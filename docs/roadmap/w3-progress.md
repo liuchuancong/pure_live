@@ -72,18 +72,19 @@ retryDelay)翻译成 media_core 的策略对象。这条结论单独记 ADR(0020
 
 ## 2. W3 要写的东西
 
-盘点结论落定后的顺序(第 1—4 条已完成):
+盘点结论落定后的顺序(第 0—5 条已完成):
 
 0. 播放诊断:`docs/diagnostics/playback-diagnostics.md` 的轨迹与导出报告已落(§2.5);**"设置 → 诊断 → 导出"
    的 UI 与文件落盘还没有**,那是 feature 层的活。
 1. ~~`pure_live_media`:`MediaTicket → MediaSource` 映射~~ —— 已落(§2.1)。
 2. ~~假引擎跑通"播一个假源"~~ —— 已落(§2.2),M2 的另一半在**接线层面**达成。
 3. ~~票据到期与预取调度(平台侧看门狗)~~ —— 已落(§2.3)。
-4. 引擎适配(media_kit / ijk / better_player)与真实设备播放:前两条证明的是接线到得了引擎,不代表任何
-   真机在播。
 4. ~~`MediaTicketRefreshInfo`(`refreshBefore`,models §11)~~ —— 已落(§2.4),预取提前量改为"逐票建议优先、
    全局默认兜底"。
-5. Watchdog 的其余三项监控(帧心跳、适配器错误、缓冲率细节)**不做**:内核已经在报,重复判定就是 ADR 0020
+5. ~~`packages/ecosystem/resolver` 与换链的读侧闸~~ —— 已落(§2.6)。
+6. 引擎适配(media_kit / ijk / better_player)与真实设备播放:前两条证明的是接线到得了引擎,不代表任何
+   真机在播。
+7. Watchdog 的其余三项监控(帧心跳、适配器错误、缓冲率细节)**不做**:内核已经在报,重复判定就是 ADR 0020
    反对的多方救火。触发后的"降画质建议 / 追帧"两个动作也没有实现,它们需要 UI 与直播时钟源,随各波落地。
 
 ### 2.1 已完成:`pure_live_media` 的票据映射(15 测试)
@@ -180,19 +181,47 @@ models §11 的 `MediaTicketRefreshInfo{supported, expiresAt, refreshBefore}` �
 `classifyFault()` 按文档的反馈闭环把故障归给能修它的一方(源插件 / network / media),而不是统一句"播放失败";
 带命名空间的插件自定义码(`tvbox.*`)靠 `category` 落归属,不硬猜 unknown 之外的类别。
 
+### 2.6 已完成:`packages/ecosystem/resolver`(30 测试)与 platform 的 `ResolverDescriptor`(11 测试)
+
+§12 的 `Resolver` 与 §10 的 `ResolveCapability` 不是一个东西:后者交一张票据,前者交一组票据加一条选择策略,
+而且注册表要在**不发请求**的前提下问出"谁能服务这个内容"。本包干的就是把前者套在后者外面。
+
+- `resolver.dart`:`Resolver`(`descriptor` / `canResolve` / `resolve`)与 `ResolverException`。异常一律带
+  models §14 的码(`resolver.unsupported` / `resolver.failed` / `resolver.timeout` / `media.expired` /
+  `task.cancelled`),因为恢复阶梯要分支的是码而不是消息 —— "内容类型不支持"不可重试,"超时"可重试。
+- `resolver_registry.dart`:`candidatesFor` 优先级降序、**平序按注册序**。这里踩到一个 Dart 事实:`List.sort`
+  不是稳定排序,只按 priority 比会把等值候选洗乱,所以显式带下标做第二关键字。`register` 同 id 覆盖并追加到末尾。
+- `ResolverChain`:`allowFallback == false` 时首个失败**原样上抛且不再问后面的候选**;取消(`task.cancelled`)
+  直接上抛,不降级(models §20 不变量 9: caller 不播了不是换源的理由);候选返回空 tickets 算失败并继续降级;
+  全空时上报**第一个**拒绝理由。源抛出的外来异常被包成 `resolver.failed`(带 `retryable`),调用方不必知道
+  第三方运行时选了哪种异常;但在 `allowFallback == false` 时原物重抛,不做二次包装。
+- `capability_resolver.dart`:`CapabilityResolver` 用 `descriptor.serves` + 可选 `allowedKinds` **收窄**回答
+  (它不是授权,写了 descriptor 不支持的 kind 仍然拒绝);`request.context.preferredQuality` 翻成 `SelectionRef`
+  传给源;`ResolveResult.selection.preferredProtocol` 取**票据实际协议**,不是请求里想要的。
+  **已经过期的票据在这里挡下**:放它过去在这儿算成功,失败会落在播放器里,而那里的恢复阶梯回不到"换个源"。
+- `CapabilityTicketRefresher`:两道闸各测其分 —— `policy.allowRefresh == false`(平台不许)与
+  `refresh.supported == false`(源是一次性签名 url)都拒,且拒的是 `permission.restricted` 而不是
+  `resolver.failed`:重试一个被拒的换链会永久打转,而重试一个失败的请求不会。
+
+同层边 `pure_live_resolver → pure_live_capability` 走 [ADR 0021](../adr/0021-resolver-capability-edge.md)
+登记进 `kApprovedExceptions` 与依赖规则 §4,护栏回归补了正例与反例各一条(别的生态包伸手拿 capability 仍被
+`layer-direction` 拦下)。
+
 ## 3. 验证证据
 
 | 命令 | 结果 |
 |---|---|
 | `packages/integrations/media` → `flutter analyze` | No issues found |
 | `packages/integrations/media` → `flutter test` | **51 全绿** = 15 票据映射 + 5 假引擎端到端播放 + 19 看门狗 + 12 播放诊断轨迹;跑在真实 `flutter test` 上、对钉住的 media_core ref(不是对桩) |
-| `packages/ecosystem/platform` → `dart test -j 1` | **89 全绿**(+7 条 `MediaTicketRefreshInfo` 调度与往返) |
+| `packages/ecosystem/platform` → `dart test -j 1` | **100 全绿**(89 + 11 条 `ResolverDescriptor`:词汇钉死、`serves` 全表、JSON 往返与"未知 kind 落回 vod") |
+| `packages/ecosystem/resolver` → `dart analyze .` / `dart test -j 1` | No issues found;**30 全绿** = 注册表与降级链 14 + 能力适配与换链闸 16。两条被**改的是断言**而不是代码:等值候选的注册序、`ContentKind.movie` 只有一个候选服务 |
 | 假引擎播放的路径 | `PlayerKernel.createFromMedia` 走内核自己的 planner(`DefaultMediaSourcePlanner`)与 `PlayerHandle.initialize/open/play/stop`;`FakePlayerAdapter` 来自 media_core 自带的 `testing/library.dart` |
 | 看门狗 → 阶梯的证据 | 断言 `handle.recoveryFailure.source == RecoveryFailureSource.watchdog`(真实 handle,不是替身回调) |
 | 环境 | `flutter test` 每次会触发一次 pub 解析;本网络下只有先 `flutter pub get --offline` 才不报 `Connection terminated during handshake`。已把这条顺序固定下来 |
 | `flutter pub get --offline`(仓库根) | Got dependencies;media_core 复用应用同一 git checkout,未新增解析 |
 | `dart analyze packages` / `dart analyze .` | No issues found |
-| `dart run tool/check_architecture.dart --strict` | `packages=25 errors=0 warnings=0` |
+| `dart run tool/check_architecture.dart --strict` | `packages=26 errors=0 warnings=0`(新登记 `resolver → capability` 同层例外) |
+| `powershell -File tool/test_check_architecture.ps1` | **PASS: 23 assertions across 21 cases**(新正反例:`resolverCapabilityEdge_reports_nothing`、`otherPackageTakingTheCapabilityEdge_reports_error`) |
 | `dart format --output=none --set-exit-if-changed packages tool/check_*.dart` | 127 文件 0 changed |
 
 事故记录:`dart format ../../..` 误从包目录指到仓库根,把 `third_party/built_in_kotlin/**`(53 个 vendored
@@ -205,11 +234,14 @@ models §11 的 `MediaTicketRefreshInfo{supported, expiresAt, refreshBefore}` �
   修订;不能让文档继续指向一套不该存在的实现。
 - 播放只在**假引擎**上打通:没有真实引擎适配(media_kit / ijk / better_player),没有真机验收,也没有画面/音频
   输出证据。M2 的"能播一个假源"达成,"能播"这件事本身还没达成。
-- 换链的**执行端**还没有:`onTicketRefresh` 回调由谁去重新 resolve、拿到新票据后怎么 `handle.open` 上去
-  (且要保住会话与进度,docs/media/media-ticket.md §4),要等 resolver(W4 之前)与播放会话归属定下来。目前
-  看门狗只会"提出要换",不会真的换。
+- 换链的**读侧闸与执行原语**已落(§2.6:`CapabilityTicketRefresher.refresh`),但**接线还没有**:看门狗的
+  `onTicketRefresh` 由谁调、拿到新票据后怎么 `handle.open` 上去(且要保住会话与进度,docs/media/media-ticket.md §4)
+  仍待播放会话归属定下来。目前看门狗只会"提出要换",不会真的换。
 - 内核阶梯被**触发过**一次(测试里 `reportFailure` 进到 `handle.recoveryFailure`),但没有走完一轮恢复:
   没有候选线路、没有 `RecoveryLadderEvent` 断言。真实恢复路径的验证随引擎适配一起做。
-- `MediaTicketRefreshInfo` 目前只有模型与读法,**没有任何 resolver 会填它**:字段是先给 W4/W7 用的,不是
-  "已生效"。
+- `MediaTicketRefreshInfo` 现在有**读它的一方**了(§2.4 的预取时刻、§2.6 的换链闸),但**没有写它的一方**:
+  只有真实 provider 在 `ResolveCapability.resolve` 里回填 `refresh`,这些字段才生效。在此之前它们对任何源都是 null,
+  行为等同"源没给建议 → 用全局默认提前量"。
+- `ResolverRegistry` 还没有装配点:注册表与链是纯对象,app 侧(唯一组合根,I9)尚未把源注册进来,
+  也没有把 `ResolveCapability` 从扩展上下文递到 `CapabilityResolver`。这属于 W4 的 DI 活。
 
