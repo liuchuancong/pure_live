@@ -15,33 +15,7 @@ import 'package:media_core/testing/library.dart' as doubles;
 import 'package:pure_live_media/pure_live_media.dart';
 import 'package:pure_live_platform/pure_live_platform.dart' as platform;
 
-/// Hands the kernel a fresh fake adapter and keeps them, so a test can read what was opened.
-final class _FakeEngineFactory implements core.PlayerAdapterFactory {
-  _FakeEngineFactory(this.created);
-
-  final List<doubles.FakePlayerAdapter> created;
-
-  @override
-  core.PlayerAdapter create(String id) {
-    final adapter = doubles.FakePlayerAdapter(id: id);
-    created.add(adapter);
-    return adapter;
-  }
-
-  @override
-  bool supports(String id) => true;
-}
-
-const core.PlayerAdapterCapabilities _fakeCapabilities = core.PlayerAdapterCapabilities(
-  supportsLive: true,
-  supportsSeek: true,
-  supportsPause: true,
-  supportsStop: true,
-  supportsVolumeControl: true,
-  supportedProtocols: <String>{'http', 'https'},
-  supportedFormats: <String>{'hls', 'dash', 'mp4'},
-  compositeSupport: core.CompositeSupport.native,
-);
+import 'support/fake_engine.dart';
 
 platform.MediaTicket _ticket({
   platform.MediaKind kind = platform.MediaKind.vod,
@@ -66,10 +40,7 @@ void main() {
 
   setUp(() {
     created = <doubles.FakePlayerAdapter>[];
-    kernel = core.PlayerKernel();
-    kernel.registerBackend(
-      core.PlayerAdapterRegistration(id: 'fake', factory: _FakeEngineFactory(created), capabilities: _fakeCapabilities),
-    );
+    kernel = fakeEngineKernel(created: created);
   });
 
   tearDown(() async {
@@ -128,13 +99,10 @@ void main() {
     // The kernel, not the mapping, decides playability: a single-url engine handed a composite gets an
     // UnsupportedPlan, and the platform must see a refusal rather than a silently degraded handle.
     created.clear();
-    kernel.unregisterBackend('fake');
-    kernel.registerBackend(
-      core.PlayerAdapterRegistration(
-        id: 'single_url',
-        factory: _FakeEngineFactory(created),
-        capabilities: const core.PlayerAdapterCapabilities(supportedProtocols: <String>{'https'}),
-      ),
+    kernel = fakeEngineKernel(
+      created: created,
+      capabilities: const core.PlayerAdapterCapabilities(supportedProtocols: <String>{'https'}),
+      backendId: 'single_url',
     );
 
     final source = toCoreSource(

@@ -72,15 +72,18 @@ retryDelay)翻译成 media_core 的策略对象。这条结论单独记 ADR(0020
 
 ## 2. W3 要写的东西
 
-盘点结论落定后的顺序(第 1、2 条已完成):
+盘点结论落定后的顺序(第 1—3 条已完成):
 
 1. ~~`pure_live_media`:`MediaTicket → MediaSource` 映射~~ —— 已落(§2.1)。
 2. ~~假引擎跑通"播一个假源"~~ —— 已落(§2.2),M2 的另一半在**接线层面**达成。
-3. Watchdog:先用 media_core 的 recovery/ + `player_handle_recovery.dart`,只在"票据到期预取"这一层加平台侧
-   调度(docs/media/watchdog.md 与 recovery.md 的对应关系要按 §1.3 重写,不能照原样实现)。
-4. `MediaTicketRefreshInfo`(`refreshBefore`,models §11)仍未落 —— 到期预取的提前量没有落点,是第 3 条的前置。
-5. 引擎适配(media_kit / ijk / better_player 等)与真实设备播放:第 2 条只证明接线到得了引擎,不代表任何
+3. ~~票据到期与预取调度(平台侧看门狗)~~ —— 已落(§2.3)。
+4. 引擎适配(media_kit / ijk / better_player)与真实设备播放:前两条证明的是接线到得了引擎,不代表任何
    真机在播。
+5. `MediaTicketRefreshInfo`(`refreshBefore`,models §11)仍未落:目前预取提前量来自
+   `WatchdogThresholds.prefetchLead`(全局默认 + 每源可覆写的入口),而票据**自身**建议的提前量还没有字段;
+   两者合并的规则要等 resolver 真正返回 per-ticket 建议时再定,不提前发明。
+6. Watchdog 的其余三项监控(帧心跳、适配器错误、缓冲率细节)**不做**:内核已经在报,重复判定就是 ADR 0020
+   反对的多方救火。触发后的"降画质建议 / 追帧"两个动作也没有实现,它们需要 UI 与直播时钟源,随各波落地。
 
 ### 2.1 已完成:`pure_live_media` 的票据映射(15 测试)
 
@@ -133,13 +136,32 @@ platform.MediaTicket → toCoreSource() → PlayerKernel.registerBackend(fake)
 边界(必须与成就分开写):这一条证明的是**接线能到引擎**,不是任何真机在播。media_kit / ijk / better_player
 适配与设备验收还没有。
 
+### 2.3 已完成:平台侧看门狗(17 测试,`lib/src/watchdog.dart`)
+
+`docs/media/watchdog.md` 的五项监控里,只有两项是平台能观察的,盘点也证实内核把这两项留给宿主:
+`kernel/player_handle_recovery.dart:176` 明写"之后再停的时钟是 position-stall watchdog 的活",而票据 TTL 根本
+不进内核(内核只拿到 url)。因此这里只做:**票据过期 / 到期预取 / 位置停滞 / 起播超时**,
+`reportStall` 与 `reportStartTimeout` 通过 `PlayerHandle.reportFailure` 交给内核阶梯
+(`RecoveryFailureSource.watchdog`),看门狗自己不执行任何恢复(§2 规则:只发起)。
+
+架构上一处被源码事实推翻的设计:原打算让看门狗直接持有 `PlayerHandle`,但 `PlayerHandle` 是 final class,
+外部无法 implement,测试也就无法替身 —— 改成注入 `reportFailure` 回调。这不是妥协:持有 handle 的一方本来
+就该决定故障往哪儿报。
+
+判定里"不做"的部分与被断言的部分同样重要,测试逐条钉住:`paused` / `idle` 冻结不报(那是用户意图)、
+无 `expiresAt` 不预取(静态流永不过期)、`allowRefresh == false` 不预取(源禁止换链)、过期优先于停滞、
+一次只允许一个换链在飞。真实链路那条测试断言的是
+`handle.recoveryFailure.source == RecoveryFailureSource.watchdog`,即"报到了阶梯里",而不是"回调被调了"。
+
 ## 3. 验证证据
 
 | 命令 | 结果 |
 |---|---|
 | `packages/integrations/media` → `flutter analyze` | No issues found |
-| `packages/integrations/media` → `flutter test` | **20 全绿**(15 条映射 + 5 条假引擎端到端播放),跑在真实 `flutter test` 上、对钉住的 media_core ref(不是对桩) |
+| `packages/integrations/media` → `flutter test` | **37 全绿** = 15 条票据映射 + 5 条假引擎端到端播放 + 17 条看门狗判定与动作;跑在真实 `flutter test` 上、对钉住的 media_core ref(不是对桩) |
 | 假引擎播放的路径 | `PlayerKernel.createFromMedia` 走内核自己的 planner(`DefaultMediaSourcePlanner`)与 `PlayerHandle.initialize/open/play/stop`;`FakePlayerAdapter` 来自 media_core 自带的 `testing/library.dart` |
+| 看门狗 → 阶梯的证据 | 断言 `handle.recoveryFailure.source == RecoveryFailureSource.watchdog`(真实 handle,不是替身回调) |
+| 环境 | `flutter test` 每次会触发一次 pub 解析;本网络下只有先 `flutter pub get --offline` 才不报 `Connection terminated during handshake`。已把这条顺序固定下来 |
 | `flutter pub get --offline`(仓库根) | Got dependencies;media_core 复用应用同一 git checkout,未新增解析 |
 | `dart analyze packages` / `dart analyze .` | No issues found |
 | `dart run tool/check_architecture.dart --strict` | `packages=25 errors=0 warnings=0` |

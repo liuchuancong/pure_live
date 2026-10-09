@@ -14,6 +14,7 @@
 - `lib/src/media_track_mapping.dart` —— 平台 `MediaTrack` ↔ 内核 `MediaTrack`
 - `lib/src/ticket_source.dart` —— `MediaTicket` → `MediaSource`(Progressive / Composite)
 - `lib/src/ticket_policy.dart` —— `MediaTicketPolicy` → 内核 `RecoveryPolicy` / `FallbackPolicy`
+- `lib/src/watchdog.dart` —— 播放看门狗:票据到期/预取、位置停滞、起播超时
 
 media_core 钉的是应用 pubspec 里同一个 ref(`5b04714542…`),全 workspace 共用一份 checkout。
 
@@ -35,6 +36,31 @@ media_core 钉的是应用 pubspec 里同一个 ref(`5b04714542…`),全 workspa
 | `policy.allowLineFallback` | `FallbackPolicy.allowLineFallback` | |
 | —(无对应) | `FallbackPolicy.downgradeQualityOnFailure = false` | 换画质在 PureLive 是"带另一个 `SelectionRef` 重新 resolve",不是播放中降级 |
 | `policy.allowRedirect` / `seamlessRefresh` | 无内核对应 | 留在平台侧:前者是网络出口策略,后者是换链调度 |
+
+## 看门狗(docs/media/watchdog.md)
+
+`docs/media/watchdog.md` 列了五项监控,**本包只实现平台看得见的两项**;其余三项(帧心跳、适配器错误、
+缓冲率细节)内核已经在报,再判一遍就是 ADR 0020 反对的"多方同时救火"。
+
+| 监控项 | 判定 | 动作 |
+|---|---|---|
+| 票据过期 | `now >= expiresAt` | `refreshTicket` → `onTicketRefresh(RefreshReason.expired)` |
+| 到期预取 | `expiresAt - prefetchLead < now < expiresAt` 且 `policy.allowRefresh` | `prefetchTicket` → `onTicketRefresh(expiring)` |
+| 无进度心跳 | 位置不变 + `phase == buffering` 且停滞 ≥ `stallTimeout` | `reportStall` → `handle.reportFailure(source: watchdog)` |
+| 起播超时 | `phase == preparing` 且已超 `startTimeout` 无首帧 | `reportStartTimeout` → 同上 |
+
+判定规则里刻意"不做"的部分:
+
+- **`paused` / `idle` 下时钟冻结不算故障**:那是用户意图(AGENTS.md 保 pause 意图),否则看门狗会在观众
+  背后把播放继续下去。
+- **票据没说 `expiresAt` 就不猜**:静态 m3u8 永不过期,若把"没有 TTL"当成"快过期",就会对一条好流反复换链。
+- **`policy.allowRefresh == false` 时不预取**:换链是被源禁止的,提前请求只是浪费一次解析。
+- 到期**优先于**停滞:链路已经死了,先换链再谈心跳。
+- 一次只允许一个换链在飞:`_refreshInFlight`,否则一条 30 秒才回来的重解析会被每个采样点各催一次。
+- 看门狗**只发起**恢复:它不执行阶梯,阶梯归 `handle.reportFailure` 之后的内核。
+
+注入形式是 `reportFailure: handle.reportFailure`(函数而非 `PlayerHandle`):`PlayerHandle` 是 final class
+不许 implement,而持有 handle 的一方本来就该决定故障送到哪里。
 
 ## 边界
 
