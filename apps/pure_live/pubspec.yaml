@@ -135,95 +135,7 @@ dependencies:
   mobile_scanner:
     path: ../../third_party/built_in_kotlin/mobile_scanner
 
-  # 播放器引擎经 media_core 适配包再导出获取, 这里只保留 wakelock_plus。
-  wakelock_plus: ^1.3.3 # 与 media_core_media_kit 的引擎依赖链对齐
-  #
-  # media_core 走 git 依赖, 18 个子包共用同一个 url/ref, 只有子目录不同。
-  media_core:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      ref: 5b047145422758d983a3724e689d8aa4b7d06863
-      path: packages/media_core
-  media_core_media_kit:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      ref: 5b047145422758d983a3724e689d8aa4b7d06863
-      path: packages/media_core_media_kit
-  media_core_ui:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      ref: 5b047145422758d983a3724e689d8aa4b7d06863
-      path: packages/media_core_ui
-  media_core_pip:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      ref: 5b047145422758d983a3724e689d8aa4b7d06863
-      path: packages/media_core_pip
-  media_core_fullscreen:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      ref: 5b047145422758d983a3724e689d8aa4b7d06863
-      path: packages/media_core_fullscreen
-  media_core_multiview:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      ref: 5b047145422758d983a3724e689d8aa4b7d06863
-      path: packages/media_core_multiview
-  media_core_ingest:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      ref: 5b047145422758d983a3724e689d8aa4b7d06863
-      path: packages/media_core_ingest
-  media_core_presentation:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      ref: 5b047145422758d983a3724e689d8aa4b7d06863
-      path: packages/media_core_presentation
-  media_core_floating:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      ref: 5b047145422758d983a3724e689d8aa4b7d06863
-      path: packages/media_core_floating
-  media_core_list_playback:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      ref: 5b047145422758d983a3724e689d8aa4b7d06863
-      path: packages/media_core_list_playback
-  media_core_feed:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      ref: 5b047145422758d983a3724e689d8aa4b7d06863
-      path: packages/media_core_feed
-  media_core_ijk_player:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      ref: 5b047145422758d983a3724e689d8aa4b7d06863
-      path: packages/media_core_ijk_player
-  media_core_better_player:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      ref: 5b047145422758d983a3724e689d8aa4b7d06863
-      path: packages/media_core_better_player
-  media_core_danmaku:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      ref: 5b047145422758d983a3724e689d8aa4b7d06863
-      path: packages/media_core_danmaku
-  media_core_mediasession:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      ref: 5b047145422758d983a3724e689d8aa4b7d06863
-      path: packages/media_core_mediasession
-  media_core_live:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      ref: 5b047145422758d983a3724e689d8aa4b7d06863
-      path: packages/media_core_live
-  media_core_logging:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      ref: 5b047145422758d983a3724e689d8aa4b7d06863
-      path: packages/media_core_logging
+  # 播放器引擎与唤醒锁随 integrations/media 的内核接线进入依赖图,应用不直接持有。
 
   # -------------------------- v2 分层包(组合根)--------------------------
   # AGENTS.md I9:只有这里允许同时看见所有层。运行时装配写在 lib/app/runtime.dart,
@@ -312,7 +224,6 @@ dependencies:
   easy_localization: ^3.0.8 # 多语言
   app_links: ^7.2.1
   scroll_animator: 0.3.0
-  fluttersdk_artisan: ^0.0.18
 
 
 # 依赖覆盖（强制指定版本）
@@ -339,7 +250,6 @@ dev_dependencies:
   go_router_builder: ^4.5.0 # 类型安全路由生成
   hive_ce_generator: ^1.11.2 # Hive 适配器生成
   flutter_native_splash: ^2.4.6 # 原生冷启动屏生成(Android12+/桌面)
-  fluttersdk_dusk: ^0.0.18
 
 # 应用图标配置
 flutter_icons:

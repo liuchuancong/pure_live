@@ -5,7 +5,3 @@ targets:
       # class/file options; the package's auto builder ignores those options.
       enven:enven:
         enabled: false
-      drift_dev:drift_dev:
-        generate_for:
-          - lib/core/iptv/local/tables.dart
-          - lib/core/iptv/local/database.dart

@@ -145,46 +145,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.13.1"
-  audio_service:
-    dependency: transitive
-    description:
-      name: audio_service
-      sha256: "95f3267f3449eb5cf71c8fcf1d556f57af1e898e2dc5815fb168d1843653edb7"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.18.19"
-  audio_service_mpris:
-    dependency: transitive
-    description:
-      name: audio_service_mpris
-      sha256: "8cb2ff2237f4cd2fd27f16451ed35b3aedc12df8a384435327c67a9f4d557ef4"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.2.1"
-  audio_service_platform_interface:
-    dependency: transitive
-    description:
-      name: audio_service_platform_interface
-      sha256: "6283782851f6c8b501b60904a32fc7199dc631172da0629d7301e66f672ab777"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.3"
-  audio_service_web:
-    dependency: transitive
-    description:
-      name: audio_service_web
-      sha256: b8ea9243201ee53383157fbccf13d5d2a866b5dda922ec19d866d1d5d70424df
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.4"
-  audio_service_win:
-    dependency: transitive
-    description:
-      name: audio_service_win
-      sha256: "677e25f447d3d49f537ea6f4fd36e9511acdc0badc6534c9cb92a205566ba12a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.3"
   audio_session:
     dependency: transitive
     description:
@@ -217,14 +177,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
-  better_player_plus:
-    dependency: transitive
-    description:
-      name: better_player_plus
-      sha256: "49c02ec4d975cf0da3f55c3bf07a4eb3eeab2b417790d8fa3e29a77947cb02f1"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.4.1"
   bonsoir:
     dependency: transitive
     description:
@@ -577,14 +529,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.2"
-  dart_mcp:
-    dependency: transitive
-    description:
-      name: dart_mcp
-      sha256: "852b51da915d679be8d051e2e3b6c68ed19fe685f1c676bb35272a2d73ceac7a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.5.2"
   dart_sm:
     dependency: transitive
     description:
@@ -945,15 +889,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.0.1"
-  floating:
-    dependency: transitive
-    description:
-      path: "packages/floating"
-      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
-    version: "6.0.0"
   flutter:
     dependency: transitive
     description: flutter
@@ -1247,30 +1182,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_widget_from_html_core:
-    dependency: transitive
-    description:
-      name: flutter_widget_from_html_core
-      sha256: "530f2e3cc57be1a00f8bfae1b0000064e8a6df0cf1fb4d48a80f85afde9b39b7"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.17.4"
-  fluttersdk_artisan:
-    dependency: transitive
-    description:
-      name: fluttersdk_artisan
-      sha256: "0505f45eb66252c1901d38ffede0ee5ed0181200e9ee2dec76eb73c58e8f43c7"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.18"
-  fluttersdk_dusk:
-    dependency: transitive
-    description:
-      name: fluttersdk_dusk
-      sha256: d220ae0920cbb519e4abc59d35bdfef903cd10af46fff8754690e32b1af377ac
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.18"
   fluttersdk_wind:
     dependency: transitive
     description:
@@ -1287,15 +1198,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.2.0"
-  flv_lzc:
-    dependency: transitive
-    description:
-      path: "."
-      ref: HEAD
-      resolved-ref: "162030d642857109048a8e6858d502b8d73c754a"
-      url: "https://github.com/liuchuancong/flv_lzc.git"
-    source: git
-    version: "1.0.4+purelive.2"
   font_awesome_flutter:
     dependency: transitive
     description:
@@ -1554,14 +1456,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
-  js:
-    dependency: transitive
-    description:
-      name: js
-      sha256: "53385261521cc4a0c4658fd0ad07a7d14591cf8fc33abbceae306ddb974888dc"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.7.2"
   json_annotation:
     dependency: transitive
     description:
@@ -1570,14 +1464,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.12.0"
-  json_rpc_2:
-    dependency: transitive
-    description:
-      name: json_rpc_2
-      sha256: "82dfd37d3b2e5030ae4729e1d7f5538cbc45eb1c73d618b9272931facac3bec1"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.1.0"
   json_serializable:
     dependency: transitive
     description:
@@ -1731,109 +1617,10 @@ packages:
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
-  media_core_better_player:
-    dependency: transitive
-    description:
-      path: "packages/media_core_better_player"
-      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
-    version: "0.1.0"
-  media_core_danmaku:
-    dependency: transitive
-    description:
-      path: "packages/media_core_danmaku"
-      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
-    version: "0.1.0"
-  media_core_feed:
-    dependency: transitive
-    description:
-      path: "packages/media_core_feed"
-      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
-    version: "0.1.0"
-  media_core_floating:
-    dependency: transitive
-    description:
-      path: "packages/media_core_floating"
-      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
-    version: "0.1.0"
-  media_core_fullscreen:
-    dependency: transitive
-    description:
-      path: "packages/media_core_fullscreen"
-      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
-    version: "0.1.0"
-  media_core_ijk_player:
-    dependency: transitive
-    description:
-      path: "packages/media_core_ijk_player"
-      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
-    version: "0.1.0"
-  media_core_ingest:
-    dependency: transitive
-    description:
-      path: "packages/media_core_ingest"
-      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
-    version: "0.1.0"
-  media_core_list_playback:
-    dependency: transitive
-    description:
-      path: "packages/media_core_list_playback"
-      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
-    version: "0.1.0"
-  media_core_live:
-    dependency: transitive
-    description:
-      path: "packages/media_core_live"
-      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
-    version: "0.1.0"
   media_core_logging:
     dependency: transitive
     description:
       path: "packages/media_core_logging"
-      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
-    version: "0.1.0"
-  media_core_media_kit:
-    dependency: transitive
-    description:
-      path: "packages/media_core_media_kit"
-      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
-    version: "0.1.0"
-  media_core_mediasession:
-    dependency: transitive
-    description:
-      path: "packages/media_core_mediasession"
       ref: "5b047145422758d983a3724e689d8aa4b7d06863"
       resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
       url: "https://github.com/liuchuancong/media_core"
@@ -1848,69 +1635,6 @@ packages:
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
-  media_core_multiview:
-    dependency: transitive
-    description:
-      path: "packages/media_core_multiview"
-      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
-    version: "0.1.0"
-  media_core_pip:
-    dependency: transitive
-    description:
-      path: "packages/media_core_pip"
-      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
-    version: "0.1.0"
-  media_core_presentation:
-    dependency: transitive
-    description:
-      path: "packages/media_core_presentation"
-      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
-    version: "0.1.0"
-  media_core_ui:
-    dependency: transitive
-    description:
-      path: "packages/media_core_ui"
-      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
-    version: "0.1.0"
-  media_core_win32:
-    dependency: transitive
-    description:
-      path: "packages/media_core_win32"
-      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
-      url: "https://github.com/liuchuancong/media_core"
-    source: git
-    version: "0.1.0"
-  media_kit:
-    dependency: transitive
-    description:
-      path: media_kit
-      ref: "803c4a27912091db6f839d48d1b984a0d9f588c7"
-      resolved-ref: "803c4a27912091db6f839d48d1b984a0d9f588c7"
-      url: "https://github.com/Predidit/media-kit.git"
-    source: git
-    version: "1.1.11"
-  media_kit_video:
-    dependency: transitive
-    description:
-      path: media_kit_video
-      ref: "803c4a27912091db6f839d48d1b984a0d9f588c7"
-      resolved-ref: "803c4a27912091db6f839d48d1b984a0d9f588c7"
-      url: "https://github.com/Predidit/media-kit.git"
-    source: git
-    version: "1.2.5"
   meta:
     dependency: transitive
     description:
@@ -2382,14 +2106,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.28.0"
-  safe_local_storage:
-    dependency: transitive
-    description:
-      name: safe_local_storage
-      sha256: "494b982d5edb71030650ea463d939670e91b232b588323dc75229d2c5f23e7b7"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.6"
   screen_brightness_android:
     dependency: transitive
     description:
@@ -2994,14 +2710,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.0"
-  uri_parser:
-    dependency: transitive
-    description:
-      name: uri_parser
-      sha256: "051c62e5f693de98ca9f130ee707f8916e2266945565926be3ff20659f7853ce"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.2"
   uri_to_file:
     dependency: transitive
     description:
@@ -3146,14 +2854,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.8.1"
-  wakelock_plus_ohos:
-    dependency: transitive
-    description:
-      name: wakelock_plus_ohos
-      sha256: b22af297411555b5ec0fe43ec2960cd5f019dd23b83853214ebe6dcc97b337bd
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.3"
   wakelock_plus_platform_interface:
     dependency: transitive
     description:
