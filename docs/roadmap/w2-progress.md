@@ -183,19 +183,29 @@ app 的 pubspec 也没引用 v2 栈里任何一个包 —— 换句话说 W2/W3 
    `Resolve-PureLiveProjectPath`(把调用方目录映射进所选的短路径空间:物理 / junction / SUBST 三种都成立),
    调用方在仓库根时行为**逐字不变**;`tool/test_subst_path.ps1` 加了 6 条不起 Flutter 的用例钉住它,
    其中包括"仓库外的调用目录退回根"这条保守分支。
-2. **`ffmpeg_kit_extended_flutter` 的构建钩子把"应用目录"算成 package_config 的上两级。**
-   pub workspace 把 `package_config.json` 放在仓库根,所以钩子看到的是 hub 的 pubspec,读不到
-   `ffmpeg_kit_extended_config`,退回它自己的默认值 `base + small` —— 与本应用声明的 `small: false` 不一致,
-   而且本机缓存里只有非 small 那一份,于是 `flutter test` 在原生资源阶段尝试联网下载并死于
-   `HandshakeException`。已在根 pubspec 镜像这段配置(注释写明应用侧才是权威、两处不一致时产物按 hub 走,
-   上游修好 workspace 感知后删除)。这条的代价要说清楚:**在没有代理的机器上,此前所有 app 侧
-   `flutter test` / `build` 都会在这里失败**,而不是只在测试里。
+2. **`ffmpeg_kit_extended_flutter` 的构建钩子把"应用目录"算成 package_config 的上两级**,
+   而这条我第一版的处理是错的,连同纠正一起记在这里:
+   - 现象:pub workspace 把 `package_config.json` 放在仓库根,钩子于是读到 hub 的 pubspec,拿不到
+     `ffmpeg_kit_extended_config`,退回它自己的默认 `base + small`;应用声明的是 `small: false`。
+   - 第一版做法(把这段配置镜像到根 pubspec,commit `563a16c5a`)让**文件名**对上了仓库钉的那一份,
+     于是暴露出更深的冲突:钩子接着去上游取该文件名的校验和,上游对
+     `bundle-base-windows-x86_64-shared-lgpl.zip` 给的是 `ac4f7c68…`,而仓库自己的固定件是 `e61684a9…`
+     (`tool/prefetch_android_native.ps1` 的 0.6.2 profile、`tool/verify_ffmpeg_native.py`、
+     `tool/build_local_release.ps1` 三处一致,工件来自 `wzgrx/pure_live` 的 `native-ffmpeg-9.0.2-b1` release)。
+     钩子据此判定缓存"损坏",**删掉仓库那份 zip** 并要求重下上游版本 —— 这与 BUILD_POLICY 的固定来源要求
+     直接冲突,而且会不会发生取决于那一刻连不连得上校验文件所在的主机。
+   - 已撤回该镜像(revert `14786aea4`),并用仓库自己的工具把被删的固定件从持久缓存
+     `%LOCALAPPDATA%/PureLive/native-cache` 复原(17.2 MB,SHA256 已核对:
+     `tool/prefetch_android_native.ps1 -SkipAndroidMedia`)。机器状态不劣于本轮开始之前。
+   - 撤回后钩子回到默认的 small 那份:本机没有,而 `objects.githubusercontent.com` 此刻 TLS 握手失败,
+     所以 app 侧 `flutter test` 今天过不了原生资源这一步。这是**环境与上游契约**问题,不是 §1.7 的装配问题。
+   - 真正的修法要先定 provenance 归属:要么按 `third_party/` 的既有做法给这个插件的钩子打补丁,让它认项目
+     自己的固定件;要么改用上游发布的 bundle 并同步改三处哈希。两者都是构建决策,不该由"在根上补一段 yaml"掩盖。
 
-`tool/local_ci.ps1` 仍然假定 Flutter 工程在仓库根(`flutter pub get` / `test` / `analyze` 都在 `$repoRoot`,
-格式化排除项还写着搬家前的 `plugins/built_in_kotlin/` 与 `lib/core/scripts/douyin_sign.dart`),
-因此它现在不能用作本波的验证入口。本轮验证走的是守卫内的直接命令:
-`Enter-PureLiveHeavyTaskSlot` → `tool/flutterw.ps1 test/analyze`(cwd = apps/pure_live)→ `Exit-PureLiveHeavyTaskSlot`。
-local_ci 的适配单独一票,不塞进本波。
+`tool/local_ci.ps1` 的目录适配在同一轮落了(见 §4 第 6 条):`flutter pub get` / `test` / `analyze` 三个阶段
+改到 `apps/pure_live` 里执行,格式化改成"只碰自己拥有的路径"的白名单。修好之后 Focused 跑起来不再是"测试文件
+不存在",而是进到 app 工程的原生资源构建,并最终停在上面第 2 条那个 FFmpeg 契约上 —— 因此本轮**不声称**
+local_ci 端到端通过,只声称它的目录假设已经纠正、失败点已经前移到真实的环境问题上。
 
 ## 2. 顺带修掉的工程缺陷
 
@@ -227,18 +237,6 @@ local_ci 的适配单独一票,不塞进本波。
 | `dart run tool/check_workflow_yaml.dart` | 4 个 workflow/action 文件解析通过 |
 | 护栏非空转验证 | 临时放置 `packages/foundation/utils/lib/src/.gitkeep` → 报 `stale-scaffold-marker` 且 `errors=1`,删除后回 0 |
 
-组合根(§1.7)验证 —— 全部经 `tool/build_resource_guard.ps1` 的租约,`tool/flutterw.ps1` 在 `apps/pure_live` 下执行:
-
-| 命令 | 结果 |
-|---|---|
-| `apps/pure_live` → `flutter pub get --offline` | Got dependencies(新增 8 个 workspace 路径依赖) |
-| `apps/pure_live` → `flutter test --no-pub test/runtime_assembly_test.dart` | **7 全绿**(装配 4 + 持久化 2 + 宿主 widget 1) |
-| `apps/pure_live` → `flutter analyze --no-pub` | No issues found(修掉两条:一处未用 import、一个未用测试参数) |
-| 原生资源 | FFmpegKit 钩子改用本机已有的 `bundle-base-windows-x86_64-shared-lgpl`,不再下载 |
-| `tool/test_subst_path.ps1` | PASS:8 条 SUBST + 6 条 project-path + wrapper syntax |
-| `dart analyze packages` / `--strict` 护栏 / 格式化 | No issues found;`packages=26 errors=0`;显式路径 153 文件 0 changed |
-| **仍未恢复** | `tool/local_ci.ps1` 的 Flutter 阶段仍指向仓库根,不能作为本波验证入口;分支能 `flutter test`,但**没有做过设备/构建验收** |
-
 W2 收尾(§1.6)复跑:
 
 | 命令 | 结果 |
@@ -247,6 +245,20 @@ W2 收尾(§1.6)复跑:
 | `packages/ecosystem/extension` → `dart analyze .` / `dart test -j 1` | No issues found;**53 全绿** = 原有 34 + 持久视图 18 + 网关接缝集成 1 |
 | 磁盘行为依赖的平台事实 | Windows 上 `File.rename` **可以**覆盖已存在的目标(先探针验证再写实现),所以"临时文件 + rename"不需要先删目标 —— 那会把窗口期变成"文件不见了" |
 | 护栏与格式化 | 见 [w3-progress.md](w3-progress.md) §3:resolver 波之后 `packages=26 errors=0`、`142 文件 0 changed`、护栏回归 21 例 23 断言全过 |
+
+组合根(§1.7)验证 —— 全部经 `tool/build_resource_guard.ps1` 的租约,`tool/flutterw.ps1` 在 `apps/pure_live` 下执行:
+
+| 命令 | 结果 |
+|---|---|
+| `apps/pure_live` → `flutter pub get --offline` | Got dependencies(新增 8 个 workspace 路径依赖) |
+| `apps/pure_live` → `flutter test --no-pub test/runtime_assembly_test.dart` | **7 全绿**(装配 4 + 持久化 2 + 宿主 widget 1) |
+| `apps/pure_live` → `flutter analyze --no-pub` | No issues found(修掉两条:一处未用 import、一个未用测试参数) |
+| FFmpegKit 原生资源 | 见 §1.8(2):钩子要的是上游 small 那份,本机既没有也下不到;仓库固定的非 small 那份已用 prefetch 复原 |
+| `tool/local_ci.ps1 -Scope Focused -TestPath test/runtime_assembly_test.dart -SkipPubGet -Analyze` | 失败点已从"测试文件不存在"前移到 app 的原生资源构建(证明目录修复生效),最终因 FFmpeg 契约停下(§1.8(2)) |
+| `tool/prefetch_android_native.ps1 -SkipAndroidMedia` | exit 0;Verified `bundle-base-windows-x86_64-shared-lgpl.zip`(复原被钩子删除的固定件) |
+| `tool/test_subst_path.ps1` | PASS:8 条 SUBST + 6 条 project-path + wrapper syntax |
+| `dart analyze packages` / `--strict` 护栏 / 格式化 | No issues found;`packages=26 errors=0`;显式路径 153 文件 0 changed |
+| **仍未通过** | `tool/local_ci.ps1` 目录假设已纠正,但 Focused 停在 FFmpeg 原生资源(§1.8(2)),所以端到端未通过;分支现在**能编译、能起**(此前不能),但**没有做过设备/构建验收** |
 
 ## 4. 余下项(W2 未完成部分)
 
@@ -264,13 +276,18 @@ W2 收尾(§1.6)复跑:
 4. M2 的另一半"媒体管线能播一个假源"已在 W3 达成(接线层),见 [w3-progress.md](w3-progress.md) §2.2。
 5. `ExtensionGateway.supportedApiVersions` 默认为空 = 不做版本检查;插件一旦能声明 `platformApiVersion`,
    组合根必须显式给出接受范围,否则 platform-contracts.md §23 的兼容性判定形同不存在。
-6. `tool/local_ci.ps1` 需要适配 ADR 0015 之后的目录(Flutter 阶段进 `apps/pure_live`,格式化排除项改到
-   `third_party/**` 与 `apps/pure_live/lib/core/scripts/douyin_sign.dart`),并给"改了依赖必须重写 lockfile"
-   留一个开关(现在它固定 `pub get --enforce-lockfile`)。这是本波之后紧接着的一票。
-7. 组合根只装到 §1.7 那张表的范围:`InMemoryPermissionStore` 让授权与拒绝**活不过重启**(每次开机重新问一遍),
+6. `tool/local_ci.ps1` 的目录假设**已纠正**(§1.8(1)):Flutter 三个阶段改在 `apps/pure_live` 里跑,格式化改成
+   "只碰自己拥有的路径"的白名单(packages / apps/pure_live 的 lib+test / tool),并排除 `*.g.dart`、`/build/`、
+   `/.dart_tool/`、`/generated/` —— 旧的黑名单还写着搬家前的 `plugins/built_in_kotlin/`,那正是误格式化 53 个
+   vendored 文件的成因。**仍欠两笔**:端到端跑通被 §1.8(2) 的 FFmpeg 契约挡住;以及"改了依赖必须重写锁文件"
+   没有开关(现在固定 `pub get --enforce-lockfile`)。
+7. **FFmpeg 原生工件的 provenance 归属要有人定**(§1.8(2)):插件钩子按上游校验和验收,仓库钉的是自己重烤的
+   `native-ffmpeg-9.0.2-b1` 工件,两者对同一个文件名给出不同哈希。不解决就会在"能连上校验主机"的那次构建里
+   悄悄删掉固定件、换回上游版本。
+8. 组合根只装到 §1.7 那张表的范围:`InMemoryPermissionStore` 让授权与拒绝**活不过重启**(每次开机重新问一遍),
    `MediaRuntime` 没有装(没有引擎适配),`RuntimeRegistry` 是空的(没有运行时可注册)。前两条各有明确落点,
    第三条随 W3 的引擎适配。
-8. 落盘视图留了两处口子(§1.6 里也写了,记在这里是为了不让它被当成已解决):
+9. 落盘视图留了两处口子(§1.6 里也写了,记在这里是为了不让它被当成已解决):
    - **卸载不清 data**:`ExtensionStorage` 契约没有 `clear()`(§19 就没有),网关也只有 `unload` 不叫 uninstall。
      清理只能由持有 `KeyValueStore` 的一方按 `ExtensionNamespace` 前缀做,而那需要一个真正的卸载入口。
    - **磁盘缓存没有条数上限**:过期只在读这一行或列键时被剔除。AGENTS.md 把"有界缓存"列为要守的性质,而策略该是
