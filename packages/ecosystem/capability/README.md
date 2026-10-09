@@ -14,7 +14,26 @@
 - `pubspec.yaml` / `analysis_options.yaml` / `CHANGELOG.md` / `README.md` / `test/` —— 所有包必备
 - `lib/src/capabilities.dart` —— `CapabilityKind` 与有方法集的 `BrowseCapability` / `SearchCapability` /
   `ResolveCapability` / `FeedCapability`、注册时上报的 `CapabilitySet`
+- `lib/src/capability_registry.dart` —— `ProviderRegistration` 与 `CapabilityRegistry`:provider 的发现入口
 - `lib/testing.dart` —— 契约断言(见下)
+
+## 发现:两个视图,故意不一样
+
+[provider-contract.md](../../../docs/contracts/provider-contract.md) §3 要求"查询方永远通过 CapabilityRegistry
+发现 Provider 列表,不硬编码源",而声明与实现是两件事,所以这里给两个视图而不是一个折中:
+
+| 视图 | 依据 | 谁用 |
+|---|---|---|
+| `providersFor(kind)` | 源在注册时**声明**的 `CapabilitySet` | 路由与展示("这个源有没有搜索") |
+| `implementations<T>()` | 对象**实际实现**的接口 | 真要发调用的一方(search.md 的聚合循环、Feed 聚合) |
+
+两者只在声明与实现相符时一致,而那由 `contract.declaration.missing_interface` 在安装前把关
+(§1 规则 5)。分开的理由:注册表存的是 `Object`,一个多声明了 `search` 的第三方源会让聚合循环在
+`as SearchCapability` 处失败;而它其余的能力是真的,也不该因为一处多声明就整源不可见。
+
+`register` 同 `sourceId` **覆盖**并保留原位置(刷新不该改变聚合顺序),`unregisterExtension` 是
+[plugin-lifecycle.md](../../../docs/plugin/plugin-lifecycle.md) 的 Enabled 行"对 CapabilityRegistry 可见"的落点:
+生命周期事件说的是扩展,不是它名下的每个仓库,逐个注销就会漏掉一个仍在应答的禁用插件。
 
 ## 为什么有第二个入口
 

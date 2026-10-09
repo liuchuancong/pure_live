@@ -22,6 +22,10 @@ load → init(context: HostBridge) → [resolve/refresh/browse/search/…] → d
 
 Provider 由 PluginRegistry 装载、CapabilityRegistry 按 capability 索引;查询方(搜索/Feed/首页)永远通过 CapabilityRegistry 发现 Provider 列表,不硬编码源(见 [../services/search.md](../services/search.md)、[../services/feed.md](../services/feed.md))。
 
+> 实现落点:`packages/ecosystem/capability/lib/src/capability_registry.dart`(注册/覆盖/按扩展注销)。
+> 声明面走 `providersFor(kind)`,要发调用的一方用 `implementations<T>()` —— 两个视图的分工与理由见
+> [包 README](../../packages/ecosystem/capability/README.md) 与 [../roadmap/w4-progress.md](../roadmap/w4-progress.md) §1。
+
 ## 4. 参考
 
 第一个参考 Provider:Bilibili(同时覆盖 Live/VOD/Search/Feed/Danmaku/Auth/Subtitle,最大程度验证契约,见 [../roadmap/v2-roadmap.md](../roadmap/v2-roadmap.md) W4;协议词典:pure_live_TV `lib/modules/vod`)。

@@ -28,6 +28,10 @@ MediaTicket / MediaPlan / PlayerKernel 接线 / Recovery / Watchdog。
 
 覆盖 Live / VOD / Search / Feed / Danmaku / Auth —— 用它验证完整生态链(内容链 + 媒体链)。
 
+> 前置与缺口记录见 [w4-progress.md](w4-progress.md):`CapabilityRegistry`(六处文档引用而代码里不存在的发现入口)已落;
+> Bilibili 适配仍卡在两处 —— 真实响应录制通道(provider-contract §1 规则 5 要求 fixtures 是录制的,不是猜的)与
+> Danmaku / Auth 的方法集(capability-contract §3 只定义了内容类四个方法集,定它们是改契约而不是写实现)。
+
 ## W5 — Universal Content
 
 ContentRef 业务面:History / Favorite / Playlist / Feed / Search / Link。

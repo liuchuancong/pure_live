@@ -13,3 +13,4 @@
 library;
 
 export 'src/capabilities.dart';
+export 'src/capability_registry.dart';
