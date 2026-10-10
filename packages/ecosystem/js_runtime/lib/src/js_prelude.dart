@@ -62,7 +62,10 @@ var __PureLive = (function () {
           return JSON.stringify(result === undefined ? null : result);
         }
       }
-      throw new Error('no registration implements ' + capability + '.' + method);
+      // A marker object, not a thrown Error: the host distinguishes "nothing implements this optional method"
+      // from "the method threw", and matching on the wording of an exception message breaks the moment the
+      // text changes. A plugin's own method failures still surface as errors below.
+      return JSON.stringify({ __noRegistration__: capability + '.' + method });
     },
     describes: function () {
       return JSON.stringify(registrations.map(function (definition) {

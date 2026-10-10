@@ -32,16 +32,15 @@ final class JsPluginRuntime implements PluginRuntime {
   HostBridge? _bridge;
   PluginManifest? _manifest;
 
-  /// The capability group names the enabled script serves, cut down to what
-  /// its manifest declared.
   Set<String> _groups = const <String>{};
+
+  /// The capability groups the loaded script registered, cut down to what its manifest declared. Read after
+  /// [enable]; empty before. Unmodifiable: this used to hand out the live set, so a caller could add a group the
+  /// manifest never declared - or clear the runtime's own state - through a getter.
+  Set<String> get registeredGroups => Set<String>.unmodifiable(_groups);
 
   @override
   PluginRuntimeKind get kind => PluginRuntimeKind.js;
-
-  /// The capability groups the loaded script registered. Read after [enable];
-  /// empty before.
-  Set<String> get registeredGroups => _groups;
 
   /// The live sandbox, while the plugin is enabled. Hosts that speak a second
   /// vocabulary over the same script (a music feature reading an lx script,
@@ -57,13 +56,23 @@ final class JsPluginRuntime implements PluginRuntime {
     _manifest = manifest;
     _bridge = bridge;
     final sandbox = FjsJsSandbox(pluginId: manifest.id, policy: policy, bridge: bridge, onLog: onLog);
-    await sandbox.start();
-    final outcome = await sandbox.evaluate(SandboxUnit(pluginId: manifest.id, key: 'plugin.source', source: source));
-    if (!outcome.isClean) {
+    try {
+      await sandbox.start();
+      final outcome = await sandbox.evaluate(SandboxUnit(pluginId: manifest.id, key: 'plugin.source', source: source));
+      if (!outcome.isClean) {
+        throw StateError('${manifest.id} failed to load: ${outcome.message}');
+      }
+      _sandbox = sandbox;
+    } on Object {
+      // A failed load used to leave the manifest and bridge behind with no sandbox, so the runtime reported
+      // "not enabled" while still holding the identity and the host handle of a plugin that had never started -
+      // and the half-built engine leaked. Nothing survives a load that did not happen.
       await sandbox.dispose();
-      throw StateError('${manifest.id} failed to load: ${outcome.message}');
+      _manifest = null;
+      _bridge = null;
+      _groups = const <String>{};
+      rethrow;
     }
-    _sandbox = sandbox;
   }
 
   @override
@@ -73,15 +82,29 @@ final class JsPluginRuntime implements PluginRuntime {
     if (!described.isClean || described.value == null) {
       throw StateError('${_manifest!.id} did not describe its registrations: ${described.message}');
     }
-    final descriptions = (jsonDecode(described.value!) as List).cast<Map<String, Object?>>();
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(described.value!);
+    } on FormatException catch (error) {
+      throw StateError('${_manifest!.id} described itself in text that is not JSON: ${error.message}');
+    }
+    // A script that describes itself as an object, a number or a list of strings is a broken plugin, not a
+    // host crash: the message says what arrived, and one odd registration must not lose the ones that are fine.
     final served = <String>{};
-    for (final description in descriptions) {
-      final declared = _asObjectMap(description['manifest']) ?? const <String, Object?>{};
-      final carried = ((description['capabilityNames'] as List?) ?? const []).map((name) => '$name').toSet();
+    for (final description in decoded is List ? decoded : const <Object?>[]) {
+      final entry = _asObjectMap(description);
+      if (entry == null) {
+        continue;
+      }
+      final declared = _asObjectMap(entry['manifest']) ?? const <String, Object?>{};
+      final carried = _asList(entry['capabilityNames']).map((name) => '$name').toSet();
       // The declared manifest wins over what the object happens to carry: a
       // script exposing more groups than it declared is exactly the drift the
       // manifest review is supposed to catch, so it is cut here.
       served.addAll(carried.intersection(_declaredGroups(declared)));
+    }
+    if (decoded is! List) {
+      throw StateError('${_manifest!.id} described itself as ${decoded.runtimeType}, not a list of registrations');
     }
     _groups = served;
   }
@@ -126,14 +149,14 @@ final class JsPluginRuntime implements PluginRuntime {
 
   /// Dispatch that treats "no registration implements this" as null instead
   /// of an error - the distinction optional methods need.
+  ///
+  /// The check is on a named failure type, not on the wording of an exception message: the prelude answers an
+  /// unimplemented method with a marker object precisely so this decision does not depend on text.
   Future<Map<String, Object?>?> _dispatchOrNull(String group, String method) async {
     try {
       return await _dispatch(group, method, const <String, Object?>{});
-    } on StateError catch (error) {
-      if ('${error}'.contains('no registration implements')) {
-        return null;
-      }
-      rethrow;
+    } on NoRegistration {
+      return null;
     }
   }
 
@@ -143,9 +166,31 @@ final class JsPluginRuntime implements PluginRuntime {
     if (!outcome.isClean || outcome.value == null) {
       throw StateError('$group.$method failed: ${outcome.message ?? 'no answer'}');
     }
-    final decoded = jsonDecode(outcome.value!);
-    return decoded is Map<String, Object?> ? decoded : <String, Object?>{'result': decoded};
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(outcome.value!);
+    } on FormatException {
+      throw StateError('$group.$method answered with text that is not JSON');
+    }
+    final map = _asObjectMap(decoded);
+    if (map != null && map['__noRegistration__'] is String) {
+      throw NoRegistration('${map['__noRegistration__']} is not implemented by ${_manifest?.id ?? 'this plugin'}');
+    }
+    return map ?? <String, Object?>{'result': decoded};
   }
+}
+
+/// A capability method no registration of this plugin implements.
+///
+/// Its own type because the runtime has to tell this apart from a failure: an optional method that is simply
+/// absent is a shape of the plugin, and a call that failed is an error the user should hear about.
+final class NoRegistration implements Exception {
+  const NoRegistration(this.message);
+
+  final String message;
+
+  @override
+  String toString() => 'NoRegistration($message)';
 }
 
 /// The live/vod group of a JS plugin, as the capability contract sees it.
@@ -157,6 +202,9 @@ Map<String, Object?>? _asObjectMap(Object? value) {
   }
   return Map<String, Object?>.fromEntries(value.entries.map((entry) => MapEntry('${entry.key}', entry.value)));
 }
+
+/// A list field the plugin may have answered with anything. Not a list is zero rows, never a crash.
+List<Object?> _asList(Object? value) => value is List ? value : const <Object?>[];
 
 final class JsLiveAdapter implements BrowseCapability, ResolveCapability {
   JsLiveAdapter({required JsPluginRuntime runtime}) : _runtime = runtime;
@@ -171,10 +219,11 @@ final class JsLiveAdapter implements BrowseCapability, ResolveCapability {
     if (answer == null) {
       return const <ContentCategory>[];
     }
-    final rows = (answer['result'] as List?) ?? (answer['items'] as List?) ?? const [];
+    final rows = _asList(answer['result'] ?? answer['items']);
     return <ContentCategory>[
       for (final row in rows)
-        if (_asObjectMap(row) != null) ContentCategory.fromJson(_asObjectMap(row)!),
+        if (_asObjectMap(row) case final Map<String, Object?> category)
+          if (_categoryFrom(category) case final ContentCategory parsed) parsed,
     ];
   }
 
@@ -201,8 +250,7 @@ final class JsLiveAdapter implements BrowseCapability, ResolveCapability {
       if (quality != null) 'quality': quality.toJson(),
       if (line != null) 'line': line.toJson(),
     });
-    final ticket = _asObjectMap(answer['ticket']) ?? answer;
-    return MediaTicket.fromJson(ticket);
+    return _ticketFrom(answer, 'live', 'resolve');
   }
 
   @override
@@ -211,8 +259,7 @@ final class JsLiveAdapter implements BrowseCapability, ResolveCapability {
       'ticket': expired.toJson(),
       'reason': reason.name,
     });
-    final ticket = _asObjectMap(answer['ticket']) ?? answer;
-    return MediaTicket.fromJson(ticket);
+    return _ticketFrom(answer, 'live', 'refresh');
   }
 }
 
@@ -233,14 +280,61 @@ final class JsSearchAdapter implements SearchCapability {
 /// fields are treated as "one full page, no more", which is the honest reading
 /// of a script that did not say.
 PageResult<ContentSummary> _pageFrom(Map<String, Object?> answer) {
-  final rows = (answer['items'] as List?) ?? const [];
-  final items = <ContentSummary>[for (final row in rows) ContentSummary.fromJson(_asObjectMap(row)!)];
+  // One malformed row is a row, not a page: `_asObjectMap(row)!` used to throw on whatever the script answered
+  // differently (a string in the list, a summary missing its ref), and the whole page was lost with it - which
+  // to the user reads as an empty result rather than a partial one.
+  final rows = answer['items'] is List ? answer['items']! as List : const <Object?>[];
+  final items = <ContentSummary>[
+    for (final row in rows)
+      if (_asObjectMap(row) case final Map<String, Object?> summary)
+        if (_summaryFrom(summary) case final ContentSummary summaryRow) summaryRow,
+  ];
+  final declaredPageSize = (answer['pageSize'] as num?)?.toInt();
   return PageResult<ContentSummary>(
     items: items,
     page: (answer['page'] as num?)?.toInt() ?? 1,
-    pageSize: (answer['pageSize'] as num?)?.toInt() ?? items.length,
+    pageSize: declaredPageSize ?? items.length,
     hasMore: answer['hasMore'] as bool? ?? false,
     mode: PageMode.values.where((mode) => mode.name == answer['mode']).firstOrNull ?? PageMode.fixedPage,
-    nextCursor: answer['nextCursor'] as String?,
+    nextCursor: answer['nextCursor'] is String ? answer['nextCursor']! as String : null,
   );
+}
+
+/// Rebuilds one row, or null when the script did not give enough to name the content.
+ContentSummary? _summaryFrom(Map<String, Object?> row) {
+  final ref = _asObjectMap(row['ref']);
+  if (ref == null) {
+    return null;
+  }
+  try {
+    return ContentSummary.fromJson(row);
+  } on Object {
+    // A row whose own fields are the wrong shape is dropped for the same reason: the list is still useful.
+    return null;
+  }
+}
+
+/// One category row, or null when the plugin did not name it. Dropped rather than fatal: the category browser
+/// is more useful with the rows that came through than with an error page replacing all of them.
+ContentCategory? _categoryFrom(Map<String, Object?> row) {
+  if (row['id'] is! String || (row['id']! as String).isEmpty) {
+    return null;
+  }
+  try {
+    return ContentCategory.fromJson(row);
+  } on Object {
+    return null;
+  }
+}
+
+/// A ticket a plugin answered with, or a named failure. `MediaTicket.fromJson` throws on a missing uri, and the
+/// script is not the caller - a plugin that answers garbage must fail as "this plugin answered garbage", with
+/// the group and method in the message the user's diagnostics will show.
+MediaTicket _ticketFrom(Map<String, Object?> answer, String group, String method) {
+  final ticket = _asObjectMap(answer['ticket']) ?? answer;
+  try {
+    return MediaTicket.fromJson(ticket);
+  } on Object catch (error) {
+    throw StateError('$group.$method answered with a ticket that cannot be read: $error');
+  }
 }

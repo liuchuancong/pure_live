@@ -29,15 +29,21 @@ final class FjsJsSandbox implements ScriptSandbox {
   }) : _bridge = bridge,
        _onLog = onLog;
 
-  /// Shared engine-library start-up. Idempotent; fjs requires it once per process.
-  static Future<void> ensureLibraryInitialized() async {
-    if (!_libraryReady) {
-      await fjs.LibFjs.init();
-      _libraryReady = true;
-    }
+  /// Shared engine-library start-up. Idempotent and single-flight: fjs requires it once per process, and two
+  /// plugins enabled at start-up used to both see "not ready" and both run the native init. A failed init is
+  /// not remembered, so the next plugin can try again on a runtime that recovered.
+  static Future<void> ensureLibraryInitialized() {
+    return _libraryInit ??= fjs.LibFjs.init().catchError((Object error) {
+      _libraryInit = null;
+      throw error;
+    });
   }
 
-  static bool _libraryReady = false;
+  static Future<void>? _libraryInit;
+
+  /// True once the native library has come up. Diagnostic only: nothing should branch on it, because
+  /// [ensureLibraryInitialized] is the safe call.
+  static bool get isLibraryReady => _libraryInit != null;
 
   /// Not part of the sandbox contract; the field exists so log lines can name
   /// the plugin they came from.
@@ -58,9 +64,24 @@ final class FjsJsSandbox implements ScriptSandbox {
   /// zlib endpoints without coupling this package to them.
   Future<Object?>? Function(String api, Map<String, Object?> payload)? extendedApiHandler;
 
-  /// Brings the engine up and installs the host prelude. Split from the
-  /// constructor because engine creation is asynchronous and fallible.
-  Future<void> start() async {
+  /// Brings the engine up and installs the host prelude. Split from the constructor because engine creation
+  /// is asynchronous and fallible.
+  ///
+  /// Single-flight, and any failure closes the engine it created: two concurrent `start()` calls used to both
+  /// pass the `_engine != null` check across the await and create two native engines, one of which no one held
+  /// a handle to. A throw from `init`, a resource-limit call or the prelude eval used to leave the created
+  /// engine running while `_engine` stayed null - so `dispose()` had nothing to close and the caller had no
+  /// way to reach the leak.
+  Future<void> start() {
+    return _starting ??= _start().catchError((Object error) {
+      _starting = null;
+      return Future<void>.error(error);
+    });
+  }
+
+  Future<void>? _starting;
+
+  Future<void> _start() async {
     if (_engine != null) {
       return;
     }
@@ -72,16 +93,22 @@ final class FjsJsSandbox implements ScriptSandbox {
       // to prevent.
       builtins: fjs.JsBuiltinOptions(console: true, timers: true),
     );
-    await engine.init(bridge: _handleBridgeCall);
-    // Resource limits from the policy, applied to the engine the script runs
-    // in: a plugin that allocates without bound gets stopped by the runtime
-    // instead of taking the host's memory with it.
-    const megabyte = 1024 * 1024;
-    await engine.setMemoryLimit(limit: BigInt.from(128 * megabyte));
-    await engine.setGcThreshold(threshold: BigInt.from(16 * megabyte));
-    await engine.setMaxStackSize(limit: BigInt.from(512 * 1024));
-    await engine.eval(source: fjs.JsCode.code(jsHostPrelude));
+    try {
+      await engine.init(bridge: _handleBridgeCall);
+      // Resource limits from the policy, applied to the engine the script runs
+      // in: a plugin that allocates without bound gets stopped by the runtime
+      // instead of taking the host's memory with it.
+      const megabyte = 1024 * 1024;
+      await engine.setMemoryLimit(limit: BigInt.from(128 * megabyte));
+      await engine.setGcThreshold(threshold: BigInt.from(16 * megabyte));
+      await engine.setMaxStackSize(limit: BigInt.from(512 * 1024));
+      await engine.eval(source: fjs.JsCode.code(jsHostPrelude));
+    } catch (error) {
+      await engine.close();
+      rethrow;
+    }
     _engine = engine;
+    _starting = null;
   }
 
   /// The one host entry a script can reach: `fjs.bridge_call({api, payload})`.
@@ -128,7 +155,14 @@ final class FjsJsSandbox implements ScriptSandbox {
       default:
         final handler = extendedApiHandler;
         if (handler != null) {
-          return handler(api, Map<String, Object?>.from(options));
+          final answered = await handler(api, Map<String, Object?>.from(options));
+          if (answered == null) {
+            // The handler's contract is "null means I do not speak this api". Returning it as the result made
+            // an unhandled api look like a successful call that answered nothing, which is the one thing a
+            // script cannot recover from.
+            throw StateError('unknown host api: $api');
+          }
+          return answered;
         }
         throw StateError('unknown host api: $api');
     }
@@ -145,6 +179,14 @@ final class FjsJsSandbox implements ScriptSandbox {
       timeout: options['timeoutMs'] is num ? Duration(milliseconds: (options['timeoutMs']! as num).toInt()) : null,
     );
     final response = await _bridge.network.send(request);
+    if (response.bodySize > policy.limits.maxOutputBytes) {
+      // Checked before the decode: utf8-decoding a 200 MB body to then reject it as "output too large" is the
+      // out-of-memory crash arriving through the door the limit was installed to block.
+      throw StateError(
+        'http answer for ${request.uri} is ${response.bodySize} bytes, over the '
+        '${policy.limits.maxOutputBytes} byte script budget',
+      );
+    }
     return <String, Object?>{
       'statusCode': response.statusCode,
       'headers': response.headers,
@@ -168,20 +210,28 @@ final class FjsJsSandbox implements ScriptSandbox {
   /// use import/export; imports resolve against modules already registered in
   /// this engine. Assigning to `globalThis` inside the module is how its
   /// surface becomes reachable from later script evaluations.
-  Future<SandboxOutcome> evaluateModuleSource(String moduleName, String source) async {
-    final engine = _engine;
-    if (_disposed || engine == null) {
-      return SandboxOutcome(failure: SandboxFailure.crashed, elapsed: Duration.zero, message: 'sandbox is closed');
-    }
-    final watch = Stopwatch()..start();
-    try {
-      await engine.evaluateModule(
-        module: fjs.JsModule.code(module: moduleName, code: source),
-      );
-      return SandboxOutcome(failure: SandboxFailure.none, elapsed: watch.elapsed);
-    } catch (error) {
-      return SandboxOutcome(failure: SandboxFailure.threw, elapsed: watch.elapsed, message: '$error');
-    }
+  Future<SandboxOutcome> evaluateModuleSource(String moduleName, String source) {
+    // The module path goes through the same budget and the same deadline as every other evaluation. It used to
+    // call the engine directly, so a module whose top-level code hung waited forever - the timeout the policy
+    // promises simply did not apply to loading, which is exactly where untrusted code runs.
+    return _guarded((engine) async {
+      final watch = Stopwatch()..start();
+      try {
+        await engine
+            .evaluateModule(
+              module: fjs.JsModule.code(module: moduleName, code: source),
+            )
+            .timeout(
+              policy.limits.timeout,
+              onTimeout: () => throw TimeoutException('module exceeded ${policy.limits.timeout}'),
+            );
+        return SandboxOutcome(failure: SandboxFailure.none, elapsed: watch.elapsed);
+      } on TimeoutException catch (error) {
+        return SandboxOutcome(failure: SandboxFailure.timedOut, elapsed: watch.elapsed, message: '${error.message}');
+      } catch (error) {
+        return SandboxOutcome(failure: SandboxFailure.threw, elapsed: watch.elapsed, message: '$error');
+      }
+    });
   }
 
   /// Calls a capability method on the plugin's registration and returns the
@@ -201,7 +251,12 @@ final class FjsJsSandbox implements ScriptSandbox {
     return _evaluateCode('$jsGlobalName.describes()', usePromise: true);
   }
 
-  Future<SandboxOutcome> _evaluateCode(String code, {bool usePromise = false}) async {
+  Future<SandboxOutcome> _evaluateCode(String code, {bool usePromise = false}) {
+    return _guarded((engine) => _evaluateCodeUnchecked(engine, code, usePromise: usePromise));
+  }
+
+  /// The shared gate every evaluation passes: closed check, concurrency slot, release on the way out.
+  Future<SandboxOutcome> _guarded(Future<SandboxOutcome> Function(fjs.JsEngine engine) body) async {
     final engine = _engine;
     if (_disposed || engine == null) {
       return SandboxOutcome(failure: SandboxFailure.crashed, elapsed: Duration.zero, message: 'sandbox is closed');
@@ -213,12 +268,12 @@ final class FjsJsSandbox implements ScriptSandbox {
       return SandboxOutcome(
         failure: SandboxFailure.threw,
         elapsed: Duration.zero,
-        message: 'concurrent script budget exhausted (\${policy.limits.maxConcurrentScripts})',
+        message: 'concurrent script budget exhausted (${policy.limits.maxConcurrentScripts})',
       );
     }
     _activeEvaluations++;
     try {
-      return await _evaluateCodeUnchecked(engine, code, usePromise: usePromise);
+      return await body(engine);
     } finally {
       _activeEvaluations--;
     }
@@ -252,13 +307,26 @@ final class FjsJsSandbox implements ScriptSandbox {
     }
   }
 
+  /// Closes the engine.
+  ///
+  /// In-flight evaluations are given [SandboxPolicy.limits.timeout] to land first: closing an engine while a
+  /// script is running used to fail that call in whatever way the native layer chose, and the caller holding
+  /// the future got a crash instead of an answer. A script that ignores the grace period is not waited for
+  /// forever - the deadline is the same budget the evaluation itself ran under.
   @override
   Future<void> dispose() async {
     if (_disposed) {
       return;
     }
     _disposed = true;
+    final deadline = policy.limits.timeout;
+    for (var waited = Duration.zero; _activeEvaluations > 0 && waited < deadline; waited += _drainTick) {
+      await Future<void>.delayed(_drainTick);
+    }
     await _engine?.close();
     _engine = null;
+    _starting = null;
   }
+
+  static const Duration _drainTick = Duration(milliseconds: 10);
 }
