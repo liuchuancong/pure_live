@@ -145,4 +145,102 @@ void main() {
     expect(_entry('a') == QueueEntry(ref: _song('a'), title: 'remixed'), isFalse);
     expect(_entry('a').sameSongAs(QueueEntry(ref: _song('a'), title: 'remixed')), isTrue);
   });
+
+  test('test_musicQueue_insertingAtOrBeforeTheCursorKeepsTheSong', () {
+    final queue = _queue(3).withCursor(1);
+
+    expect(queue.insertAt(0, _entry('z')).current?.ref.contentId, 'b');
+    expect(queue.insertAt(0, _entry('z')).cursor, 2);
+    expect(queue.insertAt(1, _entry('y')).cursor, 2, reason: 'inserting AT the cursor still shifts it');
+    expect(queue.insertAt(2, _entry('n')).cursor, 1, reason: 'behind the cursor nothing moves');
+    expect(queue.insertAt(3, _entry('tail')).length, 4);
+    expect(() => queue.insertAt(4, _entry('out')), throwsA(isA<QueueFailure>()));
+    expect(() => queue.insertAt(-1, _entry('out')), throwsA(isA<QueueFailure>()));
+  });
+
+  test('test_musicQueue_draggingARowKeepsTheAudibleSong', () {
+    final queue = _queue(3).withCursor(2);
+
+    expect(queue.move(2, 0).current?.ref.contentId, 'c', reason: 'the song that was playing rode along');
+    expect(queue.move(2, 0).entries.map((entry) => entry.ref.contentId), <String>['c', 'a', 'b']);
+    expect(queue.move(0, 2).current?.ref.contentId, 'c');
+    expect(queue.move(1, 1), same(queue));
+    expect(() => queue.move(0, 3), throwsA(isA<QueueFailure>()));
+    expect(() => queue.move(-1, 0), throwsA(isA<QueueFailure>()));
+  });
+
+  test('test_musicQueue_replacingTheListKeepsTheCursorOnTheSameSongOrLosesIt', () {
+    final queue = _queue(3).withCursor(2);
+
+    expect(queue.withEntries(<QueueEntry>[_entry('z'), _entry('c')]).current?.ref.contentId, 'c');
+    expect(queue.withEntries(<QueueEntry>[_entry('z'), _entry('c')]).cursor, 1);
+    expect(
+      queue.withEntries(<QueueEntry>[_entry('z')]).cursor,
+      -1,
+      reason: 'the playing song is gone; row 0 is a claim',
+    );
+    expect(queue.withEntries(const <QueueEntry>[]).isEmpty, isTrue);
+  });
+
+  test('test_musicQueue_upcomingIsTheNextRowsAndWrapsOnlyUnderRepeatAll', () {
+    final queue = _queue(3).withCursor(1);
+
+    expect(queue.upcoming().map((entry) => entry.ref.contentId), <String>['c']);
+    expect(queue.withEndMode(QueueEndMode.repeatAll).upcoming(limit: 4).map((entry) => entry.ref.contentId), <String>[
+      'c',
+      'a',
+      'b',
+    ], reason: 'the window never shows more rows than the queue has songs');
+    expect(queue.upcoming(limit: 0), isEmpty);
+    expect(queue.cleared().upcoming(), isEmpty);
+    expect(
+      MusicQueue(entries: <QueueEntry>[_entry('a'), _entry('b')]).upcoming().length,
+      2,
+      reason: 'nothing playing yet means the whole list is next up',
+    );
+  });
+
+  test('test_musicQueue_previousWalksBackAndRefusesTheTop', () {
+    final queue = _queue(3).withCursor(2);
+
+    expect(queue.peekPrevious().entry?.ref.contentId, 'b');
+    expect(queue.peekPrevious().isActionable, isTrue);
+    final top = queue.withCursor(0);
+    expect(top.peekPrevious().reason, QueueAdvanceReason.atStart);
+    expect(top.peekPrevious().isActionable, isFalse);
+    expect(top.withEndMode(QueueEndMode.repeatAll).peekPrevious().entry?.ref.contentId, 'c');
+    expect(top.withEndMode(QueueEndMode.repeatAll).peekPrevious().reason, QueueAdvanceReason.wrapped);
+    expect(top.withEndMode(QueueEndMode.repeatAll).cleared().peekPrevious().reason, QueueAdvanceReason.queueEmpty);
+  });
+
+  test('test_musicQueue_aDeliberateSkipMovesOnUnderRepeatOne', () {
+    final queue = _queue(3).withCursor(0).withRepeatOne(true);
+
+    expect(queue.peekNext().reason, QueueAdvanceReason.repeatOne);
+    expect(queue.nextFor(skip: true).entry?.ref.contentId, 'b', reason: 'next means next when the viewer pressed it');
+    expect(queue.nextFor().reason, QueueAdvanceReason.repeatOne, reason: 'the automatic end-of-song path repeats');
+    expect(queue.withRepeatOne(false).nextFor(skip: true).entry?.ref.contentId, 'b');
+    expect(queue.cleared().nextFor(skip: true).reason, QueueAdvanceReason.queueEmpty);
+  });
+
+  test('test_musicQueue_songLookupCountsCopiesAndAnswersMembership', () {
+    final queue = _queue(3).enqueue(_song('a'));
+
+    expect(queue.indexOfSong(_song('a')), 0);
+    expect(queue.countOfSong(_song('a')), 2);
+    expect(queue.containsSong(_song('zzz')), isFalse);
+    expect(queue.indexOfSong(_song('zzz')), -1);
+  });
+
+  test('test_musicQueue_theCallerListIsCopiedSoItCannotMoveTheCursor', () {
+    final growable = <QueueEntry>[_entry('a'), _entry('b')];
+    final queue = MusicQueue(entries: growable, cursor: 1);
+
+    growable
+      ..removeAt(0)
+      ..add(_entry('c'));
+    expect(queue.entries.map((entry) => entry.ref.contentId), <String>['a', 'b']);
+    expect(queue.current?.ref.contentId, 'b');
+    expect(queue.isNotEmpty, isTrue);
+  });
 }

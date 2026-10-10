@@ -19,21 +19,37 @@ final class _FakeBridge implements MusicSourceBridge {
   String? lyricFor = 'line one';
   String? coverFor = 'https://cdn.example.com/cover.jpg';
 
+  /// When set, every lookup throws this instead of answering - a script runtime failing in its own way.
+  Object? failure;
+
+  /// The quality the last `musicUrl` call asked for, kept out of [calls] so the existing tuples stay put.
+  String? lastQuality;
+
   @override
   Future<String> musicUrl({required String source, required String songId, required String quality}) async {
     calls.add(('musicUrl', source, songId));
+    lastQuality = quality;
+    if (failure != null) {
+      throw failure!;
+    }
     return urlFor;
   }
 
   @override
   Future<String?> lyric({required String source, required String songId}) async {
     calls.add(('lyric', source, songId));
+    if (failure != null) {
+      throw failure!;
+    }
     return lyricFor;
   }
 
   @override
   Future<String?> cover({required String source, required String songId}) async {
     calls.add(('cover', source, songId));
+    if (failure != null) {
+      throw failure!;
+    }
     return coverFor;
   }
 
@@ -126,5 +142,76 @@ void main() {
 
     expect(await LxMusicRepository(bridge: bridge).cover(_song(source: 'ne')), bridge.coverFor);
     expect(bridge.calls.single, ('cover', 'ne', 'song-1'));
+  });
+
+  test('test_lxMusicRepository_aLiteralNullFromTheScriptIsNotAUrl', () async {
+    final bridge = _FakeBridge()..urlFor = 'null';
+
+    await expectLater(
+      LxMusicRepository(bridge: bridge).resolveUrl(_song()),
+      throwsA(isA<MusicSourceFailure>().having((error) => error.reason, 'reason', contains('not a stream url'))),
+    );
+  });
+
+  test('test_lxMusicRepository_aQualityTheSourceNeverAnnouncedIsRefusedWithTheLabelsNamed', () async {
+    final bridge = _FakeBridge()
+      ..announced = <String, MusicSourceQualities>{
+        'wy': const MusicSourceQualities(qualities: <String>['128k', '320k'], servesMusicUrl: true),
+      };
+    final repository = LxMusicRepository(bridge: bridge);
+
+    await expectLater(
+      repository.resolveUrl(_song(source: 'wy', quality: 'flac')),
+      throwsA(
+        isA<MusicSourceFailure>().having(
+          (error) => error.reason,
+          'reason',
+          allOf(contains('does not offer "flac"'), contains('128k, 320k')),
+        ),
+      ),
+    );
+    expect(bridge.calls, isEmpty, reason: 'the question was never asked of the script');
+    expect(repository.servesQuality('wy', '320k'), isTrue);
+    expect(repository.servesQuality('unannounced', 'anything'), isTrue, reason: 'unknown is not evidence');
+    expect(await repository.resolveUrl(_song(source: 'unannounced', quality: 'flac')), isNotEmpty);
+  });
+
+  test('test_lxMusicRepository_aHostThatThrowsArrivesClassifiedWithItsCause', () async {
+    final bridge = _FakeBridge()..failure = StateError('python runtime died');
+    final repository = LxMusicRepository(bridge: bridge);
+
+    await expectLater(
+      repository.resolveUrl(_song()),
+      throwsA(
+        isA<MusicSourceFailure>()
+            .having((error) => error.reason, 'reason', contains('play url of song-1'))
+            .having((error) => error.cause, 'cause', isA<StateError>()),
+      ),
+    );
+    await expectLater(repository.lyric(_song()), throwsA(isA<MusicSourceFailure>()));
+  });
+
+  test('test_lxMusicRepository_anUnusableCoverIsNoCoverNotAFailedSong', () async {
+    final bridge = _FakeBridge()..coverFor = 'not a url';
+
+    expect(await LxMusicRepository(bridge: bridge).cover(_song()), isNull);
+    expect(await LxMusicRepository(bridge: _FakeBridge()..coverFor = '  ').cover(_song()), isNull);
+  });
+
+  test('test_lxMusicRepository_defaultQualityIsTheHostsToSay', () async {
+    final bridge = _FakeBridge();
+
+    await LxMusicRepository(bridge: bridge, defaultQuality: '320k').resolveUrl(_song());
+    expect(bridge.lastQuality, '320k');
+
+    final plain = _FakeBridge();
+    await LxMusicRepository(bridge: plain).resolveUrl(_song());
+    expect(plain.lastQuality, '128k');
+  });
+
+  test('test_lxMusicRepository_blankLyricIsNoLyric', () async {
+    final bridge = _FakeBridge()..lyricFor = '   ';
+
+    expect(await LxMusicRepository(bridge: bridge).lyric(_song()), isNull);
   });
 }
