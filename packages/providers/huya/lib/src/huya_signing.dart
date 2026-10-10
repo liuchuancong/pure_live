@@ -59,17 +59,16 @@ String buildAntiCode(String stream, int viewerUid, String antiCode, {DateTime? n
   // Splitting on `_` and rebuilding a presumed layout would silently sign the wrong string as soon as Huya
   // adds a field; the complete decoded template is preserved instead.
   final secretTemplate = utf8.decode(base64.decode(base64.normalize(encodedFm)));
-  if (!const <String>[r'$0', r'$1', r'$2', r'$3'].every(secretTemplate.contains)) {
-    throw const FormatException('Huya AntiCode fm template is incomplete');
-  }
-  final secretStr = secretTemplate
-      .replaceFirst(r'$0', calcUid.toString())
-      .replaceFirst(r'$1', stream)
-      .replaceFirst(r'$2', secretHash)
-      .replaceFirst(r'$3', wsTime);
+  final secretStr = fillAntiCodeTemplate(
+    secretTemplate,
+    calcUid: calcUid,
+    stream: stream,
+    secretHash: secretHash,
+    wsTime: wsTime,
+  );
   final wsSecret = md5.convert(utf8.encode(secretStr)).toString();
 
-  final random = Random();
+  final random = Random.secure();
   final ct = ((wsTimeSeconds + random.nextDouble()) * 1000).toInt();
   final uuid = (((ct % 1e10) + random.nextDouble()) * 1e3 % 0xffffffff).toInt().toString();
   final result = <String, String>{...original}
@@ -97,6 +96,47 @@ String buildAntiCode(String stream, int viewerUid, String antiCode, {DateTime? n
   }
 
   return Uri(queryParameters: result).query;
+}
+
+/// Fills the four `fm` placeholders in one left-to-right pass.
+///
+/// Sequential `replaceFirst`s would let an earlier substitution feed a later one: a room whose name contains
+/// `$2` (rooms do have such names) would have its own text replaced by the hash, and the signature would be
+/// computed over a string the server never templated. Each placeholder is also required to exist, because a
+/// template missing one is a shape change, not a shorter lease.
+String fillAntiCodeTemplate(
+  String template, {
+  required int calcUid,
+  required String stream,
+  required String secretHash,
+  required String wsTime,
+}) {
+  final replacements = <String, String>{r'$0': calcUid.toString(), r'$1': stream, r'$2': secretHash, r'$3': wsTime};
+  final missing = <String>[...replacements.keys].where((placeholder) => !template.contains(placeholder)).toList();
+  if (missing.isNotEmpty) {
+    throw FormatException('Huya AntiCode fm template is incomplete: ${missing.join(', ')}');
+  }
+  // One left-to-right pass. Each placeholder is filled at its first occurrence - which is what the site's own
+  // client does with a string pattern in JavaScript's replace - and the text written in is never re-scanned,
+  // so a room name that itself reads `$2` cannot be signed over.
+  final buffer = StringBuffer();
+  final filled = <String>{};
+  for (var index = 0; index < template.length; index++) {
+    if (template[index] != r'$' || index + 1 >= template.length) {
+      buffer.write(template[index]);
+      continue;
+    }
+    final placeholder = template.substring(index, index + 2);
+    final replacement = replacements[placeholder];
+    if (replacement == null || filled.contains(placeholder)) {
+      buffer.write(template[index]);
+      continue;
+    }
+    buffer.write(replacement);
+    filled.add(placeholder);
+    index++;
+  }
+  return buffer.toString();
 }
 
 /// Huya's web player names this operation `rotl64`: only the low 32-bit lane is
