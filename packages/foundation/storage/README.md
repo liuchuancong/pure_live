@@ -17,10 +17,17 @@
 - `migration.dart` —— `SettingsMigrator`(旧键 → 新键 + 转换函数表,未知键记录不丢)+ `SchemaMigrator`(版本步进链,断点续迁)
 - `preferences/preference_key.dart` —— `PreferenceCodec<T>`(闭集 bool/int/double/String/List<String> + `of()` 自定义)、`PreferenceKey<T>`(名 + codec + 默认值 + 可选 `validate` + 可选 `upgrade`)、`PreferenceKeyInfo`、`PreferenceFailure` / `PreferenceRejection` / `PreferenceChange` / `PreferenceDecodeReject`
 - `preferences/preferences_store.dart` —— `PreferencesStore`:类型化偏好的落盘机制(信封 `{v,c,value}`、命名空间、`putIfAbsent` 首启语义、`exportAll` / `importAll` 逐项报告、变更流、`upgradedKeys`)
+- `decorators.dart` —— 在同一个 `KeyValueStore` 上叠行为,而不是再造一个后端:
+  `NamespacedKeyValueStore`(前缀隔离,`clear()` 只清自己那一层 —— 普通前缀约定最容易出事的地方正是"顺手清了兄弟的行")、
+  `ExpiringKeyValueStore`(行变 `{"v","u"}` 信封,到期即 absent 并在读时删除;`sweep()` 管没人读的死行;`maxTtl` 封顶)、
+  `CachingKeyValueStore`(LRU + 命中/缺失计数;**只能放在 expiring 之后**,放前面会让行活得比自己的期限长)、
+  `BufferedKeyValueStore`(写合并:设置页连写二十行不再等于二十次整档重写;窗口/`maxPending`/`flush()` 三种触发,
+  `close()` 前不落盘的行就是崩溃会带走的那些)、`KeyValueStoreBatch`(`writeAll` / `removeAll` / `readAll` /
+  `readAllAsMap` / `extraKeys`,顺序执行以免在同一次读-改-写上互相抢)
 
 迁移语义按 [docs/migration/settings-migration.md](../../../docs/migration/settings-migration.md) 与 [v1-to-v2.md](../../../docs/migration/v1-to-v2.md):一个键转换失败只记在它自己头上,其余继续;schema 版本每步落盘,重试从断点接上,链上有缺口或重复步在动手前就报错。
 
-`FileKeyValueStore` 的三条规矩,都是围绕"别把用户的数据变成没有":
+`FileKeyValueStore` 的四条规矩,都是围绕"别把用户的数据变成没有":
 
 - **读不懂就不覆盖**:文件存在但不是 `{"key": value}` 形状时抛 `StoreCorruptedException`,之后的 `write` 也一并拒绝。
   把"读不出来"当成"本来就是空"会让下一次写入把不可读永久变成丢失(空文件例外:那是首次写入中途被杀留下的,里面从来没有数据)。
@@ -28,6 +35,8 @@
   `ArgumentError`,而文件与原值分毫未动。
 - **写 = 临时文件 + rename**:读者只会看到完整的旧文件或完整的新文件;所有操作走一条队列,否则两个扩展同时
   读-改-写会在同一个文件上互相覆盖。
+- **覆盖前先留一份**:`keepBackup` 时每次替换把旧档复制成 `<path>.bak`,之后 `recoverFromBackup()` 才有的可回。
+  回滚是**调用方的决定**(它才知道"旧设置"和"重新开始"哪个更值),所以这里只给能力不给自动行为。
 
 应用目录由组合根与 `pure_live_files` 决定,本包只收一个路径 —— L0 之间不建依赖边。
 
@@ -81,13 +90,18 @@ logging)。第二个理由更实际:**信封之前的旧行要靠 schema step �
 
 ## 验证
 
-- 分析:`dart analyze packages/foundation/storage`(0 issue)
-- 测试:`dart test` —— **84 例** = 文件 KV 与并发/损坏语义、迁移流程、存储接口,加自 `features/settings` 搬来的
+- 分析:`dart analyze packages/foundation/storage`(2026-10-11:0 issue),消费方 `cache` / `features/home` /
+  `features/search` / `features/vod` / `ecosystem/extension` 同轮 0 issue,护栏 `--strict` 54 包 0 error 0 warning
+- 测试:`dart test` —— **84 例**全绿 = 文件 KV 与并发/损坏语义、迁移流程、存储接口,加自 `features/settings` 搬来的
   32 例偏好机制测试(信封与 codec 门禁、读不抛并记账、写拒越界、首启、命名空间隔离、变更流与 dispose 幂等、
-  `importAll` 逐项报告、旧形状升级的两个方向)
+  `importAll` 逐项报告、旧形状升级的两个方向)。**本轮新增的 decorator 与 `.bak` 没有新增测试**,84 例只证明旧语义没被打破。
 
 ## 未验证
 
+- **`decorators.dart` 的四个装饰器零测试零消费者**:`ExpiringKeyValueStore` 的信封与 `PreferencesStore` 的信封
+  不是同一个东西,叠在一起时谁包谁、`NamespacedKeyValueStore` 之下 codec 看到的键名长什么样,都只在代码里推演过。
+  `BufferedKeyValueStore` 的窗口/`maxPending`/`close()` 交错未压测。
+- `.bak` 只在本地临时目录测过写入路径的语义;真机(Android 外部存储 / Windows AppData)的复制与 rename 权限差异未观测。
 - **与 `FileKeyValueStore` 的真实串接没跑过**:两个消费者(`features/home` 的布局行、`features/search` 的历史行)  的测试都只用 `MemoryKeyValueStore`。真机上偏好与收藏/历史同处一个 JSON 文件时的行为,以及 `dispose()` 之后  还能不能读到流,都没有观测。两个仓库的 `dispose()` 也还**没有调用者** —— App 侧尚未装配这两个仓库。
 - `importAll` 收到**更大**信封版本时按拒绝处理,不是迁移。放宽它的正确做法是加一条 `SchemaStep`,
   但这条组合(`PreferencesStore` 的行由 `SchemaMigrator` 升级)还没有实现与测试。

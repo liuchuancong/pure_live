@@ -31,12 +31,17 @@ final class StoreCorruptedException implements Exception {
 /// Operations are serialised through one queue: two extensions writing at the same moment would otherwise
 /// interleave read-modify-write on the same file and one of them would lose its row.
 final class FileKeyValueStore implements KeyValueStore {
-  FileKeyValueStore({required this.filePath, this.indent = false});
+  FileKeyValueStore({required this.filePath, this.indent = false, this.keepBackup = true});
 
   final String filePath;
 
   /// Pretty-printed output is for a file a human is expected to open while debugging.
   final bool indent;
+
+  /// Keeps the previous document at `<filePath>.bak` on every replace, so a file that later reads as damage
+  /// has something to be restored from. A settings file truncated by a power loss is user data lost for good
+  /// if the only copy was the one that got broken.
+  final bool keepBackup;
 
   Map<String, Object?>? _entries;
   Future<void> _queue = Future<void>.value();
@@ -132,10 +137,49 @@ final class FileKeyValueStore implements KeyValueStore {
     if (!await parent.exists()) {
       await parent.create(recursive: true);
     }
+    if (keepBackup && await file.exists()) {
+      // The document that is about to be replaced is the only copy of everything before this write, so it is
+      // parked first; a backup of a file that was itself damaged is how recovery ends up worse.
+      await file.copy(backupPath);
+    }
     // Write-then-rename: a reader either sees the whole previous file or the whole new one, and a crash
     // leaves the previous file in place instead of a half-written one.
     final temp = File('$filePath.tmp');
     await temp.writeAsString(encoded, flush: true);
     await temp.rename(file.path);
   }
+
+  /// Where the previous good document is kept.
+  String get backupPath => '$filePath.bak';
+
+  /// Whether a restore source exists.
+  Future<bool> get hasBackup => File(backupPath).exists();
+
+  /// Reads the backup as the live document, or reports why it cannot.
+  ///
+  /// A host calls this after a [StoreCorruptedException]: the store has already refused to overwrite the
+  /// damaged file, so the decision to roll back stays with the caller that knows whether a copy of the old
+  /// settings is worth more than starting clean.
+  Future<Map<String, Object?>> recoverFromBackup() => _serialised(() async {
+    final backup = File(backupPath);
+    if (!await backup.exists()) {
+      throw StoreCorruptedException(backupPath, 'no backup to recover from');
+    }
+    final text = await backup.readAsString();
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(text);
+    } on FormatException catch (error) {
+      throw StoreCorruptedException(backupPath, 'the backup itself is unreadable: ${error.message}');
+    }
+    if (decoded is! Map) {
+      throw StoreCorruptedException(backupPath, 'the backup top level is a ${decoded.runtimeType}');
+    }
+    _entries = Map<String, Object?>.from(decoded);
+    await _replaceFile(_encode(_entries!));
+    return _entries!;
+  });
+
+  /// Drops the cached document so the next read goes back to disk.
+  void reload() => _entries = null;
 }

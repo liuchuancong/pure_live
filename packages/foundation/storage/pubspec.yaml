@@ -8,7 +8,11 @@ environment:
   sdk: ^3.13.0
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
-# No runtime dependency: the real backends are bound by the application.
+# The real backends are bound by the application; utils is the L0 leaf every package may use, and the
+# expiring store needs its injectable Clock rather than a wall-clock call it cannot test against.
+dependencies:
+  pure_live_utils:
+    path: ../utils
 
 dev_dependencies:
   test: ^1.26.0

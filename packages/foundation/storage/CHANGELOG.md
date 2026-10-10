@@ -5,6 +5,15 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- `decorators.dart`: `NamespacedKeyValueStore` (prefix isolation whose `clear()` cannot wipe a sibling's rows),
+  `ExpiringKeyValueStore` (the deadline travels with the row; expired reads as absent and is dropped on read,
+  `sweep()` for rows nobody reads, `maxTtl` cap), `CachingKeyValueStore` (LRU with hit/miss counters, placed
+  behind expiry rather than in front), `BufferedKeyValueStore` (write coalescing, so a settings page that writes
+  twenty rows no longer rewrites the whole document twenty times) and the `KeyValueStoreBatch` extension.
+- `FileKeyValueStore` keeps the document it is about to replace at `<path>.bak` (`keepBackup`) and gains
+  `recoverFromBackup()`, `hasBackup` and `reload()`. Refusing to overwrite an unreadable file was already the
+  rule; without a copy to restore from, the refusal only decided that the data stays unusable.
+- `pubspec.yaml`: `pure_live_utils` added (the L0 leaf) so the expiring store can take an injectable `Clock`.
 - `PreferenceCodec` refusals now carry a reason: a parse may throw `PreferenceDecodeReject(reason)`, recorded
   as `PreferenceFailure.refusedByCodec` with the words kept in `PreferenceRejection.reason`. Returning null
   still means "I do not recognise this shape". Three consumers had been forced to collapse "a newer build
