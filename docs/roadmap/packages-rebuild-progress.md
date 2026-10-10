@@ -18,6 +18,48 @@
 
 ## 2. 本轮已做
 
+- **L0/L0.5 整包工业化(2026-10-11,11 个包,逐个提交到 `origin/v2`)**:按"每包要能独立发 pub.dev"的标准重写,
+  验证门是 `dart analyze` 0 issue + 既有 `dart test` 全绿 + 护栏 `--strict` 54 包 0/0;新增能力**按用户要求不写测试**,
+  每个包的 README 里把"哪些是观测过的、哪些只是推演"分开了。
+  - `foundation/l10n`(ff7d7a0a0):CLDR 操作数 + ~30 语种复数表(原实现只有 zh/en/ru 四格,法语把 0 和 1 都算单数、
+    阿语/波兰语/斯洛文尼亚语直接错)、ICU 子集**解析器**(不用 intl 的 MessageFormat:畸形 pattern 它直接抛,一个
+    locale 文件里的手误会变成别人第一屏的异常)、`LocalizationCatalog`(owner 命名空间 + 装载期校验 + 覆盖率/孤儿键 +
+    有界上报账本)、`relative_time`(月与年**按日历数**而不是 `inDays ~/ 30`,`2026-10-11 - 2026-09-11` 是 1 个月)。
+  - `foundation/network`(d497ff226):**服从 `Retry-After`**(429 原来按固定曲线锤)、404/5xx 有自己的 kind(枚举里
+    早就声明了却从不产生,调用方写不出"这地址死了"那支)、`HttpHeaderBag`/`url_reference`/`RequestBody`(编码与其
+    content-type 绑死)、`ConcurrencyLimiter` + `HostThrottle`(队列也有上界)、`download` 走 stream **边读边拦**
+    (chunked 不声明长度)、verbs 补全。`retryAsync` 加了可选 `delayFor(error, scheduled)` 钩子(默认行为不变,utils 38 测试仍绿)。
+  - `foundation/storage`(565db564d):`decorators.dart` —— 命名空间隔离(`clear()` 只清自己那层)、行级 TTL、
+    读穿透 LRU、写合并(设置页连写 20 行不再 20 次整档重写)、批量原语;`FileKeyValueStore` **覆盖前先留 `.bak`** +
+    `recoverFromBackup()`(拒绝覆盖读不懂的文件只决定了"数据继续不可用")。
+  - `foundation/events`(dd0fc5a1a):`observe()`(不是订阅 —— 看得见没有监听者时的 emit)、有界诊断账本、
+    `onReplaying` / `expect` / `subscribe(into: Disposer)`、六个时间整形操作符(throttle/coalesce/debounce/buffer/named/fresher,
+    每个都带尾传或第二个触发条件)、`EventLogSink`(不记 payload,洪水自挂起)、`EventRecorder`。
+  - `foundation/diagnostics`(2003ab2ae):`redaction.dart` 单张规则表(各表面自遮 = 各有一份漏网;`Bearer <token>`
+    只遮首词等于把凭据留在遮罩后)、`FailureLedger`(30 次重试折成 1 条 x30)、`MetricRegistry`(有界窗口 + p50/p95)、
+    `BreadcrumbTrail`、`DiagnosticReportBuilder`(每节 + 总预算,砍中间留头尾并把"省略 N 行"写进输出)。
+  - `foundation/logging`(b3147e71c):自由文本凭据遮罩(`playUrl` 是这条的真实缺口)、4 个有界 sink(轮转文件 /
+    限速 / 缓冲 / JSON 行)、`MemoryLogSink` 不再无限长、`LogRouter` 注入 `Clock` + 逐 sink 隔离异常、`withFields`。
+  - `foundation/sync`(143384b35):`pullAll`(三态停止:`exhausted` / `noAdvance` / `pageCap` —— 远端回吐同一游标是
+    常见坏实现,没这条就是一条长得像"同步中"的无限下载)、`SyncCoordinator`(去抖 + single-flight + 有上限退避)、
+    `LocalStore` 的第一个真实实现(参考实现 + `PendingQueue` + 墓碑双上限保留)。
+  - `foundation/backup`(b81172cd6):档**变成字节** —— 规范化 JSON 上的 payload 摘要 + manifest 摘要分开校(顺序不同
+    就误判等于把完整性检查抛硬币)、`BackupArchiver`(build→encode→write→prune,报出裁掉的条数)、条数 + 账龄双限、
+    `RestoreEngine.plan`(先确认再动手;靠写出来的摘要不是摘要)。
+  - `foundation/platform_info`(8cfa28fee):能力行成为值(`==`/`hashCode`,否则每次派生行都算新行、子树无限重建)、
+    `PlatformCapability` 枚举、`DeviceForm`/`resolveDeviceForm`、`CapabilityOverride`(**只允许关不允许开**)、
+    `DeviceDescription`(模型串有界)。
+  - `foundation/release`(74af8761b):`AppVersion` 认得 pre-release 并按 semver 规则 11 排序(`4.1.0-beta.1` 以前解析失败,
+    beta 行从更新检查里悄悄消失)、`ReleaseTrack` 通道 + 轨道外计数、按 **ABI** 与 **Windows 形态**挑工件(挑错 APK 是签名
+    冲突;MSIX/installer/portable 同时决定数据落哪)、sha256 完整性、`snooze`("以后再说"终于有记录,更新版本必然打破沉默)。
+  - `integrations/firebase`(0d7048180):`FirestoreSyncRemote`(游标是"见过的最大 updatedAt"而非会过期的 page token;
+    推送按 **500 写/批** 切;墓碑不带 value;两端拒凭据)、`CrashGate`(开关默认关;`unknown` 期有界缓冲;
+    **答"不"就销毁缓冲**;超 `maxAge` 不补发;上传器抛只记账不当第二次崩溃)、`CrashLogSink` 挂 `LogRouter`。
+  - **留下的口子**:①`integrations/firebase` 的 Firestore/CrashGate 无可执行验证(`dart run` 起不来,需 `dart:ui`),
+    且 `apps/pure_live` 仍直连 `cloud_firestore`,那条边应改走本包;②network 的 pubspec 描述仍写着"代理",
+    暴露 dio 代理要 `dart:io` 会丢 web,已记在该包 README;③本会话新增代码**一律没有测试**,各包 README 的"未验证"
+    段逐条列了哪些只是推演。
+
 - **`features/search` 重写(队列 #2)**:`SearchTerm`(display + 折叠键)、`SearchHistoryRepository` 接口、
   `StoredSearchHistory`(带 `{v,items:[{q,at}]}` 信封、v0 裸列表迁移、MRU + `matchKey` 定序、有界淘汰、
   读坏行**记账**而不是装作没搜过)、`rankSearchResults`(按内容而不是按谁先答)、`SearchController`
