@@ -26,6 +26,9 @@ final class Timestamps {
   /// Whole seconds since the epoch, for the wire formats that carry second resolution.
   static int toSeconds(DateTime value) => value.toUtc().millisecondsSinceEpoch ~/ 1000;
 
+  /// Milliseconds since the epoch, the unit a stored timestamp is written in.
+  static int toMilliseconds(DateTime value) => value.toUtc().millisecondsSinceEpoch;
+
   /// Microseconds since the epoch, matching the media_core timestamp unit.
   static int toMicroseconds(DateTime value) => value.toUtc().microsecondsSinceEpoch;
 

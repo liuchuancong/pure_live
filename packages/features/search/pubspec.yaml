@@ -1,6 +1,6 @@
 # GENERATED-BY: tool/scaffold_package.ps1
 name: pure_live_search_feature
-description: "Feature package: search (repository + presentation skeleton per package-architecture.md)"
+description: "Feature package: search (查询规范化、历史、跨 App 一致的结果排序、单世代执行)"
 publish_to: none
 resolution: workspace
 
@@ -8,3 +8,16 @@ environment:
   sdk: ^3.13.0
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  # The search vocabulary belongs to the platform models; the fan-out belongs to the service.
+  pure_live_platform:
+    path: ../../ecosystem/platform
+  pure_live_search:
+    path: ../../services/search
+  pure_live_storage:
+    path: ../../foundation/storage
+  pure_live_utils:
+    path: ../../foundation/utils
+
+dev_dependencies:
+  test: ^1.26.0
