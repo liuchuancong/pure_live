@@ -8,4 +8,6 @@
 /// See docs/architecture/dependency-rules.md and the package README.
 library;
 
+export 'src/crash_reporting.dart';
 export 'src/firebase_bootstrap.dart';
+export 'src/firestore_remote.dart';
