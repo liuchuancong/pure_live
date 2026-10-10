@@ -16,6 +16,9 @@ dependencies:
   # provider-contract.md section 3), so discovery is the only L1 surface this package needs.
   pure_live_capability:
     path: ../../ecosystem/capability
+  # The cancellation seam is the utils leaf, not a new concept this layer invents.
+  pure_live_utils:
+    path: ../../foundation/utils
 
 dev_dependencies:
   test: ^1.26.0

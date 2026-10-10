@@ -11,6 +11,7 @@ import 'dart:async';
 
 import 'package:pure_live_capability/pure_live_capability.dart';
 import 'package:pure_live_platform/pure_live_platform.dart';
+import 'package:pure_live_utils/pure_live_utils.dart' show CancellationToken;
 
 /// Why a source ended up with no section. Recorded rather than silently missing, because a tile that simply
 /// vanished is unexplainable to whoever has to support it.
@@ -37,7 +38,10 @@ final class FeedSection {
     required this.sourceId,
     required this.items,
     required this.page,
-    required this.hasMore,
+    required this.mode,
+    this.nextCursor,
+    this.hasMore = false,
+    this.contractViolation,
     this.duplicateItems = 0,
     this.foreignItems = 0,
   });
@@ -46,8 +50,24 @@ final class FeedSection {
   final List<ContentSummary> items;
 
   /// The page this section came from, echoed back so "load more" can ask for the next one without guessing.
+  /// Meaningless when [mode] is [PageMode.cursor].
   final int page;
+
+  /// How this source pages. Carried out of the provider because the rule for asking again differs per
+  /// source: feed.md wants the cursor to run through to the provider, and a caller cannot continue what the
+  /// aggregator threw away.
+  final PageMode mode;
+
+  /// The continuation token for [mode] == [PageMode.cursor], null when the source gave none.
+  final String? nextCursor;
+
   final bool hasMore;
+
+  /// Set when the source's own answer contradicts its declared paging mode - a `singleShot` source that
+  /// claims more rows, or a cursor source that says it has them and hands over no token. Recorded rather
+  /// than quietly corrected: the surface stops at the end either way, but a "why did Home stop loading"
+  /// report needs to know which source was wrong.
+  final String? contractViolation;
 
   /// Repeated rows within this one section (contract.feed.duplicate_ref). The later copy is dropped; the
   /// count stays so a diagnostics view can say the source is double-listing.
@@ -77,9 +97,19 @@ final class FeedResult {
 }
 
 abstract interface class FeedAggregator {
-  /// One page of the aggregated feed. Refresh means asking for page 1 again rather than a separate reload
-  /// path, because a refresh that keeps an old cursor is how a front page stops showing new rows.
-  Future<FeedResult> feed(PageRequest page);
+  /// One page of the aggregated feed. Refresh means asking for page 1 again with [cursors] cleared rather
+  /// than a separate reload path, because a refresh that keeps an old cursor is how a front page stops
+  /// showing new rows.
+  ///
+  /// [cursors] is per source, from that source's own previous [FeedSection.nextCursor]: a token from one
+  /// provider means nothing to another, and `PageRequest.cursor` wins over the page number, so a single
+  /// shared cursor would either stall every source that ignores it or hand each source somebody else's
+  /// token.
+  ///
+  /// [cancellation] abandons assembly: the provider requests already dispatched are not this layer's to
+  /// abort (see [CapabilityFeedAggregator.perSourceTimeout]), but a cancelled run stops being reported as a
+  /// set of source failures, which is what a user leaving Home actually means.
+  Future<FeedResult> feed(PageRequest page, {Map<SourceId, String> cursors, CancellationToken? cancellation});
 }
 
 /// A [FeedAggregator] over the [CapabilityRegistry].
@@ -94,7 +124,12 @@ final class CapabilityFeedAggregator implements FeedAggregator {
   final Duration perSourceTimeout;
 
   @override
-  Future<FeedResult> feed(PageRequest page) async {
+  Future<FeedResult> feed(
+    PageRequest page, {
+    Map<SourceId, String> cursors = const <SourceId, String>{},
+    CancellationToken? cancellation,
+  }) async {
+    cancellation?.throwIfCancelled();
     final targets = <({SourceId id, FeedCapability capability})>[];
     final skips = <FeedSkip>[];
 
@@ -113,7 +148,14 @@ final class CapabilityFeedAggregator implements FeedAggregator {
       targets.add((id: entry.sourceId, capability: provider));
     }
 
-    final answered = await Future.wait<_Answer>(targets.map((target) => _read(target.id, target.capability, page)));
+    final answered = await Future.wait<_Answer>(
+      targets.map((target) => _read(target.id, target.capability, page, cursors)),
+    );
+
+    // Assembly stops here when the caller walked away. The provider requests are already dispatched and
+    // keep running - this layer does not own them - but reporting their outcome as source failures would
+    // blame twelve providers for one user leaving Home.
+    cancellation?.throwIfCancelled();
 
     // Registry order, not arrival order: a front page that reorders itself between refreshes because one
     // source was slower today cannot be compared against what the user arranged.
@@ -131,10 +173,17 @@ final class CapabilityFeedAggregator implements FeedAggregator {
     return FeedResult(sections: sections, skips: skips, page: page.page);
   }
 
-  Future<_Answer> _read(SourceId sourceId, FeedCapability capability, PageRequest page) async {
+  Future<_Answer> _read(
+    SourceId sourceId,
+    FeedCapability capability,
+    PageRequest page,
+    Map<SourceId, String> cursors,
+  ) async {
     final PageResult<ContentSummary> result;
+    final cursor = cursors[sourceId];
+    final request = cursor == null ? page : PageRequest(page: page.page, pageSize: page.pageSize, cursor: cursor);
     try {
-      result = await capability.feed(page).timeout(perSourceTimeout);
+      result = await capability.feed(request).timeout(perSourceTimeout);
     } on TimeoutException {
       return _Answer(
         sourceId: sourceId,
@@ -183,12 +232,30 @@ final class CapabilityFeedAggregator implements FeedAggregator {
         sourceId: sourceId,
         items: items,
         page: result.page,
+        mode: result.mode,
+        nextCursor: result.nextCursor,
         hasMore: result.hasMore,
+        contractViolation: _violationOf(sourceId, result),
         duplicateItems: duplicates,
         foreignItems: foreign,
       ),
     );
   }
+
+  /// The ways a source's answer can contradict its own declared paging mode, named for the diagnostics view.
+  ///
+  /// Each case ends the same way on screen - no more rows - so the temptation is to normalise it silently.
+  /// That hides the only evidence that a provider is broken, and a "Home stopped loading" report is
+  /// unanswerable without it.
+  static String? _violationOf(SourceId sourceId, PageResult<ContentSummary> result) => switch (result.mode) {
+    PageMode.singleShot when result.hasMore || result.nextCursor != null =>
+      '$sourceId is a single-shot feed but claims more rows',
+    PageMode.cursor when result.hasMore && result.nextCursor == null =>
+      '$sourceId says a cursor page continues but returned no cursor',
+    PageMode.fixedPage when result.nextCursor != null =>
+      '$sourceId returned a continuation token for a fixed-page feed',
+    _ => null,
+  };
 }
 
 /// One source's outcome, kept private so the public surface stays sections and skips.

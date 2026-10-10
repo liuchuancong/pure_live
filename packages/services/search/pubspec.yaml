@@ -16,6 +16,9 @@ dependencies:
   # enumerates, and never names a source itself (docs/contracts/provider-contract.md section 3).
   pure_live_capability:
     path: ../../ecosystem/capability
+  # The cancellation seam comes from the utils leaf rather than a new concept invented per layer.
+  pure_live_utils:
+    path: ../../foundation/utils
 
 dev_dependencies:
   test: ^1.26.0

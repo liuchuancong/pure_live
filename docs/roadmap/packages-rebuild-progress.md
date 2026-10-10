@@ -90,6 +90,21 @@
   另加 `fileName` 路径校验(宿主把它拼到录制目录后)、三处 `DateTime.now()` 换成注入 `Clock`
   (不然这些规则根本没法测)、id 在转换间保持稳定。13 测试。
   `lib/src/data/` 仍空是刻意的:引擎在录制波次,状态契约先立住就没有第二套真相。
+- **#6 提前做掉(队列顺序我自己调了,理由与可逆性都在这儿)**:`services/feed` 与 `services/search` 是
+  纯 Dart 的,能真跑测试;#5(`ui/lyric` / `ui/player_ui`)是 Flutter 侧,而本轮已定"只静态分析",
+  再做一层只会多一批无法验证的改动。#5 没删,仍是下一步。
+  **查出来的真实缺口比 §1 那句"缺分页语义"具体**:feed 的 CHANGELOG 早就写着"游标贯穿到源并原样带回",
+  但代码里 ① 请求只有一份**全体源共享**的 `PageRequest`(`PageRequest.cursor` 优先于页号 →
+  把 A 源的 token 喂给 B 源是**静默错页**,不是报错),② `PageResult.mode` / `nextCursor` **被丢弃** →
+  cursor 模式的源答完第一次就再也续不了(它给的 token 无处可读)。
+  现在:`feed(page, {cursors, cancellation})` + `FeedSection.mode/nextCursor`,并按三态校验答复
+  (single-shot 却说还有 / cursor 说还有不给 token / fixed-page 却给 token → `contractViolation` 记账,
+  **不静默归一化** —— 屏幕上结果一样,但"首页为什么停止加载"需要知道是哪个源在撒谎)。
+  search 同样补了 `cancellation`:被取代的运行以前会以"十二个源 failed"落地,那是把健康 provider 写成病态。
+  两处的界都说清了:已发出的每源请求不由这层取消(与既有 timeout 边界同一条)。
+  16 + 23 测试通过,`dart analyze packages/services` 0 issue,护栏 0 错。
+  **诚实记录**:这是本轮第一次出现"CHANGELOG 与代码不符" —— 说明 §1 的行数基线不足以判断完成度,
+  判据要回到"契约逐条对代码"。
 - **#4 第 2 步:`ui_kit` 与 `ui/adaptive` 开始真读令牌**(`6f71642` 之后的那一步)。
   新增 `DesignTokensTheme`(ThemeExtension)承载 density / input / focus / motion —— `ThemeData` 对这些
   **没有槽位**;`context.designTokens` 在未安装时**回退到平台默认而不抛**(抛会让组件只能在全应用主题里预览)。
@@ -185,7 +200,7 @@
 | 3 | `features/home` `account` `backup` `live` `vod` `iptv` `recorder` `music` **全部重写完成** | 每包原 58–191 行,domain 有形状、data 缺失 | 按 §6 补齐:data 边界 + 具名错误 + 资源释放;presentation 留给 UI 波。`music` 的 L4→L5 直连已改端口注入 |
 | 4 | `ui/design` **令牌面已补齐** / `ui/ui_kit` `ui/adaptive` **已接令牌(仅静态分析验证)** / 真机与 app 传参待做 | 令牌只有 spacing/radius,组件 4 个,风格注册表无焦点/密度维度 | 令牌全集(色/距/圆/高/动效/字焦/密度)、`AppNotice`/`AppDialog`/`AppLoading`/空错态门面、D-pad 焦点序与 TV 尺寸。**下一步是把 ui_kit 与 adaptive 改成消费 `DesignTokens`** —— 否则令牌只是躺在一个没人读的包里 |
 | 5 | `ui/lyric` `ui/player_ui` | 单文件适配 | 时间轴同步、句柄所有权、与 `integrations/media` 的状态订阅边界 |
-| 6 | `services/search` `services/feed` | 聚合器只有扇出 | 分页模式(§契约三态)、部分结果策略、取消传播、失败记账的可诊断形状 |
+| 6 | `services/search` `services/feed` **已完成** | 聚合器只有扇出 | 分页三态校验 + 按源游标 + 取消传播 + 失败记账形状已落;剩余:跨源节(继续看)受 FeedSection 形状限制,见 w5 §2 |
 | 7 | `foundation/diagnostics` `events` `platform_info` `sync` | 薄 | 结构化事件 + 有界缓冲 + 脱敏;探测能力矩阵;同步游标与冲突策略 |
 | 8 | `providers/douyu` | 空 barrel | 按 `providers/huya` 的形状实现 feed/browse/search/resolve |
 | 9 | `ecosystem/plugin_host` `resolver` `capability` | 有实现,未过 DoD | 只做复核:错误具名、超时/体积上限、资源释放、README 平台矩阵 |

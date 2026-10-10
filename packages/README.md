@@ -57,8 +57,8 @@
 | `services/favorites` | favorites / key_value_favorite_repository | app | ✅ |
 | `services/history` | history / key_value_history_repository | app | ✅ 但 `record`/`finish`/`flush` 仍无调用方 |
 | `services/playlist` | playlist / key_value_playlist_repository | app | ✅ |
-| `services/search` | search_aggregator(扇出/超时/失败隔离) | app | ✅ |
-| `services/feed` | feed_aggregator(按源分节 + 跳过记账) | app | ✅ 跨源节(继续看)受形状限制,见 w5 §2 |
+| `services/search` | search_aggregator(扇出/超时/失败隔离 + 取消缝) | app | ✅ 16 测试 |
+| `services/feed` | feed_aggregator(按源分节 + 跳过记账 + 按源游标与三态校验) | app | ✅ 23 测试;修了「游标贯穿」只做一半;跨源节仍受形状限制(w5 §2) |
 | `ui/design` | semantic_roles / scale_tokens / control_metrics / design_tokens(解析器 + AppearanceSettings) | ui_kit, lyric;app | ✅ 令牌全集补齐(色角色/距/圆/字阶+可读下限/动效归零/密度/交互尺寸/焦点视觉),20 测试;纯 Dart 无 Flutter import。**ui_kit 与 adaptive 还没接它** |
 | `ui/ui_kit` | **app_facade**(Notice/Dialog/Loading)/ tokens_theme(ThemeExtension)/ poster_card / status_views | adaptive;无 App 依赖 | ✅ 组件改读令牌,`PosterCard.width` 之前被忽略已修;门面仍没人用。**只过静态分析** |
 | `ui/adaptive` | ui_style(六风格注册,统一 `_applyTokens` 映射)/ app_background | app | ✅ 密度/控件尺寸/字阶下限/焦点/动效改由令牌决定,风格只剩装饰差别;声明了 design+ui_kit 依赖。**只过静态分析,app 还没传 tokens** |

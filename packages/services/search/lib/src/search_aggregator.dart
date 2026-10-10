@@ -11,6 +11,7 @@ import 'dart:async';
 
 import 'package:pure_live_capability/pure_live_capability.dart';
 import 'package:pure_live_platform/pure_live_platform.dart';
+import 'package:pure_live_utils/pure_live_utils.dart' show CancellationToken;
 
 /// How one provider's share of a search ended.
 enum SearchOutcomeKind { answered, empty, timedOut, failed }
@@ -75,7 +76,10 @@ final class SearchAggregate {
 abstract interface class SearchAggregator {
   /// [onlySources] narrows the fan-out to a 站内搜索 over named sources; naming an unregistered source simply
   /// leaves it out of the run.
-  Future<SearchAggregate> search(SearchQuery query, {Iterable<SourceId>? onlySources});
+  ///
+  /// [cancellation] abandons the run: a search box that moved on does not want its superseded answer
+  /// reported as a page full of source failures.
+  Future<SearchAggregate> search(SearchQuery query, {Iterable<SourceId>? onlySources, CancellationToken? cancellation});
 }
 
 /// A [SearchAggregator] over the [CapabilityRegistry].
@@ -96,7 +100,12 @@ final class CapabilitySearchAggregator implements SearchAggregator {
   final Duration perProviderTimeout;
 
   @override
-  Future<SearchAggregate> search(SearchQuery query, {Iterable<SourceId>? onlySources}) async {
+  Future<SearchAggregate> search(
+    SearchQuery query, {
+    Iterable<SourceId>? onlySources,
+    CancellationToken? cancellation,
+  }) async {
+    cancellation?.throwIfCancelled();
     if (query.keyword.trim().isEmpty) {
       // A blank keyword over N sources is N pointless requests, and every one of them would be answered by
       // the provider's own contract test as an empty search.
@@ -128,6 +137,9 @@ final class CapabilitySearchAggregator implements SearchAggregator {
       targets.map((target) => _ask(target.$1, target.$2, query)),
     );
 
+    // Assembly stops for a caller that walked away; the per-provider requests already dispatched keep running
+    // because this layer does not own them (see [perProviderTimeout] for the same boundary).
+    cancellation?.throwIfCancelled();
     return SearchAggregate(query: query, outcomes: <SearchProviderOutcome>[...unsearchable, ...answered]);
   }
 
