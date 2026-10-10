@@ -41,3 +41,22 @@
   究竟多久算卡,需要一次真机测量再调;调的是常量,不是机制。
 - `.timeout()` 只让等待方放弃,**不提供取消已发出请求的能力**(与 services 层聚合器同一条界)。
   挂死的 provider 请求仍在跑,直到 dio 自己结束。
+
+## 这一轮补的(2026-10-11)
+
+- **`line` 真的传到源**:此前 `CapabilityResolver` 只把 `preferredQuality` 交给 `ResolveCapability.resolve`,
+  `line` 参数从来没人传 —— recovery.md 说的"源内线路回退"在平台这一侧根本没有入口。
+  现在读 `ResolveContext.metadata[kPreferredLineKey]`(`platform.preferredLine`),类型不对当"没偏好"处理
+  (源不该因为调用方把 string 位置放了 number 就播不起来),并把实际用的线路写进 `ResolveResult.metadata`。
+- **`ResolverChain.resolveReported`** 逐个候选记账:`ChainAttempt{resolverId, position, outcome, elapsedMs, code, detail}`
+  + `ChainReport{attempts, result, error, elapsed}`,`resolve()` 变成它的薄壳。
+  失败面板要的从来不是"第一个错",而是"试了哪四个、每个怎么死的"。
+- 保留两条既有语义:取消**原样上抛**、`allowFallback: false` 时**外部异常原样 rethrow**
+  (不许把源的桥接 bug 包成 `resolver.failed` 藏起来)—— 后者是新测试当场抓到的回归。
+
+## 验证
+
+- 分析:`dart analyze packages/ecosystem/resolver`(0 issue)
+- 测试:`dart test` —— **35 例**全绿(注册优先序与并列按插入序、候选耗尽、不 fallback 的两条语义、
+  超时预算与 `timedOut` 码、过期票据不上交)。`resolveReported` 的记账内容未单独测,
+  但它跑在全部 35 例的 `resolve()` 路径上。

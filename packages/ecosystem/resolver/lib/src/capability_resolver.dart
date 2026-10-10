@@ -16,6 +16,10 @@ import 'package:pure_live_platform/pure_live_platform.dart';
 
 import 'resolver.dart';
 
+/// The `ResolveContext.metadata` key a host uses to name a preferred line (source id of the multi-line
+/// variants a site offers for the same room).
+const String kPreferredLineKey = 'platform.preferredLine';
+
 /// A Resolver over one source's ResolveCapability.
 final class CapabilityResolver implements Resolver {
   CapabilityResolver({
@@ -67,8 +71,11 @@ final class CapabilityResolver implements Resolver {
     }
 
     final MediaTicket ticket;
+    final line = _lineFor(request.context.metadata[kPreferredLineKey]);
     try {
-      ticket = await _guard(capability.resolve(request.ref, quality: _selectionFor(request.context.preferredQuality)));
+      ticket = await _guard(
+        capability.resolve(request.ref, quality: _selectionFor(request.context.preferredQuality), line: line),
+      );
     } on ResolverException {
       rethrow;
     } on TimeoutException {
@@ -94,7 +101,13 @@ final class CapabilityResolver implements Resolver {
         preferredQuality: request.context.preferredQuality,
         preferredProtocol: ticket.protocol,
       ),
-      metadata: <String, Object?>{'platform.resolver': descriptor.id},
+      metadata: <String, Object?>{
+        'platform.resolver': descriptor.id,
+        // What the source actually answered with, so a "why did it use line 2" report can be answered
+        // without asking the provider to log anything.
+        if (line != null) 'platform.line': line.id,
+        'platform.ticket': ticket.id,
+      },
     );
   }
 
@@ -103,6 +116,17 @@ final class CapabilityResolver implements Resolver {
   Future<T> _guard<T>(Future<T> operation) => timeout == Duration.zero ? operation : operation.timeout(timeout);
 
   static SelectionRef? _selectionFor(String? quality) => quality == null ? null : SelectionRef(quality);
+
+  /// Reads the line the host asked for out of the context metadata, which is the only place a request can
+  /// carry a source-specific choice today. A value of the wrong type is treated as "no preference" rather
+  /// than an error: a resolver must not fail playback because a caller put a number where a string belonged.
+  static SelectionRef? _lineFor(Object? raw) {
+    if (raw is! String) {
+      return null;
+    }
+    final text = raw.trim();
+    return text.isEmpty ? null : SelectionRef(text);
+  }
 
   static DateTime _utcNow() => DateTime.now().toUtc();
 }

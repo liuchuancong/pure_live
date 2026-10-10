@@ -80,36 +80,109 @@ final class ResolverChain {
   /// *same* source during playback does not want a silent jump to another one mid-stream, because the
   /// line it chose carried its subtitles and its quality promise.
   Future<ResolveResult> resolve(ResolveRequest request) async {
+    final outcome = await resolveReported(request);
+    if (outcome.result != null) {
+      return outcome.result!;
+    }
+    throw outcome.error ?? ResolverException.unsupported(request.ref);
+  }
+
+  /// The same walk, keeping every attempt.
+  ///
+  /// The failure sheet needs more than the first error: "试了 4 个源都不行" is only actionable when it says
+  /// which four and what each did (timed out, refused the kind, returned nothing). Returns a reported
+  /// failure instead of throwing so the caller can show the attempts and the error together.
+  Future<ChainReport> resolveReported(ResolveRequest request) async {
+    final watch = Stopwatch()..start();
     final candidates = _registry.candidatesFor(request.ref);
     if (candidates.isEmpty) {
-      throw ResolverException.unsupported(request.ref);
+      return ChainReport(
+        request: request,
+        attempts: const <ChainAttempt>[],
+        error: ResolverException.unsupported(request.ref),
+      );
     }
 
+    final attempts = <ChainAttempt>[];
     ResolverException? firstFailure;
+    ResolveResult? winner;
+    var index = 0;
 
     for (final resolver in candidates) {
+      final started = DateTime.now().microsecondsSinceEpoch;
+      index++;
       try {
         final result = await resolver.resolve(request);
+        final took = Duration(microseconds: DateTime.now().microsecondsSinceEpoch - started);
         if (!result.isEmpty) {
-          return result;
+          attempts.add(
+            ChainAttempt(
+              resolverId: resolver.descriptor.id,
+              position: index,
+              outcome: ChainAttemptOutcome.succeeded,
+              elapsed: took,
+            ),
+          );
+          winner = result;
+          break;
         }
         firstFailure ??= ResolverException.failed(
           request.ref.contentId,
           '${resolver.descriptor.id} returned no tickets',
         );
+        attempts.add(
+          ChainAttempt(
+            resolverId: resolver.descriptor.id,
+            position: index,
+            outcome: ChainAttemptOutcome.empty,
+            elapsed: took,
+            detail: 'answered with no tickets',
+          ),
+        );
       } on ResolverException catch (error) {
+        final took = Duration(microseconds: DateTime.now().microsecondsSinceEpoch - started);
         if (error.isCancellation) {
-          rethrow;
+          attempts.add(
+            ChainAttempt(
+              resolverId: resolver.descriptor.id,
+              position: index,
+              outcome: ChainAttemptOutcome.cancelled,
+              elapsed: took,
+            ),
+          );
+          return ChainReport(request: request, attempts: attempts, error: error);
         }
         firstFailure ??= error;
+        attempts.add(
+          ChainAttempt(
+            resolverId: resolver.descriptor.id,
+            position: index,
+            outcome: ChainAttemptOutcome.failed,
+            elapsed: took,
+            code: error.code,
+            detail: error.error.message,
+          ),
+        );
         if (!request.allowFallback) {
-          throw error;
+          break;
         }
       } catch (error) {
+        final took = Duration(microseconds: DateTime.now().microsecondsSinceEpoch - started);
         // A resolver that threw a foreign type is still a failed candidate; the caller should not have to
         // know which exception a third-party runtime chose.
         firstFailure ??= ResolverException.failed(request.ref.contentId, error);
+        attempts.add(
+          ChainAttempt(
+            resolverId: resolver.descriptor.id,
+            position: index,
+            outcome: ChainAttemptOutcome.failed,
+            elapsed: took,
+            detail: '$error',
+          ),
+        );
         if (!request.allowFallback) {
+          // A caller that forbade fallback asked for *this* source's answer, so its own exception is the
+          // answer: wrapping it here would hide a bridge bug behind a resolver code.
           rethrow;
         }
       }
@@ -118,8 +191,84 @@ final class ResolverChain {
       }
     }
 
-    // Every candidate was tried and none produced a ticket. The first refusal explains it best: the later
-    // ones are usually the same network or the same missing kind.
-    throw firstFailure ?? ResolverException.failed(request.ref.contentId, 'every candidate returned nothing');
+    watch.stop();
+    return ChainReport(
+      request: request,
+      attempts: List<ChainAttempt>.unmodifiable(attempts),
+      result: winner,
+      error: winner == null
+          ? firstFailure ?? ResolverException.failed(request.ref.contentId, 'every candidate returned nothing')
+          : null,
+      elapsed: Duration(microseconds: watch.elapsedMicroseconds),
+    );
   }
+}
+
+/// What one candidate did during a chain walk.
+enum ChainAttemptOutcome { succeeded, failed, empty, cancelled }
+
+/// One candidate's turn.
+final class ChainAttempt {
+  const ChainAttempt({
+    required this.resolverId,
+    required this.position,
+    required this.outcome,
+    required this.elapsed,
+    this.code,
+    this.detail,
+  });
+
+  final ResolverId resolverId;
+
+  /// 1-based place in the candidate order, so a report can say "the third source timed out".
+  final int position;
+  final ChainAttemptOutcome outcome;
+  final Duration elapsed;
+  final String? code;
+  final String? detail;
+
+  Map<String, Object?> toJson() {
+    return <String, Object?>{
+      'resolver': resolverId,
+      'position': position,
+      'outcome': outcome.name,
+      'elapsedMs': elapsed.inMilliseconds,
+      if (code != null) 'code': code,
+      if (detail != null) 'detail': detail,
+    };
+  }
+
+  @override
+  String toString() =>
+      '$position.$resolverId ${outcome.name}(${elapsed.inMilliseconds}ms${code == null ? '' : ' $code'})';
+}
+
+/// The whole walk: what was tried, what won, and what to report when nothing did.
+final class ChainReport {
+  const ChainReport({
+    required this.request,
+    required this.attempts,
+    this.result,
+    this.error,
+    this.elapsed = Duration.zero,
+  });
+
+  final ResolveRequest request;
+  final List<ChainAttempt> attempts;
+  final ResolveResult? result;
+  final ResolverException? error;
+  final Duration elapsed;
+
+  bool get succeeded => result != null;
+
+  /// How many candidates existed before the walk stopped early (a win, a cancellation, or no-fallback).
+  int get triedCount => attempts.length;
+
+  List<ChainAttempt> get failures =>
+      attempts.where((attempt) => attempt.outcome != ChainAttemptOutcome.succeeded).toList(growable: false);
+
+  @override
+  String toString() =>
+      'ChainReport(${succeeded ? 'ok' : 'failed'} after ${attempts.length} attempt(s) in '
+      '${elapsed.inMilliseconds}ms${error == null ? '' : ', ${error!.code}'})';
 }

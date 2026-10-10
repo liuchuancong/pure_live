@@ -5,6 +5,15 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- `line` is now passed to the source. `preferredQuality` reached `ResolveCapability.resolve` and `line` never
+  did, which left the "fall back to another line inside one source" step of the recovery ladder with no entry
+  point on the platform side. The preference is read from `ResolveContext.metadata[kPreferredLineKey]`, a
+  wrong-typed value is treated as no preference rather than an error, and the line actually used is echoed into
+  `ResolveResult.metadata`.
+- `ResolverChain.resolveReported` keeps every candidate's turn (id, position, outcome, elapsed, code) and
+  `resolve()` became a thin shell over it. `allowFallback: false` still rethrows a foreign exception
+  unmodified - wrapping a bridge bug in `resolver.failed` hides it.
+
 - **Fixed(DoD 体积/超时项)**:`CapabilityResolver` 与 `CapabilityTicketRefresher` 现在真的有超时预算
   (`timeout`,默认 `CapabilityResolver.kDefaultResolveTimeout` = 12s;`Duration.zero` 表示不设限)。
   `ResolverException.timedOut` 从第一版就定义好了,却**没有任何代码抛它** —— 适配器直接 await 提供方的
