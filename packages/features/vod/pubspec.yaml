@@ -8,3 +8,9 @@ environment:
   sdk: ^3.13.0
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  pure_live_platform:
+    path: ../../ecosystem/platform
+  # The vod feature's own persistence (resume position, series watch state) is a kv-backed store.
+  pure_live_storage:
+    path: ../../foundation/storage

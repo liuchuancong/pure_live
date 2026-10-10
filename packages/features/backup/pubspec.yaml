@@ -8,3 +8,7 @@ environment:
   sdk: ^3.13.0
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  # The backup feature is a front end for the backup L0 engine.
+  pure_live_backup:
+    path: ../../foundation/backup

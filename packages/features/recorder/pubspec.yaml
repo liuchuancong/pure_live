@@ -8,3 +8,7 @@ environment:
   sdk: ^3.13.0
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  # Recording works on platform content references; the feature owns no content vocabulary of its own.
+  pure_live_platform:
+    path: ../../ecosystem/platform

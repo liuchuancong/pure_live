@@ -8,3 +8,7 @@ environment:
   sdk: ^3.13.0
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  # Preferences are a kv-backed mechanism; the app binds the store, this package only keys it.
+  pure_live_storage:
+    path: ../../foundation/storage

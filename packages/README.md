@@ -74,7 +74,7 @@
 | `features/vod` | episode_navigator / watch_progress_repository | **无** | ⚠️ 零消费者 |
 | `features/music`(pure_live_music_feature) | music_queue / lx_music_repository | **无** | ⚠️ 等 pure_music |
 | `features/iptv`(pure_live_iptv_feature) | channel_zapper / epg_window | **无** | ⚠️ 零消费者 |
-| `features/search`(pure_live_search_feature) | search_history | **无** | ⚠️ 81 行;缓存不失效、坏档会静默清空后覆盖写(台账队列第 2 项) |
+| `features/search`(pure_live_search_feature) | search_term / search_history(接口)/ stored_search_history / search_result_order / search_controller | **无 App 消费者**(等拆壳波)| ✅ 重写完成:折叠键统一"同一次搜索"、信封带版本与 v0 迁移、坏档记账不装作没搜过、结果按内容定序、世代栅栏丢弃被取代的答案;22 测试 |
 | `features/home` | home_tab | **无** | ⚠️ |
 | `features/account` | site_account_registry | **无** | ⚠️ |
 | `features/backup`(pure_live_backup_feature) | webdav_backup_service | **无** | ⚠️ 与 foundation/backup 的分工没写清 |

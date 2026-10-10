@@ -8,6 +8,8 @@ environment:
   sdk: ^3.13.0
 
 dependencies:
+  # Bundle extraction walks directories; that path arithmetic is a pub.dev package, not our own.
+  path: ^1.9.0
   pure_live_platform:
     path: ../../ecosystem/platform
   pure_live_plugin_api:

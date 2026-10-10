@@ -8,3 +8,7 @@ environment:
   sdk: ^3.13.0
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  # The account screen consumes the auth L0 service; it never talks to a provider directly.
+  pure_live_auth:
+    path: ../../foundation/auth

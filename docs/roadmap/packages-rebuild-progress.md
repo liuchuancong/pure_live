@@ -18,6 +18,28 @@
 
 ## 2. 本轮已做
 
+- **`features/search` 重写(队列 #2)**:`SearchTerm`(display + 折叠键)、`SearchHistoryRepository` 接口、
+  `StoredSearchHistory`(带 `{v,items:[{q,at}]}` 信封、v0 裸列表迁移、MRU + `matchKey` 定序、有界淘汰、
+  读坏行**记账**而不是装作没搜过)、`rankSearchResults`(按内容而不是按谁先答)、`SearchController`
+  (世代栅栏:`Answer`/`Rejected`/`Superseded`,被放弃的答案不写历史;`currentToken` 只在放弃时触发)。
+  22 个测试通过,包 analyze 0 issue。它是 `equality` / `identifiers` / `errors` / `numbers` 这几个新
+  utils 模块的第一个真实消费者。
+- **查出一类护栏盲区:pub workspace 让"未声明依赖"照样编译。** 逐包 grep `lib/` 里的
+  `import 'package:...'` 与 pubspec 对照,14 个包在空 `dependencies:` 的情况下用着别的包 —— 意味着
+  §2bis 的依赖图(按 pubspec 测)**系统性少算边**。已把这批能合规的边补进 pubspec:
+  `features/{account→auth, backup→backup, recorder→platform, vod→platform+storage, settings→storage,
+  music→platform, search→platform+search+storage+utils}`、`ui/adaptive→flutter(sdk)`、
+  `foundation/cache→path`、`ecosystem/plugin_host→path`、`integrations/python_runtime→path`。
+  **剩下 3 条故意没补**,因为补了就是在给未批准的边发护照,需要你先定规则:
+  1. `features/music` → `providers/music`(L4→L5,**规则明写"providers 经注册表消费",不得直连**)
+     —— 要么改成组合根注入,要么删掉那段代码;
+  2. `ui/adaptive` → `ui/design`(L3 同层,§3 只写了 `ui_kit→design` 一条)—— 是把 design 定为
+     "ui 层人人可用"的叶子,还是给 adaptive 加白名单;
+  3. `ecosystem/external_tvbox` → `ecosystem/plugin_api`(L1 同层,§4 无此例外)。
+  这三条现在**只存在于 import 语句里**,`check_architecture.dart` 看不见(它读 pubspec)。
+  建议的修法:护栏把 `lib/` 的 import 也解析成边(现在 `checkImports` 只查 `lib/src` 越界与 app 边界),
+  那样未声明依赖会直接成 error。**待你点头再动护栏**,因为那会让 CI 立刻红这 3 条。
+
 - **`foundation/utils` 从 5 个模块扩到 13 个**(`async_tools`→`async`,新增 errors / conversion / numbers /
   types / validation / equality / identifiers / math,`result` 拆出 `result_sequence`)。每个新模块对应一次
   grep 计数,写在包 `doc/design-decisions.md` §1 的表里:13 个包各写一份 `XException`、`platform` 一处 12 个
@@ -53,7 +75,7 @@
 | 序 | 包 | 现状缺口(对照 §6) | 重写要点 |
 |---|---|---|---|
 | 1 | ~~`features/settings`~~ **已重写 `cd4c96fcb`** | 共享包里写死了一个产品的 5 个偏好键,机制本身反而没有 | 键改为消费方声明的 `PreferenceKey<T>`;带版本信封 `{v,c,value}`;读不抛+回退记账、写拒越界;`putIfAbsent` 承担首启语义;命名空间隔离 App;`importAll` 逐项校验并出报告;变更流 + `dispose` 只关自己的流。95 行 → 约 430 行,`dart analyze` 0 issue |
-| 2 | `features/search` | 只有历史记录容器 | 查询规范化、跨 App 一致的排序、容量上限与淘汰、与 `services/search` 聚合器的取消语义 |
+| 2 | ~~`features/search`~~ **已重写(本轮)** | 只有历史记录容器 | 查询规范化、跨 App 一致的排序、容量上限与淘汰、与 `services/search` 聚合器的取消语义 —— 全部落地,详见 §2 |
 | 3 | `features/home` `account` `backup` `live` `vod` `music` `iptv` `recorder` | 每包 58–191 行,domain 有形状、data 缺失 | 按 §6 补齐:data 边界 + 具名错误 + 资源释放;presentation 留给 UI 波 |
 | 4 | `ui/design` → `ui/ui_kit` → `ui/adaptive` | 令牌只有 spacing/radius,组件 4 个,风格注册表无焦点/密度维度 | 令牌全集(色/距/圆/高/动效/字焦/密度)、`AppNotice`/`AppDialog`/`AppLoading`/空错态门面、D-pad 焦点序与 TV 尺寸 |
 | 5 | `ui/lyric` `ui/player_ui` | 单文件适配 | 时间轴同步、句柄所有权、与 `integrations/media` 的状态订阅边界 |

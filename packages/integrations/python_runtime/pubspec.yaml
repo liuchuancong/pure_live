@@ -10,6 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  path: ^1.9.0
   # Embedded CPython. The spider code itself is plain stdlib python: the
   # worker loop talks to this package's local HTTP gateway, so no pip
   # dependency is required for the framework to run a spider.
