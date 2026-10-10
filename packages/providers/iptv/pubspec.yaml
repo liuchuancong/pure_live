@@ -14,3 +14,7 @@ dependencies:
     path: ../../ecosystem/external_tvbox
   pure_live_platform:
     path: ../../ecosystem/platform
+  # The L0 leaf, for the Clock the source stamps tickets and "now playing" with: a fixed clock is what makes
+  # an 18:00 schedule question answerable without sleeping.
+  pure_live_utils:
+    path: ../../foundation/utils
