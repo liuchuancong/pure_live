@@ -19,3 +19,11 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 - `ErrorRetryView` accepts `title` / `retryLabel`: a base component that hardcodes "重试" is a base component
   every translated feature has to copy.
 - Covers show a placeholder while loading, not only on error.
+- Added `src/facade_material.dart`: the Material half of the notice/dialog/loading facades (`SnackbarNotice`,
+  `MaterialFacades`). Until now the interfaces existed and nothing implemented them, so a feature that called
+  `AppNotice` had nothing to bind and went back to `ScaffoldMessenger` - which is how every page grew its own
+  snackbar. Severity colours come from `ColorScheme`'s container pairs (the role vocabulary has one destructive
+  slot and no success/warning), while severity *timing* is a design rule and does come from the tokens' input
+  mode. **Not yet bound**: no app or feature constructs these, and there are no widget tests - the UI wave's
+  verification (device, D-pad focus, screenshot comparison) is still ahead.
+
