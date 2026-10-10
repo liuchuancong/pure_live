@@ -1,6 +1,6 @@
 # GENERATED-BY: tool/scaffold_package.ps1
 name: pure_live_recorder
-description: "Feature package: recorder (repository + presentation skeleton per package-architecture.md)"
+description: "Feature package: recorder(录制任务生命周期、文件名校验与经过时长)"
 publish_to: none
 resolution: workspace
 
@@ -9,6 +9,10 @@ environment:
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
 dependencies:
-  # Recording works on platform content references; the feature owns no content vocabulary of its own.
   pure_live_platform:
     path: ../../ecosystem/platform
+  pure_live_utils:
+    path: ../../foundation/utils
+
+dev_dependencies:
+  test: ^1.26.0

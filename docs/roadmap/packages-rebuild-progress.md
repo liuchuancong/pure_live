@@ -80,6 +80,16 @@
   `toString` 不含 header 值(platform-models §16)、重叠与空洞交给屏幕。24 测试。
   **我自代的决定**(可逆):遍历时默认跳过不可开条目,`select(number)` 仍可到达;
   另外本包**不依赖 platform**,换台与 EPG 是纯索引/时间算术。
+- **`features/recorder` 重写(队列 #3 第 7 个,除 `music` 外做完)**:四个真问题。
+  (1) `state` / `endReason` 是**公开可写字段** —— 类注释写着"迟到的编码器回调不能复活已结束的任务",
+  下一行任何调用方一个赋值就能违反;
+  (2) `elapsed` 从创建时间算,**排队一小时的录制在列表上显示"已录 1 小时"**(改成从 beganAt 算,queued 给 0);
+  (3) `endReason` 默认 `none` 让"结束了但没有原因"可表示(现在终态必须给原因,`fail(userStopped)` 直接拒,
+  因为用户按停与磁盘满是两块屏);
+  (4) id 用 `/` 直拼 sourceId 与 contentId,带分隔符的 contentId 会让两个房间撞同一个 id;
+  另加 `fileName` 路径校验(宿主把它拼到录制目录后)、三处 `DateTime.now()` 换成注入 `Clock`
+  (不然这些规则根本没法测)、id 在转换间保持稳定。13 测试。
+  `lib/src/data/` 仍空是刻意的:引擎在录制波次,状态契约先立住就没有第二套真相。
 
 - **查出一类护栏盲区:pub workspace 让"未声明依赖"照样编译。** 逐包 grep `lib/` 里的
   `import 'package:...'` 与 pubspec 对照,14 个包在空 `dependencies:` 的情况下用着别的包 —— 意味着
@@ -133,7 +143,7 @@
 |---|---|---|---|
 | 1 | ~~`features/settings`~~ **已重写 `cd4c96fcb`** | 共享包里写死了一个产品的 5 个偏好键,机制本身反而没有 | 键改为消费方声明的 `PreferenceKey<T>`;带版本信封 `{v,c,value}`;读不抛+回退记账、写拒越界;`putIfAbsent` 承担首启语义;命名空间隔离 App;`importAll` 逐项校验并出报告;变更流 + `dispose` 只关自己的流。95 行 → 约 430 行,`dart analyze` 0 issue |
 | 2 | ~~`features/search`~~ **已重写(本轮)** | 只有历史记录容器 | 查询规范化、跨 App 一致的排序、容量上限与淘汰、与 `services/search` 聚合器的取消语义 —— 全部落地,详见 §2 |
-| 3 | `features/home` `account` `backup` `live` `vod` `iptv` **已重写** / ~~`music`~~ `recorder` 待做 | 每包 58–191 行,domain 有形状、data 缺失 | 按 §6 补齐:data 边界 + 具名错误 + 资源释放;presentation 留给 UI 波。`music` 卡在 §2bis 的 L4→L5 直连 provider,要先定注入形状 |
+| 3 | `features/home` `account` `backup` `live` `vod` `iptv` `recorder` **已重写** / ~~`music`~~ 待做 | 每包 58–191 行,domain 有形状、data 缺失 | 按 §6 补齐:data 边界 + 具名错误 + 资源释放;presentation 留给 UI 波。`music` 卡在 §2bis 的 L4→L5 直连 provider,要先定注入形状 |
 | 4 | `ui/design` → `ui/ui_kit` → `ui/adaptive` | 令牌只有 spacing/radius,组件 4 个,风格注册表无焦点/密度维度 | 令牌全集(色/距/圆/高/动效/字焦/密度)、`AppNotice`/`AppDialog`/`AppLoading`/空错态门面、D-pad 焦点序与 TV 尺寸 |
 | 5 | `ui/lyric` `ui/player_ui` | 单文件适配 | 时间轴同步、句柄所有权、与 `integrations/media` 的状态订阅边界 |
 | 6 | `services/search` `services/feed` | 聚合器只有扇出 | 分页模式(§契约三态)、部分结果策略、取消传播、失败记账的可诊断形状 |
