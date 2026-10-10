@@ -23,7 +23,9 @@ App 只是 Runtime 的一个宿主。未来可存在 PureLive Mobile / TV / Desk
 
 ```text
 用户点击直播间卡片(ContentRef: douyu://live/123456)
- → LiveCapabilityProvider.resolve() → MediaTicket(urls, expiresAt, quality, line)
+ → 源的 ResolveCapability.resolve(ref, {quality, line}) → MediaTicket
+   (一张票:uri 或 tracks + expiresAt + policy + metadata + refresh;清晰度与线路是**请求**里的
+    SelectionRef,不是票上的字段 —— 见 [../sources/live/source-contract.md](../sources/live/source-contract.md))
  → MediaPlan(编排:起播参数/预取策略/兜底线路)
  → PlaybackSession 创建 → PlayerKernel → PlayerAdapter(mpv)→ 出画
  → Watchdog 监控卡顿/过期 → ticket.refresh(before expiresAt)→ 无缝换链

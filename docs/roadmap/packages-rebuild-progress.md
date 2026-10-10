@@ -409,11 +409,23 @@
   旧形状一律靠 `PreferenceKey.upgrade` 读回且不回写。采纳过程中补了机制自己的两块(拒绝带理由、两本诊断账有上界),
   并修掉我在前两处采纳时压平诊断粒度造成的回退。第四处(app 的 appearance)判定不套用,理由记在本文末尾。
   曾考虑的备选 B(给 §4 白名单加 `features/* → features/settings`)被否:那是把层级错误固化成永久例外。
-- **契约点名的类型不存在。** `docs/sources/live/source-contract.md` 用 `QualityLine` / `QualityRef` /
-  `LineRef` / `LiveDetail` / `StreamTicket` 写方法签名,但 `pure_live_platform` 里**一个都没定义**
-  (只有 `MediaTicket` 有)。所以 `features/live` 只能自带 `StreamVariant` 词汇,站点适配写出来时也要各写一份映射。
-  要么把这些类型落进 platform 伞包(并让契约测试按它们断言),要么改契约用现有类型 —— 在有人实现
-  `LiveCapability` 之前必须先定,否则第一个 provider 会把这坨差异固化成三四个方言。
+- ~~**契约点名的类型不存在**~~ **已改文档贴合代码(2026-10-11)**:`docs/sources/live/source-contract.md` 原文用了
+  14 个类型名,**11 个在 `platform`/`capability` 里指不到东西**:`Page`、`ContentItem`、`CategoryRef`、`Cursor`、
+  `SearchItem`、`SearchRequest`、`QualityRef`、`LineRef`、`LiveDetail`、`QualityLine`,加上被当成接口写的
+  `LiveCapability` —— 它**从未存在过**,真实存在的只有路由枚举项 `CapabilityKind.live` 与四个方法集。
+  计数方式是逐个 `grep -E "(class|enum) <名字>" packages/ecosystem/{platform,capability}/lib`,不是印象。
+  而那份文档还写着"契约测试按此断言"—— 它断言不了任何东西。
+  改写后的版本只用指得到的名字(Feed/Browse/Search/Resolve 四个方法集 + `ContentDetail`/`ContentSummary`/
+  `PageResult`/`SelectionRef`/`MediaTicket`/`RefreshReason`),并列出真实证据:`providers/{huya,douyu}` 就是按这一组
+  建好的,`PlatformErrorCodes.authRequired` 取代了不存在的 `AuthRequired` 异常,降级由 `ResolveRequest.allowFallback`
+  决定而不是源自己决定。别名表本来就在 `capability-contract.md` §5,新文档指过去而不是再抄一份。
+  **顺手修掉两处同类失真**:`system-overview.md` 的播放链路写了 `LiveCapabilityProvider.resolve()` 与
+  `MediaTicket(urls, quality, line)` —— 类型不存在,且票上没有 `urls`/`quality`/`line` 字段(实际是
+  `uri`/`tracks`/`expiresAt`/`policy`/`metadata`/`refresh`,清晰度与线路属于**请求**侧的 `SelectionRef`)。
+  **仍然开着的是设计题而不是文档题**:清晰度/线路的**列表**没有任何接口能返回(`qualities()` 在代码里不存在,
+  `ContentDetail.extra` 也没有人塞过清晰度表 —— 两条都 grep 过)。不在这里有实现之前拍一个 `QualityLine` 出来:
+  实测两边的形状就不同:douyu 的 `multirates` 是"名字 + 一个不能按数值排序的不透明请求码",huya 的线路是 CDN 列表 —— 先拍形状的人会把其中一家的方言固化成公共契约。
+  因此文档里把它记为**待定义项**,并明确禁止源在被定义之前自造返回类型或把清晰度表塞进 `extra`。
 - **`features/music` 的端口还没有实现者。** `MusicSourceBridge` 是为消除 L4→L5 直连而造的接缝,
   但 `apps/` 目录里现在**只有 `pure_live`** —— pure_music 壳不存在,所以没有一个适配器来实现它。
   端口形状够用与否要等那个壳建起来才能验;若届时发现形状不对,改的是适配器不是域模型,这是选可逆方案的理由。
