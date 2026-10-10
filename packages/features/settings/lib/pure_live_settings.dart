@@ -9,3 +9,4 @@
 library;
 
 export 'src/data/preferences_store.dart';
+export 'src/domain/preference_key.dart';
