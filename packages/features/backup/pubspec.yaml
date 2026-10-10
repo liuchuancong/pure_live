@@ -1,6 +1,6 @@
 # GENERATED-BY: tool/scaffold_package.ps1
 name: pure_live_backup_feature
-description: "Feature package: backup (repository + presentation skeleton per package-architecture.md)"
+description: "Feature package: backup(归档推送/列举/恢复、快照名校验与传输失败具名)"
 publish_to: none
 resolution: workspace
 
@@ -9,6 +9,11 @@ environment:
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
 dependencies:
-  # The backup feature is a front end for the backup L0 engine.
+  # The engine, manifest and WebDAV store live in L0; this package only orchestrates them.
   pure_live_backup:
     path: ../../foundation/backup
+  pure_live_utils:
+    path: ../../foundation/utils
+
+dev_dependencies:
+  test: ^1.26.0

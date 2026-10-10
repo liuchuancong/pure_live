@@ -39,6 +39,14 @@
   `HomeLayoutService`(`recordUse` / `setHidden` / `staleSavedIds` / `reset`)。18 测试,包 analyze 0 issue。
   **顺带暴露一条规则盲区**:§3 说 feature 可依赖"偏好机制",但偏好机制住在 `features/settings` —— 同层禁互依,
   所以 home 只能自己再写一份 kv + 信封 + 迁移。见 §5。
+- **`features/backup` 重写(队列 #3 第 3 个)**:除编排补齐外,修掉两个真问题 ——
+  (1) 备份摘要是在**上传成功之后**用 `document['manifest']['domains']` 的 cast 链算出来的,manifest 形状一变
+  就会把已经落地的归档报成失败;(2) `listRemote()` 注释说"最新在前",实际返回服务器给的顺序。
+  另加:快照名当**不可信输入**(含 `/`、`\`、`..`、控制字符直接拒 —— 它会变成别人 dav 上的路径分量);
+  `SnapshotRemote` 端口(L0 的 `WebDavBackupStore` 是 final class,原注释"注入传输好测试"根本做不到);
+  `{manifest,payload}` 编解码从 `apps/pure_live/lib/app/user_backup.dart` **收回来一份**(那边仍留着副本,
+  等拆壳波替换),解码拒绝:缺 payload、自称含凭据、不认识的 schema 版本、列了域却没给值。
+  18 测试,包 analyze 0 issue。
 - **查出一类护栏盲区:pub workspace 让"未声明依赖"照样编译。** 逐包 grep `lib/` 里的
   `import 'package:...'` 与 pubspec 对照,14 个包在空 `dependencies:` 的情况下用着别的包 —— 意味着
   §2bis 的依赖图(按 pubspec 测)**系统性少算边**。已把这批能合规的边补进 pubspec:
@@ -91,7 +99,7 @@
 |---|---|---|---|
 | 1 | ~~`features/settings`~~ **已重写 `cd4c96fcb`** | 共享包里写死了一个产品的 5 个偏好键,机制本身反而没有 | 键改为消费方声明的 `PreferenceKey<T>`;带版本信封 `{v,c,value}`;读不抛+回退记账、写拒越界;`putIfAbsent` 承担首启语义;命名空间隔离 App;`importAll` 逐项校验并出报告;变更流 + `dispose` 只关自己的流。95 行 → 约 430 行,`dart analyze` 0 issue |
 | 2 | ~~`features/search`~~ **已重写(本轮)** | 只有历史记录容器 | 查询规范化、跨 App 一致的排序、容量上限与淘汰、与 `services/search` 聚合器的取消语义 —— 全部落地,详见 §2 |
-| 3 | `features/home` `account` **已重写** / `backup` `live` `vod` ~~`music`~~ `iptv` `recorder` 待做 | 每包 58–191 行,domain 有形状、data 缺失 | 按 §6 补齐:data 边界 + 具名错误 + 资源释放;presentation 留给 UI 波。`music` 卡在 §2bis 的 L4→L5 直连 provider,要先定注入形状 |
+| 3 | `features/home` `account` `backup` **已重写** / `live` `vod` ~~`music`~~ `iptv` `recorder` 待做 | 每包 58–191 行,domain 有形状、data 缺失 | 按 §6 补齐:data 边界 + 具名错误 + 资源释放;presentation 留给 UI 波。`music` 卡在 §2bis 的 L4→L5 直连 provider,要先定注入形状 |
 | 4 | `ui/design` → `ui/ui_kit` → `ui/adaptive` | 令牌只有 spacing/radius,组件 4 个,风格注册表无焦点/密度维度 | 令牌全集(色/距/圆/高/动效/字焦/密度)、`AppNotice`/`AppDialog`/`AppLoading`/空错态门面、D-pad 焦点序与 TV 尺寸 |
 | 5 | `ui/lyric` `ui/player_ui` | 单文件适配 | 时间轴同步、句柄所有权、与 `integrations/media` 的状态订阅边界 |
 | 6 | `services/search` `services/feed` | 聚合器只有扇出 | 分页模式(§契约三态)、部分结果策略、取消传播、失败记账的可诊断形状 |

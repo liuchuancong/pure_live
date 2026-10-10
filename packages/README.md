@@ -77,7 +77,7 @@
 | `features/search`(pure_live_search_feature) | search_term / search_history(接口)/ stored_search_history / search_result_order / search_controller | **无 App 消费者**(等拆壳波)| ✅ 重写完成:折叠键统一"同一次搜索"、信封带版本与 v0 迁移、坏档记账不装作没搜过、结果按内容定序、世代栅栏丢弃被取代的答案;22 测试 |
 | `features/home` | home_tab / home_layout_repository / home_layout_service / stored_home_layout | **无 App 消费者**(等拆壳波) | ✅ 重写完成:排序与默认可见性分职、按 App 命名信封落盘、坏行记账、18 测试 |
 | `features/account` | site_account(视图+接口)/ credential_site_accounts | **无 App 消费者**(等拆壳波) | ✅ 重写完成:假句柄与"按 last 登出"两个真缺陷修掉、状态三分(过期可刷/禁用/无账号)、密钥体积上限,10 测试 |
-| `features/backup`(pure_live_backup_feature) | webdav_backup_service | **无** | ⚠️ 与 foundation/backup 的分工没写清 |
+| `features/backup`(pure_live_backup_feature) | backup_reports / snapshot_remote(端口)/ webdav_snapshot_remote / backup_document / webdav_backup_service | **无 App 消费者**(apps/pure_live 仍自带一份 `{manifest,payload}` 编解码) | ✅ 重写完成:分工写清(端口换 final class 的可测性、报告是数据、快照名守路径逃逸),18 测试 |
 | `features/recorder` | recording_task | **无** | ⚠️ |
 | `providers/huya` | huya_source / huya_signing(antiCode) | app | ✅ |
 | `providers/bilibili` | bilibili_vod_source / bili_wbi | app | ✅ 只有 vod 面;live 面未做 |
