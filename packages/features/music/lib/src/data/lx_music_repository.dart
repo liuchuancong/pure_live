@@ -1,55 +1,86 @@
 // Module: lib/src/data/lx_music_repository.dart
-// Purpose: The music domain's repository over one lx source host: resolve a
-// song ref to its play url, lyric or cover through the script's handler.
+// Purpose: The music domain's repository over one script host: resolve a song to its url, lyric or cover.
 // Author: liuchuancong
 // Created: 2026-10-10
 //
-// The lx host (providers/music) speaks {action, source, info}; this repository
-// is where the music domain's ContentRef vocabulary maps onto that call. A
-// music ContentRef is expected to carry its lx source key and quality in
-// metadata, which is what makes a queue entry survive restarts without
-// re-resolving its source assignment.
+// The music ContentRef carries its lx source key and quality in metadata, which is what lets a queue entry
+// survive a restart without re-deriving which source it came from. This file is where that metadata contract
+// is read - once, in one place, with the failure named when a ref arrives without it.
+//
+// An earlier version threw a bare StateError for a ref with no `lxSource` and returned nulls that could mean
+// three different things. A missing source key is the ref being built wrong (a programming error worth
+// raising), while no lyric is a normal answer, so the two are separated here rather than flattened.
 
-import 'package:pure_live_music/pure_live_music.dart';
 import 'package:pure_live_platform/pure_live_platform.dart';
+import 'package:pure_live_utils/pure_live_utils.dart' show stringOrNull;
 
-/// Resolves music refs through one attached lx source host.
+import '../domain/music_source_bridge.dart';
+
+/// The metadata key holding the lx source a song came from.
+const String kMusicSourceKey = 'lxSource';
+
+/// The metadata key holding the quality label to request.
+const String kMusicQualityKey = 'quality';
+
+/// The quality asked for when a reference did not say.
+const String kMusicDefaultQuality = '128k';
+
+/// Resolves music references through one attached script host.
 final class LxMusicRepository {
-  LxMusicRepository({required this.host});
+  const LxMusicRepository({required MusicSourceBridge bridge}) : _bridge = bridge;
 
-  final MusicSourceScriptHost host;
+  final MusicSourceBridge _bridge;
 
-  /// The play url for [ref]. Expected metadata: `lxSource` (the source key
-  /// the script announced, for example wy), optional `quality` (lx quality
-  /// vocabulary, default 128k).
-  Future<String> resolveUrl(ContentRef ref) {
-    final source = '${ref.metadata['lxSource'] ?? ''}';
-    if (source.isEmpty) {
-      throw StateError('music ref ${ref.contentId} does not name its lx source');
+  /// The play url for [ref].
+  ///
+  /// Throws [MusicSourceFailure] when the ref does not name its source: that ref cannot be played by
+  /// anything, and returning null would put it in the same bucket as "this source has no such song".
+  Future<String> resolveUrl(ContentRef ref) async {
+    final (source, id, quality) = _arguments(ref);
+    final url = await _bridge.musicUrl(source: source, songId: id, quality: quality);
+    if (url.isEmpty) {
+      throw MusicSourceFailure('$source returned an empty play url for $id at $quality');
     }
-    return host.musicUrl(source, ref.contentId, '${ref.metadata['quality'] ?? '128k'}');
+    return url;
   }
 
-  /// The lyric text for [ref], when its source serves lyric.
-  Future<String?> lyric(ContentRef ref) {
-    return host.lyric('${ref.metadata['lxSource'] ?? ''}', ref.contentId);
+  /// The lyric text for [ref], or null when the source serves none.
+  Future<String?> lyric(ContentRef ref) async {
+    final (source, id, _) = _arguments(ref);
+    return _bridge.lyric(source: source, songId: id);
   }
 
-  /// The cover url for [ref], when its source serves pic.
-  Future<String?> cover(ContentRef ref) {
-    return host.pic('${ref.metadata['lxSource'] ?? ''}', ref.contentId);
+  /// The cover url for [ref], or null when the source serves none.
+  Future<String?> cover(ContentRef ref) async {
+    final (source, id, _) = _arguments(ref);
+    return _bridge.cover(source: source, songId: id);
   }
 
-  /// The sources the script announced that answer musicUrl, as
-  /// {source key, quality list}. Null until the script called lx.send('inited').
+  /// The sources that answer musicUrl, as {source key, qualities}, or null while the script has not
+  /// announced anything.
   Map<String, List<String>>? availableSources() {
-    final announced = host.announced;
+    final announced = _bridge.announcedSources;
     if (announced == null) {
       return null;
     }
     return <String, List<String>>{
-      for (final entry in announced.sources.entries)
-        if (entry.value.serves('musicUrl')) entry.key: entry.value.qualitys,
+      for (final entry in announced.entries)
+        if (entry.value.servesMusicUrl) entry.key: entry.value.qualities,
     };
+  }
+
+  /// True once the host has announced its sources, for a surface that shows a loading row instead of an
+  /// empty one.
+  bool get isReady => _bridge.announcedSources != null;
+
+  (String, String, String) _arguments(ContentRef ref) {
+    final source = stringOrNull(ref.metadata[kMusicSourceKey]);
+    if (source == null) {
+      throw MusicSourceFailure(
+        'music ref ${ref.sourceId}/${ref.contentId} does not name its $kMusicSourceKey, so no source can serve it',
+      );
+    }
+    final quality = stringOrNull(ref.metadata[kMusicQualityKey]) ?? kMusicDefaultQuality;
+    return (source, ref.contentId, quality);
   }
 }

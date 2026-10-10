@@ -1,6 +1,6 @@
 # GENERATED-BY: tool/scaffold_package.ps1
 name: pure_live_music_feature
-description: "Feature package: music (repository + presentation skeleton per package-architecture.md)"
+description: "Feature package: music(播放队列的提议/提交与 lx 源桥接端口)"
 publish_to: none
 resolution: workspace
 
@@ -11,3 +11,8 @@ environment:
 dependencies:
   pure_live_platform:
     path: ../../ecosystem/platform
+  pure_live_utils:
+    path: ../../foundation/utils
+
+dev_dependencies:
+  test: ^1.26.0

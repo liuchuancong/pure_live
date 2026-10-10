@@ -72,7 +72,7 @@
 | `features/settings`(pure_live_settings) | preference_key(键/codec/校验)+ preferences_store(信封/命名空间/导入/变更流) | **无** | 🟡 刚重写成机制;等 App 声明键 |
 | `features/live` | live_session(不可变选流状态机:两轴已提交选择 + 带身份的切换尝试) | **无 App 消费者** | ✅ 重写完成:迟到回调不再能改写选择、按轴独立、未提供的变体具名拒绝;13 测试 |
 | `features/vod` | episode_navigator(不可变连播队列)/ watch_progress(双阈值续播) | **无 App 消费者** | ✅ 重写完成:按 (source,id) 匹配修好连播静默失效、含 `/` 的 id 不再撞行、看完不再续到 99%,20 测试 |
-| `features/music`(pure_live_music_feature) | music_queue / lx_music_repository | **无** | ⚠️ 等 pure_music |
+| `features/music`(pure_live_music_feature) | music_queue(不可变)/ music_source_bridge(端口)/ lx_music_repository | **无 App 消费者**;`pure_music` 壳还不存在 | ✅ 重写完成:L4→L5 直连 provider 改成端口注入、删歌跳曲与过期 step 修好,23 测试。**端口目前没有实现** |
 | `features/iptv`(pure_live_iptv_feature) | zap_channel / channel_zapper(不可变)/ epg_window | **无 App 消费者** | ✅ 重写完成:空 url 条目不再崩、换组不跳台、`visible()` 不再漏内部 list、EPG 向上取整,24 测试 |
 | `features/search`(pure_live_search_feature) | search_term / search_history(接口)/ stored_search_history / search_result_order / search_controller | **无 App 消费者**(等拆壳波)| ✅ 重写完成:折叠键统一"同一次搜索"、信封带版本与 v0 迁移、坏档记账不装作没搜过、结果按内容定序、世代栅栏丢弃被取代的答案;22 测试 |
 | `features/home` | home_tab / home_layout_repository / home_layout_service / stored_home_layout | **无 App 消费者**(等拆壳波) | ✅ 重写完成:排序与默认可见性分职、按 App 命名信封落盘、坏行记账、18 测试 |

@@ -90,6 +90,15 @@
   另加 `fileName` 路径校验(宿主把它拼到录制目录后)、三处 `DateTime.now()` 换成注入 `Clock`
   (不然这些规则根本没法测)、id 在转换间保持稳定。13 测试。
   `lib/src/data/` 仍空是刻意的:引擎在录制波次,状态契约先立住就没有第二套真相。
+- **`features/music` 重写(队列 #3 第 8 个,除决策外全部做完)**:**那条 L4→L5 直连我自己按可逆方案解掉了** ——
+  包 README 之前甚至写着"源解析走 providers/music(lx-music 源直接导入)",而同一个文件的禁止依赖行又禁止它。
+  新增 `MusicSourceBridge` 端口(四个问题 + `MusicSourceQualities`),`LxMusicRepository` 只认端口,
+  **适配器留给装载 lx 脚本的那个 App 的组合根**;将来若判定这形状该共享,端口原样搬去 ecosystem 就行。
+  队列侧修掉三个真缺陷:删光标之前的歌会**静默跳过一首**;走到末尾被报成 `queueEmpty`(实为 `atEnd`);
+  已过期的 step 仍可 commit,把光标挪到"现在坐在那儿的另一首歌"。现在队列不可变、commit 校验歌还在原位,
+  越界索引具名拒绝。23 测试。
+  **已知空白**:`MusicSourceBridge` **还没有任何实现**,因为 `apps/` 里只有 `pure_live` —— 形状要等 pure_music
+  建起来才能验;这条记进 §5。
 
 - **查出一类护栏盲区:pub workspace 让"未声明依赖"照样编译。** 逐包 grep `lib/` 里的
   `import 'package:...'` 与 pubspec 对照,14 个包在空 `dependencies:` 的情况下用着别的包 —— 意味着
@@ -97,9 +106,9 @@
   `features/{account→auth, backup→backup, recorder→platform, vod→platform+storage, settings→storage,
   music→platform, search→platform+search+storage+utils}`、`ui/adaptive→flutter(sdk)`、
   `foundation/cache→path`、`ecosystem/plugin_host→path`、`integrations/python_runtime→path`。
-  **剩下 3 条故意没补**,因为补了就是在给未批准的边发护照,需要你先定规则:
-  1. `features/music` → `providers/music`(L4→L5,**规则明写"providers 经注册表消费",不得直连**)
-     —— 要么改成组合根注入,要么删掉那段代码;
+  **起初剩下 3 条故意没补**,因为补了就是在给未批准的边发护照;现在第 1 条已经解掉,还剩 2 条要你先定规则:
+  1. ~~`features/music` → `providers/music`~~ **已消除**:改成 `MusicSourceBridge` 端口 + 组合根适配器
+     (见上面的 music 条目),import 不再存在;
   2. `ui/adaptive` → `ui/design`(L3 同层,§3 只写了 `ui_kit→design` 一条)—— 是把 design 定为
      "ui 层人人可用"的叶子,还是给 adaptive 加白名单;
   3. `ecosystem/external_tvbox` → `ecosystem/plugin_api`(L1 同层,§4 无此例外)。
@@ -143,7 +152,7 @@
 |---|---|---|---|
 | 1 | ~~`features/settings`~~ **已重写 `cd4c96fcb`** | 共享包里写死了一个产品的 5 个偏好键,机制本身反而没有 | 键改为消费方声明的 `PreferenceKey<T>`;带版本信封 `{v,c,value}`;读不抛+回退记账、写拒越界;`putIfAbsent` 承担首启语义;命名空间隔离 App;`importAll` 逐项校验并出报告;变更流 + `dispose` 只关自己的流。95 行 → 约 430 行,`dart analyze` 0 issue |
 | 2 | ~~`features/search`~~ **已重写(本轮)** | 只有历史记录容器 | 查询规范化、跨 App 一致的排序、容量上限与淘汰、与 `services/search` 聚合器的取消语义 —— 全部落地,详见 §2 |
-| 3 | `features/home` `account` `backup` `live` `vod` `iptv` `recorder` **已重写** / ~~`music`~~ 待做 | 每包 58–191 行,domain 有形状、data 缺失 | 按 §6 补齐:data 边界 + 具名错误 + 资源释放;presentation 留给 UI 波。`music` 卡在 §2bis 的 L4→L5 直连 provider,要先定注入形状 |
+| 3 | `features/home` `account` `backup` `live` `vod` `iptv` `recorder` `music` **全部重写完成** | 每包原 58–191 行,domain 有形状、data 缺失 | 按 §6 补齐:data 边界 + 具名错误 + 资源释放;presentation 留给 UI 波。`music` 的 L4→L5 直连已改端口注入 |
 | 4 | `ui/design` → `ui/ui_kit` → `ui/adaptive` | 令牌只有 spacing/radius,组件 4 个,风格注册表无焦点/密度维度 | 令牌全集(色/距/圆/高/动效/字焦/密度)、`AppNotice`/`AppDialog`/`AppLoading`/空错态门面、D-pad 焦点序与 TV 尺寸 |
 | 5 | `ui/lyric` `ui/player_ui` | 单文件适配 | 时间轴同步、句柄所有权、与 `integrations/media` 的状态订阅边界 |
 | 6 | `services/search` `services/feed` | 聚合器只有扇出 | 分页模式(§契约三态)、部分结果策略、取消传播、失败记账的可诊断形状 |
@@ -175,6 +184,9 @@
   (只有 `MediaTicket` 有)。所以 `features/live` 只能自带 `StreamVariant` 词汇,站点适配写出来时也要各写一份映射。
   要么把这些类型落进 platform 伞包(并让契约测试按它们断言),要么改契约用现有类型 —— 在有人实现
   `LiveCapability` 之前必须先定,否则第一个 provider 会把这坨差异固化成三四个方言。
+- **`features/music` 的端口还没有实现者。** `MusicSourceBridge` 是为消除 L4→L5 直连而造的接缝,
+  但 `apps/` 目录里现在**只有 `pure_live`** —— pure_music 壳不存在,所以没有一个适配器来实现它。
+  端口形状够用与否要等那个壳建起来才能验;若届时发现形状不对,改的是适配器不是域模型,这是选可逆方案的理由。
 - **未跑任何 app 侧验证**:`apps/pure_live` 的 `flutter test` 需要 `native-assets/` 预取件
   (BUILD_POLICY §3 的顺序契约),本轮没跑;包重写以 `dart analyze` + 护栏为门。
 - **五个被删的 provider 若将来要接**:按 §3 第 8 行的形状重新建包,不要恢复空壳。
