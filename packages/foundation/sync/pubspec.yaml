@@ -9,7 +9,9 @@ environment:
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
 dependencies:
-  # utils is one of the two L0 leaves every package may use; it supplies the Clock seam.
+  # The two L0 leaves every package may use: utils supplies the Clock seam, logging the coordinator's warning.
+  pure_live_logging:
+    path: ../logging
   pure_live_utils:
     path: ../utils
 

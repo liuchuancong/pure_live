@@ -11,4 +11,6 @@
 /// approved exception, but the vendor SDK is bound by the application so this package stays testable.
 library;
 
+export 'src/coordinator.dart';
+export 'src/local_store.dart';
 export 'src/sync_engine.dart';

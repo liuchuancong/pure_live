@@ -3,6 +3,22 @@
 All notable changes to this package are documented here. Version numbers are managed by the
 repository-wide release train, see docs/architecture/package-architecture.md section 3.
 
+## Unreleased
+
+- `pullAll`: walks pages until the remote runs out, the cap is reached, or the cursor stops advancing, and the
+  report says which (`SyncStopReason`, `pages`, `isCapped`). Without the no-advance check a remote that answers
+  every page with the cursor it was given turns the walk into an infinite download that looks like a sync.
+- `SyncReport` names the conflicted keys (bounded by `conflictKeyLimit`) instead of only counting them, so a UI
+  can say which two rows kept the cloud version, and `merge` lets a paged pass report one total.
+- `SyncCoordinator`: debounced `request()` (five edits are one pass), single-flight so two triggers never run
+  two passes, exponential backoff with a ceiling after a failure, a bounded failure ledger, and a `stop()` that
+  does not rethrow an in-flight failure at the caller that only asked to shut down.
+- `local_store.dart`: `MemoryLocalStore`, `PendingQueue` and `TombstonePolicy`. Without one working
+  implementation every test writes its own port and each forgets a different edge - usually the tombstone,
+  which is the difference between "the other device deletes what the user deleted" and the two stores never
+  agreeing again.
+- `pubspec.yaml`: the `logging` leaf added, for the coordinator's warning line.
+
 ## Unreleased (2026-10-10, cursor and rejection pass)
 
 - **Breaking**: `RemoteStore.fetchSince` returns a `RemoteBatch` (records **plus the cursor to continue

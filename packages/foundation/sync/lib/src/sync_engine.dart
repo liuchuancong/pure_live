@@ -107,12 +107,22 @@ final class SyncReport {
     required this.refusedCredentials,
     this.rejected = 0,
     this.nextCursor,
+    this.conflictKeys = const <String>[],
+    this.pages = 1,
+    this.stopReason,
   });
+
+  /// How many conflicted keys one report names. A sync over a 5000-row library that resolved half of them
+  /// would otherwise carry a list the size of the store into a toast message.
+  static const int conflictKeyLimit = 64;
 
   final int applied;
 
   /// Keys that differed on both sides and were resolved by [SyncEngine.policy].
   final int conflicts;
+
+  /// Which keys those were, up to [conflictKeyLimit], so a UI can name them instead of printing a number.
+  final List<String> conflictKeys;
 
   final int pushed;
 
@@ -131,13 +141,71 @@ final class SyncReport {
   /// fed the report back into the next pull silently restarted full history every single time.
   final SyncCursor? nextCursor;
 
+  /// How many pages a pull walk consumed. Always 1 for [SyncEngine.pull].
+  final int pages;
+
+  /// Why a paged pull stopped, or null for a single-page pass.
+  final SyncStopReason? stopReason;
+
   /// The cursor to continue from, keeping [previous] when this pass learned nothing.
   SyncCursor cursorAfter(SyncCursor previous) => nextCursor ?? previous;
+
+  /// True when the walk hit [SyncStopReason.pageCap], meaning the remote has more and this pass did not take
+  /// it. A caller that treats a capped pass as "fully synced" will never finish.
+  bool get isCapped => stopReason == SyncStopReason.pageCap;
+
+  SyncReport merge(SyncReport other) {
+    final keys = <String>[...conflictKeys, ...other.conflictKeys];
+
+    return SyncReport(
+      applied: applied + other.applied,
+      conflicts: conflicts + other.conflicts,
+      conflictKeys: keys.length <= conflictKeyLimit
+          ? List<String>.unmodifiable(keys)
+          : List<String>.unmodifiable(keys.take(conflictKeyLimit)),
+      pushed: pushed + other.pushed,
+      refusedCredentials: refusedCredentials + other.refusedCredentials,
+      rejected: rejected + other.rejected,
+      nextCursor: other.nextCursor ?? nextCursor,
+      pages: pages + other.pages,
+      stopReason: other.stopReason,
+    );
+  }
+
+  /// The same report with the walk's ending recorded.
+  SyncReport withStop(SyncStopReason reason, int pagesTaken) => SyncReport(
+    applied: applied,
+    conflicts: conflicts,
+    conflictKeys: conflictKeys,
+    pushed: pushed,
+    refusedCredentials: refusedCredentials,
+    rejected: rejected,
+    nextCursor: nextCursor,
+    pages: pagesTaken,
+    stopReason: reason,
+  );
 
   @override
   String toString() =>
       'SyncReport(applied=$applied, conflicts=$conflicts, pushed=$pushed, '
-      'refusedCredentials=$refusedCredentials, rejected=$rejected, nextCursor=$nextCursor)';
+      'refusedCredentials=$refusedCredentials, rejected=$rejected, pages=$pages, nextCursor=$nextCursor'
+      '${stopReason == null ? '' : ', stopped=${stopReason!.name}'})';
+}
+
+/// Why a paged pull walk ended.
+enum SyncStopReason {
+  /// The remote sent an empty page: everything known is local.
+  exhausted,
+
+  /// The remote answered with the cursor it was given, so another page would repeat the same rows.
+  /// A pull that loops here is a download that never ends.
+  noAdvance,
+
+  /// [SyncEngine.pullAll]'s page cap was reached with more still owed.
+  pageCap,
+
+  /// The caller cancelled.
+  cancelled,
 }
 
 /// Moves records between a local store and a remote one.
@@ -198,6 +266,7 @@ final class SyncEngine {
     final existing = await local.readAll();
     final accepted = <SyncRecord>[];
     var conflicts = 0;
+    final conflictKeys = <String>[];
     for (final record in safe) {
       final localRecord = existing[record.key];
       if (localRecord == null) {
@@ -206,6 +275,9 @@ final class SyncEngine {
       }
       if (_remoteWins(localRecord, record)) {
         conflicts++;
+        if (conflictKeys.length < SyncReport.conflictKeyLimit) {
+          conflictKeys.add(record.key);
+        }
         accepted.add(record);
       }
     }
@@ -215,12 +287,58 @@ final class SyncEngine {
     return SyncReport(
       applied: accepted.length,
       conflicts: conflicts,
+      conflictKeys: List<String>.unmodifiable(conflictKeys),
       pushed: 0,
       refusedCredentials: refused,
       rejected: rejected,
       nextCursor: _advance(from, batch.cursor),
     );
   }
+
+  /// Walks pages until the remote runs out, the cap is hit, or the cursor stops advancing.
+  ///
+  /// The no-advance check is the reason this is a loop and not a caller's `while`: a remote that answers every
+  /// page with the cursor it was given is a common broken implementation, and without the check the walk is an
+  /// infinite download that looks exactly like a sync in progress.
+  Future<SyncReport> pullAll({
+    SyncCursor from = SyncCursor.start,
+    int maxPages = 32,
+    bool Function()? isCancelled,
+    void Function(int page, SyncCursor at)? onPage,
+  }) async {
+    if (maxPages < 1) {
+      throw ArgumentError.value(maxPages, 'maxPages', 'must allow at least one page');
+    }
+    var cursor = from;
+    SyncReport? total;
+    for (var page = 1; page <= maxPages; page++) {
+      if (isCancelled != null && isCancelled()) {
+        return (total ?? _emptyReport(cursor)).withStop(SyncStopReason.cancelled, page - 1);
+      }
+      final report = await pull(from: cursor);
+      onPage?.call(page, report.nextCursor ?? cursor);
+      total = total == null ? report : total.merge(report);
+      final next = report.nextCursor;
+      if (next == null) {
+        // Nothing advanced: either the remote is done with this cursor or it echoed it back. Distinguish by
+        // asking whether anything was applied - a page of rows with no cursor is the broken remote.
+        return total.withStop(report.applied == 0 ? SyncStopReason.exhausted : SyncStopReason.noAdvance, page);
+      }
+      cursor = next;
+      if (report.applied == 0 && report.rejected == 0 && report.refusedCredentials == 0 && page > 1) {
+        return total.withStop(SyncStopReason.exhausted, page);
+      }
+    }
+    return (total ?? _emptyReport(cursor)).withStop(SyncStopReason.pageCap, maxPages);
+  }
+
+  static SyncReport _emptyReport(SyncCursor cursor) => SyncReport(
+    applied: 0,
+    conflicts: 0,
+    pushed: 0,
+    refusedCredentials: 0,
+    nextCursor: cursor.isStart ? null : cursor,
+  );
 
   /// Pushes local changes and returns the cursor that reflects the remote afterwards.
   Future<SyncReport> push({SyncCursor known = SyncCursor.start}) async {
