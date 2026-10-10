@@ -8,12 +8,31 @@
 // release with version/date/changelog and a files array of {name, url}. The
 // platform asset is picked by name pattern, newest entry wins, and entries
 // whose version fails to parse are skipped rather than poisoning the choice.
+//
+// The fetch is a seam, not a client: this package is L0 and its README forbids one foundation package
+// depending on another, so pure_live_network stays with the composition root that binds [UpdateFeedTransport].
 
+import 'dart:async';
 import 'dart:convert';
 
-import 'package:pure_live_network/pure_live_network.dart';
-
 import 'version.dart';
+
+/// How the feed answered one read.
+final class UpdateFeedResponse {
+  const UpdateFeedResponse({required this.statusCode, required this.body});
+
+  final int statusCode;
+  final String body;
+}
+
+/// Where [UpdateChecker] reads its feed from.
+abstract interface class UpdateFeedTransport {
+  Future<UpdateFeedResponse> fetch(String url);
+}
+
+/// One feed read's budget. The settings screen awaits this before it shows anything, so without a deadline a
+/// silent host leaves the "checking" notice up for as long as the transport's own timeout allows.
+const Duration kDefaultUpdateFeedTimeout = Duration(seconds: 15);
 
 /// The platform an update asset is picked for.
 enum UpdateTarget { android, windows, linux, macos }
@@ -105,25 +124,33 @@ final class UpdateCheckResult {
 
 /// Fetches and decodes the feed, then answers one [UpdateCheckResult].
 final class UpdateChecker {
-  UpdateChecker({required this.feedUrl, NetworkClient? client, this.target = UpdateTarget.android})
-    : _client = client ?? NetworkClient();
+  UpdateChecker({
+    required this.feedUrl,
+    required this.transport,
+    this.target = UpdateTarget.android,
+    this.timeout = kDefaultUpdateFeedTimeout,
+  });
 
   final String feedUrl;
   final UpdateTarget target;
-  final NetworkClient _client;
+  final UpdateFeedTransport transport;
+  final Duration timeout;
 
+  /// Never throws: an update check that fails must not take the screen that asked for it down, so every
+  /// failure - transport, deadline, status, malformed body - lands in [UpdateCheckResult.error].
   Future<UpdateCheckResult> check(AppVersion current) async {
     try {
-      final response = await _client.get(feedUrl, headers: const <String, String>{'accept': 'application/json'});
-      final status = response.statusCode ?? 0;
-      if (status < 200 || status >= 300) {
-        return UpdateCheckResult(current: current, error: 'feed status $status');
+      final response = await transport.fetch(feedUrl).timeout(timeout);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return UpdateCheckResult(current: current, error: 'feed status ${response.statusCode}');
       }
-      final entry = newestEntry(response.data ?? '');
+      final entry = newestEntry(response.body);
       if (entry == null) {
         return UpdateCheckResult(current: current, error: 'feed carried no parsable release');
       }
       return UpdateCheckResult(current: current, entry: entry, asset: entry.assetFor(target));
+    } on TimeoutException {
+      return UpdateCheckResult(current: current, error: 'feed did not answer within ${timeout.inSeconds}s');
     } catch (error) {
       return UpdateCheckResult(current: current, error: '$error');
     }
@@ -164,6 +191,4 @@ final class UpdateChecker {
     }
     return null;
   }
-
-  void dispose() => _client.close();
 }

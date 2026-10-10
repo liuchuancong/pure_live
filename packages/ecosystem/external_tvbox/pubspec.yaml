@@ -14,5 +14,10 @@ dependencies:
     path: ../../foundation/network
   pure_live_js_runtime:
     path: ../js_runtime
+  # Building a spider sandbox means naming SandboxPolicy and SandboxUnit, which are the plugin_api sandbox
+  # contract rather than the js_runtime host. Same one-domain edge as the JS host's own dependency on it
+  # (docs/architecture/dependency-rules.md §4, docs/plugin/js-plugin.md).
+  pure_live_plugin_api:
+    path: ../plugin_api
   pure_live_platform:
     path: ../platform

@@ -24,7 +24,7 @@
 | `sync` → pure_live_sync | sync_engine(拉/推 + 墓碑 + 游标 + 冲突策略) | **无** | ✅ 修了「游标回显 → 每次全量重拉」与空闲 push 谎报起点;拒绝行计数;18 测试 |
 | `l10n` → pure_live_l10n | locale / translation_bundle | **无** | ⚠️ 零消费者(app 侧本地化未接) |
 | `platform_info` → pure_live_platform_info | platform_info(能力矩阵 + 探测) | **无** | ✅ 未识别系统不再借用 web 的乐观答案(新增 `unknown` 全 false 底线);web 输入方式改为显式传入;21 测试 |
-| `release` → pure_live_release | version / update_feed | app | ✅ |
+| `release` → pure_live_release | version / update_feed (+新 `UpdateFeedTransport` 端口) | app | ✅ 把本包对 `pure_live_network`的隐形依赖换成注入端口(L0 不得依赖 L0,原引用藏在 dev_dependencies 里);feed 读取加 15s 死线与首次测试;28 测试 |
 
 ## 2. L0.5 integrations(3)
 
@@ -48,7 +48,7 @@
 | `plugin_api` → pure_live_plugin_api | manifest_validator / lifecycle / plugin_runtime / host_bridge / sandbox | js_runtime, plugin_host | 🔴 悬空(无 App 装配) |
 | `plugin_host` → pure_live_plugin_host | plugin_bundle / plugin_store | **无**(栈仍悬空,等宿主 App) | 🟡 修了 id `..` 能让 `uninstall` 递归删到应用数据目录 + 读取加体积上限;5 测试 |
 | `js_runtime` → pure_live_js_runtime | fjs_sandbox / js_plugin_runtime / js_prelude | external_tvbox, providers/music | 🔴 悬空(等 pure_tvbox / pure_music) |
-| `external_tvbox` → pure_live_external_tvbox | spider_contract / spider_vod_provider / js_spider_handle / js_drpy_spider_handle / tvbox_repository / tvbox_repo_fetcher / data_source_runtime | providers/iptv, python_runtime(互依,已白名单) | 🔴 悬空,整体归 `pure_tvbox` |
+| `external_tvbox` → pure_live_external_tvbox | spider_contract / spider_vod_provider / js_spider_handle / js_drpy_spider_handle / tvbox_repository / tvbox_repo_fetcher / data_source_runtime | providers/iptv, python_runtime(互依,已白名单);它自己声明了 plugin_api(沙箱契约,一直只在 import 里存在,现已补声明并进 §4 白名单) | 🔴 悬空,整体归 `pure_tvbox` |
 
 ## 3bis. L2 services(5)/ L3 ui(5)
 
@@ -108,4 +108,6 @@
 - 删除要同时改根 `pubspec.yaml` 的 `workspace:` 列表,并清 `packages/<层>/<名>` 下 pub 生成的
   `.dart_tool/` 残留,否则护栏会报 `unregistered-package` 的反向问题。
 - 层级方向与 App 边界由 `dart run tool/check_architecture.dart --strict` 强制,白名单在
-  [docs/architecture/dependency-rules.md](../docs/architecture/dependency-rules.md) §4。
+  [docs/architecture/dependency-rules.md](../docs/architecture/dependency-rules.md) §4。同一把护栏现在还比对
+  `lib/` 里的 import 与 pubspec 声明(§4.1 `undeclared-dependency`):workspace 会让未声明的 import 照样解析,
+  所以本表的「消费者」列此前系统性少报真实边 —— 现在漏声明会让 CI 变红,列才是可信的。

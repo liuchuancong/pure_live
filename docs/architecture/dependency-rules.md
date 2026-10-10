@@ -80,6 +80,21 @@ L5 Providers/Plugins(与 L2-L4 平级,只向下依赖)
 | resolver → capability | `Resolver` 是 `ResolveCapability` 的平台形状,适配器必须能看到被适配的契约(见 [../adr/0021-resolver-capability-edge.md](../adr/0021-resolver-capability-edge.md)) |
 | js_runtime → plugin_api / capability | JS 宿主实现的正是 plugin_api 的沙箱与运行时契约,并把适配器以能力对象交付(见 [../plugin/js-plugin.md](../plugin/js-plugin.md)) |
 | plugin_host → plugin_api | 安装器直接调用 plugin_api 的 Manifest 校验器,权限天花板只有一处裁决(见 [../plugin/plugin-manifest.md](../plugin/plugin-manifest.md)) |
+| external_tvbox → plugin_api | spider 沙箱要命名 `SandboxPolicy`/`SandboxUnit`,那是 plugin_api 的沙箱契约而不是 js_runtime 宿主;与上面 js_runtime → plugin_api 同一条「插件系统与其执行引擎是一个域」的边(见 [../plugin/js-plugin.md](../plugin/js-plugin.md)) |
+
+### 4.1 声明与 import 必须一致(护栏 `undeclared-dependency`)
+
+pub workspace 会把 `package:<成员>/...` 解析到任何 workspace 成员,即使 import 方从没在自己的 pubspec 里声明它。
+而 §3 的方向表只读 pubspec,所以这类边对方向校验完全不可见 —— 目录里统计出来的依赖也因此偏少。护栏于是把每个包
+`lib/` 里的 `package:` import 与它声明的 `dependencies` 逐条比对,缺失的记为 **warning**:构建今天能过,但这是一条
+没被记录的真实依赖。CI 用 `--strict` 跑(见 [.github/workflows/architecture.yml](../../.github/workflows/architecture.yml)),
+warning 同样让流水线变红。
+
+- 只针对 workspace 成员;pub.dev 三方包的声明由 lockfile 与 analyzer 负责,护栏不重复报。
+- **dev_dependencies 不是 `lib/` 的声明**:只在测试里可用的包被生产代码 import,消费者侧必然解析不到。
+  `foundation/release` 曾经这样引用 `pure_live_network`(L0 依赖另一个 L0,README 明令禁止),
+  现在改成包内定义 `UpdateFeedTransport` 端口、由 App 组合根绑定 —— 与 `features/music` 的
+  `MusicSourceBridge`、`foundation/sync` 的 `RemoteStore` 同一个做法:端口不是依赖。
 
 ## 5. 架构不变量(I1-I10)
 

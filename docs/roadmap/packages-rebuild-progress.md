@@ -200,16 +200,25 @@
   `features/{account→auth, backup→backup, recorder→platform, vod→platform+storage, settings→storage,
   music→platform, search→platform+search+storage+utils}`、`ui/adaptive→flutter(sdk)`、
   `foundation/cache→path`、`ecosystem/plugin_host→path`、`integrations/python_runtime→path`。
-  **起初剩下 3 条故意没补**,因为补了就是在给未批准的边发护照;现在已解掉 2 条,只剩最后 1 条要你先定规则:
+  **起初剩下 3 条故意没补**,因为补了就是在给未批准的边发护照;现在 3 条全部收口:
   1. ~~`features/music` → `providers/music`~~ **已消除**:改成 `MusicSourceBridge` 端口 + 组合根适配器
      (见上面的 music 条目),import 不再存在;
   2. ~~`ui/adaptive` → `ui/design`~~ **已解决**:design 定为 ui 层叶子(§3/§4 已改),依赖已声明 ——
      顺带发现 `ui/lyric` 本来就依赖 design,旧那句"只 ui_kit→design"是文档落后;
-  3. `ecosystem/external_tvbox` → `ecosystem/plugin_api`(L1 同层,§4 无此例外)。
-  现在只剩 `external_tvbox → plugin_api` 一条仍**只存在于 import 语句里**,`check_architecture.dart` 看不见它
-  (它读 pubspec)。
-  建议的修法:护栏把 `lib/` 的 import 也解析成边(现在 `checkImports` 只查 `lib/src` 越界与 app 边界),
-  那样未声明依赖会直接成 error。**待你点头再动护栏**,因为那会让 CI 立刻红这 3 条。
+  3. ~~`ecosystem/external_tvbox` → `ecosystem/plugin_api`~~ **已解决**:spider 沙箱命名的
+     `SandboxPolicy`/`SandboxUnit` 是 plugin_api 的契约而不是 js_runtime 的宿主,与已白名单的
+     `js_runtime → plugin_api` 同一条"插件系统与其执行引擎是一个域"的边,所以依赖已声明、进 §4 白名单、
+     护栏不再报错。若要否决这条边,撤回是机械的:删 §4 那一行与 pubspec 那 4 行,它会重新变成 §4.1 的 warning。
+- **护栏新增 `undeclared-dependency`(§4.1)**:`checkImports` 过去只看越界 import 与 app 边界,现在把
+  `lib/` 里每个 `package:<成员>/` 与该包 pubspec 的 `dependencies` 比对,缺声明记 warning;CI 跑 `--strict`,
+  warning 即红。首跑实测出 **2 条真隐藏边**:上面那条 tvbox 边,以及 `foundation/release` →
+  `pure_live_network`(声明在 **dev_dependencies** 里,`lib/` 却 import 它 —— L0 依赖 L0,包自己 README 明令禁止,
+  写在 dev_dependencies 只是为了躲开方向表)。**修法不是补声明**:release 改为定义 `UpdateFeedTransport` 端口,
+  App 组合根 `apps/pure_live/lib/app/update_transport.dart` 绑定 runtime 已有的 `NetworkClient`;顺带修掉
+  `UpdateChecker` 每次检查新建一个 HttpClient 却没人调 `dispose()` 的泄漏,并给 feed 读取加 15s 截止线
+  (设置页 `await` 之后才弹结果)。release 新增 `test/update_feed_test.dart`(28 测试;此前该文件零测试)。
+  回归:`tool/test_check_architecture.ps1` 加 4 例(未声明→warning、`--strict`→失败、补声明→静默、
+  pub.dev 三方 import→不归护栏管),30 例 / 33 断言全过,真仓 `--strict` `packages=55 errors=0 warnings=0`。
 
 - **`foundation/utils` 从 5 个模块扩到 13 个**(`async_tools`→`async`,新增 errors / conversion / numbers /
   types / validation / equality / identifiers / math,`result` 拆出 `result_sequence`)。每个新模块对应一次

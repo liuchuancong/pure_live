@@ -21,6 +21,7 @@ import 'package:pure_live_design/pure_live_design.dart';
 
 import '../../app/appearance.dart';
 import '../../app/di.dart';
+import '../../app/update_transport.dart';
 import '../../app/user_backup.dart';
 
 final class SettingsPage extends ConsumerWidget {
@@ -280,7 +281,13 @@ UpdateTarget _currentTarget() {
 Future<void> _checkUpdate(BuildContext context, WidgetRef ref) async {
   final messenger = ScaffoldMessenger.of(context);
   final info = await PackageInfo.fromPlatform();
-  final checker = UpdateChecker(feedUrl: kReleaseFeedUrl, target: _currentTarget());
+  // The checker reads through the runtime's client rather than building its own: pure_live_release is L0 and
+  // cannot depend on the network package, and a client created here would have nobody left to close it.
+  final checker = UpdateChecker(
+    feedUrl: kReleaseFeedUrl,
+    transport: NetworkUpdateFeedTransport(ref.read(runtimeProvider).network),
+    target: _currentTarget(),
+  );
   messenger.showSnackBar(const SnackBar(content: Text('正在检查更新…')));
   final result = await checker.check(AppVersion.parse(info.version));
   if (!context.mounted) {
