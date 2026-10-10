@@ -113,25 +113,9 @@ final class CapabilitySearchAggregator implements SearchAggregator {
     }
 
     // Sources that claimed search but cannot take the call; they are reported, not dropped.
-    final unsearchable = <SearchProviderOutcome>[];
-    final targets = <(SourceId, SearchCapability)>[];
-    for (final entry in _providers.providersFor(CapabilityKind.search)) {
-      if (onlySources != null && !onlySources.contains(entry.sourceId)) {
-        continue;
-      }
-      final provider = entry.provider;
-      if (provider is! SearchCapability) {
-        unsearchable.add(
-          SearchProviderOutcome(
-            sourceId: entry.sourceId,
-            kind: SearchOutcomeKind.failed,
-            detail: 'declares search but is not a SearchCapability',
-          ),
-        );
-        continue;
-      }
-      targets.add((entry.sourceId, provider));
-    }
+    final selected = selectSearchTargets(providers: _providers, onlySources: onlySources);
+    final unsearchable = selected.unsearchable;
+    final targets = selected.targets;
 
     final answered = await Future.wait<SearchProviderOutcome>(
       targets.map((target) => _ask(target.$1, target.$2, query)),
@@ -143,37 +127,168 @@ final class CapabilitySearchAggregator implements SearchAggregator {
     return SearchAggregate(query: query, outcomes: <SearchProviderOutcome>[...unsearchable, ...answered]);
   }
 
-  Future<SearchProviderOutcome> _ask(SourceId sourceId, SearchCapability capability, SearchQuery query) async {
-    final PageResult<ContentSummary> page;
-    try {
-      page = await capability.search(query).timeout(perProviderTimeout);
-    } on TimeoutException {
-      return SearchProviderOutcome(
-        sourceId: sourceId,
-        kind: SearchOutcomeKind.timedOut,
-        detail: 'no answer within ${perProviderTimeout.inMilliseconds}ms',
-      );
-    } catch (error) {
-      return SearchProviderOutcome(sourceId: sourceId, kind: SearchOutcomeKind.failed, detail: '$error');
-    }
+  Future<SearchProviderOutcome> _ask(SourceId sourceId, SearchCapability capability, SearchQuery query) =>
+      askSearchSource(sourceId, capability, query, timeout: perProviderTimeout);
+}
 
-    // A provider may only name its own content; the contract test asserts the same rule, and this is the
-    // copy of it that still holds when the assertion was skipped (a third-party source that shipped anyway).
-    final mine = page.items.where((item) => item.ref.sourceId == sourceId).toList(growable: false);
-    if (mine.isEmpty) {
-      return SearchProviderOutcome(
-        sourceId: sourceId,
-        kind: SearchOutcomeKind.empty,
-        page: page,
-        droppedForeignItems: page.items.length - mine.length,
-      );
-    }
+/// Runs one source's share of a search and classifies what came back.
+///
+/// Public because the live and the collected fan-out are the same rule with a different container; two copies
+/// would mean one of them stops dropping foreign-source items or stops timing out.
+Future<SearchProviderOutcome> askSearchSource(
+  SourceId sourceId,
+  SearchCapability capability,
+  SearchQuery query, {
+  required Duration timeout,
+}) async {
+  final PageResult<ContentSummary> page;
+  try {
+    page = await capability.search(query).timeout(timeout);
+  } on TimeoutException {
     return SearchProviderOutcome(
       sourceId: sourceId,
-      kind: SearchOutcomeKind.answered,
-      items: mine,
+      kind: SearchOutcomeKind.timedOut,
+      detail: 'no answer within ${timeout.inMilliseconds}ms',
+    );
+  } catch (error) {
+    return SearchProviderOutcome(sourceId: sourceId, kind: SearchOutcomeKind.failed, detail: '$error');
+  }
+
+  // A provider may only name its own content; the contract test asserts the same rule, and this is the
+  // copy of it that still holds when the assertion was skipped (a third-party source that shipped anyway).
+  final mine = page.items.where((item) => item.ref.sourceId == sourceId).toList(growable: false);
+  if (mine.isEmpty) {
+    return SearchProviderOutcome(
+      sourceId: sourceId,
+      kind: SearchOutcomeKind.empty,
       page: page,
       droppedForeignItems: page.items.length - mine.length,
     );
+  }
+  return SearchProviderOutcome(
+    sourceId: sourceId,
+    kind: SearchOutcomeKind.answered,
+    items: mine,
+    page: page,
+    droppedForeignItems: page.items.length - mine.length,
+  );
+}
+
+/// The sources a run will ask, plus the ones that claimed search and cannot take the call.
+///
+/// A declared-but-unusable provider is **reported**, not dropped: a missing tile needs a reason a user or a
+/// support attachment can point at.
+({List<(SourceId, SearchCapability)> targets, List<SearchProviderOutcome> unsearchable}) selectSearchTargets({
+  required CapabilityRegistry providers,
+  SearchQuery? query,
+  Iterable<SourceId>? onlySources,
+}) {
+  final wanted = onlySources == null ? null : onlySources.toSet();
+  final targets = <(SourceId, SearchCapability)>[];
+  final unsearchable = <SearchProviderOutcome>[];
+  for (final entry in providers.providersFor(CapabilityKind.search)) {
+    if (wanted != null && !wanted.contains(entry.sourceId)) {
+      continue;
+    }
+    final provider = entry.provider;
+    if (provider is! SearchCapability) {
+      unsearchable.add(
+        SearchProviderOutcome(
+          sourceId: entry.sourceId,
+          kind: SearchOutcomeKind.failed,
+          detail: 'declares search but is not a SearchCapability',
+        ),
+      );
+      continue;
+    }
+    targets.add((entry.sourceId, provider));
+  }
+  return (targets: targets, unsearchable: unsearchable);
+}
+
+/// The next page for one source, or why there is not one.
+///
+/// Fixed-page sources continue by number, cursor sources by token; the mode is what the provider reported, so
+/// guessing which one a source uses is exactly how a continuation repeats the first page and calls it page two.
+sealed class SearchContinuation {
+  const SearchContinuation();
+
+  /// The request to send, or null when the source has nothing more.
+  PageRequest? get request;
+
+  String get reason;
+}
+
+final class HasMorePages implements SearchContinuation {
+  const HasMorePages(this.request, this.page) : super();
+
+  @override
+  final PageRequest request;
+  final int page;
+
+  @override
+  String get reason => 'the source serves fixed pages and reported more';
+}
+
+final class HasMoreCursor implements SearchContinuation {
+  const HasMoreCursor(this.request, this.cursor) : super();
+
+  @override
+  final PageRequest request;
+  final String cursor;
+
+  @override
+  String get reason => 'the source returned a continuation cursor';
+}
+
+final class SourceExhausted implements SearchContinuation {
+  const SourceExhausted(this.request) : super();
+
+  @override
+  final PageRequest? request;
+
+  @override
+  String get reason => 'the source reported no more results';
+}
+
+final class ContinuationUnknown implements SearchContinuation {
+  const ContinuationUnknown(this.detail) : super();
+
+  final String detail;
+
+  @override
+  PageRequest? get request => null;
+
+  @override
+  String get reason => detail;
+}
+
+/// Works out what to ask [outcome]'s source for next.
+SearchContinuation continuationFor(SearchProviderOutcome outcome) {
+  final answer = outcome.page;
+  if (answer == null) {
+    return const ContinuationUnknown('the source never answered, so there is no page to continue');
+  }
+  final request = PageRequest(page: answer.page, pageSize: answer.pageSize);
+  switch (answer.mode) {
+    case PageMode.singleShot:
+      return SourceExhausted(request);
+    case PageMode.cursor:
+      final cursor = answer.nextCursor;
+      if (!answer.hasMore || cursor == null || cursor.trim().isEmpty) {
+        return SourceExhausted(request);
+      }
+      return HasMoreCursor(PageRequest(page: answer.page + 1, pageSize: answer.pageSize, cursor: cursor), cursor);
+    case PageMode.fixedPage:
+      if (!answer.hasMore) {
+        return SourceExhausted(request);
+      }
+      final next = answer.page + 1;
+      if (next < 1) {
+        // A provider that reported a page number it cannot advance (zero or negative) would otherwise loop
+        // back onto the first page forever.
+        return const ContinuationUnknown('the source reported a page number that cannot advance');
+      }
+      return HasMorePages(PageRequest(page: next, pageSize: answer.pageSize), next);
   }
 }

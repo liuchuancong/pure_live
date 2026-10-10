@@ -12,8 +12,11 @@
 ## 结构
 
 - `pubspec.yaml` / `analysis_options.yaml` / `CHANGELOG.md` / `README.md` / `test/` —— 所有包必备
-- `lib/src/search_aggregator.dart` —— `SearchAggregator` 契约、`SearchProviderOutcome` / `SearchAggregate` 与
-  `CapabilitySearchAggregator`
+- `lib/src/search_aggregator.dart` —— `SearchAggregator` 契约、`SearchProviderOutcome` / `SearchAggregate`、
+  `CapabilitySearchAggregator`,以及抽出来给两条路径共用的 `askSearchSource` / `selectSearchTargets` /
+  `continuationFor`(分页续问的三种答案)
+- `lib/src/live_search.dart` —— `LiveSearchAggregator.stream`(先到先报)、`SearchFanout`(并发上限)、
+  `SourceHealthLedger`(坏源记账)、`firstAnswer` + `SearchWaitNotice`、`more()`(同源下一页)
 
 ## 规则(规范来自 docs/services/search.md)
 
@@ -37,14 +40,43 @@
 
 分页游标从 `PageResult` 原样带出(本包不改写源的翻页语义,聚合不改协议)。
 
+## 流式那一路(2026-10-11 补上)
+
+规范原文是"部分结果可用"。`Future.wait` 那一路做不到这条:20 个源的搜索要等最慢那个把预算烧完才一次性出现,
+用户读到的是"没结果",不是"还在搜"。所以加了 `LiveSearchAggregator.stream`(旧那条保留,两条共用同一个
+`askSearchSource` —— 两份实现迟早有一份不再丢外来结果或不再超时):
+
+- `SearchFanout.maxConcurrent`(默认 6)限同时问几个源;不限就是一次搜索向最弱的那个源发二十条请求。
+- **冷却中的源排到最后问**,而不是被剔除:用户启用的源恢复了还得能用;但一上来就问它,首屏预算就花在一个已知慢的源上。
+- `SourceHealthLedger` 记住每源连续失败次数与冷却截止(`failuresBeforeCooldown=3`、`cooldown=30s`、
+  跟踪源数有上界 `sourceLimit=128` 并按最久未见淘汰);`empty` 是"没搜到",**不算失败**。
+- `firstAnswer` 有两种诚实的答案:第一个可用结果,或者 `SearchWaitNotice`(预算烧完,还没有源回话)。
+  把后者做成异常或 null,就等于把"这条慢"的唯一线索抹掉。
+- `continuationFor` / `more()` 按 `PageResult.mode` 续问:fixedPage 加页号、cursor 带回 token、singleShot 明确没有下一页;
+  页号无法前进(0 或负)时报"续不下去",否则会在第一页上永远打转。
+
 ## 还没做的
 
 - 结果按"直播/视频/音乐/频道"分组是 UI 的呈现规则,不在这里做。
 - 搜索历史与热搜(`hotword` capability)需要存储与一个能力定义,两者都还没有:历史记录归 W5 的业务面,
   热词的调用面要先在 capability-contract §3 定下来。
-- 结果是"全部落定才返回"。首屏想要先到先显示的话,需要一条流式接口,而那需要 UI 侧的分批渲染决定,现在加等于猜。
+- 跨源去重(同一部剧在两个源里都出现)没有做:合并会丢掉"另一个源也能播"这条信息,而那是换源的理由。
 
 ## 验证
 
-- 分析:`dart analyze`(纯 Dart)或 `flutter analyze`(带 `-Flutter`)
-- 测试:`dart test -j 1`(纯 Dart)或 `flutter test`(带 `-Flutter`)
+- 分析:`dart analyze packages/services/search`(2026-10-11:0 issue)
+- 测试:`dart test -j 1` —— **16 例**全绿(源超时不外溢、抛错被收进该源、空结果与失败可分、外来结果丢弃并计数、
+  声明未实现的源被报出来、取消算取消不算坏源、空白关键词拒发)。
+  流式那一路**没有新增测试**;行为用仓库外一次性脚本观测过:4 源(10ms / 120ms / 挂住 / 外来)在
+  `maxConcurrent=2`、`perSourceTimeout=300ms` 下先到先报 `[fast:answered, mid:answered, other:empty, hang:timedOut]`、
+  5ms 预算拿到 `SearchWaitNotice(4 sources)`、挂住的源两次超时后 `healthOf=degraded` 且剩 ~30s 冷却、
+  `more()` 真的发了第二页(源侧调用数增加)、空白关键词返回 `refused` 且 0 个请求。脚本已删除。
+
+## 未验证
+
+- 真机弱网下的并发上限与超时预算(6 / 8s)没测过;上限是按"浏览器每主机 6"类比定的,不是按移动网络实测。
+- `SourceHealthLedger` 与真实源的交互未验证:一个源在别的关键词上好好的、只在这个关键词慢,也会被记成 degraded;
+  记分粒度是"每源",不是"每源每关键词"。
+- 取消语义仍是"这一层不取消 transport 请求"(见 `perProviderTimeout` 的注释);`CancellationToken` 只阻止装配结果,
+  已经发出的请求还是会跑完它自己的超时。
+

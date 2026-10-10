@@ -8,4 +8,5 @@
 /// See docs/architecture/dependency-rules.md and the package README.
 library;
 
+export 'src/live_search.dart';
 export 'src/search_aggregator.dart';
