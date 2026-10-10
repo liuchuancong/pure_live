@@ -8,7 +8,12 @@ environment:
   sdk: ^3.13.0
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
-# No runtime dependency: pure decision logic over values the application supplies.
+# crypto is the digest the artifact integrity check needs; utils is the L0 leaf for the Clock the nag policy
+# and the track selection take instead of reading a wall clock.
+dependencies:
+  crypto: ^3.0.0
+  pure_live_utils:
+    path: ../utils
 
 dev_dependencies:
   test: ^1.26.0

@@ -11,5 +11,8 @@
 
 library;
 
+export 'src/channels.dart';
+export 'src/integrity.dart';
+export 'src/snooze.dart';
 export 'src/update_feed.dart';
 export 'src/version.dart';
