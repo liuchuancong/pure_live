@@ -27,3 +27,10 @@
 
 - 分析:`dart analyze`(纯 Dart)或 `flutter analyze`(带 `-Flutter`)
 - 测试:`dart test`(纯 Dart)或 `flutter test`(带 `-Flutter`)
+
+## 未验证(2026-10-10 复核)
+
+- 超时预算的**默认值 12s 是这里定的经验数**,没有对着真实源测过:慢线路的 douyu/huya 解析在弱网下
+  究竟多久算卡,需要一次真机测量再调;调的是常量,不是机制。
+- `.timeout()` 只让等待方放弃,**不提供取消已发出请求的能力**(与 services 层聚合器同一条界)。
+  挂死的 provider 请求仍在跑,直到 dio 自己结束。

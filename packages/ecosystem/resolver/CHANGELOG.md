@@ -5,6 +5,15 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- **Fixed(DoD 体积/超时项)**:`CapabilityResolver` 与 `CapabilityTicketRefresher` 现在真的有超时预算
+  (`timeout`,默认 `CapabilityResolver.kDefaultResolveTimeout` = 12s;`Duration.zero` 表示不设限)。
+  `ResolverException.timedOut` 从第一版就定义好了,却**没有任何代码抛它** —— 适配器直接 await 提供方的
+  网络调用,于是一个卡死的源能把起播无限期拖住,而"换一路恢复"的阶梯根本轮不到执行。
+- 超时抛的是带 `resolver.timeout` 码、`category: timeout`、`retryable: true` 的分类失败,而不是 sdk 的
+  `TimeoutException`,也不是被泛化 catch 折成的 `resolver.failed`:调用方按码分支,拒绝与超时必须是两个码
+  (不可解析的内容不该重试,超时该重试并换源)。
+- 刷新路径同样受预算约束:刷新发生在播放器已经在跑的时候,卡住的表现是声音还在、画面冻住。
+
 - `Resolver` / `ResolverException`:解析契约与带码的失败(`resolver.unsupported` / `resolver.failed` /
   `resolver.timeout` / `media.expired` / `task.cancelled`),`canResolve` 要求离线可答。
 - `ResolverRegistry` / `ResolverChain`:优先级排序 + 插入序破平;候选降级、`allowFallback == false` 时首个失败

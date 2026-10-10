@@ -9,6 +9,8 @@
 // be lifted into one. This adapter is that lift, and it is the only place a capability's ticket becomes a
 // ResolveResult.
 
+import 'dart:async';
+
 import 'package:pure_live_capability/pure_live_capability.dart';
 import 'package:pure_live_platform/pure_live_platform.dart';
 
@@ -16,7 +18,24 @@ import 'resolver.dart';
 
 /// A Resolver over one source's ResolveCapability.
 final class CapabilityResolver implements Resolver {
-  CapabilityResolver({required this.descriptor, required this.capability, this.allowedKinds, this.clock});
+  CapabilityResolver({
+    required this.descriptor,
+    required this.capability,
+    this.allowedKinds,
+    this.clock,
+    this.timeout = kDefaultResolveTimeout,
+  });
+
+  /// How long a source may take to answer before the platform moves on.
+  ///
+  /// A resolve is one round trip plus a redirect, so a budget here is not a tuning knob for slow networks:
+  /// without it, one hung provider stalls playback start indefinitely while the ladder that exists to
+  /// recover from a dead source never gets to run. `ResolverException.timedOut` was defined from the start
+  /// and nothing threw it - the timeout was a documented behaviour with no code enforcing it.
+  static const Duration kDefaultResolveTimeout = Duration(seconds: 12);
+
+  /// The budget applied to [ResolveCapability.resolve] and to a refresh. Zero disables the limit.
+  final Duration timeout;
 
   @override
   final ResolverDescriptor descriptor;
@@ -49,9 +68,13 @@ final class CapabilityResolver implements Resolver {
 
     final MediaTicket ticket;
     try {
-      ticket = await capability.resolve(request.ref, quality: _selectionFor(request.context.preferredQuality));
+      ticket = await _guard(capability.resolve(request.ref, quality: _selectionFor(request.context.preferredQuality)));
     } on ResolverException {
       rethrow;
+    } on TimeoutException {
+      // A distinct code, because a timeout is retryable and a refusal is not: the ladder that reads this
+      // must keep looking for the same content rather than mark it unresolvable.
+      throw ResolverException.timedOut(request.ref, timeout);
     } catch (error) {
       throw ResolverException.failed(request.ref.contentId, error);
     }
@@ -75,6 +98,10 @@ final class CapabilityResolver implements Resolver {
     );
   }
 
+  /// Applies [timeout] to a provider call and turns the sdk's [TimeoutException] into the contract's
+  /// classified failure, because a caller branches on the code and cannot see an sdk exception type.
+  Future<T> _guard<T>(Future<T> operation) => timeout == Duration.zero ? operation : operation.timeout(timeout);
+
   static SelectionRef? _selectionFor(String? quality) => quality == null ? null : SelectionRef(quality);
 
   static DateTime _utcNow() => DateTime.now().toUtc();
@@ -86,9 +113,13 @@ final class CapabilityResolver implements Resolver {
 /// RefreshReason distinguishes "expiring" from "403" from "user asked", and a source that knows which of
 /// those it is can pick a different line instead of the same dead one.
 final class CapabilityTicketRefresher {
-  const CapabilityTicketRefresher(this.capability);
+  const CapabilityTicketRefresher(this.capability, {this.timeout = CapabilityResolver.kDefaultResolveTimeout});
 
   final ResolveCapability capability;
+
+  /// The same budget a first resolve gets: a refresh happens while the player is already running, so a hung
+  /// provider here shows up as audio continuing over a frozen or black picture rather than as a failure.
+  final Duration timeout;
 
   /// Refreshable means the platform is allowed to try *and* the source did not say the url is one-shot.
   bool canRefresh(MediaTicket ticket) => ticket.policy.allowRefresh && (ticket.refresh?.supported ?? true);
@@ -104,9 +135,20 @@ final class CapabilityTicketRefresher {
       );
     }
     try {
-      return await capability.refresh(ticket, reason);
+      final operation = capability.refresh(ticket, reason);
+      return timeout == Duration.zero ? await operation : await operation.timeout(timeout);
     } on ResolverException {
       rethrow;
+    } on TimeoutException {
+      throw ResolverException(
+        PlatformErrorInfo(
+          code: PlatformErrorCodes.resolverTimeout,
+          message: 'refreshing ticket ${ticket.id} exceeded ${timeout.inSeconds}s',
+          category: PlatformErrorCategory.timeout,
+          retryable: true,
+          recoverable: true,
+        ),
+      );
     } catch (error) {
       // A refresh is a re-resolve of the same content, so its failure carries the ticket it replaced.
       throw ResolverException.failed(ticket.id, error);

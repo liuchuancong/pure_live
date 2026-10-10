@@ -43,10 +43,10 @@
 | `permission` → pure_live_permission | policy_permission_manager / extension_network / extension_cookie_store / key_value_permission_store | extension, app | 🟡 app 依赖它属偏差(§4) |
 | `task` → pure_live_task | task / task_scheduler / in_memory_task_scheduler / cancellation | extension, app | ✅ |
 | `extension` → pure_live_extension | gateway / managed_extension_gateway / context / runtime / source / network_transport_bridge / persistent_context | app | 🟡 网关今天还承载"内置源装载",职责待与插件宿主分离 |
-| `resolver` → pure_live_resolver | resolver / resolver_registry / capability_resolver | app | ✅ |
+| `resolver` → pure_live_resolver | resolver / resolver_registry / capability_resolver | app | ✅ 补上一直存在却没人抛的解析超时预算(默认 12s,分类成 `resolver.timeout`);35 测试 |
 | `identity` → pure_live_identity | identity(加权匹配 + 门槛)/ identity_index | **无** | ⚠️ 零消费者:跨源去重/换源还没接(portfolio §2 W5 卡点) |
 | `plugin_api` → pure_live_plugin_api | manifest_validator / lifecycle / plugin_runtime / host_bridge / sandbox | js_runtime, plugin_host | 🔴 悬空(无 App 装配) |
-| `plugin_host` → pure_live_plugin_host | plugin_bundle / plugin_store | **无** | 🔴 悬空 |
+| `plugin_host` → pure_live_plugin_host | plugin_bundle / plugin_store | **无**(栈仍悬空,等宿主 App) | 🟡 修了 id `..` 能让 `uninstall` 递归删到应用数据目录 + 读取加体积上限;5 测试 |
 | `js_runtime` → pure_live_js_runtime | fjs_sandbox / js_plugin_runtime / js_prelude | external_tvbox, providers/music | 🔴 悬空(等 pure_tvbox / pure_music) |
 | `external_tvbox` → pure_live_external_tvbox | spider_contract / spider_vod_provider / js_spider_handle / js_drpy_spider_handle / tvbox_repository / tvbox_repo_fetcher / data_source_runtime | providers/iptv, python_runtime(互依,已白名单) | 🔴 悬空,整体归 `pure_tvbox` |
 

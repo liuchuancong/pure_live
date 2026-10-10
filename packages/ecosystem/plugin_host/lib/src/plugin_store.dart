@@ -46,6 +46,23 @@ final class PluginInstallException implements Exception {
   String toString() => 'PluginInstallException($message)';
 }
 
+/// A stored plugin could not be read within the limit the caller asked for.
+///
+/// Distinct from an install refusal: the plugin on disk is fine, the reader drew the line. A runtime that
+/// loads a script into a sandbox needs the size to be the sandbox's decision, not a surprise in the middle
+/// of a decode.
+final class PluginTooLargeException implements Exception {
+  const PluginTooLargeException(this.id, this.path, this.limitBytes, this.actualBytes);
+
+  final String id;
+  final String path;
+  final int limitBytes;
+  final int actualBytes;
+
+  @override
+  String toString() => 'PluginTooLargeException($id at $path: $actualBytes bytes over the $limitBytes byte limit)';
+}
+
 /// The on-disk plugin registry. One store per app process; the composition
 /// root owns it and hands loaded code to the runtime host.
 final class PluginStore {
@@ -132,8 +149,13 @@ final class PluginStore {
     );
   }
 
-  /// The stored content of one data plugin.
-  Future<String> readContent(String id) => File(_contentPath(id)).readAsString();
+  /// The stored content of one data plugin, up to [maxBytes].
+  ///
+  /// The cap exists because a data plugin's content is handed to a parser that assumes it came from a
+  /// config file; an unbounded read lets one 200 MB file turn the settings page into an out-of-memory
+  /// crash on open, which is the moment a plugin becomes unremovable.
+  Future<String> readContent(String id, {int maxBytes = kDefaultPluginTextBytes}) =>
+      _readBounded(File(_contentPath(id)), id, 'content.txt', maxBytes);
 
   /// Every installed plugin, id-ordered so the management page is stable.
   Future<List<InstalledPlugin>> list() async {
@@ -166,8 +188,26 @@ final class PluginStore {
     return installed;
   }
 
-  /// The script of one installed plugin, for the runtime to load.
-  Future<String> readSource(String id) => File(_sourcePath(id)).readAsString();
+  /// The script of one installed plugin, for the runtime to load, up to [maxBytes].
+  Future<String> readSource(String id, {int maxBytes = kDefaultPluginTextBytes}) =>
+      _readBounded(File(_sourcePath(id)), id, 'plugin.js', maxBytes);
+
+  /// The default ceiling for one text file of a plugin: 4 MB.
+  ///
+  /// Generous next to a real spider script (tens of kilobytes) and small next to a device's memory, so a
+  /// limit here is a guard against a broken or hostile file and not a tuning knob.
+  static const int kDefaultPluginTextBytes = 4 * 1024 * 1024;
+
+  Future<String> _readBounded(File file, String id, String name, int maxBytes) async {
+    if (!await file.exists()) {
+      throw PluginInstallException('$id has no $name');
+    }
+    final size = await file.length();
+    if (size > maxBytes) {
+      throw PluginTooLargeException(id, name, maxBytes, size);
+    }
+    return file.readAsString();
+  }
 
   Future<void> setEnabled(String id, bool enabled) async {
     final state = await _readState(id);
@@ -188,9 +228,28 @@ final class PluginStore {
     }
   }
 
+  /// The one place an id becomes a path, so no caller has to remember to sanitise it.
+  ///
+  /// Replacing everything outside `[A-Za-z0-9._-]` was not enough: the dot is allowed, so the id `..`
+  /// survived untouched and resolved to the directory *above* `plugins/` - where `uninstall` deletes
+  /// recursively. Collapsing dot runs is what makes the escape unrepresentable, and the containment check
+  /// behind it is belt-and-braces rather than the real guard: a path helper that resolves cleanly still has
+  /// to be proven to stay inside the root.
   Directory _directoryFor(String id) {
-    final safe = id.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
-    return Directory(p.join(_pluginsRoot.path, safe));
+    var safe = id.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    safe = safe.replaceAll(RegExp(r'\.{2,}'), '_').replaceAll(RegExp(r'^\.+|\.+$'), '_');
+    final directory = Directory(p.join(_pluginsRoot.path, safe));
+    if (!_staysInsideRoot(directory.path)) {
+      // Unreachable while the two rewrites above hold; kept because "the id can never escape" is a property
+      // of code that changes, not a fact about the input.
+      throw PluginInstallException('$id cannot be used as a plugin id: it escapes the plugin directory');
+    }
+    return directory;
+  }
+
+  bool _staysInsideRoot(String path) {
+    final relative = p.relative(path, from: _pluginsRoot.path);
+    return !relative.startsWith('..') && !p.isAbsolute(relative);
   }
 
   String _manifestPath(String id) => p.join(_directoryFor(id).path, 'manifest.json');

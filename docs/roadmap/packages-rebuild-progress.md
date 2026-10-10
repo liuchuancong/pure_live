@@ -90,6 +90,19 @@
   另加 `fileName` 路径校验(宿主把它拼到录制目录后)、三处 `DateTime.now()` 换成注入 `Clock`
   (不然这些规则根本没法测)、id 在转换间保持稳定。13 测试。
   `lib/src/data/` 仍空是刻意的:引擎在录制波次,状态契约先立住就没有第二套真相。
+- **#9 复核(3/9):`ecosystem/plugin_host` 与 `resolver` 各抓到一个能落地的缺陷**。
+  plugin_host:`_directoryFor` 净化 id 时挡了 `/ \` 与空白,**唯独没挡连续的点** ——
+  id `..` 原样穿过,拼成 `plugins/../`(= 应用自己的数据目录),而 `uninstall()` 是 `delete(recursive: true)`;
+  现在折叠点串 + 复检「仍在根内」。同一文件里 `readSource`/`readContent` 是**无上限 `readAsString()`**
+  → 加 `maxBytes`(默认 4 MiB)与具名 `PluginTooLargeException`(DoD §4 的体积上限这一格终于填上),
+  缺文件也不再抛裸 `FileNotFoundError`。
+  resolver:`ResolverException.timedOut` **从第一版就定义、从没被任何代码抛过** —— 适配器直接 await 提供方网络调用,
+  一个卡死的源能把起播无限期拖住,而「换一路」的阶梯根本轮不到跑。现在解析与刷新都有预算(默认 12s,
+  `Duration.zero` 显式关),超时映射成 `resolver.timeout` + `retryable: true`(与 `resolver.failed` 分开:
+  不可解析不该重试,超时该)。plugin_host 首次有了自己的测试(5 个,含临时目录里的删除实验),resolver 35 个。
+  `capability` 复核未发现同类缺陷(注册表按声明顺序取、契约测试有 pageSize 越界断言),不强改。
+  **仍未解决**:这三包中 `plugin_host` 依旧零消费者(整条插件栈悬空,§2bis 第 1 组),
+  所以"删错目录"这条是我推演的路径而不是观测到的事故 —— 它值得修,但别记成线上问题。
 - **#7 的 `foundation/platform_info`(能力矩阵)**:`detectPlatform` 认不出的系统以前回退成 `PlatformKind.web`,
   而它自己的注释写着这是「最受限的目标」—— web 恰恰不是:它 `supportsPictureInPicture: true` 且
   `isTouchPrimary: true`。于是 harmonyos / 改壳 Android 分支**同时**继承两个乐观假设和 web 的存储分支
@@ -229,7 +242,7 @@
 | 6 | `services/search` `services/feed` **已完成** | 聚合器只有扇出 | 分页三态校验 + 按源游标 + 取消传播 + 失败记账形状已落;剩余:跨源节(继续看)受 FeedSection 形状限制,见 w5 §2 |
 | 7 | `foundation/diagnostics` `events` `sync` `platform_info` **全部已修** | 薄 | 有界缓冲与守护执行的真缺陷已修;剩余:结构化事件出口、探测能力矩阵、同步游标与冲突策略 |
 | 8 | `providers/douyu` | 空 barrel | 按 `providers/huya` 的形状实现 feed/browse/search/resolve |
-| 9 | `ecosystem/plugin_host` `resolver` `capability` | 有实现,未过 DoD | 只做复核:错误具名、超时/体积上限、资源释放、README 平台矩阵 |
+| 9 | `ecosystem/plugin_host` `resolver` **已复核并修** / `capability` 已复核无同类缺陷 | 有实现,未过 DoD | 剩余:资源释放与 README 平台矩阵逐项过;三包都还在等宿主 App |
 
 ## 4. 每包完成的定义(逐条核,不合并勾)
 
