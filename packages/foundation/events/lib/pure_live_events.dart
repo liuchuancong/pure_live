@@ -13,3 +13,5 @@
 library;
 
 export 'src/event_bus.dart';
+export 'src/operators.dart';
+export 'src/sinks.dart';

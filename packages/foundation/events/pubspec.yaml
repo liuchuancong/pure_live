@@ -8,7 +8,13 @@ environment:
   sdk: ^3.13.0
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
-# No runtime dependency: this package is a mechanism, not a policy holder.
+# The bus itself is a mechanism with no policy; the two leaves are needed by the sinks (a log line per event)
+# and by the clock the staleness filter and the publisher stamp events with.
+dependencies:
+  pure_live_logging:
+    path: ../logging
+  pure_live_utils:
+    path: ../utils
 
 dev_dependencies:
   test: ^1.26.0

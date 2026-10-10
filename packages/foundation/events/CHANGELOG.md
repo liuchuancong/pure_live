@@ -5,6 +5,20 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- `EventBus.observe` — a hook that sees every emit, including the ones with no listener. Diagnostics had to
+  subscribe to `on<AppEvent>()` to watch the bus, which meant a dropped event was invisible exactly when
+  nothing was listening: the case a "why did nothing happen" report is about.
+- Bounded diagnostics: `recentEvents` (a ring of `kEventLedgerLimit`), `countOf(name)`, `emissionCounts` and
+  `channelCount`. An unbounded ledger is the memory problem the diagnosis was supposed to find.
+- `subscribe<T>(handler, into:)` registers the handle with a `Disposer`; `onReplaying<T>(length)` serves the
+  screen that opens after the fact it needed; `expect<T>(within)` waits instead of polling with a sleep.
+- `operators.dart`: `throttled`, `coalescedBy`, `debounced`, `buffered`, `named`, `fresherThan` — each with a
+  trailing pass or a second flush trigger, because a throttle that swallows the last event loses the value the
+  user stopped on, and a buffer with one trigger either never flushes or holds a flood.
+- `sinks.dart`: `EventLogSink` (name and time only, never the payload; self-suspending flood guard that
+  reports it suspended), `EventRecorder`, `EventPublisher` (stamps with an injected `Clock`).
+- `pubspec.yaml`: the `utils` and `logging` leaves added, for the sinks and the clock.
+
 - `EventBus`: one broadcast channel **per event type** instead of one per `on<T>()` call. The previous
   version allocated a controller for every call and retained it until `dispose()`, so a screen that
   subscribed on each rebuild grew the bus without bound and kept dropped subscriptions reachable. The
