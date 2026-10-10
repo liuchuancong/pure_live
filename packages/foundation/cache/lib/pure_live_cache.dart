@@ -11,6 +11,10 @@
 /// and the settings screen cleanup stay accurate.
 library;
 
+export 'src/cache_control.dart';
+export 'src/cache_stats.dart';
 export 'src/disk_tier.dart';
+export 'src/http_cache.dart';
+export 'src/loading_cache.dart';
 export 'src/policy.dart';
 export 'src/store.dart';
