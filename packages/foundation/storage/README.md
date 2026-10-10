@@ -86,8 +86,7 @@ logging)。第二个理由更实际:**信封之前的旧行要靠 schema step �
 
 ## 未验证
 
-- **`PreferencesStore` 目前没有真实消费者**:机制与其测试都只用 `MemoryKeyValueStore`。
-  与 `FileKeyValueStore` 串起来(一个 App 的偏好落在同一个文件里、和收藏历史同处一店)尚未跑过。
+- **与 `FileKeyValueStore` 的真实串接没跑过**:第一个消费者 `features/home` 的布局行(21 例测试)用的是内存实现;  真机上偏好与收藏/历史同处一个 JSON 文件时的行为(以及 `dispose()` 之后还能不能读到流)没有观测。
 - `importAll` 收到**更大**信封版本时按拒绝处理,不是迁移。放宽它的正确做法是加一条 `SchemaStep`,
   但这条组合(`PreferencesStore` 的行由 `SchemaMigrator` 升级)还没有实现与测试。
 - `SecureStore` 的真实后端由组合根绑定,本包的内存实现只证明接口形状,不证明平台安全存储的行为。

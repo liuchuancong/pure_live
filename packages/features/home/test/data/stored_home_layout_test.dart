@@ -22,15 +22,53 @@ void main() {
     expect(reopened.isHidden('live'), isTrue);
   });
 
-  test('test_storedHomeLayout_writesAVersionedEnvelope', () async {
+  test('test_storedHomeLayout_writesTheSharedPreferenceEnvelope', () async {
     final store = MemoryKeyValueStore();
     await StoredHomeLayout(store: store, namespace: 'app').save(const HomeLayout(order: <String>['x']));
 
-    expect(jsonDecode(await store.read('app.home_layout') as String), <String, Object?>{
-      'v': kHomeLayoutEnvelopeVersion,
-      'order': <String>['x'],
-      'hidden': <String>[],
+    // The mechanism's envelope, with the document version this package owns carried inside it: the envelope
+    // answers "a typed preference row", the inner v answers "which fields a layout has".
+    expect(await store.read('app.home_layout'), <String, Object?>{
+      'v': 1,
+      'c': 'homeLayout',
+      'value': <String, Object?>{
+        'v': kHomeLayoutEnvelopeVersion,
+        'order': <String>['x'],
+        'hidden': <String>[],
+      },
     });
+  });
+
+  test('test_storedHomeLayout_readsAJSONObjectRowWithoutTheEnvelope', () async {
+    // The shape this file wrote before the mechanism existed. It was a JSON *string* under the same key, so
+    // the same string is what an installed build hands back on first read after the change.
+    final store = MemoryKeyValueStore();
+    await store.write(
+      'app.home_layout',
+      jsonEncode(<String, Object?>{
+        'v': 1,
+        'order': <String>['vod', 'live'],
+        'hidden': <String>['live'],
+      }),
+    );
+
+    final layout = await StoredHomeLayout(store: store, namespace: 'app').load();
+
+    expect(layout.order, <String>['vod', 'live']);
+    expect(layout.isHidden('live'), isTrue);
+    // The upgrade is reported by the shared store as an upgrade, never as damage; and the read must not have
+    // rewritten anything, because a screen that came to show a layout is not the thing that migrates storage.
+    expect(await store.read('app.home_layout'), isA<String>());
+  });
+
+  test('test_storedHomeLayout_savedRowThenReadsBackThroughTheEnvelope', () async {
+    final store = MemoryKeyValueStore();
+    await StoredHomeLayout(store: store, namespace: 'app').save(const HomeLayout(order: <String>['a', 'b']));
+
+    final reopened = await StoredHomeLayout(store: store, namespace: 'app').load();
+
+    expect(reopened.order, <String>['a', 'b']);
+    expect(await store.read('app.home_layout'), isNot(isA<String>()), reason: 'the second write is an envelope');
   });
 
   test('test_storedHomeLayout_namespacesPerApp', () async {

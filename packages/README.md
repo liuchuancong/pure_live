@@ -14,7 +14,7 @@
 | `utils` → pure_live_utils | async / collections / conversion / equality / errors / identifiers / math / numbers / result / strings / time / types / validation | logging, network, auth, backup, cache, sync | ✅ 叶子,真在用;新增 8 个模块按实测重复计数立项,**尚无消费者**(utils README 未验证清单) |
 | `logging` → pure_live_logging | logger / record | network | ✅ |
 | `network` → pure_live_network | client(dio 封装)/ failure 分类 | extension, providers(bilibili/huya/douyu/external_tvbox), foundation/release→已撤(改端口), app | ✅ |
-| `storage` → pure_live_storage | file_key_value_store / stores / migration / migration_runner + **preferences(键/codec/信封/命名空间/导入/变更流/旧形状升级)** | extension, permission, identity, services(favorites/history/playlist), app | ✅ 76 测试;偏好机制自 `features/settings` 搬入(台账 §5 决策)。**机制至今零真实消费者**,且与 `FileKeyValueStore` 的串接没跑过 |
+| `storage` → pure_live_storage | file_key_value_store / stores / migration / migration_runner + **preferences(键/codec/信封/命名空间/导入/变更流/旧形状升级)** | features(home 的布局行 = 第一个真实消费者)、extension, permission, identity, services(favorites/history/playlist), app | ✅ 76 测试;偏好机制自 `features/settings` 搬入(台账 §5 决策)。与 `FileKeyValueStore` 的真实串接仍未跑过(消费者测试都用内存实现) |
 | `files` → pure_live_files | atomic_file / file_names / paths | **无** | ⚠️ 零消费者(能力已实现,等消费方) |
 | `cache` → pure_live_cache | policy / store / disk_tier(两级缓存) | **无** | ⚠️ 零消费者 |
 | `events` → pure_live_events | event_bus | **无**(规则本身禁止用它替代接口) | ✅ 修了每调用一次泄漏一个 controller、`hasListeners` 的类型谎言、sync 投递让一个坏监听者静音整条总线;11 测试 |
@@ -74,7 +74,7 @@
 | `features/music`(pure_live_music_feature) | music_queue(不可变)/ music_source_bridge(端口)/ lx_music_repository | **无 App 消费者**;`pure_music` 壳还不存在 | ✅ 重写完成:L4→L5 直连 provider 改成端口注入、删歌跳曲与过期 step 修好,23 测试。**端口目前没有实现** |
 | `features/iptv`(pure_live_iptv_feature) | zap_channel / channel_zapper(不可变)/ epg_window | **无 App 消费者** | ✅ 重写完成:空 url 条目不再崩、换组不跳台、`visible()` 不再漏内部 list、EPG 向上取整,24 测试 |
 | `features/search`(pure_live_search_feature) | search_term / search_history(接口)/ stored_search_history / search_result_order / search_controller | **无 App 消费者**(等拆壳波)| ✅ 重写完成:折叠键统一"同一次搜索"、信封带版本与 v0 迁移、坏档记账不装作没搜过、结果按内容定序、世代栅栏丢弃被取代的答案;22 测试 |
-| `features/home` | home_tab / home_layout_repository / home_layout_service / stored_home_layout | **无 App 消费者**(等拆壳波) | ✅ 重写完成:排序与默认可见性分职、按 App 命名信封落盘、坏行记账、18 测试 |
+| `features/home` | home_tab / home_layout_repository / home_layout_service / stored_home_layout | **无 App 消费者**(等拆壳波) | ✅ 重写完成:排序与默认可见性分职、坏行记账、20 测试;布局行已改存成 `storage` 的类型化偏好键(自己那份 `{v,order,hidden}` 信封由 `upgrade` 继续读得) |
 | `features/account` | site_account(视图+接口)/ credential_site_accounts | **无 App 消费者**(等拆壳波) | ✅ 重写完成:假句柄与"按 last 登出"两个真缺陷修掉、状态三分(过期可刷/禁用/无账号)、密钥体积上限,10 测试 |
 | `features/backup`(pure_live_backup_feature) | backup_reports / snapshot_remote(端口)/ webdav_snapshot_remote / backup_document / webdav_backup_service | **无 App 消费者**(apps/pure_live 仍自带一份 `{manifest,payload}` 编解码) | ✅ 重写完成:分工写清(端口换 final class 的可测性、报告是数据、快照名守路径逃逸),18 测试 |
 | `features/recorder` | recording_task(不可变状态机) | **无 App 消费者**;引擎在录制波次 | ✅ 重写完成:公开可写 state 收回、排队不再报"已录 1 小时"、文件名路径校验、id 不再撞,13 测试 |

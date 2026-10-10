@@ -27,7 +27,7 @@
 
 允许:`L0`(`pure_live_storage` / `pure_live_utils`)。禁止:`features/*` 同层互依、providers 直连、App 反向依赖。
 
-**注意**:本包**还没有**复用偏好机制。它写这份文档时机制住在 `features/settings`(同层,§3 禁边),所以自己实现了信封;2026-10-10 机制已搬进 `foundation/storage`(L0,本包拿得到),换成 `PreferencesStore` + 一条读旧 `{v,order,hidden}` 的 `upgrade` 是台账记下的下一步。
+**机制复用已落地**:本包的布局行现在是 `PreferencesStore` 里的一个类型化键(`PreferenceKey<HomeLayout>`)。先前它自己实现信封,是因为机制住在 `features/settings` —— 同层,§3 禁边;2026-10-10 机制下沉到 `foundation/storage`(L0)后就没有这个理由了。旧行(信封之前的 JSON 字符串)由 `PreferenceKey.upgrade` 读回,**读不回写**:迁移磁盘形状是 `SchemaMigrator` 步骤的活,一个只是来显示布局的界面不该顺手改存储。
 这份重复是架构发现,记在 [docs/roadmap/packages-rebuild-progress.md](../../../docs/roadmap/packages-rebuild-progress.md) §5,
 待决策的是"把偏好机制沉到 L0/L1",不是"允许 feature 互相 import"。
 

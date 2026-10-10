@@ -233,6 +233,16 @@
   `Switch` / `DropdownButton<String>` / 四个 `Icons.*` 都由这层门校验,不是凭记忆写的),design 测试 20 → 26,
   护栏 `--strict packages=55 errors=0 warnings=0`。
   **仍未验**:主题真实渲染成什么样 —— 没有 widget 测试、没有截图、没有真机(design/adaptive README 的未验证已改口)。
+- **`features/home` 成为机制的第一个真实消费者(§5 那条决策的第二步)**:布局行从自己手写的
+  `{v,order,hidden}` JSON 字符串改成 `PreferenceKey<HomeLayout>`(codec `homeLayout`)存进 `PreferencesStore`,
+  命名空间沿用 `'<app>.'` + 键名 `home_layout`,所以**磁盘上已有的键与机制要读的键是同一个**。
+  本包只留下与"布局"有关的那条规则:文档版本记在值里面(`kHomeLayoutEnvelopeVersion`),
+  比本 build 新的行拒绝而不是半读;`hidden` 缺失是"从没隐藏过"而不是"坏行"。
+  旧形状靠 `upgrade` 读回,**读不回写**(回写是 `SchemaMigrator` 步骤的活);另补了 `dispose()` 关掉现在由本包
+  创建的变更流。home 测试 18 → 20(信封形状、旧字符串行读回且仍是旧形状、存后再读落到新形状),
+  `dart analyze packages` 0 issue、护栏 `--strict packages=54 errors=0`。
+  这同时把 §2 那条"机制至今零真实消费者"从 README 与目录里改掉:现在有了一处,但它仍只跑在
+  `MemoryKeyValueStore` 上 —— 与 `FileKeyValueStore` 的真实串接还是未验项。
 - **偏好机制已搬进 `foundation/storage`(§5 那条决策落地,机械搬迁)**:`lib/src/preferences/{preference_key,preferences_store}.dart`,
   经 storage barrel 导出;`features/settings` 包**删除**(根 `workspace:` 去掉该条,`dart pub get --offline` 通过;
   它零消费者 —— 除自己的测试外全仓没有一处 import `pure_live_settings`)。文件头的 spec 与"为什么在这一层"
@@ -367,10 +377,9 @@
   持有者(`SchemaStep`/`SchemaMigrator`/`migration_runner.dart`)。**采纳前先决条件已补**:机制原先只会拒绝
   信封前的旧形状,读回落默认、下一次写就把默认存成用户的选择 —— 直接下沉会让每个既有消费者静默删数据,
   这条现在由 `PreferenceKey.upgrade` + 32 例测试封住(见 §2)。
-  **搬迁已完成**(见 §2:文件进 `storage/lib/src/preferences/`,`features/settings` 删除,包数 55 → 54,
-  storage 76 例测试)。还剩一步:**让 `features/home` 真用它** —— 换掉那份手写的 `{v,order,hidden}` 信封,
-  并带一个 `upgrade` 读旧行;`stored_home_layout.dart` 里"与 features/settings 同层所以拿不到机制"那句注释
-  随搬迁已失效,一并改。
+  **两步都已做完**:搬迁(`storage/lib/src/preferences/`,删 `features/settings`,包数 55 → 54,storage 76 例)
+  与第一个真实消费者(`features/home` 的布局行改成 `PreferenceKey<HomeLayout>`,codec 名 `homeLayout`,
+  旧 `{v,order,hidden}` 字符串行由 `upgrade` 继续读 —— home 测试 18 → 20)。
   曾考虑的备选 B(给 §4 白名单加 `features/* → features/settings`)被否:那是把层级错误固化成永久例外。
 - **契约点名的类型不存在。** `docs/sources/live/source-contract.md` 用 `QualityLine` / `QualityRef` /
   `LineRef` / `LiveDetail` / `StreamTicket` 写方法签名,但 `pure_live_platform` 里**一个都没定义**
