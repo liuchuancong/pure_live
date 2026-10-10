@@ -9,3 +9,4 @@
 library;
 
 export 'src/feed_aggregator.dart';
+export 'src/paging.dart';

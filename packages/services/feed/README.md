@@ -48,9 +48,35 @@ feed.md 写 `FeedSection[](标题 + FeedItem[] + cursor)`。实现里 `FeedSecti
   信息;两种都是改契约,要 ADR,不在本包顺手做。"关注更新"还另外缺一个源侧关注模型(favorites.md 明确说
   关注不是收藏)。
 - 分节渲染、砖位大小与"手动添加入口"是 UI 的事。
-- 结果是全部落定才返回,与聚合搜索同一个理由:先到先显示需要 UI 侧的分批渲染决定。
+- **流的"全部落定才返回"仍是一条**:聚合搜索那条已经补了流式接口(见 `pure_live_search` 的 `LiveSearchAggregator`),
+  本包没补 —— feed 的每一节都是首屏砖位,先到先显示需要 Home 的编排(features/home)先决定"某源晚到 3 秒时那块砖
+  先亮灰还是先不出现",那是编排层的决定,不在这里猜。
+
+## 分页那一路(2026-10-11 补上)
+
+`aggregator.feed(page)` 把**同一个页号**发给每个源 —— 第一页这么做是对的,往下就错了:各源在不同的深度耗尽,
+继续问一个已经说"没有了"的源,就是"加载更多"把用户看过的行再排一遍。所以 `paging.dart` 加:
+
+- `continuationFor(FeedSection)`:按**源自己报的 mode** 决定下一次问什么(fixedPage 加页号、cursor 带回 token、
+  singleShot 明确没有下一页),问不了的话给出原因 `exhausted` / `missingCursor` / `notPaged`。
+  猜是"续问把第一页重发一遍还管它叫第二页"的成因;拿别源的 token 更不是猜,那是别人的状态。
+- `FeedCursorBook`:**只存游标源的 token**(数字源靠页号继续,把页号也存进来就是同一事实放两处、还各有各的寿命,
+  典型后果是刷新之后数字源开始跳页);`reset()` 就是 feed.md 说的"刷新 = 重新拉头部"。
+- `FeedPager`:按源各自续问,只有"还能继续"的源被问;`refresh()` 清游标并清累计;
+  `maxPagesPerRun` 给一次手势封顶(计数在 refresh 时归零,所以滚得深的用户不为已经翻过的页被惩罚);
+  某源被问了却没回任何一节 → 把它的末节 `hasMore` 关掉,免得下一次 `next()` 靠一节它从没返回过的页继续问。
 
 ## 验证
 
-- 分析:`dart analyze`(纯 Dart)或 `flutter analyze`(带 `-Flutter`)
-- 测试:`dart test -j 1`(纯 Dart)或 `flutter test`(带 `-Flutter`)
+- 分析:`dart analyze packages/services/feed`(2026-10-11:0 issue)
+- 测试:`dart test -j 1` —— **23 例**全绿(游标贯穿到源并原样带回、坏数据就地处理、单源超时/抛错不外溢、
+  丢弃行跨全 feed 计数)。`paging.dart` **没有新增测试**;行为用仓库外一次性脚本观测:数字源页号 1→2→3 后
+  报 `exhausted`、游标源第二问带回 `tok1` 且 token 簿在 refresh 后清空、`allItems` 按源累计不乱序、
+  `canAdvance` 随 `maxPagesPerRun` 变。脚本已删除。
+
+## 未验证
+
+- 真实源的深度与不均衡耗尽(一个源 3 页就空、另一个 30 页)没在任何线上源上观测过,`maxPagesPerRun` 默认 1 是保守值。
+- `FeedPager` 的累计只在内存里;Home 被杀之后的续问起点要靠宿主自己存游标(那是 sync/编排的事)。
+- 上面"接不进本包形状"那条差异**仍然存在**,`FeedSource` 抽象需要 ADR。
+

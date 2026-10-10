@@ -5,6 +5,17 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- `paging.dart`: `continuationFor` reads the mode the *source* reported instead of guessing (numbered feeds
+  advance by page, cursor feeds re-send the token, single-shot has no next page); `FeedCursorBook` stores only
+  cursor tokens and `reset()` is what "refresh re-fetches the head" means; `FeedPager` asks only the sources
+  that can still continue, bounds one gesture by `maxPagesPerRun`, and closes off a source that was asked and
+  returned nothing so a later page is not built on a page it never sent.
+- Sending the same page number to every source is right for the first pull and wrong after that: sources run
+  out at different depths, and continuing one that already said "no more" is how a load-more button re-renders
+  rows the user has seen.
+
+## Unreleased (aggregator pass)
+
 - `FeedAggregator` / `CapabilityFeedAggregator`:按 `CapabilityRegistry` 枚举 feed 源、单源超时与失败隔离、
   节顺序取注册顺序而不是到达顺序,游标贯穿到源并原样带回(刷新 = 重新取第 1 页)。
   注:「原样带回」在 2026-10-10 之前是不成立的,见下一条修复。
