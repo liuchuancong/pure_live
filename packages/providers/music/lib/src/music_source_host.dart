@@ -95,6 +95,11 @@ final class MusicSourceScriptHost {
   /// The script identity once lx.send('inited') arrived.
   Future<MusicScriptInfo> get inited => _inited.future;
 
+  /// The announced identity, set when lx.send('inited') completes.
+  MusicScriptInfo? get announced => _announced;
+
+  MusicScriptInfo? _announced;
+
   /// Attaches to a sandbox another host already loaded the script in. The lx
   /// environment must already be present: an lx script evaluated inside a
   /// plugin runtime's sandbox carries it because that runtime evaluated the
@@ -144,6 +149,7 @@ final class MusicSourceScriptHost {
     switch (api) {
       case 'lx.inited':
         final info = MusicScriptInfo.fromJson(scriptId, payload);
+        _announced = info;
         if (!_inited.isCompleted) {
           _inited.complete(info);
         }

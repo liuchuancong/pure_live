@@ -7,3 +7,6 @@
 /// Layer: features. Allowed dependencies: repository packages use L0, plugin_api and services; UI packages use their own domain repository, services, ui and ecosystem; no same-layer cycles.
 /// See docs/architecture/dependency-rules.md and the package README.
 library;
+
+export 'src/data/watch_progress_repository.dart';
+export 'src/domain/episode_navigator.dart';
