@@ -1,7 +1,5 @@
-// Module: lib/src/async_tools/single_flight.dart
+// Module: lib/src/async/single_flight.dart
 // Purpose: Run one operation per key at a time and share its result with callers that arrive meanwhile.
-// Author: liuchuancong
-// Created: 2026-10-08
 //
 // The platform issues the same request repeatedly - several widgets opening one room, or a line switch
 // retrying a dead url. Sharing the in-flight future removes the stampede without any caller having to

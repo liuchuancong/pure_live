@@ -1,7 +1,5 @@
-// Module: lib/src/async_tools/stream_extensions.dart
+// Module: lib/src/async/stream_extensions.dart
 // Purpose: Stream shapes the UI needs: trailing-edge debounce, key-based distinct, first-or-nothing.
-// Author: liuchuancong
-// Created: 2026-10-10
 //
 // Search fields and progress ticks both arrive faster than anything can be done with them. These operators
 // exist so each screen does not re-implement a timer and get the cancellation subtly different.

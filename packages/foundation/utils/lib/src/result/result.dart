@@ -6,6 +6,9 @@
 // docs/DEVELOPMENT_STANDARDS.md section 3.4 forbids using exceptions for normal flow and forbids swallowing
 // them. Result covers the expected-failure half: a resolver that found nothing, a parser that rejected an
 // entry. Exceptions stay reserved for genuinely exceptional conditions.
+//
+// The companion files are exported by the package barrel: result_extensions.dart (reading one result),
+// result_sequence.dart (combining many) and result_transformers.dart (crossing the throwing boundary).
 
 /// The outcome of an operation that can fail in a foreseeable way.
 sealed class Result<T, E> {

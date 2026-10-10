@@ -1,27 +1,21 @@
-// Module: lib/src/async_tools/retry.dart
+// Module: lib/src/async/retry.dart
 // Purpose: Bounded retry with exponential backoff that treats cancellation as a stop, not a failure.
-// Author: liuchuancong
-// Created: 2026-10-08
 //
 // docs/contracts/platform-models.md section 20 invariant 9 requires cancellation not to be retried, so the
 // loop recognises it separately from an ordinary error. The sleep is injectable because a retry test that
 // waits for real time is a slow test that proves nothing about the backoff curve.
 
-/// Thrown when an operation is cancelled by the caller rather than failing on its own.
-final class OperationCancelledException implements Exception {
-  const OperationCancelledException([this.message = 'cancelled']);
-
-  final String message;
-
-  @override
-  String toString() => 'OperationCancelledException: $message';
-}
+import 'cancellation_token.dart';
+export 'cancellation_token.dart' show OperationCancelledException;
 
 /// Waits for [delay]; replaceable so tests do not sleep for real.
 typedef Sleeper = Future<void> Function(Duration delay);
 
 Future<void> _systemSleeper(Duration delay) => Future<void>.delayed(delay);
 
+/// Decorrelates concurrent retryers sharing one endpoint (thundering herd).
+/// Replaceable so tests keep the backoff curve exact.
+Duration Function(Duration base) jitter = (base) => base;
 bool _alwaysRetry(Object error) => true;
 
 void _ignoreRetry(Object error, Duration wait) {}
@@ -65,7 +59,7 @@ Future<T> retryAsync<T>(
         rethrow;
       }
       onRetry(error, wait);
-      await sleep(wait);
+      await sleep(jitter(wait));
       wait = _nextDelay(wait, backoff, maxDelay);
     }
   }

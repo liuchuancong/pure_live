@@ -1,42 +1,67 @@
-# pure_live_utils
 
-> 全仓共享的纯 Dart 基础能力。**五个模块,没有 misc**:async_tools / collections / result / strings / time。
-> 只有一个功能需要的辅助函数,放进那个功能自己的包,不放这里。
+# PureLive Utils
 
-## 为什么这么窄
+Shared pure Dart utilities for the PureLive workspace.
 
-这个包是依赖图的叶子,任何人在任何层都能 import 它,所以这里的每一行都被整个仓库继承。
-通用工具包的失败模式不是缺功能,而是变成第二个 `dart:core`:一百个没人读过的扩展、
-三套做同一件事的 API。取舍写进 [doc/design-decisions.md](doc/design-decisions.md)。
+## Principles
 
-## 模块
+- Keep Flutter UI, platform plugins, networking clients, and application-specific business logic out of this package.
+- Export supported public APIs through `lib/pure_live_utils.dart`.
+- Keep implementation details under `lib/src/`.
+- Prefer Dart SDK and established package APIs over duplicate implementations.
+- Make asynchronous behavior deterministic and testable.
+- Document public APIs and test boundary conditions.
+- Keep dependency direction one-way: foundational utilities must not depend on application features.
 
-| 模块 | 提供 | 为什么是它 |
-|---|---|---|
-| `async_tools` | `SingleFlight`、`retryAsync`、`AsyncMemoizer`、`OperationCancelledException`、Future/Stream 扩展 | 平台会重复发同一个请求(多个 widget 开同一房间、切线路重试死链),去重与退避必须只有一处实现 |
-| `collections` | `groupBy` / `mapNotNull` / `distinctBy` / `chunked` + Iterable/List/Map 扩展 | 分组要保序、去重要按计算键、有界追加要丢头部 —— SDK 不给或给得不一样 |
-| `result` | `Result<T,E>`(Ok/Err)、`partition` / `collect` / `waitAll` | DEVELOPMENT_STANDARDS §3.4 禁止用异常表达正常流程;解析失败、找不到内容是可预见失败 |
-| `strings` | `nullIfBlank` / `collapsedWhitespace` / `truncate`、`redactHeaders` / `redactQuery`、`Truncator` | 敏感头脱敏是 platform-models §16 的硬要求;标题是中日韩加 emoji,按码元截会撕裂字符 |
-| `time` | `Clock` 缝隙、`systemClock`、`FixedClock`、时长格式化、epoch 换算 | 过期判断与重试退避都要和"现在"比;直接读 DateTime.now() 就不可测 |
+## Modules
 
-## 依赖
+- `async`: asynchronous coordination, cancellation, and lifecycle primitives.
+- `collections`: reusable collection algorithms and extensions.
+- `result`: explicit success and failure values.
+- `errors`: error categorization and normalization.
+- `strings`: normalization, comparison, and truncation.
+- `conversion`: safe parsing and conversion.
+- `time`: clocks, timestamps, and duration helpers.
+- `numbers`: numeric parsing and range helpers.
+- `types`: common type and nullable-value helpers.
+- `validation`: reusable validation primitives.
+- `equality`: value and deep equality helpers.
+- `identifiers`: identifier parsing and validation.
+- `math`: ranges and numeric utilities.
 
-运行时只依赖 `collection` 与 `clock`,且都是**有理由的**:`collection` 提供这里转引用的 `firstOrNull` 等实现,
-`clock` 提供可被 zone 覆盖的全局时钟,于是 `systemClock()` 与测试里的 `withClock()` 是同一个源。
-`async` / `meta` 之类按源码需要再加,不加"以后可能用得上"的依赖。
+## Dependencies
 
-## 用法
+Runtime dependency: `clock` only, and for one reason — `systemClock()` reads the package-global clock, so
+`withClock(...)` in a test reaches code that never received an injected clock. `collection` was dropped: its
+`firstOrNull` is an extension member and cannot be forwarded as a function, so the one-line local definition
+is what keeps the barrel traceable. No other pub.dev package, and no foundation package.
 
-```dart
-import 'package:pure_live_utils/pure_live_utils.dart';
+## Allowed and forbidden imports
 
-final flight = SingleFlight<int>();
-final value = await flight.run('room-1', () => source.viewers('room-1'));
+- Allowed for consumers: `package:pure_live_utils/pure_live_utils.dart` — the barrel is the only surface.
+- Forbidden: `lib/src/**` from any other package, Flutter widgets, io, plugins and any app.
+- Forbidden: this package importing another foundation package; it is the L0 leaf alongside `logging`.
+The rules and the whitelist live in `docs/architecture/dependency-rules.md`; `tool/check_architecture.dart`
+enforces them.
 
-final settled = await futures.waitAll();
-if (!settled.isAllOk) {
-  log.warning('${settled.errors.length} of ${settled.count} sources failed');
-}
+## Platform matrix
+
+Pure Dart: no platform channel, no file system, no isolate. Every symbol runs on Android, Android TV,
+Windows, iOS and the web without a conditional import.
+
+## Unverified
+
+- `Disposer`, `OperationGuard`, `CancellationToken.guard`, the `equality`, `identifiers`, `math`, `numbers`,
+  `types`, `validation`, `conversion` and `errors` modules have no consumer yet. They exist because the
+  duplication they absorb was measured across the repository (see `doc/design-decisions.md` §1), not because
+  a caller asked for them; the first consumer's review is when the shape gets fixed.
+- Nothing here has run on a device. Package-level `dart analyze` and `dart test` are the only gates passed.
+
+## Development
+
+Run package analysis and tests from the workspace root after dependency resolution:
+
+```bash
+dart analyze packages/foundation/utils
+dart test packages/foundation/utils/test
 ```
-
-公共面清单见 [doc/public-api.md](doc/public-api.md)。

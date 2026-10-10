@@ -1,72 +1,56 @@
 // Module: lib/src/result/result_transformers.dart
-// Purpose: Combining many results without losing which ones failed.
+// Purpose: The seam between code that throws and code that returns a Result, plus chaining across a future.
 // Author: liuchuancong
-// Created: 2026-10-10
+// Created: 2026-10-08
 //
-// Fan-out is the platform's normal shape: twelve sources answer one query. All-or-nothing combination throws
-// away the nine that answered, so both modes exist and the caller picks.
+// docs/DEVELOPMENT_STANDARDS.md section 3.4 forbids both using exceptions for normal flow and swallowing
+// them, so the boundary has to be explicit and in one place: a throwing io call becomes an `err` at the
+// edge that owns the domain error type, and nothing in between needs a try/catch.
 
 import 'dart:async';
 
 import 'result.dart';
 
-/// Aggregates results, keeping successes and failures separated in input order.
-final class ResultCollection<T, E> {
-  const ResultCollection({required this.values, required this.errors});
-
-  factory ResultCollection.from(Iterable<Result<T, E>> results) {
-    final values = <T>[], errors = <E>[];
-    for (final result in results) {
-      switch (result) {
-        case OkResult<T, E>(value: final value):
-          values.add(value);
-        case ErrResult<T, E>(error: final error):
-          errors.add(error);
-      }
-    }
-    return ResultCollection<T, E>(values: values, errors: errors);
-  }
-
-  /// The successes, in input order.
-  final List<T> values;
-
-  /// The failures, in input order.
-  final List<E> errors;
-
-  bool get isAllOk => errors.isEmpty;
-
-  int get count => values.length + errors.length;
-}
-
-extension ResultIterable<T, E> on Iterable<Result<T, E>> {
-  /// Splits into successes and failures, preserving order on both sides.
-  ResultCollection<T, E> partition() => ResultCollection<T, E>.from(this);
-
-  /// The list of values only when every result succeeded; the first error otherwise.
-  Result<List<T>, E> collect() {
-    final values = <T>[];
-    for (final result in this) {
-      switch (result) {
-        case OkResult<T, E>(value: final value):
-          values.add(value);
-        case ErrResult<T, E>(error: final error):
-          return ErrResult<List<T>, E>(error);
-      }
-    }
-    return OkResult<List<T>, E>(values);
+/// Runs [operation], turning a throw into a failure of type [E].
+///
+/// [onFailure] is required rather than defaulted to `Object`: choosing the error type is the caller's job,
+/// and a default would put raw exceptions into domain results.
+Result<T, E> captureResult<T, E>(T Function() operation, {required E Function(Object error) onFailure}) {
+  try {
+    return OkResult<T, E>(operation());
+  } catch (error) {
+    return ErrResult<T, E>(onFailure(error));
   }
 }
 
-extension ResultFutureIterable<T, E> on Iterable<Future<Result<T, E>>> {
-  /// Awaits all, reporting each slot: a rejected future is still an answer about that source.
-  Future<ResultCollection<T, E>> waitAll() async {
-    final settled = await Future.wait(map((future) async {
-      try {
-        return await future;
-      } catch (error) {
-        return Result<T, E>.err(error is E ? error : throw error);
-      }
-    }));
-    return ResultCollection<T, E>.from(settled);
+/// The async form of [captureResult].
+Future<Result<T, E>> captureAsync<T, E>(
+  Future<T> Function() operation, {
+  required E Function(Object error) onFailure,
+}) async {
+  try {
+    return OkResult<T, E>(await operation());
+  } catch (error) {
+    return ErrResult<T, E>(onFailure(error));
+  }
+}
+
+extension ResultFutureUtils<T, E> on Future<Result<T, E>> {
+  /// Chains an operation that can itself fail once this one succeeds.
+  Future<Result<R, E>> andThen<R>(Future<Result<R, E>> Function(T value) next) async {
+    final result = await this;
+    return switch (result) {
+      OkResult<T, E>(value: final value) => await next(value),
+      ErrResult<T, E>(error: final error) => ErrResult<R, E>(error),
+    };
+  }
+
+  /// Replaces a failure with another result, which is where a fallback source belongs.
+  Future<Result<T, F>> recover<F>(Future<Result<T, F>> Function(E error) fallback) async {
+    final result = await this;
+    return switch (result) {
+      OkResult<T, E>(value: final value) => OkResult<T, F>(value),
+      ErrResult<T, E>(error: final error) => await fallback(error),
+    };
   }
 }

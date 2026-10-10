@@ -1,7 +1,5 @@
-// Module: lib/src/async_tools/async_memoizer.dart
+// Module: lib/src/async/async_memoizer.dart
 // Purpose: Cache an async computation per key, with an optional lifetime, without a second stampede layer.
-// Author: liuchuancong
-// Created: 2026-10-10
 //
 // SingleFlight deduplicates concurrent calls but keeps nothing afterwards; a plain map keeps forever and
 // never expires. This sits between them: one in-flight operation per key plus a bounded, time-limited
@@ -16,7 +14,8 @@ import 'single_flight.dart';
 /// Memoizes async computations by key for [ttl], sharing in-flight work between concurrent callers.
 final class AsyncMemoizer<T> {
   AsyncMemoizer({this.ttl = Duration.zero, this.maxEntries = 64, Clock? clock})
-    : _clock = clock ?? systemClock;
+    : assert(maxEntries > 0, 'maxEntries must be at least 1'),
+      _clock = clock ?? systemClock;
 
   /// How long a completed value stays reusable. [Duration.zero] means "never expires" (still bounded by
   /// [maxEntries]).
@@ -66,15 +65,16 @@ final class AsyncMemoizer<T> {
   int get length => _entries.length;
 
   void _store(Object key, T value) {
+    // A re-store moves the entry to the back: eviction has to follow the order values actually landed, and
+    // comparing storedAt timestamps is unstable when two writes happen inside the same clock tick.
+    _entries.remove(key);
     _entries[key] = _Memo<T>(value, _clock());
     while (_entries.length > maxEntries) {
-      final oldest = _entries.entries.reduce((a, b) => a.value.storedAt.isBefore(b.value.storedAt) ? a : b);
-      _entries.remove(oldest.key);
+      _entries.remove(_entries.keys.first);
     }
   }
 
-  bool _expired(_Memo<T> entry) =>
-      ttl > Duration.zero && !_clock().toUtc().isBefore(entry.storedAt.toUtc().add(ttl));
+  bool _expired(_Memo<T> entry) => ttl > Duration.zero && !_clock().toUtc().isBefore(entry.storedAt.toUtc().add(ttl));
 }
 
 final class _Memo<T> {

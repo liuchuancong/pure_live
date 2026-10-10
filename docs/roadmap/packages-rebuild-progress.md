@@ -18,6 +18,13 @@
 
 ## 2. 本轮已做
 
+- **`foundation/utils` 从 5 个模块扩到 13 个**(`async_tools`→`async`,新增 errors / conversion / numbers /
+  types / validation / equality / identifiers / math,`result` 拆出 `result_sequence`)。每个新模块对应一次
+  grep 计数,写在包 `doc/design-decisions.md` §1 的表里:13 个包各写一份 `XException`、`platform` 一处 12 个
+  手写 `operator ==`、82 处手写 `ArgumentError`、9 处裸 `.clamp()`、`64*1024*1024` 这类无单位常量。
+  同时修掉两个实现缺陷:`AsyncMemoizer` 按 `storedAt` 比较淘汰,同一 tick 两次写入会把**最新**那条踢掉
+  (改为按写入序);`Set.union` 参数类型错。测试 38 个通过,`dart analyze` 0 issue,护栏 `packages=55 errors=0`。
+  **未验证**:8 个新模块零消费者,形状要等第一个调用点来钉。
 - **删除 5 个无消费者的 provider 空壳**:`providers/community`、`douyin`、`tvbox`、`twitch`、`youtube`
   (每个 9 行 = 只有 barrel)。全仓 grep 确认无任何 import/依赖/文档引用(`platform` 测试里的
   `pure_live_tvbox_runtime` 是运行时 id 字符串,与该包无关)。根 `workspace:` 同步移除,

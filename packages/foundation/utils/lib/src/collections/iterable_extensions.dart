@@ -3,11 +3,15 @@
 // Author: liuchuancong
 // Created: 2026-10-10
 
-import 'package:collection/collection.dart' as pkg;
-
 extension IterableUtils<T> on Iterable<T> {
-  /// The first element, or null when empty. Delegates to package:collection so the repo has one definition.
-  T? get head => pkg.firstOrNull;
+  /// The first element, or null when empty.
+  ///
+  /// package:collection has this as an extension member, so it cannot be referenced as a function; the
+  /// one-line body here keeps the repo's own definition reachable from the barrel.
+  T? get head {
+    final iterator = this.iterator;
+    return iterator.moveNext() ? iterator.current : null;
+  }
 
   /// The only element, or null when there are none or several.
   ///

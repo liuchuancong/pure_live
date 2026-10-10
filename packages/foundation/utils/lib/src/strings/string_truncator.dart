@@ -27,12 +27,7 @@ final class Truncator {
   ///
   /// [limit] counts UTF-16 code units, matching [String.length] and therefore every width constraint a
   /// widget expresses in characters.
-  static String at(
-    String value,
-    int limit, {
-    String ellipsis = '…',
-    TruncateMode mode = TruncateMode.grapheme,
-  }) {
+  static String at(String value, int limit, {String ellipsis = '…', TruncateMode mode = TruncateMode.grapheme}) {
     if (limit <= 0 || value.length <= limit) {
       return value;
     }

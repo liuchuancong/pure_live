@@ -11,7 +11,7 @@
 
 | 包 | 公共面 | 消费者 | 状态 |
 |---|---|---|---|
-| `utils` → pure_live_utils | async_tools / collections / result / strings / time | logging, network, auth, backup, cache, sync | ✅ 叶子,真在用 |
+| `utils` → pure_live_utils | async / collections / conversion / equality / errors / identifiers / math / numbers / result / strings / time / types / validation | logging, network, auth, backup, cache, sync | ✅ 叶子,真在用;新增 8 个模块按实测重复计数立项,**尚无消费者**(utils README 未验证清单) |
 | `logging` → pure_live_logging | logger / record | network | ✅ |
 | `network` → pure_live_network | client(dio 封装)/ failure 分类 | extension, providers(bilibili/huya/external_tvbox), app | ✅ |
 | `storage` → pure_live_storage | file_key_value_store / stores / migration / migration_runner | extension, permission, identity, services(favorites/history/playlist), app | ✅ |

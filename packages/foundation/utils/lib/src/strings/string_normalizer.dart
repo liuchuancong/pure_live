@@ -44,17 +44,12 @@ String? hostOf(String value) {
 /// Returns a copy of [headers] with sensitive values replaced by [redactedPlaceholder].
 ///
 /// Comparison ignores case because HTTP header names are case-insensitive.
-Map<String, String> redactHeaders(
-  Map<String, String> headers, {
-  Set<String> extraSensitiveNames = const <String>{},
-}) {
-  final blocked = sensitiveHeaderNames.union(extraSensitiveNames.map((name) => name.toLowerCase()));
+Map<String, String> redactHeaders(Map<String, String> headers, {Set<String> extraSensitiveNames = const <String>{}}) {
+  // Set.union takes a Set, so the lower-cased copy has to become one before the merge.
+  final blocked = sensitiveHeaderNames.union(extraSensitiveNames.map((name) => name.toLowerCase()).toSet());
   return Map<String, String>.fromEntries(
     headers.entries.map(
-      (entry) => MapEntry(
-        entry.key,
-        blocked.contains(entry.key.toLowerCase()) ? redactedPlaceholder : entry.value,
-      ),
+      (entry) => MapEntry(entry.key, blocked.contains(entry.key.toLowerCase()) ? redactedPlaceholder : entry.value),
     ),
   );
 }
@@ -70,16 +65,19 @@ String redactQuery(String url, {Set<String> sensitiveKeys = sensitiveQueryKeys})
   }
   final prefix = url.substring(0, mark + 1);
   final query = url.substring(mark + 1);
-  final rewritten = query.split('&').map((part) {
-    final equals = part.indexOf('=');
-    if (equals < 1) {
-      return part;
-    }
-    final name = part.substring(0, equals).toLowerCase();
-    if (!sensitiveKeys.contains(name)) {
-      return part;
-    }
-    return '${part.substring(0, equals)}=$redactedPlaceholder';
-  }).join('&');
+  final rewritten = query
+      .split('&')
+      .map((part) {
+        final equals = part.indexOf('=');
+        if (equals < 1) {
+          return part;
+        }
+        final name = part.substring(0, equals).toLowerCase();
+        if (!sensitiveKeys.contains(name)) {
+          return part;
+        }
+        return '${part.substring(0, equals)}=$redactedPlaceholder';
+      })
+      .join('&');
   return '$prefix$rewritten';
 }

@@ -1,19 +1,24 @@
-# Changelog
 
-All notable changes to this package are documented here. Version numbers are managed by the
-repository-wide release train, see docs/architecture/package-architecture.md section 3.
+# Changelog
 
 ## 0.1.0
 
-- 按模块拆分目录:`lib/src/<module>/`,每模块一个 barrel,包 barrel 只导出五个模块。
-- 新增 `AsyncMemoizer`(带 TTL 与条数上限的异步记忆化)、`Stream.debounce` / `distinctByKey` /
-  `firstOrNull`、`Future.nullable` / `orFallback` / `ignore`。
-- 新增 collections 扩展:`head` / `singleOrNull` / `uniqueBy` / `sumBy` / `partitionBy`、
-  `elementAtOrNull` / `move` / `appended` / `indexOfOrNull`、`getOrPut` / `mergedWith` /
-  `whereValue` / `readWhere`。
-- 新增 result:`ResultCollection`、`partition` / `collect` / `waitAll`、`requireValue` / `fold` / `tapErr`。
-- 新增 `Truncator`(hard / word / grapheme 三种截断策略)与 `isBlank`;`truncate` 保留为按码元的简版。
-- 新增 `Timestamps`(秒 / 毫秒 / 微秒 epoch 与 `parseAmbiguous`)、`Duration.asHms` / `asCompact`、
-  `DateTime.sameDayAs` / `startOfDay`。
-- **行为变化**:`systemClock()` 改为经 `package:clock` 读取,zone 内覆盖时钟现在会影响默认值。
-- `redactHeaders` 增加 `extraSensitiveNames`;默认敏感查询键提为具名常量 `sensitiveQueryKeys`。
+- Establish the initial PureLive utility package.
+- Define module boundaries and public API conventions.
+- `async_tools` became `async` and gained `CancellationToken` with `OperationCancelledException` (moved
+  out of `retry.dart`, which now re-exports it), `AsyncOnce<T>` (one stored computation per key, failures
+  not remembered), `Disposer`/`Disposable` and `OperationGuard`.
+- New modules, each absorbed from measured duplication: `errors` (`DomainFailure`, `UnexpectedFailure`),
+  `conversion` (`intFrom`, `doubleFrom`, `boolFrom`, `stringFrom`, `jsonMapFrom`, `stringListFrom`),
+  `numbers` (`clampInt`, `clampDouble`, `lerpDouble`, `roundTo`, `percentOf`, `ByteSize`), `types` (`Unit`,
+  `asOrNull`, `or`), `validation` (`requireNonBlank`, `requireInRange`, `requireNotEmpty`,
+  `requireNonNull`), `equality` (`ValueEquality`, `deepEquals`, `deepHash`), `identifiers` (`identityKey`,
+  `normalizeToken`, `sameToken`) and `math` (`ClosedInterval`).
+- **Breaking**: `result` split — `ResultCollection`, `partition`, `collect` and `waitAll` moved to
+  `result_sequence.dart`; `result_transformers.dart` now holds the throwing-to-`Result` seam
+  (`captureResult`, `captureAsync`) and the future combinators (`andThen`, `recover`).
+- **Breaking**: `waitAll()` no longer folds a rejected future into the error list. A rejection means the
+  caller did not turn its own failure into `Result.err`, so it propagates.
+- `AsyncMemoizer` evicts in store order instead of by `storedAt` comparison, which picked the newest entry
+  when two writes landed in the same clock tick.
+- Dropped the `collection` dependency; `clock` is the only runtime dependency.
