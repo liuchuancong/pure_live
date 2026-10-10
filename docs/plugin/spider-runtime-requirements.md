@@ -77,7 +77,68 @@ fjs 的 `fjs.bridge_call` 返回 **Promise**(异步)。这意味着:
 若均不可行,W8 铺量的存量同步源需要自研 quickjs 包装器(whl.quickjs 同类,工程量大)或引导源作者
 改 async。此项为 **W8 的第一阻塞项**,已在本文件记录。
 
-## 5. 各域功能需求清单(工业级口径)
+
+## 6. Bilibili 视频域端点全集(newBV bili-api 92 端点盘点)
+
+来源:newBV-main bili-api/src/main/kotlin/.../http/BiliHttpApi.kt(2336 行,92 个端点)。
+按域分组,✓=PureLive 已实现,○=待实现,括号内为关键约束:
+
+**基础/游客可用**
+- ✓ popular 热门(pn/ps)、✓ view 详情、✓ player/playurl(try_look)、✓ search/type(WBI+buvid3)
+- ○ buvid3 获取:/x/spi(游客首跑需先取,当前用随机值——部分风控场景会 412)
+- ○ related 相关视频、○ comments 评论(分页/回复)、○ online 在线人数、○ video shot 卡点图
+
+**WBI 签名端点**(签名器已就绪)
+- ✓ nav(密钥)、○ wbi/view/detail 超详、○ space/wbi/arc/search UP 主投稿、
+  ○ space/wbi/acc/info 用户信息、○ dm/wbi/web/seg.so 弹幕分段
+
+**登录态域**(无 Cookie 全不可用;QR 扫码+Cookie 导入两路)
+- ○ passport QR 登录(qrcode generate/poll)、○ cookie 刷新(fresh)
+- ○ myinfo、○ histories 历史金条、○ toview 稍后再看(增删)、○ favorite 文件夹全套
+- ○ heartbeat 心跳上报(网页/app 双形态)、○ like/coin/fav/triple 互动、○ follow 追番追剧
+
+**PGC 番剧域**
+- ○ pgc/player/web/playurl(V1)、○ pgc/player/web/v2/playurl(V2)
+- ○ pgc Web 初始态、feed、 seasons 索引(番剧/国创/综艺/影视/纪录片七类)、○ timeline 时间表
+
+**直播域**(bilibili_live_source 已含 getList/getListByAreaID/second getList/getInfoByRoom/getRoomPlayInfo)
+- ○ getDanmuInfo + websocket 弹幕(WBI 签名+host_list 故障转移——协议已盘点)
+- ○ live 全站推荐流
+
+**其他**
+- ○ dynamic 动态、○ region 分区、○ searchSquare/trend/suggest 搜索发现、
+  ○ season 系列信息、○ tag 系统、○ garb 装扮、○ download 直链下载
+
+**横切需求**
+- Cookie jar(buvid3/bili_jct/DedeUserID/SessData)+ 每请求 Referer
+- WBI 密钥 6h 缓存与 -352 风控重试
+- v_voucher 风控检测(响应含即抛)
+- app 形态端点(app_key 签名)作为 web 风控后备
+
+## 7. 直播域协议清单(dart_simple_live-dev simple_live_core)
+
+| 平台 | 协议文件行数 | 关键难度 |
+|---|---:|---|
+| douyin | 714 | webid 申请 + X-Bogus/MSigner 签名(需 JS 沙箱跑签名脚本)+ websocket 弹幕 |
+| douyu | 351 | getEncryption 描述符 + md5 链签名(纯 Dart 可移植)+ TCP 弹幕(封包协议) |
+| bilibili | ~600 | WBI + getRoomPlayInfo 多层流结构 + protobuf websocket 弹幕 |
+| huya | ~600 | TARS/WS 注册 + antiCode 多形态(已迁移 v1 线) |
+| twitch | ~200 | GraphQL 端点 + USHS 流 |
+
+另:本仓 master 维护线已有 35+ 站协议(acfun/baidulive/bigo/cc/chzzk/fc2live/inke/jdlive/
+kilakila/kugoulive/liveme/looklive/missevan/niconico/pandalive/picarto/seventeenlive/
+showroom/sixroom/soop/steambroadcast/tiktok/twitcasting/weibo/xiaohongshu/yy...),每站含
+弹幕与签名细节,按需逐站迁移。
+
+## 8. lx-music 补充盘点
+
+- user-api 脚本可调用面已实现(request/send/on/crypto/buffer/zlib/currentScriptInfo);
+  **未实现**:代理透传(request options.agent)、脚本存储(桌面端未提供 storage API——
+  实际脚本用全局变量保状态,进程内即满足)。
+- 音源脚本生态常见形态:单文件 IIFE、声明 sources( kw/kg/tx/wy/mg/local × qualitys )、
+  musicUrl 内部二次请求解析、部分依赖 crypto-js 内联。宿主无需 cheerio。
+
+## 9. 各域功能需求清单(工业级口径)
 
 ### TVBox 域
 - [x] 单仓/多仓/urls/storeHouse 解析
