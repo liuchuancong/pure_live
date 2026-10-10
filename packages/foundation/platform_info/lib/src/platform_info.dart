@@ -8,7 +8,13 @@
 // own: ask capabilitiesFor(kind) once and pass the answer down.
 
 /// Which operating environment the app is running in.
-enum PlatformKind { android, androidTv, ios, iOSTv, macOS, windows, linux, web }
+///
+/// [unknown] is a real case and not a placeholder: this enum is the input every capability branch reads, so
+/// an unrecognised operating system has to answer "I do not know" rather than borrow another target's
+/// answers. It used to borrow [PlatformKind.web], which was described as "the most restricted target" and is
+/// not - web can enter picture-in-picture and reports itself touch-first, so a fuchsia or a rebranded
+/// Android fork inherited two optimistic assumptions while being told it had no secure storage.
+enum PlatformKind { android, androidTv, ios, iOSTv, macOS, windows, linux, web, unknown }
 
 /// What the platform can be asked to do. Defaults live in one table so a new target cannot silently
 /// inherit an optimistic assumption.
@@ -38,6 +44,20 @@ final class PlatformCapabilities {
   final bool supportsRemoteControl;
   final bool isTouchPrimary;
   final bool isTelevision;
+
+  /// Nothing is assumed. This is the floor an unrecognised target falls back to, and every flag is off
+  /// because a capability nobody verified is worse than a feature nobody offered: on the optimistic reading
+  /// the app hides its own controls, on the pessimistic one it shows a button that does nothing.
+  static const PlatformCapabilities unknown = PlatformCapabilities(
+    hasSecureStorage: false,
+    supportsBackgroundPlayback: false,
+    supportsPictureInPicture: false,
+    supportsFileSystemAccess: false,
+    supportsMultiWindow: false,
+    supportsRemoteControl: false,
+    isTouchPrimary: false,
+    isTelevision: false,
+  );
 
   /// A web target: no secure enclave, no background playback, no raw file system.
   static const PlatformCapabilities web = PlatformCapabilities(
@@ -127,13 +147,33 @@ PlatformKind detectPlatform({required String os, bool isTelevisionDevice = false
     case 'linux':
       return PlatformKind.linux;
     default:
-      return PlatformKind.web;
+      // Not web: an unknown target must not inherit a browser's assumptions, see [PlatformKind.unknown].
+      return PlatformKind.unknown;
   }
 }
 
 /// The capability matrix for [kind].
-PlatformCapabilities capabilitiesFor(PlatformKind kind) {
+///
+/// [webIsTouchPrimary] exists because "web" says nothing about how the person is pointing: a browser on a
+/// phone and a browser on a desktop are the same [PlatformKind] with opposite layout rules. The host knows
+/// which one it is from MediaQuery, and passing it here keeps one table instead of letting each surface
+/// re-decide what a browser is.
+PlatformCapabilities capabilitiesFor(PlatformKind kind, {bool? webIsTouchPrimary}) {
+  if (kind == PlatformKind.web && webIsTouchPrimary != null) {
+    final base = PlatformCapabilities.web;
+    return PlatformCapabilities(
+      hasSecureStorage: base.hasSecureStorage,
+      supportsBackgroundPlayback: base.supportsBackgroundPlayback,
+      supportsPictureInPicture: base.supportsPictureInPicture,
+      supportsFileSystemAccess: base.supportsFileSystemAccess,
+      supportsMultiWindow: base.supportsMultiWindow,
+      supportsRemoteControl: base.supportsRemoteControl,
+      isTouchPrimary: webIsTouchPrimary,
+      isTelevision: base.isTelevision,
+    );
+  }
   return switch (kind) {
+    PlatformKind.unknown => PlatformCapabilities.unknown,
     PlatformKind.web => PlatformCapabilities.web,
     PlatformKind.android => PlatformCapabilities.android,
     PlatformKind.androidTv => PlatformCapabilities.androidTv,

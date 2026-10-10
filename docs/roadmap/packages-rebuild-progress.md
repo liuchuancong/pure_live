@@ -90,6 +90,13 @@
   另加 `fileName` 路径校验(宿主把它拼到录制目录后)、三处 `DateTime.now()` 换成注入 `Clock`
   (不然这些规则根本没法测)、id 在转换间保持稳定。13 测试。
   `lib/src/data/` 仍空是刻意的:引擎在录制波次,状态契约先立住就没有第二套真相。
+- **#7 的 `foundation/platform_info`(能力矩阵)**:`detectPlatform` 认不出的系统以前回退成 `PlatformKind.web`,
+  而它自己的注释写着这是「最受限的目标」—— web 恰恰不是:它 `supportsPictureInPicture: true` 且
+  `isTouchPrimary: true`。于是 harmonyos / 改壳 Android 分支**同时**继承两个乐观假设和 web 的存储分支
+  (`kind == web` 这种判断在别处决定文件写到哪)。新增 `PlatformKind.unknown` + 全 false 的底线矩阵,
+  穷尽 switch 照旧(加目标不写矩阵就编不过);web 的输入方式改成显式 `webIsTouchPrimary`
+  —— 手机浏览器与桌面浏览器是同一个 kind、相反布局,只有宿主分得出来。21 测试。
+  **仍未验证**:零消费者;旗标的真实性一台设备都没测过,`unknown` 是保守而不是正确。
 - **#7 的 `foundation/sync`(游标)**:这条是**会导致重复全量拉取**的那种缺陷,而且完全静默 ——
   `pull()` 把收到的 `from` 原样回显成报告的游标(因为 `fetchSince` 只回一个 `List`,引擎根本不知道新位置),
   所以按文档写的用法 `pull(from: lastReport.cursor)` **每次都重拉全部历史**,看起来一切正常;
@@ -220,7 +227,7 @@
 | 4 | `ui/design` **令牌面已补齐** / `ui/ui_kit` `ui/adaptive` **已接令牌(仅静态分析验证)** / 真机与 app 传参待做 | 令牌只有 spacing/radius,组件 4 个,风格注册表无焦点/密度维度 | 令牌全集(色/距/圆/高/动效/字焦/密度)、`AppNotice`/`AppDialog`/`AppLoading`/空错态门面、D-pad 焦点序与 TV 尺寸。**下一步是把 ui_kit 与 adaptive 改成消费 `DesignTokens`** —— 否则令牌只是躺在一个没人读的包里 |
 | 5 | `ui/lyric` `ui/player_ui` | 单文件适配 | 时间轴同步、句柄所有权、与 `integrations/media` 的状态订阅边界 |
 | 6 | `services/search` `services/feed` **已完成** | 聚合器只有扇出 | 分页三态校验 + 按源游标 + 取消传播 + 失败记账形状已落;剩余:跨源节(继续看)受 FeedSection 形状限制,见 w5 §2 |
-| 7 | `foundation/diagnostics` `events` `sync` **已修** / `platform_info` 待做 | 薄 | 有界缓冲与守护执行的真缺陷已修;剩余:结构化事件出口、探测能力矩阵、同步游标与冲突策略 |
+| 7 | `foundation/diagnostics` `events` `sync` `platform_info` **全部已修** | 薄 | 有界缓冲与守护执行的真缺陷已修;剩余:结构化事件出口、探测能力矩阵、同步游标与冲突策略 |
 | 8 | `providers/douyu` | 空 barrel | 按 `providers/huya` 的形状实现 feed/browse/search/resolve |
 | 9 | `ecosystem/plugin_host` `resolver` `capability` | 有实现,未过 DoD | 只做复核:错误具名、超时/体积上限、资源释放、README 平台矩阵 |
 

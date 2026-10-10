@@ -25,10 +25,13 @@ void main() {
       expect(detectPlatform(os: 'ios', isTelevisionDevice: true), PlatformKind.iOSTv);
     });
 
-    test('test_detectPlatform_unrecognisedName_fallsBackToWeb', () {
-      // An unknown name is treated as the most restricted target, so a new platform cannot silently
-      // inherit desktop file-system rights.
-      expect(detectPlatform(os: 'symbian'), PlatformKind.web);
+    test('test_detectPlatform_unrecognisedName_fallsBackToUnknown', () {
+      // The intent of this test was always "the most restricted target", and web was never that: a browser
+      // may enter picture-in-picture and reports itself touch-first. An unknown name now answers "I do not
+      // know", which is the floor with nothing assumed.
+      expect(detectPlatform(os: 'symbian'), PlatformKind.unknown);
+      expect(capabilitiesFor(PlatformKind.unknown).supportsFileSystemAccess, isFalse);
+      expect(capabilitiesFor(PlatformKind.unknown).supportsPictureInPicture, isFalse);
     });
 
     test('test_detectPlatform_desktops', () {

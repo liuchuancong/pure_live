@@ -23,7 +23,7 @@
 | `backup` → pure_live_backup | engine / manifest / webdav_store | app | ✅ |
 | `sync` → pure_live_sync | sync_engine(拉/推 + 墓碑 + 游标 + 冲突策略) | **无** | ✅ 修了「游标回显 → 每次全量重拉」与空闲 push 谎报起点;拒绝行计数;18 测试 |
 | `l10n` → pure_live_l10n | locale / translation_bundle | **无** | ⚠️ 零消费者(app 侧本地化未接) |
-| `platform_info` → pure_live_platform_info | platform_info | **无** | ⚠️ 零消费者 |
+| `platform_info` → pure_live_platform_info | platform_info(能力矩阵 + 探测) | **无** | ✅ 未识别系统不再借用 web 的乐观答案(新增 `unknown` 全 false 底线);web 输入方式改为显式传入;21 测试 |
 | `release` → pure_live_release | version / update_feed | app | ✅ |
 
 ## 2. L0.5 integrations(3)
