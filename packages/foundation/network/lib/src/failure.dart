@@ -23,6 +23,15 @@ enum NetworkFailureKind {
   /// A response body exceeded the configured ceiling.
   responseTooLarge,
 
+  /// The server answered 404.
+  notFound,
+
+  /// The server answered a 5xx class error.
+  server,
+
+  /// A response body could not be decoded into the expected shape.
+  parse,
+
   /// Any other HTTP status the caller treats as an error.
   httpStatus,
 
@@ -56,7 +65,10 @@ final class NetworkFailure implements Exception {
       NetworkFailureKind.rateLimited => 'network.rate_limited',
       NetworkFailureKind.responseTooLarge => 'network.response_too_large',
       NetworkFailureKind.cancelled => 'task.cancelled',
-      // These three extend the section 14 list rather than reusing an unrelated code: a 5xx is not
+      NetworkFailureKind.notFound => 'network.not_found',
+      NetworkFailureKind.server => 'network.server',
+      NetworkFailureKind.parse => 'network.parse',
+      // These extend the section 14 list rather than reusing an unrelated code: a 5xx is not
       // "unreachable", and mislabelling it would make the retry dashboard lie about the cause.
       NetworkFailureKind.httpStatus => 'network.http_status',
       NetworkFailureKind.redirectRefused => 'network.redirect_refused',

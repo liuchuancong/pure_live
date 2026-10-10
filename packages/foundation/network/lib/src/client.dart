@@ -339,12 +339,12 @@ final class NetworkClient {
 /// Decodes a JSON object body, reporting the url that failed rather than throwing a bare FormatException.
 Map<String, Object?> decodeJsonObject(String body, {required String url}) {
   if (body.trim().isEmpty) {
-    throw NetworkFailure(kind: NetworkFailureKind.unknown, method: 'GET', url: url, cause: 'empty body');
+    throw NetworkFailure(kind: NetworkFailureKind.parse, method: 'GET', url: url, cause: 'empty body');
   }
   final decoded = jsonDecode(body);
   if (decoded is! Map) {
     throw NetworkFailure(
-      kind: NetworkFailureKind.unknown,
+      kind: NetworkFailureKind.parse,
       method: 'GET',
       url: url,
       cause: 'expected a JSON object, got ${decoded.runtimeType}',
