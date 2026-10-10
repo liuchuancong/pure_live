@@ -11,6 +11,9 @@
 /// package the only reader and writer of credentials.
 library;
 
+export 'src/cookies.dart';
 export 'src/credential_store.dart';
 export 'src/ports.dart';
+export 'src/request_auth.dart';
 export 'src/session.dart';
+export 'src/token_refresh.dart';
