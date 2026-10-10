@@ -1,6 +1,6 @@
 # GENERATED-BY: tool/scaffold_package.ps1
 name: pure_live_settings
-description: "Feature package: settings (repository + presentation skeleton per package-architecture.md)"
+description: "Feature package: settings(偏好机制:PreferenceKey<T> + 带版本信封的 KV、命名空间隔离与逐项校验的导入)"
 publish_to: none
 resolution: workspace
 

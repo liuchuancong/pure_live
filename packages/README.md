@@ -99,8 +99,9 @@
    全是为了躲 `foundation/backup`、`services/search`、`providers/iptv`、`providers/music` 的重名。
    要么改层内短名(如 `features/backup` → `features/webdav_backup`),要么给包名加层前缀 —— 需要一次
    决策,不能各改各的。
-4. **pubspec description 失真**:`providers/iptv`(312 行)、`providers/music`(735 行)、`ui/*` 五包、
-   `features/settings` 都还写着 "skeleton"。描述是别人判断"这包能不能用"的第一入口,失真等于误导。
+4. ~~**pubspec description 失真**~~ **已修(2026-10-10)**:`providers/{iptv,music}`、`ui/{adaptive,lyric,player_ui,ui_kit}`、
+   `features/settings` 七包原本都还写着 "skeleton",`providers/douyu` 写着空壳。全仓 `grep -l skeleton --include=pubspec.yaml`
+   现已为 0。描述是别人判断"这包能不能用"的第一入口,失真等于误导 —— 新描述照各包 barrel 与文件头 Purpose 写。
 
 ## 5. 添加 / 删除一个包
 

@@ -1,6 +1,6 @@
 # GENERATED-BY: tool/scaffold_package.ps1
 name: pure_live_player_ui
-description: "UI layer package: player_ui (skeleton; capabilities fill per package-architecture.md)"
+description: "UI layer package: player_ui(选集面板与变体选择面板:清晰度、线路或任意可选项)"
 publish_to: none
 resolution: workspace
 

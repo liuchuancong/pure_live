@@ -1,6 +1,6 @@
 # GENERATED-BY: tool/scaffold_package.ps1
 name: pure_live_iptv
-description: "Provider package: iptv (skeleton; capabilities fill in the plugin-details phase)"
+description: "IPTV 源:一份播放列表加可选 XMLTV 节目单,按 capability 契约出直播房间、目录与 EPG"
 publish_to: none
 resolution: workspace
 

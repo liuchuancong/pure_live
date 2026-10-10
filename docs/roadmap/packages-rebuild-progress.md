@@ -233,6 +233,11 @@
   `Switch` / `DropdownButton<String>` / 四个 `Icons.*` 都由这层门校验,不是凭记忆写的),design 测试 20 → 26,
   护栏 `--strict packages=55 errors=0 warnings=0`。
   **仍未验**:主题真实渲染成什么样 —— 没有 widget 测试、没有截图、没有真机(design/adaptive README 的未验证已改口)。
+- **失真的 pubspec description 全部修掉(台账 §2bis/目录 §4 第 4 项,标注"优先修"的那条)**:
+  `providers/{iptv,music}`、`ui/{adaptive,lyric,player_ui,ui_kit}`、`features/settings` 七包还写着 "skeleton",
+  `providers/douyu` 写着空壳(那条本轮实现时已顺带改)。新描述是按各包 barrel 与文件头 `Purpose:` 写的,
+  不是照旧文案润色。全仓 `grep -l skeleton --include=pubspec.yaml` 现在为 0。
+  理由与目录里那条一致:**描述是别人判断"这包能不能用"的第一入口**,失真比缺实现更误导 —— 空壳包至少一眼看得出空。
 - **队列第 9 项收口:ecosystem 逐包过资源释放与 README 平台矩阵**(plugin_host / resolver / capability 的复核本轮补完):
   - `plugin_host` 两个真缺陷(新增 6 例测试,包内共 11 例通过):(a) `list()` 会把 `.staging` 残骸当成已装插件 ——
     三文件是在 rename **之前**全部写完的,所以崩溃留下的残骸**内容是完整的**,于是同一个插件被列两遍,

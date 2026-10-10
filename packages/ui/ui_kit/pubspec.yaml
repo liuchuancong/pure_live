@@ -1,6 +1,6 @@
 # GENERATED-BY: tool/scaffold_package.ps1
 name: pure_live_ui_kit
-description: "UI layer package: ui_kit (skeleton; capabilities fill per package-architecture.md)"
+description: "UI layer package: ui_kit(通知/对话框/加载门面、海报卡、空错态,以及承载令牌的 DesignTokensTheme)"
 publish_to: none
 resolution: workspace
 

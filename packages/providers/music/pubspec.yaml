@@ -1,6 +1,6 @@
 # GENERATED-BY: tool/scaffold_package.ps1
 name: pure_live_music
-description: "Provider package: music (skeleton; capabilities fill in the plugin-details phase)"
+description: "lx-music 源宿主:在沙箱里跑 user-api 脚本,Dart 侧提供 bridge 端点与前置环境"
 publish_to: none
 resolution: workspace
 

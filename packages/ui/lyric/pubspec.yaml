@@ -1,6 +1,6 @@
 # GENERATED-BY: tool/scaffold_package.ps1
 name: pure_live_lyric
-description: "UI layer package: lyric (skeleton; capabilities fill per package-architecture.md)"
+description: "UI layer package: lyric(歌词面:多格式时间轴解析、逐行高亮与播放进度跟随)"
 publish_to: none
 resolution: workspace
 

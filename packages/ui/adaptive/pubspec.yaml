@@ -1,6 +1,6 @@
 # GENERATED-BY: tool/scaffold_package.ps1
 name: pure_live_adaptive
-description: "UI layer package: adaptive (skeleton; capabilities fill per package-architecture.md)"
+description: "UI layer package: adaptive(六种风格注册表把 DesignTokens 映射成 ThemeData,外加装饰背景层)"
 publish_to: none
 resolution: workspace
 
