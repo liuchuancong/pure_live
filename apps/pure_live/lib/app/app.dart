@@ -31,8 +31,11 @@ final class PureLiveApp extends ConsumerWidget {
     final registry = AdaptiveStyleRegistry.withAllVariants();
     return MaterialApp.router(
       title: '纯粹直播',
-      theme: registry.themeFor(appearance.style, Brightness.light, appearance.seed),
-      darkTheme: registry.themeFor(appearance.style, Brightness.dark, appearance.seed),
+      // The stored settings are what make the tokens the user's: density, text scale, motion and input mode
+      // all decide control sizes and font floors, so leaving them out would render a TV build at phone
+      // metrics no matter what the settings page says.
+      theme: registry.themeFor(appearance.style, Brightness.light, appearance.seed, appearance: appearance.settings),
+      darkTheme: registry.themeFor(appearance.style, Brightness.dark, appearance.seed, appearance: appearance.settings),
       themeMode: appearance.themeMode,
       routerConfig: router,
       builder: (context, child) {

@@ -11,7 +11,7 @@
 | `src/semantic_roles.dart` | `ColorRole`(13 个角色)、`ControlState`、`FocusShape`、`InputMode`、`PlatformProfile` | 六种风格不共享 Material 的命名;角色按语义命名,适配器才不用各写一套常量 |
 | `src/scale_tokens.dart` | `SpaceToken` / `RadiusToken` / `Density` / `TypeRole` / `MotionProfile` | 字阶要能表达"十英尺可读下限",动效要能表达"减少动态 = 时长归零而不是变短" |
 | `src/control_metrics.dart` | `ControlKind`(高度与最小可瞄准尺寸)、`FocusVisual` | TV / 鼠标 / 触摸的交互尺寸本来就不该是同一个数 |
-| `src/design_tokens.dart` | `DesignTokens` + `resolveDesignTokens` + `AppearanceSettings` + `BackgroundConfig` + 兼容用的 `PureLiveSpacing` / `PureLiveRadius` | 解析规则(不可协商的那几条)只能有一处实现 |
+| `src/design_tokens.dart` | `DesignTokens` + `resolveDesignTokens` + `AppearanceSettings`(+ `resolveTokens` / `copyWith` / `withDensity` / `withInput`)+ `BackgroundConfig` + 兼容用的 `PureLiveSpacing` / `PureLiveRadius` | 解析规则(不可协商的那几条)只能有一处实现 |
 
 ## 规则(这些是包里的硬约束,不是建议)
 
@@ -43,8 +43,7 @@
 
 ## 未验证
 
-- **ui_kit 与 ui/adaptive 还没消费这套令牌** —— 注册表现在直接从 `ColorScheme` 造 `ThemeData`,
-  没有读密度/焦点/输入模式维度(台账 §3 第 4 行剩下的部分就是这件事)。
-- 因此这些数字**没有对着真机或截图核过**:20 个测试钉住的是自洽性(下限、排序、归零、可瞄准),
-  不是"TV 上看着舒服"。首轮真机验证要连 ui_kit 的接入一起做。
+- **数字没有对着真机或截图核过**:26 个测试钉住的是自洽性(下限、排序、归零、可瞄准、设置→令牌的映射),
+  不是"TV 上看着舒服"。`apps/pure_live` 已经把用户设置接进 `themeFor`,但那条链路只过了静态分析:
+  设置页改一次密度/字号后实际渲染成什么样,本轮没有 widget 测试、也没有设备截图。
 - `ColorRole` 的 13 个角色是照 §5.4 列的集合,没有做对比度实测;对比度目前是**要求值**而不是计算值。

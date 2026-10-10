@@ -5,6 +5,10 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- `themeFor` gained `{appearance}` (a `pure_live_design` `AppearanceSettings`, defaulting to the platform's own
+  reading). It is additive — the existing `{tokens}` override still wins — and it is what lets a host pass the
+  settings it stores instead of re-deriving density, input mode and text scale at every call site.
+
 - **Breaking (internally)**: `StyleThemeFactory` now receives `DesignTokens` instead of a `TextTheme?`, and
   `themeFor` gained an optional `{tokens}`. The shared part of a theme moved into `_applyTokens`, which runs
   after the style's factory: switching to Fluent used to also switch to a mouse's density, so a Fluent build

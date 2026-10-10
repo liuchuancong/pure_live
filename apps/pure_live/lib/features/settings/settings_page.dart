@@ -154,9 +154,84 @@ final class _AppearanceSection extends ConsumerWidget {
           trailing: const Icon(Icons.chevron_right),
           onTap: () => _editBackground(context, controller, appearance),
         ),
+        ListTile(
+          leading: const Icon(Icons.format_size),
+          title: const Text('文字缩放'),
+          subtitle: const Text('字号只放大,不缩小到看不清以下'),
+          trailing: DropdownButton<String>(
+            value: _textScaleCode(appearance.settings.textScale),
+            items: const <DropdownMenuItem<String>>[
+              DropdownMenuItem(value: '1', child: Text('标准')),
+              DropdownMenuItem(value: '1.15', child: Text('较大')),
+              DropdownMenuItem(value: '1.3', child: Text('大')),
+              DropdownMenuItem(value: '1.5', child: Text('特大')),
+            ],
+            onChanged: (code) =>
+                code == null ? null : controller.update(appearance.copyWith(textScale: double.parse(code))),
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.grid_on),
+          title: const Text('控件密度'),
+          subtitle: const Text('遥控与触屏需要更大的可瞄准区域'),
+          trailing: DropdownButton<String>(
+            value: appearance.settings.density?.name ?? 'auto',
+            items: const <DropdownMenuItem<String>>[
+              DropdownMenuItem(value: 'auto', child: Text('跟随设备')),
+              DropdownMenuItem(value: 'compact', child: Text('紧凑')),
+              DropdownMenuItem(value: 'standard', child: Text('标准')),
+              DropdownMenuItem(value: 'comfortable', child: Text('宽松')),
+            ],
+            onChanged: (code) => code == null
+                ? null
+                : controller.update(appearance.withDensity(code == 'auto' ? null : Density.values.byName(code))),
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.gamepad_outlined),
+          title: const Text('操作方式'),
+          subtitle: const Text('决定焦点样式与十尺距离的字底', maxLines: 2),
+          trailing: DropdownButton<String>(
+            value: appearance.settings.preferredInput?.name ?? 'auto',
+            items: const <DropdownMenuItem<String>>[
+              DropdownMenuItem(value: 'auto', child: Text('跟随设备')),
+              DropdownMenuItem(value: 'touch', child: Text('触屏')),
+              DropdownMenuItem(value: 'pointer', child: Text('鼠标')),
+              DropdownMenuItem(value: 'remote', child: Text('遥控器')),
+            ],
+            onChanged: (code) => code == null
+                ? null
+                : controller.update(appearance.withInput(code == 'auto' ? null : InputMode.values.byName(code))),
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.motion_photos_pause_outlined),
+          title: const Text('减弱动效'),
+          subtitle: const Text('把缩放与位移动画降到 0'),
+          trailing: Switch(
+            value: appearance.settings.reduceMotion,
+            onChanged: (value) => controller.update(appearance.copyWith(reduceMotion: value)),
+          ),
+        ),
       ],
     );
   }
+}
+
+/// The nearest preset for the saved text scale. Stored as a number because that is what the token resolver
+/// reads; the dropdown only offers the four the floor and the layout actually survive.
+String _textScaleCode(double scale) {
+  const codes = <String>['1', '1.15', '1.3', '1.5'];
+  var best = codes.first;
+  var bestGap = double.infinity;
+  for (final code in codes) {
+    final gap = (double.parse(code) - scale).abs();
+    if (gap < bestGap) {
+      best = code;
+      bestGap = gap;
+    }
+  }
+  return best;
 }
 
 final class _SectionHeader extends StatelessWidget {

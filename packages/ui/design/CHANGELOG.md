@@ -5,6 +5,13 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- Added `AppearanceSettings.resolveTokens({required platform})`, `copyWith`, `withDensity` and `withInput`, so
+  the settings document a user writes and the token set a theme is built from are one object rather than a
+  per-host re-derivation of the same mapping. `withDensity`/`withInput` exist because `copyWith`'s absent
+  argument means "unchanged", and "follow the platform" is a choice a settings screen has to be able to make.
+  Tests 20 → 26; the added ones pin the input-over-platform rules and the text-scale floor through the
+  settings object rather than only through `resolveDesignTokens`.
+
 - Added the token set section 5.4 asks a style adapter to map: `ColorRole` (13 semantic roles), `ControlState`,
   `FocusShape`, `SpaceToken`, `RadiusToken`, `Density`, `TypeRole`, `MotionProfile`, `ControlKind`,
   `FocusVisual`, `InputMode` and `PlatformProfile`.

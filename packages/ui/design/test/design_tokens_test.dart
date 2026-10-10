@@ -174,6 +174,60 @@ void main() {
       expect(defaults.background.isActive, isFalse);
     });
 
+    test('test_resolveTokens_aPhoneBuildWithRemoteInputStillClearsTheRemoteMinimums', () {
+      // The point of carrying preferredInput: a PC attached to a TV remote is one real configuration, and the
+      // token set must follow the input, not the box it happens to run on.
+      const settings = AppearanceSettings(preferredInput: InputMode.remote);
+
+      final tokens = settings.resolveTokens(platform: PlatformProfile.androidPhone);
+
+      expect(tokens.input, InputMode.remote);
+      expect(tokens.focus.isFindable, isTrue);
+      expect(tokens.motion.scaleOnFocusAllowed, isFalse);
+    });
+
+    test('test_resolveTokens_textScaleBelowOneIsRefused', () {
+      // The resolver owns the floor, so no caller can ship a "smaller text" option that a style invented.
+      const settings = AppearanceSettings(textScale: 0.8);
+
+      expect(settings.resolveTokens(platform: PlatformProfile.androidPhone).textScale, 1);
+    });
+
+    test('test_resolveTokens_withoutAChoiceThePlatformDecidesDensity', () {
+      const settings = AppearanceSettings();
+
+      expect(settings.resolveTokens(platform: PlatformProfile.androidTv).density, Density.comfortable);
+      expect(settings.resolveTokens(platform: PlatformProfile.windows).density, Density.compact);
+    });
+
+    test('test_resolveTokens_reduceMotionZeroesEveryDuration', () {
+      const settings = AppearanceSettings(reduceMotion: true);
+
+      final motion = settings.resolveTokens(platform: PlatformProfile.androidTv).motion;
+
+      expect(motion.instant, Duration.zero);
+      expect(motion.quick, Duration.zero);
+      expect(motion.standard, Duration.zero);
+      expect(motion.slow, Duration.zero);
+    });
+
+    test('test_withDensity_nullMeansFollowThePlatformAgain', () {
+      // copyWith cannot express this: an absent argument there means "unchanged", and "auto" is a choice the
+      // settings screen has to be able to make.
+      const picked = AppearanceSettings(density: Density.compact);
+
+      expect(picked.copyWith(textScale: 1.5).density, Density.compact);
+      expect(picked.withDensity(null).density, isNull);
+      expect(picked.withDensity(null).textScale, picked.textScale);
+    });
+
+    test('test_withInput_nullFallsBackToThePlatformDefault', () {
+      const picked = AppearanceSettings(preferredInput: InputMode.touch);
+
+      expect(picked.withInput(null).preferredInput, isNull);
+      expect(picked.withInput(null).resolveTokens(platform: PlatformProfile.windows).input, InputMode.pointer);
+    });
+
     test('test_backgroundConfig_anUnknownKindReadsAsNoneRatherThanThrowing', () {
       final read = BackgroundConfig.fromJson(<String, Object?>{'kind': 'hologram', 'opacity': 0.4});
 

@@ -70,13 +70,20 @@ final class AdaptiveStyleRegistry {
 
   /// The themes for one style, light and dark, from one seed.
   ///
-  /// [tokens] is what carries the user's density, input mode and text scale. Without it the theme is built
-  /// for the running platform's default input - correct on a phone, wrong on a TV - so a host that knows
-  /// which box it is on should pass them.
-  ThemeData themeFor(AdaptiveUiStyle style, Brightness brightness, Color seed, {DesignTokens? tokens}) {
+  /// [appearance] is the user's own density, input mode, text scale and motion preference, resolved against
+  /// the running platform. [tokens] overrides that whole step for a host that already resolved them. With
+  /// neither the theme is built for the platform's default input - correct on a phone, wrong on a TV - so a
+  /// host that has a settings screen should pass what it stores.
+  ThemeData themeFor(
+    AdaptiveUiStyle style,
+    Brightness brightness,
+    Color seed, {
+    AppearanceSettings appearance = const AppearanceSettings(),
+    DesignTokens? tokens,
+  }) {
     final entry = entryFor(style);
     final scheme = ColorScheme.fromSeed(seedColor: seed, brightness: brightness);
-    final resolved = tokens ?? resolveDesignTokens(platform: platformProfileOf(defaultTargetPlatform));
+    final resolved = tokens ?? appearance.resolveTokens(platform: platformProfileOf(defaultTargetPlatform));
     return _applyTokens(entry.factory(scheme, resolved, resolved.targetPlatform), resolved, scheme);
   }
 

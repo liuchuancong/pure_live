@@ -203,6 +203,61 @@ final class AppearanceSettings {
   final InputMode? preferredInput;
   final BackgroundConfig background;
 
+  /// The tokens these settings resolve to on [platform].
+  ///
+  /// The mapping lives beside the settings because the text floor, the remote minimums and the density default
+  /// are rules of the token set, not of whichever screen drew the dropdown: a host that re-derived them per
+  /// call site is where a TV build silently starts using phone hit areas.
+  DesignTokens resolveTokens({required PlatformProfile platform}) => resolveDesignTokens(
+    platform: platform,
+    density: density,
+    reduceMotion: reduceMotion,
+    textScale: textScale,
+    preferredInput: preferredInput,
+    background: background,
+  );
+
+  AppearanceSettings copyWith({
+    String? styleName,
+    String? brightness,
+    bool? reduceMotion,
+    double? textScale,
+    BackgroundConfig? background,
+  }) => AppearanceSettings(
+    styleName: styleName ?? this.styleName,
+    brightness: brightness ?? this.brightness,
+    density: density,
+    reduceMotion: reduceMotion ?? this.reduceMotion,
+    textScale: textScale ?? this.textScale,
+    preferredInput: preferredInput,
+    background: background ?? this.background,
+  );
+
+  /// The density choice, or null for "whatever the platform profile resolves to".
+  ///
+  /// Separate from [copyWith] on purpose: an absent argument there means "unchanged", and "auto" is a value a
+  /// settings screen has to be able to pick.
+  AppearanceSettings withDensity(Density? value) => AppearanceSettings(
+    styleName: styleName,
+    brightness: brightness,
+    density: value,
+    reduceMotion: reduceMotion,
+    textScale: textScale,
+    preferredInput: preferredInput,
+    background: background,
+  );
+
+  /// The input choice, or null for "read it from the platform".
+  AppearanceSettings withInput(InputMode? value) => AppearanceSettings(
+    styleName: styleName,
+    brightness: brightness,
+    density: density,
+    reduceMotion: reduceMotion,
+    textScale: textScale,
+    preferredInput: value,
+    background: background,
+  );
+
   Map<String, Object?> toJson() => <String, Object?>{
     'style': styleName,
     'brightness': brightness,

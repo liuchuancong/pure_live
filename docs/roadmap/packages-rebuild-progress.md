@@ -220,6 +220,19 @@
   回归:`tool/test_check_architecture.ps1` 加 4 例(未声明→warning、`--strict`→失败、补声明→静默、
   pub.dev 三方 import→不归护栏管),30 例 / 33 断言全过,真仓 `--strict` `packages=55 errors=0 warnings=0`。
 
+- **令牌接到用户设置上(队列第 4 行的"剩余")**:此前 `themeFor` 自己按运行平台解析默认输入,app 存的外观设置
+  与主题之间没有通路 —— 令牌等于还是没人读。现在 `AppearanceSettings.resolveTokens(platform:)`(design)、
+  `themeFor(..., appearance:)`(adaptive, additive,`tokens:` 仍优先)与 `apps/pure_live` 的文档串起来了:
+  设置页新增文字缩放 / 控件密度 / 操作方式 / 减弱动效四项,`app.dart` 把 `appearance.settings` 传进主题。
+  顺带解决台账 §5 记的那份重复:`apps/pure_live/lib/app/appearance.dart` **不再自己声明** style/brightness/
+  density/textScale/reduceMotion/input/background 七个字段,改为组合 design 的 `AppearanceSettings`;
+  app 只留自己才有的两样 —— seed,和 `brightness 字符串 ↔ ThemeMode` 的映射。
+  文档同时升版:`{v:1, seed, settings:{…}}`,并把 v0(平铺 + `themeMode`)在 `fromJson` 里迁移而不是重置 ——
+  用户设的主题色不该因为一次他没参与的重构丢掉。备份侧不用改:`user_backup.dart` 把 appearance 当不透明值搬。
+  验证:`dart analyze apps/pure_live` + `dart analyze packages/ui` 0 issue(新增的 Flutter API 名
+  `Switch` / `DropdownButton<String>` / 四个 `Icons.*` 都由这层门校验,不是凭记忆写的),design 测试 20 → 26,
+  护栏 `--strict packages=55 errors=0 warnings=0`。
+  **仍未验**:主题真实渲染成什么样 —— 没有 widget 测试、没有截图、没有真机(design/adaptive README 的未验证已改口)。
 - **`providers/douyu` 实现匿名切片(队列第 8 项)**:此前只有空 barrel,而我一直拒绝凭空写协议。解除阻塞的关键是
   `origin/master` 里 v1 维护线仍在(`lib/shared/platforms/douyu/douyu_site.dart` 742 行 +
   `lib/core/network/douyu_utils.dart` 651 行),端点、字段名、签名链都从它取 —— 按 UPSTREAM_REVIEW_POLICY
@@ -268,7 +281,7 @@
 | 1 | ~~`features/settings`~~ **已重写 `cd4c96fcb`** | 共享包里写死了一个产品的 5 个偏好键,机制本身反而没有 | 键改为消费方声明的 `PreferenceKey<T>`;带版本信封 `{v,c,value}`;读不抛+回退记账、写拒越界;`putIfAbsent` 承担首启语义;命名空间隔离 App;`importAll` 逐项校验并出报告;变更流 + `dispose` 只关自己的流。95 行 → 约 430 行,`dart analyze` 0 issue |
 | 2 | ~~`features/search`~~ **已重写(本轮)** | 只有历史记录容器 | 查询规范化、跨 App 一致的排序、容量上限与淘汰、与 `services/search` 聚合器的取消语义 —— 全部落地,详见 §2 |
 | 3 | `features/home` `account` `backup` `live` `vod` `iptv` `recorder` `music` **全部重写完成** | 每包原 58–191 行,domain 有形状、data 缺失 | 按 §6 补齐:data 边界 + 具名错误 + 资源释放;presentation 留给 UI 波。`music` 的 L4→L5 直连已改端口注入 |
-| 4 | `ui/design` **令牌面已补齐** / `ui/ui_kit` `ui/adaptive` **已接令牌(仅静态分析验证)** / 真机与 app 传参待做 | 令牌只有 spacing/radius,组件 4 个,风格注册表无焦点/密度维度 | 令牌全集(色/距/圆/高/动效/字焦/密度)、`AppNotice`/`AppDialog`/`AppLoading`/空错态门面、D-pad 焦点序与 TV 尺寸。**下一步是把 ui_kit 与 adaptive 改成消费 `DesignTokens`** —— 否则令牌只是躺在一个没人读的包里 |
+| 4 | `ui/design` **令牌面已补齐** / `ui/ui_kit` `ui/adaptive` **已接令牌** / **app 传参已完成(本轮)** | 令牌只有 spacing/radius,组件 4 个,风格注册表无焦点/密度维度 | 令牌全集(色/距/圆/高/动效/字焦/密度)、`AppNotice`/`AppDialog`/`AppLoading`/空错态门面、D-pad 焦点序与 TV 尺寸;`AppearanceSettings.resolveTokens` + `themeFor(appearance:)` 已把用户设置接进主题,设置页加了字号/密度/输入/减弱动效四项(见 §2)。**剩余是验证而不是实现**:widget 测试、截图对比、真机 —— 静态门只证明"能编译且 API 名字存在" |
 | 5 | `ui/lyric` `ui/player_ui` **已复核并修** | 单文件适配 | 时间轴先后与面板可滚动已修;剩余:真正接上 `integrations/media` 的状态订阅(要等房间页重构),以及 widget 级测试 |
 | 6 | `services/search` `services/feed` **已完成** | 聚合器只有扇出 | 分页三态校验 + 按源游标 + 取消传播 + 失败记账形状已落;剩余:跨源节(继续看)受 FeedSection 形状限制,见 w5 §2 |
 | 7 | `foundation/diagnostics` `events` `sync` `platform_info` **全部已修** | 薄 | 有界缓冲与守护执行的真缺陷已修;剩余:结构化事件出口、探测能力矩阵、同步游标与冲突策略 |

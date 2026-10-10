@@ -45,5 +45,7 @@ Android / Android TV / Windows / iOS / Linux / macOS。TV 由宿主声明的 `Pl
   按使用者的决定本轮不跑 `flutter analyze` / `flutter test`,没有真机、没有截图对比。
 - 六个风格当前仍是"同一 Material 3 + 不同装饰"的变体;fluent / macos / yaru 等的真实控件包还没接
   (技术栈 §5.3 要求先验证各包的活跃度/焦点/无障碍/深色模式,不许因名字对就认定可用)。
-- 注册表现有的 `themeFor(...)` 调用点(`apps/pure_live/lib/app/app.dart`)还**没传 tokens**,
-  所以它现在拿到的是"按运行平台默认输入"解析出的令牌。传令牌是拆壳波的动作。
+- `themeFor` 现在收 `appearance:`(设计包的设置对象),没传时按运行平台默认输入解析 ——
+  `apps/pure_live/lib/app/app.dart` 已把用户设置接进来。**接进来不等于验过**:`_applyTokens` 往 `ThemeData`
+  写了什么(字号、tap 目标、toolbar 高、focusColor、`NoSplash`)只有静态分析与单元层的令牌测试覆盖,
+  主题真的渲染成什么样需要 widget 测试或截图对比。
