@@ -8,7 +8,12 @@ environment:
   sdk: ^3.13.0
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
-# No runtime dependency: this package is a mechanism, not a policy holder.
+# This package is still a mechanism, not a policy holder: utils is the L0 leaf every package may use, and the
+# ledger, the trail and the metrics take its injectable Clock instead of reading a wall clock they cannot be
+# tested against.
+dependencies:
+  pure_live_utils:
+    path: ../utils
 
 dev_dependencies:
   test: ^1.26.0

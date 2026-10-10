@@ -5,6 +5,19 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- `redaction.dart`: one named rule table for every surface that leaves the device. Each surface used to scrub
+  its own subset, so each had a case it missed; `Authorization: Bearer <token>` was the live one here - masking
+  only the first word leaves the credential standing behind its own redaction.
+- `failure_ledger.dart`: repeats merge into one entry keyed on type + digit-masked first line + first app frame,
+  with first/last seen and a per-minute rate. Thirty retries of one dead source were thirty log lines and one bug.
+- `metrics.dart`: counters and duration summaries (min/mean/p50/p95/max) with a bounded sample window and a
+  bounded label set; a summary that was sampled says so, because a mean-only view hides the one slow request
+  that made a session unwatchable.
+- `breadcrumbs.dart`: the user's last steps, scrubbed on the way *in* rather than on export.
+- `report.dart`: a report with a per-section budget and an overall one, keeping head and tail and writing the
+  omission counts into the output; a silent mid-stack stop reads like the trace ended where the buffer did.
+- `pubspec.yaml`: the `utils` leaf added, for the injectable `Clock` these take instead of a wall-clock read.
+
 - `RingBuffer` is a real ring: an overwrite advances a head index instead of `removeAt(0)` on a growable
   list, which copied the whole tail on every add once full - and this buffer is written on every diagnostic
   event for the lifetime of a session.

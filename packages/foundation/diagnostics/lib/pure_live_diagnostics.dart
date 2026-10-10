@@ -11,4 +11,9 @@
 /// package never points upward at the ecosystem layer.
 library;
 
+export 'src/breadcrumbs.dart';
+export 'src/failure_ledger.dart';
+export 'src/metrics.dart';
 export 'src/recording.dart';
+export 'src/redaction.dart';
+export 'src/report.dart';
