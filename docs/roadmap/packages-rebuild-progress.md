@@ -24,6 +24,23 @@
   `dart pub get --offline` 通过,护栏 `packages=55 errors=0`。
   理由:portfolio §6 第 7 条 —— 空壳包让包数变成误导数字。将来真要接这些站点,按消费者出现时再建包。
 
+## 2bis. 实测依赖图暴露的四组偏差(2026-10-10,`packages/README.md` 已按实测重写)
+
+按 pubspec 声明逐包核对消费者后得到:
+
+1. **整条插件/TVBox 栈零 App 消费者**:`plugin_api` / `plugin_host` / `js_runtime` / `external_tvbox` /
+   `python_runtime` 只互相依赖。`c8f30b45e` 把插件系统从壳里撤掉之后就悬空了。归属是 `pure_tvbox` /
+   `pure_music`(ADR 0022),**在宿主 App 建起来前不删**;但也不能算"已完成",因为没人跑过它。
+2. **`apps/pure_live` 仍依赖 `permission` + `extension`**:与 portfolio §3 的矩阵不符,是"拆壳"未做的残留。
+3. **4 个包违反"目录短名 ↔ 包名一一对应"**:`features/{backup,search,iptv,music}` 分别叫
+   `pure_live_backup_feature` / `pure_live_search_feature` / `pure_live_iptv_feature` / `pure_live_music_feature`,
+   全为躲重名。**需要一次决策**:改层内短名,还是给 features 包统一加层前缀 —— 定了我再机械改名。
+4. **10 个 features 包 + `foundation/{auth,cache,events,files,l10n,platform_info,sync}` + `firebase` +
+   `identity` + `ui/{lyric,player_ui}` + `providers/{iptv,music,douyu}` 零消费者**。
+   零消费者不等于要删:features/ui 那批是"等壳来装配"(§7 步骤 3-4),`identity` 是等跨源去重接上(w5 §2),
+   `providers/{iptv,music}` 是**已实现但没装配**且 pubspec 描述还写着 "skeleton" —— 描述失真优先修,
+   它是别人判断这包能不能用的第一入口。
+
 ## 3. 重写队列(按"缺口 × 消费者数"排序)
 
 | 序 | 包 | 现状缺口(对照 §6) | 重写要点 |
