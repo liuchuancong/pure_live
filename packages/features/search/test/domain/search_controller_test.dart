@@ -18,7 +18,11 @@ final class _GatedAggregator implements SearchAggregator {
   final Map<String, Completer<SearchAggregate>> _gates = <String, Completer<SearchAggregate>>{};
 
   @override
-  Future<SearchAggregate> search(SearchQuery query, {Iterable<SourceId>? onlySources}) {
+  Future<SearchAggregate> search(
+    SearchQuery query, {
+    Iterable<SourceId>? onlySources,
+    CancellationToken? cancellation,
+  }) {
     asked.add(query);
     final completer = Completer<SearchAggregate>();
     _gates[query.keyword] = completer;
