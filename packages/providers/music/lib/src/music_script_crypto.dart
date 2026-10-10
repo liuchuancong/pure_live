@@ -24,8 +24,13 @@ Future<Object?>? handleMusicScriptCryptoApi(String api, Map<String, Object?> pay
       return Future.value(md5lib.md5.convert(utf8.encode('${payload['text'] ?? ''}')).toString());
     case 'crypto.randomBytes':
       final size = (payload['size'] as num?)?.toInt() ?? 16;
+      if (size < 0 || size > kMaxRandomBytes) {
+        // Refused rather than clamped: a script that asked for 1 MiB of key material and silently got 64 KiB
+        // would go on to build something wrong out of it, and the wrongness would surface far from here.
+        throw FormatException('crypto.randomBytes asks for $size bytes; the ceiling is $kMaxRandomBytes');
+      }
       final random = Random.secure();
-      return Future.value(base64Encode(List<int>.generate(size.clamp(0, 65536), (_) => random.nextInt(256))));
+      return Future.value(base64Encode(List<int>.generate(size, (_) => random.nextInt(256))));
     case 'crypto.aesEncrypt':
       return Future.value(
         base64Encode(
@@ -50,6 +55,9 @@ Future<Object?>? handleMusicScriptCryptoApi(String api, Map<String, Object?> pay
   }
 }
 
+/// The largest `crypto.randomBytes` request this host answers.
+const int kMaxRandomBytes = 64 * 1024;
+
 /// AES with PKCS#7 padding over cbc/ecb, keyed by the Node cipher name.
 Uint8List aesEncrypt(List<int> data, String mode, List<int> key, List<int>? iv) {
   final nameParts = mode.toLowerCase().split('-');
@@ -57,6 +65,12 @@ Uint8List aesEncrypt(List<int> data, String mode, List<int> key, List<int>? iv) 
     throw FormatException('unsupported aes mode: $mode');
   }
   final bits = int.parse(nameParts[1]);
+  // The mode string is a promise about the key, and the engine would happily take a longer one: asking for
+  // aes-128 and handing over 32 bytes used to produce AES-256 output that Node, reading the same request as
+  // 128-bit, would never reproduce. The name has to match the material.
+  if (key.length * 8 != bits) {
+    throw FormatException('$mode asks for a $bits-bit key but got ${key.length * 8} bits');
+  }
   final engine = AESEngine()..init(true, KeyParameter(Uint8List.fromList(key)));
   final padded = _padPkcs7(Uint8List.fromList(data), 16);
 
@@ -74,8 +88,6 @@ Uint8List aesEncrypt(List<int> data, String mode, List<int> key, List<int>? iv) 
   } else {
     throw FormatException('unsupported aes mode: $mode');
   }
-  // Key length is checked by the engine; a wrong-size key throws there.
-  assert(bits > 0);
   return out;
 }
 
@@ -125,11 +137,20 @@ RSAPublicKey _parsePublicKey(String pem) {
   final outer = reader.readSequence();
   final first = outer.readTag();
   if (first == 0x30) {
-    // SPKI: algorithm wrapper, then a BIT STRING wrapping the PKCS#1 key.
-    final inner = _DerReader(outer.lastContent);
-    inner.readTag();
-    final keyReader = _DerReader(inner.lastContent);
-    keyReader.readTag();
+    // SPKI: SEQUENCE { AlgorithmIdentifier, BIT STRING <PKCS#1> }. The algorithm identifier is skipped by
+    // reading *past* it in the outer reader - the previous version descended into its contents and then read
+    // the object identifier as if it were the key, so a genuine `BEGIN PUBLIC KEY` failed and the comment's
+    // claim to support both forms was false.
+    final bitString = outer.readTag();
+    if (bitString != 0x03) {
+      throw FormatException('SPKI public key has a 0x${bitString.toRadixString(16)} where a BIT STRING belongs');
+    }
+    final bitContents = outer.lastContent;
+    if (bitContents.isEmpty) {
+      throw const FormatException('SPKI public key carries an empty BIT STRING');
+    }
+    // The first byte of a BIT STRING content is the count of unused trailing bits, never part of the key.
+    final keyReader = _DerReader(bitContents.sublist(1)).readSequence();
     return RSAPublicKey(keyReader.readInteger(), keyReader.readInteger());
   }
   return RSAPublicKey(outer.readIntegerAt(first), outer.readInteger());
@@ -147,14 +168,26 @@ final class _DerReader {
   List<int> get lastContent => _content;
 
   int readTag() {
+    // Every read below is guarded: `key` arrives as whatever the imported script passed, and a truncated or
+    // forged PEM used to escape as a bare RangeError from index arithmetic - an error that names neither the
+    // key nor the position, and reads to the caller like a crash in our code rather than bad input.
+    if (_position + 2 > bytes.length) {
+      throw FormatException('DER object truncated at $_position of ${bytes.length} bytes');
+    }
     _tag = bytes[_position++];
     var length = bytes[_position++];
     if (length & 0x80 != 0) {
       final lengthBytes = length & 0x7f;
+      if (lengthBytes == 0 || _position + lengthBytes > bytes.length) {
+        throw FormatException('DER length header at $_position runs past the buffer');
+      }
       length = 0;
       for (var i = 0; i < lengthBytes; i++) {
         length = (length << 8) | bytes[_position++];
       }
+    }
+    if (length < 0 || _position + length > bytes.length) {
+      throw FormatException('DER content of $length bytes does not fit in ${bytes.length - _position} remaining');
     }
     _content = bytes.sublist(_position, _position + length);
     _position += length;

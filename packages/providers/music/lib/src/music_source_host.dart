@@ -26,8 +26,8 @@ final class MusicSourceInfo {
 
   factory MusicSourceInfo.fromJson(Map<String, Object?> json) => MusicSourceInfo(
     name: '${json['name'] ?? ''}',
-    actions: [for (final action in (json['actions'] as List? ?? const [])) '$action'],
-    qualitys: [for (final quality in (json['qualitys'] as List? ?? const [])) '$quality'],
+    actions: _names(json['actions']),
+    qualitys: _names(json['qualitys']),
   );
 
   final String name;
@@ -37,6 +37,18 @@ final class MusicSourceInfo {
   final List<String> qualitys;
 
   bool serves(String action) => actions.contains(action);
+
+  /// True when the script listed [quality], or announced no quality list at all - an empty list is "the script
+  /// did not say", and treating that as a refusal would break every source that omits it.
+  bool servesQuality(String quality) => qualitys.isEmpty || qualitys.contains(quality);
+
+  /// lx scripts ship both arrays and single strings where a list is expected; a string is one item, anything
+  /// else is none. Throwing here would lose the whole announcement over one field's shape.
+  static List<String> _names(Object? raw) => switch (raw) {
+    final List<Object?> list => <String>[for (final item in list) '$item'],
+    null => const <String>[],
+    final Object single => <String>['$single'],
+  };
 }
 
 /// The whole script identity, as lx.send('inited') carried it.
@@ -100,12 +112,12 @@ final class MusicSourceScriptHost {
 
   MusicScriptInfo? _announced;
 
-  /// Attaches to a sandbox another host already loaded the script in. The lx
-  /// environment must already be present: an lx script evaluated inside a
-  /// plugin runtime's sandbox carries it because that runtime evaluated the
-  /// script against this package's prelude... no - it does not. Attach is only
-  /// valid when the loading host evaluated [lxApiPrelude] itself; otherwise
-  /// use [spawn].
+  /// Attaches to a sandbox another host already loaded the script in.
+  ///
+  /// Valid only when that host evaluated this package's [musicSourceApiPrelude] before the script: the dispatch
+  /// entry point this class calls (`__music_source_dispatch_request`) is defined by the prelude, so attaching to
+  /// a sandbox that ran the script against some other environment yields a ReferenceError on the first request.
+  /// When in doubt use [spawn], which owns the whole load order.
   static MusicSourceScriptHost attach({required String scriptId, required FjsJsSandbox sandbox}) {
     return MusicSourceScriptHost._(scriptId: scriptId, sandbox: sandbox);
   }
@@ -163,13 +175,47 @@ final class MusicSourceScriptHost {
     }
   }
 
-  /// Waits for lx.send('inited') with a hard deadline, then returns the
-  /// announced sources.
-  Future<MusicScriptInfo> awaitInited({Duration timeout = const Duration(seconds: 15)}) {
-    return inited.timeout(
-      timeout,
-      onTimeout: () => throw TimeoutException('lx script $scriptId never called lx.send("inited")'),
-    );
+  /// Waits for lx.send('inited') with a hard deadline, then returns the announced sources.
+  ///
+  /// A script that never announces is a broken script, and the sandbox it is loaded in is still alive at that
+  /// moment: the deadline releases it, because a caller that gives up on a source has no other handle on the
+  /// runtime the failed load created.
+  Future<MusicScriptInfo> awaitInited({Duration timeout = const Duration(seconds: 15)}) async {
+    try {
+      return await inited.timeout(
+        timeout,
+        onTimeout: () => throw TimeoutException('lx script $scriptId never called lx.send("inited")'),
+      );
+    } on TimeoutException {
+      await dispose();
+      rethrow;
+    }
+  }
+
+  /// The sources the script announced, or null before the announcement lands.
+  Map<String, MusicSourceInfo>? get sources => _announced?.sources;
+
+  /// Refuses an action the script never announced, naming what it does serve.
+  ///
+  /// Asking a source for a lyric it never claimed to give used to reach the handler, which either answers
+  /// nothing (the request hangs until the caller's own timeout) or throws in script space with a message
+  /// about an unknown action. The announcement is the only contract the script gave; using it is cheaper
+  /// than debugging the answer it did not send. An unannounced source - before `inited`, or a script that
+  /// announced none - is not evidence of refusal, so it passes through.
+  void _requireAction(String source, String action) {
+    final info = _announced?.sources[source];
+    if (info == null || info.actions.isEmpty || info.serves(action)) {
+      return;
+    }
+    throw StateError('lx source "$source" does not serve $action; it announced ${info.actions.join(', ')}');
+  }
+
+  void _requireQuality(String source, String quality) {
+    final info = _announced?.sources[source];
+    if (info == null || info.servesQuality(quality)) {
+      return;
+    }
+    throw StateError('lx source "$source" has no quality "$quality"; it announced ${info.qualitys.join(', ')}');
   }
 
   Future<Map<String, Object?>?> _request(String action, String source, Map<String, Object?> info) async {
@@ -196,31 +242,45 @@ final class MusicSourceScriptHost {
     return decoded is Map<String, Object?> ? decoded : null;
   }
 
-  /// The play url for one song. [quality] is the lx vocabulary (128k, 320k,
-  /// flac, flac24bit).
+  /// The play url for one song. [quality] is the lx vocabulary (128k, 320k, flac, flac24bit).
   Future<String> musicUrl(String source, String musicId, String quality) async {
+    _requireAction(source, 'musicUrl');
+    _requireQuality(source, quality);
     final answer = await _request('musicUrl', source, <String, Object?>{'musicId': musicId, 'type': quality});
     final url = answer?['result'] ?? answer?['url'];
     if (url is! String || url.isEmpty) {
       throw StateError('lx $scriptId musicUrl/$source returned no url');
+    }
+    if (!url.contains('://')) {
+      // Same rule the music repository applies: a script that answers a failed lookup with a bare word is not
+      // handing back a stream, and the player would treat it as one.
+      throw StateError('lx $scriptId musicUrl/$source returned "$url", which is not a url');
     }
     return url;
   }
 
   /// The lyric text for one song, when the source serves it.
   Future<String?> lyric(String source, String musicId) async {
+    _requireAction(source, 'lyric');
     final answer = await _request('lyric', source, <String, Object?>{'musicId': musicId});
     final lyric = answer?['result'] ?? answer?['lyric'];
-    return lyric is String && lyric.isNotEmpty ? lyric : null;
+    return lyric is String && lyric.trim().isNotEmpty ? lyric : null;
   }
 
   /// The cover image url for one song, when the source serves it.
   Future<String?> pic(String source, String musicId) async {
+    _requireAction(source, 'pic');
     final answer = await _request('pic', source, <String, Object?>{'musicId': musicId});
     final pic = answer?['result'] ?? answer?['pic'];
     return pic is String && pic.isNotEmpty ? pic : null;
   }
 
+  /// Releases the sandbox this host owns.
+  ///
+  /// A pending `inited` is deliberately *not* completed with an error here: a future nobody has attached a
+  /// listener to would then surface as an unhandled async error and can take the isolate with it. Callers that
+  /// need a deadline use [awaitInited], which times out and disposes; [inited] itself only ever completes when
+  /// the script really announced.
   Future<void> dispose() async {
     if (_disposed) {
       return;
