@@ -233,6 +233,19 @@
   `Switch` / `DropdownButton<String>` / 四个 `Icons.*` 都由这层门校验,不是凭记忆写的),design 测试 20 → 26,
   护栏 `--strict packages=55 errors=0 warnings=0`。
   **仍未验**:主题真实渲染成什么样 —— 没有 widget 测试、没有截图、没有真机(design/adaptive README 的未验证已改口)。
+- **第三处采纳 + 机制本身补的两块**:`features/vod` 的进度行也改成 `PreferenceKey<WatchProgress>`(codec
+  `watchProgress`,键名仍是 `progress.<identityKey>`,所以旧行就是本轮读的键;20 → 22 测试)。
+  它是第一个**每内容一行**的消费者,于是暴露出机制里两处只有这种形状才会碰到的问题:
+  1. **诊断粒度被压平**。三个消费者原先都能说清"这行为什么不能用"(比本 build 新 / 缺 `positionMs` / 缺
+     `updatedAt`),而 codec 只能返回 null,采纳后统统变成一个 `unreadableEnvelope`。
+     现在 codec 可抛 `PreferenceDecodeReject(reason)` → 记成 `refusedByCodec` 并把理由放进
+     `PreferenceRejection.reason`;抛**别的**异常仍然上抛(codec 的 bug 不该被洗成默认值)。
+     这条同时回填 home 与 search 的报文,它们之前的采纳是把粒度丢掉了 —— 是我造成的回退,不是既有缺陷。
+  2. **`upgradedKeys` 无界**。`rejections` 本来就有 64 上限(我先核了前提才动手,没有"顺手加个 cap"),
+     但升级账本是 `Set<String>`,固定几个设置键时无所谓,每内容一行时它的规模就是一个用户的库。
+     现在两本账都有具名上界(`kPreferenceRejectionLimit` 64 / `kPreferenceUpgradeReportLimit` 64),超出的计入
+     `upgradedCount` 而不是无声消失。storage 测试 76 → 84。
+  还剩第四处也是最后一处:`apps/pure_live` 的 appearance 文档(它自己写了 `{v,seed,settings}` 信封)。
 - **第二处采纳:`features/search` 的历史行**也改成 `PreferenceKey<List<SearchHistoryEntry>>`(codec
   `searchHistory`),键名沿用 `<namespace>.history` 所以旧行仍是本轮读的键。这个包原来自己写
   `{v,items}` JSON 字符串,而**它下面还有 v0**:磁盘上可能躺着"裸关键词列表"(条目还没带时间戳的年代)。

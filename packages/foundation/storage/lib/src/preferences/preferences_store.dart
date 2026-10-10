@@ -18,6 +18,19 @@ import 'preference_key.dart';
 /// without the marker, a type change under the same key name reads as a valid value of the new type.
 const int kPreferenceEnvelopeVersion = 1;
 
+/// How many recent rejections the store keeps.
+///
+/// A read of a damaged row notes one every time, and a screen that polls a preference would otherwise grow a
+/// log in proportion to how broken the disk is. The newest entries are the useful ones, so the oldest leave.
+const int kPreferenceRejectionLimit = 64;
+
+/// How many distinct upgraded keys the store remembers.
+///
+/// Bounded for the same reason as [kPreferenceRejectionLimit], and reached by a different shape: a repository
+/// with one key per content reference (a watch-progress row per episode) can meet more legacy rows than any
+/// fixed settings screen ever would.
+const int kPreferenceUpgradeReportLimit = 64;
+
 /// Typed preferences over one namespaced key-value store.
 final class PreferencesStore {
   /// [namespace] ends with its separator and is the only thing separating two apps that share a store file.
@@ -44,6 +57,8 @@ final class PreferencesStore {
   /// a failure, and a caller that reports one must not report the other as if it were.
   final Set<String> _upgraded = <String>{};
 
+  int _upgradedOverflow = 0;
+
   bool _disposed = false;
 
   /// Broadcast stream of writes and resets. A listener that arrives late misses earlier changes by design:
@@ -59,6 +74,9 @@ final class PreferencesStore {
   /// A read never rewrites, because a screen that only came to display a value should not be the thing that
   /// mutates storage.
   List<String> get upgradedKeys => List<String>.unmodifiable(_upgraded);
+
+  /// How many distinct keys have been upgraded, including any beyond the report limit.
+  int get upgradedCount => _upgraded.length + _upgradedOverflow;
 
   /// The stored value, or [PreferenceKey.defaultValue] when nothing valid is stored.
   Future<T> read<T extends Object>(PreferenceKey<T> key) async {
@@ -190,23 +208,7 @@ final class PreferencesStore {
         );
         return null;
       }
-      final upgraded = key.codec.decode(legacy);
-      if (upgraded == null) {
-        _note(
-          PreferenceRejection(
-            keyName: key.name,
-            failure: PreferenceFailure.unreadableEnvelope,
-            rawType: '${legacy.runtimeType}',
-          ),
-        );
-        return null;
-      }
-      if (!_accepts(key, upgraded)) {
-        _note(PreferenceRejection(keyName: key.name, failure: PreferenceFailure.invalidValue));
-        return null;
-      }
-      _upgraded.add(key.name);
-      return upgraded;
+      return _applyCodec(key, legacy, wasLegacy: true);
     }
     final map = raw as Map;
     if (map[_codecField] != key.codec.name) {
@@ -219,13 +221,29 @@ final class PreferencesStore {
       );
       return null;
     }
-    final value = key.codec.decode(map[_valueField]);
+    return _applyCodec(key, map[_valueField], wasLegacy: false);
+  }
+
+  /// Runs one codec and accounts for what it said.
+  ///
+  /// Both read paths come through here so a refusal means the same thing for a legacy row and for an envelope.
+  /// A codec that throws [PreferenceDecodeReject] is refusing with a reason worth keeping; a codec that returns
+  /// null did not recognise the shape at all. Anything else it throws is a bug in the codec and is left to
+  /// propagate - a programming error must not be turned into a default value.
+  T? _applyCodec<T extends Object>(PreferenceKey<T> key, Object? raw, {required bool wasLegacy}) {
+    final T? value;
+    try {
+      value = key.codec.decode(raw);
+    } on PreferenceDecodeReject catch (reject) {
+      _note(PreferenceRejection(keyName: key.name, failure: PreferenceFailure.refusedByCodec, reason: reject.reason));
+      return null;
+    }
     if (value == null) {
       _note(
         PreferenceRejection(
           keyName: key.name,
           failure: PreferenceFailure.unreadableEnvelope,
-          rawType: '${map[_valueField]?.runtimeType}',
+          rawType: '${raw.runtimeType}',
         ),
       );
       return null;
@@ -233,6 +251,9 @@ final class PreferencesStore {
     if (!_accepts(key, value)) {
       _note(PreferenceRejection(keyName: key.name, failure: PreferenceFailure.invalidValue));
       return null;
+    }
+    if (wasLegacy) {
+      _noteUpgrade(key.name);
     }
     return value;
   }
@@ -260,9 +281,22 @@ final class PreferencesStore {
 
   void _note(PreferenceRejection rejection) {
     _rejections.add(rejection);
-    if (_rejections.length > 64) {
+    if (_rejections.length > kPreferenceRejectionLimit) {
       _rejections.removeAt(0);
     }
+  }
+
+  void _noteUpgrade(String name) {
+    if (_upgraded.contains(name)) {
+      return;
+    }
+    if (_upgraded.length < kPreferenceUpgradeReportLimit) {
+      _upgraded.add(name);
+      return;
+    }
+    // Counted rather than dropped silently: "there were more" is the difference between a handful of legacy
+    // rows and a store that needs migrating before this ledger can be trusted to be complete.
+    _upgradedOverflow++;
   }
 }
 

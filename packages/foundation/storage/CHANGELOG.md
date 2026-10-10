@@ -4,6 +4,19 @@ All notable changes to this package are documented here. Version numbers are man
 repository-wide release train, see docs/architecture/package-architecture.md section 3.
 
 ## Unreleased
+
+- `PreferenceCodec` refusals now carry a reason: a parse may throw `PreferenceDecodeReject(reason)`, recorded
+  as `PreferenceFailure.refusedByCodec` with the words kept in `PreferenceRejection.reason`. Returning null
+  still means "I do not recognise this shape". Three consumers had been forced to collapse "a newer build
+  wrote this row" and "this row has no position field" into one word when they adopted the mechanism, and
+  those two sentences have different fixes - one is updating the app, the other is damage. Anything a codec
+  throws that is not this type still propagates: a bug in a codec must not be laundered into a default value.
+- Both diagnostic ledgers are bounded and named: `kPreferenceRejectionLimit` (64; the oldest entries leave
+  first, because a screen polling a broken row would otherwise grow the log in proportion to how damaged the
+  disk is) and `kPreferenceUpgradeReportLimit` (64 distinct keys, the remainder counted in the new
+  `upgradedCount`). The second cap is reached by a repository that keeps one key per content reference, where
+  the number of legacy rows a process can meet is a user's library, not a settings table.
+- Tests 76 to 84: refusal reasons on both read paths, a codec bug propagating, and both bounds.
 - **偏好机制自 `features/settings` 搬进本包**(`lib/src/preferences/`,公开面经 barrel 导出)。
   搬的理由记在台账 §5:实测四处各自手写了版本化文档(`features/home` 的 `{v,order,hidden}`、
   `features/search` 的 `{v,items}`、`features/vod` 的进度行、app 的 appearance),而机制原住在

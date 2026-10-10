@@ -15,7 +15,7 @@
 - `file_key_value_store.dart` —— `FileKeyValueStore`:单文件 JSON 的 `KeyValueStore`,首次访问时载入、每次改动写穿
 - `migration_runner.dart` —— `MigrationRunner` / `MigrationDomainSpec` / `KeyValueMigrationJournal`:逐域迁移流程
 - `migration.dart` —— `SettingsMigrator`(旧键 → 新键 + 转换函数表,未知键记录不丢)+ `SchemaMigrator`(版本步进链,断点续迁)
-- `preferences/preference_key.dart` —— `PreferenceCodec<T>`(闭集 bool/int/double/String/List<String> + `of()` 自定义)、`PreferenceKey<T>`(名 + codec + 默认值 + 可选 `validate` + 可选 `upgrade`)、`PreferenceKeyInfo`、`PreferenceFailure` / `PreferenceRejection` / `PreferenceChange`
+- `preferences/preference_key.dart` —— `PreferenceCodec<T>`(闭集 bool/int/double/String/List<String> + `of()` 自定义)、`PreferenceKey<T>`(名 + codec + 默认值 + 可选 `validate` + 可选 `upgrade`)、`PreferenceKeyInfo`、`PreferenceFailure` / `PreferenceRejection` / `PreferenceChange` / `PreferenceDecodeReject`
 - `preferences/preferences_store.dart` —— `PreferencesStore`:类型化偏好的落盘机制(信封 `{v,c,value}`、命名空间、`putIfAbsent` 首启语义、`exportAll` / `importAll` 逐项报告、变更流、`upgradedKeys`)
 
 迁移语义按 [docs/migration/settings-migration.md](../../../docs/migration/settings-migration.md) 与 [v1-to-v2.md](../../../docs/migration/v1-to-v2.md):一个键转换失败只记在它自己头上,其余继续;schema 版本每步落盘,重试从断点接上,链上有缺口或重复步在动手前就报错。
@@ -50,6 +50,8 @@ logging)。第二个理由更实际:**信封之前的旧行要靠 schema step �
 | 首启 | `putIfAbsent` 而不是 `read() == default`:后者分不出"没设过"与"设回默认值",于是首启提示会为用户已经关掉的东西再弹一次 |
 | 两个 App 共用一个文件 | `namespace` 前缀是唯一隔离手段;`exportAll` 也只交本命名空间的行,备份不会带走别家的键 |
 | 旧形状可升级不可丢弃 | `PreferenceKey.upgrade` 读信封前的行;升级记进 `upgradedKeys` 而**不是** `rejections`(更老的形状不是故障);**读不回写**,回写是 schema step 的活 |
+| 拒绝要说得出为什么 | codec 抛 `PreferenceDecodeReject(reason)` 就是"我认识这形状但拒了",记成 `refusedByCodec` 并把理由带进 `PreferenceRejection.reason`;返回 null 只表示"不认识"。codec 抛**别的**东西照原样上抛 —— 那是 codec 的 bug,不该被洗成一个看起来正常的默认值 |
+| 诊断账本有上界 | `rejections` 只留最近 `kPreferenceRejectionLimit`(64)条,最旧的先走;`upgradedKeys` 只列 `kPreferenceUpgradeReportLimit`(64)个键,其余计入 `upgradedCount` 而不是无声丢掉 —— "还有更多"本身就是需要知道的事 |
 | 备份部分可用 | `importAll` 逐项 accept/reject 并回报 `unknownKeys`,坏一条不连坐;更大信封版本按拒绝处理,放宽它属于一次真正的 schema 升级 |
 
 ## 结构
@@ -80,7 +82,7 @@ logging)。第二个理由更实际:**信封之前的旧行要靠 schema step �
 ## 验证
 
 - 分析:`dart analyze packages/foundation/storage`(0 issue)
-- 测试:`dart test` —— **76 例** = 文件 KV 与并发/损坏语义、迁移流程、存储接口,加自 `features/settings` 搬来的
+- 测试:`dart test` —— **84 例** = 文件 KV 与并发/损坏语义、迁移流程、存储接口,加自 `features/settings` 搬来的
   32 例偏好机制测试(信封与 codec 门禁、读不抛并记账、写拒越界、首启、命名空间隔离、变更流与 dispose 幂等、
   `importAll` 逐项报告、旧形状升级的两个方向)
 

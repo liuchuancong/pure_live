@@ -63,6 +63,21 @@ final class PreferenceCodec<T extends Object> {
   ) => PreferenceCodec<T>._(name, parse, serialize);
 }
 
+/// Thrown by a codec's parse to refuse a value while saying why.
+///
+/// Returning null already means "not usable"; the difference is that a consumer's own report loses the reason.
+/// A row from a newer build and a row missing its order list are both unreadable, but only one of them is
+/// fixed by upgrading the app - and the user-facing sentence has to know which.
+final class PreferenceDecodeReject implements Exception {
+  const PreferenceDecodeReject(this.reason);
+
+  /// Why this value was refused. Written for a diagnostics view, so it names fields rather than echoing bytes.
+  final String reason;
+
+  @override
+  String toString() => 'PreferenceDecodeReject($reason)';
+}
+
 /// The type-independent part of a preference key.
 ///
 /// Dart generics are invariant, so a `PreferenceKey<String>` is not a `PreferenceKey<Object>`: an API that
@@ -130,6 +145,9 @@ enum PreferenceFailure {
   /// The envelope is missing its version, so the value's shape is unknown.
   unreadableEnvelope,
 
+  /// The codec recognised the envelope and refused the value inside it, saying why in [PreferenceRejection.reason].
+  refusedByCodec,
+
   /// The envelope names a codec this key does not use - a writer changed the type under the same name.
   codecMismatch,
 
@@ -139,7 +157,7 @@ enum PreferenceFailure {
 
 /// One rejected stored value, kept so a caller can report it instead of silently disagreeing with the disk.
 final class PreferenceRejection {
-  const PreferenceRejection({required this.keyName, required this.failure, this.rawType});
+  const PreferenceRejection({required this.keyName, required this.failure, this.rawType, this.reason});
 
   final String keyName;
   final PreferenceFailure failure;
@@ -148,8 +166,19 @@ final class PreferenceRejection {
   /// diagnostic report should not echo.
   final String? rawType;
 
+  /// The codec's own words, carried from [PreferenceDecodeReject] when it threw.
+  ///
+  /// It exists because "unreadable" is not one fact but several, and a consumer that used to be able to tell
+  /// "a newer build wrote this" from "the row has no order list" loses that difference if the reason is
+  /// collapsed into an enum. Nothing here is optional about the *enum*: [failure] still classifies the outcome
+  /// for code that only needs to count them.
+  final String? reason;
+
   @override
-  String toString() => 'PreferenceRejection($keyName ${failure.name}${rawType == null ? '' : ' was $rawType'})';
+  String toString() {
+    final detail = reason ?? (rawType == null ? '' : 'was $rawType');
+    return 'PreferenceRejection($keyName ${failure.name}${detail.isEmpty ? '' : ': $detail'})';
+  }
 }
 
 /// A value that changed, as announced to whoever is watching the settings screen.

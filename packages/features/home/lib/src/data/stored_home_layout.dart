@@ -94,8 +94,8 @@ final class StoredHomeLayout implements HomeLayoutRepository {
     if (_preferences.rejections.length > rejectionsBefore) {
       final rejection = _preferences.rejections.last;
       _report(
-        'stored row was unusable (${rejection.failure.name}'
-        '${rejection.rawType == null ? '' : ', found ${rejection.rawType}'})',
+        'stored row was unusable: '
+        '${rejection.reason ?? '${rejection.failure.name}${rejection.rawType == null ? '' : ' (found ${rejection.rawType})'}'}',
       );
     }
     _cache = const HomeLayout();
@@ -141,11 +141,13 @@ final class StoredHomeLayout implements HomeLayoutRepository {
     }
     final version = intFrom(document['v']) ?? 0;
     if (version > kHomeLayoutEnvelopeVersion) {
-      return null;
+      // Thrown rather than returning null because the two refusals mean different things to whoever reads the
+      // report: "a newer build wrote this" is fixed by updating the app, "the row has no order list" is damage.
+      throw PreferenceDecodeReject('stored row version $version is newer than $kHomeLayoutEnvelopeVersion');
     }
     final order = stringListFrom(document['order']);
     if (order == null) {
-      return null;
+      throw const PreferenceDecodeReject('envelope has no order list');
     }
     // A row without the hidden list predates that field. An absent list means the user never hid a tab, which
     // is the empty list rather than a failure - the difference matters because reporting it as corrupt would

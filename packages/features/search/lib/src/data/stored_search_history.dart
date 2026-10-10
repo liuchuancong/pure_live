@@ -152,7 +152,7 @@ final class StoredSearchHistory implements SearchHistoryRepository {
     }
     if (_preferences.rejections.length > rejectionsBefore) {
       final rejection = _preferences.rejections.last;
-      _reportReadFailure('stored row was unusable (${rejection.failure.name})');
+      _reportReadFailure('stored row was unusable: ${rejection.reason ?? rejection.failure.name}');
     }
     _cache = const <SearchHistoryEntry>[];
     return _cache!;
@@ -200,12 +200,13 @@ final class StoredSearchHistory implements SearchHistoryRepository {
     final version = intFrom(document['v']) ?? 0;
     if (version > kSearchHistoryEnvelopeVersion) {
       // Written by a newer build (a downgraded apk, two apps on one database). Reading it anyway would rewrite
-      // fields this build does not understand, so the row is refused and stays as it is.
-      return null;
+      // fields this build does not understand, so the row is refused and stays as it is. The reason is thrown
+      // rather than folded into "unreadable" because the two refusals have different fixes.
+      throw PreferenceDecodeReject('stored envelope version $version is newer than $kSearchHistoryEnvelopeVersion');
     }
     final items = listFrom(document['items']);
     if (items == null) {
-      return null;
+      throw const PreferenceDecodeReject('envelope has no item list');
     }
     final entries = <SearchHistoryEntry>[];
     for (final item in items) {

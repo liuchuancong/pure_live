@@ -422,6 +422,153 @@ void main() {
     });
   });
 
+  group('codec refusal', () {
+    test('test_read_codecRefusesWithValue_reportsItsReasonUnderItsOwnFailure', () async {
+      // "unreadable" is several facts with different fixes, so a refusal must not be folded into the shape
+      // bucket. A newer row is handled by updating the app; a row missing its list is damage.
+      final key = PreferenceKey<int>(
+        name: 'feed.pageSize',
+        codec: PreferenceCodec.of<int>('storingSize', (Object? raw) {
+          if (raw is Map && raw['v'] == 99) {
+            throw const PreferenceDecodeReject('written by a newer build (v99)');
+          }
+          return null;
+        }, (int value) => value),
+        defaultValue: 20,
+      );
+      await disk.write('settings.feed.pageSize', <String, Object?>{
+        'v': 1,
+        'c': 'storingSize',
+        'value': {'v': 99},
+      });
+
+      expect(await store.read(key), 20);
+      expect(store.rejections.single.failure, PreferenceFailure.refusedByCodec);
+      expect(store.rejections.single.reason, contains('newer build'));
+    });
+
+    test('test_read_codecThrowsSomethingElse_isNotTreatedAsData', () async {
+      // Only PreferenceDecodeReject is a refusal. Anything else out of a codec is a bug in it, and turning that
+      // into a default value would hide a crash behind a plausible-looking setting.
+      final key = PreferenceKey<int>(
+        name: 'feed.pageSize',
+        codec: PreferenceCodec.of<int>(
+          'brokenSize',
+          (Object? raw) => throw StateError('codec bug'),
+          (int value) => value,
+        ),
+        defaultValue: 20,
+      );
+      await disk.write('settings.feed.pageSize', <String, Object?>{'v': 1, 'c': 'brokenSize', 'value': 30});
+
+      expect(() => store.read(key), throwsStateError);
+      expect(store.rejections, isEmpty);
+    });
+
+    test('test_read_legacyUpgradeRefusal_alsoCarriesTheReason', () async {
+      // Both read paths run the same codec, so the reason survives whichever shape the disk holds.
+      final key = PreferenceKey<int>(
+        name: 'feed.pageSize',
+        codec: PreferenceCodec.of<int>('storingSize', (Object? raw) {
+          if (raw is Map) {
+            throw const PreferenceDecodeReject('legacy row has no size field');
+          }
+          return null;
+        }, (int value) => value),
+        defaultValue: 20,
+        upgrade: (Object? raw) => raw,
+      );
+      await disk.write('settings.feed.pageSize', <String, Object>{'old': 1});
+
+      expect(await store.read(key), 20);
+      expect(store.rejections.single.failure, PreferenceFailure.refusedByCodec);
+      expect(store.rejections.single.reason, contains('no size field'));
+      expect(store.upgradedKeys, isEmpty, reason: 'a refused legacy row was never upgraded');
+    });
+
+    test('test_preferenceRejection_toString_prefersTheReasonOverTheType', () {
+      const withReason = PreferenceRejection(
+        keyName: 'a',
+        failure: PreferenceFailure.refusedByCodec,
+        reason: 'no size field',
+      );
+      const withType = PreferenceRejection(
+        keyName: 'a',
+        failure: PreferenceFailure.unreadableEnvelope,
+        rawType: 'String',
+      );
+
+      expect(withReason.toString(), 'PreferenceRejection(a refusedByCodec: no size field)');
+      expect(withType.toString(), 'PreferenceRejection(a unreadableEnvelope: was String)');
+    });
+  });
+
+  group('diagnostics stay bounded', () {
+    test('test_rejections_aRepeatedlyBrokenRow_doesNotGrowTheLog', () async {
+      // A screen that polls a preference would otherwise accumulate one entry per read for as long as the row
+      // stays broken, and the log grows with how damaged the disk is rather than with anything useful.
+      await disk.write('settings.app.quality', 'not an envelope');
+
+      for (var attempt = 0; attempt < kPreferenceRejectionLimit * 3; attempt++) {
+        await store.read(_label);
+      }
+
+      expect(store.rejections, hasLength(kPreferenceRejectionLimit));
+      expect(store.rejections.every((r) => r.keyName == 'app.quality'), isTrue);
+    });
+
+    test('test_rejections_theOldestEntriesLeaveFirst', () async {
+      for (final name in <String>['one', 'two', 'three']) {
+        await disk.write('settings.$name', 'not an envelope');
+      }
+      final keys = <String>['one', 'two', 'three'];
+      for (var index = 0; index < kPreferenceRejectionLimit + 2; index++) {
+        await store.read(
+          PreferenceKey<String>(name: keys[index % keys.length], codec: PreferenceCodec.string, defaultValue: 'x'),
+        );
+      }
+
+      expect(store.rejections, hasLength(kPreferenceRejectionLimit));
+      // 66 reads pushed the first two out, so the head of the log is the third read - which is 'three', not
+      // 'one', because each key keeps reappearing and the cap drops entries, not keys.
+      expect(store.rejections.first.keyName, 'three');
+      expect(store.rejections.last.keyName, keys[(kPreferenceRejectionLimit + 1) % keys.length]);
+    });
+
+    test('test_upgradedKeys_oneKeyPerRow_staysBoundedButKeepsCounting', () async {
+      // The shape a watch-progress repository reaches: one key per content reference, so the number of legacy
+      // rows it can meet is a user's library, not a fixed settings table.
+      final seen = <String>[];
+      for (var index = 0; index < kPreferenceUpgradeReportLimit + 12; index++) {
+        final name = 'episode${index}_$index';
+        await disk.write('settings.$name', <String>['a']);
+        final key = PreferenceKey<List<String>>(
+          name: name,
+          codec: PreferenceCodec.stringList,
+          defaultValue: const <String>[],
+          upgrade: (Object? raw) => raw is List ? raw : null,
+        );
+
+        expect(await store.read(key), <String>['a']);
+        seen.add(name);
+      }
+
+      expect(store.upgradedKeys, hasLength(kPreferenceUpgradeReportLimit));
+      expect(store.upgradedCount, seen.length, reason: 'the overflow is counted, not dropped in silence');
+      expect(store.rejections, isEmpty);
+    });
+
+    test('test_upgradedCount_anAlreadyListedKeyDoesNotDoubleCount', () async {
+      await disk.write('settings.home.order', <String>['a']);
+      final key = _legacyOrder();
+
+      await store.read(key);
+      await store.read(key);
+
+      expect(store.upgradedCount, 1);
+    });
+  });
+
   group('key identity', () {
     test('test_preferenceKey_equalityIsNameAndCodec', () {
       expect(
