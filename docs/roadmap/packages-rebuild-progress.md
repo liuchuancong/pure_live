@@ -24,6 +24,14 @@
   (世代栅栏:`Answer`/`Rejected`/`Superseded`,被放弃的答案不写历史;`currentToken` 只在放弃时触发)。
   22 个测试通过,包 analyze 0 issue。它是 `equality` / `identifiers` / `errors` / `numbers` 这几个新
   utils 模块的第一个真实消费者。
+- **`features/account` 重写(队列 #3 第 2 个)**:改掉两个真缺陷 ——
+  (1) `load(siteId)` 用字符串拼 `CredentialHandle(key: '$siteId:$accountId')`,而 vault 的真实键带
+  `auth.secret.` 前缀,**它给出的每个 handle 都指向一个不可能存在的键**(登录站点被读成未登录;拿它去发认证
+  请求会静默丢 cookie);(2) `logout(siteId)` 删 `accounts.last`,多账号站点被静默挑一个。
+  现在:`SiteAccount`(状态 + `secretPresent` + `canRefresh`,expired / disabled / 无账号三者可分)、
+  `signOut(account)` 与 `signOutSite(site)` 分名、`primaryAccount` 按"可用且过期最晚"、
+  空白 id / 空密钥 / 超 `maxSecretSize`(默认 64 KiB)具名拒绝、`accountsOf` 按 accountId 定序(遥控器指同一行)。
+  10 测试通过。它是 `numbers.ByteSize` 与 `validation` 在 features 层的第一个消费者。
 - **`features/home` 重写(队列 #3 第 1 个)**:`HomeTab.visible` → `defaultVisible` 并与用户选择分家
   (原实现一个字段被 hidden 集合覆盖,**出厂隐藏的标签一跑排序就变可见**);`arrange(HomeLayout)` 返回
   `ArrangedHomeTab`(可见性 + 是否用户排过);新增 `HomeLayoutRepository` / `StoredHomeLayout`
@@ -83,7 +91,7 @@
 |---|---|---|---|
 | 1 | ~~`features/settings`~~ **已重写 `cd4c96fcb`** | 共享包里写死了一个产品的 5 个偏好键,机制本身反而没有 | 键改为消费方声明的 `PreferenceKey<T>`;带版本信封 `{v,c,value}`;读不抛+回退记账、写拒越界;`putIfAbsent` 承担首启语义;命名空间隔离 App;`importAll` 逐项校验并出报告;变更流 + `dispose` 只关自己的流。95 行 → 约 430 行,`dart analyze` 0 issue |
 | 2 | ~~`features/search`~~ **已重写(本轮)** | 只有历史记录容器 | 查询规范化、跨 App 一致的排序、容量上限与淘汰、与 `services/search` 聚合器的取消语义 —— 全部落地,详见 §2 |
-| 3 | `features/home` **已重写** / `account` `backup` `live` `vod` `music` `iptv` `recorder` 待做 | 每包 58–191 行,domain 有形状、data 缺失 | 按 §6 补齐:data 边界 + 具名错误 + 资源释放;presentation 留给 UI 波 |
+| 3 | `features/home` `account` **已重写** / `backup` `live` `vod` ~~`music`~~ `iptv` `recorder` 待做 | 每包 58–191 行,domain 有形状、data 缺失 | 按 §6 补齐:data 边界 + 具名错误 + 资源释放;presentation 留给 UI 波。`music` 卡在 §2bis 的 L4→L5 直连 provider,要先定注入形状 |
 | 4 | `ui/design` → `ui/ui_kit` → `ui/adaptive` | 令牌只有 spacing/radius,组件 4 个,风格注册表无焦点/密度维度 | 令牌全集(色/距/圆/高/动效/字焦/密度)、`AppNotice`/`AppDialog`/`AppLoading`/空错态门面、D-pad 焦点序与 TV 尺寸 |
 | 5 | `ui/lyric` `ui/player_ui` | 单文件适配 | 时间轴同步、句柄所有权、与 `integrations/media` 的状态订阅边界 |
 | 6 | `services/search` `services/feed` | 聚合器只有扇出 | 分页模式(§契约三态)、部分结果策略、取消传播、失败记账的可诊断形状 |

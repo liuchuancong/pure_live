@@ -1,6 +1,6 @@
 # GENERATED-BY: tool/scaffold_package.ps1
 name: pure_live_account
-description: "Feature package: account (repository + presentation skeleton per package-architecture.md)"
+description: "Feature package: account (站点账号的状态视图、登录/登出/刷新资格与容量上限)"
 publish_to: none
 resolution: workspace
 
@@ -12,3 +12,8 @@ dependencies:
   # The account screen consumes the auth L0 service; it never talks to a provider directly.
   pure_live_auth:
     path: ../../foundation/auth
+  pure_live_utils:
+    path: ../../foundation/utils
+
+dev_dependencies:
+  test: ^1.26.0
