@@ -171,13 +171,15 @@ function Add-FixtureApp {
 }
 
 function Invoke-Guard {
-    param([string] $Dir)
+    param([string] $Dir, [switch] $Strict)
     # PowerShell turns a native process' stderr into ErrorRecord objects; the guard writes diagnostics
     # there on purpose, so the preference must be relaxed while it runs and the exit code inspected.
     $previous = $ErrorActionPreference
+    $arguments = @('--root', $Dir)
+    if ($Strict) { $arguments += '--strict' }
     try {
         $ErrorActionPreference = 'Continue'
-        $output = & $dart --packages="$packageConfig" $guard --root $Dir 2>&1
+        $output = & $dart --packages="$packageConfig" $guard @arguments 2>&1
         return [pscustomobject]@{ Exit = $LASTEXITCODE; Text = (($output | ForEach-Object { "$_" }) -join "`n") }
     }
     finally {
@@ -458,6 +460,63 @@ function test_checkarchitecture_appDependingOnSharedPackages_reports_nothing {
     $result = Invoke-Guard -Dir $Dir
     Assert-True -Condition ($result.Exit -eq 0 -and $result.Text.Contains('errors=0')) `
         -Message 'a conforming app reports nothing (got: ' + $result.Text + ')'
+}
+
+# A pub workspace resolves an import against every member, so code can reach a package its pubspec never
+# declared. The dependency table cannot see that edge, and the analyzer does not care; these cases are the
+# reason the guard compares imports against declarations.
+function test_checkarchitecture_importWithoutDeclaration_reports_undeclareddependency {
+    param([string] $Dir)
+    Add-FixtureMember -Dir $Dir -Path 'packages/foundation/utils'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/foundation/utils'
+    Add-FixtureMember -Dir $Dir -Path 'packages/foundation/cache'
+    # utils is a leaf, so the layer rule is satisfied; the only finding left is the missing declaration.
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/foundation/cache' `
+        -Imports @("import 'package:pure_live_utils/pure_live_utils.dart';")
+    $result = Invoke-Guard -Dir $Dir
+    Assert-True -Condition ($result.Text.Contains('undeclared-dependency') -and $result.Text.Contains('pure_live_utils')) `
+        -Message 'a workspace member imported without being declared is reported (got: ' + $result.Text + ')'
+    Assert-True -Condition ($result.Exit -eq 0) `
+        -Message 'the finding is a warning, so a non-strict run still passes (got exit ' + $result.Exit + ')'
+}
+
+function test_checkarchitecture_undeclaredImportUnderStrict_reports_error {
+    param([string] $Dir)
+    Add-FixtureMember -Dir $Dir -Path 'packages/foundation/utils'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/foundation/utils'
+    Add-FixtureMember -Dir $Dir -Path 'packages/foundation/cache'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/foundation/cache' `
+        -Imports @("import 'package:pure_live_utils/pure_live_utils.dart';")
+    # CI runs --strict; that is where a bookkeeping gap stops being advisory.
+    $result = Invoke-Guard -Dir $Dir -Strict
+    Assert-True -Condition ($result.Exit -eq 1 -and $result.Text.Contains('undeclared-dependency')) `
+        -Message '--strict turns an undeclared import into a failure (got: ' + $result.Text + ')'
+}
+
+function test_checkarchitecture_declaredImport_reports_nothing {
+    param([string] $Dir)
+    Add-FixtureMember -Dir $Dir -Path 'packages/foundation/utils'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/foundation/utils'
+    Add-FixtureMember -Dir $Dir -Path 'packages/foundation/cache'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/foundation/cache' -Deps @('pure_live_utils') `
+        -Imports @("import 'package:pure_live_utils/pure_live_utils.dart';")
+    $result = Invoke-Guard -Dir $Dir -Strict
+    Assert-True -Condition ($result.Exit -eq 0 -and -not $result.Text.Contains('undeclared-dependency')) `
+        -Message 'the same import is silent once declared (got: ' + $result.Text + ')'
+}
+
+function test_checkarchitecture_importOfNonWorkspacePackage_reports_nothing {
+    param([string] $Dir)
+    Add-FixtureMember -Dir $Dir -Path 'packages/foundation/utils'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/foundation/utils'
+    # pub.dev packages are resolved from the lockfile and are nobody's workspace member; the rule is about
+    # hidden intra-repository edges, so a third-party import must not be reported here.
+    Add-FixtureMember -Dir $Dir -Path 'packages/foundation/network'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/foundation/network' `
+        -Imports @("import 'package:dio/dio.dart';")
+    $result = Invoke-Guard -Dir $Dir -Strict
+    Assert-True -Condition ($result.Exit -eq 0 -and -not $result.Text.Contains('undeclared-dependency')) `
+        -Message 'a third-party import is left to the lockfile (got: ' + $result.Text + ')'
 }
 
 # ----------------------------------------------------------------------- runner ---

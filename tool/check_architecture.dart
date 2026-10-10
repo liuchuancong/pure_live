@@ -72,7 +72,14 @@ const Map<String, Set<String>> kApprovedExceptions = <String, Set<String>>{
   // The python host implements the spider contract the adapter defines; the
   // edge is the mirror of the adapter's dependency on the runtime.
   'pure_live_python_runtime': <String>{'pure_live_external_tvbox'},
-  'pure_live_external_tvbox': <String>{'pure_live_python_runtime', 'pure_live_capability', 'pure_live_js_runtime'},
+  // The spider handle builds a sandbox, so it names SandboxPolicy and SandboxUnit - the plugin_api sandbox
+  // contract, not the js_runtime host. The same one-domain edge as the JS host's own dependency on it.
+  'pure_live_external_tvbox': <String>{
+    'pure_live_python_runtime',
+    'pure_live_capability',
+    'pure_live_js_runtime',
+    'pure_live_plugin_api',
+  },
   // ADR 0019: the gateway is where ExtensionContext is assembled from the permission and task packages.
   'pure_live_extension': <String>{'pure_live_permission', 'pure_live_task'},
   // ADR 0021: CapabilityResolver lifts a source's ResolveCapability into the platform's Resolver.
@@ -152,12 +159,12 @@ void main(List<String> args) {
       // template (one barrel, lib/src) does not apply to it. What does apply is the boundary between apps -
       // ADR 0022 lets them share nothing but packages.
       findings.addAll(checkDependencies(package, packages, appNames));
-      findings.addAll(checkImports(root, package, appNames));
+      findings.addAll(checkImports(root, package, packages, appNames));
       continue;
     }
     findings.addAll(checkLayout(root, package));
     findings.addAll(checkDependencies(package, packages, appNames));
-    findings.addAll(checkImports(root, package, appNames));
+    findings.addAll(checkImports(root, package, packages, appNames));
   }
 
   final errors = findings.where((finding) => !finding.isWarning).toList();
@@ -412,8 +419,14 @@ bool isApprovedException(PackageInfo package, PackageInfo target) {
 }
 
 /// Source-level rules that a pubspec cannot express, from dependency-rules.md sections 5 and 6.
-List<Finding> checkImports(Directory root, PackageInfo package, Set<String> appNames) {
+///
+/// [byName] is needed because a pub workspace resolves an import against every workspace member, so code can
+/// reach a package its pubspec never declared. Layer direction is read from pubspecs, which means those hidden
+/// edges are invisible to the dependency check; comparing the imports against the declared set is what makes a
+/// real edge visible.
+List<Finding> checkImports(Directory root, PackageInfo package, Map<String, PackageInfo> byName, Set<String> appNames) {
   final findings = <Finding>[];
+  final reported = <String>{};
   final lib = Directory('${root.path}/${package.relativePath}/lib');
   if (!lib.existsSync()) {
     return findings;
@@ -430,9 +443,31 @@ List<Finding> checkImports(Directory root, PackageInfo package, Set<String> appN
       }
       final target = import.path.split('/').first;
       findings.addAll(checkImportedPackage(package, relative, target, appNames));
+      if (byName.containsKey(target) && reported.add('$relative|$target')) {
+        findings.addAll(checkImportDeclared(package, relative, target));
+      }
     }
   }
   return findings;
+}
+
+/// A workspace member imported by code but missing from the importer's pubspec.
+///
+/// A warning rather than an error: the build works today, so the finding is a bookkeeping gap, not a broken
+/// dependency. It still has to be visible, because the dependency catalog and every layer judgement built on
+/// it silently understate the edges a hidden import carries.
+List<Finding> checkImportDeclared(PackageInfo package, String file, String target) {
+  if (target == package.name || package.dependencies.contains(target)) {
+    return const <Finding>[];
+  }
+  return <Finding>[
+    Finding(
+      'undeclared-dependency',
+      file,
+      '${package.name} imports package:$target/ without declaring $target in its pubspec.yaml',
+      isWarning: true,
+    ),
+  ];
 }
 
 String? _importTarget(String line) {
