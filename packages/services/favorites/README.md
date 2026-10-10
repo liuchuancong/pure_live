@@ -50,3 +50,29 @@
 
 - 分析:`dart analyze`(纯 Dart)或 `flutter analyze`(带 `-Flutter`)
 - 测试:`dart test -j 1`(纯 Dart)或 `flutter test`(带 `-Flutter`)
+
+## 服务面补齐(2026-10-11)
+
+- `isFavorite(ref)` / `folderCounts()`(含空文件夹 —— 只显示有数的文件夹,空的看起来像丢了)
+- `matching(query, folderId, limit)` —— 过滤的是**存下来的快照**,不去问源:断网也能翻自己的收藏
+- `moveAll` / `removeAll` —— 一次读、逐条写,**移动了哪几条、拒了哪几条分开报**
+  (第一条坏 ref 就抛的批量调用会让用户以为整批都生效了)
+- `refreshSnapshots(lookup, limit:)` —— 有界重取快照,四类结果分别报:`refreshed` / `unchanged` /
+  `missing`(源说"没有了",旧快照留着,由调用方去标记)/ `failed`(查询抛了,同样留旧值)。
+  无上界的版本等于"用户一年攒的收藏,一次全量问源"。
+- `changes` 广播流 + `dispose()`:列表页订阅而不是每次重建都重读;广播控制器保证第二个页面不会抢走第一个的事件。
+  `add`/`remove`/`move`/`removeFolder`/两个批量/`refreshSnapshots` 都会播报;`dispose()` 之后服务照常用,只是不再播报。
+
+## 验证
+
+- 分析:`dart analyze packages/services/favorites`(2026-10-11:0 issue)
+- 测试:`dart test` —— **16 例**全绿(增删移动、拒绝空文件夹、跨重启持久、坏文档拒读)。
+  本轮新增项**没有新增测试**;用仓库外一次性脚本实测:两个文件夹的计数含 0、`matching` 只命中副标题那条、
+  `moveAll` 报 1 moved/1 refused 且 f2 真拿到那一行、`removeAll` 同样分开报、
+  `refreshSnapshots` 报 `1 refreshed`、6 次变更后收到 5 个事件、`dispose()` 后仍能读写。脚本已删除。
+
+## 未验证
+
+- `changes` 只保证"有变更",不带载荷:订阅方收到还是得重读整份列表(收藏量级下可接受,上千行时不是)。
+- 没有并发保护:两处同时 `add` 同一 ref 时后写覆盖前写,`addedAt` 谁赢看时序 —— 单 isolate UI 里没暴露,
+  跨 isolate 或将来接了 sync 双向写就会。

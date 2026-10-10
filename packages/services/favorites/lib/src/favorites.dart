@@ -7,6 +7,8 @@
 // and the rule that snapshot metadata (title/cover) is stored with the entry so the list stays visible after
 // the source stops answering. "关注" is deliberately not here: that comes from a source, this is local.
 
+import 'dart:async';
+
 import 'package:pure_live_platform/pure_live_platform.dart';
 
 /// The id of the folder every unfiled favourite goes to. A value rather than a string the caller types, so a
@@ -170,6 +172,7 @@ final class FavoritesService {
       );
     }
     await _repository.removeFolder(id);
+    _announce();
   }
 
   /// Favourites [ref] with the metadata the caller has on screen. If it is already there, the snapshot is
@@ -181,6 +184,7 @@ final class FavoritesService {
         ? FavoriteEntry(ref: ref, folderId: folder.id, addedAt: _clock(), snapshot: snapshot)
         : existing.withSnapshot(snapshot);
     await _repository.upsertEntry(entry);
+    _announce();
     return entry;
   }
 
@@ -189,6 +193,7 @@ final class FavoritesService {
       throw FavoriteException(FavoriteFailure.notFavorite, '${ref.sourceId}/${ref.contentId} is not a favourite');
     }
     await _repository.removeEntry(ref);
+    _announce();
   }
 
   Future<FavoriteEntry> move(ContentRef ref, String folderId) async {
@@ -199,6 +204,7 @@ final class FavoritesService {
     final folder = await _requireFolder(folderId);
     final moved = entry.inFolder(folder.id);
     await _repository.upsertEntry(moved);
+    _announce();
     return moved;
   }
 
@@ -222,6 +228,168 @@ final class FavoritesService {
     }).toList();
     entries.sort((a, b) => -a.addedAt.compareTo(b.addedAt));
     return entries;
+  }
+
+  /// Whether [ref] is on the list, without building the list.
+  Future<bool> isFavorite(ContentRef ref) async => await _find(ref) != null;
+
+  /// How many favourites each folder holds, empty folders included: a folder list that shows counts needs the
+  /// zeros too, or an empty folder looks like a missing one.
+  Future<Map<String, int>> folderCounts() async {
+    final counts = <String, int>{for (final folder in await _repository.folders()) folder.id: 0};
+    for (final entry in await _repository.entries()) {
+      counts[entry.folderId] = (counts[entry.folderId] ?? 0) + 1;
+    }
+    return Map<String, int>.unmodifiable(counts);
+  }
+
+  /// Entries whose **stored snapshot** mentions [query] in title, subtitle or description.
+  ///
+  /// A filter over the snapshots rather than a search at the source: the list is browsable with the network
+  /// down, which is the property that made the snapshot the record in the first place.
+  Future<List<FavoriteEntry>> matching(String query, {String? folderId, int? limit}) async {
+    final found = await list(folderId: folderId);
+    final needle = query.trim().toLowerCase();
+    final hits = needle.isEmpty
+        ? found
+        : <FavoriteEntry>[
+            for (final entry in found)
+              if (_mentions(entry.snapshot, needle)) entry,
+          ];
+    return limit == null || limit >= hits.length
+        ? hits
+        : List<FavoriteEntry>.unmodifiable(hits.take(limit < 0 ? 0 : limit));
+  }
+
+  /// Moves several entries, reading the list once and reporting what it refused.
+  ///
+  /// A bulk call that threw on the first bad ref would leave the user believing the batch had been applied.
+  Future<BulkFolderChange> moveAll(Iterable<ContentRef> refs, String folderId) async {
+    final folder = await _requireFolder(folderId);
+    final entries = await _repository.entries();
+    final moved = <ContentRef>[];
+    final refused = <ContentRef>[];
+    for (final ref in refs) {
+      final found = _firstEntryFor(entries, ref);
+      if (found == null) {
+        refused.add(ref);
+        continue;
+      }
+      await _repository.upsertEntry(found.inFolder(folder.id));
+      moved.add(ref);
+    }
+    _announce();
+    return BulkFolderChange(moved: moved, refused: refused);
+  }
+
+  Future<BulkRemoval> removeAll(Iterable<ContentRef> refs) async {
+    final entries = await _repository.entries();
+    final removed = <ContentRef>[];
+    final refused = <ContentRef>[];
+    for (final ref in refs) {
+      if (_firstEntryFor(entries, ref) == null) {
+        refused.add(ref);
+        continue;
+      }
+      await _repository.removeEntry(ref);
+      removed.add(ref);
+    }
+    _announce();
+    return BulkRemoval(removed: removed, refused: refused);
+  }
+
+  /// Re-asks a source for each stored snapshot, through [lookup], and reports the four outcomes separately.
+  ///
+  /// Bounded by [limit]: the unbounded version runs one request per favourite against whatever the user saved
+  /// over a year. A null answer is **missing**, not an error to swallow - a video that is gone keeps its old
+  /// snapshot and shows up in [SnapshotRefresh.missing] so the caller can mark it rather than drop the row.
+  Future<SnapshotRefresh> refreshSnapshots(
+    Future<ContentSummary?> Function(ContentRef ref) lookup, {
+    int limit = 100,
+    String? folderId,
+  }) async {
+    final targets = List<FavoriteEntry>.unmodifiable((await list(folderId: folderId)).take(limit < 1 ? 0 : limit));
+    var refreshed = 0;
+    var unchanged = 0;
+    final missing = <ContentRef>[];
+    final failed = <ContentRef>[];
+    for (final entry in targets) {
+      final ContentSummary? fresh;
+      try {
+        fresh = await lookup(entry.ref);
+      } on Object {
+        failed.add(entry.ref);
+        continue;
+      }
+      if (fresh == null) {
+        missing.add(entry.ref);
+        continue;
+      }
+      if (fresh.title == entry.snapshot.title &&
+          fresh.subtitle == entry.snapshot.subtitle &&
+          fresh.cover == entry.snapshot.cover) {
+        unchanged++;
+        continue;
+      }
+      await _repository.upsertEntry(entry.withSnapshot(fresh));
+      refreshed++;
+    }
+    if (refreshed > 0) {
+      _announce();
+    }
+    return SnapshotRefresh(
+      considered: targets.length,
+      refreshed: refreshed,
+      unchanged: unchanged,
+      missing: missing,
+      failed: failed,
+    );
+  }
+
+  /// Emits after any mutation this service performs, so a list screen listens instead of re-reading on every
+  /// rebuild. Broadcast: a second screen must not steal the first one's events.
+  Stream<void> get changes {
+    final out = _changes ??= StreamController<void>.broadcast();
+    return out.stream;
+  }
+
+  /// Closes [changes]. The service keeps working after this; it just stops announcing.
+  Future<void> dispose() async {
+    final out = _changes;
+    _changes = null;
+    if (out != null && !out.isClosed) {
+      await out.close();
+    }
+  }
+
+  StreamController<void>? _changes;
+
+  void _announce() {
+    final out = _changes;
+    if (out != null && !out.isClosed) {
+      out.add(null);
+    }
+  }
+
+  static bool _mentions(ContentSummary snapshot, String needle) {
+    if (snapshot.title.toLowerCase().contains(needle)) {
+      return true;
+    }
+    final subtitle = snapshot.subtitle;
+    if (subtitle != null && subtitle.toLowerCase().contains(needle)) {
+      return true;
+    }
+    final description = snapshot.description;
+    return description != null && description.toLowerCase().contains(needle);
+  }
+
+  static FavoriteEntry? _firstEntryFor(List<FavoriteEntry> entries, ContentRef ref) {
+    for (final entry in entries) {
+      if (entry.ref == ref) {
+        return entry;
+      }
+    }
+    return null;
   }
 
   Future<FavoriteEntry?> _find(ContentRef ref) async {
@@ -275,3 +443,59 @@ DateTime _parseUtc(Object? raw) {
 }
 
 String _formatUtc(DateTime value) => value.toUtc().toIso8601String();
+
+/// What a bulk move did: the rows it moved and the refs it refused because they were not favourites.
+final class BulkFolderChange {
+  const BulkFolderChange({required this.moved, required this.refused});
+
+  final List<ContentRef> moved;
+  final List<ContentRef> refused;
+
+  bool get isClean => refused.isEmpty;
+
+  int get requestedCount => moved.length + refused.length;
+
+  @override
+  String toString() => 'BulkFolderChange(${moved.length} moved, ${refused.length} refused)';
+}
+
+/// What a bulk removal did.
+final class BulkRemoval {
+  const BulkRemoval({required this.removed, required this.refused});
+
+  final List<ContentRef> removed;
+  final List<ContentRef> refused;
+
+  bool get isClean => refused.isEmpty;
+
+  @override
+  String toString() => 'BulkRemoval(${removed.length} removed, ${refused.length} refused)';
+}
+
+/// What a snapshot refresh found, in the four categories that need handling different from each other.
+final class SnapshotRefresh {
+  const SnapshotRefresh({
+    required this.considered,
+    required this.refreshed,
+    required this.unchanged,
+    required this.missing,
+    required this.failed,
+  });
+
+  final int considered;
+  final int refreshed;
+  final int unchanged;
+
+  /// The source answered "I do not have this anymore".
+  final List<ContentRef> missing;
+
+  /// The lookup threw. The old snapshot stays - that is the whole point of storing one.
+  final List<ContentRef> failed;
+
+  int get untouched => missing.length + failed.length;
+
+  @override
+  String toString() =>
+      'SnapshotRefresh($considered considered, $refreshed refreshed, $unchanged unchanged, '
+      '${missing.length} missing, ${failed.length} failed)';
+}
