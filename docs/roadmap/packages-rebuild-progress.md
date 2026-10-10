@@ -90,6 +90,17 @@
   另加 `fileName` 路径校验(宿主把它拼到录制目录后)、三处 `DateTime.now()` 换成注入 `Clock`
   (不然这些规则根本没法测)、id 在转换间保持稳定。13 测试。
   `lib/src/data/` 仍空是刻意的:引擎在录制波次,状态契约先立住就没有第二套真相。
+- **#5 复核(`ui/lyric` + `ui/player_ui`)**:两处能靠读码确认的缺陷,没有一处靠猜第三方 API。
+  player_ui:`showPlayerOptionSheet` 开的是**固定高度 bottom sheet**,四十条线路或六个画质渲染成
+  「后面那些只有构造它的代码看得见」——而同包的 `episode_panel` **早就**用了 `isScrollControlled` +
+  `DraggableScrollableSheet`,同一包里两份面板行为不一致就是漏改的证据;空选项列表也不再开一扇空面板
+  (那是内容事实,不是 UI bug)。选中/正在播放的图标补 semanticLabel(读屏时一列相同的行里,勾是唯一的区别)。
+  lyric:换曲那一帧文本与进度同时变,而进度只在 `progress` 自己变化时才推 —— 于是**新歌词配旧进度**,
+  高亮指错行直到下一拍;现在重解析之后再无条件推一次,`initState` 也补初始进度(从播放页滑到歌词页时
+  下一次进度事件可能很久才来)。两包内边距改用 `PureLiveSpacing`,player_ui 新增 `ui/design` 依赖(ui 层叶子)。
+  **验证等级**:按你定的「Flutter 侧只静态分析」——`dart analyze packages/ui` 0 issue、护栏 0 错、design 的
+  20 个纯 Dart 测试仍过;**没跑 widget test、没跑 flutter analyze、没上真机**,
+  flutter_lyric 的实际渲染行为与 bottom sheet 拖拽手感都未验证。
 - **#9 复核(3/9):`ecosystem/plugin_host` 与 `resolver` 各抓到一个能落地的缺陷**。
   plugin_host:`_directoryFor` 净化 id 时挡了 `/ \` 与空白,**唯独没挡连续的点** ——
   id `..` 原样穿过,拼成 `plugins/../`(= 应用自己的数据目录),而 `uninstall()` 是 `delete(recursive: true)`;
@@ -238,7 +249,7 @@
 | 2 | ~~`features/search`~~ **已重写(本轮)** | 只有历史记录容器 | 查询规范化、跨 App 一致的排序、容量上限与淘汰、与 `services/search` 聚合器的取消语义 —— 全部落地,详见 §2 |
 | 3 | `features/home` `account` `backup` `live` `vod` `iptv` `recorder` `music` **全部重写完成** | 每包原 58–191 行,domain 有形状、data 缺失 | 按 §6 补齐:data 边界 + 具名错误 + 资源释放;presentation 留给 UI 波。`music` 的 L4→L5 直连已改端口注入 |
 | 4 | `ui/design` **令牌面已补齐** / `ui/ui_kit` `ui/adaptive` **已接令牌(仅静态分析验证)** / 真机与 app 传参待做 | 令牌只有 spacing/radius,组件 4 个,风格注册表无焦点/密度维度 | 令牌全集(色/距/圆/高/动效/字焦/密度)、`AppNotice`/`AppDialog`/`AppLoading`/空错态门面、D-pad 焦点序与 TV 尺寸。**下一步是把 ui_kit 与 adaptive 改成消费 `DesignTokens`** —— 否则令牌只是躺在一个没人读的包里 |
-| 5 | `ui/lyric` `ui/player_ui` | 单文件适配 | 时间轴同步、句柄所有权、与 `integrations/media` 的状态订阅边界 |
+| 5 | `ui/lyric` `ui/player_ui` **已复核并修** | 单文件适配 | 时间轴先后与面板可滚动已修;剩余:真正接上 `integrations/media` 的状态订阅(要等房间页重构),以及 widget 级测试 |
 | 6 | `services/search` `services/feed` **已完成** | 聚合器只有扇出 | 分页三态校验 + 按源游标 + 取消传播 + 失败记账形状已落;剩余:跨源节(继续看)受 FeedSection 形状限制,见 w5 §2 |
 | 7 | `foundation/diagnostics` `events` `sync` `platform_info` **全部已修** | 薄 | 有界缓冲与守护执行的真缺陷已修;剩余:结构化事件出口、探测能力矩阵、同步游标与冲突策略 |
 | 8 | `providers/douyu` | 空 barrel | 按 `providers/huya` 的形状实现 feed/browse/search/resolve |

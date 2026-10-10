@@ -38,17 +38,22 @@ final class _LyricsSurfaceState extends State<LyricsSurface> {
   void initState() {
     super.initState();
     _loadLyric();
+    // The first progress tick may not have arrived when this surface opens (a resumed episode, a lyric tab
+    // swiped to), and a controller with no position paints every line unhighlighted until the next one.
+    _controller.progressNotifier.value = widget.progress;
   }
 
   @override
   void didUpdateWidget(covariant LyricsSurface oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.lyricText != oldWidget.lyricText || widget.translationText != oldWidget.translationText) {
+    final replaced = widget.lyricText != oldWidget.lyricText || widget.translationText != oldWidget.translationText;
+    if (replaced) {
       _loadLyric();
     }
-    if (widget.progress != oldWidget.progress) {
-      _controller.progressNotifier.value = widget.progress;
-    }
+    // Pushed unconditionally, and after any reparse: a song change arrives with the new lyric text and the
+    // new position in the same frame, and the old order left the previous song's progress applied to the
+    // freshly parsed - different - line list.
+    _controller.progressNotifier.value = widget.progress;
   }
 
   void _loadLyric() {

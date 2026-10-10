@@ -10,3 +10,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Sheet paddings and text roles come from the design tokens; ui/design is the ui layer's leaf.
+  pure_live_design:
+    path: ../design

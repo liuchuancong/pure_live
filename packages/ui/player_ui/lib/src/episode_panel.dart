@@ -6,6 +6,8 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:pure_live_design/pure_live_design.dart';
+
 /// One episode row in the panel.
 final class PlayerEpisode {
   const PlayerEpisode({required this.id, required this.label, this.current = false});
@@ -33,7 +35,12 @@ Future<String?> showPlayerEpisodePanel(
       builder: (sheetContext, scrollController) => Column(
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+            padding: const EdgeInsets.fromLTRB(
+              PureLiveSpacing.xl,
+              PureLiveSpacing.sm,
+              PureLiveSpacing.xl,
+              PureLiveSpacing.md,
+            ),
             child: Text(title, style: Theme.of(sheetContext).textTheme.titleMedium),
           ),
           Expanded(
@@ -45,7 +52,14 @@ Future<String?> showPlayerEpisodePanel(
                 return ListTile(
                   dense: true,
                   selected: episode.current,
-                  leading: episode.current ? const Icon(Icons.play_circle_outline) : Text('${index + 1}'),
+                  // The number is the row's address in the list; a bare play icon says "this one" to nobody
+                  // using a screen reader, so the marker carries its own label.
+                  leading: episode.current
+                      ? const Icon(Icons.play_circle_outline, semanticLabel: '正在播放')
+                      : SizedBox(
+                          width: PureLiveSpacing.xl + PureLiveSpacing.sm,
+                          child: Text('${index + 1}', textAlign: TextAlign.right),
+                        ),
                   title: Text(episode.label, maxLines: 1, overflow: TextOverflow.ellipsis),
                   onTap: () => Navigator.pop(sheetContext, episode.id),
                 );

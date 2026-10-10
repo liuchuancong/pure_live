@@ -6,8 +6,15 @@
 //
 // Generic on purpose: the player surface knows option ids/labels, while the
 // meaning (quality vs line) belongs to the caller's domain model.
+//
+// It used to open a fixed-height bottom sheet, which the sibling episode panel had already learned not to
+// do: a source with forty lines or six qualities rendered a list you could not scroll, so the last options
+// existed only to the caller that built the list. It also opened a titled sheet with nothing in it when the
+// list was empty, which reads as a broken button rather than as "this content has no variants".
 
 import 'package:flutter/material.dart';
+
+import 'package:pure_live_design/pure_live_design.dart';
 
 /// One selectable option row.
 final class PlayerOption {
@@ -25,27 +32,59 @@ Future<String?> showPlayerOptionSheet(
   required String title,
   required List<PlayerOption> options,
 }) {
+  if (options.isEmpty) {
+    // No sheet at all: an empty list is a fact about the content, and showing a blank panel turns it into a
+    // UI bug the viewer has to dismiss.
+    return Future<String?>.value();
+  }
   return showModalBottomSheet<String>(
     context: context,
     showDragHandle: true,
-    builder: (sheetContext) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    isScrollControlled: true,
+    builder: (sheetContext) => DraggableScrollableSheet(
+      expand: false,
+      // A short list shrinks to fit; a long one can be pulled up to 85% and scrolled, which is the whole
+      // point of the sheet existing in two sizes instead of one clipped one.
+      initialChildSize: options.length <= _CompactThreshold ? 0.4 : 0.6,
+      maxChildSize: 0.85,
+      minChildSize: 0.25,
+      builder: (sheetContext, scrollController) => Column(
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+            padding: const EdgeInsets.fromLTRB(
+              PureLiveSpacing.xl,
+              PureLiveSpacing.sm,
+              PureLiveSpacing.xl,
+              PureLiveSpacing.md,
+            ),
             child: Text(title, style: Theme.of(sheetContext).textTheme.titleMedium),
           ),
-          for (final option in options)
-            ListTile(
-              dense: true,
-              title: Text(option.label),
-              trailing: option.selected ? const Icon(Icons.check) : null,
-              onTap: () => Navigator.pop(sheetContext, option.id),
+          Expanded(
+            child: ListView.builder(
+              controller: scrollController,
+              itemCount: options.length,
+              itemBuilder: (rowContext, index) {
+                final option = options[index];
+                return ListTile(
+                  dense: true,
+                  selected: option.selected,
+                  // The check is the only thing distinguishing the current variant from the rest, so it has
+                  // to be announced: a screen reader otherwise reads a list of identical rows.
+                  trailing: option.selected
+                      ? const Icon(Icons.check, semanticLabel: '当前选择')
+                      : const SizedBox(width: PureLiveSpacing.xl),
+                  title: Text(option.label, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  onTap: () => Navigator.pop(sheetContext, option.id),
+                );
+              },
             ),
-          const SizedBox(height: 8),
+          ),
         ],
       ),
     ),
   );
 }
+
+/// Below this many options the sheet opens at its smaller height; a two-entry quality picker should not
+/// cover the picture it is choosing for.
+const int _CompactThreshold = 4;

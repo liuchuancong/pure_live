@@ -59,11 +59,11 @@
 | `services/playlist` | playlist / key_value_playlist_repository | app | ✅ |
 | `services/search` | search_aggregator(扇出/超时/失败隔离 + 取消缝) | app | ✅ 16 测试 |
 | `services/feed` | feed_aggregator(按源分节 + 跳过记账 + 按源游标与三态校验) | app | ✅ 23 测试;修了「游标贯穿」只做一半;跨源节仍受形状限制(w5 §2) |
-| `ui/design` | semantic_roles / scale_tokens / control_metrics / design_tokens(解析器 + AppearanceSettings) | ui_kit, lyric;app | ✅ 令牌全集补齐(色角色/距/圆/字阶+可读下限/动效归零/密度/交互尺寸/焦点视觉),20 测试;纯 Dart 无 Flutter import。**ui_kit 与 adaptive 还没接它** |
+| `ui/design` | semantic_roles / scale_tokens / control_metrics / design_tokens(解析器 + AppearanceSettings) | ui_kit, lyric;app | ✅ 令牌全集补齐(色角色/距/圆/字阶+可读下限/动效归零/密度/交互尺寸/焦点视觉),20 测试;纯 Dart 无 Flutter import。ui_kit/adaptive 已接(app 侧传 tokens 待做) |
 | `ui/ui_kit` | **app_facade**(Notice/Dialog/Loading)/ tokens_theme(ThemeExtension)/ poster_card / status_views | adaptive;无 App 依赖 | ✅ 组件改读令牌,`PosterCard.width` 之前被忽略已修;门面仍没人用。**只过静态分析** |
 | `ui/adaptive` | ui_style(六风格注册,统一 `_applyTokens` 映射)/ app_background | app | ✅ 密度/控件尺寸/字阶下限/焦点/动效改由令牌决定,风格只剩装饰差别;声明了 design+ui_kit 依赖。**只过静态分析,app 还没传 tokens** |
-| `ui/lyric` | lyrics_surface | **无** | ⚠️ 等 pure_music |
-| `ui/player_ui` | option_sheet / episode_panel | **无** | ⚠️ 等房间页重构 |
+| `ui/lyric` | lyrics_surface | **无**(等 pure_music) | ✅ 修了换曲时「进度与重解析先后」导致的高亮错行 + 首帧无进度。**只过静态分析,flutter_lyric 实际行为未测** |
+| `ui/player_ui` | option_sheet / episode_panel | **无**(等房间页重构) | ✅ 修了选项表不可滚动(同包 ep 面板早已 scroll-controlled)、空表开空面板;令牌化 + 语义标签。**只过静态分析** |
 
 ## 3ter. L4 features(10)与 L5 providers(6)
 
