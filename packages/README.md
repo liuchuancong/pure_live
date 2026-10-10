@@ -70,7 +70,7 @@
 | 包 | 公共面 | 消费者 | 状态 |
 |---|---|---|---|
 | `features/settings`(pure_live_settings) | preference_key(键/codec/校验)+ preferences_store(信封/命名空间/导入/变更流) | **无** | 🟡 刚重写成机制;等 App 声明键 |
-| `features/live` | live_session(换源状态机) | **无** | ⚠️ 零消费者 |
+| `features/live` | live_session(不可变选流状态机:两轴已提交选择 + 带身份的切换尝试) | **无 App 消费者** | ✅ 重写完成:迟到回调不再能改写选择、按轴独立、未提供的变体具名拒绝;13 测试 |
 | `features/vod` | episode_navigator / watch_progress_repository | **无** | ⚠️ 零消费者 |
 | `features/music`(pure_live_music_feature) | music_queue / lx_music_repository | **无** | ⚠️ 等 pure_music |
 | `features/iptv`(pure_live_iptv_feature) | channel_zapper / epg_window | **无** | ⚠️ 零消费者 |

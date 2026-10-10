@@ -47,6 +47,18 @@
   `{manifest,payload}` 编解码从 `apps/pure_live/lib/app/user_backup.dart` **收回来一份**(那边仍留着副本,
   等拆壳波替换),解码拒绝:缺 payload、自称含凭据、不认识的 schema 版本、列了域却没给值。
   18 测试,包 analyze 0 issue。
+- **`features/live` 重写(队列 #3 第 4 个)**:旧模型把切换当成**一个 pending 标志**,于是
+  (1) 第二次切换覆盖第一次,`commitSwitch()` 提交"当时挂着的那个"—— 用户已经放弃的那条线路的迟到
+  "开播成功"回调会把选择改写成没人播的流;(2) 单 `active` 字段表达不了"线路2 + 原画",换画质会把线路清空;
+  (3) 可以请求一个源从没给过的变体;(4) `active/pending/currentTicket/variants` 全是公开可写字段,
+  "只在开播后提交"这条规则任何调用方都能绕过。
+  现在:不可变状态 + **按轴的带身份尝试**(`SwitchAttempt`,被取代者 commit 抛 `SwitchFailure`)、
+  `SwitchNoop` 让遥控器重复事件不再是错误、`withTicket` 保留选择但作废在飞尝试、
+  变体表变化时释放消失的选择与尝试。13 测试。
+  **顺带查出**:source-contract.md 点名的 `QualityLine` / `QualityRef` / `LineRef` / `LiveDetail` /
+  `StreamTicket` 在 `pure_live_platform` 里**一个都不存在**(只有 `MediaTicket` 有),契约与模型对不齐,
+  见 §5。
+
 - **查出一类护栏盲区:pub workspace 让"未声明依赖"照样编译。** 逐包 grep `lib/` 里的
   `import 'package:...'` 与 pubspec 对照,14 个包在空 `dependencies:` 的情况下用着别的包 —— 意味着
   §2bis 的依赖图(按 pubspec 测)**系统性少算边**。已把这批能合规的边补进 pubspec:
@@ -99,7 +111,7 @@
 |---|---|---|---|
 | 1 | ~~`features/settings`~~ **已重写 `cd4c96fcb`** | 共享包里写死了一个产品的 5 个偏好键,机制本身反而没有 | 键改为消费方声明的 `PreferenceKey<T>`;带版本信封 `{v,c,value}`;读不抛+回退记账、写拒越界;`putIfAbsent` 承担首启语义;命名空间隔离 App;`importAll` 逐项校验并出报告;变更流 + `dispose` 只关自己的流。95 行 → 约 430 行,`dart analyze` 0 issue |
 | 2 | ~~`features/search`~~ **已重写(本轮)** | 只有历史记录容器 | 查询规范化、跨 App 一致的排序、容量上限与淘汰、与 `services/search` 聚合器的取消语义 —— 全部落地,详见 §2 |
-| 3 | `features/home` `account` `backup` **已重写** / `live` `vod` ~~`music`~~ `iptv` `recorder` 待做 | 每包 58–191 行,domain 有形状、data 缺失 | 按 §6 补齐:data 边界 + 具名错误 + 资源释放;presentation 留给 UI 波。`music` 卡在 §2bis 的 L4→L5 直连 provider,要先定注入形状 |
+| 3 | `features/home` `account` `backup` `live` **已重写** / `vod` ~~`music`~~ `iptv` `recorder` 待做 | 每包 58–191 行,domain 有形状、data 缺失 | 按 §6 补齐:data 边界 + 具名错误 + 资源释放;presentation 留给 UI 波。`music` 卡在 §2bis 的 L4→L5 直连 provider,要先定注入形状 |
 | 4 | `ui/design` → `ui/ui_kit` → `ui/adaptive` | 令牌只有 spacing/radius,组件 4 个,风格注册表无焦点/密度维度 | 令牌全集(色/距/圆/高/动效/字焦/密度)、`AppNotice`/`AppDialog`/`AppLoading`/空错态门面、D-pad 焦点序与 TV 尺寸 |
 | 5 | `ui/lyric` `ui/player_ui` | 单文件适配 | 时间轴同步、句柄所有权、与 `integrations/media` 的状态订阅边界 |
 | 6 | `services/search` `services/feed` | 聚合器只有扇出 | 分页模式(§契约三态)、部分结果策略、取消传播、失败记账的可诊断形状 |
@@ -126,6 +138,11 @@
   (自带 `{v,order,hidden}` 信封)。**两个选项**:A 把偏好机制下沉到 `foundation/preferences`(L0,人人可用,
   settings 只留 App 词汇);B 给 §4 白名单加 `features/* → features/settings` 一条例外。我倾向 A:
   "带版本的 kv 读写"是基础设施而不是产品功能,而且 §2bis 显示 10 个 features 包都要它 —— 选 A 我就机械搬迁。
+- **契约点名的类型不存在。** `docs/sources/live/source-contract.md` 用 `QualityLine` / `QualityRef` /
+  `LineRef` / `LiveDetail` / `StreamTicket` 写方法签名,但 `pure_live_platform` 里**一个都没定义**
+  (只有 `MediaTicket` 有)。所以 `features/live` 只能自带 `StreamVariant` 词汇,站点适配写出来时也要各写一份映射。
+  要么把这些类型落进 platform 伞包(并让契约测试按它们断言),要么改契约用现有类型 —— 在有人实现
+  `LiveCapability` 之前必须先定,否则第一个 provider 会把这坨差异固化成三四个方言。
 - **未跑任何 app 侧验证**:`apps/pure_live` 的 `flutter test` 需要 `native-assets/` 预取件
   (BUILD_POLICY §3 的顺序契约),本轮没跑;包重写以 `dart analyze` + 护栏为门。
 - **五个被删的 provider 若将来要接**:按 §3 第 8 行的形状重新建包,不要恢复空壳。
