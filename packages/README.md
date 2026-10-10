@@ -75,7 +75,7 @@
 | `features/music`(pure_live_music_feature) | music_queue / lx_music_repository | **无** | ⚠️ 等 pure_music |
 | `features/iptv`(pure_live_iptv_feature) | channel_zapper / epg_window | **无** | ⚠️ 零消费者 |
 | `features/search`(pure_live_search_feature) | search_term / search_history(接口)/ stored_search_history / search_result_order / search_controller | **无 App 消费者**(等拆壳波)| ✅ 重写完成:折叠键统一"同一次搜索"、信封带版本与 v0 迁移、坏档记账不装作没搜过、结果按内容定序、世代栅栏丢弃被取代的答案;22 测试 |
-| `features/home` | home_tab | **无** | ⚠️ |
+| `features/home` | home_tab / home_layout_repository / home_layout_service / stored_home_layout | **无 App 消费者**(等拆壳波) | ✅ 重写完成:排序与默认可见性分职、按 App 命名信封落盘、坏行记账、18 测试 |
 | `features/account` | site_account_registry | **无** | ⚠️ |
 | `features/backup`(pure_live_backup_feature) | webdav_backup_service | **无** | ⚠️ 与 foundation/backup 的分工没写清 |
 | `features/recorder` | recording_task | **无** | ⚠️ |

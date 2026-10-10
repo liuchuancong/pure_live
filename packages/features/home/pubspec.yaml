@@ -1,6 +1,6 @@
 # GENERATED-BY: tool/scaffold_package.ps1
 name: pure_live_home
-description: "Feature package: home (repository + presentation skeleton per package-architecture.md)"
+description: "Feature package: home (声明的标签页、用户排序与可见性、按 App 命名的持久化)"
 publish_to: none
 resolution: workspace
 
@@ -8,3 +8,11 @@ environment:
   sdk: ^3.13.0
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  pure_live_storage:
+    path: ../../foundation/storage
+  pure_live_utils:
+    path: ../../foundation/utils
+
+dev_dependencies:
+  test: ^1.26.0

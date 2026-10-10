@@ -24,6 +24,13 @@
   (世代栅栏:`Answer`/`Rejected`/`Superseded`,被放弃的答案不写历史;`currentToken` 只在放弃时触发)。
   22 个测试通过,包 analyze 0 issue。它是 `equality` / `identifiers` / `errors` / `numbers` 这几个新
   utils 模块的第一个真实消费者。
+- **`features/home` 重写(队列 #3 第 1 个)**:`HomeTab.visible` → `defaultVisible` 并与用户选择分家
+  (原实现一个字段被 hidden 集合覆盖,**出厂隐藏的标签一跑排序就变可见**);`arrange(HomeLayout)` 返回
+  `ArrangedHomeTab`(可见性 + 是否用户排过);新增 `HomeLayoutRepository` / `StoredHomeLayout`
+  (`{v,order,hidden}` 信封、按 App 命名、缺 `hidden` 当迁移不当损坏、坏行记账后回退出厂顺序)、
+  `HomeLayoutService`(`recordUse` / `setHidden` / `staleSavedIds` / `reset`)。18 测试,包 analyze 0 issue。
+  **顺带暴露一条规则盲区**:§3 说 feature 可依赖"偏好机制",但偏好机制住在 `features/settings` —— 同层禁互依,
+  所以 home 只能自己再写一份 kv + 信封 + 迁移。见 §5。
 - **查出一类护栏盲区:pub workspace 让"未声明依赖"照样编译。** 逐包 grep `lib/` 里的
   `import 'package:...'` 与 pubspec 对照,14 个包在空 `dependencies:` 的情况下用着别的包 —— 意味着
   §2bis 的依赖图(按 pubspec 测)**系统性少算边**。已把这批能合规的边补进 pubspec:
@@ -76,7 +83,7 @@
 |---|---|---|---|
 | 1 | ~~`features/settings`~~ **已重写 `cd4c96fcb`** | 共享包里写死了一个产品的 5 个偏好键,机制本身反而没有 | 键改为消费方声明的 `PreferenceKey<T>`;带版本信封 `{v,c,value}`;读不抛+回退记账、写拒越界;`putIfAbsent` 承担首启语义;命名空间隔离 App;`importAll` 逐项校验并出报告;变更流 + `dispose` 只关自己的流。95 行 → 约 430 行,`dart analyze` 0 issue |
 | 2 | ~~`features/search`~~ **已重写(本轮)** | 只有历史记录容器 | 查询规范化、跨 App 一致的排序、容量上限与淘汰、与 `services/search` 聚合器的取消语义 —— 全部落地,详见 §2 |
-| 3 | `features/home` `account` `backup` `live` `vod` `music` `iptv` `recorder` | 每包 58–191 行,domain 有形状、data 缺失 | 按 §6 补齐:data 边界 + 具名错误 + 资源释放;presentation 留给 UI 波 |
+| 3 | `features/home` **已重写** / `account` `backup` `live` `vod` `music` `iptv` `recorder` 待做 | 每包 58–191 行,domain 有形状、data 缺失 | 按 §6 补齐:data 边界 + 具名错误 + 资源释放;presentation 留给 UI 波 |
 | 4 | `ui/design` → `ui/ui_kit` → `ui/adaptive` | 令牌只有 spacing/radius,组件 4 个,风格注册表无焦点/密度维度 | 令牌全集(色/距/圆/高/动效/字焦/密度)、`AppNotice`/`AppDialog`/`AppLoading`/空错态门面、D-pad 焦点序与 TV 尺寸 |
 | 5 | `ui/lyric` `ui/player_ui` | 单文件适配 | 时间轴同步、句柄所有权、与 `integrations/media` 的状态订阅边界 |
 | 6 | `services/search` `services/feed` | 聚合器只有扇出 | 分页模式(§契约三态)、部分结果策略、取消传播、失败记账的可诊断形状 |
@@ -98,6 +105,11 @@
 
 ## 5. 未做 / 风险
 
+- **待决策:偏好机制住错了层。** `features/settings` 给的是"机制"(`PreferenceKey<T>` + 信封 + 命名空间 +
+  变更流),但 §3 禁 feature 同层互依,所以后面的 feature 想用就得再写一份。`features/home` 已经这样写了
+  (自带 `{v,order,hidden}` 信封)。**两个选项**:A 把偏好机制下沉到 `foundation/preferences`(L0,人人可用,
+  settings 只留 App 词汇);B 给 §4 白名单加 `features/* → features/settings` 一条例外。我倾向 A:
+  "带版本的 kv 读写"是基础设施而不是产品功能,而且 §2bis 显示 10 个 features 包都要它 —— 选 A 我就机械搬迁。
 - **未跑任何 app 侧验证**:`apps/pure_live` 的 `flutter test` 需要 `native-assets/` 预取件
   (BUILD_POLICY §3 的顺序契约),本轮没跑;包重写以 `dart analyze` + 护栏为门。
 - **五个被删的 provider 若将来要接**:按 §3 第 8 行的形状重新建包,不要恢复空壳。
