@@ -30,6 +30,74 @@ final class PlatformCapabilities {
     required this.isTelevision,
   });
 
+  /// Everything switched on in this row, as a set - the form a capability check or a report wants.
+  Set<PlatformCapability> get enabled {
+    return <PlatformCapability>{
+      if (hasSecureStorage) PlatformCapability.secureStorage,
+      if (supportsBackgroundPlayback) PlatformCapability.backgroundPlayback,
+      if (supportsPictureInPicture) PlatformCapability.pictureInPicture,
+      if (supportsFileSystemAccess) PlatformCapability.fileSystemAccess,
+      if (supportsMultiWindow) PlatformCapability.multiWindow,
+      if (supportsRemoteControl) PlatformCapability.remoteControl,
+      if (isTouchPrimary) PlatformCapability.touchPrimary,
+      if (isTelevision) PlatformCapability.television,
+    };
+  }
+
+  bool supports(PlatformCapability capability) => enabled.contains(capability);
+
+  /// A copy with one flag changed, so a derived row does not restate all eight.
+  PlatformCapabilities copyWith({
+    bool? hasSecureStorage,
+    bool? supportsBackgroundPlayback,
+    bool? supportsPictureInPicture,
+    bool? supportsFileSystemAccess,
+    bool? supportsMultiWindow,
+    bool? supportsRemoteControl,
+    bool? isTouchPrimary,
+    bool? isTelevision,
+  }) {
+    return PlatformCapabilities(
+      hasSecureStorage: hasSecureStorage ?? this.hasSecureStorage,
+      supportsBackgroundPlayback: supportsBackgroundPlayback ?? this.supportsBackgroundPlayback,
+      supportsPictureInPicture: supportsPictureInPicture ?? this.supportsPictureInPicture,
+      supportsFileSystemAccess: supportsFileSystemAccess ?? this.supportsFileSystemAccess,
+      supportsMultiWindow: supportsMultiWindow ?? this.supportsMultiWindow,
+      supportsRemoteControl: supportsRemoteControl ?? this.supportsRemoteControl,
+      isTouchPrimary: isTouchPrimary ?? this.isTouchPrimary,
+      isTelevision: isTelevision ?? this.isTelevision,
+    );
+  }
+
+  /// What both rows allow. An intersection is how a feature is offered on a device that has to satisfy two
+  /// targets at once - a browser on a phone, a TV box that also runs a desktop build.
+  PlatformCapabilities restrict(PlatformCapabilities other) {
+    return PlatformCapabilities(
+      hasSecureStorage: hasSecureStorage && other.hasSecureStorage,
+      supportsBackgroundPlayback: supportsBackgroundPlayback && other.supportsBackgroundPlayback,
+      supportsPictureInPicture: supportsPictureInPicture && other.supportsPictureInPicture,
+      supportsFileSystemAccess: supportsFileSystemAccess && other.supportsFileSystemAccess,
+      supportsMultiWindow: supportsMultiWindow && other.supportsMultiWindow,
+      supportsRemoteControl: supportsRemoteControl && other.supportsRemoteControl,
+      isTouchPrimary: isTouchPrimary && other.isTouchPrimary,
+      isTelevision: isTelevision && other.isTelevision,
+    );
+  }
+
+  /// The same row minus [capability], the shape an override or a kill switch needs.
+  PlatformCapabilities without(PlatformCapability capability) {
+    return switch (capability) {
+      PlatformCapability.secureStorage => copyWith(hasSecureStorage: false),
+      PlatformCapability.backgroundPlayback => copyWith(supportsBackgroundPlayback: false),
+      PlatformCapability.pictureInPicture => copyWith(supportsPictureInPicture: false),
+      PlatformCapability.fileSystemAccess => copyWith(supportsFileSystemAccess: false),
+      PlatformCapability.multiWindow => copyWith(supportsMultiWindow: false),
+      PlatformCapability.remoteControl => copyWith(supportsRemoteControl: false),
+      PlatformCapability.touchPrimary => copyWith(isTouchPrimary: false),
+      PlatformCapability.television => copyWith(isTelevision: false),
+    };
+  }
+
   final bool hasSecureStorage;
 
   /// Whether audio may keep playing with the UI hidden.
@@ -125,6 +193,48 @@ final class PlatformCapabilities {
     isTouchPrimary: false,
     isTelevision: false,
   );
+
+  /// A capability row is a value: a widget that rebuilds on `!=` needs two identical rows to compare equal,
+  /// otherwise every derived row is "new" and the subtree rebuilds forever.
+  @override
+  bool operator ==(Object other) {
+    return other is PlatformCapabilities &&
+        other.hasSecureStorage == hasSecureStorage &&
+        other.supportsBackgroundPlayback == supportsBackgroundPlayback &&
+        other.supportsPictureInPicture == supportsPictureInPicture &&
+        other.supportsFileSystemAccess == supportsFileSystemAccess &&
+        other.supportsMultiWindow == supportsMultiWindow &&
+        other.supportsRemoteControl == supportsRemoteControl &&
+        other.isTouchPrimary == isTouchPrimary &&
+        other.isTelevision == isTelevision;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    hasSecureStorage,
+    supportsBackgroundPlayback,
+    supportsPictureInPicture,
+    supportsFileSystemAccess,
+    supportsMultiWindow,
+    supportsRemoteControl,
+    isTouchPrimary,
+    isTelevision,
+  );
+
+  @override
+  String toString() => 'PlatformCapabilities(${enabled.map((cap) => cap.name).join(', ')})';
+}
+
+/// The eight switches, as an enum, for code that passes "which capability" around rather than reading one.
+enum PlatformCapability {
+  secureStorage,
+  backgroundPlayback,
+  pictureInPicture,
+  fileSystemAccess,
+  multiWindow,
+  remoteControl,
+  touchPrimary,
+  television,
 }
 
 /// Resolves a platform kind from the raw signals the app collects at startup.
@@ -160,17 +270,7 @@ PlatformKind detectPlatform({required String os, bool isTelevisionDevice = false
 /// re-decide what a browser is.
 PlatformCapabilities capabilitiesFor(PlatformKind kind, {bool? webIsTouchPrimary}) {
   if (kind == PlatformKind.web && webIsTouchPrimary != null) {
-    final base = PlatformCapabilities.web;
-    return PlatformCapabilities(
-      hasSecureStorage: base.hasSecureStorage,
-      supportsBackgroundPlayback: base.supportsBackgroundPlayback,
-      supportsPictureInPicture: base.supportsPictureInPicture,
-      supportsFileSystemAccess: base.supportsFileSystemAccess,
-      supportsMultiWindow: base.supportsMultiWindow,
-      supportsRemoteControl: base.supportsRemoteControl,
-      isTouchPrimary: webIsTouchPrimary,
-      isTelevision: base.isTelevision,
-    );
+    return PlatformCapabilities.web.copyWith(isTouchPrimary: webIsTouchPrimary);
   }
   return switch (kind) {
     PlatformKind.unknown => PlatformCapabilities.unknown,

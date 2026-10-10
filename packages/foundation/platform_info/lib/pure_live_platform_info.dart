@@ -11,4 +11,5 @@
 
 library;
 
+export 'src/device_profile.dart';
 export 'src/platform_info.dart';
