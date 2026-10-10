@@ -391,6 +391,51 @@
   `dart pub get --offline` 通过,护栏 `packages=55 errors=0`。
   理由:portfolio §6 第 7 条 —— 空壳包让包数变成误导数字。将来真要接这些站点,按消费者出现时再建包。
 
+### 2026-10-11 第三轮:逐包做到"可发布形状"+ 全仓缺陷家族扫描 + 参考项目对比
+
+用户指令原文要点:packages 下每个包都得是工业级、可发 pub.dev 的整体,不要"只引用一下"的薄壳;
+先 packages 后 UI;不要求测试,以分析无报错为门;需要的外部能力先在 pub.dev 上找现成的,不造轮子;
+**不要在包的边界停下来等授权或汇报,按节奏连续推进**。
+
+- **逐包重写/加固并每包一次提交**(共 25 包,`origin/v2` 已推):
+  `foundation/{l10n,network,storage,events,diagnostics,logging,sync,backup,platform_info,release}`、
+  `integrations/firebase`、`services/{search,feed,playlist,favorites,history}`、`ecosystem/{resolver,plugin_host}`、
+  `providers/{iptv,demo,bilibili,huya,music}`、`features/{recorder,live,music,iptv}`。
+  门:`dart analyze <包>` 0 issue(根 `dart analyze` 全仓亦 0 issue)+ 既有 `dart test` 保持绿 +
+  `check_architecture --strict` `packages=54 errors=0`。
+- **缺陷家族横切扫描**(按八类 grep,再逐条读码定性,不做"看起来像就改"):无界累加器 /
+  该返回 rejected future 却同步 throw / 对 JSON 硬 cast / 静默吞异常 / 声明了但没人产出的状态 /
+  没注入的墙钟 / 把调用方的可 grow list 当内部字段 / 按值找下标(重复行)。
+  假阳性明确存在(memory store 的 map、const 置换表都被"无界"命中),所以每条都要读到实现才算。
+- 扫描定出来的三处新修(此前未碰过的包):
+  * `providers/music` —— SPKI 分支钻进 AlgorithmIdentifier 把 OID 当密钥读,**真 `BEGIN PUBLIC KEY` 从来就没通过**
+    (注释声称两种形状都收);DER 每步裸下标 → 用户脚本给的坏 key 以 `RangeError` 逃出;
+    `aes-128-*` 无视自己名字里的位数(32 字节 key 静默做 AES-256,与 Node 侧对不上);
+    `randomBytes` 超限**静默截断**;`lx.send('inited')` 的公告从来没被当作校验依据(`serves()` 无调用者);
+    `awaitInited` 超时不释放沙箱;`musicUrl` 收下裸词当流地址。
+    执行验证:一次性脚本跑 19 条后删除,含 PKCS#1 与 SPKI 两种 PEM 对照 `BigInt.modPow` 独立算出的 RSAEP 密文
+    (**不把答案交给产生它的同一个 engine 复核**)。**包内无测试**(§4 第 9 条),脚本删掉的观测记在 README。
+  * `ecosystem/js_runtime` —— `start()` 非单飞且部分失败漏原生引擎;`evaluateModuleSource` 绕过并发与超时门,
+    **加载(正是跑不可信代码那步)根本没超时**;`dispose()` 在飞求值中途关引擎;并发额度消息写成 `\${...}` 字面量
+    (诊断里那个数永远是原文);扩展 api handler 返回 null 被当成功空答;可选方法靠匹配异常文案识别 →
+    改 prelude 结构化标记 + `NoRegistration` 类型;`_pageFrom` 一行坏丢整页;`registeredGroups` 交出活 set;
+    `load()` 失败留下已认领的身份与 host 句柄。`fjs` 是 FFI 插件 → **本包一行都没执行过**,
+    README 原先写"dart test 或 flutter test",已按实情改写(静态门 + 推演,逐条列进 未验证)。
+  * `services/history` —— `remove()` 守卫比 `ContentRef ==` 而仓库按 key 删(同一行可得到相反答案);
+    `flush()` 每持有一行就整文档重写一次(退出时最明显);position=0 的行被算进"继续看"。
+- **参考项目对比**:`https://github.com/wzgrx/pure_live`(v4.1.0,4.0 是整体重写的成熟发行线,11 个 `live_*` 包、
+  34 平台)。浅 clone 到**仓库外** `D:\flutter\_ref_pure_live` 只读对比;**未合并、未借用任何文件**
+  (UPSTREAM_REVIEW_POLICY:本地修好不等于可以往里并)。摘到五条可落地面,已列进 §5:
+  1. `live_net` 只依赖 `meta`(自带 io_http/socket,**不用 dio**);我们的 `pure_live_network` 绑在 dio 上,
+     连"注入一个假传输"都要消费者自己再声明一次 dio dev 依赖(本轮 bilibili、huya 各加了一次)。
+  2. 它把测试替身作为包的一部分发布(`live_net/testing/`)→ 对应 `foundation/network` 加 `lib/testing.dart`。
+  3. `live_net/race.dart`(并发竞速、先答先用)→ 我们的 resolver 链是纯顺序降级,搜索限并发但没有竞速。
+  4. `live_net/proxy.dart` 配 `docs/Q-网络和代理/`:`foundation/network` 的 pubspec 描述**已经写了 proxy,代码里没有**
+     (旧欠账),它给的是现成形状参考。
+  5. `live_store/{legacy,settings,backup,webdav,block_lists,tags,accounts}` 的分文件形状,以及 `docs/` 按
+     产品域(界面/直播间/弹幕/播放/录制/设置/网络/性能)而不是按层组织。
+  明确**不照搬**的:它的包划分(11 个大包)与我们 L0–L5 + providers 侧向依赖的形态不同。
+
 ## 2bis. 实测依赖图暴露的四组偏差(2026-10-10,`packages/README.md` 已按实测重写)
 
 按 pubspec 声明逐包核对消费者后得到:
@@ -480,3 +525,23 @@
   (BUILD_POLICY §3 的顺序契约),本轮没跑;包重写以 `dart analyze` + 护栏为门。
 - **五个被删的 provider 若将来要接**:按 §3 第 8 行的形状重新建包,不要恢复空壳。
 - **重写期间可能有并行会话**:每包独立提交,冲突时以消费矩阵与 §4 判据为准,不互相覆盖整文件。
+- **下一段审阅队列(2026-10-11 扫描定下的、本轮没碰过的包,按风险×无测试排序)**:
+  `ecosystem/external_tvbox`(1395 行,0 测试)、`foundation/auth`(1431)、`foundation/cache`(1404)、
+  `foundation/files`(1200)、`integrations/python_runtime`(553,0 测试)、`ecosystem/{task,identity}`(各 1 测试)、
+  `features/{account,home,vod,search,backup}`(README 缺 `## 验证` 段)、
+  `ecosystem/{platform,capability,extension,permission,plugin_api}`、`providers/douyu`;
+  **UI 层与 app 波在最后**(用户:先做 packages,最后写 UI;含明确要求的手机+桌面分页组件)。
+  扫描已定点、待逐条读码确认的:同步 throw 的 Future 面 `external_tvbox/spider_vod_provider.dart:193`、
+  `auth/token_refresh.dart:203`、`cache/loading_cache.dart:72`;裸 `.first/.last/.single` 集中点
+  `providers/iptv/xmltv_parser.dart`(6)、`foundation/release/channels.dart`(4)、`capability/lib/testing.dart`(3);
+  无界累加器 `extension/managed_extension_gateway.dart`。
+- **从参考项目摘来的四个待办(前两条不需要产品拍板,后两条要)**:
+  1. `foundation/network` 增加 `lib/testing.dart`(脚本化 `HttpClientAdapter`),把 bilibili/huya 各自重抄的假传输
+     和两处 `dio` dev 依赖收回来。**代价**:动 L0 公共面;`pure_live_network` 目前把 dio 类型当注入参数收下
+     却不再导出,所以每个想验网络的消费者都得自己声明 dio。
+  2. `providers/*` 的响应解析可以共用一套"行不是 map 就跳过 + 具名失败"的边界小工具(本轮 bilibili/huya 各写一份)。
+  3. **竞速取源要不要进 `ResolverChain`**(参考 `live_net/race.dart`):现在是纯顺序降级,首答延迟 = 前面所有源
+     的超时之和。要做就是行为与费用(并发放大)双向变化,需拍板。
+  4. **proxy:补实现还是改描述**。`foundation/network` 的 pubspec description 里写着 proxy,代码里没有;
+     参考项目有 `live_net/proxy.dart` 与一整组 `Q-网络和代理` 文档。要么按 §4 第 8 条补上可用实现,
+     要么把描述里的承诺去掉 —— 二者都行,但不能继续不一致。
