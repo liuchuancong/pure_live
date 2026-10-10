@@ -18,6 +18,7 @@ import 'package:path/path.dart' as p;
 
 import 'package:pure_live_platform/pure_live_platform.dart';
 import 'package:pure_live_plugin_api/pure_live_plugin_api.dart';
+import 'package:pure_live_utils/pure_live_utils.dart' show Clock, systemClock;
 
 import 'plugin_bundle.dart';
 
@@ -73,50 +74,38 @@ final class PluginTooLargeException implements Exception {
 /// The on-disk plugin registry. One store per app process; the composition
 /// root owns it and hands loaded code to the runtime host.
 final class PluginStore {
-  PluginStore({required Directory root, PluginManifestValidator? validator})
+  PluginStore({required Directory root, PluginManifestValidator? validator, Clock? clock})
     : _pluginsRoot = Directory(p.join(root.path, 'plugins')),
-      _validator = validator ?? PluginManifestValidator();
+      _validator = validator ?? PluginManifestValidator(),
+      _clock = clock ?? systemClock;
 
   final Directory _pluginsRoot;
   final PluginManifestValidator _validator;
 
+  /// Install timestamps come from here: the store used to call `DateTime.now()` directly, so a test that
+  /// wanted a known `installedAt` had to wait for the wall clock, and the local-vs-UTC mistake this repository
+  /// has fixed repeatedly was invisible at the call site.
+  final Clock _clock;
+
   /// Validates and persists one bundle. An already-installed id is replaced:
   /// upgrading a plugin is installing the next version, and the enable state
-  /// carries over so an update does not silently turn a source off.
+  /// carries over so an update does not silently turn a source off. The import
+  /// origin carries over for the same reason - relative spider paths inside the
+  /// config resolve against it, and an update that dropped it breaks a plugin
+  /// that was working.
   Future<InstalledPlugin> install(PluginBundle bundle, {Uri? originUrl}) async {
     final result = _validator.validate(bundle.manifest);
     if (!result.isAccepted) {
       final details = result.errors.map((issue) => issue.toString()).join('; ');
       throw PluginInstallException('${bundle.manifest.id} refused: $details');
     }
-    final directory = _directoryFor(bundle.manifest.id);
-    await _refuseForeignOccupant(directory, bundle.manifest.id);
-    final staging = Directory('${directory.path}$kPluginStagingSuffix');
-    if (await staging.exists()) {
-      await staging.delete(recursive: true);
-    }
-    await staging.create(recursive: true);
-    await File(p.join(staging.path, 'manifest.json')).writeAsString(jsonEncode(bundle.manifest.toJson()), flush: true);
-    await File(p.join(staging.path, 'plugin.js')).writeAsString(bundle.source, flush: true);
     final existing = await _readState(bundle.manifest.id);
-    final state = <String, Object?>{
-      'enabled': existing?['enabled'] ?? false,
-      'installedAt': DateTime.now().toUtc().toIso8601String(),
-      if (originUrl != null) 'originUrl': originUrl.toString(),
-    };
-    await File(p.join(staging.path, 'state.json')).writeAsString(jsonEncode(state), flush: true);
-    // The swap keeps states clean: the staging directory only appears once
-    // every file is complete, so a crash mid-install leaves either the
-    // previous plugin or the staging remnant (cleaned by the next install),
-    // never a half-written live directory.
-    if (await directory.exists()) {
-      await directory.delete(recursive: true);
-    }
-    await staging.rename(directory.path);
-    return InstalledPlugin(
+    return _write(
       manifest: bundle.manifest,
-      enabled: state['enabled']! as bool,
-      installedAt: DateTime.parse(state['installedAt']! as String),
+      fileName: 'plugin.js',
+      body: bundle.source,
+      existing: existing,
+      originUrl: originUrl,
     );
   }
 
@@ -132,6 +121,22 @@ final class PluginStore {
       final details = result.errors.map((issue) => issue.toString()).join('; ');
       throw PluginInstallException('${manifest.id} refused: $details');
     }
+    final existing = await _readState(manifest.id);
+    return _write(manifest: manifest, fileName: 'content.txt', body: content, existing: existing, originUrl: originUrl);
+  }
+
+  /// The one install path: validate, fill a staging directory, swap it in.
+  ///
+  /// Both entry points had their own copy of this until the data variant drifted - it reset `enabled` to
+  /// false on every update, which is exactly the "an update turned my source off" behaviour the code path
+  /// above documents as the thing to avoid.
+  Future<InstalledPlugin> _write({
+    required PluginManifest manifest,
+    required String fileName,
+    required String body,
+    required Map<String, Object?>? existing,
+    required Uri? originUrl,
+  }) async {
     final directory = _directoryFor(manifest.id);
     await _refuseForeignOccupant(directory, manifest.id);
     final staging = Directory('${directory.path}$kPluginStagingSuffix');
@@ -140,21 +145,27 @@ final class PluginStore {
     }
     await staging.create(recursive: true);
     await File(p.join(staging.path, 'manifest.json')).writeAsString(jsonEncode(manifest.toJson()), flush: true);
-    await File(p.join(staging.path, 'content.txt')).writeAsString(content, flush: true);
+    await File(p.join(staging.path, fileName)).writeAsString(body, flush: true);
+    final keptOrigin = originUrl ?? _originFromState(existing);
     final state = <String, Object?>{
-      'enabled': false,
-      'installedAt': DateTime.now().toUtc().toIso8601String(),
-      if (originUrl != null) 'originUrl': originUrl.toString(),
+      'enabled': existing?['enabled'] is bool ? existing!['enabled'] : false,
+      'installedAt': _clock().toUtc().toIso8601String(),
+      if (keptOrigin != null) 'originUrl': keptOrigin.toString(),
     };
     await File(p.join(staging.path, 'state.json')).writeAsString(jsonEncode(state), flush: true);
+    // The swap keeps states clean: the staging directory only appears once
+    // every file is complete, so a crash mid-install leaves either the
+    // previous plugin or the staging remnant (cleaned by the next install),
+    // never a half-written live directory.
     if (await directory.exists()) {
       await directory.delete(recursive: true);
     }
     await staging.rename(directory.path);
     return InstalledPlugin(
       manifest: manifest,
-      enabled: false,
+      enabled: state['enabled']! as bool,
       installedAt: DateTime.parse(state['installedAt']! as String),
+      originUrl: keptOrigin,
     );
   }
 
@@ -166,13 +177,25 @@ final class PluginStore {
   Future<String> readContent(String id, {int maxBytes = kDefaultPluginTextBytes}) =>
       _readBounded(File(_contentPath(id)), id, 'content.txt', maxBytes);
 
+  /// The one plugin stored under [id], or null when it is not installed (including the case where its
+  /// directory exists but its declaration or state cannot be read - the same "not installed" reading [list]
+  /// uses, so the two cannot disagree about a damaged plugin).
+  Future<InstalledPlugin?> find(String id) async {
+    final manifest = await _readManifest(id);
+    final state = await _readState(id);
+    if (manifest == null || state == null) {
+      return null;
+    }
+    return _fromState(id, manifest, state);
+  }
+
   /// Every installed plugin, id-ordered so the management page is stable.
   Future<List<InstalledPlugin>> list() async {
     if (!await _pluginsRoot.exists()) {
       return const <InstalledPlugin>[];
     }
     final installed = <InstalledPlugin>[];
-    for (final entity in _pluginsRoot.listSync()) {
+    await for (final entity in _pluginsRoot.list(followLinks: false)) {
       if (entity is! Directory) {
         continue;
       }
@@ -183,24 +206,34 @@ final class PluginStore {
       if (id.endsWith(kPluginStagingSuffix)) {
         continue;
       }
-      final manifest = await _readManifest(id);
-      final state = await _readState(id);
-      if (manifest == null || state == null) {
+      final plugin = await find(id);
+      if (plugin == null) {
         // A half-written directory (crash between the three writes) reads as
         // not-installed rather than crashing the whole list.
         continue;
       }
-      installed.add(
-        InstalledPlugin(
-          manifest: manifest,
-          enabled: state['enabled'] as bool? ?? false,
-          installedAt: DateTime.tryParse('${state['installedAt']}') ?? DateTime.fromMillisecondsSinceEpoch(0),
-          originUrl: state['originUrl'] is String ? Uri.tryParse(state['originUrl']! as String) : null,
-        ),
-      );
+      installed.add(plugin);
     }
     installed.sort((a, b) => a.id.compareTo(b.id));
     return installed;
+  }
+
+  /// Deletes staging remnants left by installs that died before their rename, and returns how many went.
+  ///
+  /// A sweep a caller runs deliberately (at start-up, from the settings page), because deleting directories on
+  /// a user's plugin root is not something a `list()` should do on the side.
+  Future<int> pruneStagingRemnants() async {
+    if (!await _pluginsRoot.exists()) {
+      return 0;
+    }
+    var removed = 0;
+    await for (final entity in _pluginsRoot.list(followLinks: false)) {
+      if (entity is Directory && entity.path.endsWith(kPluginStagingSuffix)) {
+        await entity.delete(recursive: true);
+        removed++;
+      }
+    }
+    return removed;
   }
 
   /// The script of one installed plugin, for the runtime to load, up to [maxBytes].
@@ -224,22 +257,39 @@ final class PluginStore {
     return file.readAsString();
   }
 
+  /// Turns one plugin on or off.
+  ///
+  /// Written through a temporary file and a rename: this used to overwrite `state.json` in place, and a crash
+  /// or a full disk half way through leaves a file that no longer parses - which [list] reads as "not
+  /// installed". Pressing the toggle would then have made the plugin disappear from the management page while
+  /// its directory and script stayed on disk, unlistable and so unremovable from the UI.
   Future<void> setEnabled(String id, bool enabled) async {
     final state = await _readState(id);
     if (state == null) {
       throw PluginInstallException('$id is not installed');
     }
     state['enabled'] = enabled;
-    await File(_statePath(id)).writeAsString(jsonEncode(state), flush: true);
+    final target = File(_statePath(id));
+    final temporary = File('${target.path}.tmp');
+    await temporary.writeAsString(jsonEncode(state), flush: true);
+    await temporary.rename(target.path);
   }
 
   /// Removes the plugin's code and declaration. Its kv namespace belongs to
   /// the storage layer and is not touched here: uninstall of data is a
   /// separate, user-visible decision.
+  ///
+  /// The staging sibling goes with it: an uninstall that left `x.staging` behind would resurrect the plugin
+  /// on the next listing once the phantom-suffix rule was relaxed, and it holds a full copy of the code the
+  /// user just asked to delete.
   Future<void> uninstall(String id) async {
     final directory = _directoryFor(id);
     if (await directory.exists()) {
       await directory.delete(recursive: true);
+    }
+    final staging = Directory('${directory.path}$kPluginStagingSuffix');
+    if (await staging.exists()) {
+      await staging.delete(recursive: true);
     }
   }
 
@@ -300,7 +350,10 @@ final class PluginStore {
     try {
       final decoded = jsonDecode(await file.readAsString());
       return decoded is Map ? PluginManifest.fromJson(Map<String, Object?>.from(decoded)) : null;
-    } on FormatException {
+    } on Object {
+      // Not just a FormatException: a manifest that parses but has the wrong shape (a list where the id
+      // should be, a number for a version) throws from the model, and one damaged plugin must not take the
+      // whole listing - or the settings page - down with it.
       return null;
     }
   }
@@ -313,8 +366,27 @@ final class PluginStore {
     try {
       final decoded = jsonDecode(await file.readAsString());
       return decoded is Map ? Map<String, Object?>.from(decoded) : null;
-    } on FormatException {
+    } on Object {
       return null;
     }
+  }
+
+  InstalledPlugin _fromState(String id, PluginManifest manifest, Map<String, Object?> state) => InstalledPlugin(
+    manifest: manifest,
+    enabled: state['enabled'] is bool ? state['enabled']! as bool : false,
+    installedAt: DateTime.tryParse('${state['installedAt']}') ?? DateTime.fromMillisecondsSinceEpoch(0),
+    originUrl: _originFromState(state),
+  );
+
+  /// The import origin in a stored state map, or null. A value that is not a url is treated as absent rather
+  /// than passed to `Uri.parse`, which accepts almost anything and would hand a relative-path base that points
+  /// nowhere.
+  static Uri? _originFromState(Map<String, Object?>? state) {
+    final raw = state?['originUrl'];
+    if (raw is! String || raw.isEmpty) {
+      return null;
+    }
+    final parsed = Uri.tryParse(raw);
+    return parsed == null || !parsed.hasScheme ? null : parsed;
   }
 }

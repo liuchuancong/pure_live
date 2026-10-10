@@ -14,6 +14,10 @@ dependencies:
     path: ../../ecosystem/platform
   pure_live_plugin_api:
     path: ../../ecosystem/plugin_api
+  # Install timestamps go through the injected Clock, whose typedef and zone-overridable system clock live in
+  # the L0 utils package (dependency-rules §1: every layer may use L0).
+  pure_live_utils:
+    path: ../../foundation/utils
 
 dev_dependencies:
   test: ^1.26.0
