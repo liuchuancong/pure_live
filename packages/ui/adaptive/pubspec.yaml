@@ -11,3 +11,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # The registry maps one resolved token set per style, so it reads the tokens and installs the extension
+  # that carries them. docs/architecture/dependency-rules.md section 3.
+  pure_live_design:
+    path: ../design
+  pure_live_ui_kit:
+    path: ../ui_kit

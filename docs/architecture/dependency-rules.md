@@ -53,7 +53,10 @@ L5 Providers/Plugins(与 L2-L4 平级,只向下依赖)
   (能力接口与 `CapabilityRegistry`;provider-contract.md §3 规定搜索/Feed 的发现入口就是它,所以这条边是
   文档要求,不是新开的口子)。L2 **不**依赖 L1 的运行时服务包(plugin_api / extension / permission / task / resolver),
   那些由组合根注入进来;护栏只查方向,这条界线靠 review 守(见 [../roadmap/w4-progress.md](../roadmap/w4-progress.md) §3)。
-- **L3 ui**:→ design 单向(ui_kit→design)+ L0 + theme。
+- **L3 ui**:→ **design 是 ui 层的叶子**(任何 ui 包都可依赖它,像 L0 的 utils/logging)+ L0 + theme。
+  层内次序是 `design → ui_kit → adaptive`:ui_kit 是组件底座,adaptive 是风格注册表,后者可用前者。
+  design 不含行为也不 import Flutter,所以"人人可用"不会把耦合带回来。
+  (此前这行只写了 `ui_kit→design`,而 `ui/lyric` 早已依赖 design —— 文档落后于代码,见 §4。)
 - **L4 features**:repository → L0 + plugin_api + services;UI 包 → **本域 repository** + services + ui + ecosystem;同层禁互依。
 - **L5 sources**:→ L0 + plugin_api(经 host 注入的沙箱桥);同层禁互依;**不得触碰 PlayerAdapter**。
 - **app**:每个 App 都是自己进程里的唯一全知层;其他任何包禁止依赖 app,**App 之间也禁止互相依赖**
@@ -69,6 +72,7 @@ L5 Providers/Plugins(与 L2-L4 平级,只向下依赖)
 | backup → auth | 同步凭据 |
 | player_ui → media | 控制层需要播放状态 |
 | ui_kit → design | 组件底座就是设计令牌(护栏同表已有,此前漏记于文档) |
+| adaptive → design、adaptive → ui_kit | design 是 ui 层的叶子,注册表要把 `DesignTokens` 映射成 ThemeData 并安装 ui_kit 的 `DesignTokensTheme`。护栏不需要新白名单:`kAllowedLayers['ui']` 已含同层;**不把 design 加进 `kLeafPackages`** —— 那会让 L0 也能 import ui 包 |
 | external_tvbox → python_runtime | 外部生态运行时必须宿主在嵌入式 CPython 上(见 [../adr/0017-tvbox-python-runtime.md](../adr/0017-tvbox-python-runtime.md)) |
 | python_runtime → external_tvbox | Python 宿主实现的是 external_tvbox 定义的 SpiderHandle 契约,镜像上述依赖(见 [../adr/0017-tvbox-python-runtime.md](../adr/0017-tvbox-python-runtime.md)) |
 | external_tvbox → js_runtime | js spider 的执行走同一个沙箱体系,适配器需要能驱动它(见 [../plugin/js-plugin.md](../plugin/js-plugin.md)) |

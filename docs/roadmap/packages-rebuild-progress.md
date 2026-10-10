@@ -90,6 +90,23 @@
   另加 `fileName` 路径校验(宿主把它拼到录制目录后)、三处 `DateTime.now()` 换成注入 `Clock`
   (不然这些规则根本没法测)、id 在转换间保持稳定。13 测试。
   `lib/src/data/` 仍空是刻意的:引擎在录制波次,状态契约先立住就没有第二套真相。
+- **#4 第 2 步:`ui_kit` 与 `ui/adaptive` 开始真读令牌**(`6f71642` 之后的那一步)。
+  新增 `DesignTokensTheme`(ThemeExtension)承载 density / input / focus / motion —— `ThemeData` 对这些
+  **没有槽位**;`context.designTokens` 在未安装时**回退到平台默认而不抛**(抛会让组件只能在全应用主题里预览)。
+  adaptive 的 `StyleThemeFactory` 改收 `DesignTokens`,共享部分集中到 `_applyTokens` 并**跑在风格工厂之后** ——
+  以前切到 Fluent 顺带切成鼠标密度,TV 上跑 Fluent 变体就拿到 36 像素按钮;现在密度、四种按钮 minimumSize、
+  图标按钮、toolbar 高、`textTheme` 六个角色(可读下限进全局)、list 纵向 padding、focusColor、
+  reduce-motion 的 `NoSplash` 一律来自令牌,风格只剩圆角/表面/控件形状。
+  顺带修掉 `PosterCard.width`(**声明了却从没被用**,传与不传得到不同布局且都不报错),
+  状态页文字改走 `typeSize`,`ErrorRetryView` 的文案变成可覆盖参数(底座写死"重试"就等于逼 feature 复制它)。
+  **验证等级(按使用者指定)**:只 `dart analyze`(`packages/ui` 与 `apps/pure_live` 均 0 issue)+ 护栏 0 错 +
+  design 的 20 个纯 Dart 测试;**不跑 flutter analyze / flutter test,没上真机**,
+  所以 extension 是否被 MaterialApp 带下去、焦点环实际观感、真实字号下的排版都未验证。
+  两个映射上的诚实交代:`visualDensity` 只用 SDK 保证的三个常量(不假设 `VisualDensity.large` 存在 ——
+  这条在当前 SDK 上直接是编译错);路由转场**没有映射**,因为 `PageTransitionsTheme` 对没列出的平台会回退默认
+  builder,给空 map 的意思恰恰是"继续动"。
+  `apps/pure_live/lib/app/app.dart` 的 `themeFor(...)` 还**没传 tokens**,所以线上路径暂时走平台默认输入 ——
+  拆壳波里连 `AppearanceSettings`(app 现在自己那套 `appearance.dart` 与之重复)一起接。
 - **`ui/design` 令牌补齐(队列 #4 第 1 个)**:按技术栈 §5.4 把"差一个量级"的令牌面补成
   颜色角色(13 个,按语义命名而不是照 Material 槽位)/ 间距 / 圆角 / 字阶 / 动效 / 密度 /
   交互尺寸 / 焦点视觉,加 `resolveDesignTokens` 与 `AppearanceSettings` 持久形状。
@@ -118,13 +135,14 @@
   `features/{account→auth, backup→backup, recorder→platform, vod→platform+storage, settings→storage,
   music→platform, search→platform+search+storage+utils}`、`ui/adaptive→flutter(sdk)`、
   `foundation/cache→path`、`ecosystem/plugin_host→path`、`integrations/python_runtime→path`。
-  **起初剩下 3 条故意没补**,因为补了就是在给未批准的边发护照;现在第 1 条已经解掉,还剩 2 条要你先定规则:
+  **起初剩下 3 条故意没补**,因为补了就是在给未批准的边发护照;现在已解掉 2 条,只剩最后 1 条要你先定规则:
   1. ~~`features/music` → `providers/music`~~ **已消除**:改成 `MusicSourceBridge` 端口 + 组合根适配器
      (见上面的 music 条目),import 不再存在;
-  2. `ui/adaptive` → `ui/design`(L3 同层,§3 只写了 `ui_kit→design` 一条)—— 是把 design 定为
-     "ui 层人人可用"的叶子,还是给 adaptive 加白名单;
+  2. ~~`ui/adaptive` → `ui/design`~~ **已解决**:design 定为 ui 层叶子(§3/§4 已改),依赖已声明 ——
+     顺带发现 `ui/lyric` 本来就依赖 design,旧那句"只 ui_kit→design"是文档落后;
   3. `ecosystem/external_tvbox` → `ecosystem/plugin_api`(L1 同层,§4 无此例外)。
-  这三条现在**只存在于 import 语句里**,`check_architecture.dart` 看不见(它读 pubspec)。
+  现在只剩 `external_tvbox → plugin_api` 一条仍**只存在于 import 语句里**,`check_architecture.dart` 看不见它
+  (它读 pubspec)。
   建议的修法:护栏把 `lib/` 的 import 也解析成边(现在 `checkImports` 只查 `lib/src` 越界与 app 边界),
   那样未声明依赖会直接成 error。**待你点头再动护栏**,因为那会让 CI 立刻红这 3 条。
 
@@ -165,7 +183,7 @@
 | 1 | ~~`features/settings`~~ **已重写 `cd4c96fcb`** | 共享包里写死了一个产品的 5 个偏好键,机制本身反而没有 | 键改为消费方声明的 `PreferenceKey<T>`;带版本信封 `{v,c,value}`;读不抛+回退记账、写拒越界;`putIfAbsent` 承担首启语义;命名空间隔离 App;`importAll` 逐项校验并出报告;变更流 + `dispose` 只关自己的流。95 行 → 约 430 行,`dart analyze` 0 issue |
 | 2 | ~~`features/search`~~ **已重写(本轮)** | 只有历史记录容器 | 查询规范化、跨 App 一致的排序、容量上限与淘汰、与 `services/search` 聚合器的取消语义 —— 全部落地,详见 §2 |
 | 3 | `features/home` `account` `backup` `live` `vod` `iptv` `recorder` `music` **全部重写完成** | 每包原 58–191 行,domain 有形状、data 缺失 | 按 §6 补齐:data 边界 + 具名错误 + 资源释放;presentation 留给 UI 波。`music` 的 L4→L5 直连已改端口注入 |
-| 4 | `ui/design` **令牌面已补齐** / `ui/ui_kit` `ui/adaptive` 待接 | 令牌只有 spacing/radius,组件 4 个,风格注册表无焦点/密度维度 | 令牌全集(色/距/圆/高/动效/字焦/密度)、`AppNotice`/`AppDialog`/`AppLoading`/空错态门面、D-pad 焦点序与 TV 尺寸。**下一步是把 ui_kit 与 adaptive 改成消费 `DesignTokens`** —— 否则令牌只是躺在一个没人读的包里 |
+| 4 | `ui/design` **令牌面已补齐** / `ui/ui_kit` `ui/adaptive` **已接令牌(仅静态分析验证)** / 真机与 app 传参待做 | 令牌只有 spacing/radius,组件 4 个,风格注册表无焦点/密度维度 | 令牌全集(色/距/圆/高/动效/字焦/密度)、`AppNotice`/`AppDialog`/`AppLoading`/空错态门面、D-pad 焦点序与 TV 尺寸。**下一步是把 ui_kit 与 adaptive 改成消费 `DesignTokens`** —— 否则令牌只是躺在一个没人读的包里 |
 | 5 | `ui/lyric` `ui/player_ui` | 单文件适配 | 时间轴同步、句柄所有权、与 `integrations/media` 的状态订阅边界 |
 | 6 | `services/search` `services/feed` | 聚合器只有扇出 | 分页模式(§契约三态)、部分结果策略、取消传播、失败记账的可诊断形状 |
 | 7 | `foundation/diagnostics` `events` `platform_info` `sync` | 薄 | 结构化事件 + 有界缓冲 + 脱敏;探测能力矩阵;同步游标与冲突策略 |
@@ -199,11 +217,11 @@
 - **`features/music` 的端口还没有实现者。** `MusicSourceBridge` 是为消除 L4→L5 直连而造的接缝,
   但 `apps/` 目录里现在**只有 `pure_live`** —— pure_music 壳不存在,所以没有一个适配器来实现它。
   端口形状够用与否要等那个壳建起来才能验;若届时发现形状不对,改的是适配器不是域模型,这是选可逆方案的理由。
-- **队列 #4 的下一步被那条同层边卡住.** `ui/adaptive` 要消费 `ui/design` 的 `DesignTokens`
-  (注册表现在不读密度/焦点/输入模式),但 §3 只白名单了 `ui_kit → design`,
-  `adaptive → design` 就是 §2bis 里我故意没声明的第 2 条边。要么把 design 定成"ui 层人人可用的叶子"(像 L0 的
-  utils),要么只给 adaptive 加一条例外 —— 我倾向前者:`DesignTokens` 是无行为的数字,
-  每个 ui 包各拿一份副本只会把它们各自漂移。定了我就改 §3 + 声明依赖 + 接 adaptive。
+- **ui 层同层边已按可逆方案定掉(2026-10-10)**:把 `design` 定为 ui 层的叶子(像 L0 的 utils/logging),
+  §3 与 §4 已改文。理由是查出来的事实而不是偏好:`ui/lyric` **早就**依赖 design,§3 那句"只 ui_kit→design"
+  已经落后于代码;而 design 无行为、不 import Flutter,放开同层边不会带进耦合。
+  护栏不需要新白名单(`kAllowedLayers['ui']` 已含同层),也**没有**把 design 加进 `kLeafPackages` ——
+  那会允许 L0 import ui 包。
 - **未跑任何 app 侧验证**:`apps/pure_live` 的 `flutter test` 需要 `native-assets/` 预取件
   (BUILD_POLICY §3 的顺序契约),本轮没跑;包重写以 `dart analyze` + 护栏为门。
 - **五个被删的 provider 若将来要接**:按 §3 第 8 行的形状重新建包,不要恢复空壳。

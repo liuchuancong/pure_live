@@ -11,3 +11,4 @@ library;
 export 'src/app_facade.dart';
 export 'src/poster_card.dart';
 export 'src/status_views.dart';
+export 'src/tokens_theme.dart';
