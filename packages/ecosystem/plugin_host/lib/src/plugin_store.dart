@@ -21,6 +21,13 @@ import 'package:pure_live_plugin_api/pure_live_plugin_api.dart';
 
 import 'plugin_bundle.dart';
 
+/// The directory an install writes into before it swaps into place.
+///
+/// Spelled once because [PluginStore.list] has to recognise the remnant: an install that died after its last
+/// write but before the rename leaves a *complete* staging directory, and reading it would show the same
+/// plugin a second time under an id no manifest ever claimed.
+const String kPluginStagingSuffix = '.staging';
+
 /// One plugin as the store has it on disk.
 final class InstalledPlugin {
   const InstalledPlugin({required this.manifest, required this.enabled, required this.installedAt, this.originUrl});
@@ -83,7 +90,8 @@ final class PluginStore {
       throw PluginInstallException('${bundle.manifest.id} refused: $details');
     }
     final directory = _directoryFor(bundle.manifest.id);
-    final staging = Directory('${directory.path}.staging');
+    await _refuseForeignOccupant(directory, bundle.manifest.id);
+    final staging = Directory('${directory.path}$kPluginStagingSuffix');
     if (await staging.exists()) {
       await staging.delete(recursive: true);
     }
@@ -125,7 +133,8 @@ final class PluginStore {
       throw PluginInstallException('${manifest.id} refused: $details');
     }
     final directory = _directoryFor(manifest.id);
-    final staging = Directory('${directory.path}.staging');
+    await _refuseForeignOccupant(directory, manifest.id);
+    final staging = Directory('${directory.path}$kPluginStagingSuffix');
     if (await staging.exists()) {
       await staging.delete(recursive: true);
     }
@@ -168,6 +177,12 @@ final class PluginStore {
         continue;
       }
       final id = entity.uri.pathSegments.where((segment) => segment.isNotEmpty).last;
+      // A crash between the last staging write and the rename leaves a complete `.staging` directory behind.
+      // It holds a real manifest, so reading it would list the same plugin twice, the second time under an id
+      // that is the first one plus a suffix - which then uninstalls, enables and stores state as that phantom.
+      if (id.endsWith(kPluginStagingSuffix)) {
+        continue;
+      }
       final manifest = await _readManifest(id);
       final state = await _readState(id);
       if (manifest == null || state == null) {
@@ -260,8 +275,25 @@ final class PluginStore {
 
   String _statePath(String id) => p.join(_directoryFor(id).path, 'state.json');
 
-  Future<PluginManifest?> _readManifest(String id) async {
-    final file = File(_manifestPath(id));
+  Future<PluginManifest?> _readManifest(String id) => _readManifestAt(_manifestPath(id));
+
+  /// Refuses an install whose target directory already belongs to a different plugin.
+  ///
+  /// `_directoryFor` sanitises, so two distinct manifest ids can land in one directory (`a.` and `a_`), and
+  /// without this check the second install would overwrite the first while the manifest on disk claimed the
+  /// id nobody asked to replace.
+  Future<void> _refuseForeignOccupant(Directory directory, String id) async {
+    final occupant = await _readManifestAt(p.join(directory.path, 'manifest.json'));
+    if (occupant != null && occupant.id != id) {
+      throw PluginInstallException(
+        '$id cannot be installed: its plugin directory already holds ${occupant.id}, '
+        'and the two ids sanitise to the same name',
+      );
+    }
+  }
+
+  Future<PluginManifest?> _readManifestAt(String path) async {
+    final file = File(path);
     if (!await file.exists()) {
       return null;
     }
