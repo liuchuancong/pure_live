@@ -9,4 +9,6 @@
 library;
 
 export 'src/key_value_playlist_repository.dart';
+export 'src/m3u.dart';
 export 'src/playlist.dart';
+export 'src/watch_later.dart';

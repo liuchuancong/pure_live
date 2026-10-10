@@ -86,7 +86,14 @@ final class Playlist {
 }
 
 /// Why a playlist operation was refused.
-enum PlaylistFailure { notFound, indexOutOfRange, duplicateId }
+enum PlaylistFailure {
+  notFound,
+  indexOutOfRange,
+  duplicateId,
+
+  /// A title or id the caller passed is unusable, which is the caller's mistake rather than the list's.
+  invalidInput,
+}
 
 final class PlaylistException implements Exception {
   const PlaylistException(this.kind, this.detail);
@@ -121,16 +128,18 @@ final class PlaylistsService {
   Future<Playlist> get(String id) async => _require(id);
 
   Future<Playlist> create(String id, String title) async {
-    if (await _repository.all().then((all) => all.any((playlist) => playlist.id == id))) {
-      throw PlaylistException(PlaylistFailure.duplicateId, 'a playlist named $id already exists');
+    final cleanId = _requireIdentifier(id);
+    final cleanTitle = _requireTitle(title);
+    if (await _repository.all().then((all) => all.any((playlist) => playlist.id == cleanId))) {
+      throw PlaylistException(PlaylistFailure.duplicateId, 'a playlist named $cleanId already exists');
     }
-    final playlist = Playlist(id: id, title: title);
+    final playlist = Playlist(id: cleanId, title: cleanTitle);
     await _repository.upsert(playlist);
     return playlist;
   }
 
   Future<Playlist> rename(String id, String title) async {
-    final updated = (await _require(id)).copyWith(title: title);
+    final updated = (await _require(id)).copyWith(title: _requireTitle(title));
     await _repository.upsert(updated);
     return updated;
   }
@@ -174,6 +183,32 @@ final class PlaylistsService {
 
   Future<Playlist> clear(String id) async => _store((await _require(id)).withItems(const <PlaylistItem>[]));
 
+  /// Replaces the whole row list in one write.
+  ///
+  /// It exists because the bulk callers (Watch Later's capacity trim, an import, a reorder drag) would
+  /// otherwise issue N upserts of an N-row document: the repository stores the list whole, so N writes is N
+  /// squared rows, and a crash halfway leaves a list no one asked for.
+  Future<Playlist> replaceItems(String id, List<PlaylistItem> items) async {
+    final playlist = await _require(id);
+    return _store(playlist.withItems(List<PlaylistItem>.unmodifiable(items)));
+  }
+
+  /// Appends a batch, the shape an import wants. One write, same reason as [replaceItems].
+  Future<Playlist> addAllItems(String id, Iterable<PlaylistItem> items) async {
+    final playlist = await _require(id);
+    final next = List<PlaylistItem>.of(playlist.items)..addAll(items);
+    return _store(playlist.withItems(next));
+  }
+
+  Future<Playlist> removeWhere(String id, bool Function(PlaylistItem item) test) async {
+    final playlist = await _require(id);
+    final items = List<PlaylistItem>.of(playlist.items)..removeWhere(test);
+    return _store(playlist.withItems(items));
+  }
+
+  Future<Playlist> reverse(String id) async =>
+      replaceItems(id, (await _require(id)).items.reversed.toList(growable: false));
+
   Future<void> delete(String id) async {
     await _require(id);
     await _repository.remove(id);
@@ -211,6 +246,35 @@ final class PlaylistsService {
       throw PlaylistException(PlaylistFailure.indexOutOfRange, 'index $index is outside a list of $length rows');
     }
     return index;
+  }
+
+  static const int titleBudget = 120;
+
+  /// A title is user text stored in a document and shown in a tile: blank is not a name, and an unbounded one
+  /// is a list row that pushes every other title off the screen.
+  static String _requireTitle(String title) {
+    final trimmed = title.trim();
+    if (trimmed.isEmpty) {
+      throw const PlaylistException(PlaylistFailure.invalidInput, 'a playlist title cannot be blank');
+    }
+    if (trimmed.length > titleBudget) {
+      throw PlaylistException(
+        PlaylistFailure.invalidInput,
+        'a $titleBudget-character title is the limit; got ${trimmed.length}',
+      );
+    }
+    return trimmed;
+  }
+
+  static String _requireIdentifier(String id) {
+    final trimmed = id.trim();
+    if (trimmed.isEmpty) {
+      throw const PlaylistException(PlaylistFailure.invalidInput, 'a playlist id cannot be blank');
+    }
+    if (trimmed.contains(RegExp(r'[\r\n]')) || trimmed.length > 120) {
+      throw PlaylistException(PlaylistFailure.invalidInput, '"$trimmed" is not a usable playlist id');
+    }
+    return trimmed;
   }
 }
 
