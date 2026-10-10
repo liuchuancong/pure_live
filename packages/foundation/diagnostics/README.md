@@ -25,3 +25,17 @@
 
 - 分析:`dart analyze`(纯 Dart)或 `flutter analyze`(带 `-Flutter`)
 - 测试:`dart test`(纯 Dart)或 `flutter test`(带 `-Flutter`)
+
+## 行为契约(2026-10-10 起)
+
+- `RingBuffer` 是真环形:满时移动 head 而不是 `removeAt(0)`(后者每次 add 复制整个尾巴,而这个缓冲区
+  在整个会话期内每个诊断事件都要写)。`droppedCount` 非 0 表示"这份视图是残缺的"。
+- `measure` 用 `Stopwatch`(单调),不再拿两次 `DateTime.now()` 相减:墙钟会被 NTP 校正、用户改时间、
+  唤醒后时区变化往回拨,那时旧实现报出**负时长** —— 面板读成"瞬时",阈值判断读成"可以忽略"。
+- `runGuarded` 现在也守护 `onError` 自己:报告器抛异常(诊断文件被锁是常见一种)以前会让调用方
+  永远等一个不会完成的 future。现在它照旧返回/抛出,不挂死也不吞掉 body 的原因。
+
+## 未验证
+
+- 只有一个消费者(`ecosystem/extension` 的内存 tracer)。18 个测试覆盖机制本身;
+  "诊断真正落到设备上"的路径不在本包内,也未验证。

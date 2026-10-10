@@ -17,8 +17,8 @@
 | `storage` → pure_live_storage | file_key_value_store / stores / migration / migration_runner | extension, permission, identity, services(favorites/history/playlist), app | ✅ |
 | `files` → pure_live_files | atomic_file / file_names / paths | **无** | ⚠️ 零消费者(能力已实现,等消费方) |
 | `cache` → pure_live_cache | policy / store / disk_tier(两级缓存) | **无** | ⚠️ 零消费者 |
-| `events` → pure_live_events | event_bus | **无** | ⚠️ 零消费者(且规则禁止用它替代接口) |
-| `diagnostics` → pure_live_diagnostics | recording(有界环) | extension | 🟡 只有一个消费者,面很薄(121 行) |
+| `events` → pure_live_events | event_bus | **无**(规则本身禁止用它替代接口) | ✅ 修了每调用一次泄漏一个 controller、`hasListeners` 的类型谎言、sync 投递让一个坏监听者静音整条总线;11 测试 |
+| `diagnostics` → pure_live_diagnostics | recording(有界环 / 守护执行 / 计时) | extension | ✅ 环改成真 O(1)、`measure` 换单调钟、reporter 抛异常不再挂死调用方;18 测试;面仍薄(只有一个消费者) |
 | `auth` → pure_live_auth | credential_store / ports / session | **无** | ⚠️ 零消费者;白名单里 backup→auth 尚未发生 |
 | `backup` → pure_live_backup | engine / manifest / webdav_store | app | ✅ |
 | `sync` → pure_live_sync | sync_engine(游标同步) | **无** | ⚠️ 零消费者;白名单 sync→firebase 尚未发生 |

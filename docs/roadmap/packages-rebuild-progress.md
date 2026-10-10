@@ -90,6 +90,16 @@
   另加 `fileName` 路径校验(宿主把它拼到录制目录后)、三处 `DateTime.now()` 换成注入 `Clock`
   (不然这些规则根本没法测)、id 在转换间保持稳定。13 测试。
   `lib/src/data/` 仍空是刻意的:引擎在录制波次,状态契约先立住就没有第二套真相。
+- **#7 的一部分:`foundation/events` 与 `foundation/diagnostics`**(纯 Dart,可测)。三个能验证的真缺陷:
+  (1) `EventBus.on<T>()` **每次调用新建一个 controller 并 retain 到 dispose** —— 在 build() 里订阅的屏每重建
+  一次就多一个,被丢弃的订阅也一直可达;改成**按事件类型一条 channel**(界由类型数决定,这是这层唯一能知道的界)。
+  (2) `hasListeners` 文档说它回答"有没有人订 T",而它是 getter、拿不到类型参数 —— 一句假话;
+  拆成 `hasListeners`(有任何人)+ 新的 `hasListenersFor<T>()`。
+  (3) `sync: true` 让监听者的异常**沿 `emit()` 同步抛回发布者**:一个设置页的 bug 能把"会话过期"整条链静音。
+  diagnostics:`RingBuffer` 满时 `removeAt(0)` 复制整个尾巴(它在整个会话里每个事件都写)→ 真环形 O(1);
+  `measure` 用两次 `DateTime.now()` 相减,墙钟回拨会报**负时长**(面板读成"瞬时"、阈值读成"可忽略")→ 换 `Stopwatch`;
+  `runGuarded` 不守护 reporter 自己 → 诊断文件被锁时调用方永远等一个不完成的 future。
+  11 + 18 测试,消费者 `ecosystem/extension` 的 53 测试仍全过。
 - **#6 提前做掉(队列顺序我自己调了,理由与可逆性都在这儿)**:`services/feed` 与 `services/search` 是
   纯 Dart 的,能真跑测试;#5(`ui/lyric` / `ui/player_ui`)是 Flutter 侧,而本轮已定"只静态分析",
   再做一层只会多一批无法验证的改动。#5 没删,仍是下一步。
@@ -201,7 +211,7 @@
 | 4 | `ui/design` **令牌面已补齐** / `ui/ui_kit` `ui/adaptive` **已接令牌(仅静态分析验证)** / 真机与 app 传参待做 | 令牌只有 spacing/radius,组件 4 个,风格注册表无焦点/密度维度 | 令牌全集(色/距/圆/高/动效/字焦/密度)、`AppNotice`/`AppDialog`/`AppLoading`/空错态门面、D-pad 焦点序与 TV 尺寸。**下一步是把 ui_kit 与 adaptive 改成消费 `DesignTokens`** —— 否则令牌只是躺在一个没人读的包里 |
 | 5 | `ui/lyric` `ui/player_ui` | 单文件适配 | 时间轴同步、句柄所有权、与 `integrations/media` 的状态订阅边界 |
 | 6 | `services/search` `services/feed` **已完成** | 聚合器只有扇出 | 分页三态校验 + 按源游标 + 取消传播 + 失败记账形状已落;剩余:跨源节(继续看)受 FeedSection 形状限制,见 w5 §2 |
-| 7 | `foundation/diagnostics` `events` `platform_info` `sync` | 薄 | 结构化事件 + 有界缓冲 + 脱敏;探测能力矩阵;同步游标与冲突策略 |
+| 7 | `foundation/diagnostics` `events` **已修** / `platform_info` `sync` 待做 | 薄 | 有界缓冲与守护执行的真缺陷已修;剩余:结构化事件出口、探测能力矩阵、同步游标与冲突策略 |
 | 8 | `providers/douyu` | 空 barrel | 按 `providers/huya` 的形状实现 feed/browse/search/resolve |
 | 9 | `ecosystem/plugin_host` `resolver` `capability` | 有实现,未过 DoD | 只做复核:错误具名、超时/体积上限、资源释放、README 平台矩阵 |
 
