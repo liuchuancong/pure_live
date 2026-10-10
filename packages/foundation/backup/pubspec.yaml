@@ -10,6 +10,7 @@ environment:
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
 dependencies:
   # utils is one of the two L0 leaves every package may use; it supplies the Clock seam.
+  crypto: ^3.0.0
   pure_live_utils:
     path: ../utils
   webdav_client: ^1.2.2

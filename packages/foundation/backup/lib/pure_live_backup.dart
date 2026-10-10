@@ -11,6 +11,8 @@
 /// the auth package, and an L0 package may not reach into another L0 package.
 library;
 
+export 'src/archiver.dart';
+export 'src/codec.dart';
 export 'src/engine.dart';
 export 'src/manifest.dart';
 export 'src/webdav_store.dart';
