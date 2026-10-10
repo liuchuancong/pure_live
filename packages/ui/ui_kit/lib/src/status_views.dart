@@ -136,9 +136,12 @@ final class SectionHeader extends StatelessWidget {
     final tokens = context.designTokens;
     final horizontal = tokens.gapBetween(ControlKind.listItem);
     return Padding(
-      padding: EdgeInsets.fromLTRB(horizontal, PureLiveSpacing.md * tokens.density.scale, horizontal, tokens.gapBetween(
-        ControlKind.chip,
-      )),
+      padding: EdgeInsets.fromLTRB(
+        horizontal,
+        PureLiveSpacing.md * tokens.density.scale,
+        horizontal,
+        tokens.gapBetween(ControlKind.chip),
+      ),
       child: Text(
         title,
         style: theme.textTheme.titleMedium?.copyWith(color: color, fontSize: tokens.typeSize(TypeRole.titleMedium)),

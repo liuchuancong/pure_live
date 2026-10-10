@@ -70,15 +70,12 @@ final class DesignTokensTheme extends ThemeExtension<DesignTokensTheme> {
   ///
   /// Null is a real answer, not a missing one: layering a ring over an outline doubles the visual weight at
   /// exactly the states that already read as focused.
-  BorderSide? focusRing(Color color) => focus.shape == FocusShape.outline
-      ? null
-      : BorderSide(color: color, width: focus.width);
+  BorderSide? focusRing(Color color) =>
+      focus.shape == FocusShape.outline ? null : BorderSide(color: color, width: focus.width);
 
   @override
-  DesignTokensTheme copyWith({DesignTokens? tokens, Map<ColorRole, Color>? roles}) => DesignTokensTheme(
-    tokens: tokens ?? this.tokens,
-    roles: roles ?? this.roles,
-  );
+  DesignTokensTheme copyWith({DesignTokens? tokens, Map<ColorRole, Color>? roles}) =>
+      DesignTokensTheme(tokens: tokens ?? this.tokens, roles: roles ?? this.roles);
 
   @override
   DesignTokensTheme lerp(covariant ThemeExtension<DesignTokensTheme>? other, double t) {

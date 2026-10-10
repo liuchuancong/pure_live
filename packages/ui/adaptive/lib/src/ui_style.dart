@@ -39,8 +39,7 @@ enum AdaptiveUiStyle {
 }
 
 /// Builds one style's theme from a scheme and the tokens the user's settings resolved to.
-typedef StyleThemeFactory =
-    ThemeData Function(ColorScheme scheme, DesignTokens tokens, TargetPlatform platform);
+typedef StyleThemeFactory = ThemeData Function(ColorScheme scheme, DesignTokens tokens, TargetPlatform platform);
 
 /// One style's registration: how it names itself, how it builds themes, and its default seed.
 final class StyleEntry {
@@ -142,9 +141,7 @@ final class AdaptiveStyleRegistry {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(minimumSize: Size(buttonHeight * 2, buttonHeight)),
       ),
-      iconButtonTheme: IconButtonThemeData(
-        style: IconButton.styleFrom(minimumSize: Size(iconSize, iconSize)),
-      ),
+      iconButtonTheme: IconButtonThemeData(style: IconButton.styleFrom(minimumSize: Size(iconSize, iconSize))),
       listTileTheme: ListTileThemeData(
         // The row height is a floor, not a clamp: a two-line title with a subtitle has to be able to grow.
         minVerticalPadding: SpaceToken.space8.px * tokens.density.scale,
@@ -210,8 +207,8 @@ final class AdaptiveStyleRegistry {
     );
   }
 
-  static ThemeData _buildMacos(ColorScheme scheme, DesignTokens tokens, TargetPlatform platform) =>
-      _base(scheme).copyWith(
+  static ThemeData _buildMacos(ColorScheme scheme, DesignTokens tokens, TargetPlatform platform) => _base(scheme)
+      .copyWith(
         platform: platform,
         cardTheme: CardThemeData(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusToken.medium.px)),
@@ -230,12 +227,18 @@ final class AdaptiveStyleRegistry {
       cardTheme: CardThemeData(
         color: surface,
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: radius, side: BorderSide(color: scheme.outlineVariant)),
+        shape: RoundedRectangleBorder(
+          borderRadius: radius,
+          side: BorderSide(color: scheme.outlineVariant),
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surface,
-        border: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: scheme.outlineVariant)),
+        border: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: BorderSide(color: scheme.outlineVariant),
+        ),
       ),
     );
   }
@@ -249,9 +252,7 @@ final class AdaptiveStyleRegistry {
           titleTextStyle: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w700, fontSize: 20),
         ),
         // Yaru's pill buttons: the shape is the whole difference, and the size still comes from the tokens.
-        filledButtonTheme: FilledButtonThemeData(
-          style: FilledButton.styleFrom(shape: const StadiumBorder()),
-        ),
+        filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(shape: const StadiumBorder())),
       );
 }
 

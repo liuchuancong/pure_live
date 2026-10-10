@@ -70,9 +70,7 @@ final class PosterCard extends StatelessWidget {
         onTap: onTap,
         focusColor: Colors.transparent,
         hoverColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-        child: width == null
-            ? _column(label)
-            : SizedBox(width: width, child: _column(label)),
+        child: width == null ? _column(label) : SizedBox(width: width, child: _column(label)),
       ),
     );
     return card;
@@ -80,7 +78,10 @@ final class PosterCard extends StatelessWidget {
 
   Column _column(Widget label) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
-    children: <Widget>[Expanded(child: CoverImage(cover: cover)), label],
+    children: <Widget>[
+      Expanded(child: CoverImage(cover: cover)),
+      label,
+    ],
   );
 
   BorderSide _focusSide(ThemeData theme, BuildContext context) {
