@@ -1,18 +1,22 @@
 // Module: lib/src/data/stored_search_history.dart
-// Purpose: The kv-backed history: bounded, deduplicated by the folded term, and versioned on disk.
+// Purpose: The kv-backed history: bounded, deduplicated by the folded term, stored as one typed preference.
 // Author: liuchuancong
 // Created: 2026-10-10
 //
-// Two rules the older version of this file did not hold, both of which show up only on a user's device
-// weeks later:
+// Two rules the older version of this file did not hold, both of which show up only on a user's device weeks
+// later:
 //
-// 1. The stored blob carried no format version. Adding a timestamp to an entry is a shape change, and
-//    without the marker a new build reads an old list as if it were new and finds no `at` field.
-// 2. A corrupt row was healed silently. The list came back empty and nobody could tell corruption from
-//    "this user has never searched", which is the difference between a bug report and a shrug.
+// 1. The stored blob carried no format version. Adding a timestamp to an entry is a shape change, and without
+//    the marker a new build reads an old list as if it were new and finds no `at` field.
+// 2. A corrupt row was healed silently. The list came back empty and nobody could tell corruption from "this
+//    user has never searched", which is the difference between a bug report and a shrug.
 //
 // A history is a preference of the user's, not a cache: it is never re-derivable from a server, so an
 // unreadable row means losing what they typed, and the loss has to be reported.
+//
+// The envelope, namespace, codec gate and rejection accounting are pure_live_storage's `PreferencesStore` - the
+// same mechanism features/home now uses. This file keeps what is about histories: the bound, the folded-term
+// dedup, the ordering rule, and the two older row shapes that predate the envelope.
 
 import 'dart:convert';
 
@@ -22,8 +26,14 @@ import 'package:pure_live_utils/pure_live_utils.dart';
 import '../domain/search_history.dart';
 import '../domain/search_term.dart';
 
-/// The envelope version this writer produces.
+/// The document version this writer produces, carried inside the stored value.
+///
+/// Separate from the mechanism's envelope version: the envelope says "a typed preference row", this says "an
+/// entry list whose rows carry timestamps". A row from a newer build is refused rather than half-read.
 const int kSearchHistoryEnvelopeVersion = 1;
+
+/// The key inside the namespace, kept as it was before the mechanism so rows on disk are rows we read.
+const String kSearchHistoryPreferenceName = 'history';
 
 /// Thrown for a construction the caller cannot recover from, such as a zero-size history.
 final class SearchHistoryConfigurationFailure extends DomainFailure {
@@ -35,7 +45,7 @@ final class SearchHistoryReadFailure extends DomainFailure {
   const SearchHistoryReadFailure(super.reason, {super.cause});
 }
 
-/// A [SearchHistoryRepository] over one namespaced [KeyValueStore].
+/// A [SearchHistoryRepository] over one namespaced preference key.
 final class StoredSearchHistory implements SearchHistoryRepository {
   StoredSearchHistory({
     required KeyValueStore store,
@@ -43,16 +53,33 @@ final class StoredSearchHistory implements SearchHistoryRepository {
     this.maxLength = 20,
     Clock? clock,
     this.onReadFailure,
-  }) : _store = store,
-       _clock = clock ?? systemClock {
+  }) : _clock = clock ?? systemClock {
     if (maxLength < 1) {
       throw SearchHistoryConfigurationFailure('maxLength must be at least 1, got $maxLength');
     }
+    _preferences = PreferencesStore(store: store, namespace: '$namespace.');
   }
 
-  static const String _suffix = '.history';
+  static final PreferenceCodec<List<SearchHistoryEntry>> _codec = PreferenceCodec.of<List<SearchHistoryEntry>>(
+    'searchHistory',
+    _decodeDocument,
+    (List<SearchHistoryEntry> entries) => <String, Object?>{
+      'v': kSearchHistoryEnvelopeVersion,
+      'items': <Object?>[
+        for (final entry in entries)
+          <String, Object?>{'q': entry.term.display, 'at': Timestamps.toMilliseconds(entry.usedAt)},
+      ],
+    },
+  );
 
-  final KeyValueStore _store;
+  static final PreferenceKey<List<SearchHistoryEntry>> _key = PreferenceKey<List<SearchHistoryEntry>>(
+    name: kSearchHistoryPreferenceName,
+    codec: _codec,
+    defaultValue: <SearchHistoryEntry>[],
+    upgrade: _readLegacyRow,
+  );
+
+  late final PreferencesStore _preferences;
   final Clock _clock;
 
   /// Which app's history this is. Two apps sharing one store must not share one list: a user's live-stream
@@ -64,8 +91,6 @@ final class StoredSearchHistory implements SearchHistoryRepository {
 
   /// Notified whenever a stored row was unreadable and the list had to start empty.
   final void Function(SearchHistoryReadFailure failure)? onReadFailure;
-
-  String get _key => '$namespace$_suffix';
 
   List<SearchHistoryEntry>? _cache;
 
@@ -83,8 +108,8 @@ final class StoredSearchHistory implements SearchHistoryRepository {
   @override
   Future<List<SearchHistoryEntry>> record(SearchTerm term) async {
     final entries = await _load();
-    // Dedup by the folded key, keep the newest display spelling: a user who typed "ABCD" then "abcd" gets
-    // one row, and it shows the way they most recently chose to write it.
+    // Dedup by the folded key, keep the newest display spelling: a user who typed "ABCD" then "abcd" gets one
+    // row, and it shows the way they most recently chose to write it.
     final kept = <SearchHistoryEntry>[
       for (final entry in entries)
         if (!entry.term.sameQuery(term)) entry,
@@ -108,69 +133,78 @@ final class StoredSearchHistory implements SearchHistoryRepository {
   @override
   Future<void> clear() async {
     _cache = <SearchHistoryEntry>[];
-    await _store.remove(_key);
+    await _preferences.reset(_key);
   }
+
+  /// Closes the change stream of the store this repository creates. The history itself is durable.
+  Future<void> dispose() => _preferences.dispose();
 
   Future<List<SearchHistoryEntry>> _load() async {
     final cached = _cache;
     if (cached != null) {
       return cached;
     }
-    final loaded = <SearchHistoryEntry>[];
-    final raw = await _store.read(_key);
-    if (raw != null) {
-      final decoded = _decode(raw);
-      if (decoded != null) {
-        loaded.addAll(decoded);
-      }
+    final rejectionsBefore = _preferences.rejections.length;
+    final stored = await _preferences.readIfStored(_key);
+    if (stored != null) {
+      _cache = stored;
+      return stored;
     }
-    _cache = loaded;
-    return loaded;
+    if (_preferences.rejections.length > rejectionsBefore) {
+      final rejection = _preferences.rejections.last;
+      _reportReadFailure('stored row was unusable (${rejection.failure.name})');
+    }
+    _cache = const <SearchHistoryEntry>[];
+    return _cache!;
   }
 
-  /// The stored row turned into entries, or null when it could not be read.
-  ///
-  /// A null result is accompanied by the report the caller asked for and a next write that stores the new
-  /// envelope, so one bad row does not outlive itself.
-  List<SearchHistoryEntry>? _decode(Object? raw) {
-    if (raw is! String || raw.isEmpty) {
-      _reportReadFailure('stored value is not text', cause: raw.runtimeType);
-      return null;
-    }
-    final Object? decoded;
-    try {
-      decoded = jsonDecode(raw);
-    } on FormatException catch (error) {
-      _reportReadFailure('stored row is not json', cause: error);
-      return null;
-    }
+  Future<void> _save() async {
+    final entries = _cache ?? const <SearchHistoryEntry>[];
+    final kept = _order(entries).take(maxLength).toList(growable: false);
+    _cache = kept;
+    await _preferences.write(_key, kept);
+  }
 
+  /// The pre-mechanism row: this file wrote its envelope as a JSON string under the same key.
+  ///
+  /// Handing the decoded object to the codec keeps the version and field rules in one place instead of two
+  /// readers, and it is what keeps both older shapes alive: the bare keyword list of version 0, and the
+  /// versioned object that came after it.
+  static Object? _readLegacyRow(Object? raw) {
+    if (raw is! String || raw.isEmpty) {
+      return null;
+    }
+    try {
+      return jsonDecode(raw);
+    } on FormatException {
+      return null;
+    }
+  }
+
+  static List<SearchHistoryEntry>? _decodeDocument(Object? raw) {
     // Version 0 was a bare list of keyword strings, written before an entry carried a timestamp.
-    if (decoded is List) {
+    if (raw is List) {
       return <SearchHistoryEntry>[
-        for (final item in decoded)
+        for (final item in raw)
           if (SearchTerm.tryParse('$item') case final term?)
-            // An unknown age sorts last, and "unknown" is spelled here as the epoch rather than as null so
-            // the ordering rule stays one comparator instead of a special case per reader.
+            // An unknown age sorts last, and "unknown" is spelled here as the epoch rather than as null so the
+            // ordering rule stays one comparator instead of a special case per reader.
             SearchHistoryEntry(term: term, usedAt: DateTime.utc(1970)),
       ];
     }
 
-    final envelope = jsonMapFrom(decoded);
-    if (envelope == null) {
-      _reportReadFailure('stored row is not an object');
+    final document = jsonMapFrom(raw);
+    if (document == null) {
       return null;
     }
-    final version = intFrom(envelope['v']) ?? 0;
+    final version = intFrom(document['v']) ?? 0;
     if (version > kSearchHistoryEnvelopeVersion) {
-      // Written by a newer build (a downgraded apk, two apps on one database). Reading it anyway would
-      // rewrite fields this build does not understand, so the list comes back empty and the row stays.
-      _reportReadFailure('stored envelope version $version is newer than $kSearchHistoryEnvelopeVersion');
+      // Written by a newer build (a downgraded apk, two apps on one database). Reading it anyway would rewrite
+      // fields this build does not understand, so the row is refused and stays as it is.
       return null;
     }
-    final items = listFrom(envelope['items']);
+    final items = listFrom(document['items']);
     if (items == null) {
-      _reportReadFailure('envelope has no item list');
       return null;
     }
     final entries = <SearchHistoryEntry>[];
@@ -186,22 +220,6 @@ final class StoredSearchHistory implements SearchHistoryRepository {
       entries.add(SearchHistoryEntry(term: term, usedAt: Timestamps.fromMilliseconds(intFrom(row['at']) ?? 0)));
     }
     return entries;
-  }
-
-  Future<void> _save() async {
-    final entries = _cache ?? const <SearchHistoryEntry>[];
-    final kept = _order(entries).take(maxLength).toList(growable: false);
-    _cache = kept;
-    await _store.write(
-      _key,
-      jsonEncode(<String, Object?>{
-        'v': kSearchHistoryEnvelopeVersion,
-        'items': <Object?>[
-          for (final entry in kept)
-            <String, Object?>{'q': entry.term.display, 'at': Timestamps.toMilliseconds(entry.usedAt)},
-        ],
-      }),
-    );
   }
 
   /// Newest first, and an equal timestamp broken by the folded term so two readers agree.

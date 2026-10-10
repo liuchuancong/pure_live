@@ -5,6 +5,19 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- The history row is now a typed preference of `pure_live_storage` (`PreferenceKey<List<SearchHistoryEntry>>`,
+  codec `searchHistory`) instead of a JSON string this file wrapped in its own envelope. Envelope, namespace,
+  codec gating and rejection accounting come from the mechanism that `features/home` adopted in the same pass;
+  what stays here is what is about histories: the bound, the folded-term dedup, the comparator, and reading
+  the two older shapes - the bare keyword list of version 0 and the pre-mechanism `{v, items}` string - through
+  `PreferenceKey.upgrade`. A read never rewrites a legacy row.
+- The key is unchanged (`<namespace>.history`), so rows written by the previous build are the rows this build
+  reads; a corrupt row is still reported and then replaced by the next write.
+- Added `dispose()` for the change stream of the store this repository creates. Nothing constructs these two
+  repositories in an app yet, so no caller is currently responsible for it.
+- Test updated rather than deleted where it pinned the old raw shape (`corruptRow_isReportedAndHealed` now
+  asserts the shared envelope plus the document version inside it). 22 tests passing.
+
 - **Breaking**: `SearchHistory` became `StoredSearchHistory` implementing the new
   `SearchHistoryRepository` interface, and moved from `data/search_history.dart` to
   `data/stored_search_history.dart`. Entries are `SearchHistoryEntry` (term + UTC instant), not bare strings.

@@ -233,6 +233,14 @@
   `Switch` / `DropdownButton<String>` / 四个 `Icons.*` 都由这层门校验,不是凭记忆写的),design 测试 20 → 26,
   护栏 `--strict packages=55 errors=0 warnings=0`。
   **仍未验**:主题真实渲染成什么样 —— 没有 widget 测试、没有截图、没有真机(design/adaptive README 的未验证已改口)。
+- **第二处采纳:`features/search` 的历史行**也改成 `PreferenceKey<List<SearchHistoryEntry>>`(codec
+  `searchHistory`),键名沿用 `<namespace>.history` 所以旧行仍是本轮读的键。这个包原来自己写
+  `{v,items}` JSON 字符串,而**它下面还有 v0**:磁盘上可能躺着"裸关键词列表"(条目还没带时间戳的年代)。
+  两种旧形状都由 `upgrade` 读回(v0 行的时间用 epoch 表示,让排序仍是一条 comparator 而不是每个读法一个特例),
+  本包只留下与历史有关的东西:上限、折叠键去重、排序,以及"坏档要报、报后自愈"。
+  有一条测试原本钉的是旧原始形状(`corruptRow_isReportedAndHealed` 断言存进去的是 JSON 字符串),
+  按新形状改写而不是删掉 —— 它的意图是"一条坏行不会活过自己",那句话仍然成立。search 22 例全绿。
+  §5 的四处重复到这里还剩两处:`features/vod` 的进度行与 `apps/pure_live` 的 appearance 文档。
 - **`features/home` 成为机制的第一个真实消费者(§5 那条决策的第二步)**:布局行从自己手写的
   `{v,order,hidden}` JSON 字符串改成 `PreferenceKey<HomeLayout>`(codec `homeLayout`)存进 `PreferencesStore`,
   命名空间沿用 `'<app>.'` + 键名 `home_layout`,所以**磁盘上已有的键与机制要读的键是同一个**。

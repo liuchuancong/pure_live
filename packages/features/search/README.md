@@ -11,7 +11,7 @@
 | `domain/search_history.dart` | `SearchHistoryEntry` + `SearchHistoryRepository` 接口 | presentation 只依赖规则,不依赖存储;换库、按账号分表、不存历史都是换实现 |
 | `domain/search_result_order.dart` | `rankSearchResults` / `relevanceOf` / `RankedResult` | 聚合器按"谁先答"给桶,直接拼接就让同一查询在不同启动顺序下换行序 |
 | `domain/search_controller.dart` | `SearchController` + `SearchOutcome`(Answer/Rejected/Superseded) | 世代栅栏属于"知道用户又敲了一个字"的这一层;service 只知道一次查询 |
-| `data/stored_search_history.dart` | `StoredSearchHistory`(kv、带版本信封、有界、可读回) | 落盘格式与迁移是这个包的债,不是 App 的 |
+| `data/stored_search_history.dart` | `StoredSearchHistory`(存成 `storage` 的类型化偏好键、有界、可读回) | 信封/命名空间/记账是 L0 机制的债;**这条历史行的形状**(上限、折叠键去重、v0 与旧信封两种读法)才是本包的债 |
 
 ## 依赖
 

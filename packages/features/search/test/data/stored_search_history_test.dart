@@ -75,7 +75,13 @@ void main() {
 
     await history.record(SearchTerm.tryParse('after')!);
     expect(await history.recent(), hasLength(1));
-    expect(jsonDecode(await store.read('search.history') as String), contains('v'));
+    // The healed row is the shared envelope, with this document's own version carried inside the value: the
+    // envelope answers "a typed preference row", the inner v answers "an entry list with timestamps".
+    final healed = await store.read('search.history') as Map<Object?, Object?>;
+    expect(healed['c'], 'searchHistory');
+    final document = healed['value']! as Map<Object?, Object?>;
+    expect(document['v'], kSearchHistoryEnvelopeVersion);
+    expect((document['items']! as List<Object?>).whereType<Map<Object?, Object?>>(), hasLength(1));
   });
 
   test('test_storedSearchHistory_newerEnvelopeVersion_isLeftAlone', () async {
