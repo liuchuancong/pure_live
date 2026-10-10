@@ -11,10 +11,13 @@ final class _Remote implements RemoteStore {
   _Remote({List<SyncRecord> records = const <SyncRecord>[]}) : this.records = records;
 
   List<SyncRecord> records;
+
+  /// What the remote says the next pull should start from.
+  final SyncCursor batchCursor = const SyncCursor('cursor-1');
   final List<SyncRecord> pushed = <SyncRecord>[];
 
   @override
-  Future<List<SyncRecord>> fetchSince(SyncCursor cursor) async => records;
+  Future<RemoteBatch> fetchSince(SyncCursor cursor) async => RemoteBatch(records: records, cursor: batchCursor);
 
   @override
   Future<SyncCursor> push(List<SyncRecord> batch) async {
@@ -197,10 +200,13 @@ void main() {
     expect(report.refusedCredentials, 1);
     expect(remote.pushed.map((record) => record.key), <String>['favorites.a']);
     expect(local.marked, <String>['favorites.a']);
-    expect(report.cursor.token, 'cursor-2');
+    expect(report.nextCursor?.token, 'cursor-2');
   });
 
-  test('test_syncEngine_push_withNothingPending_returnsStartCursor', () async {
+  // The old assertion here was `report.cursor == SyncCursor.start`, and the engine did return that -
+  // meaning a caller feeding the report into its next pull restarted the whole history on every idle pass.
+  // "Nothing learned" is now expressible as null instead of as a false beginning.
+  test('test_syncEngine_push_withNothingPending_reportsNoNewCursor', () async {
     final report = await SyncEngine(
       remote: _Remote(),
       local: _Local(<String, SyncRecord>{}),
@@ -208,7 +214,9 @@ void main() {
     ).push();
 
     expect(report.pushed, 0);
-    expect(report.cursor, SyncCursor.start);
+    expect(report.nextCursor, isNull);
+    // and the position the caller already had survives the idle pass
+    expect(report.cursorAfter(const SyncCursor('held')), const SyncCursor('held'));
   });
 
   test('test_syncRecord_jsonRoundTrip_keepsTombstoneAndTime', () {

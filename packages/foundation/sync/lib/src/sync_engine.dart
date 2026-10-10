@@ -8,8 +8,6 @@
 // The remote is a port, not a dependency: the application binds it to Firebase in its composition root,
 // which keeps this L0 package free of a vendor SDK.
 
-import 'package:pure_live_utils/pure_live_utils.dart';
-
 /// One synced item. A deleted record is kept as a tombstone so a deletion propagates instead of looking
 /// like an absent key.
 final class SyncRecord {
@@ -42,6 +40,30 @@ final class SyncCursor {
   final String token;
 
   static const SyncCursor start = SyncCursor('');
+
+  /// True when nothing has been fetched yet, which the engine treats as "the remote owes me everything".
+  bool get isStart => token.isEmpty;
+
+  @override
+  bool operator ==(Object other) => other is SyncCursor && other.token == token;
+
+  @override
+  int get hashCode => token.hashCode;
+
+  @override
+  String toString() => 'SyncCursor($token)';
+}
+
+/// One page pulled from the remote: the records and where the next page starts.
+///
+/// The cursor has to travel with the batch. When it does not, the engine can only echo the cursor it was
+/// given, and a caller that dutifully passes the previous report's cursor forward re-downloads the whole
+/// history on every sync - which looks like a working sync until the store is big enough to notice.
+final class RemoteBatch {
+  const RemoteBatch({required this.records, required this.cursor});
+
+  final List<SyncRecord> records;
+  final SyncCursor cursor;
 }
 
 /// How to resolve the same key changed on both sides.
@@ -58,8 +80,10 @@ enum ConflictPolicy {
 
 /// The remote side.
 abstract interface class RemoteStore {
-  Future<List<SyncRecord>> fetchSince(SyncCursor cursor);
+  /// The records after [cursor], and the cursor to continue from.
+  Future<RemoteBatch> fetchSince(SyncCursor cursor);
 
+  /// Sends [records] and returns the cursor that reflects the remote's state afterwards.
   Future<SyncCursor> push(List<SyncRecord> records);
 }
 
@@ -81,19 +105,39 @@ final class SyncReport {
     required this.conflicts,
     required this.pushed,
     required this.refusedCredentials,
-    required this.cursor,
+    this.rejected = 0,
+    this.nextCursor,
   });
 
   final int applied;
+
+  /// Keys that differed on both sides and were resolved by [SyncEngine.policy].
   final int conflicts;
+
   final int pushed;
+
+  /// Keys the remote tried to send (or local tried to send) that belong to the credential store.
   final int refusedCredentials;
-  final SyncCursor cursor;
+
+  /// Records dropped for being unusable - a blank key, or a repeat of a key already in the same batch.
+  ///
+  /// Counted rather than filtered quietly: a remote that sends keyless rows is broken, and the number is
+  /// the evidence.
+  final int rejected;
+
+  /// Where the next pull should start, or null when this pass learned nothing.
+  ///
+  /// Null is the point: the earlier design reported [SyncCursor.start] for a no-op pass, so a caller that
+  /// fed the report back into the next pull silently restarted full history every single time.
+  final SyncCursor? nextCursor;
+
+  /// The cursor to continue from, keeping [previous] when this pass learned nothing.
+  SyncCursor cursorAfter(SyncCursor previous) => nextCursor ?? previous;
 
   @override
   String toString() =>
       'SyncReport(applied=$applied, conflicts=$conflicts, pushed=$pushed, '
-      'refusedCredentials=$refusedCredentials)';
+      'refusedCredentials=$refusedCredentials, rejected=$rejected, nextCursor=$nextCursor)';
 }
 
 /// Moves records between a local store and a remote one.
@@ -113,24 +157,45 @@ final class SyncEngine {
   final ConflictPolicy policy;
 
   /// Pulls everything after [from] and writes the accepted records locally.
-  Future<SyncReport> pull({SyncCursor from = SyncCursor.start, Clock? clock}) async {
-    final incoming = await remote.fetchSince(from);
+  ///
+  /// The report carries the cursor the remote handed back, so successive pulls advance instead of
+  /// re-downloading history; see [SyncReport.nextCursor].
+  Future<SyncReport> pull({SyncCursor from = SyncCursor.start}) async {
+    final batch = await remote.fetchSince(from);
     final safe = <SyncRecord>[];
     var refused = 0;
-    for (final record in incoming) {
+    var rejected = 0;
+    final seen = <String>{};
+    for (final record in batch.records) {
+      if (record.key.trim().isEmpty) {
+        rejected++;
+        continue;
+      }
       if (isCredentialKey(record.key)) {
         refused++;
         continue;
       }
+      // Two rows for one key inside a single batch: keep the later one, which is the order the remote sent
+      // them in, and count the collapse.
+      if (!seen.add(record.key)) {
+        rejected++;
+        safe.removeWhere((previous) => previous.key == record.key);
+      }
       safe.add(record);
     }
+
     if (safe.isEmpty) {
-      return SyncReport(applied: 0, conflicts: 0, pushed: 0, refusedCredentials: refused, cursor: from);
+      return SyncReport(
+        applied: 0,
+        conflicts: 0,
+        pushed: 0,
+        refusedCredentials: refused,
+        rejected: rejected,
+        nextCursor: _advance(from, batch.cursor),
+      );
     }
 
     final existing = await local.readAll();
-    // The clock seam keeps pull deterministic for a caller that injects one.
-    (clock ?? systemClock)();
     final accepted = <SyncRecord>[];
     var conflicts = 0;
     for (final record in safe) {
@@ -152,21 +217,24 @@ final class SyncEngine {
       conflicts: conflicts,
       pushed: 0,
       refusedCredentials: refused,
-      cursor: from,
+      rejected: rejected,
+      nextCursor: _advance(from, batch.cursor),
     );
   }
 
-  /// Pushes local changes and returns the cursor the next pull should start from.
-  Future<SyncReport> push() async {
+  /// Pushes local changes and returns the cursor that reflects the remote afterwards.
+  Future<SyncReport> push({SyncCursor known = SyncCursor.start}) async {
     final pending = await local.pendingChanges();
     final safe = pending.where((record) => !isCredentialKey(record.key)).toList(growable: false);
     if (safe.isEmpty) {
+      // Nothing went out, so nothing was learned about the remote's position: the caller keeps the cursor
+      // it already had. Reporting `start` here is what restarted full history on every idle pass.
       return SyncReport(
         applied: 0,
         conflicts: 0,
         pushed: 0,
         refusedCredentials: pending.length - safe.length,
-        cursor: SyncCursor.start,
+        nextCursor: known.isStart ? null : known,
       );
     }
     final cursor = await remote.push(safe);
@@ -176,9 +244,13 @@ final class SyncEngine {
       conflicts: 0,
       pushed: safe.length,
       refusedCredentials: pending.length - safe.length,
-      cursor: cursor,
+      nextCursor: cursor,
     );
   }
+
+  /// A remote that answers with the same cursor it was asked with has advanced nothing; reporting it as a
+  /// new position would be a claim this layer cannot verify.
+  static SyncCursor? _advance(SyncCursor from, SyncCursor returned) => returned == from ? null : returned;
 
   /// Whether the incoming record replaces the local one.
   bool _remoteWins(SyncRecord localRecord, SyncRecord incoming) {

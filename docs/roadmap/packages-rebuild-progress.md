@@ -90,6 +90,15 @@
   另加 `fileName` 路径校验(宿主把它拼到录制目录后)、三处 `DateTime.now()` 换成注入 `Clock`
   (不然这些规则根本没法测)、id 在转换间保持稳定。13 测试。
   `lib/src/data/` 仍空是刻意的:引擎在录制波次,状态契约先立住就没有第二套真相。
+- **#7 的 `foundation/sync`(游标)**:这条是**会导致重复全量拉取**的那种缺陷,而且完全静默 ——
+  `pull()` 把收到的 `from` 原样回显成报告的游标(因为 `fetchSince` 只回一个 `List`,引擎根本不知道新位置),
+  所以按文档写的用法 `pull(from: lastReport.cursor)` **每次都重拉全部历史**,看起来一切正常;
+  `push()` 在没有待推送内容时返回 `SyncCursor.start`,空闲一趟反而把调用方的位置抹回起点。
+  现在:`RemoteStore.fetchSince → RemoteBatch(records, cursor)`、`SyncReport.nextCursor` 可空 +
+  `cursorAfter(held)`、远端交回同样游标不算前进、空 key 与同批重复 key 计进 `rejected`
+  (凭据键仍单独计,那是远端违约不是发垃圾)、`SyncCursor` 补值相等。
+  顺带删掉 `pull(clock: ...)` —— 它读了一次时钟就丢掉,却写着「保持确定性」。18 测试。
+  **未验证**:零消费者,真实 Firebase 的游标行为(单调性、分页边界、重放同一 token)一次都没跑过。
 - **#7 的一部分:`foundation/events` 与 `foundation/diagnostics`**(纯 Dart,可测)。三个能验证的真缺陷:
   (1) `EventBus.on<T>()` **每次调用新建一个 controller 并 retain 到 dispose** —— 在 build() 里订阅的屏每重建
   一次就多一个,被丢弃的订阅也一直可达;改成**按事件类型一条 channel**(界由类型数决定,这是这层唯一能知道的界)。
@@ -211,7 +220,7 @@
 | 4 | `ui/design` **令牌面已补齐** / `ui/ui_kit` `ui/adaptive` **已接令牌(仅静态分析验证)** / 真机与 app 传参待做 | 令牌只有 spacing/radius,组件 4 个,风格注册表无焦点/密度维度 | 令牌全集(色/距/圆/高/动效/字焦/密度)、`AppNotice`/`AppDialog`/`AppLoading`/空错态门面、D-pad 焦点序与 TV 尺寸。**下一步是把 ui_kit 与 adaptive 改成消费 `DesignTokens`** —— 否则令牌只是躺在一个没人读的包里 |
 | 5 | `ui/lyric` `ui/player_ui` | 单文件适配 | 时间轴同步、句柄所有权、与 `integrations/media` 的状态订阅边界 |
 | 6 | `services/search` `services/feed` **已完成** | 聚合器只有扇出 | 分页三态校验 + 按源游标 + 取消传播 + 失败记账形状已落;剩余:跨源节(继续看)受 FeedSection 形状限制,见 w5 §2 |
-| 7 | `foundation/diagnostics` `events` **已修** / `platform_info` `sync` 待做 | 薄 | 有界缓冲与守护执行的真缺陷已修;剩余:结构化事件出口、探测能力矩阵、同步游标与冲突策略 |
+| 7 | `foundation/diagnostics` `events` `sync` **已修** / `platform_info` 待做 | 薄 | 有界缓冲与守护执行的真缺陷已修;剩余:结构化事件出口、探测能力矩阵、同步游标与冲突策略 |
 | 8 | `providers/douyu` | 空 barrel | 按 `providers/huya` 的形状实现 feed/browse/search/resolve |
 | 9 | `ecosystem/plugin_host` `resolver` `capability` | 有实现,未过 DoD | 只做复核:错误具名、超时/体积上限、资源释放、README 平台矩阵 |
 

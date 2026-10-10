@@ -21,7 +21,7 @@
 | `diagnostics` → pure_live_diagnostics | recording(有界环 / 守护执行 / 计时) | extension | ✅ 环改成真 O(1)、`measure` 换单调钟、reporter 抛异常不再挂死调用方;18 测试;面仍薄(只有一个消费者) |
 | `auth` → pure_live_auth | credential_store / ports / session | **无** | ⚠️ 零消费者;白名单里 backup→auth 尚未发生 |
 | `backup` → pure_live_backup | engine / manifest / webdav_store | app | ✅ |
-| `sync` → pure_live_sync | sync_engine(游标同步) | **无** | ⚠️ 零消费者;白名单 sync→firebase 尚未发生 |
+| `sync` → pure_live_sync | sync_engine(拉/推 + 墓碑 + 游标 + 冲突策略) | **无** | ✅ 修了「游标回显 → 每次全量重拉」与空闲 push 谎报起点;拒绝行计数;18 测试 |
 | `l10n` → pure_live_l10n | locale / translation_bundle | **无** | ⚠️ 零消费者(app 侧本地化未接) |
 | `platform_info` → pure_live_platform_info | platform_info | **无** | ⚠️ 零消费者 |
 | `release` → pure_live_release | version / update_feed | app | ✅ |
