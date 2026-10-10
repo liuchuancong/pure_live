@@ -1,17 +1,16 @@
-// Module: lib/src/data/preferences_store.dart
+// Module: lib/src/preferences/preferences_store.dart
 // Purpose: The durable mechanism behind a typed preference key - envelope, namespace, import/export, changes.
 // Author: liuchuancong
 // Created: 2026-10-10
 //
-// Spec: docs/architecture/application-portfolio.md section 5 gives this package the mechanism and the apps
-// the vocabulary. Everything here is keyed by a consumer-declared PreferenceKey; nothing here knows what a
+// Spec: docs/architecture/application-portfolio.md section 5 gives this layer the mechanism and the apps the
+// vocabulary. Everything here is keyed by a consumer-declared PreferenceKey; nothing here knows what a
 // quality label or a tab order is.
 
 import 'dart:async';
 
-import 'package:pure_live_storage/pure_live_storage.dart';
-
-import '../domain/preference_key.dart';
+import '../stores.dart';
+import 'preference_key.dart';
 
 /// The envelope version this writer produces.
 ///

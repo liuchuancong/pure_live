@@ -27,7 +27,7 @@
 
 允许:`L0`(`pure_live_storage` / `pure_live_utils`)。禁止:`features/*` 同层互依、providers 直连、App 反向依赖。
 
-**注意**:本包**没有**复用 `features/settings` 的偏好机制,因为设置包与本包同层(§3 禁同层边)。
+**注意**:本包**还没有**复用偏好机制。它写这份文档时机制住在 `features/settings`(同层,§3 禁边),所以自己实现了信封;2026-10-10 机制已搬进 `foundation/storage`(L0,本包拿得到),换成 `PreferencesStore` + 一条读旧 `{v,order,hidden}` 的 `upgrade` 是台账记下的下一步。
 这份重复是架构发现,记在 [docs/roadmap/packages-rebuild-progress.md](../../../docs/roadmap/packages-rebuild-progress.md) §5,
 待决策的是"把偏好机制沉到 L0/L1",不是"允许 feature 互相 import"。
 

@@ -14,4 +14,6 @@ library;
 export 'src/file_key_value_store.dart';
 export 'src/migration.dart';
 export 'src/migration_runner.dart';
+export 'src/preferences/preference_key.dart';
+export 'src/preferences/preferences_store.dart';
 export 'src/stores.dart';

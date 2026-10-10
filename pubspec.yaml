@@ -27,7 +27,6 @@ workspace:
   - packages/features/music
   - packages/features/recorder
   - packages/features/search
-  - packages/features/settings
   - packages/features/vod
   - packages/foundation/auth
   - packages/foundation/backup

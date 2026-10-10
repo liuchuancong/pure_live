@@ -9,7 +9,6 @@
 // is safe for existing user data - the legacy upgrade hook.
 import 'dart:async';
 
-import 'package:pure_live_settings/pure_live_settings.dart';
 import 'package:pure_live_storage/pure_live_storage.dart';
 import 'package:test/test.dart';
 

@@ -15,6 +15,8 @@
 - `file_key_value_store.dart` —— `FileKeyValueStore`:单文件 JSON 的 `KeyValueStore`,首次访问时载入、每次改动写穿
 - `migration_runner.dart` —— `MigrationRunner` / `MigrationDomainSpec` / `KeyValueMigrationJournal`:逐域迁移流程
 - `migration.dart` —— `SettingsMigrator`(旧键 → 新键 + 转换函数表,未知键记录不丢)+ `SchemaMigrator`(版本步进链,断点续迁)
+- `preferences/preference_key.dart` —— `PreferenceCodec<T>`(闭集 bool/int/double/String/List<String> + `of()` 自定义)、`PreferenceKey<T>`(名 + codec + 默认值 + 可选 `validate` + 可选 `upgrade`)、`PreferenceKeyInfo`、`PreferenceFailure` / `PreferenceRejection` / `PreferenceChange`
+- `preferences/preferences_store.dart` —— `PreferencesStore`:类型化偏好的落盘机制(信封 `{v,c,value}`、命名空间、`putIfAbsent` 首启语义、`exportAll` / `importAll` 逐项报告、变更流、`upgradedKeys`)
 
 迁移语义按 [docs/migration/settings-migration.md](../../../docs/migration/settings-migration.md) 与 [v1-to-v2.md](../../../docs/migration/v1-to-v2.md):一个键转换失败只记在它自己头上,其余继续;schema 版本每步落盘,重试从断点接上,链上有缺口或重复步在动手前就报错。
 
@@ -28,6 +30,27 @@
   读-改-写会在同一个文件上互相覆盖。
 
 应用目录由组合根与 `pure_live_files` 决定,本包只收一个路径 —— L0 之间不建依赖边。
+
+## 偏好机制为什么在本包
+
+`docs/architecture/application-portfolio.md` §5 把"机制"与"词汇表"分开:键是消费方自己声明的,存储只负责
+**怎么存、怎么验、怎么播报**。它原先住在 `features/settings`,而 §3 禁 feature 同层互依 —— 结果是需要它的
+四个地方各自手写了版本化文档(`features/home` 的 `{v,order,hidden}`、`features/search` 的 `{v,items}`、
+`features/vod` 的进度行、app 的 appearance)。搬进 `foundation/storage` 而不是新建 `foundation/preferences`,
+理由是同一条 §3:偏好机制必须用 `KeyValueStore`,那是本包的类型,而 L0 之间不建依赖边(叶子只有 utils 与
+logging)。第二个理由更实际:**信封之前的旧行要靠 schema step 回写**,`SchemaMigrator` 就在这层。
+
+钉住的规则:
+
+| 规则 | 落法 |
+|---|---|
+| 读永不抛 | 任何坏形状回默认值,并记 `PreferenceRejection`(只记原值的**运行时类型**,不记原值:偏好里可能是路径或标签,不该进诊断报告) |
+| 写会抛 | 越界值抛 `PreferenceException`,不落盘 —— 读端宽容不等于把坏值写下去 |
+| 类型不被字符串化 | 门禁是信封里的 `c`(codec 名),不是 JSON 类型:同名换类型判 `codecMismatch`,免得 `'${5}'` 把数字变成 `'5'` 后错误永久化 |
+| 首启 | `putIfAbsent` 而不是 `read() == default`:后者分不出"没设过"与"设回默认值",于是首启提示会为用户已经关掉的东西再弹一次 |
+| 两个 App 共用一个文件 | `namespace` 前缀是唯一隔离手段;`exportAll` 也只交本命名空间的行,备份不会带走别家的键 |
+| 旧形状可升级不可丢弃 | `PreferenceKey.upgrade` 读信封前的行;升级记进 `upgradedKeys` 而**不是** `rejections`(更老的形状不是故障);**读不回写**,回写是 schema step 的活 |
+| 备份部分可用 | `importAll` 逐项 accept/reject 并回报 `unknownKeys`,坏一条不连坐;更大信封版本按拒绝处理,放宽它属于一次真正的 schema 升级 |
 
 ## 结构
 
@@ -56,6 +79,16 @@
 
 ## 验证
 
-- 分析:`dart analyze`(纯 Dart)或 `flutter analyze`(带 `-Flutter`)
-- 测试:`dart test`(纯 Dart)或 `flutter test`(带 `-Flutter`)
+- 分析:`dart analyze packages/foundation/storage`(0 issue)
+- 测试:`dart test` —— **76 例** = 文件 KV 与并发/损坏语义、迁移流程、存储接口,加自 `features/settings` 搬来的
+  32 例偏好机制测试(信封与 codec 门禁、读不抛并记账、写拒越界、首启、命名空间隔离、变更流与 dispose 幂等、
+  `importAll` 逐项报告、旧形状升级的两个方向)
+
+## 未验证
+
+- **`PreferencesStore` 目前没有真实消费者**:机制与其测试都只用 `MemoryKeyValueStore`。
+  与 `FileKeyValueStore` 串起来(一个 App 的偏好落在同一个文件里、和收藏历史同处一店)尚未跑过。
+- `importAll` 收到**更大**信封版本时按拒绝处理,不是迁移。放宽它的正确做法是加一条 `SchemaStep`,
+  但这条组合(`PreferencesStore` 的行由 `SchemaMigrator` 升级)还没有实现与测试。
+- `SecureStore` 的真实后端由组合根绑定,本包的内存实现只证明接口形状,不证明平台安全存储的行为。
 

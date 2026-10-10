@@ -9,9 +9,11 @@
 // to carry its format version, because adding a field - as this one did, with the hidden set arriving after
 // the order - is otherwise indistinguishable from a corrupt row.
 //
-// This package sits in the same layer as features/settings, so it cannot reach the preferences mechanism
-// there (dependency-rules.md section 3 forbids same-layer edges). That duplication is written up in the
-// roadmap ledger as the architectural finding it is, not solved by importing a sibling feature.
+// The reason this file carried its own envelope at all was a layering fact: the preference mechanism used to
+// live in features/settings, a sibling in the same layer, which section 3 forbids importing. The mechanism is
+// in pure_live_storage (L0, reachable from here) as of 2026-10-10, so this shape is now the odd one out -
+// migrating it onto PreferencesStore is the recorded next step in the ledger, and it needs a
+// PreferenceKey.upgrade for rows already stored in the form below.
 
 import 'dart:convert';
 

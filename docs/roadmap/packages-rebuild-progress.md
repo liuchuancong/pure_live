@@ -233,6 +233,17 @@
   `Switch` / `DropdownButton<String>` / 四个 `Icons.*` 都由这层门校验,不是凭记忆写的),design 测试 20 → 26,
   护栏 `--strict packages=55 errors=0 warnings=0`。
   **仍未验**:主题真实渲染成什么样 —— 没有 widget 测试、没有截图、没有真机(design/adaptive README 的未验证已改口)。
+- **偏好机制已搬进 `foundation/storage`(§5 那条决策落地,机械搬迁)**:`lib/src/preferences/{preference_key,preferences_store}.dart`,
+  经 storage barrel 导出;`features/settings` 包**删除**(根 `workspace:` 去掉该条,`dart pub get --offline` 通过;
+  它零消费者 —— 除自己的测试外全仓没有一处 import `pure_live_settings`)。文件头的 spec 与"为什么在这一层"
+  一起改写,storage README 新增一节把规则列成表(读不抛/写会抛、codec 名是门禁、`putIfAbsent` 首启、命名空间隔离、
+  旧形状可升级不可丢弃、备份部分可用)。CHANGELOG 把该包的全部历史条目原样并入 storage,记录没有丢。
+  验证:`dart analyze packages` 0 issue、护栏 `--strict packages=54 errors=0 warnings=0`(**55 → 54 就是删包的证据**)、
+  storage `dart test` **76 例**(44 原有 + 32 搬来)。
+  同步改口的文档:`packages/README.md`(storage 行、features 计数 10 → 9、settings 行移除)、
+  `application-portfolio.md` §? 消费矩阵、`dependency-rules.md` §? 的 L4 清单(写明机制不在这一层以及为什么)。
+  **还剩一步没做**:让 `features/home` 成为第一个真实消费者(它的数据文件里正好有那句
+  "本包与 features/settings 同层,所以拿不到偏好机制"的注释,搬完就失效了,连同它手写的 `{v,order,hidden}` 信封一起换掉)。
 - **偏好机制补上"能安全被采纳"那一块,并写了它的第一批测试**:`features/settings` 的 491 行机制此前
   **一条测试都没有**(包 README 自己写着"本轮按使用者要求不写测试"),而缺测试掩盖的正是致命一条:
   机制只会**拒绝**更老的形状,不会**读**它。信封之前的行 → `unreadableEnvelope` → 回落默认值 →
@@ -312,7 +323,7 @@
 3. **4 个包违反"目录短名 ↔ 包名一一对应"**:`features/{backup,search,iptv,music}` 分别叫
    `pure_live_backup_feature` / `pure_live_search_feature` / `pure_live_iptv_feature` / `pure_live_music_feature`,
    全为躲重名。**需要一次决策**:改层内短名,还是给 features 包统一加层前缀 —— 定了我再机械改名。
-4. **10 个 features 包 + `foundation/{auth,cache,events,files,l10n,platform_info,sync}` + `firebase` +
+4. **9 个 features 包 + `foundation/{auth,cache,events,files,l10n,platform_info,sync}` + `firebase` +
    `identity` + `ui/{lyric,player_ui}` + `providers/{iptv,music,douyu}` 零消费者**。
    零消费者不等于要删:features/ui 那批是"等壳来装配"(§7 步骤 3-4),`identity` 是等跨源去重接上(w5 §2),
    `providers/{iptv,music}` 是**已实现但没装配**且 pubspec 描述还写着 "skeleton" —— 描述失真优先修,
@@ -322,7 +333,7 @@
 
 | 序 | 包 | 现状缺口(对照 §6) | 重写要点 |
 |---|---|---|---|
-| 1 | ~~`features/settings`~~ **已重写 `cd4c96fcb`** | 共享包里写死了一个产品的 5 个偏好键,机制本身反而没有 | 键改为消费方声明的 `PreferenceKey<T>`;带版本信封 `{v,c,value}`;读不抛+回退记账、写拒越界;`putIfAbsent` 承担首启语义;命名空间隔离 App;`importAll` 逐项校验并出报告;变更流 + `dispose` 只关自己的流。95 行 → 约 430 行,`dart analyze` 0 issue |
+| 1 | ~~`features/settings`~~ **已重写 `cd4c96fcb`,本轮机制并入 `foundation/storage`(包已删)** | 共享包里写死了一个产品的 5 个偏好键,机制本身反而没有 | 键改为消费方声明的 `PreferenceKey<T>`;带版本信封 `{v,c,value}`;读不抛+回退记账、写拒越界;`putIfAbsent` 承担首启语义;命名空间隔离 App;`importAll` 逐项校验并出报告;变更流 + `dispose` 只关自己的流。95 行 → 约 430 行,`dart analyze` 0 issue |
 | 2 | ~~`features/search`~~ **已重写(本轮)** | 只有历史记录容器 | 查询规范化、跨 App 一致的排序、容量上限与淘汰、与 `services/search` 聚合器的取消语义 —— 全部落地,详见 §2 |
 | 3 | `features/home` `account` `backup` `live` `vod` `iptv` `recorder` `music` **全部重写完成** | 每包原 58–191 行,domain 有形状、data 缺失 | 按 §6 补齐:data 边界 + 具名错误 + 资源释放;presentation 留给 UI 波。`music` 的 L4→L5 直连已改端口注入 |
 | 4 | `ui/design` **令牌面已补齐** / `ui/ui_kit` `ui/adaptive` **已接令牌** / **app 传参已完成(本轮)** | 令牌只有 spacing/radius,组件 4 个,风格注册表无焦点/密度维度 | 令牌全集(色/距/圆/高/动效/字焦/密度)、`AppNotice`/`AppDialog`/`AppLoading`/空错态门面、D-pad 焦点序与 TV 尺寸;`AppearanceSettings.resolveTokens` + `themeFor(appearance:)` 已把用户设置接进主题,设置页加了字号/密度/输入/减弱动效四项(见 §2)。**剩余是验证而不是实现**:widget 测试、截图对比、真机 —— 静态门只证明"能编译且 API 名字存在" |
@@ -356,8 +367,10 @@
   持有者(`SchemaStep`/`SchemaMigrator`/`migration_runner.dart`)。**采纳前先决条件已补**:机制原先只会拒绝
   信封前的旧形状,读回落默认、下一次写就把默认存成用户的选择 —— 直接下沉会让每个既有消费者静默删数据,
   这条现在由 `PreferenceKey.upgrade` + 32 例测试封住(见 §2)。
-  **还剩的活(未做,可单条回退)**:机械搬迁 + `features/settings` 整包并入 storage(它本来零消费者),
-  再让 `features/home` 成为第一个真实消费者并带上它那份 `{v,order,hidden}` 的 upgrade。
+  **搬迁已完成**(见 §2:文件进 `storage/lib/src/preferences/`,`features/settings` 删除,包数 55 → 54,
+  storage 76 例测试)。还剩一步:**让 `features/home` 真用它** —— 换掉那份手写的 `{v,order,hidden}` 信封,
+  并带一个 `upgrade` 读旧行;`stored_home_layout.dart` 里"与 features/settings 同层所以拿不到机制"那句注释
+  随搬迁已失效,一并改。
   曾考虑的备选 B(给 §4 白名单加 `features/* → features/settings`)被否:那是把层级错误固化成永久例外。
 - **契约点名的类型不存在。** `docs/sources/live/source-contract.md` 用 `QualityLine` / `QualityRef` /
   `LineRef` / `LiveDetail` / `StreamTicket` 写方法签名,但 `pure_live_platform` 里**一个都没定义**

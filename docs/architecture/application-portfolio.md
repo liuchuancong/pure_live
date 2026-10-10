@@ -89,7 +89,7 @@
 | ui/design, adaptive, ui_kit | ✓ | ✓ | ✓ | ✓ | 六风格 + 令牌 + 语义组件 |
 | ui/player_ui | ✓ | ✓ | ✓ | ✓ | 播放面板 |
 | ui/lyric | — | — | ✓ | — | 歌词面 |
-| features/home, search, settings, live, vod | ✓ | ✓(vod 为主) | ✓(队列面) | ✓ | 见 §4 装配清单 |
+| features/home, search, live, vod | ✓ | ✓(vod 为主) | ✓(队列面) | ✓ | 见 §4 装配清单 |
 | features/account | ✓ | ✓ | ✓ | — | 站点凭据注册 |
 | features/iptv | ✓ | — | — | ✓ | 频道墙 + EPG |
 | features/recorder | ✓ | — | — | ✓ | 录制任务 |

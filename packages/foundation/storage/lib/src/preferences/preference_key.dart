@@ -1,12 +1,17 @@
-// Module: lib/src/domain/preference_key.dart
+// Module: lib/src/preferences/preference_key.dart
 // Purpose: The vocabulary-free preference contract - a named, typed key with its own default and codec.
 // Author: liuchuancong
 // Created: 2026-10-10
 //
-// Spec: docs/architecture/application-portfolio.md section 3 makes this package shared by all four apps, and
-// section 5 forbids one product's vocabulary leaking into shared code. So a key is a value the *consumer*
-// declares: the package owns how a preference is stored, validated and announced, never which preferences
-// exist. That is also why the default lives on the key instead of in a registry the store would have to know.
+// Spec: docs/architecture/application-portfolio.md section 5 forbids one product's vocabulary leaking into
+// shared code, and section 3 makes this the layer every app may reach. So a key is a value the *consumer*
+// declares: storage owns how a preference is stored, validated and announced, never which preferences exist.
+// That is also why the default lives on the key instead of in a registry the store would have to know.
+//
+// Why it lives here rather than in its own package: the mechanism reads and writes a KeyValueStore, which is
+// this package's own type, and section 3 forbids one foundation package depending on another. It also sits
+// beside SchemaMigrator for a second reason - a preference row that predates the envelope is migrated by a
+// schema step, and the two halves of that story belong in one place.
 
 /// How a stored value is decoded, and what "no answer" means for one key.
 ///

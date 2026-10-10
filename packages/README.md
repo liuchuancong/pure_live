@@ -14,7 +14,7 @@
 | `utils` → pure_live_utils | async / collections / conversion / equality / errors / identifiers / math / numbers / result / strings / time / types / validation | logging, network, auth, backup, cache, sync | ✅ 叶子,真在用;新增 8 个模块按实测重复计数立项,**尚无消费者**(utils README 未验证清单) |
 | `logging` → pure_live_logging | logger / record | network | ✅ |
 | `network` → pure_live_network | client(dio 封装)/ failure 分类 | extension, providers(bilibili/huya/douyu/external_tvbox), foundation/release→已撤(改端口), app | ✅ |
-| `storage` → pure_live_storage | file_key_value_store / stores / migration / migration_runner | extension, permission, identity, services(favorites/history/playlist), app | ✅ |
+| `storage` → pure_live_storage | file_key_value_store / stores / migration / migration_runner + **preferences(键/codec/信封/命名空间/导入/变更流/旧形状升级)** | extension, permission, identity, services(favorites/history/playlist), app | ✅ 76 测试;偏好机制自 `features/settings` 搬入(台账 §5 决策)。**机制至今零真实消费者**,且与 `FileKeyValueStore` 的串接没跑过 |
 | `files` → pure_live_files | atomic_file / file_names / paths | **无** | ⚠️ 零消费者(能力已实现,等消费方) |
 | `cache` → pure_live_cache | policy / store / disk_tier(两级缓存) | **无** | ⚠️ 零消费者 |
 | `events` → pure_live_events | event_bus | **无**(规则本身禁止用它替代接口) | ✅ 修了每调用一次泄漏一个 controller、`hasListeners` 的类型谎言、sync 投递让一个坏监听者静音整条总线;11 测试 |
@@ -65,11 +65,10 @@
 | `ui/lyric` | lyrics_surface | **无**(等 pure_music) | ✅ 修了换曲时「进度与重解析先后」导致的高亮错行 + 首帧无进度。**只过静态分析,flutter_lyric 实际行为未测** |
 | `ui/player_ui` | option_sheet / episode_panel | **无**(等房间页重构) | ✅ 修了选项表不可滚动(同包 ep 面板早已 scroll-controlled)、空表开空面板;令牌化 + 语义标签。**只过静态分析** |
 
-## 3ter. L4 features(10)与 L5 providers(6)
+## 3ter. L4 features(9)与 L5 providers(6)
 
 | 包 | 公共面 | 消费者 | 状态 |
 |---|---|---|---|
-| `features/settings`(pure_live_settings) | preference_key(键/codec/校验)+ preferences_store(信封/命名空间/导入/变更流) | **无** | 🟡 刚重写成机制;等 App 声明键 |
 | `features/live` | live_session(不可变选流状态机:两轴已提交选择 + 带身份的切换尝试) | **无 App 消费者** | ✅ 重写完成:迟到回调不再能改写选择、按轴独立、未提供的变体具名拒绝;13 测试 |
 | `features/vod` | episode_navigator(不可变连播队列)/ watch_progress(双阈值续播) | **无 App 消费者** | ✅ 重写完成:按 (source,id) 匹配修好连播静默失效、含 `/` 的 id 不再撞行、看完不再续到 99%,20 测试 |
 | `features/music`(pure_live_music_feature) | music_queue(不可变)/ music_source_bridge(端口)/ lx_music_repository | **无 App 消费者**;`pure_music` 壳还不存在 | ✅ 重写完成:L4→L5 直连 provider 改成端口注入、删歌跳曲与过期 step 修好,23 测试。**端口目前没有实现** |
@@ -100,7 +99,7 @@
    要么改层内短名(如 `features/backup` → `features/webdav_backup`),要么给包名加层前缀 —— 需要一次
    决策,不能各改各的。
 4. ~~**pubspec description 失真**~~ **已修(2026-10-10)**:`providers/{iptv,music}`、`ui/{adaptive,lyric,player_ui,ui_kit}`、
-   `features/settings` 七包原本都还写着 "skeleton",`providers/douyu` 写着空壳。全仓 `grep -l skeleton --include=pubspec.yaml`
+   `features/settings`(现已并回 storage)七包原本都还写着 "skeleton",`providers/douyu` 写着空壳。全仓 `grep -l skeleton --include=pubspec.yaml`
    现已为 0。描述是别人判断"这包能不能用"的第一入口,失真等于误导 —— 新描述照各包 barrel 与文件头 Purpose 写。
 
 ## 5. 添加 / 删除一个包

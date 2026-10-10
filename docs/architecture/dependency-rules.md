@@ -39,7 +39,7 @@ L5 Providers/Plugins(与 L2-L4 平级,只向下依赖)
 | L1 Ecosystem | plugin_api, plugin_host, plugin_registry, extension(gateway), resolver, identity, permission, task, capability, content, external_tvbox / lx_music / m3u / xmltv, theme, background, danmaku |
 | L2 Services | search, history, favorites, playlist, links, feed, download, remote, cast, fonts, emote |
 | L3 UI | design, ui_kit(唯一 import fluttersdk_wind), adaptive, lyric, player_ui |
-| L4 Features | repository:live/vod/music/iptv/recorder/settings/search/home/account/backup;UI:live_ui/vod_ui/music_ui/iptv_ui/recorder_ui/settings_ui/account_ui/backup_ui/home_ui |
+| L4 Features | repository:live/vod/music/iptv/recorder/search/home/account/backup;UI:live_ui/vod_ui/music_ui/iptv_ui/recorder_ui/settings_ui/account_ui/backup_ui/home_ui。**偏好机制不在这一层**:它(`PreferenceKey` / `PreferencesStore`)住在 L0 `storage`,因为 §3 既禁同层互依也禁 L0 互依,而机制必须用 `KeyValueStore`;各 App 的偏好**词汇表**仍归自己声明(portfolio §5) |
 | L5 Providers | bilibili(live+vod 参考实现)、douyu、huya、douyin、twitch、youtube 等 33+ 站、music sources、tvbox adapters、iptv sources、第三方插件 |
 
 目录形态:`packages/<层>/<短名>`,层 = `foundation/ integrations/ ecosystem/ services/ ui/ features/ providers/`;应用壳在 `apps/<name>`(四个,见 §1bis),仓库根 `pubspec.yaml` 是 pub workspace hub,四个 App 都是成员。包名 `pure_live_<短名>`,目录用短名。形态决策见 [../adr/0015-monorepo-layout.md](../adr/0015-monorepo-layout.md),多 App 拆分见 [../adr/0022-multi-app-one-feature-each.md](../adr/0022-multi-app-one-feature-each.md)。
