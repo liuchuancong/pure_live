@@ -350,4 +350,127 @@ void main() {
       await expectLater(KeyValueHistoryRepository(store).entries(), throwsA(isA<FormatException>()));
     });
   });
+
+  group('test_history_identity_and_bulk', () {
+    test('test_remove_deletesTheRowWhoseKeyMatchesEvenWhenTheRefDiffers', () async {
+      // The guard used to compare full ContentRefs while the repository deleted by key: a caller that restated
+      // the series (or carried any metadata) was told "no such record" about a row that then did disappear -
+      // or, worse, the two rules disagreed about which row that was.
+      final parented = ContentRef(sourceId: 'a', contentId: 'ep1', kind: ContentKind.episode, parentId: 's1');
+      await history.record(parented, const Duration(minutes: 5), parentId: 's1');
+
+      await history.remove(_ref('a', 'ep1'));
+
+      expect(await history.timeline(), isEmpty);
+      await expectLater(
+        history.remove(_ref('a', 'ep1')),
+        throwsA(isA<HistoryException>().having((e) => e.kind, 'kind', HistoryFailure.notFound)),
+      );
+    });
+
+    test('test_continueWatching_skipsARecordWithNoProgressAtAll', () async {
+      await history.record(_ref('a', 'opened-then-left'), Duration.zero);
+      await history.record(_ref('a', 'partway'), const Duration(minutes: 4), duration: const Duration(minutes: 40));
+
+      expect((await history.continueWatching()).map((entry) => entry.ref.contentId), <String>['partway']);
+      expect(await history.timeline(), hasLength(2), reason: 'it is still history, just not "continue"');
+    });
+
+    test('test_flush_writesEveryHeldRowAsOneRepositoryCall', () async {
+      final counting = _CountingRepository(KeyValueHistoryRepository(store));
+      final throttled = HistoryService(
+        repository: counting,
+        clock: () => now,
+        minWriteInterval: const Duration(minutes: 1),
+      );
+
+      await throttled.record(_ref('a', 'one'), const Duration(minutes: 1));
+      now = now.add(const Duration(seconds: 10));
+      for (var tick = 2; tick <= 6; tick++) {
+        await throttled.record(_ref('a', 'one'), Duration(minutes: tick));
+      }
+      await throttled.record(_ref('b', 'two'), const Duration(minutes: 2));
+
+      final singlesBeforeFlush = counting.singleUpsertCalls;
+      await throttled.flush();
+
+      expect(counting.upsertAllCalls, 1, reason: 'the exit flush is one bulk statement, not N rewrites');
+      expect(counting.singleUpsertCalls, singlesBeforeFlush, reason: 'and it does not trickle single writes either');
+      expect(singlesBeforeFlush, 2, reason: 'the two first-seen rows were written as they happened');
+      expect((await throttled.timeline()).map((entry) => entry.ref.contentId), containsAll(<String>['one', 'two']));
+      expect((await throttled.timeline()).firstWhere((entry) => entry.ref.contentId == 'one').position,
+          const Duration(minutes: 6));
+    });
+
+    test('test_upsertAll_replacesMatchingRowsAndKeepsTheRest', () async {
+      await history.record(_ref('a', 'keep'), const Duration(minutes: 1));
+      await history.record(_ref('a', 'swap'), const Duration(minutes: 1));
+
+      await KeyValueHistoryRepository(store).upsertAll(<HistoryEntry>[
+        HistoryEntry(ref: _ref('a', 'swap'), updatedAt: now, position: const Duration(minutes: 9)),
+        HistoryEntry(ref: _ref('a', 'new'), updatedAt: now, position: const Duration(minutes: 3)),
+      ]);
+
+      final rows = await history.timeline();
+      expect(rows, hasLength(3));
+      expect(rows.firstWhere((entry) => entry.ref.contentId == 'swap').position, const Duration(minutes: 9));
+      expect(rows.firstWhere((entry) => entry.ref.contentId == 'keep').position, const Duration(minutes: 1));
+    });
+
+    test('test_upsertAll_ofNothingLeavesTheDocumentAlone', () async {
+      await history.record(_ref('a', 'keep'), const Duration(minutes: 1));
+      final before = await store.read('history');
+
+      await KeyValueHistoryRepository(store).upsertAll(const <HistoryEntry>[]);
+
+      expect(await store.read('history'), before, reason: 'an empty bulk write is not a rewrite');
+      expect(await history.timeline(), hasLength(1));
+    });
+
+    test('test_historyKeyOf_isTheOneSpellingEveryCallerUses', () {
+      final ref = ContentRef(sourceId: 's', contentId: 'c', kind: ContentKind.vod);
+
+      expect(historyKeyOf(ref), 's/c/vod');
+      expect(HistoryEntry(ref: ref, updatedAt: now).identityKey, historyKeyOf(ref));
+    });
+  });
+}
+
+/// Counts which repository methods ran, so "one bulk write" is an observation and not a claim.
+final class _CountingRepository implements HistoryRepository {
+  _CountingRepository(this.inner);
+
+  final HistoryRepository inner;
+  int upsertAllCalls = 0;
+  int singleUpsertCalls = 0;
+
+  @override
+  Future<List<HistoryEntry>> entries() => inner.entries();
+
+  @override
+  Future<void> upsert(HistoryEntry entry) async {
+    singleUpsertCalls++;
+    await inner.upsert(entry);
+  }
+
+  @override
+  Future<void> upsertAll(Iterable<HistoryEntry> entries) async {
+    upsertAllCalls++;
+    await inner.upsertAll(entries);
+  }
+
+  @override
+  Future<void> remove(ContentRef ref) async {
+    await inner.remove(ref);
+  }
+
+  @override
+  Future<int> removeWhere(bool Function(HistoryEntry) test) async {
+    return inner.removeWhere(test);
+  }
+
+  @override
+  Future<void> clear() async {
+    await inner.clear();
+  }
 }

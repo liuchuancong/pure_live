@@ -26,6 +26,13 @@ HistoryDomain domainOf(ContentKind kind) => switch (kind) {
   ContentKind.stream || ContentKind.playlist => HistoryDomain.other,
 };
 
+/// The row key for one content reference: source, content and kind, and nothing else.
+///
+/// Spelled once because three callers need the identical string - the record's own [HistoryEntry.identityKey],
+/// the service's lookup and the repository's delete. A second copy that drifts splits one piece of history
+/// into two rows, or deletes a row the caller never named.
+String historyKeyOf(ContentRef ref) => '${ref.sourceId}/${ref.contentId}/${ref.kind.name}';
+
 /// One watched thing, with where the user got to.
 final class HistoryEntry {
   const HistoryEntry({
@@ -101,7 +108,7 @@ final class HistoryEntry {
   /// The row's key: which content this is. `ContentRef` equality also compares `parentId`, and a caller that
   /// reports progress without restating the parent must not get a second row for the same thing - so the
   /// record's identity is the content, while [parentId] stays a column that the series view reads.
-  String get identityKey => '${ref.sourceId}/${ref.contentId}/${ref.kind.name}';
+  String get identityKey => historyKeyOf(ref);
 
   @override
   bool operator ==(Object other) =>
@@ -147,6 +154,13 @@ abstract interface class HistoryRepository {
   Future<List<HistoryEntry>> entries();
 
   Future<void> upsert(HistoryEntry entry);
+
+  /// Writes many records as one operation.
+  ///
+  /// The single-row method is fine against a table; against the document-backed binding of today it means one
+  /// read and one full rewrite per entry, so a session that held back thirty progress ticks rewrites the whole
+  /// history document thirty times on exit.
+  Future<void> upsertAll(Iterable<HistoryEntry> entries);
 
   Future<void> remove(ContentRef ref);
 
@@ -241,9 +255,7 @@ final class HistoryService {
     }
     final queued = List<HistoryEntry>.of(_pending.values);
     _pending.clear();
-    for (final entry in queued) {
-      await _repository.upsert(entry);
-    }
+    await _repository.upsertAll(queued);
   }
 
   /// The mixed timeline, newest first, narrowed by domain, source or a substring of the stored title.
@@ -268,8 +280,13 @@ final class HistoryService {
   }
 
   /// What has progress but is not finished: "继续观看".
+  ///
+  /// A record at position zero is *not* "continue": the doc asks for rows with progress, and a room the viewer
+  /// opened and walked away from would otherwise sit in the row of things they mean to finish.
   Future<List<HistoryEntry>> continueWatching({int? limit}) async {
-    final open = (await _repository.entries()).where((entry) => !entry.isCompleted).toList()
+    final open = (await _repository.entries())
+        .where((entry) => !entry.isCompleted && entry.position > Duration.zero)
+        .toList()
       ..sort((a, b) => -a.updatedAt.compareTo(b.updatedAt));
     if (limit != null && open.length > limit) {
       return open.sublist(0, limit);
@@ -302,7 +319,10 @@ final class HistoryService {
 
   Future<void> remove(ContentRef ref) async {
     final entries = await _repository.entries();
-    if (entries.every((entry) => entry.ref != ref)) {
+    // Compared by the row key, not by `==`: ContentRef equality also carries parentId and metadata, so a ref
+    // that restates the series differently would be "not found" here while the repository's own delete - which
+    // matches by key - removes the row this guard just insisted was there.
+    if (entries.every((entry) => entry.identityKey != historyKeyOf(ref))) {
       throw HistoryException(HistoryFailure.notFound, '${ref.sourceId}/${ref.contentId} has no history record');
     }
     _pending.remove(_keyOf(ref));
@@ -333,7 +353,7 @@ final class HistoryService {
     return null;
   }
 
-  static String _keyOf(ContentRef ref) => '${ref.sourceId}/${ref.contentId}/${ref.kind.name}';
+  static String _keyOf(ContentRef ref) => historyKeyOf(ref);
 
   Future<HistoryEntry?> _write(HistoryEntry entry, {HistoryEntry? existing, required bool force}) async {
     final held = _pending[entry.identityKey];

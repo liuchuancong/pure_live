@@ -39,18 +39,28 @@ final class KeyValueHistoryRepository implements HistoryRepository {
   }
 
   @override
-  Future<void> upsert(HistoryEntry entry) async {
+  Future<void> upsert(HistoryEntry entry) => upsertAll(<HistoryEntry>[entry]);
+
+  @override
+  Future<void> upsertAll(Iterable<HistoryEntry> entries) async {
+    final incoming = <HistoryEntry>[...entries];
+    if (incoming.isEmpty) {
+      return;
+    }
+    // One read, one rewrite. Doing this per entry through upsert() would rewrite the whole document once per
+    // held tick, and the exit flush is exactly the moment a stalled main thread is most visible.
+    final replaced = <String, HistoryEntry>{for (final entry in incoming) entry.identityKey: entry};
     final next = <HistoryEntry>[
-      for (final existing in await entries())
-        if (existing.identityKey != entry.identityKey) existing,
-      entry,
+      for (final existing in await this.entries())
+        if (!replaced.containsKey(existing.identityKey)) existing,
+      ...incoming,
     ];
     await _write(next);
   }
 
   @override
   Future<void> remove(ContentRef ref) async {
-    final key = '${ref.sourceId}/${ref.contentId}/${ref.kind.name}';
+    final key = historyKeyOf(ref);
     await _write((await entries()).where((entry) => entry.identityKey != key).toList());
   }
 
