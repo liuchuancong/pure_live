@@ -12,6 +12,10 @@
 //
 // Every transition here returns a new [ChannelZapper]; the surface holds one value and replaces it, which is
 // what makes a double key-press and a rebuild race visible instead of silent.
+//
+// Positions, not values, are the internal currency: a real playlist repeats a station row verbatim (the same
+// name, group and url twice is how a source lists its second CDN), and matching by value would land both rows
+// on the first copy, so the second one is unreachable and the visible number is a lie.
 
 import 'package:pure_live_utils/pure_live_utils.dart';
 
@@ -27,11 +31,16 @@ sealed class ZapStep {
   const ZapStep();
 }
 
-/// The cursor moved to [channel].
+/// The cursor moved to [channel]; [zapper] is the lineup positioned there.
+///
+/// Carrying the new position is not a convenience: without it every caller re-derives the move with
+/// `selectChannel(step.channel)`, and on a lineup with a repeated row that call resolves to the *other* copy,
+/// so the key press lands somewhere the viewer did not aim at.
 final class ZapMoved extends ZapStep {
-  const ZapMoved(this.channel);
+  const ZapMoved(this.channel, {required this.zapper});
 
   final ZapChannel channel;
+  final ChannelZapper zapper;
 }
 
 /// Nothing was in scope to move to - an empty lineup, or a group with no channels.
@@ -47,18 +56,35 @@ final class ChannelZapper {
   /// land the viewer on a black screen with no error, indistinguishable from a dead station. Skipping them
   /// makes the remote feel responsive on the playlists people actually import. [select] still reaches them
   /// deliberately.
-  const ChannelZapper({required List<ZapChannel> channels, this.group, this.cursor = -1, this.skipUnplayable = true})
-    : _channels = channels;
+  ///
+  /// [channels] is copied: a getter that hands back an unmodifiable view while the internal field still points
+  /// at the caller's growable list lets that caller reorder - or empty - the station being watched.
+  ChannelZapper({required List<ZapChannel> channels, this.group, this.cursor = -1, this.skipUnplayable = true})
+    : _channels = List<ZapChannel>.unmodifiable(channels) {
+    _scope = <int>[
+      for (var index = 0; index < _channels.length; index++)
+        if (group == null || _channels[index].group == group) index,
+    ];
+  }
 
-  /// Builds a zapper over [channels], positioned at the first playable entry.
+  /// Builds a zapper over [channels], positioned at the first meaningful entry.
   factory ChannelZapper.lineup(List<ZapChannel> channels, {String? group, bool skipUnplayable = true}) {
-    final scoped = channels;
-    final zapper = ChannelZapper(channels: scoped, group: group, cursor: -1, skipUnplayable: skipUnplayable);
-    final first = zapper.visible().isEmpty ? -1 : zapper._firstMeaningfulIndex();
-    return ChannelZapper(channels: scoped, group: group, cursor: first, skipUnplayable: skipUnplayable);
+    final zapper = ChannelZapper(channels: channels, group: group, skipUnplayable: skipUnplayable);
+    return zapper.at(_positionOf(zapper._scope, zapper._channels, skipUnplayable: skipUnplayable));
+  }
+
+  /// The first in-scope position, honouring [skipUnplayable]; -1 when the scope holds nothing usable.
+  static int _positionOf(List<int> scope, List<ZapChannel> channels, {required bool skipUnplayable}) {
+    for (final index in scope) {
+      if (!skipUnplayable || channels[index].isPlayable) {
+        return index;
+      }
+    }
+    return scope.isEmpty ? -1 : scope.first;
   }
 
   final List<ZapChannel> _channels;
+  late final List<int> _scope;
 
   /// The group filter narrowing the cycle, or null for the whole lineup.
   final String? group;
@@ -70,21 +96,20 @@ final class ChannelZapper {
 
   /// The full lineup, in playlist order. Unmodifiable, because a getter that hands back the internal list
   /// lets a caller reorder the station the viewer is watching.
-  List<ZapChannel> get channels => List<ZapChannel>.unmodifiable(_channels);
+  List<ZapChannel> get channels => _channels;
 
-  bool get isEmpty => visible().isEmpty;
+  /// The channels in scope: the group's entries, in playlist order.
+  List<ZapChannel> get visible => List<ZapChannel>.unmodifiable(_scope.map((index) => _channels[index]));
+
+  bool get isEmpty => _scope.isEmpty;
+
+  int get count => _channels.length;
+
+  /// How many entries the current filter puts in scope.
+  int get visibleCount => _scope.length;
 
   /// The channel under the cursor, or null.
   ZapChannel? get current => cursor >= 0 && cursor < _channels.length ? _channels[cursor] : null;
-
-  /// The channels in scope: the group's entries, in playlist order.
-  List<ZapChannel> visible() {
-    final wanted = group;
-    if (wanted == null) {
-      return List<ZapChannel>.unmodifiable(_channels);
-    }
-    return List<ZapChannel>.unmodifiable(_channels.where((channel) => channel.group == wanted));
-  }
 
   /// Every group present, in first-appearance order, with the count of entries in each.
   Map<String, int> get groups {
@@ -104,18 +129,31 @@ final class ChannelZapper {
   /// channel of the new scope, which is a station change nobody asked for.
   ChannelZapper withGroup(String? group) {
     final candidate = ChannelZapper(channels: _channels, group: group, cursor: cursor, skipUnplayable: skipUnplayable);
-    final held = current;
-    if (held != null && candidate.visible().any((channel) => channel == held)) {
+    if (candidate._holdsCursor) {
       return candidate;
     }
-    final first = candidate._firstMeaningfulIndex();
-    return ChannelZapper(channels: _channels, group: group, cursor: first, skipUnplayable: skipUnplayable);
+    return candidate.at(_positionOf(candidate._scope, candidate._channels, skipUnplayable: skipUnplayable));
   }
 
-  /// Channel up on the remote.
+  /// The same lineup with a different skip rule, e.g. a settings toggle that lets the viewer walk dead rows.
+  ChannelZapper withSkipUnplayable(bool skip) {
+    if (skip == skipUnplayable) {
+      return this;
+    }
+    final candidate = ChannelZapper(channels: _channels, group: group, cursor: cursor, skipUnplayable: skip);
+    return candidate._holdsCursor
+        ? candidate
+        : candidate.at(_positionOf(candidate._scope, candidate._channels, skipUnplayable: skip));
+  }
+
+  /// Channel up on the remote: one row towards the top of the list, wrapping to the bottom.
+  ///
+  /// The direction is the lineup's order, not the channel *number*, and that is a choice a surface must know
+  /// about before it binds a key - see the README. A future binding that follows the Android TV convention
+  /// (CH+ raises the number) calls [zapDown] for CH+, which is why these two carry no "next"/"previous" name.
   ZapStep zapUp() => _step(-1);
 
-  /// Channel down on the remote.
+  /// Channel down on the remote: one row towards the bottom of the list, wrapping to the top.
   ZapStep zapDown() => _step(1);
 
   /// The channel a viewer typed on the remote, 1-based against the visible scope.
@@ -123,61 +161,79 @@ final class ChannelZapper {
   /// Unplayable entries are reachable here, because a typed number is a deliberate choice: a greyed-out row
   /// the viewer still wants to try.
   ChannelZapper select(int number) {
-    final scope = visible();
-    if (scope.isEmpty) {
+    if (_scope.isEmpty) {
       throw LineupFailure('there is no channel $number: the ${group == null ? 'lineup' : 'group "$group"'} is empty');
     }
-    if (number < 1 || number > scope.length) {
-      throw LineupFailure('channel $number is outside 1..${scope.length} of ${group ?? 'the lineup'}');
+    if (number < 1 || number > _scope.length) {
+      throw LineupFailure('channel $number is outside 1..${_scope.length} of ${group ?? 'the lineup'}');
     }
-    final index = _channels.indexOf(scope[number - 1]);
-    return ChannelZapper(channels: _channels, group: group, cursor: index, skipUnplayable: skipUnplayable);
+    return at(_scope[number - 1]);
   }
 
   /// Moves to [channel], which must be part of this lineup.
+  ///
+  /// When the playlist repeats a row, this lands on the first copy - use [select] or [atIndex] to name a
+  /// position instead of a value, and [indexOf] to see how many copies exist.
   ChannelZapper selectChannel(ZapChannel channel) {
     final index = _channels.indexOf(channel);
     if (index < 0) {
       throw LineupFailure('${channel.name} is not part of this lineup');
     }
-    return ChannelZapper(channels: _channels, group: group, cursor: index, skipUnplayable: skipUnplayable);
+    return at(index);
   }
+
+  /// Moves to an absolute position in the full lineup.
+  ChannelZapper atIndex(int index) {
+    if (index < 0 || index >= _channels.length) {
+      throw LineupFailure('position $index is outside 0..${_channels.length - 1} of the lineup');
+    }
+    if (group != null && !_scope.contains(index)) {
+      throw LineupFailure('${_channels[index].name} is not in group "$group", so it cannot be selected');
+    }
+    return at(index);
+  }
+
+  /// The position of [channel] in the full lineup, or -1; a repeated row reports every copy.
+  List<int> positionsOf(ZapChannel channel) => <int>[
+    for (var index = 0; index < _channels.length; index++)
+      if (_channels[index] == channel) index,
+  ];
 
   /// The position of the current station within the visible scope, 1-based; 0 when nothing is in scope.
   int get visibleNumber {
-    final held = current;
-    if (held == null) {
-      return 0;
-    }
-    return visible().indexOf(held) + 1;
+    final slot = _scope.indexOf(cursor);
+    return slot < 0 ? 0 : slot + 1;
   }
 
+  /// A copy positioned at [cursor]; -1 is legal and means "nothing selected".
+  ChannelZapper at(int cursor) =>
+      ChannelZapper(channels: _channels, group: group, cursor: cursor, skipUnplayable: skipUnplayable);
+
+  bool get _holdsCursor => cursor >= 0 && _scope.contains(cursor);
+
   ZapStep _step(int direction) {
-    final scope = visible();
-    if (scope.isEmpty) {
+    if (_scope.isEmpty) {
       return ZapEmpty('${group == null ? 'the lineup' : 'group "$group"'} has no channels to zap through');
     }
-    final held = current;
-    var from = held == null ? (direction > 0 ? -1 : 0) : scope.indexOf(held);
-    for (var attempt = 0; attempt < scope.length; attempt++) {
-      from = (from + direction) % scope.length;
+    final held = _scope.indexOf(cursor);
+    var from = held < 0 ? (direction > 0 ? -1 : 0) : held;
+    for (var attempt = 0; attempt < _scope.length; attempt++) {
+      from = (from + direction) % _scope.length;
       if (from < 0) {
-        from += scope.length;
+        from += _scope.length;
       }
-      final candidate = scope[from];
-      if (!skipUnplayable || candidate.isPlayable) {
-        return ZapMoved(candidate);
+      final index = _scope[from];
+      if (!skipUnplayable || _channels[index].isPlayable) {
+        return ZapMoved(_channels[index], zapper: at(index));
       }
     }
     // Everything in scope is unplayable: stay where the viewer is and say so, rather than wrapping onto a
     // black screen over and over.
-    return ZapEmpty('all ${scope.length} channels in ${group ?? 'the lineup'} have no playable stream');
+    return ZapEmpty('all ${_scope.length} channels in ${group ?? 'the lineup'} have no playable stream');
   }
 
-  int _firstMeaningfulIndex() {
-    final scope = visible();
-    final chosen = scope.where((channel) => !skipUnplayable || channel.isPlayable).toList(growable: false);
-    final target = chosen.isEmpty ? scope.head : chosen.head;
-    return target == null ? -1 : _channels.indexOf(target);
-  }
+  @override
+  String toString() =>
+      'ChannelZapper(${_channels.length} entries${group == null ? '' : ', group "$group"'}'
+      ', visible=${_scope.length}, at=$visibleNumber)';
 }

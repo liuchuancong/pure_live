@@ -88,4 +88,63 @@ void main() {
     expect(a, EpgWindow(nowTitle: 'x', nowEndsAt: _at(20, 0)));
     expect(a == EpgWindow(nowTitle: 'y', nowEndsAt: _at(20, 0)), isFalse);
   });
+
+  test('test_windowFrom_aGapIsNotReportedAsSomethingBeingOnAir', () {
+    final withHole = <EpgProgramme>[
+      EpgProgramme(title: '前节目', startsAt: _at(19, 0), endsAt: _at(19, 30)),
+      EpgProgramme(title: '后节目', startsAt: _at(20, 30), endsAt: _at(21, 0)),
+    ];
+    final failures = <DomainFailure>[];
+
+    final window = windowFrom(withHole, at: _at(20, 0), onInconsistentData: failures.add);
+    expect(window.hasNow, isFalse, reason: 'nothing started, so a countdown for 后节目 would be a lie');
+    expect(window.nextTitle, '后节目');
+    expect(failures.single.reason, contains('nothing airs'));
+  });
+
+  test('test_windowFrom_anOverlappingNeighbourReachesTheOverlapFlag', () {
+    final overlapping = <EpgProgramme>[
+      EpgProgramme(title: '直播', startsAt: _at(19, 0), endsAt: _at(20, 0)),
+      EpgProgramme(title: '延长的广告', startsAt: _at(19, 45), endsAt: _at(20, 30)),
+    ];
+
+    final window = windowFrom(overlapping, at: _at(19, 30));
+    expect(window.nowTitle, '直播');
+    expect(window.nextTitle, '延长的广告', reason: 'the neighbour that starts early IS the next row');
+    expect(window.isOverlappingGuide, isTrue);
+  });
+
+  test('test_windowFrom_overlappingCoveragePicksTheRowThatStartedLast', () {
+    final overlapping = <EpgProgramme>[
+      EpgProgramme(title: '垫档', startsAt: _at(18, 0), endsAt: _at(21, 0)),
+      EpgProgramme(title: '正片', startsAt: _at(19, 30), endsAt: _at(21, 0)),
+    ];
+
+    expect(windowFrom(overlapping, at: _at(20, 0)).nowTitle, '正片');
+  });
+
+  test('test_windowFrom_doesNotAssumeTheCallerSortedTheGuide', () {
+    final shuffled = <EpgProgramme>[_schedule[2], _schedule[0], _schedule[1]];
+
+    final window = windowFrom(shuffled, at: _at(20, 0));
+    expect(window.nowTitle, '剧场');
+    expect(window.nextTitle, '深夜档');
+  });
+
+  test('test_windowFrom_aRowEndingBeforeItStartsIsReportedAndSkipped', () {
+    final broken = <EpgProgramme>[
+      EpgProgramme(title: '坏行', startsAt: _at(20, 0), endsAt: _at(19, 0)),
+      EpgProgramme(title: '剧场', startsAt: _at(19, 30), endsAt: _at(21, 0)),
+    ];
+    final failures = <DomainFailure>[];
+
+    final window = windowFrom(broken, at: _at(20, 0), onInconsistentData: failures.add);
+    expect(window.nowTitle, '剧场');
+    expect(failures.single.reason, contains('ends before it starts'));
+    expect(window.nowDuration, const Duration(hours: 1, minutes: 30));
+  });
+
+  test('test_windowFrom_noEndMeansNoDuration', () {
+    expect(const EpgWindow(nowTitle: 'x').nowDuration, isNull);
+  });
 }

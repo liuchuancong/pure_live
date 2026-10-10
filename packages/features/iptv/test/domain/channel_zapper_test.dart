@@ -63,7 +63,7 @@ void main() {
 
     final narrowed = zapper.withGroup('地方');
     expect(narrowed.current?.name, isNot('cctv1'), reason: 'cctv1 left the scope, so something in 地方 is chosen');
-    expect(narrowed.visible().map((channel) => channel.group), <String>['地方', '地方']);
+    expect(narrowed.visible.map((channel) => channel.group), <String>['地方', '地方']);
   });
 
   test('test_channelZapper_selectIsOneBasedAgainstTheVisibleScope', () {
@@ -94,7 +94,7 @@ void main() {
     final zapper = ChannelZapper.lineup(lineup);
 
     expect(() => zapper.channels.add(_channel('extra', '地方')), throwsUnsupportedError);
-    expect(() => zapper.visible().clear(), throwsUnsupportedError);
+    expect(() => zapper.visible.clear(), throwsUnsupportedError);
   });
 
   test('test_channelZapper_groupsListsCountsInFirstAppearanceOrder', () {
@@ -134,5 +134,58 @@ void main() {
 
     expect(channel.headerNames, <String>['Cookie']);
     expect(channel.toString(), isNot(contains('session=secret')));
+  });
+
+  test('test_channelZapper_repeatedRowIsReachableByPosition', () {
+    final repeated = ChannelZapper.lineup(<ZapChannel>[
+      _channel('cctv1', '央卫'),
+      _channel('cctv1', '央卫'),
+      _channel('cctv2', '央卫'),
+    ], skipUnplayable: false);
+
+    expect(repeated.visibleNumber, 1);
+    expect(repeated.positionsOf(_channel('cctv1', '央卫')), <int>[0, 1]);
+    expect(repeated.select(2).cursor, 1, reason: 'row 2 is the second copy, not the first one again');
+    expect(repeated.zapDown(), isA<ZapMoved>());
+    expect((repeated.select(2).zapDown() as ZapMoved).channel.name, 'cctv2');
+  });
+
+  test('test_channelZapper_zapMovedCarriesThePositionedLineup', () {
+    final zapper = ChannelZapper.lineup(lineup);
+
+    final step = zapper.zapDown() as ZapMoved;
+    expect(step.zapper.current, step.channel);
+    expect(step.zapper.visibleNumber, 2);
+    expect(step.zapper.zapDown(), isA<ZapMoved>(), reason: 'the returned lineup keeps walking from where it landed');
+  });
+
+  test('test_channelZapper_callerListMutationCannotReorderTheLineup', () {
+    final growable = <ZapChannel>[...lineup];
+    final zapper = ChannelZapper.lineup(growable);
+
+    growable
+      ..removeAt(0)
+      ..add(_channel('late', '地方'));
+    expect(zapper.channels.map((channel) => channel.name), <String>['cctv1', 'cctv2', 'hunan', 'ghost']);
+    expect(zapper.current?.name, 'cctv1', reason: 'the cursor still points at the station it was on');
+  });
+
+  test('test_channelZapper_withSkipUnplayableDoesNotMoveTheViewer', () {
+    final zapper = ChannelZapper.lineup(lineup).select(3);
+
+    expect(zapper.current?.name, 'hunan');
+    final loosened = zapper.withSkipUnplayable(false);
+    expect(loosened.current?.name, 'hunan');
+    expect(loosened.zapDown(), isA<ZapMoved>());
+    expect((loosened.zapDown() as ZapMoved).channel.name, 'ghost');
+    expect(zapper.withSkipUnplayable(true), same(zapper));
+  });
+
+  test('test_channelZapper_atIndexRefusesAPositionOutsideTheFilter', () {
+    final zapper = ChannelZapper.lineup(lineup, group: '央卫');
+
+    expect(() => zapper.atIndex(2), throwsA(isA<LineupFailure>()));
+    expect(() => zapper.atIndex(-1), throwsA(isA<LineupFailure>()));
+    expect(zapper.atIndex(1).current?.name, 'cctv2');
   });
 }
