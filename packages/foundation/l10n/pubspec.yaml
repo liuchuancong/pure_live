@@ -8,7 +8,10 @@ environment:
   sdk: ^3.13.0
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
-# No runtime dependency: pure decision logic over values the application supplies.
+# intl is the only runtime dependency: it owns the locale symbol tables (number separators, month names),
+# which are published data nobody should re-typeset. Plural rules stay local because intl's are int-only.
+dependencies:
+  intl: ^0.20.0
 
 dev_dependencies:
   test: ^1.26.0

@@ -12,5 +12,10 @@
 
 library;
 
+export 'src/catalog.dart';
 export 'src/locale.dart';
+export 'src/message_format.dart';
+export 'src/plural_math.dart';
+export 'src/plural_rules.dart';
+export 'src/relative_time.dart';
 export 'src/translation_bundle.dart';

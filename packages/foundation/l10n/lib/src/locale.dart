@@ -1,5 +1,5 @@
 // Module: lib/src/locale.dart
-// Purpose: Locale tag parsing, fallback resolution and the plural and RTL rules the UI layer asks for.
+// Purpose: Locale tag parsing, fallback resolution and the right-to-left rule the UI layer asks for.
 // Author: liuchuancong
 // Created: 2026-10-08
 //
@@ -138,42 +138,6 @@ bool isRightToLeft(String locale) {
 }
 
 /// Which plural form a count takes. Names follow CLDR categories.
+///
+/// The rule itself is in `plural_rules.dart`; this tag file only names the categories so both can export them.
 enum PluralCategory { zero, one, two, few, many, other }
-
-/// Picks the plural category for [count] in [language].
-///
-/// English and Chinese cover the two rules this application ships; anything else falls back to the
-/// `other` form, which every translation is required to provide.
-PluralCategory pluralCategory(int count, {String language = 'en'}) {
-  if (language == 'zh' || language == 'ja' || language == 'ko') {
-    return PluralCategory.other;
-  }
-  if (language == 'en') {
-    return count == 1 ? PluralCategory.one : PluralCategory.other;
-  }
-  if (language == 'ru') {
-    final mod10 = count % 10;
-    final mod100 = count % 100;
-    if (mod10 == 1 && mod100 != 11) {
-      return PluralCategory.one;
-    }
-    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
-      return PluralCategory.few;
-    }
-    return PluralCategory.many;
-  }
-  return PluralCategory.other;
-}
-
-/// Formats a count with the plural rule of [language], given the forms available.
-///
-/// A missing `other` form is a bug in the translation, so the raw count is returned rather than throwing
-/// inside a widget build.
-String pluralize(int count, {required Map<PluralCategory, String> forms, String language = 'en'}) {
-  final category = pluralCategory(count, language: language);
-  final template = forms[category] ?? forms[PluralCategory.other];
-  if (template == null) {
-    return '$count';
-  }
-  return template.replaceAll('{}', '$count');
-}
