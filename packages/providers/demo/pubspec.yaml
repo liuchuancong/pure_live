@@ -10,5 +10,8 @@ environment:
 dependencies:
   pure_live_capability:
     path: ../../ecosystem/capability
+  # The L0 leaf, for the Clock the ticket's createdAt is stamped with.
+  pure_live_utils:
+    path: ../../foundation/utils
   pure_live_platform:
     path: ../../ecosystem/platform

@@ -221,7 +221,7 @@ PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
     ProviderRegistration(
       sourceId: demoSourceId,
       extensionId: 'built-in.demo',
-      provider: const DemoLiveSource(),
+      provider: DemoLiveSource(),
       capabilities: const CapabilitySet(<CapabilityKind>{CapabilityKind.feed, CapabilityKind.live}),
     ),
   );
