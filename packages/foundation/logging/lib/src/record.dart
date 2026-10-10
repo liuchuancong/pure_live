@@ -6,7 +6,7 @@
 // Records are values, not strings: a sink decides how to render, and a structured field stays queryable.
 // Timestamps are normalized to UTC because logs get merged across devices and time zones.
 
-import 'package:pure_live_utils/pure_live_utils.dart';
+import 'redaction.dart';
 
 /// Severity of a log record.
 enum LogLevel { debug, info, warning, error, fatal }
@@ -22,7 +22,7 @@ final class LogRecord {
     this.stackTrace,
     Map<String, Object?> fields = const <String, Object?>{},
   }) : timestamp = timestamp.toUtc(),
-       fields = _redactFields(fields);
+       fields = redactFields(fields);
 
   /// When the record was produced; always UTC.
   final DateTime timestamp;
@@ -36,8 +36,8 @@ final class LogRecord {
   final Object? error;
   final StackTrace? stackTrace;
 
-  /// Structured context. Header-like values are redacted at construction, not at render time, so no sink
-  /// can forget to do it.
+  /// Structured context. Credentials are scrubbed at construction, not at render time, so a sink cannot
+  /// forget to do it and a file written on a device never carries a token.
   final Map<String, Object?> fields;
 
   bool get isErrorOrWorse => level.index >= LogLevel.error.index;
@@ -52,23 +52,6 @@ final class LogRecord {
       if (stackTrace != null) 'stackTrace': '$stackTrace',
       if (fields.isNotEmpty) 'fields': fields,
     };
-  }
-
-  static Map<String, Object?> _redactFields(Map<String, Object?> fields) {
-    final redacted = <String, Object?>{};
-    for (final entry in fields.entries) {
-      final value = entry.value;
-      if (value is Map && entry.key.toLowerCase().contains('header')) {
-        redacted[entry.key] = redactHeaders(value.map((key, dynamic value) => MapEntry('$key', '$value')));
-        continue;
-      }
-      if (value is String && entry.key.toLowerCase().contains('url')) {
-        redacted[entry.key] = redactQuery(value);
-        continue;
-      }
-      redacted[entry.key] = value;
-    }
-    return Map<String, Object?>.unmodifiable(redacted);
   }
 }
 

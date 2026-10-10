@@ -14,3 +14,5 @@ library;
 
 export 'src/logger.dart';
 export 'src/record.dart';
+export 'src/redaction.dart';
+export 'src/sinks.dart';
