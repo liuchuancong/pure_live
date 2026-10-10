@@ -1,6 +1,11 @@
 # v2 路线图
 
 > 波次按依赖序排列;每波有独立验收。**第一阶段不追插件数量,追一条完整链。**
+>
+> **2026-10-10 重排**:产品形态改为"一个 App 一个功能"(`pure_live` / `pure_bili` / `pure_music` /
+> `pure_tvbox`),共享层下沉到 `packages/`。决策见 [../adr/0022-multi-app-one-feature-each.md](../adr/0022-multi-app-one-feature-each.md),
+> 需求与包消费矩阵见 [../architecture/application-portfolio.md](../architecture/application-portfolio.md)。
+> 下面每波的"应用面"据此按 App 分道;W2 的插件/外部生态线只服务 `pure_tvbox`。
 
 ## W0 — 架构冻结(已完成)
 
@@ -67,3 +72,21 @@ Android / Android TV / iOS / macOS / Windows / Linux 全平台验收。
 ## W12 — Release
 
 迁移器 / 性能 / 诊断面板 / 文档 / 插件开发者指南 / v2 首版发布。
+
+## 波次落点(2026-10-10 重排后)
+
+各波的**内容**不变,变的是**落在哪个 App**上;验收也按 App 分道,不再要求一个产物覆盖全部。
+
+| 波 | 落点 App | 说明 |
+|---|---|---|
+| W2 插件运行时 + 扩展网关 | `pure_tvbox` | permission / extension / plugin_api / plugin_host / js_runtime 整线只服务 TVBox 兼容壳;`pure_live` 的组合根里不出现它们 |
+| W3 媒体 | 全部四个 | `integrations/media` 是唯一播放入口(I2),各 App 各自装配 `MediaKernelHost` |
+| W4 Bilibili 参考实现 | `pure_live`(live 能力)+ `pure_bili`(vod 能力) | 同一个 `providers/bilibili` 包,两个 App 只注册自己要的那组能力 |
+| W5 Universal Content | 全部四个 | 机制共享、数据不共享:收藏/历史/歌单每 App 一份文件(portfolio §4 第 4 条) |
+| W6 Music | `pure_music` | lx 音源 + bmsc 式 B 站音源/歌单导入 |
+| W7 TVBox | `pure_tvbox` | 导入即运行,壳内不写站点 |
+| W8 直播铺量 | `pure_live` | **native Dart 源**(签名/Cookie 租约/低延迟换源不走沙箱),受同一 capability 契约约束 |
+| W9 IPTV/Recorder/Download/Cast | `pure_live` + `pure_tvbox` | 频道墙与录制按这两个 App 的交互分别验收 |
+| W10 插件生态 | `pure_tvbox` | JS SDK / data 插件 / repository / 安全打磨 |
+| W11 平台 | 按 App | live+tvbox:Android / Android TV / Windows;bili+music:Android / iOS |
+| W12 Release | 按 App 四条发布线 | 版本、产物、更新源各自独立 |

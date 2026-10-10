@@ -6,36 +6,42 @@
 
 ```text
 pure_live/                        # 仓库根 = pub workspace hub(pubspec.yaml 只有成员清单与 dependency_overrides)
-├── apps/pure_live/               # 应用壳(唯一组合根):lib/ + 原生工程 + assets/ + bin/ + tool/
-├── packages/
+├── apps/                         # 一个 App 一个功能;App 之间禁止任何依赖(ADR 0022)
+│   ├── pure_live/                # 直播软件:native Dart 源(huya/douyu/bilibili live/demo),不装插件宿主
+│   ├── pure_bili/                # B 站视频客户端(参照 newBV)【待建】
+│   ├── pure_music/               # 音乐客户端(lx 音源 + bmsc 式 B 站音源/歌单导入)【待建】
+│   └── pure_tvbox/               # TVBox 客户端(external_tvbox + js/py spider 宿主,导入即运行)【待建】
+├── packages/                     # ×57 共享层(foundation / integrations / ecosystem / services / ui / features / providers)
 │   ├── foundation/               # L0:每关切面一包
 │   │   ├── utils/ logging/ network/ auth/ storage/ files/ platform_info/
 │   │   ├── cache/ events/ diagnostics/
 │   │   └── backup/ sync/ release/ l10n/
 │   ├── integrations/             # L0.5
-│   │   ├── firebase/ media/
+│   │   ├── firebase/ media/ python_runtime/
 │   ├── ecosystem/                # L1
 │   │   ├── platform/             # pure_live_platform:平台契约+模型伞包(纯 Dart,禁 Flutter 依赖)
-│   │   ├── plugin_api/ plugin_host/ plugin_registry/
+│   │   ├── plugin_api/ plugin_host/ js_runtime/
 │   │   ├── extension/ resolver/ identity/ permission/ task/
-│   │   ├── capability/ content/ repository/
-│   │   ├── external/ external_tvbox/ external_lx_music/ external_m3u/ external_xmltv/
-│   │   ├── theme/ background/ danmaku/
+│   │   ├── capability/
+│   │   ├── external_tvbox/       # spider 契约 + 单仓/多仓/M3U 解析(仅 pure_tvbox 装配)
 │   ├── services/                 # L2
-│   │   ├── search/ history/ favorites/ playlist/ links/ feed/
-│   │   ├── download/ remote/ cast/ fonts/ emote/
+│   │   ├── search/ history/ favorites/ playlist/ feed/
 │   ├── ui/                       # L3
 │   │   ├── design/ ui_kit/ adaptive/ lyric/ player_ui/
 │   ├── features/                 # L4
 │   │   ├── home/ live/ vod/ music/ iptv/ recorder/ search/ settings/ account/ backup/
-│   └── providers/                # L5 Providers(原 docs 里的 plugins/;根目录 plugins/ 已被 vendored 插件占用)
-│       ├── bilibili/ douyu/ huya/ douyin/ twitch/ youtube/ …(33+ 站)
-│       ├── music/ tvbox/ iptv/ community/
-├── third_party/                  # vendored 上游源码与补丁(built_in_kotlin、media_kit fork)
+│   └── providers/                # L5 源适配层(native Dart 站点 / 音源 / M3U+EPG)
+│       ├── bilibili/ douyu/ huya/ demo/ music/ iptv/ …
+├── third_party/                  # vendored 上游源码与补丁
 ├── fixtures/                     # 跨包共享的录制样本(jar / m3u / 站点响应)
 ├── tool/                         # 仓库级脚本入口(构建 / 质量 / 发布 / 设备)
 └── docs/                         # 本文档体系
 ```
+
+**包的存在性由消费矩阵决定**:"哪个包被哪个 App 消费"见 [application-portfolio.md](application-portfolio.md) §3;
+没有 App 消费者的包不重写、不保留。生态层(`plugin_api`/`plugin_host`/`js_runtime`/`extension`/
+`permission`/`external_tvbox`)与 `integrations/python_runtime` 是 `pure_tvbox` 的功能面,
+其他 App 的组合根里不出现它们。
 
 成员登记在根 `pubspec.yaml` 的 `workspace:` 列表里,由脚手架自动维护;`apps/pure_live` 也是成员。melos 若接入,直接复用这份列表,不再另立 glob。目录形态的决策与迁移后果见 [../adr/0015-monorepo-layout.md](../adr/0015-monorepo-layout.md)。
 

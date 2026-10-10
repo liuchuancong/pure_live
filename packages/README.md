@@ -1,7 +1,14 @@
 # packages/ 公共模块目录
 
-> 本目录是 monorepo 的**共享模块层**:所有 App(apps/pure_live、后续 pure_bili/pure_music/pure_tvbox)
-> 直接调用这些包,不复制代码。App 之间互不依赖;一切共享逻辑下沉到这里。
+> 本目录是 monorepo 的**共享模块层**:四个 App(`apps/pure_live` 直播、`apps/pure_bili` B 站视频、
+> `apps/pure_music` 音乐、`apps/pure_tvbox` TVBox 兼容)直接调用这些包,不复制代码。
+> **App 之间互不依赖;一切共享逻辑下沉到这里。**
+>
+> 本文件的表是"包提供什么";**"哪个包被哪个 App 消费"以及包重写范围的唯一依据**是
+> [docs/architecture/application-portfolio.md](../docs/architecture/application-portfolio.md) §3,
+> 重写的完成判据(工业级 DoD)在同文 §6。决策记录:
+> [docs/adr/0022-multi-app-one-feature-each.md](../docs/adr/0022-multi-app-one-feature-each.md)。
+> **规则:没有 App 消费者的包不重写也不保留**——空壳包让包数变成误导数字。
 >
 > 添加新 App:在 `apps/<name>` 建包 → 根 `pubspec.yaml` 的 `workspace:` 登记 → 按下表选依赖。
 > 层级方向严格单向(见 docs/architecture/dependency-rules.md);护栏 `tool/check_architecture.dart --strict` 强制。

@@ -18,9 +18,15 @@ same-layer edges are forbidden except the documented exceptions.
 [docs/architecture/dependency-rules.md](docs/architecture/dependency-rules.md).
 
 - Root `pubspec.yaml`: pub workspace hub - member list and `dependency_overrides`, no code.
-- `apps/pure_live/`: the only composition root - bootstrap, DI, router, native projects, assets.
+- `apps/<name>/`: one app per feature - `pure_live` (live only), `pure_bili` (Bilibili video),
+  `pure_music` (music), `pure_tvbox` (TVBox import). Each is the only composition root of its own
+  process (bootstrap, DI, router, native projects, assets). Apps never depend on each other, not even
+  in dev/test dependencies; shared code goes to `packages/`. Scope and consumer matrix:
+  [docs/architecture/application-portfolio.md](docs/architecture/application-portfolio.md),
+  decision: [docs/adr/0022-multi-app-one-feature-each.md](docs/adr/0022-multi-app-one-feature-each.md).
 - `packages/<layer>/<name>/`: one capability per package, created only by
   `tool/scaffold_package.ps1`; a package exports through one barrel and keeps internals in `lib/src/`.
+  A package exists only if some app consumes it (portfolio §3).
 - `packages/providers/<site>/`: site adapters (bilibili, douyu, huya, ...) implementing the
   capability contracts; they never reach the player.
 - `third_party/`: vendored upstream sources and patches, excluded from the quality gate.
@@ -29,9 +35,10 @@ same-layer edges are forbidden except the documented exceptions.
 - `tool/`: repository entrypoints (build, quality, release, device); `tool/probes/` is opt-in.
 - `docs/`: architecture, contracts and acceptance evidence; `docs/roadmap/w1-progress.md` records
   the current migration state, including what is still unfixed.
-- Tests live in the package that owns the behaviour; app-level tests stay in `apps/pure_live/test/`.
-- `apps/pure_live/android/` and `apps/pure_live/windows/` are the primary targets; other platform
-  directories remain community-verified.
+- Tests live in the package that owns the behaviour; app-level tests stay in that app's `test/`.
+- `pure_live` and `pure_tvbox` target Android / Android TV / Windows; `pure_bili` and `pure_music`
+  target Android / iOS. Each app keeps its own native projects; other platform directories remain
+  community-verified.
 
 ## Maintenance scope and triage
 

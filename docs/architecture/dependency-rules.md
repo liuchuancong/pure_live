@@ -6,11 +6,24 @@
 
 ```text
 L0 Foundation → L0.5 Integrations → L1 Ecosystem → L2 Services
-→ L3 UI → L4 Features → App(组合根)
+→ L3 UI → L4 Features → App(组合根,每个 App 一个)
 L5 Providers/Plugins(与 L2-L4 平级,只向下依赖)
 ```
 
-严格单向,禁止任何反向依赖;`sources/plugins` 之间禁止互相依赖。
+严格单向,禁止任何反向依赖;`sources/plugins` 之间禁止互相依赖;**App 之间禁止任何依赖**(含 dev/test)。
+
+## 1bis. App 清单(一个 App 一个功能)
+
+| App | 功能 | 装配的生态面 |
+|---|---|---|
+| `apps/pure_live` | 直播(native Dart 源) | 不装插件宿主 / 不装 JS+Python 运行时 |
+| `apps/pure_bili` | B 站视频 | 同上 |
+| `apps/pure_music` | 音乐(lx + bmsc 式音源) | 同上 |
+| `apps/pure_tvbox` | TVBox 兼容(导入即运行) | 装 permission / extension / plugin_api / plugin_host / js_runtime / external_tvbox / python_runtime |
+
+依据与边界见 [application-portfolio.md](application-portfolio.md) 与
+[../adr/0022-multi-app-one-feature-each.md](../adr/0022-multi-app-one-feature-each.md)。
+"哪个包被哪个 App 消费"的矩阵在 portfolio 文 §3,它是包重写范围的唯一依据。
 
 ## 2. 包清单(81+)
 
@@ -24,7 +37,7 @@ L5 Providers/Plugins(与 L2-L4 平级,只向下依赖)
 | L4 Features | repository:live/vod/music/iptv/recorder/settings/search/home/account/backup;UI:live_ui/vod_ui/music_ui/iptv_ui/recorder_ui/settings_ui/account_ui/backup_ui/home_ui |
 | L5 Providers | bilibili(live+vod 参考实现)、douyu、huya、douyin、twitch、youtube 等 33+ 站、music sources、tvbox adapters、iptv sources、第三方插件 |
 
-目录形态:`packages/<层>/<短名>`,层 = `foundation/ integrations/ ecosystem/ services/ ui/ features/ providers/`;应用壳在 `apps/pure_live`,仓库根 `pubspec.yaml` 是 pub workspace hub。包名 `pure_live_<短名>`,目录用短名。形态决策见 [../adr/0015-monorepo-layout.md](../adr/0015-monorepo-layout.md)。
+目录形态:`packages/<层>/<短名>`,层 = `foundation/ integrations/ ecosystem/ services/ ui/ features/ providers/`;应用壳在 `apps/<name>`(四个,见 §1bis),仓库根 `pubspec.yaml` 是 pub workspace hub,四个 App 都是成员。包名 `pure_live_<短名>`,目录用短名。形态决策见 [../adr/0015-monorepo-layout.md](../adr/0015-monorepo-layout.md),多 App 拆分见 [../adr/0022-multi-app-one-feature-each.md](../adr/0022-multi-app-one-feature-each.md)。
 
 ## 3. 逐层依赖细则
 
@@ -38,7 +51,8 @@ L5 Providers/Plugins(与 L2-L4 平级,只向下依赖)
 - **L3 ui**:→ design 单向(ui_kit→design)+ L0 + theme。
 - **L4 features**:repository → L0 + plugin_api + services;UI 包 → **本域 repository** + services + ui + ecosystem;同层禁互依。
 - **L5 sources**:→ L0 + plugin_api(经 host 注入的沙箱桥);同层禁互依;**不得触碰 PlayerAdapter**。
-- **app**:唯一全知层;其他任何包禁止依赖 app。
+- **app**:每个 App 都是自己进程里的唯一全知层;其他任何包禁止依赖 app,**App 之间也禁止互相依赖**
+  (共享只能下沉到 `packages/`,或各自实现)。
 
 ## 4. 显式例外清单(护栏白名单)
 
@@ -70,7 +84,7 @@ L5 Providers/Plugins(与 L2-L4 平级,只向下依赖)
 | I6 | 所有可播放资源最终进入 MediaTicket |
 | I7 | 跨业务数据统一使用 ContentRef |
 | I8 | 插件权限最小化 |
-| I9 | App 是唯一 Composition Root |
+| I9 | 每个 App 是自己进程的唯一 Composition Root;App 之间不共享组合根、不互相依赖 |
 | I10 | Core 不依赖具体业务 |
 
 ## 6. 禁止清单
@@ -82,3 +96,6 @@ L5 Providers/Plugins(与 L2-L4 平级,只向下依赖)
 - 业务代码 `import fluttersdk_wind`(仅 ui_kit)/ 直接 import 厂商 SDK(仅 integrations)。
 - JS 插件直接获得完整 HTTP 能力(只能走 PluginNetwork,见 [../security/network-security.md](../security/network-security.md))。
 - 用 EventBus 替代正常接口依赖。
+- App import 另一个 App(含 dev/test 依赖、路径依赖、fixture 共享)。要共享就下沉到 `packages/`。
+- 保留没有 App 消费者的包。包的存在性由 [application-portfolio.md](application-portfolio.md) §3 的
+  消费矩阵决定;空壳包让包数变成误导数字。
