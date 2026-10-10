@@ -32,6 +32,10 @@ Duration _nextDelay(Duration current, double backoff, Duration maxDelay) {
 ///   [delay] - wait before the second attempt; grows by [backoff] each round up to [maxDelay].
 ///   [shouldRetry] - decides whether an error is worth another try; cancellation never is.
 ///   [onRetry] - notified before each wait, with the error and the delay about to be applied.
+///   [delayFor] - replaces the scheduled wait for one specific error, still clamped to [maxDelay]. A server
+///       that says "come back in 30 seconds" means 30 seconds; a fixed backoff curve ignores that and the
+///       endpoint keeps answering 429. Null keeps the curve, which is what every existing caller wants.
+///   [sleep] - waits for real by default; injectable so a test does not sleep.
 ///
 /// Throws the last error when the budget runs out.
 Future<T> retryAsync<T>(
@@ -42,6 +46,7 @@ Future<T> retryAsync<T>(
   Duration maxDelay = const Duration(seconds: 5),
   bool Function(Object error) shouldRetry = _alwaysRetry,
   void Function(Object error, Duration wait) onRetry = _ignoreRetry,
+  Duration Function(Object error, Duration scheduled)? delayFor,
   Sleeper sleep = _systemSleeper,
 }) async {
   if (attempts < 1) {
@@ -58,11 +63,14 @@ Future<T> retryAsync<T>(
       if (attempt == attempts || !shouldRetry(error)) {
         rethrow;
       }
-      onRetry(error, wait);
-      await sleep(jitter(wait));
+      final actual = delayFor == null ? wait : _clamp(delayFor(error, wait), maxDelay);
+      onRetry(error, actual);
+      await sleep(jitter(actual));
       wait = _nextDelay(wait, backoff, maxDelay);
     }
   }
   // Unreachable while attempts >= 1: the loop either returns or rethrows.
   throw StateError('retryAsync exhausted without an error');
 }
+
+Duration _clamp(Duration value, Duration maxDelay) => value > maxDelay ? maxDelay : value;

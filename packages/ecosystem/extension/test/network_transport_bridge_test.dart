@@ -78,7 +78,7 @@ void main() {
 
   NetworkClient clientReturning(ResponseBody Function(RequestOptions) body, {NetworkSettings? settings}) {
     return NetworkClient(
-      settings: settings ?? NetworkSettings(attempts: 1, retryDelay: Duration.zero),
+      settings: settings ?? NetworkSettings(retry: const RetryPolicy(attempts: 1, baseDelay: Duration.zero)),
       adapter: _ScriptedAdapter(body),
     );
   }
@@ -109,7 +109,7 @@ void main() {
     final adapter = _ScriptedAdapter((_) => ResponseBody.fromString('ok', 200));
     final transport = NetworkClientTransport(
       client: NetworkClient(
-        settings: const NetworkSettings(attempts: 1, retryDelay: Duration.zero),
+        settings: const NetworkSettings(retry: RetryPolicy(attempts: 1, baseDelay: Duration.zero)),
         adapter: adapter,
       ),
     );
@@ -132,7 +132,7 @@ void main() {
     final adapter = _ScriptedAdapter((_) => ResponseBody.fromString('ok', 200));
     final transport = NetworkClientTransport(
       client: NetworkClient(
-        settings: const NetworkSettings(attempts: 1, retryDelay: Duration.zero),
+        settings: const NetworkSettings(retry: RetryPolicy(attempts: 1, baseDelay: Duration.zero)),
         adapter: adapter,
       ),
     );
@@ -155,7 +155,7 @@ void main() {
     final transport = NetworkClientTransport(
       client: clientReturning(
         (_) => ResponseBody.fromBytes(List<int>.filled(4096, 1), 200),
-        settings: NetworkSettings(attempts: 1, retryDelay: Duration.zero, maxResponseBytes: 1024),
+        settings: NetworkSettings(retry: const RetryPolicy(attempts: 1, baseDelay: Duration.zero), maxResponseBytes: 1024),
       ),
     );
 
@@ -194,7 +194,7 @@ void main() {
   test('test_dispose_onlyClosesAClientTheTransportCreated', () async {
     var closes = 0;
     final adapter = _CountingAdapter(() => closes++);
-    final client = NetworkClient(settings: const NetworkSettings(attempts: 1), adapter: adapter);
+    final client = NetworkClient(settings: const NetworkSettings(retry: RetryPolicy(attempts: 1)), adapter: adapter);
 
     NetworkClientTransport(client: client).dispose();
     expect(closes, 0, reason: 'a borrowed client belongs to its owner');

@@ -1,6 +1,12 @@
 
 # Changelog
 
+## Unreleased
+
+- `retryAsync` gained an optional `delayFor(error, scheduled)` hook, clamped to `maxDelay`. The wait was only
+  ever a curve, so a caller could not honour a server that said "come back in 30 seconds"; `pure_live_network`
+  uses it for `Retry-After`. Callers that pass nothing keep the curve unchanged.
+
 ## 0.1.0
 
 - Establish the initial PureLive utility package.

@@ -47,7 +47,9 @@ ResponseBody _body(String text, int status, {Map<String, String>? headers}) {
   );
 }
 
-NetworkSettings _fast({int attempts = 3}) => NetworkSettings(attempts: attempts, retryDelay: Duration.zero);
+NetworkSettings _fast({int attempts = 3}) => NetworkSettings(
+  retry: RetryPolicy(attempts: attempts, baseDelay: Duration.zero),
+);
 
 void main() {
   test('test_client_ok_returnsBodyAndSendsUserAgent', () async {
@@ -75,10 +77,12 @@ void main() {
       client.get('https://example.com/gone'),
       throwsA(
         isA<NetworkFailure>()
-            .having((f) => f.kind, 'kind', NetworkFailureKind.httpStatus)
+            // 404 names its own kind: it was declared in the vocabulary from the start and never produced,
+            // so a caller that switched on notFound could not write the branch that handled a dead url.
+            .having((f) => f.kind, 'kind', NetworkFailureKind.notFound)
             .having((f) => f.statusCode, 'statusCode', 404)
             .having((f) => f.retryable, 'retryable', isFalse)
-            .having((f) => f.code, 'code', 'network.http_status'),
+            .having((f) => f.code, 'code', 'network.not_found'),
       ),
     );
     expect(adapter.callCount, 1);
@@ -193,7 +197,10 @@ void main() {
       (_) async => _body('{"ok":1}', 200, headers: <String, String>{'content-length': '999999999'}),
     ]);
     final client = NetworkClient(
-      settings: NetworkSettings(attempts: 1, retryDelay: Duration.zero, maxResponseBytes: 1024),
+      settings: NetworkSettings(
+        retry: const RetryPolicy(attempts: 1, baseDelay: Duration.zero),
+        maxResponseBytes: 1024,
+      ),
       adapter: adapter,
     );
 
@@ -294,7 +301,10 @@ void main() {
         (_) async => _body('small', 200, headers: <String, String>{'content-length': '999999999'}),
       ]);
       final client = NetworkClient(
-        settings: NetworkSettings(attempts: 1, retryDelay: Duration.zero, maxResponseBytes: 1024),
+        settings: NetworkSettings(
+          retry: const RetryPolicy(attempts: 1, baseDelay: Duration.zero),
+          maxResponseBytes: 1024,
+        ),
         adapter: adapter,
       );
 
@@ -315,7 +325,10 @@ void main() {
         (_) async => ResponseBody.fromBytes(List<int>.filled(4096, 7), 200),
       ]);
       final client = NetworkClient(
-        settings: NetworkSettings(attempts: 1, retryDelay: Duration.zero, maxResponseBytes: 1024),
+        settings: NetworkSettings(
+          retry: const RetryPolicy(attempts: 1, baseDelay: Duration.zero),
+          maxResponseBytes: 1024,
+        ),
         adapter: adapter,
       );
 
@@ -332,7 +345,7 @@ void main() {
           (_) async => _body('denied', status),
         ]);
         final client = NetworkClient(
-          settings: NetworkSettings(attempts: 1, retryDelay: Duration.zero),
+          settings: NetworkSettings(retry: const RetryPolicy(attempts: 1, baseDelay: Duration.zero)),
           adapter: adapter,
         );
 

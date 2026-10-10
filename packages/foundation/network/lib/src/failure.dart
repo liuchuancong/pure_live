@@ -23,6 +23,9 @@ enum NetworkFailureKind {
   /// A response body exceeded the configured ceiling.
   responseTooLarge,
 
+  /// A request body was refused before it left the device.
+  requestTooLarge,
+
   /// The server answered 404.
   notFound,
 
@@ -54,6 +57,8 @@ final class NetworkFailure implements Exception {
     this.statusCode,
     this.cause,
     this.retryable = false,
+    this.retryAfter,
+    this.actualUri,
   });
 
   /// The standard code for this kind, ready to put into PlatformErrorInfo.code.
@@ -64,6 +69,7 @@ final class NetworkFailure implements Exception {
       NetworkFailureKind.forbidden => 'network.forbidden',
       NetworkFailureKind.rateLimited => 'network.rate_limited',
       NetworkFailureKind.responseTooLarge => 'network.response_too_large',
+      NetworkFailureKind.requestTooLarge => 'network.request_too_large',
       NetworkFailureKind.cancelled => 'task.cancelled',
       NetworkFailureKind.notFound => 'network.not_found',
       NetworkFailureKind.server => 'network.server',
@@ -87,9 +93,30 @@ final class NetworkFailure implements Exception {
   /// Whether retrying the same request is reasonable.
   final bool retryable;
 
+  /// How long the server asked for before the next attempt (`Retry-After` on a 429 or 503), when it said.
+  /// Null means no instruction, not "no wait".
+  final Duration? retryAfter;
+
+  /// Where the response actually came from, when it differs from [url]: a redirect that left the granted
+  /// origin is only visible from here, and a refused one must name the host it tried to reach.
+  final Uri? actualUri;
+
+  /// The same failure with [retryAfter] and [actualUri] filled in from a response.
+  NetworkFailure withResponse({Duration? retryAfter, Uri? actualUri}) => NetworkFailure(
+    kind: kind,
+    method: method,
+    url: url,
+    statusCode: statusCode,
+    cause: cause,
+    retryable: retryable,
+    retryAfter: retryAfter ?? this.retryAfter,
+    actualUri: actualUri ?? this.actualUri,
+  );
+
   @override
   String toString() {
     final status = statusCode == null ? '' : ' status=$statusCode';
-    return 'NetworkFailure($kind $method $url$status retryable=$retryable)';
+    final wait = retryAfter == null ? '' : ' retryAfter=${retryAfter!.inMilliseconds}ms';
+    return 'NetworkFailure($kind $method $url$status$wait retryable=$retryable)';
   }
 }
