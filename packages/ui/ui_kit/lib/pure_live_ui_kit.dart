@@ -8,5 +8,6 @@
 /// See docs/architecture/dependency-rules.md and the package README.
 library;
 
+export 'src/app_facade.dart';
 export 'src/poster_card.dart';
 export 'src/status_views.dart';
