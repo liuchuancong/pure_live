@@ -13,6 +13,8 @@
 library;
 
 export 'src/atomic_file.dart';
-
 export 'src/file_names.dart';
 export 'src/paths.dart';
+export 'src/platform_paths.dart';
+export 'src/storage_guard.dart';
+export 'src/storage_locations.dart';

@@ -8,7 +8,13 @@ environment:
   sdk: ^3.13.0
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
-# No runtime dependency: path_provider is bound by the application behind DirectoryPolicy.
+dependencies:
+  # Path joining per host style, and the XDG base-directory specification's own fallbacks - both are pub.dev
+  # packages rather than hand-rolled, because getting `C:\` versus `/` wrong is invisible until a write fails.
+  path: ^1.9.0
+  xdg_directories: ^1.1.0
+  pure_live_utils:
+    path: ../utils
 
 dev_dependencies:
   test: ^1.26.0
