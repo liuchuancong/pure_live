@@ -207,8 +207,6 @@ $barrelTemplate = @'
 // __MARK__
 // Module: lib/__PKG__.dart
 // Purpose: Public barrel of __PKG__; the only import surface other packages may use.
-// Author: __AUTHOR__
-// Created: __CREATED__
 ///
 /// Layer: __LAYER__. Allowed dependencies: __ALLOWED__
 /// See docs/architecture/dependency-rules.md and the package README.

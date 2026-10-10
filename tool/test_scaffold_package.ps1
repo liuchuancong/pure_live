@@ -148,8 +148,9 @@ function test_scaffold_newpackage_writes_english_code_comments {
     # DEVELOPMENT_STANDARDS.md section 4: comments are English even when the README keeps the repository language.
     Assert-True -Condition ($barrel.Contains('// Module: lib/pure_live_utils.dart')) -Message 'barrel carries the file header'
     Assert-True -Condition ($barrel.Contains('// Purpose:')) -Message 'barrel header states purpose'
-    Assert-True -Condition ($barrel.Contains('// Author:')) -Message 'barrel header states author'
-    Assert-True -Condition ($barrel.Contains('// Created:')) -Message 'barrel header states creation date'
+    # v2 comment standard: file headers must NOT carry author/creation-date content.
+    Assert-True -Condition (-not $barrel.Contains('// Author:')) -Message 'barrel header omits author'
+    Assert-True -Condition (-not $barrel.Contains('// Created:')) -Message 'barrel header omits created date'
     Assert-True -Condition ($barrel -notmatch '[一-鿿]') -Message 'barrel comments contain no CJK characters'
     $readme = Read-RepoText (Join-Path $Dir 'packages\foundation\utils\README.md')
     Assert-True -Condition ($readme.Contains('通用值类型与扩展')) -Message 'README keeps the Chinese responsibility line'
