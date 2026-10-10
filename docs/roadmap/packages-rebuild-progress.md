@@ -233,6 +233,24 @@
   `Switch` / `DropdownButton<String>` / 四个 `Icons.*` 都由这层门校验,不是凭记忆写的),design 测试 20 → 26,
   护栏 `--strict packages=55 errors=0 warnings=0`。
   **仍未验**:主题真实渲染成什么样 —— 没有 widget 测试、没有截图、没有真机(design/adaptive README 的未验证已改口)。
+- **队列第 9 项收口:ecosystem 逐包过资源释放与 README 平台矩阵**(plugin_host / resolver / capability 的复核本轮补完):
+  - `plugin_host` 两个真缺陷(新增 6 例测试,包内共 11 例通过):(a) `list()` 会把 `.staging` 残骸当成已装插件 ——
+    三文件是在 rename **之前**全部写完的,所以崩溃留下的残骸**内容是完整的**,于是同一个插件被列两遍,
+    第二遍挂在一个没有任何 manifest 声称过的 id 上,而那个幻影还能被 enable、写 state、递归 uninstall;
+    (b) id 先 sanitise 再当目录名,两个都合规的反向域名 id 可以撞进同一个目录(`com.a$b` / `com.a_b`、
+    `com.a..b` / `com.a_b`),原来的 `install` 会**静默覆盖**前一个插件,disk 上的 manifest 却声称第三个 id。
+    现在后缀是命名常量(写侧与读侧共用),撞名且目录里已有别人的 manifest 就直接拒。同 id 重装仍是升级路径,
+    enable 位照旧带过来(有测试钉住)。
+  - **10 个 ecosystem 包全部补上 平台矩阵 + 未验证**(此前只有 plugin_host / resolver 有)。矩阵按实测依据写:
+    直接 import `dart:io` 的只有 plugin_host;identity / permission / extension 自己纯 Dart,但**默认装配**的
+    持久实现走 `pure_live_storage`(`dart:io`)→ Web 不是"未验"而是当前形态跑不了;js_runtime 依赖 fjs
+    (Rust/QuickJS 的 ffiPlugin,五端有产物、**没有 web**),所以它是需要 Flutter 宿主的包,`dart test` 跑不了。
+    external_tvbox 的平台边界是**传递来的**(它自己只 import `dart:convert`),这一点在矩阵里写清楚而不是假装纯 Dart。
+  - 顺手抓了**三处不实描述**(与 §2 里"CHANGELOG 写得比代码多"同一类):
+    (a) `plugin_api` 的 `knownCapabilities` 注释声称"测试把这串名字对着 `CapabilityKind` 钉住"—— 不存在也**不可能**存在
+    (同层禁依赖),已改注释并在 CHANGELOG 记录;(b) js_runtime 其实**一条测试都没有**(`test/` 只有 .gitkeep),
+    我第一版 README 草稿写成"纯 Dart 侧形状验过",改成事实;(c) extension 的落盘视图**是有测试的**
+    (`FileKeyValueStore` + 临时目录写-重开-读),我草稿说"只有内存实现",同样改成事实。external_tvbox 也确认为零测试。
 - **`providers/douyu` 实现匿名切片(队列第 8 项)**:此前只有空 barrel,而我一直拒绝凭空写协议。解除阻塞的关键是
   `origin/master` 里 v1 维护线仍在(`lib/shared/platforms/douyu/douyu_site.dart` 742 行 +
   `lib/core/network/douyu_utils.dart` 651 行),端点、字段名、签名链都从它取 —— 按 UPSTREAM_REVIEW_POLICY
@@ -286,7 +304,7 @@
 | 6 | `services/search` `services/feed` **已完成** | 聚合器只有扇出 | 分页三态校验 + 按源游标 + 取消传播 + 失败记账形状已落;剩余:跨源节(继续看)受 FeedSection 形状限制,见 w5 §2 |
 | 7 | `foundation/diagnostics` `events` `sync` `platform_info` **全部已修** | 薄 | 有界缓冲与守护执行的真缺陷已修;剩余:结构化事件出口、探测能力矩阵、同步游标与冲突策略 |
 | 8 | ~~`providers/douyu`~~ **已实现匿名切片(本轮)** | 原空 barrel;现 49 测试、Feed/Browse/Search/Resolve 全在 | 取数参照 `origin/master` 的 v1 维护线(不是 merge)。**剩余**:登录/弹幕/清晰度线路挑选等第一个消费者要时再补;`fixtures/` 仍空,需要一次对斗鱼的实际请求把测试体换成录到的响应 |
-| 9 | `ecosystem/plugin_host` `resolver` **已复核并修** / `capability` 已复核无同类缺陷 | 有实现,未过 DoD | 剩余:资源释放与 README 平台矩阵逐项过;三包都还在等宿主 App |
+| 9 | `ecosystem` **DoD 逐项已过(本轮收口)**:`plugin_host` 修 2 个真缺陷、10 包补齐 平台矩阵+未验证、清掉 3 处不实描述 | 有实现,未过 DoD | 见 §2 的"队列第 9 项收口"。**剩下的不是实现活而是验收**:三包都还在等宿主 App(js_runtime 与 external_tvbox 至今零测试),真机/真 Flutter 那条门要到 `pure_tvbox` 壳起来才能过 |
 
 ## 4. 每包完成的定义(逐条核,不合并勾)
 

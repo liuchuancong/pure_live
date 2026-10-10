@@ -59,6 +59,17 @@
 **这条链路没有被真实 HTTP 验证过**:桥的测试用脚本化 adapter,没有一次真连站点。到 W4 Bilibili 之前,
 它的验收状态是"策略与桥有离线证明,线上无证据"。
 
+## 平台矩阵
+
+| 平台 | 能不能跑 | 依据 |
+|---|---|---|
+| Android / Android TV / iOS / macOS / Windows / Linux | ✅ | 判定与策略纯 Dart;授权持久化经 `pure_live_storage`(`dart:io`)。 |
+| Web | ❌ 取决于装配 | 同上:web 上没有 `FileKeyValueStore`,授权记录就只能落进另一个 `KeyValueStore` 实现。 |
+
+## 未验证
+
+- **拒绝的持久性**:一次 denied 之后重启不再弹,这条靠 `KeyValuePermissionStore` 的读写保证,但真机上的进程被杀/存储被系统清理两种情况没有分别验过。
+- 网络策略与 Cookie 隔离只在网关的假传输上验过;真实站点的 Set-Cookie 组合(多域、过期、属性名大小写)没跑过。
 ## 验证
 
 - 分析:`dart analyze`(纯 Dart)或 `flutter analyze`(带 `-Flutter`)

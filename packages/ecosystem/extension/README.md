@@ -79,6 +79,18 @@
 真实站点仍**没有**跑过:测试用脚本化 adapter。到 W4 Bilibili 之前,这条链路的验收状态是"策略与桥有离线证明,
 线上无证据"。
 
+## 平台矩阵
+
+| 平台 | 能不能跑 | 依据 |
+|---|---|---|
+| Android / Android TV / iOS / macOS / Windows / Linux | ✅ | `dart:async` / `dart:convert` + dio(网络出口)+ `pure_live_storage`(缓存与 KV)。 |
+| Web | ❌ 不完整 | 网关本身不 import `dart:io`,但默认装配的 `PersistentExtensionCache` / `PersistentExtensionStorage` 走文件型 KV;而且扩展执行的运行时(js_runtime → fjs)在 web 上没有产物。 |
+
+## 未验证
+
+- 落盘视图本身有测试(`FileKeyValueStore` + 临时目录:写-重开-读),但**完整生命周期没有**:在插件真的写盘、真的起 isolate 的路径上没有端到端验证。
+- 卸载清 `storage` 行这件事:契约里没有 `clear()`,当前靠属主前缀约定,越界写没有机制拦得住。
+- 网关的两个工厂参数由 app 组合根传入,**装配错(共享同一个 KV 命名空间)的后果没有测试**。
 ## 验证
 
 - 分析:`dart analyze`(纯 Dart)或 `flutter analyze`(带 `-Flutter`)

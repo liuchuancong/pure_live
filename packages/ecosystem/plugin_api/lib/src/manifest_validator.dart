@@ -83,8 +83,9 @@ final class PluginManifestValidator {
   ///
   /// This is the plugin-facing vocabulary of docs/contracts/capability-contract.md section 1, which is finer
   /// than the coarse ExtensionCapability routing set: `danmaku`, `comment` and `subtitle` are valid
-  /// declarations that no routing table knows about yet. The test suite pins this list against CapabilityKind
-  /// in pure_live_capability so the two cannot drift apart quietly.
+  /// declarations that no routing table knows about yet. Each side pins its own list against the document
+  /// (this package's test asserts the declared names, pure_live_capability's asserts CapabilityKind); there is
+  /// no cross-package test, because plugin_api must not depend on capability to compare the two in code.
   final Set<String> knownCapabilities;
   final Set<String> knownPermissions;
 

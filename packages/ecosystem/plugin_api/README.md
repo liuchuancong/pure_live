@@ -49,6 +49,20 @@
 - 连续失败自动禁用(plugin-lifecycle.md §2)需要执行体才有意义,失败预算的计数随 plugin_host 一起落。
 - 下载 / 签名校验(plugin-contract.md §2 管线的前两阶段)属宿主与生态侧,不在本包。
 
+## 平台矩阵
+
+| 平台 | 能不能跑 | 依据 |
+|---|---|---|
+| Android / Android TV / iOS / macOS / Windows / Linux | ✅ | 声明与校验层:纯 Dart(`PluginManifest` + `PluginManifestValidator`),无平台依赖。 |
+| Web | ✅ 编译层无障碍 | 校验器不读写文件;真正的沙箱在 js_runtime,那一层才有平台边界。 |
+
+## 未验证
+
+- 词表**没有跨包对齐测试**:本包不能依赖 `pure_live_capability`(同层互依),所以「插件能声明的名字」与
+  「平台路由认识的能力」各自被自己包的测试对着文档钉,两边同时改一个名字这件事仍靠 review。
+  (原先 `knownCapabilities` 的注释声称有这条对齐测试,那是不实描述,已改。)
+- 接口形状(`PluginRuntime` / `ScriptSandbox`)**一条实现都没有验过**:实现方在 js_runtime,而那个包目前零测试;
+  native 调用表与 data 解析器还没落地。这里被验证的只有 manifest 的校验与描述符转换。
 ## 验证
 
 - 分析:`dart analyze`;测试:`dart test`

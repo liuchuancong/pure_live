@@ -23,10 +23,17 @@
 - 取消不是失败(`platform-models.md` §20 不变量 9):`ResolverChain` 遇到 `task.cancelled` 直接上抛,不会去试下一个候选。
 - `allowFallback == false` 时首个失败原样上抛,且不再问后面的候选——播放中换源会连带换掉字幕线与清晰度承诺。
 
+## 平台矩阵
+
+| 平台 | 能不能跑 | 依据 |
+|---|---|---|
+| Android / Android TV / iOS / macOS / Windows / Linux | ✅ | 纯 Dart:只有 `dart:async` 的 `Future.timeout`,没有文件、没有插件、没有 Flutter。 |
+| Web | ✅ 编译层面无障碍,**本轮没跑过** | 本包不碰 `dart:io`;但换链的成败由被解析的站点决定,浏览器侧还多出 CORS 与预检这一层,而这条路径没有任何测试跑在 web 上。 |
+
 ## 验证
 
-- 分析:`dart analyze`(纯 Dart)或 `flutter analyze`(带 `-Flutter`)
-- 测试:`dart test`(纯 Dart)或 `flutter test`(带 `-Flutter`)
+- 分析:`dart analyze packages/ecosystem/resolver`(0 issue)
+- 测试:`dart test`(35 例,纯 Dart)
 
 ## 未验证(2026-10-10 复核)
 

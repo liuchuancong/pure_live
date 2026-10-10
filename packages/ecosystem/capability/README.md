@@ -63,6 +63,18 @@
 `CapabilityKind` 里没有方法集的 kind(danmaku、epg、auth 等)在声明检查中不产生违规,也不宣称通过;它们随
 定义其调用的那一批一起补上断言。
 
+## 平台矩阵
+
+| 平台 | 能不能跑 | 依据 |
+|---|---|---|
+| Android / Android TV / iOS / macOS / Windows / Linux | ✅ | 纯 Dart:只依赖 `pure_live_platform` 的模型,没有 `dart:io`、没有插件、没有 Flutter。 |
+| Web | ✅ 编译层无障碍,**本轮没跑过** | 注册表是内存结构,不碰文件也不碰网络;但 web 构建一次都没跑过 `dart test`,所以这是依据代码面推出的,不是观测。 |
+
+## 未验证
+
+- 注册表的**并发语义**:多个 isolate 或热重载同时写 `CapabilityRegistry` 会怎样,没有测试。
+- 能力声明与实际 provider 实现的一致性靠 `is` 判定(`FeedCapability` 等),插件在运行时改报能力这条路径没有验过。
+- Web 构建。
 ## 验证
 
 - 分析:`dart analyze`(纯 Dart)或 `flutter analyze`(带 `-Flutter`)

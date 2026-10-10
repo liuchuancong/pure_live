@@ -18,6 +18,17 @@
 `MediaTrack` 是 media_core 类型的**平台镜像**,映射在 `packages/integrations/media`,理由与约束见
 [ADR 0016](../../docs/adr/0016-platform-media-track-mirror.md)。
 
+## 平台矩阵
+
+| 平台 | 能不能跑 | 依据 |
+|---|---|---|
+| Android / Android TV / iOS / macOS / Windows / Linux | ✅ | 契约与模型层:纯 Dart 数据结构 + JSON 往返,无平台 API。 |
+| Web | ✅ | 同上;模型不参与渲染,序列化走 `json` 与 `DateTime` 的 UTC/毫秒约定。 |
+
+## 未验证
+
+- 跨语言/跨端**往返兼容**没有真实样本:一个旧版本 app 写出的 `MediaTicket` JSON 能不能被当前 `fromJson` 读回来,只测了本包自己写的形状。
+- §16 的 UTC/毫秒约定没有对拍过任何外部实现(插件、TVBox 配置)。
 ## 验证
 
 - `pubspec.yaml` / `analysis_options.yaml` / `CHANGELOG.md` / `README.md` / `test/` —— 所有包必备
