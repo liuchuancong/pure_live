@@ -1,6 +1,6 @@
 # GENERATED-BY: tool/scaffold_package.ps1
 name: pure_live_iptv_feature
-description: "Feature package: iptv (repository + presentation skeleton per package-architecture.md)"
+description: "Feature package: iptv(播放列表遍历与换台、按组过滤、EPG 窗口)"
 publish_to: none
 resolution: workspace
 
@@ -8,3 +8,9 @@ environment:
   sdk: ^3.13.0
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  pure_live_utils:
+    path: ../../foundation/utils
+
+dev_dependencies:
+  test: ^1.26.0
