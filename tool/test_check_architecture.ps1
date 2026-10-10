@@ -148,6 +148,28 @@ function Add-FixturePackage {
     }
 }
 
+function Add-FixtureApp {
+    <#
+    Purpose: Write an app member (apps/<name>) into a fixture.
+    Returns: nothing; the caller registers it with Add-FixtureMember so the unregistered case can be built.
+    Params:  Name - the app package name (apps carry their own name, no pure_live_ prefix); Deps - dependency
+             names; Imports - lines written into lib/main.dart.
+    #>
+    param(
+        [string] $Dir,
+        [string] $Name,
+        [string[]] $Deps = @(),
+        [string[]] $Imports = @()
+    )
+    $appDir = Join-Path $Dir ('apps\' + $Name)
+    $pubspec = @("name: $Name", 'publish_to: none', 'resolution: workspace', '', 'environment:', '  sdk: ^3.13.0')
+    if ($Deps.Count -gt 0) {
+        $pubspec = $pubspec + @('', 'dependencies:') + @($Deps | ForEach-Object { '  ' + $_ + ':' })
+    }
+    Write-File -Path (Join-Path $appDir 'pubspec.yaml') -Content (($pubspec -join "`n") + "`n")
+    Write-File -Path (Join-Path $appDir 'lib\main.dart') -Content (($Imports -join "`n") + "`n")
+}
+
 function Invoke-Guard {
     param([string] $Dir)
     # PowerShell turns a native process' stderr into ErrorRecord objects; the guard writes diagnostics
@@ -373,6 +395,69 @@ function test_checkarchitecture_rootwithoutworkspace_reports_readfailure {
     Write-File -Path (Join-Path $Dir 'pubspec.yaml') -Content "name: broken`npublish_to: none`n"
     $result = Invoke-Guard -Dir $Dir
     Assert-True -Condition ($result.Exit -eq 64) -Message 'an unreadable workspace root fails with exit 64'
+}
+
+# ADR 0022 makes every app its own composition root, so the guard has to police the boundary *between*
+# apps as well as the one between apps and packages. These fixtures are the reason: an app-to-app edge is
+# invisible to the layer table (an app is not a layer anyone may depend on).
+function test_checkarchitecture_appDependingOnAnotherApp_reports_apptoapp {
+    param([string] $Dir)
+    Add-FixtureMember -Dir $Dir -Path 'apps/pure_live'
+    Add-FixtureApp -Dir $Dir -Name 'pure_live' -Deps @('pure_bili')
+    Add-FixtureMember -Dir $Dir -Path 'apps/pure_bili'
+    Add-FixtureApp -Dir $Dir -Name 'pure_bili'
+    $result = Invoke-Guard -Dir $Dir
+    Assert-True -Condition ($result.Exit -eq 1 -and $result.Text.Contains('app-to-app: pure_live')) `
+        -Message 'an app depending on another app is refused (got: ' + $result.Text + ')'
+}
+
+function test_checkarchitecture_appImportingAnotherApp_reports_appimportapp {
+    param([string] $Dir)
+    Add-FixtureMember -Dir $Dir -Path 'apps/pure_live'
+    Add-FixtureApp -Dir $Dir -Name 'pure_live' -Imports @("import 'package:pure_bili/app/runtime.dart';")
+    Add-FixtureMember -Dir $Dir -Path 'apps/pure_bili'
+    Add-FixtureApp -Dir $Dir -Name 'pure_bili'
+    $result = Invoke-Guard -Dir $Dir
+    Assert-True -Condition ($result.Text.Contains('app-import-app')) `
+        -Message 'an app importing another app package is refused'
+}
+
+function test_checkarchitecture_packageDependingOnAnApp_reports_dependonapp {
+    param([string] $Dir)
+    Add-FixtureMember -Dir $Dir -Path 'apps/pure_music'
+    Add-FixtureApp -Dir $Dir -Name 'pure_music'
+    Add-FixtureMember -Dir $Dir -Path 'packages/services/favorites'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/services/favorites' -Deps @('pure_music')
+    $result = Invoke-Guard -Dir $Dir
+    Assert-True -Condition ($result.Text.Contains('depend-on-app: pure_live_favorites')) `
+        -Message 'a shared package depending on an app is refused (I9)'
+}
+
+function test_checkarchitecture_unregisteredApp_reports_error {
+    param([string] $Dir)
+    Add-FixtureMember -Dir $Dir -Path 'apps/pure_live'
+    Add-FixtureApp -Dir $Dir -Name 'pure_live'
+    # apps/pure_tvbox exists on disk but the root never lists it.
+    Add-FixtureApp -Dir $Dir -Name 'pure_tvbox'
+    $result = Invoke-Guard -Dir $Dir
+    Assert-True -Condition ($result.Text.Contains('unregistered-package: apps/pure_tvbox')) `
+        -Message 'an app directory missing from workspace: is reported'
+}
+
+function test_checkarchitecture_appDependingOnSharedPackages_reports_nothing {
+    param([string] $Dir)
+    Add-FixtureMember -Dir $Dir -Path 'packages/foundation/utils'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/foundation/utils'
+    Add-FixtureMember -Dir $Dir -Path 'packages/ecosystem/content'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/ecosystem/content' -Deps @('pure_live_utils')
+    Add-FixtureMember -Dir $Dir -Path 'apps/pure_live'
+    # The composition root may reach every layer, and it imports its own package by name - neither is a
+    # cross-app edge, so both must stay silent.
+    Add-FixtureApp -Dir $Dir -Name 'pure_live' -Deps @('pure_live_utils', 'pure_live_content') `
+        -Imports @("import 'package:pure_live/app/runtime.dart';", "import 'package:pure_live_content/content.dart';")
+    $result = Invoke-Guard -Dir $Dir
+    Assert-True -Condition ($result.Exit -eq 0 -and $result.Text.Contains('errors=0')) `
+        -Message 'a conforming app reports nothing (got: ' + $result.Text + ')'
 }
 
 # ----------------------------------------------------------------------- runner ---

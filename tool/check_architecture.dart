@@ -42,6 +42,10 @@ const Set<String> kLeafPackages = <String>{'pure_live_utils', 'pure_live_logging
 const Set<String> kSharedModelPackages = <String>{'pure_live_platform'};
 
 /// Layers a package of the given layer may depend on, from docs/architecture/dependency-rules.md section 3.
+///
+/// `app` is the composition-root layer: it may reach every package layer, and the entry exists so the same
+/// direction check covers app pubspecs instead of skipping them. App-to-app edges are a separate rule
+/// (`app-to-app`), never a layer allowance - ADR 0022 forbids them outright.
 const Map<String, Set<String>> kAllowedLayers = <String, Set<String>>{
   'foundation': <String>{},
   'integrations': <String>{'foundation'},
@@ -50,6 +54,7 @@ const Map<String, Set<String>> kAllowedLayers = <String, Set<String>>{
   'ui': <String>{'foundation', 'ecosystem', 'ui'},
   'features': <String>{'foundation', 'ecosystem', 'services', 'ui', 'features'},
   'providers': <String>{'foundation', 'ecosystem'},
+  'app': <String>{'foundation', 'integrations', 'ecosystem', 'services', 'ui', 'features', 'providers'},
 };
 
 /// Documented same-layer and upward exceptions from dependency-rules.md section 4.
@@ -139,13 +144,20 @@ void main(List<String> args) {
     packages[package.name] = package;
   }
 
+  final appNames = packages.values.where((package) => package.isApplication).map((package) => package.name).toSet();
+
   for (final package in packages.values) {
     if (package.isApplication) {
+      // An app is the composition root of its own process: it may reach every package layer, so the layout
+      // template (one barrel, lib/src) does not apply to it. What does apply is the boundary between apps -
+      // ADR 0022 lets them share nothing but packages.
+      findings.addAll(checkDependencies(package, packages, appNames));
+      findings.addAll(checkImports(root, package, appNames));
       continue;
     }
     findings.addAll(checkLayout(root, package));
-    findings.addAll(checkDependencies(package, packages));
-    findings.addAll(checkImports(root, package));
+    findings.addAll(checkDependencies(package, packages, appNames));
+    findings.addAll(checkImports(root, package, appNames));
   }
 
   final errors = findings.where((finding) => !finding.isWarning).toList();
@@ -224,6 +236,21 @@ String domainOf(String relativePath) {
 List<Finding> checkRegistration(Directory root, List<String> members, Map<String, PackageInfo> packages) {
   final findings = <Finding>[];
   final listed = members.toSet();
+  // Apps are workspace members too: an unregistered app would still build locally and only fail on CI.
+  // Only the immediate child counts - recursing into an app finds the native projects' generated plugin
+  // copies under ephemeral/, which are nobody's workspace members.
+  final appsDirectory = Directory('${root.path}/apps');
+  if (appsDirectory.existsSync()) {
+    for (final entry in appsDirectory.listSync()) {
+      if (entry is! Directory || !FileSystemEntity.isFileSync('${entry.path}/pubspec.yaml')) {
+        continue;
+      }
+      final relative = entry.path.substring(root.path.length + 1).replaceAll(r'\', '/');
+      if (!listed.contains(relative)) {
+        findings.add(Finding('unregistered-package', relative, 'exists on disk but is missing from workspace:'));
+      }
+    }
+  }
   for (final layer in kLayers) {
     final directory = Directory('${root.path}/packages/$layer');
     if (!directory.existsSync()) {
@@ -311,10 +338,27 @@ List<String> internalLayout(PackageInfo package) => switch (package.layer) {
 };
 
 /// Enforces the dependency direction between layers, plus the approved exception table.
-List<Finding> checkDependencies(PackageInfo package, Map<String, PackageInfo> byName) {
+List<Finding> checkDependencies(PackageInfo package, Map<String, PackageInfo> byName, Set<String> appNames) {
   final findings = <Finding>[];
   final allowed = kAllowedLayers[package.layer] ?? const <String>{};
   for (final dependency in package.dependencies) {
+    if (appNames.contains(dependency)) {
+      // Checked before any layer allowance: an app is not a layer to depend on, whichever side asks.
+      findings.add(
+        package.isApplication
+            ? Finding(
+                'app-to-app',
+                package.name,
+                'apps never depend on each other, not even for shared widgets or fixtures (ADR 0022)',
+              )
+            : Finding(
+                'depend-on-app',
+                package.name,
+                'only the composition root may be depended on, never the app itself (I9)',
+              ),
+      );
+      continue;
+    }
     if (dependency == 'pure_live') {
       findings.add(
         Finding(
@@ -368,7 +412,7 @@ bool isApprovedException(PackageInfo package, PackageInfo target) {
 }
 
 /// Source-level rules that a pubspec cannot express, from dependency-rules.md sections 5 and 6.
-List<Finding> checkImports(Directory root, PackageInfo package) {
+List<Finding> checkImports(Directory root, PackageInfo package, Set<String> appNames) {
   final findings = <Finding>[];
   final lib = Directory('${root.path}/${package.relativePath}/lib');
   if (!lib.existsSync()) {
@@ -385,7 +429,7 @@ List<Finding> checkImports(Directory root, PackageInfo package) {
         continue;
       }
       final target = import.path.split('/').first;
-      findings.addAll(checkImportedPackage(package, relative, target));
+      findings.addAll(checkImportedPackage(package, relative, target, appNames));
     }
   }
   return findings;
@@ -396,9 +440,21 @@ String? _importTarget(String line) {
   return match?.group(1);
 }
 
-List<Finding> checkImportedPackage(PackageInfo package, String file, String target) {
-  if (target == 'pure_live') {
-    return <Finding>[Finding('import-app', file, 'imports the application shell (I9)')];
+List<Finding> checkImportedPackage(PackageInfo package, String file, String target, Set<String> appNames) {
+  // An app imports its own package by name (package:pure_live/app/runtime.dart); that is not a cross-app edge.
+  if (target == package.name) {
+    return const <Finding>[];
+  }
+  if (target == 'pure_live' || appNames.contains(target)) {
+    return <Finding>[
+      package.isApplication
+          ? Finding(
+              'app-import-app',
+              file,
+              'an app may not import another app; share through packages/ instead (ADR 0022)',
+            )
+          : Finding('import-app', file, 'imports the application shell (I9)'),
+    ];
   }
   if (target == 'fluttersdk_wind' && package.name != 'pure_live_ui_kit') {
     return <Finding>[Finding('import-wind', file, 'only ui_kit may import fluttersdk_wind')];

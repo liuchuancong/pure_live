@@ -25,6 +25,11 @@ L5 Providers/Plugins(与 L2-L4 平级,只向下依赖)
 [../adr/0022-multi-app-one-feature-each.md](../adr/0022-multi-app-one-feature-each.md)。
 "哪个包被哪个 App 消费"的矩阵在 portfolio 文 §3,它是包重写范围的唯一依据。
 
+护栏对这一节机械执行四条:`app-to-app`(App 的 pubspec 依赖另一个 App)、`app-import-app`
+(App 源码 import 另一个 App 的 package)、`depend-on-app` / `import-app`(共享包反向触达任一 App),
+以及把 `apps/*` 纳入 `unregistered-package` 扫描(只查直接子目录,不递归进原生工程的
+`ephemeral/` 生成物)。App 仍不受包布局模板约束(barrel / `lib/src`),但它的依赖方向照常检查。
+
 ## 2. 包清单(81+)
 
 | 层 | 包 |
