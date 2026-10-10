@@ -1,13 +1,13 @@
 {
-  "version": "3.1.18",
-  "build_number": 4107,
-  "version_num": 301184107,
+  "version": "3.1.19",
+  "build_number": 4108,
+  "version_num": 301184108,
   "android_abis": [
     "armeabi-v7a",
     "arm64-v8a",
     "x86_64"
   ],
-  "version_desc": "version: 3.1.19\n版本更新：\n- 播放内核：全平台默认 mpv 引擎，采用更安全的硬解默认值，修复 Android 硬解兼容；设置新增\"播放内核一键配置\"、分模块播放指南与 Anime4K 超分辨率，输出/超分参数改完即生效，不再需要重启。\n- 取流与线路：线路自带容器/编码声明，直连还是 FFmpeg 转封装按线路事实决定，旧式 HEVC FLV 改走重封装；带 token 与特殊 CDN（如 Steam 广播）线路走回环中继，代理与 demuxer 按源选择，TwitCasting 这类\"分片为相对地址\"的线路不再打不开。\n- 直播弹幕：AcFun、TwitCasting、LOOK、Chzzk、Bigo、Showroom、Picarto、Panda、FC2、Steam、JD、酷狗、六间房、十七 Live、MissEvan、KilaKila 等 17 站弹幕/聊天引擎全部到齐；新增弹幕设置页；Twitch 订阅/赠送/突袭事件与消息撤回进弹幕区。\n- 录像播放页：改为短视频式布局——倍速/选集分离、±10 秒跳转、可拖进度条、仅音频/截图/小窗/画中画右上角常驻；窄窗口画面在上、列表在下，退出小窗接着播；新增本地录像播放与私有目录提示。\n- 全屏与返回：安卓返回改两段语义——先退全屏、再退页面；竖屏与桌面全屏的控制栏避开刘海与手势条；画中画不再裁圆角，桌面全屏按钮不再消失。\n- 界面与设置：直播间键位收成可测键位表，新增 F 全屏、M 静音（空格暂停、Esc 退出全屏）；小窗控制层 5 秒无操作自动收起；画中画尺寸可调，站点分类平铺，平台选择器统一平台 logo；壁纸/背景覆盖更广，界面文案全部进语言包。\n- 账号与稳定性：新增\"退出所有登录\"统一入口，退出斗鱼同步清理会话；Bigo 支持登录态取流；虎牙/斗鱼连接参数更新，连接更稳。",
+  "version_desc": "version: 3.1.19\n版本更新：\n- 修复部分bug",
   "prerelease": false,
   "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.19",
   "platforms": {
@@ -15,7 +15,7 @@
       "version": "3.1.19",
       "build_number": 4108,
       "version_num": 301184108,
-      "version_desc": "version: 3.1.19\n版本更新：\n- 播放内核：全平台默认 mpv 引擎，采用更安全的硬解默认值，修复 Android 硬解兼容；设置新增\"播放内核一键配置\"、分模块播放指南与 Anime4K 超分辨率，输出/超分参数改完即生效，不再需要重启。\n- 取流与线路：线路自带容器/编码声明，直连还是 FFmpeg 转封装按线路事实决定，旧式 HEVC FLV 改走重封装；带 token 与特殊 CDN（如 Steam 广播）线路走回环中继，代理与 demuxer 按源选择，TwitCasting 这类\"分片为相对地址\"的线路不再打不开。\n- 直播弹幕：AcFun、TwitCasting、LOOK、Chzzk、Bigo、Showroom、Picarto、Panda、FC2、Steam、JD、酷狗、六间房、十七 Live、MissEvan、KilaKila 等 17 站弹幕/聊天引擎全部到齐；新增弹幕设置页；Twitch 订阅/赠送/突袭事件与消息撤回进弹幕区。\n- 录像播放页：改为短视频式布局——倍速/选集分离、±10 秒跳转、可拖进度条、仅音频/截图/小窗/画中画右上角常驻；窄窗口画面在上、列表在下，退出小窗接着播；新增本地录像播放与私有目录提示。\n- 全屏与返回：安卓返回改两段语义——先退全屏、再退页面；竖屏与桌面全屏的控制栏避开刘海与手势条；画中画不再裁圆角，桌面全屏按钮不再消失。\n- 界面与设置：直播间键位收成可测键位表，新增 F 全屏、M 静音（空格暂停、Esc 退出全屏）；小窗控制层 5 秒无操作自动收起；画中画尺寸可调，站点分类平铺，平台选择器统一平台 logo；壁纸/背景覆盖更广，界面文案全部进语言包。\n- 账号与稳定性：新增\"退出所有登录\"统一入口，退出斗鱼同步清理会话；Bigo 支持登录态取流；虎牙/斗鱼连接参数更新，连接更稳。",
+      "version_desc": "version: 3.1.19\n版本更新：\n- 修复部分bug",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.19",
       "android_abis": [
@@ -28,7 +28,7 @@
       "version": "3.1.19",
       "build_number": 4108,
       "version_num": 301184108,
-      "version_desc": "version: 3.1.19\n版本更新：\n- 播放内核：全平台默认 mpv 引擎，采用更安全的硬解默认值，修复 Android 硬解兼容；设置新增\"播放内核一键配置\"、分模块播放指南与 Anime4K 超分辨率，输出/超分参数改完即生效，不再需要重启。\n- 取流与线路：线路自带容器/编码声明，直连还是 FFmpeg 转封装按线路事实决定，旧式 HEVC FLV 改走重封装；带 token 与特殊 CDN（如 Steam 广播）线路走回环中继，代理与 demuxer 按源选择，TwitCasting 这类\"分片为相对地址\"的线路不再打不开。\n- 直播弹幕：AcFun、TwitCasting、LOOK、Chzzk、Bigo、Showroom、Picarto、Panda、FC2、Steam、JD、酷狗、六间房、十七 Live、MissEvan、KilaKila 等 17 站弹幕/聊天引擎全部到齐；新增弹幕设置页；Twitch 订阅/赠送/突袭事件与消息撤回进弹幕区。\n- 录像播放页：改为短视频式布局——倍速/选集分离、±10 秒跳转、可拖进度条、仅音频/截图/小窗/画中画右上角常驻；窄窗口画面在上、列表在下，退出小窗接着播；新增本地录像播放与私有目录提示。\n- 全屏与返回：安卓返回改两段语义——先退全屏、再退页面；竖屏与桌面全屏的控制栏避开刘海与手势条；画中画不再裁圆角，桌面全屏按钮不再消失。\n- 界面与设置：直播间键位收成可测键位表，新增 F 全屏、M 静音（空格暂停、Esc 退出全屏）；小窗控制层 5 秒无操作自动收起；画中画尺寸可调，站点分类平铺，平台选择器统一平台 logo；壁纸/背景覆盖更广，界面文案全部进语言包。\n- 账号与稳定性：新增\"退出所有登录\"统一入口，退出斗鱼同步清理会话；Bigo 支持登录态取流；虎牙/斗鱼连接参数更新，连接更稳。",
+      "version_desc": "version: 3.1.19\n版本更新：\n- 修复部分bug",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.19",
       "windows_msix_available": true
@@ -37,7 +37,7 @@
       "version": "3.1.19",
       "build_number": 4108,
       "version_num": 301184108,
-      "version_desc": "version: 3.1.19\n版本更新：\n- 播放内核：全平台默认 mpv 引擎，采用更安全的硬解默认值，修复 Android 硬解兼容；设置新增\"播放内核一键配置\"、分模块播放指南与 Anime4K 超分辨率，输出/超分参数改完即生效，不再需要重启。\n- 取流与线路：线路自带容器/编码声明，直连还是 FFmpeg 转封装按线路事实决定，旧式 HEVC FLV 改走重封装；带 token 与特殊 CDN（如 Steam 广播）线路走回环中继，代理与 demuxer 按源选择，TwitCasting 这类\"分片为相对地址\"的线路不再打不开。\n- 直播弹幕：AcFun、TwitCasting、LOOK、Chzzk、Bigo、Showroom、Picarto、Panda、FC2、Steam、JD、酷狗、六间房、十七 Live、MissEvan、KilaKila 等 17 站弹幕/聊天引擎全部到齐；新增弹幕设置页；Twitch 订阅/赠送/突袭事件与消息撤回进弹幕区。\n- 录像播放页：改为短视频式布局——倍速/选集分离、±10 秒跳转、可拖进度条、仅音频/截图/小窗/画中画右上角常驻；窄窗口画面在上、列表在下，退出小窗接着播；新增本地录像播放与私有目录提示。\n- 全屏与返回：安卓返回改两段语义——先退全屏、再退页面；竖屏与桌面全屏的控制栏避开刘海与手势条；画中画不再裁圆角，桌面全屏按钮不再消失。\n- 界面与设置：直播间键位收成可测键位表，新增 F 全屏、M 静音（空格暂停、Esc 退出全屏）；小窗控制层 5 秒无操作自动收起；画中画尺寸可调，站点分类平铺，平台选择器统一平台 logo；壁纸/背景覆盖更广，界面文案全部进语言包。\n- 账号与稳定性：新增\"退出所有登录\"统一入口，退出斗鱼同步清理会话；Bigo 支持登录态取流；虎牙/斗鱼连接参数更新，连接更稳。",
+      "version_desc": "version: 3.1.19\n版本更新：\n- 修复部分bug",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.19"
     },
@@ -45,7 +45,7 @@
       "version": "3.1.19",
       "build_number": 4108,
       "version_num": 301184108,
-      "version_desc": "version: 3.1.19\n版本更新：\n- 播放内核：全平台默认 mpv 引擎，采用更安全的硬解默认值，修复 Android 硬解兼容；设置新增\"播放内核一键配置\"、分模块播放指南与 Anime4K 超分辨率，输出/超分参数改完即生效，不再需要重启。\n- 取流与线路：线路自带容器/编码声明，直连还是 FFmpeg 转封装按线路事实决定，旧式 HEVC FLV 改走重封装；带 token 与特殊 CDN（如 Steam 广播）线路走回环中继，代理与 demuxer 按源选择，TwitCasting 这类\"分片为相对地址\"的线路不再打不开。\n- 直播弹幕：AcFun、TwitCasting、LOOK、Chzzk、Bigo、Showroom、Picarto、Panda、FC2、Steam、JD、酷狗、六间房、十七 Live、MissEvan、KilaKila 等 17 站弹幕/聊天引擎全部到齐；新增弹幕设置页；Twitch 订阅/赠送/突袭事件与消息撤回进弹幕区。\n- 录像播放页：改为短视频式布局——倍速/选集分离、±10 秒跳转、可拖进度条、仅音频/截图/小窗/画中画右上角常驻；窄窗口画面在上、列表在下，退出小窗接着播；新增本地录像播放与私有目录提示。\n- 全屏与返回：安卓返回改两段语义——先退全屏、再退页面；竖屏与桌面全屏的控制栏避开刘海与手势条；画中画不再裁圆角，桌面全屏按钮不再消失。\n- 界面与设置：直播间键位收成可测键位表，新增 F 全屏、M 静音（空格暂停、Esc 退出全屏）；小窗控制层 5 秒无操作自动收起；画中画尺寸可调，站点分类平铺，平台选择器统一平台 logo；壁纸/背景覆盖更广，界面文案全部进语言包。\n- 账号与稳定性：新增\"退出所有登录\"统一入口，退出斗鱼同步清理会话；Bigo 支持登录态取流；虎牙/斗鱼连接参数更新，连接更稳。",
+      "version_desc": "version: 3.1.19\n版本更新：\n- 修复部分bug",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.19"
     },
@@ -53,7 +53,7 @@
       "version": "3.1.19",
       "build_number": 4108,
       "version_num": 301184108,
-      "version_desc": "version: 3.1.19\n版本更新：\n- 播放内核：全平台默认 mpv 引擎，采用更安全的硬解默认值，修复 Android 硬解兼容；设置新增\"播放内核一键配置\"、分模块播放指南与 Anime4K 超分辨率，输出/超分参数改完即生效，不再需要重启。\n- 取流与线路：线路自带容器/编码声明，直连还是 FFmpeg 转封装按线路事实决定，旧式 HEVC FLV 改走重封装；带 token 与特殊 CDN（如 Steam 广播）线路走回环中继，代理与 demuxer 按源选择，TwitCasting 这类\"分片为相对地址\"的线路不再打不开。\n- 直播弹幕：AcFun、TwitCasting、LOOK、Chzzk、Bigo、Showroom、Picarto、Panda、FC2、Steam、JD、酷狗、六间房、十七 Live、MissEvan、KilaKila 等 17 站弹幕/聊天引擎全部到齐；新增弹幕设置页；Twitch 订阅/赠送/突袭事件与消息撤回进弹幕区。\n- 录像播放页：改为短视频式布局——倍速/选集分离、±10 秒跳转、可拖进度条、仅音频/截图/小窗/画中画右上角常驻；窄窗口画面在上、列表在下，退出小窗接着播；新增本地录像播放与私有目录提示。\n- 全屏与返回：安卓返回改两段语义——先退全屏、再退页面；竖屏与桌面全屏的控制栏避开刘海与手势条；画中画不再裁圆角，桌面全屏按钮不再消失。\n- 界面与设置：直播间键位收成可测键位表，新增 F 全屏、M 静音（空格暂停、Esc 退出全屏）；小窗控制层 5 秒无操作自动收起；画中画尺寸可调，站点分类平铺，平台选择器统一平台 logo；壁纸/背景覆盖更广，界面文案全部进语言包。\n- 账号与稳定性：新增\"退出所有登录\"统一入口，退出斗鱼同步清理会话；Bigo 支持登录态取流；虎牙/斗鱼连接参数更新，连接更稳。",
+      "version_desc": "version: 3.1.19\n版本更新：\n- 修复部分bug",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.19"
     }
