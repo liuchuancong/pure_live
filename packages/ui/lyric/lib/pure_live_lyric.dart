@@ -2,8 +2,10 @@
 // Module: lib/pure_live_lyric.dart
 // Purpose: Public barrel of pure_live_lyric; the only import surface other packages may use.
 // Author: liuchuancong
-// Created: 2026-10-09
+// Created: 2026-10-10
 ///
-/// Layer: ui. Allowed dependencies: design (ui_kit depends on design, one direction), L0 foundation and theme; only ui_kit may import fluttersdk_wind.
-/// See docs/architecture/dependency-rules.md and the package README.
+/// Layer: ui. LRC parsing and the synced lyric surface. See
+/// docs/architecture/dependency-rules.md and the package README.
 library;
+
+export 'src/lyrics_surface.dart';

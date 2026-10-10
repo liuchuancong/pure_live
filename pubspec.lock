@@ -1084,6 +1084,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_lyric:
+    dependency: transitive
+    description:
+      name: flutter_lyric
+      sha256: "7cb3531568c4b5607564555298ac4415c5868a50d77172338894e535529f07d2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.8"
   flutter_native_splash:
     dependency: transitive
     description:

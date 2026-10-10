@@ -7,4 +7,9 @@ resolution: workspace
 environment:
   sdk: ^3.13.0
 
-# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_lyric: ^3.0.8
+  pure_live_design:
+    path: ../design
