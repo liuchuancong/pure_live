@@ -1,6 +1,6 @@
 # GENERATED-BY: tool/scaffold_package.ps1
 name: pure_live_vod
-description: "Feature package: vod (repository + presentation skeleton per package-architecture.md)"
+description: "Feature package: vod(续播位置的双阈值规则、连播队列与身份匹配)"
 publish_to: none
 resolution: workspace
 
@@ -11,6 +11,10 @@ environment:
 dependencies:
   pure_live_platform:
     path: ../../ecosystem/platform
-  # The vod feature's own persistence (resume position, series watch state) is a kv-backed store.
   pure_live_storage:
     path: ../../foundation/storage
+  pure_live_utils:
+    path: ../../foundation/utils
+
+dev_dependencies:
+  test: ^1.26.0
