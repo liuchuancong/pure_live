@@ -44,6 +44,20 @@ final class RecordingTask with ValueEquality {
       endReason = null,
       stoppedAt = null;
 
+  /// Rebuilds a stored task. The named constructor exists so a reload from disk is not a caller assigning
+  /// [state] directly - the transitions stay the only way into a state.
+  RecordingTask.restore({
+    required this.ref,
+    required String fileName,
+    required this.createdAt,
+    required this.beganAt,
+    required this.stoppedAt,
+    required this.state,
+    required this.endReason,
+    Clock? clock,
+  }) : _clock = clock ?? systemClock,
+       fileName = requireSafeFileName(fileName);
+
   RecordingTask._({
     required this.ref,
     required this.fileName,

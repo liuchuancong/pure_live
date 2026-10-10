@@ -14,3 +14,4 @@
 library;
 
 export 'src/domain/recording_task.dart';
+export 'src/recording_manager.dart';

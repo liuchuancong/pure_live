@@ -5,6 +5,20 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- `recording_manager.dart`: `RecordingStore` (whole-list persistence with a history cap and unknown enum names
+  dropped rather than guessed), `RecordingEngine` and `StorageProbe` ports so the task list is testable before
+  the encoder exists, and `RecordingManager` - schedule, start, stop, mark ended, remove.
+- A process that died mid-recording is now resolved: `restore()` marks every stored `recording` as
+  `failed/engineLost`. Left alone it keeps the concurrency slot, shows a timer that grows forever, and cannot
+  actually be stopped.
+- Free space is checked against a reservation **before** the engine writes anything, and an engine that refuses
+  leaves the task `queued` rather than `failed`, so the user can try again.
+- A second live task may not claim a file name already in use; a task that has not ended cannot be removed.
+- `RecordingTask.restore` added, and the store carries the injected `Clock` through it: without it a recovered
+  row stamped `stoppedAt` from the wall clock against a `beganAt` from the test clock, and `elapsed` came out
+  negative.
+
+
 - **Breaking**: `RecordingTask` is immutable. `start()` / `stop()` / `fail()` returned bools and left the
   caller to guess what went wrong; the transitions are now `begin()` / `stop(reason)` / `fail(reason)`
   returning the next task and throwing `RecordingFailure` with the state that was refused. `RecordingState

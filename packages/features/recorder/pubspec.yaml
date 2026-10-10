@@ -11,6 +11,8 @@ environment:
 dependencies:
   pure_live_platform:
     path: ../../ecosystem/platform
+  pure_live_storage:
+    path: ../../foundation/storage
   pure_live_utils:
     path: ../../foundation/utils
 
