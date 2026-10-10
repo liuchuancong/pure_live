@@ -15,6 +15,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
+
 import 'package:pure_live_external_tvbox/pure_live_external_tvbox.dart';
 import 'package:serious_python/serious_python.dart';
 
@@ -54,11 +56,11 @@ final class PythonSpiderHost implements SpiderHandle {
   static Future<LocalSpiderGateway> _start(Directory dataDirectory) async {
     final gateway = LocalSpiderGateway();
     await gateway.start();
-    final spiderDir = Directory('${dataDirectory.path}${Platform.pathSeparator}spiders');
+    final spiderDir = Directory(p.join(dataDirectory.path, 'spiders'));
     if (!await spiderDir.exists()) {
       await spiderDir.create(recursive: true);
     }
-    final workerFile = File('${dataDirectory.path}${Platform.pathSeparator}pure_live_worker.py');
+    final workerFile = File(p.join(dataDirectory.path, 'pure_live_worker.py'));
     await workerFile.writeAsString(pythonWorkerProgram, flush: true);
     // The worker blocks by design (its main is a job loop); serious_python
     // runs the program off the UI thread when sync is absent.
@@ -76,11 +78,11 @@ final class PythonSpiderHost implements SpiderHandle {
   /// Writes one spider module into the worker's spider directory. Content is
   /// the site's python spider, installed from its plugin record.
   static Future<void> installSpider(Directory dataDirectory, String key, String code) async {
-    final dir = Directory('${dataDirectory.path}${Platform.pathSeparator}spiders');
+    final dir = Directory(p.join(dataDirectory.path, 'spiders'));
     if (!await dir.exists()) {
       await dir.create(recursive: true);
     }
-    await File('${dir.path}${Platform.pathSeparator}$key.py').writeAsString(code, flush: true);
+    await File(p.join(dir.path, '$key.py')).writeAsString(code, flush: true);
   }
 
   /// The site key; also the spider module file name in the worker's directory.

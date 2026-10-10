@@ -15,6 +15,7 @@
 
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:pure_live_huya/pure_live_huya.dart';
 import 'package:pure_live_demo/pure_live_demo.dart';
@@ -73,13 +74,11 @@ final class PureLiveRuntime {
     PermissionPrompt permissionPrompt = const UnaskedPrompts(),
   }) async {
     final directory = dataDirectory ?? await _defaultDataDirectory();
-    final store = FileKeyValueStore(filePath: '${directory.path}${Platform.pathSeparator}extensions.json');
+    final store = FileKeyValueStore(filePath: p.join(directory.path, 'extensions.json'));
     // A separate file from the extension rows: one corrupt record set must not take the other down with it,
     // and a platform grant is not an extension's data to clear.
     final permissions = PolicyPermissionManager(
-      store: KeyValuePermissionStore(
-        FileKeyValueStore(filePath: '${directory.path}${Platform.pathSeparator}permissions.json'),
-      ),
+      store: KeyValuePermissionStore(FileKeyValueStore(filePath: p.join(directory.path, 'permissions.json'))),
       prompt: permissionPrompt,
     );
     final network = NetworkClient();
@@ -150,13 +149,13 @@ final class PureLiveRuntime {
   /// The store one user-data domain owns. Named by domain rather than by service, because the file is the
   /// unit a migrator and a backup both address.
   static FileKeyValueStore _domainStore(Directory directory, String domain) =>
-      FileKeyValueStore(filePath: '${directory.path}${Platform.pathSeparator}$domain.json');
+      FileKeyValueStore(filePath: p.join(directory.path, '$domain.json'));
 
   /// Where the runtime's files live. Named for the runtime rather than one feature so a second store does
   /// not scatter itself into its own directory.
   static Future<Directory> _defaultDataDirectory() async {
     final support = await getApplicationSupportDirectory();
-    final directory = Directory('${support.path}${Platform.pathSeparator}runtime');
+    final directory = Directory(p.join(support.path, 'runtime'));
     if (!await directory.exists()) {
       await directory.create(recursive: true);
     }

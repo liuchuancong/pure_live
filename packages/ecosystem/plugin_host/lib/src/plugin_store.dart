@@ -14,6 +14,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
+
 import 'package:pure_live_platform/pure_live_platform.dart';
 import 'package:pure_live_plugin_api/pure_live_plugin_api.dart';
 
@@ -48,7 +50,7 @@ final class PluginInstallException implements Exception {
 /// root owns it and hands loaded code to the runtime host.
 final class PluginStore {
   PluginStore({required Directory root, PluginManifestValidator? validator})
-    : _pluginsRoot = Directory('${root.path}${Platform.pathSeparator}plugins'),
+    : _pluginsRoot = Directory(p.join(root.path, 'plugins')),
       _validator = validator ?? PluginManifestValidator();
 
   final Directory _pluginsRoot;
@@ -69,16 +71,15 @@ final class PluginStore {
       await staging.delete(recursive: true);
     }
     await staging.create(recursive: true);
-    await File('${staging.path}${Platform.pathSeparator}manifest.json')
-        .writeAsString(jsonEncode(bundle.manifest.toJson()), flush: true);
-    await File('${staging.path}${Platform.pathSeparator}plugin.js').writeAsString(bundle.source, flush: true);
+    await File(p.join(staging.path, 'manifest.json')).writeAsString(jsonEncode(bundle.manifest.toJson()), flush: true);
+    await File(p.join(staging.path, 'plugin.js')).writeAsString(bundle.source, flush: true);
     final existing = await _readState(bundle.manifest.id);
     final state = <String, Object?>{
       'enabled': existing?['enabled'] ?? false,
       'installedAt': DateTime.now().toUtc().toIso8601String(),
       if (originUrl != null) 'originUrl': originUrl.toString(),
     };
-    await File('${staging.path}${Platform.pathSeparator}state.json').writeAsString(jsonEncode(state), flush: true);
+    await File(p.join(staging.path, 'state.json')).writeAsString(jsonEncode(state), flush: true);
     // The swap keeps states clean: the staging directory only appears once
     // every file is complete, so a crash mid-install leaves either the
     // previous plugin or the staging remnant (cleaned by the next install),
@@ -112,15 +113,14 @@ final class PluginStore {
       await staging.delete(recursive: true);
     }
     await staging.create(recursive: true);
-    await File('${staging.path}${Platform.pathSeparator}manifest.json')
-        .writeAsString(jsonEncode(manifest.toJson()), flush: true);
-    await File('${staging.path}${Platform.pathSeparator}content.txt').writeAsString(content, flush: true);
+    await File(p.join(staging.path, 'manifest.json')).writeAsString(jsonEncode(manifest.toJson()), flush: true);
+    await File(p.join(staging.path, 'content.txt')).writeAsString(content, flush: true);
     final state = <String, Object?>{
       'enabled': false,
       'installedAt': DateTime.now().toUtc().toIso8601String(),
       if (originUrl != null) 'originUrl': originUrl.toString(),
     };
-    await File('${staging.path}${Platform.pathSeparator}state.json').writeAsString(jsonEncode(state), flush: true);
+    await File(p.join(staging.path, 'state.json')).writeAsString(jsonEncode(state), flush: true);
     if (await directory.exists()) {
       await directory.delete(recursive: true);
     }
@@ -190,16 +190,16 @@ final class PluginStore {
 
   Directory _directoryFor(String id) {
     final safe = id.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
-    return Directory('${_pluginsRoot.path}${Platform.pathSeparator}$safe');
+    return Directory(p.join(_pluginsRoot.path, safe));
   }
 
-  String _manifestPath(String id) => '${_directoryFor(id).path}${Platform.pathSeparator}manifest.json';
+  String _manifestPath(String id) => p.join(_directoryFor(id).path, 'manifest.json');
 
-  String _sourcePath(String id) => '${_directoryFor(id).path}${Platform.pathSeparator}plugin.js';
+  String _sourcePath(String id) => p.join(_directoryFor(id).path, 'plugin.js');
 
-  String _contentPath(String id) => '${_directoryFor(id).path}${Platform.pathSeparator}content.txt';
+  String _contentPath(String id) => p.join(_directoryFor(id).path, 'content.txt');
 
-  String _statePath(String id) => '${_directoryFor(id).path}${Platform.pathSeparator}state.json';
+  String _statePath(String id) => p.join(_directoryFor(id).path, 'state.json');
 
   Future<PluginManifest?> _readManifest(String id) async {
     final file = File(_manifestPath(id));

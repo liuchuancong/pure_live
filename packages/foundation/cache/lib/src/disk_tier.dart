@@ -10,9 +10,11 @@
 
 import 'dart:convert';
 import 'dart:io';
+
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
+import 'package:path/path.dart' as p;
 import 'package:pure_live_utils/pure_live_utils.dart';
 
 import 'store.dart';
@@ -128,7 +130,7 @@ final class DiskCacheTier {
 
   File _fileFor(String key) {
     final digest = sha256.convert(utf8.encode(key)).toString();
-    return File('${_directory.path}${Platform.pathSeparator}$digest.cache');
+    return File(p.join(_directory.path, '$digest.cache'));
   }
 
   Future<void> _deleteQuietly(File file) async {

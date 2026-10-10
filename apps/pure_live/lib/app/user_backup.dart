@@ -13,6 +13,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
+
 import 'package:pure_live_backup/pure_live_backup.dart';
 
 import 'runtime.dart';
@@ -41,10 +43,7 @@ bool _looksLikeCredential(String key) {
 Future<Map<String, Object?>> buildUserBackup(PureLiveRuntime runtime) async {
   final sources = <DomainSource>[
     for (final domain in backupDomains)
-      _FileDomainSource(
-        name: domain.name,
-        file: File('${runtime.dataDirectory.path}${Platform.pathSeparator}${domain.file}'),
-      ),
+      _FileDomainSource(name: domain.name, file: File(p.join(runtime.dataDirectory.path, domain.file))),
   ];
   final bundle = await BackupEngine(
     sources: sources,
@@ -59,10 +58,7 @@ Future<Map<String, Object?>> buildUserBackup(PureLiveRuntime runtime) async {
 Future<(List<String>, int)> restoreUserBackup(PureLiveRuntime runtime, Map<String, Object?> document) async {
   final targets = <DomainTarget>[
     for (final domain in backupDomains)
-      _FileDomainTarget(
-        name: domain.name,
-        file: File('${runtime.dataDirectory.path}${Platform.pathSeparator}${domain.file}'),
-      ),
+      _FileDomainTarget(name: domain.name, file: File(p.join(runtime.dataDirectory.path, domain.file))),
   ];
   final bundle = BackupBundle(
     manifest: BackupManifest.fromJson(Map<String, Object?>.from(document['manifest']! as Map)),
