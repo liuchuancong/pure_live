@@ -90,6 +90,18 @@
   另加 `fileName` 路径校验(宿主把它拼到录制目录后)、三处 `DateTime.now()` 换成注入 `Clock`
   (不然这些规则根本没法测)、id 在转换间保持稳定。13 测试。
   `lib/src/data/` 仍空是刻意的:引擎在录制波次,状态契约先立住就没有第二套真相。
+- **`ui/design` 令牌补齐(队列 #4 第 1 个)**:按技术栈 §5.4 把"差一个量级"的令牌面补成
+  颜色角色(13 个,按语义命名而不是照 Material 槽位)/ 间距 / 圆角 / 字阶 / 动效 / 密度 /
+  交互尺寸 / 焦点视觉,加 `resolveDesignTokens` 与 `AppearanceSettings` 持久形状。
+  **写进包里的硬规则**(不是建议):`textScale` 不许低于 1(风格不得回缩用户的字号)、
+  remote 下小字角色抬到 16 逻辑像素的十英尺可读下限、减少动态效果**时长归零而不是缩短**、
+  **remote 不做聚焦缩放**(控件一变大它下面整排跟着动,d-pad 上像界面在抖)、
+  `isAimable` / `isFindable` 把"按不中"和"看不见焦点"变成断言(chip 是行内件,下限另算)。
+  `PureLiveSpacing`/`PureLiveRadius` **数值原样保留**(Dart 的枚举字段访问进不了 const,所以两份字面量 +
+  一条相等断言钉住),免得"补令牌"顺手把 ui_kit 现在的渲染改了样子。
+  包仍然**不 import Flutter** —— 要能在没有 BuildContext 的情况下断言数字。20 测试。
+  **没做的**:`ui_kit` / `ui/adaptive` 还没消费这套令牌(adaptive 的六风格注册表现在直接从 ColorScheme 造
+  ThemeData,不读密度/焦点/输入模式),所以这些数字只过了自洽性检查,**没对过真机与截图**。
 - **`features/music` 重写(队列 #3 第 8 个,除决策外全部做完)**:**那条 L4→L5 直连我自己按可逆方案解掉了** ——
   包 README 之前甚至写着"源解析走 providers/music(lx-music 源直接导入)",而同一个文件的禁止依赖行又禁止它。
   新增 `MusicSourceBridge` 端口(四个问题 + `MusicSourceQualities`),`LxMusicRepository` 只认端口,
@@ -153,7 +165,7 @@
 | 1 | ~~`features/settings`~~ **已重写 `cd4c96fcb`** | 共享包里写死了一个产品的 5 个偏好键,机制本身反而没有 | 键改为消费方声明的 `PreferenceKey<T>`;带版本信封 `{v,c,value}`;读不抛+回退记账、写拒越界;`putIfAbsent` 承担首启语义;命名空间隔离 App;`importAll` 逐项校验并出报告;变更流 + `dispose` 只关自己的流。95 行 → 约 430 行,`dart analyze` 0 issue |
 | 2 | ~~`features/search`~~ **已重写(本轮)** | 只有历史记录容器 | 查询规范化、跨 App 一致的排序、容量上限与淘汰、与 `services/search` 聚合器的取消语义 —— 全部落地,详见 §2 |
 | 3 | `features/home` `account` `backup` `live` `vod` `iptv` `recorder` `music` **全部重写完成** | 每包原 58–191 行,domain 有形状、data 缺失 | 按 §6 补齐:data 边界 + 具名错误 + 资源释放;presentation 留给 UI 波。`music` 的 L4→L5 直连已改端口注入 |
-| 4 | `ui/design` → `ui/ui_kit` → `ui/adaptive` | 令牌只有 spacing/radius,组件 4 个,风格注册表无焦点/密度维度 | 令牌全集(色/距/圆/高/动效/字焦/密度)、`AppNotice`/`AppDialog`/`AppLoading`/空错态门面、D-pad 焦点序与 TV 尺寸 |
+| 4 | `ui/design` **令牌面已补齐** / `ui/ui_kit` `ui/adaptive` 待接 | 令牌只有 spacing/radius,组件 4 个,风格注册表无焦点/密度维度 | 令牌全集(色/距/圆/高/动效/字焦/密度)、`AppNotice`/`AppDialog`/`AppLoading`/空错态门面、D-pad 焦点序与 TV 尺寸。**下一步是把 ui_kit 与 adaptive 改成消费 `DesignTokens`** —— 否则令牌只是躺在一个没人读的包里 |
 | 5 | `ui/lyric` `ui/player_ui` | 单文件适配 | 时间轴同步、句柄所有权、与 `integrations/media` 的状态订阅边界 |
 | 6 | `services/search` `services/feed` | 聚合器只有扇出 | 分页模式(§契约三态)、部分结果策略、取消传播、失败记账的可诊断形状 |
 | 7 | `foundation/diagnostics` `events` `platform_info` `sync` | 薄 | 结构化事件 + 有界缓冲 + 脱敏;探测能力矩阵;同步游标与冲突策略 |
@@ -187,6 +199,11 @@
 - **`features/music` 的端口还没有实现者。** `MusicSourceBridge` 是为消除 L4→L5 直连而造的接缝,
   但 `apps/` 目录里现在**只有 `pure_live`** —— pure_music 壳不存在,所以没有一个适配器来实现它。
   端口形状够用与否要等那个壳建起来才能验;若届时发现形状不对,改的是适配器不是域模型,这是选可逆方案的理由。
+- **队列 #4 的下一步被那条同层边卡住.** `ui/adaptive` 要消费 `ui/design` 的 `DesignTokens`
+  (注册表现在不读密度/焦点/输入模式),但 §3 只白名单了 `ui_kit → design`,
+  `adaptive → design` 就是 §2bis 里我故意没声明的第 2 条边。要么把 design 定成"ui 层人人可用的叶子"(像 L0 的
+  utils),要么只给 adaptive 加一条例外 —— 我倾向前者:`DesignTokens` 是无行为的数字,
+  每个 ui 包各拿一份副本只会把它们各自漂移。定了我就改 §3 + 声明依赖 + 接 adaptive。
 - **未跑任何 app 侧验证**:`apps/pure_live` 的 `flutter test` 需要 `native-assets/` 预取件
   (BUILD_POLICY §3 的顺序契约),本轮没跑;包重写以 `dart analyze` + 护栏为门。
 - **五个被删的 provider 若将来要接**:按 §3 第 8 行的形状重新建包,不要恢复空壳。

@@ -1,20 +1,50 @@
 # pure_live_design
 
-> 职责:UI layer package: design (skeleton; capabilities fill per package-architecture.md)
+> 职责:UI 的**语义令牌** —— 颜色角色、间距/圆角/字阶/动效/密度、交互尺寸与焦点视觉,以及外观设置的持久形状。
+> 这里是**数字与名字**,不是颜色值:具体 scheme 由风格适配器造。
+> 规格出处:[技术栈 §5.2/§5.4](../../../docs/architecture/pure_live_v2_flutter_technology_stack.md)。
 
-| 项 | 规则 |
-|---|---|
-| 层 | ui(见 [依赖规则](../../../docs/architecture/dependency-rules.md)) |
-| 允许依赖 | -> design(ui_kit -> design 单向)+ L0 + theme;只有 ui_kit 可 import fluttersdk_wind。 |
-| 禁止依赖 | 任何反向依赖;禁止依赖应用壳(唯一组合根,I9);同层互依(除规则明示例外) |
-| 公共面 | 只有 `lib/pure_live_design.dart`;内部实现放 `lib/src/` |
+## 模块
 
-## 结构
+| 文件 | 提供 | 为什么要单独一份 |
+|---|---|---|
+| `src/semantic_roles.dart` | `ColorRole`(13 个角色)、`ControlState`、`FocusShape`、`InputMode`、`PlatformProfile` | 六种风格不共享 Material 的命名;角色按语义命名,适配器才不用各写一套常量 |
+| `src/scale_tokens.dart` | `SpaceToken` / `RadiusToken` / `Density` / `TypeRole` / `MotionProfile` | 字阶要能表达"十英尺可读下限",动效要能表达"减少动态 = 时长归零而不是变短" |
+| `src/control_metrics.dart` | `ControlKind`(高度与最小可瞄准尺寸)、`FocusVisual` | TV / 鼠标 / 触摸的交互尺寸本来就不该是同一个数 |
+| `src/design_tokens.dart` | `DesignTokens` + `resolveDesignTokens` + `AppearanceSettings` + `BackgroundConfig` + 兼容用的 `PureLiveSpacing` / `PureLiveRadius` | 解析规则(不可协商的那几条)只能有一处实现 |
 
-- `pubspec.yaml` / `analysis_options.yaml` / `CHANGELOG.md` / `README.md` / `test/` —— 所有包必备
-- `lib/src`
+## 规则(这些是包里的硬约束,不是建议)
 
-## 验证
+- **字不能越改越小**:`resolveDesignTokens` 把 `textScale < 1` 抬回 1.0;`TypeRole.sizeFor` 只允许变大。
+- **remote 有可读下限**:`InputMode.remote` 下 `bodySmall` 等小字角色最低 16 逻辑像素。
+- **减少动态效果 = 时长归零**,不是缩短;且 `MotionProfile.reduced` 优先于模式默认值。
+- **遥控器输入不做聚焦缩放**(`scaleOnFocusAllowed == false`):控件尺寸一变,它下面整排行就跟着动,
+  在 d-pad 上看起来像界面在抖。
+- **瞄准尺寸**:主交互件下限 remote/touch 48/44、pointer 24;`chip` 属行内件(行的 padding 也参与命中),
+  下限 32/20 —— 两套数字是刻意的,统一成一个会把 chip 撑成按钮。
+  `ControlKind.isAimable` 把这条变成可断言的检查,而不是等用户在小屏上按不中。
+- **焦点必须看得见**:`FocusVisual.isFindable` 要求宽度 ≥2 且对比 ≥3:1;remote 给 3px / 3.5:1。
+- `PlatformProfile.preferredInput` 只是默认值:接遥控器的主机、外接键控的盒子都能覆盖,
+  覆盖后**下限跟着输入模式走而不是平台走**。
 
-- 分析:`dart analyze`(纯 Dart)或 `flutter analyze`(带 `-Flutter`)
-- 测试:`dart test`(纯 Dart)或 `flutter test`(带 `-Flutter`)
+## 兼容
+
+`PureLiveSpacing` / `PureLiveRadius` 的数值保持 ui_kit 现在渲染的那套(枚举字段访问进不了 const 表达式,
+所以是两份字面量 + 一条相等断言把它钉住)。改这些数字是一次设计变更,得对着截图定,不是顺手重构。
+
+## 依赖
+
+无。这个包**刻意不 import Flutter**:令牌要能在没有 BuildContext 的情况下被断言,
+否则"数字对不对"只能靠截图 review。
+
+## 平台矩阵
+
+纯 Dart,所有平台一致。真正分叉的是适配器(ui/adaptive),它把这里解析出的 `DesignTokens` 映射成 `ThemeData`。
+
+## 未验证
+
+- **ui_kit 与 ui/adaptive 还没消费这套令牌** —— 注册表现在直接从 `ColorScheme` 造 `ThemeData`,
+  没有读密度/焦点/输入模式维度(台账 §3 第 4 行剩下的部分就是这件事)。
+- 因此这些数字**没有对着真机或截图核过**:20 个测试钉住的是自洽性(下限、排序、归零、可瞄准),
+  不是"TV 上看着舒服"。首轮真机验证要连 ui_kit 的接入一起做。
+- `ColorRole` 的 13 个角色是照 §5.4 列的集合,没有做对比度实测;对比度目前是**要求值**而不是计算值。
