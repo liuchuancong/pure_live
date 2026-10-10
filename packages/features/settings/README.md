@@ -57,6 +57,26 @@ final label = await settings.read(quality);
 
 ## 平台与验证状态
 
-纯 Dart + 注入的 KV 接口,平台无关。本轮按使用者要求**不写测试**;`dart analyze` 与架构护栏
-`--strict` 通过。未验证项:与 `FileKeyValueStore` 的真实文件往返(属存储包自己的用例覆盖范围)、
-`importAll` 在跨版本备份(信封 `v` 更大)下的行为——当前实现按"拒绝并报告"处理,不是迁移。
+纯 Dart + 注入的 KV 接口,平台无关。`dart analyze` 0 issue、架构护栏 `--strict` 通过,
+`dart test` **32 例**(本包第一批测试:信封与 codec 名的门禁、读永不抛并记账、写拒越界、
+`putIfAbsent` 的首启语义、命名空间隔离与备份只含本命名空间、变更流与 `dispose` 幂等、
+`importAll` 的逐项接受/拒绝、以及下面那条旧文档升级路径)。
+
+## 旧文档升级(`PreferenceKey.upgrade`)
+
+**采纳这套机制是否安全,取决于这一条。** 没有它,一个在信封之前写下的行会被判成
+`unreadableEnvelope`,读回落到 key 的默认值,而**下一次写入就把默认值当成用户的选择存下去** ——
+用户的设置不是被读到,是被替换掉。所以:
+
+- `upgrade(raw)` 返回 codec 能吃的**内层值**(不是信封),或返回 null 表示"这形状我没写过"。
+- 升级成功记进 `upgradedKeys`,**不进** `rejections`:"盘上是更老的形状"不是故障。
+- 读**不回写**。一个只是来显示值的界面不该顺手改存储;把行换成信封是
+  `pure_live_storage` 的 `SchemaMigrator` 步骤该做的事,`upgradedKeys` 就是告诉调用方还有活要干。
+- 升级出来的值仍要过 `validate`,越界照样是 `invalidValue` 回落默认。
+
+## 未验证
+
+- 与 `FileKeyValueStore` 的真实文件往返(属存储包自己的用例覆盖范围;本包用 `MemoryKeyValueStore`)。
+- `importAll` 收到**更大**信封版本时仍按"拒绝并报告"处理,不是迁移 —— 已知的形状边界,
+  放宽它属于一次真正的 schema 升级,跟着 `SchemaMigrator` 的步骤一起做。
+- 零消费者:机制本身还没有 app 或 feature 装配(台账 §2bis 第 4 组),形状要等第一个调用点来钉。

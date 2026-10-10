@@ -233,6 +233,27 @@
   `Switch` / `DropdownButton<String>` / 四个 `Icons.*` 都由这层门校验,不是凭记忆写的),design 测试 20 → 26,
   护栏 `--strict packages=55 errors=0 warnings=0`。
   **仍未验**:主题真实渲染成什么样 —— 没有 widget 测试、没有截图、没有真机(design/adaptive README 的未验证已改口)。
+- **偏好机制补上"能安全被采纳"那一块,并写了它的第一批测试**:`features/settings` 的 491 行机制此前
+  **一条测试都没有**(包 README 自己写着"本轮按使用者要求不写测试"),而缺测试掩盖的正是致命一条:
+  机制只会**拒绝**更老的形状,不会**读**它。信封之前的行 → `unreadableEnvelope` → 回落默认值 →
+  **下一次写入把默认值当作用户的选择存下去**。也就是说任何已有消费者搬到这套机制上,都会静默删掉用户设置,
+  而这恰好是"要不要下沉复用"那个决策的前提条件。现在加了 `PreferenceKey.upgrade`(返回 codec 能吃的内层值,
+  或 null 表示真不认识)+ `upgradedKeys`(升级不算故障,所以不进 `rejections`),读**不回写** ——
+  把行换成信封是 `pure_live_storage` 的 `SchemaMigrator` 步骤的活,升级出来的值仍要过 `validate`。
+  新增 32 例(命名空间隔离、备份只含本命名空间、`putIfAbsent` 首启语义、codec 名门禁、变更流与 dispose 幂等、
+  `importAll` 逐项接受/拒绝、旧文档升级两个方向)。写测试时自己错了两条断言并按实现改正:
+  门禁是信封里的 `c` 名字而不是 JSON 类型(int 写下的行 double key 照样拒),以及 `disk.write` 要带命名空间前缀。
+- **§5 的偏好分层决策按可逆方案定了(A 的变体)**:实测重复有 4 处各写了自己的版本化文档 ——
+  `features/home`(`{v,order,hidden}`)、`features/search`(`{v,items}` + v0 迁移)、`features/vod`
+  (watch progress 的 version 字段)、`apps/pure_live`(appearance 的 `{v,seed,settings}`)。
+  机制住在 `features/settings` 时 §3 禁同层互依,这四处谁也拿不到 —— 这正是重复的原因。
+  **选择:把机制落到 `foundation/storage`,不新建 `foundation/preferences`**。理由:`preferences` 若独立成 L0 包,
+  它必须依赖同为 L0 的 `storage`(`KeyValueStore` 是那里定义的),而 §3 禁止 L0 互依(叶子只有 utils/logging);
+  要么加一条例外,要么再抄一遍 KV 接口 —— 两者都比搬文件更糟。storage 本来就已经是"版本化文档 + 迁移"的持有者
+  (`migration.dart` 的 `SchemaStep`/`SchemaMigrator`、`migration_runner.dart`),偏好文档放进它是同一件事。
+  搬完后 `features/settings` 只剩 App 词汇(目前它没有词汇,所以这个包会**整体并入 storage**,
+  它本来就是零消费者)。**下一步是机械搬迁 + 让 `features/home` 成为第一个真实消费者**(带它那份
+  `{v,order,hidden}` 的 upgrade),这一步没做:搬迁与采纳各自独立提交,便于单条回退。
 - **失真的 pubspec description 全部修掉(台账 §2bis/目录 §4 第 4 项,标注"优先修"的那条)**:
   `providers/{iptv,music}`、`ui/{adaptive,lyric,player_ui,ui_kit}`、`features/settings` 七包还写着 "skeleton",
   `providers/douyu` 写着空壳(那条本轮实现时已顺带改)。新描述是按各包 barrel 与文件头 `Purpose:` 写的,
@@ -325,11 +346,19 @@
 
 ## 5. 未做 / 风险
 
-- **待决策:偏好机制住错了层。** `features/settings` 给的是"机制"(`PreferenceKey<T>` + 信封 + 命名空间 +
-  变更流),但 §3 禁 feature 同层互依,所以后面的 feature 想用就得再写一份。`features/home` 已经这样写了
-  (自带 `{v,order,hidden}` 信封)。**两个选项**:A 把偏好机制下沉到 `foundation/preferences`(L0,人人可用,
-  settings 只留 App 词汇);B 给 §4 白名单加 `features/* → features/settings` 一条例外。我倾向 A:
-  "带版本的 kv 读写"是基础设施而不是产品功能,而且 §2bis 显示 10 个 features 包都要它 —— 选 A 我就机械搬迁。
+- **偏好机制住错了层 —— 已定(2026-10-10,A 的变体:并进 `foundation/storage`)。**
+  `features/settings` 给的是"机制"(`PreferenceKey<T>` + 信封 + 命名空间 + 变更流),但 §3 禁 feature 同层互依,
+  所以后面的 feature 想用就得再写一份。实测确实各写了一份:`features/home` 的 `{v,order,hidden}`、
+  `features/search` 的 `{v,items}`(自带 v0 迁移)、`features/vod` 的 watch progress 版本字段、
+  `apps/pure_live` 的 appearance 文档 —— **四处手写版本化文档,就是这条层级错的账单**。
+  为什么不新建 `foundation/preferences`:它必须依赖 L0 的 `storage` 才能拿到 `KeyValueStore`,而 §3 禁 L0 互依
+  (叶子只有 utils/logging),要么加例外要么重抄 KV 接口,都比搬文件更糟;而 storage 本来就是版本化文档与迁移的
+  持有者(`SchemaStep`/`SchemaMigrator`/`migration_runner.dart`)。**采纳前先决条件已补**:机制原先只会拒绝
+  信封前的旧形状,读回落默认、下一次写就把默认存成用户的选择 —— 直接下沉会让每个既有消费者静默删数据,
+  这条现在由 `PreferenceKey.upgrade` + 32 例测试封住(见 §2)。
+  **还剩的活(未做,可单条回退)**:机械搬迁 + `features/settings` 整包并入 storage(它本来零消费者),
+  再让 `features/home` 成为第一个真实消费者并带上它那份 `{v,order,hidden}` 的 upgrade。
+  曾考虑的备选 B(给 §4 白名单加 `features/* → features/settings`)被否:那是把层级错误固化成永久例外。
 - **契约点名的类型不存在。** `docs/sources/live/source-contract.md` 用 `QualityLine` / `QualityRef` /
   `LineRef` / `LiveDetail` / `StreamTicket` 写方法签名,但 `pure_live_platform` 里**一个都没定义**
   (只有 `MediaTicket` 有)。所以 `features/live` 只能自带 `StreamVariant` 词汇,站点适配写出来时也要各写一份映射。

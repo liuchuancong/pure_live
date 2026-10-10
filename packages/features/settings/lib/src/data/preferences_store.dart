@@ -40,6 +40,11 @@ final class PreferencesStore {
   /// value becomes visible to a diagnostics view instead of vanishing into a default.
   final List<PreferenceRejection> _rejections = <PreferenceRejection>[];
 
+  /// Keys whose stored row was read through [PreferenceKey.upgrade] - a legacy shape, still valid, not yet
+  /// rewritten as an envelope. Kept apart from [rejections] because "the disk holds an older document" is not
+  /// a failure, and a caller that reports one must not report the other as if it were.
+  final Set<String> _upgraded = <String>{};
+
   bool _disposed = false;
 
   /// Broadcast stream of writes and resets. A listener that arrives late misses earlier changes by design:
@@ -47,6 +52,14 @@ final class PreferencesStore {
   Stream<PreferenceChange> get changes => _changes.stream;
 
   List<PreferenceRejection> get rejections => List<PreferenceRejection>.unmodifiable(_rejections);
+
+  /// The keys read through a legacy upgrade since construction, in first-seen order.
+  ///
+  /// Reported rather than silent because it is the caller's decision what to do: the row still holds the old
+  /// shape, so a consumer that wants envelopes everywhere runs a `SchemaMigrator` step and writes them back.
+  /// A read never rewrites, because a screen that only came to display a value should not be the thing that
+  /// mutates storage.
+  List<String> get upgradedKeys => List<String>.unmodifiable(_upgraded);
 
   /// The stored value, or [PreferenceKey.defaultValue] when nothing valid is stored.
   Future<T> read<T extends Object>(PreferenceKey<T> key) async {
@@ -163,14 +176,38 @@ final class PreferencesStore {
       return null;
     }
     if (!_isEnvelope(raw)) {
-      _note(
-        PreferenceRejection(
-          keyName: key.name,
-          failure: PreferenceFailure.unreadableEnvelope,
-          rawType: '${raw.runtimeType}',
-        ),
-      );
-      return null;
+      // A row this store never wrote is not automatically a corrupt row: it may be the consumer's own older
+      // document. The key decides, because only the consumer knows what its data looked like before the
+      // envelope - and treating an unreadable-but-known shape as a rejection would drop the user's setting on
+      // the floor and let the next write persist the default in its place.
+      final legacy = key.upgrade?.call(raw);
+      if (legacy == null) {
+        _note(
+          PreferenceRejection(
+            keyName: key.name,
+            failure: PreferenceFailure.unreadableEnvelope,
+            rawType: '${raw.runtimeType}',
+          ),
+        );
+        return null;
+      }
+      final upgraded = key.codec.decode(legacy);
+      if (upgraded == null) {
+        _note(
+          PreferenceRejection(
+            keyName: key.name,
+            failure: PreferenceFailure.unreadableEnvelope,
+            rawType: '${legacy.runtimeType}',
+          ),
+        );
+        return null;
+      }
+      if (!_accepts(key, upgraded)) {
+        _note(PreferenceRejection(keyName: key.name, failure: PreferenceFailure.invalidValue));
+        return null;
+      }
+      _upgraded.add(key.name);
+      return upgraded;
     }
     final map = raw as Map;
     if (map[_codecField] != key.codec.name) {

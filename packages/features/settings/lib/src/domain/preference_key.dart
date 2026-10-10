@@ -72,7 +72,13 @@ abstract interface class PreferenceKeyInfo {
 
 /// One preference: its storage name, its type, and the answer to give when nothing valid is stored.
 final class PreferenceKey<T extends Object> implements PreferenceKeyInfo {
-  const PreferenceKey({required this.name, required this.codec, required this.defaultValue, this.validate});
+  const PreferenceKey({
+    required this.name,
+    required this.codec,
+    required this.defaultValue,
+    this.validate,
+    this.upgrade,
+  });
 
   /// The key inside the store's namespace. Stable forever: renaming it orphans existing user data.
   @override
@@ -92,6 +98,17 @@ final class PreferenceKey<T extends Object> implements PreferenceKeyInfo {
   /// It lives here rather than at each call site so a value read back from disk is checked by the same rule
   /// that guarded the write; otherwise an import could smuggle past the caller.
   final bool Function(T value)? validate;
+
+  /// Reads a value written before this store's envelope existed, and returns what the codec should make of it.
+  ///
+  /// Without this hook, adopting the store silently deletes a user's setting: a legacy row is not an envelope,
+  /// an unreadable read falls back to the key's default, and the next write persists that default as if the
+  /// user had chosen it. Returning null keeps the value "unknown shape", which is the honest answer for a
+  /// document this consumer never wrote. Return the raw inner value (what `value` would hold), not an envelope.
+  ///
+  /// A read never rewrites the row, so this runs on every read until an explicit migration replaces the row -
+  /// which is what `pure_live_storage`'s SchemaMigrator step is for.
+  final Object? Function(Object? raw)? upgrade;
 
   @override
   bool operator ==(Object other) => other is PreferenceKey<T> && other.name == name && other.codec.name == codec.name;
