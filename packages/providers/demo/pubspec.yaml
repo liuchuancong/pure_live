@@ -1,0 +1,14 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_demo
+description: "In-repo demo live source proving the capability-to-UI chain without any network access"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  pure_live_capability:
+    path: ../../ecosystem/capability
+  pure_live_platform:
+    path: ../../ecosystem/platform

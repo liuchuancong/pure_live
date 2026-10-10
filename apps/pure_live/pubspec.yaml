@@ -168,26 +168,20 @@ dependencies:
     path: ../../packages/services/search
   pure_live_media:
     path: ../../packages/integrations/media
+  pure_live_demo:
+    path: ../../packages/providers/demo
+  pure_live_bilibili:
+    path: ../../packages/providers/bilibili
+  pure_live_huya:
+    path: ../../packages/providers/huya
   pure_live_backup:
     path: ../../packages/foundation/backup
   pure_live_release:
     path: ../../packages/foundation/release
-  pure_live_music:
-    path: ../../packages/providers/music
   pure_live_design:
     path: ../../packages/ui/design
   pure_live_adaptive:
     path: ../../packages/ui/adaptive
-  pure_live_plugin_host:
-    path: ../../packages/ecosystem/plugin_host
-  pure_live_plugin_api:
-    path: ../../packages/ecosystem/plugin_api
-  pure_live_js_runtime:
-    path: ../../packages/ecosystem/js_runtime
-  pure_live_external_tvbox:
-    path: ../../packages/ecosystem/external_tvbox
-  pure_live_python_runtime:
-    path: ../../packages/integrations/python_runtime
 
   # -------------------------- 数据存储/数据库 --------------------------
   hive_ce: ^2.20.0 # Hive本地数据库

@@ -12,7 +12,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_secure_storage_linux
   media_kit_video
   screen_retriever_linux
-  serious_python_linux
   url_launcher_linux
   volume_controller
   window_manager

@@ -16,14 +16,15 @@
 import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
+import 'package:pure_live_huya/pure_live_huya.dart';
+import 'package:pure_live_demo/pure_live_demo.dart';
+import 'package:pure_live_bilibili/pure_live_bilibili.dart';
 import 'package:pure_live_capability/pure_live_capability.dart';
 import 'package:pure_live_extension/pure_live_extension.dart';
 import 'package:pure_live_favorites/pure_live_favorites.dart';
 import 'package:pure_live_feed/pure_live_feed.dart';
 import 'package:pure_live_history/pure_live_history.dart';
 import 'package:pure_live_media/pure_live_media.dart';
-import 'package:pure_live_music/pure_live_music.dart';
-import 'package:pure_live_plugin_host/pure_live_plugin_host.dart';
 import 'package:pure_live_network/pure_live_network.dart';
 import 'package:pure_live_permission/pure_live_permission.dart';
 import 'package:pure_live_playlist/pure_live_playlist.dart';
@@ -44,7 +45,6 @@ final class PureLiveRuntime {
     required this.runtimes,
     required this.gateway,
     required this.cookies,
-    required this.pluginStore,
     required this.media,
     required this.capabilities,
     required this.resolvers,
@@ -87,7 +87,6 @@ final class PureLiveRuntime {
     final diagnostics = InMemoryDiagnosticTracer();
     final runtimes = RuntimeRegistry();
     final cookies = InMemoryCookieJar();
-    final pluginStore = PluginStore(root: Directory('${directory.path}${Platform.pathSeparator}plugins'));
 
     final gateway = ManagedExtensionGateway(
       runtimes: runtimes,
@@ -133,7 +132,6 @@ final class PureLiveRuntime {
       diagnostics: diagnostics,
       gateway: gateway,
       cookies: cookies,
-      pluginStore: pluginStore,
       media: media,
       capabilities: capabilities,
       runtimes: runtimes,
@@ -179,14 +177,6 @@ final class PureLiveRuntime {
   /// by the gateway and the plugin bridge so both paths see the same cookies.
   final InMemoryCookieJar cookies;
 
-  /// The installed-plugin directory this shell loads from.
-  final PluginStore pluginStore;
-
-  /// Music source hosts keyed by plugin id: an imported lx-music user-api
-  /// script answers musicUrl/lyric/pic here. The music feature reads this
-  /// map; nothing else touches it.
-  final Map<String, MusicSourceScriptHost> musicHosts = <String, MusicSourceScriptHost>{};
-
   /// The playback kernel with the media_kit backend. Opened from tickets; the app entry point runs
   /// [MediaKernelHost.ensureInitialized] before the first surface is built.
   final MediaKernelHost media;
@@ -220,4 +210,41 @@ final class PureLiveRuntime {
     await media.dispose();
     network.close();
   }
+}
+
+/// Registers the content sources compiled into this app.
+///
+/// This app is the live product: the demo seed keeps the feed chain
+/// demonstrable, bilibili vod serves the video band, and huya serves live
+/// rooms. Sites are plain Dart here by design - no plugin indirection.
+PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
+  runtime.capabilities.register(
+    ProviderRegistration(
+      sourceId: demoSourceId,
+      extensionId: 'built-in.demo',
+      provider: const DemoLiveSource(),
+      capabilities: const CapabilitySet(<CapabilityKind>{CapabilityKind.feed, CapabilityKind.live}),
+    ),
+  );
+  runtime.capabilities.register(
+    ProviderRegistration(
+      sourceId: bilibiliSourceId,
+      extensionId: 'built-in.bilibili',
+      provider: BilibiliVodSource(),
+      capabilities: const CapabilitySet(<CapabilityKind>{CapabilityKind.vod, CapabilityKind.search}),
+    ),
+  );
+  runtime.capabilities.register(
+    ProviderRegistration(
+      sourceId: huyaSourceId,
+      extensionId: 'built-in.huya',
+      provider: HuyaSource(),
+      capabilities: const CapabilitySet(<CapabilityKind>{
+        CapabilityKind.feed,
+        CapabilityKind.live,
+        CapabilityKind.search,
+      }),
+    ),
+  );
+  return runtime;
 }
