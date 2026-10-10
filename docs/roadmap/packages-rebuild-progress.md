@@ -220,6 +220,17 @@
   回归:`tool/test_check_architecture.ps1` 加 4 例(未声明→warning、`--strict`→失败、补声明→静默、
   pub.dev 三方 import→不归护栏管),30 例 / 33 断言全过,真仓 `--strict` `packages=55 errors=0 warnings=0`。
 
+- **`providers/douyu` 实现匿名切片(队列第 8 项)**:此前只有空 barrel,而我一直拒绝凭空写协议。解除阻塞的关键是
+  `origin/master` 里 v1 维护线仍在(`lib/shared/platforms/douyu/douyu_site.dart` 742 行 +
+  `lib/core/network/douyu_utils.dart` 651 行),端点、字段名、签名链都从它取 —— 按 UPSTREAM_REVIEW_POLICY
+  是"参照取数的新实现",不是 merge。落地面:`DouyuSource`(Feed/Browse/Search/Resolve)、`DouyuSigner` +
+  `douyuSignedForm`(websec 描述符 → `enc_time` 轮 md5 → salt 收尾;DID 必须同时出现在描述符 query、表单与
+  cookie,否则边缘 403 且无错误码)、`douyuPlayUrl` 换链梯(`rtmp_live` 已是绝对地址时必须直接采用)、
+  票据 `expiresAt = createdAt + expire` 与 `refreshBefore = min(45s, 生命/4)`。
+  49 测试(签名 2 个 golden 值用独立实现算出后钉住;传输换成 dio 罐头适配器,所以跑的是真解码路径)。
+  **不包含**:登录 cookie、passport 续期、弹幕、清晰度/线路挑选、超级聊天 —— 等第一个真实消费者要时再补。
+  **未验证**:`fixtures/` 仍空,测试体是照 v1 解析器字段搭的形状,不是录到的响应;下一步需要一次对斗鱼的实际请求。
+  顺带修一个契约形状问题:`refresh` 原来是同步 `throw`,Future 型方法同步抛错会绕过调用方的 `await` 与恢复梯。
 - **`foundation/utils` 从 5 个模块扩到 13 个**(`async_tools`→`async`,新增 errors / conversion / numbers /
   types / validation / equality / identifiers / math,`result` 拆出 `result_sequence`)。每个新模块对应一次
   grep 计数,写在包 `doc/design-decisions.md` §1 的表里:13 个包各写一份 `XException`、`platform` 一处 12 个
@@ -261,7 +272,7 @@
 | 5 | `ui/lyric` `ui/player_ui` **已复核并修** | 单文件适配 | 时间轴先后与面板可滚动已修;剩余:真正接上 `integrations/media` 的状态订阅(要等房间页重构),以及 widget 级测试 |
 | 6 | `services/search` `services/feed` **已完成** | 聚合器只有扇出 | 分页三态校验 + 按源游标 + 取消传播 + 失败记账形状已落;剩余:跨源节(继续看)受 FeedSection 形状限制,见 w5 §2 |
 | 7 | `foundation/diagnostics` `events` `sync` `platform_info` **全部已修** | 薄 | 有界缓冲与守护执行的真缺陷已修;剩余:结构化事件出口、探测能力矩阵、同步游标与冲突策略 |
-| 8 | `providers/douyu` | 空 barrel | 按 `providers/huya` 的形状实现 feed/browse/search/resolve |
+| 8 | ~~`providers/douyu`~~ **已实现匿名切片(本轮)** | 原空 barrel;现 49 测试、Feed/Browse/Search/Resolve 全在 | 取数参照 `origin/master` 的 v1 维护线(不是 merge)。**剩余**:登录/弹幕/清晰度线路挑选等第一个消费者要时再补;`fixtures/` 仍空,需要一次对斗鱼的实际请求把测试体换成录到的响应 |
 | 9 | `ecosystem/plugin_host` `resolver` **已复核并修** / `capability` 已复核无同类缺陷 | 有实现,未过 DoD | 剩余:资源释放与 README 平台矩阵逐项过;三包都还在等宿主 App |
 
 ## 4. 每包完成的定义(逐条核,不合并勾)

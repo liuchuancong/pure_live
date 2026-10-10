@@ -13,7 +13,7 @@
 |---|---|---|---|
 | `utils` → pure_live_utils | async / collections / conversion / equality / errors / identifiers / math / numbers / result / strings / time / types / validation | logging, network, auth, backup, cache, sync | ✅ 叶子,真在用;新增 8 个模块按实测重复计数立项,**尚无消费者**(utils README 未验证清单) |
 | `logging` → pure_live_logging | logger / record | network | ✅ |
-| `network` → pure_live_network | client(dio 封装)/ failure 分类 | extension, providers(bilibili/huya/external_tvbox), app | ✅ |
+| `network` → pure_live_network | client(dio 封装)/ failure 分类 | extension, providers(bilibili/huya/douyu/external_tvbox), foundation/release→已撤(改端口), app | ✅ |
 | `storage` → pure_live_storage | file_key_value_store / stores / migration / migration_runner | extension, permission, identity, services(favorites/history/playlist), app | ✅ |
 | `files` → pure_live_files | atomic_file / file_names / paths | **无** | ⚠️ 零消费者(能力已实现,等消费方) |
 | `cache` → pure_live_cache | policy / store / disk_tier(两级缓存) | **无** | ⚠️ 零消费者 |
@@ -84,7 +84,7 @@
 | `providers/demo` | demo_source(离线种子) | app | ✅ |
 | `providers/iptv` | iptv_source / xmltv_parser | **无** | ⚠️ 实现了但没装配(pubspec 描述还写着 skeleton) |
 | `providers/music` | music_source_host / music_script_crypto / music_script_prelude | **无** | ⚠️ 同上,等 pure_music |
-| `providers/douyu` | 空 barrel | **无** | 🔴 空壳,队列第 8 项 |
+| `providers/douyu` → pure_live_douyu | douyu_source(Feed/Browse/Search/Resolve)/ douyu_sign(描述符 + md5 链)/ douyu_row 三种行形 | **无**(等 `pure_live` 房间页装配) | ✅ 队列第 8 项已实现匿名切片:签名换链带 `expiresAt`,49 测试把 dio 传输换成罐头适配器。**未录到真实响应**,fixtures 仍空(包 README 未验证) |
 
 ## 4. 与目标的偏差(必须修的三组)
 

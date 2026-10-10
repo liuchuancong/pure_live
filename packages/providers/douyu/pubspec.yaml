@@ -1,6 +1,6 @@
 # GENERATED-BY: tool/scaffold_package.ps1
 name: pure_live_douyu
-description: "Provider package: douyu (skeleton; capabilities fill in the plugin-details phase)"
+description: "Douyu live source: anonymous feed, categories, search and the signed H5 play resolve"
 publish_to: none
 resolution: workspace
 
@@ -8,3 +8,21 @@ environment:
   sdk: ^3.13.0
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  # The md5 chain of Douyu's websec descriptor; the signing lives in this package because the descriptor is
+  # Douyu's, not a platform contract.
+  crypto: ^3.0.7
+  pure_live_capability:
+    path: ../../ecosystem/capability
+  pure_live_network:
+    path: ../../foundation/network
+  pure_live_platform:
+    path: ../../ecosystem/platform
+  pure_live_utils:
+    path: ../../foundation/utils
+
+dev_dependencies:
+  # Tests replace the transport, not the client, so the decoding path under test is the real one. That needs
+  # dio's HttpClientAdapter type, which pure_live_network does not re-export.
+  dio: ^5.9.0
+  test: ^1.26.0
