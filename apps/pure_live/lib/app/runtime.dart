@@ -16,9 +16,7 @@
 import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
-import 'package:pure_live_bilibili/pure_live_bilibili.dart';
 import 'package:pure_live_capability/pure_live_capability.dart';
-import 'package:pure_live_demo/pure_live_demo.dart';
 import 'package:pure_live_extension/pure_live_extension.dart';
 import 'package:pure_live_favorites/pure_live_favorites.dart';
 import 'package:pure_live_feed/pure_live_feed.dart';
@@ -222,35 +220,4 @@ final class PureLiveRuntime {
     await media.dispose();
     network.close();
   }
-}
-
-/// Registers the seed source compiled into the app binary.
-///
-/// The shell hosts plugins; it does not ship sites. The demo source is seed
-/// data so the feed and playback chains are demonstrable before the first
-/// plugin is imported, and it is the only thing this function will ever
-/// register. Real sources arrive through install -> enable -> registry.
-PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
-  runtime.capabilities.register(
-    ProviderRegistration(
-      sourceId: demoSourceId,
-      extensionId: 'built-in.demo',
-      provider: const DemoLiveSource(),
-      capabilities: const CapabilitySet(<CapabilityKind>{CapabilityKind.feed, CapabilityKind.live}),
-    ),
-  );
-  // Bilibili vod is the first native source: compiled in (native plugins ship
-  // with the app by definition) but consumed through the same registry as
-  // every plugin, so home, search and the room surface treat it identically.
-  // A settings toggle for built-ins follows the plugin management wave.
-  final bilibili = BilibiliVodSource();
-  runtime.capabilities.register(
-    ProviderRegistration(
-      sourceId: bilibiliSourceId,
-      extensionId: 'built-in.bilibili',
-      provider: bilibili,
-      capabilities: const CapabilitySet(<CapabilityKind>{CapabilityKind.vod, CapabilityKind.search}),
-    ),
-  );
-  return runtime;
 }

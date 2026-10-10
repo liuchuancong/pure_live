@@ -37,7 +37,7 @@ Future<void> main() async {
   } catch (error) {
     mediaSessionError = error;
   }
-  final runtime = registerBuiltInSources(await PureLiveRuntime.boot());
+  final runtime = await PureLiveRuntime.boot();
   if (mediaSessionError != null) {
     runtime.diagnostics.emit(
       'media.sessionUnavailable',
