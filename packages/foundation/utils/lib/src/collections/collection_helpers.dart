@@ -1,5 +1,5 @@
-// Module: lib/src/collections.dart
-// Purpose: Small collection helpers that the platform needs and the SDK does not provide.
+// Module: lib/src/collections/collection_helpers.dart
+// Purpose: The original top-level helpers, kept as functions where an extension cannot express the shape.
 // Author: liuchuancong
 // Created: 2026-10-08
 //
@@ -41,7 +41,7 @@ List<T> distinctBy<T, K>(Iterable<T> items, K Function(T item) keyOf) {
 /// Splits into consecutive chunks of at most [size]; [size] must be positive.
 List<List<T>> chunked<T>(Iterable<T> items, int size) {
   if (size < 1) {
-    throw ArgumentError.value(size, 'size', 'must be at least 1');
+    throw ArgumentError.value(size, "size", "must be at least 1");
   }
   final chunks = <List<T>>[];
   final buffer = <T>[];

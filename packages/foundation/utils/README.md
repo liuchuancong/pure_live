@@ -1,30 +1,42 @@
 # pure_live_utils
 
-> 职责:通用值类型、错误分类与零依赖基础扩展
+> 全仓共享的纯 Dart 基础能力。**五个模块,没有 misc**:async_tools / collections / result / strings / time。
+> 只有一个功能需要的辅助函数,放进那个功能自己的包,不放这里。
 
-| 项 | 规则 |
-|---|---|
-| 层 | foundation(见 [依赖规则](../../../docs/architecture/dependency-rules.md)) |
-| 允许依赖 | 仅 pub.dev 三方包;L0 各包互不依赖(utils、logging 是人人可用的叶子)。 |
-| 禁止依赖 | 任何反向依赖;禁止依赖应用壳(唯一组合根,I9);同层互依(除规则明示例外) |
-| 公共面 | 只有 `lib/pure_live_utils.dart`;内部实现放 `lib/src/` |
+## 为什么这么窄
 
-## 内容
+这个包是依赖图的叶子,任何人在任何层都能 import 它,所以这里的每一行都被整个仓库继承。
+通用工具包的失败模式不是缺功能,而是变成第二个 `dart:core`:一百个没人读过的扩展、
+三套做同一件事的 API。取舍写进 [doc/design-decisions.md](doc/design-decisions.md)。
 
-- `time.dart` —— `Clock` 注入缝与 `FixedClock`,加时长格式化;需要"现在几点"的代码一律接 Clock,不直接读 `DateTime.now()`
-- `strings.dart` —— 空白/截断/URL 判定,以及 §16 要求的敏感 header 与签名 URL 脱敏
-- `result.dart` —— `Result<T,E>`:可预期失败用返回值表达,异常只留给真正的异常
-- `async_tools.dart` —— `SingleFlight` 同键去重、`retryAsync` 退避重试(取消按不变量 9 直接上抛)
-- `collections.dart` —— `groupBy` / `mapNotNull` / `distinctBy` / `chunked`
+## 模块
 
-本包是全仓叶子:**不加运行时依赖**,也不收留只服务单个功能的helper —— 那种东西留在它自己的包里。
+| 模块 | 提供 | 为什么是它 |
+|---|---|---|
+| `async_tools` | `SingleFlight`、`retryAsync`、`AsyncMemoizer`、`OperationCancelledException`、Future/Stream 扩展 | 平台会重复发同一个请求(多个 widget 开同一房间、切线路重试死链),去重与退避必须只有一处实现 |
+| `collections` | `groupBy` / `mapNotNull` / `distinctBy` / `chunked` + Iterable/List/Map 扩展 | 分组要保序、去重要按计算键、有界追加要丢头部 —— SDK 不给或给得不一样 |
+| `result` | `Result<T,E>`(Ok/Err)、`partition` / `collect` / `waitAll` | DEVELOPMENT_STANDARDS §3.4 禁止用异常表达正常流程;解析失败、找不到内容是可预见失败 |
+| `strings` | `nullIfBlank` / `collapsedWhitespace` / `truncate`、`redactHeaders` / `redactQuery`、`Truncator` | 敏感头脱敏是 platform-models §16 的硬要求;标题是中日韩加 emoji,按码元截会撕裂字符 |
+| `time` | `Clock` 缝隙、`systemClock`、`FixedClock`、时长格式化、epoch 换算 | 过期判断与重试退避都要和"现在"比;直接读 DateTime.now() 就不可测 |
 
-## 结构
+## 依赖
 
-- `pubspec.yaml` / `analysis_options.yaml` / `CHANGELOG.md` / `README.md` / `test/` —— 所有包必备
-- `lib/src`
+运行时只依赖 `collection` 与 `clock`,且都是**有理由的**:`collection` 提供这里转引用的 `firstOrNull` 等实现,
+`clock` 提供可被 zone 覆盖的全局时钟,于是 `systemClock()` 与测试里的 `withClock()` 是同一个源。
+`async` / `meta` 之类按源码需要再加,不加"以后可能用得上"的依赖。
 
-## 验证
+## 用法
 
-- 分析:`dart analyze`(纯 Dart)或 `flutter analyze`(带 `-Flutter`)
-- 测试:`dart test`(纯 Dart)或 `flutter test`(带 `-Flutter`)
+```dart
+import 'package:pure_live_utils/pure_live_utils.dart';
+
+final flight = SingleFlight<int>();
+final value = await flight.run('room-1', () => source.viewers('room-1'));
+
+final settled = await futures.waitAll();
+if (!settled.isAllOk) {
+  log.warning('${settled.errors.length} of ${settled.count} sources failed');
+}
+```
+
+公共面清单见 [doc/public-api.md](doc/public-api.md)。

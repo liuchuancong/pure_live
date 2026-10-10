@@ -1,14 +1,18 @@
-# GENERATED-BY: tool/scaffold_package.ps1
 name: pure_live_utils
-description: "通用值类型、错误分类与零依赖基础扩展"
+description: Reusable pure Dart utilities for the PureLive workspace.
+version: 0.1.0
+
 publish_to: none
+
 resolution: workspace
 
 environment:
-  sdk: ^3.13.0
+  sdk: ">=3.9.0 <4.0.0"
 
-# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
-# This package is the leaf of the graph and stays free of runtime dependencies on purpose.
+dependencies:
+  collection: ^1.19.1
+  clock: ^1.1.3
 
 dev_dependencies:
-  test: ^1.26.0
+  test: any
+  lints: any

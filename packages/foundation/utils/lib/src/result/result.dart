@@ -1,4 +1,4 @@
-// Module: lib/src/result.dart
+// Module: lib/src/result/result.dart
 // Purpose: A value-or-failure result type so callers handle expected failures without exceptions in control flow.
 // Author: liuchuancong
 // Created: 2026-10-08
@@ -49,6 +49,7 @@ sealed class Result<T, E> {
   Result<T, E> onErr(void Function(E error) action);
 }
 
+/// A success carrying [value].
 final class OkResult<T, E> extends Result<T, E> {
   const OkResult(this.value) : super();
 
@@ -89,8 +90,12 @@ final class OkResult<T, E> extends Result<T, E> {
 
   @override
   int get hashCode => Object.hash('ok', value);
+
+  @override
+  String toString() => 'Ok($value)';
 }
 
+/// A failure carrying [error].
 final class ErrResult<T, E> extends Result<T, E> {
   const ErrResult(this.error) : super();
 
@@ -131,4 +136,7 @@ final class ErrResult<T, E> extends Result<T, E> {
 
   @override
   int get hashCode => Object.hash('err', error);
+
+  @override
+  String toString() => 'Err($error)';
 }
