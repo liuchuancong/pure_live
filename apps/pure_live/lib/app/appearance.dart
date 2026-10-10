@@ -12,6 +12,15 @@
 // The document is versioned. v0 (the first v2 builds) wrote the fields flat with a `themeMode`; v1 writes
 // `{v:1, seed, settings:{...}}`. fromJson migrates v0 rather than resetting it, because a user who set a seed
 // should not lose it to a refactor they never opted into.
+//
+// Why this one still hand-rolls a version while features/home, features/search and features/vod moved to
+// pure_live_storage's preference mechanism: it is not that shape of problem. The row lives under the key
+// `appearance` inside the runtime's shared extensions store, so the mechanism's isolation-by-namespace would
+// either move the key (which reads an installed user's appearance as "never set" and then persists the default
+// as their choice - the exact defect this round exists to prevent) or run with an empty namespace, where
+// `exportAll` would sweep the extension rows in as if they were preferences. What the mechanism adds - an
+// envelope, a codec gate, a change stream - buys nothing for a single row with one reader that already
+// carries its version and migrates. If appearance ever splits into independently writable keys, it moves.
 
 import 'dart:convert';
 

@@ -245,7 +245,13 @@
      但升级账本是 `Set<String>`,固定几个设置键时无所谓,每内容一行时它的规模就是一个用户的库。
      现在两本账都有具名上界(`kPreferenceRejectionLimit` 64 / `kPreferenceUpgradeReportLimit` 64),超出的计入
      `upgradedCount` 而不是无声消失。storage 测试 76 → 84。
-  还剩第四处也是最后一处:`apps/pure_live` 的 appearance 文档(它自己写了 `{v,seed,settings}` 信封)。
+  **第四处(§5 原计划里的那笔账)判定为不套用**:`apps/pure_live/lib/app/appearance.dart` 的
+  `{v,seed,settings}` 文档继续自己带版本。理由是它跟前三处不是一个形状 ——
+  它的键是 `appearance`,坐在 `runtime.keyValueStore`(那文件同时装扩展的行)里,而机制的隔离手段是
+  `namespace` 前缀:要么改名换键(用户的外观设置会被读成"没设过"→ 下一次写就把默认值存成他的选择,
+  正是这轮一直在修的那个缺陷),要么用空前缀(于是 `exportAll` 会把扩展的行一起当偏好导出)。
+  机制带来的增量收益(信封、codec 门禁、变更流)对这个只有一处读写、已经带版本与 v0 迁移的文档不抵这两个代价。
+  **这是判断而不是遗漏**:如果以后 appearance 拆成多个可独立改的键,那时它就该进机制。
 - **第二处采纳:`features/search` 的历史行**也改成 `PreferenceKey<List<SearchHistoryEntry>>`(codec
   `searchHistory`),键名沿用 `<namespace>.history` 所以旧行仍是本轮读的键。这个包原来自己写
   `{v,items}` JSON 字符串,而**它下面还有 v0**:磁盘上可能躺着"裸关键词列表"(条目还没带时间戳的年代)。
@@ -398,9 +404,10 @@
   持有者(`SchemaStep`/`SchemaMigrator`/`migration_runner.dart`)。**采纳前先决条件已补**:机制原先只会拒绝
   信封前的旧形状,读回落默认、下一次写就把默认存成用户的选择 —— 直接下沉会让每个既有消费者静默删数据,
   这条现在由 `PreferenceKey.upgrade` + 32 例测试封住(见 §2)。
-  **两步都已做完**:搬迁(`storage/lib/src/preferences/`,删 `features/settings`,包数 55 → 54,storage 76 例)
-  与第一个真实消费者(`features/home` 的布局行改成 `PreferenceKey<HomeLayout>`,codec 名 `homeLayout`,
-  旧 `{v,order,hidden}` 字符串行由 `upgrade` 继续读 —— home 测试 18 → 20)。
+  **搬迁与采纳都已做完**:机制进 `storage/lib/src/preferences/`,`features/settings` 删除(包数 55 → 54),
+  三个消费者落地 —— `features/home` 的布局行、`features/search` 的历史行、`features/vod` 的进度行,
+  旧形状一律靠 `PreferenceKey.upgrade` 读回且不回写。采纳过程中补了机制自己的两块(拒绝带理由、两本诊断账有上界),
+  并修掉我在前两处采纳时压平诊断粒度造成的回退。第四处(app 的 appearance)判定不套用,理由记在本文末尾。
   曾考虑的备选 B(给 §4 白名单加 `features/* → features/settings`)被否:那是把层级错误固化成永久例外。
 - **契约点名的类型不存在。** `docs/sources/live/source-contract.md` 用 `QualityLine` / `QualityRef` /
   `LineRef` / `LiveDetail` / `StreamTicket` 写方法签名,但 `pure_live_platform` 里**一个都没定义**
