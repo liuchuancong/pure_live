@@ -15,3 +15,12 @@ dependencies:
     path: ../../foundation/network
   pure_live_platform:
     path: ../../ecosystem/platform
+  # The injected Clock the WBI signer and the source share (dependency-rules §1: L0 is open to every layer).
+  pure_live_utils:
+    path: ../../foundation/utils
+
+dev_dependencies:
+  # Test-only: the transport fake implements dio's HttpClientAdapter, which pure_live_network takes as an
+  # injection parameter but does not re-export. Depending on dio here keeps that out of the shipped graph.
+  dio: ^5.11.0
+  test: ^1.26.0
