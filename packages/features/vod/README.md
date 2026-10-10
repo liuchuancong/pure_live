@@ -8,7 +8,7 @@
 | 文件 | 提供 | 为什么在这一层 |
 |---|---|---|
 | `domain/episode_navigator.dart` | `EpisodeQueue` / `EpisodeStep` / `EpisodeDirection` / `EpisodeNavigationFailure` / `sameContent` | vod-architecture.md 把连播定义成 PlaybackQueue;队列的顺序就是源的顺序,而"提交"只发生在播放器真的打开之后 |
-| `data/watch_progress.dart` | `WatchProgress` / `WatchProgressRepository` / `StoredWatchProgress` / `WatchProgressReadFailure` | 续播阈值是产品规则不是字段;落盘格式与迁移是本包的债 |
+| `data/watch_progress.dart` | `WatchProgress` / `WatchProgressRepository` / `StoredWatchProgress` / `WatchProgressReadFailure` | 续播阈值是产品规则不是字段;**行的形状**(版本、`positionMs`/`updatedAt` 缺哪个)由本包说,"信封/命名空间/记账有上界"是 `storage` 的机制说的 |
 
 ## 行为契约
 

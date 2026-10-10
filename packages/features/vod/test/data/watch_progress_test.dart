@@ -99,6 +99,41 @@ void main() {
     expect(await store.read(key), contains('99'));
   });
 
+  test('test_storedWatchProgress_savesTheSharedEnvelopeWithItsOwnDocumentVersion', () async {
+    // The row is the mechanism's envelope; the watch-position version rides inside the value, because the two
+    // answers are different: "a typed preference row" versus "a progress row with positionMs and updatedAt".
+    final key = 'progress.${identityKey(<Object?>['s1', 'e1'])}';
+    await progress.save(_ref('s1', 'e1'), const Duration(minutes: 4), duration: const Duration(minutes: 40));
+
+    final row = await store.read(key) as Map<Object?, Object?>;
+    expect(row['c'], 'watchProgress');
+    final document = row['value']! as Map<Object?, Object?>;
+    expect(document['v'], kWatchProgressEnvelopeVersion);
+    expect(document['positionMs'], const Duration(minutes: 4).inMilliseconds);
+    expect(document['durationMs'], const Duration(minutes: 40).inMilliseconds);
+  });
+
+  test('test_storedWatchProgress_readsTheRowThisFileWroteBeforeTheMechanism', () async {
+    // A pre-mechanism row is the same document as a JSON string under the same key. Reading it must work and
+    // must not rewrite it: opening an episode is not the event that migrates a user's library.
+    final key = 'progress.${identityKey(<Object?>['s1', 'e2'])}';
+    await store.write(
+      key,
+      jsonEncode(<String, Object?>{
+        'v': 1,
+        'positionMs': 60000,
+        'durationMs': 600000,
+        'updatedAt': '2026-10-01T00:00:00Z',
+      }),
+    );
+
+    final read = await progress.read(_ref('s1', 'e2'));
+
+    expect(read!.position, const Duration(minutes: 1));
+    expect(read.progress, 0.1);
+    expect(await store.read(key), isA<String>(), reason: 'still the old shape on disk');
+  });
+
   test('test_storedWatchProgress_rejectsImpossibleArguments', () async {
     expect(() => progress.save(_ref('s1', 'e1'), const Duration(seconds: -1)), throwsArgumentError);
     expect(

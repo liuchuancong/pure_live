@@ -127,13 +127,30 @@ abstract interface class WatchProgressRepository {
 }
 
 /// The kv-backed [WatchProgressRepository].
+///
+/// Each reference is one typed preference row of `pure_live_storage`'s mechanism: envelope, namespace, codec
+/// gate and bounded rejection log come from there, and the codec name is what stops a row written by a
+/// different shape being read as this one. What stays here is the progress's own rule set - the version check
+/// and the two field refusals, which are about watch positions rather than about storage.
 final class StoredWatchProgress implements WatchProgressRepository {
   StoredWatchProgress({required KeyValueStore store, Clock? clock, String namespace = 'progress', this.onReadFailure})
-    : _store = store,
-      _clock = clock ?? systemClock,
-      namespace = requireNonBlank(namespace, name: 'namespace').toLowerCase();
+    : namespace = requireNonBlank(namespace, name: 'namespace').toLowerCase(),
+      _clock = clock ?? systemClock {
+    _preferences = PreferencesStore(store: store, namespace: '${this.namespace}.');
+  }
 
-  final KeyValueStore _store;
+  static final PreferenceCodec<WatchProgress> _codec = PreferenceCodec.of<WatchProgress>(
+    'watchProgress',
+    _decodeDocument,
+    (WatchProgress value) => value.toJson(),
+  );
+
+  /// The mechanism requires a default for every key; this repository only ever reads with `readIfStored`, so
+  /// the value below is a placeholder that is never handed to a caller. Nullability lives in the repository's
+  /// own contract ("no row, or a row this build cannot use"), not in the storage layer's.
+  static final WatchProgress _noRow = WatchProgress(position: Duration.zero, updatedAt: DateTime.utc(1970));
+
+  late final PreferencesStore _preferences;
   final Clock _clock;
 
   /// Lets two apps keep separate progress in one store.
@@ -143,32 +160,18 @@ final class StoredWatchProgress implements WatchProgressRepository {
 
   @override
   Future<WatchProgress?> read(ContentRef ref) async {
-    final raw = await _store.read(_key(ref));
-    if (raw == null) {
-      return null;
+    final rejectionsBefore = _preferences.rejections.length;
+    final stored = await _preferences.readIfStored(_keyFor(ref));
+    if (stored != null) {
+      return stored;
     }
-    if (raw is! String || raw.isEmpty) {
-      _report('stored value is not text', ref, cause: raw.runtimeType);
-      return null;
+    if (_preferences.rejections.length > rejectionsBefore) {
+      final rejection = _preferences.rejections.last;
+      // The reason the codec gave, when it gave one: "a newer build wrote this" and "there is no position in
+      // this row" are different news for whoever has to answer a user's report.
+      _report(ref, rejection.reason ?? rejection.failure.name);
     }
-    final Object? decoded;
-    try {
-      decoded = jsonDecode(raw);
-    } on FormatException catch (error) {
-      _report('stored row is not json', ref, cause: error);
-      return null;
-    }
-    final fields = jsonMapFrom(decoded);
-    if (fields == null) {
-      _report('stored row is not an object', ref);
-      return null;
-    }
-    final version = intFrom(fields['v']) ?? 0;
-    if (version > kWatchProgressEnvelopeVersion) {
-      _report('stored row version $version is newer than $kWatchProgressEnvelopeVersion', ref);
-      return null;
-    }
-    return WatchProgress.fromJson(fields, onReadFailure: onReadFailure);
+    return null;
   }
 
   @override
@@ -181,16 +184,66 @@ final class StoredWatchProgress implements WatchProgressRepository {
       // past the end and stop the episode from ever resuming.
       throw ArgumentError.value(duration, 'duration', 'must be longer than zero when given');
     }
-    final progress = WatchProgress(position: position, duration: duration, updatedAt: _clock());
-    await _store.write(_key(ref), jsonEncode(progress.toJson()));
+    await _preferences.write(_keyFor(ref), WatchProgress(position: position, duration: duration, updatedAt: _clock()));
   }
 
   @override
-  Future<void> remove(ContentRef ref) => _store.remove(_key(ref));
+  Future<void> remove(ContentRef ref) => _preferences.reset(_keyFor(ref));
 
-  String _key(ContentRef ref) => '$namespace.${identityKey(<Object?>[ref.sourceId, ref.contentId])}';
+  /// Closes the change stream of the store this repository creates. Rows already saved are durable and stay.
+  Future<void> dispose() => _preferences.dispose();
 
-  void _report(String reason, ContentRef ref, {Object? cause}) {
+  /// One key per content reference, and the name is not a slash-joined pair.
+  ///
+  /// `identityKey` length-prefixes each part, so sourceId `a` with contentId `b/c` and sourceId `a/b` with
+  /// contentId `c` - which several vod sources really do produce - cannot collide onto one row and overwrite
+  /// one viewer's position with another's. The name is unchanged from the pre-mechanism file, so rows already
+  /// on disk are the rows this build reads.
+  static PreferenceKey<WatchProgress> _keyFor(ContentRef ref) => PreferenceKey<WatchProgress>(
+    name: identityKey(<Object?>[ref.sourceId, ref.contentId]),
+    codec: _codec,
+    defaultValue: _noRow,
+    upgrade: _readLegacyRow,
+  );
+
+  /// The pre-mechanism row: this file wrote its document as a JSON string under the same key.
+  static Object? _readLegacyRow(Object? raw) {
+    if (raw is! String || raw.isEmpty) {
+      return null;
+    }
+    try {
+      return jsonDecode(raw);
+    } on FormatException {
+      return null;
+    }
+  }
+
+  static WatchProgress? _decodeDocument(Object? raw) {
+    final document = jsonMapFrom(raw);
+    if (document == null) {
+      return null;
+    }
+    final version = intFrom(document['v']) ?? 0;
+    if (version > kWatchProgressEnvelopeVersion) {
+      throw PreferenceDecodeReject('stored row version $version is newer than $kWatchProgressEnvelopeVersion');
+    }
+    final position = intFrom(document['positionMs']);
+    if (position == null || position < 0) {
+      throw const PreferenceDecodeReject('a progress row carries no usable positionMs');
+    }
+    final updatedAt = DateTime.tryParse('${document['updatedAt']}')?.toUtc();
+    if (updatedAt == null) {
+      throw const PreferenceDecodeReject('a progress row carries no parseable updatedAt');
+    }
+    final rawDuration = intFrom(document['durationMs']);
+    return WatchProgress(
+      position: Duration(milliseconds: position),
+      duration: rawDuration == null || rawDuration <= 0 ? null : Duration(milliseconds: rawDuration),
+      updatedAt: updatedAt,
+    );
+  }
+
+  void _report(ContentRef ref, String reason, {Object? cause}) {
     onReadFailure?.call(
       WatchProgressReadFailure('progress for ${ref.sourceId}/${ref.contentId} was unusable: $reason', cause: cause),
     );
