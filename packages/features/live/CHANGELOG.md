@@ -25,4 +25,17 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
   that still exists.
 - `SwitchFailure` reports through `DomainFailure`, so a refused switch carries the same shape as every other
   named failure in the repository.
+- Added `domain/live_recovery.dart`: `LineDegrader` walks the lines **this source** offered, default line
+  first, and stops at `maxSwitches` (4) or when every line has failed. It never crosses to another source -
+  that is the `ResolverChain`'s job, and crossing mid-stream would silently move the user to a different
+  site's vocabulary of qualities and subtitles. It holds no quality variants at all, so a dead line cannot
+  degrade the bitrate the user picked; an earlier draft carried an `allowQualityDegrade` flag that nothing
+  read, which is a knob that lies, so it is gone.
+- Added `LastWatched` and `LastWatchedStore`: the room, title and variant ids to reopen on the next launch,
+  versioned (`v`, and a newer envelope is refused rather than guessed at) and tolerant - an unreadable
+  record, a stale timestamp and a line id the source no longer offers all mean "open nothing" or "start on
+  the source's default", never "resolve a stream that cannot exist". Keys are namespaced, so two hosts
+  sharing one `KeyValueStore` do not read each other's resume record.
+- Declared `pure_live_storage` (the resume record needs a store, and features may not reach services'
+  persistence through a same-layer dependency).
 - Declared `pure_live_utils` and the `test` dev dependency.

@@ -13,4 +13,5 @@
 /// re-implements it per widget is how a late callback from an abandoned line ends up as the selection.
 library;
 
+export 'src/domain/live_recovery.dart';
 export 'src/domain/live_session.dart';
