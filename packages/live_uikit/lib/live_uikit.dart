@@ -6,6 +6,9 @@
 /// resolved here, not a platform check in a page.
 library;
 
+export 'src/backgrounds/background_presets.dart';
+export 'src/backgrounds/background_style.dart';
+export 'src/backgrounds/live_background.dart';
 export 'src/components/contracts/live_component_specs.dart';
 export 'src/components/contracts/live_design_language_components.dart';
 export 'src/core/design_language.dart';
