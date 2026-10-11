@@ -49,7 +49,7 @@ abstract final class LookLiveParser {
     radix: 16,
   ).modPow(BigInt.from(0x10001), _modulus).toRadixString(16).padLeft(256, '0');
 
-  static final crypto.AesCbc _aesCbc = crypto.AesCbc.with256bits(macAlgorithm: crypto.MacAlgorithm.empty);
+  static final crypto.AesCbc _aesCbc = crypto.AesCbc.with128bits(macAlgorithm: crypto.MacAlgorithm.empty);
 
   /// AES-128-CBC (PKCS#7, fixed IV) of [text] under [key], Base64.
   static Future<String> aesEncrypt(String text, String key) async {
@@ -71,6 +71,140 @@ abstract final class LookLiveParser {
 
   /// The form body of [payload].
   static Future<String> formBody(Object? payload) async => Uri(queryParameters: await envelope(payload)).query;
+
+  /// The video list path (the homepage's own recommendation feed).
+  static const String videoListPath = '/weapi/livestream/homepage/recommend';
+
+  /// The voice list path.
+  static const String audioListPath = '/weapi/livestream/listen/homepage/recommend/list';
+
+  /// Rooms one list page asks for.
+  static const int pageSize = 20;
+
+  /// The last page a caller may ask for.
+  static const int maxPage = 10000;
+
+  /// The most entries one list answer may hold.
+  static const int maxEntries = 100;
+
+  /// The id of the video feed's area.
+  static const String videoAreaId = 'video';
+
+  /// The id of the voice feed's area.
+  static const String audioAreaId = 'audio';
+
+  /// The video area's name.
+  static const String videoAreaName = '视频直播';
+
+  /// The voice area's name.
+  static const String audioAreaName = '语音直播';
+
+  /// The catalogue: the site's two feeds, and it is constant — the areas are
+  /// the feeds themselves — so no request is spent finding it out.
+  static List<LiveArea> areas() => const [
+    LiveArea(id: videoAreaId, name: videoAreaName),
+    LiveArea(id: audioAreaId, name: audioAreaName, sort: 1),
+  ];
+
+  /// The feed an area id names, or null for anything else.
+  static LookLiveKind? kindOf(String areaId) => switch (areaId.trim()) {
+    videoAreaId => LookLiveKind.video,
+    audioAreaId => LookLiveKind.audio,
+    _ => null,
+  };
+
+  /// The path of [kind]'s list.
+  static String listPath(LookLiveKind kind) => kind == LookLiveKind.audio ? audioListPath : videoListPath;
+
+  /// The payload of list page [page].
+  static Map<String, int> listPayload(int page) => {'offset': (page - 1) * pageSize, 'limit': pageSize};
+
+  /// A list answer of [kind]: its live rooms, each once, and whether the site
+  /// has another page after them.
+  ///
+  /// An answer that carries neither rows nor a "more" flag is an ended list
+  /// rather than a broken one, which is how the video feed answers once it
+  /// runs out. An entry of another feed is left out; an entry that looked
+  /// like a card of this feed but cannot be read costs itself, while a page
+  /// none of whose entries can be read is a changed endpoint.
+  static LivePage<LiveRoom> directory(String body, {required LookLiveKind kind, required int page, int status = 200}) {
+    final what = kind == LookLiveKind.audio ? 'voice list' : 'video list';
+    final data = LookLiveParser.data(body, status: status, what: what);
+    final rows = data['itemList'];
+    final hasMore = data['hasMore'];
+    if (rows == null && hasMore == false) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    if (rows is! List || rows.length > maxEntries || hasMore is! bool) {
+      throw SiteApiChangedError(
+        'looklive $what: itemList ${rows is List ? 'of ${rows.length}' : rows.runtimeType}, hasMore $hasMore',
+      );
+    }
+    final seen = <String>{};
+    final rooms = <LiveRoom>[];
+    var unreadable = 0;
+    for (final row in rows) {
+      final entry = card(row, kind: kind);
+      if (entry.malformed) {
+        unreadable++;
+        continue;
+      }
+      if (entry.room case final room? when seen.add(room.roomId)) {
+        rooms.add(room);
+      }
+    }
+    if (rooms.isEmpty && unreadable > 0) {
+      throw SiteApiChangedError('looklive $what page $page: $unreadable unreadable entries, none listed');
+    }
+    return LivePage<LiveRoom>(items: rooms, hasMore: hasMore, nextPage: hasMore ? page + 1 : null);
+  }
+
+  /// One list entry: its room, or none because the entry is another feed's
+  /// or carries no live data.
+  ///
+  /// A card is `type` 1 with a `liveData` object whose `liveType` says which
+  /// feed it belongs to — 1 video, 2 voice, and a card whose `liveType` is
+  /// neither is a changed payload rather than another feed's entry. The
+  /// number, name, title, pictures, popularity and viewer count come from the
+  /// card; a card's room is always live, because the feeds carry nothing
+  /// else.
+  static ({LiveRoom? room, bool malformed}) card(Object? raw, {required LookLiveKind kind}) {
+    final entry = SiteJson.object(raw);
+    if (SiteText.trimmed(entry['type']) != '1' || entry['liveData'] == null) {
+      return (room: null, malformed: false);
+    }
+    final live = SiteJson.object(entry['liveData']);
+    final liveType = SiteCounts.integer(live['liveType']);
+    if (liveType != 1 && liveType != 2) {
+      return (room: null, malformed: true);
+    }
+    if (liveType != (kind == LookLiveKind.audio ? 2 : 1)) {
+      return (room: null, malformed: false);
+    }
+    final user = SiteJson.object(live['userInfo']);
+    final roomId = SiteText.trimmed(user['liveRoomNo']);
+    if (!_roomNumber.hasMatch(roomId)) {
+      return (room: null, malformed: true);
+    }
+    final online = SiteCounts.integer(live['onlineNumber']);
+    return (
+      room: LiveRoom(
+        platform: SiteIds.looklive,
+        roomId: roomId,
+        title: SiteText.trimmed(live['liveTitle']),
+        nick: SiteText.trimmed(user['nickname']),
+        avatar: _picture(user['avatarUrl']),
+        cover: _picture(live['liveCoverUrl']),
+        status: LiveStatus.live,
+        watching: online ?? SiteCounts.integer(live['popularity']),
+        onlineViewers: online,
+      ),
+      malformed: false,
+    );
+  }
+
+  /// A room number: two to eighteen digits, as the site writes them.
+  static final RegExp _roomNumber = RegExp(r'^[1-9][0-9]{1,17}$');
 
   /// Validates the envelope (`code` 0) and returns `data`; code 404 is
   /// "not found".
@@ -158,4 +292,13 @@ abstract final class LookLiveParser {
     final url = value?.toString() ?? '';
     return url.isEmpty ? null : url;
   }
+}
+
+/// The two feeds LOOK Live serves.
+enum LookLiveKind {
+  /// Video broadcasts (`liveType` 1).
+  video,
+
+  /// Voice broadcasts (`liveType` 2).
+  audio,
 }
