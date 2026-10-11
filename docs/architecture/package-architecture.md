@@ -49,8 +49,37 @@ pure_live/                        # 仓库根 = pub workspace hub(pubspec.yaml �
 
 **Foundation 包**:`lib/<包名>.dart`(唯一 barrel)+ `lib/src/<切面>/` + `test/`。
 **Feature 包**(repository 与 UI 分包):`lib/src/{data,domain,presentation}/` + `test/`。
-**Provider(源插件)包**:`manifest` + `lib/src/{live|vod|music|auth|models}/` + `capability tests` + `contract tests` + `fixtures/`(录制的真实响应)+ `security policy`。
+**Provider(源插件)包**:`manifest` + `lib/src/{api,site,model,constant}/` + `capability tests` + `contract tests` + `fixtures/`(录制的真实响应)+ `security policy`。
 **所有包必备**:`README.md`(职责一句话 + 允许/禁止依赖)、`CHANGELOG.md`、`pubspec.yaml`、`test/`。
+
+### 2.1 包内文件规范(参照 `wzgrx/pure_live`,2026-10-11 定)
+
+一个包 = 一个能被独立使用、独立测试、独立讲清楚职责的**完整工程**,不是"几个文件放一起"。参考项目的一个站点是
+`<site>_api.dart`(端点/请求头/签名/wire 解析)+ `<site>_site.dart`(能力实现)+ 必要时 `<site>_sign.dart`,
+读起来一眼看得出哪层在哪;我们照这个形状定四条:
+
+1. **一个类型一个文件**,文件名 = 类型名的 snake_case:`stream_option.dart` 里只有 `StreamOption`。
+   枚举也算类型(`danmaku_kind.dart`)。一个文件里出现第二个公开类型 = 该拆了,不管多小。
+2. **barrel 只 export,不定义类型**;`lib/src/**` 之外不得有实现。
+3. **目录按职责分,不按体量分**:
+   - `lib/src/api/` 端点表、请求头、签名、wire 响应到 DTO 的解析(不实现 capability)
+   - `lib/src/site/` capability 实现(`*Capability` 的那些类),一个 capability 面一个类一个文件
+   - `lib/src/model/` 只属于本源的 wire/DTO 形状,**不外泄**:跨包要用的类型进 `ecosystem/platform`
+   - `lib/src/constant/` 端点常量、UA、source id、超时与体积上限(参考项目的 `lib/constant/` 就是这个用途)
+   - `lib/src/internal/` 私有小工具(解析、节流),不给 barrel 出口
+   目录形态与本文档不一致时**改文档先说清理由**(§5:偏离 = 先改模板再改包)。
+4. **pub.dev 上有的,不自己造**。定下的默认选择:
+
+| 用途 | 依赖 | 取代掉的手写物 |
+|---|---|---|
+| 值相等 | `equatable: ^3.0.0` | 手写 `operator ==`/`hashCode`。`foundation/utils` 的 `ValueEquality` 只留给不能带这个依赖的 L0 内部;**新代码一律 `Equatable`** |
+| HTML 解析与实体还原 | `html: ^0.15.4` | 手撕 `<em>` / `&quot;` 的正则。XML 侧同理优先用已锁定的 `xml`/`yaml` 类库 |
+| 关键区互斥 | `synchronized: ^3.3.1` | 自己写"导入并发控制""同一文件读写锁"(参考项目用它控导入并发) |
+| AES/RSA/哈希原语 | `pointycastle: ^4.0.0`(+ `crypto`) | `providers/music` 已用;`crypto` 只用于纯 hash |
+| 国密 SM2/SM3/SM4 | `dart_sm: ^0.1.5` | 站点签名(克拉克拉/抖音一类的 SM 路径出现时用它,不要手抄实现) |
+
+   选它们是因为参考项目已在生产里跑着同一批平台;真要绕过(比如某平台形状库确实覆盖不到)要在包 README 里
+   写清"为什么现成的不够",而不是默默手写。
 
 ## 3. 命名与版本
 

@@ -17,6 +17,7 @@
 import 'package:pure_live_platform/pure_live_platform.dart';
 
 import 'src/capabilities.dart';
+import 'src/media_capabilities.dart';
 
 /// One contract break found in a source implementation.
 ///
@@ -294,6 +295,19 @@ List<String> _missingInterfaces(CapabilityKind kind, Object source) => switch (k
   ],
   CapabilityKind.search => source is! SearchCapability ? const <String>['SearchCapability'] : const <String>[],
   CapabilityKind.feed => source is! FeedCapability ? const <String>['FeedCapability'] : const <String>[],
+  CapabilityKind.quality => source is! QualityCapability ? const <String>['QualityCapability'] : const <String>[],
+  CapabilityKind.line => source is! LineCapability ? const <String>['LineCapability'] : const <String>[],
+  CapabilityKind.danmaku => source is! DanmakuCapability ? const <String>['DanmakuCapability'] : const <String>[],
+  CapabilityKind.subtitle => source is! SubtitleCapability ? const <String>['SubtitleCapability'] : const <String>[],
+  CapabilityKind.lyric => source is! LyricCapability ? const <String>['LyricCapability'] : const <String>[],
+  CapabilityKind.comment => source is! CommentCapability ? const <String>['CommentCapability'] : const <String>[],
+  CapabilityKind.chapter => source is! ChapterCapability ? const <String>['ChapterCapability'] : const <String>[],
+  CapabilityKind.recommendation =>
+    source is! RelatedCapability ? const <String>['RelatedCapability'] : const <String>[],
+  CapabilityKind.account => source is! AccountCapability ? const <String>['AccountCapability'] : const <String>[],
+  // `auth` (a login flow) and `danmaku` send rights are not checkable here: sending is discovered by testing
+  // `source is DanmakuSendCapability` at the call site, and a login flow has no interface until the consent
+  // surface that owns it exists. Declaring either therefore reports nothing rather than pretending a match.
   _ => const <String>[],
 };
 

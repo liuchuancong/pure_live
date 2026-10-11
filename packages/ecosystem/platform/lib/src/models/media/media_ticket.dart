@@ -92,12 +92,18 @@ final class MediaTrack {
 /// able to do. A source may permit nothing while the policy allows everything, and the intersection is what
 /// a scheduler may act on.
 final class MediaTicketRefreshInfo {
-  const MediaTicketRefreshInfo({this.supported = true, this.expiresAt, this.refreshBefore});
+  const MediaTicketRefreshInfo({
+    this.supported = true,
+    this.expiresAt,
+    this.refreshBefore,
+    this.cutsConnection = false,
+  });
 
   factory MediaTicketRefreshInfo.fromJson(Map<String, Object?> json) => MediaTicketRefreshInfo(
     supported: json['supported'] as bool? ?? true,
     expiresAt: parseUtc(json['expiresAt']),
     refreshBefore: parseDurationMs(json['refreshBeforeMs']),
+    cutsConnection: json['cutsConnection'] as bool? ?? false,
   );
 
   /// Whether this resource can be re-fetched at all. A one-shot signed url sets this false, and asking for a
@@ -111,6 +117,14 @@ final class MediaTicketRefreshInfo {
   /// How long before expiry a replacement should be requested (docs/media/media-contract.md section 2's
   /// `refreshBefore`, the "T-45s" in docs/media/media-ticket.md section 3).
   final Duration? refreshBefore;
+
+  /// Whether the old stream also **dies** when its lease ends, so the replacement has to be spliced in rather
+  /// than merely prefetched. Douyu's signed FLV does this; huya's does not - and a player that prefetches but
+  /// never reconnects on the first is the "画面停了声音还在" report.
+  ///
+  /// This is the one thing a source knows about its own URLs that the platform cannot observe from the wire, so
+  /// it has to be declared. Absent means the safer-for-bandwidth reading: prefetch is enough.
+  final bool cutsConnection;
 
   /// When a replacement should be asked for, or null when there is nothing to schedule.
   ///
@@ -139,6 +153,7 @@ final class MediaTicketRefreshInfo {
     if (!supported) 'supported': false,
     if (expiresAt != null) 'expiresAt': formatUtc(expiresAt),
     if (refreshBefore != null) 'refreshBeforeMs': durationMs(refreshBefore),
+    if (cutsConnection) 'cutsConnection': true,
   };
 
   @override

@@ -14,3 +14,4 @@ library;
 
 export 'src/capabilities.dart';
 export 'src/capability_registry.dart';
+export 'src/media_capabilities.dart';

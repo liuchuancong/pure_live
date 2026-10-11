@@ -349,13 +349,19 @@ void main() {
   });
 
   test('test_checkCapabilityDeclarations_kindsWithoutInterfacesReportNothing', () {
-    // danmaku and epg have no method set in this package yet; a declaration of one is not a contract break.
+    // epg and auth have no method set in this package (auth needs the consent surface that owns a login flow),
+    // so declaring one is not a contract break; declaring danmaku is, since media_capabilities.dart gave that
+    // kind a method set and a source that only lists it would be reporting a capability it cannot serve.
     expect(
       checkCapabilityDeclarations(
-        const CapabilitySet(<CapabilityKind>{CapabilityKind.danmaku, CapabilityKind.epg}),
+        const CapabilitySet(<CapabilityKind>{CapabilityKind.epg, CapabilityKind.auth}),
         Object(),
       ),
       isEmpty,
+    );
+    expect(
+      checkCapabilityDeclarations(const CapabilitySet(<CapabilityKind>{CapabilityKind.danmaku}), Object()),
+      isNotEmpty,
     );
   });
 

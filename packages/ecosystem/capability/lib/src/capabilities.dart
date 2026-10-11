@@ -11,9 +11,19 @@ import 'package:pure_live_platform/pure_live_platform.dart';
 
 /// Every capability name the platform recognises.
 ///
-/// Only the kinds whose method sets are specified by docs/contracts/capability-contract.md section 3 have
-/// an interface in this package today; the rest land with the wave that defines their calls, so nobody has
-/// to guess a signature to satisfy an empty interface.
+/// Which kinds have a method set, and which deliberately do not:
+/// - `live`/`vod`/`music`/`iptv` route to [BrowseCapability] + [ResolveCapability]; the domain itself is a
+///   [ContentKind], not an interface, so a "LiveCapability" would be a second name for the same two methods.
+/// - `search` and `feed` are [SearchCapability] and [FeedCapability].
+/// - `quality`, `line`, `danmaku`, `subtitle`, `lyric`, `comment`, `chapter`, `recommendation` and `account` are
+///   the interfaces in `media_capabilities.dart`, added because a provider could not otherwise be a complete
+///   package: the ceiling of four method sets is why every source so far stopped at listing and resolving.
+/// - `auth` has no interface yet - a login flow needs the consent surface that owns it, not a signature guessed
+///   here. `history`, `favorite` and `playlist` are L2 services, and `epg`/`repository` are package-level
+///   features (`providers/iptv`, `ecosystem/extension`), so they are not source capabilities to declare.
+///
+/// `testing.dart`'s declaration check compares each kind that has an interface and reports nothing for the rest,
+/// so declaring an unimplemented kind is caught where it is checkable, and never passes a check that does not exist.
 enum CapabilityKind {
   // content capabilities
   live,
