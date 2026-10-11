@@ -247,6 +247,41 @@ abstract final class HuyaParser {
   /// A title from the richer field, falling back to the shorter one.
   static String _title(Object? primary, Object? fallback) => SiteText.titleFrom(primary, fallback);
 
+  /// The site's four boards, which are fixed: Huya answers a *board's*
+  /// areas on request (`bussLive?bussType=`) but never lists the boards
+  /// themselves, so they are named here rather than fetched.
+  static const List<({String id, String name})> boards = [
+    (id: '1', name: '网游'),
+    (id: '2', name: '单机'),
+    (id: '3', name: '手游'),
+    (id: '8', name: '娱乐'),
+  ];
+
+  /// `liveconfig/game/bussLive` → the areas of one board.
+  ///
+  /// Each row is a game with a numeric `gid`, which is what the room list is
+  /// filtered by; the `areaType` is the board the request asked for, so a
+  /// picker can group the areas exactly as the site does. The area picture
+  /// follows a well-known CDN pattern, which is why it can be built from the
+  /// id when the row carries none.
+  static List<LiveArea> areas(Map<String, Object?> root, {required ({String id, String name}) board}) {
+    final rows = SiteJson.list(root['data']);
+    if (rows.isEmpty) {
+      throw const SiteApiChangedError('huya bussLive: no data list');
+    }
+    return [
+      for (final row in rows)
+        if (row is Map<String, Object?>)
+          if (SiteCounts.integer(row['gid']) case final id? when id > 0)
+            LiveArea(
+              id: '$id',
+              name: SiteText.title(SiteText.text(row['gameFullName'])),
+              parentId: board.id,
+              sort: SiteCounts.integer(row['gameSort']) ?? 0,
+            ),
+    ];
+  }
+
   /// `getSearchContent&v=1` → the streamers matching a keyword.
   ///
   /// The search answer carries several document sets — rooms under

@@ -12,7 +12,7 @@ import 'package:live_sites/src/platforms/huya/parsers/huya_parser.dart';
 /// until then) and the Wup token flow for higher qualities.
 final class HuyaSite
     with SiteRoomGuard
-    implements LiveSite, LiveDirectoryCapability, LiveSearchCapability, LiveAnchorSearch {
+    implements LiveSite, LiveDirectoryCapability, LiveSearchCapability, LiveAnchorSearch, LiveAreaCatalog {
   /// A site over [http].
   new({required this.http});
 
@@ -95,6 +95,34 @@ final class HuyaSite
       throw SiteApiChangedError('huya $what: body is not an object');
     }
     return root;
+  }
+
+  /// The site's boards and every board's areas, flattened.
+  ///
+  /// One request per board — four of them, in parallel — because the site
+  /// offers no endpoint that lists a board's areas together with the others;
+  /// a board whose request fails is skipped rather than failing the whole
+  /// catalogue, since three boards of areas still browse.
+  @override
+  Future<List<LiveArea>> getAreas() async {
+    final results = await Future.wait([for (final board in HuyaParser.boards) _boardAreas(board)]);
+    return [for (final areas in results) ...areas];
+  }
+
+  /// One board's areas, or none when its request fails.
+  Future<List<LiveArea>> _boardAreas(({String id, String name}) board) async {
+    try {
+      final response = await http.send(
+        LiveRequest.get(
+          Uri.https('live.cdn.huya.com', '/liveconfig/game/bussLive', {'bussType': board.id}),
+          headers: const {'user-agent': _userAgent},
+          site: siteId,
+        ),
+      );
+      return HuyaParser.areas(_json(response, what: 'bussLive'), board: board);
+    } on Object {
+      return const [];
+    }
   }
 
   /// The streamers matching [keyword], live or not.
