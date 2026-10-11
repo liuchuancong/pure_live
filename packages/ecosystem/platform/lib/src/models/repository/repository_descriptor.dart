@@ -7,7 +7,7 @@
 // repository is a collection of sources; it is not a plugin and does not become one.
 
 import '../../support/json.dart';
-import '../identifiers/identifiers/identifiers.dart';
+import '../identifiers/identifiers.dart';
 
 /// What a repository can serve.
 enum RepositoryCapability { list, detail, search, category, recommendation, resolve, playlist, epg }

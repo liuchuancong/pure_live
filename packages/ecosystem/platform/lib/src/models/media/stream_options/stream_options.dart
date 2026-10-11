@@ -1,4 +1,4 @@
-// Module: lib/src/models/media/stream_options.dart
+// Module: lib/src/models/media/stream_options/stream_options.dart
 // Purpose: Both stream menus one content item offers - qualities and lines - carried together.
 // Author: liuchuancong
 // Created: 2026-10-11

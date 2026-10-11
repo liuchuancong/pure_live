@@ -1,4 +1,4 @@
-// Module: lib/src/models/media/media_ticket.dart
+// Module: lib/src/models/media/media_ticket_policy/media_ticket_policy.dart
 // Purpose: MediaTicketPolicy, split out of the file that bundled it (see package-architecture.md
 // §2.1): one public type per file, and the file in a folder of its own so anything generated for
 // it lands beside it.
@@ -6,8 +6,8 @@
 // Created: 2026-10-11
 
 import '../../../support/json.dart';
-import '../../content/content_ref/content_ref.dart';
 
+/// What the platform is allowed to do with a ticket. Defaults follow section 11.
 final class MediaTicketPolicy {
   const MediaTicketPolicy({
     this.allowRedirect = true,
@@ -59,5 +59,3 @@ final class MediaTicketPolicy {
     };
   }
 }
-
-/// A resolved, playable resource.

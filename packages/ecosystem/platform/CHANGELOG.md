@@ -5,6 +5,10 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- **Fixed**: the residue of the one-type-per-file split. `Module:` headers named the file each type came out of
+  (the content ones had the path doubled), a type's doc block had landed at the foot of its predecessor's file,
+  and unused imports travelled along. Docs are restored from the pre-split originals; `models/identifiers/` is
+  flattened; behaviour and JSON shape are untouched (the diff is comments and directives only).
 - **Added**: `models/live/` as the live domain's own model home. `LiveRoom`, `LiveRoomStatus`, `LiveRoomState`,
   `AnchorSummary`, `DanmakuMessage` and `DanmakuKind` moved out of `models/content/` and `models/media/`, where
   they were mixed in with the generic and the点播 shapes. A room's facts had been travelling as

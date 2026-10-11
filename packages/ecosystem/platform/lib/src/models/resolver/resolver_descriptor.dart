@@ -9,7 +9,7 @@
 
 import '../../support/json.dart';
 import '../content/content_kind/content_kind.dart';
-import '../identifiers/identifiers/identifiers.dart';
+import '../identifiers/identifiers.dart';
 
 /// What a resolver turns into a ticket.
 enum ResolverKind { live, vod, music, iptv, local, download }

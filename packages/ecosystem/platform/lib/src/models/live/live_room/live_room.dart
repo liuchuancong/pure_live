@@ -1,4 +1,4 @@
-// Module: lib/src/models/live/live_room.dart
+// Module: lib/src/models/live/live_room/live_room.dart
 // Purpose: 直播间本身 - one room, described once, with the live facts as fields instead of string keys.
 // Author: liuchuancong
 // Created: 2026-10-11
@@ -19,11 +19,11 @@ import '../../content/content_metadata/content_metadata.dart';
 import '../../content/content_ref/content_ref.dart';
 import '../../content/content_summary/content_summary.dart';
 import '../anchor_summary/anchor_summary.dart';
-import '../live_room_state/live_room_state.dart';
 import '../live_audience/live_audience.dart';
 import '../live_audience_metric/live_audience_metric.dart';
 import '../live_catch_up/live_catch_up.dart';
 import '../live_restriction/live_restriction.dart';
+import '../live_room_state/live_room_state.dart';
 
 part 'live_room.freezed.dart';
 part 'live_room.g.dart';

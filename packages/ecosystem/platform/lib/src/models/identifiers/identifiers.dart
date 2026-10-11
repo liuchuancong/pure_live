@@ -1,4 +1,4 @@
-// Module: lib/src/models/identifiers.dart
+// Module: lib/src/models/identifiers/identifiers.dart
 // Purpose: The identifier typedefs every platform model uses, so an id is a named concept rather than a bare String.
 // Author: liuchuancong
 // Created: 2026-10-08

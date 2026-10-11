@@ -1,4 +1,4 @@
-// Module: lib/src/lib/src/models/content/page_mode/page_mode.dart
+// Module: lib/src/models/content/page_mode/page_mode.dart
 // Purpose: How a listing is continued.
 // Author: liuchuancong
 // Created: 2026-10-11
@@ -9,6 +9,10 @@
 
 import '../page_request/page_request.dart';
 
+/// How a source pages its listings. The source declares the mode on every
+/// answer; the consumer reads the fields the mode names and must not assume.
+/// Sources in the wild genuinely differ: fixed page tables, opaque server
+/// cursors, and lists that simply come back whole.
 enum PageMode {
   /// One-based page numbers with a page size; the classic table.
   fixedPage,
@@ -21,5 +25,3 @@ enum PageMode {
   /// asking for page 2 returns empty.
   singleShot,
 }
-
-/// Which page to fetch. Page numbers are one-based, matching every protocol this app speaks.

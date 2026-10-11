@@ -1,4 +1,4 @@
-// Module: lib/src/lib/src/models/content/content_summary/content_summary.dart
+// Module: lib/src/models/content/content_summary/content_summary.dart
 // Purpose: The card-sized view of content, used by lists and search results.
 // Author: liuchuancong
 // Created: 2026-10-11
@@ -11,6 +11,7 @@ import '../../../support/json.dart';
 import '../content_metadata/content_metadata.dart';
 import '../content_ref/content_ref.dart';
 
+/// The card-sized view of content, used by lists and search results.
 final class ContentSummary {
   const ContentSummary({
     required this.ref,
@@ -50,5 +51,3 @@ final class ContentSummary {
     };
   }
 }
-
-/// The full record for one item: its summary, its children and its tags.

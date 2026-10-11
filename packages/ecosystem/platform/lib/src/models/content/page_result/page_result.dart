@@ -1,4 +1,4 @@
-// Module: lib/src/lib/src/models/content/page_result/page_result.dart
+// Module: lib/src/models/content/page_result/page_result.dart
 // Purpose: One page of results.
 // Author: liuchuancong
 // Created: 2026-10-11
@@ -9,6 +9,7 @@
 
 import '../page_mode/page_mode.dart';
 
+/// One page of results.
 final class PageResult<T> {
   const PageResult({
     required this.items,
@@ -63,5 +64,3 @@ final class PageResult<T> {
     };
   }
 }
-
-/// How a browse request is ordered.

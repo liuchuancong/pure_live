@@ -9,7 +9,7 @@
 
 import '../../support/json.dart';
 import '../error/platform_error_info.dart';
-import '../identifiers/identifiers/identifiers.dart';
+import '../identifiers/identifiers.dart';
 import '../runtime/runtime_descriptor.dart';
 import 'extension_type.dart';
 

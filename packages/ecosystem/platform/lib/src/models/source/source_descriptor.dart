@@ -9,7 +9,7 @@
 
 import '../../support/json.dart';
 import '../error/platform_error_info.dart';
-import '../identifiers/identifiers/identifiers.dart';
+import '../identifiers/identifiers.dart';
 
 /// How the source is reached.
 enum SourceType { url, file, script, builtin, repository }

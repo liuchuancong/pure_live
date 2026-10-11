@@ -1,4 +1,4 @@
-// Module: lib/src/models/media/stream_option_kind.dart
+// Module: lib/src/models/media/stream_option_kind/stream_option_kind.dart
 // Purpose: Which axis a listed stream choice belongs to.
 // Author: liuchuancong
 // Created: 2026-10-11

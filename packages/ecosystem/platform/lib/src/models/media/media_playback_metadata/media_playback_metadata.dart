@@ -1,4 +1,4 @@
-// Module: lib/src/models/media/media_ticket.dart
+// Module: lib/src/models/media/media_playback_metadata/media_playback_metadata.dart
 // Purpose: MediaPlaybackMetadata, split out of the file that bundled it (see package-architecture.md
 // §2.1): one public type per file, and the file in a folder of its own so anything generated for
 // it lands beside it.
@@ -6,8 +6,8 @@
 // Created: 2026-10-11
 
 import '../../../support/json.dart';
-import '../../content/content_ref/content_ref.dart';
 
+/// Descriptive fields for a UI or a media session. No playback state.
 final class MediaPlaybackMetadata {
   const MediaPlaybackMetadata({
     this.title,
@@ -51,5 +51,3 @@ final class MediaPlaybackMetadata {
     };
   }
 }
-
-/// What the platform is allowed to do with a ticket. Defaults follow section 11.

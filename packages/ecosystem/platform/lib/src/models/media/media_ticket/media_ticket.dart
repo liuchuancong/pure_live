@@ -1,4 +1,4 @@
-// Module: lib/src/models/media/media_ticket.dart
+// Module: lib/src/models/media/media_ticket/media_ticket.dart
 // Purpose: MediaTicket, split out of the file that bundled it (see package-architecture.md
 // §2.1): one public type per file, and the file in a folder of its own so anything generated for
 // it lands beside it.
@@ -8,12 +8,13 @@
 import '../../../support/json.dart';
 import '../../content/content_ref/content_ref.dart';
 import '../media_kind/media_kind.dart';
-import '../media_protocol/media_protocol.dart';
-import '../media_track/media_track.dart';
-import '../media_ticket_refresh_info/media_ticket_refresh_info.dart';
 import '../media_playback_metadata/media_playback_metadata.dart';
+import '../media_protocol/media_protocol.dart';
 import '../media_ticket_policy/media_ticket_policy.dart';
+import '../media_ticket_refresh_info/media_ticket_refresh_info.dart';
+import '../media_track/media_track.dart';
 
+/// A resolved, playable resource.
 final class MediaTicket {
   const MediaTicket({
     required this.id,

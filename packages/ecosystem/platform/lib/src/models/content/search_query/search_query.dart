@@ -1,4 +1,4 @@
-// Module: lib/src/lib/src/models/content/search_query/search_query.dart
+// Module: lib/src/models/content/search_query/search_query.dart
 // Purpose: One search request.
 // Author: liuchuancong
 // Created: 2026-10-11
@@ -11,6 +11,7 @@ import '../../../support/json.dart';
 import '../content_kind/content_kind.dart';
 import '../page_request/page_request.dart';
 
+/// A search request. Kept separate from ContentQuery because search has no category to scope by.
 final class SearchQuery {
   const SearchQuery({
     required this.keyword,
@@ -40,10 +41,3 @@ final class SearchQuery {
     filters: asObjectMap(json['filters']),
   );
 }
-
-/// Why a ticket is being refreshed.
-///
-/// Spec: docs/contracts/media-contract.md section 3 and docs/media/media-ticket.md section 2 list these
-/// names; docs/architecture/evolution.md forbids renaming or reordering an enum once it exists, so the
-/// documented set is used as written instead of a reduced local one. The four failure causes stay separate
-/// because the recovery ladder differs per cause (docs/media/recovery.md).

@@ -1,4 +1,4 @@
-// Module: lib/src/lib/src/models/content/content_metadata/content_metadata.dart
+// Module: lib/src/models/content/content_metadata/content_metadata.dart
 // Purpose: The descriptive columns a listing shows beside a title.
 // Author: liuchuancong
 // Created: 2026-10-11
@@ -9,6 +9,7 @@
 
 import '../../../support/json.dart';
 
+/// Extra descriptive fields. Only fields that are stable and widely consumed belong here.
 final class ContentMetadata {
   const ContentMetadata({
     this.year,
@@ -52,7 +53,3 @@ final class ContentMetadata {
     };
   }
 }
-
-/// One entry of a source's category table. [parentId] builds the tree when a
-/// source groups two levels (channel group -> sub-category); a flat source
-/// leaves it null. The id is what a ContentQuery.category carries back.

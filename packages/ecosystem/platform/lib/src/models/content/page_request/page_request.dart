@@ -1,4 +1,4 @@
-// Module: lib/src/lib/src/models/content/page_request/page_request.dart
+// Module: lib/src/models/content/page_request/page_request.dart
 // Purpose: Which page to fetch.
 // Author: liuchuancong
 // Created: 2026-10-11
@@ -7,6 +7,7 @@
 // type per file, and the file lives in a folder of its own (§2.1) so a model and anything generated
 // for it are found in one place.
 
+/// Which page to fetch. Page numbers are one-based, matching every protocol this app speaks.
 final class PageRequest {
   const PageRequest({this.page = 1, this.pageSize = 20, this.cursor});
 
@@ -31,5 +32,3 @@ final class PageRequest {
     cursor: json['cursor'] as String?,
   );
 }
-
-/// One page of results.

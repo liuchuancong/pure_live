@@ -1,4 +1,4 @@
-// Module: lib/src/lib/src/models/content/content_kind/content_kind.dart
+// Module: lib/src/models/content/content_kind/content_kind.dart
 // Purpose: What kind of content a reference points at.
 // Author: liuchuancong
 // Created: 2026-10-11
@@ -7,6 +7,7 @@
 // type per file, and the file lives in a folder of its own (§2.1) so a model and anything generated
 // for it are found in one place.
 
+/// What kind of content a reference points at.
 enum ContentKind {
   liveChannel,
   liveRoom,
@@ -27,5 +28,3 @@ enum ContentKind {
   epgProgram,
   localMedia,
 }
-
-/// Extra descriptive fields. Only fields that are stable and widely consumed belong here.

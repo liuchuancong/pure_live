@@ -1,4 +1,4 @@
-// Module: lib/src/lib/src/models/content/content_query/content_query.dart
+// Module: lib/src/models/content/content_query/content_query.dart
 // Purpose: One listing request.
 // Author: liuchuancong
 // Created: 2026-10-11
@@ -11,6 +11,7 @@ import '../../../support/json.dart';
 import '../content_sort/content_sort.dart';
 import '../page_request/page_request.dart';
 
+/// A browse query inside one source.
 final class ContentQuery {
   const ContentQuery({
     this.category,
@@ -44,5 +45,3 @@ final class ContentQuery {
     filters: asObjectMap(json['filters']),
   );
 }
-
-/// A search request. Kept separate from ContentQuery because search has no category to scope by.

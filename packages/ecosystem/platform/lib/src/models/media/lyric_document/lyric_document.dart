@@ -1,4 +1,4 @@
-// Module: lib/src/models/media/lyric_document.dart
+// Module: lib/src/models/media/lyric_document/lyric_document.dart
 // Purpose: Lyric text one item carries, in the source's own format.
 // Author: liuchuancong
 // Created: 2026-10-11

@@ -1,4 +1,4 @@
-// Module: lib/src/lib/src/models/content/selection_ref/selection_ref.dart
+// Module: lib/src/models/content/selection_ref/selection_ref.dart
 // Purpose: A choice the viewer made from a menu the source published.
 // Author: liuchuancong
 // Created: 2026-10-11
@@ -7,6 +7,7 @@
 // type per file, and the file lives in a folder of its own (§2.1) so a model and anything generated
 // for it are found in one place.
 
+/// A quality or line choice inside one source's own vocabulary.
 final class SelectionRef {
   const SelectionRef(this.id, {this.label});
 

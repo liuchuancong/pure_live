@@ -1,4 +1,4 @@
-// Module: lib/src/lib/src/models/content/content_tag/content_tag.dart
+// Module: lib/src/models/content/content_tag/content_tag.dart
 // Purpose: A label the source puts on content, as the source names it.
 // Author: liuchuancong
 // Created: 2026-10-11
@@ -9,6 +9,7 @@
 
 import '../../../support/json.dart';
 
+/// A tag as one source labels content.
 final class ContentTag {
   const ContentTag({required this.id, required this.name});
 
@@ -20,5 +21,3 @@ final class ContentTag {
 
   Map<String, Object?> toJson() => <String, Object?>{'id': id, 'name': name};
 }
-
-/// A reference to content inside one source.

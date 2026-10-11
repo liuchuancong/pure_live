@@ -1,4 +1,4 @@
-// Module: lib/src/lib/src/models/content/content_detail/content_detail.dart
+// Module: lib/src/models/content/content_detail/content_detail.dart
 // Purpose: The full answer for one item, including its children.
 // Author: liuchuancong
 // Created: 2026-10-11
@@ -12,6 +12,7 @@ import '../content_ref/content_ref.dart';
 import '../content_summary/content_summary.dart';
 import '../content_tag/content_tag.dart';
 
+/// The full record for one item: its summary, its children and its tags.
 final class ContentDetail {
   const ContentDetail({
     required this.summary,

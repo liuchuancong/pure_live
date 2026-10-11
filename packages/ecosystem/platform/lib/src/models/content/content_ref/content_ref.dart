@@ -1,4 +1,4 @@
-// Module: lib/src/lib/src/models/content/content_ref/content_ref.dart
+// Module: lib/src/models/content/content_ref/content_ref.dart
 // Purpose: A reference to content inside one source.
 // Author: liuchuancong
 // Created: 2026-10-11
@@ -8,9 +8,10 @@
 // for it are found in one place.
 
 import '../../../support/json.dart';
-import '../../identifiers/identifiers/identifiers.dart';
+import '../../identifiers/identifiers.dart';
 import '../content_kind/content_kind.dart';
 
+/// A reference to content inside one source.
 final class ContentRef {
   const ContentRef({
     required this.sourceId,
@@ -88,5 +89,3 @@ ContentRef? refFromJsonOrNull(Object? value) => value == null ? null : refFromJs
 Map<String, Object?> refToJson(ContentRef value) => value.toJson();
 
 Map<String, Object?>? refToJsonOrNull(ContentRef? value) => value?.toJson();
-
-/// The card-sized view of content, used by lists and search results.

@@ -1,4 +1,4 @@
-// Module: lib/src/models/media/media_ticket.dart
+// Module: lib/src/models/media/media_track/media_track.dart
 // Purpose: MediaTrack, split out of the file that bundled it (see package-architecture.md
 // §2.1): one public type per file, and the file in a folder of its own so anything generated for
 // it lands beside it.
@@ -6,10 +6,9 @@
 // Created: 2026-10-11
 
 import '../../../support/json.dart';
-import '../../content/content_ref/content_ref.dart';
 import '../media_track_type/media_track_type.dart';
-import '../media_ticket_policy/media_ticket_policy.dart';
 
+/// One stream inside a ticket: video essence, audio essence or subtitle.
 final class MediaTrack {
   const MediaTrack({
     required this.uri,
@@ -65,10 +64,3 @@ final class MediaTrack {
     };
   }
 }
-
-/// What a source says about keeping one ticket alive.
-///
-/// docs/contracts/platform-models.md section 11 defines it alongside [MediaTicketPolicy], and the two are
-/// deliberately separate: the policy is what the *platform* is permitted to do, this is what the *source* is
-/// able to do. A source may permit nothing while the policy allows everything, and the intersection is what
-/// a scheduler may act on.

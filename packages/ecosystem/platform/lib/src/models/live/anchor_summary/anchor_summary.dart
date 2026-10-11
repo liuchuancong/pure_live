@@ -1,4 +1,4 @@
-// Module: lib/src/models/live/anchor_summary.dart
+// Module: lib/src/models/live/anchor_summary/anchor_summary.dart
 // Purpose: A person a source can be searched for, as opposed to a room or a video.
 // Author: liuchuancong
 // Created: 2026-10-11

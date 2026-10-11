@@ -1,4 +1,4 @@
-// Module: lib/src/models/live/danmaku_message.dart
+// Module: lib/src/models/live/danmaku_message/danmaku_message.dart
 // Purpose: One live-room message as the source reported it.
 // Author: liuchuancong
 // Created: 2026-10-11

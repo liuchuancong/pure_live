@@ -10,7 +10,7 @@
 
 import '../../support/json.dart';
 import '../error/platform_error_info.dart';
-import '../identifiers/identifiers/identifiers.dart';
+import '../identifiers/identifiers.dart';
 
 /// Where a task sits in the queue. Values follow platform-infrastructure.md section 7.3.
 enum TaskPriority { critical, high, normal, low, background }

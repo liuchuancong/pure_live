@@ -1,4 +1,4 @@
-// Module: lib/src/lib/src/models/content/content_category/content_category.dart
+// Module: lib/src/models/content/content_category/content_category.dart
 // Purpose: One entry of a source's own category table.
 // Author: liuchuancong
 // Created: 2026-10-11
@@ -9,6 +9,9 @@
 
 import '../../../support/json.dart';
 
+/// One entry of a source's category table. [parentId] builds the tree when a
+/// source groups two levels (channel group -> sub-category); a flat source
+/// leaves it null. The id is what a ContentQuery.category carries back.
 final class ContentCategory {
   const ContentCategory({required this.id, required this.name, this.parentId, this.icon});
 
@@ -40,5 +43,3 @@ final class ContentCategory {
   @override
   String toString() => 'ContentCategory($id $name)';
 }
-
-/// A tag as one source labels content.

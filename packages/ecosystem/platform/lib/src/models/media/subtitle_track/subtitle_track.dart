@@ -1,4 +1,4 @@
-// Module: lib/src/models/media/subtitle_track.dart
+// Module: lib/src/models/media/subtitle_track/subtitle_track.dart
 // Purpose: One subtitle track a stream offers, and where its bytes come from.
 // Author: liuchuancong
 // Created: 2026-10-11

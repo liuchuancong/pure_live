@@ -1,4 +1,4 @@
-// Module: lib/src/models/media/stream_option.dart
+// Module: lib/src/models/media/stream_option/stream_option.dart
 // Purpose: One choice a source offers before a stream is resolved - a quality or a line.
 // Author: liuchuancong
 // Created: 2026-10-11
