@@ -30,6 +30,179 @@ abstract final class PandaLiveParser {
     'shareLinkType': '',
   };
 
+  /// The id of the public-directory area (3.x's `public`).
+  static const String publicAreaId = 'public';
+
+  /// The name of the public-directory area (3.x's zh.json
+  /// `pandalive_public_directory`).
+  static const String directoryAreaName = '公开直播';
+
+  /// The id of the new-broadcaster area: the platform's list of the
+  /// broadcasters it marks as new (`onlyNewBj=Y`).
+  static const String newBroadcasterAreaId = 'newbj';
+
+  /// The name of the new-broadcaster area.
+  static const String newBroadcasterAreaName = '新人主播';
+
+  /// Rows of a directory page (3.x's `directory` size).
+  static const int pageSize = 30;
+
+  /// The highest directory page 3.x would ask (1–1000).
+  static const int maxPage = 1000;
+
+  /// The most rows a paged answer may carry (3.x's guard).
+  static const int maxRows = 64;
+
+  /// The Referer of a directory POST (the website's own directory page).
+  static const String directoryReferer = '$origin/live';
+
+  /// The names of the category codes the cards carry.
+  static const Map<String, String> areaNames = {
+    'ind': '个人直播',
+    'talk': '聊天',
+    'music': '音乐',
+    'game': '游戏',
+    'sports': '体育',
+    'etc': '其他',
+  };
+
+  /// The name of category code [code]: the table's name, else the code as
+  /// sent; empty for none.
+  static String areaNameOf(Object? code) {
+    final text = SiteText.trimmed(code);
+    return areaNames[text.toLowerCase()] ?? text;
+  }
+
+  /// The catalogue: this site's two areas, both *constant* — the public
+  /// directory and the new broadcasters, no request at all (3.x's
+  /// `categories`).
+  static List<LiveArea> areas() => const [
+    LiveArea(id: publicAreaId, name: directoryAreaName),
+    LiveArea(id: newBroadcasterAreaId, name: newBroadcasterAreaName, sort: 1),
+  ];
+
+  /// The `live/index` form of directory page [page] of [areaId]:
+  /// [pageSize] rows by popularity; the new broadcasters add
+  /// `onlyNewBj=Y`.
+  static Map<String, String> directoryForm(int page, {String areaId = publicAreaId}) => {
+    'offset': '${(page - 1) * pageSize}',
+    'limit': '$pageSize',
+    'orderBy': 'hot',
+    if (areaId == newBroadcasterAreaId) 'onlyNewBj': 'Y',
+  };
+
+  /// Checks [area] as the caller error it is: null (the public directory)
+  /// or one of the two areas; anything else is refused before any request.
+  static String checkArea(LiveArea? area) {
+    if (area == null) return publicAreaId;
+    if (area.id != publicAreaId && area.id != newBroadcasterAreaId) {
+      throw ArgumentError.value(area, 'area', 'not a PandaTV directory');
+    }
+    return area.id;
+  }
+
+  /// Checks a page number (1–[maxPage]) as 3.x did before any request.
+  static void checkPage(int page) {
+    if (page < 1 || page > maxPage) throw RangeError.range(page, 1, maxPage, 'page');
+  }
+
+  /// A page of `live/index` asked at [page] of [size]: the directory and
+  /// the LIVE search answer with the same envelope.
+  ///
+  /// This endpoint's answer is *flat* — `list`, `page` and `result` sit at
+  /// the top level, unlike `member/bj`'s `{result, data}` — so it is decoded
+  /// here rather than through [data]. `page.offset`, `limit` and `page` must
+  /// be what was asked and `total` must be a count: a paged answer that does
+  /// not echo the request is a changed endpoint, not an empty page. A row
+  /// that cannot be a live card is skipped instead of failing the page.
+  static LivePage<LiveRoom> livePage(String body, {required int page, int size = pageSize, int status = 200}) {
+    if (status < 200 || status >= 300) {
+      throw SiteApiChangedError('pandalive live/index: HTTP $status');
+    }
+    final root = SiteJson.decode(body, what: 'pandalive live/index');
+    if (SiteCounts.flag(root['result']) != true) {
+      throw SiteApiChangedError('pandalive live/index: result ${root['result']}');
+    }
+    final paging = SiteJson.object(root['page']);
+    final offset = (page - 1) * size;
+    if (SiteCounts.integer(paging['offset']) != offset ||
+        SiteCounts.integer(paging['limit']) != size ||
+        SiteCounts.integer(paging['page']) != page) {
+      throw SiteApiChangedError('pandalive live/index: page $paging for offset $offset, limit $size');
+    }
+    final total = SiteCounts.integer(paging['total']);
+    if (total == null) {
+      throw SiteApiChangedError('pandalive live/index: page.total ${paging['total']}');
+    }
+    final rows = SiteJson.list(root['list']);
+    if (rows.length > maxRows) {
+      throw SiteApiChangedError('pandalive live/index: list of ${rows.length} rows');
+    }
+    final seen = <String>{};
+    final items = <LiveRoom>[];
+    for (final row in rows) {
+      final card = liveCard(SiteJson.object(row));
+      if (card != null && seen.add(card.roomId.toLowerCase())) items.add(card);
+    }
+    final hasMore = offset + rows.length < total;
+    return LivePage(items: items, hasMore: hasMore, nextPage: hasMore ? page + 1 : null, totalCount: total);
+  }
+
+  /// A live card of a directory row: the broadcast title (else the nick),
+  /// the broadcaster's nick and avatar, the snapshot as cover, the
+  /// category's name as area, concurrent viewers and the start. Null for a
+  /// row without a broadcaster id or that is not on air.
+  ///
+  /// The site's adult/password/fans-only flags have no counterpart in the
+  /// unified restriction enum, so a card carries the state only; a refusal
+  /// is the play path's to report.
+  static LiveRoom? liveCard(Map<String, Object?> row) {
+    final id = normalizeUserId(row['userId']);
+    if (id == null || SiteCounts.flag(row['isLive']) != true) return null;
+    final nick = SiteText.title(SiteText.text(row['userNick']));
+    final title = SiteText.title(SiteText.text(row['title']));
+    return LiveRoom(
+      platform: SiteIds.pandalive,
+      roomId: id,
+      title: title.isEmpty ? nick : title,
+      nick: nick,
+      avatar: _image(row['userImg']),
+      cover: _image(row['thumbUrl'] ?? row['ivsThumbnail']),
+      areaName: areaNameOf(row['category']),
+      status: isRerun(row) ? LiveStatus.replay : LiveStatus.live,
+      watching: SiteCounts.integer(row['user']),
+      startedAt: koreanTime(row['startTime']),
+    );
+  }
+
+  /// Whether an on-air broadcast is a recording played again (`onAirType`
+  /// or `liveType` `rec`; its title starts with `[녹]`, 녹화): a replay,
+  /// as Twitch's reruns. It plays like a live broadcast.
+  static bool isRerun(Map<String, Object?> media) =>
+      SiteText.trimmed(media['onAirType']) == 'rec' || SiteText.trimmed(media['liveType']) == 'rec';
+
+  /// A `startTime` as a moment in time: the site sends a Korean wall clock
+  /// (`yyyy-MM-dd HH:mm:ss`), which is UTC+9 — parsing it as local time
+  /// would shift every start by the viewer's offset.
+  static DateTime? koreanTime(Object? value) {
+    final match = _koreanTime.firstMatch(SiteText.trimmed(value));
+    if (match == null) return null;
+    final parts = [for (var group = 1; group <= 6; group++) int.parse(match.group(group)!)];
+    return DateTime.utc(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]).subtract(const Duration(hours: 9));
+  }
+
+  /// [value] as a broadcaster id: trimmed, letters, digits and `_`, with an
+  /// optional social-login suffix (`@ka`); null for anything else.
+  static String? normalizeUserId(Object? value) {
+    if (value is! String) return null;
+    final id = value.trim();
+    return _userId.hasMatch(id) ? id : null;
+  }
+
+  static final RegExp _koreanTime = RegExp(r'^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$');
+
+  static final RegExp _userId = RegExp(r'^[A-Za-z0-9_]{1,64}(?:@[A-Za-z0-9_]{2,16})?$');
+
   /// Validates the `{result, data}` envelope; HTTP 400 is "not found"
   /// ("유저 정보가 없습니다").
   static Map<String, Object?> data(String body, {int status = 200, String what = 'response'}) {
