@@ -35,6 +35,9 @@ class _RoomPageState extends State<RoomPage> {
   late sites.LiveRoom _room = widget.room;
   final List<sites.LiveMessage> _messages = [];
   InteractionSession? _interaction;
+  // Created when the room connects and cancelled in dispose, which is the
+  // page's lifetime rather than the connecting function's — hence the ignore.
+  // ignore: cancel_subscriptions
   StreamSubscription<InteractionState>? _interactionState;
   List<sites.LivePlayQuality> _qualities = const [];
   sites.LivePlayQuality? _quality;
