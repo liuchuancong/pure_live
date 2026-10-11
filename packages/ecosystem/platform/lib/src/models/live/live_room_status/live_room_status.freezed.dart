@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$LiveRoomStatus {
 
- ContentRef get ref;/// [LiveRoomState.unknown] is "the source could not tell" and is deliberately not collapsed into
+@JsonKey(fromJson: refFromJson, toJson: refToJson) ContentRef get ref;/// [LiveRoomState.unknown] is "the source could not tell" and is deliberately not collapsed into
 /// [LiveRoomState.ended]: a follow list that reads a timeout as off-air stops watching a live stream.
  LiveRoomState get state;/// Viewer count exactly as the platform worded it. The unit (concurrent viewers, total visits, heat) is
 /// the source's own, so this model does not rename it; a surface that shows it carries the platform's label.
@@ -59,7 +59,7 @@ abstract mixin class $LiveRoomStatusCopyWith<$Res>  {
   factory $LiveRoomStatusCopyWith(LiveRoomStatus value, $Res Function(LiveRoomStatus) _then) = _$LiveRoomStatusCopyWithImpl;
 @useResult
 $Res call({
- ContentRef ref, LiveRoomState state,@JsonKey(fromJson: _intOrNull, toJson: _intOrNull) int? viewers, String? title, String? cover, String? anchorName, DateTime? startedAt
+@JsonKey(fromJson: refFromJson, toJson: refToJson) ContentRef ref, LiveRoomState state,@JsonKey(fromJson: _intOrNull, toJson: _intOrNull) int? viewers, String? title, String? cover, String? anchorName, DateTime? startedAt
 });
 
 
@@ -170,7 +170,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ContentRef ref,  LiveRoomState state, @JsonKey(fromJson: _intOrNull, toJson: _intOrNull)  int? viewers,  String? title,  String? cover,  String? anchorName,  DateTime? startedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(fromJson: refFromJson, toJson: refToJson)  ContentRef ref,  LiveRoomState state, @JsonKey(fromJson: _intOrNull, toJson: _intOrNull)  int? viewers,  String? title,  String? cover,  String? anchorName,  DateTime? startedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LiveRoomStatus() when $default != null:
 return $default(_that.ref,_that.state,_that.viewers,_that.title,_that.cover,_that.anchorName,_that.startedAt);case _:
@@ -191,7 +191,7 @@ return $default(_that.ref,_that.state,_that.viewers,_that.title,_that.cover,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ContentRef ref,  LiveRoomState state, @JsonKey(fromJson: _intOrNull, toJson: _intOrNull)  int? viewers,  String? title,  String? cover,  String? anchorName,  DateTime? startedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(fromJson: refFromJson, toJson: refToJson)  ContentRef ref,  LiveRoomState state, @JsonKey(fromJson: _intOrNull, toJson: _intOrNull)  int? viewers,  String? title,  String? cover,  String? anchorName,  DateTime? startedAt)  $default,) {final _that = this;
 switch (_that) {
 case _LiveRoomStatus():
 return $default(_that.ref,_that.state,_that.viewers,_that.title,_that.cover,_that.anchorName,_that.startedAt);case _:
@@ -211,7 +211,7 @@ return $default(_that.ref,_that.state,_that.viewers,_that.title,_that.cover,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ContentRef ref,  LiveRoomState state, @JsonKey(fromJson: _intOrNull, toJson: _intOrNull)  int? viewers,  String? title,  String? cover,  String? anchorName,  DateTime? startedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(fromJson: refFromJson, toJson: refToJson)  ContentRef ref,  LiveRoomState state, @JsonKey(fromJson: _intOrNull, toJson: _intOrNull)  int? viewers,  String? title,  String? cover,  String? anchorName,  DateTime? startedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _LiveRoomStatus() when $default != null:
 return $default(_that.ref,_that.state,_that.viewers,_that.title,_that.cover,_that.anchorName,_that.startedAt);case _:
@@ -226,10 +226,10 @@ return $default(_that.ref,_that.state,_that.viewers,_that.title,_that.cover,_tha
 @JsonSerializable()
 
 class _LiveRoomStatus extends LiveRoomStatus {
-  const _LiveRoomStatus({required this.ref, required this.state, @JsonKey(fromJson: _intOrNull, toJson: _intOrNull) this.viewers, this.title, this.cover, this.anchorName, this.startedAt}): super._();
+  const _LiveRoomStatus({@JsonKey(fromJson: refFromJson, toJson: refToJson) required this.ref, required this.state, @JsonKey(fromJson: _intOrNull, toJson: _intOrNull) this.viewers, this.title, this.cover, this.anchorName, this.startedAt}): super._();
   factory _LiveRoomStatus.fromJson(Map<String, dynamic> json) => _$LiveRoomStatusFromJson(json);
 
-@override final  ContentRef ref;
+@override@JsonKey(fromJson: refFromJson, toJson: refToJson) final  ContentRef ref;
 /// [LiveRoomState.unknown] is "the source could not tell" and is deliberately not collapsed into
 /// [LiveRoomState.ended]: a follow list that reads a timeout as off-air stops watching a live stream.
 @override final  LiveRoomState state;
@@ -277,7 +277,7 @@ abstract mixin class _$LiveRoomStatusCopyWith<$Res> implements $LiveRoomStatusCo
   factory _$LiveRoomStatusCopyWith(_LiveRoomStatus value, $Res Function(_LiveRoomStatus) _then) = __$LiveRoomStatusCopyWithImpl;
 @override @useResult
 $Res call({
- ContentRef ref, LiveRoomState state,@JsonKey(fromJson: _intOrNull, toJson: _intOrNull) int? viewers, String? title, String? cover, String? anchorName, DateTime? startedAt
+@JsonKey(fromJson: refFromJson, toJson: refToJson) ContentRef ref, LiveRoomState state,@JsonKey(fromJson: _intOrNull, toJson: _intOrNull) int? viewers, String? title, String? cover, String? anchorName, DateTime? startedAt
 });
 
 

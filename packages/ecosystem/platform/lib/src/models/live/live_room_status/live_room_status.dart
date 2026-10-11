@@ -1,4 +1,4 @@
-// Module: lib/src/models/content/live_room_status/live_room_status.dart
+// Module: lib/src/models/live/live_room_status/live_room_status.dart
 // Purpose: The cheap, pollable answer about one room: is it on air, and what does it look like right now.
 // Author: liuchuancong
 // Created: 2026-10-11
@@ -13,7 +13,7 @@
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import '../content_ref.dart';
+import '../../content/content_ref.dart';
 import '../live_room_state.dart';
 
 part 'live_room_status.freezed.dart';
@@ -23,7 +23,7 @@ part 'live_room_status.g.dart';
 @freezed
 abstract class LiveRoomStatus with _$LiveRoomStatus {
   const factory LiveRoomStatus({
-    required ContentRef ref,
+    @JsonKey(fromJson: refFromJson, toJson: refToJson) required ContentRef ref,
 
     /// [LiveRoomState.unknown] is "the source could not tell" and is deliberately not collapsed into
     /// [LiveRoomState.ended]: a follow list that reads a timeout as off-air stops watching a live stream.

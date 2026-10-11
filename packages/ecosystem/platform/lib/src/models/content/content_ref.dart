@@ -14,6 +14,11 @@ import '../identifiers.dart';
 enum ContentKind {
   liveChannel,
   liveRoom,
+
+  /// 主播本人 - the person, not their room. `AnchorSearchCapability` returns these and a follow list stores
+  /// them, so a ref that pointed at [liveRoom] instead would open whoever is streaming right now rather than
+  /// the account the viewer chose.
+  anchor,
   vod,
   movie,
   series,
@@ -183,6 +188,21 @@ final class ContentRef {
   @override
   String toString() => 'ContentRef($sourceId/$kind:$contentId)';
 }
+
+/// The converter pair a generated (freezed/json_serializable) model must hang on a nested [ContentRef] field.
+///
+/// Without it the generator writes the **object** into the map - `'ref': instance.ref` - which `jsonEncode`
+/// happens to survive but our storage does not: the repositories persist the `toJson()` map itself, and reading
+/// that back hit `json['ref'] as Map<String, dynamic>` on a live `ContentRef` and threw. The two directions are
+/// paired here so no model can ship half of them.
+ContentRef refFromJson(Object? value) =>
+    ContentRef.fromJson(value is Map ? asObjectMap(value) : const <String, Object?>{});
+
+ContentRef? refFromJsonOrNull(Object? value) => value == null ? null : refFromJson(value);
+
+Map<String, Object?> refToJson(ContentRef value) => value.toJson();
+
+Map<String, Object?>? refToJsonOrNull(ContentRef? value) => value?.toJson();
 
 /// The card-sized view of content, used by lists and search results.
 final class ContentSummary {

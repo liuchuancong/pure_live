@@ -1,4 +1,4 @@
-// Module: lib/src/models/media/danmaku_kind.dart
+// Module: lib/src/models/live/danmaku_kind.dart
 // Purpose: What kind of message a live-room row is.
 // Author: liuchuancong
 // Created: 2026-10-11

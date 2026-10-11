@@ -1,4 +1,4 @@
-// Module: lib/src/models/content/live_room_state.dart
+// Module: lib/src/models/live/live_room_state.dart
 // Purpose: Whether a live room is on air, as the source reported it.
 // Author: liuchuancong
 // Created: 2026-10-11

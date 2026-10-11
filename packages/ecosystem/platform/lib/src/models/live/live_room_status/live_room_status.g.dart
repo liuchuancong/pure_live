@@ -8,7 +8,7 @@ part of 'live_room_status.dart';
 
 _LiveRoomStatus _$LiveRoomStatusFromJson(Map<String, dynamic> json) =>
     _LiveRoomStatus(
-      ref: ContentRef.fromJson(json['ref'] as Map<String, dynamic>),
+      ref: refFromJson(json['ref']),
       state: $enumDecode(_$LiveRoomStateEnumMap, json['state']),
       viewers: _intOrNull(json['viewers']),
       title: json['title'] as String?,
@@ -21,7 +21,7 @@ _LiveRoomStatus _$LiveRoomStatusFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$LiveRoomStatusToJson(_LiveRoomStatus instance) =>
     <String, dynamic>{
-      'ref': instance.ref,
+      'ref': refToJson(instance.ref),
       'state': _$LiveRoomStateEnumMap[instance.state]!,
       'viewers': _intOrNull(instance.viewers),
       'title': instance.title,
