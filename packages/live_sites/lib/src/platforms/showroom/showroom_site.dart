@@ -12,7 +12,7 @@ import 'package:live_sites/src/platforms/showroom/parsers/showroom_parser.dart';
 ///
 /// Not migrated yet: directory, search and the room's gift catalog (a gift
 /// is reported by its id until the catalog lands).
-final class ShowroomSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability {
+final class ShowroomSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability, LiveAreaCatalog {
   /// A site over [http].
   new({required this.http});
 
@@ -45,6 +45,20 @@ final class ShowroomSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapa
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
     throw UnimplementedError('showroom search lands with its migration');
+  }
+
+  /// The site's genres, which are the groups its live snapshot is divided
+  /// into — there is no separate catalogue endpoint.
+  @override
+  Future<List<LiveArea>> getAreas() async {
+    final response = await http.send(
+      LiveRequest.get(
+        Uri.https('www.showroom-live.com', '/api/live/onlives'),
+        headers: ShowroomParser.headers,
+        site: siteId,
+      ),
+    );
+    return ShowroomParser.genres(ShowroomParser.data(response.text, status: response.statusCode, what: 'live/onlives'));
   }
 
   /// Opens a danmaku session for [room].

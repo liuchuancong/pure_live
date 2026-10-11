@@ -127,6 +127,32 @@ abstract final class ShowroomParser {
     return lines;
   }
 
+  /// `live/onlives` → the site's genres, flattened.
+  ///
+  /// SHOWROOM has no catalogue endpoint: the genres are the groups the live
+  /// snapshot is already divided into (`onlives[]` with `genre_id` and
+  /// `genre_name`), so this reads the same answer the room list does rather
+  /// than asking for something else. Genre 0 is the site's "Popularity"
+  /// group — the recommendations rather than a subject — and is kept,
+  /// because that is how the site's own side bar starts.
+  static List<LiveArea> genres(Map<String, Object?> root) {
+    final groups = SiteJson.list(root['onlives']);
+    if (groups.isEmpty) {
+      throw const SiteApiChangedError('showroom onlives: no onlives groups');
+    }
+    final areas = <LiveArea>[];
+    final seen = <String>{};
+    for (final group in groups) {
+      final groupMap = SiteJson.object(group);
+      final id = SiteCounts.integer(groupMap['genre_id']);
+      if (id == null || !seen.add('$id')) {
+        continue;
+      }
+      areas.add(LiveArea(id: '$id', name: SiteText.title(SiteText.text(groupMap['genre_name'])), sort: id));
+    }
+    return areas;
+  }
+
   static String? _image(Object? value) {
     final url = value?.toString() ?? '';
     return url.isEmpty ? null : url;
