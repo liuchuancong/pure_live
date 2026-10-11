@@ -1,4 +1,7 @@
-import 'package:meta/meta.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'site_metadata.freezed.dart';
+part 'site_metadata.g.dart';
 
 /// The stable program identifier and display facts of a live site.
 ///
@@ -6,29 +9,20 @@ import 'package:meta/meta.dart';
 /// [displayName] is what the UI shows by default and may be overridden
 /// per locale. [logoUrl] points at a remote brand asset; [iconAsset]
 /// names an app-bundled one. A site sets exactly the one it ships.
-@immutable
-final class SiteMetadata {
+// ignore_for_file: unnecessary_type_name_in_constructor -- Freezed
+// factories cannot use the `new` shorthand; the lint cannot be satisfied
+// for generated-model constructors.
+@freezed
+abstract class SiteMetadata with _$SiteMetadata {
   /// Builds the metadata bundle.
-  const new({required this.id, required this.displayName, this.homeUrl, this.logoUrl, this.iconAsset});
+  const factory SiteMetadata({
+    required String id,
+    required String displayName,
+    String? homeUrl,
+    String? logoUrl,
+    String? iconAsset,
+  }) = _SiteMetadata;
 
-  /// Stable program identifier, e.g. `bilibili`.
-  final String id;
-
-  /// Human-facing display name.
-  final String displayName;
-
-  /// The site's home page, when it has one.
-  final String? homeUrl;
-
-  /// Remote logo asset URL.
-  final String? logoUrl;
-
-  /// App-bundled icon asset key.
-  final String? iconAsset;
-
-  /// Convenience: the remote logo, if the site ships one.
-  String? get logoUrlOrNull => logoUrl;
-
-  @override
-  String toString() => 'SiteMetadata($id, $displayName)';
+  /// Restores metadata from JSON (registry fixtures and diagnostics).
+  factory SiteMetadata.fromJson(Map<String, Object?> json) => _$SiteMetadataFromJson(json);
 }
