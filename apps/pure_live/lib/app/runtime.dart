@@ -291,6 +291,22 @@ PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
   );
   runtime.capabilities.register(
     ProviderRegistration(
+      sourceId: picartoSourceId,
+      extensionId: 'built-in.picarto',
+      provider: PicartoSource(),
+      // The play path is three reads deep (channel detail, master playlist, chosen address), so the status path
+      // stops at the detail and never fetches a playlist.
+      capabilities: const CapabilitySet(<CapabilityKind>{
+        CapabilityKind.feed,
+        CapabilityKind.live,
+        CapabilityKind.search,
+        CapabilityKind.quality,
+        CapabilityKind.line,
+      }),
+    ),
+  );
+  runtime.capabilities.register(
+    ProviderRegistration(
       sourceId: jdliveSourceId,
       extensionId: 'built-in.jdlive',
       provider: JdliveSource(),

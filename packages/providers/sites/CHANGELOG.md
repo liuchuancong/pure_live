@@ -6,6 +6,17 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- **Added**: `picarto` - the explore grid that has to describe its own request (`current_page`, `per_page`,
+  `last_page` and `total` are all checked, and a page past the end carrying rows is a schema change rather than
+  more results), the language-category table, the profile search, the channel detail with its single-stream match
+  and shape-checked load-balancer origin, and the master playlist grouped by **picture identity**. The room is the
+  channel name, so the site's own page words (`search`, `login`, `about`, …) are reserved and can never resolve as
+  someone's stream. Adult and offline rows are dropped from the grid - dropping is not the same as marking them
+  offline - and a filtered answer whose row is not in the asked-for category is refused instead of being shown
+  under that heading. Two renditions of one resolution/frame-rate/codec are one quality with two cdn addresses
+  (bandwidth ranks, it does not identify), and a playlist carrying external audio keeps its **master as an
+  explicit automatic choice** rather than picking a video variant that would drop the sound.
+
 - **Added**: `jdlive` (京东直播) - the gateway's `body=<json>` query shape, the directory that continues by
   `currentCount` under one fixed timestamp (a page past the first asked without that cursor is refused, and a count
   that did not move ends the list), and the room's two containers. `code` and `subCode` are **text** on this

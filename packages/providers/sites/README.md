@@ -70,6 +70,13 @@
   标题写着 `【重播】` 而状态字段仍说在播时,房间照播,真相记在 tag 里。清晰度是 tier(`blueray`→原画、`ultra`→蓝光,
   表里没有的键保留原名),一个 tier 内部的 cdn 家族才是线路,顺序按站自己的偏好表;原画那档不带 `vbr`,
   所以它的位置来自名字而不是缺席的码率。直播包里的线路值可能只是挂在房间 m3u8 上的 `?sign=`,不是完整地址。
+- `picarto/` —— `PicartoSource`:**房间就是频道名**(`[A-Za-z0-9_]{1,50}`,且站点自己的页面词 `search`/`login`/`about`
+  等是保留字,永远不会被解析成某人的频道)。explore 的答复必须**自证是这次请求**:`current_page`/`per_page`/
+  `last_page`/`total` 全都核对,过了最后一页还带行就是接口变了。成人行与离线行从网格里**丢弃**(丢弃不等于把它们
+  标成离线);带了分类筛选而某行不在该分类里 ⇒ 拒绝,而不是挂在这个分类下面。清晰度按**画面身份**分组
+  (分辨率/帧率/codec;cdn 主机、签名路径与抖动的带宽都不算身份):同身份的多个地址是一条清晰度的两条线路,带宽只参与排序。
+  清单里带外部音频时,master 作为**显式的自动选项**保留,而不是挑一个会丢声音的纯视频变体。详情里负载均衡 origin
+  在拼进 url 前过形状检查;流列表匹配本频道必须**恰好一条**。
 - `jdlive/` —— `JdliveSource`:所有调用都是 `api.m.jd.com/api?appid=h5-live&functionId=…&body=<json>`,
   `code`/`subCode` 在这个网关里是**文本** `'0'`(按数字比就把能用的答案读成拒绝),目录靠
   `currentCount` 续着走(整趟共用一个 timestamp,要下一页没带 count 就拒绝;count 不动就是到头)。卡片只有
@@ -96,8 +103,8 @@
 ## 验证
 
 - 分析:`dart analyze packages/providers/sites`
-- 测试:`dart test packages/providers/sites`(363 条,每个站点目录配一份 `test/<site>/`;README 上没列到的
-  weibo / inke / kugou / missevan / kuaishou / baidulive / bigo / cc / chzzk / jdlive 见 CHANGELOG。传输一律用 `pure_live_network`
+- 测试:`dart test packages/providers/sites`(383 条,每个站点目录配一份 `test/<site>/`;README 上没列到的
+  weibo / inke / kugou / missevan / kuaishou / baidulive / bigo / cc / chzzk / jdlive / picarto 见 CHANGELOG。传输一律用 `pure_live_network`
   的 `testing.dart` 罐头适配器,不联网)
 - 架构:`dart run tool/check_architecture.dart --strict`
 
