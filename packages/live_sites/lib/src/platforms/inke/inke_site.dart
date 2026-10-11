@@ -3,12 +3,12 @@ import 'package:live_sites/live_sites.dart';
 import 'package:live_sites/src/platforms/inke/parsers/inke_parser.dart';
 
 /// The Inke adapter: live_share_pc rooms enriched by the app's
-/// now_publish broadcast (who carries the signed pull URLs).
+/// now_publish broadcast (who carries the signed pull URLs), plus the
+/// website's showcases and the app's hot list.
 ///
-/// Not migrated yet: directory and search, the Zego original-quality
-/// line as a separate quality, the showcase URL lookup fallback and the
-/// danmaku transport.
-final class InkeSite with SiteRoomGuard implements LiveSite {
+/// Not migrated yet: search, the Zego original-quality line as a separate
+/// quality, the showcase URL lookup fallback and the danmaku transport.
+final class InkeSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -25,14 +25,52 @@ final class InkeSite with SiteRoomGuard implements LiveSite {
   SiteMetadata get metadata =>
       const SiteMetadata(id: SiteIds.inke, displayName: '映客直播', homeUrl: 'https://www.inke.cn');
 
+  /// The catalogue: the website's top list and its channels, read from the
+  /// one answer that also carries their rooms.
   @override
-  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
-    throw UnimplementedError('inke directory lands with its migration');
+  Future<List<LiveArea>> getAreas() async {
+    final response = await http.send(
+      LiveRequest.get(InkeParser.channelListUrl(), headers: InkeParser.headers, site: siteId),
+    );
+    return InkeParser.areas(response.text, status: response.statusCode);
   }
 
+  /// The app's hot list — about twenty broadcasts, different at every call —
+  /// which is what the site recommends; it is one page, so a later page is
+  /// empty without a request.
+  @override
+  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
+    if (page > 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final response = await http.send(LiveRequest.get(InkeParser.hotUrl(), headers: InkeParser.headers, site: siteId));
+    return LivePage<LiveRoom>(items: InkeParser.hotRooms(response.text, status: response.statusCode));
+  }
+
+  /// The rooms of one showcase, one page: the top list for its own area,
+  /// else the channel's rows of the website's channel list. A channel the
+  /// site has retired is not found rather than empty.
   @override
   Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    throw UnimplementedError('inke directory lands with its migration');
+    if (page > 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final key = area.id.trim();
+    if (key == InkeParser.topAreaId) {
+      final response = await http.send(LiveRequest.get(InkeParser.topUrl(), headers: InkeParser.headers, site: siteId));
+      return LivePage<LiveRoom>(items: InkeParser.topRooms(response.text, status: response.statusCode));
+    }
+    if (!RegExp(r'^[A-Za-z0-9_]{1,64}$').hasMatch(key)) {
+      throw SiteError.invalidRoomId(area.id);
+    }
+    final response = await http.send(
+      LiveRequest.get(InkeParser.channelListUrl(), headers: InkeParser.headers, site: siteId),
+    );
+    final rooms = InkeParser.channelRooms(response.text, tabKey: key, status: response.statusCode);
+    if (rooms == null) {
+      throw SiteNotFoundError('inke: the site no longer has the channel $key');
+    }
+    return LivePage<LiveRoom>(items: rooms);
   }
 
   @override

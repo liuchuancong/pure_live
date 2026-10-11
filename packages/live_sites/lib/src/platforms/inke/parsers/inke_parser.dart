@@ -28,6 +28,196 @@ abstract final class InkeParser {
   /// A uuid: digits.
   static bool isUid(String value) => RegExp(r'^\d{1,20}$').hasMatch(value.trim());
 
+  /// The id of the website's top list, which is also the first area of the
+  /// catalogue. A channel key is alphanumeric and can never collide with it.
+  static const String topAreaId = 'Live_top_pc';
+
+  /// The name of the top-list area.
+  static const String topAreaName = '官网推荐';
+
+  /// A channel key (`tab_key`).
+  static final RegExp _tabKey = RegExp(r'^[A-Za-z0-9_]{1,64}$');
+
+  /// The website's channel list, which is also the catalogue: its channels
+  /// are the areas, and their rows are the rooms.
+  static Uri channelListUrl() => Uri.parse('$webApi/Live_channel_pc');
+
+  /// The website's top list (eight slots).
+  static Uri topUrl() => Uri.parse('$webApi/Live_top_pc');
+
+  /// The app's hot list, which is what the site recommends.
+  static Uri hotUrl() => Uri.parse('$appApi/simpleall');
+
+  /// The `data` of a website answer (`error_code` 0), which is the envelope
+  /// every `Live_*_pc` endpoint uses.
+  static Map<String, Object?> webData(String body, {required String what, int status = 200}) {
+    if (status < 200 || status >= 300) {
+      throw SiteApiChangedError('inke $what: HTTP $status');
+    }
+    final root = SiteJson.decode(body, what: 'inke $what');
+    final code = SiteCounts.integer(root['error_code']);
+    if (code == null) {
+      throw SiteApiChangedError('inke $what: no error_code');
+    }
+    if (code != 0) {
+      throw SiteApiChangedError('inke $what: error_code $code');
+    }
+    final data = SiteJson.object(root['data']);
+    if (data.isEmpty) {
+      throw SiteApiChangedError('inke $what: no data');
+    }
+    return data;
+  }
+
+  /// An app answer (`dm_error` 0), which carries the hot list.
+  static Map<String, Object?> appData(String body, {required String what, int status = 200}) {
+    if (status < 200 || status >= 300) {
+      throw SiteApiChangedError('inke $what: HTTP $status');
+    }
+    final root = SiteJson.decode(body, what: 'inke $what');
+    final code = SiteCounts.integer(root['dm_error']);
+    if (code != 0) {
+      throw SiteApiChangedError('inke $what: dm_error ${root['dm_error']}');
+    }
+    return root;
+  }
+
+  /// The catalogue: the website's top list first, then its channels, in the
+  /// site's own order.
+  ///
+  /// One answer carries both the areas and their rooms, which is why the
+  /// areas and a channel's listing are read from the same body. A channel
+  /// without an alphanumeric key, with a key an earlier one took, without a
+  /// name or without a list of rows is skipped; more than a hundred channels
+  /// is a changed page.
+  static List<LiveArea> areas(String body, {int status = 200}) {
+    final data = webData(body, what: 'Live_channel_pc', status: status);
+    final groups = SiteJson.list(data['list']);
+    if (groups.length > 100) {
+      throw SiteApiChangedError('inke Live_channel_pc: ${groups.length} channels');
+    }
+    final areas = <LiveArea>[const LiveArea(id: topAreaId, name: topAreaName)];
+    final seen = <String>{topAreaId};
+    for (final group in groups) {
+      final row = SiteJson.object(group);
+      final key = SiteText.trimmed(row['tab_key']);
+      final name = SiteText.title(SiteText.text(row['channel_name']));
+      if (!_tabKey.hasMatch(key) || name.isEmpty || !seen.add(key)) {
+        continue;
+      }
+      areas.add(LiveArea(id: key, name: name, sort: areas.length));
+    }
+    return areas;
+  }
+
+  /// The rooms of channel [tabKey] of the website's channel list, in the
+  /// site's order; null when the answer has no such channel (the tabs change
+  /// between releases, so a stored area can name a channel the site has
+  /// retired).
+  static List<LiveRoom>? channelRooms(String body, {required String tabKey, int status = 200}) {
+    final data = webData(body, what: 'Live_channel_pc', status: status);
+    for (final group in SiteJson.objects(data['list'])) {
+      if (SiteText.trimmed(group['tab_key']) != tabKey) {
+        continue;
+      }
+      final rows = group['list'];
+      if (rows is! List || rows.length > 1000) {
+        throw SiteApiChangedError('inke channel $tabKey: ${rows is List ? '${rows.length} rows' : 'no list'}');
+      }
+      return unique([for (final row in SiteJson.objects(rows)) ?card(row)]);
+    }
+    return null;
+  }
+
+  /// The rooms of the website's top list, one page.
+  static List<LiveRoom> topRooms(String body, {int status = 200}) {
+    final data = webData(body, what: 'Live_top_pc', status: status);
+    final rows = data['list'];
+    if (rows is! List || rows.length > 1000) {
+      throw SiteApiChangedError('inke Live_top_pc: ${rows is List ? '${rows.length} rows' : 'no list'}');
+    }
+    return unique([for (final row in SiteJson.objects(rows)) ?card(row)]);
+  }
+
+  /// The app's hot list: every card live, with the app's title, cover, start
+  /// time and audience.
+  ///
+  /// A row that is not a live broadcast (`status` 1), or that names no
+  /// anchor or broadcast, is skipped.
+  static List<LiveRoom> hotRooms(String body, {int status = 200}) {
+    final root = appData(body, what: 'simpleall', status: status);
+    return unique([for (final row in SiteJson.objects(root['lives'])) ?appCard(row)]);
+  }
+
+  /// One showcase row as a room: live, the nickname as its title, the
+  /// portrait as avatar and cover, no audience (the showcases carry none).
+  /// Null for a row without an anchor, a broadcast or a nickname.
+  static LiveRoom? card(Map<String, Object?> row) {
+    final uid = SiteText.trimmed(row['uid']);
+    final nick = SiteText.title(SiteText.text(row['nick']));
+    if (!isUid(uid) || nick.isEmpty || SiteText.trimmed(row['live_id']).isEmpty) {
+      return null;
+    }
+    final portrait = image(row['portrait']);
+    return LiveRoom(
+      platform: SiteIds.inke,
+      roomId: uid,
+      nick: nick,
+      title: nick,
+      avatar: portrait,
+      cover: portrait,
+      status: LiveStatus.live,
+    );
+  }
+
+  /// One app hot row as a room, or null when it is not a live broadcast or
+  /// names no anchor.
+  ///
+  /// `numbers.real` is the "N人在看" the app shows (concurrent viewers) and
+  /// `online_users` the larger display figure, kept as the audience the site
+  /// publishes beside it; a broadcast the app gave no line is not restricted,
+  /// a row without a line says nothing.
+  static LiveRoom? appCard(Map<String, Object?> row) {
+    final creator = SiteJson.object(row['creator']);
+    final uid = SiteText.trimmed(creator['id']);
+    if (!isUid(uid) || SiteText.trimmed(row['id']).isEmpty || SiteCounts.integer(row['status']) != 1) {
+      return null;
+    }
+    final nick = SiteText.title(SiteText.text(creator['nick']));
+    final title = SiteText.title(SiteText.text(row['name']));
+    final avatar = image(creator['portrait']);
+    final cover = image(row['cover']);
+    final numbers = SiteJson.object(row['numbers']);
+    final online = SiteCounts.integer(numbers['real']);
+    final heat = SiteCounts.integer(row['online_users']);
+    final seconds = SiteCounts.integer(row['start_time']);
+    return LiveRoom(
+      platform: SiteIds.inke,
+      roomId: uid,
+      nick: nick,
+      title: title.isEmpty ? nick : title,
+      avatar: avatar,
+      cover: cover ?? avatar,
+      watching: online ?? heat,
+      onlineViewers: online,
+      status: LiveStatus.live,
+      startedAt: seconds == null || seconds < 946684800
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true),
+      restriction: (row['stream_addr']?.toString() ?? '').startsWith('http') ? LiveRestriction.none : null,
+    );
+  }
+
+  /// [rooms] with each anchor once (the first wins), in order: a room is the
+  /// anchor's, so a list showing one twice shows it once.
+  static List<LiveRoom> unique(Iterable<LiveRoom> rooms) {
+    final seen = <String>{};
+    return [
+      for (final room in rooms)
+        if (seen.add(room.roomId)) room,
+    ];
+  }
+
   /// Decodes a body and returns its `data` object; null when the answer
   /// says the anchor has no broadcast ("当前用户无直播").
   static Map<String, Object?>? data(String body, {int status = 200, String what = 'response'}) {
