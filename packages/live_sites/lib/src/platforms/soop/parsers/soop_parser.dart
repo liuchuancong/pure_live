@@ -93,9 +93,9 @@ abstract final class SoopParser {
           title: title,
           status: LiveStatus.live,
           restriction: switch (result) {
-            -6 => LiveRestriction.loginRequired,
-            -8 => LiveRestriction.loginRequired,
-            _ => LiveRestriction.loginRequired,
+            -6 => LiveRestriction.needsLogin,
+            -8 => LiveRestriction.needsLogin,
+            _ => LiveRestriction.needsLogin,
           },
           startedAt: _startedBefore(fields['BTIME']),
         );

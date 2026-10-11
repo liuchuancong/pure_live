@@ -123,7 +123,7 @@ abstract final class NiconicoParser {
         restriction: regionRestricted
             ? LiveRestriction.regionBlocked
             : needsLogin
-            ? LiveRestriction.loginRequired
+            ? LiveRestriction.needsLogin
             : null,
         startedAt: live && beginMs != null && beginMs > 0
             ? DateTime.fromMillisecondsSinceEpoch(beginMs * 1000, isUtc: true)

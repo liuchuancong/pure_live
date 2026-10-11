@@ -115,7 +115,7 @@ abstract final class PicartoParser {
       areaName: areaName,
       watching: (channel['viewers'] as num?)?.toInt(),
       status: live ? LiveStatus.live : LiveStatus.offline,
-      restriction: private ? LiveRestriction.loginRequired : null,
+      restriction: private ? LiveRestriction.private : null,
       data: master,
     );
   }

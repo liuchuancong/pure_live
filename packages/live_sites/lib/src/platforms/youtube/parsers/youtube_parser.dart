@@ -137,7 +137,7 @@ abstract final class YouTubeParser {
           : code.isEmpty
           ? LiveStatus.unknown
           : LiveStatus.offline,
-      restriction: live || restricted ? (restricted ? LiveRestriction.loginRequired : null) : null,
+      restriction: live || restricted ? (restricted ? LiveRestriction.needsLogin : null) : null,
       startedAt: live && start != null ? DateTime.tryParse(start) : null,
       data: live && hls.startsWith('http') ? hls : null,
     );

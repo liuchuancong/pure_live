@@ -89,7 +89,7 @@ final class TwitcastingSite with SiteRoomGuard implements LiveSite, LiveDanmakuC
       merged = merged.copyWith(startedAt: page.liveStartedAt);
     }
     if (page.secretWord) {
-      merged = merged.copyWith(restriction: LiveRestriction.loginRequired);
+      merged = merged.copyWith(restriction: LiveRestriction.needsLogin);
     }
     return room.mergeFrom(merged);
   }

@@ -90,9 +90,9 @@ abstract final class Fc2LiveParser {
       watching: (channel['count'] as num?)?.toInt(),
       status: published ? LiveStatus.live : LiveStatus.offline,
       restriction: published && emailOnly
-          ? LiveRestriction.loginRequired
+          ? LiveRestriction.needsLogin
           : published && loginOnly
-          ? LiveRestriction.loginRequired
+          ? LiveRestriction.needsLogin
           : null,
       startedAt: published && startSeconds != null && startSeconds > 0
           ? DateTime.fromMillisecondsSinceEpoch(startSeconds * 1000, isUtc: true)

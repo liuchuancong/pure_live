@@ -77,7 +77,7 @@ abstract final class KilakilaParser {
       cover: _picture(body['backPic']) ?? _picture(body['defaultBackgroundPicUrl']),
       watching: (body['onlineNumber'] as num?)?.toInt(),
       status: live ? LiveStatus.live : LiveStatus.offline,
-      restriction: live && price > 0 ? LiveRestriction.loginRequired : null,
+      restriction: live && price > 0 ? LiveRestriction.paid : null,
       startedAt: live && startMs != null && startMs >= 1000000000000 && startMs < 10000000000000
           ? DateTime.fromMillisecondsSinceEpoch(startMs, isUtc: true)
           : null,

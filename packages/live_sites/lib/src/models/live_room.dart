@@ -43,7 +43,7 @@ class LiveRestrictionConverter implements JsonConverter<LiveRestriction?, String
   LiveRestriction? fromJson(String? json) => json == null ? null : LiveRestriction.tryParse(json);
 
   @override
-  String? toJson(LiveRestriction? object) => object?.jsonName;
+  String? toJson(LiveRestriction? object) => object?.name;
 }
 
 /// A live room — the identity object every site operation revolves

@@ -97,7 +97,7 @@ abstract final class SteamBroadcastParser {
     final replay = decoded['is_replay'] == true;
     final (state, restriction) = switch (success) {
       'ready' => (replay ? LiveStatus.replay : LiveStatus.live, null),
-      'missing_subscription' => (LiveStatus.live, LiveRestriction.loginRequired),
+      'missing_subscription' => (LiveStatus.live, LiveRestriction.subscribersOnly),
       'unavailable' || 'offline' || 'not_live' || 'no_broadcast' => (LiveStatus.offline, null),
       'user_restricted' => (LiveStatus.banned, null),
       _ => (LiveStatus.unknown, null),
