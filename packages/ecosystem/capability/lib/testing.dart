@@ -289,7 +289,14 @@ Future<List<ContractViolation>> checkFeedContract(FeedCapability capability, Con
 }
 
 List<String> _missingInterfaces(CapabilityKind kind, Object source) => switch (kind) {
-  CapabilityKind.live || CapabilityKind.vod || CapabilityKind.music || CapabilityKind.iptv => <String>[
+  CapabilityKind.live => <String>[
+    if (source is! BrowseCapability) 'BrowseCapability',
+    if (source is! ResolveCapability) 'ResolveCapability',
+    // A live source that cannot describe its room is not declaring the live surface, it is declaring a feed of
+    // tiles: the room object is where the anchor, the 分区 and the paywall flag live.
+    if (source is! LiveRoomCapability) 'LiveRoomCapability',
+  ],
+  CapabilityKind.vod || CapabilityKind.music || CapabilityKind.iptv => <String>[
     if (source is! BrowseCapability) 'BrowseCapability',
     if (source is! ResolveCapability) 'ResolveCapability',
   ],

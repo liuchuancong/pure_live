@@ -5,6 +5,12 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- **Added**: `room()` (the `LiveRoomCapability` answer) on huya, douyu and acfun, each built by a reader in that
+  site's own api file: huya's profileRoom, douyu's `betard` document, acfun's live/info envelope. The room's facts
+  are fields now - `state`, `anchorName`, `area`, `viewers`, `startedAt`, `streamId`, `requiresAuth` - instead of
+  `extra` keys each site spelled differently. acfun is the only one of the three that states a paid-show gate, so
+  it is the only one that sets `requiresAuth`; huya and douyu leave it false rather than inferring a gate from an
+  empty CDN list.
 - **Added**: `acfun` - the live directory by cursor (`nextCursor`, and a page number asked without its cursor is
   refused rather than answered as page one), the filter-pair category table, the anchor search read as both rooms
   and people, the visitor session shared across rooms, the quality menu ordered by the site's own `level` (its

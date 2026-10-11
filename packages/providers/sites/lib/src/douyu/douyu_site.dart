@@ -25,7 +25,8 @@ import 'douyu_api.dart';
 ///
 /// Owns its [NetworkClient] and closes it in [dispose], unless the caller passed one it wants to keep -
 /// the same borrowing rule the extension transport follows.
-final class DouyuSource implements FeedCapability, BrowseCapability, SearchCapability, ResolveCapability {
+final class DouyuSource
+    implements FeedCapability, BrowseCapability, SearchCapability, ResolveCapability, LiveRoomCapability {
   DouyuSource({NetworkClient? client, DouyuDevice? device, Clock? clock})
     : _client = client ?? NetworkClient(),
       _ownsClient = client == null,
@@ -167,6 +168,19 @@ final class DouyuSource implements FeedCapability, BrowseCapability, SearchCapab
       ),
       description: summary.description,
     );
+  }
+
+  @override
+  Future<LiveRoom> room(ContentRef ref) async {
+    final json = await _client.getJson(
+      '$kDouyuProfilePath/${ref.contentId}',
+      headers: _device.headers(roomId: ref.contentId),
+    );
+    final room = json['room'];
+    if (room is! Map) {
+      throw DouyuApiException('room ${ref.contentId} profile answered without a room object');
+    }
+    return douyuLiveRoom(room, roomId: ref.contentId);
   }
 
   @override

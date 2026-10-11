@@ -18,10 +18,8 @@ import 'stream_option_kind.dart';
 final class StreamOptions extends Equatable {
   const StreamOptions({this.qualities = const <StreamOption>[], this.lines = const <StreamOption>[]});
 
-  factory StreamOptions.fromJson(Map<String, Object?> json) => StreamOptions(
-    qualities: _list(json['qualities']),
-    lines: _list(json['lines']),
-  );
+  factory StreamOptions.fromJson(Map<String, Object?> json) =>
+      StreamOptions(qualities: _list(json['qualities']), lines: _list(json['lines']));
 
   /// Nothing known about either axis. Distinct from "the source answered and said none": an empty
   /// [StreamOptions] means the platform must not draw a picker at all.

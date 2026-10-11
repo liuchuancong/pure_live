@@ -30,6 +30,7 @@ final class HuyaSource
         ResolveCapability,
         LineCapability,
         QualityCapability,
+        LiveRoomCapability,
         LiveStatusCapability {
   HuyaSource({NetworkClient? client, Clock? clock})
     : _client = client ?? NetworkClient(),
@@ -229,6 +230,9 @@ final class HuyaSource
   /// no picker, and a fake 1080p row would be a promise this transport cannot keep.
   @override
   Future<List<StreamOption>> qualities(ContentRef ref) async => const <StreamOption>[];
+
+  @override
+  Future<LiveRoom> room(ContentRef ref) async => huyaLiveRoom(await _profile(ref.contentId));
 
   @override
   Future<LiveRoomStatus> liveStatus(ContentRef ref) async {

@@ -39,6 +39,18 @@ abstract interface class LineCapability {
   Future<List<StreamOption>> lines(ContentRef ref);
 }
 
+/// A source that can describe one of its rooms fully.
+///
+/// This is the live domain's own return shape: [LiveRoom] carries the anchor, the 分区, the audience figure, the
+/// paywall flag and the start time **as fields**. A live source that can only hand back a [ContentSummary] with
+/// those facts under `metadata.extra` string keys is the thing this interface exists to stop - every site then
+/// invents its own spelling and every consumer re-guesses it.
+abstract interface class LiveRoomCapability {
+  /// The room in full. A source that has to make one request for this and a cheaper one for [liveStatus] should
+  /// say so in its README: the two are deliberately separate because the poll is the hot path.
+  Future<LiveRoom> room(ContentRef ref);
+}
+
 /// A source that can answer whether a room is on air right now, cheaply enough to poll.
 abstract interface class LiveStatusCapability {
   /// The current state of [ref]. [LiveRoomState.unknown] on a failed poll: a follow list that reads unknown as

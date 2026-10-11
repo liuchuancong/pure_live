@@ -47,6 +47,7 @@ final class AcfunSource
         ResolveCapability,
         QualityCapability,
         LineCapability,
+        LiveRoomCapability,
         LiveStatusCapability {
   AcfunSource({NetworkClient? client, Clock? clock})
     : _api = AcfunApi(client: client, clock: clock),
@@ -183,6 +184,13 @@ final class AcfunSource
       return null;
     }
     return DateTime.fromMillisecondsSinceEpoch(value, isUtc: true);
+  }
+
+  @override
+  Future<LiveRoom> room(ContentRef ref) async {
+    final authorId = AcfunApi.normalizeAuthorId(ref.contentId);
+    final data = await _api.roomInfo(authorId);
+    return AcfunApi.liveRoom(authorId, data, live: AcfunApi.liveInRoomEnvelope(data, authorId));
   }
 
   @override

@@ -479,3 +479,38 @@ String douyuContainerOf(Uri uri) {
   }
   return 'unknown';
 }
+
+/// The room as one object, from the `betard/<roomId>` profile document.
+///
+/// This is the only douyu answer that states on-air-ness outright, which is why [LiveRoom.state] is honest here
+/// rather than inferred: the list rows said only that the room was on air when that page was built. `hot` is the
+/// room's own audience figure and is reported as stated; a room that carries no `room_biz_all` gets null, not 0.
+LiveRoom douyuLiveRoom(Map<Object?, Object?> room, {required String roomId}) {
+  final name = '${room['room_name'] ?? ''}'.trim();
+  final owner = '${room['owner_name'] ?? ''}'.trim();
+  final area = '${room['second_lvl_name'] ?? ''}'.trim();
+  final details = '${room['show_details'] ?? ''}'.trim();
+  final business = jsonMap(room['room_biz_all']);
+  final startedAt = douyuStartedAt(room['show_time']);
+  final live = douyuRoomPayloadIsLive(room);
+  return LiveRoom(
+    ref: ContentRef(sourceId: douyuSourceId, contentId: '${room['room_id'] ?? roomId}', kind: ContentKind.liveRoom),
+    state: live ? LiveRoomState.live : LiveRoomState.ended,
+    title: name.isEmpty ? roomId : name,
+    anchorName: owner.isEmpty ? null : owner,
+    anchorId: '${room['owner_id'] ?? ''}'.trim().isEmpty ? null : '${room['owner_id']}'.trim(),
+    avatar: douyuAbsoluteUrl('${room['owner_avatar'] ?? room['weight_avatar'] ?? ''}'),
+    cover: douyuAbsoluteUrl('${room['room_pic'] ?? ''}'),
+    area: area.isEmpty ? null : area,
+    introduction: details.isEmpty ? null : details,
+    viewers: business == null ? null : jsonInt(business['hot']),
+    // Douyu's anonymous profile does not state a paywall or a schedule; both stay false rather than being
+    // inferred from an off-air room, which would show "this stream is paid" for a streamer who simply stopped.
+    streamId: '${room['video_id'] ?? ''}'.trim().isEmpty ? null : '${room['video_id']}'.trim(),
+    startedAt: live ? startedAt : null,
+    extra: <String, Object?>{
+      if (jsonInt(room['show_status']) != null) 'showStatus': jsonInt(room['show_status']),
+      if ('${room['typ'] ?? ''}'.trim().isNotEmpty) 'tier': '${room['typ']}'.trim(),
+    },
+  );
+}

@@ -23,6 +23,7 @@ import 'dart:math';
 import 'package:html/dom.dart' show DocumentFragment, Element;
 import 'package:html/parser.dart' show parseFragment;
 import 'package:pure_live_network/pure_live_network.dart';
+import 'package:pure_live_platform/pure_live_platform.dart';
 import 'package:pure_live_utils/pure_live_utils.dart' show Clock, systemClock;
 
 import '../common/site_json.dart';
@@ -659,6 +660,46 @@ final class AcfunApi {
       // page that asked for the stream.
       throw AcfunApiFailure('${Uri.parse(url).path} answered something that is not json', cause: error);
     }
+  }
+
+  /// The room as one object, from the same envelope [liveInRoomEnvelope] just validated.
+  ///
+  /// This is where acfun's live facts stop being string keys: the anchor's name and avatar, the 分区, the online
+  /// count, the per-broadcast `liveId` and the paid-show gate all come off the envelope into fields. `fanCountValue`
+  /// stays a label in [LiveRoom.extra] because the page gives no number to parse, and inventing one would be our
+  /// arithmetic presented as the platform's figure.
+  static LiveRoom liveRoom(String authorId, Map<String, Object?> data, {required bool live}) {
+    final user = jsonMap(data['user']) ?? const <String, Object?>{};
+    final nick = '${user['name'] ?? ''}'.trim();
+    final area = '${(jsonMap(data['type']) ?? const <String, Object?>{})['name'] ?? ''}'.trim();
+    final covers = jsonList(data['coverUrls']);
+    final title = '${data['title'] ?? ''}'.trim();
+    final introduction = '${data['introduction'] ?? ''}'.trim();
+    final avatar = '${user['headUrl'] ?? ''}'.trim();
+    final followerLabel = '${user['fanCountValue'] ?? ''}'.trim();
+    final created = jsonInt(data['createTime']);
+    return LiveRoom(
+      ref: ContentRef(sourceId: acfunSourceId, contentId: authorId, kind: ContentKind.liveRoom),
+      state: live ? LiveRoomState.live : LiveRoomState.ended,
+      title: title.isEmpty ? nick : title,
+      anchorName: nick.isEmpty ? null : nick,
+      avatar: avatar.isEmpty ? null : avatar,
+      cover: covers.isEmpty ? null : '${covers.first}',
+      area: area.isEmpty ? null : area,
+      introduction: introduction.isEmpty ? null : introduction,
+      viewers: jsonInt(data['onlineCount']),
+      // A scheduled-but-unstarted room is not what this envelope can say: acfun answers with the author's row and
+      // simply omits the live fields, so `notStarted` would be a guess dressed up as a fact.
+      isScheduled: false,
+      streamId: live ? '${data['liveId'] ?? ''}'.trim() : null,
+      // The paid-show gate: `paidShowUuid` names a paid show the anonymous visitor has not bought. Saying false
+      // here is what makes a black screen look like a broken player.
+      requiresAuth: '${data['paidShowUuid'] ?? ''}'.trim().isNotEmpty && data['paidShowUserBuyStatus'] != true,
+      startedAt: created == null || created < 1000000000000 || created >= 10000000000000
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(created, isUtc: true),
+      extra: <String, Object?>{if (followerLabel.isNotEmpty) 'followers': followerLabel},
+    );
   }
 
   static void _expectResult(Map<String, Object?> data, int expected, String what) {

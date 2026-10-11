@@ -51,7 +51,8 @@ MediaTicket _ticket(
 }
 
 /// A source that satisfies every assertion. Each fake below overrides one hook, so a failure names one rule.
-class _ConformingSource implements BrowseCapability, SearchCapability, ResolveCapability, FeedCapability {
+class _ConformingSource
+    implements BrowseCapability, SearchCapability, ResolveCapability, FeedCapability, LiveRoomCapability {
   const _ConformingSource();
 
   /// The ticket the source hands out.
@@ -70,6 +71,10 @@ class _ConformingSource implements BrowseCapability, SearchCapability, ResolveCa
 
   @override
   Future<ContentDetail> detail(ContentRef ref) async => ContentDetail(summary: _summary(ref.contentId));
+
+  @override
+  Future<LiveRoom> room(ContentRef ref) async =>
+      LiveRoom(ref: ref, state: LiveRoomState.live, title: '房间 ${ref.contentId}');
 
   @override
   Future<PageResult<ContentSummary>> search(SearchQuery query) async => page(query.page);

@@ -34,8 +34,7 @@ abstract class AnchorSummary with _$AnchorSummary {
 
     /// The room they are in right now, when the platform knows. This is what makes the row tappable: an anchor
     /// without a live room opens a profile, not a player.
-    @JsonKey(fromJson: refFromJsonOrNull, toJson: refToJsonOrNull, includeIfNull: false)
-    ContentRef? currentRoom,
+    @JsonKey(fromJson: refFromJsonOrNull, toJson: refToJsonOrNull, includeIfNull: false) ContentRef? currentRoom,
     @JsonKey(fromJson: _text, includeIfNull: false) String? description,
     @JsonKey(fromJson: _map, toJson: _mapOut) @Default(<String, Object?>{}) Map<String, Object?> extra,
   }) = _AnchorSummary;

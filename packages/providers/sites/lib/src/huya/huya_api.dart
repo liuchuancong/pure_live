@@ -413,3 +413,29 @@ final class HuyaListRow {
     return raw.contains('?') ? raw : '$raw$huyaCoverThumbQuery';
   }
 }
+
+/// The room as one object, from the profileRoom document that already answers everything else about it.
+///
+/// Huya states no paywall or schedule flag on the anonymous path, so those stay false rather than being inferred
+/// from "the stream was empty" - an empty CDN list is an off-air or between-segments moment, not a gate.
+/// `streamId` carries the per-broadcast stream name because it is exactly that: valid for this broadcast only,
+/// never usable as the room's identity.
+LiveRoom huyaLiveRoom(HuyaRoomProfile profile) {
+  final title = profile.roomName.trim();
+  final anchor = profile.anchorName.trim();
+  return LiveRoom(
+    ref: ContentRef(sourceId: huyaSourceId, contentId: profile.roomId, kind: ContentKind.liveRoom),
+    state: switch (profile.liveStatusCode) {
+      1 => LiveRoomState.live,
+      0 => LiveRoomState.ended,
+      _ => LiveRoomState.unknown,
+    },
+    title: title.isNotEmpty ? title : anchor,
+    anchorName: anchor.isEmpty ? null : anchor,
+    cover: profile.screenshot,
+    viewers: profile.viewers,
+    introduction: profile.introduction.trim().isEmpty ? null : profile.introduction.trim(),
+    streamId: profile.entries.isEmpty ? null : profile.entries.first.streamName,
+    extra: <String, Object?>{if (profile.entries.length > 1) 'cdnLines': profile.entries.length},
+  );
+}

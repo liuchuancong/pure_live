@@ -5,6 +5,10 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- **Added**: `LiveRoomCapability.room(ref) -> LiveRoom`, and `CapabilityKind.live` now requires it in the contract
+  checker alongside `BrowseCapability` / `ResolveCapability`. A source that can only hand back a tile with the
+  room's facts under string keys was declaring a feed, not the live surface: the anchor, the 分区, the audience
+  figure and the paywall flag are the room, and they belong in the model that says so.
 - `CapabilityKind` 与四个有方法集的接口(`BrowseCapability` / `SearchCapability` / `ResolveCapability` /
   `FeedCapability`)、注册上报用的 `CapabilitySet`(W1 首切片)。
 - `lib/testing.dart`:契约断言,返回带稳定 `code` 的 `List<ContractViolation>`,内置源与脚本源跑同一套(W2)。

@@ -26,6 +26,7 @@ export 'src/models/identifiers.dart';
 export 'src/models/live/anchor_summary.dart';
 export 'src/models/live/danmaku_kind.dart';
 export 'src/models/live/danmaku_message.dart';
+export 'src/models/live/live_room.dart';
 export 'src/models/live/live_room_state.dart';
 export 'src/models/live/live_room_status/live_room_status.dart';
 export 'src/models/media/lyric_document.dart';
