@@ -1,3 +1,4 @@
+import 'package:live_sites/src/contracts/directory_query.dart';
 import 'package:live_sites/src/contracts/site_error.dart';
 import 'package:live_sites/src/models/live_area.dart';
 import 'package:live_sites/src/models/live_play_line.dart';
@@ -43,6 +44,26 @@ abstract interface class LiveSite {
   /// room in, get the fresh room out (same identity, updated status,
   /// audience and title).
   Future<LiveRoom> refreshLiveStatus(LiveRoom room);
+}
+
+/// Running a [DirectoryQuery] against a site.
+///
+/// The three directory methods stay on [LiveSite] because that is what an
+/// adapter implements; this extension is what a *page* calls, so the
+/// recommend/category/search switch lives in one place instead of in every
+/// view that offers more than one way to browse.
+extension LiveSiteDirectory on LiveSite {
+  /// Runs [query] and returns the page of rooms it asks for.
+  ///
+  /// A query the site cannot answer (search on an adapter that has not
+  /// migrated it) throws the same `UnimplementedError` the direct call
+  /// would; callers that must not fail should probe the capabilities first
+  /// (`site is LiveDirectoryCapability`, `site is LiveSearchCapability`).
+  Future<LivePage<LiveRoom>> browse(DirectoryQuery query) => switch (query) {
+    RecommendQuery(:final page) => getRecommendRooms(page: page),
+    CategoryQuery(:final area, :final page) => getCategoryRooms(area, page: page),
+    SearchQuery(:final keyword, :final page) => searchRooms(keyword, page: page),
+  };
 }
 
 /// A room guard shared by every adapter: validates that `room` belongs

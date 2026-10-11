@@ -128,7 +128,7 @@ abstract final class BilibiliParser {
           LiveRoom(
             platform: SiteIds.bilibili,
             roomId: roomId,
-            title: _stripHighlights(item['title']?.toString() ?? ''),
+            title: SiteText.title(SiteText.text(item['title'])),
             nick: item['uname']?.toString() ?? '',
             cover: item['user_cover']?.toString() ?? item['cover']?.toString(),
             areaName: item['cate_name']?.toString(),
@@ -142,24 +142,6 @@ abstract final class BilibiliParser {
   }
 
   /// Removes the search highlight tags (`<em class=…>text</em>`).
-  static String _stripHighlights(String text) => text.replaceAll(RegExp('<em[^>]*>|</em>'), '');
-
-  /// Titles and names arrive HTML-escaped (`&quot;`, `&amp;`, `&#39;`), which
-  /// would otherwise be shown literally on a card.
-  static String _unescape(String text) {
-    if (!text.contains('&')) {
-      return text;
-    }
-    return text
-        .replaceAll('&quot;', '"')
-        .replaceAll('&#39;', "'")
-        .replaceAll('&apos;', "'")
-        .replaceAll('&lt;', '<')
-        .replaceAll('&gt;', '>')
-        .replaceAll('&nbsp;', ' ')
-        .replaceAll('&amp;', '&');
-  }
-
   /// `Area/getList` payload → the top-level area list.
   static List<LiveArea> areaList(Map<String, Object?> data) {
     final list = data['data'];
@@ -235,13 +217,13 @@ abstract final class BilibiliParser {
 
   /// One directory item, with every spelling the three payloads use.
   ///
-  /// `title` is HTML-escaped in the ranked list and `&quot;`-wrapped in the
-  /// feed, so it goes through the same unescaping the search results use.
+  /// `title` is HTML-escaped in the ranked list and tag-wrapped in the feed,
+  /// so it goes through the shared title pipeline (`SiteText.title`).
   static LiveRoom _listRoom(Map<String, Object?> item) => LiveRoom(
     platform: SiteIds.bilibili,
     roomId: item['roomid']?.toString() ?? '',
-    title: _unescape(item['title']?.toString() ?? ''),
-    nick: _unescape(item['uname']?.toString() ?? ''),
+    title: SiteText.title(SiteText.text(item['title'])),
+    nick: SiteText.title(SiteText.text(item['uname'])),
     avatar: item['uface']?.toString() ?? item['face']?.toString(),
     cover: item['user_cover']?.toString() ?? item['cover']?.toString(),
     areaName: item['area_name']?.toString() ?? item['areaName']?.toString() ?? item['area_v2_name']?.toString(),

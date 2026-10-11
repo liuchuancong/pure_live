@@ -237,23 +237,15 @@ abstract final class HuyaParser {
   }
 
   /// A plain-text field, tolerating a missing one.
-  static String _text(Object? value) => value?.toString() ?? '';
+  static String _text(Object? value) => SiteText.text(value);
 
   /// A viewer count, which the directory sends as a *string* and the search
   /// results as a number — casting to `num?` (as this used to) threw on the
   /// directory and silently lost every room behind the first one.
-  static int? _count(Object? value) {
-    if (value is num) {
-      return value.toInt();
-    }
-    return int.tryParse(value?.toString().trim() ?? '');
-  }
+  static int? _count(Object? value) => SiteCounts.integer(value);
 
   /// A title from the richer field, falling back to the shorter one.
-  static String _title(Object? primary, Object? fallback) {
-    final text = primary?.toString().trim() ?? '';
-    return text.isNotEmpty ? text : (_text(fallback).trim());
-  }
+  static String _title(Object? primary, Object? fallback) => SiteText.titleFrom(primary, fallback);
 
   static Map<String, Object?> _decode(String blob) {
     final cleaned = blob.replaceAll(_scriptEscape, '');

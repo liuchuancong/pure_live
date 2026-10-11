@@ -13,6 +13,13 @@
 /// map platform packets into; UI never sees platform wire formats.
 library;
 
+export 'src/common/headers/site_headers.dart';
+export 'src/common/normalization/site_counts.dart';
+export 'src/common/normalization/site_images.dart';
+export 'src/common/normalization/site_text.dart';
+export 'src/common/parsing/site_json.dart';
+export 'src/common/urls/site_urls.dart';
+export 'src/contracts/directory_query.dart';
 export 'src/contracts/live_site.dart';
 export 'src/contracts/site_capability.dart';
 export 'src/contracts/site_error.dart';

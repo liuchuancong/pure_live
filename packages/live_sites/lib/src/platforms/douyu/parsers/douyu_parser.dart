@@ -175,28 +175,12 @@ abstract final class DouyuParser {
 
   /// The cover URL: the directory's `rs16` is already a full CDN URL, while
   /// the older endpoints hand over a bare upload path.
-  static String? _cover(Object? value) {
-    final path = value?.toString() ?? '';
-    if (path.isEmpty) {
-      return null;
-    }
-    if (path.startsWith('https://') || path.startsWith('http://')) {
-      return path;
-    }
-    return _image(path);
-  }
+  static String? _cover(Object? value) => SiteImages.url(value, cdnBase: _cdn, suffix: '_middle.jpg');
 
-  /// Normalizes the avatar/cover paths: a bare upload path becomes the
-  /// `_middle.jpg` CDN URL; a full URL passes through.
-  static String? _image(Object? value) {
-    final path = value?.toString() ?? '';
-    if (path.isEmpty) {
-      return null;
-    }
-    if (path.startsWith('https://') || path.startsWith('http://')) {
-      return path;
-    }
-    final clean = path.startsWith('/') ? path.substring(1) : path;
-    return 'https://apic.douyucdn.cn/upload/${clean}_middle.jpg';
-  }
+  /// The avatar/cover CDN base, used through [SiteImages].
+  static const String _cdn = 'https://apic.douyucdn.cn/upload';
+
+  /// A bare upload path becomes the `_middle.jpg` derivative; a full URL
+  /// passes through.
+  static String? _image(Object? value) => SiteImages.url(value, cdnBase: _cdn, suffix: '_middle.jpg');
 }
