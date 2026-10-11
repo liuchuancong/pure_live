@@ -11,7 +11,7 @@ import 'package:live_sites/src/platforms/yy/parsers/yy_parser.dart';
 /// transport (YY speaks its own binary packet framing).
 final class YySite
     with SiteRoomGuard
-    implements LiveSite, LiveDirectoryCapability, LiveSearchCapability, LiveAnchorSearch {
+    implements LiveSite, LiveDirectoryCapability, LiveSearchCapability, LiveAnchorSearch, LiveAreaCatalog {
   /// A site over [http].
   new({required this.http});
 
@@ -43,24 +43,36 @@ final class YySite
     return YyParser.roomList(root, areaNames: YyParser.bizAreaNames);
   }
 
+  /// The catalogue: the header's categories and the areas each carries, one
+  /// request.
+  @override
+  Future<List<LiveArea>> getAreas() async {
+    final response = await http.send(
+      LiveRequest.get(Uri.https(_host, '/yyweb/module/data/header'), headers: YyParser.apiHeaders, site: siteId),
+    );
+    return YyParser.headerAreas(response.text, status: response.statusCode);
+  }
+
   /// The rooms of one area.
   ///
-  /// An area carries its module in the id (the site's own JSON), because YY
-  /// addresses a listing by `(moduleId, biz, subBiz)` rather than by name.
-  /// An area whose module has no listing — 手机直播, 综合, 英雄联盟 render
-  /// their rooms inside their page — is read from that page instead, and has
+  /// An area's id is the page it opens, because YY addresses a listing by
+  /// `(moduleId, biz, subBiz)` and that module is named on the page, not in
+  /// the catalogue — so a listing reads the page first. An area whose module
+  /// has no listing — 手机直播, 综合, 英雄联盟 render their rooms inside
+  /// their page — is served from the page's own cards instead, and has
   /// exactly one page to give.
   @override
   Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    final module = YyParser.moduleOf(area.id);
-    if (module == null) {
+    final path = area.id.trim();
+    if (path.isEmpty || path.startsWith('/') || path.contains(':') || path.contains('..')) {
       throw SiteError.invalidRoomId(area.id);
     }
-    if (!YyParser.hasListing(module)) {
+    final html = await _areaHtml(path);
+    final module = YyParser.pageInfo(html);
+    if (module == null || !YyParser.hasListing(module)) {
       if (page > 1) {
         return const LivePage<LiveRoom>(items: []);
       }
-      final html = await _areaHtml(area.id);
       return YyParser.pageRooms(html, area: area.name);
     }
     final root = await _page({

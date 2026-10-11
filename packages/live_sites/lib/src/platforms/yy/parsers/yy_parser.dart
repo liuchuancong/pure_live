@@ -191,6 +191,61 @@ abstract final class YyParser {
     return (moduleId: moduleId, biz: biz, subBiz: subBiz);
   }
 
+  /// Whether [path] is a short-video page (`www.yy.com/sv/`, 小视频 under
+  /// 其他): those have no live rooms, so the catalogue leaves them out.
+  static bool isShortVideoPath(String path) => path.split('/').first == 'sv';
+
+  /// `yyweb/module/data/header` → the areas of every category (`navs`), in
+  /// the server's order, each with the category as its [LiveArea.parentId].
+  ///
+  /// The header already lists every area — 3.x asked
+  /// `category/getCategory.action` once per category for the same rows, which
+  /// this does not need. An area's id is the page it opens (its path), because
+  /// the listing module of an area lives on that page and nowhere in this
+  /// answer. A nav without a usable `www.yy.com` link or on a short-video
+  /// page is skipped; a name is used as sent, HTML entities decoded.
+  static List<LiveArea> headerAreas(String body, {int status = 200}) {
+    final root = checked(body, status: status, what: 'header');
+    final tabs = root['categoryTabs'];
+    if (tabs is! List) {
+      throw const SiteApiChangedError('yy header: no categoryTabs');
+    }
+    final areas = <LiveArea>[];
+    for (final tab in SiteJson.objects(tabs)) {
+      final categoryId = SiteText.trimmed(tab['id']);
+      if (categoryId.isEmpty) {
+        throw const SiteApiChangedError('yy header: a category without an id');
+      }
+      for (final nav in SiteJson.objects(tab['navs'])) {
+        final path = _areaPath(nav['url']);
+        if (path == null || isShortVideoPath(path)) {
+          continue;
+        }
+        areas.add(
+          LiveArea(
+            id: path,
+            name: SiteText.unescape(SiteText.trimmed(nav['title'])),
+            parentId: categoryId,
+            sort: areas.length,
+          ),
+        );
+      }
+    }
+    return areas;
+  }
+
+  /// The page path an area's `url` names, relative to the site's host and
+  /// kept as sent (YY writes both `/music/` and `/dancing`); null for a link
+  /// that leads somewhere else or has no path at all.
+  static String? _areaPath(Object? url) {
+    final uri = Uri.tryParse(SiteText.trimmed(url));
+    if (uri == null || uri.host.toLowerCase() != 'www.yy.com' || uri.hasPort) {
+      return null;
+    }
+    final path = uri.path.replaceFirst(RegExp('^/+'), '');
+    return path.isEmpty ? null : path;
+  }
+
   /// Whether a module has a JSON listing at all.
   ///
   /// An area whose module id is 0 (手机直播, 综合, 英雄联盟) renders its rooms
