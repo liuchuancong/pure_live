@@ -1,13 +1,17 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/twitcasting/danmaku/twitcasting_session.dart';
 import 'package:live_sites/src/platforms/twitcasting/parsers/twitcasting_parser.dart';
 
 /// The TwitCasting adapter: channel page + streamserver flow.
 ///
 /// Only `movie.live` is authoritative for on-air state. A password
 /// (secret-word) broadcast shows as live with the password restriction.
-/// Not migrated yet: directory, search and the comment WebSocket.
-final class TwitcastingSite with SiteRoomGuard implements LiveSite {
+/// The comment stream is the broadcast's event socket, whose URL the site
+/// hands out per broadcast with a signature that lasts about an hour.
+///
+/// Not migrated yet: directory and search.
+final class TwitcastingSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -37,6 +41,29 @@ final class TwitcastingSite with SiteRoomGuard implements LiveSite {
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
     throw UnimplementedError('twitcasting search lands with its migration');
+  }
+
+  /// Opens the broadcast's comment stream.
+  ///
+  /// The socket URL belongs to one broadcast, so it is fetched here rather
+  /// than cached: a session opened after the streamer restarted subscribes
+  /// to the new broadcast. A room that is not on air has no movie id at all,
+  /// which is reported as "no danmaku" instead of an attempt to guess one.
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) async {
+    guardRoom(room);
+    final movieId = await _movieId(room);
+    if (movieId == null) {
+      throw SiteNotFoundError('twitcasting ${room.roomId}: not on air, no comment stream');
+    }
+    return await TwitcastingDanmakuSession.connect(movieId, http);
+  }
+
+  /// The broadcast's movie id, read the same way the play-lines path reads
+  /// it — from the stream server answer, which names the live broadcast.
+  Future<int?> _movieId(LiveRoom room) async {
+    final stream = await _stream(_channel(room.roomId));
+    return stream.live ? stream.movieId : null;
   }
 
   @override
