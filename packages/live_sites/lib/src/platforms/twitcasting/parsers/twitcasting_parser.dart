@@ -125,7 +125,7 @@ abstract final class TwitcastingParser {
       return null;
     }
     final rest = body.substring(match.end);
-    final inner = RegExp('<' + tag + r'\b[^>]*>', caseSensitive: false).firstMatch(rest);
+    final inner = RegExp('<$tag\\b[^>]*>', caseSensitive: false).firstMatch(rest);
     if (inner == null) {
       return null;
     }
