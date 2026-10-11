@@ -154,9 +154,16 @@ final class AcfunSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapab
 
   final Map<String, _AcfunChain> _chains = {};
 
+  /// Not migrated yet: the search answer is an HTML *fragment* (a JSON
+  /// envelope carrying a `html` string of `search-up` cards) rather than
+  /// structured JSON, so it needs a document pass over the parsed fragment.
+  ///
+  /// This is also the site's only search: AcFun has no separate streamer
+  /// search — the old implementation derived anchors from these same room
+  /// cards — so [LiveAnchorSearch] lands with this, not before it.
   @override
-  Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('acfun search lands with its migration');
+  Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) {
+    throw UnimplementedError('acfun search lands with the search-fragment migration');
   }
 
   @override
