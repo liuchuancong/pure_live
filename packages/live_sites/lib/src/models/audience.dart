@@ -1,4 +1,4 @@
-import 'package:meta/meta.dart';
+import 'package:equatable/equatable.dart';
 
 /// Audience readings, separated from the room status because they travel on
 /// their own: a danmaku session pushes them, a status refresh returns them,
@@ -23,14 +23,19 @@ enum AudienceMetricType {
 }
 
 /// One audience reading with its [type].
-@immutable
-final class AudienceMetric {
+final class AudienceMetric extends Equatable {
   /// A reading of [value] viewers under [type].
   const new({required this.type, required this.value});
 
-  /// Which口径 this number belongs to.
+  /// Which instrument produced this number.
   final AudienceMetricType type;
 
   /// The reading itself.
   final int value;
+
+  /// Identity is the pair: two readings of the same kind with the same value
+  /// are the same reading, which is what lets a stream of updates be
+  /// de-duplicated by value.
+  @override
+  List<Object?> get props => [type, value];
 }

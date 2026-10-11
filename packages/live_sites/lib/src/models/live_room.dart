@@ -1,3 +1,4 @@
+import 'package:equatable/equatable.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:live_sites/src/models/live_status.dart';
 
@@ -51,7 +52,8 @@ class LiveRestrictionConverter implements JsonConverter<LiveRestriction?, String
 /// Identity is (platform, roomId): two snapshots of the same room are
 /// `==` regardless of title, viewer counts or status changes, which
 /// keeps Set/Map semantics and UI update checks stable across refreshes —
-/// hence Freezed equality is off and `==`/`hashCode` are written here.
+/// hence Freezed equality is off and the identity is expressed through
+/// `Equatable` instead.
 ///
 /// [data] and [danmakuData] are runtime caches owned by the platform
 /// adapter (session handles, signed init payloads). They never enter
@@ -62,7 +64,7 @@ class LiveRestrictionConverter implements JsonConverter<LiveRestriction?, String
 // factories cannot use the `new` shorthand.
 @immutable
 @Freezed(equal: false)
-abstract class LiveRoom with _$LiveRoom {
+abstract class LiveRoom with _$LiveRoom, Equatable {
   /// A room snapshot; [status] defaults to [LiveStatus.unknown].
   const factory LiveRoom({
     required String platform,
@@ -122,10 +124,8 @@ abstract class LiveRoom with _$LiveRoom {
   }
 
   /// Identity equality: platform and room id decide, snapshot fields do
-  /// not.
+  /// not — `Equatable` is what expresses that here, because Freezed's own
+  /// equality is off.
   @override
-  bool operator ==(Object other) => other is LiveRoom && other.identity == identity;
-
-  @override
-  int get hashCode => identity.hashCode;
+  List<Object?> get props => [platform, roomId];
 }

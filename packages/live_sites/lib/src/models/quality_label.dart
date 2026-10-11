@@ -1,4 +1,4 @@
-import 'package:meta/meta.dart';
+import 'package:equatable/equatable.dart';
 
 /// How a quality level is described, independent of who described it.
 ///
@@ -9,8 +9,7 @@ import 'package:meta/meta.dart';
 /// [normalizedLabel], with the platform's own numeric id kept beside it: the
 /// text is what the user recognizes, the id is what the API needs, and
 /// [rank] is the only ordering the UI may use.
-@immutable
-final class QualityLabel {
+final class QualityLabel extends Equatable {
   /// A quality label.
   const new({required this.label, this.quality, this.rank = 0});
 
@@ -40,6 +39,14 @@ final class QualityLabel {
   /// The label lower-cased, stripped of spaces and punctuation, for
   /// comparisons that must survive cosmetic differences.
   String get normalizedLabel => label.toLowerCase().replaceAll(RegExp(r'[\s_\-()（）]'), '');
+
+  /// Equality is the *whole* description: the same text with a different
+  /// platform id is a different level (a site may reuse a name for another
+  /// number), which is why [sameAs] exists beside it — "the user's stored
+  /// preference names this level" and "this is the same object" are not the
+  /// same question, and a single `==` cannot answer both.
+  @override
+  List<Object?> get props => [label, quality, rank];
 
   /// The label of [labels] that [preference] names, or null when it names
   /// none of them.
