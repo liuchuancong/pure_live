@@ -177,6 +177,39 @@ abstract final class DouyuParser {
   /// the older endpoints hand over a bare upload path.
   static String? _cover(Object? value) => SiteImages.url(value, cdnBase: _cdn, suffix: '_middle.jpg');
 
+  /// `m.douyu.com/api/cate/list` → the site's categories, flattened.
+  ///
+  /// The answer carries two flat lists — `cate1Info` (the boards) and
+  /// `cate2Info` (every area of every board, each naming its board by
+  /// `cate1Id`) — so the tree is rebuilt by matching those ids. The boards
+  /// are sorted numerically, which is the order the site's own side bar
+  /// shows rather than the order the lists happen to arrive in.
+  static List<LiveArea> categories(Map<String, Object?> root) {
+    final data = SiteJson.object(root['data']);
+    final groups = SiteJson.objects(data['cate1Info']);
+    final areas = SiteJson.objects(data['cate2Info']);
+    if (groups.isEmpty && areas.isEmpty) {
+      throw const SiteApiChangedError('douyu cate/list: no cate1Info or cate2Info');
+    }
+    final result = <LiveArea>[
+      for (final group in groups)
+        if (SiteText.trimmed(group['cate1Id']) case final boardId when boardId.isNotEmpty)
+          LiveArea(
+            id: boardId,
+            name: SiteText.title(SiteText.text(group['cate1Name'])),
+            sort: SiteCounts.integer(group['cate1Id']) ?? 0,
+          ),
+      for (final area in areas)
+        if (SiteText.trimmed(area['cate2Id']) case final id when id.isNotEmpty)
+          LiveArea(
+            id: id,
+            name: SiteText.title(SiteText.text(area['cate2Name'])),
+            parentId: SiteText.trimmed(area['cate1Id']),
+          ),
+    ];
+    return result;
+  }
+
   /// The avatar/cover CDN base, used through [SiteImages].
   static const String _cdn = 'https://apic.douyucdn.cn/upload';
 

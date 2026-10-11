@@ -12,7 +12,7 @@ import 'package:live_sites/src/platforms/douyu/parsers/douyu_parser.dart';
 /// Danmaku is not wired yet — Douyu uses a TCP text protocol
 /// (`danmakuMsg.douyucdn.cn:8501`) instead of WebSockets, which needs its
 /// own transport; the capability is simply absent until then.
-final class DouyuSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapability {
+final class DouyuSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapability, LiveAreaCatalog {
   /// A site over [http]; [now] is injectable for descriptor-expiry tests.
   new({required this.http, DateTime Function()? now}) : _now = now ?? DateTime.now;
 
@@ -39,6 +39,17 @@ final class DouyuSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapab
   @override
   SiteMetadata get metadata =>
       const SiteMetadata(id: SiteIds.douyu, displayName: '斗鱼直播', homeUrl: 'https://www.douyu.com');
+
+  /// The site's boards and their areas, flattened.
+  ///
+  /// One request answers both levels — the boards list their id and name,
+  /// the areas name their board — so the tree is rebuilt without a request
+  /// per board. The area ids it returns are exactly what
+  /// [getCategoryRooms] filters by, which is what makes a picker built from
+  /// this list work without a mapping table.
+  @override
+  Future<List<LiveArea>> getAreas() async =>
+      DouyuParser.categories(await _getJson('https://m.douyu.com/api/cate/list'));
 
   @override
   Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
