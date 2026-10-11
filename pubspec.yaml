@@ -16,6 +16,7 @@ workspace:
   - packages/live_sites
   - packages/live_platform
   - packages/live_playback
+  - packages/live_preferences
   - packages/live_storage
   - packages/pagination_core
 
