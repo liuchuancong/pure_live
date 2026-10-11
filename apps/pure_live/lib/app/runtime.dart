@@ -261,6 +261,20 @@ PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
   );
   runtime.capabilities.register(
     ProviderRegistration(
+      sourceId: missevanSourceId,
+      extensionId: 'built-in.missevan',
+      provider: MissevanSource(),
+      capabilities: const CapabilitySet(<CapabilityKind>{
+        CapabilityKind.feed,
+        CapabilityKind.live,
+        CapabilityKind.search,
+        CapabilityKind.quality,
+        CapabilityKind.line,
+      }),
+    ),
+  );
+  runtime.capabilities.register(
+    ProviderRegistration(
       sourceId: kugouSourceId,
       extensionId: 'built-in.kugou',
       provider: KugouSource(),

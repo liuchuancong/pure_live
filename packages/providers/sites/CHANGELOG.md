@@ -3,7 +3,16 @@
 All notable changes to this package are documented here. Version numbers are managed by the
 repository-wide release train, see docs/architecture/package-architecture.md section 3.
 
+
 ## Unreleased
+
+- **Added**: `missevan` (猫耳FM直播) - native 20-row server pages (a caller that asks for 50 is told it got 20,
+  otherwise its "short page means the end" logic stops the list early), the `type:id` tab key the list query
+  requires, the room/creator identity checks, and the two pull containers. `500030004` is the only code that
+  means "no such room"; every other non-zero code is a service failure and is never read as offline. A pull
+  address must be in the site's own `*.bilivideo.com` family with a single ten-digit `expires`, normalised to
+  https with the signed query kept verbatim. An offline room never looks at its stale channel urls - replaying
+  them plays yesterday's show under today's title.
 
 - **Added**: `kugou` (酷狗直播 / 繁星) - the recommend directory and per-category directory (two different paths,
   the category one needing `cid`), the category table scraped from the site's own HTML with its personal routes
