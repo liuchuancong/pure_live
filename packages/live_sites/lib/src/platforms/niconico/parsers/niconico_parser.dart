@@ -26,6 +26,208 @@ abstract final class NiconicoParser {
   /// Whether [value] is a channel room id (`ch<n>`).
   static bool isChannelRoomId(String value) => RegExp(r'^ch\d+$').hasMatch(value);
 
+  /// The area type of the seven tabs.
+  static const String areaType = 'recent';
+
+  /// The seven tabs, in the site's own order; `common` is the
+  /// recommendations rather than a subject.
+  static const Map<String, String> tabNames = {
+    'common': '综合',
+    'try': '创作与挑战',
+    'live': '游戏',
+    'req': '视频介绍',
+    'face': '露脸直播',
+    'totu': '连麦互动',
+    'vtuber': 'VTuber',
+  };
+
+  /// Rows one page of the recent programs carries.
+  static const int recentPageSize = 70;
+
+  /// The path of the recent-programs page.
+  static const String directoryPath = '/front/api/pages/recent/v1/programs';
+
+  /// The catalogue: the seven constant tabs, so no request is spent finding
+  /// them out.
+  static List<LiveArea> areas() => [
+    for (final (index, entry) in tabNames.entries.indexed) LiveArea(id: entry.key, name: entry.value, sort: index),
+  ];
+
+  /// Whether [areaId] names one of the tabs.
+  static bool isTab(String areaId) => tabNames.containsKey(areaId.trim());
+
+  /// The URL of tab [tab]'s page [page] (the API offsets pages by count, and
+  /// one page is [recentPageSize] rows).
+  static Uri directoryUrl({required String tab, required int page}) =>
+      Uri.https('live.nicovideo.jp', directoryPath, {'tab': tab, 'offset': '${page - 1}', 'sortOrder': 'recentDesc'});
+
+  /// A `recent/v1/programs` page: the on-air programs of [tab], each
+  /// broadcaster once, and whether the site has another page.
+  ///
+  /// The service answers under `meta`: a status other than 200 or an
+  /// `errorCode` other than `OK` is the service failing rather than a page
+  /// without rooms, and is reported as a changed endpoint because that is
+  /// what a caller can act on. `totalCount` must be a count of at least the
+  /// rows, and the rows a list of at most [recentPageSize]. A row that
+  /// cannot be read costs itself, while a page whose every row cannot be
+  /// read is a changed endpoint.
+  static LivePage<LiveRoom> directoryPage(String body, {required String tab, required int page, int status = 200}) {
+    if (status < 200 || status >= 300) {
+      throw SiteApiChangedError('niconico recent $tab: HTTP $status');
+    }
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(body);
+    } on FormatException {
+      throw SiteApiChangedError('niconico recent $tab: body is not JSON');
+    }
+    final root = decoded is Map<String, Object?> ? decoded : null;
+    final meta = SiteJson.object(root?['meta']);
+    if (SiteCounts.integer(meta['statusCode']) != 200 || SiteText.trimmed(meta['errorCode']) != 'OK') {
+      throw SiteApiChangedError('niconico recent $tab: meta ${meta['statusCode']} ${meta['errorCode']}');
+    }
+    final total = SiteCounts.integer(meta['totalCount']);
+    final rows = SiteJson.list(root?['data']);
+    if (total == null || total < rows.length || rows.length > recentPageSize) {
+      throw SiteApiChangedError('niconico recent $tab: ${rows.length} rows, totalCount $total');
+    }
+    final seen = <String>{};
+    final rooms = <LiveRoom>[];
+    var unreadable = 0;
+    for (final row in rows) {
+      final room = listRoom(SiteJson.object(row));
+      if (room == null) {
+        unreadable++;
+        continue;
+      }
+      if (seen.add(room.roomId)) {
+        rooms.add(room);
+      }
+    }
+    if (rooms.isEmpty && unreadable > 0) {
+      throw SiteApiChangedError('niconico recent $tab: every one of $unreadable rows is unreadable');
+    }
+    final hasMore = total > page * recentPageSize;
+    return LivePage<LiveRoom>(items: rooms, hasMore: hasMore, nextPage: hasMore ? page + 1 : null, totalCount: total);
+  }
+
+  /// One `recent` row as a room, or null when the row is not an on-air
+  /// program of a known kind.
+  ///
+  /// The room is the broadcaster rather than the program when the site names
+  /// one ([roomIdOf]), so a program that ends does not orphan a followed
+  /// broadcaster. A row is kept only when it is on air (`liveCycle`) and
+  /// links to itself; its title, provider name and pictures come from the
+  /// answer, its viewers from `statistics.watchCount` (the visit count the
+  /// site publishes), and its restriction from `isPayProgram` and
+  /// `isFollowerOnly` — a paid or followers-only program is listed, because
+  /// the site lists it, and the watch page decides playback.
+  static LiveRoom? listRoom(Map<String, Object?> row) {
+    final programId = SiteText.trimmed(row['id']);
+    if (!isProgramId(programId)) {
+      return null;
+    }
+    if (!_isWatchLink(SiteText.trimmed(row['watchPageUrl']), programId)) {
+      return null;
+    }
+    if (SiteText.trimmed(row['liveCycle']) != 'ON_AIR') {
+      return null;
+    }
+    final providerType = SiteText.trimmed(row['providerType']);
+    if (!const {'community', 'channel', 'official'}.contains(providerType)) {
+      return null;
+    }
+    final provider = SiteJson.object(row['programProvider']);
+    final social = SiteJson.object(row['socialGroup']);
+    final started = SiteCounts.integer(row['beginAt']);
+    return LiveRoom(
+      platform: SiteIds.niconico,
+      roomId: roomIdOf(
+        programId: programId,
+        providerType: providerType,
+        userId: provider['id'],
+        channelId: social['id'],
+      ),
+      title: SiteText.title(SiteText.text(row['title'])),
+      nick: SiteText.title(SiteText.text(provider['name'] ?? social['name'])),
+      avatar: publicImage(provider['icon']) ?? publicImage(social['thumbnailUrl']),
+      cover: publicImage(row['flippedListingThumbnail']) ?? publicImage(row['listingThumbnail']),
+      status: LiveStatus.live,
+      watching: SiteCounts.integer(SiteJson.object(row['statistics'])['watchCount']),
+      restriction: listRestriction(row),
+      startedAt: started != null && started >= 1000000000000
+          ? DateTime.fromMillisecondsSinceEpoch(started, isUtc: true)
+          : null,
+    );
+  }
+
+  /// Whether [link] is the watch page of [programId].
+  ///
+  /// The site writes a `ref` on every card's link, so a query — and a
+  /// fragment with it — is allowed; anything else, including another
+  /// program's page, is not.
+  static bool _isWatchLink(String link, String programId) {
+    if (link == programId) {
+      return true;
+    }
+    final uri = Uri.tryParse(link);
+    if (uri == null || !(uri.isScheme('http') || uri.isScheme('https'))) {
+      return false;
+    }
+    final segments = uri.pathSegments.where((segment) => segment.isNotEmpty).toList();
+    return segments.length == 2 && segments[0] == 'watch' && segments[1] == programId;
+  }
+
+  /// The restriction a list row states: a paid program is `paid`, a
+  /// followers-only one `subscribersOnly`, both flags false none, and a row
+  /// without the flags says nothing (null).
+  static LiveRestriction? listRestriction(Map<String, Object?> row) {
+    final paid = row['isPayProgram'];
+    final followers = row['isFollowerOnly'];
+    if (paid == true || paid is Map) {
+      return LiveRestriction.paid;
+    }
+    if (followers == true) {
+      return LiveRestriction.subscribersOnly;
+    }
+    return paid == false && followers == false ? LiveRestriction.none : null;
+  }
+
+  /// The room id of a program: the broadcaster's when the provider names one
+  /// — a community or user program becomes `user/<id>`, a channel program
+  /// its `ch<id>` — else the program itself.
+  static String roomIdOf({required String programId, Object? providerType, Object? userId, Object? channelId}) {
+    final user = userId is int ? '$userId' : (userId is String ? userId : '');
+    if ((providerType == 'community' || providerType == 'user') && RegExp(r'^[1-9][0-9]{0,18}$').hasMatch(user)) {
+      return 'user/$user';
+    }
+    if (providerType == 'channel' && channelId is String && isChannelRoomId(channelId)) {
+      return channelId;
+    }
+    return programId;
+  }
+
+  /// A public image URL of the site's own hosts, else null.
+  ///
+  /// The list answers carry URLs this client must not load blindly: an image
+  /// is kept only when it is https, on a `*.nimg.jp` or `*.nicovideo.jp`
+  /// host, without a port, user info or fragment, and written without an
+  /// explicit `:443` (which [Uri] drops, so the check would reject it).
+  static String? publicImage(Object? value) {
+    if (value is! String || value.length > 8192) {
+      return null;
+    }
+    final uri = Uri.tryParse(value);
+    if (uri == null || !uri.isScheme('https') || uri.userInfo.isNotEmpty || uri.hasPort || uri.hasFragment) {
+      return null;
+    }
+    if (!(uri.host.endsWith('.nimg.jp') || uri.host.endsWith('.nicovideo.jp'))) {
+      return null;
+    }
+    final base = 'https://${uri.host}';
+    return value != base && !value.startsWith('$base/') && !value.startsWith('$base?') ? null : value;
+  }
+
   static final RegExp _scriptTag = RegExp(r'<script\b([^>]*)>', caseSensitive: false);
   static final RegExp _attribute = RegExp(r'([\w-]+)\s*=\s*"([^"]*)"');
 
