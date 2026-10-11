@@ -291,6 +291,36 @@ PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
   );
   runtime.capabilities.register(
     ProviderRegistration(
+      sourceId: soopSourceId,
+      extensionId: 'built-in.soop',
+      provider: SoopSource(),
+      // Play costs three reads (channel, assignment, aid signature), so the status path stops at the channel and
+      // qualities never signs. One address per tier means no line axis.
+      capabilities: const CapabilitySet(<CapabilityKind>{
+        CapabilityKind.feed,
+        CapabilityKind.live,
+        CapabilityKind.search,
+        CapabilityKind.quality,
+      }),
+    ),
+  );
+  runtime.capabilities.register(
+    ProviderRegistration(
+      sourceId: showroomSourceId,
+      extensionId: 'built-in.showroom',
+      provider: ShowroomSource(),
+      // One snapshot paged locally, and one address per tier - so a quality menu with no line axis. The search is
+      // a filter over the on-air snapshot, which is what this site's public surface allows.
+      capabilities: const CapabilitySet(<CapabilityKind>{
+        CapabilityKind.feed,
+        CapabilityKind.live,
+        CapabilityKind.search,
+        CapabilityKind.quality,
+      }),
+    ),
+  );
+  runtime.capabilities.register(
+    ProviderRegistration(
       sourceId: picartoSourceId,
       extensionId: 'built-in.picarto',
       provider: PicartoSource(),

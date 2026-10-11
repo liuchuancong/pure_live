@@ -621,8 +621,13 @@ platform 的共享模型;能力至少 live+feed+search+resolve 四面,弹幕/主
 ### 站点搬迁进度与下一站要点(2026-10-11 续)
 
 已落 `providers/sites/lib/src/`(一站两文件,测试在同名 test 目录,均已注册进 `registerBuiltInSources`):
-**acfun、douyu、huya、weibo、inke、kugou、missevan、kuaishou、baidulive、bigo、cc、chzzk、jdlive、picarto、showroom**(15 个直播站)+ `providers/vod_sites/lib/src/bilibili/`(点播)。
-测试:providers/sites 404 条。仍未落的一侧总数是参考项目的 34 个直播站。
+**acfun、douyu、huya、weibo、inke、kugou、missevan、kuaishou、baidulive、bigo、cc、chzzk、jdlive、picarto、showroom、soop**(16 个直播站)+ `providers/vod_sites/lib/src/bilibili/`(点播)。
+测试:providers/sites 424 条。仍未落的一侧总数是参考项目的 34 个直播站。
+`soop` 落点是:`RESULT` 把**被封**与**未播**分开报(v1 把两者都写成离线,于是一支还在轮询的特别列表和一支
+已经放弃的看起来一模一样)、观众数按 PC/移动两路相加而显式 0 保持 0、档位名字就是身份(`bps` 只在同档内排序,
+`auto` 不作为选项)、`broad_key` 用站点的**原始拼写**(小写化等于向它要一个答复里没点名的档)、`aid` 一次一签所以
+`refresh` 重签不复用、聊天 socket 端口是明文 **+1**、一个档一个地址 ⇒ **不申报 line**。操作者 cookie 只用于匿名
+路径不交给它的频道,这里不登录,被挡的房间照实说。
 `bigo` 落点是:一份 20 行的有限快照(两页从同一块里切,`total` 真;30 秒复用且失败不缓存)、studio 状态、
 两次 jsonp 换 token 再拿 hls 租约(所以 `liveStatus` 走不带 token 的那次,一次轮询一次请求),
 一路流 ⇒ 申报 quality 不申报 line。它的清单级分片保护编解码随站落地并有往返测试,但**播放链没有分片变换钩子**,
@@ -641,6 +646,16 @@ platform 的共享模型;能力至少 live+feed+search+resolve 四面,弹幕/主
 - 播放地址只认 `^/tc\.livehls/v1/streams/<movieId>/hls/<n>.<n>/media\.m3u8$` 这一条路径形状,movieId 要和
   房间答案一致 —— 换 movie 的地址属于另一场直播。
 - 请求头带 `Referer: https://twitcasting.tv/` 与 `Origin`。
+
+**排在 twitcasting 之后的两站要先各自过一次专门勘查,不能顺手搬**:
+
+- `douyin` —— v1 是 `douyin_site.dart` 981 行 + `douyin_search.dart` 601 行 + `abogus.dart` 731 行。签名这条
+  (`abogus`/`x-bogus`,依赖 `dart_sm ^0.1.5`,已在 pub cache 里)和 `ttwid`/`webid`/`RENDER_DATA` 这套身份是 HTTP
+  面的一部分,可以搬;它 268KB 的 protobuf 只服务弹幕,所以**这一站的第一遍只做 feed/partition/enter/reflow +
+  search**,弹幕留到共享层那一遍。
+- `fc2live` —— 它的 HLS 授权只在 websocket 控制会话(`Fc2ControlSession`)开着的时候有效,而 v2 的 `MediaTicket`
+  模型**没有"租约持有者"这个概念**:票据到期由刷新器重签,重签需要一个还活着的 seat。这是平台设计项(要么给票据
+  加一个 source-owned 的 lease holder,要么这站申报为"进入即开会话、退出即关"),拍板前不写代码。
 
 #### 快手(kuaishou)已落地(2026-10-11,`providers/sites/lib/src/kuaishou/`)
 

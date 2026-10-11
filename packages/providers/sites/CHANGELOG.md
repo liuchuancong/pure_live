@@ -6,6 +6,24 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- **Added**: `soop` (SOOP, the service afreecaTV was renamed to) - the category table, the homepage block, the
+  room search, the channel answer and the three-step play path (channel → `broad_stream_assign.html` → the signed
+  `aid`). A channel is its broadcaster id, and an answer that names a different `BJID` than the one asked for is
+  refused rather than played as "probably the same room". `RESULT` separates **banned** from **not broadcasting** -
+  v1 collapsed both into "offline", which makes a follow list that polls on look identical to one that gave up.
+  The concurrent audience is split across platforms (`total_view_cnt`/`view_cnt`/`VIEW_CNT`, else the explicit PC
+  and mobile fields added); an explicit zero stays zero and an unstated figure stays null. The tier *name* is the
+  identity: `bps` only orders inside a tier, because the source preset is regularly returned with no bitrate and
+  must still sit above the transcoded variants, and `auto` is the player's own decision so it is never offered as
+  a choice. The `broad_key` carries the site's **own spelling** (`…-common-Original-hls`); asking with a
+  lower-cased tier requests one the answer never named, so asks are matched case-insensitively while the wire
+  value keeps its case. The `aid` is signed per request and no lease is stated, so `refresh` re-signs instead of
+  reusing an address whose signature may already be dead. The chat socket is the plain port **plus one** (a WSS
+  connection to the unmodified port stalls in the handshake) and the host may have to be rebuilt from the chat
+  IPv4. One tier is one address, so the source declares **no line axis** - a second picker could only ever say
+  "1". The cookie this source takes is an operator's own session for channels the anonymous path is not handed;
+  nothing here logs in and a gated room is reported as gated.
+
 - **Added**: `showroom` (SHOWROOM) - the complete in-air snapshot (`/api/live/onlives`) with its genres, paged
   locally because the endpoint has no server-side paging, reused for 30 seconds with failures never cached, and
   its `total` stated as the snapshot's real size. A genre with nobody live carries a `cell_type` message cell

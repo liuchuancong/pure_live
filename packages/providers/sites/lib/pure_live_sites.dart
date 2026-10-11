@@ -50,5 +50,7 @@ export 'src/picarto/picarto_api.dart';
 export 'src/picarto/picarto_site.dart';
 export 'src/showroom/showroom_api.dart';
 export 'src/showroom/showroom_site.dart';
+export 'src/soop/soop_api.dart';
+export 'src/soop/soop_site.dart';
 export 'src/weibo/weibo_api.dart';
 export 'src/weibo/weibo_site.dart';

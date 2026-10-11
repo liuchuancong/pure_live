@@ -100,6 +100,17 @@
   (`{height}p{60}`),而 HLS 与 LLHLS 的同一形状**合成一个选择、两条线路**。`krOnlyViewing` 是站点拒绝本路径
   (resolve 里照实说是区域限制,不写成离线)、`adult` 是匿名会话证明不了的分组、`timeMachineActive` 才是
   "过去可看" ⇒ 只有它落进 `LiveCatchUp`。
+- `soop/` —— `SoopSource`:房间是主播 id,答案里的 `BJID` 与所问不合就**拒绝**(播别人的频道不是"大概同一个")。
+  在播由 `RESULT` 码说清(1 在播 / 2 没在播 / 3 被封),被封与未播是两条不同的话;`VIEWPRESET` 缺席就是**没有可签的档**,
+  不申报清晰度。观众数分 PC 与移动:`total_view_cnt`/`view_cnt`/`VIEW_CNT` 优先,没有合计字段时把两路相加,
+  显式的 0 就是 0、什么都没说的是 null。**档位名字就是身份**:`bps` 只在同一档内部排序(原画那一行常常不带码率,
+  它仍要坐在转码档之上),表里没名字的外来档按码率排;`auto` 是播放器自己的决定,不作为选项递出去。
+  换链是三步:频道 → `broad_stream_assign.html`(`return_type` 按 cdn 家族,`broad_key` 是 `bno-common-<站点原拼写>-hls`
+  —— 换成小写就是向它要一个答复里从没点名的档)→ `player_live_api.php` 签 `aid`。`aid` 一次一签,所以 `refresh`
+  重签而不是复用可能已经死掉的地址。**没有线路轴**:一个档只有一个地址,申报第二根轴就只会造一个永远填 1 的选择器。
+  聊天 socket 的 TLS 端口是站点给的明文端口 **+1**(照原端口连 wss 会卡在握手),没有主机时按 `CHIP` 的十六进制
+  重建 `chat-<hex>.sooplive.co.kr`(主机在小写化之后才拼进 url)。接受的 cookie 是操作者自己的会话,用来读匿名路径不交给它的频道;这里不登录,
+  被站点挡住的房间照实说,不靠偷渡播出去。
 
 ## 钉住的规则
 
@@ -111,8 +122,8 @@
 ## 验证
 
 - 分析:`dart analyze packages/providers/sites`
-- 测试:`dart test packages/providers/sites`(404 条,每个站点目录配一份 `test/<site>/`;README 上没列到的
-  weibo / inke / kugou / missevan / kuaishou / baidulive / bigo / cc / chzzk / jdlive / picarto / showroom 见 CHANGELOG。传输一律用 `pure_live_network`
+- 测试:`dart test packages/providers/sites`(424 条,每个站点目录配一份 `test/<site>/`;README 上没列到的
+  weibo / inke / kugou / missevan / kuaishou / baidulive / bigo / cc / chzzk / jdlive / picarto / showroom / soop 见 CHANGELOG。传输一律用 `pure_live_network`
   的 `testing.dart` 罐头适配器,不联网)
 - 架构:`dart run tool/check_architecture.dart --strict`
 
