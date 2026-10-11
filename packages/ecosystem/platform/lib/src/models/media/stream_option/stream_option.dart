@@ -19,9 +19,9 @@
 
 import 'package:equatable/equatable.dart';
 
-import '../../support/json.dart';
-import '../content/selection_ref/selection_ref.dart';
-import 'stream_option_kind.dart';
+import '../../../support/json.dart';
+import '../../content/selection_ref/selection_ref.dart';
+import '../stream_option_kind/stream_option_kind.dart';
 
 /// One choice a source offers for [StreamOptionKind].
 final class StreamOption extends Equatable {

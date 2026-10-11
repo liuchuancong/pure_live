@@ -11,8 +11,8 @@
 
 import 'package:equatable/equatable.dart';
 
-import 'stream_option.dart';
-import 'stream_option_kind.dart';
+import '../stream_option/stream_option.dart';
+import '../stream_option_kind/stream_option_kind.dart';
 
 /// The menus for one content item.
 final class StreamOptions extends Equatable {

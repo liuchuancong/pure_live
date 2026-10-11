@@ -8,7 +8,7 @@
 // for it are found in one place.
 
 import '../../../support/json.dart';
-import '../../identifiers.dart';
+import '../../identifiers/identifiers/identifiers.dart';
 import '../content_kind/content_kind.dart';
 
 final class ContentRef {

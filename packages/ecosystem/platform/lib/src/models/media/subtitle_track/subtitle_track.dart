@@ -7,7 +7,7 @@
 
 import 'package:equatable/equatable.dart';
 
-import '../../support/json.dart';
+import '../../../support/json.dart';
 
 /// One subtitle track.
 final class SubtitleTrack extends Equatable {

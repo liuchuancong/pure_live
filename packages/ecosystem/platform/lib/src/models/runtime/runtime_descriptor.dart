@@ -10,7 +10,7 @@
 import '../../support/json.dart';
 import '../error/platform_error_info.dart';
 import '../extension/extension_type.dart';
-import '../identifiers.dart';
+import '../identifiers/identifiers/identifiers.dart';
 
 /// How usable a runtime currently is.
 enum RuntimeHealth { healthy, degraded, unavailable }

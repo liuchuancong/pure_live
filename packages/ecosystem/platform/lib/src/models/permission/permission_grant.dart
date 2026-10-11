@@ -11,7 +11,7 @@
 
 import '../../support/json.dart';
 import '../extension/extension_descriptor.dart';
-import '../identifiers.dart';
+import '../identifiers/identifiers/identifiers.dart';
 
 /// Whether a permission is held. `unknown` means nobody has decided yet, which is not the same as denied:
 /// a request prompt is allowed for unknown, never for an explicit denial.
