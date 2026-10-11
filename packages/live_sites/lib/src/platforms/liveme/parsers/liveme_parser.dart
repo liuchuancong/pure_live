@@ -79,6 +79,116 @@ abstract final class LiveMeParser {
     'referer': shortId == null ? 'https://www.liveme.com/' : 'https://www.liveme.com/live.html?uid=$shortId',
   };
 
+  /// The directory host: the featured list is the web page's own API, and it
+  /// is not signed.
+  static const String directoryHost = 'lvapi.liveme.com';
+
+  /// Rooms one directory page asks for (the web page's own size).
+  static const int directoryPageSize = 20;
+
+  /// The `featurelist` URL of directory page [page].
+  static Uri featuredUrl({required int page, int pageSize = directoryPageSize}) => Uri.https(
+    directoryHost,
+    '/live/featurelist',
+    {'countryCode': 'GLOBAL', 'page_index': '$page', 'page_size': '$pageSize', 'pid': '3', 'posid': '3002', 'h5': '1'},
+  );
+
+  /// A `featurelist` page: the rooms it shows, each once, and whether the
+  /// site has another page after it (`next_page` 1).
+  ///
+  /// A card without a short id is a union room — several anchors sharing one
+  /// broadcast — and is left out, as the site's own discovery page leaves it
+  /// out. A card that cannot be read costs itself, while a page none of whose
+  /// cards can be read is a changed endpoint rather than an empty page. A
+  /// private or paid broadcast is listed live and marked, because the list
+  /// carries it (the discovery page hides it, but it is reachable there
+  /// anyway).
+  static LivePage<LiveRoom> featuredPage(String body, {required int page, int status = 200}) {
+    final data = LiveMeParser.data(body, status: status, what: 'featurelist');
+    final rows = SiteJson.list(data['video_info']);
+    if (rows.length > 100) {
+      throw SiteApiChangedError('liveme featurelist page $page: ${rows.length} cards');
+    }
+    final seen = <String>{};
+    final rooms = <LiveRoom>[];
+    var unreadable = 0;
+    for (final row in rows) {
+      final video = SiteJson.object(row);
+      if (SiteText.trimmed(video['ushortid']).isEmpty) {
+        continue;
+      }
+      final room = card(video);
+      if (room == null) {
+        unreadable++;
+        continue;
+      }
+      if (seen.add(room.roomId)) {
+        rooms.add(room);
+      }
+    }
+    if (rooms.isEmpty && unreadable > 0) {
+      throw SiteApiChangedError('liveme featurelist page $page: $unreadable unreadable cards, none listed');
+    }
+    final hasMore = SiteCounts.integer(data['next_page']) == 1;
+    return LivePage<LiveRoom>(items: rooms, hasMore: hasMore, nextPage: hasMore ? page + 1 : null);
+  }
+
+  /// One `video_info` card as a room, or null when it names no short id.
+  ///
+  /// A card has the shape of the room detail's own `video_info` without the
+  /// streams, so the same fields are read; `online`, `status` and `roomstate`
+  /// together decide the state (the site's own rule, where `online` 1 with
+  /// both counters 0 is on air), and `heat`/`playnumber` are its audience.
+  static LiveRoom? card(Map<String, Object?> video) {
+    final shortId = SiteText.trimmed(video['ushortid']);
+    if (shortId.isEmpty) {
+      return null;
+    }
+    final online = SiteCounts.integer(video['online']);
+    final state = SiteCounts.integer(video['status']);
+    final roomState = SiteCounts.integer(video['roomstate']);
+    final live = online == 1 && state == 0 && roomState == 0;
+    final offline = online == 0 || (state != null && state != 0) || (roomState != null && roomState != 0);
+    final nick = SiteText.title(SiteText.text(video['uname']));
+    final title = SiteText.title(SiteText.text(video['title']));
+    return LiveRoom(
+      platform: SiteIds.liveme,
+      roomId: shortId,
+      title: title.isEmpty || title == 'LiveMe' ? nick : title,
+      nick: nick,
+      avatar: _image(video['uface']),
+      cover: _image(video['videocapture'] ?? video['smallcover']),
+      status: live
+          ? LiveStatus.live
+          : offline
+          ? LiveStatus.offline
+          : LiveStatus.unknown,
+      watching: live ? SiteCounts.integer(video['heat']) ?? SiteCounts.integer(video['playnumber']) : null,
+      startedAt: live ? _startedAt(video['vtime']) : null,
+      restriction: live ? restrictionOf(video) : null,
+      data: live ? video : null,
+    );
+  }
+
+  /// The restriction a live card carries: `ispvt` 1 is a private broadcast,
+  /// `livebptype` 7 or the paid label is a paid one, anything else none.
+  static LiveRestriction restrictionOf(Map<String, Object?> video) {
+    if (SiteCounts.integer(video['ispvt']) == 1) {
+      return LiveRestriction.private;
+    }
+    if (SiteCounts.integer(video['livebptype']) == 7 || _isPaidLabel(video['hot_label_v2'])) {
+      return LiveRestriction.paid;
+    }
+    return LiveRestriction.none;
+  }
+
+  /// Whether a `hot_label_v2` — JSON text, as the web client receives it —
+  /// says the broadcast is paid.
+  static bool _isPaidLabel(Object? value) {
+    final text = SiteText.trimmed(value).toLowerCase();
+    return text.contains('paid broadcast') || text.contains('付费');
+  }
+
   /// Validates the envelope (`business` 0) and returns `data`.
   static Map<String, Object?> data(String body, {int status = 200, String what = 'response'}) {
     if (status < 200 || status >= 300) {
@@ -93,7 +203,7 @@ abstract final class LiveMeParser {
     if (decoded is! Map<String, Object?>) {
       throw SiteApiChangedError('liveme $what: body is not an object');
     }
-    final business = (decoded['business'] as num?)?.toInt();
+    final business = SiteCounts.integer(decoded['business']);
     if (business != null && business != 0) {
       final message = decoded['message']?.toString() ?? '';
       if (business == 500 && message.toLowerCase().contains('not exist')) {
@@ -128,9 +238,9 @@ abstract final class LiveMeParser {
       throw const SiteApiChangedError('liveme queryinfosimple: no video_info');
     }
     final userMap = user is Map<String, Object?> ? user : const <String, Object?>{};
-    final online = (video['online'] as num?)?.toInt();
-    final state = (video['status'] as num?)?.toInt();
-    final roomState = (video['roomstate'] as num?)?.toInt();
+    final online = SiteCounts.integer(video['online']);
+    final state = SiteCounts.integer(video['status']);
+    final roomState = SiteCounts.integer(video['roomstate']);
     final live = online == 1 && state == 0 && roomState == 0;
     final offline = online == 0 || (state != null && state != 0) || (roomState != null && roomState != 0);
     final nick = video['uname']?.toString() ?? userMap['uname']?.toString() ?? userMap['nickname']?.toString() ?? '';
@@ -147,7 +257,7 @@ abstract final class LiveMeParser {
           : offline
           ? LiveStatus.offline
           : LiveStatus.unknown,
-      watching: live ? (video['heat'] as num?)?.toInt() ?? (video['playnumber'] as num?)?.toInt() : null,
+      watching: live ? SiteCounts.integer(video['heat']) ?? SiteCounts.integer(video['playnumber']) : null,
       startedAt: live ? _startedAt(video['vtime']) : null,
       data: live ? video : null,
     );

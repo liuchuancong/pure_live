@@ -2,11 +2,12 @@ import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:live_sites/src/platforms/liveme/parsers/liveme_parser.dart';
 
-/// The LiveMe adapter: short-id mapping → signed queryinfosimple flow.
+/// The LiveMe adapter: short-id mapping → signed queryinfosimple flow, plus
+/// the featured directory.
 ///
-/// Not migrated yet: the guest profile fetch (bio), directory, search and
-/// the danmaku transport.
-final class LiveMeSite with SiteRoomGuard implements LiveSite {
+/// Not migrated yet: the guest profile fetch (bio), search and the danmaku
+/// transport.
+final class LiveMeSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapability {
   /// A site over [http]; [signer] is injectable for tests.
   new({required this.http, LiveMeSigner? signer}) : signer = signer ?? LiveMeSigner();
 
@@ -26,14 +27,28 @@ final class LiveMeSite with SiteRoomGuard implements LiveSite {
   SiteMetadata get metadata =>
       const SiteMetadata(id: SiteIds.liveme, displayName: 'LiveMe', homeUrl: 'https://www.liveme.com');
 
+  /// Page [page] of the site's featured list: the web page's own
+  /// `featurelist`, twenty rooms a page and not signed.
   @override
   Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
-    throw UnimplementedError('liveme directory lands with its migration');
+    if (page < 1) {
+      throw RangeError.range(page, 1, null, 'page');
+    }
+    final response = await http.send(
+      LiveRequest.get(
+        LiveMeParser.featuredUrl(page: page),
+        headers: LiveMeParser.headers(),
+        site: siteId,
+      ),
+    );
+    return LiveMeParser.featuredPage(response.text, page: page, status: response.statusCode);
   }
 
+  /// LiveMe has no areas: its one list is the featured list, so asking for an
+  /// area is a caller error rather than a request that cannot work.
   @override
-  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    throw UnimplementedError('liveme directory lands with its migration');
+  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) {
+    throw SiteError.invalidRoomId(area.id);
   }
 
   @override
