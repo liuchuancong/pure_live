@@ -17,9 +17,9 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:pure_live_huya/pure_live_huya.dart';
+import 'package:pure_live_sites/pure_live_sites.dart';
 import 'package:pure_live_demo/pure_live_demo.dart';
-import 'package:pure_live_bilibili/pure_live_bilibili.dart';
+import 'package:pure_live_vod_sites/pure_live_vod_sites.dart';
 import 'package:pure_live_capability/pure_live_capability.dart';
 import 'package:pure_live_extension/pure_live_extension.dart';
 import 'package:pure_live_favorites/pure_live_favorites.dart';
@@ -214,7 +214,7 @@ final class PureLiveRuntime {
 /// Registers the content sources compiled into this app.
 ///
 /// This app is the live product: the demo seed keeps the feed chain
-/// demonstrable, bilibili vod serves the video band, and huya serves live
+/// demonstrable, bilibili vod serves the video band, and huya and douyu serve live
 /// rooms. Sites are plain Dart here by design - no plugin indirection.
 PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
   runtime.capabilities.register(
@@ -231,6 +231,18 @@ PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
       extensionId: 'built-in.bilibili',
       provider: BilibiliVodSource(),
       capabilities: const CapabilitySet(<CapabilityKind>{CapabilityKind.vod, CapabilityKind.search}),
+    ),
+  );
+  runtime.capabilities.register(
+    ProviderRegistration(
+      sourceId: douyuSourceId,
+      extensionId: 'built-in.douyu',
+      provider: DouyuSource(),
+      capabilities: const CapabilitySet(<CapabilityKind>{
+        CapabilityKind.feed,
+        CapabilityKind.live,
+        CapabilityKind.search,
+      }),
     ),
   );
   runtime.capabilities.register(

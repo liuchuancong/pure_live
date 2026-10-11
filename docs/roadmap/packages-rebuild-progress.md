@@ -492,13 +492,34 @@ lyric/subtitle/comment/chapter/recommendation/account 全都只有名字没有�
   `LiveRoomStatus` / `LiveRoomState` / `AnchorSummary` / `ContentComment` / `ContentChapter` / `LyricDocument` /
   `SubtitleTrack`;`MediaTicketRefreshInfo` 补 `cutsConnection`(斗鱼的租约到期会**断已有连接**,虎牙不会 ——
   只有源自己知道这件事,不声明就会出现"画面停了声音还在")。
-- 依赖与文件规范落进 `package-architecture.md` §2.1:一类一文件、生成文件与类同目录、
-  provider 分 `constant/ api/ model/ site/`;默认库 `equatable` / `freezed`+`json_serializable` / `html` /
-  `synchronized` / `pointycastle` / `dart_sm`(参考项目在用同一批,我们不重复造)。
-  护栏 `check_architecture.dart` 现在按 `lib/src/site` 是否存在来要求新布局(旧布局的包仍放行,迁移期不断线)。
-- **模板包已立起来:`providers/huya`** —— 9 个一类一文件、实现了 7 个能力接口、36 条测试、
-  `dispose()` 只关自己造的 client。下一个按同一形状重做:`providers/douyu`(49 测试,先补 lines/qualities/
-  danmaku 的**申报与实现**)、`providers/bilibili`,然后才是新站点。
+- 依赖与文件规范落进 `package-architecture.md` §2.1:共享模型一类一文件、生成文件与类同目录;
+  默认库 `equatable` / `freezed`+`json_serializable` / `html` / `synchronized` / `pointycastle` / `dart_sm`
+  (参考项目在用同一批,我们不重复造)。
+
+### 3ter. 站点形态的返工(2026-10-11,上一条里的两个错)
+
+上一条把站点做成了 **一站一包 + 每站一套目录/模型**,这是错的,本轮直接推翻:
+
+- **一站一包不成立**:后面还有三十多个站。参考项目的做法是 `live_core/lib/src/sites/<site>/` —— 一个包收全部
+  同类站点,一站两文件。所以删掉 `providers/{huya,douyu,bilibili}` 三个包,建 **`providers/sites`
+  (`pure_live_sites`,直播站点合集)** 与 **`providers/vod_sites`(`pure_live_vod_sites`,点播站点合集)**,
+  现内容:`sites/lib/src/{common,huya,douyu}/`、`vod_sites/lib/src/bilibili/`。
+- **`<site>_model.dart` 不成立**:三十个站各一套 model 就是把同一个房间、同一条线路、同一张票据抄三十遍,
+  而这些共享形状本来就在 `ecosystem/platform`(`ContentSummary` / `ContentDetail` / `MediaTicket` /
+  `StreamOption` / `LiveRoomStatus`)。站点特有的只是"这个接口这个字段历史上出现过几种形状",那是 api 文件里的
+  读法。所以每个站只剩两文件:`<site>_api.dart`(端点、请求头、source id、签名 + 该站响应的读法)与
+  `<site>_site.dart`(capability 实现,自己不碰 JSON)。护栏加了 `checkSiteDirectories`:站点目录缺 `_api.dart`
+  或出现 `_model.dart` 直接报 `site-layout`。
+- **直播与点播分包**:视频可以反复打开,房间的地址带着会中断已建立流的租约(`cutsConnection` 就是为这个差别加的),
+  一个 `resolve` 没法同时诚实服务两者 —— 参照项目也是 `live_core` / `live_vod` 两个包。bilibili 目前只有 vod 面,
+  故整个住在 `vod_sites`;bilibili live 将来是 `sites/lib/src/bilibili/` 一个目录。
+- 顺带:`_cleanTitle` 的手撕 `<em>`/`&quot;` 换成 `package:html` 的 `parseFragment`(§2.1 那张表的第一次落地)。
+- 验证:`dart analyze` 两包 + `apps/pure_live` 均 0 issue;`dart test` sites **85** 通过、vod_sites **28** 通过;
+  `check_architecture --strict` = 53 包 0 error 0 warning。`apps/pure_live` 的 `registerBuiltInSources` 现在从
+  `pure_live_sites` 注册 huya + **douyu(douyu 第一次进组合根)**,从 `pure_live_vod_sites` 注册 bilibili vod。
+  未录到真实响应这条没变:两包 `fixtures/` 仍空。
+- **加下一个站的做法**:`sites/lib/src/<site>/<site>_api.dart` + `<site>_site.dart`,测试放 `sites/test/<site>/`,
+  然后在 `registerBuiltInSources` 加一条注册。不新建包、不新建 model 文件。
 
 ### 新站点清单(按参考项目顺序,等消费者拍板前先不建空壳)
 
@@ -506,8 +527,9 @@ lyric/subtitle/comment/chapter/recommendation/account 全都只有名字没有�
 niconico pandalive seventeenlive showroom sixroom soop timi? —— 实际以
 `ls /d/flutter/_ref_pure_live/packages/live_core/lib/src/sites` 为准(34 个);
 海外 16 含 twitch youtube kick picarto liveme bigo steambroadcast chzzk pandalive twitcasting 等。
-**规矩**:`portfolio §6-7` 与 §5 一致 —— 空壳不算交付,新站点必须带着它自己的 `api/site/model/constant` 与
-至少 live+feed+search+resolve 四面出现,弹幕/主播搜索等按该平台真实能力申报。
+**规矩**:`portfolio §6-7` 与 §5 一致 —— 空壳不算交付,新站点是 `sites/lib/src/<site>/` 里的
+`<site>_api.dart` + `<site>_site.dart` 两文件(签名复杂才加 `<site>_sign.dart`),没有 model 文件,返回值就是
+platform 的共享模型;能力至少 live+feed+search+resolve 四面,弹幕/主播搜索等按该平台真实能力申报。
 
 ### 还没做完、需要拍板或消费者出现的两件事
 

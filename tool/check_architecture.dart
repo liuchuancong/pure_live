@@ -313,6 +313,7 @@ List<Finding> checkLayout(Directory root, PackageInfo package) {
       Finding('stale-scaffold-marker', marker, 'a .gitkeep only belongs in a directory that is otherwise empty'),
     );
   }
+  findings.addAll(checkSiteDirectories(root, package));
   return findings;
 }
 
@@ -339,18 +340,71 @@ List<String> _staleSkeletonMarkers(Directory root, PackageInfo package) {
 
 /// The per-layer internal directory template from package-architecture.md section 2 and 2.1.
 List<String> internalLayout(PackageInfo package, String rootPath) {
-  final base = '$rootPath/${package.relativePath}';
   return switch (package.layer) {
     'features' => const <String>['lib/src/data', 'lib/src/domain', 'lib/src/presentation'],
-    // A provider is either the full 2.1 shape (urls and headers in constant/, signing and response failures in
-    // api/, the endpoint's shapes in model/, the capability answers in site/) or still the legacy single models/
-    // directory it shipped with. Half a migration is allowed; a provider with a site/ and no api/ is not -
-    // that is the shape where endpoint knowledge hides inside a capability class.
-    'providers' => Directory('$base/lib/src/site').existsSync()
-        ? const <String>['lib/src/constant', 'lib/src/api', 'lib/src/model', 'lib/src/site', 'fixtures']
-        : const <String>['lib/src/models', 'fixtures'],
+    // A provider is either a site-collection package (a `lib/src/<site>/` directory per platform, the shape
+    // docs/architecture/package-architecture.md 2.1 mandates for 直播与点播站点) or still the legacy per-site
+    // package it shipped with. The collection shape's own rules - two files per site, no per-site model file -
+    // are checked by checkSiteDirectories below, so this only stops demanding lib/src/models + fixtures.
+    'providers' =>
+      _siteDirectories(package, rootPath).isEmpty
+          ? const <String>['lib/src/models', 'fixtures']
+          : const <String>['lib/src'],
     _ => const <String>['lib/src'],
   };
+}
+
+/// The site directories of a provider package: `lib/src/<site>/` holding a `<something>_site.dart`.
+/// `common/` is the shared reading rules, not a site.
+List<Directory> _siteDirectories(PackageInfo package, String rootPath) {
+  final src = Directory('$rootPath/${package.relativePath}/lib/src');
+  if (!src.existsSync()) {
+    return const <Directory>[];
+  }
+  final sites = <Directory>[];
+  for (final entry in src.listSync()) {
+    if (entry is! Directory) {
+      continue;
+    }
+    final name = entry.path.replaceAll(r'\', '/').split('/').last;
+    if (name == 'common' || name == 'models' || name.startsWith('.')) {
+      continue;
+    }
+    final hasSiteClass = entry.listSync().whereType<File>().any(
+      (file) => file.uri.pathSegments.last.endsWith('_site.dart'),
+    );
+    if (hasSiteClass) {
+      sites.add(entry);
+    }
+  }
+  return sites;
+}
+
+/// The two-file rule of a site collection: `<site>_api.dart` (what is asked, signed, and how the answer is read)
+/// and `<site>_site.dart` (the capability answers), and **no `<site>_model.dart`** - 三十个站各配一套 model 就是把
+/// 同一个房间、同一条线路、同一张票据抄三十遍,而共享形状已经在 pure_live_platform 里。
+List<Finding> checkSiteDirectories(Directory root, PackageInfo package) {
+  if (package.layer != 'providers') {
+    return const <Finding>[];
+  }
+  final findings = <Finding>[];
+  for (final site in _siteDirectories(package, root.path)) {
+    final relative = '${package.relativePath}/${site.path.substring('${root.path}/${package.relativePath}/'.length)}'
+        .replaceAll(r'\', '/');
+    final files = site.listSync().whereType<File>().map((file) => file.uri.pathSegments.last).toSet();
+    final shortName = relative.split('/').last;
+    if (!files.any((name) => name.endsWith('_api.dart'))) {
+      findings.add(
+        Finding('site-layout', relative, 'a site directory needs <$shortName>_api.dart beside its site class'),
+      );
+    }
+    for (final name in files.where((name) => name.endsWith('_model.dart'))) {
+      findings.add(
+        Finding('site-layout', '$relative/$name', 'models are shared in pure_live_platform; a site has no model file'),
+      );
+    }
+  }
+  return findings;
 }
 
 /// Enforces the dependency direction between layers, plus the approved exception table.

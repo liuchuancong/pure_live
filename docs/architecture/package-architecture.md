@@ -31,7 +31,9 @@ pure_live/                        # 仓库根 = pub workspace hub(pubspec.yaml �
 │   ├── features/                 # L4
 │   │   ├── home/ live/ vod/ music/ iptv/ recorder/ search/ settings/ account/ backup/
 │   └── providers/                # L5 源适配层(native Dart 站点 / 音源 / M3U+EPG)
-│       ├── bilibili/ douyu/ huya/ demo/ music/ iptv/ …
+│       ├── sites/                # 直播站点合集:lib/src/<site>/,后面三十多个站都往这里加目录
+│       ├── vod_sites/            # 点播站点合集:同一形态(视频与房间对票据的要求不同,故分包)
+│       ├── music/ iptv/ demo/    # 音源 / M3U+EPG / 演示源
 ├── third_party/                  # vendored 上游源码与补丁
 ├── fixtures/                     # 跨包共享的录制样本(jar / m3u / 站点响应)
 ├── tool/                         # 仓库级脚本入口(构建 / 质量 / 发布 / 设备)
@@ -49,7 +51,9 @@ pure_live/                        # 仓库根 = pub workspace hub(pubspec.yaml �
 
 **Foundation 包**:`lib/<包名>.dart`(唯一 barrel)+ `lib/src/<切面>/` + `test/`。
 **Feature 包**(repository 与 UI 分包):`lib/src/{data,domain,presentation}/` + `test/`。
-**Provider(源插件)包**:`manifest` + `lib/src/{api,site,model,constant}/` + `capability tests` + `contract tests` + `fixtures/`(录制的真实响应)+ `security policy`。
+**Provider(站点)包**:一个包收全部同类站点,不是一个站一个包。`providers/sites`(直播)与 `providers/vod_sites`(点播)
+各按 `lib/src/<site>/` 分目录,**一站两文件**:`<site>_api.dart`(端点、请求头、签名、这个站响应字段的读法)+ `<site>_site.dart`
+(capability 实现)。返回值一律是 `ecosystem/platform` 的共享模型,**站点没有 model 文件**(§2.1)。测试同形:`test/<site>/`。
 **所有包必备**:`README.md`(职责一句话 + 允许/禁止依赖)、`CHANGELOG.md`、`pubspec.yaml`、`test/`。
 
 ### 2.1 包内文件规范(参照 `wzgrx/pure_live`,2026-10-11 定)
@@ -58,15 +62,19 @@ pure_live/                        # 仓库根 = pub workspace hub(pubspec.yaml �
 `<site>_api.dart`(端点/请求头/签名/wire 解析)+ `<site>_site.dart`(能力实现)+ 必要时 `<site>_sign.dart`,
 读起来一眼看得出哪层在哪;我们照这个形状定四条:
 
-1. **一个类型一个文件**,文件名 = 类型名的 snake_case:`stream_option.dart` 里只有 `StreamOption`。
-   枚举也算类型(`danmaku_kind.dart`)。一个文件里出现第二个公开类型 = 该拆了,不管多小。
+1. **共享模型:一个类型一个文件**,文件名 = 类型名的 snake_case:`stream_option.dart` 里只有 `StreamOption`
+   (枚举也算类型)。这条管的是 `ecosystem/platform` 与 L0-L4 的公开类型,**不管站点**:站点的 api 文件是一个站
+   的请求面,端点、UA、签名与响应读法放一起才对得上,按类型拆成七个文件就是我 earlier 犯的"乱拆"。
 2. **barrel 只 export,不定义类型**;`lib/src/**` 之外不得有实现。
-3. **目录按职责分,不按体量分**:
-   - `lib/src/api/` 端点表、请求头、签名、wire 响应到 DTO 的解析(不实现 capability)
-   - `lib/src/site/` capability 实现(`*Capability` 的那些类),一个 capability 面一个类一个文件
-   - `lib/src/model/` 只属于本源的 wire/DTO 形状,**不外泄**:跨包要用的类型进 `ecosystem/platform`
-   - `lib/src/constant/` 端点常量、UA、source id、超时与体积上限(参考项目的 `lib/constant/` 就是这个用途)
-   - `lib/src/internal/` 私有小工具(解析、节流),不给 barrel 出口
+3. **站点包按站分目录,一站两文件**(护栏 `checkSiteDirectories` 强制):
+   - `lib/src/<site>/<site>_api.dart` 端点表、请求头、source id、签名机制,以及**这个站响应字段的读法**
+     (字段历史上出过 map/数字/字符串/`{value:…}`/缺席五种形状的那些收敛函数)
+   - `lib/src/<site>/<site>_site.dart` capability 实现;自己不碰 JSON,只把 api 的读法接成共享模型
+   - 必要时第三个文件是签名本身(`<site>_sign.dart`,参考项目的 douyin 就这么放)
+   - `lib/src/common/` 多个站共用的读取规则;`lib/src/<site>/<site>_model.dart` **不允许存在** ——
+     三十个站各一套 model 就是把同一个房间、同一条线路、同一张票据抄三十遍,而这些形状已经在 platform 里
+   - 点播站点在 `providers/vod_sites`,同一形态:视频可反复打开,房间的地址带着会中断直播流的租约,
+     一个 `resolve` 不能同时诚实服务两者
    目录形态与本文档不一致时**改文档先说清理由**(§5:偏离 = 先改模板再改包)。
 4. **pub.dev 上有的,不自己造**。定下的默认选择:
 

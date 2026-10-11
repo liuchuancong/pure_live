@@ -45,10 +45,9 @@ workspace:
   - packages/integrations/firebase
   - packages/integrations/media
   - packages/integrations/python_runtime
-  - packages/providers/bilibili
+  - packages/providers/sites
+  - packages/providers/vod_sites
   - packages/providers/demo
-  - packages/providers/huya
-  - packages/providers/douyu
   - packages/providers/iptv
   - packages/providers/music
   - packages/services/favorites

@@ -95,8 +95,8 @@
 | features/recorder | ✓ | — | — | ✓ | 录制任务 |
 | features/music | — | — | ✓ | — | 队列与音源仓库 |
 | features/backup | ✓ | ✓ | ✓ | ✓ | WebDAV 构建→推→拉→恢复 |
-| providers/huya, douyu, demo | ✓ | — | — | — | native 直播源 |
-| providers/bilibili | ✓(live 能力) | ✓(vod 能力) | — | — | 同一个包,各 App 只注册自己要的能力 |
+| providers/sites(huya、douyu)+ demo | ✓ | — | — | — | native 直播源:后面三十多个站都加目录,不新增包 |
+| providers/vod_sites(bilibili vod) | — | ✓(vod 能力) | — | ✓(参照 newBV) | 点播与直播分包:一个 `resolve` 不能同时诚实服务房间的租约和视频的重开 |
 | providers/music | — | — | ✓ | — | lx 兼容音源宿主 |
 | providers/iptv | ✓ | — | — | ✓ | M3U + XMLTV |
 | providers/tvbox, community, twitch, youtube, douyin | — | — | — | 待定 | 无消费者前不重写(见 §6) |

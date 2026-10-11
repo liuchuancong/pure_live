@@ -78,12 +78,11 @@
 | `features/account` | site_account(视图+接口)/ credential_site_accounts | **无 App 消费者**(等拆壳波) | ✅ 重写完成:假句柄与"按 last 登出"两个真缺陷修掉、状态三分(过期可刷/禁用/无账号)、密钥体积上限,10 测试 |
 | `features/backup`(pure_live_backup_feature) | backup_reports / snapshot_remote(端口)/ webdav_snapshot_remote / backup_document / webdav_backup_service | **无 App 消费者**(apps/pure_live 仍自带一份 `{manifest,payload}` 编解码) | ✅ 重写完成:分工写清(端口换 final class 的可测性、报告是数据、快照名守路径逃逸),18 测试 |
 | `features/recorder` | recording_task(不可变状态机) | **无 App 消费者**;引擎在录制波次 | ✅ 重写完成:公开可写 state 收回、排队不再报"已录 1 小时"、文件名路径校验、id 不再撞,13 测试 |
-| `providers/huya` | huya_source / huya_signing(antiCode) | app | ✅ |
-| `providers/bilibili` | bilibili_vod_source / bili_wbi | app | ✅ 只有 vod 面;live 面未做 |
+| `providers/sites` → pure_live_sites | 直播站点合集:`lib/src/huya/`、`lib/src/douyu/`(各 `<site>_api.dart` + `<site>_site.dart`)+ `common/site_json.dart` | app(huya + douyu 已在 `registerBuiltInSources` 注册) | ✅ 一站一目录两文件,**无 per-site model**:返回值就是 platform 的共享模型。85 测试用罐头传输。**未录到真实响应** |
+| `providers/vod_sites` → pure_live_vod_sites | 点播站点合集:`lib/src/bilibili/`(vod 面 + WBI 签名;live 面未做) | app | ✅ 28 测试;标题解析改用 `package:html`。**未录到真实响应** |
 | `providers/demo` | demo_source(离线种子) | app | ✅ |
 | `providers/iptv` | iptv_source / xmltv_parser | **无** | ⚠️ 实现了但没装配(pubspec 描述还写着 skeleton) |
 | `providers/music` | music_source_host / music_script_crypto / music_script_prelude | **无** | ⚠️ 同上,等 pure_music |
-| `providers/douyu` → pure_live_douyu | douyu_source(Feed/Browse/Search/Resolve)/ douyu_sign(描述符 + md5 链)/ douyu_row 三种行形 | **无**(等 `pure_live` 房间页装配) | ✅ 队列第 8 项已实现匿名切片:签名换链带 `expiresAt`,49 测试把 dio 传输换成罐头适配器。**未录到真实响应**,fixtures 仍空(包 README 未验证) |
 
 ## 4. 与目标的偏差(必须修的三组)
 

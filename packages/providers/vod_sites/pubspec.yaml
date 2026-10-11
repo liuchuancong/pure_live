@@ -1,0 +1,28 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_vod_sites
+description: "点播站点适配器合集:一个站点一个子目录(api/model/site),guest 换链、分页与签名都在这里"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+# 点播与直播是两件事:直播站点在 pure_live_sites(房间是"现在"的内容,票据带租约),这里的对象是可重复打开的
+# 视频条目。混在一个包里,resolve 就要同时服务两种生命周期,而它们对 expiresAt、刷新与线路的定义并不相同。
+# 规则与目录形态见 docs/architecture/package-architecture.md §2。
+dependencies:
+  # wbi 签名的 md5;纯 Dart。
+  crypto: ^3.0.7
+  # 标题里的 `<em class="keyword">` 高亮与 HTML 实体:解析交给上游包,不自己写正则去剥标签。
+  html: ^0.15.4
+  pure_live_capability:
+    path: ../../ecosystem/capability
+  pure_live_network:
+    path: ../../foundation/network
+  pure_live_platform:
+    path: ../../ecosystem/platform
+  pure_live_utils:
+    path: ../../foundation/utils
+
+dev_dependencies:
+  test: ^1.26.0

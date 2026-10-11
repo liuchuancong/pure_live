@@ -170,10 +170,10 @@ dependencies:
     path: ../../packages/integrations/media
   pure_live_demo:
     path: ../../packages/providers/demo
-  pure_live_bilibili:
-    path: ../../packages/providers/bilibili
-  pure_live_huya:
-    path: ../../packages/providers/huya
+  pure_live_sites:
+    path: ../../packages/providers/sites
+  pure_live_vod_sites:
+    path: ../../packages/providers/vod_sites
   pure_live_backup:
     path: ../../packages/foundation/backup
   pure_live_release:
