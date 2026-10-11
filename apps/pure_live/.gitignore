@@ -46,3 +46,6 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Local run data (PURE_LIVE_DATA_DIR) written by diagnostic runs.
+.run-data/

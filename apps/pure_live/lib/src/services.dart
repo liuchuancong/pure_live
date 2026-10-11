@@ -73,8 +73,8 @@ final class PureLiveServices {
   static Future<PureLiveServices> boot({bool declaredTvBuild = false}) async {
     final runtime = await PlatformBootstrap.init(
       formFactor: declaredTvBuild ? FormFactor.tv : null,
-      userDataDirectory: getApplicationSupportDirectory,
-      cacheDirectory: getApplicationCacheDirectory,
+      userDataDirectory: () => resolvePersistentDirectory(_dataDirectoryOverrideKey),
+      cacheDirectory: resolveCacheDirectory,
     );
 
     // Logging first, so every later failure is reportable. The console sink
@@ -159,6 +159,50 @@ final class PureLiveServices {
     await history.dispose();
     await iptv.dispose();
     await database.close();
+  }
+
+  /// The environment variable a portable or diagnostic run sets to keep its
+  /// data tree somewhere of its choosing.
+  static const String _dataDirectoryOverrideKey = 'PURE_LIVE_DATA_DIR';
+
+  /// Resolves the directory durable data lives in.
+  ///
+  /// The chain, in order: an explicit environment override (portable and
+  /// diagnostic runs), the OS application-support directory, then the
+  /// documents directory. The *cache* directory is deliberately not in the
+  /// chain: the storage policy forbids keeping persistent data in a
+  /// clearable area, so a build that cannot find a persistent root must fail
+  /// loudly rather than lose the user's settings at the next cleanup — which
+  /// is why a failure here propagates and the app shows a boot error instead
+  /// of starting with settings it cannot keep.
+  static Future<Directory?> resolvePersistentDirectory(String overrideKey) async {
+    final override = Platform.environment[overrideKey];
+    if (override != null && override.trim().isNotEmpty) {
+      return Directory(override)..createSync(recursive: true);
+    }
+    for (final resolve in <Future<Directory> Function()>[
+      getApplicationSupportDirectory,
+      getApplicationDocumentsDirectory,
+    ]) {
+      try {
+        return await resolve();
+      } on Object {
+        // Try the next candidate; the error is reported by the caller when
+        // every candidate failed.
+        continue;
+      }
+    }
+    return null;
+  }
+
+  /// Resolves the directory re-fetchable data lives in; the cache area may
+  /// degrade, so this one is allowed to come back null.
+  static Future<Directory?> resolveCacheDirectory() async {
+    try {
+      return await getApplicationCacheDirectory();
+    } on Object {
+      return null;
+    }
   }
 
   static Future<String> _ensureDirectory(StorageManager storage, StorageArea area, {String? child}) async {

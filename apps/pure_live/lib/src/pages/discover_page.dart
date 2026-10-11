@@ -28,26 +28,38 @@ class DiscoverPage extends StatefulWidget {
 class _DiscoverPageState extends State<DiscoverPage> {
   final ScrollController _scroll = ScrollController();
   final List<sites.LiveRoom> _rooms = [];
-  late String _siteId = _initialSiteId;
+  String? _siteId;
   int _page = 0;
   bool _loading = false;
   bool _hasMore = true;
   Object? _failure;
 
-  sites.LiveSite get _site => widget.services.sites[_siteId]!;
+  /// The sites this build can actually browse.
+  ///
+  /// Not every adapter's directory is migrated yet, and the ones that are not
+  /// say so through the capability markers — so the picker offers the working
+  /// sites instead of putting the user on a page whose only outcome is an
+  /// error. IPTV is excluded because it is its own page: its "directory" is
+  /// the channel library the user imported.
+  List<sites.LiveSite> get _browsableSites =>
+      widget.services.sites.browsable.where((site) => site.id != sites.SiteIds.iptv).toList()
+        ..sort((a, b) => a.metadata.displayName.compareTo(b.metadata.displayName));
 
-  String get _initialSiteId {
-    final ids = widget.services.sites.ids.where((id) => id != sites.SiteIds.iptv).toList()..sort();
-    return ids.first;
+  sites.LiveSite? get _site {
+    final id = _siteId;
+    return id == null ? null : widget.services.sites[id];
   }
 
   @override
   void initState() {
     super.initState();
     _scroll.addListener(_onScroll);
+    _siteId = _browsableSites.isEmpty ? null : _browsableSites.first.id;
     // The first load starts after the first frame so the page never calls
     // setState while it is building.
-    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_loadFirstPage()));
+    if (_siteId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_loadFirstPage()));
+    }
   }
 
   @override
@@ -87,8 +99,15 @@ class _DiscoverPageState extends State<DiscoverPage> {
       _failure = null;
     });
     final siteId = _siteId;
+    final site = _site;
+    if (site == null) {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+      return;
+    }
     try {
-      final result = await _site.getRecommendRooms(page: page);
+      final result = await site.getRecommendRooms(page: page);
       if (!mounted || siteId != _siteId) {
         // The user switched sites while this page was in flight; the answer
         // is about a site nobody is looking at any more.
@@ -128,26 +147,37 @@ class _DiscoverPageState extends State<DiscoverPage> {
   Widget build(BuildContext context) {
     final theme = LiveTheme.of(context);
     final environment = LiveEnvironmentScope.of(context);
+    final site = _site;
+    if (site == null) {
+      return Padding(
+        padding: theme.componentTheme.pagePaddingFor(environment.layoutMode),
+        child: const LiveEmptyView(
+          title: 'No browsable site in this build',
+          message:
+              'The adapters whose directory is migrated declare it; the rest land site by site, '
+              'and the IPTV library has its own page.',
+        ),
+      );
+    }
     final header = Padding(
       padding: EdgeInsets.only(bottom: theme.componentTheme.sectionGap),
       child: Row(
         children: [
           Expanded(
             child: Text(
-              _site.metadata.displayName,
+              site.metadata.displayName,
               style: environment.layoutMode == LiveLayoutMode.tv ? theme.typography.display : theme.typography.headline,
             ),
           ),
           LiveMenuButton(
             tooltip: 'Choose a site',
             entries: [
-              for (final id in widget.services.sites.ids.toList()..sort())
-                if (id != sites.SiteIds.iptv)
-                  LiveMenuEntry(
-                    id: id,
-                    label: widget.services.sites[id]?.metadata.displayName ?? id,
-                    selected: id == _siteId,
-                  ),
+              for (final browsable in _browsableSites)
+                LiveMenuEntry(
+                  id: browsable.id,
+                  label: browsable.metadata.displayName,
+                  selected: browsable.id == _siteId,
+                ),
             ],
             onSelected: _selectSite,
             child: const LiveIconButton(icon: Icons.switch_video_outlined, tooltip: 'Choose a site'),
