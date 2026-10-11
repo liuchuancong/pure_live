@@ -291,6 +291,21 @@ PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
   );
   runtime.capabilities.register(
     ProviderRegistration(
+      sourceId: jdliveSourceId,
+      extensionId: 'built-in.jdlive',
+      provider: JdliveSource(),
+      // One profile in two containers (the site proves they are the same stream), and no declared search: its
+      // only lookup surface is a pasted live link.
+      capabilities: const CapabilitySet(<CapabilityKind>{
+        CapabilityKind.feed,
+        CapabilityKind.live,
+        CapabilityKind.quality,
+        CapabilityKind.line,
+      }),
+    ),
+  );
+  runtime.capabilities.register(
+    ProviderRegistration(
       sourceId: chzzkSourceId,
       extensionId: 'built-in.chzzk',
       provider: ChzzkSource(),
