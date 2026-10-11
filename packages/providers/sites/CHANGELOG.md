@@ -5,6 +5,11 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- **Added**: `weibo` - the anonymous recommendation snapshot (`PageMode.singleShot`: it is not a pagination
+  endpoint, and asking it for page 2 without refusing would loop the same rooms forever), the room answer with
+  its identity check, and the gated play url. `watch_limit` / `play_switch` become `LiveRoom.requiresAuth` and a
+  named refusal at resolve time; a trial url present under a paid gate is **not** handed out, because presence
+  is not permission. Weibo declares no search and no categories, because its anonymous surface has neither.
 - **Added**: `room()` (the `LiveRoomCapability` answer) on huya, douyu and acfun, each built by a reader in that
   site's own api file: huya's profileRoom, douyu's `betard` document, acfun's live/info envelope. The room's facts
   are fields now - `state`, `anchorName`, `area`, `viewers`, `startedAt`, `streamId`, `requiresAuth` - instead of

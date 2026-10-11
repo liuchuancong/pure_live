@@ -261,6 +261,16 @@ PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
   );
   runtime.capabilities.register(
     ProviderRegistration(
+      sourceId: weiboSourceId,
+      extensionId: 'built-in.weibo',
+      provider: WeiboSource(),
+      // No search, no categories: weibo's anonymous surface serves neither, and declaring them would be a
+      // promise the site cannot keep.
+      capabilities: const CapabilitySet(<CapabilityKind>{CapabilityKind.feed, CapabilityKind.live}),
+    ),
+  );
+  runtime.capabilities.register(
+    ProviderRegistration(
       sourceId: huyaSourceId,
       extensionId: 'built-in.huya',
       provider: HuyaSource(),

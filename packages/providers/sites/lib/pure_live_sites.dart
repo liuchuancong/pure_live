@@ -28,3 +28,5 @@ export 'src/douyu/douyu_api.dart';
 export 'src/douyu/douyu_site.dart';
 export 'src/huya/huya_api.dart';
 export 'src/huya/huya_site.dart';
+export 'src/weibo/weibo_api.dart';
+export 'src/weibo/weibo_site.dart';
