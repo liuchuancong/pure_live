@@ -1,0 +1,26 @@
+name: live_playback
+description: >-
+  Live playback orchestration for Pure Live: playback sessions, quality and
+  line selection, lease-aware renewal scheduling, failure classification and
+  the same-line → next-line → next-quality recovery ladder, audio-only mode
+  and a multi-session coordinator. Engine-agnostic — the player engine is a
+  seam the app binds to media_core.
+version: 0.1.0
+publish_to: none
+
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.12.0
+  live_sites:
+  meta: ^1.19.0
+
+dev_dependencies:
+  build_runner: ^2.16.0
+  freezed: ^4.0.2
+  json_serializable: ^6.14.0
+  very_good_analysis: ^11.0.0
