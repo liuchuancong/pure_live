@@ -22,9 +22,16 @@ final class ChzzkSite with SiteRoomGuard implements LiveSite {
   SiteMetadata get metadata =>
       const SiteMetadata(id: SiteIds.chzzk, displayName: 'CHZZK', homeUrl: 'https://chzzk.naver.com');
 
+  /// Not migrated yet, and the shape is recorded here so the next round does
+  /// not re-derive it: CHZZK's directory is a *paged cursor* API
+  /// (`/service/v1/categories/live` with a `next` cursor) whose areas carry a
+  /// category type, so the catalogue needs a page walk, a type-name map and
+  /// the area-id validation the site's own paths require (one real id even
+  /// contains `&`). The room list reads the same pages, which is why both
+  /// land together rather than one before the other.
   @override
-  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
-    throw UnimplementedError('chzzk directory lands with its migration');
+  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) {
+    throw UnimplementedError('chzzk directory lands with the category-paging migration');
   }
 
   @override
