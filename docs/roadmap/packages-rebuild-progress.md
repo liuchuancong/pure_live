@@ -621,8 +621,8 @@ platform 的共享模型;能力至少 live+feed+search+resolve 四面,弹幕/主
 ### 站点搬迁进度与下一站要点(2026-10-11 续)
 
 已落 `providers/sites/lib/src/`(一站两文件,测试在同名 test 目录,均已注册进 `registerBuiltInSources`):
-**acfun、douyu、huya、weibo、inke、kugou、missevan、kuaishou、baidulive、bigo、cc、chzzk、jdlive、picarto、showroom、soop**(16 个直播站)+ `providers/vod_sites/lib/src/bilibili/`(点播)。
-测试:providers/sites 424 条。仍未落的一侧总数是参考项目的 34 个直播站。
+**acfun、douyu、huya、weibo、inke、kugou、missevan、kuaishou、baidulive、bigo、cc、chzzk、jdlive、picarto、showroom、soop、twitcasting**(17 个直播站)+ `providers/vod_sites/lib/src/bilibili/`(点播)。
+测试:providers/sites 451 条。仍未落的一侧总数是参考项目的 34 个直播站。
 `soop` 落点是:`RESULT` 把**被封**与**未播**分开报(v1 把两者都写成离线,于是一支还在轮询的特别列表和一支
 已经放弃的看起来一模一样)、观众数按 PC/移动两路相加而显式 0 保持 0、档位名字就是身份(`bps` 只在同档内排序,
 `auto` 不作为选项)、`broad_key` 用站点的**原始拼写**(小写化等于向它要一个答复里没点名的档)、`aid` 一次一签所以
@@ -636,18 +636,20 @@ platform 的共享模型;能力至少 live+feed+search+resolve 四面,弹幕/主
 给它一个"搜什么都是空"的搜索框就是谎报平台能力。它的目录是继 acfun 之后第二个游标翻页的(游标是 `session_id`+
 `refresh_index` 的服务器答案,不是页码),清晰度轴是 `protocol:resolution:codec`,变体内部的地址才是线路。
 
-**下一站已勘查:twitcasting**(`origin/master lib/shared/platforms/twitcasting/`,api 19KB + site 5KB)。
-搬运时必须保留的规则(取自 v1 实测,不是猜测):
+**twitcasting 已落地(2026-10-11,`providers/sites/lib/src/twitcasting/`)**,勘查时记下的规则全部按 v1 保留:
+白名单 `^(?:(?:c|g|f|ig):)?[a-z0-9_]{1,64}$` 与保留页词、目录窗口 60 / 搜索窗口 50、`frontendapi` 的 JSON、首页与搜索页
+用 `package:html` 抓、媒体路径 `/tc.livehls/v1/streams/<movieId>/hls/<n>.<n>/media.m3u8` 且 movieId 必须与房间答案一致、
+请求头带 `Referer`/`Origin`。v2 里额外钉死的三件事:① **`movie.live` 才说在播**(v1 实测过下播答复里仍带着另一场的地址),
+所以 `liveStatus`/`qualities` 只读 streamserver,页面只管身份与展示字段;② 四个布尔开关 `is_live`/`is_locked`/`is_group`/
+`is_deleted` 一旦不是 bool 就判接口变了(宽松读法要么把门禁房全留下,要么把在播全丢掉),且 `live_url` 必须点名这个
+channel 与这个 broadcast;③ 搜索页不报观众数 ⇒ 那些房间是"没有数"而不是 0;密码页报 `private` 并把口令标记写进 extra
+(契约里没有 `password` 这一档,这是有意的合并而不是漏掉)。**未搬的一侧**:v1 的 `twitcasting_danmaku.dart`(187 行)
+属于弹幕那一遍,本站只把 `channel`/`movieId` 放进 `danmakuPayload`。
 
-- 房间名/broadcast 名要过 `^(?:(?:c|g|f|ig):)?[a-z0-9_]{1,64}$` 这类白名单,目录分类 key 是
-  `[a-zA-Z0-9_]{1,80}`;不合法就不发请求。
-- 目录走 `frontendapi.twitcasting.tv` 的 JSON,窗口是 `directoryWindow = 60`;搜索窗口 50;首页/分类页是
-  HTML 抓的(和酷狗一样要 `package:html`,别手撕标签)。
-- 播放地址只认 `^/tc\.livehls/v1/streams/<movieId>/hls/<n>.<n>/media\.m3u8$` 这一条路径形状,movieId 要和
-  房间答案一致 —— 换 movie 的地址属于另一场直播。
-- 请求头带 `Referer: https://twitcasting.tv/` 与 `Origin`。
+**下一站是 twitch**(v1 在 `origin/master lib/shared/platforms/twitch/`),**尚未勘查** —— 它的 gql 边车、`client-id`
+与播放 token 交换都还没读过,搬之前先做一次专门勘查,别把上面的规则当成已知。
 
-**排在 twitcasting 之后的两站要先各自过一次专门勘查,不能顺手搬**:
+**再往后有两站要先各自过一次专门勘查,不能顺手搬**:
 
 - `douyin` —— v1 是 `douyin_site.dart` 981 行 + `douyin_search.dart` 601 行 + `abogus.dart` 731 行。签名这条
   (`abogus`/`x-bogus`,依赖 `dart_sm ^0.1.5`,已在 pub cache 里)和 `ttwid`/`webid`/`RENDER_DATA` 这套身份是 HTTP

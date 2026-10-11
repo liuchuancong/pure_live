@@ -6,6 +6,21 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- **Added**: `twitcasting` (TwitCasting) - the category bar scraped off the site's own home page, the top-60 window
+  the directory refreshes instead of paging, the text-search page, the room page and the stream server.
+  **`movie.live` is the only authority on air-ness**: v1 observed offline answers carrying HLS urls for a
+  *different* movie, so `liveStatus` and `qualities` read the stream server alone and an address is only ever taken
+  from an answer that says it is live - and every address is checked against the movie id that same answer names
+  (`/tc.livehls/v1/streams/<movieId>/hls/<n>.<n>/media.m3u8` on the site's own host). The directory's four flags
+  (`is_live`/`is_locked`/`is_group`/`is_deleted`) have to stay booleans, because `0`/`1` arriving is a changed
+  endpoint and reading it loosely would drop every room or keep every gated one; a row is only a row when its
+  `live_url` names that channel and that broadcast. The room page is the authority on **identity** - exactly one
+  `twitter:creator` mark and a header `data-user-id`, both naming the channel asked for - while the search page
+  states no audience at all, so those rooms carry none. Pages are slices of a bounded window, and a page past the
+  window asks for nothing. A channel name is a whitelist (the site's own page words are reserved) and a movie or
+  archive url is refused as a room rather than answered with the channel's *current* broadcast, which would be a
+  different show. The password page is reported as gated (`private`, with the marker written down), not as offline.
+
 - **Added**: `soop` (SOOP, the service afreecaTV was renamed to) - the category table, the homepage block, the
   room search, the channel answer and the three-step play path (channel → `broad_stream_assign.html` → the signed
   `aid`). A channel is its broadcaster id, and an answer that names a different `BJID` than the one asked for is

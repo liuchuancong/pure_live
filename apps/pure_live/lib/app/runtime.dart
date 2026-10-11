@@ -291,6 +291,21 @@ PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
   );
   runtime.capabilities.register(
     ProviderRegistration(
+      sourceId: twitcastingSourceId,
+      extensionId: 'built-in.twitcasting',
+      provider: TwitcastingSource(),
+      // `movie.live` is the only authority on air-ness, so status and qualities read the stream server alone and
+      // never the addresses an offline answer still carries. One address per tier means no line axis.
+      capabilities: const CapabilitySet(<CapabilityKind>{
+        CapabilityKind.feed,
+        CapabilityKind.live,
+        CapabilityKind.search,
+        CapabilityKind.quality,
+      }),
+    ),
+  );
+  runtime.capabilities.register(
+    ProviderRegistration(
       sourceId: soopSourceId,
       extensionId: 'built-in.soop',
       provider: SoopSource(),

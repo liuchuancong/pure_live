@@ -111,6 +111,15 @@
   聊天 socket 的 TLS 端口是站点给的明文端口 **+1**(照原端口连 wss 会卡在握手),没有主机时按 `CHIP` 的十六进制
   重建 `chat-<hex>.sooplive.co.kr`(主机在小写化之后才拼进 url)。接受的 cookie 是操作者自己的会话,用来读匿名路径不交给它的频道;这里不登录,
   被站点挡住的房间照实说,不靠偷渡播出去。
+- `twitcasting/` —— `TwitcastingSource`:**在播只由 `movie.live` 说话**。v1 实测过"已下播的答复里仍然带着另一场
+  broadcast 的 HLS 地址",所以状态与清晰度都只读 streamserver(页面只负责身份与展示字段),而每个地址都必须点名
+  **同一条 broadcast**:`/tc.livehls/v1/streams/<movieId>/hls/<n>.<n>/media.m3u8`,且只在站点自己的 host 上。
+  目录是**一个会刷新的 60 行窗口**而不是 offset 接口:翻页是本地切片,过窗就返回空且不发一次请求。四个开关
+  (`is_live`/`is_locked`/`is_group`/`is_deleted`)必须是 bool —— 变成 0/1 就是接口改了,宽松读法要么把门禁房全留下,
+  要么把在播全丢掉;一行只有在 `live_url` 点名这个 channel 与这个 broadcast 时才是房间。房间页要**恰好一个**
+  `twitter:creator`,且 header 的 `data-user-id` 与所问一致。搜索页不报观众数,所以那些房间就是没有数,不是 0。
+  频道名是白名单(站点自己的页面词是保留字),movie/archive 链接**不会**被换成"当前那一场" —— 那是另一档节目。
+  密码页报成 `private` 并把口令标记写进 extra,不报成下播;一个档一个地址 ⇒ 没有线路轴。
 
 ## 钉住的规则
 
@@ -122,8 +131,8 @@
 ## 验证
 
 - 分析:`dart analyze packages/providers/sites`
-- 测试:`dart test packages/providers/sites`(424 条,每个站点目录配一份 `test/<site>/`;README 上没列到的
-  weibo / inke / kugou / missevan / kuaishou / baidulive / bigo / cc / chzzk / jdlive / picarto / showroom / soop 见 CHANGELOG。传输一律用 `pure_live_network`
+- 测试:`dart test packages/providers/sites`(451 条,每个站点目录配一份 `test/<site>/`;README 上没列到的
+  weibo / inke / kugou / missevan / kuaishou / baidulive 见 CHANGELOG。传输一律用 `pure_live_network`
   的 `testing.dart` 罐头适配器,不联网)
 - 架构:`dart run tool/check_architecture.dart --strict`
 
