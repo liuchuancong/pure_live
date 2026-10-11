@@ -70,6 +70,14 @@
   标题写着 `【重播】` 而状态字段仍说在播时,房间照播,真相记在 tag 里。清晰度是 tier(`blueray`→原画、`ultra`→蓝光,
   表里没有的键保留原名),一个 tier 内部的 cdn 家族才是线路,顺序按站自己的偏好表;原画那档不带 `vbr`,
   所以它的位置来自名字而不是缺席的码率。直播包里的线路值可能只是挂在房间 m3u8 上的 `?sign=`,不是完整地址。
+- `showroom/` —— `ShowroomSource`:在播表是**一整份快照**(`/api/live/onlives` 没有服务端翻页,所以本地切片、`total`
+  就是快照大小;30 秒内复用,失败绝不缓存成空目录)。没人播的分类里放的是 `cell_type` 消息格而不是空数组,这种行跳过,
+  而**看着像直播的行照常严格校验** —— 真改了接口要响,不能跟着填充行一起被咽下。**房间有两个名字**:耐久的数字
+  `room_id`(它是 ref)与公开的 `room_url_key`(分享链接里那个);句柄经 status 接口解析一次,所以主播改名不会弄丢收藏。
+  **在播要 `is_onlive` 与 `live_status == 2` 两边都点头**;只有一边说是,就是 `unknown` 并记下 disagreement,resolve
+  拒绝而不是播一个"也许"。`view_num` 是本场流量 ⇒ 落在累计,不是同时在线。`premium_room_type` 非零是
+  `LiveRestriction.unknown`(站点说收费但没说怎么收费)。只读 `hls`/`hls_all` 两型,`hls_all` 是站自己的自动档,
+  排在固定档之上。聊天主机与 key 先过形状检查才敢当 socket 地址用,两者齐了才申报握手。
 - `picarto/` —— `PicartoSource`:**房间就是频道名**(`[A-Za-z0-9_]{1,50}`,且站点自己的页面词 `search`/`login`/`about`
   等是保留字,永远不会被解析成某人的频道)。explore 的答复必须**自证是这次请求**:`current_page`/`per_page`/
   `last_page`/`total` 全都核对,过了最后一页还带行就是接口变了。成人行与离线行从网格里**丢弃**(丢弃不等于把它们
@@ -103,8 +111,8 @@
 ## 验证
 
 - 分析:`dart analyze packages/providers/sites`
-- 测试:`dart test packages/providers/sites`(383 条,每个站点目录配一份 `test/<site>/`;README 上没列到的
-  weibo / inke / kugou / missevan / kuaishou / baidulive / bigo / cc / chzzk / jdlive / picarto 见 CHANGELOG。传输一律用 `pure_live_network`
+- 测试:`dart test packages/providers/sites`(404 条,每个站点目录配一份 `test/<site>/`;README 上没列到的
+  weibo / inke / kugou / missevan / kuaishou / baidulive / bigo / cc / chzzk / jdlive / picarto / showroom 见 CHANGELOG。传输一律用 `pure_live_network`
   的 `testing.dart` 罐头适配器,不联网)
 - 架构:`dart run tool/check_architecture.dart --strict`
 

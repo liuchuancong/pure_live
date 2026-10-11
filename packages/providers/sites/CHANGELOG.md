@@ -6,6 +6,21 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- **Added**: `showroom` (SHOWROOM) - the complete in-air snapshot (`/api/live/onlives`) with its genres, paged
+  locally because the endpoint has no server-side paging, reused for 30 seconds with failures never cached, and
+  its `total` stated as the snapshot's real size. A genre with nobody live carries a `cell_type` message cell
+  rather than an empty list, so those rows are skipped while every row that *does* look like a live keeps the
+  strict checks. The room has two names - the durable numeric `room_id` (the ref) and the public `room_url_key`
+  (resolved once through the status endpoint, so a renamed room keeps its favourites). **On air requires the
+  profile's `is_onlive` and `live_status == 2` to agree**; when only one says yes the room is `unknown` with
+  `showroom.disagreement` recorded, and resolve refuses rather than playing a maybe. `view_num` is session
+  traffic and lands on total viewers, never on a headcount. `premium_room_type` non-zero is
+  [LiveRestriction.unknown] - the site said it is gated without saying how - and an on-air room with no stream
+  row is `unplayable`. Only `hls` and `hls_all` are read at all; `hls_all` is the site's own automatic tier and
+  ranks above the fixed bands (自動 / 原画 / 中画質 / 低画質 by its published `quality` codes), with one address
+  per row so there is no line axis. The chat host and key are shape-checked before they can become a socket
+  address, and both are required for the handshake to be reported at all.
+
 - **Added**: `picarto` - the explore grid that has to describe its own request (`current_page`, `per_page`,
   `last_page` and `total` are all checked, and a page past the end carrying rows is a schema change rather than
   more results), the language-category table, the profile search, the channel detail with its single-stream match

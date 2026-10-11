@@ -48,5 +48,7 @@ export 'src/missevan/missevan_api.dart';
 export 'src/missevan/missevan_site.dart';
 export 'src/picarto/picarto_api.dart';
 export 'src/picarto/picarto_site.dart';
+export 'src/showroom/showroom_api.dart';
+export 'src/showroom/showroom_site.dart';
 export 'src/weibo/weibo_api.dart';
 export 'src/weibo/weibo_site.dart';
