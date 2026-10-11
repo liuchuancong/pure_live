@@ -166,6 +166,176 @@ abstract final class KugouLiveParser {
     return url;
   }
 
+  /// The area id of the site's recommendations (推荐).
+  static const String recommendAreaId = '8000';
+
+  /// The last directory page the site serves (3.x).
+  static const int maxPage = 10000;
+
+  /// The area id [area] asks for: [recommendAreaId] for null (the
+  /// recommendations), else the area's own id. An area of another kind, or
+  /// with an id that is not a short number, is a caller error refused before
+  /// any request.
+  static String areaId(LiveArea? area) {
+    if (area == null) {
+      return recommendAreaId;
+    }
+    final id = SiteText.trimmed(area.id);
+    if (SiteText.trimmed(area.parentId) != areaType || !_areaId.hasMatch(id)) {
+      throw ArgumentError.value(area, 'area', 'not a Kugou Live area');
+    }
+    return id;
+  }
+
+  static final RegExp _areaId = RegExp(r'^[0-9]{1,8}$');
+
+  static final RegExp _roomId = RegExp(r'^[1-9][0-9]{2,10}$');
+
+  /// The room list of [areaId] at [page]: the recommendations are
+  /// `index/list`, another area `index/list_v4` with its `cid`, and the
+  /// answers differ in nothing else.
+  static Uri directoryUrl(int page, String areaId) {
+    final recommend = areaId == recommendAreaId;
+    return Uri.https(
+      apiHost,
+      recommend ? '/mfanxing-home/h5/cdn/room/index/list' : '/mfanxing-home/h5/cdn/room/index/list_v4',
+      {
+        'pid': '0',
+        'kugouId': '0',
+        'doubleLiveFirst': '1',
+        'sysVersion': '0',
+        'platform': '7',
+        'device': 'PureLive-Web',
+        'channel': '0',
+        'version': '99999',
+        'longitude': '0',
+        'latitude': '0',
+        'appid': '1010',
+        'liveTypeFilter': '0',
+        'isNew': '0',
+        'entranceType': '0',
+        'uiMode': '0',
+        'page': '$page',
+        if (!recommend) 'cid': areaId,
+      },
+    );
+  }
+
+  /// A room list page: the cards of `list` (`star` rows unwrapping their own
+  /// `data`), a room once, and whether the site has another page. The
+  /// answer's `times` dates the cards' `livetime`.
+  static LivePage<LiveRoom> directoryPage(String body, {required int page, int status = 200}) {
+    final root = decode(body, status: status, what: 'room list');
+    if (SiteCounts.integer(root['code']) != 0) {
+      throw SiteApiChangedError('kugoulive room list: code ${root['code']}');
+    }
+    final data = SiteJson.object(root['data']);
+    if (data.isEmpty) {
+      throw const SiteApiChangedError('kugoulive room list: no data');
+    }
+    final at = answeredAt(root);
+    final seen = <String>{};
+    final items = <LiveRoom>[];
+    for (final entry in SiteJson.list(data['list'])) {
+      final wrapper = SiteJson.object(entry);
+      final raw = SiteText.trimmed(wrapper['uiType']) == 'star' ? SiteJson.object(wrapper['data']) : wrapper;
+      final room = card(raw, answeredAt: at);
+      if (room != null && seen.add(room.roomId)) {
+        items.add(room);
+      }
+    }
+    final more = data['hasNextPage'];
+    final hasMore = more == true || SiteCounts.integer(more) == 1;
+    return LivePage(items: items, hasMore: hasMore, nextPage: hasMore ? page + 1 : null);
+  }
+
+  /// A card as a room, or null for a row without a room number.
+  ///
+  /// The title is `label`, else `topicContent`, `performContent` or the nick;
+  /// the avatar `userLogo` (a present `logo` only when it is absent), the
+  /// cover `imgPath` (else `imagePath`). `viewerNum`/`getViewerNum` are the
+  /// viewers and `hot` the popularity — the site publishes one or the other —
+  /// and a live card's start is its `livetime`, the broadcast's age in
+  /// seconds when the answer was written.
+  static LiveRoom? card(Map<String, Object?> raw, {DateTime? answeredAt}) {
+    final id = SiteText.trimmed(raw['roomId']);
+    if (!_roomId.hasMatch(id)) {
+      return null;
+    }
+    final nick = SiteText.title(SiteText.text(raw['nickName']));
+    final state = _state(raw['liveStatus'] ?? raw['status'] ?? raw['liveType']);
+    final live = state == LiveStatus.live;
+    final viewers = SiteCounts.integer(raw['viewerNum'] ?? raw['getViewerNum']);
+    return LiveRoom(
+      platform: SiteIds.kugouLive,
+      roomId: id,
+      title: _firstText([raw['label'], raw['topicContent'], raw['performContent'], nick]),
+      nick: nick,
+      avatar: image(raw['userLogo'] ?? raw['logo']),
+      cover: image(raw['imgPath'] ?? raw['imagePath']),
+      status: state,
+      watching: viewers ?? SiteCounts.integer(raw['hot']),
+      onlineViewers: viewers,
+      startedAt: live ? listStart(raw['livetime'], answeredAt) : null,
+    );
+  }
+
+  /// A card's state (`liveStatus`, else `status`, else `liveType`): a
+  /// positive value is live (1 a camera, 6 a phone or game broadcast), 0 or
+  /// -1 offline, anything else unknown.
+  static LiveStatus _state(Object? value) => switch (SiteCounts.integer(value)) {
+    final int state when state > 0 => LiveStatus.live,
+    0 || -1 => LiveStatus.offline,
+    _ => LiveStatus.unknown,
+  };
+
+  /// When the platform wrote an answer: its root `times` (milliseconds,
+  /// seconds when implausibly small), and only a plausible moment — in
+  /// 2000–2099 — else null.
+  static DateTime? answeredAt(Map<String, Object?> root) {
+    final value = SiteCounts.integer(root['times']);
+    if (value == null || value <= 0) {
+      return null;
+    }
+    final time = DateTime.fromMillisecondsSinceEpoch(value >= 100000000000 ? value : value * 1000, isUtc: true);
+    return _plausible(time, null);
+  }
+
+  /// A list card's start: `livetime` is the broadcast's age in seconds at the
+  /// moment the answer was written, so it began that moment minus the age.
+  static DateTime? listStart(Object? liveSeconds, DateTime? answeredAt) {
+    final seconds = SiteCounts.integer(liveSeconds);
+    if (answeredAt == null || seconds == null || seconds < 0) {
+      return null;
+    }
+    return _plausible(answeredAt.subtract(Duration(seconds: seconds)), answeredAt);
+  }
+
+  static final DateTime _earliest = DateTime.utc(2000);
+  static final DateTime _latest = DateTime.utc(2100);
+
+  /// How far a start may lie after the answer's own time (servers' clocks).
+  static const Duration _skew = Duration(minutes: 5);
+
+  /// [time] when it lies in 2000–2099 and (when known) not after
+  /// [answeredAt], give or take [_skew]; else null.
+  static DateTime? _plausible(DateTime time, DateTime? answeredAt) =>
+      time.isBefore(_earliest) || !time.isBefore(_latest) || (answeredAt != null && time.isAfter(answeredAt.add(_skew)))
+      ? null
+      : time;
+
+  /// The first of [values] whose text is neither empty nor the literal
+  /// `null` the site writes into fields it does not use.
+  static String _firstText(List<Object?> values) {
+    for (final value in values) {
+      final text = SiteText.title(SiteText.text(value));
+      if (text.isNotEmpty && text != 'null') {
+        return text;
+      }
+    }
+    return '';
+  }
+
   /// The areas the site's own home page links.
   ///
   /// There is no catalogue endpoint: the page carries the areas as

@@ -2,12 +2,11 @@ import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:live_sites/src/platforms/kugoulive/parsers/kugoulive_parser.dart';
 
-/// The Kugou Live adapter: getEnterRoomInfo rooms and the streamaddr
-/// multi-line play answer.
+/// The Kugou Live adapter: getEnterRoomInfo rooms, the streamaddr
+/// multi-line play answer and the `index/list` directory.
 ///
-/// Not migrated yet: search (jsonp), directory and the danmaku
-/// transport.
-final class KugouLiveSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog {
+/// Not migrated yet: search (jsonp) and the danmaku transport.
+final class KugouLiveSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -49,14 +48,23 @@ final class KugouLiveSite with SiteRoomGuard implements LiveSite, LiveAreaCatalo
 
   Future<String>? _homeHtml;
 
+  /// Page [page] (1–10000) of the site's recommendations (推荐).
   @override
-  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
-    throw UnimplementedError('kugoulive directory lands with its migration');
-  }
+  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) => _directory(null, page);
 
+  /// Page [page] of one area: the same listing, with the area's `cid`.
   @override
-  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    throw UnimplementedError('kugoulive directory lands with its migration');
+  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) => _directory(area, page);
+
+  Future<LivePage<LiveRoom>> _directory(LiveArea? area, int page) async {
+    final id = KugouLiveParser.areaId(area);
+    if (page < 1 || page > KugouLiveParser.maxPage) {
+      throw RangeError.range(page, 1, KugouLiveParser.maxPage, 'page');
+    }
+    final response = await http.send(
+      LiveRequest.get(KugouLiveParser.directoryUrl(page, id), headers: KugouLiveParser.apiHeaders, site: siteId),
+    );
+    return KugouLiveParser.directoryPage(response.text, page: page, status: response.statusCode);
   }
 
   @override
