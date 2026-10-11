@@ -5,7 +5,7 @@ import 'package:live_sites/src/platforms/chzzk/parsers/chzzk_parser.dart';
 /// The CHZZK (Naver) adapter: channel + live-detail flow.
 ///
 /// Not migrated yet: directory, search and the chat WebSocket.
-final class ChzzkSite with SiteRoomGuard implements LiveSite {
+final class ChzzkSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog {
   /// A site over [http].
   new({required this.http});
 
@@ -22,13 +22,33 @@ final class ChzzkSite with SiteRoomGuard implements LiveSite {
   SiteMetadata get metadata =>
       const SiteMetadata(id: SiteIds.chzzk, displayName: 'CHZZK', homeUrl: 'https://chzzk.naver.com');
 
-  /// Not migrated yet, and the shape is recorded here so the next round does
-  /// not re-derive it: CHZZK's directory is a *paged cursor* API
-  /// (`/service/v1/categories/live` with a `next` cursor) whose areas carry a
-  /// category type, so the catalogue needs a page walk, a type-name map and
-  /// the area-id validation the site's own paths require (one real id even
-  /// contains `&`). The room list reads the same pages, which is why both
-  /// land together rather than one before the other.
+  /// The site's areas, from the first catalogue page.
+  ///
+  /// One request answers the areas that matter: the endpoint sorts by
+  /// viewers, so the first page of
+  /// [ChzzkParser.categoryPageSize] holds the areas with a real audience.
+  /// Walking the cursor for the rest lands with the room-list mapping, which
+  /// reads the same pages — and until then a catalogue that covers the
+  /// popular areas beats one that covers none.
+  @override
+  Future<List<LiveArea>> getAreas() async {
+    final response = await http.send(
+      LiveRequest.get(
+        Uri.https('api.chzzk.naver.com', '/service/v1/categories/live', ChzzkParser.categoriesQuery(const {})),
+        headers: ChzzkParser.headers,
+        site: siteId,
+      ),
+    );
+    final content = ChzzkParser.content(response.text, status: response.statusCode, what: 'categories/live');
+    if (content == null) {
+      throw const SiteApiChangedError('chzzk categories/live: no content object');
+    }
+    return ChzzkParser.categoryPage(content).areas;
+  }
+
+  /// The room list is not migrated yet: it reads the same catalogue pages
+  /// (each carries the lives of its areas), so it lands with the room-card
+  /// mapping rather than one before the other.
   @override
   Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) {
     throw UnimplementedError('chzzk directory lands with the category-paging migration');
