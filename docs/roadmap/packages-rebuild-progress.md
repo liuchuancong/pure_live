@@ -634,3 +634,19 @@ platform 的共享模型;能力至少 live+feed+search+resolve 四面,弹幕/主
 - 播放地址只认 `^/tc\.livehls/v1/streams/<movieId>/hls/<n>.<n>/media\.m3u8$` 这一条路径形状,movieId 要和
   房间答案一致 —— 换 movie 的地址属于另一场直播。
 - 请求头带 `Referer: https://twitcasting.tv/` 与 `Origin`。
+
+#### 快手(kuaishou)勘查(未落地,下一站直接照这个写)
+
+- 端点:`live_api/category/data?type=&page=&size=`(子分类:id/name/poster)、`live_api/gameboard/list`(游戏,必须带
+  `subCategory`,空的一律拒绝 —— 空值会掉回"推荐",把游戏房混进别的分类)、`live_api/non-gameboard/list`、
+  `live_api/home/lives?pageName=profile&showFilter=1[&cursor=]`。行里自带 `liveInfo`/`playUrls`。
+- 清晰度:`playUrls` 有两种形状 —— 房间页是 `{h264|avc: {...}, hevc|h265: {...}}`,列表/回放是裸对象或对象数组
+  (数组=多条 CDN,同名合并成一条清晰度的多条线路)。`level` 缺失才退回 `bitrate`;名字依次取
+  `name`→`shortName`→`qualityType`→"清晰度 N"。**codec 是身份的一部分**:h264 的"蓝光"和 hevc 的"蓝光"是两条
+  流,合并会让观众选到设备解不动的那条。
+- 一个 quality 没有任何可用 url ⇒ `LiveRestriction.unplayable`,不是"离线"。
+- 首页/榜单里**合法地混回放卡**:房间页报离线,但卡上带着签名的回放地址 —— v1 的做法是保留并显式标成录制
+  (`isReplay`),既不丢掉也不冒充正在直播。
+- 头:`referer`/`origin` = `https://live.kuaishou.com`。v1 还有一次 `log-sdk.ksapisrv.com/.../misc2` 的会话上报
+  (30 分钟会话)。**房间页 HTML(`__NEXT_DATA__`)的装载我这次没读完**,所以首版只按列表行自带的 playUrls 服务,
+  并在 README 写明"detail 不走房间页",不假装实现了没验证过的东西。
