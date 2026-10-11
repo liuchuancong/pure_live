@@ -692,9 +692,11 @@ final class AcfunApi {
       // simply omits the live fields, so `notStarted` would be a guess dressed up as a fact.
       isScheduled: false,
       streamId: live ? '${data['liveId'] ?? ''}'.trim() : null,
-      // The paid-show gate: `paidShowUuid` names a paid show the anonymous visitor has not bought. Saying false
-      // here is what makes a black screen look like a broken player.
-      requiresAuth: '${data['paidShowUuid'] ?? ''}'.trim().isNotEmpty && data['paidShowUserBuyStatus'] != true,
+      // The paid-show gate: `paidShowUuid` names a paid show the anonymous visitor has not bought. Reporting
+      // `none` here is what makes a black screen look like a broken player.
+      restriction: '${data['paidShowUuid'] ?? ''}'.trim().isEmpty || data['paidShowUserBuyStatus'] == true
+          ? LiveRestriction.none
+          : LiveRestriction.paid,
       startedAt: created == null || created < 1000000000000 || created >= 10000000000000
           ? null
           : DateTime.fromMillisecondsSinceEpoch(created, isUtc: true),

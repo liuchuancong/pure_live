@@ -163,9 +163,20 @@ final class WeiboRoomDetail {
       anchorId: ownerId == 0 ? null : '$ownerId',
       avatar: avatar,
       cover: cover,
-      // A watch_limit is a statement about *who may watch*, which is exactly the field that lets a surface
-      // explain a refused open instead of showing a black screen and a spinner.
-      requiresAuth: access != WeiboAccess.public,
+      // A watch_limit is a statement about *who may watch*, and LiveRestriction is the field that lets a
+      // surface explain a refused open instead of showing a black screen and a spinner. The code table is the
+      // site's own: 8 = app-only, 10/11 = friends/self only, 12 = paid.
+      restriction: switch (access) {
+        WeiboAccess.public => LiveRestriction.none,
+        WeiboAccess.disabled => LiveRestriction.unplayable,
+        WeiboAccess.restricted => switch (watchLimit) {
+          8 => LiveRestriction.appOnly,
+          10 || 11 => LiveRestriction.private,
+          12 => LiveRestriction.paid,
+          _ => LiveRestriction.unknown,
+        },
+      },
+      reportedStateCode: watchLimit,
       extra: <String, Object?>{
         'watchLimit': watchLimit,
         'reportedStatus': reportedStatus,
