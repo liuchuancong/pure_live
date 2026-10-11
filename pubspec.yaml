@@ -1,0 +1,14 @@
+# Pure Live workspace. Members are added one refactored module at a time and
+# share this directory's pubspec.lock. Dependency overrides may only be
+# declared here. See docs/packages-migration.md for the migration plan.
+name: pure_live_workspace
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+
+workspace:
+  - packages/live_log
+
+# Overrides apply to the whole workspace and may only be declared here.
+dependency_overrides: {}
