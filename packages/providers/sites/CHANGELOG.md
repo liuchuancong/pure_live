@@ -6,6 +6,20 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- **Added**: `baidulive` (百度直播) - the session-cursored feed (`session_id` + `refresh_index`, so a page past the
+  first asked without its cursor is refused instead of answered as page one, and an answer that repeats its own
+  counter ends the list rather than looping the same rooms), the tab block that arrives *with* the feed because the
+  site has no category endpoint, the `371` room command, and the `protocol:resolution:codec` manifest. Two status
+  numberings are kept apart on purpose: the feed calls broadcasting `1` while the room command calls it `0`, so a
+  shared mapping would read every live grid card as a preview. `error_code` 1 and 4 are "no such broadcast" and
+  nothing else is. Pull addresses must sit on the site's own host family, start under `/live/`, end with the
+  container's extension and **name this room in their path** - and `flv-live.bdstatic.com` is deliberately served
+  over http, which the ticket reports as `MediaProtocol.http` rather than pretending otherwise. Preview is
+  `notStarted`, replay is `ended` with catch-up offered, and a thin room answer is padded from the card that
+  listed it but never for its audience number. No keyword search is declared: the anonymous surface indexes
+  broadcasts by room id only, and a search box that answers "nothing found" for every word would be a lie about
+  what the site can be asked.
+
 - **Added**: `kuaishou` (快手直播) - the eight static groups with their paged sub-categories, the two grid
   endpoints picked by the **length of the category id** (short = gameboard, long = non-game, both keyed as
   `gameId`), the one-shot recommendation block (its endpoint takes no page, so page 2 asks for nothing), the

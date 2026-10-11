@@ -23,6 +23,8 @@ library;
 
 export 'src/acfun/acfun_api.dart';
 export 'src/acfun/acfun_site.dart';
+export 'src/baidulive/baidulive_api.dart';
+export 'src/baidulive/baidulive_site.dart';
 export 'src/common/site_json.dart';
 export 'src/douyu/douyu_api.dart';
 export 'src/douyu/douyu_site.dart';

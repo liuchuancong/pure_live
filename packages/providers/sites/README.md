@@ -46,6 +46,13 @@
   播放清单**按 codec 分组**:站点给 H.265 行起的名字和 H.264 行一模一样,合并就成了一条某些解码器打不开的标签;
   同 codec 同行才合并成一条清晰度的多条线路。离线页不报观看人数(v1 写 `'0'`,那是平台没许过的数),`isLiving`
   既不是真也不是假时是 `unknown` 而不是已结束。
+- `baidulive/` —— `BaiduliveSource`:目录**按 session 游标**翻页(`session_id` + `refresh_index`,要第 2 页却没带回游标
+  就拒绝,而不是当第 1 页回答;服务器重复自己的计数器就是列表到头,而不是再要一页同样的房间),分类表是信息流第一页
+  捎带来的(站点没有独立分类接口),房间是 `371` 命令。**同一个状态在两个接口里编号不同** —— feed 用 1 表示在播,
+  命令用 0 表示在播,共用一张映射会把每个在播的格子读成预告。`error_code` 只有 1 和 4 是"没这场直播"。
+  拉流地址必须落在站自己的 cdn 域名、`/live/` 路径、对应扩展名,并且**路径里带着这个房间的 id**;
+  `flv-live.bdstatic.com` 按站点客户端的做法**就是 http**,票据如实报 `MediaProtocol.http` 而不是谎称 https。
+  预告是 `notStarted`,回放是 `ended` 且申报可回看;细细的房间答案会用列表卡片补齐展示字段,但**绝不补观看人数**。
 
 ## 钉住的规则
 
@@ -57,8 +64,8 @@
 ## 验证
 
 - 分析:`dart analyze packages/providers/sites`
-- 测试:`dart test packages/providers/sites`(230 条,每个站点目录配一份 `test/<site>/`;README 上列的只是其中三个,
-  weibo / inke / kugou / missevan / kuaishou 见 CHANGELOG。传输一律用 `pure_live_network`
+- 测试:`dart test packages/providers/sites`(260 条,每个站点目录配一份 `test/<site>/`;README 上列的只是其中几个,
+  weibo / inke / kugou / missevan / kuaishou / baidulive 见 CHANGELOG。传输一律用 `pure_live_network`
   的 `testing.dart` 罐头适配器,不联网)
 - 架构:`dart run tool/check_architecture.dart --strict`
 

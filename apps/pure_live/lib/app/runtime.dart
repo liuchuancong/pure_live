@@ -291,6 +291,21 @@ PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
   );
   runtime.capabilities.register(
     ProviderRegistration(
+      sourceId: baiduliveSourceId,
+      extensionId: 'built-in.baidulive',
+      provider: BaiduliveSource(),
+      // Cursor-paged like acfun, and the second site with both axes (protocol:resolution:codec, then its cdn
+      // urls). It declares no search: its anonymous surface indexes broadcasts by room id only.
+      capabilities: const CapabilitySet(<CapabilityKind>{
+        CapabilityKind.feed,
+        CapabilityKind.live,
+        CapabilityKind.quality,
+        CapabilityKind.line,
+      }),
+    ),
+  );
+  runtime.capabilities.register(
+    ProviderRegistration(
       sourceId: kugouSourceId,
       extensionId: 'built-in.kugou',
       provider: KugouSource(),
