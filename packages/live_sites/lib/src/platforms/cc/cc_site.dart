@@ -5,10 +5,10 @@ import 'package:live_sites/src/platforms/cc/parsers/cc_parser.dart';
 /// The NetEase CC adapter: the two-step guest flow (anchor lives →
 /// channel) plus the h5 `video_play_url` tiers.
 ///
-/// Not migrated yet: the category and search endpoints, the room page's
-/// `__NEXT_DATA__` entry for anchors without a live channel, and the
-/// danmaku capability (CC has no danmaku in 3.x either).
-final class CcSite with SiteRoomGuard implements LiveSite {
+/// Not migrated yet: the room page's `__NEXT_DATA__` entry for anchors
+/// without a live channel, the paid-show ticket flow and the danmaku
+/// capability (CC had none in 3.x either).
+final class CcSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapability, LiveSearchCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -24,20 +24,71 @@ final class CcSite with SiteRoomGuard implements LiveSite {
   @override
   SiteMetadata get metadata => const SiteMetadata(id: SiteIds.cc, displayName: '网易CC直播', homeUrl: 'https://cc.163.com');
 
+  /// Every live room, by the site's heat order.
+  ///
+  /// The endpoint pages by offset (`start`/`size`), which the page API
+  /// converts; 100 rooms a page is what the site's own popular page asks
+  /// for.
   @override
   Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
-    throw UnimplementedError('cc directory lands with its migration');
+    final number = page < 1 ? 1 : page;
+    final data = await _json('/api/category/live/', {
+      'format': 'json',
+      'start': '${(number - 1) * _pageSize}',
+      'size': '$_pageSize',
+    });
+    return CcParser.roomList(data);
   }
 
+  /// The rooms of one game area.
   @override
   Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    throw UnimplementedError('cc directory lands with its migration');
+    final game = area.id.trim();
+    if (game.isEmpty) {
+      throw SiteError.invalidRoomId(area.id);
+    }
+    final number = page < 1 ? 1 : page;
+    // The trailing slash matters: without it the site answers a 301 the
+    // transport does not follow for JSON requests.
+    final data = await _json('/api/category/$game/', {
+      'format': 'json',
+      'tag_id': '0',
+      'start': '${(number - 1) * _pageSize}',
+      'size': '$_pageSize',
+    });
+    return CcParser.roomList(data, gametype: game);
   }
 
+  /// Streamers matching a keyword, live or not.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('cc search lands with its migration');
+    final text = keyword.trim();
+    if (text.isEmpty) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final data = await _json('/search/anchor/', {
+      'query': text,
+      // The search endpoint caps its page at 50 rows; asking for the
+      // listing's 100 gets an error envelope instead of results.
+      'size': '$_searchPageSize',
+      'page': '${page < 1 ? 1 : page}',
+    }, trailingSlash: true);
+    return CcParser.searchRooms(data);
   }
+
+  /// One JSON request, with the site's own error conventions.
+  Future<Map<String, Object?>> _json(String path, Map<String, String> query, {bool trailingSlash = false}) async {
+    final response = await http.send(
+      LiveRequest.get(Uri.https('cc.163.com', path, query), headers: CcParser.apiHeaders, site: siteId),
+    );
+    return CcParser.decode(response.text, status: response.statusCode, what: trailingSlash ? path : 'cc');
+  }
+
+  /// How many rooms one listing page asks for (the endpoint's maximum).
+  static const int _pageSize = 100;
+
+  /// How many rows one search page asks for (a lower cap than the listings).
+  static const int _searchPageSize = 50;
 
   @override
   Future<LiveRoom> getRoomDetail(LiveRoom room) async {

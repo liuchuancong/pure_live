@@ -146,6 +146,13 @@ abstract final class CcParser {
 
   /// Media headers: UA, Origin and the room page as Referer. CC has no
   /// cookie.
+  /// The headers a directory or search request needs: CC answers HTML to a
+  /// request without an `Accept`, and the JSON listings are what the page
+  /// wants.
+  static const Map<String, String> apiHeaders = SiteHeaders.json;
+
+  /// Media headers: the room page as Referer, which the play endpoint
+  /// checks.
   static Map<String, String> mediaHeaders(String roomId) {
     final id = Uri.encodeComponent(roomId.trim());
     return {
@@ -161,6 +168,149 @@ abstract final class CcParser {
     final match = RegExp(r'(?:^|&)auth_key=(\d+)-').firstMatch(Uri.parse(url).query);
     final seconds = match == null ? null : int.tryParse(match.group(1)!);
     return seconds == null ? null : DateTime.fromMillisecondsSinceEpoch(seconds * 1000);
+  }
+
+  /// `api/category/live/` or `api/category/<game>/` → one page of rooms.
+  ///
+  /// Both listings answer the same shape: a `lives` array whose rows carry
+  /// the room id as `cuteid` (a positive integer or a digit string), the
+  /// heat and concurrent-viewer counters side by side, and the area under
+  /// `game_name` or `gamename` depending on the endpoint. Rows without a
+  /// usable `cuteid` are skipped: the site pads its lists with
+  /// advertisements, and a card with the room id "null" (which a naive
+  /// mapping produced) can never open.
+  ///
+  /// [gametype] is the area the request was made for, so the parser can
+  /// reject an answer for a different area rather than label its rooms
+  /// wrongly; null accepts any area and reads it from the row.
+  static LivePage<LiveRoom> roomList(Map<String, Object?> data, {String? gametype}) {
+    final announced = SiteText.trimmed(data['gametype']);
+    if (gametype != null && announced.isNotEmpty && announced != gametype) {
+      throw SiteApiChangedError('cc category: answered $announced for $gametype');
+    }
+    final rows = SiteJson.list(data['lives']);
+    final rooms = <LiveRoom>[
+      for (final row in rows)
+        if (row is Map<String, Object?>)
+          if (_cuteId(row['cuteid']) case final id?)
+            _listRoom(
+              row,
+              id,
+              area: SiteText.trimmed(row['game_name']).isEmpty
+                  ? SiteText.trimmed(row['gamename'])
+                  : SiteText.trimmed(row['game_name']),
+            ),
+    ];
+    // The listings have no page count, so "more" is the honest answer for a
+    // full page and "no more" for a short one.
+    return LivePage<LiveRoom>(items: rooms, hasMore: rooms.length >= _fullPageHint);
+  }
+
+  /// `search/anchor/` → the streamers matching a keyword, live or not.
+  ///
+  /// A search card's heat is `hot_score` alone: the `visitor` field it also
+  /// carries counts every profile view, offline streamers included, so using
+  /// it as a viewer count would show a room as lively while it is dark.
+  static LivePage<LiveRoom> searchRooms(Map<String, Object?> data) {
+    final anchors = SiteJson.object(data['webcc_anchor']);
+    final rooms = <LiveRoom>[
+      for (final row in SiteJson.list(anchors['result']))
+        if (row is Map<String, Object?>)
+          if (_cuteId(row['cuteid']) case final id?) _searchRoom(row, id),
+    ];
+    return LivePage<LiveRoom>(items: rooms, hasMore: rooms.length >= _fullPageHint);
+  }
+
+  /// The row count above which a listing is assumed to have another page.
+  ///
+  /// Neither endpoint reports a total, so this is a heuristic — and it is
+  /// marked as one: a full page almost always means more, a short page
+  /// means the end.
+  static const int _fullPageHint = 20;
+
+  /// One directory card.
+  static LiveRoom _listRoom(Map<String, Object?> item, String roomId, {required String area}) {
+    final audience = _audience(item);
+    final status = _onAirStatus(_status(item['status']), item['title']);
+    return LiveRoom(
+      platform: SiteIds.cc,
+      roomId: roomId,
+      title: SiteText.title(SiteText.text(item['title'])),
+      nick: SiteText.title(SiteText.text(item['nickname'])),
+      avatar: _image(item['purl']),
+      cover: _image(item['cover'] ?? item['poster']),
+      areaName: area,
+      watching: audience.online ?? audience.popularity,
+      status: status,
+      startedAt: _onAir(status) ? _startedAt(item['startat']) : null,
+    );
+  }
+
+  /// One search card, which reports the viewer count separately from the
+  /// heat and falls back to the portrait for a cover.
+  static LiveRoom _searchRoom(Map<String, Object?> item, String roomId) {
+    final portrait = _image(item['portrait']) ?? _image(item['portraiturl']);
+    final status = (SiteCounts.integer(item['status']) ?? 0) == 1 ? LiveStatus.live : LiveStatus.offline;
+    return LiveRoom(
+      platform: SiteIds.cc,
+      roomId: roomId,
+      title: SiteText.title(SiteText.text(item['title'] ?? item['nickname'])),
+      nick: SiteText.title(SiteText.text(item['nickname'])),
+      avatar: _image(item['purl']) ?? portrait,
+      cover: _image(item['cover']) ?? portrait,
+      areaName: SiteText.trimmed(item['gamename']),
+      watching: SiteCounts.integer(item['hot_score']),
+      status: status,
+    );
+  }
+
+  /// The heat and the concurrent-viewer counters, each under whichever of
+  /// its field names this endpoint uses. The heat may be a display string
+  /// ("1.2万"), which is why it is read as a scaled count.
+  static ({int? popularity, int? online}) _audience(Map<String, Object?> room) {
+    int? first(List<String> keys) {
+      for (final key in keys) {
+        final value = SiteCounts.scaled(room[key]);
+        if (value != null) {
+          return value;
+        }
+      }
+      return null;
+    }
+
+    return (
+      popularity: first(const ['webcc_visitor', 'hot_score', 'visitor', 'total_visitor']),
+      online: first(const ['vision_visitor', 'online_num']),
+    );
+  }
+
+  /// A room id: a positive integer within the safe range, or a digit string.
+  static String? _cuteId(Object? value) {
+    if (value is int) {
+      return value > 0 && value <= 9007199254740991 ? '$value' : null;
+    }
+    final text = SiteText.trimmed(value);
+    return RegExp(r'^\d{1,18}$').hasMatch(text) && text != '0' ? text : null;
+  }
+
+  static LiveStatus _status(Object? value) => switch (SiteCounts.integer(value)) {
+    1 => LiveStatus.live,
+    0 => LiveStatus.offline,
+    _ => LiveStatus.unknown,
+  };
+
+  /// Whether a room is on air, with the site's own "【重播】" prefix marking a
+  /// rebroadcast as a replay rather than a live stream.
+  static LiveStatus _onAirStatus(LiveStatus status, Object? title) =>
+      status == LiveStatus.live && SiteText.trimmed(title).startsWith('【重播】') ? LiveStatus.replay : status;
+
+  static bool _onAir(LiveStatus status) => status == LiveStatus.live || status == LiveStatus.replay;
+
+  /// When a broadcast went on air; `startat` is Beijing time as epoch
+  /// seconds.
+  static DateTime? _startedAt(Object? value) {
+    final seconds = SiteCounts.integer(value);
+    return seconds == null || seconds <= 0 ? null : DateTime.fromMillisecondsSinceEpoch(seconds * 1000);
   }
 
   static String? _image(Object? value) {
