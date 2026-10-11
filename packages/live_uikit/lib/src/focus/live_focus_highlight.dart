@@ -1,19 +1,22 @@
 import 'package:flutter/widgets.dart';
 
 import 'package:live_uikit/src/theme/live_theme.dart';
+import 'package:live_uikit/src/tokens/elevation.dart';
 
 /// Wraps a control so it can be focused the same way in every design
 /// language.
 ///
 /// The highlight owns the [FocusNode] when the caller does not supply one
 /// and hands it to the builder, which is what makes one node drive both the
-/// inner control's focus handling and the ring drawn here. The ring is an
-/// overlay: it never inserts padding or changes the control's size, so
+/// inner control's focus handling and the feedback drawn here. The feedback
+/// is an overlay: it never inserts padding or changes the control's size, so
 /// focus moving through a list does not shift the layout.
 ///
-/// This is the shared piece of the focus infrastructure; the TV-specific
-/// behaviour (focus memory, d-pad navigation, boundary rules) is added on
-/// top of it, not instead of it.
+/// What "focused" looks like comes from the theme's focus tokens, and the two ways
+/// it can be expressed are both supported here: a ring (Material, Cupertino,
+/// Fluent, macOS, Yaru) and a lift (Neumorphic, and TV builds where a glow
+/// reads better from three metres away). A language that wants neither sets
+/// both `showRing` to false and `liftElevation` to zero.
 class LiveFocusHighlight extends StatefulWidget {
   /// A highlight around the widget [childBuilder] returns.
   const new({
@@ -114,6 +117,20 @@ class _LiveFocusHighlightState extends State<LiveFocusHighlight> {
                 decoration: BoxDecoration(
                   border: Border.all(color: theme.colors.focus, width: focus.ringWidth),
                   borderRadius: BorderRadius.circular(widget.radius + focus.ringOffset),
+                ),
+              ),
+            ),
+          ),
+        if (_focused && focus.liftElevation > 0)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(widget.radius),
+                  boxShadow: LiveElevation.shadow(
+                    color: theme.colors.shadow.withValues(alpha: 0.45),
+                    elevation: focus.liftElevation,
+                  ),
                 ),
               ),
             ),
