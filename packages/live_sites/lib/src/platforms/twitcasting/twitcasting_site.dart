@@ -10,8 +10,14 @@ import 'package:live_sites/src/platforms/twitcasting/parsers/twitcasting_parser.
 /// The comment stream is the broadcast's event socket, whose URL the site
 /// hands out per broadcast with a signature that lasts about an hour.
 ///
-/// Not migrated yet: directory and search.
-final class TwitcastingSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability {
+/// The directory is the site's `top/category` window: one answer of up to
+/// sixty broadcasts, paged locally, for the whole site or one of the
+/// homepage's tabs.
+///
+/// Not migrated yet: search.
+final class TwitcastingSite
+    with SiteRoomGuard
+    implements LiveSite, LiveDanmakuCapability, LiveAreaCatalog, LiveDirectoryCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -28,15 +34,80 @@ final class TwitcastingSite with SiteRoomGuard implements LiveSite, LiveDanmakuC
   SiteMetadata get metadata =>
       const SiteMetadata(id: SiteIds.twitcasting, displayName: 'TwitCasting', homeUrl: 'https://twitcasting.tv');
 
+  /// The site's tabs, read from its own home page: the tabs *are* the
+  /// catalogue, so this one request is also the tab keys a listing accepts.
   @override
-  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
-    throw UnimplementedError('twitcasting directory lands with its migration');
+  Future<List<LiveArea>> getAreas() async {
+    final response = await http.send(
+      LiveRequest.get(Uri.https('twitcasting.tv', '/'), headers: TwitcastingParser.headers, site: siteId),
+    );
+    return TwitcastingParser.areas(response.text, status: response.statusCode);
   }
 
+  /// The whole site's window: `top/category` without a tab, which is the
+  /// broadcasts the site itself shows on its front page.
   @override
-  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    throw UnimplementedError('twitcasting directory lands with its migration');
+  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) => _directory('', page);
+
+  /// The window of one homepage tab; a key that is not a tab key is a caller
+  /// error, refused before any request.
+  @override
+  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) {
+    final key = area.id.trim();
+    if (!TwitcastingParser.areaIdPattern.hasMatch(key)) {
+      throw SiteError.invalidRoomId(area.id);
+    }
+    return _directory(key, page);
   }
+
+  /// One page of a tab's window.
+  ///
+  /// The site answers a single window of [TwitcastingParser.directoryWindow]
+  /// broadcasts, so page 1 asks for it whole and a later page is cut from the
+  /// same answer while it is younger than [windowLifetime]; a page past the
+  /// window is empty without a request.
+  Future<LivePage<LiveRoom>> _directory(String key, int page) async {
+    if (page < 1 || page > TwitcastingParser.maxPage) {
+      throw RangeError.range(page, 1, TwitcastingParser.maxPage, 'page');
+    }
+    if ((page - 1) * TwitcastingParser.directoryPageSize >= TwitcastingParser.directoryWindow) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final cached = _windows[key];
+    final String body;
+    if (page > 1 && cached != null && DateTime.now().difference(cached.at) < windowLifetime) {
+      body = cached.body;
+    } else {
+      final response = await http.send(
+        LiveRequest.get(
+          Uri.https('frontendapi.twitcasting.tv', '/top/category', {
+            'id': key,
+            'count': '${TwitcastingParser.directoryWindow}',
+          }),
+          headers: TwitcastingParser.headers,
+          site: siteId,
+        ),
+      );
+      if (response.statusCode != 200) {
+        throw SiteApiChangedError('twitcasting top/category $key: HTTP ${response.statusCode}');
+      }
+      body = response.text;
+      _windows.remove(key);
+      _windows[key] = (at: DateTime.now(), body: body);
+      if (_windows.length > _windowLimit) {
+        _windows.remove(_windows.keys.first);
+      }
+    }
+    return TwitcastingParser.directory(body, page: page, areaId: key, now: DateTime.now());
+  }
+
+  /// How long a window is reused by the pages after the first.
+  static const Duration windowLifetime = Duration(seconds: 30);
+
+  /// How many windows are kept at once (the site's tabs, oldest dropped).
+  static const int _windowLimit = 8;
+
+  final Map<String, ({DateTime at, String body})> _windows = {};
 
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {

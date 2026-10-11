@@ -45,6 +45,211 @@ abstract final class TwitcastingParser {
     for (final match in _metaAttr.allMatches(source)) match.group(1)!: match.group(2)!,
   };
 
+  /// The broadcasts one `top/category` answer holds: the site answers a
+  /// single window of this many, and the pages a caller asks for are cut from
+  /// it.
+  static const int directoryWindow = 60;
+
+  /// How many rooms one directory page shows.
+  static const int directoryPageSize = 30;
+
+  /// The highest page a caller may ask for.
+  static const int maxPage = 10000;
+
+  /// A homepage tab key (`data-channel`).
+  static final RegExp areaIdPattern = RegExp(r'^[a-zA-Z0-9_]{1,80}$');
+
+  /// The homepage's top tabs (`a.tw-top-tab-item[data-channel]`) as the
+  /// site's areas, in page order; "For You" carries no key and is left out.
+  ///
+  /// The tabs *are* the catalogue — the site has no catalogue endpoint — so a
+  /// tab without a usable key or label fails the catalogue, as does a page
+  /// with none or more than a hundred: a homepage without its tabs is a
+  /// changed page, not a page with nothing to browse.
+  static List<LiveArea> areas(String body, {int status = 200}) {
+    if (status != 200) {
+      throw SiteApiChangedError('twitcasting home: HTTP $status');
+    }
+    final areas = <LiveArea>[];
+    final seen = <String>{};
+    for (final match in _anchor.allMatches(body)) {
+      final tag = match.group(0)!;
+      if (!tag.contains('tw-top-tab-item')) {
+        continue;
+      }
+      final key = _attributes(tag)['data-channel'];
+      if (key == null) {
+        continue;
+      }
+      final label = _anchorText(body, match.end);
+      if (!areaIdPattern.hasMatch(key) || label.isEmpty) {
+        throw SiteApiChangedError('twitcasting home: tab "$key" "$label"');
+      }
+      if (seen.add(key)) {
+        areas.add(LiveArea(id: key, name: label, sort: areas.length));
+      }
+    }
+    if (areas.isEmpty || areas.length > 100) {
+      throw SiteApiChangedError('twitcasting home: ${areas.length} category tabs');
+    }
+    return areas;
+  }
+
+  /// The `top/category` window of tab [areaId] (the empty string for the whole
+  /// site): the room each row shows, or null when the row is left out.
+  ///
+  /// Left out are broadcasts that ended, were deleted or are group broadcasts
+  /// — what a group broadcast is was never seen, 0 of 837 rows on 2026-09-29
+  /// — and a row that cannot be read (a flag that is not a boolean, or a bad
+  /// channel, movie id, `live_url` or viewer count), which costs that row
+  /// rather than the page (the unified fault-tolerance rule); 3.x failed the
+  /// whole list on one. A window whose every row is malformed, one over
+  /// [directoryWindow] rows or one that is not a list at all is a changed
+  /// endpoint. A locked broadcast (the site's secret word) is a live room
+  /// restricted to [LiveRestriction.password] and any other to
+  /// [LiveRestriction.none]; 3.x left locked rooms out. A start time is [now]
+  /// less the broadcast's `elapsed_time`, when [now] is known.
+  static List<LiveRoom?> window(String body, {required String areaId, int status = 200, DateTime? now}) {
+    if (status != 200) {
+      throw SiteApiChangedError('twitcasting top/category $areaId: HTTP $status');
+    }
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(body);
+    } on FormatException {
+      throw SiteApiChangedError('twitcasting top/category $areaId: body is not JSON');
+    }
+    final root = decoded is Map<String, Object?> ? decoded : null;
+    final rows = root?['movies'];
+    if (rows is! List || rows.length > directoryWindow) {
+      throw SiteApiChangedError(
+        'twitcasting top/category $areaId: movies is ${rows is List ? '${rows.length} rows' : rows.runtimeType}',
+      );
+    }
+    final window = [for (final row in rows) _row(row, now)];
+    if (rows.isNotEmpty && window.every((room) => room.malformed)) {
+      throw SiteApiChangedError('twitcasting top/category $areaId: all ${rows.length} rows malformed');
+    }
+    return [for (final row in window) row.room];
+  }
+
+  /// One `top/category` page: the rooms of the window's rows [page] of
+  /// [directoryPageSize] shows, cut after the rows left out were dropped — so
+  /// a page may hold fewer rooms — with a channel repeated on the page listed
+  /// once.
+  ///
+  /// The site answers one window and no more, so the last page of it is the
+  /// last page there is.
+  static LivePage<LiveRoom> directory(
+    String body, {
+    required int page,
+    required String areaId,
+    int status = 200,
+    DateTime? now,
+  }) {
+    if (page < 1 || page > maxPage) {
+      throw RangeError.range(page, 1, maxPage, 'page');
+    }
+    final offset = (page - 1) * directoryPageSize;
+    if (offset >= directoryWindow) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final rooms = <String, LiveRoom>{};
+    for (final room in window(body, areaId: areaId, status: status, now: now).skip(offset).take(directoryPageSize)) {
+      if (room != null) {
+        rooms.putIfAbsent(room.roomId, () => room);
+      }
+    }
+    final hasMore = offset + directoryPageSize < directoryWindow;
+    return LivePage(
+      items: rooms.values.toList(),
+      hasMore: hasMore,
+      nextPage: hasMore ? page + 1 : null,
+      totalCount: directoryWindow,
+    );
+  }
+
+  /// One `top/category` row: its room, or none because the row is left out or
+  /// cannot be read ([window] explains both).
+  static ({LiveRoom? room, bool malformed}) _row(Object? raw, DateTime? now) {
+    const malformed = (room: null, malformed: true);
+    final row = raw is Map<String, Object?> ? raw : SiteJson.object(raw);
+    if (row.isEmpty) {
+      return malformed;
+    }
+    const flags = ['is_live', 'is_locked', 'is_group', 'is_deleted'];
+    if (flags.any((flag) => row[flag] is! bool)) {
+      return malformed;
+    }
+    if (row['is_live'] != true || row['is_group'] != false || row['is_deleted'] != false) {
+      return (room: null, malformed: false);
+    }
+    final channel = channelName(SiteText.text(row['user_id']));
+    final movie = SiteCounts.integer(row['id']);
+    final link = Uri.tryParse(SiteText.trimmed(row['live_url']));
+    final viewers = SiteCounts.integer(row['current_viewer_count']);
+    if (channel == null ||
+        movie == null ||
+        movie <= 0 ||
+        link == null ||
+        link.hasAuthority ||
+        link.hasQuery ||
+        link.hasFragment ||
+        link.pathSegments.where((segment) => segment.isNotEmpty).join('/') != '$channel/movie/$movie' ||
+        viewers == null ||
+        viewers < 0) {
+      return malformed;
+    }
+    final telop = SiteText.title(SiteText.text(row['telop']));
+    final elapsed = SiteCounts.integer(row['elapsed_time']);
+    return (
+      room: LiveRoom(
+        platform: SiteIds.twitcasting,
+        roomId: channel,
+        title: telop.isEmpty ? SiteText.title(SiteText.text(row['title'])) : telop,
+        nick: SiteText.title(SiteText.text(row['user_name'])),
+        cover: _picture(row['thumbnail_url']),
+        avatar: _picture(row['user_icon_url']),
+        watching: viewers,
+        status: LiveStatus.live,
+        startedAt: now == null || elapsed == null || elapsed < 0 ? null : startedBefore(now, elapsed),
+        restriction: row['is_locked'] == true ? LiveRestriction.password : LiveRestriction.none,
+      ),
+      malformed: false,
+    );
+  }
+
+  /// [now] less [seconds], to the whole second: the start of a broadcast the
+  /// site says has run that long.
+  static DateTime startedBefore(DateTime now, int seconds) {
+    final utc = now.toUtc();
+    return DateTime.fromMillisecondsSinceEpoch(
+      utc.millisecondsSinceEpoch - utc.millisecondsSinceEpoch % 1000,
+      isUtc: true,
+    ).subtract(Duration(seconds: seconds));
+  }
+
+  /// A `//host/…` or `https://host/…` picture as it is served.
+  static String? _picture(Object? value) {
+    final url = SiteText.trimmed(value);
+    if (url.isEmpty) {
+      return null;
+    }
+    return url.startsWith('//') ? 'https:$url' : url;
+  }
+
+  static final RegExp _anchor = RegExp(r'<a\b[^>]*>', caseSensitive: false);
+
+  /// The text of the anchor whose tag ended at [from]: up to its `</a>`, with
+  /// tags stripped and whitespace collapsed.
+  static String _anchorText(String body, int from) {
+    final close = body.indexOf('</a>', from);
+    if (close < 0) {
+      return '';
+    }
+    return SiteText.title(SiteText.stripTags(body.substring(from, close)));
+  }
+
   /// The channel page → the room. A redirect (>=300) is "not found"; a
   /// secret-word page marks the broadcast protected.
   static ({LiveRoom room, bool secretWord, int? movieId, DateTime? liveStartedAt}) channelPage(
