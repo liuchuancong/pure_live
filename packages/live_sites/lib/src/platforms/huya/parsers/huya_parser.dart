@@ -247,6 +247,33 @@ abstract final class HuyaParser {
   /// A title from the richer field, falling back to the shorter one.
   static String _title(Object? primary, Object? fallback) => SiteText.titleFrom(primary, fallback);
 
+  /// `getSearchContent&v=1` → the streamers matching a keyword.
+  ///
+  /// The search answer carries several document sets — rooms under
+  /// `response.3`, streamers under `response.1` — and this reads the
+  /// streamer set: people, with the room they are in when they are on air.
+  /// `gameLiveOn` is the site's own flag rather than a guess from the room id
+  /// being present, because a person keeps their room while they are not
+  /// broadcasting.
+  static LivePage<LiveAnchor> searchAnchors(Map<String, Object?> response) {
+    final rows = _docs(response, '1');
+    final anchors = <LiveAnchor>[
+      for (final doc in rows)
+        if (SiteText.trimmed(doc['room_id']) case final id when id.isNotEmpty && int.tryParse(id) != null)
+          LiveAnchor(
+            id: SiteText.trimmed(doc['yyid']).isEmpty ? id : SiteText.trimmed(doc['yyid']),
+            roomId: id,
+            name: SiteText.title(SiteText.text(doc['game_nick'])),
+            avatar: SiteText.trimmed(doc['game_avatarUrl180']).isEmpty
+                ? null
+                : SiteText.trimmed(doc['game_avatarUrl180']),
+            live: SiteCounts.flag(doc['gameLiveOn']) ?? false,
+            areaName: SiteText.trimmed(doc['gameName']),
+          ),
+    ];
+    return LivePage<LiveAnchor>(items: anchors, hasMore: rows.length >= 30);
+  }
+
   static Map<String, Object?> _decode(String blob) {
     final cleaned = blob.replaceAll(_scriptEscape, '');
     final decoded = jsonDecode(cleaned);

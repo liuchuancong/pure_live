@@ -10,7 +10,9 @@ import 'package:live_sites/src/platforms/huya/parsers/huya_parser.dart';
 /// Not migrated yet: the Tars-based danmaku transport (a binary protocol
 /// over TCP that needs its own codec, so the danmaku capability is absent
 /// until then) and the Wup token flow for higher qualities.
-final class HuyaSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapability, LiveSearchCapability {
+final class HuyaSite
+    with SiteRoomGuard
+    implements LiveSite, LiveDirectoryCapability, LiveSearchCapability, LiveAnchorSearch {
   /// A site over [http].
   new({required this.http});
 
@@ -93,6 +95,40 @@ final class HuyaSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapabi
       throw SiteApiChangedError('huya $what: body is not an object');
     }
     return root;
+  }
+
+  /// The streamers matching [keyword], live or not.
+  ///
+  /// The same endpoint as the room search with the other document set
+  /// selected (`v=1` asks for streamers, `v=4` for rooms): the site answers
+  /// both in one payload, which is why the parser reads the set it needs
+  /// rather than the answer being requested twice.
+  @override
+  Future<LivePage<LiveAnchor>> searchAnchors(String keyword, {int page = 1}) async {
+    final text = keyword.trim();
+    if (text.isEmpty) {
+      return const LivePage<LiveAnchor>(items: []);
+    }
+    const rows = 30;
+    final start = ((page < 1 ? 1 : page) - 1) * rows;
+    final url = Uri.https('search.cdn.huya.com', '/', {
+      'm': 'Search',
+      'do': 'getSearchContent',
+      'q': text,
+      'uid': '0',
+      'v': '1',
+      'typ': '-5',
+      'livestate': '0',
+      'rows': '$rows',
+      'start': '$start',
+    });
+    final response = await http.send(LiveRequest.get(url, headers: const {'user-agent': _userAgent}, site: siteId));
+    final root = _json(response, what: 'getSearchContent');
+    final payload = root['response'];
+    if (payload is! Map<String, Object?>) {
+      throw const SiteApiChangedError('huya search: no response object');
+    }
+    return HuyaParser.searchAnchors(payload);
   }
 
   /// `cache.php?m=LiveList&do=getLiveListByPage`, 120 rooms a page.
