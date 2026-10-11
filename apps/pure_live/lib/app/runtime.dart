@@ -275,10 +275,26 @@ PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
   );
   runtime.capabilities.register(
     ProviderRegistration(
+      sourceId: kuaishouSourceId,
+      extensionId: 'built-in.kuaishou',
+      provider: KuaishouSource(),
+      // The room is keyed on the streamer, and the quality menu is per codec - an H.265 row is its own choice
+      // rather than a duplicate label, because a decoder that cannot open it has to be able to see that.
+      capabilities: const CapabilitySet(<CapabilityKind>{
+        CapabilityKind.feed,
+        CapabilityKind.live,
+        CapabilityKind.search,
+        CapabilityKind.quality,
+        CapabilityKind.line,
+      }),
+    ),
+  );
+  runtime.capabilities.register(
+    ProviderRegistration(
       sourceId: kugouSourceId,
       extensionId: 'built-in.kugou',
       provider: KugouSource(),
-      // The only site so far that ships both axes: rate/codec/layout profiles and the cdn urls inside one.
+      // Ships both axes: rate/codec/layout profiles and the cdn urls inside one.
       capabilities: const CapabilitySet(<CapabilityKind>{
         CapabilityKind.feed,
         CapabilityKind.live,

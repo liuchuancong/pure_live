@@ -621,8 +621,8 @@ platform 的共享模型;能力至少 live+feed+search+resolve 四面,弹幕/主
 ### 站点搬迁进度与下一站要点(2026-10-11 续)
 
 已落 `providers/sites/lib/src/`(一站两文件,测试在同名 test 目录,均已注册进 `registerBuiltInSources`):
-**acfun、douyu、huya、weibo、inke、kugou、missevan**(7 个直播站)+ `providers/vod_sites/lib/src/bilibili/`(点播)。
-测试:providers/sites 200 条。仍未落的一侧总数是参考项目的 34 个直播站。
+**acfun、douyu、huya、weibo、inke、kugou、missevan、kuaishou**(8 个直播站)+ `providers/vod_sites/lib/src/bilibili/`(点播)。
+测试:providers/sites 230 条。仍未落的一侧总数是参考项目的 34 个直播站。
 
 **下一站已勘查:twitcasting**(`origin/master lib/shared/platforms/twitcasting/`,api 19KB + site 5KB)。
 搬运时必须保留的规则(取自 v1 实测,不是猜测):
@@ -635,18 +635,23 @@ platform 的共享模型;能力至少 live+feed+search+resolve 四面,弹幕/主
   房间答案一致 —— 换 movie 的地址属于另一场直播。
 - 请求头带 `Referer: https://twitcasting.tv/` 与 `Origin`。
 
-#### 快手(kuaishou)勘查(未落地,下一站直接照这个写)
+#### 快手(kuaishou)已落地(2026-10-11,`providers/sites/lib/src/kuaishou/`)
 
-- 端点:`live_api/category/data?type=&page=&size=`(子分类:id/name/poster)、`live_api/gameboard/list`(游戏,必须带
-  `subCategory`,空的一律拒绝 —— 空值会掉回"推荐",把游戏房混进别的分类)、`live_api/non-gameboard/list`、
-  `live_api/home/lives?pageName=profile&showFilter=1[&cursor=]`。行里自带 `liveInfo`/`playUrls`。
-- 清晰度:`playUrls` 有两种形状 —— 房间页是 `{h264|avc: {...}, hevc|h265: {...}}`,列表/回放是裸对象或对象数组
-  (数组=多条 CDN,同名合并成一条清晰度的多条线路)。`level` 缺失才退回 `bitrate`;名字依次取
-  `name`→`shortName`→`qualityType`→"清晰度 N"。**codec 是身份的一部分**:h264 的"蓝光"和 hevc 的"蓝光"是两条
-  流,合并会让观众选到设备解不动的那条。
-- 一个 quality 没有任何可用 url ⇒ `LiveRestriction.unplayable`,不是"离线"。
-- 首页/榜单里**合法地混回放卡**:房间页报离线,但卡上带着签名的回放地址 —— v1 的做法是保留并显式标成录制
-  (`isReplay`),既不丢掉也不冒充正在直播。
-- 头:`referer`/`origin` = `https://live.kuaishou.com`。v1 还有一次 `log-sdk.ksapisrv.com/.../misc2` 的会话上报
-  (30 分钟会话)。**房间页 HTML(`__NEXT_DATA__`)的装载我这次没读完**,所以首版只按列表行自带的 playUrls 服务,
-  并在 README 写明"detail 不走房间页",不假装实现了没验证过的东西。
+按 v1 维护的那条线(`origin/master lib/shared/platforms/kuaishou/kuaishou_site.dart`)搬,清单按 codec 分组、
+`level` 缺失才退 `bitrate`、同名同行合并成线路、空清单 ⇒ `unplayable` 都保留了。房间页这次**读了**:
+`window.__INITIAL_STATE__` 的装载照 v1 的 `_loadRoom` 实现,并修掉 v1 的三处读法缺陷 —— ①`(.*?);` 会在标题里的
+分号处截断,改成括号配平;②`undefined` 全文替换会改写字符串内容,改成只替换值位;③判断海报扩展率时按整条 url
+切 `.`,于是 `…/cover.jpg?x=1` 被当成无扩展又补了一个 `.jpg`。离线页不再写 `'0'` 人(平台没许的数),
+`isLiving` 非真非假 ⇒ `unknown`。
+
+留作待验证(未录到真实响应,不假装实现):
+
+- 目录参数用的是 v1 的 `gameId`(短 id 走 `gameboard/list`,长 id 走 `non-gameboard/list`);勘查时记的
+  `subCategory` 必填、空值掉回推荐,以及 `home/lives?pageName=profile&showFilter=1&cursor=` 这条游标接口**都来自
+  别处的知识,这一版没实现**。抓一次真样本就能定:要么 v1 的参数已经够用,要么得改参数名并把首页换成游标翻页。
+- **回放卡不再冒充在播**:v1 靠"当前选中卡片里那条签名回放地址"来播已结束的房间,而 v2 的源没有这个宿主状态,
+  `resolve` 只重读房间页 —— 页面报离线就是离线。要录回放必须补一个未采样过的回放接口,这是队列项不是静默缺口。
+- 会话只做了"匿名先请求一次,首个响应给了 cookie 就带 cookie 重试一次"的阶梯;`misc2` 上报保留但不伪造页面浏览
+  (v1 的载荷里写死了王者荣耀的 page view)。罐头传输不回放响应头,所以这条阶梯在测试里只能验证"没拿到 cookie
+  就只发一次",真机行为待验。
+

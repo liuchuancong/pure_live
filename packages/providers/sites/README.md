@@ -40,6 +40,12 @@
   (房间名里真写着 `$2`,顺序 replaceFirst 会把签名算到服务器没模板过的串上);`rotl64` 只转低 32 位而保留高 32 位。
 - `douyu/` —— `DouyuSource`:feed / 分类 / 搜索 / 签名换链。描述符按设备签发并共享一次刷新;`expire` 到点会**切断已建立的
   连接**,所以票据带 `expiresAt` + `cutsConnection: true`(huya 的租约不切,故为 false)。
+- `kuaishou/` —— `KuaishouSource`:八个静态分区与其翻页子分区、按**分区 id 长度**二选一的两个目录接口、一次性的推荐块
+  (那个接口没有翻页参数,要第 2 页就是不发请求)、主播搜索(同一份答案按房间和人两种形状读)、以及房间页里
+  `window.__INITIAL_STATE__` 那份文档。**房间以主播 id 寻址**,`liveStreamId` 一场一个,所以它是 `streamId` 而不是 ref。
+  播放清单**按 codec 分组**:站点给 H.265 行起的名字和 H.264 行一模一样,合并就成了一条某些解码器打不开的标签;
+  同 codec 同行才合并成一条清晰度的多条线路。离线页不报观看人数(v1 写 `'0'`,那是平台没许过的数),`isLiving`
+  既不是真也不是假时是 `unknown` 而不是已结束。
 
 ## 钉住的规则
 
@@ -51,7 +57,8 @@
 ## 验证
 
 - 分析:`dart analyze packages/providers/sites`
-- 测试:`dart test packages/providers/sites`(114 条:acfun 29 + huya 36 + douyu 49;传输一律用 `pure_live_network`
+- 测试:`dart test packages/providers/sites`(230 条,每个站点目录配一份 `test/<site>/`;README 上列的只是其中三个,
+  weibo / inke / kugou / missevan / kuaishou 见 CHANGELOG。传输一律用 `pure_live_network`
   的 `testing.dart` 罐头适配器,不联网)
 - 架构:`dart run tool/check_architecture.dart --strict`
 

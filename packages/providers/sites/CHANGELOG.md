@@ -6,6 +6,20 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- **Added**: `kuaishou` (快手直播) - the eight static groups with their paged sub-categories, the two grid
+  endpoints picked by the **length of the category id** (short = gameboard, long = non-game, both keyed as
+  `gameId`), the one-shot recommendation block (its endpoint takes no page, so page 2 asks for nothing), the
+  streamer search read as both rooms and people, and the room page's `window.__INITIAL_STATE__` document.
+  The room is keyed on the **streamer** while `liveStreamId` is per broadcast, so the latter is
+  `LiveRoom.streamId` and never the ref. The manifest is read **per codec**: an H.265 row that the site named
+  exactly like its H.264 sibling stays its own quality (a decoder that cannot open it has to be able to see
+  that), while rows of one codec merge into one quality whose urls are the lines. Three reading bugs from the v1
+  line are pinned fixed here: the state literal was cut at the first `;` it found - including one inside a
+  streamer's title - so it is now read by bracket matching; `undefined` was replaced everywhere, including
+  inside strings, so only value position is; and a poster's extension was judged on the whole url, so
+  `…/cover.jpg?x=1` got a second `.jpg` appended. An offline page reports **no** audience number instead of v1's
+  `'0'`, `isLiving` that is neither true nor false is `unknown` and not ended, and a page with no state block is
+  retried once only when the first response actually handed out a cookie.
 - **Added**: `missevan` (猫耳FM直播) - native 20-row server pages (a caller that asks for 50 is told it got 20,
   otherwise its "short page means the end" logic stops the list early), the `type:id` tab key the list query
   requires, the room/creator identity checks, and the two pull containers. `500030004` is the only code that
