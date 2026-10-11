@@ -8,7 +8,9 @@ import 'package:live_sites/src/platforms/cc/parsers/cc_parser.dart';
 /// Not migrated yet: the room page's `__NEXT_DATA__` entry for anchors
 /// without a live channel, the paid-show ticket flow and the danmaku
 /// capability (CC had none in 3.x either).
-final class CcSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapability, LiveSearchCapability {
+final class CcSite
+    with SiteRoomGuard
+    implements LiveSite, LiveDirectoryCapability, LiveSearchCapability, LiveAnchorSearch {
   /// A site over [http].
   new({required this.http});
 
@@ -74,6 +76,25 @@ final class CcSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapabili
       'page': '${page < 1 ? 1 : page}',
     }, trailingSlash: true);
     return CcParser.searchRooms(data);
+  }
+
+  /// The streamers matching [keyword], live or not.
+  ///
+  /// The same endpoint as the room search, read as people: the site answers
+  /// one list of streamers and the two searches differ only in how the rows
+  /// are interpreted — a person, or the room that person is in.
+  @override
+  Future<LivePage<LiveAnchor>> searchAnchors(String keyword, {int page = 1}) async {
+    final text = keyword.trim();
+    if (text.isEmpty) {
+      return const LivePage<LiveAnchor>(items: []);
+    }
+    final data = await _json('/search/anchor/', {
+      'query': text,
+      'size': '$_searchPageSize',
+      'page': '${page < 1 ? 1 : page}',
+    });
+    return CcParser.searchAnchors(data);
   }
 
   /// One JSON request, with the site's own error conventions.

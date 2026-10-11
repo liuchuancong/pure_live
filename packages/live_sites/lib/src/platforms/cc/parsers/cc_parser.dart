@@ -284,6 +284,36 @@ abstract final class CcParser {
     );
   }
 
+  /// `search/anchor/` → the streamers matching a keyword, as anchors.
+  ///
+  /// The same answer the room search reads, seen as people instead: a
+  /// streamer who is not broadcasting still has an id and a name to show and
+  /// follow, while `cuteid` doubles as the room to open when they are on
+  /// air. The count is the follower total the site reports — search's own
+  /// `visitor` counts every profile view, offline streamers included, so it
+  /// is not an audience.
+  static LivePage<LiveAnchor> searchAnchors(Map<String, Object?> data) {
+    final anchors = SiteJson.object(data['webcc_anchor']);
+    final rows = SiteJson.objects(anchors['result']);
+    return LivePage<LiveAnchor>(
+      items: [
+        for (final row in rows)
+          if (SiteText.trimmed(row['cuteid']).isNotEmpty)
+            LiveAnchor(
+              id: SiteText.trimmed(row['cuteid']),
+              roomId: SiteCounts.integer(row['status']) == 1 ? SiteText.trimmed(row['cuteid']) : null,
+              name: SiteText.title(SiteText.text(row['nickname'])),
+              avatar: SiteText.trimmed(row['portrait'] ?? row['portraiturl']).isEmpty
+                  ? null
+                  : SiteText.trimmed(row['portrait'] ?? row['portraiturl']),
+              live: SiteCounts.integer(row['status']) == 1,
+              count: SiteCounts.integer(row['follower_num']),
+            ),
+      ],
+      hasMore: rows.length >= _fullPageHint,
+    );
+  }
+
   /// A room id: a positive integer within the safe range, or a digit string.
   static String? _cuteId(Object? value) {
     if (value is int) {
