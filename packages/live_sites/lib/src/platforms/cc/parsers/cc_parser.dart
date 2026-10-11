@@ -24,6 +24,61 @@ abstract final class CcParser {
     return decoded;
   }
 
+  /// `wapcc/gamecategory` → `data.category_info`, the answer's own body
+  /// (`code` 0, else the endpoint changed).
+  static Map<String, Object?> categoryInfo(String body, {int status = 200}) {
+    final root = decode(body, status: status, what: 'gamecategory');
+    if (SiteCounts.integer(root['code']) != 0) {
+      throw SiteApiChangedError('cc gamecategory: code ${root['code']}');
+    }
+    final info = SiteJson.object(SiteJson.path(root, ['data', 'category_info']));
+    if (info.isEmpty) {
+      throw const SiteApiChangedError('cc gamecategory: no category_info');
+    }
+    return info;
+  }
+
+  /// `wapcc/gamecategory?catetype=0` → the game categories (`cate_list`) the
+  /// mobile site's catalog offers, in the server's order, without its
+  /// "all games" row (`cate_type` 0). A row without a positive type or
+  /// without a name is skipped; a repeated type is listed once.
+  static List<({String id, String name})> categoryTypes(String body, {int status = 200}) {
+    final info = categoryInfo(body, status: status);
+    final seen = <String>{};
+    final types = <({String id, String name})>[];
+    for (final row in SiteJson.objects(info['cate_list'])) {
+      final type = SiteCounts.integer(row['cate_type']);
+      final name = SiteText.unescape(SiteText.trimmed(row['name']));
+      if (type == null || type <= 0 || name.isEmpty || !seen.add('$type')) {
+        continue;
+      }
+      types.add((id: '$type', name: name));
+    }
+    return types;
+  }
+
+  /// `wapcc/gamecategory?catetype={id}` → the areas (`game_list`) of that
+  /// category, in the server's order. An area's id is the `gametype` its
+  /// rooms are listed by, and the category is its [LiveArea.parentId]. A row
+  /// without a game type or without a name is skipped; a repeated game type
+  /// is listed once.
+  static List<LiveArea> categoryAreas(String body, {required String id, int status = 200}) {
+    final info = categoryInfo(body, status: status);
+    final seen = <String>{};
+    final areas = <LiveArea>[];
+    for (final row in SiteJson.objects(info['game_list'])) {
+      final gametype = SiteText.trimmed(row['gametype']);
+      final name = SiteText.unescape(SiteText.trimmed(row['name']));
+      if (!_areaId.hasMatch(gametype) || name.isEmpty || !seen.add(gametype)) {
+        continue;
+      }
+      areas.add(LiveArea(id: gametype, name: name, parentId: id, sort: areas.length));
+    }
+    return areas;
+  }
+
+  static final RegExp _areaId = RegExp(r'^(?:0|[1-9][0-9]{0,15})$');
+
   /// `activitylives/anchor/lives` → the live channel id for [ccid], or
   /// null when the anchor has none.
   static String? liveChannel(String body, {required String ccid, int status = 200}) {

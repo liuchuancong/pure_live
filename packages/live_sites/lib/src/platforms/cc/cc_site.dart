@@ -10,7 +10,7 @@ import 'package:live_sites/src/platforms/cc/parsers/cc_parser.dart';
 /// capability (CC had none in 3.x either).
 final class CcSite
     with SiteRoomGuard
-    implements LiveSite, LiveDirectoryCapability, LiveSearchCapability, LiveAnchorSearch {
+    implements LiveSite, LiveDirectoryCapability, LiveSearchCapability, LiveAnchorSearch, LiveAreaCatalog {
   /// A site over [http].
   new({required this.http});
 
@@ -25,6 +25,36 @@ final class CcSite
 
   @override
   SiteMetadata get metadata => const SiteMetadata(id: SiteIds.cc, displayName: '网易CC直播', homeUrl: 'https://cc.163.com');
+
+  /// The catalogue: the mobile site's game categories, then the areas of
+  /// each — one `gamecategory` request per category, asked together, and any
+  /// of them failing fails the catalogue (3.x's all-or-nothing). A category
+  /// without areas contributes nothing.
+  ///
+  /// 3.x also listed the Dashen configuration's official rooms and events
+  /// beside these, but an entry there is a link to the website rather than a
+  /// listing this adapter can serve, and the unified area carries no URL —
+  /// so the catalogue is the browsable areas only.
+  @override
+  Future<List<LiveArea>> getAreas() async {
+    final root = await _category('0');
+    final types = CcParser.categoryTypes(root.text, status: root.statusCode);
+    final answers = await Future.wait([for (final type in types) _category(type.id)]);
+    return [
+      for (final (index, answer) in answers.indexed)
+        ...CcParser.categoryAreas(answer.text, id: types[index].id, status: answer.statusCode),
+    ];
+  }
+
+  /// One `wapcc/gamecategory` request; `catetype` 0 asks for the categories
+  /// themselves, any other id for that category's areas.
+  Future<LiveResponse> _category(String catetype) => http.send(
+    LiveRequest.get(
+      Uri.https('api.cc.163.com', '/v1/wapcc/gamecategory', {'catetype': catetype}),
+      headers: CcParser.apiHeaders,
+      site: siteId,
+    ),
+  );
 
   /// Every live room, by the site's heat order.
   ///
