@@ -126,6 +126,205 @@ abstract final class YyParser {
     return lines;
   }
 
+  /// `more/page.action` → one page of rooms.
+  ///
+  /// The envelope is `data.data` (the endpoint wraps its own payload once).
+  /// Each card's label comes from `biz` — the site's module name, not a
+  /// human area name — so [areaNames] translates the ones this build knows
+  /// and an unknown module leaves the area empty rather than showing `other`
+  /// on every card.
+  ///
+  /// Cards without a numeric `sid` are dropped: the lists mix in
+  /// advertisements and banner entries.
+  static LivePage<LiveRoom> roomList(
+    Map<String, Object?> root, {
+    String? area,
+    Map<String, String> areaNames = const {},
+  }) {
+    final data = SiteJson.object(root['data']);
+    final rows = SiteJson.objects(data['data']);
+    final rooms = <LiveRoom>[
+      for (final item in rows)
+        if (channel(item['sid']) case final sid?)
+          _card(item, sid, area: area ?? areaNames[SiteText.trimmed(item['biz'])] ?? ''),
+    ];
+    // The endpoint answers about thirty rooms per page and reports no total,
+    // so a full page is the only signal there may be more.
+    return LivePage<LiveRoom>(items: rooms, hasMore: rooms.length >= _pageRows);
+  }
+
+  /// The rows one page holds; used only to guess at more pages, which is all
+  /// this endpoint allows.
+  static const int _pageRows = 30;
+
+  /// The module a page's `pageInfo` blob names, or null when it carries none.
+  static ({int moduleId, String biz, String subBiz})? pageInfo(String html) {
+    final source = RegExp(r'pageInfo\s*=\s*(\{[\s\S]*?\})\s*;').firstMatch(html)?.group(1);
+    if (source == null) {
+      return null;
+    }
+    final moduleId = SiteCounts.integer(RegExp(r'''moduleId\s*:\s*['\"]?(-?\d+)''').firstMatch(source)?.group(1));
+    final biz = SiteText.trimmed(RegExp(r'''biz\s*:\s*['\"]([^'\"]+)''').firstMatch(source)?.group(1));
+    final subBiz = SiteText.trimmed(RegExp(r'''subBiz\s*:\s*['\"]([^'\"]+)''').firstMatch(source)?.group(1));
+    if (moduleId == null || biz.isEmpty || subBiz.isEmpty) {
+      return null;
+    }
+    return (moduleId: moduleId, biz: biz, subBiz: subBiz);
+  }
+
+  /// The module a stored area carries (3.x kept it in the area's short name);
+  /// null when the text holds no module.
+  static ({int moduleId, String biz, String subBiz})? moduleOf(String shortName) {
+    Object? decoded;
+    try {
+      decoded = jsonDecode(shortName);
+    } on FormatException {
+      return null;
+    }
+    final map = SiteJson.object(decoded);
+    final moduleId = SiteCounts.integer(map['moduleId']);
+    final biz = SiteText.trimmed(map['biz']);
+    final subBiz = SiteText.trimmed(map['subBiz']);
+    if (moduleId == null || biz.isEmpty || subBiz.isEmpty) {
+      return null;
+    }
+    return (moduleId: moduleId, biz: biz, subBiz: subBiz);
+  }
+
+  /// Whether a module has a JSON listing at all.
+  ///
+  /// An area whose module id is 0 (手机直播, 综合, 英雄联盟) renders its rooms
+  /// inside its own page and answers no listing request; asking for one used
+  /// to be an HTTP 400.
+  static bool hasListing(({int moduleId, String biz, String subBiz}) module) =>
+      module.moduleId != 0 && module.biz != 'null' && module.subBiz != 'null';
+
+  /// The rooms of an area page whose module has no listing: the cards the
+  /// page itself renders.
+  ///
+  /// Such an area cannot be paged — there is no second page to ask for —
+  /// which is why the answer is a single page with no continuation.
+  static LivePage<LiveRoom> pageRooms(String html, {required String area}) {
+    final source = RegExp(r'initData\s*=\s*(\{[\s\S]*?\});').firstMatch(html)?.group(1);
+    if (source == null) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(source);
+    } on FormatException {
+      throw const SiteApiChangedError('yy area page: initData is not JSON');
+    }
+    final rooms = <LiveRoom>[
+      for (final item in SiteJson.objects(SiteJson.path(decoded, ['data', 'list'])))
+        if (channel(item['sid']) case final sid?) _card(item, sid, area: area),
+    ];
+    return LivePage<LiveRoom>(items: rooms);
+  }
+
+  /// One card.
+  static LiveRoom _card(Map<String, Object?> item, String sid, {required String area}) {
+    final users = SiteCounts.integer(item['users']);
+    return LiveRoom(
+      platform: SiteIds.yy,
+      roomId: sid,
+      title: title(item['desc']),
+      nick: SiteText.title(SiteText.text(item['name'])),
+      avatar: image(item['avatar']),
+      cover: image(item['thumb2']) ?? image(item['thumb']),
+      areaName: area,
+      watching: users,
+      status: LiveStatus.live,
+      startedAt: startedAt(item['startTime']),
+      data: {'sid': sid, 'ssid': channel(item['ssid']) ?? sid},
+    );
+  }
+
+  /// A room title without YY's default suffix.
+  ///
+  /// A room whose streamer never set a title is named `<nickname> 正在直播` by
+  /// the site, so showing that as the title repeats the streamer's name on
+  /// every card. The suffix is stripped only when it is the whole tail —
+  /// a streamer may well have typed it themselves.
+  static String title(Object? value) {
+    final text = SiteText.title(SiteText.text(value));
+    return text.endsWith(liveSuffix) ? text.substring(0, text.length - liveSuffix.length).trim() : text;
+  }
+
+  /// The suffix YY appends to a room without a title of its own.
+  static const String liveSuffix = '正在直播';
+
+  /// When a broadcast started: Unix seconds, or null for the site's 0 and
+  /// for values that are plainly milliseconds.
+  static DateTime? startedAt(Object? value) {
+    final seconds = SiteCounts.integer(value);
+    if (seconds == null || seconds <= 0 || seconds > 100000000000) {
+      return null;
+    }
+    return DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true);
+  }
+
+  /// The module names this build can translate; an unknown one leaves the
+  /// card's area empty.
+  static const Map<String, String> bizAreaNames = {
+    'sing': '音乐',
+    'talk': '脱口秀',
+    'dance': '舞蹈',
+    'red': '户外',
+    'pretty': '颜值',
+    'mc': '喊麦',
+    'sport': '体育',
+    'car': '二次元',
+    'game': '王者荣耀',
+    'zonghe': '综合',
+  };
+
+  /// The headers a directory, area-page or search request needs.
+  static const Map<String, String> apiHeaders = SiteHeaders.json;
+
+  /// `doSearch.json?t=120` → the live rooms matching a keyword.
+  ///
+  /// The payload nests the results three levels deep
+  /// (`data.searchResult.response.<tab>.docs`) and reports its own failure in
+  /// a `success` flag plus a status code, which is checked before the list is
+  /// read — a search that failed and a search that found nothing are
+  /// different answers. The tab is `120` for live rooms; the site's own
+  /// search page uses the same tab for the same list. `category` is the area
+  /// name and `liveOn` the channel's state.
+  static LivePage<LiveRoom> searchRooms(Map<String, Object?> root) {
+    final docs = _searchDocs(root, tab: '120');
+    final rooms = <LiveRoom>[
+      for (final item in docs)
+        if (channel(item['sid']) case final sid?)
+          LiveRoom(
+            platform: SiteIds.yy,
+            roomId: sid,
+            title: title(item['channelName']),
+            nick: SiteText.title(SiteText.text(item['name'])),
+            avatar: image(item['headurl']),
+            cover: image(item['posterurl']),
+            areaName: SiteText.trimmed(item['category']),
+            watching: SiteCounts.integer(item['users']),
+            status: SiteCounts.flag(item['liveOn']) ?? false ? LiveStatus.live : LiveStatus.offline,
+            data: {'sid': sid, 'ssid': channel(item['ssid']) ?? sid},
+          ),
+    ];
+    // Sixteen rows a page and no total: a full page is the only hint of more.
+    return LivePage<LiveRoom>(items: rooms, hasMore: rooms.length >= _searchPageRows);
+  }
+
+  /// The rows a search tab answers with.
+  static List<Map<String, Object?>> _searchDocs(Map<String, Object?> root, {required String tab}) {
+    if (root['success'] == false || (SiteCounts.integer(root['status']) ?? 0) != 0) {
+      throw SiteApiChangedError('yy doSearch: status ${root['status']} ${SiteText.trimmed(root['message'])}'.trim());
+    }
+    final response = SiteJson.path(root, ['data', 'searchResult', 'response']);
+    return SiteJson.objects(SiteJson.path(response, [tab, 'docs']));
+  }
+
+  /// How many rows one search page holds.
+  static const int _searchPageRows = 16;
+
   /// Passes a non-empty image URL through, else null.
   static String? image(Object? value) {
     final url = value?.toString() ?? '';

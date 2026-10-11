@@ -7,10 +7,9 @@ import 'package:live_sites/src/platforms/yy/parsers/yy_parser.dart';
 /// The YY adapter: liveInfoDetail room flow plus the stream-manager play
 /// answer.
 ///
-/// Not migrated yet: directory pages (they render as HTML card lists),
-/// search, the full stream-manager quality table, and the danmaku
+/// Not migrated yet: the full stream-manager quality table and the danmaku
 /// transport (YY speaks its own binary packet framing).
-final class YySite with SiteRoomGuard implements LiveSite {
+final class YySite with SiteRoomGuard implements LiveSite, LiveDirectoryCapability, LiveSearchCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -29,20 +28,87 @@ final class YySite with SiteRoomGuard implements LiveSite {
   @override
   SiteMetadata get metadata => const SiteMetadata(id: SiteIds.yy, displayName: 'YY直播', homeUrl: 'https://www.yy.com');
 
+  /// The home listing (`biz=other`): every live room the site recommends.
   @override
   Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
-    throw UnimplementedError('yy directory lands with its migration');
+    final root = await _page({
+      'page': '${page < 1 ? 1 : page}',
+      'pageSize': '$_pageSize',
+      'biz': 'other',
+      'subBiz': 'idx',
+      'moduleId': '-1',
+    });
+    return YyParser.roomList(root, areaNames: YyParser.bizAreaNames);
   }
 
+  /// The rooms of one area.
+  ///
+  /// An area carries its module in the id (the site's own JSON), because YY
+  /// addresses a listing by `(moduleId, biz, subBiz)` rather than by name.
+  /// An area whose module has no listing — 手机直播, 综合, 英雄联盟 render
+  /// their rooms inside their page — is read from that page instead, and has
+  /// exactly one page to give.
   @override
   Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    throw UnimplementedError('yy directory lands with its migration');
+    final module = YyParser.moduleOf(area.id);
+    if (module == null) {
+      throw SiteError.invalidRoomId(area.id);
+    }
+    if (!YyParser.hasListing(module)) {
+      if (page > 1) {
+        return const LivePage<LiveRoom>(items: []);
+      }
+      final html = await _areaHtml(area.id);
+      return YyParser.pageRooms(html, area: area.name);
+    }
+    final root = await _page({
+      'page': '${page < 1 ? 1 : page}',
+      'pageSize': '$_pageSize',
+      'moduleId': '${module.moduleId}',
+      'biz': module.biz,
+      'subBiz': module.subBiz,
+    });
+    return YyParser.roomList(root, area: area.name);
   }
 
+  /// Live rooms matching a keyword, 16 per page.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('yy search lands with its migration');
+    final text = keyword.trim();
+    if (text.isEmpty) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final response = await http.send(
+      LiveRequest.get(
+        Uri.https(_host, '/apiSearch/doSearch.json', {'q': text, 't': '120', 'n': '${page < 1 ? 1 : page}'}),
+        headers: YyParser.apiHeaders,
+        site: siteId,
+      ),
+    );
+    return YyParser.searchRooms(YyParser.checked(response.text, status: response.statusCode, what: 'doSearch'));
   }
+
+  /// One `more/page.action` request.
+  Future<Map<String, Object?>> _page(Map<String, String> query) async {
+    final response = await http.send(
+      LiveRequest.get(Uri.https(_host, '/more/page.action', query), headers: YyParser.apiHeaders, site: siteId),
+    );
+    return YyParser.checked(response.text, status: response.statusCode, what: 'page.action');
+  }
+
+  /// The HTML of an area page (the areas whose rooms live in their page).
+  Future<String> _areaHtml(String areaId) async {
+    final response = await http.send(
+      LiveRequest.get(Uri.https(_host, '/$areaId'), headers: YyParser.apiHeaders, site: siteId),
+    );
+    if (response.statusCode != 200) {
+      throw SiteApiChangedError('yy area page $areaId: HTTP ${response.statusCode}');
+    }
+    return response.text;
+  }
+
+  /// How many rooms one listing page asks for.
+  static const int _pageSize = 30;
 
   @override
   Future<LiveRoom> getRoomDetail(LiveRoom room) async {
