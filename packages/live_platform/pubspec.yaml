@@ -1,0 +1,20 @@
+name: live_platform
+description: >-
+  Cross-platform runtime and system-capability layer for Pure Live: desktop
+  distribution detection (installed / MSIX / portable), a unified storage
+  contract with candidate probing and fallback, atomic file writes, file
+  access seams, capability discovery and shutdown coordination. Business
+  modules never test platforms, splice system paths or assume write access.
+version: 0.1.0
+publish_to: none
+
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  path: ^1.9.0
+
+dev_dependencies:
+  very_good_analysis: ^11.0.0

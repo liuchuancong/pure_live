@@ -10,6 +10,7 @@ environment:
 workspace:
   - packages/live_log
   - packages/live_net
+  - packages/live_platform
 
 # Overrides apply to the whole workspace and may only be declared here.
 dependency_overrides: {}
