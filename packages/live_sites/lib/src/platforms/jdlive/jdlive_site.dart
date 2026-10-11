@@ -67,7 +67,7 @@ final class JdLiveSite with SiteRoomGuard implements LiveSite {
         qualities.add(const LivePlayQuality(label: 'HLS'));
       }
       if (_has(data['videoUrl'], '.flv') || _has(data['pcVideoUrl'], '.flv')) {
-        qualities.add(const LivePlayQuality(label: 'FLV', sort: 0));
+        qualities.add(const LivePlayQuality(label: 'FLV'));
       }
     } else if (status == LiveStatus.replay) {
       qualities.add(const LivePlayQuality(label: '原画'));
