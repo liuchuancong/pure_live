@@ -9,7 +9,9 @@ import 'package:live_sites/src/platforms/yy/parsers/yy_parser.dart';
 ///
 /// Not migrated yet: the full stream-manager quality table and the danmaku
 /// transport (YY speaks its own binary packet framing).
-final class YySite with SiteRoomGuard implements LiveSite, LiveDirectoryCapability, LiveSearchCapability {
+final class YySite
+    with SiteRoomGuard
+    implements LiveSite, LiveDirectoryCapability, LiveSearchCapability, LiveAnchorSearch {
   /// A site over [http].
   new({required this.http});
 
@@ -86,6 +88,28 @@ final class YySite with SiteRoomGuard implements LiveSite, LiveDirectoryCapabili
       ),
     );
     return YyParser.searchRooms(YyParser.checked(response.text, status: response.statusCode, what: 'doSearch'));
+  }
+
+  /// The streamers matching [keyword], live or not.
+  ///
+  /// The site answers rooms and people from one search, in two tabs; this
+  /// asks for the streamer tab and reads its own state flag, so a streamer
+  /// who is off air is still a person worth following rather than an empty
+  /// room.
+  @override
+  Future<LivePage<LiveAnchor>> searchAnchors(String keyword, {int page = 1}) async {
+    final text = keyword.trim();
+    if (text.isEmpty) {
+      return const LivePage<LiveAnchor>(items: []);
+    }
+    final response = await http.send(
+      LiveRequest.get(
+        Uri.https(_host, '/apiSearch/doSearch.json', {'q': text, 't': '1', 'n': '${page < 1 ? 1 : page}'}),
+        headers: YyParser.apiHeaders,
+        site: siteId,
+      ),
+    );
+    return YyParser.searchAnchors(YyParser.checked(response.text, status: response.statusCode, what: 'doSearch'));
   }
 
   /// One `more/page.action` request.

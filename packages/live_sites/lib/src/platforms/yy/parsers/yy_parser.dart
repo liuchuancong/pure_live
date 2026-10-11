@@ -279,6 +279,32 @@ abstract final class YyParser {
     'zonghe': '综合',
   };
 
+  /// `doSearch.json?t=1` → the streamers matching a keyword.
+  ///
+  /// The same answer the room search reads, from the streamer tab: `1` for
+  /// people, `120` for live rooms. The id is the channel id (`sid`, or the
+  /// sub-channel `ssid` when that is all the row carries) — the value a
+  /// follow is addressed by — while `liveOn` is the streamer's own state,
+  /// which is what tells a person who is merely not broadcasting from one
+  /// who is.
+  static LivePage<LiveAnchor> searchAnchors(Map<String, Object?> root) {
+    final rows = _searchDocs(root, tab: '1');
+    final anchors = <LiveAnchor>[
+      for (final item in rows)
+        if (channel(item['sid']) ?? channel(item['ssid']) case final id?)
+          LiveAnchor(
+            id: id,
+            roomId: id,
+            name: SiteText.title(
+              SiteText.text(item['name']).isEmpty ? SiteText.text(item['stageName']) : SiteText.text(item['name']),
+            ),
+            avatar: image(item['headurl']),
+            live: SiteCounts.flag(item['liveOn']) ?? false,
+          ),
+    ];
+    return LivePage<LiveAnchor>(items: anchors, hasMore: rows.length >= _searchPageRows);
+  }
+
   /// The headers a directory, area-page or search request needs.
   static const Map<String, String> apiHeaders = SiteHeaders.json;
 
