@@ -57,14 +57,14 @@ final class TwitcastingSite with SiteRoomGuard implements LiveSite {
       return room.mergeFrom(page.room.copyWith(status: LiveStatus.offline));
     }
     final sameBroadcast = page.movieId == null || stream.movieId == null || page.movieId == stream.movieId;
-    return room.mergeFrom(
-      page.room.copyWith(
-        status: LiveStatus.live,
-        startedAt: sameBroadcast && page.liveStartedAt != null ? () => page.liveStartedAt : null,
-        restriction: page.secretWord ? () => LiveRestriction.loginRequired : null,
-        data: () => stream,
-      ),
-    );
+    var merged = page.room.copyWith(status: LiveStatus.live, data: stream);
+    if (sameBroadcast && page.liveStartedAt != null) {
+      merged = merged.copyWith(startedAt: page.liveStartedAt);
+    }
+    if (page.secretWord) {
+      merged = merged.copyWith(restriction: LiveRestriction.loginRequired);
+    }
+    return room.mergeFrom(merged);
   }
 
   @override

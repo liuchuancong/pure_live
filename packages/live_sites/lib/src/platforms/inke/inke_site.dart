@@ -53,14 +53,12 @@ final class InkeSite with SiteRoomGuard implements LiveSite {
     if (broadcast == null) {
       return room.mergeFrom(fresh);
     }
-    return room.mergeFrom(
-      fresh.copyWith(
-        cover: broadcast.cover == null ? null : () => broadcast.cover,
-        watching: broadcast.watching == null ? null : () => broadcast.watching,
-        startedAt: broadcast.startedAt == null ? null : () => broadcast.startedAt,
-        data: () => {...?fresh.data as Map<String, Object?>?, 'broadcast': broadcast.lines},
-      ),
-    );
+    var merged = fresh;
+    if (broadcast.cover != null) merged = merged.copyWith(cover: broadcast.cover);
+    if (broadcast.watching != null) merged = merged.copyWith(watching: broadcast.watching);
+    if (broadcast.startedAt != null) merged = merged.copyWith(startedAt: broadcast.startedAt);
+    merged = merged.copyWith(data: {...?fresh.data as Map<String, Object?>?, 'broadcast': broadcast.lines});
+    return room.mergeFrom(merged);
   }
 
   @override
