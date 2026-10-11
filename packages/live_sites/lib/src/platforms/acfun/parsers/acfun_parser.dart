@@ -146,6 +146,89 @@ abstract final class AcfunParser {
     return lines;
   }
 
+  /// `channel/list` → one page of rooms and the cursor after them.
+  ///
+  /// The envelope is `channelListData` (with the bare answer as a fallback),
+  /// whose `liveList` carries the cards and whose `pcursor` carries the
+  /// cursor for the next page; the cursor arrives as a string or a number
+  /// depending on the endpoint's mood, so both are accepted. Cards whose
+  /// author id is not an AcFun author id are dropped — the list mixes in
+  /// banner and advertisement entries, and a card the site cannot open is
+  /// worse than a missing one.
+  static ({List<LiveRoom> rooms, String? nextCursor}) directory(
+    String body,
+    String Function(Map<String, Object?> item) authorIdOf, {
+    int status = 200,
+  }) {
+    final root = AcfunParser.root(body, status: status, what: 'channel/list');
+    final nested = SiteJson.object(root['channelListData']);
+    final data = nested.isEmpty ? root : nested;
+    final result = SiteCounts.integer(data['result']);
+    if (result != null && result != 0) {
+      throw SiteApiChangedError('acfun channel/list: result $result');
+    }
+    final rooms = <LiveRoom>[
+      for (final item in SiteJson.objects(data['liveList']))
+        if (authorIdOf(item).isNotEmpty) _listRoom(item, authorIdOf(item)),
+    ];
+    final cursor = SiteText.trimmed(data['pcursor']);
+    final next = cursor.isEmpty || cursor == 'no_more' ? null : cursor;
+    return (rooms: rooms, nextCursor: next);
+  }
+
+  /// One directory card.
+  ///
+  /// The card carries the same fields as `live/info` (the site renders both
+  /// with one component), so the same reading applies: the author id is the
+  /// room identity, the online count is a concurrent-viewer reading, and a
+  /// card with a `liveId` is on air.
+  static LiveRoom _listRoom(Map<String, Object?> item, String authorId) {
+    final user = SiteJson.object(item['user']);
+    final covers = SiteJson.list(item['coverUrls']);
+    final type = SiteJson.object(item['type']);
+    final live = SiteText.trimmed(item['liveId']).isNotEmpty;
+    return LiveRoom(
+      platform: SiteIds.acfun,
+      roomId: authorId,
+      title: SiteText.title(SiteText.text(item['title'])),
+      nick: SiteText.title(SiteText.text(user['name'])),
+      avatar: authorImage(user['headUrl']),
+      cover: authorImage(covers.isEmpty ? null : covers.first),
+      areaName: SiteText.trimmed(type['name']),
+      watching: SiteCounts.integer(item['onlineCount']),
+      onlineViewers: SiteCounts.integer(item['onlineCount']),
+      status: live ? LiveStatus.live : LiveStatus.offline,
+      startedAt: live ? _startedAt(item['createTime'] ?? item['liveStartTime']) : null,
+    );
+  }
+
+  /// When a broadcast started: epoch milliseconds, or null for 0 and for
+  /// values that are plainly seconds (a millisecond timestamp before 2001).
+  static DateTime? _startedAt(Object? value) {
+    final millis = SiteCounts.integer(value);
+    if (millis == null || millis <= 0) {
+      return null;
+    }
+    final seconds = millis < 1000000000000 ? millis * 1000 : millis;
+    return DateTime.fromMillisecondsSinceEpoch(seconds);
+  }
+
+  /// The `filters` query value of an area: its filter type and id, JSON as
+  /// the endpoint expects it.
+  static String filterQuery({required int type, required int id}) => jsonEncode([
+    {'filterType': type, 'filterId': id},
+  ]);
+
+  /// The area id that means "everything": a listing filtered by it is the
+  /// same as the recommendations, so it is sent as no filter at all.
+  static const int allFilterId = 0;
+
+  static final RegExp _authorId = RegExp(r'^\d+$');
+
+  /// Whether [value] is an AcFun author id (digits only): the identity of a
+  /// room on this platform is its author, not a numeric room id.
+  static bool isAuthorId(String value) => _authorId.hasMatch(value.trim());
+
   /// Normalizes a possibly relative image path to an absolute URL.
   static String? authorImage(Object? value) {
     final url = value?.toString() ?? '';
