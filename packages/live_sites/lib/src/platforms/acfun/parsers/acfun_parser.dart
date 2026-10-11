@@ -229,6 +229,47 @@ abstract final class AcfunParser {
   /// room on this platform is its author, not a numeric room id.
   static bool isAuthorId(String value) => _authorId.hasMatch(value.trim());
 
+  /// A listing answer's `channelFilters` → the site's channel filters,
+  /// flattened.
+  ///
+  /// The filters are grouped for display (`liveChannelDisplayFilters`), and
+  /// the group's name is what a picker shows as the heading — which is why it
+  /// becomes the area's parent id rather than being dropped: the ids stay
+  /// what `getCategoryRooms` accepts, and the group survives as context.
+  /// The `全部` filter of each group is skipped, because it means "no filter"
+  /// and listing it as an area would offer the same rooms under a second
+  /// name.
+  static List<LiveArea> channelAreas(Map<String, Object?> root) {
+    final groups = SiteJson.list(SiteJson.object(root['channelFilters'])['liveChannelDisplayFilters']);
+    final areas = <LiveArea>[];
+    final seen = <String>{};
+    for (final group in groups) {
+      final groupMap = SiteJson.object(group);
+      final groupName = SiteText.title(SiteText.text(groupMap['name']));
+      for (final filter in SiteJson.list(groupMap['displayFilters'])) {
+        final filterMap = SiteJson.object(filter);
+        final id = SiteText.trimmed(filterMap['filterId']);
+        final type = SiteText.trimmed(filterMap['filterType']);
+        final name = SiteText.title(SiteText.text(filterMap['name']));
+        if (id.isEmpty || name.isEmpty || id == '0' || !seen.add('$type:$id')) {
+          continue;
+        }
+        areas.add(
+          LiveArea(
+            id: id,
+            name: name,
+            parentId: type.isEmpty ? null : type,
+            sort: SiteCounts.integer(filterMap['sort']) ?? 0,
+          ),
+        );
+      }
+      if (groupName.isEmpty) {
+        continue;
+      }
+    }
+    return areas;
+  }
+
   /// Normalizes a possibly relative image path to an absolute URL.
   static String? authorImage(Object? value) {
     final url = value?.toString() ?? '';

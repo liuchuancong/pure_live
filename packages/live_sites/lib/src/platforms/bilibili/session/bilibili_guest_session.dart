@@ -51,6 +51,16 @@ final class BilibiliGuestSession {
   Future<Map<String, Object?>> get(String path, Map<String, String> query) =>
       _send(Uri.https(BilibiliConstants.apiHost, path, query));
 
+  /// A GET whose answer this caller parses itself.
+  ///
+  /// The session normally hands back the decoded payload, but some endpoints
+  /// put a *list* under `data` (`Area/getList`) and the object-shaped rule
+  /// would reject them, so the raw response is available for exactly those.
+  Future<LiveResponse> getRaw(String path, Map<String, String> query) =>
+      _sendRaw(Uri.https(BilibiliConstants.apiHost, path, query));
+
+  Future<LiveResponse> _sendRaw(Uri url) => http.send(LiveRequest.get(url, headers: headers(), site: SiteIds.bilibili));
+
   /// A GET against `api.bilibili.com[path]` (main-site endpoints such as
   /// nav, finger and search).
   Future<Map<String, Object?>> getMain(String path, Map<String, String> query) =>

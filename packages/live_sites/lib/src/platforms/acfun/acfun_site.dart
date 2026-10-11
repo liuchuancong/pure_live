@@ -7,7 +7,7 @@ import 'package:live_sites/src/platforms/acfun/parsers/acfun_parser.dart';
 /// Not migrated yet: search (the endpoint answers an HTML fragment that
 /// needs a document pass) and the paid-show ticket flow; the danmaku
 /// transport needs its own codec.
-final class AcfunSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapability {
+final class AcfunSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapability, LiveAreaCatalog {
   /// A site over [http].
   new({required this.http});
 
@@ -26,6 +26,21 @@ final class AcfunSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapab
   @override
   SiteMetadata get metadata =>
       const SiteMetadata(id: SiteIds.acfun, displayName: 'AcFun直播', homeUrl: 'https://live.acfun.cn');
+
+  /// The site's channel filters, flattened.
+  ///
+  /// They arrive with any listing answer (`channelFilters`), which is why
+  /// this asks for the smallest one the site can give — a single room —
+  /// rather than a dedicated catalogue endpoint the site does not have. The
+  /// display group's name is kept as the area's parent, so a picker can group
+  /// the filters the way the site itself does.
+  @override
+  Future<List<LiveArea>> getAreas() async {
+    final url = Uri.https('live.acfun.cn', '/api/channel/list', {'count': '1'});
+    final response = await http.send(LiveRequest.get(url, headers: AcfunParser.apiHeaders, site: siteId));
+    final root = AcfunParser.root(response.text, status: response.statusCode, what: 'channel/list');
+    return AcfunParser.channelAreas(root);
+  }
 
   /// Every live room, by popularity.
   ///

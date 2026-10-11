@@ -15,7 +15,7 @@ import 'package:live_sites/src/platforms/bilibili/session/bilibili_guest_session
 /// Those land with the session-layer migration.
 final class BilibiliSite
     with SiteRoomGuard
-    implements LiveSite, LiveDanmakuCapability, LiveDirectoryCapability, LiveSearchCapability {
+    implements LiveSite, LiveDanmakuCapability, LiveDirectoryCapability, LiveSearchCapability, LiveAreaCatalog {
   /// A site over [http]; the guest session owns cookies and WBI keys.
   new({required LiveHttp http}) : session = BilibiliGuestSession(http: http);
 
@@ -35,6 +35,19 @@ final class BilibiliSite
     homeUrl: 'https://live.bilibili.com',
     logoUrl: 'https://i0.hdslb.com/bfs/static/jinkela/long/images/TV-Bgroup.png',
   );
+
+  /// The site's area tree, flattened, in one request.
+  ///
+  /// Each parent carries its children in a nested list — which is exactly
+  /// what the site's own side bar draws — so a request per parent (as this
+  /// first did) spent a round trip for information already in hand.
+  @override
+  Future<List<LiveArea>> getAreas() async {
+    final response = await session.getRaw('/room/v1/Area/getList', {'need_entrance': '1', 'parent_id': '0'});
+    return BilibiliParser.areaTree(
+      BilibiliParser.checkedList(response.text, status: response.statusCode, what: 'Area/getList'),
+    );
+  }
 
   /// The anonymous ranked list, then the recommendation feed.
   ///
@@ -80,17 +93,24 @@ final class BilibiliSite
   /// The pause between the two ranked-list attempts.
   static const Duration _rankedRetryDelay = Duration(milliseconds: 180);
 
+  /// The rooms of one area.
+  ///
+  /// This endpoint puts a *list* under `data` (like the area tree), so it is
+  /// read with the list-shaped envelope rule; the room parser accepts both
+  /// shapes, which is what lets one call path serve it and the home listing.
   @override
   Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    final data = await _get('/room/v1/area/getRoomList', {
+    final response = await session.getRaw('/room/v1/area/getRoomList', {
       'platform': 'web',
       'parent_area_id': area.parentId ?? '0',
       'area_id': area.id,
       'sort_type': 'online',
-      'page': '$page',
+      'page': '${page < 1 ? 1 : page}',
       'page_size': '30',
     });
-    return BilibiliParser.roomList(data);
+    return BilibiliParser.roomList(
+      BilibiliParser.checkedList(response.text, status: response.statusCode, what: 'area/getRoomList'),
+    );
   }
 
   /// Live search.

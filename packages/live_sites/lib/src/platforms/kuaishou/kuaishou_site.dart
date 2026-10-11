@@ -14,7 +14,7 @@ import 'package:live_sites/src/platforms/kuaishou/parsers/kuaishou_parser.dart';
 /// browser bootstrap), the session cookie dance and the gift catalog.
 final class KuaishouSite
     with SiteRoomGuard
-    implements LiveSite, LiveDirectoryCapability, LiveSearchCapability, LiveDanmakuCapability {
+    implements LiveSite, LiveDirectoryCapability, LiveSearchCapability, LiveDanmakuCapability, LiveAreaCatalog {
   /// A site over [http].
   new({required this.http});
 
@@ -67,7 +67,11 @@ final class KuaishouSite
   /// The endpoint pages its categories, so a first page that still reports
   /// more is followed: a caller that asks for the categories gets all of
   /// them, because a half-filled side bar is worse than a slow one.
-  Future<List<LiveArea>> getAreas({String type = '1', int maxPages = 4}) async {
+  @override
+  Future<List<LiveArea>> getAreas() => _areas();
+
+  /// The same catalogue for a board type other than the default.
+  Future<List<LiveArea>> _areas({String type = '1', int maxPages = 4}) async {
     final areas = <LiveArea>[];
     final seen = <String>{};
     for (var page = 1; page <= maxPages; page++) {

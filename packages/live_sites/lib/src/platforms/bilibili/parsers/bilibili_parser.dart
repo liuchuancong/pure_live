@@ -45,6 +45,36 @@ abstract final class BilibiliParser {
     throw SiteApiChangedError('bilibili $what: code $code, $message');
   }
 
+  /// Like [checked], but for the endpoints whose `data` is an array.
+  ///
+  /// `Area/getList` answers `{"code":0,"data":[…]}` — the same envelope with
+  /// a list where the others put an object — so the object-shaped rule
+  /// rejects an answer that is perfectly fine.
+  static List<Object?> checkedList(String body, {int status = 200, String what = 'response'}) {
+    if (status == 412) {
+      throw SiteRateLimitedError('bilibili $what: request intercepted (412)');
+    }
+    if (status != 200) {
+      throw SiteApiChangedError('bilibili $what: HTTP $status');
+    }
+    final Object? root;
+    try {
+      root = jsonDecode(body);
+    } on FormatException catch (error) {
+      throw SiteApiChangedError('bilibili $what: body is not JSON (${error.message})');
+    }
+    if (root is! Map<String, Object?>) {
+      throw SiteApiChangedError('bilibili $what: body is not an object');
+    }
+    final code = (root['code'] as num?)?.toInt();
+    if (code != 0) {
+      final message = root['message']?.toString() ?? root['msg']?.toString() ?? '';
+      throw SiteApiChangedError('bilibili $what: code $code, $message');
+    }
+    final data = root['data'];
+    return data is List ? data : const <Object?>[];
+  }
+
   /// The envelope rule for endpoints a *guest* is allowed to call.
   ///
   /// `nav` answers `code: -101 账号未登录` to an anonymous session and still
@@ -142,23 +172,42 @@ abstract final class BilibiliParser {
   }
 
   /// Removes the search highlight tags (`<em class=…>text</em>`).
-  /// `Area/getList` payload → the top-level area list.
-  static List<LiveArea> areaList(Map<String, Object?> data) {
-    final list = data['data'];
-    final areas = <LiveArea>[];
-    if (list is List) {
-      for (final item in list) {
-        if (item is! Map<String, Object?>) {
-          continue;
-        }
-        areas.add(
+  /// `Area/getList` rows → one level of the area tree.
+  ///
+  /// A row without an area id is skipped: an area nobody can browse by is a
+  /// picker entry that does nothing.
+  static List<LiveArea> areaList(List<Object?> rows) => [
+    for (final row in rows)
+      if (row is Map<String, Object?>)
+        if (SiteText.trimmed(row['id'] ?? row['area_id']) case final id when id.isNotEmpty)
           LiveArea(
-            id: item['area_id']?.toString() ?? '',
-            name: item['area_name']?.toString() ?? '',
-            parentId: item['parent_id']?.toString(),
-            sort: (item['sort'] as num?)?.toInt() ?? 0,
+            id: id,
+            name: SiteText.title(SiteText.text(row['name'] ?? row['area_name'])),
+            parentId: SiteText.trimmed(row['parent_id']).isEmpty ? null : SiteText.trimmed(row['parent_id']),
+            sort: SiteCounts.integer(row['sort']) ?? 0,
           ),
-        );
+  ];
+
+  /// `Area/getList` rows → the whole area tree, parents first.
+  ///
+  /// One request answers both levels: each parent carries its children in a
+  /// nested `list`, which is what the site's own side bar draws. The children
+  /// get their parent's id when they do not carry one, so `parentId` is
+  /// always usable for grouping.
+  static List<LiveArea> areaTree(List<Object?> parents) {
+    final areas = <LiveArea>[];
+    for (final parent in parents) {
+      if (parent is! Map<String, Object?>) {
+        continue;
+      }
+      final parentAreas = areaList([parent]);
+      if (parentAreas.isEmpty) {
+        continue;
+      }
+      final head = parentAreas.first;
+      areas.add(head);
+      for (final child in areaList(SiteJson.list(parent['list']))) {
+        areas.add(child.parentId == null ? child.copyWith(parentId: head.id) : child);
       }
     }
     return areas;
