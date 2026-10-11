@@ -4,8 +4,9 @@ import 'package:live_sites/src/platforms/chzzk/parsers/chzzk_parser.dart';
 
 /// The CHZZK (Naver) adapter: channel + live-detail flow.
 ///
-/// Not migrated yet: directory, search and the chat WebSocket.
-final class ChzzkSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog {
+/// The directory (the live list and an area's lives) and the area catalogue
+/// are migrated; search and the chat WebSocket are not.
+final class ChzzkSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -46,17 +47,51 @@ final class ChzzkSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog {
     return ChzzkParser.categoryPage(content).areas;
   }
 
-  /// The room list is not migrated yet: it reads the same catalogue pages
-  /// (each carries the lives of its areas), so it lands with the room-card
-  /// mapping rather than one before the other.
+  /// The site-wide live list, the most-watched first.
+  ///
+  /// The same endpoint serves an area's list when it is filtered by
+  /// [LiveArea], which is what [getCategoryRooms] does. The answer carries
+  /// the page size and the cursor rather than a total, so `hasMore` is the
+  /// honest "a full page came back" it is elsewhere on this platform.
   @override
-  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) {
-    throw UnimplementedError('chzzk directory lands with the category-paging migration');
+  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) => _lives(page: page);
+
+  /// Not migrated yet, and the finding is recorded here rather than guessed
+  /// at again: the live list ignores the `categoryType`/`categoryId`
+  /// parameters this build sends — with them it answers the site-wide list,
+  /// starting with the same room — and the filtered paths tried
+  /// (`categories/live/<id>/lives`, `filterType=CATEGORY`) answer nothing at
+  /// all. A category listing that silently returns the unfiltered list is
+  /// worse than one that says it is missing, because the viewer sees rooms
+  /// that are not in the category they picked and has no way to tell.
+  ///
+  /// The area *catalogue* above is unaffected: its ids are the site's own,
+  /// and [getRecommendRooms] works, which is why the directory capability is
+  /// declared while this one call is not.
+  @override
+  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) {
+    throw UnimplementedError('chzzk category lives land with the category-filter migration');
   }
 
-  @override
-  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    throw UnimplementedError('chzzk directory lands with its migration');
+  Future<LivePage<LiveRoom>> _lives({required int page}) async {
+    final number = page < 1 ? 1 : page;
+    final response = await http.send(
+      LiveRequest.get(
+        Uri.https('api.chzzk.naver.com', '/service/v1/lives', {
+          'size': '${ChzzkParser.categoryPageSize}',
+          'page': '$number',
+        }),
+        headers: ChzzkParser.headers,
+        site: siteId,
+      ),
+    );
+    final content = ChzzkParser.content(response.text, status: response.statusCode, what: 'lives');
+    if (content == null) {
+      throw const SiteApiChangedError('chzzk lives: no content object');
+    }
+    final rows = SiteJson.list(content['data']).length;
+    final pageInfo = SiteJson.object(content['page']);
+    return ChzzkParser.lives(content, hasMore: pageInfo['next'] != null || rows >= ChzzkParser.categoryPageSize);
   }
 
   @override
