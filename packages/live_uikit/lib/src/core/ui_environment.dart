@@ -153,4 +153,39 @@ final class LiveUiEnvironment {
   /// The same environment recomputed for a new window [width].
   LiveUiEnvironment withWidth(double width, {LiveBreakpoints breakpoints = const LiveBreakpoints()}) =>
       withLayoutMode(LiveLayoutMode.resolve(platform: platform, width: width, breakpoints: breakpoints));
+
+  /// The same environment with [inputModes] widened, for a device the
+  /// composition root knows has more than its platform's defaults.
+  LiveUiEnvironment withInputModes(Set<LiveInputMode> modes) => LiveUiEnvironment(
+    platform: platform,
+    layoutMode: layoutMode,
+    inputModes: modes,
+    supportsBlur: supportsBlur,
+    supportsAnimations: supportsAnimations,
+    systemTextScale: systemTextScale,
+  );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    return other is LiveUiEnvironment &&
+        other.platform == platform &&
+        other.layoutMode == layoutMode &&
+        other.supportsBlur == supportsBlur &&
+        other.supportsAnimations == supportsAnimations &&
+        other.systemTextScale == systemTextScale &&
+        setEquals(other.inputModes, inputModes);
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    platform,
+    layoutMode,
+    Object.hashAllUnordered(inputModes),
+    supportsBlur,
+    supportsAnimations,
+    systemTextScale,
+  );
 }
