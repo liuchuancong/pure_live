@@ -1,0 +1,27 @@
+name: live_net
+description: >-
+  Network kernel for Pure Live: a transport-agnostic HTTP contract
+  (LiveHttp/LiveRequest/LiveResponse) over a dio pipeline with cookie
+  management, response caching, bounded retries, native-adapter fallback
+  and redacted logging through live_log.
+version: 0.1.0
+publish_to: none
+
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  cookie_jar: ^4.0.0
+  dio: ^5.9.0
+  dio_cache_interceptor: ^4.0.7
+  dio_cookie_manager: ^3.0.0
+  dio_http2_adapter: ^2.9.0
+  dio_smart_retry: ^7.0.0
+  live_log:
+  meta: ^1.19.0
+
+dev_dependencies:
+  test: ^1.32.0
+  very_good_analysis: ^11.0.0
