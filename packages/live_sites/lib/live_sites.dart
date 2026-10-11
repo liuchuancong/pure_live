@@ -23,6 +23,7 @@ export 'src/models/live_play_line.dart';
 export 'src/models/live_room.dart';
 export 'src/models/live_status.dart';
 export 'src/platforms/iptv.dart';
+export 'src/registry/site_factories.dart';
 export 'src/registry/site_ids.dart';
 export 'src/registry/site_metadata.dart';
 export 'src/registry/site_registry.dart';
