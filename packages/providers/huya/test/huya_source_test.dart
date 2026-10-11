@@ -55,7 +55,9 @@ String _profile({String? override}) =>
     jsonEncode(<String, Object?>{
       'status': 200,
       'data': <String, Object?>{
+        'liveStatus': 1,
         'liveData': <String, Object?>{
+          'liveStatus': 1,
           'introduction': '峡谷上分',
           'sRoomName': '房间1',
           'nick': '主播乙',
@@ -345,7 +347,12 @@ void main() {
 
       await expectLater(
         missing.detail(ContentRef(sourceId: huyaSourceId, contentId: '77', kind: ContentKind.liveRoom)),
-        throwsA(isA<StateError>().having((e) => e.message, 'message', contains('房间不存在'))),
+        throwsA(
+          isA<HuyaProfileRequestFailure>()
+              .having((e) => e.message, 'message', '房间不存在')
+              .having((e) => e.status, 'status', '404')
+              .having((e) => e.roomId, 'roomId', '77'),
+        ),
       );
     });
 
@@ -406,6 +413,80 @@ void main() {
         ),
         throwsA(isA<StateError>().having((e) => e.message, 'message', contains('does not name a room'))),
       );
+    });
+  });
+
+  group('test_huyaSource_menus', () {
+    test('test_lines_numbersEveryCdnAndMarksTheFirstTheDefault', () async {
+      final options = await source.lines(
+        ContentRef(sourceId: huyaSourceId, contentId: '123456', kind: ContentKind.liveRoom),
+      );
+
+      expect(options.map((line) => line.id), <String>['1', '2']);
+      expect(
+        options.every((line) => line.kind == StreamOptionKind.line),
+        isTrue,
+        reason: 'a CDN row is a line, not a quality',
+      );
+      expect(options.first.isDefault, isTrue);
+      expect(options.first.label, isNull, reason: 'the source names its CDNs nothing; the platform must not');
+      expect(options.every((line) => line.available), isTrue);
+    });
+
+    test('test_qualities_answersEmptyBecauseTheGuestPathServesOneRate', () async {
+      final options = await source.qualities(
+        ContentRef(sourceId: huyaSourceId, contentId: '123456', kind: ContentKind.liveRoom),
+      );
+
+      expect(options, isEmpty, reason: 'an invented 1080p row would be a promise the transport cannot keep');
+    });
+
+    test('test_liveStatus_mapsTheFlagAndViewers', () async {
+      final status = await source.liveStatus(
+        ContentRef(sourceId: huyaSourceId, contentId: '123456', kind: ContentKind.liveRoom),
+      );
+
+      expect(status.isLive, isTrue);
+      expect(status.viewers, 555, reason: 'the count arrives as a string on this endpoint');
+      expect(status.title, '房间1');
+      expect(status.anchorName, '主播乙');
+    });
+
+    test('test_liveStatus_aProfileWithoutALiveFlagIsUnknownNotEnded', () async {
+      transport = _Scripted(<String, List<String>>{
+        'mp.huya.com/cache.php': <String>['{"status":200,"data":{"liveData":{"sRoomName":"无标志"}}}'],
+      });
+      final blind = _source(transport);
+
+      final status = await blind.liveStatus(
+        ContentRef(sourceId: huyaSourceId, contentId: '9', kind: ContentKind.liveRoom),
+      );
+      expect(status.state, LiveRoomState.unknown);
+      expect(status.isLive, isFalse);
+      blind.dispose();
+    });
+  });
+
+  group('test_huyaSource_ownership', () {
+    test('test_dispose_doesNotCloseAClientTheHostHandedIn', () async {
+      final shared = _Scripted(_copy(_defaultScript));
+      final sourceWithHostClient = HuyaSource(client: _client(shared));
+
+      sourceWithHostClient.dispose();
+      expect(
+        shared.closed,
+        isFalse,
+        reason: 'a source that closed a shared transport takes the other consumers with it',
+      );
+    });
+
+    test('test_dispose_twiceIsHarmless', () {
+      final transport = _Scripted(_copy(_defaultScript));
+      final owned = HuyaSource(client: _client(transport));
+
+      owned.dispose();
+      owned.dispose();
+      expect(transport.closed, isFalse);
     });
   });
 }

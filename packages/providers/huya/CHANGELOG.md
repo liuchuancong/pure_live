@@ -40,4 +40,18 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 - Declared `pure_live_utils` (`Clock`) and, as a dev dependency, `dio` for the transport fake.
 - Added `test/huya_signing_test.dart` (13 cases) and `test/huya_source_test.dart` (17 cases). The package had
   no tests. `dart test`: 30 passing.
+- Restructured to package-architecture.md 2.1: one type per file, with `constant/` for urls, headers and the
+  source's own names, `api/` for the anti-code, the viewer uid and the named profile failure, `model/` for what
+  the endpoints describe, and `site/` for the single class that answers the capability interfaces. Nothing about
+  the wire behaviour moved except where a shape could be shared: the two list endpoints' rows are now one
+  `HuyaListRow` with one `toSummary`, because two conversions drift - one gets fixed after a field rename and
+  the other keeps rendering blank tiles.
+- Added the menus and the polling the contract now expresses: `lines()` reports the CDN list as 1-based
+  `StreamOption`s with no invented labels, `qualities()` answers empty rather than fabricating a picker the
+  anonymous path cannot serve, and `liveStatus()` maps `1/0/absent` to live/ended/**unknown** - a follow list
+  that reads a missing flag as "ended" silently stops watching a live room.
+- **Fixed**:`dispose()` closed whatever `NetworkClient` the source held, including one the composition root
+  handed in, which takes the other consumers' connections with it. A source now closes only what it built.
+- A profileRoom refusal is the named `HuyaProfileRequestFailure` (room id, status, the site's own message)
+  rather than a `StateError` whose text happened to contain them.
 - Earlier: skeleton created for layer providers as `pure_live_huya`, then the first anonymous-HLS slice.

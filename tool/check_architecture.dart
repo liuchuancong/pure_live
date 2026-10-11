@@ -294,7 +294,7 @@ List<Finding> checkLayout(Directory root, PackageInfo package) {
   if (!FileSystemEntity.isDirectorySync('${root.path}/${package.relativePath}/test')) {
     findings.add(Finding('missing-file', package.relativePath, 'test/ is required for every package'));
   }
-  for (final directory in internalLayout(package)) {
+  for (final directory in internalLayout(package, root.path)) {
     if (!FileSystemEntity.isDirectorySync('${root.path}/${package.relativePath}/$directory')) {
       findings.add(
         Finding('layout-drift', package.relativePath, '$directory/ is required for the ${package.layer} layer'),
@@ -337,12 +337,21 @@ List<String> _staleSkeletonMarkers(Directory root, PackageInfo package) {
   return found;
 }
 
-/// The per-layer internal directory template from package-architecture.md section 2.
-List<String> internalLayout(PackageInfo package) => switch (package.layer) {
-  'features' => const <String>['lib/src/data', 'lib/src/domain', 'lib/src/presentation'],
-  'providers' => const <String>['lib/src/models', 'fixtures'],
-  _ => const <String>['lib/src'],
-};
+/// The per-layer internal directory template from package-architecture.md section 2 and 2.1.
+List<String> internalLayout(PackageInfo package, String rootPath) {
+  final base = '$rootPath/${package.relativePath}';
+  return switch (package.layer) {
+    'features' => const <String>['lib/src/data', 'lib/src/domain', 'lib/src/presentation'],
+    // A provider is either the full 2.1 shape (urls and headers in constant/, signing and response failures in
+    // api/, the endpoint's shapes in model/, the capability answers in site/) or still the legacy single models/
+    // directory it shipped with. Half a migration is allowed; a provider with a site/ and no api/ is not -
+    // that is the shape where endpoint knowledge hides inside a capability class.
+    'providers' => Directory('$base/lib/src/site').existsSync()
+        ? const <String>['lib/src/constant', 'lib/src/api', 'lib/src/model', 'lib/src/site', 'fixtures']
+        : const <String>['lib/src/models', 'fixtures'],
+    _ => const <String>['lib/src'],
+  };
+}
 
 /// Enforces the dependency direction between layers, plus the approved exception table.
 List<Finding> checkDependencies(PackageInfo package, Map<String, PackageInfo> byName, Set<String> appNames) {
