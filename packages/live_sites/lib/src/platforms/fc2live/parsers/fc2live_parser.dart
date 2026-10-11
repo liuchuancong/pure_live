@@ -27,7 +27,7 @@ abstract final class Fc2LiveParser {
     'referer': '$origin/$channelId/',
   };
 
-  /// The channel id of [roomId]: a channel number or a channel link.
+  /// The channel id of the input: a channel number or a channel link.
   static String? channelId(String raw) {
     final input = raw.trim();
     if (RegExp(r'^\d{1,12}$').hasMatch(input)) {
