@@ -3,6 +3,7 @@ import 'package:live_sites/live_sites.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_models.dart';
 import 'package:live_sites/src/platforms/bilibili/danmaku/bilibili_session.dart';
 import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_parser.dart';
+import 'package:live_sites/src/platforms/bilibili/session/bilibili_guest_session.dart';
 
 /// The Bilibili adapter: guest (unsigned) flows over [LiveHttp] plus the
 /// protover-2 danmaku gateway.
@@ -13,11 +14,11 @@ import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_parser.dart';
 /// control retries, carousel rooms, super chats and the gift catalog.
 /// Those land with the session-layer migration.
 final class BilibiliSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability {
-  /// A site over [http].
-  new({required this.http});
+  /// A site over [http]; the guest session owns cookies and WBI keys.
+  new({required LiveHttp http}) : session = BilibiliGuestSession(http: http);
 
-  /// The HTTP transport guest flows run over.
-  final LiveHttp http;
+  /// The guest session (buvid cookies, WBI keys, signed GETs).
+  final BilibiliGuestSession session;
 
   @override
   String get siteId => SiteIds.bilibili;
@@ -53,14 +54,23 @@ final class BilibiliSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapa
 
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('search lands with the signed-session migration');
+    final data = await session.getSigned(BilibiliConstants.apiHost, '/x/web-interface/search/type', {
+      'search_type': 'live_room',
+      'keyword': keyword,
+      'page': '$page',
+      'page_size': '30',
+    });
+    return BilibiliParser.searchRooms(data, page: page);
   }
 
   @override
   Future<LiveRoom> getRoomDetail(LiveRoom room) async {
     guardRoom(room);
-    final data = await _get('/room/v1/Room/get_info', {'room_id': room.roomId});
-    return room.mergeFrom(BilibiliParser.roomDetail(data, requestedId: room.roomId));
+    final id = _numericId(room.roomId);
+    final data = await session.getSigned(BilibiliConstants.apiHost, '/xlive/web-room/v1/index/getInfoByRoom', {
+      'room_id': id,
+    });
+    return room.mergeFrom(BilibiliParser.roomDetail(data, requestedId: id));
   }
 
   @override
@@ -75,7 +85,7 @@ final class BilibiliSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapa
   @override
   Future<List<LivePlayLine>> getPlayUrls(LiveRoom room, LivePlayQuality quality) async {
     guardRoom(room);
-    final data = await _get('/xlive/web-room/v2/index/getRoomPlayInfo', {
+    final data = await session.getSigned(BilibiliConstants.apiHost, '/xlive/web-room/v2/index/getRoomPlayInfo', {
       'room_id': room.roomId,
       'protocol': '0,1',
       'format': '0,1,2',
@@ -90,8 +100,7 @@ final class BilibiliSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapa
   Future<LiveRoom> refreshLiveStatus(LiveRoom room) async {
     guardRoom(room);
     final data = await _get('/room/v1/Room/get_info', {'room_id': room.roomId});
-    final fresh = BilibiliParser.roomDetail(data, requestedId: room.roomId);
-    return room.mergeFrom(fresh);
+    return room.mergeFrom(BilibiliParser.roomDetail(data, requestedId: room.roomId));
   }
 
   @override
@@ -111,11 +120,13 @@ final class BilibiliSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapa
     return BilibiliDanmakuArgs(roomId: longId, uid: 0, token: '', server: BilibiliConstants.danmakuGateway);
   }
 
-  Future<Map<String, Object?>> _get(String path, Map<String, String> query) async {
-    final url = Uri.https(BilibiliConstants.apiHost, path, query);
-    final response = await http.send(
-      LiveRequest.get(url, headers: {...BilibiliConstants.mediaHeaders, 'accept': 'application/json'}, site: id),
-    );
-    return BilibiliParser.checked(response.text, status: response.statusCode, what: path);
+  Future<Map<String, Object?>> _get(String path, Map<String, String> query) => session.get(path, query);
+
+  String _numericId(String roomId) {
+    final id = int.tryParse(roomId);
+    if (id == null || id <= 0) {
+      throw SiteError.invalidRoomId(roomId);
+    }
+    return '$id';
   }
 }

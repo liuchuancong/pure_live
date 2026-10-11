@@ -78,6 +78,39 @@ abstract final class BilibiliParser {
     return LivePage<LiveRoom>(items: rooms, hasMore: rooms.isNotEmpty);
   }
 
+  /// `search/type?search_type=live_room` payload → one page of rooms.
+  static LivePage<LiveRoom> searchRooms(Map<String, Object?> data, {required int page}) {
+    final result = data['result'];
+    final rooms = <LiveRoom>[];
+    if (result is List) {
+      for (final item in result) {
+        if (item is! Map<String, Object?>) {
+          continue;
+        }
+        final roomId = item['roomid']?.toString() ?? '';
+        if (roomId.isEmpty) {
+          continue;
+        }
+        rooms.add(
+          LiveRoom(
+            platform: SiteIds.bilibili,
+            roomId: roomId,
+            title: _stripHighlights(item['title']?.toString() ?? ''),
+            nick: item['uname']?.toString() ?? '',
+            cover: item['user_cover']?.toString() ?? item['cover']?.toString(),
+            areaName: item['cate_name']?.toString(),
+            status: LiveStatus.live,
+            watching: int.tryParse(item['online']?.toString() ?? ''),
+          ),
+        );
+      }
+    }
+    return LivePage<LiveRoom>(items: rooms, hasMore: rooms.isNotEmpty, nextPage: page + 1);
+  }
+
+  /// Removes the search highlight tags (`<em class=…>text</em>`).
+  static String _stripHighlights(String text) => text.replaceAll(RegExp('<em[^>]*>|</em>'), '');
+
   /// `Area/getList` payload → the top-level area list.
   static List<LiveArea> areaList(Map<String, Object?> data) {
     final list = data['data'];
