@@ -50,19 +50,20 @@ abstract final class SiteCounts {
     };
   }
 
-  /// A Chinese-scaled count (`"1.2万"`, `"3.4亿"`, `"12"`) as an integer;
-  /// null when the text carries no number at all.
+  /// A display-scaled count as an integer, or null when the text carries no
+  /// number at all.
   ///
-  /// Several platforms display counts this way and, where the number is
-  /// inside a text field, it is the only reading available — so it is
-  /// parsed here rather than approximated by a regex at each call site.
+  /// Platforms write counts as short strings — `"1.2万"`, `"3.4亿"`,
+  /// `"1943.3w"`, `"12k"` — and where the number lives inside a text field
+  /// that is the only reading available. Both conventions are handled, in
+  /// either case, because the same site uses them in different endpoints.
   static int? scaled(Object? value) {
     final direct = integer(value);
     if (direct != null) {
       return direct;
     }
-    final text = value?.toString().trim() ?? '';
-    final match = RegExp(r'([0-9]+(?:\.[0-9]+)?)\s*([万亿]?)').firstMatch(text);
+    final text = value?.toString().trim().toLowerCase() ?? '';
+    final match = RegExp(r'([0-9]+(?:\.[0-9]+)?)\s*([万亿wk]?)').firstMatch(text);
     if (match == null) {
       return null;
     }
@@ -71,8 +72,9 @@ abstract final class SiteCounts {
       return null;
     }
     final scale = switch (match.group(2)) {
-      '万' => 10000,
+      '万' || 'w' => 10000,
       '亿' => 100000000,
+      'k' => 1000,
       _ => 1,
     };
     return (base * scale).round();

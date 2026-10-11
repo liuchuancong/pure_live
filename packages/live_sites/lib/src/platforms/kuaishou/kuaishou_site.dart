@@ -14,7 +14,13 @@ import 'package:live_sites/src/platforms/kuaishou/parsers/kuaishou_parser.dart';
 /// browser bootstrap), the session cookie dance and the gift catalog.
 final class KuaishouSite
     with SiteRoomGuard
-    implements LiveSite, LiveDirectoryCapability, LiveSearchCapability, LiveDanmakuCapability, LiveAreaCatalog {
+    implements
+        LiveSite,
+        LiveDirectoryCapability,
+        LiveSearchCapability,
+        LiveDanmakuCapability,
+        LiveAreaCatalog,
+        LiveAnchorSearch {
   /// A site over [http].
   new({required this.http});
 
@@ -115,6 +121,34 @@ final class KuaishouSite
       KuaishouParser.json(response.text, status: response.statusCode, what: 'search/author'),
       what: 'search/author',
     );
+  }
+
+  /// The streamers matching [keyword], as anchors.
+  ///
+  /// Kuaishou searches *people*: the endpoint is the author search, and a
+  /// room exists for an author only while they are broadcasting, which is
+  /// why the room-shaped reading of this same answer had to invent a room
+  /// for everybody else. Here the two are separate facts — an anchor with
+  /// the room to open when there is one — and the live flag is the card's
+  /// own, not a guess from the presence of a stream.
+  @override
+  Future<LivePage<LiveAnchor>> searchAnchors(String keyword, {int page = 1}) async {
+    final text = keyword.trim();
+    if (text.isEmpty) {
+      return const LivePage<LiveAnchor>(items: []);
+    }
+    final number = page < 1 ? 1 : page;
+    final encoded = Uri.encodeQueryComponent(text);
+    final url = Uri.parse('https://$_webHost/live_api/search/author?keyword=$encoded&page=$number&lssid=');
+    final response = await http.send(
+      LiveRequest.get(
+        url,
+        headers: {...KuaishouParser.webHeaders, 'referer': 'https://$_webHost/search?keyword=$encoded'},
+        site: siteId,
+      ),
+    );
+    final root = KuaishouParser.json(response.text, status: response.statusCode, what: 'search/author');
+    return KuaishouParser.anchorList(root);
   }
 
   /// One JSON directory request.

@@ -98,6 +98,46 @@ abstract final class KuaishouParser {
     return LivePage<LiveRoom>(items: rooms, hasMore: hasMore);
   }
 
+  /// A search answer's rows → the streamers it names, as anchors.
+  ///
+  /// The same cards the room reading maps, read as people: `id` is the
+  /// author and doubles as the broadcast id when they are live (`living`,
+  /// or a `liveStream` that is actually populated — the flag alone is not
+  /// always present), the follower count is what the card reports, and a
+  /// card without an id names nobody and is dropped.
+  static LivePage<LiveAnchor> anchorList(Map<String, Object?> root, {String? what}) {
+    final data = listPayload(root, what: what ?? 'search');
+    final cards = SiteJson.list(data['list']);
+    final anchors = <LiveAnchor>[
+      for (final card in cards)
+        if (card is Map<String, Object?>)
+          if (SiteText.trimmed(card['id']) case final id when id.isNotEmpty) _anchor(card, id),
+    ];
+    return LivePage<LiveAnchor>(items: anchors, hasMore: SiteCounts.flag(data['hasMore']) ?? anchors.length >= 20);
+  }
+
+  /// One anchor row.
+  ///
+  /// The author search answers rows about *people*, not cards about rooms,
+  /// so the fields sit at the top level (`name`, `avatar`, `living`) rather
+  /// than under `author`, and the follower count is a display string
+  /// (`"1943.3w"`) rather than a number — reading the directory's fields, as
+  /// this first did, produced anchors with no names.
+  static LiveAnchor _anchor(Map<String, Object?> card, String id) {
+    final living = SiteCounts.flag(card['living']) ?? SiteCounts.flag(card['isLiving']) ?? false;
+    final counts = SiteJson.object(card['counts']);
+    final bio = SiteText.title(SiteText.text(card['description']));
+    return LiveAnchor(
+      id: id,
+      roomId: living ? id : null,
+      name: SiteText.title(SiteText.text(card['name'])),
+      avatar: SiteText.trimmed(card['avatar']).isEmpty ? null : SiteText.trimmed(card['avatar']),
+      live: living,
+      count: SiteCounts.scaled(counts['fan']),
+      bio: bio.isEmpty ? null : bio,
+    );
+  }
+
   /// One live card, or null when it is not a room.
   ///
   /// The card's `id` *is* the broadcast's live stream id — the value the
