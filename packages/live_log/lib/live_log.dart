@@ -21,5 +21,6 @@ export 'src/record.dart';
 export 'src/sanitizer.dart';
 export 'src/sink.dart';
 export 'src/sinks/console_sink.dart';
+export 'src/sinks/fan_out_sink.dart';
 export 'src/sinks/file_sink.dart';
 export 'src/sinks/memory_sink.dart';
