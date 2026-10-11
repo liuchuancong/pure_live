@@ -1,4 +1,5 @@
 import 'package:live_sites/src/contracts/live_site.dart';
+import 'package:live_sites/src/contracts/site_capability.dart';
 import 'package:live_sites/src/contracts/site_error.dart';
 import 'package:live_sites/src/registry/site_metadata.dart';
 
@@ -27,6 +28,31 @@ final class SiteRegistry {
 
   /// All registered site ids.
   Iterable<String> get ids => _factories.keys;
+
+  /// The sites whose directory browsing works.
+  ///
+  /// A page that offers a site picker uses this instead of `ids`: an adapter
+  /// that has not implemented its directory yet implements neither
+  /// [LiveDirectoryCapability] nor [LiveSearchCapability], and offering it
+  /// would put the user on a page that can only fail.
+  Iterable<LiveSite> get browsable sync* {
+    for (final id in ids) {
+      final site = this[id];
+      if (site != null && site is LiveDirectoryCapability) {
+        yield site;
+      }
+    }
+  }
+
+  /// The sites whose search works.
+  Iterable<LiveSite> get searchable sync* {
+    for (final id in ids) {
+      final site = this[id];
+      if (site != null && site is LiveSearchCapability) {
+        yield site;
+      }
+    }
+  }
 
   /// The site for [id], or null when not registered.
   LiveSite? operator [](String id) {

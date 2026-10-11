@@ -12,7 +12,7 @@ import 'package:live_sites/src/platforms/douyu/parsers/douyu_parser.dart';
 /// Danmaku is not wired yet — Douyu uses a TCP text protocol
 /// (`danmakuMsg.douyucdn.cn:8501`) instead of WebSockets, which needs its
 /// own transport; the capability is simply absent until then.
-final class DouyuSite with SiteRoomGuard implements LiveSite {
+final class DouyuSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapability {
   /// A site over [http]; [now] is injectable for descriptor-expiry tests.
   new({required this.http, DateTime Function()? now}) : _now = now ?? DateTime.now;
 

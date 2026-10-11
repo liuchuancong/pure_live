@@ -50,7 +50,7 @@ abstract interface class IptvChannelSource {
 /// The IPTV "site": channels of an injected [IptvChannelSource] exposed
 /// through the ordinary [LiveSite] contract, so the rest of the app plays
 /// them like any other room.
-final class IptvSite with SiteRoomGuard implements LiveSite {
+final class IptvSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapability {
   /// A site over [source].
   new({required this.source});
 
