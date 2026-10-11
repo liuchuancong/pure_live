@@ -18,6 +18,7 @@ workspace:
   - packages/live_playback
   - packages/live_preferences
   - packages/live_storage
+  - packages/live_uikit
   - packages/pagination_core
 
 # Overrides apply to the whole workspace and may only be declared here.
