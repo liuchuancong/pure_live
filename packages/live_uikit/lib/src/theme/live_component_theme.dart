@@ -28,6 +28,9 @@ abstract class LiveComponentTheme with _$LiveComponentTheme {
     /// The density these numbers were derived from.
     required LiveUiDensity density,
 
+    /// The corner radius of a button or other control surface.
+    required double controlRadius,
+
     /// The height of a [LiveControlSize.small] control.
     required double heightSmall,
 
@@ -111,6 +114,7 @@ abstract class LiveComponentTheme with _$LiveComponentTheme {
   static LiveComponentTheme forDensity(LiveUiDensity density) => switch (density) {
     LiveUiDensity.compact => LiveComponentTheme(
       density: density,
+      controlRadius: LiveRadii.xs,
       heightSmall: 28,
       heightMedium: LiveSizing.controlHeightCompact,
       heightLarge: 44,
@@ -139,6 +143,7 @@ abstract class LiveComponentTheme with _$LiveComponentTheme {
     ),
     LiveUiDensity.comfortable => LiveComponentTheme(
       density: density,
+      controlRadius: LiveRadii.sm,
       heightSmall: 32,
       heightMedium: LiveSizing.controlHeight,
       heightLarge: 52,
@@ -167,6 +172,7 @@ abstract class LiveComponentTheme with _$LiveComponentTheme {
     ),
     LiveUiDensity.spacious => LiveComponentTheme(
       density: density,
+      controlRadius: LiveRadii.md,
       heightSmall: 40,
       heightMedium: LiveSizing.controlHeightTv,
       heightLarge: 64,

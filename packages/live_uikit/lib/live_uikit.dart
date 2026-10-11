@@ -22,6 +22,8 @@ export 'src/core/ui_component_registry.dart';
 export 'src/core/ui_configuration.dart';
 export 'src/core/ui_environment.dart';
 export 'src/core/ui_platform.dart';
+export 'src/design_languages/cupertino/cupertino_components.dart';
+export 'src/design_languages/cupertino/cupertino_language.dart';
 export 'src/design_languages/material/material_components.dart';
 export 'src/design_languages/material/material_language.dart';
 export 'src/focus/live_focus_highlight.dart';

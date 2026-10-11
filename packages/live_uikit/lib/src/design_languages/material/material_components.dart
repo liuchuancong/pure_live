@@ -35,9 +35,8 @@ class MaterialComponents implements LiveDesignLanguageComponents {
     };
     return LiveFocusHighlight(
       focusNode: spec.focusNode,
-      radius: LiveRadii.sm,
+      radius: geometry.controlRadius,
       enabled: interactive,
-      autofocus: spec.autofocus,
       childBuilder: (context, node) {
         final content = _buttonContent(context, spec, foreground, geometry.iconSize, geometry.iconGap);
         final style = ButtonStyle(
@@ -52,8 +51,8 @@ class MaterialComponents implements LiveDesignLanguageComponents {
           padding: WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: geometry.controlPadding)),
           minimumSize: WidgetStatePropertyAll(Size(0, geometry.heightFor(spec.size))),
           maximumSize: const WidgetStatePropertyAll(Size.infinite),
-          shape: const WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(LiveRadii.sm))),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(geometry.controlRadius)),
           ),
           textStyle: WidgetStatePropertyAll(theme.typography.label.copyWith(color: foreground)),
           side: border == null ? null : WidgetStatePropertyAll(BorderSide(color: border)),
@@ -95,12 +94,12 @@ class MaterialComponents implements LiveDesignLanguageComponents {
       focusNode: spec.focusNode,
       radius: LiveRadii.pill,
       enabled: interactive,
-      autofocus: spec.autofocus,
       childBuilder: (context, node) => Tooltip(
         message: spec.tooltip,
         child: IconButton(
           onPressed: interactive ? spec.onPressed : null,
           focusNode: node,
+          autofocus: spec.autofocus,
           style: ButtonStyle(
             backgroundColor: WidgetStateProperty.resolveWith(
               (states) => states.contains(WidgetState.disabled) ? background?.withValues(alpha: 0.4) : background,
@@ -165,7 +164,6 @@ class MaterialComponents implements LiveDesignLanguageComponents {
     return LiveFocusHighlight(
       focusNode: spec.focusNode,
       radius: geometry.cardRadius,
-      autofocus: spec.autofocus,
       childBuilder: (context, node) => Material(
         color: theme.colors.surfaceElevated,
         borderRadius: BorderRadius.circular(geometry.cardRadius),
@@ -174,6 +172,7 @@ class MaterialComponents implements LiveDesignLanguageComponents {
           onTap: spec.onTap,
           onLongPress: spec.onLongPress,
           focusNode: node,
+          autofocus: spec.autofocus,
           borderRadius: BorderRadius.circular(geometry.cardRadius),
           overlayColor: WidgetStatePropertyAll(theme.colors.focus.withValues(alpha: 0.1)),
           child: body,

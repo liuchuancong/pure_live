@@ -22,7 +22,6 @@ class LiveFocusHighlight extends StatefulWidget {
     this.focusNode,
     this.scale,
     this.enabled = true,
-    this.autofocus = false,
     super.key,
   });
 
@@ -41,9 +40,6 @@ class LiveFocusHighlight extends StatefulWidget {
 
   /// Whether the control can take focus at all.
   final bool enabled;
-
-  /// Whether it takes focus when the view opens.
-  final bool autofocus;
 
   @override
   State<LiveFocusHighlight> createState() => _LiveFocusHighlightState();

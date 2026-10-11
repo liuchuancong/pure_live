@@ -75,7 +75,7 @@ abstract final class LiveThemeData {
         isDense: true,
         contentPadding: EdgeInsets.symmetric(
           horizontal: componentTheme.controlPadding,
-          vertical: (componentTheme.inputHeight - typography.body.fontSize! * 1.45) / 2,
+          vertical: (componentTheme.inputHeight - (typography.body.fontSize ?? 15) * 1.45) / 2,
         ),
         border: _inputBorder(colors, componentTheme, colors.divider),
         enabledBorder: _inputBorder(colors, componentTheme, colors.outline.withValues(alpha: 0.5)),
