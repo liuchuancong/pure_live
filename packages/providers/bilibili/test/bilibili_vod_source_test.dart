@@ -8,11 +8,9 @@
 // as an empty page, a ticket that could not be re-minted after its cache entry was gone, and a signed query
 // that the caller re-encoded into something else.
 
-import 'dart:typed_data';
-
-import 'package:dio/dio.dart';
 import 'package:pure_live_bilibili/pure_live_bilibili.dart';
 import 'package:pure_live_network/pure_live_network.dart';
+import 'package:pure_live_network/testing.dart';
 import 'package:pure_live_platform/pure_live_platform.dart';
 import 'package:test/test.dart';
 
@@ -48,39 +46,10 @@ const String _playurl2 = '''
 {"code":0,"message":"0","data":{"durl":[
   {"url":"https://dx.example.com/video.m4s?key=refreshed","length":600,"size":12345}]}}''';
 
-/// Path-keyed script of bodies; a path may hold several, answered in order and repeating the last.
-final class _ScriptedTransport implements HttpClientAdapter {
-  _ScriptedTransport(this.script);
-
-  final Map<String, List<String>> script;
-  final List<RequestOptions> requests = <RequestOptions>[];
-  bool closed = false;
-
-  @override
-  Future<ResponseBody> fetch(
-    RequestOptions options,
-    Stream<Uint8List>? requestStream,
-    Future<void>? cancelFuture,
-  ) async {
-    requests.add(options);
-    final bodies = script[options.uri.path];
-    if (bodies == null) {
-      throw StateError('nothing scripted for ${options.uri.path}');
-    }
-    final index = requests.where((request) => request.uri.path == options.uri.path).length - 1;
-    final body = bodies[index.clamp(0, bodies.length - 1)];
-    return ResponseBody.fromString(
-      body,
-      200,
-      headers: <String, List<String>>{
-        Headers.contentTypeHeader: <String>['application/json; charset=utf-8'],
-      },
-    );
-  }
-
-  @override
-  void close({bool force = false}) => closed = true;
-}
+/// Path-keyed script of bodies; a path may hold several, answered in order and repeating the last. This is the
+/// transport `pure_live_network` publishes for exactly this job - the file used to implement dio's
+/// `HttpClientAdapter` itself, which dragged a dio dev dependency into the provider for one fake.
+typedef _ScriptedTransport = ScriptedTransport;
 
 _ScriptedTransport _transport({List<String> playurl = const <String>[_playurl]}) =>
     _ScriptedTransport(<String, List<String>>{
@@ -91,8 +60,13 @@ _ScriptedTransport _transport({List<String> playurl = const <String>[_playurl]})
       '/x/player/playurl': playurl,
     });
 
-NetworkClient _client(_ScriptedTransport transport) =>
-    NetworkClient(adapter: transport, clock: () => DateTime.utc(2026, 10, 11));
+NetworkClient _client(_ScriptedTransport transport) => NetworkClient(
+  adapter: transport,
+  clock: () => DateTime.utc(2026, 10, 11),
+  // One attempt per request: these tests count requests to prove a refusal never reached the socket, and the
+  // production retry policy would add transport attempts on top of every one.
+  settings: const NetworkSettings(retry: RetryPolicy(attempts: 1)),
+);
 
 void main() {
   late _ScriptedTransport transport;

@@ -10,12 +10,11 @@
 // against) yields %20 and Dart's encodeQueryComponent yields '+'.
 
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
-import 'package:dio/dio.dart';
 import 'package:pure_live_bilibili/pure_live_bilibili.dart';
 import 'package:pure_live_network/pure_live_network.dart';
+import 'package:pure_live_network/testing.dart';
 import 'package:test/test.dart';
 
 const String _imgKey = '7cd08494133a40833e9ee1a137569020';
@@ -90,28 +89,32 @@ void main() {
 
   group('test_biliWbi_signer', () {
     test('test_signedQuery_fetchesOnceAndCachesUntilTheKeyLifetimePasses', () async {
-      final transport = _RecordingTransport(<String>[_navBody()]);
+      final transport = _recordingTransport(<String>[_navBody()]);
       var now = DateTime.utc(2026, 10, 11);
       final signer = BiliWbiSigner(
-        client: NetworkClient(adapter: transport),
+        client: _signerClient(transport),
         clock: () => now,
         keyLifetime: const Duration(hours: 1),
       );
 
       await signer.signedQuery(<String, String>{'keyword': 'a'});
       await signer.signedQuery(<String, String>{'keyword': 'b'});
-      expect(transport.navRequests, 1, reason: 'the second call must not re-read nav');
+      expect(transport.requestsTo(_navKey), 1, reason: 'the second call must not re-read nav');
 
       now = now.add(const Duration(hours: 2));
       await signer.signedQuery(<String, String>{'keyword': 'c'});
-      expect(transport.navRequests, 2, reason: 'the site rotates keys on deploys; a forever-cache pins a dead key');
+      expect(
+        transport.requestsTo(_navKey),
+        2,
+        reason: 'the site rotates keys on deploys; a forever-cache pins a dead key',
+      );
     });
 
     test('test_signedQuery_sitsOnAFailureInsteadOfRetryingPerRequest', () async {
-      final transport = _RecordingTransport(<String>['{"code":-352,"message":"risk control"}']);
+      final transport = _recordingTransport(<String>['{"code":-352,"message":"risk control"}']);
       var now = DateTime.utc(2026, 10, 11);
       final signer = BiliWbiSigner(
-        client: NetworkClient(adapter: transport),
+        client: _signerClient(transport),
         clock: () => now,
         failureBackoff: const Duration(minutes: 5),
       );
@@ -119,20 +122,17 @@ void main() {
       await expectLater(signer.signedQuery(<String, String>{'keyword': 'a'}), throwsA(anything));
       now = now.add(const Duration(seconds: 30));
       await expectLater(signer.signedQuery(<String, String>{'keyword': 'b'}), throwsA(isA<StateError>()));
-      expect(transport.navRequests, 1, reason: 'an outage must not become a retry storm against nav');
+      expect(transport.requestsTo(_navKey), 1, reason: 'an outage must not become a retry storm against nav');
 
       now = now.add(const Duration(minutes: 5));
-      transport.bodies.add(_navBody());
+      transport.script[_navKey]!.add(_navBody());
       expect(await signer.signedQuery(<String, String>{'keyword': 'c'}), contains('w_rid='));
-      expect(transport.navRequests, 2);
+      expect(transport.requestsTo(_navKey), 2);
     });
 
     test('test_signedQuery_refusesAnAnswerWithoutWbiKeys', () async {
-      final transport = _RecordingTransport(<String>['{"code":0,"data":{}}']);
-      final signer = BiliWbiSigner(
-        client: NetworkClient(adapter: transport),
-        clock: () => DateTime.utc(2026),
-      );
+      final transport = _recordingTransport(<String>['{"code":0,"data":{}}']);
+      final signer = BiliWbiSigner(client: _signerClient(transport), clock: () => DateTime.utc(2026));
 
       await expectLater(signer.signedQuery(<String, String>{}), throwsA(isA<FormatException>()));
     });
@@ -157,33 +157,16 @@ void main() {
   });
 }
 
-/// Answers nav from a script of bodies, counting the requests so caching is observable.
-final class _RecordingTransport implements HttpClientAdapter {
-  _RecordingTransport(this.bodies);
+/// The scripted nav endpoint, from the published transport: this file used to implement its own
+/// `HttpClientAdapter`, which meant depending on dio directly for one fake.
+const String _navKey = '/x/web-interface/nav';
 
-  final List<String> bodies;
-  int navRequests = 0;
+ScriptedTransport _recordingTransport(List<String> bodies) =>
+    ScriptedTransport(<String, List<String>>{_navKey: bodies});
 
-  @override
-  Future<ResponseBody> fetch(
-    RequestOptions options,
-    Stream<Uint8List>? requestStream,
-    Future<void>? cancelFuture,
-  ) async {
-    if (!options.uri.path.endsWith('/web-interface/nav')) {
-      throw StateError('the signer asked something other than nav: ${options.uri}');
-    }
-    final index = navRequests.clamp(0, bodies.length - 1);
-    navRequests++;
-    return ResponseBody.fromString(
-      bodies[index],
-      200,
-      headers: <String, List<String>>{
-        Headers.contentTypeHeader: <String>['application/json; charset=utf-8'],
-      },
-    );
-  }
-
-  @override
-  void close({bool force = false}) {}
-}
+/// One attempt per request: the signer's own backoff is what these tests count, and the production retry
+/// policy would otherwise add transport attempts on top.
+NetworkClient _signerClient(ScriptedTransport transport) => NetworkClient(
+  adapter: transport,
+  settings: const NetworkSettings(retry: RetryPolicy(attempts: 1)),
+);

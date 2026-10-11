@@ -8,11 +8,10 @@
 // missing url - rather than throwing away the page or opening a guessed host.
 
 import 'dart:convert';
-import 'dart:typed_data';
 
-import 'package:dio/dio.dart';
 import 'package:pure_live_huya/pure_live_huya.dart';
 import 'package:pure_live_network/pure_live_network.dart';
+import 'package:pure_live_network/testing.dart';
 import 'package:pure_live_platform/pure_live_platform.dart';
 import 'package:test/test.dart';
 
@@ -81,48 +80,16 @@ String _profile({String? override}) =>
       },
     });
 
-final class _Scripted implements HttpClientAdapter {
-  _Scripted(this.script);
+/// The published scripted transport, aliased so the script helpers below read as this file's own vocabulary.
+typedef _Scripted = ScriptedTransport;
 
-  /// host+path -> response bodies, answered in order and repeating the last.
-  final Map<String, List<String>> script;
-  final List<RequestOptions> requests = <RequestOptions>[];
-
-  @override
-  Future<ResponseBody> fetch(
-    RequestOptions options,
-    Stream<Uint8List>? requestStream,
-    Future<void>? cancelFuture,
-  ) async {
-    requests.add(options);
-    final key = '${options.uri.host}${options.uri.path}';
-    final bodies = script[key];
-    if (bodies == null) {
-      throw StateError('nothing scripted for $key');
-    }
-    final seen = requests.where((request) => '${request.uri.host}${request.uri.path}' == key).length - 1;
-    final body = bodies[seen.clamp(0, bodies.length - 1)];
-    // A body that starts with `!` stands for the group being unreachable, not for a bad payload: the source
-    // has to survive both, and the transport-level one is the ordinary way a single group fails.
-    if (body.startsWith('!')) {
-      throw DioException(requestOptions: options, error: body);
-    }
-    return ResponseBody.fromString(
-      body,
-      200,
-      headers: <String, List<String>>{
-        Headers.contentTypeHeader: <String>['application/json; charset=utf-8'],
-      },
-    );
-  }
-
-  @override
-  void close({bool force = false}) {}
-
-  int requestsTo(String key) => requests.where((request) => '${request.uri.host}${request.uri.path}' == key).length;
-}
-
-NetworkClient _client(_Scripted transport) => NetworkClient(adapter: transport, clock: () => _now);
+NetworkClient _client(_Scripted transport) => NetworkClient(
+  adapter: transport,
+  clock: () => _now,
+  // One attempt per request: the failure bodies (`!…`) are connection errors, which the production retry
+  // policy legitimately re-attempts, and a source test wants one request per call or the counts mean nothing.
+  settings: const NetworkSettings(retry: RetryPolicy(attempts: 1)),
+);
 
 HuyaSource _source(_Scripted transport) => HuyaSource(client: _client(transport), clock: () => _now);
 
