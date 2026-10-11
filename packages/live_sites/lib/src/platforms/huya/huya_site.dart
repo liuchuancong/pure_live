@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_parser.dart';
@@ -5,11 +7,10 @@ import 'package:live_sites/src/platforms/huya/parsers/huya_parser.dart';
 /// The Huya adapter: room state and streams read from the room page's
 /// embedded config blobs (TT_ROOM_DATA / HYPlayerConfig).
 ///
-/// Not migrated yet: the search endpoint, the Tars-based danmaku
-/// transport (a binary protocol over TCP, needs its own codec — the
-/// danmaku capability is absent until then), and the Wup token flow for
-/// higher qualities.
-final class HuyaSite with SiteRoomGuard implements LiveSite {
+/// Not migrated yet: the Tars-based danmaku transport (a binary protocol
+/// over TCP that needs its own codec, so the danmaku capability is absent
+/// until then) and the Wup token flow for higher qualities.
+final class HuyaSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapability, LiveSearchCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -26,20 +27,99 @@ final class HuyaSite with SiteRoomGuard implements LiveSite {
   SiteMetadata get metadata =>
       const SiteMetadata(id: SiteIds.huya, displayName: '虎牙直播', homeUrl: 'https://www.huya.com');
 
+  /// The site's own front page: the same `getLiveListByPage` call the web
+  /// client makes, without a game filter. The recommendation list is the
+  /// one endpoint here that wants an `Origin`/`Referer` pair — the CDN
+  /// answers 403 to a bare request for it — so the headers are attached
+  /// only for this call, where they are needed.
   @override
-  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
-    throw UnimplementedError('huya directory lands with its migration');
-  }
+  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) =>
+      _liveList(page, headers: const {'origin': _web, 'referer': '$_web/'});
 
+  /// The same list filtered by the area's game id.
   @override
-  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    throw UnimplementedError('huya directory lands with its migration');
-  }
+  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) => _liveList(page, gameId: area.id);
 
+  /// Live search.
+  ///
+  /// The search CDN answers `403 Not allowed` to a request without a
+  /// User-Agent, which is why the browser UA is attached here (and only
+  /// here — the directory works without it). A blank keyword asks nothing.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('huya search lands with its migration');
+    final text = keyword.trim();
+    if (text.isEmpty) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    const rows = 30;
+    final start = ((page < 1 ? 1 : page) - 1) * rows;
+    final url = Uri.https('search.cdn.huya.com', '/', {
+      'm': 'Search',
+      'do': 'getSearchContent',
+      'q': text,
+      'uid': '0',
+      'v': '4',
+      'typ': '-5',
+      'livestate': '0',
+      'rows': '$rows',
+      'start': '$start',
+    });
+    final response = await http.send(LiveRequest.get(url, headers: const {'user-agent': _userAgent}, site: siteId));
+    final root = _json(response, what: 'getSearchContent');
+    final payload = root['response'];
+    if (payload is! Map<String, Object?>) {
+      throw const SiteApiChangedError('huya search: no response object');
+    }
+    return HuyaParser.searchRooms(payload, start: start, rows: rows);
   }
+
+  /// Decodes an endpoint's JSON envelope.
+  ///
+  /// Huya's directory and search endpoints answer with the payload at the
+  /// top level (there is no `code` field to check), so the rules here are
+  /// the transport's: a non-200 status or a body that is not an object is
+  /// an API change, not an empty page.
+  Map<String, Object?> _json(LiveResponse response, {required String what}) {
+    if (response.statusCode != 200) {
+      throw SiteApiChangedError('huya $what: HTTP ${response.statusCode}');
+    }
+    final Object? root;
+    try {
+      root = jsonDecode(response.text);
+    } on FormatException catch (error) {
+      throw SiteApiChangedError('huya $what: body is not JSON (${error.message})');
+    }
+    if (root is! Map<String, Object?>) {
+      throw SiteApiChangedError('huya $what: body is not an object');
+    }
+    return root;
+  }
+
+  /// `cache.php?m=LiveList&do=getLiveListByPage`, 120 rooms a page.
+  Future<LivePage<LiveRoom>> _liveList(int page, {String? gameId, Map<String, String> headers = const {}}) async {
+    final number = page < 1 ? 1 : page;
+    final url = Uri.https('www.huya.com', '/cache.php', {
+      'm': 'LiveList',
+      'do': 'getLiveListByPage',
+      'tagAll': '0',
+      'gameId': ?gameId,
+      'page': '$number',
+    });
+    final response = await http.send(LiveRequest.get(url, headers: headers, site: siteId));
+    final root = _json(response, what: 'getLiveListByPage');
+    final data = root['data'];
+    if (data is! Map<String, Object?>) {
+      throw const SiteApiChangedError('huya directory: no data object');
+    }
+    return HuyaParser.roomList(data, page: number);
+  }
+
+  /// The site origin, used for the recommendation request's headers.
+  static const String _web = 'https://www.huya.com';
+
+  /// The browser User-Agent the search CDN requires.
+  static const String _userAgent =
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
 
   @override
   Future<LiveRoom> getRoomDetail(LiveRoom room) async {
