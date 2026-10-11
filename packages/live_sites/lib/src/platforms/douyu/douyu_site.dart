@@ -12,7 +12,9 @@ import 'package:live_sites/src/platforms/douyu/parsers/douyu_parser.dart';
 /// Danmaku is not wired yet — Douyu uses a TCP text protocol
 /// (`danmakuMsg.douyucdn.cn:8501`) instead of WebSockets, which needs its
 /// own transport; the capability is simply absent until then.
-final class DouyuSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapability, LiveAreaCatalog {
+final class DouyuSite
+    with SiteRoomGuard
+    implements LiveSite, LiveDirectoryCapability, LiveAreaCatalog, LiveSearchCapability, LiveAnchorSearch {
   /// A site over [http]; [now] is injectable for descriptor-expiry tests.
   new({required this.http, DateTime Function()? now}) : _now = now ?? DateTime.now;
 
@@ -67,7 +69,36 @@ final class DouyuSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapab
 
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('douyu search lands with the search-migration phase');
+    final text = keyword.trim();
+    if (text.isEmpty) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final number = page < 1 ? 1 : page;
+    final encoded = Uri.encodeQueryComponent(text);
+    return DouyuParser.searchRooms(
+      await _searchJson('https://www.douyu.com/japi/search/api/searchShow?kw=$encoded&page=$number&pageSize=30'),
+    );
+  }
+
+  /// The streamers matching a keyword, as anchors.
+  ///
+  /// Douyu searches people through a different endpoint from rooms, and the
+  /// two are worth keeping apart: this one returns people who are *not*
+  /// broadcasting, and the room-shaped reading of it — which the old
+  /// implementation used — had to invent a room for each of them.
+  @override
+  Future<LivePage<LiveAnchor>> searchAnchors(String keyword, {int page = 1}) async {
+    final text = keyword.trim();
+    if (text.isEmpty) {
+      return const LivePage<LiveAnchor>(items: []);
+    }
+    final number = page < 1 ? 1 : page;
+    final encoded = Uri.encodeQueryComponent(text);
+    return DouyuParser.searchAnchors(
+      await _searchJson(
+        'https://www.douyu.com/japi/search/api/searchUser?kw=$encoded&page=$number&pageSize=30&filterType=1',
+      ),
+    );
   }
 
   @override
@@ -116,8 +147,22 @@ final class DouyuSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapab
     return room.mergeFrom(DouyuParser.roomDetail(jsonEncode(data), requestedId: room.roomId));
   }
 
-  Future<Map<String, Object?>> _getJson(String url) async {
-    final response = await http.send(LiveRequest.get(Uri.parse(url), headers: DouyuParser.mediaHeaders(''), site: id));
+  /// One search request.
+  ///
+  /// The search endpoints want the search page as their referer: with the
+  /// room page's — which is what the shared helper sends — they answer an
+  /// empty list for a keyword that has results, which is exactly how a
+  /// working search looks broken.
+  Future<Map<String, Object?>> _searchJson(String url) => _getJson(url, referer: 'https://www.douyu.com/search/');
+
+  Future<Map<String, Object?>> _getJson(String url, {String? referer}) async {
+    final response = await http.send(
+      LiveRequest.get(
+        Uri.parse(url),
+        headers: DouyuParser.mediaHeaders('', referer: referer),
+        site: id,
+      ),
+    );
     if (response.statusCode != 200) {
       throw SiteApiChangedError('douyu: HTTP ${response.statusCode} for $url');
     }
