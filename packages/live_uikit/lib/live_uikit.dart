@@ -35,6 +35,7 @@ export 'src/design_languages/neumorphic/neumorphic_language.dart';
 export 'src/design_languages/yaru/yaru_components.dart';
 export 'src/design_languages/yaru/yaru_language.dart';
 export 'src/focus/live_focus_highlight.dart';
+export 'src/integration/wind_integration.dart';
 export 'src/theme/live_color_scheme.dart';
 export 'src/theme/live_component_theme.dart';
 export 'src/theme/live_theme.dart';
