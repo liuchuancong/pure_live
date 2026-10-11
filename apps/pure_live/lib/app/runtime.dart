@@ -291,6 +291,22 @@ PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
   );
   runtime.capabilities.register(
     ProviderRegistration(
+      sourceId: ccSourceId,
+      extensionId: 'built-in.cc',
+      provider: CcSource(),
+      // The menu is assembled from two endpoints and a room costs two calls, so the status path is not cheap and
+      // says so. Tiers are qualities, cdn families inside a tier are lines.
+      capabilities: const CapabilitySet(<CapabilityKind>{
+        CapabilityKind.feed,
+        CapabilityKind.live,
+        CapabilityKind.search,
+        CapabilityKind.quality,
+        CapabilityKind.line,
+      }),
+    ),
+  );
+  runtime.capabilities.register(
+    ProviderRegistration(
       sourceId: bigoSourceId,
       extensionId: 'built-in.bigo',
       provider: BigoSource(),

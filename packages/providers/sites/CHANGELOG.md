@@ -6,6 +6,21 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- **Added**: `cc` (网易CC直播) - the menu assembled from the Dashen game registry *and* the live-entry
+  configuration that selects which of those games are navigable at all (the legacy category endpoint now serves
+  the application, not a category list), the fixed-30 grids, the two-call room and the anchor search read as both
+  rooms and people. An entry whose game is missing, whose destination is not an `https://cc.163.com` route the
+  site owns, whose configuration id does not come back, or whose identity repeats fails the whole menu rather
+  than dropping a row. Two audience scales stay apart: `webcc_visitor`/`hot_score`/`visitor`/`total_visitor` are
+  heat while `vision_visitor`/`online_num` are the people watching now - keeping both is what stops 50 万热度 from
+  being drawn as 50 万人在线. A title starting with the site's `【重播】` mark while the status field says live stays
+  playable and gets the site's own word as a tag. Tiers (`blueray`→原画, `ultra`→蓝光, unknown keys keep their own
+  name) are qualities and the cdn families inside one are lines, ordered by the site's own preference table; the
+  untouched tier states no `vbr`, so its place comes from its name rather than from a missing bitrate. A live
+  bundle's line value can be a bare `?sign=` that belongs on the room's own m3u8 - read as a url it would be
+  nothing, read as a suffix it is the signed address. `startat` is the site's UTC+8 wall clock and is converted,
+  because a local reading turns into "已直播 -3 小时" elsewhere.
+
 - **Added**: `bigo` - the finite homepage block (one snapshot of 20 rows that both pages are sliced from, with a
   real `total` and a 30-second reuse that is *not* cached on failure), the studio status, the token-handed lease and
   the three-way access gate. `bigo_id` is the room and `room_id` is an int64 kept as **text**, because rounding it
