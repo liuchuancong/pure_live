@@ -10,6 +10,7 @@ environment:
 workspace:
   - packages/live_log
   - packages/live_net
+  - packages/live_sites
   - packages/live_platform
   - packages/live_storage
   - packages/pagination_core

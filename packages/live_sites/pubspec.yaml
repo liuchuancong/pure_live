@@ -1,0 +1,21 @@
+name: live_sites
+description: >-
+  Site domain and adaptation contracts for Pure Live: unified room, play
+  and danmaku models; the LiveSite contract that takes LiveRoom first;
+  the site registry with metadata; and per-platform adapters. Pure Dart —
+  players, renderers, HTTP transports and persistence live above or
+  beside it.
+version: 0.1.0
+publish_to: none
+
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  live_net:
+  meta: ^1.19.0
+
+dev_dependencies:
+  very_good_analysis: ^11.0.0
