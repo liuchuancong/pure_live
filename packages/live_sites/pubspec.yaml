@@ -15,6 +15,7 @@ environment:
 
 dependencies:
   crypto: ^3.0.6
+  cryptography: ^2.7.0
   live_net:
   meta: ^1.19.0
 
