@@ -3,11 +3,11 @@ import 'package:live_sites/live_sites.dart';
 import 'package:live_sites/src/platforms/jdlive/parsers/jdlive_parser.dart';
 
 /// The JD Live adapter: rooms through the h5 `getImmediatePlayToM` play
-/// answer.
+/// answer and the featured list (`liveListWithTabToM`).
 ///
-/// Not migrated yet: the featured list (`liveListWithTabToM`), search,
-/// the playlist validation pass and the danmaku transport.
-final class JdLiveSite with SiteRoomGuard implements LiveSite {
+/// Not migrated yet: search, the playlist validation pass and the danmaku
+/// transport.
+final class JdLiveSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -30,15 +30,84 @@ final class JdLiveSite with SiteRoomGuard implements LiveSite {
   SiteMetadata get metadata =>
       const SiteMetadata(id: SiteIds.jdLive, displayName: '京东直播', homeUrl: 'https://m.jd.com/live');
 
+  /// The catalogue: one area, and it is constant — the featured list — so no
+  /// request is spent finding it out.
   @override
-  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
-    throw UnimplementedError('jdlive directory lands with its migration');
+  Future<List<LiveArea>> getAreas() async => JdLiveParser.areas();
+
+  /// Page [page] of the featured list — the site has only this one list.
+  @override
+  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) => _directory(page);
+
+  /// As [getRecommendRooms]; an area that is not the featured list is a
+  /// caller error, refused before any request.
+  @override
+  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) {
+    if (!JdLiveParser.isArea(area)) {
+      throw SiteError.invalidRoomId(area.id);
+    }
+    return _directory(page);
   }
 
-  @override
-  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    throw UnimplementedError('jdlive directory lands with its migration');
+  /// Page [page] of the featured list.
+  ///
+  /// The list pages by a *sequence* rather than by page number: page 1 starts
+  /// one at the clock's time, every later page sends the count the previous
+  /// page reported together with that same time, and a broadcast the sequence
+  /// already listed is not listed again. A stateless `page: N` request is
+  /// served by walking the sequence — the pages asked before are kept, so
+  /// "next page" costs one request — and a page the sequence has ended before
+  /// is empty rather than an error.
+  Future<LivePage<LiveRoom>> _directory(int page) async {
+    if (page < 1 || page > JdLiveParser.maxPage) {
+      throw RangeError.range(page, 1, JdLiveParser.maxPage, 'page');
+    }
+    if (page == 1) {
+      // Page 1 is the pull to refresh: it starts the sequence anew.
+      _sequence = _JdLiveSequence(DateTime.now().millisecondsSinceEpoch);
+    }
+    final sequence = _sequence;
+    for (var current = 1; current <= page; current++) {
+      final cached = sequence.pages[current];
+      if (cached != null) {
+        continue;
+      }
+      if (sequence.ended || !sequence.counts.containsKey(current)) {
+        // The listing ran out before this page (or the sequence was restarted),
+        // which is an empty page rather than an error.
+        return const LivePage<LiveRoom>(items: []);
+      }
+      final count = sequence.counts[current]!;
+      final response = await http.send(
+        LiveRequest.get(
+          JdLiveParser.listUrl(page: current, count: count, timestamp: sequence.startedAt, now: DateTime.now()),
+          headers: JdLiveParser.apiHeaders,
+          site: siteId,
+        ),
+      );
+      final answer = JdLiveParser.directory(response.text, page: current, after: count, status: response.statusCode);
+      final fresh = <LiveRoom>[];
+      for (final entry in answer.entries) {
+        _known[entry.room.roomId] = entry.card;
+        if (sequence.listed.add(entry.room.roomId)) {
+          fresh.add(entry.room);
+        }
+      }
+      final more = answer.hasMore && fresh.isNotEmpty;
+      sequence.pages[current] = fresh;
+      if (more) {
+        sequence.counts[current + 1] = answer.nextCount;
+      } else {
+        sequence.ended = true;
+      }
+    }
+    final rooms = sequence.pages[page] ?? const <LiveRoom>[];
+    final hasMore = !sequence.ended;
+    return LivePage<LiveRoom>(items: rooms, hasMore: hasMore, nextPage: hasMore ? page + 1 : null);
   }
+
+  /// The sequence the current browse walks; page 1 replaces it.
+  _JdLiveSequence _sequence = _JdLiveSequence(0);
 
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
@@ -126,4 +195,31 @@ final class JdLiveSite with SiteRoomGuard implements LiveSite {
   }
 
   static bool _has(Object? value, String suffix) => (value?.toString() ?? '').contains(suffix);
+}
+
+/// One browse of the featured list: the sequence the site pages by.
+///
+/// The site walks its list by count and time rather than by page number, so
+/// the pages a caller asked for are kept here: the first request starts the
+/// sequence, and every later page sends the count the previous one reported
+/// with the sequence's own start time. [listed] is what keeps a broadcast
+/// from appearing on two pages of the same browse.
+final class _JdLiveSequence {
+  /// A sequence started at [startedAt] (Unix milliseconds).
+  new(this.startedAt) : counts = {1: 0};
+
+  /// When the browse began, sent with every page.
+  final int startedAt;
+
+  /// The count each page is asked after.
+  final Map<int, int> counts;
+
+  /// The rooms each page answered with.
+  final Map<int, List<LiveRoom>> pages = {};
+
+  /// The broadcasts this browse already listed.
+  final Set<String> listed = {};
+
+  /// Whether the site said there is no page after the last one walked.
+  bool ended = false;
 }
