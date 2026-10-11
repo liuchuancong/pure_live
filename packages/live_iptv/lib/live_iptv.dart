@@ -10,6 +10,7 @@
 /// IPTV site so channels play through the ordinary playback stack.
 library;
 
+export 'src/catchup/catchup.dart';
 export 'src/library/iptv_library.dart';
 export 'src/library/iptv_store.dart';
 export 'src/model/iptv_models.dart';
