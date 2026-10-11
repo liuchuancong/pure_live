@@ -8,10 +8,14 @@ environment:
   sdk: ^3.13.0
 
 workspace:
+  - packages/live_interaction
+  - packages/live_iptv
+  - packages/live_library
   - packages/live_log
   - packages/live_net
   - packages/live_sites
   - packages/live_platform
+  - packages/live_playback
   - packages/live_storage
   - packages/pagination_core
 
