@@ -1,19 +1,31 @@
 {
-    "python-envs.defaultEnvManager": "ms-python.python:system",
-    "cmake.sourceDirectory": "D:/flutter/pure_live/linux",
-    "[dart]": {
-        "editor.defaultFormatter": "Dart-Code.dart-code",
-        "editor.formatOnSave": true,
-        "editor.codeActionsOnSave": {
-            "source.fixAll": "explicit"
-        }
-    },
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": false,
+  "editor.formatOnType": false,
 
-    "dart.lineLength": 100,
-    "dart.previewFlutterUiGuides": true,
-    "yaml.validate": true,
-    "yaml.schemas": {
-        "https://json.schemastore.org/github-action.json": [".github/actions/*/action.yml", ".github/actions/*/action.yaml"],
-        "https://json.schemastore.org/github-workflow.json": [".github/workflows/*.yml", ".github/workflows/*.yaml"]
-    }
+  "[dart]": {
+    "editor.defaultFormatter": "Dart-Code.dart-code",
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": false,
+    "editor.formatOnType": false,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    },
+    "editor.rulers": [120]
+  },
+  "[yaml]": {
+    "editor.formatOnSave": false,
+    "editor.formatOnPaste": false
+  },
+  "[markdown]": {
+    "editor.formatOnSave": false,
+    "editor.formatOnPaste": false
+  },
+
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": false,
+  "files.encoding": "utf8",
+
+  "dart.lineLength": 120,
+  "dart.enableSdkFormatter": true
 }
