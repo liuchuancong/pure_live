@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show gzip;
 
 import 'package:live_iptv/src/model/guide_models.dart';
 import 'package:xml/xml.dart' show XmlParserException;
@@ -35,6 +36,18 @@ ParsedGuide parseGuide(String text, {GuideFormat? format}) => switch (format ?? 
   GuideFormat.xmltv => XmltvParser.parse(text),
   GuideFormat.json => JsonGuideParser.parse(text),
 };
+
+/// Decodes guide [bytes] as text: gzip when they carry its magic (what most
+/// public guides are served as, whatever the packaging URL says) or UTF-8
+/// otherwise.
+///
+/// Throws a [FormatException] for bytes that are neither — a handler that
+/// hands back an error page, say — so the caller keeps whatever guide it
+/// already had.
+String decodeGuideBytes(List<int> bytes) {
+  final gzipped = bytes.length >= 2 && bytes[0] == 0x1f && bytes[1] == 0x8b;
+  return utf8.decode(gzipped ? gzip.decode(bytes) : bytes);
+}
 
 /// XMLTV parsing, streamed rather than built into a document.
 ///

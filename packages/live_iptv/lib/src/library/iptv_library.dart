@@ -32,6 +32,7 @@ final class IptvLibrary {
   List<EpgProgramme> _programmes = const [];
   List<EpgMapping> _mappings = const [];
   bool _loaded = false;
+  bool _writing = false;
   StreamSubscription<void>? _external;
 
   /// Emits after every committed mutation.
@@ -58,7 +59,7 @@ final class IptvLibrary {
     _guideChannels = await store.loadGuideChannels();
     _programmes = await store.loadGuideProgrammes();
     _mappings = await store.loadGuideMappings();
-    _external ??= store.changes.listen((_) => unawaited(_reload()));
+    _external ??= store.changes.listen((_) => _storeChanged());
   }
 
   /// The guide source [id], or null.
@@ -335,9 +336,11 @@ final class IptvLibrary {
   ///
   /// One write per list: a source's data is only ever replaced whole, because
   /// a guide that updated its channels but not its programmes shows a week of
-  /// programmes under the wrong names. [duplicates] are sources the user named
-  /// the same — importing a guide again under a name they already have must
-  /// not leave two sources whose programmes fight over the same channels.
+  /// programmes under the wrong names. The source replaces the stored one of
+  /// the same id — a sync must not leave two records of one guide — and
+  /// [duplicates] are the sources the user named the same: importing a guide
+  /// again under a name they already have must not leave two sources whose
+  /// programmes fight over the same channels.
   Future<void> saveGuide(
     EpgSource source,
     List<EpgChannel> channels,
@@ -345,23 +348,37 @@ final class IptvLibrary {
     List<EpgSource> duplicates = const [],
   }) async {
     final dropped = {for (final duplicate in duplicates) duplicate.id};
-    _sources = [
-      for (final saved in _sources)
-        if (!dropped.contains(saved.id)) saved,
-    ];
+    final merged = <EpgSource>[];
+    var placed = false;
+    for (final saved in _sources) {
+      if (saved.id == source.id) {
+        // A sync keeps its place in the list: the sources are shown in the
+        // order they were imported, and refreshing one must not move it.
+        merged.add(source);
+        placed = true;
+      } else if (!dropped.contains(saved.id)) {
+        merged.add(saved);
+      }
+    }
+    if (!placed) {
+      merged.add(source);
+    }
+    _sources = merged;
+    // The source's own previous rows go the way of the duplicates': a sync
+    // replaces its channels and programmes, it does not add to them.
+    final replaced = {...dropped, source.id};
     _guideChannels = [
       for (final channel in _guideChannels)
-        if (!dropped.contains(channel.sourceId)) channel,
+        if (!replaced.contains(channel.sourceId)) channel,
     ];
     _programmes = [
       for (final programme in _programmes)
-        if (!dropped.contains(programme.sourceId)) programme,
+        if (!replaced.contains(programme.sourceId)) programme,
     ];
     _mappings = [
       for (final mapping in _mappings)
-        if (!dropped.contains(mapping.epgSourceId)) mapping,
+        if (!replaced.contains(mapping.epgSourceId)) mapping,
     ];
-    _sources = [..._sources, source];
     _guideChannels = [..._guideChannels, ...channels];
     _programmes = [..._programmes, ...programmes];
     await _commitGuide();
@@ -443,10 +460,15 @@ final class IptvLibrary {
   }
 
   Future<void> _commitGuide() async {
-    await store.saveGuideSources(_sources);
-    await store.saveGuideChannels(_guideChannels);
-    await store.saveGuideProgrammes(_programmes);
-    await store.saveGuideMappings(_mappings);
+    _writing = true;
+    try {
+      await store.saveGuideSources(_sources);
+      await store.saveGuideChannels(_guideChannels);
+      await store.saveGuideProgrammes(_programmes);
+      await store.saveGuideMappings(_mappings);
+    } finally {
+      _writing = false;
+    }
     _changes.add(null);
   }
 
@@ -467,8 +489,26 @@ final class IptvLibrary {
     }
   }
 
+  /// A change the store reported: another writer's, or the library's own.
+  ///
+  /// The library's own writes are ignored, because a reload there would read
+  /// the lists back while they are still being saved — a commit that writes
+  /// four lists fires an event per list, and reloading between two of them
+  /// would undo the write that is in flight.
+  void _storeChanged() {
+    if (_writing) {
+      return;
+    }
+    unawaited(_reload());
+  }
+
   Future<void> _commit() async {
-    await store.saveChannels(_channels);
+    _writing = true;
+    try {
+      await store.saveChannels(_channels);
+    } finally {
+      _writing = false;
+    }
     _changes.add(null);
   }
 
@@ -479,6 +519,10 @@ final class IptvLibrary {
     _guideChannels = await store.loadGuideChannels();
     _programmes = await store.loadGuideProgrammes();
     _mappings = await store.loadGuideMappings();
+    if (_changes.isClosed) {
+      // The library was disposed while this reload was queued.
+      return;
+    }
     _changes.add(null);
   }
 }
