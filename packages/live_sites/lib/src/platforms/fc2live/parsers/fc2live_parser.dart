@@ -27,6 +27,161 @@ abstract final class Fc2LiveParser {
     'referer': '$origin/$channelId/',
   };
 
+  /// The whole-channel-list endpoint: the directory is one answer carrying
+  /// every channel on air, paged locally.
+  static const String snapshotPath = '/contents/allchannellist.php';
+
+  /// Rooms one directory page shows (the site's own page size).
+  static const int directoryPageSize = 20;
+
+  /// The last directory page a caller may ask for.
+  static const int maxPage = 10000;
+
+  /// The id of the area that keeps every channel.
+  static const String allAreaId = 'all';
+
+  /// The areas, in the site's own order: everything first, then the
+  /// categories the site files its channels under.
+  static const List<({String id, String name})> areaCatalog = [
+    (id: allAreaId, name: '全部公开直播'),
+    (id: '1', name: '闲聊'),
+    (id: '2', name: '游戏 / 作业'),
+    (id: '4', name: '视频'),
+    (id: '9', name: '音频'),
+    (id: '5', name: '其他'),
+  ];
+
+  /// The catalogue: six constant areas, so no request is spent finding them
+  /// out.
+  static List<LiveArea> areas() => [
+    for (final (index, area) in areaCatalog.indexed) LiveArea(id: area.id, name: area.name, sort: index),
+  ];
+
+  /// The category an area id keeps: null for [allAreaId] (everything), else
+  /// 1, 2, 4, 5 or 9; null too for an id the catalogue does not know, which
+  /// is the caller's mistake rather than a listing this site has.
+  static int? areaFilter(LiveArea area) {
+    if (area.id.trim() == allAreaId) {
+      return null;
+    }
+    final value = SiteCounts.integer(area.id);
+    return value != null && const {1, 2, 4, 5, 9}.contains(value) ? value : null;
+  }
+
+  /// Whether a channel of [categoryId] belongs to the area [filter] keeps:
+  /// every area for null, and the site's own "game or work" area (2) also
+  /// keeps category 3, which has no area of its own.
+  static bool inArea(int categoryId, int? filter) =>
+      filter == null || categoryId == filter || (filter == 2 && categoryId == 3);
+
+  /// The name of the area [categoryId] belongs to; empty for the site's own
+  /// categories outside the catalogue (0 and 8 are its "unknown", 6 premium,
+  /// 7 official).
+  static String areaName(int categoryId) => switch (categoryId) {
+    1 || 4 || 5 || 9 => areaCatalog.firstWhere((area) => area.id == '$categoryId').name,
+    2 || 3 => '游戏 / 作业',
+    _ => '',
+  };
+
+  /// The `allchannellist` URL.
+  static Uri snapshotUrl() => Uri.parse('$origin$snapshotPath');
+
+  /// An `allchannellist` answer: every channel on air, in the site's order,
+  /// with the category each is filed under.
+  ///
+  /// Rows that are not public rooms (`type` 1 is a public broadcast; open
+  /// chats and private two-shots are the others) are skipped. Restricted
+  /// channels — paid, ticketed, for signed-in viewers — stay listed, live and
+  /// marked, because the site shows them and the play path is where the
+  /// refusal belongs. A row that cannot be read costs itself, while an answer
+  /// none of whose rows can be read is a changed endpoint. `time` must be a
+  /// moment, which is what tells a real answer from an empty stand-in.
+  static List<({LiveRoom room, int categoryId})> snapshot(String body, {int status = 200}) {
+    if (status < 200 || status >= 300) {
+      throw SiteApiChangedError('fc2live allchannellist: HTTP $status');
+    }
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(body);
+    } on FormatException {
+      throw const SiteApiChangedError('fc2live allchannellist: body is not JSON');
+    }
+    if (decoded is! Map<String, Object?>) {
+      throw const SiteApiChangedError('fc2live allchannellist: body is not an object');
+    }
+    if ((SiteCounts.integer(decoded['time']) ?? 0) < 1) {
+      throw const SiteApiChangedError('fc2live allchannellist: no time');
+    }
+    final rows = decoded['channel'];
+    if (rows is! List || rows.length > 1000) {
+      throw const SiteApiChangedError('fc2live allchannellist: no channel list');
+    }
+    final seen = <String>{};
+    final channels = <({LiveRoom room, int categoryId})>[];
+    var unreadable = 0;
+    for (final raw in rows) {
+      final data = SiteJson.object(raw);
+      if (SiteCounts.integer(data['type']) != 1) {
+        continue;
+      }
+      final channel = card(data);
+      if (channel == null) {
+        unreadable++;
+        continue;
+      }
+      if (seen.add(channel.room.roomId)) {
+        channels.add(channel);
+      }
+    }
+    if (channels.isEmpty && unreadable > 0) {
+      throw SiteApiChangedError('fc2live allchannellist: none of $unreadable rows can be read');
+    }
+    return channels;
+  }
+
+  /// One list row as a room with the category it is filed under, or null when
+  /// the row names no channel.
+  ///
+  /// The title falls back to the broadcaster's name, the card's `pay`/`tid`
+  /// marks make a paid broadcast and its `login` mark one for signed-in
+  /// viewers, and `start_time` is Unix milliseconds.
+  static ({LiveRoom room, int categoryId})? card(Map<String, Object?> data) {
+    final roomId = channelId(SiteText.text(data['id']));
+    if (roomId == null || !RegExp(r'^[0-9]{1,12}$').hasMatch(roomId)) {
+      return null;
+    }
+    final categoryId = SiteCounts.integer(data['category']) ?? 0;
+    final name = SiteText.title(SiteText.text(data['name']));
+    final title = SiteText.title(SiteText.text(data['title']));
+    final pay = SiteCounts.integer(data['pay']) ?? 0;
+    final ticket = SiteCounts.integer(data['tid']) ?? 0;
+    final login = SiteCounts.integer(data['login']) ?? 0;
+    final restriction = pay != 0 || ticket != 0
+        ? LiveRestriction.paid
+        : login != 0
+        ? LiveRestriction.needsLogin
+        : LiveRestriction.none;
+    final startedMilliseconds = SiteCounts.integer(data['start_time']);
+    final started = startedMilliseconds == null || startedMilliseconds < 946684800000
+        ? null
+        : DateTime.fromMillisecondsSinceEpoch(startedMilliseconds, isUtc: true);
+    return (
+      room: LiveRoom(
+        platform: SiteIds.fc2Live,
+        roomId: roomId,
+        title: title.isEmpty ? name : title,
+        nick: name,
+        cover: _image(data['image']),
+        areaName: areaName(categoryId),
+        watching: SiteCounts.integer(data['count']),
+        status: LiveStatus.live,
+        startedAt: started,
+        restriction: restriction,
+      ),
+      categoryId: categoryId,
+    );
+  }
+
   /// The channel id of the input: a channel number or a channel link.
   static String? channelId(String raw) {
     final input = raw.trim();
