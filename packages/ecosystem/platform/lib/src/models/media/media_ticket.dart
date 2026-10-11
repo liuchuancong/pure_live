@@ -14,7 +14,7 @@
 // See docs/adr/0016-platform-media-track-mirror.md.
 
 import '../../support/json.dart';
-import '../content/content_ref.dart';
+import '../content/content_ref/content_ref.dart';
 
 /// What the resource semantically is. Kept separate from [MediaProtocol], which is how it is transported
 /// (docs/contracts/platform-models.md section 11 forbids merging the two).

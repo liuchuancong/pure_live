@@ -9,7 +9,7 @@
 // enter metadata (section 16).
 
 import '../../support/json.dart';
-import '../content/content_ref.dart';
+import '../content/content_ref/content_ref.dart';
 import '../error/platform_error_info.dart';
 import '../identifiers.dart';
 

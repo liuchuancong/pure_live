@@ -14,7 +14,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../support/json.dart';
-import '../content/content_ref.dart';
+import '../content/content_ref/content_ref.dart';
 
 /// Lyric text for one item.
 final class LyricDocument extends Equatable {

@@ -8,7 +8,7 @@
 // pure_live_resolver, per docs/adr/0018-contract-package-split.md.
 
 import '../../support/json.dart';
-import '../content/content_ref.dart';
+import '../content/content_kind/content_kind.dart';
 import '../identifiers.dart';
 
 /// What a resolver turns into a ticket.

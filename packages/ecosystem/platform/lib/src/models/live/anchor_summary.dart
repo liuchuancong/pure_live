@@ -15,7 +15,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../support/json.dart';
-import '../content/content_ref.dart';
+import '../content/content_ref/content_ref.dart';
 
 part 'anchor_summary.freezed.dart';
 part 'anchor_summary.g.dart';

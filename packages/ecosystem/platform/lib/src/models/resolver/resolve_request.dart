@@ -11,7 +11,7 @@
 // that owns the token passes it to the resolver call itself rather than through the serializable model.
 
 import '../../support/json.dart';
-import '../content/content_ref.dart';
+import '../content/content_ref/content_ref.dart';
 import '../media/media_ticket.dart';
 
 /// Why the caller is resolving. It is an input to resolution, not a player mode.

@@ -19,7 +19,9 @@ enum HistoryDomain { live, vod, music, iptv, other }
 /// land in [HistoryDomain.other] rather than being guessed at, because a wrong domain puts the record under
 /// the wrong tab and the user reads that as lost history.
 HistoryDomain domainOf(ContentKind kind) => switch (kind) {
-  ContentKind.liveChannel || ContentKind.liveRoom || ContentKind.epgProgram => HistoryDomain.live,
+  // anchor is live too: the person you follow, not the video you rewatch. A wrong domain here puts the
+  // record under the wrong tab, which the user reads as lost history.
+  ContentKind.liveChannel || ContentKind.liveRoom || ContentKind.epgProgram || ContentKind.anchor => HistoryDomain.live,
   ContentKind.vod || ContentKind.movie || ContentKind.series || ContentKind.episode => HistoryDomain.vod,
   ContentKind.music || ContentKind.album || ContentKind.artist => HistoryDomain.music,
   ContentKind.localMedia => HistoryDomain.other,
@@ -284,10 +286,9 @@ final class HistoryService {
   /// A record at position zero is *not* "continue": the doc asks for rows with progress, and a room the viewer
   /// opened and walked away from would otherwise sit in the row of things they mean to finish.
   Future<List<HistoryEntry>> continueWatching({int? limit}) async {
-    final open = (await _repository.entries())
-        .where((entry) => !entry.isCompleted && entry.position > Duration.zero)
-        .toList()
-      ..sort((a, b) => -a.updatedAt.compareTo(b.updatedAt));
+    final open =
+        (await _repository.entries()).where((entry) => !entry.isCompleted && entry.position > Duration.zero).toList()
+          ..sort((a, b) => -a.updatedAt.compareTo(b.updatedAt));
     if (limit != null && open.length > limit) {
       return open.sublist(0, limit);
     }

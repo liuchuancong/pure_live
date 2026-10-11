@@ -13,10 +13,23 @@
 /// waves, and this barrel grows with them.
 library;
 
+export 'src/models/content/content_category/content_category.dart';
+export 'src/models/content/content_detail/content_detail.dart';
 export 'src/models/content/content_chapter.dart';
 export 'src/models/content/content_comment.dart';
-export 'src/models/content/content_ref.dart';
-export 'src/models/content/paging.dart';
+export 'src/models/content/content_kind/content_kind.dart';
+export 'src/models/content/content_metadata/content_metadata.dart';
+export 'src/models/content/content_query/content_query.dart';
+export 'src/models/content/content_ref/content_ref.dart';
+export 'src/models/content/content_sort/content_sort.dart';
+export 'src/models/content/content_summary/content_summary.dart';
+export 'src/models/content/content_tag/content_tag.dart';
+export 'src/models/content/page_mode/page_mode.dart';
+export 'src/models/content/page_request/page_request.dart';
+export 'src/models/content/page_result/page_result.dart';
+export 'src/models/content/refresh_reason/refresh_reason.dart';
+export 'src/models/content/search_query/search_query.dart';
+export 'src/models/content/selection_ref/selection_ref.dart';
 export 'src/models/diagnostics/diagnostic_event.dart';
 export 'src/models/error/platform_error_info.dart';
 export 'src/models/extension/extension_descriptor.dart';

@@ -20,7 +20,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../support/json.dart';
-import '../content/paging.dart';
+import '../content/selection_ref/selection_ref.dart';
 import 'stream_option_kind.dart';
 
 /// One choice a source offers for [StreamOptionKind].
