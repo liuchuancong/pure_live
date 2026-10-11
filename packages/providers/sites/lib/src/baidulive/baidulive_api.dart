@@ -904,10 +904,7 @@ final class BaiduliveApi {
       'uid': _deviceId,
       '_': '${_clock().millisecondsSinceEpoch}',
     };
-    final room = baiduliveRoomDetail(
-      await _get('$baiduliveDetailOrigin/searchbox', query),
-      expectedRoomId: roomId,
-    );
+    final room = baiduliveRoomDetail(await _get('$baiduliveDetailOrigin/searchbox', query), expectedRoomId: roomId);
     final filled = fillFromListing ? room.filledBy(_known[roomId]) : room;
     _remember(filled);
     return filled;

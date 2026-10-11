@@ -29,6 +29,8 @@ export 'src/bigo/bigo_api.dart';
 export 'src/bigo/bigo_site.dart';
 export 'src/cc/cc_api.dart';
 export 'src/cc/cc_site.dart';
+export 'src/chzzk/chzzk_api.dart';
+export 'src/chzzk/chzzk_site.dart';
 export 'src/common/site_json.dart';
 export 'src/douyu/douyu_api.dart';
 export 'src/douyu/douyu_site.dart';

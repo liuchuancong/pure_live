@@ -70,6 +70,14 @@
   标题写着 `【重播】` 而状态字段仍说在播时,房间照播,真相记在 tag 里。清晰度是 tier(`blueray`→原画、`ultra`→蓝光,
   表里没有的键保留原名),一个 tier 内部的 cdn 家族才是线路,顺序按站自己的偏好表;原画那档不带 `vbr`,
   所以它的位置来自名字而不是缺席的码率。直播包里的线路值可能只是挂在房间 m3u8 上的 `?sign=`,不是完整地址。
+- `chzzk/` —— `ChzzkSource`:目录游标是**含端点的**(续页多要一行再丢掉重复的边界行;`next` 块把刚发出去的游标原样
+  还回来就是列表到头,而不是可以一直翻),房间是**频道**(`liveId` 一场一个),观众数被 `cvExposure` 挡着时
+  就是**没有观众数** —— 0 会是站点选择 withheld 的那个数。能播的清单不在房间答案里:`livePlaybackJson` 是一段
+  json **字符串**,里面点名的 akamaized 清单读出来才有变体;别的 mediaId 跳过而不是猜成"大概也是 hls"。
+  变体缺 `RESOLUTION` 或 `BANDWIDTH` 就判清单坏了,不给它编一行菜单。同高度的 30fps 与 60fps 是两个选择
+  (`{height}p{60}`),而 HLS 与 LLHLS 的同一形状**合成一个选择、两条线路**。`krOnlyViewing` 是站点拒绝本路径
+  (resolve 里照实说是区域限制,不写成离线)、`adult` 是匿名会话证明不了的分组、`timeMachineActive` 才是
+  "过去可看" ⇒ 只有它落进 `LiveCatchUp`。
 
 ## 钉住的规则
 
@@ -81,8 +89,8 @@
 ## 验证
 
 - 分析:`dart analyze packages/providers/sites`
-- 测试:`dart test packages/providers/sites`(312 条,每个站点目录配一份 `test/<site>/`;README 上列的只是其中几个,
-  weibo / inke / kugou / missevan / kuaishou / baidulive / bigo / cc 见 CHANGELOG。传输一律用 `pure_live_network`
+- 测试:`dart test packages/providers/sites`(339 条,每个站点目录配一份 `test/<site>/`;README 上没列到的
+  weibo / inke / kugou / missevan / kuaishou / baidulive / bigo / cc / chzzk 见 CHANGELOG。传输一律用 `pure_live_network`
   的 `testing.dart` 罐头适配器,不联网)
 - 架构:`dart run tool/check_architecture.dart --strict`
 

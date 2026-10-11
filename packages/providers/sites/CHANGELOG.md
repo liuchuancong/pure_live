@@ -6,6 +6,21 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- **Added**: `chzzk` - the inclusive-cursor live directory (continuation asks one row more and drops the repeated
+  boundary item, and a `next` block that hands back the cursor we just sent ends the list instead of looping it),
+  the channel search read as both rooms and people, the two-call room and the renditions read out of the manifests
+  the playback bundle names. The channel is the room (`liveId` is per broadcast), and the audience number is
+  exposure-gated: when `cvExposure` is not true the room reports no audience at all, because 0 would be a figure
+  the site chose to withhold. `livePlaybackJson` is a json *string* naming HLS and LLHLS manifests on the
+  akamaized family - other media ids are skipped rather than guessed at - and a rendition that states no
+  `RESOLUTION` or no `BANDWIDTH` fails the manifest instead of inventing a menu row. Renditions group by
+  `{height}p{60}` so 30fps and 60fps stay two choices, while HLS and LLHLS of one shape merge into one choice whose
+  two addresses are the lines. `krOnlyViewing` is the site refusing this path (named as a region reason at resolve
+  time, not reported as an offline room), `adult` is a group check the anonymous session cannot prove, and
+  `timeMachineActive` is the site's own word for watchable-past so it is the only one that becomes
+  [LiveCatchUp]. `qualities`, `lines` and `resolve` each read the room once - an earlier draft read it twice per
+  call, which doubled the cost of every menu for the same answer.
+
 - **Added**: `cc` (网易CC直播) - the menu assembled from the Dashen game registry *and* the live-entry
   configuration that selects which of those games are navigable at all (the legacy category endpoint now serves
   the application, not a category list), the fixed-30 grids, the two-call room and the anchor search read as both
