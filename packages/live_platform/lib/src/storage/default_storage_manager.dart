@@ -16,12 +16,18 @@ import 'package:path/path.dart' as p;
 /// a temp directory — if every candidate fails, resolution throws so the
 /// caller can tell the user where data will live.
 final class DefaultStorageManager implements StorageManager {
-  /// A manager over [policy]; [systemTemp] is the last-resort directory
-  /// for cache and temporary areas.
-  new({required this.policy, Directory? systemTemp}) : _systemTemp = systemTemp ?? Directory.systemTemp;
+  /// A manager over [policy]; [runtime] feeds the portable-ordering
+  /// decision (bootstrap injects it after building the snapshot),
+  /// [systemTemp] is the last-resort directory for cache and temporary
+  /// areas.
+  new({required this.policy, this.runtime, Directory? systemTemp}) : _systemTemp = systemTemp ?? Directory.systemTemp;
 
   /// The active candidate policy.
   final StoragePolicy policy;
+
+  /// The runtime snapshot the policy consults; settable so bootstrap can
+  /// attach it after the manager and the snapshot are both built.
+  PlatformRuntimeInfo? runtime;
 
   final Directory _systemTemp;
   final Map<StorageArea, StorageLocation> _resolved = {};
@@ -32,8 +38,9 @@ final class DefaultStorageManager implements StorageManager {
     if (known != null && known.accessState == AccessState.writable) {
       return known;
     }
-    final runtime = _runtime ?? (throw StateError('bootstrap did not inject the runtime snapshot'));
-    for (final candidate in policy.candidatesFor(area, runtime)) {
+    final snapshot =
+        runtime ?? (throw StateError('no runtime snapshot: construct with runtime or run PlatformBootstrap.init'));
+    for (final candidate in policy.candidatesFor(area, snapshot)) {
       final location = await _probe(area, candidate);
       if (location != null) {
         return _resolved[area] = location;
@@ -49,7 +56,7 @@ final class DefaultStorageManager implements StorageManager {
     }
     throw StorageUnavailableException(
       'no writable location for ${area.name} storage; '
-      'candidates: ${policy.candidatesFor(area, runtime).map((d) => d.path).join(', ')}',
+      'candidates: ${policy.candidatesFor(area, snapshot).map((d) => d.path).join(', ')}',
     );
   }
 
@@ -58,12 +65,6 @@ final class DefaultStorageManager implements StorageManager {
     _resolved.remove(area);
     return resolve(area);
   }
-
-  PlatformRuntimeInfo? _runtime;
-
-  /// Injects the runtime snapshot the policy needs; called by bootstrap.
-  // ignore: avoid_setters_without_getters
-  set runtime(PlatformRuntimeInfo value) => _runtime = value;
 
   Future<StorageLocation?> _probe(StorageArea area, Directory candidate) async {
     try {

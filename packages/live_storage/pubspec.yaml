@@ -1,0 +1,25 @@
+name: live_storage
+description: >-
+  Storage infrastructure for Pure Live: the ten-type storage error model,
+  a typed preferences store (in-memory and drift-backed), a secure-store
+  seam for credentials, a path-safe file store over the live_platform
+  directory service, and a versioned fail-loud drift database skeleton.
+  Pure Dart; Flutter plugins plug in at the app shell.
+version: 0.1.0
+publish_to: none
+
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  drift: ^2.35.1
+  live_platform:
+  meta: ^1.19.0
+  path: ^1.9.0
+  sqlite3: ^3.7.0
+
+dev_dependencies:
+  test: ^1.32.0
+  very_good_analysis: ^11.0.0
