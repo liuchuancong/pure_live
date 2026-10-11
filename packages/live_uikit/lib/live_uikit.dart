@@ -30,6 +30,8 @@ export 'src/design_languages/macos/macos_components.dart';
 export 'src/design_languages/macos/macos_language.dart';
 export 'src/design_languages/material/material_components.dart';
 export 'src/design_languages/material/material_language.dart';
+export 'src/design_languages/neumorphic/neumorphic_components.dart';
+export 'src/design_languages/neumorphic/neumorphic_language.dart';
 export 'src/design_languages/yaru/yaru_components.dart';
 export 'src/design_languages/yaru/yaru_language.dart';
 export 'src/focus/live_focus_highlight.dart';

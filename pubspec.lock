@@ -347,6 +347,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_neumorphic_plus:
+    dependency: transitive
+    description:
+      name: flutter_neumorphic_plus
+      sha256: "39fb64ebaf60efec654c7bd3dd8fc56a3265e1b15e925f1d321f1f30ad090fbc"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.5.0"
   flutter_web_plugins:
     dependency: transitive
     description: flutter

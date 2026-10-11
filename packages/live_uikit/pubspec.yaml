@@ -17,6 +17,7 @@ dependencies:
   fluent_ui: ^4.16.1
   flutter:
     sdk: flutter
+  flutter_neumorphic_plus: ^3.5.0
   freezed_annotation: ^3.1.0
   macos_ui: ^2.2.2
   meta: ^1.19.0
