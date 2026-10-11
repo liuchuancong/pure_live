@@ -261,6 +261,20 @@ PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
   );
   runtime.capabilities.register(
     ProviderRegistration(
+      sourceId: inkeSourceId,
+      extensionId: 'built-in.inke',
+      provider: InkeSource(),
+      // search here is a filter over two finite showcases, not a nickname index; the capability is declared
+      // because the surface exists, and the README says what it can and cannot find.
+      capabilities: const CapabilitySet(<CapabilityKind>{
+        CapabilityKind.feed,
+        CapabilityKind.live,
+        CapabilityKind.search,
+      }),
+    ),
+  );
+  runtime.capabilities.register(
+    ProviderRegistration(
       sourceId: weiboSourceId,
       extensionId: 'built-in.weibo',
       provider: WeiboSource(),

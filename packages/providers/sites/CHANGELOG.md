@@ -5,6 +5,13 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- **Added**: `inke` (一直播) - the three finite website catalogues, their tabs, the room endpoint and the one
+  verbatim pull url. Two distinctions this site lives on: `error_code 1099999920` on the room endpoint is the
+  only answer that means "no broadcast in progress" (an unknown code, a 5xx or a catalogue with no verified
+  address all mean something else and are refused rather than reported as offline), and a signed flv url is
+  accepted only on the site's own pull host with the path pinned to this broadcast - no synthesised hls, no url
+  borrowed from another broadcast under the same uid, because a url we assembled is one nobody can debug when it
+  403s. `liveStatus` deliberately does not read the catalogues, so a follow-list poll costs one request.
 - **Added**: `weibo` - the anonymous recommendation snapshot (`PageMode.singleShot`: it is not a pagination
   endpoint, and asking it for page 2 without refusing would loop the same rooms forever), the room answer with
   its identity check, and the gated play url. `watch_limit` / `play_switch` become `LiveRoom.requiresAuth` and a
