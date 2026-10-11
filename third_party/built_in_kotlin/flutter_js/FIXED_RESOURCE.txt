@@ -1,1 +1,0 @@
-HTTP CALL WORKED OK! File returned from https://raw.githubusercontent.com/abner/flutter_js/master/FIXED_RESOURCE.txt
