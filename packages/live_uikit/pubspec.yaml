@@ -18,6 +18,7 @@ dependencies:
   flutter:
     sdk: flutter
   freezed_annotation: ^3.1.0
+  macos_ui: ^2.2.2
   meta: ^1.19.0
 
 dev_dependencies:
