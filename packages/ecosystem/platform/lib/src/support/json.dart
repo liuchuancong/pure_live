@@ -78,3 +78,14 @@ String requireString(Map<String, Object?> json, String field, String model) {
   }
   return value;
 }
+
+/// A `Map<String, String>` field, tolerating the null, non-map and non-string entries the platforms send.
+///
+/// Shared because two model files needed the same six lines, and a private copy per library is how one fixed
+/// bug stays broken in the other file.
+Map<String, String> stringMapField(Object? value) {
+  if (value is! Map) {
+    return const <String, String>{};
+  }
+  return Map<String, String>.fromEntries(value.entries.map((entry) => MapEntry('${entry.key}', '${entry.value}')));
+}

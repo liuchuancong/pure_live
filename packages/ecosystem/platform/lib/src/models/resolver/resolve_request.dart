@@ -12,7 +12,8 @@
 
 import '../../support/json.dart';
 import '../content/content_ref/content_ref.dart';
-import '../media/media_ticket.dart';
+import '../media/media_protocol/media_protocol.dart';
+import '../media/media_ticket/media_ticket.dart';
 
 /// Why the caller is resolving. It is an input to resolution, not a player mode.
 enum PlaybackIntent { normal, audioOnly, background, cast, external, preview }
