@@ -1,0 +1,21 @@
+name: pagination_core
+description: >-
+  Pagination core for Pure Live: one engine, four data-source modes
+  (server paged pages, variable-length server batches, complete server
+  data, local reactive streams), shared by mobile infinite lists and
+  desktop numbered pagination. Generation-guarded sessions keep stale
+  results out; UI is not part of this package.
+version: 0.1.0
+publish_to: none
+
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  meta: ^1.19.0
+
+dev_dependencies:
+  test: ^1.32.0
+  very_good_analysis: ^11.0.0
