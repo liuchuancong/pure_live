@@ -14,6 +14,7 @@ environment:
   flutter: ">=3.47.0"
 
 dependencies:
+  fluent_ui: ^4.16.1
   flutter:
     sdk: flutter
   freezed_annotation: ^3.1.0
