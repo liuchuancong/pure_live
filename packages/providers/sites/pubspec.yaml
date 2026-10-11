@@ -16,6 +16,8 @@ dependencies:
   crypto: ^3.0.7
   # acfun 的搜索页答 HTML(ajaxpipe 片段),标签与实体都交给上游解析器,不手撕正则。
   html: ^0.15.4
+  # bigo 的网页 token 信封是 AES-256-CBC + EVP_BytesToKey(md5),站点自己的浏览器包就是这么算的。
+  pointycastle: ^4.0.0
   pure_live_capability:
     path: ../../ecosystem/capability
   pure_live_network:

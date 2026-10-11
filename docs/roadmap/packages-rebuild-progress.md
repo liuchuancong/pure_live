@@ -621,8 +621,12 @@ platform 的共享模型;能力至少 live+feed+search+resolve 四面,弹幕/主
 ### 站点搬迁进度与下一站要点(2026-10-11 续)
 
 已落 `providers/sites/lib/src/`(一站两文件,测试在同名 test 目录,均已注册进 `registerBuiltInSources`):
-**acfun、douyu、huya、weibo、inke、kugou、missevan、kuaishou、baidulive**(9 个直播站)+ `providers/vod_sites/lib/src/bilibili/`(点播)。
-测试:providers/sites 260 条。仍未落的一侧总数是参考项目的 34 个直播站。
+**acfun、douyu、huya、weibo、inke、kugou、missevan、kuaishou、baidulive、bigo**(10 个直播站)+ `providers/vod_sites/lib/src/bilibili/`(点播)。
+测试:providers/sites 287 条。仍未落的一侧总数是参考项目的 34 个直播站。
+`bigo` 落点是:一份 20 行的有限快照(两页从同一块里切,`total` 真;30 秒复用且失败不缓存)、studio 状态、
+两次 jsonp 换 token 再拿 hls 租约(所以 `liveStatus` 走不带 token 的那次,一次轮询一次请求),
+一路流 ⇒ 申报 quality 不申报 line。它的清单级分片保护编解码随站落地并有往返测试,但**播放链没有分片变换钩子**,
+所以受保护的房会把保护字节交给内核 —— 这条挂在播放器队列,不写成"已支持"。
 `baidulive` 申报 feed+live+quality+line 四面,**不申报 search**:它的匿名面只按房间 id 索引,
 给它一个"搜什么都是空"的搜索框就是谎报平台能力。它的目录是继 acfun 之后第二个游标翻页的(游标是 `session_id`+
 `refresh_index` 的服务器答案,不是页码),清晰度轴是 `protocol:resolution:codec`,变体内部的地址才是线路。

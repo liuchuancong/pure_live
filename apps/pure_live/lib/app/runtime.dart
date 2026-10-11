@@ -291,6 +291,21 @@ PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
   );
   runtime.capabilities.register(
     ProviderRegistration(
+      sourceId: bigoSourceId,
+      extensionId: 'built-in.bigo',
+      provider: BigoSource(),
+      // One finite block and one stream: a quality menu of one and deliberately no line axis. The lease needs a
+      // token handshake, so the status path is the request-free studio call.
+      capabilities: const CapabilitySet(<CapabilityKind>{
+        CapabilityKind.feed,
+        CapabilityKind.live,
+        CapabilityKind.search,
+        CapabilityKind.quality,
+      }),
+    ),
+  );
+  runtime.capabilities.register(
+    ProviderRegistration(
       sourceId: baiduliveSourceId,
       extensionId: 'built-in.baidulive',
       provider: BaiduliveSource(),

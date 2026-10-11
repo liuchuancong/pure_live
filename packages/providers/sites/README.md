@@ -53,6 +53,14 @@
   拉流地址必须落在站自己的 cdn 域名、`/live/` 路径、对应扩展名,并且**路径里带着这个房间的 id**;
   `flv-live.bdstatic.com` 按站点客户端的做法**就是 http**,票据如实报 `MediaProtocol.http` 而不是谎称 https。
   预告是 `notStarted`,回放是 `ended` 且申报可回看;细细的房间答案会用列表卡片补齐展示字段,但**绝不补观看人数**。
+- `bigo/` —— `BigoSource`:首页是**一份有限快照**(20 行,两页都从它切,`total` 是真的;30 秒内复用,失败不缓存),
+  房间是 studio 命令。**房间是句柄不是数字**:`room_id` 是超出 javascript 精确整数范围的 int64,只能按**文本**留着,
+  过一遍 double 就会指向一个不存在的场次。**被门禁的 `alive == 0` 不是"已下播"的观测**,所以登录房/密码房读作
+  `unknown` + `restriction` 说明原因;反过来,门禁房或站点说没在播的房间递来 `hls_src` 是**接口变了**,直接拒绝 ——
+  地址存在不等于有权播放。换地址要先走两次 jsonp(服务器时间戳 → AES-256-CBC 信封,密钥用 OpenSSL
+  EVP_BytesToKey 从站点公开包里的口令派生),**回调名不是自己那个就不执行**。一路流就是一个清晰度、**没有线路轴**。
+  清单级保护 `BigoHlsProtection`(TS 头两个包各 16 字节按种子 xorshift 异或)已带往返测试,但播放链还没有
+  分片变换钩子,这条缺口写在台账里。
 
 ## 钉住的规则
 
@@ -64,8 +72,8 @@
 ## 验证
 
 - 分析:`dart analyze packages/providers/sites`
-- 测试:`dart test packages/providers/sites`(260 条,每个站点目录配一份 `test/<site>/`;README 上列的只是其中几个,
-  weibo / inke / kugou / missevan / kuaishou / baidulive 见 CHANGELOG。传输一律用 `pure_live_network`
+- 测试:`dart test packages/providers/sites`(287 条,每个站点目录配一份 `test/<site>/`;README 上列的只是其中几个,
+  weibo / inke / kugou / missevan / kuaishou / baidulive / bigo 见 CHANGELOG。传输一律用 `pure_live_network`
   的 `testing.dart` 罐头适配器,不联网)
 - 架构:`dart run tool/check_architecture.dart --strict`
 

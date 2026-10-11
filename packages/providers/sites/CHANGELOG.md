@@ -6,6 +6,18 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- **Added**: `bigo` - the finite homepage block (one snapshot of 20 rows that both pages are sliced from, with a
+  real `total` and a 30-second reuse that is *not* cached on failure), the studio status, the token-handed lease and
+  the three-way access gate. `bigo_id` is the room and `room_id` is an int64 kept as **text**, because rounding it
+  through a double names a broadcast that does not exist. A gated `alive == 0` is not an offline observation, so a
+  login or password room reads as `unknown` with the reason in `restriction` - and a gated room, or a room the site
+  says is not broadcasting, that ships an `hls_src` is refused as a schema change: presence of a url is not
+  permission. The lease needs a two-call jsonp handshake (a server timestamp, then an AES-256-CBC envelope keyed by
+  OpenSSL's EVP_BytesToKey from the site's bundle passphrase); a jsonp answer under a different callback name is not
+  executed. One stream means a quality menu of one and **no line axis**. The manifest-level
+  `BigoHlsProtection` codec ships here and is tested round-trip, but the playback path has no per-segment transform
+  hook yet, so a protected room would feed the kernel protected bytes - recorded as a player-layer queue item.
+
 - **Added**: `baidulive` (百度直播) - the session-cursored feed (`session_id` + `refresh_index`, so a page past the
   first asked without its cursor is refused instead of answered as page one, and an answer that repeats its own
   counter ends the list rather than looping the same rooms), the tab block that arrives *with* the feed because the
