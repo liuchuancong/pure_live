@@ -8,6 +8,7 @@ environment:
   sdk: ^3.13.0
 
 workspace:
+  - apps/pure_live
   - packages/live_interaction
   - packages/live_iptv
   - packages/live_library

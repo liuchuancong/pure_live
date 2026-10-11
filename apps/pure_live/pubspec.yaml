@@ -1,0 +1,38 @@
+name: pure_live
+description: >-
+  Pure Live: the application composition root. It boots the platform layer,
+  opens the storage, installs the logging and network stacks, resolves the
+  theme from the user's preferences and assembles the pages out of the
+  business packages and live_uikit.
+version: 0.1.0
+publish_to: none
+
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  drift: ^2.28.0
+  flutter:
+    sdk: flutter
+  live_interaction:
+  live_iptv:
+  live_library:
+  live_log:
+  live_net:
+  live_platform:
+  live_playback:
+  live_preferences:
+  live_sites:
+  live_storage:
+  live_uikit:
+  path: ^1.9.0
+  path_provider: ^2.1.5
+
+dev_dependencies:
+  very_good_analysis: ^11.0.0
+
+flutter:
+  uses-material-design: true
