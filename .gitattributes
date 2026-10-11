@@ -1,0 +1,31 @@
+# Normalize all text files to LF in the repository; the working copy keeps
+# the platform default via git's autocrlf. Matches the .editorconfig rule
+# (end_of_line = lf) so checkouts stay consistent across Windows, Linux and
+# macOS.
+* text=auto eol=lf
+
+# Windows-only scripts must keep CRLF; some tools misparse LF batch files.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binaries — never normalize.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.zip binary
+*.gz binary
+*.mp4 binary
+*.webm binary
+*.mp3 binary
+*.flv binary
+*.ts binary
+*.db binary
+*.hive binary
