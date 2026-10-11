@@ -61,7 +61,15 @@ final class ChzzkSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, L
   /// parameters this build sends — with them it answers the site-wide list,
   /// starting with the same room — and the filtered paths tried
   /// (`categories/live/<id>/lives`, `filterType=CATEGORY`) answer nothing at
-  /// all. A category listing that silently returns the unfiltered list is
+  /// all.
+  ///
+  /// Since then these were tried and are known *not* to work either, so a
+  /// next attempt should look elsewhere than parameter and version shapes:
+  /// `categoryId` alone, `categoryType`+`categoryId`+`sortType=POPULAR`
+  /// +`filterType=CATEGORY`, and the `v2`/`v3` live paths (which answer
+  /// nothing at all, not even JSON). The real endpoint is somewhere else —
+  /// most likely the one the site's own category page calls, which may carry
+  /// a signature. A category listing that silently returns the unfiltered list is
   /// worse than one that says it is missing, because the viewer sees rooms
   /// that are not in the category they picked and has no way to tell.
   ///
