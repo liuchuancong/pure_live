@@ -1,4 +1,5 @@
 import 'package:live_iptv/src/model/iptv_models.dart';
+import 'package:live_iptv/src/playlist/playlist_parse_result.dart';
 
 /// The playlist format the parser recognised.
 enum IptvPlaylistFormat {
@@ -27,12 +28,25 @@ IptvPlaylistFormat? detectPlaylistFormat(String text) {
 /// itself, never the whole playlist; URLs may carry `|`-suffixed headers
 /// (`url|User-Agent=…&Referer=…`), which are split into the entry's
 /// headers.
-List<IptvEntry> parsePlaylist(String text, {IptvPlaylistFormat? format}) {
+List<IptvEntry> parsePlaylist(String text, {IptvPlaylistFormat? format}) =>
+    parsePlaylistResult(text, format: format).entries;
+
+/// Parses a playlist and reports what it found wrong.
+///
+/// The result carries the entries *and* the problems, because the two
+/// together are what an import has to decide on: a playlist whose last
+/// `#EXTINF` never got its URL was cut off mid-download (truncated) and must
+/// not replace a good saved one, while one with a handful of unparsable
+/// lines imports fine and just says so.
+PlaylistParseResult parsePlaylistResult(String text, {IptvPlaylistFormat? format}) {
   final actual = format ?? detectPlaylistFormat(text);
   return switch (actual) {
-    IptvPlaylistFormat.m3u => parseM3u(text),
-    IptvPlaylistFormat.txt => parseTxt(text),
-    null => const [],
+    IptvPlaylistFormat.m3u => parseM3uResult(text),
+    IptvPlaylistFormat.txt => parseTxtResult(text),
+    null => PlaylistParseResult(
+      entries: const [],
+      issues: const [PlaylistIssue(0, 'the text is neither an M3U nor a text playlist')],
+    ),
   };
 }
 
@@ -42,8 +56,21 @@ List<IptvEntry> parsePlaylist(String text, {IptvPlaylistFormat? format}) {
 /// `tvg-logo`, `group-title`, `catchup*`), `#EXTGRP` as the running
 /// group, `#EXTVLCOPT`/`#KODIPROP` request options
 /// (`http-user-agent=`, `http-referrer=`) and the `url|headers` tail.
-List<IptvEntry> parseM3u(String text) {
+List<IptvEntry> parseM3u(String text) => parseM3uResult(text).entries;
+
+/// Parses an extended M3U playlist and reports its problems.
+///
+/// A dangling `#EXTINF` at the end of the text (a stanza that never received
+/// its URL) is reported as truncated rather than as a skipped line: it is the
+/// signature of an interrupted download, and the caller decides what that
+/// means for the data it already has.
+PlaylistParseResult parseM3uResult(String text) {
   final entries = <IptvEntry>[];
+  final issues = <PlaylistIssue>[];
+  // The issue reports carry line numbers, so the walk counts lines rather
+  // than only the lines it acts on.
+  var lineNumber = 0;
+  var dangling = false;
   String? pendingName;
   var pendingAttributes = const <String, String>{};
   final headers = <String, String>{};
@@ -54,6 +81,14 @@ List<IptvEntry> parseM3u(String text) {
     final parsed = splitUrlHeaders(urlLine);
     final url = parsed.url;
     if (url.isEmpty) {
+      return;
+    }
+    if (!_looksLikeUrl(url)) {
+      issues.add(PlaylistIssue(lineNumber, 'the address is not a URL: "$url"'));
+      pendingName = null;
+      pendingAttributes = const {};
+      headers.clear();
+      alternatives.clear();
       return;
     }
     final allHeaders = {...headers, ...parsed.headers};
@@ -77,11 +112,16 @@ List<IptvEntry> parseM3u(String text) {
   }
 
   for (final rawLine in text.split('\n')) {
+    lineNumber++;
     final line = rawLine.trim();
     if (line.isEmpty) {
       continue;
     }
     if (line.startsWith('#EXTINF:')) {
+      if (dangling) {
+        issues.add(PlaylistIssue(lineNumber - 1, 'an #EXTINF line was replaced before its URL arrived'));
+      }
+      dangling = true;
       pendingName = _nameOf(line);
       pendingAttributes = _attributesOf(line);
       continue;
@@ -109,6 +149,7 @@ List<IptvEntry> parseM3u(String text) {
     }
     if (pendingName != null || pendingAttributes.isNotEmpty) {
       flush(line);
+      dangling = false;
     } else if (alternatives.isEmpty && entries.isEmpty) {
       // A bare URL without EXTINF: still a channel.
       flush(line);
@@ -117,17 +158,26 @@ List<IptvEntry> parseM3u(String text) {
       // the current channel; tolerate it as its own channel instead — the
       // safer reading for malformed playlists.
       flush(line);
+    } else {
+      issues.add(PlaylistIssue(lineNumber, 'the line is neither a directive nor a URL'));
     }
   }
-  return entries;
+  if (dangling) {
+    issues.add(PlaylistIssue(lineNumber, 'the playlist ends inside a stanza: the download was probably cut'));
+  }
+  return PlaylistParseResult(entries: entries, issues: issues, truncated: dangling);
 }
 
 /// Parses the plain text list format.
 ///
 /// `name,url` lines belong to the running `group,#genre#` header; `#`
 /// separates alternative URLs of one channel.
-List<IptvEntry> parseTxt(String text) {
+List<IptvEntry> parseTxt(String text) => parseTxtResult(text).entries;
+
+/// Parses the plain text list format and reports its problems.
+PlaylistParseResult parseTxtResult(String text) {
   final entries = <IptvEntry>[];
+  final issues = <PlaylistIssue>[];
   var group = '';
   for (final rawLine in text.split('\n')) {
     final line = rawLine.trim();
@@ -140,8 +190,10 @@ List<IptvEntry> parseTxt(String text) {
     }
     final name = line.substring(0, separator).trim();
     final rest = line.substring(separator + 1).trim();
-    if (rest.replaceAll('#', '').trim().isEmpty) {
-      // `name,#genre#` heads a group.
+    if (_isGenreHeader(rest)) {
+      // `name,#genre#` heads a group; providers also write `#genre` without
+      // the closing hash, and a header read as a channel would put a bogus
+      // "央视" channel with the URL "#genre#" in the library.
       group = name;
       continue;
     }
@@ -163,7 +215,29 @@ List<IptvEntry> parseTxt(String text) {
       ),
     );
   }
-  return entries;
+  return PlaylistParseResult(entries: entries, issues: issues);
+}
+
+/// Whether [text] is the TXT format's group marker (`#genre#`, `#genre`).
+bool _isGenreHeader(String text) {
+  final stripped = text.replaceAll('#', '').trim().toLowerCase();
+  return stripped == 'genre' || stripped.isEmpty;
+}
+
+/// Whether [value] looks like a playback address.
+///
+/// A scheme is required (http, https, rtmp, rtsp, udp, file all carry
+/// `://`), and a protocol-relative address is accepted because some
+/// playlists write them. Everything else — a note, a name, a comment that
+/// lost its `#` — is not something any player can open, and importing it as
+/// a channel hides the fact that the line was broken.
+bool _looksLikeUrl(String value) {
+  final text = value.trim();
+  if (text.startsWith('//')) {
+    return true;
+  }
+  final scheme = RegExp(r'^[a-zA-Z][a-zA-Z0-9+.\-]*://').firstMatch(text);
+  return scheme != null;
 }
 
 /// Splits `url` from a `url|Key=Value&Key2=Value2` tail.
