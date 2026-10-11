@@ -105,6 +105,61 @@ abstract final class MissevanParser {
     return lines;
   }
 
+  /// The area namespaces of the `meta/data` tabs, and the tab field each id
+  /// lives in.
+  ///
+  /// A catalog and a tag with the same number are *different* areas, which is
+  /// why the namespace is part of an area's identity here rather than a
+  /// label: the request that lists an area is chosen by the namespace, and
+  /// collapsing the two would send the wrong one.
+  static const Map<String, String> areaNamespaces = {'catalog': '分区', 'list': '团播', 'tag': '标签'};
+
+  static const Map<String, String> _tabIdField = {'catalog': 'catalog_id', 'tag': 'tag_id', 'list': 'list_type'};
+
+  /// `meta/data` → the site's areas, flattened.
+  ///
+  /// The catalogue lives under `info`, not under the `data` object the room
+  /// answers use — the same site, two envelopes — so it is read here rather
+  /// than through the room reader, which would reject it.
+  ///
+  /// One request carries every namespace: each tab names its kind (`type`),
+  /// its id (under the field that kind uses) and its label. A row without a
+  /// usable id or label is skipped, and a file with no usable tab at all is
+  /// an API change — an empty catalogue and a changed answer must not look
+  /// the same.
+  static List<LiveArea> areas(Map<String, Object?> body) {
+    final data = SiteJson.object(body['info']).isEmpty ? SiteJson.object(body['data']) : SiteJson.object(body['info']);
+    final tabs = SiteJson.list(data['tabs']);
+    if (tabs.isEmpty || tabs.length > 100) {
+      throw const SiteApiChangedError('missevan meta/data: no tabs');
+    }
+    final areas = <LiveArea>[];
+    final seen = <String>{};
+    for (final tab in tabs) {
+      if (tab is! Map<String, Object?>) {
+        continue;
+      }
+      final type = SiteText.trimmed(tab['type']);
+      final idField = _tabIdField[type];
+      final id = idField == null ? null : SiteCounts.integer(tab[idField]);
+      final name = SiteText.title(SiteText.text(tab['name']));
+      if (id == null || id <= 0 || name.isEmpty) {
+        continue;
+      }
+      if (!seen.add('$type:$id')) {
+        continue;
+      }
+      areas.add(LiveArea(id: '$id', name: name, parentId: type));
+    }
+    if (areas.isEmpty) {
+      throw const SiteApiChangedError('missevan meta/data: no usable tab');
+    }
+    return areas;
+  }
+
+  /// The name shown for a namespace, or its own id when unknown.
+  static String areaNamespaceName(String type) => areaNamespaces[type] ?? type;
+
   static Map<String, Object?>? _channel(Map<String, Object?> row) {
     final channel = row['channel'];
     return channel is Map<String, Object?> ? channel : null;
