@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:live_iptv/src/model/guide_models.dart';
 import 'package:live_iptv/src/model/iptv_models.dart';
 import 'package:live_storage/live_storage.dart';
 
@@ -11,11 +12,35 @@ abstract interface class IptvStore {
   /// Loads the imported playlists.
   Future<List<IptvPlaylist>> loadPlaylists();
 
+  /// Loads the guide sources (in import order).
+  Future<List<EpgSource>> loadGuideSources();
+
+  /// Loads every stored guide channel.
+  Future<List<EpgChannel>> loadGuideChannels();
+
+  /// Loads every stored programme.
+  Future<List<EpgProgramme>> loadGuideProgrammes();
+
+  /// Loads every stored channel-to-guide mapping.
+  Future<List<EpgMapping>> loadGuideMappings();
+
   /// Stores the channels.
   Future<void> saveChannels(List<IptvChannel> channels);
 
   /// Stores the playlists.
   Future<void> savePlaylists(List<IptvPlaylist> playlists);
+
+  /// Stores the guide sources.
+  Future<void> saveGuideSources(List<EpgSource> sources);
+
+  /// Stores every guide channel (the whole set, one write).
+  Future<void> saveGuideChannels(List<EpgChannel> channels);
+
+  /// Stores every programme (the whole set, one write).
+  Future<void> saveGuideProgrammes(List<EpgProgramme> programmes);
+
+  /// Stores every channel-to-guide mapping (the whole set, one write).
+  Future<void> saveGuideMappings(List<EpgMapping> mappings);
 
   /// Emits when another writer changed the library.
   Stream<void> get changes;
@@ -28,6 +53,18 @@ abstract final class IptvKeys {
 
   /// Imported playlists.
   static const String playlists = 'iptv.playlists.v1';
+
+  /// Guide sources.
+  static const String guideSources = 'iptv.guideSources.v1';
+
+  /// Stored guide channels.
+  static const String guideChannels = 'iptv.guideChannels.v1';
+
+  /// Stored programmes.
+  static const String guideProgrammes = 'iptv.guideProgrammes.v1';
+
+  /// Channel-to-guide mappings.
+  static const String guideMappings = 'iptv.guideMappings.v1';
 }
 
 /// An [IptvStore] over the live_storage preferences seam.
@@ -55,6 +92,34 @@ final class PreferencesIptvStore implements IptvStore {
   Future<void> savePlaylists(List<IptvPlaylist> playlists) =>
       _save(IptvKeys.playlists, playlists, (playlist) => playlist.toJson());
 
+  @override
+  Future<List<EpgSource>> loadGuideSources() => _load(IptvKeys.guideSources, EpgSource.fromJson);
+
+  @override
+  Future<List<EpgChannel>> loadGuideChannels() => _load(IptvKeys.guideChannels, EpgChannel.fromJson);
+
+  @override
+  Future<List<EpgProgramme>> loadGuideProgrammes() => _load(IptvKeys.guideProgrammes, EpgProgramme.fromJson);
+
+  @override
+  Future<List<EpgMapping>> loadGuideMappings() => _load(IptvKeys.guideMappings, EpgMapping.fromJson);
+
+  @override
+  Future<void> saveGuideSources(List<EpgSource> sources) =>
+      _save(IptvKeys.guideSources, sources, (source) => source.toJson());
+
+  @override
+  Future<void> saveGuideChannels(List<EpgChannel> channels) =>
+      _save(IptvKeys.guideChannels, channels, (channel) => channel.toJson());
+
+  @override
+  Future<void> saveGuideProgrammes(List<EpgProgramme> programmes) =>
+      _save(IptvKeys.guideProgrammes, programmes, (programme) => programme.toJson());
+
+  @override
+  Future<void> saveGuideMappings(List<EpgMapping> mappings) =>
+      _save(IptvKeys.guideMappings, mappings, (mapping) => mapping.toJson());
+
   Future<List<T>> _load<T>(String key, T Function(Map<String, Object?>) fromJson) async {
     final raw = await preferences.read(key);
     if (raw is! List) {
@@ -78,6 +143,10 @@ final class InMemoryIptvStore implements IptvStore {
   final _changes = StreamController<void>.broadcast();
   List<IptvChannel> _channels = const [];
   List<IptvPlaylist> _playlists = const [];
+  List<EpgSource> _sources = const [];
+  List<EpgChannel> _guideChannels = const [];
+  List<EpgProgramme> _programmes = const [];
+  List<EpgMapping> _mappings = const [];
 
   @override
   Stream<void> get changes => _changes.stream;
@@ -89,6 +158,18 @@ final class InMemoryIptvStore implements IptvStore {
   Future<List<IptvPlaylist>> loadPlaylists() async => _playlists;
 
   @override
+  Future<List<EpgSource>> loadGuideSources() async => _sources;
+
+  @override
+  Future<List<EpgChannel>> loadGuideChannels() async => _guideChannels;
+
+  @override
+  Future<List<EpgProgramme>> loadGuideProgrammes() async => _programmes;
+
+  @override
+  Future<List<EpgMapping>> loadGuideMappings() async => _mappings;
+
+  @override
   Future<void> saveChannels(List<IptvChannel> channels) async {
     _channels = List.unmodifiable(channels);
     _changes.add(null);
@@ -97,6 +178,30 @@ final class InMemoryIptvStore implements IptvStore {
   @override
   Future<void> savePlaylists(List<IptvPlaylist> playlists) async {
     _playlists = List.unmodifiable(playlists);
+    _changes.add(null);
+  }
+
+  @override
+  Future<void> saveGuideSources(List<EpgSource> sources) async {
+    _sources = List.unmodifiable(sources);
+    _changes.add(null);
+  }
+
+  @override
+  Future<void> saveGuideChannels(List<EpgChannel> channels) async {
+    _guideChannels = List.unmodifiable(channels);
+    _changes.add(null);
+  }
+
+  @override
+  Future<void> saveGuideProgrammes(List<EpgProgramme> programmes) async {
+    _programmes = List.unmodifiable(programmes);
+    _changes.add(null);
+  }
+
+  @override
+  Future<void> saveGuideMappings(List<EpgMapping> mappings) async {
+    _mappings = List.unmodifiable(mappings);
     _changes.add(null);
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:live_iptv/src/library/iptv_store.dart';
+import 'package:live_iptv/src/model/guide_models.dart';
 import 'package:live_iptv/src/model/iptv_models.dart';
 import 'package:live_iptv/src/playlist/playlist_parse_result.dart';
 import 'package:live_iptv/src/playlist/playlist_parser.dart';
@@ -26,6 +27,10 @@ final class IptvLibrary {
   final _changes = StreamController<void>.broadcast();
   List<IptvChannel> _channels = const [];
   List<IptvPlaylist> _playlists = const [];
+  List<EpgSource> _sources = const [];
+  List<EpgChannel> _guideChannels = const [];
+  List<EpgProgramme> _programmes = const [];
+  List<EpgMapping> _mappings = const [];
   bool _loaded = false;
   StreamSubscription<void>? _external;
 
@@ -38,6 +43,9 @@ final class IptvLibrary {
   /// The imported playlists.
   List<IptvPlaylist> get playlists => List.unmodifiable(_playlists);
 
+  /// The guide sources, in import order.
+  List<EpgSource> get guideSources => List.unmodifiable(_sources);
+
   /// Loads the library (idempotent).
   Future<void> load() async {
     if (_loaded) {
@@ -46,8 +54,60 @@ final class IptvLibrary {
     _loaded = true;
     _channels = await store.loadChannels();
     _playlists = await store.loadPlaylists();
+    _sources = await store.loadGuideSources();
+    _guideChannels = await store.loadGuideChannels();
+    _programmes = await store.loadGuideProgrammes();
+    _mappings = await store.loadGuideMappings();
     _external ??= store.changes.listen((_) => unawaited(_reload()));
   }
+
+  /// The guide source [id], or null.
+  EpgSource? guideSource(String id) {
+    for (final source in _sources) {
+      if (source.id == id) {
+        return source;
+      }
+    }
+    return null;
+  }
+
+  /// The channels of the guide source [sourceId].
+  List<EpgChannel> guideChannels(String sourceId) => List.unmodifiable([
+    for (final channel in _guideChannels)
+      if (channel.sourceId == sourceId) channel,
+  ]);
+
+  /// The mappings of the playlist [playlistId].
+  List<EpgMapping> mappings(String playlistId) => List.unmodifiable([
+    for (final mapping in _mappings)
+      if (mapping.playlistId == playlistId) mapping,
+  ]);
+
+  /// The programmes of guide channel [channelKey] that start at or after
+  /// [from] and stop at or before [to], by start.
+  ///
+  /// The key is the one a room carries ([epgChannelKey]), so a caller that
+  /// holds a room can ask without knowing how the library sorted them.
+  List<EpgProgramme> programmes(String channelKey, {required DateTime from, required DateTime to}) {
+    final matching = [
+      for (final programme in _programmes)
+        if (epgChannelKey(programme.sourceId, programme.channelId) == channelKey &&
+            !programme.start.isBefore(from) &&
+            !programme.stop.isAfter(to))
+          programme,
+    ]..sort((a, b) => a.start.compareTo(b.start));
+    return List.unmodifiable(matching);
+  }
+
+  /// The programmes of [channelKeys] that are on air at [at]: started at or
+  /// before it and not stopped yet.
+  List<EpgProgramme> programmesAt(Set<String> channelKeys, DateTime at) => List.unmodifiable([
+    for (final programme in _programmes)
+      if (channelKeys.contains(epgChannelKey(programme.sourceId, programme.channelId)) &&
+          !programme.start.isAfter(at) &&
+          !programme.stop.isBefore(at))
+        programme,
+  ]);
 
   /// The playlist named [name] (case-insensitive), or null.
   ///
@@ -217,7 +277,14 @@ final class IptvLibrary {
       for (final playlist in _playlists)
         if (playlist.id != id) playlist,
     ];
+    // The playlist's mappings go with it: a mapping names one of its
+    // channels, and that channel no longer exists.
+    _mappings = [
+      for (final mapping in _mappings)
+        if (mapping.playlistId != id) mapping,
+    ];
     await store.savePlaylists(_playlists);
+    await store.saveGuideMappings(_mappings);
     _changes.add(null);
   }
 
@@ -263,6 +330,126 @@ final class IptvLibrary {
     await _changes.close();
   }
 
+  /// Replaces guide source [source] with [channels] and [programmes], and
+  /// drops the sources in [duplicates] with everything of theirs.
+  ///
+  /// One write per list: a source's data is only ever replaced whole, because
+  /// a guide that updated its channels but not its programmes shows a week of
+  /// programmes under the wrong names. [duplicates] are sources the user named
+  /// the same — importing a guide again under a name they already have must
+  /// not leave two sources whose programmes fight over the same channels.
+  Future<void> saveGuide(
+    EpgSource source,
+    List<EpgChannel> channels,
+    List<EpgProgramme> programmes, {
+    List<EpgSource> duplicates = const [],
+  }) async {
+    final dropped = {for (final duplicate in duplicates) duplicate.id};
+    _sources = [
+      for (final saved in _sources)
+        if (!dropped.contains(saved.id)) saved,
+    ];
+    _guideChannels = [
+      for (final channel in _guideChannels)
+        if (!dropped.contains(channel.sourceId)) channel,
+    ];
+    _programmes = [
+      for (final programme in _programmes)
+        if (!dropped.contains(programme.sourceId)) programme,
+    ];
+    _mappings = [
+      for (final mapping in _mappings)
+        if (!dropped.contains(mapping.epgSourceId)) mapping,
+    ];
+    _sources = [..._sources, source];
+    _guideChannels = [..._guideChannels, ...channels];
+    _programmes = [..._programmes, ...programmes];
+    await _commitGuide();
+  }
+
+  /// Updates the fields of a guide source without touching its data.
+  Future<void> updateGuideSource(EpgSource source) async {
+    if (guideSource(source.id) == null) {
+      return;
+    }
+    _sources = [
+      for (final saved in _sources)
+        if (saved.id == source.id) source else saved,
+    ];
+    await _commitGuide();
+  }
+
+  /// Deletes the guide source [id] with its channels, its programmes and the
+  /// mappings that named it; false when there is no such source.
+  ///
+  /// The mappings go with it because a mapping to a deleted guide would
+  /// otherwise keep a room pointing at programmes that no longer exist.
+  Future<bool> deleteGuideSource(String id) async {
+    if (guideSource(id) == null) {
+      return false;
+    }
+    _sources = [
+      for (final source in _sources)
+        if (source.id != id) source,
+    ];
+    _guideChannels = [
+      for (final channel in _guideChannels)
+        if (channel.sourceId != id) channel,
+    ];
+    _programmes = [
+      for (final programme in _programmes)
+        if (programme.sourceId != id) programme,
+    ];
+    _mappings = [
+      for (final mapping in _mappings)
+        if (mapping.epgSourceId != id) mapping,
+    ];
+    await _commitGuide();
+    return true;
+  }
+
+  /// Applies the mappings the matcher computed: [upserts] replace whatever is
+  /// stored for their channel, [deletes] name the guide keys to drop.
+  Future<void> applyMappings({required List<EpgMapping> upserts, required List<EpgMapping> deletes}) async {
+    if (upserts.isEmpty && deletes.isEmpty) {
+      return;
+    }
+    final removed = {for (final mapping in deletes) '${mapping.channelId}\u0000${mapping.epgChannelKey}'};
+    final replaced = {for (final mapping in upserts) mapping.channelId};
+    _mappings = [
+      for (final mapping in _mappings)
+        if (!removed.contains('${mapping.channelId}\u0000${mapping.epgChannelKey}') &&
+            !replaced.contains(mapping.channelId))
+          mapping,
+      ...upserts,
+    ];
+    await _commitGuide();
+  }
+
+  /// Deletes the programmes that stopped before [before].
+  ///
+  /// A guide carries days of past programmes; keeping them would grow the
+  /// store without ever being read, because a guide shows what is on now.
+  Future<void> pruneProgrammes(DateTime before) async {
+    final kept = [
+      for (final programme in _programmes)
+        if (!programme.stop.isBefore(before)) programme,
+    ];
+    if (kept.length == _programmes.length) {
+      return;
+    }
+    _programmes = kept;
+    await _commitGuide();
+  }
+
+  Future<void> _commitGuide() async {
+    await store.saveGuideSources(_sources);
+    await store.saveGuideChannels(_guideChannels);
+    await store.saveGuideProgrammes(_programmes);
+    await store.saveGuideMappings(_mappings);
+    _changes.add(null);
+  }
+
   Future<void> _update(String id, IptvChannel Function(IptvChannel) transform) async {
     var changed = false;
     _channels = [
@@ -288,6 +475,10 @@ final class IptvLibrary {
   Future<void> _reload() async {
     _channels = await store.loadChannels();
     _playlists = await store.loadPlaylists();
+    _sources = await store.loadGuideSources();
+    _guideChannels = await store.loadGuideChannels();
+    _programmes = await store.loadGuideProgrammes();
+    _mappings = await store.loadGuideMappings();
     _changes.add(null);
   }
 }
