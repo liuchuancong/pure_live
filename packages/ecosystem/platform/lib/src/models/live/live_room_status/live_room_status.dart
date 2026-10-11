@@ -14,7 +14,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../content/content_ref/content_ref.dart';
-import '../live_room_state.dart';
+import '../live_room_state/live_room_state.dart';
 
 part 'live_room_status.freezed.dart';
 part 'live_room_status.g.dart';

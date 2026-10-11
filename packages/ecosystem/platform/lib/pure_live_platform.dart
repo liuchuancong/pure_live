@@ -14,9 +14,9 @@
 library;
 
 export 'src/models/content/content_category/content_category.dart';
-export 'src/models/content/content_detail/content_detail.dart';
 export 'src/models/content/content_chapter.dart';
 export 'src/models/content/content_comment.dart';
+export 'src/models/content/content_detail/content_detail.dart';
 export 'src/models/content/content_kind/content_kind.dart';
 export 'src/models/content/content_metadata/content_metadata.dart';
 export 'src/models/content/content_query/content_query.dart';
@@ -36,11 +36,11 @@ export 'src/models/extension/extension_descriptor.dart';
 export 'src/models/extension/extension_type.dart';
 export 'src/models/extension/plugin_manifest.dart';
 export 'src/models/identifiers.dart';
-export 'src/models/live/anchor_summary.dart';
-export 'src/models/live/danmaku_kind.dart';
-export 'src/models/live/danmaku_message.dart';
-export 'src/models/live/live_room.dart';
-export 'src/models/live/live_room_state.dart';
+export 'src/models/live/anchor_summary/anchor_summary.dart';
+export 'src/models/live/danmaku_kind/danmaku_kind.dart';
+export 'src/models/live/danmaku_message/danmaku_message.dart';
+export 'src/models/live/live_room/live_room.dart';
+export 'src/models/live/live_room_state/live_room_state.dart';
 export 'src/models/live/live_room_status/live_room_status.dart';
 export 'src/models/media/lyric_document.dart';
 export 'src/models/media/media_ticket.dart';

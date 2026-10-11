@@ -13,13 +13,13 @@
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import '../../support/json.dart';
-import '../content/content_kind/content_kind.dart';
-import '../content/content_metadata/content_metadata.dart';
-import '../content/content_ref/content_ref.dart';
-import '../content/content_summary/content_summary.dart';
-import 'anchor_summary.dart';
-import 'live_room_state.dart';
+import '../../../support/json.dart';
+import '../../content/content_kind/content_kind.dart';
+import '../../content/content_metadata/content_metadata.dart';
+import '../../content/content_ref/content_ref.dart';
+import '../../content/content_summary/content_summary.dart';
+import '../anchor_summary/anchor_summary.dart';
+import '../live_room_state/live_room_state.dart';
 
 part 'live_room.freezed.dart';
 part 'live_room.g.dart';

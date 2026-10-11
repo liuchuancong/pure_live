@@ -14,9 +14,9 @@
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import '../../support/json.dart';
-import '../content/content_ref/content_ref.dart';
-import 'danmaku_kind.dart';
+import '../../../support/json.dart';
+import '../../content/content_ref/content_ref.dart';
+import '../danmaku_kind/danmaku_kind.dart';
 
 part 'danmaku_message.freezed.dart';
 part 'danmaku_message.g.dart';
