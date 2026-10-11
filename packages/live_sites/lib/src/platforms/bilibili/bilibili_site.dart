@@ -15,7 +15,13 @@ import 'package:live_sites/src/platforms/bilibili/session/bilibili_guest_session
 /// Those land with the session-layer migration.
 final class BilibiliSite
     with SiteRoomGuard
-    implements LiveSite, LiveDanmakuCapability, LiveDirectoryCapability, LiveSearchCapability, LiveAreaCatalog {
+    implements
+        LiveSite,
+        LiveDanmakuCapability,
+        LiveDirectoryCapability,
+        LiveSearchCapability,
+        LiveAreaCatalog,
+        LiveAnchorSearch {
   /// A site over [http]; the guest session owns cookies and WBI keys.
   new({required LiveHttp http}) : session = BilibiliGuestSession(http: http);
 
@@ -35,6 +41,27 @@ final class BilibiliSite
     homeUrl: 'https://live.bilibili.com',
     logoUrl: 'https://i0.hdslb.com/bfs/static/jinkela/long/images/TV-Bgroup.png',
   );
+
+  /// The streamers matching [keyword], live or not.
+  ///
+  /// The site searches people and rooms separately, and the two answer
+  /// different things: a search for a name is usually a search for a person,
+  /// while a search for a topic is a search for rooms.
+  @override
+  Future<LivePage<LiveAnchor>> searchAnchors(String keyword, {int page = 1}) async {
+    final text = keyword.trim();
+    if (text.isEmpty) {
+      return const LivePage<LiveAnchor>(items: []);
+    }
+    final number = page < 1 ? 1 : page;
+    final data = await session.getMain('/x/web-interface/search/type', {
+      'search_type': 'live_user',
+      'keyword': text,
+      'page': '$number',
+      'page_size': '30',
+    });
+    return BilibiliParser.searchAnchors(SiteJson.list(data['result']));
+  }
 
   /// The site's area tree, flattened, in one request.
   ///

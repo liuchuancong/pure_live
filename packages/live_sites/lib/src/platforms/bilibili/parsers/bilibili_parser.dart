@@ -141,6 +141,38 @@ abstract final class BilibiliParser {
     return LivePage<LiveRoom>(items: rooms, hasMore: rooms.isNotEmpty);
   }
 
+  /// `search/type?search_type=live_user` → the streamers matching a keyword.
+  ///
+  /// The rows are *people*, not rooms: a user who is not broadcasting has no
+  /// room id at all, which is why this returns anchors — the ones who are on
+  /// air carry the room to open, and the rest are people the user can still
+  /// find and follow.
+  static LivePage<LiveAnchor> searchAnchors(List<Object?> rows) => LivePage<LiveAnchor>(
+    items: [
+      for (final row in rows)
+        if (row is Map<String, Object?>)
+          if (SiteText.trimmed(row['mid']) case final id when id.isNotEmpty)
+            LiveAnchor(
+              id: id,
+              roomId: SiteCounts.integer(row['roomid']) == null ? null : SiteText.trimmed(row['roomid']),
+              name: SiteText.title(SiteText.text(row['uname'])),
+              avatar: _anchorAvatar(row['uface']),
+              live: SiteCounts.flag(row['is_live']),
+            ),
+    ],
+    hasMore: rows.length >= 30,
+  );
+
+  /// An anchor's avatar, with the size suffix the search rows need.
+  static String? _anchorAvatar(Object? value) {
+    final url = SiteText.trimmed(value);
+    if (url.isEmpty) {
+      return null;
+    }
+    final absolute = url.startsWith('//') ? 'https:$url' : url;
+    return absolute.contains('@') ? absolute : '$absolute@240w_240h_1c_1s.webp';
+  }
+
   /// `search/type?search_type=live_room` payload → one page of rooms.
   static LivePage<LiveRoom> searchRooms(Map<String, Object?> data, {required int page}) {
     final result = data['result'];
