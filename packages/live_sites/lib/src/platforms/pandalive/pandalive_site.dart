@@ -23,14 +23,21 @@ final class PandaLiveSite with SiteRoomGuard implements LiveSite {
   SiteMetadata get metadata =>
       const SiteMetadata(id: SiteIds.pandalive, displayName: 'PandaTV', homeUrl: 'https://www.pandalive.co.kr');
 
+  /// Not migrated yet, and both halves go together — the shape is recorded
+  /// here so the next round does not re-derive it: this site's catalogue is
+  /// *constant* (two areas: the public directory and the new broadcasters,
+  /// no request at all), while both room listings come from one POST of
+  /// `live/index` — thirty rooms by popularity, or the new broadcasters
+  /// when that area is picked. A catalogue with a listing that throws would
+  /// be a picker that leads nowhere, which is why neither is here yet.
   @override
-  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
-    throw UnimplementedError('pandalive directory lands with its migration');
+  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) {
+    throw UnimplementedError('pandalive directory lands with the live/index listing');
   }
 
   @override
-  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    throw UnimplementedError('pandalive directory lands with its migration');
+  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) {
+    throw UnimplementedError('pandalive directory lands with the live/index listing');
   }
 
   @override
