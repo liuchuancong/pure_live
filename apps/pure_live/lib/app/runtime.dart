@@ -291,6 +291,22 @@ PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
   );
   runtime.capabilities.register(
     ProviderRegistration(
+      sourceId: chzzkSourceId,
+      extensionId: 'built-in.chzzk',
+      provider: ChzzkSource(),
+      // The playable menu is not in the room answer: it is read out of the manifests the bundle names, so
+      // qualities and resolve each cost the room's two calls plus one fetch per manifest.
+      capabilities: const CapabilitySet(<CapabilityKind>{
+        CapabilityKind.feed,
+        CapabilityKind.live,
+        CapabilityKind.search,
+        CapabilityKind.quality,
+        CapabilityKind.line,
+      }),
+    ),
+  );
+  runtime.capabilities.register(
+    ProviderRegistration(
       sourceId: ccSourceId,
       extensionId: 'built-in.cc',
       provider: CcSource(),
