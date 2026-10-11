@@ -31,6 +31,11 @@
 - `common/site_json.dart` —— `jsonMap` / `jsonList` / `jsonInt` / `jsonDuration` / `jsonString`:字段可能是 map、数字、
   数字字符串、`{value: …}` 盒子或者根本没有。**读不出来的值是缺席,不是 0 也不是空页** —— 把未知观看人数画成 "0" 是平台
   没许过的数,整页解析失败当成"这页没内容"是分页器会相信的谎。
+- `acfun/` —— `AcfunSource`:目录按 `pcursor` **游标**翻页(没有游标的第 N 页直接拒绝,而不是当作第 1 页回答),
+  分类是站自己的 `(filterType, filterId)` 对,房间按**主播 id**寻址(`liveId` 一场一个,拿它当 ref 会在下播后失效),
+  换链要先做一次匿名 visitor 登录(会话按 5 分钟复用、被拒时丢弃、登录失败有退避),清晰度排序用站的 `level`
+  而不是码率数字 —— 两者不同量纲。搜索页答的是包在 json 里的 **HTML**,所以卡片用 `package:html` 解析,
+  而曝光属性是**一段 json 文本**:把它当 Map 取会让搜索"什么都没有且什么都没失败"。
 - `huya/` —— `HuyaSource`:feed / 分类 / 搜索 / 房间状态 / CDN 线路 / guest HLS 换链。AntiCode 的 `fm` 模板**单遍**填充
   (房间名里真写着 `$2`,顺序 replaceFirst 会把签名算到服务器没模板过的串上);`rotl64` 只转低 32 位而保留高 32 位。
 - `douyu/` —— `DouyuSource`:feed / 分类 / 搜索 / 签名换链。描述符按设备签发并共享一次刷新;`expire` 到点会**切断已建立的
@@ -46,8 +51,8 @@
 ## 验证
 
 - 分析:`dart analyze packages/providers/sites`
-- 测试:`dart test packages/providers/sites`(huya 签名/换链、douyu 行形/签名/换链;传输用 `pure_live_network` 的
-  `testing.dart` 罐头适配器,不联网)
+- 测试:`dart test packages/providers/sites`(114 条:acfun 29 + huya 36 + douyu 49;传输一律用 `pure_live_network`
+  的 `testing.dart` 罐头适配器,不联网)
 - 架构:`dart run tool/check_architecture.dart --strict`
 
 ## 未验证

@@ -21,6 +21,8 @@
 /// video is re-openable while a live room is now-or-not, and resolve means different things to the two.
 library;
 
+export 'src/acfun/acfun_api.dart';
+export 'src/acfun/acfun_site.dart';
 export 'src/common/site_json.dart';
 export 'src/douyu/douyu_api.dart';
 export 'src/douyu/douyu_site.dart';

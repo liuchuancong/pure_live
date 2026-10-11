@@ -5,6 +5,10 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- **Added**: `acfun` - the live directory by cursor (`nextCursor`, and a page number asked without its cursor is
+  refused rather than answered as page one), the filter-pair category table, the anchor search read as both rooms
+  and people, the visitor session shared across rooms, the quality menu ordered by the site's own `level` (its
+  bitrate is a different scale, and mixing them sorts 高清 above 蓝光), and the play ticket.
 - **Added**: the package. Every live site is a directory here rather than a package of its own, in the shape the
   reference product uses: `lib/src/<site>/<site>_api.dart` (urls, identity, signing, response readers) and
   `<site>_site.dart` (the capability answers). No per-site model file - callers receive the shared

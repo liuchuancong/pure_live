@@ -214,7 +214,7 @@ final class PureLiveRuntime {
 /// Registers the content sources compiled into this app.
 ///
 /// This app is the live product: the demo seed keeps the feed chain
-/// demonstrable, bilibili vod serves the video band, and huya and douyu serve live
+/// demonstrable, bilibili vod serves the video band, and acfun, huya and douyu serve live
 /// rooms. Sites are plain Dart here by design - no plugin indirection.
 PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
   runtime.capabilities.register(
@@ -242,6 +242,20 @@ PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
         CapabilityKind.feed,
         CapabilityKind.live,
         CapabilityKind.search,
+      }),
+    ),
+  );
+  runtime.capabilities.register(
+    ProviderRegistration(
+      sourceId: acfunSourceId,
+      extensionId: 'built-in.acfun',
+      provider: AcfunSource(),
+      capabilities: const CapabilitySet(<CapabilityKind>{
+        CapabilityKind.feed,
+        CapabilityKind.live,
+        CapabilityKind.search,
+        CapabilityKind.quality,
+        CapabilityKind.line,
       }),
     ),
   );
