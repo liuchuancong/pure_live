@@ -467,6 +467,56 @@
 | 8 | ~~`providers/douyu`~~ **已实现匿名切片(本轮)** | 原空 barrel;现 49 测试、Feed/Browse/Search/Resolve 全在 | 取数参照 `origin/master` 的 v1 维护线(不是 merge)。**剩余**:登录/弹幕/清晰度线路挑选等第一个消费者要时再补;`fixtures/` 仍空,需要一次对斗鱼的实际请求把测试体换成录到的响应 |
 | 9 | `ecosystem` **DoD 逐项已过(本轮收口)**:`plugin_host` 修 2 个真缺陷、10 包补齐 平台矩阵+未验证、清掉 3 处不实描述 | 有实现,未过 DoD | 见 §2 的"队列第 9 项收口"。**剩下的不是实现活而是验收**:三包都还在等宿主 App(js_runtime 与 external_tvbox 至今零测试),真机/真 Flutter 那条门要到 `pure_tvbox` 壳起来才能过 |
 
+## 3bis. 平台覆盖差距与"完整平台包"目标(2026-10-11,对 `wzgrx/pure_live` v4.1.0 实测)
+
+参考项目不是"另一个写法",它是一份**已经跑在生产上的平台清单**:
+`packages/live_core/lib/src/sites/` 下 **34 个站点**(每站 `<site>_api.dart` + `<site>_site.dart`,
+抖音另有 `<site>_sign.dart`,合计 50,698 行 ≈ 每站 1.5k 行),`live_danmaku/lib/src/sites/` 另有 **29 个弹幕协议适配**;
+它的 `LiveSite` 基类公开 18+ 个方法:`getCategories` / `getCategoryRooms` / `getRecommendRooms` / `searchRooms` /
+`searchAnchors` / `getRoomDetail` / **`getPlayQualities`** / **`getPlayUrls(quality)`** / `getLiveStatus` /
+`getSuperChatMessage`,加上 `LivePlayUrlResolution`(带 `PlayLease{refreshAt, expiresAt, cutsConnection}` 与
+per-line headers/format/codec/width/height)、`resolvePlayUrlsForRecovery`、`getPlayUrlRefreshAt/InvalidAt`、
+`getRoomDetailForRefresh/ForRecording`、`searchRoomsCancellable`、`supportsSearchPaginationFor`、
+`getDirectoryPage(AtCursor)`、`discoverPlayQualitiesRaw`。
+
+**我们当时的天花板只有 4 个能力接口**(Browse/Search/Resolve/Feed),`CapabilityKind` 里 danmaku/quality/line/
+lyric/subtitle/comment/chapter/recommendation/account 全都只有名字没有方法集 —— 这就是"包做不到完整"的根因,
+不是哪个包写少了。本轮已补(见 §2 第三轮之后的小节):
+
+- `ecosystem/capability/lib/src/media_capabilities.dart`:`QualityCapability` `LineCapability`
+  `LiveStatusCapability` `DanmakuCapability` `DanmakuSendCapability` `AnchorSearchCapability` `CommentCapability`
+  `LyricCapability` `SubtitleCapability` `ChapterCapability` `RelatedCapability` `AccountCapability`;
+  `testing.dart` 的申报检查现在会拒"申报了却未实现"的每一种(仍无接口的只有 `auth`,以及本质是 L2/包级的
+  history/favorite/playlist/epg/repository)。
+- `ecosystem/platform` 新增配套模型(一类一文件):`StreamOption(Kind)` / `StreamOptions` / `DanmakuMessage(Kind)` /
+  `LiveRoomStatus` / `LiveRoomState` / `AnchorSummary` / `ContentComment` / `ContentChapter` / `LyricDocument` /
+  `SubtitleTrack`;`MediaTicketRefreshInfo` 补 `cutsConnection`(斗鱼的租约到期会**断已有连接**,虎牙不会 ——
+  只有源自己知道这件事,不声明就会出现"画面停了声音还在")。
+- 依赖与文件规范落进 `package-architecture.md` §2.1:一类一文件、生成文件与类同目录、
+  provider 分 `constant/ api/ model/ site/`;默认库 `equatable` / `freezed`+`json_serializable` / `html` /
+  `synchronized` / `pointycastle` / `dart_sm`(参考项目在用同一批,我们不重复造)。
+  护栏 `check_architecture.dart` 现在按 `lib/src/site` 是否存在来要求新布局(旧布局的包仍放行,迁移期不断线)。
+- **模板包已立起来:`providers/huya`** —— 9 个一类一文件、实现了 7 个能力接口、36 条测试、
+  `dispose()` 只关自己造的 client。下一个按同一形状重做:`providers/douyu`(49 测试,先补 lines/qualities/
+  danmaku 的**申报与实现**)、`providers/bilibili`,然后才是新站点。
+
+### 新站点清单(按参考项目顺序,等消费者拍板前先不建空壳)
+
+国内 18:acfun bilibili douyin douyu fc2live huya inke jdlive kilakila kuaishou looklive missevan
+niconico pandalive seventeenlive showroom sixroom soop timi? —— 实际以
+`ls /d/flutter/_ref_pure_live/packages/live_core/lib/src/sites` 为准(34 个);
+海外 16 含 twitch youtube kick picarto liveme bigo steambroadcast chzzk pandalive twitcasting 等。
+**规矩**:`portfolio §6-7` 与 §5 一致 —— 空壳不算交付,新站点必须带着它自己的 `api/site/model/constant` 与
+至少 live+feed+search+resolve 四面出现,弹幕/主播搜索等按该平台真实能力申报。
+
+### 还没做完、需要拍板或消费者出现的两件事
+
+1. **竞速取源**(`live_net/race.dart` 的对应物):现在 `ResolverChain` 是纯顺序降级,首答延迟 = 前面所有源超时之和。
+   做就是并发放大,不做就是首屏延迟;要产品定(用户已说"都要做",故列入队列而非等待)。
+2. **代理**:`foundation/network` 的描述已去掉未实现的 proxy 承诺;参考项目有 `live_net/proxy.dart` +
+   `docs/Q-网络和代理/` 一整组。补实现是"照它做"还是"接系统代理",需要一个消费场景(科学上网/局域网源)来定形状。
+
+
 ## 4. 每包完成的定义(逐条核,不合并勾)
 
 1. `dart analyze` 在该包目录 0 issue;`dart run tool/check_architecture.dart --strict` 全仓 0 错;
