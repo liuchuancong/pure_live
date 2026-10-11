@@ -70,6 +70,13 @@
   标题写着 `【重播】` 而状态字段仍说在播时,房间照播,真相记在 tag 里。清晰度是 tier(`blueray`→原画、`ultra`→蓝光,
   表里没有的键保留原名),一个 tier 内部的 cdn 家族才是线路,顺序按站自己的偏好表;原画那档不带 `vbr`,
   所以它的位置来自名字而不是缺席的码率。直播包里的线路值可能只是挂在房间 m3u8 上的 `?sign=`,不是完整地址。
+- `jdlive/` —— `JdliveSource`:所有调用都是 `api.m.jd.com/api?appid=h5-live&functionId=…&body=<json>`,
+  `code`/`subCode` 在这个网关里是**文本** `'0'`(按数字比就把能用的答案读成拒绝),目录靠
+  `currentCount` 续着走(整趟共用一个 timestamp,要下一页没带 count 就拒绝;count 不动就是到头)。卡片只有
+  `liveId` 与 `id` 一致且模板是房间才算卡片。hls 与 flv **必须指向同一路流**(站点自己就是这么要求的),所以它们是
+  一个清晰度下的两个容器 / 两条线路,而不是 v1 菜单里的两个清晰度。播之前要读一次主清单:每个子引用都得留在同一
+  host、`/live/` 下、并保持这条流的文件名主干。`secret == 1` 是 app-only,resolve 时照实说。**不申报 search**:
+  v1 是拿已经翻过的那几页过滤,那等于对平台上其余所有房间报"查无此人"。
 - `chzzk/` —— `ChzzkSource`:目录游标是**含端点的**(续页多要一行再丢掉重复的边界行;`next` 块把刚发出去的游标原样
   还回来就是列表到头,而不是可以一直翻),房间是**频道**(`liveId` 一场一个),观众数被 `cvExposure` 挡着时
   就是**没有观众数** —— 0 会是站点选择 withheld 的那个数。能播的清单不在房间答案里:`livePlaybackJson` 是一段
@@ -89,8 +96,8 @@
 ## 验证
 
 - 分析:`dart analyze packages/providers/sites`
-- 测试:`dart test packages/providers/sites`(339 条,每个站点目录配一份 `test/<site>/`;README 上没列到的
-  weibo / inke / kugou / missevan / kuaishou / baidulive / bigo / cc / chzzk 见 CHANGELOG。传输一律用 `pure_live_network`
+- 测试:`dart test packages/providers/sites`(363 条,每个站点目录配一份 `test/<site>/`;README 上没列到的
+  weibo / inke / kugou / missevan / kuaishou / baidulive / bigo / cc / chzzk / jdlive 见 CHANGELOG。传输一律用 `pure_live_network`
   的 `testing.dart` 罐头适配器,不联网)
 - 架构:`dart run tool/check_architecture.dart --strict`
 

@@ -38,6 +38,8 @@ export 'src/huya/huya_api.dart';
 export 'src/huya/huya_site.dart';
 export 'src/inke/inke_api.dart';
 export 'src/inke/inke_site.dart';
+export 'src/jdlive/jdlive_api.dart';
+export 'src/jdlive/jdlive_site.dart';
 export 'src/kuaishou/kuaishou_api.dart';
 export 'src/kuaishou/kuaishou_site.dart';
 export 'src/kugou/kugou_api.dart';

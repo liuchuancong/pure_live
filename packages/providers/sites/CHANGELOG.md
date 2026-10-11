@@ -6,6 +6,18 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- **Added**: `jdlive` (京东直播) - the gateway's `body=<json>` query shape, the directory that continues by
+  `currentCount` under one fixed timestamp (a page past the first asked without that cursor is refused, and a count
+  that did not move ends the list), and the room's two containers. `code` and `subCode` are **text** on this
+  gateway, so comparing them as numbers turns a working answer into a refusal; `subCode` is the field that means
+  "no such live". A card is only a card when its `liveId` and `id` agree and its template is a room, because the
+  list interleaves banners and slots. The hls and flv addresses are required to name the **same stream** - the site
+  proves they are one encode in two containers, which is why this port lists them as one profile with two lines
+  rather than as the two qualities v1's menu showed. The hls grant is read and validated before its address is
+  handed out: every child has to stay on the issuing host, under `/live/`, and keep the stream's own stem.
+  `secret == 1` is app-only and says so at resolve time. No keyword search is declared: v1 filtered the pages it
+  had already walked, which reports "nobody by that name" for the rest of the platform.
+
 - **Added**: `chzzk` - the inclusive-cursor live directory (continuation asks one row more and drops the repeated
   boundary item, and a `next` block that hands back the cursor we just sent ends the list instead of looping it),
   the channel search read as both rooms and people, the two-call room and the renditions read out of the manifests
