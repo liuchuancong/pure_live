@@ -127,6 +127,80 @@ abstract final class ShowroomParser {
     return lines;
   }
 
+  /// The rooms one directory page lists: the snapshot is sliced locally, so
+  /// this is the site's own page size rather than a request parameter.
+  static const int directoryPageSize = 30;
+
+  /// `live/onlives` → the live rooms of one group, in the snapshot's order.
+  ///
+  /// The snapshot is the whole directory in one answer: the groups it is
+  /// divided into (`onlives[]` with `genre_id` and `lives`) carry the rooms,
+  /// and [genreId] picks one. Genre 0 is the site's "Popularity" group — the
+  /// recommendations rather than a subject — and null means every live once,
+  /// in group order. A group without a usable genre id is skipped, a repeated
+  /// live listed once (the site shows a room in more than one group), and a
+  /// genre the snapshot does not have is not found rather than empty.
+  static List<LiveRoom> lives(Map<String, Object?> root, {int? genreId}) {
+    final groups = SiteJson.list(root['onlives']);
+    if (groups.isEmpty) {
+      throw const SiteApiChangedError('showroom onlives: no onlives groups');
+    }
+    final rooms = <LiveRoom>[];
+    final seen = <String>{};
+    var found = genreId == null;
+    for (final group in groups) {
+      final groupMap = SiteJson.object(group);
+      final id = SiteCounts.integer(groupMap['genre_id']);
+      if (id == null || (genreId != null && id != genreId)) {
+        continue;
+      }
+      found = true;
+      for (final raw in SiteJson.list(groupMap['lives'])) {
+        final room = card(SiteJson.object(raw));
+        if (room != null && seen.add(room.roomId)) {
+          rooms.add(room);
+        }
+      }
+    }
+    if (!found) {
+      throw SiteNotFoundError('showroom genre $genreId is not in the snapshot');
+    }
+    return rooms;
+  }
+
+  /// One live of the snapshot as a room, or null for a row without a room id.
+  ///
+  /// The room's name is the room's own name (`main_name`) and its caption
+  /// (`telop`), when the streamer set one, is the title — the site shows it
+  /// that way. `view_num` is the broadcast's visits, the figure the site
+  /// publishes beside a live, and the site's premium flag has no counterpart
+  /// in the unified restriction enum, so the play path is where a refusal
+  /// lands.
+  static LiveRoom? card(Map<String, Object?> row) {
+    final roomId = SiteCounts.integer(row['room_id']);
+    if (roomId == null || roomId <= 0) {
+      return null;
+    }
+    final name = SiteText.title(SiteText.text(row['main_name']));
+    final telop = SiteText.title(SiteText.text(row['telop']));
+    final seconds = SiteCounts.integer(row['started_at']);
+    return LiveRoom(
+      platform: SiteIds.showroom,
+      roomId: '$roomId',
+      title: telop.isEmpty ? name : telop,
+      nick: name,
+      avatar: _image(row['image_square'] ?? row['image']),
+      cover: _image(row['image_square'] ?? row['image']),
+      areaName: SiteText.trimmed(row['genre_name']),
+      watching: SiteCounts.integer(row['view_num']),
+      status: LiveStatus.live,
+      startedAt: seconds != null && seconds > 0
+          ? DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true)
+          : null,
+      httpHeaders: mediaHeaders(roomId),
+    );
+  }
+
   /// `live/onlives` → the site's genres, flattened.
   ///
   /// SHOWROOM has no catalogue endpoint: the genres are the groups the live

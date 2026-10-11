@@ -4,15 +4,18 @@ import 'package:live_sites/src/platforms/showroom/danmaku/showroom_danmaku.dart'
 import 'package:live_sites/src/platforms/showroom/danmaku/showroom_session.dart';
 import 'package:live_sites/src/platforms/showroom/parsers/showroom_parser.dart';
 
-/// The SHOWROOM adapter: profile + live_info + streaming_url flow.
+/// The SHOWROOM adapter: profile + live_info + streaming_url flow and the
+/// `live/onlives` directory.
 ///
 /// The danmaku transport is the broadcast WebSocket (`bcsvr`), whose host
 /// and per-broadcast key come from the same `live/live_info` answer the room
 /// snapshot does.
 ///
-/// Not migrated yet: directory, search and the room's gift catalog (a gift
-/// is reported by its id until the catalog lands).
-final class ShowroomSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability, LiveAreaCatalog {
+/// Not migrated yet: search and the room's gift catalog (a gift is reported
+/// by its id until the catalog lands).
+final class ShowroomSite
+    with SiteRoomGuard
+    implements LiveSite, LiveDanmakuCapability, LiveAreaCatalog, LiveDirectoryCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -21,6 +24,14 @@ final class ShowroomSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapa
 
   /// Room ids resolved from url keys.
   final Map<String, int> _keys = {};
+
+  /// How long the live snapshot is reused after it arrived: the pages of one
+  /// browse come from the same answer, so they neither repeat nor skip the
+  /// rooms page 1 showed.
+  static const Duration snapshotLifetime = Duration(seconds: 30);
+
+  Map<String, Object?>? _snapshot;
+  DateTime? _snapshotAt;
 
   @override
   String get siteId => SiteIds.showroom;
@@ -32,14 +43,68 @@ final class ShowroomSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapa
   SiteMetadata get metadata =>
       const SiteMetadata(id: SiteIds.showroom, displayName: 'SHOWROOM', homeUrl: 'https://www.showroom-live.com');
 
+  /// Page [page] of the site's Popularity group: the rooms the site itself
+  /// recommends.
   @override
-  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
-    throw UnimplementedError('showroom directory lands with its migration');
+  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) => _directory(null, page);
+
+  /// Page [page] of one genre; a genre the snapshot no longer carries is not
+  /// found rather than empty.
+  @override
+  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) => _directory(_genreId(area), page);
+
+  /// One page of the snapshot: [genreId] null is every live once, otherwise
+  /// that genre's rooms.
+  Future<LivePage<LiveRoom>> _directory(int? genreId, int page) async {
+    if (page < 1) {
+      throw RangeError.range(page, 1, null, 'page');
+    }
+    final lives = ShowroomParser.lives(await _liveSnapshot(fresh: page == 1), genreId: genreId);
+    final start = (page - 1) * ShowroomParser.directoryPageSize;
+    if (start >= lives.length) {
+      return LivePage<LiveRoom>(items: const [], totalCount: lives.length);
+    }
+    final end = (start + ShowroomParser.directoryPageSize).clamp(start, lives.length);
+    final hasMore = end < lives.length;
+    return LivePage(
+      items: lives.sublist(start, end),
+      hasMore: hasMore,
+      nextPage: hasMore ? page + 1 : null,
+      totalCount: lives.length,
+    );
   }
 
-  @override
-  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    throw UnimplementedError('showroom directory lands with its migration');
+  /// The live snapshot: page 1 asks anew (a pull to refresh), a later page
+  /// reuses the answer while it is younger than [snapshotLifetime]. Every
+  /// genre is one request's answer, so paging costs one snapshot, not one
+  /// request per page.
+  Future<Map<String, Object?>> _liveSnapshot({required bool fresh}) async {
+    final cached = _snapshot;
+    final at = _snapshotAt;
+    if (!fresh && cached != null && at != null && DateTime.now().difference(at) < snapshotLifetime) {
+      return cached;
+    }
+    final response = await http.send(
+      LiveRequest.get(
+        Uri.https('www.showroom-live.com', '/api/live/onlives'),
+        headers: ShowroomParser.headers,
+        site: siteId,
+      ),
+    );
+    final root = ShowroomParser.data(response.text, status: response.statusCode, what: 'live/onlives');
+    _snapshot = root;
+    _snapshotAt = DateTime.now();
+    return root;
+  }
+
+  /// The genre number of [area]; an area that carries none is a caller
+  /// error, refused before any request.
+  static int _genreId(LiveArea area) {
+    final genre = int.tryParse(area.id.trim());
+    if (genre == null || genre < 0) {
+      throw SiteError.invalidRoomId(area.id);
+    }
+    return genre;
   }
 
   @override
