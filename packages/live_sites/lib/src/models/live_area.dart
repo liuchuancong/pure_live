@@ -1,65 +1,41 @@
-import 'package:meta/meta.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'live_area.freezed.dart';
+part 'live_area.g.dart';
 
 /// A quality level as the platform names and numbers it.
-@immutable
-final class LivePlayQuality {
+// ignore_for_file: unnecessary_type_name_in_constructor -- Freezed
+// factories cannot use the `new` shorthand.
+@freezed
+abstract class LivePlayQuality with _$LivePlayQuality {
   /// A quality descriptor.
-  const new({required this.label, this.quality, this.sort = 0, this.codec});
+  const factory LivePlayQuality({required String label, int? quality, @Default(0) int sort, String? codec}) =
+      _LivePlayQuality;
 
-  /// The platform's own quality number (e.g. bilibili qn=4).
-  final int? quality;
-
-  /// Chinese display label, normalized per the platform's convention.
-  final String label;
-
-  /// Display sort order, ascending.
-  final int sort;
-
-  /// Codec restriction of this quality, when the platform splits by codec.
-  final String? codec;
-
-  @override
-  String toString() => 'LivePlayQuality($label)';
+  /// Restores a quality from JSON.
+  factory LivePlayQuality.fromJson(Map<String, Object?> json) => _$LivePlayQualityFromJson(json);
 }
 
 /// A directory area (分区) with its platform id and optional parent.
-@immutable
-final class LiveArea {
+@freezed
+abstract class LiveArea with _$LiveArea {
   /// An area descriptor.
-  const new({required this.id, required this.name, this.parentId, this.sort = 0});
+  const factory LiveArea({required String id, required String name, String? parentId, @Default(0) int sort}) =
+      _LiveArea;
 
-  /// The platform's area id.
-  final String id;
-
-  /// Display name.
-  final String name;
-
-  /// The parent area id, for two-level taxonomies.
-  final String? parentId;
-
-  /// Display sort order, ascending.
-  final int sort;
-
-  @override
-  String toString() => 'LiveArea($id, $name)';
+  /// Restores an area from JSON.
+  factory LiveArea.fromJson(Map<String, Object?> json) => _$LiveAreaFromJson(json);
 }
 
 /// A directory page: one page of rooms plus the pagination facts.
-@immutable
-final class LivePage<T> {
+@Freezed(genericArgumentFactories: true)
+abstract class LivePage<T> with _$LivePage<T> {
   /// A page of [items]; [hasMore] is the authoritative continuation
   /// signal, [nextPage] the page number to request next when known.
-  const new({required this.items, this.hasMore = false, this.nextPage, this.totalCount});
+  const factory LivePage({required List<T> items, @Default(false) bool hasMore, int? nextPage, int? totalCount}) =
+      _LivePage<T>;
 
-  /// The rooms (or anchors) of this page.
-  final List<T> items;
-
-  /// Whether another page exists.
-  final bool hasMore;
-
-  /// The next page number, when the source paginates by number.
-  final int? nextPage;
-
-  /// Total matching items, when the source reports it.
-  final int? totalCount;
+  /// Restores a page from JSON (items decoded by the caller's [T]).
+  factory LivePage.fromJson(Map<String, Object?> json, T Function(Object? json) fromJsonT) =>
+      _$LivePageFromJson(json, fromJsonT);
 }

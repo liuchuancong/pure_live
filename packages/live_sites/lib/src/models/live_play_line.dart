@@ -1,4 +1,7 @@
-import 'package:meta/meta.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'live_play_line.freezed.dart';
+part 'live_play_line.g.dart';
 
 /// One stream line of one quality, self-describing: URL, headers, codec,
 /// and the lease that says when the URL dies.
@@ -6,20 +9,19 @@ import 'package:meta/meta.dart';
 /// `lease` replaces the scattered refresh/expiry resolvers of earlier
 /// versions — everything a replayer needs to decide "reuse or refetch"
 /// travels with the line.
-@immutable
-final class PlayLease {
+// ignore_for_file: unnecessary_type_name_in_constructor -- Freezed
+// factories cannot use the `new` shorthand.
+@freezed
+abstract class PlayLease with _$PlayLease {
   /// A lease; [expiresAt] null means the URL has no known deadline.
-  const new({this.refreshAt, this.expiresAt, this.cutsConnection = false});
+  const factory PlayLease({DateTime? refreshAt, DateTime? expiresAt, @Default(false) bool cutsConnection}) = _PlayLease;
 
-  /// When the client should proactively refresh the URL.
-  final DateTime? refreshAt;
+  /// Restores a lease from JSON.
+  factory PlayLease.fromJson(Map<String, Object?> json) => _$PlayLeaseFromJson(json);
+}
 
-  /// When the URL stops working.
-  final DateTime? expiresAt;
-
-  /// Whether using the URL past expiry cuts the current connection.
-  final bool cutsConnection;
-
+/// Whether a lease has a deadline at all.
+extension PlayLeaseDeadline on PlayLease {
   /// Whether the lease has a deadline at all.
   bool get isExpiring => expiresAt != null || refreshAt != null;
 }
@@ -37,44 +39,20 @@ enum StreamFormat {
 }
 
 /// A playable line: identity, transport and lease in one object.
-@immutable
-final class LivePlayLine {
+@freezed
+abstract class LivePlayLine with _$LivePlayLine {
   /// A line description.
-  const new({
-    required this.url,
-    this.headers = const {},
-    this.format = StreamFormat.other,
-    this.codec,
-    this.lineId,
-    this.lease,
-    this.width,
-    this.height,
-  });
+  const factory LivePlayLine({
+    required String url,
+    @Default(<String, String>{}) Map<String, String> headers,
+    @Default(StreamFormat.other) StreamFormat format,
+    String? codec,
+    String? lineId,
+    PlayLease? lease,
+    int? width,
+    int? height,
+  }) = _LivePlayLine;
 
-  /// Absolute stream URL.
-  final String url;
-
-  /// Request headers the player must send.
-  final Map<String, String> headers;
-
-  /// Wire format hint for backend selection.
-  final StreamFormat format;
-
-  /// Codec hint, when the source declares one (e.g. `avc`, `hevc`).
-  final String? codec;
-
-  /// Stable line identifier within one resolution result.
-  final String? lineId;
-
-  /// The refresh/expiry lease of [url].
-  final PlayLease? lease;
-
-  /// Declared video width, when known.
-  final int? width;
-
-  /// Declared video height, when known.
-  final int? height;
-
-  @override
-  String toString() => 'LivePlayLine(${lineId ?? url}, ${format.name})';
+  /// Restores a line from JSON.
+  factory LivePlayLine.fromJson(Map<String, Object?> json) => _$LivePlayLineFromJson(json);
 }
