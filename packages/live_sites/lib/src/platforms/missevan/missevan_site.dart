@@ -4,12 +4,12 @@ import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:live_sites/src/platforms/missevan/parsers/missevan_parser.dart';
 
-/// The Missevan (猫耳 FM) adapter: the `live/{id}` room and its channel
-/// pull URLs.
+/// The Missevan (猫耳 FM) adapter: the `live/{id}` room, its channel pull
+/// URLs and the `chatroom/open/list` directory.
 ///
-/// Not migrated yet: the directory, search and the danmaku transport
-/// (Missevan frames carry a brotli-compressed payload).
-final class MissevanSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog {
+/// Not migrated yet: search and the danmaku transport (Missevan frames carry
+/// a brotli-compressed payload).
+final class MissevanSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -56,14 +56,31 @@ final class MissevanSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog
     return MissevanParser.areas(decoded);
   }
 
+  /// Page [page] (1–10000) of the site's recommendations: every live room,
+  /// in the site's own order.
   @override
-  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
-    throw UnimplementedError('missevan directory lands with its migration');
-  }
+  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) => _directory(null, page);
 
+  /// Page [page] of one area, filtered by the parameter its namespace names
+  /// (`catalog_id`, `tag_id` or `list_type`).
   @override
-  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    throw UnimplementedError('missevan directory lands with its migration');
+  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) => _directory(area, page);
+
+  /// One `chatroom/open/list` page, of the recommendations when [area] is
+  /// null.
+  Future<LivePage<LiveRoom>> _directory(LiveArea? area, int page) async {
+    if (page < 1 || page > MissevanParser.maxPage) {
+      throw RangeError.range(page, 1, MissevanParser.maxPage, 'page');
+    }
+    final query = {'p': '$page', ...MissevanParser.areaQuery(area)};
+    final response = await http.send(
+      LiveRequest.get(
+        Uri.https('fm.missevan.com', '/api/v2/chatroom/open/list', query),
+        headers: MissevanParser.headers,
+        site: id,
+      ),
+    );
+    return MissevanParser.roomList(response.text, page: page, status: response.statusCode);
   }
 
   @override

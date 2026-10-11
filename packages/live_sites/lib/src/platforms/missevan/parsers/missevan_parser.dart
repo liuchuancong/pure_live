@@ -160,6 +160,144 @@ abstract final class MissevanParser {
   /// The name shown for a namespace, or its own id when unknown.
   static String areaNamespaceName(String type) => areaNamespaces[type] ?? type;
 
+  /// The rows one `chatroom/open/list` page answers with (the site's own
+  /// page size, fixed).
+  static const int serverPageSize = 20;
+
+  /// The highest directory page the site serves.
+  static const int maxPage = 10000;
+
+  /// The list parameter [area] asks for: the namespace the area belongs to
+  /// chooses it ([areaNamespaces] — `catalog` is `catalog_id`, `tag` is
+  /// `tag_id`, `list` is `list_type`). Null (the recommendations) is no
+  /// filter at all. An area of an unknown namespace, or with an id that is
+  /// not a positive number, is a caller error refused before any request.
+  static Map<String, String> areaQuery(LiveArea? area) {
+    if (area == null) {
+      return const {};
+    }
+    final parameter = _tabIdField[SiteText.trimmed(area.parentId)];
+    final id = SiteText.trimmed(area.id);
+    if (parameter == null || !_areaId.hasMatch(id)) {
+      throw ArgumentError.value(area, 'area', 'not a Missevan area');
+    }
+    return {parameter: id};
+  }
+
+  static final RegExp _areaId = RegExp(r'^[1-9][0-9]{0,9}$');
+
+  /// A `chatroom/open/list` page at [page]: the live rooms of its rows, each
+  /// once, and whether the site's last page is still ahead.
+  ///
+  /// The page must echo [page] and [serverPageSize], and carry a `maxpage`
+  /// and a `count`; a page past the site's last one must be empty. A row that
+  /// cannot be read is skipped, but a page whose every row is unreadable is a
+  /// changed endpoint rather than an empty page (the unified fault-tolerance
+  /// rule). The promoted rows of the first page come again at their own place
+  /// on a later page, so rooms this page already showed are dropped.
+  static LivePage<LiveRoom> roomList(String body, {required int page, int status = 200}) {
+    final data = payload(body, what: 'open/list', status: status);
+    final pagination = SiteJson.object(data['pagination']);
+    final max = SiteCounts.integer(pagination['maxpage']);
+    final count = SiteCounts.integer(pagination['count']);
+    final rows = SiteJson.list(data['Datas']);
+    if (SiteCounts.integer(pagination['p']) != page ||
+        SiteCounts.integer(pagination['pagesize']) != serverPageSize ||
+        max == null ||
+        max < 0 ||
+        count == null ||
+        count < 0 ||
+        rows.length > 100 ||
+        (page > max && rows.isNotEmpty)) {
+      throw SiteApiChangedError('missevan open/list page $page: unexpected pagination $pagination');
+    }
+    final rooms = <String, LiveRoom>{};
+    var readable = false;
+    for (final raw in rows) {
+      final room = roomRow(raw);
+      readable = readable || room != null;
+      if (room != null && room.status == LiveStatus.live) {
+        rooms.putIfAbsent(room.roomId, () => room);
+      }
+    }
+    if (!readable && rows.isNotEmpty) {
+      throw SiteApiChangedError('missevan open/list page $page: no readable row');
+    }
+    final hasMore = page < max;
+    return LivePage(
+      items: rooms.values.toList(),
+      hasMore: hasMore,
+      nextPage: hasMore ? page + 1 : null,
+      totalCount: count,
+    );
+  }
+
+  /// One `chatroom/open/list` row as a room, or null when the row carries no
+  /// room id.
+  ///
+  /// A row has the shape of a room's own object with the creator's name and
+  /// avatar on the row itself; its `statistics.score` is the audience figure
+  /// the site publishes, and only a broadcasting row carries a start time.
+  /// A row carries no pull URLs — the play path reads the room itself — so
+  /// the room's runtime cache is left unset here.
+  static LiveRoom? roomRow(Object? raw) {
+    final row = raw is Map<String, Object?> ? raw : null;
+    if (row == null) {
+      return null;
+    }
+    final id = SiteText.trimmed(row['room_id']);
+    if (id.isEmpty) {
+      return null;
+    }
+    final state = SiteJson.object(row['status']);
+    final live = SiteCounts.integer(state['open']) == 1;
+    final area = SiteText.trimmed(row['catalog_name']);
+    return LiveRoom(
+      platform: SiteIds.missevan,
+      roomId: id,
+      title: SiteText.text(row['name']),
+      nick: SiteText.text(row['creator_username']),
+      avatar: image(row['creator_iconurl']),
+      cover: image(row['cover_url']),
+      areaName: area.isEmpty ? null : area,
+      watching: SiteCounts.integer(SiteJson.object(row['statistics'])['score']),
+      status: live ? LiveStatus.live : LiveStatus.offline,
+      startedAt: live ? _startedAt(state['open_time']) : null,
+    );
+  }
+
+  /// Validates the envelope (`code` 0) of a list endpoint and returns its
+  /// payload: the same envelope [checked] reads for one room, minus the
+  /// per-room identity.
+  ///
+  /// The list endpoints answer under `info` (the detail endpoint's `data`)
+  /// and, like the catalogue, an answer that carries only the other key is
+  /// read rather than rejected.
+  static Map<String, Object?> payload(String body, {required String what, int status = 200}) {
+    if (status != 200) {
+      throw SiteApiChangedError('missevan $what: HTTP $status');
+    }
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(body);
+    } on FormatException {
+      throw SiteApiChangedError('missevan $what: body is not JSON');
+    }
+    if (decoded is! Map<String, Object?>) {
+      throw SiteApiChangedError('missevan $what: body is not an object');
+    }
+    final code = SiteCounts.integer(decoded['code']);
+    if (code != 0) {
+      throw SiteApiChangedError('missevan $what: code ${decoded['code']}');
+    }
+    final info = decoded['info'];
+    final data = info is Map<String, Object?> ? info : decoded['data'];
+    if (data is! Map<String, Object?>) {
+      throw SiteApiChangedError('missevan $what: no payload object');
+    }
+    return data;
+  }
+
   static Map<String, Object?>? _channel(Map<String, Object?> row) {
     final channel = row['channel'];
     return channel is Map<String, Object?> ? channel : null;
