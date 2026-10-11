@@ -11,7 +11,10 @@
 library;
 
 export 'src/catchup/catchup.dart';
+export 'src/guide/guide_matcher.dart';
+export 'src/guide/guide_parser.dart';
 export 'src/library/iptv_library.dart';
 export 'src/library/iptv_store.dart';
+export 'src/model/guide_models.dart';
 export 'src/model/iptv_models.dart';
 export 'src/playlist/playlist_parser.dart';
