@@ -30,5 +30,7 @@ export 'src/huya/huya_api.dart';
 export 'src/huya/huya_site.dart';
 export 'src/inke/inke_api.dart';
 export 'src/inke/inke_site.dart';
+export 'src/kugou/kugou_api.dart';
+export 'src/kugou/kugou_site.dart';
 export 'src/weibo/weibo_api.dart';
 export 'src/weibo/weibo_site.dart';

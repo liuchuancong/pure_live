@@ -261,6 +261,21 @@ PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
   );
   runtime.capabilities.register(
     ProviderRegistration(
+      sourceId: kugouSourceId,
+      extensionId: 'built-in.kugou',
+      provider: KugouSource(),
+      // The only site so far that ships both axes: rate/codec/layout profiles and the cdn urls inside one.
+      capabilities: const CapabilitySet(<CapabilityKind>{
+        CapabilityKind.feed,
+        CapabilityKind.live,
+        CapabilityKind.search,
+        CapabilityKind.quality,
+        CapabilityKind.line,
+      }),
+    ),
+  );
+  runtime.capabilities.register(
+    ProviderRegistration(
       sourceId: inkeSourceId,
       extensionId: 'built-in.inke',
       provider: InkeSource(),

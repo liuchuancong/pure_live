@@ -5,6 +5,16 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
+- **Added**: `kugou` (酷狗直播 / 繁星) - the recommend directory and per-category directory (two different paths,
+  the category one needing `cid`), the category table scraped from the site's own HTML with its personal routes
+  filtered out and a last-known fallback when the scrape yields nothing, the jsonp anchor search (the callback
+  we asked for has to come back, or the answer is an error page wearing a jsonp costume), the room endpoint and
+  the multi-line stream-address endpoint. **This is the first site that uses both axes**: a profile is
+  `container:rate:codec:layout` and the cdn urls inside one profile are the lines - flattening them into one list
+  is what makes "1080p line 2" unaddressable. On-air is `liveType != -1` **and** a non-empty `liveSessionId`; a
+  room missing the session is `unknown`, not ended. Pull urls are validated against the site's own host family,
+  `/live/`, the container extension and a `txSecret`/`txTime` pair, and anything else is dropped rather than
+  opened.
 - **Added**: `inke` (一直播) - the three finite website catalogues, their tabs, the room endpoint and the one
   verbatim pull url. Two distinctions this site lives on: `error_code 1099999920` on the room endpoint is the
   only answer that means "no broadcast in progress" (an unknown code, a 5xx or a catalogue with no verified
