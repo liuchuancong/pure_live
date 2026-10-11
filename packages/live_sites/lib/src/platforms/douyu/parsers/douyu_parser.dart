@@ -127,30 +127,63 @@ abstract final class DouyuParser {
   }
 
   /// `web/api/room/list` payload → one page of live rooms.
+  /// A directory payload → one page of rooms.
+  ///
+  /// The directory endpoints answer with `data.rl`, whose field names are
+  /// Douyu's short ones (`rid`, `rn`, `nn`, `ol`, `c2name`, `rs16`), and
+  /// `data.pgcnt` carries the page count — so `hasMore` is the site's own
+  /// answer rather than a guess from a non-empty page. Items whose `type`
+  /// is not a live room (advertisement and banner entries) are dropped; the
+  /// room id is validated, because a garbage id would produce a card that
+  /// can never open.
   static LivePage<LiveRoom> roomList(Map<String, Object?> root) {
-    final list = root['data'];
+    final data = root['data'];
+    final raw = data is Map<String, Object?> ? data['rl'] : null;
+    final items = raw is List ? raw : const <Object?>[];
     final rooms = <LiveRoom>[];
-    if (list is List) {
-      for (final item in list) {
-        if (item is! Map<String, Object?>) {
-          continue;
-        }
-        rooms.add(
-          LiveRoom(
-            platform: SiteIds.douyu,
-            roomId: item['room_id']?.toString() ?? '',
-            title: item['room_name']?.toString() ?? '',
-            nick: item['nickname']?.toString() ?? '',
-            avatar: _image(item['owner_avatar']),
-            cover: _image(item['verticalSrc'] ?? item['room_src']),
-            areaName: item['cate_name']?.toString(),
-            watching: int.tryParse(item['hn']?.toString() ?? ''),
-            status: LiveStatus.live,
-          ),
-        );
+    for (final item in items) {
+      if (item is! Map<String, Object?>) {
+        continue;
+      }
+      final room = _listRoom(item);
+      if (room != null) {
+        rooms.add(room);
       }
     }
-    return LivePage<LiveRoom>(items: rooms, hasMore: rooms.isNotEmpty);
+    final pages = (data is Map<String, Object?> ? data['pgcnt'] as num? : null)?.toInt() ?? 0;
+    return LivePage<LiveRoom>(items: rooms, hasMore: rooms.isNotEmpty && pages > 0 && pages > 1);
+  }
+
+  /// One directory item, or null when it is not a live room.
+  static LiveRoom? _listRoom(Map<String, Object?> item) {
+    final roomId = item['rid']?.toString().trim() ?? '';
+    if (roomId.isEmpty || (item['type'] is num && (item['type']! as num).toInt() != 1)) {
+      return null;
+    }
+    return LiveRoom(
+      platform: SiteIds.douyu,
+      roomId: roomId,
+      title: item['rn']?.toString() ?? '',
+      nick: item['nn']?.toString() ?? '',
+      avatar: _image(item['av']),
+      cover: _cover(item['rs16']),
+      areaName: item['c2name']?.toString(),
+      watching: (item['ol'] as num?)?.toInt(),
+      status: LiveStatus.live,
+    );
+  }
+
+  /// The cover URL: the directory's `rs16` is already a full CDN URL, while
+  /// the older endpoints hand over a bare upload path.
+  static String? _cover(Object? value) {
+    final path = value?.toString() ?? '';
+    if (path.isEmpty) {
+      return null;
+    }
+    if (path.startsWith('https://') || path.startsWith('http://')) {
+      return path;
+    }
+    return _image(path);
   }
 
   /// Normalizes the avatar/cover paths: a bare upload path becomes the

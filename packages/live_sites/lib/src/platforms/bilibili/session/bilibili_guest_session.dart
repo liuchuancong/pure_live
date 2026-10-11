@@ -56,6 +56,15 @@ final class BilibiliGuestSession {
   Future<Map<String, Object?>> getMain(String path, Map<String, String> query) =>
       _send(Uri.https('api.bilibili.com', path, query));
 
+  /// A GET whose envelope tolerates the anonymous `-101` code; see
+  /// `BilibiliParser.anonymousChecked`.
+  Future<Map<String, Object?>> _getMainAnonymous(String path) async {
+    final response = await http.send(
+      LiveRequest.get(Uri.https('api.bilibili.com', path), headers: headers(), site: SiteIds.bilibili),
+    );
+    return BilibiliParser.anonymousChecked(response.text, status: response.statusCode, what: path);
+  }
+
   Future<Map<String, Object?>> _send(Uri url) async {
     final response = await http.send(LiveRequest.get(url, headers: headers(), site: SiteIds.bilibili));
     return BilibiliParser.checked(response.text, status: response.statusCode, what: url.path);
@@ -89,7 +98,9 @@ final class BilibiliGuestSession {
   Future<({String imgKey, String subKey})> _fetchKeys() async {
     try {
       await ensureBuvid();
-      final root = await getMain('/x/web-interface/nav', {});
+      // The anonymous rule matters here: a guest gets `-101` with the keys,
+      // and that is the normal, intended answer.
+      final root = await _getMainAnonymous('/x/web-interface/nav');
       final keys = BilibiliWbi.keys(root);
       _keys = (imgKey: keys.imgKey, subKey: keys.subKey, at: _now());
       return keys;

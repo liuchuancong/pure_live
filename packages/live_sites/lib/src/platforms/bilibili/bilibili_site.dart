@@ -13,7 +13,9 @@ import 'package:live_sites/src/platforms/bilibili/session/bilibili_guest_session
 /// `getDanmuInfo` and the second getList), the cookie/session store, risk
 /// control retries, carousel rooms, super chats and the gift catalog.
 /// Those land with the session-layer migration.
-final class BilibiliSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability {
+final class BilibiliSite
+    with SiteRoomGuard
+    implements LiveSite, LiveDanmakuCapability, LiveDirectoryCapability, LiveSearchCapability {
   /// A site over [http]; the guest session owns cookies and WBI keys.
   new({required LiveHttp http}) : session = BilibiliGuestSession(http: http);
 
@@ -34,10 +36,49 @@ final class BilibiliSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapa
     logoUrl: 'https://i0.hdslb.com/bfs/static/jinkela/long/images/TV-Bgroup.png',
   );
 
+  /// The anonymous ranked list, then the recommendation feed.
+  ///
+  /// Two endpoints because they fail independently: `getListByAreaID` is
+  /// the ranked list the site's own home page shows and answers with a
+  /// clean `list` payload, while `getMoreRecList` is the personalisation
+  /// feed that keeps working when the ranked list is being rate-limited.
+  /// The ranked list is tried twice (a 180 ms pause between tries, because
+  /// the first call of a cold session sometimes comes back empty), and the
+  /// feed is the fallback; when both fail the ranked list's error is the one
+  /// reported, since that is the request the caller asked for.
   @override
   Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
-    throw UnimplementedError('recommend lands with the full bilibili migration');
+    final number = page < 1 ? 1 : page;
+    SiteError? rankedFailure;
+    for (var attempt = 0; attempt < 2; attempt++) {
+      if (attempt > 0) {
+        await Future<void>.delayed(_rankedRetryDelay);
+      }
+      try {
+        final data = await _get('/room/v1/Area/getListByAreaID', {
+          'areaId': '0',
+          'parent_area_id': '0',
+          'sort': 'online',
+          'pageSize': '30',
+          'page': '$number',
+        });
+        return BilibiliParser.roomList(data);
+      } on SiteError catch (error) {
+        rankedFailure = error;
+      }
+    }
+    try {
+      final data = await _get('/xlive/web-interface/v1/webMain/getMoreRecList', {'platform': 'web', 'page': '$number'});
+      return BilibiliParser.roomList(data);
+    } on SiteError {
+      // The ranked list is what the caller asked for, so its failure is the
+      // one reported — not the fallback's.
+      throw rankedFailure!;
+    }
   }
+
+  /// The pause between the two ranked-list attempts.
+  static const Duration _rankedRetryDelay = Duration(milliseconds: 180);
 
   @override
   Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
@@ -52,15 +93,26 @@ final class BilibiliSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapa
     return BilibiliParser.roomList(data);
   }
 
+  /// Live search.
+  ///
+  /// The search endpoint lives on the *main* site (`api.bilibili.com`), not
+  /// on the live host, and answers an anonymous GET: asking the live host
+  /// for it returns a 404 (`WebProxyNeedLess`), which is how this method
+  /// failed before. A blank keyword asks for nothing.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    final data = await session.getSigned(BilibiliConstants.apiHost, '/x/web-interface/search/type', {
+    final text = keyword.trim();
+    if (text.isEmpty) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final number = page < 1 ? 1 : page;
+    final data = await session.getMain('/x/web-interface/search/type', {
       'search_type': 'live_room',
-      'keyword': keyword,
-      'page': '$page',
+      'keyword': text,
+      'page': '$number',
       'page_size': '30',
     });
-    return BilibiliParser.searchRooms(data, page: page);
+    return BilibiliParser.searchRooms(data, page: number);
   }
 
   @override

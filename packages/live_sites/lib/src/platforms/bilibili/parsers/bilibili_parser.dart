@@ -45,6 +45,32 @@ abstract final class BilibiliParser {
     throw SiteApiChangedError('bilibili $what: code $code, $message');
   }
 
+  /// The envelope rule for endpoints a *guest* is allowed to call.
+  ///
+  /// `nav` answers `code: -101 账号未登录` to an anonymous session and still
+  /// ships the WBI keys in `data` — which is exactly what a guest needs,
+  /// because signing is what makes an anonymous call legal in the first
+  /// place. Applying the strict rule here (as this used to) turned every
+  /// signed request into "账号未登录" before it reached its endpoint; the
+  /// payload is only rejected when the keys really are missing.
+  static Map<String, Object?> anonymousChecked(String body, {int status = 200, String what = 'response'}) {
+    if (status == 200) {
+      Object? root;
+      try {
+        root = jsonDecode(body);
+      } on FormatException {
+        root = null;
+      }
+      if (root is Map<String, Object?>) {
+        final data = root['data'];
+        if (data is Map<String, Object?> && data.isNotEmpty) {
+          return data;
+        }
+      }
+    }
+    return checked(body, status: status, what: what);
+  }
+
   /// `room/v1/Room/get_info` payload → room detail.
   static LiveRoom roomDetail(Map<String, Object?> data, {required String requestedId}) {
     final longId = data['room_id']?.toString() ?? requestedId;
@@ -65,16 +91,23 @@ abstract final class BilibiliParser {
   }
 
   /// `room/v1/area/getRoomList` payload → one page of rooms.
-  static LivePage<LiveRoom> roomList(Map<String, Object?> data) {
-    final list = data['list'];
-    final rooms = <LiveRoom>[];
-    if (list is List) {
-      for (final item in list) {
-        if (item is Map<String, Object?>) {
-          rooms.add(_listRoom(item));
-        }
-      }
-    }
+  /// A directory payload → one page of rooms.
+  ///
+  /// The live endpoints disagree on their shape, so this reads all three:
+  /// `data.list` (the category list), `data.recommend_room_list` (the
+  /// personalisation feed) and a bare `data` array (the ranked list). The
+  /// item fields differ too — `area_name` in one, `areaName` in another,
+  /// `area_v2_name` in the third — which is what [_listRoom] absorbs; a
+  /// parser that knew only one shape returned an empty page for two of the
+  /// three, which is exactly what happened before this was written.
+  static LivePage<LiveRoom> roomList(Object? data) {
+    final payload = data is Map<String, Object?> ? (data['list'] ?? data['recommend_room_list']) : data;
+    final items = payload is List ? payload : const <Object?>[];
+    final rooms = <LiveRoom>[
+      for (final item in items)
+        if (item is Map<String, Object?>)
+          if (_listRoom(item) case final room when room.roomId.isNotEmpty) room,
+    ];
     return LivePage<LiveRoom>(items: rooms, hasMore: rooms.isNotEmpty);
   }
 
@@ -110,6 +143,22 @@ abstract final class BilibiliParser {
 
   /// Removes the search highlight tags (`<em class=…>text</em>`).
   static String _stripHighlights(String text) => text.replaceAll(RegExp('<em[^>]*>|</em>'), '');
+
+  /// Titles and names arrive HTML-escaped (`&quot;`, `&amp;`, `&#39;`), which
+  /// would otherwise be shown literally on a card.
+  static String _unescape(String text) {
+    if (!text.contains('&')) {
+      return text;
+    }
+    return text
+        .replaceAll('&quot;', '"')
+        .replaceAll('&#39;', "'")
+        .replaceAll('&apos;', "'")
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll('&amp;', '&');
+  }
 
   /// `Area/getList` payload → the top-level area list.
   static List<LiveArea> areaList(Map<String, Object?> data) {
@@ -184,14 +233,18 @@ abstract final class BilibiliParser {
     return (token: token, servers: servers);
   }
 
+  /// One directory item, with every spelling the three payloads use.
+  ///
+  /// `title` is HTML-escaped in the ranked list and `&quot;`-wrapped in the
+  /// feed, so it goes through the same unescaping the search results use.
   static LiveRoom _listRoom(Map<String, Object?> item) => LiveRoom(
     platform: SiteIds.bilibili,
     roomId: item['roomid']?.toString() ?? '',
-    title: item['title']?.toString() ?? '',
-    nick: item['uname']?.toString() ?? '',
-    avatar: item['uface']?.toString(),
+    title: _unescape(item['title']?.toString() ?? ''),
+    nick: _unescape(item['uname']?.toString() ?? ''),
+    avatar: item['uface']?.toString() ?? item['face']?.toString(),
     cover: item['user_cover']?.toString() ?? item['cover']?.toString(),
-    areaName: item['area_name']?.toString(),
+    areaName: item['area_name']?.toString() ?? item['areaName']?.toString() ?? item['area_v2_name']?.toString(),
     status: LiveStatus.live,
     watching: (item['online'] as num?)?.toInt(),
   );
