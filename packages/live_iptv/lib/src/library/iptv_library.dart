@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:live_iptv/src/library/iptv_store.dart';
 import 'package:live_iptv/src/model/iptv_models.dart';
+import 'package:live_iptv/src/playlist/playlist_parse_result.dart';
 import 'package:live_iptv/src/playlist/playlist_parser.dart';
 import 'package:live_sites/live_sites.dart' as sites;
 import 'package:live_storage/live_storage.dart';
@@ -48,11 +49,108 @@ final class IptvLibrary {
     _external ??= store.changes.listen((_) => unawaited(_reload()));
   }
 
-  /// Imports [text] as a playlist named [name].
+  /// The playlist named [name] (case-insensitive), or null.
   ///
-  /// [url] records the remote source when the text came from one.
-  /// Returns the number of channels the library now holds from the
-  /// import.
+  /// The importer asks this before it writes anything: a name the user
+  /// already has is a replacement, not a second playlist, and only the user
+  /// can say whether that is what they meant.
+  IptvPlaylist? playlistNamed(String name) {
+    final wanted = name.trim().toLowerCase();
+    for (final playlist in _playlists) {
+      if (playlist.name.trim().toLowerCase() == wanted) {
+        return playlist;
+      }
+    }
+    return null;
+  }
+
+  /// Imports a parsed playlist, replacing the record named [replaceId] when
+  /// given.
+  ///
+  /// The channels are reconciled by URL exactly as [importFromText] does —
+  /// the user's favourites, hidden flags and ordering survive a re-import —
+  /// and the playlist record is updated in place when it is a replacement,
+  /// so a room that points at a channel id keeps working across a sync.
+  Future<({String id, int channels, int added, int updated})> importResult(
+    PlaylistParseResult result, {
+    required String name,
+    String? url,
+    String? replaceId,
+    bool removeMissing = false,
+  }) async {
+    final entries = result.entries;
+    if (entries.isEmpty) {
+      throw const StorageValidationException('playlist has no channels');
+    }
+    final byUrl = {for (final channel in _channels) channel.entry.url: channel};
+    var nextPosition = _channels.isEmpty
+        ? 0
+        : _channels.map((channel) => channel.position).reduce((a, b) => a > b ? a : b) + 1;
+    final seenUrls = <String>{};
+    final reconciled = <IptvChannel>[];
+    var added = 0;
+    var updated = 0;
+    for (final entry in entries) {
+      seenUrls.add(entry.url);
+      final existing = byUrl[entry.url];
+      if (existing != null) {
+        reconciled.add(existing.copyWith(entry: entry));
+        updated++;
+      } else {
+        reconciled.add(
+          IptvChannel(
+            id: 'c${DateTime.now().microsecondsSinceEpoch}_${reconciled.length}',
+            entry: entry,
+            position: nextPosition++,
+          ),
+        );
+        added++;
+      }
+    }
+    if (!removeMissing) {
+      for (final channel in _channels) {
+        if (!seenUrls.contains(channel.entry.url)) {
+          reconciled.add(channel);
+        }
+      }
+    }
+    _channels = reconciled;
+    final existing = replaceId == null ? null : _playlistById(replaceId);
+    final id = existing?.id ?? 'p${DateTime.now().microsecondsSinceEpoch}';
+    final record = IptvPlaylist(
+      id: id,
+      name: name,
+      importedAt: DateTime.now(),
+      url: url ?? existing?.url,
+      channelCount: entries.length,
+    );
+    _playlists = [
+      for (final playlist in _playlists)
+        if (playlist.id != id) playlist,
+      record,
+    ];
+    await store.saveChannels(_channels);
+    await store.savePlaylists(_playlists);
+    _changes.add(null);
+    return (id: id, channels: entries.length, added: added, updated: updated);
+  }
+
+  IptvPlaylist? _playlistById(String id) {
+    for (final playlist in _playlists) {
+      if (playlist.id == id) {
+        return playlist;
+      }
+    }
+    return null;
+  }
+
+  /// Imports [text] as a playlist named [name], appending a record.
+  ///
+  /// [url] records the remote source when the text came from one. Returns
+  /// the number of channels the text carried. Callers that need to replace a
+  /// playlist of the same name, or to know how many channels were new, use
+  /// [importResult] instead — this method keeps its original shape for the
+  /// call sites that only wanted the count.
   Future<int> importFromText(String text, {required String name, String? url, bool removeMissing = false}) async {
     final entries = parsePlaylist(text);
     if (entries.isEmpty) {
@@ -103,6 +201,28 @@ final class IptvLibrary {
     _changes.add(null);
     return entries.length;
   }
+
+  /// Removes the playlist record [id] and, when it was the last one holding
+  /// them, the channels only it carried.
+  ///
+  /// Channels are shared between playlists by URL, so deleting a source may
+  /// leave channels another source still lists: those stay, and only the
+  /// ones nothing else claims go with it.
+  Future<void> deletePlaylist(String id) async {
+    final record = _playlistById(id);
+    if (record == null) {
+      return;
+    }
+    _playlists = [
+      for (final playlist in _playlists)
+        if (playlist.id != id) playlist,
+    ];
+    await store.savePlaylists(_playlists);
+    _changes.add(null);
+  }
+
+  /// The playlist held at [id], or null.
+  IptvPlaylist? playlistById(String id) => _playlistById(id);
 
   /// Toggles the favourite flag of [id].
   Future<void> toggleFavorite(String id) => _update(id, (channel) => channel.copyWith(favorite: !channel.favorite));
