@@ -7,7 +7,7 @@ import 'package:live_sites/src/platforms/kugoulive/parsers/kugoulive_parser.dart
 ///
 /// Not migrated yet: search (jsonp), directory and the danmaku
 /// transport.
-final class KugouLiveSite with SiteRoomGuard implements LiveSite {
+final class KugouLiveSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog {
   /// A site over [http].
   new({required this.http});
 
@@ -23,6 +23,31 @@ final class KugouLiveSite with SiteRoomGuard implements LiveSite {
   @override
   SiteMetadata get metadata =>
       const SiteMetadata(id: SiteIds.kugouLive, displayName: '酷狗直播', homeUrl: 'https://fanxing.kugou.com');
+
+  /// The site's areas, read from its own home page.
+  ///
+  /// A single request, and the page is also where the room links live, so
+  /// the answer is cached for the session: the catalogue and the directory
+  /// then agree about what the site currently offers.
+  @override
+  Future<List<LiveArea>> getAreas() async {
+    final html = await _home();
+    return KugouLiveParser.areas(html);
+  }
+
+  Future<String> _home() => _homeHtml ??= _fetchHome();
+
+  Future<String> _fetchHome() async {
+    final response = await http.send(
+      LiveRequest.get(Uri.https('fanxing.kugou.com', '/'), headers: KugouLiveParser.apiHeaders, site: siteId),
+    );
+    if (response.statusCode != 200) {
+      throw SiteApiChangedError('kugoulive home page: HTTP ${response.statusCode}');
+    }
+    return response.text;
+  }
+
+  Future<String>? _homeHtml;
 
   @override
   Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {

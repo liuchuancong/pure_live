@@ -165,4 +165,57 @@ abstract final class KugouLiveParser {
     }
     return url;
   }
+
+  /// The areas the site's own home page links.
+  ///
+  /// There is no catalogue endpoint: the page carries the areas as
+  /// `/pcindex/category/<id>` links with a `title`, in the order the site
+  /// shows them, and that is what is read here. The per-user routes are left
+  /// out — they are "my rooms" rather than subjects — and when the page
+  /// carries no such link at all the known list [fallbackAreas] is used,
+  /// because a page redesign must not leave the picker empty.
+  static List<LiveArea> areas(String html, {int status = 200}) {
+    if (status < 200 || status >= 300) {
+      throw SiteApiChangedError('kugoulive home page: HTTP $status');
+    }
+    final seen = <String>{};
+    final found = <({String id, String name})>[
+      for (final match in _areaLink.allMatches(html))
+        if (SiteText.title(SiteText.text(match.group(2))) case final name
+            when !_personalRoutes.contains(match.group(1)) && name.isNotEmpty && seen.add(match.group(1)!))
+          (id: match.group(1)!, name: name),
+    ];
+    return [for (final area in found.isEmpty ? fallbackAreas : found) _area(area.id, area.name)];
+  }
+
+  /// The category a stored area belongs to (the site has one).
+  static LiveArea _area(String id, String name) => LiveArea(id: id, name: name, parentId: areaType);
+
+  /// The areas the site is known to have, used when its page links none.
+  static const List<({String id, String name})> fallbackAreas = [
+    (id: '8000', name: '推荐'),
+    (id: '100001', name: '一起玩'),
+    (id: '100002', name: '音乐'),
+    (id: '31050', name: '高清'),
+    (id: '7024', name: '舞蹈'),
+    (id: '1009', name: '颜值'),
+    (id: '1001', name: '新秀'),
+    (id: '3007', name: '酷次元'),
+    (id: '7041', name: '搞笑'),
+    (id: '31', name: '国风'),
+    (id: '6201', name: '游戏女神'),
+    (id: '6007', name: '王者荣耀'),
+  ];
+
+  /// The area links of the home page.
+  static final RegExp _areaLink = RegExp(
+    r'''href=["\'](?:https://fanxing\.kugou\.com)?/pcindex/category/(\d{1,8})[^"\']*["\'][^>]*title=["\']([^"\']+)["\']''',
+    caseSensitive: false,
+  );
+
+  /// Routes of the site's own pages that are not subjects.
+  static const Set<String> _personalRoutes = {'3001', '3009', '3014', '3015'};
+
+  /// The one category name the site's areas belong to.
+  static const String areaType = 'official';
 }
