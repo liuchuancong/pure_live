@@ -617,3 +617,20 @@ platform 的共享模型;能力至少 live+feed+search+resolve 四面,弹幕/主
   4. **proxy:补实现还是改描述**。`foundation/network` 的 pubspec description 里写着 proxy,代码里没有;
      参考项目有 `live_net/proxy.dart` 与一整组 `Q-网络和代理` 文档。要么按 §4 第 8 条补上可用实现,
      要么把描述里的承诺去掉 —— 二者都行,但不能继续不一致。
+
+### 站点搬迁进度与下一站要点(2026-10-11 续)
+
+已落 `providers/sites/lib/src/`(一站两文件,测试在同名 test 目录,均已注册进 `registerBuiltInSources`):
+**acfun、douyu、huya、weibo、inke、kugou、missevan**(7 个直播站)+ `providers/vod_sites/lib/src/bilibili/`(点播)。
+测试:providers/sites 200 条。仍未落的一侧总数是参考项目的 34 个直播站。
+
+**下一站已勘查:twitcasting**(`origin/master lib/shared/platforms/twitcasting/`,api 19KB + site 5KB)。
+搬运时必须保留的规则(取自 v1 实测,不是猜测):
+
+- 房间名/broadcast 名要过 `^(?:(?:c|g|f|ig):)?[a-z0-9_]{1,64}$` 这类白名单,目录分类 key 是
+  `[a-zA-Z0-9_]{1,80}`;不合法就不发请求。
+- 目录走 `frontendapi.twitcasting.tv` 的 JSON,窗口是 `directoryWindow = 60`;搜索窗口 50;首页/分类页是
+  HTML 抓的(和酷狗一样要 `package:html`,别手撕标签)。
+- 播放地址只认 `^/tc\.livehls/v1/streams/<movieId>/hls/<n>.<n>/media\.m3u8$` 这一条路径形状,movieId 要和
+  房间答案一致 —— 换 movie 的地址属于另一场直播。
+- 请求头带 `Referer: https://twitcasting.tv/` 与 `Origin`。
