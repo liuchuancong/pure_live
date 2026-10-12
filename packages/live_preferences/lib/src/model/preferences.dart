@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'package:live_preferences/src/model/appearance_preferences.dart';
 import 'package:live_preferences/src/model/danmaku_preferences.dart';
+import 'package:live_preferences/src/model/iptv_preferences.dart';
 import 'package:live_preferences/src/model/library_preferences.dart';
 import 'package:live_preferences/src/model/playback_preferences.dart';
 import 'package:live_preferences/src/model/tv_preferences.dart';
@@ -40,8 +41,11 @@ abstract final class PreferencesKeys {
   /// Appearance group key.
   static const String appearance = '$prefix.appearance.v1';
 
+  /// IPTV library group key.
+  static const String iptv = '$prefix.iptv.v1';
+
   /// Every group key, in document order.
-  static const List<String> all = [playback, danmaku, library, tv, window, appearance];
+  static const List<String> all = [playback, danmaku, library, tv, window, appearance, iptv];
 }
 
 /// The user's preferences, grouped by what they configure.
@@ -73,6 +77,9 @@ abstract class Preferences with _$Preferences {
 
     /// Appearance: design language, theme mode, accent.
     @Default(AppearancePreferences()) AppearancePreferences appearance,
+
+    /// IPTV: how the channel library and its guides go stale.
+    @Default(IptvPreferences()) IptvPreferences iptv,
   }) = _Preferences;
 
   /// The shipping defaults, for first start and for reset.
