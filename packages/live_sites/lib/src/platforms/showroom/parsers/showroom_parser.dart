@@ -168,6 +168,44 @@ abstract final class ShowroomParser {
     return rooms;
   }
 
+  /// The lives matching [keyword] over every room once: the room id or url key
+  /// equal to it, or its name, telop or genre name containing it, the
+  /// comparison case-insensitive (SHOWROOM has no search API — this filters the
+  /// same live snapshot the directory reads). A blank keyword matches nothing.
+  static List<LiveRoom> search(Map<String, Object?> root, String keyword) {
+    final query = keyword.trim().toLowerCase();
+    if (query.isEmpty) {
+      return const [];
+    }
+    final rooms = <LiveRoom>[];
+    final seen = <String>{};
+    for (final group in SiteJson.list(root['onlives'])) {
+      for (final raw in SiteJson.list(SiteJson.object(group)['lives'])) {
+        final row = SiteJson.object(raw);
+        final id = SiteCounts.integer(row['room_id']);
+        if (id == null || id <= 0 || !seen.add('$id')) {
+          continue;
+        }
+        final name = SiteText.text(row['main_name']).toLowerCase();
+        final telop = SiteText.text(row['telop']).toLowerCase();
+        final key = SiteText.text(row['room_url_key']).toLowerCase();
+        final genre = SiteText.text(row['genre_name']).toLowerCase();
+        if ('$id' != query &&
+            key != query &&
+            !name.contains(query) &&
+            !telop.contains(query) &&
+            !genre.contains(query)) {
+          continue;
+        }
+        final room = card(row);
+        if (room != null) {
+          rooms.add(room);
+        }
+      }
+    }
+    return rooms;
+  }
+
   /// One live of the snapshot as a room, or null for a row without a room id.
   ///
   /// The room's name is the room's own name (`main_name`) and its caption

@@ -11,8 +11,9 @@ import 'package:live_sites/src/platforms/showroom/parsers/showroom_parser.dart';
 /// and per-broadcast key come from the same `live/live_info` answer the room
 /// snapshot does.
 ///
-/// Not migrated yet: search and the room's gift catalog (a gift is reported
-/// by its id until the catalog lands).
+/// Not migrated yet: the room's gift catalog (a gift is reported by its id
+/// until the catalog lands). Search filters the live snapshot (SHOWROOM has no
+/// search API).
 final class ShowroomSite
     with SiteRoomGuard
     implements LiveSite, LiveDanmakuCapability, LiveAreaCatalog, LiveDirectoryCapability {
@@ -107,9 +108,31 @@ final class ShowroomSite
     return genre;
   }
 
+  /// The lives matching [keyword] (SHOWROOM has no search API, so this filters
+  /// the live snapshot the directory reads): page 1 asks anew, a later page
+  /// cuts the same snapshot. A blank keyword or a page past the end finds
+  /// nothing.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('showroom search lands with its migration');
+    final query = keyword.trim();
+    if (query.isEmpty || page < 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final root = await _liveSnapshot(fresh: page == 1);
+    final lives = ShowroomParser.search(root, query);
+    const size = ShowroomParser.directoryPageSize;
+    final start = (page - 1) * size;
+    if (start >= lives.length) {
+      return LivePage<LiveRoom>(items: const [], totalCount: lives.length);
+    }
+    final end = (start + size).clamp(start, lives.length);
+    final hasMore = end < lives.length;
+    return LivePage(
+      items: lives.sublist(start, end),
+      hasMore: hasMore,
+      nextPage: hasMore ? page + 1 : null,
+      totalCount: lives.length,
+    );
   }
 
   /// The site's genres, which are the groups its live snapshot is divided
