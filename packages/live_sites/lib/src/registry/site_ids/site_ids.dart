@@ -99,6 +99,9 @@ abstract final class SiteIds {
   /// Steam Broadcast.
   static const String steamBroadcast = 'steambroadcast';
 
+  /// 17LIVE.
+  static const String seventeenLive = '17live';
+
   /// TikTok Live.
   static const String tiktok = 'tiktok';
 
@@ -142,6 +145,7 @@ abstract final class SiteIds {
     picarto,
     bigo,
     steamBroadcast,
+    seventeenLive,
     tiktok,
     iptv,
   ];

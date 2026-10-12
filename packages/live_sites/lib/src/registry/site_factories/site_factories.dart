@@ -24,6 +24,7 @@ import 'package:live_sites/src/platforms/missevan/missevan_site.dart';
 import 'package:live_sites/src/platforms/niconico/niconico_site.dart';
 import 'package:live_sites/src/platforms/pandalive/pandalive_site.dart';
 import 'package:live_sites/src/platforms/picarto/picarto_site.dart';
+import 'package:live_sites/src/platforms/seventeenlive/seventeenlive_site.dart';
 import 'package:live_sites/src/platforms/showroom/showroom_site.dart';
 import 'package:live_sites/src/platforms/sixroom/sixroom_site.dart';
 import 'package:live_sites/src/platforms/soop/soop_site.dart';
@@ -71,6 +72,7 @@ Map<String, LiveSite Function()> defaultSiteFactories(LiveHttp http, {IptvChanne
   SiteIds.showroom: () => ShowroomSite(http: http),
   SiteIds.sixroom: () => SixRoomSite(http: http),
   SiteIds.soop: () => SoopSite(http: http),
+  SiteIds.seventeenLive: () => SeventeenLiveSite(http: http),
   SiteIds.steamBroadcast: () => SteamBroadcastSite(http: http),
   SiteIds.tiktok: () => TikTokSite(http: http),
   SiteIds.twitcasting: () => TwitcastingSite(http: http),
