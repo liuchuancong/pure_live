@@ -1,12 +1,16 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/steambroadcast/danmaku/steambroadcast_danmaku.dart';
+import 'package:live_sites/src/platforms/steambroadcast/danmaku/steambroadcast_session.dart';
 import 'package:live_sites/src/platforms/steambroadcast/parsers/steambroadcast_parser.dart';
 
 /// The Steam Broadcast adapter: profile + getbroadcastmpd + info flow.
 ///
-/// Not migrated yet: the directory, the custom-URL (vanity) resolution and
-/// the chat.
-final class SteamBroadcastSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability {
+/// Not migrated yet: the directory's full set and the custom-URL (vanity)
+/// resolution. The chat ([connect]) polls the broadcast's chat log over HTTP.
+final class SteamBroadcastSite
+    with SiteRoomGuard
+    implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability, LiveDanmakuCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -87,6 +91,16 @@ final class SteamBroadcastSite with SiteRoomGuard implements LiveSite, LiveAreaC
     guardRoom(room);
     final fresh = await _read(room.roomId);
     return room.mergeFrom(fresh);
+  }
+
+  /// Opens Steam's broadcast chat: the session follows the broadcaster's
+  /// current broadcast (looking up its `broadcastid` and chat log itself, so
+  /// a fresh room id is enough here). A room id that is not a Steam 64-bit id
+  /// ends with a [SiteNotFoundError].
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) async {
+    guardRoom(room);
+    return await SteamBroadcastDanmakuSession.connect(SteamBroadcastDanmakuArgs(steamId: room.roomId.trim()), http);
   }
 
   /// The room: profile, getbroadcastmpd (state and master) and, unless
