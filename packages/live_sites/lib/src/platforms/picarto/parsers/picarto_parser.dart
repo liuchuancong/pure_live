@@ -29,6 +29,26 @@ abstract final class PicartoParser {
   /// A channel name: letters, digits and underscores/dashes.
   static bool isChannelName(String value) => RegExp(r'^[A-Za-z0-9_-]{1,64}$').hasMatch(value.trim());
 
+  /// Largest `api/search` page size 3.x served.
+  static const int maxPageSize = 60;
+
+  /// Longest keyword `api/search` takes; a longer one is cut.
+  static const int maxKeywordLength = 100;
+
+  /// The `api/search` (`searchProfiles`) URL for [keyword] at [page] of
+  /// [pageSize]: the channel search the site's own page uses. The keyword is
+  /// trimmed and cut to [maxKeywordLength], the page floored at one.
+  static Uri searchUrl(String keyword, {required int page, required int pageSize}) {
+    final text = keyword.trim();
+    return Uri.https(apiHost, '/api/search', {
+      'first': '$pageSize',
+      'page': '${page < 1 ? 1 : page}',
+      'q': text.length > maxKeywordLength ? text.substring(0, maxKeywordLength) : text,
+      'type': 'searchProfiles',
+      'tag_search': 'false',
+    });
+  }
+
   /// The channel detail URL of [name].
   static Uri detailUrl(String name) => Uri.https(apiHost, '/api/channel/detail/$name');
 
@@ -140,6 +160,50 @@ abstract final class PicartoParser {
   /// The numeric channel id of a room, from its detail; null until a detail
   /// has answered. The chat socket names the room by it.
   static int? channelIdOf(Object? data) => data is Map<String, Object?> ? _asInt(data['channelId']) : null;
+
+  /// An `api/search` (`searchProfiles`) page: channel profiles, live and
+  /// offline, one per name, each at most [pageSize]. A profile with no valid
+  /// name, id or online flag, or with negative followers, is left out; a page
+  /// with rows but none usable is a changed endpoint. The profile's title is
+  /// its name (search rows carry no stream title), and the bio and follower
+  /// count the reduced room model has no field for are dropped.
+  static List<LiveRoom> search(String body, {required int pageSize, int status = 200}) {
+    final root = PicartoParser.root(body, status: status, what: 'search');
+    final rows = SiteJson.object(root['searchProfiles'])['data'];
+    if (rows is! List || rows.length > pageSize) {
+      throw SiteApiChangedError('picarto search: no searchProfiles.data of at most $pageSize');
+    }
+    final rooms = <String, LiveRoom>{};
+    var usable = 0;
+    for (final profile in SiteJson.objects(rows)) {
+      final id = SiteCounts.integer(profile['id']);
+      final followers = SiteCounts.integer(profile['follower_count']);
+      final name = SiteText.trimmed(profile['name']);
+      if (!isChannelName(name) ||
+          id == null ||
+          id <= 0 ||
+          profile['online'] is! bool ||
+          (followers != null && followers < 0)) {
+        continue;
+      }
+      usable++;
+      rooms.putIfAbsent(
+        name.toLowerCase(),
+        () => LiveRoom(
+          platform: SiteIds.picarto,
+          roomId: name,
+          title: name,
+          nick: name,
+          avatar: _image(profile['avatar']),
+          status: profile['online'] == true ? LiveStatus.live : LiveStatus.offline,
+        ),
+      );
+    }
+    if (rows.isNotEmpty && usable == 0) {
+      throw const SiteApiChangedError('picarto search: no usable profile');
+    }
+    return List.unmodifiable(rooms.values);
+  }
 
   static int? _asInt(Object? value) => value is int ? value : int.tryParse('$value');
 

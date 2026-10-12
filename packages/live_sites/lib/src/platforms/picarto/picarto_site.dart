@@ -7,7 +7,7 @@ import 'package:live_sites/src/platforms/picarto/parsers/picarto_parser.dart';
 /// socket over a GraphQL-issued token.
 ///
 /// Not migrated yet: the multistream overlay, the broadcast start from the
-/// public API, directory and search.
+/// public API, and the directory.
 final class PicartoSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability {
   /// A site over [http].
   new({required this.http});
@@ -35,9 +35,27 @@ final class PicartoSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapab
     throw UnimplementedError('picarto directory lands with its migration');
   }
 
+  /// The site's channel search: one `api/search` (`searchProfiles`) page of
+  /// thirty at [page], live and offline profiles alike. A blank keyword is
+  /// nothing without a request; the site pages by its own cursor, so a page
+  /// past the results is an empty answer.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('picarto search lands with its migration');
+    final text = keyword.trim();
+    if (text.isEmpty) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    const size = 30;
+    final response = await http.send(
+      LiveRequest.get(
+        PicartoParser.searchUrl(text, page: page < 1 ? 1 : page, pageSize: size),
+        headers: PicartoParser.headers,
+        site: siteId,
+      ),
+    );
+    return LivePage<LiveRoom>(
+      items: PicartoParser.search(response.text, pageSize: size, status: response.statusCode),
+    );
   }
 
   @override
