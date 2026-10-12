@@ -32,14 +32,14 @@ abstract final class KilakilaParser {
       throw const SiteApiChangedError('kilakila getRoomInfo: body is not an object');
     }
     final header = decoded['h'];
-    final code = header is Map<String, Object?> ? (header['code'] as num?)?.toInt() : null;
+    final code = SiteCounts.integer(header is Map<String, Object?> ? header['code'] : null);
     if (code == 5201) {
       throw SiteNotFoundError('kilakila getRoomInfo: no broadcast $broadcastId');
     }
     if (code == 5966) {
       throw SiteNotFoundError('kilakila getRoomInfo: $broadcastId is a historical replay');
     }
-    if (code != null && code != 0) {
+    if (code != null && code != 0 && code != 200) {
       throw SiteApiChangedError('kilakila getRoomInfo: code $code');
     }
     final body = decoded['b'];
@@ -202,9 +202,9 @@ abstract final class KilakilaParser {
     if (nick.isEmpty || title.isEmpty) {
       throw SiteApiChangedError('kilakila getRoomInfo $broadcastId: owner or title missing');
     }
-    final state = (body['status'] as num?)?.toInt();
-    final price = (body['goldPrice'] as num?)?.toInt() ?? 0;
-    final startMs = (body['actualTime'] as num?)?.toInt();
+    final state = SiteCounts.integer(body['status']);
+    final price = SiteCounts.integer(body['goldPrice']) ?? 0;
+    final startMs = SiteCounts.integer(body['actualTime']);
     final live = state == 4;
     return LiveRoom(
       platform: SiteIds.kilakila,
@@ -213,7 +213,7 @@ abstract final class KilakilaParser {
       nick: nick,
       avatar: _picture(ownerMap['headPortraitUrl']),
       cover: _picture(body['backPic']) ?? _picture(body['defaultBackgroundPicUrl']),
-      watching: (body['onlineNumber'] as num?)?.toInt(),
+      watching: SiteCounts.integer(body['onlineNumber']) ?? SiteCounts.integer(body['watchNumber']),
       status: live ? LiveStatus.live : LiveStatus.offline,
       restriction: live && price > 0 ? LiveRestriction.paid : null,
       startedAt: live && startMs != null && startMs >= 1000000000000 && startMs < 10000000000000
