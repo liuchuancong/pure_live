@@ -191,6 +191,17 @@ abstract final class KugouLiveParser {
 
   static final RegExp _roomId = RegExp(r'^[1-9][0-9]{2,10}$');
 
+  /// The longest keyword searched.
+  static const int maxKeywordLength = 100;
+
+  /// The search of [keyword], answered as JSONP to [callback]: 200 streamers,
+  /// live or not.
+  static Uri searchUrl(String keyword, String callback) => Uri.https(apiHost, '/pt_search/pcsearch/v1/type_all.jsonp', {
+    'keywords': keyword,
+    'nums': '200,0,0,0',
+    'callback': callback,
+  });
+
   /// The room list of [areaId] at [page]: the recommendations are
   /// `index/list`, another area `index/list_v4` with its `cid`, and the
   /// answers differ in nothing else.
@@ -255,11 +266,13 @@ abstract final class KugouLiveParser {
   /// the avatar `userLogo` (a present `logo` only when it is absent), the
   /// cover `imgPath` (else `imagePath`). `viewerNum`/`getViewerNum` are the
   /// viewers and `hot` the popularity — the site publishes one or the other —
-  /// and a live card's start is its `livetime`, the broadcast's age in
-  /// seconds when the answer was written.
-  static LiveRoom? card(Map<String, Object?> raw, {DateTime? answeredAt}) {
-    final id = SiteText.trimmed(raw['roomId']);
-    if (!_roomId.hasMatch(id)) {
+  /// and a live card's start is its `livetime`, the broadcast's age in seconds
+  /// when the answer was written. A [search] row's viewers only count while it
+  /// is live and above 0 (the search answers 0 for everyone), and its start is
+  /// `lastLiveTime` (Unix seconds).
+  static LiveRoom? card(Map<String, Object?> raw, {DateTime? answeredAt, bool search = false}) {
+    final id = parseRoomId(SiteText.text(raw['roomId']));
+    if (id == null) {
       return null;
     }
     final nick = SiteText.title(SiteText.text(raw['nickName']));
@@ -274,10 +287,122 @@ abstract final class KugouLiveParser {
       avatar: image(raw['userLogo'] ?? raw['logo']),
       cover: image(raw['imgPath'] ?? raw['imagePath']),
       status: state,
-      watching: viewers ?? SiteCounts.integer(raw['hot']),
-      onlineViewers: viewers,
-      startedAt: live ? listStart(raw['livetime'], answeredAt) : null,
+      watching: search && !(live && viewers != null && viewers > 0)
+          ? null
+          : (viewers ?? SiteCounts.integer(raw['hot'])),
+      onlineViewers: search && !(live && viewers != null && viewers > 0) ? null : viewers,
+      startedAt: !live
+          ? null
+          : search
+          ? _unixStart(raw['lastLiveTime'], answeredAt)
+          : listStart(raw['livetime'], answeredAt),
     );
+  }
+
+  /// [roomId] as a room number (a room link names one); anything else is null.
+  static String? parseRoomId(String roomId) {
+    final value = roomId.trim();
+    if (_roomId.hasMatch(value)) {
+      return value;
+    }
+    return roomIdFromUrl(value);
+  }
+
+  /// The room of a room link: http(s) on `fanxing.kugou.com` or
+  /// `mfanxing.kugou.com`, the default port, no user info or fragment; the path
+  /// is one room number, or any path with a `roomId` query. Null otherwise.
+  static String? roomIdFromUrl(String url) {
+    final uri = Uri.tryParse(url.trim());
+    if (uri == null ||
+        !const {'http', 'https'}.contains(uri.scheme.toLowerCase()) ||
+        uri.userInfo.isNotEmpty ||
+        !_webHosts.contains(uri.host.toLowerCase()) ||
+        (uri.hasPort && uri.port != 80 && uri.port != 443) ||
+        uri.fragment.isNotEmpty) {
+      return null;
+    }
+    try {
+      final segments = uri.pathSegments.where((part) => part.isNotEmpty).toList(growable: false);
+      if (segments.length == 1 && _roomId.hasMatch(segments.single)) {
+        return segments.single;
+      }
+      final queryId = uri.queryParameters['roomId']?.trim();
+      return queryId != null && _roomId.hasMatch(queryId) ? queryId : null;
+    } on FormatException {
+      return null;
+    }
+  }
+
+  /// A `lastLiveTime` (Unix seconds) as a plausible start, else null.
+  static DateTime? _unixStart(Object? seconds, DateTime? answeredAt) {
+    final value = SiteCounts.integer(seconds);
+    if (value == null || value <= 0) {
+      return null;
+    }
+    return _plausible(DateTime.fromMillisecondsSinceEpoch(value * 1000, isUtc: true), answeredAt);
+  }
+
+  static const Set<String> _webHosts = {'fanxing.kugou.com', 'mfanxing.kugou.com'};
+  static final RegExp _callbackName = RegExp(r'^[A-Za-z_$][A-Za-z0-9_$.]*$');
+
+  /// The largest search answer read (4 MiB).
+  static const int responseLimit = 4 * 1024 * 1024;
+
+  /// The room list of a search page: the cards of `data.anchor.list` (each a
+  /// [card] in search mode), a room once, sliced to page [page] of [pageSize].
+  /// The answer is JSONP to [callback] (when given) with nothing after it but
+  /// `;`; a `status` (else `code`) other than 0 or 1 is empty. A failed status
+  /// or a non-JSON body is an API change.
+  static LivePage<LiveRoom> searchPage(
+    String body, {
+    required int page,
+    String? callback,
+    int pageSize = 30,
+    int status = 200,
+  }) {
+    const what = 'search';
+    if (status < 200 || status >= 300) {
+      throw SiteApiChangedError('kugoulive $what: HTTP $status');
+    }
+    if (body.length > responseLimit) {
+      throw const SiteApiChangedError('kugoulive $what: answer over $responseLimit characters');
+    }
+    final text = body.trim();
+    final open = text.indexOf('(');
+    final close = text.lastIndexOf(')');
+    if (open <= 0 || close <= open || text.substring(close + 1).trim().replaceAll(';', '').isNotEmpty) {
+      throw const SiteApiChangedError('kugoulive $what: not JSONP');
+    }
+    final name = text.substring(0, open).trim();
+    if (!_callbackName.hasMatch(name) || (callback != null && name != callback)) {
+      throw SiteApiChangedError('kugoulive $what: JSONP to $name, not $callback');
+    }
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(text.substring(open + 1, close));
+    } on FormatException {
+      throw const SiteApiChangedError('kugoulive $what: not JSON');
+    }
+    final root = decoded is Map<String, Object?> ? decoded : const <String, Object?>{};
+    final code = SiteCounts.integer(root['status'] ?? root['code']);
+    if (code != null && code != 0 && code != 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final at = answeredAt(root);
+    final seen = <String>{};
+    final rooms = <LiveRoom>[];
+    final data = SiteJson.object(root['data']);
+    for (final row in SiteJson.list(SiteJson.object(SiteJson.object(data['anchor'])['list']))) {
+      if (card(SiteJson.object(row), answeredAt: at, search: true) case final room? when seen.add(room.roomId)) {
+        rooms.add(room);
+      }
+    }
+    final start = (page - 1) * pageSize;
+    final slice = start >= rooms.length
+        ? const <LiveRoom>[]
+        : rooms.sublist(start, (start + pageSize).clamp(0, rooms.length));
+    final hasMore = start + pageSize < rooms.length;
+    return LivePage(items: slice, hasMore: hasMore, nextPage: hasMore ? page + 1 : null);
   }
 
   /// A card's state (`liveStatus`, else `status`, else `liveType`): a

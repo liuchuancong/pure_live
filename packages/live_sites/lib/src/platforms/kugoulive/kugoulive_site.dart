@@ -5,11 +5,10 @@ import 'package:live_sites/src/platforms/kugoulive/danmaku/kugoulive_session.dar
 import 'package:live_sites/src/platforms/kugoulive/parsers/kugoulive_parser.dart';
 
 /// The Kugou Live adapter: getEnterRoomInfo rooms, the streamaddr multi-line
-/// play answer and the `index/list` directory.
+/// play answer, the `index/list` directory and the `type_all.jsonp` search.
 ///
-/// Not migrated yet: search (jsonp). The chat ([connect]) is the scheduler's
-/// hosts and a protobuf-over-WebSocket login ([KugouLiveDanmakuSession]); the
-/// room id is the numeric room number.
+/// The chat ([connect]) is the scheduler's hosts and a protobuf-over-WebSocket
+/// login ([KugouLiveDanmakuSession]); the room id is the numeric room number.
 final class KugouLiveSite
     with SiteRoomGuard
     implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability, LiveDanmakuCapability {
@@ -75,7 +74,32 @@ final class KugouLiveSite
 
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('kugoulive search lands with its migration');
+    final text = keyword.trim();
+    if (text.isEmpty || page < 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    // A room number or room link finds that room on page 1 (one enter-room
+    // info), nothing on later pages.
+    final roomId = KugouLiveParser.parseRoomId(text);
+    if (roomId != null) {
+      if (page != 1) {
+        return const LivePage<LiveRoom>(items: []);
+      }
+      try {
+        return LivePage<LiveRoom>(items: [await _info(roomId)]);
+      } on SiteNotFoundError {
+        return const LivePage<LiveRoom>(items: []);
+      }
+    }
+    if (text.length > KugouLiveParser.maxKeywordLength) {
+      throw ArgumentError.value(keyword, 'keyword', 'longer than ${KugouLiveParser.maxKeywordLength} characters');
+    }
+    // One `type_all.jsonp` answers 200 streamers; page [page] is cut here.
+    final callback = 'pureLive${DateTime.now().microsecondsSinceEpoch}';
+    final response = await http.send(
+      LiveRequest.get(KugouLiveParser.searchUrl(text, callback), headers: KugouLiveParser.apiHeaders, site: siteId),
+    );
+    return KugouLiveParser.searchPage(response.text, callback: callback, page: page, status: response.statusCode);
   }
 
   @override
