@@ -7,7 +7,7 @@ import 'package:live_sites/src/platforms/soop/parsers/soop_parser.dart';
 ///
 /// Not migrated yet: the station profile, directory, search and the chat
 /// WebSocket.
-final class SoopSite with SiteRoomGuard implements LiveSite {
+final class SoopSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -24,14 +24,72 @@ final class SoopSite with SiteRoomGuard implements LiveSite {
   SiteMetadata get metadata =>
       const SiteMetadata(id: SiteIds.soop, displayName: 'SOOP', homeUrl: 'https://www.sooplive.co.kr');
 
+  /// The catalogue: every area of the one category, walked from
+  /// `categoryList` until it says there is no more — twenty pages at most,
+  /// because the site repeats its list when paged past the end. A failing
+  /// first page fails the catalogue; a later failing one ends it with the
+  /// areas so far, as the previous generation showed a partial list rather
+  /// than none.
   @override
-  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
-    throw UnimplementedError('soop directory lands with its migration');
+  Future<List<LiveArea>> getAreas() async {
+    final areas = <String, LiveArea>{};
+    for (var page = 1; page <= SoopParser.maxCategoryPages; page++) {
+      final ({List<LiveArea> areas, bool hasMore}) result;
+      try {
+        final response = await http.send(
+          LiveRequest.get(SoopParser.categoryListUrl(page), headers: SoopParser.headers, site: siteId),
+        );
+        result = SoopParser.categoryPage(response.text, status: response.statusCode);
+      } on SiteError {
+        if (page == 1) {
+          rethrow;
+        }
+        break;
+      }
+      var added = false;
+      for (final area in result.areas) {
+        if (areas.containsKey(area.id)) {
+          continue;
+        }
+        areas[area.id] = area;
+        added = true;
+      }
+      if (!result.hasMore || !added) {
+        break;
+      }
+    }
+    return [...areas.values];
   }
 
+  /// Page [page] of the site's recommendations: sixty rooms by viewers, and
+  /// the list ends with an empty page.
+  @override
+  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
+    if (page < 1) {
+      throw RangeError.range(page, 1, null, 'page');
+    }
+    final response = await http.send(
+      LiveRequest.get(SoopParser.recommendUrl(page), headers: SoopParser.headers, site: siteId),
+    );
+    return SoopParser.recommendPage(response.text, status: response.statusCode);
+  }
+
+  /// Page [page] of one area's live listing; an area id that is not a
+  /// category number is a caller error rather than a request that cannot
+  /// work.
   @override
   Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    throw UnimplementedError('soop directory lands with its migration');
+    final no = area.id.trim();
+    if (!RegExp(r'^[0-9]{4,12}$').hasMatch(no)) {
+      throw SiteError.invalidRoomId(area.id);
+    }
+    if (page < 1) {
+      throw RangeError.range(page, 1, null, 'page');
+    }
+    final response = await http.send(
+      LiveRequest.get(SoopParser.areaListUrl(no, page), headers: SoopParser.headers, site: siteId),
+    );
+    return SoopParser.areaPage(response.text, areaName: area.name, status: response.statusCode);
   }
 
   @override
