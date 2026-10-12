@@ -6,10 +6,13 @@ import 'package:live_sites/src/platforms/sixroom/danmaku/sixroom_danmaku.dart';
 import 'package:live_sites/src/platforms/sixroom/danmaku/sixroom_session.dart';
 import 'package:live_sites/src/platforms/sixroom/parsers/sixroom_parser.dart';
 
-/// The 6.cn (六间房) adapter: room page user id → inroom answer flow, plus the
+/// The 6.cn (六间房) adapter: room page user id → inroom answer flow, the
+/// mobile-list/subarea/homepage directory, the `search.php` search, and the
 /// guest chat socket on one of the room's `getChat.php` servers.
 ///
-/// Not migrated yet: directory and search.
+/// The directory and search are stateless here: each page reads its own answer
+/// and search rows map straight from the page (3.x's remembered-room registry
+/// that fills a search card's gaps has no counterpart in the reduced model).
 final class SixRoomSite
     with SiteRoomGuard
     implements LiveSite, LiveDanmakuCapability, LiveAreaCatalog, LiveDirectoryCapability {
@@ -107,9 +110,36 @@ final class SixRoomSite
     return LivePage<LiveRoom>(items: SixRoomParser.homeRooms(response.text, status: response.statusCode));
   }
 
+  /// 3.x's search, page 1 only (the site's search page is not paged here): a
+  /// room number or room link is that room (a room the site does not know is
+  /// nothing); a blank keyword, a page below 1, a later page or a keyword over
+  /// 80 characters gives nothing without a request; anything else is the
+  /// `search.php` page.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('sixroom search lands with its migration');
+    final raw = keyword.trim();
+    if (raw.isEmpty || page < 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final roomId = SixRoomParser.roomIdOf(raw);
+    if (roomId != null) {
+      if (page != 1) {
+        return const LivePage<LiveRoom>(items: []);
+      }
+      try {
+        return LivePage<LiveRoom>(items: [await _read(roomId)]);
+      } on SiteNotFoundError {
+        return const LivePage<LiveRoom>(items: []);
+      }
+    }
+    if (page > 1 || raw.length > SixRoomParser.maxKeywordLength) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final response = await http.send(
+      LiveRequest.get(SixRoomParser.searchUrl(raw), headers: SixRoomParser.headers, site: siteId),
+    );
+    final rooms = SixRoomParser.searchRooms(response.text, status: response.statusCode);
+    return LivePage<LiveRoom>(items: rooms.take(SixRoomParser.pageSize).toList(growable: false));
   }
 
   @override

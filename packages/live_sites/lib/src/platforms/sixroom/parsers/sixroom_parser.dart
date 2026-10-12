@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:html/parser.dart' as html;
 import 'package:live_sites/live_sites.dart';
 
 /// Static parsers for the 6.cn (六间房) live APIs.
@@ -55,6 +56,91 @@ abstract final class SixRoomParser {
       }
     }
     return null;
+  }
+
+  /// The longest keyword the search page takes (3.x refused a longer one).
+  static const int maxKeywordLength = 80;
+
+  /// The search page for [keyword].
+  static Uri searchUrl(String keyword) =>
+      Uri.parse('$origin/search.php').replace(queryParameters: {'type': 'use', 'key': keyword});
+
+  /// The search page (`search.php`) as rooms: each `ul.search-user` entry's
+  /// broadcaster, named by its `.alias`, with the `.pic` image as avatar,
+  /// live when it carries an `i.live` mark and offline when its link is a
+  /// `/profile/…` page (else unknown). An entry without a room number, a valid
+  /// user id, or seen already is left out. The "输入内容过长" prompt (a keyword
+  /// the site calls too long) is no result; any other prompt page is risk
+  /// control; no list at all is a changed page.
+  static List<LiveRoom> searchRooms(String body, {int status = 200}) {
+    if (status < 200 || status >= 300) {
+      throw switch (status) {
+        404 || 410 => SiteNotFoundError('sixroom search: HTTP $status'),
+        429 => SiteRateLimitedError('sixroom search: HTTP $status'),
+        401 || 403 => SiteRiskControlError('sixroom search: HTTP $status'),
+        _ when status >= 300 && status < 400 => SiteRiskControlError('sixroom search: HTTP $status'),
+        _ => SiteApiChangedError('sixroom search: HTTP $status'),
+      };
+    }
+    final root = html.parseFragment(body);
+    final page = root.querySelector('.page-search-user');
+    if (page == null) {
+      final remind = root.querySelector('.remind');
+      if (remind == null) {
+        throw const SiteApiChangedError('sixroom search: no page-search-user');
+      }
+      final message = (remind.querySelector('.rcontent')?.text ?? '').trim();
+      if (message.contains('过长')) {
+        return const [];
+      }
+      throw SiteRiskControlError('sixroom search: $message');
+    }
+    final seen = <String>{};
+    final rooms = <LiveRoom>[];
+    for (final item in page.querySelectorAll('ul.search-user > li[data-uid]')) {
+      final userId = item.attributes['data-uid']?.trim() ?? '';
+      final href = item.querySelector('a.user-box')?.attributes['href'] ?? '';
+      final Uri link;
+      try {
+        link = Uri.parse(origin).resolve(href);
+      } on FormatException {
+        continue;
+      }
+      final roomId = roomIdOf('$link');
+      if (roomId == null || !isUserId(userId) || !seen.add(roomId)) {
+        continue;
+      }
+      final image = item.querySelector('.pic img');
+      final dataSrc = (image?.attributes['data-src'] ?? '').trim();
+      final src = (image?.attributes['src'] ?? '').trim();
+      final nick = SiteText.title(item.querySelector('.alias')?.text ?? '');
+      final live = item.querySelector('i.live') != null;
+      final profile = link.pathSegments.isNotEmpty && link.pathSegments.first.toLowerCase() == 'profile';
+      rooms.add(
+        LiveRoom(
+          platform: SiteIds.sixroom,
+          roomId: roomId,
+          nick: nick,
+          title: nick,
+          avatar: _searchImage(dataSrc.isNotEmpty ? dataSrc : src),
+          status: live
+              ? LiveStatus.live
+              : profile
+              ? LiveStatus.offline
+              : LiveStatus.unknown,
+        ),
+      );
+    }
+    return List.unmodifiable(rooms);
+  }
+
+  /// A search avatar URL kept only as https (a protocol-relative one upgraded);
+  /// null for an empty or non-http value.
+  static String? _searchImage(String value) {
+    if (value.startsWith('//')) {
+      return 'https:$value';
+    }
+    return value.startsWith('http') ? value : null;
   }
 
   static final RegExp _pageIds = RegExp(
