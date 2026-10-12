@@ -113,7 +113,16 @@ abstract final class DouyinParser {
       status: live ? LiveStatus.live : LiveStatus.offline,
       startedAt: live ? _epoch(room['start_time']) ?? _epoch(room['create_time']) : null,
       data: live ? room['stream_url'] : null,
+      danmakuData: live ? _numericRoomId(room) : null,
     );
+  }
+
+  /// This broadcast's numeric `room_id` (`id_str`, else `id`), the chat
+  /// channel's name; null when it is absent, `0` or not digits.
+  static String? _numericRoomId(Map<String, Object?> room) {
+    final text = (room['id_str'] ?? room['id'])?.toString().trim();
+    if (text == null || text.isEmpty || text == '0') return null;
+    return RegExp(r'^\d+$').hasMatch(text) ? text : null;
   }
 
   /// The quality levels of a `stream_url`: the sdk options first, the

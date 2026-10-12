@@ -1,5 +1,8 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/douyin/danmaku/douyin_danmaku.dart';
+import 'package:live_sites/src/platforms/douyin/danmaku/douyin_session.dart';
+import 'package:live_sites/src/platforms/douyin/danmaku/douyin_sign.dart';
 import 'package:live_sites/src/platforms/douyin/parsers/douyin_parser.dart';
 
 /// The Douyin adapter: the webcast enter flow with the signer as a seam.
@@ -9,7 +12,7 @@ import 'package:live_sites/src/platforms/douyin/parsers/douyin_parser.dart';
 /// endpoints. The full browser-cipher signer and the room-page React
 /// payload fallback are the next migration step — the seam exists so the
 /// app can inject them without touching the adapter.
-final class DouyinSite with SiteRoomGuard implements LiveSite {
+final class DouyinSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability {
   /// A site over [http]; [signer] signs query parameters (default:
   /// unsigned).
   new({required this.http, DouyinSigner? signer}) : signer = signer ?? _unsigned;
@@ -83,5 +86,21 @@ final class DouyinSite with SiteRoomGuard implements LiveSite {
     });
     final response = await http.send(LiveRequest.get(url, headers: DouyinParser.apiHeaders, site: id));
     return DouyinParser.enter(response.text, webRid: webRid, status: response.statusCode);
+  }
+
+  /// The room's chat: a fresh enter brings this broadcast's numeric room id (the
+  /// web IM channel's name) in [LiveRoom.danmakuData]; the visitor id is generated
+  /// per connect ([DouyinSign.visitorId]) and the socket is signed and opened by
+  /// [DouyinDanmakuSession.connect].
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) async {
+    guardRoom(room);
+    final detail = await _enter(room.roomId);
+    final numeric = detail.danmakuData;
+    if (numeric is! String || numeric.isEmpty) {
+      throw SiteNotFoundError('douyin ${room.roomId}: no broadcast room id');
+    }
+    final args = DouyinDanmakuArgs(webRid: room.roomId, roomId: numeric, userId: DouyinSign.visitorId());
+    return await DouyinDanmakuSession.connect(args);
   }
 }
