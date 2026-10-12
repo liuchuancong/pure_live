@@ -125,7 +125,7 @@ abstract final class XiaohongshuParser {
     if (echoed != null && echoed != roomId) {
       throw SiteApiChangedError('xiaohongshu share page: asked $roomId, got $echoed');
     }
-    final code = (info['status'] as num?)?.toInt();
+    final code = SiteCounts.integer(info['status']);
     final liveStatus = state['liveStatus'];
     final live = code == 2;
     if (live && liveStatus != 'success') {

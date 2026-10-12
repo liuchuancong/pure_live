@@ -67,7 +67,7 @@ abstract final class PicartoParser {
     if (name.toLowerCase() != requestedId.trim().toLowerCase() || channel['private'] is! bool) {
       throw const SiteApiChangedError('picarto channel/detail: invalid channel');
     }
-    final channelId = (channel['id'] as num?)?.toInt();
+    final channelId = SiteCounts.integer(channel['id']);
     final live = channel['online'] == true;
     final private = channel['private'] == true;
     Uri? master;
@@ -84,7 +84,7 @@ abstract final class PicartoParser {
       String? streamName;
       if (streams is List) {
         for (final entry in streams) {
-          if (entry is Map<String, Object?> && (entry['channelId'] as num?)?.toInt() == channelId) {
+          if (entry is Map<String, Object?> && SiteCounts.integer(entry['channelId']) == channelId) {
             final candidate = entry['stream_name']?.toString() ?? '';
             if (RegExp(r'^[a-zA-Z0-9_+-]{1,150}$').hasMatch(candidate)) {
               streamName = candidate;
@@ -113,7 +113,7 @@ abstract final class PicartoParser {
       avatar: _image(channel['avatar']),
       cover: _image(channel['image_thumbnail']),
       areaName: areaName,
-      watching: (channel['viewers'] as num?)?.toInt(),
+      watching: SiteCounts.integer(channel['viewers']),
       status: live ? LiveStatus.live : LiveStatus.offline,
       restriction: private ? LiveRestriction.private : null,
       data: <String, Object?>{'channelId': ?channelId, 'master': ?master},

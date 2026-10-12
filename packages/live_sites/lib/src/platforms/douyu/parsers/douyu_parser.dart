@@ -22,7 +22,7 @@ abstract final class DouyuParser {
     if (root is! Map<String, Object?>) {
       throw SiteApiChangedError('douyu $what: body is not an object');
     }
-    final error = (root['error'] as num?)?.toInt() ?? (root['code'] as num?)?.toInt() ?? 0;
+    final error = SiteCounts.integer(root['error']) ?? SiteCounts.integer(root['code']) ?? 0;
     if (error != 0) {
       final message = root['msg']?.toString() ?? root['message']?.toString() ?? '';
       throw SiteApiChangedError('douyu $what: error $error $message'.trim());
@@ -48,7 +48,7 @@ abstract final class DouyuParser {
     if (decoded is! Map<String, Object?>) {
       throw const SiteApiChangedError('getH5PlayV1: body is not an object');
     }
-    final code = (decoded['error'] as num?)?.toInt() ?? (decoded['code'] as num?)?.toInt();
+    final code = SiteCounts.integer(decoded['error']) ?? SiteCounts.integer(decoded['code']);
     if (code == null) {
       throw const SiteApiChangedError('getH5PlayV1: no error code');
     }
@@ -217,7 +217,7 @@ abstract final class DouyuParser {
         rooms.add(room);
       }
     }
-    final pages = (data is Map<String, Object?> ? data['pgcnt'] as num? : null)?.toInt() ?? 0;
+    final pages = data is Map<String, Object?> ? (SiteCounts.integer(data['pgcnt']) ?? 0) : 0;
     return LivePage<LiveRoom>(items: rooms, hasMore: rooms.isNotEmpty && pages > 0 && pages > 1);
   }
 
@@ -235,7 +235,7 @@ abstract final class DouyuParser {
       avatar: _image(item['av']),
       cover: _cover(item['rs16']),
       areaName: item['c2name']?.toString(),
-      watching: (item['ol'] as num?)?.toInt(),
+      watching: SiteCounts.integer(item['ol']),
       status: LiveStatus.live,
     );
   }

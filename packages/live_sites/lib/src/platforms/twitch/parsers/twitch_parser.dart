@@ -136,7 +136,7 @@ abstract final class TwitchParser {
       avatar: _image(user['profileImageURL']),
       cover: _image(streamMap?['previewImageURL']),
       areaName: (gameMap['displayName'] ?? gameMap['name'])?.toString(),
-      watching: (streamMap?['viewersCount'] as num?)?.toInt(),
+      watching: SiteCounts.integer(streamMap?['viewersCount']),
       status: live ? LiveStatus.live : LiveStatus.offline,
       restriction: live && restrictionType != null && restrictionType != 'NONE' ? LiveRestriction.regionBlocked : null,
       startedAt: live && createdAt != null ? DateTime.tryParse(createdAt) : null,

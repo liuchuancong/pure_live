@@ -293,7 +293,7 @@ abstract final class InkeParser {
     if (live['creator']?.toString() != uid) {
       throw SiteApiChangedError('inke now_publish: a broadcast of ${live['creator']} for $uid');
     }
-    if ((live['status'] as num?)?.toInt() != 1) {
+    if (SiteCounts.integer(live['status']) != 1) {
       return null;
     }
     final lines = <LivePlayLine>[];
@@ -306,12 +306,12 @@ abstract final class InkeParser {
       lines.add(LivePlayLine(url: origin, headers: headers, format: StreamFormat.flv, lineId: 'original'));
     }
     final numbers = live['numbers'];
-    final online = numbers is Map<String, Object?> ? (numbers['real'] as num?)?.toInt() : null;
-    final startedSeconds = (live['start_time'] as num?)?.toInt();
+    final online = numbers is Map<String, Object?> ? SiteCounts.integer(numbers['real']) : null;
+    final startedSeconds = SiteCounts.integer(live['start_time']);
     return (
       lines: lines,
       cover: image(live['cover']),
-      watching: online ?? (live['online_users'] as num?)?.toInt(),
+      watching: online ?? SiteCounts.integer(live['online_users']),
       startedAt: startedSeconds == null || startedSeconds < 946684800
           ? null
           : DateTime.fromMillisecondsSinceEpoch(startedSeconds * 1000, isUtc: true),

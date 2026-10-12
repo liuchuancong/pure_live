@@ -68,7 +68,7 @@ abstract final class TikTokParser {
     if (decoded is! Map<String, Object?>) {
       throw SiteApiChangedError('tiktok $what: body is not an object');
     }
-    final code = (decoded['statusCode'] as num?)?.toInt() ?? 0;
+    final code = SiteCounts.integer(decoded['statusCode']) ?? 0;
     if (code != 0) {
       final message = decoded['message']?.toString() ?? '';
       final lower = message.toLowerCase();
@@ -96,13 +96,13 @@ abstract final class TikTokParser {
     if (actual != username) {
       throw SiteApiChangedError('tiktok user/room: asked $username, got $actual');
     }
-    final state = (live['status'] ?? user['status']) as num?;
-    final liveState = state?.toInt() == 2;
+    final state = SiteCounts.integer(live['status'] ?? user['status']);
+    final liveState = state == 2;
     final roomStats = live['liveRoomStats'];
     final roomStatsMap = roomStats is Map<String, Object?> ? roomStats : const <String, Object?>{};
     final nickname = user['nickname']?.toString() ?? '';
     final title = live['title']?.toString() ?? '';
-    final startSeconds = (live['startTime'] as num?)?.toInt();
+    final startSeconds = SiteCounts.integer(live['startTime']);
     return LiveRoom(
       platform: SiteIds.tiktok,
       roomId: username,
@@ -110,10 +110,10 @@ abstract final class TikTokParser {
       nick: nickname,
       avatar: _image(user['avatarLarger'] ?? user['avatarMedium'] ?? user['avatarThumb']),
       cover: _image(live['coverUrl'] ?? live['squareCoverImg']),
-      watching: liveState ? (roomStatsMap['userCount'] as num?)?.toInt() : null,
+      watching: liveState ? SiteCounts.integer(roomStatsMap['userCount']) : null,
       status: liveState
           ? LiveStatus.live
-          : state?.toInt() == 4
+          : state == 4
           ? LiveStatus.offline
           : LiveStatus.unknown,
       startedAt: liveState && startSeconds != null && startSeconds > 0

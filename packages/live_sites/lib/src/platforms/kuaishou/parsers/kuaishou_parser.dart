@@ -330,7 +330,7 @@ abstract final class KuaishouParser {
     }
     final error = room['errorType'];
     if (error != null) {
-      final type = error is Map<String, Object?> ? (error['type'] as num?)?.toInt() : (error as num?)?.toInt();
+      final type = error is Map<String, Object?> ? SiteCounts.integer(error['type']) : SiteCounts.integer(error);
       if (type == 22) {
         throw const SiteNotFoundError('kuaishou: room not found (errorType 22)');
       }

@@ -378,7 +378,7 @@ abstract final class TwitcastingParser {
         }
       }
     }
-    return (live: live, movieId: (movie['id'] as num?)?.toInt(), streams: streams);
+    return (live: live, movieId: SiteCounts.integer(movie['id']), streams: streams);
   }
 
   /// The play lines of a live, unprotected broadcast: the HLS tiers with

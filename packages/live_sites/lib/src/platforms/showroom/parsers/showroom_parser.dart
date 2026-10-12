@@ -56,7 +56,7 @@ abstract final class ShowroomParser {
   /// `room/status` → the numeric room id.
   static int roomIdOfStatus(String body, {int status = 200}) {
     final data = ShowroomParser.data(body, status: status, what: 'room/status');
-    final id = (data['room_id'] as num?)?.toInt();
+    final id = SiteCounts.integer(data['room_id']);
     if (id == null || id <= 0) {
       throw const SiteNotFoundError('showroom room/status: no room id');
     }
@@ -66,13 +66,13 @@ abstract final class ShowroomParser {
   /// `room/profile` + `live/live_info` → the room snapshot. `live_status`
   /// 2 is on air.
   static LiveRoom room(Map<String, Object?> profile, Map<String, Object?> info, {required int roomId}) {
-    final actual = (profile['room_id'] as num?)?.toInt();
+    final actual = SiteCounts.integer(profile['room_id']);
     if (actual != roomId) {
       throw SiteApiChangedError('showroom room/profile: answered $actual for $roomId');
     }
-    final state = (info['live_status'] as num?)?.toInt();
+    final state = SiteCounts.integer(info['live_status']);
     final live = state == 2;
-    final startSeconds = (profile['current_live_started_at'] as num?)?.toInt();
+    final startSeconds = SiteCounts.integer(profile['current_live_started_at']);
     return LiveRoom(
       platform: SiteIds.showroom,
       roomId: '$roomId',
@@ -80,7 +80,7 @@ abstract final class ShowroomParser {
       nick: (profile['main_name'] ?? profile['room_name'])?.toString() ?? '',
       cover: _image(profile['image_square']),
       areaName: profile['genre_name']?.toString(),
-      watching: (profile['follower_num'] as num?)?.toInt(),
+      watching: SiteCounts.integer(profile['follower_num']),
       status: live ? LiveStatus.live : LiveStatus.offline,
       startedAt: live && startSeconds != null && startSeconds > 0
           ? DateTime.fromMillisecondsSinceEpoch(startSeconds * 1000, isUtc: true)

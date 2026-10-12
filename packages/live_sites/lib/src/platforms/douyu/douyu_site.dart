@@ -137,7 +137,7 @@ final class DouyuSite
         }
         qualities.add(
           LivePlayQuality(
-            quality: (item['rate'] as num?)?.toInt(),
+            quality: SiteCounts.integer(item['rate']),
             label: item['name']?.toString() ?? '',
             sort: qualities.length,
           ),

@@ -69,7 +69,7 @@ abstract final class KickParser {
   static LiveRoom room(String body, {required String requestedSlug, int status = 200}) {
     final root = KickParser.decode(body, status: status);
     final slug = normalizeSlug(root['slug']?.toString() ?? '');
-    final channelId = (root['id'] as num?)?.toInt();
+    final channelId = SiteCounts.integer(root['id']);
     final user = root['user'];
     if (slug == null || channelId == null || channelId <= 0 || user is! Map<String, Object?>) {
       throw const SiteApiChangedError('kick channel: no slug, id or user');
@@ -97,7 +97,7 @@ abstract final class KickParser {
           ? _image(_nested(streamMap['thumbnail'], 'url') ?? _nested(streamMap['thumbnail'], 'src'))
           : _image(_nested(root['offline_banner_image'], 'src') ?? _nested(root['banner_image'], 'url')),
       areaName: _firstCategoryName(streamMap['categories']),
-      watching: live ? (streamMap['viewer_count'] as num?)?.toInt() : null,
+      watching: live ? SiteCounts.integer(streamMap['viewer_count']) : null,
       status: banned
           ? LiveStatus.banned
           : live

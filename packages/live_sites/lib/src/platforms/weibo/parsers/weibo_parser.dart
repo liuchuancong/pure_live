@@ -62,13 +62,13 @@ abstract final class WeiboParser {
     }
     final user = item['user'];
     final userMap = user is Map<String, Object?> ? user : const <String, Object?>{};
-    final state = (item['status'] as num?)?.toInt();
-    final enabled = (item['play_switch'] as num?)?.toInt() != 0;
-    final limit = (item['watch_limit'] as num?)?.toInt() ?? 0;
+    final state = SiteCounts.integer(item['status']);
+    final enabled = SiteCounts.integer(item['play_switch']) != 0;
+    final limit = SiteCounts.integer(item['watch_limit']) ?? 0;
     final public = enabled && limit == 0;
     final live = state == 1;
     final replay = state == 3;
-    final startMs = (item['startTime'] as num?)?.toInt();
+    final startMs = SiteCounts.integer(item['startTime']);
     return LiveRoom(
       platform: SiteIds.weibo,
       roomId: liveId,

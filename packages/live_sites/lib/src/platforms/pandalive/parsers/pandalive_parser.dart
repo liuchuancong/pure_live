@@ -241,7 +241,7 @@ abstract final class PandaLiveParser {
     if (id.toLowerCase() != userId.toLowerCase()) {
       throw SiteApiChangedError('pandalive member/bj: bjInfo of $id for $userId');
     }
-    final index = (info['idx'] as num?)?.toInt();
+    final index = SiteCounts.integer(info['idx']);
     if (index == null || index <= 0) {
       throw const SiteApiChangedError('pandalive member/bj: no idx');
     }

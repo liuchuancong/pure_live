@@ -348,7 +348,7 @@ abstract final class SoopParser {
     if (channel is! Map<String, Object?>) {
       throw const SiteApiChangedError('soop player_live_api: no CHANNEL');
     }
-    return (result: (channel['RESULT'] as num?)?.toInt() ?? 0, fields: channel);
+    return (result: SiteCounts.integer(channel['RESULT']) ?? 0, fields: channel);
   }
 
   /// The room snapshot from a `type=live` answer. RESULT 1 is live, 0
@@ -503,7 +503,7 @@ abstract final class SoopParser {
     if (decoded is! Map<String, Object?>) {
       throw const SiteApiChangedError('soop broad_stream_assign: body is not an object');
     }
-    if ((decoded['result'] as num?)?.toInt() != 1) {
+    if (SiteCounts.integer(decoded['result']) != 1) {
       throw SiteNotFoundError('soop broad_stream_assign: result ${decoded['result']}');
     }
     final url = decoded['view_url']?.toString() ?? '';
