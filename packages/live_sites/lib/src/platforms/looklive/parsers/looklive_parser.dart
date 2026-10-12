@@ -206,6 +206,12 @@ abstract final class LookLiveParser {
   /// A room number: two to eighteen digits, as the site writes them.
   static final RegExp _roomNumber = RegExp(r'^[1-9][0-9]{1,17}$');
 
+  /// [input] as a room number when it is one, else null.
+  static String? roomNumber(String input) {
+    final text = input.trim();
+    return _roomNumber.hasMatch(text) ? text : null;
+  }
+
   /// Validates the envelope (`code` 0) and returns `data`; code 404 is
   /// "not found".
   static Map<String, Object?> data(String body, {int status = 200, String what = 'response'}) {

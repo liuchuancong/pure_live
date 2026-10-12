@@ -114,9 +114,39 @@ final class LookLiveSite
   /// out of the merged listing's later pages.
   final Map<LookLiveKind, int> _ended = {};
 
+  /// LOOK has no search API (page 1 only): a room number finds that room (one
+  /// the site does not know is no result); another keyword filters the first
+  /// recommendation page by number, name and title, case ignored, up to 30. A
+  /// blank keyword, another page, or a link gives nothing.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('looklive search lands with its migration');
+    final raw = keyword.trim();
+    if (raw.isEmpty || page != 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final roomId = LookLiveParser.roomNumber(raw);
+    if (roomId != null) {
+      try {
+        return LivePage<LiveRoom>(items: [await _room(roomId)]);
+      } on SiteNotFoundError {
+        return const LivePage<LiveRoom>(items: []);
+      }
+    }
+    final uri = Uri.tryParse(raw);
+    if (uri != null && uri.hasScheme && uri.hasAuthority) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final query = raw.toLowerCase();
+    final rooms = (await getRecommendRooms(page: 1)).items;
+    return LivePage<LiveRoom>(
+      items: [
+        for (final room in rooms)
+          if (room.roomId.toLowerCase().contains(query) ||
+              room.nick.toLowerCase().contains(query) ||
+              room.title.toLowerCase().contains(query))
+            room,
+      ].take(30).toList(),
+    );
   }
 
   @override
