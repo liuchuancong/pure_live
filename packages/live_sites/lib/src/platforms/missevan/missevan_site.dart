@@ -2,14 +2,17 @@ import 'dart:convert';
 
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/missevan/danmaku/missevan_session.dart';
 import 'package:live_sites/src/platforms/missevan/parsers/missevan_parser.dart';
 
 /// The Missevan (猫耳 FM) adapter: the `live/{id}` room, its channel pull
 /// URLs and the `chatroom/open/list` directory.
 ///
-/// Not migrated yet: search and the danmaku transport (Missevan frames carry
-/// a brotli-compressed payload).
-final class MissevanSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability {
+/// Not migrated yet: search. The danmaku ([connect]) joins the room's NetEase
+/// IM chatroom as a guest (its frames carry a Brotli-compressed payload).
+final class MissevanSite
+    with SiteRoomGuard
+    implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability, LiveDanmakuCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -120,10 +123,36 @@ final class MissevanSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog
     return room.mergeFrom(fresh);
   }
 
+  /// The [LiveRoom] of one room answer's `live/{id}` document.
   Future<LiveRoom> _live(String roomId) async {
     final response = await http.send(
       LiveRequest.get(MissevanParser.detailUrl(roomId), headers: MissevanParser.headers, site: id),
     );
     return MissevanParser.room(response.text, roomId: roomId, status: response.statusCode);
+  }
+
+  /// Joins the room's Missevan (猫耳FM) chat: one room detail answers both the
+  /// on-air state and the chat socket (its `websocket`); the session then takes
+  /// the guest `FM_SESS` cookie the handshake needs. A room not on air ends with
+  /// a [SiteNotFoundError].
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) async {
+    guardRoom(room);
+    final response = await http.send(
+      LiveRequest.get(MissevanParser.detailUrl(room.roomId), headers: MissevanParser.headers, site: id),
+    );
+    final detail = MissevanParser.room(response.text, roomId: room.roomId, status: response.statusCode);
+    if (detail.status != LiveStatus.live) {
+      throw SiteNotFoundError('missevan ${room.roomId}: not on air');
+    }
+    final socket = MissevanParser.chatSocket(response.text, roomId: room.roomId, status: response.statusCode);
+    return await MissevanDanmakuSession.connect(
+      MissevanDanmakuArgs(
+        roomId: room.roomId.trim(),
+        url: Uri.parse(socket ?? 'wss://im.missevan.com/ws'),
+        headers: MissevanParser.headers,
+      ),
+      http,
+    );
   }
 }

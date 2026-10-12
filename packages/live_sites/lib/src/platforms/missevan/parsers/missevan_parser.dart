@@ -55,6 +55,22 @@ abstract final class MissevanParser {
     return data;
   }
 
+  /// The guest session the chat socket needs (`Set-Cookie: FM_SESS`, without
+  /// which the handshake is refused).
+  static final Uri guestSession = Uri.https('fm.missevan.com', '/api/user/info');
+
+  /// A Missevan room id: a positive integer of up to 18 digits.
+  static final RegExp idPattern = RegExp(r'^[1-9][0-9]{0,17}$');
+
+  /// The chat socket url of a room answer (`data.room.websocket`, a
+  /// `wss://im.missevan.com/ws?room_id=…`), or null when the answer has none.
+  static String? chatSocket(String body, {required String roomId, int status = 200}) {
+    final row = checked(body, roomId: roomId, status: status)['room'];
+    if (row is! Map<String, Object?>) return null;
+    final url = row['websocket']?.toString().trim() ?? '';
+    return url.isEmpty ? null : url;
+  }
+
   /// `live/{id}` → the room with its catalog, state and pull URLs.
   static LiveRoom room(String body, {required String roomId, int status = 200}) {
     final data = checked(body, roomId: roomId, status: status);
