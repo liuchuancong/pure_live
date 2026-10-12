@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'dart:io' show gzip;
 import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
 import 'package:live_sites/src/common/protobuf/protobuf.dart';
+import 'package:live_sites/src/models/live_gift/live_gift.dart';
+import 'package:live_sites/src/models/live_message/live_message.dart';
 
 /// AcFun's link protocol frame codec and `acSecurity` seal, without the
 /// session. The command builders that `seal`/`open` and the `push` decode land
@@ -152,4 +155,190 @@ abstract final class AcfunDanmakuProtocol {
     final millis = ProtoMessage.decode(enterRoomAck).integer(1) ?? 0;
     return millis > 0 ? Duration(milliseconds: millis) : null;
   }
+
+  static const int _maxEpochMilliseconds = 8640000000000000;
+
+  /// The id of the banana in the (unfetched) gift table.
+  static const String bananaId = '1';
+
+  /// The banana's name without the gift table: the platform's own word for it.
+  static const String bananaName = '香蕉';
+
+  /// One `ZtLiveScMessage` (`messageType 1, compressionType 2 (gzip), payload
+  /// 3, ...`): a `ZtLiveScActionSignal` reads each `CommonActionSignalComment`
+  /// as chat, each `CommonActionSignalGift` and `AcfunActionSignalThrowBanana`
+  /// as a gift ([push]); a `ZtLiveScStateSignal` reads each
+  /// `CommonStateSignalDisplayInfo` as the concurrent audience; and
+  /// `ZtLiveScTicketInvalid` / `ZtLiveScStatusChanged` are flagged. This build
+  /// does not fetch the room's gift table, so a gift carries only its name
+  /// (`香蕉` for the banana, else `礼物 {id}`), count and combo id.
+  static AcfunDanmakuPush push(List<int> payload) {
+    const none = (messages: <LiveMessage>[], ticketInvalid: false, statusChanged: null);
+    final messages = <LiveMessage>[];
+    try {
+      final message = ProtoMessage.decode(payload);
+      var body = message.bytes(3) ?? Uint8List(0);
+      if (message.integer(2) == 2) body = Uint8List.fromList(gzip.decode(body));
+      switch (message.string(1)) {
+        case 'ZtLiveScActionSignal':
+          for (final item in _signals(body)) {
+            final read = switch (item.string(1)) {
+              'CommonActionSignalComment' => _comment,
+              'CommonActionSignalGift' => _giftSignal,
+              'AcfunActionSignalThrowBanana' => _bananaSignal,
+              _ => null,
+            };
+            if (read == null) continue;
+            for (final field in item.fields) {
+              if (field.number != 2 || field.wireType != ProtoMessage.lengthDelimitedType) continue;
+              if (read(field.value as Uint8List) case final decoded?) messages.add(decoded);
+            }
+          }
+        case 'ZtLiveScStateSignal':
+          for (final item in _signals(body)) {
+            if (item.string(1) != 'CommonStateSignalDisplayInfo') continue;
+            if (_displayInfo(item.bytes(2)) case final audience?) messages.add(audience);
+          }
+        case 'ZtLiveScTicketInvalid':
+          return (messages: messages, ticketInvalid: true, statusChanged: null);
+        case 'ZtLiveScStatusChanged':
+          return (messages: messages, ticketInvalid: false, statusChanged: ProtoMessage.decode(body).integer(1) ?? 0);
+      }
+    } on FormatException {
+      return none;
+    }
+    return (messages: messages, ticketInvalid: false, statusChanged: null);
+  }
+
+  /// The signals of an action or state signal list (`{1: [signal]}`), each
+  /// read on its own; one that does not decode is left out.
+  static List<ProtoMessage> _signals(Uint8List body) {
+    final signals = <ProtoMessage>[];
+    for (final field in ProtoMessage.decode(body).fields) {
+      if (field.number != 1 || field.wireType != ProtoMessage.lengthDelimitedType) continue;
+      try {
+        signals.add(ProtoMessage.decode(field.value as Uint8List));
+      } on FormatException {
+        continue;
+      }
+    }
+    return signals;
+  }
+
+  /// `CommonActionSignalComment` (`content 1, sendTimeMs 2, userInfo 3
+  /// {userId 1, nickname 2}`); none without text or sender.
+  static LiveMessage? _comment(Uint8List payload) {
+    try {
+      final signal = ProtoMessage.decode(payload);
+      final text = signal.string(1) ?? '';
+      final user = signal.message(3);
+      if (text.isEmpty || user == null) return null;
+      final id = user.integer(1);
+      return LiveMessage(
+        type: LiveMessageType.chat,
+        userName: user.string(2) ?? '',
+        userId: id == null || id <= 0 ? '' : '$id',
+        message: text,
+        color: 0xFFFFFF,
+        sentAt: _time(signal.integer(2)),
+      );
+    } on FormatException {
+      return null;
+    }
+  }
+
+  /// `CommonActionSignalGift` (`user 1, sendTimeMs 2, giftId 3, count 4,
+  /// combo 5, value 6, comboId 7`). Without the gift table the name is
+  /// `香蕉`/`礼物 {id}` and there is no price. The combo key is `comboId`.
+  static LiveMessage? _giftSignal(Uint8List payload) {
+    try {
+      final signal = ProtoMessage.decode(payload);
+      final user = signal.message(1);
+      final id = signal.integer(3);
+      if (user == null || id == null || id <= 0) return null;
+      final count = _positive(signal.integer(4)) ?? 1;
+      final comboId = (signal.string(7) ?? '').trim();
+      final name = id == 1 ? bananaName : '礼物 $id';
+      final sender = user.integer(1) ?? 0;
+      return LiveMessage(
+        type: LiveMessageType.gift,
+        userName: user.string(2) ?? '',
+        userId: sender <= 0 ? '' : '$sender',
+        message: '$name ×$count',
+        color: 0xFFFFFF,
+        id: comboId.isEmpty ? null : '$sender:$comboId:${_positive(signal.integer(5)) ?? 0}',
+        sentAt: _time(signal.integer(2)),
+        data: LiveGift(name: name, count: count, combo: comboId.isEmpty ? null : comboId),
+      );
+    } on FormatException {
+      return null;
+    }
+  }
+
+  /// `AcfunActionSignalThrowBanana` (`visitor 1 {userId 1, nickname 2},
+  /// count 2, sendTimeMs 3`): bananas, free. Null without a sender.
+  static LiveMessage? _bananaSignal(Uint8List payload) {
+    try {
+      final signal = ProtoMessage.decode(payload);
+      final user = signal.message(1);
+      if (user == null) return null;
+      final count = _positive(signal.integer(2)) ?? 1;
+      final sender = user.integer(1) ?? 0;
+      return LiveMessage(
+        type: LiveMessageType.gift,
+        userName: user.string(2) ?? '',
+        userId: sender <= 0 ? '' : '$sender',
+        message: '$bananaName ×$count',
+        color: 0xFFFFFF,
+        sentAt: _time(signal.integer(3)),
+        data: LiveGift(name: bananaName, count: count),
+      );
+    } on FormatException {
+      return null;
+    }
+  }
+
+  /// `CommonStateSignalDisplayInfo.watchingCount` (`1`), a count like `76` or
+  /// `1.2万`; the concurrent audience as one update. Null when it will not
+  /// parse.
+  static LiveMessage? _displayInfo(Uint8List? payload) {
+    if (payload == null) return null;
+    try {
+      final watching = _chineseCount(ProtoMessage.decode(payload).string(1));
+      if (watching == null) return null;
+      return LiveMessage(
+        type: LiveMessageType.audienceUpdate,
+        userName: '',
+        message: '',
+        data: LiveAudienceUpdate(onlineViewers: watching),
+      );
+    } on FormatException {
+      return null;
+    }
+  }
+
+  static int? _chineseCount(String? text) {
+    final match = RegExp(r'^([\d.]+)\s*([千万亿])?$').firstMatch((text ?? '').trim());
+    if (match == null) return null;
+    final value = double.tryParse(match.group(1) ?? '');
+    if (value == null) return null;
+    final multiplier = switch (match.group(2)) {
+      '万' => 10000,
+      '千' => 1000,
+      '亿' => 100000000,
+      _ => 1,
+    };
+    return (value * multiplier).round();
+  }
+
+  static DateTime? _time(int? millis) => millis == null || millis <= 0 || millis > _maxEpochMilliseconds
+      ? null
+      : DateTime.fromMillisecondsSinceEpoch(millis);
+
+  static int? _positive(int? value) => value != null && value > 0 ? value : null;
 }
+
+/// What one `Push.ZtLiveInteractive.Message` carried: the messages to report,
+/// whether the ticket died (`ZtLiveScTicketInvalid`) and the broadcast's new
+/// status (`ZtLiveScStatusChanged.type`, or null).
+typedef AcfunDanmakuPush = ({List<LiveMessage> messages, bool ticketInvalid, int? statusChanged});
