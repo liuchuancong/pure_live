@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:html/parser.dart' as html;
 import 'package:live_sites/live_sites.dart';
 
 /// Static parsers for the KilaKila (奇秀) live APIs.
@@ -238,6 +239,76 @@ abstract final class KilakilaParser {
       lines.add(LivePlayLine(url: hls, headers: headers, format: StreamFormat.hls, lineId: 'hls'));
     }
     return lines;
+  }
+
+  /// The longest keyword the search page takes (3.x refused a longer one).
+  static const int keywordLimit = 100;
+
+  /// The keyword sent for [keyword]: trimmed and cut to [keywordLimit] UTF-16
+  /// code units, never inside a surrogate pair, then trimmed again. Empty when
+  /// there is nothing to search for.
+  static String searchKeyword(String keyword) {
+    var text = keyword.trim();
+    if (text.length > keywordLimit) {
+      var end = keywordLimit;
+      final last = text.codeUnitAt(end - 1);
+      if (last >= 0xD800 && last <= 0xDBFF) {
+        end--;
+      }
+      text = text.substring(0, end).trim();
+    }
+    return text;
+  }
+
+  /// The website's user search page of [keyword] ([searchKeyword]; `serach` is
+  /// the site's own spelling): `/aboutus/serach/kw/<keyword>`, `/p/<page>`
+  /// after page 1.
+  static Uri searchUrl(String keyword, int page) => Uri(
+    scheme: 'https',
+    host: 'live.kilakila.cn',
+    pathSegments: [
+      'aboutus',
+      'serach',
+      'kw',
+      searchKeyword(keyword),
+      if (page > 1) ...['p', '$page'],
+    ],
+  );
+
+  /// A user search page: the anchors of the `.userList` links `/zhubo/<uid>`,
+  /// each once, as rooms named by their `.anchor-name` (also the title) with
+  /// the `.anchorHeaderImg` avatar. The page says nothing about broadcasts, so
+  /// their state is unknown. An entry whose link is not an anchor page or that
+  /// has no name is left out; a page without the list, over 100 entries, or
+  /// whose entries are all broken is a changed page.
+  static List<LiveRoom> searchPage(String body, {int status = 200}) {
+    if (status < 200 || status >= 300) {
+      throw SiteApiChangedError('kilakila search: HTTP $status');
+    }
+    final list = html.parseFragment(body).querySelector('.userList');
+    if (list == null || list.children.length > 100) {
+      throw const SiteApiChangedError('kilakila search: no user list');
+    }
+    final rooms = <String, LiveRoom>{};
+    var broken = 0;
+    for (final anchor in list.children.where((element) => element.localName == 'a')) {
+      final match = RegExp(r'^/zhubo/([1-9][0-9]{0,31})$').firstMatch(anchor.attributes['href'] ?? '');
+      final nick = anchor.querySelector('.anchor-name')?.text.trim() ?? '';
+      if (match == null || nick.isEmpty) {
+        broken++;
+        continue;
+      }
+      final uid = match.group(1)!;
+      final avatar = anchor.querySelector('.anchorHeaderImg img')?.attributes['src'];
+      rooms.putIfAbsent(
+        uid,
+        () => LiveRoom(platform: SiteIds.kilakila, roomId: uid, nick: nick, title: nick, avatar: _picture(avatar)),
+      );
+    }
+    if (broken > 0 && rooms.isEmpty) {
+      throw SiteApiChangedError('kilakila search: $broken broken entries, none usable');
+    }
+    return rooms.values.toList();
   }
 
   static String? _picture(Object? value) {

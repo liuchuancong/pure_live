@@ -6,7 +6,8 @@ import 'package:live_sites/src/platforms/kilakila/parsers/kilakila_parser.dart';
 /// The KilaKila (奇秀) adapter: one getRoomInfo request per broadcast, the two
 /// timeline listings, and the guest Socket.IO chat.
 ///
-/// Not migrated yet: search and the personal profile completion.
+/// Not migrated yet: the exact anchor-id/link search (needs the personal
+/// profile completion) and the danmaku transport.
 final class KilakilaSite
     with SiteRoomGuard
     implements LiveSite, LiveDanmakuCapability, LiveAreaCatalog, LiveDirectoryCapability {
@@ -105,9 +106,37 @@ final class KilakilaSite
   /// nothing new.
   final Map<String, ({Set<String> anchors, int idle})> _shown = {};
 
+  /// The website's user search page (`aboutus/serach/kw/<keyword>`), [page] of
+  /// the anchors it lists (their state unknown — the page says nothing about
+  /// broadcasts). A blank keyword is nothing; a page out of 1–10000 is a caller
+  /// error. A bare anchor id or a room link is an exact anchor lookup that
+  /// needs the personal profile (which has not landed), so it returns nothing
+  /// rather than mis-searching.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('kilakila search lands with its migration');
+    if (page < 1 || page > 10000) {
+      throw RangeError.range(page, 1, 10000, 'page');
+    }
+    final input = keyword.trim();
+    if (input.isEmpty) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    if (_isLink(input) || RegExp(r'^[1-9][0-9]{0,31}$').hasMatch(input)) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    if (KilakilaParser.searchKeyword(input).isEmpty) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final response = await http.send(
+      LiveRequest.get(KilakilaParser.searchUrl(input, page), headers: KilakilaParser.headers, site: siteId),
+    );
+    return LivePage<LiveRoom>(items: KilakilaParser.searchPage(response.text, status: response.statusCode));
+  }
+
+  /// Whether [input] is a link (`scheme://…`) rather than a keyword.
+  static bool _isLink(String input) {
+    final uri = Uri.tryParse(input);
+    return uri != null && uri.hasScheme && uri.hasAuthority;
   }
 
   @override
