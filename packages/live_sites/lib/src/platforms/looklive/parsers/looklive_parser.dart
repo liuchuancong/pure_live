@@ -221,7 +221,7 @@ abstract final class LookLiveParser {
     if (decoded is! Map<String, Object?>) {
       throw SiteApiChangedError('looklive $what: body is not an object');
     }
-    final code = (decoded['code'] as num?)?.toInt();
+    final code = SiteCounts.integer(decoded['code']);
     if (code == 404) {
       throw SiteNotFoundError('looklive $what: room not found');
     }
@@ -247,10 +247,10 @@ abstract final class LookLiveParser {
     }
     final info = data['roomInfo'];
     final infoMap = info is Map<String, Object?> ? info : const <String, Object?>{};
-    final liveStatus = (data['liveStatus'] as num?)?.toInt();
+    final liveStatus = SiteCounts.integer(data['liveStatus']);
     final live = liveStatus == 1;
     final banned = liveStatus == -10 || liveStatus == -4;
-    final startSeconds = (infoMap['startTime'] as num?)?.toInt();
+    final startSeconds = SiteCounts.integer(infoMap['startTime']);
     return LiveRoom(
       platform: SiteIds.looklive,
       roomId: roomId,
