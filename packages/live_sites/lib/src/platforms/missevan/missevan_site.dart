@@ -8,8 +8,8 @@ import 'package:live_sites/src/platforms/missevan/parsers/missevan_parser.dart';
 /// The Missevan (猫耳 FM) adapter: the `live/{id}` room, its channel pull
 /// URLs and the `chatroom/open/list` directory.
 ///
-/// Not migrated yet: search. The danmaku ([connect]) joins the room's NetEase
-/// IM chatroom as a guest (its frames carry a Brotli-compressed payload).
+/// The danmaku ([connect]) joins the room's NetEase IM chatroom as a guest
+/// (its frames carry a Brotli-compressed payload).
 final class MissevanSite
     with SiteRoomGuard
     implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability, LiveDanmakuCapability {
@@ -86,9 +86,60 @@ final class MissevanSite
     return MissevanParser.roomList(response.text, page: page, status: response.statusCode);
   }
 
+  /// Rooms for [keyword], live or offline: a room number or `live/{id}` link
+  /// finds that room on page 1 only (a room the site does not know is nothing);
+  /// another link or a blank keyword is nothing; anything else is a
+  /// `chatroom/search` keyword ([MissevanParser.searchKeyword], cut to 100 code
+  /// points). A keyword with control characters, or a page out of 1–
+  /// [MissevanParser.maxPage], is a caller error.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('missevan search lands with its migration');
+    final input = keyword.trim();
+    if (input.isEmpty) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final exact = _exactRoom(input);
+    if (exact != null) {
+      if (page != 1) {
+        return const LivePage<LiveRoom>(items: []);
+      }
+      try {
+        return LivePage<LiveRoom>(items: [await _live(exact)]);
+      } on SiteNotFoundError {
+        return const LivePage<LiveRoom>(items: []);
+      }
+    }
+    if (_isLink(input)) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final text = MissevanParser.searchKeyword(input);
+    if (text == null) {
+      throw ArgumentError.value(keyword, 'keyword', 'not a Missevan keyword');
+    }
+    if (page < 1 || page > MissevanParser.maxPage) {
+      throw RangeError.range(page, 1, MissevanParser.maxPage, 'page');
+    }
+    const size = 30;
+    final response = await http.send(
+      LiveRequest.get(
+        MissevanParser.searchUrl(text, page: page, pageSize: size),
+        headers: MissevanParser.headers,
+        site: siteId,
+      ),
+    );
+    return LivePage<LiveRoom>(
+      items: MissevanParser.searchRows(response.text, page: page, pageSize: size, status: response.statusCode),
+    );
+  }
+
+  /// The room [input] names exactly: a room number, or a `live/{id}` link.
+  static String? _exactRoom(String input) =>
+      MissevanParser.idPattern.hasMatch(input) ? input : MissevanParser.roomIdFromUri(Uri.tryParse(input));
+
+  /// Whether [input] is a link (`scheme://…`) rather than a keyword.
+  static bool _isLink(String input) {
+    final uri = Uri.tryParse(input);
+    return uri != null && uri.hasScheme && uri.hasAuthority;
   }
 
   @override

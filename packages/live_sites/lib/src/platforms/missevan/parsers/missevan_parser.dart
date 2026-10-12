@@ -282,6 +282,86 @@ abstract final class MissevanParser {
     );
   }
 
+  /// The longest keyword `chatroom/search` is sent, in code points.
+  static const int maxKeywordLength = 100;
+
+  static final RegExp _control = RegExp(r'[\x00-\x1f\x7f]');
+
+  /// [keyword] as `chatroom/search` is asked for it: trimmed and, when longer,
+  /// cut to its first [maxKeywordLength] code points (so an emoji is never
+  /// split) and trimmed again. Null for a blank keyword or one carrying a
+  /// control character, which 3.x refused.
+  static String? searchKeyword(String keyword) {
+    final text = keyword.trim();
+    if (text.isEmpty || _control.hasMatch(text)) {
+      return null;
+    }
+    final runes = text.runes;
+    return runes.length <= maxKeywordLength ? text : String.fromCharCodes(runes.take(maxKeywordLength)).trimRight();
+  }
+
+  /// The room of a `fm.missevan.com/live/{id}` link (3.x's `roomFromUri`):
+  /// http(s), that host exactly, the default port, no user info, and the path
+  /// `live/{id}` with at most a trailing slash (a query is allowed); null
+  /// otherwise.
+  static String? roomIdFromUri(Uri? uri) {
+    if (uri == null ||
+        (uri.scheme != 'http' && uri.scheme != 'https') ||
+        uri.host != 'fm.missevan.com' ||
+        uri.userInfo.isNotEmpty ||
+        (uri.hasPort && uri.port != (uri.scheme == 'https' ? 443 : 80))) {
+      return null;
+    }
+    final parts = [
+      for (final segment in uri.pathSegments)
+        if (segment.isNotEmpty) segment,
+    ];
+    if (parts.length == 2 && parts.first == 'live' && idPattern.hasMatch(parts.last)) {
+      return parts.last;
+    }
+    return null;
+  }
+
+  /// The `chatroom/search` URL for keyword [text] at [page] of [pageSize].
+  static Uri searchUrl(String text, {required int page, required int pageSize}) =>
+      Uri.https('fm.missevan.com', '/api/v2/chatroom/search', {'s': text, 'p': '$page', 'page_size': '$pageSize'});
+
+  /// A `chatroom/search` page at [page] of [pageSize]: the rooms matching the
+  /// keyword, live or offline, each once. The page must echo [page] and
+  /// [pageSize] and carry a `maxpage` and a `count`; a page past the site's
+  /// last one must be empty. A row that cannot be read is skipped, but a page
+  /// whose every row is unreadable is a changed endpoint.
+  static List<LiveRoom> searchRows(String body, {required int page, required int pageSize, int status = 200}) {
+    final data = payload(body, what: 'chatroom/search', status: status);
+    final pagination = SiteJson.object(data['pagination']);
+    final max = SiteCounts.integer(pagination['maxpage']);
+    final count = SiteCounts.integer(pagination['count']);
+    final rows = SiteJson.list(data['data']);
+    if (SiteCounts.integer(pagination['p']) != page ||
+        SiteCounts.integer(pagination['pagesize']) != pageSize ||
+        max == null ||
+        max < 0 ||
+        count == null ||
+        count < 0 ||
+        rows.length > 100 ||
+        (page > max && rows.isNotEmpty)) {
+      throw SiteApiChangedError('missevan chatroom/search page $page: unexpected pagination $pagination');
+    }
+    final rooms = <String, LiveRoom>{};
+    var readable = false;
+    for (final raw in rows) {
+      final room = roomRow(raw);
+      readable = readable || room != null;
+      if (room != null) {
+        rooms.putIfAbsent(room.roomId, () => room);
+      }
+    }
+    if (!readable && rows.isNotEmpty) {
+      throw SiteApiChangedError('missevan chatroom/search page $page: no readable row');
+    }
+    return rooms.values.toList();
+  }
+
   /// Validates the envelope (`code` 0) of a list endpoint and returns its
   /// payload: the same envelope [checked] reads for one room, minus the
   /// per-room identity.
