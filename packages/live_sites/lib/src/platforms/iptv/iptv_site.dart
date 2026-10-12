@@ -1,5 +1,24 @@
 import 'package:live_sites/live_sites.dart';
 
+/// One playable address of a channel.
+///
+/// A channel of a real list usually has several; the source hands them over
+/// already ranked, best first, so the site has nothing to decide beyond
+/// which one the user asked for.
+final class IptvLine {
+  /// A line.
+  const new({required this.url, this.headers = const {}, this.lineId});
+
+  /// The stream URL.
+  final String url;
+
+  /// Request headers this address needs.
+  final Map<String, String> headers;
+
+  /// What the source calls this line, when it has a name for it.
+  final String? lineId;
+}
+
 /// One IPTV channel as the site layer sees it.
 final class IptvChannel {
   /// A channel entry.
@@ -11,6 +30,8 @@ final class IptvChannel {
     this.headers = const {},
     this.epgChannelId,
     this.favorite = false,
+    this.number,
+    this.lines = const [],
   });
 
   /// Stable channel id.
@@ -33,6 +54,20 @@ final class IptvChannel {
 
   /// Whether the user favourited the channel.
   final bool favorite;
+
+  /// The number the viewer types to reach this channel, null when it has
+  /// none. A channel's number is a fact about the viewer's habit rather than
+  /// about the stream, which is why it travels with the room instead of
+  /// being re-derived from the list order on every screen.
+  final int? number;
+
+  /// The channel's addresses, best first; empty when the source has nothing
+  /// better to say than [url].
+  final List<IptvLine> lines;
+
+  /// The addresses to try, in order: the ranked lines when the source named
+  /// any, the channel's own URL otherwise.
+  List<IptvLine> get playableLines => lines.isEmpty ? [IptvLine(url: url, headers: headers, lineId: 'channel')] : lines;
 }
 
 /// The channel data source the IPTV site reads.
@@ -129,13 +164,18 @@ final class IptvSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapabi
     if (channel == null) {
       throw SiteNotFoundError('iptv: no channel ${room.roomId}');
     }
+    // Every address the channel has, in the order the source ranks them:
+    // an IPTV list is a set of mirrors of one stream, and handing the
+    // player only the first turns a dead mirror into a black screen when
+    // the next one would have played.
     return [
-      LivePlayLine(
-        url: channel.url,
-        headers: channel.headers,
-        format: channel.url.contains('.m3u8') ? StreamFormat.hls : StreamFormat.other,
-        lineId: 'channel',
-      ),
+      for (final (index, line) in channel.playableLines.indexed)
+        LivePlayLine(
+          url: line.url,
+          headers: line.headers,
+          format: formatOfUrl(line.url),
+          lineId: line.lineId ?? 'line-${index + 1}',
+        ),
     ];
   }
 
@@ -159,4 +199,20 @@ final class IptvSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapabi
     tagIds: channel.favorite ? const ['favorite'] : const [],
     data: withData ? channel : null,
   );
+}
+
+/// The wire format an IPTV address carries.
+///
+/// Judged from the address, because that is all a playlist says: `.m3u8` is
+/// HLS, a `.flv` or a `.live.flv` is HTTP-FLV, and a bare host or a `.ts`
+/// slice is something the player has to sniff.
+StreamFormat formatOfUrl(String url) {
+  final path = Uri.tryParse(url)?.path.toLowerCase() ?? url.toLowerCase();
+  if (path.endsWith('.m3u8')) {
+    return StreamFormat.hls;
+  }
+  if (path.endsWith('.flv')) {
+    return StreamFormat.flv;
+  }
+  return StreamFormat.other;
 }
