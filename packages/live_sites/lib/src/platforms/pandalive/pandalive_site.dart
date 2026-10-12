@@ -56,9 +56,28 @@ final class PandaLiveSite
     return PandaLiveParser.livePage(response.text, page: page, status: response.statusCode);
   }
 
+  /// Live rooms matching [keyword] (`live/index` searched by viewers), [page]
+  /// of thirty. A blank keyword or a bad page/control-char keyword gives
+  /// nothing or a caller error. The broadcaster (`bj_list`) source and a
+  /// keyword that is a broadcaster id are not merged in yet — the reference
+  /// also searches broadcasters; this returns the live-room matches.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('pandalive search lands with its migration');
+    final query = keyword.trim();
+    if (query.isEmpty) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    PandaLiveParser.checkKeyword(query);
+    PandaLiveParser.checkPage(page);
+    final response = await http.send(
+      LiveRequest.form(
+        Uri.https(PandaLiveParser.apiHost, '/v1/live/index'),
+        fields: PandaLiveParser.liveSearchForm(query, page: page, size: PandaLiveParser.pageSize),
+        headers: {...PandaLiveParser.headers, 'referer': PandaLiveParser.searchReferer('live', query)},
+        site: id,
+      ),
+    );
+    return PandaLiveParser.livePage(response.text, page: page, status: response.statusCode);
   }
 
   @override

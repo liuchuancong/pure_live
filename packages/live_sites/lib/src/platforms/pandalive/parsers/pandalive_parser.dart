@@ -106,6 +106,28 @@ abstract final class PandaLiveParser {
     if (page < 1 || page > maxPage) throw RangeError.range(page, 1, maxPage, 'page');
   }
 
+  /// The keyword sent to the search: trimmed and rejected when it holds a
+  /// control character (3.x refused it before any request).
+  static String checkKeyword(String keyword) {
+    final text = keyword.trim();
+    if (RegExp(r'[\x00-\x1f]').hasMatch(text)) {
+      throw ArgumentError.value(keyword, 'keyword', 'contains a control character');
+    }
+    return text;
+  }
+
+  /// The referer of a search source page.
+  static String searchReferer(String source, String keyword) =>
+      '$origin/search/$source?text=${Uri.encodeQueryComponent(keyword)}';
+
+  /// The `live/index` form of the LIVE search (by viewers), at [page] of [size].
+  static Map<String, String> liveSearchForm(String keyword, {required int page, required int size}) => {
+    'offset': '${(page - 1) * size}',
+    'limit': '$size',
+    'orderBy': 'user',
+    'searchVal': keyword,
+  };
+
   /// A page of `live/index` asked at [page] of [size]: the directory and
   /// the LIVE search answer with the same envelope.
   ///
