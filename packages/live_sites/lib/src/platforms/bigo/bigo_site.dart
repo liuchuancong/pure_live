@@ -1,13 +1,18 @@
+import 'dart:math';
+
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/bigo/danmaku/bigo_danmaku.dart';
+import 'package:live_sites/src/platforms/bigo/danmaku/bigo_session.dart';
 import 'package:live_sites/src/platforms/bigo/parsers/bigo_parser.dart';
 
 /// The Bigo Live adapter: the token → studio flow (the studio API needs a
-/// signed anonymous web token), plus the public list.
+/// signed anonymous web token), the public list, and the anonymous chat socket.
 ///
-/// Not migrated yet: search, the password/paid detail and the danmaku
-/// transport.
-final class BigoSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability {
+/// Not migrated yet: search and the password/paid detail.
+final class BigoSite
+    with SiteRoomGuard
+    implements LiveSite, LiveDanmakuCapability, LiveAreaCatalog, LiveDirectoryCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -127,6 +132,42 @@ final class BigoSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, Li
     return room.mergeFrom(BigoParser.room(studio));
   }
 
+  /// Opens the anonymous chat for [room].
+  ///
+  /// The studio answer carries the room's identity (`siteId`), the streamer's
+  /// account (`ownerId`) and its int64 room id (`roomId`); a visitor account is
+  /// asked from `getWebSocketLink`, then the socket runs its handshake. A room
+  /// the answer gives no usable ids for, or a visitor the endpoint refuses,
+  /// becomes a [SiteNotFoundError] rather than a socket that cannot enter.
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) async {
+    guardRoom(room);
+    final studio = await _studio(room.roomId);
+    final args = BigoDanmakuProtocol.checked(siteId: studio.siteId, ownerId: studio.ownerId, roomId: studio.roomId);
+    if (args == null) {
+      throw SiteNotFoundError('bigo ${room.roomId}: no usable room id or owner');
+    }
+    return await BigoDanmakuSession.connect(await _visitor(), ownerId: args.ownerId, roomId: args.roomId);
+  }
+
+  /// A fresh anonymous visitor account, asked the way the page's player does.
+  Future<BigoChatVisitor> _visitor() async {
+    final device = BigoDanmakuProtocol.deviceId(Random.secure(), DateTime.now());
+    final response = await http.send(
+      LiveRequest.form(
+        BigoDanmakuProtocol.linkUrl,
+        fields: BigoDanmakuProtocol.linkFields(device),
+        headers: {...BigoParser.headers, 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8'},
+        site: id,
+      ),
+    );
+    try {
+      return BigoDanmakuProtocol.visitor(response.text, status: response.statusCode, deviceId: device);
+    } on FormatException catch (error) {
+      throw SiteNotFoundError('bigo: ${error.message}');
+    }
+  }
+
   /// The studio of [siteId] with the token chain (server time → token →
   /// studio). The token is reused across detail and refresh calls;
   /// [freshToken] spends a new one, because a token's first use is the only
@@ -134,6 +175,8 @@ final class BigoSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, Li
   Future<
     ({
       String siteId,
+      int ownerId,
+      String roomId,
       bool alive,
       bool needsLogin,
       bool password,

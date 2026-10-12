@@ -225,6 +225,8 @@ abstract final class BigoParser {
   /// `getInternalStudioInfo` → the studio facts and its HLS playlist.
   static ({
     String siteId,
+    int ownerId,
+    String roomId,
     bool alive,
     bool needsLogin,
     bool password,
@@ -261,6 +263,10 @@ abstract final class BigoParser {
     final paid = data['isPaidShow']?.toString() == '1';
     final alive = data['alive'] == '1' || data['alive'] == 1 || data['alive'] == true;
     final hls = data['hls_src']?.toString() ?? '';
+    // The chat socket enters the room by its int64 `roomId` and asks the
+    // audience of the streamer's account `uid`; both ride in `room.data`.
+    final ownerId = int.tryParse(data['uid']?.toString() ?? '') ?? 0;
+    final roomId = data['roomId']?.toString() ?? '';
     // The answered `clientBigoId` can be the room's *vanity* alias — a room
     // the list names 650391684 answers Thefam0us.bez (probed 2026-10-12) —
     // and a room's identity may not change mid-flow: the asked id is the
@@ -268,6 +274,8 @@ abstract final class BigoParser {
     // guard in `LiveRoom.mergeFrom` would rightly refuse it).
     return (
       siteId: requestedSiteId,
+      ownerId: ownerId,
+      roomId: roomId,
       alive: alive,
       needsLogin: needsLogin,
       password: password,
@@ -285,6 +293,8 @@ abstract final class BigoParser {
   static LiveRoom room(
     ({
       String siteId,
+      int ownerId,
+      String roomId,
       bool alive,
       bool needsLogin,
       bool password,
@@ -312,7 +322,12 @@ abstract final class BigoParser {
       _ when studio.paid => LiveRestriction.paid,
       _ => null,
     },
-    data: studio.hls,
+    data: <String, Object?>{
+      'siteId': studio.siteId,
+      'ownerId': studio.ownerId,
+      'roomId': studio.roomId,
+      'hls': studio.hls,
+    },
   );
 
   /// The play line of a studio's HLS playlist.
