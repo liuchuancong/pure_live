@@ -1,10 +1,10 @@
 name: live_storage
 description: >-
-  Storage infrastructure for Pure Live: the ten-type storage error model,
-  a typed preferences store (in-memory and drift-backed), a secure-store
-  seam for credentials, a path-safe file store over the live_platform
-  directory service, and a versioned fail-loud drift database skeleton.
-  Pure Dart; Flutter plugins plug in at the app shell.
+  Storage infrastructure for Pure Live: bootstrap and lifecycle over
+  Hive CE, typed box opening through hive_box_manager, typed storage
+  repositories, migration contracts, diagnostics and the JSON box
+  adapter bridge. Pure Dart; the app shell injects the storage
+  directory and registers adapters.
 version: 0.1.0
 publish_to: none
 
@@ -14,12 +14,11 @@ environment:
   sdk: ^3.13.0
 
 dependencies:
-  drift: ^2.35.1
-  live_platform:
-  meta: ^1.19.0
-  path: ^1.9.0
-  sqlite3: ^3.7.0
+  hive_box_manager: ^1.2.0
+  hive_ce: ^2.20.2
 
 dev_dependencies:
+  build_runner: ^2.7.1
+  hive_ce_generator: ^1.11.3
   test: ^1.32.0
   very_good_analysis: ^11.0.0

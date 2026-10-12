@@ -337,14 +337,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.2"
-  drift:
-    dependency: transitive
-    description:
-      name: drift
-      sha256: ef9598e1785c18db37209e8554fc79aff94632209d384ec98984b9e3184af0f7
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.35.2"
   equatable:
     dependency: transitive
     description:
@@ -432,6 +424,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.2.0"
+  fpdart:
+    dependency: transitive
+    description:
+      name: fpdart
+      sha256: f8e9d0989ba293946673e382c59ac513e30cb6746a9452df195f29e3357a73d4
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.0"
   freezed:
     dependency: transitive
     description:
@@ -496,6 +496,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
+  hive_box_manager:
+    dependency: transitive
+    description:
+      name: hive_box_manager
+      sha256: "4618e0648891194d6cbdbdc99a6d861f3385b5213595ee71d145e3da02fa8157"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.0"
+  hive_ce:
+    dependency: transitive
+    description:
+      name: hive_ce
+      sha256: "85d43209e2b4903a95d65d054407ea9ad4989d17b4d47e71732070d41b427c87"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.20.2"
+  hive_ce_generator:
+    dependency: transitive
+    description:
+      name: hive_ce_generator
+      sha256: "2925081718b37e37a3183530b1781c4bd60959e35c46a1d7605689bf7a320de4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.11.3"
   hooks:
     dependency: transitive
     description:
@@ -576,6 +600,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.0"
+  isolate_channel:
+    dependency: transitive
+    description:
+      name: isolate_channel
+      sha256: a9d3d620695bc984244dafae00b95e4319d6974b2d77f4b9e1eb4f2efe099094
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.1"
   jni:
     dependency: transitive
     description:
@@ -712,14 +744,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.6"
-  native_toolchain_c:
-    dependency: transitive
-    description:
-      name: native_toolchain_c
-      sha256: "90eaad8059ebc2004a63810a4696ea9acdb02473e47ed3b6b3bafb100ac77e31"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.19.5"
   node_preamble:
     dependency: transitive
     description:
@@ -1037,14 +1061,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.10.2"
-  sqlite3:
-    dependency: transitive
-    description:
-      name: sqlite3
-      sha256: cc62d72dbf16bb1f6ae8954b238016de1473e53df060ed0c332eed0a41dd1848
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.7.0"
   stack_trace:
     dependency: transitive
     description:
@@ -1261,6 +1277,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.4"
+  yaml_writer:
+    dependency: transitive
+    description:
+      name: yaml_writer
+      sha256: "69651cd7238411179ac32079937d4aa9a2970150d6b2ae2c6fe6de09402a5dc5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.0"
   yaru:
     dependency: transitive
     description:
