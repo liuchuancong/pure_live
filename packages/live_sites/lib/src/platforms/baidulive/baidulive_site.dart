@@ -8,7 +8,7 @@ import 'package:live_sites/src/platforms/baidulive/parsers/baidulive_parser.dart
 
 /// The Baidu Live adapter: rooms through the searchbox 371 room command.
 ///
-/// Not migrated yet: the feed (directory), search and replay variants. One
+/// Not migrated yet: the feed (directory) and the replay variants. One
 /// request serves both detail and play — the room command carries the video
 /// URLs, so play reuses the last answer — and the same command names the
 /// signed message lists the danmaku session ([connect]) polls.
@@ -44,9 +44,24 @@ final class BaiduLiveSite with SiteRoomGuard implements LiveSite, LiveDanmakuCap
     throw UnimplementedError('baidulive feed lands with its migration');
   }
 
+  /// Baidu Live has no keyword search: a room id or room link is that room
+  /// (the room command, one request); anything else, or a later page, is
+  /// nothing without a request, and an id the room command does not know is
+  /// no result.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('baidulive search lands with its migration');
+    if (page != 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final roomId = BaiduLiveParser.parseRoomId(keyword.trim());
+    if (roomId == null) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    try {
+      return LivePage<LiveRoom>(items: [await _fetch(roomId)]);
+    } on SiteNotFoundError {
+      return const LivePage<LiveRoom>(items: []);
+    }
   }
 
   @override

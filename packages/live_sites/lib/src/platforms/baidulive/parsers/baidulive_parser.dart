@@ -23,6 +23,68 @@ abstract final class BaiduLiveParser {
     }),
   };
 
+  /// A room id: 6–20 digits, not starting with zero.
+  static final RegExp _roomId = RegExp(r'^[1-9]\d{5,19}$');
+
+  /// A share page's code segment.
+  static final RegExp _shareCode = RegExp(r'^[A-Za-z0-9_-]{1,64}$');
+
+  /// [raw] trimmed as a room id (6–20 digits, not starting with zero), or
+  /// null.
+  static String? normalizeRoomId(String raw) {
+    final value = raw.trim();
+    return _roomId.hasMatch(value) ? value : null;
+  }
+
+  /// A room id or a room link (3.x's `BaiduLiveLink.parseRoomId`), or null
+  /// for anything else.
+  static String? parseRoomId(String raw) => normalizeRoomId(raw) ?? roomIdFromUrl(raw);
+
+  /// The room of a Baidu Live room link, or null: https or http on
+  /// `live.baidu.com` with the scheme's default port, no user info or
+  /// fragment, and either `/m/room/<id>` or a `room_id=<id>` on the PC player
+  /// or a share page.
+  static String? roomIdFromUrl(String url) {
+    final uri = Uri.tryParse(url.trim());
+    if (uri == null) {
+      return null;
+    }
+    final scheme = uri.scheme.toLowerCase();
+    final defaultPort = switch (scheme) {
+      'https' => 443,
+      'http' => 80,
+      _ => null,
+    };
+    if (defaultPort == null ||
+        uri.userInfo.isNotEmpty ||
+        uri.host.toLowerCase() != 'live.baidu.com' ||
+        (uri.hasPort && uri.port != defaultPort) ||
+        uri.fragment.isNotEmpty) {
+      return null;
+    }
+    try {
+      final segments = uri.pathSegments.where((segment) => segment.isNotEmpty).toList(growable: false);
+      if (segments.length == 3 && segments[0] == 'm' && segments[1] == 'room' && _roomId.hasMatch(segments[2])) {
+        return segments[2];
+      }
+      final roomId = uri.queryParameters['room_id']?.trim();
+      if (roomId == null || !_roomId.hasMatch(roomId)) {
+        return null;
+      }
+      if ('/${segments.join('/')}' == '/m/media/pclive/pchome/live.html') {
+        return roomId;
+      }
+      if (segments.length == 6 &&
+          segments.take(5).join('/') == 'm/media/multipage/liveshow/index' &&
+          _shareCode.hasMatch(segments.last)) {
+        return roomId;
+      }
+      return null;
+    } on FormatException {
+      return null;
+    }
+  }
+
   /// The `data.371` command of a searchbox answer; "not found" when the
   /// command is missing or its error codes say so.
   static Map<String, Object?> commandOf(String body, {int status = 200}) {
