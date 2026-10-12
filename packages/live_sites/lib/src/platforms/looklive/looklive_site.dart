@@ -1,13 +1,17 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/looklive/danmaku/looklive_danmaku.dart';
+import 'package:live_sites/src/platforms/looklive/danmaku/looklive_session.dart';
 import 'package:live_sites/src/platforms/looklive/parsers/looklive_parser.dart';
 
 /// The Look (网易 LOOK) adapter: the weapi room flow with the NetEase
 /// request envelope (double AES-128-CBC + encSecKey).
 ///
-/// Not migrated yet: search and the danmaku transport (the chat servers
-/// come from a separate address endpoint).
-final class LookLiveSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability {
+/// Not migrated yet: search. The danmaku ([connect]) joins the room's NetEase
+/// Yunxin chatroom as an anonymous guest.
+final class LookLiveSite
+    with SiteRoomGuard
+    implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability, LiveDanmakuCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -155,6 +159,49 @@ final class LookLiveSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog
 
   /// The liveUrl of a room whose data is the roomInfo map.
   static Object? _liveUrlOf(Object? data) => data is Map<String, Object?> ? data['liveUrl'] : null;
+
+  /// The Yunxin chatroom id of a room whose data is the roomInfo map
+  /// (`roomInfo.roomId`, not the room number).
+  static String _chatroomIdOf(Object? data) =>
+      data is Map<String, Object?> ? data['roomId']?.toString().trim() ?? '' : '';
+
+  /// Joins the room's Yunxin chatroom: the room answer gives the chatroom id,
+  /// `chat/address` the chat servers the session handshakes. A room not on air,
+  /// or one whose answer carries no chatroom id, ends with a [SiteError] rather
+  /// than an opening socket.
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) async {
+    guardRoom(room);
+    final detail = await _room(room.roomId);
+    if (detail.status != LiveStatus.live) {
+      throw SiteNotFoundError('looklive ${room.roomId}: not on air');
+    }
+    final chatroomId = _chatroomIdOf(detail.data);
+    if (!LookLiveDanmakuProtocol.isRoomNumber(room.roomId) || chatroomId.isEmpty) {
+      throw SiteApiChangedError('looklive ${room.roomId}: no chatroom to join');
+    }
+    return await LookLiveDanmakuSession.connect(
+      LookLiveDanmakuArgs(roomId: room.roomId, chatroomId: chatroomId),
+      http,
+      LookLiveDanmakuProtocol.endpoints(await _chatAddresses(room.roomId)),
+    );
+  }
+
+  /// The room's chat servers (`chat/address`, weapi-encoded like every other
+  /// LOOK request).
+  Future<List<String>> _chatAddresses(String roomId) async {
+    final body = await LookLiveParser.formBody(LookLiveParser.chatAddressPayload(roomId));
+    final response = await http.send(
+      LiveRequest.custom(
+        url: Uri.parse('${LookLiveParser.apiOrigin}${LookLiveParser.chatAddressPath}'),
+        method: 'POST',
+        headers: LookLiveParser.requestHeaders,
+        body: body,
+        site: id,
+      ),
+    );
+    return LookLiveParser.chatAddresses(response.text, status: response.statusCode);
+  }
 
   Future<LiveRoom> _room(String roomId) async {
     final body = await LookLiveParser.formBody({'liveRoomNo': roomId});

@@ -292,6 +292,40 @@ abstract final class LookLiveParser {
     final url = value?.toString() ?? '';
     return url.isEmpty ? null : url;
   }
+
+  /// The Yunxin chat-server address endpoint.
+  static const String chatAddressPath = '/weapi/livestream/chat/address';
+
+  /// The `chat/address` payload of [roomId].
+  static Map<String, Object> chatAddressPayload(String roomId) => {'liveRoomNo': roomId, 'os': 0};
+
+  static final RegExp _chatAddress = RegExp(
+    r'^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+:([0-9]{1,5})$',
+  );
+
+  /// The chat servers of a `chat/address` answer: `data.address`, each a
+  /// `host:port` of NetEase Yunxin's chatroom service, in the answer's order,
+  /// lower-cased; entries that are not a host name and a port (1 to 65535) are
+  /// left out. The envelope follows [data] (code 404 is "not found"); no
+  /// `address` list, or none usable, is a changed API.
+  static List<String> chatAddresses(String body, {int status = 200}) {
+    const what = 'chat/address';
+    final data = LookLiveParser.data(body, status: status, what: what);
+    final raw = data['address'];
+    if (raw is! List) {
+      throw const SiteApiChangedError('looklive chat/address: address is not a list');
+    }
+    final addresses = <String>{
+      for (final entry in raw)
+        if (entry?.toString().trim().toLowerCase() case final address? when address.isNotEmpty)
+          if (_chatAddress.firstMatch(address) case final match?)
+            if (int.tryParse(match.group(4) ?? '') case final port? when port >= 1 && port <= 65535) address,
+    };
+    if (addresses.isEmpty) {
+      throw const SiteApiChangedError('looklive chat/address: no usable address');
+    }
+    return addresses.toList();
+  }
 }
 
 /// The two feeds LOOK Live serves.
