@@ -1,13 +1,19 @@
+import 'dart:math';
+
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/jdlive/danmaku/jdlive_danmaku.dart';
+import 'package:live_sites/src/platforms/jdlive/danmaku/jdlive_session.dart';
 import 'package:live_sites/src/platforms/jdlive/parsers/jdlive_parser.dart';
 
 /// The JD Live adapter: rooms through the h5 `getImmediatePlayToM` play
-/// answer and the featured list (`liveListWithTabToM`).
+/// answer and the featured list (`liveListWithTabToM`), plus the `liveauth`
+/// chat socket.
 ///
-/// Not migrated yet: search, the playlist validation pass and the danmaku
-/// transport.
-final class JdLiveSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability {
+/// Not migrated yet: search and the playlist validation pass.
+final class JdLiveSite
+    with SiteRoomGuard
+    implements LiveSite, LiveDanmakuCapability, LiveAreaCatalog, LiveDirectoryCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -168,6 +174,40 @@ final class JdLiveSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, 
     final liveId = _numeric(room.roomId);
     final data = await _play(liveId);
     return room.mergeFrom(JdLiveParser.room(data, liveId: liveId, known: _known[liveId]));
+  }
+
+  /// Opens the `liveauth` chat for [room].
+  ///
+  /// A token opens one socket, so every connect POSTs `liveauth` anew (the
+  /// page does the same after a socket error). A handshake the server refuses
+  /// becomes a [SiteNotFoundError] with its reason, minus the socket URL's
+  /// token.
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) async {
+    guardRoom(room);
+    final liveId = _numeric(room.roomId);
+    return await JdLiveDanmakuSession.connect(await _liveauth(liveId), liveId: liveId);
+  }
+
+  Future<JdLiveChatAuth> _liveauth(String liveId) async {
+    final fields = await JdLiveDanmakuProtocol.liveauthFields(
+      liveId,
+      now: DateTime.now(),
+      nonce: JdLiveDanmakuProtocol.nonce(Random.secure()),
+    );
+    final response = await http.send(
+      LiveRequest.form(
+        JdLiveDanmakuProtocol.authUrl,
+        fields: fields,
+        headers: JdLiveDanmakuProtocol.authHeaders,
+        site: id,
+      ),
+    );
+    try {
+      return JdLiveDanmakuProtocol.auth(response.text, status: response.statusCode);
+    } on FormatException catch (error) {
+      throw SiteNotFoundError(JdLiveDanmakuProtocol.redact(error.message));
+    }
   }
 
   Future<Map<String, Object?>> _play(String liveId) async {
