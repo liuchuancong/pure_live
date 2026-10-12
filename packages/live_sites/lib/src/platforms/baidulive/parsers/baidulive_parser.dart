@@ -40,7 +40,7 @@ abstract final class BaiduLiveParser {
     if (raw is! Map<String, Object?>) {
       throw const SiteNotFoundError('baidulive: no room command');
     }
-    final error = (raw['error_code'] as num?)?.toInt();
+    final error = SiteCounts.integer(raw['error_code']);
     if (error == 1 || error == 4) {
       throw SiteNotFoundError('baidulive: error_code $error');
     }
@@ -60,7 +60,7 @@ abstract final class BaiduLiveParser {
     }
     final hostMap = host is Map<String, Object?> ? host : const <String, Object?>{};
     final videoMap = video is Map<String, Object?> ? video : const <String, Object?>{};
-    final stateCode = (cmd['status'] as num?)?.toInt();
+    final stateCode = SiteCounts.integer(cmd['status']);
     final live = stateCode == 0;
     final replay = stateCode == 3;
     final nick = hostMap['nick_name']?.toString() ?? hostMap['name']?.toString() ?? '';
@@ -76,7 +76,7 @@ abstract final class BaiduLiveParser {
       ),
       cover: _image(coverMap['cover_100'] ?? coverMap['vertical_cover']),
       areaName: cmd['category']?.toString(),
-      watching: (cmd['online_users'] as num?)?.toInt(),
+      watching: SiteCounts.integer(cmd['online_users']),
       status: replay
           ? LiveStatus.replay
           : live
@@ -118,7 +118,7 @@ abstract final class BaiduLiveParser {
         if (item is! Map<String, Object?>) {
           continue;
         }
-        final height = (item['resolution'] as num?)?.toInt();
+        final height = SiteCounts.integer(item['resolution']);
         final urls = item['urls'];
         if (urls is! Map<String, Object?>) {
           continue;
@@ -134,7 +134,7 @@ abstract final class BaiduLiveParser {
         if (item is! Map<String, Object?>) {
           continue;
         }
-        final height = (item['resolution'] as num?)?.toInt();
+        final height = SiteCounts.integer(item['resolution']);
         final pairs = item['urls'];
         if (pairs is! List) {
           continue;
