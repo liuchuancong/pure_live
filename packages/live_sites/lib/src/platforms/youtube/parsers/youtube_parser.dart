@@ -187,5 +187,192 @@ abstract final class YouTubeParser {
   /// The chat's `get_live_chat` body for [continuation].
   static Map<String, Object?> chatBody(String continuation) => {'context': webContext, 'continuation': continuation};
 
+  // Directory and search (the WEB InnerTube client) --------------------------
+
+  /// The InnerTube search filter "Live".
+  static const String liveFilter = 'EgJAAQ%3D%3D';
+
+  /// The channel browse id of the site's "Live" tab (the recommendations).
+  static const String liveDestination = 'UC4R8DWoMoI7CAwX8_LjQHig';
+
+  /// The `browse` body of the live destination.
+  static Map<String, Object?> browseBody() => {'context': webContext, 'browseId': liveDestination};
+
+  /// The `search` body of [query] filtered to live broadcasts.
+  static Map<String, Object?> searchBody(String query) => {'context': webContext, 'query': query, 'params': liveFilter};
+
+  static const int _walkBudget = 250000;
+
+  /// The live rooms of a `browse` ([search] false) or `search` answer: the
+  /// live `videoRenderer` rows (ended and upcoming rows are left out), each
+  /// keyed by its video id (this adapter opens rooms by video id), a video
+  /// once. A failed status or a non-JSON body is an API change.
+  ///
+  /// Archived from the reference, whose rooms are keyed by the owner's channel
+  /// id; here they are keyed by the broadcast's video id so `getRoomDetail`
+  /// (the ANDROID player) opens them. Deep continuation paging is not done: the
+  /// first answer's rooms are returned whole, `hasMore` false.
+  static LivePage<LiveRoom> listing(String body, {required bool search, int status = 200}) {
+    final what = search ? 'search' : 'browse';
+    checkStatus(status, body, what);
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(body);
+    } on FormatException {
+      throw const SiteApiChangedError('youtube not a JSON object');
+    }
+    if (decoded is! Map<String, Object?>) {
+      throw const SiteApiChangedError('youtube not a JSON object');
+    }
+    final rooms = <LiveRoom>[];
+    final seen = <String>{};
+    for (final item in _findAll(decoded, 'videoRenderer')) {
+      final renderer = _object(item);
+      if (!_rowLive(renderer)) {
+        continue;
+      }
+      final room = _liveCard(renderer);
+      if (room != null && seen.add(room.roomId)) {
+        rooms.add(room);
+      }
+    }
+    return LivePage(items: rooms);
+  }
+
+  static LiveRoom? _liveCard(Map<String, Object?> renderer) {
+    final videoId = normalizeVideoId(renderer['videoId']?.toString() ?? '');
+    if (videoId == null) {
+      return null;
+    }
+    final owner = renderer['ownerText'] ?? renderer['longBylineText'] ?? renderer['shortBylineText'];
+    final title = _text(renderer['title']);
+    final nick = _text(owner);
+    if (title.isEmpty || nick.isEmpty) {
+      return null;
+    }
+    final avatar = _object(_object(renderer['channelThumbnailSupportedRenderers'])['channelThumbnailWithLinkRenderer']);
+    final viewers = _watching(renderer['viewCountText']);
+    final badges = renderer['badges'];
+    final members =
+        badges is List &&
+        badges.any(
+          (badge) => _object(_object(badge)['metadataBadgeRenderer'])['style'] == 'BADGE_STYLE_TYPE_MEMBERS_ONLY',
+        );
+    final cover = _thumbnail(renderer['thumbnail']);
+    return LiveRoom(
+      platform: SiteIds.youtube,
+      roomId: videoId,
+      title: title,
+      nick: nick,
+      avatar: _nullIfEmpty(_thumbnail(avatar['thumbnail'], avatar: true)),
+      cover: _nullIfEmpty(cover),
+      status: LiveStatus.live,
+      restriction: members ? LiveRestriction.subscribersOnly : null,
+      watching: viewers,
+      onlineViewers: viewers,
+      httpHeaders: mediaHeaders(videoId),
+    );
+  }
+
+  static bool _rowLive(Map<String, Object?> renderer) {
+    if (renderer.containsKey('upcomingEventData')) {
+      return false;
+    }
+    final badges = renderer['badges'];
+    if (badges is List) {
+      for (final badge in badges) {
+        if (_object(_object(badge)['metadataBadgeRenderer'])['style'] == 'BADGE_STYLE_TYPE_LIVE_NOW') {
+          return true;
+        }
+      }
+    }
+    final overlays = renderer['thumbnailOverlays'];
+    if (overlays is List) {
+      for (final overlay in overlays) {
+        if (_object(_object(overlay)['thumbnailOverlayTimeStatusRenderer'])['style'] == 'LIVE') {
+          return true;
+        }
+      }
+    }
+    return _watching(renderer['viewCountText']) != null;
+  }
+
+  static final RegExp _watchingCount = RegExp(r'^(\d[\d,.]*)\s*watching', caseSensitive: false);
+
+  static int? _watching(Object? value) {
+    final match = _watchingCount.firstMatch(_text(value));
+    final digits = match?.group(1)?.replaceAll(RegExp(r'\D'), '');
+    return digits == null || digits.isEmpty ? null : int.tryParse(digits);
+  }
+
+  static List<Object?> _findAll(Object? root, String key) {
+    final found = <Object?>[];
+    var visited = 0;
+    void walk(Object? value) {
+      if (++visited > _walkBudget) {
+        throw SiteApiChangedError('youtube answer too large looking for $key');
+      }
+      if (value is List) {
+        value.forEach(walk);
+      } else if (value is Map) {
+        for (final entry in value.entries) {
+          if (entry.key == key) found.add(entry.value);
+          walk(entry.value);
+        }
+      }
+    }
+
+    walk(root);
+    return found;
+  }
+
+  /// The last (largest) https picture of a `thumbnails` list on a YouTube or
+  /// Google image host (a `googleusercontent` one only for [avatar]), else empty.
+  static String _thumbnail(Object? value, {bool avatar = false}) {
+    final items = _object(value)['thumbnails'];
+    if (items is! List || items.length > 64) {
+      return '';
+    }
+    for (final item in items.reversed) {
+      final raw = _object(item)['url'];
+      final uri = raw is String ? Uri.tryParse(raw) : null;
+      final host = uri?.host.toLowerCase() ?? '';
+      if (uri != null &&
+          uri.scheme == 'https' &&
+          uri.userInfo.isEmpty &&
+          !uri.hasFragment &&
+          (_imageHost(host) ||
+              (avatar && (host == 'googleusercontent.com' || host.endsWith('.googleusercontent.com'))))) {
+        return uri.toString();
+      }
+    }
+    return '';
+  }
+
+  static bool _imageHost(String host) =>
+      host == 'ytimg.com' || host.endsWith('.ytimg.com') || host == 'ggpht.com' || host.endsWith('.ggpht.com');
+
+  /// The text of a `{simpleText}` or `{runs: [...]}` object, joined and trimmed.
+  static String _text(Object? value) {
+    final map = _object(value);
+    final simple = map['simpleText'];
+    if (simple is String) {
+      return simple.trim();
+    }
+    final runs = map['runs'];
+    if (runs is! List) {
+      return '';
+    }
+    return [
+      for (final run in runs)
+        if (_object(run)['text'] case final String text) text,
+    ].join().trim();
+  }
+
+  static Map<String, Object?> _object(Object? value) =>
+      value is Map<String, Object?> ? value : (value is Map ? value.cast<String, Object?>() : const {});
+
+  static String? _nullIfEmpty(String value) => value.isEmpty ? null : value;
+
   static Map<String, Object?> _map(Object? value) => value is Map<String, Object?> ? value : const <String, Object?>{};
 }

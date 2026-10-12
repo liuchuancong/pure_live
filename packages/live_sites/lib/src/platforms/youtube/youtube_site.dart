@@ -5,11 +5,14 @@ import 'package:live_sites/src/platforms/youtube/danmaku/youtube_session.dart';
 import 'package:live_sites/src/platforms/youtube/parsers/youtube_parser.dart';
 
 /// The YouTube adapter: the ANDROID InnerTube player flow (anonymous HLS
-/// manifest, no browser proofs needed).
+/// manifest, no browser proofs needed), the WEB InnerTube live tab (`browse`)
+/// and live search, and the live chat.
 ///
 /// Not migrated yet: the watch page's API key discovery (the public fallback key
-/// is used), directory and search. The live chat ([connect]) is the WEB InnerTube
-/// poll ([YouTubeDanmakuSession]); the room id is the broadcast's video id.
+/// is used). Directory and search return the first answer's live rooms (keyed by
+/// video id); the InnerTube continuation paging and the channel-id identity of
+/// the reference are not ported. The chat ([connect]) is the WEB InnerTube poll
+/// ([YouTubeDanmakuSession]); the room id is the broadcast's video id.
 final class YouTubeSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability {
   /// A site over [http].
   new({required this.http, this.apiKey = YouTubeParser.fallbackApiKey});
@@ -31,19 +34,58 @@ final class YouTubeSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapab
   SiteMetadata get metadata =>
       const SiteMetadata(id: SiteIds.youtube, displayName: 'YouTube Live', homeUrl: 'https://www.youtube.com');
 
+  /// Page 1 of the site's "Live" tab (`browse` of the live destination). The
+  /// first answer's live rooms are returned whole; [page] past 1 is empty.
   @override
   Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
-    throw UnimplementedError('youtube directory lands with its migration');
+    if (page != 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final response = await http.send(
+      LiveRequest.json(
+        YouTubeParser.apiUrl('browse'),
+        body: YouTubeParser.browseBody(),
+        headers: YouTubeParser.apiHeaders,
+        site: id,
+      ),
+    );
+    return YouTubeParser.listing(response.text, search: false, status: response.statusCode);
   }
 
+  /// There is no area catalogue: every area's listing is the live tab.
   @override
   Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    throw UnimplementedError('youtube directory lands with its migration');
+    if (page != 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final response = await http.send(
+      LiveRequest.json(
+        YouTubeParser.apiUrl('browse'),
+        body: YouTubeParser.browseBody(),
+        headers: YouTubeParser.apiHeaders,
+        site: id,
+      ),
+    );
+    return YouTubeParser.listing(response.text, search: false, status: response.statusCode);
   }
 
+  /// A live search of [keyword]: the first page's live rooms. A blank keyword
+  /// or a page past 1 finds nothing.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('youtube search lands with its migration');
+    final text = keyword.trim();
+    if (text.isEmpty || page != 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final response = await http.send(
+      LiveRequest.json(
+        YouTubeParser.apiUrl('search'),
+        body: YouTubeParser.searchBody(text),
+        headers: YouTubeParser.apiHeaders,
+        site: id,
+      ),
+    );
+    return YouTubeParser.listing(response.text, search: true, status: response.statusCode);
   }
 
   @override
