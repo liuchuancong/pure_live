@@ -1,12 +1,14 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/picarto/danmaku/picarto_session.dart';
 import 'package:live_sites/src/platforms/picarto/parsers/picarto_parser.dart';
 
-/// The Picarto adapter: one channel/detail request per room.
+/// The Picarto adapter: one channel/detail request per room, plus the chat
+/// socket over a GraphQL-issued token.
 ///
-/// Not migrated yet: the multistream overlay, the broadcast start from
-/// the public API, directory, search and the danmaku transport.
-final class PicartoSite with SiteRoomGuard implements LiveSite {
+/// Not migrated yet: the multistream overlay, the broadcast start from the
+/// public API, directory and search.
+final class PicartoSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -64,6 +66,19 @@ final class PicartoSite with SiteRoomGuard implements LiveSite {
     guardRoom(room);
     final fresh = await _detail(room.roomId);
     return room.mergeFrom(fresh);
+  }
+
+  /// Opens the chat socket for [room].
+  ///
+  /// The channel's numeric id comes from the detail answer and lets the
+  /// decoder drop a `stream` frame naming another channel; a room with no
+  /// detail yet fetches one here. The session asks its own JWT token.
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) async {
+    guardRoom(room);
+    final data = room.data ?? (await _detail(room.roomId)).data;
+    final channelId = PicartoParser.channelIdOf(data) ?? 0;
+    return await PicartoDanmakuSession.connect(http, channelName: room.roomId, channelId: channelId);
   }
 
   Future<LiveRoom> _detail(String roomId) async {

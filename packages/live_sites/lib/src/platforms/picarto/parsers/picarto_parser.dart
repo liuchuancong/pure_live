@@ -116,18 +116,19 @@ abstract final class PicartoParser {
       watching: (channel['viewers'] as num?)?.toInt(),
       status: live ? LiveStatus.live : LiveStatus.offline,
       restriction: private ? LiveRestriction.private : null,
-      data: master,
+      data: <String, Object?>{'channelId': ?channelId, 'master': ?master},
     );
   }
 
   /// The play lines of a live room's master playlist.
   static List<LivePlayLine> playLines(Object? data, String name) {
-    if (data is! Uri) {
+    final master = data is Map<String, Object?> ? data['master'] : null;
+    if (master is! Uri) {
       return const [];
     }
     return [
       LivePlayLine(
-        url: data.toString(),
+        url: master.toString(),
         headers: mediaHeaders(name),
         format: StreamFormat.hls,
         codec: 'avc',
@@ -135,6 +136,12 @@ abstract final class PicartoParser {
       ),
     ];
   }
+
+  /// The numeric channel id of a room, from its detail; null until a detail
+  /// has answered. The chat socket names the room by it.
+  static int? channelIdOf(Object? data) => data is Map<String, Object?> ? _asInt(data['channelId']) : null;
+
+  static int? _asInt(Object? value) => value is int ? value : int.tryParse('$value');
 
   static String? _image(Object? value) {
     final url = value?.toString() ?? '';
