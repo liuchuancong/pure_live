@@ -3,13 +3,13 @@ import 'package:live_storage/live_storage.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('DbPreferencesStore', () {
+  group('DbKeyedStore', () {
     late PureLiveDatabase database;
-    late DbPreferencesStore store;
+    late KeyedStore store;
 
     setUp(() {
       database = PureLiveDatabase(NativeDatabase.memory());
-      store = DbPreferencesStore(database);
+      store = database.store('preferences');
     });
 
     tearDown(() async {
@@ -28,6 +28,25 @@ void main() {
       expect(await store.read('nested'), {'quality': '超清', 'volume': 0.8});
     });
 
+    test('readAll and keys list the table contents in key order', () async {
+      await store.write('b', 2);
+      await store.write('a', 1);
+
+      expect(await store.keys(), ['a', 'b']);
+      expect(await store.readAll(), {'a': 1, 'b': 2});
+    });
+
+    test('one store instance per table name', () {
+      expect(identical(database.store('preferences'), store), isTrue);
+      expect(identical(database.store('other'), store), isFalse);
+    });
+
+    test('rejects table names that are not plain identifiers', () {
+      expect(() => database.store(''), throwsA(isA<StorageValidationException>()));
+      expect(() => database.store('a b'), throwsA(isA<StorageValidationException>()));
+      expect(() => database.store('x; DROP TABLE preferences'), throwsA(isA<StorageValidationException>()));
+    });
+
     test('upsert overwrites and remove clears', () async {
       await store.write('key', 'first');
       await store.write('key', 'second');
@@ -37,6 +56,13 @@ void main() {
       expect(await store.read('key'), isNull);
     });
 
+    test('writing null removes the entry', () async {
+      await store.write('key', 'value');
+      await store.write('key', null);
+      expect(await store.read('key'), isNull);
+      expect(await store.keys(), isEmpty);
+    });
+
     test('writes are durable across reopen', () async {
       await store.write('durable', 'yes');
       await database.close();
@@ -44,7 +70,7 @@ void main() {
       // A fresh in-memory database has nothing — proving writes go to the
       // executor, not to some in-controller cache.
       final reopened = PureLiveDatabase(NativeDatabase.memory());
-      final reopenedStore = DbPreferencesStore(reopened);
+      final reopenedStore = reopened.store('preferences');
       expect(await reopenedStore.read('durable'), isNull);
       await reopened.close();
     });
@@ -58,6 +84,17 @@ void main() {
       await sub.cancel();
 
       expect(events, hasLength(2));
+    });
+
+    test('clear empties this table only', () async {
+      final other = database.store('other');
+      await store.write('k', 1);
+      await other.write('k', 2);
+
+      await store.clear();
+
+      expect(await store.read('k'), isNull);
+      expect(await other.read('k'), 2);
     });
 
     test('transaction rolls back on failure', () async {

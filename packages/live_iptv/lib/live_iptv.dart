@@ -4,7 +4,7 @@
 /// KODIPROP options, `url|headers` tails) and TXT (`name,url`,
 /// `group,#genre#`, `#` alternatives) playlists tolerantly; `IptvLibrary`
 /// persists the channels and playlists through the `IptvStore` seam
-/// (live_storage preferences in production), reconciles re-imports by URL
+/// (a live_storage keyed store in production), reconciles re-imports by URL
 /// so favourites, hiding and ordering survive a playlist update, and
 /// `LibraryIptvChannelSource` exposes the library through the live_sites
 /// IPTV site so channels play through the ordinary playback stack.

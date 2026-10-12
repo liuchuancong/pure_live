@@ -30,7 +30,7 @@ final class PreferencesLoadReport {
 }
 
 /// The user's preferences: one in-memory [Preferences] value, persisted
-/// group by group through a [PreferencesStore].
+/// group by group through a [KeyedStore].
 ///
 /// Reading is synchronous — every reader sees [value] and watches
 /// [changes]; writing goes through the `update*` methods, which apply the
@@ -53,7 +53,7 @@ final class PreferencesService {
   }) : _value = initial;
 
   /// The store the groups are persisted in.
-  final PreferencesStore store;
+  final KeyedStore store;
 
   /// How long a change waits for company before its group is written.
   final Duration saveDebounce;

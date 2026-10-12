@@ -5,8 +5,8 @@ import 'package:live_storage/live_storage.dart';
 
 /// The persistence seam of the library.
 ///
-/// The production implementation writes through the live_storage
-/// preferences store; tests use [InMemoryLibraryStore].
+/// The production implementation writes through a live_storage keyed
+/// store; tests use [InMemoryLibraryStore].
 abstract interface class LibraryStore {
   /// Loads the followed rooms (ordered by position).
   Future<List<LibraryRoom>> loadRooms();
@@ -42,16 +42,16 @@ abstract final class LibraryKeys {
   static const String history = 'library.history.v1';
 }
 
-/// A [LibraryStore] over the live_storage preferences seam.
-final class PreferencesLibraryStore implements LibraryStore {
-  /// A store over [preferences].
-  new(this.preferences);
+/// A [LibraryStore] over a live_storage keyed store.
+final class KeyedLibraryStore implements LibraryStore {
+  /// A store writing through [store].
+  new(this.store);
 
-  /// The preferences store (drift-backed in production).
-  final PreferencesStore preferences;
+  /// The keyed store (drift-backed in production).
+  final KeyedStore store;
 
   @override
-  Stream<void> get changes => preferences.changes;
+  Stream<void> get changes => store.changes;
 
   @override
   Future<List<LibraryRoom>> loadRooms() => _load(LibraryKeys.rooms, LibraryRoom.fromJson);
@@ -73,7 +73,7 @@ final class PreferencesLibraryStore implements LibraryStore {
       _save(LibraryKeys.history, history, (record) => record.toJson());
 
   Future<List<T>> _load<T>(String key, T Function(Map<String, Object?>) fromJson) async {
-    final raw = await preferences.read(key);
+    final raw = await store.read(key);
     if (raw is! List) {
       return const [];
     }
@@ -87,7 +87,7 @@ final class PreferencesLibraryStore implements LibraryStore {
   }
 
   Future<void> _save<T>(String key, List<T> items, Map<String, Object?> Function(T) toJson) =>
-      preferences.write(key, [for (final item in items) toJson(item)]);
+      store.write(key, [for (final item in items) toJson(item)]);
 }
 
 /// An in-memory [LibraryStore] for tests and previews.

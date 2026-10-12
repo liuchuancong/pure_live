@@ -2,10 +2,10 @@ import 'package:live_storage/live_storage.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('InMemoryPreferencesStore', () {
-    late PreferencesStore store;
+  group('InMemoryKeyedStore', () {
+    late KeyedStore store;
 
-    setUp(() => store = InMemoryPreferencesStore());
+    setUp(() => store = InMemoryKeyedStore());
 
     test('write, read, overwrite and remove', () async {
       await store.write('theme', 'dark');
@@ -39,6 +39,12 @@ void main() {
         'a': 1,
         'b': [2, 3],
       });
+
+      expect(await store.keys(), ['count', 'flag', 'name', 'nested', 'ratio', 'tags']);
+      expect((await store.readAll())['nested'], {
+        'a': 1,
+        'b': [2, 3],
+      });
     });
 
     test('clear removes everything', () async {
@@ -48,6 +54,7 @@ void main() {
 
       expect(await store.read('a'), isNull);
       expect(await store.read('b'), isNull);
+      expect(await store.keys(), isEmpty);
     });
 
     test('changes fires per committed mutation', () async {

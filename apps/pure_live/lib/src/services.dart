@@ -99,12 +99,13 @@ final class PureLiveServices {
     // write the file still logs to both of the others.
     log.replaceSink(memory, FanOutSink([console, memory, file]));
 
-    // The structured store, then the preference documents on top of it.
+    // The structured store, then the documents on top of it: one keyed
+    // table for the preference groups, one for the user's own data.
     final dataDirectory = await _ensureDirectory(runtime.storage, StorageArea.data);
     final database = PureLiveDatabase(
       NativeDatabase.createInBackground(File(p.join(dataDirectory, 'pure_live.sqlite'))),
     );
-    final preferencesStore = DbPreferencesStore(database);
+    final preferencesStore = database.store(LiveStorageTables.preferences);
     final preferences = PreferencesService(
       store: preferencesStore,
       onError: (key, error, stack) => log
@@ -120,10 +121,10 @@ final class PureLiveServices {
     }
 
     // The user's own data: followed rooms, history, IPTV channels.
-    final libraryStore = PreferencesLibraryStore(preferencesStore);
+    final libraryStore = KeyedLibraryStore(preferencesStore);
     final library = FollowRepository(libraryStore);
     final history = HistoryRepository(libraryStore, capacity: preferences.value.library.historyLimit);
-    final iptv = IptvLibrary(PreferencesIptvStore(preferencesStore));
+    final iptv = IptvLibrary(KeyedIptvStore(preferencesStore));
     await library.load();
     await history.load();
     await iptv.load();

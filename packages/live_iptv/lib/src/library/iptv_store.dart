@@ -46,7 +46,7 @@ abstract interface class IptvStore {
   Stream<void> get changes;
 }
 
-/// The preference keys the library owns.
+/// The keys the IPTV library owns in its keyed store.
 abstract final class IptvKeys {
   /// Library channels.
   static const String channels = 'iptv.channels.v1';
@@ -67,16 +67,16 @@ abstract final class IptvKeys {
   static const String guideMappings = 'iptv.guideMappings.v1';
 }
 
-/// An [IptvStore] over the live_storage preferences seam.
-final class PreferencesIptvStore implements IptvStore {
-  /// A store over [preferences].
-  new(this.preferences);
+/// An [IptvStore] over a live_storage keyed store.
+final class KeyedIptvStore implements IptvStore {
+  /// A store writing through [store].
+  new(this.store);
 
-  /// The preferences store.
-  final PreferencesStore preferences;
+  /// The keyed store (drift-backed in production).
+  final KeyedStore store;
 
   @override
-  Stream<void> get changes => preferences.changes;
+  Stream<void> get changes => store.changes;
 
   @override
   Future<List<IptvChannel>> loadChannels() => _load(IptvKeys.channels, IptvChannel.fromJson);
@@ -121,7 +121,7 @@ final class PreferencesIptvStore implements IptvStore {
       _save(IptvKeys.guideMappings, mappings, (mapping) => mapping.toJson());
 
   Future<List<T>> _load<T>(String key, T Function(Map<String, Object?>) fromJson) async {
-    final raw = await preferences.read(key);
+    final raw = await store.read(key);
     if (raw is! List) {
       return const [];
     }
@@ -132,7 +132,7 @@ final class PreferencesIptvStore implements IptvStore {
   }
 
   Future<void> _save<T>(String key, List<T> items, Map<String, Object?> Function(T) toJson) =>
-      preferences.write(key, [for (final item in items) toJson(item)]);
+      store.write(key, [for (final item in items) toJson(item)]);
 }
 
 /// An in-memory [IptvStore] for tests and previews.
