@@ -33,7 +33,7 @@ abstract final class AcfunParser {
   /// danmaku link registers with), or an error on a refused login.
   static ({String userId, String token, String security}) visitor(String body, {int status = 200}) {
     final parsed = root(body, status: status, what: 'visitor/login');
-    final result = (parsed['result'] as num?)?.toInt();
+    final result = SiteCounts.integer(parsed['result']);
     if (result != 0) {
       throw SiteRiskControlError('acfun visitor/login: result $result');
     }
@@ -55,7 +55,7 @@ abstract final class AcfunParser {
   /// `live/info?authorId=` → the room; live when it has a `liveId`.
   static LiveRoom roomDetail(String body, {required String authorId, int status = 200}) {
     final parsed = root(body, status: status, what: 'live/info');
-    final result = (parsed['result'] as num?)?.toInt();
+    final result = SiteCounts.integer(parsed['result']);
     if (result != 0) {
       throw SiteApiChangedError('acfun live/info: result $result');
     }
@@ -67,9 +67,9 @@ abstract final class AcfunParser {
     }
     final live = (parsed['liveId']?.toString() ?? '').isNotEmpty;
     final covers = parsed['coverUrls'];
-    final count = (parsed['onlineCount'] as num?)?.toInt();
+    final count = SiteCounts.integer(parsed['onlineCount']);
     final type = parsed['type'];
-    final createTime = (parsed['createTime'] as num?)?.toInt();
+    final createTime = SiteCounts.integer(parsed['createTime']);
     return LiveRoom(
       platform: SiteIds.acfun,
       roomId: authorId,
@@ -90,7 +90,7 @@ abstract final class AcfunParser {
   /// control.
   static List<LivePlayLine> playLines(String body, {int status = 200}) {
     final parsed = root(body, status: status, what: 'startPlay');
-    final result = (parsed['result'] as num?)?.toInt();
+    final result = SiteCounts.integer(parsed['result']);
     if (result == 5) {
       throw const SiteNotFoundError('acfun startPlay: broadcast ended');
     }
@@ -155,7 +155,7 @@ abstract final class AcfunParser {
     int status = 200,
   }) {
     final parsed = root(body, status: status, what: 'startPlay');
-    final result = (parsed['result'] as num?)?.toInt();
+    final result = SiteCounts.integer(parsed['result']);
     if (result == 5) {
       throw const SiteNotFoundError('acfun startPlay: broadcast ended');
     }

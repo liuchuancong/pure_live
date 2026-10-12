@@ -24,7 +24,7 @@ abstract final class YyParser {
     if (root is! Map<String, Object?>) {
       throw SiteApiChangedError('yy $what: body is not an object');
     }
-    final code = (root['code'] as num?)?.toInt() ?? (root['res'] as num?)?.toInt() ?? 0;
+    final code = SiteCounts.integer(root['code']) ?? SiteCounts.integer(root['res']) ?? 0;
     if (code != 0) {
       throw SiteApiChangedError('yy $what: code $code ${root['message']?.toString() ?? ''}'.trim());
     }
