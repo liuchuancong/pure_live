@@ -1,5 +1,6 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/seventeenlive/danmaku/seventeenlive_session.dart';
 import 'package:live_sites/src/platforms/seventeenlive/parsers/seventeenlive_parser.dart';
 
 /// The 17LIVE (イチナナ) adapter: an anonymous room, its pull streams and the
@@ -11,11 +12,11 @@ import 'package:live_sites/src/platforms/seventeenlive/parsers/seventeenlive_par
 /// follow refresh, the live state, room entry and playback are one `lives/<id>`
 /// each. Playback qualities ride in the room answer's [LiveRoom.data].
 ///
-/// Not migrated yet: the danmaku (17LIVE's chat is an Ably channel named by the
-/// room id; see the next slice).
+/// The chat ([connect]) is an Ably channel named by the room id; the room entry
+/// keeps that id in [LiveRoom.danmakuData] (see [SeventeenLiveDanmakuSession]).
 final class SeventeenLiveSite
     with SiteRoomGuard
-    implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability, LiveSearchCapability {
+    implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability, LiveSearchCapability, LiveDanmakuCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -151,6 +152,17 @@ final class SeventeenLiveSite
     guardRoom(room);
     final fresh = await _refresh(room.roomId);
     return room.mergeFrom(fresh);
+  }
+
+  /// The room's Ably chat: an anonymous token and one realtime socket to the
+  /// channel named by the room id ([SeventeenLiveDanmakuSession.connect]). The
+  /// channel id is the room entry's [LiveRoom.danmakuData], else the room id.
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) {
+    guardRoom(room);
+    final cached = room.danmakuData;
+    final roomId = cached is String && cached.isNotEmpty ? cached : room.roomId;
+    return SeventeenLiveDanmakuSession.connect(http, roomId);
   }
 
   /// The playback cache of [room], re-entering it when the cache is absent (a
