@@ -1,12 +1,15 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/chzzk/danmaku/chzzk_session.dart';
 import 'package:live_sites/src/platforms/chzzk/parsers/chzzk_parser.dart';
 
-/// The CHZZK (Naver) adapter: channel + live-detail flow.
+/// The CHZZK (Naver) adapter: channel + live-detail flow, plus the chat.
 ///
 /// The directory (the live list and an area's lives) and the area catalogue
-/// are migrated; search and the chat WebSocket are not.
-final class ChzzkSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability {
+/// are migrated; search is not.
+final class ChzzkSite
+    with SiteRoomGuard
+    implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability, LiveDanmakuCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -100,6 +103,14 @@ final class ChzzkSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, L
     final rows = SiteJson.list(content['data']).length;
     final pageInfo = SiteJson.object(content['page']);
     return ChzzkParser.lives(content, hasMore: pageInfo['next'] != null || rows >= ChzzkParser.categoryPageSize);
+  }
+
+  /// Opens the live's chat: a session keyed by the room's channel id, which
+  /// is what the live-status poll names the chat channel from.
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) {
+    guardRoom(room);
+    return ChzzkDanmakuSession.connect(http, room.roomId);
   }
 
   @override
