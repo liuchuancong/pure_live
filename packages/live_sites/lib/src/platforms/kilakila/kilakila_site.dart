@@ -1,13 +1,15 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/kilakila/danmaku/kilakila_session.dart';
 import 'package:live_sites/src/platforms/kilakila/parsers/kilakila_parser.dart';
 
-/// The KilaKila (奇秀) adapter: one getRoomInfo request per broadcast, plus
-/// the two timeline listings.
+/// The KilaKila (奇秀) adapter: one getRoomInfo request per broadcast, the two
+/// timeline listings, and the guest Socket.IO chat.
 ///
-/// Not migrated yet: search, the personal profile completion and the
-/// danmaku transport.
-final class KilakilaSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability {
+/// Not migrated yet: search and the personal profile completion.
+final class KilakilaSite
+    with SiteRoomGuard
+    implements LiveSite, LiveDanmakuCapability, LiveAreaCatalog, LiveDirectoryCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -141,6 +143,16 @@ final class KilakilaSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog
     guardRoom(room);
     final fresh = await _info(room.roomId);
     return room.mergeFrom(fresh);
+  }
+
+  /// Opens the guest chat for [room].
+  ///
+  /// The socket subscribes to the broadcast by its id in the query; no token
+  /// or HTTP handshake is needed for a guest.
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) async {
+    guardRoom(room);
+    return await KilakilaDanmakuSession.connect(room.roomId);
   }
 
   Future<LiveRoom> _info(String broadcastId) async {
