@@ -56,14 +56,15 @@ abstract final class KickParser {
   }
 
   /// Channels matching a keyword (`api/search`), by followers as Kick orders
-  /// them (live or not), each slug once. A channel with no slug or id is left
+  /// them (live or not), each slug once, then the live broadcasts tagged with
+  /// it whose channel is not listed yet. A channel with no slug or id is left
   /// out; a page with channels but none usable is a changed endpoint. Kick's
-  /// search is one page. The broadcasts tagged with the keyword are not read
-  /// here — they share the directory's card, which has not landed yet.
+  /// search is one page.
   static List<LiveRoom> search(String body, {int status = 200}) {
     final root = KickParser.decode(body, status: status, what: 'search');
     final channels = root['channels'];
-    if (channels is! List || channels.length > 100) {
+    final tagged = root['livestreams'] is Map<String, Object?> ? SiteJson.object(root['livestreams'])['tags'] : null;
+    if (channels is! List || channels.length > 100 || (tagged != null && tagged is! List)) {
       throw const SiteApiChangedError('kick search: no channel list of at most 100');
     }
     final rooms = <String, LiveRoom>{};
@@ -78,6 +79,14 @@ abstract final class KickParser {
     }
     if (channels.isNotEmpty && usable == 0) {
       throw const SiteApiChangedError('kick search: no usable channel');
+    }
+    if (tagged is List) {
+      for (final row in SiteJson.objects(tagged.take(100))) {
+        final room = listCard(row);
+        if (room != null) {
+          rooms.putIfAbsent(room.roomId, () => room);
+        }
+      }
     }
     return List.unmodifiable(rooms.values);
   }
@@ -105,6 +114,217 @@ abstract final class KickParser {
           ? LiveStatus.live
           : LiveStatus.offline,
     );
+  }
+
+  /// The largest live-list page asked for; 30 is the site's own page.
+  static const int pageSize = 30;
+
+  /// Subcategories asked for per top-level category (the API caps `limit`).
+  static const int subcategoryLimit = 32;
+
+  /// The top-level categories in Chinese; others keep Kick's name.
+  static const Map<String, String> categoryNames = {
+    'games': '游戏',
+    'irl': '生活',
+    'music': '音乐',
+    'gambling': '博彩',
+    'creative': '创作',
+    'alternative': '其他',
+  };
+
+  static final RegExp _slugPattern = RegExp(r'^[a-z0-9_-]{1,100}$');
+
+  /// Whether [value] names a subcategory Kick's list filter takes.
+  static bool isSubcategory(String value) => RegExp(r'^[A-Za-z0-9:+_-]{1,100}$').hasMatch(value.trim());
+
+  /// The top-level categories URL.
+  static Uri categoriesUrl() => Uri.https(apiHost, '/api/v1/categories');
+
+  /// The most watched subcategories of category [category].
+  static Uri subcategoriesUrl(String category) =>
+      Uri.https(apiHost, '/api/v1/subcategories', {'category': category, 'limit': '$subcategoryLimit', 'page': '1'});
+
+  /// The live-broadcasts page [page] of [pageSize], by viewers; a [subcategory]
+  /// narrows it to that subcategory.
+  static Uri livestreamsUrl({required int page, required int pageSize, String? subcategory}) => Uri.https(
+    apiHost,
+    '/stream/livestreams/en',
+    {'page': '${page < 1 ? 1 : page}', 'limit': '$pageSize', 'sort': 'desc', 'subcategory': ?subcategory},
+  );
+
+  /// The top-level categories (`api/v1/categories`), in Kick's order, each by
+  /// slug with its display name. A row without a valid slug or name is left
+  /// out; not a list, more than 64, or no usable row is a changed endpoint.
+  static List<({String slug, String name})> mainCategories(String body, {int status = 200}) {
+    if (status < 200 || status >= 300) {
+      throw SiteApiChangedError('kick categories: HTTP $status');
+    }
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(body);
+    } on FormatException {
+      throw const SiteApiChangedError('kick categories: body is not JSON');
+    }
+    if (decoded is! List || decoded.length > 64) {
+      throw const SiteApiChangedError('kick categories: not a list of at most 64');
+    }
+    final result = <String, ({String slug, String name})>{};
+    for (final row in SiteJson.objects(decoded)) {
+      final slug = row['slug']?.toString().toLowerCase() ?? '';
+      final name = row['name']?.toString() ?? '';
+      if (!_slugPattern.hasMatch(slug) || name.isEmpty) {
+        continue;
+      }
+      result.putIfAbsent(slug, () => (slug: slug, name: categoryNames[slug] ?? name));
+    }
+    if (result.isEmpty) {
+      throw const SiteApiChangedError('kick categories: no usable category');
+    }
+    return List.unmodifiable(result.values);
+  }
+
+  /// The subcategories of category [parentSlug] (`api/v1/subcategories`), as
+  /// flat areas under it, by viewers as Kick orders them. A row without a slug
+  /// or name, longer than 100, or of another category is left out; not a data
+  /// list, more than 100, or rows none of which are usable is a changed
+  /// endpoint.
+  static List<LiveArea> subcategories(
+    String body, {
+    required String parentSlug,
+    required String parentName,
+    int status = 200,
+  }) {
+    final root = KickParser.decode(body, status: status, what: 'subcategories');
+    final rows = root['data'];
+    if (rows is! List || rows.length > 100) {
+      throw const SiteApiChangedError('kick subcategories: no data list of at most 100');
+    }
+    final areas = <String, LiveArea>{};
+    for (final row in SiteJson.objects(rows)) {
+      final slug = row['slug']?.toString() ?? '';
+      final name = row['name']?.toString() ?? '';
+      final owner = SiteJson.object(row['category'])['slug']?.toString().toLowerCase();
+      if (slug.isEmpty || name.isEmpty || slug.length > 100 || (owner != null && owner != parentSlug)) {
+        continue;
+      }
+      areas.putIfAbsent(slug.toLowerCase(), () => LiveArea(id: slug, name: name, parentId: parentSlug));
+    }
+    if (rows.isNotEmpty && areas.isEmpty) {
+      throw const SiteApiChangedError('kick subcategories: no usable row');
+    }
+    return List.unmodifiable(areas.values);
+  }
+
+  /// A page of live broadcasts (`stream/livestreams/en`, by viewers), each
+  /// channel once. With [subcategory], rows of other subcategories are left
+  /// out — and since Kick answers the whole directory for a subcategory it
+  /// does not know, a page with usable rows but none of it is `not found`. A
+  /// page whose every row is unusable is a changed endpoint; the page must
+  /// echo [page]. More pages follow while the answer names a next one.
+  static LivePage<LiveRoom> directoryPage(
+    String body, {
+    required int page,
+    required int pageSize,
+    String? subcategory,
+    int status = 200,
+  }) {
+    final root = KickParser.decode(body, status: status, what: 'livestreams');
+    final rows = root['data'];
+    if (rows is! List || rows.length > pageSize * 2 || SiteCounts.integer(root['current_page']) != page) {
+      throw SiteApiChangedError('kick livestreams: not page $page');
+    }
+    final wanted = subcategory?.toLowerCase();
+    final rooms = <String, LiveRoom>{};
+    var usable = 0;
+    var matching = 0;
+    for (final row in SiteJson.objects(rows)) {
+      final room = listCard(row);
+      if (room == null) {
+        continue;
+      }
+      usable++;
+      if (wanted != null && !_subcategorySlugs(row['categories']).contains(wanted)) {
+        continue;
+      }
+      matching++;
+      rooms.putIfAbsent(room.roomId, () => room);
+    }
+    if (rows.isNotEmpty && usable == 0) {
+      throw const SiteApiChangedError('kick livestreams: no usable row');
+    }
+    if (wanted != null && usable > 0 && matching == 0) {
+      throw SiteNotFoundError('kick: no subcategory $subcategory');
+    }
+    final hasMore = root['next_page_url'] is String && rows.isNotEmpty;
+    return LivePage<LiveRoom>(
+      items: List.unmodifiable(rooms.values),
+      hasMore: hasMore,
+      nextPage: hasMore ? page + 1 : null,
+    );
+  }
+
+  /// A live-broadcast list row (`stream/livestreams`, or a search tag) as a
+  /// room, or null when it names no channel, has no id, is banned, or is not
+  /// live. The room is the channel, on air; the audience is `viewer_count`
+  /// unless Kick hides it, the area the first category name, and the play
+  /// needs the channel's media headers. The mature flag would set a notice the
+  /// reduced room has no field for, so it is dropped.
+  static LiveRoom? listCard(Map<String, Object?> row) {
+    final channel = row['channel'] is Map<String, Object?> ? row['channel']! as Map<String, Object?> : null;
+    if (channel == null) {
+      return null;
+    }
+    final slug = normalizeSlug(channel['slug']?.toString() ?? '');
+    final channelId = SiteCounts.integer(channel['id']) ?? SiteCounts.integer(row['channel_id']);
+    if (slug == null || channelId == null || channel['is_banned'] == true) {
+      return null;
+    }
+    if (row['is_live'] == false) {
+      return null;
+    }
+    final user = channel['user'] is Map<String, Object?>
+        ? channel['user']! as Map<String, Object?>
+        : const <String, Object?>{};
+    final viewers = row['show_view_count'] == false ? null : SiteCounts.integer(row['viewer_count'] ?? row['viewers']);
+    final thumbnail = row['thumbnail'] is Map<String, Object?>
+        ? row['thumbnail']! as Map<String, Object?>
+        : const <String, Object?>{};
+    return LiveRoom(
+      platform: SiteIds.kick,
+      roomId: slug,
+      nick: user['username']?.toString() ?? '',
+      title: row['session_title']?.toString() ?? '',
+      avatar: _image(user['profilepic'] ?? user['profile_pic'] ?? user['profilePic']),
+      cover: _image(thumbnail['src'] ?? thumbnail['url']),
+      areaName: _subcategoryName(row['categories']),
+      watching: viewers,
+      onlineViewers: viewers,
+      status: LiveStatus.live,
+      restriction: LiveRestriction.none,
+      startedAt: _time(row['start_time']),
+      httpHeaders: mediaHeaders(slug),
+    );
+  }
+
+  /// The subcategory slugs a list row carries, lower-cased.
+  static Set<String> _subcategorySlugs(Object? categories) => {
+    if (categories is List)
+      for (final category in categories)
+        ?(category is Map<String, Object?> ? category['slug']?.toString().toLowerCase() : null),
+  };
+
+  /// The first category name of a list row, or null.
+  static String? _subcategoryName(Object? categories) {
+    if (categories is! List) {
+      return null;
+    }
+    for (final category in categories) {
+      final name = category is Map<String, Object?> ? category['name']?.toString() ?? '' : '';
+      if (name.isNotEmpty) {
+        return name;
+      }
+    }
+    return null;
   }
 
   /// Decodes an answer.
