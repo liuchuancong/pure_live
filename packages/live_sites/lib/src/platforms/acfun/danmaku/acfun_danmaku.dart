@@ -139,4 +139,17 @@ abstract final class AcfunDanmakuProtocol {
       throw const FormatException('AcFun payload did not decrypt');
     }
   }
+
+  /// `ZtLiveCsCmdAck`: the answer's type, its error code and payload.
+  static ({String type, int code, Uint8List payload}) ack(List<int> payload) {
+    final message = ProtoMessage.decode(payload);
+    return (type: message.string(1) ?? '', code: message.integer(2) ?? 0, payload: message.bytes(4) ?? Uint8List(0));
+  }
+
+  /// `ZtLiveCsEnterRoomAck.heartbeatIntervalMs`, or null when it is missing or
+  /// not positive.
+  static Duration? heartbeatInterval(List<int> enterRoomAck) {
+    final millis = ProtoMessage.decode(enterRoomAck).integer(1) ?? 0;
+    return millis > 0 ? Duration(milliseconds: millis) : null;
+  }
 }
