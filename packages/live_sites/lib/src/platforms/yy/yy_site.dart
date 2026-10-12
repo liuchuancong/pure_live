@@ -2,16 +2,24 @@ import 'dart:convert';
 
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/yy/danmaku/yy_session.dart';
 import 'package:live_sites/src/platforms/yy/parsers/yy_parser.dart';
 
 /// The YY adapter: liveInfoDetail room flow plus the stream-manager play
 /// answer.
 ///
-/// Not migrated yet: the full stream-manager quality table and the danmaku
-/// transport (YY speaks its own binary packet framing).
+/// Not migrated yet: the full stream-manager quality table. The danmaku
+/// ([connect]) runs YY's own binary packet framing over an H5-service
+/// WebSocket.
 final class YySite
     with SiteRoomGuard
-    implements LiveSite, LiveDirectoryCapability, LiveSearchCapability, LiveAnchorSearch, LiveAreaCatalog {
+    implements
+        LiveSite,
+        LiveDirectoryCapability,
+        LiveSearchCapability,
+        LiveAnchorSearch,
+        LiveAreaCatalog,
+        LiveDanmakuCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -271,6 +279,22 @@ final class YySite
     }
     final page = await _roomPage(room.roomId);
     return (sid: page.sid, ssid: page.ssid);
+  }
+
+  /// Opens YY's chat: the room's top and sub channel (from its data cache or
+  /// the room page) are the binary join's target; the connection itself is
+  /// anonymous over the H5-service WebSocket. A room whose channels are not
+  /// numbers cannot be joined, so this ends with a [SiteNotFoundError].
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) async {
+    guardRoom(room);
+    final (:sid, :ssid) = await _channelOf(room);
+    final topSid = int.tryParse(sid);
+    final subSid = int.tryParse(ssid);
+    if (topSid == null || subSid == null) {
+      throw SiteNotFoundError('yy ${room.roomId}: no numeric channel to join');
+    }
+    return await YyDanmakuConnection.connect(YyDanmakuArgs(topSid: topSid, subSid: subSid));
   }
 
   Future<({String sid, String ssid, String? nick, String? title})> _roomPage(String roomId) async {
