@@ -44,6 +44,69 @@ abstract final class KickParser {
   /// The channel API URL of [slug].
   static Uri channelUrl(String slug) => Uri.https(apiHost, '/api/v2/channels/$slug');
 
+  /// Longest keyword Kick's search takes; a longer one is cut.
+  static const int maxKeywordLength = 50;
+
+  /// The `api/search` URL for [keyword], the keyword trimmed and cut to
+  /// [maxKeywordLength] as 3.x sent it.
+  static Uri searchUrl(String keyword) {
+    final text = keyword.trim();
+    final words = text.length > maxKeywordLength ? text.substring(0, maxKeywordLength) : text;
+    return Uri.https(apiHost, '/api/search', {'searched_word': words});
+  }
+
+  /// Channels matching a keyword (`api/search`), by followers as Kick orders
+  /// them (live or not), each slug once. A channel with no slug or id is left
+  /// out; a page with channels but none usable is a changed endpoint. Kick's
+  /// search is one page. The broadcasts tagged with the keyword are not read
+  /// here — they share the directory's card, which has not landed yet.
+  static List<LiveRoom> search(String body, {int status = 200}) {
+    final root = KickParser.decode(body, status: status, what: 'search');
+    final channels = root['channels'];
+    if (channels is! List || channels.length > 100) {
+      throw const SiteApiChangedError('kick search: no channel list of at most 100');
+    }
+    final rooms = <String, LiveRoom>{};
+    var usable = 0;
+    for (final row in SiteJson.objects(channels)) {
+      final room = searchCard(row);
+      if (room == null) {
+        continue;
+      }
+      usable++;
+      rooms.putIfAbsent(room.roomId, () => room);
+    }
+    if (channels.isNotEmpty && usable == 0) {
+      throw const SiteApiChangedError('kick search: no usable channel');
+    }
+    return List.unmodifiable(rooms.values);
+  }
+
+  /// One `api/search` channel row as a room, or null when it names no slug or
+  /// id. The profile carries no stream, so the room is the channel: banned
+  /// when Kick says so, else live or offline by its `is_live` flag.
+  static LiveRoom? searchCard(Map<String, Object?> row) {
+    final slug = normalizeSlug(row['slug']?.toString() ?? '');
+    final channelId = SiteCounts.integer(row['id']);
+    if (slug == null || channelId == null) {
+      return null;
+    }
+    final user = row['user'] is Map<String, Object?> ? row['user']! as Map<String, Object?> : const <String, Object?>{};
+    final banned = row['is_banned'] == true;
+    final live = row['isLive'] ?? row['is_live'];
+    return LiveRoom(
+      platform: SiteIds.kick,
+      roomId: slug,
+      nick: user['username']?.toString() ?? '',
+      avatar: _image(user['profilePic'] ?? user['profile_pic']),
+      status: banned
+          ? LiveStatus.banned
+          : live == true
+          ? LiveStatus.live
+          : LiveStatus.offline,
+    );
+  }
+
   /// Decodes an answer.
   static Map<String, Object?> decode(String body, {int status = 200, String what = 'channel'}) {
     if (status == 404) {

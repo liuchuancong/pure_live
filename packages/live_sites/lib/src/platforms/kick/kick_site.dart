@@ -7,7 +7,8 @@ import 'package:live_sites/src/platforms/kick/parsers/kick_parser.dart';
 /// The Kick adapter: one channel request per room (the answer carries the
 /// stream and the signed IVS master), plus the Pusher chat WebSocket.
 ///
-/// Not migrated yet: directory and search.
+/// Not migrated yet: the directory, and with it the broadcasts-a-tag-matches
+/// branch of search.
 final class KickSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability {
   /// A site over [http].
   new({required this.http});
@@ -34,9 +35,20 @@ final class KickSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapabili
     throw UnimplementedError('kick directory lands with its migration');
   }
 
+  /// Channels matching [keyword] (its first fifty characters), live or not.
+  /// Kick's search is one page, so a later page or a blank keyword gives
+  /// nothing without a request. The broadcasts tagged with the keyword are
+  /// not returned yet: they share the directory's card.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('kick search lands with its migration');
+    final text = keyword.trim();
+    if (text.isEmpty || page > 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final response = await http.send(
+      LiveRequest.get(KickParser.searchUrl(text), headers: KickParser.headers, site: siteId),
+    );
+    return LivePage<LiveRoom>(items: KickParser.search(response.text, status: response.statusCode));
   }
 
   @override
