@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:live_sites/src/common/tars/tars.dart';
+import 'package:live_sites/src/contracts/site_error/site_error.dart';
 import 'package:live_sites/src/models/live_gift/live_gift.dart';
 import 'package:live_sites/src/models/live_message/live_message.dart';
 
@@ -64,6 +65,20 @@ abstract final class HuyaDanmakuProtocol {
 
   /// The detail of the run's end at the stream end.
   static const String broadcastEnded = 'Broadcast ended';
+
+  /// The WUP-over-HTTP endpoint a board fetch posts to.
+  static final Uri wupEndpoint = Uri.https('wup.huya.com', '/');
+
+  /// The HYSDK user agent a WUP call sends.
+  static const String hysdkUserAgent = 'HYSDK(Windows,30000002)_APP(pc_exe&7100004&official)_SDK(trans&2.40.0.6448)';
+
+  /// Headers of a WUP call: the binary envelope type and the web origin.
+  static Map<String, String> get wupHeaders => const {
+    'content-type': 'application/x-wup',
+    'origin': 'https://www.huya.com',
+    'referer': 'https://www.huya.com',
+    'user-agent': hysdkUserAgent,
+  };
 
   /// The groups a connection registers for streamer [uid].
   static List<String> groups(int uid) => ['live:$uid', 'chat:$uid'];
@@ -270,5 +285,58 @@ abstract final class HuyaDanmakuProtocol {
       );
     }
     return messages;
+  }
+
+  /// `wupui.getHeadLineMessageBoard` for the board of [topSid]
+  /// (`GetGameEventMessageBoardReq`: 0 lPid, 1 sOffset, 2 tId with the HYSDK
+  /// UA, 3 iMessageBoardScope 0, 4 iPageSize 10). A guest sends an anonymous
+  /// `HuyaUserId` (only `sHuYaUA` set).
+  static Uint8List messageBoardRequest(int topSid) => WupPacket(
+    servant: 'wupui',
+    function: 'getHeadLineMessageBoard',
+    params: {
+      'tReq': WupPacket.structParam(
+        (writer) => writer
+          ..writeInt(0, topSid)
+          ..writeString(1, '')
+          ..writeStruct(2, _anonymousUserId)
+          ..writeInt(3, 0)
+          ..writeInt(4, 10),
+      ),
+    },
+  ).encode();
+
+  /// The anonymous Huya identity a guest sends (tag 0 lUid, 1 sGuid, 2 sToken,
+  /// 3 sHuYaUA, 4 sCookie, 5 iTokenType, 6 sDeviceInfo, 7 sQIMEI): empty but
+  /// for the HYSDK UA.
+  static void _anonymousUserId(TarsWriter writer) => writer
+    ..writeInt(0, 0)
+    ..writeString(1, '')
+    ..writeString(2, '')
+    ..writeString(3, hysdkUserAgent)
+    ..writeString(4, '')
+    ..writeInt(5, 0)
+    ..writeString(6, '')
+    ..writeString(7, '');
+
+  /// The headline message board from a `getHeadLineMessageBoard` response:
+  /// `tRsp` field 1 is the panel (`GameEventMessageBoardPanel`), read as
+  /// [_panel] reads it. A non-2xx status or a non-zero return code is a
+  /// [SiteApiChangedError]; an answer with no panel is empty.
+  static List<LiveMessage> superChats(List<int> bytes, {required DateTime now, int status = 200}) {
+    if (status < 200 || status >= 300) {
+      throw SiteApiChangedError('huya getHeadLineMessageBoard: HTTP $status');
+    }
+    final WupPacket packet;
+    try {
+      packet = WupPacket.decode(bytes);
+    } on FormatException catch (error) {
+      throw SiteApiChangedError('huya getHeadLineMessageBoard: ${error.message}');
+    }
+    if (packet.code != 0) {
+      throw SiteApiChangedError('huya getHeadLineMessageBoard code ${packet.code}');
+    }
+    final panel = packet.struct('tRsp')?.struct(1);
+    return panel == null ? const [] : _panel(panel, now: now);
   }
 }
