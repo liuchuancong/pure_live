@@ -1,13 +1,16 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/youtube/danmaku/youtube_danmaku.dart';
+import 'package:live_sites/src/platforms/youtube/danmaku/youtube_session.dart';
 import 'package:live_sites/src/platforms/youtube/parsers/youtube_parser.dart';
 
 /// The YouTube adapter: the ANDROID InnerTube player flow (anonymous HLS
 /// manifest, no browser proofs needed).
 ///
-/// Not migrated yet: the watch page's API key discovery (the public
-/// fallback key is used), directory, search and the live chat.
-final class YouTubeSite with SiteRoomGuard implements LiveSite {
+/// Not migrated yet: the watch page's API key discovery (the public fallback key
+/// is used), directory and search. The live chat ([connect]) is the WEB InnerTube
+/// poll ([YouTubeDanmakuSession]); the room id is the broadcast's video id.
+final class YouTubeSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability {
   /// A site over [http].
   new({required this.http, this.apiKey = YouTubeParser.fallbackApiKey});
 
@@ -85,4 +88,11 @@ final class YouTubeSite with SiteRoomGuard implements LiveSite {
     );
     return YouTubeParser.video(response.text, videoId: id, status: response.statusCode);
   }
+
+  /// The broadcast's live chat: the room id is the video id, polled by
+  /// [YouTubeDanmakuSession.connect] (join failures surface on the message
+  /// stream, which the caller's supervisor reconnects).
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) =>
+      YouTubeDanmakuSession.connect(http, YouTubeDanmakuArgs(room.roomId));
 }
