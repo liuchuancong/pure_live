@@ -5,8 +5,10 @@ import 'package:live_sites/src/platforms/tiktok/parsers/tiktok_parser.dart';
 /// The TikTok adapter: the user/room flow (the answer carries the room
 /// state and its stream tiers).
 ///
-/// Not migrated yet: the share-link → room-info resolution, directory,
-/// search and the danmaku transport.
+/// TikTok has no anonymous directory: [getRecommendRooms] is empty and
+/// [getCategoryRooms] is a caller error, exactly as 3.x refused it. Not
+/// migrated yet: the share-link → room-info resolution, the keyword search
+/// (which runs through that link resolution) and the danmaku transport.
 final class TikTokSite with SiteRoomGuard implements LiveSite {
   /// A site over [http].
   new({required this.http});
@@ -24,14 +26,25 @@ final class TikTokSite with SiteRoomGuard implements LiveSite {
   SiteMetadata get metadata =>
       const SiteMetadata(id: SiteIds.tiktok, displayName: 'TikTok Live', homeUrl: 'https://www.tiktok.com/live');
 
+  /// Always empty: no public directory is reachable anonymously, and nothing
+  /// is requested. A page below one is a caller error, as 3.x refused it.
   @override
   Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
-    throw UnimplementedError('tiktok directory lands with its migration');
+    if (page < 1) {
+      throw RangeError.range(page, 1, null, 'page');
+    }
+    return const LivePage<LiveRoom>(items: []);
   }
 
+  /// TikTok has no categories, so any area is a caller error refused before a
+  /// request — a category listing that returned the unfiltered list would be
+  /// worse than one that says there is none.
   @override
   Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    throw UnimplementedError('tiktok directory lands with its migration');
+    if (page < 1) {
+      throw RangeError.range(page, 1, null, 'page');
+    }
+    throw SiteError.invalidRoomId(area.id);
   }
 
   @override
