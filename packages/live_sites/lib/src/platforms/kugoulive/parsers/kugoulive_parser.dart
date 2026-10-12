@@ -72,7 +72,7 @@ abstract final class KugouLiveParser {
     if (nick.isEmpty && (kugouId.isEmpty || kugouId == '0')) {
       throw SiteNotFoundError('kugoulive: no room $roomId');
     }
-    final liveType = data is Map<String, Object?> ? (data['liveType'] as num?)?.toInt() : null;
+    final liveType = data is Map<String, Object?> ? SiteCounts.integer(data['liveType']) : null;
     final session = data is Map<String, Object?> ? data['liveSessionId']?.toString() ?? '' : '';
     final live = liveType != -1 && session.isNotEmpty;
     return LiveRoom(
@@ -91,7 +91,7 @@ abstract final class KugouLiveParser {
   /// other than 1 is "nothing streaming".
   static List<LivePlayLine> playLines(String body, {required String roomId, int status = 200}) {
     final root = decode(body, status: status, what: 'streamaddr');
-    final code = (root['code'] as num?)?.toInt();
+    final code = SiteCounts.integer(root['code']);
     if (code == 2) {
       throw SiteNeedsLoginError('kugoulive streamaddr: login required for $roomId');
     }
@@ -99,7 +99,7 @@ abstract final class KugouLiveParser {
     if (data is! Map<String, Object?>) {
       throw const SiteApiChangedError('kugoulive streamaddr: no data');
     }
-    final statusField = (data['status'] as num?)?.toInt();
+    final statusField = SiteCounts.integer(data['status']);
     if (statusField != null && statusField != 1) {
       throw SiteNotFoundError('kugoulive streamaddr: nothing streaming (status $statusField)');
     }
@@ -121,8 +121,8 @@ abstract final class KugouLiveParser {
           if (profileValue is! Map<String, Object?>) {
             continue;
           }
-          final rate = (profileValue['rate'] as num?)?.toInt() ?? 0;
-          final codec = (profileValue['codec'] as num?)?.toInt() ?? 0;
+          final rate = SiteCounts.integer(profileValue['rate']) ?? 0;
+          final codec = SiteCounts.integer(profileValue['codec']) ?? 0;
           for (final (key, format) in const [('httpsFlv', StreamFormat.flv), ('httpsHls', StreamFormat.hls)]) {
             final urls = profileValue[key];
             if (urls is! List) {
