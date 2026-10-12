@@ -95,9 +95,23 @@ final class SoopSite
     return SoopParser.areaPage(response.text, areaName: area.name, status: response.statusCode);
   }
 
+  /// Live rooms matching [keyword] (`liveSearch`), paged by [page]. A blank
+  /// keyword or a page below 1 gives nothing without a request.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('soop search lands with its migration');
+    final text = keyword.trim();
+    if (text.isEmpty || page < 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final response = await http.send(
+      LiveRequest.get(
+        SoopParser.searchUrl(text, page: page),
+        headers: SoopParser.headers,
+        site: siteId,
+      ),
+    );
+    final result = SoopParser.searchPage(response.text, status: response.statusCode);
+    return LivePage(items: result.items, hasMore: result.hasMore, nextPage: result.hasMore ? page + 1 : null);
   }
 
   @override

@@ -130,6 +130,52 @@ abstract final class SoopParser {
     return LivePage<LiveRoom>(items: items);
   }
 
+  /// The `liveSearch` request URL for [keyword].
+  static Uri searchUrl(String keyword, {int page = 1, int size = 30}) => Uri.https(searchHost, '/api.php', {
+    'l': 'DF',
+    'm': 'liveSearch',
+    'c': 'UTF-8',
+    'w': 'webk',
+    'isMobile': '0',
+    'onlyParent': '1',
+    'szType': 'json',
+    'szOrder': 'score',
+    'szKeyword': keyword,
+    'nPageNo': '${page < 1 ? 1 : page}',
+    'nListCnt': '${size.clamp(1, 50)}',
+    'tab': 'live',
+    'location': 'total_search',
+    'isHashSearch': '0',
+    'v': '2.0',
+  });
+
+  /// A `liveSearch` answer: live rooms matching the keyword. `HAS_MORE_LIST`
+  /// stays true on empty pages, so a page has more only when it is non-empty.
+  static LivePage<LiveRoom> searchPage(String body, {int status = 200}) {
+    if (status < 200 || status >= 300) {
+      throw SiteApiChangedError('soop liveSearch: HTTP $status');
+    }
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(body);
+    } on FormatException {
+      throw const SiteApiChangedError('soop liveSearch: body is not JSON');
+    }
+    if (decoded is! Map<String, Object?>) {
+      throw const SiteApiChangedError('soop liveSearch: body is not an object');
+    }
+    final result = SiteCounts.integer(decoded['RESULT']);
+    if (result != null && result != 1) {
+      throw SiteApiChangedError('soop liveSearch: RESULT ${decoded['RESULT']}');
+    }
+    final rows = listField(decoded['REAL_BROAD'], what: 'liveSearch');
+    final items = [
+      for (final row in SiteJson.objects(rows))
+        ?card(row, cover: row['broad_img'], area: display(row['broad_cate_name'] ?? row['standard_broad_cate_name'])),
+    ];
+    return LivePage<LiveRoom>(items: items, hasMore: items.isNotEmpty);
+  }
+
   /// One list row as a room, or null when it names no streamer.
   ///
   /// Every list of this site — an area's, the recommendations — carries the
