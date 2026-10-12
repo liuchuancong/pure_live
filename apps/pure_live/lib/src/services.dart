@@ -32,6 +32,8 @@ final class PureLiveServices {
     required this.library,
     required this.history,
     required this.iptv,
+    required this.iptvImporter,
+    required this.iptvSync,
     required this.storage,
     required this.http,
   });
@@ -56,6 +58,17 @@ final class PureLiveServices {
 
   /// The IPTV channel library.
   final IptvLibrary iptv;
+
+  /// Imports and syncs IPTV playlists and programme guides.
+  ///
+  /// Every import goes through this rather than writing to [iptv] directly,
+  /// because the rules that protect a user's library live here: a download
+  /// cut off mid-file keeps the stored one, a name already in use is asked
+  /// about, and two imports never interleave their writes.
+  final IptvImporter iptvImporter;
+
+  /// Refreshes what has gone stale, under the policy read from [preferences].
+  final IptvSyncCoordinator iptvSync;
 
   /// The storage bootstrap; shutdown flushes and closes what it opened.
   final StorageBootstrap storage;
@@ -142,6 +155,18 @@ final class PureLiveServices {
       factories: defaultSiteFactories(http.create(), iptvSource: LibraryIptvChannelSource(iptv)),
     );
 
+    // Playlist and guide downloads ride the media profile on purpose: it
+    // never caches, so "sync now" re-reads the address instead of being
+    // served the copy the interceptor kept, which is the one thing a manual
+    // refresh must never do.
+    final fetchHttp = http.create(profile: ClientProfile.media);
+    final iptvImporter = IptvImporter(
+      library: iptv,
+      fetch: iptvFetcherFor(fetchHttp),
+      fetchBytes: iptvBytesFetcherFor(fetchHttp),
+    );
+    final iptvSync = IptvSyncCoordinator(importer: iptvImporter);
+
     return PureLiveServices(
       log: log,
       runtime: runtime,
@@ -150,8 +175,33 @@ final class PureLiveServices {
       library: library,
       history: history,
       iptv: iptv,
+      iptvImporter: iptvImporter,
+      iptvSync: iptvSync,
       storage: storage,
       http: http,
+    );
+  }
+
+  /// Refreshes the stale playlists and guides the settings allow, and answers
+  /// what the round did.
+  ///
+  /// Call it at start-up and again on returning to the foreground; a second
+  /// call while a round is in flight joins that one rather than starting a
+  /// parallel download of the same list.
+  ///
+  /// [force] ignores the two switches that turn automatic refresh off — the
+  /// viewer asked for it, so the settings that say "never" are about
+  /// unattended rounds, not this one — while keeping the intervals, which
+  /// still decide what counts as stale enough to re-read.
+  Future<IptvSyncReport> syncIptv({bool force = false}) {
+    final settings = preferences.value.iptv;
+    return iptvSync.syncDue(
+      IptvSyncPolicy(
+        playlistInterval: settings.playlistSyncInterval,
+        guideInterval: settings.guideSyncInterval,
+        playlists: force || settings.autoSyncPlaylists,
+        guides: force || settings.autoSyncGuides,
+      ),
     );
   }
 
