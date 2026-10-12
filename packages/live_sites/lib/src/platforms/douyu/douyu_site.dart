@@ -3,18 +3,21 @@ import 'dart:math';
 
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/douyu/danmaku/douyu_session.dart';
 import 'package:live_sites/src/platforms/douyu/douyu_models.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_parser.dart';
 
-/// The Douyu adapter: the descriptor-signed H5 play flow over
-/// [LiveHttp].
-///
-/// Danmaku is not wired yet — Douyu uses a TCP text protocol
-/// (`danmakuMsg.douyucdn.cn:8501`) instead of WebSockets, which needs its
-/// own transport; the capability is simply absent until then.
+/// The Douyu adapter: the descriptor-signed H5 play flow over [LiveHttp], plus
+/// the raw-TCP STT chat socket.
 final class DouyuSite
     with SiteRoomGuard
-    implements LiveSite, LiveDirectoryCapability, LiveAreaCatalog, LiveSearchCapability, LiveAnchorSearch {
+    implements
+        LiveSite,
+        LiveDanmakuCapability,
+        LiveDirectoryCapability,
+        LiveAreaCatalog,
+        LiveSearchCapability,
+        LiveAnchorSearch {
   /// A site over [http]; [now] is injectable for descriptor-expiry tests.
   new({required this.http, DateTime Function()? now}) : _now = now ?? DateTime.now;
 
@@ -41,6 +44,17 @@ final class DouyuSite
   @override
   SiteMetadata get metadata =>
       const SiteMetadata(id: SiteIds.douyu, displayName: '斗鱼直播', homeUrl: 'https://www.douyu.com');
+
+  /// Opens the raw-TCP STT chat for [room].
+  ///
+  /// Douyu's danmaku is a plain socket, not a WebSocket: the session dials the
+  /// chat host on its port, sends the join packets for the room, and reads
+  /// length-prefixed packets off the byte stream.
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) async {
+    guardRoom(room);
+    return await DouyuDanmakuSession.connect(room.roomId);
+  }
 
   /// The site's boards and their areas, flattened.
   ///
