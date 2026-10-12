@@ -1,5 +1,5 @@
-import 'package:live_sites/src/models/live_anchor.dart';
-import 'package:live_sites/src/models/live_area.dart';
+import 'package:live_sites/src/models/live_anchor/live_anchor.dart';
+import 'package:live_sites/src/models/live_area/live_area.dart';
 
 /// The area catalogue: the categories and areas a site can be browsed by.
 ///

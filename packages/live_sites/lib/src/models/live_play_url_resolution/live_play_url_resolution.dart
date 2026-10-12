@@ -1,7 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import 'package:live_sites/src/models/live_play_line.dart';
-import 'package:live_sites/src/models/quality_label.dart';
+import 'package:live_sites/src/models/live_play_line/live_play_line.dart';
+import 'package:live_sites/src/models/quality_label/quality_label.dart';
 
 part 'live_play_url_resolution.freezed.dart';
 

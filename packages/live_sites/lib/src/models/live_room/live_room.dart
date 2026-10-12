@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:live_sites/src/models/live_status.dart';
+import 'package:live_sites/src/models/live_status/live_status.dart';
 
 part 'live_room.freezed.dart';
 part 'live_room.g.dart';

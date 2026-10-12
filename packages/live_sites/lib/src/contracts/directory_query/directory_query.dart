@@ -1,7 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import 'package:live_sites/src/models/live_area.dart';
-import 'package:live_sites/src/models/live_room.dart';
+import 'package:live_sites/src/models/live_area/live_area.dart';
+import 'package:live_sites/src/models/live_room/live_room.dart';
 
 part 'directory_query.freezed.dart';
 

@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:live_sites/src/models/live_gift.dart';
-import 'package:live_sites/src/models/live_message.dart';
+import 'package:live_sites/src/models/live_gift/live_gift.dart';
+import 'package:live_sites/src/models/live_message/live_message.dart';
 
 /// TwitCasting's comment stream: an event socket handed out per broadcast.
 ///

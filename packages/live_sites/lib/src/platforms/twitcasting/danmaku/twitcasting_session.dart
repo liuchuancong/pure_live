@@ -3,9 +3,9 @@ import 'dart:io';
 
 import 'package:live_net/live_net.dart';
 
-import 'package:live_sites/src/contracts/site_capability.dart';
-import 'package:live_sites/src/contracts/site_error.dart';
-import 'package:live_sites/src/models/live_message.dart';
+import 'package:live_sites/src/contracts/site_capability/site_capability.dart';
+import 'package:live_sites/src/contracts/site_error/site_error.dart';
+import 'package:live_sites/src/models/live_message/live_message.dart';
 import 'package:live_sites/src/platforms/twitcasting/danmaku/twitcasting_danmaku.dart';
 
 /// A TwitCasting danmaku session over the broadcast's event socket.

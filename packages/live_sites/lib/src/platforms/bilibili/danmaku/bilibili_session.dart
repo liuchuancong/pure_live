@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:live_sites/src/contracts/site_capability.dart';
-import 'package:live_sites/src/models/live_message.dart';
+import 'package:live_sites/src/contracts/site_capability/site_capability.dart';
+import 'package:live_sites/src/models/live_message/live_message.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_models.dart';
 import 'package:live_sites/src/platforms/bilibili/danmaku/bilibili_mapper.dart';
 import 'package:live_sites/src/platforms/bilibili/danmaku/bilibili_packet.dart';

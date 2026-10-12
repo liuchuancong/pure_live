@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
-import 'package:live_sites/src/contracts/site_error.dart';
+import 'package:live_sites/src/contracts/site_error/site_error.dart';
 
 /// WBI request signing for the Bilibili web APIs that demand `w_rid`.
 abstract final class BilibiliWbi {

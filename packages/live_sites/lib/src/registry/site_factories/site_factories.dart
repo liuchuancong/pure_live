@@ -1,6 +1,6 @@
 import 'package:live_net/live_net.dart';
 
-import 'package:live_sites/src/contracts/live_site.dart';
+import 'package:live_sites/src/contracts/live_site/live_site.dart';
 import 'package:live_sites/src/platforms/acfun/acfun_site.dart';
 import 'package:live_sites/src/platforms/baidulive/baidulive_site.dart';
 import 'package:live_sites/src/platforms/bigo/bigo_site.dart';
@@ -35,7 +35,7 @@ import 'package:live_sites/src/platforms/weibo/weibo_site.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_site.dart';
 import 'package:live_sites/src/platforms/youtube/youtube_site.dart';
 import 'package:live_sites/src/platforms/yy/yy_site.dart';
-import 'package:live_sites/src/registry/site_ids.dart';
+import 'package:live_sites/src/registry/site_ids/site_ids.dart';
 
 /// Every adapter this package ships, as factories keyed by site id.
 ///

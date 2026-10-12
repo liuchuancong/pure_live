@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:live_sites/src/models/live_message.dart';
-import 'package:live_sites/src/models/live_room.dart';
+import 'package:live_sites/src/models/live_message/live_message.dart';
+import 'package:live_sites/src/models/live_room/live_room.dart';
 
 /// A connected danmaku session for one room.
 ///

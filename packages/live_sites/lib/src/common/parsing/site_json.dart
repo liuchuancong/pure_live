@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:live_sites/src/contracts/site_error.dart';
+import 'package:live_sites/src/contracts/site_error/site_error.dart';
 
 /// JSON access shared by every adapter.
 ///

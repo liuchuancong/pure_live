@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:live_net/live_net.dart';
-import 'package:live_sites/src/contracts/site_capability.dart';
-import 'package:live_sites/src/models/live_message.dart';
+import 'package:live_sites/src/contracts/site_capability/site_capability.dart';
+import 'package:live_sites/src/models/live_message/live_message.dart';
 import 'package:live_sites/src/platforms/chzzk/danmaku/chzzk_danmaku.dart';
 import 'package:live_sites/src/platforms/chzzk/parsers/chzzk_parser.dart';
 

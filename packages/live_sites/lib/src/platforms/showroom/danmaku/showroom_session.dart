@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:live_sites/src/contracts/site_capability.dart';
-import 'package:live_sites/src/models/live_message.dart';
+import 'package:live_sites/src/contracts/site_capability/site_capability.dart';
+import 'package:live_sites/src/models/live_message/live_message.dart';
 import 'package:live_sites/src/platforms/showroom/danmaku/showroom_danmaku.dart';
 
 /// A SHOWROOM danmaku session over one WebSocket.

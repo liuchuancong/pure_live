@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:live_net/live_net.dart';
 
-import 'package:live_sites/src/contracts/site_capability.dart';
-import 'package:live_sites/src/contracts/site_error.dart';
-import 'package:live_sites/src/models/live_message.dart';
+import 'package:live_sites/src/contracts/site_capability/site_capability.dart';
+import 'package:live_sites/src/contracts/site_error/site_error.dart';
+import 'package:live_sites/src/models/live_message/live_message.dart';
 import 'package:live_sites/src/platforms/kuaishou/danmaku/kuaishou_danmaku.dart';
 
 /// A Kuaishou danmaku session: the comment feed, polled.

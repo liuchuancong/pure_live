@@ -1,7 +1,7 @@
-import 'package:live_sites/src/contracts/live_site.dart';
-import 'package:live_sites/src/contracts/site_capability.dart';
-import 'package:live_sites/src/contracts/site_error.dart';
-import 'package:live_sites/src/registry/site_metadata.dart';
+import 'package:live_sites/src/contracts/live_site/live_site.dart';
+import 'package:live_sites/src/contracts/site_capability/site_capability.dart';
+import 'package:live_sites/src/contracts/site_error/site_error.dart';
+import 'package:live_sites/src/registry/site_metadata/site_metadata.dart';
 
 /// Lazy, id-keyed site registry.
 ///
