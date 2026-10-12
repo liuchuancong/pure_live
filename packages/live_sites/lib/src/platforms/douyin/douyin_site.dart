@@ -4,18 +4,18 @@ import 'package:live_sites/src/platforms/douyin/danmaku/douyin_danmaku.dart';
 import 'package:live_sites/src/platforms/douyin/danmaku/douyin_session.dart';
 import 'package:live_sites/src/platforms/douyin/danmaku/douyin_sign.dart';
 import 'package:live_sites/src/platforms/douyin/parsers/douyin_parser.dart';
+import 'package:live_sites/src/platforms/douyin/parsers/douyin_sign.dart';
 
-/// The Douyin adapter: the webcast enter flow with the signer as a seam.
+/// The Douyin adapter: the webcast enter flow with the `a_bogus` signer.
 ///
-/// Request signing (`a_bogus`) is injectable through [signer]; the default
-/// sends unsigned requests, which the webcast host answers for several
-/// endpoints. The full browser-cipher signer and the room-page React
-/// payload fallback are the next migration step — the seam exists so the
-/// app can inject them without touching the adapter.
+/// Request signing goes through [signer]; by default it is the pure-Dart
+/// [DouyinWebSigner] for the adapter's own UA. The room-page React payload
+/// fallback and the directory/search migration are still ahead.
 final class DouyinSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability {
-  /// A site over [http]; [signer] signs query parameters (default:
-  /// unsigned).
-  new({required this.http, DouyinSigner? signer}) : signer = signer ?? _unsigned;
+  /// A site over [http]; [signer] signs query parameters (default: the full
+  /// `a_bogus` signer for [DouyinParser]'s UA).
+  new({required this.http, DouyinSigner? signer})
+    : signer = signer ?? DouyinWebSigner(userAgent: DouyinParser.apiHeaders['user-agent']!).signedUrl;
 
   /// The HTTP transport.
   final LiveHttp http;
@@ -32,8 +32,6 @@ final class DouyinSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapabi
   @override
   SiteMetadata get metadata =>
       const SiteMetadata(id: SiteIds.douyin, displayName: '抖音直播', homeUrl: 'https://live.douyin.com');
-
-  static Uri _unsigned(Uri base, Map<String, String> params) => base.replace(queryParameters: params);
 
   @override
   Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
