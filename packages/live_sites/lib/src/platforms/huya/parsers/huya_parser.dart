@@ -33,6 +33,9 @@ abstract final class HuyaParser {
     final introduction = data['introduction']?.toString() ?? '';
     final state = (data['state'] as num?)?.toInt() ?? 0;
     final isReplay = data['isReplay']?.toString() == '1';
+    // The streamer's numeric uid, which the danmaku socket registers its chat
+    // groups under. A runtime cache: it rides in `data`, never in JSON.
+    final uid = (data['uid'] as num?)?.toInt();
     return LiveRoom(
       platform: SiteIds.huya,
       roomId: requestedId,
@@ -49,6 +52,7 @@ abstract final class HuyaParser {
           : state == 3
           ? LiveStatus.carousel
           : LiveStatus.offline,
+      data: uid == null ? null : <String, Object?>{'uid': uid},
     );
   }
 

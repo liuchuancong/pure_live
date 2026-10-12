@@ -2,17 +2,24 @@ import 'dart:convert';
 
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/huya/danmaku/huya_session.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_parser.dart';
 
 /// The Huya adapter: room state and streams read from the room page's
-/// embedded config blobs (TT_ROOM_DATA / HYPlayerConfig).
+/// embedded config blobs (TT_ROOM_DATA / HYPlayerConfig), plus the Tars chat
+/// socket.
 ///
-/// Not migrated yet: the Tars-based danmaku transport (a binary protocol
-/// over TCP that needs its own codec, so the danmaku capability is absent
-/// until then) and the Wup token flow for higher qualities.
+/// Not migrated yet: the Wup token flow for higher qualities and the headline
+/// (super chat) board on the danmaku socket.
 final class HuyaSite
     with SiteRoomGuard
-    implements LiveSite, LiveDirectoryCapability, LiveSearchCapability, LiveAnchorSearch, LiveAreaCatalog {
+    implements
+        LiveSite,
+        LiveDanmakuCapability,
+        LiveDirectoryCapability,
+        LiveSearchCapability,
+        LiveAnchorSearch,
+        LiveAreaCatalog {
   /// A site over [http].
   new({required this.http});
 
@@ -219,6 +226,23 @@ final class HuyaSite
     guardRoom(room);
     final html = await _page(room.roomId);
     return room.mergeFrom(HuyaParser.roomDetail(html, requestedId: room.roomId));
+  }
+
+  /// Opens the Tars chat socket for [room].
+  ///
+  /// The streamer's numeric uid comes from the room page (TT_ROOM_DATA) and
+  /// names the chat groups the socket registers; a room the page gives no uid
+  /// for cannot join. The headline (super chat) board is not read yet.
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) async {
+    guardRoom(room);
+    final detail = HuyaParser.roomDetail(await _page(room.roomId), requestedId: room.roomId);
+    final data = detail.data;
+    final uid = data is Map<String, Object?> ? (data['uid'] as num?)?.toInt() : null;
+    if (uid == null || uid <= 0) {
+      throw SiteNotFoundError('huya ${room.roomId}: no streamer uid to register');
+    }
+    return await HuyaDanmakuSession.connect(uid);
   }
 
   Future<String> _page(String roomId) async {
