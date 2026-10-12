@@ -1,13 +1,16 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/soop/danmaku/soop_danmaku.dart';
+import 'package:live_sites/src/platforms/soop/danmaku/soop_session.dart';
 import 'package:live_sites/src/platforms/soop/parsers/soop_parser.dart';
 
 /// The SOOP (formerly AfreecaTV) adapter: player_live_api live/aid and the
-/// stream assignment flow.
+/// stream assignment flow, plus the `chat` WebSocket.
 ///
-/// Not migrated yet: the station profile, directory, search and the chat
-/// WebSocket.
-final class SoopSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability {
+/// Not migrated yet: the station profile, directory and search.
+final class SoopSite
+    with SiteRoomGuard
+    implements LiveSite, LiveDanmakuCapability, LiveAreaCatalog, LiveDirectoryCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -143,6 +146,38 @@ final class SoopSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, Li
     guardRoom(room);
     final fresh = await _live(room.roomId);
     return room.mergeFrom(fresh);
+  }
+
+  /// Opens the `chat` WebSocket for [room].
+  ///
+  /// The chat host, port and room number come from the live answer's
+  /// `CHANNEL` and are re-read on every connect (not cached): they belong to
+  /// one broadcast, so a reconnect after a restart needs the new ones — and a
+  /// room that is not on air has no chat server, which is why this answers
+  /// with a [SiteNotFoundError] instead of dialing a socket that would join
+  /// nothing.
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) async {
+    guardRoom(room);
+    final data = (await _live(room.roomId)).data;
+    if (data is! Map<String, Object?>) {
+      throw SiteNotFoundError('soop ${room.roomId}: not live, no chat server');
+    }
+    final chatNo = data['chatNo']?.toString() ?? '';
+    final host = data['chatHost']?.toString() ?? '';
+    final rawPort = data['chatPort'];
+    final port = rawPort is int ? rawPort : int.tryParse('$rawPort');
+    if (chatNo.isEmpty || host.isEmpty || port == null || port <= 0 || port >= 65535) {
+      throw SiteNotFoundError('soop ${room.roomId}: no chat server');
+    }
+    return await SoopDanmakuSession.connect(
+      SoopDanmakuArgs(
+        url: Uri(scheme: 'wss', host: host, port: port + 1, pathSegments: ['Websocket', room.roomId]),
+        plainUrl: Uri(scheme: 'ws', host: host, port: port, pathSegments: ['Websocket', room.roomId]),
+        chatNo: chatNo,
+        headers: SoopParser.headers,
+      ),
+    );
   }
 
   Future<LiveRoom> _live(String roomId) async {

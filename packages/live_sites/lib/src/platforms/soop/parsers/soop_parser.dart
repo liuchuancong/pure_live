@@ -385,6 +385,7 @@ abstract final class SoopParser {
     final bj = fields['BJID']?.toString() ?? id;
     final live = fields['VIEWPRESET'] != null;
     final viewers = _int(fields['VIEWPRESET'] == null ? null : fields['VISITOR_COUNT'] ?? fields['VIEWER_COUNT']);
+    final chat = live ? _chat(fields, id) : null;
     return LiveRoom(
       platform: SiteIds.soop,
       roomId: id,
@@ -402,9 +403,44 @@ abstract final class SoopParser {
               'rmd': fields['RMD']?.toString() ?? '',
               'cdn': fields['CDN']?.toString() ?? '',
               'presets': presets(fields['VIEWPRESET']),
+              if (chat != null) 'chatNo': chat.chatNo,
+              if (chat != null) 'chatHost': chat.host,
+              if (chat != null) 'chatPort': chat.port,
             }
           : null,
     );
+  }
+
+  /// The chat server of a `CHANNEL` for streamer [roomId]: host `CHDOMAIN`,
+  /// else `chat-<CHIP as eight hex digits>.sooplive.com`, and the plain port
+  /// `CHPT` (the socket dials `CHPT + 1` for TLS). Null without `CHATNO`, a
+  /// host or a usable port — as 3.x connected nothing then. This rides in
+  /// `room.data`, never JSON: a reconnect re-reads it from the live answer.
+  static ({String host, int port, String chatNo})? _chat(Map<String, Object?> channel, String roomId) {
+    final chatNo = channel['CHATNO']?.toString().trim() ?? '';
+    final domain = channel['CHDOMAIN']?.toString().trim();
+    final host = domain != null && domain.isNotEmpty ? domain : _chatHost(channel['CHIP']?.toString().trim() ?? '');
+    final port = _int(channel['CHPT']);
+    if (roomId.isEmpty ||
+        chatNo.isEmpty ||
+        host == null ||
+        host.isEmpty ||
+        port == null ||
+        port <= 0 ||
+        port >= 65535) {
+      return null;
+    }
+    return (host: host, port: port, chatNo: chatNo);
+  }
+
+  /// `chat-<IPv4 as eight hex digits>.sooplive.com`, or null for anything but
+  /// a dotted quad: the fallback chat host when `CHDOMAIN` is absent.
+  static String? _chatHost(String ip) {
+    final parts = ip.split('.').map(int.tryParse).toList();
+    if (parts.length != 4 || parts.any((part) => part == null || part < 0 || part > 255)) {
+      return null;
+    }
+    return 'chat-${[for (final part in parts) part!.toRadixString(16).padLeft(2, '0')].join().toUpperCase()}.sooplive.com';
   }
 
   /// The presets of a `VIEWPRESET` list: name and codec.
