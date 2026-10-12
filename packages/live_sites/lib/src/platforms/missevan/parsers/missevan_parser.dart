@@ -38,7 +38,7 @@ abstract final class MissevanParser {
     if (decoded is! Map<String, Object?>) {
       throw const SiteApiChangedError('missevan: body is not an object');
     }
-    final code = (decoded['code'] as num?)?.toInt();
+    final code = SiteCounts.integer(decoded['code']);
     if (code == null) {
       throw const SiteApiChangedError('missevan: no code');
     }
@@ -83,10 +83,10 @@ abstract final class MissevanParser {
       throw SiteApiChangedError('missevan live/$roomId answered room $id');
     }
     final state = row['status'];
-    final open = state is Map<String, Object?> ? (state['open'] as num?)?.toInt() : null;
+    final open = state is Map<String, Object?> ? SiteCounts.integer(state['open']) : null;
     final live = open == 1;
     final statistics = row['statistics'];
-    final score = statistics is Map<String, Object?> ? (statistics['score'] as num?)?.toInt() : null;
+    final score = statistics is Map<String, Object?> ? SiteCounts.integer(statistics['score']) : null;
     final creator = data['creator'];
     final creatorMap = creator is Map<String, Object?> ? creator : const <String, Object?>{};
     return LiveRoom(
@@ -321,7 +321,7 @@ abstract final class MissevanParser {
 
   /// `status.open_time`: epoch milliseconds from 2000 on.
   static DateTime? _startedAt(Object? value) {
-    final milliseconds = (value as num?)?.toInt();
+    final milliseconds = SiteCounts.integer(value);
     if (milliseconds == null || milliseconds < 946684800000 || milliseconds >= 10000000000000) {
       return null;
     }
