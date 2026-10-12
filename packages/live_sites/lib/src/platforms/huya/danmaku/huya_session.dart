@@ -57,7 +57,7 @@ final class HuyaDanmakuSession implements LiveDanmakuSession {
     if (data is! List<int>) {
       return;
     }
-    final frame = HuyaDanmakuProtocol.decode(data);
+    final frame = HuyaDanmakuProtocol.decode(data, now: DateTime.now());
     frame.messages.forEach(_messages.add);
     if (frame.ended.any((uid) => uid == _uid || uid <= 0)) {
       _fail(const SiteNotFoundError('huya: ${HuyaDanmakuProtocol.broadcastEnded}'), StackTrace.current);

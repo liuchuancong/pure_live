@@ -21,8 +21,10 @@ typedef HuyaDanmakuFrame = ({List<LiveMessage> messages, List<int> ended});
 /// paid total and combo key (the combo counter and gift id have no field); a
 /// chat colour is an int (white for none); the audience is a
 /// [LiveAudienceUpdate]; a message id is `id`. The headline (super chat) board
-/// (uri 2001314) is **not read yet**: its board panel and the background board
-/// fetch are a separate follow-up, so those notices are ignored here.
+/// (uri 2001314) is read when the notice body carries the panel itself
+/// ([headlineNotice]); the background board *fetch* (a WUP-over-HTTP
+/// `getHeadLineMessageBoard` call, which this site's transport does not speak
+/// yet) is not migrated, so a notice without an inline panel is dropped.
 abstract final class HuyaDanmakuProtocol {
   /// The only endpoint.
   static final Uri endpoint = Uri.parse('wss://wsapi.huya.com');
@@ -55,8 +57,9 @@ abstract final class HuyaDanmakuProtocol {
   /// The stream ended (`EndLiveNotice`: 0 lPresenterUid, …).
   static const int endUri = 8001;
 
-  /// The headline (super chat) board notice — recognised and skipped until its
-  /// board reader lands.
+  /// The headline (super chat) board notice ([headlineNotice] reads its body
+  /// when the notice carries the panel; the background board fetch is not
+  /// migrated).
   static const int superChatUri = 2001314;
 
   /// The detail of the run's end at the stream end.
@@ -84,12 +87,13 @@ abstract final class HuyaDanmakuProtocol {
             ..writeBytes(1, const []))
           .toBytes();
 
-  /// The messages of one server [frame]: chat, popularity and gifts from
-  /// commands 7 and 22, and the streamer uid of each stream-end notice. A
-  /// headline (super chat) notice is skipped; other commands and uris give
-  /// nothing; a frame that is not Tars gives nothing, and an item whose body
-  /// fails to decode is skipped without losing the others.
-  static HuyaDanmakuFrame decode(List<int> frame) {
+  /// The messages of one server [frame] received at [now]: chat, popularity
+  /// and gifts from commands 7 and 22, the headline (super chat) board of a
+  /// uri-2001314 notice whose body carries the panel, and the streamer uid of
+  /// each stream-end notice. Other commands and uris give nothing; a frame
+  /// that is not Tars gives nothing, and an item whose body fails to decode is
+  /// skipped without losing the others.
+  static HuyaDanmakuFrame decode(List<int> frame, {required DateTime now}) {
     final messages = <LiveMessage>[];
     final ended = <int>[];
     void item(int uri, Uint8List? body, int eventId) {
@@ -101,7 +105,10 @@ abstract final class HuyaDanmakuProtocol {
         }
         return;
       }
-      if (uri == superChatUri) return; // board reader not migrated yet.
+      if (uri == superChatUri) {
+        messages.addAll(headlineNotice(body, now: now));
+        return;
+      }
       try {
         final message = switch (uri) {
           chatUri => _chat(body, eventId),
@@ -206,5 +213,62 @@ abstract final class HuyaDanmakuProtocol {
       id: id.isEmpty ? null : id,
       data: LiveAudienceUpdate(watching: heat),
     );
+  }
+
+  /// The headline (super chat) entries of a uri-2001314 notice whose body is
+  /// the board's panel (`GameEventMessageBoardPanel`): its entries as
+  /// [_panel] reads them, empty for an empty board. An empty list when [body]
+  /// is missing, not Tars, or holds no entry list at tag 1 — the background
+  /// board *fetch* (a `getHeadLineMessageBoard` WUP-over-HTTP call) is not
+  /// migrated, so a notice without an inline panel is dropped.
+  static List<LiveMessage> headlineNotice(Uint8List? body, {required DateTime now}) {
+    if (body == null || body.isEmpty) return const [];
+    final TarsStruct panel;
+    try {
+      panel = TarsStruct.decode(body);
+    } on FormatException {
+      return const [];
+    }
+    return panel.fields[1] is List ? _panel(panel, now: now) : const [];
+  }
+
+  /// The entries of a board panel: tag 1 lists them (0 user: 1 nick, 2 avatar;
+  /// 1 content; 2 iCost; 4 iTotalSec; 5 iCountDown; 9 lMessageId; 12 iCostPay).
+  /// Entries without text or time left are dropped; the window ends the
+  /// countdown (else the total) after [now]. The price is iCost, else
+  /// iCostPay/100. The id is `huya:{lMessageId}`, so a board rebuilt on every
+  /// poll stays one message. The avatar and the board's colours have no field
+  /// here.
+  static List<LiveMessage> _panel(TarsStruct panel, {required DateTime now}) {
+    final messages = <LiveMessage>[];
+    for (final raw in panel.list(1)) {
+      if (raw is! TarsStruct) continue;
+      final content = (raw.string(1) ?? '').trim();
+      final total = raw.integer(4) ?? 0;
+      final countdown = raw.integer(5) ?? 0;
+      final remaining = countdown > 0 ? countdown : total;
+      if (content.isEmpty || remaining <= 0) continue;
+      final cost = raw.integer(2) ?? 0;
+      final paid = raw.integer(12) ?? 0;
+      final id = raw.integer(9) ?? 0;
+      final user = raw.struct(0);
+      final end = now.add(Duration(seconds: remaining));
+      messages.add(
+        LiveMessage(
+          type: LiveMessageType.superChat,
+          userName: (user?.string(1) ?? '').trim(),
+          message: content,
+          color: 0xFFFFFF,
+          id: id > 0 ? 'huya:$id' : null,
+          data: LiveSuperChat(
+            message: content,
+            price: cost > 0 ? cost : (paid > 0 ? (paid / 100).round() : 0),
+            startTime: end.subtract(Duration(seconds: total > 0 ? total : remaining)),
+            endTime: end,
+          ),
+        ),
+      );
+    }
+    return messages;
   }
 }
