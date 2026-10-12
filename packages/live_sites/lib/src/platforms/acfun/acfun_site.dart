@@ -1,13 +1,16 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/acfun/danmaku/acfun_danmaku.dart';
+import 'package:live_sites/src/platforms/acfun/danmaku/acfun_session.dart';
 import 'package:live_sites/src/platforms/acfun/parsers/acfun_parser.dart';
 
 /// The AcFun adapter: the visitor-session → startPlay play flow.
 ///
 /// Not migrated yet: search (the endpoint answers an HTML fragment that
-/// needs a document pass) and the paid-show ticket flow; the danmaku
-/// transport needs its own codec.
-final class AcfunSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapability, LiveAreaCatalog {
+/// needs a document pass) and the paid-show ticket flow.
+final class AcfunSite
+    with SiteRoomGuard
+    implements LiveSite, LiveDirectoryCapability, LiveAreaCatalog, LiveDanmakuCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -15,7 +18,7 @@ final class AcfunSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapab
   final LiveHttp http;
 
   String? _deviceId;
-  ({String userId, String token})? _visitor;
+  ({String userId, String token, String security})? _visitor;
 
   @override
   String get siteId => SiteIds.acfun;
@@ -184,6 +187,14 @@ final class AcfunSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapab
   @override
   Future<List<LivePlayLine>> getPlayUrls(LiveRoom room, LivePlayQuality quality) async {
     guardRoom(room);
+    final play = await _startPlay(room.roomId);
+    return AcfunParser.playLines(play.body, status: play.status);
+  }
+
+  /// A fresh visitor session and `startPlay` for [authorId], as the web
+  /// client asks them: the same request serves the streams and the danmaku
+  /// link's join parameters.
+  Future<({String body, int status})> _startPlay(String authorId) async {
     final visitor = await _session();
     final deviceId = _deviceId!;
     final response = await http.send(
@@ -196,12 +207,36 @@ final class AcfunSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapab
           'did': deviceId,
           'acfun.api.visitor_st': visitor.token,
         }),
-        fields: {'authorId': room.roomId, 'pullStreamType': 'FLV'},
+        fields: {'authorId': authorId, 'pullStreamType': 'FLV'},
         headers: AcfunParser.apiHeaders,
         site: id,
       ),
     );
-    return AcfunParser.playLines(response.text, status: response.statusCode);
+    return (body: response.text, status: response.statusCode);
+  }
+
+  /// Opens AcFun's live link for [room]: the visitor session (whose
+  /// `acSecurity` seals the register exchange) and the `startPlay` answer
+  /// (its broadcast id, tickets and enter attachment) the streams come from
+  /// too. A visitor without `acSecurity`, or a broadcast with no ticket,
+  /// leaves the link unable to join, so this ends with a [SiteApiChangedError]
+  /// rather than opening a socket that cannot register.
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) async {
+    guardRoom(room);
+    final visitor = await _session();
+    final play = AcfunParser.danmakuParams((await _startPlay(room.roomId)).body);
+    return await AcfunDanmakuSession.connect(
+      AcfunDanmakuArgs(
+        userId: visitor.userId,
+        deviceId: _deviceId!,
+        token: visitor.token,
+        security: visitor.security,
+        liveId: play.liveId,
+        tickets: play.tickets,
+        enterRoomAttach: play.enterRoomAttach,
+      ),
+    );
   }
 
   @override
@@ -223,7 +258,7 @@ final class AcfunSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapab
   }
 
   /// The visitor session; a refused one is replaced on the next call.
-  Future<({String userId, String token})> _session() async {
+  Future<({String userId, String token, String security})> _session() async {
     final cached = _visitor;
     if (cached != null) {
       return cached;

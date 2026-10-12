@@ -29,9 +29,9 @@ abstract final class AcfunParser {
     return decoded;
   }
 
-  /// `visitor/login` → the session (userId, token, deviceId), or an error
-  /// on a refused login.
-  static ({String userId, String token}) visitor(String body, {int status = 200}) {
+  /// `visitor/login` → the session (userId, token, and the `acSecurity` the
+  /// danmaku link registers with), or an error on a refused login.
+  static ({String userId, String token, String security}) visitor(String body, {int status = 200}) {
     final parsed = root(body, status: status, what: 'visitor/login');
     final result = (parsed['result'] as num?)?.toInt();
     if (result != 0) {
@@ -42,7 +42,7 @@ abstract final class AcfunParser {
     if (userId.isEmpty || userId == '0' || token.isEmpty) {
       throw const SiteApiChangedError('acfun visitor/login: incomplete session');
     }
-    return (userId: userId, token: token);
+    return (userId: userId, token: token, security: parsed['acSecurity']?.toString() ?? '');
   }
 
   /// A random 16-char device id for the visitor session.
@@ -144,6 +144,38 @@ abstract final class AcfunParser {
       throw const SiteNotFoundError('acfun startPlay: nothing playable');
     }
     return lines;
+  }
+
+  /// `startPlay` → what the danmaku link needs from the same answer the
+  /// streams come from: the broadcast id, its tickets (in order) and the enter
+  /// attachment. `result` follows [playLines]' rules; a live answer with no
+  /// `liveId` is a changed API.
+  static ({String liveId, List<String> tickets, String enterRoomAttach}) danmakuParams(
+    String body, {
+    int status = 200,
+  }) {
+    final parsed = root(body, status: status, what: 'startPlay');
+    final result = (parsed['result'] as num?)?.toInt();
+    if (result == 5) {
+      throw const SiteNotFoundError('acfun startPlay: broadcast ended');
+    }
+    if (result != 1) {
+      throw SiteRiskControlError('acfun startPlay: result $result ${parsed['error_msg'] ?? ''}'.trim());
+    }
+    final data = parsed['data'];
+    if (data is! Map<String, Object?>) {
+      throw const SiteApiChangedError('acfun startPlay: no data');
+    }
+    final liveId = data['liveId']?.toString() ?? '';
+    if (liveId.isEmpty) {
+      throw const SiteApiChangedError('acfun startPlay: no liveId');
+    }
+    final available = data['availableTickets'];
+    final tickets = [
+      for (final ticket in available is List ? available : const [])
+        if (ticket?.toString() case final text? when text.isNotEmpty) text,
+    ];
+    return (liveId: liveId, tickets: tickets, enterRoomAttach: data['enterRoomAttach']?.toString() ?? '');
   }
 
   /// `channel/list` → one page of rooms and the cursor after them.

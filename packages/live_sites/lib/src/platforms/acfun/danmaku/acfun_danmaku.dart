@@ -6,6 +6,77 @@ import 'package:cryptography/cryptography.dart';
 import 'package:live_sites/src/common/protobuf/protobuf.dart';
 import 'package:live_sites/src/models/live_gift/live_gift.dart';
 import 'package:live_sites/src/models/live_message/live_message.dart';
+import 'package:meta/meta.dart';
+
+/// What the AcFun link needs to join one broadcast: the visitor session
+/// `startPlay` was asked with, the broadcast's id, its tickets and the enter
+/// attachment. All arrive from the two requests room entry makes anyway. The
+/// gift table is not fetched, so a gift carries only what its signal says.
+@immutable
+final class AcfunDanmakuArgs {
+  /// A link join target.
+  new({
+    required this.userId,
+    required this.deviceId,
+    required this.token,
+    required this.security,
+    required this.liveId,
+    required List<String> tickets,
+    required this.enterRoomAttach,
+    this.headers = const {
+      'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+      'origin': 'https://live.acfun.cn',
+    },
+  }) : tickets = List.unmodifiable(tickets);
+
+  /// The visitor's user id (`userId`), sent as a number in the packet header.
+  final String userId;
+
+  /// The `_did` cookie the visitor logged in with, sent again as `did`.
+  final String deviceId;
+
+  /// The service token (`acfun.api.visitor_st`), carried by the register
+  /// header.
+  final String token;
+
+  /// `acSecurity`, the base64 key of the register exchange. Without it the
+  /// link cannot register.
+  final String security;
+
+  /// The broadcast (`liveId`).
+  final String liveId;
+
+  /// `availableTickets`, tried in order when one dies.
+  final List<String> tickets;
+
+  /// `enterRoomAttach`, echoed when entering the room.
+  final String enterRoomAttach;
+
+  /// Handshake headers of the web client.
+  final Map<String, String> headers;
+
+  @override
+  String toString() => 'AcfunDanmakuArgs($liveId, ${tickets.length} tickets, $userId)';
+}
+
+/// One packet received on the link, opened by the socket session.
+@immutable
+final class AcfunDanmakuPacket {
+  /// Creates a packet.
+  const new({required this.command, required this.seqId, required this.payload, this.errorCode = 0});
+
+  /// `DownstreamPayload.command`, like `Basic.Register`.
+  final String command;
+
+  /// The header's `seqId` (a push's acknowledgement echoes it).
+  final int seqId;
+
+  /// `payloadData`.
+  final Uint8List payload;
+
+  /// `errorCode`; 0 is success.
+  final int errorCode;
+}
 
 /// AcFun's link protocol frame codec and `acSecurity` seal, without the
 /// session. The command builders that `seal`/`open` and the `push` decode land
