@@ -5,9 +5,12 @@ import 'package:live_sites/src/contracts/site_error/site_error.dart';
 import 'package:live_sites/src/models/live_gift/live_gift.dart';
 import 'package:live_sites/src/models/live_message/live_message.dart';
 
-/// What one Huya server frame held: its messages in order, and the streamer
-/// uids of its stream-end notices (0 when a notice names none).
-typedef HuyaDanmakuFrame = ({List<LiveMessage> messages, List<int> ended});
+/// What one Huya server frame held: its messages in order (with the super
+/// chats that headline notices carried inline), how many headline notices (uri
+/// 2001314) had a body that was *not* a board panel — so the board must be
+/// fetched — and the streamer uids of its stream-end notices (0 when a notice
+/// names none).
+typedef HuyaDanmakuFrame = ({List<LiveMessage> messages, int superChatNotices, List<int> ended});
 
 /// Huya's danmaku protocol, without I/O.
 ///
@@ -23,9 +26,8 @@ typedef HuyaDanmakuFrame = ({List<LiveMessage> messages, List<int> ended});
 /// chat colour is an int (white for none); the audience is a
 /// [LiveAudienceUpdate]; a message id is `id`. The headline (super chat) board
 /// (uri 2001314) is read when the notice body carries the panel itself
-/// ([headlineNotice]); the background board *fetch* (a WUP-over-HTTP
-/// `getHeadLineMessageBoard` call, which this site's transport does not speak
-/// yet) is not migrated, so a notice without an inline panel is dropped.
+/// ([headlineNotice]); a notice that does not is a board-fetch trigger, served
+/// by the session through [messageBoardRequest]/[superChats] over HTTP.
 abstract final class HuyaDanmakuProtocol {
   /// The only endpoint.
   static final Uri endpoint = Uri.parse('wss://wsapi.huya.com');
@@ -59,9 +61,24 @@ abstract final class HuyaDanmakuProtocol {
   static const int endUri = 8001;
 
   /// The headline (super chat) board notice ([headlineNotice] reads its body
-  /// when the notice carries the panel; the background board fetch is not
-  /// migrated).
+  /// when the notice carries the panel; otherwise the session fetches the
+  /// board over [messageBoardRequest]).
   static const int superChatUri = 2001314;
+
+  /// Waits before each board fetch after a headline notice: the notice can
+  /// arrive before the board has the entry.
+  static const List<Duration> superChatRetryDelays = [
+    Duration.zero,
+    Duration(milliseconds: 600),
+    Duration(milliseconds: 1800),
+    Duration(milliseconds: 4000),
+  ];
+
+  /// Longest wait for one board fetch.
+  static const Duration superChatTimeout = Duration(seconds: 3);
+
+  /// Board entries remembered per connection to report each only once.
+  static const int maxRememberedSuperChats = 512;
 
   /// The detail of the run's end at the stream end.
   static const String broadcastEnded = 'Broadcast ended';
@@ -111,6 +128,7 @@ abstract final class HuyaDanmakuProtocol {
   static HuyaDanmakuFrame decode(List<int> frame, {required DateTime now}) {
     final messages = <LiveMessage>[];
     final ended = <int>[];
+    var notices = 0;
     void item(int uri, Uint8List? body, int eventId) {
       if (uri == endUri) {
         try {
@@ -121,7 +139,12 @@ abstract final class HuyaDanmakuProtocol {
         return;
       }
       if (uri == superChatUri) {
-        messages.addAll(headlineNotice(body, now: now));
+        final board = headlineNotice(body, now: now);
+        if (board.isEmpty) {
+          notices++;
+        } else {
+          messages.addAll(board);
+        }
         return;
       }
       try {
@@ -154,7 +177,7 @@ abstract final class HuyaDanmakuProtocol {
     } on FormatException {
       // A frame that is not Tars.
     }
-    return (messages: messages, ended: ended);
+    return (messages: messages, superChatNotices: notices, ended: ended);
   }
 
   /// The colour of a chat's `iFontColor`: 0 or less (-1 is the default) is

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/huya/danmaku/huya_danmaku.dart';
 import 'package:live_sites/src/platforms/huya/danmaku/huya_session.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_parser.dart';
 
@@ -231,18 +232,38 @@ final class HuyaSite
   /// Opens the Tars chat socket for [room].
   ///
   /// The streamer's numeric uid comes from the room page (TT_ROOM_DATA) and
-  /// names the chat groups the socket registers; a room the page gives no uid
-  /// for cannot join. The headline (super chat) board is not read yet.
+  /// names the chat groups the socket registers; the board channel id
+  /// (`lChannelId`, topSid) names the headline board a super-chat notice
+  /// fetches. A room the page gives no uid for cannot join; one with no
+  /// topSid reads only inline board panels.
   @override
   Future<LiveDanmakuSession> connect(LiveRoom room) async {
     guardRoom(room);
     final detail = HuyaParser.roomDetail(await _page(room.roomId), requestedId: room.roomId);
     final data = detail.data;
     final uid = data is Map<String, Object?> ? (data['uid'] as num?)?.toInt() : null;
+    final topSid = data is Map<String, Object?> ? (data['topSid'] as num?)?.toInt() ?? 0 : 0;
     if (uid == null || uid <= 0) {
       throw SiteNotFoundError('huya ${room.roomId}: no streamer uid to register');
     }
-    return await HuyaDanmakuSession.connect(uid);
+    final board = topSid > 0 ? () => _headLineBoard(topSid) : null;
+    return await HuyaDanmakuSession.connect(uid, board: board);
+  }
+
+  /// Fetches the room's headline (super chat) board: a `wupui.
+  /// getHeadLineMessageBoard` WUP packet over HTTP, decoded back into
+  /// super-chat messages.
+  Future<List<LiveMessage>> _headLineBoard(int topSid) async {
+    final response = await http.send(
+      LiveRequest.custom(
+        method: 'POST',
+        url: HuyaDanmakuProtocol.wupEndpoint,
+        bodyBytes: HuyaDanmakuProtocol.messageBoardRequest(topSid),
+        headers: HuyaDanmakuProtocol.wupHeaders,
+        site: id,
+      ),
+    );
+    return HuyaDanmakuProtocol.superChats(response.bodyBytes, now: DateTime.now(), status: response.statusCode);
   }
 
   Future<String> _page(String roomId) async {
