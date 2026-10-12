@@ -241,8 +241,8 @@ final class HuyaSite
     guardRoom(room);
     final detail = HuyaParser.roomDetail(await _page(room.roomId), requestedId: room.roomId);
     final data = detail.data;
-    final uid = data is Map<String, Object?> ? (data['uid'] as num?)?.toInt() : null;
-    final topSid = data is Map<String, Object?> ? (data['topSid'] as num?)?.toInt() ?? 0 : 0;
+    final uid = data is Map<String, Object?> ? SiteCounts.integer(data['uid']) : null;
+    final topSid = data is Map<String, Object?> ? SiteCounts.integer(data['topSid']) ?? 0 : 0;
     if (uid == null || uid <= 0) {
       throw SiteNotFoundError('huya ${room.roomId}: no streamer uid to register');
     }

@@ -31,13 +31,13 @@ abstract final class HuyaParser {
     }
     final data = _decode(blob);
     final introduction = data['introduction']?.toString() ?? '';
-    final state = (data['state'] as num?)?.toInt() ?? 0;
+    final state = SiteCounts.integer(data['state']) ?? 0;
     final isReplay = data['isReplay']?.toString() == '1';
     // The streamer's numeric uid, which the danmaku socket registers its chat
     // groups under, and the headline board's channel id (topSid, `lChannelId`)
     // a board fetch names. Both ride in `data`, never in JSON.
-    final uid = (data['uid'] as num?)?.toInt();
-    final topSid = (data['lChannelId'] as num?)?.toInt() ?? 0;
+    final uid = SiteCounts.integer(data['uid']);
+    final topSid = SiteCounts.integer(data['lChannelId']) ?? 0;
     return LiveRoom(
       platform: SiteIds.huya,
       roomId: requestedId,
@@ -46,7 +46,7 @@ abstract final class HuyaParser {
       avatar: data['avatar180']?.toString(),
       cover: data['screenshot']?.toString(),
       areaName: data['gameFullName']?.toString(),
-      watching: (data['gg_total_count'] as num?)?.toInt(),
+      watching: SiteCounts.integer(data['gg_total_count']),
       status: isReplay
           ? LiveStatus.replay
           : state == 2
@@ -114,7 +114,7 @@ abstract final class HuyaParser {
         if (entry is! Map<String, Object?>) {
           continue;
         }
-        final rate = (entry['iBitRate'] as num?)?.toInt();
+        final rate = SiteCounts.integer(entry['iBitRate']);
         if (rate == null || seen.containsKey(rate)) {
           continue;
         }
@@ -146,7 +146,7 @@ abstract final class HuyaParser {
       for (final item in raw is List ? raw : const <Object?>[])
         if (item is Map<String, Object?>) ?_directoryRoom(item),
     ];
-    final totalPage = (data['totalPage'] as num?)?.toInt() ?? 0;
+    final totalPage = SiteCounts.integer(data['totalPage']) ?? 0;
     final hasMore = rooms.isNotEmpty && (totalPage <= 0 || page < totalPage);
     return LivePage<LiveRoom>(items: rooms, hasMore: hasMore);
   }
