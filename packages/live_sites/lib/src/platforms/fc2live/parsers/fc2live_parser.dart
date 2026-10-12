@@ -217,7 +217,7 @@ abstract final class Fc2LiveParser {
     if (decoded is! Map<String, Object?>) {
       throw const SiteApiChangedError('fc2live memberApi: body is not an object');
     }
-    if ((decoded['status'] as num?)?.toInt() != 1) {
+    if (SiteCounts.integer(decoded['status']) != 1) {
       throw SiteNotFoundError('fc2live memberApi: no channel $channelId');
     }
     final data = decoded['data'];
@@ -231,11 +231,11 @@ abstract final class Fc2LiveParser {
     }
     final rawProfile = data is Map<String, Object?> ? data['profile_data'] : null;
     final profile = rawProfile is Map<String, Object?> ? rawProfile : const <String, Object?>{};
-    final published = (channel['is_publish'] as num?)?.toInt() == 1;
-    final emailOnly = (channel['is_limited'] as num?)?.toInt() == 1;
-    final loginOnly = (channel['login_only'] as num?)?.toInt() == 1;
+    final published = SiteCounts.integer(channel['is_publish']) == 1;
+    final emailOnly = SiteCounts.integer(channel['is_limited']) == 1;
+    final loginOnly = SiteCounts.integer(channel['login_only']) == 1;
     final name = (profile['name'] ?? channel['tname'])?.toString() ?? '';
-    final startSeconds = (channel['start'] as num?)?.toInt();
+    final startSeconds = SiteCounts.integer(channel['start']);
     final version = channel['version']?.toString() ?? '';
     return (
       room: LiveRoom(
@@ -245,7 +245,7 @@ abstract final class Fc2LiveParser {
         nick: name,
         avatar: _image(profile['icon'] ?? profile['image']),
         cover: _image(channel['image']),
-        watching: (channel['count'] as num?)?.toInt(),
+        watching: SiteCounts.integer(channel['count']),
         status: published ? LiveStatus.live : LiveStatus.offline,
         restriction: published && emailOnly
             ? LiveRestriction.needsLogin
@@ -286,7 +286,7 @@ abstract final class Fc2LiveParser {
     if (decoded is! Map<String, Object?>) {
       throw const SiteApiChangedError('fc2live getControlServer: body is not an object');
     }
-    if ((decoded['status'] as num?)?.toInt() != 0) {
+    if (SiteCounts.integer(decoded['status']) != 0) {
       throw SiteNotFoundError('fc2live getControlServer: not on air or restricted (status ${decoded['status']})');
     }
     final url = decoded['url']?.toString() ?? '';
