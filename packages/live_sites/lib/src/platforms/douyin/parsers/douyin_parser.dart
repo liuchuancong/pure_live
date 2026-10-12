@@ -45,7 +45,7 @@ abstract final class DouyinParser {
     if (decoded is! Map<String, Object?>) {
       throw SiteApiChangedError('douyin $what: body is not an object');
     }
-    final code = (decoded['status_code'] as num?)?.toInt();
+    final code = SiteCounts.integer(decoded['status_code']);
     if (code != null && code != 0) {
       final message = decoded['data']?.toString() ?? '';
       throw SiteRiskControlError('douyin $what: status_code $code $message'.trim());
@@ -232,15 +232,15 @@ abstract final class DouyinParser {
   }
 
   static bool _isLive(Map<String, Object?> room, {Object? roomStatus}) {
-    final status = (room['status'] as num?)?.toInt();
+    final status = SiteCounts.integer(room['status']);
     if (roomStatus != null) {
-      return (roomStatus as num?)?.toInt() == 2 || status == 2;
+      return SiteCounts.integer(roomStatus) == 2 || status == 2;
     }
     return status == 2;
   }
 
   static DateTime? _epoch(Object? value) {
-    final seconds = (value as num?)?.toInt();
+    final seconds = SiteCounts.integer(value);
     return seconds == null || seconds <= 0 ? null : DateTime.fromMillisecondsSinceEpoch(seconds * 1000);
   }
 
