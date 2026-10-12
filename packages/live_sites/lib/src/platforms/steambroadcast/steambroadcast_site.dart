@@ -6,7 +6,7 @@ import 'package:live_sites/src/platforms/steambroadcast/parsers/steambroadcast_p
 ///
 /// Not migrated yet: the directory, the custom-URL (vanity) resolution and
 /// the chat.
-final class SteamBroadcastSite with SiteRoomGuard implements LiveSite {
+final class SteamBroadcastSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -26,14 +26,31 @@ final class SteamBroadcastSite with SiteRoomGuard implements LiveSite {
     homeUrl: 'https://steamcommunity.com/broadcast/',
   );
 
+  /// The catalogue: one constant area, the trending broadcasts.
+  @override
+  Future<List<LiveArea>> getAreas() async => SteamBroadcastParser.areas();
+
+  /// Page [page] of the trending broadcasts, which is what the site
+  /// recommends.
   @override
   Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
-    throw UnimplementedError('steambroadcast directory lands with its migration');
+    if (page < 1) {
+      throw RangeError.range(page, 1, null, 'page');
+    }
+    final response = await http.send(
+      LiveRequest.get(SteamBroadcastParser.directoryUrl(page), headers: SteamBroadcastParser.headers, site: siteId),
+    );
+    return SteamBroadcastParser.directory(response.text, page: page, status: response.statusCode);
   }
 
+  /// As [getRecommendRooms]; the site has one area and anything else is a
+  /// caller error rather than a request that cannot work.
   @override
-  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    throw UnimplementedError('steambroadcast directory lands with its migration');
+  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) {
+    if (!SteamBroadcastParser.isArea(area)) {
+      throw SiteError.invalidRoomId(area.id);
+    }
+    return getRecommendRooms(page: page);
   }
 
   @override
