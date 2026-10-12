@@ -115,7 +115,7 @@ abstract final class SteamBroadcastParser {
       status: state,
       restriction: restriction,
       title: title,
-      viewers: (decoded['num_viewers'] as num?)?.toInt(),
+      viewers: SiteCounts.integer(decoded['num_viewers']),
       broadcastId: decoded['broadcastid']?.toString(),
       master: master,
     );
@@ -140,7 +140,7 @@ abstract final class SteamBroadcastParser {
     if (decoded is! Map<String, Object?>) {
       throw const SiteApiChangedError('steambroadcast getbroadcastinfo: body is not an object');
     }
-    final success = (decoded['success'] as num?)?.toInt();
+    final success = SiteCounts.integer(decoded['success']);
     if (success != 1 && success != 42) {
       throw const SiteApiChangedError('steambroadcast getbroadcastinfo: bad success');
     }
@@ -155,7 +155,7 @@ abstract final class SteamBroadcastParser {
       status: decoded['is_replay'] == true ? LiveStatus.replay : LiveStatus.live,
       title: title.isEmpty ? game : title,
       cover: _thumbnail(thumbnail, game),
-      viewers: (decoded['viewer_count'] as num?)?.toInt(),
+      viewers: SiteCounts.integer(decoded['viewer_count']),
     );
   }
 
