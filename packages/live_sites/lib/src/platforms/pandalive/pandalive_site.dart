@@ -1,12 +1,16 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/pandalive/danmaku/pandalive_danmaku.dart';
+import 'package:live_sites/src/platforms/pandalive/danmaku/pandalive_session.dart';
 import 'package:live_sites/src/platforms/pandalive/parsers/pandalive_parser.dart';
 
-/// The PandaLive adapter: member/bj + live/play flow and the directory.
+/// The PandaLive adapter: member/bj + live/play flow, the directory, and the
+/// Centrifugo chat joined with a `live/play` guest token.
 ///
-/// Not migrated yet: search, the password/fan-room refusals detail and the
-/// chat WebSocket.
-final class PandaLiveSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapability, LiveAreaCatalog {
+/// Not migrated yet: search and the password/fan-room refusals detail.
+final class PandaLiveSite
+    with SiteRoomGuard
+    implements LiveSite, LiveDanmakuCapability, LiveDirectoryCapability, LiveAreaCatalog {
   /// A site over [http].
   new({required this.http});
 
@@ -84,6 +88,34 @@ final class PandaLiveSite with SiteRoomGuard implements LiveSite, LiveDirectoryC
     guardRoom(room);
     final member = await _member(room.roomId);
     return room.mergeFrom(PandaLiveParser.room(member));
+  }
+
+  /// Opens the Centrifugo chat for [room].
+  ///
+  /// A `live/play` POST hands the guest token and the chat channel (the
+  /// broadcaster's number), asked fresh on every connect. A broadcast the
+  /// answer refuses (ended, adult, password, fans only, not live) becomes a
+  /// [SiteNotFoundError]; the socket then connects with the token.
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) async {
+    guardRoom(room);
+    final response = await http.send(
+      LiveRequest.form(
+        Uri.https(PandaLiveParser.apiHost, '/v1/live/play'),
+        fields: PandaLiveParser.playForm(room.roomId),
+        headers: {...PandaLiveParser.headers, 'referer': PandaLiveParser.roomUrl(room.roomId)},
+        site: id,
+      ),
+    );
+    final ({String channel, String token}) grant;
+    try {
+      grant = PandaLiveDanmakuProtocol.grant(response.text, status: response.statusCode);
+    } on PandaLiveChatRefusal catch (refusal) {
+      throw SiteNotFoundError('pandalive ${room.roomId}: $refusal');
+    } on FormatException catch (error) {
+      throw SiteApiChangedError('pandalive ${room.roomId}: ${error.message}');
+    }
+    return await PandaLiveDanmakuSession.connect(grant.channel, grant.token);
   }
 
   Future<
