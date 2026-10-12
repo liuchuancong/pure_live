@@ -4,7 +4,7 @@ import 'package:live_storage/src/contracts/storage_exception.dart';
 import 'package:live_storage/src/database/db_keyed_store.dart';
 
 /// Table names this package seeds; callers own the names of every other
-/// table they open through [PureLiveDatabase.store].
+/// table they open through [PureLiveDatabase.openStore].
 abstract final class LiveStorageTables {
   /// Typed settings values (JSON documents).
   static const preferences = 'preferences';
@@ -12,12 +12,13 @@ abstract final class LiveStorageTables {
 
 /// The versioned database the keyed stores hang off.
 ///
-/// The database itself registers no tables — [store] creates a table on
-/// first use from the name the caller passes. Migration policy per the
-/// storage spec: schema steps are registered explicitly, a missing step
-/// fails loudly with [StorageMigrationException], and nothing here ever
-/// deletes the database to "recover" — a damaged database surfaces as
-/// [StorageCorruptedException] so the app can offer the user a real
+/// The database itself registers no tables — [openStore] creates a
+/// table on first use from the name the caller passes, loads it into
+/// memory and hands back a Hive-like keyed store. Migration policy per
+/// the storage spec: schema steps are registered explicitly, a missing
+/// step fails loudly with [StorageMigrationException], and nothing here
+/// ever deletes the database to "recover" — a damaged database surfaces
+/// as [StorageCorruptedException] so the app can offer the user a real
 /// choice (restore backup / start over), not a silent wipe.
 ///
 /// Tables are plain SQL and access goes through
@@ -27,21 +28,18 @@ final class PureLiveDatabase extends GeneratedDatabase {
   /// file-backed).
   new(super.executor);
 
-  static final RegExp _tableNamePattern = RegExp(r'^[A-Za-z_][A-Za-z0-9_]{0,63}$');
+  final Map<String, Future<KeyedStore>> _opening = {};
 
-  final Map<String, KeyedStore> _stores = {};
-
-  /// The keyed store for the table [name], created on first use, one
-  /// store instance per name.
+  /// Opens the keyed store for the table [name] — creating the table
+  /// when missing, loading its rows, one store instance per name shared
+  /// by every caller.
   ///
   /// [name] is interpolated into CREATE/SELECT/DELETE text, so it must
-  /// be a plain identifier — anything else is rejected here before it
+  /// be a plain identifier; anything else is rejected here before it
   /// can become an injection.
-  KeyedStore store(String name) {
-    if (!_tableNamePattern.hasMatch(name)) {
-      throw StorageValidationException('table name must be a plain identifier, got "$name"');
-    }
-    return _stores.putIfAbsent(name, () => DbKeyedStore(database: this, tableName: name));
+  Future<KeyedStore> openStore(String name) {
+    DbKeyedStore.checkTableName(name);
+    return _opening.putIfAbsent(name, () => DbKeyedStore.open(database: this, tableName: name));
   }
 
   @override

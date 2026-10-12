@@ -30,8 +30,11 @@ abstract interface class LibraryStore {
   Stream<void> get changes;
 }
 
-/// The keys the library owns in the preferences store.
+/// The keys the library owns in its keyed table.
 abstract final class LibraryKeys {
+  /// The table the library owns in the shared database.
+  static const String table = 'library';
+
   /// Followed rooms.
   static const String rooms = 'library.follows.v1';
 
@@ -51,7 +54,7 @@ final class KeyedLibraryStore implements LibraryStore {
   final KeyedStore store;
 
   @override
-  Stream<void> get changes => store.changes;
+  Stream<void> get changes => store.watch();
 
   @override
   Future<List<LibraryRoom>> loadRooms() => _load(LibraryKeys.rooms, LibraryRoom.fromJson);
@@ -73,7 +76,7 @@ final class KeyedLibraryStore implements LibraryStore {
       _save(LibraryKeys.history, history, (record) => record.toJson());
 
   Future<List<T>> _load<T>(String key, T Function(Map<String, Object?>) fromJson) async {
-    final raw = await store.read(key);
+    final raw = store.get<Object?>(key);
     if (raw is! List) {
       return const [];
     }
@@ -87,7 +90,7 @@ final class KeyedLibraryStore implements LibraryStore {
   }
 
   Future<void> _save<T>(String key, List<T> items, Map<String, Object?> Function(T) toJson) =>
-      store.write(key, [for (final item in items) toJson(item)]);
+      store.put(key, [for (final item in items) toJson(item)]);
 }
 
 /// An in-memory [LibraryStore] for tests and previews.

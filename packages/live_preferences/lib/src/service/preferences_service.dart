@@ -11,22 +11,19 @@ import 'package:live_storage/live_storage.dart';
 
 /// What a [PreferencesService.load] found wrong with the stored documents.
 ///
-/// The load itself never fails: a preference document that cannot be read
-/// or decoded must not keep the app from starting, so the affected group
+/// The load itself never fails: a preference document that cannot be
+/// decoded must not keep the app from starting, so the affected group
 /// keeps its defaults — but the failure is reported here and through the
 /// service's `onError`, never silently.
 final class PreferencesLoadReport {
-  /// A report of [readFailures] and [decodeFailures].
-  const new({this.readFailures = const <String>[], this.decodeFailures = const <String>[]});
-
-  /// Group keys whose store read threw.
-  final List<String> readFailures;
+  /// A report of [decodeFailures].
+  const new({this.decodeFailures = const <String>[]});
 
   /// Group keys whose document was present but did not decode.
   final List<String> decodeFailures;
 
-  /// Whether every stored document loaded.
-  bool get isClean => readFailures.isEmpty && decodeFailures.isEmpty;
+  /// Whether every stored document decoded.
+  bool get isClean => decodeFailures.isEmpty;
 }
 
 /// The user's preferences: one in-memory [Preferences] value, persisted
@@ -78,24 +75,16 @@ final class PreferencesService {
   /// Emits on every applied change, including [load] and [reset].
   Stream<Preferences> get changes => _controller.stream;
 
-  /// Reads every group document and applies the ones that decode.
+  /// Applies the stored group documents on top of the current value.
   ///
-  /// Groups that fail keep their current value. Emits [changes] when
-  /// anything was applied.
+  /// Groups that fail to decode keep their current value. Emits
+  /// [changes] when anything was applied.
   Future<PreferencesLoadReport> load() async {
     _checkNotDisposed();
-    final readFailures = <String>[];
     final decodeFailures = <String>[];
     var loaded = _value;
     for (final key in PreferencesKeys.all) {
-      final Object? raw;
-      try {
-        raw = await store.read(key);
-      } on Object catch (error, stack) {
-        readFailures.add(key);
-        onError?.call(key, error, stack);
-        continue;
-      }
+      final raw = store.get<Object?>(key);
       if (raw == null) {
         continue;
       }
@@ -116,7 +105,7 @@ final class PreferencesService {
       _value = loaded;
       _emit();
     }
-    return PreferencesLoadReport(readFailures: readFailures, decodeFailures: decodeFailures);
+    return PreferencesLoadReport(decodeFailures: decodeFailures);
   }
 
   /// Applies [transform] to the root and persists whichever groups changed.
@@ -252,7 +241,7 @@ final class PreferencesService {
     _writeChain = _writeChain.then((_) async {
       for (final MapEntry(:key, value: json) in documents.entries) {
         try {
-          await store.write(key, json);
+          await store.put(key, json);
         } on Object catch (error, stack) {
           onError?.call(key, error, stack);
         }

@@ -46,8 +46,11 @@ abstract interface class IptvStore {
   Stream<void> get changes;
 }
 
-/// The keys the IPTV library owns in its keyed store.
+/// The keys the IPTV library owns in its keyed table.
 abstract final class IptvKeys {
+  /// The table the IPTV library owns in the shared database.
+  static const String table = 'iptv';
+
   /// Library channels.
   static const String channels = 'iptv.channels.v1';
 
@@ -76,7 +79,7 @@ final class KeyedIptvStore implements IptvStore {
   final KeyedStore store;
 
   @override
-  Stream<void> get changes => store.changes;
+  Stream<void> get changes => store.watch();
 
   @override
   Future<List<IptvChannel>> loadChannels() => _load(IptvKeys.channels, IptvChannel.fromJson);
@@ -121,7 +124,7 @@ final class KeyedIptvStore implements IptvStore {
       _save(IptvKeys.guideMappings, mappings, (mapping) => mapping.toJson());
 
   Future<List<T>> _load<T>(String key, T Function(Map<String, Object?>) fromJson) async {
-    final raw = await store.read(key);
+    final raw = store.get<Object?>(key);
     if (raw is! List) {
       return const [];
     }
@@ -132,7 +135,7 @@ final class KeyedIptvStore implements IptvStore {
   }
 
   Future<void> _save<T>(String key, List<T> items, Map<String, Object?> Function(T) toJson) =>
-      store.write(key, [for (final item in items) toJson(item)]);
+      store.put(key, [for (final item in items) toJson(item)]);
 }
 
 /// An in-memory [IptvStore] for tests and previews.

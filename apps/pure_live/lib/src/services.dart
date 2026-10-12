@@ -105,7 +105,7 @@ final class PureLiveServices {
     final database = PureLiveDatabase(
       NativeDatabase.createInBackground(File(p.join(dataDirectory, 'pure_live.sqlite'))),
     );
-    final preferencesStore = database.store(LiveStorageTables.preferences);
+    final preferencesStore = await database.openStore(LiveStorageTables.preferences);
     final preferences = PreferencesService(
       store: preferencesStore,
       onError: (key, error, stack) => log
@@ -116,15 +116,16 @@ final class PureLiveServices {
     if (!report.isClean) {
       appLog.warning(
         'some preference documents were not loaded and keep their defaults',
-        fields: {'unread': report.readFailures.join(','), 'undecoded': report.decodeFailures.join(',')},
+        fields: {'undecoded': report.decodeFailures.join(',')},
       );
     }
 
-    // The user's own data: followed rooms, history, IPTV channels.
-    final libraryStore = KeyedLibraryStore(preferencesStore);
+    // The user's own data: followed rooms, history, IPTV channels — one
+    // keyed table per domain, written through the shared database.
+    final libraryStore = KeyedLibraryStore(await database.openStore(LibraryKeys.table));
     final library = FollowRepository(libraryStore);
     final history = HistoryRepository(libraryStore, capacity: preferences.value.library.historyLimit);
-    final iptv = IptvLibrary(KeyedIptvStore(preferencesStore));
+    final iptv = IptvLibrary(KeyedIptvStore(await database.openStore(IptvKeys.table)));
     await library.load();
     await history.load();
     await iptv.load();
