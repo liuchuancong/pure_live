@@ -137,7 +137,7 @@ final class LookLiveSite
       return const LivePage<LiveRoom>(items: []);
     }
     final query = raw.toLowerCase();
-    final rooms = (await getRecommendRooms(page: 1)).items;
+    final rooms = (await getRecommendRooms()).items;
     return LivePage<LiveRoom>(
       items: [
         for (final room in rooms)
