@@ -6,9 +6,11 @@ import 'package:live_sites/src/platforms/picarto/parsers/picarto_parser.dart';
 /// The Picarto adapter: one channel/detail request per room, plus the chat
 /// socket over a GraphQL-issued token.
 ///
-/// Not migrated yet: the multistream overlay, the broadcast start from the
-/// public API, and the directory.
-final class PicartoSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability {
+/// Not migrated yet: the multistream overlay and the broadcast start from the
+/// public API.
+final class PicartoSite
+    with SiteRoomGuard
+    implements LiveSite, LiveDanmakuCapability, LiveAreaCatalog, LiveDirectoryCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -25,14 +27,61 @@ final class PicartoSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapab
   SiteMetadata get metadata =>
       const SiteMetadata(id: SiteIds.picarto, displayName: 'Picarto', homeUrl: 'https://picarto.tv');
 
+  /// The catalogue: the public directory first, then the platform's
+  /// categories from `languages-categories`.
   @override
-  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
-    throw UnimplementedError('picarto directory lands with its migration');
+  Future<List<LiveArea>> getAreas() async {
+    final response = await http.send(
+      LiveRequest.get(
+        Uri.https(PicartoParser.apiHost, '/api/languages-categories'),
+        headers: PicartoParser.headers,
+        site: siteId,
+      ),
+    );
+    return [PicartoParser.publicDirectoryArea, ...PicartoParser.categories(response.text, status: response.statusCode)];
   }
 
+  /// Page [page] of the public directory: live, non-adult channels by
+  /// viewers, thirty a page.
   @override
-  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    throw UnimplementedError('picarto directory lands with its migration');
+  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) => _explore(page: page);
+
+  /// Page [page] of one category's live channels; the public directory when
+  /// [area] is that area, and a caller error for anything else.
+  @override
+  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) =>
+      _explore(page: page, categoryId: _categoryId(area));
+
+  Future<LivePage<LiveRoom>> _explore({required int page, int? categoryId}) async {
+    const size = PicartoParser.pageSize;
+    final response = await http.send(
+      LiveRequest.get(
+        PicartoParser.exploreUrl(page: page < 1 ? 1 : page, pageSize: size, categoryId: categoryId),
+        headers: PicartoParser.headers,
+        site: siteId,
+      ),
+    );
+    return PicartoParser.directoryPage(
+      response.text,
+      page: page < 1 ? 1 : page,
+      pageSize: size,
+      categoryId: categoryId,
+      status: response.statusCode,
+    );
+  }
+
+  /// The category id of [area]: null for the public directory, else a positive
+  /// category id. Anything else is a caller error, refused before a request.
+  int? _categoryId(LiveArea area) {
+    final id = area.id.trim();
+    if (id == PicartoParser.publicDirectoryId) {
+      return null;
+    }
+    final number = int.tryParse(id);
+    if (number == null || number <= 0) {
+      throw SiteError.invalidRoomId(area.id);
+    }
+    return number;
   }
 
   /// The site's channel search: one `api/search` (`searchProfiles`) page of

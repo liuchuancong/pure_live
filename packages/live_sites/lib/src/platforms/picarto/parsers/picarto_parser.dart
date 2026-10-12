@@ -205,6 +205,156 @@ abstract final class PicartoParser {
     return List.unmodifiable(rooms.values);
   }
 
+  /// Rows the public directory and a category ask for per page (3.x's pager).
+  static const int pageSize = 30;
+
+  /// The id of the one "public directory" area: live, non-adult channels by
+  /// viewers, which is not a site category. A category id is a number, so it
+  /// can never collide with it.
+  static const String publicDirectoryId = 'live';
+
+  /// The public-directory area, first in the catalogue.
+  static const LiveArea publicDirectoryArea = LiveArea(id: publicDirectoryId, name: '公开直播（不含成人内容）');
+
+  /// The `api/explore` URL for page [page] of [pageSize], by viewers and not
+  /// adult; a [categoryId] narrows it to that site category and drops the
+  /// language filter, as 3.x sent it.
+  static Uri exploreUrl({required int page, required int pageSize, int? categoryId}) =>
+      Uri.https(apiHost, '/api/explore', {
+        'first': '$pageSize',
+        'page': '${page < 1 ? 1 : page}',
+        'filter_params[adult]': 'false',
+        'order_by[field]': 'viewers',
+        'order_by[order]': 'DESC',
+        'type': 'stream',
+        if (categoryId != null) 'filter_params[languages]': '',
+        if (categoryId != null) 'filter_params[categories]': '$categoryId: true',
+      });
+
+  /// `api/languages-categories`: the platform's categories in answer order,
+  /// each a flat area keyed by its positive id. An entry without a valid id or
+  /// label, or repeating an id, is left out; no list, more than 200, or no
+  /// valid entry at all is a changed endpoint.
+  static List<LiveArea> categories(String body, {int status = 200}) {
+    final root = PicartoParser.root(body, status: status, what: 'languages-categories');
+    final rows = root['categories'];
+    if (rows is! List || rows.isEmpty || rows.length > 200) {
+      throw const SiteApiChangedError('picarto languages-categories: no category list');
+    }
+    final areas = <String, LiveArea>{};
+    for (final item in SiteJson.objects(rows)) {
+      final id = SiteCounts.integer(item['id']);
+      final label = SiteText.text(item['label']);
+      if (id == null || id <= 0 || label.isEmpty || label.length > 100 || areas.containsKey('$id')) {
+        continue;
+      }
+      areas['$id'] = LiveArea(id: '$id', name: label, sort: areas.length + 1);
+    }
+    if (areas.isEmpty) {
+      throw const SiteApiChangedError('picarto languages-categories: no valid category');
+    }
+    return List.unmodifiable(areas.values);
+  }
+
+  /// An `api/explore` page: live, non-adult channels by viewers, one per name.
+  /// The page must echo [page] and [pageSize]; a row that is no channel (bad
+  /// name, id or online flag, or a non-boolean `adult` flag), or with
+  /// [categoryId] not of that category, is left out, and only a live non-adult
+  /// channel is kept (a short page is not topped up); a page with rows but
+  /// none usable is a changed endpoint. More pages follow while [page] is
+  /// below `last_page`.
+  static LivePage<LiveRoom> directoryPage(
+    String body, {
+    required int page,
+    required int pageSize,
+    int? categoryId,
+    int status = 200,
+  }) {
+    final root = PicartoParser.root(body, status: status, what: 'explore');
+    final rows = root['data'];
+    final last = SiteCounts.integer(root['last_page']);
+    final total = SiteCounts.integer(root['total']);
+    if (rows is! List ||
+        rows.length > pageSize ||
+        SiteCounts.integer(root['current_page']) != page ||
+        SiteCounts.integer(root['per_page']) != pageSize ||
+        last == null ||
+        last < 1 ||
+        total == null ||
+        total < 0 ||
+        (page > last && rows.isNotEmpty)) {
+      throw SiteApiChangedError('picarto explore: not page $page of $pageSize');
+    }
+    final rooms = <String, LiveRoom>{};
+    var usable = 0;
+    for (final row in SiteJson.objects(rows)) {
+      if (row['adult'] is! bool || !_isChannelRow(row)) {
+        continue;
+      }
+      if (categoryId != null) {
+        final categories = row['categories'];
+        if (categories is! List ||
+            !categories.any((value) => SiteCounts.integer(SiteJson.object(value)['id']) == categoryId)) {
+          continue;
+        }
+      }
+      usable++;
+      if (row['adult'] != false || row['online'] != true) {
+        continue;
+      }
+      final room = _card(row);
+      rooms.putIfAbsent(room.roomId.toLowerCase(), () => room);
+    }
+    if (rows.isNotEmpty && usable == 0) {
+      throw SiteApiChangedError(
+        'picarto explore: no usable row${categoryId == null ? '' : ' of category $categoryId'}',
+      );
+    }
+    final hasMore = page < last;
+    return LivePage<LiveRoom>(
+      items: List.unmodifiable(rooms.values),
+      hasMore: hasMore,
+      nextPage: hasMore ? page + 1 : null,
+      totalCount: total,
+    );
+  }
+
+  /// Whether an explore row is a channel the site can list: a valid name, a
+  /// positive id and a boolean online flag.
+  static bool _isChannelRow(Map<String, Object?> row) {
+    final id = SiteCounts.integer(row['id']);
+    return isChannelName(SiteText.text(row['name'])) && id != null && id > 0 && row['online'] is bool;
+  }
+
+  /// One explore channel row as a room: the stream title (empty for none), the
+  /// category names joined as the area, `viewers` as the audience, and the
+  /// `private` flag, when present, as the restriction. Adult rows and offline
+  /// rows are filtered out by [directoryPage], not mapped to an invented state.
+  static LiveRoom _card(Map<String, Object?> row) {
+    final name = SiteText.text(row['name']);
+    final viewers = SiteCounts.integer(row['viewers']);
+    final categories = row['categories'];
+    final private = row['private'];
+    return LiveRoom(
+      platform: SiteIds.picarto,
+      roomId: name,
+      nick: name,
+      title: SiteText.title(SiteText.text(row['title'])),
+      avatar: _image(row['avatar']),
+      cover: _image(row['image_thumbnail']),
+      areaName: categories is List
+          ? [
+              for (final category in SiteJson.objects(categories))
+                if (SiteText.trimmed(category['name']).isNotEmpty) SiteText.trimmed(category['name']),
+            ].join(' / ')
+          : null,
+      watching: viewers,
+      onlineViewers: viewers,
+      status: row['online'] == true ? LiveStatus.live : LiveStatus.offline,
+      restriction: private is bool ? (private ? LiveRestriction.private : LiveRestriction.none) : null,
+    );
+  }
+
   static int? _asInt(Object? value) => value is int ? value : int.tryParse('$value');
 
   static String? _image(Object? value) {
