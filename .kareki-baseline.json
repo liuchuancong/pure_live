@@ -1,0 +1,2358 @@
+{
+  "version": 1,
+  "tool": "kareki",
+  "findings": [
+    {
+      "ruleId": "test_only_used",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\calls.dart|LiveHttpCalls|postForm|method",
+      "file": "packages\\live_net\\lib\\src\\calls.dart",
+      "message": "Public method 'LiveHttpCalls.postForm' is only referenced from test code."
+    },
+    {
+      "ruleId": "test_only_used",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\calls.dart|LiveHttpCalls|postJson|method",
+      "file": "packages\\live_net\\lib\\src\\calls.dart",
+      "message": "Public method 'LiveHttpCalls.postJson' is only referenced from test code."
+    },
+    {
+      "ruleId": "test_only_used",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\proxy.dart|FixedProxyPolicy|FixedProxyPolicy|constructor",
+      "file": "packages\\live_net\\lib\\src\\proxy.dart",
+      "message": "Public constructor 'FixedProxyPolicy.FixedProxyPolicy' is only referenced from test code."
+    },
+    {
+      "ruleId": "test_only_used",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\request.dart|LiveRequest|withQuery|method",
+      "file": "packages\\live_net\\lib\\src\\request.dart",
+      "message": "Public method 'LiveRequest.withQuery' is only referenced from test code."
+    },
+    {
+      "ruleId": "test_only_used",
+      "stableId": "live_storage|<root>/packages\\live_storage\\lib\\src\\contracts\\file_store.dart|FileStore|directoryFor|method",
+      "file": "packages\\live_storage\\lib\\src\\contracts\\file_store.dart",
+      "message": "Public method 'FileStore.directoryFor' is only referenced from test code."
+    },
+    {
+      "ruleId": "test_only_used",
+      "stableId": "live_storage|<root>/packages\\live_storage\\lib\\src\\contracts\\file_store.dart|FileStore|exists|method",
+      "file": "packages\\live_storage\\lib\\src\\contracts\\file_store.dart",
+      "message": "Public method 'FileStore.exists' is only referenced from test code."
+    },
+    {
+      "ruleId": "test_only_used",
+      "stableId": "live_storage|<root>/packages\\live_storage\\lib\\src\\contracts\\file_store.dart|FileStore|readText|method",
+      "file": "packages\\live_storage\\lib\\src\\contracts\\file_store.dart",
+      "message": "Public method 'FileStore.readText' is only referenced from test code."
+    },
+    {
+      "ruleId": "test_only_used",
+      "stableId": "live_storage|<root>/packages\\live_storage\\lib\\src\\contracts\\file_store.dart|FileStore|writeText|method",
+      "file": "packages\\live_storage\\lib\\src\\contracts\\file_store.dart",
+      "message": "Public method 'FileStore.writeText' is only referenced from test code."
+    },
+    {
+      "ruleId": "test_only_used",
+      "stableId": "live_storage|<root>/packages\\live_storage\\lib\\src\\files\\platform_file_store.dart|PlatformFileStore|PlatformFileStore|constructor",
+      "file": "packages\\live_storage\\lib\\src\\files\\platform_file_store.dart",
+      "message": "Public constructor 'PlatformFileStore.PlatformFileStore' is only referenced from test code."
+    },
+    {
+      "ruleId": "test_only_used",
+      "stableId": "live_storage|<root>/packages\\live_storage\\lib\\src\\preferences\\in_memory_preferences_store.dart|InMemoryPreferencesStore|InMemoryPreferencesStore|constructor",
+      "file": "packages\\live_storage\\lib\\src\\preferences\\in_memory_preferences_store.dart",
+      "message": "Public constructor 'InMemoryPreferencesStore.InMemoryPreferencesStore' is only referenced from test code."
+    },
+    {
+      "ruleId": "test_only_used",
+      "stableId": "live_storage|<root>/packages\\live_storage\\lib\\src\\secure\\in_memory_secure_store.dart|InMemorySecureStore|InMemorySecureStore|constructor",
+      "file": "packages\\live_storage\\lib\\src\\secure\\in_memory_secure_store.dart",
+      "message": "Public constructor 'InMemorySecureStore.InMemorySecureStore' is only referenced from test code."
+    },
+    {
+      "ruleId": "test_only_used",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|pageSizeFor|method",
+      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "message": "Public method 'PaginationViewConfig.pageSizeFor' is only referenced from test code."
+    },
+    {
+      "ruleId": "test_only_used",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|pageSizeOptionsIncluding|method",
+      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "message": "Public method 'PaginationViewConfig.pageSizeOptionsIncluding' is only referenced from test code."
+    },
+    {
+      "ruleId": "test_only_used",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\controller\\paged_controller.dart|PagedController|refreshFromStart|method",
+      "file": "packages\\pagination_core\\lib\\src\\controller\\paged_controller.dart",
+      "message": "Public method 'PagedController.refreshFromStart' is only referenced from test code."
+    },
+    {
+      "ruleId": "test_only_used",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\math\\page_math.dart|PageMath|slice|method",
+      "file": "packages\\pagination_core\\lib\\src\\math\\page_math.dart",
+      "message": "Public method 'PageMath.slice' is only referenced from test code."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_interaction|<root>/packages\\live_interaction\\lib\\src\\model\\interaction_state.dart|InteractionState|isConnected|getter",
+      "file": "packages\\live_interaction\\lib\\src\\model\\interaction_state.dart",
+      "message": "Unused public getter 'InteractionState.isConnected'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_interaction|<root>/packages\\live_interaction\\lib\\src\\pipeline\\message_filter.dart||MessagePredicate|typedefDecl",
+      "file": "packages\\live_interaction\\lib\\src\\pipeline\\message_filter.dart",
+      "message": "Unused public typedefDecl 'MessagePredicate'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_interaction|<root>/packages\\live_interaction\\lib\\src\\source\\interaction_source.dart||InteractionSourceFactory|typedefDecl",
+      "file": "packages\\live_interaction\\lib\\src\\source\\interaction_source.dart",
+      "message": "Unused public typedefDecl 'InteractionSourceFactory'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\catchup\\catchup.dart||CatchupUrlType|enumDecl",
+      "file": "packages\\live_iptv\\lib\\src\\catchup\\catchup.dart",
+      "message": "Unused public enumDecl 'CatchupUrlType'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\catchup\\catchup.dart||IptvCatchupAvailability|enumDecl",
+      "file": "packages\\live_iptv\\lib\\src\\catchup\\catchup.dart",
+      "message": "Unused public enumDecl 'IptvCatchupAvailability'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\catchup\\catchup.dart||IptvProgrammePhase|enumDecl",
+      "file": "packages\\live_iptv\\lib\\src\\catchup\\catchup.dart",
+      "message": "Unused public enumDecl 'IptvProgrammePhase'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\catchup\\catchup.dart||buildIptvCatchupUrl|function",
+      "file": "packages\\live_iptv\\lib\\src\\catchup\\catchup.dart",
+      "message": "Unused public function 'buildIptvCatchupUrl'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\catchup\\catchup.dart||classifyIptvProgramme|function",
+      "file": "packages\\live_iptv\\lib\\src\\catchup\\catchup.dart",
+      "message": "Unused public function 'classifyIptvProgramme'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\catchup\\catchup.dart||disabledCatchupModes|topLevelVariable",
+      "file": "packages\\live_iptv\\lib\\src\\catchup\\catchup.dart",
+      "message": "Unused public topLevelVariable 'disabledCatchupModes'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\catchup\\catchup.dart||evaluateIptvCatchupAvailability|function",
+      "file": "packages\\live_iptv\\lib\\src\\catchup\\catchup.dart",
+      "message": "Unused public function 'evaluateIptvCatchupAvailability'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\guide\\guide_matcher.dart|GuideIndex|GuideIndex|constructor",
+      "file": "packages\\live_iptv\\lib\\src\\guide\\guide_matcher.dart",
+      "message": "Unused public constructor 'GuideIndex.GuideIndex'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\guide\\guide_matcher.dart||diceCoefficient|function",
+      "file": "packages\\live_iptv\\lib\\src\\guide\\guide_matcher.dart",
+      "message": "Unused public function 'diceCoefficient'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\guide\\guide_matcher.dart||fuzzyScore|function",
+      "file": "packages\\live_iptv\\lib\\src\\guide\\guide_matcher.dart",
+      "message": "Unused public function 'fuzzyScore'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\guide\\guide_matcher.dart||rebuildMappings|function",
+      "file": "packages\\live_iptv\\lib\\src\\guide\\guide_matcher.dart",
+      "message": "Unused public function 'rebuildMappings'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\guide\\guide_matcher.dart||resolveGuideChannel|function",
+      "file": "packages\\live_iptv\\lib\\src\\guide\\guide_matcher.dart",
+      "message": "Unused public function 'resolveGuideChannel'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\guide\\guide_matcher.dart||resolveGuideReference|function",
+      "file": "packages\\live_iptv\\lib\\src\\guide\\guide_matcher.dart",
+      "message": "Unused public function 'resolveGuideReference'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_import_result.dart|IptvImportResult|isImported|getter",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_import_result.dart",
+      "message": "Unused public getter 'IptvImportResult.isImported'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|IptvImporter|constructor",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Unused public constructor 'IptvImporter.IptvImporter'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|deleteGuide|method",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Unused public method 'IptvImporter.deleteGuide'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|importGuideFromUrl|method",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Unused public method 'IptvImporter.importGuideFromUrl'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|importGuideText|method",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Unused public method 'IptvImporter.importGuideText'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|importPlaylistFromUrl|method",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Unused public method 'IptvImporter.importPlaylistFromUrl'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|importPlaylistText|method",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Unused public method 'IptvImporter.importPlaylistText'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|syncExpiredGuides|method",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Unused public method 'IptvImporter.syncExpiredGuides'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|syncExpired|method",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Unused public method 'IptvImporter.syncExpired'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\library\\iptv_library.dart|IptvLibrary|applyMappings|method",
+      "file": "packages\\live_iptv\\lib\\src\\library\\iptv_library.dart",
+      "message": "Unused public method 'IptvLibrary.applyMappings'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\library\\iptv_library.dart|IptvLibrary|programmesAt|method",
+      "file": "packages\\live_iptv\\lib\\src\\library\\iptv_library.dart",
+      "message": "Unused public method 'IptvLibrary.programmesAt'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\library\\iptv_library.dart|IptvLibrary|reorder|method",
+      "file": "packages\\live_iptv\\lib\\src\\library\\iptv_library.dart",
+      "message": "Unused public method 'IptvLibrary.reorder'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\library\\iptv_library.dart|IptvLibrary|updateGuideSource|method",
+      "file": "packages\\live_iptv\\lib\\src\\library\\iptv_library.dart",
+      "message": "Unused public method 'IptvLibrary.updateGuideSource'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\library\\iptv_store.dart|InMemoryIptvStore|InMemoryIptvStore|constructor",
+      "file": "packages\\live_iptv\\lib\\src\\library\\iptv_store.dart",
+      "message": "Unused public constructor 'InMemoryIptvStore.InMemoryIptvStore'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\model\\guide_models.dart|EpgChannelKeyX|primaryName|getter",
+      "file": "packages\\live_iptv\\lib\\src\\model\\guide_models.dart",
+      "message": "Unused public getter 'EpgChannelKeyX.primaryName'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\playlist\\playlist_parse_result.dart|PlaylistParseResult|hasIssues|getter",
+      "file": "packages\\live_iptv\\lib\\src\\playlist\\playlist_parse_result.dart",
+      "message": "Unused public getter 'PlaylistParseResult.hasIssues'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\playlist\\playlist_parser.dart||parseM3u|function",
+      "file": "packages\\live_iptv\\lib\\src\\playlist\\playlist_parser.dart",
+      "message": "Unused public function 'parseM3u'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\playlist\\playlist_parser.dart||parseTxt|function",
+      "file": "packages\\live_iptv\\lib\\src\\playlist\\playlist_parser.dart",
+      "message": "Unused public function 'parseTxt'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_library|<root>/packages\\live_library\\lib\\src\\repository\\follow_repository.dart|FollowRepository|createGroup|method",
+      "file": "packages\\live_library\\lib\\src\\repository\\follow_repository.dart",
+      "message": "Unused public method 'FollowRepository.createGroup'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_library|<root>/packages\\live_library\\lib\\src\\repository\\follow_repository.dart|FollowRepository|deleteGroup|method",
+      "file": "packages\\live_library\\lib\\src\\repository\\follow_repository.dart",
+      "message": "Unused public method 'FollowRepository.deleteGroup'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_library|<root>/packages\\live_library\\lib\\src\\repository\\follow_repository.dart|FollowRepository|isLoaded|getter",
+      "file": "packages\\live_library\\lib\\src\\repository\\follow_repository.dart",
+      "message": "Unused public getter 'FollowRepository.isLoaded'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_library|<root>/packages\\live_library\\lib\\src\\repository\\follow_repository.dart|FollowRepository|renameGroup|method",
+      "file": "packages\\live_library\\lib\\src\\repository\\follow_repository.dart",
+      "message": "Unused public method 'FollowRepository.renameGroup'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_library|<root>/packages\\live_library\\lib\\src\\repository\\follow_repository.dart|FollowRepository|reorder|method",
+      "file": "packages\\live_library\\lib\\src\\repository\\follow_repository.dart",
+      "message": "Unused public method 'FollowRepository.reorder'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_library|<root>/packages\\live_library\\lib\\src\\repository\\follow_repository.dart|FollowRepository|setGroups|method",
+      "file": "packages\\live_library\\lib\\src\\repository\\follow_repository.dart",
+      "message": "Unused public method 'FollowRepository.setGroups'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_library|<root>/packages\\live_library\\lib\\src\\repository\\follow_repository.dart|FollowRepository|setNote|method",
+      "file": "packages\\live_library\\lib\\src\\repository\\follow_repository.dart",
+      "message": "Unused public method 'FollowRepository.setNote'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_library|<root>/packages\\live_library\\lib\\src\\repository\\history_repository.dart|HistoryRepository|records|getter",
+      "file": "packages\\live_library\\lib\\src\\repository\\history_repository.dart",
+      "message": "Unused public getter 'HistoryRepository.records'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_log|<root>/packages\\live_log\\lib\\src\\filter.dart|LevelFilterSink|LevelFilterSink|constructor",
+      "file": "packages\\live_log\\lib\\src\\filter.dart",
+      "message": "Unused public constructor 'LevelFilterSink.LevelFilterSink'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_log|<root>/packages\\live_log\\lib\\src\\level.dart|LogLevel|isRecordLevel|getter",
+      "file": "packages\\live_log\\lib\\src\\level.dart",
+      "message": "Unused public getter 'LogLevel.isRecordLevel'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_log|<root>/packages\\live_log\\lib\\src\\sinks\\file_sink.dart|FileSink|isDegraded|getter",
+      "file": "packages\\live_log\\lib\\src\\sinks\\file_sink.dart",
+      "message": "Unused public getter 'FileSink.isDegraded'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_log|<root>/packages\\live_log\\lib\\src\\sinks\\memory_sink.dart|MemorySink|exportText|method",
+      "file": "packages\\live_log\\lib\\src\\sinks\\memory_sink.dart",
+      "message": "Unused public method 'MemorySink.exportText'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_log|<root>/packages\\live_log\\lib\\src\\sinks\\memory_sink.dart|MemorySink|records|getter",
+      "file": "packages\\live_log\\lib\\src\\sinks\\memory_sink.dart",
+      "message": "Unused public getter 'MemorySink.records'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\calls.dart|LiveHttpCalls|getJson|method",
+      "file": "packages\\live_net\\lib\\src\\calls.dart",
+      "message": "Unused public method 'LiveHttpCalls.getJson'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\calls.dart|LiveHttpCalls|getText|method",
+      "file": "packages\\live_net\\lib\\src\\calls.dart",
+      "message": "Unused public method 'LiveHttpCalls.getText'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\dio_factory.dart|DioFactory|clearCookies|method",
+      "file": "packages\\live_net\\lib\\src\\dio_factory.dart",
+      "message": "Unused public method 'DioFactory.clearCookies'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\dio_factory.dart|DioFactory|purgeCache|method",
+      "file": "packages\\live_net\\lib\\src\\dio_factory.dart",
+      "message": "Unused public method 'DioFactory.purgeCache'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\dio_http.dart|RequestExtras|requestId|field",
+      "file": "packages\\live_net\\lib\\src\\dio_http.dart",
+      "message": "Unused public field 'RequestExtras.requestId'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\storage\\cache_store_factory.dart|CacheStoreFactory|tiered|method",
+      "file": "packages\\live_net\\lib\\src\\storage\\cache_store_factory.dart",
+      "message": "Unused public method 'CacheStoreFactory.tiered'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\contracts\\file_access_service.dart|FileAccessService|pickDirectory|method",
+      "file": "packages\\live_platform\\lib\\src\\contracts\\file_access_service.dart",
+      "message": "Unused public method 'FileAccessService.pickDirectory'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\contracts\\file_access_service.dart|FileAccessService|pickOpenFile|method",
+      "file": "packages\\live_platform\\lib\\src\\contracts\\file_access_service.dart",
+      "message": "Unused public method 'FileAccessService.pickOpenFile'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\contracts\\file_access_service.dart|FileAccessService|pickSaveLocation|method",
+      "file": "packages\\live_platform\\lib\\src\\contracts\\file_access_service.dart",
+      "message": "Unused public method 'FileAccessService.pickSaveLocation'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\contracts\\file_access_service.dart|SelectedFile|SelectedFile|constructor",
+      "file": "packages\\live_platform\\lib\\src\\contracts\\file_access_service.dart",
+      "message": "Unused public constructor 'SelectedFile.SelectedFile'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\contracts\\file_access_service.dart||FileAccessService|classDecl",
+      "file": "packages\\live_platform\\lib\\src\\contracts\\file_access_service.dart",
+      "message": "Unused public classDecl 'FileAccessService'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\contracts\\platform_exception.dart|StorageCapacityException|StorageCapacityException|constructor",
+      "file": "packages\\live_platform\\lib\\src\\contracts\\platform_exception.dart",
+      "message": "Unused public constructor 'StorageCapacityException.StorageCapacityException'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\contracts\\platform_exception.dart|UnsupportedCapabilityException|UnsupportedCapabilityException|constructor",
+      "file": "packages\\live_platform\\lib\\src\\contracts\\platform_exception.dart",
+      "message": "Unused public constructor 'UnsupportedCapabilityException.UnsupportedCapabilityException'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\contracts\\platform_exception.dart|UserCancelledException|UserCancelledException|constructor",
+      "file": "packages\\live_platform\\lib\\src\\contracts\\platform_exception.dart",
+      "message": "Unused public constructor 'UserCancelledException.UserCancelledException'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\contracts\\platform_exception.dart||StorageCapacityException|classDecl",
+      "file": "packages\\live_platform\\lib\\src\\contracts\\platform_exception.dart",
+      "message": "Unused public classDecl 'StorageCapacityException'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\contracts\\platform_exception.dart||UnsupportedCapabilityException|classDecl",
+      "file": "packages\\live_platform\\lib\\src\\contracts\\platform_exception.dart",
+      "message": "Unused public classDecl 'UnsupportedCapabilityException'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\contracts\\platform_exception.dart||UserCancelledException|classDecl",
+      "file": "packages\\live_platform\\lib\\src\\contracts\\platform_exception.dart",
+      "message": "Unused public classDecl 'UserCancelledException'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\contracts\\storage_manager.dart|StorageManager|revalidate|method",
+      "file": "packages\\live_platform\\lib\\src\\contracts\\storage_manager.dart",
+      "message": "Unused public method 'StorageManager.revalidate'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\lifecycle\\shutdown_coordinator.dart|ShutdownCoordinator|register|method",
+      "file": "packages\\live_platform\\lib\\src\\lifecycle\\shutdown_coordinator.dart",
+      "message": "Unused public method 'ShutdownCoordinator.register'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\lifecycle\\shutdown_coordinator.dart|ShutdownCoordinator|shutdown|method",
+      "file": "packages\\live_platform\\lib\\src\\lifecycle\\shutdown_coordinator.dart",
+      "message": "Unused public method 'ShutdownCoordinator.shutdown'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\lifecycle\\shutdown_coordinator.dart|ShutdownResult|ShutdownResult|constructor",
+      "file": "packages\\live_platform\\lib\\src\\lifecycle\\shutdown_coordinator.dart",
+      "message": "Unused public constructor 'ShutdownResult.ShutdownResult'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\lifecycle\\shutdown_coordinator.dart||ShutdownCoordinator|classDecl",
+      "file": "packages\\live_platform\\lib\\src\\lifecycle\\shutdown_coordinator.dart",
+      "message": "Unused public classDecl 'ShutdownCoordinator'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\runtime\\platform_runtime_info.dart|PlatformRuntimeInfo|isPackaged|field",
+      "file": "packages\\live_platform\\lib\\src\\runtime\\platform_runtime_info.dart",
+      "message": "Unused public field 'PlatformRuntimeInfo.isPackaged'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\runtime\\platform_runtime_info.dart|PlatformRuntimeInfo|osVersion|field",
+      "file": "packages\\live_platform\\lib\\src\\runtime\\platform_runtime_info.dart",
+      "message": "Unused public field 'PlatformRuntimeInfo.osVersion'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\storage\\atomic_file_writer.dart|AtomicFileWriter|writeString|method",
+      "file": "packages\\live_platform\\lib\\src\\storage\\atomic_file_writer.dart",
+      "message": "Unused public method 'AtomicFileWriter.writeString'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_playback|<root>/packages\\live_playback\\lib\\src\\coordinator\\playback_coordinator.dart|PlaybackCoordinator|PlaybackCoordinator|constructor",
+      "file": "packages\\live_playback\\lib\\src\\coordinator\\playback_coordinator.dart",
+      "message": "Unused public constructor 'PlaybackCoordinator.PlaybackCoordinator'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_playback|<root>/packages\\live_playback\\lib\\src\\coordinator\\playback_coordinator.dart|PlaybackCoordinator|audioOwnerId|getter",
+      "file": "packages\\live_playback\\lib\\src\\coordinator\\playback_coordinator.dart",
+      "message": "Unused public getter 'PlaybackCoordinator.audioOwnerId'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_playback|<root>/packages\\live_playback\\lib\\src\\coordinator\\playback_coordinator.dart|PlaybackCoordinator|audioOwner|getter",
+      "file": "packages\\live_playback\\lib\\src\\coordinator\\playback_coordinator.dart",
+      "message": "Unused public getter 'PlaybackCoordinator.audioOwner'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_playback|<root>/packages\\live_playback\\lib\\src\\coordinator\\playback_coordinator.dart|PlaybackCoordinator|disposeAll|method",
+      "file": "packages\\live_playback\\lib\\src\\coordinator\\playback_coordinator.dart",
+      "message": "Unused public method 'PlaybackCoordinator.disposeAll'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_playback|<root>/packages\\live_playback\\lib\\src\\coordinator\\playback_coordinator.dart|PlaybackCoordinator|sessions|getter",
+      "file": "packages\\live_playback\\lib\\src\\coordinator\\playback_coordinator.dart",
+      "message": "Unused public getter 'PlaybackCoordinator.sessions'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_playback|<root>/packages\\live_playback\\lib\\src\\engine\\playback_engine.dart|EngineProgress|bufferAhead|field",
+      "file": "packages\\live_playback\\lib\\src\\engine\\playback_engine.dart",
+      "message": "Unused public field 'EngineProgress.bufferAhead'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_playback|<root>/packages\\live_playback\\lib\\src\\model\\playback_failure.dart|PlaybackFailureKind|shouldAdvanceLadder|getter",
+      "file": "packages\\live_playback\\lib\\src\\model\\playback_failure.dart",
+      "message": "Unused public getter 'PlaybackFailureKind.shouldAdvanceLadder'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_preferences|<root>/packages\\live_preferences\\lib\\src\\service\\preferences_service.dart|PreferencesService|updateTv|method",
+      "file": "packages\\live_preferences\\lib\\src\\service\\preferences_service.dart",
+      "message": "Unused public method 'PreferencesService.updateTv'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_preferences|<root>/packages\\live_preferences\\lib\\src\\service\\preferences_service.dart|PreferencesService|updateWindow|method",
+      "file": "packages\\live_preferences\\lib\\src\\service\\preferences_service.dart",
+      "message": "Unused public method 'PreferencesService.updateWindow'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\common\\headers\\site_headers.dart|SiteHeaders|withExtra|method",
+      "file": "packages\\live_sites\\lib\\src\\common\\headers\\site_headers.dart",
+      "message": "Unused public method 'SiteHeaders.withExtra'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\common\\normalization\\site_counts.dart|SiteCounts|decimal|method",
+      "file": "packages\\live_sites\\lib\\src\\common\\normalization\\site_counts.dart",
+      "message": "Unused public method 'SiteCounts.decimal'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\contracts\\directory_capabilities.dart|LiveAreaCatalog|getAreas|method",
+      "file": "packages\\live_sites\\lib\\src\\contracts\\directory_capabilities.dart",
+      "message": "Unused public method 'LiveAreaCatalog.getAreas'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\contracts\\directory_query.dart|DirectoryQueryPage|describe|getter",
+      "file": "packages\\live_sites\\lib\\src\\contracts\\directory_query.dart",
+      "message": "Unused public getter 'DirectoryQueryPage.describe'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\contracts\\directory_query.dart|DirectoryQueryPage|withPage|method",
+      "file": "packages\\live_sites\\lib\\src\\contracts\\directory_query.dart",
+      "message": "Unused public method 'DirectoryQueryPage.withPage'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\contracts\\live_site.dart|LiveSiteDirectory|browse|method",
+      "file": "packages\\live_sites\\lib\\src\\contracts\\live_site.dart",
+      "message": "Unused public method 'LiveSiteDirectory.browse'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\contracts\\live_site.dart||LiveSiteDirectory|extensionDecl",
+      "file": "packages\\live_sites\\lib\\src\\contracts\\live_site.dart",
+      "message": "Unused public extensionDecl 'LiveSiteDirectory'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\models\\audience.dart|AudienceMetric|AudienceMetric|constructor",
+      "file": "packages\\live_sites\\lib\\src\\models\\audience.dart",
+      "message": "Unused public constructor 'AudienceMetric.AudienceMetric'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\models\\live_play_url_resolution.dart|LivePlayUrlResolutionX|degraded|getter",
+      "file": "packages\\live_sites\\lib\\src\\models\\live_play_url_resolution.dart",
+      "message": "Unused public getter 'LivePlayUrlResolutionX.degraded'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\models\\live_play_url_resolution.dart|LivePlayUrlResolutionX|isPlayable|getter",
+      "file": "packages\\live_sites\\lib\\src\\models\\live_play_url_resolution.dart",
+      "message": "Unused public getter 'LivePlayUrlResolutionX.isPlayable'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\models\\live_play_url_resolution.dart||LivePlayUrlResolutionX|extensionDecl",
+      "file": "packages\\live_sites\\lib\\src\\models\\live_play_url_resolution.dart",
+      "message": "Unused public extensionDecl 'LivePlayUrlResolutionX'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\acfun\\parsers\\acfun_parser.dart|AcfunParser|isAuthorId|method",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\acfun\\parsers\\acfun_parser.dart",
+      "message": "Unused public method 'AcfunParser.isAuthorId'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\bilibili\\danmaku\\bilibili_session.dart|BilibiliDanmakuSession|isAuthed|getter",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\bilibili\\danmaku\\bilibili_session.dart",
+      "message": "Unused public getter 'BilibiliDanmakuSession.isAuthed'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\bilibili\\parsers\\bilibili_parser.dart|BilibiliParser|danmakuInfo|method",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\bilibili\\parsers\\bilibili_parser.dart",
+      "message": "Unused public method 'BilibiliParser.danmakuInfo'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\cc\\parsers\\cc_parser.dart|CcParser|leaseExpiry|method",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\cc\\parsers\\cc_parser.dart",
+      "message": "Unused public method 'CcParser.leaseExpiry'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\chzzk\\parsers\\chzzk_parser.dart|ChzzkParser|categoryTypeName|method",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\chzzk\\parsers\\chzzk_parser.dart",
+      "message": "Unused public method 'ChzzkParser.categoryTypeName'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\douyin\\parsers\\douyin_parser.dart|DouyinParser|reflow|method",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\douyin\\parsers\\douyin_parser.dart",
+      "message": "Unused public method 'DouyinParser.reflow'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\iptv\\iptv_site.dart|IptvChannel|epgChannelId|field",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\iptv\\iptv_site.dart",
+      "message": "Unused public field 'IptvChannel.epgChannelId'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\kuaishou\\parsers\\kuaishou_parser.dart|KuaishouParser|roomCard|method",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\kuaishou\\parsers\\kuaishou_parser.dart",
+      "message": "Unused public method 'KuaishouParser.roomCard'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\missevan\\parsers\\missevan_parser.dart|MissevanParser|areaNamespaceName|method",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\missevan\\parsers\\missevan_parser.dart",
+      "message": "Unused public method 'MissevanParser.areaNamespaceName'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\picarto\\parsers\\picarto_parser.dart|PicartoParser|publicApiHost|field",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\picarto\\parsers\\picarto_parser.dart",
+      "message": "Unused public field 'PicartoParser.publicApiHost'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\showroom\\danmaku\\showroom_danmaku.dart|ShowroomDanmakuProtocol|ack|field",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\showroom\\danmaku\\showroom_danmaku.dart",
+      "message": "Unused public field 'ShowroomDanmakuProtocol.ack'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\soop\\parsers\\soop_parser.dart|SoopParser|stationHost|field",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\soop\\parsers\\soop_parser.dart",
+      "message": "Unused public field 'SoopParser.stationHost'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\tiktok\\parsers\\tiktok_parser.dart|TikTokParser|webcastOrigin|field",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\tiktok\\parsers\\tiktok_parser.dart",
+      "message": "Unused public field 'TikTokParser.webcastOrigin'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\twitcasting\\danmaku\\twitcasting_danmaku.dart|TwitcastingDanmakuProtocol|keepAliveInterval|field",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\twitcasting\\danmaku\\twitcasting_danmaku.dart",
+      "message": "Unused public field 'TwitcastingDanmakuProtocol.keepAliveInterval'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\twitcasting\\danmaku\\twitcasting_danmaku.dart|TwitcastingDanmakuProtocol|silenceTimeout|field",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\twitcasting\\danmaku\\twitcasting_danmaku.dart",
+      "message": "Unused public field 'TwitcastingDanmakuProtocol.silenceTimeout'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\yy\\parsers\\yy_parser.dart|YyParser|moduleOf|method",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\yy\\parsers\\yy_parser.dart",
+      "message": "Unused public method 'YyParser.moduleOf'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\registry\\site_ids.dart|SiteIds|caseInsensitiveRoomIds|field",
+      "file": "packages\\live_sites\\lib\\src\\registry\\site_ids.dart",
+      "message": "Unused public field 'SiteIds.caseInsensitiveRoomIds'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\registry\\site_ids.dart|SiteIds|supported|field",
+      "file": "packages\\live_sites\\lib\\src\\registry\\site_ids.dart",
+      "message": "Unused public field 'SiteIds.supported'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\registry\\site_registry.dart|SiteRegistry|metadataList|getter",
+      "file": "packages\\live_sites\\lib\\src\\registry\\site_registry.dart",
+      "message": "Unused public getter 'SiteRegistry.metadataList'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\registry\\site_registry.dart|SiteRegistry|require|method",
+      "file": "packages\\live_sites\\lib\\src\\registry\\site_registry.dart",
+      "message": "Unused public method 'SiteRegistry.require'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\registry\\site_registry.dart|SiteRegistry|searchable|getter",
+      "file": "packages\\live_sites\\lib\\src\\registry\\site_registry.dart",
+      "message": "Unused public getter 'SiteRegistry.searchable'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_storage|<root>/packages\\live_storage\\lib\\src\\contracts\\storage_exception.dart|StorageCancelledException|StorageCancelledException|constructor",
+      "file": "packages\\live_storage\\lib\\src\\contracts\\storage_exception.dart",
+      "message": "Unused public constructor 'StorageCancelledException.StorageCancelledException'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_storage|<root>/packages\\live_storage\\lib\\src\\contracts\\storage_exception.dart|StorageConflictException|StorageConflictException|constructor",
+      "file": "packages\\live_storage\\lib\\src\\contracts\\storage_exception.dart",
+      "message": "Unused public constructor 'StorageConflictException.StorageConflictException'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_storage|<root>/packages\\live_storage\\lib\\src\\contracts\\storage_exception.dart|StorageUnknownException|StorageUnknownException|constructor",
+      "file": "packages\\live_storage\\lib\\src\\contracts\\storage_exception.dart",
+      "message": "Unused public constructor 'StorageUnknownException.StorageUnknownException'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\backgrounds\\background_presets.dart|LiveBackgroundPresets|playerScrim|method",
+      "file": "packages\\live_uikit\\lib\\src\\backgrounds\\background_presets.dart",
+      "message": "Unused public method 'LiveBackgroundPresets.playerScrim'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\backgrounds\\live_background.dart|LiveBackground|rounded|method",
+      "file": "packages\\live_uikit\\lib\\src\\backgrounds\\live_background.dart",
+      "message": "Unused public method 'LiveBackground.rounded'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\core\\ui_component_registry.dart|LiveComponentRegistry|registered|getter",
+      "file": "packages\\live_uikit\\lib\\src\\core\\ui_component_registry.dart",
+      "message": "Unused public getter 'LiveComponentRegistry.registered'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\core\\ui_component_registry.dart|LiveComponentRegistry|withLanguage|method",
+      "file": "packages\\live_uikit\\lib\\src\\core\\ui_component_registry.dart",
+      "message": "Unused public method 'LiveComponentRegistry.withLanguage'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\core\\ui_environment.dart|LiveUiEnvironment|withInputModes|method",
+      "file": "packages\\live_uikit\\lib\\src\\core\\ui_environment.dart",
+      "message": "Unused public method 'LiveUiEnvironment.withInputModes'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\focus\\live_focus_navigation.dart|LiveFocusNavigation|isFocused|method",
+      "file": "packages\\live_uikit\\lib\\src\\focus\\live_focus_navigation.dart",
+      "message": "Unused public method 'LiveFocusNavigation.isFocused'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\focus\\live_focus_navigation.dart|LiveFocusNavigation|move|method",
+      "file": "packages\\live_uikit\\lib\\src\\focus\\live_focus_navigation.dart",
+      "message": "Unused public method 'LiveFocusNavigation.move'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\focus\\live_focus_scope.dart|LiveFocusScopeController|rememberedNode|getter",
+      "file": "packages\\live_uikit\\lib\\src\\focus\\live_focus_scope.dart",
+      "message": "Unused public getter 'LiveFocusScopeController.rememberedNode'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\input\\live_remote_actions.dart|LiveSeekIntent|forward|getter",
+      "file": "packages\\live_uikit\\lib\\src\\input\\live_remote_actions.dart",
+      "message": "Unused public getter 'LiveSeekIntent.forward'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\layouts\\live_layout_builder.dart|LiveAdaptiveLayout|LiveAdaptiveLayout|constructor",
+      "file": "packages\\live_uikit\\lib\\src\\layouts\\live_layout_builder.dart",
+      "message": "Unused public constructor 'LiveAdaptiveLayout.LiveAdaptiveLayout'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\layouts\\live_layout_builder.dart|LiveSizeClassBuilder|LiveSizeClassBuilder|constructor",
+      "file": "packages\\live_uikit\\lib\\src\\layouts\\live_layout_builder.dart",
+      "message": "Unused public constructor 'LiveSizeClassBuilder.LiveSizeClassBuilder'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\layouts\\live_tv_collections.dart|LiveTvSection|LiveTvSection|constructor",
+      "file": "packages\\live_uikit\\lib\\src\\layouts\\live_tv_collections.dart",
+      "message": "Unused public constructor 'LiveTvSection.LiveTvSection'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\layouts\\live_tv_scaffold.dart|LiveFocusReveal|margin|field",
+      "file": "packages\\live_uikit\\lib\\src\\layouts\\live_tv_scaffold.dart",
+      "message": "Unused public field 'LiveFocusReveal.margin'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\layouts\\live_tv_scaffold.dart|LiveTvScaffold|LiveTvScaffold|constructor",
+      "file": "packages\\live_uikit\\lib\\src\\layouts\\live_tv_scaffold.dart",
+      "message": "Unused public constructor 'LiveTvScaffold.LiveTvScaffold'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\theme\\live_theme.dart|LiveTheme|usedFallback|getter",
+      "file": "packages\\live_uikit\\lib\\src\\theme\\live_theme.dart",
+      "message": "Unused public getter 'LiveTheme.usedFallback'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\theme\\live_theme_parts.dart|LiveDesignLanguageContext|isDark|getter",
+      "file": "packages\\live_uikit\\lib\\src\\theme\\live_theme_parts.dart",
+      "message": "Unused public getter 'LiveDesignLanguageContext.isDark'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\theme\\theme_resolver.dart|LiveThemeResolver|resolveFallback|method",
+      "file": "packages\\live_uikit\\lib\\src\\theme\\theme_resolver.dart",
+      "message": "Unused public method 'LiveThemeResolver.resolveFallback'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\tokens\\breakpoints.dart|LiveWindowSizeClass|hasRoomForRail|getter",
+      "file": "packages\\live_uikit\\lib\\src\\tokens\\breakpoints.dart",
+      "message": "Unused public getter 'LiveWindowSizeClass.hasRoomForRail'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\tokens\\motion.dart|LiveMotion|accelerate|field",
+      "file": "packages\\live_uikit\\lib\\src\\tokens\\motion.dart",
+      "message": "Unused public field 'LiveMotion.accelerate'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\tokens\\motion.dart|LiveMotion|decelerate|field",
+      "file": "packages\\live_uikit\\lib\\src\\tokens\\motion.dart",
+      "message": "Unused public field 'LiveMotion.decelerate'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\tokens\\motion.dart|LiveMotion|emphasized|field",
+      "file": "packages\\live_uikit\\lib\\src\\tokens\\motion.dart",
+      "message": "Unused public field 'LiveMotion.emphasized'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\tokens\\sizing.dart|LiveSizing|coverAspectRatio|field",
+      "file": "packages\\live_uikit\\lib\\src\\tokens\\sizing.dart",
+      "message": "Unused public field 'LiveSizing.coverAspectRatio'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\tokens\\sizing.dart|LiveSizing|iconXl|field",
+      "file": "packages\\live_uikit\\lib\\src\\tokens\\sizing.dart",
+      "message": "Unused public field 'LiveSizing.iconXl'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\tokens\\sizing.dart|LiveSizing|iconXs|field",
+      "file": "packages\\live_uikit\\lib\\src\\tokens\\sizing.dart",
+      "message": "Unused public field 'LiveSizing.iconXs'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\tokens\\typography.dart|LiveTypography|colored|method",
+      "file": "packages\\live_uikit\\lib\\src\\tokens\\typography.dart",
+      "message": "Unused public method 'LiveTypography.colored'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|shouldHideJumpButtons|method",
+      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "message": "Unused public method 'PaginationViewConfig.shouldHideJumpButtons'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\math\\page_math.dart|PageMath|isValidPage|method",
+      "file": "packages\\pagination_core\\lib\\src\\math\\page_math.dart",
+      "message": "Unused public method 'PageMath.isValidPage'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\state\\infinite_state.dart|InfiniteState|isUnloaded|getter",
+      "file": "packages\\pagination_core\\lib\\src\\state\\infinite_state.dart",
+      "message": "Unused public getter 'InfiniteState.isUnloaded'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\state\\paged_state.dart|PagedState|isUnloaded|getter",
+      "file": "packages\\pagination_core\\lib\\src\\state\\paged_state.dart",
+      "message": "Unused public getter 'PagedState.isUnloaded'."
+    },
+    {
+      "ruleId": "unused_element",
+      "stableId": "pure_live|<root>/apps\\pure_live\\lib\\src\\services.dart|PureLiveServices|shutdown|method",
+      "file": "apps\\pure_live\\lib\\src\\services.dart",
+      "message": "Unused public method 'PureLiveServices.shutdown'."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_log|<root>/packages\\live_log\\example\\live_log_demo.dart",
+      "file": "packages\\live_log\\example\\live_log_demo.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_net|<root>/packages\\live_net\\lib\\src\\storage\\cache_store_factory.dart",
+      "file": "packages\\live_net\\lib\\src\\storage\\cache_store_factory.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_playback|<root>/packages\\live_playback\\lib\\live_playback.dart",
+      "file": "packages\\live_playback\\lib\\live_playback.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\acfun.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\acfun.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\baidulive.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\baidulive.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\bigo.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\bigo.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\bilibili.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\bilibili.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\cc.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\cc.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\chzzk.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\chzzk.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\douyin.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\douyin.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\douyu.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\douyu.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\fc2live.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\fc2live.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\huya.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\huya.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\inke.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\inke.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\jdlive.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\jdlive.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\kick.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\kick.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\kilakila.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\kilakila.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\kuaishou.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\kuaishou.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\kugoulive.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\kugoulive.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\liveme.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\liveme.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\looklive.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\looklive.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\missevan.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\missevan.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\niconico.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\niconico.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\pandalive.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\pandalive.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\picarto.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\picarto.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\showroom.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\showroom.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\sixroom.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\sixroom.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\soop.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\soop.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\steambroadcast.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\steambroadcast.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\tiktok.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\tiktok.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\twitcasting.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\twitcasting.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\twitch.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\twitch.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\weibo.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\weibo.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\xiaohongshu.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\xiaohongshu.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\youtube.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\youtube.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\yy.dart",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\yy.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_file",
+      "stableId": "file|pagination_core|<root>/packages\\pagination_core\\example\\pagination_demo.dart",
+      "file": "packages\\pagination_core\\example\\pagination_demo.dart",
+      "message": "File is never imported, parted, or exported."
+    },
+    {
+      "ruleId": "unused_parameter",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\dio_http.dart|DioLiveHttp|_retryEvaluator|method|param:attempt",
+      "file": "packages\\live_net\\lib\\src\\dio_http.dart",
+      "message": "Parameter 'attempt' of 'DioLiveHttp._retryEvaluator' is never used."
+    },
+    {
+      "ruleId": "unused_parameter",
+      "stableId": "live_playback|<root>/packages\\live_playback\\lib\\src\\coordinator\\playback_coordinator.dart|PlaybackCoordinator|_onSessionState|method|param:session",
+      "file": "packages\\live_playback\\lib\\src\\coordinator\\playback_coordinator.dart",
+      "message": "Parameter 'session' of 'PlaybackCoordinator._onSessionState' is never used."
+    },
+    {
+      "ruleId": "unused_parameter",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\baidulive\\parsers\\baidulive_parser.dart|BaiduLiveParser|playLines|method|param:roomId",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\baidulive\\parsers\\baidulive_parser.dart",
+      "message": "Parameter 'roomId' of 'BaiduLiveParser.playLines' is never used."
+    },
+    {
+      "ruleId": "unused_parameter",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\bigo\\parsers\\bigo_parser.dart|BigoParser|jsonp|method|param:callback",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\bigo\\parsers\\bigo_parser.dart",
+      "message": "Parameter 'callback' of 'BigoParser.jsonp' is never used."
+    },
+    {
+      "ruleId": "unused_parameter",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\chzzk\\danmaku\\chzzk_session.dart|ChzzkDanmakuSession|_replace|method|param:error",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\chzzk\\danmaku\\chzzk_session.dart",
+      "message": "Parameter 'error' of 'ChzzkDanmakuSession._replace' is never used."
+    },
+    {
+      "ruleId": "unused_parameter",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\chzzk\\danmaku\\chzzk_session.dart|ChzzkDanmakuSession|_replace|method|param:stack",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\chzzk\\danmaku\\chzzk_session.dart",
+      "message": "Parameter 'stack' of 'ChzzkDanmakuSession._replace' is never used."
+    },
+    {
+      "ruleId": "unused_parameter",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\missevan\\parsers\\missevan_parser.dart|MissevanParser|playLines|method|param:roomId",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\missevan\\parsers\\missevan_parser.dart",
+      "message": "Parameter 'roomId' of 'MissevanParser.playLines' is never used."
+    },
+    {
+      "ruleId": "unused_parameter",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\sixroom\\sixroom_site.dart|SixRoomSite|_subarea|method|param:subarea",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\sixroom\\sixroom_site.dart",
+      "message": "Parameter 'subarea' of 'SixRoomSite._subarea' is never used."
+    },
+    {
+      "ruleId": "unused_parameter",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\soop\\parsers\\soop_parser.dart|SoopParser|_cover|method|param:now",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\soop\\parsers\\soop_parser.dart",
+      "message": "Parameter 'now' of 'SoopParser._cover' is never used."
+    },
+    {
+      "ruleId": "unused_parameter",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\steambroadcast\\parsers\\steambroadcast_parser.dart|SteamBroadcastParser|_thumbnail|method|param:game",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\steambroadcast\\parsers\\steambroadcast_parser.dart",
+      "message": "Parameter 'game' of 'SteamBroadcastParser._thumbnail' is never used."
+    },
+    {
+      "ruleId": "unused_parameter",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\steambroadcast\\parsers\\steambroadcast_parser.dart|SteamBroadcastParser|info|method|param:steamId",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\steambroadcast\\parsers\\steambroadcast_parser.dart",
+      "message": "Parameter 'steamId' of 'SteamBroadcastParser.info' is never used."
+    },
+    {
+      "ruleId": "unused_parameter",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\steambroadcast\\parsers\\steambroadcast_parser.dart|SteamBroadcastParser|profile|method|param:steamId",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\steambroadcast\\parsers\\steambroadcast_parser.dart",
+      "message": "Parameter 'steamId' of 'SteamBroadcastParser.profile' is never used."
+    },
+    {
+      "ruleId": "unused_parameter",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\backgrounds\\live_background.dart|LiveBackground|_image|method|param:context",
+      "file": "packages\\live_uikit\\lib\\src\\backgrounds\\live_background.dart",
+      "message": "Parameter 'context' of 'LiveBackground._image' is never used."
+    },
+    {
+      "ruleId": "unused_parameter",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\components\\dialogs\\live_dialog.dart|LiveDialog|confirm|method|param:confirmAccessibilityLabel",
+      "file": "packages\\live_uikit\\lib\\src\\components\\dialogs\\live_dialog.dart",
+      "message": "Parameter 'confirmAccessibilityLabel' of 'LiveDialog.confirm' is never used."
+    },
+    {
+      "ruleId": "unused_parameter",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\theme\\live_theme_data.dart|LiveThemeData|_inputBorder|method|param:colors",
+      "file": "packages\\live_uikit\\lib\\src\\theme\\live_theme_data.dart",
+      "message": "Parameter 'colors' of 'LiveThemeData._inputBorder' is never used."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_interaction|<root>/packages\\live_interaction\\lib\\src\\pipeline\\message_gate.dart|MessageGate|MessageGate|constructor|optparam:now",
+      "file": "packages\\live_interaction\\lib\\src\\pipeline\\message_gate.dart",
+      "message": "Optional parameter 'now' of 'MessageGate()' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_interaction|<root>/packages\\live_interaction\\lib\\src\\pipeline\\message_gate.dart|MessageGate|openReconnectWindow|method|optparam:duration",
+      "file": "packages\\live_interaction\\lib\\src\\pipeline\\message_gate.dart",
+      "message": "Optional parameter 'duration' of 'MessageGate.openReconnectWindow' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_interaction|<root>/packages\\live_interaction\\lib\\src\\session\\interaction_session.dart|InteractionSession|InteractionSession|constructor|optparam:backoff",
+      "file": "packages\\live_interaction\\lib\\src\\session\\interaction_session.dart",
+      "message": "Optional parameter 'backoff' of 'InteractionSession()' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_interaction|<root>/packages\\live_interaction\\lib\\src\\session\\interaction_session.dart|InteractionSession|InteractionSession|constructor|optparam:gate",
+      "file": "packages\\live_interaction\\lib\\src\\session\\interaction_session.dart",
+      "message": "Optional parameter 'gate' of 'InteractionSession()' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\catchup\\catchup.dart||buildIptvCatchupUrl|function|optparam:catchupId",
+      "file": "packages\\live_iptv\\lib\\src\\catchup\\catchup.dart",
+      "message": "Optional parameter 'catchupId' of 'buildIptvCatchupUrl' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\catchup\\catchup.dart||buildIptvCatchupUrl|function|optparam:correctionHours",
+      "file": "packages\\live_iptv\\lib\\src\\catchup\\catchup.dart",
+      "message": "Optional parameter 'correctionHours' of 'buildIptvCatchupUrl' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\catchup\\catchup.dart||buildIptvCatchupUrl|function|optparam:mode",
+      "file": "packages\\live_iptv\\lib\\src\\catchup\\catchup.dart",
+      "message": "Optional parameter 'mode' of 'buildIptvCatchupUrl' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\catchup\\catchup.dart||buildIptvCatchupUrl|function|optparam:now",
+      "file": "packages\\live_iptv\\lib\\src\\catchup\\catchup.dart",
+      "message": "Optional parameter 'now' of 'buildIptvCatchupUrl' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\catchup\\catchup.dart||buildIptvCatchupUrl|function|optparam:source",
+      "file": "packages\\live_iptv\\lib\\src\\catchup\\catchup.dart",
+      "message": "Optional parameter 'source' of 'buildIptvCatchupUrl' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\catchup\\catchup.dart||buildIptvCatchupUrl|function|optparam:type",
+      "file": "packages\\live_iptv\\lib\\src\\catchup\\catchup.dart",
+      "message": "Optional parameter 'type' of 'buildIptvCatchupUrl' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\catchup\\catchup.dart||evaluateIptvCatchupAvailability|function|optparam:catchupId",
+      "file": "packages\\live_iptv\\lib\\src\\catchup\\catchup.dart",
+      "message": "Optional parameter 'catchupId' of 'evaluateIptvCatchupAvailability' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\catchup\\catchup.dart||evaluateIptvCatchupAvailability|function|optparam:days",
+      "file": "packages\\live_iptv\\lib\\src\\catchup\\catchup.dart",
+      "message": "Optional parameter 'days' of 'evaluateIptvCatchupAvailability' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\catchup\\catchup.dart||evaluateIptvCatchupAvailability|function|optparam:mode",
+      "file": "packages\\live_iptv\\lib\\src\\catchup\\catchup.dart",
+      "message": "Optional parameter 'mode' of 'evaluateIptvCatchupAvailability' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\catchup\\catchup.dart||evaluateIptvCatchupAvailability|function|optparam:source",
+      "file": "packages\\live_iptv\\lib\\src\\catchup\\catchup.dart",
+      "message": "Optional parameter 'source' of 'evaluateIptvCatchupAvailability' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\guide\\guide_matcher.dart||resolveGuideChannel|function|optparam:mapping",
+      "file": "packages\\live_iptv\\lib\\src\\guide\\guide_matcher.dart",
+      "message": "Optional parameter 'mapping' of 'resolveGuideChannel' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\guide\\guide_parser.dart||parseGuide|function|optparam:format",
+      "file": "packages\\live_iptv\\lib\\src\\guide\\guide_parser.dart",
+      "message": "Optional parameter 'format' of 'parseGuide' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|importGuideFromUrl|method|optparam:confirmReplace",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Optional parameter 'confirmReplace' of 'IptvImporter.importGuideFromUrl' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|importGuideFromUrl|method|optparam:force",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Optional parameter 'force' of 'IptvImporter.importGuideFromUrl' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|importGuideFromUrl|method|optparam:headers",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Optional parameter 'headers' of 'IptvImporter.importGuideFromUrl' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|importGuideText|method|optparam:confirmReplace",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Optional parameter 'confirmReplace' of 'IptvImporter.importGuideText' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|importGuideText|method|optparam:expected",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Optional parameter 'expected' of 'IptvImporter.importGuideText' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|importGuideText|method|optparam:force",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Optional parameter 'force' of 'IptvImporter.importGuideText' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|importPlaylistFromUrl|method|optparam:confirmReplace",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Optional parameter 'confirmReplace' of 'IptvImporter.importPlaylistFromUrl' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|importPlaylistFromUrl|method|optparam:force",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Optional parameter 'force' of 'IptvImporter.importPlaylistFromUrl' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|importPlaylistFromUrl|method|optparam:headers",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Optional parameter 'headers' of 'IptvImporter.importPlaylistFromUrl' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|importPlaylistText|method|optparam:confirmReplace",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Optional parameter 'confirmReplace' of 'IptvImporter.importPlaylistText' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|importPlaylistText|method|optparam:force",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Optional parameter 'force' of 'IptvImporter.importPlaylistText' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|importPlaylistText|method|optparam:url",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Optional parameter 'url' of 'IptvImporter.importPlaylistText' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|syncExpiredGuides|method|optparam:now",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Optional parameter 'now' of 'IptvImporter.syncExpiredGuides' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart|IptvImporter|syncExpired|method|optparam:now",
+      "file": "packages\\live_iptv\\lib\\src\\import\\iptv_importer.dart",
+      "message": "Optional parameter 'now' of 'IptvImporter.syncExpired' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\library\\iptv_library.dart|IptvLibrary|importFromText|method|optparam:removeMissing",
+      "file": "packages\\live_iptv\\lib\\src\\library\\iptv_library.dart",
+      "message": "Optional parameter 'removeMissing' of 'IptvLibrary.importFromText' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\library\\iptv_library.dart|IptvLibrary|importResult|method|optparam:removeMissing",
+      "file": "packages\\live_iptv\\lib\\src\\library\\iptv_library.dart",
+      "message": "Optional parameter 'removeMissing' of 'IptvLibrary.importResult' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_iptv|<root>/packages\\live_iptv\\lib\\src\\playlist\\playlist_parser.dart||parsePlaylist|function|optparam:format",
+      "file": "packages\\live_iptv\\lib\\src\\playlist\\playlist_parser.dart",
+      "message": "Optional parameter 'format' of 'parsePlaylist' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_library|<root>/packages\\live_library\\lib\\src\\repository\\follow_repository.dart|FollowRepository|follow|method|optparam:groupIds",
+      "file": "packages\\live_library\\lib\\src\\repository\\follow_repository.dart",
+      "message": "Optional parameter 'groupIds' of 'FollowRepository.follow' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_library|<root>/packages\\live_library\\lib\\src\\repository\\follow_repository.dart|FollowRepository|follow|method|optparam:note",
+      "file": "packages\\live_library\\lib\\src\\repository\\follow_repository.dart",
+      "message": "Optional parameter 'note' of 'FollowRepository.follow' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_log|<root>/packages\\live_log\\lib\\src\\error_reporter.dart|ErrorReporter|report|method|optparam:fields",
+      "file": "packages\\live_log\\lib\\src\\error_reporter.dart",
+      "message": "Optional parameter 'fields' of 'ErrorReporter.report' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_log|<root>/packages\\live_log\\lib\\src\\live_log.dart|LiveLog|fatal|method|optparam:fields",
+      "file": "packages\\live_log\\lib\\src\\live_log.dart",
+      "message": "Optional parameter 'fields' of 'LiveLog.fatal' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_log|<root>/packages\\live_log\\lib\\src\\live_log.dart|LiveLog|root|constructor|optparam:sanitizer",
+      "file": "packages\\live_log\\lib\\src\\live_log.dart",
+      "message": "Optional parameter 'sanitizer' of 'LiveLog.root' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_log|<root>/packages\\live_log\\lib\\src\\live_log.dart|LiveLog|trace|method|optparam:fields",
+      "file": "packages\\live_log\\lib\\src\\live_log.dart",
+      "message": "Optional parameter 'fields' of 'LiveLog.trace' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_log|<root>/packages\\live_log\\lib\\src\\record.dart|LogRecord|LogRecord|constructor|optparam:timestamp",
+      "file": "packages\\live_log\\lib\\src\\record.dart",
+      "message": "Optional parameter 'timestamp' of 'LogRecord()' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_log|<root>/packages\\live_log\\lib\\src\\sinks\\memory_sink.dart|MemorySink|exportJsonLines|method|optparam:sanitizer",
+      "file": "packages\\live_log\\lib\\src\\sinks\\memory_sink.dart",
+      "message": "Optional parameter 'sanitizer' of 'MemorySink.exportJsonLines' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_log|<root>/packages\\live_log\\lib\\src\\sinks\\memory_sink.dart|MemorySink|exportText|method|optparam:categoryPrefix",
+      "file": "packages\\live_log\\lib\\src\\sinks\\memory_sink.dart",
+      "message": "Optional parameter 'categoryPrefix' of 'MemorySink.exportText' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_log|<root>/packages\\live_log\\lib\\src\\sinks\\memory_sink.dart|MemorySink|exportText|method|optparam:minLevel",
+      "file": "packages\\live_log\\lib\\src\\sinks\\memory_sink.dart",
+      "message": "Optional parameter 'minLevel' of 'MemorySink.exportText' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_log|<root>/packages\\live_log\\lib\\src\\sinks\\memory_sink.dart|MemorySink|exportText|method|optparam:sanitizer",
+      "file": "packages\\live_log\\lib\\src\\sinks\\memory_sink.dart",
+      "message": "Optional parameter 'sanitizer' of 'MemorySink.exportText' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\calls.dart|LiveHttpCalls|getJson|method|optparam:cancelToken",
+      "file": "packages\\live_net\\lib\\src\\calls.dart",
+      "message": "Optional parameter 'cancelToken' of 'LiveHttpCalls.getJson' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\calls.dart|LiveHttpCalls|getJson|method|optparam:headers",
+      "file": "packages\\live_net\\lib\\src\\calls.dart",
+      "message": "Optional parameter 'headers' of 'LiveHttpCalls.getJson' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\calls.dart|LiveHttpCalls|getJson|method|optparam:site",
+      "file": "packages\\live_net\\lib\\src\\calls.dart",
+      "message": "Optional parameter 'site' of 'LiveHttpCalls.getJson' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\calls.dart|LiveHttpCalls|getJson|method|optparam:timeout",
+      "file": "packages\\live_net\\lib\\src\\calls.dart",
+      "message": "Optional parameter 'timeout' of 'LiveHttpCalls.getJson' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\calls.dart|LiveHttpCalls|getText|method|optparam:cancelToken",
+      "file": "packages\\live_net\\lib\\src\\calls.dart",
+      "message": "Optional parameter 'cancelToken' of 'LiveHttpCalls.getText' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\calls.dart|LiveHttpCalls|getText|method|optparam:headers",
+      "file": "packages\\live_net\\lib\\src\\calls.dart",
+      "message": "Optional parameter 'headers' of 'LiveHttpCalls.getText' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\calls.dart|LiveHttpCalls|getText|method|optparam:site",
+      "file": "packages\\live_net\\lib\\src\\calls.dart",
+      "message": "Optional parameter 'site' of 'LiveHttpCalls.getText' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\calls.dart|LiveHttpCalls|getText|method|optparam:timeout",
+      "file": "packages\\live_net\\lib\\src\\calls.dart",
+      "message": "Optional parameter 'timeout' of 'LiveHttpCalls.getText' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\calls.dart|LiveHttpCalls|postForm|method|optparam:cancelToken",
+      "file": "packages\\live_net\\lib\\src\\calls.dart",
+      "message": "Optional parameter 'cancelToken' of 'LiveHttpCalls.postForm' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\calls.dart|LiveHttpCalls|postForm|method|optparam:headers",
+      "file": "packages\\live_net\\lib\\src\\calls.dart",
+      "message": "Optional parameter 'headers' of 'LiveHttpCalls.postForm' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\calls.dart|LiveHttpCalls|postForm|method|optparam:site",
+      "file": "packages\\live_net\\lib\\src\\calls.dart",
+      "message": "Optional parameter 'site' of 'LiveHttpCalls.postForm' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\calls.dart|LiveHttpCalls|postForm|method|optparam:timeout",
+      "file": "packages\\live_net\\lib\\src\\calls.dart",
+      "message": "Optional parameter 'timeout' of 'LiveHttpCalls.postForm' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\calls.dart|LiveHttpCalls|postJson|method|optparam:cancelToken",
+      "file": "packages\\live_net\\lib\\src\\calls.dart",
+      "message": "Optional parameter 'cancelToken' of 'LiveHttpCalls.postJson' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\calls.dart|LiveHttpCalls|postJson|method|optparam:headers",
+      "file": "packages\\live_net\\lib\\src\\calls.dart",
+      "message": "Optional parameter 'headers' of 'LiveHttpCalls.postJson' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\calls.dart|LiveHttpCalls|postJson|method|optparam:site",
+      "file": "packages\\live_net\\lib\\src\\calls.dart",
+      "message": "Optional parameter 'site' of 'LiveHttpCalls.postJson' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\calls.dart|LiveHttpCalls|postJson|method|optparam:timeout",
+      "file": "packages\\live_net\\lib\\src\\calls.dart",
+      "message": "Optional parameter 'timeout' of 'LiveHttpCalls.postJson' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\dio_factory.dart|DioFactory|DioFactory|constructor|optparam:defaultHeaders",
+      "file": "packages\\live_net\\lib\\src\\dio_factory.dart",
+      "message": "Optional parameter 'defaultHeaders' of 'DioFactory()' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\request.dart|LiveRequest|form|constructor|optparam:proxyRoute",
+      "file": "packages\\live_net\\lib\\src\\request.dart",
+      "message": "Optional parameter 'proxyRoute' of 'LiveRequest.form' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\request.dart|LiveRequest|get|constructor|optparam:proxyRoute",
+      "file": "packages\\live_net\\lib\\src\\request.dart",
+      "message": "Optional parameter 'proxyRoute' of 'LiveRequest.get' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\request.dart|LiveRequest|head|constructor|optparam:proxyRoute",
+      "file": "packages\\live_net\\lib\\src\\request.dart",
+      "message": "Optional parameter 'proxyRoute' of 'LiveRequest.head' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\request.dart|LiveRequest|json|constructor|optparam:proxyRoute",
+      "file": "packages\\live_net\\lib\\src\\request.dart",
+      "message": "Optional parameter 'proxyRoute' of 'LiveRequest.json' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\storage\\cache_store_factory.dart|CacheStoreFactory|memory|method|optparam:maxEntrySizeBytes",
+      "file": "packages\\live_net\\lib\\src\\storage\\cache_store_factory.dart",
+      "message": "Optional parameter 'maxEntrySizeBytes' of 'CacheStoreFactory.memory' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_net|<root>/packages\\live_net\\lib\\src\\storage\\cache_store_factory.dart|CacheStoreFactory|memory|method|optparam:maxSizeBytes",
+      "file": "packages\\live_net\\lib\\src\\storage\\cache_store_factory.dart",
+      "message": "Optional parameter 'maxSizeBytes' of 'CacheStoreFactory.memory' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\bootstrap\\platform_bootstrap.dart|PlatformBootstrap|init|method|optparam:declaredDistribution",
+      "file": "packages\\live_platform\\lib\\src\\bootstrap\\platform_bootstrap.dart",
+      "message": "Optional parameter 'declaredDistribution' of 'PlatformBootstrap.init' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\bootstrap\\platform_bootstrap.dart|PlatformBootstrap|init|method|optparam:policy",
+      "file": "packages\\live_platform\\lib\\src\\bootstrap\\platform_bootstrap.dart",
+      "message": "Optional parameter 'policy' of 'PlatformBootstrap.init' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\diagnostics\\storage_diagnostics.dart|StorageDiagnostics|report|method|optparam:areas",
+      "file": "packages\\live_platform\\lib\\src\\diagnostics\\storage_diagnostics.dart",
+      "message": "Optional parameter 'areas' of 'StorageDiagnostics.report' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\runtime\\platform_capabilities.dart|PlatformCapabilities|copyWith|method|optparam:filePicker",
+      "file": "packages\\live_platform\\lib\\src\\runtime\\platform_capabilities.dart",
+      "message": "Optional parameter 'filePicker' of 'PlatformCapabilities.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\runtime\\platform_capabilities.dart|PlatformCapabilities|copyWith|method|optparam:mediaSession",
+      "file": "packages\\live_platform\\lib\\src\\runtime\\platform_capabilities.dart",
+      "message": "Optional parameter 'mediaSession' of 'PlatformCapabilities.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\runtime\\platform_capabilities.dart|PlatformCapabilities|copyWith|method|optparam:pictureInPicture",
+      "file": "packages\\live_platform\\lib\\src\\runtime\\platform_capabilities.dart",
+      "message": "Optional parameter 'pictureInPicture' of 'PlatformCapabilities.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\runtime\\platform_capabilities.dart|PlatformCapabilities|copyWith|method|optparam:systemTray",
+      "file": "packages\\live_platform\\lib\\src\\runtime\\platform_capabilities.dart",
+      "message": "Optional parameter 'systemTray' of 'PlatformCapabilities.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\runtime\\platform_capabilities.dart|PlatformCapabilities|copyWith|method|optparam:windowing",
+      "file": "packages\\live_platform\\lib\\src\\runtime\\platform_capabilities.dart",
+      "message": "Optional parameter 'windowing' of 'PlatformCapabilities.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_platform|<root>/packages\\live_platform\\lib\\src\\storage\\default_storage_manager.dart|DefaultStorageManager|DefaultStorageManager|constructor|optparam:systemTemp",
+      "file": "packages\\live_platform\\lib\\src\\storage\\default_storage_manager.dart",
+      "message": "Optional parameter 'systemTemp' of 'DefaultStorageManager()' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_playback|<root>/packages\\live_playback\\lib\\src\\coordinator\\playback_coordinator.dart|PlaybackCoordinator|open|method|optparam:claimAudio",
+      "file": "packages\\live_playback\\lib\\src\\coordinator\\playback_coordinator.dart",
+      "message": "Optional parameter 'claimAudio' of 'PlaybackCoordinator.open' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_playback|<root>/packages\\live_playback\\lib\\src\\session\\playback_session.dart|PlaybackSession|PlaybackSession|constructor|optparam:now",
+      "file": "packages\\live_playback\\lib\\src\\session\\playback_session.dart",
+      "message": "Optional parameter 'now' of 'PlaybackSession()' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_playback|<root>/packages\\live_playback\\lib\\src\\session\\playback_session.dart|PlaybackSession|PlaybackSession|constructor|optparam:selector",
+      "file": "packages\\live_playback\\lib\\src\\session\\playback_session.dart",
+      "message": "Optional parameter 'selector' of 'PlaybackSession()' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_preferences|<root>/packages\\live_preferences\\lib\\src\\service\\preferences_service.dart|PreferencesService|PreferencesService|constructor|optparam:initial",
+      "file": "packages\\live_preferences\\lib\\src\\service\\preferences_service.dart",
+      "message": "Optional parameter 'initial' of 'PreferencesService()' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\models\\live_play_url_resolution.dart|LivePlayUrlResolution|of|constructor|optparam:requested",
+      "file": "packages\\live_sites\\lib\\src\\models\\live_play_url_resolution.dart",
+      "message": "Optional parameter 'requested' of 'LivePlayUrlResolution.of' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\bigo\\parsers\\bigo_parser.dart|BigoParser|tokenData|method|optparam:random",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\bigo\\parsers\\bigo_parser.dart",
+      "message": "Optional parameter 'random' of 'BigoParser.tokenData' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\bilibili\\session\\bilibili_guest_session.dart|BilibiliGuestSession|BilibiliGuestSession|constructor|optparam:now",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\bilibili\\session\\bilibili_guest_session.dart",
+      "message": "Optional parameter 'now' of 'BilibiliGuestSession()' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\bilibili\\session\\bilibili_guest_session.dart|BilibiliGuestSession|getSigned|method|optparam:renewKeys",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\bilibili\\session\\bilibili_guest_session.dart",
+      "message": "Optional parameter 'renewKeys' of 'BilibiliGuestSession.getSigned' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\chzzk\\danmaku\\chzzk_danmaku.dart|ChzzkDanmakuProtocol|decode|method|optparam:receivedAt",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\chzzk\\danmaku\\chzzk_danmaku.dart",
+      "message": "Optional parameter 'receivedAt' of 'ChzzkDanmakuProtocol.decode' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\douyin\\douyin_site.dart|DouyinSite|DouyinSite|constructor|optparam:signer",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\douyin\\douyin_site.dart",
+      "message": "Optional parameter 'signer' of 'DouyinSite()' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\douyin\\parsers\\douyin_parser.dart|DouyinParser|reflow|method|optparam:status",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\douyin\\parsers\\douyin_parser.dart",
+      "message": "Optional parameter 'status' of 'DouyinParser.reflow' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\douyu\\douyu_site.dart|DouyuSite|DouyuSite|constructor|optparam:now",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\douyu\\douyu_site.dart",
+      "message": "Optional parameter 'now' of 'DouyuSite()' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\kilakila\\parsers\\kilakila_parser.dart|KilakilaParser|timelineUrl|method|optparam:pageSize",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\kilakila\\parsers\\kilakila_parser.dart",
+      "message": "Optional parameter 'pageSize' of 'KilakilaParser.timelineUrl' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\kuaishou\\danmaku\\kuaishou_session.dart|KuaishouDanmakuSession|connect|method|optparam:cookie",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\kuaishou\\danmaku\\kuaishou_session.dart",
+      "message": "Optional parameter 'cookie' of 'KuaishouDanmakuSession.connect' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\kuaishou\\kuaishou_site.dart|KuaishouSite|_areas|method|optparam:maxPages",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\kuaishou\\kuaishou_site.dart",
+      "message": "Optional parameter 'maxPages' of 'KuaishouSite._areas' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\kuaishou\\kuaishou_site.dart|KuaishouSite|_areas|method|optparam:type",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\kuaishou\\kuaishou_site.dart",
+      "message": "Optional parameter 'type' of 'KuaishouSite._areas' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\kuaishou\\parsers\\kuaishou_parser.dart|KuaishouParser|anchorList|method|optparam:what",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\kuaishou\\parsers\\kuaishou_parser.dart",
+      "message": "Optional parameter 'what' of 'KuaishouParser.anchorList' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\kuaishou\\parsers\\kuaishou_parser.dart|KuaishouParser|roomCard|method|optparam:defaultArea",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\kuaishou\\parsers\\kuaishou_parser.dart",
+      "message": "Optional parameter 'defaultArea' of 'KuaishouParser.roomCard' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\kuaishou\\parsers\\kuaishou_parser.dart|KuaishouParser|roomList|method|optparam:defaultArea",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\kuaishou\\parsers\\kuaishou_parser.dart",
+      "message": "Optional parameter 'defaultArea' of 'KuaishouParser.roomList' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\liveme\\liveme_site.dart|LiveMeSite|LiveMeSite|constructor|optparam:signer",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\liveme\\liveme_site.dart",
+      "message": "Optional parameter 'signer' of 'LiveMeSite()' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\liveme\\parsers\\liveme_parser.dart|LiveMeParser|featuredUrl|method|optparam:pageSize",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\liveme\\parsers\\liveme_parser.dart",
+      "message": "Optional parameter 'pageSize' of 'LiveMeParser.featuredUrl' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\liveme\\parsers\\liveme_parser.dart|LiveMeSigner|LiveMeSigner|constructor|optparam:random",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\liveme\\parsers\\liveme_parser.dart",
+      "message": "Optional parameter 'random' of 'LiveMeSigner()' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\pandalive\\parsers\\pandalive_parser.dart|PandaLiveParser|livePage|method|optparam:size",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\pandalive\\parsers\\pandalive_parser.dart",
+      "message": "Optional parameter 'size' of 'PandaLiveParser.livePage' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_sites|<root>/packages\\live_sites\\lib\\src\\platforms\\sixroom\\parsers\\sixroom_parser.dart|SixRoomParser|listUrl|method|optparam:size",
+      "file": "packages\\live_sites\\lib\\src\\platforms\\sixroom\\parsers\\sixroom_parser.dart",
+      "message": "Optional parameter 'size' of 'SixRoomParser.listUrl' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\backgrounds\\background_presets.dart|LiveBackgroundPresets|card|method|optparam:elevated",
+      "file": "packages\\live_uikit\\lib\\src\\backgrounds\\background_presets.dart",
+      "message": "Optional parameter 'elevated' of 'LiveBackgroundPresets.card' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\backgrounds\\background_presets.dart|LiveBackgroundPresets|glass|method|optparam:environment",
+      "file": "packages\\live_uikit\\lib\\src\\backgrounds\\background_presets.dart",
+      "message": "Optional parameter 'environment' of 'LiveBackgroundPresets.glass' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\backgrounds\\background_presets.dart|LiveBackgroundPresets|glass|method|optparam:opacity",
+      "file": "packages\\live_uikit\\lib\\src\\backgrounds\\background_presets.dart",
+      "message": "Optional parameter 'opacity' of 'LiveBackgroundPresets.glass' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\backgrounds\\background_presets.dart|LiveBackgroundPresets|page|method|optparam:accent",
+      "file": "packages\\live_uikit\\lib\\src\\backgrounds\\background_presets.dart",
+      "message": "Optional parameter 'accent' of 'LiveBackgroundPresets.page' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\backgrounds\\background_presets.dart|LiveBackgroundPresets|page|method|optparam:environment",
+      "file": "packages\\live_uikit\\lib\\src\\backgrounds\\background_presets.dart",
+      "message": "Optional parameter 'environment' of 'LiveBackgroundPresets.page' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\backgrounds\\background_presets.dart|LiveBackgroundPresets|page|method|optparam:plain",
+      "file": "packages\\live_uikit\\lib\\src\\backgrounds\\background_presets.dart",
+      "message": "Optional parameter 'plain' of 'LiveBackgroundPresets.page' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\backgrounds\\background_presets.dart|LiveBackgroundPresets|tv|method|optparam:accent",
+      "file": "packages\\live_uikit\\lib\\src\\backgrounds\\background_presets.dart",
+      "message": "Optional parameter 'accent' of 'LiveBackgroundPresets.tv' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\backgrounds\\live_background.dart|LiveBackground|rounded|method|optparam:radius",
+      "file": "packages\\live_uikit\\lib\\src\\backgrounds\\live_background.dart",
+      "message": "Optional parameter 'radius' of 'LiveBackground.rounded' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart|LiveButtonSpec|copyWith|method|optparam:autofocus",
+      "file": "packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart",
+      "message": "Optional parameter 'autofocus' of 'LiveButtonSpec.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart|LiveButtonSpec|copyWith|method|optparam:expand",
+      "file": "packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart",
+      "message": "Optional parameter 'expand' of 'LiveButtonSpec.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart|LiveButtonSpec|copyWith|method|optparam:focusNode",
+      "file": "packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart",
+      "message": "Optional parameter 'focusNode' of 'LiveButtonSpec.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart|LiveButtonSpec|copyWith|method|optparam:icon",
+      "file": "packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart",
+      "message": "Optional parameter 'icon' of 'LiveButtonSpec.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart|LiveButtonSpec|copyWith|method|optparam:label",
+      "file": "packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart",
+      "message": "Optional parameter 'label' of 'LiveButtonSpec.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart|LiveButtonSpec|copyWith|method|optparam:loading",
+      "file": "packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart",
+      "message": "Optional parameter 'loading' of 'LiveButtonSpec.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart|LiveButtonSpec|copyWith|method|optparam:onPressed",
+      "file": "packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart",
+      "message": "Optional parameter 'onPressed' of 'LiveButtonSpec.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart|LiveButtonSpec|copyWith|method|optparam:semanticLabel",
+      "file": "packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart",
+      "message": "Optional parameter 'semanticLabel' of 'LiveButtonSpec.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart|LiveButtonSpec|copyWith|method|optparam:size",
+      "file": "packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart",
+      "message": "Optional parameter 'size' of 'LiveButtonSpec.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart|LiveButtonSpec|copyWith|method|optparam:tooltip",
+      "file": "packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart",
+      "message": "Optional parameter 'tooltip' of 'LiveButtonSpec.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart|LiveButtonSpec|copyWith|method|optparam:variant",
+      "file": "packages\\live_uikit\\lib\\src\\components\\contracts\\live_component_specs.dart",
+      "message": "Optional parameter 'variant' of 'LiveButtonSpec.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\components\\dialogs\\live_dialog.dart|LiveDialog|confirm|method|optparam:cancelLabel",
+      "file": "packages\\live_uikit\\lib\\src\\components\\dialogs\\live_dialog.dart",
+      "message": "Optional parameter 'cancelLabel' of 'LiveDialog.confirm' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\components\\dialogs\\live_dialog.dart|LiveDialog|confirm|method|optparam:confirmAccessibilityLabel",
+      "file": "packages\\live_uikit\\lib\\src\\components\\dialogs\\live_dialog.dart",
+      "message": "Optional parameter 'confirmAccessibilityLabel' of 'LiveDialog.confirm' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\components\\dialogs\\live_dialog.dart|LiveDialog|confirm|method|optparam:confirmLabel",
+      "file": "packages\\live_uikit\\lib\\src\\components\\dialogs\\live_dialog.dart",
+      "message": "Optional parameter 'confirmLabel' of 'LiveDialog.confirm' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\components\\dialogs\\live_dialog.dart|LiveDialog|confirm|method|optparam:content",
+      "file": "packages\\live_uikit\\lib\\src\\components\\dialogs\\live_dialog.dart",
+      "message": "Optional parameter 'content' of 'LiveDialog.confirm' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\components\\dialogs\\live_dialog.dart|LiveDialog|confirm|method|optparam:danger",
+      "file": "packages\\live_uikit\\lib\\src\\components\\dialogs\\live_dialog.dart",
+      "message": "Optional parameter 'danger' of 'LiveDialog.confirm' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\components\\dialogs\\live_dialog.dart|LiveDialog|confirm|method|optparam:message",
+      "file": "packages\\live_uikit\\lib\\src\\components\\dialogs\\live_dialog.dart",
+      "message": "Optional parameter 'message' of 'LiveDialog.confirm' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\core\\ui_environment.dart|LiveUiEnvironment|forPlatform|constructor|optparam:breakpoints",
+      "file": "packages\\live_uikit\\lib\\src\\core\\ui_environment.dart",
+      "message": "Optional parameter 'breakpoints' of 'LiveUiEnvironment.forPlatform' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\core\\ui_environment.dart|LiveUiEnvironment|forPlatform|constructor|optparam:inputModes",
+      "file": "packages\\live_uikit\\lib\\src\\core\\ui_environment.dart",
+      "message": "Optional parameter 'inputModes' of 'LiveUiEnvironment.forPlatform' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\core\\ui_environment.dart|LiveUiEnvironment|forPlatform|constructor|optparam:supportsAnimations",
+      "file": "packages\\live_uikit\\lib\\src\\core\\ui_environment.dart",
+      "message": "Optional parameter 'supportsAnimations' of 'LiveUiEnvironment.forPlatform' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\core\\ui_environment.dart|LiveUiEnvironment|forPlatform|constructor|optparam:systemTextScale",
+      "file": "packages\\live_uikit\\lib\\src\\core\\ui_environment.dart",
+      "message": "Optional parameter 'systemTextScale' of 'LiveUiEnvironment.forPlatform' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\core\\ui_platform.dart|LiveUiPlatform|resolve|method|optparam:isWeb",
+      "file": "packages\\live_uikit\\lib\\src\\core\\ui_platform.dart",
+      "message": "Optional parameter 'isWeb' of 'LiveUiPlatform.resolve' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\core\\ui_platform.dart|LiveUiPlatform|resolve|method|optparam:targetPlatform",
+      "file": "packages\\live_uikit\\lib\\src\\core\\ui_platform.dart",
+      "message": "Optional parameter 'targetPlatform' of 'LiveUiPlatform.resolve' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\focus\\live_focus_navigation.dart|LiveFocusNavigation|move|method|optparam:wrap",
+      "file": "packages\\live_uikit\\lib\\src\\focus\\live_focus_navigation.dart",
+      "message": "Optional parameter 'wrap' of 'LiveFocusNavigation.move' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\theme\\live_theme.dart|LiveTheme|copyWith|method|optparam:brightness",
+      "file": "packages\\live_uikit\\lib\\src\\theme\\live_theme.dart",
+      "message": "Optional parameter 'brightness' of 'LiveTheme.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\theme\\live_theme.dart|LiveTheme|copyWith|method|optparam:components",
+      "file": "packages\\live_uikit\\lib\\src\\theme\\live_theme.dart",
+      "message": "Optional parameter 'components' of 'LiveTheme.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\theme\\live_theme.dart|LiveTheme|copyWith|method|optparam:configuration",
+      "file": "packages\\live_uikit\\lib\\src\\theme\\live_theme.dart",
+      "message": "Optional parameter 'configuration' of 'LiveTheme.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\theme\\live_theme.dart|LiveTheme|copyWith|method|optparam:environment",
+      "file": "packages\\live_uikit\\lib\\src\\theme\\live_theme.dart",
+      "message": "Optional parameter 'environment' of 'LiveTheme.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\theme\\live_theme.dart|LiveTheme|copyWith|method|optparam:fallbacks",
+      "file": "packages\\live_uikit\\lib\\src\\theme\\live_theme.dart",
+      "message": "Optional parameter 'fallbacks' of 'LiveTheme.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\theme\\live_theme.dart|LiveTheme|copyWith|method|optparam:parts",
+      "file": "packages\\live_uikit\\lib\\src\\theme\\live_theme.dart",
+      "message": "Optional parameter 'parts' of 'LiveTheme.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\theme\\live_theme.dart|LiveTheme|copyWith|method|optparam:requestedLanguage",
+      "file": "packages\\live_uikit\\lib\\src\\theme\\live_theme.dart",
+      "message": "Optional parameter 'requestedLanguage' of 'LiveTheme.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\theme\\live_theme_parts.dart|LiveThemeParts|withParts|method|optparam:brightness",
+      "file": "packages\\live_uikit\\lib\\src\\theme\\live_theme_parts.dart",
+      "message": "Optional parameter 'brightness' of 'LiveThemeParts.withParts' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\theme\\live_theme_parts.dart|LiveThemeParts|withParts|method|optparam:typography",
+      "file": "packages\\live_uikit\\lib\\src\\theme\\live_theme_parts.dart",
+      "message": "Optional parameter 'typography' of 'LiveThemeParts.withParts' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\theme\\theme_resolver.dart|LiveThemeResolver|resolveFallback|method|optparam:configuration",
+      "file": "packages\\live_uikit\\lib\\src\\theme\\theme_resolver.dart",
+      "message": "Optional parameter 'configuration' of 'LiveThemeResolver.resolveFallback' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\tokens\\focus_tokens.dart|LiveFocusTokens|copyWith|method|optparam:duration",
+      "file": "packages\\live_uikit\\lib\\src\\tokens\\focus_tokens.dart",
+      "message": "Optional parameter 'duration' of 'LiveFocusTokens.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\tokens\\typography.dart|LiveTypography|copyWith|method|optparam:body",
+      "file": "packages\\live_uikit\\lib\\src\\tokens\\typography.dart",
+      "message": "Optional parameter 'body' of 'LiveTypography.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\tokens\\typography.dart|LiveTypography|copyWith|method|optparam:bodySmall",
+      "file": "packages\\live_uikit\\lib\\src\\tokens\\typography.dart",
+      "message": "Optional parameter 'bodySmall' of 'LiveTypography.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\tokens\\typography.dart|LiveTypography|copyWith|method|optparam:caption",
+      "file": "packages\\live_uikit\\lib\\src\\tokens\\typography.dart",
+      "message": "Optional parameter 'caption' of 'LiveTypography.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\tokens\\typography.dart|LiveTypography|copyWith|method|optparam:display",
+      "file": "packages\\live_uikit\\lib\\src\\tokens\\typography.dart",
+      "message": "Optional parameter 'display' of 'LiveTypography.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\tokens\\typography.dart|LiveTypography|copyWith|method|optparam:fontFamily",
+      "file": "packages\\live_uikit\\lib\\src\\tokens\\typography.dart",
+      "message": "Optional parameter 'fontFamily' of 'LiveTypography.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\tokens\\typography.dart|LiveTypography|copyWith|method|optparam:headline",
+      "file": "packages\\live_uikit\\lib\\src\\tokens\\typography.dart",
+      "message": "Optional parameter 'headline' of 'LiveTypography.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\tokens\\typography.dart|LiveTypography|copyWith|method|optparam:label",
+      "file": "packages\\live_uikit\\lib\\src\\tokens\\typography.dart",
+      "message": "Optional parameter 'label' of 'LiveTypography.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\tokens\\typography.dart|LiveTypography|copyWith|method|optparam:subtitle",
+      "file": "packages\\live_uikit\\lib\\src\\tokens\\typography.dart",
+      "message": "Optional parameter 'subtitle' of 'LiveTypography.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "live_uikit|<root>/packages\\live_uikit\\lib\\src\\tokens\\typography.dart|LiveTypography|standard|constructor|optparam:fontFamily",
+      "file": "packages\\live_uikit\\lib\\src\\tokens\\typography.dart",
+      "message": "Optional parameter 'fontFamily' of 'LiveTypography.standard' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:backToBottomDistanceThreshold",
+      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "message": "Optional parameter 'backToBottomDistanceThreshold' of 'PaginationViewConfig.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:backToTopOffsetThreshold",
+      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "message": "Optional parameter 'backToTopOffsetThreshold' of 'PaginationViewConfig.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:desktopBreakpointWidth",
+      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "message": "Optional parameter 'desktopBreakpointWidth' of 'PaginationViewConfig.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:desktopPageSize",
+      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "message": "Optional parameter 'desktopPageSize' of 'PaginationViewConfig.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:jumpAnimationBaseMs",
+      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "message": "Optional parameter 'jumpAnimationBaseMs' of 'PaginationViewConfig.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:jumpAnimationMaxMs",
+      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "message": "Optional parameter 'jumpAnimationMaxMs' of 'PaginationViewConfig.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:jumpAnimationMinMs",
+      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "message": "Optional parameter 'jumpAnimationMinMs' of 'PaginationViewConfig.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:jumpAnimationMsPerPx",
+      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "message": "Optional parameter 'jumpAnimationMsPerPx' of 'PaginationViewConfig.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:mobilePageSize",
+      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "message": "Optional parameter 'mobilePageSize' of 'PaginationViewConfig.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:pageSizeOptions",
+      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "message": "Optional parameter 'pageSizeOptions' of 'PaginationViewConfig.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\state\\infinite_state.dart|InfiniteState|copyWith|method|optparam:hasMore",
+      "file": "packages\\pagination_core\\lib\\src\\state\\infinite_state.dart",
+      "message": "Optional parameter 'hasMore' of 'InfiniteState.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\state\\infinite_state.dart|InfiniteState|copyWith|method|optparam:items",
+      "file": "packages\\pagination_core\\lib\\src\\state\\infinite_state.dart",
+      "message": "Optional parameter 'items' of 'InfiniteState.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\state\\infinite_state.dart|InfiniteState|copyWith|method|optparam:pageSize",
+      "file": "packages\\pagination_core\\lib\\src\\state\\infinite_state.dart",
+      "message": "Optional parameter 'pageSize' of 'InfiniteState.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\state\\infinite_state.dart|InfiniteState|copyWith|method|optparam:totalCount",
+      "file": "packages\\pagination_core\\lib\\src\\state\\infinite_state.dart",
+      "message": "Optional parameter 'totalCount' of 'InfiniteState.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\state\\paged_state.dart|PagedState|copyWith|method|optparam:items",
+      "file": "packages\\pagination_core\\lib\\src\\state\\paged_state.dart",
+      "message": "Optional parameter 'items' of 'PagedState.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\state\\paged_state.dart|PagedState|copyWith|method|optparam:pageSize",
+      "file": "packages\\pagination_core\\lib\\src\\state\\paged_state.dart",
+      "message": "Optional parameter 'pageSize' of 'PagedState.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\state\\paged_state.dart|PagedState|copyWith|method|optparam:totalCount",
+      "file": "packages\\pagination_core\\lib\\src\\state\\paged_state.dart",
+      "message": "Optional parameter 'totalCount' of 'PagedState.copyWith' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\test\\paged_controller_test.dart||countingLoader|function|optparam:failPages",
+      "file": "packages\\pagination_core\\test\\paged_controller_test.dart",
+      "message": "Optional parameter 'failPages' of 'countingLoader' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\test\\paged_controller_test.dart||countingLoader|function|optparam:hasMoreFor",
+      "file": "packages\\pagination_core\\test\\paged_controller_test.dart",
+      "message": "Optional parameter 'hasMoreFor' of 'countingLoader' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "pagination_core|<root>/packages\\pagination_core\\test\\paged_controller_test.dart||countingLoader|function|optparam:reportTotalCount",
+      "file": "packages\\pagination_core\\test\\paged_controller_test.dart",
+      "message": "Optional parameter 'reportTotalCount' of 'countingLoader' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_parameter_optional",
+      "stableId": "pure_live|<root>/apps\\pure_live\\lib\\src\\ui\\ui_configuration.dart|UiConfigurationMapper|environmentOf|method|optparam:width",
+      "file": "apps\\pure_live\\lib\\src\\ui\\ui_configuration.dart",
+      "message": "Optional parameter 'width' of 'UiConfigurationMapper.environmentOf' is never passed at any call site."
+    },
+    {
+      "ruleId": "unused_pub_dependency",
+      "stableId": "pubdep|build_tool_runner|build_tool",
+      "file": "apps\\pure_live\\build\\windows\\x64\\plugins\\fjs\\cargokit_build\\tool\\pubspec.yaml",
+      "message": "Dependency 'build_tool' is declared in pubspec.yaml but never imported within 'build_tool_runner'."
+    },
+    {
+      "ruleId": "unused_pub_dependency",
+      "stableId": "pubdep|live_iptv|equatable",
+      "file": "packages\\live_iptv\\pubspec.yaml",
+      "message": "Dependency 'equatable' is declared in pubspec.yaml but never imported within 'live_iptv'."
+    },
+    {
+      "ruleId": "unused_pub_dependency",
+      "stableId": "pubdep|live_net|meta",
+      "file": "packages\\live_net\\pubspec.yaml",
+      "message": "Dependency 'meta' is declared in pubspec.yaml but never imported within 'live_net'."
+    },
+    {
+      "ruleId": "unused_pub_dependency",
+      "stableId": "pubdep|live_storage|meta",
+      "file": "packages\\live_storage\\pubspec.yaml",
+      "message": "Dependency 'meta' is declared in pubspec.yaml but never imported within 'live_storage'."
+    },
+    {
+      "ruleId": "unused_pub_dependency",
+      "stableId": "pubdep|live_storage|sqlite3",
+      "file": "packages\\live_storage\\pubspec.yaml",
+      "message": "Dependency 'sqlite3' is declared in pubspec.yaml but never imported within 'live_storage'."
+    },
+    {
+      "ruleId": "unused_pub_dependency",
+      "stableId": "pubdep|pure_live|live_playback",
+      "file": "apps\\pure_live\\pubspec.yaml",
+      "message": "Dependency 'live_playback' is declared in pubspec.yaml but never imported within 'pure_live'."
+    }
+  ]
+}

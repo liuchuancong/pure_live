@@ -22,5 +22,39 @@ workspace:
   - packages/live_uikit
   - packages/pagination_core
 
+dev_dependencies:
+  kareki: ^0.7.0
+  melos: ^8.9.0
+
 # Overrides apply to the whole workspace and may only be declared here.
-dependency_overrides: {}
+# melos 8.9.0 caps platform <3.2.0 while yaru 11 requires ^3.2.0; platform
+# 3.2.x is what the app already resolves to, so melos is made to accept it.
+dependency_overrides:
+  platform: ^3.2.0
+
+melos:
+  scripts:
+    gen:
+      description: Run build_runner code generation in every package that uses it.
+      exec:
+        command: dart run build_runner build --delete-conflicting-outputs
+        concurrency: 1
+      packageFilters:
+        dependsOn:
+          - build_runner
+      env:
+        CI: "true"
+    analyze:
+      description: Run dart analyze in every workspace package.
+      exec:
+        command: dart analyze
+        concurrency: 1
+      env:
+        CI: "true"
+    format:
+      description: Format every workspace package.
+      exec:
+        command: dart format .
+    kareki:
+      description: Workspace-wide dead code scan; new findings fail, baselined ones pass.
+      run: dart run kareki --baseline .kareki-baseline.json

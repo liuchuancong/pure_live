@@ -41,6 +41,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.3.0"
+  ansi_styles:
+    dependency: transitive
+    description:
+      name: ansi_styles
+      sha256: "9c656cc12b3c27b17dd982b2cc5c0cfdfbdabd7bc8f3ae5e8542d9867b47ce8a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.2+1"
   appkit_ui_element_colors:
     dependency: transitive
     description:
@@ -145,6 +153,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.1"
+  charcode:
+    dependency: transitive
+    description:
+      name: charcode
+      sha256: fb0f1107cac15a5ea6ef0a6ef71a807b9e4267c713bb93e00e92d737cc8dbd8a
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.0"
   checked_yaml:
     dependency: transitive
     description:
@@ -161,6 +177,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.0"
+  cli_launcher:
+    dependency: transitive
+    description:
+      name: cli_launcher
+      sha256: d2dd1baf7ae4ff1550e731dcb8fe669a5c652903e833f75359c178222c44214e
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.4"
+  cli_util:
+    dependency: transitive
+    description:
+      name: cli_util
+      sha256: "89b8801ba49f8b593fbf2d3e59efd0f566c46cd4ba6837ae2610c72b52a0f899"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.0"
   clock:
     dependency: transitive
     description:
@@ -185,6 +217,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.19.1"
+  conventional_commit:
+    dependency: transitive
+    description:
+      name: conventional_commit
+      sha256: c40b1b449ce2a63fa2ce852f35e3890b1e182f5951819934c0e4a66254bc0dc3
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.1+1"
   convert:
     dependency: transitive
     description:
@@ -576,6 +616,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.14.1"
+  kareki:
+    dependency: "direct dev"
+    description:
+      name: kareki
+      sha256: "39a8613cda9d2d60d93b8c765356bda351c9fe3ff868edf959169ef1fa591098"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.7.0"
   logging:
     dependency: transitive
     description:
@@ -632,6 +680,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.1"
+  melos:
+    dependency: "direct dev"
+    description:
+      name: melos
+      sha256: "140e51d7990b5134663e64b39e19d3b64ead16382e69127c205942c91e752b16"
+      url: "https://pub.dev"
+    source: hosted
+    version: "8.9.0"
   meta:
     dependency: transitive
     description:
@@ -648,6 +704,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
+  mustache_template:
+    dependency: transitive
+    description:
+      name: mustache_template
+      sha256: "17a8de9072575bb1a3237b90ed1f756b2189995b334df2ad12b7cdd76b13f3ce"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.6"
   native_toolchain_c:
     dependency: transitive
     description:
@@ -753,7 +817,7 @@ packages:
     source: hosted
     version: "7.1.0"
   platform:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: platform
       sha256: a36d119c13416516a7b5913fbe8af8531e11633d784c550b2125f76c758524ec
@@ -800,6 +864,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.0.6"
+  prompts:
+    dependency: transitive
+    description:
+      name: prompts
+      sha256: "3773b845e85a849f01e793c4fc18a45d52d7783b4cb6c0569fad19f9d0a774a1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.0"
   pub_semver:
     dependency: transitive
     description:
@@ -808,6 +880,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.1"
+  pub_updater:
+    dependency: transitive
+    description:
+      name: pub_updater
+      sha256: "3aadeb8c68d15ef9d117b36474ddcc543b48ae1e64f7dd71407da26df66bf7c8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.6.0"
   pubspec_parse:
     dependency: transitive
     description:
@@ -1173,6 +1253,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.4"
+  yaml_edit:
+    dependency: transitive
+    description:
+      name: yaml_edit
+      sha256: "07c9e63ba42519745182b88ca12264a7ba2484d8239958778dfe4d44fe760488"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.4"
   yaru:
     dependency: transitive
     description:
