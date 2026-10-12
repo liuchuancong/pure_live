@@ -31,7 +31,7 @@ abstract final class DouyinCatalog {
   /// own "all" area (`parentId` its id), then its sub-partitions (the category
   /// as parent) and their games (the sub-partition as parent); a game listed
   /// twice appears once, under the first.
-  static List<LiveArea> areas(String html, {int status = 200, Map<String, List<String>> headers = const {}}) {
+  static List<LiveArea> areas(String html, {int status = 200, Map<String, String> headers = const {}}) {
     _checkHttp(html, status, headers, 'home page');
     final raw = _flightObject(_flightRows(html), 'categoryData')?['categoryData'];
     if (raw is! List) throw const SiteApiChangedError('douyin home page: categoryData missing');
@@ -79,7 +79,7 @@ abstract final class DouyinCatalog {
     required int offset,
     String? areaName,
     int status = 200,
-    Map<String, List<String>> headers = const {},
+    Map<String, String> headers = const {},
   }) {
     final data = _obj(_checked(body, status, headers, 'partition rooms')['data']);
     final list = data?['data'];
@@ -114,7 +114,7 @@ abstract final class DouyinCatalog {
   /// 2026-08 (room in `data[].data`, possibly a JSON string, or in `room`) and
   /// the older `data.data` room list. Identity is the web_rid, else the room_id;
   /// duplicates drop. A room without an area shows [recommendArea].
-  static List<LiveRoom> feed(String body, {int status = 200, Map<String, List<String>> headers = const {}}) {
+  static List<LiveRoom> feed(String body, {int status = 200, Map<String, String> headers = const {}}) {
     final root = _checked(body, status, headers, 'feed');
     var list = root['data'];
     if (list is Map) list = list['data'];
@@ -155,7 +155,7 @@ abstract final class DouyinCatalog {
   /// …, JSON strings included). Identity is `owner.web_rid`, else the room_id;
   /// `status` 2 is live; duplicates drop. The card's picture is the streamer's
   /// large avatar, then the cover; a missing nickname stays empty.
-  static List<LiveRoom> searchRooms(String body, {int status = 200, Map<String, List<String>> headers = const {}}) {
+  static List<LiveRoom> searchRooms(String body, {int status = 200, Map<String, String> headers = const {}}) {
     _checkHttp(body, status, headers, 'search');
     final items = <Object?>[];
     for (final chunk in _chunks(body)) {
@@ -408,7 +408,7 @@ abstract final class DouyinCatalog {
   /// rid) is `NotFound`, 2483 and 20003 (not signed in) `NeedsLogin`, any other
   /// non-zero code `ApiChanged`. A body that is not JSON is a challenge page:
   /// `RiskControl`.
-  static Map<String, Object?> _checked(String body, int status, Map<String, List<String>> headers, String what) {
+  static Map<String, Object?> _checked(String body, int status, Map<String, String> headers, String what) {
     _checkHttp(body, status, headers, what);
     final Object? decoded;
     try {
@@ -434,10 +434,10 @@ abstract final class DouyinCatalog {
   /// HTTP-level failures before the body is read: a captcha (`bdturing-verify`),
   /// 401/403 and an empty 200 (no ttwid, a rejected signature) are risk; 429
   /// throttling; 5xx and any other non-2xx an API change.
-  static void _checkHttp(String body, int status, Map<String, List<String>> headers, String what) {
+  static void _checkHttp(String body, int status, Map<String, String> headers, String what) {
     String? header(String name) {
       for (final entry in headers.entries) {
-        if (entry.key.toLowerCase() == name && entry.value.isNotEmpty) return entry.value.first;
+        if (entry.key.toLowerCase() == name && entry.value.isNotEmpty) return entry.value;
       }
       return null;
     }
