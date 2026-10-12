@@ -1,11 +1,18 @@
+import 'dart:math';
+
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/sixroom/danmaku/sixroom_danmaku.dart';
+import 'package:live_sites/src/platforms/sixroom/danmaku/sixroom_session.dart';
 import 'package:live_sites/src/platforms/sixroom/parsers/sixroom_parser.dart';
 
-/// The 6.cn (六间房) adapter: room page user id → inroom answer flow.
+/// The 6.cn (六间房) adapter: room page user id → inroom answer flow, plus the
+/// guest chat socket on one of the room's `getChat.php` servers.
 ///
-/// Not migrated yet: directory, search and the danmaku transport.
-final class SixRoomSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability {
+/// Not migrated yet: directory and search.
+final class SixRoomSite
+    with SiteRoomGuard
+    implements LiveSite, LiveDanmakuCapability, LiveAreaCatalog, LiveDirectoryCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -132,6 +139,54 @@ final class SixRoomSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog,
     guardRoom(room);
     final fresh = await _read(room.roomId);
     return room.mergeFrom(fresh);
+  }
+
+  /// Opens the guest chat socket for [room].
+  ///
+  /// The broadcaster id names the room's chat-server list (`getChat.php`) and
+  /// the login's `roomid`; it is resolved from the room page and cached. Each
+  /// server is tried in turn (see [SixRoomDanmakuSession.connect]).
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) async {
+    guardRoom(room);
+    final userId = await _broadcasterId(room.roomId);
+    final servers = await _chatServers(userId, roomId: room.roomId);
+    final guestId = SixRoomDanmakuProtocol.guestId(Random().nextInt(100000000));
+    return await SixRoomDanmakuSession.connect(servers: servers, userId: userId, guestId: guestId);
+  }
+
+  /// The broadcaster's user id of room [roomId]: cached, or read from the room
+  /// page.
+  Future<String> _broadcasterId(String roomId) async {
+    final cached = _userIds[roomId];
+    if (cached != null) {
+      return cached;
+    }
+    final page = await http.send(
+      LiveRequest.get(SixRoomParser.roomUrl(roomId), headers: SixRoomParser.headers, site: id),
+    );
+    return _userIds[roomId] = SixRoomParser.userIdOf(page.text, roomId: roomId, status: page.statusCode);
+  }
+
+  /// The room's chat servers, from `getChat.php?rid=<userId>`.
+  Future<List<Uri>> _chatServers(String userId, {required String roomId}) async {
+    final response = await http.send(
+      LiveRequest.get(
+        SixRoomDanmakuProtocol.serversUrl.replace(queryParameters: {'rid': userId}),
+        headers: {
+          'user-agent': SixRoomParser.headers['user-agent']!,
+          'accept': 'application/json, text/javascript, */*; q=0.01',
+          'referer': SixRoomParser.roomUrl(roomId).toString(),
+          'x-requested-with': 'XMLHttpRequest',
+        },
+        site: id,
+      ),
+    );
+    try {
+      return SixRoomDanmakuProtocol.servers(response.text, status: response.statusCode);
+    } on FormatException catch (error) {
+      throw SiteNotFoundError('sixroom $roomId: ${error.message}');
+    }
   }
 
   /// The room: the broadcaster id (cached) then the inroom POST.
