@@ -153,5 +153,39 @@ abstract final class YouTubeParser {
     ];
   }
 
+  // Chat (the WEB InnerTube client) -------------------------------------------
+
+  /// The web client's InnerTube context of the live chat's `next`,
+  /// `get_live_chat` and `updated_metadata`.
+  static const Map<String, Object?> webContext = {
+    'client': {'clientName': 'WEB', 'clientVersion': '2.20260925.01.00', 'hl': 'en', 'gl': 'US'},
+  };
+
+  /// The web client's desktop UA (Chrome 140).
+  static const String webUserAgent =
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+      'Chrome/140.0.0.0 Safari/537.36';
+
+  /// The web client's InnerTube endpoint [endpoint], without a key (the WEB
+  /// client needs none; only the ANDROID player does).
+  static Uri apiUrl(String endpoint) => Uri.parse('$origin/youtubei/v1/$endpoint?prettyPrint=false');
+
+  /// Headers of the web client's InnerTube calls (the JSON content type comes
+  /// with the request): English, the `SOCS=CAI` consent cookie and the site.
+  static Map<String, String> get apiHeaders => {
+    'user-agent': webUserAgent,
+    'accept': 'application/json',
+    'accept-language': 'en-US,en;q=0.9',
+    'cookie': 'SOCS=CAI',
+    'origin': origin,
+    'referer': '$origin/',
+  };
+
+  /// The watch page's `next` body for [videoId].
+  static Map<String, Object?> nextBody(String videoId) => {'context': webContext, 'videoId': videoId};
+
+  /// The chat's `get_live_chat` body for [continuation].
+  static Map<String, Object?> chatBody(String continuation) => {'context': webContext, 'continuation': continuation};
+
   static Map<String, Object?> _map(Object? value) => value is Map<String, Object?> ? value : const <String, Object?>{};
 }
