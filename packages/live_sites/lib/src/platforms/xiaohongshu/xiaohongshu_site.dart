@@ -5,7 +5,10 @@ import 'package:live_sites/src/platforms/xiaohongshu/parsers/xiaohongshu_parser.
 /// The Xiaohongshu adapter: the share page's hydration state per
 /// broadcast (every broadcast has a new room id).
 ///
-/// Not migrated yet: directory, search and the danmaku transport.
+/// Xiaohongshu has no anonymous directory: [getRecommendRooms] is empty and
+/// [getCategoryRooms] is a caller error, as 3.x refused it. Not migrated yet:
+/// the share/short-link search (which runs through room resolution) and the
+/// danmaku transport.
 final class XiaohongshuSite with SiteRoomGuard implements LiveSite {
   /// A site over [http].
   new({required this.http});
@@ -23,14 +26,24 @@ final class XiaohongshuSite with SiteRoomGuard implements LiveSite {
   SiteMetadata get metadata =>
       const SiteMetadata(id: SiteIds.xiaohongshu, displayName: '小红书直播', homeUrl: 'https://www.xiaohongshu.com');
 
+  /// Always empty: no public directory is reachable anonymously, and nothing
+  /// is requested. A page below one is a caller error, as 3.x refused it.
   @override
   Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
-    throw UnimplementedError('xiaohongshu directory lands with its migration');
+    if (page < 1) {
+      throw RangeError.range(page, 1, null, 'page');
+    }
+    return const LivePage<LiveRoom>(items: []);
   }
 
+  /// Xiaohongshu has no categories, so any area is a caller error refused
+  /// before a request.
   @override
   Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    throw UnimplementedError('xiaohongshu directory lands with its migration');
+    if (page < 1) {
+      throw RangeError.range(page, 1, null, 'page');
+    }
+    throw SiteError.invalidRoomId(area.id);
   }
 
   @override
