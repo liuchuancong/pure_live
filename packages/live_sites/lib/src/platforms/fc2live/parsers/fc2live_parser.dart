@@ -201,9 +201,10 @@ abstract final class Fc2LiveParser {
     return null;
   }
 
-  /// `memberApi` → the room. `status` 1 with data means the channel exists;
-  /// `is_publish` 1 means on air.
-  static LiveRoom room(String body, {required String channelId, int status = 200}) {
+  /// `memberApi` → the room and the channel's `version` (the control grant
+  /// needs it, the room does not keep it). `status` 1 with data means the
+  /// channel exists; `is_publish` 1 means on air.
+  static ({LiveRoom room, String version}) room(String body, {required String channelId, int status = 200}) {
     if (status < 200 || status >= 300) {
       throw SiteApiChangedError('fc2live memberApi: HTTP $status');
     }
@@ -235,25 +236,82 @@ abstract final class Fc2LiveParser {
     final loginOnly = (channel['login_only'] as num?)?.toInt() == 1;
     final name = (profile['name'] ?? channel['tname'])?.toString() ?? '';
     final startSeconds = (channel['start'] as num?)?.toInt();
-    return LiveRoom(
-      platform: SiteIds.fc2Live,
-      roomId: channelId,
-      title: channel['title']?.toString() ?? name,
-      nick: name,
-      avatar: _image(profile['icon'] ?? profile['image']),
-      cover: _image(channel['image']),
-      watching: (channel['count'] as num?)?.toInt(),
-      status: published ? LiveStatus.live : LiveStatus.offline,
-      restriction: published && emailOnly
-          ? LiveRestriction.needsLogin
-          : published && loginOnly
-          ? LiveRestriction.needsLogin
-          : null,
-      startedAt: published && startSeconds != null && startSeconds > 0
-          ? DateTime.fromMillisecondsSinceEpoch(startSeconds * 1000, isUtc: true)
-          : null,
+    final version = channel['version']?.toString() ?? '';
+    return (
+      room: LiveRoom(
+        platform: SiteIds.fc2Live,
+        roomId: channelId,
+        title: channel['title']?.toString() ?? name,
+        nick: name,
+        avatar: _image(profile['icon'] ?? profile['image']),
+        cover: _image(channel['image']),
+        watching: (channel['count'] as num?)?.toInt(),
+        status: published ? LiveStatus.live : LiveStatus.offline,
+        restriction: published && emailOnly
+            ? LiveRestriction.needsLogin
+            : published && loginOnly
+            ? LiveRestriction.needsLogin
+            : null,
+        startedAt: published && startSeconds != null && startSeconds > 0
+            ? DateTime.fromMillisecondsSinceEpoch(startSeconds * 1000, isUtc: true)
+            : null,
+      ),
+      version: version,
     );
   }
+
+  /// The `getControlServer.php` path, the anonymous control grant.
+  static const String controlPath = '/api/getControlServer.php';
+
+  /// `getControlServer` → the control socket of [channelId] and its handshake:
+  /// the `wss://` endpoint carrying the `control_token`, and the headers with
+  /// the `l_ortkn` session cookie. `status` other than 0 is a channel not on
+  /// air or restricted (a [SiteNotFoundError]). A socket that is not this
+  /// channel's `wss` control socket, a token or `orz_raw` that is empty, too
+  /// long, or not cookie-safe, are a [SiteApiChangedError].
+  static ({Uri endpoint, Map<String, String> headers}) grant(
+    String body, {
+    required String channelId,
+    int status = 200,
+  }) {
+    if (status < 200 || status >= 300) {
+      throw SiteApiChangedError('fc2live getControlServer: HTTP $status');
+    }
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(body);
+    } on FormatException {
+      throw const SiteApiChangedError('fc2live getControlServer: body is not JSON');
+    }
+    if (decoded is! Map<String, Object?>) {
+      throw const SiteApiChangedError('fc2live getControlServer: body is not an object');
+    }
+    if ((decoded['status'] as num?)?.toInt() != 0) {
+      throw SiteNotFoundError('fc2live getControlServer: not on air or restricted (status ${decoded['status']})');
+    }
+    final url = decoded['url']?.toString() ?? '';
+    final token = decoded['control_token']?.toString() ?? '';
+    final orz = decoded['orz_raw']?.toString() ?? '';
+    final socket = url.isEmpty || url.length > 2048 || token.isEmpty || token.length > 4096 ? null : Uri.tryParse(url);
+    if (socket == null ||
+        socket.scheme != 'wss' ||
+        socket.userInfo.isNotEmpty ||
+        !_isControlHost(socket.host) ||
+        socket.path != '/control/channels/$channelId' ||
+        socket.hasQuery ||
+        socket.hasFragment ||
+        orz.isEmpty ||
+        orz.length > 256 ||
+        !RegExp(r'^[A-Za-z0-9._~-]+$').hasMatch(orz)) {
+      throw const SiteApiChangedError('fc2live getControlServer: not a control socket of the channel');
+    }
+    return (
+      endpoint: socket.replace(queryParameters: {'control_token': token}),
+      headers: {'origin': origin, 'user-agent': headers['user-agent']!, 'cookie': 'l_ortkn=$orz'},
+    );
+  }
+
+  static bool _isControlHost(String host) => host == 'live.fc2.com' || host.endsWith('.live.fc2.com');
 
   static String? _image(Object? value) {
     final url = value?.toString() ?? '';

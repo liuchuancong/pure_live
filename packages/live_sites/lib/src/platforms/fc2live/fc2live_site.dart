@@ -1,5 +1,7 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/fc2live/danmaku/fc2live_danmaku.dart';
+import 'package:live_sites/src/platforms/fc2live/danmaku/fc2live_session.dart';
 import 'package:live_sites/src/platforms/fc2live/parsers/fc2live_parser.dart';
 
 /// The FC2 Live adapter: one member-API request per room, and a directory
@@ -8,8 +10,12 @@ import 'package:live_sites/src/platforms/fc2live/parsers/fc2live_parser.dart';
 /// Playback is not migrated yet: an FC2 stream is authorized through the
 /// control WebSocket (`wss://<node>.live.fc2.com/control/channels/<id>`)
 /// and played through a relay recipe, so
-/// [getPlayQualities]/[getPlayUrls] throw until that transport lands.
-final class Fc2LiveSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability {
+/// [getPlayQualities]/[getPlayUrls] throw until that transport lands. The
+/// comments ride the same control socket, opened from a fresh grant
+/// ([connect]).
+final class Fc2LiveSite
+    with SiteRoomGuard
+    implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability, LiveDanmakuCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -115,7 +121,7 @@ final class Fc2LiveSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog,
   Future<LiveRoom> getRoomDetail(LiveRoom room) async {
     guardRoom(room);
     final fresh = await _member(room.roomId);
-    return room.mergeFrom(fresh);
+    return room.mergeFrom(fresh.room);
   }
 
   @override
@@ -134,11 +140,11 @@ final class Fc2LiveSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog,
   Future<LiveRoom> refreshLiveStatus(LiveRoom room) async {
     guardRoom(room);
     final fresh = await _member(room.roomId);
-    return room.mergeFrom(fresh);
+    return room.mergeFrom(fresh.room);
   }
 
-  /// The member-API request of [roomId].
-  Future<LiveRoom> _member(String roomId) async {
+  /// The member-API request of [roomId]: the room and the channel's version.
+  Future<({LiveRoom room, String version})> _member(String roomId) async {
     final channelId = Fc2LiveParser.channelId(roomId);
     if (channelId == null) {
       throw SiteNotFoundError('fc2live: "${roomId.trim()}" is not an FC2 channel');
@@ -152,5 +158,49 @@ final class Fc2LiveSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog,
       ),
     );
     return Fc2LiveParser.room(response.text, channelId: channelId, status: response.statusCode);
+  }
+
+  /// Opens FC2's control socket for [room]'s comments: `memberApi` (which says
+  /// the channel is on air and gives its version), then `getControlServer`
+  /// for the grant that names the socket and its session cookie. A channel not
+  /// on air, or a grant the site refuses, ends with a [SiteError] rather than
+  /// an opening socket.
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) async {
+    guardRoom(room);
+    return await Fc2LiveDanmakuSession.connect(await _danmakuArgs(room.roomId));
+  }
+
+  Future<Fc2LiveDanmakuArgs> _danmakuArgs(String roomId) async {
+    final channelId = Fc2LiveParser.channelId(roomId);
+    if (channelId == null) {
+      throw SiteNotFoundError('fc2live: "${roomId.trim()}" is not an FC2 channel');
+    }
+    final member = await _member(channelId);
+    if (member.room.status != LiveStatus.live) {
+      throw SiteNotFoundError('fc2live: channel $channelId is not on air');
+    }
+    if (member.version.isEmpty) {
+      throw const SiteApiChangedError('fc2live memberApi: channel is live without a version');
+    }
+    final response = await http.send(
+      LiveRequest.form(
+        Uri.https('live.fc2.com', Fc2LiveParser.controlPath),
+        fields: {
+          'channel_id': channelId,
+          'mode': 'play',
+          'orz': '',
+          'channel_version': member.version,
+          'client_version': '2.1.0\n [1]',
+          'client_type': 'pc',
+          'client_app': 'browser_hls',
+          'ipv6': '',
+        },
+        headers: Fc2LiveParser.headers,
+        site: id,
+      ),
+    );
+    final grant = Fc2LiveParser.grant(response.text, channelId: channelId, status: response.statusCode);
+    return Fc2LiveDanmakuArgs(channelId: channelId, endpoint: grant.endpoint, headers: grant.headers);
   }
 }
