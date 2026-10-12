@@ -16,6 +16,9 @@ part 'preferences.freezed.dart';
 /// or outdated document only ever resets its own group and never the rest
 /// of the user's settings.
 abstract final class PreferencesKeys {
+  /// The box the preference group documents live in.
+  static const String box = 'settings.preferences';
+
   /// The group key prefix, also the export filename prefix.
   static const String prefix = 'preferences';
 

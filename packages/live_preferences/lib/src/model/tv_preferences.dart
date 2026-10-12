@@ -25,6 +25,15 @@ abstract class TvPreferences with _$TvPreferences {
     /// Whether holding the d-pad's left/right key seeks in the live
     /// buffer, instead of moving focus.
     @Default(false) bool longPressSeek,
+
+    /// Whether the channel up and down keys are swapped when zapping
+    /// through a channel line-up.
+    ///
+    /// Some remote layouts, and some viewers, read "up" as "the previous
+    /// number" rather than "the next row on screen"; the walk itself keeps
+    /// its order, only the two keys change places, so a list still reads the
+    /// same way top to bottom.
+    @Default(false) bool channelReversal,
   }) = _TvPreferences;
 
   /// Restores TV preferences from JSON.

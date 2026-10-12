@@ -5,8 +5,8 @@ import 'package:live_storage/live_storage.dart';
 
 /// The persistence seam of the library.
 ///
-/// The production implementation writes through a live_storage keyed
-/// store; tests use [InMemoryLibraryStore].
+/// The production implementation writes through a live_storage list
+/// repository; tests use [InMemoryLibraryStore].
 abstract interface class LibraryStore {
   /// Loads the followed rooms (ordered by position).
   Future<List<LibraryRoom>> loadRooms();
@@ -45,13 +45,13 @@ abstract final class LibraryKeys {
   static const String history = 'library.history.v1';
 }
 
-/// A [LibraryStore] over a live_storage keyed store.
-final class KeyedLibraryStore implements LibraryStore {
+/// A [LibraryStore] over a live_storage list repository.
+final class BoxLibraryStore implements LibraryStore {
   /// A store writing through [store].
   new(this.store);
 
-  /// The keyed store (drift-backed in production).
-  final KeyedStore store;
+  /// The library repository, one document per concern.
+  final StorageListRepository<Map<dynamic, dynamic>> store;
 
   @override
   Stream<void> get changes => store.watch();
@@ -76,21 +76,19 @@ final class KeyedLibraryStore implements LibraryStore {
       _save(LibraryKeys.history, history, (record) => record.toJson());
 
   Future<List<T>> _load<T>(String key, T Function(Map<String, Object?>) fromJson) async {
-    final raw = store.get<Object?>(key);
-    if (raw is! List) {
+    final raw = store.get(key);
+    if (raw == null) {
       return const [];
     }
     final items = <T>[];
     for (final entry in raw) {
-      if (entry is Map) {
-        items.add(fromJson(entry.cast<String, Object?>()));
-      }
+      items.add(fromJson(entry.cast<String, Object?>()));
     }
     return items;
   }
 
   Future<void> _save<T>(String key, List<T> items, Map<String, Object?> Function(T) toJson) =>
-      store.put(key, [for (final item in items) toJson(item)]);
+      store.save(key, [for (final item in items) toJson(item)]);
 }
 
 /// An in-memory [LibraryStore] for tests and previews.

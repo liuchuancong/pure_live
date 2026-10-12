@@ -12,22 +12,25 @@ import 'package:live_storage/live_storage.dart';
 /// What a [PreferencesService.load] found wrong with the stored documents.
 ///
 /// The load itself never fails: a preference document that cannot be
-/// decoded must not keep the app from starting, so the affected group
+/// read or decoded must not keep the app from starting, so the affected group
 /// keeps its defaults — but the failure is reported here and through the
 /// service's `onError`, never silently.
 final class PreferencesLoadReport {
-  /// A report of [decodeFailures].
-  const new({this.decodeFailures = const <String>[]});
+  /// A report of [readFailures] and [decodeFailures].
+  const new({this.readFailures = const <String>[], this.decodeFailures = const <String>[]});
+
+  /// Group keys whose box read threw.
+  final List<String> readFailures;
 
   /// Group keys whose document was present but did not decode.
   final List<String> decodeFailures;
 
-  /// Whether every stored document decoded.
-  bool get isClean => decodeFailures.isEmpty;
+  /// Whether every stored document loaded.
+  bool get isClean => readFailures.isEmpty && decodeFailures.isEmpty;
 }
 
 /// The user's preferences: one in-memory [Preferences] value, persisted
-/// group by group through a [KeyedStore].
+/// group by group through a storage repository.
 ///
 /// Reading is synchronous — every reader sees [value] and watches
 /// [changes]; writing goes through the `update*` methods, which apply the
@@ -49,8 +52,8 @@ final class PreferencesService {
     this.onError,
   }) : _value = initial;
 
-  /// The store the groups are persisted in.
-  final KeyedStore store;
+  /// The repository the group documents are persisted in.
+  final StorageRepository<Map<dynamic, dynamic>> store;
 
   /// How long a change waits for company before its group is written.
   final Duration saveDebounce;
@@ -75,16 +78,24 @@ final class PreferencesService {
   /// Emits on every applied change, including [load] and [reset].
   Stream<Preferences> get changes => _controller.stream;
 
-  /// Applies the stored group documents on top of the current value.
+  /// Reads every group document and applies the ones that decode.
   ///
-  /// Groups that fail to decode keep their current value. Emits
-  /// [changes] when anything was applied.
+  /// Groups that fail keep their current value. Emits [changes] when
+  /// anything was applied.
   Future<PreferencesLoadReport> load() async {
     _checkNotDisposed();
+    final readFailures = <String>[];
     final decodeFailures = <String>[];
     var loaded = _value;
     for (final key in PreferencesKeys.all) {
-      final raw = store.get<Object?>(key);
+      final Object? raw;
+      try {
+        raw = store.get(key);
+      } on Object catch (error, stack) {
+        readFailures.add(key);
+        onError?.call(key, error, stack);
+        continue;
+      }
       if (raw == null) {
         continue;
       }
@@ -105,7 +116,7 @@ final class PreferencesService {
       _value = loaded;
       _emit();
     }
-    return PreferencesLoadReport(decodeFailures: decodeFailures);
+    return PreferencesLoadReport(readFailures: readFailures, decodeFailures: decodeFailures);
   }
 
   /// Applies [transform] to the root and persists whichever groups changed.
@@ -241,7 +252,13 @@ final class PreferencesService {
     _writeChain = _writeChain.then((_) async {
       for (final MapEntry(:key, value: json) in documents.entries) {
         try {
-          await store.put(key, json);
+          // A null document marks a reset; the repository stores only
+          // non-null values, so a reset deletes the entry.
+          if (json == null) {
+            await store.delete(key);
+          } else {
+            await store.save(key, json);
+          }
         } on Object catch (error, stack) {
           onError?.call(key, error, stack);
         }
