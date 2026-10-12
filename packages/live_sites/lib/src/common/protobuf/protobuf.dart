@@ -1,0 +1,201 @@
+/// A schema-less protobuf reader and writer, used by the AcFun and Douyin
+/// chat codecs (which read hand-picked fields of their `.proto` messages
+/// rather than generated classes). Internal to this package: site decoders
+/// import it directly rather than through the barrel.
+library;
+
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:meta/meta.dart';
+
+/// One protobuf field as it appeared on the wire.
+typedef ProtoField = ({int number, int wireType, Object value});
+
+/// A protobuf message read one level deep, without a schema: only the fields
+/// a site names are reached into, and nested messages are read when asked for.
+///
+/// The reading follows the `package:protobuf` runtime where it matters for
+/// well-formed input:
+///
+/// - a singular field keeps its last value; a field sent with another wire type
+///   than its declared one is ignored (an unknown field);
+/// - a singular message sent more than once is the merge of all of them, which
+///   is the message of their concatenated bytes;
+/// - a bool is true when the low 32 bits of its varint are not zero;
+/// - strings are UTF-8 with malformed bytes replaced;
+/// - a truncated field, a varint of more than ten bytes, field number 0, a
+///   length above 2^31 − 1, an unmatched group end or wire type 6 or 7 is a
+///   [FormatException]. Groups are skipped.
+@immutable
+final class ProtoMessage {
+  /// Wraps [fields].
+  const new(this.fields);
+
+  /// Reads [bytes] one level deep.
+  factory decode(List<int> bytes) {
+    final reader = _Reader(bytes is Uint8List ? bytes : Uint8List.fromList(bytes));
+    final fields = <ProtoField>[];
+    while (!reader.atEnd) {
+      final (number, wireType) = reader.tag();
+      if (wireType == _endGroup) throw const FormatException('Protobuf group end without a start');
+      fields.add((number: number, wireType: wireType, value: reader.value(number, wireType)));
+    }
+    return ProtoMessage(fields);
+  }
+
+  /// Fields in wire order.
+  final List<ProtoField> fields;
+
+  /// Wire type of varints.
+  static const int varintType = 0;
+
+  /// Wire type of length-delimited fields (strings, bytes, messages).
+  static const int lengthDelimitedType = 2;
+
+  Object? _last(int number, int wireType) {
+    for (var i = fields.length - 1; i >= 0; i--) {
+      final field = fields[i];
+      if (field.number == number && field.wireType == wireType) return field.value;
+    }
+    return null;
+  }
+
+  /// The last varint of [number] as a 64-bit two's complement `int`, or null
+  /// when there is none.
+  int? integer(int number) => _last(number, varintType) as int?;
+
+  /// Whether the bool [number] is true.
+  bool flag(int number) => ((integer(number) ?? 0) & 0xFFFFFFFF) != 0;
+
+  /// The last length-delimited value of [number].
+  Uint8List? bytes(int number) => _last(number, lengthDelimitedType) as Uint8List?;
+
+  /// The last value of [number] as UTF-8 text.
+  String? string(int number) {
+    final value = bytes(number);
+    return value == null ? null : utf8.decode(value, allowMalformed: true);
+  }
+
+  /// The singular message [number]: every occurrence merged, or null when
+  /// there is none.
+  ProtoMessage? message(int number) {
+    final parts = [
+      for (final field in fields)
+        if (field.number == number && field.wireType == lengthDelimitedType) field.value as Uint8List,
+    ];
+    if (parts.isEmpty) return null;
+    return ProtoMessage.decode(parts.length == 1 ? parts.single : [for (final part in parts) ...part]);
+  }
+
+  /// The repeated message [number], one per occurrence.
+  List<ProtoMessage> messages(int number) => [
+    for (final field in fields)
+      if (field.number == number && field.wireType == lengthDelimitedType)
+        ProtoMessage.decode(field.value as Uint8List),
+  ];
+
+  /// [value], a uint64 read into a 64-bit `int`, as unsigned decimal.
+  static String unsigned(int value) => value >= 0 ? '$value' : BigInt.from(value).toUnsigned(64).toString();
+}
+
+const int _fixed64 = 1;
+const int _startGroup = 3;
+const int _endGroup = 4;
+const int _fixed32 = 5;
+
+final class _Reader {
+  new(this.data);
+
+  final Uint8List data;
+  int offset = 0;
+
+  bool get atEnd => offset >= data.length;
+
+  int varint() {
+    var result = 0;
+    for (var shift = 0; shift < 70; shift += 7) {
+      if (offset >= data.length) throw const FormatException('Truncated protobuf varint');
+      final byte = data[offset++];
+      result |= (byte & 0x7F) << shift;
+      if (byte < 0x80) return result;
+    }
+    throw const FormatException('Protobuf varint longer than ten bytes');
+  }
+
+  (int, int) tag() {
+    final tag = varint() & 0xFFFFFFFF;
+    final number = tag >>> 3;
+    if (number == 0) throw const FormatException('Protobuf field number 0');
+    return (number, tag & 7);
+  }
+
+  Uint8List take(int length) {
+    if (length < 0 || length > data.length - offset) throw const FormatException('Truncated protobuf field');
+    final value = Uint8List.sublistView(data, offset, offset + length);
+    offset += length;
+    return value;
+  }
+
+  Object value(int number, int wireType) => switch (wireType) {
+    ProtoMessage.varintType => varint(),
+    _fixed64 => ByteData.sublistView(take(8)).getInt64(0, Endian.little),
+    // The runtime reads lengths as signed 32-bit values.
+    ProtoMessage.lengthDelimitedType => take(varint().toSigned(32)),
+    _startGroup => _skipGroup(number),
+    _fixed32 => ByteData.sublistView(take(4)).getUint32(0, Endian.little),
+    _ => throw FormatException('Unsupported protobuf wire type $wireType'),
+  };
+
+  /// Skips the fields of group [number] up to its end; the group reads as an
+  /// empty value.
+  Uint8List _skipGroup(int number) {
+    while (true) {
+      if (atEnd) throw const FormatException('Truncated protobuf group');
+      final (inner, wireType) = tag();
+      if (wireType == _endGroup) {
+        if (inner != number) throw const FormatException('Mismatched protobuf group end');
+        return Uint8List(0);
+      }
+      value(inner, wireType);
+    }
+  }
+}
+
+/// Writes protobuf fields in call order.
+final class ProtoWriter {
+  final BytesBuilder _out = BytesBuilder(copy: false);
+
+  void _varint(int value) {
+    var rest = value;
+    while (true) {
+      final byte = rest & 0x7F;
+      rest >>>= 7;
+      if (rest == 0) {
+        _out.addByte(byte);
+        return;
+      }
+      _out.addByte(byte | 0x80);
+    }
+  }
+
+  /// A varint field; a negative [value] is its 64-bit two's complement (ten
+  /// bytes), as for a uint64 above 2^63.
+  void integer(int number, int value) {
+    _varint(number << 3 | ProtoMessage.varintType);
+    _varint(value);
+  }
+
+  /// A length-delimited field.
+  void bytes(int number, List<int> value) {
+    _varint(number << 3 | ProtoMessage.lengthDelimitedType);
+    _varint(value.length);
+    _out.add(value);
+  }
+
+  /// A UTF-8 string field.
+  void string(int number, String value) => bytes(number, utf8.encode(value));
+
+  /// The message written so far.
+  Uint8List toBytes() => _out.toBytes();
+}
