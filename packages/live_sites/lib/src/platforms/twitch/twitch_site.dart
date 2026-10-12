@@ -2,13 +2,15 @@ import 'dart:convert';
 
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/twitch/danmaku/twitch_session.dart';
 import 'package:live_sites/src/platforms/twitch/parsers/twitch_parser.dart';
 
-/// The Twitch adapter: anonymous GraphQL + usher flow.
+/// The Twitch adapter: anonymous GraphQL + usher flow, plus the IRC chat over
+/// an anonymous WebSocket.
 ///
-/// Not migrated yet: the directory (the web client has no persisted query
-/// for it), search, the session cookie and the IRC chat.
-final class TwitchSite with SiteRoomGuard implements LiveSite {
+/// Not migrated yet: the directory (the web client has no persisted query for
+/// it), search and the session cookie.
+final class TwitchSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability {
   /// A site over [http].
   new({required this.http}) : _deviceId = TwitchParser.deviceId();
 
@@ -81,6 +83,14 @@ final class TwitchSite with SiteRoomGuard implements LiveSite {
     guardRoom(room);
     final fresh = await _user(room.roomId);
     return room.mergeFrom(fresh);
+  }
+
+  /// Opens the IRC chat for [room] as an anonymous guest (this tree stores no
+  /// Twitch login, so the join always uses an anonymous nick).
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) async {
+    guardRoom(room);
+    return await TwitchDanmakuSession.connect(room.roomId);
   }
 
   Future<LiveRoom> _user(String login) async {
