@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:live_sites/src/common/normalization/site_counts.dart';
 import 'package:live_sites/src/contracts/site_capability/site_capability.dart';
 import 'package:live_sites/src/models/live_message/live_message.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_models.dart';
@@ -86,7 +87,7 @@ final class BilibiliDanmakuSession implements LiveDanmakuSession {
       return 0;
     }
     final reply = jsonDecode(text);
-    return reply is Map<String, Object?> ? (reply['code'] as num?)?.toInt() ?? -1 : -1;
+    return reply is Map<String, Object?> ? SiteCounts.integer(reply['code']) ?? -1 : -1;
   }
 
   void _fail(Object error, StackTrace stackTrace) {

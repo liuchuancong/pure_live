@@ -1,3 +1,4 @@
+import 'package:live_sites/src/common/normalization/site_counts.dart';
 import 'package:live_sites/src/models/live_gift/live_gift.dart';
 import 'package:live_sites/src/models/live_message/live_message.dart';
 
@@ -35,7 +36,7 @@ abstract final class BilibiliDanmakuMapper {
       return null;
     }
     final meta = info[0];
-    final metaColor = meta is List && meta.length > 3 ? (meta[3] as num?)?.toInt() : null;
+    final metaColor = meta is List && meta.length > 3 ? SiteCounts.integer(meta[3]) : null;
     final sender = info[2];
     final text = info[1]?.toString() ?? '';
     if (sender is! List || sender.length < 2) {
@@ -59,7 +60,7 @@ abstract final class BilibiliDanmakuMapper {
       type: LiveMessageType.audienceUpdate,
       userName: '',
       message: 'watched change',
-      data: LiveAudienceUpdate(watching: (value as num?)?.toInt()),
+      data: LiveAudienceUpdate(watching: SiteCounts.integer(value)),
     );
   }
 

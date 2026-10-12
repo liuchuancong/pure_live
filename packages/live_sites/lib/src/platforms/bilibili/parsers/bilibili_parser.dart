@@ -24,7 +24,7 @@ abstract final class BilibiliParser {
     if (root is! Map<String, Object?>) {
       throw SiteApiChangedError('bilibili $what: body is not an object');
     }
-    final code = (root['code'] as num?)?.toInt();
+    final code = SiteCounts.integer(root['code']);
     if (code == 0) {
       final data = root['data'];
       if (data is Map<String, Object?>) {
@@ -66,7 +66,7 @@ abstract final class BilibiliParser {
     if (root is! Map<String, Object?>) {
       throw SiteApiChangedError('bilibili $what: body is not an object');
     }
-    final code = (root['code'] as num?)?.toInt();
+    final code = SiteCounts.integer(root['code']);
     if (code != 0) {
       final message = root['message']?.toString() ?? root['msg']?.toString() ?? '';
       throw SiteApiChangedError('bilibili $what: code $code, $message');
@@ -104,7 +104,7 @@ abstract final class BilibiliParser {
   /// `room/v1/Room/get_info` payload → room detail.
   static LiveRoom roomDetail(Map<String, Object?> data, {required String requestedId}) {
     final longId = data['room_id']?.toString() ?? requestedId;
-    final liveStatus = (data['live_status'] as num?)?.toInt() ?? 0;
+    final liveStatus = SiteCounts.integer(data['live_status']) ?? 0;
     return LiveRoom(
       platform: SiteIds.bilibili,
       roomId: longId,
@@ -113,7 +113,7 @@ abstract final class BilibiliParser {
       areaId: data['area_id']?.toString(),
       areaName: data['area_name']?.toString(),
       status: _status(liveStatus),
-      watching: (data['online'] as num?)?.toInt(),
+      watching: SiteCounts.integer(data['online']),
       startedAt: (data['live_time'] as String?) == null || data['live_time'] == '0' || data['live_time'] == ''
           ? null
           : DateTime.tryParse(data['live_time']!.toString()),
@@ -262,7 +262,7 @@ abstract final class BilibiliParser {
               url: url,
               headers: BilibiliConstants.mediaHeaders,
               format: StreamFormat.flv,
-              codec: (data['current_quality'] as num?) == null ? null : 'avc',
+              codec: SiteCounts.integer(data['current_quality']) == null ? null : 'avc',
               lineId: 'durl-${lines.length}',
             ),
           );
@@ -286,7 +286,7 @@ abstract final class BilibiliParser {
         if (host == null || host.isEmpty) {
           continue;
         }
-        final port = (item['wss_port'] as num?)?.toInt() ?? 443;
+        final port = SiteCounts.integer(item['wss_port']) ?? 443;
         final endpoint = 'wss://$host${port == 443 ? '' : ':$port'}/sub';
         if (!servers.contains(endpoint)) {
           servers.add(endpoint);
@@ -309,7 +309,7 @@ abstract final class BilibiliParser {
     cover: item['user_cover']?.toString() ?? item['cover']?.toString(),
     areaName: item['area_name']?.toString() ?? item['areaName']?.toString() ?? item['area_v2_name']?.toString(),
     status: LiveStatus.live,
-    watching: (item['online'] as num?)?.toInt(),
+    watching: SiteCounts.integer(item['online']),
   );
 
   static String _userName(Map<String, Object?> data) {

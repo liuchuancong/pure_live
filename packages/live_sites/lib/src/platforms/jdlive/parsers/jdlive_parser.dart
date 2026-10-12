@@ -138,7 +138,7 @@ abstract final class JdLiveParser {
         avatar: card['userPic'] as String?,
         cover: card['indexImage'] as String?,
         status: statusOf(item['status']),
-        watching: card['pv'] as int?,
+        watching: SiteCounts.integer(card['pv']),
       ),
       card: card,
     );
@@ -192,7 +192,7 @@ abstract final class JdLiveParser {
   }
 
   /// The room state from the play answer's `status`.
-  static LiveStatus statusOf(Object? status) => switch ((status as num?)?.toInt()) {
+  static LiveStatus statusOf(Object? status) => switch (SiteCounts.integer(status)) {
     1 => LiveStatus.live,
     3 => LiveStatus.replay,
     0 || 2 => LiveStatus.offline,
@@ -220,7 +220,7 @@ abstract final class JdLiveParser {
       avatar: _image(data['userPic'] ?? data['authorPic']) ?? known?['userPic']?.toString(),
       cover: _image(data['indexImage'] ?? data['coverImg']) ?? known?['indexImage']?.toString(),
       status: status,
-      watching: (data['pv'] as num?)?.toInt(),
+      watching: SiteCounts.integer(data['pv']),
     );
   }
 
