@@ -116,7 +116,8 @@ abstract final class SeventeenLiveParser {
   /// The website origin.
   static const String origin = 'https://17.live';
 
-  static const String _userAgent =
+  /// 3.x's desktop Chrome user agent, sent with every request.
+  static const String userAgent =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36';
 
   /// Display name.
@@ -219,7 +220,7 @@ abstract final class SeventeenLiveParser {
 
   /// 3.x's headers of the room answer.
   static Map<String, String> requestHeaders(String roomId) => {
-    'user-agent': _userAgent,
+    'user-agent': userAgent,
     'accept': 'application/json, text/plain, */*',
     'accept-language': 'en-US,en;q=0.9',
     'origin': origin,
@@ -228,7 +229,7 @@ abstract final class SeventeenLiveParser {
 
   /// 3.x's headers of the sections and the search.
   static const Map<String, String> catalogHeaders = {
-    'user-agent': _userAgent,
+    'user-agent': userAgent,
     'accept': 'application/json, text/plain, */*',
     'accept-language': 'ja-JP,ja;q=0.9,en;q=0.8',
     'origin': origin,
@@ -237,7 +238,7 @@ abstract final class SeventeenLiveParser {
 
   /// The pull streams' headers (the hosts refuse a request without a Referer).
   static Map<String, String> mediaHeaders(String roomId) => {
-    'user-agent': _userAgent,
+    'user-agent': userAgent,
     'origin': origin,
     'referer': roomUrl(roomId),
   };
