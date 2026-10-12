@@ -150,7 +150,7 @@ final class DioLiveHttp implements LiveHttp {
         dio.RequestOptions(
             path: request.url.toString(),
             method: request.method.toUpperCase(),
-            data: request.body,
+            data: request.bodyBytes ?? request.body,
             headers: {
               ..._defaultHeaders,
               if (request.contentType != null) dio.Headers.contentTypeHeader: request.contentType,

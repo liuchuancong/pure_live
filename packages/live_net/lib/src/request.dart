@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:live_net/src/proxy.dart';
 
@@ -46,6 +47,7 @@ final class LiveRequest {
     required this.method,
     required this.url,
     this.body,
+    this.bodyBytes,
     this.contentType,
     this.headers = const {},
     this.site,
@@ -145,6 +147,10 @@ final class LiveRequest {
 
   /// Pre-encoded request body, or null for bodyless requests.
   final String? body;
+
+  /// A raw byte request body (a binary envelope, e.g. a WUP packet), sent
+  /// instead of [body] when set. Null for text or bodyless requests.
+  final Uint8List? bodyBytes;
 
   /// Content type of [body]; the transport picks a default when null.
   final String? contentType;
