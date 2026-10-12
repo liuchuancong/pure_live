@@ -6,7 +6,7 @@ import 'package:live_sites/src/platforms/inke/parsers/inke_parser.dart';
 /// now_publish broadcast (who carries the signed pull URLs), plus the
 /// website's showcases and the app's hot list.
 ///
-/// Not migrated yet: search, the Zego original-quality line as a separate
+/// Not migrated yet: the Zego original-quality line as a separate
 /// quality, the showcase URL lookup fallback and the danmaku transport.
 final class InkeSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability {
   /// A site over [http].
@@ -73,9 +73,51 @@ final class InkeSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, Li
     return LivePage<LiveRoom>(items: rooms);
   }
 
+  /// 3.x's nickname search: no server endpoint, so the website's top list and
+  /// channels plus the app's hot list are fetched and filtered by nickname
+  /// (trimmed, case-ignored), each anchor once at its first place, page [page]
+  /// of twenty. A uid or room link is one exact answer at page 1; any other
+  /// link is nothing. The hot list failing leaves it out rather than the
+  /// whole search.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('inke search lands with its migration');
+    if (page < 1) throw RangeError.range(page, 1, null, 'page');
+    final input = keyword.trim();
+    final uid = _exactRoom(input);
+    if (uid != null) {
+      if (page != 1) {
+        return const LivePage<LiveRoom>(items: []);
+      }
+      try {
+        return LivePage<LiveRoom>(items: [await _share(uid)]);
+      } on SiteNotFoundError {
+        return const LivePage<LiveRoom>(items: []);
+      }
+    }
+    if (_isLink(input)) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    if (page > 10000) throw RangeError.range(page, 1, 10000, 'page');
+    if (input.toLowerCase().length > 100) throw ArgumentError.value(keyword, 'keyword', 'over 100 characters');
+    if (input.isEmpty) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final top = await http.send(LiveRequest.get(InkeParser.topUrl(), headers: InkeParser.headers, site: siteId));
+    final showcase = InkeParser.topRooms(top.text, status: top.statusCode);
+    final channels = await http.send(
+      LiveRequest.get(InkeParser.channelListUrl(), headers: InkeParser.headers, site: siteId),
+    );
+    final channelRooms = InkeParser.allChannelRooms(channels.text, status: channels.statusCode);
+    List<LiveRoom> hot;
+    try {
+      final response = await http.send(LiveRequest.get(InkeParser.hotUrl(), headers: InkeParser.headers, site: siteId));
+      hot = InkeParser.hotRooms(response.text, status: response.statusCode);
+    } on SiteError {
+      hot = const [];
+    }
+    return LivePage<LiveRoom>(
+      items: InkeParser.searchShowcases(input, [...showcase, ...channelRooms], hot: hot, page: page),
+    );
   }
 
   @override
@@ -150,5 +192,17 @@ final class InkeSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, Li
       throw SiteNotFoundError('inke: "${roomId.trim()}" is not a uid');
     }
     return roomId.trim();
+  }
+
+  /// The room [input] names exactly: a uid, or a room link.
+  String? _exactRoom(String input) =>
+      InkeParser.isUid(input) ? input.trim() : InkeParser.roomIdFromUri(Uri.tryParse(input));
+
+  /// Whether [input] is a link (`scheme://…`) rather than a keyword. As 3.x,
+  /// any text with a scheme counts, so a keyword such as `Re:Zero` finds
+  /// nothing.
+  bool _isLink(String input) {
+    final uri = Uri.tryParse(input);
+    return uri != null && uri.hasScheme && uri.hasAuthority;
   }
 }

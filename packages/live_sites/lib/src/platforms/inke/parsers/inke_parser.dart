@@ -129,6 +129,17 @@ abstract final class InkeParser {
     return null;
   }
 
+  /// Every channel's rows of the website's channel list, in the site's order
+  /// and not deduplicated (a search deduplicates by anchor): the showcases
+  /// the nickname search walks.
+  static List<LiveRoom> allChannelRooms(String body, {int status = 200}) {
+    final data = webData(body, what: 'Live_channel_pc', status: status);
+    return [
+      for (final group in SiteJson.objects(data['list']))
+        for (final row in SiteJson.objects(group['list'])) ?card(row),
+    ];
+  }
+
   /// The rooms of the website's top list, one page.
   static List<LiveRoom> topRooms(String body, {int status = 200}) {
     final data = webData(body, what: 'Live_top_pc', status: status);
@@ -216,6 +227,48 @@ abstract final class InkeParser {
       for (final room in rooms)
         if (seen.add(room.roomId)) room,
     ];
+  }
+
+  /// The app's hot list as the richer card for a uid, so a match from the
+  /// showcases is answered with the hot row's audience, cover and title when
+  /// that anchor is also trending.
+  static List<LiveRoom> searchShowcases(
+    String keyword,
+    Iterable<LiveRoom> rooms, {
+    Iterable<LiveRoom> hot = const [],
+    int page = 1,
+    int pageSize = 20,
+  }) {
+    final query = keyword.trim().toLowerCase();
+    if (query.isEmpty) return const [];
+    final cards = <String, LiveRoom>{};
+    for (final room in hot) {
+      cards.putIfAbsent(room.roomId, () => room);
+    }
+    final matches = unique([...rooms, ...hot].where((room) => room.nick.toLowerCase().contains(query)));
+    final start = (page - 1) * pageSize;
+    if (start >= matches.length) return const [];
+    return List.unmodifiable(matches.skip(start).take(pageSize).map((room) => cards[room.roomId] ?? room));
+  }
+
+  /// The uid of an Inke room link, without any request: a web room page
+  /// `…/liveroom/index.html?uid=…` on the site's hosts, or an app share page
+  /// `https://mlive<n>.inke.cn/app/…?uid=…`. Both need http(s), the default
+  /// port, no user info and exactly one `uid` that is a uid.
+  static String? roomIdFromUri(Uri? uri) {
+    if (uri == null) return null;
+    if (uri.scheme != 'http' && uri.scheme != 'https') return null;
+    if (uri.userInfo.isNotEmpty) return null;
+    if (uri.hasPort && uri.port != (uri.scheme == 'https' ? 443 : 80)) return null;
+    final web =
+        const {'inke.cn', 'www.inke.cn', 'inke.com', 'www.inke.com'}.contains(uri.host) &&
+        uri.path == '/liveroom/index.html';
+    final share = RegExp(r'^mlive[0-9]*\.inke\.cn$').hasMatch(uri.host) && uri.path.startsWith('/app/');
+    if (!web && !share) return null;
+    final values = uri.queryParametersAll['uid'];
+    if (values == null || values.length != 1) return null;
+    final uid = values.single.trim();
+    return isUid(uid) ? uid : null;
   }
 
   /// Decodes a body and returns its `data` object; null when the answer
