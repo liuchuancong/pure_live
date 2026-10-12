@@ -113,9 +113,38 @@ final class ChzzkSite
     return ChzzkDanmakuSession.connect(http, room.roomId);
   }
 
+  /// Channels matching [keyword], live and offline: one request a page, [page]
+  /// of `20` from offset `(page - 1) × 20`, the keyword cut to 100 characters
+  /// ([ChzzkParser.searchKeyword]). A page below 1 or a blank keyword finds
+  /// nothing without a request; an offset over [ChzzkParser.maxSearchOffset] is
+  /// a caller error.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('chzzk search lands with its migration');
+    if (page < 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final text = ChzzkParser.searchKeyword(keyword);
+    if (text.isEmpty) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final offset = (page - 1) * ChzzkParser.searchPageSize;
+    if (offset > ChzzkParser.maxSearchOffset) {
+      throw RangeError.range(offset, 0, ChzzkParser.maxSearchOffset, 'offset');
+    }
+    final response = await http.send(
+      LiveRequest.get(
+        Uri.https('api.chzzk.naver.com', '/service/v1/search/channels', {
+          'keyword': text,
+          'offset': '$offset',
+          'size': '${ChzzkParser.searchPageSize}',
+        }),
+        headers: ChzzkParser.headers,
+        site: siteId,
+      ),
+    );
+    final rooms = ChzzkParser.searchRooms(response.text, status: response.statusCode);
+    final hasMore = rooms.length >= ChzzkParser.searchPageSize;
+    return LivePage(items: rooms, hasMore: hasMore, nextPage: hasMore ? page + 1 : null);
   }
 
   @override
