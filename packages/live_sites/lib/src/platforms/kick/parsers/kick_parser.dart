@@ -82,6 +82,11 @@ abstract final class KickParser {
     final streamMap = stream is Map<String, Object?> ? stream : const <String, Object?>{};
     final live = !banned && stream is Map<String, Object?> && streamMap['is_live'] == true;
     final master = live ? _master(root['playback_url']?.toString()) : null;
+    // The chatroom id is not the channel id (`xqcisoffline`: channel 101691,
+    // chatroom 101689); the Pusher chat channel is named by the chatroom.
+    final chatroomObj = root['chatroom'];
+    final rawChatroom = chatroomObj is Map ? chatroomObj['id'] : null;
+    final chatroomId = rawChatroom is num ? rawChatroom.toInt() : int.tryParse('$rawChatroom');
     return LiveRoom(
       platform: SiteIds.kick,
       roomId: slug,
@@ -99,13 +104,18 @@ abstract final class KickParser {
           ? LiveStatus.live
           : LiveStatus.offline,
       startedAt: live ? _time(streamMap['start_time']) : null,
-      data: master,
+      data: <String, Object?>{
+        'channelId': channelId,
+        if (chatroomId != null && chatroomId > 0) 'chatroomId': chatroomId,
+        'master': ?master,
+      },
     );
   }
 
   /// The play lines of a live room's master playlist.
   static List<LivePlayLine> playLines(Object? data, String slug) {
-    if (data is! Uri) {
+    final master = data is Map<String, Object?> ? data['master'] : null;
+    if (master is! Uri) {
       return const [];
     }
     return [

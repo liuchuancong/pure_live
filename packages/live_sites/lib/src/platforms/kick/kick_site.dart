@@ -1,12 +1,14 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/kick/danmaku/kick_danmaku.dart';
+import 'package:live_sites/src/platforms/kick/danmaku/kick_session.dart';
 import 'package:live_sites/src/platforms/kick/parsers/kick_parser.dart';
 
 /// The Kick adapter: one channel request per room (the answer carries the
-/// stream and the signed IVS master).
+/// stream and the signed IVS master), plus the Pusher chat WebSocket.
 ///
-/// Not migrated yet: directory, search and the chat WebSocket.
-final class KickSite with SiteRoomGuard implements LiveSite {
+/// Not migrated yet: directory and search.
+final class KickSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -63,6 +65,29 @@ final class KickSite with SiteRoomGuard implements LiveSite {
     final fresh = await _channel(room.roomId);
     return room.mergeFrom(fresh);
   }
+
+  /// Opens the Pusher chat for [room].
+  ///
+  /// The chatroom and channel ids come from the channel answer and are
+  /// re-read on every connect (not cached). There is no subscribing to a
+  /// guessed chatroom, so a channel the answer gives no chatroom id for ends
+  /// with a [SiteNotFoundError] rather than a socket on the wrong room.
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) async {
+    guardRoom(room);
+    final data = (await _channel(room.roomId)).data;
+    final channelId = data is Map<String, Object?> ? _asInt(data['channelId']) : null;
+    final chatroomId = data is Map<String, Object?> ? _asInt(data['chatroomId']) : null;
+    final args = KickDanmakuProtocol.checked(
+      KickDanmakuArgs(chatroomId: chatroomId ?? 0, channelId: channelId ?? 0, slug: room.roomId),
+    );
+    if (args == null) {
+      throw SiteNotFoundError('kick ${room.roomId}: no chatroom to subscribe to');
+    }
+    return await KickDanmakuSession.connect(args);
+  }
+
+  static int? _asInt(Object? value) => value is int ? value : int.tryParse('$value');
 
   Future<LiveRoom> _channel(String roomId) async {
     final slug = KickParser.normalizeSlug(roomId);
