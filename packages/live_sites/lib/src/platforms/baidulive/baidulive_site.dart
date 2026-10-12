@@ -2,15 +2,17 @@ import 'dart:math';
 
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/baidulive/danmaku/baidulive_danmaku.dart';
+import 'package:live_sites/src/platforms/baidulive/danmaku/baidulive_session.dart';
 import 'package:live_sites/src/platforms/baidulive/parsers/baidulive_parser.dart';
 
 /// The Baidu Live adapter: rooms through the searchbox 371 room command.
 ///
-/// Not migrated yet: the feed (directory), search, replay variants and
-/// the danmaku session (the message-list playlist is signed). One
-/// request serves both detail and play — the room command carries the
-/// video URLs, so play reuses the last answer.
-final class BaiduLiveSite with SiteRoomGuard implements LiveSite {
+/// Not migrated yet: the feed (directory), search and replay variants. One
+/// request serves both detail and play — the room command carries the video
+/// URLs, so play reuses the last answer — and the same command names the
+/// signed message lists the danmaku session ([connect]) polls.
+final class BaiduLiveSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -86,6 +88,22 @@ final class BaiduLiveSite with SiteRoomGuard implements LiveSite {
     guardRoom(room);
     final fresh = await _fetch(room.roomId);
     return room.mergeFrom(fresh);
+  }
+
+  /// Opens Baidu Live's chat: the room command names the signed message lists
+  /// the session polls. A room whose command gives no valid chat list cannot
+  /// be followed, so this ends with a [SiteNotFoundError] rather than an
+  /// empty stream. The lists' signatures come from this command; a session
+  /// that outlives one ends, and the caller reconnects to a fresh command.
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) async {
+    guardRoom(room);
+    final command = BaiduLiveParser.commandOf(await _bodyFor(room.roomId));
+    final args = BaiduLiveDanmakuProtocol.danmakuArgs(command, room.roomId);
+    if (args == null) {
+      throw SiteNotFoundError('baidulive ${room.roomId}: no message list to follow');
+    }
+    return await BaiduLiveDanmakuSession.connect(args, http);
   }
 
   Future<LiveRoom> _fetch(String roomId) async {
