@@ -121,6 +121,106 @@ abstract final class WeiboParser {
     return lines;
   }
 
+  /// A broadcast id: 3–8 digits, a colon and 16–48 letters or digits.
+  static final RegExp liveIdPattern = RegExp(r'^[0-9]{3,8}:[0-9A-Za-z]{16,48}$');
+
+  /// Whether [value] is a broadcast id.
+  static bool isLiveId(String value) => liveIdPattern.hasMatch(value);
+
+  /// The `id` of the one area, the recommendation snapshot.
+  static const String areaId = 'live';
+
+  /// The name of the one area.
+  static const String areaName = '公开推荐';
+
+  /// The snapshot request path.
+  static const String recommendPath = '/l/!/2/wblive/pc_recommend/list.json';
+
+  /// The count 3.x asked the snapshot for.
+  static const int recommendCount = 100;
+
+  /// The recommendation-snapshot URL (`?count=100&uid=`, 3.x's spelling).
+  static Uri recommendUrl() => Uri.parse('$origin$recommendPath?count=$recommendCount&uid=');
+
+  /// The room [input] names exactly: a broadcast id, or a room link; null for
+  /// anything with a backslash or whitespace, and for a non-broadcast link.
+  static String? exactRoom(String input) {
+    final value = input.trim();
+    if (RegExp(r'[\\\s]').hasMatch(value)) {
+      return null;
+    }
+    return isLiveId(value) ? value : liveIdFromUrl(value);
+  }
+
+  /// The broadcast id of a `weibo.com/l/wblive/[pm]/show/<id>` room link, the
+  /// `%3a` in its id decoded back to a colon; null for anything else.
+  static String? liveIdFromUrl(String raw) {
+    final value = raw.trim();
+    if (RegExp(r'[\\\s]').hasMatch(value)) {
+      return null;
+    }
+    final schemeIndex = value.indexOf('://');
+    if (schemeIndex < 0) {
+      return null;
+    }
+    final authorityAndPath = value.substring(schemeIndex + 3).split(RegExp('[?#]')).first;
+    final slash = authorityAndPath.indexOf('/');
+    if (slash < 0) {
+      return null;
+    }
+    final match = RegExp(r'^/l/wblive/[pm]/show/([^/]+)/?$').firstMatch(authorityAndPath.substring(slash));
+    if (match == null) {
+      return null;
+    }
+    return match[1]!.replaceAll(RegExp('%3a', caseSensitive: false), ':');
+  }
+
+  /// The recommendation snapshot: each broadcast on air, one page, `hasMore`
+  /// false. A bad row (not an object, no valid broadcast id, or listed before)
+  /// is skipped; a `data.data` that is no list, over 500, or whose rows are
+  /// none usable is a changed endpoint rather than an empty directory. The
+  /// snapshot lists live broadcasts only and says nothing of restrictions.
+  static LivePage<LiveRoom> recommendations(String body, {int status = 200}) {
+    final rows = data(body, status: status, what: 'pc_recommend')['data'];
+    if (rows is! List || rows.length > 500) {
+      throw const SiteApiChangedError('weibo pc_recommend: data.data is not a list');
+    }
+    final seen = <String>{};
+    final rooms = <LiveRoom>[];
+    for (final row in SiteJson.objects(rows)) {
+      final id = row['liveid']?.toString() ?? '';
+      if (!isLiveId(id) || !seen.add(id)) {
+        continue;
+      }
+      final nick = SiteText.title(SiteText.text(row['nickname']));
+      rooms.add(
+        LiveRoom(
+          platform: SiteIds.weibo,
+          roomId: id,
+          nick: nick,
+          title: nick,
+          cover: _image(row['cover']),
+          status: LiveStatus.live,
+        ),
+      );
+    }
+    if (rooms.isEmpty && rows.isNotEmpty) {
+      throw const SiteApiChangedError('weibo pc_recommend: no usable row');
+    }
+    return LivePage<LiveRoom>(items: rooms);
+  }
+
+  /// 3.x's nickname search: the snapshot [rooms] whose nickname contains
+  /// [keyword] (trimmed, case ignored), the first [pageSize]. There is no
+  /// server search and no second page.
+  static List<LiveRoom> searchSnapshot(String keyword, Iterable<LiveRoom> rooms, {int pageSize = 30}) {
+    final query = keyword.trim().toLowerCase();
+    if (query.isEmpty) {
+      return const [];
+    }
+    return List.unmodifiable(rooms.where((room) => room.nick.toLowerCase().contains(query)).take(pageSize));
+  }
+
   static String? _image(Object? value) {
     final url = value?.toString() ?? '';
     return url.isEmpty ? null : url;

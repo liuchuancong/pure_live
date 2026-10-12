@@ -2,11 +2,15 @@ import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:live_sites/src/platforms/weibo/parsers/weibo_parser.dart';
 
-/// The Weibo adapter: one broadcast per live id (every broadcast has its
-/// own link, so a room id is a broadcast id).
+/// The Weibo adapter: one broadcast per live id (every broadcast has its own
+/// link, so a room id is a broadcast id), the official recommendation
+/// snapshot as the directory, and a nickname filter over that snapshot as the
+/// search.
 ///
-/// Not migrated yet: search, directory and the danmaku transport.
-final class WeiboSite with SiteRoomGuard implements LiveSite {
+/// The snapshot is one page (no server paging), so pages after the first are
+/// empty without a request. Not migrated yet: the `t.cn` short-link search
+/// branch (which resolves the redirect first) and the danmaku transport.
+final class WeiboSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -22,19 +26,71 @@ final class WeiboSite with SiteRoomGuard implements LiveSite {
   @override
   SiteMetadata get metadata => const SiteMetadata(id: SiteIds.weibo, displayName: '微博直播', homeUrl: 'https://weibo.com');
 
+  /// The catalogue: the one area, the official recommendation snapshot.
+  @override
+  Future<List<LiveArea>> getAreas() async => const [LiveArea(id: WeiboParser.areaId, name: WeiboParser.areaName)];
+
+  /// Page [page] of the recommendation snapshot: one page of live broadcasts,
+  /// the most-watched first, without audience. Pages after the first are
+  /// empty without a request.
   @override
   Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
-    throw UnimplementedError('weibo directory lands with its migration');
+    if (page < 1) {
+      throw RangeError.range(page, 1, null, 'page');
+    }
+    if (page > 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final response = await http.send(
+      LiveRequest.get(WeiboParser.recommendUrl(), headers: WeiboParser.headers, site: siteId),
+    );
+    return WeiboParser.recommendations(response.text, status: response.statusCode);
   }
 
+  /// As [getRecommendRooms], for the one area; any other area is a caller
+  /// error refused before a request.
   @override
-  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    throw UnimplementedError('weibo directory lands with its migration');
+  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) {
+    if (area.id.trim() != WeiboParser.areaId) {
+      throw SiteError.invalidRoomId(area.id);
+    }
+    return getRecommendRooms(page: page);
   }
 
+  /// 3.x's search, on page 1 only (a later page is empty without a request):
+  /// a broadcast id or room link finds that room (a room the site does not
+  /// know is nothing); another link or a blank keyword is nothing; anything
+  /// else filters the snapshot's nicknames. The `t.cn` short link is not
+  /// resolved yet.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('weibo search lands with its migration');
+    if (page < 1) {
+      throw RangeError.range(page, 1, null, 'page');
+    }
+    if (page > 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final input = keyword.trim();
+    final exact = WeiboParser.exactRoom(input);
+    if (exact != null) {
+      try {
+        return LivePage<LiveRoom>(items: [await _detail(exact)]);
+      } on SiteNotFoundError {
+        return const LivePage<LiveRoom>(items: []);
+      }
+    }
+    if (input.isEmpty || _isLink(input)) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final snapshot = await getRecommendRooms();
+    return LivePage<LiveRoom>(items: WeiboParser.searchSnapshot(input, snapshot.items));
+  }
+
+  /// Whether [input] is a link (`scheme://…`) rather than a keyword. 3.x
+  /// filtered the snapshot's nicknames with it, which never matched.
+  static bool _isLink(String input) {
+    final uri = Uri.tryParse(input);
+    return uri != null && uri.hasScheme && uri.hasAuthority;
   }
 
   @override
