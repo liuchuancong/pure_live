@@ -1,5 +1,6 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/niconico/danmaku/niconico_session.dart';
 import 'package:live_sites/src/platforms/niconico/parsers/niconico_parser.dart';
 
 /// The Niconico adapter: watch-page program status and access, plus the
@@ -8,9 +9,12 @@ import 'package:live_sites/src/platforms/niconico/parsers/niconico_parser.dart';
 /// Playback is not migrated yet: a Niconico stream is delivered through a
 /// "seat" — a WebSocket session against the relive server whose stream
 /// grants are per-viewer and revocable — so
-/// [getPlayQualities]/[getPlayUrls] throw until the seat transport lands
-/// (the parser already surfaces the seat's `webSocketUrl` in `room.data`).
-final class NiconicoSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability {
+/// [getPlayQualities]/[getPlayUrls] throw until the grant side of the seat
+/// lands. The comments ([connect]) use the same seat only to name the comment
+/// server (the parser surfaces its `webSocketUrl`), then read it over HTTP.
+final class NiconicoSite
+    with SiteRoomGuard
+    implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability, LiveDanmakuCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -98,10 +102,33 @@ final class NiconicoSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog
     return room.mergeFrom(fresh);
   }
 
-  Future<LiveRoom> _watch(String roomId) async {
+  Future<LiveRoom> _watch(String roomId) async => (await _watchWithSeat(roomId)).room;
+
+  /// The watch page and the seat WebSocket it names (null when the room is not
+  /// watchable). [connect] needs the seat address; the other paths only the
+  /// room.
+  Future<({LiveRoom room, String? socketUrl})> _watchWithSeat(String roomId) async {
     final response = await http.send(
       LiveRequest.get(Uri.parse(NiconicoParser.watchUrl(roomId)), headers: NiconicoParser.headers, site: id),
     );
-    return NiconicoParser.watch(response.text, roomId: roomId, status: response.statusCode).room;
+    return NiconicoParser.watch(response.text, roomId: roomId, status: response.statusCode);
+  }
+
+  /// Opens niconico's comments: the watch page names the watching seat's
+  /// WebSocket, whose handshake names the comment server the session then
+  /// follows. A room the watch page gives no seat for (offline, restricted,
+  /// gone) ends with a [SiteNotFoundError].
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) async {
+    guardRoom(room);
+    final watch = await _watchWithSeat(room.roomId);
+    final socket = watch.socketUrl;
+    if (socket == null) {
+      throw SiteNotFoundError('niconico ${room.roomId}: no seat (offline, restricted or gone)');
+    }
+    return await NiconicoDanmakuSession.connect(
+      NiconicoDanmakuArgs(roomId: room.roomId, seatSocket: Uri.parse(socket)),
+      http,
+    );
   }
 }
