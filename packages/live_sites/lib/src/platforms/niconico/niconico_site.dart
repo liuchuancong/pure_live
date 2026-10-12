@@ -71,9 +71,26 @@ final class NiconicoSite
     return NiconicoParser.directoryPage(response.text, tab: tab, page: page, status: response.statusCode);
   }
 
+  /// Programs on air matching [keyword]: one `search/v1/programs` page of
+  /// forty at [page], read like a directory page. A blank keyword is nothing
+  /// without a request; a keyword over 500 characters or a page below one is
+  /// the caller's mistake, as in 3.x.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('niconico search lands with its migration');
+    if (page < 1) {
+      throw RangeError.range(page, 1, null, 'page');
+    }
+    if (keyword.length > 500) {
+      throw ArgumentError('A niconico keyword has at most 500 characters');
+    }
+    final term = keyword.trim();
+    if (term.isEmpty) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final response = await http.send(
+      LiveRequest.get(NiconicoParser.searchUrl(term, page), headers: NiconicoParser.headers, site: siteId),
+    );
+    return NiconicoParser.directoryPage(response.text, page: page, search: true, status: response.statusCode);
   }
 
   @override

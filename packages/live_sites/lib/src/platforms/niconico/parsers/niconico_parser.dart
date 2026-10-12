@@ -44,8 +44,14 @@ abstract final class NiconicoParser {
   /// Rows one page of the recent programs carries.
   static const int recentPageSize = 70;
 
+  /// Rows one page of the program search carries.
+  static const int searchPageSize = 40;
+
   /// The path of the recent-programs page.
   static const String directoryPath = '/front/api/pages/recent/v1/programs';
+
+  /// The path of the program-search page.
+  static const String searchPath = '/front/api/pages/search/v1/programs';
 
   /// The catalogue: the seven constant tabs, so no request is spent finding
   /// them out.
@@ -61,41 +67,63 @@ abstract final class NiconicoParser {
   static Uri directoryUrl({required String tab, required int page}) =>
       Uri.https('live.nicovideo.jp', directoryPath, {'tab': tab, 'offset': '${page - 1}', 'sortOrder': 'recentDesc'});
 
-  /// A `recent/v1/programs` page: the on-air programs of [tab], each
+  /// The URL of the on-air program search for [keyword] at [page] — the API
+  /// pages searches by page number, one page of [searchPageSize] programs.
+  static Uri searchUrl(String keyword, int page) => Uri.https('live.nicovideo.jp', searchPath, {
+    'keyword': keyword,
+    'column': 'main',
+    'status': 'onair',
+    'page': '${page < 1 ? 1 : page}',
+    'disableGrouping': 'true',
+  });
+
+  /// A `recent/v1/programs` (`search: false`) or `search/v1/programs` page:
+  /// the on-air programs of [tab] (or matching the search keyword), each
   /// broadcaster once, and whether the site has another page.
   ///
   /// The service answers under `meta`: a status other than 200 or an
   /// `errorCode` other than `OK` is the service failing rather than a page
   /// without rooms, and is reported as a changed endpoint because that is
-  /// what a caller can act on. `totalCount` must be a count of at least the
-  /// rows, and the rows a list of at most [recentPageSize]. A row that
-  /// cannot be read costs itself, while a page whose every row cannot be
-  /// read is a changed endpoint.
-  static LivePage<LiveRoom> directoryPage(String body, {required String tab, required int page, int status = 200}) {
+  /// what a caller can act on. The two answers nest differently — the recent
+  /// page counts in `meta` and lists rows in `data`, the search counts in a
+  /// `data` object and lists its programs in `data.programs` — so the row
+  /// budget is [recentPageSize] or [searchPageSize] accordingly. `totalCount`
+  /// must be a count of at least the rows. A row that cannot be read costs
+  /// itself, while a page whose every row cannot be read is a changed
+  /// endpoint.
+  static LivePage<LiveRoom> directoryPage(
+    String body, {
+    required int page,
+    String tab = '',
+    bool search = false,
+    int status = 200,
+  }) {
+    final what = search ? 'search' : 'recent $tab';
     if (status < 200 || status >= 300) {
-      throw SiteApiChangedError('niconico recent $tab: HTTP $status');
+      throw SiteApiChangedError('niconico $what: HTTP $status');
     }
     final Object? decoded;
     try {
       decoded = jsonDecode(body);
     } on FormatException {
-      throw SiteApiChangedError('niconico recent $tab: body is not JSON');
+      throw SiteApiChangedError('niconico $what: body is not JSON');
     }
     final root = decoded is Map<String, Object?> ? decoded : null;
     final meta = SiteJson.object(root?['meta']);
     if (SiteCounts.integer(meta['statusCode']) != 200 || SiteText.trimmed(meta['errorCode']) != 'OK') {
-      throw SiteApiChangedError('niconico recent $tab: meta ${meta['statusCode']} ${meta['errorCode']}');
+      throw SiteApiChangedError('niconico $what: meta ${meta['statusCode']} ${meta['errorCode']}');
     }
-    final total = SiteCounts.integer(meta['totalCount']);
-    final rows = SiteJson.list(root?['data']);
-    if (total == null || total < rows.length || rows.length > recentPageSize) {
-      throw SiteApiChangedError('niconico recent $tab: ${rows.length} rows, totalCount $total');
+    final size = search ? searchPageSize : recentPageSize;
+    final rows = search ? SiteJson.list(SiteJson.object(root?['data'])['programs']) : SiteJson.list(root?['data']);
+    final total = SiteCounts.integer((search ? SiteJson.object(root?['data']) : meta)['totalCount']);
+    if (total == null || total < rows.length || rows.length > size) {
+      throw SiteApiChangedError('niconico $what: ${rows.length} rows, totalCount $total');
     }
     final seen = <String>{};
     final rooms = <LiveRoom>[];
     var unreadable = 0;
     for (final row in rows) {
-      final room = listRoom(SiteJson.object(row));
+      final room = listRoom(SiteJson.object(row), search: search);
       if (room == null) {
         unreadable++;
         continue;
@@ -105,9 +133,9 @@ abstract final class NiconicoParser {
       }
     }
     if (rooms.isEmpty && unreadable > 0) {
-      throw SiteApiChangedError('niconico recent $tab: every one of $unreadable rows is unreadable');
+      throw SiteApiChangedError('niconico $what: every one of $unreadable rows is unreadable');
     }
-    final hasMore = total > page * recentPageSize;
+    final hasMore = total > page * size;
     return LivePage<LiveRoom>(items: rooms, hasMore: hasMore, nextPage: hasMore ? page + 1 : null, totalCount: total);
   }
 
@@ -122,42 +150,66 @@ abstract final class NiconicoParser {
   /// site publishes), and its restriction from `isPayProgram` and
   /// `isFollowerOnly` — a paid or followers-only program is listed, because
   /// the site lists it, and the watch page decides playback.
-  static LiveRoom? listRoom(Map<String, Object?> row) {
-    final programId = SiteText.trimmed(row['id']);
+  /// A `recent` (or, with [search], `search`) row as a room, or null when the
+  /// row is not an on-air program of a known kind.
+  ///
+  /// The room is the broadcaster rather than the program when the site names
+  /// one ([roomIdOf]), so a program that ends does not orphan a followed
+  /// broadcaster. A row is kept only when it is on air and links to itself;
+  /// its title, provider name and pictures come from the answer, its viewers
+  /// from `statistics.watchCount` (the visit count the site publishes), and
+  /// its restriction from `isPayProgram` and `isFollowerOnly` — a paid or
+  /// followers-only program is listed, because the site lists it, and the
+  /// watch page decides playback.
+  ///
+  /// The search answer spells the same facts under other keys: the program id
+  /// in `nicoliveProgramId`, its state in `status`, the broadcaster in
+  /// `supplier` (whose id is `programProviderId` and icon `icons.uri150x150`)
+  /// and its start in `beginTime` as epoch seconds; the recent page uses `id`,
+  /// `liveCycle`, `programProvider` (id `id`, icon `icon`) and `beginAt` in
+  /// milliseconds.
+  static LiveRoom? listRoom(Map<String, Object?> row, {bool search = false}) {
+    final programId = SiteText.trimmed(row[search ? 'nicoliveProgramId' : 'id']);
     if (!isProgramId(programId)) {
       return null;
     }
     if (!_isWatchLink(SiteText.trimmed(row['watchPageUrl']), programId)) {
       return null;
     }
-    if (SiteText.trimmed(row['liveCycle']) != 'ON_AIR') {
+    if (SiteText.trimmed(row[search ? 'status' : 'liveCycle']) != 'ON_AIR') {
       return null;
     }
     final providerType = SiteText.trimmed(row['providerType']);
     if (!const {'community', 'channel', 'official'}.contains(providerType)) {
       return null;
     }
-    final provider = SiteJson.object(row['programProvider']);
+    final provider = SiteJson.object(row[search ? 'supplier' : 'programProvider']);
     final social = SiteJson.object(row['socialGroup']);
-    final started = SiteCounts.integer(row['beginAt']);
+    final icons = SiteJson.object(provider['icons']);
+    final icon = search ? icons['uri150x150'] : provider['icon'];
+    final started = SiteCounts.integer(row[search ? 'beginTime' : 'beginAt']);
     return LiveRoom(
       platform: SiteIds.niconico,
       roomId: roomIdOf(
         programId: programId,
         providerType: providerType,
-        userId: provider['id'],
+        userId: provider[search ? 'programProviderId' : 'id'],
         channelId: social['id'],
       ),
       title: SiteText.title(SiteText.text(row['title'])),
       nick: SiteText.title(SiteText.text(provider['name'] ?? social['name'])),
-      avatar: publicImage(provider['icon']) ?? publicImage(social['thumbnailUrl']),
+      avatar: publicImage(icon) ?? publicImage(social['thumbnailUrl']),
       cover: publicImage(row['flippedListingThumbnail']) ?? publicImage(row['listingThumbnail']),
       status: LiveStatus.live,
       watching: SiteCounts.integer(SiteJson.object(row['statistics'])['watchCount']),
       restriction: listRestriction(row),
-      startedAt: started != null && started >= 1000000000000
-          ? DateTime.fromMillisecondsSinceEpoch(started, isUtc: true)
-          : null,
+      startedAt: search
+          ? (started != null && started >= 1000000000 && started < 10000000000
+                ? DateTime.fromMillisecondsSinceEpoch(started * 1000, isUtc: true)
+                : null)
+          : (started != null && started >= 1000000000000 && started < 10000000000000
+                ? DateTime.fromMillisecondsSinceEpoch(started, isUtc: true)
+                : null),
     );
   }
 
