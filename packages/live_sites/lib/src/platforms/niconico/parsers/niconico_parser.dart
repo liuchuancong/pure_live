@@ -299,9 +299,9 @@ abstract final class NiconicoParser {
         : 'denied';
     final live = statusText == 'ON_AIR';
     final statistics = program['statistics'];
-    final watchCount = (statistics is Map<String, Object?> ? statistics['watchCount'] : null) as num?;
+    final watchCount = SiteCounts.integer(statistics is Map<String, Object?> ? statistics['watchCount'] : null);
     final icons = supplierMap['icons'];
-    final beginMs = (program['beginTime'] as num?)?.toInt();
+    final beginMs = SiteCounts.integer(program['beginTime']);
     String? socketUrl;
     if (live && access == 'allowed') {
       final site = data['site'];
@@ -316,7 +316,7 @@ abstract final class NiconicoParser {
         nick: supplierMap['name']?.toString() ?? '',
         avatar: _image(_avatarOf(icons, channel, roomId)),
         cover: _image(program['screenshot'] ?? program['thumbnail']),
-        watching: watchCount?.toInt(),
+        watching: watchCount,
         status: live
             ? LiveStatus.live
             : statusText == 'ENDED'
