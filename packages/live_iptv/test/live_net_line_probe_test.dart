@@ -2,8 +2,7 @@ import 'dart:typed_data';
 
 import 'package:live_iptv/src/model/model.dart';
 import 'package:live_iptv/src/order/iptv_channel_ordering.dart' show compareIptvChannels;
-import 'package:live_iptv/src/probe/iptv_line_prober.dart';
-import 'package:live_iptv/src/probe/live_net_line_probe.dart';
+import 'package:live_iptv/src/probe/probe.dart';
 import 'package:live_net/live_net.dart';
 import 'package:test/test.dart';
 

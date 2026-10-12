@@ -1,13 +1,12 @@
 import 'dart:async';
 
-import 'package:live_iptv/src/library/iptv_store.dart';
+import 'package:live_iptv/src/guide/guide_matcher.dart';
+import 'package:live_iptv/src/library/iptv_store/iptv_store.dart';
 import 'package:live_iptv/src/model/model.dart';
 import 'package:live_iptv/src/order/iptv_channel_ordering.dart';
 import 'package:live_iptv/src/order/iptv_zap_sequence.dart';
-import 'package:live_iptv/src/playlist/playlist_parse_result.dart';
-import 'package:live_iptv/src/playlist/playlist_parser.dart';
-import 'package:live_iptv/src/probe/iptv_line_prober.dart';
-import 'package:live_sites/live_sites.dart' as sites;
+import 'package:live_iptv/src/playlist/playlist.dart';
+import 'package:live_iptv/src/probe/probe.dart';
 import 'package:live_storage/live_storage.dart';
 
 /// The user's IPTV library: imported playlists and the channels they
@@ -37,6 +36,12 @@ final class IptvLibrary {
   Map<String, IptvLineHealth> _health = const {};
   bool _loaded = false;
   bool _writing = false;
+
+  /// Bumped by every commit this library makes, and read by [_reload] to
+  /// notice a write that landed while it was reading.
+  int _revision = 0;
+  bool _reloading = false;
+  bool _reloadAgain = false;
   StreamSubscription<void>? _external;
 
   /// Emits after every committed mutation.
@@ -193,6 +198,192 @@ final class IptvLibrary {
           !programme.stop.isBefore(at))
         programme,
   ]);
+
+  /// The mapping stored for channel [channelId], or null.
+  ///
+  /// A locked or hand-made mapping is returned exactly like an automatic one:
+  /// who made it decides whether a later sync may rewrite it, not whether it
+  /// is in force today. A channel with two rows (one per guide source, from
+  /// before the matcher ran on a second guide) reports the locked one, and
+  /// the first otherwise, so the answer is stable across a reload.
+  EpgMapping? mappingFor(String channelId) {
+    EpgMapping? found;
+    for (final mapping in _mappings) {
+      if (mapping.channelId != channelId) {
+        continue;
+      }
+      if (mapping.locked) {
+        return mapping;
+      }
+      found ??= mapping;
+    }
+    return found;
+  }
+
+  /// The guide channel key [channel]'s programmes come from, or null.
+  ///
+  /// The trust order is the matcher's own, not a second copy of it: a stored
+  /// mapping first, then the playlist's `tvg-id`, then the normalized name
+  /// asked of each guide source in turn — which is what lets a freshly
+  /// imported guide show programmes before anybody has run the matcher over
+  /// the whole library.
+  String? guideKeyFor(IptvChannel channel) {
+    final stored = mappingFor(channel.id);
+    for (final source in _sources) {
+      final key = resolveGuideChannel(
+        channel: channel,
+        sourceId: source.id,
+        guideChannels: guideChannels(source.id),
+        mapping: stored,
+      );
+      if (key != null) {
+        return key;
+      }
+    }
+    // A locked mapping whose guide channel has disappeared resolves to nothing
+    // on purpose — the matcher will not guess a replacement for a choice the
+    // viewer made. Hand their choice back anyway: the pin should survive a
+    // guide that renamed a channel, with no programmes for the hour in between,
+    // rather than silently become somebody else's channel.
+    if (stored != null && stored.locked) {
+      return stored.epgChannelKey;
+    }
+    return null;
+  }
+
+  /// What is on [channel] at [now], and what comes after it.
+  ///
+  /// The window is deliberately wide behind [now] (an hour and a half of
+  /// history) rather than starting at the programme list's own beginning:
+  /// a viewer who opened the guide at midnight should still see what is on,
+  /// and a guide that only carries today's evening must not read as empty
+  /// for that reason.
+  IptvProgrammeSlot programmeSlot(IptvChannel channel, {DateTime? now}) {
+    final moment = now ?? DateTime.now();
+    final list = schedule(channel, from: moment.subtract(const Duration(hours: 6)), span: const Duration(hours: 42));
+    EpgProgramme? current;
+    EpgProgramme? next;
+    for (final programme in list) {
+      if (programme.start.isAfter(moment)) {
+        next ??= programme;
+        continue;
+      }
+      if (!programme.stop.isBefore(moment) && (current == null || programme.start.isAfter(current.start))) {
+        current = programme;
+      }
+    }
+    return IptvProgrammeSlot(current: current, next: next, at: moment);
+  }
+
+  /// How far before a schedule's start a programme may begin and still be
+  /// shown as part of it.
+  static const Duration _programmeLookback = Duration(days: 3);
+
+  /// The programmes of [channel] from [from] for [span], by start.
+  ///
+  /// Empty for a channel with no guide channel behind it, which the interface
+  /// shows as "这个频道没有节目单" rather than as a day with nothing on it.
+  List<EpgProgramme> schedule(IptvChannel channel, {DateTime? from, Duration span = const Duration(hours: 6)}) {
+    final key = guideKeyFor(channel);
+    if (key == null) {
+      return const [];
+    }
+    final start = from ?? DateTime.now();
+    final end = start.add(span);
+    // The stored query reports the lists that *start* inside its window, and a
+    // guide row has to show the programme that began an hour ago with ninety
+    // minutes still to run — so the read reaches back and the overlap is
+    // decided here. Three days covers the longest programme anybody puts in a
+    // guide without pretending to browse history.
+    return [
+      for (final programme in programmes(key, from: start.subtract(_programmeLookback), to: end))
+        if (!programme.stop.isBefore(start) && !programme.start.isAfter(end)) programme,
+    ];
+  }
+
+  /// The guide channels of [sourceId] whose names contain [query].
+  ///
+  /// For the mapping editor, which has to let the viewer find the right guide
+  /// channel among thousands — the matcher's own name comparison is too strict
+  /// to be a search over.
+  List<EpgChannel> searchGuideChannels(String sourceId, String query) {
+    final needle = query.trim().toLowerCase();
+    final found = [
+      for (final channel in guideChannels(sourceId))
+        if (needle.isEmpty ||
+            channel.primaryName.toLowerCase().contains(needle) ||
+            channel.channelId.toLowerCase().contains(needle))
+          channel,
+    ];
+    return List.unmodifiable(found);
+  }
+
+  /// Pins channel [channelId] to guide channel [epgChannelKey] of
+  /// [epgSourceId], replacing whatever mapping it had.
+  ///
+  /// The mapping is locked: a viewer who chose a channel by hand outranks the
+  /// matcher, whose job is to guess where nobody did.
+  Future<void> assignGuide({
+    required String channelId,
+    required String epgSourceId,
+    required String epgChannelKey,
+    String playlistId = '',
+  }) async {
+    _mappings = [
+      for (final mapping in _mappings)
+        if (mapping.channelId != channelId) mapping,
+      EpgMapping(
+        channelId: channelId,
+        epgChannelKey: epgChannelKey,
+        playlistId: playlistId,
+        epgSourceId: epgSourceId,
+        locked: true,
+        origin: 'user',
+      ),
+    ];
+    await _commitGuide();
+  }
+
+  /// Drops every mapping of [channelId], which leaves it to the matcher's next
+  /// run — an unassigned channel is unmapped until then, rather than snapped
+  /// back to whatever the last automatic guess was.
+  Future<void> releaseGuide(String channelId) async {
+    final kept = [
+      for (final mapping in _mappings)
+        if (mapping.channelId != channelId) mapping,
+    ];
+    if (kept.length == _mappings.length) {
+      return;
+    }
+    _mappings = kept;
+    await _commitGuide();
+  }
+
+  /// Runs the matcher for one guide source over the whole library and stores
+  /// what it decides; answers how many mappings it wrote or rewrote.
+  ///
+  /// Every channel is offered, not only those of one playlist: channels are
+  /// shared between playlists by URL, so a per-playlist run would leave a
+  /// channel mapped in one list and unmapped in the next. [playlistId] is
+  /// bookkeeping on the rows it writes — which import decided them — and is
+  /// empty for a library-wide pass like the one a guide refresh triggers.
+  ///
+  /// Locked and hand-made mappings survive the run untouched — that is the
+  /// whole reason a mapping records who made it.
+  Future<int> autoMatch({required String sourceId, String playlistId = ''}) async {
+    final changes = rebuildMappings(
+      playlistId: playlistId,
+      sourceId: sourceId,
+      channels: _channels,
+      guideChannels: guideChannels(sourceId),
+      previous: _mappings,
+    );
+    if (changes.upserts.isEmpty && changes.deletes.isEmpty) {
+      return 0;
+    }
+    await applyMappings(upserts: changes.upserts, deletes: changes.deletes);
+    return changes.upserts.length;
+  }
 
   /// The playlist named [name] (case-insensitive), or null.
   ///
@@ -673,6 +864,7 @@ final class IptvLibrary {
 
   Future<void> _commitGroups() async {
     _writing = true;
+    _revision++;
     try {
       await store.saveGroups(_groups);
     } finally {
@@ -683,6 +875,7 @@ final class IptvLibrary {
 
   Future<void> _commitHealth() async {
     _writing = true;
+    _revision++;
     try {
       await store.saveLineHealth(_health.values.toList());
     } finally {
@@ -828,6 +1021,7 @@ final class IptvLibrary {
 
   Future<void> _commitGuide() async {
     _writing = true;
+    _revision++;
     try {
       await store.saveGuideSources(_sources);
       await store.saveGuideChannels(_guideChannels);
@@ -858,10 +1052,11 @@ final class IptvLibrary {
 
   /// A change the store reported: another writer's, or the library's own.
   ///
-  /// The library's own writes are ignored, because a reload there would read
-  /// the lists back while they are still being saved — a commit that writes
-  /// four lists fires an event per list, and reloading between two of them
-  /// would undo the write that is in flight.
+  /// The library's own writes are ignored while they are in flight, because
+  /// reloading between the four lists one commit writes would undo the write
+  /// still running. A commit that has already finished is a different matter:
+  /// another window's store, and this one's own, both arrive here, and
+  /// [_reload] decides whether the snapshot it read is still current.
   void _storeChanged() {
     if (_writing) {
       return;
@@ -869,8 +1064,62 @@ final class IptvLibrary {
     unawaited(_reload());
   }
 
+  /// Reads the store back, one pass at a time.
+  ///
+  /// The trap this guards: the store reports a write *after* it landed, so a
+  /// reload that began before a commit and finished after it would install the
+  /// older values over the newer ones — the viewer favourites a channel, the
+  /// star appears, and a beat later it is gone. So the revision is read before
+  /// the lists and checked after: if a commit got in between, this snapshot is
+  /// stale and the pass is taken again rather than applied.
+  ///
+  /// Requests that arrive while a pass is running do not start a second read;
+  /// they raise the re-run flag, so the pass going around once more ends up
+  /// holding whatever the store said last.
+  Future<void> _reload() async {
+    if (_reloading) {
+      _reloadAgain = true;
+      return;
+    }
+    _reloading = true;
+    try {
+      do {
+        _reloadAgain = false;
+        final revision = _revision;
+        final channels = await store.loadChannels();
+        final playlists = await store.loadPlaylists();
+        final sources = await store.loadGuideSources();
+        final guideChannels = await store.loadGuideChannels();
+        final programmes = await store.loadGuideProgrammes();
+        final mappings = await store.loadGuideMappings();
+        final groups = await store.loadGroups();
+        final health = _indexHealth(await store.loadLineHealth());
+        if (revision != _revision) {
+          _reloadAgain = true;
+          continue;
+        }
+        _channels = channels;
+        _playlists = playlists;
+        _sources = sources;
+        _guideChannels = guideChannels;
+        _programmes = programmes;
+        _mappings = mappings;
+        _groups = groups;
+        _health = health;
+      } while (_reloadAgain);
+    } finally {
+      _reloading = false;
+    }
+    if (_changes.isClosed) {
+      // The library was disposed while this reload was queued.
+      return;
+    }
+    _changes.add(null);
+  }
+
   Future<void> _commit() async {
     _writing = true;
+    _revision++;
     try {
       await store.saveChannels(_channels);
     } finally {
@@ -878,77 +1127,4 @@ final class IptvLibrary {
     }
     _changes.add(null);
   }
-
-  Future<void> _reload() async {
-    _channels = await store.loadChannels();
-    _playlists = await store.loadPlaylists();
-    _sources = await store.loadGuideSources();
-    _guideChannels = await store.loadGuideChannels();
-    _programmes = await store.loadGuideProgrammes();
-    _mappings = await store.loadGuideMappings();
-    _groups = await store.loadGroups();
-    _health = _indexHealth(await store.loadLineHealth());
-    if (_changes.isClosed) {
-      // The library was disposed while this reload was queued.
-      return;
-    }
-    _changes.add(null);
-  }
-}
-
-/// The library as the `live_sites` IPTV site's channel source: the site
-/// layer exposes these through [sites.IptvSite] so IPTV channels play
-/// through the ordinary playback stack.
-///
-/// The channels come out in zap order rather than in import order, because
-/// the site's directory is what a screen lists and what a remote steps
-/// through: the two must agree, or the sixth row of the list is not the
-/// sixth channel the down key reaches. Hidden channels and hidden groups
-/// are left out unless [includeHidden] asks for them, and the line of each
-/// channel is the health-ranked candidate list, so a source that died on
-/// the last probe hands the player its mirror instead of a dead URL.
-final class LibraryIptvChannelSource implements sites.IptvChannelSource {
-  /// A source over [library]; [includeHidden] keeps hidden channels out
-  /// by default.
-  new(this.library, {this.includeHidden = false});
-
-  /// The library to read.
-  final IptvLibrary library;
-
-  /// Whether hidden channels are exposed.
-  final bool includeHidden;
-
-  @override
-  List<sites.IptvChannel> get channels => [
-    for (final channel in library.zapSequence(includeHidden: includeHidden).channels) _toSiteChannel(channel),
-  ];
-
-  @override
-  sites.IptvChannel? channelById(String id) {
-    // Looked up by id, a hidden channel is still there: [channels] is the
-    // list the viewer walks, while an id is something a room already holds.
-    // Refusing here would kill a stream the user is watching the moment
-    // they hide its channel, and a hidden channel is a request to not be
-    // offered it, not a request to be cut off from it.
-    final channel = library.channelById(id);
-    if (channel == null) {
-      return null;
-    }
-    return _toSiteChannel(channel);
-  }
-
-  sites.IptvChannel _toSiteChannel(IptvChannel channel) => sites.IptvChannel(
-    id: channel.id,
-    name: channel.entry.name,
-    url: channel.entry.url,
-    group: channel.entry.group,
-    headers: channel.entry.headers,
-    epgChannelId: channel.entry.tvgId,
-    favorite: channel.favorite,
-    number: channel.number,
-    lines: [
-      for (final candidate in library.candidateLines(channel))
-        sites.IptvLine(url: candidate.url, headers: candidate.headers, lineId: candidate.isHealthy ? 'healthy' : null),
-    ],
-  );
 }

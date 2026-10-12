@@ -1,5 +1,5 @@
 import 'package:live_iptv/src/model/model.dart';
-import 'package:live_iptv/src/playlist/playlist_parser.dart';
+import 'package:live_iptv/src/playlist/playlist.dart';
 import 'package:test/test.dart';
 
 /// The tests reach into `src/` rather than the package barrel on purpose:

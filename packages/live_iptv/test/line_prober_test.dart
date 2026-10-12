@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:live_iptv/src/model/model.dart';
-import 'package:live_iptv/src/probe/iptv_line_prober.dart';
+import 'package:live_iptv/src/probe/probe.dart';
 import 'package:test/test.dart';
 
 /// A channel with one primary address and however many alternatives the

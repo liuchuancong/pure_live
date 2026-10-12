@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:live_iptv/src/model/model.dart';
 import 'package:live_iptv/src/library/iptv_keys/iptv_keys.dart';
 import 'package:live_iptv/src/library/iptv_store/iptv_store.dart';
+import 'package:live_iptv/src/model/model.dart';
 import 'package:live_storage/live_storage.dart';
 
 /// An [IptvStore] over a live_storage list repository.

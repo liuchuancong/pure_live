@@ -16,12 +16,12 @@
 /// ```
 ///
 /// The two timeouts have to agree: [MediaProbe] bounds the fetch and
-/// [IptvLineProber] bounds the wait, and if the prober's clock is the shorter
+/// `IptvLineProber` bounds the wait, and if the prober's clock is the shorter
 /// one, a slow-but-live address is recorded as a failure while the fetch is
 /// still running. Give the prober at least as long as the probe.
 library;
 
-import 'package:live_iptv/src/probe/iptv_line_prober.dart';
+import 'package:live_iptv/src/probe/iptv_probe_outcome/iptv_probe_outcome.dart';
 import 'package:live_net/live_net.dart' show MediaProbe, MediaProbeResult;
 
 /// An [IptvLineProbe] that asks [probe] about each address.

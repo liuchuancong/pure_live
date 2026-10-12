@@ -22,16 +22,14 @@
 library;
 
 export 'src/catchup/catchup.dart';
-export 'src/guide/guide_matcher.dart';
-export 'src/guide/guide_parser.dart';
+export 'src/guide/guide.dart';
 export 'src/import/iptv_import_result.dart';
 export 'src/import/iptv_importer.dart';
-export 'src/library/iptv_library.dart';
-export 'src/library/iptv_store.dart';
+export 'src/import/live_net_fetch.dart';
+export 'src/library/library.dart';
 export 'src/model/model.dart';
 export 'src/order/iptv_channel_ordering.dart';
 export 'src/order/iptv_zap_sequence.dart';
-export 'src/playlist/playlist_parse_result.dart';
-export 'src/playlist/playlist_parser.dart';
-export 'src/probe/iptv_line_prober.dart';
-export 'src/probe/live_net_line_probe.dart';
+export 'src/playlist/playlist.dart';
+export 'src/probe/probe.dart';
+export 'src/sync/sync.dart';

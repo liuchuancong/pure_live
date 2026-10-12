@@ -1,11 +1,10 @@
 import 'dart:async';
 
-import 'package:live_iptv/src/guide/guide_parser.dart';
+import 'package:live_iptv/src/guide/guide.dart';
 import 'package:live_iptv/src/import/iptv_import_result.dart';
-import 'package:live_iptv/src/library/iptv_library.dart';
+import 'package:live_iptv/src/library/iptv_library/iptv_library.dart';
 import 'package:live_iptv/src/model/model.dart';
-import 'package:live_iptv/src/playlist/playlist_parse_result.dart';
-import 'package:live_iptv/src/playlist/playlist_parser.dart';
+import 'package:live_iptv/src/playlist/playlist.dart';
 
 /// Downloads a playlist or guide.
 ///
