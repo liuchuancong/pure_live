@@ -53,6 +53,19 @@ abstract final class PandaLiveParser {
   /// The most rows a paged answer may carry (3.x's guard).
   static const int maxRows = 64;
 
+  /// The shortest keyword the search takes (3.x refused a shorter one before
+  /// any request).
+  static const int minKeywordLength = 2;
+
+  /// The longest keyword the search takes.
+  static const int maxKeywordLength = 100;
+
+  /// The most rows either search source returns (3.x capped each at 50).
+  static const int maxSourceSize = 50;
+
+  /// The website's hosts a room link may name.
+  static const Set<String> hosts = {'pandalive.co.kr', 'www.pandalive.co.kr', 'm.pandalive.co.kr'};
+
   /// The Referer of a directory POST (the website's own directory page).
   static const String directoryReferer = '$origin/live';
 
@@ -125,6 +138,14 @@ abstract final class PandaLiveParser {
     'offset': '${(page - 1) * size}',
     'limit': '$size',
     'orderBy': 'user',
+    'searchVal': keyword,
+  };
+
+  /// The `live/bj_list` form of the BJ search, at [page] of [size] (3.x sent
+  /// no `orderBy` here).
+  static Map<String, String> broadcasterSearchForm(String keyword, {required int page, required int size}) => {
+    'offset': '${(page - 1) * size}',
+    'limit': '$size',
     'searchVal': keyword,
   };
 
@@ -224,6 +245,141 @@ abstract final class PandaLiveParser {
   static final RegExp _koreanTime = RegExp(r'^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$');
 
   static final RegExp _userId = RegExp(r'^[A-Za-z0-9_]{1,64}(?:@[A-Za-z0-9_]{2,16})?$');
+
+  /// The broadcaster id of a PandaLive room link, or null: http(s) on one of
+  /// [hosts], no user info, no fragment, the default port, and the path
+  /// `/channel/<id>`(``/home``), `/play/<id>` or `/live/play/<id>`. The id is
+  /// taken as written and re-checked as a broadcaster id.
+  static String? roomIdFromUrl(String url) {
+    if (url.length > 8192 || RegExp(r'[\x00-\x20\x7f]').hasMatch(url)) {
+      return null;
+    }
+    final uri = Uri.tryParse(url.trim());
+    if (uri == null ||
+        !const {'http', 'https'}.contains(uri.scheme.toLowerCase()) ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasFragment ||
+        (uri.hasPort && uri.port != (uri.scheme == 'https' ? 443 : 80)) ||
+        !hosts.contains(uri.host.toLowerCase())) {
+      return null;
+    }
+    final List<String> segments;
+    try {
+      segments = uri.pathSegments.where((segment) => segment.isNotEmpty).toList(growable: false);
+    } on FormatException {
+      return null;
+    }
+    final id = switch ([for (final segment in segments) segment.toLowerCase()]) {
+      ['live', 'play', _] => segments.length == 3 ? segments[2] : null,
+      ['play', _] || ['channel', _] => segments.length == 2 ? segments[1] : null,
+      ['channel', _, 'home'] => segments.length == 3 ? segments[1] : null,
+      _ => null,
+    };
+    return normalizeUserId(id);
+  }
+
+  /// A page of `live/bj_list` asked at [page] of [size]: the same flat
+  /// `{result, page, list}` envelope as [livePage], but its rows are
+  /// broadcasters (live or not) read with [profileCard] instead of the
+  /// live-only directory card.
+  static LivePage<LiveRoom> broadcasterPage(String body, {required int page, int size = pageSize, int status = 200}) {
+    if (status < 200 || status >= 300) {
+      throw SiteApiChangedError('pandalive live/bj_list: HTTP $status');
+    }
+    final root = SiteJson.decode(body, what: 'pandalive live/bj_list');
+    if (SiteCounts.flag(root['result']) != true) {
+      throw SiteApiChangedError('pandalive live/bj_list: result ${root['result']}');
+    }
+    final paging = SiteJson.object(root['page']);
+    final offset = (page - 1) * size;
+    if (SiteCounts.integer(paging['offset']) != offset ||
+        SiteCounts.integer(paging['limit']) != size ||
+        SiteCounts.integer(paging['page']) != page) {
+      throw SiteApiChangedError('pandalive live/bj_list: page $paging for offset $offset, limit $size');
+    }
+    final total = SiteCounts.integer(paging['total']);
+    if (total == null) {
+      throw SiteApiChangedError('pandalive live/bj_list: page.total ${paging['total']}');
+    }
+    final rows = SiteJson.list(root['list']);
+    if (rows.length > maxRows) {
+      throw SiteApiChangedError('pandalive live/bj_list: list of ${rows.length} rows');
+    }
+    final seen = <String>{};
+    final items = <LiveRoom>[];
+    for (final row in rows) {
+      final card = profileCard(SiteJson.object(row));
+      if (card != null && seen.add(card.roomId.toLowerCase())) items.add(card);
+    }
+    final hasMore = offset + rows.length < total;
+    return LivePage(items: items, hasMore: hasMore, nextPage: hasMore ? page + 1 : null, totalCount: total);
+  }
+
+  /// A broadcaster of the BJ search (`live/bj_list`), live or offline, named
+  /// by its nick with the `thumbUrl` avatar. Without `media` it is offline and
+  /// titled by the nick; with it, the broadcast's title, cover, category and
+  /// audience, on air by `isLive` (a replay for a rerun, unknown when the
+  /// answer says neither) and the start while on air. A row the service
+  /// blocked, without a broadcaster id or number, or whose `media` is not the
+  /// broadcaster's own, is left out. As 3.x's card here carries the state only
+  /// — the site's adult/password flags have no counterpart in the unified
+  /// restriction enum.
+  static LiveRoom? profileCard(Map<String, Object?> row) {
+    if (SiteCounts.flag(row['blockService']) == true) {
+      return null;
+    }
+    final id = normalizeUserId(row['userId']);
+    final index = _positive(row['userIdx']);
+    if (id == null || index == null) {
+      return null;
+    }
+    final nick = SiteText.title(SiteText.text(row['userNick']));
+    final avatar = _image(row['thumbUrl']);
+    final raw = row['media'];
+    if (raw == null) {
+      return LiveRoom(
+        platform: SiteIds.pandalive,
+        roomId: id,
+        title: nick,
+        nick: nick,
+        avatar: avatar,
+        status: LiveStatus.offline,
+      );
+    }
+    final media = raw is Map<String, Object?> ? raw : null;
+    if (media == null || !_owns(media, id, index)) {
+      return null;
+    }
+    final live = SiteCounts.flag(media['isLive']);
+    final onAir = live ?? false;
+    final title = SiteText.title(SiteText.text(media['title']));
+    return LiveRoom(
+      platform: SiteIds.pandalive,
+      roomId: id,
+      title: title.isEmpty ? nick : title,
+      nick: nick,
+      avatar: avatar,
+      cover: _image(media['thumbUrl'] ?? media['ivsThumbnail']),
+      areaName: areaNameOf(media['category']),
+      status: switch (live) {
+        true => isRerun(media) ? LiveStatus.replay : LiveStatus.live,
+        false => LiveStatus.offline,
+        null => LiveStatus.unknown,
+      },
+      watching: onAir ? SiteCounts.integer(media['user']) : null,
+      startedAt: onAir ? koreanTime(media['startTime']) : null,
+    );
+  }
+
+  /// A positive integer, or null.
+  static int? _positive(Object? value) {
+    final number = SiteCounts.integer(value);
+    return number != null && number > 0 ? number : null;
+  }
+
+  /// Whether [media] is the broadcast of the broadcaster [id] / [index].
+  static bool _owns(Map<String, Object?> media, String id, int index) =>
+      normalizeUserId(media['userId'])?.toLowerCase() == id.toLowerCase() && _positive(media['userIdx']) == index;
 
   /// Validates the `{result, data}` envelope; HTTP 400 is "not found"
   /// ("유저 정보가 없습니다").

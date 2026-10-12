@@ -7,7 +7,7 @@ import 'package:live_sites/src/platforms/pandalive/parsers/pandalive_parser.dart
 /// The PandaLive adapter: member/bj + live/play flow, the directory, and the
 /// Centrifugo chat joined with a `live/play` guest token.
 ///
-/// Not migrated yet: search and the password/fan-room refusals detail.
+/// Not migrated yet: the password/fan-room refusals detail.
 final class PandaLiveSite
     with SiteRoomGuard
     implements LiveSite, LiveDanmakuCapability, LiveDirectoryCapability, LiveAreaCatalog {
@@ -56,29 +56,109 @@ final class PandaLiveSite
     return PandaLiveParser.livePage(response.text, page: page, status: response.statusCode);
   }
 
-  /// Live rooms matching [keyword] (`live/index` searched by viewers), [page]
-  /// of thirty. A blank keyword or a bad page/control-char keyword gives
-  /// nothing or a caller error. The broadcaster (`bj_list`) source and a
-  /// keyword that is a broadcaster id are not merged in yet — the reference
-  /// also searches broadcasters; this returns the live-room matches.
+  /// 3.x's search, in order: a room link finds that broadcaster on page 1;
+  /// another URL, or a keyword shorter than 2 or longer than 100 characters,
+  /// finds nothing; otherwise the BJ search (`live/bj_list`) runs *before* the
+  /// LIVE search (`live/index`) — the gateway was seen to stall one of two
+  /// parallel POSTs — each with its own size (half the page live, the rest
+  /// broadcasters, at most 50 each). Live cards come first, a broadcaster
+  /// once; one source failing leaves the other's rows. On page 1 a keyword
+  /// that is a broadcaster id puts that broadcaster first. A page below 1 or
+  /// over 1000, or a control-character keyword, is a caller error.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    final query = keyword.trim();
-    if (query.isEmpty) {
+    if (page < 1) {
       return const LivePage<LiveRoom>(items: []);
     }
-    PandaLiveParser.checkKeyword(query);
+    final query = keyword.trim();
+    final linked = PandaLiveParser.roomIdFromUrl(query);
+    if (linked != null) {
+      if (page > 1) {
+        return const LivePage<LiveRoom>(items: []);
+      }
+      try {
+        return LivePage<LiveRoom>(items: [await _refresh(linked)]);
+      } on SiteNotFoundError {
+        return const LivePage<LiveRoom>(items: []);
+      }
+    }
+    if (Uri.tryParse(query)?.hasScheme ?? false) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    if (query.length < PandaLiveParser.minKeywordLength || query.length > PandaLiveParser.maxKeywordLength) {
+      return const LivePage<LiveRoom>(items: []);
+    }
     PandaLiveParser.checkPage(page);
-    final response = await http.send(
-      LiveRequest.form(
-        Uri.https(PandaLiveParser.apiHost, '/v1/live/index'),
-        fields: PandaLiveParser.liveSearchForm(query, page: page, size: PandaLiveParser.pageSize),
-        headers: {...PandaLiveParser.headers, 'referer': PandaLiveParser.searchReferer('live', query)},
-        site: id,
-      ),
-    );
-    return PandaLiveParser.livePage(response.text, page: page, status: response.statusCode);
+    PandaLiveParser.checkKeyword(query);
+    const size = PandaLiveParser.pageSize;
+    final exact = page == 1 ? PandaLiveParser.normalizeUserId(query) : null;
+    const liveSize = size > 1 ? (size + 1) ~/ 2 : 0;
+    final broadcasterSize = (size - liveSize).clamp(1, PandaLiveParser.maxSourceSize);
+    List<LiveRoom>? broadcasters;
+    List<LiveRoom>? live;
+    SiteError? broadcasterError;
+    SiteError? liveError;
+    try {
+      final response = await http.send(
+        LiveRequest.form(
+          Uri.https(PandaLiveParser.apiHost, '/v1/live/bj_list'),
+          fields: PandaLiveParser.broadcasterSearchForm(query, page: page, size: broadcasterSize),
+          headers: {...PandaLiveParser.headers, 'referer': PandaLiveParser.searchReferer('bj', query)},
+          site: id,
+        ),
+      );
+      broadcasters = PandaLiveParser.broadcasterPage(
+        response.text,
+        page: page,
+        size: broadcasterSize,
+        status: response.statusCode,
+      ).items;
+    } on SiteError catch (error) {
+      broadcasterError = error;
+    }
+    if (liveSize > 0) {
+      try {
+        final response = await http.send(
+          LiveRequest.form(
+            Uri.https(PandaLiveParser.apiHost, '/v1/live/index'),
+            fields: PandaLiveParser.liveSearchForm(query, page: page, size: liveSize),
+            headers: {...PandaLiveParser.headers, 'referer': PandaLiveParser.searchReferer('live', query)},
+            site: id,
+          ),
+        );
+        live = PandaLiveParser.livePage(response.text, page: page, size: liveSize, status: response.statusCode).items;
+      } on SiteError catch (error) {
+        liveError = error;
+      }
+    }
+    var failure = liveError ?? broadcasterError;
+    final seen = <String>{};
+    final rooms = [
+      for (final room in [...?live, ...?broadcasters])
+        if (seen.add(room.roomId.toLowerCase())) room,
+    ];
+    if (exact != null) {
+      final index = rooms.indexWhere((room) => room.roomId.toLowerCase() == exact.toLowerCase());
+      if (index >= 0) {
+        rooms.insert(0, rooms.removeAt(index));
+      } else {
+        try {
+          rooms.insert(0, await _refresh(exact));
+        } on SiteNotFoundError {
+          // Not a broadcaster after all.
+        } on SiteError catch (error) {
+          failure ??= error;
+        }
+      }
+    }
+    if (rooms.isEmpty && failure != null) {
+      throw failure;
+    }
+    return LivePage<LiveRoom>(items: List.unmodifiable(rooms));
   }
+
+  /// The follow-refresh room of broadcaster [userId]: one `member/bj`.
+  Future<LiveRoom> _refresh(String userId) async => PandaLiveParser.room(await _member(userId));
 
   @override
   Future<LiveRoom> getRoomDetail(LiveRoom room) async {
