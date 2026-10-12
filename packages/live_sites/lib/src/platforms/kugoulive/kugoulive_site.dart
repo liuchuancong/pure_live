@@ -1,12 +1,18 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/kugoulive/danmaku/kugoulive_danmaku.dart';
+import 'package:live_sites/src/platforms/kugoulive/danmaku/kugoulive_session.dart';
 import 'package:live_sites/src/platforms/kugoulive/parsers/kugoulive_parser.dart';
 
-/// The Kugou Live adapter: getEnterRoomInfo rooms, the streamaddr
-/// multi-line play answer and the `index/list` directory.
+/// The Kugou Live adapter: getEnterRoomInfo rooms, the streamaddr multi-line
+/// play answer and the `index/list` directory.
 ///
-/// Not migrated yet: search (jsonp) and the danmaku transport.
-final class KugouLiveSite with SiteRoomGuard implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability {
+/// Not migrated yet: search (jsonp). The chat ([connect]) is the scheduler's
+/// hosts and a protobuf-over-WebSocket login ([KugouLiveDanmakuSession]); the
+/// room id is the numeric room number.
+final class KugouLiveSite
+    with SiteRoomGuard
+    implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability, LiveDanmakuCapability {
   /// A site over [http].
   new({required this.http});
 
@@ -128,5 +134,15 @@ final class KugouLiveSite with SiteRoomGuard implements LiveSite, LiveAreaCatalo
       ),
     );
     return KugouLiveParser.playLines(response.text, roomId: roomId, status: response.statusCode);
+  }
+
+  /// The room's chat: the scheduler's hosts and token, then the login socket
+  /// ([KugouLiveDanmakuSession.connect]). The room id is the numeric room
+  /// number; a join or scheduler failure surfaces on the message stream, which
+  /// the caller's supervisor reconnects.
+  @override
+  Future<LiveDanmakuSession> connect(LiveRoom room) {
+    guardRoom(room);
+    return KugouLiveDanmakuSession.connect(http, KugouLiveDanmakuArgs(room.roomId));
   }
 }
