@@ -14,7 +14,6 @@ environment:
   flutter: ">=3.47.0"
 
 dependencies:
-  drift: ^2.28.0
   flutter:
     sdk: flutter
   live_interaction:

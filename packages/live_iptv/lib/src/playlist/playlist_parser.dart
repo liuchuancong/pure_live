@@ -1,4 +1,4 @@
-import 'package:live_iptv/src/model/iptv_models.dart';
+import 'package:live_iptv/src/model/model.dart';
 import 'package:live_iptv/src/playlist/playlist_parse_result.dart';
 
 /// The playlist format the parser recognised.
@@ -53,8 +53,8 @@ PlaylistParseResult parsePlaylistResult(String text, {IptvPlaylistFormat? format
 /// Parses an extended M3U playlist.
 ///
 /// Supports `#EXTINF` with `key="value"` attributes (`tvg-id`,
-/// `tvg-logo`, `group-title`, `catchup*`), `#EXTGRP` as the running
-/// group, `#EXTVLCOPT`/`#KODIPROP` request options
+/// `tvg-logo`, `group-title`, `tvg-chno`, `catchup*`), `#EXTGRP` as the
+/// running group, `#EXTVLCOPT`/`#KODIPROP` request options
 /// (`http-user-agent=`, `http-referrer=`) and the `url|headers` tail.
 List<IptvEntry> parseM3u(String text) => parseM3uResult(text).entries;
 
@@ -98,6 +98,7 @@ PlaylistParseResult parseM3uResult(String text) {
       group: pendingAttributes['group-title'] ?? currentGroup,
       tvgId: pendingAttributes['tvg-id'],
       tvgLogo: pendingAttributes['tvg-logo'],
+      channelNumber: channelNumberOf(pendingAttributes),
       headers: Map.unmodifiable(allHeaders),
       alternatives: List.unmodifiable(alternatives),
       catchupSource: pendingAttributes['catchup-source'],
@@ -263,6 +264,28 @@ bool _looksLikeUrl(String value) {
     }
   }
   return (url: url, headers: headers);
+}
+
+/// The channel number a playlist declared for an entry, or null.
+///
+/// `tvg-chno` is the attribute the M3U spec carries it in, and providers
+/// also write `tvg-number`; both are read, and a non-numeric or negative
+/// value is no number at all — importing "01CCTV" as a channel number
+/// would give the remote control something to type and the library nothing
+/// to find. Leading zeros are the provider's formatting, not the user's:
+/// `tvg-chno="001"` is channel 1.
+int? channelNumberOf(Map<String, String> attributes) {
+  for (final key in const ['tvg-chno', 'tvg-number']) {
+    final raw = attributes[key]?.trim();
+    if (raw == null || raw.isEmpty) {
+      continue;
+    }
+    final number = int.tryParse(raw);
+    if (number != null && number > 0) {
+      return number;
+    }
+  }
+  return null;
 }
 
 /// The display name of an `#EXTINF` line (after the last comma).

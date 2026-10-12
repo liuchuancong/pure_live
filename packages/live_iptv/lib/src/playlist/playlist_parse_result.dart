@@ -1,4 +1,4 @@
-import 'package:live_iptv/src/model/iptv_models.dart';
+import 'package:live_iptv/src/model/model.dart';
 
 /// One problem in a playlist, as a parser found it.
 ///

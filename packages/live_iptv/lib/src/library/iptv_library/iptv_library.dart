@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:live_iptv/src/library/iptv_store.dart';
-import 'package:live_iptv/src/model/guide_models.dart';
-import 'package:live_iptv/src/model/iptv_models.dart';
+import 'package:live_iptv/src/model/model.dart';
+import 'package:live_iptv/src/order/iptv_channel_ordering.dart';
+import 'package:live_iptv/src/order/iptv_zap_sequence.dart';
 import 'package:live_iptv/src/playlist/playlist_parse_result.dart';
 import 'package:live_iptv/src/playlist/playlist_parser.dart';
+import 'package:live_iptv/src/probe/iptv_line_prober.dart';
 import 'package:live_sites/live_sites.dart' as sites;
 import 'package:live_storage/live_storage.dart';
 
@@ -31,6 +33,8 @@ final class IptvLibrary {
   List<EpgChannel> _guideChannels = const [];
   List<EpgProgramme> _programmes = const [];
   List<EpgMapping> _mappings = const [];
+  List<IptvGroup> _groups = const [];
+  Map<String, IptvLineHealth> _health = const {};
   bool _loaded = false;
   bool _writing = false;
   StreamSubscription<void>? _external;
@@ -47,6 +51,84 @@ final class IptvLibrary {
   /// The guide sources, in import order.
   List<EpgSource> get guideSources => List.unmodifiable(_sources);
 
+  /// The group records the user arranged, in the order they arranged them.
+  ///
+  /// A group whose channels the user never touched has no record here, and
+  /// that is the normal state rather than a gap: see [groupNames] for the
+  /// list a screen should actually draw.
+  List<IptvGroup> get groups => List.unmodifiable(sortIptvGroups(_groups));
+
+  /// Every group the channels name, in display order, including the ones
+  /// nobody has arranged and the hidden ones.
+  List<String> get groupNames => List.unmodifiable(groupRanks.keys);
+
+  /// The display rank of every group, smallest first; the key is
+  /// [iptvUngroupedKey] for channels that name no group.
+  ///
+  /// Derived rather than stored, because the set of groups is a fact about
+  /// the playlists and only their *order* is a fact about the user: a group
+  /// that appears in tomorrow's list has to land somewhere without anyone
+  /// having to record it first.
+  Map<String, int> get groupRanks => rankIptvGroups(channels: _channels, groups: _groups);
+
+  /// The last probe verdict of every address that has one, keyed by URL.
+  Map<String, IptvLineHealth> get lineHealth => Map.unmodifiable(_health);
+
+  /// The verdict stored for [url], null when there is none.
+  IptvLineHealth? healthOfUrl(String url) => _health[url];
+
+  /// The channels in display order, hidden ones included.
+  ///
+  /// This is the list [zapSequence] and the number lookup walk when nothing
+  /// filters them; a screen that shows a filter of its own should sort with
+  /// [compareIptvChannels] rather than assume the playlist order it arrived
+  /// in is the order the remote will step through.
+  List<IptvChannel> get orderedChannels => sortIptvChannels(_channels, groupRanks: groupRanks);
+
+  /// The channel numbered [number] among the visible ones, or null.
+  IptvChannel? channelByNumber(int number, {String? group}) => zapSequence(group: group).byNumber(number);
+
+  /// The channel with [id], or null.
+  IptvChannel? channelById(String id) {
+    for (final channel in _channels) {
+      if (channel.id == id) {
+        return channel;
+      }
+    }
+    return null;
+  }
+
+  /// The next free channel number, so a screen offering "number this
+  /// channel" never proposes one that already answers.
+  int get nextUnusedNumber => iptvNextFreeNumber([for (final channel in _channels) channel.number ?? 0], 1);
+
+  /// The walk the remote control's up and down keys take.
+  ///
+  /// Hidden channels and the channels of hidden groups are left out, which
+  /// is what makes hiding a channel a real removal from the zapping rather
+  /// than a note in a list. [group] restricts the walk to one group while
+  /// keeping the numbers the whole line-up uses; [favouritesOnly] is the
+  /// same idea for the favourites switch on a TV screen; [reverse] swaps the
+  /// two keys without reordering the list.
+  IptvZapSequence zapSequence({
+    String? group,
+    bool favouritesOnly = false,
+    bool includeHidden = false,
+    bool reverse = false,
+  }) {
+    final ranks = groupRanks;
+    final ordered = sortIptvChannels(_channels, groupRanks: ranks);
+    final visible = [
+      for (final channel in ordered)
+        if ((includeHidden || !channel.hidden) &&
+            (group == null || iptvGroupKeyOf(channel) == group) &&
+            (!favouritesOnly || channel.favorite) &&
+            (includeHidden || !(_recordOf(iptvGroupKeyOf(channel))?.hidden ?? false)))
+          channel,
+    ];
+    return IptvZapSequence(channels: visible, reversed: reverse);
+  }
+
   /// Loads the library (idempotent).
   Future<void> load() async {
     if (_loaded) {
@@ -59,6 +141,8 @@ final class IptvLibrary {
     _guideChannels = await store.loadGuideChannels();
     _programmes = await store.loadGuideProgrammes();
     _mappings = await store.loadGuideMappings();
+    _groups = await store.loadGroups();
+    _health = _indexHealth(await store.loadLineHealth());
     _external ??= store.changes.listen((_) => _storeChanged());
   }
 
@@ -147,6 +231,11 @@ final class IptvLibrary {
     var nextPosition = _channels.isEmpty
         ? 0
         : _channels.map((channel) => channel.position).reduce((a, b) => a > b ? a : b) + 1;
+    // A provider that numbered its whole list is worth believing: those
+    // numbers are what its own docs tell people to dial. A list that
+    // numbered three channels out of two hundred is not, and adopting them
+    // would push the other one hundred and ninety-seven behind them.
+    final adoptNumbers = _providerNumbersComplete(entries);
     final seenUrls = <String>{};
     final reconciled = <IptvChannel>[];
     var added = 0;
@@ -163,6 +252,7 @@ final class IptvLibrary {
             id: 'c${DateTime.now().microsecondsSinceEpoch}_${reconciled.length}',
             entry: entry,
             position: nextPosition++,
+            number: adoptNumbers ? entry.channelNumber : null,
           ),
         );
         added++;
@@ -221,6 +311,7 @@ final class IptvLibrary {
     var nextPosition = _channels.isEmpty
         ? 0
         : _channels.map((channel) => channel.position).reduce((a, b) => a > b ? a : b) + 1;
+    final adoptNumbers = _providerNumbersComplete(entries);
     final seenUrls = <String>{};
     final reconciled = <IptvChannel>[];
     for (final entry in entries) {
@@ -235,6 +326,7 @@ final class IptvLibrary {
             id: 'c${DateTime.now().microsecondsSinceEpoch}_${reconciled.length}',
             entry: entry,
             position: nextPosition++,
+            number: adoptNumbers ? entry.channelNumber : null,
           ),
         );
       }
@@ -322,6 +414,281 @@ final class IptvLibrary {
     }
     _channels = next;
     await _commit();
+  }
+
+  // Numbers ------------------------------------------------------------------
+
+  /// Hands out channel numbers, and answers how many channels needed one.
+  ///
+  /// Numbering runs over *every* channel, hidden ones included: hiding a
+  /// channel takes it out of the walk, not out of the line-up, and a channel
+  /// that comes back unhidden without a number would have to be numbered a
+  /// second time. With [keepExisting] (the default) the numbers the user
+  /// typed stay where they put them and only the channels without one are
+  /// filled in.
+  Future<int> assignNumbers({
+    IptvNumberingMode mode = IptvNumberingMode.sequential,
+    int startAt = 1,
+    int groupBlock = 100,
+    bool keepExisting = true,
+  }) async {
+    final ordered = orderedChannels;
+    final assigned = assignChannelNumbers(
+      ordered: ordered,
+      mode: mode,
+      groupRanks: groupRanks,
+      startAt: startAt,
+      groupBlock: groupBlock,
+      keepExisting: keepExisting,
+    );
+    var changed = 0;
+    _channels = [
+      for (final channel in ordered)
+        () {
+          final number = assigned[channel.id];
+          if (number == null || channel.number == number) {
+            return channel;
+          }
+          changed++;
+          return channel.copyWith(number: number);
+        }(),
+    ];
+    if (changed > 0) {
+      await _commit();
+    }
+    return changed;
+  }
+
+  /// Puts channel [id] on [number] and answers the id of the channel that
+  /// had to move, null when nothing was in the way.
+  ///
+  /// A number that is taken is not a refusal: the channel holding it climbs
+  /// to the next free number, the way a line-up editor moves a channel aside
+  /// rather than rejecting the edit. The climb runs in display order, so the
+  /// channel that was on the wanted number is the one that moves, and the
+  /// one behind it is not dragged along by a neighbour it never touched.
+  ///
+  /// A [number] below 1 changes nothing: use [clearChannelNumber] when the
+  /// viewer means "this one has no number", so a mistyped 0 cannot silently
+  /// un-number a channel they were dialling.
+  ///
+  /// Answers null when there is no such channel, as well as when nothing
+  /// moved.
+  Future<String?> setChannelNumber(String id, int number) async {
+    final target = channelById(id);
+    if (target == null || number < 1 || target.number == number) {
+      return null;
+    }
+    final ordered = orderedChannels;
+    final placed = <String, int>{id: number};
+    final used = <int>{number};
+    String? displaced;
+    for (final channel in ordered) {
+      if (channel.id == id) {
+        continue;
+      }
+      final held = channel.number;
+      if (held == null || held < 1) {
+        continue;
+      }
+      if (used.contains(held)) {
+        final moved = iptvNextFreeNumber(used, held + 1);
+        used.add(moved);
+        placed[channel.id] = moved;
+        displaced ??= channel.id;
+      } else {
+        used.add(held);
+        placed[channel.id] = held;
+      }
+    }
+    _channels = [for (final channel in ordered) channel.copyWith(number: placed[channel.id])];
+    await _commit();
+    return displaced;
+  }
+
+  /// Takes channel [id] out of the numbering.
+  ///
+  /// An unnumbered channel sorts after the numbered ones, which is where a
+  /// viewer expects it to go when they delete the number they had typed;
+  /// its old number is left free for whatever they put there next.
+  Future<void> clearChannelNumber(String id) => _update(id, (channel) => channel.copyWith(number: null));
+
+  /// Pins channel [id] to the front of the walk, or unpins it.
+  Future<void> setChannelPinned(String id, {required bool pinned}) =>
+      _update(id, (channel) => channel.copyWith(pinned: pinned));
+
+  // Groups -------------------------------------------------------------------
+
+  /// Moves the group [name] to [index] among the groups, creating its record
+  /// when the user is arranging it for the first time.
+  ///
+  /// The orders are rewritten as a straight 0..n-1 run afterwards, because
+  /// an order kept as "whatever number the user's drop happened to land on"
+  /// drifts into a list with 400 groups and no room between two of them.
+  /// A pinned group still sorts ahead of the run: pinning is the stronger
+  /// statement, and undoing a pin by dragging should not be the user's
+  /// problem.
+  Future<void> setGroupOrder(String name, int index) async {
+    final arranged = sortIptvGroups(_groups).map((group) => group.name).toList();
+    if (!arranged.contains(name)) {
+      arranged.add(name);
+    }
+    arranged.remove(name);
+    arranged.insert(index.clamp(0, arranged.length), name);
+    final records = <IptvGroup>[];
+    for (final (position, groupName) in arranged.indexed) {
+      final existing = _recordOf(groupName);
+      records.add(existing?.copyWith(order: position) ?? IptvGroup(name: groupName, order: position));
+    }
+    // A group that is in neither the reordered run nor the channels any
+    // more keeps its record: the user may re-import tomorrow.
+    final known = arranged.toSet();
+    _groups = [
+      ...records,
+      for (final group in _groups)
+        if (!known.contains(group.name)) group,
+    ];
+    await _commitGroups();
+  }
+
+  /// Pins the group [name] to the front of the group list, or unpins it.
+  Future<void> setGroupPinned(String name, {required bool pinned}) =>
+      _updateGroup(name, (group) => group.copyWith(pinned: pinned));
+
+  /// Takes the group [name] out of the walks and lists, or puts it back.
+  ///
+  /// The channels of a hidden group are not hidden themselves, so turning
+  /// the group back on gives back exactly the line-up that was there before
+  /// it was switched off — including the favourites and numbers inside it.
+  Future<void> setGroupHidden(String name, {required bool hidden}) =>
+      _updateGroup(name, (group) => group.copyWith(hidden: hidden));
+
+  /// Whether the group [name] is switched off.
+  ///
+  /// A group with no record is on: the absence is the user never having
+  /// said anything about it, and saying nothing is not hiding.
+  bool isGroupHidden(String name) => _recordOf(name)?.hidden ?? false;
+
+  /// Forgets the arrangement of the group [name], which returns it to the
+  /// unarranged tail; answers whether there was a record to forget.
+  Future<bool> forgetGroup(String name) async {
+    final kept = [
+      for (final group in _groups)
+        if (group.name != name) group,
+    ];
+    if (kept.length == _groups.length) {
+      return false;
+    }
+    _groups = kept;
+    await _commitGroups();
+    return true;
+  }
+
+  // Lines --------------------------------------------------------------------
+
+  /// The channel's addresses, best first: the working line before the lines
+  /// nobody has asked about, and those before the ones that failed.
+  ///
+  /// This is what a player should be handed as its candidate list, so a
+  /// channel whose primary source died starts on a mirror instead of on a
+  /// black screen, and the recovery ladder has somewhere to climb.
+  ///
+  /// A verdict older than [staleAfter] is not believed [now]: yesterday's
+  /// dead mirror is tonight's unknown, and the playlist's own order gets to
+  /// speak again once the evidence has aged out.
+  List<IptvLineCandidate> candidateLines(
+    IptvChannel channel, {
+    DateTime? now,
+    Duration staleAfter = const Duration(hours: 12),
+  }) => rankIptvLines(channel, _health, now: now ?? DateTime.now(), staleAfter: staleAfter);
+
+  /// Saves what the probes found, and answers how many verdicts changed.
+  ///
+  /// An address the probe never reached (because a better one answered
+  /// first) keeps the verdict it already had: the probe abstained, it did
+  /// not retract. The counting of consecutive failures is the probe
+  /// package's [mergeIptvLineHealth]; this only decides what to write.
+  Future<int> applyProbeReports(Iterable<IptvProbeReport> reports, {DateTime? now}) async {
+    final merged = mergeIptvLineHealth(reports, previous: _health, now: now);
+    var changed = 0;
+    for (final entry in merged.entries) {
+      if (_health[entry.key] != entry.value) {
+        changed++;
+      }
+    }
+    if (changed == 0) {
+      return 0;
+    }
+    _health = merged;
+    await _commitHealth();
+    return changed;
+  }
+
+  /// Drops the verdicts made before [before].
+  ///
+  /// A verdict that old says nothing about tonight's servers, and keeping
+  /// the history of them would grow the store to rank the same hundred
+  /// addresses forever.
+  Future<int> pruneLineHealth(DateTime before) async {
+    final kept = {
+      for (final entry in _health.entries)
+        if (!entry.value.checkedAt.isBefore(before)) entry.key: entry.value,
+    };
+    if (kept.length == _health.length) {
+      return 0;
+    }
+    final dropped = _health.length - kept.length;
+    _health = kept;
+    await _commitHealth();
+    return dropped;
+  }
+
+  // Internals ----------------------------------------------------------------
+
+  bool _providerNumbersComplete(List<IptvEntry> entries) =>
+      entries.isNotEmpty && entries.every((entry) => entry.channelNumber != null);
+
+  IptvGroup? _recordOf(String name) {
+    for (final group in _groups) {
+      if (group.name == name) {
+        return group;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _updateGroup(String name, IptvGroup Function(IptvGroup) transform) async {
+    final existing = _recordOf(name);
+    _groups = [..._groups, if (existing == null) IptvGroup(name: name)];
+    _groups = [
+      for (final group in _groups)
+        if (group.name == name) transform(group) else group,
+    ];
+    await _commitGroups();
+  }
+
+  Map<String, IptvLineHealth> _indexHealth(List<IptvLineHealth> records) => {
+    for (final record in records) record.url: record,
+  };
+
+  Future<void> _commitGroups() async {
+    _writing = true;
+    try {
+      await store.saveGroups(_groups);
+    } finally {
+      _writing = false;
+    }
+    _changes.add(null);
+  }
+
+  Future<void> _commitHealth() async {
+    _writing = true;
+    try {
+      await store.saveLineHealth(_health.values.toList());
+    } finally {
+      _writing = false;
+    }
+    _changes.add(null);
   }
 
   /// Releases the library.
@@ -519,6 +886,8 @@ final class IptvLibrary {
     _guideChannels = await store.loadGuideChannels();
     _programmes = await store.loadGuideProgrammes();
     _mappings = await store.loadGuideMappings();
+    _groups = await store.loadGroups();
+    _health = _indexHealth(await store.loadLineHealth());
     if (_changes.isClosed) {
       // The library was disposed while this reload was queued.
       return;
@@ -530,6 +899,14 @@ final class IptvLibrary {
 /// The library as the `live_sites` IPTV site's channel source: the site
 /// layer exposes these through [sites.IptvSite] so IPTV channels play
 /// through the ordinary playback stack.
+///
+/// The channels come out in zap order rather than in import order, because
+/// the site's directory is what a screen lists and what a remote steps
+/// through: the two must agree, or the sixth row of the list is not the
+/// sixth channel the down key reaches. Hidden channels and hidden groups
+/// are left out unless [includeHidden] asks for them, and the line of each
+/// channel is the health-ranked candidate list, so a source that died on
+/// the last probe hands the player its mirror instead of a dead URL.
 final class LibraryIptvChannelSource implements sites.IptvChannelSource {
   /// A source over [library]; [includeHidden] keeps hidden channels out
   /// by default.
@@ -543,21 +920,24 @@ final class LibraryIptvChannelSource implements sites.IptvChannelSource {
 
   @override
   List<sites.IptvChannel> get channels => [
-    for (final channel in library.channels)
-      if (includeHidden || !channel.hidden) _toSiteChannel(channel),
+    for (final channel in library.zapSequence(includeHidden: includeHidden).channels) _toSiteChannel(channel),
   ];
 
   @override
   sites.IptvChannel? channelById(String id) {
-    for (final channel in library.channels) {
-      if (channel.id == id) {
-        return _toSiteChannel(channel);
-      }
+    // Looked up by id, a hidden channel is still there: [channels] is the
+    // list the viewer walks, while an id is something a room already holds.
+    // Refusing here would kill a stream the user is watching the moment
+    // they hide its channel, and a hidden channel is a request to not be
+    // offered it, not a request to be cut off from it.
+    final channel = library.channelById(id);
+    if (channel == null) {
+      return null;
     }
-    return null;
+    return _toSiteChannel(channel);
   }
 
-  static sites.IptvChannel _toSiteChannel(IptvChannel channel) => sites.IptvChannel(
+  sites.IptvChannel _toSiteChannel(IptvChannel channel) => sites.IptvChannel(
     id: channel.id,
     name: channel.entry.name,
     url: channel.entry.url,
@@ -565,5 +945,10 @@ final class LibraryIptvChannelSource implements sites.IptvChannelSource {
     headers: channel.entry.headers,
     epgChannelId: channel.entry.tvgId,
     favorite: channel.favorite,
+    number: channel.number,
+    lines: [
+      for (final candidate in library.candidateLines(channel))
+        sites.IptvLine(url: candidate.url, headers: candidate.headers, lineId: candidate.isHealthy ? 'healthy' : null),
+    ],
   );
 }

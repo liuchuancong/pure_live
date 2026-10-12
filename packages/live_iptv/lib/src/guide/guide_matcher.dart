@@ -1,5 +1,4 @@
-import 'package:live_iptv/src/model/guide_models.dart';
-import 'package:live_iptv/src/model/iptv_models.dart';
+import 'package:live_iptv/src/model/model.dart';
 
 /// Unique-only matching of playlist channels to the channels of one guide.
 ///

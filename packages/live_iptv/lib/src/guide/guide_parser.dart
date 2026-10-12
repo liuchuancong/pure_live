@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io' show gzip;
 
-import 'package:live_iptv/src/model/guide_models.dart';
+import 'package:live_iptv/src/model/model.dart';
 import 'package:xml/xml.dart' show XmlParserException;
 import 'package:xml/xml_events.dart';
 

@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:live_iptv/live_iptv.dart';
 import 'package:live_library/live_library.dart';
@@ -33,7 +32,7 @@ final class PureLiveServices {
     required this.library,
     required this.history,
     required this.iptv,
-    required this.database,
+    required this.storage,
     required this.http,
   });
 
@@ -58,8 +57,8 @@ final class PureLiveServices {
   /// The IPTV channel library.
   final IptvLibrary iptv;
 
-  /// The structured store every durable value goes through.
-  final PureLiveDatabase database;
+  /// The storage bootstrap; shutdown flushes and closes what it opened.
+  final StorageBootstrap storage;
 
   /// The shared HTTP factory, so every package speaks through one pipeline.
   final DioFactory http;
@@ -99,15 +98,17 @@ final class PureLiveServices {
     // write the file still logs to both of the others.
     log.replaceSink(memory, FanOutSink([console, memory, file]));
 
-    // The structured store, then the documents on top of it: one keyed
-    // table for the preference groups, one for the user's own data.
+    // Storage first: Hive bound to the data directory, adapters
+    // registered once, then every repository on top of it.
     final dataDirectory = await _ensureDirectory(runtime.storage, StorageArea.data);
-    final database = PureLiveDatabase(
-      NativeDatabase.createInBackground(File(p.join(dataDirectory, 'pure_live.sqlite'))),
+    final storage = StorageBootstrap(
+      pathProvider: StoragePathProvider(resolver: () async => dataDirectory),
+      adapterRegistry: StorageAdapterRegistry(),
     );
-    final preferencesStore = await database.openStore(LiveStorageTables.preferences);
+    await storage.initialize();
+    final boxes = StorageBoxManager();
     final preferences = PreferencesService(
-      store: preferencesStore,
+      store: HiveStorageRepository<Map<dynamic, dynamic>>(box: await boxes.keyed(PreferencesKeys.box)),
       onError: (key, error, stack) => log
           .forCategory('app.preferences')
           .log(LogLevel.warning, '$key could not be stored', error: error, stackTrace: stack),
@@ -121,11 +122,15 @@ final class PureLiveServices {
     }
 
     // The user's own data: followed rooms, history, IPTV channels — one
-    // keyed table per domain, written through the shared database.
-    final libraryStore = KeyedLibraryStore(await database.openStore(LibraryKeys.table));
+    // list repository per domain, written through the shared storage.
+    final libraryStore = BoxLibraryStore(
+      HiveStorageListRepository(box: await boxes.list<Map<dynamic, dynamic>>(LibraryKeys.table)),
+    );
     final library = FollowRepository(libraryStore);
     final history = HistoryRepository(libraryStore, capacity: preferences.value.library.historyLimit);
-    final iptv = IptvLibrary(KeyedIptvStore(await database.openStore(IptvKeys.table)));
+    final iptv = IptvLibrary(
+      BoxIptvStore(HiveStorageListRepository(box: await boxes.list<Map<dynamic, dynamic>>(IptvKeys.table))),
+    );
     await library.load();
     await history.load();
     await iptv.load();
@@ -145,7 +150,7 @@ final class PureLiveServices {
       library: library,
       history: history,
       iptv: iptv,
-      database: database,
+      storage: storage,
       http: http,
     );
   }
@@ -153,14 +158,14 @@ final class PureLiveServices {
   /// Flushes and closes everything, in reverse order of construction.
   ///
   /// Called from the app's lifecycle hook, not from a widget's dispose: the
-  /// preference write and the database close must both finish before the
+  /// preference write and the storage close must both finish before the
   /// process exits, or the last change is lost.
   Future<void> shutdown() async {
     await preferences.dispose();
     await library.dispose();
     await history.dispose();
     await iptv.dispose();
-    await database.close();
+    await storage.shutdown();
   }
 
   /// The environment variable a portable or diagnostic run sets to keep its
