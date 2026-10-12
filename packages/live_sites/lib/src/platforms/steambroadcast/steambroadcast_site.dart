@@ -57,9 +57,34 @@ final class SteamBroadcastSite
     return getRecommendRooms(page: page);
   }
 
+  /// 3.x's search (Steam has no anonymous broadcast search): a Steam id or a
+  /// watch/profile link is that account's room (the refresh, page 1 only; an
+  /// account without a page is no result), and any other keyword filters
+  /// directory page [page] by id, broadcaster, title and game (case ignored).
+  /// A blank keyword or a page below one is nothing. A custom profile address
+  /// is not resolved — that needs the profile XML.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('steambroadcast search lands with its migration');
+    if (page < 1) {
+      throw RangeError.range(page, 1, null, 'page');
+    }
+    final raw = keyword.trim();
+    if (raw.isEmpty) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final steamId = SteamBroadcastParser.steamIdOf(raw);
+    if (steamId != null) {
+      if (page != 1) {
+        return const LivePage<LiveRoom>(items: []);
+      }
+      try {
+        return LivePage<LiveRoom>(items: [await _read(steamId)]);
+      } on SiteNotFoundError {
+        return const LivePage<LiveRoom>(items: []);
+      }
+    }
+    final directory = await getRecommendRooms(page: page);
+    return LivePage<LiveRoom>(items: SteamBroadcastParser.filter(directory.items, raw.toLowerCase()));
   }
 
   @override

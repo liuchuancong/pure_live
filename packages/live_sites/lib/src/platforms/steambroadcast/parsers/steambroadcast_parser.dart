@@ -19,6 +19,41 @@ abstract final class SteamBroadcastParser {
   /// A Steam id: 17 digits starting with 7656.
   static bool isSteamId(String value) => RegExp(r'^7656\d{13}$').hasMatch(value.trim());
 
+  /// The Steam id a bare id or a watch/profile link names, or null. A custom
+  /// address (`/id/<name>`) is not resolved here — that needs the profile
+  /// XML, which has not landed yet.
+  static String? steamIdOf(String raw) {
+    final value = raw.trim();
+    if (isSteamId(value)) {
+      return value;
+    }
+    final uri = Uri.tryParse(value);
+    if (uri == null || uri.host != 'steamcommunity.com') {
+      return null;
+    }
+    final segments = uri.pathSegments.where((segment) => segment.isNotEmpty).toList(growable: false);
+    final named =
+        (segments.length == 3 && segments[0] == 'broadcast' && segments[1] == 'watch') ||
+        (segments.length == 2 && segments[0] == 'profiles');
+    if (!named) {
+      return null;
+    }
+    final id = segments.last;
+    return isSteamId(id) ? id : null;
+  }
+
+  /// The directory rooms whose id, broadcaster, title or area (the game)
+  /// contains the lower-case [query] — 3.x's nickname filter, which matched
+  /// the game as its own field.
+  static List<LiveRoom> filter(Iterable<LiveRoom> rooms, String query) => [
+    for (final room in rooms)
+      if (room.roomId.contains(query) ||
+          room.nick.toLowerCase().contains(query) ||
+          room.title.toLowerCase().contains(query) ||
+          (room.areaName?.toLowerCase().contains(query) ?? false))
+        room,
+  ];
+
   /// The mini profile URL of [steamId].
   static Uri profileUrl(String steamId) =>
       Uri.https('steamcommunity.com', '/miniprofile/${BigInt.parse(steamId) - accountBase}/json');
