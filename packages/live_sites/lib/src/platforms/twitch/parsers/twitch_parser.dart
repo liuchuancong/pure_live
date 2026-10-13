@@ -3,6 +3,10 @@ import 'dart:math';
 
 import 'package:live_sites/live_sites.dart';
 
+/// A category tag of `SearchCategoryTags`: its id and its name in the
+/// requested language.
+typedef TwitchTag = ({String id, String name});
+
 /// Static parsers and request bodies for the Twitch GraphQL and usher
 /// APIs.
 abstract final class TwitchParser {
@@ -31,10 +35,12 @@ abstract final class TwitchParser {
     return [for (var i = 0; i < 32; i++) '0123456789abcdef'[random.nextInt(16)]].join();
   }
 
-  /// GraphQL request headers with [deviceId].
-  static Map<String, String> gqlHeaders({required String deviceId}) => {
+  /// GraphQL request headers with [deviceId]. [language] is the
+  /// `Accept-Language`; the directory asks for [acceptLanguage] to get Chinese
+  /// names (the default is English, as the other queries send).
+  static Map<String, String> gqlHeaders({required String deviceId, String language = 'en-US;q=0.9,en;q=0.8'}) => {
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-    'accept-language': 'en-US;q=0.9,en;q=0.8',
+    'accept-language': language,
     'accept': 'application/vnd.twitchtv.v5+json',
     'client-id': clientId,
     'origin': origin,
@@ -263,6 +269,151 @@ abstract final class TwitchParser {
   /// A broadcast language as Twitch's `Language` enum spells it (`ZH`,
   /// `ZH_HK`, `ASL`, `OTHER`).
   static final RegExp languagePattern = RegExp(r'^[A-Z]{2,5}(_[A-Z]{2,4})?$');
+
+  /// The persisted hash of the `SearchCategoryTags` query (the category tags).
+  static const String tagsHash = 'b4cb189d8d17aadf29c61e9d7c7e7dcfc932e93b77b3209af5661bffb484195f';
+
+  /// The persisted hash of the `BrowsePage_AllDirectories` query (a tag's
+  /// directory pages).
+  static const String directoriesHash = '2f67f71ba89f3c0ed26a141ec00da1defecb2303595f5cda4298169549783d9e';
+
+  /// Directories per page of a category tag.
+  static const int tagDirectoryLimit = 30;
+
+  /// Operations one GraphQL request may carry (`BATCH_LIMIT_EXCEEDED` above).
+  static const int batchLimit = 35;
+
+  /// `Accept-Language` for Chinese names (tags, directories, games).
+  static const String acceptLanguage = 'zh-CN,zh;q=0.9,en;q=0.8';
+
+  /// `Accept-Language` of the backfill request for tags Twitch has no Chinese
+  /// name for.
+  static const String englishLanguage = 'en-US,en;q=0.9';
+
+  /// `SearchCategoryTags`: every category tag (its id and name in the requested
+  /// language).
+  static Map<String, Object?> tagsOperation() => {
+    'operationName': 'SearchCategoryTags',
+    'extensions': {
+      'persistedQuery': {'version': 1, 'sha256Hash': tagsHash},
+    },
+    'variables': {'userQuery': '', 'limit': 100},
+  };
+
+  /// `BrowsePage_AllDirectories` of one tag, by viewers, after [cursor].
+  static Map<String, Object?> directoriesOperation(String tagId, {String? cursor}) => {
+    'operationName': 'BrowsePage_AllDirectories',
+    'extensions': {
+      'persistedQuery': {'version': 1, 'sha256Hash': directoriesHash},
+    },
+    'variables': {
+      'limit': tagDirectoryLimit,
+      'options': {
+        'recommendationsContext': {'platform': 'web'},
+        'requestID': 'JIRA-VXP-2397',
+        'sort': 'VIEWER_COUNT',
+        'tags': [tagId],
+      },
+      'cursor': ?cursor,
+    },
+  };
+
+  /// `SearchCategoryTags`: every tag in the server's order, named by `tagName`;
+  /// `localizedName` only when `tagName` is empty, and a tag with neither keeps
+  /// its empty name (see [namedTags]).
+  static List<TwitchTag> tags(String body, {int status = 200}) {
+    final data = TwitchParser.data(body, status: status, what: 'SearchCategoryTags');
+    final list = data['searchCategoryTags'];
+    if (list is! List) {
+      throw const SiteApiChangedError('twitch SearchCategoryTags: no list');
+    }
+    final tags = <TwitchTag>[];
+    for (final tag in list) {
+      if (tag is! Map<String, Object?>) {
+        continue;
+      }
+      final id = SiteText.text(tag['id']);
+      if (id.isEmpty) {
+        continue;
+      }
+      tags.add((id: id, name: _tagName(tag)));
+    }
+    return tags;
+  }
+
+  /// [tags] with each empty name taken from [namedTags]`s second argument (the
+  /// same tags asked for in English): Twitch has no Chinese name for some tags.
+  /// A tag the English answer cannot name keeps its empty name.
+  static List<TwitchTag> namedTags(List<TwitchTag> tags, List<TwitchTag> fallback) {
+    final names = {for (final tag in fallback) tag.id: tag.name};
+    return [
+      for (final tag in tags)
+        if (tag.name.isNotEmpty) tag else (id: tag.id, name: names[tag.id] ?? ''),
+    ];
+  }
+
+  /// A batch of `BrowsePage_AllDirectories` envelopes: one page of
+  /// directories per request-order operation, as the flat areas
+  /// `getCategoryRooms` accepts (the game's slug is the id, its Chinese name
+  /// the name, [tags] the grouping parent), and the cursor of the next page
+  /// when `pageInfo` says there is one. An envelope with errors and no data is
+  /// a page without areas. Throws when the answer has fewer envelopes than
+  /// [tags].
+  static List<({List<LiveArea> areas, String? cursor})> directoriesBatch(
+    String body, {
+    required List<TwitchTag> tags,
+    int status = 200,
+  }) {
+    final envelopes = _batch(body, expected: tags.length, status: status, what: 'BrowsePage_AllDirectories');
+    return [for (final (index, data) in envelopes.indexed) _directories(data, tags[index])];
+  }
+
+  static ({List<LiveArea> areas, String? cursor}) _directories(Map<String, Object?>? data, TwitchTag tag) {
+    final connection = _connection(data?['directoriesWithTags']);
+    final areas = <LiveArea>[];
+    for (final edge in connection.edges) {
+      if (edge['node'] is! Map<String, Object?>) {
+        continue;
+      }
+      final node = edge['node']! as Map<String, Object?>;
+      final slug = SiteText.text(node['slug']);
+      if (slug.isEmpty) {
+        continue;
+      }
+      areas.add(LiveArea(id: slug, name: _gameName(node), parentId: tag.id));
+    }
+    return (areas: areas, cursor: _nextCursor(connection));
+  }
+
+  static List<Map<String, Object?>> _batch(
+    String body, {
+    required int expected,
+    required int status,
+    required String what,
+  }) {
+    if (status < 200 || status >= 300) {
+      throw SiteApiChangedError('twitch $what: HTTP $status');
+    }
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(body);
+    } on FormatException {
+      throw SiteApiChangedError('twitch $what: body is not JSON');
+    }
+    final envelopes = decoded is List ? decoded : [decoded];
+    if (envelopes.length != expected) {
+      throw SiteApiChangedError('twitch $what: ${envelopes.length} answers for $expected operations');
+    }
+    return [
+      for (final envelope in envelopes)
+        if (envelope is Map<String, Object?>) SiteJson.object(envelope['data']) else const <String, Object?>{},
+    ];
+  }
+
+  static String _tagName(Map<String, Object?> tag) {
+    final name = SiteText.text(tag['tagName']);
+    return name.isEmpty ? SiteText.text(tag['localizedName']) : name;
+  }
 
   /// The busiest live streams of the whole site, in the broadcast
   /// `languages` when given (the recommendations). The web client has no

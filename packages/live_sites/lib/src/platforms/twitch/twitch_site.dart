@@ -6,11 +6,13 @@ import 'package:live_sites/live_sites.dart';
 import 'package:live_sites/src/platforms/twitch/danmaku/twitch_session.dart';
 import 'package:live_sites/src/platforms/twitch/parsers/twitch_parser.dart';
 
-/// The Twitch adapter: anonymous GraphQL + usher flow, plus the IRC chat over
-/// an anonymous WebSocket.
+/// The Twitch adapter: anonymous GraphQL (catalog, directory lists, search) and
+/// usher flow, plus the IRC chat over an anonymous WebSocket.
 ///
-/// Not migrated yet: the directory and the session cookie.
-final class TwitchSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability {
+/// Not migrated yet: the stored session cookie and the transport fallbacks the
+/// reference used for anonymous integrity-token-gated later pages; this tree is
+/// anonymous throughout and lets those pages end on a plain failure.
+final class TwitchSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability, LiveAreaCatalog {
   /// A site over [http].
   new({required this.http}) : _deviceId = TwitchParser.deviceId();
 
@@ -31,6 +33,108 @@ final class TwitchSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapabi
   @override
   SiteMetadata get metadata =>
       const SiteMetadata(id: SiteIds.twitch, displayName: 'Twitch', homeUrl: 'https://www.twitch.tv');
+
+  /// The category tags with their directories, as the reference's
+  /// `getCategores`: 30 directories a page, and a tag's next page while its
+  /// last one was full and had a cursor. The pages of a round go out together,
+  /// in batches of at most 35 operations. A failed first round fails the
+  /// catalog; a failed later round ends those tags with the pages they have.
+  /// Names are Chinese; the tags Twitch has no Chinese name for get their
+  /// English one from one more tags request. Returned as the flat selectable
+  /// areas (each game once per tag, `parentId` the grouping tag), whose
+  /// `id` is the directory slug [getCategoryRooms] browses.
+  @override
+  Future<List<LiveArea>> getAreas() async {
+    final tagsResponse = await _gql(TwitchParser.tagsOperation(), TwitchParser.acceptLanguage);
+    var tags = TwitchParser.tags(tagsResponse.text, status: tagsResponse.statusCode);
+    if (tags.any((tag) => tag.name.isEmpty)) {
+      tags = await _namedTags(tags);
+    }
+    final areas = {for (final tag in tags) tag.id: <LiveArea>[]};
+    final seen = <String>{};
+    var pages = [for (final tag in tags) (tag: tag, cursor: null as String?)];
+    for (var round = 0; pages.isNotEmpty && round < _tagPageLimit; round++) {
+      final answers = await _directoryRound(pages, lenient: round > 0);
+      pages = [];
+      for (final answer in answers) {
+        areas[answer.tag.id]!.addAll(answer.areas);
+        final cursor = answer.cursor;
+        if (answer.areas.length >= TwitchParser.tagDirectoryLimit &&
+            cursor != null &&
+            seen.add('${answer.tag.id}|$cursor')) {
+          pages.add((tag: answer.tag, cursor: cursor));
+        }
+      }
+    }
+    return [for (final tag in tags) ...areas[tag.id]!];
+  }
+
+  /// [tags] with English names for those without a Chinese one. The names are
+  /// cosmetic: when that request fails the tags keep their empty names.
+  Future<List<TwitchTag>> _namedTags(List<TwitchTag> tags) async {
+    try {
+      final englishResponse = await _gql(TwitchParser.tagsOperation(), TwitchParser.englishLanguage);
+      final english = TwitchParser.tags(englishResponse.text, status: englishResponse.statusCode);
+      return TwitchParser.namedTags(tags, english);
+    } on SiteError {
+      return tags;
+    }
+  }
+
+  /// One page of directories for each of [pages], in batches of at most 35
+  /// operations sent together. With [lenient] a failed batch just gives no
+  /// pages.
+  Future<List<({TwitchTag tag, List<LiveArea> areas, String? cursor})>> _directoryRound(
+    List<({TwitchTag tag, String? cursor})> pages, {
+    required bool lenient,
+  }) async {
+    final chunks = [
+      for (var start = 0; start < pages.length; start += TwitchParser.batchLimit)
+        pages.sublist(start, min(start + TwitchParser.batchLimit, pages.length)),
+    ];
+    Future<List<({TwitchTag tag, List<LiveArea> areas, String? cursor})>> ask(
+      List<({TwitchTag tag, String? cursor})> chunk,
+    ) async {
+      try {
+        final response = await _gql([
+          for (final page in chunk) TwitchParser.directoriesOperation(page.tag.id, cursor: page.cursor),
+        ], TwitchParser.acceptLanguage);
+        final answers = TwitchParser.directoriesBatch(
+          response.text,
+          tags: [for (final page in chunk) page.tag],
+          status: response.statusCode,
+        );
+        return [
+          for (final (index, answer) in answers.indexed)
+            (tag: chunk[index].tag, areas: answer.areas, cursor: answer.cursor),
+        ];
+      } on SiteError {
+        if (lenient) {
+          return const [];
+        }
+        rethrow;
+      }
+    }
+
+    return [
+      for (final answers in await Future.wait([for (final chunk in chunks) ask(chunk)])) ...answers,
+    ];
+  }
+
+  /// One GraphQL [operation] (an operation or a batch) as a response.
+  Future<LiveResponse> _gql(Object operation, String language) => http.send(
+    LiveRequest.custom(
+      url: TwitchParser.gqlUrl,
+      method: 'POST',
+      body: jsonEncode(operation),
+      headers: TwitchParser.gqlHeaders(deviceId: _deviceId, language: language),
+      site: id,
+    ),
+  );
+
+  /// Pages of one category tag at most (30 directories each); a cursor that
+  /// repeats also ends a tag.
+  static const int _tagPageLimit = 50;
 
   /// The busiest live streams of the whole site, in Twitch's order, 30 at a
   /// time (the most Twitch gives) and paged locally from a snapshot: the first
