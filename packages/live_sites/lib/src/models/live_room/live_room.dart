@@ -44,11 +44,11 @@ final class LiveRoom {
     String title = '',
     this.cover = '',
     this.area,
-    this.watching = '0',
-    this.audienceMetricType,
-    this.popularity = '',
-    this.onlineViewers = '',
-    this.totalViewers = '',
+    String watching = '0',
+    AudienceMetricType? audienceMetricType,
+    String popularity = '',
+    String onlineViewers = '',
+    String totalViewers = '',
     this.liveStatus,
     DateTime? startedAt,
     this.restriction,
@@ -56,10 +56,10 @@ final class LiveRoom {
     String? notice,
     this.data,
     this.danmakuData,
-    this.epgId,
-    this.currentProgramme,
-    this.currentProgrammeDescription,
-    this.catchUp = const CatchUp(),
+    String? epgId,
+    String currentProgramme = '',
+    String? currentProgrammeDescription,
+    CatchUp catchUp = const CatchUp(),
     Map<String, String> httpHeaders = const {},
     this.lastWatchedAt,
     List<String> tagIds = const [],
@@ -68,8 +68,21 @@ final class LiveRoom {
        title = SiteText.stripInvisiblePlaceholders(title),
        introduction = SiteText.stripInvisiblePlaceholdersOrNull(introduction),
        notice = SiteText.stripInvisiblePlaceholdersOrNull(notice),
+       audience = LiveAudience(
+         watching: watching,
+         metricType: audienceMetricType,
+         popularity: popularity,
+         onlineViewers: onlineViewers,
+         totalViewers: totalViewers,
+       ),
+       guide = LiveGuide(
+         epgId: epgId,
+         currentProgramme: currentProgramme,
+         currentProgrammeDescription: currentProgrammeDescription,
+         catchUp: catchUp,
+         httpHeaders: SiteHeaders.normalize(httpHeaders),
+       ),
        startedAt = startedAt?.toUtc(),
-       httpHeaders = SiteHeaders.normalize(httpHeaders),
        tagIds = List.unmodifiable(tagIds);
 
   /// Reads the JSON stored for follows, history and backups.
@@ -171,21 +184,24 @@ final class LiveRoom {
   /// The room's area (its category node), when the platform names one.
   final LiveArea? area;
 
+  /// The audience figures the platform reported, as one snapshot.
+  final LiveAudience audience;
+
   /// The single audience field of older records and backups; `'0'` is the old
   /// default and not a measurement.
-  final String watching;
+  String get watching => audience.watching;
 
   /// What the platform's main audience number means; null when not given.
-  final AudienceMetricType? audienceMetricType;
+  AudienceMetricType? get audienceMetricType => audience.metricType;
 
   /// Popularity or heat; not a head count.
-  final String popularity;
+  String get popularity => audience.popularity;
 
   /// Concurrent viewers, when the platform exposes an explicit value.
-  final String onlineViewers;
+  String get onlineViewers => audience.onlineViewers;
 
   /// Cumulative viewers of the current session.
-  final String totalViewers;
+  String get totalViewers => audience.totalViewers;
 
   /// Broadcast state; null when the response did not say.
   final LiveStatus? liveStatus;
@@ -211,20 +227,23 @@ final class LiveRoom {
   /// Platform data needed to connect danmaku; never stored.
   final Object? danmakuData;
 
+  /// The IPTV guide state: channel, programme on air, catch-up and headers.
+  final LiveGuide guide;
+
   /// IPTV: guide channel id.
-  final String? epgId;
+  String? get epgId => guide.epgId;
 
   /// IPTV: programme on air.
-  final String? currentProgramme;
+  String get currentProgramme => guide.currentProgramme;
 
   /// IPTV: description of the programme on air.
-  final String? currentProgrammeDescription;
+  String? get currentProgrammeDescription => guide.currentProgrammeDescription;
 
   /// IPTV: catch-up playback.
-  final CatchUp catchUp;
+  CatchUp get catchUp => guide.catchUp;
 
   /// IPTV: headers the channel's media requests need, normalized.
-  final Map<String, String> httpHeaders;
+  Map<String, String> get httpHeaders => guide.httpHeaders;
 
   /// Last time this room was watched, epoch milliseconds (history).
   final int? lastWatchedAt;
@@ -502,7 +521,7 @@ final class LiveRoom {
       data: incoming.data ?? data,
       danmakuData: incoming.danmakuData ?? danmakuData,
       epgId: preferNullable(incoming.epgId, epgId),
-      currentProgramme: preferNullable(incoming.currentProgramme, currentProgramme),
+      currentProgramme: prefer(incoming.currentProgramme, currentProgramme),
       currentProgrammeDescription: preferNullable(incoming.currentProgrammeDescription, currentProgrammeDescription),
       catchUp: CatchUp(
         url: preferNullable(incoming.catchUp.url, catchUp.url),
