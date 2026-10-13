@@ -10,7 +10,8 @@ import 'package:live_sites/src/platforms/jdlive/parsers/jdlive_parser.dart';
 /// answer and the featured list (`liveListWithTabToM`), plus the `liveauth`
 /// chat socket.
 ///
-/// Not migrated yet: search and the playlist validation pass.
+/// Not migrated yet: the playlist validation pass. Search filters its own
+/// per-keyword sequence of the featured list (3.x's `search:<query>`).
 final class JdLiveSite
     with SiteRoomGuard
     implements LiveSite, LiveDanmakuCapability, LiveAreaCatalog, LiveDirectoryCapability {
@@ -64,7 +65,7 @@ final class JdLiveSite
   /// served by walking the sequence — the pages asked before are kept, so
   /// "next page" costs one request — and a page the sequence has ended before
   /// is empty rather than an error.
-  Future<LivePage<LiveRoom>> _directory(int page) async {
+  Future<LivePage<LiveRoom>> _directory(int page) {
     if (page < 1 || page > JdLiveParser.maxPage) {
       throw RangeError.range(page, 1, JdLiveParser.maxPage, 'page');
     }
@@ -72,10 +73,14 @@ final class JdLiveSite
       // Page 1 is the pull to refresh: it starts the sequence anew.
       _sequence = _JdLiveSequence(DateTime.now().millisecondsSinceEpoch);
     }
-    final sequence = _sequence;
+    return _walk(_sequence, page);
+  }
+
+  /// Walks [sequence] up to [page], asking only the pages it has not cached,
+  /// and answers the page's rooms and whether another may follow.
+  Future<LivePage<LiveRoom>> _walk(_JdLiveSequence sequence, int page) async {
     for (var current = 1; current <= page; current++) {
-      final cached = sequence.pages[current];
-      if (cached != null) {
+      if (sequence.pages[current] != null) {
         continue;
       }
       if (sequence.ended || !sequence.counts.containsKey(current)) {
@@ -115,9 +120,66 @@ final class JdLiveSite
   /// The sequence the current browse walks; page 1 replaces it.
   _JdLiveSequence _sequence = _JdLiveSequence(0);
 
+  /// The sequence each keyword's search walks (3.x's `search:<query>`); the
+  /// oldest drops past [_searchLimit].
+  final Map<String, _JdLiveSequence> _searches = {};
+
+  static const int _searchLimit = 32;
+
+  /// 3.x's search: a broadcast id or room link is that room (page 1 only; an
+  /// unknown one is nothing); another keyword filters its own sequence's page
+  /// [page] of the featured list by id, account, shop name and title (case
+  /// ignored), the first 30. A blank keyword, a page below 1, or a link of
+  /// another site gives nothing without a request; a later page whose sequence
+  /// never started is empty without a request.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('jdlive search lands with its migration');
+    if (page < 1 || page > JdLiveParser.maxPage) {
+      throw RangeError.range(page, 1, JdLiveParser.maxPage, 'page');
+    }
+    final raw = keyword.trim();
+    if (raw.isEmpty) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final liveId = JdLiveParser.liveIdOf(raw);
+    if (liveId != null) {
+      if (page != 1) {
+        return const LivePage<LiveRoom>(items: []);
+      }
+      try {
+        return LivePage<LiveRoom>(
+          items: [await getRoomDetail(LiveRoom(platform: SiteIds.jdLive, roomId: liveId))],
+        );
+      } on SiteNotFoundError {
+        return const LivePage<LiveRoom>(items: []);
+      }
+    }
+    if (_isLink(raw)) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final query = raw.toLowerCase();
+    if (page == 1) {
+      _searches
+        ..remove(query)
+        ..[query] = _JdLiveSequence(DateTime.now().millisecondsSinceEpoch);
+      if (_searches.length > _searchLimit) {
+        _searches.remove(_searches.keys.first);
+      }
+    }
+    final sequence = _searches[query];
+    if (sequence == null) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final result = await _walk(sequence, page);
+    final matches = result.items.where((room) => JdLiveParser.matches(room, query)).take(30);
+    return LivePage<LiveRoom>(items: List.unmodifiable(matches));
+  }
+
+  /// Whether [input] is a link (`scheme://…`) rather than a keyword. 3.x
+  /// filtered the list with it, which never matched.
+  static bool _isLink(String input) {
+    final uri = Uri.tryParse(input);
+    return uri != null && uri.hasScheme && uri.hasAuthority;
   }
 
   @override

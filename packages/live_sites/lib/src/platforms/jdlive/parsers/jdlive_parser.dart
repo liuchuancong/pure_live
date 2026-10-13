@@ -42,6 +42,16 @@ abstract final class JdLiveParser {
   /// Whether [area] is the one area this site has.
   static bool isArea(LiveArea area) => area.id.trim() == areaId;
 
+  /// Largest search page size 3.x served; a larger one gives nothing.
+  static const int maxSearchSize = 100;
+
+  /// Whether [room] matches the lower-case [query] of 3.x's search filter:
+  /// its broadcast id, account, shop name (the nick) or title contains it.
+  static bool matches(LiveRoom room, String query) =>
+      room.roomId.contains(query) ||
+      room.nick.toLowerCase().contains(query) ||
+      room.title.toLowerCase().contains(query);
+
   /// The `liveListWithTabToM` URL: page [page] after [count] entries, in the
   /// sequence started at [timestamp].
   static Uri listUrl({required int page, required int count, required int timestamp, required DateTime now}) =>
