@@ -1,0 +1,24 @@
+name: live_shell
+description: >-
+  The application shell for Pure Live's desktop clients: what a window's chrome
+  is on each platform, what closing a window means, what the tray icon stands
+  for, how a second instance hands its intent to the first, and how the
+  window's geometry survives a disconnect from a second monitor. Pure Dart: the
+  platform decisions are functions, and the plugin-bound hosts (window_manager,
+  tray_manager, desktop_multi_window) are implemented by the application against
+  the seams declared here.
+version: 0.1.0
+publish_to: none
+
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  live_platform:
+  meta: ^1.19.0
+
+dev_dependencies:
+  test: ^1.33.0
+  very_good_analysis: ^11.0.0

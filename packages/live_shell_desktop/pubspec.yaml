@@ -1,0 +1,35 @@
+name: live_shell_desktop
+description: >-
+  The plugin-backed implementation of live_shell's seams for Windows, macOS and
+  Linux: a WindowHost over window_manager, a TrayHost over tray_manager, a
+  display reader over screen_retriever and a window launcher over
+  desktop_multi_window. live_shell decides what a window should do; this is the
+  part that asks the operating system to do it.
+version: 0.1.0
+publish_to: none
+
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+  flutter: '>=3.47.0'
+
+dependencies:
+  desktop_multi_window: ^0.3.1
+  ffi: ^2.1.0
+  flutter:
+    sdk: flutter
+  live_platform:
+  live_shell:
+  screen_retriever: ^0.2.2
+  tray_manager: ^0.8.0
+  window_manager: ^0.5.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^11.0.0
+
+flutter:
+  assets:
+    - assets/tray/
