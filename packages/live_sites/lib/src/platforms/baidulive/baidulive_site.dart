@@ -6,20 +6,38 @@ import 'package:live_sites/src/platforms/baidulive/danmaku/baidulive_danmaku.dar
 import 'package:live_sites/src/platforms/baidulive/danmaku/baidulive_session.dart';
 import 'package:live_sites/src/platforms/baidulive/parsers/baidulive_parser.dart';
 
-/// The Baidu Live adapter: rooms through the searchbox 371 room command.
+/// The Baidu Live adapter: the signed PC feed for the directory, and rooms
+/// through the searchbox 371 room command.
 ///
-/// Not migrated yet: the feed (directory) and the replay variants. One
+/// Not migrated yet: the replay variants beyond the recording URL. One
 /// request serves both detail and play — the room command carries the video
 /// URLs, so play reuses the last answer — and the same command names the
 /// signed message lists the danmaku session ([connect]) polls.
-final class BaiduLiveSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability {
+///
+/// The directory is the feed: one signed form POST a page, pages following one
+/// feed session for the recommendations and one per channel; a page repeats no
+/// room of its session, and the page a session served last is replayed without
+/// a request. A later page that is not the session's next is empty, and a
+/// non-2xx answer (this tree sends no integrity-token fallback) ends it.
+final class BaiduLiveSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability, LiveAreaCatalog {
   /// A site over [http].
-  new({required this.http});
+  new({required this.http}) : _feedDevice = 'pc-${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}purelivedev';
 
   /// The HTTP transport.
   final LiveHttp http;
 
   late final String _deviceId = _newDeviceId();
+
+  /// The feed's device id (`uid`), made once per adapter.
+  final String _feedDevice;
+
+  /// The platform's channels, once a first feed page brought them; else the
+  /// [BaiduLiveParser.fallbackChannels] list.
+  List<BaiduLiveChannel>? _channels;
+
+  /// The feed session of the recommendations (key `''`) and of each channel (by
+  /// its id), each paged in turn.
+  final Map<String, _BaiduSequence> _sequences = {};
 
   String? _lastBody;
   String? _lastRoomId;
@@ -34,14 +52,109 @@ final class BaiduLiveSite with SiteRoomGuard implements LiveSite, LiveDanmakuCap
   SiteMetadata get metadata =>
       const SiteMetadata(id: SiteIds.baiduLive, displayName: '百度直播', homeUrl: 'https://live.baidu.com');
 
+  /// The channels: the platform's, once a first feed page brought them, else
+  /// the fixed fallback list. No request.
   @override
-  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) async {
-    throw UnimplementedError('baidulive feed lands with its migration');
+  Future<List<LiveArea>> getAreas() async =>
+      BaiduLiveParser.channelAreas(_channels ?? BaiduLiveParser.fallbackChannels);
+
+  /// Page [page] of the recommendations (the first channel, in a session of
+  /// their own).
+  @override
+  Future<LivePage<LiveRoom>> getRecommendRooms({int page = 1}) {
+    final channel = (_channels ?? BaiduLiveParser.fallbackChannels).first;
+    return _directory(page: page, channel: channel, key: '');
   }
 
+  /// Page [page] of [area]'s feed; an area that is not one of the catalog's
+  /// channels is a caller error, refused before a request.
   @override
-  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) async {
-    throw UnimplementedError('baidulive feed lands with its migration');
+  Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) {
+    final id = area.id.trim();
+    final channels = _channels ?? BaiduLiveParser.fallbackChannels;
+    for (final channel in channels) {
+      if (channel.id == id) {
+        return _directory(page: page, channel: channel, key: id);
+      }
+    }
+    throw SiteError.invalidRoomId(area.id);
+  }
+
+  /// Page [page] of [channel]'s feed ([key] its session): page 1 starts a new
+  /// session, and each later page must be that session's next (any other page
+  /// is empty, without a request). A page keeps the rooms the session has not
+  /// shown yet and has more while it was full, brought a new room and moved the
+  /// session on; the page a session served last is replayed without a request.
+  /// The first page's channel list replaces the catalog. A page below 1 is
+  /// empty; one above `maxPage` is a [RangeError].
+  Future<LivePage<LiveRoom>> _directory({
+    required int page,
+    required BaiduLiveChannel channel,
+    required String key,
+  }) async {
+    if (page < 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    if (page == 1) {
+      _sequences[key] = _BaiduSequence();
+    }
+    final sequence = _sequences[key];
+    if (sequence != null && page == sequence.lastPage && sequence.last != null) {
+      return sequence.last!;
+    }
+    if (sequence == null || page != sequence.nextPage) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    if (page > BaiduLiveParser.maxPage) {
+      throw RangeError.range(page, 1, BaiduLiveParser.maxPage, 'page');
+    }
+    final previous = sequence.refreshIndex;
+    final result = await _feed(
+      channel,
+      page: page,
+      sessionId: sequence.sessionId,
+      refreshIndex: page == 1 ? 1 : previous + 1,
+    );
+    if (result.channels.isNotEmpty) {
+      _channels = result.channels;
+    }
+    final fresh = [
+      for (final room in result.rooms)
+        if (sequence.seen.add(room.roomId)) room,
+    ];
+    final hasMore = result.hasMore && fresh.isNotEmpty && (page == 1 || result.refreshIndex > previous);
+    final served = LivePage<LiveRoom>(items: fresh, hasMore: hasMore, nextPage: hasMore ? page + 1 : null);
+    sequence
+      ..sessionId = result.sessionId
+      ..refreshIndex = result.refreshIndex
+      ..nextPage = hasMore ? page + 1 : page
+      ..lastPage = page
+      ..last = served;
+    return served;
+  }
+
+  /// One signed feed page of [channel]. The body is form-encoded as the site
+  /// sends it (empty fields bare, `sid&`).
+  Future<({List<LiveRoom> rooms, List<BaiduLiveChannel> channels, String sessionId, int refreshIndex, bool hasMore})>
+  _feed(BaiduLiveChannel channel, {required int page, required String sessionId, required int refreshIndex}) async {
+    final form = BaiduLiveParser.feedForm(
+      channel: channel,
+      first: page == 1,
+      deviceId: _feedDevice,
+      now: DateTime.now(),
+      sessionId: sessionId,
+      refreshIndex: refreshIndex,
+    );
+    final response = await http.send(
+      LiveRequest.custom(
+        url: BaiduLiveParser.feedUrl,
+        method: 'POST',
+        body: BaiduLiveParser.feedBody(form),
+        headers: BaiduLiveParser.feedHeaders,
+        site: id,
+      ),
+    );
+    return BaiduLiveParser.page(response.text, status: response.statusCode);
   }
 
   /// Baidu Live has no keyword search: a room id or room link is that room
@@ -147,4 +260,15 @@ final class BaiduLiveSite with SiteRoomGuard implements LiveSite, LiveDanmakuCap
     final random = Random.secure();
     return 'pc-${[for (var i = 0; i < 12; i++) random.nextInt(36).toRadixString(36)].join()}baidulive';
   }
+}
+
+/// One feed session (its id, the page it is on, the rooms it has shown, and the
+/// page it served last so a repeat is replayed without a request).
+final class _BaiduSequence {
+  String sessionId = '';
+  int refreshIndex = 0;
+  int nextPage = 1;
+  int lastPage = 0;
+  LivePage<LiveRoom>? last;
+  final Set<String> seen = {};
 }
