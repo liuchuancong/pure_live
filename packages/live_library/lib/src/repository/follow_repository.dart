@@ -49,10 +49,10 @@ final class FollowRepository {
   }
 
   /// Whether [room] is followed (by identity).
-  bool isFollowed(LiveRoom room) => _rooms.any((record) => record.identity == room.identity);
+  bool isFollowed(LiveRoom room) => _rooms.any((record) => record.identity == room.identityKey);
 
   /// The record of [room], when followed.
-  LibraryRoom? recordOf(LiveRoom room) => _rooms.where((record) => record.identity == room.identity).firstOrNull;
+  LibraryRoom? recordOf(LiveRoom room) => _rooms.where((record) => record.identity == room.identityKey).firstOrNull;
 
   /// Follows [room] (a no-op when already followed).
   Future<void> follow(LiveRoom room, {String? note, List<String> groupIds = const []}) async {
@@ -71,7 +71,7 @@ final class FollowRepository {
   Future<void> unfollow(LiveRoom room) async {
     final next = [
       for (final record in _rooms)
-        if (record.identity != room.identity) record,
+        if (record.identity != room.identityKey) record,
     ];
     if (next.length == _rooms.length) {
       return;
@@ -86,10 +86,10 @@ final class FollowRepository {
     var changed = false;
     _rooms = [
       for (final record in _rooms)
-        if (record.identity == room.identity)
+        if (record.identity == room.identityKey)
           () {
             changed = true;
-            return record.copyWith(room: record.room.mergeFrom(room));
+            return record.copyWith(room: record.room.mergedWith(room));
           }()
         else
           record,
@@ -109,7 +109,7 @@ final class FollowRepository {
   /// Moves [room] to [position], rewriting the order of the whole list.
   Future<void> reorder(LiveRoom room, int position) async {
     final ordered = [..._rooms]..sort((a, b) => a.position.compareTo(b.position));
-    final index = ordered.indexWhere((record) => record.identity == room.identity);
+    final index = ordered.indexWhere((record) => record.identity == room.identityKey);
     if (index < 0) {
       return;
     }
@@ -174,7 +174,7 @@ final class FollowRepository {
     var changed = false;
     _rooms = [
       for (final record in _rooms)
-        if (record.identity == room.identity)
+        if (record.identity == room.identityKey)
           () {
             changed = true;
             return transform(record);

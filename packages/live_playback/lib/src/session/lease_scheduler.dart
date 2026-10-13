@@ -4,8 +4,8 @@ import 'package:live_sites/live_sites.dart';
 
 /// Schedules proactive renewal of a line's lease.
 ///
-/// A [PlayLease] says when a URL should be refreshed ([PlayLease.refreshAt])
-/// and when it dies ([PlayLease.expiresAt]); the scheduler fires [onRenew]
+/// A line lease says when a URL should be refreshed (`refreshAt`)
+/// and when it dies (`expiresAt`); the scheduler fires [onRenew]
 /// shortly before the refresh deadline (never after expiry) so the
 /// session can re-resolve the URL before playback breaks. A line without
 /// a lease schedules nothing.
@@ -22,8 +22,9 @@ final class LeaseScheduler {
 
   /// Arms the timer for [line]'s lease. Cancels any previous arm.
   ///
-  /// The deadline is [PlayLease.refreshAt] when present, else a lead-time
-  /// margin (60 seconds) before [PlayLease.expiresAt] — mirroring the
+  /// The deadline is the lease's `refreshAt` — the site layers' lease
+  /// conventions put it ahead of `expiresAt` by a lead margin. A lease whose deadline has passed
+  /// fires immediately.
   /// site layers' lease conventions. A lease whose deadline has passed
   /// fires immediately.
   void arm(LivePlayLine line) {
@@ -32,10 +33,7 @@ final class LeaseScheduler {
     if (lease == null) {
       return;
     }
-    final deadline = lease.refreshAt ?? lease.expiresAt?.subtract(const Duration(seconds: 60));
-    if (deadline == null) {
-      return;
-    }
+    final deadline = lease.refreshAt;
     final delay = deadline.difference(_now());
     if (delay <= Duration.zero) {
       _timer = Timer(Duration.zero, onRenew);

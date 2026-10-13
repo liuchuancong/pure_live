@@ -3,7 +3,7 @@ import 'package:live_iptv/src/model/model.dart';
 import 'package:live_sites/live_sites.dart' as sites;
 
 /// The library as the `live_sites` IPTV site's channel source: the site
-/// layer exposes these through [sites.IptvSite] so IPTV channels play
+/// layer exposes these through `sites.IptvSite` so IPTV channels play
 /// through the ordinary playback stack.
 ///
 /// The channels come out in zap order rather than in import order, because
@@ -59,7 +59,11 @@ final class LibraryIptvChannelSource implements sites.IptvChannelSource {
     number: channel.number,
     lines: [
       for (final candidate in library.candidateLines(channel))
-        sites.IptvLine(url: candidate.url, headers: candidate.headers, lineId: candidate.isHealthy ? 'healthy' : null),
+        sites.IptvLine(
+          url: candidate.url,
+          headers: candidate.headers,
+          lineLabel: candidate.isHealthy ? 'healthy' : null,
+        ),
     ],
   );
 }

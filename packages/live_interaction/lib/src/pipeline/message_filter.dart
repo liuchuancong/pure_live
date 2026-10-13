@@ -6,7 +6,7 @@ enum BlockKind {
   /// surrounding `/…/` meaning a regular expression.
   keyword,
 
-  /// Match the sender's [LiveMessage.userName] exactly.
+  /// Match the sender's user name exactly.
   user,
 }
 
@@ -66,11 +66,11 @@ final class MessageFilter {
 
   /// Whether [message] may be shown.
   bool allows(LiveMessage message) {
-    final user = message.userName.toLowerCase();
+    final user = message.effectiveSender.userName.toLowerCase();
     if (_users.contains(user)) {
       return false;
     }
-    final text = message.message;
+    final text = message.text;
     final lowered = text.toLowerCase();
     for (final plain in _plain) {
       if (lowered.contains(plain)) {
@@ -93,7 +93,7 @@ final class MessageFilter {
       return false;
     }
     // A chat message whose emote placeholders cover its whole text.
-    var stripped = message.message;
+    var stripped = message.text;
     for (final emote in message.emotes) {
       stripped = stripped.replaceAll(emote.code, '');
     }

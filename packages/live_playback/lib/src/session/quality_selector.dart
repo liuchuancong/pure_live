@@ -15,7 +15,7 @@ final class QualitySelector {
 
   /// The qualities in play order, best first.
   List<LivePlayQuality> order(List<LivePlayQuality> qualities) {
-    final ordered = [...qualities]..sort((a, b) => b.sort.compareTo(a.sort));
+    final ordered = [...qualities]..sort((a, b) => b.platformOrder.compareTo(a.platformOrder));
     final preferred = preferredLabel;
     if (preferred == null || preferred.isEmpty) {
       return ordered;

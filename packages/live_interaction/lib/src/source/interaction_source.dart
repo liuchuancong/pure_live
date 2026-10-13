@@ -44,14 +44,14 @@ final class DanmakuInteractionSource implements InteractionSource {
   Stream<LiveMessage> get messages async* {
     final session = await connect();
     _session = session;
-    yield* session.messages;
+    yield* session.events;
   }
 
   @override
   Future<void> close() async {
     final session = _session;
     _session = null;
-    await session?.close();
+    await session?.dispose();
   }
 }
 

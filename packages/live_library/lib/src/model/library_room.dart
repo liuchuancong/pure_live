@@ -51,11 +51,11 @@ abstract class WatchRecord with _$WatchRecord {
 /// The identity helper shared by the library lists.
 extension LibraryRoomIdentity on LibraryRoom {
   /// The room's stable identity, e.g. `bilibili:23058`.
-  String get identity => room.identity;
+  String get identity => room.identityKey;
 }
 
 /// The identity helper shared by the history entries.
 extension WatchRecordIdentity on WatchRecord {
   /// The room's stable identity.
-  String get identity => room.identity;
+  String get identity => room.identityKey;
 }

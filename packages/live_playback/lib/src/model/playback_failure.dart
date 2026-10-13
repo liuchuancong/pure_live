@@ -10,7 +10,7 @@ part 'playback_failure.freezed.dart';
 // ignore_for_file: unnecessary_type_name_in_constructor -- Freezed
 // factories cannot use the `new` shorthand.
 @freezed
-sealed class PlaybackFailure with _$PlaybackFailure {
+sealed class PlaybackFailure with _$PlaybackFailure implements Exception {
   /// The stream URL is dead (expired lease, 404, stream gone).
   const factory PlaybackFailure.streamUnavailable({
     /// Human-readable detail.

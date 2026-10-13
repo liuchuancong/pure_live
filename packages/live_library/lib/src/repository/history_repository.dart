@@ -48,7 +48,7 @@ final class HistoryRepository {
     _history = [
       entry,
       for (final record in _history)
-        if (record.identity != room.identity) record,
+        if (record.identity != room.identityKey) record,
     ];
     if (_history.length > capacity) {
       _history = _history.sublist(0, capacity);
@@ -60,7 +60,7 @@ final class HistoryRepository {
   Future<void> remove(LiveRoom room) async {
     final next = [
       for (final record in _history)
-        if (record.identity != room.identity) record,
+        if (record.identity != room.identityKey) record,
     ];
     if (next.length == _history.length) {
       return;

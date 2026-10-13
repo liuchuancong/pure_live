@@ -6,7 +6,7 @@ import 'package:live_sites/live_sites.dart';
 ///
 /// Two behaviours from the interaction spec:
 ///
-/// - **Dedup**: messages that carry a stable [LiveMessage.id] are dropped
+/// - **Dedup**: messages that carry a stable messageId are dropped
 ///   when the same id was seen within [window] (platforms repeat packets
 ///   after reconnects and combo gifts stream many near-identical ids).
 ///   Messages without an id always pass.
@@ -67,8 +67,8 @@ final class MessageGate {
   }
 
   bool _isFreshId(LiveMessage message) {
-    final id = message.id;
-    if (id == null || id.isEmpty) {
+    final id = message.messageId;
+    if (id.isEmpty) {
       return true;
     }
     final now = _now();

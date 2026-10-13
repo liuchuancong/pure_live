@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fpdart/fpdart.dart';
 import 'package:live_playback/src/engine/playback_engine.dart';
 import 'package:live_playback/src/model/playback_event.dart';
 import 'package:live_playback/src/model/playback_failure.dart';
@@ -127,7 +128,7 @@ final class PlaybackSession {
 
   /// Resolves qualities and lines and opens the current pick.
   ///
-  /// [refresh] forces a fresh `getPlayQualities` (recovery); without it the
+  /// [refresh] forces a fresh quality resolve (recovery); without it the
   /// cached order is kept.
   Future<void> _resolve({required bool refresh}) async {
     if (_disposed) {
@@ -136,7 +137,14 @@ final class PlaybackSession {
     _setState(_state.copyWith(phase: PlaybackPhase.resolving));
     try {
       if (_order.isEmpty || refresh) {
-        final qualities = await site.getPlayQualities(room);
+        final provider = site.capability<LivePlaybackProvider>();
+        if (provider == null) {
+          _giveUp(const PlaybackFailure.apiChanged(detail: 'site exposes no playback capability'));
+          return;
+        }
+        final qualities = await provider
+            .getQualities(roomId: room.roomId)
+            .then((result) => result.fold((error) => throw SiteFailure(error), (values) => values));
         _order = selector.order(qualities);
         _qualityIndex = 0;
         _lineIndex = 0;
@@ -164,7 +172,7 @@ final class PlaybackSession {
       return;
     }
     _opening = true;
-    _setState(_state.copyWith(phase: PlaybackPhase.opening, qualityLabel: quality.label, lineId: line.lineId));
+    _setState(_state.copyWith(phase: PlaybackPhase.opening, qualityLabel: quality.label, lineId: line.lineLabel));
     try {
       await _engine.open(line);
     } on Object catch (error) {
@@ -175,10 +183,20 @@ final class PlaybackSession {
     _opening = false;
     _lease.arm(line);
     _setState(_state.copyWith(phase: PlaybackPhase.playing));
-    _events.add(PlaybackEvent.started(quality: quality.label, lineId: line.lineId));
+    _events.add(PlaybackEvent.started(quality: quality.label, lineId: line.lineLabel));
   }
 
-  Future<List<LivePlayLine>> _linesOf(LivePlayQuality quality) => site.getPlayUrls(room, quality);
+  Future<List<LivePlayLine>> _linesOf(LivePlayQuality quality) async {
+    final provider = site.capability<LivePlaybackProvider>();
+    if (provider == null) {
+      throw const PlaybackFailure.apiChanged(detail: 'site exposes no playback capability');
+    }
+    final result = await provider.getLines(roomId: room.roomId, quality: quality);
+    return switch (result) {
+      Left(:final value) => throw SiteFailure(value),
+      Right(:final value) => value,
+    };
+  }
 
   /// Advances the ladder after [failure]: next line, then next quality,
   /// then a fresh resolve, then give up.
@@ -264,15 +282,24 @@ final class PlaybackSession {
     if (error is PlaybackFailure) {
       return error;
     }
+    if (error is SiteFailure) {
+      return _classifySite(error.error);
+    }
     return switch (error) {
-      SitePlatformMismatchError() ||
-      SiteInvalidRoomIdError() ||
-      SiteApiChangedError() => PlaybackFailure.apiChanged(detail: '$error'),
-      SiteNotFoundError() => PlaybackFailure.streamUnavailable(detail: '$error'),
-      SiteNeedsLoginError() => PlaybackFailure.needsLogin(detail: '$error'),
-      SiteRateLimitedError() ||
-      SiteRiskControlError() ||
-      SiteRegionBlockedError() => PlaybackFailure.rateLimited(detail: '$error'),
+      _ => PlaybackFailure.engine(detail: '$error', cause: error),
+    };
+  }
+
+  /// Maps an Either-reported site error onto [PlaybackFailure].
+  PlaybackFailure _classifySite(LiveSiteError error) {
+    return switch (error) {
+      LiveSiteNotFound(:final message) => PlaybackFailure.streamUnavailable(detail: message),
+      LiveSiteUnsupported(:final message) ||
+      LiveSiteParseError(:final message) ||
+      LiveSiteInvalidArgument(:final message) => PlaybackFailure.apiChanged(detail: message),
+      LiveSiteAuthenticationError(:final message) => PlaybackFailure.needsLogin(detail: message),
+      LiveSiteRateLimitError(:final message) => PlaybackFailure.rateLimited(detail: message),
+      LiveSiteNetworkError(:final message) => PlaybackFailure.network(detail: message),
       _ => PlaybackFailure.engine(detail: '$error', cause: error),
     };
   }
@@ -289,4 +316,17 @@ final class PlaybackSession {
       listener(next);
     }
   }
+}
+
+/// Bridges an Either-reported site error into the session's
+/// exception-driven recovery ladder.
+final class SiteFailure implements Exception {
+  /// Wraps the site error returned by a capability's Either.
+  new(this.error);
+
+  /// The site error the capability returned.
+  final LiveSiteError error;
+
+  @override
+  String toString() => 'SiteFailure(${error.message})';
 }
