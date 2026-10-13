@@ -122,6 +122,23 @@ void main() {
 
       expect(seen, [WindowEvent.maximised, WindowEvent.unmaximised]);
     });
+
+    test('a move is heard whether the platform reports the start or the settle', () async {
+      // This is the bug the plugin's no-op listener defaults hide: mapping only
+      // `move` means that on a platform which debounces and sends `moved`, the
+      // window's new place is never recorded, and the viewer's window returns to
+      // the old one every start with no error anywhere to explain it.
+      final host = hostWith();
+      final seen = <WindowEvent>[];
+      host.events.listen(seen.add);
+
+      await emit('move');
+      await emit('moved');
+      await emit('resize');
+      await emit('resized');
+
+      expect(seen, [WindowEvent.moved, WindowEvent.moved, WindowEvent.resized, WindowEvent.resized]);
+    });
   });
 
   group('closing', () {

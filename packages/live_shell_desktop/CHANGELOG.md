@@ -10,8 +10,13 @@
   `WindowRole` into the window calls that actually reach the platform.
 - `system_idle.dart`: the machine's idle span over `user32` FFI on Windows, absent
   on other platforms rather than guessed.
-- `assets/tray/` with a five-size `.ico` and macOS menu-bar PNGs, plus the bundle-key
-  constants for reaching package assets from a plugin that resolves by file path.
+
+### Removed
+
+- `tray_assets.dart` and the bundled `assets/tray/` artwork. A product's tray mark
+  is brand identity, not a shell concern, so it is no longer declared or shipped by
+  this package; the application supplies its own asset paths through
+  `TrayManagerHost.iconAssets` (the seam already existed).
 
 ### Changed
 
@@ -27,4 +32,7 @@
 
 ### Breaking Changes
 
+- `windowsTrayIcon`, `macOSMenuIcon`, `macOSMenuIconRetina` and `defaultTrayIcons`
+  are no longer exported. Callers that built a `TrayManagerHost` now pass their own
+  icon-asset map, so the mark travels with the app that owns the brand.
 - Initial development release; no stability commitment yet.

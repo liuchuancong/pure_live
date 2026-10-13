@@ -1,0 +1,167 @@
+import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
+import 'package:flutter/widgets.dart';
+
+import 'package:live_uikit/src/styling/contracts/live_ui_adapter.dart';
+import 'package:live_uikit/src/styling/root/live_config_provider.dart';
+
+/// One tab's label and optional icon.
+class LiveTab {
+  /// A tab.
+  const new({required this.label, this.icon});
+
+  /// The tab label.
+  final String label;
+
+  /// An optional leading icon.
+  final IconData? icon;
+}
+
+/// A horizontal tab strip in the token model, controlled by [index] /
+/// [onChanged]. Selected, hover and the ink bar all come from the tabs
+/// component token; each tab is keyboard/remote focusable. This is the base for
+/// languages that do not map tabs to their own widget.
+class TokenTabs extends StatelessWidget {
+  /// A token tab strip.
+  const new({required this.tabs, required this.index, this.onChanged, this.spacing = 0, super.key});
+
+  /// The tabs, in order.
+  final List<LiveTab> tabs;
+
+  /// The selected index.
+  final int index;
+
+  /// Called with a tab's index when it is chosen; null disables the tabs.
+  final ValueChanged<int>? onChanged;
+
+  /// The gap between tabs.
+  final double spacing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < tabs.length; i++)
+          Padding(
+            padding: EdgeInsets.only(right: i == tabs.length - 1 ? 0 : spacing),
+            child: _TabButton(tab: tabs[i], selected: i == index, onTap: () => onChanged?.call(i)),
+          ),
+      ],
+    );
+  }
+}
+
+/// The public tab strip: a thin dispatcher to the active language adapter, so
+/// switching `UiConfig.language` renders tabs with the real library's control
+/// (Material's `TabBar`) or the token base.
+class LiveTabs extends StatelessWidget {
+  /// A tab strip.
+  const new({required this.tabs, required this.index, required this.onChanged, this.spacing = 0, super.key});
+
+  /// The tabs, in order.
+  final List<LiveTab> tabs;
+
+  /// The selected index.
+  final int index;
+
+  /// Called with a tab's index when it is chosen.
+  final ValueChanged<int>? onChanged;
+
+  /// The gap between tabs.
+  final double spacing;
+
+  @override
+  Widget build(BuildContext context) =>
+      LiveTheme.of(context).adapter
+          .tabBar(context, LanguageTabsSpec(tabs: tabs, index: index, onChanged: onChanged, spacing: spacing));
+}
+
+class _TabButton extends StatefulWidget {
+  const new({required this.tab, required this.selected, required this.onTap});
+
+  final LiveTab tab;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  State<_TabButton> createState() => _TabButtonState();
+}
+
+class _TabButtonState extends State<_TabButton> {
+  final FocusNode _focus = FocusNode();
+  bool _hovered = false;
+  bool _focused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(() => setState(() => _focused = _focus.hasFocus));
+  }
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = LiveTheme.of(context);
+    final tabs = theme.tabs;
+    final color = widget.selected
+        ? tabs.itemSelectedColor
+        : _hovered
+        ? tabs.itemHoverColor
+        : tabs.itemColor;
+
+    final label = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (widget.tab.icon case final icon?) ...[
+          Icon(icon, size: theme.text.label.fontSize, color: color),
+          SizedBox(width: theme.token.scale.sizes.xs),
+        ],
+        Text(widget.tab.label, style: theme.text.label.copyWith(color: color)),
+      ],
+    );
+
+    return Focus(
+      focusNode: _focus,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            (event.logicalKey == LogicalKeyboardKey.enter ||
+                event.logicalKey == LogicalKeyboardKey.space ||
+                event.logicalKey == LogicalKeyboardKey.select)) {
+          widget.onTap();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onTap,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: tabs.horizontalPadding, vertical: tabs.verticalGap),
+                child: Center(child: label),
+              ),
+              // The ink bar: full-width when selected, transparent otherwise.
+              AnimatedContainer(
+                duration: theme.duration,
+                height: theme.token.motion.lineWidthBold,
+                color: widget.selected || _focused ? tabs.inkBarColor : const Color(0x00000000),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

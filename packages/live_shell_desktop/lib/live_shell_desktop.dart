@@ -16,6 +16,5 @@ export 'src/configure_main_window.dart';
 export 'src/desktop_window_launcher.dart';
 export 'src/displays.dart';
 export 'src/system_idle.dart';
-export 'src/tray_assets.dart';
 export 'src/tray_manager_host.dart';
 export 'src/window_manager_host.dart';

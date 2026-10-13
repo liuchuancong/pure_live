@@ -18,7 +18,8 @@ the shell's vocabulary without smuggling decisions back in.
   (`attach`/`dispose`) because a duplicate registration delivers every close twice.
 - `TrayManagerHost` — a `TrayHost` over `tray_manager`, with idempotent menu rebuilds
   (re-setting a menu closes the one the viewer is pointing at) and label truncation
-  that never cuts a status suffix.
+  that never cuts a status suffix. The icon artwork it shows is **injected** by the
+  caller through `iconAssets`; this package names no file.
 - `DesktopWindowLauncher` / `SecondaryWindow` — real OS-level secondary windows in
   their own isolates, addressed by id.
 - `ScreenRetrieverDisplays`, `DisplayReader` — displays in logical pixels, and the
@@ -27,13 +28,17 @@ the shell's vocabulary without smuggling decisions back in.
   `ChromePlan`, `RenderFallbacks` and a `WindowRole` become actual window calls.
 - `system_idle.dart` — the machine's idle span over `user32` FFI on Windows, and
   `null` elsewhere rather than a number that would look right.
-- `tray_assets.dart` + `assets/tray/` — a multi-size `.ico` and macOS menu-bar PNGs,
-  derived from the repository's launcher art.
 
 ## Explicitly not owned
 
 Policy. If a function here answers "what should happen", it belongs in `live_shell`.
 This package answers "what did the platform say, and what do I send it".
+
+Brand artwork. Which icon a product shows in the notification area is the
+application's identity, not a shell concern, so it is not declared or bundled
+here — the app passes its own asset paths into `TrayManagerHost.iconAssets`. A
+reusable host that hard-coded a particular mark could never be used by a
+differently-branded product without forking it.
 
 ## Public entry point
 

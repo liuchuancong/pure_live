@@ -1,0 +1,48 @@
+import 'package:flutter/widgets.dart';
+import 'package:live_uikit/styling.dart';
+import 'package:live_uikit_macos/src/adapter/macos_ui_capabilities.dart';
+import 'package:live_uikit_macos/src/theme/macos_theme_mapper.dart';
+import 'package:live_uikit_macos/src/widgets/macos_button_builder.dart';
+import 'package:live_uikit_macos/src/widgets/macos_checkbox_builder.dart';
+import 'package:live_uikit_macos/src/widgets/macos_slider_builder.dart';
+import 'package:live_uikit_macos/src/widgets/macos_text_field_builder.dart';
+
+/// macOS — the `macos_ui` design-language adapter (§1).
+///
+/// Implements the core contract for [LiveDesignLanguage.macos]: theme mapping
+/// delegates to `theme/`, each control to its `widgets/` builder, and the
+/// declared [capabilities] to `macos_ui_capabilities.dart`. macOS widgets reuse
+/// the core's Material/Cupertino localization, so this package adds no delegates.
+class MacosLanguageAdapter extends SharedLanguageAdapter {
+  /// The macOS adapter.
+  const new();
+
+  static const MacosThemeMapper _theme = MacosThemeMapper();
+
+  @override
+  LiveDesignLanguage get language => LiveDesignLanguage.macos;
+
+  @override
+  String get id => 'macos';
+
+  @override
+  String get displayName => 'macOS';
+
+  @override
+  LiveUiCapabilities get capabilities => macosUiCapabilities;
+
+  @override
+  Widget wrap(BuildContext context, DesignToken token, Widget child) => _theme.wrap(context, token, child);
+
+  @override
+  Widget button(BuildContext context, LanguageButtonSpec spec) => MacosButtonBuilder.build(context, spec, this);
+
+  @override
+  Widget textField(BuildContext context, LanguageTextFieldSpec spec) => MacosTextFieldBuilder.build(context, spec);
+
+  @override
+  Widget checkbox(BuildContext context, LanguageCheckboxSpec spec) => MacosCheckboxBuilder.build(context, spec, this);
+
+  @override
+  Widget slider(BuildContext context, LanguageSliderSpec spec) => MacosSliderBuilder.build(context, spec);
+}

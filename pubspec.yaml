@@ -22,7 +22,16 @@ workspace:
   - packages/live_shell_desktop
   - packages/live_storage
   - packages/live_uikit
-  - packages/pagination_core
+  - packages/live_uikit_background
+  - packages/live_uikit_background/example
+  - packages/live_uikit_cupertino_ui
+  - packages/live_uikit_fluent
+  - packages/live_uikit_macos
+  - packages/live_uikit_material_ui
+  - packages/live_uikit_neumorphic
+  - packages/live_uikit_glass
+  - packages/live_uikit_wind
+  - packages/live_pagination
 
 dev_dependencies:
   kareki: ^0.7.0
@@ -31,9 +40,14 @@ dev_dependencies:
 # Overrides apply to the whole workspace and may only be declared here.
 # melos 8.9.0 caps platform <3.2.0 while yaru 11 requires ^3.2.0; platform
 # 3.2.x is what the app already resolves to, so melos is made to accept it.
+# battery_plus (upower -> dbus ^0.7) and network_info_plus (nm -> dbus ^0.8)
+# pin disjoint dbus majors; force dbus 0.8 so the workspace resolves. If a
+# device-info feature later needs upower against 0.8, align the *_plus versions
+# instead of relying on this override.
 dependency_overrides:
   platform: ^3.2.0
   test_api: ^0.7.15
+  dbus: ^0.8.0
 melos:
   scripts:
     gen:

@@ -35,7 +35,6 @@ final class WindowManagerHost with WindowListener implements WindowHost {
 
   bool _alive = true;
   bool _attached = false;
-  bool _reportedMaximised = false;
 
   @override
   bool get isAlive => _alive;
@@ -89,11 +88,9 @@ final class WindowManagerHost with WindowListener implements WindowHost {
     final maximised = await windowManager.isMaximized();
     if (maximised) {
       await windowManager.unmaximize();
-      _reportedMaximised = false;
       return false;
     }
     await windowManager.maximize();
-    _reportedMaximised = true;
     return true;
   }
 
@@ -118,7 +115,13 @@ final class WindowManagerHost with WindowListener implements WindowHost {
     final frame = rectToFrame(await windowManager.getBounds());
     return WindowGeometry(
       frame: frame,
-      maximized: _reportedMaximised,
+      // Asked of the window manager here rather than remembered from the last
+      // event: `window_manager` reports move and size changes for interactive
+      // drags, but a window maximised by the keyboard, by a snap edge or by
+      // another process arrives with no such notice, and a stale `false` here
+      // stores the maximised outer rectangle — overhang and all — as the size the
+      // window should come back at.
+      maximized: await windowManager.isMaximized(),
       displayId: _screenRetrieverDisplays.displayHosting(frame, await _readDisplays()),
     );
   }
@@ -131,7 +134,6 @@ final class WindowManagerHost with WindowListener implements WindowHost {
     // working on a window that is visibly full screen.
     if (geometry.maximized) {
       await windowManager.maximize();
-      _reportedMaximised = true;
       return;
     }
     await windowManager.setBounds(frameToRect(geometry.frame));
@@ -176,16 +178,10 @@ final class WindowManagerHost with WindowListener implements WindowHost {
   void onWindowBlur() => _emit(WindowEvent.blurred);
 
   @override
-  void onWindowMaximize() {
-    _reportedMaximised = true;
-    _emit(WindowEvent.maximised);
-  }
+  void onWindowMaximize() => _emit(WindowEvent.maximised);
 
   @override
-  void onWindowUnmaximize() {
-    _reportedMaximised = false;
-    _emit(WindowEvent.unmaximised);
-  }
+  void onWindowUnmaximize() => _emit(WindowEvent.unmaximised);
 
   @override
   void onWindowMinimize() => _emit(WindowEvent.minimised);
@@ -196,8 +192,22 @@ final class WindowManagerHost with WindowListener implements WindowHost {
   @override
   void onWindowResize() => _emit(WindowEvent.resized);
 
+  /// The settled form of the same change.
+  ///
+  /// `WindowListener` gives every callback a no-op default, so forgetting this
+  /// override does not fail — it just means the window's new size is never
+  /// remembered. Which of the pair a platform actually sends differs (Windows
+  /// debounces the settled one after the drag stops), so both are forwarded: the
+  /// store already coalesces writes and the drag throttle tolerates an extra
+  /// push, while a missing event costs the viewer their window position.
+  @override
+  void onWindowResized() => _emit(WindowEvent.resized);
+
   @override
   void onWindowMove() => _emit(WindowEvent.moved);
+
+  @override
+  void onWindowMoved() => _emit(WindowEvent.moved);
 
   @override
   void onWindowEnterFullScreen() => _emit(WindowEvent.enteredFullScreen);

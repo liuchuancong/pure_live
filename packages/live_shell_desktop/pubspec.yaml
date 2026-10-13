@@ -29,7 +29,3 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   very_good_analysis: ^11.0.0
-
-flutter:
-  assets:
-    - assets/tray/
