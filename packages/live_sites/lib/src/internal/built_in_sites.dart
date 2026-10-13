@@ -1,5 +1,7 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/core/live_site.dart';
+import 'package:live_sites/src/platforms/douyin/api/douyin_http.dart';
+import 'package:live_sites/src/platforms/douyin/douyin_site.dart';
 import 'package:live_sites/src/platforms/douyu/api/douyu_http.dart';
 import 'package:live_sites/src/platforms/douyu/douyu_site.dart';
 import 'package:live_sites/src/platforms/huya/api/huya_http.dart';
@@ -12,5 +14,9 @@ import 'package:live_sites/src/platforms/huya/huya_site.dart';
 /// root calls this and hands the result to `LiveSiteRegistry`.
 List<LiveSite> createBuiltInLiveSites({LiveHttp? http}) {
   final transport = http ?? DioFactory().create();
-  return <LiveSite>[DouyuSite(http: DouyuHttp(transport)), HuyaSite(http: HuyaHttp(transport))];
+  return <LiveSite>[
+    DouyuSite(http: DouyuHttp(transport)),
+    HuyaSite(http: HuyaHttp(transport)),
+    DouyinSite(http: DouyinHttp(transport)),
+  ];
 }
