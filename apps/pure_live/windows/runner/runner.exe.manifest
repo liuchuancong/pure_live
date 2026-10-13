@@ -2,7 +2,31 @@
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
   <application xmlns="urn:schemas-microsoft-com:asm.v3">
     <windowsSettings>
-      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>
+      <!--
+        Both spellings, in this order, because they are read by different
+        versions of the OS. A Windows 10 build before 1703 does not know the
+        2016 `dpiAwareness` element at all and looks only at the 2005
+        `dpiAware`; find neither and the process runs DPI-unaware, which is not
+        merely blurry — an unaware process is given virtualised, 96-DPI window
+        coordinates by the system, so the geometry the shell remembers in
+        logical pixels stops matching where the window actually is, and a
+        restored window lands half off the screen on a mixed-DPI desktop.
+        `true/pm` asks for per-monitor awareness on those older builds, and the
+        list on the newer one lets a system that knows PerMonitor but not
+        PerMonitorV2 fall back instead of ignoring the request. Flutter's
+        Windows embedder handles WM_DPICHANGED itself, so per-monitor is the
+        correct mode here.
+      -->
+      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2, PerMonitor</dpiAwareness>
+      <!--
+        Long paths, because the output of a recorder is a folder tree the viewer
+        chose: `D:\录制\2026-10-12\频道名\标题 - 第 3 集.ts` passes 260 characters
+        without anyone doing anything unusual. Without this the create fails
+        with ERROR_PATH_NOT_FOUND, which arrives not at setup time but in the
+        middle of the one recording they cared about.
+      -->
+      <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
     </windowsSettings>
   </application>
   <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
