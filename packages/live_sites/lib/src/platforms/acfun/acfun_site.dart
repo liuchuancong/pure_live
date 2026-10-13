@@ -6,8 +6,7 @@ import 'package:live_sites/src/platforms/acfun/parsers/acfun_parser.dart';
 
 /// The AcFun adapter: the visitor-session → startPlay play flow.
 ///
-/// Not migrated yet: search (the endpoint answers an HTML fragment that
-/// needs a document pass) and the paid-show ticket flow.
+/// Not migrated yet: the paid-show ticket flow.
 final class AcfunSite
     with SiteRoomGuard
     implements LiveSite, LiveDirectoryCapability, LiveAreaCatalog, LiveDanmakuCapability {
@@ -157,16 +156,31 @@ final class AcfunSite
 
   final Map<String, _AcfunChain> _chains = {};
 
-  /// Not migrated yet: the search answer is an HTML *fragment* (a JSON
-  /// envelope carrying a `html` string of `search-up` cards) rather than
-  /// structured JSON, so it needs a document pass over the parsed fragment.
-  ///
-  /// This is also the site's only search: AcFun has no separate streamer
-  /// search — the old implementation derived anchors from these same room
-  /// cards — so [LiveAnchorSearch] lands with this, not before it.
+  /// 3.x's author search: the `www.acfun.cn/search?type=user` page at
+  /// [page], an HTML fragment of `.search-up` cards parsed by
+  /// [AcfunParser.searchPage]. A blank keyword gives nothing without a request;
+  /// the site pages by server page, so a logical page is that server page
+  /// (thirty cards), and more follow while the total extends past it.
   @override
-  Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) {
-    throw UnimplementedError('acfun search lands with the search-fragment migration');
+  Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
+    if (page < 1) {
+      throw RangeError.range(page, 1, null, 'page');
+    }
+    final text = keyword.trim();
+    if (text.isEmpty) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final response = await http.send(
+      LiveRequest.get(AcfunParser.searchUrl(text, page), headers: AcfunParser.searchHeaders, site: siteId),
+    );
+    final result = AcfunParser.searchPage(response.text, page: page, status: response.statusCode);
+    final hasMore = page * AcfunParser.searchPageSize < result.total;
+    return LivePage<LiveRoom>(
+      items: result.rooms,
+      hasMore: hasMore,
+      nextPage: hasMore ? page + 1 : null,
+      totalCount: result.total,
+    );
   }
 
   @override

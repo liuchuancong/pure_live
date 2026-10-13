@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:html/dom.dart' as dom;
+import 'package:html/parser.dart' as html;
 import 'package:live_sites/live_sites.dart';
 
 /// Static parsers for the AcFun / Kuaishou-ZT live APIs.
@@ -11,6 +13,132 @@ abstract final class AcfunParser {
     'origin': 'https://live.acfun.cn',
     'referer': 'https://live.acfun.cn/',
   };
+
+  /// Authors a search page holds.
+  static const int searchPageSize = 30;
+
+  /// The search-page request headers (the site's own page referer).
+  static const Map<String, String> searchHeaders = {
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+    'referer': 'https://www.acfun.cn/search',
+  };
+
+  /// The author (user) search page for [keyword] at server [page].
+  static Uri searchUrl(String keyword, int page) => Uri.https('www.acfun.cn', '/search', {
+    'keyword': keyword,
+    'type': 'user',
+    'pCursor': '$page',
+    'quickViewId': 'up-list',
+    'reqID': '1',
+    'ajaxpipe': '1',
+  });
+
+  /// A search answer: a JSON envelope up to a `/*<!-- fetch-stream -->*/`
+  /// marker carrying an `html` string of `.search-up` author cards, plus the
+  /// `.total-num[data-total]` count and an `.empty-page` marker. The total
+  /// must bound the card count for the page; no total, more cards than fit, or
+  /// no cards without the empty marker is a changed page. A card whose `up_id`,
+  /// name link or name does not check out, or that repeats an author, is left
+  /// out.
+  static ({List<LiveRoom> rooms, int total}) searchPage(String body, {required int page, int status = 200}) {
+    if (status < 200 || status >= 300) {
+      throw SiteApiChangedError('acfun search: HTTP $status');
+    }
+    final end = body.indexOf('/*<!-- fetch-stream -->*/');
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(end < 0 ? body : body.substring(0, end));
+    } on FormatException {
+      throw const SiteApiChangedError('acfun search: not a JSON answer');
+    }
+    final content = SiteJson.object(decoded)['html'];
+    if (content is! String) {
+      throw const SiteApiChangedError('acfun search: no html');
+    }
+    final fragment = html.parseFragment(content);
+    final totalNode = fragment.querySelector('.total-num[data-total]');
+    if (totalNode == null) {
+      throw const SiteApiChangedError('acfun search: no total');
+    }
+    final cards = fragment.querySelectorAll('.search-up');
+    final empty = fragment.querySelector('.empty-page') != null;
+    final totalText = (totalNode.attributes['data-total'] ?? '').trim();
+    var total = int.tryParse(totalText);
+    if (total == null &&
+        totalText.isEmpty &&
+        totalNode.text.replaceAll(RegExp(r'\s'), '') == '共0条结果' &&
+        empty &&
+        cards.isEmpty) {
+      total = 0;
+    }
+    final left = total == null ? 0 : total - (page - 1) * searchPageSize;
+    if (total == null ||
+        total < 0 ||
+        cards.length > searchPageSize ||
+        cards.length > (left < 0 ? 0 : (left > searchPageSize ? searchPageSize : left))) {
+      throw SiteApiChangedError('acfun search: ${cards.length} cards for total $totalText on page $page');
+    }
+    if (cards.isEmpty && !empty) {
+      throw const SiteApiChangedError('acfun search: no cards and no empty-page marker');
+    }
+    final seen = <String>{};
+    return (rooms: [for (final card in cards) ?_searchCard(card, seen)], total: total);
+  }
+
+  /// One `.search-up` author card: the `up_id` of its `data-up-exposure-log`,
+  /// the name of the `/u/<id>` link under `.up__main__name`, the
+  /// `.up__avatar` image, and live by `is_on_live` (unknown when the flag is
+  /// neither text nor bool). A card that is not a well-formed author link, or
+  /// repeats an id, is left out.
+  static LiveRoom? _searchCard(dom.Element card, Set<String> seen) {
+    final Object? meta;
+    try {
+      meta = jsonDecode(card.attributes['data-up-exposure-log'] ?? '');
+    } on FormatException {
+      return null;
+    }
+    final log = meta is Map<String, Object?> ? meta : null;
+    final id = SiteText.trimmed(log?['up_id']);
+    if (log == null || !isAuthorId(id)) {
+      return null;
+    }
+    final anchor = card.querySelector('.up__main__name a');
+    final href = Uri.tryParse(anchor?.attributes['href'] ?? '');
+    final name = (anchor?.text ?? '').trim();
+    if (anchor == null ||
+        href == null ||
+        (href.hasScheme && !(href.isScheme('http') || href.isScheme('https'))) ||
+        (href.hasAuthority && href.host != 'www.acfun.cn' && href.host != 'acfun.cn') ||
+        href.userInfo.isNotEmpty ||
+        href.path != '/u/$id' ||
+        name.isEmpty ||
+        !seen.add(id)) {
+      return null;
+    }
+    final flag = log['is_on_live'];
+    final live = flag is String ? flag.trim().isNotEmpty : (flag is bool ? flag : null);
+    return LiveRoom(
+      platform: SiteIds.acfun,
+      roomId: id,
+      nick: name,
+      title: name,
+      avatar: _searchImage(card.querySelector('img.up__avatar')?.attributes['src'] ?? ''),
+      status: switch (live) {
+        true => LiveStatus.live,
+        false => LiveStatus.offline,
+        _ => LiveStatus.unknown,
+      },
+    );
+  }
+
+  /// A search avatar URL kept as-is, protocol-relative upgraded; null for a
+  /// non-http value.
+  static String? _searchImage(String url) {
+    if (url.startsWith('//')) {
+      return 'https:$url';
+    }
+    return url.startsWith('http') ? url : null;
+  }
 
   /// Validates a JSON body and returns the root object.
   static Map<String, Object?> root(String body, {int status = 200, String what = 'response'}) {
