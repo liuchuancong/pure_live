@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import 'package:live_sites/src/models/live_asset_ref/live_asset_type.dart';
+import 'package:live_sites/src/models/live_asset_type/live_asset_type.dart';
 
 part 'live_asset_ref.freezed.dart';
 

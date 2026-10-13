@@ -1,7 +1,7 @@
 // These value classes spell their class name in the constructor; the shorthand
 // would read as a method declaration.
 // ignore_for_file: unnecessary_type_name_in_constructor
-import 'package:live_sites/src/models/live_gift/live_gift_unit.dart';
+import 'package:live_sites/src/models/live_gift_unit/live_gift_unit.dart';
 import 'package:meta/meta.dart';
 
 /// A super chat (paid message).

@@ -1,7 +1,7 @@
 // These value classes spell their class name in the constructor; the shorthand
 // would read as a method declaration.
 // ignore_for_file: unnecessary_type_name_in_constructor
-import 'package:live_sites/src/models/live_message/live_message_placement.dart';
+import 'package:live_sites/src/models/live_message_placement/live_message_placement.dart';
 import 'package:meta/meta.dart';
 
 /// Presentation of a locally composed danmaku; platform messages use the room's

@@ -1,7 +1,7 @@
 // These value classes spell their class name in the constructor; the shorthand
 // would read as a method declaration.
 // ignore_for_file: unnecessary_type_name_in_constructor
-import 'package:live_sites/src/models/live_audience/live_audience_online_availability.dart';
+import 'package:live_sites/src/models/live_audience_online_availability/live_audience_online_availability.dart';
 import 'package:meta/meta.dart';
 
 /// Which audience metrics a platform has (the per-platform table; the comments

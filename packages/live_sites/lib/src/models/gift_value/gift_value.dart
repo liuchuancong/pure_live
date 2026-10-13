@@ -1,5 +1,5 @@
-import 'package:live_sites/src/models/live_gift/live_gift_tier.dart';
-import 'package:live_sites/src/models/live_gift/live_gift_unit.dart';
+import 'package:live_sites/src/models/live_gift_tier/live_gift_tier.dart';
+import 'package:live_sites/src/models/live_gift_unit/live_gift_unit.dart';
 
 /// How many of each unit make about one yuan, for [giftTierOf]. The domestic
 /// rates are fixed by the platforms; the overseas ones are rough and only rank

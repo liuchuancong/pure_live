@@ -1,8 +1,8 @@
 // These value classes spell their class name in the constructor; the shorthand
 // would read as a method declaration.
 // ignore_for_file: unnecessary_type_name_in_constructor
-import 'package:live_sites/src/models/live_play_line/live_play_lease.dart';
-import 'package:live_sites/src/models/live_play_line/live_stream_format.dart';
+import 'package:live_sites/src/models/live_play_lease/live_play_lease.dart';
+import 'package:live_sites/src/models/live_stream_format/live_stream_format.dart';
 import 'package:meta/meta.dart';
 
 /// One playable line and everything needed to open it.

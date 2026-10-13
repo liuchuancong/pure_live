@@ -1,4 +1,4 @@
-import 'package:live_sites/src/models/live_gift/live_gift_unit.dart';
+import 'package:live_sites/src/models/live_gift_unit/live_gift_unit.dart';
 
 /// The words of a super chat's price: the platform's [priceText] when it gives
 /// one; else [price] in [unit] as [unitText] writes it, or the bare number when

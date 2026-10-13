@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import 'package:live_sites/src/models/live_search_result/live_search_target.dart';
+import 'package:live_sites/src/models/live_search_target/live_search_target.dart';
 
 part 'live_search_request.freezed.dart';
 
