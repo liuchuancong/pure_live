@@ -1,6 +1,7 @@
 // These value classes spell their class name in the constructor; the shorthand
 // would read as a method declaration.
 // ignore_for_file: unnecessary_type_name_in_constructor
+import 'package:live_sites/src/models/live_play_geometry/live_play_geometry.dart';
 import 'package:live_sites/src/models/live_play_lease/live_play_lease.dart';
 import 'package:live_sites/src/models/live_stream_format/live_stream_format.dart';
 import 'package:meta/meta.dart';
@@ -20,8 +21,7 @@ final class LivePlayLine {
     this.codec,
     this.lineId,
     this.lease,
-    this.width,
-    this.height,
+    this.geometry = const LivePlayGeometry(),
   });
 
   /// Media URL.
@@ -42,21 +42,17 @@ final class LivePlayLine {
   /// Renewal rule; null when the URL does not expire while playing.
   final LivePlayLease? lease;
 
-  /// Picture width the platform declares for this line, when it does: the
-  /// player lays the picture out by it before the first frame; the decoded size
-  /// wins once known.
-  final int? width;
+  /// The declared picture geometry (width, height, aspect ratio).
+  final LivePlayGeometry geometry;
 
-  /// Picture height the platform declares for this line; see [width].
-  final int? height;
+  /// Picture width the platform declares for this line (delegates to [geometry]).
+  int? get width => geometry.width;
 
-  /// [width] over [height], when both are declared.
-  double? get declaredAspectRatio {
-    final w = width;
-    final h = height;
-    if (w == null || h == null || w <= 0 || h <= 0) return null;
-    return w / h;
-  }
+  /// Picture height the platform declares for this line (delegates to [geometry]).
+  int? get height => geometry.height;
+
+  /// [width] over [height], when both are declared (delegates to [geometry]).
+  double? get declaredAspectRatio => geometry.declaredAspectRatio;
 
   @override
   String toString() => 'LivePlayLine(${lineId ?? url})';

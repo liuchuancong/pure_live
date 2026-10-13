@@ -2,26 +2,39 @@
 // would read as a method declaration.
 // ignore_for_file: unnecessary_type_name_in_constructor
 import 'package:live_sites/src/models/live_gift_unit/live_gift_unit.dart';
+import 'package:live_sites/src/models/live_super_chat_display/live_super_chat_display.dart';
+import 'package:live_sites/src/models/live_super_chat_price/live_super_chat_price.dart';
 import 'package:meta/meta.dart';
 
 /// A super chat (paid message).
+///
+/// The sender (name, avatar) and text live here; the cost is a
+/// [LiveSuperChatPrice] and the display window and card colors are a
+/// [LiveSuperChatDisplay], reached through the delegating getters below.
 @immutable
 final class LiveSuperChatMessage {
   /// Creates a message.
-  const LiveSuperChatMessage({
+  LiveSuperChatMessage({
     required this.userName,
     required this.face,
     required this.message,
-    required this.price,
-    required this.startTime,
-    required this.endTime,
-    required this.backgroundColor,
-    required this.backgroundBottomColor,
+    required int price,
+    required DateTime startTime,
+    required DateTime endTime,
+    String backgroundColor = '',
+    String backgroundBottomColor = '',
     this.messageId = '',
-    this.priceText = '',
-    this.unit = LiveGiftUnit.other,
-    this.image = '',
-  });
+    String priceText = '',
+    LiveGiftUnit unit = LiveGiftUnit.other,
+    String image = '',
+  }) : priceInfo = LiveSuperChatPrice(price: price, priceText: priceText, unit: unit),
+       display = LiveSuperChatDisplay(
+         startTime: startTime,
+         endTime: endTime,
+         backgroundColor: backgroundColor,
+         backgroundBottomColor: backgroundBottomColor,
+         image: image,
+       );
 
   /// The platform's id for the event, when it has one. Some message-board APIs
   /// rebuild [startTime] from a countdown on every poll, so equality by time
@@ -37,33 +50,35 @@ final class LiveSuperChatMessage {
   /// Text.
   final String message;
 
-  /// Price in [unit]; for a platform that only writes its price ([priceText] in
-  /// the buyer's currency: YouTube) the number read from that text
-  /// (`superChatAmount`), which only orders and compares.
-  final int price;
+  /// The price (amount, text, unit).
+  final LiveSuperChatPrice priceInfo;
 
-  /// The price as the platform shows it (`$5.00`, `1,000 cheese`), when [price]
-  /// alone cannot say it; empty otherwise.
-  final String priceText;
+  /// The display window and card colors.
+  final LiveSuperChatDisplay display;
 
-  /// The unit of [price].
-  final LiveGiftUnit unit;
+  /// Price in [unit] (delegates to [priceInfo]).
+  int get price => priceInfo.price;
 
-  /// Start of display.
-  final DateTime startTime;
+  /// The platform's own price text (delegates to [priceInfo]).
+  String get priceText => priceInfo.priceText;
 
-  /// End of display.
-  final DateTime endTime;
+  /// The currency of [price] (delegates to [priceInfo]).
+  LiveGiftUnit get unit => priceInfo.unit;
 
-  /// Top background colour.
-  final String backgroundColor;
+  /// Start of display (delegates to [display]).
+  DateTime get startTime => display.startTime;
 
-  /// Bottom background colour.
-  final String backgroundBottomColor;
+  /// End of display (delegates to [display]).
+  DateTime get endTime => display.endTime;
 
-  /// The picture the message is, an https URL (YouTube's Super Sticker); empty
-  /// for a message of text.
-  final String image;
+  /// Top background colour (delegates to [display]).
+  String get backgroundColor => display.backgroundColor;
+
+  /// Bottom background colour (delegates to [display]).
+  String get backgroundBottomColor => display.backgroundBottomColor;
+
+  /// The sticker picture URL (delegates to [display]).
+  String get image => display.image;
 
   /// Same [messageId] when either has one; otherwise same sender, text and price.
   @override
