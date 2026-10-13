@@ -59,4 +59,37 @@ abstract final class SiteText {
     final first = title(trimmed(primary));
     return first.isNotEmpty ? first : title(trimmed(fallback));
   }
+
+  /// Code units a platform leaves in display text where it had a picture or a
+  /// control, and that fonts draw as a box: the object replacement char (0xFFFC,
+  /// Kuaishou keeps it for an embedded image), the interlinear annotation marks
+  /// (0xFFF9..0xFFFB), the noncharacters (0xFFFE, 0xFFFF) and the C0/C1 controls
+  /// except tab, line feed and carriage return. Meaningful invisible units stay:
+  /// the zero-width space and joiners, the BOM, and the visible replacement char.
+  static final Set<int> _invisiblePlaceholderCodes = {
+    for (var code = 0x00; code <= 0x08; code++) code,
+    0x0B,
+    0x0C,
+    for (var code = 0x0E; code <= 0x1F; code++) code,
+    for (var code = 0x7F; code <= 0x9F; code++) code,
+    for (var code = 0xFFF9; code <= 0xFFFC; code++) code,
+    0xFFFE,
+    0xFFFF,
+  };
+
+  /// [text] without invisible placeholder characters; the same string when it
+  /// has none. Applied to titles, names, introductions and notices so no
+  /// platform has to.
+  static String stripInvisiblePlaceholders(String text) {
+    if (!text.runes.any(_invisiblePlaceholderCodes.contains)) return text;
+    final buffer = StringBuffer();
+    for (final code in text.runes) {
+      if (!_invisiblePlaceholderCodes.contains(code)) buffer.writeCharCode(code);
+    }
+    return buffer.toString();
+  }
+
+  /// [stripInvisiblePlaceholders] of a nullable [text].
+  static String? stripInvisiblePlaceholdersOrNull(String? text) =>
+      text == null ? null : stripInvisiblePlaceholders(text);
 }

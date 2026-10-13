@@ -27,4 +27,18 @@ abstract final class SiteHeaders {
 
   /// The same headers with [extra] merged over them.
   static Map<String, String> withExtra(Map<String, String> base, Map<String, String> extra) => {...base, ...extra};
+
+  /// A map of [headers] keyed by lower-cased, trimmed names (later duplicates
+  /// win) with trimmed values; blank names or values are dropped. IPTV channel
+  /// headers come from a playlist as free text, so they are stored normalized
+  /// the same way the rest of the package keys headers.
+  static Map<String, String> normalize(Map<Object?, Object?> headers) {
+    final normalized = <String, String>{};
+    headers.forEach((name, value) {
+      final key = name?.toString().trim().toLowerCase() ?? '';
+      final text = value?.toString().trim() ?? '';
+      if (key.isNotEmpty && text.isNotEmpty) normalized[key] = text;
+    });
+    return Map<String, String>.unmodifiable(normalized);
+  }
 }
