@@ -4,7 +4,7 @@ import 'package:fpdart/fpdart.dart';
 
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
-import 'package:live_sites/src/models/live_danmaku_event/live_danmaku_event.dart';
+import 'package:live_sites/src/models/live_message/live_message.dart';
 
 /// Creates a danmaku session for a room.
 ///
@@ -20,7 +20,7 @@ abstract interface class LiveDanmakuProvider implements LiveSiteCapability {
 /// A live danmaku connection over a platform protocol.
 abstract interface class LiveDanmakuSession {
   /// The normalized events, in receive order.
-  Stream<LiveDanmakuEvent> get events;
+  Stream<LiveMessage> get events;
 
   /// Connects to the platform's danmaku service.
   Future<void> connect();

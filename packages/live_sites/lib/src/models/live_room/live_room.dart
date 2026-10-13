@@ -6,6 +6,7 @@ import 'package:live_sites/src/common/normalization/site_text.dart';
 import 'package:live_sites/src/common/site_ids/site_ids.dart';
 import 'package:live_sites/src/models/audience/audience.dart';
 import 'package:live_sites/src/models/catch_up/catch_up.dart';
+import 'package:live_sites/src/models/live_anchor/live_anchor.dart';
 import 'package:live_sites/src/models/live_area/live_area.dart';
 import 'package:live_sites/src/models/live_restriction/live_restriction.dart';
 import 'package:live_sites/src/models/live_status/live_status.dart';
@@ -37,12 +38,10 @@ final class LiveRoom {
   LiveRoom({
     String? roomId,
     String? platform,
-    this.userId,
+    this.anchor,
     this.link,
     this.nativeLink,
     String title = '',
-    String nick = '',
-    this.avatar = '',
     this.cover = '',
     this.area,
     this.watching = '0',
@@ -50,7 +49,6 @@ final class LiveRoom {
     this.popularity = '',
     this.onlineViewers = '',
     this.totalViewers = '',
-    this.followers = '0',
     this.liveStatus,
     DateTime? startedAt,
     this.restriction,
@@ -68,7 +66,6 @@ final class LiveRoom {
   }) : roomId = roomId?.trim() ?? '',
        platform = platform?.trim().toLowerCase() ?? 'unknown',
        title = SiteText.stripInvisiblePlaceholders(title),
-       nick = SiteText.stripInvisiblePlaceholders(nick),
        introduction = SiteText.stripInvisiblePlaceholdersOrNull(introduction),
        notice = SiteText.stripInvisiblePlaceholdersOrNull(notice),
        startedAt = startedAt?.toUtc(),
@@ -111,12 +108,10 @@ final class LiveRoom {
     return LiveRoom(
       roomId: text('roomId') ?? '',
       platform: platform,
-      userId: text('userId') ?? '',
+      anchor: _anchorFromJson(json, platform),
       link: text('link') ?? '',
       nativeLink: text('nativeLink') ?? '',
       title: text('title') ?? '',
-      nick: text('nick') ?? '',
-      avatar: text('avatar') ?? '',
       cover: text('cover') ?? '',
       area: _areaFromJson(json['area'], platform),
       watching: watching,
@@ -124,7 +119,6 @@ final class LiveRoom {
       popularity: popularity,
       onlineViewers: online,
       totalViewers: text('totalViewers') ?? '',
-      followers: text('followers') ?? '0',
       liveStatus: _statusFromJson(json),
       startedAt: _timeFromJson(json['startedAt']),
       restriction: json['restriction'] == null ? null : LiveRestriction.fromName(json['restriction']),
@@ -155,8 +149,9 @@ final class LiveRoom {
   /// Room id within the platform.
   final String roomId;
 
-  /// Streamer id, when the platform has one separate from the room.
-  final String? userId;
+  /// The broadcaster this room belongs to, when the platform names one. The
+  /// room's [userId], [nick], [avatar] and [followers] read through to it.
+  final LiveAnchor? anchor;
 
   /// Web link to the room.
   final String? link;
@@ -169,12 +164,6 @@ final class LiveRoom {
 
   /// Room title.
   final String title;
-
-  /// Streamer name.
-  final String nick;
-
-  /// Streamer avatar URL.
-  final String avatar;
 
   /// Cover URL.
   final String cover;
@@ -197,9 +186,6 @@ final class LiveRoom {
 
   /// Cumulative viewers of the current session.
   final String totalViewers;
-
-  /// Followers of the streamer.
-  final String followers;
 
   /// Broadcast state; null when the response did not say.
   final LiveStatus? liveStatus;
@@ -299,6 +285,21 @@ final class LiveRoom {
     LiveStatus.replay when restriction != LiveRestriction.unplayable => FollowGroup.replay,
     _ => FollowGroup.offline,
   };
+
+  /// The broadcaster's id on the platform, or '' when the room names none.
+  String get userId => anchor?.anchorId ?? '';
+
+  /// The broadcaster's display name, with invisible placeholders removed.
+  String get nick => anchor == null ? '' : SiteText.stripInvisiblePlaceholders(anchor!.name);
+
+  /// The broadcaster's avatar URL, or '' when the anchor gives none.
+  String get avatar => anchor?.avatar ?? '';
+
+  /// The broadcaster's follower count as text; `'0'` when none is known.
+  String get followers {
+    final count = anchor?.followerCount;
+    return count == null || count <= 0 ? '0' : '$count';
+  }
 
   /// Whether the platform gave a streamer name.
   bool get hasNick => nick.trim().isNotEmpty;
@@ -482,12 +483,10 @@ final class LiveRoom {
     return LiveRoom(
       roomId: roomId,
       platform: platform,
-      userId: preferNullable(incoming.userId, userId),
+      anchor: _mergedAnchor(incoming.anchor, anchor),
       link: preferNullable(incoming.link, link),
       nativeLink: preferNullable(incoming.nativeLink, nativeLink),
       title: prefer(incoming.title, title),
-      nick: prefer(incoming.nick, nick),
-      avatar: prefer(incoming.avatar, avatar),
       cover: prefer(incoming.cover, cover),
       area: incoming.area ?? area,
       watching: prefer(incoming.watching, watching),
@@ -495,7 +494,6 @@ final class LiveRoom {
       popularity: prefer(incoming.popularity, popularity),
       onlineViewers: prefer(incoming.onlineViewers, onlineViewers),
       totalViewers: prefer(incoming.totalViewers, totalViewers),
-      followers: prefer(incoming.followers, followers),
       liveStatus: incoming.liveStatus ?? liveStatus,
       startedAt: incoming.startedAt ?? (sameBroadcast ? startedAt : null),
       restriction: incoming.restriction ?? (sameBroadcast ? restriction : null),
@@ -541,20 +539,17 @@ final class LiveRoom {
     return copyWith(
       title: title.trim().isEmpty && detail.title.trim().isNotEmpty ? detail.title : title,
       area: (area?.areaName ?? '').isEmpty ? detail.area : area,
-      nick: nick.trim().isEmpty ? detail.nick : nick,
-      avatar: avatar.trim().isEmpty ? detail.avatar : avatar,
+      anchor: anchor ?? detail.anchor,
       cover: cover.trim().isEmpty ? detail.cover : cover,
     );
   }
 
   /// A copy with the given fields replaced (identity cannot change).
   LiveRoom copyWith({
-    String? userId,
+    LiveAnchor? anchor,
     String? link,
     String? nativeLink,
     String? title,
-    String? nick,
-    String? avatar,
     String? cover,
     LiveArea? area,
     String? watching,
@@ -562,7 +557,6 @@ final class LiveRoom {
     String? popularity,
     String? onlineViewers,
     String? totalViewers,
-    String? followers,
     LiveStatus? liveStatus,
     DateTime? startedAt,
     LiveRestriction? restriction,
@@ -580,12 +574,10 @@ final class LiveRoom {
   }) => LiveRoom(
     roomId: roomId,
     platform: platform,
-    userId: userId ?? this.userId,
+    anchor: anchor ?? this.anchor,
     link: link ?? this.link,
     nativeLink: nativeLink ?? this.nativeLink,
     title: title ?? this.title,
-    nick: nick ?? this.nick,
-    avatar: avatar ?? this.avatar,
     cover: cover ?? this.cover,
     area: area ?? this.area,
     watching: watching ?? this.watching,
@@ -593,7 +585,6 @@ final class LiveRoom {
     popularity: popularity ?? this.popularity,
     onlineViewers: onlineViewers ?? this.onlineViewers,
     totalViewers: totalViewers ?? this.totalViewers,
-    followers: followers ?? this.followers,
     liveStatus: liveStatus ?? this.liveStatus,
     startedAt: startedAt ?? this.startedAt,
     restriction: restriction ?? this.restriction,
@@ -717,6 +708,31 @@ final class LiveRoom {
     }
     final name = value?.toString().trim() ?? '';
     return name.isEmpty ? null : LiveArea(platform: platform, areaName: name);
+  }
+
+  /// The stored [LiveRoom.anchor]: a record's flat `userId`/`nick`/`avatar`/
+  /// `followers` keys become a [LiveAnchor]; a record with none of them has null.
+  static LiveAnchor? _anchorFromJson(Map<String, Object?> json, String platform) {
+    final anchorId = json['userId']?.toString().trim() ?? '';
+    final name = json['nick']?.toString().trim() ?? '';
+    final avatar = json['avatar']?.toString().trim() ?? '';
+    final followers = parseAudienceNumber(json['followers']?.toString());
+    if (anchorId.isEmpty && name.isEmpty && avatar.isEmpty && followers <= 0) return null;
+    return LiveAnchor(
+      platform: platform.trim().toLowerCase(),
+      anchorId: anchorId,
+      name: name,
+      avatar: avatar,
+      followerCount: followers > 0 ? followers : null,
+    );
+  }
+
+  /// The stored room's anchor after a refresh: [stored] keeps what it has and
+  /// [incoming] fills the gaps; null on either side takes the other.
+  static LiveAnchor? _mergedAnchor(LiveAnchor? incoming, LiveAnchor? stored) {
+    if (incoming == null) return stored;
+    if (stored == null) return incoming;
+    return stored.mergedWith(incoming);
   }
 
   static double? _finiteDouble(Object? value) {

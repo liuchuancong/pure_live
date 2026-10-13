@@ -40,7 +40,6 @@ export 'src/models/catch_up/catch_up.dart';
 export 'src/models/live_anchor/live_anchor.dart';
 export 'src/models/live_area/live_area.dart';
 export 'src/models/live_asset_ref/live_asset_ref.dart';
-export 'src/models/live_danmaku_event/live_danmaku_event.dart';
 export 'src/models/live_gift/live_gift.dart';
 export 'src/models/live_gift_combo/live_gift_combo.dart';
 export 'src/models/live_input_recipe/live_input_recipe.dart';

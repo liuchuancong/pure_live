@@ -97,28 +97,6 @@ final class LiveArea {
   String toString() => 'LiveArea($platform, $areaId, $areaName)';
 }
 
-/// A streamer found by search.
-@immutable
-final class LiveAnchorItem {
-  /// Creates an item.
-  const LiveAnchorItem({required this.roomId, required this.avatar, required this.userName, required this.liveStatus});
-
-  /// Room id.
-  final String roomId;
-
-  /// Avatar URL.
-  final String avatar;
-
-  /// Streamer name.
-  final String userName;
-
-  /// Broadcasting now.
-  final bool liveStatus;
-
-  @override
-  String toString() => 'LiveAnchorItem($roomId, $userName)';
-}
-
 /// One quality a room offers.
 @immutable
 final class LivePlayQuality {
