@@ -1,6 +1,7 @@
 // The named constructors spell their class name so the identity normalization
 // runs; the shorthand cannot carry an initializer list.
 // ignore_for_file: unnecessary_type_name_in_constructor
+import 'package:live_sites/src/common/audience/audience_numbers.dart';
 import 'package:live_sites/src/common/headers/site_headers.dart';
 import 'package:live_sites/src/common/normalization/site_text.dart';
 import 'package:live_sites/src/common/site_ids/site_ids.dart';
@@ -8,7 +9,6 @@ import 'package:live_sites/src/models/live_anchor/live_anchor.dart';
 import 'package:live_sites/src/models/live_area/live_area.dart';
 import 'package:live_sites/src/models/live_audience/live_audience.dart';
 import 'package:live_sites/src/models/live_audience_metric_type/live_audience_metric_type.dart';
-import 'package:live_sites/src/models/live_audience_numbers/live_audience_numbers.dart';
 import 'package:live_sites/src/models/live_audience_platform_capability/live_audience_platform_capability.dart';
 import 'package:live_sites/src/models/live_audience_rank_key/live_audience_rank_key.dart';
 import 'package:live_sites/src/models/live_catch_up/live_catch_up.dart';
