@@ -99,6 +99,116 @@ abstract final class YyParser {
     data: sid == null ? null : {'sid': sid, 'ssid': ssid ?? sid},
   );
 
+  /// The stream-manager request body for channel [sid]/[ssid] at [gear], asking
+  /// the server's own line ([line] −1) with this client's fingerprint (3.x's
+  /// `parsePlayQualities`/`streamManagerBody`).
+  static Map<String, Object?> streamManagerBody({
+    required String sid,
+    required String ssid,
+    required int gear,
+    required int sequence,
+    int line = -1,
+  }) => {
+    'head': {
+      'seq': sequence,
+      'appidstr': '0',
+      'bidstr': '121',
+      'cidstr': sid,
+      'sidstr': ssid,
+      'uid64': 0,
+      'client_type': 108,
+      'client_ver': '1.0.0',
+      'stream_sys_ver': 1,
+      'app': 'yylive_web',
+      'playersdk_ver': '1.0.0',
+      'thundersdk_ver': '0',
+      'streamsdk_ver': '1.0.0',
+    },
+    'client_attribute': {
+      'client': 'web',
+      'model': 'web0',
+      'cpu': '',
+      'graphics_card': '',
+      'os': 'chrome',
+      'osversion': '128.0.0.0',
+      'vsdk_version': '',
+      'app_identify': '',
+      'app_version': '',
+      'business': '',
+      'width': '1366',
+      'height': '768',
+      'scale': '',
+      'client_type': 8,
+      'h265': 0,
+    },
+    'avp_parameter': {
+      'version': 1,
+      'client_type': 8,
+      'service_type': 0,
+      'imsi': 0,
+      'send_time': sequence ~/ 1000,
+      'line_seq': line,
+      'gear': gear,
+      'ssl': 1,
+      'stream_format': 0,
+    },
+  };
+
+  /// The qualities of a stream-manager answer: each stream's `json` (a nested
+  /// JSON string) holds `gear_info` (`gear`, `name`) and `rate`; the first
+  /// stream of a gear wins, a name used by two gears gets the gear appended,
+  /// best rate first. Only streams with a `stream_key` are listed — the others
+  /// have no web stream, and asking for their gear answers with another's. The
+  /// gear rides on [LivePlayQuality.quality] so [playLines] can re-request it.
+  static List<LivePlayQuality> qualities(Map<String, Object?> streams) {
+    final info = SiteJson.object(streams['channel_stream_info']);
+    final records = <({String name, String gear, int rate})>[];
+    final seen = <String>{};
+    for (final raw in SiteJson.list(info['streams'])) {
+      if (raw is! Map<String, Object?>) {
+        continue;
+      }
+      if (SiteText.trimmed(raw['stream_key']).isEmpty) {
+        continue;
+      }
+      final json = _streamJson(raw['json']);
+      final gearInfo = SiteJson.object(json['gear_info']);
+      final name = SiteText.trimmed(gearInfo['name']);
+      final gear = SiteText.trimmed(gearInfo['gear']);
+      if (name.isEmpty || gear.isEmpty || !seen.add(gear)) {
+        continue;
+      }
+      records.add((name: name, gear: gear, rate: SiteCounts.integer(json['rate']) ?? 0));
+    }
+    final nameCounts = <String, int>{};
+    for (final record in records) {
+      nameCounts.update(record.name, (count) => count + 1, ifAbsent: () => 1);
+    }
+    final qualities = [
+      for (final record in records)
+        LivePlayQuality(
+          label: nameCounts[record.name] == 1 ? record.name : '${record.name} · ${record.gear}',
+          quality: int.tryParse(record.gear),
+          sort: record.rate,
+        ),
+    ]..sort((left, right) => right.sort.compareTo(left.sort));
+    return qualities;
+  }
+
+  static Map<String, Object?> _streamJson(Object? value) {
+    final text = SiteText.text(value);
+    if (text.isEmpty) {
+      return const {};
+    }
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(text);
+    } on FormatException {
+      return const {};
+    }
+    return decoded is Map<String, Object?> ? decoded : const {};
+  }
+
   /// Play lines of a stream-manager answer: every `stream_line_addr`
   /// entry in server order, de-duplicated by URL.
   static List<LivePlayLine> playLines(Map<String, Object?> streams) {

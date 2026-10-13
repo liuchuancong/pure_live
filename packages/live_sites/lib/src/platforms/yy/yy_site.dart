@@ -6,9 +6,11 @@ import 'package:live_sites/src/platforms/yy/danmaku/yy_session.dart';
 import 'package:live_sites/src/platforms/yy/parsers/yy_parser.dart';
 
 /// The YY adapter: liveInfoDetail room flow plus the stream-manager play
-/// answer.
+/// answer and its gear table (蓝光, 高清, 流畅).
 ///
-/// Not migrated yet: the full stream-manager quality table. The danmaku
+/// Not migrated yet: the reference's mobile-HLS quality route and its
+/// per-CDN-line probing (one stream-manager request per line, merged with
+/// leases). This tree plays the server's chosen FLV line per gear. The danmaku
 /// ([connect]) runs YY's own binary packet framing over an H5-service
 /// WebSocket.
 final class YySite
@@ -170,12 +172,18 @@ final class YySite
   @override
   Future<List<LivePlayQuality>> getPlayQualities(LiveRoom room) async {
     guardRoom(room);
-    throw UnimplementedError('yy stream-manager quality table lands with its migration');
+    return YyParser.qualities(await _streams(room, 1));
   }
 
   @override
   Future<List<LivePlayLine>> getPlayUrls(LiveRoom room, LivePlayQuality quality) async {
     guardRoom(room);
+    final streams = await _streams(room, quality.quality ?? 0);
+    return YyParser.playLines(streams);
+  }
+
+  /// One stream-manager request for [gear] on [room]'s channel.
+  Future<Map<String, Object?>> _streams(LiveRoom room, int gear) async {
     final (:sid, :ssid) = await _channelOf(room);
     final sequence = DateTime.now().millisecondsSinceEpoch;
     final response = await http.send(
@@ -189,57 +197,12 @@ final class YySite
           'encode': 'json',
         }),
         method: 'POST',
-        headers: {'content-type': 'application/json', 'referer': 'https://www.yy.com/$room.roomId'},
-        body: jsonEncode({
-          'head': {
-            'seq': sequence,
-            'appidstr': '0',
-            'bidstr': '121',
-            'cidstr': sid,
-            'sidstr': ssid,
-            'uid64': 0,
-            'client_type': 108,
-            'client_ver': '1.0.0',
-            'stream_sys_ver': 1,
-            'app': 'yylive_web',
-            'playersdk_ver': '1.0.0',
-            'thundersdk_ver': '0',
-            'streamsdk_ver': '1.0.0',
-          },
-          'client_attribute': {
-            'client': 'web',
-            'model': 'web0',
-            'cpu': '',
-            'graphics_card': '',
-            'os': 'chrome',
-            'osversion': '128.0.0.0',
-            'vsdk_version': '',
-            'app_identify': '',
-            'app_version': '',
-            'business': '',
-            'width': '1366',
-            'height': '768',
-            'scale': '',
-            'client_type': 8,
-            'h265': 0,
-          },
-          'avp_parameter': {
-            'version': 1,
-            'client_type': 8,
-            'service_type': 0,
-            'imsi': 0,
-            'send_time': sequence ~/ 1000,
-            'line_seq': -1,
-            'gear': 0,
-            'ssl': 1,
-            'stream_format': 0,
-          },
-        }),
+        headers: {'content-type': 'application/json', 'referer': 'https://www.yy.com/${room.roomId}'},
+        body: jsonEncode(YyParser.streamManagerBody(sid: sid, ssid: ssid, gear: gear, sequence: sequence)),
         site: id,
       ),
     );
-    final root = YyParser.checked(response.text, status: response.statusCode, what: 'stream-manager');
-    return YyParser.playLines(root);
+    return YyParser.checked(response.text, status: response.statusCode, what: 'stream-manager');
   }
 
   @override
