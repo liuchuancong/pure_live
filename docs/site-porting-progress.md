@@ -22,8 +22,9 @@
 | 站点 | 状态 | 备注 |
 |---|---|---|
 | douyu 斗鱼 | ✅ | 见下方"douyu 明细" |
+| huya 虎牙 | ✅ | 见下方"huya 明细" |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
-| huya 虎牙 | ⬜ | 下一站候选(与 douyu 同为 WS+签名,最宜复用其形态) |
+| douyin 抖音 | ⬜ | 下一站候选(protobuf PushFrame + X-Bogus 签名) |
 | douyin 抖音 | ⬜ | protobuf PushFrame + X-Bogus 签名 |
 | bilibili B站 | ⬜ | WS + protobuf,房间/分区/弹幕齐 |
 | kuaishou 快手 | ⬜ | |
@@ -40,3 +41,14 @@
 - 清理:去掉 douyu 各文件里重复的文档注释/叠加 `@override` 合并残渣,及会话 provider 的三重文档。
 - **延后项(性能/边角,不影响功能门)**:`descriptorFor` 同 did 并发去重;礼物缓存的失败退避 + LRU 逐出 + 大表 isolate 卸载;`DouyuGiftInfo.effect`(gift_effect,新模型无落点);passport `set-cookie` 多属性串的续期 cookie 合并边界。
 - 验证:`dart analyze` 整包 No issues found;`dart test` 15 项全绿(新增 `test/platforms/douyu/douyu_test.dart`)。
+
+## huya 明细(2026-10-14)
+整站从 `E:\study\pure_live` 的 `live_core/sites/huya` + `live_danmaku/sites/huya.dart` 迁到 `platforms/huya/`,照 douyu 的文件形态:
+- 能力:room / area / discovery(推荐 allpage) / search(v4 房间+v1 主播) / playback / danmaku / link_resolver,均在 `capability<T>()` 注册。错误经 `HuyaFailure → toLiveSiteError('huya')`,数据面一律 `Either`。
+- 播放签名:`signAntiCode` = MD5 模板法(fm base64→`$0..$3`;wsTime hex;seqid=uid+ms;hash=md5("seqid|ctype|t");rotated=低32位循环左移8;wsSecret=md5(填充模板);输出剥离 fm/回填 wsSecret,u=rotated,ver/fs/t/seqid)。线路/清晰度直接取 profileRoom 的 `stream.flv/hls.multiLine` + `bitRateInfo`/`rateArray`(0=原画),含 lease/短传输/媒体头/FLV→https。**延后**:`getCdnTokenInfoEx` 的 WUP token 刷新、消息板(超播 uri 2001314)、回放 deflist。
+- 弹幕:`wss://wsapi.huya.com`,**Tars 非 protobuf**(自写 `huya_tars.dart` 最小编解码,裸 Tars 帧无长度前缀)。cmd16 register(live:/chat: 组)、cmd20 心跳(60s,静默180s换),server cmd7 单推 / cmd22 批量;uri 1400 聊天 / 8006 热度 / 6501 礼物(价直接从包 iPayTotal 来,无外部目录)/ 8001 关播。重连沿用 douyu 的双开互斥 + 连续失败上限终止上报。
+- 链接:数字 rid 直连;别名页 `TT_ROOM_DATA` 解析;`HuyaRoomParser.isNumericId/roomIdAt/aliasAt/roomIdFromPage`。
+- 验证:`dart analyze` 整包 No issues found;`dart test` 全绿(huya 15 项:Tars 往返、chat/gift/online/end/batch 解码、独立复算 md5 命中的签名、链接解析)。
+
+## 环境缺口(影响交付门,重要)
+本机工作区 **无法 `dart pub get`**:`packages/live_playback` 依赖 `media_core` 路径 `../../../../media_core/packages/media_core`(即 `D:\media_core\packages\media_core`),该外部工作区在本机不存在,导致整个 workspace 解析失败、`dart test` 直接跑不起来(与本次站点代码无关)。为跑本包测试,曾临时在 `D:\media_core` 造桩再删。要长期跑测试门,需把真实 `media_core` 工作区放到 `D:\media_core`(或在 live_playback 里改成实际存在的路径/移除该 member)。在此之前,"交付门 = dart analyze + dart test" 中的 test 步骤依赖人工补 media_core。
