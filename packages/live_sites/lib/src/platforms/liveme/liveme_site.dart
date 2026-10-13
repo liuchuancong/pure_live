@@ -5,8 +5,8 @@ import 'package:live_sites/src/platforms/liveme/parsers/liveme_parser.dart';
 /// The LiveMe adapter: short-id mapping → signed queryinfosimple flow, plus
 /// the featured directory.
 ///
-/// Not migrated yet: the guest profile fetch (bio), search and the danmaku
-/// transport.
+/// Not migrated yet: the guest profile fetch (bio), the search page's
+/// anchor/broadcast link resolution, and the danmaku transport.
 final class LiveMeSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapability {
   /// A site over [http]; [signer] is injectable for tests.
   new({required this.http, LiveMeSigner? signer}) : signer = signer ?? LiveMeSigner();
@@ -52,8 +52,59 @@ final class LiveMeSite with SiteRoomGuard implements LiveSite, LiveDirectoryCapa
   }
 
   @override
+  /// 3.x's search: a bare room short id is that room (page 1 only; an unknown
+  /// one is nothing); any other link is an anchor/broadcast resolution that
+  /// needs the link subsystem (not migrated) and gives nothing; a blank
+  /// keyword or a page below one is nothing; a keyword over 256 characters is
+  /// a caller error; otherwise one `search/searchKeyword` page (30, capped at
+  /// 40, the guest query).
+  @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('liveme search lands with its migration');
+    final raw = keyword.trim();
+    if (LiveMeParser.isShortId(raw)) {
+      if (page != 1) {
+        return const LivePage<LiveRoom>(items: []);
+      }
+      try {
+        return LivePage<LiveRoom>(items: [await _room(raw)]);
+      } on SiteNotFoundError {
+        return const LivePage<LiveRoom>(items: []);
+      }
+    }
+    if (raw.isEmpty || page < 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    if (_isLink(raw)) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    if (raw.length > 256) {
+      throw ArgumentError.value(keyword, 'keyword', 'over 256 characters');
+    }
+    const size = 30;
+    final response = await http.send(
+      LiveRequest.get(
+        Uri.https(LiveMeParser.apiHost, '/search/searchKeyword', {
+          ...LiveMeParser.guestQuery(DateTime.now()),
+          'type': '1',
+          'page': '$page',
+          'pageSize': '$size',
+          'keyword': raw,
+          'tuid': '',
+          'uid': '',
+          'token': '',
+          'androidid': '',
+        }),
+        headers: LiveMeParser.headers(),
+        site: siteId,
+      ),
+    );
+    return LivePage<LiveRoom>(items: LiveMeParser.searchPage(response.text, status: response.statusCode));
+  }
+
+  /// Whether [input] is a link (`scheme://…`) rather than a keyword.
+  static bool _isLink(String input) {
+    final uri = Uri.tryParse(input);
+    return uri != null && uri.hasScheme && uri.hasAuthority;
   }
 
   @override

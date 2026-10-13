@@ -315,6 +315,53 @@ abstract final class LiveMeParser {
     return DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true);
   }
 
+  /// A room short id: 5–12 digits, not starting with zero.
+  static bool isShortId(String value) => RegExp(r'^[1-9][0-9]{4,11}$').hasMatch(value.trim());
+
+  /// A `searchKeyword` answer: each anchor's room, live or not, the short id
+  /// as the room, the nickname (`uname` when it has none) as nick and title,
+  /// `face` as the avatar, and `is_live` 1/0 as live/offline (else unknown).
+  /// A row without a short id or a nickname is left out; a `data_info` that
+  /// is no list, over 100, or whose rows are none usable is a changed endpoint.
+  static List<LiveRoom> searchPage(String body, {int status = 200}) {
+    final rows = data(body, status: status, what: 'searchKeyword')['data_info'];
+    if (rows is! List || rows.length > 100) {
+      throw const SiteApiChangedError('liveme searchKeyword: no data_info of at most 100');
+    }
+    final rooms = <String, LiveRoom>{};
+    var broken = 0;
+    for (final row in SiteJson.objects(rows)) {
+      final shortId = SiteText.trimmed(row['short_id']);
+      final nickname = SiteText.title(
+        SiteText.text(row['nickname']).isNotEmpty ? SiteText.text(row['nickname']) : SiteText.text(row['uname']),
+      );
+      if (!isShortId(shortId) || nickname.isEmpty) {
+        broken++;
+        continue;
+      }
+      final state = SiteCounts.integer(row['is_live']);
+      rooms.putIfAbsent(
+        shortId,
+        () => LiveRoom(
+          platform: SiteIds.liveme,
+          roomId: shortId,
+          nick: nickname,
+          title: nickname,
+          avatar: _image(row['face']),
+          status: switch (state) {
+            1 => LiveStatus.live,
+            0 => LiveStatus.offline,
+            _ => LiveStatus.unknown,
+          },
+        ),
+      );
+    }
+    if (rooms.isEmpty && broken > 0) {
+      throw SiteApiChangedError('liveme searchKeyword: $broken rows, none usable');
+    }
+    return List.unmodifiable(rooms.values);
+  }
+
   static String? _image(Object? value) {
     final url = value?.toString() ?? '';
     return url.isEmpty ? null : url;
