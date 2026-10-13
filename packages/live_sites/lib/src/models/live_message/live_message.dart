@@ -37,6 +37,8 @@ final class LiveMessage {
     this.replayed = false,
     this.emotes = const [],
     this.sourceRoomId = '',
+    this.createdAt,
+    this.rawData = const {},
   }) : sender = LiveMessageSender(
          userId: userId,
          userName: userName,
@@ -55,6 +57,15 @@ final class LiveMessage {
 
   /// Who sent it.
   final LiveMessageSender sender;
+
+  /// When this message was recorded/stored locally, UTC; distinct from
+  /// [sentAt] (the platform's own timestamp). Null for a non-recorded message.
+  final DateTime? createdAt;
+
+  /// The untouched platform payload this message was parsed from, kept only when
+  /// recording so a chat log can be re-parsed after a schema change; empty when
+  /// not kept.
+  final Map<String, Object?> rawData;
 
   /// For [LiveMessageType.online] a `LiveAudienceUpdate` (older engines may send
   /// a number); for [LiveMessageType.gift] a [LiveGift].
