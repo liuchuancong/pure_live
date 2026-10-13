@@ -6,9 +6,10 @@ import 'package:live_sites/src/platforms/tiktok/parsers/tiktok_parser.dart';
 /// state and its stream tiers).
 ///
 /// TikTok has no anonymous directory: [getRecommendRooms] is empty and
-/// [getCategoryRooms] is a caller error, exactly as 3.x refused it. Not
-/// migrated yet: the share-link → room-info resolution, the keyword search
-/// (which runs through that link resolution) and the danmaku transport.
+/// [getCategoryRooms] is a caller error, exactly as 3.x refused it. Search
+/// resolves a username or `@name` link; not migrated yet: the `share/live` and
+/// short-link resolution (through room-info/redirect) and the danmaku
+/// transport.
 final class TikTokSite with SiteRoomGuard implements LiveSite {
   /// A site over [http].
   new({required this.http});
@@ -47,9 +48,24 @@ final class TikTokSite with SiteRoomGuard implements LiveSite {
     throw SiteError.invalidRoomId(area.id);
   }
 
+  /// The one room [keyword] names: a username, an `@name` or a
+  /// `tiktok.com/@name` link (page 1 only); anything else — a `share/live`
+  /// room or a short link, which resolve through the owner/redirect path —
+  /// gives nothing. TikTok has no keyword search.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('tiktok search lands with its migration');
+    if (page != 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final username = TikTokParser.usernameFrom(keyword);
+    if (username == null) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    try {
+      return LivePage<LiveRoom>(items: [await _room(username)]);
+    } on SiteNotFoundError {
+      return const LivePage<LiveRoom>(items: []);
+    }
   }
 
   @override

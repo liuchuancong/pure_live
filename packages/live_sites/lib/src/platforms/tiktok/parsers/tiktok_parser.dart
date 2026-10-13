@@ -32,6 +32,30 @@ abstract final class TikTokParser {
     return RegExp(r'^[A-Za-z0-9._]{1,24}$').hasMatch(username) ? username : null;
   }
 
+  /// The username a [raw] keyword names: a bare name, an `@name`, or a
+  /// `tiktok.com/@name` link; null otherwise (a `share/live` room or a short
+  /// link is resolved through the owner/redirect path, not here).
+  static String? usernameFrom(String raw) {
+    final value = raw.trim();
+    final direct = normalizeUsername(value);
+    if (direct != null && !value.contains('/')) {
+      return direct;
+    }
+    final uri = Uri.tryParse(value);
+    if (uri == null || !(uri.host == 'tiktok.com' || uri.host.endsWith('.tiktok.com'))) {
+      return null;
+    }
+    for (final segment in uri.pathSegments) {
+      if (segment.startsWith('@')) {
+        final name = normalizeUsername(segment.substring(1));
+        if (name != null) {
+          return name;
+        }
+      }
+    }
+    return null;
+  }
+
   /// The room page URL.
   static String roomUrl(String username) => '$origin/@$username/live';
 
