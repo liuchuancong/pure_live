@@ -44,6 +44,7 @@ export 'src/notifications/playback_notifications.dart';
 export 'src/orchestration/playback_orchestrator.dart';
 export 'src/playback_service.dart';
 // Presentation
+export 'src/presentation/in_place_presentation_adapter.dart';
 export 'src/presentation/playback_presentation.dart';
 export 'src/presentation/window_geometry.dart';
 export 'src/presentation/window_preference_manager.dart';

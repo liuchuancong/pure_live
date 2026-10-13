@@ -11,7 +11,9 @@ import 'package:live_playback/src/model/playback_system_state.dart';
 import 'package:live_playback/src/multiview/multi_view_manager.dart';
 import 'package:live_playback/src/notifications/playback_notifications.dart';
 import 'package:live_playback/src/orchestration/playback_orchestrator.dart';
+import 'package:live_playback/src/presentation/in_place_presentation_adapter.dart';
 import 'package:live_playback/src/presentation/playback_presentation.dart';
+import 'package:live_playback/src/presentation/window_geometry.dart';
 import 'package:live_playback/src/presentation/window_preference_manager.dart';
 import 'package:live_playback/src/session/playback_session.dart';
 import 'package:media_core/media_core.dart';
@@ -32,10 +34,12 @@ import 'package:rxdart/rxdart.dart';
 /// - the [PlayerKernel]: the app owns adapters and the audio driver;
 /// - [PlaybackConfig]: device profile, whether background playback, PiP and
 ///   the floating window are allowed — the viewer's settings, not ours;
-/// - `PresentationManager` (optional, from `media_core`): built by the app
-///   with whatever platform drivers it has, so this package never imports a
-///   window manager. Without one, a default manager tracks the mode and no
-///   platform window is touched;
+/// - `PresentationAdapter` (optional, from `media_core_presentation` /
+///   `media_core_pip` / `media_core_floating`): the platform mechanics behind
+///   fullscreen, PiP and the floating window. Without one, the stack reports
+///   fullscreen and window-fullscreen as available (they are host layout) and
+///   PiP/floating as unsupported, so nothing asks for a window that would never
+///   appear;
 /// - [MediaSessionDriver] (optional, from `media_core_mediasession`): the app
 ///   attaches it to the kernel; when present, the notification names the room;
 /// - [WindowPreferenceStore] (optional): where the viewer's window layout is
@@ -45,18 +49,22 @@ final class PlaybackService {
   /// Creates the service.
   new({
     required PlayerKernel kernel,
-    PresentationManager? presentationManager,
+    PresentationController? presentationController,
+    PresentationAdapter? presentationAdapter,
     MediaSessionDriver? mediaSession,
     WindowPreferenceStore? windowStore,
     this.config = PlaybackConfig.defaults,
   }) : coordinator = PlaybackSessionCoordinator(kernel: kernel, config: config),
-       _ownPresentation = presentationManager == null,
-       presentation = PlaybackPresentation(
-         manager: presentationManager ?? PresentationManager(controller: PresentationController()),
-         preferences: WindowPreferenceManager(store: windowStore ?? EphemeralWindowPreferenceStore()),
-         config: config,
-       ),
        notifications = PlaybackNotifications(driver: mediaSession) {
+    this.presentationController = presentationController ?? PresentationController();
+    presentation = PlaybackPresentation(
+      service: PresentationService(
+        controller: this.presentationController,
+        adapter: presentationAdapter ?? InPlacePresentationAdapter(),
+      ),
+      preferences: WindowPreferenceManager(store: windowStore ?? EphemeralWindowPreferenceStore()),
+      config: config,
+    );
     feed = FeedPlaybackManager(coordinator: coordinator);
     multiView = MultiViewManager(coordinator: coordinator);
     background = BackgroundPlaybackManager(coordinator: coordinator, presentation: presentation, config: config);
@@ -67,7 +75,11 @@ final class PlaybackService {
       notifications: notifications,
     );
 
-    _sessionSub = coordinator.sessionIds.listen((_) => _publishState());
+    _sessionSub = coordinator.sessionIds.listen((_) {
+      _watchSessions();
+      _publishState();
+    });
+    _primarySub = coordinator.currentSessionIdStream.listen((_) => _publishState());
     _modeSub = presentation.modeChanges.listen((_) => _publishState());
     _backgroundSub = background.backgroundedChanges.listen((_) => _publishState());
   }
@@ -79,7 +91,14 @@ final class PlaybackService {
   final PlaybackSessionCoordinator coordinator;
 
   /// Presentation policy and window geometry memory.
-  final PlaybackPresentation presentation;
+  late final PlaybackPresentation presentation;
+
+  /// The presentation state machine this service drives.
+  ///
+  /// Exposed because the host often needs it directly: to observe the full
+  /// state (target mode, generations, errors), or to feed it orientation and
+  /// capability changes from its own platform layer.
+  late final PresentationController presentationController;
 
   /// Media surface naming.
   final PlaybackNotifications notifications;
@@ -96,15 +115,21 @@ final class PlaybackService {
   /// The intent-to-coordinator brain.
   late final PlaybackOrchestrator orchestrator;
 
-  final bool _ownPresentation;
-
   final BehaviorSubject<PlaybackSystemState> _state = BehaviorSubject<PlaybackSystemState>.seeded(
     PlaybackSystemState.idle,
   );
 
   StreamSubscription<List<String>>? _sessionSub;
+  StreamSubscription<String?>? _primarySub;
   StreamSubscription<PresentationMode>? _modeSub;
   StreamSubscription<bool>? _backgroundSub;
+
+  /// Per-session subscriptions that keep the snapshot honest, keyed by session.
+  ///
+  /// The snapshot is a value, so anything that changes what it says has to
+  /// publish a new one — including changes nobody asked the service for, like
+  /// the feed muting a tile or another window claiming the audio channel.
+  final Map<String, List<StreamSubscription<Object?>>> _watched = <String, List<StreamSubscription<Object?>>>{};
 
   /// The current state snapshot.
   PlaybackSystemState get state => _state.value;
@@ -183,8 +208,67 @@ final class PlaybackService {
   /// Switches presentation mode (fullscreen, PiP, floating, normal).
   Future<void> setPresentationMode(PresentationMode mode) => execute(ChangePresentationIntent(mode));
 
+  /// Continues a playing session in an overlay window.
+  ///
+  /// The one call a page makes when it is being popped while its video should
+  /// keep going: the session keeps playing, becomes the audible window and
+  /// moves into [surface]. It survives the page — opening other content or
+  /// leaving the list stops the *page's* video, not this one — until the
+  /// overlay is exited or the session is closed.
+  Future<void> handOffToOverlay({String? id, WindowSurface surface = WindowSurface.floating}) =>
+      execute(HandOffToOverlayIntent(surface: surface, sessionId: id));
+
+  /// Returns the picture from an overlay to the page.
+  Future<void> exitOverlay() => execute(const ExitOverlayIntent());
+
+  /// The session currently in an overlay window, if any.
+  String? get overlaySessionId => orchestrator.overlaySessionId;
+
+  /// The session a recorded video displaced, if any.
+  String? get suspendedSessionId => orchestrator.suspendedSessionId;
+
   /// Tells the layout layer the video turned, so the strategy follows it.
   void updateVideoOrientation(VideoOrientation orientation) => presentation.updateOrientation(orientation);
+
+  /// Subscribes to the open sessions' state, dropping the ones that closed.
+  ///
+  /// The transport subscription is filtered to the coarse states — playing,
+  /// paused, buffering — because a snapshot per position tick would rebuild the
+  /// whole map sixty times a second for numbers the UI reads from the player
+  /// widget anyway.
+  void _watchSessions() {
+    final live = coordinator.sessions.keys.toSet();
+
+    for (final id in _watched.keys.toSet()) {
+      if (live.contains(id)) {
+        continue;
+      }
+      for (final subscription in _watched.remove(id)!) {
+        unawaited(subscription.cancel());
+      }
+    }
+
+    for (final id in live) {
+      if (_watched.containsKey(id)) {
+        continue;
+      }
+
+      final session = coordinator.sessionFor(id);
+      if (session == null) {
+        continue;
+      }
+
+      _watched[id] = <StreamSubscription<Object?>>[
+        session.state.listen((_) => _publishState()),
+        session.mutedChanges.listen((_) => _publishState()),
+        session.danmakuEnabledChanges.listen((_) => _publishState()),
+        session.transportState
+            .map((state) => (state.isPlaying, state.buffering, state.command))
+            .distinct()
+            .listen((_) => _publishState()),
+      ];
+    }
+  }
 
   void _publishState() {
     final sessions = <String, PlaybackSessionSnapshot>{
@@ -196,6 +280,7 @@ final class PlaybackService {
       PlaybackSystemState(
         sessions: sessions,
         primarySessionId: coordinator.currentSessionId,
+        overlaySessionId: orchestrator.overlaySessionId,
         presentationMode: presentation.mode,
         presentationTransitioning: presentation.isTransitioning,
         deviceProfile: config.deviceProfile,
@@ -209,17 +294,22 @@ final class PlaybackService {
   /// Releases every coordinator, session and stream.
   Future<void> dispose() async {
     await _sessionSub?.cancel();
+    await _primarySub?.cancel();
     await _modeSub?.cancel();
     await _backgroundSub?.cancel();
+    for (final subscriptions in _watched.values) {
+      for (final subscription in subscriptions) {
+        await subscription.cancel();
+      }
+    }
+    _watched.clear();
     await feed.dispose();
     await multiView.dispose();
     await background.dispose();
     await orchestrator.dispose();
     await coordinator.dispose();
     await _state.close();
-    if (_ownPresentation) {
-      await presentation.manager.dispose();
-    }
     await presentation.dispose();
+    await presentation.service.dispose();
   }
 }

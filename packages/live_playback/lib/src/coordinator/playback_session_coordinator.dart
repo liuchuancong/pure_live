@@ -169,6 +169,20 @@ final class PlaybackSessionCoordinator {
     ]);
   }
 
+  /// Gives up the audio channel when [id] currently holds it, muting only that
+  /// session.
+  ///
+  /// This is a page going quiet — a list of muted previews, say — not a global
+  /// mute: a small window the viewer still watches keeps whatever it had.
+  Future<void> releaseIfOwner(String id) async {
+    if (currentSessionId != id) {
+      return;
+    }
+
+    _currentSessionId.add(null);
+    await _sessions[id]?.setMute(muted: true);
+  }
+
   /// Releases the audio channel, muting every session.
   ///
   /// Used when the app stops being audible on purpose (a phone call, the

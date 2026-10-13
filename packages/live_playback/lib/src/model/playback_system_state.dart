@@ -103,6 +103,7 @@ final class PlaybackSystemState {
     required this.deviceProfile,
     required this.isBackgrounded,
     this.primarySessionId,
+    this.overlaySessionId,
     this.allMuted = false,
     this.allDanmakuDisabled = false,
   });
@@ -134,6 +135,14 @@ final class PlaybackSystemState {
   /// The id of the session that owns the audio channel.
   final String? primarySessionId;
 
+  /// The id of the session showing in an overlay (PiP or the small window).
+  ///
+  /// A page going away can hand its video to an overlay instead of stopping it,
+  /// and the overlay outlives the page: this is how the rest of the app knows
+  /// which window is the small one, and which session must not be recycled when
+  /// a list scrolls away from it.
+  final String? overlaySessionId;
+
   /// Whether every session is muted by the global mute.
   final bool allMuted;
 
@@ -142,6 +151,9 @@ final class PlaybackSystemState {
 
   /// The audio owner's snapshot, when there is one.
   PlaybackSessionSnapshot? get primary => primarySessionId == null ? null : sessions[primarySessionId];
+
+  /// The overlay window's snapshot, when one is showing.
+  PlaybackSessionSnapshot? get overlay => overlaySessionId == null ? null : sessions[overlaySessionId];
 
   /// Whether any session exists.
   bool get hasSessions => sessions.isNotEmpty;
@@ -174,6 +186,8 @@ final class PlaybackSystemState {
     bool? isBackgrounded,
     String? primarySessionId,
     bool clearPrimary = false,
+    String? overlaySessionId,
+    bool clearOverlay = false,
     bool? allMuted,
     bool? allDanmakuDisabled,
   }) {
@@ -184,6 +198,7 @@ final class PlaybackSystemState {
       deviceProfile: deviceProfile ?? this.deviceProfile,
       isBackgrounded: isBackgrounded ?? this.isBackgrounded,
       primarySessionId: clearPrimary ? null : (primarySessionId ?? this.primarySessionId),
+      overlaySessionId: clearOverlay ? null : (overlaySessionId ?? this.overlaySessionId),
       allMuted: allMuted ?? this.allMuted,
       allDanmakuDisabled: allDanmakuDisabled ?? this.allDanmakuDisabled,
     );

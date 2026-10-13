@@ -57,8 +57,10 @@ final class MultiViewState {
 /// - **what moves together**: play/pause/seek across tiles, for the layouts
 ///   where the tiles are the *same* content at different lines or angles and
 ///   must stay in step;
-/// - **what stays silent**: chat and idle tiles are muted, and a tile that
-///   enters a small window does not take the sound with it.
+/// - **what stays silent**: chat and idle tiles are muted. Promoting a tile to
+///   a small window is an explicit choice by the viewer (`focusSlot`, or the
+///   hand-off an overlay performs), so it moves the sound with it — the tiles
+///   left behind are muted, not stopped.
 ///
 /// Opening and closing sessions stays the coordinator's job: a tile is added
 /// here only once its session exists.

@@ -17,6 +17,12 @@ enum WindowSurface {
 
   /// The storage slot name for this surface.
   String get storageKey => name;
+
+  /// The presentation mode this surface is shown in.
+  PresentationMode get mode => switch (this) {
+    WindowSurface.pip => PresentationMode.pip,
+    WindowSurface.floating => PresentationMode.floating,
+  };
 }
 
 /// The identity a remembered window geometry is stored under.

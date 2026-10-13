@@ -86,7 +86,10 @@ final class PlaybackSession {
 
   // --- Audio bookkeeping ---
 
-  bool _muted = false;
+  /// Whether the sound is muted, as a stream: the system state snapshot follows
+  /// it, and a muting that nothing else announces (another window claiming the
+  /// channel) would otherwise leave a stale flag in that snapshot.
+  final BehaviorSubject<bool> _mutedSubject = BehaviorSubject<bool>.seeded(false);
 
   /// Business state: phase, quality, line and recovery attempts.
   ValueStream<PlaybackState> get state => _stateSubject.stream;
@@ -112,7 +115,10 @@ final class PlaybackSession {
   bool _thumbnailMode = false;
 
   /// Whether this session's sound is muted.
-  bool get muted => _muted;
+  bool get muted => _mutedSubject.value;
+
+  /// Stream of mute changes.
+  ValueStream<bool> get mutedChanges => _mutedSubject.stream;
 
   /// Whether the picture is playing right now, as the kernel reports it.
   bool get isPlaying => handle.isPlaying;
@@ -165,7 +171,7 @@ final class PlaybackSession {
 
   /// Mutes or unmutes.
   Future<void> setMute({required bool muted}) async {
-    _muted = muted;
+    _mutedSubject.add(muted);
     await handle.setMute(muted);
   }
 
@@ -256,7 +262,7 @@ final class PlaybackSession {
       state: currentState,
       metadata: metadata,
       volume: volume,
-      muted: _muted,
+      muted: muted,
       danmakuEnabled: danmakuEnabled,
       danmaku: danmaku?.state,
       player: snapshot,
@@ -351,6 +357,7 @@ final class PlaybackSession {
     await _ladder.dispose();
     await danmaku?.dispose();
     await _stateSubject.close();
+    await _mutedSubject.close();
     await _danmakuWanted.close();
     await _danmakuEnabled.close();
     await _eventController.close();
