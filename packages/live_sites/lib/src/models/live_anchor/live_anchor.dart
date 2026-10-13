@@ -1,47 +1,37 @@
+import 'package:equatable/equatable.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'live_anchor.freezed.dart';
 
-/// A streamer, live or not.
+/// An anchor (streamer) as the shared contract represents it, independent of
+/// whether they are currently live.
 ///
-/// Separate from a room on purpose, because the two answer different
-/// questions: a room is somewhere to watch, an anchor is somebody to follow.
-/// Search on several platforms returns *people* — including the ones who are
-/// not broadcasting — and modelling them as rooms with an empty stream would
-/// mean inventing a room id for someone who has none. The link between the
-/// two, when there is one, is [roomId]: an anchor who is on air can be opened
-/// as that room.
+/// Identity is the pair (siteId, id): the same anchor keeps their identity
+/// across refreshes even as [isLive] or [followerCount] changes, so Freezed's
+/// generated equality is disabled and [Equatable] expresses identity. [avatar]
+/// and [uri] are parsed URIs, never widgets; unreported fields stay null.
 // ignore_for_file: unnecessary_type_name_in_constructor -- Freezed
 // factories cannot use the `new` shorthand.
-@freezed
-abstract class LiveAnchor with _$LiveAnchor {
-  /// An anchor.
+@Freezed(equal: false)
+abstract class LiveAnchor with _$LiveAnchor, Equatable {
+  /// Creates an anchor for [siteId] with the platform-specific [id].
   const factory LiveAnchor({
-    /// The platform's user id.
+    required String siteId,
     required String id,
-
-    /// The room to open, when the platform names one; null for an anchor who
-    /// has no room yet (or whose room the search does not report).
-    String? roomId,
-
-    /// The display name.
-    @Default('') String name,
-
-    /// The avatar image.
-    String? avatar,
-
-    /// The area the anchor broadcasts in, when the platform says.
-    String? areaName,
-
-    /// Whether the anchor is broadcasting right now; null when the platform
-    /// does not say (which is not the same as "offline").
-    bool? live,
-
-    /// The follower or audience count the platform reports, in whichever unit
-    /// it uses.
-    int? count,
-
-    /// A one-line introduction, when the platform sends one.
-    String? bio,
+    required String name,
+    Uri? avatar,
+    Uri? uri,
+    String? description,
+    bool? isLive,
+    int? followerCount,
+    @Default({}) Map<String, Object?> metadata,
   }) = _LiveAnchor;
+
+  const LiveAnchor._();
+
+  /// The stable identity key, e.g. `bilibili:12345`.
+  String get identity => '$siteId:$id';
+
+  @override
+  List<Object?> get props => [siteId, id];
 }

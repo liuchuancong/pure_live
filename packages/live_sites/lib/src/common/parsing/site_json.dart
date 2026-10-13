@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:live_sites/src/contracts/site_error/site_error.dart';
-
 /// JSON access shared by every adapter.
 ///
 /// Platform payloads are untyped by nature, and the two failure modes are
@@ -9,10 +7,11 @@ import 'package:live_sites/src/contracts/site_error/site_error.dart';
 /// *changed* payload must fail loudly, because silently rendering an empty
 /// page is how a broken site goes unnoticed for weeks. This class draws that
 /// line once: `object`/`list`/`text` degrade, `decode` throws a
-/// `SiteApiChangedError` with the site named.
+/// [FormatException] with the site named; adapters map that to a
+/// `LiveSiteParseError` at their boundary.
 abstract final class SiteJson {
-  /// Decodes [body] as a JSON object, or throws a [SiteApiChangedError]
-  /// naming [what] when it is not one.
+  /// Decodes [body] as a JSON object, or throws a [FormatException] naming
+  /// [what] when it is not one.
   ///
   /// The error carries the first bytes of the body, which is what turns
   /// "the site changed" into a diagnosis: an HTML error page, a rate-limit
@@ -22,10 +21,10 @@ abstract final class SiteJson {
     try {
       root = jsonDecode(body);
     } on FormatException catch (error) {
-      throw SiteApiChangedError('$what: body is not JSON (${error.message}) near "${_snippet(body)}"');
+      throw FormatException('$what: body is not JSON (${error.message}) near "${_snippet(body)}"');
     }
     if (root is! Map<String, Object?>) {
-      throw SiteApiChangedError('$what: body is not an object near "${_snippet(body)}"');
+      throw FormatException('$what: body is not an object near "${_snippet(body)}"');
     }
     return root;
   }
