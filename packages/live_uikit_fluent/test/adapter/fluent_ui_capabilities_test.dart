@@ -21,13 +21,14 @@ void main() {
         LiveUiControl.checkbox,
         LiveUiControl.slider,
         LiveUiControl.progress,
+        LiveUiControl.select,
       };
       for (final control in native) {
         expect(adapter.capabilities.supports(control), isTrue, reason: '$control should be native');
       }
-      // Controls the adapter does not override fall back to the shared renderer.
+      // Controls fluent_ui has no matching widget for fall back to the shared
+      // renderer (no segmented control; `TabView` is a whole tab view, not a strip).
       expect(adapter.capabilities.supports(LiveUiControl.segmented), isFalse);
-      expect(adapter.capabilities.supports(LiveUiControl.select), isFalse);
       expect(adapter.capabilities.supports(LiveUiControl.tabBar), isFalse);
     });
   });

@@ -6,6 +6,7 @@ import 'package:live_uikit_fluent/src/theme/fluent_theme_mapper.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_button_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_card_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_checkbox_builder.dart';
+import 'package:live_uikit_fluent/src/widgets/fluent_select_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_slider_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_switch_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_text_field_builder.dart';
@@ -59,4 +60,7 @@ class FluentLanguageAdapter extends SharedLanguageAdapter {
   @override
   Widget progress(BuildContext context, LanguageProgressSpec spec) =>
       fluent.ProgressBar(value: spec.value == null ? null : spec.value! * 100);
+
+  @override
+  Widget select<T>(BuildContext context, LanguageSelectSpec<T> spec) => FluentSelectBuilder.build<T>(context, spec);
 }
