@@ -27,6 +27,16 @@ abstract class LiveAnchor with _$LiveAnchor, Equatable {
     String? description,
     bool? isLive,
     int? followerCount,
+
+    /// When this record was first stored (follow/history), epoch-based UTC.
+    DateTime? createdAt,
+
+    /// When this record was last refreshed from the platform.
+    DateTime? updatedAt,
+
+    /// The untouched platform payload this anchor was parsed from, for debugging
+    /// and re-parsing after a schema change; empty when not kept.
+    @Default({}) Map<String, Object?> rawData,
   }) = _LiveAnchor;
 
   const LiveAnchor._();
@@ -53,6 +63,9 @@ abstract class LiveAnchor with _$LiveAnchor, Equatable {
     description: incoming.description ?? description,
     isLive: incoming.isLive ?? isLive,
     followerCount: incoming.followerCount ?? followerCount,
+    createdAt: createdAt ?? incoming.createdAt,
+    updatedAt: incoming.updatedAt ?? updatedAt,
+    rawData: incoming.rawData.isNotEmpty ? incoming.rawData : rawData,
   );
 
   @override

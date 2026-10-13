@@ -70,6 +70,9 @@ final class LiveRoom {
     Map<String, String> httpHeaders = const {},
     int? lastWatchedAt,
     List<String> tagIds = const [],
+    this.createdAt,
+    this.updatedAt,
+    this.rawData = const {},
   }) : roomId = roomId?.trim() ?? '',
        platform = platform?.trim().toLowerCase() ?? 'unknown',
        links = LiveRoomLinks(link: link, nativeLink: nativeLink),
@@ -155,6 +158,12 @@ final class LiveRoom {
       httpHeaders: headers is Map ? SiteHeaders.normalize(headers) : const {},
       lastWatchedAt: watched is num ? watched.toInt() : null,
       tagIds: tags is List ? [for (final tag in tags) '$tag'] : const [],
+      createdAt: _timeFromJson(json['createdAt']),
+      updatedAt: _timeFromJson(json['updatedAt']),
+      rawData: switch (json['rawData']) {
+        final Map<Object?, Object?> map => map.cast<String, Object?>(),
+        _ => const {},
+      },
     );
   }
 
@@ -163,6 +172,17 @@ final class LiveRoom {
 
   /// Room id within the platform.
   final String roomId;
+
+  /// When this room record was first stored (follow/history/backup), UTC; null
+  /// for a transient parse.
+  final DateTime? createdAt;
+
+  /// When this room was last refreshed from the platform, UTC.
+  final DateTime? updatedAt;
+
+  /// The untouched platform payload this room was parsed from, for debugging and
+  /// re-parsing after a schema change; empty when not kept.
+  final Map<String, Object?> rawData;
 
   /// The broadcaster this room belongs to, when the platform names one.
   final LiveAnchor? anchor;
@@ -517,6 +537,9 @@ final class LiveRoom {
       httpHeaders: incoming.platform == 'iptv' ? incoming.httpHeaders : httpHeaders,
       lastWatchedAt: incoming.lastWatchedAt ?? lastWatchedAt,
       tagIds: tagIds,
+      createdAt: createdAt ?? incoming.createdAt,
+      updatedAt: incoming.updatedAt ?? updatedAt,
+      rawData: incoming.rawData.isNotEmpty ? incoming.rawData : rawData,
     );
   }
 
@@ -566,6 +589,9 @@ final class LiveRoom {
     Map<String, String>? httpHeaders,
     int? lastWatchedAt,
     List<String>? tagIds,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Map<String, Object?>? rawData,
   }) => LiveRoom(
     roomId: roomId,
     platform: platform,
@@ -594,6 +620,9 @@ final class LiveRoom {
     httpHeaders: httpHeaders ?? this.httpHeaders,
     lastWatchedAt: lastWatchedAt ?? this.lastWatchedAt,
     tagIds: tagIds ?? this.tagIds,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    rawData: rawData ?? this.rawData,
   );
 
   /// The JSON stored for follows, history and backups. `data` and [danmakuData]
@@ -636,6 +665,9 @@ final class LiveRoom {
     'catchUpCorrectionHours': catchUp.correctionHours,
     'httpHeaders': httpHeaders,
     'lastWatchedAt': lastWatchedAt,
+    if (createdAt case final at?) 'createdAt': at.toIso8601String(),
+    if (updatedAt case final at?) 'updatedAt': at.toIso8601String(),
+    if (rawData.isNotEmpty) 'rawData': rawData,
   };
 
   static LiveStatus _statusFromJson(Map<String, Object?> json) {

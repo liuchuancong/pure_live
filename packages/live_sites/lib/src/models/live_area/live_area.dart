@@ -18,12 +18,16 @@ final class LiveArea {
     this.areaName = '',
     this.areaPic = '',
     this.shortName = '',
+    this.createdAt,
+    this.updatedAt,
+    this.rawData = const {},
   });
 
   /// Reads stored JSON; missing fields become empty text whatever their JSON
   /// type (a platform may return a numeric id).
   factory LiveArea.fromJson(Map<String, Object?> json) {
     String text(String key) => json[key]?.toString() ?? '';
+    final raw = json['rawData'];
     return LiveArea(
       platform: text('platform'),
       areaType: text('areaType'),
@@ -32,6 +36,9 @@ final class LiveArea {
       areaName: text('areaName'),
       areaPic: text('areaPic'),
       shortName: text('shortName'),
+      createdAt: DateTime.tryParse(text('createdAt')),
+      updatedAt: DateTime.tryParse(text('updatedAt')),
+      rawData: raw is Map ? raw.cast<String, Object?>() : const {},
     );
   }
 
@@ -55,6 +62,16 @@ final class LiveArea {
 
   /// Short name (some platforms route by it).
   final String shortName;
+
+  /// When this area was first stored, UTC; null for a transient parse.
+  final DateTime? createdAt;
+
+  /// When this area was last refreshed from the platform, UTC.
+  final DateTime? updatedAt;
+
+  /// The untouched platform payload this area was parsed from, for debugging and
+  /// re-parsing after a schema change; empty when not kept.
+  final Map<String, Object?> rawData;
 
   /// The identity used by followed areas, or null without platform or id.
   String? get identityKey => identityKeyFor(platform: platform, areaId: areaId, areaType: areaType);
@@ -85,6 +102,9 @@ final class LiveArea {
     'areaName': areaName,
     'areaPic': areaPic,
     'shortName': shortName,
+    if (createdAt case final at?) 'createdAt': at.toIso8601String(),
+    if (updatedAt case final at?) 'updatedAt': at.toIso8601String(),
+    if (rawData.isNotEmpty) 'rawData': rawData,
   };
 
   @override
