@@ -188,6 +188,82 @@ abstract final class BigoParser {
     return cards;
   }
 
+  /// Site paths that are never a room id (so a link to one is not a room).
+  static const Set<String> reservedPaths = {'about', 'download', 'index', 'live', 'login', 'search', 'signup'};
+
+  static final RegExp _siteId = RegExp(r'^[A-Za-z0-9_][A-Za-z0-9_.-]{0,63}$');
+
+  /// Whether [value] is a Bigo id (a room's site id, the broadcaster's login).
+  static bool isSiteId(String value) => _siteId.hasMatch(value.trim());
+
+  /// Whether the search takes [query] (trimmed) at all: not blank, at most
+  /// 100 characters, no control character, and not a URL.
+  static bool isSearchable(String query) =>
+      query.isNotEmpty &&
+      query.length <= 100 &&
+      !RegExp(r'[\x00-\x1f]').hasMatch(query) &&
+      Uri.tryParse(query)?.hasScheme != true;
+
+  /// The id of a room link, else [text] trimmed when it is a Bigo id, else
+  /// null.
+  static String? siteIdOf(String text) {
+    final value = text.trim();
+    return siteIdFromUrl(value) ?? (isSiteId(value) ? value : null);
+  }
+
+  /// Whether the search looks [query] up as an id before filtering: a Bigo id
+  /// holding a digit, `_`, `.` or `-` (a word of letters is a name first).
+  static bool looksLikeId(String query) => isSiteId(query) && RegExp('[0-9_.-]').hasMatch(query);
+
+  /// The Bigo id of a room link: http(s) on `bigo.tv` or a subdomain, the
+  /// default port, no user info, the path `/<id>` or `/<two-letter lang>/<id>`,
+  /// and not a [reservedPaths] page. A fragment is ignored. Null otherwise.
+  static String? siteIdFromUrl(String raw) {
+    if (raw.length > 8192 || RegExp(r'[\x00-\x20\x7f]').hasMatch(raw)) {
+      return null;
+    }
+    final parsed = Uri.tryParse(raw.trim());
+    if (parsed == null ||
+        (!parsed.isScheme('http') && !parsed.isScheme('https')) ||
+        parsed.userInfo.isNotEmpty ||
+        (parsed.hasPort && parsed.port != (parsed.isScheme('https') ? 443 : 80))) {
+      return null;
+    }
+    final uri = parsed.removeFragment();
+    final host = uri.host.toLowerCase();
+    if (host != 'bigo.tv' && !host.endsWith('.bigo.tv')) {
+      return null;
+    }
+    final List<String> segments;
+    try {
+      segments = uri.pathSegments.where((segment) => segment.isNotEmpty).toList(growable: false);
+    } on FormatException {
+      return null;
+    }
+    final candidate = switch (segments) {
+      [final id] => id,
+      [final language, final id] when RegExp(r'^[a-zA-Z]{2}$').hasMatch(language) => id,
+      _ => null,
+    };
+    if (candidate == null || reservedPaths.contains(candidate.toLowerCase())) {
+      return null;
+    }
+    return isSiteId(candidate) ? candidate : null;
+  }
+
+  /// The [cards] whose streamer name or title contains [query], case ignored,
+  /// once per id (case ignored), in list order.
+  static List<LiveRoom> filter(List<LiveRoom> cards, String query) {
+    final needle = query.toLowerCase();
+    final seen = <String>{};
+    return List.unmodifiable([
+      for (final card in cards)
+        if ((card.nick.toLowerCase().contains(needle) || card.title.toLowerCase().contains(needle)) &&
+            seen.add(card.roomId.toLowerCase()))
+          card,
+    ]);
+  }
+
   /// One list row as a room, or null when the row names no Bigo id or
   /// broadcast.
   ///

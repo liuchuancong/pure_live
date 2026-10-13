@@ -9,7 +9,7 @@ import 'package:live_sites/src/platforms/bigo/parsers/bigo_parser.dart';
 /// The Bigo Live adapter: the token → studio flow (the studio API needs a
 /// signed anonymous web token), the public list, and the anonymous chat socket.
 ///
-/// Not migrated yet: search and the password/paid detail.
+/// Not migrated yet: the password/paid detail.
 final class BigoSite
     with SiteRoomGuard
     implements LiveSite, LiveDanmakuCapability, LiveAreaCatalog, LiveDirectoryCapability {
@@ -93,9 +93,53 @@ final class BigoSite
   List<LiveRoom>? _list;
   DateTime? _listAt;
 
+  /// 3.x's search, first page only: a room link is looked up by id; a
+  /// keyword that looks like an id is looked up first; otherwise the
+  /// recommendations are filtered by streamer name or title (the anonymous
+  /// directory list), and a word of letters that matches no card but names a
+  /// known id is looked up too. A blank keyword, a later page, or a URL of
+  /// another site gives nothing.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('bigo search lands with its migration');
+    if (page != 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final query = keyword.trim();
+    final linked = BigoParser.siteIdFromUrl(query);
+    if (linked != null) {
+      return LivePage<LiveRoom>(items: await _lookUp(linked));
+    }
+    if (!BigoParser.isSearchable(query)) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final siteId = BigoParser.siteIdOf(query);
+    final asId = BigoParser.looksLikeId(query);
+    if (asId) {
+      final exact = await _lookUp(query);
+      if (exact.isNotEmpty) {
+        return LivePage<LiveRoom>(items: exact);
+      }
+    }
+    final cards = (await getRecommendRooms()).items;
+    final asName = siteId != null && !asId;
+    if (asName && cards.any((card) => card.roomId.toLowerCase() == query.toLowerCase())) {
+      return LivePage<LiveRoom>(items: await _lookUp(siteId));
+    }
+    final matches = BigoParser.filter(cards, query);
+    if (matches.isNotEmpty) {
+      return LivePage<LiveRoom>(items: matches);
+    }
+    return asName ? LivePage<LiveRoom>(items: await _lookUp(siteId)) : const LivePage<LiveRoom>(items: []);
+  }
+
+  /// The room of [siteId] as one result, or none when the site does not know
+  /// it (3.x's `_exactSearch`).
+  Future<List<LiveRoom>> _lookUp(String siteId) async {
+    try {
+      return [BigoParser.room(await _studio(siteId))];
+    } on SiteNotFoundError {
+      return const [];
+    }
   }
 
   @override
