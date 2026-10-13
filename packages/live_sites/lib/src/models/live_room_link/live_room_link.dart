@@ -24,28 +24,3 @@ final class LiveRoomLink {
   @override
   String toString() => 'LiveRoomLink($platform, $roomId)';
 }
-
-/// What a platform made of a link that needs requests to resolve.
-@immutable
-sealed class LiveLinkResolution {
-  /// A resolution.
-  const LiveLinkResolution();
-}
-
-/// The link points to [roomId].
-final class LiveLinkRoom extends LiveLinkResolution {
-  /// Creates the result.
-  const LiveLinkRoom(this.roomId);
-
-  /// Room id within the platform.
-  final String roomId;
-}
-
-/// The link redirects to [target], which is parsed again (by any platform).
-final class LiveLinkRedirect extends LiveLinkResolution {
-  /// Creates the result.
-  const LiveLinkRedirect(this.target);
-
-  /// Where the short link leads.
-  final Uri target;
-}

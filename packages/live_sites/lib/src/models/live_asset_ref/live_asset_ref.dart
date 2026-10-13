@@ -1,18 +1,8 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'package:live_sites/src/models/live_asset_ref/live_asset_type.dart';
+
 part 'live_asset_ref.freezed.dart';
-
-/// The kind of backing an asset reference points at.
-enum LiveAssetType {
-  /// Shipped inside the application bundle, addressed by a package path.
-  bundled,
-
-  /// Fetched over the network, addressed by a URI.
-  remote,
-
-  /// A platform-supplied default used when nothing better is available.
-  platformDefault,
-}
 
 /// A reference to an asset (an icon or other image) expressed as data rather
 /// than a UI widget, so the domain layer never depends on Flutter rendering.
