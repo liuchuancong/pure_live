@@ -2,8 +2,9 @@ import 'dart:ui';
 
 /// Persistence for the geometry a viewer gave a small window.
 ///
-/// The host supplies an implementation (the app uses the shared-preferences
-/// one); the module stays storage-agnostic so tests can run without a disk.
+/// The host supplies an implementation — `HiveWindowPreferenceStore` over
+/// `live_storage` in the app, `EphemeralWindowPreferenceStore` where there is
+/// no disk — so the module itself stays storage-agnostic.
 ///
 /// A hidden window's rect is remembered *after the drag settles*, not on
 /// every frame: the position worth remembering is the one the viewer chose,

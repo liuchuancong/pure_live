@@ -39,7 +39,8 @@ import 'package:rxdart/rxdart.dart';
 /// - [MediaSessionDriver] (optional, from `media_core_mediasession`): the app
 ///   attaches it to the kernel; when present, the notification names the room;
 /// - [WindowPreferenceStore] (optional): where the viewer's window layout is
-///   remembered across launches.
+///   remembered across launches; `HiveWindowPreferenceStore` serves it from
+///   `live_storage`.
 final class PlaybackService {
   /// Creates the service.
   new({

@@ -1,9 +1,11 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hive_ce/hive.dart';
 import 'package:live_playback/live_playback.dart';
+import 'package:live_storage/live_storage.dart';
 import 'package:media_core/media_core.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 VideoGeometry geometryOf(int width, int height) {
   final size = VideoSize(width: width, height: height);
@@ -35,12 +37,25 @@ void main() {
     });
   });
 
-  group('SharedPreferencesWindowPreferenceStore', () {
-    setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
+  group('HiveWindowPreferenceStore', () {
+    late Directory storageDir;
 
-    test('round-trips a rect through the platform store', () async {
-      final preferences = await SharedPreferences.getInstance();
-      final store = SharedPreferencesWindowPreferenceStore(preferences);
+    setUp(() {
+      storageDir = Directory.systemTemp.createTempSync('live_playback_window_geometry');
+      Hive.init(storageDir.path);
+    });
+
+    tearDown(() async {
+      await Hive.close();
+      try {
+        storageDir.deleteSync(recursive: true);
+      } on FileSystemException {
+        // Transient lock on Windows; the temp directory goes with the process.
+      }
+    });
+
+    test('round-trips a rect through the storage box', () async {
+      final store = HiveWindowPreferenceStore();
 
       await store.writeRect(
         sessionId: sessionId,
@@ -54,24 +69,50 @@ void main() {
       );
     });
 
+    test('keeps sessions apart', () async {
+      final store = HiveWindowPreferenceStore();
+
+      await store.writeRect(sessionId: 'room-1', slot: 'pip_landscape', rect: const Rect.fromLTWH(1, 2, 3, 4));
+      await store.writeRect(sessionId: 'room-2', slot: 'pip_landscape', rect: const Rect.fromLTWH(5, 6, 7, 8));
+
+      expect(await store.readRect(sessionId: 'room-1', slot: 'pip_landscape'), const Rect.fromLTWH(1, 2, 3, 4));
+      expect(await store.readRect(sessionId: 'room-2', slot: 'pip_landscape'), const Rect.fromLTWH(5, 6, 7, 8));
+    });
+
+    test('a session whose id is a prefix of another keeps its own entry', () async {
+      final store = HiveWindowPreferenceStore();
+
+      await store.writeRect(sessionId: 'room', slot: 'floating_portrait', rect: const Rect.fromLTWH(1, 2, 3, 4));
+      await store.writeRect(sessionId: 'room-2', slot: 'floating_portrait', rect: const Rect.fromLTWH(5, 6, 7, 8));
+
+      await store.clearSession('room');
+
+      expect(await store.readRect(sessionId: 'room', slot: 'floating_portrait'), isNull);
+      expect(await store.readRect(sessionId: 'room-2', slot: 'floating_portrait'), const Rect.fromLTWH(5, 6, 7, 8));
+    });
+
     test('a half-written entry degrades to "no preference"', () async {
-      SharedPreferences.setMockInitialValues(<String, Object>{
-        'live_playback.window.$sessionId.floating_portrait': <String>['10', '20'],
-      });
-      final preferences = await SharedPreferences.getInstance();
-      final store = SharedPreferencesWindowPreferenceStore(preferences);
+      final boxes = StorageBoxManager();
+      final box = await boxes.keyed<Map<String, List<double>>>(HiveWindowPreferenceStore.defaultBoxName);
+      await box.put(sessionId, <String, List<double>>{
+        'floating_portrait': <double>[10, 20],
+      }).run();
+
+      final store = HiveWindowPreferenceStore(boxes: boxes);
 
       expect(await store.readRect(sessionId: sessionId, slot: 'floating_portrait'), isNull);
     });
 
-    test('a non-numeric entry degrades to "no preference"', () async {
-      SharedPreferences.setMockInitialValues(<String, Object>{
-        'live_playback.window.$sessionId.floating_portrait': <String>['a', 'b', 'c', 'd'],
-      });
-      final preferences = await SharedPreferences.getInstance();
-      final store = SharedPreferencesWindowPreferenceStore(preferences);
+    test('clearAll forgets every session', () async {
+      final store = HiveWindowPreferenceStore();
 
-      expect(await store.readRect(sessionId: sessionId, slot: 'floating_portrait'), isNull);
+      await store.writeRect(sessionId: 'room-1', slot: 'pip_landscape', rect: const Rect.fromLTWH(1, 2, 3, 4));
+      await store.writeRect(sessionId: 'room-2', slot: 'pip_landscape', rect: const Rect.fromLTWH(5, 6, 7, 8));
+
+      await store.clearAll();
+
+      expect(await store.readRect(sessionId: 'room-1', slot: 'pip_landscape'), isNull);
+      expect(await store.readRect(sessionId: 'room-2', slot: 'pip_landscape'), isNull);
     });
   });
 

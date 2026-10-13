@@ -21,8 +21,8 @@ import 'package:media_core/media_core.dart' show PlayerHandle;
 
 export 'src/background/background_playback_manager.dart';
 // Configuration
+export 'src/config/hive_window_preference_store.dart';
 export 'src/config/playback_config.dart';
-export 'src/config/shared_preferences_window_preference_store.dart';
 export 'src/config/window_preference_store.dart';
 // Coordination
 export 'src/coordinator/playback_session_coordinator.dart';
