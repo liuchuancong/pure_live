@@ -8,9 +8,8 @@ import 'package:media_core/media_core.dart';
 /// This is the composition root that bridges business requests (rooms/sites)
 /// to the [PlayerKernel] runtime.
 final class PlaybackCoordinator {
-
   /// Creates a new [PlaybackCoordinator].
-  PlaybackCoordinator({required this.kernel});
+  new({required this.kernel});
 
   /// The underlying media kernel.
   final PlayerKernel kernel;
@@ -25,17 +24,10 @@ final class PlaybackCoordinator {
     PlayerConfig config = PlayerConfig.defaults,
   }) async {
     // 1. Create a player via the kernel.
-    final handle = await kernel.create(
-      source: source,
-      config: config,
-    );
+    final handle = await kernel.create(source: source, config: config);
 
     // 2. Wrap it in a business-level session.
-    return PlaybackSession(
-      handle: handle,
-      sourceCandidates: qualities,
-      kernel: kernel,
-    );
+    return PlaybackSession(handle: handle, sourceCandidates: qualities, kernel: kernel);
   }
 
   /// Stops and releases a session.

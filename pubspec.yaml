@@ -45,8 +45,8 @@ dev_dependencies:
 # device-info feature later needs upower against 0.8, align the *_plus versions
 # instead of relying on this override.
 dependency_overrides:
-  equatable: ^3.0.0
   dbus: ^0.8.0
+  equatable: ^3.0.0
   platform: ^3.2.0
   test_api: ^0.7.15
   
