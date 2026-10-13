@@ -6,9 +6,9 @@ build/
 .pub-cache/
 .packages
 
-# Generated code
-*.g.dart
-*.freezed.dart
+# Generated Dart code (*.g.dart, *.freezed.dart) is tracked on purpose so
+# checkouts build without build_runner. Regenerate with:
+#   dart run build_runner build --delete-conflicting-outputs
 
 # IDE
 .idea/
