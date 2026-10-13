@@ -4,7 +4,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 /// What a room's audience number means. Stored by name in room JSON.
-enum AudienceMetricType {
+enum LiveAudienceMetricType {
   /// Platform popularity or heat; not a head count.
   popularity,
 
@@ -22,7 +22,7 @@ enum AudienceMetricType {
 }
 
 /// Where a platform exposes its concurrent-viewer count.
-enum AudienceOnlineAvailability {
+enum LiveAudienceOnlineAvailability {
   /// Nowhere.
   unsupported,
 
@@ -36,19 +36,19 @@ enum AudienceOnlineAvailability {
 /// Which audience metrics a platform has (the per-platform table; the comments
 /// record why each value is what it is).
 @immutable
-final class AudiencePlatformCapability {
+final class LiveAudiencePlatformCapability {
   /// Creates a capability.
-  const AudiencePlatformCapability({
+  const LiveAudiencePlatformCapability({
     required this.hasPopularity,
     required this.hasTotalViewers,
     required this.onlineAvailability,
   });
 
   /// A platform without known metrics.
-  static const AudiencePlatformCapability unknown = AudiencePlatformCapability(
+  static const LiveAudiencePlatformCapability unknown = LiveAudiencePlatformCapability(
     hasPopularity: false,
     hasTotalViewers: false,
-    onlineAvailability: AudienceOnlineAvailability.unsupported,
+    onlineAvailability: LiveAudienceOnlineAvailability.unsupported,
   );
 
   /// Whether the platform has a popularity or heat value.
@@ -58,176 +58,176 @@ final class AudiencePlatformCapability {
   final bool hasTotalViewers;
 
   /// Where the concurrent-viewer count is available.
-  final AudienceOnlineAvailability onlineAvailability;
+  final LiveAudienceOnlineAvailability onlineAvailability;
 
   /// Whether the platform has a concurrent-viewer count at all.
-  bool get supportsConcurrentOnline => onlineAvailability != AudienceOnlineAvailability.unsupported;
+  bool get supportsConcurrentOnline => onlineAvailability != LiveAudienceOnlineAvailability.unsupported;
 
   /// Whether room lists already carry the concurrent-viewer count.
-  bool get onlineAvailableInRoomLists => onlineAvailability == AudienceOnlineAvailability.roomList;
+  bool get onlineAvailableInRoomLists => onlineAvailability == LiveAudienceOnlineAvailability.roomList;
 
   /// The capability of [platform] (case-insensitive), or [unknown].
-  static AudiencePlatformCapability of(String? platform) =>
+  static LiveAudiencePlatformCapability of(String? platform) =>
       audienceCapabilities[platform?.trim().toLowerCase()] ?? unknown;
 }
 
 /// Audience metrics per platform id. A platform not listed is
-/// [AudiencePlatformCapability.unknown].
-const Map<String, AudiencePlatformCapability> audienceCapabilities = {
-  'bilibili': AudiencePlatformCapability(
+/// [LiveAudiencePlatformCapability.unknown].
+const Map<String, LiveAudiencePlatformCapability> audienceCapabilities = {
+  'bilibili': LiveAudiencePlatformCapability(
     hasPopularity: true,
     hasTotalViewers: true,
-    onlineAvailability: AudienceOnlineAvailability.unsupported,
+    onlineAvailability: LiveAudienceOnlineAvailability.unsupported,
   ),
-  'douyu': AudiencePlatformCapability(
+  'douyu': LiveAudiencePlatformCapability(
     hasPopularity: true,
     hasTotalViewers: false,
-    onlineAvailability: AudienceOnlineAvailability.unsupported,
+    onlineAvailability: LiveAudienceOnlineAvailability.unsupported,
   ),
-  'huya': AudiencePlatformCapability(
+  'huya': LiveAudiencePlatformCapability(
     hasPopularity: true,
     hasTotalViewers: false,
-    onlineAvailability: AudienceOnlineAvailability.unsupported,
+    onlineAvailability: LiveAudienceOnlineAvailability.unsupported,
   ),
-  'douyin': AudiencePlatformCapability(
+  'douyin': LiveAudiencePlatformCapability(
     hasPopularity: false,
     hasTotalViewers: true,
-    onlineAvailability: AudienceOnlineAvailability.roomList,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomList,
   ),
-  'kuaishou': AudiencePlatformCapability(
+  'kuaishou': LiveAudiencePlatformCapability(
     hasPopularity: false,
     hasTotalViewers: false,
-    onlineAvailability: AudienceOnlineAvailability.roomList,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomList,
   ),
-  'cc': AudiencePlatformCapability(
+  'cc': LiveAudiencePlatformCapability(
     hasPopularity: true,
     hasTotalViewers: false,
-    onlineAvailability: AudienceOnlineAvailability.roomList,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomList,
   ),
-  'twitch': AudiencePlatformCapability(
+  'twitch': LiveAudiencePlatformCapability(
     hasPopularity: false,
     hasTotalViewers: false,
-    onlineAvailability: AudienceOnlineAvailability.roomList,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomList,
   ),
-  'soop': AudiencePlatformCapability(
+  'soop': LiveAudiencePlatformCapability(
     hasPopularity: false,
     hasTotalViewers: false,
-    onlineAvailability: AudienceOnlineAvailability.roomList,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomList,
   ),
-  'yy': AudiencePlatformCapability(
+  'yy': LiveAudiencePlatformCapability(
     hasPopularity: true,
     hasTotalViewers: false,
-    onlineAvailability: AudienceOnlineAvailability.unsupported,
+    onlineAvailability: LiveAudienceOnlineAvailability.unsupported,
   ),
-  'picarto': AudiencePlatformCapability(
+  'picarto': LiveAudiencePlatformCapability(
     hasPopularity: false,
     hasTotalViewers: true,
-    onlineAvailability: AudienceOnlineAvailability.roomList,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomList,
   ),
-  'twitcasting': AudiencePlatformCapability(
+  'twitcasting': LiveAudiencePlatformCapability(
     hasPopularity: false,
     hasTotalViewers: false,
-    onlineAvailability: AudienceOnlineAvailability.roomList,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomList,
   ),
-  'showroom': AudiencePlatformCapability(
+  'showroom': LiveAudiencePlatformCapability(
     hasPopularity: false,
     hasTotalViewers: true,
-    onlineAvailability: AudienceOnlineAvailability.unsupported,
+    onlineAvailability: LiveAudienceOnlineAvailability.unsupported,
   ),
-  'chzzk': AudiencePlatformCapability(
+  'chzzk': LiveAudiencePlatformCapability(
     hasPopularity: false,
     hasTotalViewers: false,
-    onlineAvailability: AudienceOnlineAvailability.roomList,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomList,
   ),
-  'kick': AudiencePlatformCapability(
+  'kick': LiveAudiencePlatformCapability(
     hasPopularity: false,
     hasTotalViewers: false,
-    onlineAvailability: AudienceOnlineAvailability.roomList,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomList,
   ),
-  '17live': AudiencePlatformCapability(
+  '17live': LiveAudiencePlatformCapability(
     hasPopularity: false,
     hasTotalViewers: true,
-    onlineAvailability: AudienceOnlineAvailability.roomRealtime,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomRealtime,
   ),
-  'liveme': AudiencePlatformCapability(
+  'liveme': LiveAudiencePlatformCapability(
     hasPopularity: true,
     hasTotalViewers: true,
-    onlineAvailability: AudienceOnlineAvailability.roomList,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomList,
   ),
-  'tiktok': AudiencePlatformCapability(
+  'tiktok': LiveAudiencePlatformCapability(
     hasPopularity: false,
     hasTotalViewers: true,
-    onlineAvailability: AudienceOnlineAvailability.roomRealtime,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomRealtime,
   ),
-  'youtube': AudiencePlatformCapability(
+  'youtube': LiveAudiencePlatformCapability(
     hasPopularity: false,
     hasTotalViewers: false,
-    onlineAvailability: AudienceOnlineAvailability.roomRealtime,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomRealtime,
   ),
-  'bigo': AudiencePlatformCapability(
+  'bigo': LiveAudiencePlatformCapability(
     hasPopularity: false,
     hasTotalViewers: false,
-    onlineAvailability: AudienceOnlineAvailability.roomList,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomList,
   ),
-  'pandalive': AudiencePlatformCapability(
+  'pandalive': LiveAudiencePlatformCapability(
     hasPopularity: false,
     hasTotalViewers: true,
-    onlineAvailability: AudienceOnlineAvailability.roomList,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomList,
   ),
-  'fc2live': AudiencePlatformCapability(
+  'fc2live': LiveAudiencePlatformCapability(
     hasPopularity: false,
     hasTotalViewers: true,
-    onlineAvailability: AudienceOnlineAvailability.roomList,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomList,
   ),
-  'steambroadcast': AudiencePlatformCapability(
+  'steambroadcast': LiveAudiencePlatformCapability(
     hasPopularity: false,
     hasTotalViewers: false,
-    onlineAvailability: AudienceOnlineAvailability.roomList,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomList,
   ),
-  'jdlive': AudiencePlatformCapability(
+  'jdlive': LiveAudiencePlatformCapability(
     hasPopularity: false,
     hasTotalViewers: true,
-    onlineAvailability: AudienceOnlineAvailability.roomRealtime,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomRealtime,
   ),
-  'kugoulive': AudiencePlatformCapability(
+  'kugoulive': LiveAudiencePlatformCapability(
     hasPopularity: true,
     hasTotalViewers: true,
-    onlineAvailability: AudienceOnlineAvailability.roomList,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomList,
   ),
-  'baidulive': AudiencePlatformCapability(
+  'baidulive': LiveAudiencePlatformCapability(
     hasPopularity: false,
     hasTotalViewers: false,
-    onlineAvailability: AudienceOnlineAvailability.roomList,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomList,
   ),
-  'sixroom': AudiencePlatformCapability(
+  'sixroom': LiveAudiencePlatformCapability(
     hasPopularity: true,
     hasTotalViewers: false,
-    onlineAvailability: AudienceOnlineAvailability.unsupported,
+    onlineAvailability: LiveAudienceOnlineAvailability.unsupported,
   ),
-  'looklive': AudiencePlatformCapability(
+  'looklive': LiveAudiencePlatformCapability(
     hasPopularity: true,
     hasTotalViewers: false,
-    onlineAvailability: AudienceOnlineAvailability.roomList,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomList,
   ),
-  'missevan': AudiencePlatformCapability(
+  'missevan': LiveAudiencePlatformCapability(
     hasPopularity: true,
     hasTotalViewers: false,
-    onlineAvailability: AudienceOnlineAvailability.roomRealtime,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomRealtime,
   ),
-  'inke': AudiencePlatformCapability(
+  'inke': LiveAudiencePlatformCapability(
     hasPopularity: true,
     hasTotalViewers: false,
-    onlineAvailability: AudienceOnlineAvailability.roomList,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomList,
   ),
-  'acfun': AudiencePlatformCapability(
+  'acfun': LiveAudiencePlatformCapability(
     hasPopularity: false,
     hasTotalViewers: false,
-    onlineAvailability: AudienceOnlineAvailability.roomList,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomList,
   ),
-  'kilakila': AudiencePlatformCapability(
+  'kilakila': LiveAudiencePlatformCapability(
     hasPopularity: false,
     hasTotalViewers: true,
-    onlineAvailability: AudienceOnlineAvailability.roomRealtime,
+    onlineAvailability: LiveAudienceOnlineAvailability.roomRealtime,
   ),
 };
 
@@ -235,9 +235,9 @@ const Map<String, AudiencePlatformCapability> audienceCapabilities = {
 /// concurrent-viewer mode an explicit concurrent value ranks ahead of a pending
 /// one, and a pending supported room ahead of a heat or cumulative fallback.
 @immutable
-final class AudienceRankKey {
+final class LiveAudienceRankKey {
   /// Creates a key.
-  const AudienceRankKey({required this.metricPriority, required this.value});
+  const LiveAudienceRankKey({required this.metricPriority, required this.value});
 
   /// Higher ranks first: 3 explicit concurrent, 2 pending concurrent, 1 a
   /// native value, 0 nothing.
@@ -284,7 +284,7 @@ bool hasExplicitAudienceValue(String? value) {
 /// means is given by [metricType], or by the platform's usual one when it is
 /// null or unknown (see `LiveRoom.effectiveAudienceMetricType`, which supplies
 /// the platform). This is pure data; the ranking and fallback logic lives on
-/// the room, which knows its platform and its [AudiencePlatformCapability].
+/// the room, which knows its platform and its [LiveAudiencePlatformCapability].
 @immutable
 final class LiveAudience {
   /// Creates an audience snapshot.
@@ -300,7 +300,7 @@ final class LiveAudience {
   final String watching;
 
   /// What the platform's main audience number means; null when not given.
-  final AudienceMetricType? metricType;
+  final LiveAudienceMetricType? metricType;
 
   /// Popularity or heat; not a head count.
   final String popularity;
@@ -319,7 +319,7 @@ final class LiveAudience {
     final given = incoming.metricType;
     return LiveAudience(
       watching: prefer(incoming.watching, watching),
-      metricType: given != null && given != AudienceMetricType.unknown ? given : metricType,
+      metricType: given != null && given != LiveAudienceMetricType.unknown ? given : metricType,
       popularity: prefer(incoming.popularity, popularity),
       onlineViewers: prefer(incoming.onlineViewers, onlineViewers),
       totalViewers: prefer(incoming.totalViewers, totalViewers),

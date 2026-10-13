@@ -1,7 +1,7 @@
 // These value classes spell their class name in the constructor; the shorthand
 // would read as a method declaration.
 // ignore_for_file: unnecessary_type_name_in_constructor
-import 'package:live_sites/src/models/catch_up/catch_up.dart';
+import 'package:live_sites/src/models/live_catch_up/live_catch_up.dart';
 import 'package:meta/meta.dart';
 
 /// Everything IPTV-like about a room: the guide channel and programme on air,
@@ -18,7 +18,7 @@ final class LiveGuide {
     this.epgId,
     this.currentProgramme = '',
     this.currentProgrammeDescription,
-    this.catchUp = const CatchUp(),
+    this.catchUp = const LiveCatchUp(),
     this.httpHeaders = const {},
   });
 
@@ -32,7 +32,7 @@ final class LiveGuide {
   final String? currentProgrammeDescription;
 
   /// Catch-up (time-shift) playback.
-  final CatchUp catchUp;
+  final LiveCatchUp catchUp;
 
   /// Headers the channel's media requests need, normalized.
   final Map<String, String> httpHeaders;

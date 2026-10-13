@@ -2,14 +2,14 @@
 // ignore_for_file: unnecessary_type_name_in_constructor
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-part 'catch_up.freezed.dart';
-part 'catch_up.g.dart';
+part 'live_catch_up.freezed.dart';
+part 'live_catch_up.g.dart';
 
 /// Catch-up (time-shift) playback of a channel.
 @freezed
-abstract class CatchUp with _$CatchUp {
+abstract class LiveCatchUp with _$LiveCatchUp {
   /// Creates the catch-up state.
-  const factory CatchUp({
+  const factory LiveCatchUp({
     /// Time-shifted stream URL of the programme being played, if any.
     String? url,
 
@@ -33,16 +33,17 @@ abstract class CatchUp with _$CatchUp {
 
     /// Correction for the provider's timestamps, in hours.
     double? correctionHours,
-  }) = _CatchUp;
+  }) = _LiveCatchUp;
 
-  const CatchUp._();
+  const LiveCatchUp._();
 
   /// Reads a stored catch-up record.
-  factory CatchUp.fromJson(Map<String, Object?> json) => _$CatchUpFromJson(json);
+  factory LiveCatchUp.fromJson(Map<String, Object?> json) => _$LiveCatchUpFromJson(json);
 
   /// Whether a time-shifted programme is playing (flag or URL present).
   bool get isActive => active || (url?.trim().isNotEmpty ?? false);
 
   /// The provider settings without the played interval (back to live).
-  CatchUp withoutInterval() => CatchUp(mode: mode, source: source, days: days, correctionHours: correctionHours);
+  LiveCatchUp withoutInterval() =>
+      LiveCatchUp(mode: mode, source: source, days: days, correctionHours: correctionHours);
 }

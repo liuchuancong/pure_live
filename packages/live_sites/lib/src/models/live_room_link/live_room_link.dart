@@ -5,9 +5,9 @@ import 'package:meta/meta.dart';
 
 /// A room a link points to.
 @immutable
-final class RoomLink {
+final class LiveRoomLink {
   /// Creates the link target for [platform]'s room [roomId].
-  const RoomLink(this.platform, this.roomId);
+  const LiveRoomLink(this.platform, this.roomId);
 
   /// Platform id.
   final String platform;
@@ -16,35 +16,35 @@ final class RoomLink {
   final String roomId;
 
   @override
-  bool operator ==(Object other) => other is RoomLink && other.platform == platform && other.roomId == roomId;
+  bool operator ==(Object other) => other is LiveRoomLink && other.platform == platform && other.roomId == roomId;
 
   @override
   int get hashCode => Object.hash(platform, roomId);
 
   @override
-  String toString() => 'RoomLink($platform, $roomId)';
+  String toString() => 'LiveRoomLink($platform, $roomId)';
 }
 
 /// What a platform made of a link that needs requests to resolve.
 @immutable
-sealed class LinkResolution {
+sealed class LiveLinkResolution {
   /// A resolution.
-  const LinkResolution();
+  const LiveLinkResolution();
 }
 
 /// The link points to [roomId].
-final class LinkRoom extends LinkResolution {
+final class LiveLinkRoom extends LiveLinkResolution {
   /// Creates the result.
-  const LinkRoom(this.roomId);
+  const LiveLinkRoom(this.roomId);
 
   /// Room id within the platform.
   final String roomId;
 }
 
 /// The link redirects to [target], which is parsed again (by any platform).
-final class LinkRedirect extends LinkResolution {
+final class LiveLinkRedirect extends LiveLinkResolution {
   /// Creates the result.
-  const LinkRedirect(this.target);
+  const LiveLinkRedirect(this.target);
 
   /// Where the short link leads.
   final Uri target;

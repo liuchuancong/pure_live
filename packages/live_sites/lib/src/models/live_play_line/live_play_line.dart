@@ -4,7 +4,7 @@
 import 'package:meta/meta.dart';
 
 /// Container format of a play line.
-enum StreamFormat {
+enum LiveStreamFormat {
   /// HTTP-FLV.
   flv,
 
@@ -18,9 +18,9 @@ enum StreamFormat {
 
 /// When a signed play URL must be renewed.
 @immutable
-final class PlayLease {
+final class LivePlayLease {
   /// Creates a lease; [refreshAt] must not be after [expiresAt].
-  PlayLease({required this.refreshAt, this.expiresAt, this.cutsConnection = false})
+  LivePlayLease({required this.refreshAt, this.expiresAt, this.cutsConnection = false})
     : assert(expiresAt == null || !refreshAt.isAfter(expiresAt), 'refreshAt must not be after expiresAt');
 
   /// When to fetch a fresh URL.
@@ -60,7 +60,7 @@ final class LivePlayLine {
   final Map<String, String> headers;
 
   /// Container format, when known.
-  final StreamFormat? format;
+  final LiveStreamFormat? format;
 
   /// Video codec when known (`avc`, `hevc`).
   final String? codec;
@@ -69,7 +69,7 @@ final class LivePlayLine {
   final String? lineId;
 
   /// Renewal rule; null when the URL does not expire while playing.
-  final PlayLease? lease;
+  final LivePlayLease? lease;
 
   /// Picture width the platform declares for this line, when it does: the
   /// player lays the picture out by it before the first frame; the decoded size

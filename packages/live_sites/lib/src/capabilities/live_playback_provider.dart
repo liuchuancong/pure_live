@@ -1,8 +1,8 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
+import 'package:live_sites/src/models/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/live_play_quality/live_play_quality.dart';
-import 'package:live_sites/src/models/play_line/play_line.dart';
 
 /// The stream qualities a room offers and the playable lines behind them.
 ///

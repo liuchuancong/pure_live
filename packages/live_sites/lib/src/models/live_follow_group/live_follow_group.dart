@@ -1,5 +1,5 @@
 /// Where the follow page lists a room (live, replay and offline tabs).
-enum FollowGroup {
+enum LiveFollowGroup {
   /// Broadcasting now, restricted or not.
   live,
 
