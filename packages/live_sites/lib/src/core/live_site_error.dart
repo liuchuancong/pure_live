@@ -30,6 +30,12 @@ sealed class LiveSiteError with _$LiveSiteError {
 
   const factory LiveSiteError.rateLimit({required String siteId, required String message}) = LiveSiteRateLimitError;
 
+  /// The content itself is not available (a live room on air that pushes no
+  /// stream, a withdrawn media) — a room state, not a transport or shape
+  /// failure.
+  const factory LiveSiteError.contentUnavailable({required String siteId, required String message}) =
+      LiveSiteContentUnavailable;
+
   const factory LiveSiteError.invalidArgument({required String siteId, required String message}) =
       LiveSiteInvalidArgument;
 

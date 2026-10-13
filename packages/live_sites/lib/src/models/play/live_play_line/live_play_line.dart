@@ -29,6 +29,12 @@ abstract class LivePlayLine with _$LivePlayLine {
     String? lineLabel,
     LivePlayLease? lease,
     @Default(PlayGeometry()) PlayGeometry geometry,
+
+    /// Whether this URL starts playback only once: re-opening the same
+    /// address fails even before its lease expires, and the player must
+    /// re-resolve instead of replaying it. Long-lived, re-openable lines
+    /// stay false.
+    @Default(false) bool singleUse,
   }) = _LivePlayLine;
 }
 

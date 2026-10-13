@@ -683,6 +683,8 @@ LiveSiteError (sealed)
 ├─ LiveSiteParseError       响应形状损坏（含 cause）
 ├─ LiveSiteAuthenticationError 需要登录/凭证失效
 ├─ LiveSiteRateLimitError   限流
+├─ LiveSiteContentUnavailable  内容不可用（在播但无流推送，重试无意义）
+├─ LiveSiteInvalidArgument  参数不合法
 └─ LiveSiteUnexpectedError  兜底（含 cause）
 ```
 
