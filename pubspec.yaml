@@ -17,6 +17,7 @@ workspace:
   - packages/live_sites
   - packages/live_platform
   - packages/live_playback
+  - packages/live_playback/example
   - packages/live_preferences
   - packages/live_shell
   - packages/live_shell_desktop

@@ -6,6 +6,7 @@
 
 #include "generated_plugin_registrant.h"
 
+#include <audio_service_win/audio_service_win_plugin_c_api.h>
 #include <battery_plus/battery_plus_windows_plugin.h>
 #include <connectivity_plus/connectivity_plus_windows_plugin.h>
 #include <desktop_multi_window/desktop_multi_window_plugin.h>
@@ -17,6 +18,8 @@
 #include <window_manager/window_manager_plugin.h>
 
 void RegisterPlugins(flutter::PluginRegistry* registry) {
+  AudioServiceWinPluginCApiRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("AudioServiceWinPluginCApi"));
   BatteryPlusWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("BatteryPlusWindowsPlugin"));
   ConnectivityPlusWindowsPluginRegisterWithRegistrar(
