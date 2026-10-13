@@ -249,8 +249,210 @@ abstract final class TwitchParser {
         'transcode_mode': 'cbr_v1',
       });
 
+  /// The persisted hash of the `DirectoryPage_Game` query.
+  static const String gameHash = '76cb069d835b8a02914c08dc42c421d0dafda8af5b113a3f19141824b901402f';
+
+  /// Streams one `DirectoryPage_Game` request asks for: an area's list is
+  /// fetched 100 at a time and paged locally, as the reference's popular page
+  /// did with its recommendations.
+  static const int directoryFetchLimit = 100;
+
+  /// Streams one site-wide `streams` request may ask for (`first` is 1–30).
+  static const int streamsLimit = 30;
+
+  /// A broadcast language as Twitch's `Language` enum spells it (`ZH`,
+  /// `ZH_HK`, `ASL`, `OTHER`).
+  static final RegExp languagePattern = RegExp(r'^[A-Z]{2,5}(_[A-Z]{2,4})?$');
+
+  /// The busiest live streams of the whole site, in the broadcast
+  /// `languages` when given (the recommendations). The web client has no
+  /// persisted query for it; `first` is at most 30. `$languages` is the
+  /// `Language` enum: the schema rejects the query when it is declared
+  /// `[String!]`.
+  static const String streamsQuery =
+      r'query($first: Int!, $after: Cursor, $languages: [Language!]) { streams(first: $first, after: $after, '
+      r'options: {broadcasterLanguages: $languages}) { edges { cursor node { id title type viewersCount '
+      'createdAt previewImageURL(width: 440, height: 248) restriction { type } broadcaster { id login '
+      'displayName profileImageURL(width: 70) } game { id name displayName slug } } } '
+      'pageInfo { hasNextPage } } }';
+
+  /// The raw [streamsQuery]: [limit] (1–30) of the site's busiest streams
+  /// after [cursor], in [languages] (all when empty).
+  static Map<String, Object?> streamsOperation({
+    required int limit,
+    String? cursor,
+    List<String> languages = const [],
+  }) => {
+    'query': streamsQuery,
+    'variables': {
+      'first': limit.clamp(1, streamsLimit),
+      'after': ?cursor,
+      if (languages.isNotEmpty) 'languages': languages,
+    },
+  };
+
+  /// `DirectoryPage_Game` of the directory [slug]: [limit] streams by viewers
+  /// after [cursor], in [languages] (all when empty).
+  static Map<String, Object?> gameOperation(
+    String slug, {
+    required int limit,
+    String? cursor,
+    List<String> languages = const [],
+  }) => {
+    'operationName': 'DirectoryPage_Game',
+    'extensions': {
+      'persistedQuery': {'version': 1, 'sha256Hash': gameHash},
+    },
+    'variables': {
+      'imageWidth': 50,
+      'slug': slug,
+      'options': {
+        'sort': 'VIEWER_COUNT',
+        'recommendationsContext': {'platform': 'web'},
+        'requestID': 'JIRA-VXP-2397',
+        'freeformTags': null,
+        'tags': <String>[],
+        'broadcasterLanguages': languages,
+        'systemFilters': <String>[],
+      },
+      'sortTypeIsRecency': false,
+      'limit': limit,
+      'includeCostreaming': true,
+      'cursor': ?cursor,
+    },
+  };
+
+  /// The broadcast languages as Twitch spells them: upper case, `-` as `_`,
+  /// each once; blanks and values that cannot be a language are left out (an
+  /// unknown one fails the whole request).
+  static List<String> normalizeLanguages(Iterable<String> languages) => [
+    ...{
+      for (final language in languages)
+        if (language.trim().toUpperCase().replaceAll('-', '_') case final code when languagePattern.hasMatch(code))
+          code,
+    },
+  ];
+
+  /// The raw [streamsQuery]: the site's busiest streams as cards (the
+  /// recommendations), each with its start time and restriction, and the
+  /// cursor of the next page when `pageInfo` says there is one.
+  static ({List<LiveRoom> rooms, String? cursor}) streams(String body, {required DateTime now, int status = 200}) {
+    final data = TwitchParser.data(body, status: status, what: 'streams');
+    final connection = _connection(data['streams']);
+    return (
+      rooms: [for (final edge in connection.edges) ?_streamCard(edge['node'], now: now)],
+      cursor: _nextCursor(connection),
+    );
+  }
+
+  /// `DirectoryPage_Game`: the streams of a directory as cards, and the cursor
+  /// of the next page when `pageInfo` says there is one. A stream is live, or
+  /// a replay when it is a rerun. The answer has no start time or restriction.
+  /// An unknown directory (`game == null`) is a [SiteNotFoundError].
+  static ({List<LiveRoom> rooms, String? cursor}) gameStreams(
+    String body, {
+    required DateTime now,
+    required String slug,
+    int status = 200,
+  }) {
+    final data = TwitchParser.data(body, status: status, what: 'DirectoryPage_Game');
+    final game = data['game'] is Map<String, Object?> ? SiteJson.object(data['game']) : null;
+    if (game == null) {
+      throw SiteNotFoundError('twitch: no directory $slug');
+    }
+    final connection = _connection(game['streams']);
+    return (
+      rooms: [for (final edge in connection.edges) ?_streamCard(edge['node'], now: now)],
+      cursor: _nextCursor(connection),
+    );
+  }
+
+  /// One stream node of a list as a card: the broadcaster's login as room,
+  /// its display name (the login without one), live or a rerun's replay, the
+  /// preview as cover, the game's name as area. The start time (`createdAt`)
+  /// and restriction come with the raw [streamsQuery] only. Null without a
+  /// broadcaster login.
+  static LiveRoom? _streamCard(Object? value, {required DateTime now}) {
+    final node = value is Map<String, Object?> ? value : null;
+    final broadcaster = node?['broadcaster'] is Map<String, Object?> ? SiteJson.object(node?['broadcaster']) : null;
+    final login = SiteText.text(broadcaster?['login']);
+    if (node == null || broadcaster == null || login.isEmpty) {
+      return null;
+    }
+    final game = node['game'] is Map<String, Object?> ? SiteJson.object(node['game']) : null;
+    final viewers = SiteCounts.integer(node['viewersCount']);
+    final displayName = SiteText.text(broadcaster['displayName']);
+    return LiveRoom(
+      platform: SiteIds.twitch,
+      roomId: login,
+      title: SiteText.text(node['title']),
+      nick: displayName.isEmpty ? login : displayName,
+      avatar: _image(broadcaster['profileImageURL']),
+      cover: _cover(node['previewImageURL'], now),
+      areaName: game == null ? null : _gameName(game),
+      watching: viewers,
+      status: _isRerun(node) ? LiveStatus.replay : LiveStatus.live,
+      startedAt: _time(node['createdAt']),
+      restriction: _restriction(node),
+    );
+  }
+
+  /// The restriction of a stream node that was asked for its `restriction`
+  /// ([streamsQuery]): none when it is null; subscribers only for Twitch's
+  /// subscriber-only streams (a type naming `SUB`); another kind is
+  /// `unplayable`. Null when the node has no such key (the persisted list
+  /// queries do not ask for it).
+  static LiveRestriction? _restriction(Map<String, Object?> stream) {
+    if (!stream.containsKey('restriction')) {
+      return null;
+    }
+    final value = stream['restriction'];
+    if (value == null) {
+      return LiveRestriction.none;
+    }
+    final type = SiteText.text(SiteJson.object(value)['type']).toUpperCase();
+    return type.contains('SUB') ? LiveRestriction.subscribersOnly : LiveRestriction.unplayable;
+  }
+
+  static ({List<Map<String, Object?>> edges, bool hasNextPage}) _connection(Object? value) {
+    final connection = SiteJson.object(value);
+    return (
+      edges: SiteJson.objects(connection['edges']),
+      hasNextPage: SiteJson.object(connection['pageInfo'])['hasNextPage'] == true,
+    );
+  }
+
+  static String? _nextCursor(({List<Map<String, Object?>> edges, bool hasNextPage}) connection) {
+    if (!connection.hasNextPage || connection.edges.isEmpty) {
+      return null;
+    }
+    final cursor = SiteText.text(connection.edges.last['cursor']);
+    return cursor.isEmpty ? null : cursor;
+  }
+
+  static String _gameName(Map<String, Object?> game) {
+    final display = SiteText.text(game['displayName']);
+    return display.isEmpty ? SiteText.text(game['name']) : display;
+  }
+
+  static bool _isRerun(Map<String, Object?> stream) => stream['type'] == 'rerun';
+
+  /// An ISO 8601 time (`2026-09-27T12:49:35Z`) as UTC; null when missing,
+  /// unreadable or not after 1970.
+  static DateTime? _time(Object? value) {
+    final time = DateTime.tryParse(SiteText.text(value))?.toUtc();
+    return time == null || time.millisecondsSinceEpoch <= 0 ? null : time;
+  }
+
   static String? _image(Object? value) {
     final url = value?.toString() ?? '';
     return url.isEmpty ? null : url;
+  }
+
+  /// A stream preview with `?&t=<Unix seconds>` so a refresh fetches the
+  /// current frame; null without a preview.
+  static String? _cover(Object? value, DateTime now) {
+    final url = SiteText.text(value).trim();
+    return url.isEmpty ? null : '$url?&t=${now.millisecondsSinceEpoch ~/ 1000}';
   }
 }
