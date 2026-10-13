@@ -143,6 +143,78 @@ abstract final class TwitchParser {
     );
   }
 
+  /// The persisted hash of the `SearchResultsPage_SearchResults` query.
+  static const String searchHash = '7f3580f6ac6cd8aa1424cff7c974a07143827d6fa36bba1b54318fe7f0b68dc5';
+
+  /// `SearchResultsPage_SearchResults` for [keyword]; a later page names the
+  /// channel index's [cursor] in `options.targets` (a first page has none).
+  static Map<String, Object?> searchOperation(String keyword, {String? cursor}) => {
+    'operationName': 'SearchResultsPage_SearchResults',
+    'variables': {
+      'platform': 'web',
+      'query': keyword,
+      'options': {
+        'targets': cursor == null
+            ? null
+            : [
+                {'index': 'CHANNEL', 'cursor': cursor},
+              ],
+        'shouldSkipDiscoveryControl': false,
+      },
+      'requestID': '808c9f2e-f52e-431c-8dc7-d2e3c1831d77',
+      'includeIsDJ': true,
+    },
+    'extensions': {
+      'persistedQuery': {'version': 1, 'sha256Hash': searchHash},
+    },
+  };
+
+  /// `SearchResultsPage_SearchResults`: the channels, live or offline, each as
+  /// a card (a channel whose `stream` and `lastBroadcast` share an id is on
+  /// air), and the cursor of the next page when `pageInfo.hasNextPage` says
+  /// there is one. A `channels` connection with no edges gives nothing and no
+  /// cursor; a missing `searchFor` is an empty page (the query is the answer,
+  /// not a changed endpoint).
+  static ({List<LiveRoom> rooms, String? cursor}) searchPage(String body, {int status = 200}) {
+    final data = TwitchParser.data(body, status: status, what: 'SearchResultsPage_SearchResults');
+    final channels = SiteJson.object(SiteJson.object(data['searchFor'])['channels']);
+    final edges = SiteJson.list(channels['edges']);
+    final rooms = <LiveRoom>[];
+    for (final edge in edges) {
+      final item = SiteJson.object(SiteJson.object(edge)['item']);
+      final login = SiteText.text(item['login']);
+      if (login.isEmpty) {
+        continue;
+      }
+      final stream = item['stream'] is Map<String, Object?> ? SiteJson.object(item['stream']) : null;
+      final broadcast = SiteJson.object(item['lastBroadcast']);
+      final streamId = stream?['id']?.toString() ?? '';
+      final live = streamId.isNotEmpty && streamId == broadcast['id']?.toString();
+      final game = SiteJson.object(stream?['game']);
+      final displayName = SiteText.text(item['displayName']);
+      rooms.add(
+        LiveRoom(
+          platform: SiteIds.twitch,
+          roomId: login,
+          title: SiteText.text(SiteJson.object(item['broadcastSettings'])['title']),
+          nick: displayName.isEmpty ? login : displayName,
+          avatar: _image(item['profileImageURL']),
+          cover: _image(stream?['previewImageURL']),
+          areaName: (game['displayName'] ?? game['name'])?.toString(),
+          watching: SiteCounts.integer(stream?['viewersCount']),
+          status: live ? LiveStatus.live : LiveStatus.offline,
+        ),
+      );
+    }
+    String? cursor;
+    final pageInfo = SiteJson.object(channels['pageInfo']);
+    if (pageInfo['hasNextPage'] == true && edges.isNotEmpty) {
+      final last = SiteText.text(SiteJson.object(edges.last)['cursor']);
+      cursor = last.isEmpty ? null : last;
+    }
+    return (rooms: rooms, cursor: cursor);
+  }
+
   /// The `PlaybackAccessToken` answer → the token and signature.
   static ({String value, String signature}) accessToken(String body, {int status = 200}) {
     final data = TwitchParser.data(body, status: status, what: 'PlaybackAccessToken');

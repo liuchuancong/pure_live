@@ -8,8 +8,7 @@ import 'package:live_sites/src/platforms/twitch/parsers/twitch_parser.dart';
 /// The Twitch adapter: anonymous GraphQL + usher flow, plus the IRC chat over
 /// an anonymous WebSocket.
 ///
-/// Not migrated yet: the directory (the web client has no persisted query for
-/// it), search and the session cookie.
+/// Not migrated yet: the directory and the session cookie.
 final class TwitchSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapability {
   /// A site over [http].
   new({required this.http}) : _deviceId = TwitchParser.deviceId();
@@ -42,10 +41,43 @@ final class TwitchSite with SiteRoomGuard implements LiveSite, LiveDanmakuCapabi
     throw UnimplementedError('twitch directory lands with its migration');
   }
 
+  /// Channels matching [keyword], live or offline: the `SearchResultsPage_`
+  /// `SearchResults` query, one page of thirty; a later page continues the
+  /// cursor the previous page reported (so it must have been asked), and a
+  /// blank keyword gives nothing without a request.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('twitch search lands with its migration');
+    final text = keyword.trim();
+    if (text.isEmpty) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    if (page < 1) {
+      throw RangeError.range(page, 1, null, 'page');
+    }
+    final key = 'search|$text';
+    final cursor = page == 1 ? null : _cursors['$key|$page'];
+    if (page > 1 && cursor == null) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final response = await http.send(
+      LiveRequest.custom(
+        url: TwitchParser.gqlUrl,
+        method: 'POST',
+        body: jsonEncode(TwitchParser.searchOperation(text, cursor: cursor)),
+        headers: TwitchParser.gqlHeaders(deviceId: _deviceId),
+        site: id,
+      ),
+    );
+    final result = TwitchParser.searchPage(response.text, status: response.statusCode);
+    if (result.cursor != null) {
+      _cursors['$key|${page + 1}'] = result.cursor!;
+    }
+    final hasMore = result.cursor != null && result.rooms.isNotEmpty;
+    return LivePage<LiveRoom>(items: result.rooms, hasMore: hasMore, nextPage: hasMore ? page + 1 : null);
   }
+
+  /// The cursor of each search page after the first, by `search|keyword|page`.
+  final Map<String, String> _cursors = {};
 
   @override
   Future<LiveRoom> getRoomDetail(LiveRoom room) async {
