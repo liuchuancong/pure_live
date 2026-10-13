@@ -8,9 +8,16 @@ part 'live_area.g.dart';
 // factories cannot use the `new` shorthand.
 @freezed
 abstract class LivePlayQuality with _$LivePlayQuality {
-  /// A quality descriptor.
-  const factory LivePlayQuality({required String label, int? quality, @Default(0) int sort, String? codec}) =
-      _LivePlayQuality;
+  /// A quality descriptor. [data] is a runtime cache owned by the platform
+  /// adapter (a variant or seat recipe a later `getPlayUrls` re-opens with);
+  /// it never enters JSON and never survives a database round trip.
+  const factory LivePlayQuality({
+    required String label,
+    int? quality,
+    @Default(0) int sort,
+    String? codec,
+    @JsonKey(includeToJson: false, includeFromJson: false) Object? data,
+  }) = _LivePlayQuality;
 
   /// Restores a quality from JSON.
   factory LivePlayQuality.fromJson(Map<String, Object?> json) => _$LivePlayQualityFromJson(json);

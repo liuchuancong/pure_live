@@ -101,3 +101,14 @@ final class SiteApiChangedError extends SiteError {
   @override
   String get label => 'apiChanged';
 }
+
+/// The room is known but has nothing to play right now (offline, ended
+/// without a recording, or a stream whose seat moved away). Distinct from
+/// [SiteNotFoundError]: the room exists, it just is not playable.
+final class SiteStreamUnavailableError extends SiteError {
+  /// Nothing is currently playable for this room.
+  const new(super.message);
+
+  @override
+  String get label => 'streamUnavailable';
+}
