@@ -25,6 +25,88 @@ abstract final class XiaohongshuParser {
   /// The share page URL of [roomId].
   static Uri roomUrl(String roomId) => Uri.parse('$origin/livestream/$roomId');
 
+  static final RegExp _controls = RegExp(r'[\x00-\x20\x7f]');
+  static final RegExp _canonicalPath = RegExp(r'^/livestream/([1-9][0-9]{0,19})/?$');
+  static final RegExp _dynamicPath = RegExp(r'^/livestream/dynpath[A-Za-z0-9]{8}/([1-9][0-9]{0,19})/?$');
+  static final RegExp _hinaPath = RegExp(r'^/hina/livestream/([1-9][0-9]{0,19})(?:/[A-Za-z0-9_-]{1,64})?/?$');
+
+  /// The room [raw] names exactly: a bare id, an app deep link, or a share
+  /// page; null for anything else (a short link's hops are not resolved).
+  static String? roomIdFrom(String raw) {
+    final value = raw.trim();
+    if (isRoomId(value)) {
+      return value;
+    }
+    return deepLinkRoomId(value) ?? webRoomId(value);
+  }
+
+  /// The room of an app deep link `xhsdiscover://live_audience?room_id=…`:
+  /// exactly one `room_id`, no path, user, port or fragment.
+  static String? deepLinkRoomId(String raw) {
+    final value = raw.trim();
+    if (value.length > 8192 || value.contains(_controls)) {
+      return null;
+    }
+    final uri = Uri.tryParse(value);
+    if (uri == null ||
+        uri.scheme.toLowerCase() != 'xhsdiscover' ||
+        uri.host.toLowerCase() != 'live_audience' ||
+        uri.path.isNotEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasPort ||
+        uri.hasFragment) {
+      return null;
+    }
+    try {
+      final room = uri.queryParametersAll['room_id'];
+      if (room == null || room.length != 1) {
+        return null;
+      }
+      return isRoomId(room.single) ? room.single : null;
+    } on FormatException {
+      return null;
+    }
+  }
+
+  /// The room of a `www.xiaohongshu.com`/`xiaohongshu.com` share page:
+  /// `/livestream/<room>`, the `/livestream/dynpath<8>/<room>` share redirect,
+  /// or `/hina/livestream/<room>[/<alias>]`, http(s) on the default port and
+  /// a plain path.
+  static String? webRoomId(String raw) {
+    final uri = _webUri(raw);
+    if (uri == null || !(uri.host == 'www.xiaohongshu.com' || uri.host == 'xiaohongshu.com')) {
+      return null;
+    }
+    return (_canonicalPath.firstMatch(uri.path) ?? _dynamicPath.firstMatch(uri.path) ?? _hinaPath.firstMatch(uri.path))
+        ?.group(1);
+  }
+
+  /// Whether a written value has no control characters, escapes, backslashes
+  /// or dot segments in its path, and is short enough to parse.
+  static bool _plainPath(String value) {
+    if (value.length > 8192 || value.contains(_controls)) {
+      return false;
+    }
+    final path = value.split(RegExp('[?#]')).first;
+    return !path.contains('%') && !path.contains(r'\') && !RegExp(r'(^|/)\.\.?(/|$)').hasMatch(path);
+  }
+
+  /// A written http(s) link on the default port with no user info, or null.
+  static Uri? _webUri(String raw) {
+    final value = raw.trim();
+    if (!_plainPath(value)) {
+      return null;
+    }
+    final uri = Uri.tryParse(value);
+    if (uri == null ||
+        !(uri.scheme == 'https' || uri.scheme == 'http') ||
+        uri.userInfo.isNotEmpty ||
+        (uri.hasPort && uri.port != (uri.scheme == 'https' ? 443 : 80))) {
+      return null;
+    }
+    return uri;
+  }
+
   static const String _marker = 'window.__INITIAL_STATE__=';
 
   /// Extracts the `liveStream` object of the share page.

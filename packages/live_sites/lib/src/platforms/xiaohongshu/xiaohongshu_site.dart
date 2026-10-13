@@ -6,9 +6,9 @@ import 'package:live_sites/src/platforms/xiaohongshu/parsers/xiaohongshu_parser.
 /// broadcast (every broadcast has a new room id).
 ///
 /// Xiaohongshu has no anonymous directory: [getRecommendRooms] is empty and
-/// [getCategoryRooms] is a caller error, as 3.x refused it. Not migrated yet:
-/// the share/short-link search (which runs through room resolution) and the
-/// danmaku transport.
+/// [getCategoryRooms] is a caller error, as 3.x refused it. Search resolves a
+/// room id, share page or app deep link; not migrated yet: `xhslink.com`
+/// short-link hops and the danmaku transport.
 final class XiaohongshuSite with SiteRoomGuard implements LiveSite {
   /// A site over [http].
   new({required this.http});
@@ -46,9 +46,24 @@ final class XiaohongshuSite with SiteRoomGuard implements LiveSite {
     throw SiteError.invalidRoomId(area.id);
   }
 
+  /// The one room [keyword] names: a room id, a share page or an app deep
+  /// link (the follow refresh — no stream data); a room the site does not
+  /// know gives nothing. Other keywords and pages after the first give
+  /// nothing without a request; `xhslink.com` short links are not resolved yet.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('xiaohongshu search lands with its migration');
+    if (page != 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final roomId = XiaohongshuParser.roomIdFrom(keyword);
+    if (roomId == null) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    try {
+      return LivePage<LiveRoom>(items: [await _page(roomId)]);
+    } on SiteNotFoundError {
+      return const LivePage<LiveRoom>(items: []);
+    }
   }
 
   @override
