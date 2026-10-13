@@ -1,19 +1,19 @@
 import 'dart:async';
 
 import 'package:fpdart/fpdart.dart';
-
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
-import 'package:live_sites/src/models/live_message/live_message.dart';
+import 'package:live_sites/src/models/message/live_message/live_message.dart';
 
 /// Creates a danmaku session for a room.
 ///
 /// Protocol-level reconnection required by a platform's transport belongs to
-/// the session; application-level playback recovery does not — [LiveSiteError]
-/// only reports that a connection could not be started or was lost.
+/// the session; application-level playback recovery does not — a
+/// [LiveSiteError] only reports that a connection could not be started or
+/// was lost.
 abstract interface class LiveDanmakuProvider implements LiveSiteCapability {
-  /// Creates a session for [roomId]. A left reports why the session could not
-  /// be started (auth, unsupported, temporary unavailability).
+  /// Creates a session for [roomId]. A left reports why the session could
+  /// not be started (auth, unsupported, temporary unavailability).
   Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId});
 }
 

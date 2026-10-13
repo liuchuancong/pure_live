@@ -1,82 +1,36 @@
-/// Number and boolean coercion shared by every adapter.
+/// Parsing of the audience-figure texts platforms send
+/// (`"1.2万"`, `"3,400"`, `"8000万"`, bare numbers).
 ///
-/// Platform JSON is loosely typed in a way that bites silently: the same
-/// field arrives as a number in one endpoint and as a string in another
-/// (Huya's viewer counts), a flag arrives as `0`/`1`, `"0"`/`"1"` or a real
-/// boolean, and a count arrives as `"1.2万"`. Casting with `as num?` throws
-/// and takes the whole page down with it, so the coercions live here — one
-/// implementation, one set of tolerances.
-abstract final class SiteCounts {
-  /// [value] as an integer, accepting numbers, numeric strings and strings
-  /// with a decimal part; null when it is none of those.
-  static int? integer(Object? value) {
-    if (value is num) {
-      return value.isFinite ? value.toInt() : null;
-    }
-    if (value is String) {
-      final text = value.trim();
-      if (text.isEmpty) {
-        return null;
-      }
-      return int.tryParse(text) ?? double.tryParse(text)?.toInt();
-    }
-    return null;
-  }
+/// Adapters call these at the response boundary and store `int?`; the text
+/// itself is never stored (MODELS.md §1.3). UI formatting ("1.2万") lives in
+/// the application layer.
+library;
 
-  /// [value] as a double, accepting numbers and numeric strings.
-  static double? decimal(Object? value) {
-    if (value is num) {
-      return value.toDouble();
-    }
-    if (value is String) {
-      return double.tryParse(value.trim());
-    }
-    return null;
-  }
+final RegExp _countPattern = RegExp(r'([0-9]+(?:\.[0-9]+)?)\s*(亿|万|千|[kwm])?');
 
-  /// [value] as a flag: booleans, `0`/`1` in either type, and `"true"`/
-  /// `"false"` all resolve; null is "the field was absent or unreadable".
-  static bool? flag(Object? value) {
-    if (value is bool) {
-      return value;
-    }
-    if (value is num) {
-      return value != 0;
-    }
-    return switch (value?.toString().trim().toLowerCase()) {
-      'true' || '1' || 'yes' => true,
-      'false' || '0' || 'no' || '' => false,
-      _ => null,
-    };
-  }
+/// Parses a platform count text into an absolute number; `0` when [value]
+/// carries no number at all.
+int parseAudienceNumber(String? value) => parseAudienceNumberOrNull(value) ?? 0;
 
-  /// A display-scaled count as an integer, or null when the text carries no
-  /// number at all.
-  ///
-  /// Platforms write counts as short strings — `"1.2万"`, `"3.4亿"`,
-  /// `"1943.3w"`, `"12k"` — and where the number lives inside a text field
-  /// that is the only reading available. Both conventions are handled, in
-  /// either case, because the same site uses them in different endpoints.
-  static int? scaled(Object? value) {
-    final direct = integer(value);
-    if (direct != null) {
-      return direct;
-    }
-    final text = value?.toString().trim().toLowerCase() ?? '';
-    final match = RegExp(r'([0-9]+(?:\.[0-9]+)?)\s*([万亿wk]?)').firstMatch(text);
-    if (match == null) {
-      return null;
-    }
-    final base = double.tryParse(match.group(1)!);
-    if (base == null) {
-      return null;
-    }
-    final scale = switch (match.group(2)) {
-      '万' || 'w' => 10000,
-      '亿' => 100000000,
-      'k' => 1000,
-      _ => 1,
-    };
-    return (base * scale).round();
-  }
+/// Parses a platform count text into an absolute number; `null` when [value]
+/// carries no number at all (null = unknown, never a fabricated zero).
+int? parseAudienceNumberOrNull(String? value) {
+  final text = value?.trim().toLowerCase() ?? '';
+  if (text.isEmpty) return null;
+  final normalized = text.replaceAll(',', '').replaceAll('，', '');
+  final match = _countPattern.firstMatch(normalized);
+  final number = double.tryParse(match?.group(1) ?? '');
+  if (number == null) return null;
+  const multipliers = {'亿': 100000000, '万': 10000, 'w': 10000, '千': 1000, 'k': 1000, 'm': 1000000};
+  final multiplier = multipliers[match?.group(2)] ?? 1;
+  return (number * multiplier).round();
 }
+
+/// Whether [value] holds a positive audience figure (not blank, not `null`,
+/// not zero).
+bool hasAudienceValue(String? value) => (parseAudienceNumberOrNull(value) ?? 0) > 0;
+
+/// Whether [value] carries an explicit figure at all — positive or zero.
+/// A room that truly has nobody online must stay distinguishable from a room
+/// whose count the source did not report.
+bool hasExplicitAudienceValue(String? value) => value != null && RegExp('[0-9]').hasMatch(value.trim());

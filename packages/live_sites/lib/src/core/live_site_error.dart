@@ -1,63 +1,38 @@
-/// A normalized, expected failure in a live-site operation.
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'live_site_error.freezed.dart';
+
+// Constructors spell their class name by convention here; the `.new`
+// shorthand hurts readability more than the lint helps.
+// ignore_for_file: unnecessary_type_name_in_constructor
+
+/// An expected failure at a capability boundary — a value, never a throw
+/// (ARCHITECTURE.md §5).
 ///
-/// Adapters return these at the business boundary (wrapped in an `Either`) so
-/// a caller can tell "room not found" from "network down" from "not supported"
-/// without catching exceptions. The `cause` field carries the original error
-/// for diagnostics only; it must never be shown to an end user as-is, and none
-/// of these types carry tokens, cookies or signed URLs in their message.
-sealed class LiveSiteError {
-  /// Creates an error for [siteId] with a human-readable [message] and an
-  /// optional underlying [cause].
-  const new({required this.siteId, required this.message, this.cause});
+/// 'message' is diagnostic text for logs and developers; it must never carry
+/// tokens, cookies or signed URLs, and user-facing wording is the
+/// application's business. 'cause' keeps the original error for diagnosis
+/// only.
+@freezed
+sealed class LiveSiteError with _$LiveSiteError {
+  const factory LiveSiteError.notFound({required String siteId, required String message}) = LiveSiteNotFound;
 
-  /// The identifier of the site where the failure occurred.
-  final String siteId;
+  const factory LiveSiteError.unsupported({required String siteId, required String message}) = LiveSiteUnsupported;
 
-  /// A human-readable diagnostic message.
-  final String message;
+  const factory LiveSiteError.network({required String siteId, required String message, Object? cause}) =
+      LiveSiteNetworkError;
 
-  /// The original error, when available.
-  final Object? cause;
-}
+  const factory LiveSiteError.parse({required String siteId, required String message, Object? cause}) =
+      LiveSiteParseError;
 
-/// The requested room, anchor, category or source does not exist.
-final class LiveSiteNotFound extends LiveSiteError {
-  /// A not-found failure for [siteId].
-  const new({required super.siteId, required super.message});
-}
+  const factory LiveSiteError.authentication({required String siteId, required String message}) =
+      LiveSiteAuthenticationError;
 
-/// The site does not support the requested operation.
-final class LiveSiteUnsupported extends LiveSiteError {
-  /// An unsupported-operation failure for [siteId].
-  const new({required super.siteId, required super.message});
-}
+  const factory LiveSiteError.rateLimit({required String siteId, required String message}) = LiveSiteRateLimitError;
 
-/// The operation failed because of a network problem.
-final class LiveSiteNetworkError extends LiveSiteError {
-  /// A network failure for [siteId], with an optional [cause].
-  const new({required super.siteId, required super.message, super.cause});
-}
+  const factory LiveSiteError.invalidArgument({required String siteId, required String message}) =
+      LiveSiteInvalidArgument;
 
-/// The response could not be parsed or validated.
-final class LiveSiteParseError extends LiveSiteError {
-  /// A parse failure for [siteId], with an optional [cause].
-  const new({required super.siteId, required super.message, super.cause});
-}
-
-/// The site requires authentication or authorization the session lacks.
-final class LiveSiteAuthenticationError extends LiveSiteError {
-  /// An authentication failure for [siteId].
-  const new({required super.siteId, required super.message});
-}
-
-/// The platform rejected the request because of rate limiting.
-final class LiveSiteRateLimitError extends LiveSiteError {
-  /// A rate-limit failure for [siteId].
-  const new({required super.siteId, required super.message});
-}
-
-/// An unexpected failure normalized at an API boundary.
-final class LiveSiteUnexpectedError extends LiveSiteError {
-  /// An unexpected failure for [siteId], with the [cause] that triggered it.
-  const new({required super.siteId, required super.message, super.cause});
+  const factory LiveSiteError.unexpected({required String siteId, required String message, Object? cause}) =
+      LiveSiteUnexpectedError;
 }

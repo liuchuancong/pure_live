@@ -1,11 +1,11 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
-import 'package:live_sites/src/models/live_page/live_page.dart';
-import 'package:live_sites/src/models/live_page_request/live_page_request.dart';
-import 'package:live_sites/src/models/live_room/live_room.dart';
+import 'package:live_sites/src/models/page/live_page/live_page.dart';
+import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 
-/// Room-related operations a site may support.
+/// Room lookup a site may support.
 abstract interface class LiveRoomProvider implements LiveSiteCapability {
   /// Fetches a room by its platform-specific [roomId].
   ///

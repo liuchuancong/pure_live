@@ -1,0 +1,11 @@
+# Shared codegen options for live_sites models (ARCHITECTURE.md §9).
+#
+# explicit_to_json makes json_serializable call `.toJson()` on nested
+# freezed values (LiveRoom.ref, RoomGuide.catchUp, LiveMessage.sender, ...)
+# instead of embedding the objects raw into storage JSON.
+targets:
+  $default:
+    builders:
+      json_serializable:
+        options:
+          explicit_to_json: true

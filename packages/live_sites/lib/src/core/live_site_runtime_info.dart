@@ -1,36 +1,43 @@
+// Constructors spell their class name by convention here; the `.new`
+// shorthand hurts readability more than the lint helps.
+// ignore_for_file: unnecessary_type_name_in_constructor
 /// The lifecycle state of a site instance.
 enum LiveSiteStatus {
-  /// Constructed but not yet initialized.
+  /// Constructed, not yet initialized.
   uninitialized,
 
-  /// Initialization is in progress.
+  /// `initialize` is running.
   initializing,
 
-  /// Ready for use.
+  /// Ready to serve capabilities.
   ready,
 
-  /// Usable, but with some features known to be degraded.
+  /// Serving with reduced capability (a resource failed but the site
+  /// remains usable).
   degraded,
 
-  /// Not currently usable (for example, a transient outage).
+  /// Currently unusable; a transient condition, not a disposal.
   unavailable,
 
-  /// Disposed; resources released and not reusable.
+  /// Disposed; the instance is not reusable.
   disposed,
 }
 
-/// Current runtime status, distinct from the immutable manifest.
+/// The current runtime status of a site instance.
+///
+/// Deliberately coarse: runtime status never replaces operation-level error
+/// handling, and a transient API failure must not mark every capability
+/// unavailable.
 class LiveSiteRuntimeInfo {
-  /// Creates runtime info for [status], with an optional human [message] and
-  /// the time it was last checked.
-  const new({required this.status, this.message, this.lastCheckedAt});
+  /// Builds a status snapshot.
+  const LiveSiteRuntimeInfo({required this.status, this.message, this.lastCheckedAt});
 
-  /// The site's current lifecycle state.
+  /// The lifecycle state.
   final LiveSiteStatus status;
 
-  /// A diagnostic message about the state, when there is one.
+  /// A diagnostic message, when the state needs one.
   final String? message;
 
-  /// When the status was last observed.
+  /// When the status was last refreshed, UTC.
   final DateTime? lastCheckedAt;
 }

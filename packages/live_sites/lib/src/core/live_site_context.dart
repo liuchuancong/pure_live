@@ -1,4 +1,7 @@
-/// A platform (device target) a site declares support for.
+// Constructors spell their class name by convention here; the `.new`
+// shorthand hurts readability more than the lint helps.
+// ignore_for_file: unnecessary_type_name_in_constructor
+/// The host environment a site is initialized for.
 enum LiveTargetPlatform {
   /// Android phones and tablets.
   android,
@@ -19,16 +22,14 @@ enum LiveTargetPlatform {
   linux,
 }
 
-/// The environment a site is initialized into.
+/// The environment a site runs in, handed to `LiveSite.initialize`.
 ///
-/// A site reads this at its `initialize` step to adapt to the running device,
-/// locale and application settings; it must not store it as immutable metadata
-/// and must not assume the locale never changes.
+/// Localization falls back through [locale] to [defaultLocale]; the
+/// composition root owns both. [configuration] carries app-provided options
+/// (proxy, feature flags); authentication credentials never travel here.
 class LiveSiteContext {
-  /// Creates a context for the running [platform] and [locale], with the
-  /// [defaultLocale] used when a resource has no exact match, an optional
-  /// [applicationVersion] and free-form [configuration].
-  const new({
+  /// Hands the environment to `LiveSite.initialize`.
+  const LiveSiteContext({
     required this.platform,
     required this.locale,
     required this.defaultLocale,
@@ -36,18 +37,18 @@ class LiveSiteContext {
     this.configuration = const {},
   });
 
-  /// The device target the site runs on.
+  /// The host platform the site should adapt to.
   final LiveTargetPlatform platform;
 
-  /// The active locale as a BCP 47 tag (for example `zh-CN`).
+  /// The user's locale (BCP 47, `zh-CN` shape).
   final String locale;
 
-  /// The fallback locale when [locale] has no match.
+  /// The application's fallback locale.
   final String defaultLocale;
 
-  /// The application version, when the site needs it.
+  /// The application version, for diagnostics.
   final String? applicationVersion;
 
-  /// Application-supplied settings the site may read to adapt.
+  /// App-provided configuration options; sites read what they declare.
   final Map<String, Object?> configuration;
 }
