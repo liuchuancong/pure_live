@@ -26,6 +26,16 @@ abstract final class NiconicoParser {
   /// Whether [value] is a channel room id (`ch<n>`).
   static bool isChannelRoomId(String value) => RegExp(r'^ch\d+$').hasMatch(value);
 
+  /// Whether [uri] is a seat WebSocket: `wss://a.live2.nicovideo.jp`
+  /// `/[unama/]wsapi/v2/watch/<n>` without port, credentials or fragment.
+  static bool isSeatSocket(Uri uri) =>
+      uri.isScheme('wss') &&
+      uri.host == 'a.live2.nicovideo.jp' &&
+      uri.userInfo.isEmpty &&
+      !uri.hasPort &&
+      !uri.hasFragment &&
+      RegExp(r'^/(?:unama/)?wsapi/v2/watch/[1-9][0-9]*$').hasMatch(uri.path);
+
   /// The area type of the seven tabs.
   static const String areaType = 'recent';
 
@@ -283,9 +293,15 @@ abstract final class NiconicoParser {
   static final RegExp _scriptTag = RegExp(r'<script\b([^>]*)>', caseSensitive: false);
   static final RegExp _attribute = RegExp(r'([\w-]+)\s*=\s*"([^"]*)"');
 
-  /// The watch page → the room. The hydration payload is the single
-  /// `script#embedded-data` element's `data-props` attribute.
-  static ({LiveRoom room, String? socketUrl}) watch(String body, {required String roomId, int status = 200}) {
+  /// The watch page → the room, the seat WebSocket it names (null when the room
+  /// is not watchable) and the `lv…` program id (the playback quality recipe's
+  /// key). The hydration payload is the single `script#embedded-data` element's
+  /// `data-props` attribute.
+  static ({LiveRoom room, String? socketUrl, String programId}) watch(
+    String body, {
+    required String roomId,
+    int status = 200,
+  }) {
     if (status == 404) {
       throw const SiteNotFoundError('niconico watch page: HTTP 404');
     }
@@ -385,6 +401,7 @@ abstract final class NiconicoParser {
         data: socketUrl,
       ),
       socketUrl: socketUrl,
+      programId: programId,
     );
   }
 

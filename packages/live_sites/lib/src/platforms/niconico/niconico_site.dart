@@ -1,17 +1,20 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:live_sites/src/platforms/niconico/danmaku/niconico_session.dart';
+import 'package:live_sites/src/platforms/niconico/niconico_models.dart';
+import 'package:live_sites/src/platforms/niconico/niconico_playback.dart';
 import 'package:live_sites/src/platforms/niconico/parsers/niconico_parser.dart';
 
-/// The Niconico adapter: watch-page program status and access, plus the
-/// recent-programs directory.
+/// The Niconico adapter: watch-page program status and access, the
+/// recent-programs directory, and a watching-seat (WebSocket) for playback.
 ///
-/// Playback is not migrated yet: a Niconico stream is delivered through a
-/// "seat" — a WebSocket session against the relive server whose stream
-/// grants are per-viewer and revocable — so
-/// [getPlayQualities]/[getPlayUrls] throw until the grant side of the seat
-/// lands. The comments ([connect]) use the same seat only to name the comment
-/// server (the parser surfaces its `webSocketUrl`), then read it over HTTP.
+/// Playback opens a seat, reads its `abr` HLS master and hands it back with the
+/// master's path cookies. Because the seat's stream grant is per-viewer and
+/// revocable, only the master is fetchable after the seat closes; the
+/// reference delivers the stream as an *owned input* the player holds the seat
+/// open for (the app layer), which this site adapter does not own. The comments
+/// ([connect]) use the same seat only to name the comment server (the parser
+/// surfaces its `webSocketUrl`), then read it over HTTP.
 final class NiconicoSite
     with SiteRoomGuard
     implements LiveSite, LiveAreaCatalog, LiveDirectoryCapability, LiveDanmakuCapability {
@@ -100,17 +103,77 @@ final class NiconicoSite
     return room.mergeFrom(fresh);
   }
 
+  /// The seat's stream grants are per-viewer and revocable, so this opens a
+  /// seat, reads its `abr` master, and closes it. It offers the master as one
+  /// adaptive quality (the tree's HLS precedent); the reference instead parses
+  /// the master into exact per-variant recipes (a `NiconicoQuality`), which a
+  /// held-seat player selects.
   @override
   Future<List<LivePlayQuality>> getPlayQualities(LiveRoom room) async {
     guardRoom(room);
-    throw UnimplementedError('niconico playback needs the seat WebSocket transport');
+    final watch = await _watchWithSeat(room.roomId);
+    final socket = watch.socketUrl;
+    if (socket == null) {
+      throw SiteStreamUnavailableError('niconico ${room.roomId}: not watchable (offline, restricted or gone)');
+    }
+    final seat = await NiconicoStreamSeat.open(Uri.parse(socket));
+    try {
+      seat.current; // Fails if the seat ended before it granted a stream.
+    } finally {
+      await seat.close();
+    }
+    return const [LivePlayQuality(label: '自动', sort: 1000)];
   }
 
+  /// The seat's master playlist with its path's cookies and the lease until
+  /// they run out. A room the watch page gives no seat for is a
+  /// [SiteStreamUnavailableError]. NOTE: the master and every segment below it
+  /// need the cookies of a *live* seat; this tree hands back a URL, so only the
+  /// master plays while the seat's cookies hold. Full segment playback needs the
+  /// reference's owned-input seat held by the player (the app layer), which this
+  /// site adapter does not own.
   @override
   Future<List<LivePlayLine>> getPlayUrls(LiveRoom room, LivePlayQuality quality) async {
     guardRoom(room);
-    throw UnimplementedError('niconico playback needs the seat WebSocket transport');
+    final watch = await _watchWithSeat(room.roomId);
+    final socket = watch.socketUrl;
+    if (socket == null) {
+      throw SiteStreamUnavailableError('niconico ${room.roomId}: not watchable (offline, restricted or gone)');
+    }
+    final seat = await NiconicoStreamSeat.open(Uri.parse(socket));
+    final NiconicoGrant grant;
+    try {
+      grant = seat.current;
+    } finally {
+      await seat.close();
+    }
+    final uri = grant.uri;
+    final cookie = grant.cookieHeaderFor(uri);
+    return [
+      LivePlayLine(
+        url: uri.toString(),
+        headers: {...NiconicoParser.headers, if (cookie != null && cookie.isNotEmpty) 'cookie': cookie},
+        format: StreamFormat.hls,
+        lease: _grantLease(grant, uri),
+      ),
+    ];
   }
+
+  /// The lease of a grant's master [uri]: it runs out when the earliest cookie
+  /// on the master's path does (and the seat cannot be re-used after), else a
+  /// short fixed window.
+  static PlayLease _grantLease(NiconicoGrant grant, Uri uri) {
+    final cookie = grant.cookieHeaderFor(uri);
+    if (cookie == null || cookie.isEmpty) {
+      return const PlayLease(cutsConnection: true);
+    }
+    return PlayLease(expiresAt: DateTime.now().add(_masterLifetime), cutsConnection: true);
+  }
+
+  /// The window a returned niconico master stays fetchable after its seat
+  /// closes; the cookies' true expiry may be longer, but the tree's URL player
+  /// cannot renew them.
+  static const Duration _masterLifetime = Duration(minutes: 5);
 
   @override
   Future<LiveRoom> refreshLiveStatus(LiveRoom room) async {
@@ -124,7 +187,7 @@ final class NiconicoSite
   /// The watch page and the seat WebSocket it names (null when the room is not
   /// watchable). [connect] needs the seat address; the other paths only the
   /// room.
-  Future<({LiveRoom room, String? socketUrl})> _watchWithSeat(String roomId) async {
+  Future<({LiveRoom room, String? socketUrl, String programId})> _watchWithSeat(String roomId) async {
     final response = await http.send(
       LiveRequest.get(Uri.parse(NiconicoParser.watchUrl(roomId)), headers: NiconicoParser.headers, site: id),
     );
