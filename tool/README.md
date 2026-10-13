@@ -24,7 +24,7 @@ file and line.
 `check_architecture.ps1` runs as a fatal gate in `.github/workflows/architecture.yml`.
 `validate_packages.ps1` runs in the same job as a report (`continue-on-error`) because
 it currently lists 57 pre-existing gaps — packages without `README.md`/`CHANGELOG.md`/`test/`,
-and `pagination_core`, whose name has no `live_` prefix. Flip it to fatal when its
+and `live_pagination`, whose name has no `live_` prefix. Flip it to fatal when its
 count reaches zero; until then a hard gate would only teach people to ignore red CI.
 
 Both scripts used to fail at startup: `$PSScriptRoot` is still empty while a `param()`

@@ -57,8 +57,16 @@ foreach ($packageName in $packageMap.Keys) {
         }
 
         # UI adapters must not depend on each other.
-        if ($packageName -match '^live_uikit_.+') {
-            foreach ($otherAdapter in $packageMap.Keys | Where-Object { $_ -match '^live_uikit_.+' -and $_ -ne $packageName }) {
+        #
+        # A `<adapter>_example` package is the runnable demo of the adapter it
+        # belongs to, and depending on that adapter is its entire purpose - it is
+        # not a style adapter and must not be counted as one. Same exemption as
+        # docs/decisions/0003.
+        if ($packageName -match '^live_uikit_.+' -and $packageName -notmatch '_example$') {
+            $adapters = $packageMap.Keys | Where-Object {
+                $_ -match '^live_uikit_.+' -and $_ -notmatch '_example$' -and $_ -ne $packageName
+            }
+            foreach ($otherAdapter in $adapters) {
                 if ($source -match "package:$([regex]::Escape($otherAdapter))/" -or $pubspec -match "(?m)^\s+$([regex]::Escape($otherAdapter))\s*:") {
                     $issues.Add("UI adapter '$packageName' depends on another adapter '$otherAdapter'.")
                 }

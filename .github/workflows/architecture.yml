@@ -33,6 +33,19 @@ jobs:
       # could not pass its own analyzer.
       - name: Generate code
         run: dart run melos run gen
+      # The generators do not format what they emit, and generated files must sit
+      # beside their sources, so a workspace-wide format check would otherwise fail
+      # on code nobody wrote (verified: a freshly generated .g.dart is not
+      # formatter-clean). Formatting only the generated output keeps the check below
+      # meaningful for handwritten files rather than teaching people to ignore a red CI.
+      - name: Format generated output
+        shell: pwsh
+        run: |
+          $paths = (Get-ChildItem packages -Recurse -Include *.g.dart,*.freezed.dart -File).FullName
+          if ($paths) {
+            dart format $paths | Out-Null
+          }
+          Write-Host "Formatted $(@($paths).Count) generated files."
       - name: Architecture guard
         # The guard that exists and passes: dependency direction, UI-core boundary,
         # adapter isolation. It replaces a step pointing at a file that is not in

@@ -59,6 +59,12 @@ foreach ($relativePath in $workspacePaths) {
     }
     $name = $Matches[1]
 
+    # `example/` is a reserved directory name in the pub package format: publishing
+    # tooling and pub.dev look for that path, so it cannot be renamed to satisfy the
+    # directory-name rule. An example is also not a deliverable that consumers read a
+    # changelog for or ship tests into - it is a runnable demo. See docs/decisions/0003.
+    $isExamplePackage = $relativePath -match '(^|/)example$'
+
     if ($name -notmatch '^live_[a-z0-9]+(?:_[a-z0-9]+)*$' -and $relativePath -notmatch '^apps/') {
         $issues.Add("Package name '$name' does not follow live_snake_case: $relativePath")
     }
@@ -69,7 +75,7 @@ foreach ($relativePath in $workspacePaths) {
     }
 
     $actualName = Split-Path $packagePath -Leaf
-    if ($actualName -ne $name) {
+    if (-not $isExamplePackage -and $actualName -ne $name) {
         $issues.Add("Directory name '$actualName' does not match pubspec name '$name': $relativePath")
     }
 
@@ -77,7 +83,11 @@ foreach ($relativePath in $workspacePaths) {
         $issues.Add("Missing 'resolution: workspace': $relativePath/pubspec.yaml")
     }
 
-    foreach ($required in @("README.md", "CHANGELOG.md", "analysis_options.yaml", "lib", "test")) {
+    $requiredItems = @("README.md", "CHANGELOG.md", "analysis_options.yaml", "lib", "test")
+    if ($isExamplePackage) {
+        $requiredItems = @("README.md", "analysis_options.yaml")
+    }
+    foreach ($required in $requiredItems) {
         if (-not (Test-Path (Join-Path $packagePath $required))) {
             $issues.Add("Missing required item '$required': $relativePath")
         }

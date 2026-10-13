@@ -70,26 +70,26 @@
     },
     {
       "ruleId": "test_only_used",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|pageSizeFor|method",
-      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|pageSizeFor|method",
+      "file": "packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart",
       "message": "Public method 'PaginationViewConfig.pageSizeFor' is only referenced from test code."
     },
     {
       "ruleId": "test_only_used",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|pageSizeOptionsIncluding|method",
-      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|pageSizeOptionsIncluding|method",
+      "file": "packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart",
       "message": "Public method 'PaginationViewConfig.pageSizeOptionsIncluding' is only referenced from test code."
     },
     {
       "ruleId": "test_only_used",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\controller\\paged_controller.dart|PagedController|refreshFromStart|method",
-      "file": "packages\\pagination_core\\lib\\src\\controller\\paged_controller.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\controller\\paged_controller.dart|PagedController|refreshFromStart|method",
+      "file": "packages\\live_pagination\\lib\\src\\controller\\paged_controller.dart",
       "message": "Public method 'PagedController.refreshFromStart' is only referenced from test code."
     },
     {
       "ruleId": "test_only_used",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\math\\page_math.dart|PageMath|slice|method",
-      "file": "packages\\pagination_core\\lib\\src\\math\\page_math.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\math\\page_math.dart|PageMath|slice|method",
+      "file": "packages\\live_pagination\\lib\\src\\math\\page_math.dart",
       "message": "Public method 'PageMath.slice' is only referenced from test code."
     },
     {
@@ -940,26 +940,26 @@
     },
     {
       "ruleId": "unused_element",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|shouldHideJumpButtons|method",
-      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|shouldHideJumpButtons|method",
+      "file": "packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart",
       "message": "Unused public method 'PaginationViewConfig.shouldHideJumpButtons'."
     },
     {
       "ruleId": "unused_element",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\math\\page_math.dart|PageMath|isValidPage|method",
-      "file": "packages\\pagination_core\\lib\\src\\math\\page_math.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\math\\page_math.dart|PageMath|isValidPage|method",
+      "file": "packages\\live_pagination\\lib\\src\\math\\page_math.dart",
       "message": "Unused public method 'PageMath.isValidPage'."
     },
     {
       "ruleId": "unused_element",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\state\\infinite_state.dart|InfiniteState|isUnloaded|getter",
-      "file": "packages\\pagination_core\\lib\\src\\state\\infinite_state.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\state\\infinite_state.dart|InfiniteState|isUnloaded|getter",
+      "file": "packages\\live_pagination\\lib\\src\\state\\infinite_state.dart",
       "message": "Unused public getter 'InfiniteState.isUnloaded'."
     },
     {
       "ruleId": "unused_element",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\state\\paged_state.dart|PagedState|isUnloaded|getter",
-      "file": "packages\\pagination_core\\lib\\src\\state\\paged_state.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\state\\paged_state.dart|PagedState|isUnloaded|getter",
+      "file": "packages\\live_pagination\\lib\\src\\state\\paged_state.dart",
       "message": "Unused public getter 'PagedState.isUnloaded'."
     },
     {
@@ -1186,8 +1186,8 @@
     },
     {
       "ruleId": "unused_file",
-      "stableId": "file|pagination_core|<root>/packages\\pagination_core\\example\\pagination_demo.dart",
-      "file": "packages\\pagination_core\\example\\pagination_demo.dart",
+      "stableId": "file|live_pagination|<root>/packages\\live_pagination\\example\\pagination_demo.dart",
+      "file": "packages\\live_pagination\\example\\pagination_demo.dart",
       "message": "File is never imported, parted, or exported."
     },
     {
@@ -2194,122 +2194,122 @@
     },
     {
       "ruleId": "unused_parameter_optional",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:backToBottomDistanceThreshold",
-      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:backToBottomDistanceThreshold",
+      "file": "packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart",
       "message": "Optional parameter 'backToBottomDistanceThreshold' of 'PaginationViewConfig.copyWith' is never passed at any call site."
     },
     {
       "ruleId": "unused_parameter_optional",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:backToTopOffsetThreshold",
-      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:backToTopOffsetThreshold",
+      "file": "packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart",
       "message": "Optional parameter 'backToTopOffsetThreshold' of 'PaginationViewConfig.copyWith' is never passed at any call site."
     },
     {
       "ruleId": "unused_parameter_optional",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:desktopBreakpointWidth",
-      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:desktopBreakpointWidth",
+      "file": "packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart",
       "message": "Optional parameter 'desktopBreakpointWidth' of 'PaginationViewConfig.copyWith' is never passed at any call site."
     },
     {
       "ruleId": "unused_parameter_optional",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:desktopPageSize",
-      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:desktopPageSize",
+      "file": "packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart",
       "message": "Optional parameter 'desktopPageSize' of 'PaginationViewConfig.copyWith' is never passed at any call site."
     },
     {
       "ruleId": "unused_parameter_optional",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:jumpAnimationBaseMs",
-      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:jumpAnimationBaseMs",
+      "file": "packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart",
       "message": "Optional parameter 'jumpAnimationBaseMs' of 'PaginationViewConfig.copyWith' is never passed at any call site."
     },
     {
       "ruleId": "unused_parameter_optional",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:jumpAnimationMaxMs",
-      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:jumpAnimationMaxMs",
+      "file": "packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart",
       "message": "Optional parameter 'jumpAnimationMaxMs' of 'PaginationViewConfig.copyWith' is never passed at any call site."
     },
     {
       "ruleId": "unused_parameter_optional",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:jumpAnimationMinMs",
-      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:jumpAnimationMinMs",
+      "file": "packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart",
       "message": "Optional parameter 'jumpAnimationMinMs' of 'PaginationViewConfig.copyWith' is never passed at any call site."
     },
     {
       "ruleId": "unused_parameter_optional",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:jumpAnimationMsPerPx",
-      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:jumpAnimationMsPerPx",
+      "file": "packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart",
       "message": "Optional parameter 'jumpAnimationMsPerPx' of 'PaginationViewConfig.copyWith' is never passed at any call site."
     },
     {
       "ruleId": "unused_parameter_optional",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:mobilePageSize",
-      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:mobilePageSize",
+      "file": "packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart",
       "message": "Optional parameter 'mobilePageSize' of 'PaginationViewConfig.copyWith' is never passed at any call site."
     },
     {
       "ruleId": "unused_parameter_optional",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:pageSizeOptions",
-      "file": "packages\\pagination_core\\lib\\src\\config\\pagination_view_config.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart|PaginationViewConfig|copyWith|method|optparam:pageSizeOptions",
+      "file": "packages\\live_pagination\\lib\\src\\config\\pagination_view_config.dart",
       "message": "Optional parameter 'pageSizeOptions' of 'PaginationViewConfig.copyWith' is never passed at any call site."
     },
     {
       "ruleId": "unused_parameter_optional",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\state\\infinite_state.dart|InfiniteState|copyWith|method|optparam:hasMore",
-      "file": "packages\\pagination_core\\lib\\src\\state\\infinite_state.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\state\\infinite_state.dart|InfiniteState|copyWith|method|optparam:hasMore",
+      "file": "packages\\live_pagination\\lib\\src\\state\\infinite_state.dart",
       "message": "Optional parameter 'hasMore' of 'InfiniteState.copyWith' is never passed at any call site."
     },
     {
       "ruleId": "unused_parameter_optional",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\state\\infinite_state.dart|InfiniteState|copyWith|method|optparam:items",
-      "file": "packages\\pagination_core\\lib\\src\\state\\infinite_state.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\state\\infinite_state.dart|InfiniteState|copyWith|method|optparam:items",
+      "file": "packages\\live_pagination\\lib\\src\\state\\infinite_state.dart",
       "message": "Optional parameter 'items' of 'InfiniteState.copyWith' is never passed at any call site."
     },
     {
       "ruleId": "unused_parameter_optional",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\state\\infinite_state.dart|InfiniteState|copyWith|method|optparam:pageSize",
-      "file": "packages\\pagination_core\\lib\\src\\state\\infinite_state.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\state\\infinite_state.dart|InfiniteState|copyWith|method|optparam:pageSize",
+      "file": "packages\\live_pagination\\lib\\src\\state\\infinite_state.dart",
       "message": "Optional parameter 'pageSize' of 'InfiniteState.copyWith' is never passed at any call site."
     },
     {
       "ruleId": "unused_parameter_optional",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\state\\infinite_state.dart|InfiniteState|copyWith|method|optparam:totalCount",
-      "file": "packages\\pagination_core\\lib\\src\\state\\infinite_state.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\state\\infinite_state.dart|InfiniteState|copyWith|method|optparam:totalCount",
+      "file": "packages\\live_pagination\\lib\\src\\state\\infinite_state.dart",
       "message": "Optional parameter 'totalCount' of 'InfiniteState.copyWith' is never passed at any call site."
     },
     {
       "ruleId": "unused_parameter_optional",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\state\\paged_state.dart|PagedState|copyWith|method|optparam:items",
-      "file": "packages\\pagination_core\\lib\\src\\state\\paged_state.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\state\\paged_state.dart|PagedState|copyWith|method|optparam:items",
+      "file": "packages\\live_pagination\\lib\\src\\state\\paged_state.dart",
       "message": "Optional parameter 'items' of 'PagedState.copyWith' is never passed at any call site."
     },
     {
       "ruleId": "unused_parameter_optional",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\state\\paged_state.dart|PagedState|copyWith|method|optparam:pageSize",
-      "file": "packages\\pagination_core\\lib\\src\\state\\paged_state.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\state\\paged_state.dart|PagedState|copyWith|method|optparam:pageSize",
+      "file": "packages\\live_pagination\\lib\\src\\state\\paged_state.dart",
       "message": "Optional parameter 'pageSize' of 'PagedState.copyWith' is never passed at any call site."
     },
     {
       "ruleId": "unused_parameter_optional",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\lib\\src\\state\\paged_state.dart|PagedState|copyWith|method|optparam:totalCount",
-      "file": "packages\\pagination_core\\lib\\src\\state\\paged_state.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\lib\\src\\state\\paged_state.dart|PagedState|copyWith|method|optparam:totalCount",
+      "file": "packages\\live_pagination\\lib\\src\\state\\paged_state.dart",
       "message": "Optional parameter 'totalCount' of 'PagedState.copyWith' is never passed at any call site."
     },
     {
       "ruleId": "unused_parameter_optional",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\test\\paged_controller_test.dart||countingLoader|function|optparam:failPages",
-      "file": "packages\\pagination_core\\test\\paged_controller_test.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\test\\paged_controller_test.dart||countingLoader|function|optparam:failPages",
+      "file": "packages\\live_pagination\\test\\paged_controller_test.dart",
       "message": "Optional parameter 'failPages' of 'countingLoader' is never passed at any call site."
     },
     {
       "ruleId": "unused_parameter_optional",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\test\\paged_controller_test.dart||countingLoader|function|optparam:hasMoreFor",
-      "file": "packages\\pagination_core\\test\\paged_controller_test.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\test\\paged_controller_test.dart||countingLoader|function|optparam:hasMoreFor",
+      "file": "packages\\live_pagination\\test\\paged_controller_test.dart",
       "message": "Optional parameter 'hasMoreFor' of 'countingLoader' is never passed at any call site."
     },
     {
       "ruleId": "unused_parameter_optional",
-      "stableId": "pagination_core|<root>/packages\\pagination_core\\test\\paged_controller_test.dart||countingLoader|function|optparam:reportTotalCount",
-      "file": "packages\\pagination_core\\test\\paged_controller_test.dart",
+      "stableId": "live_pagination|<root>/packages\\live_pagination\\test\\paged_controller_test.dart||countingLoader|function|optparam:reportTotalCount",
+      "file": "packages\\live_pagination\\test\\paged_controller_test.dart",
       "message": "Optional parameter 'reportTotalCount' of 'countingLoader' is never passed at any call site."
     },
     {
