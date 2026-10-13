@@ -5,6 +5,8 @@ library;
 
 export 'src/model/appearance_preferences.dart';
 export 'src/model/danmaku_preferences.dart';
+export 'src/model/desktop_preferences.dart';
+export 'src/model/desktop_shell_mapping.dart';
 export 'src/model/iptv_preferences.dart';
 export 'src/model/library_preferences.dart';
 export 'src/model/playback_preferences.dart';
