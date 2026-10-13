@@ -56,16 +56,64 @@ final class KuaishouSite
 
   /// The rooms of one game area.
   ///
-  /// Deliberately not migrated yet: the board listing's path segment is the
-  /// board the site groups a game under, and the game ids the category
-  /// endpoint hands out do not map onto it one-to-one — guessing the path
-  /// produced a 404 for every area, which is worse than saying so. The home
-  /// listing and streamer search cover browsing until that mapping is read
-  /// from the site's own page.
+  /// Ids shorter than 7 characters are game areas (`gameboard`), the rest
+  /// `non-gameboard`, 20 a page. A non-gameboard page after the first sends the
+  /// previous page's `cursor`; a page not reached yet is walked to from page 1,
+  /// and a page past the last is empty without a request. A room already listed
+  /// on an earlier page since page 1 was last read (or earlier on this page) is
+  /// left out, because the live ranking shifts between requests.
   @override
   Future<LivePage<LiveRoom>> getCategoryRooms(LiveArea area, {int page = 1}) {
-    throw UnimplementedError('kuaishou board listings land with the board-path migration');
+    final id = area.id.trim();
+    if (id.isEmpty) {
+      return Future.value(const LivePage<LiveRoom>(items: []));
+    }
+    return _areaRooms(id, page < 1 ? 1 : page);
   }
+
+  Future<LivePage<LiveRoom>> _areaRooms(String areaId, int page) async {
+    var cursor = '';
+    var listed = const <String>{};
+    if (page > 1) {
+      final key = '$areaId#$page';
+      if (!_areaPages.containsKey(key)) {
+        await _areaRooms(areaId, page - 1);
+      }
+      final stored = _areaPages[key];
+      if (stored == null) {
+        return const LivePage<LiveRoom>(items: []);
+      }
+      cursor = stored.cursor;
+      listed = stored.listed;
+    }
+    final board = areaId.length < 7 ? 'gameboard' : 'non-gameboard';
+    final root = await _json('/live_api/$board/list', {
+      'filterType': '0',
+      'pageSize': '20',
+      'gameId': areaId,
+      'page': '$page',
+      if (cursor.isNotEmpty) 'cursor': cursor,
+    });
+    final result = KuaishouParser.areaRooms(root, what: '$board/list');
+    final seen = {...listed};
+    final rooms = [
+      for (final room in result.rooms)
+        if (seen.add(room.identity)) room,
+    ];
+    final next = '$areaId#${page + 1}';
+    _areaPages
+      ..remove(next)
+      ..[next] = result.hasMore ? (cursor: result.cursor ?? '', listed: Set.unmodifiable(seen)) : null;
+    if (_areaPages.length > _areaPageLimit) {
+      _areaPages.remove(_areaPages.keys.first);
+    }
+    return LivePage<LiveRoom>(items: rooms, hasMore: result.hasMore, nextPage: result.hasMore ? page + 1 : null);
+  }
+
+  /// The board cursors kept (the oldest is dropped first), by `areaId#page`.
+  final Map<String, ({String cursor, Set<String> listed})?> _areaPages = {};
+
+  static const int _areaPageLimit = 256;
 
   /// The game categories of the site's own boards, which is what a caller
   /// browses by before it has an area to ask for.

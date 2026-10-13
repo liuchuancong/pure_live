@@ -98,6 +98,41 @@ abstract final class KuaishouParser {
     return LivePage<LiveRoom>(items: rooms, hasMore: hasMore);
   }
 
+  /// `live_api/gameboard/list` and `non-gameboard/list`: the live rooms of one
+  /// area page, the paging the server reports (`hasMore`), and the `cursor` the
+  /// next non-gameboard page must send. Each card is the same shape the home
+  /// listing reads; a board card carries its start (`statrtTime`, the
+  /// platform's misspelling; `startTime` is accepted too) and, when it lists a
+  /// stream, no restriction.
+  static ({List<LiveRoom> rooms, bool hasMore, String? cursor}) areaRooms(
+    Map<String, Object?> root, {
+    required String what,
+  }) {
+    final data = listPayload(root, what: what);
+    final rooms = <LiveRoom>[];
+    for (final card in SiteJson.list(data['list'])) {
+      if (card is! Map<String, Object?>) {
+        continue;
+      }
+      final room = liveCard(card);
+      if (room == null) {
+        continue;
+      }
+      rooms.add(
+        room.copyWith(
+          startedAt: _epochMilliseconds(card['statrtTime'] ?? card['startTime']),
+          restriction: _playable(card['playUrls']) ? LiveRestriction.none : null,
+        ),
+      );
+    }
+    final cursor = SiteText.text(data['cursor']);
+    return (
+      rooms: rooms,
+      hasMore: rooms.isNotEmpty && (SiteCounts.flag(data['hasMore']) ?? false),
+      cursor: cursor.isEmpty ? null : cursor,
+    );
+  }
+
   /// A search answer's rows → the streamers it names, as anchors.
   ///
   /// The same cards the room reading maps, read as people: `id` is the
@@ -435,5 +470,31 @@ abstract final class KuaishouParser {
   static String? _cover(Object? value) {
     final url = value?.toString() ?? '';
     return url.isEmpty ? null : (url.startsWith('//') ? 'https:$url' : url);
+  }
+
+  /// A time in epoch milliseconds; null for 0, negatives, values that are not
+  /// milliseconds (before 2001 or after 2286, such as a time in seconds) and
+  /// anything that is not an integer.
+  static DateTime? _epochMilliseconds(Object? value) {
+    final milliseconds = SiteCounts.integer(value);
+    if (milliseconds == null || milliseconds < 1000000000000 || milliseconds >= 10000000000000) {
+      return null;
+    }
+    return DateTime.fromMillisecondsSinceEpoch(milliseconds, isUtc: true);
+  }
+
+  /// Whether the [node] `playUrls` field names a stream the player could open:
+  /// any nested object with a `url` that is http(s). A card with none leaves
+  /// its restriction unknown, since a list may omit streams and only the room
+  /// page decides.
+  static bool _playable(Object? node) {
+    if (node is List) {
+      return node.any(_playable);
+    }
+    if (node is! Map<String, Object?>) {
+      return false;
+    }
+    final url = node['url']?.toString().trim() ?? '';
+    return url.startsWith('http') || node.values.any(_playable);
   }
 }
