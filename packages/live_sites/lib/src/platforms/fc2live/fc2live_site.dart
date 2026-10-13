@@ -112,9 +112,50 @@ final class Fc2LiveSite
   List<({LiveRoom room, int categoryId})>? _channels;
   DateTime? _channelsAt;
 
+  /// 3.x's search, one snapshot: a channel id or link is that channel (the
+  /// member answer, page 1 only); any other keyword filters the channel
+  /// snapshot by name or title (case ignored) and slices it at the site's page
+  /// size. A blank keyword or a page below one gives nothing without a request;
+  /// a later page reuses the first's snapshot while it is young.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('fc2live search lands with its migration');
+    const size = Fc2LiveParser.directoryPageSize;
+    final query = keyword.trim();
+    if (query.isEmpty || page < 1) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final exact = Fc2LiveParser.channelId(query);
+    if (exact != null) {
+      if (page != 1) {
+        return const LivePage<LiveRoom>(items: []);
+      }
+      try {
+        return LivePage<LiveRoom>(items: [(await _member(exact)).room]);
+      } on SiteNotFoundError {
+        return const LivePage<LiveRoom>(items: []);
+      }
+    }
+    final channels = await _snapshot(fresh: page == 1);
+    final needle = query.toLowerCase();
+    final seen = <String>{};
+    final matching = [
+      for (final channel in channels)
+        if ((channel.room.nick.toLowerCase().contains(needle) || channel.room.title.toLowerCase().contains(needle)) &&
+            seen.add(channel.room.roomId))
+          channel.room,
+    ];
+    final start = (page - 1) * size;
+    if (start >= matching.length) {
+      return LivePage<LiveRoom>(items: const [], totalCount: matching.length);
+    }
+    final end = (start + size).clamp(start, matching.length);
+    final hasMore = end < matching.length;
+    return LivePage<LiveRoom>(
+      items: matching.sublist(start, end),
+      hasMore: hasMore,
+      nextPage: hasMore ? page + 1 : null,
+      totalCount: matching.length,
+    );
   }
 
   @override
