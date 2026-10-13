@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:ui' show Rect, Size;
 
-import 'package:live_playback/src/config/playback_config.dart';
+import 'package:live_playback/src/config/playback_settings.dart';
 import 'package:live_playback/src/model/layout_strategy.dart';
 import 'package:live_playback/src/presentation/window_geometry.dart';
 import 'package:live_playback/src/presentation/window_preference_manager.dart';
@@ -28,7 +28,8 @@ import 'package:rxdart/rxdart.dart';
 /// the same player. There is one now, and it lives in the kernel.
 final class PlaybackPresentation {
   /// Creates the presentation layer.
-  new({required this.service, required this.preferences, this.config = PlaybackConfig.defaults}) {
+  new({required this.service, required this.preferences, PlaybackSettings? settings})
+    : settings = settings ?? PlaybackSettings() {
     _modeSub = service.state.map((state) => state.mode).listen((mode) {
       if (_lastMode != mode) {
         _lastMode = mode;
@@ -44,7 +45,10 @@ final class PlaybackPresentation {
   final WindowPreferenceManager preferences;
 
   /// What the viewer has allowed and what device this is.
-  final PlaybackConfig config;
+  ///
+  /// Read live: turning PiP off while a video plays changes whether the next
+  /// backgrounding may float the picture.
+  final PlaybackSettings settings;
 
   late final StreamSubscription<PresentationMode> _modeSub;
 
@@ -73,7 +77,7 @@ final class PlaybackPresentation {
   bool get isFloating => mode.isFloating;
 
   /// The device profile the layout decisions use.
-  DeviceProfile get deviceProfile => config.deviceProfile;
+  DeviceProfile get deviceProfile => settings.deviceProfile;
 
   /// Whether the platform can do system PiP at all.
   ///
@@ -86,10 +90,10 @@ final class PlaybackPresentation {
   bool get supportsFloating => service.current.capabilities.canFloating;
 
   /// Whether the viewer's configuration and the platform agree on PiP.
-  bool get canEnterPip => config.allowPictureInPicture && supportsPip;
+  bool get canEnterPip => settings.allowPictureInPicture && supportsPip;
 
   /// Whether the viewer's configuration and the platform agree on floating.
-  bool get canEnterFloating => config.allowFloatingWindow && supportsFloating;
+  bool get canEnterFloating => settings.allowFloatingWindow && supportsFloating;
 
   /// How a video surface should be laid out for [orientation].
   LayoutStrategy layoutStrategyFor(VideoOrientation orientation) {

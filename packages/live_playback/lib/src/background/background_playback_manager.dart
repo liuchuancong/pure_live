@@ -1,14 +1,14 @@
 import 'dart:async';
 
-import 'package:live_playback/src/config/playback_config.dart';
+import 'package:live_playback/src/config/playback_settings.dart';
 import 'package:live_playback/src/coordinator/playback_session_coordinator.dart';
 import 'package:live_playback/src/presentation/playback_presentation.dart';
 import 'package:rxdart/rxdart.dart';
 
 /// What happens to playback when the app stops being visible.
 ///
-/// The policy is the viewer's, expressed in [PlaybackConfig], and the order is
-/// deliberate:
+/// The policy is the viewer's, read live from [PlaybackSettings], and the order
+/// is deliberate:
 ///
 /// 1. **PiP, when allowed** — the viewer asked to keep *watching*, and the
 ///    platform can float the picture. This wins over audio-only because it is
@@ -25,7 +25,8 @@ import 'package:rxdart/rxdart.dart';
 /// *viewer* opened is left alone.
 final class BackgroundPlaybackManager {
   /// Creates the manager.
-  new({required this.coordinator, required this.presentation, this.config = PlaybackConfig.defaults});
+  new({required this.coordinator, required this.presentation, PlaybackSettings? settings})
+    : settings = settings ?? PlaybackSettings();
 
   /// The session registry.
   final PlaybackSessionCoordinator coordinator;
@@ -33,8 +34,12 @@ final class BackgroundPlaybackManager {
   /// The presentation policy (mode transitions, PiP support).
   final PlaybackPresentation presentation;
 
-  /// What the viewer allows.
-  final PlaybackConfig config;
+  /// What the viewer allows, read at the moment of the decision.
+  ///
+  /// Read here rather than captured at construction because these are settings
+  /// the viewer flips while a video is playing, and the next backgrounding has
+  /// to obey the new answer.
+  final PlaybackSettings settings;
 
   final BehaviorSubject<bool> _backgrounded = BehaviorSubject<bool>.seeded(false);
 
@@ -70,14 +75,14 @@ final class BackgroundPlaybackManager {
       return;
     }
 
-    if (config.allowPictureInPicture && presentation.canEnterPip) {
+    if (settings.allowPictureInPicture && presentation.canEnterPip) {
       _openedPip = await presentation.enterPip();
       if (_openedPip) {
         return;
       }
     }
 
-    if (!config.allowBackgroundPlayback) {
+    if (!settings.allowBackgroundPlayback) {
       await session.pause();
       return;
     }
@@ -108,7 +113,7 @@ final class BackgroundPlaybackManager {
       return;
     }
 
-    if (!session.isPlaying && !config.allowBackgroundPlayback) {
+    if (!session.isPlaying && !settings.allowBackgroundPlayback) {
       // Nothing automatic: the viewer paused by leaving, so coming back does
       // not start playback behind their back.
       return;

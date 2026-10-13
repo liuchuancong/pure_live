@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:live_playback/src/config/playback_config.dart';
+import 'package:live_playback/src/config/playback_settings.dart';
 import 'package:live_playback/src/model/content_type.dart';
 import 'package:live_playback/src/model/playback_metadata.dart';
 import 'package:live_playback/src/session/playback_session.dart';
@@ -26,13 +26,13 @@ import 'package:rxdart/rxdart.dart';
 /// This coordinator only decides which of our own windows may be heard.
 final class PlaybackSessionCoordinator {
   /// Creates a session coordinator.
-  new({required this.kernel, this.config = PlaybackConfig.defaults});
+  new({required this.kernel, PlaybackSettings? settings}) : settings = settings ?? PlaybackSettings();
 
   /// The media kernel every session is created from.
   final PlayerKernel kernel;
 
-  /// Global configuration (device profile, audio defaults).
-  final PlaybackConfig config;
+  /// The viewer's settings; audio defaults are read when a session opens.
+  final PlaybackSettings settings;
 
   final Map<String, PlaybackSession> _sessions = <String, PlaybackSession>{};
 
@@ -94,8 +94,8 @@ final class PlaybackSessionCoordinator {
           playerConfig ??
           PlayerConfig.defaults.copyWith(
             autoPlay: autoPlay,
-            volume: config.defaultVolume,
-            playbackRate: config.defaultPlaybackRate,
+            volume: settings.defaultVolume,
+            playbackRate: settings.defaultPlaybackRate,
           ),
     );
 

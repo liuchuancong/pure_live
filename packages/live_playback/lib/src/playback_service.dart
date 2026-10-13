@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:live_playback/src/background/background_playback_manager.dart';
-import 'package:live_playback/src/config/playback_config.dart';
+import 'package:live_playback/src/config/playback_settings.dart';
 import 'package:live_playback/src/config/window_preference_store.dart';
 import 'package:live_playback/src/coordinator/playback_session_coordinator.dart';
 import 'package:live_playback/src/feed/feed_playback_manager.dart';
@@ -32,8 +32,10 @@ import 'package:rxdart/rxdart.dart';
 /// What the host supplies, and why each is the host's call:
 ///
 /// - the [PlayerKernel]: the app owns adapters and the audio driver;
-/// - [PlaybackConfig]: device profile, whether background playback, PiP and
-///   the floating window are allowed — the viewer's settings, not ours;
+/// - [PlaybackSettings] (optional): device profile and whether background
+///   playback, PiP and the floating window are allowed — the viewer's settings,
+///   not ours. Live: flip one while a video plays and the next decision obeys
+///   the new answer;
 /// - `PresentationAdapter` (optional, from `media_core_presentation` /
 ///   `media_core_pip` / `media_core_floating`): the platform mechanics behind
 ///   fullscreen, PiP and the floating window. Without one, the stack reports
@@ -53,9 +55,10 @@ final class PlaybackService {
     PresentationAdapter? presentationAdapter,
     MediaSessionDriver? mediaSession,
     WindowPreferenceStore? windowStore,
-    this.config = PlaybackConfig.defaults,
-  }) : coordinator = PlaybackSessionCoordinator(kernel: kernel, config: config),
+    PlaybackSettings? settings,
+  }) : settings = settings ?? PlaybackSettings(),
        notifications = PlaybackNotifications(driver: mediaSession) {
+    coordinator = PlaybackSessionCoordinator(kernel: kernel, settings: this.settings);
     this.presentationController = presentationController ?? PresentationController();
     presentation = PlaybackPresentation(
       service: PresentationService(
@@ -63,11 +66,15 @@ final class PlaybackService {
         adapter: presentationAdapter ?? InPlacePresentationAdapter(),
       ),
       preferences: WindowPreferenceManager(store: windowStore ?? EphemeralWindowPreferenceStore()),
-      config: config,
+      settings: this.settings,
     );
     feed = FeedPlaybackManager(coordinator: coordinator);
     multiView = MultiViewManager(coordinator: coordinator);
-    background = BackgroundPlaybackManager(coordinator: coordinator, presentation: presentation, config: config);
+    background = BackgroundPlaybackManager(
+      coordinator: coordinator,
+      presentation: presentation,
+      settings: this.settings,
+    );
     orchestrator = PlaybackOrchestrator(
       coordinator: coordinator,
       presentation: presentation,
@@ -79,16 +86,20 @@ final class PlaybackService {
       _watchSessions();
       _publishState();
     });
+    this.settings.addListener(_onSettingsChanged);
     _primarySub = coordinator.currentSessionIdStream.listen((_) => _publishState());
     _modeSub = presentation.modeChanges.listen((_) => _publishState());
     _backgroundSub = background.backgroundedChanges.listen((_) => _publishState());
   }
 
   /// What the viewer allows and what device this is.
-  final PlaybackConfig config;
+  ///
+  /// Live settings: replacing [PlaybackSettings.config] while a video plays is
+  /// supported and republishes the state snapshot.
+  final PlaybackSettings settings;
 
   /// The session registry: every open window, who owns the audio.
-  final PlaybackSessionCoordinator coordinator;
+  late final PlaybackSessionCoordinator coordinator;
 
   /// Presentation policy and window geometry memory.
   late final PlaybackPresentation presentation;
@@ -270,6 +281,13 @@ final class PlaybackService {
     }
   }
 
+  /// Republishes when the viewer changes a setting.
+  ///
+  /// A settings change does not have to touch the picture — turning PiP off
+  /// while a video plays changes the *next* decision — but the snapshot the UI
+  /// renders includes the settings, so it has to move with them.
+  void _onSettingsChanged() => _publishState();
+
   void _publishState() {
     final sessions = <String, PlaybackSessionSnapshot>{
       for (final entry in coordinator.sessions.entries)
@@ -283,7 +301,7 @@ final class PlaybackService {
         overlaySessionId: orchestrator.overlaySessionId,
         presentationMode: presentation.mode,
         presentationTransitioning: presentation.isTransitioning,
-        deviceProfile: config.deviceProfile,
+        deviceProfile: settings.deviceProfile,
         isBackgrounded: background.isBackgrounded,
         allMuted: sessions.isNotEmpty && sessions.values.every((session) => session.muted),
         allDanmakuDisabled: !coordinator.danmakuEnabled,
@@ -294,6 +312,7 @@ final class PlaybackService {
   /// Releases every coordinator, session and stream.
   Future<void> dispose() async {
     await _sessionSub?.cancel();
+    settings.removeListener(_onSettingsChanged);
     await _primarySub?.cancel();
     await _modeSub?.cancel();
     await _backgroundSub?.cancel();

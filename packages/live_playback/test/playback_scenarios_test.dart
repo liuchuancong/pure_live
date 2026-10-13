@@ -38,7 +38,7 @@ void main() {
       presentationAdapter: InPlacePresentationAdapter(
         initialCapabilities: PresentationCapabilities(pip: pip, floating: floating),
       ),
-      config: config,
+      settings: PlaybackSettings(config),
     );
   }
 
@@ -92,6 +92,19 @@ void main() {
       await service.setVisible(isVisible: false);
 
       expect(session.isPlaying, isFalse);
+    });
+
+    test('a setting changed while playing applies to the next decision', () async {
+      final service = serviceWith();
+      final session = await openLive(service, 'room-1');
+
+      // The viewer turns PiP off in the settings page while the video plays.
+      service.settings.update(allowPictureInPicture: false);
+
+      await service.setVisible(isVisible: false);
+
+      expect(service.state.presentationMode, isNot(PresentationMode.pip));
+      expect(session.isPlaying, isTrue, reason: 'background audio is still allowed');
     });
 
     test('returns from the background by closing the PiP it opened', () async {

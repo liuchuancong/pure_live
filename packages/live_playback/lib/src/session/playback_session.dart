@@ -114,6 +114,10 @@ final class PlaybackSession {
 
   bool _thumbnailMode = false;
 
+  /// Whether [dispose] has run. Any event arriving after it is a race the
+  /// teardown already decided to ignore.
+  bool _disposed = false;
+
   /// Whether this session's sound is muted.
   bool get muted => _mutedSubject.value;
 
@@ -171,6 +175,10 @@ final class PlaybackSession {
 
   /// Mutes or unmutes.
   Future<void> setMute({required bool muted}) async {
+    if (_disposed) {
+      return;
+    }
+
     _mutedSubject.add(muted);
     await handle.setMute(muted);
   }
@@ -186,7 +194,7 @@ final class PlaybackSession {
   /// resuming a stale buffer would replay what the viewer already missed.
   Future<void> refresh() async {
     final source = handle.source;
-    if (source == null) {
+    if (_disposed || source == null) {
       return;
     }
 
@@ -212,6 +220,10 @@ final class PlaybackSession {
   /// [enabled] is remembered independently of the presentation mode, so
   /// leaving PiP restores whatever the viewer had chosen.
   void setDanmakuEnabled({required bool enabled}) {
+    if (_disposed) {
+      return;
+    }
+
     _danmakuWanted.add(enabled);
     _emitDanmakuEnabled();
   }
@@ -245,6 +257,10 @@ final class PlaybackSession {
   }
 
   void _emitDanmakuEnabled() {
+    if (_disposed) {
+      return;
+    }
+
     final enabled = _danmakuWanted.value && !_danmakuSuppressedByMode;
     if (_danmakuEnabled.value != enabled) {
       _danmakuEnabled.add(enabled);
@@ -273,7 +289,7 @@ final class PlaybackSession {
   // --- Recovery wiring ---
 
   void _onAdapterEvent(PlayerAdapterEvent event) {
-    if (event is! PlayerAdapterErrorEvent) {
+    if (_disposed || event is! PlayerAdapterErrorEvent) {
       return;
     }
 
@@ -287,6 +303,10 @@ final class PlaybackSession {
   }
 
   void _onRecoveryEvent(RecoveryLadderEvent event) {
+    if (_disposed) {
+      return;
+    }
+
     switch (event) {
       case RecoveryLadderStepStarted():
         _stateSubject.add(currentState.copyWith(phase: PlaybackPhase.recovering));
@@ -340,7 +360,8 @@ final class PlaybackSession {
   }
 
   void _raiseIfNeeded() {
-    if (currentState.phase == PlaybackPhase.idle ||
+    if (_disposed ||
+        currentState.phase == PlaybackPhase.idle ||
         currentState.phase == PlaybackPhase.paused ||
         currentState.phase == PlaybackPhase.opening) {
       _stateSubject.add(currentState.copyWith(phase: PlaybackPhase.playing));
@@ -351,9 +372,23 @@ final class PlaybackSession {
   ///
   /// The [handle] is *not* disposed here — the coordinator releases it
   /// through the kernel so the pool and every coordinator see the release.
+  ///
+  /// Cancellation of the kernel subscriptions is *not* awaited. A stream's
+  /// `cancel` may hold its completion until the platform (or, in a widget test,
+  /// the real event loop behind a fake clock) says otherwise, and a teardown
+  /// that waits for that keeps the session — and whoever is closing it, up to a
+  /// page being popped — alive for as long as the platform likes. Dart
+  /// guarantees no further events once `cancel` returns, so the subscriptions
+  /// are cancelled here and now and only the acknowledgement is discarded;
+  /// [_disposed] makes a late event harmless.
   Future<void> dispose() async {
-    await _adapterSub?.cancel();
-    await _ladderSub?.cancel();
+    if (_disposed) {
+      return;
+    }
+    _disposed = true;
+
+    unawaited(_adapterSub?.cancel() ?? Future<void>.value());
+    unawaited(_ladderSub?.cancel() ?? Future<void>.value());
     await _ladder.dispose();
     await danmaku?.dispose();
     await _stateSubject.close();
