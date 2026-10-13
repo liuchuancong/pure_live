@@ -11,10 +11,15 @@ import 'package:live_sites/src/models/live_audience/live_audience.dart';
 import 'package:live_sites/src/models/live_audience_metric_type/live_audience_metric_type.dart';
 import 'package:live_sites/src/models/live_audience_platform_capability/live_audience_platform_capability.dart';
 import 'package:live_sites/src/models/live_audience_rank_key/live_audience_rank_key.dart';
+import 'package:live_sites/src/models/live_broadcast/live_broadcast.dart';
 import 'package:live_sites/src/models/live_catch_up/live_catch_up.dart';
 import 'package:live_sites/src/models/live_follow_group/live_follow_group.dart';
 import 'package:live_sites/src/models/live_guide/live_guide.dart';
 import 'package:live_sites/src/models/live_restriction/live_restriction.dart';
+import 'package:live_sites/src/models/live_room_content/live_room_content.dart';
+import 'package:live_sites/src/models/live_room_links/live_room_links.dart';
+import 'package:live_sites/src/models/live_room_local/live_room_local.dart';
+import 'package:live_sites/src/models/live_room_runtime/live_room_runtime.dart';
 import 'package:live_sites/src/models/live_status/live_status.dart';
 import 'package:meta/meta.dart';
 
@@ -22,58 +27,59 @@ import 'package:meta/meta.dart';
 /// for follows and history.
 ///
 /// Immutable, with identity equality: two rooms are equal when [platform] and
-/// [roomId] match (room numbers are unique only within a platform; case is
-/// ignored where the platform ignores it, see [identityKey]). Platform and room
-/// id are normalized on creation, so the identity used as a map key can never
-/// change afterwards.
+/// [roomId] match. The room is a thin aggregate over the concerns each of which
+/// is its own type — [anchor] (the broadcaster), [area] (its category),
+/// [audience] (its viewer counts), [guide] (IPTV programme and catch-up),
+/// [links] (web and app), [content] (title, cover, introduction, notice),
+/// [broadcast] (live state, start, restriction), [runtime] (the transient
+/// play/danmaku handles) and [local] (tags and last-watched). The room keeps
+/// only identity plus these, and delegates field access to them.
 ///
 /// Fields a platform response may omit are nullable, and null means "not in
 /// this response": [mergeFrom] keeps the stored value then.
-///
-/// Placeholders: an adapter that does not get the real [nick], [title] or
-/// [cover] leaves it empty, never fills in a stand-in. [mergeFrom] keeps a
-/// stored value only against an empty one, so a stand-in would overwrite the
-/// name a follow stored. The UI shows the platform's name for an empty [nick]
-/// ([displayNick]).
 @immutable
 final class LiveRoom {
-  /// Creates a room. [platform] is lower-cased, [roomId] trimmed and
-  /// [startedAt] converted to UTC; [title], [nick], [introduction] and [notice]
-  /// lose invisible placeholder characters
-  /// ([SiteText.stripInvisiblePlaceholders], such as Kuaishou's U+FFFC).
+  /// Creates a room. [platform] is lower-cased, [roomId] trimmed; [title],
+  /// [nick], [introduction] and [notice] lose invisible placeholder characters
+  /// ([SiteText.stripInvisiblePlaceholders]); [startedAt] becomes UTC.
   LiveRoom({
     String? roomId,
     String? platform,
     this.anchor,
-    this.link,
-    this.nativeLink,
-    String title = '',
-    this.cover = '',
     this.area,
+    String title = '',
+    String cover = '',
+    String? introduction,
+    String? notice,
+    String? link,
+    String? nativeLink,
     String watching = '0',
     LiveAudienceMetricType? audienceMetricType,
     String popularity = '',
     String onlineViewers = '',
     String totalViewers = '',
-    this.liveStatus,
+    LiveStatus? liveStatus,
     DateTime? startedAt,
-    this.restriction,
-    String? introduction,
-    String? notice,
-    this.data,
-    this.danmakuData,
+    LiveRestriction? restriction,
+    Object? data,
+    Object? danmakuData,
     String? epgId,
     String currentProgramme = '',
     String? currentProgrammeDescription,
     LiveCatchUp catchUp = const LiveCatchUp(),
     Map<String, String> httpHeaders = const {},
-    this.lastWatchedAt,
+    int? lastWatchedAt,
     List<String> tagIds = const [],
   }) : roomId = roomId?.trim() ?? '',
        platform = platform?.trim().toLowerCase() ?? 'unknown',
-       title = SiteText.stripInvisiblePlaceholders(title),
-       introduction = SiteText.stripInvisiblePlaceholdersOrNull(introduction),
-       notice = SiteText.stripInvisiblePlaceholdersOrNull(notice),
+       links = LiveRoomLinks(link: link, nativeLink: nativeLink),
+       content = LiveRoomContent(
+         title: SiteText.stripInvisiblePlaceholders(title),
+         cover: cover,
+         introduction: SiteText.stripInvisiblePlaceholdersOrNull(introduction),
+         notice: SiteText.stripInvisiblePlaceholdersOrNull(notice),
+       ),
+       broadcast = LiveBroadcast(liveStatus: liveStatus, startedAt: startedAt?.toUtc(), restriction: restriction),
        audience = LiveAudience(
          watching: watching,
          metricType: audienceMetricType,
@@ -88,20 +94,10 @@ final class LiveRoom {
          catchUp: catchUp,
          httpHeaders: SiteHeaders.normalize(httpHeaders),
        ),
-       startedAt = startedAt?.toUtc(),
-       tagIds = List.unmodifiable(tagIds);
+       runtime = LiveRoomRuntime(streamData: data, danmakuData: danmakuData),
+       local = LiveRoomLocal(lastWatchedAt: lastWatchedAt, tagIds: List.unmodifiable(tagIds));
 
   /// Reads the JSON stored for follows, history and backups.
-  ///
-  /// - Without `liveStatus`, the status comes from the old `status` and
-  ///   `isRecord` booleans; with it, the index is authoritative (a stale
-  ///   `status: true` once kept an ended room painted as live).
-  /// - `isRecord: true` means [LiveStatus.replay].
-  /// - Earlier builds stored Huya's popularity as concurrent viewers; it is
-  ///   moved back to [popularity].
-  /// - `startedAt` (ISO 8601, or epoch milliseconds) and `restriction` (a
-  ///   [LiveRestriction] name) are the newer keys; a record without them has
-  ///   neither.
   factory LiveRoom.fromJson(Map<String, Object?> json) {
     String? text(String key) => json[key]?.toString();
     final platform = text('platform') ?? 'UNKNOWN';
@@ -168,33 +164,75 @@ final class LiveRoom {
   /// Room id within the platform.
   final String roomId;
 
-  /// The broadcaster this room belongs to, when the platform names one. The
-  /// room's [userId], [nick], [avatar] and [followers] read through to it.
+  /// The broadcaster this room belongs to, when the platform names one.
   final LiveAnchor? anchor;
-
-  /// Web link to the room.
-  final String? link;
-
-  /// The platform's app-launch scheme for this room (for example
-  /// `bilibili://live/23058`), the link that opens the room in the platform's
-  /// own app. Distinct from [link], the web page: a user who wants to share
-  /// "open in the app" needs this, and not every platform provides one.
-  final String? nativeLink;
-
-  /// Room title.
-  final String title;
-
-  /// Cover URL.
-  final String cover;
 
   /// The room's area (its category node), when the platform names one.
   final LiveArea? area;
 
-  /// The audience figures the platform reported, as one snapshot.
+  /// The audience figures the platform reported.
   final LiveAudience audience;
 
-  /// The single audience field of older records and backups; `'0'` is the old
-  /// default and not a measurement.
+  /// The IPTV guide state: channel, programme on air, catch-up and headers.
+  final LiveGuide guide;
+
+  /// How to reach the room (web and app links).
+  final LiveRoomLinks links;
+
+  /// The room's display text (title, cover, introduction, notice).
+  final LiveRoomContent content;
+
+  /// The broadcast state (live status, start time, restriction).
+  final LiveBroadcast broadcast;
+
+  /// The transient play/danmaku handles; never stored.
+  final LiveRoomRuntime runtime;
+
+  /// The per-user local follow state (tags, last watched).
+  final LiveRoomLocal local;
+
+  // --- accessors delegating to the concern objects (kept for a stable API) ---
+
+  /// Web link to the room.
+  String? get link => links.link;
+
+  /// The platform's app-launch scheme for this room (`bilibili://live/23058`).
+  String? get nativeLink => links.nativeLink;
+
+  /// Room title.
+  String get title => content.title;
+
+  /// Cover URL.
+  String get cover => content.cover;
+
+  /// Room introduction.
+  String? get introduction => content.introduction;
+
+  /// Room notice.
+  String? get notice => content.notice;
+
+  /// Broadcast state; null when the response did not say.
+  LiveStatus? get liveStatus => broadcast.liveStatus;
+
+  /// When the current broadcast started, UTC.
+  DateTime? get startedAt => broadcast.startedAt;
+
+  /// What keeps the current broadcast from simply playing.
+  LiveRestriction? get restriction => broadcast.restriction;
+
+  /// Platform data needed to resolve streams; never stored.
+  Object? get data => runtime.streamData;
+
+  /// Platform data needed to connect danmaku; never stored.
+  Object? get danmakuData => runtime.danmakuData;
+
+  /// Last time this room was watched, epoch milliseconds (history).
+  int? get lastWatchedAt => local.lastWatchedAt;
+
+  /// Tags of a followed room (local only).
+  List<String> get tagIds => local.tagIds;
+
+  /// The single audience field of older records and backups.
   String get watching => audience.watching;
 
   /// What the platform's main audience number means; null when not given.
@@ -208,33 +246,6 @@ final class LiveRoom {
 
   /// Cumulative viewers of the current session.
   String get totalViewers => audience.totalViewers;
-
-  /// Broadcast state; null when the response did not say.
-  final LiveStatus? liveStatus;
-
-  /// When the current broadcast (or the replayed one) started, UTC; null when
-  /// the response did not say or the room is not on.
-  final DateTime? startedAt;
-
-  /// What keeps the current broadcast from simply playing. Null means the
-  /// response did not say; [LiveRestriction.none] means the platform was
-  /// checked and there is no restriction.
-  final LiveRestriction? restriction;
-
-  /// Room introduction.
-  final String? introduction;
-
-  /// Room notice.
-  final String? notice;
-
-  /// Platform data needed to resolve streams; never stored.
-  final Object? data;
-
-  /// Platform data needed to connect danmaku; never stored.
-  final Object? danmakuData;
-
-  /// The IPTV guide state: channel, programme on air, catch-up and headers.
-  final LiveGuide guide;
 
   /// IPTV: guide channel id.
   String? get epgId => guide.epgId;
@@ -251,66 +262,6 @@ final class LiveRoom {
   /// IPTV: headers the channel's media requests need, normalized.
   Map<String, String> get httpHeaders => guide.httpHeaders;
 
-  /// Last time this room was watched, epoch milliseconds (history).
-  final int? lastWatchedAt;
-
-  /// Tags of a followed room (local only).
-  final List<String> tagIds;
-
-  /// `platform:roomId`, the identity used by follows, tags and merges; see
-  /// [identityKeyFor]. [roomId] itself keeps the spelling it was created with.
-  String get identityKey => identityKeyFor(platform: platform, roomId: roomId);
-
-  /// Whether [other] is the same room.
-  bool hasSameIdentity(LiveRoom other) => identityKey == other.identityKey;
-
-  /// Whether this is [platform]'s room [roomId], compared as [identityKeyFor]
-  /// does.
-  bool hasIdentity({required String platform, required String roomId}) =>
-      identityKey == identityKeyFor(platform: platform, roomId: roomId);
-
-  /// The identity of [platform]'s room [roomId]: `platform:roomId` with the
-  /// platform lower-cased and the room id trimmed, and the room id also
-  /// lower-cased on platforms whose room ids are user names the platform
-  /// matches without regard to case ([SiteIds.ignoresRoomIdCase]). Elsewhere
-  /// case is significant (a YouTube video id, for example).
-  static String identityKeyFor({required String platform, required String roomId}) {
-    final site = platform.trim().toLowerCase();
-    final id = roomId.trim();
-    return '$site:${SiteIds.ignoresRoomIdCase(site) ? id.toLowerCase() : id}';
-  }
-
-  /// The state used for display and playback: unknown when not given.
-  LiveStatus get effectiveLiveStatus => liveStatus ?? LiveStatus.unknown;
-
-  /// Broadcasting now (restricted or not).
-  bool get isLiveNow => effectiveLiveStatus == LiveStatus.live;
-
-  /// Live or replay: something can be played. A restriction does not change
-  /// this (playback explains it); a carousel is not playable.
-  bool get isPlayableNow => isLiveNow || effectiveLiveStatus == LiveStatus.replay;
-
-  /// The platform said offline, banned or carousel (the streamer is off).
-  bool get isExplicitlyOfflineNow => switch (effectiveLiveStatus) {
-    LiveStatus.offline || LiveStatus.banned || LiveStatus.carousel => true,
-    LiveStatus.live || LiveStatus.replay || LiveStatus.unknown => false,
-  };
-
-  /// The restriction, or [LiveRestriction.none] when the response did not say.
-  LiveRestriction get effectiveRestriction => restriction ?? LiveRestriction.none;
-
-  /// Whether a restriction is known (for the card's mark).
-  bool get isRestricted => effectiveRestriction != LiveRestriction.none;
-
-  /// Where the follow page lists this room: live rooms (restricted or not) as
-  /// live, playable replays as replay, everything else as offline, including a
-  /// carousel and a replay marked [LiveRestriction.unplayable].
-  LiveFollowGroup get followGroup => switch (effectiveLiveStatus) {
-    LiveStatus.live => LiveFollowGroup.live,
-    LiveStatus.replay when restriction != LiveRestriction.unplayable => LiveFollowGroup.replay,
-    _ => LiveFollowGroup.offline,
-  };
-
   /// The broadcaster's id on the platform, or '' when the room names none.
   String get userId => anchor?.anchorId ?? '';
 
@@ -326,18 +277,59 @@ final class LiveRoom {
     return count == null || count <= 0 ? '0' : '$count';
   }
 
+  /// `platform:roomId`, the identity used by follows, tags and merges; see
+  /// [identityKeyFor].
+  String get identityKey => identityKeyFor(platform: platform, roomId: roomId);
+
+  /// Whether [other] is the same room.
+  bool hasSameIdentity(LiveRoom other) => identityKey == other.identityKey;
+
+  /// Whether this is [platform]'s room [roomId], compared as [identityKeyFor].
+  bool hasIdentity({required String platform, required String roomId}) =>
+      identityKey == identityKeyFor(platform: platform, roomId: roomId);
+
+  /// The identity of [platform]'s room [roomId]: `platform:roomId` with the
+  /// platform lower-cased and the room id trimmed, and the room id also
+  /// lower-cased on platforms whose room ids are user names the platform
+  /// matches without regard to case ([SiteIds.ignoresRoomIdCase]).
+  static String identityKeyFor({required String platform, required String roomId}) {
+    final site = platform.trim().toLowerCase();
+    final id = roomId.trim();
+    return '$site:${SiteIds.ignoresRoomIdCase(site) ? id.toLowerCase() : id}';
+  }
+
+  /// The state used for display and playback: unknown when not given.
+  LiveStatus get effectiveLiveStatus => broadcast.effectiveLiveStatus;
+
+  /// Broadcasting now (restricted or not).
+  bool get isLiveNow => broadcast.isLiveNow;
+
+  /// Live or replay: something can be played.
+  bool get isPlayableNow => broadcast.isPlayableNow;
+
+  /// The platform said offline, banned or carousel (the streamer is off).
+  bool get isExplicitlyOfflineNow => broadcast.isExplicitlyOfflineNow;
+
+  /// The restriction, or [LiveRestriction.none] when the response did not say.
+  LiveRestriction get effectiveRestriction => broadcast.effectiveRestriction;
+
+  /// Whether a restriction is known (for the card's mark).
+  bool get isRestricted => broadcast.isRestricted;
+
+  /// Where the follow page lists this room.
+  LiveFollowGroup get followGroup => broadcast.followGroup;
+
   /// Whether the platform gave a streamer name.
   bool get hasNick => nick.trim().isNotEmpty;
 
-  /// The streamer name to show: [nick], or [platformName] when it is empty. The
-  /// platform's display name is localized by the UI, so the caller passes it in.
+  /// The streamer name to show: [nick], or [platformName] when it is empty.
   String displayNick(String platformName) => hasNick ? nick.trim() : platformName;
 
   /// The state is not known yet.
-  bool get isLiveStatusPending => effectiveLiveStatus == LiveStatus.unknown;
+  bool get isLiveStatusPending => broadcast.isPending;
 
   /// Playing a recording or replay.
-  bool get isRecord => effectiveLiveStatus == LiveStatus.replay;
+  bool get isRecord => broadcast.isRecord;
 
   /// IPTV: a time-shifted programme is playing.
   bool get isCatchUpActive => catchUp.isActive;
@@ -361,8 +353,7 @@ final class LiveRoom {
   }
 
   /// Concurrent viewers, falling back to a positive [watching] when that is what
-  /// it holds (the old `'0'` default is not a count; an adapter that really saw
-  /// zero writes it to [onlineViewers]).
+  /// it holds.
   String get effectiveOnlineViewers {
     if (hasExplicitAudienceValue(onlineViewers)) return onlineViewers.trim();
     return effectiveAudienceMetricType == LiveAudienceMetricType.onlineViewers && hasAudienceValue(watching)
@@ -379,18 +370,13 @@ final class LiveRoom {
   /// The platform's audience metrics.
   LiveAudiencePlatformCapability get audienceCapability => LiveAudiencePlatformCapability.of(platform);
 
-  /// Whether the platform has a concurrent-viewer count at all, whether or not
-  /// this room has received it yet.
+  /// Whether the platform has a concurrent-viewer count at all.
   bool get supportsRealOnlineCount => audienceCapability.supportsConcurrentOnline;
 
   /// Whether this room has an explicit concurrent-viewer count.
   bool get hasRealOnlineCount => hasExplicitAudienceValue(effectiveOnlineViewers);
 
-  /// The audience text to show. With [preferRealOnline] on a platform that has
-  /// concurrent viewers and is [platformEnabled], only the concurrent count is
-  /// shown (empty while pending); otherwise popularity, then cumulative, then
-  /// concurrent, then the old field unless it is the `'0'` default of an unknown
-  /// metric.
+  /// The audience text to show.
   String audienceValue({required bool preferRealOnline, required bool platformEnabled}) {
     if (preferRealOnline && platformEnabled && supportsRealOnlineCount) {
       return hasRealOnlineCount ? effectiveOnlineViewers : '';
@@ -458,9 +444,8 @@ final class LiveRoom {
   }
 
   /// This room with [fallback]'s audience where this one has none, or where
-  /// Bilibili's detail transiently answers `1` for a busy room (the header would
-  /// jump from hundreds of thousands to one). A later plausible heartbeat is
-  /// still accepted. Rooms of another identity are ignored.
+  /// Bilibili's detail transiently answers `1` for a busy room. Rooms of another
+  /// identity are ignored.
   LiveRoom withAudienceFallbackFrom(LiveRoom fallback) {
     if (!hasSameIdentity(fallback)) return this;
     final current = effectivePopularity;
@@ -483,18 +468,8 @@ final class LiveRoom {
     );
   }
 
-  /// A fresh detail [incoming] applied without losing local data.
-  ///
-  /// Responses are sparse: an omitted state, title or audience means "not in
-  /// this response", not "offline" or "erase". An empty name, title or cover
-  /// keeps the stored one. Tags stay local; IPTV headers come from the playlist.
-  /// Rooms of another identity are ignored.
-  ///
-  /// [startedAt] and [restriction] describe one broadcast. The incoming value
-  /// wins whenever it is given ([LiveRestriction.none] clears a stored
-  /// restriction). An omitted one keeps the stored value while [incoming] reports
-  /// no other state; once the state changes it becomes null (not known), so a
-  /// later broadcast never shows the last one's start time or restriction.
+  /// A fresh detail [incoming] applied without losing local data. Responses are
+  /// sparse; an omitted value means "not in this response", not "erase".
   LiveRoom mergeFrom(LiveRoom incoming) {
     if (!hasSameIdentity(incoming)) return this;
     String prefer(String incoming, String current) => incoming.trim().isEmpty ? current : incoming;
@@ -546,19 +521,14 @@ final class LiveRoom {
   }
 
   /// After a failed detail request: identity and metadata stay, the state
-  /// becomes pending (a failed request is no evidence the broadcast ended) and
-  /// the `'0'` default audience is dropped.
+  /// becomes pending and the `'0'` default audience is dropped.
   LiveRoom pendingAfterError() =>
       copyWith(liveStatus: LiveStatus.unknown, watching: watching.trim() == '0' ? '' : watching);
 
-  /// Back to the live stream: the played catch-up interval is removed as one
-  /// snapshot, so a later guide render never highlights a retired programme.
+  /// Back to the live stream: the played catch-up interval is removed.
   LiveRoom withoutCatchUp() => copyWith(catchUp: catchUp.withoutInterval());
 
-  /// Title, area, name, avatar and cover from [detail] where this room has none
-  /// (blank counts as none). [detail] is the card the room was entered from, so
-  /// the history entry, the audio-only cover, the mini player and the
-  /// notification keep a title or cover the room page itself does not give.
+  /// Title, area, name, avatar and cover from [detail] where this room has none.
   LiveRoom fillFromDetail(LiveRoom? detail) {
     if (detail == null) return this;
     return copyWith(
@@ -576,6 +546,8 @@ final class LiveRoom {
     String? nativeLink,
     String? title,
     String? cover,
+    String? introduction,
+    String? notice,
     LiveArea? area,
     String? watching,
     LiveAudienceMetricType? audienceMetricType,
@@ -585,8 +557,6 @@ final class LiveRoom {
     LiveStatus? liveStatus,
     DateTime? startedAt,
     LiveRestriction? restriction,
-    String? introduction,
-    String? notice,
     Object? data,
     Object? danmakuData,
     String? epgId,
@@ -600,11 +570,13 @@ final class LiveRoom {
     roomId: roomId,
     platform: platform,
     anchor: anchor ?? this.anchor,
+    area: area ?? this.area,
     link: link ?? this.link,
     nativeLink: nativeLink ?? this.nativeLink,
     title: title ?? this.title,
     cover: cover ?? this.cover,
-    area: area ?? this.area,
+    introduction: introduction ?? this.introduction,
+    notice: notice ?? this.notice,
     watching: watching ?? this.watching,
     audienceMetricType: audienceMetricType ?? this.audienceMetricType,
     popularity: popularity ?? this.popularity,
@@ -613,8 +585,6 @@ final class LiveRoom {
     liveStatus: liveStatus ?? this.liveStatus,
     startedAt: startedAt ?? this.startedAt,
     restriction: restriction ?? this.restriction,
-    introduction: introduction ?? this.introduction,
-    notice: notice ?? this.notice,
     data: data ?? this.data,
     danmakuData: danmakuData ?? this.danmakuData,
     epgId: epgId ?? this.epgId,
@@ -626,10 +596,8 @@ final class LiveRoom {
     tagIds: tagIds ?? this.tagIds,
   );
 
-  /// The JSON stored for follows, history and backups. `status` and `isRecord`
-  /// are derived from the canonical state, so a restored backup never carries a
-  /// contradiction. `nativeLink` is written for an app-shared room. `data` and
-  /// [danmakuData] are transient and never stored.
+  /// The JSON stored for follows, history and backups. `data` and [danmakuData]
+  /// are transient and never stored.
   Map<String, Object?> toJson() => {
     'roomId': roomId,
     'userId': userId,
@@ -682,9 +650,6 @@ final class LiveRoom {
     };
   }
 
-  /// An ISO 8601 text (without an offset it is UTC, as written) or epoch
-  /// milliseconds (a number or a text of digits); anything else, or a time not
-  /// after the epoch, is null.
   static DateTime? _timeFromJson(Object? value) {
     final text = value is String ? value.trim() : null;
     final millis = switch (value) {
@@ -712,7 +677,6 @@ final class LiveRoom {
     return utc.millisecondsSinceEpoch > 0 ? utc : null;
   }
 
-  /// The largest time [DateTime] can hold, epoch milliseconds.
   static const int _maxEpochMillis = 8640000000000000;
 
   static bool _isDigits(String text) {
@@ -725,8 +689,6 @@ final class LiveRoom {
 
   static int? _int(Object? value) => value is num ? value.toInt() : int.tryParse(value?.toString() ?? '');
 
-  /// The stored [LiveRoom.area]: a new record writes a `LiveArea` object, an
-  /// older one a bare name string; blank or absent is null.
   static LiveArea? _areaFromJson(Object? value, String platform) {
     if (value is Map) {
       return LiveArea.fromJson(value.cast<String, Object?>());
@@ -735,8 +697,6 @@ final class LiveRoom {
     return name.isEmpty ? null : LiveArea(platform: platform, areaName: name);
   }
 
-  /// The stored [LiveRoom.anchor]: a record's flat `userId`/`nick`/`avatar`/
-  /// `followers` keys become a [LiveAnchor]; a record with none of them has null.
   static LiveAnchor? _anchorFromJson(Map<String, Object?> json, String platform) {
     final anchorId = json['userId']?.toString().trim() ?? '';
     final name = json['nick']?.toString().trim() ?? '';
@@ -752,8 +712,6 @@ final class LiveRoom {
     );
   }
 
-  /// The stored room's anchor after a refresh: [stored] keeps what it has and
-  /// [incoming] fills the gaps; null on either side takes the other.
   static LiveAnchor? _mergedAnchor(LiveAnchor? incoming, LiveAnchor? stored) {
     if (incoming == null) return stored;
     if (stored == null) return incoming;
