@@ -1,5 +1,5 @@
+import 'package:live_pagination/src/math/page_math.dart';
 import 'package:meta/meta.dart';
-import 'package:pagination_core/src/math/page_math.dart';
 
 /// Marker for "keep the current value" in [PagedState.copyWith].
 const Object unset = Object();

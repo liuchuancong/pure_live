@@ -1,5 +1,5 @@
+import 'package:live_pagination/src/state/paged_state.dart' show unset;
 import 'package:meta/meta.dart';
-import 'package:pagination_core/src/state/paged_state.dart' show unset;
 
 /// Immutable state of the mobile infinite list: everything loaded so far.
 ///

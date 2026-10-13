@@ -1,4 +1,4 @@
-import 'package:pagination_core/pagination_core.dart';
+import 'package:live_pagination/live_pagination.dart';
 import 'package:test/test.dart';
 
 void main() {

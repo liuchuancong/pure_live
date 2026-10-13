@@ -2,7 +2,7 @@
 // ignore_for_file: avoid_print
 import 'dart:async';
 
-import 'package:pagination_core/pagination_core.dart';
+import 'package:live_pagination/live_pagination.dart';
 
 /// End-to-end demo of the pagination core, run with:
 /// ```sh

@@ -1,5 +1,5 @@
-import 'package:pagination_core/src/contracts/page_request.dart';
-import 'package:pagination_core/src/contracts/page_result.dart';
+import 'package:live_pagination/src/contracts/page_request.dart';
+import 'package:live_pagination/src/contracts/page_result.dart';
 
 /// Produces one ready-made logical page.
 ///

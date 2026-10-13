@@ -1,9 +1,9 @@
-import 'package:pagination_core/src/contracts/page_loader.dart';
-import 'package:pagination_core/src/contracts/page_request.dart';
-import 'package:pagination_core/src/contracts/page_result.dart';
-import 'package:pagination_core/src/contracts/pagination_session.dart';
-import 'package:pagination_core/src/math/page_math.dart';
-import 'package:pagination_core/src/state/infinite_state.dart';
+import 'package:live_pagination/src/contracts/page_loader.dart';
+import 'package:live_pagination/src/contracts/page_request.dart';
+import 'package:live_pagination/src/contracts/page_result.dart';
+import 'package:live_pagination/src/contracts/pagination_session.dart';
+import 'package:live_pagination/src/math/page_math.dart';
+import 'package:live_pagination/src/state/infinite_state.dart';
 
 /// Mobile infinite scrolling: accumulates every loaded page.
 ///
@@ -20,7 +20,11 @@ final class InfiniteController<T> {
   /// Builds a controller over [loader]. [dataRefresher], when given,
   /// runs before every refresh so the repository can reload business
   /// data first.
-  new({required this.loader, this.pageSize = 20, this.dataRefresher});
+  new({required this.loader, this.pageSize = 20, this.dataRefresher}) {
+    // Seed the state with this controller's page size, so a view reading the
+    // snapshot before the first refresh does not see a different one.
+    _state = InfiniteState<T>(pageSize: pageSize);
+  }
 
   /// The page producer; see [PageLoader] for the contract.
   final PageLoader<T> loader;
@@ -96,7 +100,17 @@ final class InfiniteController<T> {
         page: 1,
         pageSize: pageSize,
         totalCount: result.totalCount,
-        hasMore: _hasMoreAfter(result, page: 1, appendedCount: 0),
+        hasMore: PageMath.hasMoreAfter(
+          page: 1,
+          pageSize: pageSize,
+          hasMore: result.hasMore,
+          totalCount: result.totalCount,
+          // The items actually received. Passing zero here used to make an
+          // unknown-total source answer "nothing follows" on its own first page,
+          // which stopped the list dead after page one — the one case a cursor
+          // source is in when it has said nothing about its end.
+          receivedCount: result.items.length,
+        ),
       ),
     );
   }
@@ -138,7 +152,13 @@ final class InfiniteController<T> {
         page: target,
         pageSize: pageSize,
         totalCount: result.totalCount ?? _state.totalCount,
-        hasMore: _hasMoreAfter(result, page: target, appendedCount: result.items.length),
+        hasMore: PageMath.hasMoreAfter(
+          page: target,
+          pageSize: pageSize,
+          hasMore: result.hasMore,
+          totalCount: result.totalCount,
+          receivedCount: result.items.length,
+        ),
       ),
     );
     return true;
@@ -160,25 +180,12 @@ final class InfiniteController<T> {
     }
   }
 
-  /// Stops the controller: listeners stay attached but every further
-  /// operation and state update is dropped.
+  /// Stops the controller. Listeners are dropped and every further operation and
+  /// state update is ignored, so a late loader answer cannot append to a dead list.
   void dispose() {
     _disposed = true;
     _session.invalidate();
     _listeners.clear();
-  }
-
-  /// Derives continuation from the loader's explicit answer, the known
-  /// total, or whether the page came back with any items.
-  bool _hasMoreAfter(PageResult<T> result, {required int page, required int appendedCount}) {
-    if (result.hasMore != null) {
-      return result.hasMore!;
-    }
-    final totalPages = PageMath.totalPages(result.totalCount, pageSize);
-    if (totalPages != null) {
-      return page < totalPages;
-    }
-    return appendedCount > 0;
   }
 
   void _emit(InfiniteState<T> next) {

@@ -1,10 +1,10 @@
-import 'package:pagination_core/src/contracts/page_loader.dart';
-import 'package:pagination_core/src/contracts/page_request.dart';
-import 'package:pagination_core/src/contracts/page_result.dart';
-import 'package:pagination_core/src/contracts/pagination_session.dart';
-import 'package:pagination_core/src/math/page_math.dart';
-import 'package:pagination_core/src/state/paged_state.dart';
-import 'package:pagination_core/src/state/refresh_position_policy.dart';
+import 'package:live_pagination/src/contracts/page_loader.dart';
+import 'package:live_pagination/src/contracts/page_request.dart';
+import 'package:live_pagination/src/contracts/page_result.dart';
+import 'package:live_pagination/src/contracts/pagination_session.dart';
+import 'package:live_pagination/src/math/page_math.dart';
+import 'package:live_pagination/src/state/paged_state.dart';
+import 'package:live_pagination/src/state/refresh_position_policy.dart';
 
 /// Desktop numbered pagination: holds exactly one visible page.
 ///
@@ -29,7 +29,12 @@ final class PagedController<T> {
     this.refreshPolicy = RefreshPositionPolicy.preserveCurrentPage,
     this.supportsJumpToPage = true,
     this.dataRefresher,
-  });
+  }) {
+    // The initial state must already carry this controller's page size: a view
+    // that renders "page 1 of N" from the state while nothing has loaded yet
+    // would otherwise derive N from the wrong size.
+    _state = PagedState<T>(pageSize: pageSize);
+  }
 
   /// The page producer; see [PageLoader] for the contract.
   final PageLoader<T> loader;
@@ -87,20 +92,25 @@ final class PagedController<T> {
   /// Jumps to the first page.
   Future<void> first() => loadPage(1);
 
-  /// Moves one page forward; returns false when already at the end (a
-  /// known total, or a previously empty probe).
+  /// Moves one page forward; returns false when the walk is at its end — a known
+  /// total reached, or a last page that proved there is nothing after it.
   Future<bool> next() async {
     final total = PageMath.totalPages(_state.totalCount, pageSize);
-    if (_endReached || (total != null && _state.page >= total)) {
+    // The same predicate the view needs to decide whether a jump control is
+    // offerable; spelling it out again here is how the two drift apart.
+    if (_endReached || !PageMath.isValidPage(_state.page + 1, total)) {
       return false;
     }
+    final before = _state.page;
     await loadPage(_state.page + 1);
-    return true;
+    // A request refused while one was in flight changes nothing, and reporting
+    // success there would tell the caller to disable a control that is still valid.
+    return _state.page != before;
   }
 
   /// Moves one page back; returns false when already on the first page.
   Future<bool> previous() async {
-    if (_state.page <= 1) {
+    if (!PageMath.isValidPage(_state.page - 1, null)) {
       return false;
     }
     await loadPage(_state.page - 1);
@@ -155,8 +165,8 @@ final class PagedController<T> {
     await _request(PageMath.pageForIndex(anchorIndex, newSize), force: true);
   }
 
-  /// Stops the controller: listeners stay attached but every further
-  /// operation and state update is dropped.
+  /// Stops the controller. Listeners are dropped and every further operation and
+  /// state update is ignored, so a late loader answer cannot reach a dead view.
   void dispose() {
     _disposed = true;
     _session.invalidate();
@@ -194,14 +204,37 @@ final class PagedController<T> {
     final totalPages = PageMath.totalPages(totalCount, pageSize);
     final clamped = PageMath.clampPage(target, totalPages);
 
-    // The dataset shrank under the requested page: re-request the last
-    // valid page once so data and page number agree.
-    if (result.items.isEmpty && target > 1 && clamped < target) {
+    // The requested page is not the page we may show: a total that only this
+    // answer revealed can pull the target below it. Re-request the real page
+    // whether or not the loader sent rows, because emitting this result under the
+    // clamped number would leave the view showing page 9's content titled page 2 —
+    // and an empty answer at least looks like "nothing here", while mislabelled
+    // rows look like a corrupt library.
+    if (clamped < target) {
       await _request(clamped);
       return;
     }
 
-    _endReached = totalPages != null && clamped >= totalPages;
+    // An advance that found nothing: keep the page that is on screen and mark the
+    // walk ended. Replacing a full page of rows with an empty one in order to
+    // record "there is no next page" is the worst of both — the viewer sees the
+    // content vanish and reads it as a bug in the loader.
+    if (result.items.isEmpty && _state.items.isNotEmpty && target > _state.page) {
+      _endReached = true;
+      _emit(_state.copyWith(isLoading: false, loadingPage: null, error: null));
+      return;
+    }
+
+    _endReached = !PageMath.hasMoreAfter(
+      page: clamped,
+      pageSize: pageSize,
+      // The loader's own answer outranks anything derived here: a cursor source
+      // that says `hasMore: false` is finished however full the page looked, and
+      // ignoring it leaves the view walking through empty pages forever.
+      hasMore: result.hasMore,
+      totalCount: totalCount,
+      receivedCount: result.items.length,
+    );
     _emit(PagedState<T>(items: result.items, page: clamped, pageSize: pageSize, totalCount: totalCount));
   }
 

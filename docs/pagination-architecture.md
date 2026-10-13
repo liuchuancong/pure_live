@@ -2,7 +2,7 @@
 # PureLive 分页核心技术设计规范
 
 - 文档状态：提案
-- 所属模块：`pagination_core`
+- 所属模块：`live_pagination`
 - 支持平台：Android、iOS、Android TV、Windows、macOS、Linux
 - 状态管理：Riverpod 3.x
 - 数据模型：不可变状态，按需使用 Freezed
@@ -598,10 +598,10 @@ Provider 的身份必须反映所有会改变逻辑数据集的关键参数。
 ## 12. 建议的包目录
 
 ```text
-packages/pagination_core/
+packages/live_pagination/
 ├── pubspec.yaml
 ├── lib/
-│   ├── pagination_core.dart
+│   ├── live_pagination.dart
 │   └── src/
 │       ├── models/
 │       │   ├── pagination_request.dart
