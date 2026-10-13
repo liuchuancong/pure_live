@@ -7,6 +7,7 @@ import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/platforms/douyu/danmaku/douyu_stt_codec.dart';
+import 'package:live_sites/src/platforms/douyu/douyu_site.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_gift_parser.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -15,32 +16,38 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 // ignore_for_file: unnecessary_type_name_in_constructor
 
 /// Creates danmaku sessions for the douyu protocol.
-/// Creates danmaku sessions for the douyu protocol.
-/// Creates danmaku sessions for the douyu protocol.
 final class DouyuDanmakuProvider implements LiveDanmakuProvider {
-  /// The provider; callbacks as in the session.
-  /// Creates the provider; callbacks as in the session.
-  DouyuDanmakuProvider({this.filterSuspectedAutomated, this.giftsFor});
+  /// The provider over [site] (which supplies and refreshes the gift catalogues).
+  DouyuDanmakuProvider({required this.site, this.filterSuspectedAutomated});
+
+  /// The site this capability serves: the source of the gift catalogues.
+  final DouyuSite site;
 
   /// Read for each suspected chat, so a changed setting applies at once.
   final bool Function()? filterSuspectedAutomated;
-
-  /// The gift catalogues of a room (`betard`'s, with the fetched lists over
-  /// them); gifts before it answers are still reported.
-  final DouyuGiftCatalog Function(String roomId)? giftsFor;
 
   @override
   Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
     final session = DouyuDanmakuSession(
       roomId: roomId,
       filterSuspectedAutomated: filterSuspectedAutomated,
-      gifts: giftsFor?.call(roomId) ?? DouyuGiftCatalog.empty,
+      gifts: site.cachedGifts(roomId),
     );
     final failure = await session.connect();
     if (failure != null) {
       unawaited(session.dispose());
       return left(failure);
     }
+    // The catalogue is fetched off the connect path and merged into the live
+    // session as it arrives (the contract's update-methods channel); a room
+    // the lists do not know still reports its gifts, just unpriced.
+    unawaited(() async {
+      try {
+        session.addGifts(await site.giftCatalog(roomId));
+      } on Object {
+        // A failed catalogue fetch leaves the session reporting raw gifts.
+      }
+    }());
     return right(session);
   }
 }
@@ -75,6 +82,17 @@ final class DouyuDanmakuSession implements LiveDanmakuSession {
   StreamSubscription<dynamic>? _subscription;
   int _generation = 0;
   bool _disposed = false;
+
+  /// One reconnect in flight per generation (the watchdog and `onDone` both
+  /// fire on a dead socket; without this they would double-open).
+  bool _reconnecting = false;
+
+  /// Consecutive failed reconnects; a run that reaches [maxReconnectAttempts]
+  /// gives up and closes [events] instead of retrying forever in silence.
+  int _reconnectFailures = 0;
+
+  /// How many reconnects in a row may fail before the session is abandoned.
+  static const int maxReconnectAttempts = 6;
 
   /// Adds [extra] to the gift catalogue (a fetched list arriving late).
   void addGifts(DouyuGiftCatalog extra) => gifts = gifts.merge(extra);
@@ -121,6 +139,7 @@ final class DouyuDanmakuSession implements LiveDanmakuSession {
   static const String _endpoint = 'wss://danmuproxy.douyu.com:8506';
 
   void _onFrame(List<int> frame) {
+    _reconnectFailures = 0;
     _watchdog?.cancel();
     _watchdog = Timer.periodic(DouyuDanmakuProtocol.heartbeatInterval * 3, (_) {
       if (!_disposed) _scheduleReconnect(_generation, 'socket silent');
@@ -152,12 +171,33 @@ final class DouyuDanmakuSession implements LiveDanmakuSession {
   }
 
   void _scheduleReconnect(int staleGeneration, String reason) {
-    if (_disposed || staleGeneration != _generation) return;
+    if (_disposed || staleGeneration != _generation || _reconnecting) return;
+    _reconnecting = true;
     unawaited(() async {
       // Back off briefly so a flapping endpoint is not hammered.
       await Future<void>.delayed(const Duration(seconds: 2));
-      if (_disposed || staleGeneration != _generation) return;
-      await connect();
+      if (_disposed || staleGeneration != _generation) {
+        _reconnecting = false;
+        return;
+      }
+      final failure = await connect();
+      _reconnecting = false;
+      if (failure == null) return;
+      _reconnectFailures++;
+      if (_reconnectFailures >= maxReconnectAttempts) {
+        // Give up: report the loss on the stream instead of retrying forever,
+        // and stop so a stale socket's reconnect is not scheduled again.
+        _generation++;
+        _events.add(
+          LiveMessage.normalized(
+            type: LiveMessageType.system,
+            text: 'Danmaku connection lost',
+            color: LiveMessageColor.white,
+          ),
+        );
+        unawaited(_teardownSocket());
+        unawaited(_events.close());
+      }
     }());
   }
 

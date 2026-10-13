@@ -15,9 +15,7 @@ import 'package:live_sites/src/platforms/douyu/parsers/douyu_room_parser.dart';
 // ignore_for_file: unnecessary_type_name_in_constructor
 
 /// Douyu's API search: rooms and anchors.
-/// Douyu's API search: rooms and anchors.
 final class DouyuSearchProvider implements LiveSearchProvider {
-  /// Serves [site].
   /// Serves [site].
   DouyuSearchProvider({required this.site});
 
@@ -28,18 +26,20 @@ final class DouyuSearchProvider implements LiveSearchProvider {
   Set<LiveSearchTarget> get supportedTargets => const {LiveSearchTarget.rooms, LiveSearchTarget.anchors};
 
   @override
-  @override
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
+    if (!supportedTargets.contains(request.target)) {
+      // The contract promises `unsupported` for a target this site does not
+      // search, whatever the keyword is — so it is checked before the blank
+      // keyword short-circuit below.
+      return left(
+        LiveSiteError.unsupported(siteId: 'douyu', message: 'search target ${request.target.name} not supported'),
+      );
+    }
     final text = request.query.trim();
     if (text.isEmpty) {
       // The platform answers a blank keyword with an error; the caller gets
       // a successful empty page instead of a round trip.
       return right(const LivePage(items: []));
-    }
-    if (!supportedTargets.contains(request.target)) {
-      return left(
-        LiveSiteError.unsupported(siteId: 'douyu', message: 'search target ${request.target.name} not supported'),
-      );
     }
     final page = request.page < 1 ? 1 : request.page;
     final pageSize = request.pageSize.clamp(1, 50);

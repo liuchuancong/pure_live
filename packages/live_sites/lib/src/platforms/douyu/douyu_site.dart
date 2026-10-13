@@ -7,6 +7,7 @@ import 'dart:math';
 import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
+import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
@@ -19,6 +20,7 @@ import 'package:live_sites/src/platforms/douyu/api/douyu_endpoints.dart';
 import 'package:live_sites/src/platforms/douyu/api/douyu_http.dart';
 import 'package:live_sites/src/platforms/douyu/capabilities/douyu_area_provider.dart';
 import 'package:live_sites/src/platforms/douyu/capabilities/douyu_discovery_provider.dart';
+import 'package:live_sites/src/platforms/douyu/capabilities/douyu_link_resolver.dart';
 import 'package:live_sites/src/platforms/douyu/capabilities/douyu_playback_provider.dart';
 import 'package:live_sites/src/platforms/douyu/capabilities/douyu_room_provider.dart';
 import 'package:live_sites/src/platforms/douyu/capabilities/douyu_search_provider.dart';
@@ -322,6 +324,7 @@ final class DouyuSite implements LiveSite {
   DouyuSearchProvider? _search;
   DouyuPlaybackProvider? _playback;
   DouyuDanmakuProvider? _danmaku;
+  DouyuLinkResolver? _link;
 
   /// The capability of type [T], or null when douyu does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -332,7 +335,8 @@ final class DouyuSite implements LiveSite {
     final discovery = _discovery ??= DouyuDiscoveryProvider(site: this);
     final search = _search ??= DouyuSearchProvider(site: this);
     final playback = _playback ??= DouyuPlaybackProvider(site: this);
-    final danmaku = _danmaku ??= DouyuDanmakuProvider(giftsFor: cachedGifts);
+    final danmaku = _danmaku ??= DouyuDanmakuProvider(site: this);
+    final link = _link ??= DouyuLinkResolver(site: this);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -340,6 +344,7 @@ final class DouyuSite implements LiveSite {
       const (LiveSearchProvider) => search as T,
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
+      const (LiveLinkResolver) => link as T,
       _ => null,
     };
   }
