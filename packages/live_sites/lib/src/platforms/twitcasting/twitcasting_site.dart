@@ -14,7 +14,9 @@ import 'package:live_sites/src/platforms/twitcasting/parsers/twitcasting_parser.
 /// sixty broadcasts, paged locally, for the whole site or one of the
 /// homepage's tabs.
 ///
-/// Not migrated yet: search.
+/// Search is the live section (`#tw-search-result-live`) of the site's text
+/// search page: one window of up to fifty rows, paged locally like the
+/// directory.
 final class TwitcastingSite
     with SiteRoomGuard
     implements LiveSite, LiveDanmakuCapability, LiveAreaCatalog, LiveDirectoryCapability {
@@ -109,9 +111,74 @@ final class TwitcastingSite
 
   final Map<String, ({DateTime at, String body})> _windows = {};
 
+  /// Live channels matching [keyword]: the site answers one window of
+  /// [TwitcastingParser.searchWindow] live rows, so page 1 asks for it and a
+  /// later page is cut from the same cached answer while it is younger than
+  /// [windowLifetime]; a page past the window is empty without a request. A
+  /// channel link finds that channel, live or not, on page 1 (an unknown one
+  /// finds nothing); other TwitCasting links find nothing. A blank keyword is
+  /// nothing; a page out of range or a keyword over 100 characters is a caller
+  /// error, as 3.x refused them.
   @override
   Future<LivePage<LiveRoom>> searchRooms(String keyword, {int page = 1}) async {
-    throw UnimplementedError('twitcasting search lands with its migration');
+    const pageSize = TwitcastingParser.directoryPageSize;
+    final query = keyword.trim();
+    if (page < 1 || page > TwitcastingParser.maxPage || query.length > 100) {
+      throw ArgumentError('Invalid TwitCasting search: page $page, ${query.length} characters');
+    }
+    if (query.isEmpty || (page - 1) * pageSize >= TwitcastingParser.searchWindow) {
+      return const LivePage<LiveRoom>(items: []);
+    }
+    final link = Uri.tryParse(query);
+    if (link != null && TwitcastingParser.hosts.contains(link.host.toLowerCase())) {
+      final channel = _channelOfLink(link);
+      if (channel == null || page != 1) {
+        return const LivePage<LiveRoom>(items: []);
+      }
+      try {
+        final room = await getRoomDetail(LiveRoom(platform: SiteIds.twitcasting, roomId: channel));
+        return LivePage<LiveRoom>(items: [room]);
+      } on SiteNotFoundError {
+        return const LivePage<LiveRoom>(items: []);
+      }
+    }
+    return await _search(query, page);
+  }
+
+  /// The channel a TwitCasting [link] names: a single path segment that is a
+  /// channel name; null for a deeper or unusable path (3.x's `channelFromUri`).
+  static String? _channelOfLink(Uri link) {
+    if (link.userInfo.isNotEmpty || (link.hasPort && link.port != (link.isScheme('https') ? 443 : 80))) {
+      return null;
+    }
+    final parts = link.pathSegments.where((segment) => segment.isNotEmpty).toList();
+    return parts.length == 1 ? TwitcastingParser.channelName(parts.single) : null;
+  }
+
+  /// One page of a keyword's search window, cached by keyword like the
+  /// directory window.
+  Future<LivePage<LiveRoom>> _search(String query, int page) async {
+    const pageSize = TwitcastingParser.directoryPageSize;
+    final key = 'search|$query';
+    final cached = _windows[key];
+    if (page > 1 && cached != null && DateTime.now().difference(cached.at) < windowLifetime) {
+      return TwitcastingParser.searchPage(cached.body, page: page, pageSize: pageSize);
+    }
+    final response = await http.send(
+      LiveRequest.get(TwitcastingParser.searchUrl(query), headers: TwitcastingParser.headers, site: siteId),
+    );
+    final result = TwitcastingParser.searchPage(
+      response.text,
+      page: page,
+      pageSize: pageSize,
+      status: response.statusCode,
+    );
+    _windows.remove(key);
+    _windows[key] = (at: DateTime.now(), body: response.text);
+    if (_windows.length > _windowLimit) {
+      _windows.remove(_windows.keys.first);
+    }
+    return result;
   }
 
   /// Opens the broadcast's comment stream.

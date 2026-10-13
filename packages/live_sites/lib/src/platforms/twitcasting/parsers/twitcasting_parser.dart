@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:html/dom.dart' as dom;
+import 'package:html/parser.dart' as html;
 import 'package:live_sites/live_sites.dart';
 
 /// Static parsers for the TwitCasting channel pages and streamserver.
@@ -230,6 +232,206 @@ abstract final class TwitcastingParser {
   }
 
   /// A `//host/…` or `https://host/…` picture as it is served.
+  /// The website's hosts a channel link may name.
+  static const Set<String> hosts = {'twitcasting.tv', 'www.twitcasting.tv'};
+
+  /// The live results the search page shows at most, all in one page.
+  static const int searchWindow = 50;
+
+  /// The search page for [query] (`search.twitcasting.tv/search/text/<query>`).
+  static Uri searchUrl(String query) => Uri(
+    scheme: 'https',
+    host: 'search.twitcasting.tv',
+    pathSegments: ['search', 'text', query],
+    queryParameters: {'hl': 'en'},
+  );
+
+  /// A page's HTTP status, as 3.x read it: 401/403 are risk control, 404 is
+  /// "not found", 429 is rate limited, anything else a changed page.
+  static void _checkStatus(int status, String what) {
+    if (status == 200) {
+      return;
+    }
+    throw switch (status) {
+      401 || 403 => SiteRiskControlError('twitcasting $what: HTTP $status'),
+      404 => SiteNotFoundError('twitcasting $what: HTTP $status'),
+      429 => SiteRateLimitedError('twitcasting $what: HTTP $status'),
+      _ => SiteApiChangedError('twitcasting $what: HTTP $status'),
+    };
+  }
+
+  /// The search page's live section (`#tw-search-result-live`): its anchors,
+  /// live, one per window entry, null where a row is malformed or left out.
+  static List<LiveRoom?> searchRows(String body, {int status = 200}) {
+    _checkStatus(status, 'search');
+    final root = html.parseFragment(body);
+    final section = root.querySelector('#tw-search-result-live');
+    if (section == null) {
+      throw const SiteApiChangedError('twitcasting search: no live section');
+    }
+    final rows = section.querySelectorAll('.tw-search-result-row');
+    if (rows.length > searchWindow) {
+      throw SiteApiChangedError('twitcasting search: ${rows.length} live rows');
+    }
+    final window = [for (final row in rows) _searchRow(row)];
+    if (rows.isNotEmpty && window.every((row) => row.malformed)) {
+      throw SiteApiChangedError('twitcasting search: all ${rows.length} live rows malformed');
+    }
+    return [for (final row in window) row.room];
+  }
+
+  /// Page [page] of [pageSize] rows of the search page's live section.
+  static LivePage<LiveRoom> searchPage(String body, {required int page, required int pageSize, int status = 200}) {
+    final rooms = slice(
+      searchRows(body, status: status),
+      offset: (page - 1) * pageSize,
+      pageSize: pageSize,
+    );
+    final hasMore = (page - 1) * pageSize + rooms.length < searchWindow && rooms.length == pageSize;
+    return LivePage<LiveRoom>(items: rooms, hasMore: hasMore, nextPage: hasMore ? page + 1 : null);
+  }
+
+  /// The rooms of a window [offset] through [offset]+[pageSize], each room
+  /// once (a malformed or skipped entry is left out).
+  static List<LiveRoom> slice(List<LiveRoom?> window, {required int offset, required int pageSize}) {
+    final rooms = <String, LiveRoom>{};
+    for (final room in window.skip(offset).take(pageSize)) {
+      if (room != null) {
+        rooms.putIfAbsent(room.roomId, () => room);
+      }
+    }
+    return List.unmodifiable(rooms.values);
+  }
+
+  /// One live search row: its room, or none when it is left out (a playable
+  /// row that is not marked live) or malformed (no channel it can name).
+  static ({LiveRoom? room, bool malformed}) _searchRow(dom.Element row) {
+    final badges = row.querySelectorAll('.tw-movie-thumbnail2-badge');
+    final playable = row
+        .querySelectorAll('.tw-movie-thumbnail2-image-wrapper')
+        .any((tag) => tag.attributes['data-can-play'] == 'true');
+    final LiveRestriction restriction;
+    if (playable) {
+      if (!badges.any((badge) => badge.attributes['data-status'] == 'live')) {
+        return (room: null, malformed: false);
+      }
+      restriction = LiveRestriction.none;
+    } else {
+      final isPrivate = badges.any((badge) => badge.text.trim().toLowerCase() == 'private');
+      restriction = isPrivate ? LiveRestriction.private : LiveRestriction.unplayable;
+    }
+    final user = row.querySelector('.tw-search-result-row-user-name');
+    final userText = user?.querySelector('.usertext');
+    final channelHref = userText?.querySelector('a')?.attributes['href'] ?? '';
+    final movieHref = row.querySelector('a.tw-movie-thumbnail2')?.attributes['href'] ?? '';
+    final channel = _searchChannel(movieHref, channelHref);
+    if (channel == null) {
+      return (room: null, malformed: true);
+    }
+    final title = (row.querySelector('.tw-movie-thumbnail-title')?.text ?? '').trim();
+    final name = (user?.querySelector('.username')?.text ?? '').trim();
+    final cover = row.querySelector('.tw-movie-thumbnail2-image')?.attributes['src'];
+    final avatar = row.querySelector('.userimage32 img')?.attributes['src'];
+    final date = row.querySelector('time.tw-movie-thumbnail-date')?.attributes['datetime'] ?? '';
+    return (
+      room: LiveRoom(
+        platform: SiteIds.twitcasting,
+        roomId: channel,
+        title: title,
+        nick: name.isEmpty ? channel : name,
+        cover: _picture(cover),
+        avatar: _picture(avatar),
+        status: LiveStatus.live,
+        startedAt: pageDate(date),
+        restriction: restriction,
+      ),
+      malformed: false,
+    );
+  }
+
+  /// The channel of a live search row, or null when its movie link
+  /// `/<channel>/movie/<id>` and its channel link `/<channel>` do not name the
+  /// same channel (3.x's checks).
+  static String? _searchChannel(String movieHref, String channelHref) {
+    final movieUri = Uri.tryParse(movieHref);
+    final channelUri = Uri.tryParse(channelHref);
+    if (movieUri == null ||
+        channelUri == null ||
+        movieUri.hasAuthority ||
+        channelUri.hasAuthority ||
+        movieUri.hasQuery ||
+        movieUri.hasFragment ||
+        channelUri.hasQuery ||
+        channelUri.hasFragment) {
+      return null;
+    }
+    try {
+      final channelParts = channelUri.pathSegments;
+      final movieParts = movieUri.pathSegments;
+      if (channelParts.length != 1 || movieParts.length != 3) {
+        return null;
+      }
+      final channel = channelName(channelParts.single);
+      final movie = int.tryParse(movieParts.last);
+      if (channel == null ||
+          movieParts.first.toLowerCase() != channel ||
+          movieParts[1] != 'movie' ||
+          movie == null ||
+          movie <= 0) {
+        return null;
+      }
+      return channel;
+    } on FormatException {
+      return null;
+    }
+  }
+
+  static final RegExp _pageDate = RegExp(
+    r'^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), (\d{1,2}) ([A-Z][a-z]{2}) (\d{4}) (\d{2}):(\d{2}):(\d{2}) ([+-])(\d{2})(\d{2})$',
+  );
+
+  static const List<String> _months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+
+  /// An RFC-1123 page date (the search rows' `datetime`, UTC+9) as a moment, or
+  /// null for anything malformed.
+  static DateTime? pageDate(String text) {
+    final match = _pageDate.firstMatch(text.trim());
+    if (match == null) {
+      return null;
+    }
+    final month = _months.indexOf(match.group(2)!) + 1;
+    final day = int.parse(match.group(1)!);
+    final year = int.parse(match.group(3)!);
+    final hour = int.parse(match.group(4)!);
+    final minute = int.parse(match.group(5)!);
+    final second = int.parse(match.group(6)!);
+    final offsetHours = int.parse(match.group(8)!);
+    final offsetMinutes = int.parse(match.group(9)!);
+    if (month == 0 || day < 1 || day > 31 || hour > 23 || minute > 59 || second > 59 || offsetMinutes > 59) {
+      return null;
+    }
+    final local = DateTime.utc(year, month, day, hour, minute, second);
+    if (local.day != day) {
+      return null;
+    }
+    final offset = Duration(hours: offsetHours, minutes: offsetMinutes);
+    final utc = match.group(7) == '+' ? local.subtract(offset) : local.add(offset);
+    return utc.millisecondsSinceEpoch > 0 ? utc : null;
+  }
+
   static String? _picture(Object? value) {
     final url = SiteText.trimmed(value);
     if (url.isEmpty) {
