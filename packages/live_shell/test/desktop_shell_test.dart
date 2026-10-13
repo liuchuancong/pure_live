@@ -181,7 +181,12 @@ void main() {
       await shell.start();
 
       expect(window.calls, isNot(contains('show')));
-      expect(shell.phase, ShellPhase.absent);
+      expect(
+        window.calls,
+        contains('hide'),
+        reason: 'the runner already showed the window; not showing it again is not hiding it',
+      );
+      expect(shell.phase, ShellPhase.hidden);
     });
 
     test('a restored session overrides the hidden setting', () async {
@@ -204,7 +209,8 @@ void main() {
       await shell.start(openedHiddenBySystem: true);
 
       expect(window.calls, isNot(contains('show')));
-      expect(shell.phase, ShellPhase.absent);
+      expect(window.calls, contains('hide'), reason: 'the window the runner mapped has to be taken away');
+      expect(shell.phase, ShellPhase.hidden);
     });
   });
 

@@ -256,3 +256,23 @@ bool isHeadlessStart(Iterable<String> arguments) {
 /// [wasRequestedHidden] with whatever the OS reported in addition to its args.
 bool wasRequestedHidden({required Iterable<String> arguments, bool openedAsHiddenBySystem = false}) =>
     openedAsHiddenBySystem || arguments.contains('--hidden');
+
+/// What a second process should hand over when its own command line carried no
+/// request.
+///
+/// Launching an app that is already running **is** the request: the viewer
+/// double-clicked the icon and expects a window, which is the convention every
+/// desktop follows (macOS reactivation, single-instance Windows apps raising
+/// themselves). Forwarding nothing leaves the app hidden in the tray with a second
+/// process that quietly did nothing — the exact "clicked it twice, nothing
+/// happened" report that has no error to find.
+///
+/// `--hidden` is honoured, because a sign-in relaunch must not throw a window at
+/// somebody who asked for none.
+LaunchIntent? intentForHandoff(Iterable<String> arguments) {
+  final explicit = LaunchIntent.fromArguments(arguments);
+  if (explicit != null) {
+    return explicit;
+  }
+  return arguments.contains('--hidden') ? null : const ShowMainWindow();
+}

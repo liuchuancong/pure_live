@@ -13,12 +13,25 @@ import 'package:path/path.dart' as p;
 /// remove+rename pair is not fully atomic there; the temp copy still
 /// guards against truncated writes.
 abstract final class AtomicFileWriter {
+  /// Per-process counter making each temp path unique. A timestamp alone is not:
+  /// two writes into the same directory inside one microsecond claimed the same
+  /// temp file, which either failed the second rename outright or — worse, and
+  /// silently — promoted one file holding interleaved bytes of two payloads.
+  static int _sequence = 0;
+
   /// Writes [bytes] to [target] through a temp file. Creates parent
   /// directories as needed.
   static Future<File> writeBytes(File target, List<int> bytes) async {
-    await target.parent.create(recursive: true);
-    final temp = File(p.join(target.parent.path, '.pure_live_tmp_${DateTime.now().microsecondsSinceEpoch}'));
+    // The whole operation is inside the try, including the directory creation: the
+    // package contract is that callers match on `PlatformException`, and a raw
+    // `PathExistsException` from `create` used to escape past the handler below
+    // whenever a parent segment was already occupied by a file.
+    File? temp;
     try {
+      await target.parent.create(recursive: true);
+      // The target name is kept in the temp name so an orphan left by a crash
+      // identifies the file it was writing.
+      temp = File(p.join(target.parent.path, '.pure_live_tmp_${pid}_${++_sequence}_${p.basename(target.path)}'));
       final sink = temp.openWrite();
       try {
         sink.add(bytes);
@@ -28,7 +41,10 @@ abstract final class AtomicFileWriter {
       }
       return _promote(temp, target);
     } on FileSystemException catch (error) {
-      _discard(temp);
+      final partial = temp;
+      if (partial != null) {
+        _discard(partial);
+      }
       throw StorageOperationException('atomic write to ${target.path} failed: ${error.message}', cause: error);
     }
   }

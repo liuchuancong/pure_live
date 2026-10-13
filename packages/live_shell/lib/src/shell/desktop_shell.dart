@@ -199,6 +199,10 @@ final class DesktopShell {
     _subscribeWindow();
     await window.setPreventClose(enabled: true);
     stateStore?.resume();
+    // Applied before the visibility decision so the window appears where it was
+    // rather than appearing and then jumping. (A maximised state is *not* reliably
+    // restored this way — that case is still open; see the note on
+    // [restoreGeometry].)
     await restoreGeometry();
     final state = resolveStartState(
       headless: false,
@@ -209,7 +213,12 @@ final class DesktopShell {
     if (state == SurfaceState.visible) {
       await reveal();
     } else {
-      _phase = ShellPhase.absent;
+      // Hiding is not the same as declining to show. On Windows and Linux the
+      // runner has already mapped and shown the window before Dart's entry point
+      // runs, so a shell that only withholds its own `show()` leaves the window
+      // on screen and "start hidden" is a setting that silently does nothing.
+      await window.hide();
+      _phase = ShellPhase.hidden;
     }
     _scheduleIdle();
     await refreshTray();
@@ -319,6 +328,10 @@ final class DesktopShell {
       state: _asSurface(_phase),
       allowReclaim: canRebuildPrimary && settings().reclaimWhenIdle && !busy(),
     );
+    // Before whichever way this leaves the screen: the store is paused on hide
+    // and the window is gone after a reclaim, so this is the last reading either
+    // branch will get.
+    await _record();
     switch (action) {
       case SurfaceAction.hide:
         await window.hide();
@@ -348,6 +361,10 @@ final class DesktopShell {
     );
     switch (disposition) {
       case CloseDisposition.hide:
+        // Last chance to capture where the window actually is: hiding stops the
+        // store, and a programmatic move or snap may never have produced an event
+        // for us to record from.
+        await _record();
         await window.hide();
         _phase = ShellPhase.hidden;
         stateStore?.pause();
@@ -359,6 +376,7 @@ final class DesktopShell {
           minimizeToTray: settings().closeAction == CloseAction.hideToTray,
           hasTray: hasTray,
         );
+        await _record();
         await window.destroy();
         // Reclaimed, not absent: the window existed and no longer does, which is
         // a different question from never having been built — raising the latter
@@ -429,6 +447,15 @@ final class DesktopShell {
   }
 
   /// Reads back the remembered place, if remembering is wanted.
+  ///
+  /// The maximised half of this depends on the Windows runner: the window is
+  /// maximised here during start-up, and `Win32Window::Show()` — which the runner
+  /// calls from its first-frame callback, i.e. after this — must use `SW_SHOW`, not
+  /// `SW_SHOWNORMAL`, because the latter also *restores* a maximised window.
+  /// Measured on a real build: with `SW_SHOWNORMAL` the window reads as maximised
+  /// at start-up and not maximised one second later; with `SW_SHOW` it stays.
+  /// Nothing in this package can defend against that, so if the runner is ever
+  /// regenerated from the Flutter template, check that call.
   Future<void> restoreGeometry() async {
     final store = stateStore;
     if (store == null || !settings().rememberBounds) {
@@ -454,6 +481,7 @@ final class DesktopShell {
     _watcher?.stop();
     ledger.record(trigger: QuitTrigger.explicitQuit, minimizeToTray: false, hasTray: hasTray);
     await windows?.dismissAll();
+    await _record();
     await stateStore?.flush();
     await _windowSub?.cancel();
     await _selectionSub?.cancel();
@@ -538,6 +566,11 @@ final class DesktopShell {
         case WindowEvent.blurred:
         case WindowEvent.maximised:
         case WindowEvent.unmaximised:
+          // Remembered the moment it is heard, and not only from the button:
+          // the frame and the maximised flag are stored as a pair, and the most
+          // common way to maximise a window on Windows is the keyboard or a snap
+          // edge, which the platform may report late or not at all.
+          unawaited(_record());
         case WindowEvent.minimised:
         case WindowEvent.enteredFullScreen:
         case WindowEvent.leftFullScreen:

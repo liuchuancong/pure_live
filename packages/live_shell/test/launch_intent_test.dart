@@ -65,4 +65,25 @@ void main() {
       expect(wasRequestedHidden(arguments: const ['--no-sandbox']), isFalse);
     });
   });
+
+  group('what a hand-off carries', () {
+    test('an explicit intent is forwarded as written', () {
+      final handed = intentForHandoff(const OpenFile('/playlists/live.m3u').toArguments());
+
+      expect(handed, isA<OpenFile>());
+      expect((handed! as OpenFile).path, '/playlists/live.m3u');
+    });
+
+    test('launching a running app with no arguments is itself the request to show it', () {
+      // Without this the second process hands over "nothing", the running app
+      // stays hidden in the tray, and the viewer's double-click produced no
+      // window and no error anywhere — the report nobody can reproduce.
+      expect(intentForHandoff(const []), isA<ShowMainWindow>());
+      expect(intentForHandoff(const ['--no-sandbox']), isA<ShowMainWindow>());
+    });
+
+    test('a relaunch that asked to stay hidden is not allowed to raise a window', () {
+      expect(intentForHandoff(const ['--hidden']), isNull);
+    });
+  });
 }

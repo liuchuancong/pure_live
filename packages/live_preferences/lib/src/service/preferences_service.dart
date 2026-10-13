@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:live_preferences/src/model/appearance_preferences.dart';
 import 'package:live_preferences/src/model/danmaku_preferences.dart';
+import 'package:live_preferences/src/model/desktop_preferences.dart';
 import 'package:live_preferences/src/model/iptv_preferences.dart';
 import 'package:live_preferences/src/model/library_preferences.dart';
 import 'package:live_preferences/src/model/playback_preferences.dart';
@@ -153,6 +154,9 @@ final class PreferencesService {
     if (fresh.iptv != previous.iptv) {
       _pending[PreferencesKeys.iptv] = fresh.iptv.toJson();
     }
+    if (fresh.desktop != previous.desktop) {
+      _pending[PreferencesKeys.desktop] = fresh.desktop.toJson();
+    }
     return _schedule();
   }
 
@@ -183,6 +187,10 @@ final class PreferencesService {
   /// Applies [transform] to the IPTV group.
   Future<void> updateIptv(IptvPreferences Function(IptvPreferences) transform) =>
       update((preferences) => preferences.copyWith(iptv: transform(preferences.iptv)));
+
+  /// Applies [transform] to the desktop shell group.
+  Future<void> updateDesktop(DesktopPreferences Function(DesktopPreferences) transform) =>
+      update((preferences) => preferences.copyWith(desktop: transform(preferences.desktop)));
 
   /// Writes every pending document now, instead of waiting for the
   /// debounce; used before the app exits and after a critical change.
@@ -233,6 +241,7 @@ final class PreferencesService {
     PreferencesKeys.window => loaded.copyWith(window: WindowPreferences.fromJson(json)),
     PreferencesKeys.appearance => loaded.copyWith(appearance: AppearancePreferences.fromJson(json)),
     PreferencesKeys.iptv => loaded.copyWith(iptv: IptvPreferences.fromJson(json)),
+    PreferencesKeys.desktop => loaded.copyWith(desktop: DesktopPreferences.fromJson(json)),
     _ => loaded,
   };
 

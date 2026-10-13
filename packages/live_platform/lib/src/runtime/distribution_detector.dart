@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:live_platform/src/runtime/desktop_distribution.dart';
+import 'package:path/path.dart' as p;
 
 /// Best-effort distribution detection, used only when the app shell has
 /// not declared the deployment explicitly.
@@ -18,11 +19,22 @@ abstract final class DistributionDetector {
   /// [DesktopDistribution.unknown] on any other layout.
   static DesktopDistribution detect(Directory executableRoot) {
     if (Platform.isWindows) {
-      final parts = executableRoot.absolute.path.split(Platform.pathSeparator);
+      // Split through package:path: a Windows path may legitimately arrive with `/`
+      // separators (a hand-written default, a value from a plugin or a config file),
+      // and splitting only on Platform.pathSeparator turns such a path into one
+      // opaque segment, so the container keyword is never found and the answer
+      // silently degrades to unknown.
+      final parts = p.split(executableRoot.absolute.path);
       final packagesIndex = parts.indexOf('Packages');
-      if (packagesIndex > 0 &&
+      // The per-user container reads `…\AppData\Local\Packages\<package-id>\…`, so the
+      // two segments before `Packages` are `Local` and `AppData`. `LocalAppData` is
+      // the shell *name of the root* and never appears as a path segment, which is
+      // why comparing against it made this rule unreachable and every MSIX build
+      // came back unknown.
+      if (packagesIndex > 1 &&
           parts.length > packagesIndex + 1 &&
-          parts[packagesIndex - 1].equalsIgnoreCase('localappdata')) {
+          parts[packagesIndex - 1].equalsIgnoreCase('local') &&
+          parts[packagesIndex - 2].equalsIgnoreCase('appdata')) {
         return DesktopDistribution.msix;
       }
     }

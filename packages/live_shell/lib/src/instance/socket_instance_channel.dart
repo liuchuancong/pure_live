@@ -198,7 +198,7 @@ final class SocketInstanceChannel implements InstanceChannel {
     if (nonce == null) {
       return false;
     }
-    final intent = LaunchIntent.fromArguments(arguments);
+    final intent = intentForHandoff(arguments);
     final request = jsonEncode({'protocol': protocolId, 'nonce': nonce, 'intent': intent?.toArguments().firstOrNull});
     Socket? socket;
     try {

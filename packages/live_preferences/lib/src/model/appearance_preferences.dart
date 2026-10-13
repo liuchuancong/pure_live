@@ -42,6 +42,27 @@ abstract class AppearancePreferences with _$AppearancePreferences {
 
     /// Whether dark surfaces are drawn pure black, for OLED screens.
     @Default(false) bool pureBlack,
+
+    /// The layout density registry id; empty means the default density.
+    @Default('') String densityId,
+
+    /// A global multiplier on every font size (the "enlarge text" control).
+    @Default(1.0) double fontScale,
+
+    /// A global font family override; null keeps the platform default.
+    String? fontFamily,
+
+    /// A multiplier (0..1) on glass/scrim opacity.
+    @Default(1.0) double transparency,
+
+    /// Accessibility: force surfaces opaque and disable backdrop blur.
+    @Default(false) bool reduceTransparency,
+
+    /// Whether motion runs.
+    @Default(true) bool animations,
+
+    /// Whether focused controls draw a visible outline.
+    @Default(true) bool focusOutline,
   }) = _AppearancePreferences;
 
   /// Restores appearance preferences from JSON.
