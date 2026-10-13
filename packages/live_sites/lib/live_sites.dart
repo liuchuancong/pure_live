@@ -7,14 +7,17 @@
 /// `Either<LiveSiteError, T>`, so a caller can distinguish "no such room" from
 /// "not supported" from "rate limited" without try/catch.
 ///
-/// The shared models are plain immutable Freezed value types; identity-bearing
-/// entities (rooms, anchors) compare by (siteId, id) so refreshes stay stable.
+/// The shared models are immutable value types built faithfully to `live_core`:
+/// pure data uses Freezed, while identity-bearing or normalizing entities
+/// (rooms, areas, play lines) are hand-written and compare by a stable identity
+/// (a room by `(platform, roomId)`) so refreshes stay stable. A room's area is a
+/// `LiveArea`; playback is reported as `LivePlayQuality` and `LivePlayLine`.
 /// Platform adapters, their parsers and signing live under `src/platforms/` and
 /// are not part of this public surface.
 library;
 
 export 'src/capabilities/live_anchor_provider.dart';
-export 'src/capabilities/live_category_provider.dart';
+export 'src/capabilities/live_area_provider.dart';
 export 'src/capabilities/live_danmaku_provider.dart';
 export 'src/capabilities/live_discovery_provider.dart';
 export 'src/capabilities/live_hot_provider.dart';
@@ -37,7 +40,6 @@ export 'src/models/catch_up/catch_up.dart';
 export 'src/models/live_anchor/live_anchor.dart';
 export 'src/models/live_area/live_area.dart';
 export 'src/models/live_asset_ref/live_asset_ref.dart';
-export 'src/models/live_category/live_category.dart';
 export 'src/models/live_danmaku_event/live_danmaku_event.dart';
 export 'src/models/live_gift/live_gift.dart';
 export 'src/models/live_gift_combo/live_gift_combo.dart';
@@ -48,6 +50,5 @@ export 'src/models/live_restriction/live_restriction.dart';
 export 'src/models/live_room/live_room.dart';
 export 'src/models/live_search_result/live_search_result.dart';
 export 'src/models/live_status/live_status.dart';
-export 'src/models/live_stream/live_stream.dart';
 export 'src/models/play_line/play_line.dart';
 export 'src/models/room_link/room_link.dart';

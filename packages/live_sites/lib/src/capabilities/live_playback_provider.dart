@@ -1,16 +1,22 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
-import 'package:live_sites/src/models/live_stream/live_stream.dart';
+import 'package:live_sites/src/models/live_area/live_area.dart';
+import 'package:live_sites/src/models/play_line/play_line.dart';
 
-/// Resolves a platform-specific playable source.
+/// The stream qualities a room offers and the playable lines behind them.
 ///
-/// This reports the source; it does not open a player, choose an engine, retry,
-/// fall back between lines or manage recovery — those belong to `live_playback`
-/// and the application layer.
+/// This reports them; it does not open a player, choose an engine, retry, fall
+/// back between lines or manage recovery — those belong to `live_playback` and
+/// the application layer. A line describes itself (its URL, headers, container
+/// format and renewal lease), so the player needs no per-platform code.
 abstract interface class LivePlaybackProvider implements LiveSiteCapability {
-  /// Resolves a playable stream for [roomId], optionally at a [quality] and a
-  /// [lineId]. A left names why resolution failed; an empty or short-lived URL
-  /// is never stored back as permanent room metadata.
-  Future<Either<LiveSiteError, LiveStream>> resolveStream({required String roomId, String? quality, String? lineId});
+  /// The qualities [roomId] offers, in the platform's order. A left names why
+  /// they could not be read.
+  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required String roomId});
+
+  /// The playable lines for [roomId] at [quality] (the default quality when it
+  /// is null). A short-lived URL is never stored back as permanent room
+  /// metadata; its [LivePlayLine.lease] says when to re-resolve.
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality});
 }

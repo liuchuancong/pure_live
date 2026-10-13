@@ -6,18 +6,19 @@ part 'live_anchor.freezed.dart';
 /// An anchor (streamer) as the shared contract represents it, independent of
 /// whether they are currently live.
 ///
-/// Identity is the pair (siteId, id): the same anchor keeps their identity
-/// across refreshes even as [isLive] or [followerCount] changes, so Freezed's
-/// generated equality is disabled and [Equatable] expresses identity. [avatar]
-/// and [uri] are parsed URIs, never widgets; unreported fields stay null.
+/// Identity is the pair (platform, anchorId): the same anchor keeps their
+/// identity across refreshes even as [isLive] or [followerCount] changes, so
+/// Freezed's generated equality is disabled and [Equatable] expresses identity.
+/// [avatar] and [uri] are parsed URIs, never widgets; unreported fields stay
+/// null.
 // ignore_for_file: unnecessary_type_name_in_constructor -- Freezed
 // factories cannot use the `new` shorthand.
 @Freezed(equal: false)
 abstract class LiveAnchor with _$LiveAnchor, Equatable {
-  /// Creates an anchor for [siteId] with the platform-specific [id].
+  /// Creates an anchor on [platform] with the platform-specific [anchorId].
   const factory LiveAnchor({
-    required String siteId,
-    required String id,
+    required String platform,
+    required String anchorId,
     required String name,
     Uri? avatar,
     Uri? uri,
@@ -30,8 +31,8 @@ abstract class LiveAnchor with _$LiveAnchor, Equatable {
   const LiveAnchor._();
 
   /// The stable identity key, e.g. `bilibili:12345`.
-  String get identity => '$siteId:$id';
+  String get identity => '$platform:$anchorId';
 
   @override
-  List<Object?> get props => [siteId, id];
+  List<Object?> get props => [platform, anchorId];
 }

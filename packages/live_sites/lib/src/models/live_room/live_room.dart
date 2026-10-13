@@ -6,6 +6,7 @@ import 'package:live_sites/src/common/normalization/site_text.dart';
 import 'package:live_sites/src/common/site_ids/site_ids.dart';
 import 'package:live_sites/src/models/audience/audience.dart';
 import 'package:live_sites/src/models/catch_up/catch_up.dart';
+import 'package:live_sites/src/models/live_area/live_area.dart';
 import 'package:live_sites/src/models/live_restriction/live_restriction.dart';
 import 'package:live_sites/src/models/live_status/live_status.dart';
 import 'package:meta/meta.dart';
@@ -117,7 +118,7 @@ final class LiveRoom {
       nick: text('nick') ?? '',
       avatar: text('avatar') ?? '',
       cover: text('cover') ?? '',
-      area: text('area') ?? '',
+      area: _areaFromJson(json['area'], platform),
       watching: watching,
       audienceMetricType: metric ?? AudienceMetricType.unknown,
       popularity: popularity,
@@ -178,8 +179,8 @@ final class LiveRoom {
   /// Cover URL.
   final String cover;
 
-  /// Area (category) name.
-  final String? area;
+  /// The room's area (its category node), when the platform names one.
+  final LiveArea? area;
 
   /// The single audience field of older records and backups; `'0'` is the old
   /// default and not a measurement.
@@ -488,7 +489,7 @@ final class LiveRoom {
       nick: prefer(incoming.nick, nick),
       avatar: prefer(incoming.avatar, avatar),
       cover: prefer(incoming.cover, cover),
-      area: preferNullable(incoming.area, area),
+      area: incoming.area ?? area,
       watching: prefer(incoming.watching, watching),
       audienceMetricType: given != null && given != AudienceMetricType.unknown ? given : audienceMetricType,
       popularity: prefer(incoming.popularity, popularity),
@@ -539,7 +540,7 @@ final class LiveRoom {
     if (detail == null) return this;
     return copyWith(
       title: title.trim().isEmpty && detail.title.trim().isNotEmpty ? detail.title : title,
-      area: (area ?? '').isEmpty ? detail.area : area,
+      area: (area?.areaName ?? '').isEmpty ? detail.area : area,
       nick: nick.trim().isEmpty ? detail.nick : nick,
       avatar: avatar.trim().isEmpty ? detail.avatar : avatar,
       cover: cover.trim().isEmpty ? detail.cover : cover,
@@ -555,7 +556,7 @@ final class LiveRoom {
     String? nick,
     String? avatar,
     String? cover,
-    String? area,
+    LiveArea? area,
     String? watching,
     AudienceMetricType? audienceMetricType,
     String? popularity,
@@ -622,7 +623,7 @@ final class LiveRoom {
     'nick': nick,
     'avatar': avatar,
     'cover': cover,
-    'area': area,
+    'area': area?.toJson(),
     'watching': watching,
     'audienceMetricType': effectiveAudienceMetricType.name,
     'popularity': popularity,
@@ -707,6 +708,16 @@ final class LiveRoom {
   }
 
   static int? _int(Object? value) => value is num ? value.toInt() : int.tryParse(value?.toString() ?? '');
+
+  /// The stored [LiveRoom.area]: a new record writes a `LiveArea` object, an
+  /// older one a bare name string; blank or absent is null.
+  static LiveArea? _areaFromJson(Object? value, String platform) {
+    if (value is Map) {
+      return LiveArea.fromJson(value.cast<String, Object?>());
+    }
+    final name = value?.toString().trim() ?? '';
+    return name.isEmpty ? null : LiveArea(platform: platform, areaName: name);
+  }
 
   static double? _finiteDouble(Object? value) {
     final parsed = value is num ? value.toDouble() : double.tryParse(value?.toString().trim() ?? '');

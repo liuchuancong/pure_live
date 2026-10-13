@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:live_sites/src/models/live_anchor/live_anchor.dart';
-import 'package:live_sites/src/models/live_category/live_category.dart';
+import 'package:live_sites/src/models/live_area/live_area.dart';
 import 'package:live_sites/src/models/live_room/live_room.dart';
 
 part 'live_search_result.freezed.dart';
@@ -16,8 +16,8 @@ enum LiveSearchTarget {
   /// Anchor search.
   anchors,
 
-  /// Category search.
-  categories,
+  /// Area (category) search.
+  areas,
 }
 
 /// A search request for [target] with [query], paged from [page].
@@ -44,6 +44,6 @@ abstract class LiveSearchResult with _$LiveSearchResult {
   /// An anchor hit.
   const factory LiveSearchResult.anchor(LiveAnchor anchor) = AnchorSearchResult;
 
-  /// A category hit.
-  const factory LiveSearchResult.category(LiveCategory category) = CategorySearchResult;
+  /// An area (category) hit.
+  const factory LiveSearchResult.area(LiveArea area) = AreaSearchResult;
 }
