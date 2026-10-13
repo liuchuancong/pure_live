@@ -514,13 +514,13 @@ packages:
     source: hosted
     version: "1.3.10"
   equatable:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: equatable
-      sha256: "3bce007a596ff8b3119c45d68aaef631272537c03d30e5d4534dd24bf4c5eaa2"
+      sha256: ea36e500cbf0ec18361deabca755434f73e42fe53c5130021c7e2d6b5ebe1702
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.0"
+    version: "3.0.0"
   fake_async:
     dependency: transitive
     description:
@@ -845,6 +845,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.0"
+  fuzzywuzzy:
+    dependency: transitive
+    description:
+      name: fuzzywuzzy
+      sha256: "3004379ffd6e7f476a0c2091f38f16588dc45f67de7adf7c41aa85dec06b432c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.0"
   glass_morphism_plus:
     dependency: transitive
     description:
@@ -1149,6 +1157,27 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.2.0"
+  media_core:
+    dependency: transitive
+    description:
+      path: "../../media_core/packages/media_core"
+      relative: true
+    source: path
+    version: "0.1.0"
+  media_core_logging:
+    dependency: transitive
+    description:
+      path: "../../media_core/packages/media_core_logging"
+      relative: true
+    source: path
+    version: "0.1.0"
+  media_core_memory:
+    dependency: transitive
+    description:
+      path: "../../media_core/packages/media_core_memory"
+      relative: true
+    source: path
+    version: "0.1.0"
   melos:
     dependency: "direct dev"
     description:
