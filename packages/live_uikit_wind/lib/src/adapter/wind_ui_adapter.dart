@@ -9,9 +9,12 @@ import 'package:live_uikit_wind/src/widgets/wind_switch_builder.dart';
 /// Wind — the `fluttersdk_wind` design-language adapter (§1).
 ///
 /// Implements the core contract for [LiveDesignLanguage.wind]: theme mapping
-/// delegates to `theme/`, each control to its `widgets/` builder, and the
-/// declared [capabilities] to `wind_ui_capabilities.dart`. Controls Wind cannot
-/// map cleanly fall back to the shared token renderer. No business state here.
+/// delegates to `theme/`, the three native controls (button, switch, checkbox)
+/// to their `widgets/` builders, and the declared [capabilities] to
+/// `wind_ui_capabilities.dart`. Every other control — card, text field, slider,
+/// segmented, progress, select, tab bar — falls back to the shared token
+/// renderer and is reported by the resolver as `controlUnsupported` (§7/§15).
+/// No business state here.
 class WindLanguageAdapter extends SharedLanguageAdapter {
   /// The Wind adapter.
   const new();
