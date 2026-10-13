@@ -150,7 +150,12 @@ bool Win32Window::Create(const std::wstring& title,
 }
 
 bool Win32Window::Show() {
-  return ShowWindow(window_handle_, SW_SHOWNORMAL);
+  // SW_SHOW, not SW_SHOWNORMAL: the latter also restores a maximised window, and
+  // this call is made from the first-frame callback, i.e. after Dart has already
+  // put the window into the state it remembered. Measured: the window maximises
+  // correctly at start-up and is un-maximised about a second later, exactly when
+  // the first frame lands.
+  return ShowWindow(window_handle_, SW_SHOW);
 }
 
 // static

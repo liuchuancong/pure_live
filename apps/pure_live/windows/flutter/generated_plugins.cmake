@@ -3,7 +3,14 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  battery_plus
+  connectivity_plus
+  desktop_multi_window
+  file_selector_windows
+  restart_app
   screen_retriever_windows
+  share_plus
+  url_launcher_windows
   window_manager
 )
 
