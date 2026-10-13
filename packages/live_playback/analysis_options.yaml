@@ -4,6 +4,7 @@ analyzer:
   exclude:
     - "**/*.freezed.dart"
     - "**/*.g.dart"
+    - build/**
 
 formatter:
   page_width: 120

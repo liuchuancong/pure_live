@@ -2,9 +2,11 @@ name: live_playback
 description: >-
   Live playback orchestration for Pure Live: playback sessions, quality and
   line selection, lease-aware renewal scheduling, failure classification and
-  the same-line → next-line → next-quality recovery ladder, audio-only mode
-  and a multi-session coordinator. Engine-agnostic — the player engine is a
-  seam the app binds to media_core.
+  the same-line → next-line → next-quality recovery ladder, per-room chat,
+  feed and multi-window coordination, the one-audio-channel rule, and the
+  policy layer over media_core's presentation (device-aware layouts, PiP and
+  floating-window geometry with remembered user sizes). Engine-agnostic — the
+  player engine is a seam the app binds to media_core.
 version: 0.1.0
 publish_to: none
 
@@ -14,17 +16,26 @@ environment:
   sdk: ^3.13.0
 
 dependencies:
+  flutter:
+    sdk: flutter
   fpdart: ^1.2.0
   freezed_annotation: ^3.1.0
   json_annotation: ^4.12.0
   live_sites:
   media_core:
     path: ../../../../media_core/packages/media_core
+  media_core_danmaku:
+    path: ../../../../media_core/packages/media_core_danmaku
+  media_core_mediasession:
+    path: ../../../../media_core/packages/media_core_mediasession
   meta: ^1.19.0
   rxdart: ^0.28.0
+  shared_preferences: ^2.3.2
 
 dev_dependencies:
   build_runner: ^2.16.0
+  flutter_test:
+    sdk: flutter
   freezed: ^4.0.2
   json_serializable: ^6.14.0
   very_good_analysis: ^11.0.0
