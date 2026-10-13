@@ -16,6 +16,7 @@
 /// are not part of this public surface.
 library;
 
+// Optional capabilities a site may implement.
 export 'src/capabilities/live_anchor_provider.dart';
 export 'src/capabilities/live_area_provider.dart';
 export 'src/capabilities/live_danmaku_provider.dart';
@@ -27,10 +28,13 @@ export 'src/capabilities/live_room_provider.dart';
 export 'src/capabilities/live_search_provider.dart';
 export 'src/capabilities/live_site_capability.dart';
 export 'src/capabilities/live_web_search_provider.dart';
+
+// Shared logic that operates on the models but is not itself a model type.
 export 'src/common/audience/audience_numbers.dart';
 export 'src/common/gift/gift_combo.dart';
 export 'src/common/gift/gift_value.dart';
 export 'src/common/message/super_chat_price.dart';
+
 export 'src/core/live_site.dart';
 export 'src/core/live_site_context.dart';
 export 'src/core/live_site_error.dart';
@@ -39,6 +43,8 @@ export 'src/core/live_site_registry.dart';
 export 'src/core/live_site_runtime_info.dart';
 export 'src/core/site_error/site_error.dart';
 export 'src/internal/built_in_sites.dart';
+
+// Shared models, one type per file.
 export 'src/models/live_anchor/live_anchor.dart';
 export 'src/models/live_area/live_area.dart';
 export 'src/models/live_asset_ref/live_asset_ref.dart';
