@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_socket.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
@@ -10,8 +11,7 @@ import 'package:live_sites/src/models/message/live_message_color/live_message_co
 import 'package:live_sites/src/platforms/douyin/danmaku/douyin_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/douyin/douyin_site.dart';
 import 'package:live_sites/src/platforms/douyin/parsers/douyin_failure.dart';
-import 'package:web_socket_channel/io.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:live_websocket/live_websocket.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -61,19 +61,21 @@ final class DouyinDanmakuProvider implements LiveDanmakuProvider {
 
 /// One live danmaku connection over Douyin's protobuf WebSocket protocol.
 ///
-/// Protocol-level recovery is this session's job: a socket that errors or
-/// stays silent for [DouyinDanmakuProtocol.inactivityTimeout] is replaced
-/// (heartbeat sent again, generation counted so a stale socket's frames are
-/// dropped), the two web IM edges alternating per attempt; the signature is
-/// computed once and kept for the reconnects. After
-/// [DouyinDanmakuProtocol.maxReconnectAttempts] failed reconnects a terminal
-/// system message closes [events] instead of retrying forever. Text frames
-/// are ignored — the protocol only speaks binary.
+/// The transport ([DanmakuSocket]) keeps the connection alive: the heartbeat
+/// frame doubles as the join, and a socket silent for
+/// [DouyinDanmakuProtocol.inactivityTimeout] is dropped. Which edge to drop
+/// *onto* is this session's own choice — the two web IM edges alternate per
+/// attempt, so the transport's automatic reconnect is off and each loss
+/// re-opens on the other host after a growing back off. After
+/// [DouyinDanmakuProtocol.maxReconnectAttempts] failed attempts a terminal
+/// system message closes [events] instead of retrying forever. Text frames are
+/// ignored — the protocol only speaks binary.
 final class DouyinDanmakuSession implements LiveDanmakuSession {
   /// A session for the broadcast in [args], joined with the X-Bogus
   /// [signature]; [connect] opens the socket.
   DouyinDanmakuSession({required this.args, required this.signature, DateTime Function()? now})
-    : now = now ?? DateTime.now;
+    : now = now ?? DateTime.now,
+      _headers = DouyinDanmakuProtocol.handshakeHeaders(args.cookie, args.webRid);
 
   /// The broadcast this session joined.
   final DouyinDanmakuArgs args;
@@ -88,32 +90,38 @@ final class DouyinDanmakuSession implements LiveDanmakuSession {
   /// How many reconnects in a row may fail before the session is abandoned.
   static const int maxReconnectAttempts = DouyinDanmakuProtocol.maxReconnectAttempts;
 
+  /// The handshake budget of one attempt.
+  static const Duration _connectTimeout = Duration(seconds: 10);
+
+  /// The `hb` heartbeat is also the silence watchdog: a socket that answers
+  /// nothing for the protocol's inactivity window is dropped.
+  static const HeartbeatConfig _heartbeat = HeartbeatConfig(
+    interval: DouyinDanmakuProtocol.heartbeatInterval,
+    payload: DouyinDanmakuProtocol.heartbeat,
+    timeout: DouyinDanmakuProtocol.inactivityTimeout,
+  );
+
+  /// The handshake headers, the same for every edge of this broadcast.
+  final Map<String, String> _headers;
+
   final _events = StreamController<LiveMessage>.broadcast();
-  WebSocketChannel? _socket;
-  Timer? _heartbeat;
-  Timer? _watchdog;
-  StreamSubscription<dynamic>? _subscription;
-  int _generation = 0;
+  DanmakuSocket? _socket;
   int _host = 0;
-  bool _disposed = false;
 
-  /// One reconnect in flight per generation (the watchdog and `onDone` both
-  /// fire on a dead socket; without this they would double-open).
-  bool _reconnecting = false;
-
-  /// Consecutive failed reconnects.
+  /// Consecutive failed attempts; any frame means the connection is healthy
+  /// again and resets the run.
   int _reconnectFailures = 0;
+  bool _disposed = false;
 
   @override
   Stream<LiveMessage> get events => _events.stream;
 
   /// Opens the socket; null on success, else why it could not start.
   @override
-  Future<LiveSiteError?> connect() async {
-    if (_disposed) {
-      return const LiveSiteError.unsupported(siteId: 'douyin', message: 'session is disposed');
-    }
-    final generation = ++_generation;
+  Future<LiveSiteError?> connect() => _open();
+
+  /// Opens one connection, on the next web IM edge in the rotation.
+  Future<LiveSiteError?> _open() async {
     await _teardownSocket();
     final endpoints = DouyinDanmakuProtocol.endpoints(
       roomId: args.roomId,
@@ -122,120 +130,80 @@ final class DouyinDanmakuSession implements LiveDanmakuSession {
       now: now(),
     );
     final endpoint = endpoints[_host++ % endpoints.length];
-    final WebSocketChannel channel;
-    try {
-      channel = IOWebSocketChannel.connect(
-        endpoint,
-        headers: DouyinDanmakuProtocol.handshakeHeaders(args.cookie, args.webRid),
-      );
-      await channel.ready.timeout(_connectTimeout);
-    } on Object catch (error) {
-      return LiveSiteError.network(siteId: 'douyin', message: 'danmaku connect failed: $error', cause: error);
-    }
-    _socket = channel;
-    _subscription = channel.stream.listen(
-      (data) {
-        if (generation != _generation || _disposed) return;
-        // Douyin only sends binary frames; a text frame is not the protocol.
-        if (data is! List<int>) return;
-        _onFrame(Uint8List.fromList(data));
-      },
-      onDone: () => _scheduleReconnect(generation, 'socket closed'),
-      onError: (Object error) => _scheduleReconnect(generation, 'socket error: $error'),
+    final socket = DanmakuSocket(
+      uri: endpoint,
+      config: WebSocketConfig(
+        headers: _headers,
+        connectTimeout: _connectTimeout,
+        // A retry here would reconnect to the same edge; the rotation belongs
+        // to this session, so a loss is reported instead of retried.
+        reconnectPolicy: const ReconnectPolicy(enabled: false),
+        heartbeat: _heartbeat,
+      ),
+      onHandshake: (socket) => socket.send(DouyinDanmakuProtocol.heartbeat()),
+      onFrame: _onFrame,
+      onLost: _onLost,
     );
-    // An open socket counts as joined: the heartbeat is the join.
-    _send(DouyinDanmakuProtocol.heartbeat());
-    _heartbeat = Timer.periodic(DouyinDanmakuProtocol.heartbeatInterval, (_) {
-      if (generation == _generation && !_disposed) _send(DouyinDanmakuProtocol.heartbeat());
-    });
-    _startWatchdog();
-    return null;
+    _socket = socket;
+    if (await socket.start()) return null;
+    return LiveSiteError.network(siteId: 'douyin', message: 'danmaku connect failed on $endpoint');
   }
 
-  static const Duration _connectTimeout = Duration(seconds: 10);
-
-  void _startWatchdog() {
-    _watchdog?.cancel();
-    _watchdog = Timer(DouyinDanmakuProtocol.inactivityTimeout, () {
-      if (!_disposed) _scheduleReconnect(_generation, 'socket silent');
-    });
-  }
-
-  void _onFrame(Uint8List frame) {
+  void _onFrame(Object frame) {
+    // Douyin only sends binary frames; a text frame is not the protocol.
+    if (frame is! List<int>) return;
     _reconnectFailures = 0;
-    _startWatchdog();
-    final decoded = DouyinDanmakuProtocol.decode(frame, roomId: args.roomId);
-    if (decoded.ack case final ack?) _send(ack);
+    final decoded = DouyinDanmakuProtocol.decode(Uint8List.fromList(frame), roomId: args.roomId);
+    if (decoded.ack case final ack?) _socket?.send(ack);
     decoded.messages.forEach(_events.add);
   }
 
-  void _send(Uint8List packet) {
-    try {
-      _socket?.sink.add(packet);
-    } on Object {
-      // The reconnect path owns a broken sink.
+  /// Re-opens the socket on the other edge until the attempts run out.
+  void _onLost(String cause) {
+    if (_disposed) return;
+    unawaited(_retry(cause));
+  }
+
+  Future<void> _retry(String cause) async {
+    while (!_disposed) {
+      _reconnectFailures++;
+      if (_reconnectFailures > maxReconnectAttempts) {
+        _loseConnection(cause);
+        return;
+      }
+      // Grow the back off with the run so a flapping edge is not hammered.
+      await Future<void>.delayed(DouyinDanmakuProtocol.reconnectBase * _reconnectFailures);
+      if (_disposed) return;
+      if (await _open() == null) return;
     }
   }
 
-  void _scheduleReconnect(int staleGeneration, String reason) {
-    if (_disposed || staleGeneration != _generation || _reconnecting) return;
-    _reconnecting = true;
-    unawaited(() async {
-      // Back off from [DouyinDanmakuProtocol.reconnectBase], once per
-      // consecutive failure, so a flapping edge is not hammered.
-      final backoff = DouyinDanmakuProtocol.reconnectBase * (_reconnectFailures + 1);
-      await Future<void>.delayed(backoff);
-      if (_disposed || staleGeneration != _generation) {
-        _reconnecting = false;
-        return;
-      }
-      final failure = await connect();
-      _reconnecting = false;
-      if (failure == null) return;
-      _reconnectFailures++;
-      if (_reconnectFailures >= maxReconnectAttempts) {
-        // Give up: report the loss on the stream instead of retrying forever,
-        // and stop so a stale socket's reconnect is not scheduled again.
-        _generation++;
-        _events.add(
-          LiveMessage.normalized(
-            type: LiveMessageType.system,
-            text: 'Danmaku connection lost ($reason)',
-            color: LiveMessageColor.white,
-          ),
-        );
-        unawaited(_teardownSocket());
-        unawaited(_events.close());
-      }
-    }());
+  void _loseConnection(String cause) {
+    if (_disposed) return;
+    _events.add(
+      LiveMessage.normalized(
+        type: LiveMessageType.system,
+        text: 'Danmaku connection lost ($cause)',
+        color: LiveMessageColor.white,
+      ),
+    );
+    unawaited(_teardownSocket());
+    unawaited(_events.close());
   }
 
   Future<void> _teardownSocket() async {
-    _heartbeat?.cancel();
-    _heartbeat = null;
-    _watchdog?.cancel();
-    _watchdog = null;
-    await _subscription?.cancel();
-    _subscription = null;
-    try {
-      await _socket?.sink.close();
-    } on Object {
-      // Closing a dead socket must not throw.
-    }
+    final socket = _socket;
     _socket = null;
+    await socket?.stop();
   }
 
   @override
-  Future<void> disconnect() async {
-    _generation++;
-    await _teardownSocket();
-  }
+  Future<void> disconnect() => _teardownSocket();
 
   @override
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
-    _generation++;
     await _teardownSocket();
     unawaited(_events.close());
   }

@@ -118,7 +118,7 @@ final class DouyuDanmakuSession implements LiveDanmakuSession {
       config: _transport,
       onHandshake: (socket) => DouyuDanmakuProtocol.joinPackets(roomId).forEach(socket.send),
       onFrame: _onFrame,
-      onLost: _loseConnection,
+      onLost: (_) => _loseConnection(),
     );
     _socket = socket;
     if (!await socket.start()) {

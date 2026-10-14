@@ -107,7 +107,7 @@ final class HuyaDanmakuSession implements LiveDanmakuSession {
         ..send(HuyaDanmakuProtocol.register(uid))
         ..send(HuyaDanmakuProtocol.heartbeat()),
       onFrame: _onFrame,
-      onLost: _loseConnection,
+      onLost: (_) => _loseConnection(),
     );
     _socket = socket;
     if (!await socket.start()) {

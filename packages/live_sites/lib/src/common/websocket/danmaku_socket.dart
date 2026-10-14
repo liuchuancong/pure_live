@@ -12,8 +12,9 @@ typedef DanmakuHandshake = void Function(DanmakuSocket socket);
 /// Receives one raw frame of a [DanmakuSocket] connection.
 typedef DanmakuFrame = void Function(Object frame);
 
-/// Reports that a [DanmakuSocket] gave up on its connection for good.
-typedef DanmakuLost = void Function();
+/// Reports that a [DanmakuSocket] gave up on its connection for good, with
+/// the transport's last word on why.
+typedef DanmakuLost = void Function(String cause);
 
 /// The WebSocket transport every site's danmaku session shares.
 ///
@@ -23,7 +24,10 @@ typedef DanmakuLost = void Function();
 /// report a socket the transport gave up on exactly once.
 ///
 /// Heartbeats, silence watchdogs and reconnect back off are configured on the
-/// [config], not hand-timed here.
+/// [config], not hand-timed here. A protocol that wants to pick a new
+/// endpoint per attempt (an edge that may itself be down) disables
+/// [WebSocketConfig.reconnectPolicy] and restarts the socket from its
+/// [onLost].
 final class DanmakuSocket {
   /// A socket for [uri] running [onHandshake] per connection, forwarding
   /// frames to [onFrame] and reporting an unrecoverable loss through
@@ -48,13 +52,16 @@ final class DanmakuSocket {
   /// Called for every incoming frame while the socket is live.
   final DanmakuFrame onFrame;
 
-  /// Called once when the transport stops retrying.
+  /// Called once when a connection that was live is not coming back.
   final DanmakuLost onLost;
 
   LiveWebSocketClient? _client;
   StreamSubscription<Object?>? _frames;
+  StreamSubscription<Object>? _errors;
   StreamSubscription<WebSocketConnectionState>? _states;
   bool _live = false;
+  bool _wasConnected = false;
+  String? _lastError;
 
   /// Whether the socket holds a connection right now.
   bool get isConnected => _client?.isConnected ?? false;
@@ -62,28 +69,35 @@ final class DanmakuSocket {
   /// Opens the socket; false when the endpoint could not be reached.
   Future<bool> start() async {
     await stop();
+    _wasConnected = false;
+    _lastError = null;
     final client = LiveWebSocketClient(uri: uri, config: config);
     _client = client;
+    // Subscribed before connect: the frame stream drops what arrives first.
     _frames = client.messages.listen((frame) {
       if (frame != null) onFrame(frame);
+    });
+    _errors = client.errors.listen((error) {
+      _lastError = error is WebSocketException ? error.message : '$error';
     });
     _states = client.states.listen((state) {
       if (!_live) return;
       if (state == WebSocketConnectionState.connected) {
+        _wasConnected = true;
         onHandshake(this);
         return;
       }
-      if (state == WebSocketConnectionState.disconnected) {
-        // The transport exhausted its reconnects.
+      // A socket that was live and whose reconnects ran out. A first attempt
+      // that never connected is the caller's to report, not a loss.
+      if (state == WebSocketConnectionState.disconnected && _wasConnected) {
         _live = false;
-        onLost();
+        onLost(_lastError ?? 'connection closed');
         unawaited(stop());
       }
     });
     _live = true;
     await client.connect();
-    if (!client.isConnected) {
-      _live = false;
+    if (!_wasConnected) {
       await stop();
       return false;
     }
@@ -108,6 +122,8 @@ final class DanmakuSocket {
     _live = false;
     await _frames?.cancel();
     _frames = null;
+    await _errors?.cancel();
+    _errors = null;
     await _states?.cancel();
     _states = null;
     final client = _client;
