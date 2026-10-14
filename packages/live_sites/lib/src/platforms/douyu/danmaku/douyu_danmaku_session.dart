@@ -9,7 +9,7 @@ import 'package:live_sites/src/models/message/live_message_color/live_message_co
 import 'package:live_sites/src/platforms/douyu/danmaku/douyu_stt_codec.dart';
 import 'package:live_sites/src/platforms/douyu/douyu_site.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_gift_parser.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:live_websocket/live_websocket.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -54,11 +54,12 @@ final class DouyuDanmakuProvider implements LiveDanmakuProvider {
 
 /// One live danmaku connection over douyu's WebSocket protocol.
 ///
-/// Protocol-level recovery is this session's job: a socket that errors, or
-/// stays silent for three heartbeat periods, is replaced (join packets
-/// again, generation counted so a stale socket's packets are dropped). The
-/// room's broadcast-end packet closes [events] after a final notice
-/// message.
+/// Protocol-level recovery is the transport's job: [LiveWebSocketClient]
+/// sends the `mrkl/` heartbeat, replaces a socket that stays silent for three
+/// heartbeat periods, and reconnects with a bounded back off. Join packets go
+/// out on every connection, generation counted so a stale socket's frames are
+/// dropped. The room's broadcast-end packet closes [events] after a final
+/// notice message.
 final class DouyuDanmakuSession implements LiveDanmakuSession {
   /// A session for [roomId]; [connect] opens the socket.
   DouyuDanmakuSession({required this.roomId, this.filterSuspectedAutomated, this.gifts = DouyuGiftCatalog.empty});
@@ -75,24 +76,37 @@ final class DouyuDanmakuSession implements LiveDanmakuSession {
   /// A notice message emitted when the platform says the broadcast ended.
   static const String broadcastEndedDetail = 'Broadcast ended';
 
-  final _events = StreamController<LiveMessage>.broadcast();
-  WebSocketChannel? _socket;
-  Timer? _heartbeat;
-  Timer? _watchdog;
-  StreamSubscription<dynamic>? _subscription;
-  int _generation = 0;
-  bool _disposed = false;
-
-  /// One reconnect in flight per generation (the watchdog and `onDone` both
-  /// fire on a dead socket; without this they would double-open).
-  bool _reconnecting = false;
-
-  /// Consecutive failed reconnects; a run that reaches [maxReconnectAttempts]
-  /// gives up and closes [events] instead of retrying forever in silence.
-  int _reconnectFailures = 0;
+  /// A notice message emitted when the transport gave up on the socket.
+  static const String connectionLostDetail = 'Danmaku connection lost';
 
   /// How many reconnects in a row may fail before the session is abandoned.
   static const int maxReconnectAttempts = 6;
+
+  /// The endpoint douyu's danmaku proxy serves for the room's cluster.
+  static const String _endpoint = 'wss://danmuproxy.douyu.com:8506';
+
+  /// The `mrkl/` packet doubles as the silence watchdog: a socket that
+  /// answers nothing for three periods is replaced.
+  static final WebSocketConfig _transport = WebSocketConfig(
+    reconnectPolicy: const ReconnectPolicy(maxAttempts: maxReconnectAttempts, initialDelay: Duration(seconds: 2)),
+    heartbeat: HeartbeatConfig(
+      interval: DouyuDanmakuProtocol.heartbeatInterval,
+      payload: DouyuDanmakuProtocol.heartbeat,
+      timeout: DouyuDanmakuProtocol.heartbeatInterval * 3,
+    ),
+  );
+
+  final _events = StreamController<LiveMessage>.broadcast();
+  LiveWebSocketClient? _client;
+  StreamSubscription<Object?>? _frames;
+  StreamSubscription<WebSocketConnectionState>? _states;
+  int _generation = 0;
+  bool _disposed = false;
+
+  /// Whether the session still expects traffic. False once the broadcast
+  /// ended or the transport gave up, so the client's final `disconnected`
+  /// state is not reported twice.
+  bool _watchesTraffic = false;
 
   /// Adds [extra] to the gift catalogue (a fetched list arriving late).
   void addGifts(DouyuGiftCatalog extra) => gifts = gifts.merge(extra);
@@ -108,42 +122,36 @@ final class DouyuDanmakuSession implements LiveDanmakuSession {
     }
     final generation = ++_generation;
     await _teardownSocket();
-    final WebSocketChannel channel;
-    try {
-      channel = WebSocketChannel.connect(Uri.parse(_endpoint));
-      await channel.ready;
-    } on Object catch (error) {
-      return LiveSiteError.network(siteId: 'douyu', message: 'danmaku connect failed: $error', cause: error);
+    final client = LiveWebSocketClient(uri: Uri.parse(_endpoint), config: _transport);
+    _client = client;
+    // Subscribed before connect: the frame stream drops what arrives first.
+    _frames = client.messages.listen((frame) {
+      if (generation != _generation || _disposed) return;
+      if (frame is! List<int>) return;
+      _onFrame(frame);
+    });
+    _states = client.states.listen((state) {
+      if (generation != _generation || _disposed || !_watchesTraffic) return;
+      if (state == WebSocketConnectionState.connected) {
+        DouyuDanmakuProtocol.joinPackets(roomId).forEach(_send);
+        return;
+      }
+      // The transport exhausted its reconnects: report it once.
+      if (state == WebSocketConnectionState.disconnected) _loseConnection();
+    });
+    _watchesTraffic = true;
+    await client.connect();
+    if (!client.isConnected) {
+      await _teardownSocket();
+      return const LiveSiteError.network(
+        siteId: 'douyu',
+        message: 'danmaku connect failed: no connection to $_endpoint',
+      );
     }
-    _socket = channel;
-    _subscription = channel.stream.listen(
-      (data) {
-        if (generation != _generation || _disposed) return;
-        if (data is! List<int>) return;
-        _onFrame(data);
-      },
-      onDone: () => _scheduleReconnect(generation, 'socket closed'),
-      onError: (Object error) => _scheduleReconnect(generation, 'socket error: $error'),
-    );
-    DouyuDanmakuProtocol.joinPackets(roomId).forEach(channel.sink.add);
-    _heartbeat = Timer.periodic(DouyuDanmakuProtocol.heartbeatInterval, (_) {
-      if (generation == _generation && !_disposed) _send(DouyuDanmakuProtocol.heartbeat());
-    });
-    // A socket silent for three heartbeat periods is replaced.
-    _watchdog = Timer.periodic(DouyuDanmakuProtocol.heartbeatInterval * 3, (_) {
-      if (generation == _generation && !_disposed) _scheduleReconnect(generation, 'socket silent');
-    });
     return null;
   }
 
-  static const String _endpoint = 'wss://danmuproxy.douyu.com:8506';
-
   void _onFrame(List<int> frame) {
-    _reconnectFailures = 0;
-    _watchdog?.cancel();
-    _watchdog = Timer.periodic(DouyuDanmakuProtocol.heartbeatInterval * 3, (_) {
-      if (!_disposed) _scheduleReconnect(_generation, 'socket silent');
-    });
     final (:messages, :ended) = DouyuDanmakuProtocol.read(
       frame,
       roomId: roomId,
@@ -163,57 +171,36 @@ final class DouyuDanmakuSession implements LiveDanmakuSession {
   }
 
   void _send(List<int> packet) {
+    final client = _client;
+    if (client == null || !client.isConnected) return;
     try {
-      _socket?.sink.add(packet);
+      client.send(packet);
     } on Object {
       // The reconnect path owns a broken sink.
     }
   }
 
-  void _scheduleReconnect(int staleGeneration, String reason) {
-    if (_disposed || staleGeneration != _generation || _reconnecting) return;
-    _reconnecting = true;
-    unawaited(() async {
-      // Back off briefly so a flapping endpoint is not hammered.
-      await Future<void>.delayed(const Duration(seconds: 2));
-      if (_disposed || staleGeneration != _generation) {
-        _reconnecting = false;
-        return;
-      }
-      final failure = await connect();
-      _reconnecting = false;
-      if (failure == null) return;
-      _reconnectFailures++;
-      if (_reconnectFailures >= maxReconnectAttempts) {
-        // Give up: report the loss on the stream instead of retrying forever,
-        // and stop so a stale socket's reconnect is not scheduled again.
-        _generation++;
-        _events.add(
-          LiveMessage.normalized(
-            type: LiveMessageType.system,
-            text: 'Danmaku connection lost',
-            color: LiveMessageColor.white,
-          ),
-        );
-        unawaited(_teardownSocket());
-        unawaited(_events.close());
-      }
-    }());
+  /// Reports the loss on the stream instead of retrying forever, and stops so
+  /// a stale socket's states are not watched again.
+  void _loseConnection() {
+    if (_disposed) return;
+    _generation++;
+    _events.add(
+      LiveMessage.normalized(type: LiveMessageType.system, text: connectionLostDetail, color: LiveMessageColor.white),
+    );
+    unawaited(_teardownSocket());
+    unawaited(_events.close());
   }
 
   Future<void> _teardownSocket() async {
-    _heartbeat?.cancel();
-    _heartbeat = null;
-    _watchdog?.cancel();
-    _watchdog = null;
-    await _subscription?.cancel();
-    _subscription = null;
-    try {
-      await _socket?.sink.close();
-    } on Object {
-      // Closing a dead socket must not throw.
-    }
-    _socket = null;
+    _watchesTraffic = false;
+    await _frames?.cancel();
+    _frames = null;
+    await _states?.cancel();
+    _states = null;
+    final client = _client;
+    _client = null;
+    await client?.dispose();
   }
 
   @override
