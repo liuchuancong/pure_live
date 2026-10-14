@@ -161,6 +161,7 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
       socket = await site.connect(
         grant.endpoint,
         headers: grant.handshakeHeaders,
+        protocols: null,
         connectTimeout: Fc2LiveEndpoints.connectTimeout,
       );
     } on Object catch (error) {
@@ -170,7 +171,7 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
       return null;
     }
     _socket = socket;
-    _subscription = socket.frames.listen(
+    _subscription = socket.stream.listen(
       (data) {
         if (generation != _generation || _disposed) return;
         _onData(data, generation);
@@ -285,7 +286,7 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
     final socket = _socket;
     if (socket == null) return;
     try {
-      socket.send(frame);
+      socket.add(frame);
     } on Object {
       // The retry path owns a broken socket.
     }

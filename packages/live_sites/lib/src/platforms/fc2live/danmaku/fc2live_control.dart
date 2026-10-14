@@ -4,41 +4,24 @@ import 'dart:convert';
 import 'package:live_sites/src/platforms/fc2live/api/fc2live_endpoints.dart';
 import 'package:live_sites/src/platforms/fc2live/parsers/fc2live_failure.dart';
 import 'package:live_sites/src/platforms/fc2live/parsers/fc2live_play_parser.dart';
-import 'package:web_socket_channel/io.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:live_websocket/live_websocket.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
 // ignore_for_file: unnecessary_type_name_in_constructor
 
-/// The socket a control or a comment connection speaks through: the frames the
-/// site sends, a way to send one's own, and why the site closed it.
-///
-/// This narrow shape exists so that a test can drive a socket by hand: the
-/// platform's own WebSocket channel is a wider thing, and neither a control nor
-/// a chat connection uses more of it than this.
-abstract interface class Fc2LiveSocket {
-  /// The frames the site sends, which ends when the socket closes.
-  Stream<Object?> get frames;
-
-  /// Why the site closed the socket, once it has.
-  int? get closeCode;
-
-  /// Sends one text frame.
-  void send(String frame);
-
-  /// Closes the socket; a socket already gone is not an error.
-  Future<void> close();
-}
+/// The socket a control or a comment connection speaks through, and the way it
+/// is connected: the frames the site sends, a way to send one's own, and why the
+/// site closed it (the code and reason from the peer). This is the shared
+/// live_websocket [SocketChannel] seam — the narrow, never-reconnecting socket a
+/// single-use protocol drives, as opposed to the reconnecting [LiveWebSocketClient].
+typedef Fc2LiveSocket = SocketChannel;
 
 /// How a socket is made: the grant's endpoint and handshake headers, with the
-/// wait bounded by the caller's own timeout. The default is [Fc2LiveControl.io],
-/// and a caller may pass another (tests).
-typedef Fc2LiveSocketConnect = Future<Fc2LiveSocket> Function(
-  Uri endpoint, {
-  required Map<String, String> headers,
-  required Duration connectTimeout,
-});
+/// wait bounded by the caller's own timeout and the site's WebSocket ping kept
+/// alive by its `pingInterval`. The default is [webSocketConnect] (via
+/// [Fc2LiveControl.io]), and a caller may pass another (tests).
+typedef Fc2LiveSocketConnect = SocketConnector;
 
 /// One FC2 Live media control: the WebSocket whose session authorizes a
 /// channel's HLS playlists.
@@ -99,17 +82,22 @@ final class Fc2LiveControl {
     return control;
   }
 
-  /// The default connector: `dart:io`, with the site's own WebSocket ping every
-  /// [Fc2LiveControl.pingInterval] (the page keeps its sockets alive that way).
+  /// The default connector: [webSocketConnect], with the site's own WebSocket
+  /// ping every [Fc2LiveControl.pingInterval] (the page keeps its sockets alive
+  /// that way).
   static Future<Fc2LiveSocket> io(
     Uri endpoint, {
     required Map<String, String> headers,
+    required Iterable<String>? protocols,
     required Duration connectTimeout,
-  }) async {
-    final channel = IOWebSocketChannel.connect(endpoint, headers: headers, pingInterval: pingInterval);
-    await channel.ready.timeout(connectTimeout);
-    return _ChannelSocket(channel);
-  }
+    Duration? pingInterval = pingInterval,
+  }) => webSocketConnect(
+    endpoint,
+    headers: headers,
+    protocols: protocols,
+    connectTimeout: connectTimeout,
+    pingInterval: pingInterval,
+  );
 
   /// The site's WebSocket ping period.
   static const Duration pingInterval = Duration(seconds: 15);
@@ -162,6 +150,7 @@ final class Fc2LiveControl {
       socket = await connect(
         grant.endpoint,
         headers: grant.handshakeHeaders,
+        protocols: null,
         connectTimeout: Fc2LiveEndpoints.connectTimeout,
       );
     } on Object catch (error) {
@@ -175,7 +164,7 @@ final class Fc2LiveControl {
     }
     _socket = socket;
     await _subscription?.cancel();
-    _subscription = socket.frames.listen(
+    _subscription = socket.stream.listen(
       _receive,
       onDone: () {
         final code = socket.closeCode;
@@ -251,7 +240,7 @@ final class Fc2LiveControl {
     final socket = _socket;
     if (_closed || socket == null) return;
     try {
-      socket.send(text);
+      socket.add(text);
     } on Object catch (error) {
       _end(Fc2LiveFailure(Fc2LiveFailureKind.network, 'control send: ${error.runtimeType}', cause: error));
     }
@@ -289,31 +278,6 @@ final class Fc2LiveControl {
       await future;
     } on Object {
       // Already closed or broken.
-    }
-  }
-}
-
-/// [Fc2LiveSocket] over a [WebSocketChannel].
-final class _ChannelSocket implements Fc2LiveSocket {
-  _ChannelSocket(this._channel);
-
-  final WebSocketChannel _channel;
-
-  @override
-  Stream<Object?> get frames => _channel.stream;
-
-  @override
-  int? get closeCode => _channel.closeCode;
-
-  @override
-  void send(String frame) => _channel.sink.add(frame);
-
-  @override
-  Future<void> close() async {
-    try {
-      await _channel.sink.close();
-    } on Object {
-      // A socket already gone is closed for our purposes.
     }
   }
 }

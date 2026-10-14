@@ -303,37 +303,42 @@ LiveResponse _ordinary(_Seen request) => switch (request.url.path) {
 Future<Fc2LiveSocket> _refuseSocket(
   Uri endpoint, {
   required Map<String, String> headers,
+  required Iterable<String>? protocols,
   required Duration connectTimeout,
+  Duration? pingInterval,
 }) async => throw StateError('no socket was asked for in this test');
 
 /// The socket a test drives by hand.
 final class _FakeSocket implements Fc2LiveSocket {
-  final StreamController<Object?> _frames = StreamController<Object?>();
+  final StreamController<Object?> _stream = StreamController<Object?>();
   final List<Object?> sent = [];
   int? _closeCode;
   bool closed = false;
 
   @override
-  Stream<Object?> get frames => _frames.stream;
+  Stream<Object?> get stream => _stream.stream;
 
   @override
   int? get closeCode => _closeCode;
 
   @override
-  void send(String frame) => sent.add(frame);
+  String? get closeReason => null;
 
   @override
-  Future<void> close() async {
+  void add(Object data) => sent.add(data);
+
+  @override
+  Future<void> close([int? code, String? reason]) async {
     closed = true;
   }
 
   /// One frame from the site.
-  void push(Object? frame) => _frames.add(frame);
+  void push(Object? frame) => _stream.add(frame);
 
   /// The site closed the socket.
   Future<void> ended({int? code}) async {
     _closeCode = code;
-    await _frames.close();
+    await _stream.close();
   }
 
   /// The text frames sent, for a search through them.
@@ -352,7 +357,9 @@ final class _Connector {
   Future<Fc2LiveSocket> call(
     Uri endpoint, {
     required Map<String, String> headers,
+    required Iterable<String>? protocols,
     required Duration connectTimeout,
+    Duration? pingInterval,
   }) async {
     endpoints.add(endpoint);
     this.headers.add(headers);
@@ -1376,7 +1383,9 @@ void main() {
       Future<Fc2LiveSocket> connect(
         Uri endpoint, {
         required Map<String, String> headers,
+        required Iterable<String>? protocols,
         required Duration connectTimeout,
+        Duration? pingInterval,
       }) async => throw StateError('handshake of $endpoint failed');
       await expectLater(
         Fc2LiveControl.open(_grant(), connect: connect),
