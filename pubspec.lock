@@ -1232,37 +1232,47 @@ packages:
   media_core:
     dependency: transitive
     description:
-      path: "../../media_core/packages/media_core"
-      relative: true
-    source: path
+      path: "packages/media_core"
+      ref: f4322cc74acf3e35d6c16c36c15b62df96622052
+      resolved-ref: f4322cc74acf3e35d6c16c36c15b62df96622052
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_danmaku:
     dependency: transitive
     description:
-      path: "../../media_core/packages/media_core_danmaku"
-      relative: true
-    source: path
+      path: "packages/media_core_danmaku"
+      ref: f4322cc74acf3e35d6c16c36c15b62df96622052
+      resolved-ref: f4322cc74acf3e35d6c16c36c15b62df96622052
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_logging:
     dependency: transitive
     description:
-      path: "../../media_core/packages/media_core_logging"
-      relative: true
-    source: path
+      path: "packages/media_core_logging"
+      ref: f4322cc74acf3e35d6c16c36c15b62df96622052
+      resolved-ref: f4322cc74acf3e35d6c16c36c15b62df96622052
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_mediasession:
     dependency: transitive
     description:
-      path: "../../media_core/packages/media_core_mediasession"
-      relative: true
-    source: path
+      path: "packages/media_core_mediasession"
+      ref: f4322cc74acf3e35d6c16c36c15b62df96622052
+      resolved-ref: f4322cc74acf3e35d6c16c36c15b62df96622052
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_memory:
     dependency: transitive
     description:
-      path: "../../media_core/packages/media_core_memory"
-      relative: true
-    source: path
+      path: "packages/media_core_memory"
+      ref: f4322cc74acf3e35d6c16c36c15b62df96622052
+      resolved-ref: f4322cc74acf3e35d6c16c36c15b62df96622052
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   melos:
     dependency: "direct dev"
