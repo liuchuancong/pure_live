@@ -49,10 +49,31 @@ const List<({String id, String name})> huyaTopCategories = [
   (id: '3', name: '手游'),
 ];
 
+/// The recording a replay room plays (`liveData.hls`, upgrade 3-1): a VOD
+/// playlist that needs no signature and does not expire, and the video id whose
+/// other definitions `moment/getMomentContent` lists.
+final class HuyaReplay {
+  /// Creates the recording.
+  // The value wrapper spells its class name; the shorthand would read as a
+  // method declaration at the call site.
+  // ignore: unnecessary_type_name_in_constructor
+  const HuyaReplay({required this.url, this.videoId});
+
+  /// The https playlist `profileRoom` names (the 360P definition when recorded).
+  final String url;
+
+  /// The recording's `vid`; null when the playlist does not carry one.
+  final int? videoId;
+
+  /// Diagnostics without the playlist's `srckey`.
+  @override
+  String toString() => 'HuyaReplay(${videoId ?? Uri.tryParse(url)?.host ?? 'unknown'})';
+}
+
 /// A `profileRoom` answer: the room as the user asked for it, the ids streams
 /// and danmaku need, and, for a live room, its qualities and (with a `stream`)
-/// its pre-signing lines. Replay recording playback is deferred, so a replay
-/// carries no lines or qualities.
+/// its pre-signing lines. A replay with a recording carries its `replay` and
+/// that recording's one quality.
 typedef HuyaProfile = ({
   LiveRoom room,
   int presenterUid,
@@ -61,6 +82,7 @@ typedef HuyaProfile = ({
   bool hasStream,
   List<HuyaLine> lines,
   List<LivePlayQuality> qualities,
+  HuyaReplay? replay,
 });
 
 /// Pure parsing of the huya catalog/search/room responses. Each function
@@ -320,6 +342,7 @@ abstract final class HuyaRoomParser {
     final isLive = state == LiveStatus.live;
     final hasStream = isLive && stream != null;
     final startTime = isLive ? _positive(live['startTime']) : null;
+    final replay = state == LiveStatus.replay ? _replayOf(live) : null;
     return (
       room: LiveRoom.normalized(
         platform: _site,
@@ -348,7 +371,7 @@ abstract final class HuyaRoomParser {
           startedAt: startTime == null ? null : DateTime.fromMillisecondsSinceEpoch(startTime * 1000, isUtc: true),
           restriction: switch (state) {
             LiveStatus.live => _liveRestriction(data, live),
-            LiveStatus.replay => LiveRestriction.unplayable,
+            LiveStatus.replay => replay == null ? LiveRestriction.unplayable : LiveRestriction.none,
             _ => null,
           },
         ),
@@ -359,8 +382,25 @@ abstract final class HuyaRoomParser {
       subSid: channel('lSubChannelId', 'subChId'),
       hasStream: hasStream,
       lines: hasStream ? HuyaPlayParser.lines(stream, bases, jsonInt(info['uid'])) : const [],
-      qualities: isLive ? HuyaPlayParser.qualities(data) : const [],
+      qualities: isLive
+          ? HuyaPlayParser.qualities(data)
+          : replay != null
+          ? [HuyaPlayParser.replayQuality(replay.url)]
+          : const [],
+      replay: replay,
     );
+  }
+
+  /// The recording of a replay: `liveData.hls`, else `hlsUrl`, when it is an
+  /// http(s) `.m3u8`; its `vid` names the video.
+  static HuyaReplay? _replayOf(Map<String, dynamic> live) {
+    for (final key in const ['hls', 'hlsUrl']) {
+      final url = HuyaPlayParser.replayUrl(live[key]);
+      if (url == null) continue;
+      final vid = int.tryParse(Uri.parse(url).queryParameters['vid'] ?? '');
+      return HuyaReplay(url: url, videoId: vid != null && vid > 0 ? vid : null);
+    }
+    return null;
   }
 
   /// The anonymous login's `data.uid`; null when the answer has none.

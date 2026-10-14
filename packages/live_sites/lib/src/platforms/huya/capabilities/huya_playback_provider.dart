@@ -1,7 +1,9 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
+import 'package:live_sites/src/models/enums/live_play_format_source.dart';
 import 'package:live_sites/src/models/enums/live_restriction.dart';
+import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
@@ -45,13 +47,26 @@ final class HuyaPlaybackProvider implements LivePlaybackProvider {
   Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
     try {
       final profile = await _playable(roomId);
+      final rid = profile.room.roomId;
+      final cookie = site.cookie();
+      // A replay plays its recording: an unsigned VOD playlist that does not
+      // expire (no lease, no signature).
+      if (profile.replay case final replay?) {
+        return right([
+          LivePlayLine(
+            url: replay.url,
+            format: LiveStreamFormat.hls,
+            formatSource: LivePlayFormatSource.declared,
+            headers: HuyaPlayParser.mediaHeaders(rid, cookie: cookie),
+            codec: LiveStreamCodec.avc,
+          ),
+        ]);
+      }
       if (profile.lines.isEmpty) {
         throw const HuyaFailure(HuyaFailureKind.streamUnavailable, 'profileRoom: no multiLine entry with a stream');
       }
       final bitRate = int.tryParse(quality?.qualityId ?? '') ?? 0;
-      final rid = profile.room.roomId;
       final viewerUid = await site.viewerUid();
-      final cookie = site.cookie();
       final issuedAt = DateTime.now().toUtc();
       final seen = <String>{};
       final lines = <LivePlayLine>[];
@@ -152,15 +167,16 @@ final class HuyaPlaybackProvider implements LivePlaybackProvider {
   );
 
   /// The room's stream data, once it can be played: a live room with a
-  /// stream, unrestricted. A restricted room (paid, password, or an
-  /// unplayable replay) and a room that is off air are content-unavailable.
+  /// stream, or a replay with a recording, unrestricted. A restricted room
+  /// (paid, password, or a replay with no recording) and a room that is off
+  /// air are content-unavailable.
   Future<HuyaProfile> _playable(String roomId) async {
     final profile = await site.detailRoom(roomId);
     final restriction = profile.room.broadcast.effectiveRestriction;
     if (restriction != LiveRestriction.none) {
       throw HuyaFailure(HuyaFailureKind.streamUnavailable, 'restricted room (${restriction.name})');
     }
-    if (!profile.hasStream) {
+    if (!profile.hasStream && profile.replay == null) {
       throw HuyaFailure(
         HuyaFailureKind.streamUnavailable,
         'profileRoom: the room is ${profile.room.broadcast.effectiveLiveStatus.name}',

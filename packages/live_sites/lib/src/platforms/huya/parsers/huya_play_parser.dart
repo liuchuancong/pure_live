@@ -78,14 +78,47 @@ final class HuyaLine {
 /// `profileRoom` answer's embedded `stream`, the `signAntiCode` MD5 template
 /// signer, and the media URL / headers / lease every line is issued with.
 ///
-/// DEFERRED (documented follow-up, not faked here): the native
-/// `getCdnTokenInfoEx` WUP play-token refresh (`wup.huya.com`, 4-byte
-/// length-prefixed TUP3 packets), the headline message board, and replay
-/// (`liveData.hls` VOD). This builds play lines from `profileRoom`'s
-/// `multiLine` and signs their `AntiCode` on the web path only.
+/// Builds play lines from `profileRoom`'s `multiLine`, signs their `AntiCode`
+/// on the web path, and reads a replay's VOD recording (`liveData.hls`). The
+/// native `getCdnTokenInfoEx` WUP play token (see [cdnTokenRequest] /
+/// [cdnTokenResponse] / [tokenWindow]) signs FLV lines as the caller prefers.
 abstract final class HuyaPlayParser {
   /// Rank of the source quality (bit rate 0), above every transcode.
   static const int sourceRank = 1 << 30;
+
+  /// The `definition` of a replay's source recording.
+  static const String replaySourceDefinition = 'yuanhua';
+
+  /// Names of the replay definitions seen in `getMomentContent`, for the one
+  /// quality `profileRoom` names when that list is not read.
+  static const Map<String, String> replayDefinitionNames = {
+    replaySourceDefinition: '原画',
+    '1300': '720P',
+    '350': '360P',
+  };
+
+  /// A recording playlist: an http(s) `.m3u8` URL, `http://` on huya.com
+  /// upgraded to https (the VOD CDN serves both); null for anything else, so a
+  /// live quality's bit rate is never taken for a recording.
+  static String? replayUrl(Object? value) {
+    if (value is! String) return null;
+    final uri = jsonUrl(value);
+    if (uri == null || !uri.path.toLowerCase().endsWith('.m3u8')) return null;
+    return secureBase(value.trim());
+  }
+
+  /// The one quality of the recording at [url], named by its `definition`
+  /// ([replayDefinitionNames]; `默认` when unknown). Its id is the definition.
+  static LivePlayQuality replayQuality(String url) {
+    final definition = _parseMap(Uri.tryParse(url)?.query ?? '')['definition'] ?? '';
+    final quality = replayDefinitionNames[definition] ?? '默认';
+    return LivePlayQuality(
+      label: quality,
+      qualityId: definition,
+      platformOrder: definition == replaySourceDefinition ? sourceRank : 0,
+      codec: LiveStreamCodec.avc,
+    );
+  }
 
   /// The `fm` key the web player signs (3.x's test before signing; an empty
   /// `fm` then signs as the query unchanged).

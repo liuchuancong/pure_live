@@ -402,4 +402,40 @@ void main() {
       );
     });
   });
+
+  group('replay recording', () {
+    test('a replay room with a recording is playable at its one quality', () {
+      final body = jsonEncode({
+        'status': 200,
+        'data': {
+          'liveStatus': 'REPLAY',
+          'liveData': {
+            'roomName': '回放房间',
+            'hls': 'https://v.huya.com/play/back/888.m3u8?vid=888&definition=yuanhua&srckey=abc',
+          },
+          'profileInfo': {'uid': 123, 'nick': 'Chan'},
+        },
+      });
+      final profile = HuyaRoomParser.profile(body, requestedId: '123');
+      expect(profile.replay?.videoId, 888);
+      expect(profile.room.broadcast.effectiveRestriction, LiveRestriction.none);
+      expect(profile.qualities.single.label, '原画');
+      expect(profile.qualities.single.qualityId, 'yuanhua');
+      expect(profile.hasStream, isFalse);
+    });
+
+    test('a replay room with no recording stays unplayable', () {
+      final body = jsonEncode({
+        'status': 200,
+        'data': {
+          'liveStatus': 'REPLAY',
+          'liveData': {'roomName': '回放', 'hls': 'https://v.huya.com/live/x.flv'},
+          'profileInfo': {'uid': 1},
+        },
+      });
+      final profile = HuyaRoomParser.profile(body, requestedId: '1');
+      expect(profile.replay, isNull);
+      expect(profile.room.broadcast.effectiveRestriction, LiveRestriction.unplayable);
+    });
+  });
 }
