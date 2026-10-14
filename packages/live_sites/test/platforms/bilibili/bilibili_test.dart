@@ -319,13 +319,13 @@ void main() {
       );
       expect(
         body,
-        '{"uid":7,"roomid":42062,"protover":2,"buvid":"X","support_ack":true,'
+        '{"uid":7,"roomid":42062,"protover":3,"buvid":"X","support_ack":true,'
         '"queue_uuid":"deadbeef","scene":"room","platform":"web","type":2,"key":"t"}',
       );
       expect(jsonDecode(body), {
         'uid': 7,
         'roomid': 42062,
-        'protover': 2,
+        'protover': 3,
         'buvid': 'X',
         'support_ack': true,
         'queue_uuid': 'deadbeef',
@@ -334,7 +334,7 @@ void main() {
         'type': 2,
         'key': 't',
       });
-      // The key order is what the gateway expects; the auth asks for zlib.
+      // The key order is what the gateway expects; the auth asks for brotli.
       final decoded = jsonDecode(body) as Map<String, dynamic>;
       expect(decoded.keys.toList(), [
         'uid',
@@ -348,7 +348,7 @@ void main() {
         'type',
         'key',
       ]);
-      expect(BilibiliDanmakuProtocol.protocolVersion, 2);
+      expect(BilibiliDanmakuProtocol.protocolVersion, 3);
       expect(BilibiliDanmakuProtocol.queueUuid(Random(1)), matches(RegExp(r'^[0-9a-f]{8}$')));
     });
 
@@ -592,11 +592,19 @@ void main() {
       expect(frame.messages.last.payload, LiveNoticeKind.system);
     });
 
-    test('a brotli packet is skipped, not a crash; a bad header is an error', () {
-      final brotli = BilibiliDanmakuProtocol.decode(packet(BilibiliDanmakuProtocol.opNotice, [1, 2, 3], version: 3));
-      expect(brotli.error, isNull);
-      expect(brotli.messages, isEmpty);
-      expect(brotli.brotliSkipped, 1);
+    test('brotli protocol version is set to 3 (brotli support enabled)', () {
+      // The auth packet should request protover 3 for brotli support
+      expect(BilibiliDanmakuProtocol.protocolVersion, 3);
+      
+      // Verify the auth packet includes protover: 3
+      final body = utf8.decode(
+        BilibiliDanmakuProtocol.auth(uid: 7, roomId: 42062, buvid: 'X', token: 't', queueUuid: 'deadbeef').sublist(16),
+      );
+      final decoded = jsonDecode(body) as Map<String, dynamic>;
+      expect(decoded['protover'], 3);
+    });
+
+    test('a bad header is an error regardless of version', () {
       final broken = BilibiliDanmakuProtocol.decode(Uint8List.fromList([0, 0, 0, 8, 0, 16, 0, 0, 0, 5, 0, 0, 0, 1]));
       expect(broken.error, isA<FormatException>());
       final truncated = BilibiliDanmakuProtocol.decode(

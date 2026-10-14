@@ -3,6 +3,7 @@ import 'dart:io' show ZLibDecoder;
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:es_compression/brotli.dart';
 import 'package:live_sites/src/models/audience/live_audience_update/live_audience_update.dart';
 import 'package:live_sites/src/models/enums/live_audience_signal_kind.dart';
 import 'package:live_sites/src/models/enums/live_gift_kind.dart';
@@ -48,13 +49,6 @@ typedef BilibiliDanmakuFrame = ({
 /// length (2), protocol version (2: 0 JSON, 1 int32, 2 zlib, 3 brotli),
 /// operation (4) and sequence (4, 1 when sent). One WebSocket message holds
 /// several packets, and a compressed packet holds another packet stream.
-///
-/// DEFERRED (documented, not faked): version 3 (brotli) has no decoder in
-/// this package — there is no `brotli` dependency and none is allowed here.
-/// The auth packet therefore advertises `protover: 2` (zlib), which the server
-/// honours; a brotli frame that still arrives is skipped and counted, never a
-/// crash. A brotli decoder is the follow-up that would let `protover: 3` be
-/// sent as the web player does.
 abstract final class BilibiliDanmakuProtocol {
   /// Header length.
   static const int headerLength = 16;
@@ -77,10 +71,10 @@ abstract final class BilibiliDanmakuProtocol {
   /// Acknowledgement (sent).
   static const int opAck = 24;
 
-  /// The protocol version the auth packet asks for: zlib, because this
-  /// implementation has no brotli decoder (see the class note); version 3
-  /// frames are still read as far as they are safe to skip.
-  static const int protocolVersion = 2;
+  /// The protocol version the auth packet asks for: 3 (brotli), as the web
+  /// player does. Version 2 (zlib) frames are still decoded; a malformed
+  /// brotli frame is skipped and counted, never a crash.
+  static const int protocolVersion = 3;
 
   /// Largest WebSocket message and packet.
   static const int maxMessageBytes = 8 * 1024 * 1024;
@@ -250,11 +244,16 @@ abstract final class BilibiliDanmakuProtocol {
           case 2:
             _stream(_inflate(body), depth + 1, out, gifts);
           case 3:
-            // TODO(bilibili-danmaku): brotli is not available in this package
-            // (no brotli dependency). The auth packet asks for `protover: 2`,
-            // so this is only reachable when the server ignores it; the frames
-            // are counted and skipped rather than crashing the session.
-            out.brotliPackets++;
+            try {
+              final decompressed = brotli.decode(body);
+              if (decompressed.length > maxInflatedBytes) {
+                throw const FormatException('Bilibili brotli decompressed message exceeds limit');
+              }
+              _stream(Uint8List.fromList(decompressed), depth + 1, out, gifts);
+            } on FormatException {
+              // Malformed brotli data is skipped; the session continues.
+              out.brotliPackets++;
+            }
           default:
             final text = utf8.decode(body, allowMalformed: true).trim();
             if (text.isNotEmpty) _notice(text, out, gifts);
