@@ -345,14 +345,38 @@ final class _FakeSocket implements Fc2LiveSocket {
   String get sentText => sent.whereType<String>().join('\n');
 }
 
-/// A connector that hands back one socket, after the grant's address.
+/// A connector that hands back a socket, after the grant's address. A test that
+/// drives frames by hand passes a single [shared] socket (every open shares it);
+/// one that only opens and is answered takes a fresh answered socket per open,
+/// as the control pool does when it replaces a ended control with a new grant.
 final class _Connector {
-  new(this.socket, {this.answer = true});
+  new({this.shared, this.answer = true});
 
-  final _FakeSocket socket;
+  /// One socket shared by every open (a hand-driven test), or null to answer
+  /// each open on its own fresh socket.
+  final _FakeSocket? shared;
   final bool answer;
   final List<Uri> endpoints = [];
   final List<Map<String, String>> headers = [];
+
+  /// Every socket handed out, oldest first.
+  final List<_FakeSocket> sockets = [];
+
+  /// The first socket (what a single-open test drives); valid even before the
+  /// first open, which reuses it.
+  _FakeSocket get first {
+    if (sockets.isNotEmpty) return sockets.first;
+    if (shared != null) return shared!;
+    return _standby ??= _FakeSocket();
+  }
+  _FakeSocket? _standby;
+
+  /// The socket the next frame or [ended] should go to.
+  _FakeSocket get latest => sockets.isEmpty ? first : sockets.last;
+
+  /// The site closed the current socket; the control ends and the next caller
+  /// opens a fresh one.
+  Future<void> ended({int? code}) => latest.ended(code: code);
 
   Future<Fc2LiveSocket> call(
     Uri endpoint, {
@@ -363,6 +387,8 @@ final class _Connector {
   }) async {
     endpoints.add(endpoint);
     this.headers.add(headers);
+    final socket = shared ?? (sockets.isEmpty ? first : _FakeSocket());
+    sockets.add(socket);
     if (answer) {
       unawaited(
         Future<void>(() async {
@@ -377,11 +403,14 @@ final class _Connector {
   }
 }
 
-/// A control socket that opens and answers with the tiers 10, 20 and 30.
+/// A control socket that opens and answers with the tiers 10, 20 and 30. Answer
+/// mode takes a fresh answered socket per open; `answer` false gives the test a
+/// single shared socket to drive by hand. The record's socket is that one (or
+/// the first open's); the connector's `latest` is the current open's.
 ({Fc2LiveSocketConnect connect, _Connector connector, _FakeSocket socket}) _controlSocket({bool answer = true}) {
-  final socket = _FakeSocket();
-  final connector = _Connector(socket, answer: answer);
-  return (connect: connector.call, socket: socket, connector: connector);
+  final shared = answer ? null : _FakeSocket();
+  final connector = _Connector(shared: shared, answer: answer);
+  return (connect: connector.call, connector: connector, socket: shared ?? connector.first);
 }
 
 /// A timer that never goes off: the watches are kept by [FakeTimers] instead.
@@ -448,8 +477,7 @@ Future<List<LiveMessage>> _next(Stream<LiveMessage> events, int count) {
 /// A comment connection over a socket and clocks the test holds.
 Future<({Fc2LiveDanmakuSession session, _FakeSocket socket, FakeTimers timers, _Connector connector, _FakeHttp http})>
 _chat({LiveResponse Function(_Seen request)? onSend}) async {
-  final socket = _FakeSocket();
-  final connector = _Connector(socket, answer: false);
+  final connector = _Connector(answer: false);
   final timers = FakeTimers();
   final http = _FakeHttp(onSend ?? _ordinary);
   final session = Fc2LiveDanmakuSession(
@@ -458,7 +486,7 @@ _chat({LiveResponse Function(_Seen request)? onSend}) async {
     timers: timers.timers,
   );
   await session.connect();
-  return (session: session, socket: socket, timers: timers, connector: connector, http: http);
+  return (session: session, socket: connector.latest, timers: timers, connector: connector, http: http);
 }
 
 void main() {
@@ -1841,7 +1869,13 @@ void main() {
 
       var answer = _resp(500, 'nope');
       final failing = _adapter(onSend: (_) => answer);
-      await expectLater(failing.site.snapshot(), throwsA(isA<Fc2LiveFailure>()));
+      Object? failure;
+      try {
+        await failing.site.snapshot();
+      } on Object catch (error) {
+        failure = error;
+      }
+      expect(failure, isA<Fc2LiveFailure>(), reason: 'a breakdown is a failure, not an empty directory');
       answer = _resp(200, _directoryFixture());
       final channels = await failing.site.snapshot();
       expect(channels, hasLength(3), reason: 'the breakdown is not kept as an answer');
@@ -2126,10 +2160,10 @@ void main() {
     test('a session follows the site orders with a fresh grant', () async {
       final chat = await _chat();
       expect(chat.http.sent, hasLength(2));
-      chat.socket.push(_frame('move_server'));
+      chat.connector.latest.push(_frame('move_server'));
       await Future<void>.delayed(Duration.zero);
       expect(chat.http.sent, hasLength(4), reason: 'the page follows a move at once, on a fresh grant');
-      chat.socket.push(_frame('control_disconnection', arguments: {'code': 4500}));
+      chat.connector.latest.push(_frame('control_disconnection', arguments: {'code': 4500}));
       await Future<void>.delayed(Duration.zero);
       chat.timers.fire(index: chat.timers.after.length - 1);
       await Future<void>.delayed(Duration.zero);
@@ -2137,10 +2171,10 @@ void main() {
       // The heartbeat id counts up through the run, and an answered heartbeat
       // restarts the count of replacements.
       chat.timers.ring(index: chat.timers.every.length - 1);
-      expect(chat.socket.sentText, contains('"id":2'));
-      chat.socket.push(_frame('_response_', arguments: {'status': 0}, id: 2));
+      expect(chat.connector.latest.sentText, contains('"id":2'));
+      chat.connector.latest.push(_frame('_response_', arguments: {'status': 0}, id: 2));
       for (var attempt = 0; attempt <= Fc2LiveDanmakuCodec.maxReconnects; attempt++) {
-        chat.socket.push(_frame('control_disconnection', arguments: {'code': 4500}));
+        chat.connector.latest.push(_frame('control_disconnection', arguments: {'code': 4500}));
         await Future<void>.delayed(Duration.zero);
         chat.timers.fire(index: chat.timers.after.length - 1);
         await Future<void>.delayed(Duration.zero);
