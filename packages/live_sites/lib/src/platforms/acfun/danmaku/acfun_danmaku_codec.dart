@@ -3,6 +3,7 @@ import 'dart:io' show gzip;
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:live_sites/src/common/crypto/aes_cbc.dart';
 import 'package:live_sites/src/common/normalization/site_counts.dart';
 import 'package:live_sites/src/models/audience/live_audience_update/live_audience_update.dart';
 import 'package:live_sites/src/models/enums/live_audience_signal_kind.dart';
@@ -15,7 +16,6 @@ import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/models/message/message_sender/message_sender.dart';
 import 'package:live_sites/src/platforms/acfun/api/acfun_endpoints.dart';
-import 'package:live_sites/src/platforms/acfun/danmaku/acfun_aes.dart';
 import 'package:live_sites/src/platforms/acfun/danmaku/acfun_protobuf.dart';
 import 'package:live_sites/src/platforms/acfun/parsers/acfun_room_parser.dart';
 
@@ -224,13 +224,13 @@ abstract final class AcfunDanmakuProtocol {
 
   /// [plain] sealed under [key] with [iv]: the IV, then the ciphertext.
   static Uint8List seal(List<int> plain, List<int> key, List<int> iv) =>
-      Uint8List.fromList([...iv, ...AcfunAesCbc.encrypt(plain, key: key, iv: iv)]);
+      Uint8List.fromList([...iv, ...AesCbc.encrypt(plain, key: key, iv: iv)]);
 
   /// Opens a sealed payload; throws [FormatException] when it is too short or
   /// does not decrypt (a wrong key included).
   static Uint8List open(List<int> sealed, List<int> key) {
     if (sealed.length < 2 * aesBlock) throw const FormatException('AcFun payload shorter than two blocks');
-    return AcfunAes128Cbc.decrypt(sealed.sublist(aesBlock), key: key, iv: sealed.sublist(0, aesBlock));
+    return Aes128Cbc.decrypt(sealed.sublist(aesBlock), key: key, iv: sealed.sublist(0, aesBlock));
   }
 
   /// `ZtLiveCsCmdAck`: the answer's type, its error code and payload.

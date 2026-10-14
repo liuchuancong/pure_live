@@ -944,6 +944,7 @@ void main() {
         'youtube',
         'twitch',
         'acfun',
+        'bigo',
       ]);
     });
 

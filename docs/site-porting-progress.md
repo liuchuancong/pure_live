@@ -29,9 +29,10 @@
 | youtube | ✅ | 见下方"youtube 明细" |
 | twitch | ✅ | 见下方"twitch 明细" |
 | acfun AcFun | ✅ | 见下方"acfun 明细" |
+| bigo Bigo Live | ✅ | 见下方"bigo 明细" |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
-| bigo / chzzk / fc2live / jdlive / kick / kilakila / kugoulive / looklive / missevan / niconico / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / yy | ⬜ | 其余含弹幕站;**下一站候选 bigo**(按本行顺序) |
+| chzzk / fc2live / jdlive / kick / kilakila / kugoulive / looklive / missevan / niconico / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / yy | ⬜ | 其余含弹幕站;**下一站候选 chzzk**(按本行顺序) |
 | cc / inke / liveme / tiktok / xiaohongshu | ⬜ | 仅 `live_core` 有(纯目录/播放,无弹幕) |
 
 ## douyu 明细(2026-10-14)
@@ -104,6 +105,17 @@
 - 链接:`live.acfun.cn/live/{id}`、`m.acfun.cn/live/detail/{id}`、`www.acfun.cn/u/{id}`(含遗留 `.aspx`)、`m.acfun.cn/upPage/{id}`(参考在此**不**剥 `.aspx`,已照搬);作者号即房间号(≤20 位正数)。
 - **延后/取舍**:参考搜索的并发分页(`_Search` + 8 s 超时 + CancelToken + 重启)在 v2 `searchRooms(keyword,{page,pageSize})` 形态下无对应面 → 用本地页切分,`data-total` 收尾语义保留;礼物信号的 `value`(字段 6)参考只"留着核对"、不驱动任何展示,v2 `LiveGift` 无落点 → 未读;`LiveGiftUnit` 无 banana 档,香蕉记 `free`,目录价为 0 的非香蕉礼物同样记 `free`(对齐参考 `free: banana || price == 0`)。
 - 验证:整包 `dart analyze` No issues found;`dart test` **300 项全绿**(acfun 110:AES 金标与往返、protobuf 逐字段、帧封解、register/session 密钥换取、push 各类信号、访客与端点参数、目录 cursor、搜索切页 + anchors 目标、链接各形态)。douyin_test 的内置站点等值断言已随之更新为含 acfun。
+
+## bigo 明细(2026-10-14)
+整站从 `live_core/sites/bigo`(api/site)+ `live_danmaku/sites/bigo.dart` 迁到 `platforms/bigo/`。**新增共享件:AES 原语上移 `src/common/crypto/aes_cbc.dart`**(acfun 的私有副本删除,两处一起用;§3 规定 ≥2 平台的共享工具归 common,§7.4 不许 common 里出现平台名)。
+- 能力:room / area(只有一个区:公开推荐 = `vedioList/72`)/ discovery(同一快照切片)/ search(仅 rooms)/ playback / danmaku / link_resolver,注册齐;`Either` + `BigoFailure → toLiveSiteError('bigo')`(needsLogin→authentication,受限/离线/无 hls→contentUnavailable,401/403→rateLimit)。
+- **Web token 链**:`sec.bigo.sg/v1/webjs/t` 取服务器时间 → `webjs/status?data=<加密>` 换 token → `getInternalStudioInfo?siteId&verify=&token=`(POST 空体)。**只有 token 的首次使用**才回 `hls_src` 与 `passRoom`,后续使用回状态/名字/图但没有这两样。所以 entry / input 用新 token(3 请求),refresh 用 30 分钟内复用的 token(1 请求);`tokenReuse=30min` 是余量不是实测过期。**签名**:`data` = base64(`Salted__` + 8 字节 salt + AES-256-CBC(PKCS7)),密钥由 OpenSSL `EVP_BytesToKey`(md5,1 轮)从站点公开口令 `undefinedval0x01` 派生(前 32 密钥、后 16 IV);两个答案都是 JSONP,回调名 `jsonpcallback_<ms>_<µs>` 必须逐字对上。
+- 解析按参考的**严格**口径:字段类型不对就是 apiChanged(`needLogin` 非 bool、`isPaidShow` 不在 {''、'0'、'1'}、`alive` 非 0/1、`hls_src` 非 https `.m3u8` 且出现在非公共/未开播房间…);列表里单行读不通就跳过该行(参考也是逐行跳),整批读不通才 apiChanged。**取舍**:参考的三条中文提示语(chat/login/restricted notice)不进模型——v2 用 `broadcast.restriction` + `audience.primaryMetric` 表达同一事实,措辞归应用层。
+- 弹幕 = **WebSocket 文本帧 `<uri><JSON>`**(服务端帧间可带 tab):256 challenge → 79108 应答(`sign = md5("60#4#5#<秒时间>#1#1#1#1#<challenge 末 8 位>")`)→ 等 1s → 512279 登录(visitor 来自 `studio/getWebSocketLink` 表单 POST)→ 512535 `res=="200"` → 1304 进房 → 1560 `resCode=="200"`(`sid=="0"` = idle → 终止)→ 10776 拉观众;10264 `totalUserCount` / 11032 `total` = 在线数,2584 按 `payload.tag` 派发(1/2 = 聊天、6 = 礼物线报送礼者名),`oriUri=="760969"` = 礼物动画(目录价不查,`LiveGiftValue` 留 unknown 不造假 0;`comboTotal = vgift_count × send_times`,送礼者行等 1s 关联)。聊天正文是 **Base64 的 UTF-8 JSON `{n,m}`**;`messageId = <uid>:<seqId>`(参考记录过同 seqId 重发)。心跳 10s(登录后起)、静默 90s 换 socket、join 10s 超时、拒绝 4 次终止 + 双开互斥与连续失败上限同款。
+- 播放:单清晰度 `直播自动`(id `live`);线路 = 首次使用 token 的 `hls_src`,`singleUse: true`(同一地址重开无效,播放器必须重新解析)、无 lease(URL 本身不带过期参数)、线路标签 = CDN host。
+- 链接:`bigo.tv` 及任意子域、仅默认端口、无 userinfo、`/<id>` 或 `/<两字母语言>/<id>`、保留路径不算房间、忽略 fragment;作者号即房间号(`^[A-Za-z0-9_][A-Za-z0-9_.-]{0,63}$`)。
+- **延后/取舍**:①**HLS 分段反混淆没有落地面**——参考的 `BigoHlsProtection`(`#EXT-X-BIGO-WEB-PROTECTION:VERSION=1,SEED=N`,前两个 188 字节包各前 16 字节 xorshift XOR,对合)已逐字节移植并有往返测试,但 v2 契约的 `LivePlayLine` 不带"分段变换"钩子,`live_playback` 也没有 relay 注入口 → 目前解不了混淆段,需要跨包 seam 才能真正播 bigo(下一条);②参考的 `resolveInput`/录制专用输入与 20s `_scoped` 截止已并入 site 的 deadline,但参考的 cancel-token 传播语义在 v2 能力签名里没有对应面(能力不接受 CancelToken);③参考搜索的 `_share()` 并发共享只保留了"无 cancel 调用者共享在途 fetch"这一半(另一半依赖 CancelToken);④参考即无热度榜、无登录、无发送弹幕、无关播信号、无徽章/表情 → 本站不做。
+- 验证:整包 `dart analyze` No issues found;`dart test` **372 项全绿**(bigo 72:EVP_BytesToKey/AES-256 金标与 OpenSSL 密文金标、JSONP 回调错配、HLS seed 解析与变换对合、列表逐行跳过/去重/预算、studio 三门与 alive 修正、`complete` 语义、链接各形态、帧编解码与 tag 派发、礼物行关联、请求次序与 token 复用、能力接线与内置站清单)。douyin/twitch 测试的内置站点等值断言已随之更新为含 bigo。
 
 ## 环境缺口
 无。此前 `packages/live_playback` 以 `path:` 依赖工作区外的 `D:\media_core` 导致整仓 `dart pub get` 解析失败、`dart test` 跑不起来;2026-10-14 已把 `media_core` / `media_core_danmaku` / `media_core_mediasession` 改为 pub git 源(`github.com/liuchuancong/media_core`),仓库根 `flutter pub get` 即可完整解析,交付门的 test 步骤不再需要人工补 media_core 或造桩。

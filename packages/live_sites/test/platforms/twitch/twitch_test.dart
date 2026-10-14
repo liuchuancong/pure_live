@@ -625,6 +625,7 @@ https://other.example/1.m3u8
         'youtube',
         'twitch',
         'acfun',
+        'bigo',
       ]);
     });
 

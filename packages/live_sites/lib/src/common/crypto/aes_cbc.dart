@@ -1,15 +1,15 @@
-/// AES-CBC for AcFun's danmaku link, in pure Dart: FIPS 197 (AES) in the
-/// SP 800-38A cipher block chaining mode, with PKCS#7 padding.
+/// AES-CBC in pure Dart: FIPS 197 (AES) in the SP 800-38A cipher block
+/// chaining mode, with PKCS#7 padding.
 ///
-/// The link seals every WebSocket payload as `IV (16 bytes) ||
-/// AES-128-CBC(PKCS#7 plaintext)`, under the key the register exchange hands
-/// out (`acSecurity`, base64 of 16 bytes). Frames are read with the AES-128
-/// decrypt side; the envelopes the socket is sent with are written with the
-/// encrypt side, which takes the 128-, 192- and 256-bit keys the app uses.
+/// Two platform links need this primitive: one seals every WebSocket payload as
+/// `IV (16 bytes) || AES-128-CBC(PKCS#7 plaintext)` under a 16-byte key the
+/// register exchange hands out ([Aes128Cbc] reads those frames, [AesCbc] writes
+/// them), and the other builds an HTTP query parameter as AES-256-CBC over a
+/// key and IV derived from a published passphrase ([AesCbc] with a 32-byte key).
 ///
 /// The algorithm is written straight from the standards instead of taken from
 /// a package: this package depends on `crypto`, which has hashes and no AES,
-/// and one danmaku link does not justify a crypto-primitive dependency. The
+/// and a live link does not justify a crypto-primitive dependency. The
 /// S-box and its inverse are built at first use from the multiplicative
 /// inverse in GF(2^8) and the affine map (FIPS 197 §5.4), so no 256-byte table
 /// literal has to be trusted, and the key expansion follows §5.2 for the
@@ -80,9 +80,9 @@ abstract final class _Aes {
 }
 
 /// AES-128 decryption in the CBC mode of SP 800-38A with PKCS#7 padding
-/// (FIPS 197), for the frames AcFun's danmaku socket sends. Encryption, for
-/// all three key sizes, is [AcfunAesCbc].
-abstract final class AcfunAes128Cbc {
+/// (FIPS 197), for a link whose frames are sealed under a 16-byte session key.
+/// Encryption, for all three key sizes, is [AesCbc].
+abstract final class Aes128Cbc {
   /// Decrypts [data] (whole blocks) with the 16-byte [key] and 16-byte [iv]
   /// and removes the PKCS#7 padding; throws [FormatException] when a length is
   /// wrong or the padding is not the padding.
@@ -195,9 +195,9 @@ abstract final class AcfunAes128Cbc {
 }
 
 /// AES encryption in the CBC mode of SP 800-38A with PKCS#7 padding, for
-/// 128-, 192- and 256-bit keys (FIPS 197), for the envelopes AcFun's danmaku
-/// socket is sent with. Decryption of AES-128 is [AcfunAes128Cbc].
-abstract final class AcfunAesCbc {
+/// 128-, 192- and 256-bit keys (FIPS 197), for the envelopes a sealed live
+/// link is sent with. Decryption of AES-128 is [Aes128Cbc].
+abstract final class AesCbc {
   /// Encrypts [plain] after PKCS#7 padding with [key] (16, 24 or 32 bytes) and
   /// [iv] (16 bytes); throws [FormatException] for another length. Padding is
   /// always added, so a whole-block [plain] grows by a full block.

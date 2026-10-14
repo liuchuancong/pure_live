@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:live_sites/src/platforms/acfun/danmaku/acfun_aes.dart';
+import 'package:live_sites/src/common/crypto/aes_cbc.dart';
 import 'package:test/test.dart';
 
 /// The bytes of a hex string of the published vectors.
@@ -39,15 +39,15 @@ const _cbcCipher =
 void main() {
   group('FIPS 197 single blocks', () {
     test('AES-128 (C.1)', () {
-      expect(_hex(AcfunAesCbc.encryptBlock(_bytes(_plain), key: _bytes(_key128))), _cipher128);
+      expect(_hex(AesCbc.encryptBlock(_bytes(_plain), key: _bytes(_key128))), _cipher128);
     });
 
     test('AES-192 (C.2)', () {
-      expect(_hex(AcfunAesCbc.encryptBlock(_bytes(_plain), key: _bytes(_key192))), _cipher192);
+      expect(_hex(AesCbc.encryptBlock(_bytes(_plain), key: _bytes(_key192))), _cipher192);
     });
 
     test('AES-256 (C.3)', () {
-      expect(_hex(AcfunAesCbc.encryptBlock(_bytes(_plain), key: _bytes(_key256))), _cipher256);
+      expect(_hex(AesCbc.encryptBlock(_bytes(_plain), key: _bytes(_key256))), _cipher256);
     });
 
     test('AES-128 decrypts its C.1 block back', () {
@@ -56,10 +56,10 @@ void main() {
       // pads, so a whole block of plaintext becomes two blocks of ciphertext.
       // decrypt() reads those two blocks and strips the padding.
       final zeroIv = Uint8List(16);
-      final sealed = AcfunAesCbc.encrypt(_bytes(_plain), key: _bytes(_key128), iv: zeroIv);
+      final sealed = AesCbc.encrypt(_bytes(_plain), key: _bytes(_key128), iv: zeroIv);
       expect(sealed.length, 32);
       expect(_hex(sealed.sublist(0, 16)), _cipher128);
-      expect(_hex(AcfunAes128Cbc.decrypt(sealed, key: _bytes(_key128), iv: zeroIv)), _plain);
+      expect(_hex(Aes128Cbc.decrypt(sealed, key: _bytes(_key128), iv: zeroIv)), _plain);
     });
   });
 
@@ -69,16 +69,13 @@ void main() {
       // through the block-level path: chaining is unaffected by a block that
       // follows, so the first 64 bytes are F.2.1's four cipher blocks and the
       // 80-byte output merely appends the encrypted padding block.
-      final sealed = AcfunAesCbc.encrypt(_bytes(_cbcPlain), key: _bytes(_cbcKey), iv: _bytes(_cbcIv));
+      final sealed = AesCbc.encrypt(_bytes(_cbcPlain), key: _bytes(_cbcKey), iv: _bytes(_cbcIv));
       expect(sealed.length, 80);
       expect(_hex(sealed.sublist(0, 64)), _cbcCipher);
     });
 
     test('F.2.2 decrypts them again', () {
-      expect(
-        _hex(AcfunAes128Cbc.decryptBlocks(_bytes(_cbcCipher), key: _bytes(_cbcKey), iv: _bytes(_cbcIv))),
-        _cbcPlain,
-      );
+      expect(_hex(Aes128Cbc.decryptBlocks(_bytes(_cbcCipher), key: _bytes(_cbcKey), iv: _bytes(_cbcIv))), _cbcPlain);
     });
   });
 
@@ -88,11 +85,11 @@ void main() {
       final iv = _bytes(_cbcIv);
       for (final length in [0, 1, 16, 100]) {
         final plain = Uint8List.fromList([for (var i = 0; i < length; i++) i & 0xff]);
-        final sealed = AcfunAesCbc.encrypt(plain, key: key, iv: iv);
+        final sealed = AesCbc.encrypt(plain, key: key, iv: iv);
         // Padding is never omitted: the 16-byte input grows to two blocks.
         expect(sealed.length, (length ~/ 16 + 1) * 16, reason: '$length bytes');
         expect(
-          AcfunAes128Cbc.decrypt(sealed, key: key, iv: iv),
+          Aes128Cbc.decrypt(sealed, key: key, iv: iv),
           plain,
           reason: '$length bytes',
         );
@@ -105,12 +102,12 @@ void main() {
     final iv = _bytes(_cbcIv);
 
     test('a ciphertext that is not whole blocks', () {
-      expect(() => AcfunAes128Cbc.decrypt(Uint8List(15), key: key, iv: iv), throwsFormatException);
-      expect(() => AcfunAes128Cbc.decrypt(Uint8List(31), key: key, iv: iv), throwsFormatException);
+      expect(() => Aes128Cbc.decrypt(Uint8List(15), key: key, iv: iv), throwsFormatException);
+      expect(() => Aes128Cbc.decrypt(Uint8List(31), key: key, iv: iv), throwsFormatException);
     });
 
     test('an empty ciphertext', () {
-      expect(() => AcfunAes128Cbc.decrypt(Uint8List(0), key: key, iv: iv), throwsFormatException);
+      expect(() => Aes128Cbc.decrypt(Uint8List(0), key: key, iv: iv), throwsFormatException);
     });
 
     test('a PKCS#7 run that is not the run its last byte claims', () {
@@ -118,23 +115,23 @@ void main() {
       // block. In CBC a ciphertext byte only disturbs the plaintext byte at the
       // same position of the same block, so this leaves the length byte 0x05
       // and corrupts the first byte of the run it covers.
-      final sealed = Uint8List.fromList(AcfunAesCbc.encrypt(Uint8List(11), key: key, iv: iv));
+      final sealed = Uint8List.fromList(AesCbc.encrypt(Uint8List(11), key: key, iv: iv));
       sealed[11] ^= 0xff;
-      expect(() => AcfunAes128Cbc.decrypt(sealed, key: key, iv: iv), throwsFormatException);
+      expect(() => Aes128Cbc.decrypt(sealed, key: key, iv: iv), throwsFormatException);
     });
 
     test('a key or IV that is not 16 bytes for AES-128', () {
-      final block = AcfunAesCbc.encrypt(Uint8List(16), key: key, iv: iv);
-      expect(() => AcfunAes128Cbc.decrypt(block, key: Uint8List(15), iv: iv), throwsFormatException);
-      expect(() => AcfunAes128Cbc.decrypt(block, key: Uint8List(32), iv: iv), throwsFormatException);
-      expect(() => AcfunAes128Cbc.decrypt(block, key: key, iv: Uint8List(15)), throwsFormatException);
+      final block = AesCbc.encrypt(Uint8List(16), key: key, iv: iv);
+      expect(() => Aes128Cbc.decrypt(block, key: Uint8List(15), iv: iv), throwsFormatException);
+      expect(() => Aes128Cbc.decrypt(block, key: Uint8List(32), iv: iv), throwsFormatException);
+      expect(() => Aes128Cbc.decrypt(block, key: key, iv: Uint8List(15)), throwsFormatException);
     });
 
     test('a key that is not 16, 24 or 32 bytes and an IV or block of the wrong length', () {
-      expect(() => AcfunAesCbc.encrypt(Uint8List(4), key: Uint8List(20), iv: iv), throwsFormatException);
-      expect(() => AcfunAesCbc.encrypt(Uint8List(4), key: key, iv: Uint8List(15)), throwsFormatException);
-      expect(() => AcfunAesCbc.encryptBlock(Uint8List(15), key: key), throwsFormatException);
-      expect(() => AcfunAesCbc.encryptBlock(Uint8List(16), key: Uint8List(17)), throwsFormatException);
+      expect(() => AesCbc.encrypt(Uint8List(4), key: Uint8List(20), iv: iv), throwsFormatException);
+      expect(() => AesCbc.encrypt(Uint8List(4), key: key, iv: Uint8List(15)), throwsFormatException);
+      expect(() => AesCbc.encryptBlock(Uint8List(15), key: key), throwsFormatException);
+      expect(() => AesCbc.encryptBlock(Uint8List(16), key: Uint8List(17)), throwsFormatException);
     });
   });
 }
