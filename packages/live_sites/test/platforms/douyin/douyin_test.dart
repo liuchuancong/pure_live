@@ -935,7 +935,7 @@ void main() {
       final built = createBuiltInLiveSites(
         http: _FakeHttp((_) => LiveResponse(statusCode: 200, headers: const {}, bodyBytes: Uint8List(0))),
       );
-      expect(built.map((entry) => entry.manifest.id), ['douyu', 'huya', 'douyin', 'bilibili']);
+      expect(built.map((entry) => entry.manifest.id), ['douyu', 'huya', 'douyin', 'bilibili', 'kuaishou']);
     });
 
     test('a guest bootstrap runs once and the detail carries the handles', () async {

@@ -8,6 +8,8 @@ import 'package:live_sites/src/platforms/douyu/api/douyu_http.dart';
 import 'package:live_sites/src/platforms/douyu/douyu_site.dart';
 import 'package:live_sites/src/platforms/huya/api/huya_http.dart';
 import 'package:live_sites/src/platforms/huya/huya_site.dart';
+import 'package:live_sites/src/platforms/kuaishou/api/kuaishou_http.dart';
+import 'package:live_sites/src/platforms/kuaishou/kuaishou_site.dart';
 
 /// The single internal construction entry point for built-in sites.
 ///
@@ -21,5 +23,6 @@ List<LiveSite> createBuiltInLiveSites({LiveHttp? http}) {
     HuyaSite(http: HuyaHttp(transport)),
     DouyinSite(http: DouyinHttp(transport)),
     BilibiliSite(http: BilibiliHttp(transport)),
+    KuaishouSite(http: KuaishouHttp(transport)),
   ];
 }

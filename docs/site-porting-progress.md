@@ -25,11 +25,8 @@
 | huya 虎牙 | ✅ | 见下方"huya 明细" |
 | douyin 抖音 | ✅ | 见下方"douyin 明细" |
 | bilibili B站 | ✅ | 见下方"bilibili 明细" |
+| kuaishou 快手 | ✅ | 见下方"kuaishou 明细" |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
-| kuaishou 快手 | ⬜ | 下一站候选 |
-| douyin 抖音 | ⬜ | protobuf PushFrame + X-Bogus 签名 |
-| bilibili B站 | ⬜ | WS + protobuf,房间/分区/弹幕齐 |
-| kuaishou 快手 | ⬜ | |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
 | acfun / bigo / chzzk / fc2live / jdlive / kick / kilakila / kugoulive / looklive / missevan / niconico / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / twitch / youtube / yy | ⬜ | 其余含弹幕站,一站一站来 |
 | cc / inke / liveme / tiktok / xiaohongshu | ⬜ | 仅 `live_core` 有(纯目录/播放,无弹幕) |
@@ -68,6 +65,14 @@
 - 播放:线路 = `playurl_info.playurl.stream[].format[].codec[].{base_url,url_info[].{host,extra}}` 拼 `host+base_url+extra`,清晰度取 accept_qn∪current_qn(qn 10000=源,guest 请求 10000 降 250),lease 取 extra 里 `expires=`;轮播 `getRoundPlayVideo`。
 - **延后/取舍**:protover 用 **2(zlib)** 而非参考的 3 → 服务端不发 brotli,version-3 帧计数跳过并留 `TODO(bilibili-danmaku)`(本包无 brotli 解码器);super chat 无对应能力,改由 `BilibiliRoomProvider.superChats()` + 弹幕流上挂 `LiveMessageType.superChat`;礼物目录内联解析不上 isolate;QR 登录/表情徽章未接。
 - 验证:整包 `dart analyze` No issues found;`dart test` **122 项全绿**(bilibili 49,含 WBI 金标、帧头字节串、auth 键序、notice/gift-pb 派发、room/search/play/gift 解析、链接解析)。
+
+## kuaishou 明细(2026-10-14)
+整站从 `live_core/sites/kuaishou` + `live_danmaku/sites/kuaishou.dart` 迁到 `platforms/kuaishou/`。**无新依赖:纯 REST JSON + HTML 轮询,无 protobuf / 无 WebSocket / 无 GraphQL / 无签名**。
+- 能力:room / area(8 个硬编码顶级分类) / discovery(home/list) / search(search/author,仅主播) / playback / danmaku / link_resolver,注册齐;`Either` + `KuaishouFailure`。访客 session:裸取房间页存 `did/clientid/client_key/kpn/bfb1s` 30 分钟,`misc2` 上报 best-effort。
+- 弹幕 = **HTTP 增量轮询** `livev.m.chenzhongtech.com/wap/live/feed`(回退 m.gifshow.com),双/三重 JSON 编码解包 + `data` 下钻;`currentWatchingCount`→在线(audienceUpdate),`liveStreamFeeds[type=comment]`→chat(sha1 of `time\u0000userId\u0000content` 兜底 id),`result!=1`→rejected。会话 `_tick` 轮询循环,退避 1/2/4/8s,连续失败上限发终止系统消息后关流(与 douyu/huya/douyin 同款互斥/上限)。礼物本协议无,不实现。
+- 播放:playUrls 的 h264/hevc `adaptationSet.representation[]`(卡片用 descriptor 列表),按 (name,level/bitrate) 合线,codec 从文件名(`_Avc/_Hevc`),hls(.m3u8)/flv,hevc-only 加 ` · H.265` 后缀置末;lease 读 `txTime/wsTime/hwTime`(8 hex)、`ty_Time/bd-origin wsTime`(10 十进制)、`ali-origin auth_key`,刷新 min(10min,¼)。
+- 解析:room 页 `window.__INITIAL_STATE__.liveroom.playList[0]`(isLiving/errorType22→NotFound);卡片 id=liveStreamId、author.id=roomId、`statrtTime` 容错(仅 1e12–1e13)。链接 `/u/{id}`。
+- 验证:整包 `dart analyze` No issues found;`dart test` **136 项全绿**(kuaishou 14:feed 解包/仅 comment/backoff/query、txTime+auth_key lease、qualities/lines、mediaHeaders、roomIdOf、sessionCookies、roomDetail 端到端)。
 
 ## 环境缺口(影响交付门,重要)
 本机工作区 **无法 `dart pub get`**:`packages/live_playback` 依赖 `media_core` 路径 `../../../../media_core/packages/media_core`(即 `D:\media_core\packages\media_core`),该外部工作区在本机不存在,导致整个 workspace 解析失败、`dart test` 直接跑不起来(与本次站点代码无关)。为跑本包测试,曾临时在 `D:\media_core` 造桩再删。要长期跑测试门,需把真实 `media_core` 工作区放到 `D:\media_core`(或在 live_playback 里改成实际存在的路径/移除该 member)。在此之前,"交付门 = dart analyze + dart test" 中的 test 步骤依赖人工补 media_core。
