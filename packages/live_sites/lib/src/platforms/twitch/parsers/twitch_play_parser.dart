@@ -1,4 +1,4 @@
-import 'package:hls/hls.dart';
+import 'package:live_sites/src/common/hls/hls_master.dart';
 import 'package:live_sites/src/models/enums/live_play_format_source.dart';
 import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
@@ -68,20 +68,14 @@ abstract final class TwitchPlayParser {
     if (!playlist.trimLeft().startsWith('#EXTM3U')) {
       throw TwitchFailure(TwitchFailureKind.apiChanged, 'usher: not a playlist (${TwitchJson.snippet(playlist)})');
     }
-    // The master is read through package:hls; a body that is not a master
-    // playlist yields no variants and falls to the stream-unavailable answer
-    // below. Relative URIs are resolved against the master here so no part of
-    // the master's own query is copied onto a variant.
-    HlsMasterPlaylist? masterPlaylist;
-    try {
-      final parsed = HlsParser.parse(playlist);
-      masterPlaylist = parsed is HlsMasterPlaylist ? parsed : null;
-    } on Object {
-      masterPlaylist = null;
-    }
+    // The master is read through the shared HLS parser; a body that is not a
+    // master playlist yields no variants and falls to the stream-unavailable
+    // answer below. Relative URIs are resolved against the master here so no
+    // part of the master's own query is copied onto a variant.
+    final result = parseHlsMaster(playlist, masterUrl: master);
     final grouped = <String, TwitchVariantGroup>{};
-    for (final variant in masterPlaylist?.variants ?? const <HlsVariant>[]) {
-      final resolved = variant.uri.hasScheme ? variant.uri : master.resolveUri(variant.uri);
+    for (final variant in result?.master.variants ?? const <HlsVariant>[]) {
+      final resolved = resolveHlsVariantUri(variant.uri, master: master);
       if (!resolved.isScheme('http') && !resolved.isScheme('https')) continue;
       final bandwidth = variant.bandwidth;
       final height = variant.height ?? 0;
@@ -100,7 +94,7 @@ abstract final class TwitchPlayParser {
         sort: source ? 1 << 30 : bandwidth,
         group: group,
         urls: [url],
-        codec: videoCodec(variant.codecs ?? ''),
+        codec: hlsVideoCodecOf(variant.codecs),
       );
     }
     if (grouped.isEmpty) throw const TwitchFailure(TwitchFailureKind.streamUnavailable, 'usher: no variant');
@@ -149,22 +143,8 @@ abstract final class TwitchPlayParser {
         (label.isEmpty ? null : groups.where((group) => group.label == label).firstOrNull);
   }
 
-  /// The video codec of an HLS `CODECS` list: [LiveStreamCodec.avc] (`avc1`,
-  /// `avc3`), [LiveStreamCodec.hevc] (`hvc1`, `hev1`) or [LiveStreamCodec.av1]
-  /// (`av01`); null for none of them.
-  static LiveStreamCodec? videoCodec(String codecs) {
-    for (final entry in codecs.toLowerCase().split(',')) {
-      switch (entry.trim().split('.').first) {
-        case 'avc1' || 'avc3':
-          return LiveStreamCodec.avc;
-        case 'hvc1' || 'hev1':
-          return LiveStreamCodec.hevc;
-        case 'av01':
-          return LiveStreamCodec.av1;
-      }
-    }
-    return null;
-  }
+  /// The video codec of an HLS `CODECS` list: delegates to [hlsVideoCodecOf].
+  static LiveStreamCodec? videoCodec(String codecs) => hlsVideoCodecOf(codecs);
 
   /// The quality label: `<height>p[<fps>][（原画）]` (the frame rate named
   /// from 45 fps up, the broadcaster's own stream marked 原画), or, when the

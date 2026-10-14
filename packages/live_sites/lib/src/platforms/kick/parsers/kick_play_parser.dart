@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:hls/hls.dart';
+import 'package:live_sites/src/common/hls/hls_master.dart';
 import 'package:live_sites/src/models/enums/live_play_format_source.dart';
 import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
@@ -62,28 +62,22 @@ abstract final class KickPlayParser {
     if (lines.isEmpty || lines.first != '#EXTM3U') {
       throw KickFailure(KickFailureKind.apiChanged, 'master playlist: not a playlist (${jsonSnippet(body)})');
     }
-    // The master is read through package:hls; a body that is not a master
-    // playlist (or that the parser refuses) yields no variants and falls to the
-    // stream-unavailable answer below, exactly as before. Relative variant URIs
-    // are resolved against the master here rather than through the parser so no
-    // part of the master's own `?token=` is copied onto a variant.
-    HlsMasterPlaylist? playlist;
-    try {
-      final parsed = HlsParser.parse(body);
-      playlist = parsed is HlsMasterPlaylist ? parsed : null;
-    } on Object {
-      playlist = null;
-    }
+    // The master is read through the shared HLS parser; a body that is not a
+    // master playlist (or that the parser refuses) yields no variants and falls
+    // to the stream-unavailable answer below, exactly as before. Relative
+    // variant URIs are resolved against the master here rather than through the
+    // parser so no part of the master's own `?token=` is copied onto a variant.
+    final parsed = parseHlsMaster(body, masterUrl: master);
     final names = <String, String>{
-      for (final rendition in playlist?.renditions ?? const <HlsRendition>[])
+      for (final rendition in parsed?.master.renditions ?? const <HlsRendition>[])
         if (rendition.type == HlsMediaType.video) rendition.groupId: rendition.name,
     };
     final variants = <String, KickVariant>{};
-    for (final parsed in playlist?.variants ?? const <HlsVariant>[]) {
-      final url = parsed.uri.hasScheme ? parsed.uri : master.resolveUri(parsed.uri);
-      final bandwidth = parsed.bandwidth;
-      final width = parsed.width;
-      final height = parsed.height;
+    for (final entry in parsed?.master.variants ?? const <HlsVariant>[]) {
+      final url = resolveHlsVariantUri(entry.uri, master: master);
+      final bandwidth = entry.bandwidth;
+      final width = entry.width;
+      final height = entry.height;
       if (!url.isScheme('https') ||
           url.host.isEmpty ||
           bandwidth <= 0 ||
@@ -93,8 +87,8 @@ abstract final class KickPlayParser {
           height <= 0) {
         continue;
       }
-      final frameRate = parsed.frameRate ?? 0;
-      final name = names[parsed.videoGroupId] ?? '${height}p${frameRate >= 50 ? frameRate.round() : ''}';
+      final frameRate = entry.frameRate ?? 0;
+      final name = names[entry.videoGroupId] ?? '${height}p${frameRate >= 50 ? frameRate.round() : ''}';
       final previous = variants[name];
       if (previous != null && previous.bandwidth >= bandwidth) continue;
       variants[name] = (
@@ -103,7 +97,7 @@ abstract final class KickPlayParser {
         height: height,
         frameRate: frameRate,
         bandwidth: bandwidth,
-        codec: videoCodec(parsed.codecs),
+        codec: hlsVideoCodecOf(entry.codecs),
         url: '$url',
       );
     }
@@ -195,21 +189,6 @@ abstract final class KickPlayParser {
     }
   }
 
-  /// The video codec of an HLS `CODECS` list: [LiveStreamCodec.avc] (`avc1`,
-  /// `avc3`), [LiveStreamCodec.hevc] (`hvc1`, `hev1`) or [LiveStreamCodec.av1]
-  /// (`av01`); null for none of them.
-  static LiveStreamCodec? videoCodec(String? codecs) {
-    for (final entry in (codecs ?? '').toLowerCase().split(',')) {
-      final name = entry.trim().split('.').first;
-      switch (name) {
-        case 'avc1' || 'avc3':
-          return LiveStreamCodec.avc;
-        case 'hvc1' || 'hev1':
-          return LiveStreamCodec.hevc;
-        case 'av01':
-          return LiveStreamCodec.av1;
-      }
-    }
-    return null;
-  }
+  /// The video codec of an HLS `CODECS` list: delegates to [hlsVideoCodecOf].
+  static LiveStreamCodec? videoCodec(String? codecs) => hlsVideoCodecOf(codecs);
 }

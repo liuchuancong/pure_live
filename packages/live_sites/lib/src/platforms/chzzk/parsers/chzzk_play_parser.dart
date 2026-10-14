@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:hls/hls.dart';
+import 'package:live_sites/src/common/hls/hls_master.dart';
 import 'package:live_sites/src/models/enums/live_play_format_source.dart';
 import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
@@ -130,38 +130,32 @@ abstract final class ChzzkPlayParser {
     if (lines.first.trim().trimLeft() != '#EXTM3U') {
       throw ChzzkFailure(ChzzkFailureKind.apiChanged, '${media.id} master: not a playlist');
     }
-    // The master is read through package:hls (after the `#EXTM3U` gate above); a
-    // body that is not a master playlist yields no variants and falls to the
-    // stream-unavailable answer below. Relative URIs are resolved against the
-    // master here so an absolute variant keeps its own `hdntl` path token and a
-    // relative one never inherits the master's `hdnts` query.
-    HlsMasterPlaylist? masterPlaylist;
-    try {
-      final parsed = HlsParser.parse(playlist);
-      masterPlaylist = parsed is HlsMasterPlaylist ? parsed : null;
-    } on Object {
-      masterPlaylist = null;
-    }
-    final result = <ChzzkVariant>[];
-    for (final parsed in masterPlaylist?.variants ?? const <HlsVariant>[]) {
-      final uri = parsed.uri.hasScheme ? parsed.uri : media.url.resolveUri(parsed.uri);
+    // The master is read through the shared HLS parser; a body that is not a
+    // master playlist yields no variants and falls to the stream-unavailable
+    // answer below. Relative URIs are resolved against the master here so an
+    // absolute variant keeps its own `hdntl` path token and a relative one
+    // never inherits the master's `hdnts` query.
+    final result = parseHlsMaster(playlist, masterUrl: media.url);
+    final variants = <ChzzkVariant>[];
+    for (final parsed in result?.master.variants ?? const <HlsVariant>[]) {
+      final uri = resolveHlsVariantUri(parsed.uri, master: media.url);
       // A variant URI that is not http(s) is left out (the master itself is
       // always https on the CDN; a stray scheme cannot be played).
       if (!uri.isScheme('http') && !uri.isScheme('https')) continue;
       final height = parsed.height ?? 0;
       if (height <= 0) continue;
-      result.add((
+      variants.add((
         mediaId: media.id,
         url: uri.toString(),
         height: height,
         frameRate: parsed.frameRate ?? 0,
         bandwidth: parsed.bandwidth,
-        codec: codecOf(parsed.codecs),
+        codec: hlsVideoCodecOf(parsed.codecs),
         lease: lease(uri, master: media.url, issuedAt: issuedAt),
       ));
     }
-    if (result.isEmpty) throw ChzzkFailure(ChzzkFailureKind.streamUnavailable, '${media.id} master: no video variant');
-    return result;
+    if (variants.isEmpty) throw ChzzkFailure(ChzzkFailureKind.streamUnavailable, '${media.id} master: no video variant');
+    return variants;
   }
 
   /// The qualities of the [variants] read together, best first: one per
@@ -219,25 +213,8 @@ abstract final class ChzzkPlayParser {
   /// more.
   static String _qualityId(ChzzkVariant variant) => '${variant.height}p${variant.frameRate >= 50 ? '60' : ''}';
 
-  /// The video codec of a `CODECS` list: [LiveStreamCodec.avc] (`avc1`, `avc3`),
-  /// [LiveStreamCodec.hevc] (`hvc1`, `hev1`), [LiveStreamCodec.av1] (`av01`) or
-  /// [LiveStreamCodec.vp9]. Only H.264 was seen in the captures of 2026-09-27;
-  /// anything else stays undeclared, so first-byte probing can still name it.
-  static LiveStreamCodec? codecOf(String? codecs) {
-    for (final entry in (codecs ?? '').toLowerCase().split(',')) {
-      switch (entry.trim().split('.').first) {
-        case 'avc1' || 'avc3':
-          return LiveStreamCodec.avc;
-        case 'hvc1' || 'hev1':
-          return LiveStreamCodec.hevc;
-        case 'av01':
-          return LiveStreamCodec.av1;
-        case 'vp09':
-          return LiveStreamCodec.vp9;
-      }
-    }
-    return null;
-  }
+  /// The video codec of a `CODECS` list: delegates to [hlsVideoCodecOf].
+  static LiveStreamCodec? codecOf(String? codecs) => hlsVideoCodecOf(codecs);
 
   static final RegExp _variantExpiry = RegExp(r'hdntl=exp=(\d{9,12})');
   static final RegExp _masterExpiry = RegExp(r'(?:^|~)exp=(\d{9,12})');

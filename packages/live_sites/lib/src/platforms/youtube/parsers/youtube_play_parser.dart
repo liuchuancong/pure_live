@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:hls/hls.dart';
+import 'package:live_sites/src/common/hls/hls_master.dart';
 import 'package:live_sites/src/models/enums/live_play_format_source.dart';
 import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
@@ -34,31 +34,26 @@ abstract final class YoutubePlayParser {
   /// [masterUrl]; at most [maxVariants]. Malformed variant lines are skipped,
   /// never fatal.
   static List<YoutubeVariant> variants(String masterText, Uri masterUrl) {
-    // The master is read through package:hls; a body the parser refuses, or one
-    // that is not a master playlist, yields no variants (the tier collapses to
-    // `hls:auto` as before). Relative URIs are resolved against the master here
-    // so the master's own query is never copied onto a variant.
-    HlsMasterPlaylist? playlist;
-    try {
-      final parsed = HlsParser.parse(masterText);
-      playlist = parsed is HlsMasterPlaylist ? parsed : null;
-    } on Object {
-      playlist = null;
-    }
-    final result = <YoutubeVariant>[];
-    for (final parsed in playlist?.variants ?? const <HlsVariant>[]) {
-      if (result.length >= maxVariants) break;
-      final uri = parsed.uri.hasScheme ? parsed.uri : masterUrl.resolveUri(parsed.uri);
-      result.add((
+    // The master is read through the shared HLS parser; a body the parser
+    // refuses, or one that is not a master playlist, yields no variants (the
+    // tier collapses to `hls:auto` as before). Relative URIs are resolved
+    // against the master here so the master's own query is never copied onto
+    // a variant.
+    final result = parseHlsMaster(masterText, masterUrl: masterUrl);
+    final variants = <YoutubeVariant>[];
+    for (final parsed in result?.master.variants ?? const <HlsVariant>[]) {
+      if (variants.length >= maxVariants) break;
+      final uri = resolveHlsVariantUri(parsed.uri, master: masterUrl);
+      variants.add((
         url: uri.toString(),
         width: parsed.width,
         height: parsed.height,
         fps: parsed.frameRate ?? 0,
-        codec: _codecOfCodecs(parsed.codecs ?? ''),
+        codec: hlsVideoCodecOf(parsed.codecs),
         bandwidth: parsed.bandwidth,
       ));
     }
-    return result;
+    return variants;
   }
 
   /// The qualities a broadcast offers: the HLS variants (primary), then the
@@ -255,14 +250,7 @@ abstract final class YoutubePlayParser {
   /// rounded frame rate.
   static String _fpsPart(double fps) => fps > 30 ? 'fps0' : '${fps.round()}';
 
-  static LiveStreamCodec? _codecOfCodecs(String codecs) {
-    final lower = codecs.toLowerCase();
-    if (lower.contains('avc1')) return LiveStreamCodec.avc;
-    if (lower.contains('hvc1') || lower.contains('hev1')) return LiveStreamCodec.hevc;
-    if (lower.contains('av01')) return LiveStreamCodec.av1;
-    if (lower.contains('vp09') || lower.contains('vp9')) return LiveStreamCodec.vp9;
-    return null;
-  }
+  static LiveStreamCodec? _codecOfCodecs(String codecs) => hlsVideoCodecOf(codecs);
 
   /// The codec of a progressive `formats[]` entry: its `codecs` hint, else its
   /// `mimetype` (`video/mp4; codecs="avc1…"`), mapped as a CODES string.

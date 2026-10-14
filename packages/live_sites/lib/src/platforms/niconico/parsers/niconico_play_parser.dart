@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:hls/hls.dart';
+import 'package:live_sites/src/common/hls/hls_master.dart';
 import 'package:live_sites/src/models/enums/live_play_format_source.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/models/play/live_play_lease/live_play_lease.dart';
@@ -278,23 +278,17 @@ abstract final class NiconicoPlayParser {
     if (lines.isEmpty || lines.first != '#EXTM3U') {
       throw NiconicoFailure(NiconicoFailureKind.apiChanged, 'master: not a playlist (${jsonSnippet(body)})');
     }
-    // The master is read through package:hls (after the `#EXTM3U` gate above);
-    // a body that is not a master playlist yields no variants and falls to the
-    // stream-unavailable answer below. Relative URIs are resolved against the
-    // source here so no part of the master's own query is copied onto a variant.
-    HlsMasterPlaylist? playlist;
-    try {
-      final parsed = HlsParser.parse(body);
-      playlist = parsed is HlsMasterPlaylist ? parsed : null;
-    } on Object {
-      playlist = null;
-    }
+    // The master is read through the shared HLS parser; a body that is not a
+    // master playlist yields no variants and falls to the stream-unavailable
+    // answer below. Relative URIs are resolved against the source here so no
+    // part of the master's own query is copied onto a variant.
+    final parsed = parseHlsMaster(body, masterUrl: source);
     final variants = <String, NiconicoVariant>{};
-    for (final parsed in playlist?.variants ?? const <HlsVariant>[]) {
-      final url = parsed.uri.hasScheme ? parsed.uri : source.resolveUri(parsed.uri);
-      final bandwidth = parsed.bandwidth;
-      final width = parsed.width;
-      final height = parsed.height;
+    for (final entry in parsed?.master.variants ?? const <HlsVariant>[]) {
+      final url = resolveHlsVariantUri(entry.uri, master: source);
+      final bandwidth = entry.bandwidth;
+      final width = entry.width;
+      final height = entry.height;
       if (url.scheme != 'https' ||
           url.host.isEmpty ||
           bandwidth <= 0 ||
