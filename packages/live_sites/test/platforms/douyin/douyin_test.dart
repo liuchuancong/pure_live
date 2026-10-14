@@ -943,6 +943,7 @@ void main() {
         'kuaishou',
         'youtube',
         'twitch',
+        'acfun',
       ]);
     });
 

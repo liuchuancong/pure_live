@@ -1,5 +1,7 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/core/live_site.dart';
+import 'package:live_sites/src/platforms/acfun/acfun_site.dart';
+import 'package:live_sites/src/platforms/acfun/api/acfun_http.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_http.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_site.dart';
 import 'package:live_sites/src/platforms/douyin/api/douyin_http.dart';
@@ -30,5 +32,6 @@ List<LiveSite> createBuiltInLiveSites({LiveHttp? http}) {
     KuaishouSite(http: KuaishouHttp(transport)),
     YoutubeSite(http: YouTubeHttp(transport)),
     TwitchSite(http: TwitchHttp(transport)),
+    AcfunSite(http: AcfunHttp(transport)),
   ];
 }

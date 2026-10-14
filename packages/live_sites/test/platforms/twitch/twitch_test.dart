@@ -624,6 +624,7 @@ https://other.example/1.m3u8
         'kuaishou',
         'youtube',
         'twitch',
+        'acfun',
       ]);
     });
 

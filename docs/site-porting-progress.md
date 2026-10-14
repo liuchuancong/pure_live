@@ -28,9 +28,10 @@
 | kuaishou 快手 | ✅ | 见下方"kuaishou 明细" |
 | youtube | ✅ | 见下方"youtube 明细" |
 | twitch | ✅ | 见下方"twitch 明细" |
+| acfun AcFun | ✅ | 见下方"acfun 明细" |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
-| acfun / bigo / chzzk / fc2live / jdlive / kick / kilakila / kugoulive / looklive / missevan / niconico / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / yy | ⬜ | 其余含弹幕站;**下一站候选 acfun**(按本行顺序) |
+| bigo / chzzk / fc2live / jdlive / kick / kilakila / kugoulive / looklive / missevan / niconico / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / yy | ⬜ | 其余含弹幕站;**下一站候选 bigo**(按本行顺序) |
 | cc / inke / liveme / tiktok / xiaohongshu | ⬜ | 仅 `live_core` 有(纯目录/播放,无弹幕) |
 
 ## douyu 明细(2026-10-14)
@@ -94,5 +95,15 @@
 - 消息面:`PRIVMSG`→chat(display-name/login 回退、`color` 十六进制、`tmi-sent-ts`、`id`;`/me` CTCP 去壳;tag 两套反转义:IRCv3 单遍与 3.x 顺序替换,与参考一致);`bits>0` 前置一条 Bits 打赏(`LiveGiftKind.tip`/`LiveGiftUnit.gold`,id `<id>:bits`);`CLEARMSG`/`CLEARCHAT`→撤回(有 target-user-id 撤人,无 trailing 撤全部);`USERNOTICE`→notice(sub/raid/system 分类)+ 观众原话成 chat,`announcement` 用 trailing 作文案,`sharedchatnotice` 认 `source-msg-id`;社区礼物(`submysterygift` 与 N 条 `subgift` 同一 `msg-param-community-gift-id`)只显公告:成员消息滞留 2 s 等公告,公告记忆 1 分钟/容量 64。
 - 验证:整包 `dart analyze` No issues found;`dart test` **190 项全绿**(twitch 41:IRC 行切分/反转义、chat+cheer+撤回+订阅公告+社区礼物标记、master 分组与标签、usher 状态码、房间/搜索/目录解析与登录不符→apiChanged、gql 头与 usher 参数、链接解析、integrity 静默止页、能力接线与内置站清单)。
 - **延后/取舍**:参考即无徽章/表情解析、无发送弹幕、无登录流程 → 本站不做;参考的 GraphQL 备用传输(`gqlFallbacks`,Android TLS/WebView 回退)属 app 注入的传输编排,未在本适配器复刻;`cookieRefusals` 事件流在 v2 契约无对应面,改为播放侧静默转匿名 + 弹幕内提示;目录树(参考 `LiveCategory` 两层)按 v2 扁平 `LiveArea`+`parentAreaId/Name` 表达;房间刷新未做 `updated_metadata` 观看数续报。
-## 环境缺口(影响交付门,重要)
-本机工作区 **无法 `dart pub get`**:`packages/live_playback` 依赖 `media_core` 路径 `../../../../media_core/packages/media_core`(即 `D:\media_core\packages\media_core`),该外部工作区在本机不存在,导致整个 workspace 解析失败、`dart test` 直接跑不起来(与本次站点代码无关)。为跑本包测试,曾临时在 `D:\media_core` 造桩再删。要长期跑测试门,需把真实 `media_core` 工作区放到 `D:\media_core`(或在 live_playback 里改成实际存在的路径/移除该 member)。在此之前,"交付门 = dart analyze + dart test" 中的 test 步骤依赖人工补 media_core。
+## acfun 明细(2026-10-14)
+整站从 `live_core/sites/acfun`(api/site)+ `live_danmaku/sites/acfun.dart` + `live_core/aes.dart` + `live_danmaku/codec/protobuf.dart` 迁到 `platforms/acfun/`。**无新依赖:AES-128 与 protobuf 全纯 Dart 手写**。
+- 能力:room / area(channelList 的 filterType+filterId 树) / discovery(推荐页 + 目录 cursor 链) / search(`type=user` 作者索引,rooms 与 anchors 共用同一份页切分) / playback / danmaku / link_resolver,注册齐;`Either` + `AcfunFailure → toLiveSiteError('acfun')`。访客会话 = `sid=acfun.api.visitor` 表单登录存 `_did=web_+16` 与 `visitor_st`,startPlay/giftList 带 `kpn=ACFUN_APP&kpf=PC_WEB&subBiz=mainApp&userId=0&did=<访客>`。
+- 弹幕 = **自定义二进制帧 + 双密钥 AES**:帧头 `magic 0xABCD / version / inLen / outLen`(`u16 u16 u32 u32`);**AES-128-CBC + PKCS#7**(与参考 `live_core/aes.dart` 同表同轮数),register 用 `acSecurity`(base64 → 16 字节),会话期用 register answer 的 `bytes(2)`;下行 IV = 载荷前 16 字节,上行随机 IV 前置。头 `appId1,uid2,instanceId3,decodedLen7,encMode8,tokenInfo9,seqId10,kpn12`、上行 `cmd1,seq2,retry3,data4,subBiz9`、下行 `cmd1,seq2,err3,data4,msg5` 与参考逐号对齐;RegisterRequest 的 appInfo/deviceInfo(platform=6, model=h5)/ztCommonInfo 字段号照搬。
+- 派发:`ZtLiveScActionSignal` 按信号名分发 comment / `CommonActionSignalGift`(目录定价,消息 id `<sender>:<comboId>:<combo>`)/ `AcfunActionSignalThrowBanana`(平台免费币)/ `ZtLiveScStateSignal` displayInfo 观看数 / ticket 失效 `{2,3,4,7}` / `ZtLiveScStatusChanged {1,2,4}`;心跳定频、每第 5 个心跳附带保活 + ticket 轮换 + 刷新预算 3;重连双开互斥 + 连续失败上限终止上报(与 douyu/huya/douyin/bilibili/twitch 同款)。
+- 播放:`/api/live/info?authorId` → `startPlay`(pullStreamType=FLV),清晰度/线路/lease 从播放答案;收费专场(380205)与未开播(129004)按契约返回 left。礼物目录缓存,取失败记空。
+- 链接:`live.acfun.cn/live/{id}`、`m.acfun.cn/live/detail/{id}`、`www.acfun.cn/u/{id}`(含遗留 `.aspx`)、`m.acfun.cn/upPage/{id}`(参考在此**不**剥 `.aspx`,已照搬);作者号即房间号(≤20 位正数)。
+- **延后/取舍**:参考搜索的并发分页(`_Search` + 8 s 超时 + CancelToken + 重启)在 v2 `searchRooms(keyword,{page,pageSize})` 形态下无对应面 → 用本地页切分,`data-total` 收尾语义保留;礼物信号的 `value`(字段 6)参考只"留着核对"、不驱动任何展示,v2 `LiveGift` 无落点 → 未读;`LiveGiftUnit` 无 banana 档,香蕉记 `free`,目录价为 0 的非香蕉礼物同样记 `free`(对齐参考 `free: banana || price == 0`)。
+- 验证:整包 `dart analyze` No issues found;`dart test` **300 项全绿**(acfun 110:AES 金标与往返、protobuf 逐字段、帧封解、register/session 密钥换取、push 各类信号、访客与端点参数、目录 cursor、搜索切页 + anchors 目标、链接各形态)。douyin_test 的内置站点等值断言已随之更新为含 acfun。
+
+## 环境缺口
+无。此前 `packages/live_playback` 以 `path:` 依赖工作区外的 `D:\media_core` 导致整仓 `dart pub get` 解析失败、`dart test` 跑不起来;2026-10-14 已把 `media_core` / `media_core_danmaku` / `media_core_mediasession` 改为 pub git 源(`github.com/liuchuancong/media_core`),仓库根 `flutter pub get` 即可完整解析,交付门的 test 步骤不再需要人工补 media_core 或造桩。
