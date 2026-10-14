@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_socket.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
@@ -10,8 +11,7 @@ import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/kick/danmaku/kick_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/kick/kick_site.dart';
 import 'package:live_sites/src/platforms/kick/parsers/kick_failure.dart';
-import 'package:web_socket_channel/io.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:live_websocket/live_websocket.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -54,22 +54,26 @@ final class KickDanmakuProvider implements LiveDanmakuProvider {
   }
 }
 
-/// One live chat connection over Kick's Pusher protocol.
+/// One live chat connection over Kick's Pusher protocol, carried by the shared
+/// [DanmakuSocket] transport.
 ///
 /// Protocol-level recovery is this session's job:
 /// - At open the socket subscribes to the chat, broadcast and Kicks
 ///   channels; the chat channel's `pusher_internal:subscription_succeeded`
 ///   is the join, which must come within [KickDanmakuCodec.joinTimeout] or
 ///   the socket is replaced.
-/// - `pusher:ping` goes out every 30 s, server pings are answered
-///   `pusher:pong`, and the server's 120 s activity timeout (or a socket
-///   silent past the watchdog) replaces the socket — the generation is
-///   counted, so a stale socket's frames are dropped.
+/// - `pusher:ping` goes out every 30 s once joined, server pings are answered
+///   `pusher:pong`, and a socket silent past [inactivityTimeout] is replaced (the
+///   server's own activity timeout is 120 s). The ping starts only after the
+///   join and the pong must be sent on a specific frame, so both stay protocol
+///   timers here rather than a transport heartbeat; the transport's automatic
+///   reconnect is off because a Pusher socket must re-subscribe through this
+///   session's generation guard, so a loss is reported and reconnected here —
+///   after [maxReconnectAttempts] failed reconnects a terminal system message
+///   closes [events] rather than retrying in silence.
 /// - `pusher:error` and a refused subscription reconnect; the broadcast's
 ///   end (`StopStreamBroadcast`) closes [events] after a final notice
 ///   message instead of reconnecting forever.
-/// - After [maxReconnectAttempts] failed reconnects a terminal system
-///   message closes [events] rather than retrying in silence.
 final class KickDanmakuSession implements LiveDanmakuSession {
   /// A session for the channel in [args]; [connect] opens the socket.
   KickDanmakuSession({required this.args});
@@ -84,9 +88,22 @@ final class KickDanmakuSession implements LiveDanmakuSession {
   /// timeout is 120 s; this is the local backstop).
   static const Duration inactivityTimeout = Duration(seconds: 150);
 
+  /// The handshake budget of one connection.
+  static const Duration _connectTimeout = Duration(seconds: 10);
+
+  /// The transport settings of one socket: the handshake headers, the connect
+  /// budget, and no automatic reconnect (a Pusher socket re-subscribes through
+  /// this session, so a loss is reported and reconnected here). The ping and the
+  /// silence watchdog are protocol timers, not this transport heartbeat, because
+  /// the ping starts only once the subscription succeeded.
+  static const WebSocketConfig _transport = WebSocketConfig(
+    headers: KickDanmakuCodec.socketHeaders,
+    connectTimeout: _connectTimeout,
+    reconnectPolicy: ReconnectPolicy(enabled: false),
+  );
+
   final _events = StreamController<LiveMessage>.broadcast();
-  WebSocketChannel? _socket;
-  StreamSubscription<dynamic>? _subscription;
+  DanmakuSocket? _socket;
   Timer? _heartbeat;
   Timer? _watchdog;
   Timer? _joinTimer;
@@ -115,22 +132,20 @@ final class KickDanmakuSession implements LiveDanmakuSession {
     final generation = ++_generation;
     _joined = false;
     await _teardownSocket();
-    final WebSocketChannel channel;
-    try {
-      channel = IOWebSocketChannel.connect(KickDanmakuCodec.endpoint, headers: KickDanmakuCodec.socketHeaders);
-      await channel.ready.timeout(const Duration(seconds: 10));
-    } on Object catch (error) {
-      return LiveSiteError.network(siteId: 'kick', message: 'danmaku connect failed: $error', cause: error);
-    }
-    _socket = channel;
-    _subscription = channel.stream.listen(
-      (data) {
-        if (generation != _generation || _disposed) return;
-        _onFrame(data, generation);
-      },
-      onDone: () => _scheduleReconnect(generation, 'socket closed'),
-      onError: (Object error) => _scheduleReconnect(generation, 'socket error: $error'),
+    // The Pusher handshake is server-driven (it opens with
+    // `pusher:connection_established`), so nothing is sent on open; the
+    // subscription goes out from that frame in [_onFrame].
+    final socket = DanmakuSocket(
+      uri: KickDanmakuCodec.endpoint,
+      config: _transport,
+      onHandshake: (_) {},
+      onFrame: (data) => _onFrame(data, generation),
+      onLost: (cause) => _scheduleReconnect(generation, cause),
     );
+    _socket = socket;
+    if (!await socket.start()) {
+      return const LiveSiteError.network(siteId: 'kick', message: 'danmaku connect failed');
+    }
     _heartbeat = Timer.periodic(KickDanmakuCodec.heartbeatInterval, (_) {
       if (_joined && generation == _generation && !_disposed) _send(KickDanmakuCodec.ping);
     });
@@ -141,7 +156,8 @@ final class KickDanmakuSession implements LiveDanmakuSession {
     return null;
   }
 
-  void _onFrame(Object? data, int generation) {
+  void _onFrame(Object data, int generation) {
+    if (generation != _generation || _disposed) return;
     _reconnectFailures = 0;
     _startWatchdog();
     final frame = KickDanmakuCodec.read(data, args);
@@ -177,11 +193,9 @@ final class KickDanmakuSession implements LiveDanmakuSession {
   }
 
   void _send(String frame) {
-    try {
-      _socket?.sink.add(frame);
-    } on Object {
-      // The reconnect path owns a broken sink.
-    }
+    final socket = _socket;
+    if (socket == null || !socket.isConnected) return;
+    socket.send(frame);
   }
 
   void _scheduleReconnect(int staleGeneration, String reason) {
@@ -222,14 +236,9 @@ final class KickDanmakuSession implements LiveDanmakuSession {
     _heartbeat = null;
     _watchdog?.cancel();
     _watchdog = null;
-    await _subscription?.cancel();
-    _subscription = null;
-    try {
-      await _socket?.sink.close();
-    } on Object {
-      // Closing a dead socket must not throw.
-    }
+    final socket = _socket;
     _socket = null;
+    await socket?.stop();
   }
 
   @override
