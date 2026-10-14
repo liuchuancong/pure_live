@@ -162,20 +162,22 @@ final class Fc2LiveSite implements LiveSite {
       if (cached != null && (_snapshotAt == null || _young(_snapshotAt))) return await cached;
     }
     late final Future<List<Fc2LiveChannel>> fetch;
-    fetch = post(Fc2LiveEndpoints.directoryPath, const {}).then(
-      (response) {
+    fetch = () async {
+      final response = await post(Fc2LiveEndpoints.directoryPath, const {});
+      try {
         final channels = Fc2LiveRoomParser.directory(response.text, status: response.status);
         if (identical(_snapshot, fetch)) _snapshotAt = _now();
         return channels;
-      },
-      onError: (Object error, StackTrace stack) {
+      } on Object {
+        // A failed snapshot is forgotten, so a breakdown is never served as an
+        // empty directory and the next caller asks anew.
         if (identical(_snapshot, fetch)) {
           _snapshot = null;
           _snapshotAt = null;
         }
-        Error.throwWithStackTrace(error, stack);
-      },
-    );
+        rethrow;
+      }
+    }();
     _snapshot = fetch;
     _snapshotAt = null;
     return await fetch;

@@ -1860,24 +1860,21 @@ void main() {
       expect(adapter.http.sent, hasLength(1), reason: 'a clock that went backwards does not reuse the snapshot');
     });
 
-    test('a snapshot is shared with everyone waiting for it, and a failed one is forgotten', () async {
+    test('a snapshot is shared with everyone waiting for it', () async {
       final adapter = _adapter();
       final first = adapter.site.snapshot();
       final second = adapter.site.snapshot();
       await Future.wait([first, second]);
       expect(adapter.http.sent, hasLength(1), reason: 'two callers, one fetch');
+      expect(await first, same(await second), reason: 'the one fetch is handed to both');
+    });
 
+    test('a failed snapshot is forgotten, not kept as an empty directory', () async {
       var answer = _resp(500, 'nope');
-      final failing = _adapter(onSend: (_) => answer);
-      Object? failure;
-      try {
-        await failing.site.snapshot();
-      } on Object catch (error) {
-        failure = error;
-      }
-      expect(failure, isA<Fc2LiveFailure>(), reason: 'a breakdown is a failure, not an empty directory');
+      final adapter = _adapter(onSend: (_) => answer);
+      await expectLater(adapter.site.snapshot(), throwsA(isA<Fc2LiveFailure>()));
       answer = _resp(200, _directoryFixture());
-      final channels = await failing.site.snapshot();
+      final channels = await adapter.site.snapshot();
       expect(channels, hasLength(3), reason: 'the breakdown is not kept as an answer');
     });
 
