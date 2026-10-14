@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_socket.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
@@ -54,12 +55,11 @@ final class DouyuDanmakuProvider implements LiveDanmakuProvider {
 
 /// One live danmaku connection over douyu's WebSocket protocol.
 ///
-/// Protocol-level recovery is the transport's job: [LiveWebSocketClient]
-/// sends the `mrkl/` heartbeat, replaces a socket that stays silent for three
-/// heartbeat periods, and reconnects with a bounded back off. Join packets go
-/// out on every connection, generation counted so a stale socket's frames are
-/// dropped. The room's broadcast-end packet closes [events] after a final
-/// notice message.
+/// Protocol-level recovery is the transport's job: [DanmakuSocket] sends the
+/// `mrkl/` heartbeat, replaces a socket that stays silent for three heartbeat
+/// periods, and reconnects with a bounded back off — the login and group
+/// packets go out again on every connection. The room's broadcast-end packet
+/// closes [events] after a final notice message.
 final class DouyuDanmakuSession implements LiveDanmakuSession {
   /// A session for [roomId]; [connect] opens the socket.
   DouyuDanmakuSession({required this.roomId, this.filterSuspectedAutomated, this.gifts = DouyuGiftCatalog.empty});
@@ -97,16 +97,8 @@ final class DouyuDanmakuSession implements LiveDanmakuSession {
   );
 
   final _events = StreamController<LiveMessage>.broadcast();
-  LiveWebSocketClient? _client;
-  StreamSubscription<Object?>? _frames;
-  StreamSubscription<WebSocketConnectionState>? _states;
-  int _generation = 0;
+  DanmakuSocket? _socket;
   bool _disposed = false;
-
-  /// Whether the session still expects traffic. False once the broadcast
-  /// ended or the transport gave up, so the client's final `disconnected`
-  /// state is not reported twice.
-  bool _watchesTraffic = false;
 
   /// Adds [extra] to the gift catalogue (a fetched list arriving late).
   void addGifts(DouyuGiftCatalog extra) => gifts = gifts.merge(extra);
@@ -120,29 +112,16 @@ final class DouyuDanmakuSession implements LiveDanmakuSession {
     if (_disposed) {
       return const LiveSiteError.unsupported(siteId: 'douyu', message: 'session is disposed');
     }
-    final generation = ++_generation;
     await _teardownSocket();
-    final client = LiveWebSocketClient(uri: Uri.parse(_endpoint), config: _transport);
-    _client = client;
-    // Subscribed before connect: the frame stream drops what arrives first.
-    _frames = client.messages.listen((frame) {
-      if (generation != _generation || _disposed) return;
-      if (frame is! List<int>) return;
-      _onFrame(frame);
-    });
-    _states = client.states.listen((state) {
-      if (generation != _generation || _disposed || !_watchesTraffic) return;
-      if (state == WebSocketConnectionState.connected) {
-        DouyuDanmakuProtocol.joinPackets(roomId).forEach(_send);
-        return;
-      }
-      // The transport exhausted its reconnects: report it once.
-      if (state == WebSocketConnectionState.disconnected) _loseConnection();
-    });
-    _watchesTraffic = true;
-    await client.connect();
-    if (!client.isConnected) {
-      await _teardownSocket();
+    final socket = DanmakuSocket(
+      uri: Uri.parse(_endpoint),
+      config: _transport,
+      onHandshake: (socket) => DouyuDanmakuProtocol.joinPackets(roomId).forEach(socket.send),
+      onFrame: _onFrame,
+      onLost: _loseConnection,
+    );
+    _socket = socket;
+    if (!await socket.start()) {
       return const LiveSiteError.network(
         siteId: 'douyu',
         message: 'danmaku connect failed: no connection to $_endpoint',
@@ -151,7 +130,8 @@ final class DouyuDanmakuSession implements LiveDanmakuSession {
     return null;
   }
 
-  void _onFrame(List<int> frame) {
+  void _onFrame(Object frame) {
+    if (frame is! List<int>) return;
     final (:messages, :ended) = DouyuDanmakuProtocol.read(
       frame,
       roomId: roomId,
@@ -164,27 +144,14 @@ final class DouyuDanmakuSession implements LiveDanmakuSession {
         LiveMessage.normalized(type: LiveMessageType.system, text: broadcastEndedDetail, color: LiveMessageColor.white),
       );
       // The room is over: end delivery instead of reconnecting forever.
-      _generation++;
       unawaited(_teardownSocket());
       unawaited(_events.close());
     }
   }
 
-  void _send(List<int> packet) {
-    final client = _client;
-    if (client == null || !client.isConnected) return;
-    try {
-      client.send(packet);
-    } on Object {
-      // The reconnect path owns a broken sink.
-    }
-  }
-
-  /// Reports the loss on the stream instead of retrying forever, and stops so
-  /// a stale socket's states are not watched again.
+  /// Reports the loss on the stream instead of retrying forever.
   void _loseConnection() {
     if (_disposed) return;
-    _generation++;
     _events.add(
       LiveMessage.normalized(type: LiveMessageType.system, text: connectionLostDetail, color: LiveMessageColor.white),
     );
@@ -193,27 +160,18 @@ final class DouyuDanmakuSession implements LiveDanmakuSession {
   }
 
   Future<void> _teardownSocket() async {
-    _watchesTraffic = false;
-    await _frames?.cancel();
-    _frames = null;
-    await _states?.cancel();
-    _states = null;
-    final client = _client;
-    _client = null;
-    await client?.dispose();
+    final socket = _socket;
+    _socket = null;
+    await socket?.stop();
   }
 
   @override
-  Future<void> disconnect() async {
-    _generation++;
-    await _teardownSocket();
-  }
+  Future<void> disconnect() => _teardownSocket();
 
   @override
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
-    _generation++;
     await _teardownSocket();
     unawaited(_events.close());
   }
