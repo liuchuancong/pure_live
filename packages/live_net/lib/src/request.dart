@@ -109,7 +109,7 @@ final class LiveRequest {
   }) : this.custom(
          method: 'POST',
          url: url,
-         body: Uri(queryParameters: fields).query,
+         body: _formBody(fields),
          contentType: 'application/x-www-form-urlencoded',
          headers: headers,
          site: site,
@@ -228,3 +228,13 @@ final class LiveRequest {
   @override
   String toString() => '${method.toUpperCase()} $url';
 }
+
+/// A `application/x-www-form-urlencoded` body: every field as
+/// `key=value`, each part encoded with [Uri.encodeQueryComponent] (so a space
+/// becomes `+`). An empty value keeps its `=` (`key=`) — unlike
+/// [Uri.queryParameters], which writes a bare `key` that servers read as a
+/// missing field rather than an empty one.
+String _formBody(Map<String, String> fields) => [
+  for (final entry in fields.entries)
+    '${Uri.encodeQueryComponent(entry.key)}=${Uri.encodeQueryComponent(entry.value)}',
+].join('&');
