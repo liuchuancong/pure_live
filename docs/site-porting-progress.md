@@ -32,9 +32,10 @@
 | bigo Bigo Live | ✅ | 见下方"bigo 明细" |
 | chzzk CHZZK(치지직) | ✅ | 见下方"chzzk 明细" |
 | kick Kick | ✅* | 见下方"kick 明细";文件已推送 `fa8f7d61a`,**尚未注册进 built_in_sites**(避让并发) |
+| niconico Niconico | ✅* | 见下方"niconico 明细";文件已推送 `6809f7ae1`,**尚未注册进 built_in_sites**(避让并发) |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
-| fc2live / jdlive / kilakila / kugoulive / looklive / missevan / niconico / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / yy | ⬜ | 其余含弹幕站;**下一站候选 fc2live**(按本行顺序) |
+| fc2live / jdlive / kilakila / kugoulive / looklive / missevan / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / yy | ⬜ | 其余含弹幕站;**下一站候选 fc2live**(按本行顺序) |
 | cc / inke / liveme / tiktok / xiaohongshu | ⬜ | 仅 `live_core` 有(纯目录/播放,无弹幕) |
 
 ## douyu 明细(2026-10-14)
@@ -142,6 +143,14 @@
 - 弹幕 = Pusher `wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679`(app key 字面量),订阅 `chatrooms.<id>.v2`/`channel.<id>`/`channel_<id>`;ping 30s、activity_timeout 120s 重连(douyu 同款双开互斥+失败上限);`App\Events\ChatMessageEvent`(data 为 JSON 串)→chat(#RRGGBB、badges_v2 level、`[emote:id:name]` 内联)、`KicksGifted`→gift、删除/封禁/清屏→撤回、`StopStreamBroadcast`→结束。
 - 播放:`playback_url` = 签名 IVS HLS master(`*.live-video.net`,EXT-X-MEDIA+STREAM-INF),lease 取 JWT `exp`。
 - **状态**:文件已提交推送 `fa8f7d61a`,scoped `dart analyze lib/src/platforms/kick test/platforms/kick` No issues、`dart test test/platforms/kick` 37 绿。**未注册进 `built_in_sites.dart`**(当时并行 lane 正实时写 fc2live、整包 analyze 因其半成品而红;为不抢共享注册文件、不卷入他人未完成工作,注册暂缓——待注册窗口无争用时补 `KickSite(http: KickHttp(transport))` 一行 + 更新 douyin_test 的内置站点 id 等值断言)。
+
+## niconico 明细(2026-10-14)
+整站从 `live_core/sites/niconico` + `live_danmaku/sites/niconico.dart` 迁到 `platforms/niconico/`。**无新依赖、匿名运行**:手写 protobuf reader + 手写 HLS master 解析 + 一个 seat WebSocket(web_socket_channel)+ HTTP-protobuf 弹幕轮询。
+- 房间:watch 页 `<script id="embedded-data">` 的 HTML-entity JSON(状态是字符串 RELEASED|ON_AIR|ENDED;restriction 由 canWatch/needLogin/isCountryRestrictionTarget/payment 决定)。discovery=`front/api/pages/recent/v1/programs?tab=`(7 tab:common/try/live/req/face/totu/vtuber);search=`.../search/v1/programs`;area 即这 7 tab。
+- 播放:seat `{"type":"stream"}` 给 `master.m3u8`(`livedelivery.dlive.nicovideo.jp`)+ `availableQualities`(丢 audio_*)+ `cookies[]`;媒体请求带 path 作用域、可回收的 cookie grant,lease=cookie 过期。
+- 弹幕两层:v2 **seat WebSocket**(`a.live2.nicovideo.jp/…/wsapi/v2/watch/`,startWatching→getAkashic,keepSeat/pong,`messageServer`→viewUri,commentable:false,END_PROGRAM→换 seat)+ **HTTP protobuf(NDGR)** 读 ChunkedEntry/ChunkedMessage/NicoliveMessage(chat 字段1/overflowed_chat 20;Chat text1/sender2/id6|5;meta1/Timestamp 2);douyu 同款生成号+双开互斥+失败上限终止。
+- **已知取舍**(离线无法验):seat WS 未发 origin 握手头(与 douyu 一致的可移植选择);弹幕按窗口缓冲读取非真流式;会话中途 4xx 折进重试上限而非立刻换新 seat。
+- **状态**:文件已提交推送 `6809f7ae1`,scoped `dart analyze lib/src/platforms/niconico test/platforms/niconico` No issues、`dart test test/platforms/niconico` 25 绿。**未注册进 built_in_sites**(避让并发;并入 #89 补注册批)。
 
 ## 环境缺口
 无。此前 `packages/live_playback` 以 `path:` 依赖工作区外的 `D:\media_core` 导致整仓 `dart pub get` 解析失败、`dart test` 跑不起来;2026-10-14 已把 `media_core` / `media_core_danmaku` / `media_core_mediasession` 改为 pub git 源(`github.com/liuchuancong/media_core`),仓库根 `flutter pub get` 即可完整解析,交付门的 test 步骤不再需要人工补 media_core 或造桩。
