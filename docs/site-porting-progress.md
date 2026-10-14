@@ -31,9 +31,10 @@
 | acfun AcFun | ✅ | 见下方"acfun 明细" |
 | bigo Bigo Live | ✅ | 见下方"bigo 明细" |
 | chzzk CHZZK(치지직) | ✅ | 见下方"chzzk 明细" |
+| kick Kick | ✅* | 见下方"kick 明细";文件已推送 `fa8f7d61a`,**尚未注册进 built_in_sites**(避让并发) |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
-| fc2live / jdlive / kick / kilakila / kugoulive / looklive / missevan / niconico / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / yy | ⬜ | 其余含弹幕站;**下一站候选 fc2live**(按本行顺序) |
+| fc2live / jdlive / kilakila / kugoulive / looklive / missevan / niconico / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / yy | ⬜ | 其余含弹幕站;**下一站候选 fc2live**(按本行顺序) |
 | cc / inke / liveme / tiktok / xiaohongshu | ⬜ | 仅 `live_core` 有(纯目录/播放,无弹幕) |
 
 ## douyu 明细(2026-10-14)
@@ -134,6 +135,13 @@
 - 链接:`chzzk.naver.com` 精确 host、http(s)、无 userinfo、空 segment 忽略,`/live/<id>`(遗留形态)与 `/<id>`、`/<id>/<tab>`(任意一级 tab)都算房间,大小写读入统一小写;`/video/<no>`、`m.chzzk.naver.com` 不是房间;频道 id = 32 位十六进制,无短链。
 - **延后/取舍**:①参考的 `DanmakuSocketConnection` 基类(心跳、看门狗、退避、`DanmakuReady`/`markDisconnected`/`reopen` 语义)在 v2 没有对等物 → session 自己实现同一套时序,`reopen` 只对 chzzk 一处可见;②3.x 弹幕行里那句 `userName = 'SUPER_CHAT_MESSAGE'` 哨兵(旧 UI 内部用)不带入 v2,直接用发送者名或匿名者名;③订阅/赠券/置顶三句中文措辞**留在平台适配器里**(和参考一致),因为 v2 没有"平台消息本地化"seam,`LiveMessage.text` 就是要显示的那句——这一点与 bigo 那条"措辞归应用层"的取舍相反,理由是两个参考把它们写在不同层;④`timeMachine`(回看)、`paidProduct`(付费)只落成限制与说明,不做回看/购买流;⑤参考即无热度榜、无登录、无发送弹幕、无关播信号、无徽章/表情目录 → 本站不做。
 - 验证:整包 `dart analyze` No issues found;`dart test` **453 项全绿**(chzzk 79:信封/cursor/`page.next` 严格性与逐行裁剪、目录与分区、频道/直播卡与限制次序、封面与 KST、搜索 offset 与 keyword 截断(不切断代理对)、master/变体/质量/租约两形态、帧编解码与各类信号、session 的请求次序与 token 重试、能力接线与内置站清单)。douyin/twitch 测试的内置站点等值断言已随之更新为含 chzzk。
+
+## kick 明细(2026-10-14)
+整站从 `live_core/sites/kick` + `live_danmaku/sites/kick.dart` 迁到 `platforms/kick/`。**无新依赖**:纯 REST JSON + Pusher WebSocket(手搓 JSON 帧,无 pusher 包)+ M3U8 master 解析。
+- 能力:room/area/discovery/search/playback/danmaku/link_resolver,`Either` + `KickFailure`。房间 `/api/v2/channels/<slug>`(chatroom.id ≠ channel id);areas `/api/v1/categories`+`subcategories`;目录 `/stream/livestreams/en`;搜索 `/api/search`(单页)。roomId=slug(小写;kick 忽略大小写,代码无 SiteIds,就地小写)。
+- 弹幕 = Pusher `wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679`(app key 字面量),订阅 `chatrooms.<id>.v2`/`channel.<id>`/`channel_<id>`;ping 30s、activity_timeout 120s 重连(douyu 同款双开互斥+失败上限);`App\Events\ChatMessageEvent`(data 为 JSON 串)→chat(#RRGGBB、badges_v2 level、`[emote:id:name]` 内联)、`KicksGifted`→gift、删除/封禁/清屏→撤回、`StopStreamBroadcast`→结束。
+- 播放:`playback_url` = 签名 IVS HLS master(`*.live-video.net`,EXT-X-MEDIA+STREAM-INF),lease 取 JWT `exp`。
+- **状态**:文件已提交推送 `fa8f7d61a`,scoped `dart analyze lib/src/platforms/kick test/platforms/kick` No issues、`dart test test/platforms/kick` 37 绿。**未注册进 `built_in_sites.dart`**(当时并行 lane 正实时写 fc2live、整包 analyze 因其半成品而红;为不抢共享注册文件、不卷入他人未完成工作,注册暂缓——待注册窗口无争用时补 `KickSite(http: KickHttp(transport))` 一行 + 更新 douyin_test 的内置站点 id 等值断言)。
 
 ## 环境缺口
 无。此前 `packages/live_playback` 以 `path:` 依赖工作区外的 `D:\media_core` 导致整仓 `dart pub get` 解析失败、`dart test` 跑不起来;2026-10-14 已把 `media_core` / `media_core_danmaku` / `media_core_mediasession` 改为 pub git 源(`github.com/liuchuancong/media_core`),仓库根 `flutter pub get` 即可完整解析,交付门的 test 步骤不再需要人工补 media_core 或造桩。
