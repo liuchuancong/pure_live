@@ -225,5 +225,67 @@ void main() {
       final r = HuyaDanmakuProtocol.decode(frame);
       expect(r.messages.map((m) => m.text), containsAll(<String>['one', 'flower ×2']));
     });
+
+    test('a headline push (2001314) decodes its panel entries as super chats', () {
+      final now = DateTime.utc(2026, 10, 1, 12);
+      final entries = <({
+        String content,
+        int total,
+        int countdown,
+        int cost,
+        int paid,
+        int id,
+        String nick,
+        String avatar,
+      })>[
+        (content: 'hello', total: 120, countdown: 60, cost: 50, paid: 0, id: 9, nick: 'Fan', avatar: '//img/a.png'),
+        (content: 'by cents', total: 60, countdown: 0, cost: 0, paid: 500, id: 10, nick: '', avatar: ''),
+        (content: '   ', total: 60, countdown: 60, cost: 1, paid: 0, id: 11, nick: '', avatar: ''),
+      ];
+      final panel =
+          (TarsWriter()..writeList<({String content, int total, int countdown, int cost, int paid, int id, String nick, String avatar})>(
+                1,
+                entries,
+                (writer, item) => writer.writeStruct(
+                  0,
+                  (s) => s
+                    ..writeStruct(0, (u) => u
+                          ..writeString(1, item.nick)
+                          ..writeString(2, item.avatar))
+                    ..writeString(1, item.content)
+                    ..writeInt(2, item.cost)
+                    ..writeInt(4, item.total)
+                    ..writeInt(5, item.countdown)
+                    ..writeInt(9, item.id)
+                    ..writeInt(12, item.paid),
+                ),
+              ))
+              .toBytes();
+      final r = HuyaDanmakuProtocol.decode(
+        pushFrame(HuyaDanmakuProtocol.superChatUri, panel),
+        now: now,
+      );
+      // The whitespace-only entry is dropped; two super chats remain, in order.
+      expect(r.messages, hasLength(2));
+      expect(r.messages.every((m) => m.type == LiveMessageType.superChat), isTrue);
+      final first = r.messages.first.payload! as LiveSuperChatMessage;
+      expect(first.messageId, 'huya:9');
+      expect(first.text, 'hello');
+      expect(first.userName, 'Fan');
+      expect(first.faceUrl, 'https://img/a.png');
+      expect(first.price.amount, 50);
+      expect(first.endTime, now.add(const Duration(seconds: 60)));
+      expect(first.startTime, now.subtract(const Duration(seconds: 60)));
+      expect(first.display.backgroundBottomColor, HuyaDanmakuProtocol.superChatBottom);
+      // iCostPay in cents reads as at least ¥1 when iCost is absent.
+      final second = r.messages[1].payload! as LiveSuperChatMessage;
+      expect(second.price.amount, 5);
+      expect(second.messageId, 'huya:10');
+    });
+
+    test('a notice-only headline push (no panel list) decodes to nothing', () {
+      final body = (TarsWriter()..writeString(7, 'just a pointer')).toBytes();
+      expect(HuyaDanmakuProtocol.decode(pushFrame(HuyaDanmakuProtocol.superChatUri, body)).messages, isEmpty);
+    });
   });
 }

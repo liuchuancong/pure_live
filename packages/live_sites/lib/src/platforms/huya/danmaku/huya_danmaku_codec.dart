@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:live_sites/src/models/audience/live_audience_update/live_audience_update.dart';
@@ -9,7 +10,11 @@ import 'package:live_sites/src/models/gift/live_gift_value/live_gift_value.dart'
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/models/message/message_sender/message_sender.dart';
+import 'package:live_sites/src/models/super_chat/live_super_chat_display/live_super_chat_display.dart';
+import 'package:live_sites/src/models/super_chat/live_super_chat_message/live_super_chat_message.dart';
+import 'package:live_sites/src/models/super_chat/live_super_chat_price/live_super_chat_price.dart';
 import 'package:live_sites/src/platforms/huya/huya_tars.dart';
+import 'package:live_sites/src/platforms/huya/parsers/huya_json.dart';
 
 /// What one Huya server frame held: its messages in receive order, and the
 /// streamer uids of its stream-end notices (uri 8001; `0` when a notice names
@@ -23,9 +28,10 @@ typedef HuyaDanmakuFrame = ({List<LiveMessage> messages, List<int> ended});
 /// (command 16) and sends heartbeats (command 20); the server pushes single
 /// messages (command 7: tag 1 uri, tag 2 body, tag 5 message id) and batches
 /// for one group (command 22: tag 1 items of tag 0 uri, tag 1 body, tag 2
-/// message id). Chat is uri 1400, popularity uri 8006, a gift uri 6501 and a
-/// stream end uri 8001. The headline message board (uri 2001314) is a deferred
-/// follow-up and is ignored here.
+/// message id). Chat is uri 1400, popularity uri 8006, a gift uri 6501, a stream
+/// end uri 8001 and a headline super chat uri 2001314. A headline push carries
+/// the board's panel (`GameEventMessageBoardPanel`); its entries become super
+/// chats, timed from the moment the frame is read.
 abstract final class HuyaDanmakuProtocol {
   /// Heartbeat period (60 000 ms); a socket silent for three periods (180 s)
   /// is replaced.
@@ -56,6 +62,16 @@ abstract final class HuyaDanmakuProtocol {
   /// The stream ended (`EndLiveNotice`: tag 0 lPresenterUid).
   static const int endUri = 8001;
 
+  /// A headline super chat (`GameEventMessageBoardPanel`): the board's entries,
+  /// each a paid message pinned for its remaining seconds.
+  static const int superChatUri = 2001314;
+
+  /// The top colour of a Huya super chat's card (the web client's fixed banner).
+  static const String superChatTop = '#ffffff';
+
+  /// The bottom colour of a Huya super chat's card.
+  static const String superChatBottom = '#246488';
+
   /// The groups a connection registers for streamer [uid].
   static List<String> groups(int uid) => ['live:$uid', 'chat:$uid'];
 
@@ -78,12 +94,13 @@ abstract final class HuyaDanmakuProtocol {
             ..writeBytes(1, const []))
           .toBytes();
 
-  /// The messages of one server [frame]: chat, popularity and gifts from
-  /// commands 7 and 22, plus the streamer uids of stream-end notices. Other
-  /// commands and uris are ignored; a frame that is not Tars gives nothing,
-  /// and an item whose body fails to decode is skipped without losing the
-  /// others.
-  static HuyaDanmakuFrame decode(List<int> frame) {
+  /// The messages of one server [frame]: chat, popularity, gifts and headline
+  /// super chats from commands 7 and 22, plus the streamer uids of stream-end
+  /// notices. A super chat's window is timed from [now] (default the clock).
+  /// Other commands and uris are ignored; a frame that is not Tars gives
+  /// nothing, and an item whose body fails to decode is skipped without losing
+  /// the others.
+  static HuyaDanmakuFrame decode(List<int> frame, {DateTime? now}) {
     final messages = <LiveMessage>[];
     final ended = <int>[];
     void item(int uri, Uint8List? body, int eventId) {
@@ -91,6 +108,8 @@ abstract final class HuyaDanmakuProtocol {
         switch (uri) {
           case endUri:
             ended.add(TarsStruct.decode(body ?? const <int>[]).integer(0) ?? 0);
+          case superChatUri:
+            messages.addAll(superChatPush(body, now ?? DateTime.now()));
           case chatUri:
             final message = chat(body, eventId);
             if (message != null) messages.add(message);
@@ -199,4 +218,67 @@ abstract final class HuyaDanmakuProtocol {
       payload: gift,
     );
   }
+
+  /// A headline push (uri 2001314): the board panel's entries as super chats,
+  /// timed from [now]. Empty when [body] is missing, not a panel, or without the
+  /// entry list at tag 1 (a notice-only push, whose board a later fetch reads).
+  static List<LiveMessage> superChatPush(List<int>? body, DateTime now) {
+    if (body == null || body.isEmpty) return const [];
+    final TarsStruct panel;
+    try {
+      panel = TarsStruct.decode(body);
+    } on FormatException {
+      return const [];
+    }
+    if (panel.fields[1] is! List) return const [];
+    return [for (final entry in _panel(panel, now)) superChatMessage(entry)];
+  }
+
+  /// The board panel's entries (tag 1): 0 user (1 nick, 2 avatar), 1 content,
+  /// 2 iCost, 4 iTotalSec, 5 iCountDown, 9 lMessageId, 12 iCostPay. An entry
+  /// without text or time left is dropped; the window ends the countdown (or the
+  /// total) seconds after [now] and starts the total before. The price is iCost,
+  /// else iCostPay / 100 (at least 1). The id is `huya:{lMessageId}`, so an event
+  /// rebuilt on every poll stays one message.
+  static List<LiveSuperChatMessage> _panel(TarsStruct panel, DateTime now) {
+    final entries = <LiveSuperChatMessage>[];
+    for (final raw in panel.list(1)) {
+      if (raw is! TarsStruct) continue;
+      final content = (raw.string(1) ?? '').trim();
+      final total = raw.integer(4) ?? 0;
+      final countdown = raw.integer(5) ?? 0;
+      final remaining = countdown > 0 ? countdown : total;
+      if (content.isEmpty || remaining <= 0) continue;
+      final cost = raw.integer(2) ?? 0;
+      final paid = raw.integer(12) ?? 0;
+      final id = raw.integer(9) ?? 0;
+      final user = raw.struct(0);
+      final end = now.add(Duration(seconds: remaining));
+      entries.add(
+        LiveSuperChatMessage(
+          messageId: id > 0 ? 'huya:$id' : '',
+          userName: (user?.string(1) ?? '').trim(),
+          faceUrl: normalizeImageUrl(user?.string(2)),
+          text: content,
+          price: SuperChatPrice(amount: cost > 0 ? cost : (paid > 0 ? max(1, (paid / 100).round()) : cost)),
+          startTime: end.subtract(Duration(seconds: total > 0 ? total : remaining)),
+          endTime: end,
+          display: const SuperChatDisplay(backgroundColor: superChatTop, backgroundBottomColor: superChatBottom),
+        ),
+      );
+    }
+    return entries;
+  }
+
+  /// One board entry as a super-chat message (the payload rides along for the
+  /// board's own view).
+  static LiveMessage superChatMessage(LiveSuperChatMessage data) => LiveMessage.normalized(
+    type: LiveMessageType.superChat,
+    text: data.text,
+    sender: MessageSender.normalized(userName: data.userName, avatarUrl: data.faceUrl.isEmpty ? null : data.faceUrl),
+    color: LiveMessageColor.white,
+    messageId: data.messageId,
+    sentAt: data.startTime,
+    payload: data,
+  );
 }
