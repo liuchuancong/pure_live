@@ -16,6 +16,7 @@ import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
 import 'package:live_sites/src/core/live_site_runtime_info.dart';
+import 'package:live_sites/src/models/super_chat/live_super_chat_message/live_super_chat_message.dart';
 import 'package:live_sites/src/platforms/huya/api/huya_endpoints.dart';
 import 'package:live_sites/src/platforms/huya/api/huya_http.dart';
 import 'package:live_sites/src/platforms/huya/capabilities/huya_area_provider.dart';
@@ -24,6 +25,7 @@ import 'package:live_sites/src/platforms/huya/capabilities/huya_link_resolver.da
 import 'package:live_sites/src/platforms/huya/capabilities/huya_playback_provider.dart';
 import 'package:live_sites/src/platforms/huya/capabilities/huya_room_provider.dart';
 import 'package:live_sites/src/platforms/huya/capabilities/huya_search_provider.dart';
+import 'package:live_sites/src/platforms/huya/danmaku/huya_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/huya/danmaku/huya_danmaku_session.dart';
 import 'package:live_sites/src/platforms/huya/huya_manifest.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_failure.dart';
@@ -242,6 +244,24 @@ final class HuyaSite implements LiveSite {
     _uids.remove(rid);
     _uids[rid] = uid;
     if (_uids.length > 512) _uids.remove(_uids.keys.first);
+  }
+
+  /// The room's headline message board of [topSid] (`wupui.getHeadLineMessageBoard`):
+  /// the live super chats. Asked over WUP POST to `wup.huya.com`; the answer is
+  /// read as [HuyaDanmakuProtocol.superChatBoard].
+  Future<List<LiveSuperChatMessage>> superChatBoard(int topSid) async {
+    final response = await http.postBytes(
+      HuyaEndpoints.wup(),
+      body: HuyaDanmakuProtocol.messageBoardRequest(topSid),
+      headers: const {
+        'content-type': 'application/x-wup',
+        'origin': HuyaEndpoints.origin,
+        'referer': '${HuyaEndpoints.origin}/',
+        'user-agent': HuyaEndpoints.hysdkUserAgent,
+      },
+      timeout: HuyaDanmakuProtocol.superChatTimeout,
+    );
+    return HuyaDanmakuProtocol.superChatBoard(response.bytes, now: now(), status: response.status);
   }
 
   // Rid mapping (link resolution) ---------------------------------------------

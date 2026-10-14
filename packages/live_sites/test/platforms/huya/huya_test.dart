@@ -288,4 +288,46 @@ void main() {
       expect(HuyaDanmakuProtocol.decode(pushFrame(HuyaDanmakuProtocol.superChatUri, body)).messages, isEmpty);
     });
   });
+
+  group('WUP packet', () {
+    test('the message-board request round-trips through encode/decode', () {
+      final bytes = HuyaDanmakuProtocol.messageBoardRequest(123456);
+      // A 4-byte big-endian length prefix that counts itself in.
+      expect(ByteData.sublistView(bytes, 0, 4).getInt32(0), bytes.length);
+      final packet = WupPacket.decode(bytes);
+      expect(packet.servant, 'wupui');
+      expect(packet.function, 'getHeadLineMessageBoard');
+      expect(packet.params.keys, contains('tReq'));
+    });
+
+    test('a board answer with a zero code and no result is an empty board', () {
+      final bytes =
+          WupPacket(
+            servant: 'wupui',
+            function: 'getHeadLineMessageBoard',
+            params: {'': WupPacket.intParam(0)},
+          ).encode();
+      expect(HuyaDanmakuProtocol.superChatBoard(bytes, now: DateTime.utc(2026)), isEmpty);
+    });
+
+    test('a non-zero return code is api-changed', () {
+      final bytes =
+          WupPacket(
+            servant: 'wupui',
+            function: 'getHeadLineMessageBoard',
+            params: {'': WupPacket.intParam(3)},
+          ).encode();
+      expect(
+        () => HuyaDanmakuProtocol.superChatBoard(bytes, now: DateTime.utc(2026)),
+        throwsA(isA<HuyaFailure>().having((f) => f.kind, 'kind', HuyaFailureKind.apiChanged)),
+      );
+    });
+
+    test('an HTTP 5xx answer is network', () {
+      expect(
+        () => HuyaDanmakuProtocol.superChatBoard(const [0, 0, 0, 4, 0, 0, 0, 0], now: DateTime.utc(2026), status: 503),
+        throwsA(isA<HuyaFailure>().having((f) => f.kind, 'kind', HuyaFailureKind.network)),
+      );
+    });
+  });
 }

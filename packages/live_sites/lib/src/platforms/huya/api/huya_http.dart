@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_failure.dart';
@@ -47,6 +48,32 @@ final class HuyaHttp {
         ),
       );
       return (text: response.text, status: response.statusCode);
+    } on TransportFailure catch (failure) {
+      if (failure is CancelledFailure) rethrow;
+      throw HuyaFailure(HuyaFailureKind.network, 'POST $url: $failure', cause: failure);
+    }
+  }
+
+  /// POSTs [body] as raw bytes (a WUP RPC packet, whose body the caller already
+  /// encoded); bad statuses are ordinary answers.
+  Future<({Uint8List bytes, int status})> postBytes(
+    Uri url, {
+    required List<int> body,
+    Map<String, String> headers = const {},
+    Duration? timeout,
+  }) async {
+    try {
+      final response = await http.send(
+        LiveRequest.custom(
+          method: 'POST',
+          site: 'huya',
+          url: url,
+          bodyBytes: Uint8List.fromList(body),
+          headers: headers,
+          timeout: timeout,
+        ),
+      );
+      return (bytes: response.bodyBytes, status: response.statusCode);
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;
       throw HuyaFailure(HuyaFailureKind.network, 'POST $url: $failure', cause: failure);

@@ -21,6 +21,10 @@ abstract final class HuyaEndpoints {
   /// The only danmaku endpoint.
   static const String danmakuServer = 'wss://wsapi.huya.com';
 
+  /// The WUP RPC endpoint (`wupui.getHeadLineMessageBoard` and the play-token
+  /// calls are POSTed here as raw `application/x-wup` packets).
+  static Uri wup() => Uri.https('wup.huya.com', '/');
+
   /// The area icon of a game id.
   static Uri areaPicture(String areaId) => Uri.https('huyaimg.msstatic.com', '/cdnimage/game/$areaId-MS.jpg');
 

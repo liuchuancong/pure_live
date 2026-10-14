@@ -373,3 +373,163 @@ final class _TarsReader {
 
   String _string(int length) => utf8.decode(Uint8List.sublistView(_take(length)), allowMalformed: true);
 }
+
+/// A huya WUP RPC packet (`wup.huya.com`): a 4-byte big-endian length (itself
+/// included), then a TUP3 `RequestPacket` whose `sBuffer` (tag 7) is a map of
+/// named parameters, each one a Tars field at tag 0. Requests carry `tReq`;
+/// responses carry the return code in `""` and the result in `tRsp`. The play
+/// token and the headline message board are asked for this way.
+final class WupPacket {
+  /// Creates a packet; [params] maps a parameter name to its encoded bytes.
+  const WupPacket({required this.servant, required this.function, required this.params, this.requestId = 0});
+
+  /// Decodes a packet. A packet shorter than its prefix, not TUP3, without an
+  /// `sBuffer`, or whose buffer is not a `name → bytes` map is a
+  /// [FormatException].
+  factory WupPacket.decode(List<int> bytes) {
+    if (bytes.length < 4) throw const FormatException('WUP: shorter than its length prefix');
+    final packet = TarsStruct.decode(bytes.sublist(4));
+    final version = packet.integer(1);
+    if (version != 3) throw FormatException('WUP: version $version, expected TUP3');
+    final buffer = packet.bytes(7);
+    if (buffer == null) throw const FormatException('WUP: no sBuffer');
+    final raw = TarsStruct.decode(buffer).map(0);
+    if (raw == null) throw const FormatException('WUP: sBuffer is not a map');
+    final params = <String, Uint8List>{};
+    for (final MapEntry(:key, :value) in raw.entries) {
+      final item = TarsStruct.asBytes(value);
+      if (key is! String || item == null) throw const FormatException('WUP: a parameter is not name → bytes');
+      params[key] = item;
+    }
+    return WupPacket(
+      servant: packet.string(5) ?? '',
+      function: packet.string(6) ?? '',
+      params: params,
+      requestId: packet.integer(4) ?? 0,
+    );
+  }
+
+  /// Servant (`wupui`).
+  final String servant;
+
+  /// Function (`getHeadLineMessageBoard`).
+  final String function;
+
+  /// Parameters by name, each one Tars field at tag 0.
+  final Map<String, List<int>> params;
+
+  /// Request id; huya's calls use 0.
+  final int requestId;
+
+  /// A parameter holding a structure at tag 0.
+  static Uint8List structParam(void Function(TarsWriter writer) fields) =>
+      (TarsWriter()..writeStruct(0, fields)).toBytes();
+
+  /// A parameter holding an integer at tag 0.
+  static Uint8List intParam(int value) => (TarsWriter()..writeInt(0, value)).toBytes();
+
+  /// The return code (the integer parameter `""`); 0 when absent.
+  int get code {
+    final bytes = params[''];
+    return bytes == null ? 0 : TarsStruct.decode(bytes).integer(0) ?? 0;
+  }
+
+  /// The structure in parameter [name], or null when there is none.
+  TarsStruct? struct(String name) {
+    final bytes = params[name];
+    return bytes == null ? null : TarsStruct.decode(bytes).struct(0);
+  }
+
+  /// Encodes the packet: version 3, a normal call, no timeout, empty context
+  /// and status.
+  Uint8List encode() {
+    final buffer = TarsWriter()..writeMap<String, List<int>>(
+      0,
+      params,
+      key: (writer, key) => writer.writeString(0, key),
+      value: (writer, value) => writer.writeBytes(1, value),
+    );
+    void empty(TarsWriter writer, int tag) => writer.writeMap<String, String>(
+      tag,
+      const {},
+      key: (writer, key) => writer.writeString(0, key),
+      value: (writer, value) => writer.writeString(1, value),
+    );
+    final body = TarsWriter()
+      ..writeInt(1, 3)
+      ..writeInt(2, 0)
+      ..writeInt(3, 0)
+      ..writeInt(4, requestId)
+      ..writeString(5, servant)
+      ..writeString(6, function)
+      ..writeBytes(7, buffer.toBytes())
+      ..writeInt(8, 0);
+    empty(body, 9);
+    empty(body, 10);
+    final bytes = body.toBytes();
+    final out = Uint8List(bytes.length + 4);
+    ByteData.sublistView(out).setInt32(0, out.length);
+    out.setRange(4, out.length, bytes);
+    return out;
+  }
+
+  @override
+  String toString() => 'WupPacket($servant.$function)';
+}
+
+/// `core/tars/types.dart` `HuyaUserId`, the identity a WUP request carries: tag
+/// 0 lUid, 1 sGuid, 2 sToken, 3 sHuYaUA, 4 sCookie, 5 iTokenType, 6 sDeviceInfo,
+/// 7 sQIMEI. Every field defaults to empty or 0.
+@immutable
+final class HuyaUserId {
+  /// Creates an identity.
+  const HuyaUserId({
+    this.uid = 0,
+    this.guid = '',
+    this.token = '',
+    this.huyaUa = '',
+    this.cookie = '',
+    this.tokenType = 0,
+    this.deviceInfo = '',
+    this.qimei = '',
+  });
+
+  /// Tag 0 `lUid`.
+  final int uid;
+
+  /// Tag 1 `sGuid`.
+  final String guid;
+
+  /// Tag 2 `sToken`.
+  final String token;
+
+  /// Tag 3 `sHuYaUA`.
+  final String huyaUa;
+
+  /// Tag 4 `sCookie`.
+  final String cookie;
+
+  /// Tag 5 `iTokenType`.
+  final int tokenType;
+
+  /// Tag 6 `sDeviceInfo`.
+  final String deviceInfo;
+
+  /// Tag 7 `sQIMEI`.
+  final String qimei;
+
+  /// Writes the fields in tag order.
+  void writeTo(TarsWriter writer) => writer
+    ..writeInt(0, uid)
+    ..writeString(1, guid)
+    ..writeString(2, token)
+    ..writeString(3, huyaUa)
+    ..writeString(4, cookie)
+    ..writeInt(5, tokenType)
+    ..writeString(6, deviceInfo)
+    ..writeString(7, qimei);
+
+  /// Diagnostics without the cookie or GUID.
+  @override
+  String toString() => 'HuyaUserId($huyaUa)';
+}

@@ -13,13 +13,16 @@ import 'package:live_sites/src/models/message/message_sender/message_sender.dart
 import 'package:live_sites/src/models/super_chat/live_super_chat_display/live_super_chat_display.dart';
 import 'package:live_sites/src/models/super_chat/live_super_chat_message/live_super_chat_message.dart';
 import 'package:live_sites/src/models/super_chat/live_super_chat_price/live_super_chat_price.dart';
+import 'package:live_sites/src/platforms/huya/api/huya_endpoints.dart';
 import 'package:live_sites/src/platforms/huya/huya_tars.dart';
+import 'package:live_sites/src/platforms/huya/parsers/huya_failure.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_json.dart';
 
-/// What one Huya server frame held: its messages in receive order, and the
-/// streamer uids of its stream-end notices (uri 8001; `0` when a notice names
-/// none, which still ends this room's run).
-typedef HuyaDanmakuFrame = ({List<LiveMessage> messages, List<int> ended});
+/// What one Huya server frame held: its messages in receive order, the count of
+/// headline super-chat notices that carried no panel (so the board is fetched),
+/// and the streamer uids of its stream-end notices (uri 8001; `0` when a notice
+/// names none, which still ends this room's run).
+typedef HuyaDanmakuFrame = ({List<LiveMessage> messages, int superChatNotices, List<int> ended});
 
 /// Huya's danmaku protocol (the Tars codec of the web client), without I/O.
 ///
@@ -72,6 +75,21 @@ abstract final class HuyaDanmakuProtocol {
   /// The bottom colour of a Huya super chat's card.
   static const String superChatBottom = '#246488';
 
+  /// The waits between the board retries of one notice (0, then 0.6, 1.8, 4 s):
+  /// the notice can arrive before the board is updated.
+  static const List<Duration> superChatRetryDelays = [
+    Duration.zero,
+    Duration(milliseconds: 600),
+    Duration(milliseconds: 1800),
+    Duration(seconds: 4),
+  ];
+
+  /// Longest wait for one board fetch.
+  static const Duration superChatTimeout = Duration(seconds: 3);
+
+  /// The most super chats remembered as reported, per run.
+  static const int maxRememberedSuperChats = 512;
+
   /// The groups a connection registers for streamer [uid].
   static List<String> groups(int uid) => ['live:$uid', 'chat:$uid'];
 
@@ -103,13 +121,19 @@ abstract final class HuyaDanmakuProtocol {
   static HuyaDanmakuFrame decode(List<int> frame, {DateTime? now}) {
     final messages = <LiveMessage>[];
     final ended = <int>[];
+    var notices = 0;
     void item(int uri, Uint8List? body, int eventId) {
       try {
         switch (uri) {
           case endUri:
             ended.add(TarsStruct.decode(body ?? const <int>[]).integer(0) ?? 0);
           case superChatUri:
-            messages.addAll(superChatPush(body, now ?? DateTime.now()));
+            final board = superChatEntries(body, now ?? DateTime.now());
+            if (board == null) {
+              notices++;
+            } else {
+              messages.addAll(board.map(superChatMessage));
+            }
           case chatUri:
             final message = chat(body, eventId);
             if (message != null) messages.add(message);
@@ -142,7 +166,7 @@ abstract final class HuyaDanmakuProtocol {
     } on FormatException {
       // A frame that is not Tars: drop it whole.
     }
-    return (messages: messages, ended: ended);
+    return (messages: messages, superChatNotices: notices, ended: ended);
   }
 
   /// The colour of a chat's `iFontColor`: 0 or less (-1 is the default) is
@@ -219,19 +243,59 @@ abstract final class HuyaDanmakuProtocol {
     );
   }
 
-  /// A headline push (uri 2001314): the board panel's entries as super chats,
-  /// timed from [now]. Empty when [body] is missing, not a panel, or without the
-  /// entry list at tag 1 (a notice-only push, whose board a later fetch reads).
-  static List<LiveMessage> superChatPush(List<int>? body, DateTime now) {
-    if (body == null || body.isEmpty) return const [];
+  /// The board entries a headline push (uri 2001314) carries, timed from [now].
+  /// Null when [body] is missing, not a panel, or without the entry list at tag
+  /// 1 (a notice-only push, whose board a later fetch reads).
+  static List<LiveSuperChatMessage>? superChatEntries(List<int>? body, DateTime now) {
+    if (body == null || body.isEmpty) return null;
     final TarsStruct panel;
     try {
       panel = TarsStruct.decode(body);
     } on FormatException {
-      return const [];
+      return null;
     }
-    if (panel.fields[1] is! List) return const [];
-    return [for (final entry in _panel(panel, now)) superChatMessage(entry)];
+    if (panel.fields[1] is! List) return null;
+    return _panel(panel, now);
+  }
+
+  /// The `wupui.getHeadLineMessageBoard` request for the board of [topSid]
+  /// (`GetGameEventMessageBoardReq`: 0 lPid, 1 sOffset '', 2 the HYSDK-UA
+  /// identity, 3 scope 0, 4 page size 10), as the WUP bytes to POST.
+  static Uint8List messageBoardRequest(int topSid) => WupPacket(
+    servant: 'wupui',
+    function: 'getHeadLineMessageBoard',
+    params: {
+      'tReq': WupPacket.structParam(
+        (writer) => writer
+          ..writeInt(0, topSid)
+          ..writeString(1, '')
+          ..writeStruct(2, const HuyaUserId(huyaUa: HuyaEndpoints.hysdkUserAgent).writeTo)
+          ..writeInt(3, 0)
+          ..writeInt(4, 10),
+      ),
+    },
+  ).encode();
+
+  /// The board answer's entries: the WUP packet's `tRsp` tag 1 panel, read as a
+  /// headline push reads it. A 5xx answer is network, another status or an
+  /// undecodable packet api-changed, and a non-zero return code api-changed.
+  static List<LiveSuperChatMessage> superChatBoard(List<int> bytes, {required DateTime now, int status = 200}) {
+    if (status >= 500) throw HuyaFailure(HuyaFailureKind.network, 'getHeadLineMessageBoard: HTTP $status');
+    if (status != 200) throw HuyaFailure(HuyaFailureKind.apiChanged, 'getHeadLineMessageBoard: HTTP $status');
+    final WupPacket packet;
+    try {
+      packet = WupPacket.decode(bytes);
+    } on FormatException catch (error) {
+      throw HuyaFailure(HuyaFailureKind.apiChanged, 'getHeadLineMessageBoard: ${error.message}');
+    }
+    if (packet.code != 0) throw HuyaFailure(HuyaFailureKind.apiChanged, 'getHeadLineMessageBoard code ${packet.code}');
+    final TarsStruct? rsp;
+    try {
+      rsp = packet.struct('tRsp');
+    } on FormatException {
+      throw const HuyaFailure(HuyaFailureKind.apiChanged, 'getHeadLineMessageBoard: tRsp is not Tars');
+    }
+    return _panel(rsp?.struct(1), now);
   }
 
   /// The board panel's entries (tag 1): 0 user (1 nick, 2 avatar), 1 content,
@@ -240,9 +304,9 @@ abstract final class HuyaDanmakuProtocol {
   /// total) seconds after [now] and starts the total before. The price is iCost,
   /// else iCostPay / 100 (at least 1). The id is `huya:{lMessageId}`, so an event
   /// rebuilt on every poll stays one message.
-  static List<LiveSuperChatMessage> _panel(TarsStruct panel, DateTime now) {
+  static List<LiveSuperChatMessage> _panel(TarsStruct? panel, DateTime now) {
     final entries = <LiveSuperChatMessage>[];
-    for (final raw in panel.list(1)) {
+    for (final raw in panel?.list(1) ?? const <Object?>[]) {
       if (raw is! TarsStruct) continue;
       final content = (raw.string(1) ?? '').trim();
       final total = raw.integer(4) ?? 0;
