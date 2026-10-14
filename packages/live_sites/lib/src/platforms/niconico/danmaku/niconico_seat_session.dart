@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:live_sites/src/platforms/niconico/api/niconico_endpoints.dart';
 import 'package:live_sites/src/platforms/niconico/parsers/niconico_failure.dart';
 import 'package:live_sites/src/platforms/niconico/parsers/niconico_json.dart';
 import 'package:live_sites/src/platforms/niconico/parsers/niconico_play_parser.dart';
 import 'package:live_sites/src/platforms/niconico/parsers/niconico_room_parser.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:live_websocket/live_websocket.dart';
 
 // The value wrappers spell their class name in their constructors; the `.new`
 // shorthand would read as a field declaration at the call site. The socket
@@ -53,10 +54,13 @@ abstract final class NiconicoSeatMessages {
 /// `keepSeat`; an `error` or `disconnect`, or the startup or silence timeout,
 /// ends the seat. A `messageServer` frame names the comment server.
 final class NiconicoSeat {
-  /// A seat on the watch page's [socket]; [connect] opens it.
-  NiconicoSeat(this.socket, {DateTime Function()? now, WebSocketChannel Function(Uri)? connector})
+  /// A seat on the watch page's [socket]; [connect] opens it through
+  /// [connector] (the shared live_websocket [webSocketConnect] by default, a
+  /// test's own otherwise). The seat never reconnects on an expired bootstrap,
+  /// so it rides the narrow [SocketChannel] seam, not the reconnecting client.
+  NiconicoSeat(this.socket, {DateTime Function()? now, SocketConnector? connector})
     : _now = now ?? DateTime.now,
-      _connector = connector ?? WebSocketChannel.connect;
+      _connector = connector ?? webSocketConnect;
 
   /// The seat WebSocket (the watch page's `site.relive.webSocketUrl` with a
   /// `frontend_id`).
@@ -85,12 +89,12 @@ final class NiconicoSeat {
   Future<NiconicoFailure?> get done => _done.future;
 
   final DateTime Function() _now;
-  final WebSocketChannel Function(Uri) _connector;
+  final SocketConnector _connector;
 
   final _grants = StreamController<NiconicoGrant>.broadcast();
   final _ready = Completer<void>();
   final _done = Completer<NiconicoFailure?>();
-  WebSocketChannel? _channel;
+  SocketChannel? _channel;
   StreamSubscription<Object?>? _subscription;
   Timer? _startup;
   Timer? _silence;
@@ -109,22 +113,31 @@ final class NiconicoSeat {
     if (!NiconicoRoomParser.isSeatSocket(socket)) {
       throw const NiconicoFailure(NiconicoFailureKind.apiChanged, 'seat: not a seat WebSocket');
     }
-    final channel = _connector(socket);
+    final SocketChannel channel;
     try {
-      await channel.ready.timeout(startupTimeout);
+      channel = await _connector(
+        socket,
+        headers: NiconicoEndpoints.seatHeaders,
+        protocols: null,
+        connectTimeout: startupTimeout,
+      ).timeout(startupTimeout);
     } on Object catch (error) {
-      await _quietly(channel.sink.close());
       throw NiconicoFailure(NiconicoFailureKind.network, 'seat handshake: $error', cause: error);
     }
     if (_closed) {
-      await _quietly(channel.sink.close());
+      await _quietly(channel.close());
       return;
     }
     _channel = channel;
     _subscription = channel.stream.listen(
       _receive,
       onError: (Object error) => _end(NiconicoFailure(NiconicoFailureKind.network, 'seat: $error', cause: error)),
-      onDone: () => _end(const NiconicoFailure(NiconicoFailureKind.network, 'seat closed by the server')),
+      onDone: () {
+        final code = channel.closeCode;
+        _end(
+          NiconicoFailure(NiconicoFailureKind.network, 'seat closed by the server${code == null ? '' : ' ($code)'}'),
+        );
+      },
     );
     _send(NiconicoSeatMessages.startWatching);
     _send(NiconicoSeatMessages.getAkashic);
@@ -213,7 +226,7 @@ final class NiconicoSeat {
     final channel = _channel;
     if (_closed || channel == null) return;
     try {
-      channel.sink.add(frame);
+      channel.add(frame);
     } on Object catch (error) {
       _end(NiconicoFailure(NiconicoFailureKind.network, 'seat send: $error', cause: error));
     }
@@ -245,7 +258,7 @@ final class NiconicoSeat {
     _subscription = null;
     _channel = null;
     await _quietly(subscription?.cancel() ?? Future<void>.value());
-    await _quietly(channel?.sink.close() ?? Future<void>.value());
+    await _quietly(channel?.close() ?? Future<void>.value());
     unawaited(_grants.close());
     if (!_done.isCompleted) _done.complete(_failure);
   }
