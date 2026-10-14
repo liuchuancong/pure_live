@@ -27,9 +27,10 @@
 | bilibili B站 | ✅ | 见下方"bilibili 明细" |
 | kuaishou 快手 | ✅ | 见下方"kuaishou 明细" |
 | youtube | ✅ | 见下方"youtube 明细" |
+| twitch | ✅ | 见下方"twitch 明细" |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
-| acfun / bigo / chzzk / fc2live / jdlive / kick / kilakila / kugoulive / looklive / missevan / niconico / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / twitch / yy | ⬜ | 其余含弹幕站;**下一站候选 twitch** |
+| acfun / bigo / chzzk / fc2live / jdlive / kick / kilakila / kugoulive / looklive / missevan / niconico / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / yy | ⬜ | 其余含弹幕站;**下一站候选 acfun**(按本行顺序) |
 | cc / inke / liveme / tiktok / xiaohongshu | ⬜ | 仅 `live_core` 有(纯目录/播放,无弹幕) |
 
 ## douyu 明细(2026-10-14)
@@ -83,5 +84,15 @@
 - 延后(记档不假造):allChat continuation 的 protobuf 重写(跳过即无需 protobuf)、频道名 RSS 富化、会员徽章解码、superChat 之外的分级色。
 - 验证:整包 `dart analyze` No issues found;`dart test` **149 项全绿**(youtube 13:room/直播态/首续页、chat+emoji/superChat/gift/撤回、轮询夹取、HLS master→清晰度/线路/lease、host 白名单拒绝、search 字面量 params+continuation、链接解析各形态)。douyin_test 的内置站点等值断言已随之更新为含 youtube。
 
+## twitch 明细(2026-10-14)
+整站从 `live_core/sites/twitch`(api/site)+ `live_danmaku/sites/twitch.dart` 迁到 `platforms/twitch/`。**无新依赖:GraphQL + usher HLS + IRC over WebSocket**。
+- 能力:room / area(BrowsePage_AllDirectories 分类标签→目录)/ discovery(全站 `streams` 最热)/ search(SearchResultsPage 仅频道)/ playback / danmaku / link_resolver,注册齐;`Either` + `TwitchFailure`(needsLogin→authentication,regionBlocked/streamUnavailable→contentUnavailable,riskControl→rateLimit)。
+- 请求:`POST gql.twitch.tv/gql`,`client-id: kimne78kx3ncx6brgo4mv6wki5h1ko` + 每适配器一个 32 位十六进制 `device-id`,`content-type: text/plain`;五个 persisted query sha256 与两条原始 query(`user`、`streams`)逐字照搬——`$languages` 必须是 `[Language!]`(2026-10 起 `[String!]` 直接报错)。`Accept-Language: zh-CN`,标签无名时一次英文名重试。
+- 列表分页:目录一次取 100、最热取 30,快照(30 s 有效)本地切页,页起点越过末尾才跟 cursor;`pageInfo.hasNextPage`+末边 cursor。搜索游标走 `options.targets`(顶层 cursor 服务端忽略),按 `search|词|页` 存,LRU 256。integrity challenge(`extensions.challenge` / `failed integrity check`)在后续页**静默结束**列表。
+- 播放:`PlaybackAccessToken`(带 cookie 时 `Authorization: OAuth <auth-token>`,被 401/风控拒绝则记住该 cookie 并转匿名)→ `usher.ttvnw.net/api/channel/hls/<login>.m3u8`(`acmb=e30=`、`allow_source`、`cdm=wv`、`play_session_id` 二选一、`player_version=1.28.0-rc.1`、`supported_codecs` 按“优先 H.264”/引擎能力)。master 解析按 `height:fps:bandwidth:VIDEO` 合线,`chunked`=源置首;变体 URL 比 20 分钟 token 长命 → **无 lease**;恢复按 id→VIDEO 组→label 重取。媒体头不带 cookie。
+- 弹幕:`wss://irc-ws.chat.twitch.tv` 文本帧 IRC。握手四行各一帧(`PASS oauth:` / `PASS SCHMOOPIIE`、`NICK`/`justinfan<4-5>`、`CAP REQ`、`JOIN #<小写频道>`),无加入确认计时器。`PING`→`PONG`,客户端心跳 40 s、静默 120 s 换 socket;`RECONNECT` 静默换(10 s 内不连换,超过则走普通重连);`NOTICE *` → 丢弃登录、匿名重开并提示一次 Cookie 失效。双开互斥 + 连续失败上限 6 终止上报(与douyu/huya/douyin/bilibili 同款)。
+- 消息面:`PRIVMSG`→chat(display-name/login 回退、`color` 十六进制、`tmi-sent-ts`、`id`;`/me` CTCP 去壳;tag 两套反转义:IRCv3 单遍与 3.x 顺序替换,与参考一致);`bits>0` 前置一条 Bits 打赏(`LiveGiftKind.tip`/`LiveGiftUnit.gold`,id `<id>:bits`);`CLEARMSG`/`CLEARCHAT`→撤回(有 target-user-id 撤人,无 trailing 撤全部);`USERNOTICE`→notice(sub/raid/system 分类)+ 观众原话成 chat,`announcement` 用 trailing 作文案,`sharedchatnotice` 认 `source-msg-id`;社区礼物(`submysterygift` 与 N 条 `subgift` 同一 `msg-param-community-gift-id`)只显公告:成员消息滞留 2 s 等公告,公告记忆 1 分钟/容量 64。
+- 验证:整包 `dart analyze` No issues found;`dart test` **190 项全绿**(twitch 41:IRC 行切分/反转义、chat+cheer+撤回+订阅公告+社区礼物标记、master 分组与标签、usher 状态码、房间/搜索/目录解析与登录不符→apiChanged、gql 头与 usher 参数、链接解析、integrity 静默止页、能力接线与内置站清单)。
+- **延后/取舍**:参考即无徽章/表情解析、无发送弹幕、无登录流程 → 本站不做;参考的 GraphQL 备用传输(`gqlFallbacks`,Android TLS/WebView 回退)属 app 注入的传输编排,未在本适配器复刻;`cookieRefusals` 事件流在 v2 契约无对应面,改为播放侧静默转匿名 + 弹幕内提示;目录树(参考 `LiveCategory` 两层)按 v2 扁平 `LiveArea`+`parentAreaId/Name` 表达;房间刷新未做 `updated_metadata` 观看数续报。
 ## 环境缺口(影响交付门,重要)
 本机工作区 **无法 `dart pub get`**:`packages/live_playback` 依赖 `media_core` 路径 `../../../../media_core/packages/media_core`(即 `D:\media_core\packages\media_core`),该外部工作区在本机不存在,导致整个 workspace 解析失败、`dart test` 直接跑不起来(与本次站点代码无关)。为跑本包测试,曾临时在 `D:\media_core` 造桩再删。要长期跑测试门,需把真实 `media_core` 工作区放到 `D:\media_core`(或在 live_playback 里改成实际存在的路径/移除该 member)。在此之前,"交付门 = dart analyze + dart test" 中的 test 步骤依赖人工补 media_core。

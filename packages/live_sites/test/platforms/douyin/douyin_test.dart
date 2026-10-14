@@ -942,6 +942,7 @@ void main() {
         'bilibili',
         'kuaishou',
         'youtube',
+        'twitch',
       ]);
     });
 

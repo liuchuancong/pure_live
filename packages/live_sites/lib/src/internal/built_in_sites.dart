@@ -10,6 +10,8 @@ import 'package:live_sites/src/platforms/huya/api/huya_http.dart';
 import 'package:live_sites/src/platforms/huya/huya_site.dart';
 import 'package:live_sites/src/platforms/kuaishou/api/kuaishou_http.dart';
 import 'package:live_sites/src/platforms/kuaishou/kuaishou_site.dart';
+import 'package:live_sites/src/platforms/twitch/api/twitch_http.dart';
+import 'package:live_sites/src/platforms/twitch/twitch_site.dart';
 import 'package:live_sites/src/platforms/youtube/api/youtube_http.dart';
 import 'package:live_sites/src/platforms/youtube/youtube_site.dart';
 
@@ -27,5 +29,6 @@ List<LiveSite> createBuiltInLiveSites({LiveHttp? http}) {
     BilibiliSite(http: BilibiliHttp(transport)),
     KuaishouSite(http: KuaishouHttp(transport)),
     YoutubeSite(http: YouTubeHttp(transport)),
+    TwitchSite(http: TwitchHttp(transport)),
   ];
 }
