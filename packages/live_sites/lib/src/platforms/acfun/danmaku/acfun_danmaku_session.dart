@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_socket.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
@@ -12,8 +13,7 @@ import 'package:live_sites/src/platforms/acfun/acfun_site.dart';
 import 'package:live_sites/src/platforms/acfun/danmaku/acfun_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/acfun/parsers/acfun_failure.dart';
 import 'package:live_sites/src/platforms/acfun/parsers/acfun_room_parser.dart';
-import 'package:web_socket_channel/io.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:live_websocket/live_websocket.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -59,6 +59,15 @@ final class AcfunDanmakuProvider implements LiveDanmakuProvider {
 
 /// One live chat connection over AcFun's link WebSocket.
 ///
+/// [DanmakuSocket] (the shared live_websocket transport) owns the socket
+/// lifecycle — it connects, forwards every frame to the session's frame handler
+/// and reports a socket that is not coming back through its lost handler. This
+/// protocol drives its own reconnection rather than the transport's automatic
+/// one, because a dead socket is replaced by re-running the register handshake
+/// (and sometimes with fresh arguments), which the transport cannot know; its
+/// automatic reconnect is therefore switched off and [silenceTimeout] and the
+/// join budget are watched here, not by a transport heartbeat.
+///
 /// - At every open: `Basic.Register` sealed with `acSecurity`; the answer
 ///   brings the session key every later payload is sealed with. Then a
 ///   keep-alive and the enter-room command, whose answer is the join — no
@@ -98,6 +107,9 @@ final class AcfunDanmakuSession implements LiveDanmakuSession {
   /// abandoned.
   static const int maxRefreshes = 3;
 
+  /// The handshake budget of one connection.
+  static const Duration _connectTimeout = Duration(seconds: 10);
+
   /// The broadcast this session joined.
   AcfunDanmakuArgs args;
 
@@ -105,14 +117,12 @@ final class AcfunDanmakuSession implements LiveDanmakuSession {
   final Random _random;
 
   final _events = StreamController<LiveMessage>.broadcast();
-  WebSocketChannel? _socket;
-  StreamSubscription<dynamic>? _subscription;
+  DanmakuSocket? _socket;
   Timer? _heartbeat;
-  Timer? _watchdog;
+  Timer? _silence;
   Timer? _join;
   AcfunDanmakuLink? _link;
   Uint8List? _key;
-  int _generation = 0;
   int _opens = 0;
   int _heartbeats = 0;
   int _ticket = 0;
@@ -122,7 +132,14 @@ final class AcfunDanmakuSession implements LiveDanmakuSession {
   bool _disposed = false;
   bool _joined = false;
   bool _refreshing = false;
-  bool _reconnecting = false;
+
+  /// A drop already in flight (a socket close, the join timeout and the silence
+  /// watchdog all fire on the same dead socket).
+  bool _reopening = false;
+
+  /// Consecutive failed reopens; any frame means the link is healthy again.
+  int _reconnectFailures = 0;
+
   AcfunGiftCatalog _gifts = AcfunGiftCatalog.empty;
 
   String get _currentTicket => args.tickets[_ticket % args.tickets.length];
@@ -158,42 +175,40 @@ final class AcfunDanmakuSession implements LiveDanmakuSession {
     return await _openSocket();
   }
 
+  /// Opens one connection over the shared transport: the socket connects, the
+  /// register handshake runs on every open, frames come to [_onFrame] and a
+  /// socket that closed is reported to [_onLost].
   Future<LiveSiteError?> _openSocket() async {
-    final generation = ++_generation;
-    _joined = false;
     await _teardownSocket();
-    final WebSocketChannel channel;
-    try {
-      channel = IOWebSocketChannel.connect(AcfunDanmakuProtocol.endpoint, headers: args.headers);
-      await channel.ready.timeout(_connectTimeout);
-    } on Object catch (error) {
-      return LiveSiteError.network(siteId: 'acfun', message: 'danmaku connect failed: $error', cause: error);
-    }
-    _socket = channel;
-    _subscription = channel.stream.listen(
-      (data) {
-        if (generation != _generation || _disposed) return;
-        if (data is! List<int>) return;
-        _onFrame(Uint8List.fromList(data));
-      },
-      onDone: () => _scheduleReconnect(generation, 'socket closed'),
-      onError: (Object error) => _scheduleReconnect(generation, 'socket error: $error'),
-    );
     final link = AcfunDanmakuLink(args: args, security: _key!, random: _random);
     _link = link;
+    _joined = false;
+    final socket = DanmakuSocket(
+      uri: AcfunDanmakuProtocol.endpoint,
+      config: WebSocketConfig(
+        headers: args.headers,
+        connectTimeout: _connectTimeout,
+        // The transport's automatic reconnect would re-open on a dead socket's
+        // terms; this protocol replaces the socket itself (its register
+        // handshake, its tickets and, sometimes, fresh arguments).
+        reconnectPolicy: const ReconnectPolicy(enabled: false),
+      ),
+      onHandshake: (socket) => socket.send(link.register()),
+      onFrame: _onFrame,
+      onLost: _onLost,
+    );
+    _socket = socket;
+    if (!await socket.start()) {
+      return LiveSiteError.network(siteId: 'acfun', message: 'danmaku connect failed on ${socket.uri}');
+    }
     _opens += 1;
     _heartbeats = 0;
-    _send([link.register()]);
-    _join = Timer(joinTimeout, () {
-      if (generation == _generation && !_disposed && !_joined) _onJoinTimeout(generation);
-    });
+    _startJoin();
     _startHeartbeat();
-    _startWatchdog();
+    _startSilenceWatch();
     unawaited(_loadGifts());
     return null;
   }
-
-  static const Duration _connectTimeout = Duration(seconds: 10);
 
   /// A new visitor session and broadcast, then a new socket with them. Tickets
   /// expire with their session, so every refresh is a fresh `startPlay`.
@@ -206,16 +221,16 @@ final class AcfunDanmakuSession implements LiveDanmakuSession {
     final load = args.gifts;
     if (load == null) return;
     try {
-      final catalog = await load();
-      _gifts = catalog;
+      _gifts = await load();
     } on Object {
       // No gift names or prices.
     }
   }
 
-  void _onFrame(Uint8List frame) {
+  void _onFrame(Object frame) {
+    if (frame is! List<int>) return;
     _reconnectFailures = 0;
-    _startWatchdog();
+    _startSilenceWatch();
     final link = _link;
     if (link == null) return;
     final AcfunDanmakuPacket packet;
@@ -251,8 +266,7 @@ final class AcfunDanmakuSession implements LiveDanmakuSession {
           }
         } else if (ack.type == AcfunDanmakuProtocol.enterRoomAck && !_joined) {
           _joined = true;
-          _join?.cancel();
-          _join = null;
+          _cancelJoin();
           _refreshes = 0;
           _ticketFailures = 0;
           _joinTimeouts = 0;
@@ -288,10 +302,7 @@ final class AcfunDanmakuSession implements LiveDanmakuSession {
     }
     _ticket = (_ticket + 1) % args.tickets.length;
     _joined = false;
-    _join?.cancel();
-    _join = Timer(joinTimeout, () {
-      if (!_disposed && !_joined) _onJoinTimeout(_generation);
-    });
+    _startJoin();
     final link = _link;
     if (link != null) _send([link.enterRoom(ticket: _currentTicket, reconnects: _opens - 1)]);
   }
@@ -300,15 +311,44 @@ final class AcfunDanmakuSession implements LiveDanmakuSession {
   /// replaced (a stalled socket), the second time in a row the arguments are
   /// refreshed too (a register answer that does not open, a ticket the server
   /// ignores).
-  void _onJoinTimeout(int generation) {
-    if (_disposed || generation != _generation) return;
-    _joinTimeouts += 1;
-    if (_joinTimeouts < 2) {
-      _scheduleReconnect(generation, 'join timed out');
-    } else {
-      _joinTimeouts = 0;
-      unawaited(_refreshAndReopen('Join timed out'));
-    }
+  void _startJoin() {
+    _join?.cancel();
+    _join = Timer(joinTimeout, () {
+      if (_disposed || _joined) return;
+      _joinTimeouts += 1;
+      if (_joinTimeouts < 2) {
+        _reopen('join timed out');
+      } else {
+        _joinTimeouts = 0;
+        unawaited(_refreshAndReopen('Join timed out'));
+      }
+    });
+  }
+
+  void _cancelJoin() {
+    _join?.cancel();
+    _join = null;
+  }
+
+  /// A socket that closed, errored or went silent is reopened with the same
+  /// arguments; a socket the transport gave up on is reported through its lost
+  /// handler and lands here too.
+  void _onLost(String cause) => _reopen(cause);
+
+  /// Replaces the socket on the same arguments after a growing back off; once
+  /// the reopens fail [maxRefreshes] × 2 times over the session terminates.
+  void _reopen(String reason) {
+    if (_disposed || _reopening || _refreshing) return;
+    _reopening = true;
+    unawaited(() async {
+      await Future<void>.delayed(Duration(seconds: _reconnectFailures + 1));
+      _reopening = false;
+      if (_disposed) return;
+      final failure = await _openSocket();
+      if (failure == null) return;
+      _reconnectFailures += 1;
+      if (_reconnectFailures >= maxRefreshes * 2) _terminate('$reason; ${failure.message}');
+    }());
   }
 
   /// A new session and broadcast, then a new socket with them. One refresh at a
@@ -340,6 +380,10 @@ final class AcfunDanmakuSession implements LiveDanmakuSession {
     }
   }
 
+  /// The room heartbeat every [heartbeatInterval] once joined, with a
+  /// keep-alive every fifth. [DanmakuSocket] carries no transport heartbeat:
+  /// this protocol's own cadence (the two frames and the 5-beat keep-alive) is
+  /// the web client's, so it stays here and is sent over the socket.
   void _startHeartbeat() {
     _heartbeat?.cancel();
     _heartbeat = Timer.periodic(heartbeatInterval, (_) {
@@ -351,38 +395,16 @@ final class AcfunDanmakuSession implements LiveDanmakuSession {
     });
   }
 
-  void _startWatchdog() {
-    _watchdog?.cancel();
-    _watchdog = Timer(silenceTimeout, () {
-      if (!_disposed) _scheduleReconnect(_generation, 'socket silent');
+  /// A socket quieter than [silenceTimeout] is replaced; every frame rearms it.
+  void _startSilenceWatch() {
+    _silence?.cancel();
+    _silence = Timer(silenceTimeout, () {
+      if (!_disposed) _reopen('socket silent');
     });
-  }
-
-  int _reconnectFailures = 0;
-
-  /// A socket that closed, errored or went silent is replaced with the same
-  /// arguments; the generation guard keeps one dead socket from opening a
-  /// second live one.
-  void _scheduleReconnect(int staleGeneration, String reason) {
-    if (_disposed || staleGeneration != _generation || _reconnecting || _refreshing) return;
-    _reconnecting = true;
-    unawaited(() async {
-      await Future<void>.delayed(Duration(seconds: _reconnectFailures + 1));
-      if (_disposed || staleGeneration != _generation) {
-        _reconnecting = false;
-        return;
-      }
-      final failure = await _openSocket();
-      _reconnecting = false;
-      if (failure == null) return;
-      _reconnectFailures += 1;
-      if (_reconnectFailures >= maxRefreshes * 2) _terminate('$reason; ${failure.message}');
-    }());
   }
 
   void _terminate(String reason) {
     if (_disposed) return;
-    _generation++;
     _joined = false;
     _events.add(
       LiveMessage.normalized(
@@ -396,21 +418,16 @@ final class AcfunDanmakuSession implements LiveDanmakuSession {
   }
 
   void _send(Iterable<List<int>> frames) {
-    final sink = _socket?.sink;
-    if (sink == null) return;
+    final socket = _socket;
+    if (socket == null || !socket.isConnected) return;
     for (final frame in frames) {
       if (frame.isEmpty) continue;
-      try {
-        sink.add(frame);
-      } on Object {
-        // The reconnect path owns a broken sink.
-      }
+      socket.send(frame);
     }
   }
 
   @override
   Future<void> disconnect() async {
-    _generation++;
     _joined = false;
     await _teardownSocket();
   }
@@ -419,7 +436,6 @@ final class AcfunDanmakuSession implements LiveDanmakuSession {
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
-    _generation++;
     _joined = false;
     await _teardownSocket();
     unawaited(_events.close());
@@ -428,18 +444,12 @@ final class AcfunDanmakuSession implements LiveDanmakuSession {
   Future<void> _teardownSocket() async {
     _heartbeat?.cancel();
     _heartbeat = null;
-    _watchdog?.cancel();
-    _watchdog = null;
-    _join?.cancel();
-    _join = null;
+    _silence?.cancel();
+    _silence = null;
+    _cancelJoin();
     _link = null;
-    await _subscription?.cancel();
-    _subscription = null;
-    try {
-      await _socket?.sink.close();
-    } on Object {
-      // Closing a dead socket must not throw.
-    }
+    final socket = _socket;
     _socket = null;
+    await socket?.stop();
   }
 }
