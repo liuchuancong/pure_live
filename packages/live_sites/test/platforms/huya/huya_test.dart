@@ -420,8 +420,41 @@ void main() {
       expect(profile.replay?.videoId, 888);
       expect(profile.room.broadcast.effectiveRestriction, LiveRestriction.none);
       expect(profile.qualities.single.label, '原画');
-      expect(profile.qualities.single.qualityId, 'yuanhua');
+      expect(profile.qualities.single.qualityId, contains('.m3u8'));
       expect(profile.hasStream, isFalse);
+    });
+
+    test('getMomentContent lists every replay definition, source first', () {
+      final body = jsonEncode({
+        'status': 200,
+        'data': {
+          'moment': {
+            'videoInfo': {
+              'definitions': [
+                {
+                  'defName': '360P',
+                  'height': 360,
+                  'm3u8': 'https://v.huya.com/play/350.m3u8?vid=888&definition=350',
+                },
+                {
+                  'defName': '原画',
+                  'height': 1080,
+                  'url': 'https://v.huya.com/play/yuanhua.m3u8?vid=888&definition=yuanhua',
+                },
+                {
+                  'defName': '720P',
+                  'height': 720,
+                  'm3u8': 'https://v.huya.com/play/1300.m3u8?vid=888&definition=1300',
+                },
+              ],
+            },
+          },
+        },
+      });
+      final qualities = HuyaRoomParser.replayQualities(body);
+      expect(qualities.map((quality) => quality.label), ['原画', '720P', '360P']);
+      expect(qualities.first.qualityId, contains('definition=yuanhua'));
+      expect(qualities.first.platformOrder, HuyaPlayParser.sourceRank);
     });
 
     test('a replay room with no recording stays unplayable', () {

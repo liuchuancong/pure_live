@@ -16,6 +16,7 @@ import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
 import 'package:live_sites/src/core/live_site_runtime_info.dart';
+import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/models/super_chat/live_super_chat_message/live_super_chat_message.dart';
 import 'package:live_sites/src/platforms/huya/api/huya_endpoints.dart';
 import 'package:live_sites/src/platforms/huya/api/huya_http.dart';
@@ -263,6 +264,25 @@ final class HuyaSite implements LiveSite {
       timeout: HuyaDanmakuProtocol.superChatTimeout,
     );
     return HuyaDanmakuProtocol.superChatBoard(response.bytes, now: now(), status: response.status);
+  }
+
+  /// The definitions of a replay's VOD (`moment/getMomentContent`). An empty
+  /// list when the answer has none; a failure is the caller's to fall back on
+  /// (the one quality `profileRoom` named is always available).
+  Future<List<LivePlayQuality>> replayQualities(int videoId) async {
+    try {
+      final response = await http.get(
+        HuyaEndpoints.momentContent(videoId),
+        headers: const {
+          'user-agent': HuyaEndpoints.userAgent,
+          'origin': HuyaEndpoints.origin,
+          'referer': '${HuyaEndpoints.origin}/',
+        },
+      );
+      return HuyaRoomParser.replayQualities(response.text, status: response.status);
+    } on HuyaFailure {
+      return const [];
+    }
   }
 
   // Play tokens (native FLV / web) --------------------------------------------

@@ -38,6 +38,10 @@ abstract final class HuyaEndpoints {
   /// calls are POSTed here as raw `application/x-wup` packets).
   static Uri wup() => Uri.https('wup.huya.com', '/');
 
+  /// `moment/getMomentContent?videoId=`: the definitions of a replay's VOD.
+  static Uri momentContent(int videoId) =>
+      Uri.https('liveapi.huya.com', '/moment/getMomentContent', {'videoId': '$videoId'});
+
   /// The area icon of a game id.
   static Uri areaPicture(String areaId) => Uri.https('huyaimg.msstatic.com', '/cdnimage/game/$areaId-MS.jpg');
 

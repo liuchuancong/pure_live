@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/area/live_area/live_area.dart';
 import 'package:live_sites/src/models/enums/live_audience_metric_type.dart';
 import 'package:live_sites/src/models/enums/live_restriction.dart';
 import 'package:live_sites/src/models/enums/live_status.dart';
+import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/models/room/room_audience/room_audience.dart';
@@ -401,6 +402,35 @@ abstract final class HuyaRoomParser {
       return HuyaReplay(url: url, videoId: vid != null && vid > 0 ? vid : null);
     }
     return null;
+  }
+
+  /// `moment/getMomentContent?videoId=`: every definition of a replay's
+  /// recording (source first, then by height), named `原画` for the source and
+  /// the platform's `defName` for the rest. Ids are the https playlist (the
+  /// line the caller echoes back). A missing video or an empty list yields
+  /// nothing, and the caller keeps the one quality `profileRoom` named.
+  static List<LivePlayQuality> replayQualities(String body, {int status = 200}) {
+    final root = json(body, status: status, what: 'getMomentContent');
+    final info = jsonObject(jsonObject(jsonObject(root['data'])?['moment'])?['videoInfo']);
+    final seen = <String>{};
+    final qualities = <LivePlayQuality>[];
+    for (final raw in jsonList(info?['definitions'])) {
+      final item = jsonObject(raw);
+      final url = HuyaPlayParser.replayUrl(item?['m3u8']) ?? HuyaPlayParser.replayUrl(item?['url']);
+      if (item == null || url == null || !seen.add(url)) continue;
+      final fallback = HuyaPlayParser.replayQuality(url);
+      final source = fallback.platformOrder == HuyaPlayParser.sourceRank;
+      final name = jsonString(item['defName']);
+      qualities.add(
+        LivePlayQuality(
+          label: source || name == null ? fallback.label : name,
+          qualityId: url,
+          platformOrder: source ? HuyaPlayParser.sourceRank : max(jsonInt(item['height']) ?? 0, 0),
+          codec: LiveStreamCodec.avc,
+        ),
+      );
+    }
+    return qualities..sort((a, b) => b.platformOrder.compareTo(a.platformOrder));
   }
 
   /// The anonymous login's `data.uid`; null when the answer has none.

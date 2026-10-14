@@ -35,6 +35,13 @@ final class HuyaPlaybackProvider implements LivePlaybackProvider {
   Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required String roomId}) async {
     try {
       final profile = await _playable(roomId);
+      // A replay offers every definition of its recording (getMomentContent),
+      // falling back to the one quality profileRoom named.
+      final videoId = profile.replay?.videoId;
+      if (videoId != null) {
+        final definitions = await site.replayQualities(videoId);
+        return right(definitions.isEmpty ? profile.qualities : definitions);
+      }
       return right(profile.qualities);
     } on HuyaFailure catch (failure) {
       return left(failure.toLiveSiteError('huya'));
@@ -50,11 +57,14 @@ final class HuyaPlaybackProvider implements LivePlaybackProvider {
       final rid = profile.room.roomId;
       final cookie = site.cookie();
       // A replay plays its recording: an unsigned VOD playlist that does not
-      // expire (no lease, no signature).
+      // expire (no lease, no signature). The chosen definition's playlist is
+      // the quality's id; without one, the recording profileRoom named.
       if (profile.replay case final replay?) {
+        final requested = quality?.qualityId ?? '';
+        final url = HuyaPlayParser.replayUrl(requested) ?? replay.url;
         return right([
           LivePlayLine(
-            url: replay.url,
+            url: url,
             format: LiveStreamFormat.hls,
             formatSource: LivePlayFormatSource.declared,
             headers: HuyaPlayParser.mediaHeaders(rid, cookie: cookie),

@@ -108,13 +108,15 @@ abstract final class HuyaPlayParser {
   }
 
   /// The one quality of the recording at [url], named by its `definition`
-  /// ([replayDefinitionNames]; `默认` when unknown). Its id is the definition.
+  /// ([replayDefinitionNames]; `默认` when unknown). Its id is the https
+  /// playlist itself — a replay's `qualityId` is the line the playback provider
+  /// echoes back, and a VOD playlist does not expire or need signing.
   static LivePlayQuality replayQuality(String url) {
     final definition = _parseMap(Uri.tryParse(url)?.query ?? '')['definition'] ?? '';
     final quality = replayDefinitionNames[definition] ?? '默认';
     return LivePlayQuality(
       label: quality,
-      qualityId: definition,
+      qualityId: url,
       platformOrder: definition == replaySourceDefinition ? sourceRank : 0,
       codec: LiveStreamCodec.avc,
     );
