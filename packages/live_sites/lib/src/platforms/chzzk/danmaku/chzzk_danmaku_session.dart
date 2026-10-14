@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_socket.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
@@ -14,8 +15,7 @@ import 'package:live_sites/src/platforms/chzzk/danmaku/chzzk_danmaku_codec.dart'
 import 'package:live_sites/src/platforms/chzzk/parsers/chzzk_failure.dart';
 import 'package:live_sites/src/platforms/chzzk/parsers/chzzk_json.dart';
 import 'package:live_sites/src/platforms/chzzk/parsers/chzzk_room_parser.dart';
-import 'package:web_socket_channel/io.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:live_websocket/live_websocket.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -61,7 +61,8 @@ final class ChzzkDanmakuProvider implements LiveDanmakuProvider {
 }
 
 /// One live chat connection: an access token and the session servers over
-/// [ChzzkHttp], then one WebSocket to the chat.
+/// [ChzzkHttp], then one WebSocket to the chat over the shared [DanmakuSocket]
+/// transport.
 ///
 /// - [connect] asks for the token up to [tokenAttempts] times (0.5 s and 1 s
 ///   apart) while the routing is asked once in parallel; without a token the
@@ -76,11 +77,14 @@ final class ChzzkDanmakuProvider implements LiveDanmakuProvider {
 ///   refused join ends the session, except [ChzzkDanmakuCodec.retryCodes]
 ///   (302–304), on which the site also reconnects; `cmd` 90102 ends it the same
 ///   way.
-/// - The ping goes out every 20 s and the server answers it, so a socket silent
-///   for 30 s is replaced; a server ping is answered at once. A socket that
-///   errors, closes or goes silent is replaced, and after
-///   [maxReconnectAttempts] failed reconnects a terminal system message closes
-///   [events] instead of retrying forever.
+/// - The ping every [ChzzkDanmakuCodec.heartbeatInterval] and the 30 s silence
+///   watchdog are the transport heartbeat (the server answers the ping, so the
+///   timeout marks a dead socket); a server ping is still answered at once. The
+///   transport's own automatic reconnect is off because a dead socket is replaced
+///   on the *next* session server, which only this session can decide; a socket
+///   that errors, closes or goes silent is replaced through its loss handler, and
+///   after [maxReconnectAttempts] failed reconnects a terminal system message
+///   closes [events] instead of retrying forever.
 /// - The recent chat of every join repeats lines already shown: chat is left to
 ///   the app's duplicate gate, while a super chat or notice already reported in
 ///   this session is reported once.
@@ -132,15 +136,31 @@ final class ChzzkDanmakuSession implements LiveDanmakuSession {
 
   static const Duration _connectTimeout = Duration(seconds: 10);
 
+  /// The heartbeat payload — a tear-off so the config stays a const.
+  static Object _heartbeatPayload() => ChzzkDanmakuCodec.ping;
+
+  /// The transport settings of one socket: the handshake headers, the connect
+  /// budget, and the ping every 20 s whose unanswered-for-30 s silence marks the
+  /// socket dead. The transport's own automatic reconnect is off because a dead
+  /// socket is replaced on the *next* session server, which only this session can
+  /// decide.
+  static const WebSocketConfig _transport = WebSocketConfig(
+    headers: ChzzkDanmakuCodec.handshakeHeaders,
+    connectTimeout: _connectTimeout,
+    reconnectPolicy: ReconnectPolicy(enabled: false),
+    heartbeat: HeartbeatConfig(
+      interval: ChzzkDanmakuCodec.heartbeatInterval,
+      payload: _heartbeatPayload,
+      timeout: ChzzkDanmakuCodec.inactivityTimeout,
+    ),
+  );
+
   final Random _random;
   final DateTime Function() _now;
 
   final _events = StreamController<LiveMessage>.broadcast();
   final Set<String> _reported = {};
-  WebSocketChannel? _socket;
-  StreamSubscription<dynamic>? _subscription;
-  Timer? _heartbeat;
-  Timer? _watchdog;
+  DanmakuSocket? _socket;
   Timer? _join;
   Timer? _quiet;
   List<String> _servers = ChzzkDanmakuCodec.defaultServers;
@@ -178,35 +198,29 @@ final class ChzzkDanmakuSession implements LiveDanmakuSession {
     return await _openSocket();
   }
 
+  /// Opens one connection on the current server over the shared transport: the
+  /// socket connects, the read-only join goes out on every open, [_transport]
+  /// carries the ping and its silence watchdog, frames come to [_onData] and a
+  /// socket that closed is reported to [_scheduleReconnect].
   Future<LiveSiteError?> _openSocket() async {
     final generation = ++_generation;
     _joined = false;
     await _teardownSocket();
-    final WebSocketChannel channel;
-    try {
-      channel = IOWebSocketChannel.connect(
-        ChzzkDanmakuCodec.endpoints(_servers, _server).first,
-        headers: ChzzkDanmakuCodec.handshakeHeaders,
-      );
-      await channel.ready.timeout(_connectTimeout);
-    } on Object catch (error) {
-      return LiveSiteError.network(siteId: 'chzzk', message: 'danmaku connect failed: $error', cause: error);
-    }
-    _socket = channel;
-    _subscription = channel.stream.listen(
-      (data) {
-        if (generation != _generation || _disposed) return;
-        _onData(data);
-      },
-      onDone: () => _scheduleReconnect(generation, 'socket closed'),
-      onError: (Object error) => _scheduleReconnect(generation, 'socket error: $error'),
+    final endpoint = ChzzkDanmakuCodec.endpoints(_servers, _server).first;
+    final socket = DanmakuSocket(
+      uri: endpoint,
+      config: _transport,
+      onHandshake: (socket) => socket.send(ChzzkDanmakuCodec.join(args.chatChannelId, _token)),
+      onFrame: _onData,
+      onLost: (cause) => _scheduleReconnect(generation, cause),
     );
-    _send(ChzzkDanmakuCodec.join(args.chatChannelId, _token));
+    _socket = socket;
+    if (!await socket.start()) {
+      return LiveSiteError.network(siteId: 'chzzk', message: 'danmaku connect failed on $endpoint');
+    }
     _join = Timer(ChzzkDanmakuCodec.joinTimeout, () {
       if (generation == _generation && !_disposed && !_joined) _scheduleReconnect(generation, 'join timed out');
     });
-    _startHeartbeat();
-    _startWatchdog();
     return null;
   }
 
@@ -243,9 +257,8 @@ final class ChzzkDanmakuSession implements LiveDanmakuSession {
     return null;
   }
 
-  void _onData(Object? data) {
+  void _onData(Object data) {
     _reconnectFailures = 0;
-    _startWatchdog();
     final frame = ChzzkDanmakuCodec.decode(data, receivedAt: _now());
     if (frame.ping) _send(ChzzkDanmakuCodec.pong);
     for (final message in frame.messages) {
@@ -275,20 +288,6 @@ final class ChzzkDanmakuSession implements LiveDanmakuSession {
     if (!_reported.add(message.messageId)) return false;
     if (_reported.length > maxRemembered) _reported.remove(_reported.first);
     return true;
-  }
-
-  void _startHeartbeat() {
-    _heartbeat?.cancel();
-    _heartbeat = Timer.periodic(ChzzkDanmakuCodec.heartbeatInterval, (_) {
-      if (!_disposed) _send(ChzzkDanmakuCodec.ping);
-    });
-  }
-
-  void _startWatchdog() {
-    _watchdog?.cancel();
-    _watchdog = Timer(ChzzkDanmakuCodec.inactivityTimeout, () {
-      if (!_disposed) _scheduleReconnect(_generation, 'socket silent');
-    });
   }
 
   void _restartQuiet() {
@@ -359,13 +358,9 @@ final class ChzzkDanmakuSession implements LiveDanmakuSession {
   }
 
   void _send(String frame) {
-    final sink = _socket?.sink;
-    if (sink == null) return;
-    try {
-      sink.add(frame);
-    } on Object {
-      // The reconnect path owns a broken sink.
-    }
+    final socket = _socket;
+    if (socket == null || !socket.isConnected) return;
+    socket.send(frame);
   }
 
   void _terminate(String reason) {
@@ -384,20 +379,11 @@ final class ChzzkDanmakuSession implements LiveDanmakuSession {
   }
 
   Future<void> _teardownSocket() async {
-    _heartbeat?.cancel();
-    _heartbeat = null;
-    _watchdog?.cancel();
-    _watchdog = null;
     _join?.cancel();
     _join = null;
-    await _subscription?.cancel();
-    _subscription = null;
-    try {
-      await _socket?.sink.close();
-    } on Object {
-      // Closing a dead socket must not throw.
-    }
+    final socket = _socket;
     _socket = null;
+    await socket?.stop();
   }
 
   @override
