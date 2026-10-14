@@ -1,7 +1,17 @@
+import 'dart:typed_data';
+
+import 'package:live_sites/src/models/audience/live_audience_update/live_audience_update.dart';
+import 'package:live_sites/src/models/enums/live_audience_signal_kind.dart';
+import 'package:live_sites/src/models/enums/live_gift_unit.dart';
+import 'package:live_sites/src/models/enums/live_message_type.dart';
+import 'package:live_sites/src/models/enums/live_notice_kind.dart';
+import 'package:live_sites/src/models/gift/live_gift/live_gift.dart';
+import 'package:live_sites/src/models/gift/live_gift_value/live_gift_value.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/models/message/message_sender/message_sender.dart';
 import 'package:live_sites/src/platforms/niconico/danmaku/niconico_protobuf.dart';
+import 'package:meta/meta.dart';
 
 // The value wrappers spell their class name in their constructors; the `.new`
 // shorthand would read as a field declaration at the call site.
@@ -61,12 +71,146 @@ final class NiconicoViewEntry {
   final int? next;
 }
 
+/// Who may comment (`NicoliveState.comment_lock`), as the web player reads it:
+/// everyone, nobody ([NiconicoCommentLock.locked]), or followers only (a
+/// [followersOnly] duration). Only a *change* is reported as a notice, so one
+/// is remembered across a seat's messages.
+@immutable
+final class NiconicoCommentLock {
+  const NiconicoCommentLock._(this.isLocked, this.followersOnly);
+
+  /// Followers only, once they have followed for [minimumFollow].
+  const NiconicoCommentLock.followers(Duration minimumFollow) : isLocked = false, followersOnly = minimumFollow;
+
+  /// Everyone may comment.
+  static const NiconicoCommentLock none = NiconicoCommentLock._(false, null);
+
+  /// Comments are locked.
+  static const NiconicoCommentLock locked = NiconicoCommentLock._(true, null);
+
+  /// Whether comments are locked.
+  final bool isLocked;
+
+  /// How long only followers must have followed to comment; null when not only
+  /// followers may.
+  final Duration? followersOnly;
+
+  @override
+  bool operator ==(Object other) =>
+      other is NiconicoCommentLock && other.isLocked == isLocked && other.followersOnly == followersOnly;
+
+  @override
+  int get hashCode => Object.hash(isLocked, followersOnly);
+}
+
+/// Reads the window messages of one connection, in order, into
+/// [LiveMessage]s. It remembers who may comment, so only a change of the
+/// comment lock is reported, and whether the last message said the program
+/// ended ([endedProgram]); it starts from "everyone" (the web player's default
+/// before its state snapshot, which is not read here). One reader serves one
+/// seat; a re-seat starts a fresh one.
+final class NiconicoMessageReader {
+  NiconicoCommentLock _commentLock = NiconicoCommentLock.none;
+  bool _endedProgram = false;
+
+  /// Whether the last message read said the program ended (`program_status`
+  /// `Ended`). A window that reports it ends its seat.
+  bool get endedProgram => _endedProgram;
+
+  /// One window message (`ChunkedMessage`: 1 meta, then one of 2 message,
+  /// 4 state, 5 signal) as a [LiveMessage], or null when it is none of the
+  /// reported kinds. Throws [FormatException] when it is not protobuf.
+  LiveMessage? read(List<int> bytes) {
+    _endedProgram = false;
+    final chunk = NiconicoProtoMessage.decode(bytes);
+    final meta = chunk.message(1);
+    return switch (NiconicoDanmakuCodec.lastPayload(chunk)) {
+      2 => NiconicoDanmakuCodec.nicoliveMessage(chunk.message(2)!, meta),
+      4 => _state(chunk.message(4)!, meta),
+      _ => null,
+    };
+  }
+
+  /// `NicoliveState`: not a oneof, but every recorded state carries one. The
+  /// web player takes the first it knows in its order — 5 comment_lock, 4
+  /// marquee, 9 program_status, 1 statistics. A field that is not protobuf
+  /// counts as absent.
+  LiveMessage? _state(NiconicoProtoMessage state, NiconicoProtoMessage? meta) {
+    if (_readable(() => state.message(5)) case final lock?) {
+      if (_readable(() => NiconicoDanmakuCodec.commentLockOf(lock)) case final next?) {
+        final notice = NiconicoDanmakuCodec.commentLockNotice(next, _commentLock);
+        _commentLock = next;
+        if (notice != null) return NiconicoDanmakuCodec.notice(notice, meta);
+      }
+    }
+    if (_readable(() => state.message(4)) case final marquee?) {
+      if (_readable(() => NiconicoDanmakuCodec.operatorComment(marquee, meta)) case final notice?) return notice;
+    }
+    if (_readable(() => state.message(9)?.integer(1)) == 1) {
+      _endedProgram = true;
+      return NiconicoDanmakuCodec.programEnded(
+        messageId: meta?.string(1)?.trim() ?? '',
+        sentAt: NiconicoDanmakuCodec.time(meta?.message(2)),
+      );
+    }
+    final viewers = _readable(() => state.message(1)?.integer(1));
+    if (viewers == null || viewers < 0) return null;
+    return LiveMessage.normalized(
+      type: LiveMessageType.audienceUpdate,
+      payload: LiveAudienceUpdate(kind: LiveAudienceSignalKind.totalViewers, value: viewers),
+      color: LiveMessageColor.white,
+    );
+  }
+
+  /// What [read] gives, or null when it meets bytes that are not protobuf.
+  static T? _readable<T>(T? Function() read) {
+    try {
+      return read();
+    } on FormatException {
+      return null;
+    }
+  }
+}
+
 /// niconico's comment server ("NDGR"), without I/O. The watching seat's
 /// `messageServer.viewUri` names its `view` address; every answer is a
 /// varint-length-delimited protobuf stream (`ChunkedEntry` for `view`,
 /// `ChunkedMessage` for a window). Chats (`chat` field 1 and `overflowed_chat`
-/// field 20) become [LiveMessage]s; the rest is not reported here.
+/// field 20) become chat messages; gifts (`gift` field 8) gift messages;
+/// `statistics.viewers`, the operator's marquee comment, a change of who may
+/// comment (`comment_lock`) and the program's end (`program_status`) become an
+/// audience update and system notices. Ads, notifications, forwarded chats, the
+/// other states and the signals are not reported.
 abstract final class NiconicoDanmakuCodec {
+  /// The notice of the program's end: the web player's line once it ended.
+  static const String programEndedNotice = 'この番組は終了しました';
+
+  /// The web player's comment-field line while comments are locked.
+  static const String commentLockedNotice = '現在コメントできません';
+
+  /// The lift of a comment lock (the web player only re-enables its field, so
+  /// the sentence is ours).
+  static const String commentUnlockedNotice = '评论锁定已解除';
+
+  /// The web player's line when comments are no longer for followers only.
+  static const String followersOnlyLiftedNotice = 'フォロワー限定コメントが解除されました';
+
+  /// The most seconds a follow restriction is read as (about 136 years).
+  static const int maxFollowSeconds = 1 << 32;
+
+  /// A follow restriction of [seconds] (0 or more) as the web player writes it:
+  /// whole days from a day on, else hours and minutes from an hour on, else
+  /// minutes (`0分` under a minute).
+  static String followDuration(int seconds) {
+    if (seconds >= 86400) {
+      final days = '${seconds ~/ 86400}日';
+      return seconds % 86400 < 3600 ? days : '$daysと${seconds % 86400 ~/ 3600}時間';
+    }
+    if (seconds < 3600) return '${seconds ~/ 60}分';
+    final hours = '${seconds ~/ 3600}時間';
+    return seconds % 3600 < 60 ? hours : '$hours${seconds % 3600 ~/ 60}分';
+  }
+
   /// The `view` request of [view] for [at] (`now` or a `next` value).
   static Uri viewUrl(Uri view, String at) => view.replace(queryParameters: {...view.queryParameters, 'at': at});
 
@@ -79,9 +223,25 @@ abstract final class NiconicoDanmakuCodec {
       !uri.hasPort &&
       !uri.hasFragment;
 
+  /// The largest comment-server message accepted.
+  static const int maxMessageBytes = 1 << 20;
+
   /// The messages of a whole answer [bytes], split at their varint length
   /// prefixes.
   static List<List<int>> split(List<int> bytes) => niconicoSplitDelimited(bytes);
+
+  /// The messages of a streamed answer [body], as they complete. Fails
+  /// ([FormatException]) on a bad length prefix, a message over
+  /// [maxLength], or when the answer ends inside a message.
+  static Stream<Uint8List> delimited(Stream<List<int>> body, {int maxLength = maxMessageBytes}) async* {
+    final reader = NiconicoDelimitedReader(maxLength: maxLength);
+    await for (final chunk in body) {
+      for (final message in reader.add(chunk)) {
+        yield message;
+      }
+    }
+    reader.close();
+  }
 
   /// One `view` entry (`ChunkedEntry`: 1 segment, 2 backward, 3 previous,
   /// 4 next; the last length-delimited one wins). Throws [FormatException]
@@ -98,16 +258,99 @@ abstract final class NiconicoDanmakuCodec {
     };
   }
 
-  /// One window message (`ChunkedMessage`: 1 meta, then one of 2 message, 4
-  /// state, 5 signal) as a [LiveMessage], or null when it is not a chat.
-  /// Throws [FormatException] when it is not protobuf.
-  static LiveMessage? message(List<int> bytes) {
-    final chunk = NiconicoProtoMessage.decode(bytes);
-    final meta = chunk.message(1);
-    return switch (_lastOf(chunk, const {2, 4})) {
-      2 => _nicoliveMessage(chunk.message(2)!, meta),
-      _ => null,
-    };
+  /// One window message (`ChunkedMessage`: 1 meta, then one of 2 message,
+  /// 4 state, 5 signal) as a [LiveMessage], or null when it is none of the
+  /// reported kinds; a comment lock as a change from "everyone". Throws
+  /// [FormatException] when it is not protobuf. A connection reads a seat's
+  /// messages with one [NiconicoMessageReader]; this stateless form is for a
+  /// single message.
+  static LiveMessage? message(List<int> bytes) => NiconicoMessageReader().read(bytes);
+
+  /// The payload of a `ChunkedMessage`: 2 or 4 (a message, length-delimited)
+  /// or 5 (a signal, a varint) — the last one wins. A signal (5) is not
+  /// reported, but reading it as one keeps a `Flushed` chunk from being
+  /// mistaken for a chat.
+  static int? lastPayload(NiconicoProtoMessage chunk) {
+    for (final field in chunk.fields.reversed) {
+      if (field.number == 5 && field.wireType == niconicoProtoVarintType) return 5;
+      if ((field.number == 2 || field.number == 4) && field.wireType == niconicoProtoLengthDelimitedType) {
+        return field.number;
+      }
+    }
+    return null;
+  }
+
+  /// The notice that the program ended ([programEndedNotice]), with the
+  /// platform's [messageId] and [sentAt] when it has them.
+  static LiveMessage programEnded({String messageId = '', DateTime? sentAt}) => notice(
+    programEndedNotice,
+    null,
+    messageId: messageId,
+    sentAt: sentAt,
+  );
+
+  /// A system notice of [text] with the window message's [meta] (id and time),
+  /// its optional [userName] and [color].
+  static LiveMessage notice(
+    String text,
+    NiconicoProtoMessage? meta, {
+    String userName = '',
+    LiveMessageColor? color,
+    String messageId = '',
+    DateTime? sentAt,
+  }) => LiveMessage.normalized(
+    type: LiveMessageType.notice,
+    text: text,
+    sender: MessageSender.normalized(userName: userName),
+    payload: LiveNoticeKind.system,
+    color: color ?? LiveMessageColor.white,
+    messageId: messageId.isNotEmpty ? messageId : (meta?.string(1)?.trim() ?? ''),
+    sentAt: sentAt ?? time(meta?.message(2)),
+  );
+
+  /// Who may comment by a `CommentLock` (1 status: 0 Unrestricted, 1 Locked,
+  /// 2 Restricted; 2 follow_restriction {1 minimum_follow_duration {1
+  /// seconds}}); null for a status this does not know (changes nothing). A
+  /// follow duration below zero is zero; over [maxFollowSeconds], that.
+  static NiconicoCommentLock? commentLockOf(NiconicoProtoMessage lock) {
+    switch (lock.integer(1) ?? 0) {
+      case 0:
+        return NiconicoCommentLock.none;
+      case 1:
+        return NiconicoCommentLock.locked;
+      case 2:
+        final restriction = lock.message(2);
+        if (restriction == null) return NiconicoCommentLock.none;
+        final seconds = restriction.message(1)?.integer(1) ?? 0;
+        return NiconicoCommentLock.followers(Duration(seconds: seconds.clamp(0, maxFollowSeconds)));
+      default:
+        return null;
+    }
+  }
+
+  /// The notice of a change from [previous] to [next], or null when it is no
+  /// change: the web player's own lines for followers-only and its lift, the
+  /// comment field's line for a lock, and ours for a lock's lift.
+  static String? commentLockNotice(NiconicoCommentLock next, NiconicoCommentLock previous) {
+    if (next == previous) return null;
+    if (next.isLocked) return commentLockedNotice;
+    if (next.followersOnly case final minimum?) {
+      final seconds = minimum.inSeconds;
+      return seconds == 0
+          ? '【コメント制限】フォロワーに限定されます'
+          : '【コメント制限】${followDuration(seconds)}フォローを継続したユーザーに限定されます';
+    }
+    return previous.isLocked ? commentUnlockedNotice : followersOnlyLiftedNotice;
+  }
+
+  /// `Marquee` (1 display {1 operator_comment}): the operator's comment
+  /// (`OperatorComment`: 1 content, 2 name, 3 modifier) as a notice, in its
+  /// colour; null for a cleared marquee or an empty comment.
+  static LiveMessage? operatorComment(NiconicoProtoMessage marquee, NiconicoProtoMessage? meta) {
+    final comment = marquee.message(1)?.message(1);
+    final text = comment?.string(1)?.trim() ?? '';
+    if (comment == null || text.isEmpty) return null;
+    return notice(text, meta, userName: comment.string(2)?.trim() ?? '', color: color(comment.message(3)));
   }
 
   /// A `Chat` (1 content, 2 name, 5 raw_user_id, 6 hashed_user_id, 7
@@ -130,15 +373,49 @@ abstract final class NiconicoDanmakuCodec {
     );
   }
 
-  // Helpers -------------------------------------------------------------------
-
-  /// `NicoliveMessage`: its oneof's chat fields (1 chat, 20 overflowed_chat)
-  /// become a chat; the rest is not reported.
-  static LiveMessage? _nicoliveMessage(NiconicoProtoMessage data, NiconicoProtoMessage? meta) =>
-      switch (data.lastOf(const {1, 20})) {
-        final kind? => chat(data.message(kind)!, meta: meta),
+  /// `NicoliveMessage`: one field of its oneof; 1 chat and 20 overflowed_chat
+  /// are chats, 8 gift a gift, the rest not reported.
+  static LiveMessage? nicoliveMessage(NiconicoProtoMessage data, NiconicoProtoMessage? meta) =>
+      switch (data.lastOf(const {1, 7, 8, 9, 13, 17, 18, 19, 20, 22, 23, 24, 25, 26})) {
+        final kind? when kind == 1 || kind == 20 => chat(data.message(kind)!, meta: meta),
+        8 => gift(data.message(8)!, meta),
         _ => null,
       };
+
+  /// `Gift` (1 item_id, 2 advertiser_user_id, 3 advertiser_name, 4 point,
+  /// 5 message, 6 item_name, 7 contribution_rank): the shared `ニコ子 ×1` line,
+  /// one item worth `point` niconico points (free at 0). Like the web player, a
+  /// gift of negative points or without an item or a name is dropped.
+  static LiveMessage? gift(NiconicoProtoMessage gift, NiconicoProtoMessage? meta) {
+    final itemId = gift.string(1)?.trim() ?? '';
+    final name = gift.string(6)?.trim() ?? '';
+    final point = gift.integer(4) ?? 0;
+    if ((itemId.isEmpty && name.isEmpty) || point < 0) return null;
+    final giver = gift.string(3)?.trim() ?? '';
+    final giverId = gift.integer(2);
+    return LiveMessage.normalized(
+      type: LiveMessageType.gift,
+      text: '${name.isEmpty ? itemId : name} ×1',
+      sender: MessageSender.normalized(
+        userId: giverId != null && giverId > 0 ? '$giverId' : '',
+        userName: giver,
+      ),
+      color: LiveMessageColor.white,
+      payload: LiveGift(
+        giftId: itemId,
+        name: name,
+        value: LiveGiftValue(
+          unit: point == 0 ? LiveGiftUnit.free : LiveGiftUnit.point,
+          unitPrice: point == 0 ? null : point.toDouble(),
+          totalValue: point == 0 ? null : point.toDouble(),
+        ),
+      ),
+      messageId: meta?.string(1)?.trim() ?? '',
+      sentAt: time(meta?.message(2)),
+    );
+  }
+
+  // Helpers -------------------------------------------------------------------
 
   /// `MessageSegment`: 1 from, 2 until, 3 uri — the window, or null when its
   /// times or address are not usable.

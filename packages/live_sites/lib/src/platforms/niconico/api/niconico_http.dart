@@ -46,6 +46,35 @@ final class NiconicoHttp {
     return (text: response.text, bytes: response.bodyBytes, status: response.statusCode);
   }
 
+  /// Opens the comment server [url] and hands back the response as it streams:
+  /// the answer to a `view` lasts about 30 s and a window's about 16 s, so its
+  /// protobuf messages arrive piecemeal and are read live. A transport
+  /// breakdown (and a cancellation) becomes a [NiconicoFailure] network error
+  /// (a cancellation rethrows); a bad status is the caller's to read off
+  /// [LiveStreamedResponse.statusCode], like [feed].
+  Future<LiveStreamedResponse> openStream(
+    Uri url, {
+    Map<String, String> headers = const {},
+    Duration? timeout,
+    CancelToken? cancel,
+  }) async {
+    try {
+      return await http.open(
+        LiveRequest.custom(
+          method: 'GET',
+          site: 'niconico',
+          url: url,
+          headers: headers,
+          timeout: timeout,
+          cancelToken: cancel,
+        ),
+      );
+    } on TransportFailure catch (failure) {
+      if (failure is CancelledFailure) rethrow;
+      throw NiconicoFailure(NiconicoFailureKind.network, 'GET $url: $failure', cause: failure);
+    }
+  }
+
   /// Releases the wrapped transport.
   void close() => http.close();
 }

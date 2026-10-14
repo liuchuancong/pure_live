@@ -8,9 +8,14 @@ import 'dart:typed_data';
 import 'package:fpdart/fpdart.dart';
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
+import 'package:live_sites/src/models/audience/live_audience_update/live_audience_update.dart';
+import 'package:live_sites/src/models/enums/live_audience_signal_kind.dart';
+import 'package:live_sites/src/models/enums/live_gift_unit.dart';
+import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/enums/live_restriction.dart';
 import 'package:live_sites/src/models/enums/live_search_target.dart';
 import 'package:live_sites/src/models/enums/live_status.dart';
+import 'package:live_sites/src/models/gift/live_gift/live_gift.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
@@ -102,6 +107,65 @@ List<int> _chunkedMessage(List<int> chat, {String id = 'msg-1', int at = 1730000
     ..message(2, nicolive.toBytes());
   return chunk.toBytes();
 }
+
+/// A `ChunkedMessage` whose payload is a state (`NicoliveState`, field 4).
+List<int> _chunkedState(List<int> state, {String id = 'msg-1', int at = 1730000000}) {
+  final meta = NiconicoProtoWriter()
+    ..string(1, id)
+    ..message(2, _timestamp(at));
+  return (NiconicoProtoWriter()
+        ..message(1, meta.toBytes())
+        ..message(4, state))
+      .toBytes();
+}
+
+/// A `ChunkedMessage` carrying a `NicoliveMessage.gift` (field 8).
+List<int> _chunkedGift(List<int> gift, {String id = 'msg-1', int at = 1730000000}) {
+  final meta = NiconicoProtoWriter()
+    ..string(1, id)
+    ..message(2, _timestamp(at));
+  final nicolive = NiconicoProtoWriter()..message(8, gift);
+  return (NiconicoProtoWriter()
+        ..message(1, meta.toBytes())
+        ..message(2, nicolive.toBytes()))
+      .toBytes();
+}
+
+/// A `Gift` (1 item_id, 3 advertiser_name, 4 point, 6 item_name).
+List<int> _gift({String itemId = 'item-9', String name = 'ニコ子', int point = 100, String giver = 'giver'}) =>
+    (NiconicoProtoWriter()
+          ..string(1, itemId)
+          ..string(3, giver)
+          ..integer(4, point)
+          ..string(6, name))
+        .toBytes();
+
+/// A `NicoliveState` carrying only `statistics.viewers` (1 → 1).
+List<int> _stateViewers(int viewers) => (NiconicoProtoWriter()
+      ..message(1, (NiconicoProtoWriter()..integer(1, viewers)).toBytes()))
+    .toBytes();
+
+/// A `NicoliveState` carrying a `comment_lock` (5): status (1) and, for the
+/// followers case, a minimum follow duration (2 → 1 → 1 seconds).
+List<int> _stateLock(int status, {int? followSeconds}) {
+  final lock = NiconicoProtoWriter()..integer(1, status);
+  if (followSeconds != null) {
+    lock.message(2, (NiconicoProtoWriter()
+          ..message(1, (NiconicoProtoWriter()..integer(1, followSeconds)).toBytes()))
+        .toBytes());
+  }
+  return (NiconicoProtoWriter()..message(5, lock.toBytes())).toBytes();
+}
+
+/// A `NicoliveState` carrying `program_status` `Ended` (9 → 1 = 1).
+List<int> _stateEnded() => (NiconicoProtoWriter()
+      ..message(9, (NiconicoProtoWriter()..integer(1, 1)).toBytes()))
+    .toBytes();
+
+/// A `ChunkedMessage` carrying only a signal (5, a varint): not a message.
+List<int> _chunkedSignal(int kind) =>
+    (NiconicoProtoWriter()..integer(5, kind)).toBytes();
+
 
 /// The recorded `program` block of a watch page (ON_AIR, anonymous-watchable)
 /// for a community user's program, with the seat's WebSocket.
@@ -214,6 +278,53 @@ void main() {
 
     test('an empty chat is dropped', () {
       expect(NiconicoDanmakuCodec.message(_chunkedMessage(_chat(content: '   '))), isNull);
+    });
+
+    test('a gift becomes a gift message of one item worth its points', () {
+      final message = NiconicoDanmakuCodec.message(_chunkedGift(_gift(point: 300, giver: 'rich')));
+      expect(message, isNotNull);
+      expect(message!.type, LiveMessageType.gift);
+      expect(message.text, 'ニコ子 ×1');
+      expect(message.sender?.userName, 'rich');
+      final gift = message.payload! as LiveGift;
+      expect(gift.giftId, 'item-9');
+      expect(gift.value.unit, LiveGiftUnit.point);
+      expect(gift.value.unitPrice, 300);
+    });
+
+    test('a free gift (0 point) is unit free with no price; an itemless one is dropped', () {
+      final free = NiconicoDanmakuCodec.message(_chunkedGift(_gift(point: 0)))!;
+      expect((free.payload! as LiveGift).value.unit, LiveGiftUnit.free);
+      expect((free.payload! as LiveGift).value.unitPrice, isNull);
+      expect(NiconicoDanmakuCodec.message(_chunkedGift(_gift(point: -5))), isNull);
+    });
+
+    test('statistics.viewers becomes an audience update, not a chat', () {
+      final message = NiconicoDanmakuCodec.message(_chunkedState(_stateViewers(4321)));
+      expect(message!.type, LiveMessageType.audienceUpdate);
+      final update = message.payload! as LiveAudienceUpdate;
+      expect(update.kind, LiveAudienceSignalKind.totalViewers);
+      expect(update.value, 4321);
+    });
+
+    test('only a change of the comment lock is reported, in the web player lines', () {
+      final reader = NiconicoMessageReader();
+      expect(reader.read(_chunkedState(_stateLock(1))), isNotNull); // locked → notice
+      expect(reader.read(_chunkedState(_stateLock(1))), isNull); // same lock → nothing
+      expect(reader.read(_chunkedState(_stateLock(0))), isNotNull); // lifted → notice
+      expect(reader.read(_chunkedState(_stateLock(2, followSeconds: 0))), isNotNull); // followers-only
+    });
+
+    test('a program end is reported once and flagged on the reader', () {
+      final reader = NiconicoMessageReader();
+      final message = reader.read(_chunkedState(_stateEnded()));
+      expect(message!.type, LiveMessageType.notice);
+      expect(message.text, NiconicoDanmakuCodec.programEndedNotice);
+      expect(reader.endedProgram, isTrue);
+    });
+
+    test('a signal chunk (field 5) is not read as a message', () {
+      expect(NiconicoDanmakuCodec.message(_chunkedSignal(3)), isNull);
     });
 
     test('a view ChunkedEntry reads its segment window and its next pointer', () {
