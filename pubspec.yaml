@@ -34,6 +34,7 @@ workspace:
   - packages/live_uikit_glass
   - packages/live_uikit_wind
   - packages/live_pagination
+  - packages/live_websocket
 
 dev_dependencies:
   kareki: ^0.7.0

@@ -1,0 +1,8 @@
+include: package:very_good_analysis/analysis_options.yaml
+
+formatter:
+  page_width: 120
+
+linter:
+  rules:
+    lines_longer_than_80_chars: false
