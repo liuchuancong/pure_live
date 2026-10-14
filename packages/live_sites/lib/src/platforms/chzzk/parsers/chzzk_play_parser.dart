@@ -154,8 +154,9 @@ abstract final class ChzzkPlayParser {
         lease: lease(uri, master: media.url, issuedAt: issuedAt),
       ));
     }
-    if (variants.isEmpty)
+    if (variants.isEmpty) {
       throw ChzzkFailure(ChzzkFailureKind.streamUnavailable, '${media.id} master: no video variant');
+    }
     return variants;
   }
 

@@ -946,6 +946,7 @@ void main() {
         'acfun',
         'bigo',
         'chzzk',
+        'fc2live',
       ]);
     });
 

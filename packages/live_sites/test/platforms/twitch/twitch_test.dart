@@ -717,6 +717,7 @@ https://other.example/1.m3u8
         'acfun',
         'bigo',
         'chzzk',
+        'fc2live',
       ]);
     });
 
