@@ -2165,19 +2165,25 @@ void main() {
       chat.timers.fire(index: chat.timers.after.length - 1);
       await Future<void>.delayed(Duration.zero);
       expect(chat.http.sent, hasLength(6), reason: 'an expired grant is replaced after the backoff step');
-      // The heartbeat id counts up through the run, and an answered heartbeat
-      // restarts the count of replacements.
+      // The heartbeat id counts up through the run (a session field, not reset
+      // by the reopen): the first ring of the current socket is id 1, the next
+      // id 2; an answered heartbeat restarts the count of replacements.
+      chat.timers.ring(index: chat.timers.every.length - 1);
+      chat.connector.latest.push(_frame('_response_', arguments: {'status': 0}, id: 1));
       chat.timers.ring(index: chat.timers.every.length - 1);
       expect(chat.connector.latest.sentText, contains('"id":2'));
       chat.connector.latest.push(_frame('_response_', arguments: {'status': 0}, id: 2));
+      // The terminating message is emitted while the loop runs, so collect from
+      // before it (a broadcast stream hands a late listener nothing it missed).
+      final seen = <LiveMessage>[];
+      final ended = chat.session.events.listen(seen.add).asFuture<void>();
       for (var attempt = 0; attempt <= Fc2LiveDanmakuCodec.maxReconnects; attempt++) {
         chat.connector.latest.push(_frame('control_disconnection', arguments: {'code': 4500}));
         await Future<void>.delayed(Duration.zero);
         chat.timers.fire(index: chat.timers.after.length - 1);
         await Future<void>.delayed(Duration.zero);
       }
-      final seen = <LiveMessage>[];
-      await chat.session.events.listen(seen.add).asFuture<void>();
+      await ended;
       expect(seen.where((message) => message.type == LiveMessageType.system), isNotEmpty);
       expect(seen.last.text, contains('Chat connection lost'));
     });
