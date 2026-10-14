@@ -1,3 +1,4 @@
+import 'package:cupertino_ui/cupertino_ui.dart' as cu;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_uikit/styling.dart';
@@ -65,9 +66,94 @@ void main() {
 
   testWidgets('an unoverridden control still renders via the shared fallback', (tester) async {
     await tester.pumpWidget(
-      harness(SizedBox(width: 300, child: LiveCard(onTap: () {}, child: const Text('body')))),
+      harness(
+        SizedBox(
+          width: 300,
+          child: LiveCard(onTap: () {}, child: const Text('body')),
+        ),
+      ),
     );
     expect(find.byType(LiveCard), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  group('spec fields the fork can carry (§9/§16)', () {
+    testWidgets('a null callback reaches the slider as null, not as a no-op', (tester) async {
+      await tester.pumpWidget(harness(const SizedBox(width: 300, child: LiveSlider(value: 0.5, onChanged: null))));
+      expect(tester.widget<cu.CupertinoSlider>(find.byType(cu.CupertinoSlider)).onChanged, isNull);
+      await tester.pumpWidget(
+        harness(SizedBox(width: 300, child: LiveSlider(value: 0.5, enabled: false, onChanged: (_) {}))),
+      );
+      expect(tester.widget<cu.CupertinoSlider>(find.byType(cu.CupertinoSlider)).onChanged, isNull);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('expand and tooltip wrap the button', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          SizedBox(
+            width: 320,
+            child: LiveButton(label: 'Wide', expand: true, tooltip: 'Save it', onPressed: () {}),
+          ),
+        ),
+      );
+      final wrappers = tester
+          .widgetList<SizedBox>(find.ancestor(of: find.byType(cu.CupertinoButton), matching: find.byType(SizedBox)))
+          .toList();
+      expect(wrappers.any((box) => box.width == double.infinity), isTrue);
+      expect(find.byType(LiveTooltip), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('text field keeps prefix, suffix and the error message', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          const LiveTextField(
+            placeholder: 'Name',
+            prefix: Icon(Icons.person),
+            suffix: Icon(Icons.check),
+            errorText: 'Required',
+          ),
+        ),
+      );
+      final field = tester.widget<cu.CupertinoTextField>(find.byType(cu.CupertinoTextField));
+      expect(field.prefix, isNotNull);
+      expect(field.suffix, isNotNull);
+      expect(find.text('Required'), findsOneWidget);
+    });
+
+    testWidgets('an inline style overrides the token body text', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          const LiveTextField(
+            style: Style(fontSize: 22, foreground: Color(0xFF0000FF), fontFamily: 'Monospace'),
+          ),
+        ),
+      );
+      final style = tester.widget<cu.CupertinoTextField>(find.byType(cu.CupertinoTextField)).style;
+      expect(style?.fontSize, 22);
+      expect(style?.color, const Color(0xFF0000FF));
+      expect(style?.fontFamily, 'Monospace');
+    });
+  });
+
+  group('caller-owned focus (§9/§16)', () {
+    testWidgets('the field takes the caller node into the focus tree', (tester) async {
+      final node = FocusNode();
+      addTearDown(node.dispose);
+      await tester.pumpWidget(harness(LiveTextField(focusNode: node)));
+      expect(tester.widget<cu.CupertinoTextField>(find.byType(cu.CupertinoTextField)).focusNode, same(node));
+      node.requestFocus();
+      await tester.pump();
+      expect(node.hasFocus, isTrue, reason: 'the node reached the focus tree, not just the widget');
+    });
+    testWidgets('the button takes the caller node and its autofocus flag', (tester) async {
+      final node = FocusNode();
+      addTearDown(node.dispose);
+      await tester.pumpWidget(harness(LiveButton(label: 'Save', focusNode: node, autofocus: true, onPressed: () {})));
+      final button = tester.widget<cu.CupertinoButton>(find.byType(cu.CupertinoButton));
+      expect(button.focusNode, same(node));
+      expect(button.autofocus, isTrue);
+    });
   });
 }

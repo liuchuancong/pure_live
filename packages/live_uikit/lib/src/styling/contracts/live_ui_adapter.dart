@@ -29,6 +29,9 @@ enum LiveDesignLanguage {
   /// `fluttersdk_wind`.
   wind,
 
+  /// `forui` (the shadcn-style `F*` widget library).
+  forui,
+
   /// The `material_ui` fork, distinct from the core `material` token base.
   materialUi,
 
@@ -47,10 +50,13 @@ class LanguageButtonSpec {
     this.icon,
     this.loading = false,
     this.expand = false,
+    this.iconOnly = false,
+    this.selected = false,
     this.onPressed,
     this.focusNode,
     this.autofocus = false,
     this.tooltip,
+    this.style,
   });
 
   /// The label text.
@@ -74,6 +80,20 @@ class LanguageButtonSpec {
   /// Whether the button fills its parent's width.
   final bool expand;
 
+  /// Whether the button carries an icon and no visible text, as a toolbar or
+  /// control-bar action does. [tooltip] is then the accessible name, so the
+  /// renderer never paints the empty [label] the caller passed to satisfy the
+  /// contract. `LiveIconButton` sets it; the token base also squares the control
+  /// to its [size] step, which is the geometry a text button never needs.
+  final bool iconOnly;
+
+  /// Whether the button shows a mode that is currently on — a toggled filter, an
+  /// active view. This is state, not emphasis: the token base tints the
+  /// foreground with the primary colour, and an adapter maps it only where its
+  /// library has an equivalent; where it does not, the button renders unselected
+  /// and the spec says so.
+  final bool selected;
+
   /// The tap callback.
   final VoidCallback? onPressed;
 
@@ -85,6 +105,13 @@ class LanguageButtonSpec {
 
   /// An optional tooltip.
   final String? tooltip;
+
+  /// An inline style override — the `style=` attribute, and the highest-precedence
+  /// layer of the recipe (see `live-uikit.md` §8). The card and text-field specs have
+  /// carried this field all along; the button spec only gained it once `LiveButton`
+  /// started forwarding the `style:` it already accepted. A library whose button paints
+  /// its own surface records in its §9 that it does not map this.
+  final Style? style;
 }
 
 /// A card described the same way every language draws it.

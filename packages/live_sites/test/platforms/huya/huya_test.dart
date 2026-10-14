@@ -13,12 +13,16 @@ import 'package:test/test.dart';
 /// Builds a server push frame: an outer struct {tag0 command, tag1 payload}
 /// around a single-push payload {tag1 uri, tag2 body, tag5 message id}.
 Uint8List pushFrame(int uri, Uint8List body, {int id = 0}) {
-  final payload = (TarsWriter()
-        ..writeInt(1, uri)
-        ..writeBytes(2, body)
-        ..writeInt(5, id))
+  final payload =
+      (TarsWriter()
+            ..writeInt(1, uri)
+            ..writeBytes(2, body)
+            ..writeInt(5, id))
+          .toBytes();
+  return (TarsWriter()
+        ..writeInt(0, HuyaDanmakuProtocol.pushCommand)
+        ..writeBytes(1, payload))
       .toBytes();
-  return (TarsWriter()..writeInt(0, HuyaDanmakuProtocol.pushCommand)..writeBytes(1, payload)).toBytes();
 }
 
 void main() {
@@ -46,11 +50,17 @@ void main() {
 
   group('HuyaDanmakuProtocol decoding', () {
     test('uri 1400 becomes a chat message', () {
-      final body = (TarsWriter()
-            ..writeStruct(0, (s) => s..writeInt(0, 42)..writeString(2, 'Bob'))
-            ..writeString(3, 'hello')
-            ..writeStruct(6, (f) => f.writeInt(0, 0)))
-          .toBytes();
+      final body =
+          (TarsWriter()
+                ..writeStruct(
+                  0,
+                  (s) => s
+                    ..writeInt(0, 42)
+                    ..writeString(2, 'Bob'),
+                )
+                ..writeString(3, 'hello')
+                ..writeStruct(6, (f) => f.writeInt(0, 0)))
+              .toBytes();
       final r = HuyaDanmakuProtocol.decode(pushFrame(HuyaDanmakuProtocol.chatUri, body, id: 9));
       expect(r.ended, isEmpty);
       final message = r.messages.single;
@@ -70,16 +80,17 @@ void main() {
     });
 
     test('uri 6501 becomes a gift priced from the packet, with a combo key', () {
-      final body = (TarsWriter()
-            ..writeInt(0, 500) // iItemType
-            ..writeInt(2, 3) // iItemCount
-            ..writeInt(4, 88) // lSenderUid
-            ..writeString(6, 'Giver') // sSenderNick
-            ..writeInt(9, 4) // iItemGroup combo counter
-            ..writeString(20, '虎粮') // sPropsName
-            ..writeInt(39, 999) // lComboSeqId
-            ..writeInt(41, 1500)) // lPayTotal
-          .toBytes();
+      final body =
+          (TarsWriter()
+                ..writeInt(0, 500) // iItemType
+                ..writeInt(2, 3) // iItemCount
+                ..writeInt(4, 88) // lSenderUid
+                ..writeString(6, 'Giver') // sSenderNick
+                ..writeInt(9, 4) // iItemGroup combo counter
+                ..writeString(20, '虎粮') // sPropsName
+                ..writeInt(39, 999) // lComboSeqId
+                ..writeInt(41, 1500)) // lPayTotal
+              .toBytes();
       final r = HuyaDanmakuProtocol.decode(pushFrame(HuyaDanmakuProtocol.giftUri, body, id: 7));
       final gift = r.messages.single.payload! as LiveGift;
       expect(gift.name, '虎粮');
@@ -185,19 +196,32 @@ void main() {
 
     test('command 22 batch decodes every item', () {
       final chat = (TarsWriter()..writeString(3, 'one')).toBytes();
-      final gift = (TarsWriter()..writeString(20, 'flower')..writeInt(2, 2)).toBytes();
+      final gift =
+          (TarsWriter()
+                ..writeString(20, 'flower')
+                ..writeInt(2, 2))
+              .toBytes();
       final items = <({int uri, Uint8List body})>[
         (uri: HuyaDanmakuProtocol.chatUri, body: chat),
         (uri: HuyaDanmakuProtocol.giftUri, body: gift),
       ];
-      final batch = (TarsWriter()
-            ..writeList<({int uri, Uint8List body})>(
-              1,
-              items,
-              (writer, item) => writer.writeStruct(0, (s) => s..writeInt(0, item.uri)..writeBytes(1, item.body)),
-            ))
-          .toBytes();
-      final frame = (TarsWriter()..writeInt(0, HuyaDanmakuProtocol.batchCommand)..writeBytes(1, batch)).toBytes();
+      final batch =
+          (TarsWriter()..writeList<({int uri, Uint8List body})>(
+                1,
+                items,
+                (writer, item) => writer.writeStruct(
+                  0,
+                  (s) => s
+                    ..writeInt(0, item.uri)
+                    ..writeBytes(1, item.body),
+                ),
+              ))
+              .toBytes();
+      final frame =
+          (TarsWriter()
+                ..writeInt(0, HuyaDanmakuProtocol.batchCommand)
+                ..writeBytes(1, batch))
+              .toBytes();
       final r = HuyaDanmakuProtocol.decode(frame);
       expect(r.messages.map((m) => m.text), containsAll(<String>['one', 'flower ×2']));
     });

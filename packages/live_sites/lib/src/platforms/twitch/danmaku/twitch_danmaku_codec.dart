@@ -186,7 +186,11 @@ abstract final class TwitchDanmakuCodec {
   static const Duration communityGiftLifetime = Duration(minutes: 1);
 
   /// How many reconnects in a row may fail before the session is abandoned.
-  static const int maxReconnectAttempts = 6;
+  static const int maxReconnectAttempts = 8;
+
+  /// The most a single backoff step waits (one second per consecutive failure,
+  /// never past this).
+  static const Duration reconnectStepCap = Duration(seconds: 6);
 
   /// The `msg-id`s of a `USERNOTICE` shown as [LiveNoticeKind.subscription]:
   /// subscribing, renewing, gifting subscriptions (named, anonymous, to the

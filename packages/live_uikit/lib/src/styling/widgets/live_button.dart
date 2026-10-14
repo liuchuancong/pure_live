@@ -26,6 +26,7 @@ class LiveButton extends StatelessWidget {
     this.expand = false,
     this.autofocus = false,
     this.focusNode,
+    this.tooltip,
     this.style,
     super.key,
   });
@@ -57,6 +58,9 @@ class LiveButton extends StatelessWidget {
   /// An externally managed focus node.
   final FocusNode? focusNode;
 
+  /// Hover/long-press hint and the accessible description of the action.
+  final String? tooltip;
+
   /// An inline style override (the `style=` attribute).
   final Style? style;
 
@@ -78,6 +82,8 @@ class LiveButton extends StatelessWidget {
         onPressed: onPressed,
         focusNode: focusNode,
         autofocus: autofocus,
+        tooltip: tooltip,
+        style: style,
       ),
     );
   }
@@ -85,7 +91,9 @@ class LiveButton extends StatelessWidget {
 
 /// A square icon-only button — the Ant `Button` icon variant. It always carries
 /// a [tooltip] (an icon alone is not a readable label) and takes the same
-/// `variant` / `size` semantics as [LiveButton], so it re-skins identically.
+/// `variant` / `size` semantics as [LiveButton], so it re-skins identically: it
+/// dispatches through the active adapter with `iconOnly` and `selected` set on the
+/// spec instead of painting a token box of its own.
 class LiveIconButton extends StatelessWidget {
   /// An icon button.
   const new({
@@ -116,7 +124,7 @@ class LiveIconButton extends StatelessWidget {
   /// The size step; drives the square side length.
   final ControlSize size;
 
-  /// Whether the button renders as toggled on (primary foreground).
+  /// Whether the control shows a mode that is currently on.
   final bool selected;
 
   /// Whether the button accepts input.
@@ -130,27 +138,22 @@ class LiveIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = LiveTheme.of(context);
-    final edge = switch (size) {
-      ControlSize.sm => theme.button.controlHeightSM,
-      ControlSize.md => theme.button.controlHeight,
-      ControlSize.lg => theme.button.controlHeightLG,
-    };
-    final foreground = selected ? theme.colors.primary : theme.colors.textSecondary;
-    return LiveBox(
-      style: (state) => theme
-          .resolveButton(variant: variant, size: size, state: state)
-          .copyWith(foreground: state == InteractionState.disabled ? theme.colors.textDisabled : foreground),
-      enabled: enabled && onPressed != null,
-      onTap: enabled ? onPressed : null,
-      focusNode: focusNode,
-      autofocus: autofocus,
-      child: SizedBox.square(
-        dimension: edge,
-        child: Tooltip(
-          message: tooltip,
-          child: Icon(icon, size: theme.text.label.fontSize, semanticLabel: tooltip),
-        ),
+    // The same contract `LiveButton` uses: `label` is required by the spec and
+    // empty here, and `iconOnly` tells the renderer never to paint it.
+    return LiveTheme.of(context).adapter.button(
+      context,
+      LanguageButtonSpec(
+        label: '',
+        icon: icon,
+        iconOnly: true,
+        selected: selected,
+        variant: variant,
+        size: size,
+        enabled: enabled && onPressed != null,
+        tooltip: tooltip,
+        onPressed: onPressed,
+        focusNode: focusNode,
+        autofocus: autofocus,
       ),
     );
   }

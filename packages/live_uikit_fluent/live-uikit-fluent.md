@@ -79,7 +79,9 @@ The application composition root registers this adapter. Business packages depen
 
 ## 4. Package directory
 
-Recommended initial structure:
+The tree below is the package as it exists today: eight native builders, three theme
+files, and one test directory per §16 concern. The modules after it are expansion
+points that have not been created.
 
 ```text
 packages/
@@ -99,29 +101,25 @@ packages/
     │       │   ├── fluent_theme_mapper.dart
     │       │   ├── fluent_theme_builder.dart
     │       │   └── fluent_theme_scope.dart
-    │       ├── widgets/
-    │       │   ├── fluent_button_builder.dart
-    │       │   ├── fluent_card_builder.dart
-    │       │   ├── fluent_text_field_builder.dart
-    │       │   ├── fluent_switch_builder.dart
-    │       │   ├── fluent_checkbox_builder.dart
-    │       │   └── fluent_slider_builder.dart
-    │       ├── interaction/
-    │       │   ├── fluent_focus_mapper.dart
-    │       │   └── fluent_keyboard_mapper.dart
-    │       ├── icons/
-    │       │   └── fluent_icon_mapper.dart
-    │       └── diagnostics/
-    │           └── fluent_adapter_diagnostics.dart
-    ├── test/
-    │   ├── adapter/
-    │   ├── theme/
-    │   ├── widgets/
-    │   ├── interaction/
-    │   └── integration/
-    └── example/
-        └── lib/
-            └── main.dart
+    │       └── widgets/
+    │           ├── fluent_button_builder.dart
+    │           ├── fluent_card_builder.dart
+    │           ├── fluent_checkbox_builder.dart
+    │           ├── fluent_progress_builder.dart
+    │           ├── fluent_select_builder.dart
+    │           ├── fluent_slider_builder.dart
+    │           ├── fluent_switch_builder.dart
+    │           └── fluent_text_field_builder.dart
+    ├── live-uikit-fluent.md
+    └── test/
+        ├── adapter/
+        │   └── fluent_ui_capabilities_test.dart
+        ├── theme/
+        │   └── fluent_theme_test.dart
+        ├── widgets/
+        │   └── fluent_native_controls_test.dart
+        └── integration/
+            └── fluent_style_switching_test.dart
 ```
 
 Do not create empty files just to match this tree. Add modules as their functionality is implemented.
@@ -133,11 +131,11 @@ Do not create empty files just to match this tree. Add modules as their function
 | `adapter/` | Adapter contract implementation, capability declaration, registration |
 | `theme/` | Translate resolved PureLive theme into Fluent theme values |
 | `widgets/` | Build Fluent controls from core widget specifications |
-| `interaction/` | Map keyboard, focus, and TV-specific behavior |
-| `icons/` | Map supported semantic icons to Fluent icons |
-| `diagnostics/` | Report unsupported mappings and adapter errors |
-| `test/` | Verify contract compliance and Fluent rendering |
-| `example/` | Demonstrate integration without business dependencies |
+| `interaction/` *(optional, not created)* | Keyboard, focus and TV-specific mapping, if Fluent's own focus treatment proves insufficient on a target |
+| `icons/` *(optional, not created)* | Semantic icon remapping to Fluent icons |
+| `diagnostics/` *(optional, not created)* | Adapter-local mapping diagnostics; the core contracts already cover control fallbacks |
+| `example/` *(optional, not created)* | Runnable demo with no business dependencies |
+| `test/` | Contract, theme-mapping, control and switching tests, one directory per §16 concern |
 
 ## 5. Package dependencies
 
@@ -175,51 +173,64 @@ The adapter should not add `freezed`, `json_serializable`, or `build_runner` unl
 
 ## 6. Public API
 
-The public entry point should expose only the adapter's supported registration API and any intentionally public Fluent integration utilities.
-
-Example:
+The public entry point exposes only the adapter's registration API:
 
 ```dart
 // lib/live_uikit_fluent.dart
 
-library live_uikit_fluent;
+/// Fluent design-language adapter for `live_uikit`.
+///
+/// Public entry exposes only the registration API (§6).
+library;
 
-export 'src/adapter/fluent_ui_registration.dart';
+export 'package:live_uikit_fluent/src/adapter/fluent_ui_registration.dart';
 ```
 
-Do not export internal widget builders, mappers, diagnostics implementation classes, or third-party types unnecessarily.
+`fluent_ui_registration.dart` provides exactly four public symbols:
 
-The exact registration class and method names must match the finalized `live_uikit` core contracts. The following sections describe the required behavior, not a claim that these APIs already exist in the core package.
+| Symbol | Kind | Purpose |
+|---|---|---|
+| `createFluentUiAdapter()` | Function | Constructs the adapter for the composition root to register |
+| `fluentUiAdapter` | `const LanguageAdapter` | The const adapter instance, usable directly where a constant is required |
+| `fluentUiAdapterId` | `const String` | The stable runtime id, `'fluent'` |
+| `fluentLocalizationsDelegates` | `const List<LocalizationsDelegate<dynamic>>` | `fluent_ui`'s own `FluentLocalizations.delegate`, appended by the app (§14) |
+
+The builders, the theme mapper/scope and the `fluent`-prefixed types stay private: exporting them would let a business page construct a Fluent control directly and bypass runtime style switching. The package name in the export is a `package:` URI rather than a relative path, matching the other adapters and the guard that rejects cross-package private imports.
 
 ## 7. Adapter contract
 
-The adapter implements the shared contract defined by `live_uikit`.
+`FluentLanguageAdapter extends SharedLanguageAdapter`, which already implements the
+core `abstract interface class LanguageAdapter` — every control has a working
+token-driven default, so the adapter overrides only what `fluent_ui` renders
+natively plus `wrap`. The contract is exactly:
 
-Conceptually, the contract should provide:
+- Getters: `language`, `id`, `displayName`, `capabilities`.
+- Methods: `wrap`, `button`, `card`, `textField`, `switchWidget`, `checkbox`,
+  `slider`, `segmented`, `progress`, `select<T>`, `tabBar`.
 
-- A stable adapter identifier, such as `fluent`.
-- A display name, such as `Fluent`.
-- A capability declaration.
-- Theme application or theme mapping.
-- Control construction from shared specifications.
-- Explicit handling of unsupported controls.
+Do not invent a competing adapter shape (an earlier draft of this document proposed a
+`LiveUiAdapter` with a single `buildControl(context, control)` entry point; the core
+never adopted it, and per-control methods are what the resolver, the capabilities set
+and the adapters are built around).
 
-Conceptual example:
+The realized mapping:
 
-```dart
-abstract interface class LiveUiAdapter {
-  String get id;
-
-  LiveUiCapabilities get capabilities;
-
-  Widget buildControl(
-    BuildContext context,
-    LiveControl control,
-  );
-}
-```
-
-**Important:** Use the actual interface and types from `live_uikit` when implementing the package. Do not create a second competing `LiveUiAdapter` contract inside `live_uikit_fluent`.
+| Contract member | Implementation here |
+|---|---|
+| `language` | `LiveDesignLanguage.fluent` |
+| `id` | `'fluent'` (matches `fluentUiAdapterId`) |
+| `displayName` | `'Fluent'` |
+| `capabilities` | `fluentUiCapabilities` |
+| `wrap` | `FluentThemeMapper.wrap` — installs the mapped `FluentTheme` scope |
+| `button` | `FluentButtonBuilder.build` — native (`FilledButton` vs `Button` by variant) |
+| `card` | `FluentCardBuilder.build` — native `fluent.Card` |
+| `textField` | `FluentTextFieldBuilder.build` — native `fluent.TextBox` |
+| `switchWidget` | `FluentSwitchBuilder.build` — native `fluent.ToggleSwitch` |
+| `checkbox` | `FluentCheckboxBuilder.build` — native `fluent.Checkbox` |
+| `slider` | `FluentSliderBuilder.build` — native `fluent.Slider` |
+| `progress` | `FluentProgressBuilder.build` — native `fluent.ProgressBar` |
+| `select<T>` | `FluentSelectBuilder.build<T>` — native `fluent.ComboBox<T>` |
+| `segmented`, `tabBar` | Inherited from `SharedLanguageAdapter` — shared token renderer |
 
 ### Adapter identifier
 
@@ -229,35 +240,30 @@ Use one stable identifier everywhere:
 fluent
 ```
 
-The identifier is a machine-readable value, not a localized label. Do not use `fluent_ui`, `Fluent UI`, or a platform-dependent identifier as the runtime style ID.
+The identifier is a machine-readable value, not a localized label. Do not use
+`fluent_ui`, `Fluent UI`, or a platform-dependent identifier as the runtime style id;
+`fluentUiAdapterId`, `FluentLanguageAdapter.id` and `LiveDesignLanguage.fluent.name`
+all resolve to `fluent`.
 
 ### Capability declaration
 
-The adapter should report actual supported controls, not simply claim support for every control in the core system.
+`fluentUiCapabilities` is a *declaration of fact*: it lists precisely the eight
+controls `FluentLanguageAdapter` overrides. `LiveUiControl` has exactly ten members
+— `button, card, textField, switchWidget, checkbox, slider, segmented, progress,
+select, tabBar` — so there is no `text`, `icon`, `dialog`, `menu` or "complex
+navigation" entry to declare; those are not part of the contract.
 
-Initial capability target:
+Fluent is the only adapter in this family to render `select` natively:
+`fluent.ComboBox<T>` absorbs the spec's generic item list, item-label function,
+placeholder and disabled state without the adapter owning caller state. `segmented`
+and `tabBar` stay on the shared renderer and the resolver reports
+`controlUnsupported` for them (§15).
 
-| Control | Implementation | Initial status |
-|---|---|---|
-| Button | Native Fluent button | Required |
-| Card | Native Fluent card or Fluent-themed container | Required |
-| Text field | Native Fluent text input | Required |
-| Switch | Native Fluent toggle switch | Required |
-| Checkbox | Native Fluent checkbox | Required |
-| Slider | Native Fluent slider | Required |
-| Text | Flutter text with Fluent theme | Required |
-| Icon | Fluent icons where mappings exist | Required |
-| Dialog | Native Fluent dialog conventions | Later phase |
-| Menu | Fluent menu controls | Later phase |
-| Complex navigation | Fluent navigation controls | Separate capability |
+The three implementation kinds come from the core —
+`LiveImplementationKind.adapterNative`, `.shared`, `.custom` — and the contract test
+asserts that the declared set matches the overrides, so a declaration that lies about
+support fails the build (§16/§17).
 
-The capability model should distinguish between:
-
-- **Native:** A control is implemented using a suitable native Fluent widget.
-- **Shared:** The core shared implementation is used.
-- **Unsupported:** No implementation is available.
-
-Use the core's actual enum names rather than adding a parallel capability system.
 
 ## 8. Theme mapping
 
@@ -289,17 +295,25 @@ Fluent controls
 
 ### 8.1 Theme properties to map
 
-| Core theme property | Fluent mapping | Notes |
+`FluentThemeBuilder.build` maps three properties today, and each unmapped row below
+records why it is left alone rather than half-wired:
+
+| Core theme property | Fluent mapping | Status |
 |---|---|---|
-| Brightness | `brightness` | Light or dark |
-| Accent color | `accentColor` | Brand accent |
-| Font family | `fontFamily` | Respect configured font |
-| Text styles | Fluent typography and text styles | Map supported roles |
-| Density | `visualDensity` or control-specific sizing | Do not assume every widget responds identically |
-| Focus appearance | `focusTheme` | Include TV and keyboard considerations |
-| Surface/background | Relevant Fluent theme and container colors | Map only supported surfaces |
-| Transparency | Acrylic or other supported surface effects where appropriate | Must have a fallback |
-| Motion | Supported Fluent transitions | Do not imply all animations are globally configurable |
+| Brightness | `FluentThemeData.brightness` from `token.isDark` | Mapped |
+| Accent / primary color | `FluentThemeData.accentColor` — `AccentColor.swatch({'normal': token.color.primary})` | Mapped |
+| Font family | `FluentThemeData.fontFamily`, which flows into `typography.body.fontFamily` | Mapped |
+| Text styles | Fluent `Typography` roles | Library default; the fork's type scale is not built from the token's roles |
+| Density | `VisualDensity` and per-control `ControlSize` | Control-level only (`FluentButtonBuilder` maps `ControlSize`); no token-driven global density is wired |
+| Focus appearance | `FocusThemeData` | Library default — verify against the resolved `fluent_ui` version before claiming token control |
+| Surface / background | `scaffoldBackgroundColor`, `cardColor`, `acrylicBackgroundColor`, `micaBackgroundColor`, `menuColor`, `resources` | Not token-mapped today; map a surface only when the token has an authoritative role for it |
+| Transparency | Acrylic / Mica surfaces | Effect-budget concern (§15), not a token mapping |
+| Motion | `AnimationDuration`/`AnimationCurve` on `AnimationFocusChangedBehavior`-style resources | Library defaults |
+
+The accent mapping deserves a note: Fluent's accent is a swatch of named shades, and
+its `dark`/`darker`/`light`/`lighter` getters fall back to `normal` when a shade is
+missing. Supplying only `normal` is therefore the faithful mapping — inventing tonal
+steps the token never declared is exactly the half-mapping §8.1 forbids.
 
 Avoid forcing all seven style libraries to use identical widget dimensions. The core tokens define shared design intent; the Fluent adapter translates that intent into the closest appropriate Fluent presentation.
 
@@ -329,21 +343,36 @@ Each control builder converts a core specification into a Fluent widget.
 
 ### Button
 
-- Map primary, secondary, subtle, and destructive intent to supported Fluent variants.
-- Preserve `onPressed`, enabled state, loading state, and accessibility labels.
+- Map primary, secondary, subtle, and destructive intent to supported Fluent variants (primary/danger → `fluent.FilledButton`, the rest → `fluent.Button`).
+- Press eligibility, loading spinner and label layout come from the shared seam, so a Fluent button cannot disagree with a token-rendered one (§2.3).
+- Preserve `onPressed`, enabled state, loading state, and accessibility labels, plus `focusNode`, `autofocus`, `expand` (a full-width wrap) and `tooltip` (the core's language-neutral `LiveTooltip`, since Fluent's own `TooltipButton` exists only on `Button` and choosing it would drop the filled variant).
 - Do not place business actions inside the adapter.
 - Use a shared fallback if a requested variant has no direct Fluent equivalent.
+- `iconOnly` needs no builder code: the shared `buttonLabel` returns the glyph alone
+  (with the tooltip as its `semanticLabel`), so a textless button built by
+  `LiveIconButton` arrives here already correct.
+- `selected` is **not mapped by this adapter today**. The token base tints a toggled
+  button with the primary foreground; reproducing that here needs this library's own
+  selected affordance rather than a hand-painted overlay on its button. Recorded as the
+  documented remainder of `docs/decisions/0004` (§15).
+- `style` is **not mapped by this adapter either**. Its button is the library's own
+  widget and paints its own surface; applying a caller's `Style` to it would mean
+  hand-painting an overlay over that widget, the trade this section already refuses
+  for `selected`. The shared token renderer does honour the field, so a language with
+  no native button keeps the override (`live-uikit.md` §11).
 
 ### Card
 
-- Prefer Fluent card visuals where they match the intended role.
-- Preserve content, padding, constraints, semantics, and click behavior.
+- Prefer Fluent card visuals where they match the intended role: `fluent.Card` with the token padding, the `dense` step, and an explicit `padding` override.
+- `selected` maps to the token primary background and `bordered` (or a selection) to the token border colour — the fork exposes both slots, so they are real, not approximations.
+- Preserve content, padding, and click behavior; an interactive card also gets the pointer cursor. `focusNode`/`autofocus` belong to controls, not to a surface, so the card has no slot for them (§15).
 - Do not assume every card is interactive.
 
 ### Text field
 
-- Use the native Fluent text input.
-- Preserve the supplied controller, focus node, callbacks, validation, enabled state, and text configuration.
+- Use the native Fluent text input (`fluent.TextBox`).
+- Preserve the supplied controller, focus node, callbacks, enabled/read-only/obscure state, `maxLines`, keyboard type and action, prefix/suffix, and the inline `Style`.
+- `errorText` has no Fluent slot on a bare `TextBox`: it draws the caption under the field in the token error colour, the same signal the token renderer sends (§15).
 - Do not create a second controller or silently own its lifecycle.
 - Respect text direction, keyboard type, and accessibility labels.
 
@@ -355,14 +384,15 @@ Each control builder converts a core specification into a Fluent widget.
 
 ### Checkbox
 
-- Use the native Fluent checkbox.
-- Preserve checked, unchecked, and indeterminate states if supported by the core contract.
-- Preserve disabled state and callback semantics.
+- Use the native Fluent checkbox, with the trailing label through the shared seam.
+- Preserve checked/unchecked; the core contract has no indeterminate state, so none is advertised.
+- Preserve disabled state and callback semantics: Fluent's callback is `bool?`, so the bridge closure exists only when the caller can be called back, and `focusNode`/`autofocus` pass to the fork.
 
 ### Slider
 
 - Use the native Fluent slider.
-- Preserve minimum, maximum, divisions, current value, and callbacks.
+- Preserve minimum, maximum, current value, and callbacks; a null callback or `enabled: false` disables.
+- The spec has no `divisions` field, so stepped behaviour is not invented here.
 - Handle invalid ranges according to the core validation contract.
 
 ### Control mapping rule
@@ -501,7 +531,39 @@ The adapter must:
 - Test long translated labels and right-to-left layouts.
 - Verify focus visibility, text contrast, and touch target sizing.
 
-If a Fluent control requires additional localization delegates, document that requirement and coordinate it through the application composition root. Do not independently override the global locale.
+### The Fluent delegate is required, not optional
+
+`fluent_ui` resolves its own `FluentLocalizations` type, which a host `MaterialApp`
+never supplies — the core localizer covers Flutter's global delegates only. Left out,
+a Fluent control throws "No FluentLocalizations found" the first time it builds, which
+is exactly what the §16 suites hit before this was wired. The package therefore exports
+the delegate and the composition root appends it:
+
+```dart
+const List<LocalizationsDelegate<dynamic>> fluentLocalizationsDelegates = [
+  fluent.FluentLocalizations.delegate,
+];
+
+MaterialApp(
+  localizationsDelegates: [
+    ...liveLocalizationsDelegates,
+    ...fluentLocalizationsDelegates,
+  ],
+  supportedLocales: /* the app's locale policy */,
+)
+```
+
+Rules:
+
+- Order matters: the core delegates come first so app-level strings keep priority and
+  Fluent supplies only its own internal strings; a test that swaps the order and still
+  resolves a core string is the check that holds this.
+- `live_uikit_fluent` must not install a delegate itself, wrap the app in a localization
+  widget, or override the global locale — that is the composition root's job.
+- `supportedLocales` must include a locale every active delegate covers; English is the
+  safe common denominator.
+- The adapter adds no `flutter_localizations` dependency of its own; the app supplies the
+  localizer and this package contributes only the delegate list.
 
 ## 15. Error handling and diagnostics
 
@@ -525,42 +587,33 @@ Expected behavior:
 
 ## 16. Testing strategy
 
+Three directories, one per concern: `test/adapter/` (contract), `test/theme/` (§8.1 mapping and the §8.3 re-skin), `test/widgets/` (§9 controls driven through a real `LiveConfigProvider` + `LiveUiResolver`, so the assertions are about the dispatch path and not a builder in isolation).
+
 ### Unit tests
 
-Test:
-
-- Stable adapter ID.
-- Capability declarations.
-- Brightness and accent-color mapping.
-- Font and density mapping.
-- Unsupported variant behavior.
-- Fallback behavior.
-- Theme invalidation when the resolved theme changes.
+- Stable adapter id `fluent`, display name, language, and `fluentUiCapabilities` truthfulness.
+- Brightness, accent and global-font mapping: `token.color.primary` becomes the `AccentColor.swatch` the fork reads, with its shade getters falling back to `normal` rather than invented tones (§8.1).
+- Theme invalidation: a token change re-skins through `wrap` without a restart.
+- Fallback behavior for every control this adapter does not override.
 
 ### Widget tests
 
-Test:
+- Button callback, disabled and loading gating, filled-vs-plain variant mapping, and `expand`/`tooltip`/`focusNode`/`autofocus` preserved.
+- Card tap, long-press, pointer cursor, padding, `dense`, explicit padding, and the selected/bordered mapping.
+- Text field controller and focus-node preservation, prefix/suffix, the error caption, and an inline `Style` override.
+- Switch value updates; checkbox null-callback disabling; slider range and disable-by-null.
+- Progress indeterminate, fraction→percent scaling, `strokeWidth` and the `barColor` tint.
+- Select typed items, and the shared fallback still rendering an unoverridden control.
+- Host shell: Fluent controls resolve their own `FluentLocalizations` and need an overlay, which the host app supplies through the appended delegates (§14).
 
-- Button callback and disabled state.
-- Text field controller and focus-node preservation.
-- Switch value updates.
-- Checkbox state transitions.
-- Slider range and callbacks.
-- Correct Fluent theme scope.
-- Accessibility semantics.
-- Layout under narrow and wide constraints.
+### Integration tests (`test/integration/fluent_style_switching_test.dart`)
 
-### Integration tests
+- Every `LiveUiControl` resolves as declared: eight `adapterNative` — including `select`, which Fluent is the only adapter here to render natively — and `segmented`/`tabBar` `shared` with `controlUnsupported`.
+- Fluent → core `material` → Fluent swaps `fluent.TextBox`/`ToggleSwitch`/`ComboBox<String>` for the SDK and token equivalents and back, with the caller's controller text intact.
+- `adapterMissing` fires for the core base only; while Fluent is active the only reports are `controlUnsupported` for `segmented` and `tabBar` — eight native controls declare no gap (§15.5).
+- Segmented stays callable on both sides of the switch, and the typed select path survives the swap (§16.7).
 
-Test:
-
-1. Register Fluent alongside at least one other adapter.
-2. Select Fluent at runtime.
-3. Render shared controls using the Fluent implementation.
-4. Change brightness and accent color without restarting the app.
-5. Switch from Fluent to another style and back.
-6. Confirm form values and business controllers remain intact.
-7. Confirm fallback behavior for a deliberately unsupported capability.
+A cross-adapter switch (this language against Fluent, Glass, …) is deliberately **not** tested from this package: §3.3 forbids depending on another style adapter, so that case belongs to the application integration suite. Brightness/accent re-skin is asserted in `test/theme/`.
 
 ### Platform verification
 
@@ -568,7 +621,10 @@ Before declaring support for a platform, test on the corresponding runtime. At m
 
 ## 17. CI and architectural enforcement
 
-Add checks to ensure that:
+These rules are enforced by `./tool/check_architecture.ps1`, which runs as a fatal
+gate in `.github/workflows/architecture.yml`. The script holds one adapter → widget-library
+map for the whole family, so the rules below are asserted once for every adapter rather than
+implemented per package:
 
 - `live_uikit_fluent` depends on `live_uikit`.
 - `live_uikit_fluent` does not depend on other style adapters.
@@ -576,6 +632,14 @@ Add checks to ensure that:
 - Business packages do not import `package:fluent_ui/fluent_ui.dart`.
 - All public exports are intentional.
 - The adapter's declared capabilities match tested implementations.
+- Every `package:fluent_ui/` import inside this package uses the `as fluent` prefix, in `lib/` and `test/`. The prefix is a package-wide rule (§3.3):
+  it keeps this library's types distinguishable from Flutter's own and from a sibling
+  adapter's, and it is what lets the architecture guard assert the convention.
+- The README's list of native controls is checked against `fluentUiCapabilities`: a control named in
+  prose but not declared, or declared but unmentioned, fails the gate.
+- §4's directory tree is checked against the package: every file the current-layout tree
+  names must exist, and every `test/**_test.dart` on disk must be named there. The
+  optional-modules block is exempt — those names must stay absent until built.
 - Formatting, static analysis, and tests pass.
 
 Example verification commands:
@@ -590,62 +654,71 @@ Run these from the workspace root with the repository's normal Flutter SDK and w
 
 ## 18. Implementation phases
 
-### Phase 1 — Contracts and registration
+### Phase 1 — Contracts and registration ✅
 
 - Align the adapter with the finalized core contract.
 - Define the stable ID and capability declarations.
 - Register Fluent from the application composition root.
 - Add a basic registration test.
 
-### Phase 2 — Theme integration
+### Phase 2 — Theme integration ✅
 
 - Implement theme mapping.
 - Add the Fluent theme scope.
 - Test brightness, accent color, typography, and density.
 - Verify runtime theme updates.
 
-### Phase 3 — Core controls
+### Phase 3 — Core controls ✅
 
-Implement and test:
+Eight native builders, each declared in `fluentUiCapabilities` and exercised through
+the real adapter path in `test/widgets/`:
 
-1. Button
-2. Card
-3. Text field
-4. Switch
-5. Checkbox
-6. Slider
-7. Text and icon mappings
+1. Button (`fluent.FilledButton` / `fluent.Button`)
+2. Card (`fluent.Card`)
+3. Text field (`fluent.TextBox`)
+4. Switch (`fluent.ToggleSwitch`)
+5. Checkbox (`fluent.Checkbox`)
+6. Slider (`fluent.Slider`)
+7. Progress (`fluent.ProgressBar`)
+8. Select (`fluent.ComboBox<T>`)
 
-### Phase 4 — Interaction and accessibility
+`segmented` and `tabBar` remain shared-renderer controls; promoting one means a
+builder, an override and a capability entry in the same change (§17 drift gate).
+There is no "text" or "icon" control in the contract to map — an earlier draft of this
+section listed both, and `LiveUiControl` has no such member.
 
+### Phase 4 — Interaction and accessibility ◐
+
+- Headless half done: focus nodes reach the fork buttons, checkbox and text field where `fluent_ui` accepts them, and a disabled control is wired dead rather than decorative.
+- Open, needs hardware: keyboard navigation and focus rings on a real Windows target, Android TV D-pad.
 - Verify keyboard navigation and focus behavior.
 - Test Android TV D-pad behavior.
 - Validate semantics and accessibility.
 - Add documented fallbacks for unsupported variants.
 
-### Phase 5 — Production readiness
+### Phase 5 — Production readiness ◐
 
-- Add integration tests for style switching.
-- Add architectural CI checks.
+- Architectural CI checks (§17) are enforced by `tool/check_architecture.ps1`.
+- Open: integration tests for style switching — a cross-adapter switch is an application-level concern, since §3.3 forbids adapter-to-adapter dependencies.
 - Verify all claimed platforms.
 - Document known limitations and upgrade compatibility.
 
 ## 19. Acceptance checklist
 
-- [ ] The package depends on `live_uikit` and `fluent_ui` only for its core integration.
-- [ ] It implements the actual core adapter contract.
-- [ ] It uses the stable adapter ID `fluent`.
-- [ ] It reports accurate control capabilities.
-- [ ] It maps the resolved core theme into Fluent theme values.
-- [ ] It uses native Fluent controls where supported.
-- [ ] It does not duplicate the core theme configuration.
-- [ ] It does not own business state or persistence.
-- [ ] It does not create a nested application shell unnecessarily.
-- [ ] Runtime switching preserves business state.
-- [ ] Keyboard, accessibility, and TV focus behavior are tested.
-- [ ] Unsupported features follow the core fallback policy.
-- [ ] Diagnostics use the shared core contract.
-- [ ] Tests and static analysis pass.
+- [x] The package depends on `live_uikit` and `fluent_ui` only for its core integration.
+- [x] It implements the actual core adapter contract.
+- [x] It uses the stable adapter ID `fluent`.
+- [x] It reports accurate control capabilities.
+- [x] It maps the resolved core theme into Fluent theme values.
+- [x] It uses native Fluent controls where supported.
+- [x] It does not duplicate the core theme configuration.
+- [x] It does not own business state or persistence.
+- [x] It does not create a nested application shell unnecessarily.
+- [x] Runtime switching preserves business state.
+- [ ] Keyboard, accessibility, and TV focus behavior are tested — the button's `focusNode`/`autofocus` and the field's node preservation are asserted (§16); the visible focus ring, D-pad traversal and Narrator behaviour need Windows hardware.
+- [x] Unsupported features follow the core fallback policy.
+- [x] Diagnostics use the shared core contract.
+- [x] Tests and static analysis pass.
 - [ ] Platform support claims are backed by actual tests.
 
 ## 20. Final architecture decision

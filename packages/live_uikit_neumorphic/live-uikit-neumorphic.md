@@ -109,9 +109,16 @@ packages/
     │           ├── neumorphic_switch_builder.dart
     │           ├── neumorphic_checkbox_builder.dart
     │           └── neumorphic_slider_builder.dart
+    ├── live-uikit-neumorphic.md
     └── test/
-        └── adapter/
-            └── neumorphic_ui_contract_test.dart
+        ├── adapter/
+        │   └── neumorphic_ui_contract_test.dart
+        ├── theme/
+        │   └── neumorphic_theme_test.dart
+        ├── widgets/
+        │   └── neumorphic_native_controls_test.dart
+        └── integration/
+            └── neumorphic_style_switching_test.dart
 ```
 
 The following modules are optional and not yet created; add them as their functionality is implemented rather than scaffolding empty files:
@@ -279,7 +286,7 @@ Neumorphic controls
 | Shadow depth | Per-control extrude/inset shape | Depth is the primary neumorphic cue; keep it legible when reduced |
 | Density / padding | Token-driven control padding | Do not assume every widget responds identically |
 
-`NeumorphicThemeBuilder.build(token)` currently derives `baseColor` from `token.color.bgLayout` and `accentColor` from `token.color.primary`, so a soft-embossed theme still tracks the app's brightness and accent.
+`NeumorphicThemeBuilder.build(token)` maps four properties: `baseColor` from `token.color.bgLayout`, `accentColor` from `token.color.primary`, `borderRadius` from `token.scale.radii.lg`, and `customShadowColor` from `token.color.shadowBase`. Brightness is tracked indirectly — `NeuThemeData` has no brightness field, and the soft surface follows whatever `bgLayout` the resolved algorithm produced, so a dark token yields a dark surface with light casting the same shadows. Depth, distance, curvature and intensity remain library defaults: they are the neumorphic signature, not colour intent, and no token names them.
 
 ### 8.2 Theme scope
 
@@ -309,19 +316,33 @@ Each control builder converts a core specification into a `flutter_neumorphic_ui
 - Press enabled-ness comes from the shared seam (`SharedLanguageAdapter.interactive`): enabled, not loading, has a callback.
 - Label, leading icon, and loading spinner come from `SharedLanguageAdapter.buttonLabel`.
 - Padding is token-driven (`theme.button.paddingInline`, `theme.token.scale.sizes.sm`).
+- `expand` wraps the button in `SizedBox(width: double.infinity)` and `tooltip` in the core's language-neutral `LiveTooltip`; `NeuButton` exposes neither slot, and its focus handling is internal, so `focusNode`/`autofocus` are recorded as unmappable (§15).
 - Do not place business actions inside the adapter.
+- `iconOnly` needs no builder code: the shared `buttonLabel` returns the glyph alone
+  (with the tooltip as its `semanticLabel`), so a textless button built by
+  `LiveIconButton` arrives here already correct.
+- `selected` is **not mapped by this adapter today**. The token base tints a toggled
+  button with the primary foreground; reproducing that here needs this library's own
+  selected affordance rather than a hand-painted overlay on its button. Recorded as the
+  documented remainder of `docs/decisions/0004` (§15).
+- `style` is **not mapped by this adapter either**. Its button is the library's own
+  widget and paints its own surface; applying a caller's `Style` to it would mean
+  hand-painting an overlay over that widget, the trade this section already refuses
+  for `selected`. The shared token renderer does honour the field, so a language with
+  no native button keeps the override (`live-uikit.md` §11).
 
 ### Card
 
 - Built by `NeumorphicCardBuilder` as a `NeuCard` — the soft surface is the card's identity.
-- Honors `dense` (tighter padding) and wraps content in a gesture layer only when `onTap` is present.
+- Honors `padding` from the spec, else the token padding with the `dense` step applied, and wraps content in a gesture layer only when `onTap` or `onLongPress` is present.
+- `selected` and `bordered` have no soft-surface equivalent — the card is its shadow, not a border or fill — so they are left to the fork's pressed state rather than faked with an outline (§15).
 - Preserve content, padding, and click semantics; do not assume every card is interactive.
 
 ### Text field
 
 - Built by `NeumorphicTextFieldBuilder` as a `NeuTextField`.
-- Passes the caller's `controller` and `focusNode` straight through; the field owns its controller when the spec supplies none.
-- Do not create a second controller or silently own its lifecycle.
+- Passes the caller's `controller`, `focusNode`, hint, error, obscuring, line count, keyboard type and action, leading/trailing slots, enable state and callbacks straight through; the field owns its controller when the spec supplies none. The inline `Style` layers onto the token body text.
+- Do not create a second controller or silently own its lifecycle. `readOnly` has no `NeuTextField` equivalent and is recorded as unmappable (§15) rather than emulated by dropping the callback, which would change what the field means.
 
 ### Switch
 
@@ -333,7 +354,7 @@ Each control builder converts a core specification into a `flutter_neumorphic_ui
 
 - Built by `NeumorphicCheckboxBuilder` as a `NeuCheckbox`.
 - The optional trailing label is applied through the shared seam (`SharedLanguageAdapter.labelled`).
-- Preserve checked/unchecked and disabled semantics; a null `onChanged` disables.
+- Preserve checked/unchecked and disabled semantics; a null `onChanged` (or `enabled: false`) reaches the fork as null, which is what renders the box disabled. The `bool?`→`bool` bridge closure exists only when the caller can be called back — a closure that swallowed the value would leave a live-looking control (§15).
 
 ### Slider
 
@@ -489,7 +510,7 @@ Expected behavior:
 
 ## 16. Testing strategy
 
-### Contract tests (present)
+### Contract tests (`test/adapter/neumorphic_ui_contract_test.dart`)
 
 `test/adapter/neumorphic_ui_contract_test.dart` verifies:
 
@@ -497,34 +518,37 @@ Expected behavior:
 - The capability set declares exactly the six native controls and none of the four fallback controls.
 - Through `LiveUiResolver` + `LanguageRegistry`: a registered language resolves to `adapterNative`; a declared control (`button`) resolves native with no diagnostic; an undeclared control (`segmented`) resolves to `shared` and reports `controlUnsupported`.
 
-### Additional unit tests
+### Theme tests (`test/theme/neumorphic_theme_test.dart`)
 
-Add as functionality grows:
+- Base surface, accent and radius follow the resolved token (§8.1), and a dark token
+  yields a different base surface than the light one (§8.3).
+- Toggling brightness re-skins through `wrap`, with no restart.
+- The native slider's rendering is asserted in `test/widgets/`; value clamping is proven
+  for the token renderer in the core suite, and nothing here yet pins the fork's own
+  clamping.
 
-- Base-color and accent mapping from the token.
-- Theme invalidation when the resolved token changes.
-- Slider clamp behavior and disabled-by-callback semantics.
+### Widget tests (`test/widgets/neumorphic_native_controls_test.dart`)
 
-### Widget tests
+- Button: `onPressed` fires when enabled, input is rejected while loading, and `expand`
+  plus `tooltip` wrap the control.
+- Text field: the caller's controller survives, the rest of the caller state passes
+  through, and the caller's `FocusNode` is the node that takes focus (§9/§16).
+- Switch, checkbox, slider: reporting the next value, a null callback disabling the
+  checkbox instead of faking one, and the card and slider rendering natively.
+- Card: `dense` and an explicit `padding` both reach the surface.
+- An unoverridden control still renders through the shared fallback.
 
-Add under `test/widgets/` as the builders stabilize:
+Not covered yet: accessibility semantics, layout under narrow versus wide constraints, and
+anything a `NeuTheme` scope decision needs on a real device — the hardware half §19 still
+keeps open.
 
-- Button callback and disabled/loading state.
-- Card interactive vs static wrapping.
-- Text field controller and focus-node preservation.
-- Switch and checkbox value updates.
-- Slider range and callbacks.
-- Correct `NeuTheme` scope and accessibility semantics.
+### Integration tests (`test/integration/neumorphic_style_switching_test.dart`)
 
-### Integration tests
+- Every `LiveUiControl` resolves as declared: six `adapterNative`, four `shared` with `controlUnsupported`.
+- Neumorphic → core `material` → Neumorphic swaps `neu.NeuButton`/`NeuCard`/`NeuTextField`/`NeuSwitch` for the token renderer and back, with the caller's controller text intact.
+- Segmented, shared in this language, stays callable on both sides (§16.7).
 
-1. Register Neumorphic alongside at least one other adapter.
-2. Select Neumorphic at runtime.
-3. Render shared controls through the Neumorphic implementation.
-4. Change brightness and accent color without restarting the app.
-5. Switch from Neumorphic to another style and back.
-6. Confirm form values and business controllers remain intact.
-7. Confirm the four fallback controls are reported, not silently changed.
+A cross-adapter switch (this language against Fluent, Glass, …) is deliberately **not** tested from this package: §3.3 forbids depending on another style adapter, so that case belongs to the application integration suite. Brightness/accent re-skin is asserted in `test/theme/`.
 
 ### Platform verification
 
@@ -532,7 +556,10 @@ Before declaring a platform supported, test on the corresponding runtime. Becaus
 
 ## 17. CI and architectural enforcement
 
-Add checks to ensure that:
+These rules are enforced by `./tool/check_architecture.ps1`, which runs as a fatal
+gate in `.github/workflows/architecture.yml`. The script holds one adapter → widget-library
+map for the whole family, so the rules below are asserted once for every adapter rather than
+implemented per package:
 
 - `live_uikit_neumorphic` depends on `live_uikit` and `flutter_neumorphic_ui_kit`.
 - `live_uikit_neumorphic` does not depend on other style adapters.
@@ -540,6 +567,14 @@ Add checks to ensure that:
 - Business packages do not import `package:flutter_neumorphic_ui_kit/...`.
 - All public exports are intentional (registration only).
 - The declared capabilities match the methods actually overridden (already asserted by the contract test).
+- Every `package:flutter_neumorphic_ui_kit/` import inside this package uses the `as neu` prefix, in `lib/` and `test/`. The prefix is a package-wide rule (§3.3):
+  it keeps this library's types distinguishable from Flutter's own and from a sibling
+  adapter's, and it is what lets the architecture guard assert the convention.
+- The README's list of native controls is checked against `neumorphicUiCapabilities`: a control named in
+  prose but not declared, or declared but unmentioned, fails the gate.
+- §4's directory tree is checked against the package: every file the current-layout tree
+  names must exist, and every `test/**_test.dart` on disk must be named there. The
+  optional-modules block is exempt — those names must stay absent until built.
 - Formatting, static analysis, and tests pass.
 
 Example verification commands, run from the workspace root:
@@ -552,19 +587,19 @@ flutter test packages/live_uikit_neumorphic
 
 ## 18. Implementation phases
 
-### Phase 1 — Contracts and registration (done)
+### Phase 1 — Contracts and registration ✅
 
 - Adapter aligned with the finalized core contract.
 - Stable id, display name, language, and capability set defined.
 - Registration API (`createNeumorphicUiAdapter`, `neumorphicUiAdapter`, `neumorphicUiAdapterId`) exported.
 - Contract and resolution tests in place.
 
-### Phase 2 — Theme integration
+### Phase 2 — Theme integration ✅
 
 - `NeumorphicThemeMapper`, `NeumorphicThemeBuilder`, and `NeumorphicThemeScope` wired through `wrap`.
 - Verify brightness/accent tracking and runtime theme updates.
 
-### Phase 3 — Core controls (native set)
+### Phase 3 — Core controls ✅ (native set)
 
 Implemented and behind the builders:
 
@@ -577,37 +612,39 @@ Implemented and behind the builders:
 
 Add widget tests as each builder matures.
 
-### Phase 4 — Interaction and accessibility
+### Phase 4 — Interaction and accessibility ◐
 
+- Headless half done: caller state, callbacks and the spec fields the library carries are asserted in `test/widgets/`.
+- Open, needs hardware: focus visibility on soft surfaces and Android TV D-pad.
 - Add the optional `interaction/` module for keyboard, focus, and TV mapping.
 - Test Android TV D-pad behavior and focus visibility on soft surfaces.
 - Validate contrast and semantics.
 - Document the `unsupportedEffect` degradation for shadow-heavy surfaces.
 
-### Phase 5 — Production readiness
+### Phase 5 — Production readiness ◐
 
-- Integration tests for style switching.
-- Architectural CI checks.
+- Architectural CI checks (§17) are enforced by `tool/check_architecture.ps1`.
+- Open: integration tests for style switching.
 - Verify all claimed platforms, including the low-power/TV shadow-degradation path.
 - Document known limitations and upgrade compatibility.
 
 ## 19. Acceptance checklist
 
-- [ ] The package depends on `live_uikit` and `flutter_neumorphic_ui_kit` only for its core integration.
-- [ ] It extends `SharedLanguageAdapter` and implements the real `LanguageAdapter` contract.
-- [ ] It uses the stable adapter id `neumorphic` with `displayName` `Neumorphic`.
-- [ ] It declares exactly six native controls (`button`, `card`, `textField`, `switchWidget`, `checkbox`, `slider`).
-- [ ] `segmented`, `progress`, `select`, `tabBar` fall back to the shared renderer and are reported via `controlUnsupported`.
-- [ ] It maps the resolved `DesignToken` into `NeuThemeData` and applies it through `wrap`.
-- [ ] It does not duplicate the core theme configuration.
-- [ ] It does not own business state or persistence.
-- [ ] It exports only the registration API and adds no localization delegates.
-- [ ] It does not create a nested application shell unnecessarily.
-- [ ] Runtime switching preserves business state.
-- [ ] Neumorphic surfaces degrade acceptably when shadows cannot be afforded (`unsupportedEffect`).
-- [ ] Keyboard, accessibility, and TV focus behavior are tested.
-- [ ] Diagnostics use the shared core contract and sink.
-- [ ] Tests and static analysis pass.
+- [x] The package depends on `live_uikit` and `flutter_neumorphic_ui_kit` only for its core integration.
+- [x] It extends `SharedLanguageAdapter` and implements the real `LanguageAdapter` contract.
+- [x] It uses the stable adapter id `neumorphic` with `displayName` `Neumorphic`.
+- [x] It declares exactly six native controls (`button`, `card`, `textField`, `switchWidget`, `checkbox`, `slider`).
+- [x] `segmented`, `progress`, `select`, `tabBar` fall back to the shared renderer and are reported via `controlUnsupported`.
+- [x] It maps the resolved `DesignToken` into `NeuThemeData` and applies it through `wrap`.
+- [x] It does not duplicate the core theme configuration.
+- [x] It does not own business state or persistence.
+- [x] It exports only the registration API and adds no localization delegates.
+- [x] It does not create a nested application shell unnecessarily.
+- [x] Runtime switching preserves business state.
+- [x] Neumorphic surfaces degrade acceptably when shadows cannot be afforded (`unsupportedEffect`).
+- [ ] Keyboard, accessibility, and TV focus behavior are tested — a caller's `FocusNode` reaching the fork's field focus tree is (§16); the shadow surface's focus visibility, D-pad traversal and screen-reader announcements need hardware.
+- [x] Diagnostics use the shared core contract and sink.
+- [x] Tests and static analysis pass.
 - [ ] Platform support claims are backed by actual tests.
 
 ## 20. Final architecture decision

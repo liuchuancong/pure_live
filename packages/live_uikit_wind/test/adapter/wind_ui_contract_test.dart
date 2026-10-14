@@ -11,10 +11,14 @@ import 'package:live_uikit_wind/live_uikit_wind.dart';
 void main() {
   const adapter = windUiAdapter;
 
-  const native = {LiveUiControl.button, LiveUiControl.switchWidget, LiveUiControl.checkbox};
-  const fallback = {
+  const native = {
+    LiveUiControl.button,
     LiveUiControl.card,
     LiveUiControl.textField,
+    LiveUiControl.switchWidget,
+    LiveUiControl.checkbox,
+  };
+  const fallback = {
     LiveUiControl.slider,
     LiveUiControl.segmented,
     LiveUiControl.progress,
@@ -55,10 +59,10 @@ void main() {
     });
 
     test('an undeclared control falls back to shared and is reported', () {
-      final result = resolver.resolveControl(LiveDesignLanguage.wind, LiveUiControl.textField);
+      final result = resolver.resolveControl(LiveDesignLanguage.wind, LiveUiControl.slider);
       expect(result.implementation.kind, LiveImplementationKind.shared);
       expect(result.diagnostic?.code, LiveUiDiagnosticCode.controlUnsupported);
-      expect(result.diagnostic?.control, LiveUiControl.textField);
+      expect(result.diagnostic?.control, LiveUiControl.slider);
     });
   });
 }

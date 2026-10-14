@@ -80,12 +80,11 @@ final class _Snapshot {
 /// The Twitch adapter: manifest + capability discovery + lifecycle
 /// (ARCHITECTURE.md §7.2).
 ///
-/// Every request is anonymous except the playback access token, which carries
-/// the stored session when there is one and is asked again without it when
-/// Twitch refuses that session (HTTP 401 or an integrity challenge); the
-/// refused cookie is not sent again until it changes. Names come back in
-/// Chinese (`Accept-Language: zh-CN`), with one English retry for the tags
-/// Twitch has no Chinese name for.
+/// **Twitch.** Every request is anonymous except the playback access token,
+/// which carries the stored session when there is one and is asked again
+/// without it when Twitch refuses that session (HTTP 401 or an integrity
+/// challenge); the refused cookie is not sent again until it changes. Names
+/// come back in the web client's own language (`accept-language: en-US,en`).
 ///
 /// **Lists.** An area's streams are fetched 100 at a time, the site's busiest
 /// streams 30 at a time (the most Twitch gives); pages of any size are cut
@@ -329,8 +328,7 @@ final class TwitchSite implements LiveSite {
   /// the pages they have (an anonymous client is asked for an integrity token
   /// there).
   Future<List<LiveArea>> categories() async {
-    var tags = TwitchRoomParser.tags(await gql(TwitchEndpoints.tagsOperation(), what: 'SearchCategoryTags'));
-    if (tags.any((tag) => tag.name.isEmpty)) tags = await _namedTags(tags);
+    final tags = TwitchRoomParser.tags(await gql(TwitchEndpoints.tagsOperation(), what: 'SearchCategoryTags'));
     final areas = {for (final tag in tags) tag.id: <LiveArea>[]};
     final seen = <String>{};
     var pages = [for (final tag in tags) (tag: tag, cursor: null as String?)];
@@ -355,21 +353,6 @@ final class TwitchSite implements LiveSite {
             if (area.shortName case final slug? when slug.isNotEmpty) MapEntry(area.areaId, slug),
       ]);
     return [for (final tag in tags) ...areas[tag.id]!];
-  }
-
-  /// [tags] with English names for those without a Chinese one. The names are
-  /// cosmetic: when that request fails the tags keep their empty names.
-  Future<List<TwitchTag>> _namedTags(List<TwitchTag> tags) async {
-    try {
-      final english = await gql(
-        TwitchEndpoints.tagsOperation(),
-        what: 'SearchCategoryTags (en)',
-        language: TwitchEndpoints.englishLanguage,
-      );
-      return TwitchRoomParser.namedTags(tags, TwitchRoomParser.tags(english));
-    } on TwitchFailure {
-      return tags;
-    }
   }
 
   /// One page of directories for each of [pages], in batches of at most 35

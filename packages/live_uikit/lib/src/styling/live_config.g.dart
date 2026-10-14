@@ -7,17 +7,11 @@ part of 'live_config.dart';
 // **************************************************************************
 
 _UiConfig _$UiConfigFromJson(Map<String, dynamic> json) => _UiConfig(
-  language:
-      $enumDecodeNullable(_$LiveDesignLanguageEnumMap, json['language']) ??
-      LiveDesignLanguage.material,
-  brightness:
-      $enumDecodeNullable(_$UiBrightnessModeEnumMap, json['brightness']) ??
-      UiBrightnessMode.system,
+  language: $enumDecodeNullable(_$LiveDesignLanguageEnumMap, json['language']) ?? LiveDesignLanguage.material,
+  brightness: $enumDecodeNullable(_$UiBrightnessModeEnumMap, json['brightness']) ?? UiBrightnessMode.system,
   accent: const ColorConverter().fromJson((json['accent'] as num?)?.toInt()),
   pureBlack: json['pureBlack'] as bool? ?? false,
-  density:
-      $enumDecodeNullable(_$UiDensityEnumMap, json['density']) ??
-      UiDensity.comfortable,
+  density: $enumDecodeNullable(_$UiDensityEnumMap, json['density']) ?? UiDensity.comfortable,
   fontFamily: json['fontFamily'] as String?,
   fontScale: (json['fontScale'] as num?)?.toDouble() ?? 1.0,
   transparency: (json['transparency'] as num?)?.toDouble() ?? 1.0,

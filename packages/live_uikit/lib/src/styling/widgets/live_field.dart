@@ -97,21 +97,41 @@ class _TokenTextFieldState extends State<TokenTextField> {
       ),
     );
 
-    final box = MouseRegion(
+    // The field's own surface, with the caller's inline style layered over it —
+    // the same cascade `LiveBox` applies, so a `style:` on a field wins over the
+    // component token exactly where it names something (§11). Blur is a `LiveBox`
+    // effect and is not painted here; a field has no frosted state in the token
+    // model.
+    final surface = Style(
+      padding: EdgeInsets.symmetric(horizontal: input.paddingInline),
+      background: input.background,
+      borderRadius: radius,
+      borderColor: borderColor,
+      borderWidth: theme.token.motion.lineWidth,
+    ).merge(spec.style);
+    final singleLineHeight = spec.maxLines == 1 && !spec.obscure ? input.height : null;
+
+    Widget box = MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: AnimatedContainer(
         duration: theme.duration,
-        padding: EdgeInsets.symmetric(horizontal: input.paddingInline),
-        constraints: spec.maxLines == 1 && !spec.obscure ? BoxConstraints(minHeight: input.height) : null,
-        decoration: BoxDecoration(
-          color: input.background,
-          borderRadius: radius,
-          border: Border.all(color: borderColor, width: theme.token.motion.lineWidth),
+        padding: surface.padding,
+        margin: surface.margin,
+        alignment: surface.alignment,
+        constraints: BoxConstraints(
+          minWidth: surface.minWidth ?? 0,
+          minHeight: surface.minHeight ?? singleLineHeight ?? 0,
+          maxWidth: surface.maxWidth ?? double.infinity,
         ),
+        decoration: surface.toDecoration(),
         child: Align(alignment: Alignment.centerLeft, child: field),
       ),
     );
+
+    if (surface.opacity case final opacity? when opacity < 1) {
+      box = Opacity(opacity: opacity, child: box);
+    }
 
     final error = spec.errorText;
     if (error == null) {

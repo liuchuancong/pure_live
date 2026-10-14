@@ -30,8 +30,7 @@ typedef TwitchAccessToken = ({String value, String signature});
 /// accessors in [TwitchJson] read both as empty rather than failing.
 abstract final class TwitchRoomParser {
   /// `SearchCategoryTags`: every tag in the server's order, named by `tagName`
-  /// (`localizedName` only when that is empty; a tag with neither keeps its
-  /// empty name — see [namedTags]).
+  /// (`localizedName` only when that is empty).
   static List<TwitchTag> tags(Object? decoded) {
     final list = TwitchJson.data(decoded, 'SearchCategoryTags')['searchCategoryTags'];
     if (list is! List) throw const TwitchFailure(TwitchFailureKind.apiChanged, 'SearchCategoryTags: no list');
@@ -40,17 +39,6 @@ abstract final class TwitchRoomParser {
         if (TwitchJson.object(tag) case final item?)
           if (TwitchJson.stringOf(item['id']) case final id?)
             (id: id, name: TwitchJson.stringOf(item['tagName']) ?? TwitchJson.stringOf(item['localizedName']) ?? ''),
-    ];
-  }
-
-  /// [tags] with each empty name taken from [fallback] (the same tags asked
-  /// for in English): Twitch has no Chinese name for some tags ("Gambling").
-  /// A tag [fallback] cannot name keeps its empty name.
-  static List<TwitchTag> namedTags(List<TwitchTag> tags, List<TwitchTag> fallback) {
-    final names = {for (final tag in fallback) tag.id: tag.name};
-    return [
-      for (final tag in tags)
-        if (tag.name.isNotEmpty) tag else (id: tag.id, name: names[tag.id] ?? ''),
     ];
   }
 
@@ -298,8 +286,8 @@ abstract final class TwitchRoomParser {
   /// parsers hand over both shapes).
   static Map<String, dynamic>? _node(Map<String, dynamic> edge) => TwitchJson.object(edge['node']) ?? edge;
 
-  /// A game's (directory's) name in the requested language: `displayName`
-  /// (Chinese under `Accept-Language: zh-CN`), its `name` when there is none.
+  /// A game's (directory's) name as the client's language names it:
+  /// `displayName`, its `name` when there is none.
   static String gameName(Map<String, dynamic> game) {
     final display = TwitchJson.textOf(game['displayName']);
     return display.isNotEmpty ? display : TwitchJson.textOf(game['name']);

@@ -1,0 +1,125 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:forui/forui.dart' as forui;
+import 'package:live_uikit/styling.dart';
+import 'package:live_uikit_forui/live_uikit_forui.dart';
+
+/// §16 integration pass for `live_uikit_forui`: the five controls forui actually serves
+/// resolve native, the other five resolve shared and are reported, and switching to the
+/// core token base and back must not cost the caller its controller or its field state
+/// (§11).
+const Set<LiveUiControl> _fallbackControls = {
+  LiveUiControl.slider,
+  LiveUiControl.segmented,
+  LiveUiControl.progress,
+  LiveUiControl.select,
+  LiveUiControl.tabBar,
+};
+
+/// The downgrades this language is expected to report: every control the adapter does not
+/// declare, each exactly once per language change (§15.5/§16.8).
+void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
+  expect(sink.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
+  expect(sink.map((diagnostic) => diagnostic.control).toSet(), _fallbackControls);
+  expect(sink, hasLength(_fallbackControls.length));
+}
+
+void main() {
+  const registry = LanguageRegistry(
+    adapters: {LiveDesignLanguage.forui: foruiUiAdapter},
+    fallback: SharedLanguageAdapter(),
+  );
+  const resolver = LiveUiResolver(registry: registry);
+  const nativeControls = {
+    LiveUiControl.button,
+    LiveUiControl.card,
+    LiveUiControl.textField,
+    LiveUiControl.switchWidget,
+    LiveUiControl.checkbox,
+  };
+
+  Widget harness(UiConfig ui, Widget child, List<LiveUiDiagnostic> sink) => LiveConfigProvider(
+    config: ui,
+    registry: registry,
+    diagnostics: sink.add,
+    child: MaterialApp(
+      localizationsDelegates: const [...liveLocalizationsDelegates, ...foruiLocalizationsDelegates],
+      supportedLocales: const [Locale('en')],
+      home: Scaffold(body: Center(child: child)),
+    ),
+  );
+
+  test('the five declared controls resolve native, the rest shared (§16.3)', () {
+    for (final control in LiveUiControl.values) {
+      final native = nativeControls.contains(control);
+      final resolution = resolver.resolveControl(LiveDesignLanguage.forui, control);
+      expect(
+        resolution.implementation.kind,
+        native ? LiveImplementationKind.adapterNative : LiveImplementationKind.shared,
+        reason: '$control',
+      );
+      expect(
+        resolution.diagnostic?.code,
+        native ? isNull : LiveUiDiagnosticCode.controlUnsupported,
+        reason: '$control',
+      );
+    }
+  });
+
+  testWidgets('ForUI ↔ core material swaps the path, not the state (§11)', (tester) async {
+    final diagnostics = <LiveUiDiagnostic>[];
+    final controller = TextEditingController(text: 'typed before the switch');
+    addTearDown(controller.dispose);
+
+    Widget page() => Column(
+      children: [
+        LiveButton(label: 'Save', onPressed: () {}),
+        const LiveCard(child: Text('card body')),
+        LiveTextField(controller: controller),
+        LiveSwitch(value: true, onChanged: (_) {}),
+        const LiveProgress(value: 0.5),
+      ],
+    );
+
+    await tester.pumpWidget(harness(const UiConfig(language: LiveDesignLanguage.forui), page(), diagnostics));
+    expect(find.byType(forui.FButton), findsOneWidget);
+    expect(find.byType(forui.FCard), findsOneWidget);
+    expect(find.byType(forui.FTextField), findsOneWidget);
+    expect(find.byType(forui.FSwitch), findsOneWidget);
+    expect(find.byType(TokenSlider), findsNothing);
+    expectUndeclaredControls(diagnostics);
+
+    // `UiConfig()` defaults to the core `material` token base.
+    await tester.pumpWidget(harness(const UiConfig(), page(), diagnostics));
+    expect(find.byType(forui.FTextField), findsNothing);
+    expect(find.byType(forui.FCard), findsNothing);
+    expect(controller.text, 'typed before the switch');
+    expect(
+      diagnostics.map((diagnostic) => diagnostic.code),
+      contains(LiveUiDiagnosticCode.adapterMissing),
+      reason: 'the core base has no adapter of its own, so the gap is reported',
+    );
+
+    diagnostics.clear();
+    await tester.pumpWidget(harness(const UiConfig(language: LiveDesignLanguage.forui), page(), diagnostics));
+    expect(find.byType(forui.FTextField), findsOneWidget);
+    expect(controller.text, 'typed before the switch');
+    expectUndeclaredControls(diagnostics);
+    // Progress stays a shared-fallback control and keeps rendering on both sides.
+    expect(find.byType(LiveProgress), findsOneWidget);
+  });
+
+  testWidgets('a shared-fallback control stays on-theme inside the forui scope (§15.3)', (tester) async {
+    final diagnostics = <LiveUiDiagnostic>[];
+    await tester.pumpWidget(
+      harness(
+        const UiConfig(language: LiveDesignLanguage.forui),
+        const LiveSlider(value: 0.25, onChanged: null),
+        diagnostics,
+      ),
+    );
+    expect(find.byType(forui.FSlider), findsNothing);
+    expect(find.byType(TokenSlider), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+}

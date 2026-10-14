@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_socket.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
@@ -12,8 +13,7 @@ import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/twitch/danmaku/twitch_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/twitch/parsers/twitch_failure.dart';
 import 'package:live_sites/src/platforms/twitch/twitch_site.dart';
-import 'package:web_socket_channel/io.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:live_websocket/live_websocket.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -97,10 +97,10 @@ final class TwitchDanmakuProvider implements LiveDanmakuProvider {
 ///   its announcement only: a subscription waits up to
 ///   [TwitchDanmakuCodec.communityGiftWait] for that announcement and is left
 ///   out once it comes; one whose announcement never comes is shown.
-/// - Protocol recovery: a socket that errors, closes or stays silent is
-///   replaced (the generation counted, so a stale socket's frames are
-///   dropped); after [TwitchDanmakuCodec.maxReconnectAttempts] failed reconnects
-///   a terminal system message closes [events] instead of retrying forever.
+/// - Transport recovery is [DanmakuSocket]'s: a socket that errors, closes or
+///   stays silent reconnects (the join lines going out again per connection)
+///   up to [TwitchDanmakuCodec.maxReconnectAttempts] times, and a terminal
+///   system message then closes [events] instead of retrying forever.
 final class TwitchDanmakuSession implements LiveDanmakuSession {
   /// A session for the channel in [args]; [connect] opens the socket. [random]
   /// draws the anonymous nick.
@@ -117,21 +117,37 @@ final class TwitchDanmakuSession implements LiveDanmakuSession {
   /// How many reconnects in a row may fail before the session is abandoned.
   static const int maxReconnectAttempts = TwitchDanmakuCodec.maxReconnectAttempts;
 
+  /// The handshake budget of one attempt.
+  static const Duration _connectTimeout = Duration(seconds: 10);
+
+  /// The socket settings of one connection: reconnects grow from a second to
+  /// [TwitchDanmakuCodec.reconnectStepCap] so a flapping edge is not hammered,
+  /// and the `PING` beat doubles as the silence watchdog.
+  WebSocketConfig _transport() => WebSocketConfig(
+    connectTimeout: _connectTimeout,
+    reconnectPolicy: const ReconnectPolicy(
+      maxAttempts: maxReconnectAttempts,
+      initialDelay: Duration(seconds: 1),
+      maxDelay: TwitchDanmakuCodec.reconnectStepCap,
+    ),
+    heartbeat: HeartbeatConfig(
+      interval: TwitchDanmakuCodec.heartbeatInterval,
+      // The beat starts once the channel is joined: Twitch confirms nothing,
+      // so joining is the handshake's `JOIN`, not the open.
+      payload: () => _joined ? TwitchDanmakuCodec.heartbeat : null,
+      timeout: TwitchDanmakuCodec.inactivityTimeout,
+    ),
+  );
+
   final Random _random;
   final DateTime Function() _now;
   final _events = StreamController<LiveMessage>.broadcast();
   late final _CommunityGifts _gifts = _CommunityGifts(_report);
 
   ({String login, String token})? _chat;
-  WebSocketChannel? _socket;
-  StreamSubscription<dynamic>? _subscription;
-  Timer? _heartbeat;
-  Timer? _watchdog;
-  int _generation = 0;
+  DanmakuSocket? _socket;
   bool _disposed = false;
   bool _joined = false;
-  bool _reconnecting = false;
-  int _reconnectFailures = 0;
   DateTime? _lastSwitch;
 
   @override
@@ -148,48 +164,43 @@ final class TwitchDanmakuSession implements LiveDanmakuSession {
       return const LiveSiteError.notFound(siteId: 'twitch', message: 'twitch channel login is missing');
     }
     _chat ??= args.chat;
-    final generation = ++_generation;
-    _joined = false;
-    await _teardownSocket();
-    final WebSocketChannel channel;
-    try {
-      channel = IOWebSocketChannel.connect(TwitchDanmakuCodec.endpoint);
-      await channel.ready.timeout(_connectTimeout);
-    } on Object catch (error) {
-      return LiveSiteError.network(siteId: 'twitch', message: 'danmaku connect failed: $error', cause: error);
-    }
-    _socket = channel;
-    _subscription = channel.stream.listen(
-      (data) {
-        if (generation != _generation || _disposed) return;
-        _onData(data);
-      },
-      onDone: () => _scheduleReconnect(generation, 'socket closed'),
-      onError: (Object error) => _scheduleReconnect(generation, 'socket error: $error'),
-    );
-    _send(TwitchDanmakuCodec.join(args.channel, random: _random, chat: _chat));
-    // Twitch confirms nothing: an open socket that joined is joined.
-    _joined = true;
-    _startHeartbeat();
-    _startWatchdog();
-    return null;
+    return await _open();
   }
 
-  static const Duration _connectTimeout = Duration(seconds: 10);
+  /// Opens one connection and joins the channel on it.
+  Future<LiveSiteError?> _open() async {
+    await _teardownSocket();
+    _joined = false;
+    final socket = DanmakuSocket(
+      uri: TwitchDanmakuCodec.endpoint,
+      config: _transport(),
+      onHandshake: _join,
+      onFrame: _onData,
+      onLost: _terminate,
+    );
+    _socket = socket;
+    if (await socket.start()) return null;
+    return LiveSiteError.network(siteId: 'twitch', message: 'danmaku connect failed on ${socket.uri}');
+  }
+
+  /// The IRC login and join of one connection: Twitch confirms nothing, so an
+  /// open socket that joined is joined.
+  void _join(DanmakuSocket socket) {
+    _send(TwitchDanmakuCodec.join(args.channel, random: _random, chat: _chat));
+    _joined = true;
+  }
 
   void _report(LiveMessage message) {
     if (!_disposed) _events.add(message);
   }
 
-  void _onData(Object? data) {
+  void _onData(Object data) {
     final text = switch (data) {
       final String text => text,
       final List<int> bytes => utf8.decode(bytes, allowMalformed: true),
       _ => null,
     };
     if (text == null) return;
-    _reconnectFailures = 0;
-    _startWatchdog();
     final frame = TwitchDanmakuCodec.decode(text);
     _send(frame.replies);
     for (final message in frame.messages) {
@@ -211,88 +222,50 @@ final class TwitchDanmakuSession implements LiveDanmakuSession {
     if (_chat == null || _disposed) return false;
     _chat = null;
     _events.add(TwitchDanmakuCodec.cookieExpiredNotice());
-    unawaited(_reopen(quiet: true));
+    unawaited(_reopen());
     return true;
   }
 
   /// Replaces the socket the server is about to drop (`RECONNECT`) with the
-  /// same login; within [switchInterval] of the last switch it reconnects the
-  /// ordinary way instead, so a server that keeps asking cannot drive a tight
-  /// loop.
+  /// same login; within [switchInterval] of the last switch it lets the
+  /// transport's own reconnect run instead, so a server that keeps asking
+  /// cannot drive a tight loop.
   void _switch() {
     final last = _lastSwitch;
     if (last != null && _now().difference(last).abs() < switchInterval) {
-      _scheduleReconnect(_generation, 'server asked to reconnect');
+      // A server that keeps asking: wait a full interval before reopening, so
+      // the switch cannot turn into a tight loop.
+      unawaited(Future<void>.delayed(switchInterval, _reopen));
       return;
     }
     _lastSwitch = _now();
-    unawaited(_reopen(quiet: true));
+    unawaited(_reopen());
   }
 
   /// Closes the current socket and opens a new one without a lost-connection
   /// notice (both paths above: the refused login and `RECONNECT`). A failed
-  /// reopen falls back to the ordinary reconnect path.
-  Future<void> _reopen({required bool quiet}) async {
+  /// reopen is reported the ordinary way.
+  Future<void> _reopen() async {
     if (_disposed) return;
-    final generation = _generation;
-    await _teardownSocket();
-    final failure = await connect();
-    if (failure == null || _disposed || generation != _generation) return;
-    _reconnectFailures++;
-    if (_reconnectFailures >= maxReconnectAttempts) _terminate(failure.message);
+    final failure = await _open();
+    if (failure != null) _terminate(failure.message);
   }
 
   void _send(Iterable<String> lines) {
-    final sink = _socket?.sink;
-    if (sink == null) return;
+    final socket = _socket;
+    if (socket == null) return;
     for (final line in lines) {
-      try {
-        sink.add(line);
-      } on Object {
-        // The reconnect path owns a broken sink.
-      }
+      socket.send(line);
     }
   }
 
-  void _startHeartbeat() {
-    _heartbeat?.cancel();
-    _heartbeat = Timer.periodic(TwitchDanmakuCodec.heartbeatInterval, (_) {
-      if (_joined && !_disposed) _send([TwitchDanmakuCodec.heartbeat]);
-    });
-  }
-
-  void _startWatchdog() {
-    _watchdog?.cancel();
-    _watchdog = Timer(TwitchDanmakuCodec.inactivityTimeout, () {
-      if (!_disposed) _scheduleReconnect(_generation, 'socket silent');
-    });
-  }
-
-  void _scheduleReconnect(int staleGeneration, String reason) {
-    if (_disposed || staleGeneration != _generation || _reconnecting) return;
-    _reconnecting = true;
-    unawaited(() async {
-      final backoff = Duration(seconds: _reconnectFailures + 1);
-      await Future<void>.delayed(backoff);
-      if (_disposed || staleGeneration != _generation) {
-        _reconnecting = false;
-        return;
-      }
-      final failure = await connect();
-      _reconnecting = false;
-      if (failure == null) return;
-      _reconnectFailures++;
-      if (_reconnectFailures >= maxReconnectAttempts) _terminate('$reason: ${failure.message}');
-    }());
-  }
-
-  void _terminate(String reason) {
-    _generation++;
+  void _terminate(String cause) {
+    if (_disposed) return;
     _joined = false;
     _events.add(
       LiveMessage.normalized(
         type: LiveMessageType.system,
-        text: 'Danmaku connection lost ($reason)',
+        text: 'Danmaku connection lost ($cause)',
         color: LiveMessageColor.white,
       ),
     );
@@ -301,33 +274,19 @@ final class TwitchDanmakuSession implements LiveDanmakuSession {
   }
 
   Future<void> _teardownSocket() async {
-    _heartbeat?.cancel();
-    _heartbeat = null;
-    _watchdog?.cancel();
-    _watchdog = null;
-    await _subscription?.cancel();
-    _subscription = null;
-    try {
-      await _socket?.sink.close();
-    } on Object {
-      // Closing a dead socket must not throw.
-    }
+    _joined = false;
+    final socket = _socket;
     _socket = null;
+    await socket?.stop();
   }
 
   @override
-  Future<void> disconnect() async {
-    _generation++;
-    _joined = false;
-    await _teardownSocket();
-  }
+  Future<void> disconnect() => _teardownSocket();
 
   @override
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
-    _generation++;
-    _joined = false;
     _gifts.dispose();
     await _teardownSocket();
     unawaited(_events.close());

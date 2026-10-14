@@ -108,9 +108,16 @@ packages/
     │           ├── macos_text_field_builder.dart
     │           ├── macos_checkbox_builder.dart
     │           └── macos_slider_builder.dart
+    ├── live-uikit-macos.md
     └── test/
-        └── adapter/
-            └── macos_ui_contract_test.dart
+        ├── adapter/
+        │   └── macos_ui_contract_test.dart
+        ├── theme/
+        │   └── macos_theme_test.dart
+        ├── widgets/
+        │   └── macos_native_controls_test.dart
+        └── integration/
+            └── macos_style_switching_test.dart
 ```
 
 Note the naming conventions in this package: the theme modules are prefixed `macos_` (not `macos_ui_`), while the adapter modules are prefixed `macos_ui_`. Keep the builder set limited to the four native controls; a builder for a shared-fallback control must not be added unless that control is promoted to native and registered in `macosUiCapabilities`.
@@ -320,17 +327,22 @@ macos_ui themed controls
 
 ### 8.1 Theme properties to map
 
-| Core theme property | macOS mapping | Notes |
+`MacosThemeBuilder.build` maps three properties today. The remaining rows are the
+properties `macos_ui` can in principle carry but which this adapter deliberately does
+not wire, because the fork's equivalents are fixed-typed or per-control — §8.1 forbids
+half-mapping them into the token and calling it a theme.
+
+| Core theme property | macOS mapping | Status |
 |---|---|---|
-| Brightness | `macos_ui` light/dark theme | Must honor the resolved brightness |
-| Accent color | Control-tint / accent color | Brand accent; verify against resolved version |
-| Font family | Typography family | Respect the configured font |
-| Text styles | `macos_ui` typography roles | Map supported roles only |
-| Density | Control-specific sizing | macOS controls do not all respond identically |
-| Focus appearance | Keyboard-focus ring presentation | Desktop-first; see §12 |
-| Surface/background | Window and control background colors | Map only supported surfaces |
-| Transparency | Vibrancy/material effects where available | Must have an opaque fallback |
-| Motion | Supported `macos_ui` transitions | Do not imply global animation control |
+| Brightness | `MacosThemeData.brightness` from `token.isDark` | Mapped |
+| Accent / primary color | `MacosThemeData.primaryColor` from `token.color.primary` | Mapped |
+| Surface / background | `MacosThemeData.canvasColor` from `token.color.surface` | Mapped |
+| Font family | `MacosThemeData.typography` family | Not mapped — `typography` is a fixed `Typography` object the fork builds from its own SF sizes, so a token family cannot be folded in without replacing the whole scale |
+| Text styles | `macos_ui` typography roles | Not mapped — same reason; role styles come from `LiveTheme.text` at the builder level |
+| Density | Control-specific sizing (`ControlSize` on the button spec) | Control-level only; no token-driven global density |
+| Focus appearance | Keyboard focus ring | Fork default; verify against the resolved `macos_ui` version before claiming token control (§12) |
+| Transparency | Vibrancy / material effects | Not mapped — the library's vibrancy is per-surface, and the resolved `canBlur` affordance flag is not read here (it gates `LiveBox` blur in the token renderer today) |
+| Motion | Supported `macos_ui` transitions | Not mapped — do not imply global animation control |
 
 Avoid forcing every style adapter to use identical widget dimensions. The core tokens define shared design intent; this adapter translates that intent into the closest appropriate macOS presentation.
 
@@ -358,17 +370,29 @@ Each native builder converts a core specification into a `macos_ui` widget.
 
 ### Button (`MacosButtonBuilder`)
 
-- Map primary, secondary, subtle, and destructive intent to supported `macos_ui` button variants.
-- Preserve `onPressed`, `enabled`, `loading`, `expand`, `icon`, `tooltip`, `focusNode`, and `autofocus`.
-- Reuse `SharedLanguageAdapter.interactive` and `buttonLabel` so loading spinners and label+icon layouts behave identically to the shared renderer.
-- Do not place business actions inside the adapter.
+- Map primary, secondary, subtle, and destructive intent to supported `macos_ui` button variants; the core `ControlSize` maps onto `macos_ui`'s small/regular/large sizes.
+- Press eligibility, loading spinner and label+icon layout come from `SharedLanguageAdapter.interactive` and `buttonLabel`, so a macOS button cannot disagree with a token-rendered one (§2.3).
+- `expand` wraps the button in `SizedBox(width: double.infinity)`; `tooltip` wraps it in the core's language-neutral `LiveTooltip` and is also passed as the fork's `semanticLabel`, which is the accessible name an icon-only button needs.
+- `focusNode` and `autofocus` are **not expressible**: `PushButton` creates and owns its focus handling, and wrapping the button in a second `Focus` would hold the focus that actually performs keyboard activation. Recorded as an unmappable spec field (§15); `test/widgets/` asserts nothing crashes when they are supplied.
+- `iconOnly` needs no builder code: the shared `buttonLabel` returns the glyph alone
+  (with the tooltip as its `semanticLabel`), so a textless button built by
+  `LiveIconButton` arrives here already correct.
+- `selected` is **not mapped by this adapter today**. The token base tints a toggled
+  button with the primary foreground; reproducing that here needs this library's own
+  selected affordance rather than a hand-painted overlay on its button. Recorded as the
+  documented remainder of `docs/decisions/0004` (§15).
+- `style` is **not mapped by this adapter either**. Its button is the library's own
+  widget and paints its own surface; applying a caller's `Style` to it would mean
+  hand-painting an overlay over that widget, the trade this section already refuses
+  for `selected`. The shared token renderer does honour the field, so a language with
+  no native button keeps the override (`live-uikit.md` §11).
 
 ### Text field (`MacosTextFieldBuilder`)
 
 - Use the native `macos_ui` text input.
-- Preserve the supplied controller, focus node, callbacks, `errorText`, enabled/read-only/obscure state, `maxLines`, keyboard type and action, prefix/suffix, and `style` override.
+- Preserve the supplied controller, focus node, callbacks, enabled/read-only/obscure state, `maxLines`, keyboard type and action, prefix/suffix, and `style` override.
 - Do not create a second controller or silently own its lifecycle; when the spec's controller is null, the field owns the one it creates.
-- Respect text direction and accessibility labels.
+- The fork has no error slot: `errorText` redraws the decoration border in the token error colour and adds the caption line beneath, the same two signals the token renderer sends (§15).
 
 ### Checkbox (`MacosCheckboxBuilder`)
 
@@ -379,9 +403,9 @@ Each native builder converts a core specification into a `macos_ui` widget.
 
 ### Slider (`MacosSliderBuilder`)
 
-- Use the native `macos_ui` slider.
-- Preserve `value`, `min`, `max`, `onChanged`, `enabled`, and `focusNode`.
-- Handle invalid ranges according to the core validation contract rather than clamping silently.
+- Use the native `macos_ui` slider, passing `min`/`max` to the fork (it asserts `min <= value <= max`) and clamping the value to the range.
+- `MacosSlider.onChanged` is required and non-nullable, so a disabled slider — `enabled: false` or a null `onChanged` — has no native form. `MacosLanguageAdapter.slider` routes exactly that case to `super.slider`, the shared token renderer, instead of passing a closure that swallows the value (§15). An earlier version did precisely that, which made a dead slider look live.
+- `focusNode` is not a parameter of `MacosSlider` and is recorded as unmappable rather than emulated.
 
 ### Shared-fallback controls
 
@@ -547,39 +571,51 @@ Expected behavior:
 
 ## 16. Testing strategy
 
-### Unit tests
-
-Current suite: `test/adapter/macos_ui_contract_test.dart`. Test:
+### Contract tests (`test/adapter/macos_ui_contract_test.dart`)
 
 - Stable adapter id `macos`, `displayName` `macOS`, `language` `LiveDesignLanguage.macos`.
-- `macosUiCapabilities` declares exactly button, textField, checkbox, slider.
-- Every declared control is actually overridden, and no unlisted control is overridden.
-- Brightness and accent-color mapping.
-- Font and density mapping.
-- Theme invalidation when the resolved token changes.
-- Fallback behavior for each of the six shared controls, asserting a `controlUnsupported` diagnostic with `kind: shared`.
+- `macosUiCapabilities` declares exactly button, textField, checkbox, slider — and the
+  same comparison holds against the methods `MacosLanguageAdapter` overrides (§17).
+- Through the real `LanguageRegistry` + `LiveUiResolver`: a registered macOS resolves
+  `adapterNative`; a declared control resolves native with no diagnostic; an undeclared
+  control falls back to `shared` and is reported.
 
-### Widget tests
+### Theme tests (`test/theme/macos_theme_test.dart`)
 
-Test:
+- Brightness, `primaryColor` and `canvasColor` follow the resolved token (§8.1), and a
+  dark token yields a different canvas than the light one (§8.3).
+- Toggling brightness re-skins through `wrap`, with no restart.
+- Typography and density are deliberately *not* mapped — `accentColor` is macOS's own
+  fixed swatch and its typography is a `MacosTypography` object (§8.1 "map only
+  supported") — so there is nothing here to assert, and §8.1 says so.
 
-- Button callback, disabled state, and loading spinner.
-- Text field controller and focus-node preservation.
-- Checkbox state transitions and label rendering.
-- Slider range, value, and callbacks.
-- Correct macOS theme scope around built controls.
-- Accessibility semantics.
-- Layout under narrow and wide constraints.
+### Widget tests (`test/widgets/macos_native_controls_test.dart`)
 
-### Integration tests
+Driven through a real `LiveConfigProvider` with the adapter registered, so the dispatch path itself is under test:
 
-1. Register macOS alongside at least one other adapter.
-2. Select macOS at runtime.
-3. Render shared controls, confirming native for four and shared for six.
-4. Change brightness and accent color without restarting the app.
-5. Switch from macOS to another style and back.
-6. Confirm form values and business controllers remain intact.
-7. Confirm the fallback diagnostics fire exactly for the declared shared set.
+- Button: callback when enabled, input rejected while loading, and `expand`, `tooltip`
+  with the accessible label reaching the control.
+- Text field: controller and `onChanged` pass-through; prefix, suffix and the error
+  message; an inline `Style` overriding the token body text; and the caller's `FocusNode`
+  being the node that actually takes focus (§9/§16).
+- Checkbox: reporting the next value, and a null callback reaching the fork as null
+  rather than a swallowing closure.
+- Slider: rendering natively, and a disabled slider taking the documented shared fallback
+  (§9) instead of the fork's own disabled rendering.
+- An unoverridden control still renders through the shared fallback.
+
+Not covered: accessibility semantics and layout under narrow versus wide constraints —
+the fork's focus ring, keyboard traversal and screen-reader behaviour are §12/§19 hardware
+items, and this suite does not claim them.
+
+### Integration tests (`test/integration/macos_style_switching_test.dart`)
+
+- Every `LiveUiControl` resolves as declared: four `adapterNative`, six `shared` with `controlUnsupported`.
+- macOS → core `material` → macOS swaps `macos.MacosTextField`/`MacosCheckbox`/`MacosSlider` for the token renderer and back, with the caller's controller text preserved.
+- `adapterMissing` is reported for the core base only; while macOS is active the sink sees exactly the six undeclared controls' `controlUnsupported` entries (§15.5).
+- Select — shared in this language — still returns its typed value after the switch (§16.7).
+
+A cross-adapter switch (this language against Fluent, Glass, …) is deliberately **not** tested from this package: §3.3 forbids depending on another style adapter, so that case belongs to the application integration suite. Brightness/accent re-skin is asserted in `test/theme/`.
 
 ### Platform verification
 
@@ -587,7 +623,10 @@ Before declaring support for a platform, test on the corresponding runtime. At m
 
 ## 17. CI and architectural enforcement
 
-Add checks to ensure that:
+These rules are enforced by `./tool/check_architecture.ps1`, which runs as a fatal
+gate in `.github/workflows/architecture.yml`. The script holds one adapter → widget-library
+map for the whole family, so the rules below are asserted once for every adapter rather than
+implemented per package:
 
 - `live_uikit_macos` depends on `live_uikit` and `macos_ui` only for its core integration.
 - `live_uikit_macos` does not depend on other style adapters (`live_uikit_fluent`, `live_uikit_cupertino_ui`, `live_uikit_material_ui`, `live_uikit_glass`, `live_uikit_neumorphic`, `live_uikit_wind`).
@@ -596,6 +635,14 @@ Add checks to ensure that:
 - The public barrel exports only `src/adapter/macos_ui_registration.dart`.
 - The adapter exports no localization delegates.
 - `macosUiCapabilities` matches the set of methods `MacosLanguageAdapter` overrides, and matches the builders under `widgets/`.
+- Every `package:macos_ui/` import inside this package uses the `as macos` prefix, in `lib/` and `test/`. The prefix is a package-wide rule (§3.3):
+  it keeps this library's types distinguishable from Flutter's own and from a sibling
+  adapter's, and it is what lets the architecture guard assert the convention.
+- The README's list of native controls is checked against `macosUiCapabilities`: a control named in
+  prose but not declared, or declared but unmentioned, fails the gate.
+- §4's directory tree is checked against the package: every file the current-layout tree
+  names must exist, and every `test/**_test.dart` on disk must be named there. The
+  optional-modules block is exempt — those names must stay absent until built.
 - Formatting, static analysis, and tests pass.
 
 Example verification commands:
@@ -610,58 +657,62 @@ Run these from the workspace root with the repository's normal Flutter SDK and w
 
 ## 18. Implementation phases
 
-### Phase 1 — Contracts and registration
+### Phase 1 — Contracts and registration ✅
 
 - Align the adapter with the finalized core contract. Done: `MacosLanguageAdapter extends SharedLanguageAdapter`, id `macos`, capabilities constant, registration exports.
 - Register macOS from the application composition root.
 - Keep the contract test green as the guard on id, language, and capabilities.
 
-### Phase 2 — Theme integration
+### Phase 2 — Theme integration ✅
 
 - Complete theme mapping in `macos_theme_builder.dart` / `macos_theme_mapper.dart`.
 - Verify `MacosThemeScope` installation through `wrap`.
-- Test brightness, accent color, typography, and density.
+- Test brightness, `primaryColor` and `canvasColor`; typography and density stay at the
+  fork's defaults, since `accentColor` is a fixed `AccentColor` swatch and its typography
+  is a `MacosTypography` object the token cannot name (§8.1).
 - Verify runtime theme updates and invalidation.
 
-### Phase 3 — Native control coverage
+### Phase 3 — Native control coverage ◐
 
 - Extend testing for the four native controls: button, text field, checkbox, slider.
 - Then, only where product value justifies it, promote shared controls: card, switch, segmented, progress, select, tab bar. Each promotion adds a builder, an override, and a capability entry in one change.
 
-### Phase 4 — Interaction and accessibility
+### Phase 4 — Interaction and accessibility ◐
 
+- Headless half done: caller state, callbacks and the spec fields `macos_ui` can carry are asserted in `test/widgets/`; the fields it cannot take (`focusNode`/`autofocus` on `PushButton`, `focusNode` on `MacosSlider`) are documented in §9 rather than faked.
+- Open, needs hardware: focus traversal, hover behavior, Android TV D-pad.
 - Factor keyboard, focus, and hover behavior into an `interaction/` module when it needs a home.
 - Test Android TV D-pad behavior under the macOS style.
 - Validate semantics and accessibility.
 - Add documented fallbacks for unsupported variants.
 
-### Phase 5 — Production readiness
+### Phase 5 — Production readiness ◐
 
-- Add integration tests for style switching.
-- Add the architectural CI checks in §17.
+- The architectural CI checks in §17 are enforced by `tool/check_architecture.ps1` (library boundary, `macos` import prefix, registration-only barrel, capability/override match).
+- Open: integration tests for style switching.
 - Verify all claimed platforms.
 - Optionally add `icons/`, `diagnostics/`, and `example/`.
 - Document known limitations and upgrade compatibility.
 
 ## 19. Acceptance checklist
 
-- [ ] The package depends on `live_uikit` and `macos_ui` only for its core integration.
-- [ ] It implements the actual core `LanguageAdapter` contract via `SharedLanguageAdapter`.
-- [ ] It uses the stable adapter id `macos` and display name `macOS`.
-- [ ] `macosUiCapabilities` reports exactly button, textField, checkbox, slider as native.
-- [ ] Card, switch, segmented, progress, select, and tab bar fall back to the shared renderer and are reported via `controlUnsupported`.
-- [ ] It maps the resolved `DesignToken` into `macos_ui` theme values through `MacosThemeMapper` and `MacosThemeScope`.
-- [ ] It uses native `macos_ui` controls where supported.
-- [ ] It does not duplicate the core theme configuration.
-- [ ] It does not own business state or persistence.
-- [ ] It does not create a nested application shell.
-- [ ] It adds no localization delegates, reusing the core Material/Cupertino localization.
-- [ ] The public barrel exports only `src/adapter/macos_ui_registration.dart`.
-- [ ] Runtime switching preserves business state.
-- [ ] Keyboard, pointer, accessibility, and TV focus behavior are tested.
-- [ ] Unsupported features follow the core fallback policy with observable diagnostics.
-- [ ] Diagnostics use the shared core contracts and a host sink, not a logging package.
-- [ ] Tests and static analysis pass for `packages/live_uikit_macos`.
+- [x] The package depends on `live_uikit` and `macos_ui` only for its core integration.
+- [x] It implements the actual core `LanguageAdapter` contract via `SharedLanguageAdapter`.
+- [x] It uses the stable adapter id `macos` and display name `macOS`.
+- [x] `macosUiCapabilities` reports exactly button, textField, checkbox, slider as native.
+- [x] Card, switch, segmented, progress, select, and tab bar fall back to the shared renderer and are reported via `controlUnsupported`.
+- [x] It maps the resolved `DesignToken` into `macos_ui` theme values through `MacosThemeMapper` and `MacosThemeScope`.
+- [x] It uses native `macos_ui` controls where supported.
+- [x] It does not duplicate the core theme configuration.
+- [x] It does not own business state or persistence.
+- [x] It does not create a nested application shell.
+- [x] It adds no localization delegates, reusing the core Material/Cupertino localization.
+- [x] The public barrel exports only `src/adapter/macos_ui_registration.dart`.
+- [x] Runtime switching preserves business state.
+- [ ] Keyboard, pointer, accessibility, and TV focus behavior are tested — a caller's `FocusNode` reaching the field's focus tree is (§16), but pointer hover, the fork's focus ring and D-pad traversal need a Mac and a TV runtime.
+- [x] Unsupported features follow the core fallback policy with observable diagnostics.
+- [x] Diagnostics use the shared core contracts and a host sink, not a logging package.
+- [x] Tests and static analysis pass for `packages/live_uikit_macos`.
 - [ ] Platform support claims are backed by actual tests.
 
 ## 20. Final architecture decision

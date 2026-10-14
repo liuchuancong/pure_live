@@ -21,7 +21,32 @@ to semantic versioning for released packages.
 - Capability/resolver contract test (`test/adapter/`).
 - `README.md` documenting purpose, boundaries, usage, testing and limitations.
 
+### Changed
+
+- `LanguageButtonSpec` gained `style`, the caller's top layer of the recipe, which
+  the shared token renderer now honours. This adapter does not map it: its button is
+  the library's own widget, and §9 records that trade.
+- An icon-only or toggled button now reaches this adapter through
+  `LanguageButtonSpec.iconOnly`/`.selected` instead of being painted by the core's token
+  box; textless rendering comes for free from the shared `buttonLabel`, while
+  `selected` stays documented as unmapped here (§9, `docs/decisions/0004`).
+
+- Theme mapping now carries the token accent into `AccentColor.swatch` alongside
+  brightness and the global font.
+- The progress build moved into `FluentProgressBuilder`, which maps `height` to
+  `strokeWidth` and `barColor` to `activeColor`; the card honours `padding`, `dense`,
+  `selected` and `bordered`; the text field takes `prefix`/`suffix`/`maxLines` and the
+  inline `Style` and draws the error caption; the button takes `expand` and `tooltip`.
+- New `test/theme/`, `test/widgets/` and `test/integration/` suites for the mapping, the
+  eight native controls, and the switch to the core base with state preserved.
+
+### Fixed
+
+- Checkbox: the `bool?` bridge closure is built only when the caller can be called back, so
+  a null callback renders disabled instead of live-but-deaf (§9/§15).
+
 ### Known limitations
 
-- No widget-level or cross-style integration tests yet; segmented, select and tab
-  bar are served by the shared renderer rather than native Fluent widgets.
+- Segmented and tab bar use the shared renderer; `errorText` is drawn as a caption because
+  a bare `TextBox` has no error slot (§9).
+- Keyboard navigation, focus rings and the Windows/TV platform claims need real targets.

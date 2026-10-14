@@ -55,7 +55,15 @@ class MaterialUiLanguageAdapter extends SharedLanguageAdapter {
       MaterialUiCheckboxBuilder.build(context, spec, this);
 
   @override
-  Widget slider(BuildContext context, LanguageSliderSpec spec) => MaterialUiSliderBuilder.build(context, spec);
+  Widget slider(BuildContext context, LanguageSliderSpec spec) {
+    // A disabled slider is the one case Material UI cannot render: the fork
+    // dereferences a focus node it only creates for an interactive slider, so
+    // the shared token renderer stands in rather than throwing (§15).
+    if (!spec.enabled || spec.onChanged == null) {
+      return super.slider(context, spec);
+    }
+    return MaterialUiSliderBuilder.build(context, spec);
+  }
 
   @override
   Widget segmented(BuildContext context, LanguageSegmentedSpec spec) => MaterialUiSegmentedBuilder.build(context, spec);

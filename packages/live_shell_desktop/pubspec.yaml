@@ -24,7 +24,7 @@ dependencies:
   screen_retriever: ^0.2.2
   tray_manager: ^0.8.0
   window_manager: ^0.5.2
-
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -1,4 +1,3 @@
-import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/widgets.dart';
 import 'package:live_uikit/styling.dart';
 import 'package:live_uikit_fluent/src/adapter/fluent_ui_capabilities.dart';
@@ -6,6 +5,7 @@ import 'package:live_uikit_fluent/src/theme/fluent_theme_mapper.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_button_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_card_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_checkbox_builder.dart';
+import 'package:live_uikit_fluent/src/widgets/fluent_progress_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_select_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_slider_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_switch_builder.dart';
@@ -58,8 +58,7 @@ class FluentLanguageAdapter extends SharedLanguageAdapter {
   Widget slider(BuildContext context, LanguageSliderSpec spec) => FluentSliderBuilder.build(context, spec);
 
   @override
-  Widget progress(BuildContext context, LanguageProgressSpec spec) =>
-      fluent.ProgressBar(value: spec.value == null ? null : spec.value! * 100);
+  Widget progress(BuildContext context, LanguageProgressSpec spec) => FluentProgressBuilder.build(context, spec);
 
   @override
   Widget select<T>(BuildContext context, LanguageSelectSpec<T> spec) => FluentSelectBuilder.build<T>(context, spec);

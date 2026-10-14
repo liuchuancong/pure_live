@@ -231,6 +231,19 @@ void main() {
       expect(logged[0], 'PASS oauth:tok');
       expect(logged[1], 'NICK user');
     });
+
+    test('the chat literals the server expects', () {
+      expect(TwitchDanmakuCodec.endpoint.toString(), 'wss://irc-ws.chat.twitch.tv');
+      expect(TwitchDanmakuCodec.anonymousPassword, 'PASS SCHMOOPIIE');
+      expect(TwitchDanmakuCodec.capabilities, 'CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership');
+      expect(TwitchDanmakuCodec.heartbeat, 'PING :tmi.twitch.tv');
+      expect(TwitchDanmakuCodec.heartbeatInterval, const Duration(seconds: 40));
+      expect(TwitchDanmakuCodec.inactivityTimeout, const Duration(seconds: 120));
+      expect(TwitchDanmakuCodec.maxReconnectAttempts, 8);
+      expect(TwitchDanmakuCodec.reconnectStepCap, const Duration(seconds: 6));
+      expect(TwitchDanmakuCodec.subscriptionNotices, contains('communitypayforward'));
+      expect(TwitchDanmakuCodec.cookieExpiredNotice().text, startsWith('Twitch 的 Cookie 已失效'));
+    });
   });
 
   group('master playlist', () {
@@ -247,14 +260,14 @@ https://other.example/1.m3u8
 
     test('grouping, source first, merged hosts, codecs and labels', () {
       final groups = TwitchPlayParser.groups(playlist, master: master);
-      expect(groups.map((group) => group.label), ['1080p60 (Source)', '720p']);
+      expect(groups.map((group) => group.label), ['1080p60（原画）', '720p']);
       expect(groups.last.urls, ['https://cdn.example/1.m3u8', 'https://other.example/1.m3u8']);
       expect(groups.first.codec, LiveStreamCodec.hevc);
       expect(groups.last.codec, LiveStreamCodec.avc);
       expect(groups.last.qualityId, '720:30:6000000:1');
 
       final qualities = TwitchPlayParser.qualities(groups);
-      expect(qualities.map((quality) => quality.label), ['1080p60 (Source)', '720p']);
+      expect(qualities.map((quality) => quality.label), ['1080p60（原画）', '720p']);
       expect(qualities.first.platformOrder, 2);
     });
 
@@ -273,7 +286,7 @@ https://other.example/1.m3u8
       final groups = TwitchPlayParser.groups(playlist, master: master);
       expect(TwitchPlayParser.sameGroup(groups, '720:30:6000000:1')?.qualityId, '720:30:6000000:1');
       expect(TwitchPlayParser.sameGroup(groups, '720:30:9999999:1')?.qualityId, '720:30:6000000:1');
-      expect(TwitchPlayParser.sameGroup(groups, 'none', label: '1080p60 (Source)')?.label, '1080p60 (Source)');
+      expect(TwitchPlayParser.sameGroup(groups, 'none', label: '1080p60（原画）')?.label, '1080p60（原画）');
       expect(TwitchPlayParser.sameGroup(groups, null), isNull);
     });
 
@@ -301,6 +314,18 @@ https://other.example/1.m3u8
       expect(
         () => TwitchPlayParser.usherStatus(403, '[{"error_code":"auth","error":"bad token"}]'),
         throwsA(_fails(TwitchFailureKind.needsLogin)),
+      );
+      expect(
+        () => TwitchPlayParser.usherStatus(403, '[{"error_code":"unauthorized","error":"failed integrity check"}]'),
+        throwsA(_fails(TwitchFailureKind.riskControl)),
+      );
+      expect(
+        () => TwitchJson.decode('{"extensions":{"challenge":"https://.twitch.tv/challenge"}}', status: 200, what: 'x'),
+        throwsA(_fails(TwitchFailureKind.riskControl)),
+      );
+      expect(
+        () => TwitchJson.decode('{"errors":[{"message":"Please review our Terms"}]}', status: 409, what: 'x'),
+        throwsA(_fails(TwitchFailureKind.apiChanged)),
       );
     });
   });
@@ -467,7 +492,7 @@ https://other.example/1.m3u8
       expect(TwitchRoomParser.searchPage(_envelope({'searchFor': {}}), now: DateTime(2026)).rooms, isEmpty);
     });
 
-    test('an unknown directory is not-found, a tag keeps its English name', () {
+    test('an unknown directory is not-found, a tag keeps the name it was given', () {
       expect(
         () => TwitchRoomParser.gameStreams(_envelope({'game': null}), now: DateTime(2026), slug: 'nope'),
         throwsA(_fails(TwitchFailureKind.notFound)),
@@ -475,16 +500,13 @@ https://other.example/1.m3u8
       final tags = TwitchRoomParser.tags(
         _envelope({
           'searchCategoryTags': [
-            {'id': '1', 'tagName': ''},
+            {'id': '1', 'tagName': 'Gambling'},
             {'id': '2', 'localizedName': '中文名'},
+            {'id': '3'},
           ],
         }),
       );
-      expect(tags, [(id: '1', name: ''), (id: '2', name: '中文名')]);
-      expect(TwitchRoomParser.namedTags(tags, [(id: '1', name: 'Gambling')]), [
-        (id: '1', name: 'Gambling'),
-        (id: '2', name: '中文名'),
-      ]);
+      expect(tags, [(id: '1', name: 'Gambling'), (id: '2', name: '中文名'), (id: '3', name: '')]);
     });
 
     test('directories name their areas and hand back the cursor', () {
@@ -517,7 +539,75 @@ https://other.example/1.m3u8
       expect(headers['device-id'], matches(RegExp(r'^[0-9a-f]{32}$')));
       expect(headers['authorization'], 'OAuth TOK');
       expect(headers['cookie'], 'login=Chan; auth-token=TOK');
+      expect(headers['accept'], 'application/vnd.twitchtv.v5+json');
+      expect(headers['accept-language'], 'en-US,en;q=0.9');
+      expect(headers['origin'], 'https://www.twitch.tv');
+      expect(headers['referer'], 'https://www.twitch.tv/');
+      expect(headers['content-type'], 'text/plain;charset=UTF-8');
+      expect(
+        headers['user-agent'],
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+        '(KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
+      );
+      expect(TwitchEndpoints.clientId, 'kimne78kx3ncx6brgo4mv6wki5h1ko');
       expect(TwitchEndpoints.deviceId(Random(1)), matches(RegExp(r'^[0-9a-f]{32}$')));
+    });
+
+    test('the GraphQL bodies carry their operation names and hashes', () {
+      String? hashOf(Map<String, Object?> operation) => TwitchJson.textOf(
+        ((operation['extensions']! as Map<String, Object?>)['persistedQuery']! as Map)['sha256Hash'],
+      );
+      final search = TwitchEndpoints.searchOperation('k');
+      expect(search['operationName'], 'SearchResultsPage_SearchResults');
+      expect(hashOf(search), '7f3580f6ac6cd8aa1424cff7c974a07143827d6fa36bba1b54318fe7f0b68dc5');
+      expect(
+        search['variables'],
+        allOf(
+          containsPair('platform', 'web'),
+          containsPair('query', 'k'),
+          containsPair('requestID', '808c9f2e-f52e-431c-8dc7-d2e3c1831d77'),
+          containsPair('includeIsDJ', true),
+        ),
+      );
+      expect((search['variables']! as Map)['options'], containsPair('shouldSkipDiscoveryControl', false));
+      final next = TwitchEndpoints.searchOperation('k', cursor: 'c1');
+      expect(
+        (next['variables']! as Map)['options'],
+        containsPair('targets', [
+          {'index': 'CHANNEL', 'cursor': 'c1'},
+        ]),
+      );
+      final tags = TwitchEndpoints.tagsOperation();
+      expect(tags['operationName'], 'SearchCategoryTags');
+      expect(hashOf(tags), 'b4cb189d8d17aadf29c61e9d7c7e7dcfc932e93b77b3209af5661bffb484195f');
+      expect(tags['variables'], {'userQuery': '', 'limit': 100});
+      final directories = TwitchEndpoints.directoriesOperation('t9');
+      expect(directories['operationName'], 'BrowsePage_AllDirectories');
+      expect(hashOf(directories), '2f67f71ba89f3c0ed26a141ec00da1defecb2303595f5cda4298169549783d9e');
+      expect(directories['variables'], containsPair('limit', 30));
+      expect(
+        (directories['variables']! as Map)['options'],
+        allOf(containsPair('tags', ['t9']), containsPair('sort', 'VIEWER_COUNT')),
+      );
+      final game = TwitchEndpoints.gameOperation('slug', limit: 100);
+      expect(game['operationName'], 'DirectoryPage_Game');
+      expect(hashOf(game), '76cb069d835b8a02914c08dc42c421d0dafda8af5b113a3f19141824b901402f');
+      expect(game['variables'], allOf(containsPair('slug', 'slug'), containsPair('limit', 100)));
+      expect(game['variables'], containsPair('includeCostreaming', true));
+      expect(game['variables'], containsPair('sortTypeIsRecency', false));
+      final token = TwitchEndpoints.accessTokenOperation('chan');
+      expect(token['operationName'], 'PlaybackAccessToken');
+      expect(hashOf(token), 'ed230aa1e33e07eebb8928504583da78a5173989fadfb1ac94be06a04f3cdbe9');
+      expect(token['variables'], allOf(containsPair('login', 'chan'), containsPair('playerType', 'site')));
+      final user = TwitchEndpoints.userOperation('chan');
+      expect(user['query'], allOf(contains(r'query($login: String!)'), contains('profileImageURL(width: 300)')));
+      expect(user['variables'], {'login': 'chan'});
+      final streams = TwitchEndpoints.streamsOperation(limit: 30);
+      expect(
+        streams['query'],
+        allOf(contains(r'$languages: [Language!]'), contains(r'broadcasterLanguages: $languages')),
+      );
+      expect(streams['variables'], containsPair('first', 30));
     });
 
     test('an access token refuses a forbidden claim', () {
@@ -679,6 +769,17 @@ https://other.example/1.m3u8
       expect(
         _left(await resolver.resolve(Uri.parse('https://www.twitch.tv/drops'))).toString(),
         contains('no channel'),
+      );
+      for (final page in ['directory', 'videos', 'search', 'games']) {
+        expect(
+          _left(await resolver.resolve(Uri.parse('https://www.twitch.tv/$page/1'))).toString(),
+          contains('no channel'),
+          reason: page,
+        );
+      }
+      expect(
+        _right(await resolver.resolve(Uri.parse('https://go.twitch.tv/Chan/videos'))).toString(),
+        'https://www.twitch.tv/Chan',
       );
     });
 

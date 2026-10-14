@@ -3,16 +3,19 @@ import 'dart:ui' as ui;
 import 'package:flutter/widgets.dart';
 
 import 'package:live_uikit/src/backgrounds/background_style.dart';
+import 'package:live_uikit/src/styling/root/live_config_provider.dart';
 import 'package:live_uikit/src/tokens/radii.dart';
 
 /// Paints a [LiveBackgroundStyle] behind [child].
 ///
-/// The widget is deliberately dumb: it renders the treatment it is given
-/// and makes no device decisions. Which treatment is affordable is decided
-/// once, by `LiveBackgroundPresets`, from the UI environment — so a page
-/// that wants a frosted control bar writes one call instead of a
-/// platform check, and the TV build never ends up paying for a backdrop
-/// filter because someone forgot one.
+/// The widget renders the treatment it is given and reads exactly one
+/// environment fact: `LiveTheme.canBlur`, the resolved answer to "may a
+/// backdrop filter be drawn at all" (`UiConfig.reduceTransparency` × the
+/// host-reported hardware capability, folded once by `LiveConfigProvider`).
+/// Where that is false, the frosted and blurred treatments degrade to their
+/// flat fill rather than paying for an effect the device or the user's
+/// accessibility setting ruled out. Callers therefore pass a treatment, not a
+/// platform check, and no page can forget the gate.
 class LiveBackground extends StatelessWidget {
   /// A background of [style] behind [child].
   const new({required this.style, this.child, this.clipRadius, this.animateImage = true, super.key});
@@ -35,11 +38,14 @@ class LiveBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Outside a LiveConfigProvider nothing has resolved an affordance, so the
+    // style is honoured as written.
+    final canBlur = LiveTheme.maybeOf(context)?.canBlur ?? true;
     final filled = switch (style) {
       LiveSolidBackground(:final color) => ColoredBox(color: color, child: child),
       LiveGradientBackground() => _gradient(child),
-      LiveImageBackground() => _image(context, child),
-      LiveGlassBackground() => _glass(child),
+      LiveImageBackground() => _image(context, child, canBlur),
+      LiveGlassBackground() => _glass(child, canBlur),
       LiveRaisedBackground() => _raised(child),
     };
     final radius = clipRadius;
@@ -61,7 +67,7 @@ class LiveBackground extends StatelessWidget {
     );
   }
 
-  Widget _image(BuildContext context, Widget? child) {
+  Widget _image(BuildContext context, Widget? child, bool canBlur) {
     final image = style as LiveImageBackground;
     final picture = Image(image: image.image, fit: image.fit, width: double.infinity, height: double.infinity);
     return Stack(
@@ -75,7 +81,7 @@ class LiveBackground extends StatelessWidget {
                 )
               : picture,
         ),
-        if (image.blurSigma > 0) Positioned.fill(child: _BlurLayer(sigma: image.blurSigma)),
+        if (image.blurSigma > 0 && canBlur) Positioned.fill(child: _BlurLayer(sigma: image.blurSigma)),
         if (image.scrim case final scrim?)
           Positioned.fill(
             child: ColoredBox(color: scrim.withValues(alpha: image.scrimStrength)),
@@ -85,19 +91,26 @@ class LiveBackground extends StatelessWidget {
     );
   }
 
-  Widget _glass(Widget? child) {
+  Widget _glass(Widget? child, bool canBlur) {
     final glass = style as LiveGlassBackground;
     final border = glass.border;
+    final surface = DecoratedBox(
+      decoration: BoxDecoration(
+        color: glass.color,
+        border: border == null ? null : Border.all(color: border),
+      ),
+      child: child,
+    );
+    if (!canBlur) {
+      // The verified degraded stand-in: the translucent fill and its border stay,
+      // the backdrop filter goes. A surface the user excluded by accessibility
+      // setting or the device cannot afford must still read as a surface.
+      return surface;
+    }
     return ClipRect(
       child: BackdropFilter(
         filter: ui.ImageFilter.blur(sigmaX: glass.sigma, sigmaY: glass.sigma, tileMode: TileMode.mirror),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: glass.color,
-            border: border == null ? null : Border.all(color: border),
-          ),
-          child: child,
-        ),
+        child: surface,
       ),
     );
   }

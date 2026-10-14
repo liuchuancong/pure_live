@@ -8,8 +8,9 @@ part 'background_style.freezed.dart';
 /// A closed set of treatments instead of a raw `BoxDecoration`: the point
 /// is that pages never spell out gradients, scrims or blurs themselves, so
 /// the platform policy (a TV build does not pay for backdrop filters, a
-/// low-end phone gets a flat tint) has exactly one place to live —
-/// `LiveBackgroundPresets`.
+/// low-end phone gets a flat tint) has exactly one place to live — the
+/// `LiveTheme.canBlur` gate inside `LiveBackground`, which folds the user's
+/// `UiConfig.reduceTransparency` with the host-reported hardware capability.
 // ignore_for_file: unnecessary_type_name_in_constructor -- Freezed
 // factories cannot use the `new` shorthand.
 @freezed
@@ -57,16 +58,16 @@ sealed class LiveBackgroundStyle with _$LiveBackgroundStyle {
     /// How strongly `scrim` is applied, 0..1.
     @Default(0.45) double scrimStrength,
 
-    /// The blur radius over the image; 0 keeps it sharp. Presets set 0
-    /// where the environment cannot afford a backdrop filter.
+    /// The blur radius over the image; 0 keeps it sharp. Ignored when the
+    /// resolved theme reports a backdrop filter is not affordable.
     @Default(0) double blurSigma,
   }) = LiveImageBackground;
 
   /// A frosted surface: a translucent fill over a blurred backdrop.
   ///
-  /// The caller is responsible for a sensible [sigma] on platforms where
-  /// blur is expensive; `LiveBackgroundPresets` already decides that from
-  /// the environment.
+  /// [sigma] is a design choice; whether the backdrop filter is drawn at all is
+  /// not — `LiveBackground` drops it when `LiveTheme.canBlur` is false and keeps
+  /// the translucent fill.
   const factory LiveBackgroundStyle.glass({
     /// The translucent fill colour.
     required Color color,

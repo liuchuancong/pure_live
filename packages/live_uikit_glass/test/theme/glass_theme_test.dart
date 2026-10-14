@@ -24,10 +24,7 @@ void main() {
     });
 
     test('a dark token yields a different panel tint than the light one (§8.3)', () {
-      expect(
-        GlassThemeBuilder.build(dark).color,
-        isNot(GlassThemeBuilder.build(light).color),
-      );
+      expect(GlassThemeBuilder.build(dark).color, isNot(GlassThemeBuilder.build(light).color));
     });
   });
 

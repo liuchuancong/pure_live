@@ -86,4 +86,10 @@ the core resolver's native-versus-`controlUnsupported` dispatch (§16/§17).
 
 - Only button, text field, switch and slider are native; every other control uses
   the shared renderer.
-- No widget-level or cross-style integration tests yet.
+- Test coverage is present at four layers: `test/adapter/` (contract and
+  resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
+  `test/widgets/` (every native control driven through the real dispatch path), and
+  `test/integration/` (resolution surface for all ten controls and a switch to the
+  core `material` base and back with caller-owned state preserved). What remains
+  untested is the part that needs hardware: focus traversal, Android TV D-pad, and
+  the platform claims in §13.

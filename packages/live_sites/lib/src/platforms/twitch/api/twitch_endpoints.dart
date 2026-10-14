@@ -44,11 +44,9 @@ abstract final class TwitchEndpoints {
   /// earlier.
   static const int tagPageLimit = 50;
 
-  /// `Accept-Language`: Chinese names for tags, directories and games.
-  static const String acceptLanguage = 'zh-CN,zh;q=0.9,en;q=0.8';
-
-  /// `Accept-Language` of the one retry that asks for English tag names.
-  static const String englishLanguage = 'en-US,en;q=0.9';
+  /// `Accept-Language`: the web client's own value, so Twitch answers in
+  /// English (a game's `displayName`, else its `name`).
+  static const String acceptLanguage = 'en-US,en;q=0.9';
 
   /// The broadcast languages the 3.x client always filtered by (Chinese and
   /// Korean); nothing is filtered unless the caller gives languages.
@@ -69,20 +67,33 @@ abstract final class TwitchEndpoints {
 
   /// Twitch's own pages: a first path segment in here is not a channel.
   static const Set<String> sitePages = {
+    'about',
+    'apps',
+    'community',
+    'directory',
+    'downloads',
     'drops',
     'following',
     'friends',
+    'games',
     'inventory',
     'jobs',
+    'login',
     'messages',
     'moderator',
     'p',
     'payments',
     'popout',
     'prime',
+    'privacy',
+    'search',
+    'settings',
+    'signin',
     'store',
     'subscriptions',
     'turbo',
+    'user',
+    'videos',
     'wallet',
   };
 

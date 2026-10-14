@@ -109,9 +109,16 @@ packages/
     │           ├── glass_button_builder.dart
     │           ├── glass_card_builder.dart
     │           └── glass_text_field_builder.dart
+    ├── live-uikit-glass.md
     └── test/
-        └── adapter/
-            └── glass_ui_contract_test.dart
+        ├── adapter/
+        │   └── glass_ui_contract_test.dart
+        ├── theme/
+        │   └── glass_theme_test.dart
+        ├── widgets/
+        │   └── glass_native_controls_test.dart
+        └── integration/
+            └── glass_style_switching_test.dart
 ```
 
 The following are **optional and not-yet-created** — add them only as their functionality is implemented, never as empty placeholders:
@@ -318,7 +325,7 @@ glass.GlassTheme  (frosted surface + controls)
 | Translucency | Backdrop-filter surface | Must have a verified degraded stand-in |
 | Focus / TV affordance | Not native to the current scope | Deferred to optional `interaction/` |
 
-`GlassThemeBuilder.build` currently returns a fixed `const GlassThemeData(blur: 16)` because `glass_morphism_plus` `^0.1.0` exposes only a fixed frosted surface, not a token-driven one. The `token` parameter is threaded through anyway to keep the seam intact: when the library grows token-driven blur or per-role surfaces, mapping happens here without touching callers. Do not force every style library to use identical widget dimensions; the token defines shared intent, the Glass builder picks the closest frosted presentation the library supports.
+`GlassThemeBuilder.build` maps the surface the fork does accept from a token: `color` from `token.color.bgContainer`, `borderRadius` from `token.scale.radii.lg`, and `shadowColor` from `token.color.shadowBase`. **`blur` stays a fixed `16`** — `glass_morphism_plus` `^0.1.0` exposes the radius as a plain double with no affordance introspection, so a token-driven blur cannot be verified and is not faked (§18 Phase 3). Note the consequence for accessibility: this library-level blur does not consult `LiveTheme.canBlur`, so `reduceTransparency` degrades the core's own surfaces and not the frosted adapter ones. Brightness is not a `GlassThemeData` field at all: the frosted surface reads what is behind it, so the token's dark/light intent arrives through the surfaces the builders paint, and no `brightness` flag is invented for it. Do not force every style library to use identical widget dimensions; the token defines shared intent, the Glass builder picks the closest frosted presentation the library supports.
 
 ### 8.2 Theme scope
 
@@ -346,8 +353,21 @@ Each native builder converts a core specification into a `glass_morphism_plus` w
 
 - Press eligibility comes from the shared seam (`seam.interactive(spec)`): enabled, not loading, has a callback; otherwise `onPressed` is null.
 - Content comes from the shared seam (`seam.buttonLabel(spec, theme)`), preserving label, icon, and loading spinner.
-- Horizontal padding is token-driven (`theme.button.paddingInline`, `theme.token.scale.sizes.sm`).
+- Horizontal padding is token-driven (`theme.button.paddingInline`, `theme.token.scale.sizes.sm`) and passed through the fork's own `padding`, not hand-wrapped.
+- `expand` wraps the button in `SizedBox(width: double.infinity)` and `tooltip` in the core's language-neutral `LiveTooltip`. `GlassButton` has no hint slot and no focus parameter, so `focusNode`/`autofocus` are recorded as unmappable (§15) rather than emulated with a second focus node that would not drive activation.
 - No business action lives inside the builder.
+- `iconOnly` needs no builder code: the shared `buttonLabel` returns the glyph alone
+  (with the tooltip as its `semanticLabel`), so a textless button built by
+  `LiveIconButton` arrives here already correct.
+- `selected` is **not mapped by this adapter today**. The token base tints a toggled
+  button with the primary foreground; reproducing that here needs this library's own
+  selected affordance rather than a hand-painted overlay on its button. Recorded as the
+  documented remainder of `docs/decisions/0004` (§15).
+- `style` is **not mapped by this adapter either**. Its button is the library's own
+  widget and paints its own surface; applying a caller's `Style` to it would mean
+  hand-painting an overlay over that widget, the trade this section already refuses
+  for `selected`. The shared token renderer does honour the field, so a language with
+  no native button keeps the override (`live-uikit.md` §11).
 
 ### Card (native)
 
@@ -355,15 +375,15 @@ Each native builder converts a core specification into a `glass_morphism_plus` w
 
 - A non-interactive card (`spec.onTap == null`) shows `spec.child` directly.
 - An interactive card wraps the content in an opaque `GestureDetector` preserving `onTap` and `onLongPress`, so click behavior survives the frosted surface.
-- Content, padding, constraints, and semantics are preserved; do not assume every card is interactive.
+- Padding comes from the spec when supplied, otherwise the token padding with the `dense` step applied; `selected` and `bordered` have no frosted equivalent (the surface is translucent by definition) and are left to the library's own treatment rather than faked with an outline (§15). Do not assume every card is interactive.
 
 ### Text field (native, partial)
 
 `GlassTextFieldBuilder.build(context, spec)` renders a `glass.GlassTextField`:
 
 - The caller's `controller` passes straight through; the builder never creates a second controller or silently owns lifecycle.
-- Only `hintText`, `onChanged`, and `onSubmitted` are representable in `glass_morphism_plus` `^0.1.0`. The remainder of `LanguageTextFieldSpec` (error text, enabled, readOnly, obscure, maxLines, keyboard type/action, prefix/suffix, style) is **not** mapped natively today.
-- When those fields are set, do not fake them in the Glass builder; either rely on a documented library limitation or route through the shared renderer once the library supports them. Respect text direction and accessibility labels.
+- `glass_morphism_plus` `^0.1.0` carries `hintText`, `enabled`, `readOnly`, `obscureText`, `maxLines`, `keyboardType`, `textInputAction`, `prefixIcon`, `suffixIcon`, `focusNode`, `style`, `onChanged` and `onSubmitted`, so all of them pass through; the inline `Style` layers onto the token body text property by property.
+- The one spec field the library cannot express is `errorText`: it draws a caption line in the token error colour under the field, exactly as the token renderer draws it, rather than approximating a Material error border on a frosted surface (§15).
 
 ### Switch, checkbox, slider, segmented, progress, select, tab bar (shared fallback)
 
@@ -525,24 +545,33 @@ Extend with:
 - Effect-budget behavior once the library exposes affordance introspection (assert `unsupportedEffect` on a simulated low-budget environment).
 - Theme invalidation when the resolved token changes.
 
-### Widget tests
+### Widget tests (`test/widgets/glass_native_controls_test.dart`)
 
-- Button callback, disabled, and loading states over the frosted surface.
-- Card tap and long-press preservation through the `GestureDetector` wrapper.
-- Text field controller pass-through and callback wiring; assert unmapped spec fields are not silently faked.
-- Correct `GlassTheme` scope around native builders.
-- Accessibility semantics and contrast on both real-blur and degraded surfaces.
-- Layout under narrow and wide constraints.
+- Button: callback when enabled, input rejected while loading, and `expand` plus
+  `tooltip` wrapped around the frosted control.
+- Card: reporting the tap, keeping the token padding and the `dense` step, and gaining no
+  gesture layer while it is not interactive. `onLongPress` is wired through the wrapper,
+  but no test drives it yet.
+- Text field: the caller's controller passing through with `onChanged` firing, placeholder,
+  prefix, disabled state and the error caption reaching the fork (§9), and the caller's
+  `FocusNode` being the node that takes focus (§16).
+- An unoverridden control still renders through the shared fallback.
+- `test/theme/glass_theme_test.dart` covers the scope the builders sit in: panel tint,
+  radius and shadow follow the token, the blur is a fixed library effect rather than a
+  token-driven one (§8.1), and a brightness change re-skins through `wrap`.
 
-### Integration tests
+Not covered: accessibility semantics and contrast on real-blur versus degraded surfaces,
+layout under narrow and wide constraints, and the effect-budget path — the library exposes
+no affordance to introspect (§15) and there is still no `interaction/` directory.
 
-1. Register Glass alongside at least one other adapter.
-2. Select Glass at runtime.
-3. Render native controls via Glass and fallback controls via the shared renderer in the same subtree.
-4. Change brightness and accent color without restarting the app.
-5. Switch from Glass to another style and back.
-6. Confirm form values and business controllers remain intact.
-7. Confirm `controlUnsupported` for the seven fallback controls and `unsupportedEffect` for a simulated unaffordable device.
+### Integration tests (`test/integration/glass_style_switching_test.dart`)
+
+- Every `LiveUiControl` resolves as declared: three `adapterNative`, seven `shared` with `controlUnsupported`.
+- Glass → core `material` → Glass removes and restores `glass.GlassButton`/`GlassCard`/`GlassTextField`, with the caller's controller text intact.
+- The fallback controls (progress here) render on both sides of the switch.
+- `unsupportedEffect` for a simulated unaffordable device stays open: it needs the affordance detection §18 Phase 3 blocks on.
+
+A cross-adapter switch (this language against Fluent, Glass, …) is deliberately **not** tested from this package: §3.3 forbids depending on another style adapter, so that case belongs to the application integration suite. Brightness/accent re-skin is asserted in `test/theme/`.
 
 ### Platform verification
 
@@ -550,7 +579,10 @@ Before declaring support for a platform, test on the corresponding runtime. The 
 
 ## 17. CI and architectural enforcement
 
-Add checks to ensure that:
+These rules are enforced by `./tool/check_architecture.ps1`, which runs as a fatal
+gate in `.github/workflows/architecture.yml`. The script holds one adapter → widget-library
+map for the whole family, so the rules below are asserted once for every adapter rather than
+implemented per package:
 
 - `live_uikit_glass` depends on `live_uikit` and `glass_morphism_plus` only for its core integration.
 - `live_uikit_glass` does not depend on other style adapters (`live_uikit_fluent`, `live_uikit_cupertino_ui`, `live_uikit_macos`, `live_uikit_material_ui`, `live_uikit_neumorphic`, `live_uikit_wind`).
@@ -558,6 +590,14 @@ Add checks to ensure that:
 - Business packages do not import `package:glass_morphism_plus/...`.
 - All public exports are intentional (only the registration API).
 - The declared `glassUiCapabilities` matches the methods `GlassLanguageAdapter` actually overrides — the fallback controls resolve shared and report `controlUnsupported`, never silent.
+- Every `package:glass_morphism_plus/` import inside this package uses the `as glass` prefix, in `lib/` and `test/`. The prefix is a package-wide rule (§3.3):
+  it keeps this library's types distinguishable from Flutter's own and from a sibling
+  adapter's, and it is what lets the architecture guard assert the convention.
+- The README's list of native controls is checked against `glassUiCapabilities`: a control named in
+  prose but not declared, or declared but unmentioned, fails the gate.
+- §4's directory tree is checked against the package: every file the current-layout tree
+  names must exist, and every `test/**_test.dart` on disk must be named there. The
+  optional-modules block is exempt — those names must stay absent until built.
 - Formatting, static analysis, and tests pass.
 
 Example verification commands (run from the workspace root with the repository's normal Flutter SDK and workspace resolution):
@@ -570,12 +610,12 @@ flutter test packages/live_uikit_glass
 
 ## 18. Implementation phases
 
-### Phase 1 — Contracts and registration (present)
+### Phase 1 — Contracts and registration ✅
 
 - Adapter aligns with the finalized core contract, stable id `glass`, three-control capability set, registration symbols.
 - Contract test asserts id/displayName/language, exact native set, and resolver fallback + `controlUnsupported` reporting. **Done.**
 
-### Phase 2 — Theme integration (present, partial)
+### Phase 2 — Theme integration ✅
 
 - `GlassThemeMapper` / `GlassThemeScope` / `GlassThemeBuilder` install the fixed frosted surface via `wrap`.
 - Keep the `token` seam so token-driven blur drops in without touching callers.
@@ -587,37 +627,39 @@ flutter test packages/live_uikit_glass
 - Report `unsupportedEffect` on unaffordable platforms (low-end Android, Android TV).
 - Blocked until `glass_morphism_plus` exposes blur/affordance introspection beyond the fixed surface.
 
-### Phase 4 — Interaction and accessibility
+### Phase 4 — Interaction and accessibility ◐
 
+- Headless half done: the native controls preserve caller state and the spec fields the library can carry (§9), asserted in `test/widgets/`.
+- Open, needs hardware: focus visibility on translucent surfaces and Android TV D-pad.
 - Implement the optional `interaction/` module for keyboard, focus visibility on translucent surfaces, and Android TV D-pad.
 - Validate semantics and contrast on both real-blur and degraded surfaces.
 - Document fallbacks for the spec fields `GlassTextField` cannot represent.
 
-### Phase 5 — Production readiness
+### Phase 5 — Production readiness ◐
 
-- Add integration tests for style switching and the effect-degrade path.
-- Add architectural CI checks.
+- Architectural CI checks (§17) are enforced by `tool/check_architecture.ps1`.
+- Open: integration tests for style switching and the effect-degrade path.
 - Verify all claimed platforms against their effect budgets.
 - Document known limitations (native surface only for three controls; fixed blur until the library supports token-driven effects).
 
 ## 19. Acceptance checklist
 
-- [ ] The package depends on `live_uikit` and `glass_morphism_plus` only for its core integration.
-- [ ] It implements the actual core adapter contract by extending `SharedLanguageAdapter`.
-- [ ] It uses the stable adapter ID `glass` and displayName `Glass`.
-- [ ] It declares exactly `{button, card, textField}` as native and nothing else.
-- [ ] The seven fallback controls render via the shared token renderer and report `controlUnsupported`.
-- [ ] It maps the resolved `DesignToken` into the Glass theme and installs a `GlassTheme` scope via `wrap`.
-- [ ] It uses native `glass_morphism_plus` widgets where supported, without faking unsupported spec fields.
+- [x] The package depends on `live_uikit` and `glass_morphism_plus` only for its core integration.
+- [x] It implements the actual core adapter contract by extending `SharedLanguageAdapter`.
+- [x] It uses the stable adapter ID `glass` and displayName `Glass`.
+- [x] It declares exactly `{button, card, textField}` as native and nothing else.
+- [x] The seven fallback controls render via the shared token renderer and report `controlUnsupported`.
+- [x] It maps the resolved `DesignToken` into the Glass theme and installs a `GlassTheme` scope via `wrap`.
+- [x] It uses native `glass_morphism_plus` widgets where supported, without faking unsupported spec fields.
 - [ ] Blur/translucency degrade to a verified surface on unaffordable platforms, reported via `unsupportedEffect`.
-- [ ] It adds no localization delegates and uses core localization.
-- [ ] It does not duplicate the core theme configuration.
-- [ ] It does not own business state or persistence.
-- [ ] It does not create a nested application shell.
-- [ ] Runtime switching preserves business state.
-- [ ] Keyboard, accessibility, contrast, and TV focus behavior are tested once `interaction/` exists.
-- [ ] Diagnostics use the shared core `LiveUiDiagnostic` / `LiveUiDiagnosticSink` contract.
-- [ ] Tests and static analysis pass.
+- [x] It adds no localization delegates and uses core localization.
+- [x] It does not duplicate the core theme configuration.
+- [x] It does not own business state or persistence.
+- [x] It does not create a nested application shell.
+- [x] Runtime switching preserves business state.
+- [ ] Keyboard, accessibility, contrast, and TV focus behavior are tested once `interaction/` exists — the caller's node reaching `GlassTextField`'s focus tree is now proven (§16), but there is no `interaction/` directory, no semantics assertion, and no effect-budget degradation to verify while the library exposes no affordance (§15).
+- [x] Diagnostics use the shared core `LiveUiDiagnostic` / `LiveUiDiagnosticSink` contract.
+- [x] Tests and static analysis pass.
 - [ ] Platform support claims are backed by actual per-effect-budget tests.
 
 ## 20. Final architecture decision

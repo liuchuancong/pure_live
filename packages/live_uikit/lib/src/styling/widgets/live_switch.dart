@@ -75,8 +75,9 @@ class _TokenSwitchState extends State<TokenSwitch> {
     );
 
     return Semantics(
+      // A switch is a toggle, not a checkbox: announcing both `toggled` and
+      // `checked` is illegal and asserts inside the render tree.
       toggled: widget.spec.value,
-      checked: widget.spec.value,
       enabled: _interactive,
       child: Focus(
         focusNode: _node,

@@ -11,7 +11,7 @@ abstract final class MaterialUiButtonBuilder {
     final theme = LiveTheme.of(context);
     final onPressed = seam.interactive(spec) ? spec.onPressed : null;
     final child = seam.buttonLabel(spec, theme);
-    return switch (spec.variant) {
+    final button = switch (spec.variant) {
       ButtonVariant.primary => mu.FilledButton(
         onPressed: onPressed,
         focusNode: spec.focusNode,
@@ -38,5 +38,13 @@ abstract final class MaterialUiButtonBuilder {
         child: child,
       ),
     };
+    // `expand` and `tooltip` are the two spec fields a Material button cannot
+    // carry in its own constructor, so they wrap it the way the token renderer
+    // wraps its buttons: full width, and the caller's text verbatim (§9).
+    final sized = spec.expand ? SizedBox(width: double.infinity, child: button) : button;
+    if (spec.tooltip == null) {
+      return sized;
+    }
+    return mu.Tooltip(message: spec.tooltip, child: sized);
   }
 }

@@ -20,10 +20,7 @@ void main() {
     });
 
     test('the accent overrides the primary colour and a configured font lands in the sans scale', () {
-      expect(
-        WindThemeBuilder.build(brand).colors['primary'],
-        isNot(WindThemeBuilder.build(plain).colors['primary']),
-      );
+      expect(WindThemeBuilder.build(brand).colors['primary'], isNot(WindThemeBuilder.build(plain).colors['primary']));
       expect(WindThemeBuilder.build(serifed).fontFamilies['sans'], 'Inter');
     });
   });

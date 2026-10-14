@@ -5,6 +5,8 @@ import 'package:live_uikit/styling.dart';
 /// keep in sync with the methods `WindLanguageAdapter` overrides (§17).
 const LiveUiCapabilities windUiCapabilities = LiveUiCapabilities(<LiveUiControl>{
   LiveUiControl.button,
+  LiveUiControl.card,
+  LiveUiControl.textField,
   LiveUiControl.switchWidget,
   LiveUiControl.checkbox,
 });

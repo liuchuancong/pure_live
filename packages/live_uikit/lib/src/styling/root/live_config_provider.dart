@@ -255,7 +255,8 @@ class _LiveConfigProviderState extends State<LiveConfigProvider> with WidgetsBin
     // The single dispatch decision (§15.3): who renders this language, and any
     // downgrade the fallback policy implies, resolved once and carried in the
     // theme as [LiveTheme.adapter] + [LiveTheme.implementationKind].
-    final resolution = LiveUiResolver(registry: widget.registry, policy: widget.fallbackPolicy).resolve(language);
+    final resolver = LiveUiResolver(registry: widget.registry, policy: widget.fallbackPolicy);
+    final resolution = resolver.resolve(language);
     final adapter = resolution.implementation.adapter;
     // Report a downgrade once per language change, never silently (§7/§8.10).
     if (language != _reported) {
@@ -263,6 +264,20 @@ class _LiveConfigProviderState extends State<LiveConfigProvider> with WidgetsBin
       final diagnostic = resolution.diagnostic;
       if (diagnostic != null) {
         widget.diagnostics?.call(diagnostic);
+      } else if (widget.diagnostics != null ||
+          widget.fallbackPolicy.onUnsupportedControl == LiveUiFallbackAction.failFast) {
+        // The language has an adapter, so any control it does not declare is a
+        // narrower downgrade with its own fact to report (§15.5): a host that
+        // wired a sink learns which controls the active library serves from the
+        // shared renderer, rather than discovering it visually. A fail-fast
+        // policy is honoured even without a sink — the demand is the loud fault,
+        // not the log line (§7).
+        for (final control in LiveUiControl.values) {
+          final controlDiagnostic = resolver.resolveControl(language, control).diagnostic;
+          if (controlDiagnostic != null) {
+            widget.diagnostics?.call(controlDiagnostic);
+          }
+        }
       }
     }
     final theme = LiveTheme(

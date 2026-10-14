@@ -311,10 +311,7 @@ abstract final class HuyaRoomParser {
     final live = jsonObject(data['liveData']) ?? const <String, dynamic>{};
     final info = jsonObject(data['profileInfo']) ?? const <String, dynamic>{};
     final stream = jsonObject(data['stream']);
-    final bases = [
-      for (final raw in jsonList(stream?['baseSteamInfoList']))
-        ?jsonObject(raw),
-    ];
+    final bases = [for (final raw in jsonList(stream?['baseSteamInfoList'])) ?jsonObject(raw)];
     int channel(String key, String fallback) =>
         bases.map((base) => _positive(base[key])).nonNulls.firstOrNull ?? _positive(data[fallback]) ?? 0;
     final presenterUid = jsonInt(info['uid']) ?? jsonInt(live['uid']) ?? 0;

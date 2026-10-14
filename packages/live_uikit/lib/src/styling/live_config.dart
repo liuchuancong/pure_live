@@ -111,6 +111,7 @@ abstract class UiConfig with _$UiConfig {
       fontFamily: fontFamily,
       motion: animations,
       pureBlack: pureBlack,
+      focusOutline: focusOutline,
       sizeStep: sizeStep,
       controlHeight: controlHeight,
     );

@@ -19,8 +19,19 @@ abstract final class FluentButtonBuilder {
       foreground: spec.variant == ButtonVariant.ghost ? theme.colors.primary : null,
     );
     final filled = spec.variant == ButtonVariant.primary || spec.variant == ButtonVariant.danger;
-    return filled
+    Widget button = filled
         ? fluent.FilledButton(onPressed: onPressed, focusNode: spec.focusNode, autofocus: spec.autofocus, child: child)
         : fluent.Button(onPressed: onPressed, focusNode: spec.focusNode, autofocus: spec.autofocus, child: child);
+    if (spec.expand) {
+      button = SizedBox(width: double.infinity, child: button);
+    }
+    final hint = spec.tooltip;
+    if (hint != null) {
+      // `TooltipButton` is Fluent's own hint affordance and only exists on
+      // `Button`, so the shared language-neutral tooltip wraps either class
+      // identically rather than dropping the filled variant to get it (§9).
+      button = LiveTooltip(message: hint, child: button);
+    }
+    return button;
   }
 }

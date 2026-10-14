@@ -77,4 +77,13 @@ the core resolver's native-versus-`controlUnsupported` dispatch (§16/§17).
 
 - Segmented, progress, select and tab bar use the shared renderer, not native
   Neumorphic widgets.
-- No widget-level or cross-style integration tests yet.
+- Test coverage is present at four layers: `test/adapter/` (contract and
+  resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
+  `test/widgets/` (every native control driven through the real dispatch path), and
+  `test/integration/` (resolution surface for all ten controls and a switch to the
+  core `material` base and back with caller-owned state preserved). What remains
+  untested is the part that needs hardware: focus traversal, Android TV D-pad, and
+  the platform claims in §13.
+- `NeuTextField` has no `readOnly`, and the soft surface has no `selected` or
+  `bordered` form, so those spec fields are recorded as unmappable rather than
+  emulated (§9).

@@ -77,4 +77,13 @@ core resolver's native-versus-`controlUnsupported` dispatch (§16/§17).
   renderer.
 - Glassmorphism blur/backdrop effects must degrade gracefully where the platform
   cannot afford them; they are never a required dependency (§13).
-- No widget-level or cross-style integration tests yet.
+- Test coverage is present at four layers: `test/adapter/` (contract and
+  resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
+  `test/widgets/` (every native control driven through the real dispatch path), and
+  `test/integration/` (resolution surface for all ten controls and a switch to the
+  core `material` base and back with caller-owned state preserved). What remains
+  untested is the part that needs hardware: focus traversal, Android TV D-pad, and
+  the platform claims in §13.
+- `errorText` has no slot in `glass_morphism_plus`, so it is drawn as a caption
+  under the field rather than as a border state, and `selected`/`bordered` have no
+  frosted equivalent (§9).

@@ -44,5 +44,12 @@ class MacosLanguageAdapter extends SharedLanguageAdapter {
   Widget checkbox(BuildContext context, LanguageCheckboxSpec spec) => MacosCheckboxBuilder.build(context, spec, this);
 
   @override
-  Widget slider(BuildContext context, LanguageSliderSpec spec) => MacosSliderBuilder.build(context, spec);
+  Widget slider(BuildContext context, LanguageSliderSpec spec) {
+    // `MacosSlider` requires a non-null callback, so a disabled slider has no
+    // native form: the shared token renderer stands in (§9/§15).
+    if (!spec.enabled || spec.onChanged == null) {
+      return super.slider(context, spec);
+    }
+    return MacosSliderBuilder.build(context, spec);
+  }
 }

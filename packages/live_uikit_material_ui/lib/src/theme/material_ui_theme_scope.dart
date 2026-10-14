@@ -5,6 +5,12 @@ import 'package:material_ui/material_ui.dart' as mu;
 
 /// Installs the mapped Material UI theme around [child] via [mu.Theme] (§8.2) —
 /// a theme scope, not a nested `MaterialApp`. Data from [MaterialUiThemeBuilder].
+///
+/// The transparent [mu.Material] under the theme is not a shell either: it is the
+/// paint surface every fork ink widget looks for by type. A host `MaterialApp`
+/// only supplies the SDK's `Material`, so without it a fork `TextField`, `Switch`
+/// or `Card` throws "No Material widget found" — and a page must not have to
+/// remember to add one.
 class MaterialUiThemeScope extends StatelessWidget {
   /// A Material UI theme scope for [token] around [child].
   const new({required this.token, required this.child, super.key});
@@ -16,5 +22,8 @@ class MaterialUiThemeScope extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => mu.Theme(data: MaterialUiThemeBuilder.build(token), child: child);
+  Widget build(BuildContext context) => mu.Theme(
+    data: MaterialUiThemeBuilder.build(token),
+    child: mu.Material(type: mu.MaterialType.transparency, child: child),
+  );
 }

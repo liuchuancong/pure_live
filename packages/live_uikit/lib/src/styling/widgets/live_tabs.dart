@@ -22,7 +22,14 @@ class LiveTab {
 /// languages that do not map tabs to their own widget.
 class TokenTabs extends StatelessWidget {
   /// A token tab strip.
-  const new({required this.tabs, required this.index, this.onChanged, this.spacing = 0, super.key});
+  const new({
+    required this.tabs,
+    required this.index,
+    this.onChanged,
+    this.spacing = 0,
+    this.enabled = true,
+    super.key,
+  });
 
   /// The tabs, in order.
   final List<LiveTab> tabs;
@@ -36,15 +43,19 @@ class TokenTabs extends StatelessWidget {
   /// The gap between tabs.
   final double spacing;
 
+  /// Whether the strip responds to input.
+  final bool enabled;
+
   @override
   Widget build(BuildContext context) {
+    final interactive = enabled && onChanged != null;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         for (var i = 0; i < tabs.length; i++)
           Padding(
             padding: EdgeInsets.only(right: i == tabs.length - 1 ? 0 : spacing),
-            child: _TabButton(tab: tabs[i], selected: i == index, onTap: () => onChanged?.call(i)),
+            child: _TabButton(tab: tabs[i], selected: i == index, onTap: interactive ? () => onChanged!(i) : null),
           ),
       ],
     );
@@ -56,7 +67,14 @@ class TokenTabs extends StatelessWidget {
 /// (Material's `TabBar`) or the token base.
 class LiveTabs extends StatelessWidget {
   /// A tab strip.
-  const new({required this.tabs, required this.index, required this.onChanged, this.spacing = 0, super.key});
+  const new({
+    required this.tabs,
+    required this.index,
+    required this.onChanged,
+    this.spacing = 0,
+    this.enabled = true,
+    super.key,
+  });
 
   /// The tabs, in order.
   final List<LiveTab> tabs;
@@ -70,10 +88,14 @@ class LiveTabs extends StatelessWidget {
   /// The gap between tabs.
   final double spacing;
 
+  /// Whether the strip responds to input.
+  final bool enabled;
+
   @override
-  Widget build(BuildContext context) =>
-      LiveTheme.of(context).adapter
-          .tabBar(context, LanguageTabsSpec(tabs: tabs, index: index, onChanged: onChanged, spacing: spacing));
+  Widget build(BuildContext context) => LiveTheme.of(context).adapter.tabBar(
+    context,
+    LanguageTabsSpec(tabs: tabs, index: index, onChanged: onChanged, spacing: spacing, enabled: enabled),
+  );
 }
 
 class _TabButton extends StatefulWidget {
@@ -81,7 +103,7 @@ class _TabButton extends StatefulWidget {
 
   final LiveTab tab;
   final bool selected;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   State<_TabButton> createState() => _TabButtonState();
@@ -127,38 +149,47 @@ class _TabButtonState extends State<_TabButton> {
 
     return Focus(
       focusNode: _focus,
+      canRequestFocus: widget.onTap != null,
       onKeyEvent: (node, event) {
+        if (widget.onTap == null) {
+          return KeyEventResult.ignored;
+        }
         if (event is KeyDownEvent &&
             (event.logicalKey == LogicalKeyboardKey.enter ||
                 event.logicalKey == LogicalKeyboardKey.space ||
                 event.logicalKey == LogicalKeyboardKey.select)) {
-          widget.onTap();
+          widget.onTap!.call();
           return KeyEventResult.handled;
         }
         return KeyEventResult.ignored;
       },
       child: MouseRegion(
-        cursor: SystemMouseCursors.click,
+        cursor: widget.onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
         onEnter: (_) => setState(() => _hovered = true),
         onExit: (_) => setState(() => _hovered = false),
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: widget.onTap,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: tabs.horizontalPadding, vertical: tabs.verticalGap),
-                child: Center(child: label),
-              ),
-              // The ink bar: full-width when selected, transparent otherwise.
-              AnimatedContainer(
-                duration: theme.duration,
-                height: theme.token.motion.lineWidthBold,
-                color: widget.selected || _focused ? tabs.inkBarColor : const Color(0x00000000),
-              ),
-            ],
+          // The strip is a Row, so a tab is laid out with an unbounded main-axis
+          // width; `stretch` below would then force an infinite width. Bounding it
+          // by the label's intrinsic width is what makes the ink bar span the tab.
+          child: IntrinsicWidth(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: tabs.horizontalPadding, vertical: tabs.verticalGap),
+                  child: Center(child: label),
+                ),
+                // The ink bar: full-width when selected, transparent otherwise.
+                AnimatedContainer(
+                  duration: theme.duration,
+                  height: theme.token.motion.lineWidthBold,
+                  color: widget.selected || _focused ? tabs.inkBarColor : const Color(0x00000000),
+                ),
+              ],
+            ),
           ),
         ),
       ),

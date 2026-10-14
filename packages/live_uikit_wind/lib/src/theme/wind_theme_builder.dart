@@ -21,10 +21,9 @@ abstract final class WindThemeBuilder {
     // accent, so it is expanded into a flat swatch (every shade = the accent)
     // rather than inventing tonal steps Wind would then render with (§8.1).
     final argb = token.color.primary.toARGB32();
-    final accent = MaterialColor(
-      argb,
-      <int, Color>{for (final shade in const [50, 100, 200, 300, 400, 500, 600, 700, 800, 900]) shade: Color(argb)},
-    );
+    final accent = MaterialColor(argb, <int, Color>{
+      for (final shade in const [50, 100, 200, 300, 400, 500, 600, 700, 800, 900]) shade: Color(argb),
+    });
     return wind.WindThemeData(
       brightness: token.isDark ? Brightness.dark : Brightness.light,
       syncWithSystem: false,

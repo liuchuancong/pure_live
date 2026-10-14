@@ -21,10 +21,7 @@ void main() {
     });
 
     test('a dark token yields a different base surface than the light one (§8.3)', () {
-      expect(
-        NeumorphicThemeBuilder.build(dark).baseColor,
-        isNot(NeumorphicThemeBuilder.build(light).baseColor),
-      );
+      expect(NeumorphicThemeBuilder.build(dark).baseColor, isNot(NeumorphicThemeBuilder.build(light).baseColor));
     });
   });
 

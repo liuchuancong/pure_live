@@ -6,9 +6,18 @@ import 'package:live_uikit/styling.dart';
 /// applying the optional trailing label through the shared seam.
 abstract final class WindCheckboxBuilder {
   /// Builds the checkbox for [spec]; [seam] supplies the shared label row.
-  static Widget build(BuildContext context, LanguageCheckboxSpec spec, SharedLanguageAdapter seam) => seam.labelled(
-    context,
-    spec.label,
-    wind.WCheckbox(value: spec.value, onChanged: spec.enabled ? spec.onChanged : null, disabled: !spec.enabled),
-  );
+  static Widget build(BuildContext context, LanguageCheckboxSpec spec, SharedLanguageAdapter seam) {
+    final onChanged = spec.onChanged;
+    return seam.labelled(
+      context,
+      spec.label,
+      wind.WCheckbox(
+        value: spec.value,
+        // A null callback means disabled (§9), so the fork's own disabled state
+        // follows it rather than leaving a live-looking box that does nothing.
+        onChanged: spec.enabled ? onChanged : null,
+        disabled: !spec.enabled || onChanged == null,
+      ),
+    );
+  }
 }

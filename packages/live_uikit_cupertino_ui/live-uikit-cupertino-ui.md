@@ -109,9 +109,16 @@ packages/
     │           ├── cupertino_ui_text_field_builder.dart
     │           ├── cupertino_ui_switch_builder.dart
     │           └── cupertino_ui_slider_builder.dart
+    ├── live-uikit-cupertino-ui.md
     └── test/
-        └── adapter/
-            └── cupertino_ui_contract_test.dart
+        ├── adapter/
+        │   └── cupertino_ui_contract_test.dart
+        ├── theme/
+        │   └── cupertino_ui_theme_test.dart
+        ├── widgets/
+        │   └── cupertino_ui_native_controls_test.dart
+        └── integration/
+            └── cupertino_ui_style_switching_test.dart
 ```
 
 Not yet created (add only when functionality exists; do not create empty placeholder files):
@@ -275,8 +282,10 @@ The adapter's `wrap` calls `_theme.wrap(...)`, where `_theme` is a `const Cupert
 | Accent / primary (`token.color.primary`) | `cu.CupertinoThemeData.primaryColor` | Brand accent drives tinted controls |
 | Text colors (`theme.colors.text`) | Applied per-control in builders | See §9; not part of the theme data draft |
 | Container / border / radius | Consumed by the text-field builder from `LiveTheme` | Decoration drawn per control, not forked into theme data |
+| Page surface (`token.color.surface`) | `cu.CupertinoThemeData.scaffoldBackgroundColor` | Mapped |
+| On-primary (`token.color.onPrimary`) | `cu.CupertinoThemeData.primaryContrastingColor` | Mapped |
 
-The current `CupertinoUiThemeBuilder.build` maps only brightness and `primaryColor`. Additional token roles (typography, density, surfaces) should be added as the fork exposes theme-equivalent fields, without inventing a second token model.
+The current `CupertinoUiThemeBuilder.build` maps brightness, `primaryColor`, `primaryContrastingColor` and `scaffoldBackgroundColor` — four properties, and the theme test asserts each one moves with the token. Typography and density stay at the fork's defaults: `cupertino_ui` builds its text scale itself, and a token family cannot be folded in without replacing the whole scale, so §8.1 leaves them alone rather than half-mapping them. No second token model is invented; role styles come from `LiveTheme` at builder level.
 
 ### 8.2 Theme scope
 
@@ -303,15 +312,29 @@ Each native builder converts a core specification into a `cupertino_ui` widget. 
 - `ButtonVariant.ghost` maps to a plain `cu.CupertinoButton`; every other variant maps to `cu.CupertinoButton.filled`.
 - Press eligibility comes from the shared seam: `seam.interactive(spec)` (enabled, not loading, has a callback) decides whether `onPressed` is passed or nulled.
 - Label/loading/icon composition is reused from the seam via `seam.buttonLabel(spec, theme, foreground: ...)`, with ghost buttons tinted `theme.colors.primary`.
-- `focusNode` and `autofocus` are passed through from the spec.
+- `focusNode` and `autofocus` are passed through from the spec — the fork's buttons take both.
+- `expand` wraps the button in `SizedBox(width: double.infinity)` and `tooltip` wraps it in the core's language-neutral `LiveTooltip`, the same two post-wraps the token renderer applies. `cupertino_ui` has no hint slot, and an SDK Material `Tooltip` does not belong in a Cupertino subtree (§14/§15).
 - No business action lives inside the builder; it maps intent, never page type.
+- `iconOnly` needs no builder code: the shared `buttonLabel` returns the glyph alone
+  (with the tooltip as its `semanticLabel`), so a textless button built by
+  `LiveIconButton` arrives here already correct.
+- `selected` is **not mapped by this adapter today**. The token base tints a toggled
+  button with the primary foreground; reproducing that here needs this library's own
+  selected affordance rather than a hand-painted overlay on its button. Recorded as the
+  documented remainder of `docs/decisions/0004` (§15).
+- `style` is **not mapped by this adapter either**. Its button is the library's own
+  widget and paints its own surface; applying a caller's `Style` to it would mean
+  hand-painting an overlay over that widget, the trade this section already refuses
+  for `selected`. The shared token renderer does honour the field, so a language with
+  no native button keeps the override (`live-uikit.md` §11).
 
 ### Text field (`CupertinoUiTextFieldBuilder.build(context, spec)`)
 
-- Native `cu.CupertinoTextField`, passing the caller's `controller`, `focusNode`, `placeholder`, `enabled`, `readOnly`, `obscureText`, `maxLines`, `keyboardType`, `onChanged`, and `onSubmitted` straight through.
+- Native `cu.CupertinoTextField`, passing the caller's `controller`, `focusNode`, `placeholder`, `enabled`, `readOnly`, `obscureText`, `maxLines`, `keyboardType`, `textInputAction`, `prefix`, `suffix`, `onChanged`, and `onSubmitted` straight through.
 - Obscure fields are forced to one line (`maxLines: 1` when `obscure`).
 - The field never creates its own competing controller; when `spec.controller` is null the field's own default is used, matching the core ownership rule.
-- Text style and decoration come from `LiveTheme.of(context)` (body text, `bgContainer` fill, `input.borderRadius`, border switching to `theme.colors.error` when `errorText != null`).
+- Text style and decoration come from `LiveTheme.of(context)` (body text, `bgContainer` fill, `input.borderRadius`, border switching to `theme.colors.error` when `errorText != null`), and the spec's inline `Style` layers onto the body text so a caller override wins property by property.
+- The fork has no error slot, so `errorText` also draws the caption line under the field, in the same caption style the token renderer uses — an error means the same thing in both paths (§15).
 
 ### Switch (`CupertinoUiSwitchBuilder.build(context, spec)`)
 
@@ -322,7 +345,7 @@ Each native builder converts a core specification into a `cupertino_ui` widget. 
 ### Slider (`CupertinoUiSliderBuilder.build(context, spec)`)
 
 - Native `cu.CupertinoSlider` with `spec.min`/`spec.max` and the value clamped to range (`spec.value.clamp(spec.min, spec.max)`).
-- Disabled by dropping `onChanged` (null) when `!spec.enabled`; otherwise a no-op listener is supplied so the thumb stays draggable.
+- Disabled by dropping `onChanged` (null) when `!spec.enabled` **or** when the spec's callback is null. The earlier version supplied a no-op listener so the thumb stayed draggable; that is the §15 defect this rule forbids — a control that looks live and never reports.
 - Invalid ranges follow the core validation contract rather than being silently corrected here.
 
 ### Card / checkbox / segmented / progress / select / tabBar
@@ -490,28 +513,33 @@ Expected behavior:
 - The declared capability set is exactly `{button, textField, switchWidget, slider}` native, and `{card, checkbox, segmented, progress, select, tabBar}` are not supported — asserting declaration matches overrides so drift fails the test (§17).
 - Resolution through a `LanguageRegistry` + `LiveUiResolver`: registered language resolves to `adapterNative`; a declared control (button) resolves native with no diagnostic; an undeclared control (card) resolves to `shared` with a `controlUnsupported` diagnostic naming that control.
 
-### Widget tests (to add as builders mature)
+### Widget tests (`test/widgets/cupertino_ui_native_controls_test.dart`)
+
+Driven through a real `LiveConfigProvider` with this adapter registered, so the assertions are about the dispatch path, not the builder in isolation:
 
 - Button callback, disabled/loading state, and ghost vs filled mapping.
-- Text-field controller and focus-node preservation (no second controller created).
+- Text-field controller and focus-node preservation (no second controller created), prefix/suffix pass-through, the error caption, and an inline `Style` overriding the token body text.
+- Caller-owned focus: the node a page hands the field is the node that takes focus, and the button takes both the caller's node and its `autofocus` flag (§9/§16).
 - Switch value updates and disable-by-null.
-- Slider clamping to range and disabled state.
-- Correct `cu.CupertinoTheme` scope installed by `wrap`.
-- Accessibility semantics and layout under narrow/wide constraints.
+- Slider clamping to range, and a null callback reaching the fork as null rather than as a no-op listener.
+- `expand` and `tooltip` wrappers on the button.
+- The shared fallback still rendering for a control this adapter does not override.
 
-### Theme tests
+### Theme tests (`test/theme/cupertino_ui_theme_test.dart`)
 
 - `CupertinoUiThemeBuilder.build` maps `token.isDark` → brightness and `token.color.primary` → `primaryColor`.
-- Theme rebuilds when the resolved token changes (no stale `CupertinoThemeData`).
+- Theme rebuilds when the resolved token changes (no stale `CupertinoThemeData`), driven through `LiveConfigProvider` → resolver → `wrap` so the re-skin is proven at runtime (§8.3).
 
-### Integration tests
+### Integration tests (`test/integration/cupertino_ui_style_switching_test.dart`)
 
-1. Register Cupertino UI alongside at least one other adapter.
-2. Select Cupertino UI at runtime.
-3. Render the four native controls via Cupertino UI; render the six shared controls via the fallback.
-4. Change brightness and primary color without restarting the app.
-5. Switch from Cupertino UI to another language and back; confirm form values and business controllers remain intact.
-6. Confirm the resolver reports `controlUnsupported` for the six fallback controls.
+Against the production `LanguageRegistry` + `LiveUiResolver` and a real `LiveConfigProvider` with the diagnostics sink wired:
+
+- Every `LiveUiControl` resolves as declared: four `adapterNative` with no diagnostic, six `shared` with `controlUnsupported` naming the control.
+- Cupertino UI → core `material` → Cupertino UI replaces the rendering path each time (`cu.CupertinoTextField`/`Switch`/`Slider` present, then absent, then present again), and the caller-owned `TextEditingController` keeps its text across both switches.
+- The core base reports `adapterMissing` for its own language and nothing else; while Cupertino UI is active the only reports are the `controlUnsupported` entries for the six controls this adapter does not declare, each once per language change (§15.5).
+- Tabs, a shared-fallback control here, stay callable on both sides of the switch (§16.7).
+
+A cross-adapter switch (this language against Fluent, Glass, …) is deliberately **not** tested from this package: §3.3 forbids depending on another style adapter, so that case belongs to the application integration suite. Brightness/accent re-skin is asserted in `test/theme/`.
 
 ### Platform verification
 
@@ -519,7 +547,10 @@ Before declaring support, test on the corresponding runtime. At minimum include 
 
 ## 17. CI and architectural enforcement
 
-Add checks to ensure that:
+These rules are enforced by `./tool/check_architecture.ps1`, which runs as a fatal
+gate in `.github/workflows/architecture.yml`. The script holds one adapter → widget-library
+map for the whole family, so the rules below are asserted once for every adapter rather than
+implemented per package:
 
 - `live_uikit_cupertino_ui` depends on `live_uikit` and `cupertino_ui` for its core integration.
 - `live_uikit_cupertino_ui` does not depend on any other style adapter (fluent, macos, material_ui, glass, neumorphic, wind).
@@ -527,6 +558,14 @@ Add checks to ensure that:
 - Business packages do not import `package:cupertino_ui/cupertino_ui.dart`.
 - The public barrel exports only `src/adapter/cupertino_ui_registration.dart`.
 - The declared `cupertinoUiCapabilities` matches exactly the controls the adapter overrides (the contract-test invariant).
+- Every `package:cupertino_ui/` import inside this package uses the `as cu` prefix, in `lib/`
+  and `test/`: this fork deliberately shadows well-known Flutter widget names, so an
+  unqualified import would resolve to the SDK's widgets and silently defeat the adapter (§3.3).
+- The README's list of native controls is checked against `cupertinoUiCapabilities`: a control named in
+  prose but not declared, or declared but unmentioned, fails the gate.
+- §4's directory tree is checked against the package: every file the current-layout tree
+  names must exist, and every `test/**_test.dart` on disk must be named there. The
+  optional-modules block is exempt — those names must stay absent until built.
 - Formatting, static analysis, and tests pass.
 
 Example verification commands (run from the workspace root with the repository's normal Flutter SDK and workspace resolution):
@@ -539,20 +578,20 @@ flutter test packages/live_uikit_cupertino_ui
 
 ## 18. Implementation phases
 
-### Phase 1 — Contracts and registration (largely done)
+### Phase 1 — Contracts and registration ✅
 
 - Align the adapter with the finalized core `LanguageAdapter` contract.
 - Lock the stable id (`cupertinoUi`), display name, and `cupertinoUiCapabilities`.
 - Expose `createCupertinoUiAdapter()` / `cupertinoUiAdapter` / `cupertinoUiAdapterId` / `cupertinoUiLocalizationsDelegates`.
 - Keep the registration/contract test green.
 
-### Phase 2 — Theme integration (started)
+### Phase 2 — Theme integration ✅
 
 - `CupertinoUiThemeMapper` / `CupertinoUiThemeScope` / `CupertinoUiThemeBuilder` wired into `wrap`.
 - Map brightness and primary color today; extend typography/density/surface roles as the fork exposes them.
 - Test runtime theme rebuild on token change.
 
-### Phase 3 — Core controls (native four done)
+### Phase 3 — Core controls ✅ (native four)
 
 Implemented and tested:
 
@@ -563,35 +602,38 @@ Implemented and tested:
 
 The remaining six controls stay on the shared renderer until native equivalents are added in this package's `widgets/` module.
 
-### Phase 4 — Interaction and accessibility
+### Phase 4 — Interaction and accessibility ◐
 
+- Headless half done: focus nodes and callbacks are preserved on the native controls and asserted in `test/widgets/`; disabled controls are wired dead rather than decorative.
+- Open, needs hardware: focus traversal on a device, Android TV D-pad, touch-target sizing.
 - Add an `interaction/` module for explicit focus traversal and visible-focus verification.
 - Test Android TV D-pad behavior and desktop keyboard navigation.
 - Validate semantics and touch-target sizing on mobile targets.
 - Document D-pad limitations rather than claiming parity.
 
-### Phase 5 — Production readiness
+### Phase 5 — Production readiness ◐
 
-- Add style-switching integration tests and per-platform verification.
+- §17 architectural rules are enforced by `tool/check_architecture.ps1` (library boundary, `cu` import prefix, registration-only barrel, capability/override match).
+- Open: style-switching integration tests and per-platform verification.
 - Add architectural CI checks (§17).
 - Optionally add `icons/` (Cupertino icon mapping), `diagnostics/`, and `example/` as needs appear.
 - Document known limitations and `cupertino_ui` upgrade compatibility.
 
 ## 19. Acceptance checklist
 
-- [ ] The package depends on `live_uikit` and `cupertino_ui` only for its core integration.
-- [ ] It extends `SharedLanguageAdapter` and implements the actual core `LanguageAdapter` contract.
-- [ ] It uses the stable adapter id `cupertinoUi` (never `cupertino`, `cupertino_ui`, or `Cupertino UI`).
-- [ ] `cupertinoUiCapabilities` declares exactly button, textField, switchWidget, slider as native.
-- [ ] Card, checkbox, segmented, progress, select, and tabBar fall back to the shared renderer and are reported as `controlUnsupported`.
-- [ ] `wrap` installs the mapped `cu.CupertinoTheme` scope from the resolved `DesignToken`.
-- [ ] Native controls preserve caller state (controller, focus node, callbacks) and never own business state.
-- [ ] The barrel exports only `cupertino_ui_registration.dart`.
-- [ ] No dependency on Riverpod or any other style adapter; business packages do not import `cupertino_ui`.
-- [ ] `cupertinoUiLocalizationsDelegates` is appended via the composition root; the global locale is never overridden.
-- [ ] Runtime switching preserves business state; touch sizing and TV focus are tested.
-- [ ] Diagnostics flow through the core sink, not a logging package.
-- [ ] Tests and static analysis pass against `packages/live_uikit_cupertino_ui`.
+- [x] The package depends on `live_uikit` and `cupertino_ui` only for its core integration.
+- [x] It extends `SharedLanguageAdapter` and implements the actual core `LanguageAdapter` contract.
+- [x] It uses the stable adapter id `cupertinoUi` (never `cupertino`, `cupertino_ui`, or `Cupertino UI`).
+- [x] `cupertinoUiCapabilities` declares exactly button, textField, switchWidget, slider as native.
+- [x] Card, checkbox, segmented, progress, select, and tabBar fall back to the shared renderer and are reported as `controlUnsupported`.
+- [x] `wrap` installs the mapped `cu.CupertinoTheme` scope from the resolved `DesignToken`.
+- [x] Native controls preserve caller state (controller, focus node, callbacks) and never own business state.
+- [x] The barrel exports only `cupertino_ui_registration.dart`.
+- [x] No dependency on Riverpod or any other style adapter; business packages do not import `cupertino_ui`.
+- [x] `cupertinoUiLocalizationsDelegates` is appended via the composition root; the global locale is never overridden.
+- [x] Runtime switching preserves business state (§16 integration suite; the device half stays in the checkbox below).
+- [x] Diagnostics flow through the core sink, not a logging package.
+- [x] Tests and static analysis pass against `packages/live_uikit_cupertino_ui`.
 - [ ] Platform claims (iOS/macOS primary, others functional) are backed by actual tests.
 
 ## 20. Final architecture decision

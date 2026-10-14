@@ -4,7 +4,8 @@ import 'package:material_ui/material_ui.dart' as mu;
 
 /// Builds a Material UI text field from a [LanguageTextFieldSpec] (§9 Text
 /// field), passing the caller's controller/focus node through and mapping hint,
-/// error, prefix and suffix into the fork's [mu.InputDecoration].
+/// error, prefix and suffix into the fork's [mu.InputDecoration]. The field only
+/// owns a controller when the caller did not supply one (§9).
 abstract final class MaterialUiTextFieldBuilder {
   /// Builds the field for [spec].
   static Widget build(BuildContext context, LanguageTextFieldSpec spec) {
@@ -20,7 +21,7 @@ abstract final class MaterialUiTextFieldBuilder {
       textInputAction: spec.textInputAction,
       onChanged: spec.onChanged,
       onSubmitted: spec.onSubmitted,
-      style: theme.text.body.copyWith(color: theme.colors.text),
+      style: _textStyle(theme, spec),
       decoration: mu.InputDecoration(
         hintText: spec.placeholder,
         errorText: spec.errorText,
@@ -32,6 +33,25 @@ abstract final class MaterialUiTextFieldBuilder {
               ),
         suffixIcon: spec.suffix,
       ),
+    );
+  }
+
+  /// The token body text, with whatever the spec's inline [Style] overrides.
+  /// [TextStyle.copyWith] keeps the base for a null argument, so only the named
+  /// properties move (§9 "preserve `style`").
+  static TextStyle _textStyle(LiveTheme theme, LanguageTextFieldSpec spec) {
+    final base = theme.text.body.copyWith(color: theme.colors.text);
+    final override = spec.style;
+    if (override == null) {
+      return base;
+    }
+    return base.copyWith(
+      color: override.foreground,
+      fontFamily: override.fontFamily,
+      fontSize: override.fontSize,
+      fontWeight: override.fontWeight,
+      letterSpacing: override.letterSpacing,
+      height: override.lineHeight,
     );
   }
 }

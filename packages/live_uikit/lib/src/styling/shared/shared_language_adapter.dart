@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-
 import 'package:live_uikit/src/styling/contracts/live_ui_adapter.dart';
 import 'package:live_uikit/src/styling/contracts/live_ui_capabilities.dart';
 import 'package:live_uikit/src/styling/design_token.dart';
+import 'package:live_uikit/src/styling/recipe.dart';
 import 'package:live_uikit/src/styling/root/live_config_provider.dart';
+import 'package:live_uikit/src/styling/style.dart';
 import 'package:live_uikit/src/styling/widgets/live_box.dart';
 import 'package:live_uikit/src/styling/widgets/live_card.dart';
 import 'package:live_uikit/src/styling/widgets/live_checkbox.dart';
@@ -51,6 +52,17 @@ class SharedLanguageAdapter implements LanguageAdapter {
         child: CircularProgressIndicator(strokeWidth: 2, color: foreground ?? theme.colors.onPrimary),
       );
     }
+    if (spec.iconOnly) {
+      // The empty `label` a textless button must still pass the contract is never
+      // painted; the glyph carries the control and `tooltip` names it — including to
+      // the semantics tree, which has no text left to absorb otherwise (§14).
+      return Icon(
+        spec.icon,
+        size: theme.text.label.fontSize,
+        color: foreground,
+        semanticLabel: spec.tooltip ?? (spec.label.isEmpty ? null : spec.label),
+      );
+    }
     final text = Text(spec.label, overflow: TextOverflow.ellipsis);
     if (spec.icon == null) {
       return text;
@@ -64,6 +76,14 @@ class SharedLanguageAdapter implements LanguageAdapter {
       ],
     );
   }
+
+  /// The square side an icon-only button takes at [size] — the same geometry the
+  /// hand-drawn icon button used before it went through the adapter.
+  double iconEdge(LiveTheme theme, ControlSize size) => switch (size) {
+    ControlSize.sm => theme.button.controlHeightSM,
+    ControlSize.md => theme.button.controlHeight,
+    ControlSize.lg => theme.button.controlHeightLG,
+  };
 
   @override
   LiveDesignLanguage get language => LiveDesignLanguage.material;
@@ -84,15 +104,41 @@ class SharedLanguageAdapter implements LanguageAdapter {
   Widget button(BuildContext context, LanguageButtonSpec spec) {
     final theme = LiveTheme.of(context);
     final enabled = interactive(spec);
-    final button = LiveBox(
-      style: (state) => theme.resolveButton(variant: spec.variant, size: spec.size, state: state),
+    Widget button = LiveBox(
+      style: (state) {
+        final resolved = theme.resolveButton(variant: spec.variant, size: spec.size, state: state);
+        if (!spec.selected) {
+          return resolved;
+        }
+        // A toggled-on control reads as its own primary colour, the way the
+        // hand-drawn icon button did before it went through the contract.
+        return resolved.copyWith(
+          foreground: state == InteractionState.disabled ? theme.colors.textDisabled : theme.colors.primary,
+        );
+      },
       enabled: enabled,
       onTap: enabled ? spec.onPressed : null,
       focusNode: spec.focusNode,
       autofocus: spec.autofocus,
+      inlineStyle: spec.style,
       child: buttonLabel(spec, theme),
     );
-    return spec.expand ? SizedBox(width: double.infinity, child: button) : button;
+    if (spec.iconOnly) {
+      // A textless control is sized by its own height step, not by the label it
+      // does not have.
+      button = SizedBox.square(
+        dimension: iconEdge(theme, spec.size),
+        child: Center(child: button),
+      );
+    }
+    final sized = spec.expand ? SizedBox(width: double.infinity, child: button) : button;
+    final hint = spec.tooltip;
+    if (hint == null) {
+      return sized;
+    }
+    // The caller's text verbatim (§14): every adapter wraps the same spec with
+    // its own library's tooltip, so a style switch keeps the hint.
+    return Tooltip(message: hint, child: sized);
   }
 
   @override
@@ -127,6 +173,11 @@ class SharedLanguageAdapter implements LanguageAdapter {
   );
 
   @override
-  Widget tabBar(BuildContext context, LanguageTabsSpec spec) =>
-      TokenTabs(tabs: spec.tabs, index: spec.index, onChanged: spec.onChanged, spacing: spec.spacing);
+  Widget tabBar(BuildContext context, LanguageTabsSpec spec) => TokenTabs(
+    tabs: spec.tabs,
+    index: spec.index,
+    onChanged: spec.onChanged,
+    spacing: spec.spacing,
+    enabled: spec.enabled,
+  );
 }

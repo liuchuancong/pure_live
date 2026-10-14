@@ -129,10 +129,38 @@ final class Geometry {
 
   @override
   bool operator ==(Object other) =>
-      other is Geometry && other.mode == mode && other.pagePadding == pagePadding && other.iconSize == iconSize;
+      other is Geometry &&
+      other.mode == mode &&
+      other.pagePadding == pagePadding &&
+      other.sectionGap == sectionGap &&
+      other.iconGap == iconGap &&
+      other.iconSize == iconSize &&
+      other.controlRadius == controlRadius &&
+      other.cardRadius == cardRadius &&
+      other.cardElevation == cardElevation &&
+      other.navBarHeight == navBarHeight &&
+      other.railWidth == railWidth &&
+      other.contentMaxWidth == contentMaxWidth &&
+      other.dialogMaxWidth == dialogMaxWidth;
 
+  // Every field, because `LiveEnvironmentScope.updateShouldNotify` compares two
+  // `Geometry` objects: a field left out here is a field whose change silently
+  // leaves the subtree laid out with the old numbers.
   @override
-  int get hashCode => Object.hash(mode, pagePadding, iconSize);
+  int get hashCode => Object.hash(
+    mode,
+    pagePadding,
+    sectionGap,
+    iconGap,
+    iconSize,
+    controlRadius,
+    cardRadius,
+    cardElevation,
+    navBarHeight,
+    railWidth,
+    contentMaxWidth,
+    dialogMaxWidth,
+  );
 }
 
 /// The runtime layout environment: the resolved [mode] and its [geometry]. Data,

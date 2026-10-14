@@ -21,10 +21,7 @@ void main() {
     });
 
     test('a dark token yields a different canvas than the light one (§8.3)', () {
-      expect(
-        MacosThemeBuilder.build(dark).canvasColor,
-        isNot(MacosThemeBuilder.build(light).canvasColor),
-      );
+      expect(MacosThemeBuilder.build(dark).canvasColor, isNot(MacosThemeBuilder.build(light).canvasColor));
     });
   });
 

@@ -81,7 +81,13 @@ void main() {
       expect(material!.brightness, Brightness.light);
 
       await tester.pumpWidget(
-        harness(const UiConfig(language: LiveDesignLanguage.materialUi, brightness: UiBrightnessMode.dark, accent: Color(0xFFAA0000))),
+        harness(
+          const UiConfig(
+            language: LiveDesignLanguage.materialUi,
+            brightness: UiBrightnessMode.dark,
+            accent: Color(0xFFAA0000),
+          ),
+        ),
       );
       expect(live!.isDark, isTrue);
       expect(material!.brightness, Brightness.dark);

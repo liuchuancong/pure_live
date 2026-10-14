@@ -107,46 +107,45 @@ abstract class Style with _$Style {
   static const Style empty = Style();
 
   /// Whether this style names no properties.
-  bool get isEmpty =>
-      padding == null &&
-      background == null &&
-      foreground == null &&
-      fontSize == null &&
-      blur == null &&
-      shadow == null &&
-      borderRadius == null &&
-      borderColor == null &&
-      opacity == null &&
-      minHeight == null;
+  ///
+  /// Compared against the empty style rather than against a hand-written list of
+  /// fields, so adding a property here cannot silently leave this behind.
+  bool get isEmpty => Style.empty == this;
 
   /// This style with [other] layered on top: every property [other] names
   /// wins, everything else is kept. This is the cascade — call it in
   /// increasing-precedence order (`base.merge(variant).merge(size)…`).
+  ///
+  /// Written field by field instead of through Freezed's `copyWith`: that
+  /// generator tells "argument not passed" apart from "argument passed as null"
+  /// (its `freezed` sentinel), so `copyWith(padding: null)` *clears* padding
+  /// rather than leaving it alone — the exact opposite of what a null means in a
+  /// [Style]. Hand-merging keeps "null means unset" true for the cascade.
   Style merge(Style? other) {
     if (other == null) {
       return this;
     }
-    return copyWith(
-      padding: other.padding,
-      margin: other.margin,
-      minWidth: other.minWidth,
-      minHeight: other.minHeight,
-      maxWidth: other.maxWidth,
-      background: other.background,
-      foreground: other.foreground,
-      borderColor: other.borderColor,
-      borderWidth: other.borderWidth,
-      borderRadius: other.borderRadius,
-      opacity: other.opacity,
-      blur: other.blur,
-      shadow: other.shadow,
-      fontSize: other.fontSize,
-      fontFamily: other.fontFamily,
-      fontWeight: other.fontWeight,
-      letterSpacing: other.letterSpacing,
-      lineHeight: other.lineHeight,
-      alignment: other.alignment,
-      textAlign: other.textAlign,
+    return Style(
+      padding: other.padding ?? padding,
+      margin: other.margin ?? margin,
+      minWidth: other.minWidth ?? minWidth,
+      minHeight: other.minHeight ?? minHeight,
+      maxWidth: other.maxWidth ?? maxWidth,
+      background: other.background ?? background,
+      foreground: other.foreground ?? foreground,
+      borderColor: other.borderColor ?? borderColor,
+      borderWidth: other.borderWidth ?? borderWidth,
+      borderRadius: other.borderRadius ?? borderRadius,
+      opacity: other.opacity ?? opacity,
+      blur: other.blur ?? blur,
+      shadow: other.shadow ?? shadow,
+      fontSize: other.fontSize ?? fontSize,
+      fontFamily: other.fontFamily ?? fontFamily,
+      fontWeight: other.fontWeight ?? fontWeight,
+      letterSpacing: other.letterSpacing ?? letterSpacing,
+      lineHeight: other.lineHeight ?? lineHeight,
+      alignment: other.alignment ?? alignment,
+      textAlign: other.textAlign ?? textAlign,
     );
   }
 

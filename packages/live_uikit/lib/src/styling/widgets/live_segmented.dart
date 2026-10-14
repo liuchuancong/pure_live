@@ -23,11 +23,15 @@ class TokenSegmented extends StatelessWidget {
         borderRadius: BorderRadius.circular(radius + theme.token.motion.lineWidth),
       ),
       child: Row(
+        // A flex child claims the whole remaining width even under
+        // `MainAxisSize.min`, so `Expanded` is only applied when the control is
+        // actually asked to share the full width; otherwise it hugs its labels.
         mainAxisSize: spec.expand ? MainAxisSize.max : MainAxisSize.min,
         children: [
           for (var i = 0; i < spec.labels.length; i++)
-            Expanded(
-              child: _Segment(
+            _flexChild(
+              spec.expand,
+              _Segment(
                 label: spec.labels[i],
                 selected: i == spec.index,
                 onTap: spec.enabled && spec.onChanged != null ? () => spec.onChanged!(i) : null,
@@ -39,6 +43,8 @@ class TokenSegmented extends StatelessWidget {
     return spec.expand ? SizedBox(width: double.infinity, child: track) : track;
   }
 }
+
+Widget _flexChild(bool expand, Widget segment) => expand ? Expanded(child: segment) : segment;
 
 class _Segment extends StatelessWidget {
   const new({required this.label, required this.selected, required this.onTap});

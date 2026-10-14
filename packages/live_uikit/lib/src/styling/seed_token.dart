@@ -134,6 +134,7 @@ final class SeedToken {
     double? motionUnit,
     bool? motion,
     bool? pureBlack,
+    bool? focusOutline,
   }) => SeedToken(
     colorPrimary: colorPrimary ?? this.colorPrimary,
     colorSuccess: colorSuccess ?? this.colorSuccess,
@@ -158,7 +159,7 @@ final class SeedToken {
     motionUnit: motionUnit ?? this.motionUnit,
     motion: motion ?? this.motion,
     wireframe: wireframe,
-    focusOutline: focusOutline,
+    focusOutline: focusOutline ?? this.focusOutline,
     pureBlack: pureBlack ?? this.pureBlack,
   );
 

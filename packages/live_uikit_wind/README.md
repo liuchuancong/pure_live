@@ -16,7 +16,7 @@ controls drawn by `fluttersdk_wind`, without business pages importing it.
 - Implement `LanguageAdapter` for `LiveDesignLanguage.wind` (stable id `wind`).
 - Map the resolved `DesignToken` into the Wind theme and install it through a
   theme scope (never a nested application shell).
-- Build native Wind widgets for: **button, switch, checkbox**.
+- Build native Wind widgets for: **button, card, text field, switch, checkbox**.
 - Declare exactly those controls in `windUiCapabilities` so the core resolver
   reports a `controlUnsupported` downgrade for the rest (§16/§17).
 
@@ -27,7 +27,7 @@ controls drawn by `fluttersdk_wind`, without business pages importing it.
 - State management (Riverpod/GetX), navigation, business pages, or playback.
 - Direct dependencies on other style adapters.
 
-Controls not built here (card, text field, slider, segmented, progress, select,
+Controls not built here (slider, segmented, progress, select,
 tab bar) fall back to the core shared token renderer — they still render
 on-theme.
 
@@ -72,6 +72,15 @@ core resolver's native-versus-`controlUnsupported` dispatch (§16/§17).
 
 ## Known limitations
 
-- Only button, switch and checkbox are native; every other control uses the shared
-  renderer.
-- No widget-level or cross-style integration tests yet.
+- Only button, card, text field, switch and checkbox are native; slider, segmented,
+  progress, select and tab bar use the shared renderer.
+- Test coverage is present at four layers: `test/adapter/` (contract and
+  resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
+  `test/widgets/` (every native control driven through the real dispatch path), and
+  `test/integration/` (resolution surface for all ten controls and a switch to the
+  core `material` base and back with caller-owned state preserved). What remains
+  untested is the part that needs hardware: focus traversal, Android TV D-pad, and
+  the platform claims in §13.
+- `WButton` owns its focus handling inside `WAnchor`, so `focusNode`/`autofocus`
+  cannot be honoured on the Wind button, and `WInput` collapses keyboard type and
+  obscuring into one `InputType` (§9).

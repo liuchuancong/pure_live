@@ -94,7 +94,7 @@ Import hygiene: `material_ui` types are imported with the `mu` prefix throughout
 
 ## 4. Package directory
 
-The tree below reflects the package as it exists today. Material UI is the most complete adapter: eight builders and three theme files are already implemented.
+The tree below reflects the package as it exists today. Material UI is the most complete adapter: eight builders and three theme files are implemented, and every §16 concern that does not need a device — contract, theme mapping, native controls, and runtime switching — has its own test directory.
 
 ```text
 packages/
@@ -125,8 +125,14 @@ packages/
     │           ├── material_ui_segmented_builder.dart
     │           └── material_ui_progress_builder.dart
     └── test/
-        └── adapter/
-            └── material_ui_contract_test.dart
+        ├── adapter/
+        │   └── material_ui_contract_test.dart
+        ├── theme/
+        │   └── material_ui_theme_test.dart
+        ├── widgets/
+        │   └── material_ui_native_controls_test.dart
+        └── integration/
+            └── material_ui_style_switching_test.dart
 ```
 
 Optional, not-yet-created modules. Add these only when the corresponding behavior is implemented; do not create empty files just to match a template tree:
@@ -137,7 +143,6 @@ Optional, not-yet-created modules. Add these only when the corresponding behavio
 | `lib/src/icons/` | Semantic icons must be remapped to fork-specific icon assets |
 | `lib/src/diagnostics/` | The adapter needs mapping-level diagnostics beyond what the core resolver already reports |
 | `example/` | A runnable demo without business dependencies is worth maintaining |
-| `test/{theme,widgets,integration}/` | The first test for that concern exists |
 
 ### Module responsibilities
 
@@ -354,7 +359,7 @@ The current implementation maps two properties, deliberately, and both follow th
 |---|---|---|
 | Brightness | `mu.ThemeData.brightness` from `token.isDark` | Light or dark; drives control defaults |
 | Accent / primary color | `mu.ColorScheme.fromSeed(seedColor: token.color.primary, brightness:)` | Seed-based generation, matching Material 3 semantics |
-| Text styles | Material UI typography, with `LiveTheme.of(context).text` supplying per-control styles | Roles are applied by the builders, not the theme |
+| Text styles | `mu.ThemeData.fontFamily` from `token.type.fontFamily`; role sizes stay at the fork's typography | Mapped for the family only — the roles come from `LiveTheme.of(context).text` in the builders, which is where `Language*Spec` intent is applied (§8.1) |
 | Density / sizing | `ControlSize` on `LanguageButtonSpec`, plus `LanguageCardSpec.dense` | Per-control; do not assume a global density knob |
 | Focus appearance | Fork default, plus `focusNode` / `autofocus` from the specs | Verify against the resolved fork version |
 | Surface / background | `mu.ColorScheme` surfaces, with `theme.colors` overrides where the token is authoritative | Map only surfaces the fork actually exposes |
@@ -370,6 +375,8 @@ Avoid forcing all seven style libraries to use identical widget dimensions. The 
 ### 8.2 Theme scope
 
 `MaterialUiThemeScope` installs the mapped theme with `mu.Theme(data: ..., child: child)` — a theme scope, not a nested application widget.
+
+Under the theme it installs one more thing: a transparent `mu.Material`. Fork ink widgets resolve their paint surface by *type*, and a host `MaterialApp`/`Scaffold` only supplies the SDK's `Material`, so a fork `TextField`, `Switch` or `Card` throws "No Material widget found" without it. Making the scope provide the surface is what keeps §1's rule intact — a page must not have to know which library is rendering it. A transparent `Material` is a paint surface, not a shell: it owns no navigation, no localization and no application configuration, so it does not fight the host `MaterialApp` for inherited state.
 
 Do not nest a Material UI application shell inside an existing app solely to apply the style. A nested application widget introduces competing navigation, localization, and application-level configuration, and in this package it would additionally fight the host `MaterialApp` for the same Material-shaped inherited state.
 
@@ -398,22 +405,34 @@ Two builders — `MaterialUiButtonBuilder` and `MaterialUiCheckboxBuilder` — t
 - Map `ButtonVariant` to the closest Material button class: `primary` → `mu.FilledButton`, `secondary` → `mu.ElevatedButton`, `ghost` → `mu.TextButton`, `danger` → `mu.FilledButton` with `styleFrom(backgroundColor: theme.colors.error, foregroundColor: theme.colors.onPrimary)`.
 - Compute `onPressed` through `seam.interactive(spec)` so disabled, loading, and no-callback states agree with the token renderer; pass `null` when not interactive.
 - Build content via `seam.buttonLabel(spec, theme)`, which substitutes a spinner while `loading`.
-- Preserve `focusNode` and `autofocus`; honour `spec.expand`; carry `tooltip` through without hardcoding text.
+- Preserve `focusNode` and `autofocus` — the fork's buttons take both directly.
+- `expand` wraps the built button in `SizedBox(width: double.infinity)` and `tooltip` wraps it in `mu.Tooltip`, the same two post-wraps the token renderer applies, because neither is a constructor argument of a Material button. The tooltip text is the caller's, never generated.
 - Do not place business actions inside the adapter.
+- `iconOnly` needs no builder code: the shared `buttonLabel` returns the glyph alone
+  (with the tooltip as its `semanticLabel`), so a textless button built by
+  `LiveIconButton` arrives here already correct.
+- `selected` is **not mapped by this adapter today**. The token base tints a toggled
+  button with the primary foreground; reproducing that here needs this library's own
+  selected affordance rather than a hand-painted overlay on its button. Recorded as the
+  documented remainder of `docs/decisions/0004` (§15).
+- `style` is **not mapped by this adapter either**. Its button is the library's own
+  widget and paints its own surface; applying a caller's `Style` to it would mean
+  hand-painting an overlay over that widget, the trade this section already refuses
+  for `selected`. The shared token renderer does honour the field, so a language with
+  no native button keeps the override (`live-uikit.md` §11).
 
 ### Card (`MaterialUiCardBuilder`)
 
 - Prefer native Material UI card visuals for the intended role.
-- Preserve `child`, `padding`, `selected`, `bordered`, `dense`, and the `style` override.
-- Wire `onTap` and `onLongPress` only when supplied; do not assume every card is interactive.
-- Preserve `focusNode` and `autofocus` for interactive cards, and `semantics`.
+- Preserve `child`, `padding`, `selected`, `bordered` and `dense`; `dense` tightens the token padding by the same factor the token renderer uses, so the density step means the same thing in both paths.
+- Read the `style` override only for what a Material card can express — `background`, `borderColor`, `borderWidth`, `borderRadius` — and leave the rest as library defaults rather than hand-painting it (§8.1 "map only supported").
+- Wire `onTap` and `onLongPress` only when supplied; do not assume every card is interactive. `focusNode` and `autofocus` reach the ink well only for an interactive card, so a plain surface never takes focus.
 
 ### Text field (`MaterialUiTextFieldBuilder`)
 
 - Use the native Material UI text input.
 - Pass the supplied `controller` and `focusNode` through untouched. When `controller` is null, follow the core convention that the field owns one — the adapter must not create a second controller or silently own a lifecycle the caller did not delegate.
-- Preserve `placeholder`, `errorText`, `enabled`, `readOnly`, `obscure`, `maxLines`, `textInputAction`, `keyboardType`, `prefix`, `suffix`, `style`, `onChanged`, and `onSubmitted`.
-- Respect text direction and accessibility labels.
+- Preserve `placeholder`, `errorText`, `enabled`, `readOnly`, `obscure`, `maxLines`, `textInputAction`, `keyboardType`, `prefix`, `suffix`, `style`, `onChanged`, and `onSubmitted`. The inline `style` layers onto the token body text through `TextStyle.copyWith`, so an unset property keeps the token value.
 
 ### Switch (`MaterialUiSwitchBuilder`)
 
@@ -425,20 +444,22 @@ Two builders — `MaterialUiButtonBuilder` and `MaterialUiCheckboxBuilder` — t
 
 - Use the native Material UI checkbox, with the label rendered through the shared seam.
 - Preserve `value`, `label`, `enabled`, `focusNode`, and `autofocus`.
+- The label-to-callback bridge exists only when the caller can be called back: `enabled: false` **or** a null `onChanged` passes `null` to the fork, so a dead checkbox never lights up as though it responded.
 - The core contract is a non-null `bool value`, so the adapter must not advertise an indeterminate state; if the fork supports one, it stays unreachable until `LanguageCheckboxSpec` models it.
 
 ### Slider (`MaterialUiSliderBuilder`)
 
-- Use the native Material UI slider.
+- Use the native Material UI slider, clamped to the spec range, with the caller's `focusNode` preserved.
 - Preserve `value`, `min`, `max`, `enabled`, and `onChanged`; a null `onChanged` or `enabled: false` disables.
 - Handle invalid ranges according to the core validation contract rather than clamping silently.
+- **A disabled slider is the documented exception to native rendering.** `material_ui` 1.6.0 reads its focus node as `widget.focusNode ?? _focusNode!` and only creates `_focusNode` for an enabled slider, so a disabled `mu.Slider` throws while building. The adapter routes that one case to `super.slider`, the shared token renderer — on-theme, functional, and reported by the resolver as `shared` (§15). The fork fix retires the branch.
 - The spec has no `divisions` field; do not invent stepped behaviour this contract does not request.
 
 ### Segmented (`MaterialUiSegmentedBuilder`)
 
 - Use the native Material UI segmented button.
-- Map `labels` in order, honour `index`, and route selection through `onChanged`; a null `onChanged` or `enabled: false` disables.
-- Honour `expand` so segments either share the full width or size to content.
+- Map `labels` in order, honour `index`, and route selection through `onChanged`; a null `onChanged` or `enabled: false` disables — as with the checkbox, the closure is only built when a callback exists.
+- Honour `expand` through the fork's own `expandedInsets: EdgeInsets.zero`, so segments share the full width instead of the adapter faking it with a width hack.
 
 ### Progress (`MaterialUiProgressBuilder`)
 
@@ -640,9 +661,11 @@ Expected behavior:
 
 ## 16. Testing strategy
 
+Four directories, one per concern: `test/adapter/` (contract), `test/theme/` (§8.1 mapping and §8.3 re-skin), `test/widgets/` (§9 control rules through the real adapter path), `test/integration/` (§11 switching). Everything in them runs headless; the items that need hardware are listed at the end and stay open.
+
 ### Unit tests
 
-`test/adapter/material_ui_contract_test.dart` already covers the highest-risk surface. It asserts:
+`test/adapter/material_ui_contract_test.dart` covers the highest-risk surface. It asserts:
 
 - `adapter.id == materialUiAdapterId == 'materialUi'`.
 - `adapter.displayName == 'Material UI'` and `adapter.language == LiveDesignLanguage.materialUi`.
@@ -652,60 +675,60 @@ Expected behavior:
 - A declared control resolves native with **no** diagnostic.
 - An undeclared control resolves `shared` with `LiveUiDiagnosticCode.controlUnsupported`, and the diagnostic names the right control.
 
+`test/theme/material_ui_theme_test.dart` adds the mapping half of §8.1: brightness, `scaffoldBackgroundColor`/`cardColor` following the token, a changed accent producing a different generated `mu.ColorScheme`, and a dark token yielding different surfaces than the light one.
+
 The registry and resolver under test are constructed as `LanguageRegistry(adapters: {LiveDesignLanguage.materialUi: adapter}, fallback: SharedLanguageAdapter())` with `LiveUiResolver(registry: registry)` — the same types production uses, so these are contract tests rather than mock tests.
-
-Extend unit coverage with:
-
-- Brightness mapping: `token.isDark` → `mu.ThemeData.brightness` at both values.
-- Seed mapping: a changed `token.color.primary` produces a different generated `mu.ColorScheme`.
-- Variant mapping: each `ButtonVariant` selects the expected `mu` button class, with `danger` carrying the error-tinted `styleFrom`.
-- Interactive-state parity with the seam: disabled, loading, and null-`onPressed` specs all yield `onPressed == null`.
-- Progress `value == null` staying indeterminate, and `barColor` overriding the primary tint.
-- Theme invalidation when the resolved token changes.
-- Unsupported-variant behavior: `showLabel` degrading as documented.
 
 ### Widget tests
 
-Test:
+`test/widgets/material_ui_native_controls_test.dart` drives every control through a `LiveConfigProvider` with this adapter registered, so it exercises the real dispatch rather than the builders in isolation. Covered:
 
-- Button callback, disabled state, and loading spinner.
-- Text field controller and focus-node preservation, including caller-owned controller identity across rebuilds.
-- Switch and checkbox value updates, and `enabled: false` producing no callback.
-- Slider range and callbacks.
-- Segmented selection and `expand`.
-- Card tap, long-press, `selected`, and non-interactive default.
-- Correct `mu.Theme` scope, and the scope not leaking an SDK `Theme`.
-- Accessibility semantics.
-- Layout under narrow and wide constraints, and right-to-left.
-- The two mixed-tree defects unique to this package: a fork widget never reading an SDK `Theme`, and a core token widget never receiving a `mu`-prefixed widget.
+- Callback, disabled and loading states, and interactive-state parity through the seam — a spec the seam calls non-interactive yields `onPressed == null` in the fork widget too.
+- Variant mapping: each `ButtonVariant` selects the expected `mu` class, and `danger` carries the token error fill through `styleFrom` rather than the seed-derived scheme.
+- `focusNode`, `autofocus`, `expand` and `tooltip` preserved on the button; `focusNode` preserved on the slider.
+- Text field controller identity across rebuilds, `onChanged`, and an inline `Style` overriding the token body text.
+- Switch, checkbox, segmented and progress value and callback semantics, including a null callback disabling the control as hard as `enabled: false`.
+- Card tap, long-press, `selected` fill, `bordered` side, `dense` padding, an explicit `padding`, and focus reaching only an interactive card.
+- Progress `value == null` staying indeterminate, `barColor` overriding the primary tint, `height` mapping to the indicator thickness, and `showLabel` degrading to no label — the omission §9 documents.
+- The disabled slider taking the documented shared-renderer fallback instead of throwing (§9/§15).
+- Correct `mu.Theme` scope, and the two mixed-tree defects unique to this package: with Material UI active no SDK `FilledButton`/`Card`/`TextField`/`Switch`/`Checkbox`/`Slider`/`SegmentedButton`/`LinearProgressIndicator`/`Tooltip` is in the tree, and the fallback controls still render.
+- Right-to-left layout with translated labels at a narrow width.
 
 ### Integration tests
 
-1. Register Material UI alongside at least one other adapter, including the core shared fallback.
-2. Select Material UI at runtime.
-3. Render all ten controls; confirm eight resolve native and two through the shared renderer.
-4. Change brightness and accent color without restarting the app.
-5. Switch Material UI → core `material` → Material UI and back again, asserting the theme scope is replaced each time.
-6. Confirm form values and business controllers remain intact across the switch.
-7. Confirm `select` and `tabBar` stay functional and on-theme across a switch to a style that renders them natively.
-8. Confirm the `controlUnsupported` diagnostics for `select` and `tabBar` are the only expected noise.
+`test/integration/material_ui_style_switching_test.dart` runs Material UI against the core shared fallback:
+
+1. All ten `LiveUiControl` values resolve through the production `LiveUiResolver`: eight `adapterNative` with no diagnostic, `select` and `tabBar` `shared` with `controlUnsupported` — the only noise (§16.3, §16.8).
+2. Brightness and accent changes re-skin `mu.ThemeData` in place, without a restart (§16.4).
+3. Material UI → core `material` → Material UI replaces the theme scope each way: the fork widgets and `mu.Theme` are present, absent, then present again (§11's hardest pair, §16.5).
+4. A caller-owned `TextEditingController` keeps its text and its identity across both switches (§16.6).
+5. `select` and `tabBar` stay callable and typed on both sides of the switch (§16.7).
+
+Registering a *second* third-party adapter in the same test is deliberately not done: §3.3 forbids a dependency on another style package, so cross-adapter switching is an application-level integration concern, exercised from the app's own test suite.
 
 ### Platform verification
 
-Before declaring support for a platform, test on the corresponding runtime. At minimum include Android, an iOS or macOS target, Windows desktop, and Android TV in the planned validation matrix — Material UI has no platform exclusions, so all six claimed platforms need evidence rather than inference.
+Before declaring support for a platform, test on the corresponding runtime. At minimum include Android, an iOS or macOS target, Windows desktop, and Android TV in the planned validation matrix — Material UI has no platform exclusions, so all six claimed platforms need evidence rather than inference. Focus traversal under `mu.ThemeData`, Android TV D-pad behaviour, and contrast on the generated tonal surfaces are the three items no headless test can settle (§12, §14).
 
 ## 17. CI and architectural enforcement
 
-Add checks to ensure that:
+These rules are enforced by `./tool/check_architecture.ps1`, which runs as a fatal gate in `.github/workflows/architecture.yml`. The script holds an adapter → widget-library map; adding an adapter adds one entry and every rule below then covers it automatically.
 
 - `live_uikit_material_ui` depends on `live_uikit` and `material_ui`.
 - `live_uikit_material_ui` does not depend on any other style adapter.
 - The core package does not depend on `material_ui`.
-- Business packages do not import `package:material_ui/material_ui.dart`.
-- Every `material_ui` import inside this package uses the `mu` alias, and no unqualified Material widget name in `lib/src/` resolves to the SDK.
-- The public barrel exports only `src/adapter/material_ui_registration.dart`.
-- `materialUiCapabilities` matches the set of control methods `MaterialUiLanguageAdapter` actually overrides — a CI assertion, not only a test. This check is what catches the drift where a builder is added but its control is never declared, or a control is declared without an override.
+- No package other than this adapter — business packages, feature packages, `apps/` — imports `package:material_ui/material_ui.dart` or declares it as a dependency. Enforced on the declared edge as well as the imported one, so a pubspec that names another adapter's library fails even before anything imports it.
+- Every `material_ui` import inside this package uses the `mu` alias, in `lib/` and in `test/`. An unqualified import would resolve to the SDK's Material widgets and quietly defeat the adapter. The alias must not leak through the public barrel.
+- The public barrel exports only `src/adapter/material_ui_registration.dart` — any other directive in it is a finding.
+- `materialUiCapabilities` matches the set of control methods `MaterialUiLanguageAdapter` actually overrides. `wrap` and names starting with `_` are ignored; a control declared without an override, or overridden without being declared, fails the build. This is what catches the drift where a builder is added but its control is never declared.
+- The README's list of native controls is checked against `materialUiCapabilities`: a control named in
+  prose but not declared, or declared but unmentioned, fails the gate.
+- §4's directory tree is checked against the package: every file the current-layout tree
+  names must exist, and every `test/**_test.dart` on disk must be named there. The
+  optional-modules block is exempt — those names must stay absent until built.
 - Formatting, static analysis, and tests pass.
+
+The gate is textual, so it cannot see an SDK Material type reached through a transitive re-export inside a builder body; that is what the SDK-widget-absent assertion in §16 covers at runtime instead.
 
 Example verification commands:
 
@@ -731,51 +754,56 @@ Done.
 ### Phase 2 — Theme integration ✅
 
 - `MaterialUiThemeMapper` wired to `wrap`.
-- `MaterialUiThemeScope` installing `mu.Theme`, `MaterialUiThemeBuilder` mapping brightness and seed colour.
-- Remaining: typography, density, and per-surface mapping as those properties become meaningful in the fork; plus the theme-scope and leakage widget tests in §16.
+- `MaterialUiThemeScope` installing `mu.Theme` plus the transparent `mu.Material` ink surface, `MaterialUiThemeBuilder` mapping brightness, accent seed, and the token's page/card surfaces.
+- The global font family is mapped into `mu.ThemeData.fontFamily`; density and per-role typography stay builder-level (`ControlSize`, `LanguageCardSpec.dense`, `LiveTheme.text`), because the fork builds its own text scale. Remaining mapping work is limited to what the fork can express. Fixed-typed fork fields (visual density, typography roles) stay library defaults and are recorded as non-token-mappable in §8.1 rather than half-mapped.
 
 ### Phase 3 — Core controls ✅
 
-Implemented across the eight `lib/src/widgets/` builders: button, card, text field, switch, checkbox, slider, segmented, progress. Remaining: per-builder widget tests and documentation of degraded spec fields.
+Implemented across the eight `lib/src/widgets/` builders: button, card, text field, switch, checkbox, slider, segmented, progress. Each builder preserves the spec fields its library can express, reuses the shared seam for press/label logic, and is covered by the §16 widget tests. The one documented degradation is `LanguageProgressSpec.showLabel`, which the fork's indicator cannot render.
 
-### Phase 4 — Interaction and accessibility
+### Phase 4 — Interaction and accessibility ◐
 
-- Verify keyboard navigation, focus traversal, and visible focus under `mu.ThemeData`.
-- Test Android TV D-pad behavior; add `lib/src/interaction/` only if Material UI-specific gaps are found.
-- Validate semantics, contrast across generated tonal surfaces, and RTL layout.
-- Document fallbacks for unsupported variants such as `LanguageProgressSpec.showLabel`.
+- Headless coverage landed: keyboard-focusable controls keep their `focusNode`/`autofocus` through the fork widgets, disabled controls are wired dead rather than decorative, semantics annotations assert, and RTL with translated labels is tested at a narrow width.
+- Open, needs hardware: focus traversal and the visible focus ring under a real `mu.ThemeData`, Android TV D-pad, and contrast measured on the generated tonal surfaces.
+- Add `lib/src/interaction/` only if that testing finds a Material UI-specific gap; it does not exist today.
 
-### Phase 5 — Production readiness
+### Phase 5 — Production readiness ◐
 
-- Integration tests for style switching, including Material UI ↔ core `material` both directions.
-- Architectural CI checks from §17, including the capability/override drift assertion and the `mu`-alias check.
-- Verify all six claimed platforms with evidence.
-- Document known limitations (select and tabs as shared fallbacks) and upgrade compatibility for `material_ui`.
+- §17 architectural CI checks are implemented in `tool/check_architecture.ps1`, including the capability/override drift assertion and the `mu`-alias rule.
+- §11 runtime switching is covered in both directions against the core shared fallback, with caller-owned state preserved.
+- Open: platform-by-platform evidence for the six claimed targets (§13), and the known limitations below promoted into a `docs/decisions/` entry if any of them is ever lifted.
+
+### Known limitations
+
+- `select` and `tabBar` are shared-fallback controls (§7).
+- A disabled `mu.Slider` cannot build in `material_ui` 1.6.0, so that one spec shape falls back to the token renderer (§9/§15). Re-check when the fork is upgraded; the assertion that would catch the fix is already in `test/widgets/`.
+- `LanguageProgressSpec.showLabel` has no fork equivalent and is dropped rather than hand-drawn (§9).
+- Cross-adapter switching (Material UI against Fluent, Cupertino UI, …) is not testable from this package because §3.3 forbids depending on another adapter; it belongs to the application's integration suite.
 
 A later phase may add native `select` and `tabBar` rendering if the fork exposes widgets that can absorb `LanguageSelectSpec<T>` and `LanguageTabsSpec` without the adapter owning caller state. Any such control must be added to `materialUiCapabilities` and the contract test in the same change.
 
 ## 19. Acceptance checklist
 
-- [ ] The package depends on `live_uikit` and `material_ui` only for its core integration.
-- [ ] It extends `SharedLanguageAdapter` and implements the real core `LanguageAdapter` contract without a competing interface.
-- [ ] It uses the stable adapter id `materialUi`, with `displayName` `Material UI` and `language` `LiveDesignLanguage.materialUi`.
-- [ ] `materialUiAdapterId`, `materialUiAdapter`, `createMaterialUiAdapter()` and `materialUiLocalizationsDelegates` are exported, and the barrel exports nothing else.
-- [ ] It reports accurate control capabilities: the eight overrides native, `select` and `tabBar` as shared fallbacks.
-- [ ] The declared capability set matches the overridden methods, asserted in CI.
-- [ ] It maps the resolved `DesignToken` into `mu.ThemeData` rather than bypassing the fork's theme.
-- [ ] It uses native `material_ui` controls where supported and never the SDK Material widgets in their place.
-- [ ] Every `material_ui` import is `mu`-aliased and the alias does not leak into the public API.
-- [ ] It installs a `mu.Theme` scope rather than a nested application shell.
-- [ ] It does not duplicate the core theme configuration or own business state or persistence.
-- [ ] Builders reuse `interactive()` and `buttonLabel()` through the shared seam instead of reimplementing them.
-- [ ] Runtime switching preserves business state, including Material UI ↔ core `material` both directions.
-- [ ] `select` and `tabBar` remain functional and on-theme through the shared renderer, with typed selection preserved.
-- [ ] `materialUiLocalizationsDelegates` is documented as appended to the core delegates, and core strings still resolve with Material UI active.
-- [ ] Keyboard, accessibility, and TV focus behavior are tested.
-- [ ] Unsupported features follow the core fallback policy and report `controlUnsupported`.
-- [ ] Diagnostics use the shared core contract and no logging dependency.
-- [ ] Tests and static analysis pass.
-- [ ] Platform support claims are backed by actual tests.
+- [x] The package depends on `live_uikit` and `material_ui` only for its core integration.
+- [x] It extends `SharedLanguageAdapter` and implements the real core `LanguageAdapter` contract without a competing interface.
+- [x] It uses the stable adapter id `materialUi`, with `displayName` `Material UI` and `language` `LiveDesignLanguage.materialUi`.
+- [x] `materialUiAdapterId`, `materialUiAdapter`, `createMaterialUiAdapter()` and `materialUiLocalizationsDelegates` are exported, and the barrel exports nothing else.
+- [x] It reports accurate control capabilities: the eight overrides native, `select` and `tabBar` as shared fallbacks.
+- [x] The declared capability set matches the overridden methods, asserted in CI.
+- [x] It maps the resolved `DesignToken` into `mu.ThemeData` rather than bypassing the fork's theme.
+- [x] It uses native `material_ui` controls where supported and never the SDK Material widgets in their place.
+- [x] Every `material_ui` import is `mu`-aliased and the alias does not leak into the public API.
+- [x] It installs a `mu.Theme` scope rather than a nested application shell.
+- [x] It does not duplicate the core theme configuration or own business state or persistence.
+- [x] Builders reuse `interactive()` and `buttonLabel()` through the shared seam instead of reimplementing them.
+- [x] Runtime switching preserves business state, including Material UI ↔ core `material` both directions.
+- [x] `select` and `tabBar` remain functional and on-theme through the shared renderer, with typed selection preserved.
+- [x] `materialUiLocalizationsDelegates` is documented as appended to the core delegates, and core strings still resolve with Material UI active.
+- [x] Unsupported features follow the core fallback policy and report `controlUnsupported`.
+- [x] Diagnostics use the shared core contract and no logging dependency.
+- [x] Tests and static analysis pass.
+- [ ] Keyboard, accessibility, and TV focus behavior are tested — the headless half is; focus traversal, the visible focus ring, Android TV D-pad and contrast on generated tonal surfaces need hardware (§12/§14/§16).
+- [ ] Platform support claims are backed by actual tests (§13/§16).
 
 ## 20. Final architecture decision
 

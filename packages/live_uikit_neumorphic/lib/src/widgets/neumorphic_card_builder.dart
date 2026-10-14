@@ -2,14 +2,19 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_neumorphic_ui_kit/flutter_neumorphic_ui_kit.dart' as neu;
 import 'package:live_uikit/styling.dart';
 
-/// Builds a soft Neumorphic card from a [LanguageCardSpec] (§9 Card), honouring
-/// the dense padding and wrapping an interactive card in a gesture layer.
+/// Builds a soft Neumorphic card from a [LanguageCardSpec] (§9 Card): the fork's
+/// embossed surface with the token padding, the `dense` step, an explicit
+/// `padding` override, and a gesture layer only when the caller supplied a tap.
+///
+/// `selected` and `bordered` have no soft-surface equivalent — a Neumorphic card
+/// is defined by its shadow, not a border or fill — so they are left to the
+/// library's own pressed state rather than faked with an outline (§15).
 abstract final class NeumorphicCardBuilder {
   /// Builds the card for [spec].
   static Widget build(BuildContext context, LanguageCardSpec spec) {
     final theme = LiveTheme.of(context);
     return neu.NeuCard(
-      padding: EdgeInsets.all(spec.dense ? theme.card.padding * 0.66 : theme.card.padding),
+      padding: spec.padding ?? EdgeInsets.all(spec.dense ? theme.card.padding * 0.66 : theme.card.padding),
       child: spec.onTap == null
           ? spec.child
           : GestureDetector(

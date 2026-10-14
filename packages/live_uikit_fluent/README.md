@@ -21,7 +21,7 @@ and have its controls drawn by `fluent_ui`, without any business page importing
 - Map the resolved `DesignToken` into a `FluentThemeData` and install it through a
   `FluentTheme` scope (never a nested `FluentApp`).
 - Build native Fluent widgets for: **button, card, text field, switch, checkbox,
-  slider, progress**.
+  slider, progress, select**.
 - Declare exactly those controls in `fluentUiCapabilities` so the core resolver can
   report a `controlUnsupported` downgrade for the rest (§16/§17).
 - Expose `fluentLocalizationsDelegates` for the composition root to install.
@@ -34,7 +34,7 @@ and have its controls drawn by `fluent_ui`, without any business page importing
 - Direct dependencies on other style adapters, or on `fluent_ui` leaking into
   business packages.
 
-Controls not built here (segmented, select, tab bar) fall back to the core shared
+Controls not built here (segmented, tab bar) fall back to the core shared
 token renderer — they still render on-theme, they are simply not Fluent-native.
 
 ## Public entry point
@@ -89,9 +89,14 @@ that the core resolver serves a declared control natively while reporting a
 
 ## Known limitations
 
-- Segmented, select and tab bar are served by the shared token renderer, not by
-  native Fluent widgets.
-- Widget-level and cross-style integration tests (§16) are not yet present; the
-  current suite is the deterministic contract/capability/resolver layer.
+- Segmented and tab bar are served by the shared token renderer; `select` and
+  `progress` are native (`fluent.ComboBox<T>` keeps the spec's typed value).
+- Test coverage is present at four layers: `test/adapter/` (contract and
+  resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
+  `test/widgets/` (every native control driven through the real dispatch path), and
+  `test/integration/` (resolution surface for all ten controls and a switch to the
+  core `material` base and back with caller-owned state preserved). What remains
+  untested is the part that needs hardware: focus traversal, Android TV D-pad, and
+  the platform claims in §13.
 - Fluent can be selected on every supported platform, but native Windows chrome
   and system integrations must not be assumed elsewhere (§13).
