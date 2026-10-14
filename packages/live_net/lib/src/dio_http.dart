@@ -111,6 +111,7 @@ final class DioLiveHttp implements LiveHttp {
     return LiveResponse(
       statusCode: response.statusCode ?? 0,
       headers: _headersOf(response.headers),
+      setCookies: _setCookiesOf(response.headers),
       bodyBytes: Uint8List.fromList(response.data ?? const <int>[]),
     );
   }
@@ -276,6 +277,18 @@ final class DioLiveHttp implements LiveHttp {
       return const {};
     }
     return {for (final entry in headers.map.entries) entry.key.toLowerCase(): entry.value.join(', ')};
+  }
+
+  /// The raw `Set-Cookie` lines, one per header value, so a caller can merge a
+  /// login's cookies without re-splitting the comma-joined [headers] copy (an
+  /// `Expires` date holds a comma and cannot be split back apart safely).
+  static List<String> _setCookiesOf(dio.Headers? headers) {
+    if (headers == null) return const [];
+    final cookies = <String>[];
+    for (final entry in headers.map.entries) {
+      if (entry.key.toLowerCase() == 'set-cookie') cookies.addAll(entry.value);
+    }
+    return cookies;
   }
 
   static TransportFailure _mapFailure(dio.DioException error) {

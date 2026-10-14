@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_provider.dart';
 import 'package:live_sites/src/common/websocket/danmaku_socket.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/douyu/danmaku/douyu_stt_codec.dart';
 import 'package:live_sites/src/platforms/douyu/douyu_site.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_gift_parser.dart';
@@ -29,27 +31,41 @@ final class DouyuDanmakuProvider implements LiveDanmakuProvider {
 
   @override
   Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
-    final session = DouyuDanmakuSession(
-      roomId: roomId,
-      filterSuspectedAutomated: filterSuspectedAutomated,
-      gifts: site.cachedGifts(roomId),
+    // The room's own gift catalogue (its `betard` answer's `room_gift.gift`) is
+    // what prices a gift the lists do not carry, so the session takes the room
+    // detail's danmaku handle and seeds from it before any packet arrives.
+    final room = site.capability<LiveRoomProvider>()!.getRoom(roomId);
+    return await (await room).match<Future<Either<LiveSiteError, LiveDanmakuSession>>>(
+      (error) async => left(error),
+      _open,
     );
-    final failure = await session.connect();
-    if (failure != null) {
-      unawaited(session.dispose());
-      return left(failure);
-    }
-    // The catalogue is fetched off the connect path and merged into the live
-    // session as it arrives (the contract's update-methods channel); a room
-    // the lists do not know still reports its gifts, just unpriced.
-    unawaited(() async {
-      try {
-        session.addGifts(await site.giftCatalog(roomId));
-      } on Object {
-        // A failed catalogue fetch leaves the session reporting raw gifts.
+  }
+
+  Future<Either<LiveSiteError, LiveDanmakuSession>> _open(LiveRoom room) async {
+    if (room.runtime.danmakuHandle case final DouyuDanmakuArgs args) {
+      final session = DouyuDanmakuSession(
+        roomId: args.roomId,
+        filterSuspectedAutomated: filterSuspectedAutomated,
+        gifts: args.gifts,
+      );
+      final failure = await session.connect();
+      if (failure != null) {
+        unawaited(session.dispose());
+        return left(failure);
       }
-    }());
-    return right(session);
+      // The fetched lists and the prop table are merged over the betard gifts
+      // off the connect path; a room the lists do not know still reports its
+      // gifts, priced from the room's own answer.
+      unawaited(() async {
+        try {
+          session.addGifts(await site.giftCatalog(args.roomId, betard: args.gifts));
+        } on Object {
+          // A failed catalogue fetch leaves the session on the betard gifts.
+        }
+      }());
+      return right(session);
+    }
+    return left(const LiveSiteError.contentUnavailable(siteId: 'douyu', message: 'room names no danmaku handle'));
   }
 }
 

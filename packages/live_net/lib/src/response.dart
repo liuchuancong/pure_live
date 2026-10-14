@@ -7,10 +7,14 @@ import 'dart:typed_data';
 /// decide what a bad status means for their site. Only the convenience
 /// helpers in `LiveHttpCalls` promote bad statuses to `HttpStatusFailure`.
 final class LiveResponse {
-  /// A response with [statusCode], lower-cased [headers] and a defensive
-  /// copy of [bodyBytes].
-  new({required this.statusCode, required this.headers, required Uint8List bodyBytes})
-    : bodyBytes = Uint8List.fromList(bodyBytes);
+  /// A response with [statusCode], lower-cased [headers], the raw repeated
+  /// [setCookies] lines and a defensive copy of [bodyBytes].
+  new({
+    required this.statusCode,
+    required this.headers,
+    required Uint8List bodyBytes,
+    this.setCookies = const [],
+  }) : bodyBytes = Uint8List.fromList(bodyBytes);
 
   /// HTTP status code, e.g. `200`.
   final int statusCode;
@@ -18,6 +22,12 @@ final class LiveResponse {
   /// Response headers keyed by lower-case name; repeated values are joined
   /// with `, `.
   final Map<String, String> headers;
+
+  /// The raw `Set-Cookie` response lines, one per header, in order. [headers]
+  /// joins repeated values with `, `, which cannot be split back apart safely
+  /// (an `Expires` date holds a comma), so the individual lines are kept here
+  /// for callers that must merge a login's cookies (a renewal answers several).
+  final List<String> setCookies;
 
   /// Raw response bytes, already decompressed for gzip/deflate transfers.
   final Uint8List bodyBytes;

@@ -166,9 +166,12 @@ final class DouyuSite implements LiveSite {
   // Signing descriptor --------------------------------------------------------
 
   ({String did, DouyuDescriptor descriptor, DateTime at})? _descriptor;
+  ({String did, Future<DouyuDescriptor> future})? _descriptorFlight;
 
   /// The descriptor for [did]: reused while younger than five minutes and
-  /// usable, fetched through [fetch] otherwise.
+  /// usable, fetched through [fetch] otherwise. Two callers that miss together
+  /// share one fetch (the descriptor is signed per device, so it is not refetched
+  /// twice for the same did).
   Future<DouyuDescriptor> descriptorFor(String did, Future<DouyuDescriptor> Function() fetch) async {
     final cached = _descriptor;
     final at = now();
@@ -178,9 +181,19 @@ final class DouyuSite implements LiveSite {
         cached.descriptor.usableAt(at)) {
       return cached.descriptor;
     }
-    final descriptor = await fetch();
-    _descriptor = (did: did, descriptor: descriptor, at: now());
-    return descriptor;
+    final running = _descriptorFlight;
+    if (running != null && running.did == did) return await running.future;
+    final flight = () async {
+      final descriptor = await fetch();
+      _descriptor = (did: did, descriptor: descriptor, at: now());
+      return descriptor;
+    }();
+    _descriptorFlight = (did: did, future: flight);
+    try {
+      return await flight;
+    } finally {
+      if (_descriptorFlight?.future == flight) _descriptorFlight = null;
+    }
   }
 
   // Rid mapping ---------------------------------------------------------------

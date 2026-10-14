@@ -65,14 +65,13 @@ final class DouyuHttp {
   }
 
   /// The raw answer of the passport renewal, whose `Set-Cookie` lines are
-  /// the whole point.
+  /// the whole point: every repeated header, kept per-line (the joined
+  /// `set-cookie` header cannot be split back apart because an `Expires`
+  /// date holds a comma).
   Future<List<String>> passportSetCookies(Uri url, Map<String, String> headers) async {
     try {
       final response = await http.send(LiveRequest.custom(method: 'GET', site: 'douyu', url: url, headers: headers));
-      // live_net joins repeated Set-Cookie headers; mergeSetCookie splits
-      // the fields off the first `;` of each, so one string is merged fine.
-      final raw = response.headers['set-cookie'];
-      return raw == null || raw.isEmpty ? const <String>[] : [raw];
+      return response.setCookies;
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;
       throw DouyuFailure(DouyuFailureKind.network, 'renewal $url: $failure', cause: failure);

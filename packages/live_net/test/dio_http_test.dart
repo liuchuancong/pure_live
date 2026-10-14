@@ -43,6 +43,23 @@ void main() {
       expect((response.json! as Map<String, Object?>)['title'], '客厅');
     });
 
+    test('repeated Set-Cookie headers are kept per-line in setCookies', () async {
+      final server = await startServer((request) async {
+        request.response.headers.add('set-cookie', 'acf_jwt_token=NEW; path=/; secure');
+        request.response.headers.add('set-cookie', 'LTP0=abc; path=/; expires=Wed, 09 Jun 2036 10:18:14 GMT');
+        request.response.write('ok');
+        await request.response.close();
+      });
+
+      final response = await http.send(LiveRequest.get(server.url));
+
+      // The joined header cannot be split back (the expires date holds a comma),
+      // but the per-line list keeps both cookies whole.
+      expect(response.setCookies, hasLength(2));
+      expect(response.setCookies.first, startsWith('acf_jwt_token=NEW'));
+      expect(response.setCookies.last, startsWith('LTP0=abc'));
+    });
+
     test('form POST reaches the server as urlencoded fields', () async {
       final server = await startServer((request) async {
         final body = await utf8.decoder.bind(request).join();
