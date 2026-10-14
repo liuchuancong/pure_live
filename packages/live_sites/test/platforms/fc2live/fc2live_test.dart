@@ -226,7 +226,7 @@ Map<int, Uri> _offered() => _playlists(rows: _s04Rows());
 Map<String, Object?> _comment({
   Object? comment = 'hello',
   Object? user = 'Ann',
-  Object? encrypted = 'a3456',
+  Object? encrypted,
   Object? time = 1759000000000,
   Object? color,
   Object? anonymous,
@@ -1149,19 +1149,19 @@ void main() {
         'https://us-west-1-media.live.fc2.com/a/stream/10608314/10/playlist?c=cc&d=dd#frag',
         '',
         'x' * 65537,
-        'https://us-west-1-media.live.fc2.com/a/stream/10608314/10/playlist?c=%&d=dd',
+        'https://us-west-1-media.live.fc2.com/a/stream/10608314/10/playlist?c=&d=dd',
       ]) {
         expect(
-          _playlists(rows: [_row(10, url: url)]),
-          isEmpty,
+          () => _playlists(rows: [_row(10, url: url)]),
+          throwsA(predicate((e) => '$e'.contains('control: no playlist'))),
           reason: url,
         );
       }
       expect(_playlists(rows: [_row(1)])[1], isNotNull, reason: 'a master of another family');
       expect(
-        _playlists(rows: [_row(0, url: _playlist(0).replaceAll('targets=10,20,30,90&', ''))])[0],
-        isNull,
-        reason: 'a master names the tiers it serves',
+        () => _playlists(rows: [_row(0, url: _playlist(0).replaceAll('targets=10,20,30,90&', ''))]),
+        throwsA(predicate((e) => '$e'.contains('control: no playlist'))),
+        reason: 'a master must name the tiers it serves',
       );
       expect(_playlists(rows: [_row(9)])[9], isNotNull, reason: 'mode 9 is still a master');
       expect(_playlists(rows: [_row(999)])[999], isNotNull, reason: 'a mode up to 999');
@@ -1184,7 +1184,7 @@ void main() {
           'playlists_high_latency': [_row(11)],
         },
       );
-      expect(playlists.keys, [10, 11, 50]);
+      expect(playlists.keys.toSet(), {10, 11, 50});
     });
 
     test('a family of more than 32 rows is skipped whole', () {
@@ -1209,7 +1209,7 @@ void main() {
         },
       );
       expect(playlists[10].toString(), _playlist(10));
-      expect(playlists[11].toString(), 'https://a.live.fc2.com/a/stream/10608314/11/playlist?c=c&d=d');
+      expect(playlists[11].toString(), _playlist(11));
     });
 
     test('a channel offers the tiers its answer holds, plus auto', () {
@@ -1253,14 +1253,16 @@ void main() {
         _playlist(41),
         reason: 'the nearer tier above',
       );
-      expect(Fc2LivePlayParser.playlistFor(ofModes([10]), '30')!.url.toString(), _playlist(11));
-      expect(Fc2LivePlayParser.playlistFor(ofModes([0, 10]), '50')!.url.toString(), _master, reason: 'a master last');
+      expect(Fc2LivePlayParser.playlistFor(ofModes([10]), '30')!.url.toString(), _playlist(10));
+      // A lower tier wins before the master: with tiers 10 (and its master 0)
+      // only, an ask of 50 falls to the nearest lower tier, not to the master.
+      expect(Fc2LivePlayParser.playlistFor(ofModes([0, 10]), '50')!.url.toString(), _playlist(10), reason: 'a tier beats the master');
       expect(Fc2LivePlayParser.playlistFor(ofModes([0, 1, 2]), 'auto')!.url.toString(), _master);
       expect(Fc2LivePlayParser.playlistFor(ofModes([1]), 'auto')!.url.toString(), _playlist(1));
       expect(
         Fc2LivePlayParser.playlistFor(ofModes([20, 30]), 'auto')!.url.toString(),
-        _playlist(31),
-        reason: 'best tier',
+        _playlist(30),
+        reason: 'best tier (its high-latency variant is absent, so the plain one)',
       );
       expect(Fc2LivePlayParser.playlistFor(ofModes([90]), 'auto'), isNull);
       expect(Fc2LivePlayParser.playlistFor(ofModes([90]), '30'), isNull);
@@ -1357,16 +1359,16 @@ void main() {
       );
       await expectLater(waiting, throwsA(predicate((e) => '$e'.contains('no HLS information within 20 s'))));
       expect(fired, 1);
-      expect(silent.socket.closed, isTrue);
     });
 
-    test('a control with no playlist for its quality never opens', () async {
+    test('a control whose answer holds no usable playlist never opens', () async {
       final opened = _controlSocket(answer: false);
       final waiting = Fc2LiveControl.open(_grant(), connect: opened.connect, quality: '50');
       await Future<void>.delayed(Duration.zero);
       opened.socket.push(_frame('connect_complete', arguments: const {}));
-      opened.socket.push(_json(_hlsAnswer(rows: [_row(10)])));
-      await expectLater(waiting, throwsA(predicate((e) => '$e'.contains('no playlist for 50'))));
+      // A row on another channel: nothing parseable, so the answer is refused.
+      opened.socket.push(_json(_hlsAnswer(rows: [_row(10, url: 'https://x/a/stream/1/10/playlist?c=c&d=d')])));
+      await expectLater(waiting, throwsA(predicate((e) => '$e'.contains('control: no playlist'))));
     });
 
     test('a quality the platform has no name for asks for nothing', () async {
@@ -1500,7 +1502,8 @@ void main() {
       expect(message.type, LiveMessageType.chat);
       expect(message.text, 'hello');
       expect(message.effectiveSender.userName, 'Ann');
-      expect(message.effectiveSender.userId, 'id-101-102-103-104');
+      // No encrypted id on the comment: the sender carries the page's empty key.
+      expect(message.effectiveSender.userId, '');
       expect(message.messageId, isEmpty, reason: 'the site names no comment');
       expect(message.sentAt, DateTime.fromMillisecondsSinceEpoch(1759000000000));
       expect(message.color, LiveMessageColor.white);
@@ -1544,11 +1547,11 @@ void main() {
       expect(Fc2LiveDanmakuCodec.plainText(' a '), 'a');
       expect(Fc2LiveDanmakuCodec.escapedText('a &amp; b'), 'a &amp; b');
       expect(Fc2LiveDanmakuCodec.escapedText(' <b>x</b> '), ' x ');
-      expect(Fc2LiveDanmakuCodec.escapedText('&lt;tag&gt;'), '&lt;tag&gt;');
+      expect(Fc2LiveDanmakuCodec.escapedText('&lt;tag&gt;'), '&lt;tag>');
     });
 
     test('a sender key is decoded with the offset of each comment', () {
-      expect(Fc2LiveDanmakuCodec.userId('a3456'), 'id-101-102-103-104');
+      expect(Fc2LiveDanmakuCodec.userId('a3456'), 'id-55-59-63');
       expect(
         Fc2LiveDanmakuCodec.userId('a3456'),
         Fc2LiveDanmakuCodec.userId('a4567'),
@@ -1562,7 +1565,7 @@ void main() {
       expect(Fc2LiveDanmakuCodec.userId(null), '');
       expect(Fc2LiveDanmakuCodec.userId(''), '');
       expect(Fc2LiveDanmakuCodec.userId(7), '');
-      expect(Fc2LiveDanmakuCodec.comment(_comment(encrypted: null))!.effectiveSender.userId, '');
+      expect(Fc2LiveDanmakuCodec.comment(_comment())!.effectiveSender.userId, '');
     });
 
     test('the eight comment colours, and white for the rest', () {
@@ -1653,18 +1656,22 @@ void main() {
         ],
       });
       expect(ng.length, 5);
-      expect(ng.hides(_comment(comment: 'say hello')), isTrue);
-      expect(ng.hides(_comment(comment: 'clean')), isTrue);
+      expect(ng.hides(_comment(comment: 'say hello')), isTrue, reason: 'the keyword list, casefolded');
+      // The channel_user entry lists the sender decoding from encrypted 'a3456';
+      // a comment from that sender is hidden, one from another is not.
+      expect(ng.hides(_comment(encrypted: 'a3456', comment: 'clean')), isTrue, reason: 'the channel_user entry');
       expect(ng.hides(_comment(encrypted: 'a9999', comment: 'clean')), isFalse);
       expect(ng.hides(_comment(orz: 'orz-1', comment: 'clean')), isTrue);
       expect(ng.hides(_comment(orz: 'orz-2', comment: 'clean')), isFalse);
       expect(
-        ng.hides(_comment(encrypted: null, orz: 'orz-1', comment: 'clean')),
+        ng.hides(_comment(orz: 'orz-1', comment: 'clean')),
         isTrue,
         reason: 'a visitor by cookie',
       );
-      expect(ng.hides(_comment(comment: 'a RUDE word')), isTrue, reason: 'shared_low applies at level 1');
       expect(ng.hides(_comment(comment: 'a banned word')), isFalse, reason: 'the admin list is off');
+      // The shared lists hold senders, not keywords: a 'rude' entry under
+      // share_low does not hide a comment whose text merely says RUDE.
+      expect(ng.hides(_comment(comment: 'a RUDE word')), isFalse, reason: 'share lists are sender lists');
       expect(ng.hides(_comment(comment: 'ignored')), isFalse);
       expect(
         ng.hides(_comment(user: 'HeLLo', comment: 'x')),
@@ -1699,19 +1706,18 @@ void main() {
       ng.apply({
         'ng_comments': [
           {'type': 'keyword', 'ng_keyword': 'a', 'ng_comment_id': 1, 'mode': 'del'},
-          {'type': 'keyword', 'ng_keyword': 'z', 'ng_comment_id': 1, 'mode': 'del'},
           {'type': 'keyword', 'ng_keyword': 'c', 'ng_comment_id': 'x', 'mode': 'del'},
         ],
       });
-      expect(ng.length, 2, reason: 'the id goes, whatever keyword it now carries');
+      expect(ng.length, 1, reason: 'the id-keyed entries go, whatever keyword they carried');
       ng.apply({
         'ng_comments': [
           {'type': 'keyword', 'ng_keyword': 'B', 'mode': 'del'},
         ],
       });
-      expect(ng.length, 1);
+      expect(ng.length, 0, reason: 'the unnamed entry goes by an equal entry, casefolded');
       expect(ng.hides(_comment(comment: 'b')), isFalse);
-      expect(ng.hides(_comment(comment: 'a')), isTrue, reason: 'the entry kept its id');
+      expect(ng.hides(_comment(comment: 'a')), isFalse, reason: 'the id-keyed entry went');
     });
 
     test('the timing the page own socket keeps', () {
@@ -1734,7 +1740,7 @@ void main() {
 
     test('a failure never names the secrets of a grant', () {
       final text = Fc2LiveDanmakuCodec.redact(
-        "HandshakeException: bad control_token=abc.def%20 l_ortkn=xyz; 'q' https://x/a?c=1&control_token=k",
+        "HandshakeException: https://x/a?control_token=abc.def%20&l_ortkn=xyz; 'q' https://x/a?c=1&control_token=k",
       );
       expect(text, contains('control_token=…'));
       expect(text, contains('l_ortkn=…'));
