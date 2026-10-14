@@ -1570,6 +1570,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "29.0.8"
+  pinyindart:
+    dependency: transitive
+    description:
+      name: pinyindart
+      sha256: "742335bb6b9d37880c2f2e1a85457cd5c097868cdc11578e5f908c886bccaa21"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.1"
   platform:
     dependency: "direct overridden"
     description:

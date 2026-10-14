@@ -1,0 +1,28 @@
+name: live_record_core
+
+description: >-
+  Recording task kernel for Pure Live: the task ledger and its three state axes
+  (queue status, room state, artifact stage), capture-safe ASCII naming with the
+  human-readable name applied after the merge, the pending-attempt list that lets
+  an interrupted recording be finished on the next launch, the queue that bounds
+  concurrent captures, and the recovery sweep. Pure Dart: it declares the capture,
+  guard and notification contracts and never imports an engine package, so the app
+  shell wires them to media_core_recording_ffmpeg, media_core_native and
+  media_core_ingest.
+version: 0.1.0
+publish_to: none
+
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  clock: ^1.1.3
+  meta: ^1.19.0
+  path: ^1.9.1
+  pinyindart: ^0.0.1
+
+dev_dependencies:
+  test: ^1.33.0
+  very_good_analysis: ^11.0.0
