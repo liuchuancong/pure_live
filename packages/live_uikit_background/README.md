@@ -4,11 +4,16 @@ Cross-cutting background subsystem for Pure Live.
 
 ## Purpose
 
-Give every page (home, rooms list, settings, player) and every
-`live_uikit_*` style adapter one shared way to describe and paint a
-background — solid, gradient, image or video — without re-implementing
-BoxFit, blur compositing, letterbox fill, failure surfaces or video
-pause plumbing at each call site.
+Give every page (home, rooms list, settings, player) one shared way to
+describe and paint a background — solid, gradient, image or video —
+without re-implementing BoxFit, blur compositing, letterbox fill,
+failure surfaces or video pause plumbing at each call site.
+
+Composers are pages and the application composition root. A
+`live_uikit_<style>` adapter is **not** one of them: adapters may not
+depend on another `live_uikit_*` package (dependency rule §3.3/§7.1,
+enforced by `tool/check_architecture.ps1`), and this package depends on
+neither `live_uikit` nor a widget library.
 
 **Design rule:** this is a plugin package. Every "what should happen
 when..." question is answered by a field the caller sets. The package
@@ -19,9 +24,9 @@ holds no defaults, no auto-detection, and no framework-side policy.
 - Own the sealed `BackgroundConfig` union and its variants.
 - Own the `LiveBackground` widget that dispatches a config to the
   matching view and layers a `child` on top.
-- Interpret the fields the caller sets: overlay scrim, underlay,
-  fallback, placeholder color, letterbox fill sigma, media blur,
-  pause signal, provider choice.
+- Interpret the fields the caller sets: overlay scrim (flat dim or
+  frosted glass), underlay, fallback, placeholder color, letterbox fill
+  sigma, media blur, pause signal, provider choice.
 - Expose the `BackgroundVideoSource` seam the app composition root
   binds to `media_core` or any other player kernel.
 - Expose `AppVisibleScope` / `AppVisibilityObserver` as **optional**
@@ -48,9 +53,11 @@ holds no defaults, no auto-detection, and no framework-side policy.
   and wrap it in `ProviderImageSource`.
 - Business state, navigation, or theme resolution. Those live in the
   app / `live_uikit` / `live_preferences`.
-- Per-style adapter rendering. Fluent / macOS / Glass / Wind etc.
-  compose `LiveBackground` the same way pages do; they do not
-  re-implement media handling.
+- Rendering inside a design-language adapter. A style adapter composes
+  nothing from here — the dependency rule forbids it. Where a style
+  needs a background surface, that is `live_uikit`'s own
+  `LiveBackground`/`LiveBackgroundStyle` (token-driven, no media
+  pipeline), not this package.
 - Theme-brightness-driven scrim colours. `BackgroundOverlay` takes
   an explicit color; if a page wants light-surface vs dark-surface
   washes it selects them itself from `LiveTheme` and hands the right
@@ -100,6 +107,8 @@ class HeroScaffold extends StatelessWidget {
         fallback: GradientBackground(
           colors: [Color(0xFF12203A), Color(0xFF061220)],
         ),
+        // Flat dim scrim. Give BackgroundOverlay a blurSigma > 0 to
+        // frost the media behind it instead (blur + wash in one layer).
         overlay: BackgroundOverlay(color: Colors.black, opacity: 0.35),
       ),
       child: const Center(child: Text('Hello')),
@@ -194,7 +203,7 @@ Exported surface:
 |---|---|---|
 | `BackgroundConfig` | sealed class | Union root |
 | `SolidBackground` / `GradientBackground` / `ImageBackground` / `VideoBackground` / `BackgroundLayerStack` | variants | Legal background shapes |
-| `BackgroundOverlay` | value class | Scrim hanging off every variant |
+| `BackgroundOverlay` | value class | Scrim hanging off every variant; a positive `blurSigma` frosts the backdrop behind it via the `blur` package |
 | `ImageSource`, `NetworkImageSource`, `AssetImageSource`, `ProviderImageSource` | sealed union | Where an image is loaded from; `ProviderImageSource` is the extension point for `FileImage`, `CachedNetworkImageProvider`, `MemoryImage`, ... |
 | `BackgroundLayer` | value class | One slice of a stack |
 | `BackgroundVideoSource` | contract | Seam the app wires to media_core |
@@ -205,7 +214,8 @@ Exported surface:
 
 - Flutter SDK. The package imports `flutter/widgets.dart`,
   `flutter/painting.dart`, `flutter/foundation.dart` and `dart:ui`
-  (for the blur `ImageFilter`); nothing else.
+  (for the media blur `ImageFilter`), plus the `blur` package for the
+  frosted-scrim overlay path.
 - No Riverpod, no GetX, no Freezed, no cached image package, no
   player kernel.
 
@@ -241,3 +251,12 @@ The `test/src/...` tree mirrors the source layout per
   `paused` parameter themselves.
 - No JSON serialization on the config models; persistence of user
   background choices is intentionally left to `live_preferences`.
+- Two widgets share the name `LiveBackground` across the uikit family
+  (`docs/decisions/0005-two-livebackground-widgets-in-the-uikit-family.md`):
+  this package's config/video/layer pipeline, and `live_uikit`'s
+  token-driven `LiveBackground` + `LiveBackgroundStyle` (solid, gradient,
+  image, glass, raised). They are independent — neither package depends
+  on the other — and today only
+  `apps/pure_live/lib/background_demo_page.dart` renders either. Which one
+  owns the name (and whether one should absorb the other) is an open
+  decision, not a settled design.

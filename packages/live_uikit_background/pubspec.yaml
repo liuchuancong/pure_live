@@ -18,9 +18,9 @@ environment:
   flutter: ">=3.47.0"
 
 dependencies:
+  blur: ^4.0.2
   flutter:
     sdk: flutter
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
