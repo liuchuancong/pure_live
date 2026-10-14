@@ -69,14 +69,16 @@ final class YoutubeRoomData {
 
 /// What the comment feed needs to follow one broadcast: the [videoId] (the
 /// request's Referer), the first live-chat [continuation], the interval it
-/// arrived with ([timeoutMs], a hint) and whether the chat is a replay
-/// ([isReplay], which this adapter refuses to poll).
+/// arrived with ([timeoutMs], a hint), the concurrent viewers the watch page
+/// showed on joining ([viewers], reported once before polling), and whether the
+/// chat is a replay ([isReplay], which this adapter refuses to poll).
 final class YoutubeDanmakuArgs {
   /// Wraps the feed arguments.
   const YoutubeDanmakuArgs({
     required this.videoId,
     required this.continuation,
     this.timeoutMs = 0,
+    this.viewers,
     this.isReplay = false,
   });
 
@@ -88,6 +90,9 @@ final class YoutubeDanmakuArgs {
 
   /// The server's poll interval hint in milliseconds.
   final int timeoutMs;
+
+  /// The concurrent viewers the room showed on joining; null when it named none.
+  final int? viewers;
 
   /// Whether the chat is a past replay.
   final bool isReplay;
@@ -193,6 +198,7 @@ final class YoutubeSite implements LiveSite {
           videoId: parse.videoId,
           continuation: parse.continuation,
           timeoutMs: parse.timeoutMs,
+          viewers: parse.room.audience.onlineViewers,
           isReplay: parse.isReplay,
         ),
       ),

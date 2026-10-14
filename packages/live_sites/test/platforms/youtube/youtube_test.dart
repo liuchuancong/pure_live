@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 // The test doubles spell their class name in their one constructor; the
 // shorthand would read as a field declaration at the call site.
@@ -6,6 +7,8 @@ import 'dart:convert';
 
 import 'package:fpdart/fpdart.dart';
 import 'package:live_net/live_net.dart';
+import 'package:live_sites/src/models/audience/live_audience_update/live_audience_update.dart';
+import 'package:live_sites/src/models/enums/live_audience_signal_kind.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
@@ -19,8 +22,10 @@ import 'package:live_sites/src/platforms/youtube/api/youtube_endpoints.dart';
 import 'package:live_sites/src/platforms/youtube/api/youtube_http.dart';
 import 'package:live_sites/src/platforms/youtube/capabilities/youtube_link_resolver.dart';
 import 'package:live_sites/src/platforms/youtube/danmaku/youtube_danmaku_codec.dart';
+import 'package:live_sites/src/platforms/youtube/danmaku/youtube_danmaku_session.dart';
 import 'package:live_sites/src/platforms/youtube/parsers/youtube_failure.dart';
 import 'package:live_sites/src/platforms/youtube/parsers/youtube_play_parser.dart';
+import 'package:live_sites/src/platforms/youtube/parsers/youtube_protobuf.dart';
 import 'package:live_sites/src/platforms/youtube/parsers/youtube_room_parser.dart';
 import 'package:live_sites/src/platforms/youtube/youtube_site.dart';
 import 'package:test/test.dart';
@@ -466,6 +471,268 @@ void main() {
       final resolver = YoutubeLinkResolver(site: site);
       final resolved = _right(await resolver.resolve(Uri.parse('https://www.youtube.com/@foo/live')));
       expect(resolved.toString(), 'https://www.youtube.com/watch?v=$_videoId');
+    });
+  });
+
+  group('B-13: the Live chat view', () {
+    // A view message: field 1 (the view varint) plus filler field 3.
+    Uint8List view(int kind) => (YoutubeProtoWriter()
+          ..integer(1, kind)
+          ..integer(3, 2))
+        .toBytes();
+    // The chat message: filler, then the view selector under field 16.
+    Uint8List chat(Uint8List viewBytes) => (YoutubeProtoWriter()
+          ..bytes(3, utf8.encode('header'))
+          ..integer(6, 1)
+          ..bytes(16, viewBytes))
+        .toBytes();
+    // The continuation: the chat wrapped under the live-chat field number.
+    String token(List<int> bytes) => base64Url.encode(bytes).replaceAll('=', '%3D');
+    String continuation(Uint8List viewBytes) => token((YoutubeProtoWriter()..bytes(119693434, chat(viewBytes))).toBytes());
+
+    test('Top chat (4) rewrites to Live chat (1); Live chat is left alone', () {
+      final top = continuation(view(4));
+      final live = continuation(view(1));
+      expect(YoutubeDanmakuCodec.allChatContinuation(top), live);
+      expect(YoutubeDanmakuCodec.allChatContinuation(live), live);
+    });
+
+    test('the rewrite changes exactly one byte, from 4 to 1', () {
+      final top = continuation(view(4));
+      final before = base64Url.decode(base64Url.normalize(top.replaceAll('%3D', '=')));
+      final after = base64Url.decode(base64Url.normalize(YoutubeDanmakuCodec.allChatContinuation(top)!.replaceAll('%3D', '=')));
+      expect(after, hasLength(before.length));
+      final changed = [
+        for (var i = 0; i < before.length; i++)
+          if (before[i] != after[i]) (i, before[i], after[i]),
+      ];
+      expect(changed, hasLength(1));
+      expect([changed.single.$2, changed.single.$3], [4, 1]);
+    });
+
+    test('a token that cannot be rewritten gives null', () {
+      final cases = {
+        'another view (2)': continuation(view(2)),
+        'no view field': token((YoutubeProtoWriter()..bytes(119693434, (YoutubeProtoWriter()..integer(6, 1)).toBytes())).toBytes()),
+        'no live-chat field': token((YoutubeProtoWriter()..integer(6, 1)).toBytes()),
+        'not base64': 'not a continuation!',
+        'empty': '',
+      };
+      for (final MapEntry(key: name, value: candidate) in cases.entries) {
+        expect(YoutubeDanmakuCodec.allChatContinuation(candidate), isNull, reason: name);
+      }
+    });
+  });
+
+  group('B-13: the viewer count', () {
+    test('updated_metadata reads the live viewers and the next continuation', () {
+      final body = jsonDecode(
+        jsonEncode({
+          'updatedMetadata': {
+            'videoViewCountRenderer': {
+              'isLive': true,
+              'viewCount': {'simpleText': '1,250 watching now'},
+            },
+          },
+          'continuation': {
+            'timedContinuationData': {'continuation': 'META_NEXT'},
+          },
+        }),
+      );
+      final update = YoutubeDanmakuCodec.parseMetadata(body);
+      expect(update.viewers, 1250);
+      expect(update.continuation, 'META_NEXT');
+    });
+
+    test('an ended broadcast (isLive false) has no live count', () {
+      final body = jsonDecode(
+        jsonEncode({
+          'videoViewCountRenderer': {
+            'isLive': false,
+            'viewCount': {'simpleText': '9,999 views'},
+          },
+        }),
+      );
+      expect(YoutubeDanmakuCodec.parseMetadata(body).viewers, isNull);
+    });
+
+    test('the audience message carries the count as an online-viewers update', () {
+      final message = YoutubeDanmakuCodec.audience(4321);
+      expect(message.type, LiveMessageType.audienceUpdate);
+      final update = message.payload! as LiveAudienceUpdate;
+      expect(update.kind, LiveAudienceSignalKind.onlineViewers);
+      expect(update.value, 4321);
+    });
+  });
+
+  group('B-22: ticker-pinned super chats', () {
+    final received = DateTime.utc(2026, 10, 1, 12);
+    Map<String, Object?> paidLine(String id, int usec, int header) => {
+      'addChatItemAction': {
+        'item': {
+          'liveChatPaidMessageRenderer': {
+            'id': id,
+            'authorName': {'simpleText': 'Bob-$id'},
+            'purchaseAmountText': {'simpleText': r'$10.00'},
+            'message': {'simpleText': 'hi'},
+            'timestampUsec': '$usec',
+            'headerBackgroundColor': header,
+          },
+        },
+      },
+    };
+    Map<String, Object?> ticker(String id, int durationSec, int fullDurationSec, int usec) => {
+      'addLiveChatTickerItemAction': {
+        'item': {
+          'liveChatTickerPaidMessageItemRenderer': {
+            'id': id,
+            'durationSec': durationSec,
+            'fullDurationSec': fullDurationSec,
+            'showItemEndpoint': {
+              'showLiveChatItemEndpoint': {
+                'renderer': {
+                  'liveChatPaidMessageRenderer': {
+                    'id': id,
+                    'authorName': {'simpleText': 'Bob-$id'},
+                    'purchaseAmountText': {'simpleText': r'$10.00'},
+                    'message': {'simpleText': 'hi'},
+                    'timestampUsec': '$usec',
+                    'headerBackgroundColor': 0xFFFFFFFF,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+    Object? answer(List<Object?> actions) => {
+      'continuationContents': {
+        'liveChatContinuation': {
+          'actions': actions,
+          'continuations': [
+            {'timedContinuationData': {'continuation': 'NEXT', 'timeoutMs': 3000}},
+          ],
+        },
+      },
+    };
+
+    test('a history super chat takes its display from the ticker fullDurationSec', () {
+      final batch = YoutubeDanmakuCodec.parse(
+        answer([paidLine('p1', 1, 0xFFFFFFFF), ticker('p1', 30, 120, 1)]),
+        now: received,
+      );
+      final superChat = batch.messages.single.payload! as LiveSuperChatMessage;
+      expect(superChat.endTime!.difference(superChat.startTime!), const Duration(seconds: 120));
+    });
+
+    test('the ticker still pins: replayed, ending when the time left does, oldest first', () {
+      // Sent at 1700 and 1800 (usec ≈ 2026); both still pinned, one with no time left.
+      final batch = YoutubeDanmakuCodec.parse(
+        answer([
+          ticker('p2', 20, 120, 1700000000000000),
+          ticker('p1', 30, 120, 1600000000000000),
+          ticker('p3', 0, 120, 1650000000000000),
+        ]),
+        now: received,
+      );
+      expect(batch.pinned.map((message) => (message.payload! as LiveSuperChatMessage).messageId), [
+        'youtube:p1',
+        'youtube:p2',
+      ]);
+      final first = batch.pinned.first;
+      expect(first.replayed, isTrue);
+      expect(first.type, LiveMessageType.superChat);
+      final superChat = first.payload! as LiveSuperChatMessage;
+      expect(superChat.startTime, DateTime.fromMicrosecondsSinceEpoch(1600000000000000, isUtc: true));
+      expect(superChat.endTime, received.add(const Duration(seconds: 30)));
+    });
+  });
+
+  test('a reload continuation restarts the chat', () {
+    final batch = YoutubeDanmakuCodec.parse({
+      'continuationContents': {
+        'liveChatContinuation': {
+          'actions': <Object?>[],
+          'continuations': [
+            {'reloadContinuationData': {'continuation': 'RELOAD'}},
+          ],
+        },
+      },
+    });
+    expect(batch.reload, isTrue);
+    expect(batch.continuation, 'RELOAD');
+  });
+
+  group('session join', () {
+    // The first answer: a history line (not reported) and a Super Chat the
+    // ticker still pins (reported), plus a continuation that keeps it open.
+    final firstAnswer = jsonEncode({
+      'continuationContents': {
+        'liveChatContinuation': {
+          'actions': [
+            {
+              'addChatItemAction': {
+                'item': {
+                  'liveChatTextMessageRenderer': {
+                    'authorName': {'simpleText': 'Old'},
+                    'id': 'h1',
+                    'message': {'simpleText': 'backlog line'},
+                  },
+                },
+              },
+            },
+            {
+              'addLiveChatTickerItemAction': {
+                'item': {
+                  'liveChatTickerPaidMessageItemRenderer': {
+                    'id': 'p1',
+                    'durationSec': 30,
+                    'fullDurationSec': 120,
+                    'showItemEndpoint': {
+                      'showLiveChatItemEndpoint': {
+                        'renderer': {
+                          'liveChatPaidMessageRenderer': {
+                            'id': 'p1',
+                            'authorName': {'simpleText': 'Rich'},
+                            'purchaseAmountText': {'simpleText': r'$20.00'},
+                            'message': {'simpleText': 'pinned!'},
+                            'timestampUsec': '1727380001000000',
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          ],
+          'continuations': [
+            {'timedContinuationData': {'continuation': 'NEXT', 'timeoutMs': 3000}},
+          ],
+        },
+      },
+    });
+    final received = DateTime.utc(2026, 10, 1, 12);
+    const args = YoutubeDanmakuArgs(videoId: _videoId, continuation: 'JOIN', viewers: 1234);
+
+    test('joining reports the viewers and the still-pinned Super Chat, not the backlog', () async {
+      final session = YoutubeDanmakuSession(
+        args: args,
+        http: YouTubeHttp(_FakeHttp((_) => _resp(200, firstAnswer))),
+        now: () => received,
+      );
+      final seen = <LiveMessage>[];
+      expect(await session.connect(), isNull);
+      final subscription = session.events.listen(seen.add);
+      await Future<void>.delayed(Duration.zero);
+      await session.dispose();
+      await subscription.cancel();
+      expect(seen.map((message) => message.type), [LiveMessageType.audienceUpdate, LiveMessageType.superChat]);
+      expect(seen.first.payload, isA<LiveAudienceUpdate>());
+      expect(seen.last.replayed, isTrue);
+      expect(seen.last.text, 'pinned!');
+      expect(seen.any((message) => message.text == 'backlog line'), isFalse);
     });
   });
 }

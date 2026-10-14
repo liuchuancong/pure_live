@@ -1,3 +1,8 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:live_sites/src/models/audience/live_audience_update/live_audience_update.dart';
+import 'package:live_sites/src/models/enums/live_audience_signal_kind.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/gift/live_gift/live_gift.dart';
 import 'package:live_sites/src/models/message/live_emote/live_emote.dart';
@@ -9,6 +14,7 @@ import 'package:live_sites/src/models/super_chat/live_super_chat_display/live_su
 import 'package:live_sites/src/models/super_chat/live_super_chat_message/live_super_chat_message.dart';
 import 'package:live_sites/src/models/super_chat/live_super_chat_price/live_super_chat_price.dart';
 import 'package:live_sites/src/platforms/youtube/parsers/youtube_json.dart';
+import 'package:live_sites/src/platforms/youtube/parsers/youtube_protobuf.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -24,6 +30,8 @@ final class YoutubeFeedBatch {
     required this.continuation,
     required this.pullDelay,
     required this.messages,
+    this.pinned = const [],
+    this.reload = false,
     this.over = false,
     this.notice = '',
   });
@@ -36,6 +44,15 @@ final class YoutubeFeedBatch {
 
   /// The messages, in feed order.
   final List<LiveMessage> messages;
+
+  /// The Super Chats the ticker still pins, as replayed super chats, oldest
+  /// first. The session reports these from the first answer instead of its
+  /// backlog of history.
+  final List<LiveMessage> pinned;
+
+  /// Whether [continuation] restarts the chat with its recent history (a
+  /// `reloadContinuationData`): the session does not report such an answer.
+  final bool reload;
 
   /// Whether the chat has ended (no `liveChatContinuation` left).
   final bool over;
@@ -63,6 +80,11 @@ abstract final class YoutubeDanmakuCodec {
   /// The per-request timeout.
   static const Duration requestTimeout = Duration(seconds: 15);
 
+  /// How often `updated_metadata` is asked for once joined. The page asks every
+  /// 5 s; a number on screen needs less and each answer is a few KB, so this
+  /// polls slower.
+  static const Duration viewerInterval = Duration(seconds: 30);
+
   /// The shortest poll interval the server may ask for.
   static const Duration minPullDelay = Duration(seconds: 1);
 
@@ -85,10 +107,13 @@ abstract final class YoutubeDanmakuCodec {
     return seconds;
   }
 
-  /// Parses one answer ([body] is the decoded JSON). A body that is not an
+  /// Parses one answer ([body] is the decoded JSON, [now] the time it came —
+  /// a Super Chat without a platform time starts then). A body that is not an
   /// object throws [FormatException]. Actions become messages; an action that
-  /// cannot be read is skipped without losing the others.
-  static YoutubeFeedBatch parse(Object? body) {
+  /// cannot be read is skipped without losing the others. The ticker items set
+  /// how long each Super Chat shows and, in [YoutubeFeedBatch.pinned], the ones
+  /// still pinned when the answer came.
+  static YoutubeFeedBatch parse(Object? body, {DateTime? now}) {
     final map = jsonObject(body);
     if (map == null) throw const FormatException('YouTube live chat has an invalid shape');
     final continuation = fields(map['continuationContents']);
@@ -104,26 +129,31 @@ abstract final class YoutubeDanmakuCodec {
         notice: notice,
       );
     }
-    final messages = [for (final action in jsonList(chat['actions'])) ?_action(action)];
+    final actions = jsonList(chat['actions']);
+    final received = now ?? DateTime.now();
+    final pinned = _pinnedDurations(actions);
+    final messages = [for (final action in actions) ?_action(action, pinned, received)];
     final next = jsonList(chat['continuations']);
-    final continuationToken = next.isEmpty ? '' : _continuation(next);
-    final timeoutMs = next.isEmpty ? 0 : _timeoutMs(next);
-    final invalid = next.any((entry) => jsonObject(entry)?['invalidContinuationEndpoint'] != null);
+    final entry = next.isEmpty ? null : _firstContinuation(next);
+    final invalid = next.any((item) => jsonObject(item)?['invalidContinuationEndpoint'] != null);
+    final token = entry?.token ?? '';
     return YoutubeFeedBatch(
-      continuation: continuationToken,
-      pullDelay: pullDelay(timeoutMs),
+      continuation: token,
+      pullDelay: pullDelay(entry?.timeoutMs ?? 0),
       messages: List.unmodifiable(messages),
-      over: invalid || (continuationToken.isEmpty && messages.isEmpty),
+      pinned: List.unmodifiable(_stillPinned(actions, received)),
+      reload: entry?.kind == 'reloadContinuationData',
+      over: invalid || (token.isEmpty && messages.isEmpty),
     );
   }
 
   // Actions -------------------------------------------------------------------
 
-  static LiveMessage? _action(Object? value) {
+  static LiveMessage? _action(Object? value, Map<String, Duration> pinned, DateTime received) {
     final action = jsonObject(value);
     if (action == null) return null;
     final add = jsonObject(action['addChatItemAction'])?['item'];
-    if (add != null) return _item(add);
+    if (add != null) return _item(add, pinned, received);
     final deleted = jsonObject(action['markChatItemAsDeletedAction']) ?? jsonObject(action['removeChatItemAction']);
     if (deleted != null) {
       final target = jsonString(deleted['targetId']) ?? jsonString(deleted['targetItemId']);
@@ -139,15 +169,15 @@ abstract final class YoutubeDanmakuCodec {
     return null;
   }
 
-  static LiveMessage? _item(Object? value) {
+  static LiveMessage? _item(Object? value, Map<String, Duration> pinned, DateTime received) {
     final item = jsonObject(value);
     if (item == null) return null;
     final text = jsonObject(findFirst(item, 'liveChatTextMessageRenderer'));
     if (text != null) return _chat(text);
     final paid = jsonObject(findFirst(item, 'liveChatPaidMessageRenderer'));
-    if (paid != null) return _superChat(paid);
+    if (paid != null) return _superChat(paid, pinned, received);
     final sticker = jsonObject(findFirst(item, 'liveChatPaidStickerRenderer'));
-    if (sticker != null) return _sticker(sticker);
+    if (sticker != null) return _sticker(sticker, pinned, received);
     final membership = jsonObject(findFirst(item, 'liveChatMembershipItemRenderer'));
     if (membership != null) return _membership(membership);
     final gift = jsonObject(findFirst(item, 'giftMessageViewModel'));
@@ -166,13 +196,27 @@ abstract final class YoutubeDanmakuCodec {
     );
   }
 
-  static LiveMessage _superChat(Map<String, dynamic> renderer) {
+  /// A paid message (Super Chat). Shown from its platform time (or [received]
+  /// when it names none) for as long as the ticker pins it ([pinned], its
+  /// `fullDurationSec`), else its colour tier, else the shortest display; or
+  /// until [end] for a Super Chat still pinned on joining ([replayed]: B-22).
+  /// Null without an amount and a message.
+  static LiveMessage? _superChat(
+    Map<String, dynamic> renderer,
+    Map<String, Duration> pinned,
+    DateTime received, {
+    DateTime? end,
+    bool replayed = false,
+  }) {
     final header = jsonInt(renderer['headerBackgroundColor']);
     final body = jsonInt(renderer['bodyBackgroundColor']);
     final amount = label(renderer['purchaseAmountText']).trim();
     final text = label(renderer['message']);
-    final start = _time(renderer['timestampUsec']);
-    final end = start?.add(_superChatDisplay(header));
+    if (amount.isEmpty && text.isEmpty) return null;
+    final id = jsonString(renderer['id']) ?? '';
+    final time = _time(renderer['timestampUsec']);
+    final start = time ?? received;
+    final display = pinned[id] ?? _superChatDisplay(header);
     return LiveMessage.normalized(
       type: LiveMessageType.superChat,
       text: text,
@@ -185,20 +229,31 @@ abstract final class YoutubeDanmakuCodec {
         text: text,
         price: SuperChatPrice(amount: _priceAmount(amount), displayText: amount),
         startTime: start,
-        endTime: end,
+        endTime: end ?? start.add(display),
         display: SuperChatDisplay(backgroundColor: _hexColor(header), backgroundBottomColor: _hexColor(body)),
       ),
+      replayed: replayed,
       messageId: _id(renderer),
-      sentAt: start,
+      sentAt: time,
     );
   }
 
-  static LiveMessage _sticker(Map<String, dynamic> renderer) {
+  /// A Super Sticker, as a Super Chat: shown from its platform time (or
+  /// [received]) for as long as the ticker pins it, else its colour tier, else
+  /// the shortest display. Null without an amount, a message or a sticker.
+  static LiveMessage? _sticker(
+    Map<String, dynamic> renderer,
+    Map<String, Duration> pinned,
+    DateTime received,
+  ) {
     final background = jsonInt(renderer['backgroundColor']);
     final amount = label(renderer['purchaseAmountText']).trim();
     final text = label(renderer['message']);
-    final start = _time(renderer['timestampUsec']);
-    final end = start?.add(_superChatDisplay(background));
+    if (amount.isEmpty && text.isEmpty) return null;
+    final id = jsonString(renderer['id']) ?? '';
+    final time = _time(renderer['timestampUsec']);
+    final start = time ?? received;
+    final display = pinned[id] ?? _superChatDisplay(background);
     return LiveMessage.normalized(
       type: LiveMessageType.superChat,
       text: text.isEmpty ? amount : text,
@@ -211,11 +266,11 @@ abstract final class YoutubeDanmakuCodec {
         text: text,
         price: SuperChatPrice(amount: _priceAmount(amount), displayText: amount),
         startTime: start,
-        endTime: end,
+        endTime: start.add(display),
         display: SuperChatDisplay(backgroundColor: _hexColor(background)),
       ),
       messageId: _id(renderer),
-      sentAt: start,
+      sentAt: time,
     );
   }
 
@@ -321,30 +376,201 @@ abstract final class YoutubeDanmakuCodec {
     return '#${two(color.r)}${two(color.g)}${two(color.b)}';
   }
 
-  static String _continuation(List<Object?> entries) {
+  /// The first continuation of `continuations`: its kind (the entry key, e.g.
+  /// `timedContinuationData` or `reloadContinuationData`), its token and the
+  /// `timeoutMs` it asks for (0 when it names none).
+  static ({String kind, String token, int timeoutMs})? _firstContinuation(List<Object?> entries) {
     for (final entry in entries) {
       final map = jsonObject(entry);
       if (map == null) continue;
-      for (final value in map.values) {
-        final data = jsonObject(value);
+      for (final MapEntry(key: kind, value: item) in map.entries) {
+        final data = jsonObject(item);
         final token = data == null ? null : jsonString(data['continuation']);
-        if (token != null && token.isNotEmpty) return token;
+        if (token != null && token.isNotEmpty) {
+          return (kind: kind, token: token, timeoutMs: jsonInt(data!['timeoutMs']) ?? 0);
+        }
       }
     }
-    return '';
+    return null;
   }
 
-  static int _timeoutMs(List<Object?> entries) {
-    for (final entry in entries) {
-      final map = jsonObject(entry);
-      if (map == null) continue;
-      for (final value in map.values) {
-        final data = jsonObject(value);
-        final timeout = data == null ? null : jsonInt(data['timeoutMs']);
-        if (timeout != null) return timeout;
+  /// How long the page pins each ticker item by its message id (`fullDurationSec`,
+  /// when positive). A Super Chat's ticker item follows it in the same answer.
+  static Map<String, Duration> _pinnedDurations(List<Object?> actions) => {
+    for (final action in actions)
+      if (jsonObject(action)?['addLiveChatTickerItemAction'] case {'item': final Map<Object?, Object?> item})
+        for (final ticker in item.values)
+          if (ticker case {'id': final String id, 'fullDurationSec': final int seconds}
+              when id.isNotEmpty && seconds > 0)
+            id: Duration(seconds: seconds),
+  };
+
+  /// The Super Chats the ticker still pins (B-22), as replayed super chats,
+  /// oldest first: each `liveChatTickerPaidMessageItemRenderer` with time left
+  /// (`durationSec`, positive) carries the paid message it stands for and is
+  /// shown from its own time to [received] plus that time. An id seen before is
+  /// left out; the session reports these from the first answer only.
+  static List<LiveMessage> _stillPinned(List<Object?> actions, DateTime received) {
+    final ids = <String>{};
+    final found = <(DateTime, int, LiveMessage)>[];
+    for (var index = 0; index < actions.length; index++) {
+      final ticker = jsonObject(jsonObject(actions[index])?['addLiveChatTickerItemAction'])?['item'];
+      if (jsonObject(ticker)?['liveChatTickerPaidMessageItemRenderer']
+          case final Map<Object?, Object?> item) {
+        final left = jsonInt(item['durationSec']);
+        if (left == null || left <= 0) continue;
+        final show = jsonObject(item['showItemEndpoint']);
+        final renderer = jsonObject(jsonObject(show?['showLiveChatItemEndpoint'])?['renderer']);
+        final paid = jsonObject(renderer?['liveChatPaidMessageRenderer']);
+        if (paid == null) continue;
+        final message = _superChat(paid, const {}, received, end: received.add(Duration(seconds: left)), replayed: true);
+        if (message == null) continue;
+        if (message.messageId.isNotEmpty && !ids.add(message.messageId)) continue;
+        final start = (message.payload! as LiveSuperChatMessage).startTime!;
+        found.add((start, index, message));
       }
     }
-    return 0;
+    found.sort((a, b) => a.$1.compareTo(b.$1) != 0 ? a.$1.compareTo(b.$1) : a.$2.compareTo(b.$2));
+    return [for (final entry in found) entry.$3];
+  }
+
+  /// The concurrent viewers as an audience-update message.
+  static LiveMessage audience(int viewers) => LiveMessage.normalized(
+    type: LiveMessageType.audienceUpdate,
+    color: LiveMessageColor.white,
+    payload: LiveAudienceUpdate(kind: LiveAudienceSignalKind.onlineViewers, value: viewers),
+  );
+
+  /// A live viewer count of a `next` or `updated_metadata` answer: the digits of
+  /// the first `videoViewCountRenderer` whose `isLive` is true ("1,250 watching
+  /// now"), null when the answer has none (the broadcast ended: "N views").
+  static int? viewers(Object? answer) {
+    int? walk(Object? node) {
+      if (node is Map) {
+        if (jsonObject(node['videoViewCountRenderer']) case final renderer? when truthy(renderer['isLive'])) {
+          final digits = label(renderer['viewCount']).replaceAll(RegExp('[^0-9]'), '');
+          if (digits.isNotEmpty) return int.tryParse(digits);
+        }
+        for (final value in node.values) {
+          if (walk(value) case final found?) return found;
+        }
+      } else if (node is List) {
+        for (final value in node) {
+          if (walk(value) case final found?) return found;
+        }
+      }
+      return null;
+    }
+
+    return walk(answer);
+  }
+
+  /// A decoded `updated_metadata` answer (B-13): the live viewers, and the
+  /// continuation of the next request (the first `continuation` entry with a text
+  /// `continuation`). A body that is not an object throws [FormatException].
+  static ({int? viewers, String? continuation}) parseMetadata(Object? body) {
+    final map = jsonObject(body);
+    if (map == null) throw const FormatException('YouTube updated_metadata has an invalid shape');
+    String? token;
+    if (jsonObject(map['continuation']) case final next?) {
+      for (final value in next.values) {
+        if (jsonString(fields(value)['continuation']) case final found? when found.isNotEmpty) {
+          token = found;
+          break;
+        }
+      }
+    }
+    return (viewers: viewers(map), continuation: token);
+  }
+
+  // The "Live chat" view ------------------------------------------------------
+
+  static const int _chatField = 119693434;
+  static const int _viewField = 16;
+  static const int _viewKind = 1;
+  static const int _topChat = 4;
+  static const int _liveChat = 1;
+
+  /// [continuation] in the page's "Live chat" view (every message) instead of the
+  /// default "Top chat". The token is a base64url protobuf message (`=` written
+  /// `%3D`); the view is field 1 of field 16 of its field 119693434: 4 for "Top
+  /// chat", 1 for "Live chat". Returns [continuation] itself when it already
+  /// names "Live chat", and null when it cannot be rewritten: not such a message,
+  /// another view, the field more than once, or a fixed-width field or group on
+  /// the way.
+  static String? allChatContinuation(String continuation) {
+    final Uint8List bytes;
+    try {
+      bytes = base64Url.decode(base64Url.normalize(continuation.replaceAll('%3D', '=')));
+    } on FormatException {
+      return null;
+    }
+    final chat = _single(bytes, _chatField);
+    final viewMessage = chat == null ? null : _single(chat, _viewField);
+    final view = viewMessage == null ? null : _viewOf(viewMessage);
+    if (view == _liveChat) return continuation;
+    if (view != _topChat) return null;
+    final rewritten = _rewrite(bytes, const [_chatField, _viewField, _viewKind], _topChat, _liveChat);
+    return rewritten == null ? null : base64Url.encode(rewritten).replaceAll('=', '%3D');
+  }
+
+  /// The only length-delimited field [number] of [bytes], or null.
+  static Uint8List? _single(Uint8List bytes, int number) {
+    final fields = _decode(bytes)?.fields.where((field) => field.number == number).toList();
+    if (fields == null || fields.length != 1 || fields.single.wireType != youtubeProtoLengthDelimitedType) {
+      return null;
+    }
+    return fields.single.value as Uint8List;
+  }
+
+  /// The view (field 1, a varint) of a view message, or null.
+  static int? _viewOf(Uint8List view) {
+    final fields = _decode(view)?.fields.where((field) => field.number == _viewKind).toList();
+    if (fields == null || fields.length != 1 || fields.single.wireType != youtubeProtoVarintType) return null;
+    return fields.single.value as int;
+  }
+
+  static YoutubeProtoMessage? _decode(Uint8List bytes) {
+    try {
+      return YoutubeProtoMessage.decode(bytes);
+    } on FormatException {
+      return null;
+    }
+  }
+
+  /// [bytes] with the varint at [path] (field numbers, outermost first) changed
+  /// from [from] to [to]; the other fields are copied as they were. Null when a
+  /// message on the path holds the field more than once, a field that is neither
+  /// a varint nor length-delimited, or the varint is not [from].
+  static Uint8List? _rewrite(Uint8List bytes, List<int> path, int from, int to) {
+    final decoded = _decode(bytes);
+    if (decoded == null) return null;
+    final [number, ...rest] = path;
+    if (decoded.fields.where((field) => field.number == number).length != 1) return null;
+    final writer = YoutubeProtoWriter();
+    for (final YoutubeProtoField(number: current, :wireType, :value) in decoded.fields) {
+      switch (wireType) {
+        case youtubeProtoVarintType:
+          if (current == number) {
+            if (rest.isNotEmpty || value != from) return null;
+            writer.integer(current, to);
+          } else {
+            writer.integer(current, value as int);
+          }
+        case youtubeProtoLengthDelimitedType:
+          if (current == number) {
+            if (rest.isEmpty) return null;
+            final inner = _rewrite(value as Uint8List, rest, from, to);
+            if (inner == null) return null;
+            writer.bytes(current, inner);
+          } else {
+            writer.bytes(current, value as Uint8List);
+          }
+        default:
+          return null;
+      }
+    }
+    return writer.toBytes();
   }
 
   static String _firstSource(Object? image) {
