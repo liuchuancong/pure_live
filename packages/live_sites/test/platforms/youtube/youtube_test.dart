@@ -14,6 +14,7 @@ import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/models/message/live_retraction/live_retraction.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
+import 'package:live_sites/src/models/super_chat/live_super_chat_message/live_super_chat_message.dart';
 import 'package:live_sites/src/platforms/youtube/api/youtube_endpoints.dart';
 import 'package:live_sites/src/platforms/youtube/api/youtube_http.dart';
 import 'package:live_sites/src/platforms/youtube/capabilities/youtube_link_resolver.dart';
@@ -230,6 +231,15 @@ void main() {
       expect(batch.messages[0].effectiveSender.userName, 'Alice');
       expect(batch.messages[1].type, LiveMessageType.superChat);
       expect(batch.messages[1].color, LiveMessageColor.numberToColor(10770391));
+      final superChat = batch.messages[1].payload! as LiveSuperChatMessage;
+      expect(superChat.price.amount, 5); // from "$5.00"
+      expect(superChat.price.displayText, r'$5.00');
+      expect(superChat.userName, 'Bob');
+      expect(superChat.text, 'Super!');
+      // The header colour is not a named tier, so the paid message keeps the
+      // shortest display (one minute) from its own time.
+      expect(superChat.startTime, DateTime.fromMicrosecondsSinceEpoch(1727380001000000, isUtc: true));
+      expect(superChat.endTime, superChat.startTime!.add(const Duration(minutes: 1)));
       expect(batch.messages[2].type, LiveMessageType.gift);
       expect(batch.messages[2].payload, isA<LiveGift>());
       expect(batch.messages[2].effectiveSender.userName, 'Cara');
@@ -258,6 +268,52 @@ void main() {
       final batch = YoutubeDanmakuCodec.parse(body);
       expect(batch.over, isTrue);
       expect(batch.notice, 'Replay chat has ended');
+    });
+
+    test('a super chat takes its price from the amount text and its pin from the colour tier', () {
+      LiveMessage parseSuperChat(int header) {
+        final body = jsonDecode(
+          jsonEncode({
+            'continuationContents': {
+              'liveChatContinuation': {
+                'actions': [
+                  {
+                    'addChatItemAction': {
+                      'item': {
+                        'liveChatPaidMessageRenderer': {
+                          'purchaseAmountText': {'simpleText': '₩10,000'},
+                          'message': {'simpleText': 'hi'},
+                          'authorName': {'simpleText': 'Bob'},
+                          'id': 'sc-1',
+                          'timestampUsec': '1727380001000000',
+                          'headerBackgroundColor': header,
+                        },
+                      },
+                    },
+                  },
+                ],
+                'continuations': [
+                  {
+                    'timedContinuationData': {'continuation': 'NEXT', 'timeoutMs': 3000},
+                  },
+                ],
+              },
+            },
+          }),
+        );
+        return YoutubeDanmakuCodec.parse(body).messages.single;
+      }
+
+      // 0xFF00BFA5 is the green tier: pinned 2 minutes; the won amount groups to 10000.
+      final green = parseSuperChat(0xFF00BFA5).payload! as LiveSuperChatMessage;
+      expect(green.price.amount, 10000);
+      expect(green.price.displayText, '₩10,000');
+      expect(green.endTime!.difference(green.startTime!), const Duration(minutes: 2));
+      expect(green.display.backgroundColor, '#00bfa5');
+
+      // An unknown colour is not a named tier: the shortest display, no fill-in.
+      final plain = parseSuperChat(0xFFFFFFFF).payload! as LiveSuperChatMessage;
+      expect(plain.endTime!.difference(plain.startTime!), const Duration(minutes: 1));
     });
   });
 

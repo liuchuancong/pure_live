@@ -5,6 +5,9 @@ import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/models/message/live_retraction/live_retraction.dart';
 import 'package:live_sites/src/models/message/message_sender/message_sender.dart';
+import 'package:live_sites/src/models/super_chat/live_super_chat_display/live_super_chat_display.dart';
+import 'package:live_sites/src/models/super_chat/live_super_chat_message/live_super_chat_message.dart';
+import 'package:live_sites/src/models/super_chat/live_super_chat_price/live_super_chat_price.dart';
 import 'package:live_sites/src/platforms/youtube/parsers/youtube_json.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -165,30 +168,54 @@ abstract final class YoutubeDanmakuCodec {
 
   static LiveMessage _superChat(Map<String, dynamic> renderer) {
     final header = jsonInt(renderer['headerBackgroundColor']);
+    final body = jsonInt(renderer['bodyBackgroundColor']);
+    final amount = label(renderer['purchaseAmountText']).trim();
+    final text = label(renderer['message']);
+    final start = _time(renderer['timestampUsec']);
+    final end = start?.add(_superChatDisplay(header));
     return LiveMessage.normalized(
       type: LiveMessageType.superChat,
-      text: label(renderer['message']),
+      text: text,
       sender: _sender(renderer),
       color: header == null ? LiveMessageColor.white : LiveMessageColor.numberToColor(header),
+      payload: LiveSuperChatMessage(
+        messageId: _id(renderer),
+        userName: label(renderer['authorName']),
+        faceUrl: thumbnailUrl(renderer['authorPhoto']),
+        text: text,
+        price: SuperChatPrice(amount: _priceAmount(amount), displayText: amount),
+        startTime: start,
+        endTime: end,
+        display: SuperChatDisplay(backgroundColor: _hexColor(header), backgroundBottomColor: _hexColor(body)),
+      ),
       messageId: _id(renderer),
-      sentAt: _time(renderer['timestampUsec']),
+      sentAt: start,
     );
   }
 
   static LiveMessage _sticker(Map<String, dynamic> renderer) {
-    final amount = label(renderer['purchaseAmountText']);
+    final background = jsonInt(renderer['backgroundColor']);
+    final amount = label(renderer['purchaseAmountText']).trim();
+    final text = label(renderer['message']);
+    final start = _time(renderer['timestampUsec']);
+    final end = start?.add(_superChatDisplay(background));
     return LiveMessage.normalized(
-      type: LiveMessageType.gift,
-      text: amount,
+      type: LiveMessageType.superChat,
+      text: text.isEmpty ? amount : text,
       sender: _sender(renderer),
       color: LiveMessageColor.white,
-      payload: LiveGift(
-        giftId: jsonString(renderer['sticker']) ?? 'super_sticker',
-        name: 'Super Sticker',
-        iconUrl: thumbnailUrl(renderer['sticker']),
+      payload: LiveSuperChatMessage(
+        messageId: _id(renderer),
+        userName: label(renderer['authorName']),
+        faceUrl: thumbnailUrl(renderer['authorPhoto']),
+        text: text,
+        price: SuperChatPrice(amount: _priceAmount(amount), displayText: amount),
+        startTime: start,
+        endTime: end,
+        display: SuperChatDisplay(backgroundColor: _hexColor(background)),
       ),
       messageId: _id(renderer),
-      sentAt: _time(renderer['timestampUsec']),
+      sentAt: start,
     );
   }
 
@@ -261,6 +288,37 @@ abstract final class YoutubeDanmakuCodec {
     final micros = jsonInt(usec);
     if (micros == null || micros <= 0 || micros > _maxMicroseconds) return null;
     return DateTime.fromMicrosecondsSinceEpoch(micros, isUtc: true);
+  }
+
+  /// How long the page pins a Super Chat, by the tier its header colour names
+  /// (YouTube's table): the two lowest tiers are not pinned (a minute, shorter
+  /// than any pin, so the app still lists them briefly); the rest from 2 minutes
+  /// (green) up to 1 hour (red, ≥100 USD). An unknown colour reads as unpinned.
+  static Duration _superChatDisplay(int? argb) => switch (argb) {
+    0xFF00BFA5 => const Duration(minutes: 2),
+    0xFFFFB300 => const Duration(minutes: 5),
+    0xFFE65100 => const Duration(minutes: 10),
+    0xFFC2185B => const Duration(minutes: 30),
+    0xFFD00000 => const Duration(hours: 1),
+    _ => const Duration(minutes: 1),
+  };
+
+  /// The whole number in a purchase-amount text, for ordering and comparing;
+  /// null when the text names none. The leading digit run (with its thousands
+  /// commas) is the amount: `$5.00` → `5` (the cents are a separate run),
+  /// `₩10,000` → `10000`. The answer carries no number of its own.
+  static int? _priceAmount(String text) {
+    final run = RegExp(r'\d[\d,]*').firstMatch(text)?.group(0)?.replaceAll(',', '');
+    return run == null ? null : int.tryParse(run);
+  }
+
+  /// An ARGB int as the `#RRGGBB` a [SuperChatDisplay] names; empty when there
+  /// is no colour.
+  static String _hexColor(int? argb) {
+    if (argb == null) return '';
+    final color = LiveMessageColor.numberToColor(argb);
+    String two(int v) => v.toRadixString(16).padLeft(2, '0');
+    return '#${two(color.r)}${two(color.g)}${two(color.b)}';
   }
 
   static String _continuation(List<Object?> entries) {
