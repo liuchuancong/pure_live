@@ -84,6 +84,21 @@ void main() {
       expect(() => KuaishouDanmakuCodec.parse(feedJson(result: 2)), throwsA(isA<KuaishouFeedRejected>()));
     });
 
+    test('a comment code found in the emoji table becomes an emote', () {
+      final batch = KuaishouDanmakuCodec.parse(
+        feedJson(result: 1, feeds: [comment(content: '高兴[笑哭]再见[笑哭][未知]')]),
+        emotes: {'[笑哭]': 'https://ali2.a.yximgs.com/e/laugh.png'},
+      );
+      final chat = batch.messages.single;
+      expect(chat.emotes.map((e) => e.code), ['[笑哭]']);
+      expect(chat.emotes.single.url, 'https://ali2.a.yximgs.com/e/laugh.png');
+    });
+
+    test('no emoji table leaves a message without emotes', () {
+      final batch = KuaishouDanmakuCodec.parse(feedJson(result: 1, feeds: [comment(content: 'hi[笑哭]')]));
+      expect(batch.messages.single.emotes, isEmpty);
+    });
+
     test('query carries the live stream id and only an existing cursor', () {
       expect(KuaishouDanmakuCodec.query('LS1', ''), {'liveStreamId': 'LS1'});
       expect(KuaishouDanmakuCodec.query('LS1', 'abc'), {'liveStreamId': 'LS1', 'cursor': 'abc'});
@@ -200,12 +215,25 @@ void main() {
             },
           ],
         },
+        'pcConfig': {
+          'pcConfig': {
+            'config': {
+              'pcLive.webConfig.emojiPanel': {
+                '[笑哭]': '//ali2.a.yximgs.com/bs2/emotion/laugh.png',
+                'not_a_code': 'https://ali2.a.yximgs.com/bs2/emotion/x.png',
+                '[空]': '',
+              },
+            },
+          },
+        },
       };
       final html = '<html>window.__INITIAL_STATE__ = ${jsonEncode(state)};</html>';
       final parsed = KuaishouRoomParser.roomDetail(html, requestedId: 'someone');
       expect(parsed.liveStreamId, 'LS-99');
       expect(parsed.playUrls, isNotNull);
       expect(parsed.room, isNotNull);
+      // A code that is not […] and an entry without an address are skipped.
+      expect(parsed.emotes, {'[笑哭]': 'https://ali2.a.yximgs.com/bs2/emotion/laugh.png'});
     });
   });
 }

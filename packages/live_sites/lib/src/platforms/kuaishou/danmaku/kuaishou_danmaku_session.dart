@@ -185,7 +185,7 @@ final class KuaishouDanmakuSession implements LiveDanmakuSession {
   }
 
   Future<KuaishouFeedBatch> _pull() async {
-    final batch = KuaishouDanmakuCodec.parse(await _fetch());
+    final batch = KuaishouDanmakuCodec.parse(await _fetch(), emotes: args.emotes);
     if (batch.cursor.isNotEmpty) _cursor = batch.cursor;
     return batch;
   }

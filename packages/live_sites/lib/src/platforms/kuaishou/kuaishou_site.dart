@@ -64,17 +64,22 @@ final class KuaishouRoomData {
 }
 
 /// What the comment feed needs to follow one broadcast: the broadcast's
-/// `liveStreamId` and the cookie in effect when the room was read (the user's,
-/// else the anonymous session's, else empty).
+/// `liveStreamId`, the cookie in effect when the room was read (the user's,
+/// else the anonymous session's, else empty) and the room page's emoji table
+/// (the `[笑哭]` codes a comment writes → their pictures).
 final class KuaishouDanmakuArgs {
   /// Wraps the feed arguments.
-  const KuaishouDanmakuArgs({required this.liveStreamId, this.cookie = ''});
+  const KuaishouDanmakuArgs({required this.liveStreamId, this.cookie = '', this.emotes = const {}});
 
   /// Id of the current broadcast (a new one every broadcast).
   final String liveStreamId;
 
   /// The `cookie` header for the feed requests; empty for none.
   final String cookie;
+
+  /// The room page's emoji table: a code a comment writes (`[笑哭]`) → its
+  /// picture (https); empty when the room was not read from its page (a card).
+  final Map<String, String> emotes;
 
   @override
   String toString() => 'KuaishouDanmakuArgs($liveStreamId, ${cookie.isEmpty ? 'guest' : '<redacted>'})';
@@ -308,7 +313,7 @@ final class KuaishouSite implements LiveSite {
         streamHandle: KuaishouRoomData(issuedAt: now(), liveStreamId: liveStreamId, playUrls: parse.playUrls),
         danmakuHandle: liveStreamId == null
             ? null
-            : KuaishouDanmakuArgs(liveStreamId: liveStreamId, cookie: result.cookie),
+            : KuaishouDanmakuArgs(liveStreamId: liveStreamId, cookie: result.cookie, emotes: parse.emotes),
       ),
     );
   }

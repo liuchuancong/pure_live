@@ -17,11 +17,12 @@ import 'package:live_sites/src/platforms/kuaishou/parsers/kuaishou_play_parser.d
 const _site = 'kuaishou';
 
 /// A room page's answer: the room as the adapter shows it, the raw
-/// `playUrls` (a card's descriptor list or the page's `{h264, hevc}` object)
-/// and this broadcast's `liveStreamId` (the comment feed's key); null when the
-/// room is offline. The stream handle and the danmaku arguments the site
+/// `playUrls` (a card's descriptor list or the page's `{h264, hevc}` object),
+/// this broadcast's `liveStreamId` (the comment feed's key; null when the room
+/// is offline) and the page's emoji table ([KuaishouRoomParser.emojiTable],
+/// empty for a card). The stream handle and the danmaku arguments the site
 /// builds from these ride in [LiveRoom.runtime].
-typedef KuaishouRoomParse = ({LiveRoom room, Object? playUrls, String? liveStreamId});
+typedef KuaishouRoomParse = ({LiveRoom room, Object? playUrls, String? liveStreamId, Map<String, String> emotes});
 
 /// Pure parsing of Kuaishou responses (catalog, search and the room page).
 /// Each function takes the response text and status and returns shared models
@@ -157,7 +158,23 @@ abstract final class KuaishouRoomParser {
       ),
       playUrls: playUrls,
       liveStreamId: liveStreamId,
+      emotes: emojiTable(state),
     );
+  }
+
+  /// The emoji table of a room page's [state]
+  /// (`pcConfig.pcConfig.config["pcLive.webConfig.emojiPanel"]`, 207 codes
+  /// on 2026-10-01: `[笑哭]` → `//ali2.a.yximgs.com/bs2/emotion/….png`): what
+  /// the site draws for the codes in comments. Addresses are made https;
+  /// codes that are not `[…]` and entries without an address are skipped.
+  /// Empty when the page has none.
+  static Map<String, String> emojiTable(Map<String, dynamic> state) {
+    final config = fields(fields(fields(state['pcConfig'])['pcConfig'])['config']);
+    return Map.unmodifiable({
+      for (final MapEntry(key: code, value: url) in fields(config['pcLive.webConfig.emojiPanel']).entries)
+        if (code.length > 2 && code.startsWith('[') && code.endsWith(']'))
+          if (imageUrl(url) case final address when address.isNotEmpty) code: address,
+    });
   }
 
   /// The `window.__INITIAL_STATE__` object of a room page, cut by JSON

@@ -5,6 +5,7 @@ import 'package:live_sites/src/common/normalization/site_counts.dart';
 import 'package:live_sites/src/models/audience/live_audience_update/live_audience_update.dart';
 import 'package:live_sites/src/models/enums/live_audience_signal_kind.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
+import 'package:live_sites/src/models/message/live_emote/live_emote.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/models/message/message_sender/message_sender.dart';
@@ -107,8 +108,10 @@ abstract final class KuaishouDanmakuCodec {
   /// Throws [FormatException] when no object results and [KuaishouFeedRejected]
   /// when `result` is not 1. Only `comment` entries (any case) with text become
   /// messages; an entry that cannot be read (a time out of range) is skipped
-  /// without losing the others.
-  static KuaishouFeedBatch parse(Object? body) {
+  /// without losing the others. A comment's codes found in [emotes] (the room
+  /// page's emoji table, `[笑哭]` → its picture) are its [LiveMessage.emotes]
+  /// (the feed itself has no pictures).
+  static KuaishouFeedBatch parse(Object? body, {Map<String, String> emotes = const {}}) {
     var payload = body;
     for (var depth = 0; depth < 3 && payload is String; depth++) {
       payload = jsonDecode(payload);
@@ -124,7 +127,7 @@ abstract final class KuaishouDanmakuCodec {
       pullDelay: Duration(seconds: (_int(payload['pullCycleSeconds']) ?? defaultPullDelay.inSeconds).clamp(1, 10)),
       messages: List.unmodifiable([
         if (feeds is List<Object?>)
-          for (final feed in feeds) ?_comment(feed),
+          for (final feed in feeds) ?_comment(feed, emotes),
       ]),
       onlineViewers: watching.isEmpty ? null : parseAudienceNumberOrNull(watching),
     );
@@ -137,8 +140,9 @@ abstract final class KuaishouDanmakuCodec {
   /// One feed entry as a chat message; null when it is not a comment, has no
   /// text, or has a time no `DateTime` can hold. The id is the entry's `id`,
   /// else a SHA-1 of `time`, the user id and the content joined by NULs; the
-  /// message id is `kuaishou:` and that id.
-  static LiveMessage? _comment(Object? feed) {
+  /// message id is `kuaishou:` and that id. Its [LiveMessage.emotes] are the
+  /// `[…]` codes [emotes] has.
+  static LiveMessage? _comment(Object? feed, Map<String, String> emotes) {
     if (feed is! Map<Object?, Object?> || feed['type']?.toString().toLowerCase() != 'comment') return null;
     final content = feed['content']?.toString().trim() ?? '';
     if (content.isEmpty) return null;
@@ -160,8 +164,21 @@ abstract final class KuaishouDanmakuCodec {
       color: LiveMessageColor.white,
       messageId: 'kuaishou:$id',
       sentAt: timestamp == null ? null : DateTime.fromMillisecondsSinceEpoch(timestamp),
+      emotes: emotes.isEmpty ? const [] : codeEmotes(content, emotes),
     );
   }
+
+  /// The `[…]` codes of [text] that [table] has, each once, in order.
+  static List<LiveEmote> codeEmotes(String text, Map<String, String> table) {
+    final seen = <String>{};
+    return [
+      for (final match in _code.allMatches(text))
+        if (table[match.group(0)!] case final url? when seen.add(match.group(0)!))
+          LiveEmote(code: match.group(0)!, url: url),
+    ];
+  }
+
+  static final RegExp _code = RegExp(r'\[[^\[\]\n]{1,16}\]');
 
   /// Numbers truncated, text parsed, anything else null.
   static int? _int(Object? value) {
