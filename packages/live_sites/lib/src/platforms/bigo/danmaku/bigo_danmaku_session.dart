@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/common/websocket/danmaku_socket.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/gift/live_gift/live_gift.dart';
@@ -15,8 +16,7 @@ import 'package:live_sites/src/platforms/bigo/danmaku/bigo_chat_visitor.dart';
 import 'package:live_sites/src/platforms/bigo/danmaku/bigo_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/bigo/parsers/bigo_failure.dart';
 import 'package:live_sites/src/platforms/bigo/parsers/bigo_room_parser.dart';
-import 'package:web_socket_channel/io.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:live_websocket/live_websocket.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -65,6 +65,15 @@ final class BigoDanmakuProvider implements LiveDanmakuProvider {
 /// One live chat connection: one WebSocket as an anonymous visitor, the way the
 /// website's player joins a room.
 ///
+/// [DanmakuSocket] (the shared live_websocket transport) owns the socket
+/// lifecycle — it connects, forwards every frame to [_onData] and reports a
+/// socket that is not coming back. Bigo re-runs its own data-driven handshake on
+/// each open (the challenge answer, login and entry the server drives), so its
+/// automatic reconnect is switched off and a loss reopens through [_scheduleReconnect].
+/// The ping carries the current time and starts only after login, so the 10 s
+/// heartbeat and the silence watchdog stay as protocol timers here, not as a
+/// transport heartbeat.
+///
 /// - The first handshake asks `getWebSocketLink` for a visitor account (one
 ///   request, as the page does once per player); later handshakes reuse it, as
 ///   the page's reconnect does. A refused or unanswered join drops it, so the
@@ -111,9 +120,19 @@ final class BigoDanmakuSession implements LiveDanmakuSession {
 
   static const Duration _connectTimeout = Duration(seconds: 10);
 
+  /// The transport settings of one socket: the page's handshake headers and the
+  /// connect budget. The transport's automatic reconnect is off because bigo
+  /// re-runs its own data-driven handshake on each open; a loss is reported and
+  /// reopened here. The ping carries the current time and starts only after
+  /// login, so the heartbeat and silence watchdog stay as protocol timers.
+  static const WebSocketConfig _transport = WebSocketConfig(
+    headers: BigoDanmakuCodec.socketHeaders,
+    connectTimeout: _connectTimeout,
+    reconnectPolicy: ReconnectPolicy(enabled: false),
+  );
+
   final _events = StreamController<LiveMessage>.broadcast();
-  WebSocketChannel? _socket;
-  StreamSubscription<dynamic>? _subscription;
+  DanmakuSocket? _socket;
   Timer? _heartbeat;
   Timer? _watchdog;
   Timer? _join;
@@ -121,7 +140,6 @@ final class BigoDanmakuSession implements LiveDanmakuSession {
   final List<_HeldGift> _heldGifts = [];
   BigoChatVisitor? _visitor;
   String _deviceId = '';
-  int _generation = 0;
   int _refusals = 0;
   int _reconnectFailures = 0;
   bool _disposed = false;
@@ -144,38 +162,33 @@ final class BigoDanmakuSession implements LiveDanmakuSession {
     if (!BigoDanmakuCodec.checks(args)) {
       return const LiveSiteError.contentUnavailable(siteId: 'bigo', message: 'the studio names no chat room');
     }
+    return await _openSocket();
+  }
+
+  /// Opens one connection over the shared transport: the visitor is asked for
+  /// when none is kept, the socket connects, frames come to [_onData] and a
+  /// socket that is not coming back is reported through [_onLost].
+  Future<LiveSiteError?> _openSocket() async {
     try {
       await _ensureVisitor();
     } on Object catch (error) {
       return LiveSiteError.network(siteId: 'bigo', message: 'chat visitor failed: $error', cause: error);
     }
-    return await _openSocket();
-  }
-
-  Future<LiveSiteError?> _openSocket() async {
-    final generation = ++_generation;
-    _resetSocket();
     await _teardownSocket();
-    final WebSocketChannel channel;
-    try {
-      channel = IOWebSocketChannel.connect(BigoDanmakuCodec.endpoint, headers: BigoDanmakuCodec.socketHeaders);
-      await channel.ready.timeout(_connectTimeout);
-    } on Object catch (error) {
-      return LiveSiteError.network(siteId: 'bigo', message: 'danmaku connect failed: $error', cause: error);
-    }
-    _socket = channel;
-    _subscription = channel.stream.listen(
-      (data) {
-        if (generation != _generation || _disposed) return;
-        _onData(data);
-      },
-      onDone: () => _scheduleReconnect(generation, 'socket closed'),
-      onError: (Object error) => _scheduleReconnect(generation, 'socket error: $error'),
+    _resetSocket();
+    final socket = DanmakuSocket(
+      uri: BigoDanmakuCodec.endpoint,
+      config: _transport,
+      // The handshake is server-driven (it opens with the challenge), so nothing
+      // is sent here; the join budget and silence watchdog start with the socket.
+      onHandshake: (_) => _startJoinAndWatch(),
+      onFrame: _onData,
+      onLost: _onLost,
     );
-    _join = Timer(BigoDanmakuCodec.joinTimeout, () {
-      if (generation == _generation && !_disposed && !_joined) _onJoinTimeout(generation);
-    });
-    _startWatchdog();
+    _socket = socket;
+    if (!await socket.start()) {
+      return LiveSiteError.network(siteId: 'bigo', message: 'danmaku connect failed on ${socket.uri}');
+    }
     return null;
   }
 
@@ -188,22 +201,21 @@ final class BigoDanmakuSession implements LiveDanmakuSession {
     _visitor = BigoDanmakuCodec.visitor(response.text, status: response.status, deviceId: _deviceId);
   }
 
-  void _onData(Object? data) {
+  void _onData(Object data) {
     _reconnectFailures = 0;
     _startWatchdog();
-    final frame = BigoDanmakuCodec.decode(data, roomId: args.roomId);
-    if (frame.refusal case final refusal?) {
+    final decoded = BigoDanmakuCodec.decode(data, roomId: args.roomId);
+    if (decoded.refusal case final refusal?) {
       _refused(refusal);
       return;
     }
-    if (frame.challenge case final challenge? when !_answered) {
+    if (decoded.challenge case final challenge? when !_answered) {
       _answered = true;
       _send(BigoDanmakuCodec.answer(challenge, _now()));
-      final generation = _generation;
       _login = Timer(_loginDelay, () {
         _login = null;
         final visitor = _visitor;
-        if (_disposed || generation != _generation || visitor == null) return;
+        if (_disposed || visitor == null) return;
         _loginSent = true;
         _send(BigoDanmakuCodec.login(visitor));
         // The page pings every 10 s from the login on, whether or not the room
@@ -211,25 +223,25 @@ final class BigoDanmakuSession implements LiveDanmakuSession {
         _startHeartbeat();
       });
     }
-    if (frame.loggedIn && _loginSent && !_entering) {
+    if (decoded.loggedIn && _loginSent && !_entering) {
       final visitor = _visitor;
       if (visitor == null) return;
       _entering = true;
       _send(BigoDanmakuCodec.enter(args.roomId, visitor, _now()));
     }
-    if (frame.idle) {
+    if (decoded.idle) {
       _terminate('no broadcast in room ${args.roomId}');
       return;
     }
-    if (frame.entered && !_joined) {
+    if (decoded.entered && !_joined) {
       _joined = true;
       _refusals = 0;
       _join?.cancel();
       _join = null;
       _send(BigoDanmakuCodec.users(args, _now()));
     }
-    if (frame.giftSender case final sender?) _named(sender);
-    for (final message in frame.messages) {
+    if (decoded.giftSender case final sender?) _named(sender);
+    for (final message in decoded.messages) {
       if (_disposed) return;
       final gift = message.giftOrNull;
       if (message.type == LiveMessageType.gift && gift is LiveGift && message.effectiveSender.userId.isNotEmpty) {
@@ -253,12 +265,14 @@ final class BigoDanmakuSession implements LiveDanmakuSession {
     unawaited(_reopen(refusal));
   }
 
-  /// No entry answer within the join limit: the first time the socket is
-  /// replaced, and the refusal counter decides after that, as the page's own
-  /// join timeout does.
-  void _onJoinTimeout(int generation) {
-    if (_disposed || generation != _generation || _joined) return;
-    _refused(_loginSent ? 'login or entry unanswered' : 'no challenge or login');
+  /// Starts the join budget and the silence watchdog for one socket; re-run on
+  /// every open (including a transport reconnect, which is disabled here).
+  void _startJoinAndWatch() {
+    _join?.cancel();
+    _join = Timer(BigoDanmakuCodec.joinTimeout, () {
+      if (!_disposed && !_joined) _refused(_loginSent ? 'login or entry unanswered' : 'no challenge or login');
+    });
+    _startWatchdog();
   }
 
   void _startHeartbeat() {
@@ -271,19 +285,22 @@ final class BigoDanmakuSession implements LiveDanmakuSession {
   void _startWatchdog() {
     _watchdog?.cancel();
     _watchdog = Timer(BigoDanmakuCodec.silenceTimeout, () {
-      if (!_disposed) _scheduleReconnect(_generation, 'socket silent');
+      if (!_disposed) _scheduleReconnect('socket silent');
     });
   }
+
+  /// The transport gave up on the socket; replace it as any other loss.
+  void _onLost(String cause) => _scheduleReconnect(cause);
 
   /// A socket that closed, errored or went silent is replaced; one reconnect at
   /// a time, and [BigoDanmakuCodec.maxReconnectAttempts] failed reconnects end
   /// the session with a terminal system message instead of retrying forever.
-  void _scheduleReconnect(int staleGeneration, String reason) {
-    if (_disposed || staleGeneration != _generation || _reconnecting) return;
+  void _scheduleReconnect(String reason) {
+    if (_disposed || _reconnecting) return;
     _reconnecting = true;
     unawaited(() async {
       await Future<void>.delayed(Duration(seconds: _reconnectFailures + 1));
-      if (_disposed || staleGeneration != _generation) {
+      if (_disposed) {
         _reconnecting = false;
         return;
       }
@@ -299,10 +316,8 @@ final class BigoDanmakuSession implements LiveDanmakuSession {
   /// notice. A failed reopen falls back to the ordinary reconnect path.
   Future<void> _reopen(String reason) async {
     if (_disposed) return;
-    final generation = _generation;
-    await _teardownSocket();
     final failure = await connect();
-    if (failure == null || _disposed || generation != _generation) return;
+    if (failure == null) return;
     _reconnectFailures++;
     if (_reconnectFailures >= BigoDanmakuCodec.maxReconnectAttempts) _terminate('$reason: ${failure.message}');
   }
@@ -349,23 +364,20 @@ final class BigoDanmakuSession implements LiveDanmakuSession {
     _loginSent = false;
     _entering = false;
     _joined = false;
+    _heartbeat?.cancel();
+    _heartbeat = null;
     _login?.cancel();
     _login = null;
   }
 
   void _send(String frame) {
-    final sink = _socket?.sink;
-    if (sink == null) return;
-    try {
-      sink.add(frame);
-    } on Object {
-      // The reconnect path owns a broken sink.
-    }
+    final socket = _socket;
+    if (socket == null || !socket.isConnected) return;
+    socket.send(frame);
   }
 
   void _terminate(String reason) {
     if (_disposed) return;
-    _generation++;
     _resetSocket();
     _releaseHeldGifts();
     _events.add(
@@ -388,14 +400,9 @@ final class BigoDanmakuSession implements LiveDanmakuSession {
     _join = null;
     _login?.cancel();
     _login = null;
-    await _subscription?.cancel();
-    _subscription = null;
-    try {
-      await _socket?.sink.close();
-    } on Object {
-      // Closing a dead socket must not throw.
-    }
+    final socket = _socket;
     _socket = null;
+    await socket?.stop();
   }
 
   void _releaseHeldGifts() {
@@ -407,7 +414,6 @@ final class BigoDanmakuSession implements LiveDanmakuSession {
 
   @override
   Future<void> disconnect() async {
-    _generation++;
     _resetSocket();
     await _teardownSocket();
   }
@@ -416,7 +422,6 @@ final class BigoDanmakuSession implements LiveDanmakuSession {
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
-    _generation++;
     _resetSocket();
     _releaseHeldGifts();
     await _teardownSocket();
