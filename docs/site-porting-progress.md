@@ -26,9 +26,10 @@
 | douyin 抖音 | ✅ | 见下方"douyin 明细" |
 | bilibili B站 | ✅ | 见下方"bilibili 明细" |
 | kuaishou 快手 | ✅ | 见下方"kuaishou 明细" |
+| youtube | ✅ | 见下方"youtube 明细" |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
-| acfun / bigo / chzzk / fc2live / jdlive / kick / kilakila / kugoulive / looklive / missevan / niconico / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / twitch / youtube / yy | ⬜ | 其余含弹幕站,一站一站来 |
+| acfun / bigo / chzzk / fc2live / jdlive / kick / kilakila / kugoulive / looklive / missevan / niconico / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / twitch / yy | ⬜ | 其余含弹幕站;**下一站候选 twitch** |
 | cc / inke / liveme / tiktok / xiaohongshu | ⬜ | 仅 `live_core` 有(纯目录/播放,无弹幕) |
 
 ## douyu 明细(2026-10-14)
@@ -73,6 +74,14 @@
 - 播放:playUrls 的 h264/hevc `adaptationSet.representation[]`(卡片用 descriptor 列表),按 (name,level/bitrate) 合线,codec 从文件名(`_Avc/_Hevc`),hls(.m3u8)/flv,hevc-only 加 ` · H.265` 后缀置末;lease 读 `txTime/wsTime/hwTime`(8 hex)、`ty_Time/bd-origin wsTime`(10 十进制)、`ali-origin auth_key`,刷新 min(10min,¼)。
 - 解析:room 页 `window.__INITIAL_STATE__.liveroom.playList[0]`(isLiving/errorType22→NotFound);卡片 id=liveStreamId、author.id=roomId、`statrtTime` 容错(仅 1e12–1e13)。链接 `/u/{id}`。
 - 验证:整包 `dart analyze` No issues found;`dart test` **136 项全绿**(kuaishou 14:feed 解包/仅 comment/backoff/query、txTime+auth_key lease、qualities/lines、mediaHeaders、roomIdOf、sessionCookies、roomDetail 端到端)。
+
+## youtube 明细(2026-10-14)
+整站从 `live_core/sites/youtube`(api/site)+ `live_danmaku/sites/youtube.dart` 迁到 `platforms/youtube/`。**无新依赖**:全 InnerTube JSON POST + 一处 watch 页 HTML 正则 + HLS master 解析,无 protobuf / 无 WS。
+- 能力:room / discovery(browse Live 中心 UC4R8… 单页) / search(search,page1 body 带**硬编码字面量 params `EgJAAQ%3D%3D`**(Live 过滤,不做运行时 protobuf),翻页用 continuation token) / playback / danmaku / link_resolver。`capability<T>()` **不注册 LiveAreaProvider**(YouTube 无分区,参考即无)。WEB context clientVersion 2.20260925.01.00;player 用 ANDROID context 匿名拿 HLS;每请求带 `cookie: SOCS=CAI`。
+- 弹幕 = `live_chat/get_live_chat` **HTTP 轮询**(kuaishou 会话形态:startAttempts 3、退避、maxFailures 8、终止消息、双开互斥)。首个 continuation 来自 `next` 的 liveChatRenderer,轮询周期 `timeoutMs` 夹到 [1s,5s];`isReplay` → 返回 left(不支持回放)。actions 解析:liveChatTextMessageRenderer→chat(含 runs/emoji)、liveChatPaidMessageRenderer→superChat、paid sticker / membership / giftMessageViewModel→礼物、removeChatItem/markDeleted→撤回。401/403/404 立即结束会话。
+- 播放:playabilityStatus→错误;streamingData.hlsManifestUrl GET master,`#EXT-X-STREAM-INF`(≤64)→清晰度/线路(id `hls:<h>:<fps0>:<codec>`,解析不出→`hls:auto`),dash/progressive 兜底;host 白名单 googlevideo.com/youtube.com/youtube-nocookie.com、仅 https;lease 从 `?expire=`/`/expire/`,renew 提前 10min。链接:`^[\w-]{11}` video / `^UC[\w-]{22}` channel,watch/live/youtu.be/embed/channel/@handle→canonical 或 `navigation/resolve_url`。
+- 延后(记档不假造):allChat continuation 的 protobuf 重写(跳过即无需 protobuf)、频道名 RSS 富化、会员徽章解码、superChat 之外的分级色。
+- 验证:整包 `dart analyze` No issues found;`dart test` **149 项全绿**(youtube 13:room/直播态/首续页、chat+emoji/superChat/gift/撤回、轮询夹取、HLS master→清晰度/线路/lease、host 白名单拒绝、search 字面量 params+continuation、链接解析各形态)。douyin_test 的内置站点等值断言已随之更新为含 youtube。
 
 ## 环境缺口(影响交付门,重要)
 本机工作区 **无法 `dart pub get`**:`packages/live_playback` 依赖 `media_core` 路径 `../../../../media_core/packages/media_core`(即 `D:\media_core\packages\media_core`),该外部工作区在本机不存在,导致整个 workspace 解析失败、`dart test` 直接跑不起来(与本次站点代码无关)。为跑本包测试,曾临时在 `D:\media_core` 造桩再删。要长期跑测试门,需把真实 `media_core` 工作区放到 `D:\media_core`(或在 live_playback 里改成实际存在的路径/移除该 member)。在此之前,"交付门 = dart analyze + dart test" 中的 test 步骤依赖人工补 media_core。
