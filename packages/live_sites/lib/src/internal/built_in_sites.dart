@@ -6,6 +6,8 @@ import 'package:live_sites/src/platforms/bigo/api/bigo_http.dart';
 import 'package:live_sites/src/platforms/bigo/bigo_site.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_http.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_site.dart';
+import 'package:live_sites/src/platforms/chzzk/api/chzzk_http.dart';
+import 'package:live_sites/src/platforms/chzzk/chzzk_site.dart';
 import 'package:live_sites/src/platforms/douyin/api/douyin_http.dart';
 import 'package:live_sites/src/platforms/douyin/douyin_site.dart';
 import 'package:live_sites/src/platforms/douyu/api/douyu_http.dart';
@@ -36,5 +38,6 @@ List<LiveSite> createBuiltInLiveSites({LiveHttp? http}) {
     TwitchSite(http: TwitchHttp(transport)),
     AcfunSite(http: AcfunHttp(transport)),
     BigoSite(http: BigoHttp(transport)),
+    ChzzkSite(http: ChzzkHttp(transport)),
   ];
 }

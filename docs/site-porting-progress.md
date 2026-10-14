@@ -30,9 +30,10 @@
 | twitch | ✅ | 见下方"twitch 明细" |
 | acfun AcFun | ✅ | 见下方"acfun 明细" |
 | bigo Bigo Live | ✅ | 见下方"bigo 明细" |
+| chzzk CHZZK(치지직) | ✅ | 见下方"chzzk 明细" |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
-| chzzk / fc2live / jdlive / kick / kilakila / kugoulive / looklive / missevan / niconico / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / yy | ⬜ | 其余含弹幕站;**下一站候选 chzzk**(按本行顺序) |
+| fc2live / jdlive / kick / kilakila / kugoulive / looklive / missevan / niconico / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / yy | ⬜ | 其余含弹幕站;**下一站候选 fc2live**(按本行顺序) |
 | cc / inke / liveme / tiktok / xiaohongshu | ⬜ | 仅 `live_core` 有(纯目录/播放,无弹幕) |
 
 ## douyu 明细(2026-10-14)
@@ -116,6 +117,23 @@
 - 链接:`bigo.tv` 及任意子域、仅默认端口、无 userinfo、`/<id>` 或 `/<两字母语言>/<id>`、保留路径不算房间、忽略 fragment;作者号即房间号(`^[A-Za-z0-9_][A-Za-z0-9_.-]{0,63}$`)。
 - **延后/取舍**:①**HLS 分段反混淆没有落地面**——参考的 `BigoHlsProtection`(`#EXT-X-BIGO-WEB-PROTECTION:VERSION=1,SEED=N`,前两个 188 字节包各前 16 字节 xorshift XOR,对合)已逐字节移植并有往返测试,但 v2 契约的 `LivePlayLine` 不带"分段变换"钩子,`live_playback` 也没有 relay 注入口 → 目前解不了混淆段,需要跨包 seam 才能真正播 bigo(下一条);②参考的 `resolveInput`/录制专用输入与 20s `_scoped` 截止已并入 site 的 deadline,但参考的 cancel-token 传播语义在 v2 能力签名里没有对应面(能力不接受 CancelToken);③参考搜索的 `_share()` 并发共享只保留了"无 cancel 调用者共享在途 fetch"这一半(另一半依赖 CancelToken);④参考即无热度榜、无登录、无发送弹幕、无关播信号、无徽章/表情 → 本站不做。
 - 验证:整包 `dart analyze` No issues found;`dart test` **372 项全绿**(bigo 72:EVP_BytesToKey/AES-256 金标与 OpenSSL 密文金标、JSONP 回调错配、HLS seed 解析与变换对合、列表逐行跳过/去重/预算、studio 三门与 alive 修正、`complete` 语义、链接各形态、帧编解码与 tag 派发、礼物行关联、请求次序与 token 复用、能力接线与内置站清单)。douyin/twitch 测试的内置站点等值断言已随之更新为含 bigo。
+
+## chzzk 明细(2026-10-14)
+整站从 `live_core/sites/chzzk`(`chzzk_api` + `chzzk_site`)+ `live_danmaku/sites/chzzk`(`ChzzkDanmakuProtocol` + `ChzzkDanmakuConnection`)迁到 `platforms/chzzk/`。
+- 能力七个全注册:room / area / discovery(同一 cursor 列表)/ search(仅 rooms)/ playback / danmaku / link_resolver;`ChzzkFailure → toLiveSiteError('chzzk')`(notFound→notFound,apiChanged→parse,network→network,rateLimited+riskControl→rateLimit,needsLogin→authentication,regionBlocked+streamUnavailable→contentUnavailable,invalidArgument→invalidArgument,其余→unexpected)。
+- **没有签名也没有 Cookie**:全靠 `{code:200,message,content}` 信封(非 200 的 HTTP 与 `code != 200` 都要过)+ 固定桌面 UA/Origin/Referer。
+- **只挂 `v3.1`**:live-detail 与 live-status 都用 v3.1——v2 端点对海外受限直播回 HTTP 500 / code 9004,整次读直接失败(2026-09-28 记录),v2 契约里没有"再试一次旧版"的余地。
+- 目录 = **排他 cursor**:平台没有 page 参数,lives 页只能带 `concurrentUserCount`+`liveId`(本适配器把 cursor 编码成 `{"v","l"}` JSON,不是它造的 cursor 一律 invalidArgument)。超过 30 行裁到 30,并用**最后保留的那一行**当下页起点(照抄平台的 `page.next` 会跳过一行);`page.next` 字段存在却不是合法 cursor 就是 apiChanged;`next == cursor` 视作列表走完;`cvExposure` 为假的行不报在线数。没有 cursor 的"第 N 页"= 从第 1 页重放(≤`maxDirectoryPage=20` 页、`directoryDeadline=20s`),重放里已出现过的频道在后页略去——在线人数会把行在两次请求之间挪动。
+- 分区:目录 `categories/live` 最多 4 页 × 50 行,`categoryType` 带中文名表(GAME/STORAGE/…)。v2 的 `getAreaRooms` 只给 areaId,故站点把读过的 `areaId → categoryType` 缓存在 `_areaTypes`,**缓存为空时才读一次目录**;查不到的 area 判 invalidArgument,绝不猜路径。
+- 房间 = 两次请求(先 channel 再 live-detail;`channel.channelId` 对不上自己频道就是 apiChanged)。`openDate` 是 KST → 折成 UTC;封面把 `liveImageUrl` 的 `{type}` 模板换成 480;`blindType == 'ABROAD'` 与 `krOnlyViewing` 同算区域受限;限制次序:有播放数据 → none,播放数据读不通 → **不给限制、房间照旧立着**只记原因,区域 → regionBlocked,成人 → adult,付费 → paid,否则 unplayable。
+- 播放:`livePlaybackJson` 只取 protocol `HLS` 里 `mediaId ∈ {HLS, LLHLS}` 的 master(>16 项 / 非 JSON 字符串 = apiChanged;单项坏就跳过,全坏才 apiChanged),地址必须 https、无 userinfo/fragment、≤16384 字符、host 在 `*.akamaized.net`;质量 id `<height>p`(FRAME-RATE ≥ 50 再补 `60`),标签 `<id> · HLS`,`platformOrder` 按名次;**只有音频的行(无 RESOLUTION)不算一个质量**,整份 master 无视频行 → streamUnavailable。
+- **Akamai 租约** = 变体的 `hdntl=exp=`(LLHLS 写在路径段、普通 HLS 写在 query,**两处都读**)否则 master `hdnts` 的 `exp`(样本里签发后约 17 小时),`refreshAt = expiresAt - min(leaseLead=10min, 生命/4)`,`requiresReconnect: true`(每个分段都是一次新请求,token 过期 = 播放断掉,不是只断下一次读列表)。`_playback[channelId]` 存最近一次读到的 master+变体:行没到期 → 0 请求复用;master 的 token 还没在 10 分钟内到期 → 只重读 master;否则重进房间。
+- 弹幕 = **JSON 帧的 WebSocket**(`IOWebSocketChannel`,v2 尚无共享 socket runtime 基类,心跳/看门狗/退避在 session 里自带):进房前 routing(1.5 s,失败退回内置 `kr-ss1..5`)与只读 access token(≤3 次、退避 500ms×次)并行问,首个 server 随机取、连不上就轮下一个;`cmd 100` 加入(`auth: READ`、`devType 2001`、无 uid)→ `10100` 且 `retCode 0` 才算连上,`302/303/304` 重连、其他拒绝终止,`90102` 同样终止;连上后 `cmd 5101`(`retCode 0`)拉 50 条近期聊天 + `notice` 置顶。心跳 20 s、静默 30 s、join 5 s,连续 8 次重连失败发一条终态系统消息后关闭事件流。
+- 消息分类:`93101`/`93102` 是实时行、`15101` 是近期表(字段名两套,逐行按形态读)、`94010` 置顶、`94008` 回撤(除 `CANCEL`,回撤 `<user>:<time>`)、`0` 是服务端 ping、`10000/93006/94005/94015` 无内容可读。donation → super chat(`치즈`/KRW,五档 1/2/5/30/60 分钟,金额为 0 时只留文本、无文本只留金额、两者都无就丢掉);subscription / 赠券 / system → notice;`익명의 후원자` 是匿名者名;表情 `{:code:}` 只有本行 `extras.emojis` 给了 http(s) 地址才成 `LiveEmote`。`mbrCnt`/`memberCount`/`userCount` 是 chat **连接数**不是观众数(样本比房间在线数差 4%–75%),不读。
+- **静音换房**:连续 3 分钟没有"实时行"才读一次 `live-status`(参考站自己每 30 s 轮询,这里 3 分钟一次);重开的直播会换 `chatChannelId`、旧 socket 立刻哑掉,发现新 id 就换 token 并用同一批 server 重开 socket。每次 join 的近期表会重报超级聊天/通知 → 每 session 记 ≤512 个已报 id 只报一次,普通聊天交给公共重复门。
+- 链接:`chzzk.naver.com` 精确 host、http(s)、无 userinfo、空 segment 忽略,`/live/<id>`(遗留形态)与 `/<id>`、`/<id>/<tab>`(任意一级 tab)都算房间,大小写读入统一小写;`/video/<no>`、`m.chzzk.naver.com` 不是房间;频道 id = 32 位十六进制,无短链。
+- **延后/取舍**:①参考的 `DanmakuSocketConnection` 基类(心跳、看门狗、退避、`DanmakuReady`/`markDisconnected`/`reopen` 语义)在 v2 没有对等物 → session 自己实现同一套时序,`reopen` 只对 chzzk 一处可见;②3.x 弹幕行里那句 `userName = 'SUPER_CHAT_MESSAGE'` 哨兵(旧 UI 内部用)不带入 v2,直接用发送者名或匿名者名;③订阅/赠券/置顶三句中文措辞**留在平台适配器里**(和参考一致),因为 v2 没有"平台消息本地化"seam,`LiveMessage.text` 就是要显示的那句——这一点与 bigo 那条"措辞归应用层"的取舍相反,理由是两个参考把它们写在不同层;④`timeMachine`(回看)、`paidProduct`(付费)只落成限制与说明,不做回看/购买流;⑤参考即无热度榜、无登录、无发送弹幕、无关播信号、无徽章/表情目录 → 本站不做。
+- 验证:整包 `dart analyze` No issues found;`dart test` **453 项全绿**(chzzk 79:信封/cursor/`page.next` 严格性与逐行裁剪、目录与分区、频道/直播卡与限制次序、封面与 KST、搜索 offset 与 keyword 截断(不切断代理对)、master/变体/质量/租约两形态、帧编解码与各类信号、session 的请求次序与 token 重试、能力接线与内置站清单)。douyin/twitch 测试的内置站点等值断言已随之更新为含 chzzk。
 
 ## 环境缺口
 无。此前 `packages/live_playback` 以 `path:` 依赖工作区外的 `D:\media_core` 导致整仓 `dart pub get` 解析失败、`dart test` 跑不起来;2026-10-14 已把 `media_core` / `media_core_danmaku` / `media_core_mediasession` 改为 pub git 源(`github.com/liuchuancong/media_core`),仓库根 `flutter pub get` 即可完整解析,交付门的 test 步骤不再需要人工补 media_core 或造桩。

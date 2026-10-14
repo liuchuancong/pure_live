@@ -945,6 +945,7 @@ void main() {
         'twitch',
         'acfun',
         'bigo',
+        'chzzk',
       ]);
     });
 
