@@ -10,6 +10,19 @@ abstract final class HuyaEndpoints {
   /// Huya's PC client UA: the media requests' default (`hysdkUserAgent`).
   static const String hysdkUserAgent = 'HYSDK(Windows,30000002)_APP(pc_exe&7100004&official)_SDK(trans&2.40.0.6448)';
 
+  /// The `tId` sHuYaUA the native FLV token request carries (the pc_exe
+  /// identity, no viewer uid, no cookie).
+  static const String nativeTarsUserAgent = 'pc_exe&7060000&official';
+
+  /// The `tId` sHuYaUA the web play-token request carries (webh5, the viewer).
+  static const String webTarsUserAgent = 'webh5&0.1.0&websocket';
+
+  /// The `iAppId` of a `getCdnTokenInfoEx` request.
+  static const int tokenAppId = 66;
+
+  /// Longest wait for a WUP play-token answer.
+  static const Duration tokenTimeout = Duration(seconds: 5);
+
   /// A desktop Chrome UA for room pages (the alias lookup).
   static const String desktopUserAgent =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '

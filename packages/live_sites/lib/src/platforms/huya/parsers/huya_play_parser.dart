@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:live_sites/src/models/enums/live_play_format_source.dart';
@@ -9,6 +10,7 @@ import 'package:live_sites/src/models/play/live_play_lease/live_play_lease.dart'
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/platforms/huya/api/huya_endpoints.dart';
+import 'package:live_sites/src/platforms/huya/huya_tars.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_failure.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_json.dart';
 
@@ -28,6 +30,10 @@ final class HuyaSignClock {
     return _last = wall > _last ? wall : _last + 1;
   }
 }
+
+/// The window a WUP play token is worth: renew at its `refreshAt`, stop
+/// accepting it at its `invalidAt`.
+typedef HuyaTokenWindow = ({DateTime refreshAt, DateTime invalidAt});
 
 /// One CDN line of a live room before signing: a `multiLine` entry of the
 /// FLV or HLS group joined with its `baseSteamInfoList` stream.
@@ -391,23 +397,25 @@ abstract final class HuyaPlayParser {
     return signedInvalidAt != null && issuedAt.isAfter(signedInvalidAt) ? null : issuedAt;
   }
 
-  /// The lease of a signed media [url] (web path only; the native token
-  /// window is a deferred follow-up):
+  /// The lease of a signed media [url]:
   ///
-  /// - invalid at `wsTime + 300 s`, or, for a short transport lease, at the
-  ///   issued time + 125 s (whichever is earliest);
-  /// - refreshed 30 s before that, or at issued + 100 s;
+  /// - invalid at `wsTime + 300 s`, at the [token] window's end, or, for a
+  ///   short transport lease, at the issued time + 125 s (whichever is
+  ///   earliest);
+  /// - refreshed 30 s before that, before the [token] window's renew point,
+  ///   or at issued + 100 s;
   /// - the issue time is [signedIssuedAt], else [builtAt] (a static token
   ///   without `seqid`).
   ///
   /// Null when nothing bounds the URL.
-  static LivePlayLease? lease(Uri url, {DateTime? builtAt}) {
+  static LivePlayLease? lease(Uri url, {DateTime? builtAt, HuyaTokenWindow? token}) {
     final signedInvalidAt = _wsTime(_parseMap(url.query)['wsTime'])?.add(const Duration(minutes: 5));
     final issuedAt = hasShortTransportLease(url) ? signedIssuedAt(url) ?? builtAt?.toUtc() : null;
-    final invalidAt = _earliest([signedInvalidAt, issuedAt?.add(const Duration(seconds: 125))]);
+    final invalidAt = _earliest([signedInvalidAt, token?.invalidAt, issuedAt?.add(const Duration(seconds: 125))]);
     if (invalidAt == null) return null;
     final refreshAt = _earliest([
       signedInvalidAt?.subtract(const Duration(seconds: 30)),
+      token?.refreshAt,
       issuedAt?.add(const Duration(seconds: 100)),
     ]);
     if (refreshAt == null) return null;
@@ -424,6 +432,7 @@ abstract final class HuyaPlayParser {
     required String roomId,
     required String cookie,
     required DateTime issuedAt,
+    HuyaTokenWindow? token,
     bool hevc = false,
   }) {
     final url = mediaUrl(line, antiCode: antiCode, bitRate: bitRate, hevc: hevc);
@@ -434,8 +443,77 @@ abstract final class HuyaPlayParser {
       headers: mediaHeaders(roomId, cookie: cookie),
       codec: codecOf(url),
       lineLabel: line.cdnType.isEmpty ? null : line.cdnType,
-      lease: lease(url, builtAt: issuedAt),
+      lease: lease(url, builtAt: issuedAt, token: token),
     );
+  }
+
+  /// The window of a WUP play token received at [receivedAt] (3.x
+  /// `HuyaCdnTokenLease.fromResponse`): valid until `wsTime + 300 s`, or the
+  /// earlier bound `iExpireTime` gives (above 10^12 milliseconds, above 10^9
+  /// seconds, else seconds after receipt); refreshed 30 s before. An empty
+  /// token or one without a hexadecimal `wsTime` is api-changed.
+  static HuyaTokenWindow tokenWindow(String token, {required int expireTime, required DateTime receivedAt}) {
+    if (token.trim().isEmpty) throw const HuyaFailure(HuyaFailureKind.apiChanged, 'getCdnTokenInfoEx: empty sFlvToken');
+    final wsTime = _wsTime(_parseMap(token.trim())['wsTime']);
+    if (wsTime == null) {
+      throw const HuyaFailure(HuyaFailureKind.apiChanged, 'getCdnTokenInfoEx: sFlvToken without wsTime');
+    }
+    var invalidAt = wsTime.add(const Duration(minutes: 5));
+    if (expireTime > 0) {
+      final bound = expireTime > 1000000000000
+          ? DateTime.fromMillisecondsSinceEpoch(min(expireTime, 8640000000000000), isUtc: true)
+          : expireTime > 1000000000
+          ? DateTime.fromMillisecondsSinceEpoch(expireTime * 1000, isUtc: true)
+          : receivedAt.toUtc().add(Duration(seconds: expireTime));
+      if (bound.isBefore(invalidAt)) invalidAt = bound;
+    }
+    return (refreshAt: invalidAt.subtract(const Duration(seconds: 30)), invalidAt: invalidAt);
+  }
+
+  /// `liveui.getCdnTokenInfoEx` with `GetCdnTokenExReq` (0 sFlvUrl,
+  /// 1 sStreamName, 2 iLoopTime, 3 tId, 4 iAppId), as the WUP bytes to POST.
+  static Uint8List cdnTokenRequest({
+    required String flvUrl,
+    required String streamName,
+    required HuyaUserId userId,
+    int loopTime = 0,
+    int appId = HuyaEndpoints.tokenAppId,
+  }) => WupPacket(
+    servant: 'liveui',
+    function: 'getCdnTokenInfoEx',
+    params: {
+      'tReq': WupPacket.structParam(
+        (writer) => writer
+          ..writeString(0, flvUrl)
+          ..writeString(1, streamName)
+          ..writeInt(2, loopTime)
+          ..writeStruct(3, userId.writeTo)
+          ..writeInt(4, appId),
+      ),
+    },
+  ).encode();
+
+  /// The `getCdnTokenInfoEx` answer: the return code, and `GetCdnTokenExResp`
+  /// (tag 0 sFlvToken, tag 1 iExpireTime). 5xx is network, another status or
+  /// undecodable bytes api-changed.
+  static ({int code, String token, int expireTime}) cdnTokenResponse(List<int> bytes, {int status = 200}) {
+    if (status >= 500) throw HuyaFailure(HuyaFailureKind.network, 'getCdnTokenInfoEx: HTTP $status');
+    if (status != 200) throw HuyaFailure(HuyaFailureKind.apiChanged, 'getCdnTokenInfoEx: HTTP $status');
+    final WupPacket packet;
+    try {
+      packet = WupPacket.decode(bytes);
+    } on FormatException catch (error) {
+      throw HuyaFailure(HuyaFailureKind.apiChanged, 'getCdnTokenInfoEx: ${error.message}');
+    }
+    final code = packet.code;
+    TarsStruct? rsp;
+    try {
+      rsp = packet.struct('tRsp');
+    } on FormatException {
+      throw const HuyaFailure(HuyaFailureKind.apiChanged, 'getCdnTokenInfoEx: tRsp is not Tars');
+    }
+    if (code == 0 && rsp == null) throw const HuyaFailure(HuyaFailureKind.apiChanged, 'getCdnTokenInfoEx: no tRsp');
+    return (code: code, token: (rsp?.string(0) ?? '').trim(), expireTime: rsp?.integer(1) ?? 0);
   }
 }
 

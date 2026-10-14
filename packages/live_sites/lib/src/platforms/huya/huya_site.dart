@@ -28,6 +28,7 @@ import 'package:live_sites/src/platforms/huya/capabilities/huya_search_provider.
 import 'package:live_sites/src/platforms/huya/danmaku/huya_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/huya/danmaku/huya_danmaku_session.dart';
 import 'package:live_sites/src/platforms/huya/huya_manifest.dart';
+import 'package:live_sites/src/platforms/huya/huya_tars.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_failure.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_play_parser.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_room_parser.dart';
@@ -264,6 +265,84 @@ final class HuyaSite implements LiveSite {
     return HuyaDanmakuProtocol.superChatBoard(response.bytes, now: now(), status: response.status);
   }
 
+  // Play tokens (native FLV / web) --------------------------------------------
+
+  final Map<String, Future<HuyaToken>> _nativeTokens = {};
+  final Map<String, Future<HuyaToken>> _webTokens = {};
+
+  /// The native FLV credential: `getCdnTokenInfoEx` with the pc_exe identity,
+  /// no cookie and no viewer uid. One request per stream name at a time;
+  /// nothing is cached, every caller signs its own URL.
+  Future<HuyaToken> nativeToken(String streamName) => _shared(
+    _nativeTokens,
+    streamName,
+    () => _fetchToken(
+      flvUrl: '',
+      streamName: streamName,
+      userId: const HuyaUserId(huyaUa: HuyaEndpoints.nativeTarsUserAgent),
+      headers: const {
+        'origin': HuyaEndpoints.origin,
+        'referer': '${HuyaEndpoints.origin}/',
+        'user-agent': HuyaEndpoints.hysdkUserAgent,
+      },
+    ),
+  );
+
+  /// The web play token for viewer [uid] and line [flvUrl]/[streamName], with
+  /// the login cookie; only the same viewer, line and stream share a request.
+  Future<HuyaToken> webToken({required String flvUrl, required String streamName, required int uid}) {
+    final cookie = this.cookie();
+    return _shared(
+      _webTokens,
+      '$uid|$flvUrl|$streamName',
+      () => _fetchToken(
+        flvUrl: flvUrl,
+        streamName: streamName,
+        userId: HuyaUserId(uid: uid, guid: guid, huyaUa: HuyaEndpoints.webTarsUserAgent, cookie: cookie),
+        headers: {
+          'origin': HuyaEndpoints.origin,
+          'referer': '${HuyaEndpoints.origin}/',
+          'user-agent': HuyaEndpoints.userAgent,
+          if (cookie.isNotEmpty) 'cookie': cookie,
+        },
+      ),
+    );
+  }
+
+  /// `POST https://wup.huya.com` `liveui.getCdnTokenInfoEx`; a non-zero return
+  /// code is stream-unavailable.
+  Future<HuyaToken> _fetchToken({
+    required String flvUrl,
+    required String streamName,
+    required HuyaUserId userId,
+    required Map<String, String> headers,
+  }) async {
+    final response = await http.postBytes(
+      HuyaEndpoints.wup(),
+      body: HuyaPlayParser.cdnTokenRequest(flvUrl: flvUrl, streamName: streamName, userId: userId),
+      headers: {...headers, 'content-type': 'application/x-wup'},
+      timeout: HuyaEndpoints.tokenTimeout,
+    );
+    final result = HuyaPlayParser.cdnTokenResponse(response.bytes, status: response.status);
+    if (result.code != 0) {
+      throw HuyaFailure(HuyaFailureKind.streamUnavailable, 'getCdnTokenInfoEx code ${result.code}');
+    }
+    return (token: result.token, expireTime: result.expireTime, receivedAt: now());
+  }
+
+  /// [fetch] shared by the callers of [key] while it runs; forgotten once it
+  /// settles, so nothing is cached.
+  static Future<T> _shared<T>(Map<String, Future<T>> inFlight, String key, Future<T> Function() fetch) async {
+    if (inFlight[key] case final pending?) return await pending;
+    final request = fetch();
+    inFlight[key] = request;
+    try {
+      return await request;
+    } finally {
+      inFlight.removeWhere((pendingKey, pending) => pendingKey == key && identical(pending, request));
+    }
+  }
+
   // Rid mapping (link resolution) ---------------------------------------------
 
   /// Remembers the canonical rid [requested] resolved to.
@@ -330,3 +409,7 @@ int? _uidFromCookie(String cookie) {
   final uid = int.tryParse(_yyuid.firstMatch(cookie)?.group(1) ?? '');
   return uid != null && uid > 0 ? uid : null;
 }
+
+/// A `getCdnTokenInfoEx` answer: the token text, its expiry, and when it
+/// arrived (the window is timed from the arrival).
+typedef HuyaToken = ({String token, int expireTime, DateTime receivedAt});

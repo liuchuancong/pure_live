@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_restriction.dart';
+import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
@@ -14,14 +15,13 @@ import 'package:live_sites/src/platforms/huya/parsers/huya_room_parser.dart';
 // govern the public surface are relaxed here.
 // ignore_for_file: unnecessary_type_name_in_constructor
 
-/// Huya's playback on the web path: qualities and pre-signing lines come from
-/// one `profileRoom` answer's embedded `stream`; every line is signed with its
-/// own `AntiCode` as the anonymous viewer.
-///
-/// DEFERRED (documented follow-up, not faked): the native `getCdnTokenInfoEx`
-/// WUP play-token refresh (4-byte length-prefixed TUP3 packets over
-/// `wup.huya.com`), the headline message board and replay recordings. A
-/// restricted room is not opened; a room with no web line is content-unavailable.
+/// Huya's playback: qualities and lines come from one `profileRoom` answer's
+/// embedded `stream`. An FLV line is signed with a WUP play token — the native
+/// `getCdnTokenInfoEx` credential first (the pc_exe identity), falling back to a
+/// web token, then to the room's own AntiCode template; an HLS line (and a room
+/// template with no `fm`) is signed on the web path. A fetched token's window
+/// bounds the line's lease. A restricted room is not opened; a room with no
+/// line is content-unavailable.
 final class HuyaPlaybackProvider implements LivePlaybackProvider {
   /// Serves [site].
   HuyaPlaybackProvider({required this.site});
@@ -58,21 +58,15 @@ final class HuyaPlaybackProvider implements LivePlaybackProvider {
       HuyaFailure? last;
       for (final line in profile.lines) {
         try {
-          if (line.antiCode.trim().isEmpty) throw HuyaFailure(HuyaFailureKind.streamUnavailable, '$line: no token');
-          final signed = HuyaPlayParser.signAntiCode(
-            line.antiCode,
-            streamName: line.streamName,
-            uid: viewerUid,
-            clock: site.clock,
-            now: site.now(),
-          );
+          final signed = await _sign(line, viewerUid);
           final answer = HuyaPlayParser.answer(
             line,
-            antiCode: signed,
+            antiCode: signed.antiCode,
             bitRate: bitRate,
             roomId: rid,
             cookie: cookie,
             issuedAt: issuedAt,
+            token: signed.window,
           );
           if (seen.add(answer.url)) lines.add(answer);
         } on HuyaFailure catch (failure) {
@@ -88,6 +82,74 @@ final class HuyaPlaybackProvider implements LivePlaybackProvider {
       return left(LiveSiteError.unexpected(siteId: 'huya', message: '$error', cause: error));
     }
   }
+
+  /// The anti-code a [line] is signed with and the token window that bounds it:
+  ///
+  /// 1. FLV asks the native WUP token and signs with it; when that fails, the
+  ///    room template is signed as the viewer; when that fails too, a web WUP
+  ///    token is fetched for this viewer and line;
+  /// 2. a room token with no `fm` is a legacy static token used as is; a
+  ///    template is signed as the viewer;
+  /// 3. HLS uses only its own AntiCode, signed as the viewer — the web path
+  ///    never uses the native identity.
+  Future<({String antiCode, HuyaTokenWindow? window})> _sign(HuyaLine line, int viewerUid) async {
+    final room = line.antiCode.trim();
+    var antiCode = room;
+    HuyaTokenWindow? window;
+    var signed = false;
+    if (line.format == LiveStreamFormat.flv) {
+      try {
+        final token = await site.nativeToken(line.streamName);
+        final native = HuyaPlayParser.tokenWindow(
+          token.token,
+          expireTime: token.expireTime,
+          receivedAt: token.receivedAt,
+        );
+        if (!site.now().toUtc().isBefore(native.invalidAt)) {
+          throw const HuyaFailure(HuyaFailureKind.streamUnavailable, 'getCdnTokenInfoEx: the native token arrived expired');
+        }
+        antiCode = _signWith(token.token, line, line.presenterUid > 0 ? line.presenterUid : viewerUid);
+        window = native;
+        signed = true;
+      } on HuyaFailure {
+        // The native token path failed; fall back to the room template.
+      }
+      if (!signed && HuyaPlayParser.hasTemplate(room)) {
+        HuyaFailure? signFailure;
+        try {
+          antiCode = _signWith(room, line, viewerUid);
+          signed = true;
+        } on HuyaFailure catch (failure) {
+          signFailure = failure;
+        }
+        if (!signed) {
+          try {
+            final token = await site.webToken(flvUrl: line.base, streamName: line.streamName, uid: viewerUid);
+            window = HuyaPlayParser.tokenWindow(
+              token.token,
+              expireTime: token.expireTime,
+              receivedAt: token.receivedAt,
+            );
+            antiCode = token.token;
+          } on HuyaFailure {
+            // The line fails with the root cause: the template signing error.
+            throw signFailure!;
+          }
+        }
+      }
+    }
+    if (antiCode.isEmpty) throw HuyaFailure(HuyaFailureKind.streamUnavailable, '${line.cdnType}: no token');
+    if (!signed && HuyaPlayParser.hasTemplate(antiCode)) antiCode = _signWith(antiCode, line, viewerUid);
+    return (antiCode: antiCode, window: window);
+  }
+
+  String _signWith(String antiCode, HuyaLine line, int uid) => HuyaPlayParser.signAntiCode(
+    antiCode,
+    streamName: line.streamName,
+    uid: uid > 0 ? uid : site.fallbackUid,
+    clock: site.clock,
+    now: site.now(),
+  );
 
   /// The room's stream data, once it can be played: a live room with a
   /// stream, unrestricted. A restricted room (paid, password, or an

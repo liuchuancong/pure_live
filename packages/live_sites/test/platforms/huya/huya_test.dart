@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart' show md5;
 import 'package:live_sites/live_sites.dart';
+import 'package:live_sites/src/platforms/huya/api/huya_endpoints.dart';
 import 'package:live_sites/src/platforms/huya/danmaku/huya_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/huya/huya_tars.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_failure.dart';
@@ -327,6 +328,77 @@ void main() {
       expect(
         () => HuyaDanmakuProtocol.superChatBoard(const [0, 0, 0, 4, 0, 0, 0, 0], now: DateTime.utc(2026), status: 503),
         throwsA(isA<HuyaFailure>().having((f) => f.kind, 'kind', HuyaFailureKind.network)),
+      );
+    });
+  });
+
+  group('play token', () {
+    test('the native getCdnTokenInfoEx request round-trips with the pc_exe identity', () {
+      final bytes =
+          HuyaPlayParser.cdnTokenRequest(
+            flvUrl: '',
+            streamName: 'stream1',
+            userId: const HuyaUserId(huyaUa: HuyaEndpoints.nativeTarsUserAgent),
+          );
+      final packet = WupPacket.decode(bytes);
+      expect(packet.servant, 'liveui');
+      expect(packet.function, 'getCdnTokenInfoEx');
+      // tId (the user identity) sits at tReq tag 3; its sHuYaUA (tag 3) is the pc_exe UA.
+      final tReq = packet.struct('tReq')!;
+      expect(tReq.struct(3)!.string(3), HuyaEndpoints.nativeTarsUserAgent);
+      expect(tReq.string(1), 'stream1');
+    });
+
+    test('a token answer returns the sFlvToken and iExpireTime; a non-zero code is returned', () {
+      final answer =
+          WupPacket(
+            servant: 'liveui',
+            function: 'getCdnTokenInfoEx',
+            params: {
+              '': WupPacket.intParam(0),
+              'tRsp': WupPacket.structParam((w) => w
+                    ..writeString(0, 'wsTime=6aba3701&t=100')
+                    ..writeInt(1, 300)),
+            },
+          ).encode();
+      final result = HuyaPlayParser.cdnTokenResponse(answer);
+      expect(result.code, 0);
+      expect(result.token, 'wsTime=6aba3701&t=100');
+      expect(result.expireTime, 300);
+
+      final refused = WupPacket(
+        servant: 'liveui',
+        function: 'getCdnTokenInfoEx',
+        params: {'': WupPacket.intParam(3)},
+      ).encode();
+      expect(HuyaPlayParser.cdnTokenResponse(refused).code, 3);
+    });
+
+    test('tokenWindow bounds the token by wsTime+300 s and the earlier iExpireTime', () {
+      final receivedAt = DateTime.utc(2026, 10, 1, 12);
+      final wsSeconds = receivedAt.millisecondsSinceEpoch ~/ 1000 + 400;
+      final ws = wsSeconds.toRadixString(16);
+      // iExpireTime 90 s after receipt is earlier than wsTime+300 s.
+      final window = HuyaPlayParser.tokenWindow('wsTime=$ws', expireTime: 90, receivedAt: receivedAt);
+      expect(window.invalidAt, receivedAt.add(const Duration(seconds: 90)));
+      expect(window.refreshAt, receivedAt.add(const Duration(seconds: 60)));
+      // An absolute second expiry above 10^9 is read as a unix second.
+      final absolute = receivedAt.add(const Duration(seconds: 200)).millisecondsSinceEpoch ~/ 1000;
+      expect(
+        HuyaPlayParser.tokenWindow('wsTime=$ws', expireTime: absolute, receivedAt: receivedAt).invalidAt,
+        DateTime.fromMillisecondsSinceEpoch(absolute * 1000, isUtc: true),
+      );
+    });
+
+    test('an empty token or one without a hexadecimal wsTime is api-changed', () {
+      final now = DateTime.utc(2026);
+      expect(
+        () => HuyaPlayParser.tokenWindow(' ', expireTime: 0, receivedAt: now),
+        throwsA(isA<HuyaFailure>().having((f) => f.kind, 'kind', HuyaFailureKind.apiChanged)),
+      );
+      expect(
+        () => HuyaPlayParser.tokenWindow('wsSecret=x', expireTime: 0, receivedAt: now),
+        throwsA(isA<HuyaFailure>().having((f) => f.kind, 'kind', HuyaFailureKind.apiChanged)),
       );
     });
   });
