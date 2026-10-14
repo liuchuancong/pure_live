@@ -14,3 +14,4 @@ export 'src/exceptions/websocket_exception.dart';
 export 'src/heartbeat/heartbeat_config.dart';
 export 'src/message/message_codec.dart';
 export 'src/message/websocket_message.dart';
+export 'src/socket_channel.dart';
