@@ -1867,8 +1867,9 @@ void main() {
       );
       expect(
         adapter.http.sent,
-        hasLength(3),
-        reason: 'page 1 of the three areas asked, the refused ones asked nothing',
+        hasLength(2),
+        reason: 'page 1 of the two asked areas each takes a fresh snapshot; the refused '
+            'areas and the page below 1 ask nothing',
       );
     });
 
@@ -1879,8 +1880,9 @@ void main() {
       expect(page.items.map((room) => room.roomId), [_channel, _other]);
       expect(page.hasMore, isTrue);
       expect(page.totalCount, 3);
-      final wide = _leftOf(await discovery.getRecommendedRooms(request: const LivePageRequest(pageSize: 500)));
-      expect(wide, isA<LiveSiteError>(), reason: 'a page the platform never served is reported, not fetched');
+      final wide = _right(await discovery.getRecommendedRooms(request: const LivePageRequest(pageSize: 500)));
+      expect(wide.items, isEmpty, reason: 'a page beyond the platform max gives nothing, without a request');
+      expect(adapter.http.sent, hasLength(1), reason: 'only the page 1 fetch above asked');
     });
 
     test('a search is the snapshot filtered here, or one exact channel', () async {
