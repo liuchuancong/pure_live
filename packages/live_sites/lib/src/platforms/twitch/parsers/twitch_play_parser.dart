@@ -1,3 +1,4 @@
+import 'package:hls/hls.dart';
 import 'package:live_sites/src/models/enums/live_play_format_source.dart';
 import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
@@ -31,7 +32,9 @@ abstract final class TwitchPlayParser {
   /// The usher answer: 404 is a channel that is not broadcasting; 403 names
   /// why this viewer may not watch (`geo` is region-blocked, another reason
   /// needs a login); 429 is rate-limited and 5xx network; anything else is
-  /// api-changed. The body is `[{error_code, error}]`.
+  /// api-changed. An answer asking for a browser integrity token
+  /// (`extensions.challenge`, or an error naming a failed integrity check) is
+  /// risk control whatever its status. The body is `[{error_code, error}]`.
   static void usherStatus(int status, String body) {
     if (status >= 200 && status < 300) return;
     if (status >= 500) throw TwitchFailure(TwitchFailureKind.network, 'usher: HTTP $status');
@@ -41,6 +44,10 @@ abstract final class TwitchPlayParser {
     final code = TwitchJson.stringOf(first?['error_code']) ?? '';
     final message = TwitchJson.stringOf(first?['error']) ?? '';
     final detail = 'usher: HTTP $status $code $message'.trim();
+    if (TwitchJson.isIntegrityRejection(decoded) ||
+        ['failed integrity check', 'integrity token'].any((phrase) => message.toLowerCase().contains(phrase))) {
+      throw TwitchFailure(TwitchFailureKind.riskControl, detail);
+    }
     if (status == 404) throw TwitchFailure(TwitchFailureKind.streamUnavailable, detail);
     if (status == 403) {
       if ('$code $message'.toLowerCase().contains('geo')) {
@@ -61,26 +68,25 @@ abstract final class TwitchPlayParser {
     if (!playlist.trimLeft().startsWith('#EXTM3U')) {
       throw TwitchFailure(TwitchFailureKind.apiChanged, 'usher: not a playlist (${TwitchJson.snippet(playlist)})');
     }
+    // The master is read through package:hls; a body that is not a master
+    // playlist yields no variants and falls to the stream-unavailable answer
+    // below. Relative URIs are resolved against the master here so no part of
+    // the master's own query is copied onto a variant.
+    HlsMasterPlaylist? masterPlaylist;
+    try {
+      final parsed = HlsParser.parse(playlist);
+      masterPlaylist = parsed is HlsMasterPlaylist ? parsed : null;
+    } on Object {
+      masterPlaylist = null;
+    }
     final grouped = <String, TwitchVariantGroup>{};
-    Map<String, String>? pending;
-    for (final raw in playlist.split(RegExp(r'\r?\n'))) {
-      final line = raw.trim();
-      if (line.startsWith('#EXT-X-STREAM-INF:')) {
-        pending = _attributes(line.substring('#EXT-X-STREAM-INF:'.length));
-        continue;
-      }
-      if (line.isEmpty || line.startsWith('#') || pending == null) continue;
-      final attributes = pending;
-      pending = null;
-      final uri = Uri.tryParse(line);
-      if (uri == null) continue;
-      final resolved = uri.hasScheme ? uri : master.resolve(line);
+    for (final variant in masterPlaylist?.variants ?? const <HlsVariant>[]) {
+      final resolved = variant.uri.hasScheme ? variant.uri : master.resolveUri(variant.uri);
       if (!resolved.isScheme('http') && !resolved.isScheme('https')) continue;
-      final bandwidth = int.tryParse(attributes['BANDWIDTH'] ?? '') ?? 0;
-      final resolution = _resolution.firstMatch(attributes['RESOLUTION'] ?? '');
-      final height = int.tryParse(resolution?.group(2) ?? '') ?? 0;
-      final frameRate = double.tryParse(attributes['FRAME-RATE'] ?? '') ?? 0;
-      final group = (attributes['VIDEO'] ?? '').toLowerCase();
+      final bandwidth = variant.bandwidth;
+      final height = variant.height ?? 0;
+      final frameRate = variant.frameRate ?? 0;
+      final group = (variant.videoGroupId ?? '').toLowerCase();
       final source = group == 'chunked';
       final id = '$height:${frameRate.round()}:$bandwidth:$group';
       final url = resolved.toString();
@@ -94,7 +100,7 @@ abstract final class TwitchPlayParser {
         sort: source ? 1 << 30 : bandwidth,
         group: group,
         urls: [url],
-        codec: videoCodec(attributes['CODECS'] ?? ''),
+        codec: videoCodec(variant.codecs ?? ''),
       );
     }
     if (grouped.isEmpty) throw const TwitchFailure(TwitchFailureKind.streamUnavailable, 'usher: no variant');
@@ -160,13 +166,13 @@ abstract final class TwitchPlayParser {
     return null;
   }
 
-  /// The quality label: `<height>p[<fps>][ (Source)]` (the frame rate named
-  /// from 45 fps up), or, when the playlist gives no resolution, a label from
-  /// the bandwidth.
+  /// The quality label: `<height>p[<fps>][（原画）]` (the frame rate named
+  /// from 45 fps up, the broadcaster's own stream marked 原画), or, when the
+  /// playlist gives no resolution, a label from the bandwidth.
   static String qualityName(int bandwidth, {required int height, required double frameRate, required bool source}) {
     if (height > 0) {
       final fps = frameRate >= 45 ? '${frameRate.round()}' : '';
-      return '${height}p$fps${source ? ' (Source)' : ''}';
+      return '${height}p$fps${source ? '（原画）' : ''}';
     }
     if (source) return '原画';
     if (bandwidth > 5000000) return '1080P';
@@ -187,17 +193,4 @@ abstract final class TwitchPlayParser {
       'referer': id.isEmpty ? '${TwitchEndpoints.origin}/' : TwitchEndpoints.roomPageUrl(id),
     };
   }
-
-  static final RegExp _resolution = RegExp(r'^(\d+)x(\d+)$');
-
-  static final RegExp _attribute = RegExp('([A-Z0-9-]+)=("[^"]*"|[^,]*)');
-
-  /// The attributes of one `#EXT-X-STREAM-INF` line, quotes stripped.
-  static Map<String, String> _attributes(String text) => {
-    for (final match in _attribute.allMatches(text))
-      match.group(1)!: switch (match.group(2) ?? '') {
-        final raw when raw.length >= 2 && raw.startsWith('"') && raw.endsWith('"') => raw.substring(1, raw.length - 1),
-        final raw => raw,
-      },
-  };
 }

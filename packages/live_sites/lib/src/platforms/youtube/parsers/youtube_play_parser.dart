@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:hls/hls.dart';
 import 'package:live_sites/src/models/enums/live_play_format_source.dart';
 import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
@@ -33,15 +34,29 @@ abstract final class YoutubePlayParser {
   /// [masterUrl]; at most [maxVariants]. Malformed variant lines are skipped,
   /// never fatal.
   static List<YoutubeVariant> variants(String masterText, Uri masterUrl) {
-    final lines = masterText.split(RegExp(r'\r\n|\r|\n'));
+    // The master is read through package:hls; a body the parser refuses, or one
+    // that is not a master playlist, yields no variants (the tier collapses to
+    // `hls:auto` as before). Relative URIs are resolved against the master here
+    // so the master's own query is never copied onto a variant.
+    HlsMasterPlaylist? playlist;
+    try {
+      final parsed = HlsParser.parse(masterText);
+      playlist = parsed is HlsMasterPlaylist ? parsed : null;
+    } on Object {
+      playlist = null;
+    }
     final result = <YoutubeVariant>[];
-    for (var index = 0; index < lines.length && result.length < maxVariants; index++) {
-      final line = lines[index].trim();
-      if (!line.startsWith('#EXT-X-STREAM-INF')) continue;
-      final attributes = line.substring(line.indexOf(':') + 1);
-      final url = _nextUri(lines, index);
-      if (url == null) continue;
-      result.add(_variant(attributes, url, masterUrl));
+    for (final parsed in playlist?.variants ?? const <HlsVariant>[]) {
+      if (result.length >= maxVariants) break;
+      final uri = parsed.uri.hasScheme ? parsed.uri : masterUrl.resolveUri(parsed.uri);
+      result.add((
+        url: uri.toString(),
+        width: parsed.width,
+        height: parsed.height,
+        fps: parsed.frameRate ?? 0,
+        codec: _codecOfCodecs(parsed.codecs ?? ''),
+        bandwidth: parsed.bandwidth,
+      ));
     }
     return result;
   }
@@ -234,50 +249,6 @@ abstract final class YoutubePlayParser {
       lineLabel: lineLabel ?? uri.host,
       lease: lease(uri, issuedAt),
     );
-  }
-
-  /// The variant URI following a `#EXT-X-STREAM-INF` line (the next
-  /// non-comment, non-empty line), or null when there is none.
-  static String? _nextUri(List<String> lines, int index) {
-    for (var cursor = index + 1; cursor < lines.length; cursor++) {
-      final candidate = lines[cursor].trim();
-      if (candidate.isEmpty || candidate.startsWith('#')) continue;
-      return candidate;
-    }
-    return null;
-  }
-
-  /// A `#EXT-X-STREAM-INF` attribute list parsed into a [YoutubeVariant], the
-  /// relative [url] resolved against [masterUrl].
-  static YoutubeVariant _variant(String attributes, String url, Uri masterUrl) {
-    final resolution = _attribute(attributes, 'RESOLUTION');
-    final (width, height) = _splitResolution(resolution);
-    final fps = jsonDouble(_attribute(attributes, 'FRAME-RATE')) ?? 0;
-    final codecs = _attribute(attributes, 'CODECS') ?? '';
-    final absolute = Uri.parse(url).hasScheme ? url : masterUrl.resolve(url).toString();
-    return (
-      url: absolute,
-      width: width,
-      height: height,
-      fps: fps,
-      codec: _codecOfCodecs(codecs),
-      bandwidth: jsonInt(_attribute(attributes, 'BANDWIDTH')),
-    );
-  }
-
-  /// The value of the [name] attribute in a comma-separated stream-inf
-  /// attribute list; null when absent.
-  static String? _attribute(String attributes, String name) {
-    final match = RegExp('(?:^|,)\\s*${RegExp.escape(name)}=([^,]*)').firstMatch(attributes);
-    return match?.group(1)?.trim();
-  }
-
-  /// A `WIDTHxHEIGHT` resolution split; both null when it is absent or
-  /// malformed.
-  static (int? width, int? height) _splitResolution(String? resolution) {
-    final match = RegExp(r'^(\d+)x(\d+)$').firstMatch(resolution ?? '');
-    if (match == null) return (null, null);
-    return (int.tryParse(match.group(1) ?? ''), int.tryParse(match.group(2) ?? ''));
   }
 
   /// The fps token of a quality id: a plain bucket (`fps0`) above 30, else the

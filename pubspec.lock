@@ -885,6 +885,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.2.0"
+  forui:
+    dependency: transitive
+    description:
+      name: forui
+      sha256: "9882c82d91827d3b5ae0af20644873212d6dda1b89897dec535f0296dad3daec"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.27.5"
+  forui_lucide:
+    dependency: transitive
+    description:
+      name: forui_lucide
+      sha256: "63c660e4213309d9558cfc1c10ec52c13dab88cc2794dc41b8be769a7c86206c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.27.0"
   fpdart:
     dependency: transitive
     description:
@@ -997,6 +1013,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.11.3"
+  hls:
+    dependency: transitive
+    description:
+      name: hls
+      sha256: "39026b53df7a88263434f286a000f9e669a7adb39d123be0318ea745a07f2e60"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   hooks:
     dependency: transitive
     description:
@@ -1322,6 +1346,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.8.1"
+  mosaic_grid:
+    dependency: transitive
+    description:
+      name: mosaic_grid
+      sha256: fbcb1d13c4229831139ff0ee8b9ce703c5da3eaa146d74291c225a2e1a83b27e
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.2"
   mustache_template:
     dependency: transitive
     description:
@@ -1618,6 +1650,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.5.2"
+  pretty_qr_code:
+    dependency: transitive
+    description:
+      name: pretty_qr_code
+      sha256: "474f8a4512113fba06f14a6ec9bbf42353b4e651d7a520e3096f2a9b6bbe7a8a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.6.0"
   process:
     dependency: transitive
     description:
@@ -1658,6 +1698,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.6.0"
+  qr:
+    dependency: transitive
+    description:
+      name: qr
+      sha256: "5a1d2586170e172b8a8c8470bbbffd5eb0cd38a66c0d77155ea138d3af3a4445"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.2"
   recase:
     dependency: transitive
     description:
@@ -1983,6 +2031,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.1"
+  sugar:
+    dependency: transitive
+    description:
+      name: sugar
+      sha256: a0a97f1d3552a3ef4cbec7c6e62c7b52c151cd5c11e984e8311700a918f73dc5
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.0"
   synchronized:
     dependency: transitive
     description:

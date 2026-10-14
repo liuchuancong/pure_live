@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:hls/hls.dart';
 import 'package:live_sites/src/models/enums/live_play_format_source.dart';
 import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
@@ -129,56 +130,38 @@ abstract final class ChzzkPlayParser {
     if (lines.first.trim().trimLeft() != '#EXTM3U') {
       throw ChzzkFailure(ChzzkFailureKind.apiChanged, '${media.id} master: not a playlist');
     }
+    // The master is read through package:hls (after the `#EXTM3U` gate above); a
+    // body that is not a master playlist yields no variants and falls to the
+    // stream-unavailable answer below. Relative URIs are resolved against the
+    // master here so an absolute variant keeps its own `hdntl` path token and a
+    // relative one never inherits the master's `hdnts` query.
+    HlsMasterPlaylist? masterPlaylist;
+    try {
+      final parsed = HlsParser.parse(playlist);
+      masterPlaylist = parsed is HlsMasterPlaylist ? parsed : null;
+    } on Object {
+      masterPlaylist = null;
+    }
     final result = <ChzzkVariant>[];
-    Map<String, String>? pending;
-    for (final raw in lines) {
-      final line = raw.trim();
-      if (line.startsWith('#EXT-X-STREAM-INF:')) {
-        pending = _attributes(line.substring('#EXT-X-STREAM-INF:'.length));
-        continue;
-      }
-      if (pending == null || line.isEmpty || line.startsWith('#')) continue;
-      final attributes = pending;
-      pending = null;
-      final height = int.tryParse((attributes['RESOLUTION'] ?? '').split('x').last) ?? 0;
+    for (final parsed in masterPlaylist?.variants ?? const <HlsVariant>[]) {
+      final uri = parsed.uri.hasScheme ? parsed.uri : media.url.resolveUri(parsed.uri);
+      // A variant URI that is not http(s) is left out (the master itself is
+      // always https on the CDN; a stray scheme cannot be played).
+      if (!uri.isScheme('http') && !uri.isScheme('https')) continue;
+      final height = parsed.height ?? 0;
       if (height <= 0) continue;
-      final uri = _resolve(master: media.url, reference: line);
-      if (uri == null) continue;
       result.add((
         mediaId: media.id,
         url: uri.toString(),
         height: height,
-        frameRate: double.tryParse(attributes['FRAME-RATE'] ?? '') ?? 0,
-        bandwidth: int.tryParse(attributes['BANDWIDTH'] ?? '') ?? 0,
-        codec: codecOf(attributes['CODECS']),
+        frameRate: parsed.frameRate ?? 0,
+        bandwidth: parsed.bandwidth,
+        codec: codecOf(parsed.codecs),
         lease: lease(uri, master: media.url, issuedAt: issuedAt),
       ));
     }
     if (result.isEmpty) throw ChzzkFailure(ChzzkFailureKind.streamUnavailable, '${media.id} master: no video variant');
     return result;
-  }
-
-  /// The attributes of one `#EXT-X-STREAM-INF` line, quotes stripped.
-  static Map<String, String> _attributes(String text) {
-    final result = <String, String>{};
-    for (final match in _attribute.allMatches(text)) {
-      result[match.group(1) ?? ''] = (match.group(2) ?? match.group(3) ?? '').replaceAll('"', '');
-    }
-    return result;
-  }
-
-  static final RegExp _attribute = RegExp('([A-Za-z0-9-]+)=(?:"([^"]*)"|([^,]*))');
-
-  /// A variant URI made absolute; null when it is not an `http(s)` address.
-  static Uri? _resolve({required Uri master, required String reference}) {
-    final Uri uri;
-    try {
-      uri = Uri.parse(reference);
-    } on FormatException {
-      return null;
-    }
-    if (uri.hasScheme) return uri.scheme == 'http' || uri.scheme == 'https' ? uri : null;
-    return master.resolveUri(uri);
   }
 
   /// The qualities of the [variants] read together, best first: one per

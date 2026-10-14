@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:hls/hls.dart';
 import 'package:live_sites/src/models/enums/live_play_format_source.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/models/play/live_play_lease/live_play_lease.dart';
@@ -127,7 +128,6 @@ abstract final class NiconicoPlayParser {
   static final RegExp _cookieValue = RegExp(r'^[\x21-\x7e]*$');
   static final RegExp _cookiePath = RegExp(r'^/hls/[A-Za-z0-9_/-]+$');
   static final RegExp _resolution = RegExp(r'^([1-9]\d{0,4})x([1-9]\d{0,4})$');
-  static final RegExp _attribute = RegExp('([A-Z0-9-]+)=("[^"]*"|[^,]*)');
 
   /// Most cookies in one grant.
   static const int maxCookies = 64;
@@ -278,24 +278,31 @@ abstract final class NiconicoPlayParser {
     if (lines.isEmpty || lines.first != '#EXTM3U') {
       throw NiconicoFailure(NiconicoFailureKind.apiChanged, 'master: not a playlist (${jsonSnippet(body)})');
     }
+    // The master is read through package:hls (after the `#EXTM3U` gate above);
+    // a body that is not a master playlist yields no variants and falls to the
+    // stream-unavailable answer below. Relative URIs are resolved against the
+    // source here so no part of the master's own query is copied onto a variant.
+    HlsMasterPlaylist? playlist;
+    try {
+      final parsed = HlsParser.parse(body);
+      playlist = parsed is HlsMasterPlaylist ? parsed : null;
+    } on Object {
+      playlist = null;
+    }
     final variants = <String, NiconicoVariant>{};
-    Map<String, String>? pending;
-    for (final line in lines.skip(1)) {
-      if (line.isEmpty) continue;
-      if (line.startsWith('#EXT-X-STREAM-INF:')) {
-        pending = _attributes(line.substring('#EXT-X-STREAM-INF:'.length));
+    for (final parsed in playlist?.variants ?? const <HlsVariant>[]) {
+      final url = parsed.uri.hasScheme ? parsed.uri : source.resolveUri(parsed.uri);
+      final bandwidth = parsed.bandwidth;
+      final width = parsed.width;
+      final height = parsed.height;
+      if (url.scheme != 'https' ||
+          url.host.isEmpty ||
+          bandwidth <= 0 ||
+          width == null ||
+          height == null ||
+          !_resolution.hasMatch('${width}x$height')) {
         continue;
       }
-      if (line.startsWith('#')) continue;
-      final attributes = pending;
-      pending = null;
-      if (attributes == null) continue;
-      final url = source.resolve(line);
-      final size = _resolution.firstMatch(attributes['RESOLUTION'] ?? '');
-      final bandwidth = jsonInt(attributes['BANDWIDTH']);
-      if (url.scheme != 'https' || url.host.isEmpty || bandwidth == null || bandwidth <= 0 || size == null) continue;
-      final width = int.parse(size.group(1)!);
-      final height = int.parse(size.group(2)!);
       final key = '${width}x$height@$bandwidth';
       variants[key] = (url: '$url', width: width, height: height, bandwidth: bandwidth);
     }
@@ -409,12 +416,4 @@ abstract final class NiconicoPlayParser {
     final date = DateTime.utc(year, month, day, hour, minute, second);
     return date.day == day ? date : null;
   }
-
-  static Map<String, String> _attributes(String text) => {
-    for (final match in _attribute.allMatches(text))
-      match.group(1)!: switch (match.group(2) ?? '') {
-        final raw when raw.length >= 2 && raw.startsWith('"') && raw.endsWith('"') => raw.substring(1, raw.length - 1),
-        final raw => raw,
-      },
-  };
 }

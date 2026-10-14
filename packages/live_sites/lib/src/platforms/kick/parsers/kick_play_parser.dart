@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:hls/hls.dart';
 import 'package:live_sites/src/models/enums/live_play_format_source.dart';
 import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
@@ -61,39 +62,39 @@ abstract final class KickPlayParser {
     if (lines.isEmpty || lines.first != '#EXTM3U') {
       throw KickFailure(KickFailureKind.apiChanged, 'master playlist: not a playlist (${jsonSnippet(body)})');
     }
-    final names = <String, String>{};
+    // The master is read through package:hls; a body that is not a master
+    // playlist (or that the parser refuses) yields no variants and falls to the
+    // stream-unavailable answer below, exactly as before. Relative variant URIs
+    // are resolved against the master here rather than through the parser so no
+    // part of the master's own `?token=` is copied onto a variant.
+    HlsMasterPlaylist? playlist;
+    try {
+      final parsed = HlsParser.parse(body);
+      playlist = parsed is HlsMasterPlaylist ? parsed : null;
+    } on Object {
+      playlist = null;
+    }
+    final names = <String, String>{
+      for (final rendition in playlist?.renditions ?? const <HlsRendition>[])
+        if (rendition.type == HlsMediaType.video) rendition.groupId: rendition.name,
+    };
     final variants = <String, KickVariant>{};
-    Map<String, String>? pending;
-    for (final line in lines.skip(1)) {
-      if (line.isEmpty) continue;
-      if (line.startsWith('#EXT-X-MEDIA:')) {
-        final media = _attributes(line.substring('#EXT-X-MEDIA:'.length));
-        if (media['TYPE'] == 'VIDEO' && media['GROUP-ID'] != null && media['NAME'] != null) {
-          names[media['GROUP-ID']!] = media['NAME']!;
-        }
+    for (final parsed in playlist?.variants ?? const <HlsVariant>[]) {
+      final url = parsed.uri.hasScheme ? parsed.uri : master.resolveUri(parsed.uri);
+      final bandwidth = parsed.bandwidth;
+      final width = parsed.width;
+      final height = parsed.height;
+      if (!url.isScheme('https') ||
+          url.host.isEmpty ||
+          bandwidth <= 0 ||
+          width == null ||
+          width <= 0 ||
+          height == null ||
+          height <= 0) {
         continue;
       }
-      if (line.startsWith('#EXT-X-STREAM-INF:')) {
-        if (pending != null) {
-          throw const KickFailure(KickFailureKind.apiChanged, 'master playlist: a variant without a URL');
-        }
-        pending = _attributes(line.substring('#EXT-X-STREAM-INF:'.length));
-        continue;
-      }
-      if (line.startsWith('#')) continue;
-      final attributes = pending;
-      pending = null;
-      if (attributes == null) continue;
-      final url = master.resolve(line);
-      final bandwidth = jsonInt(attributes['BANDWIDTH']);
-      final size = _resolution.firstMatch(attributes['RESOLUTION'] ?? '');
-      if (url.scheme != 'https' || url.host.isEmpty || bandwidth == null || bandwidth <= 0 || size == null) {
-        continue;
-      }
-      final width = int.parse(size.group(1)!);
-      final height = int.parse(size.group(2)!);
-      final frameRate = jsonDouble(attributes['FRAME-RATE']) ?? 0;
-      final name = names[attributes['VIDEO']] ?? '${height}p${frameRate >= 50 ? frameRate.round() : ''}';
+      final frameRate = parsed.frameRate ?? 0;
+      final name = names[parsed.videoGroupId] ?? '${height}p${frameRate >= 50 ? frameRate.round() : ''}';
       final previous = variants[name];
       if (previous != null && previous.bandwidth >= bandwidth) continue;
       variants[name] = (
@@ -102,7 +103,7 @@ abstract final class KickPlayParser {
         height: height,
         frameRate: frameRate,
         bandwidth: bandwidth,
-        codec: videoCodec(attributes['CODECS']),
+        codec: videoCodec(parsed.codecs),
         url: '$url',
       );
     }
@@ -211,18 +212,4 @@ abstract final class KickPlayParser {
     }
     return null;
   }
-
-  static final RegExp _resolution = RegExp(r'^([1-9]\d{0,4})x([1-9]\d{0,4})$');
-
-  static final RegExp _attribute = RegExp('([A-Z0-9-]+)=("[^"]*"|[^,]*)');
-
-  /// The attributes of one `#EXT-X-MEDIA` or `#EXT-X-STREAM-INF` line,
-  /// quotes stripped.
-  static Map<String, String> _attributes(String text) => {
-    for (final match in _attribute.allMatches(text))
-      match.group(1)!: switch (match.group(2) ?? '') {
-        final raw when raw.length >= 2 && raw.startsWith('"') && raw.endsWith('"') => raw.substring(1, raw.length - 1),
-        final raw => raw,
-      },
-  };
 }
