@@ -36,6 +36,7 @@ foreach ($file in $packageFiles) {
 $styleLibraries = [ordered]@{
     "live_uikit_cupertino_ui" = "cupertino_ui"
     "live_uikit_fluent"       = "fluent_ui"
+    "live_uikit_forui"        = "forui"
     "live_uikit_glass"        = "glass_morphism_plus"
     "live_uikit_macos"        = "macos_ui"
     "live_uikit_material_ui"  = "material_ui"
@@ -51,6 +52,7 @@ $styleLibraryNames = @($styleLibraries.Values)
 $styleLibraryAliases = @{
     "cupertino_ui"              = "cu"
     "fluent_ui"                 = "fluent"
+    "forui"                     = "forui"
     "glass_morphism_plus"       = "glass"
     "macos_ui"                  = "macos"
     "material_ui"               = "mu"
@@ -67,6 +69,7 @@ $styleLibraryAliases = @{
 $adaptersWithLocalizationDelegates = @(
     "live_uikit_cupertino_ui",
     "live_uikit_fluent",
+    "live_uikit_forui",
     "live_uikit_material_ui"
 )
 

@@ -16,7 +16,7 @@ abstract final class ForuiButtonBuilder {
 
     // forui names the accessible content on the glyph the seam builds, so the button
     // itself is not given a second `semanticsLabel` to announce twice.
-    Widget button = spec.iconOnly
+    final button = spec.iconOnly
         // An icon-only control is forui's own variant, laid out by the library: squeezing
         // the token square (`iconEdge`) around a full `FButton` clipped the glyph, so this
         // language does not use that geometry (§9).

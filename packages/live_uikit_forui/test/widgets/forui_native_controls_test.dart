@@ -97,8 +97,10 @@ void main() {
       await tester.pumpWidget(
         harness(LiveIconButton(key: const Key('icon'), icon: Icons.star, tooltip: 'Star', onPressed: () {})),
       );
-      final iconOnly = tester.widget<forui.FButton>(find.byType(forui.FButton));
-      expect(iconOnly.semanticsLabel, 'Star', reason: 'the tooltip is the accessible name (§9)');
+      // The seam names the glyph, so the accessible name lives on the icon the button
+      // carries, not on a second `FButton.semanticsLabel` — naming both would announce
+      // twice (§9).
+      expect(tester.widget<Icon>(find.byIcon(Icons.star)).semanticLabel, 'Star');
       expect(find.byType(forui.FTooltip), findsOneWidget);
     });
 

@@ -6,6 +6,7 @@ import 'package:live_preferences/live_preferences.dart' show Preferences;
 import 'package:live_uikit/styling.dart';
 import 'package:live_uikit_cupertino_ui/live_uikit_cupertino_ui.dart';
 import 'package:live_uikit_fluent/live_uikit_fluent.dart';
+import 'package:live_uikit_forui/live_uikit_forui.dart';
 import 'package:live_uikit_glass/live_uikit_glass.dart';
 import 'package:live_uikit_macos/live_uikit_macos.dart';
 import 'package:live_uikit_material_ui/live_uikit_material_ui.dart';
@@ -78,6 +79,7 @@ class PureLiveApp extends StatelessWidget {
         adapters: {
           LiveDesignLanguage.macos: macosUiAdapter,
           LiveDesignLanguage.fluent: fluentUiAdapter,
+          LiveDesignLanguage.forui: foruiUiAdapter,
           LiveDesignLanguage.neumorphic: neumorphicUiAdapter,
           LiveDesignLanguage.glass: glassUiAdapter,
           LiveDesignLanguage.wind: windUiAdapter,
@@ -97,6 +99,7 @@ class PureLiveApp extends StatelessWidget {
           ...fluentLocalizationsDelegates,
           ...cupertinoUiLocalizationsDelegates,
           ...materialUiLocalizationsDelegates,
+          ...foruiLocalizationsDelegates,
         ],
         supportedLocales: const [Locale('en'), Locale('zh')],
         home: HomePage(services: services),
