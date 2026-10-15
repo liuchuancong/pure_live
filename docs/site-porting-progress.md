@@ -35,9 +35,10 @@
 | niconico Niconico | ✅ | 见下方"niconico 明细";已注册进 `built_in_sites`(`kick` 之后) |
 | fc2live FC2 Live | ✅ | 见下方"fc2live 明细";已注册进 `built_in_sites` |
 | jdlive 京东直播 | ✅ | 见下方"jdlive 明细";已注册进 `built_in_sites` |
+| kilakila 克拉克拉 | ✅ | 见下方"kilakila 明细";已注册进 `built_in_sites` |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
-| kilakila / kugoulive / looklive / missevan / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / yy | ⬜ | 其余含弹幕站;**下一站候选 kilakila**(按本行顺序) |
+| kugoulive / looklive / missevan / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / yy | ⬜ | 其余含弹幕站;**下一站候选 kugoulive**(按本行顺序) |
 | cc / inke / liveme / tiktok / xiaohongshu | ⬜ | 仅 `live_core` 有(纯目录/播放,无弹幕) |
 
 ## douyu 明细(2026-10-14)
@@ -199,6 +200,17 @@
 - **v2 形态适配(记档)**:①播放能力签名只收 roomId——播放在 `_known` 无播放答案时自取一次(对齐参考 recovery;有则零请求,对齐参考"先开房");②搜索的 hasMore 透出页序的 hasMore(后续页是否命中平台不说);③目录页为平台原生 30 条/页,request.pageSize 不重塑(与 fc2live 快照切片不同,京东页序无法本地重切);④`followRedirects:false` 与参考 `_scope` 的 cancel 透传同 niconico 记档,v2 无对应面;deadline 用 `_scoped`(20s,到时折 network)。
 - **延后项(记档不假造)**:①`directoryNoticeKey`(目录 scope 说明)与`getRoomDetailForRefresh/ForRecording/getLiveStatus` 变体、可取消搜索、恢复重取解析器——v2 无对应面(同各家记档);②h5st 签名参考即无(游客接口),若平台收紧需另行补;③`pv`/`max_viewer`/`message_num`/`thumbs_up_num`/`cart_num`、`plus`/`userMemberLevel`/`loveLevel`/`extraTag`/`ext`、`eid` 风控指纹——参考即不读,不做;④回放录像不预下载(JD 整场录制,样本 1.4MB/9500 分段);⑤`LiveGift` 无落点——参考即无礼物,不做。
 - 验证:`dart analyze lib test` **No issues found**(含 twitch 既有 2 条 info,已被用户并行改动一并清掉);`dart test` 整包 **712 项全绿**(jdlive 50:信封/状态门、列表逐行跳过与页序、播放媒体校验/回放/appOnly、播列表校验、房间映射/清晰度/线路、AES 往返与 liveauth 表单、帧解码/掩码/群组、会话握手/静默换线/预算终止/mid-handshake 取消、页序分页/分区/搜索序列/播放自取/链接、能力接线与内置站点等值)。
+
+## kilakila 明细(2026-10-15)
+整站从 `live_core/sites/kilakila`(kilakila_api + kilakila_site)+ `live_danmaku/sites/kilakila.dart` 迁到 `platforms/kilakila/`。**无新依赖**(crypto 已在 pubspec):AES-128-CBC 解密复用 `common/crypto/aes_cbc.dart`,图片归一化 `normalizeImageUrl` 自 kick 上提 `common/normalization/site_urls.dart`(§3:两平台证实才上提,kick 经 export 切到共享版;douyu/huya 各有一份私有同实现副本,合一另记);手写迷你 HTML 读取器替代 package:html(仅搜索页用)。
+- 能力七个全注册:room / area(两条时间线 热门直播 0 + 萌星推荐 107)/ discovery(热门时间线,独立页序)/ search(rooms;uid/锚链/直播间分享链直查,其余走网站用户搜索页)/ playback / danmaku / link_resolver;`KilakilaFailure → toLiveSiteError('kilakila')`(401/403 折 rateLimit;transient 仅 network/rateLimited)。
+- **房间即主播**:roomId = 主播 uid,每场直播的 `roomIdStr` 都是新 id(REG-001,follow 因此不失效);身份信息 `Tg/personalH5?uid=` 一请求(code 1013 → notFound;`liveCard` 只有 `roomSourceType`/`recommendSource` 路由默认键 = 无当前直播 → 离线),入场再 `LiveRoom/getRoomInfo?roomId=`(h.code 5201 → notFound、5966 → 历史回放 streamUnavailable;答案的 uid 必须对得上)——两请求都过 `enteredRoom` 合并:卡片才有的开播时间/当前收听数/封面回填进 getRoomInfo 答案,简介与粉丝数随房间走。时间线 `pcLive/timeline` 双层信封(code + data.body.{h,b}),dataType 8(萌星 2)是直播行,坏行单跳、全坏 apiChanged、echo 不符 apiChanged;页序去重 + 连续 3 页无新主播即止(时间线会整页重复)+ 平台 100 页封顶(萌星曾跑到 300 页),记录随页走、重读第 1 页即重置。
+- **播放**:拉流地址只认 `https://pull.live.hongrenshuo.com.cn/hrs/<roomIdStr>.flv|.m3u8?auth_key=…`(默认端口、无 userinfo/fragment、恰一个非空 auth_key,push 地址永不读);单一清晰度"原画",FLV+HLS 互为线路(lineLabel = flv/hls),租约 = auth_key 首段 Unix 秒,refreshAt = 到期 − min(10min, 寿命/4),`requiresReconnect` 只标 HLS(过期 m3u8 断播、已建立的 FLV 连接不断——参考 cutsConnection 语义);付费(goldPrice>0)先行拒绝 restriction=paid,状态非 4/无地址同理;存量质量 id `flv`/`hls` 归一到 `original`。
+- **弹幕**(15-8,参考 3.x 无):Socket.IO 2 over Engine.IO 3,`wim.hongrenshuo.com.cn/socket.io/?roomId=<roomIdStr>&appId=111&clientType=1&EIO=3&transport=websocket`,命名空间 `/live_chat_room_guest`;开箱即发 `40/namespace?query,` 加入,Engine.IO ping `2` 每 25s(服务端 85s 不 ping 踢线),静默 90s 换线,join 8s 预算;`40`/`connect_error` code 0 = 已进房(清拒绝计数),`44`/其他 code = 拒绝(3 次重试后第 4 次终态),`41`/Engine.IO `1` = 服务端离场换线,8 次无进房终止上报。帧派发:`text_message` 双层 JSON(body.response.content 再解一层),t=200 聊天(c/n/u/l,mid/created_at)、637 房态(c 是 URL 编码 JSON,watchNumber→在线;自写 `decodeURIComponent` 兼容裸中文)、220/10004 礼物(见下)、240/300/301/532/534/706 面板中的付费提问 → superChat(uc.uiType ∈ 问答集合且 goldPrice>0,文本逐字段 URL 解码,价格文案千分位"6,000红豆",展示 5 分钟)。**礼物**:红豆折 `LiveGiftUnit.gold`(v2 无 redBean 档,记档),免费礼物 free;连击 220(isDoubleHit)与 10004 礼物行共享 `c.no` 作 comboKey、`c.doubleCount` 作总数,单价 = 行价格/整倍数;会话内 `KilakilaGiftCombos` 去重(256 容量):只报比已报计数大的连击命中/行,防同数重复。
+- **链接**:live.kilakila.cn / www.hongdoufm.com(直播 `/room/<id>`、详情 `?id=`、锚 `/zhubo/<uid>` 无 query)+ live.hongrenshuo.com.cn(https,`/index/roomuser/uid/<uid>`);**加密分享链接**(uxin-security-url-crypto-v2,公开常量非凭据):URL-safe base64 → AES-128-CBC(双公钥逐一试)→ 明文 `<id>?k=v&sign=md5`,MD5 签名绑定 scheme/host/路由原文(重编码即拒)。链接 resolver:锚页免请求 canonical 化,直播间链接一次 getRoomInfo 换锚页。
+- **v2 形态适配(记档)**:①播放能力只收 roomId——`_streams[uid]` 缓存入场数据,无则自走一次入场(等效参考 recovery;有则零请求);②用户搜索页不报状态(LiveStatus.unknown)、hasMore 未知;③搜索无分页上万的页越界折 invalidArgument;④follow 刷新/`getLiveStatus` 独立入口无对应面(入场即含);⑤`followRedirects:false` 同各家记档。
+- **延后项(记档不假造)**:①`directoryNoticeKey` 目录范围说明、可取消搜索、CancelToken 透传——v2 无对应面;②`pushFlow` 推流地址(主播推流 key)参考即不读;③`rtmpPlayUrl`、点赞/进场/ rank 类事件(101/102/210/211/603/635/636/654/663)、`vip`/`m`/`g`/徽章、提问卡下播按钮——参考即不读/不显示;④历史回放(5966)不可播,落 streamUnavailable。
+- 验证:`dart analyze lib test` **No issues found**;`dart test` 整包 **759 项全绿**(kilakila 47:信封与状态门、时间线行过滤/去重/回显门、搜索页 HTML 提取与实体解码、profile/liveCard 路由键、getRoomInfo 码表、拉流地址与租约、房间映射、加密链接三种形态+双钥匙+篡改拒绝、Socket.IO/Engine.IO 帧派发、聊天/房态/礼物/提问解码、连击去重、会话 join/ping/静默/拒绝/预算、页序与空闲截止、能力接线与内置站点等值)。
 
 ## 环境缺口
 无。此前 `packages/live_playback` 以 `path:` 依赖工作区外的 `D:\media_core` 导致整仓 `dart pub get` 解析失败、`dart test` 跑不起来;2026-10-14 已把 `media_core` / `media_core_danmaku` / `media_core_mediasession` 改为 pub git 源(`github.com/liuchuancong/media_core`),仓库根 `flutter pub get` 即可完整解析,交付门的 test 步骤不再需要人工补 media_core 或造桩。

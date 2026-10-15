@@ -950,6 +950,7 @@ void main() {
         'kick',
         'niconico',
         'jdlive',
+        'kilakila',
       ]);
     });
 

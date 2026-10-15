@@ -6,6 +6,8 @@ library;
 
 import 'dart:convert';
 
+export 'package:live_sites/src/common/normalization/site_urls.dart' show normalizeImageUrl;
+
 /// [value] as an int; numbers truncate only when integral, strings parse.
 int? jsonInt(Object? value) => switch (value) {
   final num n when n.isFinite && n == n.roundToDouble() => n.toInt(),
@@ -33,24 +35,6 @@ String? jsonString(Object? value) {
 int? jsonCount(Object? value) {
   final count = jsonInt(value);
   return count != null && count >= 0 ? count : null;
-}
-
-/// An image link as Kick returns it, made absolute: surrounding quotes
-/// removed, protocol-relative `//…` and a bare `host/path` made https, empty
-/// for `null` (the string), blanks and anything that is not a web address.
-String normalizeImageUrl(Object? source) {
-  var value = jsonString(source) ?? '';
-  if (value.isEmpty || value.toLowerCase() == 'null') return '';
-  if (value.length >= 2 &&
-      ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
-    value = value.substring(1, value.length - 1).trim();
-  }
-  if (value.isEmpty) return '';
-  if (value.startsWith('//')) return 'https:$value';
-  final uri = Uri.tryParse(value);
-  if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https') && uri.host.isNotEmpty) return value;
-  if (!value.contains(' ') && RegExp(r'^[\w.-]+\.[a-zA-Z]{2,}([/:?#]|$)').hasMatch(value)) return 'https://$value';
-  return '';
 }
 
 /// [body] decoded as JSON, null on a malformed body or one over
