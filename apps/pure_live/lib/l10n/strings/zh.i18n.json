@@ -1,0 +1,39 @@
+{
+  "@@notes": {
+    "general": [
+      "直播观看类应用；用词口语、简洁，按钮不超过 4 个字。",
+      "「房间」指直播间，「主播」不用“博主/网红”，「弹幕」用 danmaku 而非 comment。",
+      "不使用感叹号；错误文案先说明情况再给动作。"
+    ]
+  },
+  "app": {
+    "title": "Pure Live"
+  },
+  "home": {
+    "recommended": "推荐流"
+  },
+  "common": {
+    "confirm": "确定",
+    "cancel": "取消",
+    "retry": "重试",
+    "close": "关闭",
+    "save": "保存",
+    "loading": "加载中",
+    "empty": "暂无内容",
+    "pageOf": "第 {page: int} / {total: int} 页"
+  },
+  "errors": {
+    "generic": "出了点问题，请稍后再试。",
+    "network": "网络连接不可用，请检查网络后重试。",
+    "notFound": "没有找到相关内容。",
+    "cancelled": "已取消。",
+    "unsupported": "当前来源不支持该功能。"
+  },
+  "tabs": {
+    "home": "首页",
+    "follow": "关注",
+    "history": "历史",
+    "popular": "热门",
+    "settings": "设置"
+  }
+}

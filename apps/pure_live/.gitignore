@@ -49,3 +49,7 @@ app.*.map.json
 
 # Local run data (PURE_LIVE_DATA_DIR) written by diagnostic runs.
 .run-data/
+
+# Local build configuration (machine-specific, not committed).
+.env
+!.env.example

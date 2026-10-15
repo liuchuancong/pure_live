@@ -1,0 +1,32 @@
+{
+  "app": {
+    "title": "Pure Live"
+  },
+  "home": {
+    "recommended": "Recommendations"
+  },
+  "common": {
+    "confirm": "OK",
+    "cancel": "Cancel",
+    "retry": "Retry",
+    "close": "Close",
+    "save": "Save",
+    "loading": "Loading",
+    "empty": "Nothing here yet",
+    "pageOf": "Page {page: int} of {total: int}"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again later.",
+    "network": "Network unavailable. Check your connection and retry.",
+    "notFound": "Nothing found.",
+    "cancelled": "Cancelled.",
+    "unsupported": "This source doesn't support that."
+  },
+  "tabs": {
+    "home": "Home",
+    "follow": "Follow",
+    "history": "History",
+    "popular": "Popular",
+    "settings": "Settings"
+  }
+}

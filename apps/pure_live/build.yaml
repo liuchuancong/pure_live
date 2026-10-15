@@ -1,0 +1,19 @@
+targets:
+  $default:
+    builders:
+      slang_build_runner:
+        options:
+          base_locale: zh
+          fallback_strategy: base_locale
+          input_directory: lib/l10n/strings
+          input_file_pattern: .i18n.json
+          output_directory: lib/l10n/generated
+          output_file_name: strings.g.dart
+          string_interpolation: braces
+          # Deferred (lazy) loading would make the non-base locale an async
+          # import, which the second desktop window and the widget tests cannot
+          # rely on. Two locales cost little; keep them eager.
+          lazy: false
+          # The generated file is committed, so a per-run timestamp would only
+          # produce diff noise.
+          timestamp: false

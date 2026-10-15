@@ -1301,6 +1301,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.2.0"
+  mcp_dart:
+    dependency: transitive
+    description:
+      name: mcp_dart
+      sha256: af0b2e25412f70440c881314a0b70a56ef87fd090b3eb71f31c356313096e6f5
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.3"
   media_core:
     dependency: transitive
     description:
@@ -1951,6 +1959,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.19.2"
+  slang_build_runner:
+    dependency: transitive
+    description:
+      name: slang_build_runner
+      sha256: f2b6c5fc1f5bc41de80b05e95e7d5d03b5c3041082877ce931fc7ba61cd08afe
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.19.0"
+  slang_flutter:
+    dependency: transitive
+    description:
+      name: slang_flutter
+      sha256: "2348a39432c48d7c890a2a1e3409b9faae3e49f117fe56d390d4236de8d064f4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.19.0"
+  slang_mcp:
+    dependency: transitive
+    description:
+      name: slang_mcp
+      sha256: e3c9b775f283c47380a1376e2d9965d96112958b300cab6ac9acce70f9d93a77
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.1"
   source_gen:
     dependency: transitive
     description:
