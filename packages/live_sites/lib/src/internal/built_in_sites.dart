@@ -26,6 +26,8 @@ import 'package:live_sites/src/platforms/kuaishou/api/kuaishou_http.dart';
 import 'package:live_sites/src/platforms/kuaishou/kuaishou_site.dart';
 import 'package:live_sites/src/platforms/kugoulive/api/kugoulive_http.dart';
 import 'package:live_sites/src/platforms/kugoulive/kugoulive_site.dart';
+import 'package:live_sites/src/platforms/liveme/api/liveme_http.dart';
+import 'package:live_sites/src/platforms/liveme/liveme_site.dart';
 import 'package:live_sites/src/platforms/looklive/api/looklive_http.dart';
 import 'package:live_sites/src/platforms/looklive/looklive_site.dart';
 import 'package:live_sites/src/platforms/missevan/api/missevan_http.dart';
@@ -44,6 +46,8 @@ import 'package:live_sites/src/platforms/twitcasting/api/twitcasting_http.dart';
 import 'package:live_sites/src/platforms/twitcasting/twitcasting_site.dart';
 import 'package:live_sites/src/platforms/twitch/api/twitch_http.dart';
 import 'package:live_sites/src/platforms/twitch/twitch_site.dart';
+import 'package:live_sites/src/platforms/xiaohongshu/api/xiaohongshu_http.dart';
+import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_site.dart';
 import 'package:live_sites/src/platforms/youtube/api/youtube_http.dart';
 import 'package:live_sites/src/platforms/youtube/youtube_site.dart';
 
@@ -76,6 +80,8 @@ List<LiveSite> createBuiltInLiveSites({LiveHttp? http}) {
     MissevanSite(http: MissevanHttp(transport)),
     PandaliveSite(http: PandaliveHttp(transport)),
     ShowroomSite(http: ShowroomHttp(transport)),
+    LivemeSite(http: LivemeHttp(transport)),
+    XiaohongshuSite(http: XiaohongshuHttp(transport)),
     SoopSite(http: SoopHttp(transport)),
     TwitcastingSite(http: TwitcastingHttp(transport)),
   ];

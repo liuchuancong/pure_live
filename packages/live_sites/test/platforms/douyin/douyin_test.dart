@@ -957,6 +957,8 @@ void main() {
         'missevan',
         'pandalive',
         'showroom',
+        'liveme',
+        'xiaohongshu',
         'soop',
         'twitcasting',
       ]);

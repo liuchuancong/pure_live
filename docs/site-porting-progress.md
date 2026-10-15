@@ -41,11 +41,14 @@
 | missevan 猫耳FM | ✅ | 见下方"missevan 明细";已注册进 `built_in_sites` |
 | pandalive 판다라이브 | ✅ | 见下方"pandalive 明细";已注册进 `built_in_sites` |
 | picarto Picarto.TV | ✅ | 见下方"picarto 明细";已注册进 `built_in_sites` |
+| looklive LOOKS LIVE | ✅ | 见下方"looklive 明细";已注册进 `built_in_sites` |
+| liveme Live.me | ✅ | 见下方"liveme 明细";已注册进 `built_in_sites` |
+| xiaohongshu 小红书 | ✅ | 见下方"xiaohongshu 明细";已注册进 `built_in_sites` |
 | showroom SHOWROOM | ✅ | 见下方"showroom 明细";已注册进 `built_in_sites` |
 | twitcasting ツイキャス | ✅ | 见下方"twitcasting 明细";已注册进 `built_in_sites` |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
-| seventeenlive / sixroom / steambroadcast / yy | ⬜ | 其余含弹幕站;六个后台代理并行中(looklive 修绿收尾 + 5 站从头) |
+| seventeenlive / sixroom(2 文件)/ steambroadcast / yy(1)/ cc(4)/ inke(1)/ tiktok(2) | 🔄 | 后台代理被并发上限暂停,半成品在盘;按滚动队列重启 |
 | cc / inke / liveme / tiktok / xiaohongshu | ⬜ | 仅 `live_core` 有(纯目录/播放,无弹幕) |
 
 ## douyu 明细(2026-10-14)
@@ -275,6 +278,26 @@
 - 弹幕:token GraphQL 解析、wss endpoint、50s 心跳、JWT_TOKEN 拒识(预算 3 次内换 token 重开、被任何非拒识帧证明后清零)、chat/小费超聊(LiveSuperChatMessage + SuperChatPrice currency 'Kudos',名字颜色 k → MessageSender.nameColor,弃 3.x 的 SUPER_CHAT_MESSAGE 占位文本)/system/raid/订阅/rm/cm/观众帧全解码。**无礼物事件(参考亦无)**,无 LiveGift 产出。
 - **适配与延后项(记档)**:①follow 刷新(v1 getRoomDetailForRefresh)无 v2 能力面 → getRoom 即入口;②恢复播放无 recovery API → getLines 重入房间(重新 detail+master),请求质量不在新 playlist 时回落最佳质量(注释说明);③3.x `LivePlayQuality.data`(变体 URL 列表)v2 无此字段 → URL 移入 `PicartoStreamData.qualities[i].urls` 由 site 持有;④token 不可用按重连预算重试(参考 runtime 语义),长会话清零规则已注释。
 - 验证:`dart analyze` No issues;`dart test test/platforms/picarto` **58 项全绿**(page echo/last_page/坏行容忍/edge 与 stream_name 白名单/质量 id 编解码往返/错误分支 401/403/404/429/5xx/七能力接线/FakeTimers 会话:join 预算、150s 看门狗、拒识换 token、重连预算)。
+
+## looklive 明细(2026-10-15,后台代理移植+修绿代理收尾)
+整站从 `live_core/sites/looklive` + `live_danmaku/sites/looklive.dart` 迁到 `platforms/looklive/`(第一代理写完 lib 后配额中断;修绿代理接手:修 5 处测试编译错 + 逐断言对参考修 27 处 + 1 处实现侧修改,我审查后注册)。**无新依赖**。
+- 能力七项全注册(room/area/discovery/search/playback/danmaku/link_resolver)。
+- **修绿代理的实现侧修改**:discovery/area 两 provider 原先忽略 request.pageSize 返回整页 → 改为调 `site.recommend(page, pageSize)` 按页截断(参考 getRecommendRooms 明确 cut)。其余 27 个失败全判测试侧错误(fixture 缺口:socket.io 握手 GET 无应答、合并页缺 items、`roomInfo.id` 位置错、聊天用户缺 fanClub、短键 custom 缺 bizName、emoji 消息须有 content.user;预期与参考相反:秒级时间戳按毫秒读、data 非对象是 apiChanged、房号不合格卡片计入 unreadable、分帧 break 结束全解析、16 位超 2^53 id 合法、无 giftName 礼物仍产出、null quality 返回默认线路、v2 room 须 withData 才带 handle、掉线 socket 下次 connect 才关闭等)。
+- 验证:`dart analyze` No issues;`dart test test/platforms/looklive` **71 项全绿**。
+
+## liveme 明细(2026-10-15,后台代理移植)
+整站从 `live_core/sites/liveme` + `live_danmaku/sites/liveme.dart` 迁到 `platforms/liveme/`(后台代理按统一模板执行,我审查后注册)。**无新依赖**。**参考无分类无弹幕**:LiveAreaProvider 与 LiveDanmakuProvider 注册 null,未建 danmaku 目录。
+- 能力五个注册:room / discovery(featurelist 目录/推荐)/ search(searchKeyword+短号/房间/主播/分享链接直查)/ playback / link_resolver。`LivemeFailure → toLiveSiteError('liveme')`(HTTP 400→apiChanged、404→notFound、420/429→rateLimited;business 400/404→notFound、"user not exist"→notFound、≥500→network)。
+- 数据面:房间入口并行三请求(mapping → getinfo ∥ 签名 queryinfosimple);web 端 `lm_s_*` + `lm-s-sign` md5 签名(random 可注入);流数据缓存上限 64;画质 source 原画/smooth 流畅 + `flv#2` 备线(FLV→HLS、https 升级、CDN host 白名单、legacy 画质 id 迁移、无 lease——URL 对整场有效);ispvt/livebptype 7/hot_label_v2 限制;链接 liveme.com 房间页免请求、主播/分享页一请求,locale 段与任意端口兼容。
+- **代理的适配与延后项(记档)**:①v2 无 LiveDirectoryNotice → 目录范围提示弃置,房间级 chatNotice 保留;②搜索无 CancelToken → 仅保留"页 1 才直查/未知房得空"语义;③无恢复入口 → 复播重解析复用缓存流数据;④refresh/record 专用入口统一走 getRoom(media:true),搜索直查 media:false;⑤transport 无 followRedirects → 重定向落 HTML 经 envelope 门折 apiChanged;⑥likenum 严格校验保留在解析层但 v2 房间模型无点赞字段不透出。
+- 验证:`dart analyze` No issues;`dart test test/platforms/liveme` **45 项全绿**。
+
+## xiaohongshu 明细(2026-10-15,后台代理移植)
+整站从 `live_core/sites/xiaohongshu` 迁到 `platforms/xiaohongshu/`(后台代理按统一模板执行,我审查后注册)。**无新依赖、无弹幕**(LiveDanmakuProvider 与 LiveAreaProvider 注册 null——参考无分类;未建 danmaku 目录)。
+- 能力五个注册:room(getRooms 恒空页——平台无列表 API)/ discovery(恒空)/ search(仅 rooms;id/分享页/深链 xhsdiscover:///短链精确查找)/ playback / link_resolver。`XiaohongshuFailure → toLiveSiteError`(needsLogin→authentication、regionBlocked→contentUnavailable、riskControl→rateLimit——沿用 bilibili/kilakila 先例)。
+- 数据面:`window.__INITIAL_STATE__` 水合解析(唯一 script 定位、裸 undefined→null 扫描器、2MiB 门);pageStatus/roomId 一致性/status×liveStatus/字符串型字段;拉流 pullConfig 行规则(剔行、32 行上限、xhscdn 地址契约)、单组画质 FLV 先于 HLS、h264 先于 h265、行标签 #N/:hevc、formatSource inferred(kilakila 先例);链接 canonical/dynpath/hina + 深链 xhsdiscover:// + 短链一次 GET 跟随(从 Location 头或落地页水合态取房号,douyin v2 先例);分享文字批量提取 shareTextRoomIds 已移植有测试,未接能力(v2 无 share-text 钩子,记档)。
+- **代理的适配与延后项(记档)**:①目录/推荐公告文案(3.x directoryNoticeKey)无处挂载 → 延后;②短链跟随改为一次 GET 由传输层跟随(3.x 逐跳校验弃用,对最终落地仍校验);③refresh/record/getLiveStatus 无对应能力(单一 getRoom)。
+- 验证:`dart analyze` No issues;`dart test test/platforms/xiaohongshu` **87 项全绿**(水合解析严格性/限制分支/地址契约剔行/链接正反例/HTTP 状态映射/短链跟随/能力接线/错误边界)。
 
 ## 环境缺口
 无。此前 `packages/live_playback` 以 `path:` 依赖工作区外的 `D:\media_core` 导致整仓 `dart pub get` 解析失败、`dart test` 跑不起来;2026-10-14 已把 `media_core` / `media_core_danmaku` / `media_core_mediasession` 改为 pub git 源(`github.com/liuchuancong/media_core`),仓库根 `flutter pub get` 即可完整解析,交付门的 test 步骤不再需要人工补 media_core 或造桩。

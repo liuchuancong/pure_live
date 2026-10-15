@@ -728,6 +728,8 @@ https://other.example/1.m3u8
         'missevan',
         'pandalive',
         'showroom',
+        'liveme',
+        'xiaohongshu',
         'soop',
         'twitcasting',
       ]);

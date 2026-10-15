@@ -22,6 +22,10 @@
     "empty": "暂无内容",
     "pageOf": "第 {page: int} / {total: int} 页"
   },
+  "tray": {
+    "show": "显示主界面",
+    "quit": "退出"
+  },
   "search": {
     "hint": "输入关键词搜索房间"
   },

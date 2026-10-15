@@ -3,12 +3,14 @@ import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_log/live_log.dart' show ErrorReporter;
+import 'package:live_platform/live_platform.dart' show PlatformKind;
 
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/app/composition/app_services.dart';
 import 'package:pure_live/app/logging/app_log.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/theme/app_theme.dart';
+import 'package:pure_live/platforms/desktop/entry/desktop_entry.dart';
 
 /// The process entry point: open the log, boot the service graph, then hand
 /// it to the widget tree through `ProviderScope` overrides.
@@ -31,6 +33,16 @@ Future<void> main() async {
   };
 
   final services = await AppServices.boot(log: log);
+
+  // The desktop window's life starts before the first frame (size, title,
+  // tray, close interception) and its quit runs the app's own shutdown.
+  DesktopEntry? desktopEntry;
+  final kind = services.environment.runtime.kind;
+  if (kind == PlatformKind.windows || kind == PlatformKind.macos || kind == PlatformKind.linux) {
+    desktopEntry = DesktopEntry(kind: kind, onQuitRequest: services.shutdown);
+    await desktopEntry.prepare();
+  }
+
   runApp(
     ProviderScope(
       overrides: [
