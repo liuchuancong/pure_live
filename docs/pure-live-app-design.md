@@ -229,10 +229,21 @@ desktop:                         touch:
 ## 6. 文件处理域
 
 平台区分与文件路径分两层:`live_platform` 只**区分平台**(OS 家族 / 手机·平板·桌面·TV
-形态〔用户可在设置里声明,与 `PURE_LIVE_TV` 同源〕/ 桌面部署方式 exe·MSIX·便携〔可声明,
-也可由 exe 旁的 `data/` 树或 `portable.marker` 标记识别〕),**不碰文件系统**;
+形态〔用户可在设置里声明,与 `PURE_LIVE_TV` 同源〕/ 桌面部署方式),**不碰文件系统**;
 `live_platform_path_provider` 消费它的 runtime 快照,负责一切路径决策(§6 其余)、
-真实写探针、私有目录判定、配置冲突检查与原子写:
+真实写探针、私有目录判定、配置冲突检查与原子写。
+
+**桌面发行类型识别**(live_platform,`DistributionResolver`):信任链为
+①启动器/原生桥声明 → ②打包期放在 exe 旁的 `distribution.json`(`source: build`)→
+③原生包身份探测(Windows `GetCurrentPackageFamilyName`,FFI,官方 winapp 例子;
+有身份=MSIX 容器规则适用,无身份**不**证明普通安装)→ ④便携标记(`data/` 树、
+`portable.marker`)→ ⑤MSIX 路径形状 → ⑥缓存的 inferred 声明 → unknown。
+可靠的新鲜检测会原子写入可写的元数据目录(`claimDirectory`)作为 `source: inferred`
+缓存;`build` 声明运行时绝不覆盖,unknown 绝不落盘,值不变绝不重写,写失败不影响启动;
+低信任证据与结论的分歧记入 `PlatformRuntimeInfo.distributionConflicts` 供诊断日志。
+数据目录映射(portable→exe 树;msix/installed/unknown→系统用户目录,绝不进 exe 目录)
+由 path_provider 的 policy 按此结论执行,识别与路径严格分离。**待办**:打包流水线为
+各发行目标生成 `distribution.json`(portable zip 放根、MSIX 打包前放入 dist);
 
 - **目录矩阵**(`PathProviderBootstrap.init` 一次,处处读事实,不自己拼路径):
   **便携版(绿色解压)的持久数据永远不进 AppData**——只有 exe 旁的 `data/`、`config/`

@@ -2,8 +2,9 @@ import 'dart:io';
 
 import 'package:live_platform/src/contracts/platform_environment.dart';
 import 'package:live_platform/src/runtime/desktop_distribution.dart';
-import 'package:live_platform/src/runtime/distribution_detector.dart';
+import 'package:live_platform/src/runtime/distribution_resolver.dart';
 import 'package:live_platform/src/runtime/form_factor.dart';
+import 'package:live_platform/src/runtime/package_identity.dart';
 import 'package:live_platform/src/runtime/platform_capabilities.dart';
 import 'package:live_platform/src/runtime/platform_kind.dart';
 import 'package:live_platform/src/runtime/platform_runtime_info.dart';
@@ -23,28 +24,42 @@ final class PlatformRuntime {
 /// The composition entry point: run once at startup, before anything reads a
 /// platform fact.
 ///
-/// Facts are assembled in strict trust order — explicit declarations from the
-/// app shell (or launcher/native bridge) win, then the user-declared portable
-/// markers (a `data/` tree or `portable.marker` placed next to the
-/// executable), then conservative detection, and uncertainty stays visible as
-/// [DesktopDistribution.unknown]. Nothing here touches the filesystem beyond
-/// reading the marker probe.
+/// The distribution verdict comes from `DistributionResolver`'s trust chain
+/// — launcher declaration, bundled `build` claim, the native package-
+/// identity probe, the portable markers, the MSIX path shape, and finally
+/// the cached inferred claim — and a reliable fresh detection is persisted
+/// to the writable metadata directory handed to init as the new cache.
+/// Nothing here can fail a startup: every read and write failure degrades
+/// to less evidence.
 abstract final class PlatformBootstrap {
-  /// Builds the runtime. [declaredDistribution] comes from a trusted source
-  /// (launcher argument, native bridge, the user's own setting) and always
-  /// wins; when omitted, the portable markers next to the executable are
-  /// honoured, then the MSIX container shape is recognised conservatively,
-  /// and everything else stays unknown. [formFactor] overrides the default
-  /// (desktop for desktop OSes, phone for mobile) — the user's own
-  /// phone/tablet/TV choice travels here from the app's settings, because a
-  /// TV build is a UI and storage composition, not a hardware fact.
-  static PlatformRuntime init({DesktopDistribution? declaredDistribution, FormFactor? formFactor}) {
+  /// Builds the runtime.
+  ///
+  /// [declaredDistribution] is the launcher's or the user's own statement
+  /// and outranks everything on disk. [claimDirectory] is a writable
+  /// metadata home for the `distribution.json` inferred cache — pass the
+  /// OS application-support directory or a portable metadata tree, never
+  /// the read-only install resources; null disables caching.
+  /// [packageIdentity] carries the native probe's answer (a non-null
+  /// `windowsFamilyName()`); null means not probed. [formFactor] overrides
+  /// the default (desktop for desktop OSes, phone for mobile) — the user's
+  /// own phone/tablet/TV choice travels here from the app's settings,
+  /// because a TV build is a UI and storage composition, not a hardware
+  /// fact.
+  static PlatformRuntime init({
+    DesktopDistribution? declaredDistribution,
+    FormFactor? formFactor,
+    Directory? claimDirectory,
+    bool? packageIdentity,
+  }) {
     final kind = PlatformRuntimeInfo.inferKind();
     final executableRoot = File(Platform.resolvedExecutable).parent;
-    final distribution =
-        declaredDistribution ??
-        DistributionDetector.detectMarkers(executableRoot) ??
-        DistributionDetector.detect(executableRoot);
+    final resolution = DistributionResolver.resolve(
+      declared: declaredDistribution,
+      executableRoot: executableRoot,
+      claimDirectory: claimDirectory,
+      packageIdentity: packageIdentity ?? (Platform.isWindows ? PackageIdentity.windowsFamilyName() != null : null),
+    );
+    final distribution = resolution.distribution;
     final resolvedFormFactor =
         formFactor ??
         switch (kind) {
@@ -61,6 +76,8 @@ abstract final class PlatformBootstrap {
       isPackaged: distribution == DesktopDistribution.msix,
       executableRoot: executableRoot,
       osVersion: Platform.operatingSystemVersion,
+      distributionOrigin: resolution.origin,
+      distributionConflicts: resolution.conflicts,
     );
 
     return PlatformRuntime(

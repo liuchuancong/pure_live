@@ -15,6 +15,7 @@ environment:
   sdk: ^3.13.0
 
 dependencies:
+  ffi: ^2.2.0
   path: ^1.9.0
 
 dev_dependencies:

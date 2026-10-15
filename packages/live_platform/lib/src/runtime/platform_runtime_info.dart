@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:live_platform/src/runtime/desktop_distribution.dart';
+import 'package:live_platform/src/runtime/distribution_resolution.dart';
 import 'package:live_platform/src/runtime/form_factor.dart';
 import 'package:live_platform/src/runtime/platform_kind.dart';
 
@@ -18,6 +19,8 @@ final class PlatformRuntimeInfo {
     required this.isPackaged,
     required this.executableRoot,
     this.osVersion,
+    this.distributionOrigin = DistributionOrigin.undetermined,
+    this.distributionConflicts = const [],
   });
 
   /// The operating system family.
@@ -40,6 +43,14 @@ final class PlatformRuntimeInfo {
 
   /// Human-readable OS version, when the platform reported one.
   final String? osVersion;
+
+  /// Which trust tier produced [distribution] — diagnostics, not policy.
+  final DistributionOrigin distributionOrigin;
+
+  /// Lower-trust evidence that disagreed with [distribution], for the app's
+  /// diagnostics log. A packaged build claiming one thing while its markers
+  /// say another shows up here, per the conflict rules.
+  final List<String> distributionConflicts;
 
   /// Shorthand for the portable distribution decision.
   bool get isPortable => distribution == DesktopDistribution.portable;
