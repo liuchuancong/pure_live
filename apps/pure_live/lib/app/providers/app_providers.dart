@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_net/live_net.dart' show LiveHttp;
 import 'package:live_platform/live_platform.dart' show PlatformEnvironment;
 import 'package:live_sites/live_sites.dart'
     show LiveAreaProvider, LiveDiscoveryProvider, LivePlaybackProvider, LiveRoomProvider, LiveSearchProvider;
@@ -6,6 +7,7 @@ import 'package:live_storage/live_storage.dart' show StorageBootstrap;
 import 'package:live_uikit/styling.dart';
 
 import 'package:pure_live/app/composition/sites.dart';
+import 'package:pure_live/features/about/update_feed.dart';
 import 'package:pure_live/app/environment/app_paths.dart';
 import 'package:pure_live/app/theme/appearance_preferences/appearance_preferences.dart';
 import 'package:pure_live/app/theme/appearance_store.dart';
@@ -98,6 +100,12 @@ final playbackProvider = Provider.family<LivePlaybackProvider?, String>(_playbac
 
 LivePlaybackProvider? _playbackOf(Ref ref, String siteId) =>
     ref.watch(sitesProvider).registry.getById(siteId)?.capability<LivePlaybackProvider>();
+
+/// The app's shared HTTP client (the site graph's own transport).
+final httpProvider = Provider<LiveHttp>((ref) => ref.watch(sitesProvider).http);
+
+/// The update feed over the shared client.
+final updateFeedProvider = Provider<UpdateFeed>((ref) => UpdateFeed(http: ref.watch(httpProvider)));
 
 /// The persisted appearance, the single source the theme is derived from.
 ///

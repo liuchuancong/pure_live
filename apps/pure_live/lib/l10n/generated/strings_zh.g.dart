@@ -48,6 +48,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$settings$zh settings = Translations$settings$zh.internal(_root);
 	late final Translations$theme$zh theme = Translations$theme$zh.internal(_root);
 	late final Translations$design$zh design = Translations$design$zh.internal(_root);
+	late final Translations$about$zh about = Translations$about$zh.internal(_root);
 	late final Translations$search$zh search = Translations$search$zh.internal(_root);
 	late final Translations$room$zh room = Translations$room$zh.internal(_root);
 	late final Translations$errors$zh errors = Translations$errors$zh.internal(_root);
@@ -199,6 +200,42 @@ class Translations$design$zh {
 
 	/// zh: '默认（Fluent）'
 	String get defaultLanguage => '默认（Fluent）';
+}
+
+// Path: about
+class Translations$about$zh {
+	Translations$about$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '关于'
+	String get title => '关于';
+
+	/// zh: '检查更新'
+	String get checkUpdate => '检查更新';
+
+	/// zh: '已是最新版本'
+	String get upToDate => '已是最新版本';
+
+	/// zh: '发现新版本'
+	String get newVersion => '发现新版本';
+
+	/// zh: '版本历史'
+	String get versionHistory => '版本历史';
+
+	/// zh: '许可'
+	String get licenses => '许可';
+
+	/// zh: '项目主页'
+	String get project => '项目主页';
+
+	/// zh: '正在检查…'
+	String get checkRunning => '正在检查…';
+
+	/// zh: '检查失败，点此重试'
+	String get checkFailed => '检查失败，点此重试';
 }
 
 // Path: search
@@ -404,6 +441,15 @@ extension on Translations {
 			'theme.dark' => '深色',
 			'theme.light' => '浅色',
 			'design.defaultLanguage' => '默认（Fluent）',
+			'about.title' => '关于',
+			'about.checkUpdate' => '检查更新',
+			'about.upToDate' => '已是最新版本',
+			'about.newVersion' => '发现新版本',
+			'about.versionHistory' => '版本历史',
+			'about.licenses' => '许可',
+			'about.project' => '项目主页',
+			'about.checkRunning' => '正在检查…',
+			'about.checkFailed' => '检查失败，点此重试',
 			'search.hint' => '输入关键词搜索房间',
 			'search.rooms' => '房间',
 			'search.anchors' => '主播',

@@ -47,6 +47,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$theme$en theme = _Translations$theme$en._(_root);
 	@override late final _Translations$design$en design = _Translations$design$en._(_root);
 	@override late final _Translations$room$en room = _Translations$room$en._(_root);
+	@override late final _Translations$about$en about = _Translations$about$en._(_root);
 	@override late final _Translations$search$en search = _Translations$search$en._(_root);
 	@override late final _Translations$errors$en errors = _Translations$errors$en._(_root);
 	@override late final _Translations$tabs$en tabs = _Translations$tabs$en._(_root);
@@ -159,6 +160,24 @@ class _Translations$room$en extends Translations$room$zh {
 	@override String get play => 'Play';
 	@override String get pause => 'Pause';
 	@override String get failed => 'Playback failed — try again';
+}
+
+// Path: about
+class _Translations$about$en extends Translations$about$zh {
+	_Translations$about$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'About';
+	@override String get checkUpdate => 'Check for updates';
+	@override String get upToDate => 'Up to date';
+	@override String get newVersion => 'New version available:';
+	@override String get versionHistory => 'Version history';
+	@override String get licenses => 'Licenses';
+	@override String get project => 'Project page';
+	@override String get checkRunning => 'Checking…';
+	@override String get checkFailed => 'Check failed — tap to retry';
 }
 
 // Path: search
@@ -285,6 +304,15 @@ extension on TranslationsEn {
 			'room.play' => 'Play',
 			'room.pause' => 'Pause',
 			'room.failed' => 'Playback failed — try again',
+			'about.title' => 'About',
+			'about.checkUpdate' => 'Check for updates',
+			'about.upToDate' => 'Up to date',
+			'about.newVersion' => 'New version available:',
+			'about.versionHistory' => 'Version history',
+			'about.licenses' => 'Licenses',
+			'about.project' => 'Project page',
+			'about.checkRunning' => 'Checking…',
+			'about.checkFailed' => 'Check failed — tap to retry',
 			'search.hint' => 'Search rooms by keyword',
 			'search.rooms' => 'Rooms',
 			'search.anchors' => 'Anchors',

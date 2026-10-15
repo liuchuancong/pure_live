@@ -47,6 +47,17 @@
   "design": {
     "defaultLanguage": "默认（Fluent）"
   },
+  "about": {
+    "title": "关于",
+    "checkUpdate": "检查更新",
+    "upToDate": "已是最新版本",
+    "newVersion": "发现新版本",
+    "versionHistory": "版本历史",
+    "licenses": "许可",
+    "project": "项目主页",
+    "checkRunning": "正在检查…",
+    "checkFailed": "检查失败，点此重试"
+  },
   "search": {
     "hint": "输入关键词搜索房间",
     "rooms": "房间",

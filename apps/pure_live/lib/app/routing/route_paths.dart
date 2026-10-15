@@ -31,6 +31,9 @@ abstract final class RoutePath {
   /// a title hint rides as the query.
   static const String room = '/room/:siteId/:roomId';
 
+  /// The about page.
+  static const String about = '/about';
+
   /// The search page, a full page above the shell.
   static const String search = '/search';
 

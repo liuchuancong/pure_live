@@ -49,6 +49,17 @@
     "pause": "Pause",
     "failed": "Playback failed — try again"
   },
+  "about": {
+    "title": "About",
+    "checkUpdate": "Check for updates",
+    "upToDate": "Up to date",
+    "newVersion": "New version available:",
+    "versionHistory": "Version history",
+    "licenses": "Licenses",
+    "project": "Project page",
+    "checkRunning": "Checking…",
+    "checkFailed": "Check failed — tap to retry"
+  },
   "search": {
     "hint": "Search rooms by keyword",
     "rooms": "Rooms",
