@@ -60,6 +60,8 @@ Future<void> main(List<String> args) async {
         await channel?.dispose();
         await services.shutdown();
       },
+      preferences: services.shell,
+      log: log.forCategory('shell'),
     );
     await desktopEntry.prepare();
   }
@@ -72,6 +74,7 @@ Future<void> main(List<String> args) async {
         storageProvider.overrideWithValue(services.storage),
         sitesProvider.overrideWithValue(services.sites),
         appearanceStoreProvider.overrideWithValue(services.appearance),
+        shellPreferencesProvider.overrideWithValue(services.shell),
       ],
       child: AppTheme(diagnostics: log.uiSink, child: const PureLiveApp()),
     ),

@@ -9,6 +9,7 @@ import 'package:pure_live/app/environment/app_paths.dart';
 import 'package:pure_live/app/theme/appearance_preferences/appearance_preferences.dart';
 import 'package:pure_live/app/theme/appearance_store.dart';
 import 'package:pure_live/app/theme/ui_configuration_mapper.dart';
+import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart' show ShellPreferencesStore, ShellWindowChrome;
 
 /// The booted [AppearanceStore], overridden in the `ProviderScope` at
 /// start-up — the store owns an open box, so nothing here can invent one.
@@ -26,6 +27,20 @@ final environmentProvider = Provider<PlatformEnvironment>(
 /// resolves goes through it, user-moved directories included; nothing
 /// assembles a storage path of its own.
 final pathsProvider = Provider<AppPaths>((ref) => throw UnimplementedError('overridden by the composition root'));
+
+/// The booted shell preferences (title-bar mode, remembered close action),
+/// overridden at start-up; null off the desktop, where no shell exists.
+final shellPreferencesProvider = Provider<ShellPreferencesStore?>((ref) => null);
+
+/// The title-bar mode this start was launched with.
+///
+/// Read from the store once: the native frame helper behind the self-drawn
+/// strip is configured before the window exists and has no runtime toggle,
+/// so a settings change lands on the next start instead of re-dressing a
+/// live window whose frame says something else.
+final windowChromeProvider = Provider<ShellWindowChrome>(
+  (ref) => ref.watch(shellPreferencesProvider)?.value.windowChrome ?? ShellWindowChrome.app,
+);
 
 /// The opened storage layer, overridden at start-up. Boxes open through it,
 /// never through a fresh bootstrap — a second open of the same box would

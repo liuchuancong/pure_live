@@ -43,6 +43,7 @@ final class TrayManagerHost with TrayListener implements TrayHost {
 
   List<TrayEntry> _shown = const [];
   bool _created = false;
+  Object? _createError;
 
   @override
   bool get isCreated => _created;
@@ -53,6 +54,16 @@ final class TrayManagerHost with TrayListener implements TrayHost {
   @override
   Stream<TrayPointer> get pointers => _pointers.stream;
 
+  /// Why the last failed [create] failed, null when it succeeded or was never
+  /// attempted.
+  ///
+  /// `create` reports the outcome as a bool because that is what the close
+  /// policy consumes; the reason is diagnostics, and swallowing it is how a
+  /// missing icon stays a mystery for weeks. A missing asset, a notification
+  /// area that is full, a session with no status notifier at all — the caller
+  /// decides which of these is worth a log line.
+  Object? get createError => _createError;
+
   @override
   Future<bool> create({TrayIconState state = TrayIconState.idle}) async {
     if (_created) {
@@ -60,12 +71,14 @@ final class TrayManagerHost with TrayListener implements TrayHost {
     }
     try {
       await _manager.setIcon(iconAssets[state] ?? iconAssets.values.first);
-    } on Object {
-      // A missing asset, a notification area that is full, a session with no
-      // status notifier at all. Reported as false, and the close policy does the
-      // rest: it must not hide a window that nothing can bring back.
+    } on Object catch (error) {
+      // Reported as false, and the close policy does the rest: it must not
+      // hide a window that nothing can bring back. The cause is kept where a
+      // caller that logs can reach it instead of dying in this catch.
+      _createError = error;
       return false;
     }
+    _createError = null;
     _manager.addListener(this);
     _created = true;
     return true;

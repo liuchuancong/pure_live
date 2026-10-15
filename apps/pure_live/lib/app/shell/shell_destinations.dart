@@ -41,5 +41,6 @@ enum ShellBranch {
 
 /// Every branch as its chrome destination, in display order — the one
 /// list the bottom bars and the rails all render from.
-List<({String label, IconData icon})> shellDestinations(BuildContext context) =>
-    [for (final branch in ShellBranch.values) (label: branch.label(context), icon: branch.icon)];
+List<({String label, IconData icon})> shellDestinations(BuildContext context) => [
+  for (final branch in ShellBranch.values) (label: branch.label(context), icon: branch.icon),
+];

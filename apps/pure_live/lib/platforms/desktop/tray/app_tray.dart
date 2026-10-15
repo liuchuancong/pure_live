@@ -10,8 +10,10 @@ import 'package:pure_live/l10n/generated/strings.g.dart';
 /// Every icon state maps to the same asset for now — playing, recording and
 /// attention get their own art when the states they name exist to show.
 final class AppTray {
-  /// A tray with [onShow] and [onQuit] as its two menu outcomes.
-  new({required this.onShow, required this.onQuit});
+  /// A tray with [onShow] and [onQuit] as its two menu outcomes; [onCreateError]
+  /// receives the reason a failed creation failed, because a tray that silently
+  /// did not appear stays a mystery until the close flow misbehaves.
+  new({required this.onShow, required this.onQuit, this.onCreateError});
 
   /// Brings the window back.
   final void Function() onShow;
@@ -19,11 +21,15 @@ final class AppTray {
   /// Starts the quit flow.
   final void Function() onQuit;
 
+  /// Reports why [create] failed; null swallows.
+  final void Function(Object error)? onCreateError;
+
   late final TrayManagerHost _host = TrayManagerHost(
     iconAssets: {for (final state in TrayIconState.values) state: 'assets/tray/pure_live.ico'},
   );
 
   StreamSubscription<String>? _selections;
+  StreamSubscription<TrayPointer>? _pointers;
   bool _created = false;
 
   /// Creates the icon and its menu; false when the platform refused (a full
@@ -32,6 +38,10 @@ final class AppTray {
   Future<bool> create() async {
     _created = await _host.create();
     if (!_created) {
+      final error = _host.createError;
+      if (error != null) {
+        onCreateError?.call(error);
+      }
       return false;
     }
     await _host.setTooltip('Pure Live');
@@ -44,12 +54,21 @@ final class AppTray {
           onQuit();
       }
     });
+    // Left click brings the window back — the same act as the menu's show
+    // entry, minus the trip through the menu. Right click is the menu: the
+    // shell opens it natively on the press.
+    _pointers = _host.pointers.listen((pointer) {
+      if (pointer == TrayPointer.click) {
+        onShow();
+      }
+    });
     return true;
   }
 
-  /// Removes the icon and releases the listener.
+  /// Removes the icon and releases the listeners.
   Future<void> dispose() async {
     await _selections?.cancel();
+    await _pointers?.cancel();
     if (_created) {
       await _host.dispose();
     }

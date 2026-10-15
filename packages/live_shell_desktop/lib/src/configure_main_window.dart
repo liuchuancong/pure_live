@@ -23,6 +23,15 @@ import 'package:window_manager/window_manager.dart';
 /// * **The background colour is set when the effects are off**, so an opaque
 ///   window does not clear to a colour that shows through the corners as a black
 ///   square, which is the artefact the effects switch exists to escape.
+///
+/// [titleBarStyle] overrides the style the [plan]'s mode would pick. It exists
+/// for the Windows arrangement where an external frame helper (the
+/// `bitsdojo_window` fork's `BDW_CUSTOM_FRAME`) strips the caption itself and
+/// answers `WM_NCCALCSIZE`: there the self-drawn mode must *not* also ask for
+/// `TitleBarStyle.hidden`, or two components own the same non-client area and
+/// every restore/maximise cycle re-fights over it. The helper-backed caller
+/// passes [TitleBarStyle.normal] and keeps `mode: ChromeMode.selfDrawn` purely
+/// as the record of who draws the buttons.
 Future<void> configureMainWindow({
   required WindowRole role,
   required ChromePlan plan,
@@ -31,6 +40,7 @@ Future<void> configureMainWindow({
   required Color background,
   Size minimumSize = const Size(900, 600),
   Size initialSize = defaultWindowSize,
+  TitleBarStyle? titleBarStyle,
 }) async {
   await windowManager.ensureInitialized();
   // The plugin's ready-callback is a synchronous VoidCallback and nothing awaits
@@ -46,7 +56,8 @@ Future<void> configureMainWindow({
       // no material behind it clears to whatever the compositor feels like, and
       // the artefact that shows is a black square at each rounded corner.
       backgroundColor: fallbacks.needsOpaqueSurface ? background : const Color(0x00000000),
-      titleBarStyle: plan.mode == ChromeMode.nativeCaption ? TitleBarStyle.normal : TitleBarStyle.hidden,
+      titleBarStyle:
+          titleBarStyle ?? (plan.mode == ChromeMode.nativeCaption ? TitleBarStyle.normal : TitleBarStyle.hidden),
       // From the role, not a literal: a floating video window and a corner toast
       // asked for by name must not clutter alt-tab, and hard-coding `false` here
       // is how that promise gets broken by the next caller.

@@ -48,6 +48,9 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$search$zh search = Translations$search$zh.internal(_root);
 	late final Translations$errors$zh errors = Translations$errors$zh.internal(_root);
 	late final Translations$tabs$zh tabs = Translations$tabs$zh.internal(_root);
+	late final Translations$window$zh window = Translations$window$zh.internal(_root);
+	late final Translations$closePrompt$zh closePrompt = Translations$closePrompt$zh.internal(_root);
+	late final Translations$shellSettings$zh shellSettings = Translations$shellSettings$zh.internal(_root);
 }
 
 // Path: app
@@ -188,6 +191,72 @@ class Translations$tabs$zh {
 	String get settings => '设置';
 }
 
+// Path: window
+class Translations$window$zh {
+	Translations$window$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '最小化'
+	String get minimize => '最小化';
+
+	/// zh: '最大化'
+	String get maximize => '最大化';
+
+	/// zh: '还原'
+	String get restore => '还原';
+
+	/// zh: '关闭'
+	String get close => '关闭';
+}
+
+// Path: closePrompt
+class Translations$closePrompt$zh {
+	Translations$closePrompt$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '关闭窗口时要执行什么？'
+	String get title => '关闭窗口时要执行什么？';
+
+	/// zh: '隐藏到托盘，保留播放'
+	String get toTray => '隐藏到托盘，保留播放';
+
+	/// zh: '退出 Pure Live'
+	String get quit => '退出 Pure Live';
+
+	/// zh: '记住我的选择，不再询问'
+	String get remember => '记住我的选择，不再询问';
+}
+
+// Path: shellSettings
+class Translations$shellSettings$zh {
+	Translations$shellSettings$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '窗口'
+	String get sectionWindow => '窗口';
+
+	/// zh: '窗口标题栏'
+	String get titleBar => '窗口标题栏';
+
+	/// zh: '应用标题栏'
+	String get titleBarApp => '应用标题栏';
+
+	/// zh: '系统标题栏'
+	String get titleBarSystem => '系统标题栏';
+
+	/// zh: '应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式；切换在重启应用后生效。'
+	String get titleBarHint => '应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式；切换在重启应用后生效。';
+}
+
 /// The flat map containing all translations for locale <zh>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -221,6 +290,19 @@ extension on Translations {
 			'tabs.areas' => '分区',
 			'tabs.search' => '搜索',
 			'tabs.settings' => '设置',
+			'window.minimize' => '最小化',
+			'window.maximize' => '最大化',
+			'window.restore' => '还原',
+			'window.close' => '关闭',
+			'closePrompt.title' => '关闭窗口时要执行什么？',
+			'closePrompt.toTray' => '隐藏到托盘，保留播放',
+			'closePrompt.quit' => '退出 Pure Live',
+			'closePrompt.remember' => '记住我的选择，不再询问',
+			'shellSettings.sectionWindow' => '窗口',
+			'shellSettings.titleBar' => '窗口标题栏',
+			'shellSettings.titleBarApp' => '应用标题栏',
+			'shellSettings.titleBarSystem' => '系统标题栏',
+			'shellSettings.titleBarHint' => '应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式；切换在重启应用后生效。',
 			_ => null,
 		};
 	}

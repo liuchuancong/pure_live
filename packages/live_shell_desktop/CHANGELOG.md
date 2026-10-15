@@ -8,6 +8,13 @@
   `DesktopWindowLauncher`/`SecondaryWindow`, `ScreenRetrieverDisplays`.
 - `configureMainWindow`, which turns a `ChromePlan`, `RenderFallbacks` and a
   `WindowRole` into the window calls that actually reach the platform.
+- `configureMainWindow` takes an optional `titleBarStyle` override, for the
+  arrangement where an external frame helper (the `bitsdojo_window` fork's
+  `BDW_CUSTOM_FRAME`) strips the caption itself and the self-drawn mode must
+  not also ask for `TitleBarStyle.hidden`.
+- `TrayManagerHost.createError`: the reason the last failed `create` failed.
+  The bool outcome was always the close policy's business; the cause was
+  dying in the catch, which is how a missing icon stays a mystery for weeks.
 - `system_idle.dart`: the machine's idle span over `user32` FFI on Windows, absent
   on other platforms rather than guessed.
 

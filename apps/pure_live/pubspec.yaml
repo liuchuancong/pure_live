@@ -19,6 +19,15 @@ dependencies:
   any_image_view: ^2.5.0
   archive: ^4.5.2
   battery_plus: ^7.1.2
+  # Frame takeover for the self-drawn Windows title bar: the maintained fork of
+  # the stale upstream bitsdojo_window, enabled by BDW_CUSTOM_FRAME in
+  # windows/runner/main.cpp. window_manager keeps every other window operation;
+  # the fork is inert on macOS/Linux, whose runners never call the configure hook.
+  bitsdojo_window:
+    git:
+      url: https://github.com/Ali-Fadaei/bitsdojo_window.git
+      path: bitsdojo_window
+      ref: 358bc8dfa9f560ba652fb022956e1c580968c76b
   cached_network_image: ^4.0.4
   cached_network_image_ce: ^4.13.1
   collection: ^1.19.1
@@ -76,6 +85,7 @@ dependencies:
   pigeon: ^29.0.8
   pretty_qr_code: ^3.6.0
   pub_semver: ^2.2.1
+  refresh_rate: ^2.0.1
   restart_app: ^1.10.1
   riverpod_annotation: ^4.0.3
   screen_retriever: ^0.2.2

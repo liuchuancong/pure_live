@@ -5,10 +5,12 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   audio_service_win
   battery_plus
+  bitsdojo_window_windows
   connectivity_plus
   desktop_multi_window
   file_selector_windows
   flutter_secure_storage_windows
+  refresh_rate
   restart_app
   screen_retriever_windows
   share_plus

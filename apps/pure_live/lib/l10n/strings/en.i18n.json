@@ -37,5 +37,24 @@
     "areas": "Areas",
     "search": "Search",
     "settings": "Settings"
+  },
+  "window": {
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "restore": "Restore",
+    "close": "Close"
+  },
+  "closePrompt": {
+    "title": "What should closing the window do?",
+    "toTray": "Hide to tray, keep playback",
+    "quit": "Quit Pure Live",
+    "remember": "Remember my choice, stop asking"
+  },
+  "shellSettings": {
+    "sectionWindow": "Window",
+    "titleBar": "Window title bar",
+    "titleBarApp": "App title bar",
+    "titleBarSystem": "System title bar",
+    "titleBarHint": "The app title bar is drawn by Pure Live; the system title bar uses the native Windows style. A switch applies after the app restarts."
   }
 }

@@ -44,5 +44,24 @@
     "areas": "分区",
     "search": "搜索",
     "settings": "设置"
+  },
+  "window": {
+    "minimize": "最小化",
+    "maximize": "最大化",
+    "restore": "还原",
+    "close": "关闭"
+  },
+  "closePrompt": {
+    "title": "关闭窗口时要执行什么？",
+    "toTray": "隐藏到托盘，保留播放",
+    "quit": "退出 Pure Live",
+    "remember": "记住我的选择，不再询问"
+  },
+  "shellSettings": {
+    "sectionWindow": "窗口",
+    "titleBar": "窗口标题栏",
+    "titleBarApp": "应用标题栏",
+    "titleBarSystem": "系统标题栏",
+    "titleBarHint": "应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式；切换在重启应用后生效。"
   }
 }

@@ -9,6 +9,7 @@ import 'package:pure_live/app/environment/env.dart';
 import 'package:pure_live/app/environment/os_roots.dart';
 import 'package:pure_live/app/logging/app_log.dart';
 import 'package:pure_live/app/theme/appearance_store.dart';
+import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart';
 
 /// The services the app runs on, in the order they depend on each other.
 ///
@@ -42,6 +43,7 @@ final class AppServices {
     required this.paths,
     required this.storage,
     required this.appearance,
+    required this.shell,
     required this.sites,
   });
 
@@ -65,6 +67,10 @@ final class AppServices {
 
   /// The user's appearance, already loaded from disk.
   final AppearanceStore appearance;
+
+  /// The desktop shell's choices (title bar mode, remembered close action),
+  /// already loaded from disk.
+  final ShellPreferencesStore shell;
 
   /// The network and site graph: the transport factory, the site HTTP
   /// client and every built-in site, initialized and ready.
@@ -108,12 +114,25 @@ final class AppServices {
     await storage.initialize();
 
     final box = await StorageBoxManager().keyed<Map<dynamic, dynamic>>(AppearanceKeys.box);
-    final appearance = AppearanceStore(repository: HiveStorageRepository<Map<dynamic, dynamic>>(box: box));
+    final storageLog = log.forCategory('storage');
+    final shellLog = log.forCategory('shell');
+    final appearance = AppearanceStore(
+      repository: HiveStorageRepository<Map<dynamic, dynamic>>(box: box),
+      onError: (failure, error, stack) =>
+          storageLog.warning('appearance document ${failure.name} failed', fields: {'error': '$error'}),
+    );
     await appearance.load();
+    // The shell document lives in the same box under its own key: one open,
+    // one document per preference group.
+    final shell = ShellPreferencesStore(
+      repository: HiveStorageRepository<Map<dynamic, dynamic>>(box: box),
+      onError: (failure, error, stack) =>
+          shellLog.warning('shell document ${failure.name} failed', fields: {'error': '$error'}),
+    );
+    await shell.load();
 
     // Real files in two trees is a fact the user has to hear about, not
     // something to merge quietly.
-    final storageLog = log.forCategory('storage');
     final conflict = await paths.detectSplitBrain();
     if (conflict != null) {
       storageLog.warning(
@@ -153,6 +172,7 @@ final class AppServices {
       paths: paths,
       storage: storage,
       appearance: appearance,
+      shell: shell,
       sites: sites,
     );
   }
@@ -164,6 +184,7 @@ final class AppServices {
   /// teardown itself should be the last thing it records.
   Future<void> shutdown() async {
     await appearance.dispose();
+    await shell.dispose();
     await storage.shutdown();
     await sites.dispose();
     await log.close();

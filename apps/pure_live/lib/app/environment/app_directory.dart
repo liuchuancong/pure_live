@@ -76,7 +76,7 @@ enum StorageAreaEffect {
   /// change lands after a restart, when boot carries the old tree into the
   /// new directory before anything opens it. The caller says so instead of
   /// silently swapping folders underneath the user.
-  afterRestart;
+  afterRestart,
 }
 
 /// The app's own split of the areas into hot and cold.

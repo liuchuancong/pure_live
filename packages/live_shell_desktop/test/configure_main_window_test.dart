@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/live_shell.dart';
 import 'package:live_shell_desktop/live_shell_desktop.dart';
+import 'package:window_manager/window_manager.dart';
 
 /// What the shell's decisions actually look like on the way to the operating
 /// system.
@@ -75,12 +76,14 @@ void main() {
     ChromeStage stage = ChromeStage.nativeFirst,
     RenderFallbacks fallbacks = const RenderFallbacks(),
     Color background = const Color(0xFF101418),
+    TitleBarStyle? titleBarStyle,
   }) => configureMainWindow(
     role: role,
     plan: primaryChromePlan(platform, stage: stage),
     fallbacks: fallbacks,
     title: 'Pure Live',
     background: background,
+    titleBarStyle: titleBarStyle,
   );
 
   group('the chrome plan', () {
@@ -90,6 +93,19 @@ void main() {
       expect(argsOf(find('setTitleBarStyle'))['titleBarStyle'], 'normal');
       expect(sent('setAsFrameless'), isFalse);
       expect(argsOf(find('setResizable'))['isResizable'], isTrue);
+    });
+
+    test('an explicit style outranks the mode-derived one, for the external frame helper', () async {
+      // The bitsdojo arrangement: the helper strips the caption natively, so
+      // the self-drawn mode's `hidden` would put two components over the same
+      // non-client area. The override holds the window manager at normal.
+      await configure(
+        platform: PlatformKind.linux,
+        stage: ChromeStage.seamlessSelfDrawn,
+        titleBarStyle: TitleBarStyle.normal,
+      );
+
+      expect(argsOf(find('setTitleBarStyle'))['titleBarStyle'], 'normal');
     });
 
     test('a self-drawn strip that owns the edges goes frameless and stops being resizable by the system', () async {

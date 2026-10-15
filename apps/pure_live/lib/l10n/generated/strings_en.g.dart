@@ -46,6 +46,9 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$search$en search = _Translations$search$en._(_root);
 	@override late final _Translations$errors$en errors = _Translations$errors$en._(_root);
 	@override late final _Translations$tabs$en tabs = _Translations$tabs$en._(_root);
+	@override late final _Translations$window$en window = _Translations$window$en._(_root);
+	@override late final _Translations$closePrompt$en closePrompt = _Translations$closePrompt$en._(_root);
+	@override late final _Translations$shellSettings$en shellSettings = _Translations$shellSettings$en._(_root);
 }
 
 // Path: app
@@ -136,6 +139,46 @@ class _Translations$tabs$en extends Translations$tabs$zh {
 	@override String get settings => 'Settings';
 }
 
+// Path: window
+class _Translations$window$en extends Translations$window$zh {
+	_Translations$window$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get minimize => 'Minimize';
+	@override String get maximize => 'Maximize';
+	@override String get restore => 'Restore';
+	@override String get close => 'Close';
+}
+
+// Path: closePrompt
+class _Translations$closePrompt$en extends Translations$closePrompt$zh {
+	_Translations$closePrompt$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'What should closing the window do?';
+	@override String get toTray => 'Hide to tray, keep playback';
+	@override String get quit => 'Quit Pure Live';
+	@override String get remember => 'Remember my choice, stop asking';
+}
+
+// Path: shellSettings
+class _Translations$shellSettings$en extends Translations$shellSettings$zh {
+	_Translations$shellSettings$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get sectionWindow => 'Window';
+	@override String get titleBar => 'Window title bar';
+	@override String get titleBarApp => 'App title bar';
+	@override String get titleBarSystem => 'System title bar';
+	@override String get titleBarHint => 'The app title bar is drawn by Pure Live; the system title bar uses the native Windows style. A switch applies after the app restarts.';
+}
+
 /// The flat map containing all translations for locale <en>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -169,6 +212,19 @@ extension on TranslationsEn {
 			'tabs.areas' => 'Areas',
 			'tabs.search' => 'Search',
 			'tabs.settings' => 'Settings',
+			'window.minimize' => 'Minimize',
+			'window.maximize' => 'Maximize',
+			'window.restore' => 'Restore',
+			'window.close' => 'Close',
+			'closePrompt.title' => 'What should closing the window do?',
+			'closePrompt.toTray' => 'Hide to tray, keep playback',
+			'closePrompt.quit' => 'Quit Pure Live',
+			'closePrompt.remember' => 'Remember my choice, stop asking',
+			'shellSettings.sectionWindow' => 'Window',
+			'shellSettings.titleBar' => 'Window title bar',
+			'shellSettings.titleBarApp' => 'App title bar',
+			'shellSettings.titleBarSystem' => 'System title bar',
+			'shellSettings.titleBarHint' => 'The app title bar is drawn by Pure Live; the system title bar uses the native Windows style. A switch applies after the app restarts.',
 			_ => null,
 		};
 	}

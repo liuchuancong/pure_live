@@ -24,6 +24,7 @@ final class PureLiveApp extends ConsumerWidget {
     final config = ref.watch(uiConfigProvider);
     return MaterialApp.router(
       onGenerateTitle: (context) => t.app.title,
+      debugShowCheckedModeBanner: false,
       theme: materialThemeSeed(config, Brightness.light),
       darkTheme: materialThemeSeed(config, Brightness.dark),
       themeMode: switch (config.brightness) {

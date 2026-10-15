@@ -3,10 +3,12 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  bitsdojo_window_linux
   desktop_multi_window
   file_selector_linux
   flutter_secure_storage_linux
   open_file_linux
+  refresh_rate
   restart_app
   screen_retriever_linux
   url_launcher_linux
