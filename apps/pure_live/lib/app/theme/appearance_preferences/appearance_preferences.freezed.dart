@@ -16,7 +16,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AppearancePreferences {
 
-/// The design language registry id; empty means the platform's default.
+/// The design language registry id; empty means the build's default
+/// skin (fluent), which `ui_configuration_mapper.dart` resolves.
  String get designLanguageId;/// Which brightness the app follows.
  AppThemeMode get themeMode;/// The accent colour as a 32-bit ARGB value; null means the design
 /// language's own accent.
@@ -240,7 +241,8 @@ class _AppearancePreferences implements AppearancePreferences {
   const _AppearancePreferences({this.designLanguageId = '', this.themeMode = AppThemeMode.system, this.accentColor, this.pureBlack = false, this.densityId = '', this.fontScale = 1.0, this.fontFamily, this.transparency = 1.0, this.reduceTransparency = false, this.animations = true, this.focusOutline = true});
   factory _AppearancePreferences.fromJson(Map<String, dynamic> json) => _$AppearancePreferencesFromJson(json);
 
-/// The design language registry id; empty means the platform's default.
+/// The design language registry id; empty means the build's default
+/// skin (fluent), which `ui_configuration_mapper.dart` resolves.
 @override@JsonKey() final  String designLanguageId;
 /// Which brightness the app follows.
 @override@JsonKey() final  AppThemeMode themeMode;

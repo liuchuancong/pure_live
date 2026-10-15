@@ -43,6 +43,9 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$home$en home = _Translations$home$en._(_root);
 	@override late final _Translations$common$en common = _Translations$common$en._(_root);
 	@override late final _Translations$tray$en tray = _Translations$tray$en._(_root);
+	@override late final _Translations$settings$en settings = _Translations$settings$en._(_root);
+	@override late final _Translations$theme$en theme = _Translations$theme$en._(_root);
+	@override late final _Translations$design$en design = _Translations$design$en._(_root);
 	@override late final _Translations$search$en search = _Translations$search$en._(_root);
 	@override late final _Translations$errors$en errors = _Translations$errors$en._(_root);
 	@override late final _Translations$tabs$en tabs = _Translations$tabs$en._(_root);
@@ -97,6 +100,48 @@ class _Translations$tray$en extends Translations$tray$zh {
 	// Translations
 	@override String get show => 'Show Pure Live';
 	@override String get quit => 'Quit';
+}
+
+// Path: settings
+class _Translations$settings$en extends Translations$settings$zh {
+	_Translations$settings$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get appearance => 'Appearance';
+	@override String get themeMode => 'Theme mode';
+	@override String get designLanguage => 'Design language';
+	@override String get accent => 'Accent';
+	@override String get pureBlack => 'Pure black';
+	@override String get density => 'Density';
+	@override String get fontScale => 'Font size';
+	@override String get transparency => 'Transparency';
+	@override String get reduceTransparency => 'Reduce transparency';
+	@override String get animations => 'Animations';
+	@override String get focusOutline => 'Focus outline';
+}
+
+// Path: theme
+class _Translations$theme$en extends Translations$theme$zh {
+	_Translations$theme$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get system => 'System';
+	@override String get dark => 'Dark';
+	@override String get light => 'Light';
+}
+
+// Path: design
+class _Translations$design$en extends Translations$design$zh {
+	_Translations$design$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get defaultLanguage => 'Default (Fluent)';
 }
 
 // Path: search
@@ -199,6 +244,21 @@ extension on TranslationsEn {
 			'common.pageOf' => ({required int page, required int total}) => 'Page ${page} of ${total}',
 			'tray.show' => 'Show Pure Live',
 			'tray.quit' => 'Quit',
+			'settings.appearance' => 'Appearance',
+			'settings.themeMode' => 'Theme mode',
+			'settings.designLanguage' => 'Design language',
+			'settings.accent' => 'Accent',
+			'settings.pureBlack' => 'Pure black',
+			'settings.density' => 'Density',
+			'settings.fontScale' => 'Font size',
+			'settings.transparency' => 'Transparency',
+			'settings.reduceTransparency' => 'Reduce transparency',
+			'settings.animations' => 'Animations',
+			'settings.focusOutline' => 'Focus outline',
+			'theme.system' => 'System',
+			'theme.dark' => 'Dark',
+			'theme.light' => 'Light',
+			'design.defaultLanguage' => 'Default (Fluent)',
 			'search.hint' => 'Search rooms by keyword',
 			'errors.generic' => 'Something went wrong. Please try again later.',
 			'errors.network' => 'Network unavailable. Check your connection and retry.',

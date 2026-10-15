@@ -32,4 +32,7 @@ abstract final class RoutePath {
 
   /// The settings cluster's index page, a full page above the shell.
   static const String settings = '/settings';
+
+  /// The appearance page, one level under the settings index.
+  static const String settingsAppearance = '/settings/appearance';
 }

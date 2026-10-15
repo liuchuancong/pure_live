@@ -26,6 +26,27 @@
     "show": "显示主界面",
     "quit": "退出"
   },
+  "settings": {
+    "appearance": "外观",
+    "themeMode": "主题模式",
+    "designLanguage": "设计语言",
+    "accent": "强调色",
+    "pureBlack": "纯黑模式",
+    "density": "密度",
+    "fontScale": "字体大小",
+    "transparency": "透明度",
+    "reduceTransparency": "减少透明效果",
+    "animations": "动画",
+    "focusOutline": "焦点轮廓"
+  },
+  "theme": {
+    "system": "跟随系统",
+    "dark": "深色",
+    "light": "浅色"
+  },
+  "design": {
+    "defaultLanguage": "默认（Fluent）"
+  },
   "search": {
     "hint": "输入关键词搜索房间"
   },

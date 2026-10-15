@@ -19,6 +19,27 @@
     "show": "Show Pure Live",
     "quit": "Quit"
   },
+  "settings": {
+    "appearance": "Appearance",
+    "themeMode": "Theme mode",
+    "designLanguage": "Design language",
+    "accent": "Accent",
+    "pureBlack": "Pure black",
+    "density": "Density",
+    "fontScale": "Font size",
+    "transparency": "Transparency",
+    "reduceTransparency": "Reduce transparency",
+    "animations": "Animations",
+    "focusOutline": "Focus outline"
+  },
+  "theme": {
+    "system": "System",
+    "dark": "Dark",
+    "light": "Light"
+  },
+  "design": {
+    "defaultLanguage": "Default (Fluent)"
+  },
   "search": {
     "hint": "Search rooms by keyword"
   },

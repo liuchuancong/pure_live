@@ -45,6 +45,9 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$home$zh home = Translations$home$zh.internal(_root);
 	late final Translations$common$zh common = Translations$common$zh.internal(_root);
 	late final Translations$tray$zh tray = Translations$tray$zh.internal(_root);
+	late final Translations$settings$zh settings = Translations$settings$zh.internal(_root);
+	late final Translations$theme$zh theme = Translations$theme$zh.internal(_root);
+	late final Translations$design$zh design = Translations$design$zh.internal(_root);
 	late final Translations$search$zh search = Translations$search$zh.internal(_root);
 	late final Translations$errors$zh errors = Translations$errors$zh.internal(_root);
 	late final Translations$tabs$zh tabs = Translations$tabs$zh.internal(_root);
@@ -123,6 +126,78 @@ class Translations$tray$zh {
 
 	/// zh: '退出'
 	String get quit => '退出';
+}
+
+// Path: settings
+class Translations$settings$zh {
+	Translations$settings$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '外观'
+	String get appearance => '外观';
+
+	/// zh: '主题模式'
+	String get themeMode => '主题模式';
+
+	/// zh: '设计语言'
+	String get designLanguage => '设计语言';
+
+	/// zh: '强调色'
+	String get accent => '强调色';
+
+	/// zh: '纯黑模式'
+	String get pureBlack => '纯黑模式';
+
+	/// zh: '密度'
+	String get density => '密度';
+
+	/// zh: '字体大小'
+	String get fontScale => '字体大小';
+
+	/// zh: '透明度'
+	String get transparency => '透明度';
+
+	/// zh: '减少透明效果'
+	String get reduceTransparency => '减少透明效果';
+
+	/// zh: '动画'
+	String get animations => '动画';
+
+	/// zh: '焦点轮廓'
+	String get focusOutline => '焦点轮廓';
+}
+
+// Path: theme
+class Translations$theme$zh {
+	Translations$theme$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '跟随系统'
+	String get system => '跟随系统';
+
+	/// zh: '深色'
+	String get dark => '深色';
+
+	/// zh: '浅色'
+	String get light => '浅色';
+}
+
+// Path: design
+class Translations$design$zh {
+	Translations$design$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '默认（Fluent）'
+	String get defaultLanguage => '默认（Fluent）';
 }
 
 // Path: search
@@ -277,6 +352,21 @@ extension on Translations {
 			'common.pageOf' => ({required int page, required int total}) => '第 ${page} / ${total} 页',
 			'tray.show' => '显示主界面',
 			'tray.quit' => '退出',
+			'settings.appearance' => '外观',
+			'settings.themeMode' => '主题模式',
+			'settings.designLanguage' => '设计语言',
+			'settings.accent' => '强调色',
+			'settings.pureBlack' => '纯黑模式',
+			'settings.density' => '密度',
+			'settings.fontScale' => '字体大小',
+			'settings.transparency' => '透明度',
+			'settings.reduceTransparency' => '减少透明效果',
+			'settings.animations' => '动画',
+			'settings.focusOutline' => '焦点轮廓',
+			'theme.system' => '跟随系统',
+			'theme.dark' => '深色',
+			'theme.light' => '浅色',
+			'design.defaultLanguage' => '默认（Fluent）',
 			'search.hint' => '输入关键词搜索房间',
 			'errors.generic' => '出了点问题，请稍后再试。',
 			'errors.network' => '网络连接不可用，请检查网络后重试。',

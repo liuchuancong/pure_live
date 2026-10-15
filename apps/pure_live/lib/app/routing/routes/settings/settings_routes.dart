@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:pure_live/app/routing/route_paths.dart';
+import 'package:pure_live/features/settings/appearance_page.dart';
 import 'package:pure_live/features/settings/settings_page.dart';
 
 part 'settings_routes.g.dart';
@@ -17,4 +18,14 @@ class SettingsRoute extends GoRouteData with $SettingsRoute {
 
   @override
   Widget build(BuildContext context, GoRouterState state) => const SettingsPage();
+}
+
+/// The appearance page: one level under the settings index.
+@TypedGoRoute<AppearanceRoute>(path: RoutePath.settingsAppearance)
+class AppearanceRoute extends GoRouteData with $AppearanceRoute {
+  /// The appearance route.
+  const new();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const AppearancePage();
 }
