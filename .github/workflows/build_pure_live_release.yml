@@ -331,6 +331,14 @@ jobs:
           if (Test-Path (Join-Path $temporary "IPTV_CACHE")) {
             Remove-Item (Join-Path $temporary "IPTV_CACHE") -Recurse -Force
           }
+          # The portable build's own declaration — resolver trust tier ②
+          # (`source: build`, never overwritten at runtime). Without it the
+          # unzipped exe resolves `unknown` and its data lands in %APPDATA%,
+          # defeating the whole portable layout.
+          Set-Content `
+            -Path (Join-Path $temporary "distribution.json") `
+            -Value '{"schemaVersion":1,"distribution":"portable","source":"build"}' `
+            -Encoding ascii
           Compress-Archive `
             -Path (Join-Path $temporary "*") `
             -DestinationPath $portable `
@@ -351,6 +359,9 @@ jobs:
           $entries = tar -tf $portable
           if ($entries | Where-Object { $_ -match '(^|/)(AppData|IPTV_CACHE)(/|$)' }) {
             Write-Error "Runtime state was found in the Windows portable package."
+          }
+          if (!($entries | Where-Object { $_ -match '(^|/)distribution\.json$' })) {
+            Write-Error "The portable package is missing its distribution.json build claim."
           }
       - name: Rename Windows installers
         shell: pwsh
@@ -465,8 +476,15 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${{ steps.version.outputs.artifact_version }}"
-          tar -C build/linux/x64/release/bundle -czf "PureLive-${VERSION}-linux-x64.tar.gz" .
-          (cd build/linux/x64/release/bundle && zip -qr "$GITHUB_WORKSPACE/apps/pure_live/PureLive-${VERSION}-linux-x64.zip" .)
+          BUNDLE="build/linux/x64/release/bundle"
+          # The portable build's own declaration — resolver trust tier ②.
+          # Removed right after the archives are cut: the DEB is packaged
+          # from the same bundle and must never carry a portable claim.
+          printf '%s' '{"schemaVersion":1,"distribution":"portable","source":"build"}' > "$BUNDLE/distribution.json"
+          tar -C "$BUNDLE" -czf "PureLive-${VERSION}-linux-x64.tar.gz" .
+          (cd "$BUNDLE" && zip -qr "$GITHUB_WORKSPACE/apps/pure_live/PureLive-${VERSION}-linux-x64.zip" .)
+          tar -tzf "PureLive-${VERSION}-linux-x64.tar.gz" | grep -q 'distribution\.json'
+          rm -f "$BUNDLE/distribution.json"
       - name: Install pinned Linux packager
         run: |
           dart pub global activate fastforge "$FASTFORGE_VERSION"
