@@ -108,6 +108,7 @@ class _Translations$tabs$en extends Translations$tabs$zh {
 	@override String get follow => 'Follow';
 	@override String get history => 'History';
 	@override String get popular => 'Popular';
+	@override String get areas => 'Areas';
 	@override String get settings => 'Settings';
 }
 
@@ -138,6 +139,7 @@ extension on TranslationsEn {
 			'tabs.follow' => 'Follow',
 			'tabs.history' => 'History',
 			'tabs.popular' => 'Popular',
+			'tabs.areas' => 'Areas',
 			'tabs.settings' => 'Settings',
 			_ => null,
 		};

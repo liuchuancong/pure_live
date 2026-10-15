@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_platform/live_platform.dart' show PlatformEnvironment;
-import 'package:live_sites/live_sites.dart' show LiveDiscoveryProvider;
+import 'package:live_sites/live_sites.dart' show LiveAreaProvider, LiveDiscoveryProvider;
 import 'package:live_storage/live_storage.dart' show StorageBootstrap;
 import 'package:live_uikit/styling.dart';
 
@@ -41,13 +41,23 @@ final sitesProvider = Provider<AppSites>((ref) => throw UnimplementedError('over
 /// The discovery capability of a site id, null when the site does not
 /// expose one. The registry is static after boot, so a family entry never
 /// changes.
-// The riverpod family type has no exported name to annotate with.
+// riverpod's family type (ProviderFamily) is not exported by
+// flutter_riverpod, so the variable annotation the lint asks for cannot
+// be written.
 // ignore: specify_nonobvious_property_types
-final discoveryProvider = Provider.family<LiveDiscoveryProvider?, String>(
-  // The family's raw create signature loses the argument type.
-  // ignore: avoid_types_on_closure_parameters
-  (ref, String siteId) => ref.watch(sitesProvider).registry.getById(siteId)?.capability<LiveDiscoveryProvider>(),
-);
+final discoveryProvider = Provider.family<LiveDiscoveryProvider?, String>(_discoveryOf);
+
+LiveDiscoveryProvider? _discoveryOf(Ref ref, String siteId) =>
+    ref.watch(sitesProvider).registry.getById(siteId)?.capability<LiveDiscoveryProvider>();
+
+/// The area capability of a site id, null when the site does not expose
+/// one. The registry is static after boot, so a family entry never
+/// changes.
+// ignore: specify_nonobvious_property_types
+final areaProvider = Provider.family<LiveAreaProvider?, String>(_areasOf);
+
+LiveAreaProvider? _areasOf(Ref ref, String siteId) =>
+    ref.watch(sitesProvider).registry.getById(siteId)?.capability<LiveAreaProvider>();
 
 /// The persisted appearance, the single source the theme is derived from.
 ///

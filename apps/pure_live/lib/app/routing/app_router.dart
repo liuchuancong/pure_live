@@ -5,6 +5,8 @@ import 'package:live_platform/live_platform.dart' show FormFactor;
 
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/settings_routes.dart' as settings_routes;
+import 'package:pure_live/features/area_rooms/area_rooms_page.dart';
+import 'package:pure_live/features/areas/areas_page.dart';
 import 'package:pure_live/features/follow/follow_page.dart';
 import 'package:pure_live/features/history/history_page.dart';
 import 'package:pure_live/features/home/home_page.dart';
@@ -104,6 +106,38 @@ class PopularRoute extends GoRouteData with $PopularRoute {
 
   @override
   Widget build(BuildContext context, GoRouterState state) => const PopularPage();
+}
+
+/// The areas page: every platform's category catalogue, a full page above
+/// the shell.
+@TypedGoRoute<AreasRoute>(path: '/areas')
+class AreasRoute extends GoRouteData with $AreasRoute {
+  /// The areas route.
+  const new();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const AreasPage();
+}
+
+/// One area's room list, a full page above the shell; [areaName] rides as
+/// the query and only titles the page.
+@TypedGoRoute<AreaRoomsRoute>(path: '/areas/:siteId/:areaId')
+class AreaRoomsRoute extends GoRouteData with $AreaRoomsRoute {
+  /// The area rooms route.
+  const new({required this.siteId, required this.areaId, this.areaName = ''});
+
+  /// The platform the area belongs to.
+  final String siteId;
+
+  /// The area's id.
+  final String areaId;
+
+  /// The area's display name.
+  final String areaName;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      AreaRoomsPage(siteId: siteId, areaId: areaId, areaName: areaName);
 }
 
 /// The assembled graph: this library's shell table plus the standalone

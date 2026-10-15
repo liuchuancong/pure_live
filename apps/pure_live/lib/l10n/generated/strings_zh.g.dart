@@ -149,6 +149,9 @@ class Translations$tabs$zh {
 	/// zh: '热门'
 	String get popular => '热门';
 
+	/// zh: '分区'
+	String get areas => '分区';
+
 	/// zh: '设置'
 	String get settings => '设置';
 }
@@ -180,6 +183,7 @@ extension on Translations {
 			'tabs.follow' => '关注',
 			'tabs.history' => '历史',
 			'tabs.popular' => '热门',
+			'tabs.areas' => '分区',
 			'tabs.settings' => '设置',
 			_ => null,
 		};
