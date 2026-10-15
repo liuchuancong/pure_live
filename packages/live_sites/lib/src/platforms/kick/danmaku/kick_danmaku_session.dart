@@ -35,10 +35,19 @@ final class KickDanmakuProvider implements LiveDanmakuProvider {
     try {
       final channel = await site.channel(roomId);
       final chatroom = channel.chatroomId;
-      if (chatroom == null) {
+      // The three subscription ids must all be real, or the socket would
+      // subscribe `chatrooms.0.v2` / `channel_0` and join nothing.
+      if (chatroom == null || chatroom <= 0) {
         return left(const LiveSiteError.unsupported(siteId: 'kick', message: 'no chatroom to subscribe to'));
       }
-      args = KickDanmakuArgs(chatroomId: chatroom, channelId: channel.channelId, slug: channel.room.roomId);
+      if (channel.channelId <= 0) {
+        return left(const LiveSiteError.contentUnavailable(siteId: 'kick', message: 'channel has no id'));
+      }
+      final slug = channel.room.roomId.trim();
+      if (slug.isEmpty) {
+        return left(const LiveSiteError.contentUnavailable(siteId: 'kick', message: 'channel has no slug'));
+      }
+      args = KickDanmakuArgs(chatroomId: chatroom, channelId: channel.channelId, slug: slug);
     } on KickFailure catch (failure) {
       return left(failure.toLiveSiteError('kick'));
     } on Object catch (error) {

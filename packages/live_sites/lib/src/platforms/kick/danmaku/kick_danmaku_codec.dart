@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:live_sites/src/models/enums/live_gift_unit.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
@@ -9,6 +10,8 @@ import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/models/message/live_retraction/live_retraction.dart';
 import 'package:live_sites/src/models/message/message_sender/message_sender.dart';
+import 'package:live_sites/src/models/super_chat/live_super_chat_message/live_super_chat_message.dart';
+import 'package:live_sites/src/models/super_chat/live_super_chat_price/live_super_chat_price.dart';
 import 'package:live_sites/src/platforms/kick/api/kick_endpoints.dart';
 import 'package:live_sites/src/platforms/kick/kick_site.dart';
 import 'package:live_sites/src/platforms/kick/parsers/kick_json.dart';
@@ -219,35 +222,74 @@ abstract final class KickDanmakuCodec {
     );
   }
 
-  /// Kicks sent to the streamer (`KicksGifted`, Kick's paid gifts): a gift
-  /// worth `gift.amount` Kicks (100 to a US dollar) with the sent message
-  /// kept as the gift's text.
+  /// Kicks sent to the streamer (`KicksGifted`, Kick's paid gifts, 100 Kicks
+  /// to a US dollar): with a message it is a super chat of `gift.amount`
+  /// Kicks kept for the gift's `pinned_time` seconds (or [superChatDuration]
+  /// by amount); without one a gift `Hell Yeah ×1`-style with a [LiveGift].
   static LiveMessage? kicks(Map<String, dynamic> data) {
     final sender = jsonObject(data['sender']);
     final gift = jsonObject(data['gift']);
     final name = _text(sender?['username']);
-    final amount = jsonInt(gift?['amount']) ?? 0;
+    final amount = max(jsonInt(gift?['amount']) ?? 0, 0);
     if (name.isEmpty || gift == null) return null;
     final text = _content(data['message']);
     final giftName = _text(gift['name']);
-    return LiveMessage.normalized(
-      type: LiveMessageType.gift,
-      text: text.isEmpty ? '$giftName ×1' : '$name: $text',
-      sender: MessageSender.normalized(userId: _text(sender?['id']), userName: name),
-      color: LiveMessageColor.white,
-      messageId: 'kick:${_text(data['gift_transaction_id'])}',
-      sentAt: jsonMessageTime(data['created_at']),
-      payload: LiveGift(
-        giftId: _text(gift['name']),
-        name: giftName.isEmpty ? 'Kicks' : giftName,
-        value: LiveGiftValue(
-          unit: LiveGiftUnit.gold,
-          unitPrice: amount > 0 ? amount.toDouble() : null,
-          totalValue: amount > 0 ? amount.toDouble() : null,
+    final rawId = _text(data['gift_transaction_id']);
+    final messageId = rawId.isEmpty ? '' : 'kick:$rawId';
+    final sentAt = jsonMessageTime(data['created_at']);
+    final userId = _text(sender?['id']);
+    if (text.isEmpty) {
+      final display = giftName.isEmpty ? 'Kicks' : giftName;
+      return LiveMessage.normalized(
+        type: LiveMessageType.gift,
+        text: '$display ×1',
+        sender: MessageSender.normalized(userId: userId, userName: name),
+        color: LiveMessageColor.white,
+        messageId: messageId,
+        sentAt: sentAt,
+        payload: LiveGift(
+          giftId: display,
+          name: display,
+          value: LiveGiftValue(
+            unit: LiveGiftUnit.gold,
+            unitPrice: amount > 0 ? amount.toDouble() : null,
+            totalValue: amount > 0 ? amount.toDouble() : null,
+          ),
         ),
+      );
+    }
+    final start = sentAt ?? DateTime.now();
+    final pinned = jsonInt(gift['pinned_time']) ?? 0;
+    return LiveMessage.normalized(
+      type: LiveMessageType.superChat,
+      text: text,
+      sender: MessageSender.normalized(userId: userId, userName: name),
+      color: LiveMessageColor.white,
+      messageId: messageId,
+      sentAt: sentAt,
+      payload: LiveSuperChatMessage(
+        messageId: messageId,
+        userName: name,
+        text: text,
+        price: SuperChatPrice(
+          amount: amount > 0 ? amount : null,
+          currency: 'Kicks',
+          displayText: amount > 0 ? '$amount Kicks' : giftName,
+        ),
+        startTime: start,
+        endTime: start.add(pinned > 0 && pinned <= 86400 ? Duration(seconds: pinned) : superChatDuration(amount)),
       ),
     );
   }
+
+  /// How long a Kicks super chat stays without its own `pinned_time`: the
+  /// steps of Bilibili's super chats by amount (100 Kicks is one dollar).
+  static Duration superChatDuration(int amount) => switch (amount) {
+    >= 10000 => const Duration(minutes: 30),
+    >= 5000 => const Duration(minutes: 5),
+    >= 1000 => const Duration(minutes: 2),
+    _ => const Duration(minutes: 1),
+  };
 
   /// The retraction of a deleted line (by id), a banned viewer (by user id)
   /// or a cleared chat (all); null when neither id is there.

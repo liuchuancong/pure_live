@@ -23,6 +23,7 @@ import 'package:live_sites/src/models/message/live_retraction/live_retraction.da
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
+import 'package:live_sites/src/models/super_chat/live_super_chat_message/live_super_chat_message.dart';
 import 'package:live_sites/src/platforms/kick/api/kick_endpoints.dart';
 import 'package:live_sites/src/platforms/kick/api/kick_http.dart';
 import 'package:live_sites/src/platforms/kick/capabilities/kick_area_provider.dart';
@@ -283,6 +284,37 @@ void main() {
       expect(gift.value.unit, LiveGiftUnit.gold);
       expect(gift.value.unitPrice, 50);
       expect(gift.value.totalValue, 50);
+    });
+
+    test('Kicks with a message is a super chat kept for its pinned_time', () {
+      final frame = KickDanmakuCodec.read(
+        _frame('KicksGifted', {
+          'sender': {'id': 7, 'username': 'giver'},
+          'gift': {'name': 'Kick', 'amount': 500, 'pinned_time': 60},
+          'message': 'nice stream',
+          'gift_transaction_id': 'tx-2',
+          'created_at': 1759330000,
+        }, channel: KickDanmakuCodec.kicksChannel(_args)),
+        _args,
+      );
+      final message = frame.messages.single;
+      expect(message.type, LiveMessageType.superChat);
+      expect(message.text, 'nice stream');
+      final superChat = message.payload! as LiveSuperChatMessage;
+      expect(superChat.price.amount, 500);
+      expect(superChat.price.currency, 'Kicks');
+      expect(superChat.price.displayText, '500 Kicks');
+      expect(superChat.endTime!.difference(superChat.startTime!), const Duration(seconds: 60));
+    });
+
+    test('Kicks with a message but no pinned_time falls back to the amount tier', () {
+      final message = KickDanmakuCodec.kicks({
+        'sender': {'id': 7, 'username': 'giver'},
+        'gift': {'name': 'Kick', 'amount': 1000},
+        'message': 'hi',
+      })!;
+      final superChat = message.payload! as LiveSuperChatMessage;
+      expect(superChat.endTime!.difference(superChat.startTime!), const Duration(minutes: 2));
     });
 
     test('deletes, bans and clears are retractions', () {
