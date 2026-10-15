@@ -113,4 +113,23 @@ void main() {
       '${userRoot.path}/downloads',
     ]);
   });
+
+  test('the data-root helpers name the exact trees the policy writes', () {
+    final policy = DefaultStoragePolicy(portableRoot: exeRoot, userRoot: userRoot);
+
+    // A split-brain check reads these helpers to name the *other*
+    // deployment's tree; if they ever drift from candidatesFor, it starts
+    // inspecting a directory nothing writes — silently, the way the
+    // missing `/pure_live` segment once did.
+    expect(
+      DefaultStoragePolicy.portableDataRoot(exeRoot).path,
+      policy.candidatesFor(StorageArea.data, snapshot(portable: true)).single.path,
+      reason: 'the portable helper must match the portable data candidate',
+    );
+    expect(
+      DefaultStoragePolicy.installedDataRoot(userRoot).path,
+      policy.candidatesFor(StorageArea.data, snapshot(portable: false)).single.path,
+      reason: 'the installed helper must match the installed data candidate',
+    );
+  });
 }

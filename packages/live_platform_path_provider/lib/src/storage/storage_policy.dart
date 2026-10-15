@@ -78,14 +78,17 @@ final class DefaultStoragePolicy implements StoragePolicy {
       StorageArea.cache || StorageArea.temporary => false,
     };
     if (persistent) {
+      final root = portable ? portableRoot : userRoot;
       return [
-        // Flutter's own Windows bundle occupies `data/` next to the
-        // executable (`data/flutter_assets`, `data/icudtl.dat`), so the
-        // portable data area namespaces itself beneath that directory
-        // instead of writing into the runtime's files.
-        if (portable && portableRoot != null)
-          Directory('${portableRoot!.path}/${area == StorageArea.data ? 'data/pure_live' : _segment(area)}'),
-        if (!portable && userRoot != null) Directory('${userRoot!.path}/${_segment(area)}'),
+        if (root != null)
+          switch (area) {
+            // Flutter's own Windows bundle occupies `data/` next to the
+            // executable (`data/flutter_assets`, `data/icudtl.dat`), so the
+            // portable data area namespaces itself beneath that directory
+            // instead of writing into the runtime's files.
+            StorageArea.data => portable ? portableDataRoot(root) : installedDataRoot(root),
+            _ => Directory('${root.path}/${_segment(area)}'),
+          },
       ];
     }
     return switch (area) {
@@ -101,6 +104,18 @@ final class DefaultStoragePolicy implements StoragePolicy {
       _ => const [],
     };
   }
+
+  /// The data tree a portable layout rooted beside [executableRoot]
+  /// resolves to — the one place the `data/pure_live` namespacing is
+  /// spelled. A diagnostic that must name the tree the *other* deployment
+  /// style would write (a split-brain check, a migration) asks here
+  /// instead of hand-assembling the segment and drifting from the policy.
+  static Directory portableDataRoot(Directory executableRoot) => Directory('${executableRoot.path}/data/pure_live');
+
+  /// The data tree an installed or packaged layout resolves to under its
+  /// application-support root — the exact candidate [candidatesFor]
+  /// answers for [StorageArea.data] on a non-portable build.
+  static Directory installedDataRoot(Directory userRoot) => Directory('${userRoot.path}/${_segment(StorageArea.data)}');
 
   static String _segment(StorageArea area) => switch (area) {
     StorageArea.data => 'data',
