@@ -70,30 +70,31 @@ v2 的五条架构决策(不可回退,均有 ADR 或用户定案背书):
 
 ## 3. 应用架构(apps/pure_live)
 
-目录架构的**权威设计**在 `docs/app-directory-architecture.md`:完整的 lib/ 分层树
-(`app/` 装配 · `core/` 跨域基础 · `data/` 数据组合根 · `services/` 领域服务消费层 ·
-`features/` 26 个页面域的固定内聚结构)、三条适配轴的归宿(9 设计语言→live_uikit 注册表、
-三形态→LiveEnvironment 分支、多语言→lib/l10n)、域清单与路由表、命名/l10n/图标/codegen
-约定、以及现状文件到目标归宿的迁移映射。本节只留骨架与不变量:
+目录架构的**权威设计**在 `docs/app-directory-architecture.md`(已与 riverpod-state、
+design_guide、pure_live_architecture 三份项目文档对齐):feature 内
+presentation/application/data 三层、`app/` 装配层(bootstrap/router/shell/theme/engine/
+windows)、`app_providers.dart` 唯一全局 provider 文件、AppShell 只换 chrome、能力=标记
+接口+`is` 探测。本节只留骨架与不变量:
 
 ```text
 lib/
 ├── main.dart               # 进程入口:LaunchArgs → boot → runApp ✅
-├── l10n/                   # slang 翻译源 + 生成 ⬜
+├── l10n/                   # slang 翻译源(中英双语,3.x 基线)⬜
 ├── core/                   # errors ✅ formatters ✅ icons/ extensions/ widgets/ ⬜
-├── app/                    # app/router/ providers/ shell/ theme/ windows/ + adapters/delegates ✅(部分已就位)
-├── data/                   # app_services + platform/ paths/ preferences/ downloads/ ⬜(接线中)
-├── services/               # sites/ playback/ interaction/ recording/ intake/ updater/ ⬜ 随功能波次
-└── features/               # home/follow/history/settings(索引+外观)✅;其余 21 域随波次
+├── app/                    # app.dart ✅ bootstrap/ engine/ router/ shell/ theme/ windows/ ⬜ 接线中
+│                           # app_providers.dart adapters.dart delegates.dart diagnostics.dart
+└── features/               # 域内 presentation/application/data(小域可平铺)
+                            # home/follow/history/settings(索引+外观)✅;其余随波次
 ```
 
 - **导航:** go_router 18 typed routes(`@TypedStatefulShellRoute`,branch=首页/关注/历史;
   其余页面壳外全页)。返回键语义已定案:返回=返回上级,PiP 仅按钮开。
-- **形态:** `LiveLayoutBuilder(isTv:)` 驱动 desktop(左 rail)/touch(底部栏)/TV 三壳;
-  TV 由构建期 `--dart-define=PURE_LIVE_TV=true` 声明,与 `live_platform` 的 FormFactor 声明
-  **必须同源**(单一常量)。房间页三栏(phone/portraitPanel/wide)属于房间页波次,在
-  feature 内部分支,不建顶层形态目录。
-- **状态:** Riverpod 3(codegen 就绪);全局 provider 按 `app/providers/<域>_provider.dart` 拆分。
+- **形态:** AppShell 只换 chrome(mobile 底栏/desktop rail/tv 顶部焦点行),页面三形态同一
+  实例;TV 由构建期 `--dart-define=PURE_LIVE_TV=true` 声明(永不从 isAndroid 猜),与
+  `live_platform` FormFactor 同源;**TV 恒 Material**(其他语言焦点模型不符合遥控器预期),
+  TV 的 `focus/`+`input/` 基建属于 live_uikit(设计指南标注待补)。
+- **状态:** Riverpod 3 生成式 Provider;服务图长生命周期由组合根持有,Provider 只编排不
+  持有协议逻辑;主题/偏好变化只重建派生 Provider,绝不重建播放会话或弹幕连接。
 
 ## 4. 功能域对照(原应用 → v2 承接与状态)
 
@@ -178,14 +179,17 @@ lib/
 
 ## 5. 关键流程(目标形态)
 
-1. **启动装配:** `main` → DesktopBootstrap(单实例)→ `AppServices.boot`(StorageBootstrap →
-   preferences)→ `PlatformBootstrap.init`(平台事实 + 发行类型,claimDirectory=可写元数据区)
-   → `PathProviderBootstrap.init`(目录解析)→ ProviderScope → 路由壳。原应用 AppServices 的
-   聚合模式照搬,名字对齐 v2 包。
-2. **进房播放:** 路由 `/room/:site/:roomId` → RoomController(live_sites detail)→
-   `PlaybackService.enter`(选清晰度/线路 → PlayerHandle → 失败阶梯)∥
-   `InteractionSession.open`(站点弹幕 provider → websocket 传输 → 过滤链)→ 三分支布局。
-   弹幕面板四 Tab、录制按钮、清晰度选择器(`LiveSelect`)为房间页一等件。
+1. **启动装配(顺序即语义,设计指南 §1.5):** `main` → LaunchArgs → **平台事实**
+   (`PlatformBootstrap.init`,发行类型在此解析)→ **日志**(先于网络,故障才有地方落)→
+   **存储**(StorageBootstrap)→ **偏好** → **路径**(PathProviderBootstrap)→ **内容库**
+   (library/iptv)→ **网络**(LiveHttp)→ **站点注册表**(33+ 站 + IPTV 平等接入;
+   `app/engine/` 绑定 media_core 的 PlaybackEngine 与弹幕工厂)→ ProviderScope → AppShell →
+   路由。无全局单例,服务图由组合根显式下传;退出逆序 shutdown,落盘在进程退出前完成。
+2. **进房播放:** 路由进 RoomPage → `PlaybackSession.start()` 相位机(resolving→opening→
+   playing;失败 `_classify` 后走恢复阶梯:同线重开→同画质下一条线→下一条画质→强制重解析→
+   放弃;`isRetryable==false` 直接跳阶梯;租约到期=一次恢复)∥
+   `site is LiveDanmakuCapability → InteractionSession`(多源合并/去重门/过滤链)。软变更
+   (切主题/画质热切)只重建派生状态,会话与弹幕连接不重建。
 3. **录制:** 房间页录制面板 → `RecordOrchestrator.watch(target)`;capture seam 复用播放解析,
    files seam 用 StorageArea.exports/downloads,notices 接托盘;`restore()` 在启动时收尾上次任务。
 4. **下载/更新:** 一律先问目录——`PathPrivacy.isPrivate` 为真的默认目录必须提示用户改选;
@@ -213,6 +217,20 @@ lib/
 4. **录制波:** 五 seam 实现 + 录制中心/设置页。
 5. **IPTV 波、多画面波。**
 6. **壳完善波:** 多窗口/托盘/小窗/链接接管/工具箱/更新下载。
-7. **决策项(需用户拍板):** 本地互动、DLNA、live_vod/音乐、3.x 迁移、WebDAV/局域网同步是否进 v2 及其顺位。
+7. **TV 波:** live_uikit `focus/`+`input/` 基建贯通列表/控制栏/软键盘(设计指南第五部分
+   明确待补);审查 `F:\pure_live_TV\pure_live_TV` 提取成熟交互,不整包改写。
 
-> 维护约定:各域动工前先回本文勾状态;站点进度只更新台账不重复记 here。
+## 8. 文档勘误与取舍(防止旧文档误导)
+
+阅读 docs 全量后确认的"文档说 X、现实已演进为 Y"清单,以现实为准并在此记录:
+
+| 旧文档说法 | 现行裁决 | 依据 |
+|---|---|---|
+| storage-architecture(Proposed)推荐 Drift+SQLite | **存储引擎已定案 Hive CE**(`live_storage`),不再翻案;该文档的数据分类/所有权/错误模型/清理策略等**原则**仍然有效 | ADR + 用户多轮推翻 |
+| packages-migration 的 25 包细分(regional 站点包、live_danmaku_*、live_media_*、live_store_* 五拆、live_state) | **未按此拆分**:单 live_sites + live_interaction/live_websocket/live_playback/live_storage;live_state 被推翻(状态直接用 Riverpod,用户数据进 app) | 后续用户决策 |
+| packages-migration 将 live_vod_bilibili/music 列入 P7 | **音乐/点播不进 v2 核心架构**(pure_live_architecture §1 定位),pure_music 另案 | 定位文档胜出 |
+| 六种设计语言含 Yaru;Wind 只作内部实现不设第七语言 | 现实 8 个适配器:material/cupertino/fluent/macos/neumorphic/glass/wind/forui(无 yaru;wind/glass/forui 已是独立语言) | 演进现状,uikit 家族文档为准 |
+| 生成物不入 git(ADR 0001、packages-migration §4.1) | 现行惯例**提交**生成文件(`.gitignore` 注释与 104 个在库 .g.dart);两处旧说法待用户定夺是否回改 | 仓库现状 |
+| `LiveUiControl`/Spec 契约与 design_guide §2.4 的 `LiveDesignLanguageComponents` 接口形态 | 以 live_uikit 现行契约为准(9 节目录见 `docs/architecture/live-uikit.md` 与各包 spec) | 现状 |
+
+> 维护约定:各域动工前先回本文勾状态;站点进度只更新台账不重复记 here;旧文档与本表冲突时,以本表与现实代码为准。
