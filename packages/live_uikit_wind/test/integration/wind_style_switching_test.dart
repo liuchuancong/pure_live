@@ -6,8 +6,8 @@ import 'package:live_uikit_wind/live_uikit_wind.dart';
 
 /// §16/§11 integration pass for `live_uikit_wind`.
 ///
-/// Wind renders five of the ten controls natively, so a switch is the moment the
-/// other five have to keep working through the shared token renderer — and the
+/// Wind renders six of the ten controls natively, so a switch is the moment the
+/// other four have to keep working through the shared token renderer — and the
 /// moment a caller-owned controller has to prove it survives the re-render. Both
 /// directions run against the production registry and resolver types.
 /// The downgrades this language is expected to report: every control the adapter
@@ -18,10 +18,9 @@ void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
     LiveUiControl.slider,
     LiveUiControl.segmented,
     LiveUiControl.progress,
-    LiveUiControl.select,
     LiveUiControl.tabBar,
   });
-  expect(sink, hasLength(5));
+  expect(sink, hasLength(4));
 }
 
 void main() {
@@ -37,6 +36,7 @@ void main() {
     LiveUiControl.textField,
     LiveUiControl.switchWidget,
     LiveUiControl.checkbox,
+    LiveUiControl.select,
   };
 
   Widget harness(UiConfig ui, Widget child, List<LiveUiDiagnostic> sink) => LiveConfigProvider(
@@ -79,6 +79,7 @@ void main() {
         LiveSwitch(value: true, onChanged: (_) {}),
         LiveSlider(value: 0.5, onChanged: (_) {}),
         const LiveProgress(value: 0.5),
+        LiveSelect<String>(items: const ['a'], itemLabel: (item) => item, value: 'a', onChanged: (_) {}),
       ],
     );
 
@@ -86,6 +87,7 @@ void main() {
     expect(find.byType(wind.WInput), findsOneWidget);
     expect(find.byType(wind.WCard), findsOneWidget);
     expect(find.byType(wind.WSwitch), findsOneWidget);
+    expect(find.byType(wind.WSelect<String>), findsOneWidget);
     expect(find.byType(TextField), findsNothing);
     // Slider and progress are not native to Wind: they render through the token
     // base, which is the declared, reported fallback — not a gap.
@@ -95,6 +97,7 @@ void main() {
     await tester.pumpWidget(harness(const UiConfig(), page(), diagnostics));
     expect(find.byType(wind.WInput), findsNothing);
     expect(find.byType(wind.WCard), findsNothing);
+    expect(find.byType(wind.WSelect<String>), findsNothing);
     expect(find.byType(TextField), findsOneWidget);
     expect(controller.text, 'typed before the switch');
     expect(
@@ -106,6 +109,7 @@ void main() {
     diagnostics.clear();
     await tester.pumpWidget(harness(const UiConfig(language: LiveDesignLanguage.wind), page(), diagnostics));
     expect(find.byType(wind.WInput), findsOneWidget);
+    expect(find.byType(wind.WSelect<String>), findsOneWidget);
     expect(controller.text, 'typed before the switch');
     expectUndeclaredControls(diagnostics);
   });

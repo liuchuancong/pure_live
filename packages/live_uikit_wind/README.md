@@ -16,7 +16,8 @@ controls drawn by `fluttersdk_wind`, without business pages importing it.
 - Implement `LanguageAdapter` for `LiveDesignLanguage.wind` (stable id `wind`).
 - Map the resolved `DesignToken` into the Wind theme and install it through a
   theme scope (never a nested application shell).
-- Build native Wind widgets for: **button, card, text field, switch, checkbox**.
+- Build native Wind widgets for: **button, card, text field, switch, checkbox,
+  select**.
 - Declare exactly those controls in `windUiCapabilities` so the core resolver
   reports a `controlUnsupported` downgrade for the rest (§16/§17).
 
@@ -27,7 +28,7 @@ controls drawn by `fluttersdk_wind`, without business pages importing it.
 - State management (Riverpod/GetX), navigation, business pages, or playback.
 - Direct dependencies on other style adapters.
 
-Controls not built here (slider, segmented, progress, select,
+Controls not built here (slider, segmented, progress,
 tab bar) fall back to the core shared token renderer — they still render
 on-theme.
 
@@ -72,8 +73,8 @@ core resolver's native-versus-`controlUnsupported` dispatch (§16/§17).
 
 ## Known limitations
 
-- Only button, card, text field, switch and checkbox are native; slider, segmented,
-  progress, select and tab bar use the shared renderer.
+- Only button, card, text field, switch, checkbox and select are native; slider,
+  segmented, progress and tab bar use the shared renderer.
 - Test coverage is present at four layers: `test/adapter/` (contract and
   resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
   `test/widgets/` (every native control driven through the real dispatch path), and

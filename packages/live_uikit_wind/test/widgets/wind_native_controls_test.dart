@@ -237,6 +237,49 @@ void main() {
     });
   });
 
+  group('select (§9)', () {
+    testWidgets('the typed items, value and placeholder reach the fork', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          LiveSelect<String>(
+            items: const ['a', 'b'],
+            itemLabel: (item) => item.toUpperCase(),
+            value: 'a',
+            placeholder: 'Pick one',
+            onChanged: (_) {},
+          ),
+        ),
+      );
+      final select = tester.widget<wind.WSelect<String>>(find.byType(wind.WSelect<String>));
+      expect(select.value, 'a');
+      expect([for (final option in select.options) (option.value, option.label)], [('a', 'A'), ('b', 'B')]);
+      expect(select.placeholder, 'Pick one');
+      expect(select.disabled, isFalse);
+      expect(select.onChange, isNotNull);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a null callback or enabled: false disables the fork', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          Column(
+            children: [
+              LiveSelect<int>(items: const [1], itemLabel: (i) => '$i', value: 1, onChanged: null),
+              LiveSelect<int>(items: const [2], itemLabel: (i) => '$i', value: 2, enabled: false, onChanged: (_) {}),
+            ],
+          ),
+        ),
+      );
+      final selects = tester.widgetList<wind.WSelect<int>>(find.byType(wind.WSelect<int>)).toList();
+      expect(selects, hasLength(2));
+      for (final select in selects) {
+        expect(select.disabled, isTrue, reason: 'a dead select must not open');
+        expect(select.onChange, isNull);
+      }
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('shared fallback (§15.3)', () {
     testWidgets('a control the adapter does not override still renders', (tester) async {
       await tester.pumpWidget(harness(LiveSlider(value: 0.5, onChanged: (_) {})));

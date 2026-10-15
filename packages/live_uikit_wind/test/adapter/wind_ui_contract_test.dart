@@ -17,14 +17,9 @@ void main() {
     LiveUiControl.textField,
     LiveUiControl.switchWidget,
     LiveUiControl.checkbox,
-  };
-  const fallback = {
-    LiveUiControl.slider,
-    LiveUiControl.segmented,
-    LiveUiControl.progress,
     LiveUiControl.select,
-    LiveUiControl.tabBar,
   };
+  const fallback = {LiveUiControl.slider, LiveUiControl.segmented, LiveUiControl.progress, LiveUiControl.tabBar};
 
   group('Wind adapter contract (§7)', () {
     test('exposes a stable id, display name and language', () {

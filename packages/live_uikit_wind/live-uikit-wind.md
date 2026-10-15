@@ -15,7 +15,7 @@ It translates the contracts defined by `live_uikit` into native `fluttersdk_wind
 
 Wind is a Windows-flavoured, Fluent-like style kit. It is a **distinct library from `fluent_ui`** and is served by a **distinct adapter package** (`live_uikit_wind`, not `live_uikit_fluent`); the two packages do not depend on each other and do not share mappings. Where this document overlaps concerns covered in depth for Fluent, it cross-references `live-uikit-fluent.md` rather than repeating them.
 
-**Scope today.** Wind renders **button, card, text field, switch, and checkbox** natively — five of the ten contract controls. Every other control still resolves correctly, but through the core shared token renderer rather than a `fluttersdk_wind` widget. See §7 and §18.
+**Scope today.** Wind renders **button, card, text field, switch, checkbox, and select** natively — six of the ten contract controls. Every other control still resolves correctly, but through the core shared token renderer rather than a `fluttersdk_wind` widget. See §7 and §18.
 
 The package follows this dependency direction:
 
@@ -41,7 +41,7 @@ The application composition root registers this adapter. Business packages depen
 3. **No business logic.** The adapter must not manage accounts, playback sessions, routing, plugin execution, or application settings persistence.
 4. **No hidden state ownership.** Form values, loading state, validation, and business state remain controlled by the calling widget or application. The Wind switch and checkbox builders are fully controlled — value, callback, and disabled flag pass straight through the spec.
 5. **Runtime switching is supported.** Switching between Wind and any other style must not require business pages to import or construct different control classes.
-6. **Honest capabilities.** `windUiCapabilities` declares exactly the five controls `WindLanguageAdapter` overrides. The remaining five are *reported* as shared fallbacks by the resolver, not silently degraded.
+6. **Honest capabilities.** `windUiCapabilities` declares exactly the six controls `WindLanguageAdapter` overrides. The remaining four are *reported* as shared fallbacks by the resolver, not silently degraded.
 7. **Platform-aware behavior.** Wind appearance can be selected on any supported platform, but native Windows system integrations must not be assumed on every platform.
 8. **Graceful fallback.** Unsupported controls follow the fallback policy defined by `live_uikit` and surface a `controlUnsupported` diagnostic; they never change behavior in silence.
 
@@ -50,7 +50,7 @@ The application composition root registers this adapter. Business packages depen
 ### 3.1 What this package owns
 
 - Wind theme mapping (`DesignToken` → `WindThemeData`, installed through a Wind theme scope).
-- Wind widget construction for the five controls it maps natively: button, card, text field, switch, checkbox.
+- Wind widget construction for the six controls it maps natively: button, card, text field, switch, checkbox, select.
 - Wind-specific control defaults for those controls.
 - Reporting the accurate, minimal capability set to the core registry.
 - Adapter-level contract tests and capability-sync checks.
@@ -110,7 +110,8 @@ packages/
     │           ├── wind_card_builder.dart
     │           ├── wind_text_field_builder.dart
     │           ├── wind_switch_builder.dart
-    │           └── wind_checkbox_builder.dart
+    │           ├── wind_checkbox_builder.dart
+    │           └── wind_select_builder.dart
     ├── test/
     │   ├── adapter/
     │   │   └── wind_ui_contract_test.dart
@@ -249,10 +250,12 @@ class WindLanguageAdapter extends SharedLanguageAdapter {
   Widget switchWidget(BuildContext context, LanguageSwitchSpec spec) => WindSwitchBuilder.build(context, spec);
   @override
   Widget checkbox(BuildContext context, LanguageCheckboxSpec spec) => WindCheckboxBuilder.build(context, spec, this);
+  @override
+  Widget select<T>(BuildContext context, LanguageSelectSpec<T> spec) => WindSelectBuilder.build<T>(context, spec);
 }
 ```
 
-`slider`, `segmented`, `progress`, `select`, and `tabBar` are **not** overridden — they inherit the shared token renderer.
+`slider`, `segmented`, `progress`, and `tabBar` are **not** overridden — they inherit the shared token renderer.
 
 ### Adapter identifier
 
@@ -290,10 +293,10 @@ The full capability surface, mapped to the ten `LiveUiControl` values the resolv
 | `slider` | Core shared token renderer | `shared` |
 | `segmented` | Core shared token renderer | `shared` |
 | `progress` | Core shared token renderer | `shared` |
-| `select` | Core shared token renderer | `shared` |
+| `select` | Native `wind.WSelect<T>` | `adapterNative` |
 | `tabBar` | Core shared token renderer | `shared` |
 
-Five Native, five Shared fallback. A declared control resolves to `adapterNative` with **no** diagnostic; an undeclared control resolves to `shared` and the resolver emits a `controlUnsupported` diagnostic (§15). The `wind_ui_contract_test.dart` asserts that the capability set lists exactly the overrides and that the fallback controls report `controlUnsupported`, so drift between declaration and implementation is caught before it ships (§17).
+Six Native, four Shared fallback. A declared control resolves to `adapterNative` with **no** diagnostic; an undeclared control resolves to `shared` and the resolver emits a `controlUnsupported` diagnostic (§15). The `wind_ui_contract_test.dart` asserts that the capability set lists exactly the overrides and that the fallback controls report `controlUnsupported`, so drift between declaration and implementation is caught before it ships (§17).
 
 ## 8. Theme mapping
 
@@ -415,9 +418,16 @@ Each native builder converts a core `Language*Spec` into a `fluttersdk_wind` wid
 - Builds a `wind.WCheckbox(value:, onChanged:, disabled:)` and wraps it through `SharedLanguageAdapter.labelled(context, spec.label, control)` so the optional trailing label renders consistently.
 - Preserves the checked/unchecked value, the disabled flag, and the callback semantics: the label is rendered beside the box but is not itself a hit target.
 
-### Slider, segmented, progress, select, tab bar
+### Select (`WindSelectBuilder.build`)
 
-These are **not** native yet. They resolve through the inherited `SharedLanguageAdapter` methods (`TokenSlider`, `TokenSegmented`, `TokenProgress`, `TokenSelect`, `TokenTabs`) and report `controlUnsupported` (§15). They stay on-theme because they read the same `DesignToken` the Wind scope installs — the Wind look is carried by the token, even before a `fluttersdk_wind` widget stands behind each control. Promoting them to native builders is the expansion path in §18.
+- Builds a `wind.WSelect<T>` from the typed spec: each `spec.items` entry becomes one `wind.SelectOption<T>` whose label is `spec.itemLabel(item)`, and `WSelect` hands the chosen value back unchanged, so the caller's own item type survives the swap — the same property `live-uikit-fluent.md` §7 records for Fluent's `ComboBox<T>`. Wind is the second adapter in the family to render `select` natively.
+- A null `onChanged` or `enabled: false` sets the fork's `disabled` flag and passes no `onChange`, so the trigger greys out and the menu never opens, rather than staying openable but reporting nothing.
+- `placeholder` maps to the fork's own trigger text; the spec has no search, pagination, tagging, or multi-select fields, so none of those is enabled.
+- The trigger and menu keep the fork's `className` styling: `WSelect` has no slot for the resolved `Style` or a token border on the overlay it mounts, and painting one over the fork's surface is the overlay §8.1 rules out (recorded as a documented remainder, like `selected`/`style` on the button above).
+
+### Slider, segmented, progress, tab bar
+
+These are **not** native. They resolve through the inherited `SharedLanguageAdapter` methods (`TokenSlider`, `TokenSegmented`, `TokenProgress`, `TokenTabs`) and report `controlUnsupported` (§15). They stay on-theme because they read the same `DesignToken` the Wind scope installs — the Wind look is carried by the token, even before a `fluttersdk_wind` widget stands behind each control. The library offers no slider, no progress bar, and no bare tab strip (`WTabs` couples the tab row to a content panel `LanguageTabsSpec` does not carry), so their promotion stays gated on the fork actually offering a control for the job (§18).
 
 ## 10. Runtime registration
 
@@ -488,13 +498,13 @@ Selected adapter
       +---- Shared token renderer (any control an adapter does not override)
 ```
 
-Switching from Wind to another style changes rendering and interaction presentation only. It must not replace business controllers, reset form values, or recreate unrelated services. Because Wind overrides five of the ten controls, switching *into* Wind keeps slider, segmented, progress, select and tabs rendering via the shared token renderer — the visible style shift is concentrated in buttons, cards, text fields, switches, and checkboxes. The caller-owned `TextEditingController` is the state that must survive the shift untouched (§9).
+Switching from Wind to another style changes rendering and interaction presentation only. It must not replace business controllers, reset form values, or recreate unrelated services. Because Wind overrides six of the ten controls, switching *into* Wind keeps slider, segmented, progress and tabs rendering via the shared token renderer — the visible style shift is concentrated in buttons, cards, text fields, switches, checkboxes, and the select trigger. The caller-owned `TextEditingController` and the caller-owned select value are the state that must survive the shift untouched (§9).
 
 ## 12. Keyboard, focus, and TV support
 
 PureLive targets desktop and Android TV as well as mobile, so the Wind adapter must be tested for more than mouse input.
 
-Wind is Windows-flavoured, which makes keyboard-driven desktop the natural first-class context: Tab/shift-Tab traversal, visible focus indication, and Enter/Space activation should be verified against the native `WButton`/`WSwitch`/`WCheckbox`. Because `WindLanguageAdapter` inherits the shared token renderer for slider, segmented, progress, select and tabs, those inherit the core's focus behavior — the `Language*Spec` objects carry `focusNode` and `autofocus` (button, card, switch, checkbox, slider, text field all do), and the adapter forwards them on every control it maps natively where the fork accepts them.
+Wind is Windows-flavoured, which makes keyboard-driven desktop the natural first-class context: Tab/shift-Tab traversal, visible focus indication, and Enter/Space activation should be verified against the native `WButton`/`WSwitch`/`WCheckbox`. Because `WindLanguageAdapter` inherits the shared token renderer for slider, segmented, progress and tabs, those inherit the core's focus behavior — the `Language*Spec` objects carry `focusNode` and `autofocus` (button, card, switch, checkbox, slider, text field all do), and the adapter forwards them on every control it maps natively where the fork accepts them. `WSelect` creates and tracks its own focus node internally and the select spec carries no `focusNode` field, so keyboard activation stays entirely the fork's (§9).
 
 For Android TV and remote-control D-pad navigation, do not assume desktop keyboard behavior transfers automatically; test with the supported TV input devices and rely on the core interaction policy to fill gaps. The deep Fluent-specific focus and reveal behaviors are documented in `live-uikit-fluent.md` and are not repeated here — Wind and Fluent are separate libraries with separate focus theming, so each adapter's focus guarantees must be verified independently.
 
@@ -543,7 +553,7 @@ The codes relevant to Wind:
 
 | Code | When Wind hits it |
 |---|---|
-| `controlUnsupported` | A request for any of slider, segmented, progress, select, tabBar — expected, not silent degrade |
+| `controlUnsupported` | A request for any of slider, segmented, progress, tabBar — expected, not silent degrade |
 | `adapterMissing` | Wind was selected but not registered — every control resolves to shared |
 | `defaultAdapterMissing` | The shared fallback itself is unavailable — startup fault |
 | `unsupportedEffect` | The environment cannot afford a Wind visual effect; a verified degraded visual stands in |
@@ -561,8 +571,8 @@ Expected behavior:
 ### Unit / contract tests (`test/adapter/wind_ui_contract_test.dart`)
 
 - Stable id (`wind`), display name (`Wind`), and language (`LiveDesignLanguage.wind`).
-- The capability set lists exactly the five controls the adapter overrides — `{button,
-  card, textField, switchWidget, checkbox}` — and the other five are `false`; the same
+- The capability set lists exactly the six controls the adapter overrides — `{button,
+  card, textField, switchWidget, checkbox, select}` — and the other four are `false`; the same
   comparison is enforced by `tool/check_architecture.ps1` (§17), so the declaration and
   the overrides cannot drift apart silently.
 - Through `LiveUiResolver` over a `LanguageRegistry`: a registered Wind resolves `adapterNative`; a declared control resolves native with no diagnostic; an undeclared control resolves `shared` and reports `controlUnsupported`.
@@ -582,6 +592,9 @@ Expected behavior:
   the line count collapsing into the fork's single `InputType`, `errorText` marking the
   fork error state, `enabled: false` reaching the fork.
 - Switch and checkbox: rendering through the adapter and reporting the next value.
+- Select: the typed items, `value` and `placeholder` reaching `WSelect<T>` as `SelectOption`s,
+  and a null callback or `enabled: false` setting the fork's `disabled` flag with no `onChange`,
+  so a dead select cannot open.
 - A control the adapter does not override still renders through the shared fallback.
 
 Not yet covered: keyboard and remote activation, accessibility semantics, and layout under
@@ -589,9 +602,9 @@ narrow versus wide constraints — the §19 line that still asks for hardware.
 
 ### Integration tests (`test/integration/wind_style_switching_test.dart`)
 
-- Every `LiveUiControl` resolves as declared: five `adapterNative` (button, card, text field, switch, checkbox), five `shared` with `controlUnsupported`.
-- A mixed subtree renders `wind.WInput`/`WCard`/`WSwitch` natively beside the token slider and progress; Wind → core `material` → Wind replaces the path with the caller's `TextEditingController` text intact.
-- `adapterMissing` is reported only for the core base; while Wind is active the sink sees exactly the five undeclared controls' `controlUnsupported` entries (§15.5).
+- Every `LiveUiControl` resolves as declared: six `adapterNative` (button, card, text field, switch, checkbox, select), four `shared` with `controlUnsupported`.
+- A mixed subtree renders `wind.WInput`/`WCard`/`WSwitch`/`WSelect` natively beside the token slider and progress; Wind → core `material` → Wind replaces the path with the caller's `TextEditingController` text and select value intact.
+- `adapterMissing` is reported only for the core base; while Wind is active the sink sees exactly the four undeclared controls' `controlUnsupported` entries (§15.5).
 
 A cross-adapter switch (this language against Fluent, Glass, …) is deliberately **not** tested from this package: §3.3 forbids depending on another style adapter, so that case belongs to the application integration suite. Brightness/accent re-skin is asserted in `test/theme/`.
 
@@ -632,7 +645,7 @@ flutter test packages/live_uikit_wind
 
 ## 18. Implementation phases
 
-Wind ships with five native controls and a token-driven theme bridge. The phases below first hardened that foundation, then widened the native surface so the shared-fallback count drops control by control.
+Wind ships with six native controls and a token-driven theme bridge. The phases below first hardened that foundation, then widened the native surface so the shared-fallback count drops control by control.
 
 ### Phase 1 — Contracts and registration ✅
 
@@ -659,10 +672,11 @@ Wind ships with five native controls and a token-driven theme bridge. The phases
 - Both are declared in `windUiCapabilities`, and `wind_ui_contract_test.dart` moved them from the `fallback` set to the `native` set in the same change (§17 drift gate).
 - The card takes its surface from the token because `WCard` paints none; the field collapses `obscure`/`keyboardType`/`maxLines` into the fork's single `InputType` and draws `errorText` the way the token renderer does (§9).
 
-### Phase 5 — Remaining controls
+### Phase 5 — Remaining controls ◐
 
-- Add `WindSliderBuilder`, `WindSegmentedBuilder`, `WindProgressBuilder`, then `select` and `tabBar` — only where `fluttersdk_wind` actually offers a control for the job.
-- Update `windUiCapabilities` and the contract test's `native`/`fallback` sets in lockstep for each.
+- `WindSelectBuilder` added, overriding `select` with `wind.WSelect<T>` (§9): the typed items map to `SelectOption`s, a null/disabled spec disables the fork, and the contract test's `native`/`fallback` sets moved `select` in the same change (§17 drift gate). Wind is now six-of-ten native.
+- Slider, segmented, progress and tab bar stay shared: `fluttersdk_wind` offers no `WSlider`, `WProgress`, or bare tab strip (`WTabs` couples the row to a content panel `LanguageTabsSpec` does not carry), so a native builder is gated on the library first providing a control for the job rather than hand-wrapping an ill-fitting one (§9).
+- Each future promotion updates `windUiCapabilities` and the contract test's `native`/`fallback` sets in lockstep.
 
 ### Phase 6 — Interaction, icons, and accessibility
 
@@ -682,8 +696,8 @@ Wind ships with five native controls and a token-driven theme bridge. The phases
 - [x] The package depends on `live_uikit` and `fluttersdk_wind` only for its core integration.
 - [x] It extends `SharedLanguageAdapter` and implements the actual `LanguageAdapter` contract.
 - [x] It uses the stable adapter id `wind` (with `windUiAdapterId`, `windUiAdapter`, `createWindUiAdapter()`).
-- [x] `windUiCapabilities` declares exactly the five controls the adapter overrides (`button`, `card`, `textField`, `switchWidget`, `checkbox`) as native.
-- [x] The other five controls resolve through the shared token renderer and report `controlUnsupported`.
+- [x] `windUiCapabilities` declares exactly the six controls the adapter overrides (`button`, `card`, `textField`, `switchWidget`, `checkbox`, `select`) as native.
+- [x] The other four controls resolve through the shared token renderer and report `controlUnsupported`.
 - [x] The barrel exports only the registration API; no builders, mappers, or `fluttersdk_wind` types leak (§17 guards this in CI).
 - [x] It maps the resolved `DesignToken` into `WindThemeData` and installs a Wind theme scope — brightness with `syncWithSystem` off, the accent as Wind's `primary` swatch, and a configured global family in `fontFamilies['sans']` (§8.1).
 - [x] It adds no localization delegates and relies on core localization.
@@ -702,7 +716,7 @@ Wind ships with five native controls and a token-driven theme bridge. The phases
 `live_uikit_wind` is an adapter package, not a second UI framework.
 
 - `live_uikit` defines the contracts, public controls, the `DesignToken` theme model, runtime selection (`LiveUiResolver` + `LanguageRegistry`), the capability model, and the fallback/diagnostic policy.
-- `live_uikit_wind` maps those contracts to `fluttersdk_wind`, today for five native controls.
+- `live_uikit_wind` maps those contracts to `fluttersdk_wind`, today for six native controls.
 - `fluttersdk_wind` supplies the underlying Wind widgets and theme facilities.
 - The PureLive application composition root registers adapters and manages user preferences.
 - Business packages depend only on the unified `live_uikit` API.

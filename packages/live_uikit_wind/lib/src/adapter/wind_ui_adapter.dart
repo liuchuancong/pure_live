@@ -5,16 +5,17 @@ import 'package:live_uikit_wind/src/theme/wind_theme_mapper.dart';
 import 'package:live_uikit_wind/src/widgets/wind_button_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_card_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_checkbox_builder.dart';
+import 'package:live_uikit_wind/src/widgets/wind_select_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_switch_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_text_field_builder.dart';
 
 /// Wind — the `fluttersdk_wind` design-language adapter (§1).
 ///
 /// Implements the core contract for [LiveDesignLanguage.wind]: theme mapping
-/// delegates to `theme/`, the five native controls (button, card, text field,
-/// switch, checkbox) to their `widgets/` builders, and the declared
+/// delegates to `theme/`, the six native controls (button, card, text field,
+/// switch, checkbox, select) to their `widgets/` builders, and the declared
 /// [capabilities] to `wind_ui_capabilities.dart`. Every other control — slider,
-/// segmented, progress, select, tab bar — falls back to the shared token
+/// segmented, progress, tab bar — falls back to the shared token
 /// renderer and is reported by the resolver as `controlUnsupported` (§7/§15).
 /// No business state here.
 class WindLanguageAdapter extends SharedLanguageAdapter {
@@ -52,4 +53,7 @@ class WindLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget checkbox(BuildContext context, LanguageCheckboxSpec spec) => WindCheckboxBuilder.build(context, spec, this);
+
+  @override
+  Widget select<T>(BuildContext context, LanguageSelectSpec<T> spec) => WindSelectBuilder.build<T>(context, spec);
 }

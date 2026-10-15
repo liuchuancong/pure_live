@@ -9,4 +9,5 @@ const LiveUiCapabilities windUiCapabilities = LiveUiCapabilities(<LiveUiControl>
   LiveUiControl.textField,
   LiveUiControl.switchWidget,
   LiveUiControl.checkbox,
+  LiveUiControl.select,
 });
