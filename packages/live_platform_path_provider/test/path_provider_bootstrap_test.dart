@@ -69,7 +69,7 @@ void main() {
     expect((await runtime.storage.resolve(StorageArea.config)).path, '${root.path}/app/config');
 
     final downloads = await runtime.storage.resolve(StorageArea.downloads);
-    expect(downloads.path, '${root.path}/downloads', reason: 'the user choice still wins');
+    expect(downloads.path, '${root.path}/app/downloads', reason: 'the bundle carries its downloads');
   });
 
   test('a desktop resolution is never flagged private', () async {

@@ -23,7 +23,7 @@ abstract interface class StoragePolicy {
 /// layouts put the per-area trees (`data/`, `cache/`, …); `userRoot` the OS
 /// application-support directory, `cacheRoot` the OS cache directory,
 /// `tempRoot` the system temporary directory, `downloadsRoot` the
-/// user-visible download target (the user's own setting when one exists).
+/// user-visible OS download folder.
 ///
 /// The one hard rule: a portable build never resolves a persistent area
 /// into `userRoot`/`cacheRoot` — user data follows the executable, which is
@@ -48,22 +48,27 @@ final class DefaultStoragePolicy implements StoragePolicy {
   /// The system temporary directory (installed builds only).
   final Directory? tempRoot;
 
-  /// The user-visible download target: the user's own setting when one
-  /// exists, the OS download directory otherwise. A chosen directory comes
-  /// before every deployment default.
+  /// The user-visible OS download folder. For an installed or packaged
+  /// build it is the first download target; a portable build keeps its
+  /// downloads in its own tree and falls back to this folder when that
+  /// tree cannot host them (a read-only medium).
   final Directory? downloadsRoot;
 
   @override
   List<Directory> candidatesFor(StorageArea area, PlatformRuntimeInfo runtime) {
     final portable = runtime.isPortable;
     if (area == StorageArea.downloads) {
-      final Directory? deploymentDefault;
-      if (portable) {
-        deploymentDefault = portableRoot == null ? null : Directory('${portableRoot!.path}/downloads');
-      } else {
-        deploymentDefault = userRoot == null ? null : Directory('${userRoot!.path}/downloads');
-      }
-      return [?downloadsRoot, ?deploymentDefault];
+      // A portable build keeps its downloads in the bundle — the medium is
+      // the point — and degrades to the user-visible OS folder only when the
+      // bundle's tree cannot host them. An installed or packaged build never
+      // writes next to its executable (Program Files, the MSIX WindowsApps
+      // root), so there the OS download folder stays first and the user's
+      // application-data tree is the last resort.
+      final bundleTree = portable
+          ? (portableRoot == null ? null : Directory('${portableRoot!.path}/downloads'))
+          : null;
+      final osTree = portable || userRoot == null ? null : Directory('${userRoot!.path}/downloads');
+      return portable ? [?bundleTree, ?downloadsRoot] : [?downloadsRoot, ?osTree];
     }
     final persistent = switch (area) {
       StorageArea.data ||

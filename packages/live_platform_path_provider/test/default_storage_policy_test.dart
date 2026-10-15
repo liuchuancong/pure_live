@@ -90,12 +90,12 @@ void main() {
     ]);
   });
 
-  test('the user download choice always comes first', () {
+  test('a portable build keeps its downloads in the bundle, the OS folder second', () {
     final policy = DefaultStoragePolicy(portableRoot: exeRoot, userRoot: userRoot, downloadsRoot: downloadsRoot);
 
     expect(paths(policy.candidatesFor(StorageArea.downloads, snapshot(portable: true))), [
-      downloadsRoot.path,
       '${exeRoot.path}/downloads',
+      downloadsRoot.path,
     ]);
     expect(paths(policy.candidatesFor(StorageArea.downloads, snapshot(portable: false))), [
       downloadsRoot.path,
