@@ -26,6 +26,7 @@ final class AppServices {
       adapterRegistry: StorageAdapterRegistry(),
     );
     await bootstrap.initialize();
+    await StoragePrefs.init();
 
     final box = await StorageBoxManager().keyed<Map<dynamic, dynamic>>(PreferencesKeys.box);
     final preferences = PreferencesService(store: HiveStorageRepository<Map<dynamic, dynamic>>(box: box));
@@ -37,6 +38,7 @@ final class AppServices {
   /// Flushes pending writes and closes storage, for tear-down.
   Future<void> dispose() async {
     await preferences.dispose();
+    await StoragePrefs.flush();
     await _bootstrap.shutdown();
   }
 }
