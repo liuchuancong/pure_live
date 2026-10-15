@@ -38,10 +38,11 @@
 | kilakila 克拉克拉 | ✅ | 见下方"kilakila 明细";已注册进 `built_in_sites` |
 | kugoulive 酷狗直播 | ✅ | 见下方"kugoulive 明细";已注册进 `built_in_sites` |
 | soop SOOP | ✅ | 见下方"soop 明细";已注册进 `built_in_sites` |
+| missevan 猫耳FM | ✅ | 见下方"missevan 明细";已注册进 `built_in_sites` |
 | twitcasting ツイキャス | ✅ | 见下方"twitcasting 明细";已注册进 `built_in_sites` |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
-| missevan / pandalive / picarto / seventeenlive / showroom / sixroom / steambroadcast / yy | ⬜ | 其余含弹幕站;missevan(后台代理)与 looklive(后台代理)进行中 |
+| pandalive / picarto / seventeenlive / showroom / sixroom / steambroadcast / yy | ⬜ | 其余含弹幕站;pandalive/picarto/showroom 后台代理进行中 |
 | cc / inke / liveme / tiktok / xiaohongshu | ⬜ | 仅 `live_core` 有(纯目录/播放,无弹幕) |
 
 ## douyu 明细(2026-10-14)
@@ -240,6 +241,14 @@
 - 弹幕:eventpubsuburl 每次握手先 POST 换签名 WS URL、客户端不发帧(开箱即 join)、30s 看门狗、退避 1s 递增、8 次重连预算终止上报、失败文本去签名;comment/gift 解码(礼物后附 `<id>:words` 词行)。
 - **代理的适配与延后项(记档)**:①follow-card 刷新/getLiveStatus/录制 entry/播放恢复/CancellableSearch/getCategories 分页无 v2 面;②v2 LiveRequest 无 per-request followRedirects → 3xx→notFound 门保留但默认跟随的传输下未知频道落 twitter:creator 门(apiChanged);③v3 `TwitcastingGift.paid` 无 v2 字段丢弃;④restricted(room) 检查无 v2 入口;⑤会话无 join 预算/客户端心跳(faithful 参考);⑥快照分页 hasMore 为新造语义。
 - 验证:`dart analyze` No issues;`dart test test/platforms/twitcasting` **63 项全绿**。
+
+## missevan 明细(2026-10-15,后台代理接手补齐)
+整站从 `live_core/sites/missevan` + `live_danmaku/sites/missevan.dart` 迁到 `platforms/missevan/`(第一个代理写了大部分 lib 后被配额中断,第二个代理接手补齐 3 个缺文件并修绿,我审查后注册)。**无新依赖**(brotli 用 common/codec 的 es_compression 包装,FFI 在测试环境已实测可用)。
+- 能力七个全注册:room / area(meta/data 的 tabs 按 namespace catalog/list/tag 分组为三类,personal 路由剔除,坏 tab 单跳、无可用 tab apiChanged)/ discovery(推荐 open/list)/ search(chatroom/search;房间号直查、长关键词按 rune 截断、控制字符拒绝)/ playback / danmaku / link_resolver(fm.missevan.com/live/{id} 无请求规范化);`MissevanFailure → toLiveSiteError('missevan')`(code 500030004/HTTP404 → notFound;401/403 折 rateLimit;transient 仅 network/rateLimited)。
+- 数据面(匿名):`{code, info}` 信封 + 1 MiB 门;列表 echo 门(p/pagesize/maxpage/count 全对上,越界页必须空),推广行保位、目录去重,离线行不进目录;房间 = live/{id}(creator 合并头像/简介、attention_count 粉丝、status.open 1/0 严格、open_time 毫秒合理窗、占位灰猫封面留空、拉流地址必须 *.bilivideo.com 同类型且 ≤1 个十进制 expires,坏地址单条剔除、直播双无 → apiChanged;离线房旧地址忽略 REG-004);单画质 原画(qn=10000),FLV 主线 HLS 备线(存量 hls/flv id 归一),租约 = expires 提前 1 分钟,HLS 过期断流(requiresReconnect)。
+- 弹幕(13-2):guest session(/api/user/info 取 FM_SESS cookie,3 试可注入间隔,缓存复用)→ wss(join uuid 确认,重连带 reconnect:1,5s join 超时);心跳 30s 文本 ❤️(服务端回显)、静默 90s 换线;拒答 → 换新 session+socket(≤3 次)后终止;8 次重连预算;消息:brotli 帧(首字节 1,4 字节头)与明文 JSON 双路;chat/room statistics(真实收听数)/付费提问 superChat/message_clear 撤回/noble 贵族(开通/续费文案)/pk 与 global_pk 与 team_pk(中文文案表 + raid 进度)/gift(钻石折 gold、免费折 free,luckyGift 无 v2 字段丢弃记档,combo id/num)。
+- **代理的适配与延后项(记档)**:①握手 401/403 续期简化——SocketChannel 接缝看不到状态码,cookie 仅在 join 被拒时强制换新,socket 打开失败沿用缓存 cookie 走重连预算;②luckyGift 嵌套丢弃(v2 LiveGift 无字段);③session 重试间隔可注入(测试 Duration.zero)。
+- 验证:`dart analyze lib/src/platforms/missevan test/platforms/missevan` No issues;`dart test test/platforms/missevan` **69 项全绿**(信封门/目录/分页 echo/房间行/detail/拉流校验/租约/legacy id/链接矩阵/七能力接线;弹幕 endpoint/session/join/uuid、明文+真实 brotli 编码帧、负例 4 种、全部消息类型、会话生命周期)。
 
 ## 环境缺口
 无。此前 `packages/live_playback` 以 `path:` 依赖工作区外的 `D:\media_core` 导致整仓 `dart pub get` 解析失败、`dart test` 跑不起来;2026-10-14 已把 `media_core` / `media_core_danmaku` / `media_core_mediasession` 改为 pub git 源(`github.com/liuchuancong/media_core`),仓库根 `flutter pub get` 即可完整解析,交付门的 test 步骤不再需要人工补 media_core 或造桩。

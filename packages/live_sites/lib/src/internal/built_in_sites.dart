@@ -26,6 +26,8 @@ import 'package:live_sites/src/platforms/kuaishou/api/kuaishou_http.dart';
 import 'package:live_sites/src/platforms/kuaishou/kuaishou_site.dart';
 import 'package:live_sites/src/platforms/kugoulive/api/kugoulive_http.dart';
 import 'package:live_sites/src/platforms/kugoulive/kugoulive_site.dart';
+import 'package:live_sites/src/platforms/missevan/api/missevan_http.dart';
+import 'package:live_sites/src/platforms/missevan/missevan_site.dart';
 import 'package:live_sites/src/platforms/niconico/api/niconico_http.dart';
 import 'package:live_sites/src/platforms/niconico/niconico_site.dart';
 import 'package:live_sites/src/platforms/soop/api/soop_http.dart';
@@ -61,6 +63,7 @@ List<LiveSite> createBuiltInLiveSites({LiveHttp? http}) {
     JdliveSite(http: JdliveHttp(transport)),
     KilakilaSite(http: KilakilaHttp(transport)),
     KugouliveSite(http: KugouliveHttp(transport)),
+    MissevanSite(http: MissevanHttp(transport)),
     SoopSite(http: SoopHttp(transport)),
     TwitcastingSite(http: TwitcastingHttp(transport)),
   ];
