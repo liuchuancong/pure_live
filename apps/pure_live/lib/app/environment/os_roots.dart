@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:path_provider/path_provider.dart';
 
 /// The four operating-system directories the app's layout is built from.
@@ -41,11 +42,17 @@ final class OsRoots {
   /// "no such root" rather than a crash: the layout has a fallback for every
   /// area, and refusing to start over a missing download folder is worse than
   /// not offering one.
+  ///
+  /// A debug build roots its persistent and clearable trees one segment
+  /// deeper (`.../debug`): a `flutter run` must never read or write an
+  /// installed build's data, and nothing below this layer can tell the two
+  /// builds apart. The user's real download folder is deliberately not
+  /// remapped — it is the user's own folder, not the app's.
   static Future<OsRoots> measure() async {
     return OsRoots(
-      userRoot: await _nullOnFailure(getApplicationSupportDirectory),
-      cacheRoot: await _nullOnFailure(getApplicationCacheDirectory),
-      temporaryRoot: await _nullOnFailure(getTemporaryDirectory),
+      userRoot: (await _nullOnFailure(getApplicationSupportDirectory))?._debugSegment(),
+      cacheRoot: (await _nullOnFailure(getApplicationCacheDirectory))?._debugSegment(),
+      temporaryRoot: (await _nullOnFailure(getTemporaryDirectory))?._debugSegment(),
       downloadsRoot: await _nullOnFailure(getDownloadsDirectory),
     );
   }
@@ -56,5 +63,15 @@ final class OsRoots {
     } on Object {
       return null;
     }
+  }
+}
+
+/// The debug profile: one `debug` segment deeper, debug builds only.
+extension _DebugProfile on Directory {
+  Directory? _debugSegment() {
+    if (!kDebugMode) {
+      return this;
+    }
+    return Directory('$path/debug');
   }
 }
