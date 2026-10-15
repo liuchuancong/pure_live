@@ -951,6 +951,7 @@ void main() {
         'niconico',
         'jdlive',
         'kilakila',
+        'kugoulive',
       ]);
     });
 

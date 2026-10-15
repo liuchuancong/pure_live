@@ -722,6 +722,7 @@ https://other.example/1.m3u8
         'niconico',
         'jdlive',
         'kilakila',
+        'kugoulive',
       ]);
     });
 

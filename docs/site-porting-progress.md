@@ -36,9 +36,10 @@
 | fc2live FC2 Live | ✅ | 见下方"fc2live 明细";已注册进 `built_in_sites` |
 | jdlive 京东直播 | ✅ | 见下方"jdlive 明细";已注册进 `built_in_sites` |
 | kilakila 克拉克拉 | ✅ | 见下方"kilakila 明细";已注册进 `built_in_sites` |
+| kugoulive 酷狗直播 | ✅ | 见下方"kugoulive 明细";已注册进 `built_in_sites` |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
-| kugoulive / looklive / missevan / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / yy | ⬜ | 其余含弹幕站;**下一站候选 kugoulive**(按本行顺序) |
+| looklive / missevan / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / yy | ⬜ | 其余含弹幕站;**下一站候选 looklive**(soop/twitcasting 后台并行中) |
 | cc / inke / liveme / tiktok / xiaohongshu | ⬜ | 仅 `live_core` 有(纯目录/播放,无弹幕) |
 
 ## douyu 明细(2026-10-14)
@@ -211,6 +212,16 @@
 - **v2 形态适配(记档)**:①播放能力只收 roomId——`_streams[uid]` 缓存入场数据,无则自走一次入场(等效参考 recovery;有则零请求);②用户搜索页不报状态(LiveStatus.unknown)、hasMore 未知;③搜索无分页上万的页越界折 invalidArgument;④follow 刷新/`getLiveStatus` 独立入口无对应面(入场即含);⑤`followRedirects:false` 同各家记档。
 - **延后项(记档不假造)**:①`directoryNoticeKey` 目录范围说明、可取消搜索、CancelToken 透传——v2 无对应面;②`pushFlow` 推流地址(主播推流 key)参考即不读;③`rtmpPlayUrl`、点赞/进场/ rank 类事件(101/102/210/211/603/635/636/654/663)、`vip`/`m`/`g`/徽章、提问卡下播按钮——参考即不读/不显示;④历史回放(5966)不可播,落 streamUnavailable。
 - 验证:`dart analyze lib test` **No issues found**;`dart test` 整包 **759 项全绿**(kilakila 47:信封与状态门、时间线行过滤/去重/回显门、搜索页 HTML 提取与实体解码、profile/liveCard 路由键、getRoomInfo 码表、拉流地址与租约、房间映射、加密链接三种形态+双钥匙+篡改拒绝、Socket.IO/Engine.IO 帧派发、聊天/房态/礼物/提问解码、连击去重、会话 join/ping/静默/拒绝/预算、页序与空闲截止、能力接线与内置站点等值)。
+
+## kugoulive 明细(2026-10-15)
+整站从 `live_core/sites/kugoulive`(kugoulive_api + kugoulive_site)+ `live_danmaku/sites/kugoulive.dart` 迁到 `platforms/kugoulive/`。**无新依赖**:protobuf 复用 douyin 的手写件派生为 `kugoulive_protobuf.dart`(同套一层级无 schema reader/writer);gzip 用 dart:io;snappy 按 snappyjs 逐行手写(60 行,raw block 解码);HTML 实体解码上提 `common/normalization/html_entities.dart`(kilakila 同步改用共享版,两平台证实)。
+- 能力七个全注册:room / area(首页链接的 `/pcindex/category/<id>`,个人路由 3001/3009/3014/3015 剔除,空页用 14 条兜底分区表)/ discovery(推荐 8000)/ search(rooms;房间号/房间链接直查,关键词走网站 JSONP 用户搜索)/ playback / danmaku / link_resolver;`KugouliveFailure → toLiveSiteError('kugoulive')`(HTTP 451 折 contentUnavailable——v2 无 region 档,记档;401/403 折 rateLimit;transient 仅 network/rateLimited)。
+- 数据面(匿名,房间号即身份,3–11 位无前导零):首页一遍抓分区,`index/list`(推荐)/`list_v4`(分区)房间列表(`star` 行拆包、房间去重、hasNextPage 1/true、`times` 作列表时钟);房间 = `getEnterRoomInfo`(`liveType` -1 离线、有 `liveSessionId` 在播、其余 unknown;`limitType` 是**聊天**限制不是观看限制,不影响播放——记档与 3.x 的差异;无名且 kugouId 0 → notFound;`publicMesg`/`privateMesg` 是聊天公告不是标题,标题置空让 follow 保留);播放 = `streamaddr` 签名腾讯云地址:行×profile 分组为 `<protocol>:<rate>:<codec>:<layout>` 变体(FLV+HLS 两个协议键),`code -1` → needsLogin、status≠1/无可用地址 → streamUnavailable、答非所问 → apiChanged;媒体地址只认 `*.liveplay.live.kugou.com/live/*.flv|.m3u8` + 非空 `txSecret` + 十六进制 `txTime`(`token` 不读——记档 29-7:签名格式变更会让整站失联);租约 = txTime 十六进制 Unix 秒(约 12 小时),提前 5 分钟续(过期即 now);HEVC(codec 2)变体照收,"优先 H.264" 默认开 → H.264 变体排前、默认清晰度永不 HEVC;存量接口偏好 `preferH264` 注入。
+- **弹幕**(29-5,M5.25):调度器 `socket_scheduler/pc/binary/v2/address.jsonp`(MD5 签名:键排序 k=v 串 + `$_fan_xing_$`,取 hex[8:24])给 3 个聊天 host + `soctoken`(5 分钟 age);帧 = 18 字节头(100/version 3/type 1/12/command/len)+ protobuf 信封 `SocketProtocol.Message{content 7, codec 16, compression 5, ack 2, rpt 3, msgId 4, offset 1}`;登录 201(重连 2201 + socsid),901 状态帧 type1+status1 = 进房(拿 socsid),否则 `errorno`(622 = token 被拒 → 弃 token 重新调度);心跳 4 字节帧每 10s(服务端答 `64 00 03 00`),静默 90s 换线,join 10s 预算;拒绝 3 次、8 次无进房终止上报;调度器 3 试(1.5s/4.5s 页面退避),token 按-age-复用/被拒/落在未答套接字上则重调度。消息:`Content.ContentMessage` codec1 → 501 聊天(`ChatResponse`)+ ext(39 intimacyVo 粉丝牌/8 userGuard/9 littleGuard → 文本橙 #ff9900,JS truthiness)+ sinfo(ck=1 神秘人 → 金 #CC9900 + ckid 匿名 id)+ 400305 PK 对面房间聊天(tags&1 且带 source.roomid → sourceRoomId);601 礼物(`GiftEffectSocketMsg`:星币价格 → v2 折 **gold** 记档,free=价格 0,comboKey=comboIdV2 否则 comboId≠0,comboTotal=comboGiftSum,图标 s4fx.kgimg.com 补全,ack 1 → 回 211 AckRequest);301005 JSON 房态(actionId roomAuNumber,count→在线、visited→本场累计);gzip/snappy 4MiB 上限;服务端对未 ack 礼物重发两次 → 会话按 msgId LRU 256 去重;聊天剔除私聊(receiverid≠0)/负 senderid/privateType 1/他房。
+- 链接:fanxing/mfanxing.kugou.com,`/<roomId>` 单段或任意路径 `?roomId=<n>`(29-4 手机分享页),默认端口、无 fragment/userinfo;无短链。
+- **v2 形态适配(记档)**:①播放能力只收 roomId——`_streams[uid]` 缓存入场数据,无则自走一次入场(有则零请求);②搜索关键词 200 条本地切页,hasMore 仅在切页还有余量时为 true(平台不报总数);③follow 刷新/getLiveStatus 独立入口无对应面;④`followRedirects:false`、CancelToken 透传同各家记档;⑤HTTP 451 折 contentUnavailable(v2 无 region 档)。
+- **延后项(记档不假造)**:①`directoryNoticeKey`/`chatNotice` 之外的目录 scope 文案(v2 无目录级本地化面;房间级 notice 已带);②`token` 前缀校验(29-7 有意省略);③贵宾/等级外的礼物面板字段;④首页 `staticVersion` 固定 7.0.0(页面实际值可在响应里校验,记档);⑤重连后重新调度的 socketPv/时间戳漂移(与页面一致即未做漂移补偿)。
+- 验证:`dart analyze lib/src/platforms/kugoulive test/platforms/kugoulive lib/src/internal lib/src/common` **No issues found**;`dart test test/platforms/kugoulive` **31 项全绿**(信封/状态门、时钟合理性、房间号/链接、分区提取与兜底、列表 star 拆包/去重/搜索卡 viewers 门、房间信息码表、流地址校验与租约、变体分组排序与 preferH264、调度签名/grant、登录帧/心跳/uuid、状态帧 join/refusal、聊天徽章/等级/颜色、礼物星币折算/连击/ack、snappy/gzip 边界、会话调度 3 试/拒绝终止/非房间号预拒、能力接线与内置站点等值)。整包 tests 由并行站会话收尾后统一复跑。
 
 ## 环境缺口
 无。此前 `packages/live_playback` 以 `path:` 依赖工作区外的 `D:\media_core` 导致整仓 `dart pub get` 解析失败、`dart test` 跑不起来;2026-10-14 已把 `media_core` / `media_core_danmaku` / `media_core_mediasession` 改为 pub git 源(`github.com/liuchuancong/media_core`),仓库根 `flutter pub get` 即可完整解析,交付门的 test 步骤不再需要人工补 media_core 或造桩。
