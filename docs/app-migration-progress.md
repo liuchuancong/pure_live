@@ -15,7 +15,7 @@
 
 ## 待迁移（一个一个来，按序取）
 
-- [ ] **房间页 MVP + 播放器接线（✅ 用户已拍板 2026-10-16：播放器用 media_core）**
+- [x] **房间页 MVP + 播放器接线（✅ 用户已拍板 2026-10-16：播放器用 media_core）** — 9aba9a3fe
       接缝 = packages/live_playback/lib/src/engine/playback_engine.dart（PlaybackEngine：
       events/open(LivePlayLine)/pause/resume/stop/dispose + PlaybackEngineFactory；
       失败以 EngineStopped 事件上报，open 不许抛）。
