@@ -15,6 +15,15 @@
 
 ## 待迁移（一个一个来，按序取）
 
+- [ ] **房间页 MVP + 播放器接线（✅ 用户已拍板 2026-10-16：播放器用 media_core）**
+      接缝 = packages/live_playback/lib/src/engine/playback_engine.dart（PlaybackEngine：
+      events/open(LivePlayLine)/pause/resume/stop/dispose + PlaybackEngineFactory；
+      失败以 EngineStopped 事件上报，open 不许抛）。
+      实现 = app 侧绑 media_core 的 PlayerKernel（media_core 已是 git 依赖在依赖图，
+      源码 C:\Users\XA-158\projects\flutter\media_core）。
+      落点 = lib/app/engine/playback_engine.dart（目录架构文档 §app/engine）；
+      房间页 = lib/features/room/，路由 /room/:siteId/:roomId，参考 E 盘
+      features/live_play 的布局分层但控件用 live_uikit。
 - [ ] 分区房间页打磨：排序/在线人数徽标/分页页码（desktop 数字翻页用 live_pagination PagedController）
 - [ ] 关于页（package_info_plus + pub_semver + markdown 更新日志）
 - [ ] 工具箱页（链接解析：LiveLinkResolver capability → 跳房间/取流）
@@ -24,7 +33,6 @@
 - [ ] 设置-弹幕屏蔽页（shield 关键词/用户/正则，存储 keyed 家族）
 - [ ] 设置-字体管理页（font_manager，_restart_app 联动）
 - [ ] 备份/恢复页（archive zip + file_picker/file_selector）
-- [ ] 房间页 MVP（**前置：media_core 运行时接线**，live_playback PlaybackEngine 接缝）
 - [ ] 弹幕（live_interaction + live_websocket 加入依赖）
 - [ ] 录制域（live_record_core 加入依赖）
 - [ ] 多画面（mosaic_grid + 票据复用）
@@ -43,3 +51,5 @@
 5. 需要用户裁决的（如 per-platform 目录冲突、新依赖、media_core）——在台账标注
    "⛔待裁决 + 原因"，跳过取下一项，不要自行决定。
 6. push 被拒：rebase 再推；绝不 force。
+7. 开工前若发现 .git/index.lock 存在或纯 live_sites WIP 之外的未提交改动，说明
+   上一轮/另一会话还在写：本轮直接结束，等下一轮。
