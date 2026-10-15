@@ -11,6 +11,7 @@ Shared storage infrastructure for PureLive, built on Hive CE.
 - Provide storage migration infrastructure.
 - Resolve platform-specific storage paths.
 - Expose storage diagnostics.
+- Expose the simple typed settings facade (`StoragePrefs`) and its write-through reactive values for ad-hoc flags that do not deserve a repository.
 
 ## Dependencies
 
@@ -45,3 +46,18 @@ Generate adapters for application models using the project's Hive CE generator c
 Initialize storage during application startup, register the required adapters, and then allow feature packages to access their boxes.
 
 See the implementation in `lib/src/` for the supported initialization and management APIs.
+
+### Simple settings
+
+Ad-hoc flags that do not deserve a repository go through the `StoragePrefs` facade: one string-keyed box (`settings.kv`), static one-line typed reads and writes. Call `StoragePrefs.init()` once after `StorageBootstrap.initialize`.
+
+```dart
+await StoragePrefs.setString('lastPlatform', 'huya');
+StoragePrefs.getString('lastPlatform'); // synchronous read
+await StoragePrefs.persistBatch(() {
+  StoragePrefs.setBool('danmakuOn', true);
+  StoragePrefs.setInt('fontSize', 18);
+}); // one commit
+```
+
+`prefBool`, `prefString` and the other factories hand back write-through `PrefValue`s — assign `v`, the value persists and notifies listeners synchronously.

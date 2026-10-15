@@ -29,6 +29,12 @@ export 'src/migration/storage_migration_runner.dart';
 /// Application-provided storage path resolution.
 export 'src/paths/storage_path_provider.dart';
 
+/// Write-through reactive pref values.
+export 'src/prefs/storage_pref_value.dart';
+
+/// The simple typed settings facade.
+export 'src/prefs/storage_prefs.dart';
+
 /// The JSON bridge adapter for typed model storage.
 export 'src/registry/json_box_adapter.dart';
 
