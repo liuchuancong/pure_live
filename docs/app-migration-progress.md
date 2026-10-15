@@ -25,7 +25,7 @@
       房间页 = lib/features/room/，路由 /room/:siteId/:roomId，参考 E 盘
       features/live_play 的布局分层但控件用 live_uikit。
 - [x] 分区房间页打磨：排序/在线人数徽标/分页页码 — 5d5160017（large 桌面 PagedController 数字翻页条、small/medium 无限滚动、人气/默认排序切换）
-- [ ] 关于页（package_info_plus + pub_semver + markdown 更新日志）
+- [x] 关于页（package_info_plus + pub_semver + markdown 更新日志）— 863652a42（检查更新走 GitHub releases API via LiveHttp；MarkdownText 轻渲染器；版本历史 bottom sheet；许可页；项目主页 url_launcher）
 - [ ] 工具箱页（链接解析：LiveLinkResolver capability → 跳房间/取流）
 - [ ] 关注域（live_library LibraryStore seam + 分组/标签 UI）
 - [ ] 历史域（live_library 历史记录 + 清除）
