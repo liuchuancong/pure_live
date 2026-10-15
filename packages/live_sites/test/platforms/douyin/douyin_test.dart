@@ -952,6 +952,7 @@ void main() {
         'jdlive',
         'kilakila',
         'kugoulive',
+        'soop',
       ]);
     });
 

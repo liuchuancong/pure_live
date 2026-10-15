@@ -28,6 +28,8 @@ import 'package:live_sites/src/platforms/kugoulive/api/kugoulive_http.dart';
 import 'package:live_sites/src/platforms/kugoulive/kugoulive_site.dart';
 import 'package:live_sites/src/platforms/niconico/api/niconico_http.dart';
 import 'package:live_sites/src/platforms/niconico/niconico_site.dart';
+import 'package:live_sites/src/platforms/soop/api/soop_http.dart';
+import 'package:live_sites/src/platforms/soop/soop_site.dart';
 import 'package:live_sites/src/platforms/twitch/api/twitch_http.dart';
 import 'package:live_sites/src/platforms/twitch/twitch_site.dart';
 import 'package:live_sites/src/platforms/youtube/api/youtube_http.dart';
@@ -57,5 +59,6 @@ List<LiveSite> createBuiltInLiveSites({LiveHttp? http}) {
     JdliveSite(http: JdliveHttp(transport)),
     KilakilaSite(http: KilakilaHttp(transport)),
     KugouliveSite(http: KugouliveHttp(transport)),
+    SoopSite(http: SoopHttp(transport)),
   ];
 }

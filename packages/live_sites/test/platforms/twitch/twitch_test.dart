@@ -723,6 +723,7 @@ https://other.example/1.m3u8
         'jdlive',
         'kilakila',
         'kugoulive',
+        'soop',
       ]);
     });
 

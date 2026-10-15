@@ -37,9 +37,10 @@
 | jdlive 京东直播 | ✅ | 见下方"jdlive 明细";已注册进 `built_in_sites` |
 | kilakila 克拉克拉 | ✅ | 见下方"kilakila 明细";已注册进 `built_in_sites` |
 | kugoulive 酷狗直播 | ✅ | 见下方"kugoulive 明细";已注册进 `built_in_sites` |
+| soop SOOP | ✅ | 见下方"soop 明细";已注册进 `built_in_sites` |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
-| looklive / missevan / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / yy | ⬜ | 其余含弹幕站;**下一站候选 looklive**(soop/twitcasting 后台并行中) |
+| looklive / missevan / pandalive / picarto / seventeenlive / showroom / sixroom / steambroadcast / yy | ⬜ | 其余含弹幕站;looklive(后台代理)与 missevan 进行中,twitcasting(后台代理)收尾中 |
 | cc / inke / liveme / tiktok / xiaohongshu | ⬜ | 仅 `live_core` 有(纯目录/播放,无弹幕) |
 
 ## douyu 明细(2026-10-14)
@@ -222,6 +223,14 @@
 - **v2 形态适配(记档)**:①播放能力只收 roomId——`_streams[uid]` 缓存入场数据,无则自走一次入场(有则零请求);②搜索关键词 200 条本地切页,hasMore 仅在切页还有余量时为 true(平台不报总数);③follow 刷新/getLiveStatus 独立入口无对应面;④`followRedirects:false`、CancelToken 透传同各家记档;⑤HTTP 451 折 contentUnavailable(v2 无 region 档)。
 - **延后项(记档不假造)**:①`directoryNoticeKey`/`chatNotice` 之外的目录 scope 文案(v2 无目录级本地化面;房间级 notice 已带);②`token` 前缀校验(29-7 有意省略);③贵宾/等级外的礼物面板字段;④首页 `staticVersion` 固定 7.0.0(页面实际值可在响应里校验,记档);⑤重连后重新调度的 socketPv/时间戳漂移(与页面一致即未做漂移补偿)。
 - 验证:`dart analyze lib/src/platforms/kugoulive test/platforms/kugoulive lib/src/internal lib/src/common` **No issues found**;`dart test test/platforms/kugoulive` **31 项全绿**(信封/状态门、时钟合理性、房间号/链接、分区提取与兜底、列表 star 拆包/去重/搜索卡 viewers 门、房间信息码表、流地址校验与租约、变体分组排序与 preferH264、调度签名/grant、登录帧/心跳/uuid、状态帧 join/refusal、聊天徽章/等级/颜色、礼物星币折算/连击/ack、snappy/gzip 边界、会话调度 3 试/拒绝终止/非房间号预拒、能力接线与内置站点等值)。整包 tests 由并行站会话收尾后统一复跑。
+
+## soop 明细(2026-10-15,后台代理移植)
+整站从 `live_core/sites/soop` + `live_danmaku/sites/soop.dart` 迁到 `platforms/soop/`(后台代理按 kugoulive 同款模板与交付门执行,我审查后注册)。**无新依赖**。
+- 能力七个全注册:room / area / discovery / search / playback / danmaku / link_resolver;`SoopFailure → toLiveSiteError('soop')`。
+- 数据面:`player_live_api/*/live/{id}/playlist.am` 状态门与 RESULT 分支、`station` 页 + `withStation` 合并、在线人数回退链、KST 开播时间、BTIME、VIEWPRESET/qualitySort 清晰度分层、assign/aid/resolution;房间号/站号链接解析(appLink/appLinkRoomId 保留为 endpoints 纯函数)。
+- 弹幕:ESC/TAB 定长帧切割、login/heartbeat/join、chat/별풍선(星气球)/애드벌룬(广告气球)/영상풍선(视频气球)/구독(订阅)消息;20s 心跳、90s 看门狗、TLS→明文端口回退、重连预算 8 次终止上报;服务器无 join 确认包,套接字开即 join(faithful)。
+- **代理的适配与取舍(记档)**:①参考全程带用户 cookie,v2 context 不传凭证 → 匿名;年龄限制广播(-6)由可播改为 authentication(与 chzzk/bigo 一致),明文端口去-Cookie 逻辑随之删除;②별풍선/영상풍선 付费币折 v2 `gold`(unitPrice 1),애드벌룬折 `other`(无价),礼物文案 kilakila 式 `名 ×数`;③v1 三入口合并为 getRoom,`roomIdsInShareText`/传 detail 的播放/恢复接口无 v2 面 → 恢复=aid 请求被拒(RESULT 0)自然上报+重新进房;④1 MiB 响应上限与 name-only 分区挂卡片为 v2 化适配。
+- 验证:`dart analyze` No issues;`dart test test/platforms/soop` **54 项全绿**(状态门/RESULT 分支/合并路径/编解码往返/错误映射/能力接线/会话时序)。
 
 ## 环境缺口
 无。此前 `packages/live_playback` 以 `path:` 依赖工作区外的 `D:\media_core` 导致整仓 `dart pub get` 解析失败、`dart test` 跑不起来;2026-10-14 已把 `media_core` / `media_core_danmaku` / `media_core_mediasession` 改为 pub git 源(`github.com/liuchuancong/media_core`),仓库根 `flutter pub get` 即可完整解析,交付门的 test 步骤不再需要人工补 media_core 或造桩。
