@@ -1,11 +1,12 @@
 import 'dart:io';
 
-import 'package:live_platform/src/contracts/platform_exception.dart';
-import 'package:live_platform/src/contracts/storage_area.dart';
-import 'package:live_platform/src/contracts/storage_location.dart';
-import 'package:live_platform/src/contracts/storage_manager.dart';
-import 'package:live_platform/src/runtime/platform_runtime_info.dart';
-import 'package:live_platform/src/storage/storage_policy.dart';
+import 'package:live_platform/live_platform.dart' show PlatformKind, PlatformRuntimeInfo;
+import 'package:live_platform_path_provider/src/contracts/platform_exception.dart';
+import 'package:live_platform_path_provider/src/contracts/storage_area.dart';
+import 'package:live_platform_path_provider/src/contracts/storage_location.dart';
+import 'package:live_platform_path_provider/src/contracts/storage_manager.dart';
+import 'package:live_platform_path_provider/src/insights/path_privacy.dart';
+import 'package:live_platform_path_provider/src/storage/storage_policy.dart';
 import 'package:path/path.dart' as p;
 
 /// The production StorageManager: walks the policy's candidate list,
@@ -32,6 +33,11 @@ final class DefaultStorageManager implements StorageManager {
   final Directory _systemTemp;
   final Map<StorageArea, StorageLocation> _resolved = {};
 
+  /// Per-process counter keeping concurrent probes out of each other's way —
+  /// the desktop shell's second window runs another isolate, and two probes
+  /// sharing one fixed file name fight over its delete.
+  static int _probeSequence = 0;
+
   @override
   Future<StorageLocation> resolve(StorageArea area) async {
     final known = _resolved[area];
@@ -41,7 +47,7 @@ final class DefaultStorageManager implements StorageManager {
     final snapshot =
         runtime ?? (throw StateError('no runtime snapshot: construct with runtime or run PlatformBootstrap.init'));
     for (final candidate in policy.candidatesFor(area, snapshot)) {
-      final location = await _probe(area, candidate);
+      final location = await _probe(area, candidate, snapshot.kind);
       if (location != null) {
         return _resolved[area] = location;
       }
@@ -49,7 +55,7 @@ final class DefaultStorageManager implements StorageManager {
     // Clearable areas may degrade to the system temp dir; persistent ones
     // must fail loudly instead of hiding data where it will be wiped.
     if (area == StorageArea.cache || area == StorageArea.temporary) {
-      final fallback = await _probe(area, Directory(p.join(_systemTemp.path, 'pure_live')));
+      final fallback = await _probe(area, Directory(p.join(_systemTemp.path, 'pure_live')), snapshot.kind);
       if (fallback != null) {
         return _resolved[area] = fallback;
       }
@@ -66,10 +72,10 @@ final class DefaultStorageManager implements StorageManager {
     return resolve(area);
   }
 
-  Future<StorageLocation?> _probe(StorageArea area, Directory candidate) async {
+  Future<StorageLocation?> _probe(StorageArea area, Directory candidate, PlatformKind kind) async {
     try {
       await candidate.create(recursive: true);
-      final probe = File(p.join(candidate.path, '.pure_live_probe'));
+      final probe = File(p.join(candidate.path, '.pure_live_probe_${pid}_${++_probeSequence}'));
       final sink = probe.openWrite();
       await sink.close();
       await probe.delete();
@@ -81,10 +87,12 @@ final class DefaultStorageManager implements StorageManager {
           StorageArea.config ||
           StorageArea.extensions ||
           StorageArea.imports ||
-          StorageArea.exports => true,
+          StorageArea.exports ||
+          StorageArea.downloads => true,
           StorageArea.cache || StorageArea.temporary => false,
         },
         accessState: AccessState.writable,
+        isPrivate: PathPrivacy.isPrivate(candidate.path, kind: kind),
       );
     } on FileSystemException {
       return null;

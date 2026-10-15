@@ -1,10 +1,11 @@
 name: live_platform
 description: >-
-  Cross-platform runtime and system-capability layer for Pure Live: desktop
-  distribution detection (installed / MSIX / portable), a unified storage
-  contract with candidate probing and fallback, atomic file writes, file
-  access seams, capability discovery and shutdown coordination. Business
-  modules never test platforms, splice system paths or assume write access.
+  Cross-platform runtime layer for Pure Live: it distinguishes platforms —
+  the OS family, the presentation form factor (phone/tablet/desktop/TV,
+  overridable by the user) and the desktop deployment style (installed /
+  MSIX / portable, declarable and marker-detectable) — and derives the
+  conservative capability set from them. Directory and storage decisions
+  live in live_platform_path_provider.
 version: 0.1.0
 publish_to: none
 

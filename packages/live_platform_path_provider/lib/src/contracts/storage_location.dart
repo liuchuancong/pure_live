@@ -1,4 +1,4 @@
-import 'package:live_platform/src/contracts/storage_area.dart';
+import 'package:live_platform_path_provider/src/contracts/storage_area.dart';
 
 /// How a resolved location answers write attempts.
 enum AccessState {
@@ -24,6 +24,7 @@ final class StorageLocation {
     required this.path,
     required this.isPersistent,
     this.accessState = AccessState.unknown,
+    this.isPrivate = false,
   });
 
   /// Which kind of data belongs here.
@@ -39,8 +40,13 @@ final class StorageLocation {
   /// Probe result for writability.
   final AccessState accessState;
 
+  /// Whether the path sits in an app-private area other apps cannot read
+  /// (the Android app dirs, the iOS sandbox). A download resolved here must
+  /// be offered to the user as a choice first — see `PathPrivacy`.
+  final bool isPrivate;
+
   @override
   String toString() =>
       'StorageLocation(${area.name}, $path, '
-      '${accessState.name}, persistent=$isPersistent)';
+      '${accessState.name}, persistent=$isPersistent, private=$isPrivate)';
 }

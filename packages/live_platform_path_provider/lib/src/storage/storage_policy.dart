@@ -1,15 +1,14 @@
 import 'dart:io';
 
-import 'package:live_platform/src/contracts/storage_area.dart';
-import 'package:live_platform/src/runtime/platform_runtime_info.dart';
+import 'package:live_platform/live_platform.dart' show PlatformRuntimeInfo;
+import 'package:live_platform_path_provider/src/contracts/storage_area.dart';
 
 /// Ordered candidate directories per storage area.
 ///
 /// The resolver tries candidates in order and keeps the first one that
 /// passes a real write probe. Implementations decide fallback order from
-/// the deployment snapshot — e.g. a portable layout tries the `data/`
-/// tree next to the executable first and the user-data directory second,
-/// while an installed layout never offers the executable directory.
+/// the deployment snapshot — a portable build keeps its data on its own
+/// medium, an installed build never writes next to the executable.
 abstract interface class StoragePolicy {
   /// The candidate directories for [area], best first. May be empty; an
   /// empty list means "no acceptable location was planned" and the
@@ -19,53 +18,77 @@ abstract interface class StoragePolicy {
 
 /// The standard PureLive layout.
 ///
-/// Root directories come from the app shell (path_provider results, or
-/// portable-mode detection): `portableRoot` is the `data/` tree next to
-/// the executable, `userRoot` the OS application-support directory,
-/// `cacheRoot` the OS cache directory, `tempRoot` the system temporary
-/// directory.
+/// Root directories come from the app shell (path_provider results):
+/// `portableRoot` is the executable's own directory, under which portable
+/// layouts put the per-area trees (`data/`, `cache/`, …); `userRoot` the OS
+/// application-support directory, `cacheRoot` the OS cache directory,
+/// `tempRoot` the system temporary directory, `downloadsRoot` the
+/// user-visible download target (the user's own setting when one exists).
+///
+/// The one hard rule: a portable build never resolves a persistent area
+/// into `userRoot`/`cacheRoot` — user data follows the executable, which is
+/// the entire point of the distribution. The OS temporary directory stays
+/// reachable for clearable scratch only, through the manager's fallback.
 final class DefaultStoragePolicy implements StoragePolicy {
-  /// A policy over the four roots. Null roots are simply never offered
+  /// A policy over the five roots. Null roots are simply never offered
   /// as candidates.
-  const new({this.portableRoot, this.userRoot, this.cacheRoot, this.tempRoot});
+  const new({this.portableRoot, this.userRoot, this.cacheRoot, this.tempRoot, this.downloadsRoot});
 
-  /// The `data/` tree next to the executable (portable layouts only).
+  /// The executable's directory (portable layouts only); the per-area
+  /// segments (`data/`, `cache/`, …) are appended beneath it.
   final Directory? portableRoot;
 
-  /// The OS per-user application-data directory.
+  /// The OS per-user application-data directory. Never offered to a
+  /// portable build.
   final Directory? userRoot;
 
-  /// The OS cache directory.
+  /// The OS cache directory (installed builds only, same rule as [userRoot]).
   final Directory? cacheRoot;
 
-  /// The system temporary directory.
+  /// The system temporary directory (installed builds only).
   final Directory? tempRoot;
+
+  /// The user-visible download target: the user's own setting when one
+  /// exists, the OS download directory otherwise. A chosen directory comes
+  /// before every deployment default.
+  final Directory? downloadsRoot;
 
   @override
   List<Directory> candidatesFor(StorageArea area, PlatformRuntimeInfo runtime) {
+    final portable = runtime.isPortable;
+    if (area == StorageArea.downloads) {
+      final Directory? deploymentDefault;
+      if (portable) {
+        deploymentDefault = portableRoot == null ? null : Directory('${portableRoot!.path}/downloads');
+      } else {
+        deploymentDefault = userRoot == null ? null : Directory('${userRoot!.path}/downloads');
+      }
+      return [?downloadsRoot, ?deploymentDefault];
+    }
     final persistent = switch (area) {
       StorageArea.data ||
       StorageArea.config ||
       StorageArea.extensions ||
       StorageArea.imports ||
-      StorageArea.exports => true,
+      StorageArea.exports ||
+      StorageArea.downloads => true,
       StorageArea.cache || StorageArea.temporary => false,
     };
     if (persistent) {
       return [
-        if (runtime.isPortable && portableRoot != null) Directory('${portableRoot!.path}/${_segment(area)}'),
-        if (userRoot != null) Directory('${userRoot!.path}/${_segment(area)}'),
+        if (portable && portableRoot != null) Directory('${portableRoot!.path}/${_segment(area)}'),
+        if (!portable && userRoot != null) Directory('${userRoot!.path}/${_segment(area)}'),
       ];
     }
     return switch (area) {
       StorageArea.cache => [
-        if (runtime.isPortable && portableRoot != null) Directory('${portableRoot!.path}/cache'),
-        if (cacheRoot != null) Directory('${cacheRoot!.path}/pure_live'),
-        if (tempRoot != null) Directory('${tempRoot!.path}/pure_live_cache'),
+        if (portable && portableRoot != null) Directory('${portableRoot!.path}/cache'),
+        if (!portable && cacheRoot != null) Directory('${cacheRoot!.path}/pure_live'),
+        if (!portable && tempRoot != null) Directory('${tempRoot!.path}/pure_live_cache'),
       ],
       StorageArea.temporary => [
-        if (runtime.isPortable && portableRoot != null) Directory('${portableRoot!.path}/temp'),
-        if (tempRoot != null) Directory('${tempRoot!.path}/pure_live'),
+        if (portable && portableRoot != null) Directory('${portableRoot!.path}/temp'),
+        if (!portable && tempRoot != null) Directory('${tempRoot!.path}/temp'),
       ],
       _ => const [],
     };
@@ -77,6 +100,7 @@ final class DefaultStoragePolicy implements StoragePolicy {
     StorageArea.extensions => 'extensions',
     StorageArea.imports => 'imports',
     StorageArea.exports => 'exports',
+    StorageArea.downloads => 'downloads',
     StorageArea.cache => 'cache',
     StorageArea.temporary => 'temp',
   };

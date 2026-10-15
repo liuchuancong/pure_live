@@ -1,5 +1,5 @@
-import 'package:live_platform/src/contracts/storage_area.dart';
-import 'package:live_platform/src/contracts/storage_manager.dart';
+import 'package:live_platform_path_provider/src/contracts/storage_area.dart';
+import 'package:live_platform_path_provider/src/contracts/storage_manager.dart';
 
 /// Reports the resolved storage layout for diagnostics screens and bug
 /// reports: one line per area with path, persistence and access state.

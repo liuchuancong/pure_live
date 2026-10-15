@@ -9,11 +9,33 @@ import 'package:path/path.dart' as p;
 /// Rules of engagement, in order of trust:
 /// 1. The launcher or a native bridge *declares* the distribution — the
 ///    bootstrap's `declaredDistribution` always wins.
-/// 2. MSIX can be recognised conservatively here: a Windows executable
+/// 2. The user *declares* portable mode by placing a marker next to the
+///    executable (`detectMarkers`): a `data/` tree or a `portable.marker`
+///    file. Reading those is not guessing — whoever put them there meant
+///    them.
+/// 3. MSIX can be recognised conservatively here: a Windows executable
 ///    running from the per-user Packages container is a strong signal.
-/// 3. Portable mode is *never* inferred from a directory or file name —
-///    an unknown stays unknown.
+/// 4. Everything else stays `unknown`; portable mode is never inferred
+///    from a directory or file *name* — an unknown stays unknown.
 abstract final class DistributionDetector {
+  /// Recognises the user-declared portable markers: a `data/` directory or a
+  /// `portable.marker` file directly inside [executableRoot]. Returns null
+  /// when neither is present, so the caller falls through to the shape
+  /// checks. This is what keeps a portable build's data on its own medium —
+  /// without a marker (or a launcher declaration) there is no honest way to
+  /// know, and the path provider will keep such a build out of the
+  /// executable's directory.
+  static DesktopDistribution? detectMarkers(Directory executableRoot) {
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      final dataTree = Directory(p.join(executableRoot.path, 'data'));
+      final marker = File(p.join(executableRoot.path, 'portable.marker'));
+      if (dataTree.existsSync() || marker.existsSync()) {
+        return DesktopDistribution.portable;
+      }
+    }
+    return null;
+  }
+
   /// Inspects the executable location for the MSIX container pattern
   /// (`…/AppData/Local/Packages/<package-id>/…` on Windows). Returns
   /// [DesktopDistribution.unknown] on any other layout.

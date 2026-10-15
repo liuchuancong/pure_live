@@ -1,6 +1,6 @@
-import 'package:live_platform/src/contracts/platform_exception.dart';
-import 'package:live_platform/src/contracts/storage_area.dart';
-import 'package:live_platform/src/contracts/storage_location.dart';
+import 'package:live_platform_path_provider/src/contracts/platform_exception.dart';
+import 'package:live_platform_path_provider/src/contracts/storage_area.dart';
+import 'package:live_platform_path_provider/src/contracts/storage_location.dart';
 
 /// Unified directory resolution for every storage area.
 ///

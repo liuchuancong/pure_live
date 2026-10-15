@@ -1,0 +1,23 @@
+name: live_platform_path_provider
+description: >-
+  Path and storage layer for Pure Live. Resolves a directory for every
+  storage area from the platform runtime's deployment facts — a portable
+  build keeps its data next to its executable and never writes user data
+  into AppData — probes writability for real, flags app-private paths
+  before a download lands in one, detects config conflicts between data
+  trees, writes files atomically and defines the file-access seam.
+version: 0.1.0
+publish_to: none
+
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  live_platform:
+  path: ^1.9.0
+
+dev_dependencies:
+  test: ^1.33.0
+  very_good_analysis: ^11.0.0

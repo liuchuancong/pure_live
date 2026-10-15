@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:live_platform/src/contracts/platform_exception.dart';
+import 'package:live_platform_path_provider/src/contracts/platform_exception.dart';
 import 'package:path/path.dart' as p;
 
 /// Crash-safe file replacement: write to a unique temp file in the same
-/// directory, flush to disk, then atomically rename over the target.
+/// directory, flush, then atomically rename over the target. The flush
+/// reaches the operating system, so an application crash cannot truncate
+/// the target; a power loss before the OS writes through still can.
 ///
 /// A crash mid-write leaves the target untouched and at most one stray
 /// `.pure_live_tmp` file behind. Windows note: `rename` cannot clobber an

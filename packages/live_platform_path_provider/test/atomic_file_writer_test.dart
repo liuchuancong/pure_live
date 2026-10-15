@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:live_platform/live_platform.dart';
+import 'package:live_platform_path_provider/live_platform_path_provider.dart';
+
 import 'package:test/test.dart';
 
 /// `AtomicFileWriter` is what stands between a power loss and a corrupt library,

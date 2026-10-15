@@ -24,6 +24,12 @@ enum StorageArea {
   /// User-initiated exports and backups: written where the user chose.
   exports,
 
+  /// Finished downloads the user will open outside the app: persistent and
+  /// user-visible by construction — when the only available directory is
+  /// app-private, the caller is told through `StorageLocation.isPrivate`
+  /// and must offer the user a choice before writing.
+  downloads,
+
   /// Download intermediates, migration scratch space: clearable at any
   /// time, never persistent.
   temporary,

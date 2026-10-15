@@ -3,12 +3,27 @@ import 'dart:io';
 import 'package:live_platform/live_platform.dart';
 import 'package:test/test.dart';
 
-/// `DistributionDetector` is allowed to say only one thing with confidence: MSIX,
-/// recognised from the per-user package container. Everything else must stay
-/// `unknown`, because guessing portable mode from a folder name is how an installed
-/// build starts writing next to its own executable.
+/// `DistributionDetector` is allowed to say only two things with confidence:
+/// MSIX, recognised from the per-user package container, and portable mode,
+/// recognised from the user-placed markers next to the executable. Everything
+/// else must stay `unknown`, because guessing portable mode from a folder
+/// name is how an installed build starts writing next to its own executable.
 void main() {
   DesktopDistribution detectFrom(String path) => DistributionDetector.detect(Directory(path));
+
+  late Directory root;
+
+  setUp(() {
+    root = Directory.systemTemp.createTempSync('live_platform_detector');
+  });
+
+  tearDown(() {
+    try {
+      root.deleteSync(recursive: true);
+    } on FileSystemException {
+      // A transient Windows lock; the temporary directory goes with the process.
+    }
+  });
 
   test('a path that merely looks portable is not guessed', () {
     expect(detectFrom('D:/Games/PureLive Portable/App'), DesktopDistribution.unknown);
@@ -33,5 +48,26 @@ void main() {
     // local app data, are both ordinary directories and must stay unknown.
     expect(detectFrom('C:/Users/x/AppData/Local/Packages'), DesktopDistribution.unknown);
     expect(detectFrom('D:/Packages/PureLive/RP'), DesktopDistribution.unknown);
+  });
+
+  test('a data tree next to the executable declares portable mode', () {
+    Directory('${root.path}/data').createSync();
+
+    expect(DistributionDetector.detectMarkers(root), DesktopDistribution.portable);
+  });
+
+  test('a portable.marker file next to the executable declares portable mode', () {
+    File('${root.path}/portable.marker').writeAsStringSync('declared by whoever placed me here');
+
+    expect(DistributionDetector.detectMarkers(root), DesktopDistribution.portable);
+  });
+
+  test('no marker is not portable', () {
+    expect(DistributionDetector.detectMarkers(root), isNull);
+
+    // An unrelated name is a name, not a declaration.
+    File('${root.path}/portable.txt').writeAsStringSync('noise');
+    Directory('${root.path}/userdata').createSync();
+    expect(DistributionDetector.detectMarkers(root), isNull);
   });
 }

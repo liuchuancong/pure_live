@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:live_platform/src/contracts/platform_exception.dart';
+import 'package:live_platform_path_provider/src/contracts/platform_exception.dart';
 
 /// A file the user picked through the system file-access service.
 ///

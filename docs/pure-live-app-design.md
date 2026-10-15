@@ -228,14 +228,22 @@ desktop:                         touch:
 
 ## 6. 文件处理域
 
-`live_platform` 是文件能力的契约层(`StorageManager`/`StorageArea`/`FileAccessService`/
-`ShutdownCoordinator`),`files/` 是装配:
+平台区分与文件路径分两层:`live_platform` 只**区分平台**(OS 家族 / 手机·平板·桌面·TV
+形态〔用户可在设置里声明,与 `PURE_LIVE_TV` 同源〕/ 桌面部署方式 exe·MSIX·便携〔可声明,
+也可由 exe 旁的 `data/` 树或 `portable.marker` 标记识别〕),**不碰文件系统**;
+`live_platform_path_provider` 消费它的 runtime 快照,负责一切路径决策(§6 其余)、
+真实写探针、私有目录判定、配置冲突检查与原子写:
 
-- **目录矩阵**(`PlatformBootstrap.init` 一次,处处读事实,不自己拼路径):
+- **目录矩阵**(`PathProviderBootstrap.init` 一次,处处读事实,不自己拼路径):
+  **便携版(绿色解压)的持久数据永远不进 AppData**——只有 exe 旁的 `data/`、`config/`
+  等树;安装版/MSIX 恰好相反,绝不写安装目录;`downloads` 区域永远先看用户设置,再落
+  部署默认;`StorageLocation.isPrivate` 标记 Android 私有目录/iOS 沙盒,下载落私有目录前
+  必须提示用户改选(`PathPrivacy`);`StorageConflicts.inspect` 在部署方式切换后检查新旧
+  两棵配置树的双主冲突;公共判断用 `PathInsights`(exists/isDirectory/isFile/fileSize)。
 
 | 用途 | 桌面 | Android | iOS |
 |---|---|---|---|
-| 录像输出 | 用户可选(默认 视频/ PureLive) | 公共视频目录(需权限) | 文档目录+提示导出 |
+| 录像输出 | 用户可选(默认 视频/PureLive) | 公共视频目录(需权限) | 文档目录+提示导出 |
 | 截图 | 图片目录 | 相册(media store) | 相册 |
 | IPTV 导入暂存 | 下载/临时 | 缓存 | 缓存 |
 | 日志 | 应用支持目录(live_log 滚动) | 同 | 同 |
@@ -305,7 +313,8 @@ UI:`live_uikit` + 8 适配器、`live_uikit_background`、`flex_color_scheme(残
 `animations`、`shimmer`/`skeletonizer`、`custom_refresh_indicator`、`any_image_view`/
 `cached_network_image_ce`/`cached_network_image`/`flutter_svg`、`mosaic_grid`。
 数据/域:`live_sites`、`live_playback`、`live_interaction`、`live_iptv`、`live_library`、
-`live_net`、`live_storage`、`live_preferences`、`live_log`、`live_platform`、`live_shell`/
+`live_net`、`live_storage`、`live_preferences`、`live_log`、`live_platform`(平台区分)、
+`live_platform_path_provider`(路径/存储/私有目录/冲突)、`live_shell`/
 `live_shell_desktop`;**未接(按波次加入)**:`live_websocket`、`live_record_core`、
 `live_pagination`。基础设施:`flutter_riverpod`/`riverpod_annotation`、`go_router`、`freezed`/
 `json_annotation`(+dev codegen)、`slang`、`envied`、`pigeon`、`path`/`path_provider`、

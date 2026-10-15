@@ -16,6 +16,7 @@ workspace:
   - packages/live_net
   - packages/live_sites
   - packages/live_platform
+  - packages/live_platform_path_provider
   - packages/live_playback
   - packages/live_playback/example
   - packages/live_record_core
