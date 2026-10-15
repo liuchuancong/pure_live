@@ -50,10 +50,16 @@ void main() {
     expect(detectFrom('D:/Packages/PureLive/RP'), DesktopDistribution.unknown);
   });
 
-  test('a data tree next to the executable declares portable mode', () {
+  test('the runtime bundle data directory is not a marker', () {
+    // A Flutter Windows build always carries `data/` next to the executable
+    // (the runtime's own flutter_assets bundle). The directory is runtime
+    // noise, not a declaration — treating it as one called every Windows
+    // build portable.
     Directory('${root.path}/data').createSync();
+    Directory('${root.path}/data/flutter_assets').createSync();
+    File('${root.path}/data/icudtl.dat').writeAsStringSync('runtime');
 
-    expect(DistributionDetector.detectMarkers(root), DesktopDistribution.portable);
+    expect(DistributionDetector.detectMarkers(root), isNull);
   });
 
   test('a portable.marker file next to the executable declares portable mode', () {

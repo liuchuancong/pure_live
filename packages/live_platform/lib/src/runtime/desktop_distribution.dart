@@ -14,7 +14,9 @@ enum DesktopDistribution {
   msix,
 
   /// Standalone bundle; data lives next to the executable when that
-  /// directory is writable, with a user-data fallback otherwise.
+  /// directory is writable, with a user-data fallback otherwise. Declared
+  /// by a `portable.marker` file or the launcher — and un-declared by
+  /// removing the marker and the cached claim beside the executable.
   portable,
 
   /// Deployment could not be confirmed; treat as installed but keep the

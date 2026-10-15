@@ -9,27 +9,28 @@ import 'package:path/path.dart' as p;
 /// Rules of engagement, in order of trust:
 /// 1. The launcher or a native bridge *declares* the distribution — the
 ///    bootstrap's `declaredDistribution` always wins.
-/// 2. The user *declares* portable mode by placing a marker next to the
-///    executable (`detectMarkers`): a `data/` tree or a `portable.marker`
-///    file. Reading those is not guessing — whoever put them there meant
-///    them.
+/// 2. The user *declares* portable mode by placing a `portable.marker` file
+///    next to the executable. Reading it is not guessing — whoever put it
+///    there meant it. A `data/` directory is deliberately NOT a marker: on
+///    a Flutter Windows build that name is the runtime's own bundle
+///    (`data/flutter_assets`, `data/icudtl.dat`), so the directory sits
+///    next to every Windows executable ever built and would call every
+///    single build portable.
 /// 3. MSIX can be recognised conservatively here: a Windows executable
 ///    running from the per-user Packages container is a strong signal.
 /// 4. Everything else stays `unknown`; portable mode is never inferred
 ///    from a directory or file *name* — an unknown stays unknown.
 abstract final class DistributionDetector {
-  /// Recognises the user-declared portable markers: a `data/` directory or a
-  /// `portable.marker` file directly inside [executableRoot]. Returns null
-  /// when neither is present, so the caller falls through to the shape
-  /// checks. This is what keeps a portable build's data on its own medium —
-  /// without a marker (or a launcher declaration) there is no honest way to
-  /// know, and the path provider will keep such a build out of the
-  /// executable's directory.
+  /// Recognises the user-declared portable marker: a `portable.marker` file
+  /// directly inside [executableRoot]. Returns null when it is absent, so
+  /// the caller falls through to the shape checks. This is what keeps a
+  /// portable build's data on its own medium — without the marker (or a
+  /// launcher declaration) there is no honest way to know, and the path
+  /// provider will keep such a build out of the executable's directory.
   static DesktopDistribution? detectMarkers(Directory executableRoot) {
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      final dataTree = Directory(p.join(executableRoot.path, 'data'));
       final marker = File(p.join(executableRoot.path, 'portable.marker'));
-      if (dataTree.existsSync() || marker.existsSync()) {
+      if (marker.existsSync()) {
         return DesktopDistribution.portable;
       }
     }

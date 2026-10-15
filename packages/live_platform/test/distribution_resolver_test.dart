@@ -89,7 +89,7 @@ void main() {
   });
 
   test('package identity is native evidence above the markers', () {
-    Directory('${exeRoot.path}/data').createSync();
+    File('${exeRoot.path}/portable.marker').writeAsStringSync('');
 
     final resolution = DistributionResolver.resolve(
       executableRoot: exeRoot,
@@ -117,8 +117,7 @@ void main() {
     expect(resolution.origin, DistributionOrigin.undetermined);
   });
 
-  test('the markers outrank the path shape and both markers count once', () {
-    Directory('${exeRoot.path}/data').createSync();
+  test('the marker outranks the path shape and is recorded on its own medium', () {
     File('${exeRoot.path}/portable.marker').writeAsStringSync('');
 
     final resolution = DistributionResolver.resolve(
@@ -129,7 +128,7 @@ void main() {
 
     expect(resolution.distribution, DesktopDistribution.portable);
     expect(resolution.origin, DistributionOrigin.portableMarker);
-    expect(resolution.conflicts, isEmpty, reason: 'two markers are one piece of evidence');
+    expect(resolution.conflicts, isEmpty);
     // The portable hint belongs to the executable's own medium — the shared
     // metadata tree stays empty, exactly as a portable build promises.
     expect(DistributionStore.read(exeRoot)!.distribution, DesktopDistribution.portable);
@@ -138,7 +137,7 @@ void main() {
 
   test('a fresh detection different from the cache updates it', () {
     DistributionStore.writeInferred(exeRoot, DesktopDistribution.installed);
-    Directory('${exeRoot.path}/data').createSync();
+    File('${exeRoot.path}/portable.marker').writeAsStringSync('');
 
     final resolution = DistributionResolver.resolve(
       executableRoot: exeRoot,
