@@ -28,17 +28,19 @@ final class PlatformRuntime {
 /// — launcher declaration, bundled `build` claim, the native package-
 /// identity probe, the portable markers, the MSIX path shape, and finally
 /// the cached inferred claim — and a reliable fresh detection is persisted
-/// to the writable metadata directory handed to init as the new cache.
-/// Nothing here can fail a startup: every read and write failure degrades
-/// to less evidence.
+/// as the new cache: portable verdicts beside the executable, everything
+/// else in the writable metadata directory handed to init. Nothing here can
+/// fail a startup: every read and write failure degrades to less evidence.
 abstract final class PlatformBootstrap {
   /// Builds the runtime.
   ///
   /// [declaredDistribution] is the launcher's or the user's own statement
   /// and outranks everything on disk. [claimDirectory] is a writable
-  /// metadata home for the `distribution.json` inferred cache — pass the
-  /// OS application-support directory or a portable metadata tree, never
-  /// the read-only install resources; null disables caching.
+  /// metadata home for the inferred caches of non-portable verdicts — pass
+  /// the OS application-support directory or a portable metadata tree, never
+  /// the read-only install resources; null disables caching. A portable
+  /// verdict is cached beside the executable instead, on the medium it
+  /// vouches for.
   /// [packageIdentity] carries the native probe's answer (a non-null
   /// `windowsFamilyName()`); null means not probed. [formFactor] overrides
   /// the default (desktop for desktop OSes, phone for mobile) — the user's

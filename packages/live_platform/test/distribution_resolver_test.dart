@@ -130,11 +130,14 @@ void main() {
     expect(resolution.distribution, DesktopDistribution.portable);
     expect(resolution.origin, DistributionOrigin.portableMarker);
     expect(resolution.conflicts, isEmpty, reason: 'two markers are one piece of evidence');
-    expect(DistributionStore.read(claimDir)!.distribution, DesktopDistribution.portable);
+    // The portable hint belongs to the executable's own medium — the shared
+    // metadata tree stays empty, exactly as a portable build promises.
+    expect(DistributionStore.read(exeRoot)!.distribution, DesktopDistribution.portable);
+    expect(DistributionStore.read(claimDir), isNull);
   });
 
   test('a fresh detection different from the cache updates it', () {
-    DistributionStore.writeInferred(claimDir, DesktopDistribution.installed);
+    DistributionStore.writeInferred(exeRoot, DesktopDistribution.installed);
     Directory('${exeRoot.path}/data').createSync();
 
     final resolution = DistributionResolver.resolve(
@@ -145,11 +148,27 @@ void main() {
 
     expect(resolution.distribution, DesktopDistribution.portable);
     expect(resolution.origin, DistributionOrigin.portableMarker);
-    expect(DistributionStore.read(claimDir)!.distribution, DesktopDistribution.portable);
+    expect(DistributionStore.read(exeRoot)!.distribution, DesktopDistribution.portable);
+  });
+
+  test('a stale portable hint in the shared metadata tree is not evidence', () {
+    // What an older version left behind: a portable inference in the OS
+    // metadata tree an installed build reads too. The installed build must
+    // resolve unknown, not inherit the other deployment's answer.
+    DistributionStore.writeInferred(claimDir, DesktopDistribution.portable);
+
+    final resolution = DistributionResolver.resolve(
+      executableRoot: exeRoot,
+      claimDirectory: claimDir,
+      packageIdentity: false,
+    );
+
+    expect(resolution.distribution, DesktopDistribution.unknown);
+    expect(resolution.origin, DistributionOrigin.undetermined);
   });
 
   test('the cached inference only answers when nothing fresh can', () {
-    DistributionStore.writeInferred(claimDir, DesktopDistribution.portable);
+    DistributionStore.writeInferred(exeRoot, DesktopDistribution.portable);
 
     final resolution = DistributionResolver.resolve(
       executableRoot: exeRoot,

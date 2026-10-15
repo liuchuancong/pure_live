@@ -14,17 +14,20 @@ import 'package:live_platform/src/runtime/distribution_store.dart';
 /// answers when nothing fresh can. A verdict from a lower tier while a
 /// higher one spoke is impossible; the reverse is recorded as a conflict
 /// line for diagnostics. Only fresh detections are persisted, never a build
-/// claim, never `unknown`, and never a rewrite of an unchanged cache.
+/// claim, never `unknown`, and never a rewrite of an unchanged cache — and
+/// each verdict is written to the medium it vouches for: a portable verdict
+/// beside the executable, everything else into the claim directory.
 abstract final class DistributionResolver {
   /// Resolves the distribution for this process.
   ///
   /// [declared] is the launcher/native-bridge statement (`unknown` means no
   /// statement). [executableRoot] is where the bundled claim and the
-  /// portable markers live. [claimDirectory] is the writable metadata home
-  /// for the inferred cache — null disables caching, and a directory that
-  /// cannot be read or written simply disables that half. [packageIdentity]
-  /// is the native probe's answer; null means "not probed", false removes
-  /// the MSIX hypothesis without proving an installed build.
+  /// portable markers live, and where a portable verdict's inferred cache is
+  /// written. [claimDirectory] is the writable metadata home for every other
+  /// inferred cache — null disables caching, and a directory that cannot be
+  /// read or written simply disables that half. [packageIdentity] is the
+  /// native probe's answer; null means "not probed", false removes the MSIX
+  /// hypothesis without proving an installed build.
   static DistributionResolution resolve({
     DesktopDistribution? declared,
     Directory? executableRoot,
@@ -40,11 +43,15 @@ abstract final class DistributionResolver {
         : cachedClaim?.source == DistributionClaimSource.build
         ? cachedClaim
         : null;
-    final cachedInference = bundledClaim?.source == DistributionClaimSource.inferred
-        ? bundledClaim
-        : cachedClaim?.source == DistributionClaimSource.inferred
-        ? cachedClaim
-        : null;
+    final bundledInference = bundledClaim?.source == DistributionClaimSource.inferred ? bundledClaim : null;
+    final treeInference = cachedClaim?.source == DistributionClaimSource.inferred ? cachedClaim : null;
+    // A portable inference counts only where it travels with the executable:
+    // portability means data follows that medium, so a claim in the shared
+    // metadata tree cannot vouch for it — and one left there by an older
+    // version must not drag an installed build's writes next to its own
+    // (often read-only) executable.
+    final cachedInference =
+        bundledInference ?? (treeInference?.distribution == DesktopDistribution.portable ? null : treeInference);
 
     final markers = executableRoot == null ? null : DistributionDetector.detectMarkers(executableRoot);
     final shape = executableRoot == null ? null : DistributionDetector.detect(executableRoot);
@@ -99,15 +106,22 @@ abstract final class DistributionResolver {
 
     // Persist only fresh detections; never a build claim's value, never
     // unknown, never an unchanged cache. The store itself refuses to touch
-    // an existing build claim.
-    final fresh =
-        origin == DistributionOrigin.nativeIdentity ||
-        origin == DistributionOrigin.portableMarker ||
-        origin == DistributionOrigin.pathShape;
-    if (fresh && claimDirectory != null) {
-      DistributionStore.writeInferred(claimDirectory, distribution);
+    // an existing build claim. Each verdict lands on the medium it vouches
+    // for — portable beside the executable, so the hint moves with the
+    // bundle and never reaches the OS tree a portable build must leave
+    // untouched; everything else into the claim directory, which an MSIX
+    // build's container keeps to itself anyway.
+    final resolution = DistributionResolution(
+      distribution: distribution,
+      origin: origin,
+      conflicts: List.unmodifiable(conflicts),
+    );
+    if (resolution.isPersistableDetection) {
+      final cacheTarget = distribution == DesktopDistribution.portable ? executableRoot : claimDirectory;
+      if (cacheTarget != null) {
+        DistributionStore.writeInferred(cacheTarget, distribution);
+      }
     }
-
-    return DistributionResolution(distribution: distribution, origin: origin, conflicts: List.unmodifiable(conflicts));
+    return resolution;
   }
 }

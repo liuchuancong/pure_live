@@ -22,7 +22,9 @@ enum DistributionOrigin {
   pathShape,
 
   /// The cached inferred claim from an earlier reliable detection — a hint,
-  /// never trusted above fresh evidence.
+  /// never trusted above fresh evidence. A portable hint counts only when it
+  /// travels with the executable; the shared metadata tree cannot vouch for
+  /// portability.
   cachedInference,
 
   /// Nothing was conclusive.
