@@ -42,6 +42,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$app$en app = _Translations$app$en._(_root);
 	@override late final _Translations$home$en home = _Translations$home$en._(_root);
 	@override late final _Translations$common$en common = _Translations$common$en._(_root);
+	@override late final _Translations$search$en search = _Translations$search$en._(_root);
 	@override late final _Translations$errors$en errors = _Translations$errors$en._(_root);
 	@override late final _Translations$tabs$en tabs = _Translations$tabs$en._(_root);
 }
@@ -83,6 +84,16 @@ class _Translations$common$en extends Translations$common$zh {
 	@override String pageOf({required int page, required int total}) => 'Page ${page} of ${total}';
 }
 
+// Path: search
+class _Translations$search$en extends Translations$search$zh {
+	_Translations$search$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get hint => 'Search rooms by keyword';
+}
+
 // Path: errors
 class _Translations$errors$en extends Translations$errors$zh {
 	_Translations$errors$en._(TranslationsEn root) : this._root = root, super.internal(root);
@@ -109,6 +120,7 @@ class _Translations$tabs$en extends Translations$tabs$zh {
 	@override String get history => 'History';
 	@override String get popular => 'Popular';
 	@override String get areas => 'Areas';
+	@override String get search => 'Search';
 	@override String get settings => 'Settings';
 }
 
@@ -130,6 +142,7 @@ extension on TranslationsEn {
 			'common.loading' => 'Loading',
 			'common.empty' => 'Nothing here yet',
 			'common.pageOf' => ({required int page, required int total}) => 'Page ${page} of ${total}',
+			'search.hint' => 'Search rooms by keyword',
 			'errors.generic' => 'Something went wrong. Please try again later.',
 			'errors.network' => 'Network unavailable. Check your connection and retry.',
 			'errors.notFound' => 'Nothing found.',
@@ -140,6 +153,7 @@ extension on TranslationsEn {
 			'tabs.history' => 'History',
 			'tabs.popular' => 'Popular',
 			'tabs.areas' => 'Areas',
+			'tabs.search' => 'Search',
 			'tabs.settings' => 'Settings',
 			_ => null,
 		};

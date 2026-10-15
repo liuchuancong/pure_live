@@ -15,6 +15,9 @@
     "empty": "Nothing here yet",
     "pageOf": "Page {page: int} of {total: int}"
   },
+  "search": {
+    "hint": "Search rooms by keyword"
+  },
   "errors": {
     "generic": "Something went wrong. Please try again later.",
     "network": "Network unavailable. Check your connection and retry.",
@@ -28,6 +31,7 @@
     "history": "History",
     "popular": "Popular",
     "areas": "Areas",
+    "search": "Search",
     "settings": "Settings"
   }
 }

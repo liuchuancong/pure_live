@@ -121,6 +121,9 @@ class AreasRoute extends GoRouteData with $AreasRoute {
 
 /// One area's room list, a full page above the shell; [areaName] rides as
 /// the query and only titles the page.
+///
+/// The search page (`/search`) is declared in its own routes file, like
+/// settings, so the home menu reaches it without importing this library.
 @TypedGoRoute<AreaRoomsRoute>(path: '/areas/:siteId/:areaId')
 class AreaRoomsRoute extends GoRouteData with $AreaRoomsRoute {
   /// The area rooms route.

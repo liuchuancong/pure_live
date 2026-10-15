@@ -22,6 +22,9 @@
     "empty": "暂无内容",
     "pageOf": "第 {page: int} / {total: int} 页"
   },
+  "search": {
+    "hint": "输入关键词搜索房间"
+  },
   "errors": {
     "generic": "出了点问题，请稍后再试。",
     "network": "网络连接不可用，请检查网络后重试。",
@@ -35,6 +38,7 @@
     "history": "历史",
     "popular": "热门",
     "areas": "分区",
+    "search": "搜索",
     "settings": "设置"
   }
 }

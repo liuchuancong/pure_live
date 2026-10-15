@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_platform/live_platform.dart' show PlatformEnvironment;
-import 'package:live_sites/live_sites.dart' show LiveAreaProvider, LiveDiscoveryProvider;
+import 'package:live_sites/live_sites.dart' show LiveAreaProvider, LiveDiscoveryProvider, LiveSearchProvider;
 import 'package:live_storage/live_storage.dart' show StorageBootstrap;
 import 'package:live_uikit/styling.dart';
 
@@ -58,6 +58,14 @@ final areaProvider = Provider.family<LiveAreaProvider?, String>(_areasOf);
 
 LiveAreaProvider? _areasOf(Ref ref, String siteId) =>
     ref.watch(sitesProvider).registry.getById(siteId)?.capability<LiveAreaProvider>();
+
+/// The search capability of a site id, null when the site does not expose
+/// one. The registry is static after boot, so a family entry never changes.
+// ignore: specify_nonobvious_property_types
+final searchProvider = Provider.family<LiveSearchProvider?, String>(_searchOf);
+
+LiveSearchProvider? _searchOf(Ref ref, String siteId) =>
+    ref.watch(sitesProvider).registry.getById(siteId)?.capability<LiveSearchProvider>();
 
 /// The persisted appearance, the single source the theme is derived from.
 ///

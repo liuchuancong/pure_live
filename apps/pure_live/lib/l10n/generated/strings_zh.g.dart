@@ -44,6 +44,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$app$zh app = Translations$app$zh.internal(_root);
 	late final Translations$home$zh home = Translations$home$zh.internal(_root);
 	late final Translations$common$zh common = Translations$common$zh.internal(_root);
+	late final Translations$search$zh search = Translations$search$zh.internal(_root);
 	late final Translations$errors$zh errors = Translations$errors$zh.internal(_root);
 	late final Translations$tabs$zh tabs = Translations$tabs$zh.internal(_root);
 }
@@ -105,6 +106,18 @@ class Translations$common$zh {
 	String pageOf({required int page, required int total}) => '第 ${page} / ${total} 页';
 }
 
+// Path: search
+class Translations$search$zh {
+	Translations$search$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '输入关键词搜索房间'
+	String get hint => '输入关键词搜索房间';
+}
+
 // Path: errors
 class Translations$errors$zh {
 	Translations$errors$zh.internal(this._root);
@@ -152,6 +165,9 @@ class Translations$tabs$zh {
 	/// zh: '分区'
 	String get areas => '分区';
 
+	/// zh: '搜索'
+	String get search => '搜索';
+
 	/// zh: '设置'
 	String get settings => '设置';
 }
@@ -174,6 +190,7 @@ extension on Translations {
 			'common.loading' => '加载中',
 			'common.empty' => '暂无内容',
 			'common.pageOf' => ({required int page, required int total}) => '第 ${page} / ${total} 页',
+			'search.hint' => '输入关键词搜索房间',
 			'errors.generic' => '出了点问题，请稍后再试。',
 			'errors.network' => '网络连接不可用，请检查网络后重试。',
 			'errors.notFound' => '没有找到相关内容。',
@@ -184,6 +201,7 @@ extension on Translations {
 			'tabs.history' => '历史',
 			'tabs.popular' => '热门',
 			'tabs.areas' => '分区',
+			'tabs.search' => '搜索',
 			'tabs.settings' => '设置',
 			_ => null,
 		};

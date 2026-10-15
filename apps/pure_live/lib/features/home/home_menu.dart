@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:pure_live/app/routing/app_router.dart';
+import 'package:pure_live/app/routing/routes/search_routes.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 
 /// A destination of the home menu: where it goes, and how it presents.
@@ -31,6 +32,11 @@ final class HomeMenuEntry {
       label: context.t.tabs.areas,
       icon: Icons.category_outlined,
       onOpen: (context) => const AreasRoute().push<void>(context),
+    ),
+    HomeMenuEntry(
+      label: context.t.tabs.search,
+      icon: Icons.search,
+      onOpen: (context) => const SearchRoute().push<void>(context),
     ),
   ];
 }
