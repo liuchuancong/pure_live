@@ -5,12 +5,12 @@ import 'dart:ui' show Color;
 
 import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:live_platform/live_platform.dart' show PlatformKind, PlatformRuntimeInfo;
-import 'package:live_preferences/live_preferences.dart' show DesktopPreferencesAsShell, PreferencesService;
 import 'package:live_shell/live_shell.dart';
 import 'package:live_shell_desktop/live_shell_desktop.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pure_live/platform/desktop_tray_icons.dart' show trayIconAssets;
 import 'package:pure_live/storage/services.dart' show AppServices;
+import 'package:pure_live/user_data/preferences/preferences.dart' show DesktopPreferencesAsShell, PreferencesService;
 
 /// The window surface colour for the beat before Flutter paints its first frame.
 ///

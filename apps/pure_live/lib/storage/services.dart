@@ -1,6 +1,6 @@
-import 'package:live_preferences/live_preferences.dart' show PreferencesKeys, PreferencesService;
 import 'package:live_storage/live_storage.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:pure_live/user_data/preferences/preferences.dart' show PreferencesKeys, PreferencesService;
 
 /// The application's storage + preferences composition root.
 ///

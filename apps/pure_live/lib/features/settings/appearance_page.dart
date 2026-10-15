@@ -4,13 +4,13 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_platform/live_platform.dart' show PlatformKind, PlatformRuntimeInfo;
-import 'package:live_preferences/live_preferences.dart' show DesktopPreferences, Preferences;
 import 'package:live_shell/live_shell.dart' show CloseAction, CommandStartupRegistration;
 import 'package:live_uikit/styling.dart';
 
 import 'package:pure_live/app/appearance_mapping.dart';
 import 'package:pure_live/app/providers.dart';
 import 'package:pure_live/storage/services.dart';
+import 'package:pure_live/user_data/preferences/preferences.dart' show DesktopPreferences, Preferences;
 
 /// The appearance editor: every [UiConfig] choice, persisted through
 /// [AppServices.preferences]. The root `LiveConfigProvider` watches the same

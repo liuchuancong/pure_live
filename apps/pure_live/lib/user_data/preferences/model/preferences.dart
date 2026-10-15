@@ -1,13 +1,13 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import 'package:live_preferences/src/model/appearance_preferences.dart';
-import 'package:live_preferences/src/model/danmaku_preferences.dart';
-import 'package:live_preferences/src/model/desktop_preferences.dart';
-import 'package:live_preferences/src/model/iptv_preferences.dart';
-import 'package:live_preferences/src/model/library_preferences.dart';
-import 'package:live_preferences/src/model/playback_preferences.dart';
-import 'package:live_preferences/src/model/tv_preferences.dart';
-import 'package:live_preferences/src/model/window_preferences.dart';
+import 'package:pure_live/user_data/preferences/model/appearance_preferences.dart';
+import 'package:pure_live/user_data/preferences/model/danmaku_preferences.dart';
+import 'package:pure_live/user_data/preferences/model/desktop_preferences.dart';
+import 'package:pure_live/user_data/preferences/model/iptv_preferences.dart';
+import 'package:pure_live/user_data/preferences/model/library_preferences.dart';
+import 'package:pure_live/user_data/preferences/model/playback_preferences.dart';
+import 'package:pure_live/user_data/preferences/model/tv_preferences.dart';
+import 'package:pure_live/user_data/preferences/model/window_preferences.dart';
 
 part 'preferences.freezed.dart';
 

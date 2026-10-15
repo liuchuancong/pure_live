@@ -1,5 +1,5 @@
-import 'package:live_preferences/src/model/desktop_preferences.dart';
 import 'package:live_shell/live_shell.dart' show RenderFallbacks, ShellSettings;
+import 'package:pure_live/user_data/preferences/model/desktop_preferences.dart';
 
 /// The desktop group read as shell configuration.
 ///

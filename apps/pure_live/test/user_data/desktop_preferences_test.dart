@@ -1,6 +1,6 @@
-import 'package:live_preferences/live_preferences.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:live_shell/live_shell.dart' show CloseAction, ShellSettings;
-import 'package:test/test.dart';
+import 'package:pure_live/user_data/preferences/preferences.dart';
 
 /// The persisted shape of the desktop group, pinned on purpose.
 ///

@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart' show Color;
 
-import 'package:live_preferences/live_preferences.dart' show AppThemeMode, AppearancePreferences;
 import 'package:live_uikit/styling.dart' show LiveDesignLanguage, UiBrightnessMode, UiConfig, UiDensity;
+import 'package:pure_live/user_data/preferences/preferences.dart' show AppThemeMode, AppearancePreferences;
 
 /// Bridges the persisted [AppearancePreferences] document and live_uikit's
 /// [UiConfig].

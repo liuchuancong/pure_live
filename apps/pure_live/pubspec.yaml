@@ -46,7 +46,6 @@ dependencies:
   live_net:
   live_platform:
   live_playback:
-  live_preferences:
   live_shell:
   live_shell_desktop:
   live_sites:
