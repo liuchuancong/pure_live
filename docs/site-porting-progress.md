@@ -44,11 +44,13 @@
 | looklive LOOKS LIVE | ✅ | 见下方"looklive 明细";已注册进 `built_in_sites` |
 | liveme Live.me | ✅ | 见下方"liveme 明细";已注册进 `built_in_sites` |
 | xiaohongshu 小红书 | ✅ | 见下方"xiaohongshu 明细";已注册进 `built_in_sites` |
+| cc 网易CC | ✅ | 见下方"cc 明细";已注册进 `built_in_sites` |
+| inke 映客 | ✅ | 见下方"inke 明细";已注册进 `built_in_sites` |
 | showroom SHOWROOM | ✅ | 见下方"showroom 明细";已注册进 `built_in_sites` |
 | twitcasting ツイキャス | ✅ | 见下方"twitcasting 明细";已注册进 `built_in_sites` |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
-| seventeenlive / sixroom(2 文件)/ steambroadcast / yy(1)/ cc(4)/ inke(1)/ tiktok(2) | 🔄 | 后台代理被并发上限暂停,半成品在盘;按滚动队列重启 |
+| seventeenlive / sixroom / steambroadcast / yy | 🔄 | 后台代理进行中(sixroom/yy 测试编译收尾) |
 | cc / inke / liveme / tiktok / xiaohongshu | ⬜ | 仅 `live_core` 有(纯目录/播放,无弹幕) |
 
 ## douyu 明细(2026-10-14)
@@ -298,6 +300,20 @@
 - 数据面:`window.__INITIAL_STATE__` 水合解析(唯一 script 定位、裸 undefined→null 扫描器、2MiB 门);pageStatus/roomId 一致性/status×liveStatus/字符串型字段;拉流 pullConfig 行规则(剔行、32 行上限、xhscdn 地址契约)、单组画质 FLV 先于 HLS、h264 先于 h265、行标签 #N/:hevc、formatSource inferred(kilakila 先例);链接 canonical/dynpath/hina + 深链 xhsdiscover:// + 短链一次 GET 跟随(从 Location 头或落地页水合态取房号,douyin v2 先例);分享文字批量提取 shareTextRoomIds 已移植有测试,未接能力(v2 无 share-text 钩子,记档)。
 - **代理的适配与延后项(记档)**:①目录/推荐公告文案(3.x directoryNoticeKey)无处挂载 → 延后;②短链跟随改为一次 GET 由传输层跟随(3.x 逐跳校验弃用,对最终落地仍校验);③refresh/record/getLiveStatus 无对应能力(单一 getRoom)。
 - 验证:`dart analyze` No issues;`dart test test/platforms/xiaohongshu` **87 项全绿**(水合解析严格性/限制分支/地址契约剔行/链接正反例/HTTP 状态映射/短链跟随/能力接线/错误边界)。
+
+## cc 明细(2026-10-15,后台代理接手补齐)
+整站从 `live_core/sites/cc` 迁到 `platforms/cc/`(接手上一代理的 api 半成品,补齐 parser/link/site/capabilities/测试;我审查后注册)。**无新依赖、无弹幕**(参考无;LiveDanmakuProvider 未注册,Hot/Anchor/WebSearch 亦 null)。
+- 能力六个注册:room / area / discovery / search / playback / link_resolver。`CcFailure → toLiveSiteError('cc')`(410/404→contentUnavailable/notFound;401/403 折 rateLimit)。
+- 数据面:目录(移动端 gamecategory + Dashen 官方房间/专题)、分区/推荐/搜索三列表、`activitylives`→`live/channel` 房间链路、无频道房间的 `__NEXT_DATA__` 房间页、`video_play_url` tiers/CDN/lines、3.x 档位表 fallback、`auth_key` lease、【重播】→ replay;链接三种(cc.163.com、h5.cc.163.com/cc/、ds.163.com/glive)。
+- **适配与延后项(记档)**:①受众数字改 `int?`,followers 入 `LiveAnchor.followerCount`;②目录由 LiveCategory 树改 LiveArea 扁平(parentAreaId/Name);③`LivePlayQuality.data` 不存在 → `_legacy` 标记 + CcRoomData 区分 fallback 线路,quality 缺 `vbrname_sel` 用 isPlaybackUnconfirmed;④推荐页 pageSize 上限截 1000;⑤entry/refresh/status 三档深度与 `wapcc/recommendbyccid` 存在性检查无 v2 面,仅 entry 深度。
+- 验证:`dart analyze` No issues;`dart test test/platforms/cc` **37 项全绿**(状态门/4MiB/cuteid/回显校验/行数上限/坏行跳过/错误分支/fallback 链/能力接线)。
+
+## inke 明细(2026-10-15,后台代理接手补齐)
+整站从 `live_core/sites/inke` 迁到 `platforms/inke/`(接手上一代理的 1 个 api 文件,补齐其余 12 个 lib + 测试;我审查后注册)。**无新依赖、无弹幕**(LiveDanmakuProvider 未注册,Hot 等亦 null)。
+- 能力六个注册:room / area(官网 top+channels `Live_channel_pc`)/ discovery(App 热榜 `simpleall`)/ search(uid/链接精确定位 + 三列表昵称过滤,热榜失败可容忍;limit 10000/60/100 原样拒绝)/ playback / link_resolver(web 房间页+mlive 分享页规范化,保留数字 broadcast id)。`InkeFailure → toLiveSiteError('inke')`(riskControl 折 rateLimit)。
+- 数据面:房间 = `live_share_pc` + `now_publish` 合并(占位标题、标题/封面回退、online/heat 观众语义、hasLine→restriction);播放 = FLV(H.264)+ 原画(HEVC/codecInfo=8192)、"优先 H.264"排序、30s answerReuse、App 无线时按 top→hot→channel 顺序 showcase 兜底;`wsABStime` 租约(提前 min(1/4 lifetime,10min))。
+- **代理的适配与延后项(记档)**:①playback 按 roomId → `_streams` 会话表存条目 stream handle(kilakila 同款,64 条上限);②getLiveStatus/刷新/录制 resolver、LiveDirectoryNotice、搜索分页策略接口无 v2 面;③列表为有限 showcase,page≥2 恒空不请求,省去 30s snapshot 复用;④v2 LiveRequest 无 followRedirects(参考为不跟随);⑤freezed 4 `copyWith` 非空字段不可传 null → withBroadcast 整体重建 content/broadcast。
+- 验证:`dart analyze` No issues;`dart test test/platforms/inke` **48 项全绿**(信封门/showcase/hot/detail/now_publish 解析、pull URL 校验/租约/qualities/lines、链接解析、错误分支、能力接线)。
 
 ## 环境缺口
 无。此前 `packages/live_playback` 以 `path:` 依赖工作区外的 `D:\media_core` 导致整仓 `dart pub get` 解析失败、`dart test` 跑不起来;2026-10-14 已把 `media_core` / `media_core_danmaku` / `media_core_mediasession` 改为 pub git 源(`github.com/liuchuancong/media_core`),仓库根 `flutter pub get` 即可完整解析,交付门的 test 步骤不再需要人工补 media_core 或造桩。

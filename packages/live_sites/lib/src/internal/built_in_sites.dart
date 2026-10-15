@@ -6,6 +6,8 @@ import 'package:live_sites/src/platforms/bigo/api/bigo_http.dart';
 import 'package:live_sites/src/platforms/bigo/bigo_site.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_http.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_site.dart';
+import 'package:live_sites/src/platforms/cc/api/cc_http.dart';
+import 'package:live_sites/src/platforms/cc/cc_site.dart';
 import 'package:live_sites/src/platforms/chzzk/api/chzzk_http.dart';
 import 'package:live_sites/src/platforms/chzzk/chzzk_site.dart';
 import 'package:live_sites/src/platforms/douyin/api/douyin_http.dart';
@@ -16,6 +18,8 @@ import 'package:live_sites/src/platforms/fc2live/api/fc2live_http.dart';
 import 'package:live_sites/src/platforms/fc2live/fc2live_site.dart';
 import 'package:live_sites/src/platforms/huya/api/huya_http.dart';
 import 'package:live_sites/src/platforms/huya/huya_site.dart';
+import 'package:live_sites/src/platforms/inke/api/inke_http.dart';
+import 'package:live_sites/src/platforms/inke/inke_site.dart';
 import 'package:live_sites/src/platforms/jdlive/api/jdlive_http.dart';
 import 'package:live_sites/src/platforms/jdlive/jdlive_site.dart';
 import 'package:live_sites/src/platforms/kick/api/kick_http.dart';
@@ -68,12 +72,14 @@ List<LiveSite> createBuiltInLiveSites({LiveHttp? http}) {
     TwitchSite(http: TwitchHttp(transport)),
     AcfunSite(http: AcfunHttp(transport)),
     BigoSite(http: BigoHttp(transport)),
+    CcSite(http: CcHttp(transport)),
     ChzzkSite(http: ChzzkHttp(transport)),
     Fc2LiveSite(http: Fc2LiveHttp(transport)),
     KickSite(http: KickHttp(transport)),
     NiconicoSite(http: NiconicoHttp(transport)),
     PicartoSite(http: PicartoHttp(transport)),
     LookliveSite(http: LookliveHttp(transport)),
+    InkeSite(http: InkeHttp(transport)),
     JdliveSite(http: JdliveHttp(transport)),
     KilakilaSite(http: KilakilaHttp(transport)),
     KugouliveSite(http: KugouliveHttp(transport)),

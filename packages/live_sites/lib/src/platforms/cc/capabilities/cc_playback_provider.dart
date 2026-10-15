@@ -1,0 +1,48 @@
+import 'package:fpdart/fpdart.dart';
+import 'package:live_sites/src/capabilities/live_playback_provider.dart';
+import 'package:live_sites/src/core/live_site_error.dart';
+import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
+import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/platforms/cc/cc_site.dart';
+import 'package:live_sites/src/platforms/cc/parsers/cc_failure.dart';
+
+// Platform-internal code: constructor-name and doc verbosity rules that
+// govern the public surface are relaxed here.
+// ignore_for_file: unnecessary_type_name_in_constructor
+
+/// CC's playback: the real tiers of `video_play_url`, and 3.x's redirect
+/// playlist as the fallback when the room carries its tier list.
+///
+/// The play URLs are signed and expire (`auth_key`), so each line carries
+/// the lease of its key; an expired URL refuses new connections only, so an
+/// established connection keeps flowing. An anchor who is not broadcasting
+/// says stream-unavailable, never an empty list.
+final class CcPlaybackProvider implements LivePlaybackProvider {
+  /// Serves [site].
+  CcPlaybackProvider({required this.site});
+
+  /// The site this capability serves.
+  final CcSite site;
+
+  @override
+  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required String roomId}) async {
+    try {
+      return right(await site.qualitiesOf(roomId));
+    } on CcFailure catch (failure) {
+      return left(failure.toLiveSiteError('cc'));
+    } on Object catch (error) {
+      return left(LiveSiteError.unexpected(siteId: 'cc', message: '$error', cause: error));
+    }
+  }
+
+  @override
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
+    try {
+      return right(await site.linesOf(roomId, quality: quality));
+    } on CcFailure catch (failure) {
+      return left(failure.toLiveSiteError('cc'));
+    } on Object catch (error) {
+      return left(LiveSiteError.unexpected(siteId: 'cc', message: '$error', cause: error));
+    }
+  }
+}
