@@ -20,10 +20,10 @@ abstract interface class StoragePolicy {
 ///
 /// Root directories come from the app shell (path_provider results):
 /// `portableRoot` is the executable's own directory, under which portable
-/// layouts put the per-area trees (`data/`, `cache/`, …); `userRoot` the OS
-/// application-support directory, `cacheRoot` the OS cache directory,
-/// `tempRoot` the system temporary directory, `downloadsRoot` the
-/// user-visible OS download folder.
+/// layouts put the per-area trees (`data/pure_live`, `cache/`, …);
+/// `userRoot` the OS application-support directory, `cacheRoot` the OS
+/// cache directory, `tempRoot` the system temporary directory,
+/// `downloadsRoot` the user-visible OS download folder.
 ///
 /// The one hard rule: a portable build never resolves a persistent area
 /// into `userRoot`/`cacheRoot` — user data follows the executable, which is
@@ -35,7 +35,7 @@ final class DefaultStoragePolicy implements StoragePolicy {
   const new({this.portableRoot, this.userRoot, this.cacheRoot, this.tempRoot, this.downloadsRoot});
 
   /// The executable's directory (portable layouts only); the per-area
-  /// segments (`data/`, `cache/`, …) are appended beneath it.
+  /// segments (`data/pure_live`, `cache/`, …) are appended beneath it.
   final Directory? portableRoot;
 
   /// The OS per-user application-data directory. Never offered to a
@@ -79,7 +79,12 @@ final class DefaultStoragePolicy implements StoragePolicy {
     };
     if (persistent) {
       return [
-        if (portable && portableRoot != null) Directory('${portableRoot!.path}/${_segment(area)}'),
+        // Flutter's own Windows bundle occupies `data/` next to the
+        // executable (`data/flutter_assets`, `data/icudtl.dat`), so the
+        // portable data area namespaces itself beneath that directory
+        // instead of writing into the runtime's files.
+        if (portable && portableRoot != null)
+          Directory('${portableRoot!.path}/${area == StorageArea.data ? 'data/pure_live' : _segment(area)}'),
         if (!portable && userRoot != null) Directory('${userRoot!.path}/${_segment(area)}'),
       ];
     }

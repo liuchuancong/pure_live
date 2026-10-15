@@ -65,7 +65,7 @@ void main() {
       downloadsDirectory: () async => Directory('${root.path}/downloads'),
     );
 
-    expect((await runtime.storage.resolve(StorageArea.data)).path, '${root.path}/app/data');
+    expect((await runtime.storage.resolve(StorageArea.data)).path, '${root.path}/app/data/pure_live');
     expect((await runtime.storage.resolve(StorageArea.config)).path, '${root.path}/app/config');
 
     final downloads = await runtime.storage.resolve(StorageArea.downloads);

@@ -50,7 +50,9 @@ void main() {
   test('a portable layout puts the area tree under the executable', () {
     final policy = DefaultStoragePolicy(portableRoot: exeRoot, userRoot: userRoot);
 
-    expect(paths(policy.candidatesFor(StorageArea.data, snapshot(portable: true))), ['${exeRoot.path}/data']);
+    expect(paths(policy.candidatesFor(StorageArea.data, snapshot(portable: true))), [
+      '${exeRoot.path}/data/pure_live',
+    ], reason: 'the runtime bundle owns data/ itself');
     expect(paths(policy.candidatesFor(StorageArea.exports, snapshot(portable: true))), ['${exeRoot.path}/exports']);
   });
 
