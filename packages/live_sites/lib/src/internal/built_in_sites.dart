@@ -30,6 +30,10 @@ import 'package:live_sites/src/platforms/missevan/api/missevan_http.dart';
 import 'package:live_sites/src/platforms/missevan/missevan_site.dart';
 import 'package:live_sites/src/platforms/niconico/api/niconico_http.dart';
 import 'package:live_sites/src/platforms/niconico/niconico_site.dart';
+import 'package:live_sites/src/platforms/pandalive/api/pandalive_http.dart';
+import 'package:live_sites/src/platforms/pandalive/pandalive_site.dart';
+import 'package:live_sites/src/platforms/showroom/api/showroom_http.dart';
+import 'package:live_sites/src/platforms/showroom/showroom_site.dart';
 import 'package:live_sites/src/platforms/soop/api/soop_http.dart';
 import 'package:live_sites/src/platforms/soop/soop_site.dart';
 import 'package:live_sites/src/platforms/twitcasting/api/twitcasting_http.dart';
@@ -64,6 +68,8 @@ List<LiveSite> createBuiltInLiveSites({LiveHttp? http}) {
     KilakilaSite(http: KilakilaHttp(transport)),
     KugouliveSite(http: KugouliveHttp(transport)),
     MissevanSite(http: MissevanHttp(transport)),
+    PandaliveSite(http: PandaliveHttp(transport)),
+    ShowroomSite(http: ShowroomHttp(transport)),
     SoopSite(http: SoopHttp(transport)),
     TwitcastingSite(http: TwitcastingHttp(transport)),
   ];

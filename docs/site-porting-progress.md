@@ -39,10 +39,12 @@
 | kugoulive 酷狗直播 | ✅ | 见下方"kugoulive 明细";已注册进 `built_in_sites` |
 | soop SOOP | ✅ | 见下方"soop 明细";已注册进 `built_in_sites` |
 | missevan 猫耳FM | ✅ | 见下方"missevan 明细";已注册进 `built_in_sites` |
+| pandalive 판다라이브 | ✅ | 见下方"pandalive 明细";已注册进 `built_in_sites` |
+| showroom SHOWROOM | ✅ | 见下方"showroom 明细";已注册进 `built_in_sites` |
 | twitcasting ツイキャス | ✅ | 见下方"twitcasting 明细";已注册进 `built_in_sites` |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
-| pandalive / picarto / seventeenlive / showroom / sixroom / steambroadcast / yy | ⬜ | 其余含弹幕站;pandalive/picarto/showroom 后台代理进行中 |
+| picarto / seventeenlive / sixroom / steambroadcast / yy | ⬜ | 其余含弹幕站;picarto 后台代理进行中 |
 | cc / inke / liveme / tiktok / xiaohongshu | ⬜ | 仅 `live_core` 有(纯目录/播放,无弹幕) |
 
 ## douyu 明细(2026-10-14)
@@ -249,6 +251,21 @@
 - 弹幕(13-2):guest session(/api/user/info 取 FM_SESS cookie,3 试可注入间隔,缓存复用)→ wss(join uuid 确认,重连带 reconnect:1,5s join 超时);心跳 30s 文本 ❤️(服务端回显)、静默 90s 换线;拒答 → 换新 session+socket(≤3 次)后终止;8 次重连预算;消息:brotli 帧(首字节 1,4 字节头)与明文 JSON 双路;chat/room statistics(真实收听数)/付费提问 superChat/message_clear 撤回/noble 贵族(开通/续费文案)/pk 与 global_pk 与 team_pk(中文文案表 + raid 进度)/gift(钻石折 gold、免费折 free,luckyGift 无 v2 字段丢弃记档,combo id/num)。
 - **代理的适配与延后项(记档)**:①握手 401/403 续期简化——SocketChannel 接缝看不到状态码,cookie 仅在 join 被拒时强制换新,socket 打开失败沿用缓存 cookie 走重连预算;②luckyGift 嵌套丢弃(v2 LiveGift 无字段);③session 重试间隔可注入(测试 Duration.zero)。
 - 验证:`dart analyze lib/src/platforms/missevan test/platforms/missevan` No issues;`dart test test/platforms/missevan` **69 项全绿**(信封门/目录/分页 echo/房间行/detail/拉流校验/租约/legacy id/链接矩阵/七能力接线;弹幕 endpoint/session/join/uuid、明文+真实 brotli 编码帧、负例 4 种、全部消息类型、会话生命周期)。
+
+## pandalive 明细(2026-10-15,后台代理接手补齐)
+整站从 `live_core/sites/pandalive` + `live_danmaku/sites/pandalive.dart` 迁到 `platforms/pandalive/`(第一个代理写了 api/parsers 后被配额中断,第二个代理修 16 错 + 补齐全部,我审查后注册)。**无新依赖**。
+- 能力六个+link_resolver 全注册:room / area(参考的分区结构)/ discovery / search(精确 id 提前/补查、NotFound 吞掉、bj+live 半页照参考)/ playback / link_resolver;`PandaliveFailure → toLiveSiteError('pandalive')`。
+- 数据面:profileCard 语义修复(对外主播 media 回退离线房间与参考不符,改为返回 null=参考语义);会话 kilakila 形态(SocketChannel + site.connect + 注入 Timer),重连预算 8、拒绝预算 3、join 8s、心跳 25s、看门狗 90s、token 续期按 ttl-60s(ttl 短则减半),FakeTimers 驱动。
+- **适配与延后项(记档)**:①LiveGiftUnit 无 heart → 하트 후원(红心赞助)记 `other`(unitPrice 1.0),kind=tip;②v2 无 recovery 能力 → kept variants 过期(variantRefresh 30min)后 getLines 自动重进房间换新 token(测试覆盖);③搜索 hasMore 为 null(平台不告知);④搜索去掉参考中不可测的 cancel 分支。
+- 验证:`dart analyze` No issues;`dart test test/platforms/pandalive` **56 项全绿**(answers/readers、links、cards/pages、member/play、room entry、streams、chat protocol、comment session、adapter wiring)。
+
+## showroom 明细(2026-10-15,后台代理移植)
+整站从 `live_core/sites/showroom` + `live_danmaku/sites/showroom.dart`(277 行轻弹幕)迁到 `platforms/showroom/`(后台代理按统一模板与交付门执行,我审查后注册)。**无新依赖**。
+- 能力七项全注册(room/area/discovery/search/playback/danmaku/link_resolver);LiveHot/Anchor 参考 没有 → 注册 null。`ShowroomFailure → toLiveSiteError('showroom')`。
+- 数据面:onlives 快照(30s 共享/拉刷新/超时再取)→ genre 分区,推荐 = Popularity genre,搜索 = 快照过滤;房间入口 status → profile + live_info → streaming_url;播放 hls 分层(原画/中画质/低画质 + 自动 master 置尾、无租约);礼物表缓存(30min/失败重试 5min/16 房);链接解析(profile 页/键页/纯数字键 → room/status)。
+- 弹幕:SUB/PING/ACK + MSG 帧(聊天+礼物,目录表定价、gt=2 免费、默认图标、字节帧);silence 180s、重连预算 8 次、open 即 joined(服务器不确认,无 join 定时器——照参考)。
+- **适配与延后项(记档)**:①礼物表未用 Isolate.run(参考有;包内其他平台均内联,且 isolate 不 web 安全);②playback 按 roomId 无 detail 对象 → 入口记 ShowroomStreamData(offline 标记复刻免请求路径);③目录页固定 30 行/页、推荐与搜索按 pageSize 切片(≤100)照参考;④卡片/详情 area 由 genreName 升级为 LiveArea 对象(参考本就校验 genre_id);⑤未实现(参考也没有):webRTC 等非 hls 类型、t=5/8/18/101/104 等其余 MSG 种类、premium 付费房(无样本)。
+- 验证:`dart analyze` No issues;`dart test test/platforms/showroom` **57 项全绿**(状态门/逐行容错/编解码往返含定价/错误分支/七能力接线/快照复用/礼物表缓存/会话生命周期)。
 
 ## 环境缺口
 无。此前 `packages/live_playback` 以 `path:` 依赖工作区外的 `D:\media_core` 导致整仓 `dart pub get` 解析失败、`dart test` 跑不起来;2026-10-14 已把 `media_core` / `media_core_danmaku` / `media_core_mediasession` 改为 pub git 源(`github.com/liuchuancong/media_core`),仓库根 `flutter pub get` 即可完整解析,交付门的 test 步骤不再需要人工补 media_core 或造桩。

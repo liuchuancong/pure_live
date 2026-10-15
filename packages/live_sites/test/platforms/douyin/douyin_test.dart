@@ -953,6 +953,8 @@ void main() {
         'kilakila',
         'kugoulive',
         'missevan',
+        'pandalive',
+        'showroom',
         'soop',
         'twitcasting',
       ]);

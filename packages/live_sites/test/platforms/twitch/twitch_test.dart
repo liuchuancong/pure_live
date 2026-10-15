@@ -724,6 +724,8 @@ https://other.example/1.m3u8
         'kilakila',
         'kugoulive',
         'missevan',
+        'pandalive',
+        'showroom',
         'soop',
         'twitcasting',
       ]);
