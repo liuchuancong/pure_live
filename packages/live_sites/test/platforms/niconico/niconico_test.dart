@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:fpdart/fpdart.dart';
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
+import 'package:live_sites/src/internal/built_in_sites.dart';
 import 'package:live_sites/src/models/audience/live_audience_update/live_audience_update.dart';
 import 'package:live_sites/src/models/enums/live_audience_signal_kind.dart';
 import 'package:live_sites/src/models/enums/live_gift_unit.dart';
@@ -16,12 +17,16 @@ import 'package:live_sites/src/models/enums/live_restriction.dart';
 import 'package:live_sites/src/models/enums/live_search_target.dart';
 import 'package:live_sites/src/models/enums/live_status.dart';
 import 'package:live_sites/src/models/gift/live_gift/live_gift.dart';
+import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
+import 'package:live_sites/src/platforms/niconico/api/niconico_endpoints.dart';
 import 'package:live_sites/src/platforms/niconico/api/niconico_http.dart';
 import 'package:live_sites/src/platforms/niconico/capabilities/niconico_area_provider.dart';
+import 'package:live_sites/src/platforms/niconico/capabilities/niconico_discovery_provider.dart';
 import 'package:live_sites/src/platforms/niconico/capabilities/niconico_link_resolver.dart';
+import 'package:live_sites/src/platforms/niconico/capabilities/niconico_playback_provider.dart';
 import 'package:live_sites/src/platforms/niconico/capabilities/niconico_room_provider.dart';
 import 'package:live_sites/src/platforms/niconico/capabilities/niconico_search_provider.dart';
 import 'package:live_sites/src/platforms/niconico/danmaku/niconico_danmaku_codec.dart';
@@ -34,7 +39,7 @@ import 'package:live_sites/src/platforms/niconico/parsers/niconico_room_parser.d
 import 'package:test/test.dart';
 
 /// The request the fake transport answered, with its URL.
-typedef _Seen = ({Uri url, Map<String, String> headers});
+typedef _Seen = ({Uri url, Map<String, String> headers, Duration? timeout});
 
 /// Answers every request from [onSend] and records each one.
 final class _FakeHttp implements LiveHttp {
@@ -45,7 +50,7 @@ final class _FakeHttp implements LiveHttp {
 
   @override
   Future<LiveResponse> send(LiveRequest request) async {
-    sent.add((url: request.url, headers: request.headers));
+    sent.add((url: request.url, headers: request.headers, timeout: request.timeout));
     return onSend(sent.last);
   }
 
@@ -141,31 +146,28 @@ List<int> _gift({String itemId = 'item-9', String name = 'ニコ子', int point 
         .toBytes();
 
 /// A `NicoliveState` carrying only `statistics.viewers` (1 → 1).
-List<int> _stateViewers(int viewers) => (NiconicoProtoWriter()
-      ..message(1, (NiconicoProtoWriter()..integer(1, viewers)).toBytes()))
-    .toBytes();
+List<int> _stateViewers(int viewers) =>
+    (NiconicoProtoWriter()..message(1, (NiconicoProtoWriter()..integer(1, viewers)).toBytes())).toBytes();
 
 /// A `NicoliveState` carrying a `comment_lock` (5): status (1) and, for the
 /// followers case, a minimum follow duration (2 → 1 → 1 seconds).
 List<int> _stateLock(int status, {int? followSeconds}) {
   final lock = NiconicoProtoWriter()..integer(1, status);
   if (followSeconds != null) {
-    lock.message(2, (NiconicoProtoWriter()
-          ..message(1, (NiconicoProtoWriter()..integer(1, followSeconds)).toBytes()))
-        .toBytes());
+    lock.message(
+      2,
+      (NiconicoProtoWriter()..message(1, (NiconicoProtoWriter()..integer(1, followSeconds)).toBytes())).toBytes(),
+    );
   }
   return (NiconicoProtoWriter()..message(5, lock.toBytes())).toBytes();
 }
 
 /// A `NicoliveState` carrying `program_status` `Ended` (9 → 1 = 1).
-List<int> _stateEnded() => (NiconicoProtoWriter()
-      ..message(9, (NiconicoProtoWriter()..integer(1, 1)).toBytes()))
-    .toBytes();
+List<int> _stateEnded() =>
+    (NiconicoProtoWriter()..message(9, (NiconicoProtoWriter()..integer(1, 1)).toBytes())).toBytes();
 
 /// A `ChunkedMessage` carrying only a signal (5, a varint): not a message.
-List<int> _chunkedSignal(int kind) =>
-    (NiconicoProtoWriter()..integer(5, kind)).toBytes();
-
+List<int> _chunkedSignal(int kind) => (NiconicoProtoWriter()..integer(5, kind)).toBytes();
 
 /// The recorded `program` block of a watch page (ON_AIR, anonymous-watchable)
 /// for a community user's program, with the seat's WebSocket.
@@ -528,7 +530,8 @@ void main() {
         },
       });
       final results = NiconicoRoomParser.searchRooms(body);
-      final room = (results.single as RoomSearchResult).room;
+      expect(results.hasMore, isFalse);
+      final room = (results.items.single as RoomSearchResult).room;
       expect(room.roomId, 'lv300000000');
       expect(room.broadcast.startedAt, DateTime.fromMillisecondsSinceEpoch(1730000000000, isUtc: true));
     });
@@ -626,6 +629,146 @@ void main() {
         for (final bytes in NiconicoDanmakuCodec.split(window.bodyBytes)) ?NiconicoDanmakuCodec.message(bytes),
       ];
       expect(messages.single.text, 'hello');
+    });
+
+    test('search says whether another page follows, from totalCount', () async {
+      String body(int total) => jsonEncode({
+        'meta': {'statusCode': 200, 'errorCode': 'OK'},
+        'data': {
+          'totalCount': total,
+          'programs': [
+            {
+              'nicoliveProgramId': 'lv300000000',
+              'status': 'ON_AIR',
+              'providerType': 'official',
+              'supplier': {'name': '公式', 'programProviderId': 1},
+              'title': '公式番組',
+              'watchPageUrl': 'https://live.nicovideo.jp/watch/lv300000000',
+              'beginTime': 1730000000,
+            },
+          ],
+        },
+      });
+      final http = _FakeHttp((req) => _resp(200, body(100)));
+      final provider = NiconicoSearchProvider(site: NiconicoSite(http: NiconicoHttp(http)));
+      final first = _right(await provider.search(const LiveSearchRequest(query: '番組', target: LiveSearchTarget.rooms)));
+      expect(first.hasMore, isTrue);
+      // The last page (40 rows × 3 pages covers the 100 matches) says stop.
+      final http2 = _FakeHttp((req) => _resp(200, body(100)));
+      final last = _right(
+        await NiconicoSearchProvider(site: NiconicoSite(http: NiconicoHttp(http2)))
+            .search(const LiveSearchRequest(query: '番組', target: LiveSearchTarget.rooms, page: 3)),
+      );
+      expect(last.hasMore, isFalse);
+    });
+
+    test("a tab niconico does not have is refused without the site's own feed", () async {
+      final http = _FakeHttp((req) => _resp(200, '{}'));
+      final provider = NiconicoAreaProvider(site: NiconicoSite(http: NiconicoHttp(http)));
+      // The `niconico` category the tabs are parented under is not a tab:
+      // reading it used to answer the `common` feed as if it were its own list.
+      expect(_left(await provider.getAreaRooms(areaId: NiconicoEndpoints.areaId)), isA<LiveSiteInvalidArgument>());
+      expect(_left(await provider.getAreaRooms(areaId: 'nope')), isA<LiveSiteInvalidArgument>());
+      expect(http.sent, isEmpty);
+    });
+
+    test("a page or keyword outside niconico's bounds sends nothing", () async {
+      final http = _FakeHttp((req) => _resp(200, '{}'));
+      final site = NiconicoSite(http: NiconicoHttp(http));
+      final discovery = NiconicoDiscoveryProvider(site: site);
+      expect(
+        _left(await discovery.getRecommendedRooms(request: const LivePageRequest(page: 0))),
+        isA<LiveSiteInvalidArgument>(),
+      );
+      expect(
+        _left(await discovery.getRecommendedRooms(request: const LivePageRequest(page: 10001))),
+        isA<LiveSiteInvalidArgument>(),
+      );
+      final search = NiconicoSearchProvider(site: site);
+      expect(
+        _left(
+          await search.search(
+            LiveSearchRequest(query: 'x' * (NiconicoEndpoints.maxKeywordLength + 1), target: LiveSearchTarget.rooms),
+          ),
+        ),
+        isA<LiveSiteInvalidArgument>(),
+      );
+      expect(http.sent, isEmpty);
+    });
+
+    test('an oversized page or list body is api-changed, not decoded', () {
+      expect(
+        () => NiconicoRoomParser.watch('x' * (NiconicoRoomParser.responseLimit + 1), roomId: 'lv300000000'),
+        throwsA(isA<NiconicoFailure>().having((f) => f.kind, 'kind', NiconicoFailureKind.apiChanged)),
+      );
+      expect(
+        () => NiconicoRoomParser.listPage('x' * (NiconicoRoomParser.responseLimit + 1), page: 1, search: false),
+        throwsA(isA<NiconicoFailure>().having((f) => f.kind, 'kind', NiconicoFailureKind.apiChanged)),
+      );
+    });
+
+    test('the seat opens on the page the room entry read, and once more on a fresh one', () async {
+      // Two different pages: the seat must be opened on the bootstrap the room
+      // entry kept (socket A), and — when that fails — re-read the page (B).
+      final a = _embeddedData();
+      ((a['site'] as Map)['relive'] as Map)['webSocketUrl'] =
+          'wss://a.live2.nicovideo.jp/unama/wsapi/v2/watch/1111?q=k';
+      final b = _embeddedData();
+      ((b['site'] as Map)['relive'] as Map)['webSocketUrl'] =
+          'wss://a.live2.nicovideo.jp/unama/wsapi/v2/watch/2222?q=k';
+      var reads = 0;
+      final http = _FakeHttp((req) {
+        reads++;
+        return _resp(200, _watchPage(reads == 1 ? a : b));
+      });
+      final opened = <Uri>[];
+      final site = NiconicoSite(
+        http: NiconicoHttp(http),
+        seatConnector: (endpoint, {required headers, required protocols, required connectTimeout, pingInterval}) async {
+          opened.add(endpoint);
+          throw StateError('refused');
+        },
+      );
+      final room = _right(await NiconicoRoomProvider(site: site).getRoom('lv300000000'));
+      expect(http.sent.length, 1);
+      await expectLater(
+        site.openSeat(room.roomId),
+        throwsA(isA<NiconicoFailure>().having((f) => f.kind, 'kind', NiconicoFailureKind.network)),
+      );
+      expect(opened.map((uri) => uri.path), ['/unama/wsapi/v2/watch/1111', '/unama/wsapi/v2/watch/2222']);
+      // One page read for the entry, one for the retry — the kept bootstrap
+      // saved the read the seat would otherwise have made first.
+      expect(http.sent.length, 2);
+    });
+
+    test('a page that grants no seat keeps no bootstrap and answers on read', () async {
+      final data = _embeddedData();
+      (data['site'] as Map<String, dynamic>)['relive'] = <String, dynamic>{};
+      final http = _FakeHttp((req) => _resp(200, _watchPage(data)));
+      final site = NiconicoSite(http: NiconicoHttp(http));
+      final room = _right(await NiconicoRoomProvider(site: site).getRoom('lv300000000'));
+      expect(room.roomId, 'user/456');
+      expect(http.sent.length, 1);
+      await expectLater(
+        site.openSeat(room.roomId),
+        throwsA(isA<NiconicoFailure>().having((f) => f.kind, 'kind', NiconicoFailureKind.streamUnavailable)),
+      );
+      // Nothing was kept (no seat URL to open), so the seat read its own page.
+      expect(http.sent.length, 2);
+    });
+
+    test('a media read carries the master budget, not the transport default', () async {
+      final http = _FakeHttp((req) => _resp(200, _master));
+      await NiconicoHttp(http).get(
+        Uri.parse('https://livedelivery.dlive.nicovideo.jp/hls/master.m3u8'),
+        timeout: NiconicoPlaybackProvider.masterTimeout,
+      );
+      expect(http.sent.single.timeout, const Duration(seconds: 5));
+    });
+
+    test('the site is built in', () {
+      final built = createBuiltInLiveSites(http: _FakeHttp((req) => _resp(200, '{}')));
+      expect(built.map((site) => site.manifest.id), contains('niconico'));
     });
   });
 }

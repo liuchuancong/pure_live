@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:live_sites/src/models/anchor/live_anchor/live_anchor.dart';
 import 'package:live_sites/src/models/area/live_area/live_area.dart';
 import 'package:live_sites/src/models/enums/live_audience_metric_type.dart';
@@ -145,6 +147,20 @@ abstract final class NiconicoRoomParser {
   static final RegExp _scriptTag = RegExp(r'''<script\b((?:[^>"']|"[^"]*"|'[^']*')*)>''', caseSensitive: false);
   static final RegExp _tagAttribute = RegExp(r'''([^\s"'>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?''');
 
+  /// The largest watch-page or list body accepted (2 MiB). Niconico's own
+  /// pages stay far under it; a body over it is a proxy feeding us something
+  /// else, and decoding it risks the isolate rather than informing us.
+  static const int responseLimit = 2 * 1024 * 1024;
+
+  static void _limit(String body, String what) {
+    // The check runs on both counts: Dart strings are UTF-16 code units, the
+    // wire is UTF-8, and a CJK-heavy body can be far bigger as bytes than as
+    // characters.
+    if (body.length > responseLimit || (body.length * 3 > responseLimit && utf8.encode(body).length > responseLimit)) {
+      throw NiconicoFailure(NiconicoFailureKind.apiChanged, '$what: over ${responseLimit ~/ 1024} KiB');
+    }
+  }
+
   /// The watch page of [roomId]: the single `<script id="embedded-data"
   /// data-props="...">` whose attribute is HTML-entity-decoded JSON. The
   /// program a page shows must match [roomId] (a program's `lv…`, a
@@ -152,6 +168,7 @@ abstract final class NiconicoRoomParser {
   /// such script, bad status, non-boolean access flags) is `apiChanged`.
   static NiconicoWatch watch(String body, {required String roomId, int status = 200}) {
     _status(status, 'watch page', notFound: true);
+    _limit(body, 'watch page');
     final props = <String>[];
     for (final tag in _scriptTag.allMatches(body)) {
       final attributes = _attributes(tag.group(1)!);
@@ -296,6 +313,7 @@ abstract final class NiconicoRoomParser {
   }) {
     final what = search ? 'search' : 'recent';
     _status(status, what);
+    _limit(body, what);
     final root = jsonObject(decodeJson(body));
     if (root == null) {
       throw NiconicoFailure(NiconicoFailureKind.apiChanged, '$what: not an object (${jsonSnippet(body)})');
@@ -419,11 +437,13 @@ abstract final class NiconicoRoomParser {
     _ => null,
   };
 
-  /// The recent-tab search results as room results (search returns programs,
-  /// the same shape as the directory list).
-  static List<LiveSearchResult> searchRooms(String body, {int status = 200, int page = 1}) => [
-    for (final room in listPage(body, page: page, search: true, status: status).rooms) LiveSearchResult.room(room),
-  ];
+  /// The search page's rooms and whether [page] of them is not the last one:
+  /// `totalCount` says how many programs match, so the caller can stop paging
+  /// without reading an empty page.
+  static ({List<LiveSearchResult> items, bool hasMore}) searchRooms(String body, {int status = 200, int page = 1}) {
+    final page1 = listPage(body, page: page, search: true, status: status);
+    return (items: [for (final room in page1.rooms) LiveSearchResult.room(room)], hasMore: page1.hasMore);
+  }
 
   // Links ---------------------------------------------------------------------
 

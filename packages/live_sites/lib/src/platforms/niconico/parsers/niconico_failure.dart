@@ -36,6 +36,11 @@ enum NiconicoFailureKind {
 
   /// The program is set for a country this viewer is outside.
   regionBlocked,
+
+  /// The caller asked for something niconico cannot answer: a page or page
+  /// size outside the platform's bounds, a keyword over the length it sends,
+  /// an area id that is not one of its tabs. Refused without a request.
+  invalidArgument,
 }
 
 /// A niconico platform failure.
@@ -62,6 +67,7 @@ final class NiconicoFailure implements Exception {
     NiconicoFailureKind.riskControl => LiveSiteError.rateLimit(siteId: siteId, message: message),
     NiconicoFailureKind.streamUnavailable => LiveSiteError.contentUnavailable(siteId: siteId, message: message),
     NiconicoFailureKind.regionBlocked => LiveSiteError.authentication(siteId: siteId, message: message),
+    NiconicoFailureKind.invalidArgument => LiveSiteError.invalidArgument(siteId: siteId, message: message),
   };
 
   @override

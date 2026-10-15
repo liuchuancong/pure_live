@@ -23,10 +23,13 @@ final class NiconicoHttp {
   /// The wrapped transport (the danmaku session drives it directly).
   final LiveHttp http;
 
-  /// GETs [url] with [headers].
-  Future<NiconicoResponse> get(Uri url, {Map<String, String> headers = const {}}) async {
+  /// GETs [url] with [headers], bounded by [timeout] when given (the
+  /// transport's own default otherwise).
+  Future<NiconicoResponse> get(Uri url, {Map<String, String> headers = const {}, Duration? timeout}) async {
     try {
-      final response = await http.send(LiveRequest.custom(method: 'GET', site: 'niconico', url: url, headers: headers));
+      final response = await http.send(
+        LiveRequest.custom(method: 'GET', site: 'niconico', url: url, headers: headers, timeout: timeout),
+      );
       return (text: response.text, bytes: response.bodyBytes, status: response.statusCode);
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;

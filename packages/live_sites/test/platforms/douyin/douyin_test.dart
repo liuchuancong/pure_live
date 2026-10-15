@@ -948,6 +948,7 @@ void main() {
         'chzzk',
         'fc2live',
         'kick',
+        'niconico',
       ]);
     });
 

@@ -32,7 +32,7 @@
 | bigo Bigo Live | ✅ | 见下方"bigo 明细" |
 | chzzk CHZZK(치지직) | ✅ | 见下方"chzzk 明细" |
 | kick Kick | ✅ | 见下方"kick 明细";已注册进 `built_in_sites`(`fc2live` 之后) |
-| niconico Niconico | ✅* | 见下方"niconico 明细";文件已推送 `6809f7ae1`,**尚未注册进 built_in_sites**(避让并发) |
+| niconico Niconico | ✅ | 见下方"niconico 明细";已注册进 `built_in_sites`(`kick` 之后) |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
 | fc2live / jdlive / kilakila / kugoulive / looklive / missevan / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / yy | ⬜ | 其余含弹幕站;**下一站候选 fc2live**(按本行顺序) |
@@ -160,7 +160,16 @@
 - 播放:seat `{"type":"stream"}` 给 `master.m3u8`(`livedelivery.dlive.nicovideo.jp`)+ `availableQualities`(丢 audio_*)+ `cookies[]`;媒体请求带 path 作用域、可回收的 cookie grant,lease=cookie 过期。
 - 弹幕两层:v2 **seat WebSocket**(`a.live2.nicovideo.jp/…/wsapi/v2/watch/`,startWatching→getAkashic,keepSeat/pong,`messageServer`→viewUri,commentable:false,END_PROGRAM→换 seat)+ **HTTP protobuf(NDGR)** 读 ChunkedEntry/ChunkedMessage/NicoliveMessage(chat 字段1/overflowed_chat 20;Chat text1/sender2/id6|5;meta1/Timestamp 2);douyu 同款生成号+双开互斥+失败上限终止。
 - **已知取舍**(离线无法验):seat WS 未发 origin 握手头(与 douyu 一致的可移植选择);弹幕按窗口缓冲读取非真流式;会话中途 4xx 折进重试上限而非立刻换新 seat。
-- **状态**:文件已提交推送 `6809f7ae1`,scoped `dart analyze lib/src/platforms/niconico test/platforms/niconico` No issues、`dart test test/platforms/niconico` 25 绿。**未注册进 built_in_sites**(避让并发;并入 #89 补注册批)。
+- **状态**:文件先推送 `6809f7ae1`,2026-10-15 补逻辑并**已注册进 `built_in_sites`**(douyin/twitch 的内置站点有序等值断言同步加 `niconico`)。
+- 2026-10-15 逐条对照参考(`live_core/sites/niconico` 三文件 + `live_danmaku/sites/niconico.dart`)补的逻辑,框架与模型未动:
+  - **搜索分页有下文**:`NiconicoRoomParser.searchRooms`/`site.search` 改为带 `hasMore`(参考 `niconico_site.dart:228` 的 `total > page*size`),`NiconicoSearchProvider` 不再交一个 `hasMore` 为 null 的 `LivePage`——之前第二页能不能翻只能靠试。
+  - **入口页当 seat 的 bootstrap**:`detail()` 读到能看的房间页就存进 `_bootstraps`(60 秒、最多 8 间、**取一次**),`openSeat` 先用它开 seat,失败(过期/被拒)才重读页再开一次(参考 17-6)。键用的是**返回给调用方的 `room.roomId`**,不是页里的 `lv…`——`user/<id>` 入口的房间,后续正是拿 `user/<id>` 来开 seat 的。省掉的就是"进房 + 播放 + 弹幕"各自再抓一遍 watch 页。
+  - **越界不发请求**:新增 `NiconicoFailureKind.invalidArgument` → `LiveSiteError.invalidArgument`;页码限 1–10000、页大小 1–100(参考 `_checkPaging`),关键词限 500 字,`getAreaRooms` 给非 tab 的 id(含父级 `niconico`)判调用方错——**原来会静默按 `common` 去读**,把总榜当成分区列表返回。
+  - **响应体积上限**:`responseLimit` 2 MiB,watch 页与列表体都先过 `_limit`(参考 `niconico_api.dart:1152`,字符数与 UTF-8 字节数两道,中文页两者差 3 倍),超了判 apiChanged,不再把代理塞来的大-body 喂给解码器。
+  - **媒体读有预算**:`NiconicoHttp.get`/`site.httpGet` 收可选 `timeout`,`NiconicoPlaybackProvider.masterTimeout` = 5s(参考同名)打在 master.m3u8 读上——CDN 卡住时不再回落到传输默认超时把 seat 一起拖死。
+  - **seat 可注入**:`NiconicoSite({seatConnector})` 把 `NiconicoSeat` 已有的 `SocketConnector` 口子透出(缺省 `webSocketConnect`),bootstrap 复用与"失败后重读页再开一次"这条时序才有离线测试。
+- **延后项(记档不假造)**:①`live_net` 没有"不跟随重定向"的请求参数,参考的 `followRedirects: false` + 3xx 判网络错在本站做不到(需要跨包 seam);②参考的 `masterTimeout` 之外还有 `discoveryDeadline` 30s 总预算和"跟着 `seat.changes`/`seat.done` 换 master",v2 能力签名不收取消令牌 → 未复刻;③`regionBlocked`/`needsLogin` 都折到 `authentication`、`riskControl` 折到 `rateLimit`(`LiveSiteError` 没有地理/风控档,模型不动,记录此折叠);④master 变体缺 `RESOLUTION`/重复 `WxH@BW`/音频歧义,参考判 apiChanged,本站按现有口径跳过坏行(只有整份无可播行才报错);⑤seat 启动计时器仍在握手成功后起(参考在连接前起),最坏 2×20s;dispose 无 `closeTimeout` 约束;⑥3.x 的 `resolveRoomId`(遗留 `lv…` 迁到主播号)与 `notice()` 本地化公告在 v2 无落点;⑦`contribution_rank`/礼物 `message`、画质标签 `800x450 · 1080800 bps` 的差集,现有 `LiveGift`/`LivePlayQuality` 无对应字段。
+- 验证:`dart analyze lib/src/platforms/niconico test/platforms/niconico` No issues;`dart test test/platforms/niconico` **39 项全绿**(新增:totalCount→hasMore、非 tab 分区预拒、越界页码/关键词预拒、超 2 MiB 体判 apiChanged、bootstrap 复用 + 失败后重读页各开一次 seat、无 seat 页不留 bootstrap、媒体读带 5s、已进内置站点清单);整包 `dart test` **660 项全绿**。
 
 ## 环境缺口
 无。此前 `packages/live_playback` 以 `path:` 依赖工作区外的 `D:\media_core` 导致整仓 `dart pub get` 解析失败、`dart test` 跑不起来;2026-10-14 已把 `media_core` / `media_core_danmaku` / `media_core_mediasession` 改为 pub git 源(`github.com/liuchuancong/media_core`),仓库根 `flutter pub get` 即可完整解析,交付门的 test 步骤不再需要人工补 media_core 或造桩。

@@ -27,6 +27,11 @@ final class NiconicoPlaybackProvider implements LivePlaybackProvider {
   /// The site this capability serves: the source of the seat and the transport.
   final NiconicoSite site;
 
+  /// How long the master playlist read may take (the reference's
+  /// `masterTimeout`): a delivery host that hangs must not hold the seat and
+  /// the caller past the point where a retry would help.
+  static const Duration masterTimeout = Duration(seconds: 5);
+
   @override
   Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required String roomId}) async {
     final NiconicoSeat seat;
@@ -42,7 +47,7 @@ final class NiconicoPlaybackProvider implements LivePlaybackProvider {
       if (grant == null) {
         return left(const LiveSiteError.contentUnavailable(siteId: 'niconico', message: 'the seat granted no stream'));
       }
-      final response = await site.httpGet(grant.uri, headers: _mediaHeaders(roomId, grant));
+      final response = await site.httpGet(grant.uri, headers: _mediaHeaders(roomId, grant), timeout: masterTimeout);
       return right(
         NiconicoPlayParser.qualities(
           NiconicoPlayParser.variants(response.text, source: grant.uri, status: response.status),
@@ -72,7 +77,7 @@ final class NiconicoPlaybackProvider implements LivePlaybackProvider {
       if (grant == null) {
         return left(const LiveSiteError.contentUnavailable(siteId: 'niconico', message: 'the seat granted no stream'));
       }
-      final response = await site.httpGet(grant.uri, headers: _mediaHeaders(roomId, grant));
+      final response = await site.httpGet(grant.uri, headers: _mediaHeaders(roomId, grant), timeout: masterTimeout);
       final variants = NiconicoPlayParser.variants(response.text, source: grant.uri, status: response.status);
       final variant = NiconicoPlayParser.pick(variants, quality?.qualityId);
       if (variant == null) {

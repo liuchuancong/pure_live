@@ -30,6 +30,10 @@ abstract final class NiconicoEndpoints {
   /// Rows of a search page.
   static const int searchPageSize = 40;
 
+  /// The longest search keyword niconico answers; a longer one is the
+  /// caller's mistake, not something to send.
+  static const int maxKeywordLength = 500;
+
   /// The recent-programs tabs, in the platform's order. `live` is the game
   /// tab, not "every live program".
   static const List<String> tabs = ['common', 'try', 'live', 'req', 'face', 'totu', 'vtuber'];

@@ -20,6 +20,8 @@ import 'package:live_sites/src/platforms/kick/api/kick_http.dart';
 import 'package:live_sites/src/platforms/kick/kick_site.dart';
 import 'package:live_sites/src/platforms/kuaishou/api/kuaishou_http.dart';
 import 'package:live_sites/src/platforms/kuaishou/kuaishou_site.dart';
+import 'package:live_sites/src/platforms/niconico/api/niconico_http.dart';
+import 'package:live_sites/src/platforms/niconico/niconico_site.dart';
 import 'package:live_sites/src/platforms/twitch/api/twitch_http.dart';
 import 'package:live_sites/src/platforms/twitch/twitch_site.dart';
 import 'package:live_sites/src/platforms/youtube/api/youtube_http.dart';
@@ -45,5 +47,6 @@ List<LiveSite> createBuiltInLiveSites({LiveHttp? http}) {
     ChzzkSite(http: ChzzkHttp(transport)),
     Fc2LiveSite(http: Fc2LiveHttp(transport)),
     KickSite(http: KickHttp(transport)),
+    NiconicoSite(http: NiconicoHttp(transport)),
   ];
 }

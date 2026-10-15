@@ -719,6 +719,7 @@ https://other.example/1.m3u8
         'chzzk',
         'fc2live',
         'kick',
+        'niconico',
       ]);
     });
 
