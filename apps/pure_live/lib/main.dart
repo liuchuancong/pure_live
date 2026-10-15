@@ -2,21 +2,22 @@ import 'dart:async';
 import 'dart:io' show exit;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_preferences/live_preferences.dart' show Preferences;
 import 'package:live_uikit/styling.dart';
-import 'package:live_uikit_cupertino_ui/live_uikit_cupertino_ui.dart';
-import 'package:live_uikit_fluent/live_uikit_fluent.dart';
-import 'package:live_uikit_forui/live_uikit_forui.dart';
-import 'package:live_uikit_glass/live_uikit_glass.dart';
-import 'package:live_uikit_macos/live_uikit_macos.dart';
-import 'package:live_uikit_material_ui/live_uikit_material_ui.dart';
-import 'package:live_uikit_neumorphic/live_uikit_neumorphic.dart';
-import 'package:live_uikit_wind/live_uikit_wind.dart';
-import 'package:pure_live/appearance_mapping.dart';
-import 'package:pure_live/background_demo_page.dart';
-import 'package:pure_live/desktop_boot.dart';
-import 'package:pure_live/services.dart';
-import 'package:pure_live/settings_page.dart';
+
+import 'package:pure_live/app/adapters.dart';
+import 'package:pure_live/app/appearance_mapping.dart';
+import 'package:pure_live/app/delegates.dart';
+import 'package:pure_live/app/providers.dart';
+import 'package:pure_live/platform/desktop_boot.dart';
+import 'package:pure_live/storage/services.dart';
+
+/// Whether this build targets the ten-foot (TV) form factor. Declared at build
+/// time — `flutter build apk --dart-define=PURE_LIVE_TV=true` — because a TV is
+/// a different composition, not a wider window (design doc §1.2): the shell
+/// drops the rail, the geometry scale rises, and focus is the only pointer.
+const bool appIsTv = bool.fromEnvironment('PURE_LIVE_TV');
 
 /// PureLive — the application entry.
 ///
@@ -43,17 +44,19 @@ Future<void> main(List<String> arguments) async {
   // wants to be answered after the first frame has already been painted in the
   // wrong place.
   final desktop = await DesktopBootstrap.start(services: services, arguments: arguments, claim: claim);
-  runApp(PureLiveApp(services: services, desktop: desktop));
+  runApp(
+    ProviderScope(
+      overrides: [appServicesProvider.overrideWithValue(services)],
+      child: PureLiveApp(desktop: desktop),
+    ),
+  );
 }
 
 /// The root application: watches preferences and re-skins the whole app —
 /// including pushed routes — whenever the saved appearance changes.
-class PureLiveApp extends StatelessWidget {
-  /// The root app, over the booted [services] and the [desktop] shell handle.
-  const new({required this.services, this.desktop, super.key});
-
-  /// The application's booted services.
-  final AppServices services;
+class PureLiveApp extends ConsumerWidget {
+  /// The root app over the booted services and the [desktop] shell handle.
+  const new({this.desktop, super.key});
 
   /// The desktop shell this process runs under, null on a platform with none.
   ///
@@ -62,245 +65,28 @@ class PureLiveApp extends StatelessWidget {
   final DesktopBootstrap? desktop;
 
   @override
-  Widget build(BuildContext context) => StreamBuilder<Preferences>(
-    stream: services.preferences.changes,
-    initialData: services.preferences.value,
-    builder: (context, snapshot) => LiveConfigProvider(
-      config: uiConfigFromAppearance(snapshot.data!.appearance),
-      // Report, never silently swallow, a language whose adapter isn't registered
-      // — the core hands the event here; the app owns the logging (§3.10).
-      diagnostics: (diagnostic) => debugPrint('[live_uikit] $diagnostic'),
-      // The composition root registers every third-party adapter; the core
-      // itself never depends on a UI library. The shared token base serves the
-      // `material`/`cupertino` languages (the `material` language is the default
-      // fallback); the `materialUi`/`cupertinoUi` forks are separate native
-      // adapters registered below.
-      registry: const LanguageRegistry(
-        adapters: {
-          LiveDesignLanguage.macos: macosUiAdapter,
-          LiveDesignLanguage.fluent: fluentUiAdapter,
-          LiveDesignLanguage.forui: foruiUiAdapter,
-          LiveDesignLanguage.neumorphic: neumorphicUiAdapter,
-          LiveDesignLanguage.glass: glassUiAdapter,
-          LiveDesignLanguage.wind: windUiAdapter,
-          LiveDesignLanguage.cupertinoUi: cupertinoUiAdapter,
-          LiveDesignLanguage.materialUi: materialUiAdapter,
-        },
-        fallback: SharedLanguageAdapter(),
-      ),
-      child: MaterialApp(
-        title: 'Pure Live',
-        debugShowCheckedModeBanner: false,
-        // Install every design language's localizations up front, so switching
-        // UiConfig.language (Cupertino / macOS / fluent) never crashes on a
-        // missing delegate further down the tree.
-        localizationsDelegates: const [
-          ...liveLocalizationsDelegates,
-          ...fluentLocalizationsDelegates,
-          ...cupertinoUiLocalizationsDelegates,
-          ...materialUiLocalizationsDelegates,
-          ...foruiLocalizationsDelegates,
-        ],
-        supportedLocales: const [Locale('en'), Locale('zh')],
-        home: HomePage(services: services),
-      ),
-    ),
-  );
-}
-
-/// The demo home page: a language/theme switcher over a component gallery.
-class HomePage extends StatefulWidget {
-  /// The home page, reading and writing the theme through [services].
-  const new({required this.services, super.key});
-
-  /// The booted services backing theme persistence and the site registry.
-  final AppServices services;
-
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  final TextEditingController _field = TextEditingController();
-  double _slider = 0.4;
-  bool _switch = true;
-  bool _check = true;
-  int _segment = 0;
-  int _tab = 0;
-  String _quality = 'hd';
-
-  @override
-  void dispose() {
-    _field.dispose();
-    super.dispose();
-  }
-
-  /// Persists a new config; the root provider rebuilds from the change stream.
-  void _apply(UiConfig config) =>
-      unawaited(widget.services.preferences.updateAppearance((_) => appearanceFromUiConfig(config)));
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = LiveTheme.of(context);
-    final config = theme.config;
-    return Scaffold(
-      backgroundColor: theme.colors.bgLayout,
-      appBar: AppBar(
-        title: const Text('Pure Live UI Kit'),
-        backgroundColor: theme.colors.bgContainer,
-        foregroundColor: theme.colors.text,
-      ),
-      body: ListView(
-        padding: EdgeInsets.all(theme.card.padding),
-        children: [
-          _Section(
-            title: 'Design language',
-            child: Wrap(
-              spacing: theme.card.padding * 0.5,
-              runSpacing: theme.card.padding * 0.5,
-              children: [
-                for (final language in LiveDesignLanguage.values)
-                  LiveButton(
-                    label: language.name,
-                    variant: config.language == language ? ButtonVariant.primary : ButtonVariant.secondary,
-                    onPressed: () => _apply(config.copyWith(language: language)),
-                  ),
-              ],
-            ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final services = ref.watch(appServicesProvider);
+    return StreamBuilder<Preferences>(
+      stream: services.preferences.changes,
+      initialData: services.preferences.value,
+      builder: (context, snapshot) => LiveConfigProvider(
+        config: uiConfigFromAppearance(snapshot.data!.appearance),
+        // Report, never silently swallow, a language whose adapter isn't registered
+        // — the core hands the event here; the app owns the logging (§3.10).
+        diagnostics: (diagnostic) => debugPrint('[live_uikit] $diagnostic'),
+        // The composition root registers every third-party adapter; the core
+        // itself never depends on a UI library.
+        registry: appLanguageRegistry,
+        child: LiveLayoutBuilder(
+          isTv: appIsTv,
+          builder: (context, environment) => MaterialApp.router(
+            title: 'Pure Live',
+            debugShowCheckedModeBanner: false,
+            localizationsDelegates: appLocalizationsDelegates,
+            supportedLocales: const [Locale('en'), Locale('zh')],
+            routerConfig: ref.watch(appRouterProvider),
           ),
-          _Section(
-            title: 'Appearance',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                LiveSegmented(
-                  labels: const ['System', 'Light', 'Dark'],
-                  index: switch (config.brightness) {
-                    UiBrightnessMode.system => 0,
-                    UiBrightnessMode.light => 1,
-                    UiBrightnessMode.dark => 2,
-                  },
-                  onChanged: (i) => _apply(
-                    config.copyWith(
-                      brightness: const [UiBrightnessMode.system, UiBrightnessMode.light, UiBrightnessMode.dark][i],
-                    ),
-                  ),
-                ),
-                SizedBox(height: theme.card.padding * 0.5),
-                Text('Text scale', style: theme.text.body.copyWith(color: theme.colors.text)),
-                LiveSlider(
-                  value: config.fontScale,
-                  min: 0.8,
-                  max: 1.6,
-                  onChanged: (v) => _apply(config.copyWith(fontScale: v)),
-                ),
-              ],
-            ),
-          ),
-          _Section(
-            title: 'Pages',
-            child: Wrap(
-              spacing: theme.card.padding * 0.5,
-              runSpacing: theme.card.padding * 0.5,
-              children: [
-                LiveButton(
-                  label: 'Settings',
-                  onPressed: () =>
-                      Navigator.of(context)
-                          .push(MaterialPageRoute<void>(builder: (_) => SettingsPage(services: widget.services))),
-                ),
-                LiveButton(
-                  label: 'Background demo',
-                  onPressed: () =>
-                      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const BackgroundDemoPage())),
-                ),
-              ],
-            ),
-          ),
-          _Section(
-            title: 'Controls',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: theme.card.padding * 0.5,
-                  runSpacing: theme.card.padding * 0.5,
-                  children: [
-                    LiveButton(label: 'Primary', onPressed: () {}),
-                    LiveButton(label: 'Secondary', variant: ButtonVariant.secondary, onPressed: () {}),
-                    LiveButton(label: 'Ghost', variant: ButtonVariant.ghost, onPressed: () {}),
-                    LiveButton(label: 'Danger', variant: ButtonVariant.danger, onPressed: () {}),
-                    LiveButton(label: 'Loading', loading: true, onPressed: () {}),
-                    LiveIconButton(icon: Icons.favorite, tooltip: 'Favourite', onPressed: () {}),
-                  ],
-                ),
-                SizedBox(height: theme.card.padding * 0.5),
-                LiveTextField(controller: _field, placeholder: 'Search rooms…'),
-                SizedBox(height: theme.card.padding * 0.5),
-                Row(
-                  children: [
-                    LiveSwitch(value: _switch, onChanged: (v) => setState(() => _switch = v)),
-                    SizedBox(width: theme.card.padding),
-                    LiveCheckbox(value: _check, label: 'Auto-play', onChanged: (v) => setState(() => _check = v)),
-                  ],
-                ),
-                SizedBox(height: theme.card.padding * 0.5),
-                LiveSlider(value: _slider, onChanged: (v) => setState(() => _slider = v)),
-                SizedBox(height: theme.card.padding * 0.5),
-                LiveSegmented(
-                  labels: const ['Live', 'Follows', 'IPTV'],
-                  index: _segment,
-                  onChanged: (i) => setState(() => _segment = i),
-                ),
-                SizedBox(height: theme.card.padding * 0.5),
-                LiveProgress(value: _slider, showLabel: true),
-                SizedBox(height: theme.card.padding * 0.5),
-                LiveTabs(
-                  tabs: const [
-                    LiveTab(label: 'Home'),
-                    LiveTab(label: 'Sports'),
-                    LiveTab(label: 'News'),
-                  ],
-                  index: _tab,
-                  onChanged: (i) => setState(() => _tab = i),
-                ),
-                SizedBox(height: theme.card.padding * 0.5),
-                LiveSelect<String>(
-                  items: const ['hd', 'sd', 'audio'],
-                  itemLabel: (v) => v.toUpperCase(),
-                  value: _quality,
-                  placeholder: 'Quality',
-                  onChanged: (v) => setState(() => _quality = v),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// A titled group over the gallery's sections.
-class _Section extends StatelessWidget {
-  const new({required this.title, required this.child});
-
-  final String title;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = LiveTheme.of(context);
-    return Padding(
-      padding: EdgeInsets.only(bottom: theme.card.padding),
-      child: LiveCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: theme.text.title.copyWith(color: theme.colors.text)),
-            SizedBox(height: theme.card.padding * 0.5),
-            child,
-          ],
         ),
       ),
     );

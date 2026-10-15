@@ -9,8 +9,8 @@ import 'package:live_preferences/live_preferences.dart' show DesktopPreferencesA
 import 'package:live_shell/live_shell.dart';
 import 'package:live_shell_desktop/live_shell_desktop.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:pure_live/desktop_tray_icons.dart' show trayIconAssets;
-import 'package:pure_live/services.dart' show AppServices;
+import 'package:pure_live/platform/desktop_tray_icons.dart' show trayIconAssets;
+import 'package:pure_live/storage/services.dart' show AppServices;
 
 /// The window surface colour for the beat before Flutter paints its first frame.
 ///

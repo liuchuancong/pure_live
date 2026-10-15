@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_platform/live_platform.dart' show PlatformKind;
-import 'package:pure_live/desktop_tray_icons.dart';
+import 'package:pure_live/platform/desktop_tray_icons.dart';
 
 /// Checks the shipped tray artwork by reading the bytes, because a tray icon is
 /// one of the few assets where "the file is there" and "the file works" are very
