@@ -53,6 +53,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$fonts$zh fonts = Translations$fonts$zh.internal(_root);
 	late final Translations$follow$zh follow = Translations$follow$zh.internal(_root);
 	late final Translations$toolbox$zh toolbox = Translations$toolbox$zh.internal(_root);
+	late final Translations$backup$zh backup = Translations$backup$zh.internal(_root);
 	late final Translations$about$zh about = Translations$about$zh.internal(_root);
 	late final Translations$shield$zh shield = Translations$shield$zh.internal(_root);
 	late final Translations$search$zh search = Translations$search$zh.internal(_root);
@@ -344,6 +345,39 @@ class Translations$toolbox$zh {
 
 	/// zh: '打开房间'
 	String get openRoom => '打开房间';
+}
+
+// Path: backup
+class Translations$backup$zh {
+	Translations$backup$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '备份与恢复'
+	String get title => '备份与恢复';
+
+	/// zh: '创建备份'
+	String get create => '创建备份';
+
+	/// zh: '从文件恢复'
+	String get restoreFile => '从文件恢复';
+
+	/// zh: '已有备份'
+	String get existing => '已有备份';
+
+	/// zh: '还没有备份'
+	String get none => '还没有备份';
+
+	/// zh: '删除备份'
+	String get delete => '删除备份';
+
+	/// zh: '恢复'
+	String get restore => '恢复';
+
+	/// zh: '用「{name: String}」覆盖当前数据？应用将重启。'
+	String restoreConfirm({required String name}) => '用「${name}」覆盖当前数据？应用将重启。';
 }
 
 // Path: about
@@ -643,6 +677,14 @@ extension on Translations {
 			'toolbox.resolve' => '解析',
 			'toolbox.failed' => '没有平台识别该链接',
 			'toolbox.openRoom' => '打开房间',
+			'backup.title' => '备份与恢复',
+			'backup.create' => '创建备份',
+			'backup.restoreFile' => '从文件恢复',
+			'backup.existing' => '已有备份',
+			'backup.none' => '还没有备份',
+			'backup.delete' => '删除备份',
+			'backup.restore' => '恢复',
+			'backup.restoreConfirm' => ({required String name}) => '用「${name}」覆盖当前数据？应用将重启。',
 			'about.title' => '关于',
 			'about.checkUpdate' => '检查更新',
 			'about.upToDate' => '已是最新版本',

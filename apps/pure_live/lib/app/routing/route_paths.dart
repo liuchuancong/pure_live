@@ -51,4 +51,7 @@ abstract final class RoutePath {
 
   /// The danmaku shield, under the settings cluster.
   static const String settingsShield = '/settings/shield';
+
+  /// The backup and restore page, under the settings cluster.
+  static const String settingsBackup = '/settings/backup';
 }

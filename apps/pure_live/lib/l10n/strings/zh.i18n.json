@@ -88,6 +88,16 @@
     "failed": "没有平台识别该链接",
     "openRoom": "打开房间"
   },
+  "backup": {
+    "title": "备份与恢复",
+    "create": "创建备份",
+    "restoreFile": "从文件恢复",
+    "existing": "已有备份",
+    "none": "还没有备份",
+    "delete": "删除备份",
+    "restore": "恢复",
+    "restoreConfirm": "用「{name: String}」覆盖当前数据？应用将重启。"
+  },
   "about": {
     "title": "关于",
     "checkUpdate": "检查更新",

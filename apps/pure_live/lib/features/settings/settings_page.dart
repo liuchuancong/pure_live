@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:pure_live/app/routing/routes/backup/backup_routes.dart';
 import 'package:pure_live/app/routing/routes/settings/settings_routes.dart';
+import 'package:pure_live/app/routing/routes/settings/shield_routes.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 
@@ -25,6 +27,24 @@ final class SettingsPage extends StatelessWidget {
             title: Text(context.t.settings.appearance),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => const AppearanceRoute().push<void>(context),
+          ),
+        ),
+        Card(
+          margin: const EdgeInsets.only(bottom: 10),
+          child: ListTile(
+            leading: const Icon(Icons.shield_outlined),
+            title: Text(context.t.shield.title),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => const ShieldRoute().push<void>(context),
+          ),
+        ),
+        Card(
+          margin: const EdgeInsets.only(bottom: 10),
+          child: ListTile(
+            leading: const Icon(Icons.backup_outlined),
+            title: Text(context.t.backup.title),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => const BackupRoute().push<void>(context),
           ),
         ),
       ],

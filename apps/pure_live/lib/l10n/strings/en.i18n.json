@@ -90,6 +90,16 @@
     "failed": "No platform recognised this link",
     "openRoom": "Open the room"
   },
+  "backup": {
+    "title": "Backup & restore",
+    "create": "Create backup",
+    "restoreFile": "Restore from file",
+    "existing": "Existing backups",
+    "none": "No backups yet",
+    "delete": "Delete backup",
+    "restore": "Restore",
+    "restoreConfirm": "Overwrite current data with “{name: String}”? The app restarts."
+  },
   "about": {
     "title": "About",
     "checkUpdate": "Check for updates",

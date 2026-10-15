@@ -52,6 +52,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fonts$en fonts = _Translations$fonts$en._(_root);
 	@override late final _Translations$follow$en follow = _Translations$follow$en._(_root);
 	@override late final _Translations$toolbox$en toolbox = _Translations$toolbox$en._(_root);
+	@override late final _Translations$backup$en backup = _Translations$backup$en._(_root);
 	@override late final _Translations$about$en about = _Translations$about$en._(_root);
 	@override late final _Translations$shield$en shield = _Translations$shield$en._(_root);
 	@override late final _Translations$search$en search = _Translations$search$en._(_root);
@@ -244,6 +245,23 @@ class _Translations$toolbox$en extends Translations$toolbox$zh {
 	@override String get openRoom => 'Open the room';
 }
 
+// Path: backup
+class _Translations$backup$en extends Translations$backup$zh {
+	_Translations$backup$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Backup & restore';
+	@override String get create => 'Create backup';
+	@override String get restoreFile => 'Restore from file';
+	@override String get existing => 'Existing backups';
+	@override String get none => 'No backups yet';
+	@override String get delete => 'Delete backup';
+	@override String get restore => 'Restore';
+	@override String restoreConfirm({required String name}) => 'Overwrite current data with “${name}”? The app restarts.';
+}
+
 // Path: about
 class _Translations$about$en extends Translations$about$zh {
 	_Translations$about$en._(TranslationsEn root) : this._root = root, super.internal(root);
@@ -432,6 +450,14 @@ extension on TranslationsEn {
 			'toolbox.resolve' => 'Resolve',
 			'toolbox.failed' => 'No platform recognised this link',
 			'toolbox.openRoom' => 'Open the room',
+			'backup.title' => 'Backup & restore',
+			'backup.create' => 'Create backup',
+			'backup.restoreFile' => 'Restore from file',
+			'backup.existing' => 'Existing backups',
+			'backup.none' => 'No backups yet',
+			'backup.delete' => 'Delete backup',
+			'backup.restore' => 'Restore',
+			'backup.restoreConfirm' => ({required String name}) => 'Overwrite current data with “${name}”? The app restarts.',
 			'about.title' => 'About',
 			'about.checkUpdate' => 'Check for updates',
 			'about.upToDate' => 'Up to date',
