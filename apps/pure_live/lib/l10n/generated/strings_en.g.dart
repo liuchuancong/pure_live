@@ -42,6 +42,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$app$en app = _Translations$app$en._(_root);
 	@override late final _Translations$home$en home = _Translations$home$en._(_root);
 	@override late final _Translations$common$en common = _Translations$common$en._(_root);
+	@override late final _Translations$tray$en tray = _Translations$tray$en._(_root);
 	@override late final _Translations$search$en search = _Translations$search$en._(_root);
 	@override late final _Translations$errors$en errors = _Translations$errors$en._(_root);
 	@override late final _Translations$tabs$en tabs = _Translations$tabs$en._(_root);
@@ -82,6 +83,17 @@ class _Translations$common$en extends Translations$common$zh {
 	@override String get loading => 'Loading';
 	@override String get empty => 'Nothing here yet';
 	@override String pageOf({required int page, required int total}) => 'Page ${page} of ${total}';
+}
+
+// Path: tray
+class _Translations$tray$en extends Translations$tray$zh {
+	_Translations$tray$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get show => 'Show Pure Live';
+	@override String get quit => 'Quit';
 }
 
 // Path: search
@@ -142,6 +154,8 @@ extension on TranslationsEn {
 			'common.loading' => 'Loading',
 			'common.empty' => 'Nothing here yet',
 			'common.pageOf' => ({required int page, required int total}) => 'Page ${page} of ${total}',
+			'tray.show' => 'Show Pure Live',
+			'tray.quit' => 'Quit',
 			'search.hint' => 'Search rooms by keyword',
 			'errors.generic' => 'Something went wrong. Please try again later.',
 			'errors.network' => 'Network unavailable. Check your connection and retry.',

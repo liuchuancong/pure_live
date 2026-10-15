@@ -44,6 +44,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$app$zh app = Translations$app$zh.internal(_root);
 	late final Translations$home$zh home = Translations$home$zh.internal(_root);
 	late final Translations$common$zh common = Translations$common$zh.internal(_root);
+	late final Translations$tray$zh tray = Translations$tray$zh.internal(_root);
 	late final Translations$search$zh search = Translations$search$zh.internal(_root);
 	late final Translations$errors$zh errors = Translations$errors$zh.internal(_root);
 	late final Translations$tabs$zh tabs = Translations$tabs$zh.internal(_root);
@@ -104,6 +105,21 @@ class Translations$common$zh {
 
 	/// zh: '第 {page: int} / {total: int} 页'
 	String pageOf({required int page, required int total}) => '第 ${page} / ${total} 页';
+}
+
+// Path: tray
+class Translations$tray$zh {
+	Translations$tray$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '显示主界面'
+	String get show => '显示主界面';
+
+	/// zh: '退出'
+	String get quit => '退出';
 }
 
 // Path: search
@@ -190,6 +206,8 @@ extension on Translations {
 			'common.loading' => '加载中',
 			'common.empty' => '暂无内容',
 			'common.pageOf' => ({required int page, required int total}) => '第 ${page} / ${total} 页',
+			'tray.show' => '显示主界面',
+			'tray.quit' => '退出',
 			'search.hint' => '输入关键词搜索房间',
 			'errors.generic' => '出了点问题，请稍后再试。',
 			'errors.network' => '网络连接不可用，请检查网络后重试。',

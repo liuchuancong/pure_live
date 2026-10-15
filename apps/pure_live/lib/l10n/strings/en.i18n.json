@@ -15,6 +15,10 @@
     "empty": "Nothing here yet",
     "pageOf": "Page {page: int} of {total: int}"
   },
+  "tray": {
+    "show": "Show Pure Live",
+    "quit": "Quit"
+  },
   "search": {
     "hint": "Search rooms by keyword"
   },
