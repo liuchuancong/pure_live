@@ -732,6 +732,7 @@ https://other.example/1.m3u8
         'showroom',
         'liveme',
         'xiaohongshu',
+        'tiktok',
         'soop',
         'twitcasting',
       ]);

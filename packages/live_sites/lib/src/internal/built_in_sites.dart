@@ -46,6 +46,8 @@ import 'package:live_sites/src/platforms/showroom/api/showroom_http.dart';
 import 'package:live_sites/src/platforms/showroom/showroom_site.dart';
 import 'package:live_sites/src/platforms/soop/api/soop_http.dart';
 import 'package:live_sites/src/platforms/soop/soop_site.dart';
+import 'package:live_sites/src/platforms/tiktok/api/tiktok_http.dart';
+import 'package:live_sites/src/platforms/tiktok/tiktok_site.dart';
 import 'package:live_sites/src/platforms/twitcasting/api/twitcasting_http.dart';
 import 'package:live_sites/src/platforms/twitcasting/twitcasting_site.dart';
 import 'package:live_sites/src/platforms/twitch/api/twitch_http.dart';
@@ -89,6 +91,7 @@ List<LiveSite> createBuiltInLiveSites({LiveHttp? http}) {
     LivemeSite(http: LivemeHttp(transport)),
     XiaohongshuSite(http: XiaohongshuHttp(transport)),
     SoopSite(http: SoopHttp(transport)),
+    TiktokSite(http: TiktokHttp(transport)),
     TwitcastingSite(http: TwitcastingHttp(transport)),
   ];
 }

@@ -51,7 +51,8 @@
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
 | seventeenlive / sixroom / steambroadcast / yy | 🔄 | 后台代理进行中(sixroom/yy 测试编译收尾) |
-| cc / inke / liveme / tiktok / xiaohongshu | ⬜ | 仅 `live_core` 有(纯目录/播放,无弹幕) |
+| tiktok TikTok | ✅ | 见下方"tiktok 明细";已注册进 `built_in_sites` |
+| cc / inke / liveme / xiaohongshu | ✅ | 见下方"cc 明细"/"inke 明细"/"liveme 明细"/"xiaohongshu 明细";均已注册进 `built_in_sites` |
 
 ## douyu 明细(2026-10-14)
 本轮把远程基线里"名不副实"的 douyu 参考适配器补成真正可用:
@@ -314,6 +315,13 @@
 - 数据面:房间 = `live_share_pc` + `now_publish` 合并(占位标题、标题/封面回退、online/heat 观众语义、hasLine→restriction);播放 = FLV(H.264)+ 原画(HEVC/codecInfo=8192)、"优先 H.264"排序、30s answerReuse、App 无线时按 top→hot→channel 顺序 showcase 兜底;`wsABStime` 租约(提前 min(1/4 lifetime,10min))。
 - **代理的适配与延后项(记档)**:①playback 按 roomId → `_streams` 会话表存条目 stream handle(kilakila 同款,64 条上限);②getLiveStatus/刷新/录制 resolver、LiveDirectoryNotice、搜索分页策略接口无 v2 面;③列表为有限 showcase,page≥2 恒空不请求,省去 30s snapshot 复用;④v2 LiveRequest 无 followRedirects(参考为不跟随);⑤freezed 4 `copyWith` 非空字段不可传 null → withBroadcast 整体重建 content/broadcast。
 - 验证:`dart analyze` No issues;`dart test test/platforms/inke` **48 项全绿**(信封门/showcase/hot/detail/now_publish 解析、pull URL 校验/租约/qualities/lines、链接解析、错误分支、能力接线)。
+
+## tiktok 明细(2026-10-15,后台代理接手补齐)
+整站从 `live_core/sites/tiktok` 迁到 `platforms/tiktok/`(接手上一代理的 5 个 api 文件,补齐 parsers/site/capabilities/测试;我审查后注册)。**无新依赖、无弹幕**(LiveDanmakuProvider 不注册——与参考一致;TikTok 无分类,LiveAreaProvider 亦 null)。
+- 能力五个注册:room(`api-live/user/room` 卡片 + `webcast/room/info` 归属校验)/ discovery(恒空页,平台无目录)/ search(单用户搜索:用户名/链接/share/live/短链;短链改为传输层自动跟随重定向后从落地页 canonical/og:url/`"uniqueId"` 读用户名——参考的逐跳 HEAD+Location 在 v2 LiveRequest 无 followRedirects 字段不可行,记档)/ playback / link_resolver。
+- 数据面:streamData/hevcStreamData 容器逐级容错(同 codec 双容器合一、重复 URL 只留一次、audio-only 剔除)、画质排序 platformOrder 越高越好 + codec 枚举、行格式 declared、HLS 租约 requiresReconnect:true(kilakila 同款)、unplayable 判定;流缓存上限 64;12 MiB 体积门、可信 CDN 媒体 URL 白名单。
+- **适配与延后项(记档)**:①参考 DirectoryPager/DirectoryNotice → getRooms(恒空)+discovery;CancellableSearch → 短链传输层跟随(见上);②RoomRefresher/RecordRoomResolver/Recovery 无 v2 能力接口 → getRoom 重取由应用侧 mergedWith 承担;③v1 "area=站名" 展示约定未搬入(area 留空,kilakila 模板一致);④画质列表排序语义改 v2 platformOrder。
+- 验证:`dart analyze` No issues;`dart test test/platforms/tiktok` **48 项全绿**(状态/体积/JSON/身份/等级键/媒体 URL、错误分支映射、能力接线、播放零额外请求、缓存上限)。
 
 ## 环境缺口
 无。此前 `packages/live_playback` 以 `path:` 依赖工作区外的 `D:\media_core` 导致整仓 `dart pub get` 解析失败、`dart test` 跑不起来;2026-10-14 已把 `media_core` / `media_core_danmaku` / `media_core_mediasession` 改为 pub git 源(`github.com/liuchuancong/media_core`),仓库根 `flutter pub get` 即可完整解析,交付门的 test 步骤不再需要人工补 media_core 或造桩。

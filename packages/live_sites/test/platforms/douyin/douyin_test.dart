@@ -961,6 +961,7 @@ void main() {
         'showroom',
         'liveme',
         'xiaohongshu',
+        'tiktok',
         'soop',
         'twitcasting',
       ]);
