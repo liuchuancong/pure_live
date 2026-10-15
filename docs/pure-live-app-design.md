@@ -133,6 +133,15 @@ apps/pure_live/lib/
 `desktop_tray_icons.dart`→`platform/`;`background_demo_page.dart` 完成视觉验收后删除;
 `services.dart`→`storage/` + `app/providers.dart`。
 
+**Wave 1 已落地(commit `ee365fd99`,2026-10-15)**:目录重组完成;`app/` 下新增
+`router.dart`(typed routes,`router.g.dart` 按仓库惯例提交)、`adaptive_shell.dart`
+(桌面/TV 左 rail、触摸底部 NavigationBar)、`adapters.dart`(语言注册表常量)、
+`providers.dart`、`delegates.dart`;`features/settings/` 拆成索引页 + `appearance_page.dart`;
+首页/关注/历史为 `LiveEmpty` 占位页;`home` 画廊 demo 已删;`flex_color_scheme` 已移出
+pubspec。`background_demo_page.dart` 暂留 `lib/` 根部,经 `/dev/background` 路由可达
+(注释注明 ADR 0005 定案后删除);TV 形态经构建期 `--dart-define=PURE_LIVE_TV=true`
+声明,`appIsTv` 常量传入 `LiveLayoutBuilder`。
+
 ---
 
 ## 3. 直播域(核心链路)
