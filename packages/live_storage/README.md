@@ -12,6 +12,7 @@ Shared storage infrastructure for PureLive, built on Hive CE.
 - Resolve platform-specific storage paths.
 - Expose storage diagnostics.
 - Expose the simple typed settings facade (`StoragePrefs`) and its write-through reactive values for ad-hoc flags that do not deserve a repository.
+- Store cookies and passwords as sealed ciphertext (`HiveSecretStore`) under a device-bound `SecretCipher` the app provides.
 
 ## Dependencies
 
