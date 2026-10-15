@@ -36,6 +36,38 @@ void main() {
     expect(fired, isFalse);
   });
 
+  testWidgets('the variant rides on the fork color slot (§9)', (tester) async {
+    late LiveTheme theme;
+    await tester.pumpWidget(
+      harness(
+        Column(
+          children: [
+            Builder(
+              builder: (context) {
+                theme = LiveTheme.of(context);
+                return const SizedBox.shrink();
+              },
+            ),
+            // Listed explicitly: the test is about the variant mapping, and the
+            // row index is the assertion argument — spelling out the default
+            // keeps the three cases symmetrical.
+            // ignore: avoid_redundant_argument_values
+            LiveButton(label: 'p', variant: ButtonVariant.primary, onPressed: () {}),
+            LiveButton(label: 'd', variant: ButtonVariant.danger, onPressed: () {}),
+            LiveButton(label: 's', variant: ButtonVariant.secondary, onPressed: () {}),
+          ],
+        ),
+      ),
+    );
+    // `PushButton.color` is the only variant affordance the fork has: primary
+    // is its prominent button, danger the same shape in the token error, and
+    // secondary the library's own standard grey (null = theme default).
+    final fills = tester.widgetList<macos.PushButton>(find.byType(macos.PushButton)).map((b) => b.color).toList();
+    expect(fills[0], theme.colors.primary);
+    expect(fills[1], theme.colors.error);
+    expect(fills[2], isNull);
+  });
+
   testWidgets('text field preserves controller and fires onChanged (§9)', (tester) async {
     final controller = TextEditingController(text: 'hi');
     String? changed;

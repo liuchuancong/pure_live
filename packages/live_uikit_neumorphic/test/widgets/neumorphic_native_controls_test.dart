@@ -156,6 +156,20 @@ void main() {
       expect(paddings, contains(const EdgeInsets.all(21)));
     });
 
+    testWidgets('the card wires a tap, a long press, and an onLongPress-only caller', (tester) async {
+      var tapped = false;
+      var pressed = false;
+      await tester.pumpWidget(harness(LiveCard(onTap: () => tapped = true, child: const Text('a'))));
+      await tester.tap(find.byType(LiveCard));
+      expect(tapped, isTrue);
+
+      await tester.pumpWidget(harness(LiveCard(onLongPress: () => pressed = true, child: const Text('b'))));
+      // §9: the gesture layer goes in for either callback; an `onTap`-only
+      // check here silently dropped the long press.
+      await tester.longPress(find.byType(LiveCard));
+      expect(pressed, isTrue);
+    });
+
     testWidgets('expand and tooltip wrap the button', (tester) async {
       await tester.pumpWidget(
         harness(

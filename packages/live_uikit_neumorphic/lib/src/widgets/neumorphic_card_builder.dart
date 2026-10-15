@@ -4,7 +4,8 @@ import 'package:live_uikit/styling.dart';
 
 /// Builds a soft Neumorphic card from a [LanguageCardSpec] (§9 Card): the fork's
 /// embossed surface with the token padding, the `dense` step, an explicit
-/// `padding` override, and a gesture layer only when the caller supplied a tap.
+/// `padding` override, and a gesture layer only when the caller supplied a tap
+/// or a long press.
 ///
 /// `selected` and `bordered` have no soft-surface equivalent — a Neumorphic card
 /// is defined by its shadow, not a border or fill — so they are left to the
@@ -13,9 +14,12 @@ abstract final class NeumorphicCardBuilder {
   /// Builds the card for [spec].
   static Widget build(BuildContext context, LanguageCardSpec spec) {
     final theme = LiveTheme.of(context);
+    // A card is interactive on either gesture: an `onLongPress`-only caller
+    // must not have its callback dropped because only `onTap` was checked (§9).
+    final interactive = spec.onTap != null || spec.onLongPress != null;
     return neu.NeuCard(
       padding: spec.padding ?? EdgeInsets.all(spec.dense ? theme.card.padding * 0.66 : theme.card.padding),
-      child: spec.onTap == null
+      child: !interactive
           ? spec.child
           : GestureDetector(
               behavior: HitTestBehavior.opaque,

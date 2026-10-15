@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show TargetPlatform, debugDefaultTargetPlatformOverride;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_uikit/styling.dart';
@@ -31,11 +32,28 @@ void main() {
     ),
   );
 
+  // The fork picks `InkSparkle` — a fragment shader that `flutter test` does
+  // not bundle — when the theme's platform is Android, which the test binding
+  // reports by default. A pointer press on an enabled fork button then throws
+  // while painting the ink. Driving the tap under a desktop platform makes the
+  // fork choose `InkRipple` (no shader) instead; the binding's invariant check
+  // runs before `tearDown`, so the override is restored here, not there.
+  Future<void> withInkPlatform(Future<void> Function() body) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    try {
+      await body();
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  }
+
   group('button (§9)', () {
     testWidgets('fires onPressed when enabled', (tester) async {
       var fired = false;
-      await tester.pumpWidget(harness(LiveButton(label: 'Save', onPressed: () => fired = true)));
-      await tester.tap(find.byType(LiveButton));
+      await withInkPlatform(() async {
+        await tester.pumpWidget(harness(LiveButton(label: 'Save', onPressed: () => fired = true)));
+        await tester.tap(find.byType(LiveButton));
+      });
       expect(fired, isTrue);
     });
 
@@ -62,9 +80,11 @@ void main() {
   group('switch (§9)', () {
     testWidgets('reports the next value through onChanged', (tester) async {
       bool? value;
-      await tester.pumpWidget(harness(LiveSwitch(value: false, onChanged: (v) => value = v)));
-      await tester.tap(find.byType(LiveSwitch));
-      await tester.pump();
+      await withInkPlatform(() async {
+        await tester.pumpWidget(harness(LiveSwitch(value: false, onChanged: (v) => value = v)));
+        await tester.tap(find.byType(LiveSwitch));
+        await tester.pump();
+      });
       expect(value, isTrue);
     });
   });
@@ -72,9 +92,11 @@ void main() {
   group('checkbox (§9)', () {
     testWidgets('reports the next value through onChanged', (tester) async {
       bool? value;
-      await tester.pumpWidget(harness(LiveCheckbox(value: false, onChanged: (v) => value = v)));
-      await tester.tap(find.byType(LiveCheckbox));
-      await tester.pump();
+      await withInkPlatform(() async {
+        await tester.pumpWidget(harness(LiveCheckbox(value: false, onChanged: (v) => value = v)));
+        await tester.tap(find.byType(LiveCheckbox));
+        await tester.pump();
+      });
       expect(value, isTrue);
     });
   });
@@ -82,9 +104,11 @@ void main() {
   group('card (§9)', () {
     testWidgets('fires onTap when interactive', (tester) async {
       var tapped = false;
-      await tester.pumpWidget(harness(LiveCard(onTap: () => tapped = true, child: const Text('body'))));
-      await tester.tap(find.byType(LiveCard));
-      await tester.pump();
+      await withInkPlatform(() async {
+        await tester.pumpWidget(harness(LiveCard(onTap: () => tapped = true, child: const Text('body'))));
+        await tester.tap(find.byType(LiveCard));
+        await tester.pump();
+      });
       expect(tapped, isTrue);
     });
   });
@@ -295,9 +319,11 @@ void main() {
 
     testWidgets('long press reaches the caller', (tester) async {
       var pressed = false;
-      await tester.pumpWidget(harness(LiveCard(onLongPress: () => pressed = true, child: const Text('body'))));
-      await tester.longPress(find.byType(LiveCard));
-      await tester.pump();
+      await withInkPlatform(() async {
+        await tester.pumpWidget(harness(LiveCard(onLongPress: () => pressed = true, child: const Text('body'))));
+        await tester.longPress(find.byType(LiveCard));
+        await tester.pump();
+      });
       expect(pressed, isTrue);
     });
   });

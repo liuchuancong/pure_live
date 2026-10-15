@@ -370,7 +370,7 @@ Each native builder converts a core specification into a `macos_ui` widget.
 
 ### Button (`MacosButtonBuilder`)
 
-- Map primary, secondary, subtle, and destructive intent to supported `macos_ui` button variants; the core `ControlSize` maps onto `macos_ui`'s small/regular/large sizes.
+- Map intent onto the one variant affordance `macos_ui` exposes on its push button, `PushButton.color`: `primary` takes the token primary (the macOS prominent button), `danger` the token error, and `secondary`/`ghost` keep the library's own standard surface with the ghost label tinted by the token primary. The core `ControlSize` maps onto `macos_ui`'s small/regular/large sizes.
 - Press eligibility, loading spinner and label+icon layout come from `SharedLanguageAdapter.interactive` and `buttonLabel`, so a macOS button cannot disagree with a token-rendered one (§2.3).
 - `expand` wraps the button in `SizedBox(width: double.infinity)`; `tooltip` wraps it in the core's language-neutral `LiveTooltip` and is also passed as the fork's `semanticLabel`, which is the accessible name an icon-only button needs.
 - `focusNode` and `autofocus` are **not expressible**: `PushButton` creates and owns its focus handling, and wrapping the button in a second `Focus` would hold the focus that actually performs keyboard activation. Recorded as an unmappable spec field (§15); `test/widgets/` asserts nothing crashes when they are supplied.
@@ -397,7 +397,8 @@ Each native builder converts a core specification into a `macos_ui` widget.
 ### Checkbox (`MacosCheckboxBuilder`)
 
 - Use the native `macos_ui` checkbox.
-- Preserve value, `onChanged`, `label`, `enabled`, `focusNode`, and `autofocus`.
+- Preserve value and `onChanged`. `enabled: false` nulls the callback rather than wrapping it in a closure that swallows the value: `MacosCheckbox` derives its disabled look from a null `onChanged`, so the same signal that greys the box also makes it uncallable. The optional trailing `label` is applied through the shared seam, exactly as the other adapters do.
+- `focusNode` and `autofocus` are **not expressible**: `MacosCheckbox`'s constructor has no focus slots at all, so there is nothing to forward. Recorded as an unmappable spec field (§15); `test/widgets/` asserts nothing crashes when they are supplied.
 - A null `onChanged` or `enabled: false` must render disabled without swallowing state.
 - If `macos_ui` lacks a requested state under the core contract, fall through to the shared renderer and let the resolver report it.
 
@@ -679,7 +680,7 @@ Run these from the workspace root with the repository's normal Flutter SDK and w
 
 ### Phase 4 — Interaction and accessibility ◐
 
-- Headless half done: caller state, callbacks and the spec fields `macos_ui` can carry are asserted in `test/widgets/`; the fields it cannot take (`focusNode`/`autofocus` on `PushButton`, `focusNode` on `MacosSlider`) are documented in §9 rather than faked.
+- Headless half done: caller state, callbacks and the spec fields `macos_ui` can carry are asserted in `test/widgets/`; the fields it cannot take (`focusNode`/`autofocus` on `PushButton` and on `MacosCheckbox`, `focusNode` on `MacosSlider`) are documented in §9 rather than faked.
 - Open, needs hardware: focus traversal, hover behavior, Android TV D-pad.
 - Factor keyboard, focus, and hover behavior into an `interaction/` module when it needs a home.
 - Test Android TV D-pad behavior under the macOS style.

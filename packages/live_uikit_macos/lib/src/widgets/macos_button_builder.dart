@@ -6,6 +6,11 @@ import 'package:macos_ui/macos_ui.dart' as macos;
 /// The core [ControlSize] maps onto `macos_ui`'s control sizes; the label,
 /// loading and enabled logic come from the shared seam.
 ///
+/// Variants ride on `PushButton.color`, the one variant affordance the fork
+/// exposes: `primary` becomes the macOS prominent button (accent fill, solid
+/// label), `danger` the same shape in the token error, and `secondary` stays
+/// the library's own standard grey. `ghost` keeps its primary-tinted label.
+///
 /// `expand` wraps the button in a full-width box and `tooltip` uses the core's
 /// language-neutral [LiveTooltip] plus the fork's own `semanticLabel`, which is
 /// also the accessible name. `focusNode` and `autofocus` are recorded as
@@ -16,19 +21,26 @@ abstract final class MacosButtonBuilder {
   /// Builds the button for [spec]; [seam] supplies shared label/state logic.
   static Widget build(BuildContext context, LanguageButtonSpec spec, SharedLanguageAdapter seam) {
     final theme = LiveTheme.of(context);
+    final fill = switch (spec.variant) {
+      ButtonVariant.primary => theme.colors.primary,
+      ButtonVariant.danger => theme.colors.error,
+      ButtonVariant.secondary || ButtonVariant.ghost => null,
+    };
+    final foreground = switch (spec.variant) {
+      ButtonVariant.primary || ButtonVariant.danger => theme.colors.onPrimary,
+      ButtonVariant.ghost => theme.colors.primary,
+      ButtonVariant.secondary => null,
+    };
     Widget button = macos.PushButton(
       controlSize: switch (spec.size) {
         ControlSize.sm => macos.ControlSize.small,
         ControlSize.md => macos.ControlSize.regular,
         ControlSize.lg => macos.ControlSize.large,
       },
+      color: fill,
       onPressed: seam.interactive(spec) ? spec.onPressed : null,
       semanticLabel: spec.tooltip ?? (spec.icon != null ? spec.label : null),
-      child: seam.buttonLabel(
-        spec,
-        theme,
-        foreground: spec.variant == ButtonVariant.ghost ? theme.colors.primary : null,
-      ),
+      child: seam.buttonLabel(spec, theme, foreground: foreground),
     );
     if (spec.expand) {
       button = SizedBox(width: double.infinity, child: button);
