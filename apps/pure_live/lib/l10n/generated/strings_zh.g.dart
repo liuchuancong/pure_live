@@ -227,6 +227,12 @@ class Translations$room$zh {
 
 	// Translations
 
+	/// zh: '默认排序'
+	String get sortPlatform => '默认排序';
+
+	/// zh: '人气优先'
+	String get sortViewers => '人气优先';
+
 	/// zh: '清晰度'
 	String get quality => '清晰度';
 
@@ -401,6 +407,8 @@ extension on Translations {
 			'search.hint' => '输入关键词搜索房间',
 			'search.rooms' => '房间',
 			'search.anchors' => '主播',
+			'room.sortPlatform' => '默认排序',
+			'room.sortViewers' => '人气优先',
 			'room.quality' => '清晰度',
 			'room.line' => '线路',
 			'room.play' => '播放',

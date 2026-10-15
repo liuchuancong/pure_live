@@ -61,7 +61,7 @@ final class PopularPage extends ConsumerWidget {
 /// capability, kept alive across tab switches.
 final class _SiteFeed extends StatefulWidget {
   /// A feed for [site].
-  const new({required this.site, super.key});
+  const new({required this.site});
 
   final LiveSite site;
 
@@ -202,7 +202,7 @@ final class _SiteFeedState extends State<_SiteFeed> with AutomaticKeepAliveClien
 /// The first-load placeholder: a bone grid shaped exactly like the room
 /// grid, so content replaces the skeleton without a layout jump.
 final class _SkeletonFeed extends StatelessWidget {
-  const _SkeletonFeed({required this.columns});
+  const new({required this.columns});
 
   final int columns;
 
@@ -245,7 +245,7 @@ final class _SkeletonFeed extends StatelessWidget {
 /// Wraps a site error for the loader contract; the controller stores it on
 /// its state and the view renders the generic network copy over it.
 final class _FeedException implements Exception {
-  const _FeedException(this.cause);
+  const new(this.cause);
 
   /// The site error behind the failure.
   final Object cause;

@@ -53,6 +53,8 @@
     "anchors": "主播"
   },
   "room": {
+    "sortPlatform": "默认排序",
+    "sortViewers": "人气优先",
     "quality": "清晰度",
     "line": "线路",
     "play": "播放",

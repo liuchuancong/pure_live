@@ -1,9 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
-
 import 'package:pure_live/app/routing/route_paths.dart';
-import 'package:pure_live/features/areas/areas_page.dart';
 import 'package:pure_live/features/area_rooms/area_rooms_page.dart';
+import 'package:pure_live/features/areas/areas_page.dart';
 
 part 'areas_routes.g.dart';
 

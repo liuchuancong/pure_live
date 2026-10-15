@@ -2,12 +2,11 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:live_platform/live_platform.dart' show FormFactor;
-
 import 'package:pure_live/app/navigation/app_navigator_key.dart' show appNavigatorKey;
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/route_paths.dart';
-import 'package:pure_live/app/routing/routes/search/search_routes.dart' as search_routes;
 import 'package:pure_live/app/routing/routes/areas/areas_routes.dart' as areas_routes;
+import 'package:pure_live/app/routing/routes/search/search_routes.dart' as search_routes;
 import 'package:pure_live/app/routing/routes/settings/settings_routes.dart' as settings_routes;
 import 'package:pure_live/features/follow/follow_page.dart';
 import 'package:pure_live/features/history/history_page.dart';

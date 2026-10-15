@@ -41,6 +41,8 @@
     "defaultLanguage": "Default (Fluent)"
   },
   "room": {
+    "sortPlatform": "Default",
+    "sortViewers": "Most viewers",
     "quality": "Quality",
     "line": "Line",
     "play": "Play",

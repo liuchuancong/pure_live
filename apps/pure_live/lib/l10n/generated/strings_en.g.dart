@@ -152,6 +152,8 @@ class _Translations$room$en extends Translations$room$zh {
 	final TranslationsEn _root; // ignore: unused_field
 
 	// Translations
+	@override String get sortPlatform => 'Default';
+	@override String get sortViewers => 'Most viewers';
 	@override String get quality => 'Quality';
 	@override String get line => 'Line';
 	@override String get play => 'Play';
@@ -276,6 +278,8 @@ extension on TranslationsEn {
 			'theme.dark' => 'Dark',
 			'theme.light' => 'Light',
 			'design.defaultLanguage' => 'Default (Fluent)',
+			'room.sortPlatform' => 'Default',
+			'room.sortViewers' => 'Most viewers',
 			'room.quality' => 'Quality',
 			'room.line' => 'Line',
 			'room.play' => 'Play',

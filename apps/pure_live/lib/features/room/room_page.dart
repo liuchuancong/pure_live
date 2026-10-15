@@ -64,7 +64,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
 
   @override
   void dispose() {
-    _engineSub?.cancel();
+    unawaited(_engineSub?.cancel());
     unawaited(_engine.dispose());
     super.dispose();
   }

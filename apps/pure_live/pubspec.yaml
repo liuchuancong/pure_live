@@ -65,6 +65,16 @@ dependencies:
   live_sites:
   live_storage:
   live_uikit:
+  live_uikit_background:
+  live_uikit_cupertino_ui:
+  live_uikit_fluent:
+  live_uikit_forui:
+  live_uikit_glass:
+  live_uikit_macos:
+  live_uikit_material_ui:
+  live_uikit_neumorphic:
+  live_uikit_wind:
+  markdown: ^7.3.1
   media_core:
     git:
       url: https://github.com/liuchuancong/media_core
@@ -76,16 +86,6 @@ dependencies:
       path: packages/media_core_media_kit
       ref: f4322cc74acf3e35d6c16c36c15b62df96622052
   media_kit_libs_windows_video: ^1.0.10
-  live_uikit_background:
-  live_uikit_cupertino_ui:
-  live_uikit_fluent:
-  live_uikit_forui:
-  live_uikit_glass:
-  live_uikit_macos:
-  live_uikit_material_ui:
-  live_uikit_neumorphic:
-  live_uikit_wind:
-  markdown: ^7.3.1
   mobile_scanner: ^7.4.2
   mosaic_grid: ^0.1.2
   network_info_plus: ^8.2.2
