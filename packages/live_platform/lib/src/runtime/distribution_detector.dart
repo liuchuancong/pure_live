@@ -40,6 +40,12 @@ abstract final class DistributionDetector {
   /// Inspects the executable location for the MSIX container pattern
   /// (`…/AppData/Local/Packages/<package-id>/…` on Windows). Returns
   /// [DesktopDistribution.unknown] on any other layout.
+  ///
+  /// A standard MSIX install actually runs from
+  /// `…\Program Files\WindowsApps\…`, which the native package-identity
+  /// probe already covers — this shape check is a defensive fallback for
+  /// the rare package that runs from its per-user data container, never
+  /// the primary rule.
   static DesktopDistribution detect(Directory executableRoot) {
     if (Platform.isWindows) {
       // Split through package:path: a Windows path may legitimately arrive with `/`

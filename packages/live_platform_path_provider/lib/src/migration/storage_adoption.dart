@@ -43,7 +43,14 @@ abstract final class StorageAdoption {
     if (p.equals(from.absolute.path, to.absolute.path) || !from.existsSync()) {
       return null;
     }
-    final entries = from.listSync();
+    final List<FileSystemEntity> entries;
+    try {
+      entries = from.listSync();
+    } on FileSystemException {
+      // The tree vanished between the exists check and the listing:
+      // nothing left to carry.
+      return null;
+    }
     final moved = <String>[];
     final blocked = <String>[];
     try {

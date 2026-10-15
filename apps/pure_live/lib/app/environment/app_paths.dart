@@ -99,7 +99,11 @@ final class AppPaths {
     ).candidatesFor(StorageArea.config, runtime).firstOrNull;
     final anchorFile = anchorDirectory == null ? null : File('${anchorDirectory.path}/$_choicesFile');
     final choices = await _readChoices(anchorFile, onError: onError);
-    final policy = AppStoragePolicy(runtime: runtime, roots: roots, choices: choices, buildDataRoot: buildDataRoot);
+    // A relative `PURE_LIVE_DATA_DIR` (`.run-data`) means "next to where
+    // this process was started"; pinning it absolute once here keeps every
+    // later resolution off the drifting process working directory.
+    final pinnedDataRoot = buildDataRoot == null ? null : p.absolute(buildDataRoot);
+    final policy = AppStoragePolicy(runtime: runtime, roots: roots, choices: choices, buildDataRoot: pinnedDataRoot);
     final storage = (await PathProviderBootstrap.init(environment: environment, policy: policy)).storage;
 
     // The journal lives beside the anchor file — the default config
@@ -164,12 +168,12 @@ final class AppPaths {
   /// confirmed must survive the process — so a failed write throws instead of
   /// answering with a path that will not be there next start-up.
   ///
-  /// The change lands in two phases. Areas that resolve lazily (downloads,
-  /// exports) answer with the new directory right away. The data tree stays
-  /// where this boot pinned it — the storage layer holds open files there —
-  /// and the *next* start carries that tree over to the new directory
-  /// (see [dataAdoption]) before storage opens, so nothing written in
-  /// between is lost.
+  /// Fresh [location] asks answer with the new directory right away — the
+  /// lazy areas (downloads, exports) and the data area alike. Writers that
+  /// captured their directory at boot (the storage layer, the log sink)
+  /// keep writing where this boot pinned them, and the *next* start carries
+  /// that tree over to the new directory (see [dataAdoption]) before
+  /// storage opens, so nothing written in between is lost.
   Future<void> choose(StorageArea area, Directory directory) async {
     if (isFixedByBuild(area)) {
       throw StateError('${area.name} is pinned by this build (PURE_LIVE_DATA_DIR) and cannot be moved.');
@@ -210,7 +214,10 @@ final class AppPaths {
             final Directory root? => '${root.path}/data',
             _ => null,
           }
-        : '${runtime.executableRoot.path}/data';
+        // The portable tree at this same location is namespaced one segment
+        // deeper than the Flutter runtime's own `data/` bundle — it is the
+        // policy's `data/pure_live` candidate, never `data/` itself.
+        : '${runtime.executableRoot.path}/data/pure_live';
     if (legacy == null || legacy == preferred.path) {
       return null;
     }

@@ -99,7 +99,7 @@ void main() {
     );
 
     final location = await manager.resolve(StorageArea.cache);
-    expect(location.path, '${systemTemp.path}${Platform.pathSeparator}pure_live');
+    expect(location.path, '${systemTemp.path}${Platform.pathSeparator}pure_live_cache');
     expect(location.isPersistent, isFalse);
   });
 

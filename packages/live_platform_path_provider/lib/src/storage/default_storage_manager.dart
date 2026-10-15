@@ -56,7 +56,11 @@ final class DefaultStorageManager implements StorageManager {
     // must fail loudly instead of hiding data where it will be wiped. Each
     // area keeps its own namespace there, matching the policy's naming.
     if (area == StorageArea.cache || area == StorageArea.temporary) {
-      final fallback = Directory(p.join(_systemTemp.path, area == StorageArea.cache ? 'pure_live' : 'pure_live_temp'));
+      // The same names the policy's own temp candidates use, so a degraded
+      // area never changes directory depending on which tier failed.
+      final fallback = Directory(
+        p.join(_systemTemp.path, area == StorageArea.cache ? 'pure_live_cache' : 'pure_live_temp'),
+      );
       final location = await _probe(area, fallback, snapshot.kind);
       if (location != null) {
         return _resolved[area] = location;

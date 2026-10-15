@@ -15,7 +15,7 @@ enum DistributionOrigin {
   /// A native platform probe (Windows package identity).
   nativeIdentity,
 
-  /// The user-placed portable markers (`data/` tree, `portable.marker`).
+  /// The user-placed `portable.marker` file beside the executable.
   portableMarker,
 
   /// Deployment path-shape metadata (the MSIX container pattern).

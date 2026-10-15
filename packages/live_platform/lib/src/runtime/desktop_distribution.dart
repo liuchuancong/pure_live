@@ -13,10 +13,12 @@ enum DesktopDistribution {
   /// Packaged as MSIX; data goes through the package's container rules.
   msix,
 
-  /// Standalone bundle; data lives next to the executable when that
-  /// directory is writable, with a user-data fallback otherwise. Declared
-  /// by a `portable.marker` file or the launcher — and un-declared by
-  /// removing the marker and the cached claim beside the executable.
+  /// Standalone bundle; data lives next to the executable, full stop. A
+  /// portable build never falls back into the OS user-data tree — the
+  /// medium is the point — so a read-only medium fails resolution loudly
+  /// instead of hiding data where the bundle cannot find it again. Declared
+  /// by a `portable.marker` file, a bundled build claim or the launcher —
+  /// and un-declared by removing all of them beside the executable.
   portable,
 
   /// Deployment could not be confirmed; treat as installed but keep the
