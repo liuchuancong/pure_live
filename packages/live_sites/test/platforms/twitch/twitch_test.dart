@@ -734,9 +734,9 @@ https://other.example/1.m3u8
         'liveme',
         'xiaohongshu',
         'yy',
-        'tiktok',
         'soop',
         'steambroadcast',
+        'tiktok',
         'twitcasting',
       ]);
     });
