@@ -1,3 +1,4 @@
+import 'dart:io' show Platform, exit;
 import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/widgets.dart';
@@ -11,6 +12,7 @@ import 'package:pure_live/app/logging/app_log.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/theme/app_theme.dart';
 import 'package:pure_live/platforms/desktop/entry/desktop_entry.dart';
+import 'package:pure_live/platforms/desktop/entry/desktop_launch.dart';
 
 /// The process entry point: open the log, boot the service graph, then hand
 /// it to the widget tree through `ProviderScope` overrides.
@@ -20,7 +22,7 @@ import 'package:pure_live/platforms/desktop/entry/desktop_entry.dart';
 /// composition happens; nothing below the scope reads `AppServices`
 /// directly, so a second window can boot its own graph through the same
 /// door.
-Future<void> main() async {
+Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   final log = AppLog();
   FlutterError.onError = (details) {
@@ -32,6 +34,19 @@ Future<void> main() async {
     return true;
   };
 
+  // The single-instance lock is the first thing a desktop launch takes: a
+  // second launch that reached the data tree would fight the running
+  // instance over its box locks. A forwarded launch exits here, having
+  // already handed its request to whoever holds the port.
+  final onDesktop = Platform.isWindows || Platform.isMacOS || Platform.isLinux;
+  final channel = onDesktop ? await acquireDesktopInstance(log: log.root, args: args) : null;
+  if (onDesktop && channel == null) {
+    // Handed over — this process was only ever a messenger. Nothing past
+    // the log has been initialised, so a plain exit loses nothing; a bare
+    // return would leave the engine, and the process, alive.
+    exit(0);
+  }
+
   final services = await AppServices.boot(log: log);
 
   // The desktop window's life starts before the first frame (size, title,
@@ -39,7 +54,13 @@ Future<void> main() async {
   DesktopEntry? desktopEntry;
   final kind = services.environment.runtime.kind;
   if (kind == PlatformKind.windows || kind == PlatformKind.macos || kind == PlatformKind.linux) {
-    desktopEntry = DesktopEntry(kind: kind, onQuitRequest: services.shutdown);
+    desktopEntry = DesktopEntry(
+      kind: kind,
+      onQuitRequest: () async {
+        await channel?.dispose();
+        await services.shutdown();
+      },
+    );
     await desktopEntry.prepare();
   }
 
