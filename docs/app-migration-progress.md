@@ -31,7 +31,7 @@
 - [x] 历史域（live_library 历史记录 + 清除）— 29509528a（历史页最新在前/单条移除/清空确认；房间页 resolve 即 record）
 - [x] IPTV 域（live_iptv：源管理/分组/播放列表）— 59ed1d9d8（URL 导入经 live_net 生产 fetcher；按 URL 重导入保收藏/编号；源 chip 管理/分组 chips/收藏切换；频道播放待播放器 IPTV 线路波次）
 - [x] 设置-弹幕屏蔽页（shield 关键词/用户/正则，存储 keyed 家族）— b2a4c1127（三列表 chip 管理，settings.shield keyed box 每列表一键；相似度过滤随弹幕波；设置索引加行）
-- [ ] 设置-字体管理页（font_manager，_restart_app 联动）
+- [x] 设置-字体管理页（font_manager，_restart_app 联动）— 10922d804（FontLibrary：manifest 三镜像抓取、下载进 data/fonts、FontLoader 免重启注册、开机重注册；appearance.fontFamily 直通 UiConfig；restart_app 不需要——FontLoader 免重启；danmaku 字体随弹幕波）
 - [ ] 备份/恢复页（archive zip + file_picker/file_selector）
 - [ ] 弹幕（live_interaction + live_websocket 加入依赖）
 - [ ] 录制域（live_record_core 加入依赖）
