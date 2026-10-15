@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fpdart/fpdart.dart';
+import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
@@ -118,6 +119,7 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
   Timer? _watchdog;
   Timer? _join;
   Timer? _retry;
+  CancelToken? _grant;
   int _generation = 0;
   int _nextHeartbeatId = 1;
   int _unconfirmed = 0;
@@ -142,7 +144,10 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
     }
     final Fc2LiveGrant grant;
     try {
-      grant = await site.controlGrant(args.channelId);
+      grant = await _grantRequest();
+    } on CancelledFailure {
+      // Torn down while asking: the closer owns the goodbye.
+      return null;
     } on Fc2LiveFailure catch (failure) {
       if (!failure.isTransient) return failure.toLiveSiteError('fc2live');
       _scheduleRetry(failure.message);
@@ -168,6 +173,16 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
       final reason = Fc2LiveDanmakuCodec.redact('$error');
       if (generation != _generation || _disposed) return null;
       _scheduleRetry(reason);
+      return null;
+    }
+    if (_disposed || generation != _generation) {
+      // Disposed or replaced while the handshake was in flight: close what we
+      // just opened instead of parking it on a dead generation.
+      try {
+        await socket.close();
+      } on Object {
+        // Already closed or broken.
+      }
       return null;
     }
     _socket = socket;
@@ -242,11 +257,17 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
     });
   }
 
-  /// A socket to be replaced at once (the site's own `move_server`), without
-  /// waiting on the backoff and without counting against it.
+  /// A socket to be replaced at once (the site's own `move_server`): no
+  /// backoff wait, but still counted against the reconnect budget — a node that
+  /// ping-pongs this session between servers would otherwise reopen forever.
   void _renewNow() {
     _cancelTimers();
     if (_disposed) return;
+    _unconfirmed += 1;
+    if (_unconfirmed > Fc2LiveDanmakuCodec.maxReconnects) {
+      _terminate('Chat connection lost (the site kept moving this session)');
+      return;
+    }
     unawaited(_handshake());
   }
 
@@ -254,7 +275,9 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
     if (_disposed) return;
     final Fc2LiveGrant grant;
     try {
-      grant = await site.controlGrant(args.channelId);
+      grant = await _grantRequest();
+    } on CancelledFailure {
+      return;
     } on Fc2LiveFailure catch (failure) {
       // A channel that has become unplayable mid-run is not worth asking about
       // again; a breakdown is retried on the next step.
@@ -266,6 +289,17 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
       return;
     }
     await _openSocket(grant);
+  }
+
+  /// Takes the grant of the handshake under way: a request the session can
+  /// cancel when it is closed while its two calls are still in flight, instead
+  /// of leaving them to answer into a dead generation.
+  Future<Fc2LiveGrant> _grantRequest() {
+    final cancel = CancelToken();
+    _grant = cancel;
+    return site.controlGrant(args.channelId, cancel: cancel).whenComplete(() {
+      if (identical(_grant, cancel)) _grant = null;
+    });
   }
 
   void _startHeartbeat() {
@@ -335,6 +369,8 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
   Future<void> disconnect() async {
     _generation += 1;
     _cancelTimers();
+    _grant?.cancel();
+    _grant = null;
     await _teardownSocket();
   }
 
@@ -345,6 +381,8 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
     _disposed = true;
     _generation += 1;
     _cancelTimers();
+    _grant?.cancel();
+    _grant = null;
     await _teardownSocket();
     await _events.close();
   }

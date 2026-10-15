@@ -259,9 +259,9 @@ final class Fc2LiveSite implements LiveSite {
   String channelOf(String roomId) => Fc2LiveRoomParser.requiredChannel(roomId);
 
   /// The channel's member answer: one request.
-  Future<Fc2LiveMember> member(String roomId) async {
+  Future<Fc2LiveMember> member(String roomId, {CancelToken? cancel}) async {
     final id = channelOf(roomId);
-    final response = await post(Fc2LiveEndpoints.memberPath, Fc2LiveEndpoints.memberFields(id));
+    final response = await post(Fc2LiveEndpoints.memberPath, Fc2LiveEndpoints.memberFields(id), cancel: cancel);
     return Fc2LiveRoomParser.member(response.text, channelId: id, status: response.status);
   }
 
@@ -273,14 +273,16 @@ final class Fc2LiveSite implements LiveSite {
   // Control -------------------------------------------------------------------
 
   /// A fresh grant for [roomId]'s channel: its member answer, then
-  /// `getControlServer.php` with the channel's version.
+  /// `getControlServer.php` with the channel's version. Both requests go out
+  /// under [cancel], so a caller that stops wanting the grant (the comment
+  /// connection being closed) does not leave them running.
   ///
   /// A channel that is not on air, and one whose restriction keeps this viewer
   /// out, are refused before the second request. A live channel that answers no
   /// version is api-changed: the grant cannot be made without it.
-  Future<Fc2LiveGrant> controlGrant(String roomId) async {
+  Future<Fc2LiveGrant> controlGrant(String roomId, {CancelToken? cancel}) async {
     final id = channelOf(roomId);
-    final (:channel, :version) = await member(id);
+    final (:channel, :version) = await member(id, cancel: cancel);
     if (channel.state == Fc2LiveState.offline) {
       throw Fc2LiveFailure(Fc2LiveFailureKind.streamUnavailable, 'channel $id is not on air');
     }
@@ -291,6 +293,7 @@ final class Fc2LiveSite implements LiveSite {
     final response = await post(
       Fc2LiveEndpoints.controlPath,
       Fc2LiveEndpoints.controlFields(channelId: id, version: version),
+      cancel: cancel,
     );
     return Fc2LivePlayParser.grant(response.text, channelId: id, status: response.status);
   }
@@ -311,12 +314,13 @@ final class Fc2LiveSite implements LiveSite {
     if (_controls[id] case final held? when !held.control.isClosed && _now().isBefore(held.until)) {
       return held;
     }
-    final control = await Fc2LiveControl.open(
-      await controlGrant(id),
-      connect: connect,
-      startupTimeout: controlStartupTimeout,
-    );
+    // The grant's minute starts when the site answers, not when our control is
+    // up: opening it costs a socket handshake plus the HLS answer (up to
+    // [controlStartupTimeout]), and a lease counted from after that would hand
+    // the player addresses the media server has already dropped.
+    final grant = await controlGrant(id);
     final issuedAt = _now();
+    final control = await Fc2LiveControl.open(grant, connect: connect, startupTimeout: controlStartupTimeout);
     final entry = (control: control, issuedAt: issuedAt, until: _holdUntil(issuedAt));
     final replaced = _controls[id];
     _controls[id] = entry;

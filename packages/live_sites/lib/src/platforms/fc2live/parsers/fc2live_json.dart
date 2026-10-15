@@ -93,9 +93,11 @@ abstract final class Fc2LiveJson {
 
   /// An integer only when it is one, with no failure and no truncation: what a
   /// start time or a playlist row's mode needs, where a wrong type is simply
-  /// "not there".
+  /// "not there". A `num` counts when it is integral (`30.0` is the same mode
+  /// as `30`); a fraction is not an integer and reads as absent.
   static int? jsonInt(Object? value) => switch (value) {
     final int number => number,
+    final num number when number.isFinite && number == number.roundToDouble() => number.toInt(),
     final String text => int.tryParse(text.trim()),
     _ => null,
   };

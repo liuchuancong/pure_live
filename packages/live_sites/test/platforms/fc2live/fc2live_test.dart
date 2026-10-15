@@ -44,7 +44,7 @@ import 'package:live_sites/src/platforms/fc2live/parsers/fc2live_room_parser.dar
 import 'package:test/test.dart';
 
 // One request as the fake transport records it.
-typedef _Seen = ({String method, Uri url, Map<String, String> headers, String body});
+typedef _Seen = ({String method, Uri url, Map<String, String> headers, String body, CancelToken cancelToken});
 
 /// The channel of the tests: the number of the 2026-09-27 capture.
 const String _channel = '10608314';
@@ -257,7 +257,9 @@ String _commentsFrame(List<Object?> rows) => _frame('comment', arguments: {'comm
 final class _FakeHttp implements LiveHttp {
   new(this.onSend);
 
-  final LiveResponse Function(_Seen request) onSend;
+  // A future is allowed: a request that hangs until its token is cancelled
+  // needs one.
+  final FutureOr<LiveResponse> Function(_Seen request) onSend;
   final List<_Seen> sent = [];
 
   @override
@@ -267,8 +269,9 @@ final class _FakeHttp implements LiveHttp {
       url: request.url,
       headers: request.headers,
       body: request.body ?? utf8.decode(request.bodyBytes ?? const <int>[]),
+      cancelToken: request.cancelToken,
     ));
-    return onSend(sent.last);
+    return await onSend(sent.last);
   }
 
   @override
@@ -369,6 +372,7 @@ final class _Connector {
     if (shared != null) return shared!;
     return _standby ??= _FakeSocket();
   }
+
   _FakeSocket? _standby;
 
   /// The socket the next frame or [ended] should go to.
@@ -503,6 +507,25 @@ void main() {
         expect(Fc2LiveJson.statusFailure(status, 'x')!.kind, Fc2LiveFailureKind.network, reason: '$status');
       }
       expect('${Fc2LiveJson.statusFailure(503, 'memberApi')}', contains('memberApi: HTTP 503'));
+    });
+
+    test('only a breakdown or a throttle is worth asking again', () {
+      expect(const Fc2LiveFailure(Fc2LiveFailureKind.network, 'x').isTransient, isTrue);
+      expect(const Fc2LiveFailure(Fc2LiveFailureKind.rateLimited, 'x').isTransient, isTrue);
+      expect(
+        const Fc2LiveFailure(Fc2LiveFailureKind.riskControl, 'x').isTransient,
+        isFalse,
+        reason: 'an edge that refuses this client does not lift on retry',
+      );
+      for (final kind in [
+        Fc2LiveFailureKind.notFound,
+        Fc2LiveFailureKind.apiChanged,
+        Fc2LiveFailureKind.needsLogin,
+        Fc2LiveFailureKind.streamUnavailable,
+        Fc2LiveFailureKind.invalidArgument,
+      ]) {
+        expect(Fc2LiveFailure(kind, 'x').isTransient, isFalse, reason: kind.name);
+      }
     });
 
     test('an answer is JSON of a bounded size and an object', () {
@@ -1284,7 +1307,11 @@ void main() {
       expect(Fc2LivePlayParser.playlistFor(ofModes([10]), '30')!.url.toString(), _playlist(10));
       // A lower tier wins before the master: with tiers 10 (and its master 0)
       // only, an ask of 50 falls to the nearest lower tier, not to the master.
-      expect(Fc2LivePlayParser.playlistFor(ofModes([0, 10]), '50')!.url.toString(), _playlist(10), reason: 'a tier beats the master');
+      expect(
+        Fc2LivePlayParser.playlistFor(ofModes([0, 10]), '50')!.url.toString(),
+        _playlist(10),
+        reason: 'a tier beats the master',
+      );
       expect(Fc2LivePlayParser.playlistFor(ofModes([0, 1, 2]), 'auto')!.url.toString(), _master);
       expect(Fc2LivePlayParser.playlistFor(ofModes([1]), 'auto')!.url.toString(), _playlist(1));
       expect(
@@ -1687,7 +1714,11 @@ void main() {
       expect(ng.hides(_comment(comment: 'say hello')), isTrue, reason: 'the keyword list, casefolded');
       // The channel_user entry lists the sender decoding from encrypted 'a3456';
       // a comment from that sender is hidden, one from another is not.
-      expect(ng.hides(_comment(encrypted: 'a3456', comment: 'clean')), isTrue, reason: 'the channel_user entry');
+      expect(
+        ng.hides(_comment(encrypted: 'a3456', comment: 'clean')),
+        isTrue,
+        reason: 'the channel_user entry',
+      );
       expect(ng.hides(_comment(encrypted: 'a9999', comment: 'clean')), isFalse);
       expect(ng.hides(_comment(orz: 'orz-1', comment: 'clean')), isTrue);
       expect(ng.hides(_comment(orz: 'orz-2', comment: 'clean')), isFalse);
@@ -1899,7 +1930,8 @@ void main() {
       expect(
         adapter.http.sent,
         hasLength(2),
-        reason: 'page 1 of the two asked areas each takes a fresh snapshot; the refused '
+        reason:
+            'page 1 of the two asked areas each takes a fresh snapshot; the refused '
             'areas and the page below 1 ask nothing',
       );
     });
@@ -2220,6 +2252,31 @@ void main() {
       expect(opened.connector.endpoints, isEmpty);
       expect(broken.http.sent, hasLength(1));
       await waiting.dispose();
+    });
+
+    test('a session closed mid-grant cancels the requests in flight', () async {
+      final stopped = <Uri>[];
+      Future<LiveResponse> hanging(_Seen request) async {
+        await request.cancelToken.whenCancel;
+        stopped.add(request.url);
+        throw const CancelledFailure();
+      }
+
+      final connector = _Connector(answer: false);
+      final timers = FakeTimers();
+      final http = _FakeHttp(hanging);
+      final session = Fc2LiveDanmakuSession(
+        args: const Fc2LiveDanmakuArgs(_channel),
+        site: Fc2LiveSite(http: Fc2LiveHttp(http), connect: connector.call, now: () => _at),
+        timers: timers.timers,
+      );
+      final joining = session.connect();
+      await Future<void>.delayed(Duration.zero);
+      expect(http.sent, hasLength(1), reason: 'the member request of the grant is on its way');
+      await session.dispose();
+      expect(await joining, isNull, reason: 'a session being closed does not report why it did not join');
+      expect(stopped, [http.sent.first.url], reason: 'the request in flight was told to stop');
+      expect(timers.after.where((wait) => wait.delay > Duration.zero), isEmpty, reason: 'nothing is left to retry');
     });
 
     test('the provider builds a session only for a room that names a channel', () async {

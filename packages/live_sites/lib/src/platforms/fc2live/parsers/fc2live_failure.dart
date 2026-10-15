@@ -79,11 +79,10 @@ final class Fc2LiveFailure implements Exception {
   /// Whether asking again could mend this: only a transport breakdown or a
   /// throttle can, so a caller that is about to keep trying (the comment
   /// connection, which takes a fresh grant per handshake) does not spend a
-  /// request on a channel that is gone, offline or restricted.
-  bool get isTransient =>
-      kind == Fc2LiveFailureKind.network ||
-      kind == Fc2LiveFailureKind.rateLimited ||
-      kind == Fc2LiveFailureKind.riskControl;
+  /// request on a channel that is gone, offline, restricted — or one whose
+  /// edge has started refusing this client (a refusal does not lift on
+  /// retry, so asking again only spends the reconnect budget).
+  bool get isTransient => kind == Fc2LiveFailureKind.network || kind == Fc2LiveFailureKind.rateLimited;
 
   @override
   String toString() => 'Fc2LiveFailure(${kind.name}: $message)';

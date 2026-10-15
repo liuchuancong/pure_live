@@ -33,9 +33,10 @@
 | chzzk CHZZK(치지직) | ✅ | 见下方"chzzk 明细" |
 | kick Kick | ✅ | 见下方"kick 明细";已注册进 `built_in_sites`(`fc2live` 之后) |
 | niconico Niconico | ✅ | 见下方"niconico 明细";已注册进 `built_in_sites`(`kick` 之后) |
+| fc2live FC2 Live | ✅ | 见下方"fc2live 明细";已注册进 `built_in_sites` |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
-| fc2live / jdlive / kilakila / kugoulive / looklive / missevan / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / yy | ⬜ | 其余含弹幕站;**下一站候选 fc2live**(按本行顺序) |
+| jdlive / kilakila / kugoulive / looklive / missevan / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / yy | ⬜ | 其余含弹幕站;**下一站候选 jdlive**(按本行顺序) |
 | cc / inke / liveme / tiktok / xiaohongshu | ⬜ | 仅 `live_core` 有(纯目录/播放,无弹幕) |
 
 ## douyu 明细(2026-10-14)
@@ -170,6 +171,23 @@
   - **seat 可注入**:`NiconicoSite({seatConnector})` 把 `NiconicoSeat` 已有的 `SocketConnector` 口子透出(缺省 `webSocketConnect`),bootstrap 复用与"失败后重读页再开一次"这条时序才有离线测试。
 - **延后项(记档不假造)**:①`live_net` 没有"不跟随重定向"的请求参数,参考的 `followRedirects: false` + 3xx 判网络错在本站做不到(需要跨包 seam);②参考的 `masterTimeout` 之外还有 `discoveryDeadline` 30s 总预算和"跟着 `seat.changes`/`seat.done` 换 master",v2 能力签名不收取消令牌 → 未复刻;③`regionBlocked`/`needsLogin` 都折到 `authentication`、`riskControl` 折到 `rateLimit`(`LiveSiteError` 没有地理/风控档,模型不动,记录此折叠);④master 变体缺 `RESOLUTION`/重复 `WxH@BW`/音频歧义,参考判 apiChanged,本站按现有口径跳过坏行(只有整份无可播行才报错);⑤seat 启动计时器仍在握手成功后起(参考在连接前起),最坏 2×20s;dispose 无 `closeTimeout` 约束;⑥3.x 的 `resolveRoomId`(遗留 `lv…` 迁到主播号)与 `notice()` 本地化公告在 v2 无落点;⑦`contribution_rank`/礼物 `message`、画质标签 `800x450 · 1080800 bps` 的差集,现有 `LiveGift`/`LivePlayQuality` 无对应字段。
 - 验证:`dart analyze lib/src/platforms/niconico test/platforms/niconico` No issues;`dart test test/platforms/niconico` **39 项全绿**(新增:totalCount→hasMore、非 tab 分区预拒、越界页码/关键词预拒、超 2 MiB 体判 apiChanged、bootstrap 复用 + 失败后重读页各开一次 seat、无 seat 页不留 bootstrap、媒体读带 5s、已进内置站点清单);整包 `dart test` **660 项全绿**。
+
+## fc2live 明细(2026-10-15)
+整站从 `live_core/sites/fc2live`(fc2live_api + fc2live_control + fc2live_site)+ `live_danmaku/sites/fc2live.dart` 迁到 `platforms/fc2live/`。**无新依赖**:三张表单 POST + 一条控制 WebSocket(已移上 live_websocket,2683783ae)+ 手写 HLS 应答解析。文件先随 be7ca597e 等提交入库并已注册进 `built_in_sites`;2026-10-15 子代理逐条对照参考收尾,框架与模型未动。
+- 能力七个全注册:room / area(单一分类 + 6 分区,含 `all`)/ discovery(目录切片)/ search(快照过滤,精确频道号/链接走 memberApi 仅 page1,NotFound 即无结果)/ playback / danmaku / link_resolver;`Fc2LiveFailure → toLiveSiteError('fc2live')`(401/403 折 rateLimit;transient 仅 network/rateLimited)。
+- 数据面:全站目录 = `allchannellist.php` 单快照(page1 强制新拉、20s 复用、在途 fetch 共享、失败快照丢弃);房间 = `memberApi.php` 一请求(status≠1/无 owner → NotFound,五限制旗标 → restricted,离线与受限分得开);播放无地址:`getControlServer.php` 发一条控制 socket grant(wss 子域/路径/token/orz 严格校验),`get_hls_information` 问一次 HLS 应答(3 延迟家族、mode 0–999、5 档 tier + auto、坏行单跳、地址严格校验),媒体地址只在 control 开着时有效 → `LivePlayLease`(签发+1min、提前 6s 刷、requiresReconnect);adapter 每频道持有一个 control 共享给多个观看者,租期起点 = grant 应答时刻。
+- 弹幕(参考 667 行逐条对齐):每次握手新 grant 真 socket;页面心跳 30s 逐字节、join 8s 超时、静默 90s 换线;`connect_complete` 进房;`comment`(history/system 跳过、匿名 `[anonymous]`、发送方 id 偏移算法逐位一致、8 色+白、timestamp 越界丢弃)、`user_count`(增量记忆、pc+mobile 求和、变化才发)、NG 全集(keyword/channel/admin/user/share_*,按 id 增删、无名等值删、跨 socket 保留每 socket 重发)、`control_disconnection`(4500 grant 过期/1000 关播)换新 grant、`move_server` 立即换线;重连双开互斥 + 8 次无被答心跳终止上报(心跳被答即清零);token/cookie 不进任何报错。礼物走 system_comment 且参考即无定价,两侧一致跳过。
+- 链接:`live.fc2.com/<id>/` 与 `/13 语种/<id>/`,频道号 1–12 位无前导零,`/rank/`、`/archive` 与外 host 拒绝。
+- **2026-10-15 对照收尾补的六条**(子代理对照产出,前四条为工作区既有打磨一并入库):
+  - 会话在握手在途时被替换/关闭:迟到的 socket 当场关掉,不再挂在死代次上;
+  - `_renewNow`(move_server)计入重连预算——节点间 ping-pong 不再无限重开(参考 server 令重连同样计入);
+  - `heldOf` 租期起点前移到 grant 应答时刻(control 的握手+HLS 开销不计入租期,地址不会一签发就过期);
+  - `jsonInt` 收整数 `num`(`30.0` 与 `30` 同一 mode,小数不算);
+  - **`isTransient` 去掉 `riskControl`**(参考 `RiskControl.isTransient=false`:边缘封禁不因重试解除,401/403 首个 grant 即终止会话,不再空转 8 次退避;折入 rateLimit 的映射保留,v2 无独立 kind);
+  - **弹幕会话 teardown 取消在途 grant 请求**(`CancelToken` 贯通 `controlGrant → member/post`,disconnect/dispose 即 cancel,对齐参考 `_Grants.cancel`;`CancelledFailure` 视作"正在关闭"不报错;测试用挂起传输验证 token 传导)。
+- 清理:删除测试草稿分片 `part2.dart.txt`/`part3.dart.txt`(内容已全部并入 `fc2live_test.dart`)。
+- **延后项(记档不假造)**:①owned input recipe / appliedQualityData(v2 无 recipe 面,line label 承担实际档位);②恢复重取解析器(v2 由 lease/requiresReconnect 语义触发重解析);③probeControl 探针交接(v2 无"socket 交给播放器"面,heldOf 共享等效);④`getLiveStatus`/刷新/录制专用入口(无对应 capability,播控路径每次重发 memberApi 等效覆盖);⑤目录 scope 说明文案(v2 无目录级本地化面);⑥重试退避为线性 1s×n(参考 runtime 内建退避,性能型内部项)。
+- 验证:`dart analyze lib test` 除 2 条 twitch 既有 info(见 kick 明细)外无新增;`dart test` 整包 **662 项全绿**(fc2live 91,新增 isTransient 分级与 mid-grant 取消两例)。
 
 ## 环境缺口
 无。此前 `packages/live_playback` 以 `path:` 依赖工作区外的 `D:\media_core` 导致整仓 `dart pub get` 解析失败、`dart test` 跑不起来;2026-10-14 已把 `media_core` / `media_core_danmaku` / `media_core_mediasession` 改为 pub git 源(`github.com/liuchuancong/media_core`),仓库根 `flutter pub get` 即可完整解析,交付门的 test 步骤不再需要人工补 media_core 或造桩。
