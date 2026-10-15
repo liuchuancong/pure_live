@@ -949,6 +949,7 @@ void main() {
         'fc2live',
         'kick',
         'niconico',
+        'picarto',
         'jdlive',
         'kilakila',
         'kugoulive',

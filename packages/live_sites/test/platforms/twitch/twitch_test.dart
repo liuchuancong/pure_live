@@ -720,6 +720,7 @@ https://other.example/1.m3u8
         'fc2live',
         'kick',
         'niconico',
+        'picarto',
         'jdlive',
         'kilakila',
         'kugoulive',

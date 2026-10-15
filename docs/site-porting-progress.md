@@ -40,11 +40,12 @@
 | soop SOOP | ✅ | 见下方"soop 明细";已注册进 `built_in_sites` |
 | missevan 猫耳FM | ✅ | 见下方"missevan 明细";已注册进 `built_in_sites` |
 | pandalive 판다라이브 | ✅ | 见下方"pandalive 明细";已注册进 `built_in_sites` |
+| picarto Picarto.TV | ✅ | 见下方"picarto 明细";已注册进 `built_in_sites` |
 | showroom SHOWROOM | ✅ | 见下方"showroom 明细";已注册进 `built_in_sites` |
 | twitcasting ツイキャス | ✅ | 见下方"twitcasting 明细";已注册进 `built_in_sites` |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
-| picarto / seventeenlive / sixroom / steambroadcast / yy | ⬜ | 其余含弹幕站;picarto 后台代理进行中 |
+| seventeenlive / sixroom / steambroadcast / yy | ⬜ | 其余含弹幕站;六个后台代理并行中(looklive 修绿收尾 + 5 站从头) |
 | cc / inke / liveme / tiktok / xiaohongshu | ⬜ | 仅 `live_core` 有(纯目录/播放,无弹幕) |
 
 ## douyu 明细(2026-10-14)
@@ -266,6 +267,14 @@
 - 弹幕:SUB/PING/ACK + MSG 帧(聊天+礼物,目录表定价、gt=2 免费、默认图标、字节帧);silence 180s、重连预算 8 次、open 即 joined(服务器不确认,无 join 定时器——照参考)。
 - **适配与延后项(记档)**:①礼物表未用 Isolate.run(参考有;包内其他平台均内联,且 isolate 不 web 安全);②playback 按 roomId 无 detail 对象 → 入口记 ShowroomStreamData(offline 标记复刻免请求路径);③目录页固定 30 行/页、推荐与搜索按 pageSize 切片(≤100)照参考;④卡片/详情 area 由 genreName 升级为 LiveArea 对象(参考本就校验 genre_id);⑤未实现(参考也没有):webRTC 等非 hls 类型、t=5/8/18/101/104 等其余 MSG 种类、premium 付费房(无样本)。
 - 验证:`dart analyze` No issues;`dart test test/platforms/showroom` **57 项全绿**(状态门/逐行容错/编解码往返含定价/错误分支/七能力接线/快照复用/礼物表缓存/会话生命周期)。
+
+## picarto 明细(2026-10-15,后台代理移植)
+整站从 `live_core/sites/picarto` + `live_danmaku/sites/picarto.dart` 迁到 `platforms/picarto/`(后台代理按统一模板与交付门执行,我审查后注册)。**无新依赖**。
+- 能力七项全注册(room/area/discovery/search/playback/danmaku/link_resolver);LiveHot/Anchor/WebSearch 参考没有 → 注册 null。`PicartoFailure → toLiveSiteError('picarto')`(7 类,401/403 折 rateLimit)。
+- 数据面:双 API host;catalog(languages-categories,公开目录区在前)、explore 分页(30/页,clamp 1–60)、分类过滤、searchProfiles(count 不读、空页收尾);房间入口 detail + HLS master + 公共 API last_live + 弹幕 handle;HLS master 多质量(高度优先排序,外挂音频/媒体 playlist → 单一"自动");频道名规则与 roomIdFromUrl 白名单。
+- 弹幕:token GraphQL 解析、wss endpoint、50s 心跳、JWT_TOKEN 拒识(预算 3 次内换 token 重开、被任何非拒识帧证明后清零)、chat/小费超聊(LiveSuperChatMessage + SuperChatPrice currency 'Kudos',名字颜色 k → MessageSender.nameColor,弃 3.x 的 SUPER_CHAT_MESSAGE 占位文本)/system/raid/订阅/rm/cm/观众帧全解码。**无礼物事件(参考亦无)**,无 LiveGift 产出。
+- **适配与延后项(记档)**:①follow 刷新(v1 getRoomDetailForRefresh)无 v2 能力面 → getRoom 即入口;②恢复播放无 recovery API → getLines 重入房间(重新 detail+master),请求质量不在新 playlist 时回落最佳质量(注释说明);③3.x `LivePlayQuality.data`(变体 URL 列表)v2 无此字段 → URL 移入 `PicartoStreamData.qualities[i].urls` 由 site 持有;④token 不可用按重连预算重试(参考 runtime 语义),长会话清零规则已注释。
+- 验证:`dart analyze` No issues;`dart test test/platforms/picarto` **58 项全绿**(page echo/last_page/坏行容忍/edge 与 stream_name 白名单/质量 id 编解码往返/错误分支 401/403/404/429/5xx/七能力接线/FakeTimers 会话:join 预算、150s 看门狗、拒识换 token、重连预算)。
 
 ## 环境缺口
 无。此前 `packages/live_playback` 以 `path:` 依赖工作区外的 `D:\media_core` 导致整仓 `dart pub get` 解析失败、`dart test` 跑不起来;2026-10-14 已把 `media_core` / `media_core_danmaku` / `media_core_mediasession` 改为 pub git 源(`github.com/liuchuancong/media_core`),仓库根 `flutter pub get` 即可完整解析,交付门的 test 步骤不再需要人工补 media_core 或造桩。

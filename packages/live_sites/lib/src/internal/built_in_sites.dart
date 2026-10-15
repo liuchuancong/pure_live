@@ -32,6 +32,8 @@ import 'package:live_sites/src/platforms/niconico/api/niconico_http.dart';
 import 'package:live_sites/src/platforms/niconico/niconico_site.dart';
 import 'package:live_sites/src/platforms/pandalive/api/pandalive_http.dart';
 import 'package:live_sites/src/platforms/pandalive/pandalive_site.dart';
+import 'package:live_sites/src/platforms/picarto/api/picarto_http.dart';
+import 'package:live_sites/src/platforms/picarto/picarto_site.dart';
 import 'package:live_sites/src/platforms/showroom/api/showroom_http.dart';
 import 'package:live_sites/src/platforms/showroom/showroom_site.dart';
 import 'package:live_sites/src/platforms/soop/api/soop_http.dart';
@@ -64,6 +66,7 @@ List<LiveSite> createBuiltInLiveSites({LiveHttp? http}) {
     Fc2LiveSite(http: Fc2LiveHttp(transport)),
     KickSite(http: KickHttp(transport)),
     NiconicoSite(http: NiconicoHttp(transport)),
+    PicartoSite(http: PicartoHttp(transport)),
     JdliveSite(http: JdliveHttp(transport)),
     KilakilaSite(http: KilakilaHttp(transport)),
     KugouliveSite(http: KugouliveHttp(transport)),
