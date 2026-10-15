@@ -611,6 +611,8 @@ void main() {
       expect(KickRoomParser.slugFromUrl(Uri.parse('https://kick.com/xqc/videos')), isNull);
       expect(KickRoomParser.slugFromUrl(Uri.parse('https://kick.com/search?q=x')), isNull);
       expect(KickRoomParser.slugFromUrl(Uri.parse('https://twitch.tv/xqc')), isNull);
+      expect(KickRoomParser.slugFromUrl(Uri.parse('https://evil@kick.com/xqc')), isNull);
+      expect(KickRoomParser.slugFromUrl(Uri.parse('https://kick.com/xqc#frag')), isNull);
     });
   });
 

@@ -256,7 +256,12 @@ abstract final class KickRoomParser {
   /// `www.kick.com/XQC/`), lower-cased; null for anything else: a foreign
   /// host, a multi-segment path or a slug Kick's own pages own.
   static String? slugFromUrl(Uri uri) {
-    if (!(uri.isScheme('http') || uri.isScheme('https')) || !isKickHost(uri.host.toLowerCase())) return null;
+    if (!(uri.isScheme('http') || uri.isScheme('https')) ||
+        !isKickHost(uri.host.toLowerCase()) ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasFragment) {
+      return null;
+    }
     final parts = [
       for (final part in uri.pathSegments)
         if (part.isNotEmpty) part,
