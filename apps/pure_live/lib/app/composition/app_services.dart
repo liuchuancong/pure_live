@@ -1,10 +1,9 @@
-import 'dart:io';
-
 import 'package:live_platform/live_platform.dart';
 import 'package:live_platform_path_provider/live_platform_path_provider.dart';
 import 'package:live_storage/live_storage.dart';
 
 import 'package:pure_live/app/composition/sites.dart';
+import 'package:pure_live/app/environment/app_directory.dart';
 import 'package:pure_live/app/environment/app_paths.dart';
 import 'package:pure_live/app/environment/env.dart';
 import 'package:pure_live/app/environment/os_roots.dart';
@@ -93,13 +92,17 @@ final class AppServices {
       // ignore: avoid_redundant_argument_values
       buildDataRoot: Env.dataDir,
     );
-    final data = await paths.location(StorageArea.data);
+    // The data tree is the cold kind: its writers hold open files where boot
+    // resolved them, so the two roots below capture this boot's answer once
+    // rather than re-asking — a mid-session move lands on the next start,
+    // when boot carries the old tree over before anything opens it.
+    final dataDirectory = await paths.directory(AppDirectory.data);
     // Logs live under the data area: a bug report's logs must survive a cache
     // clear, and the file sink's rotation caps the growth.
-    log.attachFileSink(Directory('${data.path}/logs'));
+    log.attachFileSink(await paths.directory(AppDirectory.logs));
 
     final storage = StorageBootstrap(
-      pathProvider: StoragePathProvider(resolver: () async => data.path),
+      pathProvider: StoragePathProvider(resolver: () async => dataDirectory.path),
       adapterRegistry: StorageAdapterRegistry(),
     );
     await storage.initialize();

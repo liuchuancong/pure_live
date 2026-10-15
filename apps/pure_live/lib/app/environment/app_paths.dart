@@ -6,6 +6,7 @@ import 'package:live_platform/live_platform.dart' show PlatformEnvironment, Plat
 import 'package:live_platform_path_provider/live_platform_path_provider.dart';
 import 'package:path/path.dart' as p;
 
+import 'package:pure_live/app/environment/app_directory.dart';
 import 'package:pure_live/app/environment/os_roots.dart';
 import 'package:pure_live/app/environment/user_path_choices/user_path_choices.dart';
 
@@ -26,7 +27,10 @@ const int _journalSchemaVersion = 1;
 ///
 /// Business code asks for a [StorageArea] and gets a [StorageLocation]; it
 /// never assembles a path and never learns which of the three layers answered.
-/// The layering lives in [AppStoragePolicy], handed to `PathProviderBootstrap`
+/// The named trees the app writes — logs, recordings, backups — live one
+/// vocabulary higher, in [AppDirectory], and resolve through [directory],
+/// so a module asks for a name and never for a segment. The layering lives
+/// in [AppStoragePolicy], handed to `PathProviderBootstrap`
 /// as the app's own policy, so the distribution rules stay where they belong: a
 /// portable build keeps its data next to the executable and never in the user's
 /// app-data tree, an installed or MSIX build does exactly the opposite.
@@ -134,6 +138,24 @@ final class AppPaths {
   /// it, otherwise the app default for this build.
   Future<StorageLocation> location(StorageArea area) => storage.resolve(area);
 
+  /// The writable directory a catalog [name] stands for — one of the named
+  /// trees in [AppDirectory], resolved through the area that backs it and
+  /// never assembled by the caller.
+  ///
+  /// A name over a hot area (downloads, exports, imports) answers with the
+  /// user's latest choice on every call, so callers ask per write and the
+  /// very next download, recording or backup lands in the folder that was
+  /// just picked. A name over a cold area answers where this boot pinned
+  /// it; see [choose] for what changing it costs the running app.
+  ///
+  /// The area's own root exists once this answers (resolution probed it);
+  /// a segment beneath it is the writer's to create.
+  Future<Directory> directory(AppDirectory name) async {
+    final base = await location(name.area);
+    final segment = name.segment;
+    return segment == null ? Directory(base.path) : Directory(p.join(base.path, segment));
+  }
+
   /// The directory this app would use for [area] had the user never moved
   /// anything — the screen's "应用默认路径", and what [restore] returns to.
   ///
@@ -168,21 +190,30 @@ final class AppPaths {
   /// confirmed must survive the process — so a failed write throws instead of
   /// answering with a path that will not be there next start-up.
   ///
-  /// Fresh [location] asks answer with the new directory right away — the
-  /// lazy areas (downloads, exports) and the data area alike. Writers that
-  /// captured their directory at boot (the storage layer, the log sink)
-  /// keep writing where this boot pinned them, and the *next* start carries
-  /// that tree over to the new directory (see [dataAdoption]) before
-  /// storage opens, so nothing written in between is lost.
-  Future<void> choose(StorageArea area, Directory directory) async {
+  /// The answer says what the change means for the app that is still
+  /// running. A hot area answers [StorageAreaEffect.immediate]: nothing
+  /// holds it open and every write asks afresh, so the very next download,
+  /// recording or backup lands in the new directory. Every other area
+  /// answers [StorageAreaEffect.afterRestart]: fresh [location] asks
+  /// follow the new choice, but the writers that captured their directory
+  /// at boot (the storage layer, the log sink) keep writing where this
+  /// boot pinned them, and the *next* start carries that tree over to the
+  /// new directory (see [dataAdoption]) before storage opens — the caller
+  /// uses the effect to say so instead of silently swapping folders.
+  Future<StorageAreaEffect> choose(StorageArea area, Directory directory) async {
     if (isFixedByBuild(area)) {
       throw StateError('${area.name} is pinned by this build (PURE_LIVE_DATA_DIR) and cannot be moved.');
     }
     await _apply(choices.withPath(area.name, directory.absolute.path), area);
+    return area.changeEffect;
   }
 
-  /// Returns [area] to the app's default and re-resolves it.
-  Future<void> restore(StorageArea area) => _apply(choices.without(area.name), area);
+  /// Returns [area] to the app's default and re-resolves it; the answer
+  /// says what the change means for the running app, exactly as [choose].
+  Future<StorageAreaEffect> restore(StorageArea area) async {
+    await _apply(choices.without(area.name), area);
+    return area.changeEffect;
+  }
 
   /// Returns every movable area to its default.
   ///
@@ -190,12 +221,20 @@ final class AppPaths {
   /// keeps a location it has already probed, so clearing the record without
   /// invalidating it would leave the screen saying "default" while the app
   /// still wrote into the folder the user walked away from.
-  Future<void> restoreAll() async {
+  ///
+  /// The answer maps every area that actually moved to what the change
+  /// means for the running app — a caller offering "restore everything"
+  /// prompts for the restart once, when any entry says
+  /// [StorageAreaEffect.afterRestart], instead of per area.
+  Future<Map<StorageArea, StorageAreaEffect>> restoreAll() async {
     final moved = [for (final id in choices.customByArea.keys) _areaByName(id)].whereType<StorageArea>();
     await _apply(const UserPathChoices(), null);
+    final effects = <StorageArea, StorageAreaEffect>{};
     for (final area in moved) {
       await storage.revalidate(area);
+      effects[area] = area.changeEffect;
     }
+    return effects;
   }
 
   /// The same app's data found in two trees — an installed layout and a
@@ -209,19 +248,21 @@ final class AppPaths {
   Future<StorageConflictReport?> detectSplitBrain() async {
     final runtime = environment.runtime;
     final preferred = await location(StorageArea.data);
+    // The tree the *other* deployment style would have used on this
+    // machine, named through the policy's own helpers so the segments can
+    // never drift apart again: a portable build checks the installed tree
+    // under the OS application-support root, any other build checks the
+    // portable tree beside its own executable.
     final legacy = runtime.isPortable
         ? switch (roots.userRoot) {
-            final Directory root? => '${root.path}/data',
+            final Directory root? => DefaultStoragePolicy.installedDataRoot(root),
             _ => null,
           }
-        // The portable tree at this same location is namespaced one segment
-        // deeper than the Flutter runtime's own `data/` bundle — it is the
-        // policy's `data/pure_live` candidate, never `data/` itself.
-        : '${runtime.executableRoot.path}/data/pure_live';
-    if (legacy == null || legacy == preferred.path) {
+        : DefaultStoragePolicy.portableDataRoot(runtime.executableRoot);
+    if (legacy == null || legacy.path == preferred.path) {
       return null;
     }
-    final report = await StorageConflicts.inspect(preferred: Directory(preferred.path), legacy: Directory(legacy));
+    final report = await StorageConflicts.inspect(preferred: Directory(preferred.path), legacy: legacy);
     return report.hasConflict ? report : null;
   }
 
