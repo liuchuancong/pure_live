@@ -24,7 +24,7 @@
       落点 = lib/app/engine/playback_engine.dart（目录架构文档 §app/engine）；
       房间页 = lib/features/room/，路由 /room/:siteId/:roomId，参考 E 盘
       features/live_play 的布局分层但控件用 live_uikit。
-- [ ] 分区房间页打磨：排序/在线人数徽标/分页页码（desktop 数字翻页用 live_pagination PagedController）
+- [x] 分区房间页打磨：排序/在线人数徽标/分页页码 — 5d5160017（large 桌面 PagedController 数字翻页条、small/medium 无限滚动、人气/默认排序切换）
 - [ ] 关于页（package_info_plus + pub_semver + markdown 更新日志）
 - [ ] 工具箱页（链接解析：LiveLinkResolver capability → 跳房间/取流）
 - [ ] 关注域（live_library LibraryStore seam + 分组/标签 UI）
