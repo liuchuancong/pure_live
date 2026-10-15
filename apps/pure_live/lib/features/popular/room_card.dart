@@ -2,8 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:live_sites/live_sites.dart' show LiveRoom;
 
-import 'package:pure_live/core/formatters.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/formatters/formatters.dart';
 
 /// One room in a discovery grid: cover, title, anchor and viewer count.
 ///

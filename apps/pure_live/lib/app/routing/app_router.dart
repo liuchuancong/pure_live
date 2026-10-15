@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:pure_live/app/router/routes/settings_routes.dart' as settings_routes;
+import 'package:pure_live/app/routing/routes/settings_routes.dart' as settings_routes;
 import 'package:pure_live/app/shell/app_shell.dart';
 import 'package:pure_live/features/follow/follow_page.dart';
 import 'package:pure_live/features/history/history_page.dart';

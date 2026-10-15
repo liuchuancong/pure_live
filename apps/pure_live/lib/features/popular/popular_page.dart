@@ -1,6 +1,8 @@
 import 'dart:async' show unawaited;
 
+import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_adaptive_layout/flutter_adaptive_layout.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_pagination/live_pagination.dart';
 import 'package:live_sites/live_sites.dart' show LiveDiscoveryProvider, LivePageRequest, LiveRoom, LiveSite;
@@ -10,6 +12,7 @@ import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/shell/app_shell.dart';
 import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 /// Popular: every discovery-capable platform as a tab over its recommend
 /// feed.
@@ -135,17 +138,32 @@ final class _SiteFeedState extends State<_SiteFeed> with AutomaticKeepAliveClien
         );
       }
       if (state.isRefreshing || state.isUnloaded) {
-        return const Center(child: CircularProgressIndicator());
+        return _SkeletonFeed(columns: _columns(context));
       }
       return LiveEmpty(title: context.t.common.empty);
     }
-    return RefreshIndicator(
+    return CustomRefreshIndicator(
       onRefresh: _controller.refresh,
+      builder: (context, child, controller) => Stack(
+        alignment: Alignment.topCenter,
+        children: [
+          child,
+          Positioned(
+            top: 12,
+            child: Opacity(
+              opacity: controller.value.clamp(0, 1),
+              child: IgnorePointer(
+                child: CircularProgressIndicator(value: controller.isLoading ? null : controller.value),
+              ),
+            ),
+          ),
+        ],
+      ),
       child: GridView.builder(
         controller: _scroll,
         padding: const EdgeInsets.all(12),
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 380,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: _columns(context),
           childAspectRatio: 0.82,
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
@@ -160,6 +178,57 @@ final class _SiteFeedState extends State<_SiteFeed> with AutomaticKeepAliveClien
       ),
     );
   }
+
+  /// Grid columns by the window's own size, through the same breakpoints
+  /// the shell chrome uses.
+  static int _columns(BuildContext context) => switch (BreakpointsQualifier().qualify(context)) {
+    ScreenSize.small => 2,
+    ScreenSize.medium => 3,
+    ScreenSize.large => 4,
+  };
+}
+
+/// The first-load placeholder: a bone grid shaped exactly like the room
+/// grid, so content replaces the skeleton without a layout jump.
+final class _SkeletonFeed extends StatelessWidget {
+  const new({required this.columns});
+
+  final int columns;
+
+  @override
+  Widget build(BuildContext context) => Skeletonizer(
+    child: GridView.count(
+      crossAxisCount: columns,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(12),
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 10,
+      childAspectRatio: 0.82,
+      children: [
+        for (var i = 0; i < columns * 3; i++)
+          Card(
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: Container(color: Colors.white24),
+                ),
+                const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [Text('XXXXXXXXXXXXXXXX'), SizedBox(height: 4), Text('XXXX')],
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    ),
+  );
 }
 
 /// Wraps a site error for the loader contract; the controller stores it on

@@ -4,7 +4,7 @@ import 'package:live_uikit/styling.dart' show UiBrightnessMode;
 
 import 'package:pure_live/app/delegates.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/app/router/app_router.dart';
+import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/app/theme/app_theme.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart' show TranslationProvider, t;
 
