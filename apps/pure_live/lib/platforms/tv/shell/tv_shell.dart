@@ -31,5 +31,8 @@ final class TvShell extends StatelessWidget {
     ),
   );
 
-  void _goBranch(int index) => navigationShell.goBranch(index, initialLocation: index == navigationShell.currentIndex);
+  void _goBranch(int index) {
+    final branch = ShellBranch.at(index);
+    navigationShell.goBranch(branch.branchIndex, initialLocation: branch.branchIndex == navigationShell.currentIndex);
+  }
 }
