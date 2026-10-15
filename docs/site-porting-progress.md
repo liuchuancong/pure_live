@@ -50,8 +50,10 @@
 | twitcasting ツイキャス | ✅ | 见下方"twitcasting 明细";已注册进 `built_in_sites` |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
-| seventeenlive / sixroom / steambroadcast / yy | 🔄 | 后台代理进行中(sixroom/yy 测试编译收尾) |
+| seventeenlive / steambroadcast(待重启) | 🔄 | 最后两站;steambroadcast 上一代理被限流 0 落盘,需重启 |
 | tiktok TikTok | ✅ | 见下方"tiktok 明细";已注册进 `built_in_sites` |
+| sixroom 六间房 | ✅ | 见下方"sixroom 明细";已注册进 `built_in_sites` |
+| yy 欢聚时代 | ✅ | 见下方"yy 明细";已注册进 `built_in_sites` |
 | cc / inke / liveme / xiaohongshu | ✅ | 见下方"cc 明细"/"inke 明细"/"liveme 明细"/"xiaohongshu 明细";均已注册进 `built_in_sites` |
 
 ## douyu 明细(2026-10-14)
@@ -322,6 +324,23 @@
 - 数据面:streamData/hevcStreamData 容器逐级容错(同 codec 双容器合一、重复 URL 只留一次、audio-only 剔除)、画质排序 platformOrder 越高越好 + codec 枚举、行格式 declared、HLS 租约 requiresReconnect:true(kilakila 同款)、unplayable 判定;流缓存上限 64;12 MiB 体积门、可信 CDN 媒体 URL 白名单。
 - **适配与延后项(记档)**:①参考 DirectoryPager/DirectoryNotice → getRooms(恒空)+discovery;CancellableSearch → 短链传输层跟随(见上);②RoomRefresher/RecordRoomResolver/Recovery 无 v2 能力接口 → getRoom 重取由应用侧 mergedWith 承担;③v1 "area=站名" 展示约定未搬入(area 留空,kilakila 模板一致);④画质列表排序语义改 v2 platformOrder。
 - 验证:`dart analyze` No issues;`dart test test/platforms/tiktok` **48 项全绿**(状态/体积/JSON/身份/等级键/媒体 URL、错误分支映射、能力接线、播放零额外请求、缓存上限)。
+
+## sixroom 明细(2026-10-15,后台代理接手补齐)
+整站从 `live_core/sites/sixroom` + `live_danmaku/sites/sixroom.dart` 迁到 `platforms/sixroom/`(接手上一代理的 5 个 api/parsers 半成品,补齐 site/capabilities/danmaku/测试;我审查后注册)。**无新依赖**。
+- 能力七个全注册:room / area(三种来源:special/u0/u1/u2/u8 移动列表 + 全部=homepage 嵌入 JSON + 星颜=subarea 10)/ discovery(90s 快照本地分页、跨页去重、_remember(2000) enrich 同 broadcast 语义)/ search(房号/链接→summary 无流、关键词 search.php、过长/空关键词拒绝)/ playback(单画质 `flv:source` 无租约)/ danmaku / link_resolver。`SixroomFailure → toLiveSiteError('sixroom')`(401/403/3xx→rateLimit、404→notFound)。
+- 数据面:room 页取 ruid→inroom POST(私房/黑屏 restriction、streamInfo、mediaUri 校验、402→notFound);homepage 嵌入 JSON 花括号计数解析;搜索页 HTML 解析。
+- 弹幕:站点字母表 Base64 + raw DEFLATE 编解码、login/心跳 `y8vPLwAA`(inflate=noop)、聊天/飞屏 super chat(六币定价,SuperChatPrice currency '六币')/礼物(LiveGiftValue 双 double、combo、shownToGuests 掩码)/跟风飞屏、stoppingFlags;join 预算 6s、心跳 16s、看门狗 90s、拒登 3 次、重连预算 8 次(FakeTimers 全覆盖)。
+- **代理的适配与延后项(记档)**:①LiveGiftUnit.sixCoin(旧 v4 枚举)折 gold(六币=付费货币);②旧 LiveRoom.httpHeaders/mediaHeaders 无对应字段——参考本身注明 CDN 无需头,行不带头;③directoryNoticeKey 进 RoomContent.notice、弹幕参数进 RoomRuntime(位置随 v2)。
+- 验证:`dart analyze` No issues(整包亦 0);`dart test test/platforms/sixroom` **69 项全绿**(三种目录来源/快照分页去重/搜索/房间进入/播放/链接/错误映射/deflate 编解码/心跳/礼物/会话时序)。
+
+## yy 明细(2026-10-15,后台代理接手补齐)
+整站从 `live_core/sites/yy` + `live_danmaku/sites/yy.dart` 迁到 `platforms/yy/`(接手上一代理的 3 个文件,补齐其余 15 个 lib + 测试;我审查后注册)。**无新依赖**。
+- 能力六个注册:room / area(页面 pageInfo 模块 getCategory)/ discovery(page.action 列表)/ search(t=120 主播 + t=1 房间)/ playback / link_resolver(web 房间页 + wap.yy.com 分享页)。`YyFailure → toLiveSiteError('yy')`(401/403 折 rateLimit)。
+- 数据面:liveInfoDetail 房间数据、无模块区域的 `li[data-sid]` 卡片解析、离线房;播放 stream-manager qualities/lines/lease(移动 HLS JSONP),qualityId=gear 或 `mobile-hls:<rate>`,platformOrder=rate;列表卡只带 stream handle,详情两者都带(离线房聊天照常可开,同参考)。
+- 弹幕:小端二进制 UDB→AP→join 纯状态机 + XML chatText;5s AP 心跳、45s 看门狗、15s join 预算、重连预算 8 次(timers/now/random 可注入,FakeTimers 已测)。
+- **代理修掉的真 bug(记档)**:①Dart raw string 不做插值——`r'$name…'` 把 `$name` 当字面量导致 roomPage/卡片 class 正则永不匹配(改 raw 段拼接);②link resolver 误用 www.yy.com 作域判断(wap.yy.com 被判 unsupported,改域 yy.com);③播放线路拒绝无 scheme 垃圾 URL。
+- **适配与延后项(记档)**:①appliedQualityData/qualityUnconfirmed(服务器换挡上报)与 LivePlayQuality 的 data/bitrate 字段无 v2 承载 → 丢弃;②3.x flvQualityId(记忆画质迁移)契约无存储画质机制未移植;③列表/搜索 API 无总数 → hasMore 为 null;④注册由我统一加(代理遵守约束)。
+- 验证:`dart analyze` No issues;`dart test test/platforms/yy` **63 项全绿**(解析严格性/编解码往返/错误分支/能力接线四类)。
 
 ## 环境缺口
 无。此前 `packages/live_playback` 以 `path:` 依赖工作区外的 `D:\media_core` 导致整仓 `dart pub get` 解析失败、`dart test` 跑不起来;2026-10-14 已把 `media_core` / `media_core_danmaku` / `media_core_mediasession` 改为 pub git 源(`github.com/liuchuancong/media_core`),仓库根 `flutter pub get` 即可完整解析,交付门的 test 步骤不再需要人工补 media_core 或造桩。

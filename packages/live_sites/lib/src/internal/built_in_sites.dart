@@ -44,6 +44,8 @@ import 'package:live_sites/src/platforms/picarto/api/picarto_http.dart';
 import 'package:live_sites/src/platforms/picarto/picarto_site.dart';
 import 'package:live_sites/src/platforms/showroom/api/showroom_http.dart';
 import 'package:live_sites/src/platforms/showroom/showroom_site.dart';
+import 'package:live_sites/src/platforms/sixroom/api/sixroom_http.dart';
+import 'package:live_sites/src/platforms/sixroom/sixroom_site.dart';
 import 'package:live_sites/src/platforms/soop/api/soop_http.dart';
 import 'package:live_sites/src/platforms/soop/soop_site.dart';
 import 'package:live_sites/src/platforms/tiktok/api/tiktok_http.dart';
@@ -56,6 +58,8 @@ import 'package:live_sites/src/platforms/xiaohongshu/api/xiaohongshu_http.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_site.dart';
 import 'package:live_sites/src/platforms/youtube/api/youtube_http.dart';
 import 'package:live_sites/src/platforms/youtube/youtube_site.dart';
+import 'package:live_sites/src/platforms/yy/api/yy_http.dart';
+import 'package:live_sites/src/platforms/yy/yy_site.dart';
 
 /// The single internal construction entry point for built-in sites.
 ///
@@ -88,8 +92,10 @@ List<LiveSite> createBuiltInLiveSites({LiveHttp? http}) {
     MissevanSite(http: MissevanHttp(transport)),
     PandaliveSite(http: PandaliveHttp(transport)),
     ShowroomSite(http: ShowroomHttp(transport)),
+    SixroomSite(http: SixroomHttp(transport)),
     LivemeSite(http: LivemeHttp(transport)),
     XiaohongshuSite(http: XiaohongshuHttp(transport)),
+    YySite(http: YyHttp(transport)),
     SoopSite(http: SoopHttp(transport)),
     TiktokSite(http: TiktokHttp(transport)),
     TwitcastingSite(http: TwitcastingHttp(transport)),
