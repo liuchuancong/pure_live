@@ -93,6 +93,14 @@
     "checkRunning": "Checking…",
     "checkFailed": "Check failed — tap to retry"
   },
+  "shield": {
+    "title": "Danmaku shield",
+    "keywords": "Keywords",
+    "users": "Users",
+    "regexes": "Regexes",
+    "add": "Add",
+    "none": "Nothing here"
+  },
   "search": {
     "hint": "Search rooms by keyword",
     "rooms": "Rooms",

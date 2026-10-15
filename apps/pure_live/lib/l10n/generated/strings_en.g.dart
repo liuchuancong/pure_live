@@ -52,6 +52,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$follow$en follow = _Translations$follow$en._(_root);
 	@override late final _Translations$toolbox$en toolbox = _Translations$toolbox$en._(_root);
 	@override late final _Translations$about$en about = _Translations$about$en._(_root);
+	@override late final _Translations$shield$en shield = _Translations$shield$en._(_root);
 	@override late final _Translations$search$en search = _Translations$search$en._(_root);
 	@override late final _Translations$errors$en errors = _Translations$errors$en._(_root);
 	@override late final _Translations$tabs$en tabs = _Translations$tabs$en._(_root);
@@ -245,6 +246,21 @@ class _Translations$about$en extends Translations$about$zh {
 	@override String get checkFailed => 'Check failed — tap to retry';
 }
 
+// Path: shield
+class _Translations$shield$en extends Translations$shield$zh {
+	_Translations$shield$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Danmaku shield';
+	@override String get keywords => 'Keywords';
+	@override String get users => 'Users';
+	@override String get regexes => 'Regexes';
+	@override String get add => 'Add';
+	@override String get none => 'Nothing here';
+}
+
 // Path: search
 class _Translations$search$en extends Translations$search$zh {
 	_Translations$search$en._(TranslationsEn root) : this._root = root, super.internal(root);
@@ -403,6 +419,12 @@ extension on TranslationsEn {
 			'about.project' => 'Project page',
 			'about.checkRunning' => 'Checking…',
 			'about.checkFailed' => 'Check failed — tap to retry',
+			'shield.title' => 'Danmaku shield',
+			'shield.keywords' => 'Keywords',
+			'shield.users' => 'Users',
+			'shield.regexes' => 'Regexes',
+			'shield.add' => 'Add',
+			'shield.none' => 'Nothing here',
 			'search.hint' => 'Search rooms by keyword',
 			'search.rooms' => 'Rooms',
 			'search.anchors' => 'Anchors',

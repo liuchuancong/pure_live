@@ -91,6 +91,14 @@
     "checkRunning": "正在检查…",
     "checkFailed": "检查失败，点此重试"
   },
+  "shield": {
+    "title": "弹幕屏蔽",
+    "keywords": "关键词",
+    "users": "用户",
+    "regexes": "正则",
+    "add": "添加",
+    "none": "暂无"
+  },
   "search": {
     "hint": "输入关键词搜索房间",
     "rooms": "房间",

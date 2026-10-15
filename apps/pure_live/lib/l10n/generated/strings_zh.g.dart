@@ -53,6 +53,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$follow$zh follow = Translations$follow$zh.internal(_root);
 	late final Translations$toolbox$zh toolbox = Translations$toolbox$zh.internal(_root);
 	late final Translations$about$zh about = Translations$about$zh.internal(_root);
+	late final Translations$shield$zh shield = Translations$shield$zh.internal(_root);
 	late final Translations$search$zh search = Translations$search$zh.internal(_root);
 	late final Translations$room$zh room = Translations$room$zh.internal(_root);
 	late final Translations$errors$zh errors = Translations$errors$zh.internal(_root);
@@ -353,6 +354,33 @@ class Translations$about$zh {
 	String get checkFailed => '检查失败，点此重试';
 }
 
+// Path: shield
+class Translations$shield$zh {
+	Translations$shield$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '弹幕屏蔽'
+	String get title => '弹幕屏蔽';
+
+	/// zh: '关键词'
+	String get keywords => '关键词';
+
+	/// zh: '用户'
+	String get users => '用户';
+
+	/// zh: '正则'
+	String get regexes => '正则';
+
+	/// zh: '添加'
+	String get add => '添加';
+
+	/// zh: '暂无'
+	String get none => '暂无';
+}
+
 // Path: search
 class Translations$search$zh {
 	Translations$search$zh.internal(this._root);
@@ -590,6 +618,12 @@ extension on Translations {
 			'about.project' => '项目主页',
 			'about.checkRunning' => '正在检查…',
 			'about.checkFailed' => '检查失败，点此重试',
+			'shield.title' => '弹幕屏蔽',
+			'shield.keywords' => '关键词',
+			'shield.users' => '用户',
+			'shield.regexes' => '正则',
+			'shield.add' => '添加',
+			'shield.none' => '暂无',
 			'search.hint' => '输入关键词搜索房间',
 			'search.rooms' => '房间',
 			'search.anchors' => '主播',

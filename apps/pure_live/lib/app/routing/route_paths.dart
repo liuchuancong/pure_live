@@ -48,4 +48,7 @@ abstract final class RoutePath {
 
   /// The appearance page, one level under the settings index.
   static const String settingsAppearance = '/settings/appearance';
+
+  /// The danmaku shield, under the settings cluster.
+  static const String settingsShield = '/settings/shield';
 }
