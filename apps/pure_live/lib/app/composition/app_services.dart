@@ -1,3 +1,4 @@
+import 'package:live_iptv/live_iptv.dart';
 import 'package:live_library/live_library.dart';
 import 'package:live_platform/live_platform.dart';
 import 'package:live_platform_path_provider/live_platform_path_provider.dart';
@@ -48,6 +49,7 @@ final class AppServices {
     required this.sites,
     required this.followRepository,
     required this.historyRepository,
+    required this.iptvLibrary,
   });
 
   /// The process log, opened before anything here and closed after
@@ -84,6 +86,9 @@ final class AppServices {
 
   /// The user's watch history.
   final HistoryRepository historyRepository;
+
+  /// The IPTV library (imported playlists and their channels).
+  final IptvLibrary iptvLibrary;
 
   /// Boots the layout, storage and the documents every screen needs at once.
   ///
@@ -140,6 +145,11 @@ final class AppServices {
     await followRepository.load();
     final historyRepository = HistoryRepository(libraryStore);
     await historyRepository.load();
+
+    // The IPTV library owns its own list box, the same second-window rule.
+    final iptvBox = await StorageBoxManager().list<Map<dynamic, dynamic>>('iptv');
+    final iptvLibrary = IptvLibrary(BoxIptvStore(HiveStorageListRepository<Map<dynamic, dynamic>>(box: iptvBox)));
+    await iptvLibrary.load();
     // The shell document lives in the same box under its own key: one open,
     // one document per preference group.
     final shell = ShellPreferencesStore(
@@ -194,6 +204,7 @@ final class AppServices {
       sites: sites,
       followRepository: followRepository,
       historyRepository: historyRepository,
+      iptvLibrary: iptvLibrary,
     );
   }
 
@@ -208,6 +219,7 @@ final class AppServices {
     await storage.shutdown();
     await followRepository.dispose();
     await historyRepository.dispose();
+    await iptvLibrary.dispose();
     await sites.dispose();
     await log.close();
   }

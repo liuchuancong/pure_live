@@ -37,6 +37,9 @@ abstract final class RoutePath {
   /// The toolbox: link resolution.
   static const String toolbox = '/toolbox';
 
+  /// The IPTV library page.
+  static const String iptv = '/iptv';
+
   /// The search page, a full page above the shell.
   static const String search = '/search';
 

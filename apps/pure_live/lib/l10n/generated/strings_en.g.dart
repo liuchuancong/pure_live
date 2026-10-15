@@ -48,6 +48,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$design$en design = _Translations$design$en._(_root);
 	@override late final _Translations$room$en room = _Translations$room$en._(_root);
 	@override late final _Translations$history$en history = _Translations$history$en._(_root);
+	@override late final _Translations$iptv$en iptv = _Translations$iptv$en._(_root);
 	@override late final _Translations$follow$en follow = _Translations$follow$en._(_root);
 	@override late final _Translations$toolbox$en toolbox = _Translations$toolbox$en._(_root);
 	@override late final _Translations$about$en about = _Translations$about$en._(_root);
@@ -175,6 +176,24 @@ class _Translations$history$en extends Translations$history$zh {
 	@override String get clear => 'Clear history';
 	@override String get clearConfirm => 'Clear the whole watch history? This cannot be undone.';
 	@override String get empty => 'Nothing watched yet';
+}
+
+// Path: iptv
+class _Translations$iptv$en extends Translations$iptv$zh {
+	_Translations$iptv$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'IPTV';
+	@override String get addSource => 'Add source';
+	@override String get sourceName => 'Source name';
+	@override String get sourceUrl => 'Playlist URL (M3U/TXT)';
+	@override String get deleteSource => 'Delete this source? Its channels go too';
+	@override String imported({required int count}) => 'Imported ${count} channels';
+	@override String get allGroups => 'All groups';
+	@override String get favorite => 'Favorite';
+	@override String get empty => 'No source imported yet';
 }
 
 // Path: follow
@@ -353,6 +372,15 @@ extension on TranslationsEn {
 			'history.clear' => 'Clear history',
 			'history.clearConfirm' => 'Clear the whole watch history? This cannot be undone.',
 			'history.empty' => 'Nothing watched yet',
+			'iptv.title' => 'IPTV',
+			'iptv.addSource' => 'Add source',
+			'iptv.sourceName' => 'Source name',
+			'iptv.sourceUrl' => 'Playlist URL (M3U/TXT)',
+			'iptv.deleteSource' => 'Delete this source? Its channels go too',
+			'iptv.imported' => ({required int count}) => 'Imported ${count} channels',
+			'iptv.allGroups' => 'All groups',
+			'iptv.favorite' => 'Favorite',
+			'iptv.empty' => 'No source imported yet',
 			'follow.all' => 'All',
 			'follow.empty' => 'No followed rooms yet',
 			'follow.follow' => 'Follow',

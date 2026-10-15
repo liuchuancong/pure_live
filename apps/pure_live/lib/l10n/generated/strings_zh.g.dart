@@ -49,6 +49,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$theme$zh theme = Translations$theme$zh.internal(_root);
 	late final Translations$design$zh design = Translations$design$zh.internal(_root);
 	late final Translations$history$zh history = Translations$history$zh.internal(_root);
+	late final Translations$iptv$zh iptv = Translations$iptv$zh.internal(_root);
 	late final Translations$follow$zh follow = Translations$follow$zh.internal(_root);
 	late final Translations$toolbox$zh toolbox = Translations$toolbox$zh.internal(_root);
 	late final Translations$about$zh about = Translations$about$zh.internal(_root);
@@ -221,6 +222,42 @@ class Translations$history$zh {
 
 	/// zh: '还没有观看记录'
 	String get empty => '还没有观看记录';
+}
+
+// Path: iptv
+class Translations$iptv$zh {
+	Translations$iptv$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: 'IPTV'
+	String get title => 'IPTV';
+
+	/// zh: '添加源'
+	String get addSource => '添加源';
+
+	/// zh: '源名称'
+	String get sourceName => '源名称';
+
+	/// zh: '播放列表地址（M3U/TXT）'
+	String get sourceUrl => '播放列表地址（M3U/TXT）';
+
+	/// zh: '删除该源？频道一并移除'
+	String get deleteSource => '删除该源？频道一并移除';
+
+	/// zh: '已导入 {count: int} 个频道'
+	String imported({required int count}) => '已导入 ${count} 个频道';
+
+	/// zh: '全部分组'
+	String get allGroups => '全部分组';
+
+	/// zh: '收藏'
+	String get favorite => '收藏';
+
+	/// zh: '还没有导入任何源'
+	String get empty => '还没有导入任何源';
 }
 
 // Path: follow
@@ -522,6 +559,15 @@ extension on Translations {
 			'history.clear' => '清空记录',
 			'history.clearConfirm' => '清空全部观看记录？此操作不可撤销。',
 			'history.empty' => '还没有观看记录',
+			'iptv.title' => 'IPTV',
+			'iptv.addSource' => '添加源',
+			'iptv.sourceName' => '源名称',
+			'iptv.sourceUrl' => '播放列表地址（M3U/TXT）',
+			'iptv.deleteSource' => '删除该源？频道一并移除',
+			'iptv.imported' => ({required int count}) => '已导入 ${count} 个频道',
+			'iptv.allGroups' => '全部分组',
+			'iptv.favorite' => '收藏',
+			'iptv.empty' => '还没有导入任何源',
 			'follow.all' => '全部',
 			'follow.empty' => '还没有关注任何房间',
 			'follow.follow' => '关注',

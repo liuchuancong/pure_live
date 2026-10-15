@@ -52,6 +52,17 @@
     "clearConfirm": "清空全部观看记录？此操作不可撤销。",
     "empty": "还没有观看记录"
   },
+  "iptv": {
+    "title": "IPTV",
+    "addSource": "添加源",
+    "sourceName": "源名称",
+    "sourceUrl": "播放列表地址（M3U/TXT）",
+    "deleteSource": "删除该源？频道一并移除",
+    "imported": "已导入 {count: int} 个频道",
+    "allGroups": "全部分组",
+    "favorite": "收藏",
+    "empty": "还没有导入任何源"
+  },
   "follow": {
     "all": "全部",
     "empty": "还没有关注任何房间",

@@ -54,6 +54,17 @@
     "clearConfirm": "Clear the whole watch history? This cannot be undone.",
     "empty": "Nothing watched yet"
   },
+  "iptv": {
+    "title": "IPTV",
+    "addSource": "Add source",
+    "sourceName": "Source name",
+    "sourceUrl": "Playlist URL (M3U/TXT)",
+    "deleteSource": "Delete this source? Its channels go too",
+    "imported": "Imported {count: int} channels",
+    "allGroups": "All groups",
+    "favorite": "Favorite",
+    "empty": "No source imported yet"
+  },
   "follow": {
     "all": "All",
     "empty": "No followed rooms yet",

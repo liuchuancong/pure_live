@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_iptv/live_iptv.dart' show IptvLibrary;
 import 'package:live_library/live_library.dart' show FollowRepository, HistoryRepository;
 import 'package:live_net/live_net.dart' show LiveHttp;
 import 'package:live_platform/live_platform.dart' show PlatformEnvironment;
@@ -114,6 +115,12 @@ final followRepositoryProvider = Provider<FollowRepository>(
 
 /// The user's watch history, overridden at start-up.
 final historyRepositoryProvider = Provider<HistoryRepository>(
+  (ref) => throw UnimplementedError('overridden by the composition root'),
+);
+
+/// The IPTV library (imported playlists and channels), overridden at
+/// start-up.
+final iptvLibraryProvider = Provider<IptvLibrary>(
   (ref) => throw UnimplementedError('overridden by the composition root'),
 );
 
