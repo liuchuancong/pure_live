@@ -947,6 +947,7 @@ void main() {
         'bigo',
         'chzzk',
         'fc2live',
+        'kick',
       ]);
     });
 

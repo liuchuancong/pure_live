@@ -52,6 +52,14 @@ typedef KickMainCategory = ({String slug, String name});
 /// A bad row is left out; only an answer without any usable row fails
 /// (api-changed), so a change of format is never shown as an empty list.
 abstract final class KickRoomParser {
+  /// A picture url made absolute (protocol-relative Kick CDN links included);
+  /// null when the row carries none, so a card shows no image rather than a
+  /// broken one.
+  static String? image(Object? value) {
+    final url = normalizeImageUrl(value);
+    return url.isEmpty ? null : url;
+  }
+
   /// The channel answer for [requestedSlug]: the room and, when live, the
   /// signed master playlist. A slug Kick does not know is not-found (HTTP
   /// 404); an answer for another channel is api-changed. The room id is the
@@ -79,9 +87,10 @@ abstract final class KickRoomParser {
     final master = live ? ivsMaster(jsonString(root['playback_url'])) : null;
     final thumbnail = jsonObject(stream?['thumbnail']);
     final cover = live
-        ? jsonString(thumbnail?['url'] ?? thumbnail?['src']) ?? ''
-        : jsonString(jsonObject(root['offline_banner_image'])?['src'] ?? jsonObject(root['banner_image'])?['url']) ??
-              '';
+        ? normalizeImageUrl(thumbnail?['url'] ?? thumbnail?['src'])
+        : normalizeImageUrl(
+            jsonObject(root['offline_banner_image'])?['src'] ?? jsonObject(root['banner_image'])?['url'],
+          );
     final name = jsonString(user['username']) ?? '';
     final statusValue = banned
         ? LiveStatus.banned
@@ -101,7 +110,7 @@ abstract final class KickRoomParser {
         platform: _site,
         anchorId: '$channelId',
         name: name,
-        avatarUrl: jsonString(user['profile_pic'] ?? user['profilePic']),
+        avatarUrl: image(user['profile_pic'] ?? user['profilePic']),
         profileUrl: KickEndpoints.roomPageUrl(slug),
         followerCount: followers,
         introduction: jsonString(user['bio']),
@@ -178,7 +187,7 @@ abstract final class KickRoomParser {
           areaName: name,
           parentAreaId: parent.slug,
           parentAreaName: parent.name,
-          iconUrl: jsonString(jsonObject(row?['banner'])?['url']),
+          iconUrl: image(jsonObject(row?['banner'])?['url']),
         ),
       );
     }
@@ -316,14 +325,14 @@ abstract final class KickRoomParser {
       roomId: slug,
       content: RoomContent(
         title: jsonString(row['session_title']) ?? '',
-        coverUrl: jsonString(thumbnail?['src'] ?? thumbnail?['url']) ?? '',
+        coverUrl: normalizeImageUrl(thumbnail?['src'] ?? thumbnail?['url']),
         notice: row['is_mature'] == true ? KickEndpoints.matureNotice : '',
       ),
       anchor: LiveAnchor.normalized(
         platform: _site,
         anchorId: '$channelId',
         name: name,
-        avatarUrl: jsonString(user?['profilepic'] ?? user?['profile_pic'] ?? user?['profilePic']),
+        avatarUrl: image(user?['profilepic'] ?? user?['profile_pic'] ?? user?['profilePic']),
         profileUrl: KickEndpoints.roomPageUrl(slug),
         liveStatus: LiveStatus.live,
       ),
@@ -357,7 +366,7 @@ abstract final class KickRoomParser {
         platform: _site,
         anchorId: '$channelId',
         name: jsonString(user?['username']) ?? '',
-        avatarUrl: jsonString(user?['profilePic'] ?? user?['profile_pic']),
+        avatarUrl: image(user?['profilePic'] ?? user?['profile_pic']),
         profileUrl: KickEndpoints.roomPageUrl(slug),
         followerCount: followers,
         introduction: jsonString(user?['bio']),

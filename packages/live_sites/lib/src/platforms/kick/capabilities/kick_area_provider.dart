@@ -29,6 +29,11 @@ final class KickAreaProvider implements LiveAreaProvider {
   /// The site this capability serves.
   final KickSite site;
 
+  /// The top-level category slugs of the last [getAreas] read. Kick answers
+  /// the whole directory for one, so a room request of a parent is refused
+  /// here rather than sent and read back as an empty area.
+  final Set<String> _mainSlugs = {};
+
   @override
   Future<Either<LiveSiteError, List<LiveArea>>> getAreas() async {
     try {
@@ -45,7 +50,15 @@ final class KickAreaProvider implements LiveAreaProvider {
     required String areaId,
     LivePageRequest request = const LivePageRequest(),
   }) async {
-    final slug = areaId.trim();
+    final slug = areaId.trim().toLowerCase();
+    if (KickRoomParser.categoryNames.containsKey(slug) || _mainSlugs.contains(slug)) {
+      return left(
+        LiveSiteError.invalidArgument(
+          siteId: 'kick',
+          message: 'area id "$areaId" is Kick\'s top-level category; only its subcategories list rooms',
+        ),
+      );
+    }
     if (!KickEndpoints.subcategoryPattern.hasMatch(slug)) {
       return left(LiveSiteError.notFound(siteId: 'kick', message: 'area id "$areaId" is not a Kick subcategory slug'));
     }
@@ -76,6 +89,7 @@ final class KickAreaProvider implements LiveAreaProvider {
   Future<List<LiveArea>> _categories() async {
     final response = await site.httpGet(KickEndpoints.categories(), headers: site.apiHeaders());
     final parents = KickRoomParser.mainCategories(response.text, status: response.status);
+    _mainSlugs.addAll(parents.map((parent) => parent.slug));
     final results = await Future.wait([
       for (final parent in parents)
         _subcategories(parent).then<Object>((areas) => areas, onError: (Object error) => error),

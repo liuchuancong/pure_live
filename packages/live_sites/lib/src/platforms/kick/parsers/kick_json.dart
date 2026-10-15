@@ -21,14 +21,36 @@ double? jsonDouble(Object? value) => switch (value) {
   _ => null,
 };
 
-/// [value] as trimmed text, null for null.
-String? jsonString(Object? value) => value?.toString();
+/// [value] as trimmed text, null when it is null, blank or only spaces.
+String? jsonString(Object? value) {
+  final text = value?.toString().trim();
+  return text == null || text.isEmpty ? null : text;
+}
 
-/// [value] as a positive count (`viewer_count`, `followers_count`), null
-/// otherwise.
+/// [value] as a count (`viewer_count`, `followers_count`): zero or more, so a
+/// live room with no viewers reads as zero rather than unknown; null when the
+/// value is missing or not a number.
 int? jsonCount(Object? value) {
   final count = jsonInt(value);
-  return count != null && count > 0 ? count : null;
+  return count != null && count >= 0 ? count : null;
+}
+
+/// An image link as Kick returns it, made absolute: surrounding quotes
+/// removed, protocol-relative `//…` and a bare `host/path` made https, empty
+/// for `null` (the string), blanks and anything that is not a web address.
+String normalizeImageUrl(Object? source) {
+  var value = jsonString(source) ?? '';
+  if (value.isEmpty || value.toLowerCase() == 'null') return '';
+  if (value.length >= 2 &&
+      ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
+    value = value.substring(1, value.length - 1).trim();
+  }
+  if (value.isEmpty) return '';
+  if (value.startsWith('//')) return 'https:$value';
+  final uri = Uri.tryParse(value);
+  if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https') && uri.host.isNotEmpty) return value;
+  if (!value.contains(' ') && RegExp(r'^[\w.-]+\.[a-zA-Z]{2,}([/:?#]|$)').hasMatch(value)) return 'https://$value';
+  return '';
 }
 
 /// [body] decoded as JSON, null on a malformed body or one over

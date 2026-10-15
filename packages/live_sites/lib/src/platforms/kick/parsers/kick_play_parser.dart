@@ -43,13 +43,15 @@ abstract final class KickPlayParser {
 
   /// The variants of the master playlist [body] read from [master], best
   /// first (height, then bandwidth). A refused or gone master (403, 404) is
-  /// stream-unavailable: the broadcast ended or its token expired. A body
-  /// that is not a playlist is api-changed; a playlist with no usable
-  /// variant is stream-unavailable.
+  /// stream-unavailable: the broadcast ended or its token expired. A 401 is
+  /// the edge refusing this client. A body that is not a playlist, or one
+  /// whose last `#EXT-X-STREAM-INF` has no URL under it, is api-changed; a
+  /// playlist with no usable variant is stream-unavailable.
   static List<KickVariant> variants(String body, {required Uri master, int status = 200}) {
     if (status == 403 || status == 404) {
       throw KickFailure(KickFailureKind.streamUnavailable, 'master playlist: HTTP $status');
     }
+    if (status == 401) throw const KickFailure(KickFailureKind.riskControl, 'master playlist: HTTP 401');
     if (status >= 500) throw KickFailure(KickFailureKind.network, 'master playlist: HTTP $status');
     if (status == 429) throw const KickFailure(KickFailureKind.rateLimited, 'master playlist: HTTP 429');
     if (status < 200 || status >= 300) {
@@ -61,6 +63,22 @@ abstract final class KickPlayParser {
     final lines = const LineSplitter().convert(body).map((line) => line.trim()).toList();
     if (lines.isEmpty || lines.first != '#EXTM3U') {
       throw KickFailure(KickFailureKind.apiChanged, 'master playlist: not a playlist (${jsonSnippet(body)})');
+    }
+    var pending = false;
+    for (final line in lines.skip(1)) {
+      if (line.isEmpty) continue;
+      if (line.startsWith('#EXT-X-STREAM-INF:')) {
+        if (pending) {
+          throw const KickFailure(KickFailureKind.apiChanged, 'master playlist: a variant without a URL');
+        }
+        pending = true;
+        continue;
+      }
+      if (line.startsWith('#')) continue;
+      pending = false;
+    }
+    if (pending) {
+      throw const KickFailure(KickFailureKind.apiChanged, 'master playlist: a variant without a URL');
     }
     // The master is read through the shared HLS parser; a body that is not a
     // master playlist (or that the parser refuses) yields no variants and falls

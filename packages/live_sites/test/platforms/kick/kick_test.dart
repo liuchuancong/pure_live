@@ -6,7 +6,16 @@ import 'dart:convert';
 
 import 'package:fpdart/fpdart.dart';
 import 'package:live_net/live_net.dart';
+import 'package:live_sites/src/capabilities/live_area_provider.dart';
+import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
+import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
+import 'package:live_sites/src/capabilities/live_hot_provider.dart';
+import 'package:live_sites/src/capabilities/live_link_resolver.dart';
+import 'package:live_sites/src/capabilities/live_playback_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
+import 'package:live_sites/src/internal/built_in_sites.dart';
 import 'package:live_sites/src/models/enums/live_audience_metric_type.dart';
 import 'package:live_sites/src/models/enums/live_gift_unit.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
@@ -363,7 +372,6 @@ void main() {
         }, channel: KickDanmakuCodec.broadcastChannel(_args)),
         _args,
       );
-      expect(ended.ended, isTrue);
       expect(ended.messages.single.type, LiveMessageType.system);
       final foreign = KickDanmakuCodec.read(
         _frame(r'App\Events\StopStreamBroadcast', {
@@ -373,7 +381,7 @@ void main() {
         }, channel: KickDanmakuCodec.broadcastChannel(_args)),
         _args,
       );
-      expect(foreign.ended, isFalse);
+      expect(foreign.messages, isEmpty);
     });
 
     test('the class name after the last backslash names the event', () {
@@ -403,6 +411,39 @@ void main() {
       expect(room.broadcast.startedAt, DateTime.utc(2026, 10, 1, 5));
       expect(room.area?.areaId, 'just-chatting');
       expect(room.links.webUrl, 'https://kick.com/xqc');
+    });
+
+    test('a protocol-relative picture is made https and a zero viewer count reads as zero', () {
+      final body = jsonEncode({
+        'id': 668,
+        'slug': 'xqc',
+        'is_banned': false,
+        'followers_count': '0',
+        'playback_url':
+            'https://fa723fc1b171.us-west-2.playback.live-video.net/api/video/v1/channel.m3u8?token=${_jwt(_exp)}',
+        'user': {'id': 676, 'username': ' xQc ', 'profile_pic': '//files.kick.com/avatar.png', 'bio': ''},
+        'chatroom': {'id': 101689},
+        'livestream': {
+          'id': 129925755,
+          'is_live': true,
+          'viewer_count': 0,
+          'session_title': '  reacting  ',
+          'start_time': '2026-10-01 05:00:00',
+          'thumbnail': {'url': 'images.kick.com/thumb.jpg'},
+          'categories': <Object?>[],
+        },
+      });
+      final channel = KickRoomParser.channel(body, requestedSlug: 'xqc');
+      expect(channel.room.content.coverUrl, 'https://images.kick.com/thumb.jpg');
+      expect(channel.room.content.title, 'reacting');
+      expect(channel.room.anchor?.name, 'xQc');
+      expect(channel.room.anchor?.avatarUrl, 'https://files.kick.com/avatar.png');
+      expect(channel.room.anchor?.followerCount, 0);
+      expect(channel.room.audience.onlineViewers, 0);
+      // An empty bio reads as nothing, not as the empty string.
+      expect(channel.room.anchor?.introduction, isNull);
+      expect(channel.room.content.introduction, '');
+      expect(channel.room.content.notice, '');
     });
 
     test('an answered slug of another case still matches; the id is lower case', () {
@@ -493,6 +534,34 @@ void main() {
       );
       expect(
         () => KickPlayParser.variants('<html>nope</html>', master: master),
+        throwsA(isA<KickFailure>().having((f) => f.kind, 'kind', KickFailureKind.apiChanged)),
+      );
+    });
+
+    test('a 401 refusal is risk control, not a changed API', () {
+      expect(
+        () => KickPlayParser.variants(_masterPlaylist, master: master, status: 401),
+        throwsA(isA<KickFailure>().having((f) => f.kind, 'kind', KickFailureKind.riskControl)),
+      );
+    });
+
+    test('a STREAM-INF with no playlist under it is api-changed', () {
+      const truncated = '''
+#EXTM3U
+#EXT-X-STREAM-INF:BANDWIDTH=3422999,RESOLUTION=1280x720,CODECS="avc1.4D401F",VIDEO="720p60"
+#EXT-X-STREAM-INF:BANDWIDTH=1427999,RESOLUTION=852x480,CODECS="avc1.4D401F",VIDEO="480p30"
+/v1/playlist/480.m3u8
+''';
+      expect(
+        () => KickPlayParser.variants(truncated, master: master),
+        throwsA(isA<KickFailure>().having((f) => f.kind, 'kind', KickFailureKind.apiChanged)),
+      );
+      const unterminated = '''
+#EXTM3U
+#EXT-X-STREAM-INF:BANDWIDTH=3422999,RESOLUTION=1280x720,CODECS="avc1.4D401F",VIDEO="720p60"
+''';
+      expect(
+        () => KickPlayParser.variants(unterminated, master: master),
         throwsA(isA<KickFailure>().having((f) => f.kind, 'kind', KickFailureKind.apiChanged)),
       );
     });
@@ -732,13 +801,55 @@ void main() {
         },
       );
       final site = KickSite(http: KickHttp(http));
-      final areas = _right(await KickAreaProvider(site: site).getAreas());
+      final provider = KickAreaProvider(site: site);
+      final areas = _right(await provider.getAreas());
       expect(areas.single.areaId, 'tickets-please');
       expect(areas.single.parentAreaName, '游戏');
       // A slug that cannot be a subcategory fails without a request.
       final before = http.sent.length;
-      expect(_left(await KickAreaProvider(site: site).getAreaRooms(areaId: 'not a slug!')), isA<LiveSiteNotFound>());
+      expect(_left(await provider.getAreaRooms(areaId: 'not a slug!')), isA<LiveSiteNotFound>());
       expect(http.sent.length, before);
+      // Kick answers the whole directory for one of its own top-level
+      // categories, so the parent the catalog just named is refused without a
+      // request instead of being read back as an empty area.
+      expect(_left(await provider.getAreaRooms(areaId: 'games')), isA<LiveSiteInvalidArgument>());
+      expect(_left(await provider.getAreaRooms(areaId: 'irl')), isA<LiveSiteInvalidArgument>());
+      expect(http.sent.length, before);
+    });
+
+    test('a spent lease makes the lines request re-read the channel and master', () async {
+      final soon = DateTime.utc(2026, 10).add(const Duration(minutes: 1));
+      final body = _channelLive().replaceFirst(_jwt(_exp), _jwt(soon.millisecondsSinceEpoch ~/ 1000));
+      final http = _FakeHttp(
+        (req) => req.url.host.endsWith(KickEndpoints.ivsHostSuffix) ? _resp(200, _masterPlaylist) : _resp(200, body),
+      );
+      final site = KickSite(http: KickHttp(http), now: () => DateTime.utc(2026, 10));
+      final provider = KickPlaybackProvider(site: site);
+      final qualities = _right(await provider.getQualities(roomId: 'xqc'));
+      expect(http.sent.length, 2);
+      // The master is still inside its own lifetime, but its token dies within
+      // the recovery lead: the lines request is a new channel answer and a new
+      // master rather than the cached (soon-dead) one.
+      final lines = _right(await provider.getLines(roomId: 'xqc', quality: qualities.first));
+      expect(lines.single.lease?.expiresAt, soon);
+      expect(http.sent.length, 4);
+    });
+
+    test('every capability is wired and the site is built in', () {
+      final site = KickSite(http: KickHttp(_FakeHttp((req) => _resp(200, '{}'))));
+      expect(site.capability<LiveRoomProvider>(), isNotNull);
+      expect(site.capability<LiveAreaProvider>(), isNotNull);
+      expect(site.capability<LiveDiscoveryProvider>(), isNotNull);
+      expect(site.capability<LiveSearchProvider>(), isNotNull);
+      expect(site.capability<LivePlaybackProvider>(), isNotNull);
+      expect(site.capability<LiveDanmakuProvider>(), isNotNull);
+      expect(site.capability<LiveLinkResolver>(), isNotNull);
+      expect(site.capability<LiveHotProvider>(), isNull);
+      expect(site.capability<LiveRoomProvider>(), same(site.capability<LiveRoomProvider>()));
+      expect(
+        createBuiltInLiveSites(http: _FakeHttp((req) => _resp(200, '{}'))).map((s) => s.manifest.id),
+        contains('kick'),
+      );
     });
 
     test('the link resolver canonicalizes without a request', () async {
@@ -763,6 +874,32 @@ void main() {
     test('decodeJson refuses a body over the size cap', () {
       expect(decodeJson('{"a":1}'), isA<Map<String, Object?>>());
       expect(decodeJson('x' * (maxJsonBytes + 1)), isNull);
+    });
+
+    test('jsonString trims and blanks read as nothing', () {
+      expect(jsonString('  reacting  '), 'reacting');
+      expect(jsonString('   '), isNull);
+      expect(jsonString(''), isNull);
+      expect(jsonString(null), isNull);
+      expect(jsonString(42), '42');
+    });
+
+    test('jsonCount keeps a zero count: a live room with no viewers says zero', () {
+      expect(jsonCount(0), 0);
+      expect(jsonCount('0'), 0);
+      expect(jsonCount(-1), isNull);
+      expect(jsonCount('45000'), 45000);
+      expect(jsonCount(null), isNull);
+    });
+
+    test('normalizeImageUrl makes Kick CDN links absolute and drops junk', () {
+      expect(normalizeImageUrl('//files.kick.com/a.png'), 'https://files.kick.com/a.png');
+      expect(normalizeImageUrl('files.kick.com/a.png'), 'https://files.kick.com/a.png');
+      expect(normalizeImageUrl('"https://files.kick.com/a.png"'), 'https://files.kick.com/a.png');
+      expect(normalizeImageUrl('https://files.kick.com/a.png'), 'https://files.kick.com/a.png');
+      expect(normalizeImageUrl('null'), '');
+      expect(normalizeImageUrl('not a url at all'), '');
+      expect(normalizeImageUrl(null), '');
     });
   });
 }

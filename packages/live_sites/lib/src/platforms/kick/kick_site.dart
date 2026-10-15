@@ -63,14 +63,24 @@ final class KickDanmakuArgs {
 /// Chat runs over Kick's Pusher app (hand-rolled JSON frames), playback is
 /// the channel answer's signed IVS master playlist.
 ///
-/// Not yet wired into `built_in_sites`: the orchestrator defers the
-/// registration of this platform, so the registry does not build it.
+/// Kick's web API refuses dart:io's TLS handshake outright (Cloudflare
+/// answers 403 "Request blocked by security policy"), while the IVS media
+/// host answers any client. The reference therefore sends the API requests
+/// over a second transport the app injects — Android's system TLS,
+/// `AndroidNativeHttp` — and the media over the ordinary one; [apiHttp] is
+/// that seam and defaults to [http] when the app has no such transport.
 final class KickSite implements LiveSite {
-  /// Creates the adapter over [http]; [now] is injectable for tests.
-  KickSite({required this.http, DateTime Function()? now}) : now = now ?? DateTime.now;
+  /// Creates the adapter over [http]; kick.com requests go over [apiHttp]
+  /// when given. [now] is injectable for tests.
+  KickSite({required this.http, KickHttp? apiHttp, DateTime Function()? now})
+    : apiHttp = apiHttp ?? http,
+      now = now ?? DateTime.now;
 
-  /// Transport.
+  /// Transport of the media requests (the IVS master playlist).
   final KickHttp http;
+
+  /// Transport of the `kick.com` API requests.
+  final KickHttp apiHttp;
 
   /// Injectable clock (master-playlist cache ages).
   final DateTime Function() now;
@@ -87,12 +97,19 @@ final class KickSite implements LiveSite {
   @override
   Future<void> initialize(LiveSiteContext context) async {}
 
-  /// Releases pooled transports of the wrapped transport.
+  /// Releases the transports (one close when the app gave only one).
   @override
-  Future<void> dispose() async => http.close();
+  Future<void> dispose() async {
+    http.close();
+    if (!identical(apiHttp, http)) apiHttp.close();
+  }
 
-  /// GETs [url] with [headers] (the capabilities' transport).
+  /// GETs a `kick.com` API [url] with [headers] (the capabilities' transport).
   Future<({String text, int status})> httpGet(Uri url, {Map<String, String> headers = const {}}) =>
+      apiHttp.get(url, headers: headers);
+
+  /// GETs a media [url] (the IVS master playlist) with [headers].
+  Future<({String text, int status})> mediaGet(Uri url, {Map<String, String> headers = const {}}) =>
       http.get(url, headers: headers);
 
   /// The API request headers (identical for every endpoint: Kick checks no
@@ -106,7 +123,7 @@ final class KickSite implements LiveSite {
     if (slug == null) {
       throw KickFailure(KickFailureKind.notFound, 'room id "${roomId.trim()}" is not a Kick channel');
     }
-    final response = await http.get(KickEndpoints.channel(slug), headers: apiHeaders());
+    final response = await apiHttp.get(KickEndpoints.channel(slug), headers: apiHeaders());
     return KickRoomParser.channel(response.text, requestedSlug: slug, status: response.status);
   }
 

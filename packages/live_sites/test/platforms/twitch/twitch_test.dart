@@ -718,6 +718,7 @@ https://other.example/1.m3u8
         'bigo',
         'chzzk',
         'fc2live',
+        'kick',
       ]);
     });
 

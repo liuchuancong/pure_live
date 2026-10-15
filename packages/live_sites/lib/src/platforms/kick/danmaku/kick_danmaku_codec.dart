@@ -29,7 +29,6 @@ final class KickFrame {
     this.joined = false,
     this.ping = false,
     this.error,
-    this.ended = false,
     this.messages = const [],
   });
 
@@ -45,10 +44,6 @@ final class KickFrame {
   /// A Pusher error, a refused subscription or the server's activity
   /// timeout: reconnect.
   final String? error;
-
-  /// The broadcast ended (`StopStreamBroadcast`): stop instead of
-  /// reconnecting.
-  final bool ended;
 
   /// Messages to report.
   final List<LiveMessage> messages;
@@ -145,7 +140,7 @@ abstract final class KickDanmakuCodec {
       if (eventName(event) != 'StopStreamBroadcast') return const KickFrame();
       final endedChannel = jsonInt(jsonObject(jsonObject(payload['livestream'])?['channel'])?['id']);
       if (endedChannel != null && endedChannel != args.channelId) return const KickFrame();
-      return KickFrame(ended: true, messages: [streamEnded]);
+      return KickFrame(messages: [streamEnded]);
     }
     if (channel == kicksChannel(args)) {
       if (eventName(event) != 'KicksGifted') return const KickFrame();

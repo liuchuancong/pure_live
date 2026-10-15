@@ -80,9 +80,10 @@ final class KickDanmakuProvider implements LiveDanmakuProvider {
 ///   session's generation guard, so a loss is reported and reconnected here —
 ///   after [maxReconnectAttempts] failed reconnects a terminal system message
 ///   closes [events] rather than retrying in silence.
-/// - `pusher:error` and a refused subscription reconnect; the broadcast's
-///   end (`StopStreamBroadcast`) closes [events] after a final notice
-///   message instead of reconnecting forever.
+/// - `pusher:error` and a refused subscription reconnect. The broadcast's end
+///   (`StopStreamBroadcast`) is only a notice: the socket stays subscribed,
+///   so a broadcast restarted under the same chatroom resumes here, and the
+///   silence that follows is the watchdog's business like any other.
 final class KickDanmakuSession implements LiveDanmakuSession {
   /// A session for the channel in [args]; [connect] opens the socket.
   KickDanmakuSession({required this.args});
@@ -184,14 +185,9 @@ final class KickDanmakuSession implements LiveDanmakuSession {
       _scheduleReconnect(generation, frame.error!);
       return;
     }
-    if (frame.ended) {
-      // The broadcast is over: end delivery instead of reconnecting forever.
-      _generation++;
-      _joinTimer?.cancel();
-      _joinTimer = null;
-      unawaited(_teardownSocket());
-      unawaited(_events.close());
-    }
+    // `StopStreamBroadcast` is only a notice (as in the reference): the socket
+    // stays subscribed, so a broadcast restarted under the same chatroom
+    // resumes on this session. Silence afterwards is the watchdog's job.
   }
 
   void _startWatchdog() {

@@ -31,7 +31,7 @@
 | acfun AcFun | ✅ | 见下方"acfun 明细" |
 | bigo Bigo Live | ✅ | 见下方"bigo 明细" |
 | chzzk CHZZK(치지직) | ✅ | 见下方"chzzk 明细" |
-| kick Kick | ✅* | 见下方"kick 明细";文件已推送 `fa8f7d61a`,**尚未注册进 built_in_sites**(避让并发) |
+| kick Kick | ✅ | 见下方"kick 明细";已注册进 `built_in_sites`(`fc2live` 之后) |
 | niconico Niconico | ✅* | 见下方"niconico 明细";文件已推送 `6809f7ae1`,**尚未注册进 built_in_sites**(避让并发) |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
@@ -142,7 +142,17 @@
 - 能力:room/area/discovery/search/playback/danmaku/link_resolver,`Either` + `KickFailure`。房间 `/api/v2/channels/<slug>`(chatroom.id ≠ channel id);areas `/api/v1/categories`+`subcategories`;目录 `/stream/livestreams/en`;搜索 `/api/search`(单页)。roomId=slug(小写;kick 忽略大小写,代码无 SiteIds,就地小写)。
 - 弹幕 = Pusher `wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679`(app key 字面量),订阅 `chatrooms.<id>.v2`/`channel.<id>`/`channel_<id>`;ping 30s、activity_timeout 120s 重连(douyu 同款双开互斥+失败上限);`App\Events\ChatMessageEvent`(data 为 JSON 串)→chat(#RRGGBB、badges_v2 level、`[emote:id:name]` 内联)、`KicksGifted`→gift、删除/封禁/清屏→撤回、`StopStreamBroadcast`→结束。
 - 播放:`playback_url` = 签名 IVS HLS master(`*.live-video.net`,EXT-X-MEDIA+STREAM-INF),lease 取 JWT `exp`。
-- **状态**:文件已提交推送 `fa8f7d61a`,scoped `dart analyze lib/src/platforms/kick test/platforms/kick` No issues、`dart test test/platforms/kick` 37 绿。**未注册进 `built_in_sites.dart`**(当时并行 lane 正实时写 fc2live、整包 analyze 因其半成品而红;为不抢共享注册文件、不卷入他人未完成工作,注册暂缓——待注册窗口无争用时补 `KickSite(http: KickHttp(transport))` 一行 + 更新 douyin_test 的内置站点 id 等值断言)。
+- **状态**:文件先推送 `fa8f7d61a`,2026-10-15 补逻辑并**已注册进 `built_in_sites`**(douyin/twitch 测试的内置站点有序等值断言同步加 `kick`)。
+- 2026-10-15 逐条对照参考(`live_core/sites/kick` + `live_danmaku/sites/kick.dart`)补的逻辑,框架与模型未动:
+  - **图片 URL 归一化**:参考 `normalizeImageUrl`(`live_core/json.dart:123`)搬到 `kick_json.dart`,channel 封面/离线横幅、主播头像、分区 banner、列表卡与搜索卡六处全部走它——Kick 的 CDN 常回 `//files.kick.com/…` 甚至裸 `host/path`,不归一化就是一片空白图。
+  - **JSON 读数容错对齐参考**:`jsonString` 改为 trim 且空白算 null(参考 `json.dart:88`),`jsonCount` 从 `>0` 改成 `>=0`(参考 `json.dart:82`)——零观众/零粉丝的房间过去读成"未知",现在读成 0。
+  - **播放恢复**:`getLines` 命中缓存但 token 已在 2 分钟内到期 → 强制重读 channel+master(参考 `resolvePlayUrlsForRecoveryRaw` 总是重取的原因:token 被服务端提前作废时,只按 10 分钟寿命判缓存就永远回不来)。
+  - **分区父级预拒**:`getAreas` 记下的顶级分类 slug 在 `getAreaRooms` 直接 `invalidArgument`,不再发一次请求把整个总目录读回来当空分区(参考 `kick_site.dart:152` 靠 `areaType` 判,本站 `LiveAreaProvider` 只给 areaId,故用已读到的分类集合)。
+  - **master 状态与截断**:IVS 401 → riskControl(→ `LiveSiteRateLimitError`),与 403/404 的 streamUnavailable 分开;最后一个 `#EXT-X-STREAM-INF` 下面没有地址(或两个连排)→ apiChanged,不再静默少一个清晰度。
+  - **弹幕 `StopStreamBroadcast` 不再拆流**:只报公告、socket 留着(参考 `kick.dart:149-155`)——同 chatroom 下重开的直播能在本会话继续收,之后的静默交回看门狗;`KickFrame.ended` 随之以外删掉(死字段)。
+  - **第二传输 `apiHttp`**:参考把 kick.com 的 API 走 app 注入的 Android 系统 TLS(dart:io 握手恒被 Cloudflare 403 "Request blocked by security policy"),IVS 走普通传输。本站同样开 `KickSite({http, apiHttp})` 这个口子,`apiHttp` 缺省等于 `http`,`httpGet` 走 API 传输、`mediaGet` 走媒体传输,`dispose` 各关一次;注册表仍只传 `http`(app 有系统 TLS 传输时注入即可)。
+- **延后项(记档不假造)**:①能力签名不收 `CancelToken`,参考每请求透传取消令牌这条在 v2 契约无对应面(与 bigo 那条同一取舍);②公告文案仍是英文(`Broadcast ended`/`Danmaku connection lost`),与参考的中文 `直播已结束` 不同——本站 `site.locale` 注入了但没用到,douyu/huya/acfun/bigo/bilibili/chzzk/douyin/twitch 八家同样写英文,单独给 kick 换语言只会让包内更不一致,归到"平台文案本地化"这条跨站欠账里一起解;③`is_mature` 只落 `content.notice`,**参考就是** `restriction: LiveRestriction.none`(它不把成熟内容当播放限制),所以这不是缺口;④`KickDanmakuSession` 直接构造 `DanmakuSocket`,没有注入假 socket 的口子 → 重连/看门狗时序仍只能在线下起会话(与参考的基类差异,同 bigo/chzzk 记的"无 socket runtime 基类")。
+- 验证:`dart analyze lib/src/platforms/kick test/platforms/kick lib/src/internal` No issues;`dart test test/platforms/kick` **49 项全绿**(新增:图片归一化与零计数端到端、`jsonString`/`jsonCount`/`normalizeImageUrl` 单元、401→riskControl、截断 master→apiChanged、租将耗尽时重读 channel+master、顶级分类预拒、七个能力接线 + 已进内置站点);整包 `dart test` **652 项全绿**。整包 `dart analyze` 仍剩 2 条 twitch 文件里的既有 info lint(`avoid_redundant_argument_values`、`prefer_foreach`),不在本轮改动内。
 
 ## niconico 明细(2026-10-14)
 整站从 `live_core/sites/niconico` + `live_danmaku/sites/niconico.dart` 迁到 `platforms/niconico/`。**无新依赖、匿名运行**:手写 protobuf reader + 手写 HLS master 解析 + 一个 seat WebSocket(web_socket_channel)+ HTTP-protobuf 弹幕轮询。

@@ -19,6 +19,10 @@ typedef KickStreamData = ({String slug, Uri master, List<KickVariant> variants, 
 /// qualities request; past its token's expiry nothing is reused.
 const Duration _masterLifetime = Duration(minutes: 10);
 
+/// How close to the token's expiry still counts as "the lease is spent" for a
+/// lines request: inside it, the master is re-read rather than handed out.
+const Duration _recoveryLead = Duration(minutes: 2);
+
 /// Kick's playback: the channel answer's signed IVS master playlist is read
 /// once, and its variants are the qualities and the lines.
 ///
@@ -53,7 +57,12 @@ final class KickPlaybackProvider implements LivePlaybackProvider {
   @override
   Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
     try {
-      final data = await _read(roomId);
+      var data = await _read(roomId);
+      // A recovery read: the reference re-reads the channel and its master on
+      // recovery, because a token revoked early server-side otherwise has no
+      // way back. Same trigger kept here — the cached lease is spent, so the
+      // lines it would build are certain to die mid-play.
+      if (_leaseRunningOut(data)) data = await _read(roomId, force: true);
       final variant = KickPlayParser.pick(data.variants, quality?.qualityId ?? quality?.label);
       if (variant == null) {
         throw const KickFailure(KickFailureKind.streamUnavailable, 'master playlist: no variant');
@@ -86,7 +95,7 @@ final class KickPlaybackProvider implements LivePlaybackProvider {
         'channel $slug is ${channel.room.broadcast.effectiveLiveStatus.name}',
       );
     }
-    final response = await site.httpGet(master, headers: KickEndpoints.mediaHeaders(slug));
+    final response = await site.mediaGet(master, headers: KickEndpoints.mediaHeaders(slug));
     final variants = KickPlayParser.variants(response.text, master: master, status: response.status);
     final data = (
       slug: slug,
@@ -106,5 +115,13 @@ final class KickPlaybackProvider implements LivePlaybackProvider {
     final at = site.now();
     if (data.expiresAt != null && !at.isBefore(data.expiresAt!)) return false;
     return at.difference(data.at) < _masterLifetime;
+  }
+
+  /// Whether the cached master's token expires inside [_recoveryLead] — its
+  /// lines would stop mid-play, so ask for a new token instead.
+  bool _leaseRunningOut(KickStreamData data) {
+    final expiresAt = data.expiresAt;
+    if (expiresAt == null) return false;
+    return expiresAt.difference(site.now()) < _recoveryLead;
   }
 }
