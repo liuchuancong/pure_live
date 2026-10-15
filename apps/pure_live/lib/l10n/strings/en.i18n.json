@@ -49,6 +49,14 @@
     "pause": "Pause",
     "failed": "Playback failed — try again"
   },
+  "toolbox": {
+    "title": "Toolbox",
+    "hint": "Paste a room link",
+    "readClipboard": "Read clipboard",
+    "resolve": "Resolve",
+    "failed": "No platform recognised this link",
+    "openRoom": "Open the room"
+  },
   "about": {
     "title": "About",
     "checkUpdate": "Check for updates",

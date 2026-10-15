@@ -4,20 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pub_semver/pub_semver.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/features/about/markdown_text.dart';
 import 'package:pure_live/features/about/update_feed.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// About (3.x `AboutPage`): the app's identity, the update check against
 /// the repository's published releases, the release notes, the project
 /// page and the licenses.
 final class AboutPage extends ConsumerStatefulWidget {
   /// The about page.
-  const AboutPage({super.key});
+  const new({super.key});
 
   @override
   ConsumerState<AboutPage> createState() => _AboutPageState();
@@ -147,8 +146,8 @@ final class _AboutPageState extends ConsumerState<AboutPage> {
     );
   }
 
-  void _showHistory(BuildContext context, List<AppRelease> releases) {
-    showModalBottomSheet<void>(
+  Future<void> _showHistory(BuildContext context, List<AppRelease> releases) async {
+    await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,

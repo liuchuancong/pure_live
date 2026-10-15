@@ -5,13 +5,12 @@ import 'package:live_sites/live_sites.dart'
     show LiveAreaProvider, LiveDiscoveryProvider, LivePlaybackProvider, LiveRoomProvider, LiveSearchProvider;
 import 'package:live_storage/live_storage.dart' show StorageBootstrap;
 import 'package:live_uikit/styling.dart';
-
 import 'package:pure_live/app/composition/sites.dart';
-import 'package:pure_live/features/about/update_feed.dart';
 import 'package:pure_live/app/environment/app_paths.dart';
 import 'package:pure_live/app/theme/appearance_preferences/appearance_preferences.dart';
 import 'package:pure_live/app/theme/appearance_store.dart';
 import 'package:pure_live/app/theme/ui_configuration_mapper.dart';
+import 'package:pure_live/features/about/update_feed.dart';
 import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart' show ShellPreferencesStore, ShellWindowChrome;
 
 /// The booted [AppearanceStore], overridden in the `ProviderScope` at

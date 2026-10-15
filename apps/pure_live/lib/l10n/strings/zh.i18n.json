@@ -47,6 +47,14 @@
   "design": {
     "defaultLanguage": "默认（Fluent）"
   },
+  "toolbox": {
+    "title": "工具箱",
+    "hint": "粘贴直播间链接",
+    "readClipboard": "读取剪贴板",
+    "resolve": "解析",
+    "failed": "没有平台识别该链接",
+    "openRoom": "打开房间"
+  },
   "about": {
     "title": "关于",
     "checkUpdate": "检查更新",

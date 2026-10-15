@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 /// dependency; release notes rarely need richer structure.
 final class MarkdownText extends StatelessWidget {
   /// Shows [data].
-  const MarkdownText(this.data, {super.key});
+  const new(this.data, {super.key});
 
   /// The markdown source.
   final String data;

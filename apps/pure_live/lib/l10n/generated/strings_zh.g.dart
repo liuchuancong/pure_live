@@ -48,6 +48,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$settings$zh settings = Translations$settings$zh.internal(_root);
 	late final Translations$theme$zh theme = Translations$theme$zh.internal(_root);
 	late final Translations$design$zh design = Translations$design$zh.internal(_root);
+	late final Translations$toolbox$zh toolbox = Translations$toolbox$zh.internal(_root);
 	late final Translations$about$zh about = Translations$about$zh.internal(_root);
 	late final Translations$search$zh search = Translations$search$zh.internal(_root);
 	late final Translations$room$zh room = Translations$room$zh.internal(_root);
@@ -200,6 +201,33 @@ class Translations$design$zh {
 
 	/// zh: '默认（Fluent）'
 	String get defaultLanguage => '默认（Fluent）';
+}
+
+// Path: toolbox
+class Translations$toolbox$zh {
+	Translations$toolbox$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '工具箱'
+	String get title => '工具箱';
+
+	/// zh: '粘贴直播间链接'
+	String get hint => '粘贴直播间链接';
+
+	/// zh: '读取剪贴板'
+	String get readClipboard => '读取剪贴板';
+
+	/// zh: '解析'
+	String get resolve => '解析';
+
+	/// zh: '没有平台识别该链接'
+	String get failed => '没有平台识别该链接';
+
+	/// zh: '打开房间'
+	String get openRoom => '打开房间';
 }
 
 // Path: about
@@ -441,6 +469,12 @@ extension on Translations {
 			'theme.dark' => '深色',
 			'theme.light' => '浅色',
 			'design.defaultLanguage' => '默认（Fluent）',
+			'toolbox.title' => '工具箱',
+			'toolbox.hint' => '粘贴直播间链接',
+			'toolbox.readClipboard' => '读取剪贴板',
+			'toolbox.resolve' => '解析',
+			'toolbox.failed' => '没有平台识别该链接',
+			'toolbox.openRoom' => '打开房间',
 			'about.title' => '关于',
 			'about.checkUpdate' => '检查更新',
 			'about.upToDate' => '已是最新版本',

@@ -2,6 +2,8 @@ import 'package:live_net/live_net.dart';
 
 /// Where the app's releases live.
 const String updateOwner = 'liuchuancong';
+
+/// The repository the releases publish under.
 const String updateRepo = 'pure_live';
 
 /// The project page.
@@ -10,7 +12,7 @@ final Uri projectUrl = Uri.parse('https://github.com/$updateOwner/$updateRepo');
 /// One GitHub release of the app's repository.
 final class AppRelease {
   /// Parses one release entry of the GitHub releases API.
-  AppRelease.fromJson(Map<Object?, Object?> json)
+  new fromJson(Map<Object?, Object?> json)
     : tag = '${json['tag_name'] ?? ''}',
       name = '${json['name'] ?? json['tag_name'] ?? ''}',
       body = '${json['body'] ?? ''}',
@@ -39,7 +41,7 @@ final class AppRelease {
 /// The update feed: the repository's published releases, newest first.
 final class UpdateFeed {
   /// A feed over [http].
-  const UpdateFeed({required this.http});
+  const new({required this.http});
 
   /// The app's shared HTTP client.
   final LiveHttp http;
@@ -72,7 +74,7 @@ final class UpdateFeed {
 /// The feed could not be read.
 final class FeedUnavailable implements Exception {
   /// A feed failure.
-  const FeedUnavailable(this.message);
+  const new(this.message);
 
   /// What went wrong, safe to show.
   final String message;

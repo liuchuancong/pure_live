@@ -47,6 +47,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$theme$en theme = _Translations$theme$en._(_root);
 	@override late final _Translations$design$en design = _Translations$design$en._(_root);
 	@override late final _Translations$room$en room = _Translations$room$en._(_root);
+	@override late final _Translations$toolbox$en toolbox = _Translations$toolbox$en._(_root);
 	@override late final _Translations$about$en about = _Translations$about$en._(_root);
 	@override late final _Translations$search$en search = _Translations$search$en._(_root);
 	@override late final _Translations$errors$en errors = _Translations$errors$en._(_root);
@@ -160,6 +161,21 @@ class _Translations$room$en extends Translations$room$zh {
 	@override String get play => 'Play';
 	@override String get pause => 'Pause';
 	@override String get failed => 'Playback failed — try again';
+}
+
+// Path: toolbox
+class _Translations$toolbox$en extends Translations$toolbox$zh {
+	_Translations$toolbox$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Toolbox';
+	@override String get hint => 'Paste a room link';
+	@override String get readClipboard => 'Read clipboard';
+	@override String get resolve => 'Resolve';
+	@override String get failed => 'No platform recognised this link';
+	@override String get openRoom => 'Open the room';
 }
 
 // Path: about
@@ -304,6 +320,12 @@ extension on TranslationsEn {
 			'room.play' => 'Play',
 			'room.pause' => 'Pause',
 			'room.failed' => 'Playback failed — try again',
+			'toolbox.title' => 'Toolbox',
+			'toolbox.hint' => 'Paste a room link',
+			'toolbox.readClipboard' => 'Read clipboard',
+			'toolbox.resolve' => 'Resolve',
+			'toolbox.failed' => 'No platform recognised this link',
+			'toolbox.openRoom' => 'Open the room',
 			'about.title' => 'About',
 			'about.checkUpdate' => 'Check for updates',
 			'about.upToDate' => 'Up to date',

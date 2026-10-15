@@ -9,6 +9,7 @@ import 'package:pure_live/app/routing/routes/about/about_routes.dart' as about_r
 import 'package:pure_live/app/routing/routes/areas/areas_routes.dart' as areas_routes;
 import 'package:pure_live/app/routing/routes/search/search_routes.dart' as search_routes;
 import 'package:pure_live/app/routing/routes/settings/settings_routes.dart' as settings_routes;
+import 'package:pure_live/app/routing/routes/toolbox/toolbox_routes.dart' as toolbox_routes;
 import 'package:pure_live/features/follow/follow_page.dart';
 import 'package:pure_live/features/history/history_page.dart';
 import 'package:pure_live/features/home/home_page.dart';
@@ -126,6 +127,7 @@ final routerProvider = Provider<GoRouter>(
       ...$appRoutes,
       ...about_routes.$appRoutes,
       ...areas_routes.$appRoutes,
+      ...toolbox_routes.$appRoutes,
       ...search_routes.$appRoutes,
       ...settings_routes.$appRoutes,
     ],
