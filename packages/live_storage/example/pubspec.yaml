@@ -1,0 +1,19 @@
+name: live_storage_example
+description: >-
+  Runnable tour of live_storage: bootstrap over a throw-away directory, a
+  typed repository with change watching, the simple StoragePrefs facade and
+  write-through PrefValues.
+publish_to: none
+version: 0.1.0
+
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  hive_ce: ^2.20.2
+  live_storage:
+
+dev_dependencies:
+  very_good_analysis: ^11.0.0
