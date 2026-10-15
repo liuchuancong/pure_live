@@ -70,25 +70,30 @@ v2 的五条架构决策(不可回退,均有 ADR 或用户定案背书):
 
 ## 3. 应用架构(apps/pure_live)
 
-lib 目标结构与现状(波次 1 已落地,`ee365fd99`):
+目录架构的**权威设计**在 `docs/app-directory-architecture.md`:完整的 lib/ 分层树
+(`app/` 装配 · `core/` 跨域基础 · `data/` 数据组合根 · `services/` 领域服务消费层 ·
+`features/` 26 个页面域的固定内聚结构)、三条适配轴的归宿(9 设计语言→live_uikit 注册表、
+三形态→LiveEnvironment 分支、多语言→lib/l10n)、域清单与路由表、命名/l10n/图标/codegen
+约定、以及现状文件到目标归宿的迁移映射。本节只留骨架与不变量:
 
 ```text
 lib/
-├── main.dart            # 组合根:boot → ProviderScope → LiveConfigProvider → LiveLayoutBuilder → MaterialApp.router ✅
-├── app/                 # router(typed routes)✅ adaptive_shell(桌面 rail/触摸底栏/TV)✅
-│                        # adapters(语言注册表)✅ providers ✅ delegates ✅ appearance_mapping ✅
-├── features/            # home/follow/history 占位页 ✅;settings 索引+外观编辑页 ✅
-│                        # categories/search/room/iptv/recordings/multiview ⬜ 随波次建
-├── player/ interaction/ recording/ storage/ files/ platform/ ⬜(装配层,随对应波次)
-└── background_demo_page.dart  # 暂留,ADR 0005 定案后删(/dev/background 可达)
+├── main.dart               # 进程入口:LaunchArgs → boot → runApp ✅
+├── l10n/                   # slang 翻译源 + 生成 ⬜
+├── core/                   # errors ✅ formatters ✅ icons/ extensions/ widgets/ ⬜
+├── app/                    # app/router/ providers/ shell/ theme/ windows/ + adapters/delegates ✅(部分已就位)
+├── data/                   # app_services + platform/ paths/ preferences/ downloads/ ⬜(接线中)
+├── services/               # sites/ playback/ interaction/ recording/ intake/ updater/ ⬜ 随功能波次
+└── features/               # home/follow/history/settings(索引+外观)✅;其余 21 域随波次
 ```
 
 - **导航:** go_router 18 typed routes(`@TypedStatefulShellRoute`,branch=首页/关注/历史;
-  settings 与 dev 页在壳外)。返回键语义已定案:返回=返回上级,PiP 仅按钮开。
+  其余页面壳外全页)。返回键语义已定案:返回=返回上级,PiP 仅按钮开。
 - **形态:** `LiveLayoutBuilder(isTv:)` 驱动 desktop(左 rail)/touch(底部栏)/TV 三壳;
   TV 由构建期 `--dart-define=PURE_LIVE_TV=true` 声明,与 `live_platform` 的 FormFactor 声明
-  **必须同源**。原应用的 `RoomPageLayout(phone/portraitPanel/wide)` 三分栏属于房间页波次。
-- **状态:** Riverpod 3(codegen 就绪);`appServicesProvider` 组合根下发。
+  **必须同源**(单一常量)。房间页三栏(phone/portraitPanel/wide)属于房间页波次,在
+  feature 内部分支,不建顶层形态目录。
+- **状态:** Riverpod 3(codegen 就绪);全局 provider 按 `app/providers/<域>_provider.dart` 拆分。
 
 ## 4. 功能域对照(原应用 → v2 承接与状态)
 
