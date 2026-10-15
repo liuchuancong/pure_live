@@ -34,9 +34,10 @@
 | kick Kick | ✅ | 见下方"kick 明细";已注册进 `built_in_sites`(`fc2live` 之后) |
 | niconico Niconico | ✅ | 见下方"niconico 明细";已注册进 `built_in_sites`(`kick` 之后) |
 | fc2live FC2 Live | ✅ | 见下方"fc2live 明细";已注册进 `built_in_sites` |
+| jdlive 京东直播 | ✅ | 见下方"jdlive 明细";已注册进 `built_in_sites` |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
-| jdlive / kilakila / kugoulive / looklive / missevan / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / yy | ⬜ | 其余含弹幕站;**下一站候选 jdlive**(按本行顺序) |
+| kilakila / kugoulive / looklive / missevan / pandalive / picarto / seventeenlive / showroom / sixroom / soop / steambroadcast / twitcasting / yy | ⬜ | 其余含弹幕站;**下一站候选 kilakila**(按本行顺序) |
 | cc / inke / liveme / tiktok / xiaohongshu | ⬜ | 仅 `live_core` 有(纯目录/播放,无弹幕) |
 
 ## douyu 明细(2026-10-14)
@@ -188,6 +189,16 @@
 - 清理:删除测试草稿分片 `part2.dart.txt`/`part3.dart.txt`(内容已全部并入 `fc2live_test.dart`)。
 - **延后项(记档不假造)**:①owned input recipe / appliedQualityData(v2 无 recipe 面,line label 承担实际档位);②恢复重取解析器(v2 由 lease/requiresReconnect 语义触发重解析);③probeControl 探针交接(v2 无"socket 交给播放器"面,heldOf 共享等效);④`getLiveStatus`/刷新/录制专用入口(无对应 capability,播控路径每次重发 memberApi 等效覆盖);⑤目录 scope 说明文案(v2 无目录级本地化面);⑥重试退避为线性 1s×n(参考 runtime 内建退避,性能型内部项)。
 - 验证:`dart analyze lib test` 除 2 条 twitch 既有 info(见 kick 明细)外无新增;`dart test` 整包 **662 项全绿**(fc2live 91,新增 isTransient 分级与 mid-grant 取消两例)。
+
+## jdlive 明细(2026-10-15)
+整站从 `live_core/sites/jdlive`(jdlive_api + jdlive_site)+ `live_danmaku/sites/jdlive.dart` 迁到 `platforms/jdlive/`。**无新依赖**:两个匿名 API GET + 一条纯收 WebSocket(live_websocket 的 SocketChannel seam)+ 复用 `common/crypto/aes_cbc.dart`(bigo/acfun 共享的 AES,零新代码)。
+- 能力七个全注册:room / area(唯一分区"精选直播购物")/ discovery(同列表独立页序)/ search(rooms;精确 liveId/链接直查,其余过滤目录页序)/ playback / danmaku / link_resolver;`JdliveFailure → toLiveSiteError('jdlive')`(401/403 折 rateLimit;transient 仅 network/rateLimited,401/403 不重试——吸取 fc2live 缺口①教训)。
+- 数据面(匿名,无签名,无 cookie):iOS Safari UA + origin/referer;全站列表 = `liveListWithTabToM` **原生页序**(page1 起序记 timestamp,后续页发前页 `currentCount`,页序内去重、无新广播即止;directory/recommend/每关键词各一条页序,搜索页序 LRU 32,卡片记忆 LRU 2000);房间 = `getImmediatePlayToM` 播放答案(状态 1/0/2/3/10/11 → live/preview/offline/replay/paused,`secret` 1 = appOnly)且**无名无封面无人数**——用 `enrich` 从最近卡片补全,follow 因此保留旧值;入场时直播间的 `h5VideoUrl` 播列表**下载并校验**(`#EXTM3U`、1M 字符、引用必须同 host `/live/` 同流名干、1–1000 条,404 → streamUnavailable)。媒体校验:https、`*.jdcloud.com`、`/live/`、无 userinfo/fragment、≤8192;FLV 取 `videoUrl` 否则 `pcVideoUrl` 且流名干必须与 HLS 一致;回放录像 = `*.300hu.com` 的 m3u8。清晰度:直播 HLS(推荐)+ FLV(仅有地址的),回放"原画";线路 host 作 label,带媒体头(origin/referer 指向房间页),**无 lease**(地址无签名无过期)。
+- 弹幕(纯收,网页游客 `liveauth`):每次握手 POST `liveauth`(表单 body = {appId:'jd.mall', content:AES-128-CBC(密钥/IV 硬编码在页脚本,PKCS#7+Base64) 的 JSON:groupId=liveId/timestamp/origin=-100/random 六位}),答案给 `wss` liveUrl(*.jd.com、无 query/fragment)+ 一次性 token + 可选 `msgMaskKey`;socket 上**客户端不发任何帧**(进房帧只是访客公告),开箱即 joined;服务端推 JSON 文本或按 maskKey 逐字节 XOR 的二进制:`get_statistics_result`(`current_viewer`→online、`total_viwer`(sic)→累计)、`chat_group_message`(viewer_send_message 用 nickName、anchor_send_message 显示"主播"、正文 content、用户 id=`from.pinmd5`、时间 datetime)、`stop_live_broadcast` → 终态系统消息关流(新直播是新 liveId,不重连);groupid 不符丢弃。时序:静默看门狗 200s(服务端 180s 空闲踢线,留 20s 余量;无统计的安静房间属正常)、重连=完整 liveauth 重握手、双开互斥 + 8 次失败上限终止上报;liveauth 的 `CancelToken` 在 disconnect/dispose 即取消(吸取 fc2live 缺口②教训);token 不进任何报错。
+- 链接:`lives.jd.com` 任意大小写、http(s) 默认端口、fragment 路由 `#/<id>(/live|notice|closed|replay)?(\?query)?`;1–18 位无前导零;外 host → unsupported。
+- **v2 形态适配(记档)**:①播放能力签名只收 roomId——播放在 `_known` 无播放答案时自取一次(对齐参考 recovery;有则零请求,对齐参考"先开房");②搜索的 hasMore 透出页序的 hasMore(后续页是否命中平台不说);③目录页为平台原生 30 条/页,request.pageSize 不重塑(与 fc2live 快照切片不同,京东页序无法本地重切);④`followRedirects:false` 与参考 `_scope` 的 cancel 透传同 niconico 记档,v2 无对应面;deadline 用 `_scoped`(20s,到时折 network)。
+- **延后项(记档不假造)**:①`directoryNoticeKey`(目录 scope 说明)与`getRoomDetailForRefresh/ForRecording/getLiveStatus` 变体、可取消搜索、恢复重取解析器——v2 无对应面(同各家记档);②h5st 签名参考即无(游客接口),若平台收紧需另行补;③`pv`/`max_viewer`/`message_num`/`thumbs_up_num`/`cart_num`、`plus`/`userMemberLevel`/`loveLevel`/`extraTag`/`ext`、`eid` 风控指纹——参考即不读,不做;④回放录像不预下载(JD 整场录制,样本 1.4MB/9500 分段);⑤`LiveGift` 无落点——参考即无礼物,不做。
+- 验证:`dart analyze lib test` **No issues found**(含 twitch 既有 2 条 info,已被用户并行改动一并清掉);`dart test` 整包 **712 项全绿**(jdlive 50:信封/状态门、列表逐行跳过与页序、播放媒体校验/回放/appOnly、播列表校验、房间映射/清晰度/线路、AES 往返与 liveauth 表单、帧解码/掩码/群组、会话握手/静默换线/预算终止/mid-handshake 取消、页序分页/分区/搜索序列/播放自取/链接、能力接线与内置站点等值)。
 
 ## 环境缺口
 无。此前 `packages/live_playback` 以 `path:` 依赖工作区外的 `D:\media_core` 导致整仓 `dart pub get` 解析失败、`dart test` 跑不起来;2026-10-14 已把 `media_core` / `media_core_danmaku` / `media_core_mediasession` 改为 pub git 源(`github.com/liuchuancong/media_core`),仓库根 `flutter pub get` 即可完整解析,交付门的 test 步骤不再需要人工补 media_core 或造桩。

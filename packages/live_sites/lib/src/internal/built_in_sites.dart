@@ -16,6 +16,8 @@ import 'package:live_sites/src/platforms/fc2live/api/fc2live_http.dart';
 import 'package:live_sites/src/platforms/fc2live/fc2live_site.dart';
 import 'package:live_sites/src/platforms/huya/api/huya_http.dart';
 import 'package:live_sites/src/platforms/huya/huya_site.dart';
+import 'package:live_sites/src/platforms/jdlive/api/jdlive_http.dart';
+import 'package:live_sites/src/platforms/jdlive/jdlive_site.dart';
 import 'package:live_sites/src/platforms/kick/api/kick_http.dart';
 import 'package:live_sites/src/platforms/kick/kick_site.dart';
 import 'package:live_sites/src/platforms/kuaishou/api/kuaishou_http.dart';
@@ -48,5 +50,6 @@ List<LiveSite> createBuiltInLiveSites({LiveHttp? http}) {
     Fc2LiveSite(http: Fc2LiveHttp(transport)),
     KickSite(http: KickHttp(transport)),
     NiconicoSite(http: NiconicoHttp(transport)),
+    JdliveSite(http: JdliveHttp(transport)),
   ];
 }
