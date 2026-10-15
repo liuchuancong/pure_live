@@ -127,7 +127,6 @@ final class TwitchDanmakuSession implements LiveDanmakuSession {
     connectTimeout: _connectTimeout,
     reconnectPolicy: const ReconnectPolicy(
       maxAttempts: maxReconnectAttempts,
-      initialDelay: Duration(seconds: 1),
       maxDelay: TwitchDanmakuCodec.reconnectStepCap,
     ),
     heartbeat: HeartbeatConfig(
@@ -254,9 +253,7 @@ final class TwitchDanmakuSession implements LiveDanmakuSession {
   void _send(Iterable<String> lines) {
     final socket = _socket;
     if (socket == null) return;
-    for (final line in lines) {
-      socket.send(line);
-    }
+    lines.forEach(socket.send);
   }
 
   void _terminate(String cause) {

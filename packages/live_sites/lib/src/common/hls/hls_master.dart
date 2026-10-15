@@ -30,8 +30,7 @@ HlsMasterParseResult parseHlsMaster(String body, {required Uri masterUrl}) {
 ///
 /// An absolute URI is returned as-is (so an absolute variant keeps its own
 /// path token and a relative one never inherits the master's query).
-Uri resolveHlsVariantUri(Uri uri, {required Uri master}) =>
-    uri.hasScheme ? uri : master.resolveUri(uri);
+Uri resolveHlsVariantUri(Uri uri, {required Uri master}) => uri.hasScheme ? uri : master.resolveUri(uri);
 
 /// The video codec an HLS `CODECS` attribute names: [LiveStreamCodec.avc]
 /// (`avc1`, `avc3`), [LiveStreamCodec.hevc] (`hvc1`, `hev1`),
