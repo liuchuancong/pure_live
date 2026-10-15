@@ -40,6 +40,9 @@ abstract final class RoutePath {
   /// The IPTV library page.
   static const String iptv = '/iptv';
 
+  /// One IPTV channel playing; the name rides as the query.
+  static const String iptvPlay = '/iptv/play/:channelId';
+
   /// The search page, a full page above the shell.
   static const String search = '/search';
 

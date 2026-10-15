@@ -6,6 +6,7 @@ import 'package:live_iptv/live_iptv.dart' show IptvChannel, IptvLibrary, iptvFet
 import 'package:live_uikit/styling.dart' show LiveEmpty;
 
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/routing/routes/iptv/iptv_routes.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 
@@ -206,6 +207,7 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
           leading: const Icon(Icons.live_tv_outlined),
           title: Text(channel.entry.name, maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: Text(channel.entry.group ?? '', maxLines: 1, overflow: TextOverflow.ellipsis),
+          onTap: () => IptvPlayRoute(channelId: channel.id, name: channel.entry.name).push<void>(context),
           trailing: IconButton(
             tooltip: context.t.iptv.favorite,
             icon: Icon(channel.favorite ? Icons.favorite : Icons.favorite_border),
