@@ -543,9 +543,12 @@ void main() {
         jsonEncode([
           {'id': 1, 'name': 'Games', 'slug': 'games'},
           {'id': 2, 'name': 'IRL', 'slug': 'irl'},
+          {'id': 3, 'name': 'Bad Slug', 'slug': 'Not A Slug'},
         ]),
       );
+      // games/irl are named in Chinese; the malformed slug is dropped.
       expect(parents.map((p) => p.slug), ['games', 'irl']);
+      expect(parents.map((p) => p.name), ['游戏', '生活']);
       final areas = KickRoomParser.subcategories(
         jsonEncode({
           'data': [
@@ -567,7 +570,7 @@ void main() {
       );
       expect(areas.single.areaId, 'tickets-please');
       expect(areas.single.parentAreaId, 'games');
-      expect(areas.single.parentAreaName, 'Games');
+      expect(areas.single.parentAreaName, '游戏');
     });
 
     test('search leads with channels and adds tagged lives deduped', () {
@@ -731,7 +734,7 @@ void main() {
       final site = KickSite(http: KickHttp(http));
       final areas = _right(await KickAreaProvider(site: site).getAreas());
       expect(areas.single.areaId, 'tickets-please');
-      expect(areas.single.parentAreaName, 'Games');
+      expect(areas.single.parentAreaName, '游戏');
       // A slug that cannot be a subcategory fails without a request.
       final before = http.sent.length;
       expect(_left(await KickAreaProvider(site: site).getAreaRooms(areaId: 'not a slug!')), isA<LiveSiteNotFound>());

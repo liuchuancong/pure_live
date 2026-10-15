@@ -83,6 +83,10 @@ abstract final class KickEndpoints {
     return _slug.hasMatch(slug) && !reservedSlugs.contains(slug) ? slug : null;
   }
 
+  /// Whether [slug] (already lower-cased) has the shape of a slug without the
+  /// reserved-page rejection: a category's own slug may read like one of those.
+  static bool isSlugShape(String slug) => _slug.hasMatch(slug);
+
   /// The channel page of [slug].
   static String roomPageUrl(String slug) => '$origin/${slug.trim().toLowerCase()}';
 

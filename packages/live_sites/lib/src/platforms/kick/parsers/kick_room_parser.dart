@@ -120,8 +120,19 @@ abstract final class KickRoomParser {
     );
   }
 
+  /// The top-level categories in Chinese; others keep Kick's name.
+  static const Map<String, String> categoryNames = {
+    'games': '游戏',
+    'irl': '生活',
+    'music': '音乐',
+    'gambling': '博彩',
+    'creative': '创作',
+    'alternative': '其他',
+  };
+
   /// The top-level categories in [body] (`api/v1/categories`), in Kick's
-  /// order.
+  /// order. A row whose slug is not a slug, or repeats one already read, is
+  /// skipped; a known category is named in Chinese.
   static List<KickMainCategory> mainCategories(String body, {int status = 200}) {
     checkStatus(status, body, 'categories');
     final root = decodeJson(body);
@@ -133,8 +144,8 @@ abstract final class KickRoomParser {
       final row = jsonObject(raw);
       final slug = jsonString(row?['slug'])?.toLowerCase();
       final name = jsonString(row?['name']);
-      if (slug == null || name == null || name.isEmpty) continue;
-      result.putIfAbsent(slug, () => (slug: slug, name: name));
+      if (slug == null || name == null || name.isEmpty || !KickEndpoints.isSlugShape(slug)) continue;
+      result.putIfAbsent(slug, () => (slug: slug, name: categoryNames[slug] ?? name));
     }
     if (result.isEmpty) {
       throw const KickFailure(KickFailureKind.apiChanged, 'categories: no usable category');
