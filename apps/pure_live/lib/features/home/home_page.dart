@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:live_uikit/styling.dart';
 
 import 'package:pure_live/app/routing/app_router.dart';
-import 'package:pure_live/app/shell/app_shell.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 
 /// The home domain's shell page: the section menu plus the recommendation
 /// stream.

@@ -1,13 +1,18 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:live_platform/live_platform.dart' show FormFactor;
 
+import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/settings_routes.dart' as settings_routes;
-import 'package:pure_live/app/shell/app_shell.dart';
 import 'package:pure_live/features/follow/follow_page.dart';
 import 'package:pure_live/features/history/history_page.dart';
 import 'package:pure_live/features/home/home_page.dart';
 import 'package:pure_live/features/popular/popular_page.dart';
+import 'package:pure_live/platforms/desktop/shell/desktop_shell.dart';
+import 'package:pure_live/platforms/mobile/shell/mobile_shell.dart';
+import 'package:pure_live/platforms/tablet/shell/tablet_shell.dart';
+import 'package:pure_live/platforms/tv/shell/tv_shell.dart';
 
 part 'app_router.g.dart';
 
@@ -35,8 +40,14 @@ class AppShellRouteData extends StatefulShellRouteData {
   const new();
 
   @override
-  Widget builder(BuildContext context, GoRouterState state, StatefulNavigationShell navigationShell) =>
-      AppShell(navigationShell: navigationShell);
+  Widget builder(BuildContext context, GoRouterState state, StatefulNavigationShell navigationShell) => Consumer(
+    builder: (context, ref, _) => switch (ref.watch(environmentProvider).runtime.formFactor) {
+      FormFactor.phone => MobileShell(navigationShell: navigationShell),
+      FormFactor.tablet => TabletShell(navigationShell: navigationShell),
+      FormFactor.tv => TvShell(navigationShell: navigationShell),
+      FormFactor.desktop => DesktopShell(navigationShell: navigationShell),
+    },
+  );
 }
 
 /// Marks the home branch inside the shell.

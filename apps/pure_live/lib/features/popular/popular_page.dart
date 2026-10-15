@@ -9,9 +9,9 @@ import 'package:live_sites/live_sites.dart' show LiveDiscoveryProvider, LivePage
 import 'package:live_uikit/styling.dart' show LiveButton, LiveEmpty;
 
 import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/app/shell/app_shell.dart';
 import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 /// Popular: every discovery-capable platform as a tab over its recommend
