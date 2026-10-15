@@ -1,15 +1,27 @@
 import 'dart:async' show unawaited;
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_adaptive_layout/flutter_adaptive_layout.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_pagination/live_pagination.dart';
 import 'package:live_sites/live_sites.dart'
-    show LiveRoom, LiveSearchProvider, LiveSearchRequest, LiveSearchTarget, LiveSite, RoomSearchResult;
-import 'package:live_uikit/styling.dart' show LiveButton, LiveEmpty;
+    show
+        AnchorSearchResult,
+        AreaSearchResult,
+        LiveAnchor,
+        LiveSearchProvider,
+        LiveSearchRequest,
+        LiveSearchResult,
+        LiveSearchTarget,
+        LiveSite,
+        RoomSearchResult;
+import 'package:live_uikit/styling.dart' show LiveButton, LiveEmpty, LiveSegmented;
 
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/routing/app_router.dart';
+import 'package:pure_live/features/areas/area_card.dart';
 import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
@@ -68,9 +80,10 @@ final class _SiteSearch extends StatefulWidget {
 
 final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveClientMixin {
   final _keyword = TextEditingController();
-  InfiniteController<LiveRoom>? _controller;
+  InfiniteController<LiveSearchResult>? _controller;
   ScrollController? _scroll;
   String _query = '';
+  LiveSearchTarget _target = LiveSearchTarget.rooms;
 
   @override
   bool get wantKeepAlive => true;
@@ -83,12 +96,15 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
     super.dispose();
   }
 
-  /// Starts a search for the bar's text; a blank query clears the results.
-  void _submit() {
+  /// Starts a search for the bar's text against the chosen target; a blank
+  /// query clears the results. Switching target re-runs the query — the two
+  /// modes answer different questions.
+  void _submit({LiveSearchTarget? target}) {
     final query = _keyword.text.trim();
     if (query.isEmpty) {
       setState(() {
         _query = '';
+        _target = target ?? _target;
         _controller?.dispose();
         _controller = null;
         _scroll?.dispose();
@@ -98,6 +114,7 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
     }
     setState(() {
       _query = query;
+      _target = target ?? _target;
       _controller?.dispose();
       _controller = InfiniteController(loader: _load)..addListener(_onState);
       _scroll = ScrollController()..addListener(_onScroll);
@@ -105,7 +122,7 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
     });
   }
 
-  void _onState(InfiniteState<LiveRoom> state) {
+  void _onState(InfiniteState<LiveSearchResult> state) {
     if (mounted) {
       setState(() {});
     }
@@ -118,24 +135,22 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
     }
   }
 
-  Future<PageResult<LiveRoom>> _load(PageRequest request) async {
+  Future<PageResult<LiveSearchResult>> _load(PageRequest request) {
     final capability = widget.site.capability<LiveSearchProvider>();
     if (capability == null) {
       throw StateError('${widget.site.manifest.id} lost its search capability');
     }
-    final result = await capability.search(
-      LiveSearchRequest(query: _query, target: LiveSearchTarget.rooms, page: request.page, pageSize: request.pageSize),
-    );
-    // Rooms only this slice; anchors arrive with the anchor list wave.
-    final page = result.fold((error) => throw _SearchException(error), (page) => page);
-    return PageResult(
-      items: [
-        for (final entry in page.items)
-          if (entry is RoomSearchResult) entry.room,
-      ],
-      totalCount: page.totalCount,
-      hasMore: page.hasMore,
-    );
+    final search = LiveSearchRequest(query: _query, target: _target, page: request.page, pageSize: request.pageSize);
+    // Errors throw; the controller keeps the shown data and exposes the
+    // failure on its state.
+    return capability
+        .search(search)
+        .then(
+          (result) => result.fold(
+            (error) => throw _SearchException(error),
+            (page) => PageResult(items: page.items, totalCount: page.totalCount, hasMore: page.hasMore),
+          ),
+        );
   }
 
   static int _columns(BuildContext context) => switch (BreakpointsQualifier().qualify(context)) {
@@ -160,14 +175,33 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
             trailing: [IconButton(icon: const Icon(Icons.search), onPressed: _submit)],
           ),
         ),
+        if (controller != null) _modeRow(context)!,
         Expanded(child: controller == null ? _idle(context) : _results(context, controller)),
       ],
     );
   }
 
+  /// The room/anchor switch, only where the site searches both — a request
+  /// for a target the site does not answer must fail, not silently narrow.
+  Widget? _modeRow(BuildContext context) {
+    final capability = widget.site.capability<LiveSearchProvider>();
+    final targets = capability?.supportedTargets ?? const <LiveSearchTarget>{};
+    if (!targets.contains(LiveSearchTarget.anchors)) {
+      return null;
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      child: LiveSegmented(
+        labels: [context.t.search.rooms, context.t.search.anchors],
+        index: _target == LiveSearchTarget.rooms ? 0 : 1,
+        onChanged: (index) => _submit(target: index == 0 ? LiveSearchTarget.rooms : LiveSearchTarget.anchors),
+      ),
+    );
+  }
+
   Widget _idle(BuildContext context) => LiveEmpty(title: context.t.search.hint);
 
-  Widget _results(BuildContext context, InfiniteController<LiveRoom> controller) {
+  Widget _results(BuildContext context, InfiniteController<LiveSearchResult> controller) {
     final state = controller.state;
     if (state.items.isEmpty) {
       if (state.error != null) {
@@ -248,13 +282,52 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
         itemCount: state.items.length + 1,
         itemBuilder: (context, index) {
           if (index < state.items.length) {
-            return RoomCard(room: state.items[index]);
+            return switch (state.items[index]) {
+              RoomSearchResult(:final room) => RoomCard(room: room),
+              AnchorSearchResult(:final anchor) => AnchorTile(anchor: anchor),
+              AreaSearchResult(:final area) => AreaCard(
+                area: area,
+                onOpen: () => AreaRoomsRoute(
+                  siteId: area.platform,
+                  areaId: area.areaId,
+                  areaName: area.areaName,
+                ).push<void>(context),
+              ),
+            };
           }
           return state.isLoadingMore ? const Center(child: CircularProgressIndicator()) : const SizedBox.shrink();
         },
       ),
     );
   }
+}
+
+/// One found anchor: avatar and name — the room page wave gives the tile
+/// somewhere to go.
+final class AnchorTile extends StatelessWidget {
+  /// Shows [anchor].
+  const new({required this.anchor, super.key});
+
+  /// The anchor the search answered with.
+  final LiveAnchor anchor;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        CircleAvatar(
+          radius: 30,
+          backgroundImage: anchor.avatarUrl == null || anchor.avatarUrl!.isEmpty
+              ? null
+              : CachedNetworkImageProvider(anchor.avatarUrl!),
+          child: anchor.avatarUrl == null || anchor.avatarUrl!.isEmpty ? const Icon(Icons.person_outlined) : null,
+        ),
+        const SizedBox(height: 8),
+        Text(anchor.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyMedium),
+      ],
+    ),
+  );
 }
 
 /// Wraps a site error for the loader contract; the controller stores it on

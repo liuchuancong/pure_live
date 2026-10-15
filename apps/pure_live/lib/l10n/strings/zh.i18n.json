@@ -48,7 +48,9 @@
     "defaultLanguage": "默认（Fluent）"
   },
   "search": {
-    "hint": "输入关键词搜索房间"
+    "hint": "输入关键词搜索房间",
+    "rooms": "房间",
+    "anchors": "主播"
   },
   "errors": {
     "generic": "出了点问题，请稍后再试。",

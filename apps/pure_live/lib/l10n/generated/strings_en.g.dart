@@ -152,6 +152,8 @@ class _Translations$search$en extends Translations$search$zh {
 
 	// Translations
 	@override String get hint => 'Search rooms by keyword';
+	@override String get rooms => 'Rooms';
+	@override String get anchors => 'Anchors';
 }
 
 // Path: errors
@@ -260,6 +262,8 @@ extension on TranslationsEn {
 			'theme.light' => 'Light',
 			'design.defaultLanguage' => 'Default (Fluent)',
 			'search.hint' => 'Search rooms by keyword',
+			'search.rooms' => 'Rooms',
+			'search.anchors' => 'Anchors',
 			'errors.generic' => 'Something went wrong. Please try again later.',
 			'errors.network' => 'Network unavailable. Check your connection and retry.',
 			'errors.notFound' => 'Nothing found.',

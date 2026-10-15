@@ -41,7 +41,9 @@
     "defaultLanguage": "Default (Fluent)"
   },
   "search": {
-    "hint": "Search rooms by keyword"
+    "hint": "Search rooms by keyword",
+    "rooms": "Rooms",
+    "anchors": "Anchors"
   },
   "errors": {
     "generic": "Something went wrong. Please try again later.",

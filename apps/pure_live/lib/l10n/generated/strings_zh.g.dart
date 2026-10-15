@@ -210,6 +210,12 @@ class Translations$search$zh {
 
 	/// zh: '输入关键词搜索房间'
 	String get hint => '输入关键词搜索房间';
+
+	/// zh: '房间'
+	String get rooms => '房间';
+
+	/// zh: '主播'
+	String get anchors => '主播';
 }
 
 // Path: errors
@@ -368,6 +374,8 @@ extension on Translations {
 			'theme.light' => '浅色',
 			'design.defaultLanguage' => '默认（Fluent）',
 			'search.hint' => '输入关键词搜索房间',
+			'search.rooms' => '房间',
+			'search.anchors' => '主播',
 			'errors.generic' => '出了点问题，请稍后再试。',
 			'errors.network' => '网络连接不可用，请检查网络后重试。',
 			'errors.notFound' => '没有找到相关内容。',
