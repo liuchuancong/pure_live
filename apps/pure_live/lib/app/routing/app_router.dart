@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:live_platform/live_platform.dart' show FormFactor;
 
+import 'package:pure_live/app/navigation/app_navigator_key.dart' show appNavigatorKey;
 import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/app/routing/routes/settings_routes.dart' as settings_routes;
+import 'package:pure_live/app/routing/route_paths.dart';
+import 'package:pure_live/app/routing/routes/search/search_routes.dart' as search_routes;
+import 'package:pure_live/app/routing/routes/settings/settings_routes.dart' as settings_routes;
 import 'package:pure_live/features/area_rooms/area_rooms_page.dart';
 import 'package:pure_live/features/areas/areas_page.dart';
 import 'package:pure_live/features/follow/follow_page.dart';
@@ -21,19 +24,21 @@ part 'app_router.g.dart';
 /// The app's navigation graph in typed-route form (go_router_builder).
 ///
 /// The shell and its three branches are declared in one table here, because
-/// the branch nesting is part of a single annotation; the settings route
-/// lives in its own file so the chrome and the pages can reach it without
-/// importing this library back. When a domain grows real parametrised
-/// routes, its `routes/<域>_routes.dart` takes its own annotations and
-/// joins [routerProvider] the same way the settings list does.
+/// the branch nesting is part of a single annotation; the settings and
+/// search routes live in their own files so the chrome and the pages can
+/// reach them without importing this library back. When a domain grows real
+/// parametrised routes, its `routes/<域>_routes.dart` takes its own
+/// annotations and joins [routerProvider] the same way those two lists do.
 @TypedStatefulShellRoute<AppShellRouteData>(
   branches: <TypedStatefulShellBranch<StatefulShellBranchData>>[
-    TypedStatefulShellBranch<HomeBranchData>(routes: <TypedRoute<RouteData>>[TypedGoRoute<HomeRoute>(path: '/')]),
+    TypedStatefulShellBranch<HomeBranchData>(
+      routes: <TypedRoute<RouteData>>[TypedGoRoute<HomeRoute>(path: RoutePath.home)],
+    ),
     TypedStatefulShellBranch<FollowBranchData>(
-      routes: <TypedRoute<RouteData>>[TypedGoRoute<FollowRoute>(path: '/follow')],
+      routes: <TypedRoute<RouteData>>[TypedGoRoute<FollowRoute>(path: RoutePath.follow)],
     ),
     TypedStatefulShellBranch<HistoryBranchData>(
-      routes: <TypedRoute<RouteData>>[TypedGoRoute<HistoryRoute>(path: '/history')],
+      routes: <TypedRoute<RouteData>>[TypedGoRoute<HistoryRoute>(path: RoutePath.history)],
     ),
   ],
 )
@@ -99,7 +104,7 @@ class HistoryRoute extends GoRouteData with $HistoryRoute {
 
 /// The popular page: every platform's recommend feed, a full page above the
 /// shell.
-@TypedGoRoute<PopularRoute>(path: '/popular')
+@TypedGoRoute<PopularRoute>(path: RoutePath.popular)
 class PopularRoute extends GoRouteData with $PopularRoute {
   /// The popular route.
   const new();
@@ -110,7 +115,7 @@ class PopularRoute extends GoRouteData with $PopularRoute {
 
 /// The areas page: every platform's category catalogue, a full page above
 /// the shell.
-@TypedGoRoute<AreasRoute>(path: '/areas')
+@TypedGoRoute<AreasRoute>(path: RoutePath.areas)
 class AreasRoute extends GoRouteData with $AreasRoute {
   /// The areas route.
   const new();
@@ -124,7 +129,7 @@ class AreasRoute extends GoRouteData with $AreasRoute {
 ///
 /// The search page (`/search`) is declared in its own routes file, like
 /// settings, so the home menu reaches it without importing this library.
-@TypedGoRoute<AreaRoomsRoute>(path: '/areas/:siteId/:areaId')
+@TypedGoRoute<AreaRoomsRoute>(path: RoutePath.areaRooms)
 class AreaRoomsRoute extends GoRouteData with $AreaRoomsRoute {
   /// The area rooms route.
   const new({required this.siteId, required this.areaId, this.areaName = ''});
@@ -143,8 +148,16 @@ class AreaRoomsRoute extends GoRouteData with $AreaRoomsRoute {
       AreaRoomsPage(siteId: siteId, areaId: areaId, areaName: areaName);
 }
 
-/// The assembled graph: this library's shell table plus the standalone
-/// route files.
+/// The assembled graph: this library's shell table plus every standalone
+/// route file. A `routes/<域>_routes.dart` that is annotated but not
+/// listed here is a route the app cannot reach — every new file joins
+/// this list.
+///
+/// The navigator key is the app's one global navigator: the desktop shell's
+/// close prompt reaches it from outside the widget tree (app_navigator_key).
 final routerProvider = Provider<GoRouter>(
-  (ref) => GoRouter(routes: <RouteBase>[...$appRoutes, ...settings_routes.$appRoutes]),
+  (ref) => GoRouter(
+    navigatorKey: appNavigatorKey,
+    routes: <RouteBase>[...$appRoutes, ...search_routes.$appRoutes, ...settings_routes.$appRoutes],
+  ),
 );

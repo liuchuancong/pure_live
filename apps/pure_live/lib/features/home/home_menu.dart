@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:pure_live/app/routing/app_router.dart';
-import 'package:pure_live/app/routing/routes/search_routes.dart';
+import 'package:pure_live/app/routing/routes/search/search_routes.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 
 /// A destination of the home menu: where it goes, and how it presents.

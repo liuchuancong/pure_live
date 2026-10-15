@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:pure_live/app/routing/route_paths.dart';
 import 'package:pure_live/features/settings/settings_page.dart';
 
 part 'settings_routes.g.dart';
@@ -9,7 +10,7 @@ part 'settings_routes.g.dart';
 ///
 /// Declared apart from the shell table so the chrome and the pages can
 /// navigate here without importing the router back.
-@TypedGoRoute<SettingsRoute>(path: '/settings')
+@TypedGoRoute<SettingsRoute>(path: RoutePath.settings)
 class SettingsRoute extends GoRouteData with $SettingsRoute {
   /// The settings route.
   const new();
