@@ -47,6 +47,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$theme$en theme = _Translations$theme$en._(_root);
 	@override late final _Translations$design$en design = _Translations$design$en._(_root);
 	@override late final _Translations$room$en room = _Translations$room$en._(_root);
+	@override late final _Translations$follow$en follow = _Translations$follow$en._(_root);
 	@override late final _Translations$toolbox$en toolbox = _Translations$toolbox$en._(_root);
 	@override late final _Translations$about$en about = _Translations$about$en._(_root);
 	@override late final _Translations$search$en search = _Translations$search$en._(_root);
@@ -161,6 +162,22 @@ class _Translations$room$en extends Translations$room$zh {
 	@override String get play => 'Play';
 	@override String get pause => 'Pause';
 	@override String get failed => 'Playback failed — try again';
+}
+
+// Path: follow
+class _Translations$follow$en extends Translations$follow$zh {
+	_Translations$follow$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get all => 'All';
+	@override String get empty => 'No followed rooms yet';
+	@override String get follow => 'Follow';
+	@override String get unfollow => 'Unfollow';
+	@override String unfollowConfirm({required String name}) => 'Unfollow "${name}"?';
+	@override String get newGroup => 'New group';
+	@override String get groupName => 'Group name';
 }
 
 // Path: toolbox
@@ -320,6 +337,13 @@ extension on TranslationsEn {
 			'room.play' => 'Play',
 			'room.pause' => 'Pause',
 			'room.failed' => 'Playback failed — try again',
+			'follow.all' => 'All',
+			'follow.empty' => 'No followed rooms yet',
+			'follow.follow' => 'Follow',
+			'follow.unfollow' => 'Unfollow',
+			'follow.unfollowConfirm' => ({required String name}) => 'Unfollow "${name}"?',
+			'follow.newGroup' => 'New group',
+			'follow.groupName' => 'Group name',
 			'toolbox.title' => 'Toolbox',
 			'toolbox.hint' => 'Paste a room link',
 			'toolbox.readClipboard' => 'Read clipboard',

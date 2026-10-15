@@ -47,6 +47,15 @@
   "design": {
     "defaultLanguage": "默认（Fluent）"
   },
+  "follow": {
+    "all": "全部",
+    "empty": "还没有关注任何房间",
+    "follow": "关注",
+    "unfollow": "取消关注",
+    "unfollowConfirm": "不再关注「{name: String}」？",
+    "newGroup": "新建分组",
+    "groupName": "分组名称"
+  },
   "toolbox": {
     "title": "工具箱",
     "hint": "粘贴直播间链接",

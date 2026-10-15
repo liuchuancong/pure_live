@@ -48,6 +48,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$settings$zh settings = Translations$settings$zh.internal(_root);
 	late final Translations$theme$zh theme = Translations$theme$zh.internal(_root);
 	late final Translations$design$zh design = Translations$design$zh.internal(_root);
+	late final Translations$follow$zh follow = Translations$follow$zh.internal(_root);
 	late final Translations$toolbox$zh toolbox = Translations$toolbox$zh.internal(_root);
 	late final Translations$about$zh about = Translations$about$zh.internal(_root);
 	late final Translations$search$zh search = Translations$search$zh.internal(_root);
@@ -201,6 +202,36 @@ class Translations$design$zh {
 
 	/// zh: '默认（Fluent）'
 	String get defaultLanguage => '默认（Fluent）';
+}
+
+// Path: follow
+class Translations$follow$zh {
+	Translations$follow$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '全部'
+	String get all => '全部';
+
+	/// zh: '还没有关注任何房间'
+	String get empty => '还没有关注任何房间';
+
+	/// zh: '关注'
+	String get follow => '关注';
+
+	/// zh: '取消关注'
+	String get unfollow => '取消关注';
+
+	/// zh: '不再关注「{name: String}」？'
+	String unfollowConfirm({required String name}) => '不再关注「${name}」？';
+
+	/// zh: '新建分组'
+	String get newGroup => '新建分组';
+
+	/// zh: '分组名称'
+	String get groupName => '分组名称';
 }
 
 // Path: toolbox
@@ -469,6 +500,13 @@ extension on Translations {
 			'theme.dark' => '深色',
 			'theme.light' => '浅色',
 			'design.defaultLanguage' => '默认（Fluent）',
+			'follow.all' => '全部',
+			'follow.empty' => '还没有关注任何房间',
+			'follow.follow' => '关注',
+			'follow.unfollow' => '取消关注',
+			'follow.unfollowConfirm' => ({required String name}) => '不再关注「${name}」？',
+			'follow.newGroup' => '新建分组',
+			'follow.groupName' => '分组名称',
 			'toolbox.title' => '工具箱',
 			'toolbox.hint' => '粘贴直播间链接',
 			'toolbox.readClipboard' => '读取剪贴板',

@@ -1,3 +1,4 @@
+import 'package:live_library/live_library.dart';
 import 'package:live_platform/live_platform.dart';
 import 'package:live_platform_path_provider/live_platform_path_provider.dart';
 import 'package:live_storage/live_storage.dart';
@@ -45,6 +46,8 @@ final class AppServices {
     required this.appearance,
     required this.shell,
     required this.sites,
+    required this.followRepository,
+    required this.historyRepository,
   });
 
   /// The process log, opened before anything here and closed after
@@ -75,6 +78,12 @@ final class AppServices {
   /// The network and site graph: the transport factory, the site HTTP
   /// client and every built-in site, initialized and ready.
   final AppSites sites;
+
+  /// The user's followed rooms and their groups.
+  final FollowRepository followRepository;
+
+  /// The user's watch history.
+  final HistoryRepository historyRepository;
 
   /// Boots the layout, storage and the documents every screen needs at once.
   ///
@@ -122,6 +131,15 @@ final class AppServices {
           storageLog.warning('appearance document ${failure.name} failed', fields: {'error': '$error'}),
     );
     await appearance.load();
+
+    // The library (follows, groups, watch history) owns one list box; its
+    // repositories watch the box, so a second window stays in step.
+    final libraryBox = await StorageBoxManager().list<Map<dynamic, dynamic>>('library');
+    final libraryStore = BoxLibraryStore(HiveStorageListRepository<Map<dynamic, dynamic>>(box: libraryBox));
+    final followRepository = FollowRepository(libraryStore);
+    await followRepository.load();
+    final historyRepository = HistoryRepository(libraryStore);
+    await historyRepository.load();
     // The shell document lives in the same box under its own key: one open,
     // one document per preference group.
     final shell = ShellPreferencesStore(
@@ -174,6 +192,8 @@ final class AppServices {
       appearance: appearance,
       shell: shell,
       sites: sites,
+      followRepository: followRepository,
+      historyRepository: historyRepository,
     );
   }
 
@@ -186,6 +206,8 @@ final class AppServices {
     await appearance.dispose();
     await shell.dispose();
     await storage.shutdown();
+    await followRepository.dispose();
+    await historyRepository.dispose();
     await sites.dispose();
     await log.close();
   }

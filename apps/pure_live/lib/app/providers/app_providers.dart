@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_library/live_library.dart' show FollowRepository, HistoryRepository;
 import 'package:live_net/live_net.dart' show LiveHttp;
 import 'package:live_platform/live_platform.dart' show PlatformEnvironment;
 import 'package:live_sites/live_sites.dart'
@@ -105,6 +106,16 @@ final httpProvider = Provider<LiveHttp>((ref) => ref.watch(sitesProvider).http);
 
 /// The update feed over the shared client.
 final updateFeedProvider = Provider<UpdateFeed>((ref) => UpdateFeed(http: ref.watch(httpProvider)));
+
+/// The user's followed rooms and groups, overridden at start-up.
+final followRepositoryProvider = Provider<FollowRepository>(
+  (ref) => throw UnimplementedError('overridden by the composition root'),
+);
+
+/// The user's watch history, overridden at start-up.
+final historyRepositoryProvider = Provider<HistoryRepository>(
+  (ref) => throw UnimplementedError('overridden by the composition root'),
+);
 
 /// The persisted appearance, the single source the theme is derived from.
 ///

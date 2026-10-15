@@ -78,6 +78,8 @@ Future<void> main(List<String> args) async {
         pathsProvider.overrideWithValue(services.paths),
         storageProvider.overrideWithValue(services.storage),
         sitesProvider.overrideWithValue(services.sites),
+        followRepositoryProvider.overrideWithValue(services.followRepository),
+        historyRepositoryProvider.overrideWithValue(services.historyRepository),
         appearanceStoreProvider.overrideWithValue(services.appearance),
         shellPreferencesProvider.overrideWithValue(services.shell),
       ],

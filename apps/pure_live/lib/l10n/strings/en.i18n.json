@@ -49,6 +49,15 @@
     "pause": "Pause",
     "failed": "Playback failed — try again"
   },
+  "follow": {
+    "all": "All",
+    "empty": "No followed rooms yet",
+    "follow": "Follow",
+    "unfollow": "Unfollow",
+    "unfollowConfirm": "Unfollow \"{name: String}\"?",
+    "newGroup": "New group",
+    "groupName": "Group name"
+  },
   "toolbox": {
     "title": "Toolbox",
     "hint": "Paste a room link",
