@@ -9,6 +9,7 @@ import 'package:live_storage/live_storage.dart' show StorageBootstrap;
 import 'package:live_uikit/styling.dart';
 import 'package:pure_live/app/composition/sites.dart';
 import 'package:pure_live/app/environment/app_paths.dart';
+import 'package:pure_live/app/fonts/font_library.dart';
 import 'package:pure_live/app/theme/appearance_preferences/appearance_preferences.dart';
 import 'package:pure_live/app/theme/appearance_store.dart';
 import 'package:pure_live/app/theme/ui_configuration_mapper.dart';
@@ -121,6 +122,11 @@ final historyRepositoryProvider = Provider<HistoryRepository>(
 /// The IPTV library (imported playlists and channels), overridden at
 /// start-up.
 final iptvLibraryProvider = Provider<IptvLibrary>(
+  (ref) => throw UnimplementedError('overridden by the composition root'),
+);
+
+/// The cloud font library, overridden at start-up.
+final fontLibraryProvider = Provider<FontLibrary>(
   (ref) => throw UnimplementedError('overridden by the composition root'),
 );
 

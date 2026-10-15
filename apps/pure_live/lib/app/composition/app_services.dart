@@ -9,6 +9,7 @@ import 'package:pure_live/app/environment/app_directory.dart';
 import 'package:pure_live/app/environment/app_paths.dart';
 import 'package:pure_live/app/environment/env.dart';
 import 'package:pure_live/app/environment/os_roots.dart';
+import 'package:pure_live/app/fonts/font_library.dart';
 import 'package:pure_live/app/logging/app_log.dart';
 import 'package:pure_live/app/theme/appearance_store.dart';
 import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart';
@@ -50,6 +51,7 @@ final class AppServices {
     required this.followRepository,
     required this.historyRepository,
     required this.iptvLibrary,
+    required this.fontLibrary,
   });
 
   /// The process log, opened before anything here and closed after
@@ -89,6 +91,9 @@ final class AppServices {
 
   /// The IPTV library (imported playlists and their channels).
   final IptvLibrary iptvLibrary;
+
+  /// The cloud font library: manifest, downloads and registration.
+  final FontLibrary fontLibrary;
 
   /// Boots the layout, storage and the documents every screen needs at once.
   ///
@@ -194,6 +199,14 @@ final class AppServices {
       formFactor: environment.runtime.formFactor,
     );
 
+    // The font library downloads and registers through the shared client.
+    final fontLibrary = FontLibrary(
+      root: await paths.directory(AppDirectory.fonts),
+      http: sites.http,
+      commit: kFontCommit,
+    );
+    await fontLibrary.registerDownloaded();
+
     return AppServices._(
       log: log,
       environment: environment,
@@ -205,6 +218,7 @@ final class AppServices {
       followRepository: followRepository,
       historyRepository: historyRepository,
       iptvLibrary: iptvLibrary,
+      fontLibrary: fontLibrary,
     );
   }
 

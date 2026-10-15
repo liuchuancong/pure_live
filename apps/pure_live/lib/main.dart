@@ -80,6 +80,8 @@ Future<void> main(List<String> args) async {
         sitesProvider.overrideWithValue(services.sites),
         followRepositoryProvider.overrideWithValue(services.followRepository),
         historyRepositoryProvider.overrideWithValue(services.historyRepository),
+        iptvLibraryProvider.overrideWithValue(services.iptvLibrary),
+        fontLibraryProvider.overrideWithValue(services.fontLibrary),
         appearanceStoreProvider.overrideWithValue(services.appearance),
         shellPreferencesProvider.overrideWithValue(services.shell),
       ],

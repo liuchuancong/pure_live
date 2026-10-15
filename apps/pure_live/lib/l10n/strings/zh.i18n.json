@@ -28,6 +28,7 @@
   },
   "settings": {
     "appearance": "外观",
+    "fonts": "字体管理",
     "themeMode": "主题模式",
     "designLanguage": "设计语言",
     "accent": "强调色",
@@ -62,6 +63,13 @@
     "allGroups": "全部分组",
     "favorite": "收藏",
     "empty": "还没有导入任何源"
+  },
+  "fonts": {
+    "fonts": "字体管理",
+    "system": "系统默认",
+    "systemDesc": "使用系统自带字体",
+    "download": "下载",
+    "delete": "删除"
   },
   "follow": {
     "all": "全部",

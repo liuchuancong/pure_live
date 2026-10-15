@@ -49,6 +49,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$room$en room = _Translations$room$en._(_root);
 	@override late final _Translations$history$en history = _Translations$history$en._(_root);
 	@override late final _Translations$iptv$en iptv = _Translations$iptv$en._(_root);
+	@override late final _Translations$fonts$en fonts = _Translations$fonts$en._(_root);
 	@override late final _Translations$follow$en follow = _Translations$follow$en._(_root);
 	@override late final _Translations$toolbox$en toolbox = _Translations$toolbox$en._(_root);
 	@override late final _Translations$about$en about = _Translations$about$en._(_root);
@@ -117,6 +118,7 @@ class _Translations$settings$en extends Translations$settings$zh {
 
 	// Translations
 	@override String get appearance => 'Appearance';
+	@override String get fonts => 'Fonts';
 	@override String get themeMode => 'Theme mode';
 	@override String get designLanguage => 'Design language';
 	@override String get accent => 'Accent';
@@ -195,6 +197,20 @@ class _Translations$iptv$en extends Translations$iptv$zh {
 	@override String get allGroups => 'All groups';
 	@override String get favorite => 'Favorite';
 	@override String get empty => 'No source imported yet';
+}
+
+// Path: fonts
+class _Translations$fonts$en extends Translations$fonts$zh {
+	_Translations$fonts$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get fonts => 'Fonts';
+	@override String get system => 'System default';
+	@override String get systemDesc => 'Use the fonts the system ships';
+	@override String get download => 'Download';
+	@override String get delete => 'Delete';
 }
 
 // Path: follow
@@ -364,6 +380,7 @@ extension on TranslationsEn {
 			'tray.show' => 'Show Pure Live',
 			'tray.quit' => 'Quit',
 			'settings.appearance' => 'Appearance',
+			'settings.fonts' => 'Fonts',
 			'settings.themeMode' => 'Theme mode',
 			'settings.designLanguage' => 'Design language',
 			'settings.accent' => 'Accent',
@@ -397,6 +414,11 @@ extension on TranslationsEn {
 			'iptv.allGroups' => 'All groups',
 			'iptv.favorite' => 'Favorite',
 			'iptv.empty' => 'No source imported yet',
+			'fonts.fonts' => 'Fonts',
+			'fonts.system' => 'System default',
+			'fonts.systemDesc' => 'Use the fonts the system ships',
+			'fonts.download' => 'Download',
+			'fonts.delete' => 'Delete',
 			'follow.all' => 'All',
 			'follow.empty' => 'No followed rooms yet',
 			'follow.follow' => 'Follow',

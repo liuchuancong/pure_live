@@ -50,6 +50,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$design$zh design = Translations$design$zh.internal(_root);
 	late final Translations$history$zh history = Translations$history$zh.internal(_root);
 	late final Translations$iptv$zh iptv = Translations$iptv$zh.internal(_root);
+	late final Translations$fonts$zh fonts = Translations$fonts$zh.internal(_root);
 	late final Translations$follow$zh follow = Translations$follow$zh.internal(_root);
 	late final Translations$toolbox$zh toolbox = Translations$toolbox$zh.internal(_root);
 	late final Translations$about$zh about = Translations$about$zh.internal(_root);
@@ -145,6 +146,9 @@ class Translations$settings$zh {
 
 	/// zh: '外观'
 	String get appearance => '外观';
+
+	/// zh: '字体管理'
+	String get fonts => '字体管理';
 
 	/// zh: '主题模式'
 	String get themeMode => '主题模式';
@@ -259,6 +263,30 @@ class Translations$iptv$zh {
 
 	/// zh: '还没有导入任何源'
 	String get empty => '还没有导入任何源';
+}
+
+// Path: fonts
+class Translations$fonts$zh {
+	Translations$fonts$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '字体管理'
+	String get fonts => '字体管理';
+
+	/// zh: '系统默认'
+	String get system => '系统默认';
+
+	/// zh: '使用系统自带字体'
+	String get systemDesc => '使用系统自带字体';
+
+	/// zh: '下载'
+	String get download => '下载';
+
+	/// zh: '删除'
+	String get delete => '删除';
 }
 
 // Path: follow
@@ -570,6 +598,7 @@ extension on Translations {
 			'tray.show' => '显示主界面',
 			'tray.quit' => '退出',
 			'settings.appearance' => '外观',
+			'settings.fonts' => '字体管理',
 			'settings.themeMode' => '主题模式',
 			'settings.designLanguage' => '设计语言',
 			'settings.accent' => '强调色',
@@ -596,6 +625,11 @@ extension on Translations {
 			'iptv.allGroups' => '全部分组',
 			'iptv.favorite' => '收藏',
 			'iptv.empty' => '还没有导入任何源',
+			'fonts.fonts' => '字体管理',
+			'fonts.system' => '系统默认',
+			'fonts.systemDesc' => '使用系统自带字体',
+			'fonts.download' => '下载',
+			'fonts.delete' => '删除',
 			'follow.all' => '全部',
 			'follow.empty' => '还没有关注任何房间',
 			'follow.follow' => '关注',

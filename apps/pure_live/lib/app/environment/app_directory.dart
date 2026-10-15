@@ -44,6 +44,9 @@ enum AppDirectory {
   /// domain's output tree.
   recordings(StorageArea.downloads, 'recordings'),
 
+  /// Downloaded font families, beneath the data area.
+  fonts(StorageArea.data, 'fonts'),
+
   /// Refetchable covers, thumbnails and parse results.
   cache(StorageArea.cache, null),
 

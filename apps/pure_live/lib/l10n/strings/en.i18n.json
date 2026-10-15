@@ -21,6 +21,7 @@
   },
   "settings": {
     "appearance": "Appearance",
+    "fonts": "Fonts",
     "themeMode": "Theme mode",
     "designLanguage": "Design language",
     "accent": "Accent",
@@ -64,6 +65,13 @@
     "allGroups": "All groups",
     "favorite": "Favorite",
     "empty": "No source imported yet"
+  },
+  "fonts": {
+    "fonts": "Fonts",
+    "system": "System default",
+    "systemDesc": "Use the fonts the system ships",
+    "download": "Download",
+    "delete": "Delete"
   },
   "follow": {
     "all": "All",
