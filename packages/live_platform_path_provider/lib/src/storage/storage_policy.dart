@@ -64,9 +64,7 @@ final class DefaultStoragePolicy implements StoragePolicy {
       // writes next to its executable (Program Files, the MSIX WindowsApps
       // root), so there the OS download folder stays first and the user's
       // application-data tree is the last resort.
-      final bundleTree = portable
-          ? (portableRoot == null ? null : Directory('${portableRoot!.path}/downloads'))
-          : null;
+      final bundleTree = portable ? (portableRoot == null ? null : Directory('${portableRoot!.path}/downloads')) : null;
       final osTree = portable || userRoot == null ? null : Directory('${userRoot!.path}/downloads');
       return portable ? [?bundleTree, ?downloadsRoot] : [?downloadsRoot, ?osTree];
     }

@@ -11,8 +11,10 @@
 /// migration flows need: `PathPrivacy` (is this path invisible to other
 /// apps — prompt the user before downloading there), `PathInsights`
 /// (existence and shape of a path), `StorageConflicts` (the split-brain
-/// check when data exists in two trees) and `AtomicFileWriter` (crash-safe
-/// replacement). User-picked files flow through `FileAccessService`.
+/// check when data exists in two trees), `StorageAdoption` (carrying a
+/// previous tree into the one a new layout resolved, at boot while nothing
+/// is open yet) and `AtomicFileWriter` (crash-safe replacement).
+/// User-picked files flow through `FileAccessService`.
 library;
 
 export 'src/bootstrap/path_provider_bootstrap.dart';
@@ -25,6 +27,7 @@ export 'src/contracts/storage_manager.dart';
 export 'src/diagnostics/storage_diagnostics.dart';
 export 'src/insights/path_insights.dart';
 export 'src/insights/path_privacy.dart';
+export 'src/migration/storage_adoption.dart';
 export 'src/storage/atomic_file_writer.dart';
 export 'src/storage/default_storage_manager.dart';
 export 'src/storage/storage_policy.dart';
