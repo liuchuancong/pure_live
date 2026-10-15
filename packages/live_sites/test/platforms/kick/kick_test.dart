@@ -34,6 +34,7 @@ import 'package:live_sites/src/platforms/kick/capabilities/kick_search_provider.
 import 'package:live_sites/src/platforms/kick/danmaku/kick_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/kick/kick_site.dart';
 import 'package:live_sites/src/platforms/kick/parsers/kick_failure.dart';
+import 'package:live_sites/src/platforms/kick/parsers/kick_json.dart';
 import 'package:live_sites/src/platforms/kick/parsers/kick_play_parser.dart';
 import 'package:live_sites/src/platforms/kick/parsers/kick_room_parser.dart';
 import 'package:test/test.dart';
@@ -743,6 +744,20 @@ void main() {
       expect(_left(await resolver.resolve(Uri.parse('https://kick.com/xqc/videos'))), isA<LiveSiteNotFound>());
       expect(_left(await resolver.resolve(Uri.parse('https://twitch.tv/xqc'))), isA<LiveSiteUnsupported>());
       expect(http.sent, isEmpty);
+    });
+  });
+
+  group('json helpers', () {
+    test('jsonTime converts an ISO offset to UTC and reads a plain stamp as UTC', () {
+      expect(jsonTime('2026-09-30T19:24:14+08:00'), DateTime.utc(2026, 9, 30, 11, 24, 14));
+      expect(jsonTime('2026-09-30 19:24:14'), DateTime.utc(2026, 9, 30, 19, 24, 14));
+      expect(jsonTime('2026-09-30T19:24:14Z'), DateTime.utc(2026, 9, 30, 19, 24, 14));
+      expect(jsonTime('nonsense'), isNull);
+    });
+
+    test('decodeJson refuses a body over the size cap', () {
+      expect(decodeJson('{"a":1}'), isA<Map<String, Object?>>());
+      expect(decodeJson('x' * (maxJsonBytes + 1)), isNull);
     });
   });
 }

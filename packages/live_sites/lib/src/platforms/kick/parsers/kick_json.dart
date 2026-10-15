@@ -31,14 +31,20 @@ int? jsonCount(Object? value) {
   return count != null && count > 0 ? count : null;
 }
 
-/// [body] decoded as JSON, null on a malformed body.
+/// [body] decoded as JSON, null on a malformed body or one over
+/// [maxJsonBytes] (a runaway answer is treated as unparseable, not decoded).
 Object? decodeJson(String body) {
+  if (body.length > maxJsonBytes) return null;
   try {
     return jsonDecode(body);
   } on FormatException {
     return null;
   }
 }
+
+/// The largest JSON answer decoded (4 MiB): a bigger body is a mistake, not a
+/// page.
+const int maxJsonBytes = 4 << 20;
 
 /// [value] as a JSON object, null for anything else.
 Map<String, dynamic>? jsonObject(Object? value) => value is Map<String, dynamic> ? value : null;
@@ -61,8 +67,9 @@ String jsonSnippet(String body) {
   return text.length <= 80 ? text : '${text.substring(0, 80)}…';
 }
 
-/// `2026-09-30 19:24:14` (UTC, as Kick's web API writes it) or ISO 8601;
-/// null when the value is missing, unreadable or not a real date.
+/// `2026-09-30 19:24:14` (UTC, as Kick's web API writes it) or ISO 8601 with
+/// an optional `Z`/`±HH:MM` offset (converted to UTC); null when the value is
+/// missing, unreadable or not a real date.
 DateTime? jsonTime(Object? value) {
   final text = jsonString(value)?.trim();
   if (text == null || text.isEmpty) return null;
@@ -70,7 +77,13 @@ DateTime? jsonTime(Object? value) {
       .firstMatch(text);
   if (match == null) return null;
   final parts = [for (var group = 1; group <= 6; group++) int.parse(match.group(group)!)];
-  final time = DateTime.utc(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]);
+  var time = DateTime.utc(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]);
+  final offset = match.group(7);
+  if (offset != null && offset != 'Z') {
+    final digits = offset.substring(1).replaceAll(':', '');
+    final minutes = int.parse(digits.substring(0, 2)) * 60 + int.parse(digits.substring(2));
+    time = offset.startsWith('-') ? time.add(Duration(minutes: minutes)) : time.subtract(Duration(minutes: minutes));
+  }
   return time.year == parts[0] && time.month == parts[1] && time.day == parts[2] && time.year > 2000 ? time : null;
 }
 

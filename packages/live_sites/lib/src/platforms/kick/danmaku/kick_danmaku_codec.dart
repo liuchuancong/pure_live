@@ -379,6 +379,10 @@ abstract final class KickDanmakuCodec {
   }
 
   static LiveMessageColor? _color(Object? value) {
+    if (value is int) {
+      final argb = value >= 0 && value <= 0xFFFFFF ? value : (value & 0xFFFFFF);
+      return LiveMessageColor.numberToColor(argb);
+    }
     final hex = _text(value).replaceFirst('#', '');
     final color = hex.length == 6 ? int.tryParse(hex, radix: 16) : null;
     return color == null ? null : LiveMessageColor.numberToColor(color);
