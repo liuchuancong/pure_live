@@ -54,13 +54,20 @@ AppearancePreferences appearanceFromUiConfig(UiConfig config) => AppearancePrefe
   focusOutline: config.focusOutline,
 );
 
-/// The language an id names; empty or unknown ids take `material`, the shared
-/// token base that renders every language without an adapter of its own.
+/// The skin this build ships on when the user has not chosen: fluent, a
+/// fully registered third-party language. The default only decides which
+/// adapter answers first — the shared token base still renders anything a
+/// language does not implement, and a user who explicitly picked
+/// `material` keeps it, since their stored id names it exactly.
+const LiveDesignLanguage _defaultLanguage = LiveDesignLanguage.fluent;
+
+/// The language an id names; empty or unknown ids take the build's default
+/// skin ([_defaultLanguage]).
 LiveDesignLanguage _languageById(String id) {
   if (id.isEmpty) {
-    return LiveDesignLanguage.material;
+    return _defaultLanguage;
   }
-  return _byName(LiveDesignLanguage.values, id, LiveDesignLanguage.material);
+  return _byName(LiveDesignLanguage.values, id, _defaultLanguage);
 }
 
 T _byName<T>(List<T> values, String name, T fallback) {

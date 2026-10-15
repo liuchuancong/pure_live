@@ -28,7 +28,8 @@ enum AppThemeMode {
 abstract class AppearancePreferences with _$AppearancePreferences {
   /// Appearance preferences with the shipping defaults.
   const factory AppearancePreferences({
-    /// The design language registry id; empty means the platform's default.
+    /// The design language registry id; empty means the build's default
+    /// skin (fluent), which `ui_configuration_mapper.dart` resolves.
     @Default('') String designLanguageId,
 
     /// Which brightness the app follows.
