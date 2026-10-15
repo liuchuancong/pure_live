@@ -26,6 +26,8 @@ import 'package:live_sites/src/platforms/kuaishou/api/kuaishou_http.dart';
 import 'package:live_sites/src/platforms/kuaishou/kuaishou_site.dart';
 import 'package:live_sites/src/platforms/kugoulive/api/kugoulive_http.dart';
 import 'package:live_sites/src/platforms/kugoulive/kugoulive_site.dart';
+import 'package:live_sites/src/platforms/looklive/api/looklive_http.dart';
+import 'package:live_sites/src/platforms/looklive/looklive_site.dart';
 import 'package:live_sites/src/platforms/missevan/api/missevan_http.dart';
 import 'package:live_sites/src/platforms/missevan/missevan_site.dart';
 import 'package:live_sites/src/platforms/niconico/api/niconico_http.dart';
@@ -67,6 +69,7 @@ List<LiveSite> createBuiltInLiveSites({LiveHttp? http}) {
     KickSite(http: KickHttp(transport)),
     NiconicoSite(http: NiconicoHttp(transport)),
     PicartoSite(http: PicartoHttp(transport)),
+    LookliveSite(http: LookliveHttp(transport)),
     JdliveSite(http: JdliveHttp(transport)),
     KilakilaSite(http: KilakilaHttp(transport)),
     KugouliveSite(http: KugouliveHttp(transport)),
