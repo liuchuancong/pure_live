@@ -48,6 +48,8 @@ import 'package:live_sites/src/platforms/sixroom/api/sixroom_http.dart';
 import 'package:live_sites/src/platforms/sixroom/sixroom_site.dart';
 import 'package:live_sites/src/platforms/soop/api/soop_http.dart';
 import 'package:live_sites/src/platforms/soop/soop_site.dart';
+import 'package:live_sites/src/platforms/steambroadcast/api/steambroadcast_http.dart';
+import 'package:live_sites/src/platforms/steambroadcast/steambroadcast_site.dart';
 import 'package:live_sites/src/platforms/tiktok/api/tiktok_http.dart';
 import 'package:live_sites/src/platforms/tiktok/tiktok_site.dart';
 import 'package:live_sites/src/platforms/twitcasting/api/twitcasting_http.dart';
@@ -97,6 +99,7 @@ List<LiveSite> createBuiltInLiveSites({LiveHttp? http}) {
     XiaohongshuSite(http: XiaohongshuHttp(transport)),
     YySite(http: YyHttp(transport)),
     SoopSite(http: SoopHttp(transport)),
+    SteambroadcastSite(http: SteambroadcastHttp(transport)),
     TiktokSite(http: TiktokHttp(transport)),
     TwitcastingSite(http: TwitcastingHttp(transport)),
   ];

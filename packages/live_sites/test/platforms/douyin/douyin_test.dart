@@ -963,8 +963,9 @@ void main() {
         'liveme',
         'xiaohongshu',
         'yy',
-        'tiktok',
         'soop',
+        'steambroadcast',
+        'tiktok',
         'twitcasting',
       ]);
     });
