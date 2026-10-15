@@ -30,7 +30,7 @@
 - [x] 关注域（live_library LibraryStore seam + 分组/标签 UI）— be8104d50（AppServices 装机 BoxLibraryStore+Follow/HistoryRepository；关注页分组 tab+新建分组+长按取关；房间页关注开关；标签仍待后续波次）
 - [x] 历史域（live_library 历史记录 + 清除）— 29509528a（历史页最新在前/单条移除/清空确认；房间页 resolve 即 record）
 - [x] IPTV 域（live_iptv：源管理/分组/播放列表）— 59ed1d9d8（URL 导入经 live_net 生产 fetcher；按 URL 重导入保收藏/编号；源 chip 管理/分组 chips/收藏切换；频道播放待播放器 IPTV 线路波次）
-- [ ] 设置-弹幕屏蔽页（shield 关键词/用户/正则，存储 keyed 家族）
+- [x] 设置-弹幕屏蔽页（shield 关键词/用户/正则，存储 keyed 家族）— b2a4c1127（三列表 chip 管理，settings.shield keyed box 每列表一键；相似度过滤随弹幕波；设置索引加行）
 - [ ] 设置-字体管理页（font_manager，_restart_app 联动）
 - [ ] 备份/恢复页（archive zip + file_picker/file_selector）
 - [ ] 弹幕（live_interaction + live_websocket 加入依赖）
