@@ -1,0 +1,78 @@
+name: Sync GitHub Mirror Config
+
+on:
+  schedule:
+    - cron: "23 4 * * 0"
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-github-mirror-config
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download upstream userscript
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p .cache/github-mirrors
+
+          curl \
+            --fail \
+            --location \
+            --retry 3 \
+            --retry-all-errors \
+            --connect-timeout 15 \
+            --max-time 90 \
+            --output .cache/github-mirrors/upstream.user.js \
+            https://raw.githubusercontent.com/XIU2/UserScript/master/GithubEnhanced-High-Speed-Download.user.js
+
+          test -s .cache/github-mirrors/upstream.user.js
+
+      - name: Parse, validate and generate JSON
+        run: |
+          python scripts/sync_github_mirrors.py \
+            --source .cache/github-mirrors/upstream.user.js \
+            --output config/github_mirrors/github_mirrors.json
+
+      - name: Validate generated JSON
+        run: |
+          python -m json.tool \
+            config/github_mirrors/github_mirrors.json \
+            > /dev/null
+
+      - name: Commit updated mirror configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add config/github_mirrors/github_mirrors.json
+
+          if git diff --cached --quiet; then
+            echo "Mirror configuration unchanged; skipping commit."
+            exit 0
+          fi
+
+          git commit -m "chore: sync GitHub mirror configuration"
+          git push
