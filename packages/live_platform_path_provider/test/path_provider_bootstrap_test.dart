@@ -45,7 +45,7 @@ void main() {
 
     expect((await runtime.storage.resolve(StorageArea.data)).path, '${root.path}/userdata/data');
     expect((await runtime.storage.resolve(StorageArea.cache)).path, '${root.path}/cache/pure_live');
-    expect((await runtime.storage.resolve(StorageArea.temporary)).path, '${root.path}/temp/temp');
+    expect((await runtime.storage.resolve(StorageArea.temporary)).path, '${root.path}/temp/pure_live_temp');
     expect((await runtime.storage.resolve(StorageArea.downloads)).path, '${root.path}/downloads');
   });
 

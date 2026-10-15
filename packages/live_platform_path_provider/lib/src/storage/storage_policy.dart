@@ -88,7 +88,7 @@ final class DefaultStoragePolicy implements StoragePolicy {
       ],
       StorageArea.temporary => [
         if (portable && portableRoot != null) Directory('${portableRoot!.path}/temp'),
-        if (!portable && tempRoot != null) Directory('${tempRoot!.path}/temp'),
+        if (!portable && tempRoot != null) Directory('${tempRoot!.path}/pure_live_temp'),
       ],
       _ => const [],
     };

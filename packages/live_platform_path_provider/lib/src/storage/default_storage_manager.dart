@@ -53,11 +53,13 @@ final class DefaultStorageManager implements StorageManager {
       }
     }
     // Clearable areas may degrade to the system temp dir; persistent ones
-    // must fail loudly instead of hiding data where it will be wiped.
+    // must fail loudly instead of hiding data where it will be wiped. Each
+    // area keeps its own namespace there, matching the policy's naming.
     if (area == StorageArea.cache || area == StorageArea.temporary) {
-      final fallback = await _probe(area, Directory(p.join(_systemTemp.path, 'pure_live')), snapshot.kind);
-      if (fallback != null) {
-        return _resolved[area] = fallback;
+      final fallback = Directory(p.join(_systemTemp.path, area == StorageArea.cache ? 'pure_live' : 'pure_live_temp'));
+      final location = await _probe(area, fallback, snapshot.kind);
+      if (location != null) {
+        return _resolved[area] = location;
       }
     }
     throw StorageUnavailableException(

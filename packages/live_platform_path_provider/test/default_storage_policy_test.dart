@@ -85,7 +85,9 @@ void main() {
     final policy = DefaultStoragePolicy(portableRoot: exeRoot, tempRoot: tempRoot);
 
     expect(paths(policy.candidatesFor(StorageArea.temporary, snapshot(portable: true))), ['${exeRoot.path}/temp']);
-    expect(paths(policy.candidatesFor(StorageArea.temporary, snapshot(portable: false))), ['${tempRoot.path}/temp']);
+    expect(paths(policy.candidatesFor(StorageArea.temporary, snapshot(portable: false))), [
+      '${tempRoot.path}/pure_live_temp',
+    ]);
   });
 
   test('the user download choice always comes first', () {
