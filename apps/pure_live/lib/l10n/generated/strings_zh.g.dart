@@ -48,6 +48,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$settings$zh settings = Translations$settings$zh.internal(_root);
 	late final Translations$theme$zh theme = Translations$theme$zh.internal(_root);
 	late final Translations$design$zh design = Translations$design$zh.internal(_root);
+	late final Translations$history$zh history = Translations$history$zh.internal(_root);
 	late final Translations$follow$zh follow = Translations$follow$zh.internal(_root);
 	late final Translations$toolbox$zh toolbox = Translations$toolbox$zh.internal(_root);
 	late final Translations$about$zh about = Translations$about$zh.internal(_root);
@@ -202,6 +203,24 @@ class Translations$design$zh {
 
 	/// zh: '默认（Fluent）'
 	String get defaultLanguage => '默认（Fluent）';
+}
+
+// Path: history
+class Translations$history$zh {
+	Translations$history$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '清空记录'
+	String get clear => '清空记录';
+
+	/// zh: '清空全部观看记录？此操作不可撤销。'
+	String get clearConfirm => '清空全部观看记录？此操作不可撤销。';
+
+	/// zh: '还没有观看记录'
+	String get empty => '还没有观看记录';
 }
 
 // Path: follow
@@ -500,6 +519,9 @@ extension on Translations {
 			'theme.dark' => '深色',
 			'theme.light' => '浅色',
 			'design.defaultLanguage' => '默认（Fluent）',
+			'history.clear' => '清空记录',
+			'history.clearConfirm' => '清空全部观看记录？此操作不可撤销。',
+			'history.empty' => '还没有观看记录',
 			'follow.all' => '全部',
 			'follow.empty' => '还没有关注任何房间',
 			'follow.follow' => '关注',

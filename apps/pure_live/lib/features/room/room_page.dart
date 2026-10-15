@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_playback/live_playback.dart' show EngineStopped, PlaybackEngineEvent;
 import 'package:live_sites/live_sites.dart'
-    show LivePlayLine, LivePlayQuality, LivePlaybackProvider, LiveRoom, LiveRoomProvider, LiveSite;
+    show LivePlayLine, LivePlayQuality, LivePlaybackProvider, LiveRoom, LiveRoomProvider, LiveSite, RoomContent;
 import 'package:live_uikit/styling.dart' show LiveButton, LiveSelect;
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitVideoView;
 
@@ -92,6 +92,19 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
         detail.fold((error) => _detailError = error, (room) => _room = room);
       });
     }
+    // The visit enters the watch history as soon as the room resolves —
+    // whether or not any line ends up playing.
+    final known = _room;
+    await ref
+        .read(historyRepositoryProvider)
+        .record(
+          known ??
+              LiveRoom.normalized(
+                platform: widget.siteId,
+                roomId: widget.roomId,
+                content: RoomContent(title: widget.roomName),
+              ),
+        );
     await _loadQualities();
   }
 

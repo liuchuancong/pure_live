@@ -47,6 +47,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$theme$en theme = _Translations$theme$en._(_root);
 	@override late final _Translations$design$en design = _Translations$design$en._(_root);
 	@override late final _Translations$room$en room = _Translations$room$en._(_root);
+	@override late final _Translations$history$en history = _Translations$history$en._(_root);
 	@override late final _Translations$follow$en follow = _Translations$follow$en._(_root);
 	@override late final _Translations$toolbox$en toolbox = _Translations$toolbox$en._(_root);
 	@override late final _Translations$about$en about = _Translations$about$en._(_root);
@@ -162,6 +163,18 @@ class _Translations$room$en extends Translations$room$zh {
 	@override String get play => 'Play';
 	@override String get pause => 'Pause';
 	@override String get failed => 'Playback failed — try again';
+}
+
+// Path: history
+class _Translations$history$en extends Translations$history$zh {
+	_Translations$history$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get clear => 'Clear history';
+	@override String get clearConfirm => 'Clear the whole watch history? This cannot be undone.';
+	@override String get empty => 'Nothing watched yet';
 }
 
 // Path: follow
@@ -337,6 +350,9 @@ extension on TranslationsEn {
 			'room.play' => 'Play',
 			'room.pause' => 'Pause',
 			'room.failed' => 'Playback failed — try again',
+			'history.clear' => 'Clear history',
+			'history.clearConfirm' => 'Clear the whole watch history? This cannot be undone.',
+			'history.empty' => 'Nothing watched yet',
 			'follow.all' => 'All',
 			'follow.empty' => 'No followed rooms yet',
 			'follow.follow' => 'Follow',

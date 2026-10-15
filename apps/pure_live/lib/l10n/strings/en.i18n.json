@@ -49,6 +49,11 @@
     "pause": "Pause",
     "failed": "Playback failed — try again"
   },
+  "history": {
+    "clear": "Clear history",
+    "clearConfirm": "Clear the whole watch history? This cannot be undone.",
+    "empty": "Nothing watched yet"
+  },
   "follow": {
     "all": "All",
     "empty": "No followed rooms yet",

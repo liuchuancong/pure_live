@@ -47,6 +47,11 @@
   "design": {
     "defaultLanguage": "默认（Fluent）"
   },
+  "history": {
+    "clear": "清空记录",
+    "clearConfirm": "清空全部观看记录？此操作不可撤销。",
+    "empty": "还没有观看记录"
+  },
   "follow": {
     "all": "全部",
     "empty": "还没有关注任何房间",
