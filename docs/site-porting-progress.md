@@ -50,10 +50,11 @@
 | twitcasting ツイキャス | ✅ | 见下方"twitcasting 明细";已注册进 `built_in_sites` |
 | iptv | ✅(seam) | 基线既有,跨包 seam,非典型直播站 |
 | weibo 微博 | ⬜ | 快照门控站(无 cursor 分页) |
-| seventeenlive / steambroadcast(待重启) | 🔄 | 最后两站;steambroadcast 上一代理被限流 0 落盘,需重启 |
+| seventeenlive(参考无独立站点实现,未在队列) | ⬜ | 全部 36 站迁移完成 |
 | tiktok TikTok | ✅ | 见下方"tiktok 明细";已注册进 `built_in_sites` |
 | sixroom 六间房 | ✅ | 见下方"sixroom 明细";已注册进 `built_in_sites` |
 | yy 欢聚时代 | ✅ | 见下方"yy 明细";已注册进 `built_in_sites` |
+| steambroadcast Steam Broadcast | ✅ | 见下方"steambroadcast 明细";已注册进 `built_in_sites` |
 | cc / inke / liveme / xiaohongshu | ✅ | 见下方"cc 明细"/"inke 明细"/"liveme 明细"/"xiaohongshu 明细";均已注册进 `built_in_sites` |
 
 ## douyu 明细(2026-10-14)
@@ -341,6 +342,17 @@
 - **代理修掉的真 bug(记档)**:①Dart raw string 不做插值——`r'$name…'` 把 `$name` 当字面量导致 roomPage/卡片 class 正则永不匹配(改 raw 段拼接);②link resolver 误用 www.yy.com 作域判断(wap.yy.com 被判 unsupported,改域 yy.com);③播放线路拒绝无 scheme 垃圾 URL。
 - **适配与延后项(记档)**:①appliedQualityData/qualityUnconfirmed(服务器换挡上报)与 LivePlayQuality 的 data/bitrate 字段无 v2 承载 → 丢弃;②3.x flvQualityId(记忆画质迁移)契约无存储画质机制未移植;③列表/搜索 API 无总数 → hasMore 为 null;④注册由我统一加(代理遵守约束)。
 - 验证:`dart analyze` No issues;`dart test test/platforms/yy` **63 项全绿**(解析严格性/编解码往返/错误分支/能力接线四类)。
+
+## steambroadcast 明细(2026-10-15,后台代理移植)
+整站从 `live_core/sites/steambroadcast` + `live_danmaku/sites/steambroadcast.dart` 迁到 `platforms/steambroadcast/`(后台代理按统一模板与交付门执行,我审查后注册)。**无新依赖**。
+- 能力六个注册:room / area / discovery / search / playback / link_resolver(Hot/Anchor/WebSearch 参考 没有 → null)。`SteambroadcastFailure → toLiveSiteError('steambroadcast')`(7 类,401/403 折 rateLimit)。
+- 数据面:目录卡片/观看页/miniprofile/getbroadcastinfo/getbroadcastmpd/自定义地址 XML/HLS master 检查与 variants;25s deadline;房间 games 放 RoomContent.platformTags(v2 无 game 字段,不硬造 area); steamId/vanity 规则。
+- 弹幕:HTTP 轮询会话(bigo 模板,无 socket)——getchatinfo/窗口解析、聊天时钟、消息/观众、广播 id 校验;协议常量逐条保留(resyncAfter 4、lookUpAfter 8、maxFailures 15、退避 500ms→1/2/4/8s),FakeTimers 可测。
+- **适配与延后项(记档)**:①变体画质线路——v2 LivePlayLine 无 selector 机制且 Steam 变体播放列表本身无音频 → 变体仍以整条 master 为线路,携带变体 id(lineLabel)与编解码标记(变体清单/命名/排序/去重能力已完整移植);②质量三连折叠为 getQualities/getLines,恢复=从 entry 缓存取、无则重新入场(getbroadcastmpd+master 两请求);③refresh/getLiveStatus 无 v2 槽——refresh 保留为内部方法供搜索用,状态由 RoomBroadcast.liveStatus 承载;④"第 4 次失败重同步"不发 reconnecting 事件(v2 无对应消息类型,仅时钟重置);⑤入房参数:离线/受限账号房间仍带 danmaku handle(与参考一致,聊天自己发现不可看并以 terminal system message 结束);⑥LiveSiteDirectoryNotice v2 无对应能力未移植。
+- 验证:`dart analyze` No issues;`dart test test/platforms/steambroadcast` **49 项全绿**(解析严格性/编解码往返/错误分支/能力接线/会话时序)。
+
+## 迁移总收官(2026-10-15)
+36 站(35 个直播平台实现 + iptv seam)全部迁移完成并注册。整包 `dart analyze` 0 问题、`dart test` 全绿(见各站明细的测试数,总计数约 1600+ 项离线测试)。
 
 ## 环境缺口
 无。此前 `packages/live_playback` 以 `path:` 依赖工作区外的 `D:\media_core` 导致整仓 `dart pub get` 解析失败、`dart test` 跑不起来;2026-10-14 已把 `media_core` / `media_core_danmaku` / `media_core_mediasession` 改为 pub git 源(`github.com/liuchuancong/media_core`),仓库根 `flutter pub get` 即可完整解析,交付门的 test 步骤不再需要人工补 media_core 或造桩。
