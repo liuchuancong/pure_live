@@ -9,6 +9,7 @@ import 'package:live_sites/live_sites.dart' show LiveDiscoveryProvider, LivePage
 import 'package:live_uikit/styling.dart' show LiveButton, LiveEmpty;
 
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/routing/routes/room/room_routes.dart';
 import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
@@ -42,7 +43,9 @@ final class PopularPage extends ConsumerWidget {
           bottom: TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,
-            tabs: [for (final site in discoverable) Tab(text: _displayName(site, context))],
+            tabs: [
+              for (final site in discoverable) Tab(text: site.manifest.localizedName(_tag(context, site), 'zh-CN')),
+            ],
           ),
         ),
         body: TabBarView(children: [for (final site in discoverable) _SiteFeed(site: site)]),
@@ -50,7 +53,7 @@ final class PopularPage extends ConsumerWidget {
     );
   }
 
-  static String _displayName(LiveSite site, BuildContext context) =>
+  static String _tag(BuildContext context, LiveSite site) =>
       site.manifest.localizedName(Localizations.localeOf(context).toLanguageTag(), 'zh-CN');
 }
 
@@ -58,7 +61,7 @@ final class PopularPage extends ConsumerWidget {
 /// capability, kept alive across tab switches.
 final class _SiteFeed extends StatefulWidget {
   /// A feed for [site].
-  const new({required this.site});
+  const new({required this.site, super.key});
 
   final LiveSite site;
 
@@ -144,16 +147,16 @@ final class _SiteFeedState extends State<_SiteFeed> with AutomaticKeepAliveClien
     }
     return CustomRefreshIndicator(
       onRefresh: _controller.refresh,
-      builder: (context, child, controller) => Stack(
+      builder: (context, child, indicator) => Stack(
         alignment: Alignment.topCenter,
         children: [
           child,
           Positioned(
             top: 12,
             child: Opacity(
-              opacity: controller.value.clamp(0, 1),
+              opacity: indicator.value.clamp(0, 1),
               child: IgnorePointer(
-                child: CircularProgressIndicator(value: controller.isLoading ? null : controller.value),
+                child: CircularProgressIndicator(value: indicator.isLoading ? null : indicator.value),
               ),
             ),
           ),
@@ -171,7 +174,15 @@ final class _SiteFeedState extends State<_SiteFeed> with AutomaticKeepAliveClien
         itemCount: state.items.length + 1,
         itemBuilder: (context, index) {
           if (index < state.items.length) {
-            return RoomCard(room: state.items[index]);
+            final room = state.items[index];
+            return RoomCard(
+              room: room,
+              onOpen: () => RoomRoute(
+                siteId: room.ref.platform,
+                roomId: room.ref.roomId,
+                roomName: room.content.title,
+              ).push<void>(context),
+            );
           }
           return state.isLoadingMore ? const Center(child: CircularProgressIndicator()) : const SizedBox.shrink();
         },
@@ -191,7 +202,7 @@ final class _SiteFeedState extends State<_SiteFeed> with AutomaticKeepAliveClien
 /// The first-load placeholder: a bone grid shaped exactly like the room
 /// grid, so content replaces the skeleton without a layout jump.
 final class _SkeletonFeed extends StatelessWidget {
-  const new({required this.columns});
+  const _SkeletonFeed({required this.columns});
 
   final int columns;
 
@@ -234,7 +245,7 @@ final class _SkeletonFeed extends StatelessWidget {
 /// Wraps a site error for the loader contract; the controller stores it on
 /// its state and the view renders the generic network copy over it.
 final class _FeedException implements Exception {
-  const new(this.cause);
+  const _FeedException(this.cause);
 
   /// The site error behind the failure.
   final Object cause;

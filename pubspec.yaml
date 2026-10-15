@@ -53,6 +53,9 @@ dependency_overrides:
   dbus: ^0.8.0
   equatable: ^3.0.0
   platform: ^3.2.0
+  xml: ^7.0.0
+  wakelock_plus: 1.8.1
+  win32: ^6.4.0
   test_api: ^0.7.15
   
 melos:

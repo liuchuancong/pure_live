@@ -11,25 +11,26 @@ import 'package:live_sites/live_sites.dart'
         AnchorSearchResult,
         AreaSearchResult,
         LiveAnchor,
+        LivePageRequest,
         LiveSearchProvider,
         LiveSearchRequest,
         LiveSearchResult,
         LiveSearchTarget,
-        LiveSite,
-        RoomSearchResult;
+        RoomSearchResult,
+        LiveSite;
 import 'package:live_uikit/styling.dart' show LiveButton, LiveEmpty, LiveSegmented;
 
 import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/app/routing/app_router.dart';
+import 'package:pure_live/app/routing/routes/areas/areas_routes.dart';
+import 'package:pure_live/app/routing/routes/room/room_routes.dart';
 import 'package:pure_live/features/areas/area_card.dart';
 import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
-/// Search: every search-capable platform as a tab over its room results
-/// (3.x `SearchPage`; the cross-site fan-out with ranking is the next
-/// slice of the reference's search engine).
+/// Search: every search-capable platform as a tab over its results, across
+/// the targets the site answers — rooms, anchors and areas.
 final class SearchPage extends ConsumerWidget {
   /// The search page.
   const new({super.key});
@@ -66,7 +67,7 @@ final class SearchPage extends ConsumerWidget {
   static String _tag(BuildContext context) => Localizations.localeOf(context).toLanguageTag();
 }
 
-/// One platform's search: a keyword bar over an infinite room grid. The
+/// One platform's search: a keyword bar over an infinite result grid. The
 /// query is per tab — switching platform keeps what was typed there.
 final class _SiteSearch extends StatefulWidget {
   /// A search pane for [site].
@@ -97,7 +98,7 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
   }
 
   /// Starts a search for the bar's text against the chosen target; a blank
-  /// query clears the results. Switching target re-runs the query — the two
+  /// query clears the results. Switching target re-runs the query — the
   /// modes answer different questions.
   void _submit({LiveSearchTarget? target}) {
     final query = _keyword.text.trim();
@@ -181,7 +182,7 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
     );
   }
 
-  /// The room/anchor switch, only where the site searches both — a request
+  /// The target switch, only where the site searches anchors — a request
   /// for a target the site does not answer must fail, not silently narrow.
   Widget? _modeRow(BuildContext context) {
     final capability = widget.site.capability<LiveSearchProvider>();
@@ -283,7 +284,14 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
         itemBuilder: (context, index) {
           if (index < state.items.length) {
             return switch (state.items[index]) {
-              RoomSearchResult(:final room) => RoomCard(room: room),
+              RoomSearchResult(:final room) => RoomCard(
+                room: room,
+                onOpen: () => RoomRoute(
+                  siteId: room.ref.platform,
+                  roomId: room.ref.roomId,
+                  roomName: room.content.title,
+                ).push<void>(context),
+              ),
               AnchorSearchResult(:final anchor) => AnchorTile(anchor: anchor),
               AreaSearchResult(:final area) => AreaCard(
                 area: area,

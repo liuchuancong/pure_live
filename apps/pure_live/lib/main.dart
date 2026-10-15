@@ -8,6 +8,7 @@ import 'package:live_platform/live_platform.dart' show PlatformKind;
 
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/app/composition/app_services.dart';
+import 'package:pure_live/app/engine/playback_engine.dart';
 import 'package:pure_live/app/logging/app_log.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/theme/app_theme.dart';
@@ -38,6 +39,10 @@ Future<void> main(List<String> args) async {
   // second launch that reached the data tree would fight the running
   // instance over its box locks. A forwarded launch exits here, having
   // already handed its request to whoever holds the port.
+  if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+    ensureMediaEngineInitialized();
+  }
+
   final onDesktop = Platform.isWindows || Platform.isMacOS || Platform.isLinux;
   final channel = onDesktop ? await acquireDesktopInstance(log: log.root, args: args) : null;
   if (onDesktop && channel == null) {

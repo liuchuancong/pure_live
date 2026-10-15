@@ -5,10 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_adaptive_layout/flutter_adaptive_layout.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_pagination/live_pagination.dart';
-import 'package:live_sites/live_sites.dart' show LivePageRequest, LiveRoom;
+import 'package:live_sites/live_sites.dart' show LiveAreaProvider, LivePageRequest, LiveRoom;
 import 'package:live_uikit/styling.dart' show LiveButton, LiveEmpty;
 
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/routing/routes/room/room_routes.dart';
 import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -17,7 +18,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 /// loaded through the site's area capability.
 final class AreaRoomsPage extends ConsumerStatefulWidget {
   /// Shows [areaId] of [siteId]; [areaName] titles the page.
-  const new({required this.siteId, required this.areaId, required this.areaName, super.key});
+  const AreaRoomsPage({required this.siteId, required this.areaId, required this.areaName, super.key});
 
   /// The platform the area belongs to.
   final String siteId;
@@ -95,47 +96,50 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
     final state = _controller.state;
     return Scaffold(
       appBar: AppBar(title: Text(widget.areaName.isEmpty ? widget.areaId : widget.areaName)),
-      body: state.items.isEmpty
-          ? _placeholder(context, state)
-          : CustomRefreshIndicator(
-              onRefresh: _controller.refresh,
-              builder: (context, child, controller) => Stack(
-                alignment: Alignment.topCenter,
-                children: [
-                  child,
-                  Positioned(
-                    top: 12,
-                    child: Opacity(
-                      opacity: controller.value.clamp(0, 1),
-                      child: IgnorePointer(
-                        child: CircularProgressIndicator(value: controller.isLoading ? null : controller.value),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              child: GridView.builder(
-                controller: _scroll,
-                padding: const EdgeInsets.all(12),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: _columns(context),
-                  childAspectRatio: 0.82,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                ),
-                itemCount: state.items.length + 1,
-                itemBuilder: (context, index) {
-                  if (index < state.items.length) {
-                    return RoomCard(room: state.items[index]);
-                  }
-                  return state.isLoadingMore
-                      ? const Center(child: CircularProgressIndicator())
-                      : const SizedBox.shrink();
-                },
-              ),
-            ),
+      body: state.items.isEmpty ? _placeholder(context, state) : _grid(context, state),
     );
   }
+
+  Widget _grid(BuildContext context, InfiniteState<LiveRoom> state) => CustomRefreshIndicator(
+    onRefresh: _controller.refresh,
+    builder: (context, child, indicator) => Stack(
+      alignment: Alignment.topCenter,
+      children: [
+        child,
+        Positioned(
+          top: 12,
+          child: Opacity(
+            opacity: indicator.value.clamp(0, 1),
+            child: IgnorePointer(child: CircularProgressIndicator(value: indicator.isLoading ? null : indicator.value)),
+          ),
+        ),
+      ],
+    ),
+    child: GridView.builder(
+      controller: _scroll,
+      padding: const EdgeInsets.all(12),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: _columns(context),
+        childAspectRatio: 0.82,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+      ),
+      itemCount: state.items.length + 1,
+      itemBuilder: (context, index) {
+        if (index < state.items.length) {
+          return RoomCard(
+            room: state.items[index],
+            onOpen: () => RoomRoute(
+              siteId: state.items[index].ref.platform,
+              roomId: state.items[index].ref.roomId,
+              roomName: state.items[index].content.title,
+            ).push<void>(context),
+          );
+        }
+        return state.isLoadingMore ? const Center(child: CircularProgressIndicator()) : const SizedBox.shrink();
+      },
+    ),
+  );
 
   Widget _placeholder(BuildContext context, InfiniteState<LiveRoom> state) {
     if (state.error != null) {
@@ -192,7 +196,7 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
 /// Wraps a site error for the loader contract; the controller stores it on
 /// its state and the view renders the generic network copy over it.
 final class _FeedException implements Exception {
-  const new(this.cause);
+  const _FeedException(this.cause);
 
   /// The site error behind the failure.
   final Object cause;

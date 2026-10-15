@@ -49,6 +49,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$theme$zh theme = Translations$theme$zh.internal(_root);
 	late final Translations$design$zh design = Translations$design$zh.internal(_root);
 	late final Translations$search$zh search = Translations$search$zh.internal(_root);
+	late final Translations$room$zh room = Translations$room$zh.internal(_root);
 	late final Translations$errors$zh errors = Translations$errors$zh.internal(_root);
 	late final Translations$tabs$zh tabs = Translations$tabs$zh.internal(_root);
 	late final Translations$window$zh window = Translations$window$zh.internal(_root);
@@ -218,6 +219,30 @@ class Translations$search$zh {
 	String get anchors => '主播';
 }
 
+// Path: room
+class Translations$room$zh {
+	Translations$room$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '清晰度'
+	String get quality => '清晰度';
+
+	/// zh: '线路'
+	String get line => '线路';
+
+	/// zh: '播放'
+	String get play => '播放';
+
+	/// zh: '暂停'
+	String get pause => '暂停';
+
+	/// zh: '播放失败，请重试'
+	String get failed => '播放失败，请重试';
+}
+
 // Path: errors
 class Translations$errors$zh {
 	Translations$errors$zh.internal(this._root);
@@ -376,6 +401,11 @@ extension on Translations {
 			'search.hint' => '输入关键词搜索房间',
 			'search.rooms' => '房间',
 			'search.anchors' => '主播',
+			'room.quality' => '清晰度',
+			'room.line' => '线路',
+			'room.play' => '播放',
+			'room.pause' => '暂停',
+			'room.failed' => '播放失败，请重试',
 			'errors.generic' => '出了点问题，请稍后再试。',
 			'errors.network' => '网络连接不可用，请检查网络后重试。',
 			'errors.notFound' => '没有找到相关内容。',

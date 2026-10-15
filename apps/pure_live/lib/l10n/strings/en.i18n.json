@@ -40,6 +40,13 @@
   "design": {
     "defaultLanguage": "Default (Fluent)"
   },
+  "room": {
+    "quality": "Quality",
+    "line": "Line",
+    "play": "Play",
+    "pause": "Pause",
+    "failed": "Playback failed — try again"
+  },
   "search": {
     "hint": "Search rooms by keyword",
     "rooms": "Rooms",

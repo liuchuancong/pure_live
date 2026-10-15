@@ -6,7 +6,7 @@ import 'package:live_sites/live_sites.dart' show LiveArea, LiveAreaProvider, Liv
 import 'package:live_uikit/styling.dart' show LiveButton, LiveEmpty;
 
 import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/app/routing/app_router.dart';
+import 'package:pure_live/app/routing/routes/areas/areas_routes.dart';
 import 'package:pure_live/features/areas/area_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
@@ -88,15 +88,10 @@ final class _PlatformAreasState extends State<_PlatformAreas> with AutomaticKeep
       return;
     }
     setState(() {
-      result.fold(
-        (error) {
-          _error = error;
-        },
-        (areas) {
-          _areas = areas;
-          _selectedParent = null;
-        },
-      );
+      result.fold((error) => _error = error, (areas) {
+        _areas = areas;
+        _selectedParent = null;
+      });
     });
   }
 

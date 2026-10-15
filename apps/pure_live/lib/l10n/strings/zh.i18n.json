@@ -52,6 +52,13 @@
     "rooms": "房间",
     "anchors": "主播"
   },
+  "room": {
+    "quality": "清晰度",
+    "line": "线路",
+    "play": "播放",
+    "pause": "暂停",
+    "failed": "播放失败，请重试"
+  },
   "errors": {
     "generic": "出了点问题，请稍后再试。",
     "network": "网络连接不可用，请检查网络后重试。",

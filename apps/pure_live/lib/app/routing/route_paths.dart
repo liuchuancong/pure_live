@@ -27,6 +27,10 @@ abstract final class RoutePath {
   /// segments.
   static const String areaRooms = '/areas/:siteId/:areaId';
 
+  /// A live room, above the shell. The path carries the site and room ids;
+  /// a title hint rides as the query.
+  static const String room = '/room/:siteId/:roomId';
+
   /// The search page, a full page above the shell.
   static const String search = '/search';
 

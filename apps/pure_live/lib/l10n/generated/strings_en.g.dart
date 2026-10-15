@@ -46,6 +46,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$settings$en settings = _Translations$settings$en._(_root);
 	@override late final _Translations$theme$en theme = _Translations$theme$en._(_root);
 	@override late final _Translations$design$en design = _Translations$design$en._(_root);
+	@override late final _Translations$room$en room = _Translations$room$en._(_root);
 	@override late final _Translations$search$en search = _Translations$search$en._(_root);
 	@override late final _Translations$errors$en errors = _Translations$errors$en._(_root);
 	@override late final _Translations$tabs$en tabs = _Translations$tabs$en._(_root);
@@ -142,6 +143,20 @@ class _Translations$design$en extends Translations$design$zh {
 
 	// Translations
 	@override String get defaultLanguage => 'Default (Fluent)';
+}
+
+// Path: room
+class _Translations$room$en extends Translations$room$zh {
+	_Translations$room$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get quality => 'Quality';
+	@override String get line => 'Line';
+	@override String get play => 'Play';
+	@override String get pause => 'Pause';
+	@override String get failed => 'Playback failed — try again';
 }
 
 // Path: search
@@ -261,6 +276,11 @@ extension on TranslationsEn {
 			'theme.dark' => 'Dark',
 			'theme.light' => 'Light',
 			'design.defaultLanguage' => 'Default (Fluent)',
+			'room.quality' => 'Quality',
+			'room.line' => 'Line',
+			'room.play' => 'Play',
+			'room.pause' => 'Pause',
+			'room.failed' => 'Playback failed — try again',
 			'search.hint' => 'Search rooms by keyword',
 			'search.rooms' => 'Rooms',
 			'search.anchors' => 'Anchors',
