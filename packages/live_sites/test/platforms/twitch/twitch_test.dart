@@ -724,6 +724,7 @@ https://other.example/1.m3u8
         'kilakila',
         'kugoulive',
         'soop',
+        'twitcasting',
       ]);
     });
 
