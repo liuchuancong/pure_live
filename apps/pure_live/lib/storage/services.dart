@@ -1,29 +1,27 @@
-import 'dart:typed_data';
-
 import 'package:live_storage/live_storage.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:pure_live/platform/secret_cipher.dart' show platformSecretCipher;
+import 'package:pure_live/platform/secret_vault.dart' show SecureStorageSecretVault;
 import 'package:pure_live/user_data/preferences/preferences.dart' show PreferencesKeys, PreferencesService;
 
 /// The application's storage + preferences composition root.
 ///
 /// It initialises Hive (through `live_storage`'s bootstrap), opens the
-/// preferences and secrets boxes and hands the app a loaded
-/// [PreferencesService] and [HiveSecretStore]. Nothing here is a business
-/// decision — it is only the wiring that turns the packages into a running
-/// app. The live-site registry is wired in once platform adapters are
-/// ported to `live_sites`' capability/`Either` contract (none are yet).
+/// preferences box and hands the app a loaded [PreferencesService] and
+/// [SecretStore]. Nothing here is a business decision — it is only the
+/// wiring that turns the packages into a running app. The live-site
+/// registry is wired in once platform adapters are ported to `live_sites`'
+/// capability/`Either` contract (none are yet).
 final class AppServices {
-  /// Wraps the loaded [preferences] and [secrets] over the `bootstrap` that
-  /// backs them.
+  /// Wraps the loaded [preferences] and [secrets] over the `bootstrap`
+  /// that backs them.
   // ignore: unnecessary_type_name_in_constructor
   const AppServices._(this.preferences, this.secrets, this._bootstrap);
 
   /// The user's preferences, already loaded from disk.
   final PreferencesService preferences;
 
-  /// The device-sealed secrets (cookies, passwords), already opened.
-  final HiveSecretStore secrets;
+  /// The device-sealed secrets (cookies, passwords), already loaded.
+  final SecretStore secrets;
 
   final StorageBootstrap _bootstrap;
 
@@ -40,8 +38,7 @@ final class AppServices {
     final preferences = PreferencesService(store: HiveStorageRepository<Map<dynamic, dynamic>>(box: box));
     await preferences.load();
 
-    final secretBox = await StorageBoxManager().keyed<Uint8List>('user.secrets');
-    final secrets = await HiveSecretStore.load(box: secretBox, cipher: platformSecretCipher());
+    final secrets = await SecretStore.load(vault: SecureStorageSecretVault());
 
     return AppServices._(preferences, secrets, bootstrap);
   }

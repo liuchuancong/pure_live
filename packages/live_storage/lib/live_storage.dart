@@ -78,7 +78,7 @@ export 'src/repository/storage_set_repository.dart';
 export 'src/repository/storage_string_repository.dart';
 
 /// Sealed secret storage.
-export 'src/secrets/hive_secret_store.dart';
+export 'src/secrets/secret_store.dart';
 
-/// The device-bound secret cipher contract and secret ref names.
-export 'src/secrets/secret_cipher.dart';
+/// The device secret vault contract and secret ref names.
+export 'src/secrets/secret_vault.dart';
