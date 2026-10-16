@@ -244,11 +244,348 @@ void main() {
     });
   });
 
-  testWidgets('a control this adapter does not override still renders (§15.3)', (tester) async {
-    await tester.pumpWidget(harness(LiveSlider(value: 0.4, onChanged: (_) {})));
-    expect(find.byType(forui.FSlider), findsNothing);
-    expect(find.byType(TokenSlider), findsOneWidget);
-    expect(tester.takeException(), isNull);
+  group('the ten controls ForUI now draws itself (§9)', () {
+    testWidgets('a slider is the lifted FSlider, in the caller units, and a null callback is its inert state', (
+      tester,
+    ) async {
+      double? seen;
+      await tester.pumpWidget(harness(LiveSlider(value: 50, max: 100, onChanged: (value) => seen = value)));
+      await tester.pump();
+
+      final slider = find.byType(forui.FSlider);
+      expect(slider, findsOneWidget);
+      expect(find.byType(TokenSlider), findsNothing);
+      expect(tester.widget<forui.FSlider>(slider).enabled, isTrue);
+
+      // The thumb is dragged, not the spec's number, so whatever comes back has to be
+      // denormalised out of the library's track percentage into the caller's range.
+      await tester.drag(slider, const Offset(40, 0));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(seen, isNotNull, reason: 'the slider reports the value the caller owns');
+      expect(seen! > 50 && seen! <= 100, isTrue, reason: 'a rightward drag raises $seen from 50 of 0..100');
+
+      await tester.pumpWidget(harness(const LiveSlider(value: 0.4, onChanged: null)));
+      await tester.pump();
+      expect(
+        tester.widget<forui.FSlider>(find.byType(forui.FSlider)).enabled,
+        isFalse,
+        reason: 'the spec documents a null callback as disabling the control (§9)',
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a segmented track is a group of FButtons with one selected', (tester) async {
+      var chosen = -1;
+      await tester.pumpWidget(
+        harness(LiveSegmented(labels: const ['Small', 'Medium', 'Large'], index: 1, onChanged: (i) => chosen = i)),
+      );
+      await tester.pump();
+
+      expect(find.byType(forui.FButton), findsNWidgets(3));
+      expect(find.byType(TokenSegmented), findsNothing);
+      final buttons = tester.widgetList<forui.FButton>(find.byType(forui.FButton)).toList();
+      expect(buttons.map((button) => button.selected), [false, true, false]);
+
+      await tester.tap(find.text('Large'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(chosen, 2);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a disabled segmented track keeps its labels and reports nothing', (tester) async {
+      var chosen = -1;
+      await tester.pumpWidget(
+        harness(
+          LiveSegmented(labels: const ['A', 'B'], index: 0, enabled: false, onChanged: (i) => chosen = i),
+        ),
+      );
+      await tester.pump();
+      final buttons = tester.widgetList<forui.FButton>(find.byType(forui.FButton)).toList();
+      expect(buttons.map((button) => button.onPress), [isNull, isNull]);
+
+      await tester.tap(find.text('B'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(chosen, -1);
+    });
+
+    testWidgets('a determinate progress is FDeterminateProgress with the spec height', (tester) async {
+      await tester.pumpWidget(harness(const LiveProgress(value: 0.5, height: 12)));
+      await tester.pump();
+
+      expect(find.byType(forui.FDeterminateProgress), findsOneWidget);
+      expect(find.byType(TokenProgress), findsNothing);
+      expect(tester.widget<forui.FDeterminateProgress>(find.byType(forui.FDeterminateProgress)).value, 0.5);
+      expect(tester.getSize(find.byType(forui.FDeterminateProgress)).height, 12);
+    });
+
+    testWidgets("a null value is the library's own indeterminate FProgress", (tester) async {
+      await tester.pumpWidget(harness(const LiveProgress(value: null)));
+      await tester.pump();
+
+      expect(find.byType(forui.FProgress), findsOneWidget);
+      expect(find.byType(forui.FDeterminateProgress), findsNothing);
+      expect(find.byType(TokenProgress), findsNothing);
+      // Let the library's own loop stop before the test ends.
+      await tester.pump(const Duration(milliseconds: 100));
+    });
+
+    testWidgets('a select is FSelect and it carries the value and the placeholder', (tester) async {
+      // `FSelect` is abstract — the library builds `_BasicSelect` under it — so the
+      // finder asks for the type rather than naming a concrete class.
+      final select = find.byWidgetPredicate((widget) => widget is forui.FSelect<String>);
+      String? chosen;
+      await tester.pumpWidget(
+        harness(
+          LiveSelect<String>(
+            items: const ['alpha', 'beta'],
+            itemLabel: (item) => item,
+            value: 'beta',
+            placeholder: 'pick one',
+            onChanged: (value) => chosen = value,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(select, findsOneWidget);
+      expect(find.byType(TokenSelect<String>), findsNothing);
+      // The selected value is what the field shows, through the library's own formatter.
+      expect(find.text('beta'), findsOneWidget);
+      expect(tester.widget<forui.FSelect<String>>(select).hint, 'pick one');
+
+      await tester.pumpWidget(
+        harness(LiveSelect<String>(items: const ['alpha'], itemLabel: (i) => i, onChanged: (v) => chosen = v)),
+      );
+      await tester.pump();
+      // No placeholder: the field falls back to the library's own localized hint.
+      expect(tester.widget<forui.FSelect<String>>(select).hint, isNull);
+
+      await tester.pumpWidget(
+        harness(LiveSelect<String>(items: const ['alpha'], itemLabel: (i) => i, enabled: false, onChanged: (_) {})),
+      );
+      await tester.pump();
+      expect(tester.widget<forui.FSelect<String>>(select).enabled, isFalse);
+      expect(chosen, isNull);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a tab strip is FTabs and reports the tapped index', (tester) async {
+      var chosen = -1;
+      await tester.pumpWidget(
+        harness(
+          LiveTabs(
+            tabs: const [
+              LiveTab(label: 'Rooms'),
+              LiveTab(label: 'Shows', icon: Icons.star),
+            ],
+            index: 0,
+            onChanged: (index) => chosen = index,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(forui.FTabs), findsOneWidget);
+      expect(find.byType(TokenTabs), findsNothing);
+      expect(find.byIcon(Icons.star), findsOneWidget);
+
+      await tester.tap(find.text('Shows'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(chosen, 1);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets("a page frame is FScaffold, and its bars are ForUI's too", (tester) async {
+      await tester.pumpWidget(
+        harness(
+          LiveScaffold(
+            appBar: const LiveAppBar(title: 'Rooms', actions: [Icon(Icons.search)]),
+            body: const LiveCard(child: Text('body')),
+            bottomBar: LiveNavBar(
+              items: const [
+                LiveNavBarItem(label: 'Home', icon: Icons.home),
+                LiveNavBarItem(label: 'Shows', icon: Icons.tv),
+              ],
+              index: 0,
+              onChanged: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(forui.FScaffold), findsOneWidget);
+      expect(find.byType(TokenScaffold), findsNothing);
+      expect(find.byType(TokenAppBar), findsNothing);
+      expect(find.byType(TokenNavBar), findsNothing);
+      expect(find.text('Rooms'), findsOneWidget);
+      expect(find.byIcon(Icons.search), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('an app bar keeps its leading, its actions and its bottom strip', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          LiveAppBar(
+            title: 'Rooms',
+            leading: const Icon(Icons.menu),
+            actions: const [Icon(Icons.search), Icon(Icons.more_horiz)],
+            background: const Color(0xFF102030),
+            bottom: LiveTabs(
+              tabs: const [
+                LiveTab(label: 'One'),
+                LiveTab(label: 'Two'),
+              ],
+              index: 0,
+              onChanged: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byWidgetPredicate((widget) => widget is forui.FHeader), findsOneWidget);
+      expect(find.byType(TokenAppBar), findsNothing);
+      expect(find.byIcon(Icons.menu), findsOneWidget);
+      expect(find.byIcon(Icons.more_horiz), findsOneWidget);
+      expect(find.byType(forui.FTabs), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a row is FTile with both lines, its divider and its tap', (tester) async {
+      var taps = 0;
+      await tester.pumpWidget(
+        harness(
+          LiveListRow(
+            title: 'Room',
+            subtitle: '3 watching',
+            leading: const Icon(Icons.live_tv),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => taps++,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(forui.FTile), findsOneWidget);
+      expect(find.byType(TokenListRow), findsNothing);
+      expect(find.text('3 watching'), findsOneWidget);
+      expect(find.byType(forui.FDivider), findsOneWidget, reason: "the library's own separator, not an invented hairline");
+
+      await tester.tap(find.text('Room'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(taps, 1);
+
+      await tester.pumpWidget(harness(const LiveListRow(title: 'Room', divided: false)));
+      await tester.pump();
+      expect(find.byType(forui.FDivider), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a destination strip is FBottomNavigationBar and reports its index', (tester) async {
+      var chosen = -1;
+      await tester.pumpWidget(
+        harness(
+          LiveNavBar(
+            items: const [
+              LiveNavBarItem(label: 'Home', icon: Icons.home),
+              LiveNavBarItem(label: 'Shows', icon: Icons.tv),
+            ],
+            index: 1,
+            onChanged: (index) => chosen = index,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(forui.FBottomNavigationBar), findsOneWidget);
+      expect(find.byType(forui.FBottomNavigationBarItem), findsNWidgets(2));
+      expect(find.byType(TokenNavBar), findsNothing);
+      expect(tester.widget<forui.FBottomNavigationBar>(find.byType(forui.FBottomNavigationBar)).index, 1);
+
+      await tester.tap(find.text('Home'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(chosen, 0);
+
+      await tester.pumpWidget(
+        harness(
+          LiveNavBar(
+            items: const [
+              LiveNavBarItem(label: 'Home', icon: Icons.home),
+              LiveNavBarItem(label: 'Shows', icon: Icons.tv),
+            ],
+            index: 1,
+            enabled: false,
+            onChanged: (index) => chosen = index,
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(
+        tester.widget<forui.FBottomNavigationBar>(find.byType(forui.FBottomNavigationBar)).onChange,
+        isNull,
+        reason: "the library's own inert state, not a swallowed callback",
+      );
+      expect(chosen, 0);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets("a toast surface is the library's FToast, not the token pill", (tester) async {
+      await tester.pumpWidget(harness(const SizedBox.shrink()));
+      LiveToast.show(tester.element(find.byType(SizedBox)), 'Saved', type: LiveToastType.success);
+      await tester.pump();
+
+      expect(find.byType(forui.FToast), findsOneWidget);
+      expect(find.text('Saved'), findsOneWidget);
+      expect(find.byType(TokenToast), findsNothing);
+      // The toaster around it (`FToaster`, `showFToast`) is what needs an overlay; the
+      // core owns that overlay and the timer, so the surface the adapter returns does not.
+      expect(find.byType(forui.FToaster), findsNothing);
+    });
+  });
+
+  group('no token renderer inside a ForUI frame (§15.3)', () {
+    testWidgets('every control of the contract dispatches native', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          Column(
+            children: [
+              LiveSlider(value: 0.4, onChanged: (_) {}),
+              LiveSegmented(labels: const ['A', 'B'], index: 0, onChanged: (_) {}),
+              const LiveProgress(value: 0.5),
+              LiveSelect<String>(items: const ['x'], itemLabel: (item) => item, onChanged: (_) {}),
+              LiveTabs(
+                tabs: const [
+                  LiveTab(label: 'One'),
+                  LiveTab(label: 'Two'),
+                ],
+                index: 0,
+                onChanged: (_) {},
+              ),
+              LiveListRow(title: 'Room', onTap: () {}),
+              LiveNavBar(
+                items: const [LiveNavBarItem(label: 'Home', icon: Icons.home)],
+                index: 0,
+                onChanged: (_) {},
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // ForUI declares all fifteen controls, so nothing in a ForUI page should be a
+      // `Token*` renderer any more — the assertion is by name rather than by list so a
+      // control added to the contract cannot slip in silently.
+      expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
   });
 }
 

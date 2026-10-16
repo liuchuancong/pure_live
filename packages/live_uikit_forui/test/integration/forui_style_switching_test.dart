@@ -5,33 +5,46 @@ import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_forui/live_uikit_forui.dart';
 
 /// The controls `live_uikit_forui` renders natively (§3.1 capability
-/// declaration): five of the thirteen the resolver dispatches.
+/// declaration): all fifteen the resolver dispatches.
 const Set<LiveUiControl> nativeControls = {
   LiveUiControl.button,
   LiveUiControl.card,
   LiveUiControl.textField,
   LiveUiControl.switchWidget,
   LiveUiControl.checkbox,
+  LiveUiControl.slider,
+  LiveUiControl.segmented,
+  LiveUiControl.progress,
+  LiveUiControl.select,
+  LiveUiControl.tabBar,
+  LiveUiControl.scaffold,
+  LiveUiControl.appBar,
+  LiveUiControl.listRow,
+  LiveUiControl.navBar,
+  LiveUiControl.toast,
 };
 
-/// §16 integration pass for `live_uikit_forui`: the five controls forui actually serves
-/// resolve native, the other eight resolve shared and are reported (`slider`, `segmented`,
-/// `progress`, `select`, `tabBar` plus the page trio `scaffold`, `appBar`, `listRow`, which
-/// no adapter maps yet), and switching to the core token base and back must not cost the
-/// caller its controller or its field state (§11).
-/// The downgrades this language is expected to report: every control the adapter does not
-/// declare, each exactly once per language change (§15.5/§16.8).
+/// §16 integration pass for `live_uikit_forui`: every one of the fifteen controls
+/// resolves native — the page frame, the bars and the toast surface included, since
+/// `forui` 0.27.5 ships `FScaffold`, `FHeader`, `FTile`, `FBottomNavigationBar` and
+/// `FToast` — and switching to the core token base and back must not cost the caller
+/// its controller or its field state (§11).
+/// The downgrades this language is expected to report: no control downgrade at all,
+/// because nothing in the contract falls back any more (§15.5/§16.8). What still falls
+/// back is the structural pair — this adapter owns neither the app host nor the shell.
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
-  // This adapter owns no structural surface, so both the app host and the shell
-  // fall back alongside the controls it does not declare — two kinds of downgrade
-  // with two codes (§ surfaces).
   final controls = sink.where((diagnostic) => diagnostic.control != null);
   final surfaces = sink.where((diagnostic) => diagnostic.surface != null);
-  expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
-  expect(
-    controls.map((diagnostic) => diagnostic.control).toSet(),
-    LiveUiControl.values.toSet().difference(nativeControls),
-  );
+  // A language that renders every control reports no control downgrade at all,
+  // so the code check only applies when something actually fell back.
+  final expectedControls = LiveUiControl.values.toSet().difference(nativeControls);
+  expect(controls.map((diagnostic) => diagnostic.control).toSet(), expectedControls);
+  if (expectedControls.isNotEmpty) {
+    expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
+  }
+  // This adapter owns no structural surface, so both the app host and the shell
+  // fall back alongside it — a downgrade of a different kind, with its own code
+  // (§ surfaces).
   expect(surfaces.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.surfaceUnsupported});
   expect(surfaces.map((diagnostic) => diagnostic.surface).toSet(), LiveUiSurface.values.toSet());
   expect(sink, hasLength(LiveUiControl.values.length + LiveUiSurface.values.length - nativeControls.length));
@@ -55,7 +68,7 @@ void main() {
     ),
   );
 
-  test('the five declared controls resolve native, the rest shared (§16.3)', () {
+  test('every control resolves native, because this language declares the whole contract (§16.3)', () {
     for (final control in LiveUiControl.values) {
       final native = nativeControls.contains(control);
       final resolution = resolver.resolveControl(LiveDesignLanguage.forui, control);
@@ -92,6 +105,7 @@ void main() {
     expect(find.byType(forui.FCard), findsOneWidget);
     expect(find.byType(forui.FTextField), findsOneWidget);
     expect(find.byType(forui.FSwitch), findsOneWidget);
+    expect(find.byType(forui.FDeterminateProgress), findsOneWidget);
     expect(find.byType(TokenSlider), findsNothing);
     expectUndeclaredControls(diagnostics);
 
@@ -111,21 +125,53 @@ void main() {
     expect(find.byType(forui.FTextField), findsOneWidget);
     expect(controller.text, 'typed before the switch');
     expectUndeclaredControls(diagnostics);
-    // Progress stays a shared-fallback control and keeps rendering on both sides.
-    expect(find.byType(LiveProgress), findsOneWidget);
+    // Progress is ForUI's own now, on both sides of the switch it is the same control.
+    expect(find.byType(forui.FDeterminateProgress), findsOneWidget);
   });
 
-  testWidgets('a shared-fallback control stays on-theme inside the forui scope (§15.3)', (tester) async {
+  testWidgets('no token renderer inside a ForUI frame (§15.3)', (tester) async {
     final diagnostics = <LiveUiDiagnostic>[];
     await tester.pumpWidget(
       harness(
         const UiConfig(language: LiveDesignLanguage.forui),
-        const LiveSlider(value: 0.25, onChanged: null),
+        LiveScaffold(
+          appBar: LiveAppBar(
+            title: 'Rooms',
+            actions: const [Icon(Icons.search)],
+            bottom: LiveTabs(
+              tabs: const [
+                LiveTab(label: 'One'),
+                LiveTab(label: 'Two'),
+              ],
+              index: 0,
+              onChanged: (_) {},
+            ),
+          ),
+          body: Column(
+            children: [
+              LiveSegmented(labels: const ['A', 'B'], index: 0, onChanged: (_) {}),
+              LiveSelect<String>(items: const ['x'], itemLabel: (item) => item, onChanged: (_) {}),
+              const LiveListRow(title: 'Room'),
+            ],
+          ),
+          bottomBar: LiveNavBar(
+            items: const [
+              LiveNavBarItem(label: 'Home', icon: Icons.home),
+              LiveNavBarItem(label: 'Shows', icon: Icons.tv),
+            ],
+            index: 0,
+            onChanged: (_) {},
+          ),
+        ),
         diagnostics,
       ),
     );
-    expect(find.byType(forui.FSlider), findsNothing);
-    expect(find.byType(TokenSlider), findsOneWidget);
+    await tester.pump();
+
+    // The whole contract is declared, so nothing inside a ForUI page should be a
+    // `Token*` renderer — asserted by name rather than by list so a control added to
+    // the contract cannot slip in silently.
+    expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

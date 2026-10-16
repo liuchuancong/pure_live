@@ -1,9 +1,10 @@
 # live_uikit_forui
 
 The ForUI design-language adapter for PureLive's unified UI system (`live_uikit`).
-It renders the core's neutral control specifications with native `forui` widgets
-(`FButton`, `FCard`, `FTextField`, `FSwitch`, `FCheckbox`) and installs the forui
-theme variant the resolved design token can decide.
+It renders every control specification the core dispatches with `forui` widgets
+(`FButton`, `FCard`, `FTextField`, `FSwitch`, `FCheckbox`, `FSlider`, `FProgress`,
+`FSelect`, `FTabs`, `FScaffold`, `FHeader`, `FTile`, `FBottomNavigationBar`, `FToast`)
+and installs the forui theme variant the resolved design token can decide.
 
 See `live-uikit-forui.md` in this directory for the full architecture and
 integration specification.
@@ -23,9 +24,18 @@ and have its controls drawn by `forui`, without any business page importing
   `FTheme` scope (never a nested application shell). The library's private
   `FThemeData` constructor caps the mapping at the light/dark neutral variant (§8.1);
   the ceiling is pinned by test rather than faked.
-- Build native forui widgets for: **button, card, text field, switch, checkbox**.
-- Declare exactly those controls in `foruiCapabilities` so the core resolver can
-  report a `controlUnsupported` downgrade for the rest (§16/§17).
+- Build native ForUI widgets for all fifteen: **button, card, text field, switch,
+  checkbox, slider, segmented, progress, select, tab bar, scaffold, app bar, list
+  row, nav bar, toast**. One of them is composed out of ForUI's own parts rather than
+  mapped one-for-one — `segmented` is a row of ghost `FButton`s taking
+  `FButton.selected`, because the library's only single-choice row is `FTabs`, which is
+  a tab *view* and is spent on the tab bar — and `tab bar` is `FTabs` itself with an
+  empty content panel per entry, since that widget always paints a body area while this
+  contract's body belongs to the caller (§9).
+- Declare the whole contract in `foruiCapabilities`: a ForUI page reports no
+  `controlUnsupported` downgrade, and nothing inside a ForUI frame is a token
+  renderer (§16/§17). The structural surfaces (app host, app shell) are not this
+  package's yet, so those two still resolve shared and are reported.
 - Expose `foruiLocalizationsDelegates` for the composition root to install.
 
 ## What this package must not own
@@ -36,10 +46,11 @@ and have its controls drawn by `forui`, without any business page importing
 - Direct dependencies on other style adapters, or on `forui` leaking into
   business packages.
 
-Controls not built here (slider, segmented, progress, select, tab bar) fall back
-to the core shared token renderer — they still render on-theme, they are simply
-not forui-native. `forui` does ship widgets for most of them, so these are
-promotion candidates, not library gaps (spec §18).
+Nothing in the fifteen-control contract falls back to the core shared token renderer
+any more. What is left is narrower and documented per builder: a few spec fields the
+library has no slot for (`LanguageProgressSpec.showLabel`, `LanguageSliderSpec.focusNode`,
+`LanguageTabsSpec.spacing`), the two structural surfaces this package does not own, and
+the theme ceiling described above (spec §18).
 
 ## Public entry point
 
