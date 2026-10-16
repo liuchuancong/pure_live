@@ -138,13 +138,30 @@ final appearancePreferencesProvider = NotifierProvider<AppearancePreferencesNoti
   AppearancePreferencesNotifier.new,
 );
 
+/// A debug-only pin of the design language, which the composition root sets from
+/// the launch argument `--ui-language=<id>`.
+///
+/// Null unless a debug build was started with that flag. The pin replaces the
+/// language the persisted appearance chose for the whole tree — the app host and
+/// the shell included — while the appearance itself is left alone, so a language
+/// checked on a real device is not one the user has to un-pick afterwards, and
+/// the settings page still reports what they actually chose. While a pin is
+/// active a language picked in settings persists but does not repaint — the pin
+/// wins until the next launch, which is the point of a run-time pin.
+final pinnedLanguageProvider = Provider<LiveDesignLanguage?>((ref) => null);
+
 /// The [UiConfig] the app renders with.
 ///
-/// Derived from [appearancePreferencesProvider] alone: a preference change
+/// Derived from [appearancePreferencesProvider], with [pinnedLanguageProvider]
+/// taking the language off it when a debug run pinned one: a preference change
 /// rebuilds the theme and the widgets under it, and nothing that watches this
 /// instead of the appearance — no playback session, no danmaku connection — is
 /// rebuilt with it.
-final uiConfigProvider = Provider<UiConfig>((ref) => uiConfigFromAppearance(ref.watch(appearancePreferencesProvider)));
+final uiConfigProvider = Provider<UiConfig>((ref) {
+  final config = uiConfigFromAppearance(ref.watch(appearancePreferencesProvider));
+  final pinned = ref.watch(pinnedLanguageProvider);
+  return pinned == null ? config : config.copyWith(language: pinned);
+});
 
 /// Reads the persisted appearance and writes every change back through the
 /// store.

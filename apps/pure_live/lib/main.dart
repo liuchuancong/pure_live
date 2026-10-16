@@ -1,10 +1,12 @@
 import 'dart:io' show Platform, exit;
 import 'dart:ui' show PlatformDispatcher;
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_log/live_log.dart' show ErrorReporter;
 import 'package:live_platform/live_platform.dart' show PlatformKind;
+import 'package:live_uikit/live_uikit.dart' show LiveDesignLanguage;
 
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/app/composition/app_services.dart';
@@ -71,9 +73,17 @@ Future<void> main(List<String> args) async {
     await desktopEntry.prepare();
   }
 
+  // A debug build can pin the design language for one run with
+  // `--ui-language=<id>` (`flutter run -d windows -a --ui-language=fluent`).
+  // The language decides the app host and the shell, so this is how a language
+  // gets checked on a real device: without it the only way in was the persisted
+  // appearance box, which the user then has to un-pick. A release never reads the
+  // argument — what the user chose is the whole answer there.
+  final pinnedLanguage = kDebugMode ? _pinnedLanguageFrom(args) : null;
   runApp(
     ProviderScope(
       overrides: [
+        if (pinnedLanguage != null) pinnedLanguageProvider.overrideWithValue(pinnedLanguage),
         environmentProvider.overrideWithValue(services.environment),
         pathsProvider.overrideWithValue(services.paths),
         storageProvider.overrideWithValue(services.storage),
@@ -88,4 +98,57 @@ Future<void> main(List<String> args) async {
       child: AppTheme(diagnostics: log.uiSink, child: const PureLiveApp()),
     ),
   );
+  if (pinnedLanguage != null) {
+    debugPrint('[ui] language pinned by launch argument: ${pinnedLanguage.name}');
+  }
+  if (kDebugMode) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reportHostChain());
+  }
+}
+
+/// The language `--ui-language=<id>` pins for this run, null when the argument is
+/// absent.
+///
+/// An unknown id is a typo in a command line, and the only reader of it is the
+/// person who just typed it, so it fails at boot rather than quietly rendering
+/// the persisted language.
+LiveDesignLanguage? _pinnedLanguageFrom(List<String> args) {
+  const prefix = '--ui-language=';
+  for (final arg in args) {
+    if (!arg.startsWith(prefix)) {
+      continue;
+    }
+    final id = arg.substring(prefix.length);
+    return LiveDesignLanguage.values.firstWhere(
+      (language) => language.name == id,
+      orElse: () => throw ArgumentError.value(id, 'ui-language', 'not a design language'),
+    );
+  }
+  return null;
+}
+
+/// Prints which host and shell the running tree actually mounted, once, after
+/// the first frame.
+///
+/// The `[ui] language=` line says what the resolver *chose*; this says what is
+/// on screen — `FluentApp`, `CupertinoApp`, `MacosApp`, the fork's `MaterialApp`
+/// or the token host — because "did the language change the window" is a question
+/// about the mounted tree, and answering it used to mean attaching a debugger.
+void _reportHostChain() {
+  final root = WidgetsBinding.instance.rootElement;
+  if (root == null) {
+    return;
+  }
+  final chain = <String>[];
+  final structural = RegExp(r'(App|Window|Rail|NavigationView|Scaffold|Router|Overlay)$');
+  void visit(Element element) {
+    final name = element.widget.runtimeType.toString();
+    if (structural.hasMatch(name)) {
+      chain.add(name);
+    }
+    element.visitChildren(visit);
+  }
+
+  visit(root);
+  debugPrint('[ui] host chain: ${chain.join(' > ')}');
 }
