@@ -17,9 +17,17 @@ controls drawn by `glass_morphism_plus`, without business pages importing it.
 - Implement `LanguageAdapter` for `LiveDesignLanguage.glass` (stable id `glass`).
 - Map the resolved `DesignToken` into the Glass theme and install it through a
   theme scope (never a nested application shell).
-- Build native Glass widgets for: **button, card, text field**.
-- Declare exactly those controls in `glassCapabilities` so the core resolver
-  reports a `controlUnsupported` downgrade for the rest (§16/§17).
+- Build native Glass widgets for all fifteen: **button, card, text field, switch,
+  checkbox, slider, segmented, progress, select, tab bar, scaffold, app bar, list
+  row, nav bar, toast**. `glass_morphism_plus` is a surface library — it publishes
+  frosted sheets and the theme that describes them — so only four of those are a
+  library widget (`GlassButton`, `GlassCard`, `GlassTextField`, `GlassListTile`);
+  the other eleven are composed out of `GlassContainer` and the `GlassTheme`
+  values it reads (blur, tint, corner radius, stroke, shadow), and each builder
+  says which (§9).
+- Declare the whole contract in `glassCapabilities`: a Glass page reports no
+  `controlUnsupported` downgrade, and nothing inside a Glass frame is a token
+  renderer (§16/§17).
 
 ## What this package must not own
 
@@ -28,9 +36,9 @@ controls drawn by `glass_morphism_plus`, without business pages importing it.
 - State management (Riverpod/GetX), navigation, business pages, or playback.
 - Direct dependencies on other style adapters.
 
-Controls not built here (switch, checkbox, slider, segmented, progress, select,
-tab bar) fall back to the core shared token renderer — they still render
-on-theme.
+Every control of the contract is built here. What the library has no widget for
+is composed from its own frosted surfaces rather than falling back to the core
+shared token renderer, so a Glass page contains no token-shaped control at all.
 
 ## Public entry point
 
@@ -67,14 +75,25 @@ flutter pub get
 flutter test packages/live_uikit_glass
 ```
 
-`test/adapter/glass_contract_test.dart` verifies the stable id/display name,
-that the declared capabilities match the controls the adapter overrides, and the
-core resolver's native-versus-`controlUnsupported` dispatch (§16/§17).
+`test/adapter/glass_contract_test.dart` verifies the stable id/display name, that
+the declared capabilities are the whole contract, and that every control resolves
+native through the core resolver with no downgrade while an unregistered language
+still resolves shared and says so (§16/§17).
 
 ## Known limitations
 
-- Only button, card and text field are native; every other control uses the shared
-  renderer.
+- Four controls are the library's own widgets; the other eleven are composed from
+  its `GlassContainer` surface and `GlassTheme` values, because
+  `glass_morphism_plus` ships no switch, box, rail, track, bar, field menu, strip,
+  frame, header, destination bar or message.
+- The composed controls route their tap, hover, press and focus through the core's
+  `LiveBox` rather than through `GlassContainer.onTap`, because the library's ink
+  host builds a Material widget with a focus node of its own that the spec's
+  `focusNode` could not reach; `GlassListTile` and `GlassButton` expose no focus
+  slot either (§15).
+- A Glass `select` opens its option list in flow, under the field, since the
+  contract wants a widget that renders where it is placed and an overlay-anchored
+  popup is not one (§9).
 - Glassmorphism blur/backdrop effects must degrade gracefully where the platform
   cannot afford them; they are never a required dependency (§13).
 - Test coverage is present at four layers: `test/adapter/` (contract and
