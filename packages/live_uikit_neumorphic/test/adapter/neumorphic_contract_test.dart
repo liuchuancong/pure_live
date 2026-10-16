@@ -48,6 +48,16 @@ void main() {
       // interface could not join the downgrade list without failing here (§17).
       expect(adapter.capabilities.supported, LiveUiControl.values.toSet());
     });
+
+    test('declares exactly the surfaces it owns structurally', () {
+      const owned = <LiveUiSurface>{LiveUiSurface.appHost, LiveUiSurface.appShell};
+      for (final surface in owned) {
+        expect(adapter.surfaces.supports(surface), isTrue, reason: '$surface should be native');
+      }
+      for (final surface in LiveUiSurface.values.toSet().difference(owned)) {
+        expect(adapter.surfaces.supports(surface), isFalse, reason: '$surface should fall back');
+      }
+    });
   });
 
   group('Neumorphic resolution through the core resolver (§15.3)', () {

@@ -14,6 +14,7 @@ import 'package:live_uikit_neumorphic/src/widgets/neumorphic_progress_builder.da
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_scaffold_builder.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_segmented_builder.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_select_builder.dart';
+import 'package:live_uikit_neumorphic/src/widgets/neumorphic_shell_builder.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_slider_builder.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_switch_builder.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_tab_bar_builder.dart';
@@ -49,7 +50,10 @@ import 'package:live_uikit_neumorphic/src/widgets/neumorphic_toast_builder.dart'
 ///
 /// Nothing here falls through to the shared token base: [capabilities] is the whole
 /// contract (§15.3), and a page that mixes these controls has no Material renderer in
-/// its subtree.
+/// its subtree. Both structural surfaces are owned too — the app host is the
+/// library-themed `WidgetsApp` (`neumorphic_surfaces.dart`), and the shell is the
+/// column this package composes out of the same faces, because the library has no
+/// rail and its one navigation widget cannot carry the contract (§ surfaces).
 class NeumorphicLanguageAdapter extends SharedLanguageAdapter {
   /// The Neumorphic adapter.
   const new();
@@ -122,4 +126,7 @@ class NeumorphicLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget appHost(BuildContext context, LanguageHostSpec spec) => NeumorphicHostBuilder.build(context, spec);
+
+  @override
+  Widget shell(BuildContext context, LanguageShellSpec spec) => NeumorphicShellBuilder.build(context, spec);
 }

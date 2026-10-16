@@ -9,7 +9,8 @@ import 'stub_router.dart';
 
 /// §16 widget tests for `live_uikit_neumorphic`, driving the `Live*` controls
 /// through the real runtime so they render with the native
-/// `flutter_neumorphic_ui_kit` widgets.
+/// `flutter_neumorphic_ui_kit` widgets, plus the composed app shell and the
+/// `WidgetsApp` host (§ surfaces).
 void main() {
   const config = UiConfig(language: LiveDesignLanguage.neumorphic, brightness: UiBrightnessMode.light);
 
@@ -550,6 +551,125 @@ void main() {
       node.requestFocus();
       await tester.pump();
       expect(node.hasFocus, isTrue, reason: 'the node reached the focus tree, not just the widget');
+    });
+  });
+
+  group('the app shell (§ surfaces)', () {
+    const destinations = [
+      LiveShellDestination(id: 'home', label: 'Home', icon: Icons.home),
+      LiveShellDestination(id: 'follow', label: 'Follow', icon: Icons.favorite),
+    ];
+
+    testWidgets('the rail form is a composed column of the library faces, not the token shell', (tester) async {
+      var chosen = '';
+      await tester.pumpWidget(
+        harness(
+          LiveAppShell(
+            destinations: destinations,
+            selectedId: 'home',
+            onSelected: (id) => chosen = id,
+            placement: LiveShellPlacement.rail,
+            trailing: const Text('settings'),
+            child: const Text('room list'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // The library has no rail, so the pane is its own plane turned vertical, and
+      // the body still belongs to the caller.
+      expect(find.byType(TokenAppShell), findsNothing);
+      expect(find.byType(neu.NeuBottomNav), findsNothing, reason: 'the shell is a column, not the pill');
+      expect(find.text('room list'), findsOneWidget);
+      expect(find.text('Follow'), findsOneWidget);
+      // The composed column has a bottom slot of its own, unlike the strip.
+      expect(find.text('settings'), findsOneWidget);
+
+      // Stated with depth: exactly one cell is sunk into the flat track.
+      final dishes = tester
+          .widgetList<neu.NeuContainer>(find.byType(neu.NeuContainer))
+          .where((container) => container.shape == neu.NeuShape.pressed);
+      expect(dishes, hasLength(1));
+
+      await tester.tap(find.text('Follow'));
+      await tester.pump();
+      expect(chosen, 'follow');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a disabled destination keeps its cell and gets no tap', (tester) async {
+      var chosen = '';
+      await tester.pumpWidget(
+        harness(
+          LiveAppShell(
+            destinations: const [
+              LiveShellDestination(id: 'home', label: 'Home', icon: Icons.home),
+              LiveShellDestination(id: 'follow', label: 'Follow', icon: Icons.favorite, enabled: false),
+            ],
+            selectedId: 'home',
+            onSelected: (id) => chosen = id,
+            placement: LiveShellPlacement.rail,
+            child: const Text('room list'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Kept in the layout so the column does not shift when it opens, and refused
+      // here because the container has no disabled state to ask for.
+      expect(find.text('Follow'), findsOneWidget);
+      await tester.tap(find.text('Follow'));
+      await tester.pump();
+      expect(chosen, '');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a bottom request hands the strip to the package nav bar, which has no footer', (tester) async {
+      var chosen = '';
+      await tester.pumpWidget(
+        harness(
+          LiveAppShell(
+            destinations: destinations,
+            selectedId: 'home',
+            onSelected: (id) => chosen = id,
+            placement: LiveShellPlacement.bottom,
+            trailing: const Text('settings'),
+            child: const Text('room list'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(TokenAppShell), findsNothing);
+      expect(find.byType(TokenNavBar), findsNothing);
+      expect(find.text('room list'), findsOneWidget);
+      // The docked slab has no end-of-navigation slot, so the footer is dropped
+      // rather than invented as another destination.
+      expect(find.text('settings'), findsNothing);
+
+      await tester.tap(find.text('Follow'));
+      await tester.pump();
+      expect(chosen, 'follow');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('one destination is not a choice, so the shell stands aside', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          const LiveAppShell(
+            destinations: [LiveShellDestination(id: 'home', label: 'Home', icon: Icons.home)],
+            selectedId: 'home',
+            placement: LiveShellPlacement.rail,
+            child: Text('room list'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(TokenAppShell), findsNothing);
+      expect(find.text('Home'), findsNothing);
+      expect(find.text('room list'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 

@@ -27,21 +27,21 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.toast,
 };
 
-/// The structural surfaces this adapter owns (§ surfaces): the app host, not the
-/// shell.
-const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost};
+/// The structural surfaces this adapter owns (§ surfaces): the `WidgetsApp` host
+/// under `NeuTheme`, and a shell composed from the library's container faces, since
+/// it ships no rail.
+const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost, LiveUiSurface.appShell};
 
 /// §16 integration pass for `live_uikit_neumorphic`: the whole contract native, so a
 /// Neumorphic language change reports no control downgrade at all, and a switch to the
 /// core token base and back leaves the caller's controller and values intact (§11).
-/// The downgrades this language is expected to report: none for controls — only the
-/// shell, which this build does not own (§15.5/§16.8). The app host is owned: this
-/// library ships no application widget, so the host is the app's own `WidgetsApp`
-/// under `NeuTheme`, not Material's (§ surfaces).
+/// The downgrades this language is expected to report: none at all. Every control is
+/// native and both structural surfaces are owned, so the derived checks below compare
+/// against empty sets and skip the code assertions (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
-  // This adapter owns the app host but not the shell, so only the shell falls
-  // back while every control renders natively — a downgrade of its own kind, with
-  // its own code (§ surfaces).
+  // Nothing falls back any more: the host is this package's `WidgetsApp` under
+  // `NeuTheme`, and the shell is the column it composes, so a Neumorphic window
+  // reports no downgrade of either kind (§ surfaces).
   final controls = sink.where((diagnostic) => diagnostic.control != null);
   final surfaces = sink.where((diagnostic) => diagnostic.surface != null);
   // Asserted only while there is something to report: an empty set of codes would

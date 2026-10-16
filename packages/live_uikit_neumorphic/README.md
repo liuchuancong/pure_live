@@ -34,10 +34,12 @@ that package.
 - Declare the whole contract in `neumorphicCapabilities`: a Neumorphic page reports no
   `controlUnsupported` downgrade, and nothing inside a Neumorphic frame is a token
   renderer (§16/§17).
-- Own the app host: the library ships no application widget, so the host is
-  Flutter's `WidgetsApp` with `NeuTheme` above the routed tree — which is what takes
-  the page transition and the scroll physics out of Material's hands (§ surfaces).
-  The shell still resolves shared and is reported.
+- Own both structural surfaces: the library ships no application widget, so the host
+  is Flutter's `WidgetsApp` with `NeuTheme` above the routed tree — which is what takes
+  the page transition and the scroll physics out of Material's hands (§ surfaces) — and
+  the shell is a vertical navigation column composed out of that library's concave and
+  convex container faces, because it has no rail, sidebar or `NavigationView` of its
+  own (see `NeumorphicShellBuilder`).
 
 ## What this package must not own
 
@@ -46,11 +48,11 @@ that package.
 - State management (Riverpod/GetX), navigation, business pages, or playback.
 - Direct dependencies on other style adapters.
 
-Nothing in the control contract falls back to the core shared token renderer here:
-every control a page asks for is drawn by this library, and the host the page sits
-in is this package's own — a `WidgetsApp` with `NeuTheme` above the routed tree, not
-Material's. The only downgrade a Neumorphic page reports is the app shell, which
-this build does not own yet and resolves shared and reports (§ surfaces).
+Nothing in the contract falls back to the core shared token renderer here: every
+control a page asks for is drawn by this library, the host the page sits in is this
+package's own — a `WidgetsApp` with `NeuTheme` above the routed tree, not Material's —
+and the navigation around it is the column this package composes, so a Neumorphic
+window reports no `surfaceUnsupported` downgrade either (§ surfaces).
 
 ## Public entry point
 
@@ -93,12 +95,16 @@ the core resolver's native-versus-`controlUnsupported` dispatch (§16/§17).
 
 ## Known limitations
 
-- Scaffold, app bar, list row and nav bar use the shared renderer, not native
-  Neumorphic surfaces; that is the next pass for this package.
-- `segmented`, `select`, `tab bar` and `toast` are composed from the library's
-  own container faces rather than mapped to a widget of theirs, and the select's
-  option list opens inline (the core owns the overlay, so nothing here may ask
-  for one).
+- The app shell has no navigation widget of its library to borrow: `NeuBottomNav` is a
+  horizontal floating pill that asserts two items, demands a non-null callback and
+  adds its own safe-area inset, so the rail is a composed column and the phone form
+  goes back through `navBar`. Neither strip carries `LanguageShellSpec.trailing` —
+  there is no end-of-navigation slot in a docked bar — so a bottom shell drops the
+  footer rather than inventing one (§ surfaces).
+- `segmented`, `select`, `tab bar`, `nav bar`, `toast` and the shell are composed from
+  the library's own container faces rather than mapped to a widget of theirs, and the
+  select's option list opens inline (the core owns the overlay, so nothing here may
+  ask for one).
 - Test coverage is present at four layers: `test/adapter/` (contract and
   resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
   `test/widgets/` (every native control driven through the real dispatch path), and
