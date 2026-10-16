@@ -611,7 +611,6 @@ void main() {
           LiveApp(
             routerConfig: stubRouterConfig(child: const Text('page')),
             localizationsDelegates: const [...liveLocalizationsDelegates, ...foruiLocalizationsDelegates],
-            supportedLocales: const [Locale('en')],
           ),
         ),
       );
@@ -621,6 +620,119 @@ void main() {
       expect(find.byType(MaterialApp), findsNothing, reason: 'the token Material host must not stand in');
       expect(find.byType(forui.FTheme), findsWidgets);
       expect(find.text('page'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('the app shell (§ surfaces)', () {
+    const shellDestinations = [
+      LiveShellDestination(id: 'home', label: 'Home', icon: Icons.home),
+      LiveShellDestination(id: 'follow', label: 'Follow', icon: Icons.favorite),
+      LiveShellDestination(id: 'archive', label: 'Archive', icon: Icons.archive, enabled: false),
+    ];
+
+    testWidgets("the rail draws the library's own FSidebar, not the token column", (tester) async {
+      var chosen = '';
+      await tester.pumpWidget(
+        harness(
+          SizedBox(
+            width: 720,
+            height: 480,
+            child: LiveAppShell(
+              destinations: shellDestinations,
+              selectedId: 'home',
+              onSelected: (id) => chosen = id,
+              trailing: const Text('settings footer'),
+              placement: LiveShellPlacement.rail,
+              child: const Text('room list'),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(forui.FSidebar), findsOneWidget);
+      expect(find.byType(TokenAppShell), findsNothing);
+      // The sidebar paints only the column: the body the shell was handed is
+      // what shows, beside it.
+      expect(find.text('room list'), findsOneWidget);
+      // `trailing` has a real slot here — the sidebar's sticky footer.
+      expect(find.text('settings footer'), findsOneWidget);
+
+      await tester.tap(find.text('Follow'));
+      await tester.pump();
+      expect(chosen, 'follow');
+
+      // A disabled destination stays visible so the column does not shift, but
+      // the shell refuses it: `FSidebarItem` has no disabled state to map onto,
+      // so the item is simply inert and the id never arrives.
+      await tester.tap(find.text('Archive'));
+      await tester.pump();
+      expect(chosen, 'follow');
+
+      expect(tester.takeException(), isNull);
+
+      // Unmount before teardown and let the library's pending timers lapse:
+      // the tappable inside a sidebar item arms a press timer that outlives its
+      // subtree by a moment, which the test binding counts as a leak. In a real
+      // window that timer is the gesture recognizer settling.
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 2));
+    });
+
+    testWidgets("a bottom request delegates to the library's own strip, and drops trailing", (tester) async {
+      await tester.pumpWidget(
+        harness(
+          SizedBox(
+            width: 420,
+            height: 640,
+            child: LiveAppShell(
+              destinations: const [
+                LiveShellDestination(id: 'home', label: 'Home', icon: Icons.home),
+                LiveShellDestination(id: 'follow', label: 'Follow', icon: Icons.favorite),
+              ],
+              selectedId: 'home',
+              onSelected: (_) {},
+              trailing: const Text('settings footer'),
+              placement: LiveShellPlacement.bottom,
+              child: const Text('room list'),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(forui.FBottomNavigationBar), findsOneWidget);
+      expect(find.byType(forui.FSidebar), findsNothing);
+      expect(find.byType(TokenAppShell), findsNothing);
+      expect(find.text('room list'), findsOneWidget);
+      // The strip has no trailing slot; the form drops it rather than inventing
+      // a place for it — the same rule the token shell states.
+      expect(find.text('settings footer'), findsNothing);
+      expect(tester.takeException(), isNull);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    });
+
+    testWidgets("none is the page's own frame: the shell stands aside", (tester) async {
+      await tester.pumpWidget(
+        harness(
+          LiveAppShell(
+            destinations: shellDestinations,
+            selectedId: 'home',
+            onSelected: (_) {},
+            placement: LiveShellPlacement.none,
+            child: const Text('room list'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('room list'), findsOneWidget);
+      expect(find.byType(forui.FSidebar), findsNothing);
+      expect(find.byType(forui.FBottomNavigationBar), findsNothing);
+      expect(find.byType(TokenAppShell), findsNothing);
       expect(tester.takeException(), isNull);
     });
   });

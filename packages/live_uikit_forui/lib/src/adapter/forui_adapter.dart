@@ -14,6 +14,7 @@ import 'package:live_uikit_forui/src/widgets/forui_progress_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_scaffold_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_segmented_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_select_builder.dart';
+import 'package:live_uikit_forui/src/widgets/forui_shell_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_slider_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_switch_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_tab_bar_builder.dart';
@@ -28,9 +29,9 @@ import 'package:live_uikit_forui/src/widgets/forui_toast_builder.dart';
 /// page is drawn by the shared token renderer. The one control with no library widget to
 /// map is `segmented`, which is composed out of forui's own `FButton` group and says so
 /// in its builder; every other builder records the spec fields the library has no slot
-/// for, so the gaps are visible rather than silent. No business state lives here. The
-/// structural surfaces (app host, app shell) are not this package's yet, so they stay
-/// inherited and the resolver reports them.
+/// for, so the gaps are visible rather than silent. No business state lives here. Both
+/// structural surfaces — the app host and the app shell — are declared in
+/// [foruiSurfaces] and rendered by this package's own builders.
 class ForuiLanguageAdapter extends SharedLanguageAdapter {
   /// The ForUI adapter.
   const new();
@@ -102,4 +103,7 @@ class ForuiLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget appHost(BuildContext context, LanguageHostSpec spec) => ForuiHostBuilder.build(context, spec);
+
+  @override
+  Widget shell(BuildContext context, LanguageShellSpec spec) => ForuiShellBuilder.build(context, spec);
 }

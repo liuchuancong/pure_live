@@ -42,6 +42,22 @@ void main() {
       expect(adapter.language, LiveDesignLanguage.forui);
     });
 
+    test('declares exactly the surfaces it owns structurally', () {
+      // Both sides of the pair now: `WidgetsApp` under `FTheme` for the host,
+      // and `FSidebar` — which needs nothing above that theme and never paints
+      // a body of its own — for the shell (§ surfaces).
+      const owned = <LiveUiSurface>{LiveUiSurface.appHost, LiveUiSurface.appShell};
+      for (final surface in owned) {
+        expect(adapter.surfaces.supports(surface), isTrue, reason: '$surface should be native');
+      }
+      for (final surface in LiveUiSurface.values.toSet().difference(owned)) {
+        expect(adapter.surfaces.supports(surface), isFalse, reason: '$surface should fall back');
+      }
+      // Derived, so a surface added to the contract cannot join the fallback
+      // side silently — the same rule as the control set below (§17).
+      expect(adapter.surfaces.supported, LiveUiSurface.values.toSet());
+    });
+
     test('declares exactly the controls it renders natively', () {
       // All fifteen: forui 0.27.5 carries a widget for every control the contract
       // names, and the one it does not is composed from its own parts (§9).

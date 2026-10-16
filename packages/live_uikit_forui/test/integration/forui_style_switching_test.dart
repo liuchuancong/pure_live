@@ -24,20 +24,20 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.toast,
 };
 
-/// The structural surfaces this adapter owns (§ surfaces): the app host, not the
-/// shell.
-const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost};
+/// The structural surfaces this adapter owns (§ surfaces): both of them — the
+/// app host and the app shell (`FSidebar` beside the router's body).
+const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost, LiveUiSurface.appShell};
 
 /// §16 integration pass for `live_uikit_forui`: every one of the fifteen controls
 /// resolves native — the page frame, the bars and the toast surface included, since
 /// `forui` 0.27.5 ships `FScaffold`, `FHeader`, `FTile`, `FBottomNavigationBar` and
 /// `FToast` — and switching to the core token base and back must not cost the caller
 /// its controller or its field state (§11).
-/// The downgrades this language is expected to report: no control downgrade at all,
-/// because nothing in the contract falls back any more (§15.5/§16.8). What still falls
-/// back is the shell — this library has no application widget, so the host is the
-/// app's own `WidgetsApp` under `FTheme`, and no navigation widget of the library's
-/// is wired to a router-owned body yet (§ surfaces).
+/// The downgrades this language is expected to report: none at all — every
+/// control and both structural surfaces are native now. `forui` ships no
+/// application widget, so the host is the app's own `WidgetsApp` under `FTheme`,
+/// and the shell is `FSidebar`, which needs nothing above that same theme and
+/// paints only the navigation column, the body staying the router's (§ surfaces).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   final controls = sink.where((diagnostic) => diagnostic.control != null);
   final surfaces = sink.where((diagnostic) => diagnostic.surface != null);

@@ -35,10 +35,14 @@ and have its controls drawn by `forui`, without any business page importing
 - Declare the whole contract in `foruiCapabilities`: a ForUI page reports no
   `controlUnsupported` downgrade, and nothing inside a ForUI frame is a token
   renderer (§16/§17).
-- Own the app host: the library ships no application widget, so the host is
-  Flutter's `WidgetsApp` with `FTheme` above the routed tree — which is what takes
-  the page transition and the scroll physics out of Material's hands (§ surfaces).
-  The shell still resolves shared and is reported.
+- Own both structural surfaces (§ surfaces). The app host: the library ships no
+  application widget, so the host is Flutter's `WidgetsApp` with `FTheme` above the
+  routed tree — which is what takes the page transition and the scroll physics out of
+  Material's hands. The app shell: `FSidebar` needs nothing above that same `FTheme`
+  and paints only the navigation column, so the shell draws
+  `Row[FSidebar, Expanded(page)]` itself, hands the bottom form to the library's own
+  `FBottomNavigationBar` through `navBar`, and refuses disabled destinations in place
+  because the library's item has no disabled state to map onto.
 - Expose `foruiLocalizationsDelegates` for the composition root to install.
 
 ## What this package must not own
@@ -50,9 +54,10 @@ and have its controls drawn by `forui`, without any business page importing
   business packages.
 
 Nothing in the fifteen-control contract falls back to the core shared token renderer
-any more. What is left is narrower and documented per builder: a few spec fields the
-library has no slot for (`LanguageProgressSpec.showLabel`, `LanguageSliderSpec.focusNode`,
-`LanguageTabsSpec.spacing`), the app shell this package does not own yet, and
+any more, and neither do the two structural surfaces. What is left is narrower and
+documented per builder: a few spec fields the library has no slot for
+(`LanguageProgressSpec.showLabel`, `LanguageSliderSpec.focusNode`,
+`LanguageTabsSpec.spacing`, `FSidebarItem`'s missing disabled state), and
 the theme ceiling described above (spec §18).
 
 ## Public entry point
