@@ -65,6 +65,18 @@ class _RecordingAdapter extends SharedLanguageAdapter {
   }
 
   @override
+  Widget dialog(BuildContext context, LanguageDialogSpec spec) {
+    captured.add(spec);
+    return super.dialog(context, spec);
+  }
+
+  @override
+  Widget tabView(BuildContext context, LanguageTabViewSpec spec) {
+    captured.add(spec);
+    return super.tabView(context, spec);
+  }
+
+  @override
   Widget appHost(BuildContext context, LanguageHostSpec spec) {
     captured.add(spec);
     return super.appHost(context, spec);
@@ -366,6 +378,59 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(captured.whereType<LanguageToastSpec>(), isEmpty);
+    });
+  });
+
+  group('the dialog and the tab view', () {
+    testWidgets('a dialog forwards its surface and keeps the route in the core', (tester) async {
+      late BuildContext inside;
+      await tester.pumpWidget(
+        harness(
+          Builder(
+            builder: (context) {
+              inside = context;
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      );
+
+      showLiveDialog<void>(
+        context: inside,
+        title: 'Restore',
+        child: const Text('This overwrites the library'),
+        actions: const [Text('Cancel'), Text('Restore')],
+      );
+      await tester.pumpAndSettle();
+
+      final spec = captured.whereType<LanguageDialogSpec>().single;
+      expect(spec.title, 'Restore');
+      expect(spec.actions, hasLength(2));
+      expect(spec.dismissible, isTrue);
+      expect(find.text('This overwrites the library'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a tab view forwards the caller index and reports a swipe back', (tester) async {
+      var index = 0;
+      await tester.pumpWidget(
+        harness(
+          StatefulBuilder(
+            builder: (context, setState) => LiveTabView(
+              pages: const [Text('first'), Text('second')],
+              index: index,
+              onIndexChanged: (i) => setState(() => index = i),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final spec = captured.whereType<LanguageTabViewSpec>().last;
+      expect(spec.pages, hasLength(2));
+      expect(spec.index, 0);
+      expect(find.text('first'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 

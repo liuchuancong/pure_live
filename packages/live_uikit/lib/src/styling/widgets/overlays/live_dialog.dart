@@ -90,16 +90,10 @@ class TokenDialog extends StatelessWidget {
           ?spec.content,
           if (spec.actions.isNotEmpty) ...[
             SizedBox(height: gap),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                for (final action in spec.actions)
-                  Padding(
-                    padding: EdgeInsets.only(left: theme.token.scale.sizes.sm),
-                    child: action,
-                  ),
-              ],
-            ),
+            // A wrap, not a row: Material's own dialog bars use an overflow bar
+            // for exactly this reason — two long labels in a narrow dialog have
+            // to stack rather than run off the edge.
+            Wrap(alignment: WrapAlignment.end, spacing: theme.token.scale.sizes.sm, children: spec.actions),
           ],
         ],
       ),

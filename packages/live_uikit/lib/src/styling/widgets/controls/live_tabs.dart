@@ -246,3 +246,45 @@ class _TokenTabViewState extends State<TokenTabView> {
     );
   }
 }
+
+/// The page switcher under a [LiveTabs] strip, dispatched to the active language.
+///
+/// It takes the same index the strip reports, so a page pair looks like:
+/// ```dart
+/// Column(
+///   children: [
+///     LiveTabs(tabs: tabs, index: index, onChanged: (i) => setState(() => index = i)),
+///     Expanded(child: LiveTabView(index: index, pages: pages, onIndexChanged: (i) => setState(() => index = i))),
+///   ],
+/// )
+/// ```
+/// Whether the pages swipe, fade or simply replace is the language's decision —
+/// [LiveTabView] passes the index and the callback down and paints nothing itself.
+class LiveTabView extends StatelessWidget {
+  /// A tab view over [pages] at [index].
+  const new({
+    required this.pages,
+    required this.index,
+    this.onIndexChanged,
+    this.duration = const Duration(milliseconds: 300),
+    super.key,
+  });
+
+  /// The pages, in the order of the strip's tabs.
+  final List<Widget> pages;
+
+  /// The visible page.
+  final int index;
+
+  /// Called with a page's index when the viewer moves it by swiping.
+  final ValueChanged<int>? onIndexChanged;
+
+  /// How long a page change takes where the language animates one.
+  final Duration duration;
+
+  @override
+  Widget build(BuildContext context) => LiveTheme.of(context).adapter.tabView(
+    context,
+    LanguageTabViewSpec(pages: pages, index: index, onIndexChanged: onIndexChanged, duration: duration),
+  );
+}
