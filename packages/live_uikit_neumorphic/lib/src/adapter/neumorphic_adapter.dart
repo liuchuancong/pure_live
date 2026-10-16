@@ -7,6 +7,7 @@ import 'package:live_uikit_neumorphic/src/widgets/neumorphic_app_bar_builder.dar
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_button_builder.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_card_builder.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_checkbox_builder.dart';
+import 'package:live_uikit_neumorphic/src/widgets/neumorphic_dialog_builder.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_host_builder.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_list_row_builder.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_nav_bar_builder.dart';
@@ -18,6 +19,7 @@ import 'package:live_uikit_neumorphic/src/widgets/neumorphic_shell_builder.dart'
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_slider_builder.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_switch_builder.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_tab_bar_builder.dart';
+import 'package:live_uikit_neumorphic/src/widgets/neumorphic_tab_view_builder.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_text_field_builder.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_toast_builder.dart';
 
@@ -28,7 +30,7 @@ import 'package:live_uikit_neumorphic/src/widgets/neumorphic_toast_builder.dart'
 /// declared [capabilities] to `neumorphic_capabilities.dart`. No business state
 /// lives here.
 ///
-/// All fifteen controls are built from this library, and each builder says whether
+/// All seventeen controls are built from this library, and each builder says whether
 /// it mapped a widget or composed one. Mapped: button, card, text field, switch,
 /// checkbox, slider, `progress` (`NeuProgressBar` already is a recessed trough with
 /// a domed fill) and `appBar` (`NeuAppBar` is a `NeuContainer` plane around a
@@ -43,10 +45,15 @@ import 'package:live_uikit_neumorphic/src/widgets/neumorphic_toast_builder.dart'
 /// strip does state an active destination, and that is the part worth keeping),
 /// `listRow` (a flat plane that becomes a pressed dish when selected, since this
 /// style says "on" with depth rather than with a fill), `toast` (a raised plane;
-/// `LiveToast.show` keeps the overlay, the fade and the timer) and `scaffold` (the
-/// page surface itself — a flat plane at zero depth and zero radius with the bars
-/// stacked on it, because the only frame-shaped widget reachable from the dependency
-/// is Material's own `Scaffold`, which would hand the page back to Material).
+/// `LiveToast.show` keeps the overlay, the fade and the timer), `scaffold` (the page
+/// surface itself — a flat plane at zero depth and zero radius with the bars stacked
+/// on it, because the only frame-shaped widget reachable from the dependency is
+/// Material's own `Scaffold`, which would hand the page back to Material), `dialog`
+/// (the modal surface only — a `convex` panel at twice the theme depth, since the
+/// route, the barrier and the scale-in are the core's `showLiveDialog`, which already
+/// centres, insets and caps what it is handed), and `tabView` (the content a `tabBar`
+/// drives, slid by Flutter's own `PageView` inside a `concave` well — the inverse of
+/// the domed tab).
 ///
 /// Nothing here falls through to the shared token base: [capabilities] is the whole
 /// contract (§15.3), and a page that mixes these controls has no Material renderer in
@@ -120,6 +127,12 @@ class NeumorphicLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget toast(BuildContext context, LanguageToastSpec spec) => NeumorphicToastBuilder.build(context, spec);
+
+  @override
+  Widget dialog(BuildContext context, LanguageDialogSpec spec) => NeumorphicDialogBuilder.build(context, spec);
+
+  @override
+  Widget tabView(BuildContext context, LanguageTabViewSpec spec) => NeumorphicTabViewBuilder.build(context, spec);
 
   @override
   LiveUiSurfaceCapabilities get surfaces => neumorphicSurfaces;

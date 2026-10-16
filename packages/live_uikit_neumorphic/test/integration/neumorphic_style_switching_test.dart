@@ -5,10 +5,10 @@ import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_neumorphic/live_uikit_neumorphic.dart';
 
 /// The controls `live_uikit_neumorphic` renders with `flutter_neumorphic_ui_kit`
-/// (§3.1 capability declaration): all fifteen the resolver dispatches — the eight it
+/// (§3.1 capability declaration): all seventeen the resolver dispatches — the eight it
 /// has a widget for, plus `segmented`, `select`, `tabBar`, `toast`, `scaffold`,
-/// `listRow` and `navBar`, which are composed out of that library's own faces because
-/// it ships no such widget.
+/// `listRow`, `navBar`, `dialog` and `tabView`, which are composed out of that
+/// library's own faces because it ships no such widget.
 const Set<LiveUiControl> nativeControls = {
   LiveUiControl.button,
   LiveUiControl.card,
@@ -25,6 +25,8 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.listRow,
   LiveUiControl.navBar,
   LiveUiControl.toast,
+  LiveUiControl.dialog,
+  LiveUiControl.tabView,
 };
 
 /// The structural surfaces this adapter owns (§ surfaces): the `WidgetsApp` host

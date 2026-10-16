@@ -14,7 +14,7 @@ import 'package:live_uikit/live_uikit.dart';
 /// `NeuContainer` plane around a `NavigationToolbar`, inline-renderable, with every
 /// spec field but `bottom` in a slot of its own).
 ///
-/// Seven are composed out of that library's own faces and values, and each builder
+/// Nine are composed out of that library's own faces and values, and each builder
 /// says why it had to be: `segmented` (a `pressed` dish of cells, the chosen one
 /// domed `convex`), `select` (a field plane plus an option dish that opens inline —
 /// the core owns the overlay), `tabBar` (a row of `NeuContainer` cells, the chosen
@@ -22,10 +22,15 @@ import 'package:live_uikit/live_uikit.dart';
 /// keeps the overlay, the fade and the timer), `navBar` (a docked slab whose active
 /// destination sinks into a `pressed` dish — the opposite of the tab strip's dome),
 /// `listRow` (a flat plane that turns into a `pressed` dish when selected, since this
-/// style states an active thing with depth rather than with a fill), and `scaffold`
-/// (the page surface itself: a flat `NeuContainer` at zero depth and zero radius,
-/// with the dispatched bars stacked on it, because the library has no frame and
-/// Material's would undo the dispatch).
+/// style states an active thing with depth rather than with a fill), `scaffold` (the
+/// page surface itself: a flat `NeuContainer` at zero depth and zero radius, with the
+/// dispatched bars stacked on it, because the library has no frame and Material's
+/// would undo the dispatch), `dialog` (the modal *surface only* — a `convex` panel at
+/// twice the theme depth so it reads as lifted off the page; the route, the barrier
+/// and the scale-in stay in `showLiveDialog`, which already frames the child it is
+/// given), and `tabView` (the content a `tabBar` drives, slid by Flutter's own
+/// `PageView` inside a `concave` well — the inverse of the domed tab, so the strip
+/// and its view read apart by touch).
 ///
 /// All of them read `NeuTheme.of` for base colour, accent, depth, distance and radius,
 /// so they stay on the token through the theme scope even where the library has no
@@ -47,4 +52,6 @@ const LiveUiCapabilities neumorphicCapabilities = LiveUiCapabilities(<LiveUiCont
   LiveUiControl.listRow,
   LiveUiControl.navBar,
   LiveUiControl.toast,
+  LiveUiControl.dialog,
+  LiveUiControl.tabView,
 });

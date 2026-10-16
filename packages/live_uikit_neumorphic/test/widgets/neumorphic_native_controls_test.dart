@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_neumorphic_ui_kit/flutter_neumorphic_ui_kit.dart' as neu;
@@ -701,6 +702,86 @@ void main() {
       expect(find.byType(MaterialApp), findsNothing, reason: 'the token Material host must not stand in');
       expect(find.byType(neu.NeuTheme), findsWidgets);
       expect(find.text('page'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('dialog and tab view (§9)', () {
+    testWidgets('the dialog is a raised surface on the core route, never the token one', (tester) async {
+      late BuildContext context;
+      await tester.pumpWidget(
+        harness(
+          Builder(
+            builder: (c) {
+              context = c;
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      );
+
+      // The route, the barrier, the frame (Center → Padding → ConstrainedBox) and the
+      // scale-in are the core's; the surface inside them is what this language owns.
+      unawaited(
+        showLiveDialog<void>(
+          context: context,
+          title: 'Confirm',
+          child: const Text('body'),
+          actions: [LiveButton(label: 'OK', onPressed: () {})],
+        ),
+      );
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TokenDialog), findsNothing);
+      expect(find.text('Confirm'), findsOneWidget);
+      expect(find.text('body'), findsOneWidget);
+      expect(find.text('OK'), findsOneWidget);
+      // The lifted panel is the library's domed face, not a Material card.
+      final domes = tester
+          .widgetList<neu.NeuContainer>(find.byType(neu.NeuContainer))
+          .where((container) => container.shape == neu.NeuShape.convex);
+      expect(domes, isNotEmpty);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the tab view swipes the caller index inside a recessed well, never the token one', (tester) async {
+      Widget view(int index) => harness(
+        SizedBox(
+          width: 320,
+          height: 240,
+          child: Builder(
+            builder: (context) => LiveTheme.of(context).adapter.tabView(
+              context,
+              LanguageTabViewSpec(
+                pages: const [
+                  Center(child: Text('First page')),
+                  Center(child: Text('Second page')),
+                ],
+                index: index,
+                onIndexChanged: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(view(0));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TokenTabView), findsNothing);
+      expect(find.text('First page'), findsOneWidget);
+      expect(find.text('Second page'), findsNothing, reason: 'the caller index, not a private one, picks the page');
+
+      // Drive the index from outside and the view animates to it: the page well is a
+      // dish (concave), the inverse of the domed tab that drives it.
+      await tester.pumpWidget(view(1));
+      await tester.pumpAndSettle();
+      expect(find.text('Second page'), findsOneWidget);
+      final wells = tester
+          .widgetList<neu.NeuContainer>(find.byType(neu.NeuContainer))
+          .where((container) => container.shape == neu.NeuShape.concave);
+      expect(wells, hasLength(1));
       expect(tester.takeException(), isNull);
     });
   });

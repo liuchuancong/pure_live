@@ -19,16 +19,20 @@ that package.
   (stable id `neumorphic`).
 - Map the resolved `DesignToken` into the Neumorphic theme and install it through
   a theme scope (never a second application widget inside the host).
-- Build native Neumorphic widgets for all fifteen: **button, card, text field, switch,
+- Build native Neumorphic widgets for all seventeen: **button, card, text field, switch,
   checkbox, slider, segmented, progress, select, tab bar, scaffold, app bar, list
-  row, nav bar, toast**. Eight are mappings to a library widget (`progress` is
+  row, nav bar, toast, dialog, tab view**. Eight are mappings to a library widget (`progress` is
   `NeuProgressBar`, a recessed trough with a domed fill; `app bar` is `NeuAppBar`, a
-  `NeuContainer` plane around a `NavigationToolbar`); seven are composed out of the
+  `NeuContainer` plane around a `NavigationToolbar`); nine are composed out of the
   library's own faces — `NeuContainer` in its `flat`/`pressed`/`concave`/`convex`
   shapes with `NeuTheme` colours, depth and radius — because
   `flutter_neumorphic_ui_kit` ships no segmented track, no dropdown, no tab strip, no
-  transient message, no page frame, no list tile and no bottom bar that could carry
-  one (§9). `NeuBottomNav` in particular is a docked floating pill that asserts two
+  transient message, no page frame, no list tile, no bottom bar that could carry
+  one, no modal surface and no page view. The `dialog` composes a domed (`convex`)
+  panel at twice the theme depth as the surface only — the route, the barrier and the
+  scale-in stay the core's (`showLiveDialog`) — and the `tab view` slides its pages
+  with Flutter's own `PageView` inside a recessed (`concave`) well, the inverse of the
+  domed tab. `NeuBottomNav` in particular is a docked floating pill that asserts two
   items, demands a non-null callback and adds its own safe-area inset, so it is
   neither the tab strip nor the nav bar here.
 - Declare the whole contract in `neumorphicCapabilities`: a Neumorphic page reports no
