@@ -19,6 +19,7 @@ dependencies:
   network_info_plus: ^8.2.2 # 网络与 Wi-Fi 信息
   refresh_rate: ^2.0.1 # 屏幕刷新率
   volume_controller: ^3.7.1 # 系统音量读写
+  wakelock_plus: ^1.8.1 # 屏幕常亮开关
 
 dev_dependencies:
   flutter_test:

@@ -9,7 +9,31 @@
   request and a brightness change stream.
 - `SystemVolumeService` over `volume_controller`: 0-100 integer percentages,
   mute, a volume change stream and the Android/iOS system overlay switch.
-- Declared the device plugins this package owns: `battery_plus`,
-  `connectivity_plus`, `device_info_plus`, `mobile_scanner`,
-  `network_info_plus` and `refresh_rate`. Their services are not implemented
-  yet; the app declared these plugins directly before they moved here.
+- `BatteryService` over `battery_plus`: level, charging status, power-save
+  reading and a status stream, with `-1`/`unknown` kept as the platform's way of
+  saying "this machine has no battery".
+- `DisplayRefreshRateService` over `refresh_rate`: current/max/supported rates,
+  a rate stream, low-power and thermal snapshots, and the prefer-max,
+  prefer-default and match-content intents.
+- `NetworkConnectivityService` over `connectivity_plus`: the interface set that
+  is up, an online verdict, and a change stream that owns one native
+  subscription per returned stream, because the plugin's own stream is
+  single-subscription.
+- `WifiInfoService` over `network_info_plus`: SSID, BSSID, addressing and
+  broadcast name, read per field so one unavailable lookup does not discard the
+  rest.
+- `DeviceIdentityService` over `device_info_plus`: one narrow identity model
+  across the six platform backends, memory normalized to megabytes, and
+  deliberately no vendor or hardware tracking identifiers.
+
+- `ScreenAwakeService` over `wakelock_plus`: enable, disable and read the
+  screen wakelock, with playback policy left to the caller.
+
+### Notes
+
+- `mobile_scanner` stays declared without a service: the plugin's controller
+  only emits frames once its preview widget is attached to the widget tree, so
+  the dependency belongs to whichever layer renders the scanner, not here.
+- Declared here are the device plugins the app used to declare directly:
+  `battery_plus`, `connectivity_plus`, `device_info_plus`, `mobile_scanner`,
+  `network_info_plus` and `refresh_rate`.
