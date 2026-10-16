@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-
-import 'package:live_uikit/styling.dart' show LiveShellDestination;
-
+import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 
 /// The shell's branches in one table: the display order, each branch's

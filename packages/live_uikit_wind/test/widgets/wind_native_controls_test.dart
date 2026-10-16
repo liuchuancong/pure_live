@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_wind/live_uikit_wind.dart';
 
 /// §16 widget tests for `live_uikit_wind`, driving the `Live*` controls through

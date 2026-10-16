@@ -1,8 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:live_sites/live_sites.dart' show LiveRoom;
-import 'package:live_uikit/styling.dart' show LiveCard, LiveTheme;
-
+import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/formatters/formatters.dart';
 

@@ -2,7 +2,7 @@ import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_uikit/styling.dart' show LiveAppBar, LiveCard, LiveListRow, LiveScaffold, LiveSpinner, LiveTheme;
+import 'package:live_uikit/live_uikit.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pure_live/app/providers/app_providers.dart';

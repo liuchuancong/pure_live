@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart' show LocalizationsDelegate;
 import 'package:forui/forui.dart' as forui;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_forui/src/adapter/forui_adapter.dart';
 
 /// The stable runtime id for the ForUI adapter.

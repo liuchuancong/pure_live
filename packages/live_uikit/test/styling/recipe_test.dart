@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// The button recipe is `base ⊕ variant ⊕ size ⊕ state` (§4). Its contract is
 /// that each layer overrides only what it names, that it reads nothing but the

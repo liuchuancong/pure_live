@@ -1,7 +1,7 @@
 import 'package:cupertino_ui/cupertino_ui.dart' as cu;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_cupertino/live_uikit_cupertino.dart';
 
 import 'stub_router.dart';

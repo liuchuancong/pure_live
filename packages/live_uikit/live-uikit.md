@@ -134,12 +134,12 @@ packages/live_uikit/
 ├── analysis_options.yaml
 ├── live-uikit.md
 ├── lib/
-│   ├── live_uikit.dart                  # app-facing barrel (re-exports styling.dart)
-│   ├── styling.dart                     # the public surface adapters import
+│   ├── live_uikit.dart                  # the only public barrel
 │   └── src/
 │       ├── backgrounds/                 # LiveBackground + LiveBackgroundStyle (+ generated)
 │       ├── scales/                      # radii, sizing, spacing — the static host-facing scales
 │       └── styling/
+│           ├── styling.dart             # the curated surface the barrel re-exports
 │       │   ├── tokens/                  # seed_token, design_token, component_token,
 │       │   │                            # color_engine, theme_algorithm
 │       │   ├── style/                   # Style + InteractionState (+ generated), recipe
@@ -186,14 +186,15 @@ dart run build_runner build --delete-conflicting-outputs
 
 ## 6. Public API and entry points
 
-Two barrels, one documented reason:
+One barrel:
 
-- `package:live_uikit/live_uikit.dart` — what an application imports; it re-exports
-  `styling.dart`.
-- `package:live_uikit/styling.dart` — the token/contract/renderer surface the adapter
-  packages import directly.
+- `package:live_uikit/live_uikit.dart` — what an application *and* every adapter
+  package imports. The token/contract/renderer surface it exposes is assembled in
+  `src/styling/styling.dart`, which is now internal: two entry points let a
+  consumer pick the layer it meant, and that ambiguity showed up as adapters
+  importing the app-facing barrel and apps importing the adapter-facing one.
 
-Public surface is exactly what those two barrels re-export — a curated list of
+Public surface is exactly what that barrel re-exports — a curated list of
 `src/` files, not the whole tree. `LiveConfigProvider`, `LiveTheme`, `UiConfig`,
 `SeedToken`, `DesignToken`, `Style`, the `Live*` widgets, `LanguageAdapter`,
 `SharedLanguageAdapter`, `LanguageRegistry`, `LiveUiResolver`, the diagnostics

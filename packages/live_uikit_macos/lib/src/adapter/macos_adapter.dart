@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_macos/src/adapter/macos_capabilities.dart';
 import 'package:live_uikit_macos/src/adapter/macos_surfaces.dart';
 import 'package:live_uikit_macos/src/theme/macos_theme_mapper.dart';

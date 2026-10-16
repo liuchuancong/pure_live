@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// §14/§15.5: every downgrade the runtime decides must reach the host's sink, not
 /// only the language-wide one. These tests drive a real [LiveConfigProvider] with

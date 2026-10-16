@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_material/live_uikit_material.dart';
 
 /// The Material UI adapter's contract and capability declarations (§7/§16/§17).

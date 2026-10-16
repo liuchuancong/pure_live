@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:live_uikit/styling.dart' show LiveAppBar, LiveCard, LiveListRow, LiveScaffold;
-
+import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/features/home/home_menu.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';

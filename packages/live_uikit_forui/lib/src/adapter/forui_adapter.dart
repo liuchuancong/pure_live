@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_forui/src/adapter/forui_capabilities.dart';
 import 'package:live_uikit_forui/src/theme/forui_theme_mapper.dart';
 import 'package:live_uikit_forui/src/widgets/forui_button_builder.dart';

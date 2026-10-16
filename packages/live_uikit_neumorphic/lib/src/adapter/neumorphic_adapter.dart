@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_neumorphic/src/adapter/neumorphic_capabilities.dart';
 import 'package:live_uikit_neumorphic/src/theme/neumorphic_theme_mapper.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_button_builder.dart';

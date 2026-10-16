@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart' as forui;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_forui/live_uikit_forui.dart';
 import 'package:live_uikit_forui/src/theme/forui_theme_builder.dart';
 

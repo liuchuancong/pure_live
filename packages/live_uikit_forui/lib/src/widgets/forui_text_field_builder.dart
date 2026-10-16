@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart' as forui;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// Renders a [LanguageTextFieldSpec] with `FTextField` (§9 Text field).
 abstract final class ForuiTextFieldBuilder {

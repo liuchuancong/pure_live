@@ -1,5 +1,5 @@
 import 'package:forui/forui.dart' as forui;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// Maps the core's resolved `DesignToken` into forui's `FThemeData` (§8.1).
 ///

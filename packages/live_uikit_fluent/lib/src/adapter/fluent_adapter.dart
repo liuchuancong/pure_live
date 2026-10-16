@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_fluent/src/adapter/fluent_capabilities.dart';
 import 'package:live_uikit_fluent/src/adapter/fluent_surfaces.dart';
 import 'package:live_uikit_fluent/src/theme/fluent_theme_mapper.dart';

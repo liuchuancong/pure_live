@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic_ui_kit/flutter_neumorphic_ui_kit.dart' as neu;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_neumorphic/live_uikit_neumorphic.dart';
 
 /// §16 widget tests for `live_uikit_neumorphic`, driving the `Live*` controls

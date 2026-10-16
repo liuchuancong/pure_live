@@ -1,6 +1,6 @@
 import 'package:cupertino_ui/cupertino_ui.dart' as cu;
 import 'package:flutter/widgets.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// Builds a native Cupertino UI slider from a [LanguageSliderSpec] (§9 Slider),
 /// clamped to the spec range and disabled by dropping the callback: a null

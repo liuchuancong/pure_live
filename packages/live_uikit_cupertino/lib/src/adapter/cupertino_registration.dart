@@ -1,6 +1,6 @@
 import 'package:cupertino_ui/cupertino_ui.dart' as cu;
 import 'package:flutter/widgets.dart' show LocalizationsDelegate;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_cupertino/src/adapter/cupertino_adapter.dart';
 
 /// The stable runtime id for the Cupertino UI adapter.

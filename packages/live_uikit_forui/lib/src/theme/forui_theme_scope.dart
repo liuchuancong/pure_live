@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart' as forui;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_forui/src/theme/forui_theme_builder.dart';
 
 /// Installs the mapped forui theme around [child] via [forui.FTheme] (§8.2).

@@ -1,6 +1,6 @@
 import 'package:cupertino_ui/cupertino_ui.dart' as cu;
 import 'package:flutter/widgets.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_cupertino/src/theme/cupertino_theme_builder.dart';
 
 /// Builds the Cupertino UI app host from a [LanguageHostSpec] (§9 app host).

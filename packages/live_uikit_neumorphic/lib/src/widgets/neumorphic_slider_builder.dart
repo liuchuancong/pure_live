@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_neumorphic_ui_kit/flutter_neumorphic_ui_kit.dart' as neu;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// Builds a Neumorphic slider from a [LanguageSliderSpec] (§9 Slider), clamped
 /// to the spec range and disabled by dropping the callback.

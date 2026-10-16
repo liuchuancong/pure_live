@@ -1,4 +1,4 @@
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_glass/src/adapter/glass_adapter.dart';
 
 /// The stable runtime id for the Glass adapter.

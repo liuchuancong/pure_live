@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:glass_morphism_plus/glass_morphism_plus.dart' as glass;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_glass/src/theme/glass_theme_builder.dart';
 
 /// Installs the mapped Glass theme around [child] via [glass.GlassTheme] (§8.2).

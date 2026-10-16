@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_material/live_uikit_material.dart';
 import 'package:live_uikit_material/src/theme/material_theme_builder.dart';
 import 'package:material_ui/material_ui.dart' as mu;

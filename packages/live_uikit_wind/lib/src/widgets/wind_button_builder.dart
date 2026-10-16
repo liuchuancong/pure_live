@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart' show Tooltip;
 import 'package:flutter/widgets.dart';
 import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// Builds a Wind button from a [LanguageButtonSpec] (§9 Button). The press and
 /// label logic come from the shared seam; padding is token-driven.

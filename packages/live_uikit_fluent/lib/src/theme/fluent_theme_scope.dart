@@ -1,6 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/widgets.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_fluent/src/theme/fluent_theme_builder.dart';
 
 /// Installs the mapped Fluent theme around [child] via [fluent.FluentTheme]

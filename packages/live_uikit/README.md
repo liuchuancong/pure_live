@@ -65,12 +65,12 @@ without a page changing a line.
 
 ## Public entry points
 
-`package:live_uikit/live_uikit.dart` is the barrel applications import; it re-exports
-`package:live_uikit/styling.dart`, which is the finer-grained entry the adapter
-packages import. Two entry points rather than one on purpose: `live_uikit.dart`
-names the whole system for an app, while `styling.dart` keeps the token/contract
-surface importable without pulling the re-export layer. Both export only public
-API; nothing under `src/` is intended for outside import.
+`package:live_uikit/live_uikit.dart` is the only public barrel: applications and
+adapter packages both import it. The surface it exposes is assembled in
+`src/styling/styling.dart`, which is internal — there used to be a second
+`styling.dart` entry point for adapters, and it bought nothing except the chance
+of importing the layer you did not mean. Nothing under `src/` is intended for
+outside import.
 
 ## Installation and usage
 

@@ -1,17 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_uikit/styling.dart'
-    show
-        LiveAppBar,
-        LiveCard,
-        LiveDesignLanguage,
-        LiveScaffold,
-        LiveSegmented,
-        LiveSelect,
-        LiveSlider,
-        LiveSwitch,
-        UiDensity;
-
+import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/adapters/design_language_registry.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/theme/appearance_preferences/appearance_preferences.dart';

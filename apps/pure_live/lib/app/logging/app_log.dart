@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:live_log/live_log.dart';
-import 'package:live_uikit/styling.dart' show LiveUiDiagnosticSink;
+import 'package:live_uikit/live_uikit.dart';
 
 /// The log policy this build ships.
 ///

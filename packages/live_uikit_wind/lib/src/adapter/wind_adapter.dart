@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_wind/src/adapter/wind_capabilities.dart';
 import 'package:live_uikit_wind/src/theme/wind_theme_mapper.dart';
 import 'package:live_uikit_wind/src/widgets/wind_button_builder.dart';

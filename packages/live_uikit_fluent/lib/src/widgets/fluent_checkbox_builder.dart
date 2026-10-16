@@ -1,6 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/widgets.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// Builds a native Fluent checkbox from a [LanguageCheckboxSpec] (§9 Checkbox),
 /// with the optional trailing label applied through the shared seam so label

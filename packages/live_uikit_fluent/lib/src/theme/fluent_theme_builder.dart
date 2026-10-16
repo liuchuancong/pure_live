@@ -1,6 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/widgets.dart' show Brightness;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// Maps the core's resolved `DesignToken` into `FluentThemeData` (§8.1) — the
 /// theme-*data* half of the Fluent mapping, kept separate from installing it

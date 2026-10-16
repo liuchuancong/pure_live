@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:live_uikit/styling.dart' show LiveAppBar, LiveCard, LiveListRow, LiveScaffold;
-
+import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/routing/routes/backup/backup_routes.dart';
 import 'package:pure_live/app/routing/routes/settings/settings_routes.dart';
 import 'package:pure_live/app/routing/routes/settings/shield_routes.dart';

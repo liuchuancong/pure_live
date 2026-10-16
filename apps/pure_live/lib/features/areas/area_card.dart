@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:live_sites/live_sites.dart' show LiveArea;
-import 'package:live_uikit/styling.dart' show LiveCard, LiveTheme;
+import 'package:live_uikit/live_uikit.dart';
 
 /// An area tile (3.x `AreaCard`): the square picture and the name.
 final class AreaCard extends StatelessWidget {
@@ -31,12 +31,7 @@ final class AreaCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-        Text(
-          area.areaName,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: LiveTheme.of(context).text.caption,
-        ),
+        Text(area.areaName, maxLines: 1, overflow: TextOverflow.ellipsis, style: LiveTheme.of(context).text.caption),
       ],
     ),
   );

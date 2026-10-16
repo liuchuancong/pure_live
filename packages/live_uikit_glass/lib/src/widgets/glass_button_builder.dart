@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:glass_morphism_plus/glass_morphism_plus.dart' as glass;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// Builds a frosted glass button from a [LanguageButtonSpec] (§9 Button). The
 /// press and label logic come from the shared seam; padding is token-driven.

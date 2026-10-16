@@ -1,6 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/widgets.dart' show LocalizationsDelegate;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_fluent/src/adapter/fluent_adapter.dart';
 
 /// The stable runtime id for the Fluent adapter.

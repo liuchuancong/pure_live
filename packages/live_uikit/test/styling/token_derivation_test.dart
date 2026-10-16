@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// The token pipeline is a port, not an interpretation: a single seed is meant
 /// to reproduce Ant Design v5's published derivation (§5). These assertions pin

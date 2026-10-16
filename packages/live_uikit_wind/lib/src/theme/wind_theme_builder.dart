@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart' show Brightness, Color, MaterialColor;
 import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// Maps the core's resolved `DesignToken` into `WindThemeData` (§8.1): the
 /// brightness follows the token, the accent overrides Wind's `primary` colour,

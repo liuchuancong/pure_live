@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart' show BorderRadius, Radius;
 import 'package:flutter_neumorphic_ui_kit/flutter_neumorphic_ui_kit.dart' as neu;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// Maps the core's resolved `DesignToken` into `NeuThemeData` (§8.1): the base
 /// surface and accent colour come straight from the token, the panel corner

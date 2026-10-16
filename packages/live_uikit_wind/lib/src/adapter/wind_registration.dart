@@ -1,4 +1,4 @@
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_wind/src/adapter/wind_adapter.dart';
 
 /// The stable runtime id for the Wind adapter.

@@ -1,6 +1,6 @@
 import 'package:cupertino_ui/cupertino_ui.dart' as cu;
 import 'package:flutter/widgets.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// Builds a native Cupertino UI switch from a [LanguageSwitchSpec] (§9 Switch),
 /// fully controlled by the spec.

@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// Builds a native Wind switch from a [LanguageSwitchSpec] (§9 Switch). Fully
 /// controlled — value, callback and disabled flag come straight from the spec,

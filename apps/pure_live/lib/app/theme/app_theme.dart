@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_uikit/styling.dart';
-
+import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/adapters/design_language_registry.dart';
 import 'package:pure_live/app/environment/env.dart';
 import 'package:pure_live/app/providers/app_providers.dart';

@@ -1,4 +1,4 @@
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// The structural surfaces `live_uikit_material` owns with `material_ui`'s own
 /// widgets (§ surfaces).

@@ -1,7 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
-import 'package:live_uikit/styling.dart' show LiveAppShell, LiveShellPlacement;
-
+import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/shell/shell_destinations.dart';
 
 /// The phone chrome: the three branches under a bottom bar.

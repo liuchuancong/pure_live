@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glass_morphism_plus/glass_morphism_plus.dart' as glass;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_glass/live_uikit_glass.dart';
 
 /// §16 widget tests for `live_uikit_glass`, driving the `Live*` controls through

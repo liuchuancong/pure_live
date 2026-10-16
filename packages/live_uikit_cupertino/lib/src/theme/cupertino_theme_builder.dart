@@ -1,6 +1,6 @@
 import 'package:cupertino_ui/cupertino_ui.dart' as cu;
 import 'package:flutter/widgets.dart' show Brightness;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// Maps the core's resolved `DesignToken` into the fork's `CupertinoThemeData`
 /// (§8.1): brightness and the primary/accent colour follow the token, and the

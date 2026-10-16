@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_cupertino/src/adapter/cupertino_capabilities.dart';
 import 'package:live_uikit_cupertino/src/adapter/cupertino_surfaces.dart';
 import 'package:live_uikit_cupertino/src/theme/cupertino_theme_mapper.dart';

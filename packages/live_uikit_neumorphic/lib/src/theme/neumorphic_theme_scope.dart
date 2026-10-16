@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_neumorphic_ui_kit/flutter_neumorphic_ui_kit.dart' as neu;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_neumorphic/src/theme/neumorphic_theme_builder.dart';
 
 /// Installs the mapped Neumorphic theme around [child] via [neu.NeuTheme]

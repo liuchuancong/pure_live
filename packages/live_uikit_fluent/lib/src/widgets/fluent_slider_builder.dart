@@ -1,6 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/widgets.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// Builds a native Fluent slider from a [LanguageSliderSpec] (§9 Slider). The
 /// value is clamped into `[min, max]` (the spec's range contract) and the

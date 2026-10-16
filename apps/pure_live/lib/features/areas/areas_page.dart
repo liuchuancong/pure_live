@@ -3,8 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveArea, LiveAreaProvider, LiveSite;
-import 'package:live_uikit/styling.dart' show LiveAppBar, LiveButton, LiveEmpty, LiveScaffold, LiveSpinner;
-
+import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/areas/areas_routes.dart';
 import 'package:pure_live/features/areas/area_card.dart';

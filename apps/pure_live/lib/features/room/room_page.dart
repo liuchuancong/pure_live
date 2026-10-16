@@ -4,11 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_playback/live_playback.dart' show EngineStopped, PlaybackEngineEvent;
-import 'package:live_sites/live_sites.dart'
-    show LivePlayLine, LivePlayQuality, LivePlaybackProvider, LiveRoom, LiveRoomProvider, LiveSite, RoomContent;
-import 'package:live_uikit/styling.dart' show LiveAppBar, LiveButton, LiveScaffold, LiveSelect, LiveSpinner, LiveTheme;
+import 'package:live_sites/live_sites.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitVideoView;
-
 import 'package:pure_live/app/engine/playback_engine.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/features/room/danmaku_pane.dart';
@@ -170,10 +168,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
     };
     final playerColumn = Column(children: [_player(context), _info(context)]);
     return LiveScaffold(
-      appBar: LiveAppBar(
-        title: _title(),
-        actions: const [SettingsEntryButton()],
-      ),
+      appBar: LiveAppBar(title: _title(), actions: const [SettingsEntryButton()]),
       body: wide
           ? Row(
               crossAxisAlignment: CrossAxisAlignment.start,

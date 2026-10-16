@@ -3,8 +3,7 @@ import 'dart:async' show StreamSubscription, unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart' show IptvChannel, IptvLibrary, iptvFetcherFor;
-import 'package:live_uikit/styling.dart'
-show LiveAppBar, LiveEmpty, LiveListRow, LiveScaffold, LiveSpinner, LiveTheme;
+import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/iptv/iptv_routes.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';

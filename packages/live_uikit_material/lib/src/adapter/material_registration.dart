@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart' show LocalizationsDelegate;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_material/src/adapter/material_adapter.dart';
 import 'package:material_ui/material_ui.dart' as mu;
 

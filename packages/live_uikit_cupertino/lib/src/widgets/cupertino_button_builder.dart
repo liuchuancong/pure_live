@@ -1,6 +1,6 @@
 import 'package:cupertino_ui/cupertino_ui.dart' as cu;
 import 'package:flutter/widgets.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// Builds a native Cupertino UI button from a [LanguageButtonSpec] (§9 Button):
 /// ghost → a plain [cu.CupertinoButton], otherwise the filled variant; press and

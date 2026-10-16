@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// A stand-in for a package adapter: a distinct native implementation whose
 /// only job is to be registered under a language (§15.6 kind reproduction).

@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:forui/forui.dart' as forui;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// Renders a [LanguageCardSpec] with `FCard` (§9 Card).
 abstract final class ForuiCardBuilder {

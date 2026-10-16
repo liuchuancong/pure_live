@@ -1,4 +1,4 @@
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_neumorphic/src/adapter/neumorphic_adapter.dart';
 
 /// The stable runtime id for the Neumorphic adapter.

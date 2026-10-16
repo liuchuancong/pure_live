@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// The environment is live_uikit's third axis — next to the design language and
 /// the tokens: the same page laid out for a phone, a window or a remote (§12). It

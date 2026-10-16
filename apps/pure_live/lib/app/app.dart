@@ -1,7 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_uikit/styling.dart' show LiveApp;
-
+import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/delegates.dart';
 import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/app/theme/app_theme.dart';

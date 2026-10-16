@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_wind/src/theme/wind_theme_builder.dart';
 
 /// Installs the mapped Wind theme around [child] via [wind.WindTheme] (§8.2).

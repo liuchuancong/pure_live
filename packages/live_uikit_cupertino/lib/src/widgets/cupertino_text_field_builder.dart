@@ -1,6 +1,6 @@
 import 'package:cupertino_ui/cupertino_ui.dart' as cu;
 import 'package:flutter/widgets.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// Builds a native Cupertino UI text field from a [LanguageTextFieldSpec]
 /// (§9 Text field), passing the caller's controller and focus node through and

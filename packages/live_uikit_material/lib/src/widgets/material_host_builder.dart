@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_material/src/theme/material_theme_builder.dart';
 import 'package:material_ui/material_ui.dart' as mu;
 

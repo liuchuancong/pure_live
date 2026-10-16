@@ -1,7 +1,5 @@
 import 'package:flutter/widgets.dart' show Color;
-
-import 'package:live_uikit/styling.dart' show LiveDesignLanguage, UiBrightnessMode, UiConfig, UiDensity;
-
+import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/theme/appearance_preferences/appearance_preferences.dart';
 
 /// The one place that knows both the persisted [AppearancePreferences]

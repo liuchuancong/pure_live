@@ -1,4 +1,4 @@
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// The controls `live_uikit_material` renders with native `material_ui`
 /// widgets (§3.1 / §7). Everything else falls back to the core shared token

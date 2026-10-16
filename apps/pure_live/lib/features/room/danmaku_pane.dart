@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_interaction/live_interaction.dart';
 import 'package:live_sites/live_sites.dart' show LiveGift, LiveMessage, LiveMessageType;
-import 'package:live_uikit/styling.dart' show LiveButton;
-
+import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/engine/danmaku.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';

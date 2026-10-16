@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// §12's blur rule, asserted where it is applied: `LiveBackground` reads the one
 /// environment fact it owns (`LiveTheme.canBlur`) and degrades the frosted

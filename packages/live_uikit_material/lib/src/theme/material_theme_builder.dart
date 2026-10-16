@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart' show Brightness;
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 import 'package:material_ui/material_ui.dart' as mu;
 
 /// Maps the core's resolved `DesignToken` into the fork's `ThemeData` (§8.1):

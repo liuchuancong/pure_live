@@ -1,6 +1,6 @@
 import 'package:fluent_ui/fluent_ui.dart' as fluent;
 import 'package:flutter/widgets.dart';
-import 'package:live_uikit/styling.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// Builds a native Fluent toggle from a [LanguageSwitchSpec] (§9 Switch). The
 /// switch stays fully controlled — value and callback come from the spec, with no

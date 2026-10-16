@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveLinkResolver;
-import 'package:live_uikit/styling.dart'
-    show LiveAppBar, LiveButton, LiveCard, LiveEmpty, LiveScaffold, LiveSpinner, LiveTheme;
-
+import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
@@ -156,11 +154,8 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
         LiveButton(
           label: context.t.toolbox.openRoom,
           icon: Icons.play_circle_outline,
-          onPressed: () => RoomRoute(
-            siteId: resolved.site,
-            roomId: resolved.roomId,
-            roomName: resolved.roomId,
-          ).push<void>(context),
+          onPressed: () =>
+              RoomRoute(siteId: resolved.site, roomId: resolved.roomId, roomName: resolved.roomId).push<void>(context),
         ),
       ],
     ),
