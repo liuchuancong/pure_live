@@ -12,9 +12,8 @@ import 'stub_router.dart';
 /// `macos_ui` paints a glyph with its own `MacosIcon`, which `find.byIcon` does not
 /// match — that finder looks for a Material `Icon` — so the strip and the toast
 /// address the library's icon widget here.
-Finder macosGlyph(IconData icon) => find.byWidgetPredicate(
-  (widget) => widget is macos.MacosIcon && widget.icon == icon,
-);
+Finder macosGlyph(IconData icon) =>
+    find.byWidgetPredicate((widget) => widget is macos.MacosIcon && widget.icon == icon);
 
 /// §16 widget tests for `live_uikit_macos`, driven through the real runtime path
 /// so `Live*` controls dispatch to the `macos_ui` widgets — the eleven the library
@@ -117,13 +116,32 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('a disabled slider takes the documented shared fallback', (tester) async {
-      // `MacosSlider.onChanged` is required, so the fork cannot draw a dead
-      // slider; the token renderer stands in instead of a swallow-the-value
-      // closure (§9/§15).
-      await tester.pumpWidget(harness(const SizedBox(width: 300, child: LiveSlider(value: 0.5, onChanged: null))));
+    testWidgets('a disabled slider is the library rail, not a shared fallback', (tester) async {
+      // `MacosSlider.onChanged` is required and its track and thumb are private,
+      // so a dead slider is drawn from the library's own inert rail plus its
+      // published thumb colour (§9/§15).
+      var changed = 0.0;
+      await tester.pumpWidget(
+        harness(
+          SizedBox(width: 300, child: LiveSlider(value: 0.5, enabled: false, onChanged: (value) => changed = value)),
+        ),
+      );
+      await tester.pump();
       expect(find.byType(macos.MacosSlider), findsNothing);
+      expect(find.byType(macos.ProgressBar), findsOneWidget, reason: 'the library rail stands under the thumb');
+      expect(find.byType(TokenSlider), findsNothing);
       expect(find.byType(LiveSlider), findsOneWidget);
+
+      await tester.dragFrom(tester.getCenter(find.byType(LiveSlider)), const Offset(60, 0));
+      await tester.pump();
+      expect(changed, 0.0, reason: 'a dead rail keeps its value');
+      expect(tester.takeException(), isNull);
+
+      await tester.pumpWidget(harness(const LiveSlider(value: 0.5, onChanged: null)));
+      await tester.pump();
+      expect(find.byType(macos.MacosSlider), findsNothing);
+      expect(find.byType(macos.ProgressBar), findsOneWidget);
+      expect(find.byType(TokenSlider), findsNothing);
       expect(tester.takeException(), isNull);
 
       await tester.pumpWidget(harness(SizedBox(width: 300, child: LiveSlider(value: 0.5, onChanged: (_) {}))));
@@ -274,11 +292,7 @@ void main() {
       var chosen = -1;
       await tester.pumpWidget(
         harness(
-          LiveSegmented(
-            labels: const ['Small', 'Medium', 'Large'],
-            index: 1,
-            onChanged: (index) => chosen = index,
-          ),
+          LiveSegmented(labels: const ['Small', 'Medium', 'Large'], index: 1, onChanged: (index) => chosen = index),
         ),
       );
       await tester.pump();
@@ -309,9 +323,11 @@ void main() {
       // `MacosSegmentedControl` sets its controller index on tap whatever the
       // caller asked, so inertness is the IgnorePointer the builder puts on it.
       expect(
-        tester.widget<IgnorePointer>(
-          find.descendant(of: find.byType(LiveSegmented), matching: find.byType(IgnorePointer)),
-        ).ignoring,
+        tester
+            .widget<IgnorePointer>(
+              find.descendant(of: find.byType(LiveSegmented), matching: find.byType(IgnorePointer)),
+            )
+            .ignoring,
         isTrue,
       );
       // The tap is meant to miss: the pointer never reaches the segment, which is
@@ -379,21 +395,33 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('a select whose value is not among its items takes the shared renderer', (tester) async {
-      // The library asserts the current value matches exactly one item, so a spec
-      // it would throw on is drawn by the shared renderer rather than crashing (§15).
+    testWidgets('a select whose value is not among its items reads as nothing chosen', (tester) async {
+      // The library asserts the value matches exactly one item but skips that
+      // check for a null value, which is its own unchosen state: the field stays
+      // a pop-up button and paints its hint (§15).
       await tester.pumpWidget(
         harness(
           SizedBox(
             width: 260,
-            child: LiveSelect<String>(items: const ['alpha'], itemLabel: (item) => item, value: 'missing', onChanged: (_) {}),
+            child: LiveSelect<String>(
+              items: const ['alpha', 'alpha', 'beta'],
+              itemLabel: (item) => item,
+              value: 'missing',
+              placeholder: 'Pick one',
+              onChanged: (_) {},
+            ),
           ),
         ),
       );
       await tester.pump();
 
-      expect(find.byType(macos.MacosPopupButton<String>), findsNothing);
-      expect(find.byType(TokenSelect<String>), findsOneWidget);
+      expect(find.byType(macos.MacosPopupButton<String>), findsOneWidget);
+      expect(find.byType(TokenSelect<String>), findsNothing);
+      expect(find.text('Pick one'), findsOneWidget, reason: 'an off-list value is not a selection');
+      expect(find.text('missing'), findsNothing);
+      final button = tester.widget<macos.MacosPopupButton<String>>(find.byType(macos.MacosPopupButton<String>));
+      expect(button.value, isNull);
+      expect(button.items!.map((item) => item.value).toList(), ['alpha', 'beta'], reason: 'each legal value once');
       expect(tester.takeException(), isNull);
     });
 
@@ -502,7 +530,7 @@ void main() {
           context: anchorContext,
           title: 'Leave the room?',
           child: const Text('Playback stops.'),
-          actions: [action('Stay'), action('Leave')],
+          actions: (_) => [action('Stay'), action('Leave')],
         ),
       );
       await tester.pump();
@@ -530,7 +558,7 @@ void main() {
           context: anchorContext,
           title: 'Choose',
           child: const Text('Three ways out.'),
-          actions: [action('One'), action('Two'), action('Three')],
+          actions: (_) => [action('One'), action('Two'), action('Three')],
         ),
       );
       await tester.pump();
@@ -552,14 +580,10 @@ void main() {
         // The contract has no `LiveTabView` widget yet, so this is the seam the
         // core's own tab view dispatch would use.
         child: Builder(
-          builder: (context) =>
-              LiveTheme.of(context).adapter.tabView(
-                context,
-                LanguageTabViewSpec(
-                  pages: const [Text('first page'), Text('second page')],
-                  index: index,
-                ),
-              ),
+          builder: (context) => LiveTheme.of(context).adapter.tabView(
+            context,
+            LanguageTabViewSpec(pages: const [Text('first page'), Text('second page')], index: index),
+          ),
         ),
       );
 
@@ -817,9 +841,7 @@ void main() {
       // One destination is not a choice, and `none` asks for no navigation: in both
       // cases the shell stands aside and the page frame is the scaffold's own.
       const single = [LiveShellDestination(id: 'home', label: 'Home', icon: Icons.home)];
-      await tester.pumpWidget(
-        harness(const LiveAppShell(destinations: single, child: Text('room list'))),
-      );
+      await tester.pumpWidget(harness(const LiveAppShell(destinations: single, child: Text('room list'))));
       await tester.pump();
       expect(find.byType(macos.SidebarItems), findsNothing);
       expect(find.byType(TokenAppShell), findsNothing);
@@ -827,11 +849,7 @@ void main() {
 
       await tester.pumpWidget(
         harness(
-          const LiveAppShell(
-            destinations: destinations,
-            placement: LiveShellPlacement.none,
-            child: Text('room list'),
-          ),
+          const LiveAppShell(destinations: destinations, placement: LiveShellPlacement.none, child: Text('room list')),
         ),
       );
       await tester.pump();

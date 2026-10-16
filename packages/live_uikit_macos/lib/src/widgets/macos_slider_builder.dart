@@ -9,8 +9,8 @@ import 'package:macos_ui/macos_ui.dart' as macos;
 /// Only an interactive spec belongs here: `MacosSlider.onChanged` is a required,
 /// non-nullable callback, so a disabled slider has no representation in the
 /// library — a closure that swallows the value would leave a live-looking control
-/// (§9). The adapter routes that case to the shared token renderer, which is the
-/// documented degradation path (§15), rather than approximating a disabled state.
+/// (§9). The adapter draws that case out of the library's inert rail,
+/// `ProgressBar`, plus its published thumb colour (§15).
 abstract final class MacosSliderBuilder {
   /// Builds the slider for [spec].
   static Widget build(BuildContext context, LanguageSliderSpec spec) => macos.MacosSlider(

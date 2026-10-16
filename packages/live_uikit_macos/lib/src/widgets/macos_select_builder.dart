@@ -11,6 +11,11 @@ import 'package:macos_ui/macos_ui.dart' as macos;
 /// [LanguageSelectSpec.placeholder] rides in as the button's `hint`, the slot the
 /// library shows while no value is chosen.
 ///
+/// The adapter hands this builder a spec whose value is either one of the items
+/// or null, because `MacosPopupButton` asserts exactly that and shows its `hint`
+/// for a null value; null and repeated item values are dropped for the same
+/// "exactly one" reason.
+///
 /// A disabled select is the library's own inert state (a null `onChanged` greys
 /// the caret and refuses the menu), so [LanguageSelectSpec.enabled] needs no extra
 /// work. The menu can hand back a null selection — `onChanged` is
