@@ -302,14 +302,15 @@ final class _PagedFeedState extends ConsumerState<_PagedFeed> {
                       '$number',
                       style: TextStyle(fontWeight: FontWeight.w700, color: LiveTheme.of(context).colors.primary),
                     )
-                  : TextButton(
+                  : LiveButton(
+                      label: '$number',
+                      variant: ButtonVariant.ghost,
                       onPressed: busy ? null : () => unawaited(_controller.loadPage(number)),
-                      child: Text('$number'),
                     ),
             ),
-          IconButton(
+          LiveIconButton(
             tooltip: '>',
-            icon: const Icon(Icons.chevron_right),
+            icon: Icons.chevron_right,
             onPressed: (lastPage == null || page < lastPage) && !busy ? () => unawaited(_controller.next()) : null,
           ),
           const SizedBox(width: 12),

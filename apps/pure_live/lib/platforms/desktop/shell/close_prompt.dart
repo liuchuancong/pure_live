@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:live_shell/live_shell.dart' show CloseAction;
+import 'package:live_uikit/live_uikit.dart';
 
 import 'package:pure_live/l10n/generated/strings.g.dart';
 
@@ -21,58 +22,85 @@ final class ClosePromptResult {
 /// persists the answer only when "remember" is checked, so an unchecked
 /// answer costs one dialog per close but never silently rewrites the
 /// viewer's habit.
-Future<ClosePromptResult?> showClosePrompt(BuildContext context) => showDialog<ClosePromptResult>(
-  context: context,
-  barrierDismissible: false,
-  builder: (context) => const _ClosePromptDialog(),
-);
-
-final class _ClosePromptDialog extends StatefulWidget {
-  const new();
-
-  @override
-  State<_ClosePromptDialog> createState() => _ClosePromptDialogState();
+Future<ClosePromptResult?> showClosePrompt(BuildContext context) {
+  final draft = _ClosePromptDraft();
+  return showLiveDialog<ClosePromptResult>(
+    context: context,
+    title: context.t.closePrompt.title,
+    dismissible: false,
+    child: _ClosePromptBody(draft: draft),
+    actions: (dialogContext) => [
+      LiveButton(
+        label: dialogContext.t.common.cancel,
+        variant: ButtonVariant.ghost,
+        onPressed: () => Navigator.of(dialogContext).pop(),
+      ),
+      LiveButton(
+        label: dialogContext.t.common.confirm,
+        onPressed: () =>
+            Navigator.of(dialogContext).pop(ClosePromptResult(action: draft.action, remember: draft.remember)),
+      ),
+    ],
+  );
 }
 
-final class _ClosePromptDialogState extends State<_ClosePromptDialog> {
-  CloseAction _action = CloseAction.hideToTray;
-  bool _remember = false;
+/// The answer the body has picked so far, read by the dialog's confirm button.
+///
+/// The actions are built by the caller of [showLiveDialog] and the choices live
+/// in its child, so the two meet here rather than through a callback the child
+/// would have to be handed.
+final class _ClosePromptDraft {
+  CloseAction action = CloseAction.hideToTray;
+  bool remember = false;
+}
+
+class _ClosePromptBody extends StatefulWidget {
+  const new({required this.draft});
+
+  final _ClosePromptDraft draft;
+
+  @override
+  State<_ClosePromptBody> createState() => _ClosePromptBodyState();
+}
+
+class _ClosePromptBodyState extends State<_ClosePromptBody> {
+  late CloseAction _action = widget.draft.action;
+  late bool _remember = widget.draft.remember;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t.closePrompt;
-    return AlertDialog(
-      title: Text(t.title),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          RadioGroup<CloseAction>(
-            groupValue: _action,
-            onChanged: (value) => setState(() => _action = value ?? CloseAction.hideToTray),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RadioListTile<CloseAction>(value: CloseAction.hideToTray, title: Text(t.toTray)),
-                RadioListTile<CloseAction>(value: CloseAction.quit, title: Text(t.quit)),
-              ],
-            ),
-          ),
-          CheckboxListTile(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Two mutually exclusive answers, so the language's own choice control
+        // rather than a radio group: the dispatched set has no radio, and a
+        // segmented track says the same thing.
+        LiveSegmented(
+          labels: [t.toTray, t.quit],
+          index: _action == CloseAction.hideToTray ? 0 : 1,
+          onChanged: (index) => _choose(index == 0 ? CloseAction.hideToTray : CloseAction.quit),
+        ),
+        Padding(
+          padding: EdgeInsets.only(top: LiveTheme.of(context).token.scale.sizes.md),
+          child: LiveCheckbox(
             value: _remember,
-            onChanged: (value) => setState(() => _remember = value ?? false),
-            controlAffinity: ListTileControlAffinity.leading,
-            title: Text(t.remember),
-            dense: true,
+            label: t.remember,
+            onChanged: _rememberChoice,
           ),
-        ],
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(context.t.common.cancel)),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(ClosePromptResult(action: _action, remember: _remember)),
-          child: Text(context.t.common.confirm),
         ),
       ],
     );
+  }
+
+  void _choose(CloseAction action) {
+    setState(() => _action = action);
+    widget.draft.action = action;
+  }
+
+  void _rememberChoice(bool remember) {
+    setState(() => _remember = remember);
+    widget.draft.remember = remember;
   }
 }
