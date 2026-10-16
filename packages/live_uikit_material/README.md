@@ -21,9 +21,9 @@ core Material coverage rather than inventing a new one.
   `material`).
 - Map the resolved `DesignToken` into the Material theme and install it through a
   theme scope (never a nested application widget).
-- Build native Material widgets for all fifteen: **button, card, text field, switch,
+- Build native Material widgets for all seventeen: **button, card, text field, switch,
   checkbox, slider, segmented, progress, select, tab bar, scaffold, app bar, list
-  row, nav bar, toast**. Three of them are driven differently from the neutral
+  row, nav bar, toast, dialog, tab view**. Three of them are driven differently from the neutral
   spec: `select` is a `DropdownButton`, `tab bar` is a `TabBar` behind a
   `TabController` the adapter owns, and `toast` is a `Material` card themed by the
   fork's own `SnackBarThemeData` (§9).

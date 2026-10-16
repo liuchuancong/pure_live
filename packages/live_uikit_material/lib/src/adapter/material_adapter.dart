@@ -7,6 +7,7 @@ import 'package:live_uikit_material/src/widgets/material_app_bar_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_button_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_card_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_checkbox_builder.dart';
+import 'package:live_uikit_material/src/widgets/material_dialog_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_host_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_list_row_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_nav_bar_builder.dart';
@@ -18,6 +19,7 @@ import 'package:live_uikit_material/src/widgets/material_shell_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_slider_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_switch_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_tab_bar_builder.dart';
+import 'package:live_uikit_material/src/widgets/material_tab_view_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_text_field_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_toast_builder.dart';
 
@@ -124,6 +126,12 @@ class MaterialLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget tabBar(BuildContext context, LanguageTabsSpec spec) => MaterialTabBarBuilder.build(context, spec);
+
+  @override
+  Widget tabView(BuildContext context, LanguageTabViewSpec spec) => MaterialTabViewBuilder.build(context, spec);
+
+  @override
+  Widget dialog(BuildContext context, LanguageDialogSpec spec) => MaterialDialogBuilder.build(context, spec);
 
   @override
   Widget toast(BuildContext context, LanguageToastSpec spec) => MaterialToastBuilder.build(context, spec);

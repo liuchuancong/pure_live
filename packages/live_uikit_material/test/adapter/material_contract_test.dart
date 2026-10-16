@@ -22,6 +22,8 @@ void main() {
     LiveUiControl.progress,
     LiveUiControl.select,
     LiveUiControl.tabBar,
+    LiveUiControl.tabView,
+    LiveUiControl.dialog,
     LiveUiControl.scaffold,
     LiveUiControl.appBar,
     LiveUiControl.listRow,

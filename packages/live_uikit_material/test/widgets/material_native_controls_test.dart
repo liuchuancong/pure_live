@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/foundation.dart' show TargetPlatform, debugDefaultTargetPlatformOverride;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -820,6 +822,91 @@ void main() {
       await tester.pump();
 
       expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('the dialog surface and the page view (§9)', () {
+    testWidgets('the core route hands the surface to the fork, not to the token card', (tester) async {
+      await tester.pumpWidget(harness(const SizedBox.shrink()));
+      unawaited(
+        showLiveDialog<void>(
+          context: tester.element(find.byType(SizedBox)),
+          title: 'Leave the room?',
+          child: const Text('The stream keeps running.'),
+          actions: const [LiveButton(label: 'Cancel'), LiveButton(label: 'Leave', variant: ButtonVariant.danger)],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // The surface is the adapter's; the route, the barrier and the centred frame
+      // stayed in the core, so no token dialog is drawn under a Material page.
+      expect(find.byType(mu.AlertDialog), findsOneWidget);
+      expect(find.byType(TokenDialog), findsNothing);
+      expect(find.text('Leave the room?'), findsOneWidget);
+      expect(find.text('The stream keeps running.'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+      expect(find.text('Leave'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('an icon spec reaches the fork icon slot', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          Builder(
+            builder: (context) =>
+                LiveTheme.of(context).adapter.dialog(
+                  context,
+                  const LanguageDialogSpec(icon: Icons.info_outline, title: 'Notice', content: Text('body')),
+                ),
+          ),
+        ),
+      );
+      expect(find.byType(mu.AlertDialog), findsOneWidget);
+      expect(find.byIcon(Icons.info_outline), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the view is the fork TabBarView and follows the index it is given', (tester) async {
+      var chosen = -1;
+      Widget view(int index) =>
+          SizedBox(
+            width: 320,
+            height: 120,
+            child: Builder(
+              builder: (context) =>
+                  LiveTheme.of(context).adapter.tabView(
+                    context,
+                    LanguageTabViewSpec(
+                      pages: const [Text('first page'), Text('second page')],
+                      index: index,
+                      onIndexChanged: (value) => chosen = value,
+                    ),
+                  ),
+            ),
+          );
+
+      await tester.pumpWidget(harness(view(0)));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(mu.TabBarView), findsOneWidget);
+      expect(find.byType(TokenTabView), findsNothing);
+      // Measured from the view's own origin: the harness centres the 320-wide box,
+      // so the absolute coordinates are not the page positions. The fork builds the
+      // page the spec names, which is exactly what a controlled view promises.
+      final viewLeft = tester.getTopLeft(find.byType(mu.TabBarView)).dx;
+      expect(tester.getTopLeft(find.text('first page')).dx, moreOrLessEquals(viewLeft));
+      expect(find.text('second page'), findsNothing);
+
+      await tester.pumpWidget(harness(view(1)));
+      await tester.pumpAndSettle();
+      expect(tester.getTopLeft(find.text('second page')).dx, moreOrLessEquals(viewLeft));
+
+      await withInkPlatform(() async {
+        await tester.drag(find.byType(mu.TabBarView), const Offset(320, 0));
+        await tester.pumpAndSettle();
+      });
+      expect(chosen, 0, reason: 'a swipe reports an index, not a route');
       expect(tester.takeException(), isNull);
     });
   });
