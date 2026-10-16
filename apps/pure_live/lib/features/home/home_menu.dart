@@ -3,6 +3,7 @@ import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/app/routing/routes/about/about_routes.dart';
 import 'package:pure_live/app/routing/routes/areas/areas_routes.dart';
 import 'package:pure_live/app/routing/routes/iptv/iptv_routes.dart';
+import 'package:pure_live/app/routing/routes/multiview/multiview_routes.dart';
 import 'package:pure_live/app/routing/routes/search/search_routes.dart';
 import 'package:pure_live/app/routing/routes/toolbox/toolbox_routes.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
@@ -50,6 +51,11 @@ final class HomeMenuEntry {
       label: context.t.iptv.title,
       icon: Icons.dns_outlined,
       onOpen: (context) => const IptvRoute().push<void>(context),
+    ),
+    HomeMenuEntry(
+      label: context.t.multiview.title,
+      icon: Icons.grid_view_outlined,
+      onOpen: (context) => const MultiviewRoute().push<void>(context),
     ),
     HomeMenuEntry(
       label: context.t.about.title,

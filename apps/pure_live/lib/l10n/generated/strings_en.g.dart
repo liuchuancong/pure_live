@@ -55,6 +55,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$backup$en backup = _Translations$backup$en._(_root);
 	@override late final _Translations$about$en about = _Translations$about$en._(_root);
 	@override late final _Translations$shield$en shield = _Translations$shield$en._(_root);
+	@override late final _Translations$multiview$en multiview = _Translations$multiview$en._(_root);
 	@override late final _Translations$search$en search = _Translations$search$en._(_root);
 	@override late final _Translations$errors$en errors = _Translations$errors$en._(_root);
 	@override late final _Translations$tabs$en tabs = _Translations$tabs$en._(_root);
@@ -296,6 +297,19 @@ class _Translations$shield$en extends Translations$shield$zh {
 	@override String get none => 'Nothing here';
 }
 
+// Path: multiview
+class _Translations$multiview$en extends Translations$multiview$zh {
+	_Translations$multiview$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Multi-view';
+	@override String get platform => 'Platform';
+	@override String get roomId => 'Room ID';
+	@override String get add => 'Add cell';
+}
+
 // Path: search
 class _Translations$search$en extends Translations$search$zh {
 	_Translations$search$en._(TranslationsEn root) : this._root = root, super.internal(root);
@@ -475,6 +489,10 @@ extension on TranslationsEn {
 			'shield.regexes' => 'Regexes',
 			'shield.add' => 'Add',
 			'shield.none' => 'Nothing here',
+			'multiview.title' => 'Multi-view',
+			'multiview.platform' => 'Platform',
+			'multiview.roomId' => 'Room ID',
+			'multiview.add' => 'Add cell',
 			'search.hint' => 'Search rooms by keyword',
 			'search.rooms' => 'Rooms',
 			'search.anchors' => 'Anchors',

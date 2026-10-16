@@ -117,6 +117,12 @@
     "add": "添加",
     "none": "暂无"
   },
+  "multiview": {
+    "title": "多画面",
+    "platform": "平台",
+    "roomId": "房间号",
+    "add": "添加格子"
+  },
   "search": {
     "hint": "输入关键词搜索房间",
     "rooms": "房间",

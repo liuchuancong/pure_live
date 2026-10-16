@@ -43,6 +43,9 @@ abstract final class RoutePath {
   /// One IPTV channel playing; the name rides as the query.
   static const String iptvPlay = '/iptv/play/:channelId';
 
+  /// The multi-view page.
+  static const String multiview = '/multiview';
+
   /// The search page, a full page above the shell.
   static const String search = '/search';
 

@@ -56,6 +56,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$backup$zh backup = Translations$backup$zh.internal(_root);
 	late final Translations$about$zh about = Translations$about$zh.internal(_root);
 	late final Translations$shield$zh shield = Translations$shield$zh.internal(_root);
+	late final Translations$multiview$zh multiview = Translations$multiview$zh.internal(_root);
 	late final Translations$search$zh search = Translations$search$zh.internal(_root);
 	late final Translations$room$zh room = Translations$room$zh.internal(_root);
 	late final Translations$errors$zh errors = Translations$errors$zh.internal(_root);
@@ -443,6 +444,27 @@ class Translations$shield$zh {
 	String get none => '暂无';
 }
 
+// Path: multiview
+class Translations$multiview$zh {
+	Translations$multiview$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '多画面'
+	String get title => '多画面';
+
+	/// zh: '平台'
+	String get platform => '平台';
+
+	/// zh: '房间号'
+	String get roomId => '房间号';
+
+	/// zh: '添加格子'
+	String get add => '添加格子';
+}
+
 // Path: search
 class Translations$search$zh {
 	Translations$search$zh.internal(this._root);
@@ -703,6 +725,10 @@ extension on Translations {
 			'shield.regexes' => '正则',
 			'shield.add' => '添加',
 			'shield.none' => '暂无',
+			'multiview.title' => '多画面',
+			'multiview.platform' => '平台',
+			'multiview.roomId' => '房间号',
+			'multiview.add' => '添加格子',
 			'search.hint' => '输入关键词搜索房间',
 			'search.rooms' => '房间',
 			'search.anchors' => '主播',

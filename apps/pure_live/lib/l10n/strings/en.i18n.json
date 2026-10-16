@@ -120,6 +120,12 @@
     "add": "Add",
     "none": "Nothing here"
   },
+  "multiview": {
+    "title": "Multi-view",
+    "platform": "Platform",
+    "roomId": "Room ID",
+    "add": "Add cell"
+  },
   "search": {
     "hint": "Search rooms by keyword",
     "rooms": "Rooms",

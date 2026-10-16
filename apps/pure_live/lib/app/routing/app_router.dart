@@ -8,6 +8,7 @@ import 'package:pure_live/app/routing/route_paths.dart';
 import 'package:pure_live/app/routing/routes/about/about_routes.dart' as about_routes;
 import 'package:pure_live/app/routing/routes/areas/areas_routes.dart' as areas_routes;
 import 'package:pure_live/app/routing/routes/iptv/iptv_routes.dart' as iptv_routes;
+import 'package:pure_live/app/routing/routes/multiview/multiview_routes.dart' as multiview_routes;
 import 'package:pure_live/app/routing/routes/search/search_routes.dart' as search_routes;
 import 'package:pure_live/app/routing/routes/settings/settings_routes.dart' as settings_routes;
 import 'package:pure_live/app/routing/routes/toolbox/toolbox_routes.dart' as toolbox_routes;
@@ -129,6 +130,7 @@ final routerProvider = Provider<GoRouter>(
       ...about_routes.$appRoutes,
       ...areas_routes.$appRoutes,
       ...iptv_routes.$appRoutes,
+      ...multiview_routes.$appRoutes,
       ...toolbox_routes.$appRoutes,
       ...search_routes.$appRoutes,
       ...settings_routes.$appRoutes,
