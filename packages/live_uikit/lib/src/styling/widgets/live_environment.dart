@@ -68,6 +68,7 @@ final class Geometry {
     required this.railWidth,
     required this.contentMaxWidth,
     required this.dialogMaxWidth,
+    required this.appBarHeight,
   });
 
   /// Derives the geometry for [mode] from the design [token].
@@ -88,6 +89,7 @@ final class Geometry {
       railWidth: tv ? 0 : 88,
       contentMaxWidth: tv ? 1920 : 1100,
       dialogMaxWidth: desktop ? 520 : 420,
+      appBarHeight: tv ? 88 : 56,
     );
   }
 
@@ -127,6 +129,9 @@ final class Geometry {
   /// The maximum dialog width.
   final double dialogMaxWidth;
 
+  /// The top bar's title-row height, so a page never invents one.
+  final double appBarHeight;
+
   @override
   bool operator ==(Object other) =>
       other is Geometry &&
@@ -141,7 +146,8 @@ final class Geometry {
       other.navBarHeight == navBarHeight &&
       other.railWidth == railWidth &&
       other.contentMaxWidth == contentMaxWidth &&
-      other.dialogMaxWidth == dialogMaxWidth;
+      other.dialogMaxWidth == dialogMaxWidth &&
+      other.appBarHeight == appBarHeight;
 
   // Every field, because `LiveEnvironmentScope.updateShouldNotify` compares two
   // `Geometry` objects: a field left out here is a field whose change silently
@@ -160,6 +166,7 @@ final class Geometry {
     railWidth,
     contentMaxWidth,
     dialogMaxWidth,
+    appBarHeight,
   );
 }
 

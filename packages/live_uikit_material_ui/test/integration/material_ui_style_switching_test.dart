@@ -4,6 +4,26 @@ import 'package:live_uikit/styling.dart';
 import 'package:live_uikit_material_ui/live_uikit_material_ui.dart';
 import 'package:material_ui/material_ui.dart' as mu;
 
+/// The controls `live_uikit_material_ui` renders natively (§3.1 capability
+/// declaration): twelve of the fifteen the resolver dispatches — everything
+/// except `select`, `tabBar` (which this fork does not carry) and `toast`
+/// (Material's transient message belongs to the ScaffoldMessenger, not to a
+/// surface the adapter can return).
+const Set<LiveUiControl> nativeControls = {
+  LiveUiControl.button,
+  LiveUiControl.card,
+  LiveUiControl.textField,
+  LiveUiControl.switchWidget,
+  LiveUiControl.checkbox,
+  LiveUiControl.slider,
+  LiveUiControl.segmented,
+  LiveUiControl.progress,
+  LiveUiControl.scaffold,
+  LiveUiControl.appBar,
+  LiveUiControl.listRow,
+  LiveUiControl.navBar,
+};
+
 /// §16 integration pass for `live_uikit_material_ui`.
 ///
 /// Material UI and the core `material` token base are the pair §11 calls the most
@@ -13,11 +33,13 @@ import 'package:material_ui/material_ui.dart' as mu;
 /// directions, keep one caller-owned controller across the switch, and check the
 /// diagnostics a switch is expected to produce — and only those.
 /// The downgrades this language is expected to report: every control the adapter
-/// does not declare, each exactly once per language change (§15.5/§16.8).
+/// does not declare — `select`, `tabBar` and the page trio `scaffold`, `appBar`,
+/// `listRow` that no adapter maps yet — each exactly once per language change
+/// (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   expect(sink.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
-  expect(sink.map((diagnostic) => diagnostic.control).toSet(), {LiveUiControl.select, LiveUiControl.tabBar});
-  expect(sink, hasLength(2));
+  expect(sink.map((diagnostic) => diagnostic.control).toSet(), LiveUiControl.values.toSet().difference(nativeControls));
+  expect(sink, hasLength(LiveUiControl.values.length - nativeControls.length));
 }
 
 void main() {
@@ -43,9 +65,9 @@ void main() {
   );
 
   group('the resolution surface (§16.3/§16.8)', () {
-    test('eight controls resolve native, select and tabs through the shared renderer', () {
+    test('the twelve declared controls resolve native, the other three shared (§16.3)', () {
       for (final control in LiveUiControl.values) {
-        final native = control != LiveUiControl.select && control != LiveUiControl.tabBar;
+        final native = nativeControls.contains(control);
         final resolution = resolver.resolveControl(LiveDesignLanguage.materialUi, control);
         expect(
           resolution.implementation.kind,
@@ -85,9 +107,9 @@ void main() {
         ],
       );
 
-      // §16.7: the two controls Material UI serves through the shared renderer
-      // must stay usable — and keep their typed selection — whichever language
-      // is drawing the rest of the page.
+      // §16.7: the controls Material UI serves through the shared renderer — the
+      // two exercised here, tabs and select — must stay usable, and keep their
+      // typed selection, whichever language is drawing the rest of the page.
       Future<void> useFallbackControls() async {
         tabs = -1;
         selected = '';

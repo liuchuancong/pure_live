@@ -4,23 +4,30 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:live_uikit/styling.dart';
 import 'package:live_uikit_cupertino_ui/live_uikit_cupertino_ui.dart';
 
-/// §16 integration pass for `live_uikit_cupertino_ui`: the four declared controls
-/// resolve native and the six others resolve shared, and switching to the core
-/// token base and back replaces the rendering path without touching the caller's
-/// controller or the fallback controls' behaviour (§11).
+/// The controls `live_uikit_cupertino_ui` renders natively (§3.1 capability
+/// declaration): eight of the fifteen the resolver dispatches.
+const Set<LiveUiControl> nativeControls = {
+  LiveUiControl.button,
+  LiveUiControl.textField,
+  LiveUiControl.switchWidget,
+  LiveUiControl.slider,
+  LiveUiControl.scaffold,
+  LiveUiControl.appBar,
+  LiveUiControl.listRow,
+  LiveUiControl.navBar,
+};
+
+/// §16 integration pass for `live_uikit_cupertino_ui`: the eight declared controls
+/// resolve native and the seven others resolve shared (`card`, `checkbox`,
+/// `segmented`, `progress`, `select`, `tabBar`, `toast`), and switching to the
+/// core token base and back replaces the rendering path without touching the
+/// caller's controller or the fallback controls' behaviour (§11).
 /// The downgrades this language is expected to report: every control the adapter
 /// does not declare, each exactly once per language change (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   expect(sink.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
-  expect(sink.map((diagnostic) => diagnostic.control).toSet(), {
-    LiveUiControl.card,
-    LiveUiControl.checkbox,
-    LiveUiControl.segmented,
-    LiveUiControl.progress,
-    LiveUiControl.select,
-    LiveUiControl.tabBar,
-  });
-  expect(sink, hasLength(6));
+  expect(sink.map((diagnostic) => diagnostic.control).toSet(), LiveUiControl.values.toSet().difference(nativeControls));
+  expect(sink, hasLength(LiveUiControl.values.length - nativeControls.length));
 }
 
 void main() {
@@ -29,13 +36,6 @@ void main() {
     fallback: SharedLanguageAdapter(),
   );
   const resolver = LiveUiResolver(registry: registry);
-
-  const nativeControls = {
-    LiveUiControl.button,
-    LiveUiControl.textField,
-    LiveUiControl.switchWidget,
-    LiveUiControl.slider,
-  };
 
   Widget harness(UiConfig ui, Widget child, List<LiveUiDiagnostic> sink) => LiveConfigProvider(
     config: ui,
@@ -48,7 +48,7 @@ void main() {
     ),
   );
 
-  test('the four declared controls resolve native, the rest shared (§16.3)', () {
+  test('the eight declared controls resolve native, the rest shared (§16.3)', () {
     for (final control in LiveUiControl.values) {
       final native = nativeControls.contains(control);
       final resolution = resolver.resolveControl(LiveDesignLanguage.cupertinoUi, control);

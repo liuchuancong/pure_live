@@ -5,11 +5,14 @@ import 'package:live_uikit_fluent/src/theme/fluent_theme_mapper.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_button_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_card_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_checkbox_builder.dart';
+import 'package:live_uikit_fluent/src/widgets/fluent_list_row_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_progress_builder.dart';
+import 'package:live_uikit_fluent/src/widgets/fluent_scaffold_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_select_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_slider_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_switch_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_text_field_builder.dart';
+import 'package:live_uikit_fluent/src/widgets/fluent_toast_builder.dart';
 
 /// Fluent — the `fluent_ui` design-language adapter (§1).
 ///
@@ -62,4 +65,13 @@ class FluentLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget select<T>(BuildContext context, LanguageSelectSpec<T> spec) => FluentSelectBuilder.build<T>(context, spec);
+
+  @override
+  Widget scaffold(BuildContext context, LanguageScaffoldSpec spec) => FluentScaffoldBuilder.build(context, spec);
+
+  @override
+  Widget listRow(BuildContext context, LanguageListRowSpec spec) => FluentListRowBuilder.build(context, spec);
+
+  @override
+  Widget toast(BuildContext context, LanguageToastSpec spec) => FluentToastBuilder.build(context, spec);
 }

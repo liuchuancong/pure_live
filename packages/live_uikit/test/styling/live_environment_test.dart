@@ -121,6 +121,7 @@ void main() {
         'railWidth': _copy(desktop, railWidth: 1),
         'contentMaxWidth': _copy(desktop, contentMaxWidth: 1),
         'dialogMaxWidth': _copy(desktop, dialogMaxWidth: 1),
+        'appBarHeight': _copy(desktop, appBarHeight: 1),
       };
       for (final entry in variants.entries) {
         expect(entry.value, isNot(desktop), reason: 'a change to ${entry.key} must be visible');
@@ -366,6 +367,7 @@ Geometry _copy(
   double? railWidth,
   double? contentMaxWidth,
   double? dialogMaxWidth,
+  double? appBarHeight,
 }) => Geometry(
   mode: base.mode,
   pagePadding: pagePadding ?? base.pagePadding,
@@ -379,4 +381,5 @@ Geometry _copy(
   railWidth: railWidth ?? base.railWidth,
   contentMaxWidth: contentMaxWidth ?? base.contentMaxWidth,
   dialogMaxWidth: dialogMaxWidth ?? base.dialogMaxWidth,
+  appBarHeight: appBarHeight ?? base.appBarHeight,
 );

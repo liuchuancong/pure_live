@@ -35,6 +35,21 @@ enum LiveUiControl {
 
   /// The tab bar.
   tabBar,
+
+  /// The page frame (background, bars, floating action).
+  scaffold,
+
+  /// The top bar of a page.
+  appBar,
+
+  /// A tappable list row.
+  listRow,
+
+  /// The bottom navigation bar of a shell.
+  navBar,
+
+  /// A transient status message.
+  toast,
 }
 
 /// How a control is rendered for the active design language (§15.2).

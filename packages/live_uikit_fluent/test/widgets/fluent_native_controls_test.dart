@@ -248,6 +248,57 @@ void main() {
     });
   });
 
+  group('chrome (§9)', () {
+    testWidgets('the page frame resolves through fluent.ScaffoldPage', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          LiveScaffold(
+            appBar: const LiveAppBar(title: 'Rooms'),
+            body: const Text('content'),
+            bottomBar: LiveNavBar(
+              items: const [LiveNavBarItem(label: 'Home', icon: Icons.home)],
+              index: 0,
+              onChanged: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(fluent.ScaffoldPage), findsOneWidget);
+      expect(find.text('content'), findsOneWidget);
+      // `navBar` is not Fluent's: the strip still draws from the token base,
+      // inside a Fluent frame, and the resolver reports that gap once.
+      expect(find.byType(TokenNavBar), findsOneWidget);
+    });
+
+    testWidgets('a row resolves through fluent.ListTile with both lines and its tap', (tester) async {
+      var taps = 0;
+      await tester.pumpWidget(
+        harness(LiveListRow(title: 'Accent', subtitle: 'violet', selected: true, onTap: () => taps++)),
+      );
+
+      expect(find.byType(fluent.ListTile), findsOneWidget);
+      expect(find.text('Accent'), findsOneWidget);
+      expect(find.text('violet'), findsOneWidget);
+
+      await tester.tap(find.byType(fluent.ListTile));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(taps, 1);
+    });
+
+    testWidgets('a toast surface is the Fluent InfoBar, not the token pill', (tester) async {
+      await tester.pumpWidget(harness(const SizedBox.shrink()));
+      LiveToast.show(tester.element(find.byType(SizedBox)), 'Saved', type: LiveToastType.success);
+      await tester.pump();
+
+      expect(find.byType(fluent.InfoBar), findsOneWidget);
+      expect(find.text('Saved'), findsOneWidget);
+      expect(find.byType(TokenToast), findsNothing);
+    });
+  });
+
   group('shared fallback (§15.3)', () {
     testWidgets('a control the adapter does not override still renders', (tester) async {
       await tester.pumpWidget(harness(LiveSegmented(labels: const ['A', 'B'], index: 0, onChanged: (_) {})));

@@ -4,22 +4,32 @@ import 'package:live_uikit/styling.dart';
 import 'package:live_uikit_macos/live_uikit_macos.dart';
 import 'package:macos_ui/macos_ui.dart' as macos;
 
-/// §16 integration pass for `live_uikit_macos`: four declared controls native,
-/// six shared, and a switch to the core token base and back that replaces the
-/// rendering path while the caller keeps its own controller (§11).
+/// The controls `live_uikit_macos` renders natively (§3.1 capability
+/// declaration): seven of the fifteen the resolver dispatches, including the
+/// page frame, the bar and the row mapped onto `MacosScaffold`, `ToolBar` and
+/// `MacosListTile`.
+const Set<LiveUiControl> nativeControls = {
+  LiveUiControl.button,
+  LiveUiControl.textField,
+  LiveUiControl.checkbox,
+  LiveUiControl.slider,
+  LiveUiControl.scaffold,
+  LiveUiControl.appBar,
+  LiveUiControl.listRow,
+};
+
+/// §16 integration pass for `live_uikit_macos`: seven declared controls native,
+/// the other eight shared (`card`, `switchWidget`, `segmented`, `progress`,
+/// `select`, `tabBar` and the two chrome controls `macos_ui` has no widget for —
+/// `navBar`, whose place is taken by a `Sidebar`, and `toast`, whose `Toast` is an
+/// overlay manager rather than a surface), and a switch to the core token base and
+/// back that replaces the rendering path while the caller keeps its controller (§11).
 /// The downgrades this language is expected to report: every control the adapter
 /// does not declare, each exactly once per language change (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   expect(sink.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
-  expect(sink.map((diagnostic) => diagnostic.control).toSet(), {
-    LiveUiControl.card,
-    LiveUiControl.switchWidget,
-    LiveUiControl.segmented,
-    LiveUiControl.progress,
-    LiveUiControl.select,
-    LiveUiControl.tabBar,
-  });
-  expect(sink, hasLength(6));
+  expect(sink.map((diagnostic) => diagnostic.control).toSet(), LiveUiControl.values.toSet().difference(nativeControls));
+  expect(sink, hasLength(LiveUiControl.values.length - nativeControls.length));
 }
 
 void main() {
@@ -28,8 +38,6 @@ void main() {
     fallback: SharedLanguageAdapter(),
   );
   const resolver = LiveUiResolver(registry: registry);
-
-  const nativeControls = {LiveUiControl.button, LiveUiControl.textField, LiveUiControl.checkbox, LiveUiControl.slider};
 
   Widget harness(UiConfig ui, Widget child, List<LiveUiDiagnostic> sink) => LiveConfigProvider(
     config: ui,
@@ -42,7 +50,7 @@ void main() {
     ),
   );
 
-  test('the four declared controls resolve native, the rest shared (§16.3)', () {
+  test('the seven declared controls resolve native, the rest shared (§16.3)', () {
     for (final control in LiveUiControl.values) {
       final native = nativeControls.contains(control);
       final resolution = resolver.resolveControl(LiveDesignLanguage.macos, control);

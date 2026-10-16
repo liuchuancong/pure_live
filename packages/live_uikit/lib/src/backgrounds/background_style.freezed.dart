@@ -372,8 +372,8 @@ class LiveImageBackground implements LiveBackgroundStyle {
  final  Color? scrim;
 /// How strongly `scrim` is applied, 0..1.
 @JsonKey() final  double scrimStrength;
-/// The blur radius over the image; 0 keeps it sharp. Presets set 0
-/// where the environment cannot afford a backdrop filter.
+/// The blur radius over the image; 0 keeps it sharp. Ignored when the
+/// resolved theme reports a backdrop filter is not affordable.
 @JsonKey() final  double blurSigma;
 
 /// Create a copy of LiveBackgroundStyle

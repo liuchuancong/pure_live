@@ -4,7 +4,9 @@ import 'package:live_uikit/src/styling/contracts/live_ui_capabilities.dart';
 import 'package:live_uikit/src/styling/design_token.dart';
 import 'package:live_uikit/src/styling/recipe.dart';
 import 'package:live_uikit/src/styling/style.dart';
+import 'package:live_uikit/src/styling/widgets/live_nav_bar.dart' show LiveNavBarItem;
 import 'package:live_uikit/src/styling/widgets/live_tabs.dart' show LiveTab;
+import 'package:live_uikit/src/styling/widgets/live_toast.dart' show LiveToastType;
 
 /// The switchable design languages, each backed by its own widget library.
 enum LiveDesignLanguage {
@@ -415,6 +417,185 @@ class LanguageTabsSpec {
   final bool enabled;
 }
 
+/// A page frame described the same way every language draws it.
+///
+/// The frame is the control a language difference shows on most: it decides the
+/// background surface, where the bars sit, and whether the content runs behind
+/// the top bar. It carries the bars as already-built widgets because the bar is
+/// its own dispatched control — a page names its frame, the frame asks for its
+/// bar, and each of those answers in the active language.
+class LanguageScaffoldSpec {
+  /// A scaffold spec.
+  const new({
+    required this.body,
+    this.appBar,
+    this.bottomBar,
+    this.floatingActionButton,
+    this.background,
+    this.extendBodyBehindAppBar = false,
+    this.avoidKeyboard = true,
+  });
+
+  /// The page content.
+  final Widget body;
+
+  /// The already-dispatched top bar, null for a page without one.
+  final Widget? appBar;
+
+  /// The bottom bar — a navigation rail's footer, a tab strip, an action row.
+  final Widget? bottomBar;
+
+  /// A floating action, placed at the trailing bottom corner of the frame.
+  final Widget? floatingActionButton;
+
+  /// A background override; null keeps the surface role of the theme.
+  final Color? background;
+
+  /// Whether [body] starts under [appBar] rather than below it, for the pages
+  /// whose cover art or scroll view is meant to reach the top edge.
+  final bool extendBodyBehindAppBar;
+
+  /// Whether the content keeps clear of an open on-screen keyboard. A library
+  /// whose frame handles this itself maps it natively; the token renderer
+  /// answers with the view insets, which is what the Material frame it replaced
+  /// did by default.
+  final bool avoidKeyboard;
+}
+
+/// A top bar described the same way every language draws it.
+class LanguageAppBarSpec {
+  /// An app bar spec.
+  const new({
+    required this.title,
+    this.leading,
+    this.actions = const <Widget>[],
+    this.bottom,
+    this.background,
+    this.centerTitle,
+    this.height,
+  });
+
+  /// The page title.
+  final String title;
+
+  /// A widget before the title — a back affordance, a drawer button, a logo.
+  final Widget? leading;
+
+  /// Actions after the title, in order.
+  final List<Widget> actions;
+
+  /// A strip under the title row, typically a dispatched `LiveTabs`.
+  final Widget? bottom;
+
+  /// A background override; null keeps the theme's header surface.
+  final Color? background;
+
+  /// Whether the title sits in the middle. Null defers to what the language
+  /// does by default — a centre-titled bar is a platform statement, not a
+  /// layout preference, so the caller only overrides it deliberately.
+  final bool? centerTitle;
+
+  /// The title row height; null takes the language's own bar height.
+  final double? height;
+}
+
+/// A tappable list row described the same way every language draws it.
+class LanguageListRowSpec {
+  /// A list row spec.
+  const new({
+    required this.title,
+    this.subtitle,
+    this.leading,
+    this.trailing,
+    this.onTap,
+    this.onLongPress,
+    this.selected = false,
+    this.divided = false,
+    this.focusNode,
+    this.autofocus = false,
+  });
+
+  /// The row's main line.
+  final String title;
+
+  /// The secondary line.
+  final String? subtitle;
+
+  /// A widget before the text — an avatar, an icon, a cover.
+  final Widget? leading;
+
+  /// A widget after the text — a chevron, a switch, a menu button.
+  final Widget? trailing;
+
+  /// The tap handler; null renders a row that does not respond.
+  final VoidCallback? onTap;
+
+  /// A long-press handler.
+  final VoidCallback? onLongPress;
+
+  /// Whether the row shows the selected state.
+  final bool selected;
+
+  /// Whether a divider follows the row.
+  final bool divided;
+
+  /// A focus node and first-focus flag for interactive rows.
+  final FocusNode? focusNode;
+
+  /// Whether it takes focus on first appearance.
+  final bool autofocus;
+}
+
+/// A bottom navigation bar described the same way every language draws it.
+class LanguageNavBarSpec {
+  /// A nav bar spec.
+  const new({required this.items, required this.index, this.onChanged, this.enabled = true});
+
+  /// The destinations, in order.
+  final List<LiveNavBarItem> items;
+
+  /// The selected destination.
+  final int index;
+
+  /// Called with a destination's index; null (or `enabled: false`) refuses taps.
+  final ValueChanged<int>? onChanged;
+
+  /// Whether the bar responds to input.
+  final bool enabled;
+}
+
+/// A transient status message described the same way every language draws it.
+///
+/// The spec covers the message's own surface only: the overlay it is placed
+/// in, the fade-and-slide in and the timer that removes it belong to the core
+/// (`LiveToast.show`), because those are the same in every language and a
+/// library that wants its own placement overrides the whole call.
+class LanguageToastSpec {
+  /// A toast spec.
+  const new({
+    required this.message,
+    this.type = LiveToastType.info,
+    this.icon,
+    this.accent,
+    this.duration = const Duration(milliseconds: 2200),
+  });
+
+  /// The text.
+  final String message;
+
+  /// The semantic kind, which decides the default accent and glyph.
+  final LiveToastType type;
+
+  /// A glyph override; null takes the one that matches [type].
+  final IconData? icon;
+
+  /// A colour override; null takes the status role of [type].
+  final Color? accent;
+
+  /// How long the message stays up.
+  final Duration duration;
+}
+
 /// Renders one design language's controls from the real widget library, themed
 /// from the resolved [DesignToken]. Each language provides an adapter; the
 /// active one is chosen at runtime by `UiConfig.language`, so switching a
@@ -470,4 +651,19 @@ abstract interface class LanguageAdapter {
 
   /// Draws a tab strip with the language's real widget.
   Widget tabBar(BuildContext context, LanguageTabsSpec spec);
+
+  /// Draws the page frame with the language's real widget.
+  Widget scaffold(BuildContext context, LanguageScaffoldSpec spec);
+
+  /// Draws a top bar with the language's real widget.
+  Widget appBar(BuildContext context, LanguageAppBarSpec spec);
+
+  /// Draws a list row with the language's real widget.
+  Widget listRow(BuildContext context, LanguageListRowSpec spec);
+
+  /// Draws a bottom navigation bar with the language's real widget.
+  Widget navBar(BuildContext context, LanguageNavBarSpec spec);
+
+  /// Draws a toast's surface with the language's real widget.
+  Widget toast(BuildContext context, LanguageToastSpec spec);
 }

@@ -2,8 +2,11 @@ import 'package:flutter/widgets.dart';
 import 'package:live_uikit/styling.dart';
 import 'package:live_uikit_macos/src/adapter/macos_ui_capabilities.dart';
 import 'package:live_uikit_macos/src/theme/macos_theme_mapper.dart';
+import 'package:live_uikit_macos/src/widgets/macos_app_bar_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_button_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_checkbox_builder.dart';
+import 'package:live_uikit_macos/src/widgets/macos_list_row_builder.dart';
+import 'package:live_uikit_macos/src/widgets/macos_scaffold_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_slider_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_text_field_builder.dart';
 
@@ -52,4 +55,13 @@ class MacosLanguageAdapter extends SharedLanguageAdapter {
     }
     return MacosSliderBuilder.build(context, spec);
   }
+
+  @override
+  Widget scaffold(BuildContext context, LanguageScaffoldSpec spec) => MacosScaffoldBuilder.build(context, spec);
+
+  @override
+  Widget appBar(BuildContext context, LanguageAppBarSpec spec) => MacosAppBarBuilder.build(context, spec);
+
+  @override
+  Widget listRow(BuildContext context, LanguageListRowSpec spec) => MacosListRowBuilder.build(context, spec);
 }

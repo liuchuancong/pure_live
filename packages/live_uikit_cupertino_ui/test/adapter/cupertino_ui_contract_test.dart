@@ -11,15 +11,19 @@ import 'package:live_uikit_cupertino_ui/live_uikit_cupertino_ui.dart';
 void main() {
   const adapter = cupertinoUiAdapter;
 
-  const native = {LiveUiControl.button, LiveUiControl.textField, LiveUiControl.switchWidget, LiveUiControl.slider};
-  const fallback = {
-    LiveUiControl.card,
-    LiveUiControl.checkbox,
-    LiveUiControl.segmented,
-    LiveUiControl.progress,
-    LiveUiControl.select,
-    LiveUiControl.tabBar,
+  const native = {
+    LiveUiControl.button,
+    LiveUiControl.textField,
+    LiveUiControl.switchWidget,
+    LiveUiControl.slider,
+    LiveUiControl.scaffold,
+    LiveUiControl.appBar,
+    LiveUiControl.listRow,
+    LiveUiControl.navBar,
   };
+  // Derived rather than listed, so a control added to the contract cannot join the
+  // fallback side silently — the suite has to be told (§17).
+  final fallback = LiveUiControl.values.toSet().difference(native);
 
   group('Cupertino UI adapter contract (§7)', () {
     test('exposes a stable id, display name and language', () {

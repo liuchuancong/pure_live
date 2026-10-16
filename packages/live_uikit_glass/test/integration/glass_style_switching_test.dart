@@ -4,24 +4,22 @@ import 'package:glass_morphism_plus/glass_morphism_plus.dart' as glass;
 import 'package:live_uikit/styling.dart';
 import 'package:live_uikit_glass/live_uikit_glass.dart';
 
+/// The controls `live_uikit_glass` renders natively (§3.1 capability
+/// declaration): three of the thirteen the resolver dispatches.
+const Set<LiveUiControl> nativeControls = {LiveUiControl.button, LiveUiControl.card, LiveUiControl.textField};
+
 /// §16 integration pass for `live_uikit_glass`: the three controls the frosted
-/// library actually serves resolve native, the other seven resolve shared, and a
-/// switch to the core token base and back must not cost the caller its controller
-/// or its field state (§11).
+/// library actually serves resolve native, the other ten resolve shared (the
+/// seven widget controls `switchWidget`, `checkbox`, `slider`, `segmented`,
+/// `progress`, `select`, `tabBar` plus the page trio `scaffold`, `appBar`,
+/// `listRow` that no adapter maps yet), and a switch to the core token base and
+/// back must not cost the caller its controller or its field state (§11).
 /// The downgrades this language is expected to report: every control the adapter
 /// does not declare, each exactly once per language change (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   expect(sink.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
-  expect(sink.map((diagnostic) => diagnostic.control).toSet(), {
-    LiveUiControl.switchWidget,
-    LiveUiControl.checkbox,
-    LiveUiControl.slider,
-    LiveUiControl.segmented,
-    LiveUiControl.progress,
-    LiveUiControl.select,
-    LiveUiControl.tabBar,
-  });
-  expect(sink, hasLength(7));
+  expect(sink.map((diagnostic) => diagnostic.control).toSet(), LiveUiControl.values.toSet().difference(nativeControls));
+  expect(sink, hasLength(LiveUiControl.values.length - nativeControls.length));
 }
 
 void main() {
@@ -30,8 +28,6 @@ void main() {
     fallback: SharedLanguageAdapter(),
   );
   const resolver = LiveUiResolver(registry: registry);
-
-  const nativeControls = {LiveUiControl.button, LiveUiControl.card, LiveUiControl.textField};
 
   Widget harness(UiConfig ui, Widget child, List<LiveUiDiagnostic> sink) => LiveConfigProvider(
     config: ui,

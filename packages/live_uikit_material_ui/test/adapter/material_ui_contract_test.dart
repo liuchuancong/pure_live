@@ -20,8 +20,14 @@ void main() {
     LiveUiControl.slider,
     LiveUiControl.segmented,
     LiveUiControl.progress,
+    LiveUiControl.scaffold,
+    LiveUiControl.appBar,
+    LiveUiControl.listRow,
+    LiveUiControl.navBar,
   };
-  const fallback = {LiveUiControl.select, LiveUiControl.tabBar};
+  // Derived rather than listed, so a control added to the contract cannot join the
+  // fallback side silently — the suite has to be told (§17).
+  final fallback = LiveUiControl.values.toSet().difference(native);
 
   group('Material UI adapter contract (§7)', () {
     test('exposes a stable id, display name and language', () {

@@ -156,4 +156,85 @@ void main() {
       expect(button.autofocus, isTrue);
     });
   });
+
+  group('native chrome (§9/§16)', () {
+    // The frame is the widget under test, so it is the home itself rather than a
+    // child of a Material scaffold — a language frame that only worked inside
+    // `Scaffold` would not be a frame.
+    Widget chromeHarness(Widget child) => LiveConfigProvider(
+      config: config,
+      registry: const LanguageRegistry(
+        adapters: {LiveDesignLanguage.cupertinoUi: cupertinoUiAdapter},
+        fallback: SharedLanguageAdapter(),
+      ),
+      child: MaterialApp(
+        localizationsDelegates: const [...liveLocalizationsDelegates, ...cupertinoUiLocalizationsDelegates],
+        supportedLocales: const [Locale('en')],
+        home: child,
+      ),
+    );
+
+    testWidgets('the page trio and the bottom strip render through the fork', (tester) async {
+      var tapped = false;
+      var picked = -1;
+      await tester.pumpWidget(
+        chromeHarness(
+          LiveScaffold(
+            appBar: LiveAppBar(
+              title: 'Settings',
+              actions: [LiveButton(label: 'Done', onPressed: () {})],
+            ),
+            body: LiveListRow(title: 'Profile', subtitle: 'liu', onTap: () => tapped = true),
+            bottomBar: LiveNavBar(
+              items: const [
+                LiveNavBarItem(label: 'Home', icon: Icons.home),
+                LiveNavBarItem(label: 'More', icon: Icons.more_horiz),
+              ],
+              index: 0,
+              onChanged: (i) => picked = i,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(cu.CupertinoPageScaffold), findsOneWidget);
+      expect(find.byType(cu.CupertinoNavigationBar), findsOneWidget);
+      expect(find.byType(cu.CupertinoListTile), findsOneWidget);
+      expect(find.byType(cu.CupertinoTabBar), findsOneWidget);
+      for (final tokenType in <Type>[TokenScaffold, TokenAppBar, TokenListRow, TokenNavBar]) {
+        expect(find.byType(tokenType), findsNothing, reason: 'the token $tokenType must not render a declared control');
+      }
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.byType(cu.CupertinoListTile));
+      await tester.pump();
+      expect(tapped, isTrue);
+
+      await tester.tap(find.text('More'));
+      await tester.pump();
+      expect(picked, 1);
+    });
+
+    testWidgets('a long press reaches the row through the gesture wrapper', (tester) async {
+      var pressed = false;
+      await tester.pumpWidget(
+        chromeHarness(
+          LiveScaffold(
+            body: LiveListRow(title: 'Room', onLongPress: () => pressed = true),
+          ),
+        ),
+      );
+      expect(find.byType(cu.CupertinoListTile), findsOneWidget);
+      await tester.longPress(find.byType(cu.CupertinoListTile));
+      await tester.pump();
+      expect(pressed, isTrue);
+    });
+
+    testWidgets('an empty bottom strip keeps the shared renderer, which tolerates it', (tester) async {
+      await tester.pumpWidget(chromeHarness(const LiveNavBar(items: [], index: 0)));
+      expect(find.byType(cu.CupertinoTabBar), findsNothing);
+      expect(find.byType(TokenNavBar), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
 }

@@ -4,16 +4,37 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:live_uikit/styling.dart';
 import 'package:live_uikit_fluent/live_uikit_fluent.dart';
 
-/// §16 integration pass for `live_uikit_fluent`: the eight declared controls
+/// The controls `live_uikit_fluent` renders natively (§3.1 capability
+/// declaration): eleven of the fifteen the resolver dispatches, including
+/// `select`, which only Fluent renders for real, and the page frame, list row
+/// and toast surface this adapter maps to `ScaffoldPage`/`ListTile`/`InfoBar`.
+const Set<LiveUiControl> nativeControls = {
+  LiveUiControl.button,
+  LiveUiControl.card,
+  LiveUiControl.textField,
+  LiveUiControl.switchWidget,
+  LiveUiControl.checkbox,
+  LiveUiControl.slider,
+  LiveUiControl.progress,
+  LiveUiControl.select,
+  LiveUiControl.scaffold,
+  LiveUiControl.listRow,
+  LiveUiControl.toast,
+};
+
+/// §16 integration pass for `live_uikit_fluent`: the eleven `nativeControls`
 /// resolve native — including `select`, which only Fluent renders for real — the
-/// two remaining ones resolve shared, and switching to the core token base and
+/// four controls of the fifteen-control dispatch contract this adapter does not
+/// declare (`segmented`, `tabBar` and the chrome `appBar`/`navBar`, for which
+/// fluent_ui has no page-level title strip with widget actions and no bottom
+/// navigation strip) resolve shared, and switching to the core token base and
 /// back preserves the caller's controller (§11).
 /// The downgrades this language is expected to report: every control the adapter
 /// does not declare, each exactly once per language change (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   expect(sink.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
-  expect(sink.map((diagnostic) => diagnostic.control).toSet(), {LiveUiControl.segmented, LiveUiControl.tabBar});
-  expect(sink, hasLength(2));
+  expect(sink.map((diagnostic) => diagnostic.control).toSet(), LiveUiControl.values.toSet().difference(nativeControls));
+  expect(sink, hasLength(LiveUiControl.values.length - nativeControls.length));
 }
 
 void main() {
@@ -22,17 +43,6 @@ void main() {
     fallback: SharedLanguageAdapter(),
   );
   const resolver = LiveUiResolver(registry: registry);
-
-  const nativeControls = {
-    LiveUiControl.button,
-    LiveUiControl.card,
-    LiveUiControl.textField,
-    LiveUiControl.switchWidget,
-    LiveUiControl.checkbox,
-    LiveUiControl.slider,
-    LiveUiControl.progress,
-    LiveUiControl.select,
-  };
 
   Widget harness(UiConfig ui, Widget child, List<LiveUiDiagnostic> sink) => LiveConfigProvider(
     config: ui,
@@ -45,7 +55,7 @@ void main() {
     ),
   );
 
-  test('the eight declared controls resolve native, segmented and tabs shared (§16.3)', () {
+  test('the eleven declared controls resolve native, the other four shared (§16.3)', () {
     for (final control in LiveUiControl.values) {
       final native = nativeControls.contains(control);
       final resolution = resolver.resolveControl(LiveDesignLanguage.fluent, control);

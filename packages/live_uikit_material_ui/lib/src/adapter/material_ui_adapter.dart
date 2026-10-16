@@ -2,10 +2,14 @@ import 'package:flutter/widgets.dart';
 import 'package:live_uikit/styling.dart';
 import 'package:live_uikit_material_ui/src/adapter/material_ui_capabilities.dart';
 import 'package:live_uikit_material_ui/src/theme/material_ui_theme_mapper.dart';
+import 'package:live_uikit_material_ui/src/widgets/material_ui_app_bar_builder.dart';
 import 'package:live_uikit_material_ui/src/widgets/material_ui_button_builder.dart';
 import 'package:live_uikit_material_ui/src/widgets/material_ui_card_builder.dart';
 import 'package:live_uikit_material_ui/src/widgets/material_ui_checkbox_builder.dart';
+import 'package:live_uikit_material_ui/src/widgets/material_ui_list_row_builder.dart';
+import 'package:live_uikit_material_ui/src/widgets/material_ui_nav_bar_builder.dart';
 import 'package:live_uikit_material_ui/src/widgets/material_ui_progress_builder.dart';
+import 'package:live_uikit_material_ui/src/widgets/material_ui_scaffold_builder.dart';
 import 'package:live_uikit_material_ui/src/widgets/material_ui_segmented_builder.dart';
 import 'package:live_uikit_material_ui/src/widgets/material_ui_slider_builder.dart';
 import 'package:live_uikit_material_ui/src/widgets/material_ui_switch_builder.dart';
@@ -70,4 +74,25 @@ class MaterialUiLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget progress(BuildContext context, LanguageProgressSpec spec) => MaterialUiProgressBuilder.build(context, spec);
+
+  @override
+  Widget scaffold(BuildContext context, LanguageScaffoldSpec spec) => MaterialUiScaffoldBuilder.build(context, spec);
+
+  @override
+  Widget appBar(BuildContext context, LanguageAppBarSpec spec) => MaterialUiAppBarBuilder.build(context, spec);
+
+  @override
+  Widget listRow(BuildContext context, LanguageListRowSpec spec) => MaterialUiListRowBuilder.build(context, spec);
+
+  @override
+  Widget navBar(BuildContext context, LanguageNavBarSpec spec) {
+    // The fork's bar asserts at least two destinations and an in-range selection,
+    // so a bar that could not satisfy it — a single destination, an index from a
+    // shell whose list just shrank — is the shared renderer's case to draw rather
+    // than a crash in the library (§15).
+    if (spec.items.length < 2 || spec.index < 0 || spec.index >= spec.items.length) {
+      return super.navBar(context, spec);
+    }
+    return MaterialUiNavBarBuilder.build(context, spec);
+  }
 }

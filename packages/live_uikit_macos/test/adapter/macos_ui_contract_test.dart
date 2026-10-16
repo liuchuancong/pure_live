@@ -11,15 +11,18 @@ import 'package:live_uikit_macos/live_uikit_macos.dart';
 void main() {
   const adapter = macosUiAdapter;
 
-  const native = {LiveUiControl.button, LiveUiControl.textField, LiveUiControl.checkbox, LiveUiControl.slider};
-  const fallback = {
-    LiveUiControl.card,
-    LiveUiControl.switchWidget,
-    LiveUiControl.segmented,
-    LiveUiControl.progress,
-    LiveUiControl.select,
-    LiveUiControl.tabBar,
+  const native = {
+    LiveUiControl.button,
+    LiveUiControl.textField,
+    LiveUiControl.checkbox,
+    LiveUiControl.slider,
+    LiveUiControl.scaffold,
+    LiveUiControl.appBar,
+    LiveUiControl.listRow,
   };
+  // Derived rather than listed, so a control added to the contract cannot join the
+  // fallback side silently — the suite has to be told (§17).
+  final fallback = LiveUiControl.values.toSet().difference(native);
 
   group('macOS adapter contract (§7)', () {
     test('exposes a stable id, display name and language', () {

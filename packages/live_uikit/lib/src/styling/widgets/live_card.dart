@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:live_uikit/src/styling/component_token.dart' show CardComponentToken;
 
 import 'package:live_uikit/src/styling/contracts/live_ui_adapter.dart';
@@ -26,7 +26,16 @@ class TokenCard extends StatelessWidget {
       onLongPress: spec.onLongPress,
       focusNode: spec.focusNode,
       autofocus: spec.autofocus,
-      child: spec.child,
+      // A transparency `Material`, not a painted one: the card's own surface is
+      // LiveBox's decoration, but descendants that need a Material ancestor —
+      // an `InkWell` a caller put in the content, text selection, a tooltip —
+      // have to find one here. `Card` used to supply it by being a Material;
+      // a token card that only paints a box leaves those children crashing.
+      child: Material(
+        type: MaterialType.transparency,
+        borderRadius: BorderRadius.circular(theme.card.borderRadius),
+        child: spec.child,
+      ),
     );
   }
 }
@@ -118,8 +127,80 @@ class LiveCard extends StatelessWidget {
   );
 }
 
-/// A selectable list row — the Ant `List`/menu item group: leading, title,
-/// subtitle, trailing, a hover fill and an optional divider, all token-driven.
+/// The token-driven list row — the Ant `List`/menu item group: leading, title,
+/// subtitle, trailing, a hover fill and an optional divider. The base for
+/// languages whose library has no row widget of their own.
+class TokenListRow extends StatelessWidget {
+  /// A token row built from [spec].
+  const new({required this.spec, super.key});
+
+  /// The row configuration.
+  final LanguageListRowSpec spec;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = LiveTheme.of(context);
+    final lt = theme.listTile;
+    final row = LiveBox(
+      style: (state) => Style(
+        background: switch (state) {
+          InteractionState.hovered || InteractionState.pressed => lt.hoverBackground,
+          _ when spec.selected => lt.selectedBackground,
+          _ => null,
+        },
+        padding: EdgeInsets.symmetric(horizontal: lt.paddingHorizontal, vertical: lt.textPaddingVertical),
+        alignment: Alignment.centerLeft,
+      ),
+      onTap: spec.onTap,
+      onLongPress: spec.onLongPress,
+      focusNode: spec.focusNode,
+      autofocus: spec.autofocus,
+      child: Row(
+        children: [
+          if (spec.leading case final lead?)
+            Padding(
+              padding: EdgeInsets.only(right: lt.gap),
+              child: lead,
+            ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  spec.title,
+                  style: theme.text.body.copyWith(color: theme.colors.text),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (spec.subtitle case final sub?)
+                  Text(
+                    sub,
+                    style: theme.text.bodySmall.copyWith(color: theme.colors.textSecondary),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
+          ),
+          if (spec.trailing case final trail?) ...[SizedBox(width: lt.gap), trail],
+        ],
+      ),
+    );
+    if (!spec.divided) {
+      return row;
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        row,
+        Container(height: theme.token.motion.lineWidth, color: lt.dividerColor),
+      ],
+    );
+  }
+}
+
+/// A selectable list row: a thin dispatcher to the active language adapter.
 class LiveListRow extends StatelessWidget {
   /// A list row.
   const new({
@@ -128,6 +209,7 @@ class LiveListRow extends StatelessWidget {
     this.leading,
     this.trailing,
     this.onTap,
+    this.onLongPress,
     this.selected = false,
     this.divided = true,
     this.focusNode,
@@ -150,7 +232,10 @@ class LiveListRow extends StatelessWidget {
   /// The tap handler; null renders the row non-interactive.
   final VoidCallback? onTap;
 
-  /// Whether the row is the selected one.
+  /// A long-press handler.
+  final VoidCallback? onLongPress;
+
+  /// Whether the row shows the selected state.
   final bool selected;
 
   /// Whether to paint a divider under the row.
@@ -163,63 +248,19 @@ class LiveListRow extends StatelessWidget {
   final bool autofocus;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = LiveTheme.of(context);
-    final lt = theme.listTile;
-    final row = LiveBox(
-      style: (state) => Style(
-        background: switch (state) {
-          InteractionState.hovered || InteractionState.pressed => lt.hoverBackground,
-          _ when selected => lt.selectedBackground,
-          _ => null,
-        },
-        padding: EdgeInsets.symmetric(horizontal: lt.paddingHorizontal, vertical: lt.textPaddingVertical),
-        alignment: Alignment.centerLeft,
-      ),
+  Widget build(BuildContext context) => LiveTheme.of(context).adapter.listRow(
+    context,
+    LanguageListRowSpec(
+      title: title,
+      subtitle: subtitle,
+      leading: leading,
+      trailing: trailing,
       onTap: onTap,
+      onLongPress: onLongPress,
+      selected: selected,
+      divided: divided,
       focusNode: focusNode,
       autofocus: autofocus,
-      child: Row(
-        children: [
-          if (leading case final lead?)
-            Padding(
-              padding: EdgeInsets.only(right: lt.gap),
-              child: lead,
-            ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  style: theme.text.body.copyWith(color: theme.colors.text),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (subtitle case final sub?)
-                  Text(
-                    sub,
-                    style: theme.text.bodySmall.copyWith(color: theme.colors.textSecondary),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-              ],
-            ),
-          ),
-          if (trailing case final trail?) ...[SizedBox(width: lt.gap), trail],
-        ],
-      ),
-    );
-    if (!divided) {
-      return row;
-    }
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        row,
-        Container(height: theme.token.motion.lineWidth, color: lt.dividerColor),
-      ],
-    );
-  }
+    ),
+  );
 }

@@ -42,6 +42,7 @@ const _$LiveDesignLanguageEnumMap = {
   LiveDesignLanguage.neumorphic: 'neumorphic',
   LiveDesignLanguage.glass: 'glass',
   LiveDesignLanguage.wind: 'wind',
+  LiveDesignLanguage.forui: 'forui',
   LiveDesignLanguage.materialUi: 'materialUi',
   LiveDesignLanguage.cupertinoUi: 'cupertinoUi',
 };

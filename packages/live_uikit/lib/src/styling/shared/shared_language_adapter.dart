@@ -5,16 +5,20 @@ import 'package:live_uikit/src/styling/design_token.dart';
 import 'package:live_uikit/src/styling/recipe.dart';
 import 'package:live_uikit/src/styling/root/live_config_provider.dart';
 import 'package:live_uikit/src/styling/style.dart';
+import 'package:live_uikit/src/styling/widgets/live_app_bar.dart';
 import 'package:live_uikit/src/styling/widgets/live_box.dart';
 import 'package:live_uikit/src/styling/widgets/live_card.dart';
 import 'package:live_uikit/src/styling/widgets/live_checkbox.dart';
 import 'package:live_uikit/src/styling/widgets/live_field.dart';
+import 'package:live_uikit/src/styling/widgets/live_nav_bar.dart';
 import 'package:live_uikit/src/styling/widgets/live_progress.dart';
+import 'package:live_uikit/src/styling/widgets/live_scaffold.dart';
 import 'package:live_uikit/src/styling/widgets/live_segmented.dart';
 import 'package:live_uikit/src/styling/widgets/live_select.dart';
 import 'package:live_uikit/src/styling/widgets/live_slider.dart';
 import 'package:live_uikit/src/styling/widgets/live_switch.dart';
 import 'package:live_uikit/src/styling/widgets/live_tabs.dart';
+import 'package:live_uikit/src/styling/widgets/live_toast.dart';
 
 /// The token-driven base renderer: every control has a working default built
 /// from [LiveBox] + the recipes. Library adapters extend this and override
@@ -180,4 +184,19 @@ class SharedLanguageAdapter implements LanguageAdapter {
     spacing: spec.spacing,
     enabled: spec.enabled,
   );
+
+  @override
+  Widget scaffold(BuildContext context, LanguageScaffoldSpec spec) => TokenScaffold(spec: spec);
+
+  @override
+  Widget appBar(BuildContext context, LanguageAppBarSpec spec) => TokenAppBar(spec: spec);
+
+  @override
+  Widget listRow(BuildContext context, LanguageListRowSpec spec) => TokenListRow(spec: spec);
+
+  @override
+  Widget navBar(BuildContext context, LanguageNavBarSpec spec) => TokenNavBar(spec: spec);
+
+  @override
+  Widget toast(BuildContext context, LanguageToastSpec spec) => TokenToast(spec: spec);
 }

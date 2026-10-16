@@ -9,7 +9,12 @@ import 'package:live_uikit/styling.dart';
 /// fluent_ui ships no single-choice segmented track, and its `TabView` renders a
 /// whole tab *view* (per-tab bodies plus a filling body area), not a strip. This
 /// must stay in sync with the methods `FluentLanguageAdapter` actually overrides
-/// (§17).
+/// (§17). `appBar` and `navBar` are the two chrome controls left shared:
+/// `fluent_ui` puts a page title inside `ScaffoldPage.header` (which this
+/// adapter renders) and has no bottom navigation strip at all — its navigation
+/// surface is the vertical `NavigationView`, which is a different control — so
+/// neither maps to a Fluent widget without fighting the desktop window chrome
+/// the composition root owns.
 const LiveUiCapabilities fluentUiCapabilities = LiveUiCapabilities(<LiveUiControl>{
   LiveUiControl.button,
   LiveUiControl.card,
@@ -19,4 +24,7 @@ const LiveUiCapabilities fluentUiCapabilities = LiveUiCapabilities(<LiveUiContro
   LiveUiControl.slider,
   LiveUiControl.progress,
   LiveUiControl.select,
+  LiveUiControl.scaffold,
+  LiveUiControl.listRow,
+  LiveUiControl.toast,
 });

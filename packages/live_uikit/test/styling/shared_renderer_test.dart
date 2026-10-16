@@ -21,7 +21,7 @@ void main() {
       find.descendant(of: find.byType(TokenTextField), matching: find.byType(AnimatedContainer));
 
   group('the base renders and reports', () {
-    testWidgets('all ten controls draw from one config, with no adapter registered', (tester) async {
+    testWidgets('all fifteen controls draw from one config, with no adapter registered', (tester) async {
       late LiveTheme theme;
       await tester.pumpWidget(
         harness(
@@ -64,6 +64,11 @@ void main() {
                     index: 0,
                     onChanged: (_) {},
                   ),
+                  LiveNavBar(
+                    items: const [LiveNavBarItem(label: 'Home', icon: Icons.home)],
+                    index: 0,
+                    onChanged: (_) {},
+                  ),
                 ],
               ),
             ),
@@ -74,6 +79,36 @@ void main() {
       expect(find.text('card'), findsOneWidget);
       expect(find.byType(TokenCard), findsOneWidget);
       expect(find.byType(TokenTabs), findsOneWidget);
+      expect(find.byType(TokenNavBar), findsOneWidget);
+    });
+
+    testWidgets('the chrome renders the frame, the bar and the row', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          SizedBox(
+            width: 420,
+            height: 600,
+            child: LiveScaffold(
+              appBar: LiveAppBar(
+                title: 'Rooms',
+                actions: [LiveButton(label: 'Add', onPressed: () {})],
+              ),
+              bottomBar: const LiveListRow(title: 'row', subtitle: 'under it'),
+              floatingActionButton: LiveButton(label: 'Go', onPressed: () {}),
+              body: const Center(child: Text('content')),
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(TokenScaffold), findsOneWidget);
+      expect(find.byType(TokenAppBar), findsOneWidget);
+      expect(find.byType(TokenListRow), findsOneWidget);
+      expect(find.text('content'), findsOneWidget);
+      // The bar titles itself as a header, so a screen reader still hears it
+      // after the language changes and the font no longer does the work.
+      expect(find.bySemanticsLabel('Rooms'), findsOneWidget);
     });
   });
 

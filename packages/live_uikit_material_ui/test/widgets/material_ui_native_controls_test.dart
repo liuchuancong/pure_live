@@ -545,4 +545,96 @@ void main() {
       expect(fork?.cancelButtonLabel, isNotEmpty);
     });
   });
+
+  group('chrome (§9)', () {
+    testWidgets('the frame, bar, row and bottom strip render through the fork', (tester) async {
+      var taps = 0;
+      var picked = -1;
+      await tester.pumpWidget(
+        harness(
+          SizedBox(
+            width: 640,
+            height: 480,
+            child: LiveScaffold(
+              appBar: const LiveAppBar(title: 'Rooms'),
+              body: LiveListRow(title: 'Accent', subtitle: 'violet', onTap: () => taps++),
+              bottomBar: LiveNavBar(
+                items: const [
+                  LiveNavBarItem(label: 'Home', icon: Icons.home),
+                  LiveNavBarItem(label: 'More', icon: Icons.more_horiz),
+                ],
+                index: 0,
+                onChanged: (i) => picked = i,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(mu.Scaffold), findsOneWidget);
+      expect(find.byType(mu.AppBar), findsOneWidget);
+      expect(find.byType(mu.ListTile), findsOneWidget);
+      expect(find.byType(mu.NavigationBar), findsOneWidget);
+      for (final tokenType in <Type>[TokenScaffold, TokenAppBar, TokenListRow, TokenNavBar]) {
+        expect(find.byType(tokenType), findsNothing, reason: 'the token $tokenType must not render a declared control');
+      }
+      expect(tester.takeException(), isNull);
+
+      await withInkPlatform(() async {
+        await tester.tap(find.byType(mu.ListTile));
+        await tester.pump();
+        expect(taps, 1);
+
+        await tester.tap(find.text('More'));
+        await tester.pump();
+        expect(picked, 1, reason: 'the bar reports a destination index, not a route');
+      });
+    });
+
+    testWidgets('a disabled bottom strip keeps its destinations and stops reporting', (tester) async {
+      var picked = -1;
+      await tester.pumpWidget(
+        harness(
+          SizedBox(
+            width: 640,
+            child: LiveNavBar(
+              items: const [
+                LiveNavBarItem(label: 'Home', icon: Icons.home),
+                LiveNavBarItem(label: 'More', icon: Icons.more_horiz),
+              ],
+              index: 0,
+              enabled: false,
+              onChanged: (i) => picked = i,
+            ),
+          ),
+        ),
+      );
+      final bar = tester.widget<mu.NavigationBar>(find.byType(mu.NavigationBar));
+      expect(bar.onDestinationSelected, isNull);
+      await withInkPlatform(() async {
+        await tester.tap(find.text('Home'));
+        await tester.pump();
+      });
+      expect(picked, -1);
+    });
+
+    testWidgets('a strip the library cannot assert for falls to the shared renderer', (tester) async {
+      // The fork requires two destinations and an in-range selection; a shell whose
+      // list shrank under a saved index would otherwise crash the page.
+      await tester.pumpWidget(
+        harness(
+          const SizedBox(
+            width: 640,
+            child: LiveNavBar(
+              items: [LiveNavBarItem(label: 'Home', icon: Icons.home)],
+              index: 3,
+            ),
+          ),
+        ),
+      );
+      expect(find.byType(mu.NavigationBar), findsNothing);
+      expect(find.byType(TokenNavBar), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
 }

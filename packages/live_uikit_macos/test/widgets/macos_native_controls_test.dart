@@ -185,4 +185,40 @@ void main() {
       expect(node.hasFocus, isTrue, reason: 'the node reached the focus tree, not just the widget');
     });
   });
+
+  group('chrome (§9)', () {
+    // The frame and the bar are asserted at the resolver (§16.3) rather than
+    // by pumping them here: macos_ui's wallpaper-tinting layer keeps a periodic
+    // timer alive behind `MacosScaffold`/`ToolBar`, which the test binding counts
+    // as a leaked timer at teardown. In a running window that timer is simply the
+    // library tracking the desktop picture.
+    testWidgets('a row resolves through MacosListTile and keeps both press handlers', (tester) async {
+      var taps = 0;
+      var longs = 0;
+      await tester.pumpWidget(
+        harness(
+          LiveListRow(
+            title: 'Accent',
+            subtitle: 'violet',
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => taps++,
+            onLongPress: () => longs++,
+          ),
+        ),
+      );
+
+      expect(find.byType(macos.MacosListTile), findsOneWidget);
+      expect(find.text('Accent'), findsOneWidget);
+      expect(find.text('violet'), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+
+      await tester.tap(find.byType(macos.MacosListTile));
+      await tester.pump();
+      expect(taps, 1);
+
+      await tester.longPress(find.byType(macos.MacosListTile));
+      await tester.pump();
+      expect(longs, 1, reason: 'the library tile takes a long press, so no wrapper is needed');
+    });
+  });
 }

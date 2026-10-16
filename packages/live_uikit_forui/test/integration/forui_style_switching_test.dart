@@ -4,24 +4,27 @@ import 'package:forui/forui.dart' as forui;
 import 'package:live_uikit/styling.dart';
 import 'package:live_uikit_forui/live_uikit_forui.dart';
 
-/// §16 integration pass for `live_uikit_forui`: the five controls forui actually serves
-/// resolve native, the other five resolve shared and are reported, and switching to the
-/// core token base and back must not cost the caller its controller or its field state
-/// (§11).
-const Set<LiveUiControl> _fallbackControls = {
-  LiveUiControl.slider,
-  LiveUiControl.segmented,
-  LiveUiControl.progress,
-  LiveUiControl.select,
-  LiveUiControl.tabBar,
+/// The controls `live_uikit_forui` renders natively (§3.1 capability
+/// declaration): five of the thirteen the resolver dispatches.
+const Set<LiveUiControl> nativeControls = {
+  LiveUiControl.button,
+  LiveUiControl.card,
+  LiveUiControl.textField,
+  LiveUiControl.switchWidget,
+  LiveUiControl.checkbox,
 };
 
+/// §16 integration pass for `live_uikit_forui`: the five controls forui actually serves
+/// resolve native, the other eight resolve shared and are reported (`slider`, `segmented`,
+/// `progress`, `select`, `tabBar` plus the page trio `scaffold`, `appBar`, `listRow`, which
+/// no adapter maps yet), and switching to the core token base and back must not cost the
+/// caller its controller or its field state (§11).
 /// The downgrades this language is expected to report: every control the adapter does not
 /// declare, each exactly once per language change (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   expect(sink.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
-  expect(sink.map((diagnostic) => diagnostic.control).toSet(), _fallbackControls);
-  expect(sink, hasLength(_fallbackControls.length));
+  expect(sink.map((diagnostic) => diagnostic.control).toSet(), LiveUiControl.values.toSet().difference(nativeControls));
+  expect(sink, hasLength(LiveUiControl.values.length - nativeControls.length));
 }
 
 void main() {
@@ -30,13 +33,6 @@ void main() {
     fallback: SharedLanguageAdapter(),
   );
   const resolver = LiveUiResolver(registry: registry);
-  const nativeControls = {
-    LiveUiControl.button,
-    LiveUiControl.card,
-    LiveUiControl.textField,
-    LiveUiControl.switchWidget,
-    LiveUiControl.checkbox,
-  };
 
   Widget harness(UiConfig ui, Widget child, List<LiveUiDiagnostic> sink) => LiveConfigProvider(
     config: ui,

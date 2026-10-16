@@ -4,20 +4,28 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:live_uikit/styling.dart';
 import 'package:live_uikit_neumorphic/live_uikit_neumorphic.dart';
 
+/// The controls `live_uikit_neumorphic` renders natively (§3.1 capability
+/// declaration): six of the thirteen the resolver dispatches.
+const Set<LiveUiControl> nativeControls = {
+  LiveUiControl.button,
+  LiveUiControl.card,
+  LiveUiControl.textField,
+  LiveUiControl.switchWidget,
+  LiveUiControl.checkbox,
+  LiveUiControl.slider,
+};
+
 /// §16 integration pass for `live_uikit_neumorphic`: six declared controls native,
-/// four shared, and a switch to the core token base and back that leaves the
-/// caller's controller and values intact (§11).
+/// the other seven shared (`segmented`, `progress`, `select`, `tabBar` plus the page
+/// trio `scaffold`, `appBar`, `listRow` that no adapter maps yet), and a switch to the
+/// core token base and back that leaves the caller's controller and values intact
+/// (§11).
 /// The downgrades this language is expected to report: every control the adapter
 /// does not declare, each exactly once per language change (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   expect(sink.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
-  expect(sink.map((diagnostic) => diagnostic.control).toSet(), {
-    LiveUiControl.segmented,
-    LiveUiControl.progress,
-    LiveUiControl.select,
-    LiveUiControl.tabBar,
-  });
-  expect(sink, hasLength(4));
+  expect(sink.map((diagnostic) => diagnostic.control).toSet(), LiveUiControl.values.toSet().difference(nativeControls));
+  expect(sink, hasLength(LiveUiControl.values.length - nativeControls.length));
 }
 
 void main() {
@@ -26,15 +34,6 @@ void main() {
     fallback: SharedLanguageAdapter(),
   );
   const resolver = LiveUiResolver(registry: registry);
-
-  const nativeControls = {
-    LiveUiControl.button,
-    LiveUiControl.card,
-    LiveUiControl.textField,
-    LiveUiControl.switchWidget,
-    LiveUiControl.checkbox,
-    LiveUiControl.slider,
-  };
 
   Widget harness(UiConfig ui, Widget child, List<LiveUiDiagnostic> sink) => LiveConfigProvider(
     config: ui,
