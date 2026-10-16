@@ -224,16 +224,26 @@ List<({double size, double lineHeight})> genFontSizes(double base) {
     (sm: controlHeight * 0.75, xs: controlHeight * 0.5, lg: controlHeight * 1.25);
 
 /// `genSizeMapToken`.
-DesignSizes genSizes(double sizeUnit, double sizeStep) => DesignSizes(
-  xxl: sizeUnit * (sizeStep + 8),
-  xl: sizeUnit * (sizeStep + 4),
-  lg: sizeUnit * (sizeStep + 2),
-  md: sizeUnit * (sizeStep + 1),
-  ms: sizeUnit * sizeStep,
-  sm: sizeUnit * (sizeStep - 1),
-  xs: sizeUnit * (sizeStep - 2),
-  xxs: sizeUnit * (sizeStep - 3),
-);
+///
+/// Ant's formula is written for a `sizeStep` of 4 or more; the compact density
+/// algorithm steps it down twice, and `sizeStep - 3` then goes negative — a
+/// negative padding, gap or minimum height reaches Flutter and throws
+/// (`BoxConstraints has a negative minimum height`, `padding.isNonNegative`).
+/// The ramp is clamped at zero here rather than at each call site: the scale is
+/// the one place that knows these are distances.
+DesignSizes genSizes(double sizeUnit, double sizeStep) {
+  double step(int offset) => sizeUnit * (sizeStep + offset);
+  return DesignSizes(
+    xxl: step(8),
+    xl: step(4),
+    lg: step(2),
+    md: step(1),
+    ms: step(0),
+    sm: math.max(0, step(-1)),
+    xs: math.max(0, step(-2)),
+    xxs: math.max(0, step(-3)),
+  );
+}
 
 /// `genRadius` — the derived corner radii from a single base radius.
 DesignRadii genRadii(double radiusBase) {
