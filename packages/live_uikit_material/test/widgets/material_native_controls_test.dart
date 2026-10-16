@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_material/live_uikit_material.dart';
+import 'package:live_uikit_material/src/adapter/material_adapter.dart';
 import 'package:material_ui/material_ui.dart' as mu;
 
 import 'stub_router.dart';
@@ -364,21 +365,35 @@ void main() {
       expect(find.descendant(of: find.byType(mu.LinearProgressIndicator), matching: find.byType(Text)), findsNothing);
     });
 
-    testWidgets('slider keeps its focus node; a disabled one takes the documented fallback', (tester) async {
+    testWidgets('slider keeps its focus node; a disabled one is the fork inert rail', (tester) async {
       final node = FocusNode();
       addTearDown(node.dispose);
       await tester.pumpWidget(harness(LiveSlider(value: 0.5, onChanged: (_) {}, focusNode: node)));
       expect(tester.widget<mu.Slider>(find.byType(mu.Slider)).focusNode, same(node));
 
-      // §15: `material_ui` 1.6.0 cannot build a disabled slider, so the shared
-      // token renderer stands in — on-theme, still reading its value, no crash.
-      await tester.pumpWidget(harness(LiveSlider(value: 0.5, enabled: false, onChanged: (_) {})));
+      // §15: `material_ui` 1.6.0 cannot build a disabled slider, so the inert
+      // form is drawn out of the fork's own disabled track and thumb colours.
+      var changed = 0.0;
+      await tester.pumpWidget(
+        harness(
+          SizedBox(width: 320, child: LiveSlider(value: 0.5, enabled: false, onChanged: (value) => changed = value)),
+        ),
+      );
+      await tester.pump();
       expect(find.byType(mu.Slider), findsNothing);
+      expect(find.byType(TokenSlider), findsNothing);
+      expect(find.byKey(MaterialLanguageAdapter.inertSliderKey), findsOneWidget);
       expect(find.byType(LiveSlider), findsOneWidget);
+
+      await tester.dragFrom(tester.getCenter(find.byType(LiveSlider)), const Offset(40, 0));
+      await tester.pump();
+      expect(changed, 0.0, reason: 'the inert rail has nothing to drag');
       expect(tester.takeException(), isNull);
 
-      await tester.pumpWidget(harness(const LiveSlider(value: 0.5, onChanged: null)));
+      await tester.pumpWidget(harness(const LiveSlider(value: 0.25, onChanged: null)));
+      await tester.pump();
       expect(find.byType(mu.Slider), findsNothing);
+      expect(find.byKey(MaterialLanguageAdapter.inertSliderKey), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -622,22 +637,39 @@ void main() {
       expect(picked, -1);
     });
 
-    testWidgets('a strip the library cannot assert for falls to the shared renderer', (tester) async {
-      // The fork requires two destinations and an in-range selection; a shell whose
-      // list shrank under a saved index would otherwise crash the page.
+    testWidgets('a strip the library cannot assert for is the fork inert bar', (tester) async {
+      // The fork requires two destinations and an in-range selection, and one
+      // destination is not a selection either: the bar keeps its surface and an
+      // inert cell instead of crashing or falling through (§15).
+      var picked = -1;
       await tester.pumpWidget(
         harness(
-          const SizedBox(
+          SizedBox(
             width: 640,
             child: LiveNavBar(
-              items: [LiveNavBarItem(label: 'Home', icon: Icons.home)],
+              items: const [LiveNavBarItem(label: 'Home', icon: Icons.home)],
               index: 3,
+              onChanged: (index) => picked = index,
             ),
           ),
         ),
       );
+      await tester.pump();
       expect(find.byType(mu.NavigationBar), findsNothing);
-      expect(find.byType(TokenNavBar), findsOneWidget);
+      expect(find.byType(TokenNavBar), findsNothing);
+      expect(find.byKey(MaterialLanguageAdapter.inertNavBarKey), findsOneWidget);
+      expect(find.text('Home'), findsOneWidget);
+
+      await tester.tap(find.text('Home'));
+      await tester.pump();
+      expect(picked, -1, reason: 'an inert cell keeps its label and stops reporting');
+      expect(tester.takeException(), isNull);
+
+      await tester.pumpWidget(harness(const SizedBox(width: 640, child: LiveNavBar(items: [], index: 0))));
+      await tester.pump();
+      expect(find.byType(mu.NavigationBar), findsNothing);
+      expect(find.byType(TokenNavBar), findsNothing);
+      expect(find.byKey(MaterialLanguageAdapter.inertNavBarKey), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });
@@ -726,18 +758,29 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('a select whose value is not one of its items takes the shared renderer', (tester) async {
-      // The fork asserts the current value is among the items; a spec it would
-      // throw on is handed to the shared renderer instead of crashing (§15).
+    testWidgets('a select whose value is not one of its items reads as nothing chosen', (tester) async {
+      // The fork asserts the value matches exactly one item but skips that check
+      // for a null value, its own unchosen state: the field stays the fork
+      // dropdown and paints its hint (§15).
       await tester.pumpWidget(
         harness(
-          LiveSelect<String>(items: const ['alpha'], itemLabel: (item) => item, value: 'missing', onChanged: (_) {}),
+          LiveSelect<String>(
+            items: const ['alpha', 'beta'],
+            itemLabel: (item) => item,
+            value: 'missing',
+            placeholder: 'Pick one',
+            onChanged: (_) {},
+          ),
         ),
       );
       await tester.pump();
 
-      expect(find.byType(mu.DropdownButton<String>), findsNothing);
-      expect(find.byType(TokenSelect<String>), findsOneWidget);
+      expect(find.byType(mu.DropdownButton<String>), findsOneWidget);
+      expect(find.byType(TokenSelect<String>), findsNothing);
+      expect(find.text('Pick one'), findsOneWidget);
+      expect(find.text('missing'), findsNothing);
+      final button = tester.widget<mu.DropdownButton<String>>(find.byType(mu.DropdownButton<String>));
+      expect(button.value, isNull, reason: 'an off-list value is not treated as selected');
       expect(tester.takeException(), isNull);
     });
 
@@ -834,7 +877,10 @@ void main() {
           context: tester.element(find.byType(SizedBox)),
           title: 'Leave the room?',
           child: const Text('The stream keeps running.'),
-          actions: const [LiveButton(label: 'Cancel'), LiveButton(label: 'Leave', variant: ButtonVariant.danger)],
+          actions: (_) => [
+            const LiveButton(label: 'Cancel'),
+            const LiveButton(label: 'Leave', variant: ButtonVariant.danger),
+          ],
         ),
       );
       await tester.pumpAndSettle();
@@ -854,11 +900,10 @@ void main() {
       await tester.pumpWidget(
         harness(
           Builder(
-            builder: (context) =>
-                LiveTheme.of(context).adapter.dialog(
-                  context,
-                  const LanguageDialogSpec(icon: Icons.info_outline, title: 'Notice', content: Text('body')),
-                ),
+            builder: (context) => LiveTheme.of(context).adapter.dialog(
+              context,
+              const LanguageDialogSpec(icon: Icons.info_outline, title: 'Notice', content: Text('body')),
+            ),
           ),
         ),
       );
@@ -869,22 +914,20 @@ void main() {
 
     testWidgets('the view is the fork TabBarView and follows the index it is given', (tester) async {
       var chosen = -1;
-      Widget view(int index) =>
-          SizedBox(
-            width: 320,
-            height: 120,
-            child: Builder(
-              builder: (context) =>
-                  LiveTheme.of(context).adapter.tabView(
-                    context,
-                    LanguageTabViewSpec(
-                      pages: const [Text('first page'), Text('second page')],
-                      index: index,
-                      onIndexChanged: (value) => chosen = value,
-                    ),
-                  ),
+      Widget view(int index) => SizedBox(
+        width: 320,
+        height: 120,
+        child: Builder(
+          builder: (context) => LiveTheme.of(context).adapter.tabView(
+            context,
+            LanguageTabViewSpec(
+              pages: const [Text('first page'), Text('second page')],
+              index: index,
+              onIndexChanged: (value) => chosen = value,
             ),
-          );
+          ),
+        ),
+      );
 
       await tester.pumpWidget(harness(view(0)));
       await tester.pumpAndSettle();

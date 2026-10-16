@@ -4,6 +4,11 @@ import 'package:material_ui/material_ui.dart' as mu;
 
 /// Builds a Material UI select control from a [LanguageSelectSpec] (§9 Select).
 ///
+/// The adapter hands this builder a spec whose value is either one of the items
+/// or null, because `mu.DropdownButton` asserts exactly that and paints its `hint`
+/// for a null value; null and repeated item values are dropped for the same
+/// "exactly one" reason.
+///
 /// `mu.DropdownButton` is the fork's own select: it is generic over the caller's
 /// value type, so the chosen value comes back unchanged, and its `hint` is the
 /// spec's [LanguageSelectSpec.placeholder]. A disabled select is the library's own

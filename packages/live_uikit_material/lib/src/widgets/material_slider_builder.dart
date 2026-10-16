@@ -9,9 +9,9 @@ import 'package:material_ui/material_ui.dart' as mu;
 /// Only an interactive spec belongs here: `material_ui` 1.6.0 dereferences an
 /// internal focus node it creates solely for an enabled slider
 /// (`widget.focusNode ?? _focusNode!`), so a disabled `mu.Slider` throws while
-/// building. The adapter routes that case to the shared token renderer instead
-/// (§15), which keeps the control on-theme rather than rendering one that cannot
-/// build; the fork fix retires that branch.
+/// building. The adapter draws that case from the fork's own disabled slider theme
+/// instead (§15) — rail and thumb at their inert colours, with no drag reaching
+/// the callback; the fork fix retires that branch.
 abstract final class MaterialSliderBuilder {
   /// Builds the slider for [spec].
   static Widget build(BuildContext context, LanguageSliderSpec spec) => mu.Slider(
