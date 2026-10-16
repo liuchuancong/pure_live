@@ -5,11 +5,11 @@ import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_fluent/live_uikit_fluent.dart';
 
 /// The controls `live_uikit_fluent` renders natively (§3.1 capability
-/// declaration): all fifteen the resolver dispatches — `select`, which only
-/// Fluent renders for real, the page frame, list row and toast surface this
-/// adapter maps to `ScaffoldPage`/`ListTile`/`InfoBar`, the four chrome controls
-/// it composes out of its own widgets, and the app host, which is `FluentApp`
-/// itself.
+/// declaration): all seventeen the resolver dispatches — `select`, which only
+/// Fluent renders for real, the page frame, list row, toast and dialog surfaces
+/// this adapter maps to `ScaffoldPage`/`ListTile`/`InfoBar`/`ContentDialog`, the
+/// five chrome controls it composes out of its own widgets, and the app host,
+/// which is `FluentApp` itself.
 const Set<LiveUiControl> nativeControls = {
   LiveUiControl.button,
   LiveUiControl.card,
@@ -26,12 +26,14 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.listRow,
   LiveUiControl.navBar,
   LiveUiControl.toast,
+  LiveUiControl.dialog,
+  LiveUiControl.tabView,
 };
 
 /// The structural surfaces this adapter owns (§ surfaces).
 const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost, LiveUiSurface.appShell};
 
-/// §16 integration pass for `live_uikit_fluent`: every one of the fifteen
+/// §16 integration pass for `live_uikit_fluent`: every one of the seventeen
 /// controls resolves native, both structural surfaces resolve native, so a
 /// Fluent language change reports no downgrade at all, and switching to the core
 /// token base and back preserves the caller's controller (§11).

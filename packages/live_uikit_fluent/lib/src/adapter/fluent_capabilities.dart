@@ -4,14 +4,18 @@ import 'package:live_uikit/live_uikit.dart';
 /// with Fluent's own primitives where the library has no widget for the job
 /// (§3.1 / §7 capability declaration).
 ///
-/// All fifteen. Four of them are not a one-for-one mapping and say so in their
+/// All seventeen. Five of them are not a one-for-one mapping and say so in their
 /// builder: `segmented` and `navBar` are composed from `ToggleButton` groups
 /// because fluent_ui has no segmented track and no bottom strip — its
 /// destinations live in a `NavigationView` pane, which is the shell, not this
 /// control — and `appBar` is a `PageHeader` with the actions in its command slot
 /// because `CommandBar` builds its own items from icons and callbacks the spec
 /// does not carry. `tabBar` is `TabView` with the browser affordances switched
-/// off. Composing them here, out of Fluent's widgets and `FluentTheme`'s
+/// off. `tabView` is an `AnimatedSwitcher` page swap because this version of the
+/// library has no `Pivot` and its `TabView` fuses strip and body. `dialog` maps
+/// straight onto `ContentDialog` used as a plain surface — no route of the
+/// library's own, because the core's `showLiveDialog` owns routing and barrier.
+/// Composing them here, out of Fluent's widgets and `FluentTheme`'s
 /// metrics, is what keeps a Fluent window from having a Material bar in it.
 ///
 /// This must stay in sync with the methods `FluentLanguageAdapter` actually
@@ -32,4 +36,6 @@ const LiveUiCapabilities fluentCapabilities = LiveUiCapabilities(<LiveUiControl>
   LiveUiControl.listRow,
   LiveUiControl.navBar,
   LiveUiControl.toast,
+  LiveUiControl.dialog,
+  LiveUiControl.tabView,
 });

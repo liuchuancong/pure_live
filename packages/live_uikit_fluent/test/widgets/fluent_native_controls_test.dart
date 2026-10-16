@@ -305,6 +305,66 @@ void main() {
     });
   });
 
+  group('dialog and tab view (§9)', () {
+    testWidgets('the dialog surface is the library ContentDialog, not the token card', (tester) async {
+      await tester.pumpWidget(harness(const SizedBox.shrink()));
+      late BuildContext routeContext;
+      final result = showLiveDialog<void>(
+        context: tester.element(find.byType(SizedBox)),
+        title: 'Confirm',
+        child: Builder(
+          builder: (context) {
+            routeContext = context;
+            return const Text('Discard the draft?');
+          },
+        ),
+        actions: [LiveButton(label: 'Keep', onPressed: () {})],
+      );
+      await tester.pumpAndSettle();
+
+      // The library widget is the whole surface; the route, the barrier and the
+      // fade-and-scale stay the core's — showLiveDialog frames it.
+      expect(find.byType(fluent.ContentDialog), findsOneWidget);
+      expect(find.byType(TokenDialog), findsNothing);
+      expect(find.text('Confirm'), findsOneWidget);
+      expect(find.text('Discard the draft?'), findsOneWidget);
+      expect(find.text('Keep'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      Navigator.of(routeContext).pop();
+      await tester.pumpAndSettle();
+      await result;
+    });
+
+    testWidgets('the tab view replaces the page in place, never the token pager', (tester) async {
+      Widget view(int index) => Builder(
+        builder: (context) => LiveTheme.of(context).adapter.tabView(
+          context,
+          LanguageTabViewSpec(
+            pages: const [Text('Rooms'), Text('Shows')],
+            index: index,
+            onIndexChanged: (_) {},
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(harness(view(0)));
+      await tester.pumpAndSettle();
+      expect(find.byType(TokenTabView), findsNothing);
+      expect(find.text('Rooms'), findsOneWidget);
+      expect(find.text('Shows'), findsNothing);
+
+      // Windows semantics: the second pump replaces the body in place; a Fluent
+      // view has no slide and the strip keeps owning the index.
+      await tester.pumpWidget(harness(view(1)));
+      await tester.pumpAndSettle();
+      expect(find.text('Shows'), findsOneWidget);
+      expect(find.text('Rooms'), findsNothing);
+      expect(find.byType(TokenTabView), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('the app host (§9)', () {
     // No outer `MaterialApp` in these: an app widget inside another app widget is
     // not a shape any real page has, and Material's localizations would stand in
@@ -566,7 +626,7 @@ void main() {
       );
       await tester.pump();
 
-      // Fluent declares all fifteen controls, so nothing in a Fluent page should
+      // Fluent declares all seventeen controls, so nothing in a Fluent page should
       // be a `Token*` renderer any more — the assertion is by name rather than by
       // list so a control added to the contract cannot slip in silently.
       expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);

@@ -25,7 +25,7 @@ void main() {
     });
 
     test('declares exactly the controls it renders natively', () {
-      // All fifteen: Fluent renders every control, and the four without a
+      // All seventeen: Fluent renders every control, and the five without a
       // one-for-one library widget say so in their builder (§9).
       const native = {
         LiveUiControl.button,
@@ -43,6 +43,8 @@ void main() {
         LiveUiControl.listRow,
         LiveUiControl.navBar,
         LiveUiControl.toast,
+        LiveUiControl.dialog,
+        LiveUiControl.tabView,
       };
       for (final control in native) {
         expect(adapter.capabilities.supports(control), isTrue, reason: '$control should be native');

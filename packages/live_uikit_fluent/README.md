@@ -20,18 +20,21 @@ and have its controls drawn by `fluent_ui`, without any business page importing
 - Implement `LanguageAdapter` for `LiveDesignLanguage.fluent` (stable id `fluent`).
 - Map the resolved `DesignToken` into a `FluentThemeData` and install it through a
   `FluentTheme` scope (never a nested `FluentApp`).
-- Build native Fluent widgets for all fifteen: **button, card, text field, switch,
+- Build native Fluent widgets for all seventeen: **button, card, text field, switch,
   checkbox, slider, segmented, progress, select, tab bar, scaffold, app bar, list
-  row, nav bar, toast**. Four of them are composed out of Fluent's own widgets
-  rather than mapped one-for-one — `segmented` and `nav bar` are `ToggleButton`
-  groups, a `tab bar` is a `HoverButton` strip with the accent underline — because
-  fluent_ui has no segmented track, no bottom strip, and its `TabView` is a whole
-  tab *view* rather than a strip (§9).
+  row, nav bar, toast, dialog, tab view**. Five of them are composed out of
+  Fluent's own widgets rather than mapped one-for-one — `segmented` and `nav bar`
+  are `ToggleButton` groups, a `tab bar` is a `HoverButton` strip with the accent
+  underline, a `tab view` is an `AnimatedSwitcher` page swap — because fluent_ui
+  has no segmented track, no bottom strip, no `Pivot`, and its `TabView` is a
+  whole tab *view* rather than a strip (§9). A `dialog` maps onto `ContentDialog`
+  used as a plain surface: the route and the barrier stay the core's
+  (`showLiveDialog`).
 - Own both structural surfaces: the app host (`FluentApp`) and the app shell
   (`NavigationView`) (§ surfaces).
-- Declare the whole contract in `fluentCapabilities`: a Fluent page reports no
-  `controlUnsupported` downgrade, and nothing inside a Fluent frame is a token
-  renderer (§16/§17).
+- Declare the whole contract — all 17 controls — in `fluentCapabilities`: a Fluent
+  page reports no `controlUnsupported` downgrade, and nothing inside a Fluent
+  frame is a token renderer (§16/§17).
 - Expose `fluentLocalizationsDelegates` for the composition root to install.
 
 ## What this package must not own

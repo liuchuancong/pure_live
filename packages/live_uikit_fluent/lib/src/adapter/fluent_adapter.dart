@@ -7,6 +7,7 @@ import 'package:live_uikit_fluent/src/widgets/fluent_app_bar_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_button_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_card_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_checkbox_builder.dart';
+import 'package:live_uikit_fluent/src/widgets/fluent_dialog_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_host_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_list_row_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_nav_bar_builder.dart';
@@ -18,6 +19,7 @@ import 'package:live_uikit_fluent/src/widgets/fluent_shell_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_slider_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_switch_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_tab_bar_builder.dart';
+import 'package:live_uikit_fluent/src/widgets/fluent_tab_view_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_text_field_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_toast_builder.dart';
 
@@ -96,6 +98,12 @@ class FluentLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget toast(BuildContext context, LanguageToastSpec spec) => FluentToastBuilder.build(context, spec);
+
+  @override
+  Widget dialog(BuildContext context, LanguageDialogSpec spec) => FluentDialogBuilder.build(context, spec);
+
+  @override
+  Widget tabView(BuildContext context, LanguageTabViewSpec spec) => FluentTabViewBuilder.build(context, spec);
 
   @override
   Widget appHost(BuildContext context, LanguageHostSpec spec) => FluentHostBuilder.build(context, spec);
