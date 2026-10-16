@@ -50,6 +50,9 @@ enum LiveUiControl {
 
   /// A transient status message.
   toast,
+
+  /// The application host: the router, the chrome's strings, the theme scope.
+  appHost,
 }
 
 /// How a control is rendered for the active design language (§15.2).

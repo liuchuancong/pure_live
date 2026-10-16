@@ -33,6 +33,7 @@ export 'src/styling/seed_token.dart';
 export 'src/styling/shared/shared_language_adapter.dart';
 export 'src/styling/style.dart';
 export 'src/styling/theme_algorithm.dart';
+export 'src/styling/widgets/live_app.dart';
 export 'src/styling/widgets/live_app_bar.dart';
 export 'src/styling/widgets/live_avatar.dart';
 export 'src/styling/widgets/live_badge.dart';

@@ -4,6 +4,7 @@ import 'package:live_uikit_cupertino_ui/src/adapter/cupertino_ui_capabilities.da
 import 'package:live_uikit_cupertino_ui/src/theme/cupertino_ui_theme_mapper.dart';
 import 'package:live_uikit_cupertino_ui/src/widgets/cupertino_ui_app_bar_builder.dart';
 import 'package:live_uikit_cupertino_ui/src/widgets/cupertino_ui_button_builder.dart';
+import 'package:live_uikit_cupertino_ui/src/widgets/cupertino_ui_host_builder.dart';
 import 'package:live_uikit_cupertino_ui/src/widgets/cupertino_ui_list_row_builder.dart';
 import 'package:live_uikit_cupertino_ui/src/widgets/cupertino_ui_nav_bar_builder.dart';
 import 'package:live_uikit_cupertino_ui/src/widgets/cupertino_ui_scaffold_builder.dart';
@@ -70,4 +71,7 @@ class CupertinoUiLanguageAdapter extends SharedLanguageAdapter {
     }
     return CupertinoUiNavBarBuilder.build(context, spec);
   }
+
+  @override
+  Widget host(BuildContext context, LanguageHostSpec spec) => CupertinoUiHostBuilder.build(context, spec);
 }

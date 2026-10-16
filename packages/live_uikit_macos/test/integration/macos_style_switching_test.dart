@@ -5,9 +5,9 @@ import 'package:live_uikit_macos/live_uikit_macos.dart';
 import 'package:macos_ui/macos_ui.dart' as macos;
 
 /// The controls `live_uikit_macos` renders natively (§3.1 capability
-/// declaration): seven of the fifteen the resolver dispatches, including the
+/// declaration): eight of the sixteen the resolver dispatches, including the
 /// page frame, the bar and the row mapped onto `MacosScaffold`, `ToolBar` and
-/// `MacosListTile`.
+/// `MacosListTile`, and the app host, which is `MacosApp` itself.
 const Set<LiveUiControl> nativeControls = {
   LiveUiControl.button,
   LiveUiControl.textField,
@@ -16,9 +16,10 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.scaffold,
   LiveUiControl.appBar,
   LiveUiControl.listRow,
+  LiveUiControl.appHost,
 };
 
-/// §16 integration pass for `live_uikit_macos`: seven declared controls native,
+/// §16 integration pass for `live_uikit_macos`: eight declared controls native,
 /// the other eight shared (`card`, `switchWidget`, `segmented`, `progress`,
 /// `select`, `tabBar` and the two chrome controls `macos_ui` has no widget for —
 /// `navBar`, whose place is taken by a `Sidebar`, and `toast`, whose `Toast` is an
@@ -50,7 +51,7 @@ void main() {
     ),
   );
 
-  test('the seven declared controls resolve native, the rest shared (§16.3)', () {
+  test('the eight declared controls resolve native, the rest shared (§16.3)', () {
     for (final control in LiveUiControl.values) {
       final native = nativeControls.contains(control);
       final resolution = resolver.resolveControl(LiveDesignLanguage.macos, control);

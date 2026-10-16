@@ -5,6 +5,7 @@ import 'package:live_uikit_macos/src/theme/macos_theme_mapper.dart';
 import 'package:live_uikit_macos/src/widgets/macos_app_bar_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_button_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_checkbox_builder.dart';
+import 'package:live_uikit_macos/src/widgets/macos_host_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_list_row_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_scaffold_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_slider_builder.dart';
@@ -64,4 +65,7 @@ class MacosLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget listRow(BuildContext context, LanguageListRowSpec spec) => MacosListRowBuilder.build(context, spec);
+
+  @override
+  Widget host(BuildContext context, LanguageHostSpec spec) => MacosHostBuilder.build(context, spec);
 }

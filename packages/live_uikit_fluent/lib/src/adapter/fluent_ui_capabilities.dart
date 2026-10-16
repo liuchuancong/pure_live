@@ -27,4 +27,5 @@ const LiveUiCapabilities fluentUiCapabilities = LiveUiCapabilities(<LiveUiContro
   LiveUiControl.scaffold,
   LiveUiControl.listRow,
   LiveUiControl.toast,
+  LiveUiControl.appHost,
 });

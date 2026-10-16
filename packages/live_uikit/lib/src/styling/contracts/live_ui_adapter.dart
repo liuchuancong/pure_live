@@ -596,6 +596,58 @@ class LanguageToastSpec {
   final Duration duration;
 }
 
+/// The application host described the same way every language wires it.
+///
+/// A widget library's identity is not only its controls: the app widget owns
+/// the route transitions, the overlay the dialogs and text-selection toolbars
+/// open into, the scrollbars, and the strings the chrome reads. A language whose
+/// library ships an app widget has to be hosted by it, or the whole tree keeps
+/// behaving like Material no matter what the controls are drawn with.
+///
+/// The token is deliberately absent: the host is themed from the resolved
+/// `LiveTheme` the adapter already reads, so a preference change re-skins the
+/// host along with everything under it.
+class LanguageHostSpec {
+  /// A host spec.
+  const new({
+    required this.routerConfig,
+    this.title = '',
+    this.onGenerateTitle,
+    this.localizationsDelegates = const <LocalizationsDelegate<dynamic>>[],
+    this.supportedLocales = const <Locale>[Locale('en')],
+    this.locale,
+    this.builder,
+    this.debugShowCheckedModeBanner = false,
+  });
+
+  /// The router the app runs on — a `GoRouter`, typically.
+  final RouterConfig<Object>? routerConfig;
+
+  /// The window title. Ignored when [onGenerateTitle] is given.
+  final String title;
+
+  /// Called to resolve the title once the localizations are in scope, which is
+  /// how a translated title survives a locale change without a restart.
+  final GenerateAppTitle? onGenerateTitle;
+
+  /// The localizations every language below needs, in priority order. The host
+  /// appends its library's own defaults to these.
+  final List<LocalizationsDelegate<dynamic>> localizationsDelegates;
+
+  /// The locales the app declares, kept in step with the translation layer.
+  final List<Locale> supportedLocales;
+
+  /// The forced locale; null follows the platform.
+  final Locale? locale;
+
+  /// Wraps the navigator, below the host's localizations and above its routes
+  /// — where a translation provider belongs.
+  final TransitionBuilder? builder;
+
+  /// Whether the debug banner shows.
+  final bool debugShowCheckedModeBanner;
+}
+
 /// Renders one design language's controls from the real widget library, themed
 /// from the resolved [DesignToken]. Each language provides an adapter; the
 /// active one is chosen at runtime by `UiConfig.language`, so switching a
@@ -666,4 +718,8 @@ abstract interface class LanguageAdapter {
 
   /// Draws a toast's surface with the language's real widget.
   Widget toast(BuildContext context, LanguageToastSpec spec);
+
+  /// Wraps the whole app in the language's own host widget, when its library
+  /// ships one; the shared renderer answers with the token-seeded Material host.
+  Widget host(BuildContext context, LanguageHostSpec spec);
 }

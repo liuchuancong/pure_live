@@ -57,13 +57,13 @@ void main() {
       sink.map((diagnostic) => diagnostic.control).toSet(),
       LiveUiControl.values.toSet().difference(const {LiveUiControl.button}),
     );
-    expect(sink, hasLength(14));
+    expect(sink, hasLength(15));
     expect(sink.every((diagnostic) => diagnostic.language == LiveDesignLanguage.materialUi), isTrue);
 
     // Rebuilds with the same language report nothing new: the facts are per
     // language change, not per frame (§10 "fired once per language change").
     await tester.pumpWidget(harness(const UiConfig(language: LiveDesignLanguage.materialUi), sink));
-    expect(sink, hasLength(14));
+    expect(sink, hasLength(15));
   });
 
   testWidgets('switching language re-reports for the new adapter', (tester) async {

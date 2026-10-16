@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_uikit/styling.dart';
 
+import 'stub_router.dart';
+
 /// The chrome controls are dispatched like every other control, so the spec that
 /// reaches the adapter is the contract a page's call site is held to: a field a
 /// page sets and the adapter never sees is a field that silently stops working
@@ -27,6 +29,7 @@ class _RecordingAdapter extends SharedLanguageAdapter {
     LiveUiControl.listRow,
     LiveUiControl.navBar,
     LiveUiControl.toast,
+    LiveUiControl.appHost,
   });
 
   @override
@@ -57,6 +60,12 @@ class _RecordingAdapter extends SharedLanguageAdapter {
   Widget toast(BuildContext context, LanguageToastSpec spec) {
     captured.add(spec);
     return super.toast(context, spec);
+  }
+
+  @override
+  Widget host(BuildContext context, LanguageHostSpec spec) {
+    captured.add(spec);
+    return super.host(context, spec);
   }
 }
 
@@ -342,6 +351,58 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(captured.whereType<LanguageToastSpec>(), isEmpty);
+    });
+  });
+
+  group('the host', () {
+    // No outer `MaterialApp` here on purpose: the host under test is the app
+    // widget, and a Material host wrapped inside another one would pass while a
+    // real page never looks like that.
+    Widget hostHarness(Widget child) => LiveConfigProvider(
+      config: const UiConfig(language: LiveDesignLanguage.fluent),
+      registry: registry,
+      child: child,
+    );
+
+    testWidgets('the router, the strings and the wrap travel to the adapter', (tester) async {
+      final router = stubRouterConfig();
+      var wrapped = 0;
+      await tester.pumpWidget(
+        hostHarness(
+          LiveApp(
+            routerConfig: router,
+            title: 'Rooms',
+            localizationsDelegates: liveLocalizationsDelegates,
+            supportedLocales: const [Locale('en'), Locale('zh')],
+            locale: const Locale('zh'),
+            builder: (context, child) {
+              wrapped++;
+              return child!;
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final spec = captured.whereType<LanguageHostSpec>().single;
+      expect(spec.routerConfig, same(router));
+      expect(spec.title, 'Rooms');
+      expect(spec.localizationsDelegates, same(liveLocalizationsDelegates));
+      expect(spec.supportedLocales, hasLength(2));
+      expect(spec.locale, const Locale('zh'));
+      expect(spec.builder, isNotNull);
+      expect(wrapped, greaterThan(0), reason: 'the host runs the wrap above its routes');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a language that declares the host still gets the Material frame from the base', (tester) async {
+      await tester.pumpWidget(hostHarness(LiveApp(routerConfig: stubRouterConfig())));
+      await tester.pumpAndSettle();
+
+      // The recording adapter forwards to `super.host`, which is the token
+      // renderer — the same fall-through a control gets.
+      expect(find.byType(TokenApp), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 }

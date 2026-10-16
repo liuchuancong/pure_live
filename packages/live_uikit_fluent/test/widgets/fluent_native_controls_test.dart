@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:live_uikit/styling.dart';
 import 'package:live_uikit_fluent/live_uikit_fluent.dart';
 
+import 'stub_router.dart';
+
 /// §16 widget tests for `live_uikit_fluent`, driving the `Live*` controls through
 /// the real runtime so they dispatch to the native `fluent_ui` widgets rather
 /// than the shared token renderer. Covers §9 gating (callback, disabled, loading,
@@ -296,6 +298,62 @@ void main() {
       expect(find.byType(fluent.InfoBar), findsOneWidget);
       expect(find.text('Saved'), findsOneWidget);
       expect(find.byType(TokenToast), findsNothing);
+    });
+  });
+
+  group('the app host (§9)', () {
+    // No outer `MaterialApp` in these: an app widget inside another app widget is
+    // not a shape any real page has, and Material's localizations would stand in
+    // for Fluent's and hide the point.
+    Widget hostHarness(Widget child) => LiveConfigProvider(
+      config: config,
+      registry: const LanguageRegistry(
+        adapters: {LiveDesignLanguage.fluent: fluentUiAdapter},
+        fallback: SharedLanguageAdapter(),
+      ),
+      child: child,
+    );
+
+    LiveApp hosted(Widget route) => LiveApp(
+      routerConfig: stubRouterConfig(child: route),
+      localizationsDelegates: liveLocalizationsDelegates,
+    );
+
+    testWidgets('the tree is hosted by FluentApp, not by Material', (tester) async {
+      await tester.pumpWidget(hostHarness(hosted(const Text('page'))));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(fluent.FluentApp), findsOneWidget);
+      expect(find.byType(MaterialApp), findsNothing);
+      expect(find.byType(TokenApp), findsNothing);
+      expect(find.text('page'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a control the language does not claim still works under the Fluent host', (tester) async {
+      // The host no longer installs Material, so this is the check that the shared
+      // renderers do not lean on it: a card needs an ink host and a field needs
+      // selection-toolbar localizations, and neither may require `MaterialApp`.
+      await tester.pumpWidget(
+        hostHarness(
+          hosted(
+            Column(
+              children: [
+                const LiveCard(child: Text('card')),
+                LiveTextField(placeholder: 'name', onChanged: (_) {}),
+                InkWell(onTap: () {}, child: const Text('ink')),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(fluent.FluentApp), findsOneWidget);
+      expect(find.text('card'), findsOneWidget);
+      await tester.tap(find.text('ink'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
     });
   });
 

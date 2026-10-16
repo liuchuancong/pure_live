@@ -24,6 +24,7 @@ void main() {
     LiveUiControl.appBar,
     LiveUiControl.listRow,
     LiveUiControl.navBar,
+    LiveUiControl.appHost,
   };
   // Derived rather than listed, so a control added to the contract cannot join the
   // fallback side silently — the suite has to be told (§17).

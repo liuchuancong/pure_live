@@ -5,6 +5,7 @@ import 'package:live_uikit_fluent/src/theme/fluent_theme_mapper.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_button_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_card_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_checkbox_builder.dart';
+import 'package:live_uikit_fluent/src/widgets/fluent_host_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_list_row_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_progress_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_scaffold_builder.dart';
@@ -74,4 +75,7 @@ class FluentLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget toast(BuildContext context, LanguageToastSpec spec) => FluentToastBuilder.build(context, spec);
+
+  @override
+  Widget host(BuildContext context, LanguageHostSpec spec) => FluentHostBuilder.build(context, spec);
 }

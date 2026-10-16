@@ -5,6 +5,8 @@ import 'package:live_uikit/styling.dart';
 import 'package:live_uikit_material_ui/live_uikit_material_ui.dart';
 import 'package:material_ui/material_ui.dart' as mu;
 
+import 'stub_router.dart';
+
 /// §16 widget tests for `live_uikit_material_ui`.
 ///
 /// Every control is driven through the real runtime path — a [LiveConfigProvider]
@@ -635,6 +637,68 @@ void main() {
       expect(find.byType(mu.NavigationBar), findsNothing);
       expect(find.byType(TokenNavBar), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('the app host (§9)', () {
+    // No outer `MaterialApp` here: the host under test is the app widget, and a
+    // fork host pumped inside the SDK one would pass while no real page looks
+    // like that.
+    Widget hostHarness(Widget child) => LiveConfigProvider(
+      config: config,
+      registry: const LanguageRegistry(
+        adapters: {LiveDesignLanguage.materialUi: materialUiAdapter},
+        fallback: SharedLanguageAdapter(),
+      ),
+      child: child,
+    );
+
+    testWidgets('the tree is hosted by the fork, not by the SDK Material app', (tester) async {
+      await tester.pumpWidget(
+        hostHarness(
+          LiveApp(
+            routerConfig: stubRouterConfig(child: const Text('page')),
+            localizationsDelegates: liveLocalizationsDelegates,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(mu.MaterialApp), findsOneWidget);
+      expect(find.byType(MaterialApp), findsNothing, reason: 'the SDK host must not stand in (§15)');
+      expect(find.byType(TokenApp), findsNothing);
+      expect(find.text('page'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the fork host carries the theme the token resolved, not the platform one', (tester) async {
+      // The test binding reports a light platform; the appearance says dark, so
+      // the host has to follow the token rather than re-pick by brightness.
+      late mu.ThemeData hosted;
+      await tester.pumpWidget(
+        LiveConfigProvider(
+          config: const UiConfig(language: LiveDesignLanguage.materialUi, brightness: UiBrightnessMode.dark),
+          registry: const LanguageRegistry(
+            adapters: {LiveDesignLanguage.materialUi: materialUiAdapter},
+            fallback: SharedLanguageAdapter(),
+          ),
+          child: LiveApp(
+            routerConfig: stubRouterConfig(
+              child: Builder(
+                builder: (context) {
+                  hosted = mu.Theme.of(context);
+                  return const SizedBox.shrink();
+                },
+              ),
+            ),
+            localizationsDelegates: liveLocalizationsDelegates,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(hosted.brightness, Brightness.dark);
+      expect(hosted.scaffoldBackgroundColor, isNot(const Color(0xFFFFFFFF)));
     });
   });
 }

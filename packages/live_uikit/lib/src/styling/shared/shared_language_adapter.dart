@@ -5,6 +5,7 @@ import 'package:live_uikit/src/styling/design_token.dart';
 import 'package:live_uikit/src/styling/recipe.dart';
 import 'package:live_uikit/src/styling/root/live_config_provider.dart';
 import 'package:live_uikit/src/styling/style.dart';
+import 'package:live_uikit/src/styling/widgets/live_app.dart';
 import 'package:live_uikit/src/styling/widgets/live_app_bar.dart';
 import 'package:live_uikit/src/styling/widgets/live_box.dart';
 import 'package:live_uikit/src/styling/widgets/live_card.dart';
@@ -199,4 +200,7 @@ class SharedLanguageAdapter implements LanguageAdapter {
 
   @override
   Widget toast(BuildContext context, LanguageToastSpec spec) => TokenToast(spec: spec);
+
+  @override
+  Widget host(BuildContext context, LanguageHostSpec spec) => TokenApp(spec: spec);
 }

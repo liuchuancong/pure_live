@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_uikit/styling.dart';
 
+import 'stub_router.dart';
+
 /// The shared token renderer is the floor every adapter has to meet: an
 /// unregistered language, and every control a registered language does not
 /// override, is drawn here (§3.1). So its spec-field fidelity is tested the same
@@ -21,7 +23,7 @@ void main() {
       find.descendant(of: find.byType(TokenTextField), matching: find.byType(AnimatedContainer));
 
   group('the base renders and reports', () {
-    testWidgets('all fifteen controls draw from one config, with no adapter registered', (tester) async {
+    testWidgets('every leaf control of the contract draws from one config, with no adapter registered', (tester) async {
       late LiveTheme theme;
       await tester.pumpWidget(
         harness(
@@ -109,6 +111,20 @@ void main() {
       // The bar titles itself as a header, so a screen reader still hears it
       // after the language changes and the font no longer does the work.
       expect(find.bySemanticsLabel('Rooms'), findsOneWidget);
+    });
+
+    testWidgets('the base hosts the app in Material, seeded from the token', (tester) async {
+      await tester.pumpWidget(
+        LiveConfigProvider(
+          config: const UiConfig(),
+          child: LiveApp(routerConfig: stubRouterConfig()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TokenApp), findsOneWidget);
+      expect(find.byType(MaterialApp), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 

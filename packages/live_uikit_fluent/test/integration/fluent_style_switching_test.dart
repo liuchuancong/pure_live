@@ -5,9 +5,10 @@ import 'package:live_uikit/styling.dart';
 import 'package:live_uikit_fluent/live_uikit_fluent.dart';
 
 /// The controls `live_uikit_fluent` renders natively (§3.1 capability
-/// declaration): eleven of the fifteen the resolver dispatches, including
-/// `select`, which only Fluent renders for real, and the page frame, list row
-/// and toast surface this adapter maps to `ScaffoldPage`/`ListTile`/`InfoBar`.
+/// declaration): twelve of the sixteen the resolver dispatches, including
+/// `select`, which only Fluent renders for real, the page frame, list row and
+/// toast surface this adapter maps to `ScaffoldPage`/`ListTile`/`InfoBar`, and
+/// the app host, which is `FluentApp` itself.
 const Set<LiveUiControl> nativeControls = {
   LiveUiControl.button,
   LiveUiControl.card,
@@ -20,11 +21,12 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.scaffold,
   LiveUiControl.listRow,
   LiveUiControl.toast,
+  LiveUiControl.appHost,
 };
 
-/// §16 integration pass for `live_uikit_fluent`: the eleven `nativeControls`
+/// §16 integration pass for `live_uikit_fluent`: the twelve `nativeControls`
 /// resolve native — including `select`, which only Fluent renders for real — the
-/// four controls of the fifteen-control dispatch contract this adapter does not
+/// four controls of the sixteen-control dispatch contract this adapter does not
 /// declare (`segmented`, `tabBar` and the chrome `appBar`/`navBar`, for which
 /// fluent_ui has no page-level title strip with widget actions and no bottom
 /// navigation strip) resolve shared, and switching to the core token base and

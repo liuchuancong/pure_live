@@ -4,6 +4,8 @@ import 'package:live_uikit/styling.dart';
 import 'package:live_uikit_macos/live_uikit_macos.dart';
 import 'package:macos_ui/macos_ui.dart' as macos;
 
+import 'stub_router.dart';
+
 /// §16 widget tests for `live_uikit_macos`, driven through the real runtime path
 /// so `Live*` controls dispatch to the native `macos_ui` widgets.
 void main() {
@@ -219,6 +221,46 @@ void main() {
       await tester.longPress(find.byType(macos.MacosListTile));
       await tester.pump();
       expect(longs, 1, reason: 'the library tile takes a long press, so no wrapper is needed');
+    });
+  });
+
+  group('the app host (§9)', () {
+    // `MacosApp` is the one piece of this language that can be pumped: the
+    // wallpaper-tinting timer the frame and the bar start belongs to
+    // `MacosScaffold`, and the host does not mount one — so the tree below is
+    // asserted here rather than only at the resolver, unlike the frame.
+    Widget hostHarness(Widget child) => LiveConfigProvider(
+      config: config,
+      registry: const LanguageRegistry(
+        adapters: {LiveDesignLanguage.macos: macosUiAdapter},
+        fallback: SharedLanguageAdapter(),
+      ),
+      child: child,
+    );
+
+    testWidgets('the tree is hosted by MacosApp, not by Material', (tester) async {
+      await tester.pumpWidget(
+        hostHarness(
+          LiveApp(
+            // macos_ui ships no localizations of its own, so the core's Flutter
+            // delegates are the whole list here.
+            routerConfig: stubRouterConfig(child: const Text('page')),
+            localizationsDelegates: liveLocalizationsDelegates,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(macos.MacosApp), findsOneWidget);
+      expect(find.byType(MaterialApp), findsNothing, reason: 'the Material host must not stand in (§15)');
+      expect(find.byType(TokenApp), findsNothing);
+      expect(find.text('page'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      // Unmount before teardown: the library's accent and window-state listeners
+      // outlive their subtree otherwise.
+      await tester.pumpWidget(hostHarness(const SizedBox.shrink()));
+      await tester.pump();
     });
   });
 }

@@ -5,7 +5,7 @@ import 'package:live_uikit/styling.dart';
 import 'package:live_uikit_cupertino_ui/live_uikit_cupertino_ui.dart';
 
 /// The controls `live_uikit_cupertino_ui` renders natively (§3.1 capability
-/// declaration): eight of the fifteen the resolver dispatches.
+/// declaration): nine of the sixteen the resolver dispatches.
 const Set<LiveUiControl> nativeControls = {
   LiveUiControl.button,
   LiveUiControl.textField,
@@ -15,9 +15,10 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.appBar,
   LiveUiControl.listRow,
   LiveUiControl.navBar,
+  LiveUiControl.appHost,
 };
 
-/// §16 integration pass for `live_uikit_cupertino_ui`: the eight declared controls
+/// §16 integration pass for `live_uikit_cupertino_ui`: the nine declared controls
 /// resolve native and the seven others resolve shared (`card`, `checkbox`,
 /// `segmented`, `progress`, `select`, `tabBar`, `toast`), and switching to the
 /// core token base and back replaces the rendering path without touching the
@@ -48,7 +49,7 @@ void main() {
     ),
   );
 
-  test('the eight declared controls resolve native, the rest shared (§16.3)', () {
+  test('the nine declared controls resolve native, the rest shared (§16.3)', () {
     for (final control in LiveUiControl.values) {
       final native = nativeControls.contains(control);
       final resolution = resolver.resolveControl(LiveDesignLanguage.cupertinoUi, control);

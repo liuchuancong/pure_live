@@ -6,6 +6,7 @@ import 'package:live_uikit_material_ui/src/widgets/material_ui_app_bar_builder.d
 import 'package:live_uikit_material_ui/src/widgets/material_ui_button_builder.dart';
 import 'package:live_uikit_material_ui/src/widgets/material_ui_card_builder.dart';
 import 'package:live_uikit_material_ui/src/widgets/material_ui_checkbox_builder.dart';
+import 'package:live_uikit_material_ui/src/widgets/material_ui_host_builder.dart';
 import 'package:live_uikit_material_ui/src/widgets/material_ui_list_row_builder.dart';
 import 'package:live_uikit_material_ui/src/widgets/material_ui_nav_bar_builder.dart';
 import 'package:live_uikit_material_ui/src/widgets/material_ui_progress_builder.dart';
@@ -95,4 +96,7 @@ class MaterialUiLanguageAdapter extends SharedLanguageAdapter {
     }
     return MaterialUiNavBarBuilder.build(context, spec);
   }
+
+  @override
+  Widget host(BuildContext context, LanguageHostSpec spec) => MaterialUiHostBuilder.build(context, spec);
 }

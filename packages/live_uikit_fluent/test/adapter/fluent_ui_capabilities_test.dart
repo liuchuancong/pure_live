@@ -22,12 +22,22 @@ void main() {
         LiveUiControl.slider,
         LiveUiControl.progress,
         LiveUiControl.select,
+        LiveUiControl.scaffold,
+        LiveUiControl.listRow,
+        LiveUiControl.toast,
+        LiveUiControl.appHost,
       };
       for (final control in native) {
         expect(adapter.capabilities.supports(control), isTrue, reason: '$control should be native');
       }
-      // Controls fluent_ui has no matching widget for fall back to the shared
-      // renderer (no segmented control; `TabView` is a whole tab view, not a strip).
+      // Derived rather than listed, so a control added to the contract cannot
+      // join the fallback side silently — the suite has to be told (§17).
+      for (final control in LiveUiControl.values.toSet().difference(native)) {
+        expect(adapter.capabilities.supports(control), isFalse, reason: '$control should fall back');
+      }
+      // Named because they are the two a reader expects Fluent to have: it has
+      // no single-choice segmented track, and its `TabView` is a whole tab view,
+      // not a strip.
       expect(adapter.capabilities.supports(LiveUiControl.segmented), isFalse);
       expect(adapter.capabilities.supports(LiveUiControl.tabBar), isFalse);
     });

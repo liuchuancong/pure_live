@@ -5,7 +5,7 @@ import 'package:live_uikit_material_ui/live_uikit_material_ui.dart';
 import 'package:material_ui/material_ui.dart' as mu;
 
 /// The controls `live_uikit_material_ui` renders natively (§3.1 capability
-/// declaration): twelve of the fifteen the resolver dispatches — everything
+/// declaration): thirteen of the sixteen the resolver dispatches — everything
 /// except `select`, `tabBar` (which this fork does not carry) and `toast`
 /// (Material's transient message belongs to the ScaffoldMessenger, not to a
 /// surface the adapter can return).
@@ -22,6 +22,7 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.appBar,
   LiveUiControl.listRow,
   LiveUiControl.navBar,
+  LiveUiControl.appHost,
 };
 
 /// §16 integration pass for `live_uikit_material_ui`.
@@ -33,9 +34,8 @@ const Set<LiveUiControl> nativeControls = {
 /// directions, keep one caller-owned controller across the switch, and check the
 /// diagnostics a switch is expected to produce — and only those.
 /// The downgrades this language is expected to report: every control the adapter
-/// does not declare — `select`, `tabBar` and the page trio `scaffold`, `appBar`,
-/// `listRow` that no adapter maps yet — each exactly once per language change
-/// (§15.5/§16.8).
+/// does not declare — `select`, `tabBar` and `toast` — each exactly once per
+/// language change (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   expect(sink.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
   expect(sink.map((diagnostic) => diagnostic.control).toSet(), LiveUiControl.values.toSet().difference(nativeControls));
@@ -65,7 +65,7 @@ void main() {
   );
 
   group('the resolution surface (§16.3/§16.8)', () {
-    test('the twelve declared controls resolve native, the other three shared (§16.3)', () {
+    test('the thirteen declared controls resolve native, the other three shared (§16.3)', () {
       for (final control in LiveUiControl.values) {
         final native = nativeControls.contains(control);
         final resolution = resolver.resolveControl(LiveDesignLanguage.materialUi, control);

@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:live_uikit/styling.dart';
 import 'package:live_uikit_cupertino_ui/live_uikit_cupertino_ui.dart';
 
+import 'stub_router.dart';
+
 /// §16 widget tests for `live_uikit_cupertino_ui`, driven through the real
 /// runtime path so `LiveButton`/`LiveSwitch`/… dispatch to the native
 /// `cupertino_ui` widgets. Covers §9 rules (callback + loading gating, controller
@@ -234,6 +236,62 @@ void main() {
       await tester.pumpWidget(chromeHarness(const LiveNavBar(items: [], index: 0)));
       expect(find.byType(cu.CupertinoTabBar), findsNothing);
       expect(find.byType(TokenNavBar), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('the app host (§9)', () {
+    // No outer `MaterialApp`: the host under test is the app widget itself, and
+    // wrapping it in Material would supply exactly the localizations and route
+    // behaviour the language is supposed to replace.
+    Widget hostHarness(Widget child) => LiveConfigProvider(
+      config: config,
+      registry: const LanguageRegistry(
+        adapters: {LiveDesignLanguage.cupertinoUi: cupertinoUiAdapter},
+        fallback: SharedLanguageAdapter(),
+      ),
+      child: child,
+    );
+
+    LiveApp hosted(Widget route) => LiveApp(
+      routerConfig: stubRouterConfig(child: route),
+      localizationsDelegates: const [...liveLocalizationsDelegates, ...cupertinoUiLocalizationsDelegates],
+    );
+
+    testWidgets('the tree is hosted by the fork Cupertino app, not by Material', (tester) async {
+      await tester.pumpWidget(hostHarness(hosted(const Text('page'))));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(cu.CupertinoApp), findsOneWidget);
+      expect(find.byType(MaterialApp), findsNothing, reason: 'the Material host must not stand in (§15)');
+      expect(find.byType(TokenApp), findsNothing);
+      expect(find.text('page'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a control the language does not claim still works under the Cupertino host', (tester) async {
+      // The fork host installs no Material of its own, so this is the check that
+      // the shared renderers do not lean on one: an ink host and the selection
+      // toolbar's strings have to arrive some other way.
+      await tester.pumpWidget(
+        hostHarness(
+          hosted(
+            Column(
+              children: [
+                const LiveCard(child: Text('card')),
+                LiveTextField(placeholder: 'name', onChanged: (_) {}),
+                InkWell(onTap: () {}, child: const Text('ink')),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(cu.CupertinoApp), findsOneWidget);
+      expect(find.text('card'), findsOneWidget);
+      await tester.tap(find.text('ink'));
+      await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     });
   });

@@ -16,4 +16,5 @@ const LiveUiCapabilities macosUiCapabilities = LiveUiCapabilities(<LiveUiControl
   LiveUiControl.scaffold,
   LiveUiControl.appBar,
   LiveUiControl.listRow,
+  LiveUiControl.appHost,
 });
