@@ -82,7 +82,7 @@ Future<void> configureMainWindow({
   // clears transparent so the material shows; on refusal the opaque
   // background set above stands and nothing else changes.
   if (requestMaterial && !fallbacks.needsOpaqueSurface) {
-    final applied = (applyMaterial ?? applyWindowMaterial)(dark: materialDark);
+    final applied = await (applyMaterial ?? applyWindowMaterial)(dark: materialDark);
     if (applied != AppliedWindowMaterial.none) {
       await windowManager.setBackgroundColor(const Color(0x00000000));
     }

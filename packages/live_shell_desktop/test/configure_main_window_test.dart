@@ -168,7 +168,7 @@ void main() {
       AppliedWindowMaterial? asked;
       await configure(
         requestMaterial: true,
-        applyMaterial: ({required dark}) {
+        applyMaterial: ({required dark}) async {
           asked = AppliedWindowMaterial.mica;
           return asked!;
         },
@@ -182,7 +182,7 @@ void main() {
     });
 
     test('a requested material that is refused leaves the opaque surface', () async {
-      await configure(requestMaterial: true, applyMaterial: ({required dark}) => AppliedWindowMaterial.none);
+      await configure(requestMaterial: true, applyMaterial: ({required dark}) async => AppliedWindowMaterial.none);
 
       final colour = argsOf(find('setBackgroundColor'));
       expect(colour['backgroundColorA'], 255);
@@ -193,7 +193,7 @@ void main() {
       await configure(
         fallbacks: const RenderFallbacks(effects: false),
         requestMaterial: true,
-        applyMaterial: ({required dark}) {
+        applyMaterial: ({required dark}) async {
           asked = true;
           return AppliedWindowMaterial.mica;
         },

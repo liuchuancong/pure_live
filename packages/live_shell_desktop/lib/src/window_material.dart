@@ -2,40 +2,47 @@ import 'dart:ffi' as ffi;
 import 'dart:io' show Platform;
 
 import 'package:ffi/ffi.dart';
+import 'package:flutter_acrylic/flutter_acrylic.dart' as acrylic;
 
 /// The material a window ended up with, or [none] when nothing was applied
 /// and the surface must stay opaque.
 enum AppliedWindowMaterial {
-  /// Windows 11's compositor-hosted Mica, via `DWMWA_SYSTEMBACKDROP_TYPE`.
+  /// Windows 11's compositor-hosted Mica, applied through flutter_acrylic.
   mica,
 
-  /// Windows 10's accent-policy acrylic blur, via the undocumented
-  /// `SetWindowCompositionAttribute`. Known to drop frames while the window
-  /// is dragged; it is the best Win10 offers without a UI toolkit blur.
-  acrylic,
-
-  /// Nothing was applied: the window keeps its opaque background.
+  /// Nothing was applied: the window keeps its opaque background. Windows 10
+  /// deliberately lands here — its acrylic path drops frames while the window
+  /// is dragged, and the package's transparent effects show the desktop
+  /// through, so the solid colour is the stable choice.
   none,
 }
 
 /// Signature of the material applier, so callers and tests can substitute
 /// their own.
-typedef WindowMaterialApplier = AppliedWindowMaterial Function({required bool dark});
+typedef WindowMaterialApplier = Future<AppliedWindowMaterial> Function({required bool dark});
 
 /// Applies the strongest translucent material the running Windows supports
 /// behind the process's main window.
 ///
-/// The dispatch is the industry three-step: build 22000+ asks the DWM for
-/// Mica and verifies the attribute took by reading it back; older builds ask
-/// user32's accent policy for acrylic and trust its boolean. A failure at
-/// any step — missing export, failed call, unsupported attribute — falls
-/// through to [AppliedWindowMaterial.none], and the caller must keep the
-/// opaque surface: a transparent clear colour with no material behind it
-/// shows the desktop through on Windows 10, which is the artefact this
-/// contract exists to prevent.
-AppliedWindowMaterial applyWindowMaterial({required bool dark}) {
+/// The dispatch is deliberate: build 22000+ asks flutter_acrylic for Mica and
+/// verifies the DWM attribute took by reading it back; older builds are given
+/// the solid surface without an attempt. A failure at any step — failed
+/// initialisation, unsupported attribute, mismatched readback — falls through
+/// to [AppliedWindowMaterial.none], and the caller must keep the opaque
+/// surface: a transparent clear colour with no material behind it shows the
+/// desktop through on Windows 10, which is the artefact this contract exists
+/// to prevent.
+Future<AppliedWindowMaterial> applyWindowMaterial({required bool dark}) async {
   if (!Platform.isWindows) {
     return AppliedWindowMaterial.none;
+  }
+  if (!_initialised) {
+    try {
+      await acrylic.Window.initialize();
+      _initialised = true;
+    } on Object {
+      return AppliedWindowMaterial.none;
+    }
   }
   final hwnd = _findMainWindowHandle();
   if (hwnd == 0) {
@@ -43,17 +50,23 @@ AppliedWindowMaterial applyWindowMaterial({required bool dark}) {
   }
   // The backdrop attribute exists from build 22000; asking earlier builds
   // fails outright, so the version gate spares them the call.
-  if (_windowsBuildNumber() >= 22000 && _applyMica(hwnd, dark: dark)) {
-    return AppliedWindowMaterial.mica;
-  }
-  if (_applyAccentAcrylic(hwnd, dark: dark)) {
-    return AppliedWindowMaterial.acrylic;
+  if (_windowsBuildNumber() >= 22000) {
+    try {
+      await acrylic.Window.setEffect(effect: acrylic.WindowEffect.mica, dark: dark);
+    } on Object {
+      return AppliedWindowMaterial.none;
+    }
+    if (_backdropIsMica(hwnd)) {
+      return AppliedWindowMaterial.mica;
+    }
   }
   return AppliedWindowMaterial.none;
 }
 
-const int _hwndOwnerNone = 0;
+bool _initialised = false;
+
 const int _windowClassNameCapacity = 256;
+const int _hwndOwnerNone = 0;
 
 /// Finds the process's main top-level window by class name — the runner
 /// registers `FLUTTER_RUNNER_WIN32_WINDOW` — current process id and having
@@ -162,13 +175,10 @@ final class _OsVersionInfo extends ffi.Struct {
   external ffi.Array<ffi.Uint16> servicePack;
 }
 
-bool _applyMica(int hwnd, {required bool dark}) {
+/// Reads the window's `DWMWA_SYSTEMBACKDROP_TYPE` back: a Mica request only
+/// counts as applied when the DWM answers 2 (`DWMSBT_MAINWINDOW`).
+bool _backdropIsMica(int hwnd) {
   final dwmapi = ffi.DynamicLibrary.open('dwmapi.dll');
-  final setAttribute = dwmapi
-      .lookupFunction<
-        ffi.Int32 Function(ffi.IntPtr, ffi.Uint32, ffi.Pointer<ffi.Void>, ffi.Uint32),
-        int Function(int, int, ffi.Pointer<ffi.Void>, int)
-      >('DwmSetWindowAttribute');
   final getAttribute = dwmapi
       .lookupFunction<
         ffi.Int32 Function(ffi.IntPtr, ffi.Uint32, ffi.Pointer<ffi.Void>, ffi.Uint32),
@@ -176,111 +186,11 @@ bool _applyMica(int hwnd, {required bool dark}) {
       >('DwmGetWindowAttribute');
   const backdropAttribute = 38; // DWMWA_SYSTEMBACKDROP_TYPE
   const mainWindowMica = 2; // DWMSBT_MAINWINDOW
-  final backdrop = calloc<ffi.Int32>()..value = mainWindowMica;
   final readback = calloc<ffi.Int32>();
   try {
-    // The backdrop paints behind the extended frame region; without the
-    // sheet-of-glass margins the attribute succeeds and shows nothing.
-    _extendFrame(dwmapi, hwnd);
-    final darkMode = calloc<ffi.Int32>()..value = dark ? 1 : 0;
-    try {
-      // Attribute 20, DWMWA_USE_IMMERSIVE_DARK_MODE: tints the material.
-      setAttribute(hwnd, 20, darkMode.cast<ffi.Void>(), ffi.sizeOf<ffi.Int32>());
-    } finally {
-      calloc.free(darkMode);
-    }
-    final applied = setAttribute(hwnd, backdropAttribute, backdrop.cast<ffi.Void>(), ffi.sizeOf<ffi.Int32>()) == 0;
-    if (!applied) {
-      return false;
-    }
     return getAttribute(hwnd, backdropAttribute, readback.cast<ffi.Void>(), ffi.sizeOf<ffi.Int32>()) == 0 &&
         readback.value == mainWindowMica;
   } finally {
-    calloc
-      ..free(backdrop)
-      ..free(readback);
+    calloc.free(readback);
   }
-}
-
-void _extendFrame(ffi.DynamicLibrary dwmapi, int hwnd) {
-  final extendFrame = dwmapi
-      .lookupFunction<ffi.Int32 Function(ffi.IntPtr, ffi.Pointer<_Margins>), int Function(int, ffi.Pointer<_Margins>)>(
-        'DwmExtendFrameIntoClientArea',
-      );
-  final margins = calloc<_Margins>()
-    ..ref.left = -1
-    ..ref.right = -1
-    ..ref.top = -1
-    ..ref.bottom = -1;
-  try {
-    extendFrame(hwnd, margins);
-  } finally {
-    calloc.free(margins);
-  }
-}
-
-final class _Margins extends ffi.Struct {
-  @ffi.Int32()
-  external int left;
-
-  @ffi.Int32()
-  external int right;
-
-  @ffi.Int32()
-  external int top;
-
-  @ffi.Int32()
-  external int bottom;
-}
-
-bool _applyAccentAcrylic(int hwnd, {required bool dark}) {
-  final user32 = ffi.DynamicLibrary.open('user32.dll');
-  final setCompositionAttribute = user32
-      .lookupFunction<
-        ffi.Int32 Function(ffi.IntPtr, ffi.Pointer<_CompositionAttribData>),
-        int Function(int, ffi.Pointer<_CompositionAttribData>)
-      >('SetWindowCompositionAttribute');
-  final accent = calloc<_AccentPolicy>()
-    ..ref.state =
-        4 // ACCENT_ENABLE_ACRYLICBLURBEHIND
-    ..ref.flags = 2
-    // ABGR: a mostly-opaque tint so the blur has something to work with.
-    ..ref.gradientColor = dark ? 0xB4000000 : 0x8CFFFFFF
-    ..ref.animationId = 0;
-  final data = calloc<_CompositionAttribData>()
-    ..ref.attribute =
-        19 // WCA_ACCENT_POLICY
-    ..ref.data = accent.cast<ffi.Void>()
-    ..ref.size = ffi.sizeOf<_AccentPolicy>();
-  try {
-    return setCompositionAttribute(hwnd, data) != 0;
-  } finally {
-    calloc
-      ..free(accent)
-      ..free(data);
-  }
-}
-
-final class _AccentPolicy extends ffi.Struct {
-  @ffi.Uint32()
-  external int state;
-
-  @ffi.Uint32()
-  external int flags;
-
-  @ffi.Uint32()
-  external int gradientColor;
-
-  @ffi.Uint32()
-  external int animationId;
-}
-
-final class _CompositionAttribData extends ffi.Struct {
-  @ffi.Uint32()
-  external int attribute;
-
-  external ffi.Pointer<ffi.Void> data;
-
-  @ffi.IntPtr()
-  external int size;
 }

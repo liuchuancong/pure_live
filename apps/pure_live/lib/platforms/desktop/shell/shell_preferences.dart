@@ -32,10 +32,10 @@ enum ShellWindowChrome {
   /// The operating system draws the native caption.
   system;
 
-  /// Resolves a stored identifier; an unknown one falls back to [system].
+  /// Resolves a stored identifier; an unknown one falls back to [app].
   static ShellWindowChrome fromId(String? id) => switch (id) {
-    'app' => ShellWindowChrome.app,
-    _ => ShellWindowChrome.system,
+    'system' => ShellWindowChrome.system,
+    _ => ShellWindowChrome.app,
   };
 
   /// The stable identifier persisted in the document.
@@ -47,9 +47,9 @@ enum ShellWindowChrome {
 
 /// The desktop shell's own choices, as persisted.
 final class ShellPreferences {
-  /// The shipping defaults: the operating system draws the caption, and the
-  /// close button asks until the viewer answers with "remember".
-  const new({this.windowChrome = ShellWindowChrome.system, this.closeAction});
+  /// The shipping defaults: draw the app's own strip, ask about closing until
+  /// the viewer answers with "remember".
+  const new({this.windowChrome = ShellWindowChrome.app, this.closeAction});
 
   /// Reads the document; unknown shapes decode to the defaults.
   factory ShellPreferences.fromJson(Map<String, Object?> json) => ShellPreferences(
