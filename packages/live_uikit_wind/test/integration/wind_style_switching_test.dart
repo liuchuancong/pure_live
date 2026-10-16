@@ -5,10 +5,11 @@ import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_wind/live_uikit_wind.dart';
 
 /// The controls `live_uikit_wind` renders natively (§3.1 capability
-/// declaration): all fifteen the resolver dispatches — the six the fork has a
-/// widget for, and the nine it does not (the rail, the segmented track, the bar,
-/// the tab strip, the page frame, the top bar, the list row, the bottom bar and
-/// the toast surface), which are composed out of the fork's own parts.
+/// declaration): all seventeen the resolver dispatches — the six the fork has a
+/// widget for, and the eleven it does not (the rail, the segmented track, the bar,
+/// the tab strip, the page frame, the top bar, the list row, the bottom bar, the
+/// toast surface, the dialog panel and the page switcher), which are composed out
+/// of the fork's own parts.
 const Set<LiveUiControl> nativeControls = {
   LiveUiControl.button,
   LiveUiControl.card,
@@ -25,6 +26,8 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.listRow,
   LiveUiControl.navBar,
   LiveUiControl.toast,
+  LiveUiControl.dialog,
+  LiveUiControl.tabView,
 };
 
 /// The structural surfaces this adapter owns (§ surfaces): the `WidgetsApp` +

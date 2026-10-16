@@ -16,15 +16,18 @@ controls drawn by `fluttersdk_wind`, without business pages importing it.
 - Implement `LanguageAdapter` for `LiveDesignLanguage.wind` (stable id `wind`).
 - Map the resolved `DesignToken` into the Wind theme and install it through a
   theme scope (never a second application widget inside the host).
-- Build native Wind widgets for all fifteen: **button, card, text field, switch,
+- Build native Wind widgets for all seventeen: **button, card, text field, switch,
   checkbox, slider, segmented, progress, select, tab bar, scaffold, app bar, list
-  row, nav bar, toast**. Six of them are a fork widget (`WButton`, `WCard`,
-  `WInput`, `WSwitch`, `WCheckbox`, `WSelect`); the other nine are built out of
-  this library's own surface parts and theme values — `WDiv`/`WCard` panels, the
-  `WAnchor` its own controls are built on, `WText`/`WIcon` leaves and its Tailwind
-  colour, radius, border and shadow maps — because `fluttersdk_wind` ships no
-  slider, segmented track, progress bar, tab strip, frame, bar, row, navigation
-  bar or toast (§9).
+  row, nav bar, toast, dialog, tab view**. Six of them are a fork widget
+  (`WButton`, `WCard`, `WInput`, `WSwitch`, `WCheckbox`, `WSelect`); the other
+  eleven are built out of this library's own surface parts and theme values —
+  `WDiv`/`WCard` panels, the `WAnchor` its own controls are built on, `WText`/
+  `WIcon` leaves and its Tailwind colour, radius, border and shadow maps — because
+  `fluttersdk_wind` ships no slider, segmented track, progress bar, tab strip,
+  frame, bar, row, navigation bar, toast, dialog or page switcher (§9). For the
+  dialog only the surface is this package's: the route, the barrier, the
+  fade-and-scale and the dismissal stay in core's `showLiveDialog`, and the tab
+  view is Flutter's `PageView` inside the library's own full-size column.
 - Declare the whole contract in `windCapabilities`: a Wind page reports no
   `controlUnsupported` downgrade, and no control of it is a token renderer
   (§16/§17).
@@ -41,7 +44,7 @@ controls drawn by `fluttersdk_wind`, without business pages importing it.
 - State management (Riverpod/GetX), navigation, business pages, or playback.
 - Direct dependencies on other style adapters.
 
-Every control of the contract is drawn here: the nine the fork has no widget for
+Every control of the contract is drawn here: the eleven the fork has no widget for
 are composed out of its own surface parts and theme values, so nothing in a Wind
 page still paints from the token base. They read as Wind because their panels,
 accent, radius and rules are the library's own, resolved inside the theme scope

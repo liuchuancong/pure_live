@@ -7,6 +7,7 @@ import 'package:live_uikit_wind/src/widgets/wind_app_bar_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_button_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_card_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_checkbox_builder.dart';
+import 'package:live_uikit_wind/src/widgets/wind_dialog_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_host_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_list_row_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_nav_bar_builder.dart';
@@ -18,24 +19,28 @@ import 'package:live_uikit_wind/src/widgets/wind_shell_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_slider_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_switch_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_tab_bar_builder.dart';
+import 'package:live_uikit_wind/src/widgets/wind_tab_view_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_text_field_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_toast_builder.dart';
 
 /// Wind — the `fluttersdk_wind` design-language adapter (§1).
 ///
 /// Implements the core contract for [LiveDesignLanguage.wind] end to end: theme
-/// mapping delegates to `theme/`, all fifteen controls to their `widgets/`
+/// mapping delegates to `theme/`, all seventeen controls to their `widgets/`
 /// builders, the declared [capabilities] to `wind_capabilities.dart` and the
 /// declared structural surfaces to `wind_surfaces.dart` — the `WidgetsApp` +
 /// `WindTheme` host and the navigation column, both in `widgets/`. Six of
 /// them are drawn by a fork widget (`WButton`, `WCard`+token surface, `WInput`,
-/// `WSwitch`, `WCheckbox`, `WSelect`); the other nine are composed out of the
+/// `WSwitch`, `WCheckbox`, `WSelect`); the other eleven are composed out of the
 /// fork's own parts — `WDiv`/`WCard` surfaces, `WAnchor` interaction, `WText`/
 /// `WIcon` leaves and `WButton` for a segment — coloured from Wind's Tailwind
 /// maps (`bg-primary-500`, `bg-gray-*`, `rounded-*`, `border-*`, `shadow`) and
 /// driven through its `hover:` / `selected:` / `disabled:` state prefixes —
 /// because `fluttersdk_wind` ships no slider, segmented track, progress bar, tab
-/// strip, page frame, bar, list row, navigation bar, navigation column or toast.
+/// strip, page frame, bar, list row, navigation bar, navigation column, toast,
+/// dialog surface or page switcher — the last two being a `WCard` panel and a
+/// `PageView` inside the library's own column, since core keeps the route, the
+/// barrier and the transition for itself.
 /// Each builder says which it is. No business state here.
 class WindLanguageAdapter extends SharedLanguageAdapter {
   /// The Wind adapter.
@@ -102,6 +107,12 @@ class WindLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget toast(BuildContext context, LanguageToastSpec spec) => WindToastBuilder.build(context, spec);
+
+  @override
+  Widget dialog(BuildContext context, LanguageDialogSpec spec) => WindDialogBuilder.build(context, spec);
+
+  @override
+  Widget tabView(BuildContext context, LanguageTabViewSpec spec) => WindTabViewBuilder.build(context, spec);
 
   @override
   LiveUiSurfaceCapabilities get surfaces => windSurfaces;

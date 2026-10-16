@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
@@ -605,6 +607,77 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
       expect(find.text('Saved'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('the dialog surface and the page switcher (§9)', () {
+    testWidgets('a dialog is a Wind panel, and the route stays the core’s', (tester) async {
+      await tester.pumpWidget(harness(const SizedBox.shrink()));
+      unawaited(showLiveDialog<void>(
+        context: tester.element(find.byType(SizedBox)),
+        title: 'Leave the room?',
+        child: const Text('Playback stops.'),
+        actions: [LiveButton(label: 'Stay', onPressed: () {})],
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TokenDialog), findsNothing);
+      expect(find.text('Leave the room?'), findsOneWidget);
+      expect(find.text('Playback stops.'), findsOneWidget);
+      expect(find.text('Stay'), findsOneWidget);
+      // The surface is the fork’s own elevated container, and the heading its
+      // own type step — not a token card with a Material text style.
+      final panels = tester.widgetList<wind.WCard>(find.byType(wind.WCard)).toList();
+      expect(panels, hasLength(1));
+      expect(panels.single.className, contains('rounded-xl'));
+      expect(panels.single.className, contains('shadow-xl'));
+      expect(
+        find.byWidgetPredicate((widget) => widget is wind.WText && (widget.className ?? '').contains('font-semibold')),
+        findsOneWidget,
+      );
+
+      // Dismissing is the core barrier’s job, not something this surface repeats.
+      await tester.tapAt(const Offset(12, 12));
+      await tester.pumpAndSettle();
+      expect(find.text('Leave the room?'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the page switcher is a PageView in a Wind frame, and reports swipes', (tester) async {
+      var index = 0;
+      int? swiped;
+      Widget view() => Builder(
+        builder: (context) => LiveTheme.of(context).adapter.tabView(
+          context,
+          LanguageTabViewSpec(
+            pages: const <Widget>[Text('first page'), Text('second page')],
+            index: index,
+            onIndexChanged: (value) => swiped = value,
+          ),
+        ),
+      );
+      Widget page() => harness(SizedBox(width: 320, height: 240, child: view()));
+
+      await tester.pumpWidget(page());
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TokenTabView), findsNothing);
+      expect(find.byType(wind.WDiv), findsWidgets, reason: 'the frame is the library’s own container');
+      expect(find.text('first page'), findsOneWidget);
+
+      // A swipe moves the view and is reported, which is what lets the strip follow.
+      await tester.dragFrom(tester.getCenter(find.byType(PageView)), const Offset(-240, 0));
+      await tester.pumpAndSettle();
+      expect(swiped, 1);
+      expect(find.text('second page'), findsOneWidget);
+
+      // An index change from the strip animates the same view in place.
+      index = 0;
+      await tester.pumpWidget(page());
+      await tester.pumpAndSettle();
+      expect(find.text('first page'), findsOneWidget);
+      expect(find.text('second page'), findsNothing);
       expect(tester.takeException(), isNull);
     });
   });

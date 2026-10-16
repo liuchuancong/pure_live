@@ -21,8 +21,8 @@ void main() {
     });
 
     test('declares exactly the controls it renders natively', () {
-      // All fifteen: Wind renders every control, and the nine whose library has
-      // no widget for the job say so in their builder (§9).
+      // All seventeen: Wind renders every control, and the eleven whose library
+      // has no widget for the job say so in their builder (§9).
       const native = {
         LiveUiControl.button,
         LiveUiControl.card,
@@ -39,6 +39,8 @@ void main() {
         LiveUiControl.listRow,
         LiveUiControl.navBar,
         LiveUiControl.toast,
+        LiveUiControl.dialog,
+        LiveUiControl.tabView,
       };
       for (final control in native) {
         expect(adapter.capabilities.supports(control), isTrue, reason: '$control should be native');
