@@ -13,12 +13,19 @@ import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 /// Areas: every area-capable platform as a tab over its category catalogue
 /// (3.x `AreasPage`); a category chip row splits the platforms that group
 /// their areas, a plain grid serves the ones that do not.
-final class AreasPage extends ConsumerWidget {
+final class AreasPage extends ConsumerStatefulWidget {
   /// The areas page.
   const new({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AreasPage> createState() => _AreasPageState();
+}
+
+final class _AreasPageState extends ConsumerState<AreasPage> {
+  int _selected = 0;
+
+  @override
+  Widget build(BuildContext context) {
     final sites = ref.watch(sitesProvider);
     final capable = sites.registry.all.where((site) => site.capability<LiveAreaProvider>() != null).toList();
     if (capable.isEmpty) {
@@ -27,24 +34,28 @@ final class AreasPage extends ConsumerWidget {
         body: LiveEmpty(title: context.t.common.empty),
       );
     }
-    return DefaultTabController(
-      length: capable.length,
-      child: LiveScaffold(
-        appBar: LiveAppBar(
-          title: context.t.tabs.areas,
-          actions: const [SettingsEntryButton()],
-          // A Material strip for now: `LiveTabs` has no TabController, so this
-          // bar and its `TabBarView` below have to move to an index plus an
-          // IndexedStack together, not one at a time.
-          bottom: TabBar(
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            tabs: [for (final site in capable) Tab(text: site.manifest.localizedName(_tag(context), 'zh-CN'))],
+    final index = _selected.clamp(0, capable.length - 1);
+    return LiveScaffold(
+      appBar: LiveAppBar(
+        title: context.t.tabs.areas,
+        actions: const [SettingsEntryButton()],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: LiveTabs(
+              index: index,
+              onChanged: (value) => setState(() => _selected = value),
+              tabs: [for (final site in capable) LiveTab(label: site.manifest.localizedName(_tag(context), 'zh-CN'))],
+            ),
           ),
         ),
-        body: TabBarView(
-          children: [for (final site in capable) _PlatformAreas(key: ValueKey(site.manifest.id), site: site)],
-        ),
+      ),
+      body: LiveTabView(
+        index: index,
+        onIndexChanged: (value) => setState(() => _selected = value),
+        pages: [for (final site in capable) _PlatformAreas(key: ValueKey(site.manifest.id), site: site)],
       ),
     );
   }

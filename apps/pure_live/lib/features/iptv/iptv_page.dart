@@ -48,38 +48,41 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
   }
 
   Future<void> _addSource() async {
-    final form = await showDialog<({String name, String url})>(
+    final name = TextEditingController();
+    final url = TextEditingController();
+    final form = await showLiveDialog<({String name, String url})>(
       context: context,
-      builder: (context) {
-        final name = TextEditingController();
-        final url = TextEditingController();
-        return AlertDialog(
-          title: Text(context.t.iptv.addSource),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: name,
-                autofocus: true,
-                decoration: InputDecoration(labelText: context.t.iptv.sourceName),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: url,
-                decoration: InputDecoration(labelText: context.t.iptv.sourceUrl),
-                onSubmitted: (_) => Navigator.of(context).pop((name: name.text.trim(), url: url.text.trim())),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(context.t.common.cancel)),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop((name: name.text.trim(), url: url.text.trim())),
-              child: Text(context.t.common.confirm),
+      title: context.t.iptv.addSource,
+      // A Builder so the submit pops the dialog route, not the page under it.
+      child: Builder(
+        builder: (fieldContext) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: name,
+              autofocus: true,
+              decoration: InputDecoration(labelText: fieldContext.t.iptv.sourceName),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: url,
+              decoration: InputDecoration(labelText: fieldContext.t.iptv.sourceUrl),
+              onSubmitted: (_) => Navigator.of(fieldContext).pop((name: name.text.trim(), url: url.text.trim())),
             ),
           ],
-        );
-      },
+        ),
+      ),
+      actions: (dialogContext) => [
+        LiveButton(
+          label: dialogContext.t.common.cancel,
+          variant: ButtonVariant.ghost,
+          onPressed: () => Navigator.of(dialogContext).pop(),
+        ),
+        LiveButton(
+          label: dialogContext.t.common.confirm,
+          onPressed: () => Navigator.of(dialogContext).pop((name: name.text.trim(), url: url.text.trim())),
+        ),
+      ],
     );
     if (form == null || form.name.isEmpty || form.url.isEmpty) {
       return;
@@ -104,18 +107,22 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
   }
 
   Future<void> _deleteSource(String id) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showLiveDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.t.iptv.deleteSource),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(context.t.common.cancel)),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(context.t.common.confirm, style: TextStyle(color: LiveTheme.of(context).colors.error)),
-          ),
-        ],
-      ),
+      title: context.t.iptv.deleteSource,
+      child: const SizedBox.shrink(),
+      actions: (dialogContext) => [
+        LiveButton(
+          label: dialogContext.t.common.cancel,
+          variant: ButtonVariant.ghost,
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+        ),
+        LiveButton(
+          label: dialogContext.t.common.confirm,
+          variant: ButtonVariant.danger,
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+        ),
+      ],
     );
     if (confirmed == true) {
       await _library.deletePlaylist(id);

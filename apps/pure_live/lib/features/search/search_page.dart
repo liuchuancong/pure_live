@@ -19,12 +19,19 @@ import 'package:skeletonizer/skeletonizer.dart';
 
 /// Search: every search-capable platform as a tab over its results, across
 /// the targets the site answers — rooms, anchors and areas.
-final class SearchPage extends ConsumerWidget {
+final class SearchPage extends ConsumerStatefulWidget {
   /// The search page.
   const new({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SearchPage> createState() => _SearchPageState();
+}
+
+final class _SearchPageState extends ConsumerState<SearchPage> {
+  int _selected = 0;
+
+  @override
+  Widget build(BuildContext context) {
     final sites = ref.watch(sitesProvider);
     final searchable = sites.registry.all.where((site) => site.capability<LiveSearchProvider>() != null).toList();
     if (searchable.isEmpty) {
@@ -33,24 +40,30 @@ final class SearchPage extends ConsumerWidget {
         body: LiveEmpty(title: context.t.common.empty),
       );
     }
-    return DefaultTabController(
-      length: searchable.length,
-      child: LiveScaffold(
-        appBar: LiveAppBar(
-          title: context.t.tabs.search,
-          actions: const [SettingsEntryButton()],
-          // A Material strip for now: `LiveTabs` has no TabController, so this
-          // bar and its `TabBarView` below have to move to an index plus an
-          // IndexedStack together, not one at a time.
-          bottom: TabBar(
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            tabs: [for (final site in searchable) Tab(text: site.manifest.localizedName(_tag(context), 'zh-CN'))],
+    final index = _selected.clamp(0, searchable.length - 1);
+    return LiveScaffold(
+      appBar: LiveAppBar(
+        title: context.t.tabs.search,
+        actions: const [SettingsEntryButton()],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: LiveTabs(
+              index: index,
+              onChanged: (value) => setState(() => _selected = value),
+              tabs: [
+                for (final site in searchable) LiveTab(label: site.manifest.localizedName(_tag(context), 'zh-CN')),
+              ],
+            ),
           ),
         ),
-        body: TabBarView(
-          children: [for (final site in searchable) _SiteSearch(key: ValueKey(site.manifest.id), site: site)],
-        ),
+      ),
+      body: LiveTabView(
+        index: index,
+        onIndexChanged: (value) => setState(() => _selected = value),
+        pages: [for (final site in searchable) _SiteSearch(key: ValueKey(site.manifest.id), site: site)],
       ),
     );
   }

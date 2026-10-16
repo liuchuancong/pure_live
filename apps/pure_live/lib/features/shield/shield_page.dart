@@ -70,26 +70,29 @@ final class _ShieldPageState extends ConsumerState<ShieldPage> {
   }
 
   Future<void> _add(_ShieldKind kind) async {
-    final value = await showDialog<String>(
+    final field = TextEditingController();
+    final value = await showLiveDialog<String>(
       context: context,
-      builder: (context) {
-        final field = TextEditingController();
-        return AlertDialog(
-          title: Text('${context.t.shield.add} — ${_titleOf(kind)}'),
-          content: TextField(
-            controller: field,
-            autofocus: true,
-            onSubmitted: (value) => Navigator.of(context).pop(value.trim()),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(context.t.common.cancel)),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(field.text.trim()),
-              child: Text(context.t.common.confirm),
-            ),
-          ],
-        );
-      },
+      title: '${context.t.shield.add} — ${_titleOf(kind)}',
+      // A Builder so the submit pops the dialog route, not the page under it.
+      child: Builder(
+        builder: (fieldContext) => TextField(
+          controller: field,
+          autofocus: true,
+          onSubmitted: (submitted) => Navigator.of(fieldContext).pop(submitted.trim()),
+        ),
+      ),
+      actions: (dialogContext) => [
+        LiveButton(
+          label: dialogContext.t.common.cancel,
+          variant: ButtonVariant.ghost,
+          onPressed: () => Navigator.of(dialogContext).pop(),
+        ),
+        LiveButton(
+          label: dialogContext.t.common.confirm,
+          onPressed: () => Navigator.of(dialogContext).pop(field.text.trim()),
+        ),
+      ],
     );
     if (value == null || value.isEmpty) {
       return;

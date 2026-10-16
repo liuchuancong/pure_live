@@ -81,19 +81,22 @@ final class _BackupPageState extends ConsumerState<BackupPage> {
   /// Restores [backup] and restarts — the zip overwrites box files that
   /// are open, and a reload is the only way to read them consistently.
   Future<void> _restore(BackupEntry backup) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showLiveDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.t.backup.restore),
-        content: Text(context.t.backup.restoreConfirm(name: backup.name)),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(context.t.common.cancel)),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(context.t.backup.restore, style: TextStyle(color: LiveTheme.of(context).colors.error)),
-          ),
-        ],
-      ),
+      title: context.t.backup.restore,
+      child: Text(context.t.backup.restoreConfirm(name: backup.name)),
+      actions: (dialogContext) => [
+        LiveButton(
+          label: dialogContext.t.common.cancel,
+          variant: ButtonVariant.ghost,
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+        ),
+        LiveButton(
+          label: dialogContext.t.backup.restore,
+          variant: ButtonVariant.danger,
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+        ),
+      ],
     );
     if (confirmed != true) {
       return;

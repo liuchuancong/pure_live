@@ -19,12 +19,19 @@ import 'package:skeletonizer/skeletonizer.dart';
 ///
 /// The tabs come from the sites themselves — a platform without the
 /// discovery capability simply has no tab, per the capability contract.
-final class PopularPage extends ConsumerWidget {
+final class PopularPage extends ConsumerStatefulWidget {
   /// The popular page.
   const new({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PopularPage> createState() => _PopularPageState();
+}
+
+final class _PopularPageState extends ConsumerState<PopularPage> {
+  int _selected = 0;
+
+  @override
+  Widget build(BuildContext context) {
     final sites = ref.watch(sitesProvider);
     final discoverable = sites.registry.all.where((site) => site.capability<LiveDiscoveryProvider>() != null).toList();
     if (discoverable.isEmpty) {
@@ -33,24 +40,31 @@ final class PopularPage extends ConsumerWidget {
         body: LiveEmpty(title: context.t.common.empty),
       );
     }
-    return DefaultTabController(
-      length: discoverable.length,
-      child: LiveScaffold(
-        appBar: LiveAppBar(
-          title: context.t.tabs.popular,
-          actions: const [SettingsEntryButton()],
-          // A Material strip for now: `LiveTabs` has no TabController, so this
-          // bar and its `TabBarView` below have to move to an index plus an
-          // IndexedStack together, not one at a time.
-          bottom: TabBar(
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            tabs: [
-              for (final site in discoverable) Tab(text: site.manifest.localizedName(_tag(context, site), 'zh-CN')),
-            ],
+    final index = _selected.clamp(0, discoverable.length - 1);
+    return LiveScaffold(
+      appBar: LiveAppBar(
+        title: context.t.tabs.popular,
+        actions: const [SettingsEntryButton()],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: LiveTabs(
+              index: index,
+              onChanged: (value) => setState(() => _selected = value),
+              tabs: [
+                for (final site in discoverable)
+                  LiveTab(label: site.manifest.localizedName(_tag(context, site), 'zh-CN')),
+              ],
+            ),
           ),
         ),
-        body: TabBarView(children: [for (final site in discoverable) _SiteFeed(site: site)]),
+      ),
+      body: LiveTabView(
+        index: index,
+        onIndexChanged: (value) => setState(() => _selected = value),
+        pages: [for (final site in discoverable) _SiteFeed(site: site)],
       ),
     );
   }

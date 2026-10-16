@@ -185,49 +185,50 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
     final visible = _selectedGroup == null
         ? records
         : records.where((record) => record.groupIds.contains(_selectedGroup)).toList();
-    return DefaultTabController(
-      length: groups.length + 1,
-      child: LiveScaffold(
-        appBar: LiveAppBar(
-          title: context.t.tabs.follow,
-          actions: [
-            IconButton(
-              tooltip: context.t.follow.manageGroups,
-              icon: const Icon(Icons.folder_copy_outlined),
-              onPressed: _manageGroups,
+    final groupPosition = groups.indexWhere((group) => group.id == _selectedGroup);
+    return LiveScaffold(
+      appBar: LiveAppBar(
+        title: context.t.tabs.follow,
+        actions: [
+          IconButton(
+            tooltip: context.t.follow.manageGroups,
+            icon: const Icon(Icons.folder_copy_outlined),
+            onPressed: _manageGroups,
+          ),
+          const SettingsEntryButton(),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: LiveTabs(
+              index: _selectedGroup == null || groupPosition < 0 ? 0 : groupPosition + 1,
+              onChanged: (index) => setState(() => _selectedGroup = index == 0 ? null : groups[index - 1].id),
+              tabs: [
+                LiveTab(label: context.t.follow.all),
+                for (final group in groups) LiveTab(label: group.name),
+              ],
             ),
-            const SettingsEntryButton(),
-          ],
-          // A Material strip for now: `LiveTabs` has no TabController, so this
-          // bar and the group grid it selects into have to move to an index
-          // plus a filtered view together, not one at a time.
-          bottom: TabBar(
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            onTap: (index) => setState(() => _selectedGroup = index == 0 ? null : groups[index - 1].id),
-            tabs: [
-              Tab(text: context.t.follow.all),
-              for (final group in groups) Tab(text: group.name),
-            ],
           ),
         ),
-        body: visible.isEmpty
-            ? LiveEmpty(title: context.t.follow.empty)
-            : GridView.builder(
-                padding: const EdgeInsets.all(12),
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 340,
-                  childAspectRatio: 0.82,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                ),
-                itemCount: visible.length,
-                itemBuilder: (context, index) => GestureDetector(
-                  onLongPress: () => unawaited(_assignGroups(visible[index])),
-                  child: _tile(context, visible[index].room),
-                ),
-              ),
       ),
+      body: visible.isEmpty
+          ? LiveEmpty(title: context.t.follow.empty)
+          : GridView.builder(
+              padding: const EdgeInsets.all(12),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 340,
+                childAspectRatio: 0.82,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+              ),
+              itemCount: visible.length,
+              itemBuilder: (context, index) => GestureDetector(
+                onLongPress: () => unawaited(_assignGroups(visible[index])),
+                child: _tile(context, visible[index].room),
+              ),
+            ),
     );
   }
 

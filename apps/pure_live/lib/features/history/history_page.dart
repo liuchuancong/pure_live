@@ -44,19 +44,22 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
   }
 
   Future<void> _confirmClear() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showLiveDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.t.history.clear),
-        content: Text(context.t.history.clearConfirm),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(context.t.common.cancel)),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(context.t.history.clear, style: TextStyle(color: LiveTheme.of(context).colors.error)),
-          ),
-        ],
-      ),
+      title: context.t.history.clear,
+      child: Text(context.t.history.clearConfirm),
+      actions: (dialogContext) => [
+        LiveButton(
+          label: dialogContext.t.common.cancel,
+          variant: ButtonVariant.ghost,
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+        ),
+        LiveButton(
+          label: dialogContext.t.history.clear,
+          variant: ButtonVariant.danger,
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+        ),
+      ],
     );
     if (confirmed == true) {
       await _repository.clear();
