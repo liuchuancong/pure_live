@@ -15,7 +15,6 @@ dependencies:
   device_screen_brightness: ^2.0.0 # 屏幕亮度读写
   flutter:
     sdk: flutter
-  mobile_scanner: ^7.4.2 # 扫描二维码和条码
   network_info_plus: ^8.2.2 # 网络与 Wi-Fi 信息
   refresh_rate: ^2.0.1 # 屏幕刷新率
   volume_controller: ^3.7.1 # 系统音量读写

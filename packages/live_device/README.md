@@ -13,10 +13,10 @@ PureLive 的设备与系统能力服务。本包负责调用设备能力，不�
 - **设备身份信息**：`device_info_plus`
 - **屏幕常亮**：`wakelock_plus`
 
-`mobile_scanner`（扫码）仍在本包声明但刻意没有服务实现：它的控制器 `start()` 会等
+扫码（`mobile_scanner`）不属于本包，也没有列在依赖里：它的控制器 `start()` 会等
 `attach()`，而 `attach()` 只由预览 widget 的 `initState` 调用，widget 不进 widget tree
-就抛 `controllerNotAttached`。也就是说扫码依赖属于真正渲染相机预览的那一层，套一层
-"隐藏插件类型"的服务并不能把插件挡在外面，反而会诱导调用方以为可以不挂 widget。
+就抛 `controllerNotAttached`。也就是说真正渲染相机预览的那一层必须自己声明这个插件，
+在这里套一层"隐藏插件类型"的服务只会误导调用方以为预览是可选的。
 
 ## 接入
 

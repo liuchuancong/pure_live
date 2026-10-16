@@ -31,9 +31,9 @@
 
 ### Notes
 
-- `mobile_scanner` stays declared without a service: the plugin's controller
-  only emits frames once its preview widget is attached to the widget tree, so
-  the dependency belongs to whichever layer renders the scanner, not here.
+- `mobile_scanner` is not a dependency of this package: its controller only
+  emits frames once its preview widget is attached to the widget tree, so the
+  layer that renders the scanner has to declare the plugin itself.
 - Declared here are the device plugins the app used to declare directly:
-  `battery_plus`, `connectivity_plus`, `device_info_plus`, `mobile_scanner`,
-  `network_info_plus` and `refresh_rate`.
+  `battery_plus`, `connectivity_plus`, `device_info_plus`, `network_info_plus`,
+  `refresh_rate` and `wakelock_plus`.
