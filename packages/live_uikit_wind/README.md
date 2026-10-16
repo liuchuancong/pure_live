@@ -15,7 +15,7 @@ controls drawn by `fluttersdk_wind`, without business pages importing it.
 
 - Implement `LanguageAdapter` for `LiveDesignLanguage.wind` (stable id `wind`).
 - Map the resolved `DesignToken` into the Wind theme and install it through a
-  theme scope (never a nested application shell).
+  theme scope (never a second application widget inside the host).
 - Build native Wind widgets for all fifteen: **button, card, text field, switch,
   checkbox, slider, segmented, progress, select, tab bar, scaffold, app bar, list
   row, nav bar, toast**. Six of them are a fork widget (`WButton`, `WCard`,
@@ -28,6 +28,10 @@ controls drawn by `fluttersdk_wind`, without business pages importing it.
 - Declare the whole contract in `windCapabilities`: a Wind page reports no
   `controlUnsupported` downgrade, and no control of it is a token renderer
   (§16/§17).
+- Own the app host: the library ships no application widget, so the host is
+  Flutter's `WidgetsApp` with a `WindTheme` scope above the routed tree — which is
+  what takes the page transition, the scroll physics and the dialog barrier out of
+  Material's hands (§ surfaces). The shell still resolves shared and is reported.
 
 ## What this package must not own
 
@@ -40,8 +44,10 @@ Every control of the contract is drawn here: the nine the fork has no widget for
 are composed out of its own surface parts and theme values, so nothing in a Wind
 page still paints from the token base. They read as Wind because their panels,
 accent, radius and rules are the library's own, resolved inside the theme scope
-this adapter installs. The two structural surfaces — the app host and the shell —
-are the exception: this build leaves them to the core (§ surfaces).
+this adapter installs. The app host is here too: the library ships no application
+widget, so the host is Flutter's `WidgetsApp` with Wind's theme above the routed
+tree (§ surfaces). The app shell is the exception — this build leaves it to the
+core.
 
 ## Public entry point
 
@@ -86,17 +92,18 @@ shared and reports `adapterMissing` (§16/§17).
 Test coverage is present at four layers: `test/adapter/` (contract and
 resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
 `test/widgets/` (every control of the contract driven through the real dispatch
-path, native and composed alike, plus the assertion that no `Token*` renderer
-survives inside a Wind page), and `test/integration/` (resolution surface across
+path, native and composed alike, the assertion that no `Token*` renderer survives
+inside a Wind page, and the app host chain — `WidgetsApp` under `WindTheme` with no
+`MaterialApp` in it), and `test/integration/` (resolution surface across
 the contract and a switch to the shared `token` base and back with caller-owned
 state preserved). What remains untested is the part that needs hardware: focus
 traversal, Android TV D-pad, and the platform claims in §13.
 
 ## Known limitations
 
-- The two structural surfaces stay the core's: this build claims no app host and
-  no shell, so a Wind page is still hosted and navigated by the shared renderer
-  (§ surfaces).
+- The app shell stays the core's: this build owns the app host (`WidgetsApp` + a
+  `WindTheme` scope) but no shell, so a Wind page is hosted by Wind's own theme and
+  still navigated by the shared renderer (§ surfaces).
 - `WButton` owns its focus handling inside `WAnchor`, so `focusNode`/`autofocus`
   cannot be honoured on the Wind button — and not on the composed rail or list row
   either, which take the same anchor (§9).

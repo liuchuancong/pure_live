@@ -27,19 +27,25 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.toast,
 };
 
+/// The structural surfaces this adapter owns (§ surfaces): the app host, not the
+/// shell.
+const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost};
+
 /// §16/§11 integration pass for `live_uikit_wind`.
 ///
-/// Wind renders the whole control contract, so a switch into it replaces every
-/// rendering path at once and the only downgrades left are the two structural
-/// surfaces this build does not claim; switching to the core token base and back
-/// still has to prove a caller-owned controller survives the re-render (§11).
+/// Wind renders the whole control contract and hosts the app itself, so a switch
+/// into it replaces every rendering path at once; the only downgrade left is the
+/// shell, which this build does not claim. Switching to the core token base and
+/// back still has to prove a caller-owned controller survives the re-render (§11).
 /// The downgrades this language is expected to report: none for the controls,
-/// because nothing in the contract falls back any more — only the app host and
-/// the shell, each once per language change (§15.5/§16.8).
+/// because nothing in the contract falls back any more, and none for the app host
+/// — this library has no application widget, so the host is the app's own
+/// `WidgetsApp` under a `WindTheme` scope. Only the shell falls back, once per
+/// language change (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
-  // This adapter owns no structural surface, so both the app host and the shell
-  // fall back while no control does — two kinds of downgrade with two codes
-  // (§ surfaces).
+  // The controls fall back not at all and the surfaces only in part: the host is
+  // this adapter's, the shell is still the core's — two kinds of downgrade with
+  // two codes (§ surfaces).
   final controls = sink.where((diagnostic) => diagnostic.control != null);
   final surfaces = sink.where((diagnostic) => diagnostic.surface != null);
   // A language that renders every control reports no control downgrade at all,
@@ -49,9 +55,17 @@ void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   if (expectedControls.isNotEmpty) {
     expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
   }
-  expect(surfaces.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.surfaceUnsupported});
-  expect(surfaces.map((diagnostic) => diagnostic.surface).toSet(), LiveUiSurface.values.toSet());
-  expect(sink, hasLength(LiveUiControl.values.length + LiveUiSurface.values.length - nativeControls.length));
+  final expectedSurfaces = LiveUiSurface.values.toSet().difference(nativeSurfaces);
+  expect(surfaces.map((diagnostic) => diagnostic.surface).toSet(), expectedSurfaces);
+  if (expectedSurfaces.isNotEmpty) {
+    expect(surfaces.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.surfaceUnsupported});
+  }
+  expect(
+    sink,
+    hasLength(
+      LiveUiControl.values.length + LiveUiSurface.values.length - nativeControls.length - nativeSurfaces.length,
+    ),
+  );
 }
 
 void main() {

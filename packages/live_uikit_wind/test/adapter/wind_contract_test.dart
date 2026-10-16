@@ -53,11 +53,12 @@ void main() {
       expect(adapter.capabilities.supported, LiveUiControl.values.toSet());
     });
 
-    test('owns no structural surface in this build', () {
-      // The app host and the shell are still the core's: the promotion here is the
-      // control contract, and the surface declaration has to say exactly that
-      // (§ surfaces).
-      expect(adapter.surfaces.supported, isEmpty);
+    test('owns the app host and not the shell in this build', () {
+      // The library ships no application widget, so the host is this adapter's
+      // `WidgetsApp` under a `WindTheme` scope; the shell is still the core's,
+      // and the declaration has to say exactly that (§ surfaces).
+      expect(adapter.surfaces.supported, {LiveUiSurface.appHost});
+      expect(adapter.surfaces.supports(LiveUiSurface.appShell), isFalse);
     });
   });
 

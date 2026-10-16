@@ -4,6 +4,8 @@ import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
 import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_wind/live_uikit_wind.dart';
 
+import 'stub_router.dart';
+
 /// §16 widget tests for `live_uikit_wind`, driving the `Live*` controls through
 /// the real runtime so they render with `fluttersdk_wind`'s own widgets. Covers
 /// §9 gating (callback, disabled, loading, controlled value, controller
@@ -661,6 +663,38 @@ void main() {
       // `Token*` renderer any more — the assertion is by name rather than by list
       // so a control added to the contract cannot slip in silently.
       expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('the app host (§ surfaces)', () {
+    // No outer `MaterialApp` here: the host under test *is* the app widget, and
+    // pumping it inside the SDK one would pass while no real Wind page looks like
+    // that — and it is the SDK host the token base would fall back to.
+    Widget hostHarness(Widget child) => LiveConfigProvider(
+      config: config,
+      registry: const LanguageRegistry(
+        adapters: {LiveDesignLanguage.wind: windAdapter},
+        fallback: SharedLanguageAdapter(),
+      ),
+      child: child,
+    );
+
+    testWidgets('the tree is hosted by WidgetsApp under the Wind theme, not by the token host', (tester) async {
+      await tester.pumpWidget(
+        hostHarness(
+          LiveApp(
+            routerConfig: stubRouterConfig(child: const Text('page')),
+            localizationsDelegates: liveLocalizationsDelegates,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(WidgetsApp), findsOneWidget);
+      expect(find.byType(MaterialApp), findsNothing, reason: 'the token Material host must not stand in');
+      expect(find.byType(wind.WindTheme), findsWidgets, reason: "the library's own theme scope, above the routes");
+      expect(find.text('page'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

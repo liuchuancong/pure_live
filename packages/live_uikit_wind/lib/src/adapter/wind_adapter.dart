@@ -1,11 +1,13 @@
 import 'package:flutter/widgets.dart';
 import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_wind/src/adapter/wind_capabilities.dart';
+import 'package:live_uikit_wind/src/adapter/wind_surfaces.dart';
 import 'package:live_uikit_wind/src/theme/wind_theme_mapper.dart';
 import 'package:live_uikit_wind/src/widgets/wind_app_bar_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_button_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_card_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_checkbox_builder.dart';
+import 'package:live_uikit_wind/src/widgets/wind_host_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_list_row_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_nav_bar_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_progress_builder.dart';
@@ -22,7 +24,9 @@ import 'package:live_uikit_wind/src/widgets/wind_toast_builder.dart';
 ///
 /// Implements the core contract for [LiveDesignLanguage.wind] end to end: theme
 /// mapping delegates to `theme/`, all fifteen controls to their `widgets/`
-/// builders, and the declared [capabilities] to `wind_capabilities.dart`. Six of
+/// builders, the declared [capabilities] to `wind_capabilities.dart` and the
+/// declared structural surfaces to `wind_surfaces.dart` — the app host this
+/// adapter builds itself, in `widgets/wind_host_builder.dart`. Six of
 /// them are drawn by a fork widget (`WButton`, `WCard`+token surface, `WInput`,
 /// `WSwitch`, `WCheckbox`, `WSelect`); the other nine are composed out of the
 /// fork's own parts — `WDiv`/`WCard` surfaces, `WAnchor` interaction, `WText`/
@@ -97,4 +101,10 @@ class WindLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget toast(BuildContext context, LanguageToastSpec spec) => WindToastBuilder.build(context, spec);
+
+  @override
+  LiveUiSurfaceCapabilities get surfaces => windSurfaces;
+
+  @override
+  Widget appHost(BuildContext context, LanguageHostSpec spec) => WindHostBuilder.build(context, spec);
 }
