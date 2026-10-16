@@ -3,7 +3,8 @@ description: >-
   Logging facade for Pure Live: levelled and categorised records with a
   per-sink fan-out, unified sanitisation before any sink sees a record, and
   console / bounded-memory / rotating-file sinks. The core depends only on
-  the Dart SDK and `path`; Flutter integration stays in the app shell.
+  the Dart SDK, `path` and `logger`; Flutter integration stays in the app
+  shell.
 version: 0.1.0
 publish_to: none
 
@@ -13,6 +14,7 @@ environment:
   sdk: ^3.13.0
 
 dependencies:
+  logger: ^2.8.0
   path: ^1.9.0
 
 dev_dependencies:
