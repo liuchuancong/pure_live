@@ -23,7 +23,7 @@ import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 /// rooms picker join with their waves.
 final class MultiviewPage extends ConsumerStatefulWidget {
   /// The multiview page.
-  const MultiviewPage({super.key});
+  const new({super.key});
 
   @override
   ConsumerState<MultiviewPage> createState() => _MultiviewPageState();
@@ -51,9 +51,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     return Scaffold(
       appBar: AppBar(title: Text(context.t.multiview.title), actions: const [SettingsEntryButton()]),
       body: MosaicGrid(
-        columns: const MosaicColumns.count(2),
         columnGap: 10,
-        rowGap: 10,
         padding: const EdgeInsets.all(12),
         children: [
           for (final cell in _cells)
@@ -67,7 +65,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
 
 /// One user-added cell descriptor; [key] is the identity the grid keeps.
 final class _Cell {
-  _Cell({required this.siteId, required this.roomId, required this.name});
+  new({required this.siteId, required this.roomId, required this.name});
 
   /// The process-unique cell identity.
   final String key = DateTime.now().microsecondsSinceEpoch.toString();
@@ -190,7 +188,7 @@ final class _PlayingCellState extends ConsumerState<_PlayingCell> {
 
 /// The empty-slot tile: paste a platform link, a playing cell appears.
 final class _AddCellTile extends ConsumerStatefulWidget {
-  const new({required this.resolvers, required this.onAdded, super.key});
+  const new({required this.resolvers, required this.onAdded});
 
   /// The platforms whose links are understood.
   final List<LiveSite> resolvers;
