@@ -33,7 +33,7 @@
 - [x] 设置-弹幕屏蔽页（shield 关键词/用户/正则，存储 keyed 家族）— b2a4c1127（三列表 chip 管理，settings.shield keyed box 每列表一键；相似度过滤随弹幕波；设置索引加行）
 - [x] 设置-字体管理页（font_manager，_restart_app 联动）— 10922d804（FontLibrary：manifest 三镜像抓取、下载进 data/fonts、FontLoader 免重启注册、开机重注册；appearance.fontFamily 直通 UiConfig；restart_app 不需要——FontLoader 免重启；danmaku 字体随弹幕波）
 - [x] 备份/恢复页（archive zip + file_selector）— 775732aea（data 区打包为时间戳 zip 到 backups 树（logs/fonts 除外）；恢复带确认+应用重启（Restart.restartApp）；备份列表/删除/从文件恢复；WebDAV/LAN/TV 随各自波次）
-- [ ] 弹幕（live_interaction + live_websocket 加入依赖）
+- [x] 弹幕（live_interaction + live_websocket 加入依赖）— 2b19fa21b（app/engine/danmaku.dart 工厂：能力 createSession→DanmakuInteractionSource→InteractionSession，shield 三列表作过滤链；房间页桌面右列/触摸下方弹幕栏，自动吸底+上滚暂停，内存 200 条；仅 chat 渲染，礼物/观众/发送随后续波）
 - [ ] 录制域（live_record_core 加入依赖）
 - [ ] 多画面（mosaic_grid + 票据复用）
 
