@@ -27,6 +27,8 @@ void main() {
     LiveUiControl.listRow,
     LiveUiControl.navBar,
     LiveUiControl.toast,
+    LiveUiControl.dialog,
+    LiveUiControl.tabView,
   };
 
   test('declares exactly the surfaces it owns structurally', () {
@@ -48,7 +50,7 @@ void main() {
     });
 
     test('declares exactly the controls it renders natively', () {
-      // All fifteen: macOS renders every control, and the four the library has no
+      // All seventeen: macOS renders every control, and the six the library has no
       // widget for say in their builder how they were assembled (§9).
       for (final control in native) {
         expect(adapter.capabilities.supports(control), isTrue, reason: '$control should be native');

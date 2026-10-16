@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,9 +18,10 @@ Finder macosGlyph(IconData icon) => find.byWidgetPredicate(
 
 /// §16 widget tests for `live_uikit_macos`, driven through the real runtime path
 /// so `Live*` controls dispatch to the `macos_ui` widgets — the eleven the library
-/// has a widget for, and the four it had to be given a builder for (the card and
-/// the toast surface out of its own `MacosSheet` panel, the two strips out of its
-/// own `MacosTab` cell and `MacosIcon`).
+/// has a widget for, and the six it had to be given a builder for (the card, the
+/// toast surface and the dialogs its own alert cannot take out of its `MacosSheet`
+/// panel, the two strips out of its own `MacosTab` cell and `MacosIcon`, and the
+/// page switcher out of its pane treatment).
 void main() {
   const config = UiConfig(language: LiveDesignLanguage.macos, brightness: UiBrightnessMode.light);
 
@@ -476,6 +479,107 @@ void main() {
     });
   });
 
+  group('the dialog and the page switcher (§9)', () {
+    // `showLiveDialog` pushes on the harness's own `Navigator`, so the route has to
+    // be popped and the frame unmounted before teardown: the dialog's barrier and
+    // `macos_ui`'s coloured controls keep a periodic timer alive otherwise.
+    Future<void> detach(WidgetTester tester, {VoidCallback? pop}) async {
+      pop?.call();
+      await tester.pumpAndSettle();
+      await tester.pumpWidget(harness(const SizedBox.shrink()));
+      await tester.pump(const Duration(seconds: 2));
+    }
+
+    macos.PushButton action(String label) =>
+        macos.PushButton(controlSize: macos.ControlSize.large, onPressed: () {}, child: Text(label));
+
+    testWidgets('a dialog the library has slots for is MacosAlertDialog, not the token card', (tester) async {
+      const anchor = Key('dialog-anchor');
+      await tester.pumpWidget(harness(const SizedBox(key: anchor, width: 1, height: 1)));
+      final anchorContext = tester.element(find.byKey(anchor));
+      unawaited(
+        showLiveDialog<void>(
+          context: anchorContext,
+          title: 'Leave the room?',
+          child: const Text('Playback stops.'),
+          actions: [action('Stay'), action('Leave')],
+        ),
+      );
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(macos.MacosAlertDialog), findsOneWidget);
+      expect(find.byType(TokenDialog), findsNothing);
+      expect(find.text('Playback stops.'), findsOneWidget);
+      // The library draws `secondaryButton` then `primaryButton`, which is the
+      // spec's order and macOS's convention: the default action on the right.
+      expect(tester.getCenter(find.text('Stay')).dx, lessThan(tester.getCenter(find.text('Leave')).dx));
+      expect(tester.takeException(), isNull);
+
+      await detach(tester, pop: () => Navigator.of(anchorContext).pop());
+    });
+
+    testWidgets('a dialog the alert cannot take is a MacosSheet panel, still not the token card', (tester) async {
+      const anchor = Key('dialog-anchor');
+      await tester.pumpWidget(harness(const SizedBox(key: anchor, width: 1, height: 1)));
+      final anchorContext = tester.element(find.byKey(anchor));
+      // Three actions — the library widget has two slots, so this spec has no alert
+      // to be mapped onto and the surface is composed from its panel instead.
+      unawaited(
+        showLiveDialog<void>(
+          context: anchorContext,
+          title: 'Choose',
+          child: const Text('Three ways out.'),
+          actions: [action('One'), action('Two'), action('Three')],
+        ),
+      );
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(macos.MacosAlertDialog), findsNothing);
+      expect(find.byType(macos.MacosSheet), findsOneWidget);
+      expect(find.byType(TokenDialog), findsNothing);
+      expect(find.text('Three ways out.'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await detach(tester, pop: () => Navigator.of(anchorContext).pop());
+    });
+
+    testWidgets('the page switcher is the library pane, and the caller moves the index', (tester) async {
+      Widget view(int index) => SizedBox(
+        width: 320,
+        height: 160,
+        // The contract has no `LiveTabView` widget yet, so this is the seam the
+        // core's own tab view dispatch would use.
+        child: Builder(
+          builder: (context) =>
+              LiveTheme.of(context).adapter.tabView(
+                context,
+                LanguageTabViewSpec(
+                  pages: const [Text('first page'), Text('second page')],
+                  index: index,
+                ),
+              ),
+        ),
+      );
+
+      await tester.pumpWidget(harness(view(0)));
+      await tester.pump();
+
+      expect(find.byType(TokenTabView), findsNothing);
+      expect(find.text('first page'), findsOneWidget);
+      expect(find.text('second page'), findsNothing, reason: 'a macOS pane shows one body at a time');
+
+      await tester.pumpWidget(harness(view(1)));
+      await tester.pump();
+      expect(find.text('second page'), findsOneWidget);
+      expect(find.text('first page'), findsNothing);
+      expect(tester.takeException(), isNull);
+
+      await detach(tester);
+    });
+  });
+
   group('no token renderer inside a macOS frame (§15.3)', () {
     testWidgets('the whole chrome set draws from macos_ui, not from the shared base', (tester) async {
       await tester.pumpWidget(
@@ -523,7 +627,7 @@ void main() {
       );
       await tester.pump();
 
-      // macOS declares all fifteen controls, so nothing inside a macOS page should
+      // macOS declares all seventeen controls, so nothing inside a macOS page should
       // be a `Token*` renderer any more — the assertion is by class-name prefix
       // rather than by list, so a control added to the contract cannot slip a
       // shared renderer in silently.

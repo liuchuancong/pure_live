@@ -7,6 +7,7 @@ import 'package:live_uikit_macos/src/widgets/macos_app_bar_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_button_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_card_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_checkbox_builder.dart';
+import 'package:live_uikit_macos/src/widgets/macos_dialog_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_host_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_list_row_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_nav_bar_builder.dart';
@@ -18,6 +19,7 @@ import 'package:live_uikit_macos/src/widgets/macos_shell_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_slider_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_switch_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_tab_bar_builder.dart';
+import 'package:live_uikit_macos/src/widgets/macos_tab_view_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_text_field_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_toast_builder.dart';
 
@@ -25,10 +27,12 @@ import 'package:live_uikit_macos/src/widgets/macos_toast_builder.dart';
 ///
 /// Implements the core contract for [LiveDesignLanguage.macos]: theme mapping
 /// delegates to `theme/`, each control to its `widgets/` builder, and the
-/// declared [capabilities] to `macos_capabilities.dart`. Eleven of the fifteen
-/// controls are the library's own widget; the four the library does not carry —
-/// the card, the tab strip, the destination strip and the toast surface — are
-/// assembled from its parts, and each builder says which. It owns both structural
+/// declared [capabilities] to `macos_capabilities.dart`. Eleven of the seventeen
+/// controls are the library's own widget; the six the library does not carry in
+/// this shape — the card, the tab strip, the destination strip, the toast surface,
+/// the dialog surface whose actions the library's alert cannot take, and the page
+/// switcher under the strip — are assembled from its parts, and each builder says
+/// which. It owns both structural
 /// surfaces: `MacosApp` as the host and the library's `SidebarItems` list, in a
 /// column of the shell's own, as the shell — the page frame stays with `scaffold`.
 /// macOS widgets reuse the core's Material/Cupertino localization, so this package
@@ -121,6 +125,12 @@ class MacosLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget toast(BuildContext context, LanguageToastSpec spec) => MacosToastBuilder.build(context, spec);
+
+  @override
+  Widget dialog(BuildContext context, LanguageDialogSpec spec) => MacosDialogBuilder.build(context, spec);
+
+  @override
+  Widget tabView(BuildContext context, LanguageTabViewSpec spec) => MacosTabViewBuilder.build(context, spec);
 
   @override
   Widget appHost(BuildContext context, LanguageHostSpec spec) => MacosHostBuilder.build(context, spec);

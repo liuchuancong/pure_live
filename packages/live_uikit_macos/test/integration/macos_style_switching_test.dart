@@ -5,12 +5,14 @@ import 'package:live_uikit_macos/live_uikit_macos.dart';
 import 'package:macos_ui/macos_ui.dart' as macos;
 
 /// The controls `live_uikit_macos` renders natively (§3.1 capability
-/// declaration): all fifteen the resolver dispatches — the seven this adapter has
+/// declaration): all seventeen the resolver dispatches — the seven this adapter has
 /// always mapped onto `PushButton`, `MacosTextField`, `MacosScaffold`, `ToolBar`
 /// and the rest, the four it now maps too (`MacosSwitch`, `MacosSegmentedControl`,
-/// `ProgressBar`/`ProgressCircle`, `MacosPopupButton`), and the four the library
-/// has no widget for, assembled out of its own parts: `MacosSheet` for the card and
-/// the toast surface, `MacosTab` plus `MacosIcon` for the two strips.
+/// `ProgressBar`/`ProgressCircle`, `MacosPopupButton`), and the six the library
+/// has no widget for, assembled out of its own parts: `MacosSheet` for the card, the
+/// toast surface and the dialogs the alert cannot take, `MacosTab` plus `MacosIcon`
+/// for the two strips, and the library's own pane treatment around an `IndexedStack`
+/// for the page switcher.
 const Set<LiveUiControl> nativeControls = {
   LiveUiControl.button,
   LiveUiControl.card,
@@ -27,6 +29,8 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.listRow,
   LiveUiControl.navBar,
   LiveUiControl.toast,
+  LiveUiControl.dialog,
+  LiveUiControl.tabView,
 };
 
 /// The structural surfaces this adapter owns (§ surfaces).

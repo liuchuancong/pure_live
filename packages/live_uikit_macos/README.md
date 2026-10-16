@@ -16,15 +16,19 @@ controls drawn by `macos_ui`, without business pages importing `macos_ui`.
 - Implement `LanguageAdapter` for `LiveDesignLanguage.macos` (stable id `macos`).
 - Map the resolved `DesignToken` into a `MacosThemeData` and install it through a
   `MacosTheme` scope (never a nested `MacosApp`).
-- Build native macOS widgets for all fifteen: **button, card, text field, switch,
+- Build native macOS widgets for all seventeen: **button, card, text field, switch,
   checkbox, slider, segmented, progress, select, tab bar, scaffold, app bar, list
-  row, nav bar, toast**. Eleven are a one-for-one mapping onto the library's own
-  widget. Four are composed out of its parts rather than mapped — the card and the
-  toast surface are `MacosSheet`, the library's own panel mounted inline, because
-  `macos_ui` 2.2.2 has no card, no box and no toast at all; the tab bar and the nav
-  bar are rows of the library's `MacosTab` cell with its `MacosIcon` in front,
+  row, nav bar, toast, dialog, tab view**. Eleven are a one-for-one mapping onto the
+  library's own widget. Six are composed out of its parts rather than mapped — the
+  card and the toast surface are `MacosSheet`, the library's own panel mounted inline,
+  because `macos_ui` 2.2.2 has no card, no box and no toast at all, and so is a dialog
+  whose actions its `MacosAlertDialog` has no slots for; the tab bar and the nav bar
+  are rows of the library's `MacosTab` cell with its `MacosIcon` in front,
   because `MacosTabView` is a whole tab *view* with one body per tab, the real
-  segmented strip has a text-only cell, and the library has no bottom bar (§9).
+  segmented strip has a text-only cell, and the library has no bottom bar (§9). The
+  tab view under the strip is the same refusal: that widget fuses the strip with the
+  bodies and selects through a `MacosTabController` of its own, so the pane is the
+  library's own treatment around an `IndexedStack` (§9).
 - Own **both** structural surfaces (§ surfaces): the app host is `MacosApp`, and the
   app shell is `Sidebar` + `SidebarItems` — the library's own sidebar list, mounted
   in the column the shell draws beside the page. A `bottom` request goes back
