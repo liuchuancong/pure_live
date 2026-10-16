@@ -8,6 +8,7 @@ import 'package:live_uikit/styling.dart' show LiveButton, LiveEmpty;
 
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
+import 'package:pure_live/features/follow/follow_group_sheet.dart';
 import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
@@ -47,59 +48,133 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
     super.dispose();
   }
 
-  Future<void> _confirmUnfollow(LibraryRoom record) async {
-    final confirmed = await showModalBottomSheet<bool>(
+  /// The group management sheet: create, rename, delete — deletions leave
+  /// the followed rooms untouched (only their membership goes).
+  Future<void> _manageGroups() async {
+    await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(context.t.follow.unfollowConfirm(name: record.room.content.title)),
-              const SizedBox(height: 16),
-              LiveButton(
-                label: context.t.follow.unfollow,
-                icon: Icons.heart_broken_outlined,
-                onPressed: () => Navigator.of(context).pop(true),
+        child: Consumer(
+          builder: (context, ref, _) {
+            final groups = ref.watch(followRepositoryProvider).groups;
+            return Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(context.t.follow.manageGroups, style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 12),
+                  for (final group in groups)
+                    ListTile(
+                      leading: const Icon(Icons.folder_outlined),
+                      title: Text(group.name),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            tooltip: context.t.follow.renameGroup,
+                            icon: const Icon(Icons.edit_outlined),
+                            onPressed: () => unawaited(_renameGroupFromSheet(context, group.id, group.name)),
+                          ),
+                          IconButton(
+                            tooltip: context.t.follow.deleteGroup,
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () => unawaited(_deleteGroupFromSheet(context, group.id)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  LiveButton(
+                    label: context.t.follow.newGroup,
+                    icon: Icons.add,
+                    onPressed: () => unawaited(_createGroupFromSheet(context)),
+                  ),
+                ],
               ),
-            ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _renameGroupFromSheet(BuildContext sheetContext, String id, String current) async {
+    final name = await showFollowGroupNameDialog(sheetContext, initial: current, title: context.t.follow.renameGroup);
+    if (name != null && name.isNotEmpty && name != current) {
+      await _repository.renameGroup(id, name);
+    }
+  }
+
+  Future<void> _deleteGroupFromSheet(BuildContext sheetContext, String id) async {
+    await _repository.deleteGroup(id);
+  }
+
+  Future<void> _createGroupFromSheet(BuildContext sheetContext) async {
+    final name = await showFollowGroupNameDialog(sheetContext, title: context.t.follow.newGroup);
+    if (name != null && name.isNotEmpty) {
+      await _repository.createGroup(name);
+    }
+  }
+
+  /// Long-press on a followed room: move it between groups (the checkbox
+  /// set writes through setGroups, creating a group on the fly via the
+  /// manage sheet).
+  Future<void> _assignGroups(LibraryRoom record) async {
+    final selected = {...record.groupIds};
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(context.t.follow.assign, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                for (final group in _repository.groups)
+                  CheckboxListTile(
+                    title: Text(group.name),
+                    value: selected.contains(group.id),
+                    onChanged: (checked) => setSheetState(() {
+                      checked == true ? selected.add(group.id) : selected.remove(group.id);
+                    }),
+                  ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: LiveButton(
+                        label: context.t.common.confirm,
+                        icon: Icons.check,
+                        onPressed: () => Navigator.of(sheetContext).pop(true),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: LiveButton(
+                        label: context.t.follow.unfollow,
+                        icon: Icons.heart_broken_outlined,
+                        onPressed: () {
+                          unawaited(_repository.unfollow(record.room));
+                          Navigator.of(sheetContext).pop(true);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
     if (confirmed == true) {
-      await _repository.unfollow(record.room);
-    }
-  }
-
-  Future<void> _createGroup() async {
-    final name = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        final field = TextEditingController();
-        return AlertDialog(
-          title: Text(context.t.follow.newGroup),
-          content: TextField(
-            controller: field,
-            autofocus: true,
-            decoration: InputDecoration(hintText: context.t.follow.groupName),
-            onSubmitted: (value) => Navigator.of(context).pop(value.trim()),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(context.t.common.cancel)),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(field.text.trim()),
-              child: Text(context.t.common.confirm),
-            ),
-          ],
-        );
-      },
-    );
-    if (name != null && name.isNotEmpty) {
-      await _repository.createGroup(name);
+      await _repository.setGroups(record.room, selected.toList());
     }
   }
 
@@ -117,9 +192,9 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
           title: Text(context.t.tabs.follow),
           actions: [
             IconButton(
-              tooltip: context.t.follow.newGroup,
-              icon: const Icon(Icons.create_new_folder_outlined),
-              onPressed: _createGroup,
+              tooltip: context.t.follow.manageGroups,
+              icon: const Icon(Icons.folder_copy_outlined),
+              onPressed: _manageGroups,
             ),
             const SettingsEntryButton(),
           ],
@@ -145,7 +220,7 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
                 ),
                 itemCount: visible.length,
                 itemBuilder: (context, index) => GestureDetector(
-                  onLongPress: () => unawaited(_confirmUnfollow(visible[index])),
+                  onLongPress: () => unawaited(_assignGroups(visible[index])),
                   child: _tile(context, visible[index].room),
                 ),
               ),

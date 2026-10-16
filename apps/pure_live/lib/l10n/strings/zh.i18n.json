@@ -78,7 +78,12 @@
     "unfollow": "取消关注",
     "unfollowConfirm": "不再关注「{name: String}」？",
     "newGroup": "新建分组",
-    "groupName": "分组名称"
+        "manageGroups": "管理分组",
+    "renameGroup": "重命名分组",
+    "deleteGroup": "删除分组",
+    "deleteGroupConfirm": "删除分组不影响已关注的房间。确认删除？",
+    "assign": "移动到分组",
+"groupName": "分组名称"
   },
   "toolbox": {
     "title": "工具箱",

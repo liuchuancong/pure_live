@@ -317,6 +317,21 @@ class Translations$follow$zh {
 	/// zh: '新建分组'
 	String get newGroup => '新建分组';
 
+	/// zh: '管理分组'
+	String get manageGroups => '管理分组';
+
+	/// zh: '重命名分组'
+	String get renameGroup => '重命名分组';
+
+	/// zh: '删除分组'
+	String get deleteGroup => '删除分组';
+
+	/// zh: '删除分组不影响已关注的房间。确认删除？'
+	String get deleteGroupConfirm => '删除分组不影响已关注的房间。确认删除？';
+
+	/// zh: '移动到分组'
+	String get assign => '移动到分组';
+
 	/// zh: '分组名称'
 	String get groupName => '分组名称';
 }
@@ -695,6 +710,11 @@ extension on Translations {
 			'follow.unfollow' => '取消关注',
 			'follow.unfollowConfirm' => ({required String name}) => '不再关注「${name}」？',
 			'follow.newGroup' => '新建分组',
+			'follow.manageGroups' => '管理分组',
+			'follow.renameGroup' => '重命名分组',
+			'follow.deleteGroup' => '删除分组',
+			'follow.deleteGroupConfirm' => '删除分组不影响已关注的房间。确认删除？',
+			'follow.assign' => '移动到分组',
 			'follow.groupName' => '分组名称',
 			'toolbox.title' => '工具箱',
 			'toolbox.hint' => '粘贴直播间链接',

@@ -229,6 +229,11 @@ class _Translations$follow$en extends Translations$follow$zh {
 	@override String get unfollow => 'Unfollow';
 	@override String unfollowConfirm({required String name}) => 'Unfollow "${name}"?';
 	@override String get newGroup => 'New group';
+	@override String get manageGroups => 'Manage groups';
+	@override String get renameGroup => 'Rename group';
+	@override String get deleteGroup => 'Delete group';
+	@override String get deleteGroupConfirm => 'Deleting a group leaves followed rooms untouched. Delete?';
+	@override String get assign => 'Move to groups';
 	@override String get groupName => 'Group name';
 }
 
@@ -459,6 +464,11 @@ extension on TranslationsEn {
 			'follow.unfollow' => 'Unfollow',
 			'follow.unfollowConfirm' => ({required String name}) => 'Unfollow "${name}"?',
 			'follow.newGroup' => 'New group',
+			'follow.manageGroups' => 'Manage groups',
+			'follow.renameGroup' => 'Rename group',
+			'follow.deleteGroup' => 'Delete group',
+			'follow.deleteGroupConfirm' => 'Deleting a group leaves followed rooms untouched. Delete?',
+			'follow.assign' => 'Move to groups',
 			'follow.groupName' => 'Group name',
 			'toolbox.title' => 'Toolbox',
 			'toolbox.hint' => 'Paste a room link',

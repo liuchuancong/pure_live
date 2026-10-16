@@ -81,7 +81,12 @@
     "unfollow": "Unfollow",
     "unfollowConfirm": "Unfollow \"{name: String}\"?",
     "newGroup": "New group",
-    "groupName": "Group name"
+        "manageGroups": "Manage groups",
+    "renameGroup": "Rename group",
+    "deleteGroup": "Delete group",
+    "deleteGroupConfirm": "Deleting a group leaves followed rooms untouched. Delete?",
+    "assign": "Move to groups",
+"groupName": "Group name"
   },
   "toolbox": {
     "title": "Toolbox",
