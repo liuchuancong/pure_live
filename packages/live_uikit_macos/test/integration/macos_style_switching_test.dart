@@ -5,38 +5,50 @@ import 'package:live_uikit_macos/live_uikit_macos.dart';
 import 'package:macos_ui/macos_ui.dart' as macos;
 
 /// The controls `live_uikit_macos` renders natively (§3.1 capability
-/// declaration): seven of the fifteen the resolver dispatches, including the
-/// page frame, the bar and the row mapped onto `MacosScaffold`, `ToolBar` and
-/// `MacosListTile`, and the app host, now a surface (§ surfaces).
+/// declaration): all fifteen the resolver dispatches — the seven this adapter has
+/// always mapped onto `PushButton`, `MacosTextField`, `MacosScaffold`, `ToolBar`
+/// and the rest, the four it now maps too (`MacosSwitch`, `MacosSegmentedControl`,
+/// `ProgressBar`/`ProgressCircle`, `MacosPopupButton`), and the four the library
+/// has no widget for, assembled out of its own parts: `MacosSheet` for the card and
+/// the toast surface, `MacosTab` plus `MacosIcon` for the two strips.
 const Set<LiveUiControl> nativeControls = {
   LiveUiControl.button,
+  LiveUiControl.card,
   LiveUiControl.textField,
+  LiveUiControl.switchWidget,
   LiveUiControl.checkbox,
   LiveUiControl.slider,
+  LiveUiControl.segmented,
+  LiveUiControl.progress,
+  LiveUiControl.select,
+  LiveUiControl.tabBar,
   LiveUiControl.scaffold,
   LiveUiControl.appBar,
   LiveUiControl.listRow,
+  LiveUiControl.navBar,
+  LiveUiControl.toast,
 };
 
 /// The structural surfaces this adapter owns (§ surfaces).
 const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost};
 
-/// §16 integration pass for `live_uikit_macos`: eight declared controls native,
-/// the other eight shared (`card`, `switchWidget`, `segmented`, `progress`,
-/// `select`, `tabBar` and the two chrome controls `macos_ui` has no widget for —
-/// `navBar`, whose place is taken by a `Sidebar`, and `toast`, whose `Toast` is an
-/// overlay manager rather than a surface), and a switch to the core token base and
-/// back that replaces the rendering path while the caller keeps its controller (§11).
-/// The downgrades this language is expected to report: every control the adapter
-/// does not declare, each exactly once per language change (§15.5/§16.8).
+/// §16 integration pass for `live_uikit_macos`: every one of the fifteen controls
+/// resolves native, the app host resolves native and the shell — which macOS keeps
+/// at the window frame, where the library's only navigation widget lives — says so,
+/// and a switch to the core token base and back replaces the rendering path while
+/// the caller keeps its controller (§11).
+/// The downgrades this language is expected to report: no control downgrade at all,
+/// because nothing in the contract falls back any more (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   final controls = sink.where((diagnostic) => diagnostic.control != null);
   final surfaces = sink.where((diagnostic) => diagnostic.surface != null);
-  expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
-  expect(
-    controls.map((diagnostic) => diagnostic.control).toSet(),
-    LiveUiControl.values.toSet().difference(nativeControls),
-  );
+  // A language that renders every control reports no control downgrade at all,
+  // so the code check only applies when something actually fell back.
+  final expectedControls = LiveUiControl.values.toSet().difference(nativeControls);
+  expect(controls.map((diagnostic) => diagnostic.control).toSet(), expectedControls);
+  if (expectedControls.isNotEmpty) {
+    expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
+  }
   // A language that owns both surfaces reports no structural downgrade at all,
   // so the code check only applies when something is actually missing.
   final expectedSurfaces = LiveUiSurface.values.toSet().difference(nativeSurfaces);
@@ -83,7 +95,7 @@ void main() {
     ),
   );
 
-  test('the eight declared controls resolve native, the rest shared (§16.3)', () {
+  test('every control resolves native, because this language declares the whole contract (§16.3)', () {
     for (final control in LiveUiControl.values) {
       final native = nativeControls.contains(control);
       final resolution = resolver.resolveControl(LiveDesignLanguage.macos, control);
@@ -142,8 +154,9 @@ void main() {
     expect(controller.text, 'typed before the switch');
     expectUndeclaredControls(diagnostics);
 
-    // Select is a shared-fallback control here: opening it and choosing keeps the
-    // caller's typed value across the switch (§16.7).
+    // Select is the library's own pop-up button now: opening it and choosing a row
+    // still keeps the caller's typed value across the switch (§16.7).
+    expect(find.byType(macos.MacosPopupButton<String>), findsOneWidget);
     await tester.tap(find.byType(LiveSelect<String>));
     await tester.pumpAndSettle();
     await tester.tap(find.text('b').last);

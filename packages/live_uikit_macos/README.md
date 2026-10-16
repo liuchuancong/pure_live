@@ -16,13 +16,21 @@ controls drawn by `macos_ui`, without business pages importing `macos_ui`.
 - Implement `LanguageAdapter` for `LiveDesignLanguage.macos` (stable id `macos`).
 - Map the resolved `DesignToken` into a `MacosThemeData` and install it through a
   `MacosTheme` scope (never a nested `MacosApp`).
-- Build native macOS widgets for: **button, text field, checkbox, slider,
-  scaffold, app bar, list row**.
+- Build native macOS widgets for all fifteen: **button, card, text field, switch,
+  checkbox, slider, segmented, progress, select, tab bar, scaffold, app bar, list
+  row, nav bar, toast**. Eleven are a one-for-one mapping onto the library's own
+  widget. Four are composed out of its parts rather than mapped — the card and the
+  toast surface are `MacosSheet`, the library's own panel mounted inline, because
+  `macos_ui` 2.2.2 has no card, no box and no toast at all; the tab bar and the nav
+  bar are rows of the library's `MacosTab` cell with its `MacosIcon` in front,
+  because `MacosTabView` is a whole tab *view* with one body per tab, the real
+  segmented strip has a text-only cell, and the library has no bottom bar (§9).
 - Own the app-host surface (`MacosApp`); the shell falls back to the shared token
   renderer, because `Sidebar` belongs to a `MacosWindow` frame whose owner the
   contract does not yet decide (§ surfaces).
-- Declare exactly those controls in `macosCapabilities` so the core resolver
-  reports a `controlUnsupported` downgrade for the rest (§16/§17).
+- Declare the whole contract in `macosCapabilities`: a macOS page reports no
+  `controlUnsupported` downgrade, and nothing inside a macOS frame is a token
+  renderer (§16/§17).
 
 ## What this package must not own
 
@@ -31,8 +39,10 @@ controls drawn by `macos_ui`, without business pages importing `macos_ui`.
 - State management (Riverpod/GetX), navigation, business pages, or playback.
 - Direct dependencies on other style adapters.
 
-Controls not built here (card, switch, segmented, progress, select, tab bar) fall
-back to the core shared token renderer — they still render on-theme.
+Nothing in the contract falls back to the core shared token renderer any more. Two
+spec shapes still do, because the library refuses them rather than the adapter not
+trying: a slider with no callback (`MacosSlider.onChanged` is required) and a select
+whose current value is not one of its items (`MacosPopupButton` asserts it).
 
 ## Public entry point
 
@@ -71,22 +81,27 @@ flutter test packages/live_uikit_macos
 ```
 
 `test/adapter/macos_contract_test.dart` verifies the stable id/display name,
-that the declared capabilities match the controls the adapter overrides, and the
-core resolver's native-versus-`controlUnsupported` dispatch (§16/§17).
+that the declared capabilities are the whole contract, and the core resolver's
+native dispatch for every control (§16/§17).
 
 ## Known limitations
 
-- Card, switch, segmented, progress, select and tab bar use the shared renderer,
-  not native macOS widgets.
+- The card, the toast surface and the two strips are composed from `macos_ui`'s own
+  parts (`MacosSheet`, `MacosTab`, `MacosIcon`) because the library carries no card,
+  no box, no transient message and no bottom bar; they are macOS by its own visual
+  vocabulary, but they are not one widget the library ships.
 - Test coverage is present at four layers: `test/adapter/` (contract and
   resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
-  `test/widgets/` (every native control driven through the real dispatch path), and
-  `test/integration/` (resolution surface across the contract and a switch to the
-  the shared `token` base and back with caller-owned state preserved). What remains
+  `test/widgets/` (every control driven through the real dispatch path, and no
+  `Token*` renderer left inside a macOS frame), and `test/integration/` (resolution
+  surface across the contract and a switch to the shared `token` base and back with
+  caller-owned state preserved). What remains
   untested is the part that needs hardware: focus traversal, Android TV D-pad, and
   the platform claims in §13.
 - A disabled slider has no `macos_ui` form (`MacosSlider.onChanged` is required),
-  so that one spec shape falls back to the shared renderer, and `PushButton` and
-  `MacosSlider` accept no caller focus node (§9).
+  and a select whose value is not among its items is refused by
+  `MacosPopupButton`'s own assert, so those two spec shapes fall back to the shared
+  renderer; `PushButton`, `MacosSlider`, `MacosSwitch` and `MacosSheet` accept no
+  caller focus node (§9/§15).
 - macOS styling can be selected on any platform, but native macOS window
   integration should not be assumed off-macOS (§13).

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_uikit/live_uikit.dart';
@@ -6,8 +7,18 @@ import 'package:macos_ui/macos_ui.dart' as macos;
 
 import 'stub_router.dart';
 
+/// `macos_ui` paints a glyph with its own `MacosIcon`, which `find.byIcon` does not
+/// match — that finder looks for a Material `Icon` — so the strip and the toast
+/// address the library's icon widget here.
+Finder macosGlyph(IconData icon) => find.byWidgetPredicate(
+  (widget) => widget is macos.MacosIcon && widget.icon == icon,
+);
+
 /// §16 widget tests for `live_uikit_macos`, driven through the real runtime path
-/// so `Live*` controls dispatch to the native `macos_ui` widgets.
+/// so `Live*` controls dispatch to the `macos_ui` widgets — the eleven the library
+/// has a widget for, and the four it had to be given a builder for (the card and
+/// the toast surface out of its own `MacosSheet` panel, the two strips out of its
+/// own `MacosTab` cell and `MacosIcon`).
 void main() {
   const config = UiConfig(language: LiveDesignLanguage.macos, brightness: UiBrightnessMode.light);
 
@@ -91,12 +102,6 @@ void main() {
   testWidgets('slider renders through the macOS adapter', (tester) async {
     await tester.pumpWidget(harness(SizedBox(width: 300, child: LiveSlider(value: 0.5, onChanged: (_) {}))));
     expect(find.byType(LiveSlider), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('an unoverridden control still renders via the shared fallback', (tester) async {
-    await tester.pumpWidget(harness(LiveSwitch(value: false, onChanged: (_) {})));
-    expect(find.byType(LiveSwitch), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -189,11 +194,12 @@ void main() {
   });
 
   group('chrome (§9)', () {
-    // The frame and the bar are asserted at the resolver (§16.3) rather than
-    // by pumping them here: macos_ui's wallpaper-tinting layer keeps a periodic
-    // timer alive behind `MacosScaffold`/`ToolBar`, which the test binding counts
-    // as a leaked timer at teardown. In a running window that timer is simply the
-    // library tracking the desktop picture.
+    // The row is the one chrome piece that can be pumped on its own. The frame and
+    // the bar are pumped together with everything else in the group below, which
+    // unmounts them before teardown — macos_ui's wallpaper-tinting layer keeps a
+    // periodic timer alive behind `MacosScaffold`/`ToolBar`, and the test binding
+    // counts that as a leak. In a running window the timer is simply the library
+    // tracking the desktop picture.
     testWidgets('a row resolves through MacosListTile and keeps both press handlers', (tester) async {
       var taps = 0;
       var longs = 0;
@@ -224,11 +230,322 @@ void main() {
     });
   });
 
+  group('the eight controls macOS had to be given a builder for (§9)', () {
+    testWidgets('a card is a MacosSheet panel, and it takes the tap', (tester) async {
+      var taps = 0;
+      await tester.pumpWidget(harness(LiveCard(child: const Text('body'), onTap: () => taps++)));
+      await tester.pump();
+
+      expect(find.byType(macos.MacosSheet), findsOneWidget);
+      expect(find.byType(TokenCard), findsNothing);
+      expect(find.text('body'), findsOneWidget);
+
+      await tester.tap(find.text('body'));
+      await tester.pump();
+      expect(taps, 1);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a switch is a MacosSwitch and reports the next value', (tester) async {
+      bool? value;
+      await tester.pumpWidget(harness(LiveSwitch(value: false, onChanged: (v) => value = v)));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(macos.MacosSwitch), findsOneWidget);
+      expect(find.byType(TokenSwitch), findsNothing);
+      expect(tester.widget<macos.MacosSwitch>(find.byType(macos.MacosSwitch)).value, isFalse);
+
+      await tester.tap(find.byType(macos.MacosSwitch));
+      await tester.pumpAndSettle();
+      expect(value, isTrue);
+
+      // Inert: the library derives the disabled look from a null callback, so the
+      // spec's `enabled` has to arrive there rather than as a swallowing closure.
+      await tester.pumpWidget(harness(LiveSwitch(value: true, enabled: false, onChanged: (v) => value = v)));
+      await tester.pumpAndSettle();
+      expect(tester.widget<macos.MacosSwitch>(find.byType(macos.MacosSwitch)).onChanged, isNull);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a segmented track is a MacosSegmentedControl and reports the index', (tester) async {
+      var chosen = -1;
+      await tester.pumpWidget(
+        harness(
+          LiveSegmented(
+            labels: const ['Small', 'Medium', 'Large'],
+            index: 1,
+            onChanged: (index) => chosen = index,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(macos.MacosSegmentedControl), findsOneWidget);
+      expect(find.byType(TokenSegmented), findsNothing);
+      expect(tester.widget<macos.MacosSegmentedControl>(find.byType(macos.MacosSegmentedControl)).tabs.length, 3);
+
+      await tester.tap(find.text('Large'));
+      await tester.pump();
+      expect(chosen, 2);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a disabled track ignores the pointer, because the library has no dead state', (tester) async {
+      var chosen = -1;
+      await tester.pumpWidget(
+        harness(
+          LiveSegmented(
+            labels: const ['Small', 'Medium'],
+            index: 0,
+            enabled: false,
+            onChanged: (index) => chosen = index,
+          ),
+        ),
+      );
+      await tester.pump();
+      // `MacosSegmentedControl` sets its controller index on tap whatever the
+      // caller asked, so inertness is the IgnorePointer the builder puts on it.
+      expect(
+        tester.widget<IgnorePointer>(
+          find.descendant(of: find.byType(LiveSegmented), matching: find.byType(IgnorePointer)),
+        ).ignoring,
+        isTrue,
+      );
+      // The tap is meant to miss: the pointer never reaches the segment, which is
+      // what the warning below would otherwise be reporting.
+      await tester.tap(find.text('Medium'), warnIfMissed: false);
+      await tester.pump();
+      expect(chosen, -1, reason: 'a disabled track must not move the selection it never reported');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a determinate bar is a ProgressBar, in the units the library uses', (tester) async {
+      await tester.pumpWidget(harness(const LiveProgress(value: 0.6, height: 6, barColor: Color(0xFF00FF00))));
+      await tester.pump();
+
+      final bar = tester.widget<macos.ProgressBar>(find.byType(macos.ProgressBar));
+      expect(find.byType(TokenProgress), findsNothing);
+      // The contract is a 0..1 fraction, the library takes a percentage.
+      expect(bar.value, 60);
+      expect(bar.height, 6);
+      expect(bar.trackColor, const Color(0xFF00FF00));
+    });
+
+    testWidgets('an indeterminate value is a ProgressCircle spinner, not a bar at zero', (tester) async {
+      await tester.pumpWidget(harness(const LiveProgress(value: null)));
+      await tester.pump();
+
+      expect(find.byType(macos.ProgressCircle), findsOneWidget);
+      expect(find.byType(macos.ProgressBar), findsNothing);
+      expect(find.byType(TokenProgress), findsNothing);
+      expect(tester.widget<macos.ProgressCircle>(find.byType(macos.ProgressCircle)).value, isNull);
+      expect(tester.takeException(), isNull);
+
+      // The activity indicator animates for as long as it is mounted, so the
+      // frame is unmounted rather than settled.
+      await tester.pumpWidget(harness(const SizedBox.shrink()));
+      await tester.pump();
+    });
+
+    testWidgets('a select is a MacosPopupButton, and a choice comes back typed', (tester) async {
+      String? chosen;
+      await tester.pumpWidget(
+        harness(
+          SizedBox(
+            width: 260,
+            child: LiveSelect<String>(
+              items: const ['alpha', 'beta'],
+              itemLabel: (item) => item,
+              placeholder: 'Pick one',
+              onChanged: (value) => chosen = value,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(macos.MacosPopupButton<String>), findsOneWidget);
+      expect(find.byType(TokenSelect<String>), findsNothing);
+      expect(find.text('Pick one'), findsOneWidget, reason: 'the placeholder rides in the button hint slot');
+
+      await tester.tap(find.byType(macos.MacosPopupButton<String>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('beta').last);
+      await tester.pumpAndSettle();
+      expect(chosen, 'beta');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a select whose value is not among its items takes the shared renderer', (tester) async {
+      // The library asserts the current value matches exactly one item, so a spec
+      // it would throw on is drawn by the shared renderer rather than crashing (§15).
+      await tester.pumpWidget(
+        harness(
+          SizedBox(
+            width: 260,
+            child: LiveSelect<String>(items: const ['alpha'], itemLabel: (item) => item, value: 'missing', onChanged: (_) {}),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(macos.MacosPopupButton<String>), findsNothing);
+      expect(find.byType(TokenSelect<String>), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a tab strip is MacosTab cells with its glyph and reports the index', (tester) async {
+      var chosen = -1;
+      await tester.pumpWidget(
+        harness(
+          LiveTabs(
+            tabs: const [
+              LiveTab(label: 'Rooms'),
+              LiveTab(label: 'Shows', icon: Icons.star),
+            ],
+            index: 0,
+            onChanged: (index) => chosen = index,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(TokenTabs), findsNothing);
+      expect(find.byType(macos.MacosTab), findsNWidgets(2));
+      // The cell has no icon slot, which is why the strip is composed: the glyph
+      // still has to reach the screen.
+      expect(find.byType(macos.MacosIcon), findsOneWidget);
+      expect(macosGlyph(Icons.star), findsOneWidget);
+
+      await tester.tap(find.text('Shows'));
+      await tester.pump();
+      expect(chosen, 1);
+      final tabs = tester.widgetList<macos.MacosTab>(find.byType(macos.MacosTab)).toList();
+      expect(tabs.map((tab) => tab.active), [true, false], reason: 'the strip stays controlled by the spec index');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a destination strip reports its index, and a disabled one stays silent', (tester) async {
+      var chosen = -1;
+      Widget bar({bool enabled = true}) => LiveNavBar(
+        items: const [
+          LiveNavBarItem(label: 'Home', icon: Icons.home),
+          LiveNavBarItem(label: 'Follow', icon: Icons.favorite),
+        ],
+        index: 0,
+        enabled: enabled,
+        onChanged: (index) => chosen = index,
+      );
+
+      await tester.pumpWidget(harness(SizedBox(width: 320, child: bar())));
+      await tester.pump();
+      expect(find.byType(TokenNavBar), findsNothing);
+      expect(macosGlyph(Icons.favorite), findsOneWidget);
+
+      await tester.tap(find.text('Follow'));
+      await tester.pump();
+      expect(chosen, 1);
+
+      await tester.pumpWidget(harness(SizedBox(width: 320, child: bar(enabled: false))));
+      await tester.pump();
+      await tester.tap(find.text('Follow'));
+      await tester.pump();
+      expect(chosen, 1, reason: 'a disabled strip keeps its labels and stops reporting');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a toast surface is a MacosSheet panel, not the token pill', (tester) async {
+      const anchor = Key('toast-anchor');
+      await tester.pumpWidget(harness(const SizedBox(key: anchor, width: 1, height: 1)));
+      LiveToast.show(tester.element(find.byKey(anchor)), 'Saved', type: LiveToastType.success);
+      await tester.pump();
+
+      expect(find.text('Saved'), findsOneWidget);
+      expect(find.byType(TokenToast), findsNothing);
+      // The panel is the library's own; `showMacosSheet` would need a route, and
+      // the core owns the overlay, the fade and the timer, so the widget alone is
+      // what this slot can return.
+      expect(find.byType(macos.MacosSheet), findsOneWidget);
+      expect(macosGlyph(CupertinoIcons.checkmark_circle), findsOneWidget);
+
+      // Let the message finish its own life so its timer is not left pending.
+      await tester.pump(const Duration(milliseconds: 2300));
+      await tester.pumpAndSettle();
+      expect(find.text('Saved'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('no token renderer inside a macOS frame (§15.3)', () {
+    testWidgets('the whole chrome set draws from macos_ui, not from the shared base', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          SizedBox(
+            width: 600,
+            height: 400,
+            child: LiveScaffold(
+              appBar: LiveAppBar(
+                title: 'Rooms',
+                actions: const [Text('act')],
+                bottom: LiveTabs(
+                  tabs: const [
+                    LiveTab(label: 'One'),
+                    LiveTab(label: 'Two'),
+                  ],
+                  index: 0,
+                  onChanged: (_) {},
+                ),
+              ),
+              body: Column(
+                children: [
+                  const LiveCard(child: Text('card')),
+                  LiveSwitch(value: true, onChanged: (_) {}),
+                  LiveSegmented(labels: const ['A', 'B'], index: 0, onChanged: (_) {}),
+                  const LiveProgress(value: 0.5),
+                  SizedBox(
+                    width: 220,
+                    child: LiveSelect<String>(items: const ['x'], itemLabel: (item) => item, onChanged: (_) {}),
+                  ),
+                  const LiveListRow(title: 'row'),
+                ],
+              ),
+              bottomBar: LiveNavBar(
+                items: const [
+                  LiveNavBarItem(label: 'Home', icon: Icons.home),
+                  LiveNavBarItem(label: 'Shows', icon: Icons.star),
+                ],
+                index: 1,
+                onChanged: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // macOS declares all fifteen controls, so nothing inside a macOS page should
+      // be a `Token*` renderer any more — the assertion is by class-name prefix
+      // rather than by list, so a control added to the contract cannot slip a
+      // shared renderer in silently.
+      expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
+      expect(find.byType(macos.MacosScaffold), findsOneWidget);
+      expect(find.byType(macos.ToolBar), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      // `MacosScaffold`'s wallpaper-tinting layer keeps a periodic timer alive for
+      // as long as the frame is mounted — in a running window that is simply the
+      // library tracking the desktop picture. Unmount the frame and let the timer
+      // fire once before the binding counts it as a leak.
+      await tester.pumpAndSettle();
+      await tester.pumpWidget(harness(const SizedBox.shrink()));
+      await tester.pump(const Duration(seconds: 2));
+    });
+  });
+
   group('the app host (§9)', () {
-    // `MacosApp` is the one piece of this language that can be pumped: the
-    // wallpaper-tinting timer the frame and the bar start belongs to
-    // `MacosScaffold`, and the host does not mount one — so the tree below is
-    // asserted here rather than only at the resolver, unlike the frame.
+    // The host mounts no `MacosScaffold`, so it needs no unmount sequence of its
+    // own: the wallpaper-tinting timer belongs to the frame, and the tree below is
+    // therefore asserted here as well as at the resolver.
     Widget hostHarness(Widget child) => LiveConfigProvider(
       config: config,
       registry: const LanguageRegistry(
