@@ -399,7 +399,7 @@ void main() {
         context: inside,
         title: 'Restore',
         child: const Text('This overwrites the library'),
-        actions: const [Text('Cancel'), Text('Restore')],
+        actions: (_) => const [Text('Cancel'), Text('Restore')],
       );
       await tester.pumpAndSettle();
 

@@ -11,16 +11,19 @@ import 'package:live_uikit/src/styling/provider/live_config_provider.dart';
 /// should be dispatched controls, which is what makes them match the language,
 /// and [maxWidth] is the shared frame's constraint — a language that sizes its
 /// surface by its own layout ignores it.
+///
+/// The actions are built from the **dialog's** context, not the caller's: a
+/// button that pops the nearest route has to pop the dialog, and handing the
+/// caller's context to it would close the page instead.
 Future<T?> showLiveDialog<T>({
   required BuildContext context,
   required Widget child,
   String? title,
-  List<Widget> actions = const [],
+  List<Widget> Function(BuildContext dialogContext)? actions,
   double maxWidth = 420,
   bool dismissible = true,
 }) {
   final theme = LiveTheme.of(context);
-  final spec = LanguageDialogSpec(title: title, content: child, actions: actions, dismissible: dismissible);
   return showGeneralDialog<T>(
     context: context,
     barrierDismissible: dismissible,
@@ -34,7 +37,15 @@ Future<T?> showLiveDialog<T>({
         padding: EdgeInsets.all(theme.token.scale.sizes.lg),
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: maxWidth),
-          child: theme.adapter.dialog(dialogContext, spec),
+          child: theme.adapter.dialog(
+            dialogContext,
+            LanguageDialogSpec(
+              title: title,
+              content: child,
+              actions: actions?.call(dialogContext) ?? const [],
+              dismissible: dismissible,
+            ),
+          ),
         ),
       ),
     ),

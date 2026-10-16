@@ -390,7 +390,7 @@ void main() {
         context: tester.element(find.byType(Scaffold)),
         title: 'Leave the room?',
         child: const Text('The stream keeps running.'),
-        actions: [LiveButton(label: 'Leave', onPressed: () {})],
+        actions: (_) => [LiveButton(label: 'Leave', onPressed: () {})],
       );
       await tester.pumpAndSettle();
 

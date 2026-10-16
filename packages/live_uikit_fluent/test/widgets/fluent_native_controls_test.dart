@@ -318,7 +318,7 @@ void main() {
             return const Text('Discard the draft?');
           },
         ),
-        actions: [LiveButton(label: 'Keep', onPressed: () {})],
+        actions: (_) => [LiveButton(label: 'Keep', onPressed: () {})],
       );
       await tester.pumpAndSettle();
 
