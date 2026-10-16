@@ -16,10 +16,18 @@ controls drawn by `fluttersdk_wind`, without business pages importing it.
 - Implement `LanguageAdapter` for `LiveDesignLanguage.wind` (stable id `wind`).
 - Map the resolved `DesignToken` into the Wind theme and install it through a
   theme scope (never a nested application shell).
-- Build native Wind widgets for: **button, card, text field, switch, checkbox,
-  select**.
-- Declare exactly those controls in `windCapabilities` so the core resolver
-  reports a `controlUnsupported` downgrade for the rest (§16/§17).
+- Build native Wind widgets for all fifteen: **button, card, text field, switch,
+  checkbox, slider, segmented, progress, select, tab bar, scaffold, app bar, list
+  row, nav bar, toast**. Six of them are a fork widget (`WButton`, `WCard`,
+  `WInput`, `WSwitch`, `WCheckbox`, `WSelect`); the other nine are built out of
+  this library's own surface parts and theme values — `WDiv`/`WCard` panels, the
+  `WAnchor` its own controls are built on, `WText`/`WIcon` leaves and its Tailwind
+  colour, radius, border and shadow maps — because `fluttersdk_wind` ships no
+  slider, segmented track, progress bar, tab strip, frame, bar, row, navigation
+  bar or toast (§9).
+- Declare the whole contract in `windCapabilities`: a Wind page reports no
+  `controlUnsupported` downgrade, and no control of it is a token renderer
+  (§16/§17).
 
 ## What this package must not own
 
@@ -28,9 +36,12 @@ controls drawn by `fluttersdk_wind`, without business pages importing it.
 - State management (Riverpod/GetX), navigation, business pages, or playback.
 - Direct dependencies on other style adapters.
 
-Controls not built here (slider, segmented, progress,
-tab bar) fall back to the core shared token renderer — they still render
-on-theme.
+Every control of the contract is drawn here: the nine the fork has no widget for
+are composed out of its own surface parts and theme values, so nothing in a Wind
+page still paints from the token base. They read as Wind because their panels,
+accent, radius and rules are the library's own, resolved inside the theme scope
+this adapter installs. The two structural surfaces — the app host and the shell —
+are the exception: this build leaves them to the core (§ surfaces).
 
 ## Public entry point
 
@@ -68,20 +79,32 @@ flutter test packages/live_uikit_wind
 ```
 
 `test/adapter/wind_contract_test.dart` verifies the stable id/display name,
-that the declared capabilities match the controls the adapter overrides, and the
-core resolver's native-versus-`controlUnsupported` dispatch (§16/§17).
+that the declared capabilities are the whole contract and match the controls the
+adapter overrides, and that a language this build did not register still resolves
+shared and reports `adapterMissing` (§16/§17).
+
+Test coverage is present at four layers: `test/adapter/` (contract and
+resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
+`test/widgets/` (every control of the contract driven through the real dispatch
+path, native and composed alike, plus the assertion that no `Token*` renderer
+survives inside a Wind page), and `test/integration/` (resolution surface across
+the contract and a switch to the shared `token` base and back with caller-owned
+state preserved). What remains untested is the part that needs hardware: focus
+traversal, Android TV D-pad, and the platform claims in §13.
 
 ## Known limitations
 
-- Only button, card, text field, switch, checkbox and select are native; slider,
-  segmented, progress and tab bar use the shared renderer.
-- Test coverage is present at four layers: `test/adapter/` (contract and
-  resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
-  `test/widgets/` (every native control driven through the real dispatch path), and
-  `test/integration/` (resolution surface across the contract and a switch to the
-  the shared `token` base and back with caller-owned state preserved). What remains
-  untested is the part that needs hardware: focus traversal, Android TV D-pad, and
-  the platform claims in §13.
+- The two structural surfaces stay the core's: this build claims no app host and
+  no shell, so a Wind page is still hosted and navigated by the shared renderer
+  (§ surfaces).
 - `WButton` owns its focus handling inside `WAnchor`, so `focusNode`/`autofocus`
-  cannot be honoured on the Wind button, and `WInput` collapses keyboard type and
-  obscuring into one `InputType` (§9).
+  cannot be honoured on the Wind button — and not on the composed rail or list row
+  either, which take the same anchor (§9).
+- `WInput` collapses keyboard type and obscuring into one `InputType` (§9).
+- Wind's `primary` scale reaches this package as one flat accent
+  (`WindThemeBuilder` expands the single token accent into every shade, §8.1), so
+  a composed control has no tint step to select with: the accent is used as a mark
+  (a fill, an underline, a label) and Wind's own greys carry the resting surface.
+- The library has no transform parser (`WSwitch` records it), so an indeterminate
+  progress run cannot travel the rail; it breathes with `animate-pulse` instead
+  (§9 Progress).

@@ -5,7 +5,10 @@ import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_wind/live_uikit_wind.dart';
 
 /// §16 widget tests for `live_uikit_wind`, driving the `Live*` controls through
-/// the real runtime so they render with the native `fluttersdk_wind` widgets.
+/// the real runtime so they render with `fluttersdk_wind`'s own widgets. Covers
+/// §9 gating (callback, disabled, loading, controlled value, controller
+/// passthrough) plus the nine controls the fork has no widget for, which Wind
+/// now composes out of its parts rather than leaving to the shared renderer.
 void main() {
   const config = UiConfig(language: LiveDesignLanguage.wind, brightness: UiBrightnessMode.light);
 
@@ -280,11 +283,384 @@ void main() {
     });
   });
 
-  group('shared fallback (§15.3)', () {
-    testWidgets('a control the adapter does not override still renders', (tester) async {
-      await tester.pumpWidget(harness(LiveSlider(value: 0.5, onChanged: (_) {})));
-      expect(find.byType(wind.WInput), findsNothing);
-      expect(find.byType(LiveSlider), findsOneWidget);
+  group('the controls Wind composes rather than maps (§9)', () {
+    testWidgets("a rail is the fork's own parts and reports the position it is tapped at", (tester) async {
+      double? captured;
+      await tester.pumpWidget(
+        harness(SizedBox(width: 240, child: LiveSlider(value: 0.25, max: 2, onChanged: (value) => captured = value))),
+      );
+      expect(find.byType(TokenSlider), findsNothing);
+      // The filled run is the fork's accent class, the rail its neutral pair.
+      expect(
+        find.byWidgetPredicate((widget) => widget is wind.WDiv && (widget.className ?? '').contains('bg-primary-500')),
+        findsOneWidget,
+      );
+
+      await tester.tapAt(tester.getTopLeft(find.byType(LiveSlider)) + const Offset(180, 8));
+      await tester.pump();
+      // 180 of a 240 rail, over a span of two: the spec's own bounds, not 0..1.
+      expect(captured, closeTo(1.5, 0.05));
+
+      await tester.dragFrom(tester.getCenter(find.byType(LiveSlider)), const Offset(-100, 0));
+      await tester.pump();
+      // Centre minus a hundred logical pixels of a 240 rail, over a span of two.
+      expect(captured, closeTo(2 / 12, 0.05));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('an inert rail has neither a gesture nor a live-looking thumb', (tester) async {
+      await tester.pumpWidget(harness(const SizedBox(width: 240, child: LiveSlider(value: 0.5, onChanged: null))));
+      final parts = tester
+          .widgetList<wind.WDiv>(find.byType(wind.WDiv))
+          .where((div) => (div.className ?? '').contains('disabled:opacity-50'))
+          .toList();
+      expect(parts, hasLength(3), reason: "rail, run and thumb all carry the fork's inert state");
+      for (final part in parts) {
+        expect(part.states, contains('disabled'));
+      }
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a segmented track is a group of Wind buttons, one carrying the selected state', (tester) async {
+      var chosen = -1;
+      await tester.pumpWidget(
+        harness(
+          SizedBox(
+            width: 360,
+            child: LiveSegmented(
+              labels: const ['Small', 'Medium', 'Large'],
+              index: 1,
+              expand: true,
+              onChanged: (i) => chosen = i,
+            ),
+          ),
+        ),
+      );
+      expect(find.byType(TokenSegmented), findsNothing);
+      final segments = tester.widgetList<wind.WButton>(find.byType(wind.WButton)).toList();
+      expect(segments, hasLength(3));
+      expect(segments.map((button) => (button.states ?? const <String>{}).contains('selected')), [false, true, false]);
+      expect(segments.every((button) => button.onTap != null), isTrue);
+      // The `selected:` token really reaches the paint: the chosen segment's own
+      // container carries the accent, and that accent is the token's, because
+      // `WindThemeBuilder` seeds Wind's `primary` scale from it (§8.1).
+      final theme = LiveTheme.of(tester.element(find.byType(LiveSegmented)));
+      expect(
+        tester
+            .widgetList<Container>(find.descendant(of: find.byType(wind.WButton), matching: find.byType(Container)))
+            .map((box) => (box.decoration as BoxDecoration?)?.color),
+        [null, theme.colors.primary, null],
+      );
+
+      await tester.tap(find.text('Large'));
+      await tester.pumpAndSettle();
+      expect(chosen, 2);
+
+      await tester.pumpWidget(
+        harness(
+          SizedBox(
+            width: 360,
+            child: LiveSegmented(
+              labels: const ['Small', 'Medium', 'Large'],
+              index: 0,
+              enabled: false,
+              onChanged: (_) => chosen = 99,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      final inert = tester.widgetList<wind.WButton>(find.byType(wind.WButton)).toList();
+      expect(inert.every((button) => button.disabled && button.onTap == null), isTrue);
+      // The fork absorbs the pointer on a disabled button, so the tap has no
+      // receiver to warn about — that absence is the assertion.
+      await tester.tap(find.text('Medium'), warnIfMissed: false);
+      await tester.pump();
+      expect(chosen, 2, reason: 'a disabled group keeps its labels and stops reporting');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets("a determinate bar is the fork's rail and run, and its label is the percent", (tester) async {
+      await tester.pumpWidget(harness(const SizedBox(width: 240, child: LiveProgress(value: 0.5, showLabel: true))));
+      expect(find.byType(TokenProgress), findsNothing);
+      expect(find.text('50%'), findsOneWidget);
+      expect(tester.widget<FractionallySizedBox>(find.byType(FractionallySizedBox)).widthFactor, 0.5);
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is wind.WDiv && (widget.className ?? '').contains('bg-gray-200 dark:bg-gray-700'),
+        ),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets("an unknown completion breathes in the fork's own animation and prints no percent", (tester) async {
+      await tester.pumpWidget(harness(const SizedBox(width: 240, child: LiveProgress(value: null, showLabel: true))));
+      expect(find.byType(TokenProgress), findsNothing);
+      expect(find.text('0%'), findsNothing);
+      // Wind has no transform parser (`WSwitch` says so), so an indeterminate run
+      // cannot slide; `animate-pulse` is the library's own unfinished-work class.
+      expect(
+        find.byWidgetPredicate((widget) => widget is wind.WDiv && (widget.className ?? '').contains('animate-pulse')),
+        findsOneWidget,
+      );
+      // The pulse repeats forever, so this settles nothing — pump a fixed stretch
+      // and leave the animation to the tree teardown.
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets("a tab strip is the fork's anchors over its rule, carries its icons and reports its index", (
+      tester,
+    ) async {
+      var chosen = -1;
+      await tester.pumpWidget(
+        harness(
+          LiveTabs(
+            tabs: const [
+              LiveTab(label: 'Rooms'),
+              LiveTab(label: 'Shows', icon: Icons.star),
+            ],
+            index: 0,
+            onChanged: (i) => chosen = i,
+          ),
+        ),
+      );
+      expect(find.byType(TokenTabs), findsNothing);
+      // `WTabs` welds a panel to the row and paints only text; this strip has no
+      // panel and does paint the tab's glyph.
+      expect(find.byType(wind.WTabs), findsNothing);
+      expect(find.byIcon(Icons.star), findsOneWidget);
+      final tabs = tester
+          .widgetList<wind.WAnchor>(find.byType(wind.WAnchor))
+          // Only the strip's own anchors carry the tap; the fork adds a
+          // gestureless one inside every tab whose class list has `hover:`.
+          .where((anchor) => anchor.onTap != null)
+          .toList();
+      expect(tabs, hasLength(2));
+      expect(tabs.map((anchor) => (anchor.states ?? const <String>{}).contains('selected')), [true, false]);
+      // And the chosen tab really is the accent: `WDiv` publishes its parsed text
+      // colour as a `DefaultTextStyle`, which is also what the glyph and the label
+      // inherit, so one node proves the whole tab is tinted (§9).
+      final theme = LiveTheme.of(tester.element(find.byType(LiveTabs)));
+      expect(
+        find.byWidgetPredicate((widget) => widget is DefaultTextStyle && widget.style.color == theme.colors.primary),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Shows'));
+      await tester.pumpAndSettle();
+      expect(chosen, 1);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a page frame is a Wind column: bar, body, bottom bar and a placed action', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          const SizedBox(
+            width: 400,
+            height: 300,
+            child: LiveScaffold(
+              appBar: LiveAppBar(title: 'Rooms'),
+              body: Text('page body'),
+              bottomBar: LiveNavBar(
+                items: [LiveNavBarItem(label: 'Home', icon: Icons.home)],
+                index: 0,
+              ),
+              floatingActionButton: Text('act'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(TokenScaffold), findsNothing);
+      expect(find.text('page body'), findsOneWidget);
+      expect(find.text('act'), findsOneWidget);
+      expect(find.text('Home'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a top bar is a Wind panel with its title, actions and strip', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          const LiveAppBar(
+            title: 'Rooms',
+            actions: [Text('act')],
+            centerTitle: true,
+            bottom: LiveTabs(
+              tabs: [
+                LiveTab(label: 'One'),
+                LiveTab(label: 'Two'),
+              ],
+              index: 1,
+              onChanged: null,
+            ),
+          ),
+        ),
+      );
+      expect(find.byType(TokenAppBar), findsNothing);
+      expect(find.text('Rooms'), findsOneWidget);
+      expect(find.text('act'), findsOneWidget);
+      expect(find.text('Two'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate((widget) => widget is wind.WText && (widget.className ?? '').contains('text-center')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a list row anchors its parts, fires its tap and can rule itself off', (tester) async {
+      var taps = 0;
+      await tester.pumpWidget(
+        harness(
+          SizedBox(
+            width: 320,
+            child: LiveListRow(
+              title: 'Quality',
+              subtitle: 'Source bitrate',
+              trailing: const Text('4K'),
+              selected: true,
+              divided: false,
+              onTap: () => taps++,
+            ),
+          ),
+        ),
+      );
+      expect(find.byType(TokenListRow), findsNothing);
+      expect(find.text('Quality'), findsOneWidget);
+      expect(find.text('Source bitrate'), findsOneWidget);
+      expect(find.text('4K'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate((widget) => widget is wind.WDiv && (widget.className ?? '').contains('h-[1px]')),
+        findsNothing,
+      );
+      // The row's own anchor is the outer one; the `hover:` class on the styled
+      // div makes the fork add a gestureless anchor inside it.
+      final row = tester.widgetList<wind.WAnchor>(find.byType(wind.WAnchor)).first;
+      expect(row.states, contains('selected'));
+      expect(row.isDisabled, isFalse);
+
+      await tester.tap(find.text('Quality'));
+      await tester.pumpAndSettle();
+      expect(taps, 1);
+
+      await tester.pumpWidget(
+        harness(
+          const SizedBox(
+            width: 320,
+            child: LiveListRow(title: 'Quality', trailing: Text('4K')),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(
+        find.byWidgetPredicate((widget) => widget is wind.WDiv && (widget.className ?? '').contains('h-[1px]')),
+        findsOneWidget,
+      );
+      final inert = tester.widgetList<wind.WAnchor>(find.byType(wind.WAnchor)).first;
+      expect(inert.isDisabled, isTrue, reason: "a row with no handler is the fork's inert state");
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a destination strip shares its width, reports its index and stops when disabled', (tester) async {
+      var chosen = -1;
+      Widget bar({bool enabled = true}) => LiveNavBar(
+        items: const [
+          LiveNavBarItem(label: 'Home', icon: Icons.home),
+          LiveNavBarItem(label: 'Shows', icon: Icons.star),
+        ],
+        index: 0,
+        enabled: enabled,
+        onChanged: (i) => chosen = i,
+      );
+
+      await tester.pumpWidget(harness(SizedBox(width: 360, child: bar())));
+      expect(find.byType(TokenNavBar), findsNothing);
+      expect(find.byIcon(Icons.home), findsOneWidget);
+      await tester.tap(find.text('Shows'));
+      await tester.pumpAndSettle();
+      expect(chosen, 1);
+
+      await tester.pumpWidget(harness(SizedBox(width: 360, child: bar(enabled: false))));
+      await tester.pump();
+      await tester.tap(find.text('Home'));
+      await tester.pump();
+      expect(chosen, 1, reason: 'a disabled strip keeps its labels and stops reporting');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a toast surface is a Wind panel, not the token pill', (tester) async {
+      await tester.pumpWidget(harness(const SizedBox.shrink()));
+      LiveToast.show(tester.element(find.byType(SizedBox)), 'Saved', type: LiveToastType.success);
+      await tester.pump();
+
+      expect(find.byType(TokenToast), findsNothing);
+      expect(find.text('Saved'), findsOneWidget);
+      expect(find.byType(wind.WCard), findsOneWidget);
+      expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+      expect(find.text('Saved'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('no token renderer inside a Wind frame (§15.3)', () {
+    testWidgets('the whole chrome set draws from Wind, not from the shared base', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          SizedBox(
+            width: 480,
+            height: 360,
+            child: LiveScaffold(
+              appBar: const LiveAppBar(
+                title: 'Rooms',
+                actions: [Text('act')],
+                bottom: LiveTabs(
+                  tabs: [
+                    LiveTab(label: 'One'),
+                    LiveTab(label: 'Two'),
+                  ],
+                  index: 0,
+                  onChanged: null,
+                ),
+              ),
+              body: Column(
+                children: [
+                  const LiveListRow(title: 'Quality', subtitle: 'Source bitrate'),
+                  const SizedBox(width: 240, child: LiveProgress(value: 0.4)),
+                  const SizedBox(width: 240, child: LiveSlider(value: 0.4, onChanged: null)),
+                  SizedBox(
+                    width: 320,
+                    child: LiveSegmented(
+                      labels: const ['Low', 'Balanced', 'High'],
+                      index: 2,
+                      expand: true,
+                      onChanged: (_) {},
+                    ),
+                  ),
+                ],
+              ),
+              bottomBar: LiveNavBar(
+                items: const [
+                  LiveNavBarItem(label: 'Home', icon: Icons.home),
+                  LiveNavBarItem(label: 'Shows', icon: Icons.star),
+                ],
+                index: 1,
+                onChanged: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      // Wind declares all fifteen controls, so nothing in a Wind page should be a
+      // `Token*` renderer any more — the assertion is by name rather than by list
+      // so a control added to the contract cannot slip in silently.
+      expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
       expect(tester.takeException(), isNull);
     });
   });

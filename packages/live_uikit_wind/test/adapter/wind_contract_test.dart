@@ -5,23 +5,12 @@ import 'package:live_uikit_wind/live_uikit_wind.dart';
 /// The Wind adapter's contract and capability declarations (§7/§16/§17).
 ///
 /// The capability set must list exactly the controls `WindLanguageAdapter`
-/// overrides with native `fluttersdk_wind` widgets; the resolver turns every other
+/// overrides with `fluttersdk_wind`'s own parts — mapped where the library has a
+/// widget for the job, composed where it does not; the resolver turns every other
 /// control into a `controlUnsupported` downgrade, so drift between the declaration
 /// and the overrides is caught here before it ships (§17).
 void main() {
   const adapter = windAdapter;
-
-  const native = {
-    LiveUiControl.button,
-    LiveUiControl.card,
-    LiveUiControl.textField,
-    LiveUiControl.switchWidget,
-    LiveUiControl.checkbox,
-    LiveUiControl.select,
-  };
-  // Derived rather than listed, so a control added to the contract cannot join the
-  // fallback side silently — the suite has to be told (§17).
-  final fallback = LiveUiControl.values.toSet().difference(native);
 
   group('Wind adapter contract (§7)', () {
     test('exposes a stable id, display name and language', () {
@@ -32,12 +21,43 @@ void main() {
     });
 
     test('declares exactly the controls it renders natively', () {
+      // All fifteen: Wind renders every control, and the nine whose library has
+      // no widget for the job say so in their builder (§9).
+      const native = {
+        LiveUiControl.button,
+        LiveUiControl.card,
+        LiveUiControl.textField,
+        LiveUiControl.switchWidget,
+        LiveUiControl.checkbox,
+        LiveUiControl.slider,
+        LiveUiControl.segmented,
+        LiveUiControl.progress,
+        LiveUiControl.select,
+        LiveUiControl.tabBar,
+        LiveUiControl.scaffold,
+        LiveUiControl.appBar,
+        LiveUiControl.listRow,
+        LiveUiControl.navBar,
+        LiveUiControl.toast,
+      };
       for (final control in native) {
         expect(adapter.capabilities.supports(control), isTrue, reason: '$control should be native');
       }
-      for (final control in fallback) {
+      // Derived rather than listed, so a control added to the contract cannot join
+      // the fallback side silently — the suite has to be told (§17).
+      for (final control in LiveUiControl.values.toSet().difference(native)) {
         expect(adapter.capabilities.supports(control), isFalse, reason: '$control should fall back');
       }
+      // The other half of the point: this language has no fallback side at all, so
+      // the set above has to be the whole contract.
+      expect(adapter.capabilities.supported, LiveUiControl.values.toSet());
+    });
+
+    test('owns no structural surface in this build', () {
+      // The app host and the shell are still the core's: the promotion here is the
+      // control contract, and the surface declaration has to say exactly that
+      // (§ surfaces).
+      expect(adapter.surfaces.supported, isEmpty);
     });
   });
 
@@ -55,11 +75,18 @@ void main() {
       expect(result.diagnostic, isNull);
     });
 
-    test('an undeclared control falls back to shared and is reported', () {
-      final result = resolver.resolveControl(LiveDesignLanguage.wind, LiveUiControl.slider);
+    test('every control of the contract resolves native, with no downgrade', () {
+      for (final control in LiveUiControl.values) {
+        final result = resolver.resolveControl(LiveDesignLanguage.wind, control);
+        expect(result.implementation.kind, LiveImplementationKind.adapterNative, reason: '$control');
+        expect(result.diagnostic, isNull, reason: '$control');
+      }
+    });
+
+    test('a language this build did not register still resolves shared, and says so', () {
+      final result = resolver.resolveControl(LiveDesignLanguage.neumorphic, LiveUiControl.slider);
       expect(result.implementation.kind, LiveImplementationKind.shared);
-      expect(result.diagnostic?.code, LiveUiDiagnosticCode.controlUnsupported);
-      expect(result.diagnostic?.control, LiveUiControl.slider);
+      expect(result.diagnostic?.code, LiveUiDiagnosticCode.adapterMissing);
     });
   });
 }

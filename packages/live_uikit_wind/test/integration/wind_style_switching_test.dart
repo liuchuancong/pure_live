@@ -5,37 +5,50 @@ import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_wind/live_uikit_wind.dart';
 
 /// The controls `live_uikit_wind` renders natively (§3.1 capability
-/// declaration): six of the thirteen the resolver dispatches.
+/// declaration): all fifteen the resolver dispatches — the six the fork has a
+/// widget for, and the nine it does not (the rail, the segmented track, the bar,
+/// the tab strip, the page frame, the top bar, the list row, the bottom bar and
+/// the toast surface), which are composed out of the fork's own parts.
 const Set<LiveUiControl> nativeControls = {
   LiveUiControl.button,
   LiveUiControl.card,
   LiveUiControl.textField,
   LiveUiControl.switchWidget,
   LiveUiControl.checkbox,
+  LiveUiControl.slider,
+  LiveUiControl.segmented,
+  LiveUiControl.progress,
   LiveUiControl.select,
+  LiveUiControl.tabBar,
+  LiveUiControl.scaffold,
+  LiveUiControl.appBar,
+  LiveUiControl.listRow,
+  LiveUiControl.navBar,
+  LiveUiControl.toast,
 };
 
 /// §16/§11 integration pass for `live_uikit_wind`.
 ///
-/// Wind renders six of the thirteen controls natively, so a switch is the moment the
-/// other seven — `slider`, `segmented`, `progress`, `tabBar` and the page trio
-/// `scaffold`, `appBar`, `listRow` that no adapter maps yet — have to keep working
-/// through the shared token renderer — and the
-/// moment a caller-owned controller has to prove it survives the re-render. Both
-/// directions run against the production registry and resolver types.
-/// The downgrades this language is expected to report: every control the adapter
-/// does not declare, each exactly once per language change (§15.5/§16.8).
+/// Wind renders the whole control contract, so a switch into it replaces every
+/// rendering path at once and the only downgrades left are the two structural
+/// surfaces this build does not claim; switching to the core token base and back
+/// still has to prove a caller-owned controller survives the re-render (§11).
+/// The downgrades this language is expected to report: none for the controls,
+/// because nothing in the contract falls back any more — only the app host and
+/// the shell, each once per language change (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   // This adapter owns no structural surface, so both the app host and the shell
-  // fall back alongside the controls it does not declare — two kinds of downgrade
-  // with two codes (§ surfaces).
+  // fall back while no control does — two kinds of downgrade with two codes
+  // (§ surfaces).
   final controls = sink.where((diagnostic) => diagnostic.control != null);
   final surfaces = sink.where((diagnostic) => diagnostic.surface != null);
-  expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
-  expect(
-    controls.map((diagnostic) => diagnostic.control).toSet(),
-    LiveUiControl.values.toSet().difference(nativeControls),
-  );
+  // A language that renders every control reports no control downgrade at all,
+  // so the code check only applies when something actually fell back.
+  final expectedControls = LiveUiControl.values.toSet().difference(nativeControls);
+  expect(controls.map((diagnostic) => diagnostic.control).toSet(), expectedControls);
+  if (expectedControls.isNotEmpty) {
+    expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
+  }
   expect(surfaces.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.surfaceUnsupported});
   expect(surfaces.map((diagnostic) => diagnostic.surface).toSet(), LiveUiSurface.values.toSet());
   expect(sink, hasLength(LiveUiControl.values.length + LiveUiSurface.values.length - nativeControls.length));
@@ -59,7 +72,7 @@ void main() {
     ),
   );
 
-  test('the six declared controls resolve native, the rest shared (§16.3)', () {
+  test('every control resolves native, because this language declares the whole contract (§16.3)', () {
     for (final control in LiveUiControl.values) {
       final native = nativeControls.contains(control);
       final resolution = resolver.resolveControl(LiveDesignLanguage.wind, control);
@@ -74,6 +87,7 @@ void main() {
         reason: '$control',
       );
     }
+    expect(nativeControls, LiveUiControl.values.toSet());
   });
 
   testWidgets('Wind ↔ the token base swaps the rendering path, not the state (§11)', (tester) async {
@@ -98,9 +112,11 @@ void main() {
     expect(find.byType(wind.WSwitch), findsOneWidget);
     expect(find.byType(wind.WSelect<String>), findsOneWidget);
     expect(find.byType(TextField), findsNothing);
-    // Slider and progress are not native to Wind: they render through the token
-    // base, which is the declared, reported fallback — not a gap.
-    expect(find.byType(LiveSlider), findsOneWidget);
+    // Slider and progress are the fork's own parts now — a rail and a run drawn
+    // as `WDiv`s — so no token renderer stands in for them inside a Wind page.
+    expect(find.byType(TokenSlider), findsNothing);
+    expect(find.byType(TokenProgress), findsNothing);
+    expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
     expectUndeclaredControls(diagnostics);
 
     await tester.pumpWidget(harness(const UiConfig(), page(), diagnostics));
