@@ -7,6 +7,7 @@ import 'package:live_uikit_forui/src/widgets/forui_app_bar_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_button_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_card_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_checkbox_builder.dart';
+import 'package:live_uikit_forui/src/widgets/forui_dialog_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_host_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_list_row_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_nav_bar_builder.dart';
@@ -18,17 +19,19 @@ import 'package:live_uikit_forui/src/widgets/forui_shell_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_slider_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_switch_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_tab_bar_builder.dart';
+import 'package:live_uikit_forui/src/widgets/forui_tab_view_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_text_field_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_toast_builder.dart';
 
 /// ForUI — the `forui` design-language adapter (§1).
 ///
 /// Implements the core contract for [LiveDesignLanguage.forui]: the theme mapping
-/// delegates to `theme/`, every one of the fifteen controls to its `widgets/` builder, and
+/// delegates to `theme/`, every one of the seventeen controls to its `widgets/` builder, and
 /// the declared [capabilities] to `forui_capabilities.dart` — so nothing inside a ForUI
-/// page is drawn by the shared token renderer. The one control with no library widget to
-/// map is `segmented`, which is composed out of forui's own `FButton` group and says so
-/// in its builder; every other builder records the spec fields the library has no slot
+/// page is drawn by the shared token renderer. The two controls with no library widget to
+/// map are `segmented`, composed out of forui's own `FButton` group, and `tabView`, the
+/// widgets-layer `PageView` over the caller's pages, and each says so in its builder;
+/// every other builder records the spec fields the library has no slot
 /// for, so the gaps are visible rather than silent. No business state lives here. Both
 /// structural surfaces — the app host and the app shell — are declared in
 /// [foruiSurfaces] and rendered by this package's own builders.
@@ -97,6 +100,12 @@ class ForuiLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget toast(BuildContext context, LanguageToastSpec spec) => ForuiToastBuilder.build(context, spec);
+
+  @override
+  Widget dialog(BuildContext context, LanguageDialogSpec spec) => ForuiDialogBuilder.build(context, spec);
+
+  @override
+  Widget tabView(BuildContext context, LanguageTabViewSpec spec) => ForuiTabViewBuilder.build(context, spec);
 
   @override
   LiveUiSurfaceCapabilities get surfaces => foruiSurfaces;

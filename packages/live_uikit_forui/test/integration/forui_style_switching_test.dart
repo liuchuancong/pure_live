@@ -5,7 +5,7 @@ import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_forui/live_uikit_forui.dart';
 
 /// The controls `live_uikit_forui` renders natively (§3.1 capability
-/// declaration): all fifteen the resolver dispatches.
+/// declaration): all seventeen the resolver dispatches.
 const Set<LiveUiControl> nativeControls = {
   LiveUiControl.button,
   LiveUiControl.card,
@@ -22,16 +22,19 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.listRow,
   LiveUiControl.navBar,
   LiveUiControl.toast,
+  LiveUiControl.dialog,
+  LiveUiControl.tabView,
 };
 
 /// The structural surfaces this adapter owns (§ surfaces): both of them — the
 /// app host and the app shell (`FSidebar` beside the router's body).
 const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost, LiveUiSurface.appShell};
 
-/// §16 integration pass for `live_uikit_forui`: every one of the fifteen controls
-/// resolves native — the page frame, the bars and the toast surface included, since
-/// `forui` 0.27.5 ships `FScaffold`, `FHeader`, `FTile`, `FBottomNavigationBar` and
-/// `FToast` — and switching to the core token base and back must not cost the caller
+/// §16 integration pass for `live_uikit_forui`: every one of the seventeen controls
+/// resolves native — the page frame, the bars, the toast surface and the dialog frame
+/// included, since
+/// `forui` 0.27.5 ships `FScaffold`, `FHeader`, `FTile`, `FBottomNavigationBar`,
+/// `FToast` and `FDialog` — and switching to the core token base and back must not cost the caller
 /// its controller or its field state (§11).
 /// The downgrades this language is expected to report: none at all — every
 /// control and both structural surfaces are native now. `forui` ships no

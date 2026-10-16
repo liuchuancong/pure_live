@@ -24,14 +24,19 @@ and have its controls drawn by `forui`, without any business page importing
   `FTheme` scope (never a second application widget inside the host). The library's private
   `FThemeData` constructor caps the mapping at the light/dark neutral variant (§8.1);
   the ceiling is pinned by test rather than faked.
-- Build native ForUI widgets for all fifteen: **button, card, text field, switch,
+- Build native ForUI widgets for all seventeen: **button, card, text field, switch,
   checkbox, slider, segmented, progress, select, tab bar, scaffold, app bar, list
-  row, nav bar, toast**. One of them is composed out of ForUI's own parts rather than
+  row, nav bar, toast, dialog, tab view**. Two of them are composed out of ForUI's own parts rather than
   mapped one-for-one — `segmented` is a row of ghost `FButton`s taking
   `FButton.selected`, because the library's only single-choice row is `FTabs`, which is
   a tab *view* and is spent on the tab bar — and `tab bar` is `FTabs` itself with an
   empty content panel per entry, since that widget always paints a body area while this
-  contract's body belongs to the caller (§9).
+  contract's body belongs to the caller (§9). The body itself, `tab view`, is the
+  mirror image of that gap: the library's only page switcher is the same `FTabs`, whose
+  panels hang off labels a page switcher is never given, so the view is the widgets-layer
+  `PageView` over the caller's pages. `dialog` is `FDialog`'s frame, with the inside
+  composed because 0.27.5's frame carries no content padding and no action area; the
+  route, the barrier and the fade stay in the core's `showLiveDialog`.
 - Declare the whole contract in `foruiCapabilities`: a ForUI page reports no
   `controlUnsupported` downgrade, and nothing inside a ForUI frame is a token
   renderer (§16/§17).
@@ -53,7 +58,7 @@ and have its controls drawn by `forui`, without any business page importing
 - Direct dependencies on other style adapters, or on `forui` leaking into
   business packages.
 
-Nothing in the fifteen-control contract falls back to the core shared token renderer
+Nothing in the seventeen-control contract falls back to the core shared token renderer
 any more, and neither do the two structural surfaces. What is left is narrower and
 documented per builder: a few spec fields the library has no slot for
 (`LanguageProgressSpec.showLabel`, `LanguageSliderSpec.focusNode`,

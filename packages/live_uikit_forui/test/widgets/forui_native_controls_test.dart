@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart' as forui;
@@ -554,6 +556,78 @@ void main() {
     });
   });
 
+  group('dialog and tab view (§9)', () {
+    testWidgets("a dialog surface is the library's FDialog, framed by the core", (tester) async {
+      await tester.pumpWidget(harness(const SizedBox.shrink()));
+      // The route, the barrier, the fade-and-scale and the dismissal are the core's:
+      // the test goes through `showLiveDialog`, so what is asserted is only the
+      // surface the adapter returns inside that frame.
+      unawaited(
+        showLiveDialog<void>(
+          context: tester.element(find.byType(SizedBox)),
+          title: 'Leave the room?',
+          child: const Text('Unsaved changes'),
+          actions: [LiveButton(label: 'Stay', onPressed: () {})],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(forui.FDialog), findsOneWidget);
+      expect(find.byType(TokenDialog), findsNothing);
+      expect(find.text('Leave the room?'), findsOneWidget);
+      expect(find.text('Unsaved changes'), findsOneWidget);
+      // The action is the caller's already-dispatched control, so it arrives as the
+      // library's button rather than being re-picked by the frame.
+      expect(find.byType(forui.FButton), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 2));
+    });
+
+    testWidgets('a page switcher is the widgets-layer PageView over the caller pages', (tester) async {
+      // No `Live*` widget drives this one: the contract's tab view is dispatched
+      // straight from the adapter, which is how a page under a strip uses it (§9).
+      Widget view(int index) => harness(
+        Builder(
+          builder: (context) => SizedBox(
+            height: 200,
+            child: LiveTheme.of(context).adapter.tabView(
+              context,
+              LanguageTabViewSpec(
+                pages: [
+                  const Center(child: Text('first page')),
+                  const Center(child: Text('second page')),
+                ],
+                index: index,
+                onIndexChanged: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(view(0));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TokenTabView), findsNothing);
+      expect(
+        find.byType(forui.FTabs),
+        findsNothing,
+        reason: "the library's only page switcher is its tabs, which pair a strip with its own panels (§9)",
+      );
+      expect(find.text('first page'), findsOneWidget);
+
+      await tester.pumpWidget(view(1));
+      await tester.pumpAndSettle();
+      expect(find.text('second page'), findsOneWidget, reason: 'the view follows the index the caller holds');
+      expect(tester.takeException(), isNull);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 2));
+    });
+  });
+
   group('no token renderer inside a ForUI frame (§15.3)', () {
     testWidgets('every control of the contract dispatches native', (tester) async {
       await tester.pumpWidget(
@@ -584,7 +658,7 @@ void main() {
       );
       await tester.pump();
 
-      // ForUI declares all fifteen controls, so nothing in a ForUI page should be a
+      // ForUI declares all seventeen controls, so nothing in a ForUI page should be a
       // `Token*` renderer any more — the assertion is by name rather than by list so a
       // control added to the contract cannot slip in silently.
       expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);

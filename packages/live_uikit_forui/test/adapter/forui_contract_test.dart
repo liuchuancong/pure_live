@@ -28,6 +28,8 @@ void main() {
     LiveUiControl.listRow,
     LiveUiControl.navBar,
     LiveUiControl.toast,
+    LiveUiControl.dialog,
+    LiveUiControl.tabView,
   };
   // Derived rather than listed, so a control added to the contract cannot join
   // the fallback side silently — the suite has to be told, and that is the
@@ -59,8 +61,9 @@ void main() {
     });
 
     test('declares exactly the controls it renders natively', () {
-      // All fifteen: forui 0.27.5 carries a widget for every control the contract
-      // names, and the one it does not is composed from its own parts (§9).
+      // All seventeen: forui 0.27.5 carries a widget for every control the contract
+      // names but one, and the controls it lacks are composed from its own parts or
+      // from the widgets layer (§9).
       for (final control in native) {
         expect(adapter.capabilities.supports(control), isTrue, reason: '$control should be native');
       }
