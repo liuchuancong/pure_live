@@ -30,10 +30,11 @@ void main() {
   };
 
   test('declares exactly the surfaces it owns structurally', () {
-    for (final surface in const <LiveUiSurface>{LiveUiSurface.appHost}) {
+    const owned = <LiveUiSurface>{LiveUiSurface.appHost, LiveUiSurface.appShell};
+    for (final surface in owned) {
       expect(adapter.surfaces.supports(surface), isTrue, reason: '$surface should be native');
     }
-    for (final surface in LiveUiSurface.values.toSet().difference(const <LiveUiSurface>{LiveUiSurface.appHost})) {
+    for (final surface in LiveUiSurface.values.toSet().difference(owned)) {
       expect(adapter.surfaces.supports(surface), isFalse, reason: '$surface should fall back');
     }
   });

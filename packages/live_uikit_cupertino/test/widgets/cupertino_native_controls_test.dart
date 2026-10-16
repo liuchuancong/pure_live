@@ -10,8 +10,8 @@ import 'stub_router.dart';
 /// runtime path so `LiveButton`/`LiveSwitch`/… dispatch to the native
 /// `cupertino_ui` widgets. Covers §9 rules (callback + loading gating, controller
 /// passthrough, controlled switch), the chrome set, the seven controls this
-/// language had to add, and the check that no token renderer is left inside a
-/// Cupertino frame.
+/// language had to add, the composed app shell (§ surfaces), and the check that no
+/// token renderer is left inside a Cupertino frame.
 void main() {
   const config = UiConfig(language: LiveDesignLanguage.cupertino, brightness: UiBrightnessMode.light);
 
@@ -506,6 +506,110 @@ void main() {
       // should be a `Token*` renderer any more — the assertion is by name rather
       // than by list, so a control added to the contract cannot slip in silently.
       expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('the app shell (§ surfaces)', () {
+    const destinations = [
+      LiveShellDestination(id: 'home', label: 'Home', icon: Icons.home),
+      LiveShellDestination(id: 'follow', label: 'Follow', icon: Icons.favorite),
+    ];
+
+    testWidgets('the rail form is the list column of the fork, not the token shell', (tester) async {
+      var chosen = '';
+      await tester.pumpWidget(
+        harness(
+          LiveAppShell(
+            destinations: destinations,
+            selectedId: 'home',
+            onSelected: (id) => chosen = id,
+            placement: LiveShellPlacement.rail,
+            trailing: const Text('settings'),
+            child: const Text('room list'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // `cupertino_ui` has no rail, so the pane is composed from its list
+      // surface: a section of tiles, and the body still belongs to the caller.
+      expect(find.byType(TokenAppShell), findsNothing);
+      expect(find.byType(cu.CupertinoListSection), findsOneWidget);
+      expect(find.byType(cu.CupertinoListTile), findsNWidgets(2));
+      expect(find.text('room list'), findsOneWidget);
+      // The composed column has a bottom slot of its own, unlike the strip.
+      expect(find.text('settings'), findsOneWidget);
+
+      await tester.tap(find.text('Follow'));
+      await tester.pump();
+      expect(chosen, 'follow');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a disabled destination is inert because the tile has no such state', (tester) async {
+      var chosen = '';
+      await tester.pumpWidget(
+        harness(
+          LiveAppShell(
+            destinations: const [
+              LiveShellDestination(id: 'home', label: 'Home', icon: Icons.home),
+              LiveShellDestination(id: 'follow', label: 'Follow', icon: Icons.favorite, enabled: false),
+            ],
+            selectedId: 'home',
+            onSelected: (id) => chosen = id,
+            placement: LiveShellPlacement.rail,
+            child: const Text('room list'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Kept in the layout, tinted out of the accent, and given no tap.
+      expect(find.text('Follow'), findsOneWidget);
+      await tester.tap(find.text('Follow'));
+      await tester.pump();
+      expect(chosen, '');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a bottom request hands the strip back to the fork bar, which has no footer', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          LiveAppShell(
+            destinations: destinations,
+            selectedId: 'home',
+            onSelected: (_) {},
+            placement: LiveShellPlacement.bottom,
+            trailing: const Text('settings'),
+            child: const Text('room list'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(TokenAppShell), findsNothing);
+      expect(find.byType(cu.CupertinoTabBar), findsOneWidget);
+      expect(find.text('room list'), findsOneWidget);
+      expect(find.text('settings'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('one destination is not a choice, so the shell stands aside', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          const LiveAppShell(
+            destinations: [LiveShellDestination(id: 'home', label: 'Home', icon: Icons.home)],
+            selectedId: 'home',
+            placement: LiveShellPlacement.rail,
+            child: Text('room list'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(cu.CupertinoListSection), findsNothing);
+      expect(find.text('room list'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

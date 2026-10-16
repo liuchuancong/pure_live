@@ -26,16 +26,18 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.toast,
 };
 
-/// The structural surfaces this adapter owns (§ surfaces).
-const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost};
+/// The structural surfaces this adapter owns (§ surfaces): the `CupertinoApp`
+/// host and a shell composed from the library's list pieces, since the fork ships
+/// no rail widget of its own.
+const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost, LiveUiSurface.appShell};
 
 /// §16 integration pass for `live_uikit_cupertino`: every one of the fifteen
 /// controls resolves native, so a Cupertino language change reports no control
 /// downgrade at all, and switching to the core token base and back replaces the
 /// rendering path without touching the caller's controller (§11).
-/// The downgrades this language is expected to report: none for the controls,
-/// because nothing in the contract falls back any more — only the shell surface,
-/// which this library has no widget for (§15.5/§16.8).
+/// The downgrades this language is expected to report: none at all. Every control
+/// is native and both structural surfaces are owned, so the derived checks below
+/// compare against empty sets and skip the code assertions (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   final controls = sink.where((diagnostic) => diagnostic.control != null);
   final surfaces = sink.where((diagnostic) => diagnostic.surface != null);

@@ -14,6 +14,7 @@ import 'package:live_uikit_cupertino/src/widgets/cupertino_progress_builder.dart
 import 'package:live_uikit_cupertino/src/widgets/cupertino_scaffold_builder.dart';
 import 'package:live_uikit_cupertino/src/widgets/cupertino_segmented_builder.dart';
 import 'package:live_uikit_cupertino/src/widgets/cupertino_select_builder.dart';
+import 'package:live_uikit_cupertino/src/widgets/cupertino_shell_builder.dart';
 import 'package:live_uikit_cupertino/src/widgets/cupertino_slider_builder.dart';
 import 'package:live_uikit_cupertino/src/widgets/cupertino_switch_builder.dart';
 import 'package:live_uikit_cupertino/src/widgets/cupertino_tab_bar_builder.dart';
@@ -23,9 +24,11 @@ import 'package:live_uikit_cupertino/src/widgets/cupertino_toast_builder.dart';
 /// Cupertino UI — the `cupertino_ui` design-language adapter (§1).
 ///
 /// A fork of Flutter's Cupertino widgets, and this adapter covers the whole
-/// contract with it: the controls, the four chrome pieces, the app host, and the
-/// four controls the fork either drives differently from the neutral spec or has
-/// no widget for at all (see `cupertino_capabilities.dart` for which is which).
+/// contract with it: the controls, the four chrome pieces, both structural
+/// surfaces — the `CupertinoApp` host and a shell composed out of the library's
+/// list pieces, since it ships no rail — and the four controls the fork either
+/// drives differently from the neutral spec or has no widget for at all (see
+/// `cupertino_capabilities.dart` for which is which).
 /// Theme via `theme/`, each control via its `widgets/` builder. No business state.
 class CupertinoLanguageAdapter extends SharedLanguageAdapter {
   /// The adapter.
@@ -114,4 +117,7 @@ class CupertinoLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget appHost(BuildContext context, LanguageHostSpec spec) => CupertinoHostBuilder.build(context, spec);
+
+  @override
+  Widget shell(BuildContext context, LanguageShellSpec spec) => CupertinoShellBuilder.build(context, spec);
 }

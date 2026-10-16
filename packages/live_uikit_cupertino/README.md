@@ -33,8 +33,12 @@ the core's Cupertino coverage rather than inventing a new one.
   part of this fork) and `tab bar` is a row of `CupertinoButton`s, because the
   fork's one index-controlled strip is the *bottom* bar the nav bar already takes
   (§9).
-- Own the app-host surface (`cu.CupertinoApp`); the shell keeps the shared token
-  renderer, since `CupertinoTabScaffold` carries its own per-tab bodies (§ surfaces).
+- Own both structural surfaces (§ surfaces): the host is `cu.CupertinoApp`, and
+  the shell is an iOS sidebar composed out of the fork's own surface pieces — a
+  `CupertinoListSection` of `CupertinoListTile` rows — because the library ships
+  no rail widget: `CupertinoTabScaffold` binds a bottom bar to a
+  `CupertinoTabView` body per tab, and `CupertinoTabBar` is that same bar on its
+  own, which the nav bar already uses.
 - Declare the whole contract in `cupertinoCapabilities`: a Cupertino page reports
   no `controlUnsupported` downgrade, and nothing inside a Cupertino frame is a
   token renderer (§16/§17).
@@ -99,10 +103,16 @@ the core resolver's native-versus-`controlUnsupported` dispatch (§16/§17).
 
 ## Known limitations
 
-- The window shell is not this library's: `CupertinoTabScaffold` binds a bottom
-  bar of two to five destinations to a `CupertinoTabView` body per tab, so the
-  `appShell` surface stays with the shared renderer and reports
-  `surfaceUnsupported` (§ surfaces).
+- The library has no navigation column, so the shell's rail is composed rather
+  than mapped: `CupertinoTabScaffold` binds a bottom bar of two to five
+  destinations to a `CupertinoTabView` body per tab — a body of its own, which the
+  router-owned shell cannot accept — and `CupertinoTabBar` is that bar alone. The
+  pane is therefore a `CupertinoListSection` of `CupertinoListTile` rows, tinted
+  with the library's roles; note that `CupertinoThemeData` here has no
+  `accentColor`, so the accent is its `primaryColor` (§ surfaces).
+- `CupertinoListTile` has no disabled state, so a disabled destination is drawn
+  inert by this package: kept in the layout, tinted with `tertiaryLabel`, given no
+  `onTap`.
 - A track of fewer than two segments and a bottom bar with no destinations are
   drawn by the shared renderer: `CupertinoSegmentedControl` and `CupertinoTabBar`
   assert both away, so a spec they would throw on is not a crash in the library
