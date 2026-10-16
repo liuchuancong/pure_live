@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:live_uikit/live_uikit.dart';
 
 /// The update notes' markdown, rendered lightly (3.x `MarkdownText`):
 /// headings, bullets, numbered lists, rules and paragraphs, with inline
@@ -45,7 +46,12 @@ final class MarkdownText extends StatelessWidget {
       final numbered = _numbered.firstMatch(line);
       if (_rule.hasMatch(trimmed)) {
         flushParagraph();
-        widgets.add(const Padding(padding: EdgeInsets.symmetric(vertical: 6), child: Divider(height: 1)));
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Container(height: 1, color: LiveTheme.of(context).colors.border),
+          ),
+        );
       } else if (heading != null) {
         flushParagraph();
         widgets.add(

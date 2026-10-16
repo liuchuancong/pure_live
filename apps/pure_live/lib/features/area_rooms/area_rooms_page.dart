@@ -165,9 +165,7 @@ final class _InfiniteFeedState extends ConsumerState<_InfiniteFeed> {
             top: 12,
             child: Opacity(
               opacity: indicator.value.clamp(0, 1),
-              child: IgnorePointer(
-                child: CircularProgressIndicator(value: indicator.isLoading ? null : indicator.value),
-              ),
+              child: IgnorePointer(child: LiveProgress(value: indicator.isLoading ? null : indicator.value)),
             ),
           ),
         ],
@@ -279,19 +277,19 @@ final class _PagedFeedState extends ConsumerState<_PagedFeed> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          IconButton(
+          LiveIconButton(
             tooltip: context.t.common.retry,
-            icon: const Icon(Icons.refresh),
+            icon: Icons.refresh,
             onPressed: busy ? null : () => unawaited(_controller.refresh()),
           ),
-          IconButton(
+          LiveIconButton(
             tooltip: '|<',
-            icon: const Icon(Icons.first_page),
+            icon: Icons.first_page,
             onPressed: page > 1 && !busy ? () => unawaited(_controller.first()) : null,
           ),
-          IconButton(
+          LiveIconButton(
             tooltip: '<',
-            icon: const Icon(Icons.chevron_left),
+            icon: Icons.chevron_left,
             onPressed: page > 1 && !busy ? () => unawaited(_controller.previous()) : null,
           ),
           for (final number in numbers)

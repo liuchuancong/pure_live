@@ -74,9 +74,9 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
         title: context.t.tabs.history,
         actions: [
           if (records.isNotEmpty)
-            IconButton(
+            LiveIconButton(
               tooltip: context.t.history.clear,
-              icon: const Icon(Icons.delete_sweep_outlined),
+              icon: Icons.delete_sweep_outlined,
               onPressed: _confirmClear,
             ),
           const SettingsEntryButton(),
@@ -98,9 +98,9 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
                   leading: const Icon(Icons.live_tv_outlined),
                   title: room.content.title.isEmpty ? room.ref.roomId : room.content.title,
                   subtitle: '${room.anchor?.name ?? room.ref.platform} · $when',
-                  trailing: IconButton(
+                  trailing: LiveIconButton(
                     tooltip: context.t.common.cancel,
-                    icon: const Icon(Icons.close),
+                    icon: Icons.close,
                     onPressed: () => unawaited(_repository.remove(room)),
                   ),
                   divided: false,

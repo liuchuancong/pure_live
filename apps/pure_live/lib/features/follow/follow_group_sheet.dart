@@ -13,10 +13,13 @@ Future<String?> showFollowGroupNameDialog(BuildContext context, {required String
     // A Builder so the field's submit pops the dialog route rather than the
     // page that asked for the name.
     child: Builder(
-      builder: (fieldContext) => TextField(
-        controller: field,
+      builder: (fieldContext) => Focus(
         autofocus: true,
-        onSubmitted: (value) => Navigator.of(fieldContext).pop(value.trim()),
+        child: LiveTextField(
+          controller: field,
+          placeholder: fieldContext.t.follow.newGroup,
+          onSubmitted: (value) => Navigator.of(fieldContext).pop(value.trim()),
+        ),
       ),
     ),
     actions: (dialogContext) => [

@@ -72,14 +72,14 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          IconButton(
+                          LiveIconButton(
                             tooltip: context.t.follow.renameGroup,
-                            icon: const Icon(Icons.edit_outlined),
+                            icon: Icons.edit_outlined,
                             onPressed: () => unawaited(_renameGroupFromSheet(context, group.id, group.name)),
                           ),
-                          IconButton(
+                          LiveIconButton(
                             tooltip: context.t.follow.deleteGroup,
-                            icon: const Icon(Icons.delete_outline),
+                            icon: Icons.delete_outline,
                             onPressed: () => unawaited(_deleteGroupFromSheet(context, group.id)),
                           ),
                         ],
@@ -137,11 +137,11 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
                 Text(context.t.follow.assign, style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
                 for (final group in _repository.groups)
-                  CheckboxListTile(
-                    title: Text(group.name),
+                  LiveCheckbox(
+                    label: group.name,
                     value: selected.contains(group.id),
                     onChanged: (checked) => setSheetState(() {
-                      checked == true ? selected.add(group.id) : selected.remove(group.id);
+                      checked ? selected.add(group.id) : selected.remove(group.id);
                     }),
                   ),
                 const SizedBox(height: 8),
@@ -190,9 +190,9 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
       appBar: LiveAppBar(
         title: context.t.tabs.follow,
         actions: [
-          IconButton(
+          LiveIconButton(
             tooltip: context.t.follow.manageGroups,
-            icon: const Icon(Icons.folder_copy_outlined),
+            icon: Icons.folder_copy_outlined,
             onPressed: _manageGroups,
           ),
           const SettingsEntryButton(),

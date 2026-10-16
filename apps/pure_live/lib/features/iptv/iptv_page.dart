@@ -58,15 +58,14 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
         builder: (fieldContext) => Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-              controller: name,
+            Focus(
               autofocus: true,
-              decoration: InputDecoration(labelText: fieldContext.t.iptv.sourceName),
+              child: LiveTextField(controller: name, placeholder: fieldContext.t.iptv.sourceName),
             ),
             const SizedBox(height: 8),
-            TextField(
+            LiveTextField(
               controller: url,
-              decoration: InputDecoration(labelText: fieldContext.t.iptv.sourceUrl),
+              placeholder: fieldContext.t.iptv.sourceUrl,
               onSubmitted: (_) => Navigator.of(fieldContext).pop((name: name.text.trim(), url: url.text.trim())),
             ),
           ],
@@ -93,11 +92,11 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
       final text = await fetch(Uri.parse(form.url));
       final count = await _library.importFromText(text, name: form.name, url: form.url);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.t.iptv.imported(count: count))));
+        LiveToast.show(context, context.t.iptv.imported(count: count), type: LiveToastType.success);
       }
     } on Object {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.t.errors.network)));
+        LiveToast.show(context, context.t.errors.network, type: LiveToastType.error);
       }
     } finally {
       if (mounted) {
@@ -143,9 +142,9 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
       appBar: LiveAppBar(
         title: context.t.iptv.title,
         actions: [
-          IconButton(
+          LiveIconButton(
             tooltip: context.t.iptv.addSource,
-            icon: const Icon(Icons.add_link),
+            icon: Icons.add_link,
             onPressed: _importing ? null : _addSource,
           ),
           const SettingsEntryButton(),
@@ -214,9 +213,9 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
           title: channel.entry.name,
           subtitle: channel.entry.group ?? '',
           onTap: () => IptvPlayRoute(channelId: channel.id, name: channel.entry.name).push<void>(context),
-          trailing: IconButton(
+          trailing: LiveIconButton(
             tooltip: context.t.iptv.favorite,
-            icon: Icon(channel.favorite ? Icons.favorite : Icons.favorite_border),
+            icon: channel.favorite ? Icons.favorite : Icons.favorite_border,
             onPressed: () => unawaited(_library.toggleFavorite(channel.id)),
           ),
           divided: false,

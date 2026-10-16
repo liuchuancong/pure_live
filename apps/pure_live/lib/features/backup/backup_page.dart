@@ -166,9 +166,9 @@ final class _BackupPageState extends ConsumerState<BackupPage> {
                 leading: const Icon(Icons.archive_outlined),
                 title: backup.name,
                 subtitle: _when(backup.modified),
-                trailing: IconButton(
+                trailing: LiveIconButton(
                   tooltip: context.t.backup.delete,
-                  icon: const Icon(Icons.delete_outline),
+                  icon: Icons.delete_outline,
                   onPressed: _busy
                       ? null
                       : () => unawaited(

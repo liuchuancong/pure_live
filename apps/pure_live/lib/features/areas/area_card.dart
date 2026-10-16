@@ -15,9 +15,8 @@ final class AreaCard extends StatelessWidget {
   final VoidCallback onOpen;
 
   @override
-  Widget build(BuildContext context) => InkWell(
+  Widget build(BuildContext context) => LiveCard(
     onTap: onOpen,
-    borderRadius: const BorderRadius.all(Radius.circular(10)),
     child: Column(
       children: [
         AspectRatio(
