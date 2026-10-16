@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_library/live_library.dart' show HistoryRepository;
-import 'package:live_uikit/styling.dart' show LiveEmpty;
+import 'package:live_uikit/styling.dart' show LiveAppBar, LiveEmpty, LiveListRow, LiveScaffold, LiveTheme;
 
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
@@ -54,7 +54,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(context.t.common.cancel)),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(context.t.history.clear, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            child: Text(context.t.history.clear, style: TextStyle(color: LiveTheme.of(context).colors.error)),
           ),
         ],
       ),
@@ -67,9 +67,9 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
   @override
   Widget build(BuildContext context) {
     final records = _repository.records;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(context.t.tabs.history),
+    return LiveScaffold(
+      appBar: LiveAppBar(
+        title: context.t.tabs.history,
         actions: [
           if (records.isNotEmpty)
             IconButton(
@@ -92,23 +92,16 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
                 final when =
                     '${watchedAt.month}-${watchedAt.day.toString().padLeft(2, '0')} '
                     '${watchedAt.hour.toString().padLeft(2, '0')}:${watchedAt.minute.toString().padLeft(2, '0')}';
-                return ListTile(
+                return LiveListRow(
                   leading: const Icon(Icons.live_tv_outlined),
-                  title: Text(
-                    room.content.title.isEmpty ? room.ref.roomId : room.content.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  subtitle: Text(
-                    '${room.anchor?.name ?? room.ref.platform} · $when',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  title: room.content.title.isEmpty ? room.ref.roomId : room.content.title,
+                  subtitle: '${room.anchor?.name ?? room.ref.platform} · $when',
                   trailing: IconButton(
                     tooltip: context.t.common.cancel,
                     icon: const Icon(Icons.close),
                     onPressed: () => unawaited(_repository.remove(room)),
                   ),
+                  divided: false,
                   onTap: () => RoomRoute(
                     siteId: room.ref.platform,
                     roomId: room.ref.roomId,

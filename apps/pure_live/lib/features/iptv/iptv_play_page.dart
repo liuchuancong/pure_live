@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_playback/live_playback.dart' show EngineStopped, PlaybackEngineEvent;
 import 'package:live_sites/live_sites.dart' show LivePlayFormatSource, LivePlayLine, LiveStreamFormat;
-import 'package:live_uikit/styling.dart' show LiveButton;
+import 'package:live_uikit/styling.dart' show LiveAppBar, LiveButton, LiveScaffold, LiveSpinner;
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitVideoView;
 
 import 'package:pure_live/app/engine/playback_engine.dart';
@@ -108,9 +108,9 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
     final channel = library.channelById(widget.channelId);
     final title = channel?.entry.name.isNotEmpty ?? false ? channel!.entry.name : widget.name;
     final adapter = _engine.surfaceAdapter;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+    return LiveScaffold(
+      appBar: LiveAppBar(
+        title: title,
         actions: [
           if (channel != null)
             IconButton(
@@ -143,7 +143,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
                                 ),
                               ],
                             )
-                          : const CircularProgressIndicator(),
+                          : const LiveSpinner(size: 40),
                     ),
             ),
           ),

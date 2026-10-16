@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveLinkResolver;
-import 'package:live_uikit/styling.dart' show LiveButton, LiveEmpty;
+import 'package:live_uikit/styling.dart'
+    show LiveAppBar, LiveButton, LiveCard, LiveEmpty, LiveScaffold, LiveSpinner, LiveTheme;
 
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
@@ -96,8 +97,8 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
   @override
   Widget build(BuildContext context) {
     final resolved = _resolved;
-    return Scaffold(
-      appBar: AppBar(title: Text(context.t.toolbox.title), actions: const [SettingsEntryButton()]),
+    return LiveScaffold(
+      appBar: LiveAppBar(title: context.t.toolbox.title, actions: const [SettingsEntryButton()]),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
@@ -120,14 +121,14 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
           ),
           const SizedBox(height: 16),
           if (_resolving)
-            const Center(child: CircularProgressIndicator())
+            const Center(child: LiveSpinner(size: 40))
           else if (resolved != null)
             _resolvedCard(context, resolved)
           else ...[
             if (_failure != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: Text(_failure!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                child: Text(_failure!, style: TextStyle(color: LiveTheme.of(context).colors.error)),
               ),
             LiveEmpty(title: context.t.toolbox.hint),
           ],
@@ -136,34 +137,32 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
     );
   }
 
-  Widget _resolvedCard(BuildContext context, ({String site, String roomId, Uri url}) resolved) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(resolved.site, style: Theme.of(context).textTheme.bodySmall),
-          const SizedBox(height: 4),
-          Text(resolved.roomId, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 4),
-          Text(
-            resolved.url.toString(),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const SizedBox(height: 12),
-          LiveButton(
-            label: context.t.toolbox.openRoom,
-            icon: Icons.play_circle_outline,
-            onPressed: () => RoomRoute(
-              siteId: resolved.site,
-              roomId: resolved.roomId,
-              roomName: resolved.roomId,
-            ).push<void>(context),
-          ),
-        ],
-      ),
+  Widget _resolvedCard(BuildContext context, ({String site, String roomId, Uri url}) resolved) => LiveCard(
+    padding: const EdgeInsets.all(12),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(resolved.site, style: LiveTheme.of(context).text.caption),
+        const SizedBox(height: 4),
+        Text(resolved.roomId, style: LiveTheme.of(context).text.title),
+        const SizedBox(height: 4),
+        Text(
+          resolved.url.toString(),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: LiveTheme.of(context).text.caption,
+        ),
+        const SizedBox(height: 12),
+        LiveButton(
+          label: context.t.toolbox.openRoom,
+          icon: Icons.play_circle_outline,
+          onPressed: () => RoomRoute(
+            siteId: resolved.site,
+            roomId: resolved.roomId,
+            roomName: resolved.roomId,
+          ).push<void>(context),
+        ),
+      ],
     ),
   );
 }

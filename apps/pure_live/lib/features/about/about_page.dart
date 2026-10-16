@@ -2,6 +2,7 @@ import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_uikit/styling.dart' show LiveAppBar, LiveCard, LiveListRow, LiveScaffold, LiveSpinner, LiveTheme;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
@@ -92,52 +93,52 @@ final class _AboutPageState extends ConsumerState<AboutPage> {
         : (_hasUpdate(releases, version)
               ? '${context.t.about.newVersion} ${releases.first.tag}'
               : context.t.about.upToDate);
-    return Scaffold(
-      appBar: AppBar(title: Text(context.t.about.title), actions: const [SettingsEntryButton()]),
+    return LiveScaffold(
+      appBar: LiveAppBar(title: context.t.about.title, actions: const [SettingsEntryButton()]),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Column(
-                children: [
-                  const Icon(Icons.live_tv, size: 56),
-                  const SizedBox(height: 8),
-                  Text(context.t.app.title, style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 4),
-                  Text(version, style: Theme.of(context).textTheme.bodySmall),
-                ],
-              ),
+          LiveCard(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              children: [
+                const Icon(Icons.live_tv, size: 56),
+                const SizedBox(height: 8),
+                Text(context.t.app.title, style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 4),
+                Text(version, style: LiveTheme.of(context).text.caption),
+              ],
             ),
           ),
-          ListTile(
+          LiveListRow(
             leading: const Icon(Icons.system_update_outlined),
-            title: Text(context.t.about.checkUpdate),
-            subtitle: Text(updateText),
-            trailing: _checking
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.chevron_right),
+            title: context.t.about.checkUpdate,
+            subtitle: updateText,
+            trailing: _checking ? const LiveSpinner(size: 20) : const Icon(Icons.chevron_right),
             onTap: _checking ? null : _check,
+            divided: false,
           ),
-          ListTile(
+          LiveListRow(
             leading: const Icon(Icons.history_outlined),
-            title: Text(context.t.about.versionHistory),
+            title: context.t.about.versionHistory,
             trailing: const Icon(Icons.chevron_right),
             onTap: releases == null || releases.isEmpty ? null : () => _showHistory(context, releases),
+            divided: false,
           ),
-          ListTile(
+          LiveListRow(
             leading: const Icon(Icons.description_outlined),
-            title: Text(context.t.about.licenses),
+            title: context.t.about.licenses,
             trailing: const Icon(Icons.chevron_right),
             onTap: () =>
                 showLicensePage(context: context, applicationName: context.t.app.title, applicationVersion: version),
+            divided: false,
           ),
-          ListTile(
+          LiveListRow(
             leading: const Icon(Icons.public_outlined),
-            title: Text(context.t.about.project),
+            title: context.t.about.project,
             trailing: const Icon(Icons.open_in_new),
             onTap: () => unawaited(launchUrl(projectUrl, mode: LaunchMode.externalApplication)),
+            divided: false,
           ),
           if (releases != null && releases.isNotEmpty)
             Padding(padding: const EdgeInsets.only(top: 18), child: MarkdownText(releases.first.body)),
@@ -159,7 +160,7 @@ final class _AboutPageState extends ConsumerState<AboutPage> {
           controller: scrollController,
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
           children: [
-            Text(context.t.about.versionHistory, style: Theme.of(context).textTheme.titleMedium),
+            Text(context.t.about.versionHistory, style: LiveTheme.of(context).text.title),
             const SizedBox(height: 12),
             for (final release in releases)
               Padding(
@@ -171,7 +172,7 @@ final class _AboutPageState extends ConsumerState<AboutPage> {
                     if (release.publishedAt != null)
                       Text(
                         release.publishedAt!.toLocal().toString().split(' ').first,
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: LiveTheme.of(context).text.caption,
                       ),
                     const SizedBox(height: 6),
                     MarkdownText(release.body),

@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_uikit/styling.dart' show LiveButton, LiveEmpty;
+import 'package:live_uikit/styling.dart' show LiveAppBar, LiveButton, LiveEmpty, LiveListRow, LiveScaffold, LiveTheme;
 
 import 'package:pure_live/app/environment/app_directory.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
@@ -91,7 +91,7 @@ final class _BackupPageState extends ConsumerState<BackupPage> {
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(context.t.common.cancel)),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(context.t.backup.restore, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            child: Text(context.t.backup.restore, style: TextStyle(color: LiveTheme.of(context).colors.error)),
           ),
         ],
       ),
@@ -124,8 +124,8 @@ final class _BackupPageState extends ConsumerState<BackupPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(context.t.backup.title), actions: const [SettingsEntryButton()]),
+    return LiveScaffold(
+      appBar: LiveAppBar(title: context.t.backup.title, actions: const [SettingsEntryButton()]),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
@@ -151,7 +151,7 @@ final class _BackupPageState extends ConsumerState<BackupPage> {
           if (_message != null)
             Padding(
               padding: const EdgeInsets.only(top: 10),
-              child: Text(_message!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              child: Text(_message!, style: TextStyle(color: LiveTheme.of(context).colors.error)),
             ),
           const SizedBox(height: 18),
           Text(context.t.backup.existing, style: Theme.of(context).textTheme.titleSmall),
@@ -160,10 +160,10 @@ final class _BackupPageState extends ConsumerState<BackupPage> {
             LiveEmpty(title: context.t.backup.none)
           else
             for (final backup in _backups)
-              ListTile(
+              LiveListRow(
                 leading: const Icon(Icons.archive_outlined),
-                title: Text(backup.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                subtitle: Text(_when(backup.modified)),
+                title: backup.name,
+                subtitle: _when(backup.modified),
                 trailing: IconButton(
                   tooltip: context.t.backup.delete,
                   icon: const Icon(Icons.delete_outline),
@@ -182,6 +182,7 @@ final class _BackupPageState extends ConsumerState<BackupPage> {
                           await _restore(backup);
                         }),
                       ),
+                divided: false,
               ),
         ],
       ),

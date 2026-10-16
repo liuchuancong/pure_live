@@ -3,8 +3,8 @@ import 'dart:async' show StreamSubscription, unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart' show IptvChannel, IptvLibrary, iptvFetcherFor;
-import 'package:live_uikit/styling.dart' show LiveEmpty;
-
+import 'package:live_uikit/styling.dart'
+show LiveAppBar, LiveEmpty, LiveListRow, LiveScaffold, LiveSpinner, LiveTheme;
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/iptv/iptv_routes.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
@@ -113,7 +113,7 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
           TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(context.t.common.cancel)),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(context.t.common.confirm, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            child: Text(context.t.common.confirm, style: TextStyle(color: LiveTheme.of(context).colors.error)),
           ),
         ],
       ),
@@ -133,9 +133,9 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
       for (final channel in library.orderedChannels)
         if (group == null || channel.entry.group == group) channel,
     ];
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(context.t.iptv.title),
+    return LiveScaffold(
+      appBar: LiveAppBar(
+        title: context.t.iptv.title,
         actions: [
           IconButton(
             tooltip: context.t.iptv.addSource,
@@ -193,7 +193,7 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
 
   Widget _channelList(BuildContext context, List<IptvChannel> channels) {
     if (_importing) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: LiveSpinner(size: 40));
     }
     if (channels.isEmpty) {
       return LiveEmpty(title: context.t.iptv.empty);
@@ -203,16 +203,17 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
       itemCount: channels.length,
       itemBuilder: (context, index) {
         final channel = channels[index];
-        return ListTile(
+        return LiveListRow(
           leading: const Icon(Icons.live_tv_outlined),
-          title: Text(channel.entry.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-          subtitle: Text(channel.entry.group ?? '', maxLines: 1, overflow: TextOverflow.ellipsis),
+          title: channel.entry.name,
+          subtitle: channel.entry.group ?? '',
           onTap: () => IptvPlayRoute(channelId: channel.id, name: channel.entry.name).push<void>(context),
           trailing: IconButton(
             tooltip: context.t.iptv.favorite,
             icon: Icon(channel.favorite ? Icons.favorite : Icons.favorite_border),
             onPressed: () => unawaited(_library.toggleFavorite(channel.id)),
           ),
+          divided: false,
         );
       },
     );

@@ -6,7 +6,7 @@ import 'package:flutter_adaptive_layout/flutter_adaptive_layout.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_pagination/live_pagination.dart';
 import 'package:live_sites/live_sites.dart' show LiveDiscoveryProvider, LivePageRequest, LiveRoom, LiveSite;
-import 'package:live_uikit/styling.dart' show LiveButton, LiveEmpty;
+import 'package:live_uikit/styling.dart' show LiveAppBar, LiveButton, LiveCard, LiveEmpty, LiveScaffold, LiveSpinner;
 
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
@@ -29,17 +29,20 @@ final class PopularPage extends ConsumerWidget {
     final sites = ref.watch(sitesProvider);
     final discoverable = sites.registry.all.where((site) => site.capability<LiveDiscoveryProvider>() != null).toList();
     if (discoverable.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(title: Text(context.t.tabs.popular), actions: const [SettingsEntryButton()]),
+      return LiveScaffold(
+        appBar: LiveAppBar(title: context.t.tabs.popular, actions: const [SettingsEntryButton()]),
         body: LiveEmpty(title: context.t.common.empty),
       );
     }
     return DefaultTabController(
       length: discoverable.length,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(context.t.tabs.popular),
+      child: LiveScaffold(
+        appBar: LiveAppBar(
+          title: context.t.tabs.popular,
           actions: const [SettingsEntryButton()],
+          // A Material strip for now: `LiveTabs` has no TabController, so this
+          // bar and its `TabBarView` below have to move to an index plus an
+          // IndexedStack together, not one at a time.
           bottom: TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,
@@ -184,7 +187,7 @@ final class _SiteFeedState extends State<_SiteFeed> with AutomaticKeepAliveClien
               ).push<void>(context),
             );
           }
-          return state.isLoadingMore ? const Center(child: CircularProgressIndicator()) : const SizedBox.shrink();
+          return state.isLoadingMore ? const Center(child: LiveSpinner()) : const SizedBox.shrink();
         },
       ),
     );
@@ -218,8 +221,8 @@ final class _SkeletonFeed extends StatelessWidget {
       childAspectRatio: 0.82,
       children: [
         for (var i = 0; i < columns * 3; i++)
-          Card(
-            clipBehavior: Clip.antiAlias,
+          LiveCard(
+            padding: EdgeInsets.zero,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -227,11 +230,21 @@ final class _SkeletonFeed extends StatelessWidget {
                   aspectRatio: 16 / 9,
                   child: Container(color: Colors.white24),
                 ),
+                // Fixed-height bars rather than placeholder letters: a skeleton
+                // has to fit its tile in every design language and text scale,
+                // and a `Text('XXXX')` is measured by whichever of those is
+                // active — under a larger one it pushed this column past the
+                // tile and the grid reported an overflow on every card.
                 const Padding(
                   padding: EdgeInsets.all(8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [Text('XXXXXXXXXXXXXXXX'), SizedBox(height: 4), Text('XXXX')],
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(height: 12, child: ColoredBox(color: Color(0x33FFFFFF))),
+                      SizedBox(height: 6),
+                      SizedBox(width: 96, height: 8, child: ColoredBox(color: Color(0x26FFFFFF))),
+                    ],
                   ),
                 ),
               ],

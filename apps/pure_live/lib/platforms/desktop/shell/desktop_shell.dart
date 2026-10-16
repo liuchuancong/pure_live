@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_adaptive_layout/flutter_adaptive_layout.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:live_uikit/styling.dart' show LiveScaffold;
 
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/shell/shell_destinations.dart';
@@ -29,7 +30,7 @@ final class DesktopShell extends ConsumerWidget {
     );
   }
 
-  Widget _scaffold(BuildContext context, {required bool selfDrawn, required bool labelled}) => Scaffold(
+  Widget _scaffold(BuildContext context, {required bool selfDrawn, required bool labelled}) => LiveScaffold(
     body: Column(
       children: [
         // The strip exists only when this start was set up for it: the frame
@@ -41,6 +42,8 @@ final class DesktopShell extends ConsumerWidget {
             children: [
               SafeArea(
                 child: NavigationRail(
+                  // A Material rail for now: `LiveNavBar` is the bottom-bar
+                  // dispatch, so the vertical rail has no dispatched form yet.
                   selectedIndex: navigationShell.currentIndex,
                   onDestinationSelected: _goBranch,
                   labelType: labelled ? NavigationRailLabelType.all : NavigationRailLabelType.none,

@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:live_sites/live_sites.dart' show LiveRoom;
+import 'package:live_uikit/styling.dart' show LiveCard, LiveTheme;
 
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/formatters/formatters.dart';
@@ -24,9 +25,8 @@ final class RoomCard extends StatelessWidget {
     return InkWell(
       onTap: onOpen,
       borderRadius: const BorderRadius.all(Radius.circular(10)),
-      child: Card(
-        margin: EdgeInsets.zero,
-        clipBehavior: Clip.antiAlias,
+      child: LiveCard(
+        padding: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -67,7 +67,7 @@ final class RoomCard extends StatelessWidget {
                     room.content.title.isEmpty ? context.t.common.empty : room.content.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: LiveTheme.of(context).text.body,
                   ),
                   const SizedBox(height: 4),
                   Text(

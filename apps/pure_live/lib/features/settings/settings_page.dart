@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:live_uikit/styling.dart' show LiveAppBar, LiveCard, LiveListRow, LiveScaffold;
 
 import 'package:pure_live/app/routing/routes/backup/backup_routes.dart';
 import 'package:pure_live/app/routing/routes/settings/settings_routes.dart';
@@ -15,36 +16,48 @@ final class SettingsPage extends StatelessWidget {
   const new({super.key});
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(context.t.tabs.settings), actions: const [SettingsEntryButton()]),
+  Widget build(BuildContext context) => LiveScaffold(
+    appBar: LiveAppBar(title: context.t.tabs.settings, actions: const [SettingsEntryButton()]),
     body: ListView(
       padding: const EdgeInsets.all(12),
       children: [
-        Card(
-          margin: const EdgeInsets.only(bottom: 10),
-          child: ListTile(
-            leading: const Icon(Icons.palette_outlined),
-            title: Text(context.t.settings.appearance),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => const AppearanceRoute().push<void>(context),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: LiveCard(
+            padding: EdgeInsets.zero,
+            child: LiveListRow(
+              leading: const Icon(Icons.palette_outlined),
+              title: context.t.settings.appearance,
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => const AppearanceRoute().push<void>(context),
+              divided: false,
+            ),
           ),
         ),
-        Card(
-          margin: const EdgeInsets.only(bottom: 10),
-          child: ListTile(
-            leading: const Icon(Icons.shield_outlined),
-            title: Text(context.t.shield.title),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => const ShieldRoute().push<void>(context),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: LiveCard(
+            padding: EdgeInsets.zero,
+            child: LiveListRow(
+              leading: const Icon(Icons.shield_outlined),
+              title: context.t.shield.title,
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => const ShieldRoute().push<void>(context),
+              divided: false,
+            ),
           ),
         ),
-        Card(
-          margin: const EdgeInsets.only(bottom: 10),
-          child: ListTile(
-            leading: const Icon(Icons.backup_outlined),
-            title: Text(context.t.backup.title),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => const BackupRoute().push<void>(context),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: LiveCard(
+            padding: EdgeInsets.zero,
+            child: LiveListRow(
+              leading: const Icon(Icons.backup_outlined),
+              title: context.t.backup.title,
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => const BackupRoute().push<void>(context),
+              divided: false,
+            ),
           ),
         ),
       ],

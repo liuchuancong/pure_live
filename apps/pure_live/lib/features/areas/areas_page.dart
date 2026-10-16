@@ -3,7 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveArea, LiveAreaProvider, LiveSite;
-import 'package:live_uikit/styling.dart' show LiveButton, LiveEmpty;
+import 'package:live_uikit/styling.dart' show LiveAppBar, LiveButton, LiveEmpty, LiveScaffold, LiveSpinner;
 
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/areas/areas_routes.dart';
@@ -23,17 +23,20 @@ final class AreasPage extends ConsumerWidget {
     final sites = ref.watch(sitesProvider);
     final capable = sites.registry.all.where((site) => site.capability<LiveAreaProvider>() != null).toList();
     if (capable.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(title: Text(context.t.tabs.areas), actions: const [SettingsEntryButton()]),
+      return LiveScaffold(
+        appBar: LiveAppBar(title: context.t.tabs.areas, actions: const [SettingsEntryButton()]),
         body: LiveEmpty(title: context.t.common.empty),
       );
     }
     return DefaultTabController(
       length: capable.length,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(context.t.tabs.areas),
+      child: LiveScaffold(
+        appBar: LiveAppBar(
+          title: context.t.tabs.areas,
           actions: const [SettingsEntryButton()],
+          // A Material strip for now: `LiveTabs` has no TabController, so this
+          // bar and its `TabBarView` below have to move to an index plus an
+          // IndexedStack together, not one at a time.
           bottom: TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,
@@ -112,7 +115,7 @@ final class _PlatformAreasState extends State<_PlatformAreas> with AutomaticKeep
           ),
         );
       }
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: LiveSpinner(size: 40));
     }
     if (areas.isEmpty) {
       return LiveEmpty(title: context.t.common.empty);

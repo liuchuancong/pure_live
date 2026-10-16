@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_playback/live_playback.dart' show EngineStopped, PlaybackEngineEvent;
 import 'package:live_sites/live_sites.dart'
     show LiveLinkResolver, LivePlayLine, LivePlaybackProvider, LiveRoomProvider, LiveSite;
-import 'package:live_uikit/styling.dart' show LiveButton;
+import 'package:live_uikit/styling.dart' show LiveAppBar, LiveButton, LiveCard, LiveScaffold, LiveSpinner;
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitVideoView;
 import 'package:mosaic_grid/mosaic_grid.dart';
 
@@ -48,8 +48,8 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
         .all
         .where((site) => site.capability<LiveLinkResolver>() != null)
         .toList();
-    return Scaffold(
-      appBar: AppBar(title: Text(context.t.multiview.title), actions: const [SettingsEntryButton()]),
+    return LiveScaffold(
+      appBar: LiveAppBar(title: context.t.multiview.title, actions: const [SettingsEntryButton()]),
       body: MosaicGrid(
         columnGap: 10,
         padding: const EdgeInsets.all(12),
@@ -140,8 +140,8 @@ final class _PlayingCellState extends ConsumerState<_PlayingCell> {
   @override
   Widget build(BuildContext context) {
     final adapter = _engine.surfaceAdapter;
-    return Card(
-      clipBehavior: Clip.antiAlias,
+    return LiveCard(
+      padding: EdgeInsets.zero,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -156,7 +156,7 @@ final class _PlayingCellState extends ConsumerState<_PlayingCell> {
                             icon: Icons.refresh,
                             onPressed: () => unawaited(_open()),
                           )
-                        : const CircularProgressIndicator(),
+                        : const LiveSpinner(size: 40),
                   ),
           ),
           Positioned(
@@ -228,21 +228,19 @@ final class _AddCellTileState extends ConsumerState<_AddCellTile> {
   }
 
   @override
-  Widget build(BuildContext context) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          TextField(
-            controller: _link,
-            decoration: InputDecoration(hintText: context.t.toolbox.hint),
-            onSubmitted: (_) => unawaited(_addFromLink()),
-          ),
-          const SizedBox(height: 8),
-          LiveButton(label: context.t.multiview.add, icon: Icons.add, onPressed: () => unawaited(_addFromLink())),
-        ],
-      ),
+  Widget build(BuildContext context) => LiveCard(
+    padding: const EdgeInsets.all(12),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        TextField(
+          controller: _link,
+          decoration: InputDecoration(hintText: context.t.toolbox.hint),
+          onSubmitted: (_) => unawaited(_addFromLink()),
+        ),
+        const SizedBox(height: 8),
+        LiveButton(label: context.t.multiview.add, icon: Icons.add, onPressed: () => unawaited(_addFromLink())),
+      ],
     ),
   );
 }

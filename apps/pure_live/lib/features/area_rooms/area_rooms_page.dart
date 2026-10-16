@@ -6,7 +6,8 @@ import 'package:flutter_adaptive_layout/flutter_adaptive_layout.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_pagination/live_pagination.dart';
 import 'package:live_sites/live_sites.dart' show LivePageRequest, LiveRoom;
-import 'package:live_uikit/styling.dart' show LiveButton, LiveEmpty;
+import 'package:live_uikit/styling.dart'
+    show LiveAppBar, LiveButton, LiveCard, LiveEmpty, LiveScaffold, LiveSpinner, LiveTheme;
 
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
@@ -49,8 +50,8 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
     ScreenSize.small || ScreenSize.medium => false,
   };
 
-  PreferredSizeWidget _appBar(BuildContext context) => AppBar(
-    title: Text(widget.areaName.isEmpty ? widget.areaId : widget.areaName),
+  Widget _appBar(BuildContext context) => LiveAppBar(
+    title: widget.areaName.isEmpty ? widget.areaId : widget.areaName,
     actions: [
       Padding(
         padding: const EdgeInsets.only(right: 8),
@@ -73,7 +74,7 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
   @override
   Widget build(BuildContext context) {
     final paged = _pagedLayout(context);
-    return Scaffold(
+    return LiveScaffold(
       appBar: _appBar(context),
       body: paged ? _PagedFeed(loader: _load, sort: _sort) : _InfiniteFeed(loader: _load, sort: _sort),
     );
@@ -187,7 +188,7 @@ final class _InfiniteFeedState extends ConsumerState<_InfiniteFeed> {
           if (index < rooms.length) {
             return _tile(context, rooms[index]);
           }
-          return state.isLoadingMore ? const Center(child: CircularProgressIndicator()) : const SizedBox.shrink();
+          return state.isLoadingMore ? const Center(child: LiveSpinner(size: 40)) : const SizedBox.shrink();
         },
       ),
     );
@@ -301,7 +302,7 @@ final class _PagedFeedState extends ConsumerState<_PagedFeed> {
               child: number == page
                   ? Text(
                       '$number',
-                      style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.primary),
+                      style: TextStyle(fontWeight: FontWeight.w700, color: LiveTheme.of(context).colors.primary),
                     )
                   : TextButton(
                       onPressed: busy ? null : () => unawaited(_controller.loadPage(number)),
@@ -316,7 +317,7 @@ final class _PagedFeedState extends ConsumerState<_PagedFeed> {
           const SizedBox(width: 12),
           Text(
             context.t.common.pageOf(page: page, total: lastPage ?? 0),
-            style: Theme.of(context).textTheme.bodySmall,
+            style: LiveTheme.of(context).text.caption,
           ),
         ],
       ),
@@ -367,8 +368,8 @@ Widget _placeholder(
         childAspectRatio: 0.82,
         children: [
           for (var i = 0; i < 12; i++)
-            Card(
-              clipBehavior: Clip.antiAlias,
+            LiveCard(
+              padding: EdgeInsets.zero,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

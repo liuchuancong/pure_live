@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:live_uikit/styling.dart' show LiveAppBar, LiveCard, LiveListRow, LiveScaffold;
 
 import 'package:pure_live/features/home/home_menu.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
@@ -15,19 +16,23 @@ final class HomePage extends StatelessWidget {
   const new({super.key});
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(context.t.tabs.home), actions: const [SettingsEntryButton()]),
+  Widget build(BuildContext context) => LiveScaffold(
+    appBar: LiveAppBar(title: context.t.tabs.home, actions: const [SettingsEntryButton()]),
     body: ListView(
       padding: const EdgeInsets.all(12),
       children: [
         for (final entry in HomeMenuEntry.all(context))
-          Card(
-            margin: const EdgeInsets.only(bottom: 10),
-            child: ListTile(
-              leading: Icon(entry.icon),
-              title: Text(entry.label),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => entry.onOpen(context),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: LiveCard(
+              padding: EdgeInsets.zero,
+              child: LiveListRow(
+                leading: Icon(entry.icon),
+                title: entry.label,
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => entry.onOpen(context),
+                divided: false,
+              ),
             ),
           ),
       ],

@@ -6,7 +6,7 @@ import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_playback/live_playback.dart' show EngineStopped, PlaybackEngineEvent;
 import 'package:live_sites/live_sites.dart'
     show LivePlayLine, LivePlayQuality, LivePlaybackProvider, LiveRoom, LiveRoomProvider, LiveSite, RoomContent;
-import 'package:live_uikit/styling.dart' show LiveButton, LiveSelect;
+import 'package:live_uikit/styling.dart' show LiveAppBar, LiveButton, LiveScaffold, LiveSelect, LiveSpinner, LiveTheme;
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitVideoView;
 
 import 'package:pure_live/app/engine/playback_engine.dart';
@@ -169,9 +169,9 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
       FormFactor.phone || FormFactor.tablet => false,
     };
     final playerColumn = Column(children: [_player(context), _info(context)]);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_title(), maxLines: 1, overflow: TextOverflow.ellipsis),
+    return LiveScaffold(
+      appBar: LiveAppBar(
+        title: _title(),
         actions: const [SettingsEntryButton()],
       ),
       body: wide
@@ -219,7 +219,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
     } else if (_engineStopped) {
       surface = _failedSurface(context);
     } else if (_loadingLines || _currentLine != null) {
-      surface = const Center(child: CircularProgressIndicator());
+      surface = const Center(child: LiveSpinner(size: 40));
     } else {
       surface = const SizedBox.expand();
     }
@@ -257,14 +257,14 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
           if (anchor.isNotEmpty)
             Text(
               anchor,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.primary),
+              style: LiveTheme.of(context).text.caption.copyWith(color: LiveTheme.of(context).colors.primary),
             ),
           if (_engineStopped && _currentLine != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Row(
                 children: [
-                  Text(context.t.room.failed, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  Text(context.t.room.failed, style: TextStyle(color: LiveTheme.of(context).colors.error)),
                   const SizedBox(width: 12),
                   LiveButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: _retry),
                 ],

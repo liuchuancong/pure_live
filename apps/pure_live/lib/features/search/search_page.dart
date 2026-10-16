@@ -17,7 +17,8 @@ import 'package:live_sites/live_sites.dart'
         LiveSearchTarget,
         LiveSite,
         RoomSearchResult;
-import 'package:live_uikit/styling.dart' show LiveButton, LiveEmpty, LiveSegmented;
+import 'package:live_uikit/styling.dart'
+    show LiveAppBar, LiveButton, LiveCard, LiveEmpty, LiveScaffold, LiveSegmented, LiveSpinner;
 
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/areas/areas_routes.dart';
@@ -39,17 +40,20 @@ final class SearchPage extends ConsumerWidget {
     final sites = ref.watch(sitesProvider);
     final searchable = sites.registry.all.where((site) => site.capability<LiveSearchProvider>() != null).toList();
     if (searchable.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(title: Text(context.t.tabs.search), actions: const [SettingsEntryButton()]),
+      return LiveScaffold(
+        appBar: LiveAppBar(title: context.t.tabs.search, actions: const [SettingsEntryButton()]),
         body: LiveEmpty(title: context.t.common.empty),
       );
     }
     return DefaultTabController(
       length: searchable.length,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(context.t.tabs.search),
+      child: LiveScaffold(
+        appBar: LiveAppBar(
+          title: context.t.tabs.search,
           actions: const [SettingsEntryButton()],
+          // A Material strip for now: `LiveTabs` has no TabController, so this
+          // bar and its `TabBarView` below have to move to an index plus an
+          // IndexedStack together, not one at a time.
           bottom: TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,
@@ -228,8 +232,8 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
             childAspectRatio: 0.82,
             children: [
               for (var i = 0; i < _columns(context) * 3; i++)
-                Card(
-                  clipBehavior: Clip.antiAlias,
+                LiveCard(
+                  padding: EdgeInsets.zero,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -237,11 +241,19 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
                         aspectRatio: 16 / 9,
                         child: Container(color: Colors.white24),
                       ),
+                      // Fixed-height bars rather than placeholder letters, so
+                      // the skeleton fits its tile in every language and text
+                      // scale (see popular_page's skeleton for why).
                       const Padding(
                         padding: EdgeInsets.all(8),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [Text('XXXXXXXXXXXXXXXX'), SizedBox(height: 4), Text('XXXX')],
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(height: 12, child: ColoredBox(color: Color(0x33FFFFFF))),
+                            SizedBox(height: 6),
+                            SizedBox(width: 96, height: 8, child: ColoredBox(color: Color(0x26FFFFFF))),
+                          ],
                         ),
                       ),
                     ],
@@ -302,7 +314,7 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
               ),
             };
           }
-          return state.isLoadingMore ? const Center(child: CircularProgressIndicator()) : const SizedBox.shrink();
+          return state.isLoadingMore ? const Center(child: LiveSpinner()) : const SizedBox.shrink();
         },
       ),
     );

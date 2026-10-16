@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:live_shell/live_shell.dart';
 import 'package:live_log/live_log.dart' show LiveLog;
+import 'package:live_shell/live_shell.dart';
 import 'package:live_shell_desktop/live_shell_desktop.dart';
 
 import 'package:pure_live/l10n/generated/strings.g.dart';

@@ -3,6 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart';
+import 'package:live_uikit/styling.dart' show LiveAppBar, LiveCard, LiveScaffold, LiveSpinner;
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 
@@ -109,20 +110,20 @@ final class _ShieldPageState extends ConsumerState<ShieldPage> {
   @override
   Widget build(BuildContext context) {
     if (!_loaded) {
-      return Scaffold(
-        appBar: AppBar(title: Text(context.t.shield.title), actions: const [SettingsEntryButton()]),
-        body: const Center(child: CircularProgressIndicator()),
+      return LiveScaffold(
+        appBar: LiveAppBar(title: context.t.shield.title, actions: const [SettingsEntryButton()]),
+        body: const Center(child: LiveSpinner(size: 40)),
       );
     }
-    return Scaffold(
-      appBar: AppBar(title: Text(context.t.shield.title), actions: const [SettingsEntryButton()]),
+    return LiveScaffold(
+      appBar: LiveAppBar(title: context.t.shield.title, actions: const [SettingsEntryButton()]),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
           for (final kind in _ShieldKind.values)
-            Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              child: Padding(
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: LiveCard(
                 padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

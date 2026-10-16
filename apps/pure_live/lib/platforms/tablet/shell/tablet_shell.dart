@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:live_uikit/styling.dart' show LiveNavBar, LiveNavBarItem, LiveScaffold;
 
 import 'package:pure_live/app/shell/shell_destinations.dart';
 
@@ -13,14 +14,12 @@ final class TabletShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) => LiveScaffold(
     body: navigationShell,
-    bottomNavigationBar: NavigationBar(
-      selectedIndex: navigationShell.currentIndex,
-      onDestinationSelected: _goBranch,
-      destinations: [
-        for (final (:label, :icon) in shellDestinations(context)) NavigationDestination(icon: Icon(icon), label: label),
-      ],
+    bottomBar: LiveNavBar(
+      items: [for (final (:label, :icon) in shellDestinations(context)) LiveNavBarItem(label: label, icon: icon)],
+      index: navigationShell.currentIndex,
+      onChanged: _goBranch,
     ),
   );
 

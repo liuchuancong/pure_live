@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_library/live_library.dart' show FollowRepository, LibraryRoom;
 import 'package:live_sites/live_sites.dart' show LiveRoom;
-import 'package:live_uikit/styling.dart' show LiveButton, LiveEmpty;
+import 'package:live_uikit/styling.dart' show LiveAppBar, LiveButton, LiveEmpty, LiveListRow, LiveScaffold;
 
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
@@ -66,9 +66,10 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
                   Text(context.t.follow.manageGroups, style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 12),
                   for (final group in groups)
-                    ListTile(
+                    LiveListRow(
                       leading: const Icon(Icons.folder_outlined),
-                      title: Text(group.name),
+                      title: group.name,
+                      divided: false,
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -187,9 +188,9 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
         : records.where((record) => record.groupIds.contains(_selectedGroup)).toList();
     return DefaultTabController(
       length: groups.length + 1,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(context.t.tabs.follow),
+      child: LiveScaffold(
+        appBar: LiveAppBar(
+          title: context.t.tabs.follow,
           actions: [
             IconButton(
               tooltip: context.t.follow.manageGroups,
@@ -198,6 +199,9 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
             ),
             const SettingsEntryButton(),
           ],
+          // A Material strip for now: `LiveTabs` has no TabController, so this
+          // bar and the group grid it selects into have to move to an index
+          // plus a filtered view together, not one at a time.
           bottom: TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,

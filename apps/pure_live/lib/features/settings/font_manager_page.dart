@@ -2,7 +2,8 @@ import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_uikit/styling.dart' show LiveButton;
+import 'package:live_uikit/styling.dart'
+    show LiveAppBar, LiveButton, LiveCard, LiveListRow, LiveScaffold, LiveSpinner, LiveTheme;
 
 import 'package:pure_live/app/fonts/font_library.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
@@ -58,8 +59,8 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
     final appearance = ref.watch(appearancePreferencesProvider);
     final update = ref.read(appearancePreferencesProvider.notifier).update;
     final families = _families;
-    return Scaffold(
-      appBar: AppBar(title: Text(context.t.settings.fonts), actions: const [SettingsEntryButton()]),
+    return LiveScaffold(
+      appBar: LiveAppBar(title: context.t.settings.fonts, actions: const [SettingsEntryButton()]),
       body: families == null
           ? Center(
               child: _error != null
@@ -71,7 +72,7 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
                         LiveButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: _loadFamilies),
                       ],
                     )
-                  : const Center(child: CircularProgressIndicator()),
+                  : const Center(child: LiveSpinner(size: 40)),
             )
           : ListView(
               padding: const EdgeInsets.all(12),
@@ -106,24 +107,26 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
     required VoidCallback? action,
     String? subtitle,
     Widget? trailing,
-  }) => Card(
-    margin: const EdgeInsets.only(bottom: 10),
-    child: ListTile(
-      leading: selected
-          ? Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary)
-          : const Icon(Icons.radio_button_unchecked),
-      title: Text(title),
-      subtitle: (subtitle == null || subtitle.isEmpty)
-          ? null
-          : Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
-      trailing: trailing,
-      onTap: action,
+  }) => Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: LiveCard(
+      padding: EdgeInsets.zero,
+      child: LiveListRow(
+        leading: selected
+            ? Icon(Icons.check_circle, color: LiveTheme.of(context).colors.primary)
+            : const Icon(Icons.radio_button_unchecked),
+        title: title,
+        subtitle: (subtitle == null || subtitle.isEmpty) ? null : subtitle,
+        trailing: trailing,
+        onTap: action,
+        divided: false,
+      ),
     ),
   );
 
   Widget? _familyAction(BuildContext context, FontFamily family) {
     if (_downloading.contains(family.id)) {
-      return const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2));
+      return const LiveSpinner(size: 20);
     }
     if (_library.isDownloaded(family.id)) {
       return IconButton(

@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_uikit/styling.dart'
-    show LiveDesignLanguage, LiveSegmented, LiveSelect, LiveSlider, LiveSwitch, UiDensity;
+    show
+        LiveAppBar,
+        LiveCard,
+        LiveDesignLanguage,
+        LiveScaffold,
+        LiveSegmented,
+        LiveSelect,
+        LiveSlider,
+        LiveSwitch,
+        UiDensity;
 
 import 'package:pure_live/app/adapters/design_language_registry.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
@@ -20,8 +29,8 @@ final class AppearancePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appearance = ref.watch(appearancePreferencesProvider);
     final update = ref.read(appearancePreferencesProvider.notifier).update;
-    return Scaffold(
-      appBar: AppBar(title: Text(context.t.settings.appearance), actions: const [SettingsEntryButton()]),
+    return LiveScaffold(
+      appBar: LiveAppBar(title: context.t.settings.appearance, actions: const [SettingsEntryButton()]),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
@@ -173,17 +182,15 @@ final class _Row extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 18),
-    child: Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 10),
-            child,
-          ],
-        ),
+    child: LiveCard(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: 10),
+          child,
+        ],
       ),
     ),
   );
