@@ -31,7 +31,8 @@ controls drawn by `fluttersdk_wind`, without business pages importing it.
 - Own the app host: the library ships no application widget, so the host is
   Flutter's `WidgetsApp` with a `WindTheme` scope above the routed tree — which is
   what takes the page transition, the scroll physics and the dialog barrier out of
-  Material's hands (§ surfaces). The shell still resolves shared and is reported.
+  Material's hands (§ surfaces). The shell is composed here too: the library has
+  no navigation widget, so the column is its own panels and anchors.
 
 ## What this package must not own
 
@@ -46,8 +47,8 @@ page still paints from the token base. They read as Wind because their panels,
 accent, radius and rules are the library's own, resolved inside the theme scope
 this adapter installs. The app host is here too: the library ships no application
 widget, so the host is Flutter's `WidgetsApp` with Wind's theme above the routed
-tree (§ surfaces). The app shell is the exception — this build leaves it to the
-core.
+tree (§ surfaces), and so is the app shell, composed from the library's styled
+parts because it ships no navigation widget of its own.
 
 ## Public entry point
 
@@ -101,9 +102,10 @@ traversal, Android TV D-pad, and the platform claims in §13.
 
 ## Known limitations
 
-- The app shell stays the core's: this build owns the app host (`WidgetsApp` + a
-  `WindTheme` scope) but no shell, so a Wind page is hosted by Wind's own theme and
-  still navigated by the shared renderer (§ surfaces).
+- The shell has no widget to map onto: the library ships styled parts and no
+  navigation structure, so the rail is composed from `WDiv` panels and `WAnchor`
+  cells, and its icon size follows the library's own `text-lg` class rather than
+  the environment's `iconSize` (§ surfaces).
 - `WButton` owns its focus handling inside `WAnchor`, so `focusNode`/`autofocus`
   cannot be honoured on the Wind button — and not on the composed rail or list row
   either, which take the same anchor (§9).

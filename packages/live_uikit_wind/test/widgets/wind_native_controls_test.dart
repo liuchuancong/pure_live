@@ -10,7 +10,8 @@ import 'stub_router.dart';
 /// the real runtime so they render with `fluttersdk_wind`'s own widgets. Covers
 /// §9 gating (callback, disabled, loading, controlled value, controller
 /// passthrough) plus the nine controls the fork has no widget for, which Wind
-/// now composes out of its parts rather than leaving to the shared renderer.
+/// now composes out of its parts rather than leaving to the shared renderer, and
+/// the composed app shell (§ surfaces).
 void main() {
   const config = UiConfig(language: LiveDesignLanguage.wind, brightness: UiBrightnessMode.light);
 
@@ -663,6 +664,124 @@ void main() {
       // `Token*` renderer any more — the assertion is by name rather than by list
       // so a control added to the contract cannot slip in silently.
       expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('the app shell (§ surfaces)', () {
+    const destinations = [
+      LiveShellDestination(id: 'home', label: 'Home', icon: Icons.home),
+      LiveShellDestination(id: 'follow', label: 'Follow', icon: Icons.favorite),
+    ];
+
+    testWidgets('the rail form is the composed column, not the token shell', (tester) async {
+      var chosen = '';
+      await tester.pumpWidget(
+        harness(
+          LiveAppShell(
+            destinations: destinations,
+            selectedId: 'home',
+            onSelected: (id) => chosen = id,
+            placement: LiveShellPlacement.rail,
+            trailing: const Text('settings'),
+            child: const Text('room list'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // The library ships no navigation structure, so the pane is composed out of
+      // its styled parts — and the body still belongs to the caller.
+      expect(find.byType(TokenAppShell), findsNothing);
+      expect(find.text('room list'), findsOneWidget);
+      // The composed column has a bottom slot of its own, unlike the strip.
+      expect(find.text('settings'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')),
+        findsNothing,
+        reason: 'a Wind shell must not be drawn by the token base',
+      );
+
+      await tester.tap(find.text('Follow'));
+      await tester.pump();
+      expect(chosen, 'follow');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets("a disabled destination is the fork's inert state, so it reports nothing", (tester) async {
+      var chosen = '';
+      await tester.pumpWidget(
+        harness(
+          LiveAppShell(
+            destinations: const [
+              LiveShellDestination(id: 'home', label: 'Home', icon: Icons.home),
+              LiveShellDestination(id: 'follow', label: 'Follow', icon: Icons.favorite, enabled: false),
+            ],
+            selectedId: 'home',
+            onSelected: (id) => chosen = id,
+            placement: LiveShellPlacement.rail,
+            child: const Text('room list'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Kept in the layout so the column does not shift, handed `isDisabled` (the
+      // state behind `disabled:opacity-50`), and given no tap closure at all.
+      expect(find.text('Follow'), findsOneWidget);
+      await tester.tap(find.text('Follow'));
+      await tester.pump();
+      expect(chosen, '');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a bottom request hands the strip to the nav bar, which has no footer', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          LiveAppShell(
+            destinations: destinations,
+            selectedId: 'follow',
+            onSelected: (_) {},
+            placement: LiveShellPlacement.bottom,
+            trailing: const Text('settings'),
+            child: const Text('room list'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(TokenAppShell), findsNothing);
+      expect(find.text('room list'), findsOneWidget);
+      // The strip is this package's own composed nav bar; its footer slot does not
+      // exist, so the trailing content is dropped rather than faked as a row.
+      expect(find.text('settings'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('an adaptive request bends at the same width the token shell uses', (tester) async {
+      Widget shell(LiveShellPlacement placement) => harness(
+        LiveAppShell(
+          destinations: destinations,
+          selectedId: 'home',
+          onSelected: (_) {},
+          placement: placement,
+          child: const Text('room list'),
+        ),
+      );
+
+      // With no environment in scope the shared rule falls back to a rail width of
+      // its own, so a bare adaptive request composes the column — the same verdict
+      // the token shell reaches, and the same one the explicit forms make.
+      await tester.pumpWidget(shell(LiveShellPlacement.adaptive));
+      await tester.pump();
+      expect(find.byType(TokenAppShell), findsNothing);
+      expect(find.text('settings'), findsNothing);
+
+      await tester.pumpWidget(shell(LiveShellPlacement.none));
+      await tester.pump();
+      // A shell asked for no navigation: the frame is the page's own.
+      expect(find.text('room list'), findsOneWidget);
+      expect(find.text('Home'), findsNothing);
       expect(tester.takeException(), isNull);
     });
   });

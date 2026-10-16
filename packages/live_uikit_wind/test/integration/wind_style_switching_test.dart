@@ -27,25 +27,25 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.toast,
 };
 
-/// The structural surfaces this adapter owns (§ surfaces): the app host, not the
-/// shell.
-const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost};
+/// The structural surfaces this adapter owns (§ surfaces): the `WidgetsApp` +
+/// `WindTheme` host and a shell composed from the library's styled parts, since
+/// it ships no navigation structure of its own.
+const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost, LiveUiSurface.appShell};
 
 /// §16/§11 integration pass for `live_uikit_wind`.
 ///
-/// Wind renders the whole control contract and hosts the app itself, so a switch
-/// into it replaces every rendering path at once; the only downgrade left is the
-/// shell, which this build does not claim. Switching to the core token base and
-/// back still has to prove a caller-owned controller survives the re-render (§11).
-/// The downgrades this language is expected to report: none for the controls,
-/// because nothing in the contract falls back any more, and none for the app host
-/// — this library has no application widget, so the host is the app's own
-/// `WidgetsApp` under a `WindTheme` scope. Only the shell falls back, once per
-/// language change (§15.5/§16.8).
+/// Wind renders the whole control contract and owns both structural surfaces, so
+/// a switch into it replaces every rendering path at once. Switching to the core
+/// token base and back still has to prove a caller-owned controller survives the
+/// re-render (§11).
+/// The downgrades this language is expected to report: none at all. Every control
+/// is native and both surfaces — the `WidgetsApp` host and the composed shell —
+/// are owned, so the derived checks below compare against empty sets and skip the
+/// code assertions (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
-  // The controls fall back not at all and the surfaces only in part: the host is
-  // this adapter's, the shell is still the core's — two kinds of downgrade with
-  // two codes (§ surfaces).
+  // Nothing falls back any more: the control and surface branches both run against
+  // an empty expected set, so the two downgrade codes are only asserted while some
+  // part of the contract is still left to the shared renderer (§ surfaces).
   final controls = sink.where((diagnostic) => diagnostic.control != null);
   final surfaces = sink.where((diagnostic) => diagnostic.surface != null);
   // A language that renders every control reports no control downgrade at all,

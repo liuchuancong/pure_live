@@ -14,6 +14,7 @@ import 'package:live_uikit_wind/src/widgets/wind_progress_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_scaffold_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_segmented_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_select_builder.dart';
+import 'package:live_uikit_wind/src/widgets/wind_shell_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_slider_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_switch_builder.dart';
 import 'package:live_uikit_wind/src/widgets/wind_tab_bar_builder.dart';
@@ -25,8 +26,8 @@ import 'package:live_uikit_wind/src/widgets/wind_toast_builder.dart';
 /// Implements the core contract for [LiveDesignLanguage.wind] end to end: theme
 /// mapping delegates to `theme/`, all fifteen controls to their `widgets/`
 /// builders, the declared [capabilities] to `wind_capabilities.dart` and the
-/// declared structural surfaces to `wind_surfaces.dart` — the app host this
-/// adapter builds itself, in `widgets/wind_host_builder.dart`. Six of
+/// declared structural surfaces to `wind_surfaces.dart` — the `WidgetsApp` +
+/// `WindTheme` host and the navigation column, both in `widgets/`. Six of
 /// them are drawn by a fork widget (`WButton`, `WCard`+token surface, `WInput`,
 /// `WSwitch`, `WCheckbox`, `WSelect`); the other nine are composed out of the
 /// fork's own parts — `WDiv`/`WCard` surfaces, `WAnchor` interaction, `WText`/
@@ -34,8 +35,8 @@ import 'package:live_uikit_wind/src/widgets/wind_toast_builder.dart';
 /// maps (`bg-primary-500`, `bg-gray-*`, `rounded-*`, `border-*`, `shadow`) and
 /// driven through its `hover:` / `selected:` / `disabled:` state prefixes —
 /// because `fluttersdk_wind` ships no slider, segmented track, progress bar, tab
-/// strip, page frame, bar, list row, navigation bar or toast. Each builder says
-/// which it is. No business state here.
+/// strip, page frame, bar, list row, navigation bar, navigation column or toast.
+/// Each builder says which it is. No business state here.
 class WindLanguageAdapter extends SharedLanguageAdapter {
   /// The Wind adapter.
   const new();
@@ -107,4 +108,7 @@ class WindLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget appHost(BuildContext context, LanguageHostSpec spec) => WindHostBuilder.build(context, spec);
+
+  @override
+  Widget shell(BuildContext context, LanguageShellSpec spec) => WindShellBuilder.build(context, spec);
 }

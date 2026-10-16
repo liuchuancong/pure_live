@@ -53,12 +53,15 @@ void main() {
       expect(adapter.capabilities.supported, LiveUiControl.values.toSet());
     });
 
-    test('owns the app host and not the shell in this build', () {
+    test('owns both structural surfaces in this build', () {
       // The library ships no application widget, so the host is this adapter's
-      // `WidgetsApp` under a `WindTheme` scope; the shell is still the core's,
-      // and the declaration has to say exactly that (§ surfaces).
-      expect(adapter.surfaces.supported, {LiveUiSurface.appHost});
-      expect(adapter.surfaces.supports(LiveUiSurface.appShell), isFalse);
+      // `WidgetsApp` under a `WindTheme` scope; it ships no navigation structure
+      // either, so the shell is the column `WindShellBuilder` composes out of its
+      // styled parts. The declaration has to say exactly that (§ surfaces).
+      expect(adapter.surfaces.supported, {LiveUiSurface.appHost, LiveUiSurface.appShell});
+      for (final surface in LiveUiSurface.values.toSet().difference(adapter.surfaces.supported)) {
+        expect(adapter.surfaces.supports(surface), isFalse, reason: '$surface should fall back');
+      }
     });
   });
 
