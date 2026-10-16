@@ -221,14 +221,19 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('a one-label track keeps the shared renderer, which tolerates it', (tester) async {
-      // The library asserts at least two segments, so a spec it would throw on is
-      // handed to the shared renderer rather than crashing in the library (§15).
+    testWidgets('a one-label track is the library inert cell, not a shared renderer', (tester) async {
+      // The library asserts at least two segments, so a track it would throw on is
+      // drawn with its own inert press target instead (§15).
       await tester.pumpWidget(harness(LiveSegmented(labels: const ['Only'], index: 0, onChanged: (_) {})));
       await tester.pump();
 
       expect(find.byType(cu.CupertinoSegmentedControl<int>), findsNothing);
-      expect(find.byType(TokenSegmented), findsOneWidget);
+      expect(find.byType(TokenSegmented), findsNothing);
+      expect(find.byType(cu.CupertinoButton), findsOneWidget);
+      expect(find.text('Only'), findsOneWidget);
+
+      await tester.tap(find.text('Only'));
+      await tester.pump();
       expect(tester.takeException(), isNull);
     });
 
@@ -411,10 +416,9 @@ void main() {
       await tester.pumpWidget(
         harness(
           Builder(
-            builder: (context) => LiveTheme.of(context).adapter.dialog(
-              context,
-              const LanguageDialogSpec(icon: Icons.star, content: Text('starred')),
-            ),
+            builder: (context) =>
+                LiveTheme.of(context).adapter
+                    .dialog(context, const LanguageDialogSpec(icon: Icons.star, content: Text('starred'))),
           ),
         ),
       );
@@ -532,10 +536,34 @@ void main() {
       expect(pressed, isTrue);
     });
 
-    testWidgets('an empty bottom strip keeps the shared renderer, which tolerates it', (tester) async {
+    testWidgets('a strip that cannot hold a selection is the library inert bar', (tester) async {
+      // `CupertinoTabBar` asserts a non-empty list and an in-range index, and one
+      // destination is not a selection either, so both specs draw the bar's own
+      // surface with inert cells instead of falling through (§15).
+      var picked = -1;
       await tester.pumpWidget(chromeHarness(const LiveNavBar(items: [], index: 0)));
+      await tester.pump();
       expect(find.byType(cu.CupertinoTabBar), findsNothing);
-      expect(find.byType(TokenNavBar), findsOneWidget);
+      expect(find.byType(TokenNavBar), findsNothing);
+      expect(tester.takeException(), isNull);
+
+      await tester.pumpWidget(
+        chromeHarness(
+          LiveNavBar(
+            items: const [LiveNavBarItem(label: 'Home', icon: Icons.home)],
+            index: 4,
+            onChanged: (index) => picked = index,
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(cu.CupertinoTabBar), findsNothing);
+      expect(find.byType(TokenNavBar), findsNothing);
+      expect(find.text('Home'), findsOneWidget);
+
+      await tester.tap(find.text('Home'));
+      await tester.pump();
+      expect(picked, -1, reason: 'an inert cell keeps its label and stops reporting');
       expect(tester.takeException(), isNull);
     });
 

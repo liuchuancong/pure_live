@@ -21,8 +21,9 @@ import 'package:live_uikit/live_uikit.dart';
 ///
 /// An index outside the labels is legal here and means "nothing selected", the
 /// same reading the contract gives it. A track of fewer than two segments is not:
-/// the library asserts `children.length >= 2`, so a spec it would throw on stays
-/// with the shared renderer rather than crashing in the library (§15).
+/// the library asserts `children.length >= 2`, and one label is not a choice out
+/// of a set, so the adapter draws that spec as the library's own inert press cell
+/// instead (§15).
 abstract final class CupertinoSegmentedBuilder {
   /// Builds the segmented track for [spec].
   static Widget build(BuildContext context, LanguageSegmentedSpec spec) {
