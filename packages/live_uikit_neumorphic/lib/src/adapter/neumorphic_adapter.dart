@@ -1,11 +1,13 @@
 import 'package:flutter/widgets.dart';
 import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_neumorphic/src/adapter/neumorphic_capabilities.dart';
+import 'package:live_uikit_neumorphic/src/adapter/neumorphic_surfaces.dart';
 import 'package:live_uikit_neumorphic/src/theme/neumorphic_theme_mapper.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_app_bar_builder.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_button_builder.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_card_builder.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_checkbox_builder.dart';
+import 'package:live_uikit_neumorphic/src/widgets/neumorphic_host_builder.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_list_row_builder.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_nav_bar_builder.dart';
 import 'package:live_uikit_neumorphic/src/widgets/neumorphic_progress_builder.dart';
@@ -114,4 +116,10 @@ class NeumorphicLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget toast(BuildContext context, LanguageToastSpec spec) => NeumorphicToastBuilder.build(context, spec);
+
+  @override
+  LiveUiSurfaceCapabilities get surfaces => neumorphicSurfaces;
+
+  @override
+  Widget appHost(BuildContext context, LanguageHostSpec spec) => NeumorphicHostBuilder.build(context, spec);
 }

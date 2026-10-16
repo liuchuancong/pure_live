@@ -50,10 +50,7 @@ abstract final class NeumorphicListRowBuilder {
       borderRadius: surface.borderRadius,
       depth: spec.selected ? surface.depth : 0.0,
       distance: spec.selected ? surface.distance : 0.0,
-      padding: EdgeInsets.symmetric(
-        horizontal: listTile.paddingHorizontal,
-        vertical: listTile.textPaddingVertical,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: listTile.paddingHorizontal, vertical: listTile.textPaddingVertical),
       child: Row(
         children: [
           if (leading != null) ...[leading, SizedBox(width: listTile.gap)],

@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_neumorphic/live_uikit_neumorphic.dart';
 
+import 'stub_router.dart';
+
 /// §16 widget tests for `live_uikit_neumorphic`, driving the `Live*` controls
 /// through the real runtime so they render with the native
 /// `flutter_neumorphic_ui_kit` widgets.
@@ -156,7 +158,10 @@ void main() {
     await tester.pumpWidget(
       harness(
         LiveTabs(
-          tabs: const [LiveTab(label: 'One'), LiveTab(label: 'Two', icon: Icons.star)],
+          tabs: const [
+            LiveTab(label: 'One'),
+            LiveTab(label: 'Two', icon: Icons.star),
+          ],
           index: 0,
           spacing: 6,
           onChanged: (i) => index = i,
@@ -173,7 +178,16 @@ void main() {
 
   testWidgets('toast draws the Neumorphic pill in the core overlay (§9)', (tester) async {
     late BuildContext context;
-    await tester.pumpWidget(harness(Builder(builder: (c) { context = c; return const SizedBox.shrink(); })));
+    await tester.pumpWidget(
+      harness(
+        Builder(
+          builder: (c) {
+            context = c;
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
 
     LiveToast.show(context, 'Saved', type: LiveToastType.success);
     await tester.pump();
@@ -253,7 +267,10 @@ void main() {
               leading: LiveButton(label: 'Back', onPressed: () => action++),
               actions: const [Icon(Icons.share)],
               bottom: LiveTabs(
-                tabs: const [LiveTab(label: 'Live'), LiveTab(label: 'Off')],
+                tabs: const [
+                  LiveTab(label: 'Live'),
+                  LiveTab(label: 'Off'),
+                ],
                 index: 0,
                 onChanged: (i) => tab = i,
               ),
@@ -320,7 +337,12 @@ void main() {
       // The hairline is the row's own: the library has no divider to borrow, so the
       // branch that draws one is taken with the widget's default `divided`.
       await tester.pumpWidget(
-        harness(const SizedBox(width: 320, child: LiveListRow(title: 'Accent', subtitle: 'violet'))),
+        harness(
+          const SizedBox(
+            width: 320,
+            child: LiveListRow(title: 'Accent', subtitle: 'violet'),
+          ),
+        ),
       );
       await tester.pump();
       expect(find.text('violet'), findsOneWidget);
@@ -372,7 +394,11 @@ void main() {
         harness(
           SizedBox(
             width: 360,
-            child: LiveNavBar(items: const [LiveNavBarItem(label: 'Home', icon: Icons.home)], index: 0, onChanged: (_) {}),
+            child: LiveNavBar(
+              items: const [LiveNavBarItem(label: 'Home', icon: Icons.home)],
+              index: 0,
+              onChanged: (_) {},
+            ),
           ),
         ),
       );
@@ -387,7 +413,14 @@ void main() {
           LiveScaffold(
             appBar: LiveAppBar(
               title: 'Rooms',
-              bottom: LiveTabs(tabs: const [LiveTab(label: 'One'), LiveTab(label: 'Two')], index: 0, onChanged: (_) {}),
+              bottom: LiveTabs(
+                tabs: const [
+                  LiveTab(label: 'One'),
+                  LiveTab(label: 'Two'),
+                ],
+                index: 0,
+                onChanged: (_) {},
+              ),
             ),
             body: Column(
               children: [
@@ -517,6 +550,38 @@ void main() {
       node.requestFocus();
       await tester.pump();
       expect(node.hasFocus, isTrue, reason: 'the node reached the focus tree, not just the widget');
+    });
+  });
+
+  group('the app host (§ surfaces)', () {
+    // No outer `MaterialApp` here: the host under test *is* the app widget, and
+    // pumping it inside the SDK one would pass while no real page looks like
+    // that — and it is the SDK host the token base would fall back to.
+    Widget hostHarness(Widget child) => LiveConfigProvider(
+      config: config,
+      registry: const LanguageRegistry(
+        adapters: {LiveDesignLanguage.neumorphic: neumorphicAdapter},
+        fallback: SharedLanguageAdapter(),
+      ),
+      child: child,
+    );
+
+    testWidgets('the tree is hosted by WidgetsApp under the library theme, not by the token host', (tester) async {
+      await tester.pumpWidget(
+        hostHarness(
+          LiveApp(
+            routerConfig: stubRouterConfig(child: const Text('page')),
+            localizationsDelegates: liveLocalizationsDelegates,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(WidgetsApp), findsOneWidget);
+      expect(find.byType(MaterialApp), findsNothing, reason: 'the token Material host must not stand in');
+      expect(find.byType(neu.NeuTheme), findsWidgets);
+      expect(find.text('page'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 }

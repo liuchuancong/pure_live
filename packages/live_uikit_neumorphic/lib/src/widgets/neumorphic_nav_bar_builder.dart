@@ -105,10 +105,7 @@ class _Cell extends StatelessWidget {
         baseColor: surface.baseColor,
         depth: selected ? surface.depth : 0.0,
         distance: selected ? surface.distance : 0.0,
-        padding: EdgeInsets.symmetric(
-          horizontal: theme.token.scale.sizes.sm,
-          vertical: theme.token.scale.sizes.xs,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: theme.token.scale.sizes.sm, vertical: theme.token.scale.sizes.xs),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -119,10 +116,7 @@ class _Cell extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: theme.text.caption.copyWith(
-                color: tint,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-              ),
+              style: theme.text.caption.copyWith(color: tint, fontWeight: selected ? FontWeight.w600 : FontWeight.w400),
             ),
           ],
         ),

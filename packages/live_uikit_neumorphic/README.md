@@ -18,7 +18,7 @@ that package.
 - Implement `LanguageAdapter` for `LiveDesignLanguage.neumorphic`
   (stable id `neumorphic`).
 - Map the resolved `DesignToken` into the Neumorphic theme and install it through
-  a theme scope (never a nested application shell).
+  a theme scope (never a second application widget inside the host).
 - Build native Neumorphic widgets for all fifteen: **button, card, text field, switch,
   checkbox, slider, segmented, progress, select, tab bar, scaffold, app bar, list
   row, nav bar, toast**. Eight are mappings to a library widget (`progress` is
@@ -34,6 +34,10 @@ that package.
 - Declare the whole contract in `neumorphicCapabilities`: a Neumorphic page reports no
   `controlUnsupported` downgrade, and nothing inside a Neumorphic frame is a token
   renderer (§16/§17).
+- Own the app host: the library ships no application widget, so the host is
+  Flutter's `WidgetsApp` with `NeuTheme` above the routed tree — which is what takes
+  the page transition and the scroll physics out of Material's hands (§ surfaces).
+  The shell still resolves shared and is reported.
 
 ## What this package must not own
 
@@ -43,9 +47,10 @@ that package.
 - Direct dependencies on other style adapters.
 
 Nothing in the control contract falls back to the core shared token renderer here:
-every control a page asks for is drawn by this library, and the only downgrades a
-Neumorphic page reports are the two structural surfaces (the app host and the app
-shell), which this build does not own yet (§ surfaces).
+every control a page asks for is drawn by this library, and the host the page sits
+in is this package's own — a `WidgetsApp` with `NeuTheme` above the routed tree, not
+Material's. The only downgrade a Neumorphic page reports is the app shell, which
+this build does not own yet and resolves shared and reports (§ surfaces).
 
 ## Public entry point
 

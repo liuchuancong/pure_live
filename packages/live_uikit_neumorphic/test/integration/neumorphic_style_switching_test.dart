@@ -27,15 +27,21 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.toast,
 };
 
+/// The structural surfaces this adapter owns (§ surfaces): the app host, not the
+/// shell.
+const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost};
+
 /// §16 integration pass for `live_uikit_neumorphic`: the whole contract native, so a
 /// Neumorphic language change reports no control downgrade at all, and a switch to the
 /// core token base and back leaves the caller's controller and values intact (§11).
 /// The downgrades this language is expected to report: none for controls — only the
-/// two structural surfaces, which this build does not own (§15.5/§16.8).
+/// shell, which this build does not own (§15.5/§16.8). The app host is owned: this
+/// library ships no application widget, so the host is the app's own `WidgetsApp`
+/// under `NeuTheme`, not Material's (§ surfaces).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
-  // This adapter owns no structural surface, so both the app host and the shell
-  // fall back while every control renders natively — one kind of downgrade with one
-  // code (§ surfaces).
+  // This adapter owns the app host but not the shell, so only the shell falls
+  // back while every control renders natively — a downgrade of its own kind, with
+  // its own code (§ surfaces).
   final controls = sink.where((diagnostic) => diagnostic.control != null);
   final surfaces = sink.where((diagnostic) => diagnostic.surface != null);
   // Asserted only while there is something to report: an empty set of codes would
@@ -45,9 +51,17 @@ void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   if (expectedControls.isNotEmpty) {
     expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
   }
-  expect(surfaces.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.surfaceUnsupported});
-  expect(surfaces.map((diagnostic) => diagnostic.surface).toSet(), LiveUiSurface.values.toSet());
-  expect(sink, hasLength(LiveUiControl.values.length + LiveUiSurface.values.length - nativeControls.length));
+  final expectedSurfaces = LiveUiSurface.values.toSet().difference(nativeSurfaces);
+  expect(surfaces.map((diagnostic) => diagnostic.surface).toSet(), expectedSurfaces);
+  if (expectedSurfaces.isNotEmpty) {
+    expect(surfaces.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.surfaceUnsupported});
+  }
+  expect(
+    sink,
+    hasLength(
+      LiveUiControl.values.length + LiveUiSurface.values.length - nativeControls.length - nativeSurfaces.length,
+    ),
+  );
 }
 
 void main() {

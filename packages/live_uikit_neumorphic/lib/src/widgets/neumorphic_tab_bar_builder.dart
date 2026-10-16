@@ -101,10 +101,7 @@ class _Cell extends StatelessWidget {
               tab.label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: theme.text.body.copyWith(
-                color: tint,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-              ),
+              style: theme.text.body.copyWith(color: tint, fontWeight: selected ? FontWeight.w600 : FontWeight.w400),
             ),
           ],
         ),

@@ -68,15 +68,28 @@ abstract final class NeumorphicScaffoldBuilder {
       stacked = content;
     } else if (spec.extendBodyBehindAppBar) {
       stacked = Stack(
-        children: [Positioned.fill(child: content), Positioned(top: 0, left: 0, right: 0, child: bar)],
+        children: [
+          Positioned.fill(child: content),
+          Positioned(top: 0, left: 0, right: 0, child: bar),
+        ],
       );
     } else {
-      stacked = Column(children: [bar, Expanded(child: content)]);
+      stacked = Column(
+        children: [
+          bar,
+          Expanded(child: content),
+        ],
+      );
     }
 
     final bottom = spec.bottomBar;
     if (bottom != null) {
-      stacked = Column(children: [Expanded(child: stacked), bottom]);
+      stacked = Column(
+        children: [
+          Expanded(child: stacked),
+          bottom,
+        ],
+      );
     }
 
     final plane = neu.NeuContainer(
