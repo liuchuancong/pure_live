@@ -26,16 +26,18 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.toast,
 };
 
-/// The structural surfaces this adapter owns (§ surfaces): the app host, not the
-/// shell.
-const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost};
+/// The structural surfaces this adapter owns (§ surfaces): both of them — the
+/// `WidgetsApp` host and a shell composed from the library's frosted containers,
+/// since it ships no navigation structure of its own.
+const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost, LiveUiSurface.appShell};
 
 /// §16 integration pass for `live_uikit_glass`: every one of the fifteen controls
 /// resolves native, so a Glass language change reports no control downgrade at
 /// all, and a switch to the core token base and back must not cost the caller its
 /// controller or its field state (§11).
-/// The downgrades this language is expected to report: none for the controls, and
-/// only the shell among the surfaces (§15.5/§16.8).
+/// The downgrades this language is expected to report: none at all. Every control
+/// and both structural surfaces are native, so the derived checks below compare
+/// against empty sets and skip the code assertions (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   final controls = sink.where((diagnostic) => diagnostic.control != null);
   final surfaces = sink.where((diagnostic) => diagnostic.surface != null);
@@ -46,9 +48,10 @@ void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   if (expectedControls.isNotEmpty) {
     expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
   }
-  // This library has no application widget, so the host is the app's own
-  // `WidgetsApp` under `GlassTheme`; the shell is still shared and still
-  // reported — a downgrade of a different kind, with its own code (§ surfaces).
+  // This library has no application widget and no navigation structure of its
+  // own, so the host is the app's own `WidgetsApp` under `GlassTheme` and the
+  // shell is a frosted column this package composes — both native, so the set of
+  // surfaces still expected to fall back is empty (§ surfaces).
   final expectedSurfaces = LiveUiSurface.values.toSet().difference(nativeSurfaces);
   expect(surfaces.map((diagnostic) => diagnostic.surface).toSet(), expectedSurfaces);
   if (expectedSurfaces.isNotEmpty) {

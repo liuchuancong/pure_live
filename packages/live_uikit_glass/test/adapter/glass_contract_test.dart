@@ -38,6 +38,22 @@ void main() {
       expect(adapter.language, LiveDesignLanguage.glass);
     });
 
+    test('declares exactly the surfaces it owns structurally', () {
+      // Both sides of the pair now: `WidgetsApp` under `GlassTheme` for the host,
+      // and a frosted navigation column composed from the library's own
+      // `GlassContainer`s for the shell (§ surfaces).
+      const owned = <LiveUiSurface>{LiveUiSurface.appHost, LiveUiSurface.appShell};
+      for (final surface in owned) {
+        expect(adapter.surfaces.supports(surface), isTrue, reason: '$surface should be native');
+      }
+      for (final surface in LiveUiSurface.values.toSet().difference(owned)) {
+        expect(adapter.surfaces.supports(surface), isFalse, reason: '$surface should fall back');
+      }
+      // Derived, so a surface added to the contract cannot join the fallback side
+      // silently — the same rule as the control set below (§17).
+      expect(adapter.surfaces.supported, LiveUiSurface.values.toSet());
+    });
+
     test('declares exactly the controls it renders natively', () {
       for (final control in native) {
         expect(adapter.capabilities.supports(control), isTrue, reason: '$control should be native');

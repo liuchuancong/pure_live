@@ -583,6 +583,114 @@ void main() {
     });
   });
 
+  group('the app shell (§ surfaces)', () {
+    const destinations = [
+      LiveShellDestination(id: 'home', label: 'Home', icon: Icons.home),
+      LiveShellDestination(id: 'follow', label: 'Follow', icon: Icons.favorite),
+    ];
+
+    testWidgets('the rail is a frosted column this package composes, not the token shell', (tester) async {
+      var chosen = '';
+      await tester.pumpWidget(
+        harness(
+          LiveAppShell(
+            destinations: destinations,
+            selectedId: 'home',
+            onSelected: (id) => chosen = id,
+            trailing: const Text('settings footer'),
+            placement: LiveShellPlacement.rail,
+            child: const Text('room list'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // The library ships no navigation structure, so the column is assembled from
+      // its own surface pieces: a frosted track and a brighter sheet on the
+      // selected destination.
+      expect(find.byType(TokenAppShell), findsNothing);
+      expect(find.byType(glass.GlassContainer), findsWidgets);
+      expect(find.text('room list'), findsOneWidget);
+      // The composed column has a bottom slot of its own, unlike the strip.
+      expect(find.text('settings footer'), findsOneWidget);
+
+      await tester.tap(find.text('Follow'));
+      await tester.pump();
+      expect(chosen, 'follow');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a disabled destination keeps its row and refuses the tap', (tester) async {
+      var chosen = '';
+      await tester.pumpWidget(
+        harness(
+          LiveAppShell(
+            destinations: const [
+              LiveShellDestination(id: 'home', label: 'Home', icon: Icons.home),
+              LiveShellDestination(id: 'follow', label: 'Follow', icon: Icons.favorite, enabled: false),
+            ],
+            selectedId: 'home',
+            onSelected: (id) => chosen = id,
+            placement: LiveShellPlacement.rail,
+            child: const Text('room list'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Kept in the layout so the column does not shift, and given no tap.
+      expect(find.text('Follow'), findsOneWidget);
+      await tester.tap(find.text('Follow'));
+      await tester.pump();
+      expect(chosen, '', reason: 'the shell refuses a disabled destination in place');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a bottom request hands the strip to the nav bar, and drops the trailing', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          LiveAppShell(
+            destinations: destinations,
+            selectedId: 'home',
+            onSelected: (_) {},
+            trailing: const Text('settings footer'),
+            placement: LiveShellPlacement.bottom,
+            child: const Text('room list'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // The strip is the package's own frosted nav bar; that form has no trailing
+      // slot, so the footer is dropped rather than faked as a third tab.
+      expect(find.byType(TokenAppShell), findsNothing);
+      expect(find.byType(glass.GlassContainer), findsWidgets);
+      expect(find.text('room list'), findsOneWidget);
+      expect(find.text('settings footer'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('one destination is not a choice, so the shell stands aside', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          const LiveAppShell(
+            destinations: [LiveShellDestination(id: 'home', label: 'Home', icon: Icons.home)],
+            selectedId: 'home',
+            placement: LiveShellPlacement.rail,
+            child: Text('room list'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // No navigation is drawn — the shell hands the frame back to the page.
+      expect(find.byType(TokenAppShell), findsNothing);
+      expect(find.byType(glass.GlassContainer), findsNothing);
+      expect(find.text('room list'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('the app host (§ surfaces)', () {
     // No outer `MaterialApp` here: the host under test *is* the app widget, and
     // pumping it inside the SDK one would pass while no real page looks like

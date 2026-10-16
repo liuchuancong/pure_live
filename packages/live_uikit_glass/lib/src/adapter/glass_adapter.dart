@@ -14,6 +14,7 @@ import 'package:live_uikit_glass/src/widgets/glass_progress_builder.dart';
 import 'package:live_uikit_glass/src/widgets/glass_scaffold_builder.dart';
 import 'package:live_uikit_glass/src/widgets/glass_segmented_builder.dart';
 import 'package:live_uikit_glass/src/widgets/glass_select_builder.dart';
+import 'package:live_uikit_glass/src/widgets/glass_shell_builder.dart';
 import 'package:live_uikit_glass/src/widgets/glass_slider_builder.dart';
 import 'package:live_uikit_glass/src/widgets/glass_switch_builder.dart';
 import 'package:live_uikit_glass/src/widgets/glass_tab_bar_builder.dart';
@@ -27,7 +28,10 @@ import 'package:live_uikit_glass/src/widgets/glass_toast_builder.dart';
 /// and the declared [capabilities] to `glass_capabilities.dart`. The library ships
 /// surfaces rather than a widget set, so four controls are the library's own
 /// widgets and eleven are composed from its frosted surfaces and theme values;
-/// each builder says which. No business state lives here.
+/// each builder says which. Both structural surfaces — the `WidgetsApp` host and a
+/// shell composed from the library's frosted containers — are declared in
+/// [glassSurfaces] and rendered by this package's own builders. No business state
+/// lives here.
 class GlassLanguageAdapter extends SharedLanguageAdapter {
   /// The Glass adapter.
   const new();
@@ -99,4 +103,7 @@ class GlassLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget appHost(BuildContext context, LanguageHostSpec spec) => GlassHostBuilder.build(context, spec);
+
+  @override
+  Widget shell(BuildContext context, LanguageShellSpec spec) => GlassShellBuilder.build(context, spec);
 }

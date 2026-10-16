@@ -28,13 +28,17 @@ controls drawn by `glass_morphism_plus`, without business pages importing it.
 - Declare the whole contract in `glassCapabilities`: a Glass page reports no
   `controlUnsupported` downgrade, and nothing inside a Glass frame is a token
   renderer (§16/§17).
-- Own the app host: the library ships no application widget, so the host is
-  Flutter's `WidgetsApp` with `GlassTheme` above the routed tree — which is what
-  takes the page transition, the scroll physics and a dialog's modal barrier out
-  of Material's hands (§ surfaces). The shell still resolves shared and is
-  reported: the library's only structural widget is `GlassAppBar`, a Material
-  `AppBar` under a frosted `flexibleSpace`, so nothing of this package's wraps a
-  router-owned body yet.
+- Own both structural surfaces (§ surfaces). The app host: the library ships no
+  application widget, so the host is Flutter's `WidgetsApp` with `GlassTheme` above
+  the routed tree — which is what takes the page transition, the scroll physics and
+  a dialog's modal barrier out of Material's hands. The app shell:
+  `glass_morphism_plus` has no navigation structure either — only frosted surfaces
+  (`GlassContainer`/`GlassTile`/`GlassDivider`) and the Material `GlassAppBar` — so
+  the column is composed, not mapped: a full-height frosted `GlassContainer` track
+  with a brighter sheet on the selected destination (the nav bar and tab bar built
+  vertically), its tap and hover routed through the core's `LiveBox` because a
+  tappable `GlassContainer` brings its own ink and focus node, the bottom form
+  handed back through `navBar`, and `trailing` pinned to the foot of the column.
 
 ## What this package must not own
 
@@ -108,8 +112,8 @@ still resolves shared and says so (§16/§17).
   cannot afford them; they are never a required dependency (§13).
 - Test coverage is present at four layers: `test/adapter/` (contract and
   resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
-  `test/widgets/` (every native control driven through the real dispatch path and
-  the app host pumped with no Material app above it), and
+  `test/widgets/` (every native control driven through the real dispatch path, the
+  composed app shell and the app host pumped with no Material app above it), and
   `test/integration/` (resolution surface across the contract and a switch to the
   the shared `token` base and back with caller-owned state preserved). What remains
   untested is the part that needs hardware: focus traversal, Android TV D-pad, and
