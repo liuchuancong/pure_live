@@ -24,7 +24,7 @@ and have its controls drawn by `forui`, without any business page importing
   `FThemeData` constructor caps the mapping at the light/dark neutral variant (§8.1);
   the ceiling is pinned by test rather than faked.
 - Build native forui widgets for: **button, card, text field, switch, checkbox**.
-- Declare exactly those controls in `foruiUiCapabilities` so the core resolver can
+- Declare exactly those controls in `foruiCapabilities` so the core resolver can
   report a `controlUnsupported` downgrade for the rest (§16/§17).
 - Expose `foruiLocalizationsDelegates` for the composition root to install.
 
@@ -57,7 +57,7 @@ import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_forui/live_uikit_forui.dart';
 
 const registry = LanguageRegistry(
-  adapters: {LiveDesignLanguage.forui: foruiUiAdapter},
+  adapters: {LiveDesignLanguage.forui: foruiAdapter},
   fallback: SharedLanguageAdapter(),
 );
 

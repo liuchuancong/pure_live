@@ -3,4 +3,4 @@
 /// Public entry exposes only the registration API (§6).
 library;
 
-export 'package:live_uikit_macos/src/adapter/macos_ui_registration.dart';
+export 'package:live_uikit_macos/src/adapter/macos_registration.dart';

@@ -10,7 +10,7 @@ class _ButtonOnlyAdapter extends SharedLanguageAdapter {
   const new();
 
   @override
-  LiveDesignLanguage get language => LiveDesignLanguage.materialUi;
+  LiveDesignLanguage get language => LiveDesignLanguage.material;
 
   @override
   String get id => 'buttonOnly';
@@ -41,7 +41,7 @@ class _QuietAdapter extends SharedLanguageAdapter {
 
 void main() {
   const registry = LanguageRegistry(
-    adapters: {LiveDesignLanguage.materialUi: _ButtonOnlyAdapter(), LiveDesignLanguage.wind: _QuietAdapter()},
+    adapters: {LiveDesignLanguage.material: _ButtonOnlyAdapter(), LiveDesignLanguage.wind: _QuietAdapter()},
     fallback: SharedLanguageAdapter(),
   );
 
@@ -50,7 +50,7 @@ void main() {
 
   testWidgets('a registered adapter reports each undeclared control once (§15.5)', (tester) async {
     final sink = <LiveUiDiagnostic>[];
-    await tester.pumpWidget(harness(const UiConfig(language: LiveDesignLanguage.materialUi), sink));
+    await tester.pumpWidget(harness(const UiConfig(language: LiveDesignLanguage.material), sink));
 
     expect(sink.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
     expect(
@@ -58,17 +58,17 @@ void main() {
       LiveUiControl.values.toSet().difference(const {LiveUiControl.button}),
     );
     expect(sink, hasLength(15));
-    expect(sink.every((diagnostic) => diagnostic.language == LiveDesignLanguage.materialUi), isTrue);
+    expect(sink.every((diagnostic) => diagnostic.language == LiveDesignLanguage.material), isTrue);
 
     // Rebuilds with the same language report nothing new: the facts are per
     // language change, not per frame (§10 "fired once per language change").
-    await tester.pumpWidget(harness(const UiConfig(language: LiveDesignLanguage.materialUi), sink));
+    await tester.pumpWidget(harness(const UiConfig(language: LiveDesignLanguage.material), sink));
     expect(sink, hasLength(15));
   });
 
   testWidgets('switching language re-reports for the new adapter', (tester) async {
     final sink = <LiveUiDiagnostic>[];
-    await tester.pumpWidget(harness(const UiConfig(language: LiveDesignLanguage.materialUi), sink));
+    await tester.pumpWidget(harness(const UiConfig(language: LiveDesignLanguage.material), sink));
     final firstCount = sink.length;
 
     await tester.pumpWidget(harness(const UiConfig(language: LiveDesignLanguage.wind), sink));
@@ -78,7 +78,7 @@ void main() {
       LiveUiControl.values.length - 1,
       reason: 'the new language reports its own set once',
     );
-    expect(sink.where((diagnostic) => diagnostic.language == LiveDesignLanguage.materialUi).length, firstCount);
+    expect(sink.where((diagnostic) => diagnostic.language == LiveDesignLanguage.material).length, firstCount);
   });
 
   testWidgets('a language with no adapter reports adapterMissing, not the control set', (tester) async {
@@ -94,7 +94,7 @@ void main() {
   testWidgets('a host without a sink stays quiet under the same decisions', (tester) async {
     await tester.pumpWidget(
       const LiveConfigProvider(
-        config: UiConfig(language: LiveDesignLanguage.materialUi),
+        config: UiConfig(language: LiveDesignLanguage.material),
         registry: registry,
         child: SizedBox.shrink(),
       ),
@@ -105,7 +105,7 @@ void main() {
   testWidgets('a fail-fast policy faults even without a sink (§7)', (tester) async {
     await tester.pumpWidget(
       const LiveConfigProvider(
-        config: UiConfig(language: LiveDesignLanguage.materialUi),
+        config: UiConfig(language: LiveDesignLanguage.material),
         registry: registry,
         fallbackPolicy: LiveUiFallbackPolicy(onUnsupportedControl: LiveUiFallbackAction.failFast),
         child: SizedBox.shrink(),

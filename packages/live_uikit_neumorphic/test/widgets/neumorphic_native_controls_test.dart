@@ -13,7 +13,7 @@ void main() {
   Widget harness(Widget child) => LiveConfigProvider(
     config: config,
     registry: const LanguageRegistry(
-      adapters: {LiveDesignLanguage.neumorphic: neumorphicUiAdapter},
+      adapters: {LiveDesignLanguage.neumorphic: neumorphicAdapter},
       fallback: SharedLanguageAdapter(),
     ),
     child: MaterialApp(

@@ -1,10 +1,9 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/widgets.dart';
-
 import 'package:live_uikit/src/backgrounds/background_style.dart';
+import 'package:live_uikit/src/scales/radii.dart';
 import 'package:live_uikit/src/styling/provider/live_config_provider.dart';
-import 'package:live_uikit/src/tokens/radii.dart';
 
 /// Paints a [LiveBackgroundStyle] behind [child].
 ///

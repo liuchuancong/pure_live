@@ -7,7 +7,7 @@ class _FakeNativeAdapter extends SharedLanguageAdapter {
   const new();
 
   @override
-  LiveDesignLanguage get language => LiveDesignLanguage.cupertino;
+  LiveDesignLanguage get language => LiveDesignLanguage.macos;
 }
 
 void main() {
@@ -16,10 +16,10 @@ void main() {
 
   group('LiveUiResolver (§15.3)', () {
     test('resolves a registered language to its native adapter, no diagnostic', () {
-      const registry = LanguageRegistry(adapters: {LiveDesignLanguage.cupertino: native}, fallback: shared);
+      const registry = LanguageRegistry(adapters: {LiveDesignLanguage.macos: native}, fallback: shared);
       const resolver = LiveUiResolver(registry: registry);
 
-      final resolution = resolver.resolve(LiveDesignLanguage.cupertino);
+      final resolution = resolver.resolve(LiveDesignLanguage.macos);
 
       expect(resolution.implementation.adapter, same(native));
       expect(resolution.implementation.kind, LiveImplementationKind.adapterNative);

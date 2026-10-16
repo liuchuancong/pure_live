@@ -21,8 +21,8 @@ and have its controls drawn by `fluent_ui`, without any business page importing
 - Map the resolved `DesignToken` into a `FluentThemeData` and install it through a
   `FluentTheme` scope (never a nested `FluentApp`).
 - Build native Fluent widgets for: **button, card, text field, switch, checkbox,
-  slider, progress, select**.
-- Declare exactly those controls in `fluentUiCapabilities` so the core resolver can
+  slider, progress, select, scaffold, list row, toast, app host**.
+- Declare exactly those controls in `fluentCapabilities` so the core resolver can
   report a `controlUnsupported` downgrade for the rest (§16/§17).
 - Expose `fluentLocalizationsDelegates` for the composition root to install.
 
@@ -53,7 +53,7 @@ import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_fluent/live_uikit_fluent.dart';
 
 const registry = LanguageRegistry(
-  adapters: {LiveDesignLanguage.fluent: fluentUiAdapter},
+  adapters: {LiveDesignLanguage.fluent: fluentAdapter},
   fallback: SharedLanguageAdapter(),
 );
 
@@ -82,7 +82,7 @@ flutter pub get
 flutter test packages/live_uikit_fluent
 ```
 
-`test/adapter/fluent_ui_capabilities_test.dart` verifies the stable id/display
+`test/adapter/fluent_capabilities_test.dart` verifies the stable id/display
 name, that the declared capabilities match the controls the adapter overrides, and
 that the core resolver serves a declared control natively while reporting a
 `controlUnsupported` diagnostic for an undeclared one (§16 unit tests / §17).
@@ -95,7 +95,7 @@ that the core resolver serves a declared control natively while reporting a
   resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
   `test/widgets/` (every native control driven through the real dispatch path), and
   `test/integration/` (resolution surface for all ten controls and a switch to the
-  core `material` base and back with caller-owned state preserved). What remains
+  the shared `token` base and back with caller-owned state preserved). What remains
   untested is the part that needs hardware: focus traversal, Android TV D-pad, and
   the platform claims in §13.
 - Fluent can be selected on every supported platform, but native Windows chrome

@@ -135,26 +135,27 @@ packages/live_uikit/
 ├── live-uikit.md
 ├── lib/
 │   ├── live_uikit.dart                  # app-facing barrel (re-exports styling.dart)
-│   ├── styling.dart                     # the 42-file public surface adapters import
+│   ├── styling.dart                     # the public surface adapters import
 │   └── src/
 │       ├── backgrounds/                 # LiveBackground + LiveBackgroundStyle (+ generated)
-│       ├── styling/
-│       │   ├── seed_token.dart          # the authored seed
-│       │   ├── design_token.dart        # derived tokens: color/type/scale/motion
-│       │   ├── color_engine.dart        # ramps, solid mixing, palettes, DesignSizes/DesignRadii
-│       │   ├── theme_algorithm.dart     # default / dark / compact + resolve
-│       │   ├── live_config.dart         # UiConfig, brightness/density modes (+ generated)
-│       │   ├── component_token.dart     # per-component tokens
-│       │   ├── recipe.dart              # ControlSize, ButtonVariant, ButtonRecipe
-│       │   ├── style.dart               # Style + InteractionState (+ generated)
-│       │   ├── localizations.dart         # liveLocalizationsDelegates
-│       │   ├── contracts/               # LanguageAdapter, specs, LiveUiCapabilities
+│       ├── scales/                      # radii, sizing, spacing — the static host-facing scales
+│       └── styling/
+│       │   ├── tokens/                  # seed_token, design_token, component_token,
+│       │   │                            # color_engine, theme_algorithm
+│       │   ├── style/                   # Style + InteractionState (+ generated), recipe
+│       │   ├── config/                  # UiConfig (+ generated), liveLocalizationsDelegates
+│       │   ├── contracts/               # LanguageAdapter, the specs, LiveUiCapabilities
 │       │   ├── diagnostics/             # control/kind enums, diagnostic, codes, sink
-│       │   ├── runtime/                 # registry, resolver, fallback policy
-│       │   ├── root/                    # LiveConfigProvider, LiveTheme, TextStyles
+│       │   ├── provider/                # LiveConfigProvider, LiveTheme, TextStyles
+│       │   ├── resolution/              # registry, resolver, fallback policy
 │       │   ├── shared/                  # SharedLanguageAdapter (the token renderer)
-│       │   └── widgets/                 # the Live* and Token* components
-│       └── tokens/                      # radii, sizing, spacing
+│       │   └── widgets/
+│       │       ├── chrome/              # LiveApp + LiveScaffold/LiveAppBar/LiveNavBar
+│       │       ├── controls/            # button, field, switch, checkbox, slider,
+│       │       │                        # segmented, select, progress, tabs, stepper
+│       │       ├── overlays/            # dialog, menu, toast, tooltip
+│       │       ├── content/             # card (+ list row), avatar, badge, state views
+│       │       └── layout/              # LiveBox, LiveLayoutBuilder/environment
 └── test/
     ├── backgrounds/
     │   └── live_background_test.dart      # the resolved blur affordance (§12)
@@ -166,7 +167,9 @@ packages/live_uikit/
         ├── live_ui_resolver_test.dart     # dispatch and diagnostics (§10)
         ├── live_config_provider_test.dart # what a host is told (§15.5)
         ├── live_icon_button_test.dart     # ADR 0004 through the contract
-        └── shared_renderer_test.dart      # the `Token*` renderer's spec fidelity
+        ├── live_chrome_test.dart          # the chrome + host specs forward every field
+        ├── shared_renderer_test.dart      # the `Token*` renderer's spec fidelity
+        └── stub_router.dart               # the no-op RouterConfig the host tests pump
 ```
 
 ## 5. Package dependencies
@@ -298,7 +301,7 @@ abstract interface class LanguageAdapter {
   documented as unmappable in that adapter's §9, never faked by a hand-painted substitute.
 
 `SharedLanguageAdapter implements LanguageAdapter` (its `language` is
-`LiveDesignLanguage.material`, its capabilities are empty) and additionally exposes
+`LiveDesignLanguage.token`, its capabilities are empty) and additionally exposes
 the seam helpers `interactive(spec)`, `buttonLabel(spec, theme)` and
 `labelled(context, label, control)` that adapters call from their own builders.
 
@@ -306,7 +309,7 @@ the seam helpers `interactive(spec)`, `buttonLabel(spec, theme)` and
 
 ```dart
 const registry = LanguageRegistry(
-  adapters: {LiveDesignLanguage.materialUi: materialUiAdapter},
+  adapters: {LiveDesignLanguage.material: materialAdapter},
   fallback: SharedLanguageAdapter(),
 );
 const resolver = LiveUiResolver(registry: registry);

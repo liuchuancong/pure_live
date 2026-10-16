@@ -18,7 +18,7 @@ controls drawn by `glass_morphism_plus`, without business pages importing it.
 - Map the resolved `DesignToken` into the Glass theme and install it through a
   theme scope (never a nested application shell).
 - Build native Glass widgets for: **button, card, text field**.
-- Declare exactly those controls in `glassUiCapabilities` so the core resolver
+- Declare exactly those controls in `glassCapabilities` so the core resolver
   reports a `controlUnsupported` downgrade for the rest (§16/§17).
 
 ## What this package must not own
@@ -47,7 +47,7 @@ import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_glass/live_uikit_glass.dart';
 
 const registry = LanguageRegistry(
-  adapters: {LiveDesignLanguage.glass: glassUiAdapter},
+  adapters: {LiveDesignLanguage.glass: glassAdapter},
   fallback: SharedLanguageAdapter(),
 );
 ```
@@ -67,7 +67,7 @@ flutter pub get
 flutter test packages/live_uikit_glass
 ```
 
-`test/adapter/glass_ui_contract_test.dart` verifies the stable id/display name,
+`test/adapter/glass_contract_test.dart` verifies the stable id/display name,
 that the declared capabilities match the controls the adapter overrides, and the
 core resolver's native-versus-`controlUnsupported` dispatch (§16/§17).
 
@@ -81,7 +81,7 @@ core resolver's native-versus-`controlUnsupported` dispatch (§16/§17).
   resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
   `test/widgets/` (every native control driven through the real dispatch path), and
   `test/integration/` (resolution surface for all ten controls and a switch to the
-  core `material` base and back with caller-owned state preserved). What remains
+  the shared `token` base and back with caller-owned state preserved). What remains
   untested is the part that needs hardware: focus traversal, Android TV D-pad, and
   the platform claims in §13.
 - `errorText` has no slot in `glass_morphism_plus`, so it is drawn as a caption

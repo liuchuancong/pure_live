@@ -16,8 +16,9 @@ controls drawn by `macos_ui`, without business pages importing `macos_ui`.
 - Implement `LanguageAdapter` for `LiveDesignLanguage.macos` (stable id `macos`).
 - Map the resolved `DesignToken` into a `MacosThemeData` and install it through a
   `MacosTheme` scope (never a nested `MacosApp`).
-- Build native macOS widgets for: **button, text field, checkbox, slider**.
-- Declare exactly those controls in `macosUiCapabilities` so the core resolver
+- Build native macOS widgets for: **button, text field, checkbox, slider,
+  scaffold, app bar, list row, app host**.
+- Declare exactly those controls in `macosCapabilities` so the core resolver
   reports a `controlUnsupported` downgrade for the rest (§16/§17).
 
 ## What this package must not own
@@ -45,7 +46,7 @@ import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_macos/live_uikit_macos.dart';
 
 const registry = LanguageRegistry(
-  adapters: {LiveDesignLanguage.macos: macosUiAdapter},
+  adapters: {LiveDesignLanguage.macos: macosAdapter},
   fallback: SharedLanguageAdapter(),
 );
 ```
@@ -66,7 +67,7 @@ flutter pub get
 flutter test packages/live_uikit_macos
 ```
 
-`test/adapter/macos_ui_contract_test.dart` verifies the stable id/display name,
+`test/adapter/macos_contract_test.dart` verifies the stable id/display name,
 that the declared capabilities match the controls the adapter overrides, and the
 core resolver's native-versus-`controlUnsupported` dispatch (§16/§17).
 
@@ -78,7 +79,7 @@ core resolver's native-versus-`controlUnsupported` dispatch (§16/§17).
   resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
   `test/widgets/` (every native control driven through the real dispatch path), and
   `test/integration/` (resolution surface for all ten controls and a switch to the
-  core `material` base and back with caller-owned state preserved). What remains
+  the shared `token` base and back with caller-owned state preserved). What remains
   untested is the part that needs hardware: focus traversal, Android TV D-pad, and
   the platform claims in §13.
 - A disabled slider has no `macos_ui` form (`MacosSlider.onChanged` is required),

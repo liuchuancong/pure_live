@@ -83,7 +83,7 @@ on `live_uikit` and must not import `forui` directly.
 | `forui` | Yes | Native forui controls and theme |
 | Flutter SDK | Yes | Widget and rendering primitives |
 | Riverpod | No | State management belongs to the app |
-| `live_uikit_material_ui` | No | Adapters must remain independent |
+| `live_uikit_material` | No | Adapters must remain independent |
 | `live_uikit_macos` | No | Adapters must remain independent |
 | Business feature packages | No | Prevents dependency inversion |
 
@@ -103,9 +103,9 @@ packages/
     │   ├── live_uikit_forui.dart
     │   └── src/
     │       ├── adapter/
-    │       │   ├── forui_ui_adapter.dart
-    │       │   ├── forui_ui_capabilities.dart
-    │       │   └── forui_ui_registration.dart
+    │       │   ├── forui_adapter.dart
+    │       │   ├── forui_capabilities.dart
+    │       │   └── forui_registration.dart
     │       ├── theme/
     │       │   ├── forui_theme_builder.dart
     │       │   ├── forui_theme_mapper.dart
@@ -119,7 +119,7 @@ packages/
     ├── live-uikit-forui.md
     └── test/
         ├── adapter/
-        │   └── forui_ui_contract_test.dart
+        │   └── forui_contract_test.dart
         ├── integration/
         │   └── forui_style_switching_test.dart
         ├── theme/
@@ -177,16 +177,16 @@ The public entry point exposes only the adapter's registration API:
 
 ```dart
 // lib/live_uikit_forui.dart
-export 'package:live_uikit_forui/src/adapter/forui_ui_registration.dart';
+export 'package:live_uikit_forui/src/adapter/forui_registration.dart';
 ```
 
-`forui_ui_registration.dart` provides exactly four public symbols:
+`forui_registration.dart` provides exactly four public symbols:
 
 | Symbol | Kind | Purpose |
 |---|---|---|
-| `createForuiUiAdapter()` | Function | Constructs the adapter for the composition root to register |
-| `foruiUiAdapter` | `const LanguageAdapter` | The const adapter instance, usable directly where a constant is required |
-| `foruiUiAdapterId` | `const String` | The stable runtime id, `'forui'` |
+| `createForuiAdapter()` | Function | Constructs the adapter for the composition root to register |
+| `foruiAdapter` | `const LanguageAdapter` | The const adapter instance, usable directly where a constant is required |
+| `foruiAdapterId` | `const String` | The stable runtime id, `'forui'` |
 | `foruiLocalizationsDelegates` | `const List<LocalizationsDelegate<dynamic>>` | forui's own `FLocalizations.delegate`, appended by the app (§14) |
 
 The builders, the theme mapper/scope and the `forui`-prefixed types stay private:
@@ -209,9 +209,9 @@ The realized mapping:
 | Contract member | Implementation here |
 |---|---|
 | `language` | `LiveDesignLanguage.forui` |
-| `id` | `'forui'` (matches `foruiUiAdapterId`) |
+| `id` | `'forui'` (matches `foruiAdapterId`) |
 | `displayName` | `'ForUI'` |
-| `capabilities` | `foruiUiCapabilities` |
+| `capabilities` | `foruiCapabilities` |
 | `wrap` | `ForuiThemeMapper.wrap` — installs the mapped `FTheme` scope |
 | `button` | `ForuiButtonBuilder.build` — native `FButton` / `FButton.icon` by `iconOnly` |
 | `card` | `ForuiCardBuilder.build` — native `FCard` |
@@ -229,12 +229,12 @@ forui
 ```
 
 The identifier is a machine-readable value, not a localized label. Do not use `for_ui`,
-`ForUI`, or a package-name-derived identifier as the runtime style id; `foruiUiAdapterId`,
+`ForUI`, or a package-name-derived identifier as the runtime style id; `foruiAdapterId`,
 `ForuiLanguageAdapter.id` and `LiveDesignLanguage.forui.name` all resolve to `forui`.
 
 ### Capability declaration
 
-`foruiUiCapabilities` is a *declaration of fact*: it lists precisely the five controls
+`foruiCapabilities` is a *declaration of fact*: it lists precisely the five controls
 `ForuiLanguageAdapter` overrides. `LiveUiControl` has exactly ten members — `button,
 card, textField, switchWidget, checkbox, slider, segmented, progress, select, tabBar` —
 so there is no `text`, `icon`, `dialog` or `menu` entry to declare; those are not part
@@ -407,7 +407,7 @@ The application composition root registers the adapter during startup:
 
 ```dart
 registry: const LanguageRegistry(
-  adapters: {LiveDesignLanguage.forui: foruiUiAdapter},
+  adapters: {LiveDesignLanguage.forui: foruiAdapter},
   fallback: SharedLanguageAdapter(),
 ),
 ```
@@ -435,7 +435,7 @@ styles without following that policy.
 A business widget uses the core API (`LiveButton`, `LiveCard`, …) and never branches on
 the active style. Switching adapters changes rendering and interaction presentation; it
 must not replace business controllers, reset form values, or recreate unrelated
-application services. The integration test swaps ForUI ↔ core `material` and asserts
+application services. The integration test swaps ForUI ↔ the `token` base and asserts
 the caller's controller text survives both directions (§16).
 
 ## 12. Keyboard, focus, and TV support
@@ -540,9 +540,9 @@ Three directories plus the switching pass, one per concern: `test/adapter/` (con
 through a real `LiveConfigProvider` + `LiveUiResolver`, so the assertions are about the
 dispatch path and not a builder in isolation), `test/integration/` (§11).
 
-### Contract tests (`test/adapter/forui_ui_contract_test.dart`)
+### Contract tests (`test/adapter/forui_contract_test.dart`)
 
-- Stable adapter id `forui`, display name, language, and `foruiUiCapabilities`
+- Stable adapter id `forui`, display name, language, and `foruiCapabilities`
   truthfulness (the declared set *is* the native set).
 - Dispatch through the core resolver: a declared control resolves `adapterNative` with
   no diagnostic; an undeclared one resolves `shared` with `controlUnsupported`.
@@ -577,7 +577,7 @@ dispatch path and not a builder in isolation), `test/integration/` (§11).
 
 - Every `LiveUiControl` resolves as declared: five `adapterNative`, five `shared` with
   `controlUnsupported`, each reported exactly once per language change.
-- ForUI ↔ core `material` swaps `FButton`/`FCard`/`FTextField`/`FSwitch` for the SDK
+- ForUI ↔ the `token` base swaps `FButton`/`FCard`/`FTextField`/`FSwitch` for the SDK
   and token equivalents and back, with the caller's controller text intact; progress
   stays a shared-fallback control and keeps rendering on both sides; `adapterMissing`
   fires for the core base only.
@@ -607,7 +607,7 @@ whole family:
 - The adapter's declared capabilities match the overrides.
 - Every `package:forui/` import inside this package uses the `as forui` prefix, in
   `lib/` and `test/`.
-- The README's list of native controls is checked against `foruiUiCapabilities`.
+- The README's list of native controls is checked against `foruiCapabilities`.
 - §4's directory tree is checked against the package: every file the current-layout
   tree names must exist, and every `test/**_test.dart` on disk must be named there. The
   optional-modules block is exempt — those names must stay absent until built.

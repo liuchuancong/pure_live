@@ -16,6 +16,9 @@ library;
 // background painter + its style, and the static radius / spacing / size scales.
 export 'src/backgrounds/background_style.dart';
 export 'src/backgrounds/live_background.dart';
+export 'src/scales/radii.dart';
+export 'src/scales/sizing.dart';
+export 'src/scales/spacing.dart';
 export 'src/styling/config/live_config.dart';
 export 'src/styling/config/localizations.dart';
 export 'src/styling/contracts/live_ui_adapter.dart';
@@ -57,6 +60,3 @@ export 'src/styling/widgets/overlays/live_dialog.dart';
 export 'src/styling/widgets/overlays/live_menu.dart';
 export 'src/styling/widgets/overlays/live_toast.dart';
 export 'src/styling/widgets/overlays/live_tooltip.dart';
-export 'src/tokens/radii.dart';
-export 'src/tokens/sizing.dart';
-export 'src/tokens/spacing.dart';

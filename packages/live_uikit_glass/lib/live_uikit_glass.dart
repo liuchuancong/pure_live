@@ -3,4 +3,4 @@
 /// Public entry exposes only the registration API (§6).
 library;
 
-export 'package:live_uikit_glass/src/adapter/glass_ui_registration.dart';
+export 'package:live_uikit_glass/src/adapter/glass_registration.dart';

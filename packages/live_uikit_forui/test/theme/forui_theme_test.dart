@@ -36,7 +36,7 @@ void main() {
 
   group('runtime re-skin (§8.3)', () {
     const registry = LanguageRegistry(
-      adapters: {LiveDesignLanguage.forui: foruiUiAdapter},
+      adapters: {LiveDesignLanguage.forui: foruiAdapter},
       fallback: SharedLanguageAdapter(),
     );
 

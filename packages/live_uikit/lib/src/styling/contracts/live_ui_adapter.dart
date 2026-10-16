@@ -8,13 +8,16 @@ import 'package:live_uikit/src/styling/widgets/chrome/live_nav_bar.dart' show Li
 import 'package:live_uikit/src/styling/widgets/controls/live_tabs.dart' show LiveTab;
 import 'package:live_uikit/src/styling/widgets/overlays/live_toast.dart' show LiveToastType;
 
-/// The switchable design languages, each backed by its own widget library.
+/// The switchable design languages.
+///
+/// Every entry except [token] names a widget library the app can be drawn from
+/// and has an adapter of its own; [token] is the base every language falls
+/// through to, not a library, so it is never registered.
 enum LiveDesignLanguage {
-  /// Flutter Material (the base and fallback).
-  material,
-
-  /// iOS Cupertino.
-  cupertino,
+  /// The shared token base: the resolved `DesignToken` painted with Flutter's
+  /// Material primitives. It is the fallback renderer, claims no control and
+  /// ships no host of its own.
+  token,
 
   /// Windows `fluent_ui`.
   fluent,
@@ -34,11 +37,15 @@ enum LiveDesignLanguage {
   /// `forui` (the shadcn-style `F*` widget library).
   forui,
 
-  /// The `material_ui` fork, distinct from the core `material` token base.
-  materialUi,
+  /// `material_ui` — Flutter's Material library, the same one
+  /// `package:flutter/material.dart` was moved into. The design system [token]
+  /// already paints, taken from the library's own widgets, theme and host.
+  material,
 
-  /// The `cupertino_ui` fork, distinct from the core `cupertino` token base.
-  cupertinoUi,
+  /// `cupertino_ui` — Flutter's Cupertino library, the same one
+  /// `package:flutter/cupertino.dart` was moved into. This is the iOS language:
+  /// [token] draws Material primitives, so nothing else stands in for it.
+  cupertino,
 }
 
 /// A button described the same way every language draws it.
@@ -721,5 +728,5 @@ abstract interface class LanguageAdapter {
 
   /// Wraps the whole app in the language's own host widget, when its library
   /// ships one; the shared renderer answers with the token-seeded Material host.
-  Widget host(BuildContext context, LanguageHostSpec spec);
+  Widget appHost(BuildContext context, LanguageHostSpec spec);
 }

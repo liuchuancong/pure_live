@@ -5,4 +5,4 @@
 /// business code depends on the core contract rather than this package.
 library;
 
-export 'package:live_uikit_fluent/src/adapter/fluent_ui_registration.dart';
+export 'package:live_uikit_fluent/src/adapter/fluent_registration.dart';

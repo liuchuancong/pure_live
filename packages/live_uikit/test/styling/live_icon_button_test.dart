@@ -9,7 +9,7 @@ class _RecordingAdapter extends SharedLanguageAdapter {
   final Set<LiveUiControl> native;
 
   @override
-  LiveDesignLanguage get language => LiveDesignLanguage.materialUi;
+  LiveDesignLanguage get language => LiveDesignLanguage.material;
 
   @override
   String get id => 'recording';
@@ -31,14 +31,14 @@ class _RecordingAdapter extends SharedLanguageAdapter {
 
 void main() {
   const providerRegistry = LanguageRegistry(
-    adapters: {LiveDesignLanguage.materialUi: _RecordingAdapter()},
+    adapters: {LiveDesignLanguage.material: _RecordingAdapter()},
     fallback: SharedLanguageAdapter(),
   );
 
   // A real app shell: the tooltip the renderer wraps needs an Overlay, and the
   // text direction comes with the MaterialApp rather than being asserted by hand.
   Widget harness(Widget child, {UiConfig? config}) => LiveConfigProvider(
-    config: config ?? const UiConfig(language: LiveDesignLanguage.materialUi),
+    config: config ?? const UiConfig(language: LiveDesignLanguage.material),
     registry: providerRegistry,
     child: MaterialApp(home: Scaffold(body: child)),
   );

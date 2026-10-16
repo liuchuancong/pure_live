@@ -35,7 +35,7 @@ void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
 
 void main() {
   const registry = LanguageRegistry(
-    adapters: {LiveDesignLanguage.macos: macosUiAdapter},
+    adapters: {LiveDesignLanguage.macos: macosAdapter},
     fallback: SharedLanguageAdapter(),
   );
   const resolver = LiveUiResolver(registry: registry);
@@ -68,7 +68,7 @@ void main() {
     }
   });
 
-  testWidgets('macOS ↔ core material swaps the path, not the state (§11)', (tester) async {
+  testWidgets('macOS ↔ the token base swaps the path, not the state (§11)', (tester) async {
     final diagnostics = <LiveUiDiagnostic>[];
     final controller = TextEditingController(text: 'typed before the switch');
     addTearDown(controller.dispose);
@@ -93,7 +93,7 @@ void main() {
     expect(find.byType(TextField), findsNothing);
     expectUndeclaredControls(diagnostics);
 
-    // `UiConfig()` defaults to the core `material` token base.
+    // `UiConfig()` defaults to the shared `token` base.
     await tester.pumpWidget(harness(const UiConfig(), page(), diagnostics));
     expect(find.byType(macos.MacosTextField), findsNothing);
     expect(find.byType(TextField), findsOneWidget);

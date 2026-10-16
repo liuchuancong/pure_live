@@ -73,9 +73,9 @@ The application composition root registers this adapter. Business packages depen
 | Flutter SDK | Yes | Widget and rendering primitives |
 | Riverpod | No | State management belongs to the app |
 | `live_uikit_fluent` | No | Adapters must remain independent |
-| `live_uikit_cupertino_ui` | No | Adapters must remain independent |
+| `live_uikit_cupertino` | No | Adapters must remain independent |
 | `live_uikit_macos` | No | Adapters must remain independent |
-| `live_uikit_material_ui` | No | Adapters must remain independent |
+| `live_uikit_material` | No | Adapters must remain independent |
 | `live_uikit_glass` | No | Adapters must remain independent |
 | `live_uikit_wind` | No | Adapters must remain independent |
 | Business feature packages | No | Prevents dependency inversion |
@@ -95,9 +95,9 @@ packages/
     │   ├── live_uikit_neumorphic.dart
     │   └── src/
     │       ├── adapter/
-    │       │   ├── neumorphic_ui_adapter.dart
-    │       │   ├── neumorphic_ui_capabilities.dart
-    │       │   └── neumorphic_ui_registration.dart
+    │       │   ├── neumorphic_adapter.dart
+    │       │   ├── neumorphic_capabilities.dart
+    │       │   └── neumorphic_registration.dart
     │       ├── theme/
     │       │   ├── neumorphic_theme_builder.dart
     │       │   ├── neumorphic_theme_mapper.dart
@@ -112,7 +112,7 @@ packages/
     ├── live-uikit-neumorphic.md
     └── test/
         ├── adapter/
-        │   └── neumorphic_ui_contract_test.dart
+        │   └── neumorphic_contract_test.dart
         ├── theme/
         │   └── neumorphic_theme_test.dart
         ├── widgets/
@@ -184,16 +184,16 @@ The public entry point exposes only the adapter's registration API.
 
 library;
 
-export 'package:live_uikit_neumorphic/src/adapter/neumorphic_ui_registration.dart';
+export 'package:live_uikit_neumorphic/src/adapter/neumorphic_registration.dart';
 ```
 
 That registration file is the entire public surface:
 
 | Symbol | Kind | Purpose |
 |---|---|---|
-| `createNeumorphicUiAdapter()` | function | Builds a `LanguageAdapter` for the composition root |
-| `neumorphicUiAdapter` | `const LanguageAdapter` | The ready-to-register const adapter instance |
-| `neumorphicUiAdapterId` | `const String` | The stable runtime id, `neumorphic` |
+| `createNeumorphicAdapter()` | function | Builds a `LanguageAdapter` for the composition root |
+| `neumorphicAdapter` | `const LanguageAdapter` | The ready-to-register const adapter instance |
+| `neumorphicAdapterId` | `const String` | The stable runtime id, `neumorphic` |
 
 Do not export internal widget builders, the theme mapper, or `flutter_neumorphic_ui_kit` types. This package adds no localization delegates; the public API is registration only.
 
@@ -208,7 +208,7 @@ class NeumorphicLanguageAdapter extends SharedLanguageAdapter {
   @override LiveDesignLanguage get language => LiveDesignLanguage.neumorphic;
   @override String get id => 'neumorphic';
   @override String get displayName => 'Neumorphic';
-  @override LiveUiCapabilities get capabilities => neumorphicUiCapabilities;
+  @override LiveUiCapabilities get capabilities => neumorphicCapabilities;
 }
 ```
 
@@ -224,11 +224,11 @@ Use one stable identifier everywhere:
 neumorphic
 ```
 
-The identifier is a machine-readable value exposed by `id` and `neumorphicUiAdapterId`, not a localized label. Do not use `flutter_neumorphic_ui_kit`, `Neumorphic`, or a platform-dependent value as the runtime style ID. `displayName` is `Neumorphic` and is only for the selector UI.
+The identifier is a machine-readable value exposed by `id` and `neumorphicAdapterId`, not a localized label. Do not use `flutter_neumorphic_ui_kit`, `Neumorphic`, or a platform-dependent value as the runtime style ID. `displayName` is `Neumorphic` and is only for the selector UI.
 
 ### Capability declaration
 
-`neumorphicUiCapabilities` reports the controls rendered natively; everything else falls back to the shared token renderer and is reported by the resolver rather than silently degraded.
+`neumorphicCapabilities` reports the controls rendered natively; everything else falls back to the shared token renderer and is reported by the resolver rather than silently degraded.
 
 | Control | Implementation | Kind when active |
 |---|---|---|
@@ -243,7 +243,7 @@ The identifier is a machine-readable value exposed by `id` and `neumorphicUiAdap
 | Select | Shared token renderer | `shared` (`controlUnsupported`) |
 | Tab bar | Shared token renderer | `shared` (`controlUnsupported`) |
 
-Exactly six controls — `button`, `card`, `textField`, `switchWidget`, `checkbox`, `slider` — are Native. The other four — `segmented`, `progress`, `select`, `tabBar` — are not declared and resolve to the shared token renderer. This is the expected, reported behavior, not a defect; `neumorphic_ui_contract_test.dart` asserts the declaration matches the overrides so the two cannot drift.
+Exactly six controls — `button`, `card`, `textField`, `switchWidget`, `checkbox`, `slider` — are Native. The other four — `segmented`, `progress`, `select`, `tabBar` — are not declared and resolve to the shared token renderer. This is the expected, reported behavior, not a defect; `neumorphic_contract_test.dart` asserts the declaration matches the overrides so the two cannot drift.
 
 The core model distinguishes the same three tiers through `LiveImplementationKind`: **`adapterNative`** (this adapter's real widget), **`shared`** (the core token renderer), and **`custom`** (an application-registered override). Use the core enum names rather than adding a parallel capability system.
 
@@ -376,13 +376,13 @@ The application composition root registers the adapter during startup using the 
 
 ```dart
 void registerUiAdapters(LanguageRegistry registry) {
-  registry.register(createNeumorphicUiAdapter());
+  registry.register(createNeumorphicAdapter());
   // or register the const instance directly:
-  // registry.register(neumorphicUiAdapter);
+  // registry.register(neumorphicAdapter);
 }
 ```
 
-`createNeumorphicUiAdapter()` and `neumorphicUiAdapter` both yield a `NeumorphicLanguageAdapter`, keyed by `LiveDesignLanguage.neumorphic` and `neumorphicUiAdapterId` (`neumorphic`).
+`createNeumorphicAdapter()` and `neumorphicAdapter` both yield a `NeumorphicLanguageAdapter`, keyed by `LiveDesignLanguage.neumorphic` and `neumorphicAdapterId` (`neumorphic`).
 
 The composition root is responsible for registering adapters, loading the user's style preference, selecting the active language, providing persistence, and coordinating runtime theme changes. `live_uikit_neumorphic` must not register itself through global static initialization or require the business layer to import it.
 
@@ -510,9 +510,9 @@ Expected behavior:
 
 ## 16. Testing strategy
 
-### Contract tests (`test/adapter/neumorphic_ui_contract_test.dart`)
+### Contract tests (`test/adapter/neumorphic_contract_test.dart`)
 
-`test/adapter/neumorphic_ui_contract_test.dart` verifies:
+`test/adapter/neumorphic_contract_test.dart` verifies:
 
 - Stable id (`neumorphic`), `displayName` (`Neumorphic`), and `language` (`LiveDesignLanguage.neumorphic`).
 - The capability set declares exactly the six native controls and none of the four fallback controls.
@@ -545,7 +545,7 @@ keeps open.
 ### Integration tests (`test/integration/neumorphic_style_switching_test.dart`)
 
 - Every `LiveUiControl` resolves as declared: six `adapterNative`, four `shared` with `controlUnsupported`.
-- Neumorphic → core `material` → Neumorphic swaps `neu.NeuButton`/`NeuCard`/`NeuTextField`/`NeuSwitch` for the token renderer and back, with the caller's controller text intact.
+- Neumorphic → the `token` base → Neumorphic swaps `neu.NeuButton`/`NeuCard`/`NeuTextField`/`NeuSwitch` for the token renderer and back, with the caller's controller text intact.
 - Segmented, shared in this language, stays callable on both sides (§16.7).
 
 A cross-adapter switch (this language against Fluent, Glass, …) is deliberately **not** tested from this package: §3.3 forbids depending on another style adapter, so that case belongs to the application integration suite. Brightness/accent re-skin is asserted in `test/theme/`.
@@ -570,7 +570,7 @@ implemented per package:
 - Every `package:flutter_neumorphic_ui_kit/` import inside this package uses the `as neu` prefix, in `lib/` and `test/`. The prefix is a package-wide rule (§3.3):
   it keeps this library's types distinguishable from Flutter's own and from a sibling
   adapter's, and it is what lets the architecture guard assert the convention.
-- The README's list of native controls is checked against `neumorphicUiCapabilities`: a control named in
+- The README's list of native controls is checked against `neumorphicCapabilities`: a control named in
   prose but not declared, or declared but unmentioned, fails the gate.
 - §4's directory tree is checked against the package: every file the current-layout tree
   names must exist, and every `test/**_test.dart` on disk must be named there. The
@@ -591,7 +591,7 @@ flutter test packages/live_uikit_neumorphic
 
 - Adapter aligned with the finalized core contract.
 - Stable id, display name, language, and capability set defined.
-- Registration API (`createNeumorphicUiAdapter`, `neumorphicUiAdapter`, `neumorphicUiAdapterId`) exported.
+- Registration API (`createNeumorphicAdapter`, `neumorphicAdapter`, `neumorphicAdapterId`) exported.
 - Contract and resolution tests in place.
 
 ### Phase 2 — Theme integration ✅

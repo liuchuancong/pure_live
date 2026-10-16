@@ -41,7 +41,7 @@ void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
 
 void main() {
   const registry = LanguageRegistry(
-    adapters: {LiveDesignLanguage.fluent: fluentUiAdapter},
+    adapters: {LiveDesignLanguage.fluent: fluentAdapter},
     fallback: SharedLanguageAdapter(),
   );
   const resolver = LiveUiResolver(registry: registry);
@@ -74,7 +74,7 @@ void main() {
     }
   });
 
-  testWidgets('Fluent ↔ core material swaps the path, not the state (§11)', (tester) async {
+  testWidgets('Fluent ↔ the token base swaps the path, not the state (§11)', (tester) async {
     final diagnostics = <LiveUiDiagnostic>[];
     final controller = TextEditingController(text: 'typed before the switch');
     addTearDown(controller.dispose);
@@ -99,7 +99,7 @@ void main() {
     expect(find.byType(TextField), findsNothing);
     expectUndeclaredControls(diagnostics);
 
-    // `UiConfig()` defaults to the core `material` token base.
+    // `UiConfig()` defaults to the shared `token` base.
     await tester.pumpWidget(harness(const UiConfig(), page(), diagnostics));
     expect(find.byType(fluent.TextBox), findsNothing);
     expect(find.byType(fluent.ComboBox<String>), findsNothing);

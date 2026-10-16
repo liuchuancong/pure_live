@@ -16,7 +16,7 @@ void main() {
   Widget harness(Widget child) => LiveConfigProvider(
     config: config,
     registry: const LanguageRegistry(
-      adapters: {LiveDesignLanguage.fluent: fluentUiAdapter},
+      adapters: {LiveDesignLanguage.fluent: fluentAdapter},
       fallback: SharedLanguageAdapter(),
     ),
     // The host app supplies localization and the overlay; `adapter.wrap` installs
@@ -308,7 +308,7 @@ void main() {
     Widget hostHarness(Widget child) => LiveConfigProvider(
       config: config,
       registry: const LanguageRegistry(
-        adapters: {LiveDesignLanguage.fluent: fluentUiAdapter},
+        adapters: {LiveDesignLanguage.fluent: fluentAdapter},
         fallback: SharedLanguageAdapter(),
       ),
       child: child,

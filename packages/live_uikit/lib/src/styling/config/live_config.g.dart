@@ -7,7 +7,7 @@ part of 'live_config.dart';
 // **************************************************************************
 
 _UiConfig _$UiConfigFromJson(Map<String, dynamic> json) => _UiConfig(
-  language: $enumDecodeNullable(_$LiveDesignLanguageEnumMap, json['language']) ?? LiveDesignLanguage.material,
+  language: $enumDecodeNullable(_$LiveDesignLanguageEnumMap, json['language']) ?? LiveDesignLanguage.token,
   brightness: $enumDecodeNullable(_$UiBrightnessModeEnumMap, json['brightness']) ?? UiBrightnessMode.system,
   accent: const ColorConverter().fromJson((json['accent'] as num?)?.toInt()),
   pureBlack: json['pureBlack'] as bool? ?? false,
@@ -35,16 +35,15 @@ Map<String, dynamic> _$UiConfigToJson(_UiConfig instance) => <String, dynamic>{
 };
 
 const _$LiveDesignLanguageEnumMap = {
-  LiveDesignLanguage.material: 'material',
-  LiveDesignLanguage.cupertino: 'cupertino',
+  LiveDesignLanguage.token: 'token',
   LiveDesignLanguage.fluent: 'fluent',
   LiveDesignLanguage.macos: 'macos',
   LiveDesignLanguage.neumorphic: 'neumorphic',
   LiveDesignLanguage.glass: 'glass',
   LiveDesignLanguage.wind: 'wind',
   LiveDesignLanguage.forui: 'forui',
-  LiveDesignLanguage.materialUi: 'materialUi',
-  LiveDesignLanguage.cupertinoUi: 'cupertinoUi',
+  LiveDesignLanguage.material: 'material',
+  LiveDesignLanguage.cupertino: 'cupertino',
 };
 
 const _$UiBrightnessModeEnumMap = {

@@ -31,7 +31,7 @@ void main() {
     Widget harness(UiConfig config) => LiveConfigProvider(
       config: config,
       registry: const LanguageRegistry(
-        adapters: {LiveDesignLanguage.macos: macosUiAdapter},
+        adapters: {LiveDesignLanguage.macos: macosAdapter},
         fallback: SharedLanguageAdapter(),
       ),
       child: MaterialApp(

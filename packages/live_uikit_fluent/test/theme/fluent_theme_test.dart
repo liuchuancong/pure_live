@@ -43,7 +43,7 @@ void main() {
       Widget harness(UiConfig config) => LiveConfigProvider(
         config: config,
         registry: const LanguageRegistry(
-          adapters: {LiveDesignLanguage.fluent: fluentUiAdapter},
+          adapters: {LiveDesignLanguage.fluent: fluentAdapter},
           fallback: SharedLanguageAdapter(),
         ),
         // No manual `FluentTheme`: `adapter.wrap` installs the scope, which is

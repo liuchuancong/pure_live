@@ -41,7 +41,7 @@ The application composition root registers this adapter. Business packages depen
 3. **No business logic.** The adapter must not manage accounts, playback sessions, routing, plugin execution, or application settings persistence.
 4. **No hidden state ownership.** Form values, loading state, validation, and business state remain controlled by the calling widget or application. The Wind switch and checkbox builders are fully controlled — value, callback, and disabled flag pass straight through the spec.
 5. **Runtime switching is supported.** Switching between Wind and any other style must not require business pages to import or construct different control classes.
-6. **Honest capabilities.** `windUiCapabilities` declares exactly the six controls `WindLanguageAdapter` overrides. The remaining four are *reported* as shared fallbacks by the resolver, not silently degraded.
+6. **Honest capabilities.** `windCapabilities` declares exactly the six controls `WindLanguageAdapter` overrides. The remaining four are *reported* as shared fallbacks by the resolver, not silently degraded.
 7. **Platform-aware behavior.** Wind appearance can be selected on any supported platform, but native Windows system integrations must not be assumed on every platform.
 8. **Graceful fallback.** Unsupported controls follow the fallback policy defined by `live_uikit` and surface a `controlUnsupported` diagnostic; they never change behavior in silence.
 
@@ -76,8 +76,8 @@ The application composition root registers this adapter. Business packages depen
 | Flutter SDK | Yes | Widget and rendering primitives |
 | Riverpod | No | State management belongs to the app |
 | `live_uikit_fluent` | No | Wind and Fluent are separate adapters; no cross-dependency |
-| `live_uikit_material_ui` | No | Adapters must remain independent |
-| `live_uikit_cupertino_ui` | No | Adapters must remain independent |
+| `live_uikit_material` | No | Adapters must remain independent |
+| `live_uikit_cupertino` | No | Adapters must remain independent |
 | `live_uikit_macos` | No | Adapters must remain independent |
 | `live_uikit_glass` | No | Adapters must remain independent |
 | `live_uikit_neumorphic` | No | Adapters must remain independent |
@@ -98,9 +98,9 @@ packages/
     │   ├── live_uikit_wind.dart
     │   └── src/
     │       ├── adapter/
-    │       │   ├── wind_ui_adapter.dart
-    │       │   ├── wind_ui_capabilities.dart
-    │       │   └── wind_ui_registration.dart
+    │       │   ├── wind_adapter.dart
+    │       │   ├── wind_capabilities.dart
+    │       │   └── wind_registration.dart
     │       ├── theme/
     │       │   ├── wind_theme_mapper.dart
     │       │   ├── wind_theme_builder.dart
@@ -114,7 +114,7 @@ packages/
     │           └── wind_select_builder.dart
     ├── test/
     │   ├── adapter/
-    │   │   └── wind_ui_contract_test.dart
+    │   │   └── wind_contract_test.dart
     │   ├── theme/
     │   │   └── wind_theme_test.dart
     │   ├── widgets/
@@ -133,7 +133,7 @@ Do not create empty files just to match the optional directories. Add each modul
 
 | Module | Responsibility |
 |---|---|
-| `adapter/` | `WindLanguageAdapter`, the `windUiCapabilities` set, and the registration API |
+| `adapter/` | `WindLanguageAdapter`, the `windCapabilities` set, and the registration API |
 | `theme/` | Translate the resolved `DesignToken` into `WindThemeData` and install it via a Wind scope |
 | `widgets/` | Build native `fluttersdk_wind` controls from core `Language*Spec` objects |
 | `test/` | Verify the contract, stable id/display name, and that capabilities match the overrides |
@@ -185,15 +185,15 @@ The public entry point exposes only the registration API. This is intentional: b
 /// Public entry exposes only the registration API (§6).
 library;
 
-export 'package:live_uikit_wind/src/adapter/wind_ui_registration.dart';
+export 'package:live_uikit_wind/src/adapter/wind_registration.dart';
 ```
 
-`wind_ui_registration.dart` provides exactly three symbols:
+`wind_registration.dart` provides exactly three symbols:
 
 ```dart
-const String windUiAdapterId = 'wind';
-const LanguageAdapter windUiAdapter = WindLanguageAdapter();
-LanguageAdapter createWindUiAdapter() => const WindLanguageAdapter();
+const String windAdapterId = 'wind';
+const LanguageAdapter windAdapter = WindLanguageAdapter();
+LanguageAdapter createWindAdapter() => const WindLanguageAdapter();
 ```
 
 No localization delegates are exported. Wind adds none of its own and relies entirely on the core localization setup (§14).
@@ -235,7 +235,7 @@ class WindLanguageAdapter extends SharedLanguageAdapter {
   @override LiveDesignLanguage get language => LiveDesignLanguage.wind;
   @override String get id => 'wind';
   @override String get displayName => 'Wind';
-  @override LiveUiCapabilities get capabilities => windUiCapabilities;
+  @override LiveUiCapabilities get capabilities => windCapabilities;
 
   @override
   Widget wrap(BuildContext context, DesignToken token, Widget child) => _theme.wrap(context, token, child);
@@ -265,14 +265,14 @@ Use one stable machine-readable identifier everywhere:
 wind
 ```
 
-It is the value used by the registry, persistence, and diagnostics — never a localized label. Do not use `fluttersdk_wind`, `Wind UI`, or a platform-dependent value as the runtime style id. `windUiAdapterId`, `WindLanguageAdapter.id`, and `LiveDesignLanguage.wind.name` all resolve to `wind`.
+It is the value used by the registry, persistence, and diagnostics — never a localized label. Do not use `fluttersdk_wind`, `Wind UI`, or a platform-dependent value as the runtime style id. `windAdapterId`, `WindLanguageAdapter.id`, and `LiveDesignLanguage.wind.name` all resolve to `wind`.
 
 ### Capability declaration
 
-`windUiCapabilities` is a *declaration of fact* — it lists precisely the controls `WindLanguageAdapter` overrides with native `fluttersdk_wind` widgets:
+`windCapabilities` is a *declaration of fact* — it lists precisely the controls `WindLanguageAdapter` overrides with native `fluttersdk_wind` widgets:
 
 ```dart
-const LiveUiCapabilities windUiCapabilities = LiveUiCapabilities(<LiveUiControl>{
+const LiveUiCapabilities windCapabilities = LiveUiCapabilities(<LiveUiControl>{
   LiveUiControl.button,
   LiveUiControl.card,
   LiveUiControl.textField,
@@ -296,7 +296,7 @@ The full capability surface, mapped to the ten `LiveUiControl` values the resolv
 | `select` | Native `wind.WSelect<T>` | `adapterNative` |
 | `tabBar` | Core shared token renderer | `shared` |
 
-Six Native, four Shared fallback. A declared control resolves to `adapterNative` with **no** diagnostic; an undeclared control resolves to `shared` and the resolver emits a `controlUnsupported` diagnostic (§15). The `wind_ui_contract_test.dart` asserts that the capability set lists exactly the overrides and that the fallback controls report `controlUnsupported`, so drift between declaration and implementation is caught before it ships (§17).
+Six Native, four Shared fallback. A declared control resolves to `adapterNative` with **no** diagnostic; an undeclared control resolves to `shared` and the resolver emits a `controlUnsupported` diagnostic (§15). The `wind_contract_test.dart` asserts that the capability set lists exactly the overrides and that the fallback controls report `controlUnsupported`, so drift between declaration and implementation is caught before it ships (§17).
 
 ## 8. Theme mapping
 
@@ -437,7 +437,7 @@ The application composition root registers the adapter during startup. Wind expo
 // Using the exported API.
 // `LanguageRegistry` is immutable: the adapters are supplied as a map at construction.
 const registry = LanguageRegistry(
-  adapters: {LiveDesignLanguage.wind: windUiAdapter},   // or createWindUiAdapter()
+  adapters: {LiveDesignLanguage.wind: windAdapter},   // or createWindAdapter()
   fallback: SharedLanguageAdapter(),
 );
 ```
@@ -445,7 +445,7 @@ const registry = LanguageRegistry(
 The core `LanguageRegistry` maps `LiveDesignLanguage → LanguageAdapter` with a shared fallback, so an unregistered language still renders coherently:
 
 ```dart
-const LanguageRegistry(adapters: {LiveDesignLanguage.wind: windUiAdapter}, fallback: SharedLanguageAdapter());
+const LanguageRegistry(adapters: {LiveDesignLanguage.wind: windAdapter}, fallback: SharedLanguageAdapter());
 ```
 
 The composition root, not the adapter, is responsible for: registering the adapters included in the build, loading the user's style preference, selecting the active language, providing configuration persistence, and coordinating runtime theme changes. `live_uikit_wind` must not register itself through global static initializers or require the business layer to import it.
@@ -558,7 +558,7 @@ The codes relevant to Wind:
 | `defaultAdapterMissing` | The shared fallback itself is unavailable — startup fault |
 | `unsupportedEffect` | The environment cannot afford a Wind visual effect; a verified degraded visual stands in |
 
-For the seven fallback controls, `controlUnsupported` is the **documented, expected** outcome at Wind's current scope, not a bug. The resolver returns the shared implementation with that diagnostic so a test can assert "this control, in the Wind style, was rendered by the shared token renderer for this reason." As each control graduates to native (§18), it moves from `shared` to `adapterNative`, the diagnostic disappears, and `windUiCapabilities` must be updated in the same change.
+For the seven fallback controls, `controlUnsupported` is the **documented, expected** outcome at Wind's current scope, not a bug. The resolver returns the shared implementation with that diagnostic so a test can assert "this control, in the Wind style, was rendered by the shared token renderer for this reason." As each control graduates to native (§18), it moves from `shared` to `adapterNative`, the diagnostic disappears, and `windCapabilities` must be updated in the same change.
 
 Expected behavior:
 
@@ -568,7 +568,7 @@ Expected behavior:
 
 ## 16. Testing strategy
 
-### Unit / contract tests (`test/adapter/wind_ui_contract_test.dart`)
+### Unit / contract tests (`test/adapter/wind_contract_test.dart`)
 
 - Stable id (`wind`), display name (`Wind`), and language (`LiveDesignLanguage.wind`).
 - The capability set lists exactly the six controls the adapter overrides — `{button,
@@ -603,7 +603,7 @@ narrow versus wide constraints — the §19 line that still asks for hardware.
 ### Integration tests (`test/integration/wind_style_switching_test.dart`)
 
 - Every `LiveUiControl` resolves as declared: six `adapterNative` (button, card, text field, switch, checkbox, select), four `shared` with `controlUnsupported`.
-- A mixed subtree renders `wind.WInput`/`WCard`/`WSwitch`/`WSelect` natively beside the token slider and progress; Wind → core `material` → Wind replaces the path with the caller's `TextEditingController` text and select value intact.
+- A mixed subtree renders `wind.WInput`/`WCard`/`WSwitch`/`WSelect` natively beside the token slider and progress; Wind → the `token` base → Wind replaces the path with the caller's `TextEditingController` text and select value intact.
 - `adapterMissing` is reported only for the core base; while Wind is active the sink sees exactly the four undeclared controls' `controlUnsupported` entries (§15.5).
 
 A cross-adapter switch (this language against Fluent, Glass, …) is deliberately **not** tested from this package: §3.3 forbids depending on another style adapter, so that case belongs to the application integration suite. Brightness/accent re-skin is asserted in `test/theme/`.
@@ -624,11 +624,11 @@ implemented per package:
 - The core package does not depend on `fluttersdk_wind`.
 - Business packages do not import `package:fluttersdk_wind/fluttersdk_wind.dart`.
 - Only the registration API is exported from the barrel; builders, mappers, and `fluttersdk_wind` types stay internal.
-- The declared `windUiCapabilities` set matches the methods `WindLanguageAdapter` actually overrides (the contract test enforces this).
+- The declared `windCapabilities` set matches the methods `WindLanguageAdapter` actually overrides (the contract test enforces this).
 - Every `package:fluttersdk_wind/` import inside this package uses the `as wind` prefix, in `lib/` and `test/`. The prefix is a package-wide rule (§3.3):
   it keeps this library's types distinguishable from Flutter's own and from a sibling
   adapter's, and it is what lets the architecture guard assert the convention.
-- The README's list of native controls is checked against `windUiCapabilities`: a control named in
+- The README's list of native controls is checked against `windCapabilities`: a control named in
   prose but not declared, or declared but unmentioned, fails the gate.
 - §4's directory tree is checked against the package: every file the current-layout tree
   names must exist, and every `test/**_test.dart` on disk must be named there. The
@@ -651,8 +651,8 @@ Wind ships with six native controls and a token-driven theme bridge. The phases 
 
 - `WindLanguageAdapter` implements the finalized core contract by extending `SharedLanguageAdapter`.
 - Stable id `wind`, display name `Wind`, `LiveDesignLanguage.wind` language.
-- `windUiAdapter`, `createWindUiAdapter()`, `windUiAdapterId` registration API; barrel exports only the registration.
-- `wind_ui_contract_test.dart` covers id/capabilities/resolver behavior.
+- `windAdapter`, `createWindAdapter()`, `windAdapterId` registration API; barrel exports only the registration.
+- `wind_contract_test.dart` covers id/capabilities/resolver behavior.
 
 ### Phase 2 — Theme integration foundation ✅
 
@@ -669,14 +669,14 @@ Wind ships with six native controls and a token-driven theme bridge. The phases 
 ### Phase 4 — First high-value native surfaces ✅
 
 - `WindCardBuilder` and `WindTextFieldBuilder` added, overriding `card` and `textField`.
-- Both are declared in `windUiCapabilities`, and `wind_ui_contract_test.dart` moved them from the `fallback` set to the `native` set in the same change (§17 drift gate).
+- Both are declared in `windCapabilities`, and `wind_contract_test.dart` moved them from the `fallback` set to the `native` set in the same change (§17 drift gate).
 - The card takes its surface from the token because `WCard` paints none; the field collapses `obscure`/`keyboardType`/`maxLines` into the fork's single `InputType` and draws `errorText` the way the token renderer does (§9).
 
 ### Phase 5 — Remaining controls ◐
 
 - `WindSelectBuilder` added, overriding `select` with `wind.WSelect<T>` (§9): the typed items map to `SelectOption`s, a null/disabled spec disables the fork, and the contract test's `native`/`fallback` sets moved `select` in the same change (§17 drift gate). Wind is now six-of-ten native.
 - Slider, segmented, progress and tab bar stay shared: `fluttersdk_wind` offers no `WSlider`, `WProgress`, or bare tab strip (`WTabs` couples the row to a content panel `LanguageTabsSpec` does not carry), so a native builder is gated on the library first providing a control for the job rather than hand-wrapping an ill-fitting one (§9).
-- Each future promotion updates `windUiCapabilities` and the contract test's `native`/`fallback` sets in lockstep.
+- Each future promotion updates `windCapabilities` and the contract test's `native`/`fallback` sets in lockstep.
 
 ### Phase 6 — Interaction, icons, and accessibility
 
@@ -695,8 +695,8 @@ Wind ships with six native controls and a token-driven theme bridge. The phases 
 
 - [x] The package depends on `live_uikit` and `fluttersdk_wind` only for its core integration.
 - [x] It extends `SharedLanguageAdapter` and implements the actual `LanguageAdapter` contract.
-- [x] It uses the stable adapter id `wind` (with `windUiAdapterId`, `windUiAdapter`, `createWindUiAdapter()`).
-- [x] `windUiCapabilities` declares exactly the six controls the adapter overrides (`button`, `card`, `textField`, `switchWidget`, `checkbox`, `select`) as native.
+- [x] It uses the stable adapter id `wind` (with `windAdapterId`, `windAdapter`, `createWindAdapter()`).
+- [x] `windCapabilities` declares exactly the six controls the adapter overrides (`button`, `card`, `textField`, `switchWidget`, `checkbox`, `select`) as native.
 - [x] The other four controls resolve through the shared token renderer and report `controlUnsupported`.
 - [x] The barrel exports only the registration API; no builders, mappers, or `fluttersdk_wind` types leak (§17 guards this in CI).
 - [x] It maps the resolved `DesignToken` into `WindThemeData` and installs a Wind theme scope — brightness with `syncWithSystem` off, the accent as Wind's `primary` swatch, and a configured global family in `fontFamilies['sans']` (§8.1).
@@ -707,7 +707,7 @@ Wind ships with six native controls and a token-driven theme bridge. The phases 
 - [x] Runtime switching preserves business state.
 - [ ] Keyboard, accessibility, and TV focus behavior are tested for the native controls — nothing in the suite drives a key event or a semantics node yet (§16), and D-pad behavior needs hardware.
 - [x] Diagnostics use the shared core contract (`LiveUiDiagnostic`, `LiveUiDiagnosticSink`): the package defines no channel of its own, and its downgrades arrive as the resolver's `controlUnsupported`.
-- [x] The contract test keeps `windUiCapabilities` in sync with the overrides (§17).
+- [x] The contract test keeps `windCapabilities` in sync with the overrides (§17).
 - [x] Tests and static analysis pass (`flutter test`, `flutter analyze`: no issues).
 - [ ] Platform support claims are backed by real tests — Windows desktop, a mobile target and Android TV still need their runtimes (§16 Platform verification).
 
@@ -721,4 +721,4 @@ Wind ships with six native controls and a token-driven theme bridge. The phases 
 - The PureLive application composition root registers adapters and manages user preferences.
 - Business packages depend only on the unified `live_uikit` API.
 
-Wind's deliberately small native surface is a foundation, not a ceiling: everything renders correctly and stays on theme through the shared token renderer, and each control graduates to native through the phases above while `windUiCapabilities` tracks the truth. This separation lets PureLive add or replace UI styles — including growing Wind — without forcing business packages to know which library is currently rendering their controls.
+Wind's deliberately small native surface is a foundation, not a ceiling: everything renders correctly and stays on theme through the shared token renderer, and each control graduates to native through the phases above while `windCapabilities` tracks the truth. This separation lets PureLive add or replace UI styles — including growing Wind — without forcing business packages to know which library is currently rendering their controls.

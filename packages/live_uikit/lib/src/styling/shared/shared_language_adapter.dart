@@ -91,7 +91,7 @@ class SharedLanguageAdapter implements LanguageAdapter {
   };
 
   @override
-  LiveDesignLanguage get language => LiveDesignLanguage.material;
+  LiveDesignLanguage get language => LiveDesignLanguage.token;
 
   @override
   String get id => language.name;
@@ -202,5 +202,5 @@ class SharedLanguageAdapter implements LanguageAdapter {
   Widget toast(BuildContext context, LanguageToastSpec spec) => TokenToast(spec: spec);
 
   @override
-  Widget host(BuildContext context, LanguageHostSpec spec) => TokenApp(spec: spec);
+  Widget appHost(BuildContext context, LanguageHostSpec spec) => TokenApp(spec: spec);
 }

@@ -8,7 +8,7 @@ import 'package:live_uikit/src/styling/provider/live_config_provider.dart';
 /// own (ForUI, Glass, Neumorphic and Wind are all of that kind).
 ///
 /// It is the fallback, not the default: a language that has a real host gets
-/// [LanguageAdapter.host] overridden and this never runs, so the router's
+/// [LanguageAdapter.appHost] overridden and this never runs, so the router's
 /// transitions, the overlay dialogs open into and the chrome strings all come
 /// from the library the page controls come from.
 class TokenApp extends StatelessWidget {
@@ -90,7 +90,7 @@ class LiveApp extends StatelessWidget {
   final bool debugShowCheckedModeBanner;
 
   @override
-  Widget build(BuildContext context) => LiveTheme.of(context).adapter.host(
+  Widget build(BuildContext context) => LiveTheme.of(context).adapter.appHost(
     context,
     LanguageHostSpec(
       routerConfig: routerConfig,

@@ -27,11 +27,11 @@ workspace:
   - packages/live_uikit
   - packages/live_uikit_background
   - packages/live_uikit_background/example
-  - packages/live_uikit_cupertino_ui
+  - packages/live_uikit_cupertino
   - packages/live_uikit_fluent
   - packages/live_uikit_forui
   - packages/live_uikit_macos
-  - packages/live_uikit_material_ui
+  - packages/live_uikit_material
   - packages/live_uikit_neumorphic
   - packages/live_uikit_glass
   - packages/live_uikit_wind

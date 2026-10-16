@@ -85,22 +85,22 @@ dependencies:
 
 ```dart
 import 'package:live_uikit/live_uikit.dart';
-import 'package:live_uikit_material_ui/live_uikit_material_ui.dart';
+import 'package:live_uikit_material/live_uikit_material.dart';
 
 // The composition root registers the adapters that ship in this build.
 const registry = LanguageRegistry(
-  adapters: {LiveDesignLanguage.materialUi: materialUiAdapter},
+  adapters: {LiveDesignLanguage.material: materialAdapter},
   fallback: SharedLanguageAdapter(),
 );
 
 LiveConfigProvider(
-  config: const UiConfig(language: LiveDesignLanguage.materialUi),
+  config: const UiConfig(language: LiveDesignLanguage.material),
   registry: registry,
   diagnostics: myDiagnosticSink,
   child: MaterialApp(
     localizationsDelegates: const [
       ...liveLocalizationsDelegates,
-      ...materialUiLocalizationsDelegates,
+      ...materialLocalizationsDelegates,
     ],
     home: LiveButton(label: 'Save', onPressed: save),
   ),
@@ -149,7 +149,8 @@ theme, control and switching tests live in the `live_uikit_*` packages.
   composition root has to raise `SeedToken.controlHeight` itself
   (`LiveSizing.controlHeightTv` is the number to use). Nothing in the core reads
   `LiveSizing`; it is the host-facing scale.
-- `SharedLanguageAdapter` is the core `material`/`cupertino` renderer; the two fork
+- `SharedLanguageAdapter` is the `token` base — the only renderer the core ships,
+  and the one every language falls through to. The two Material- and iOS-shaped
   adapters (`material_ui`, `cupertino_ui`) are separate packages, so the visually
   closest pairs are also the ones most sensitive to a stale theme scope
-  (see `packages/live_uikit_material_ui/live-uikit-material-ui.md` §11).
+  (see `packages/live_uikit_material/live-uikit-material.md` §11).

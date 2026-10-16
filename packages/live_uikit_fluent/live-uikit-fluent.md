@@ -94,9 +94,9 @@ packages/
     │   ├── live_uikit_fluent.dart
     │   └── src/
     │       ├── adapter/
-    │       │   ├── fluent_ui_adapter.dart
-    │       │   ├── fluent_ui_capabilities.dart
-    │       │   └── fluent_ui_registration.dart
+    │       │   ├── fluent_adapter.dart
+    │       │   ├── fluent_capabilities.dart
+    │       │   └── fluent_registration.dart
     │       ├── theme/
     │       │   ├── fluent_theme_mapper.dart
     │       │   ├── fluent_theme_builder.dart
@@ -113,7 +113,7 @@ packages/
     ├── live-uikit-fluent.md
     └── test/
         ├── adapter/
-        │   └── fluent_ui_capabilities_test.dart
+        │   └── fluent_capabilities_test.dart
         ├── theme/
         │   └── fluent_theme_test.dart
         ├── widgets/
@@ -183,16 +183,16 @@ The public entry point exposes only the adapter's registration API:
 /// Public entry exposes only the registration API (§6).
 library;
 
-export 'package:live_uikit_fluent/src/adapter/fluent_ui_registration.dart';
+export 'package:live_uikit_fluent/src/adapter/fluent_registration.dart';
 ```
 
-`fluent_ui_registration.dart` provides exactly four public symbols:
+`fluent_registration.dart` provides exactly four public symbols:
 
 | Symbol | Kind | Purpose |
 |---|---|---|
-| `createFluentUiAdapter()` | Function | Constructs the adapter for the composition root to register |
-| `fluentUiAdapter` | `const LanguageAdapter` | The const adapter instance, usable directly where a constant is required |
-| `fluentUiAdapterId` | `const String` | The stable runtime id, `'fluent'` |
+| `createFluentAdapter()` | Function | Constructs the adapter for the composition root to register |
+| `fluentAdapter` | `const LanguageAdapter` | The const adapter instance, usable directly where a constant is required |
+| `fluentAdapterId` | `const String` | The stable runtime id, `'fluent'` |
 | `fluentLocalizationsDelegates` | `const List<LocalizationsDelegate<dynamic>>` | `fluent_ui`'s own `FluentLocalizations.delegate`, appended by the app (§14) |
 
 The builders, the theme mapper/scope and the `fluent`-prefixed types stay private: exporting them would let a business page construct a Fluent control directly and bypass runtime style switching. The package name in the export is a `package:` URI rather than a relative path, matching the other adapters and the guard that rejects cross-package private imports.
@@ -218,9 +218,9 @@ The realized mapping:
 | Contract member | Implementation here |
 |---|---|
 | `language` | `LiveDesignLanguage.fluent` |
-| `id` | `'fluent'` (matches `fluentUiAdapterId`) |
+| `id` | `'fluent'` (matches `fluentAdapterId`) |
 | `displayName` | `'Fluent'` |
-| `capabilities` | `fluentUiCapabilities` |
+| `capabilities` | `fluentCapabilities` |
 | `wrap` | `FluentThemeMapper.wrap` — installs the mapped `FluentTheme` scope |
 | `button` | `FluentButtonBuilder.build` — native (`FilledButton` vs `Button` by variant) |
 | `card` | `FluentCardBuilder.build` — native `fluent.Card` |
@@ -242,12 +242,12 @@ fluent
 
 The identifier is a machine-readable value, not a localized label. Do not use
 `fluent_ui`, `Fluent UI`, or a platform-dependent identifier as the runtime style id;
-`fluentUiAdapterId`, `FluentLanguageAdapter.id` and `LiveDesignLanguage.fluent.name`
+`fluentAdapterId`, `FluentLanguageAdapter.id` and `LiveDesignLanguage.fluent.name`
 all resolve to `fluent`.
 
 ### Capability declaration
 
-`fluentUiCapabilities` is a *declaration of fact*: it lists precisely the eight
+`fluentCapabilities` is a *declaration of fact*: it lists precisely the eight
 controls `FluentLanguageAdapter` overrides. `LiveUiControl` has exactly ten members
 — `button, card, textField, switchWidget, checkbox, slider, segmented, progress,
 select, tabBar` — so there is no `text`, `icon`, `dialog`, `menu` or "complex
@@ -412,7 +412,7 @@ void registerUiAdapters(
   LiveUiRegistry registry,
 ) {
   registry.register(
-    createFluentUiAdapter(),
+    createFluentAdapter(),
   );
 }
 ```
@@ -591,7 +591,7 @@ Three directories, one per concern: `test/adapter/` (contract), `test/theme/` (�
 
 ### Unit tests
 
-- Stable adapter id `fluent`, display name, language, and `fluentUiCapabilities` truthfulness.
+- Stable adapter id `fluent`, display name, language, and `fluentCapabilities` truthfulness.
 - Brightness, accent and global-font mapping: `token.color.primary` becomes the `AccentColor.swatch` the fork reads, with its shade getters falling back to `normal` rather than invented tones (§8.1).
 - Theme invalidation: a token change re-skins through `wrap` without a restart.
 - Fallback behavior for every control this adapter does not override.
@@ -609,7 +609,7 @@ Three directories, one per concern: `test/adapter/` (contract), `test/theme/` (�
 ### Integration tests (`test/integration/fluent_style_switching_test.dart`)
 
 - Every `LiveUiControl` resolves as declared: eight `adapterNative` — including `select`, which Fluent is the only adapter here to render natively — and `segmented`/`tabBar` `shared` with `controlUnsupported`.
-- Fluent → core `material` → Fluent swaps `fluent.TextBox`/`ToggleSwitch`/`ComboBox<String>` for the SDK and token equivalents and back, with the caller's controller text intact.
+- Fluent → the `token` base → Fluent swaps `fluent.TextBox`/`ToggleSwitch`/`ComboBox<String>` for the SDK and token equivalents and back, with the caller's controller text intact.
 - `adapterMissing` fires for the core base only; while Fluent is active the only reports are `controlUnsupported` for `segmented` and `tabBar` — eight native controls declare no gap (§15.5).
 - Segmented stays callable on both sides of the switch, and the typed select path survives the swap (§16.7).
 
@@ -635,7 +635,7 @@ implemented per package:
 - Every `package:fluent_ui/` import inside this package uses the `as fluent` prefix, in `lib/` and `test/`. The prefix is a package-wide rule (§3.3):
   it keeps this library's types distinguishable from Flutter's own and from a sibling
   adapter's, and it is what lets the architecture guard assert the convention.
-- The README's list of native controls is checked against `fluentUiCapabilities`: a control named in
+- The README's list of native controls is checked against `fluentCapabilities`: a control named in
   prose but not declared, or declared but unmentioned, fails the gate.
 - §4's directory tree is checked against the package: every file the current-layout tree
   names must exist, and every `test/**_test.dart` on disk must be named there. The
@@ -670,7 +670,7 @@ Run these from the workspace root with the repository's normal Flutter SDK and w
 
 ### Phase 3 — Core controls ✅
 
-Eight native builders, each declared in `fluentUiCapabilities` and exercised through
+Eight native builders, each declared in `fluentCapabilities` and exercised through
 the real adapter path in `test/widgets/`:
 
 1. Button (`fluent.FilledButton` / `fluent.Button`)

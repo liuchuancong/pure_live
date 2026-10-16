@@ -13,7 +13,7 @@ void main() {
   Widget harness(Widget child) => LiveConfigProvider(
     config: config,
     registry: const LanguageRegistry(
-      adapters: {LiveDesignLanguage.forui: foruiUiAdapter},
+      adapters: {LiveDesignLanguage.forui: foruiAdapter},
       fallback: SharedLanguageAdapter(),
     ),
     child: MaterialApp(

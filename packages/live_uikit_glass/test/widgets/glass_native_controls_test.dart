@@ -12,7 +12,7 @@ void main() {
   Widget harness(Widget child) => LiveConfigProvider(
     config: config,
     registry: const LanguageRegistry(
-      adapters: {LiveDesignLanguage.glass: glassUiAdapter},
+      adapters: {LiveDesignLanguage.glass: glassAdapter},
       fallback: SharedLanguageAdapter(),
     ),
     child: MaterialApp(

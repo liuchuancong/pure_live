@@ -33,7 +33,7 @@ void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
 
 void main() {
   const registry = LanguageRegistry(
-    adapters: {LiveDesignLanguage.wind: windUiAdapter},
+    adapters: {LiveDesignLanguage.wind: windAdapter},
     fallback: SharedLanguageAdapter(),
   );
   const resolver = LiveUiResolver(registry: registry);
@@ -66,7 +66,7 @@ void main() {
     }
   });
 
-  testWidgets('Wind ↔ core material swaps the rendering path, not the state (§11)', (tester) async {
+  testWidgets('Wind ↔ the token base swaps the rendering path, not the state (§11)', (tester) async {
     final diagnostics = <LiveUiDiagnostic>[];
     final controller = TextEditingController(text: 'typed before the switch');
     addTearDown(controller.dispose);

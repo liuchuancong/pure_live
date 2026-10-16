@@ -76,9 +76,9 @@ The application composition root registers this adapter. Business packages depen
 | Flutter SDK | Yes | Widget and rendering primitives |
 | Riverpod / GetX / Bloc | No | State management belongs to the app |
 | `live_uikit_fluent` | No | Adapters must remain independent |
-| `live_uikit_cupertino_ui` | No | Adapters must remain independent |
+| `live_uikit_cupertino` | No | Adapters must remain independent |
 | `live_uikit_macos` | No | Adapters must remain independent |
-| `live_uikit_material_ui` | No | Adapters must remain independent |
+| `live_uikit_material` | No | Adapters must remain independent |
 | `live_uikit_neumorphic` | No | Adapters must remain independent |
 | `live_uikit_wind` | No | Adapters must remain independent |
 | Business feature packages | No | Prevents dependency inversion |
@@ -98,9 +98,9 @@ packages/
     │   ├── live_uikit_glass.dart
     │   └── src/
     │       ├── adapter/
-    │       │   ├── glass_ui_adapter.dart
-    │       │   ├── glass_ui_capabilities.dart
-    │       │   └── glass_ui_registration.dart
+    │       │   ├── glass_adapter.dart
+    │       │   ├── glass_capabilities.dart
+    │       │   └── glass_registration.dart
     │       ├── theme/
     │       │   ├── glass_theme_mapper.dart
     │       │   ├── glass_theme_builder.dart
@@ -112,7 +112,7 @@ packages/
     ├── live-uikit-glass.md
     └── test/
         ├── adapter/
-        │   └── glass_ui_contract_test.dart
+        │   └── glass_contract_test.dart
         ├── theme/
         │   └── glass_theme_test.dart
         ├── widgets/
@@ -186,15 +186,15 @@ Real entry point:
 // lib/live_uikit_glass.dart
 library;
 
-export 'package:live_uikit_glass/src/adapter/glass_ui_registration.dart';
+export 'package:live_uikit_glass/src/adapter/glass_registration.dart';
 ```
 
-`glass_ui_registration.dart` provides the finalized core-contract symbols:
+`glass_registration.dart` provides the finalized core-contract symbols:
 
 ```dart
-const String glassUiAdapterId = 'glass';
-const LanguageAdapter glassUiAdapter = GlassLanguageAdapter();
-LanguageAdapter createGlassUiAdapter() => const GlassLanguageAdapter();
+const String glassAdapterId = 'glass';
+const LanguageAdapter glassAdapter = GlassLanguageAdapter();
+LanguageAdapter createGlassAdapter() => const GlassLanguageAdapter();
 ```
 
 Localization delegates are **not** exported and none are added; Glass relies on Flutter/core localization (§14). The theme scope and the three widget builders are implementation details reachable only through the adapter, never imported by callers.
@@ -235,7 +235,7 @@ class GlassLanguageAdapter extends SharedLanguageAdapter {
   @override LiveDesignLanguage get language => LiveDesignLanguage.glass;
   @override String get id => 'glass';
   @override String get displayName => 'Glass';
-  @override LiveUiCapabilities get capabilities => glassUiCapabilities;
+  @override LiveUiCapabilities get capabilities => glassCapabilities;
 
   @override
   Widget wrap(BuildContext context, DesignToken token, Widget child) => _theme.wrap(context, token, child);
@@ -257,14 +257,14 @@ Use one stable identifier everywhere:
 glass
 ```
 
-The `id` (`glass`), the `glassUiAdapterId` constant, and `displayName` (`Glass`) are fixed. The identifier is machine-readable; do not use `glass_morphism_plus` or a platform-dependent value as the runtime style id.
+The `id` (`glass`), the `glassAdapterId` constant, and `displayName` (`Glass`) are fixed. The identifier is machine-readable; do not use `glass_morphism_plus` or a platform-dependent value as the runtime style id.
 
 ### Capability declaration
 
-`glassUiCapabilities` reports only the controls the adapter actually overrides:
+`glassCapabilities` reports only the controls the adapter actually overrides:
 
 ```dart
-const LiveUiCapabilities glassUiCapabilities = LiveUiCapabilities(<LiveUiControl>{
+const LiveUiCapabilities glassCapabilities = LiveUiCapabilities(<LiveUiControl>{
   LiveUiControl.button,
   LiveUiControl.card,
   LiveUiControl.textField,
@@ -395,13 +395,13 @@ The application composition root registers the adapter during startup through th
 
 ```dart
 void registerUiAdapters(LanguageRegistry registry) {
-  registry.register(createGlassUiAdapter());
+  registry.register(createGlassAdapter());
 }
 ```
 
 The composition root is responsible for registering the adapters included in the build, loading the user's style preference, selecting the active language, providing configuration persistence, and coordinating runtime theme changes. `live_uikit_glass` must not register itself through global static initialization or require the business layer to import it.
 
-The const `glassUiAdapter` is available for hosts that prefer a shared instance over `createGlassUiAdapter()`; both resolve to the same `GlassLanguageAdapter`.
+The const `glassAdapter` is available for hosts that prefer a shared instance over `createGlassAdapter()`; both resolve to the same `GlassLanguageAdapter`.
 
 ### Registration and resolution failure
 
@@ -518,7 +518,7 @@ Each `LiveUiDiagnostic` carries the `language`, the `control` (null for a langua
 
 The two Glass-specific downgrades are expected and stronger here than in opaque-surface adapters:
 
-- **Capability downgrades are the norm, not an exception.** Because only button, card, and text field are native, the seven fallback controls resolve to the shared renderer on **every** platform and must surface `controlUnsupported` every time — the contract test asserts this (§16) so drift between `glassUiCapabilities` and the actual overrides fails CI.
+- **Capability downgrades are the norm, not an exception.** Because only button, card, and text field are native, the seven fallback controls resolve to the shared renderer on **every** platform and must surface `controlUnsupported` every time — the contract test asserts this (§16) so drift between `glassCapabilities` and the actual overrides fails CI.
 - **Effect downgrades must be visible.** When real-time blur is replaced by a degraded surface (§13), report `unsupportedEffect` with `control == null` so the host sees an environment-wide visual change, and record the degraded stand-in it chose. No downgrade — capability or effect — happens without one of these codes.
 
 Expected behavior:
@@ -532,7 +532,7 @@ Expected behavior:
 
 ### Unit / contract tests
 
-The existing `test/adapter/glass_ui_contract_test.dart` verifies, through the real `LanguageRegistry` and `LiveUiResolver`:
+The existing `test/adapter/glass_contract_test.dart` verifies, through the real `LanguageRegistry` and `LiveUiResolver`:
 
 - Stable `id` (`glass`), `displayName` (`Glass`), and `language` (`LiveDesignLanguage.glass`).
 - Capability set lists **exactly** `{button, card, textField}` as native and the other seven as non-native.
@@ -567,7 +567,7 @@ no affordance to introspect (§15) and there is still no `interaction/` director
 ### Integration tests (`test/integration/glass_style_switching_test.dart`)
 
 - Every `LiveUiControl` resolves as declared: three `adapterNative`, seven `shared` with `controlUnsupported`.
-- Glass → core `material` → Glass removes and restores `glass.GlassButton`/`GlassCard`/`GlassTextField`, with the caller's controller text intact.
+- Glass → the `token` base → Glass removes and restores `glass.GlassButton`/`GlassCard`/`GlassTextField`, with the caller's controller text intact.
 - The fallback controls (progress here) render on both sides of the switch.
 - `unsupportedEffect` for a simulated unaffordable device stays open: it needs the affordance detection §18 Phase 3 blocks on.
 
@@ -585,15 +585,15 @@ map for the whole family, so the rules below are asserted once for every adapter
 implemented per package:
 
 - `live_uikit_glass` depends on `live_uikit` and `glass_morphism_plus` only for its core integration.
-- `live_uikit_glass` does not depend on other style adapters (`live_uikit_fluent`, `live_uikit_cupertino_ui`, `live_uikit_macos`, `live_uikit_material_ui`, `live_uikit_neumorphic`, `live_uikit_wind`).
+- `live_uikit_glass` does not depend on other style adapters (`live_uikit_fluent`, `live_uikit_cupertino`, `live_uikit_macos`, `live_uikit_material`, `live_uikit_neumorphic`, `live_uikit_wind`).
 - The core package does not depend on `glass_morphism_plus`.
 - Business packages do not import `package:glass_morphism_plus/...`.
 - All public exports are intentional (only the registration API).
-- The declared `glassUiCapabilities` matches the methods `GlassLanguageAdapter` actually overrides — the fallback controls resolve shared and report `controlUnsupported`, never silent.
+- The declared `glassCapabilities` matches the methods `GlassLanguageAdapter` actually overrides — the fallback controls resolve shared and report `controlUnsupported`, never silent.
 - Every `package:glass_morphism_plus/` import inside this package uses the `as glass` prefix, in `lib/` and `test/`. The prefix is a package-wide rule (§3.3):
   it keeps this library's types distinguishable from Flutter's own and from a sibling
   adapter's, and it is what lets the architecture guard assert the convention.
-- The README's list of native controls is checked against `glassUiCapabilities`: a control named in
+- The README's list of native controls is checked against `glassCapabilities`: a control named in
   prose but not declared, or declared but unmentioned, fails the gate.
 - §4's directory tree is checked against the package: every file the current-layout tree
   names must exist, and every `test/**_test.dart` on disk must be named there. The

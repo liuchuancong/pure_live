@@ -29,7 +29,7 @@ void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
 
 void main() {
   const registry = LanguageRegistry(
-    adapters: {LiveDesignLanguage.forui: foruiUiAdapter},
+    adapters: {LiveDesignLanguage.forui: foruiAdapter},
     fallback: SharedLanguageAdapter(),
   );
   const resolver = LiveUiResolver(registry: registry);
@@ -62,7 +62,7 @@ void main() {
     }
   });
 
-  testWidgets('ForUI ↔ core material swaps the path, not the state (§11)', (tester) async {
+  testWidgets('ForUI ↔ the token base swaps the path, not the state (§11)', (tester) async {
     final diagnostics = <LiveUiDiagnostic>[];
     final controller = TextEditingController(text: 'typed before the switch');
     addTearDown(controller.dispose);
@@ -85,7 +85,7 @@ void main() {
     expect(find.byType(TokenSlider), findsNothing);
     expectUndeclaredControls(diagnostics);
 
-    // `UiConfig()` defaults to the core `material` token base.
+    // `UiConfig()` defaults to the shared `token` base.
     await tester.pumpWidget(harness(const UiConfig(), page(), diagnostics));
     expect(find.byType(forui.FTextField), findsNothing);
     expect(find.byType(forui.FCard), findsNothing);

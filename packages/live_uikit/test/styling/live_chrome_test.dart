@@ -63,9 +63,9 @@ class _RecordingAdapter extends SharedLanguageAdapter {
   }
 
   @override
-  Widget host(BuildContext context, LanguageHostSpec spec) {
+  Widget appHost(BuildContext context, LanguageHostSpec spec) {
     captured.add(spec);
-    return super.host(context, spec);
+    return super.appHost(context, spec);
   }
 }
 
