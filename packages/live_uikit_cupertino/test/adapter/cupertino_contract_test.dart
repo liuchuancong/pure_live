@@ -27,6 +27,8 @@ void main() {
     LiveUiControl.listRow,
     LiveUiControl.navBar,
     LiveUiControl.toast,
+    LiveUiControl.dialog,
+    LiveUiControl.tabView,
   };
 
   test('declares exactly the surfaces it owns structurally', () {
@@ -48,7 +50,7 @@ void main() {
     });
 
     test('declares exactly the controls it renders natively', () {
-      // All fifteen: Cupertino renders every control, and the four with no
+      // All seventeen: Cupertino renders every control, and the five with no
       // one-for-one library widget say so in their builder (§9).
       for (final control in native) {
         expect(adapter.capabilities.supports(control), isTrue, reason: '$control should be native');

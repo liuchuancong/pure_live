@@ -381,6 +381,84 @@ void main() {
     });
   });
 
+  group('the dialog surface and the page switcher (§9/§16)', () {
+    testWidgets('a dialog is the fork alert card, not the token box', (tester) async {
+      await tester.pumpWidget(harness(const SizedBox.shrink()));
+      // The route, the barrier and the fade stay in the core; only the surface is
+      // this language's (§9), so the test goes through `showLiveDialog`.
+      final result = showLiveDialog<void>(
+        context: tester.element(find.byType(Scaffold)),
+        title: 'Leave the room?',
+        child: const Text('The stream keeps running.'),
+        actions: [LiveButton(label: 'Leave', onPressed: () {})],
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(cu.CupertinoAlertDialog), findsOneWidget);
+      expect(find.byType(TokenDialog), findsNothing);
+      expect(find.text('Leave the room?'), findsOneWidget);
+      expect(find.text('The stream keeps running.'), findsOneWidget);
+      expect(find.byType(cu.CupertinoButton), findsWidgets, reason: 'the actions stay the dispatched button');
+      expect(tester.takeException(), isNull);
+
+      // The route is the core's, so closing it is the core's too.
+      Navigator.of(tester.element(find.byType(cu.CupertinoAlertDialog))).pop();
+      await tester.pumpAndSettle();
+      await result;
+    });
+
+    testWidgets('the icon an alert has no slot for still reaches its body', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          Builder(
+            builder: (context) => LiveTheme.of(context).adapter.dialog(
+              context,
+              const LanguageDialogSpec(icon: Icons.star, content: Text('starred')),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(cu.CupertinoAlertDialog), findsOneWidget);
+      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.text('starred'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a page switcher is a Cupertino page view, not the token one', (tester) async {
+      var reported = -1;
+      Widget view(int index) => harness(
+        SizedBox(
+          width: 300,
+          height: 200,
+          child: Builder(
+            builder: (context) => LiveTheme.of(context).adapter.tabView(
+              context,
+              LanguageTabViewSpec(
+                pages: const [Text('first'), Text('second')],
+                index: index,
+                onIndexChanged: (page) => reported = page,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(view(0));
+      await tester.pumpAndSettle();
+      expect(find.byType(TokenTabView), findsNothing);
+      expect(find.text('first'), findsOneWidget);
+
+      // The caller owns the index, so moving it here is what changes the page.
+      await tester.pumpWidget(view(1));
+      await tester.pumpAndSettle();
+      expect(find.text('second'), findsOneWidget);
+      expect(reported, 1, reason: 'the animated page change reports back to the strip');
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('native chrome (§9/§16)', () {
     // The frame is the widget under test, so it is the home itself rather than a
     // child of a Material scaffold — a language frame that only worked inside

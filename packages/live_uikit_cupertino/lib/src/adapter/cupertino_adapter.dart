@@ -7,6 +7,7 @@ import 'package:live_uikit_cupertino/src/widgets/cupertino_app_bar_builder.dart'
 import 'package:live_uikit_cupertino/src/widgets/cupertino_button_builder.dart';
 import 'package:live_uikit_cupertino/src/widgets/cupertino_card_builder.dart';
 import 'package:live_uikit_cupertino/src/widgets/cupertino_checkbox_builder.dart';
+import 'package:live_uikit_cupertino/src/widgets/cupertino_dialog_builder.dart';
 import 'package:live_uikit_cupertino/src/widgets/cupertino_host_builder.dart';
 import 'package:live_uikit_cupertino/src/widgets/cupertino_list_row_builder.dart';
 import 'package:live_uikit_cupertino/src/widgets/cupertino_nav_bar_builder.dart';
@@ -18,6 +19,7 @@ import 'package:live_uikit_cupertino/src/widgets/cupertino_shell_builder.dart';
 import 'package:live_uikit_cupertino/src/widgets/cupertino_slider_builder.dart';
 import 'package:live_uikit_cupertino/src/widgets/cupertino_switch_builder.dart';
 import 'package:live_uikit_cupertino/src/widgets/cupertino_tab_bar_builder.dart';
+import 'package:live_uikit_cupertino/src/widgets/cupertino_tab_view_builder.dart';
 import 'package:live_uikit_cupertino/src/widgets/cupertino_text_field_builder.dart';
 import 'package:live_uikit_cupertino/src/widgets/cupertino_toast_builder.dart';
 
@@ -26,7 +28,7 @@ import 'package:live_uikit_cupertino/src/widgets/cupertino_toast_builder.dart';
 /// A fork of Flutter's Cupertino widgets, and this adapter covers the whole
 /// contract with it: the controls, the four chrome pieces, both structural
 /// surfaces — the `CupertinoApp` host and a shell composed out of the library's
-/// list pieces, since it ships no rail — and the four controls the fork either
+/// list pieces, since it ships no rail — and the five controls the fork either
 /// drives differently from the neutral spec or has no widget for at all (see
 /// `cupertino_capabilities.dart` for which is which).
 /// Theme via `theme/`, each control via its `widgets/` builder. No business state.
@@ -93,6 +95,9 @@ class CupertinoLanguageAdapter extends SharedLanguageAdapter {
   Widget tabBar(BuildContext context, LanguageTabsSpec spec) => CupertinoTabBarBuilder.build(context, spec);
 
   @override
+  Widget tabView(BuildContext context, LanguageTabViewSpec spec) => CupertinoTabViewBuilder.build(context, spec);
+
+  @override
   Widget scaffold(BuildContext context, LanguageScaffoldSpec spec) => CupertinoScaffoldBuilder.build(context, spec);
 
   @override
@@ -114,6 +119,9 @@ class CupertinoLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget toast(BuildContext context, LanguageToastSpec spec) => CupertinoToastBuilder.build(context, spec);
+
+  @override
+  Widget dialog(BuildContext context, LanguageDialogSpec spec) => CupertinoDialogBuilder.build(context, spec);
 
   @override
   Widget appHost(BuildContext context, LanguageHostSpec spec) => CupertinoHostBuilder.build(context, spec);

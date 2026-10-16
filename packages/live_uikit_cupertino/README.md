@@ -21,18 +21,23 @@ the core's Cupertino coverage rather than inventing a new one.
   `cupertino`).
 - Map the resolved `DesignToken` into the Cupertino theme and install it through a
   theme scope (never a nested application shell).
-- Build native Cupertino widgets for all fifteen: **button, card, text field,
+- Build native Cupertino widgets for all seventeen: **button, card, text field,
   switch, checkbox, slider, segmented, progress, select, tab bar, scaffold, app
-  bar, list row, nav bar, toast**. Eleven are a one-for-one mapping; four are
-  composed out of the fork's own parts because it has no widget for the job —
+  bar, list row, nav bar, toast, dialog, tab view**. Twelve are a one-for-one
+  mapping; five are composed out of the fork's own parts because it has no widget
+  for the job —
   `card` is `CupertinoListSection.insetGrouped` (the library ships no card and no
   box), `select` is a `CupertinoMenuAnchor` of `CupertinoMenuItem`s behind a
   `CupertinoButton` (iOS chooses from a pull-down menu, and `CupertinoPicker` is a
   wheel that cannot be one inline widget), `toast` is the library's
   `CupertinoPopupSurface` HUD panel (`CupertinoToast` is a community widget, not
-  part of this fork) and `tab bar` is a row of `CupertinoButton`s, because the
-  fork's one index-controlled strip is the *bottom* bar the nav bar already takes
-  (§9).
+  part of this fork), `tab bar` is a row of `CupertinoButton`s, because the
+  fork's one index-controlled strip is the *bottom* bar the nav bar already takes,
+  and `tab view` is a `PageView` wearing `CupertinoScrollBehavior`, because
+  `CupertinoTabView` is a per-tab `Navigator` that takes its pages from a route
+  table while the contract hands them over built (§9). The dialog is mapped:
+  `CupertinoAlertDialog` is a plain widget with no route in it, so the core keeps
+  the barrier, the fade and the dismissal and this draws only the card.
 - Own both structural surfaces (§ surfaces): the host is `cu.CupertinoApp`, and
   the shell is an iOS sidebar composed out of the fork's own surface pieces — a
   `CupertinoListSection` of `CupertinoListTile` rows — because the library ships

@@ -5,9 +5,9 @@ import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_cupertino/live_uikit_cupertino.dart';
 
 /// The controls `live_uikit_cupertino` renders natively (§3.1 capability
-/// declaration): all fifteen the resolver dispatches — the controls and the four
-/// chrome pieces, plus the four the fork drives with its own widgets rather than
-/// with a card/checkbox/select/tab widget it does not have.
+/// declaration): all seventeen the resolver dispatches — the controls and the four
+/// chrome pieces, plus the five the fork drives with its own widgets rather than
+/// with a card/checkbox/select/tab/dialog widget it does not have.
 const Set<LiveUiControl> nativeControls = {
   LiveUiControl.button,
   LiveUiControl.card,
@@ -24,6 +24,8 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.listRow,
   LiveUiControl.navBar,
   LiveUiControl.toast,
+  LiveUiControl.dialog,
+  LiveUiControl.tabView,
 };
 
 /// The structural surfaces this adapter owns (§ surfaces): the `CupertinoApp`
@@ -31,7 +33,7 @@ const Set<LiveUiControl> nativeControls = {
 /// no rail widget of its own.
 const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost, LiveUiSurface.appShell};
 
-/// §16 integration pass for `live_uikit_cupertino`: every one of the fifteen
+/// §16 integration pass for `live_uikit_cupertino`: every one of the seventeen
 /// controls resolves native, so a Cupertino language change reports no control
 /// downgrade at all, and switching to the core token base and back replaces the
 /// rendering path without touching the caller's controller (§11).
