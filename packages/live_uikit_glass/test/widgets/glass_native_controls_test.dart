@@ -574,7 +574,7 @@ void main() {
       );
       await tester.pump();
 
-      // Glass declares all fifteen controls, so nothing in a glass page should be
+      // Glass declares all seventeen controls, so nothing in a glass page should be
       // a `Token*` renderer any more — the assertion is by name rather than by
       // list so a control added to the contract cannot slip in silently.
       expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
@@ -719,6 +719,65 @@ void main() {
       expect(find.byType(MaterialApp), findsNothing, reason: 'the token Material host must not stand in');
       expect(find.byType(glass.GlassTheme), findsWidgets, reason: "the library's own theme, above the routes");
       expect(find.text('page'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('the overlay surface and the page switcher Glass has no widget for (§9)', () {
+    testWidgets('a dialog is a frosted panel inside the core route, not the token card', (tester) async {
+      await tester.pumpWidget(harness(const Text('anchor')));
+
+      // Routing, the barrier and the fade-and-scale are the core's; this only asks
+      // what the surface inside them is drawn with (§9 Dialog).
+      final shown = showLiveDialog<void>(
+        context: tester.element(find.text('anchor')),
+        title: 'Leave the room',
+        actions: [LiveButton(label: 'Cancel', onPressed: () {})],
+        child: const Text('Your session ends.'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TokenDialog), findsNothing);
+      expect(find.byType(glass.GlassContainer), findsWidgets, reason: 'the panel is the library surface');
+      expect(find.text('Leave the room'), findsOneWidget);
+      expect(find.text('Your session ends.'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      Navigator.of(tester.element(find.text('Cancel'))).pop();
+      await tester.pumpAndSettle();
+      await shown;
+      expect(find.text('Leave the room'), findsNothing);
+    });
+
+    testWidgets('a tab view slides to the caller index on a frosted sheet', (tester) async {
+      final reported = <int>[];
+      Widget view(int index) => Builder(
+        builder: (context) => SizedBox(
+          width: 240,
+          height: 120,
+          child: LiveTheme.of(context).adapter.tabView(
+            context,
+            LanguageTabViewSpec(
+              pages: const [Text('first page'), Text('second page')],
+              index: index,
+              onIndexChanged: reported.add,
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(harness(view(0)));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TokenTabView), findsNothing);
+      expect(find.byType(PageView), findsOneWidget);
+      expect(find.text('first page'), findsOneWidget);
+
+      // The caller owns the index; the view follows it with the spec's duration.
+      await tester.pumpWidget(harness(view(1)));
+      await tester.pumpAndSettle();
+      expect(find.text('second page'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

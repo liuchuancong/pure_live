@@ -28,6 +28,8 @@ void main() {
     LiveUiControl.listRow,
     LiveUiControl.navBar,
     LiveUiControl.toast,
+    LiveUiControl.dialog,
+    LiveUiControl.tabView,
   };
 
   group('Glass adapter contract (§7)', () {

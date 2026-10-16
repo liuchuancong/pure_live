@@ -5,9 +5,10 @@ import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_glass/live_uikit_glass.dart';
 
 /// The controls `live_uikit_glass` renders with `glass_morphism_plus` (§3.1
-/// capability declaration): all fifteen the resolver dispatches — four with the
-/// library's own widgets, eleven composed from its frosted surfaces and theme
-/// values.
+/// capability declaration): all seventeen the resolver dispatches — four with the
+/// library's own widgets, thirteen composed from its frosted surfaces and theme
+/// values, the last two of those because the library ships neither a dialog nor a
+/// page switcher.
 const Set<LiveUiControl> nativeControls = {
   LiveUiControl.button,
   LiveUiControl.card,
@@ -24,6 +25,8 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.listRow,
   LiveUiControl.navBar,
   LiveUiControl.toast,
+  LiveUiControl.dialog,
+  LiveUiControl.tabView,
 };
 
 /// The structural surfaces this adapter owns (§ surfaces): both of them — the
@@ -31,7 +34,7 @@ const Set<LiveUiControl> nativeControls = {
 /// since it ships no navigation structure of its own.
 const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost, LiveUiSurface.appShell};
 
-/// §16 integration pass for `live_uikit_glass`: every one of the fifteen controls
+/// §16 integration pass for `live_uikit_glass`: every one of the seventeen controls
 /// resolves native, so a Glass language change reports no control downgrade at
 /// all, and a switch to the core token base and back must not cost the caller its
 /// controller or its field state (§11).

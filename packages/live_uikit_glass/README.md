@@ -17,14 +17,16 @@ controls drawn by `glass_morphism_plus`, without business pages importing it.
 - Implement `LanguageAdapter` for `LiveDesignLanguage.glass` (stable id `glass`).
 - Map the resolved `DesignToken` into the Glass theme and install it through a
   theme scope (never a second application widget inside the host).
-- Build native Glass widgets for all fifteen: **button, card, text field, switch,
+- Build native Glass widgets for all seventeen: **button, card, text field, switch,
   checkbox, slider, segmented, progress, select, tab bar, scaffold, app bar, list
-  row, nav bar, toast**. `glass_morphism_plus` is a surface library — it publishes
-  frosted sheets and the theme that describes them — so only four of those are a
-  library widget (`GlassButton`, `GlassCard`, `GlassTextField`, `GlassListTile`);
-  the other eleven are composed out of `GlassContainer` and the `GlassTheme`
-  values it reads (blur, tint, corner radius, stroke, shadow), and each builder
-  says which (§9).
+  row, nav bar, toast, dialog, tab view**. `glass_morphism_plus` is a surface
+  library — it publishes frosted sheets and the theme that describes them — so only
+  four of those are a library widget (`GlassButton`, `GlassCard`, `GlassTextField`,
+  `GlassListTile`); the other thirteen are composed out of `GlassContainer` and the
+  `GlassTheme` values it reads (blur, tint, corner radius, stroke, shadow), and each
+  builder says which (§9). The library has no overlay and no page switcher at all,
+  so `dialog` is a frosted panel inside the route the core owns and `tab view` is
+  the framework's `PageView` on a frosted sheet — iOS swipes between tab pages.
 - Declare the whole contract in `glassCapabilities`: a Glass page reports no
   `controlUnsupported` downgrade, and nothing inside a Glass frame is a token
   renderer (§16/§17).
