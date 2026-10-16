@@ -19,6 +19,12 @@ export 'src/display/refresh_rate/display_refresh_rate_exception.dart' show Displ
 export 'src/display/refresh_rate/display_refresh_rate_preference.dart' show DisplayRefreshRatePreference;
 export 'src/display/refresh_rate/display_refresh_rate_service.dart' show DisplayRefreshRateService;
 export 'src/display/refresh_rate/platform_display_refresh_rate_service.dart' show PlatformDisplayRefreshRateService;
+export 'src/network/adapter/ip_address.dart' show IpAddress, IpAddressVersion;
+export 'src/network/adapter/network_adapter.dart' show NetworkAdapter;
+export 'src/network/adapter/network_adapter_capabilities.dart' show NetworkAdapterCapabilities;
+export 'src/network/adapter/network_adapter_exception.dart' show NetworkAdapterException;
+export 'src/network/adapter/network_adapter_service.dart' show NetworkAdapterService;
+export 'src/network/adapter/platform_network_adapter_service.dart' show PlatformNetworkAdapterService;
 export 'src/network/connectivity/network_connectivity.dart' show NetworkConnectivity;
 export 'src/network/connectivity/network_connectivity_capabilities.dart' show NetworkConnectivityCapabilities;
 export 'src/network/connectivity/network_connectivity_exception.dart' show NetworkConnectivityException;

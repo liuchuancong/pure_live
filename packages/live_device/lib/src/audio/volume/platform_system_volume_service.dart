@@ -11,6 +11,14 @@ import 'package:volume_controller/volume_controller.dart' as plugin;
 /// The underlying plugin exposes a singleton controller. This adapter keeps
 /// that plugin API private and owns the listener subscription created for each
 /// [watchVolume] stream.
+///
+/// Every call reaches the single default endpoint the plugin resolves — Windows
+/// `GetDefaultAudioEndpoint(eRender, eMultimedia)`, macOS
+/// `kAudioHardwarePropertyDefaultOutputDevice`, Linux the ALSA card named
+/// `default` — and no endpoint selector is offered. The macOS helper in
+/// particular has no master-volume path for many devices, so it averages the
+/// per-channel volumes when reading and writes one value to every channel when
+/// setting; that folding is passed through unchanged here.
 final class PlatformSystemVolumeService implements SystemVolumeService {
   /// Creates a service using the plugin's shared system-volume controller.
   const new();

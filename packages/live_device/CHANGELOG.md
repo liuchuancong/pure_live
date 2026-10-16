@@ -28,9 +28,27 @@
 
 - `ScreenAwakeService` over `wakelock_plus`: enable, disable and read the
   screen wakelock, with playback policy left to the caller.
+- `NetworkAdapterService` over `dart:io`: every adapter with every address bound
+  to it, including prefix length and broadcast, because a host legitimately
+  holds several addresses at once — `192.168.x.x` beside a VPN `10.x.x.x`.
+
+### Changed
+
+- `DeviceIdentity.processorCount` is `logicalProcessorCount`, and
+  `DeviceIdentityCapabilities.reportsProcessorCount` follows: every source behind
+  it counts scheduling threads (`dwNumberOfProcessors`, `hw.availcpu`,
+  `hardwareConcurrency`), not physical cores.
+- `ScreenBrightnessCapabilities.targetsPrimaryDisplay` and
+  `BatteryCapabilities.aggregatesPowerSources` are required fields;
+  `DisplayRefreshRate.monitorCount` is optional. All three exist because the
+  underlying plugins answer for one display or one folded power source while the
+  machine may have several.
 
 ### Notes
 
+- `WifiNetworkInfo.ipv4Address`/`ipv6Address` are renamed
+  `primaryIpv4Address`/`primaryIpv6Address`: the plugin truncates to the first
+  address per family on every platform, and the old names implied otherwise.
 - `mobile_scanner` is not a dependency of this package: its controller only
   emits frames once its preview widget is attached to the widget tree, so the
   layer that renders the scanner has to declare the plugin itself.

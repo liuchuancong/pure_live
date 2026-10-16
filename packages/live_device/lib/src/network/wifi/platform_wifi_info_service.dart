@@ -22,8 +22,8 @@ final class PlatformWifiInfoService implements WifiInfoService {
   Future<WifiNetworkInfo> read() async {
     final ssid = await _readField('ssid', _networkInfo.getWifiName);
     final bssid = await _readField('bssid', _networkInfo.getWifiBSSID);
-    final ipv4Address = await _readField('ipv4Address', _networkInfo.getWifiIP);
-    final ipv6Address = await _readField('ipv6Address', _networkInfo.getWifiIPv6);
+    final primaryIpv4Address = await _readField('primaryIpv4Address', _networkInfo.getWifiIP);
+    final primaryIpv6Address = await _readField('primaryIpv6Address', _networkInfo.getWifiIPv6);
     final subnetMask = await _readField('subnetMask', _networkInfo.getWifiSubmask);
     final gatewayAddress = await _readField('gatewayAddress', _networkInfo.getWifiGatewayIP);
     final broadcastName = await _readField('broadcastName', _networkInfo.getWifiBroadcast);
@@ -31,8 +31,8 @@ final class PlatformWifiInfoService implements WifiInfoService {
     return WifiNetworkInfo(
       ssid: ssid,
       bssid: bssid,
-      ipv4Address: ipv4Address,
-      ipv6Address: ipv6Address,
+      primaryIpv4Address: primaryIpv4Address,
+      primaryIpv6Address: primaryIpv6Address,
       subnetMask: subnetMask,
       gatewayAddress: gatewayAddress,
       broadcastName: broadcastName,

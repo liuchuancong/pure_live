@@ -42,10 +42,17 @@ void main() {
         debugDefaultTargetPlatformOverride = platform;
         final capabilities = await service.getCapabilities();
         final hasSaverApi = platform != TargetPlatform.linux;
+        final foldsPowerSources =
+            platform == TargetPlatform.linux || platform == TargetPlatform.macOS || platform == TargetPlatform.windows;
         expect(capabilities.canReadLevel, isTrue, reason: 'unexpected support on ${platform.name}');
         expect(capabilities.canReadStatus, isTrue, reason: 'unexpected support on ${platform.name}');
         expect(capabilities.canObserve, isTrue, reason: 'unexpected support on ${platform.name}');
         expect(capabilities.canReadPowerSaveMode, hasSaverApi, reason: 'battery saver is not read on ${platform.name}');
+        expect(
+          capabilities.aggregatesPowerSources,
+          foldsPowerSources,
+          reason: 'only desktops collapse several power sources into one reading',
+        );
         expect(capabilities.platformName, platform.name);
       }
 
@@ -55,6 +62,7 @@ void main() {
       expect(capabilities.canReadStatus, isFalse);
       expect(capabilities.canObserve, isFalse);
       expect(capabilities.canReadPowerSaveMode, isFalse);
+      expect(capabilities.aggregatesPowerSources, isFalse, reason: 'a platform with no backend folds nothing');
     });
   });
 }

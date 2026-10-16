@@ -81,6 +81,7 @@ final class PlatformDisplayRefreshRateService implements DisplayRefreshRateServi
     maxHz: _toHz(info.maxRate),
     isLowPowerMode: plugin.RefreshRate.isLowPowerMode,
     thermalState: _toThermalState(plugin.RefreshRate.thermalState),
+    monitorCount: info.monitorCount,
   );
 
   /// The plugin uses `0` for "no qualified value"; `null` is the public answer.

@@ -32,11 +32,14 @@ final class DisplayRefreshRate {
     required this.maxHz,
     required this.isLowPowerMode,
     required this.thermalState,
+    this.monitorCount,
   }) : supportedHz = List<double>.unmodifiable(supportedHz);
 
-  /// Refresh rate currently reported by the operating system.
+  /// Refresh rate currently reported for the one display this snapshot resolves.
   ///
-  /// `0` when the platform has no value to report.
+  /// `0` when the platform has no value to report. It is a single display's
+  /// reading, not a machine-wide value; see [monitorCount] for how many displays
+  /// actually exist.
   final double currentHz;
 
   /// Mode rates reported as compatible with the current display.
@@ -55,6 +58,19 @@ final class DisplayRefreshRate {
 
   /// Thermal state read alongside this snapshot.
   final DisplayThermalState thermalState;
+
+  /// Monitors the platform reports, or `null` on mobile and web.
+  ///
+  /// Every rate above belongs to a SINGLE display, chosen per platform: Windows
+  /// calls `MonitorFromWindow` on the Flutter view's HWND and filters each rate
+  /// query to that monitor's `szDevice`; macOS resolves `view?.window?.screen` to
+  /// a `CGDirectDisplayID`; Linux uses `gdk_display_get_monitor_at_window`;
+  /// Android uses `activity?.display`. A second monitor's rates are therefore not
+  /// reachable through this plugin, and this count is the only signal that more
+  /// than one display exists. It is a total, not a selector: a larger value tells
+  /// the caller the reading may describe just one of several displays, but there
+  /// is no way to read the others.
+  final int? monitorCount;
 
   /// Whether the display reports a maximum above 60 hertz.
   bool get canExceedSixtyHertz {

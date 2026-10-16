@@ -52,7 +52,7 @@ final class PlatformDeviceIdentityService implements DeviceIdentityService {
         canReadIdentity: true,
         reportsPhysicalDevice: false,
         reportsMemory: true,
-        reportsProcessorCount: true,
+        reportsLogicalProcessorCount: true,
         platformName: 'web',
       );
     }
@@ -74,7 +74,7 @@ final class PlatformDeviceIdentityService implements DeviceIdentityService {
       TargetPlatform.android || TargetPlatform.iOS || TargetPlatform.macOS || TargetPlatform.windows => true,
       TargetPlatform.linux || TargetPlatform.fuchsia => false,
     };
-    final reportsProcessorCount = switch (platform) {
+    final reportsLogicalProcessorCount = switch (platform) {
       TargetPlatform.macOS || TargetPlatform.windows => true,
       TargetPlatform.android || TargetPlatform.iOS || TargetPlatform.linux || TargetPlatform.fuchsia => false,
     };
@@ -83,7 +83,7 @@ final class PlatformDeviceIdentityService implements DeviceIdentityService {
       canReadIdentity: canReadIdentity,
       reportsPhysicalDevice: reportsPhysicalDevice,
       reportsMemory: reportsMemory,
-      reportsProcessorCount: reportsProcessorCount,
+      reportsLogicalProcessorCount: reportsLogicalProcessorCount,
       platformName: platform.name,
     );
   }
@@ -128,7 +128,7 @@ final class PlatformDeviceIdentityService implements DeviceIdentityService {
     systemVersion: _windowsVersion(info),
     majorVersion: _versionComponent(info.majorVersion),
     minorVersion: _versionComponent(info.minorVersion),
-    processorCount: _count(info.numberOfCores),
+    logicalProcessorCount: _count(info.numberOfCores),
     memoryMegabytes: positiveMegabytes(info.systemMemoryInMegabytes),
     platformName: _platformName(),
   );
@@ -145,14 +145,14 @@ final class PlatformDeviceIdentityService implements DeviceIdentityService {
     systemVersion: _macOsVersion(info),
     majorVersion: _versionComponent(info.majorVersion),
     minorVersion: _versionComponent(info.minorVersion),
-    processorCount: _count(info.activeCPUs),
+    logicalProcessorCount: _count(info.activeCPUs),
     memoryMegabytes: megabytesFromBytes(info.memorySize),
     platformName: _platformName(),
   );
 
-  /// Linux exposes `os-release` only: no hardware model, no memory, no core
-  /// count, and the single machine identifier it offers is a persistent id that
-  /// this package never reads.
+  /// Linux exposes `os-release` only: no hardware model, no memory, no logical
+  /// processor count, and the single machine identifier it offers is a persistent
+  /// id that this package never reads.
   DeviceIdentity _fromLinux(plugin.LinuxDeviceInfo info) => DeviceIdentity(
     systemName: _text(info.name) ?? 'Linux',
     systemVersion: _text(info.version) ?? _text(info.versionId),
@@ -164,7 +164,7 @@ final class PlatformDeviceIdentityService implements DeviceIdentityService {
   /// browser build rather than describe a device.
   DeviceIdentity _fromWeb(plugin.WebBrowserInfo info) => DeviceIdentity(
     systemName: _text(info.browserName.name),
-    processorCount: _count(info.hardwareConcurrency),
+    logicalProcessorCount: _count(info.hardwareConcurrency),
     memoryMegabytes: megabytesFromGibibytes(info.deviceMemory),
     platformName: _platformName(),
   );

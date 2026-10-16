@@ -12,6 +12,7 @@ final class BatteryCapabilities {
     required this.canReadStatus,
     required this.canObserve,
     required this.canReadPowerSaveMode,
+    required this.aggregatesPowerSources,
     required this.platformName,
   });
 
@@ -29,6 +30,18 @@ final class BatteryCapabilities {
   /// This is unavailable on Linux, web and fuchsia; those platforms raise
   /// `BatteryException` with the `unsupported_on_platform` code instead.
   final bool canReadPowerSaveMode;
+
+  /// Whether one reading silently folds every power source the OS can see.
+  ///
+  /// The plugin surfaces a single battery value even where the platform tracks
+  /// several sources, so an extra battery or a UPS is invisible through it.
+  /// macOS calls `IOPSCopyPowerSourcesList` and then reads only `sources[0]`;
+  /// Linux uses UPower's single `DisplayDevice` rather than `client.devices`;
+  /// Windows uses `GetSystemPowerStatus`, which is already a system-wide
+  /// aggregate. On those three a second source cannot be reported separately.
+  /// Android and iOS are single-battery by API, so the flag is false there and
+  /// on the web and fuchsia, where nothing is being collapsed.
+  final bool aggregatesPowerSources;
 
   /// Runtime platform label for diagnostics, not intended for feature branching.
   final String platformName;

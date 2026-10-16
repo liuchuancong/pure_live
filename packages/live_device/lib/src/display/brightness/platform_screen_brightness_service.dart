@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:device_screen_brightness/device_screen_brightness.dart' as plugin;
+import 'package:flutter/foundation.dart';
 import 'package:live_device/src/display/brightness/screen_brightness_capabilities.dart';
 import 'package:live_device/src/display/brightness/screen_brightness_exception.dart';
 import 'package:live_device/src/display/brightness/screen_brightness_scope.dart';
@@ -57,6 +58,19 @@ final class PlatformScreenBrightnessService implements ScreenBrightnessService {
   Future<ScreenBrightnessCapabilities> getCapabilities() => _guard(() async {
     final native = await plugin.DeviceScreenBrightness.getCapabilities();
 
+    // The plugin has no display selector, so which screen a write reaches is
+    // fixed by the backend. Desktop backends pin the primary display — Windows
+    // via GetDesktopWindow()/MONITOR_DEFAULTTOPRIMARY, macOS via CGMainDisplayID,
+    // Linux via one priority-sorted backlight node — while phones (Android's
+    // per-window scope included) and the browser address a single screen. The
+    // choice therefore keys off the target platform, not the native report.
+    final targetsPrimaryDisplay =
+        !kIsWeb &&
+        switch (defaultTargetPlatform) {
+          TargetPlatform.linux || TargetPlatform.macOS || TargetPlatform.windows => true,
+          TargetPlatform.android || TargetPlatform.iOS || TargetPlatform.fuchsia => false,
+        };
+
     return ScreenBrightnessCapabilities(
       canRead: native.canRead,
       canWrite: native.canWrite,
@@ -67,6 +81,7 @@ final class PlatformScreenBrightnessService implements ScreenBrightnessService {
         plugin.BrightnessWriteSupport.unsupported => ScreenBrightnessWriteSupport.unsupported,
       },
       supportedScopes: native.supportedModes.map(_fromMode),
+      targetsPrimaryDisplay: targetsPrimaryDisplay,
       requiresSystemPermission: native.requiresWriteSettingsPermission,
       backend: native.backend,
     );

@@ -12,6 +12,7 @@ PureLive 的设备与系统能力服务。本包负责调用设备能力，不�
 - **Wi-Fi 网络信息**：`network_info_plus`
 - **设备身份信息**：`device_info_plus`
 - **屏幕常亮**：`wakelock_plus`
+- **网卡与地址枚举**：`dart:io`（不经插件）
 
 扫码（`mobile_scanner`）不属于本包，也没有列在依赖里：它的控制器 `start()` 会等
 `attach()`，而 `attach()` 只由预览 widget 的 `initState` 调用，widget 不进 widget tree
@@ -56,7 +57,7 @@ if (granted) {
 }
 ```
 
-亮度值统一使用整数百分比 `0–100`。在 iOS、Windows、macOS、Linux 中，底层插件会忽略 Android 专用的应用/系统模式并尝试操作系统或显示器亮度。桌面端受硬件、驱动、权限、虚拟机和远程桌面环境影响，必须读取能力并处理异常。
+亮度值统一使用整数百分比 `0–100`。在 iOS、Windows、macOS、Linux 中，底层插件会忽略 Android 专用的应用/系统模式并尝试操作系统或显示器亮度。桌面端受硬件、驱动、权限、虚拟机和远程桌面环境影响，必须读取能力并处理异常。多显示器还要注意：插件没有任何显示器选择器，Windows 落在 `MonitorFromWindow(GetDesktopWindow(), MONITOR_DEFAULTTOPRIMARY)` 下**第一个**支持 DDC 的显示器，macOS 落在 `CGMainDisplayID()`，Linux 只保留按类型优先级选中的一个 `/sys/class/backlight` 节点——第二块屏既读不到也写不到，能力位 `targetsPrimaryDisplay` 就是这个意思。
 
 ## 系统音量
 
@@ -91,6 +92,8 @@ await subscription.cancel();
 - `setSystemUiVisible(visible: false)` 只在 Android 和 iOS 支持，用于隐藏系统音量提示；其他平台返回 `false`，表示没有应用该设置。
 - 所有声明支持的平台仍可能因为没有可用音频设备、Linux 混音器、驱动或系统限制而在运行时失败。捕获 `SystemVolumeException`，不要仅依赖能力快照。
 - iOS 音量控制需要在真机测试；模拟器不能准确验证系统音量控制。
+- 这只控制系统**默认输出设备**的音量：Windows 用 `GetDefaultAudioEndpoint(eRender, eMultimedia)`、macOS 用 `kAudioHardwarePropertyDefaultOutputDevice`、Linux 打开名为 `default` 的 ALSA 卡，插件都不枚举其他输出，换默认设备就等于换了操作对象。
+- macOS 上设备若没有主音量，插件读时把各声道**取平均**、写时把同一个值发给所有声道，所以声道平衡在这层无法表达。
 
 ## 电量
 
@@ -112,6 +115,7 @@ await subscription.cancel();
 - 台式机这类没有电池的设备返回 `-1` / `unknown`，不抛异常；要按值判断，别按异常判断。
 - Linux 没有省电模式查询，`isInPowerSaveMode()` 抛 `BatteryException(code: 'unsupported_on_platform')`，先读 `BatteryCapabilities.canReadPowerSaveMode`。
 - `watchStatus()` 映射插件的广播流，可以多方监听，每个订阅各自 `cancel()`。
+- 多个电源会被折成一个读数：macOS 调 `IOPSCopyPowerSourcesList` 却只取 `sources[0]`，Linux 用 UPower 的 `DisplayDevice` 聚合设备而不是 `client.devices`，Windows 的 `GetSystemPowerStatus` 本身就是系统级聚合。所以第二块电池或 UPS 在这里看不见，能力位 `aggregatesPowerSources` 为 true 就表示有这种折叠；Android/iOS 由 API 决定就是单电池，为 false。
 
 ## 屏幕刷新率
 
@@ -126,6 +130,7 @@ if (rate.canExceedSixtyHertz) {
 
 - Windows、macOS、Linux 的原生实现把支持位写死为 false：查询照常，`preferMaximum()`、`preferDefault()`、`matchContent()` 返回 `DisplayRefreshRatePreference.unsupported`，既不改动系统也不抛异常。
 - `isLowPowerMode` 与 `thermalState` 是同步读取的快照，可能落后于系统状态；省电/发热降级时 `currentHz` 会变。
+- 所有速率都是**单显示器**的：Windows 取 Flutter 视图 HWND 所在那块屏、macOS 取 `view.window.screen`、Linux 取 `gdk_display_get_monitor_at_window`、Android 取 `activity.display`。插件没有按屏读取的入口，`monitorCount` 只能告诉你还有几块屏，读不到它们。
 - 插件的 `superseded` 归入本包的 `failed`，调用方不需要区分是被后来的请求顶掉还是失败。
 
 ## 网络连接状态
@@ -165,6 +170,22 @@ await awake.disable();
 - 这只是屏幕 wakelock，不让 Dart isolate 或 CPU 在应用退到后台后继续运行。
 - 何时开关由 `live_playback` 或 App 业务决定，本包不从播放状态推断策略。
 
+## 网卡与地址
+
+```dart
+final NetworkAdapterService adapters = const PlatformNetworkAdapterService();
+
+for (final adapter in await adapters.read()) {
+  // 一个网卡可能同时挂 192.168.x.x 和 10.x.x.x，这里全给你
+  print('${adapter.name}: ${adapter.ipv4Addresses.map((a) => a.value).join(', ')}');
+}
+```
+
+- 这个服务不依赖任何插件，直接读操作系统的接口表，所以能给出**每个网卡的每个地址**（含前缀长度与广播地址，平台不给时为 `null`）。
+- `network_info_plus` 那条路只能给一个地址：Android 取 `linkAddresses` 里第一个像 IPv4 的，iOS 只留遍历的第一行，macOS 只读 `en0`，Windows 取第一个单播地址，Linux 把 NetworkManager 返回的列表 `firstOrNull` 掉。所以那侧字段叫 `primaryIpv4Address`/`primaryIpv6Address`，要全集请用本服务。
+- 默认排除 loopback 与 link-local；`read(includeLoopback: true, includeLinkLocal: true)` 才带回来。
+- 用 `dart:io`，因此 web 构建不支持本服务（与 `live_net`、`live_log` 同一取舍）。
+
 ## 设备身份信息
 
 ```dart
@@ -172,6 +193,7 @@ final DeviceIdentity device = await const PlatformDeviceIdentityService().read()
 ```
 
 - 模型只留诊断字段。`identifierForVendor`、Android ID、`machineId`、`digitalProductId` 一类稳定标识符刻意不暴露，本包不做设备追踪。
+- `logicalProcessorCount` 强调**逻辑处理器**：Windows 来自 `GetSystemInfo().dwNumberOfProcessors`（含超线程），macOS 来自 `hw.availcpu`（可用逻辑 CPU，不是 `hw.physicalcpu`），web 是浏览器自报且会被上限化的 `navigator.hardwareConcurrency`；Android、iOS 和 Linux 的信息源根本不给这个数，读到 `null` 是正常结果，不是失败。
 - 内存统一到 MB：Android/iOS/Windows 原生给出的就是 MB，macOS 是字节、浏览器是 GiB，由封装内折算；平台报告 0 或 `-1` 记为 `null`。
 
 ## 依赖边界
@@ -238,6 +260,16 @@ final DeviceIdentity device = await const PlatformDeviceIdentityService().read()
 - `ScreenAwakeService`
 - `PlatformScreenAwakeService`
 - `ScreenAwakeException`
+
+### 网卡与地址
+
+- `NetworkAdapterService`
+- `PlatformNetworkAdapterService`
+- `NetworkAdapter`
+- `IpAddress`
+- `IpAddressVersion`
+- `NetworkAdapterCapabilities`
+- `NetworkAdapterException`
 
 ### 设备身份信息
 

@@ -23,7 +23,7 @@ final class DeviceIdentity {
     this.systemVersion,
     this.majorVersion,
     this.minorVersion,
-    this.processorCount,
+    this.logicalProcessorCount,
     this.memoryMegabytes,
     this.isPhysicalDevice,
   });
@@ -89,13 +89,19 @@ final class DeviceIdentity {
   /// Second numeric version component; see [majorVersion] for availability.
   final int? minorVersion;
 
-  /// Processor count reported by the platform.
+  /// Number of logical processors — hardware threads — the OS exposes.
   ///
-  /// Available on macOS (active CPUs), Windows (installed cores) and on the web
-  /// through `navigator.hardwareConcurrency`, which is itself capped and rounded.
-  /// The Android, iOS and Linux information classes expose no core count, so
-  /// mobile reads report null.
-  final int? processorCount;
+  /// The name says *logical* on purpose: every source below counts scheduling
+  /// threads, not physical cores, so a hyper-threaded or efficiency-core machine
+  /// reads a higher number than its package's core count and the true set of
+  /// cores is never recoverable from it. Windows fills it from
+  /// `GetSystemInfo().dwNumberOfProcessors`, which is logical processors
+  /// including hyperthreads; macOS fills it from `Sysctl.activeCPUs`, i.e.
+  /// `hw.availcpu` (available logical CPUs) and not `hw.physicalcpu`; the web
+  /// uses `navigator.hardwareConcurrency`, itself capped and rounded by the
+  /// browser. Android, iOS and the Linux `os-release` source report no such
+  /// number, so mobile and Linux reads yield null.
+  final int? logicalProcessorCount;
 
   /// Physical memory in whole megabytes, normalized across platforms.
   ///

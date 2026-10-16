@@ -58,6 +58,7 @@ final class PlatformBatteryService implements BatteryService {
         canReadStatus: true,
         canObserve: true,
         canReadPowerSaveMode: false,
+        aggregatesPowerSources: false,
         platformName: 'web',
       );
     }
@@ -77,12 +78,21 @@ final class PlatformBatteryService implements BatteryService {
       TargetPlatform.android || TargetPlatform.iOS || TargetPlatform.macOS || TargetPlatform.windows => true,
       TargetPlatform.linux || TargetPlatform.fuchsia => false,
     };
+    // linux/macos/windows each see more than one power source but expose only a
+    // single folded value (UPower DisplayDevice, sources[0], GetSystemPowerStatus),
+    // so an extra battery or UPS is invisible there; android/ios/fuchsia are
+    // single-battery by API and collapse nothing.
+    final aggregatesPowerSources = switch (platform) {
+      TargetPlatform.linux || TargetPlatform.macOS || TargetPlatform.windows => true,
+      TargetPlatform.android || TargetPlatform.iOS || TargetPlatform.fuchsia => false,
+    };
 
     return BatteryCapabilities(
       canReadLevel: supported,
       canReadStatus: supported,
       canObserve: supported,
       canReadPowerSaveMode: canReadPowerSaveMode,
+      aggregatesPowerSources: aggregatesPowerSources,
       platformName: platform.name,
     );
   }

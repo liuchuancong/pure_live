@@ -21,6 +21,7 @@ final class ScreenBrightnessCapabilities {
     required this.canObserve,
     required this.writeSupport,
     required Iterable<ScreenBrightnessScope> supportedScopes,
+    required this.targetsPrimaryDisplay,
     required this.requiresSystemPermission,
     required this.backend,
   }) : supportedScopes = Set<ScreenBrightnessScope>.unmodifiable(supportedScopes);
@@ -42,6 +43,19 @@ final class ScreenBrightnessCapabilities {
   /// Mode semantics are platform-specific. In particular, application-window
   /// brightness is only distinct from system brightness on Android.
   final Set<ScreenBrightnessScope> supportedScopes;
+
+  /// Whether brightness writes can only ever land on the primary display.
+  ///
+  /// The plugin exposes no display selector, so a secondary monitor cannot be
+  /// addressed at all; this flag records that desktop writes are pinned to the
+  /// built-in or main screen. Windows resolves `MonitorFromWindow(GetDesktopWindow(),
+  /// MONITOR_DEFAULTTOPRIMARY)` and then drives the FIRST DDC-capable monitor
+  /// under it (its failure text is literally "No compatible primary Windows
+  /// monitor"); macOS targets `CGMainDisplayID()`; Linux keeps the single
+  /// `/sys/class/backlight` node chosen by type priority and discards the rest.
+  /// Android's application scope is genuinely per-window and phones and the
+  /// browser have one screen, so the flag is false there.
+  final bool targetsPrimaryDisplay;
 
   /// Whether writing global system brightness requires special permission.
   final bool requiresSystemPermission;

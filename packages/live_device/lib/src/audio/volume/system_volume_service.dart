@@ -7,6 +7,18 @@ import 'package:live_device/src/audio/volume/system_volume_exception.dart';
 /// This is the device/system volume, not the media player's own gain. Playback
 /// volume should continue to use the playback engine when only the stream's
 /// audio level needs to change.
+///
+/// Control targets the system default render endpoint only; there is no way to
+/// name another output. Windows resolves `GetDefaultAudioEndpoint(eRender,
+/// eMultimedia)` with no endpoint enumeration, macOS resolves
+/// `kAudioHardwarePropertyDefaultOutputDevice`, and Linux opens the ALSA card
+/// literally named `default`. Switching the OS default device changes what this
+/// service reads and writes; a non-default device is not addressable here.
+///
+/// The percentage is also a single folded value. On macOS, when a device exposes
+/// no master volume the plugin averages the channel volumes for a read and
+/// writes one value to every channel for a set, so per-channel balance is not
+/// representable through this contract.
 abstract interface class SystemVolumeService {
   /// Reads the current system volume as a percentage from 0 to 100.
   Future<int> getVolume();

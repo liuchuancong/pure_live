@@ -10,6 +10,7 @@ ScreenBrightnessCapabilities _capabilities({
   canObserve: false,
   writeSupport: writeSupport,
   supportedScopes: supportedScopes,
+  targetsPrimaryDisplay: false,
   requiresSystemPermission: true,
   backend: 'test-backend',
 );
@@ -41,6 +42,7 @@ void main() {
           canObserve: false,
           writeSupport: ScreenBrightnessWriteSupport.supported,
           supportedScopes: const <ScreenBrightnessScope>{},
+          targetsPrimaryDisplay: true,
           requiresSystemPermission: false,
           backend: 'read-only',
         ).canOfferBrightnessControl,

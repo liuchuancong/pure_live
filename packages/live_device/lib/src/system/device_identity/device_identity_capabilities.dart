@@ -12,7 +12,7 @@ final class DeviceIdentityCapabilities {
     required this.canReadIdentity,
     required this.reportsPhysicalDevice,
     required this.reportsMemory,
-    required this.reportsProcessorCount,
+    required this.reportsLogicalProcessorCount,
     required this.platformName,
   });
 
@@ -34,12 +34,14 @@ final class DeviceIdentityCapabilities {
   /// information class reads only `os-release`, which has no memory field.
   final bool reportsMemory;
 
-  /// Whether the platform reports a processor count.
+  /// Whether the platform reports a logical-processor (hardware-thread) count.
   ///
-  /// True on macOS, Windows and in the browser. Android and iOS information
-  /// classes publish no core count, and reading `/proc/cpuinfo` is not part of
-  /// the Linux data the plugin returns.
-  final bool reportsProcessorCount;
+  /// True on macOS, Windows and in the browser, and each of those sources counts
+  /// logical processors rather than physical cores. Android and iOS information
+  /// classes publish no processor count, and reading `/proc/cpuinfo` is not part
+  /// of the Linux data the plugin returns, so those runtimes leave
+  /// [DeviceIdentity.logicalProcessorCount] null.
+  final bool reportsLogicalProcessorCount;
 
   /// Runtime platform label for diagnostics, not intended for feature branching.
   final String platformName;

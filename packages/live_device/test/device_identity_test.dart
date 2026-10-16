@@ -50,7 +50,7 @@ void main() {
       expect(identity.systemVersion, isNull);
       expect(identity.majorVersion, isNull);
       expect(identity.minorVersion, isNull);
-      expect(identity.processorCount, isNull);
+      expect(identity.logicalProcessorCount, isNull);
       expect(identity.memoryMegabytes, isNull);
       expect(identity.isPhysicalDevice, isNull);
     });
@@ -73,26 +73,34 @@ void main() {
 
     tearDown(() => debugDefaultTargetPlatformOverride = null);
 
-    test('reports phones as physical devices with memory but no core count', () async {
+    test('reports phones as physical devices with memory but no processor count', () async {
       for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {
         debugDefaultTargetPlatformOverride = platform;
         final capabilities = await service.getCapabilities();
         expect(capabilities.canReadIdentity, isTrue, reason: 'unexpected support on ${platform.name}');
         expect(capabilities.reportsPhysicalDevice, isTrue, reason: 'emulator support on ${platform.name}');
         expect(capabilities.reportsMemory, isTrue, reason: 'memory support on ${platform.name}');
-        expect(capabilities.reportsProcessorCount, isFalse, reason: 'no core count on ${platform.name}');
+        expect(
+          capabilities.reportsLogicalProcessorCount,
+          isFalse,
+          reason: 'no logical processor count on ${platform.name}',
+        );
         expect(capabilities.platformName, platform.name);
       }
     });
 
-    test('reports desktop platforms as machines with cores and memory', () async {
+    test('reports desktop platforms as machines with a logical processor count and memory', () async {
       for (final platform in [TargetPlatform.macOS, TargetPlatform.windows]) {
         debugDefaultTargetPlatformOverride = platform;
         final capabilities = await service.getCapabilities();
         expect(capabilities.canReadIdentity, isTrue, reason: 'unexpected support on ${platform.name}');
         expect(capabilities.reportsPhysicalDevice, isFalse, reason: 'no emulator flag on ${platform.name}');
         expect(capabilities.reportsMemory, isTrue, reason: 'memory support on ${platform.name}');
-        expect(capabilities.reportsProcessorCount, isTrue, reason: 'core count on ${platform.name}');
+        expect(
+          capabilities.reportsLogicalProcessorCount,
+          isTrue,
+          reason: 'logical processor count on ${platform.name}',
+        );
         expect(capabilities.platformName, platform.name);
       }
     });
@@ -103,7 +111,7 @@ void main() {
       expect(capabilities.canReadIdentity, isTrue);
       expect(capabilities.reportsPhysicalDevice, isFalse);
       expect(capabilities.reportsMemory, isFalse);
-      expect(capabilities.reportsProcessorCount, isFalse);
+      expect(capabilities.reportsLogicalProcessorCount, isFalse);
       expect(capabilities.platformName, 'linux');
     });
 

@@ -28,8 +28,8 @@ void main() {
 
       expect(info.ssid, isNull);
       expect(info.bssid, isNull);
-      expect(info.ipv4Address, isNull);
-      expect(info.ipv6Address, isNull);
+      expect(info.primaryIpv4Address, isNull);
+      expect(info.primaryIpv6Address, isNull);
       expect(info.subnetMask, isNull);
       expect(info.gatewayAddress, isNull);
       expect(info.broadcastName, isNull);
@@ -40,8 +40,8 @@ void main() {
       const info = WifiNetworkInfo(
         ssid: '"PureLive Studio"',
         bssid: '11:22:33:44:55:66',
-        ipv4Address: '192.168.1.43',
-        ipv6Address: '2001:db8::1',
+        primaryIpv4Address: '192.168.1.43',
+        primaryIpv6Address: '2001:db8::1',
         subnetMask: '255.255.255.0',
         gatewayAddress: '192.168.1.1',
         broadcastName: '192.168.1.255',
@@ -49,8 +49,8 @@ void main() {
 
       expect(info.ssid, '"PureLive Studio"');
       expect(info.bssid, '11:22:33:44:55:66');
-      expect(info.ipv4Address, '192.168.1.43');
-      expect(info.ipv6Address, '2001:db8::1');
+      expect(info.primaryIpv4Address, '192.168.1.43');
+      expect(info.primaryIpv6Address, '2001:db8::1');
       expect(info.subnetMask, '255.255.255.0');
       expect(info.gatewayAddress, '192.168.1.1');
       expect(info.broadcastName, '192.168.1.255');
@@ -61,7 +61,7 @@ void main() {
       expect(const WifiNetworkInfo(ssid: 'Studio').hasNetworkIdentity, isTrue);
       expect(const WifiNetworkInfo(bssid: '11:22:33:44:55:66').hasNetworkIdentity, isTrue);
       expect(
-        const WifiNetworkInfo(ipv4Address: '192.168.1.43').hasNetworkIdentity,
+        const WifiNetworkInfo(primaryIpv4Address: '192.168.1.43').hasNetworkIdentity,
         isFalse,
         reason: 'an address says where the device is, not which network it joined',
       );
