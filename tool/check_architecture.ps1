@@ -34,14 +34,14 @@ foreach ($file in $packageFiles) {
 # depend on them. A new adapter adds one entry — every rule below then covers it
 # without further editing.
 $styleLibraries = [ordered]@{
-    "live_uikit_cupertino_ui" = "cupertino_ui"
-    "live_uikit_fluent"       = "fluent_ui"
-    "live_uikit_forui"        = "forui"
-    "live_uikit_glass"        = "glass_morphism_plus"
-    "live_uikit_macos"        = "macos_ui"
-    "live_uikit_material_ui"  = "material_ui"
-    "live_uikit_neumorphic"   = "flutter_neumorphic_ui_kit"
-    "live_uikit_wind"         = "fluttersdk_wind"
+    "live_uikit_cupertino"   = "cupertino_ui"
+    "live_uikit_fluent"      = "fluent_ui"
+    "live_uikit_forui"       = "forui"
+    "live_uikit_glass"       = "glass_morphism_plus"
+    "live_uikit_macos"       = "macos_ui"
+    "live_uikit_material"    = "material_ui"
+    "live_uikit_neumorphic"  = "flutter_neumorphic_ui_kit"
+    "live_uikit_wind"        = "fluttersdk_wind"
 }
 $styleLibraryNames = @($styleLibraries.Values)
 
@@ -67,10 +67,10 @@ $styleLibraryAliases = @{
 # nothing. A package that drifts from that list has a spec that now lies to the app
 # author wiring it, which is the failure this guard exists to catch.
 $adaptersWithLocalizationDelegates = @(
-    "live_uikit_cupertino_ui",
+    "live_uikit_cupertino",
     "live_uikit_fluent",
     "live_uikit_forui",
-    "live_uikit_material_ui"
+    "live_uikit_material"
 )
 
 # The README of each adapter names its native controls in prose ("Build native …
@@ -87,6 +87,12 @@ $controlNamesByProse = @{
     "progress"   = "progress"
     "select"     = "select"
     "tab bar"    = "tabBar"
+    "scaffold"   = "scaffold"
+    "app bar"    = "appBar"
+    "list row"   = "listRow"
+    "nav bar"    = "navBar"
+    "toast"      = "toast"
+    "app host"   = "appHost"
 }
 
 foreach ($packageName in $packageMap.Keys) {

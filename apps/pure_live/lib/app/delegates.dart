@@ -1,10 +1,10 @@
 import 'package:flutter/widgets.dart';
 
 import 'package:live_uikit/styling.dart';
-import 'package:live_uikit_cupertino_ui/live_uikit_cupertino_ui.dart';
+import 'package:live_uikit_cupertino/live_uikit_cupertino.dart';
 import 'package:live_uikit_fluent/live_uikit_fluent.dart';
 import 'package:live_uikit_forui/live_uikit_forui.dart';
-import 'package:live_uikit_material_ui/live_uikit_material_ui.dart';
+import 'package:live_uikit_material/live_uikit_material.dart';
 
 import 'package:pure_live/l10n/generated/strings.g.dart';
 
@@ -21,8 +21,8 @@ import 'package:pure_live/l10n/generated/strings.g.dart';
 const List<LocalizationsDelegate<dynamic>> appLocalizationsDelegates = [
   ...liveLocalizationsDelegates,
   ...fluentLocalizationsDelegates,
-  ...cupertinoUiLocalizationsDelegates,
-  ...materialUiLocalizationsDelegates,
+  ...cupertinoLocalizationsDelegates,
+  ...materialLocalizationsDelegates,
   ...foruiLocalizationsDelegates,
 ];
 

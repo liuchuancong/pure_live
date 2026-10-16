@@ -57,15 +57,32 @@ AppearancePreferences appearanceFromUiConfig(UiConfig config) => AppearancePrefe
 /// The skin this build ships on when the user has not chosen: fluent, a
 /// fully registered third-party language. The default only decides which
 /// adapter answers first — the shared token base still renders anything a
-/// language does not implement, and a user who explicitly picked
-/// `material` keeps it, since their stored id names it exactly.
+/// language does not implement, and a user who explicitly picked the base keeps
+/// it, since their stored id names it exactly.
 const LiveDesignLanguage _defaultLanguage = LiveDesignLanguage.fluent;
+
+/// Ids that named something the enum no longer has.
+///
+/// The two Material- and iOS-shaped languages used to be spelled `materialUi`
+/// and `cupertinoUi`; both ids are still what a document written before the
+/// rename holds, and an unknown id would drop the viewer onto the build's
+/// default skin — a language change they never asked for. The base, which that
+/// older enum called `material`, is now `token`, and a stored `material` names
+/// the Material library it visually matched all along.
+const Map<String, LiveDesignLanguage> _retiredIds = {
+  'materialUi': LiveDesignLanguage.material,
+  'cupertinoUi': LiveDesignLanguage.cupertino,
+};
 
 /// The language an id names; empty or unknown ids take the build's default
 /// skin ([_defaultLanguage]).
 LiveDesignLanguage _languageById(String id) {
   if (id.isEmpty) {
     return _defaultLanguage;
+  }
+  final retired = _retiredIds[id];
+  if (retired != null) {
+    return retired;
   }
   return _byName(LiveDesignLanguage.values, id, _defaultLanguage);
 }

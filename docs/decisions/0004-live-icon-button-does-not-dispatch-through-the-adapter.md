@@ -14,7 +14,7 @@ builds a `Language*Spec` and calls `LiveTheme.of(context).adapter.<control>(...)
 `LiveIconButton` does not. It paints through `LiveBox` +
 `LiveTheme.resolveButton` directly (`live_uikit/lib/src/styling/widgets/live_button.dart`),
 so an icon button keeps its token-rendered appearance no matter which design language
-is selected. Switching to `materialUi` or `fluent` re-skins the button beside it and
+is selected. Switching to `material` or `fluent` re-skins the button beside it and
 leaves this one untouched. It is the only control in the family with that behaviour,
 and it is recorded as an open item in `packages/live_uikit/live-uikit.md` §16.
 

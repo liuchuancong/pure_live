@@ -61,15 +61,16 @@ dependencies:
   live_storage:
   live_uikit:
   live_uikit_background:
-  live_uikit_cupertino_ui:
+  live_uikit_cupertino:
   live_uikit_fluent:
   live_uikit_forui:
   live_uikit_glass:
   live_uikit_macos:
-  live_uikit_material_ui:
+  live_uikit_material:
   live_uikit_neumorphic:
   live_uikit_wind:
   markdown: ^7.3.1
+  vibrancy: ^0.1.1
   media_core:
     git:
       url: https://github.com/liuchuancong/media_core

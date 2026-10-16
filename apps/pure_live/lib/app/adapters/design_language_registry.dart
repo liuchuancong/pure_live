@@ -1,10 +1,10 @@
 import 'package:live_uikit/styling.dart';
-import 'package:live_uikit_cupertino_ui/live_uikit_cupertino_ui.dart';
+import 'package:live_uikit_cupertino/live_uikit_cupertino.dart';
 import 'package:live_uikit_fluent/live_uikit_fluent.dart';
 import 'package:live_uikit_forui/live_uikit_forui.dart';
 import 'package:live_uikit_glass/live_uikit_glass.dart';
 import 'package:live_uikit_macos/live_uikit_macos.dart';
-import 'package:live_uikit_material_ui/live_uikit_material_ui.dart';
+import 'package:live_uikit_material/live_uikit_material.dart';
 import 'package:live_uikit_neumorphic/live_uikit_neumorphic.dart';
 import 'package:live_uikit_wind/live_uikit_wind.dart';
 
@@ -13,20 +13,19 @@ import 'package:live_uikit_wind/live_uikit_wind.dart';
 ///
 /// Adapters never self-register — the core ships contracts plus the shared
 /// token fallback only, so the app is the single place that decides which
-/// libraries are linked in. `material` and `cupertino` are deliberately
-/// absent: the shared token base renders them, and registering only the
-/// third-party languages keeps `adapterMissing` honest for anything the build
-/// genuinely does not support.
+/// libraries are linked in. `LiveDesignLanguage.token` is not listed because it
+/// *is* that fallback; registering it would hide the `adapterMissing` report for
+/// anything this build genuinely does not support.
 const appLanguageRegistry = LanguageRegistry(
   adapters: {
-    LiveDesignLanguage.macos: macosUiAdapter,
-    LiveDesignLanguage.fluent: fluentUiAdapter,
-    LiveDesignLanguage.forui: foruiUiAdapter,
-    LiveDesignLanguage.neumorphic: neumorphicUiAdapter,
-    LiveDesignLanguage.glass: glassUiAdapter,
-    LiveDesignLanguage.wind: windUiAdapter,
-    LiveDesignLanguage.cupertinoUi: cupertinoUiAdapter,
-    LiveDesignLanguage.materialUi: materialUiAdapter,
+    LiveDesignLanguage.macos: macosAdapter,
+    LiveDesignLanguage.fluent: fluentAdapter,
+    LiveDesignLanguage.forui: foruiAdapter,
+    LiveDesignLanguage.neumorphic: neumorphicAdapter,
+    LiveDesignLanguage.glass: glassAdapter,
+    LiveDesignLanguage.wind: windAdapter,
+    LiveDesignLanguage.cupertino: cupertinoAdapter,
+    LiveDesignLanguage.material: materialAdapter,
   },
   fallback: SharedLanguageAdapter(),
 );
