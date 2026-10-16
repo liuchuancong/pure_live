@@ -5,7 +5,7 @@ import 'package:live_uikit_cupertino/live_uikit_cupertino.dart';
 /// The Cupertino UI adapter's contract and capability declarations (§7/§16/§17).
 ///
 /// The capability set must list exactly the controls `CupertinoLanguageAdapter`
-/// overrides with native `cupertino_ui` widgets; the resolver turns every other
+/// overrides with `cupertino_ui`'s own widgets; the resolver turns every other
 /// control into a `controlUnsupported` downgrade, so drift between the declaration
 /// and the overrides is caught here before it ships (§17).
 void main() {
@@ -13,17 +13,21 @@ void main() {
 
   const native = {
     LiveUiControl.button,
+    LiveUiControl.card,
     LiveUiControl.textField,
     LiveUiControl.switchWidget,
+    LiveUiControl.checkbox,
     LiveUiControl.slider,
+    LiveUiControl.segmented,
+    LiveUiControl.progress,
+    LiveUiControl.select,
+    LiveUiControl.tabBar,
     LiveUiControl.scaffold,
     LiveUiControl.appBar,
     LiveUiControl.listRow,
     LiveUiControl.navBar,
+    LiveUiControl.toast,
   };
-  // Derived rather than listed, so a control added to the contract cannot join the
-  // fallback side silently — the suite has to be told (§17).
-  final fallback = LiveUiControl.values.toSet().difference(native);
 
   test('declares exactly the surfaces it owns structurally', () {
     for (final surface in const <LiveUiSurface>{LiveUiSurface.appHost}) {
@@ -43,12 +47,17 @@ void main() {
     });
 
     test('declares exactly the controls it renders natively', () {
+      // All fifteen: Cupertino renders every control, and the four with no
+      // one-for-one library widget say so in their builder (§9).
       for (final control in native) {
         expect(adapter.capabilities.supports(control), isTrue, reason: '$control should be native');
       }
-      for (final control in fallback) {
+      for (final control in LiveUiControl.values.toSet().difference(native)) {
         expect(adapter.capabilities.supports(control), isFalse, reason: '$control should fall back');
       }
+      // The other half of the point: this language has no fallback side at all,
+      // so the set above has to be the whole contract.
+      expect(adapter.capabilities.supported, LiveUiControl.values.toSet());
     });
   });
 
@@ -69,11 +78,18 @@ void main() {
       expect(result.diagnostic, isNull);
     });
 
-    test('an undeclared control falls back to shared and is reported', () {
-      final result = resolver.resolveControl(LiveDesignLanguage.cupertino, LiveUiControl.card);
+    test('every control of the contract resolves native, with no downgrade', () {
+      for (final control in LiveUiControl.values) {
+        final result = resolver.resolveControl(LiveDesignLanguage.cupertino, control);
+        expect(result.implementation.kind, LiveImplementationKind.adapterNative, reason: '$control');
+        expect(result.diagnostic, isNull, reason: '$control');
+      }
+    });
+
+    test('a language this build did not register still resolves shared, and says so', () {
+      final result = resolver.resolveControl(LiveDesignLanguage.glass, LiveUiControl.card);
       expect(result.implementation.kind, LiveImplementationKind.shared);
-      expect(result.diagnostic?.code, LiveUiDiagnosticCode.controlUnsupported);
-      expect(result.diagnostic?.control, LiveUiControl.card);
+      expect(result.diagnostic?.code, LiveUiDiagnosticCode.adapterMissing);
     });
   });
 }

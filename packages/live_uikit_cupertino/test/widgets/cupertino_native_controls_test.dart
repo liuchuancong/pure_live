@@ -9,7 +9,9 @@ import 'stub_router.dart';
 /// §16 widget tests for `live_uikit_cupertino`, driven through the real
 /// runtime path so `LiveButton`/`LiveSwitch`/… dispatch to the native
 /// `cupertino_ui` widgets. Covers §9 rules (callback + loading gating, controller
-/// passthrough, controlled switch) plus a render smoke and the shared fallback.
+/// passthrough, controlled switch), the chrome set, the seven controls this
+/// language had to add, and the check that no token renderer is left inside a
+/// Cupertino frame.
 void main() {
   const config = UiConfig(language: LiveDesignLanguage.cupertino, brightness: UiBrightnessMode.light);
 
@@ -66,16 +68,25 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('an unoverridden control still renders via the shared fallback', (tester) async {
+  testWidgets('a card is the fork inset-grouped panel, not the token box (§9)', (tester) async {
+    var tapped = false;
     await tester.pumpWidget(
       harness(
         SizedBox(
           width: 300,
-          child: LiveCard(onTap: () {}, child: const Text('body')),
+          child: LiveCard(onTap: () => tapped = true, child: const Text('body')),
         ),
       ),
     );
-    expect(find.byType(LiveCard), findsOneWidget);
+    await tester.pump();
+
+    expect(find.byType(cu.CupertinoListSection), findsOneWidget);
+    expect(find.byType(TokenCard), findsNothing);
+    expect(find.text('body'), findsOneWidget);
+
+    await tester.tap(find.text('body'));
+    await tester.pump();
+    expect(tapped, isTrue);
     expect(tester.takeException(), isNull);
   });
 
@@ -159,6 +170,217 @@ void main() {
     });
   });
 
+  group('the seven controls this language had to add (§9/§16)', () {
+    testWidgets('a checkbox is the fork box, and a disabled one reports nothing', (tester) async {
+      bool? value;
+      await tester.pumpWidget(harness(LiveCheckbox(value: false, onChanged: (v) => value = v, label: 'Remember')));
+      await tester.pump();
+
+      expect(find.byType(cu.CupertinoCheckbox), findsOneWidget);
+      expect(find.byType(TokenCheckbox), findsNothing);
+      // The spec's label has no slot on the box, so it travels beside it.
+      expect(find.text('Remember'), findsOneWidget);
+
+      await tester.tap(find.byType(cu.CupertinoCheckbox));
+      await tester.pump();
+      expect(value, isTrue);
+
+      await tester.pumpWidget(harness(LiveCheckbox(value: true, enabled: false, onChanged: (v) => value = v)));
+      await tester.pump();
+      expect(tester.widget<cu.CupertinoCheckbox>(find.byType(cu.CupertinoCheckbox)).onChanged, isNull);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a segmented track is the fork control and reports its index', (tester) async {
+      var chosen = -1;
+      await tester.pumpWidget(
+        harness(LiveSegmented(labels: const ['Small', 'Medium', 'Large'], index: 1, onChanged: (i) => chosen = i)),
+      );
+      await tester.pump();
+
+      final control = tester.widget<cu.CupertinoSegmentedControl<int>>(find.byType(cu.CupertinoSegmentedControl<int>));
+      expect(control.groupValue, 1);
+      expect(find.byType(TokenSegmented), findsNothing);
+
+      await tester.tap(find.text('Large'));
+      // The library fades the new selection in over 165ms.
+      await tester.pumpAndSettle();
+      expect(chosen, 2);
+
+      await tester.pumpWidget(
+        harness(LiveSegmented(labels: const ['A', 'B'], index: 0, enabled: false, onChanged: (i) => chosen = i)),
+      );
+      await tester.pump();
+      expect(
+        tester
+            .widget<cu.CupertinoSegmentedControl<int>>(find.byType(cu.CupertinoSegmentedControl<int>))
+            .disabledChildren,
+        {0, 1},
+        reason: 'a disabled group is the library inert state, segment by segment',
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a one-label track keeps the shared renderer, which tolerates it', (tester) async {
+      // The library asserts at least two segments, so a spec it would throw on is
+      // handed to the shared renderer rather than crashing in the library (§15).
+      await tester.pumpWidget(harness(LiveSegmented(labels: const ['Only'], index: 0, onChanged: (_) {})));
+      await tester.pump();
+
+      expect(find.byType(cu.CupertinoSegmentedControl<int>), findsNothing);
+      expect(find.byType(TokenSegmented), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a known fraction is the fork linear bar, a null one its spinner', (tester) async {
+      await tester.pumpWidget(harness(const SizedBox(width: 300, child: LiveProgress(value: 0.25, showLabel: true))));
+      await tester.pump();
+
+      final bar = tester.widget<cu.CupertinoLinearActivityIndicator>(find.byType(cu.CupertinoLinearActivityIndicator));
+      expect(bar.progress, 0.25);
+      expect(find.text('25%'), findsOneWidget);
+      expect(find.byType(TokenProgress), findsNothing);
+
+      await tester.pumpWidget(harness(const SizedBox(width: 300, child: LiveProgress(value: 0.9, height: 3))));
+      await tester.pump();
+      final filled = tester.widget<cu.CupertinoLinearActivityIndicator>(
+        find.byType(cu.CupertinoLinearActivityIndicator),
+      );
+      expect(filled.height, 3);
+      expect(find.text('90%'), findsNothing, reason: 'showLabel is off, so no percentage is named');
+
+      await tester.pumpWidget(harness(const SizedBox(width: 300, child: LiveProgress(value: null))));
+      await tester.pump();
+      expect(find.byType(cu.CupertinoActivityIndicator), findsOneWidget);
+      expect(find.byType(TokenProgress), findsNothing);
+
+      // The spinner ticks for as long as it is on screen; taking it down is what
+      // stops the ticker, so the test ends with the frame empty.
+      await tester.pumpWidget(harness(const SizedBox.shrink()));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a select is the fork pull-down menu and reports the chosen value', (tester) async {
+      String? chosen;
+      await tester.pumpWidget(
+        harness(
+          LiveSelect<String>(
+            items: const ['alpha', 'beta'],
+            itemLabel: (item) => item,
+            value: 'alpha',
+            placeholder: 'Pick one',
+            onChanged: (value) => chosen = value,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(cu.CupertinoMenuAnchor), findsOneWidget);
+      expect(find.byType(TokenSelect<String>), findsNothing);
+      expect(find.text('alpha'), findsOneWidget, reason: 'the trigger names the current value');
+      expect(find.text('beta'), findsNothing, reason: 'the menu is closed until the trigger is pressed');
+
+      await tester.tap(find.text('alpha'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('beta'));
+      await tester.pumpAndSettle();
+
+      expect(chosen, 'beta');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a select with nothing chosen shows its placeholder, and a disabled one cannot open', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          LiveSelect<String>(
+            items: const ['alpha'],
+            itemLabel: (item) => item,
+            placeholder: 'Pick one',
+            onChanged: null,
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('Pick one'), findsOneWidget);
+      expect(find.byType(cu.CupertinoMenuItem), findsNothing, reason: 'the menu is closed until pressed');
+
+      await tester.pumpWidget(
+        harness(
+          LiveSelect<String>(items: const ['alpha'], itemLabel: (item) => item, enabled: false, onChanged: (_) {}),
+        ),
+      );
+      await tester.pump();
+      expect(tester.widget<cu.CupertinoButton>(find.byType(cu.CupertinoButton)).onPressed, isNull);
+      await tester.tap(find.byType(cu.CupertinoMenuAnchor));
+      await tester.pump();
+      expect(find.byType(cu.CupertinoMenuItem), findsNothing, reason: 'an inert trigger never opens the menu');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a tab strip is a row of the library buttons, not the bottom bar', (tester) async {
+      var chosen = -1;
+      await tester.pumpWidget(
+        harness(
+          LiveTabs(
+            tabs: const [
+              LiveTab(label: 'Live'),
+              LiveTab(label: 'Library', icon: Icons.star),
+            ],
+            index: 0,
+            onChanged: (index) => chosen = index,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(TokenTabs), findsNothing);
+      // `CupertinoTabBar` is the library's one strip and belongs to `navBar`; an
+      // in-page strip is composed of its buttons instead.
+      expect(find.byType(cu.CupertinoTabBar), findsNothing);
+      expect(find.byIcon(Icons.star), findsOneWidget);
+
+      await tester.tap(find.text('Library'));
+      // CupertinoButton fades its pressed state back over 180ms.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(chosen, 1);
+
+      await tester.pumpWidget(
+        harness(
+          LiveTabs(
+            tabs: const [
+              LiveTab(label: 'Live'),
+              LiveTab(label: 'Library'),
+            ],
+            index: 0,
+            enabled: false,
+            onChanged: (index) => chosen = index,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.tap(find.text('Library'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(chosen, 1, reason: 'a disabled strip keeps its labels and stops reporting');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a toast surface is the library popup panel, not the token pill', (tester) async {
+      await tester.pumpWidget(harness(const SizedBox.shrink()));
+      LiveToast.show(tester.element(find.byType(Scaffold)), 'Saved', type: LiveToastType.success);
+      await tester.pump();
+
+      expect(find.text('Saved'), findsOneWidget);
+      expect(find.byType(TokenToast), findsNothing);
+      // `cupertino_ui` ships no `CupertinoToast`; the HUD it does have is the
+      // popup surface the library draws its own popups on.
+      expect(find.byType(cu.CupertinoPopupSurface), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('native chrome (§9/§16)', () {
     // The frame is the widget under test, so it is the home itself rather than a
     // child of a Material scaffold — a language frame that only worked inside
@@ -238,6 +460,54 @@ void main() {
       expect(find.byType(TokenNavBar), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('the whole contract draws from the fork, not from the shared base', (tester) async {
+      await tester.pumpWidget(
+        chromeHarness(
+          LiveScaffold(
+            appBar: const LiveAppBar(title: 'Rooms', actions: [Text('act')]),
+            body: SingleChildScrollView(
+              child: Column(
+                children: [
+                  const LiveCard(child: Text('card')),
+                  LiveCheckbox(value: false, onChanged: (_) {}, label: 'Keep'),
+                  SizedBox(
+                    width: 300,
+                    child: LiveSegmented(labels: const ['A', 'B'], index: 0, onChanged: (_) {}),
+                  ),
+                  const SizedBox(width: 300, child: LiveProgress(value: 0.4)),
+                  LiveSelect<String>(items: const ['x', 'y'], itemLabel: (item) => item, value: 'x', onChanged: (_) {}),
+                  LiveTabs(
+                    tabs: const [
+                      LiveTab(label: 'One'),
+                      LiveTab(label: 'Two'),
+                    ],
+                    index: 0,
+                    onChanged: (_) {},
+                  ),
+                  LiveListRow(title: 'Profile', onTap: () {}),
+                ],
+              ),
+            ),
+            bottomBar: LiveNavBar(
+              items: const [
+                LiveNavBarItem(label: 'Home', icon: Icons.home),
+                LiveNavBarItem(label: 'Shows', icon: Icons.star),
+              ],
+              index: 0,
+              onChanged: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Cupertino declares all fifteen controls, so nothing inside a Cupertino page
+      // should be a `Token*` renderer any more — the assertion is by name rather
+      // than by list, so a control added to the contract cannot slip in silently.
+      expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
   });
 
   group('the app host (§9)', () {
@@ -269,10 +539,10 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('a control the language does not claim still works under the Cupertino host', (tester) async {
+    testWidgets('the shared ink host and the fork controls still work under the Cupertino host', (tester) async {
       // The fork host installs no Material of its own, so this is the check that
-      // the shared renderers do not lean on one: an ink host and the selection
-      // toolbar's strings have to arrive some other way.
+      // what still leans on one — an `InkWell` a caller put in the content, the
+      // selection toolbar's strings — finds them without a Material host.
       await tester.pumpWidget(
         hostHarness(
           hosted(

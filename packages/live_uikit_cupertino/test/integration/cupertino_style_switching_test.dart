@@ -5,36 +5,47 @@ import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_cupertino/live_uikit_cupertino.dart';
 
 /// The controls `live_uikit_cupertino` renders natively (§3.1 capability
-/// declaration): eight of the fifteen the resolver dispatches.
+/// declaration): all fifteen the resolver dispatches — the controls and the four
+/// chrome pieces, plus the four the fork drives with its own widgets rather than
+/// with a card/checkbox/select/tab widget it does not have.
 const Set<LiveUiControl> nativeControls = {
   LiveUiControl.button,
+  LiveUiControl.card,
   LiveUiControl.textField,
   LiveUiControl.switchWidget,
+  LiveUiControl.checkbox,
   LiveUiControl.slider,
+  LiveUiControl.segmented,
+  LiveUiControl.progress,
+  LiveUiControl.select,
+  LiveUiControl.tabBar,
   LiveUiControl.scaffold,
   LiveUiControl.appBar,
   LiveUiControl.listRow,
   LiveUiControl.navBar,
+  LiveUiControl.toast,
 };
 
 /// The structural surfaces this adapter owns (§ surfaces).
 const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost};
 
-/// §16 integration pass for `live_uikit_cupertino`: the nine declared controls
-/// resolve native and the seven others resolve shared (`card`, `checkbox`,
-/// `segmented`, `progress`, `select`, `tabBar`, `toast`), and switching to the
-/// core token base and back replaces the rendering path without touching the
-/// caller's controller or the fallback controls' behaviour (§11).
-/// The downgrades this language is expected to report: every control the adapter
-/// does not declare, each exactly once per language change (§15.5/§16.8).
+/// §16 integration pass for `live_uikit_cupertino`: every one of the fifteen
+/// controls resolves native, so a Cupertino language change reports no control
+/// downgrade at all, and switching to the core token base and back replaces the
+/// rendering path without touching the caller's controller (§11).
+/// The downgrades this language is expected to report: none for the controls,
+/// because nothing in the contract falls back any more — only the shell surface,
+/// which this library has no widget for (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   final controls = sink.where((diagnostic) => diagnostic.control != null);
   final surfaces = sink.where((diagnostic) => diagnostic.surface != null);
-  expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
-  expect(
-    controls.map((diagnostic) => diagnostic.control).toSet(),
-    LiveUiControl.values.toSet().difference(nativeControls),
-  );
+  // A language that renders every control reports no control downgrade at all,
+  // so the code check only applies when something actually fell back.
+  final expectedControls = LiveUiControl.values.toSet().difference(nativeControls);
+  expect(controls.map((diagnostic) => diagnostic.control).toSet(), expectedControls);
+  if (expectedControls.isNotEmpty) {
+    expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
+  }
   // A language that owns both surfaces reports no structural downgrade at all,
   // so the code check only applies when something is actually missing.
   final expectedSurfaces = LiveUiSurface.values.toSet().difference(nativeSurfaces);
@@ -81,7 +92,7 @@ void main() {
     ),
   );
 
-  test('the nine declared controls resolve native, the rest shared (§16.3)', () {
+  test('every control resolves native, because this language declares the whole contract (§16.3)', () {
     for (final control in LiveUiControl.values) {
       final native = nativeControls.contains(control);
       final resolution = resolver.resolveControl(LiveDesignLanguage.cupertino, control);
@@ -144,10 +155,12 @@ void main() {
     expect(controller.text, 'typed before the switch');
     expectUndeclaredControls(diagnostics);
 
-    // Tabs are a shared-fallback control in this language: usable on both sides
-    // of the switch, and still typed (§16.7).
+    // Tabs are Cupertino's own strip by now: a row of the library's buttons, not
+    // the bottom bar the navBar takes. Usable on both sides of the switch, and
+    // still reporting (§16.7).
+    expect(find.byType(cu.CupertinoTabBar), findsNothing);
     await tester.tap(find.text('Two'));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(tabs, 1);
   });
 }

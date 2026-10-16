@@ -21,12 +21,23 @@ the core's Cupertino coverage rather than inventing a new one.
   `cupertino`).
 - Map the resolved `DesignToken` into the Cupertino theme and install it through a
   theme scope (never a nested application shell).
-- Build native Cupertino widgets for: **button, text field, switch, slider,
-  scaffold, app bar, list row, nav bar**.
+- Build native Cupertino widgets for all fifteen: **button, card, text field,
+  switch, checkbox, slider, segmented, progress, select, tab bar, scaffold, app
+  bar, list row, nav bar, toast**. Eleven are a one-for-one mapping; four are
+  composed out of the fork's own parts because it has no widget for the job —
+  `card` is `CupertinoListSection.insetGrouped` (the library ships no card and no
+  box), `select` is a `CupertinoMenuAnchor` of `CupertinoMenuItem`s behind a
+  `CupertinoButton` (iOS chooses from a pull-down menu, and `CupertinoPicker` is a
+  wheel that cannot be one inline widget), `toast` is the library's
+  `CupertinoPopupSurface` HUD panel (`CupertinoToast` is a community widget, not
+  part of this fork) and `tab bar` is a row of `CupertinoButton`s, because the
+  fork's one index-controlled strip is the *bottom* bar the nav bar already takes
+  (§9).
 - Own the app-host surface (`cu.CupertinoApp`); the shell keeps the shared token
   renderer, since `CupertinoTabScaffold` carries its own per-tab bodies (§ surfaces).
-- Declare exactly those controls in `cupertinoCapabilities` so the core resolver
-  reports a `controlUnsupported` downgrade for the rest (§16/§17).
+- Declare the whole contract in `cupertinoCapabilities`: a Cupertino page reports
+  no `controlUnsupported` downgrade, and nothing inside a Cupertino frame is a
+  token renderer (§16/§17).
 - Expose `cupertinoLocalizationsDelegates` (the fork's own Cupertino
   localizations, distinct from Flutter's) for the composition root to install.
 
@@ -37,8 +48,9 @@ the core's Cupertino coverage rather than inventing a new one.
 - State management (Riverpod/GetX), navigation, business pages, or playback.
 - Direct dependencies on other style adapters.
 
-Controls not built here (card, checkbox, segmented, progress, select, tab bar)
-fall back to the core shared token renderer — they still render on-theme.
+Every control of the contract is built here, in Cupertino's own idiom: where the
+fork has no widget, the builder composes one out of the library's parts rather
+than falling through to the core shared token renderer.
 
 ## Public entry point
 
@@ -87,8 +99,14 @@ the core resolver's native-versus-`controlUnsupported` dispatch (§16/§17).
 
 ## Known limitations
 
-- Only button, text field, switch and slider are native; every other control uses
-  the shared renderer.
+- The window shell is not this library's: `CupertinoTabScaffold` binds a bottom
+  bar of two to five destinations to a `CupertinoTabView` body per tab, so the
+  `appShell` surface stays with the shared renderer and reports
+  `surfaceUnsupported` (§ surfaces).
+- A track of fewer than two segments and a bottom bar with no destinations are
+  drawn by the shared renderer: `CupertinoSegmentedControl` and `CupertinoTabBar`
+  assert both away, so a spec they would throw on is not a crash in the library
+  (§15).
 - Test coverage is present at four layers: `test/adapter/` (contract and
   resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
   `test/widgets/` (every native control driven through the real dispatch path), and
