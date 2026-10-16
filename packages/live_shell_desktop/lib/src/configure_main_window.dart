@@ -3,6 +3,7 @@ import 'dart:ui' show Color, Size;
 import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/live_shell.dart';
 import 'package:live_shell_desktop/src/displays.dart' show defaultWindowSize;
+import 'package:live_shell_desktop/src/window_material.dart';
 import 'package:window_manager/window_manager.dart';
 
 /// Applies a [ChromePlan] and the rendering fallbacks to the window, before the
@@ -41,7 +42,9 @@ Future<void> configureMainWindow({
   Size minimumSize = const Size(900, 600),
   Size initialSize = defaultWindowSize,
   TitleBarStyle? titleBarStyle,
-  bool windowMaterial = false,
+  bool requestMaterial = false,
+  bool materialDark = false,
+  WindowMaterialApplier? applyMaterial,
 }) async {
   await windowManager.ensureInitialized();
   // The plugin's ready-callback is a synchronous VoidCallback and nothing awaits
@@ -53,12 +56,11 @@ Future<void> configureMainWindow({
       size: initialSize,
       minimumSize: minimumSize,
       center: true,
-      // An opaque surface unless a real material is behind it. The viewer's
-      // effects switch alone is not licence to clear transparent: [windowMaterial]
-      // must say a DWM material was actually applied this start — on Windows 10
-      // an unbacked transparent surface shows the desktop through, because the
-      // compositor there has no default backdrop to fall back on.
-      backgroundColor: fallbacks.needsOpaqueSurface || !windowMaterial ? background : const Color(0x00000000),
+      // Always opaque at creation: on Windows 10 an unbacked transparent
+      // surface shows the desktop through, because the compositor there has
+      // no default backdrop to fall back on. Only a material that actually
+      // applied clears the surface, and it does so after this call, below.
+      backgroundColor: background,
       titleBarStyle:
           titleBarStyle ?? (plan.mode == ChromeMode.nativeCaption ? TitleBarStyle.normal : TitleBarStyle.hidden),
       // From the role, not a literal: a floating video window and a corner toast
@@ -75,6 +77,16 @@ Future<void> configureMainWindow({
   // macos/Runner/MainFlutterWindow.swift (titlebarAppearsTransparent plus the
   // standardWindowButton frames), because window_manager exposes no offset.
   await windowManager.setResizable(!plan.ownsResize || plan.mode != ChromeMode.selfDrawn);
+  // The window exists only after waitUntilReadyToShow, so the material is
+  // applied here rather than before the options: on success the surface
+  // clears transparent so the material shows; on refusal the opaque
+  // background set above stands and nothing else changes.
+  if (requestMaterial && !fallbacks.needsOpaqueSurface) {
+    final applied = (applyMaterial ?? applyWindowMaterial)(dark: materialDark);
+    if (applied != AppliedWindowMaterial.none) {
+      await windowManager.setBackgroundColor(const Color(0x00000000));
+    }
+  }
 }
 
 /// The plan for the platform's shipping arrangement, first stage.

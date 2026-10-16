@@ -18,3 +18,4 @@ export 'src/displays.dart';
 export 'src/system_idle.dart';
 export 'src/tray_manager_host.dart';
 export 'src/window_manager_host.dart';
+export 'src/window_material.dart';

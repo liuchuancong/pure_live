@@ -1,4 +1,4 @@
-import 'dart:ui' show Color, PlatformDispatcher;
+import 'dart:ui' show Brightness, Color, PlatformDispatcher;
 
 import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/live_shell.dart';
@@ -29,6 +29,7 @@ Future<void> setUpDesktopWindow({
   ShellWindowChrome chrome = ShellWindowChrome.app,
 }) {
   final isWindows = kind == PlatformKind.windows;
+  final brightness = PlatformDispatcher.instance.platformBrightness;
   final plan = isWindows && chrome == ShellWindowChrome.app
       ? const ChromePlan(
           // The helper owns the frame; this plan records who draws the
@@ -45,10 +46,15 @@ Future<void> setUpDesktopWindow({
     plan: plan,
     fallbacks: const RenderFallbacks(),
     title: title,
-    background: _startBackground(),
+    background: _startBackground(brightness),
     // Only meaningful in the helper-backed mode: `TitleBarStyle.hidden` would
     // be the plan-derived default, and two frame takeovers is one too many.
     titleBarStyle: plan.mode == ChromeMode.selfDrawn ? TitleBarStyle.normal : null,
+    // Windows is where the compositor offers a material and where a bare
+    // transparent surface shows the desktop through; macOS and Linux keep
+    // their own arrangement for now.
+    requestMaterial: isWindows,
+    materialDark: brightness == Brightness.dark,
   );
 }
 
@@ -57,10 +63,9 @@ Future<void> setUpDesktopWindow({
 ///
 /// The old constant (`0xFF141414`) predated the theme: on the app's light
 /// default it flashed a dark rectangle for the first frames. The same seed
-/// the app theme uses, against the platform's current brightness, is the
-/// colour the viewer was going to see anyway.
-Color _startBackground() {
+/// the app theme uses, against [brightness], is the colour the viewer was
+/// going to see anyway.
+Color _startBackground(Brightness brightness) {
   final config = uiConfigFromAppearance(const AppearancePreferences());
-  final brightness = PlatformDispatcher.instance.platformBrightness;
   return materialThemeSeed(config, brightness).scaffoldBackgroundColor;
 }

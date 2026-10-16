@@ -77,7 +77,8 @@ void main() {
     RenderFallbacks fallbacks = const RenderFallbacks(),
     Color background = const Color(0xFF101418),
     TitleBarStyle? titleBarStyle,
-    bool windowMaterial = false,
+    bool requestMaterial = false,
+    WindowMaterialApplier? applyMaterial,
   }) => configureMainWindow(
     role: role,
     plan: primaryChromePlan(platform, stage: stage),
@@ -85,7 +86,8 @@ void main() {
     title: 'Pure Live',
     background: background,
     titleBarStyle: titleBarStyle,
-    windowMaterial: windowMaterial,
+    requestMaterial: requestMaterial,
+    applyMaterial: applyMaterial,
   );
 
   group('the chrome plan', () {
@@ -152,7 +154,7 @@ void main() {
   });
 
   group('the render fallbacks', () {
-    test('translucency on without a material still paints opaque', () async {
+    test('translucency on without a material request still paints opaque', () async {
       // Windows 10 has no default compositor backdrop: a transparent surface
       // with nothing behind it shows the desktop through. Transparency is
       // earned by an applied material, not by the viewer's switch alone.
@@ -162,19 +164,42 @@ void main() {
       expect(color['backgroundColorA'], 255);
     });
 
-    test('translucency on with an applied material leaves the surface clear', () async {
-      await configure(windowMaterial: true);
+    test('a requested material that applies clears the surface afterwards', () async {
+      AppliedWindowMaterial? asked;
+      await configure(
+        requestMaterial: true,
+        applyMaterial: ({required dark}) {
+          asked = AppliedWindowMaterial.mica;
+          return asked!;
+        },
+      );
 
-      final color = argsOf(find('setBackgroundColor'));
-      expect(color['backgroundColorA'], 0);
+      expect(asked, AppliedWindowMaterial.mica);
+      final colours = calls.where((call) => call.method == 'setBackgroundColor').toList();
+      expect(colours, hasLength(2), reason: 'the opaque option first, the clear surface after the material lands');
+      final after = colours.last.arguments as Map<Object?, Object?>;
+      expect(after['backgroundColorA'], 0);
     });
 
-    test('translucency off paints the given colour opaque', () async {
-      // The artefact this prevents is a black square at each rounded corner:
-      // with no material behind it, the surface's own clearing colour shows, and
-      // a transparent background there is not "invisible", it is wrong.
-      await configure(fallbacks: const RenderFallbacks(effects: false));
+    test('a requested material that is refused leaves the opaque surface', () async {
+      await configure(requestMaterial: true, applyMaterial: ({required dark}) => AppliedWindowMaterial.none);
 
+      final colour = argsOf(find('setBackgroundColor'));
+      expect(colour['backgroundColorA'], 255);
+    });
+
+    test('translucency off never asks for a material', () async {
+      var asked = false;
+      await configure(
+        fallbacks: const RenderFallbacks(effects: false),
+        requestMaterial: true,
+        applyMaterial: ({required dark}) {
+          asked = true;
+          return AppliedWindowMaterial.mica;
+        },
+      );
+
+      expect(asked, isFalse);
       final color = argsOf(find('setBackgroundColor'));
       expect(color['backgroundColorA'], 255);
       expect(color['backgroundColorR'], 0x10);
