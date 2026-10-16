@@ -270,22 +270,22 @@ void main() {
       expect(compact.isDark, isFalse);
       expect(compact.scale.controlHeight, comfortable.scale.controlHeight - 4);
       expect(compact.scale.sizes.md, 12, reason: 'sizeStep 4 - 2 over sizeUnit 4');
-    // The same pass walks `sizeStep` down twice, which pushes Ant's `sizeStep -
-    // 3` term negative: a negative gap/padding/minimum height reaches Flutter and
-    // throws, so the ramp stops at zero.
-    expect(compact.scale.sizes.xxs, 0, reason: 'sizeStep 2 - 3 would be -4');
-    for (final size in [
-      compact.scale.sizes.xxl,
-      compact.scale.sizes.xl,
-      compact.scale.sizes.lg,
-      compact.scale.sizes.md,
-      compact.scale.sizes.ms,
-      compact.scale.sizes.sm,
-      compact.scale.sizes.xs,
-      compact.scale.sizes.xxs,
-    ]) {
-      expect(size, greaterThanOrEqualTo(0));
-    }
+      // The same pass walks `sizeStep` down twice, which pushes Ant's `sizeStep -
+      // 3` term negative: a negative gap/padding/minimum height reaches Flutter and
+      // throws, so the ramp stops at zero.
+      expect(compact.scale.sizes.xxs, 0, reason: 'sizeStep 2 - 3 would be -4');
+      for (final size in [
+        compact.scale.sizes.xxl,
+        compact.scale.sizes.xl,
+        compact.scale.sizes.lg,
+        compact.scale.sizes.md,
+        compact.scale.sizes.ms,
+        compact.scale.sizes.sm,
+        compact.scale.sizes.xs,
+        compact.scale.sizes.xxs,
+      ]) {
+        expect(size, greaterThanOrEqualTo(0));
+      }
       expect(compact.scale.radii.base, comfortable.scale.radii.base, reason: 'compact tightens size, not shape');
       expect(compact.color.primary, comfortable.color.primary, reason: 'compact is not a colour pass');
     });

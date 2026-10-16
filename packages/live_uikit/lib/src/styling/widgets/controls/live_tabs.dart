@@ -196,3 +196,53 @@ class _TabButtonState extends State<_TabButton> {
     );
   }
 }
+
+/// The token-driven page switcher under a tab strip: a swipeable page view that
+/// follows the caller's index and reports a swipe back.
+///
+/// The token base swipes because that is what a tab view is for; a language whose
+/// own view does not (Fluent's `Pivot` does, a Windows shell page often does not)
+/// overrides [LanguageAdapter.tabView] rather than arguing with this one.
+class TokenTabView extends StatefulWidget {
+  /// A token tab view built from [spec].
+  const new({required this.spec, super.key});
+
+  /// The view configuration.
+  final LanguageTabViewSpec spec;
+
+  @override
+  State<TokenTabView> createState() => _TokenTabViewState();
+}
+
+class _TokenTabViewState extends State<TokenTabView> {
+  late final PageController _controller = PageController(initialPage: widget.spec.index);
+
+  @override
+  void didUpdateWidget(TokenTabView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final index = widget.spec.index;
+    if (oldWidget.spec.index != index && !_atPage(index)) {
+      _controller.animateToPage(index, duration: widget.spec.duration, curve: Curves.easeInOutCubic);
+    }
+  }
+
+  bool _atPage(int index) => _controller.hasClients && _controller.page == index.toDouble();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final spec = widget.spec;
+    final swipeable = spec.onIndexChanged != null && spec.pages.length > 1;
+    return PageView(
+      controller: _controller,
+      physics: swipeable ? const PageScrollPhysics() : const NeverScrollableScrollPhysics(),
+      onPageChanged: swipeable ? (index) => spec.onIndexChanged?.call(index) : null,
+      children: spec.pages,
+    );
+  }
+}

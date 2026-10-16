@@ -21,6 +21,7 @@ import 'package:live_uikit/src/styling/widgets/controls/live_slider.dart';
 import 'package:live_uikit/src/styling/widgets/controls/live_switch.dart';
 import 'package:live_uikit/src/styling/widgets/controls/live_tabs.dart';
 import 'package:live_uikit/src/styling/widgets/layout/live_box.dart';
+import 'package:live_uikit/src/styling/widgets/overlays/live_dialog.dart';
 import 'package:live_uikit/src/styling/widgets/overlays/live_toast.dart';
 
 /// The token-driven base renderer: every control has a working default built
@@ -205,6 +206,12 @@ class SharedLanguageAdapter implements LanguageAdapter {
 
   @override
   Widget toast(BuildContext context, LanguageToastSpec spec) => TokenToast(spec: spec);
+
+  @override
+  Widget dialog(BuildContext context, LanguageDialogSpec spec) => TokenDialog(spec: spec);
+
+  @override
+  Widget tabView(BuildContext context, LanguageTabViewSpec spec) => TokenTabView(spec: spec);
 
   @override
   Widget appHost(BuildContext context, LanguageHostSpec spec) => TokenApp(spec: spec);

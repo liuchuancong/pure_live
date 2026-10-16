@@ -51,6 +51,12 @@ enum LiveUiControl {
 
   /// A transient status message.
   toast,
+
+  /// A modal message over the page — the dialog's own surface.
+  dialog,
+
+  /// The swipeable page switcher a tab bar drives.
+  tabView,
 }
 
 /// How a control is rendered for the active design language (§15.2).

@@ -92,6 +92,8 @@ $controlNamesByProse = @{
     "list row"   = "listRow"
     "nav bar"    = "navBar"
     "toast"      = "toast"
+    "dialog"     = "dialog"
+    "tab view"   = "tabView"
 }
 
 # The method that draws each structural surface. The surface names the thing

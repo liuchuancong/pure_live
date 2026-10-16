@@ -604,6 +604,65 @@ class LanguageToastSpec {
   final Duration duration;
 }
 
+/// A modal message over the page, described the same way every language draws it.
+///
+/// Like [LanguageToastSpec] this covers the dialog's own surface: the barrier it
+/// dims, the route it arrives on and the dismissal belong to the core
+/// (`LiveDialog.show`), because those are the same behaviour in every language and
+/// a library that wants its own presentation overrides the whole call. [actions]
+/// carries already-built widgets for the same reason the bars do — a dialog's
+/// buttons are the language's `button`, and the frame must not re-pick them.
+class LanguageDialogSpec {
+  /// A dialog spec.
+  const new({this.title, this.content, this.actions = const <Widget>[], this.icon, this.dismissible = true});
+
+  /// The heading; null leaves the body to start at the top.
+  final String? title;
+
+  /// The body under the heading.
+  final Widget? content;
+
+  /// The buttons, in order.
+  final List<Widget> actions;
+
+  /// A glyph over the heading; null draws none.
+  final IconData? icon;
+
+  /// Whether tapping outside the surface closes it.
+  final bool dismissible;
+}
+
+/// The page switcher a tab strip drives, described the same way every language
+/// draws it.
+///
+/// [LanguageTabsSpec] is the strip and this is the content under it; they are two
+/// controls rather than one because the two differ per language more than they
+/// agree — iOS swipes between pages, Windows does not, and a Material view
+/// animates through a controller of its own. The caller builds the pages and owns
+/// the index, so a language decides only how a page changes, never what is on it.
+class LanguageTabViewSpec {
+  /// A tab view spec.
+  const new({
+    required this.pages,
+    required this.index,
+    this.onIndexChanged,
+    this.duration = const Duration(milliseconds: 300),
+  });
+
+  /// The pages, in the order of the strip's tabs.
+  final List<Widget> pages;
+
+  /// The visible page.
+  final int index;
+
+  /// Called with a page's index when the viewer moves it by swiping; null (or
+  /// [pages] of one) leaves the view non-interactive.
+  final ValueChanged<int>? onIndexChanged;
+
+  /// How long a page change takes where the language animates one at all.
+  final Duration duration;
+}
+
 /// The application host described the same way every language wires it.
 ///
 /// A widget library's identity is not only its controls: the app widget owns
@@ -816,6 +875,12 @@ abstract interface class LanguageAdapter {
 
   /// Draws a toast's surface with the language's real widget.
   Widget toast(BuildContext context, LanguageToastSpec spec);
+
+  /// Draws a dialog's surface with the language's real widget.
+  Widget dialog(BuildContext context, LanguageDialogSpec spec);
+
+  /// Draws the page switcher under a tab strip with the language's real widget.
+  Widget tabView(BuildContext context, LanguageTabViewSpec spec);
 
   /// Wraps the whole app in the language's own host widget, when its library
   /// ships one — a [LiveUiSurface.appHost] capability. The shared renderer answers
