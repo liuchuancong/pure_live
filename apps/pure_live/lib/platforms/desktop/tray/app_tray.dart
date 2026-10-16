@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:live_shell/live_shell.dart';
+import 'package:live_log/live_log.dart' show LiveLog;
 import 'package:live_shell_desktop/live_shell_desktop.dart';
 
 import 'package:pure_live/l10n/generated/strings.g.dart';
@@ -10,10 +11,12 @@ import 'package:pure_live/l10n/generated/strings.g.dart';
 /// Every icon state maps to the same asset for now — playing, recording and
 /// attention get their own art when the states they name exist to show.
 final class AppTray {
-  /// A tray with [onShow] and [onQuit] as its two menu outcomes; [onCreateError]
-  /// receives the reason a failed creation failed, because a tray that silently
-  /// did not appear stays a mystery until the close flow misbehaves.
-  new({required this.onShow, required this.onQuit, this.onCreateError});
+  /// A tray with [onShow] and [onQuit] as its two menu outcomes; [log]
+  /// records the creation and every click so a dead tray is diagnosable
+  /// from the log file alone; [onCreateError] receives the reason a failed
+  /// creation failed, because a tray that silently did not appear stays a
+  /// mystery until the close flow misbehaves.
+  new({required this.onShow, required this.onQuit, this.onCreateError, LiveLog? log}) : _log = log?.forCategory('tray');
 
   /// Brings the window back.
   final void Function() onShow;
@@ -28,6 +31,7 @@ final class AppTray {
     iconAssets: {for (final state in TrayIconState.values) state: 'assets/tray/pure_live.ico'},
   );
 
+  final LiveLog? _log;
   StreamSubscription<String>? _selections;
   StreamSubscription<TrayPointer>? _pointers;
   bool _created = false;
@@ -47,6 +51,7 @@ final class AppTray {
     await _host.setTooltip('Pure Live');
     await _host.setMenu([TrayAction(id: 'show', label: t.tray.show), TrayAction(id: 'quit', label: t.tray.quit)]);
     _selections = _host.selections.listen((id) {
+      _log?.info('tray menu click', fields: {'id': id});
       switch (id) {
         case 'show':
           onShow();
@@ -58,6 +63,7 @@ final class AppTray {
     // entry, minus the trip through the menu. Right click is the menu: the
     // shell opens it natively on the press.
     _pointers = _host.pointers.listen((pointer) {
+      _log?.info('tray icon click', fields: {'kind': pointer.name});
       if (pointer == TrayPointer.click) {
         onShow();
       }

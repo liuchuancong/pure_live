@@ -2,8 +2,6 @@
 #include <flutter/flutter_view_controller.h>
 #include <windows.h>
 
-#include <bitsdojo_window_windows/bitsdojo_window_plugin.h>
-
 #include "flutter_window.h"
 #include "utils.h"
 
@@ -18,17 +16,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   // Initialize COM, so that it is available for use in the library and/or
   // plugins.
   ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-
-  // Frame takeover for the self-drawn title bar (the shell's
-  // `windowChrome: app` mode): bitsdojo subclasses the window before creation
-  // and answers WM_NCCALCSIZE / WM_NCHITTEST itself, which keeps edge resize
-  // and Aero Snap while the caption strip is drawn in Flutter. Only the frame
-  // is taken — window management stays with window_manager, which is left on
-  // TitleBarStyle.normal so the two never fight over the non-client area.
-  // Deliberately NOT BDW_HIDE_ON_STARTUP: the runner's own `--hidden` handling
-  // owns launch visibility. The choice is made once here, before the window
-  // exists; switching modes is a next-start setting, not a runtime toggle.
-  bitsdojo_window_configure(BDW_CUSTOM_FRAME);
 
   flutter::DartProject project(L"data");
 
