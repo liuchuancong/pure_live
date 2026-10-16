@@ -20,7 +20,12 @@ that package.
 - Map the resolved `DesignToken` into the Neumorphic theme and install it through
   a theme scope (never a nested application shell).
 - Build native Neumorphic widgets for: **button, card, text field, switch,
-  checkbox, slider**.
+  checkbox, slider, segmented, progress, select, tab bar, toast**. Seven of them
+  are mappings to a library widget (`progress` is `NeuProgressBar`, a recessed
+  trough with a domed fill); four are composed out of the library's own faces —
+  `NeuContainer` in `pressed`/`concave`/`convex` shapes with `NeuTheme` colours,
+  depth and radius — because `flutter_neumorphic_ui_kit` ships no segmented
+  track, no dropdown, no tab strip and no transient message (§9).
 - Declare exactly those controls in `neumorphicCapabilities` so the core
   resolver reports a `controlUnsupported` downgrade for the rest (§16/§17).
 
@@ -31,8 +36,9 @@ that package.
 - State management (Riverpod/GetX), navigation, business pages, or playback.
 - Direct dependencies on other style adapters.
 
-Controls not built here (segmented, progress, select, tab bar) fall back to the
-core shared token renderer — they still render on-theme.
+Controls not built here (the page trio `scaffold`, `app bar`, `list row` and
+`nav bar`) fall back to the core shared token renderer — they still render
+on-theme.
 
 ## Public entry point
 
@@ -75,8 +81,12 @@ the core resolver's native-versus-`controlUnsupported` dispatch (§16/§17).
 
 ## Known limitations
 
-- Segmented, progress, select and tab bar use the shared renderer, not native
-  Neumorphic widgets.
+- Scaffold, app bar, list row and nav bar use the shared renderer, not native
+  Neumorphic surfaces; that is the next pass for this package.
+- `segmented`, `select`, `tab bar` and `toast` are composed from the library's
+  own container faces rather than mapped to a widget of theirs, and the select's
+  option list opens inline (the core owns the overlay, so nothing here may ask
+  for one).
 - Test coverage is present at four layers: `test/adapter/` (contract and
   resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
   `test/widgets/` (every native control driven through the real dispatch path), and

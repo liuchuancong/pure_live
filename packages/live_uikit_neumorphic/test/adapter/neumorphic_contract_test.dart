@@ -18,6 +18,11 @@ void main() {
     LiveUiControl.switchWidget,
     LiveUiControl.checkbox,
     LiveUiControl.slider,
+    LiveUiControl.segmented,
+    LiveUiControl.progress,
+    LiveUiControl.select,
+    LiveUiControl.tabBar,
+    LiveUiControl.toast,
   };
   // Derived rather than listed, so a control added to the contract cannot join the
   // fallback side silently — the suite has to be told (§17).
@@ -59,10 +64,12 @@ void main() {
     });
 
     test('an undeclared control falls back to shared and is reported', () {
-      final result = resolver.resolveControl(LiveDesignLanguage.neumorphic, LiveUiControl.segmented);
+      // The four chrome pieces are this build's remaining fallback side; naming one
+      // keeps the downgrade path honest while the rest of the contract is native.
+      final result = resolver.resolveControl(LiveDesignLanguage.neumorphic, LiveUiControl.scaffold);
       expect(result.implementation.kind, LiveImplementationKind.shared);
       expect(result.diagnostic?.code, LiveUiDiagnosticCode.controlUnsupported);
-      expect(result.diagnostic?.control, LiveUiControl.segmented);
+      expect(result.diagnostic?.control, LiveUiControl.scaffold);
     });
   });
 }

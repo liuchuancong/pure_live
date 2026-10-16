@@ -4,8 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_neumorphic/live_uikit_neumorphic.dart';
 
-/// The controls `live_uikit_neumorphic` renders natively (§3.1 capability
-/// declaration): six of the thirteen the resolver dispatches.
+/// The controls `live_uikit_neumorphic` renders with `flutter_neumorphic_ui_kit`
+/// (§3.1 capability declaration): eleven of the fifteen the resolver dispatches —
+/// the seven the library has a widget for plus `segmented`, `select`, `tabBar` and
+/// `toast`, which are composed out of that library's own faces because it ships no
+/// such widget.
 const Set<LiveUiControl> nativeControls = {
   LiveUiControl.button,
   LiveUiControl.card,
@@ -13,13 +16,17 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.switchWidget,
   LiveUiControl.checkbox,
   LiveUiControl.slider,
+  LiveUiControl.segmented,
+  LiveUiControl.progress,
+  LiveUiControl.select,
+  LiveUiControl.tabBar,
+  LiveUiControl.toast,
 };
 
-/// §16 integration pass for `live_uikit_neumorphic`: six declared controls native,
-/// the other seven shared (`segmented`, `progress`, `select`, `tabBar` plus the page
-/// trio `scaffold`, `appBar`, `listRow` that no adapter maps yet), and a switch to the
-/// core token base and back that leaves the caller's controller and values intact
-/// (§11).
+/// §16 integration pass for `live_uikit_neumorphic`: eleven declared controls native,
+/// the other four shared (the page trio `scaffold`, `appBar`, `listRow` plus
+/// `navBar`, which this build has not taken on yet), and a switch to the core token
+/// base and back that leaves the caller's controller and values intact (§11).
 /// The downgrades this language is expected to report: every control the adapter
 /// does not declare, each exactly once per language change (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
@@ -56,7 +63,7 @@ void main() {
     ),
   );
 
-  test('the six declared controls resolve native, the rest shared (§16.3)', () {
+  test('the eleven declared controls resolve native, the rest shared (§16.3)', () {
     for (final control in LiveUiControl.values) {
       final native = nativeControls.contains(control);
       final resolution = resolver.resolveControl(LiveDesignLanguage.neumorphic, control);
@@ -115,7 +122,9 @@ void main() {
     expect(controller.text, 'typed before the switch');
     expectUndeclaredControls(diagnostics);
 
-    // Segmented is a shared fallback in this language and still callable (§16.7).
+    // Segmented is composed here now, in the language's own dish-and-dome track,
+    // and still callable (§16.7).
+    expect(find.byType(TokenSegmented), findsNothing);
     await tester.tap(find.text('B'));
     await tester.pump();
     expect(segmented, 1);

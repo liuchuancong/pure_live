@@ -108,7 +108,12 @@ packages/
     │           ├── neumorphic_text_field_builder.dart
     │           ├── neumorphic_switch_builder.dart
     │           ├── neumorphic_checkbox_builder.dart
-    │           └── neumorphic_slider_builder.dart
+    │           ├── neumorphic_slider_builder.dart
+    │           ├── neumorphic_segmented_builder.dart
+    │           ├── neumorphic_progress_builder.dart
+    │           ├── neumorphic_select_builder.dart
+    │           ├── neumorphic_tab_bar_builder.dart
+    │           └── neumorphic_toast_builder.dart
     ├── live-uikit-neumorphic.md
     └── test/
         ├── adapter/

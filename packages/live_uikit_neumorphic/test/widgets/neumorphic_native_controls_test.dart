@@ -83,16 +83,112 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('an unoverridden control still renders via the shared fallback', (tester) async {
+  testWidgets('segmented domes the chosen cell and reports its index (§9)', (tester) async {
+    var index = -1;
     await tester.pumpWidget(
       harness(
         SizedBox(
           width: 300,
-          child: LiveSelect<String>(items: const ['a'], itemLabel: (s) => s, onChanged: (_) {}),
+          child: LiveSegmented(labels: const ['A', 'B', 'C'], index: 1, onChanged: (i) => index = i),
         ),
       ),
     );
-    expect(find.byType(LiveSelect<String>), findsOneWidget);
+    // The composed track is the library's own plane, never the token renderer.
+    expect(find.byType(TokenSegmented), findsNothing);
+    expect(tester.widgetList<neu.NeuContainer>(find.byType(neu.NeuContainer)).length, greaterThanOrEqualTo(4));
+    await tester.tap(find.text('C'));
+    await tester.pump();
+    expect(index, 2);
+  });
+
+  testWidgets('progress maps to the library bar and carries the label (§9)', (tester) async {
+    await tester.pumpWidget(harness(const SizedBox(width: 300, child: LiveProgress(value: 0.5, showLabel: true))));
+    expect(find.byType(neu.NeuProgressBar), findsOneWidget);
+    expect(find.byType(TokenProgress), findsNothing);
+    expect(find.text('50%'), findsOneWidget);
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('select opens inline and reports the typed value (§9)', (tester) async {
+    String? picked;
+    await tester.pumpWidget(
+      harness(
+        SizedBox(
+          width: 260,
+          child: LiveSelect<String>(items: const ['a', 'b'], itemLabel: (s) => s, onChanged: (v) => picked = v),
+        ),
+      ),
+    );
+    expect(find.byType(TokenSelect<String>), findsNothing);
+    expect(find.text('b'), findsNothing);
+
+    // The dish opens in the tree: no overlay, no ScaffoldMessenger, no Navigator.
+    await tester.tap(find.byType(LiveSelect<String>));
+    await tester.pump();
+    expect(find.text('b'), findsOneWidget);
+    await tester.tap(find.text('b'));
+    await tester.pump();
+    expect(picked, 'b');
+    // The dish closes on a choice, and the strip is controlled like every other
+    // path here: the field only shows the value the caller hands back.
+    expect(find.text('a'), findsNothing);
+    await tester.pumpWidget(
+      harness(
+        SizedBox(
+          width: 260,
+          child: LiveSelect<String>(
+            items: const ['a', 'b'],
+            itemLabel: (s) => s,
+            value: picked,
+            onChanged: (v) => picked = v,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('b'), findsOneWidget);
+    expect(find.text('a'), findsNothing);
+  });
+
+  testWidgets('tab bar is a composed strip, not the library bottom nav (§9)', (tester) async {
+    var index = -1;
+    await tester.pumpWidget(
+      harness(
+        LiveTabs(
+          tabs: const [LiveTab(label: 'One'), LiveTab(label: 'Two', icon: Icons.star)],
+          index: 0,
+          spacing: 6,
+          onChanged: (i) => index = i,
+        ),
+      ),
+    );
+    expect(find.byType(TokenTabs), findsNothing);
+    expect(find.byType(neu.NeuBottomNav), findsNothing);
+    expect(find.byIcon(Icons.star), findsOneWidget);
+    await tester.tap(find.text('Two'));
+    await tester.pump();
+    expect(index, 1);
+  });
+
+  testWidgets('toast draws the Neumorphic pill in the core overlay (§9)', (tester) async {
+    late BuildContext context;
+    await tester.pumpWidget(harness(Builder(builder: (c) { context = c; return const SizedBox.shrink(); })));
+
+    LiveToast.show(context, 'Saved', type: LiveToastType.success);
+    await tester.pump();
+    expect(find.text('Saved'), findsOneWidget);
+    expect(find.byType(TokenToast), findsNothing);
+
+    // The lifetime timer and the fade belong to the core; the pill just has to
+    // survive them, so the test outlives the message instead of leaving a timer.
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    expect(find.text('Saved'), findsNothing);
+  });
+
+  testWidgets('a control this build does not declare yet still renders via the shared fallback', (tester) async {
+    await tester.pumpWidget(harness(const LiveListRow(title: 'row')));
+    expect(find.byType(LiveListRow), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
