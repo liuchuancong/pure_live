@@ -702,6 +702,128 @@ void main() {
     });
   });
 
+  group('the three controls Material drives differently (§9)', () {
+    testWidgets('a select is the fork dropdown, and it carries the value and the placeholder', (tester) async {
+      String? chosen;
+      await tester.pumpWidget(
+        harness(
+          LiveSelect<String>(
+            items: const ['alpha', 'beta'],
+            itemLabel: (item) => item,
+            value: 'beta',
+            onChanged: (value) => chosen = value,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(mu.DropdownButton<String>), findsOneWidget);
+      expect(find.byType(TokenSelect<String>), findsNothing);
+      expect(find.text('beta'), findsOneWidget);
+      expect(chosen, isNull);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a select whose value is not one of its items takes the shared renderer', (tester) async {
+      // The fork asserts the current value is among the items; a spec it would
+      // throw on is handed to the shared renderer instead of crashing (§15).
+      await tester.pumpWidget(
+        harness(
+          LiveSelect<String>(items: const ['alpha'], itemLabel: (item) => item, value: 'missing', onChanged: (_) {}),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(mu.DropdownButton<String>), findsNothing);
+      expect(find.byType(TokenSelect<String>), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a tab strip is the fork TabBar and reports the tapped index', (tester) async {
+      var chosen = -1;
+      await withInkPlatform(() async {
+        await tester.pumpWidget(
+          harness(
+            LiveTabs(
+              tabs: const [
+                LiveTab(label: 'Live'),
+                LiveTab(label: 'Library', icon: Icons.play_arrow),
+              ],
+              index: 0,
+              onChanged: (index) => chosen = index,
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.byType(mu.TabBar), findsOneWidget);
+        expect(find.byType(TokenTabs), findsNothing);
+        expect(find.byIcon(Icons.play_arrow), findsOneWidget);
+
+        await tester.tap(find.text('Library'));
+        await tester.pumpAndSettle();
+        expect(chosen, 1);
+        expect(tester.takeException(), isNull);
+      });
+    });
+
+    testWidgets('a toast surface is the themed card of the fork, not the token pill', (tester) async {
+      await tester.pumpWidget(harness(const SizedBox.shrink()));
+      LiveToast.show(tester.element(find.byType(SizedBox)), 'Saved', type: LiveToastType.success);
+      await tester.pump();
+
+      expect(find.text('Saved'), findsOneWidget);
+      expect(find.byType(TokenToast), findsNothing);
+      // `mu.SnackBar` cannot be the surface: it reads `widget.animation!` in
+      // initState and is only ever built by a ScaffoldMessenger that owns that
+      // animation, while the core owns the overlay and the timer here.
+      expect(find.byType(mu.SnackBar), findsNothing);
+      expect(find.byType(mu.Material), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('no token renderer inside a Material frame (§15.3)', () {
+    testWidgets('the whole chrome set draws from the fork, not from the shared base', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          LiveScaffold(
+            appBar: LiveAppBar(
+              title: 'Rooms',
+              actions: const [Icon(Icons.search)],
+              bottom: LiveTabs(
+                tabs: const [
+                  LiveTab(label: 'One'),
+                  LiveTab(label: 'Two'),
+                ],
+                index: 0,
+                onChanged: (_) {},
+              ),
+            ),
+            body: Column(
+              children: [
+                LiveSegmented(labels: const ['A', 'B'], index: 0, onChanged: (_) {}),
+                LiveSelect<String>(items: const ['x'], itemLabel: (item) => item, onChanged: (_) {}),
+              ],
+            ),
+            bottomBar: LiveNavBar(
+              items: const [
+                LiveNavBarItem(label: 'Home', icon: Icons.home),
+                LiveNavBarItem(label: 'Shows', icon: Icons.tv),
+              ],
+              index: 0,
+              onChanged: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('the app shell (§ surfaces)', () {
     const destinations = [
       LiveShellDestination(id: 'home', label: 'Home', icon: Icons.home),

@@ -5,10 +5,12 @@ import 'package:live_uikit_material/live_uikit_material.dart';
 import 'package:material_ui/material_ui.dart' as mu;
 
 /// The controls `live_uikit_material` renders natively (§3.1 capability
-/// declaration): twelve of the fifteen the resolver dispatches — everything
-/// except `select`, `tabBar` (which this fork does not carry) and `toast`
-/// (Material's transient message belongs to the ScaffoldMessenger, not to a
-/// surface the adapter can return).
+/// declaration): all fifteen the resolver dispatches — the controls, the four
+/// chrome pieces, and the three the fork drives differently from the neutral
+/// spec: `select` is a `DropdownButton`, `tabBar` a `TabBar` behind a controller
+/// the adapter owns, and `toast` a `Material` card themed by the fork's own
+/// `SnackBarThemeData` — a `SnackBar` needs the animation a
+/// `ScaffoldMessenger` owns, and the core keeps the overlay and the timer.
 const Set<LiveUiControl> nativeControls = {
   LiveUiControl.button,
   LiveUiControl.card,
@@ -18,10 +20,13 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.slider,
   LiveUiControl.segmented,
   LiveUiControl.progress,
+  LiveUiControl.select,
+  LiveUiControl.tabBar,
   LiveUiControl.scaffold,
   LiveUiControl.appBar,
   LiveUiControl.listRow,
   LiveUiControl.navBar,
+  LiveUiControl.toast,
 };
 
 /// The structural surfaces this adapter owns (§ surfaces).
@@ -35,17 +40,18 @@ const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost,
 /// real [LiveConfigProvider] → [LiveUiResolver] → adapter path in both
 /// directions, keep one caller-owned controller across the switch, and check the
 /// diagnostics a switch is expected to produce — and only those.
-/// The downgrades this language is expected to report: every control the adapter
-/// does not declare — `select`, `tabBar` and `toast` — each exactly once per
-/// language change (§15.5/§16.8).
+/// The downgrades this language is expected to report: none, because nothing in
+/// the contract falls back any more (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   final controls = sink.where((diagnostic) => diagnostic.control != null);
   final surfaces = sink.where((diagnostic) => diagnostic.surface != null);
-  expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
-  expect(
-    controls.map((diagnostic) => diagnostic.control).toSet(),
-    LiveUiControl.values.toSet().difference(nativeControls),
-  );
+  // A language that renders every control reports no control downgrade at all,
+  // so the code check only applies when something actually fell back.
+  final expectedControls = LiveUiControl.values.toSet().difference(nativeControls);
+  expect(controls.map((diagnostic) => diagnostic.control).toSet(), expectedControls);
+  if (expectedControls.isNotEmpty) {
+    expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
+  }
   // A language that owns both surfaces reports no structural downgrade at all,
   // so the code check only applies when something is actually missing.
   final expectedSurfaces = LiveUiSurface.values.toSet().difference(nativeSurfaces);

@@ -13,17 +13,20 @@ import 'package:live_uikit_material/src/widgets/material_nav_bar_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_progress_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_scaffold_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_segmented_builder.dart';
+import 'package:live_uikit_material/src/widgets/material_select_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_shell_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_slider_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_switch_builder.dart';
+import 'package:live_uikit_material/src/widgets/material_tab_bar_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_text_field_builder.dart';
+import 'package:live_uikit_material/src/widgets/material_toast_builder.dart';
 
 /// Material UI — the `material_ui` design-language adapter (§1).
 ///
-/// A fork of Flutter's Material widgets, so it mirrors the core Material
-/// coverage (button/card/field/switch/checkbox/slider/segmented/progress);
-/// select and tabs fall back to the shared token base. Theme via `theme/`, each
-/// control via its `widgets/` builder, [capabilities] via the capabilities file.
+/// A fork of Flutter's Material widgets, so it covers the whole contract with
+/// the library's own widgets — the controls, the four chrome pieces, the app
+/// host and the shell. Theme via `theme/`, each control via its `widgets/`
+/// builder, [capabilities] via the capabilities file.
 class MaterialLanguageAdapter extends SharedLanguageAdapter {
   /// The adapter.
   const new();
@@ -82,6 +85,23 @@ class MaterialLanguageAdapter extends SharedLanguageAdapter {
   Widget progress(BuildContext context, LanguageProgressSpec spec) => MaterialProgressBuilder.build(context, spec);
 
   @override
+  Widget select<T>(BuildContext context, LanguageSelectSpec<T> spec) {
+    // The fork's dropdown asserts that every item value is non-null and unique
+    // and that the current value is one of the items, so a spec it would throw
+    // on is the shared renderer's case to draw rather than a crash in the
+    // library (§15).
+    final items = spec.items;
+    final unusable =
+        items.any((item) => item == null) ||
+        items.toSet().length != items.length ||
+        (spec.value != null && !items.contains(spec.value));
+    if (unusable) {
+      return super.select(context, spec);
+    }
+    return MaterialSelectBuilder.build(context, spec);
+  }
+
+  @override
   Widget scaffold(BuildContext context, LanguageScaffoldSpec spec) => MaterialScaffoldBuilder.build(context, spec);
 
   @override
@@ -101,6 +121,12 @@ class MaterialLanguageAdapter extends SharedLanguageAdapter {
     }
     return MaterialNavBarBuilder.build(context, spec);
   }
+
+  @override
+  Widget tabBar(BuildContext context, LanguageTabsSpec spec) => MaterialTabBarBuilder.build(context, spec);
+
+  @override
+  Widget toast(BuildContext context, LanguageToastSpec spec) => MaterialToastBuilder.build(context, spec);
 
   @override
   Widget appHost(BuildContext context, LanguageHostSpec spec) => MaterialHostBuilder.build(context, spec);

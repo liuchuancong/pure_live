@@ -20,14 +20,19 @@ core Material coverage rather than inventing a new one.
 - Implement `LanguageAdapter` for `LiveDesignLanguage.material` (stable id
   `material`).
 - Map the resolved `DesignToken` into the Material theme and install it through a
-  theme scope (never a nested application shell).
-- Build native Material widgets for: **button, card, text field, switch, checkbox,
-  slider, segmented, progress, scaffold, app bar, list row, nav bar**.
+  theme scope (never a nested application widget).
+- Build native Material widgets for all fifteen: **button, card, text field, switch,
+  checkbox, slider, segmented, progress, select, tab bar, scaffold, app bar, list
+  row, nav bar, toast**. Three of them are driven differently from the neutral
+  spec: `select` is a `DropdownButton`, `tab bar` is a `TabBar` behind a
+  `TabController` the adapter owns, and `toast` is a `Material` card themed by the
+  fork's own `SnackBarThemeData` (§9).
 - Own both structural surfaces: the app host (`mu.MaterialApp`) and the shell
   (`mu.NavigationRail`, or the fork's `NavigationBar` when the caller asks for a
   bottom strip) (§ surfaces).
-- Declare exactly those controls in `materialCapabilities` so the core resolver
-  reports a `controlUnsupported` downgrade for the rest (§16/§17).
+- Declare the whole contract in `materialCapabilities`: a Material page reports no
+  `controlUnsupported` downgrade, and nothing inside a Material frame is a token
+  renderer (§16/§17).
 - Expose `materialLocalizationsDelegates` (the fork's own Material
   localizations) for the composition root to install.
 
