@@ -77,6 +77,7 @@ void main() {
     RenderFallbacks fallbacks = const RenderFallbacks(),
     Color background = const Color(0xFF101418),
     TitleBarStyle? titleBarStyle,
+    bool windowMaterial = false,
   }) => configureMainWindow(
     role: role,
     plan: primaryChromePlan(platform, stage: stage),
@@ -84,6 +85,7 @@ void main() {
     title: 'Pure Live',
     background: background,
     titleBarStyle: titleBarStyle,
+    windowMaterial: windowMaterial,
   );
 
   group('the chrome plan', () {
@@ -150,8 +152,18 @@ void main() {
   });
 
   group('the render fallbacks', () {
-    test('translucency on leaves the surface clear so the material can show through', () async {
+    test('translucency on without a material still paints opaque', () async {
+      // Windows 10 has no default compositor backdrop: a transparent surface
+      // with nothing behind it shows the desktop through. Transparency is
+      // earned by an applied material, not by the viewer's switch alone.
       await configure();
+
+      final color = argsOf(find('setBackgroundColor'));
+      expect(color['backgroundColorA'], 255);
+    });
+
+    test('translucency on with an applied material leaves the surface clear', () async {
+      await configure(windowMaterial: true);
 
       final color = argsOf(find('setBackgroundColor'));
       expect(color['backgroundColorA'], 0);

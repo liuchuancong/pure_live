@@ -41,6 +41,7 @@ Future<void> configureMainWindow({
   Size minimumSize = const Size(900, 600),
   Size initialSize = defaultWindowSize,
   TitleBarStyle? titleBarStyle,
+  bool windowMaterial = false,
 }) async {
   await windowManager.ensureInitialized();
   // The plugin's ready-callback is a synchronous VoidCallback and nothing awaits
@@ -52,10 +53,12 @@ Future<void> configureMainWindow({
       size: initialSize,
       minimumSize: minimumSize,
       center: true,
-      // An opaque surface whenever the material is off: a transparent window with
-      // no material behind it clears to whatever the compositor feels like, and
-      // the artefact that shows is a black square at each rounded corner.
-      backgroundColor: fallbacks.needsOpaqueSurface ? background : const Color(0x00000000),
+      // An opaque surface unless a real material is behind it. The viewer's
+      // effects switch alone is not licence to clear transparent: [windowMaterial]
+      // must say a DWM material was actually applied this start — on Windows 10
+      // an unbacked transparent surface shows the desktop through, because the
+      // compositor there has no default backdrop to fall back on.
+      backgroundColor: fallbacks.needsOpaqueSurface || !windowMaterial ? background : const Color(0x00000000),
       titleBarStyle:
           titleBarStyle ?? (plan.mode == ChromeMode.nativeCaption ? TitleBarStyle.normal : TitleBarStyle.hidden),
       // From the role, not a literal: a floating video window and a corner toast
