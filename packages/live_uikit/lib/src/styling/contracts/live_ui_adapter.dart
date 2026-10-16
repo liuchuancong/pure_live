@@ -1,12 +1,12 @@
 import 'package:flutter/services.dart' show TextInputAction, TextInputType;
 import 'package:flutter/widgets.dart';
 import 'package:live_uikit/src/styling/contracts/live_ui_capabilities.dart';
-import 'package:live_uikit/src/styling/design_token.dart';
-import 'package:live_uikit/src/styling/recipe.dart';
-import 'package:live_uikit/src/styling/style.dart';
-import 'package:live_uikit/src/styling/widgets/live_nav_bar.dart' show LiveNavBarItem;
-import 'package:live_uikit/src/styling/widgets/live_tabs.dart' show LiveTab;
-import 'package:live_uikit/src/styling/widgets/live_toast.dart' show LiveToastType;
+import 'package:live_uikit/src/styling/style/recipe.dart';
+import 'package:live_uikit/src/styling/style/style.dart';
+import 'package:live_uikit/src/styling/tokens/design_token.dart';
+import 'package:live_uikit/src/styling/widgets/chrome/live_nav_bar.dart' show LiveNavBarItem;
+import 'package:live_uikit/src/styling/widgets/controls/live_tabs.dart' show LiveTab;
+import 'package:live_uikit/src/styling/widgets/overlays/live_toast.dart' show LiveToastType;
 
 /// The switchable design languages, each backed by its own widget library.
 enum LiveDesignLanguage {

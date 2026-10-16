@@ -124,7 +124,7 @@ flutter test packages/live_uikit
 
 `UiConfig` is `freezed`/`json_serializable` code (`live_config.freezed.dart`,
 `live_config.g.dart`, both checked in); regenerate them after editing
-`lib/src/styling/live_config.dart`.
+`lib/src/styling/config/live_config.dart`.
 
 `test/styling/live_ui_resolver_test.dart` covers the dispatch contract: a
 registered language resolves `adapterNative` with no diagnostic, an unregistered

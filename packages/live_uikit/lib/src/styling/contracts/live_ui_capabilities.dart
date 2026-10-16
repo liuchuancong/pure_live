@@ -1,4 +1,4 @@
-import 'package:live_uikit/src/styling/diagnostics.dart' show LiveUiControl;
+import 'package:live_uikit/src/styling/diagnostics/diagnostics.dart' show LiveUiControl;
 
 /// The controls an adapter renders with a native widget from its own library
 /// (§3.1 / §7 capability declaration).
