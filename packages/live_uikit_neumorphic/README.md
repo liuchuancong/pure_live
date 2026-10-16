@@ -19,15 +19,21 @@ that package.
   (stable id `neumorphic`).
 - Map the resolved `DesignToken` into the Neumorphic theme and install it through
   a theme scope (never a nested application shell).
-- Build native Neumorphic widgets for: **button, card, text field, switch,
-  checkbox, slider, segmented, progress, select, tab bar, toast**. Seven of them
-  are mappings to a library widget (`progress` is `NeuProgressBar`, a recessed
-  trough with a domed fill); four are composed out of the library's own faces —
-  `NeuContainer` in `pressed`/`concave`/`convex` shapes with `NeuTheme` colours,
-  depth and radius — because `flutter_neumorphic_ui_kit` ships no segmented
-  track, no dropdown, no tab strip and no transient message (§9).
-- Declare exactly those controls in `neumorphicCapabilities` so the core
-  resolver reports a `controlUnsupported` downgrade for the rest (§16/§17).
+- Build native Neumorphic widgets for all fifteen: **button, card, text field, switch,
+  checkbox, slider, segmented, progress, select, tab bar, scaffold, app bar, list
+  row, nav bar, toast**. Eight are mappings to a library widget (`progress` is
+  `NeuProgressBar`, a recessed trough with a domed fill; `app bar` is `NeuAppBar`, a
+  `NeuContainer` plane around a `NavigationToolbar`); seven are composed out of the
+  library's own faces — `NeuContainer` in its `flat`/`pressed`/`concave`/`convex`
+  shapes with `NeuTheme` colours, depth and radius — because
+  `flutter_neumorphic_ui_kit` ships no segmented track, no dropdown, no tab strip, no
+  transient message, no page frame, no list tile and no bottom bar that could carry
+  one (§9). `NeuBottomNav` in particular is a docked floating pill that asserts two
+  items, demands a non-null callback and adds its own safe-area inset, so it is
+  neither the tab strip nor the nav bar here.
+- Declare the whole contract in `neumorphicCapabilities`: a Neumorphic page reports no
+  `controlUnsupported` downgrade, and nothing inside a Neumorphic frame is a token
+  renderer (§16/§17).
 
 ## What this package must not own
 
@@ -36,9 +42,10 @@ that package.
 - State management (Riverpod/GetX), navigation, business pages, or playback.
 - Direct dependencies on other style adapters.
 
-Controls not built here (the page trio `scaffold`, `app bar`, `list row` and
-`nav bar`) fall back to the core shared token renderer — they still render
-on-theme.
+Nothing in the control contract falls back to the core shared token renderer here:
+every control a page asks for is drawn by this library, and the only downgrades a
+Neumorphic page reports are the two structural surfaces (the app host and the app
+shell), which this build does not own yet (§ surfaces).
 
 ## Public entry point
 

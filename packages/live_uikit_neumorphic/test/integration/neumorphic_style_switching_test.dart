@@ -5,10 +5,10 @@ import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_neumorphic/live_uikit_neumorphic.dart';
 
 /// The controls `live_uikit_neumorphic` renders with `flutter_neumorphic_ui_kit`
-/// (§3.1 capability declaration): eleven of the fifteen the resolver dispatches —
-/// the seven the library has a widget for plus `segmented`, `select`, `tabBar` and
-/// `toast`, which are composed out of that library's own faces because it ships no
-/// such widget.
+/// (§3.1 capability declaration): all fifteen the resolver dispatches — the eight it
+/// has a widget for, plus `segmented`, `select`, `tabBar`, `toast`, `scaffold`,
+/// `listRow` and `navBar`, which are composed out of that library's own faces because
+/// it ships no such widget.
 const Set<LiveUiControl> nativeControls = {
   LiveUiControl.button,
   LiveUiControl.card,
@@ -20,26 +20,31 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.progress,
   LiveUiControl.select,
   LiveUiControl.tabBar,
+  LiveUiControl.scaffold,
+  LiveUiControl.appBar,
+  LiveUiControl.listRow,
+  LiveUiControl.navBar,
   LiveUiControl.toast,
 };
 
-/// §16 integration pass for `live_uikit_neumorphic`: eleven declared controls native,
-/// the other four shared (the page trio `scaffold`, `appBar`, `listRow` plus
-/// `navBar`, which this build has not taken on yet), and a switch to the core token
-/// base and back that leaves the caller's controller and values intact (§11).
-/// The downgrades this language is expected to report: every control the adapter
-/// does not declare, each exactly once per language change (§15.5/§16.8).
+/// §16 integration pass for `live_uikit_neumorphic`: the whole contract native, so a
+/// Neumorphic language change reports no control downgrade at all, and a switch to the
+/// core token base and back leaves the caller's controller and values intact (§11).
+/// The downgrades this language is expected to report: none for controls — only the
+/// two structural surfaces, which this build does not own (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   // This adapter owns no structural surface, so both the app host and the shell
-  // fall back alongside the controls it does not declare — two kinds of downgrade
-  // with two codes (§ surfaces).
+  // fall back while every control renders natively — one kind of downgrade with one
+  // code (§ surfaces).
   final controls = sink.where((diagnostic) => diagnostic.control != null);
   final surfaces = sink.where((diagnostic) => diagnostic.surface != null);
-  expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
-  expect(
-    controls.map((diagnostic) => diagnostic.control).toSet(),
-    LiveUiControl.values.toSet().difference(nativeControls),
-  );
+  // Asserted only while there is something to report: an empty set of codes would
+  // otherwise match `{controlUnsupported}` trivially and say nothing.
+  final expectedControls = LiveUiControl.values.toSet().difference(nativeControls);
+  expect(controls.map((diagnostic) => diagnostic.control).toSet(), expectedControls);
+  if (expectedControls.isNotEmpty) {
+    expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
+  }
   expect(surfaces.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.surfaceUnsupported});
   expect(surfaces.map((diagnostic) => diagnostic.surface).toSet(), LiveUiSurface.values.toSet());
   expect(sink, hasLength(LiveUiControl.values.length + LiveUiSurface.values.length - nativeControls.length));
@@ -63,7 +68,7 @@ void main() {
     ),
   );
 
-  test('the eleven declared controls resolve native, the rest shared (§16.3)', () {
+  test('every declared control resolves native and reports nothing (§16.3)', () {
     for (final control in LiveUiControl.values) {
       final native = nativeControls.contains(control);
       final resolution = resolver.resolveControl(LiveDesignLanguage.neumorphic, control);

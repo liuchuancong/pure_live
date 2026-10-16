@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_neumorphic_ui_kit/flutter_neumorphic_ui_kit.dart' as neu;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_uikit/live_uikit.dart';
@@ -186,10 +187,233 @@ void main() {
     expect(find.text('Saved'), findsNothing);
   });
 
-  testWidgets('a control this build does not declare yet still renders via the shared fallback', (tester) async {
-    await tester.pumpWidget(harness(const LiveListRow(title: 'row')));
-    expect(find.byType(LiveListRow), findsOneWidget);
-    expect(tester.takeException(), isNull);
+  group('chrome (§9)', () {
+    testWidgets("a page frame is the library's plane, not the token frame", (tester) async {
+      var action = 0;
+      await tester.pumpWidget(
+        harness(
+          LiveScaffold(
+            appBar: const LiveAppBar(title: 'Rooms'),
+            body: const Text('content'),
+            floatingActionButton: LiveButton(label: 'Go', onPressed: () => action++),
+            bottomBar: LiveNavBar(
+              items: const [
+                LiveNavBarItem(label: 'Home', icon: Icons.home),
+                LiveNavBarItem(label: 'Follow', icon: Icons.favorite),
+              ],
+              index: 0,
+              onChanged: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Nothing above this point is Material's frame: the page surface is a
+      // `NeuContainer` filled by the stacked bars, and every one of them resolved
+      // through this package.
+      expect(find.byType(TokenScaffold), findsNothing);
+      expect(find.byType(TokenAppBar), findsNothing);
+      expect(find.byType(TokenNavBar), findsNothing);
+      expect(find.text('content'), findsOneWidget);
+      expect(find.text('Rooms'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.text('Go'));
+      await tester.pump();
+      expect(action, 1, reason: 'the floating action is placed by the frame and still fires');
+    });
+
+    testWidgets('the frame extends the body behind the bar and keeps the keyboard clear', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          const LiveScaffold(
+            appBar: LiveAppBar(title: 'Cover'),
+            body: Text('behind'),
+            extendBodyBehindAppBar: true,
+            avoidKeyboard: false,
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(TokenScaffold), findsNothing);
+      expect(find.text('behind'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets("the bar is the library's own, and its strip stacks beneath the title", (tester) async {
+      var tab = -1;
+      var action = 0;
+      await tester.pumpWidget(
+        harness(
+          SizedBox(
+            width: 420,
+            child: LiveAppBar(
+              title: 'Rooms',
+              leading: LiveButton(label: 'Back', onPressed: () => action++),
+              actions: const [Icon(Icons.share)],
+              bottom: LiveTabs(
+                tabs: const [LiveTab(label: 'Live'), LiveTab(label: 'Off')],
+                index: 0,
+                onChanged: (i) => tab = i,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(neu.NeuAppBar), findsOneWidget);
+      expect(find.byType(TokenAppBar), findsNothing);
+      expect(find.text('Rooms'), findsOneWidget);
+      expect(find.byIcon(Icons.share), findsOneWidget);
+      // The dispatched strip has no `PreferredSizeWidget` to offer the library's
+      // `bottom` slot, so the bar stacks it under the title row instead.
+      expect(find.text('Off'), findsOneWidget);
+      await tester.tap(find.text('Off'));
+      await tester.pump();
+      expect(tab, 1);
+      await tester.tap(find.text('Back'));
+      await tester.pump();
+      expect(action, 1);
+    });
+
+    testWidgets('a row is a composed plane that dishes when selected', (tester) async {
+      var taps = 0;
+      var pressed = 0;
+      await tester.pumpWidget(
+        harness(
+          SizedBox(
+            width: 320,
+            child: LiveListRow(
+              title: 'Accent',
+              subtitle: 'violet',
+              leading: const Icon(Icons.circle),
+              trailing: const Icon(Icons.chevron_right),
+              selected: true,
+              divided: false,
+              onTap: () => taps++,
+              onLongPress: () => pressed++,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(TokenListRow), findsNothing);
+      expect(find.text('Accent'), findsOneWidget);
+      expect(find.text('violet'), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+      // A selected row states itself with depth, so the plane is a pressed dish.
+      final dishes = tester
+          .widgetList<neu.NeuContainer>(find.byType(neu.NeuContainer))
+          .where((container) => container.shape == neu.NeuShape.pressed);
+      expect(dishes, hasLength(1));
+
+      await tester.tap(find.text('Accent'));
+      await tester.pump();
+      expect(taps, 1);
+      await tester.longPress(find.text('Accent'));
+      await tester.pump();
+      expect(pressed, 1);
+
+      // The hairline is the row's own: the library has no divider to borrow, so the
+      // branch that draws one is taken with the widget's default `divided`.
+      await tester.pumpWidget(
+        harness(const SizedBox(width: 320, child: LiveListRow(title: 'Accent', subtitle: 'violet'))),
+      );
+      await tester.pump();
+      expect(find.text('violet'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a row hands its focus node to the focus tree and activates from it', (tester) async {
+      var taps = 0;
+      final node = FocusNode();
+      addTearDown(node.dispose);
+      await tester.pumpWidget(harness(LiveListRow(title: 'Focused', focusNode: node, onTap: () => taps++)));
+      expect(tester.widget<neu.NeuContainer>(find.byType(neu.NeuContainer)).depth, 0, reason: 'an idle row is flat');
+      node.requestFocus();
+      await tester.pump();
+      expect(node.hasFocus, isTrue);
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.pump();
+      expect(taps, 1, reason: 'the row answers activation, not just a tap');
+    });
+
+    testWidgets('a destination bar is composed, never the library bottom nav', (tester) async {
+      var chosen = -1;
+      Widget bar(ValueChanged<int>? onChanged) => LiveNavBar(
+        items: const [
+          LiveNavBarItem(label: 'Home', icon: Icons.home),
+          LiveNavBarItem(label: 'Follow', icon: Icons.favorite),
+        ],
+        index: 0,
+        onChanged: onChanged,
+      );
+
+      await tester.pumpWidget(harness(SizedBox(width: 360, child: bar((i) => chosen = i))));
+      await tester.pump();
+      expect(find.byType(neu.NeuBottomNav), findsNothing);
+      expect(find.byType(TokenNavBar), findsNothing);
+      await tester.tap(find.text('Follow'));
+      await tester.pump();
+      expect(chosen, 1);
+
+      // Disabled: the destinations keep their labels and stop reporting.
+      await tester.pumpWidget(harness(SizedBox(width: 360, child: bar(null))));
+      await tester.pump();
+      await tester.tap(find.text('Follow'));
+      await tester.pump();
+      expect(chosen, 1, reason: 'a disabled bar keeps its destinations and loses its callbacks');
+
+      // One destination is a legal bar here, and `NeuBottomNav` asserts it away.
+      await tester.pumpWidget(
+        harness(
+          SizedBox(
+            width: 360,
+            child: LiveNavBar(items: const [LiveNavBarItem(label: 'Home', icon: Icons.home)], index: 0, onChanged: (_) {}),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('Home'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a Neumorphic page holds no token renderer at all (§15.3)', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          LiveScaffold(
+            appBar: LiveAppBar(
+              title: 'Rooms',
+              bottom: LiveTabs(tabs: const [LiveTab(label: 'One'), LiveTab(label: 'Two')], index: 0, onChanged: (_) {}),
+            ),
+            body: Column(
+              children: [
+                const LiveListRow(title: 'Row'),
+                LiveSegmented(labels: const ['A', 'B'], index: 0, onChanged: (_) {}),
+                LiveNavBar(
+                  items: const [
+                    LiveNavBarItem(label: 'Home', icon: Icons.home),
+                    LiveNavBarItem(label: 'Follow', icon: Icons.favorite),
+                  ],
+                  index: 1,
+                  onChanged: (_) {},
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // This language declares all fifteen controls, so nothing inside a Neumorphic
+      // page may be a `Token*` renderer any more — asserted by name rather than by
+      // list, so a control added to the contract cannot slip in silently.
+      expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
   });
 
   group('disabled state and preserved spec fields (§9/§16)', () {
