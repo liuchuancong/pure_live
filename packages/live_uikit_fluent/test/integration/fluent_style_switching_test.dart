@@ -5,10 +5,11 @@ import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_fluent/live_uikit_fluent.dart';
 
 /// The controls `live_uikit_fluent` renders natively (§3.1 capability
-/// declaration): eleven of the fifteen the resolver dispatches, including
-/// `select`, which only Fluent renders for real, the page frame, list row and
-/// toast surface this adapter maps to `ScaffoldPage`/`ListTile`/`InfoBar`, and
-/// the app host, which is `FluentApp` itself.
+/// declaration): all fifteen the resolver dispatches — `select`, which only
+/// Fluent renders for real, the page frame, list row and toast surface this
+/// adapter maps to `ScaffoldPage`/`ListTile`/`InfoBar`, the four chrome controls
+/// it composes out of its own widgets, and the app host, which is `FluentApp`
+/// itself.
 const Set<LiveUiControl> nativeControls = {
   LiveUiControl.button,
   LiveUiControl.card,
@@ -16,33 +17,36 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.switchWidget,
   LiveUiControl.checkbox,
   LiveUiControl.slider,
+  LiveUiControl.segmented,
   LiveUiControl.progress,
   LiveUiControl.select,
+  LiveUiControl.tabBar,
   LiveUiControl.scaffold,
+  LiveUiControl.appBar,
   LiveUiControl.listRow,
+  LiveUiControl.navBar,
   LiveUiControl.toast,
 };
 
 /// The structural surfaces this adapter owns (§ surfaces).
 const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost, LiveUiSurface.appShell};
 
-/// §16 integration pass for `live_uikit_fluent`: the twelve `nativeControls`
-/// resolve native — including `select`, which only Fluent renders for real — the
-/// four controls of the fifteen-control dispatch contract this adapter does not
-/// declare (`segmented`, `tabBar` and the chrome `appBar`/`navBar`, for which
-/// fluent_ui has no page-level title strip with widget actions and no bottom
-/// navigation strip) resolve shared, and switching to the core token base and
-/// back preserves the caller's controller (§11).
-/// The downgrades this language is expected to report: every control the adapter
-/// does not declare, each exactly once per language change (§15.5/§16.8).
+/// §16 integration pass for `live_uikit_fluent`: every one of the fifteen
+/// controls resolves native, both structural surfaces resolve native, so a
+/// Fluent language change reports no downgrade at all, and switching to the core
+/// token base and back preserves the caller's controller (§11).
+/// The downgrades this language is expected to report: none, because nothing in
+/// the contract falls back any more (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   final controls = sink.where((diagnostic) => diagnostic.control != null);
   final surfaces = sink.where((diagnostic) => diagnostic.surface != null);
-  expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
-  expect(
-    controls.map((diagnostic) => diagnostic.control).toSet(),
-    LiveUiControl.values.toSet().difference(nativeControls),
-  );
+  // A language that renders every control reports no control downgrade at all,
+  // so the code check only applies when something actually fell back.
+  final expectedControls = LiveUiControl.values.toSet().difference(nativeControls);
+  expect(controls.map((diagnostic) => diagnostic.control).toSet(), expectedControls);
+  if (expectedControls.isNotEmpty) {
+    expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
+  }
   // A language that owns both surfaces reports no structural downgrade at all,
   // so the code check only applies when something is actually missing.
   final expectedSurfaces = LiveUiSurface.values.toSet().difference(nativeSurfaces);
@@ -89,7 +93,7 @@ void main() {
     ),
   );
 
-  test('the eleven declared controls resolve native, the other four shared (§16.3)', () {
+  test('every control resolves native, because this language declares the whole contract (§16.3)', () {
     for (final control in LiveUiControl.values) {
       final native = nativeControls.contains(control);
       final resolution = resolver.resolveControl(LiveDesignLanguage.fluent, control);

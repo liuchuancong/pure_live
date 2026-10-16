@@ -25,6 +25,8 @@ void main() {
     });
 
     test('declares exactly the controls it renders natively', () {
+      // All fifteen: Fluent renders every control, and the four without a
+      // one-for-one library widget say so in their builder (§9).
       const native = {
         LiveUiControl.button,
         LiveUiControl.card,
@@ -32,10 +34,14 @@ void main() {
         LiveUiControl.switchWidget,
         LiveUiControl.checkbox,
         LiveUiControl.slider,
+        LiveUiControl.segmented,
         LiveUiControl.progress,
         LiveUiControl.select,
+        LiveUiControl.tabBar,
         LiveUiControl.scaffold,
+        LiveUiControl.appBar,
         LiveUiControl.listRow,
+        LiveUiControl.navBar,
         LiveUiControl.toast,
       };
       for (final control in native) {
@@ -46,11 +52,9 @@ void main() {
       for (final control in LiveUiControl.values.toSet().difference(native)) {
         expect(adapter.capabilities.supports(control), isFalse, reason: '$control should fall back');
       }
-      // Named because they are the two a reader expects Fluent to have: it has
-      // no single-choice segmented track, and its `TabView` is a whole tab view,
-      // not a strip.
-      expect(adapter.capabilities.supports(LiveUiControl.segmented), isFalse);
-      expect(adapter.capabilities.supports(LiveUiControl.tabBar), isFalse);
+      // The other half of the point: this language has no fallback side at all,
+      // so the set above has to be the whole contract.
+      expect(adapter.capabilities.supported, LiveUiControl.values.toSet());
     });
   });
 
@@ -67,11 +71,18 @@ void main() {
       expect(result.diagnostic, isNull);
     });
 
-    test('an undeclared control falls back to shared and is reported', () {
-      final result = resolver.resolveControl(LiveDesignLanguage.fluent, LiveUiControl.segmented);
+    test('every control of the contract resolves native for Fluent', () {
+      for (final control in LiveUiControl.values) {
+        final result = resolver.resolveControl(LiveDesignLanguage.fluent, control);
+        expect(result.implementation.kind, LiveImplementationKind.adapterNative, reason: '$control');
+        expect(result.diagnostic, isNull, reason: '$control');
+      }
+    });
+
+    test('a language this build did not register still resolves shared, and says so', () {
+      final result = resolver.resolveControl(LiveDesignLanguage.neumorphic, LiveUiControl.segmented);
       expect(result.implementation.kind, LiveImplementationKind.shared);
-      expect(result.diagnostic?.code, LiveUiDiagnosticCode.controlUnsupported);
-      expect(result.diagnostic?.control, LiveUiControl.segmented);
+      expect(result.diagnostic?.code, LiveUiDiagnosticCode.adapterMissing);
     });
   });
 }

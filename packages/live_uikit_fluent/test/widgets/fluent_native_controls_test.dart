@@ -9,7 +9,7 @@ import 'stub_router.dart';
 /// §16 widget tests for `live_uikit_fluent`, driving the `Live*` controls through
 /// the real runtime so they dispatch to the native `fluent_ui` widgets rather
 /// than the shared token renderer. Covers §9 gating (callback, disabled, loading,
-/// controlled value, controller passthrough) plus the shared fallback.
+/// controlled value, controller passthrough) plus the chrome set, which Fluent now renders in full.
 void main() {
   const config = UiConfig(language: LiveDesignLanguage.fluent, brightness: UiBrightnessMode.light);
 
@@ -269,9 +269,13 @@ void main() {
 
       expect(find.byType(fluent.ScaffoldPage), findsOneWidget);
       expect(find.text('content'), findsOneWidget);
-      // `navBar` is not Fluent's: the strip still draws from the token base,
-      // inside a Fluent frame, and the resolver reports that gap once.
-      expect(find.byType(TokenNavBar), findsOneWidget);
+      // Both chrome controls are Fluent's own now: the header is a `PageHeader`
+      // and the bottom strip a row of `ToggleButton`s, so nothing inside a
+      // Fluent frame draws from the token base any more.
+      expect(find.byType(fluent.PageHeader), findsOneWidget);
+      expect(find.text('Rooms'), findsOneWidget);
+      expect(find.byType(TokenNavBar), findsNothing);
+      expect(find.byType(TokenAppBar), findsNothing);
     });
 
     testWidgets('a row resolves through fluent.ListTile with both lines and its tap', (tester) async {
@@ -357,6 +361,98 @@ void main() {
     });
   });
 
+  group('the controls Fluent composes rather than maps (§9)', () {
+    testWidgets('a segmented track is a group of ToggleButtons, one checked', (tester) async {
+      var chosen = -1;
+      await tester.pumpWidget(
+        harness(LiveSegmented(labels: const ['Small', 'Medium', 'Large'], index: 1, onChanged: (i) => chosen = i)),
+      );
+      await tester.pump();
+
+      expect(find.byType(fluent.ToggleButton), findsNWidgets(3));
+      expect(find.byType(TokenSegmented), findsNothing);
+      final buttons = tester.widgetList<fluent.ToggleButton>(find.byType(fluent.ToggleButton)).toList();
+      expect(buttons.map((button) => button.checked), [false, true, false]);
+
+      await tester.tap(find.text('Large'));
+      // Fluent's HoverButton keeps a 100ms press timer alive after a
+      // tap; settle it or the binding reports a leak.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(chosen, 2);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a tab strip reports its index and never draws the token tabs', (tester) async {
+      var chosen = -1;
+      await tester.pumpWidget(
+        harness(
+          LiveTabs(
+            tabs: const [
+              LiveTab(label: 'Rooms'),
+              LiveTab(label: 'Shows', icon: Icons.star),
+            ],
+            index: 0,
+            onChanged: (i) => chosen = i,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(TokenTabs), findsNothing);
+      expect(find.byIcon(Icons.star), findsOneWidget);
+      await tester.tap(find.text('Shows'));
+      // Fluent's HoverButton keeps a 100ms press timer alive after a
+      // tap; settle it or the binding reports a leak.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(chosen, 1);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a destination strip reports its index, and a disabled one reports nothing', (tester) async {
+      var chosen = -1;
+      await tester.pumpWidget(
+        harness(
+          LiveNavBar(
+            items: const [
+              LiveNavBarItem(label: 'Home', icon: Icons.home),
+              LiveNavBarItem(label: 'Follow', icon: Icons.favorite),
+            ],
+            index: 0,
+            onChanged: (i) => chosen = i,
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(TokenNavBar), findsNothing);
+      await tester.tap(find.text('Follow'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(chosen, 1);
+
+      await tester.pumpWidget(
+        harness(
+          LiveNavBar(
+            items: const [
+              LiveNavBarItem(label: 'Home', icon: Icons.home),
+              LiveNavBarItem(label: 'Follow', icon: Icons.favorite),
+            ],
+            index: 0,
+            enabled: false,
+            onChanged: (i) => chosen = i,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.tap(find.text('Follow'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(chosen, 1, reason: 'a disabled strip keeps its labels and stops reporting');
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('the app shell (§ surfaces)', () {
     const destinations = [
       LiveShellDestination(id: 'home', label: 'Home', icon: fluent.FluentIcons.home),
@@ -404,7 +500,7 @@ void main() {
       await tester.pump(const Duration(seconds: 2));
     });
 
-    testWidgets('a bottom request takes the top pane, because Fluent has no bottom strip', (tester) async {
+    testWidgets('a bottom request takes the top pane, the horizontal navigation Fluent has', (tester) async {
       await tester.pumpWidget(
         harness(
           SizedBox(
@@ -430,10 +526,50 @@ void main() {
     });
   });
 
-  group('shared fallback (§15.3)', () {
-    testWidgets('a control the adapter does not override still renders', (tester) async {
-      await tester.pumpWidget(harness(LiveSegmented(labels: const ['A', 'B'], index: 0, onChanged: (_) {})));
-      expect(find.byType(LiveSegmented), findsOneWidget);
+  group('no token renderer inside a Fluent frame (§15.3)', () {
+    testWidgets('the whole chrome set draws from Fluent, not from the shared base', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          LiveScaffold(
+            appBar: LiveAppBar(
+              title: 'Rooms',
+              actions: const [Text('act')],
+              bottom: LiveTabs(
+                tabs: const [
+                  LiveTab(label: 'One'),
+                  LiveTab(label: 'Two'),
+                ],
+                index: 0,
+                onChanged: (_) {},
+              ),
+            ),
+            body: Column(
+              children: [
+                LiveSegmented(labels: const ['A', 'B'], index: 0, onChanged: (_) {}),
+                LiveNavBar(
+                  items: const [LiveNavBarItem(label: 'Home', icon: fluent.FluentIcons.home)],
+                  index: 0,
+                  onChanged: (_) {},
+                ),
+              ],
+            ),
+            bottomBar: LiveNavBar(
+              items: const [
+                LiveNavBarItem(label: 'Home', icon: fluent.FluentIcons.home),
+                LiveNavBarItem(label: 'Shows', icon: Icons.star),
+              ],
+              index: 1,
+              onChanged: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Fluent declares all fifteen controls, so nothing in a Fluent page should
+      // be a `Token*` renderer any more — the assertion is by name rather than by
+      // list so a control added to the contract cannot slip in silently.
+      expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
       expect(tester.takeException(), isNull);
     });
   });

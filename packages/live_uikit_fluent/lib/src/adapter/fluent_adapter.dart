@@ -3,17 +3,21 @@ import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_fluent/src/adapter/fluent_capabilities.dart';
 import 'package:live_uikit_fluent/src/adapter/fluent_surfaces.dart';
 import 'package:live_uikit_fluent/src/theme/fluent_theme_mapper.dart';
+import 'package:live_uikit_fluent/src/widgets/fluent_app_bar_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_button_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_card_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_checkbox_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_host_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_list_row_builder.dart';
+import 'package:live_uikit_fluent/src/widgets/fluent_nav_bar_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_progress_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_scaffold_builder.dart';
+import 'package:live_uikit_fluent/src/widgets/fluent_segmented_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_select_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_shell_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_slider_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_switch_builder.dart';
+import 'package:live_uikit_fluent/src/widgets/fluent_tab_bar_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_text_field_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_toast_builder.dart';
 
@@ -70,13 +74,25 @@ class FluentLanguageAdapter extends SharedLanguageAdapter {
   Widget progress(BuildContext context, LanguageProgressSpec spec) => FluentProgressBuilder.build(context, spec);
 
   @override
+  Widget segmented(BuildContext context, LanguageSegmentedSpec spec) => FluentSegmentedBuilder.build(context, spec);
+
+  @override
+  Widget tabBar(BuildContext context, LanguageTabsSpec spec) => FluentTabBarBuilder.build(context, spec);
+
+  @override
   Widget select<T>(BuildContext context, LanguageSelectSpec<T> spec) => FluentSelectBuilder.build<T>(context, spec);
 
   @override
   Widget scaffold(BuildContext context, LanguageScaffoldSpec spec) => FluentScaffoldBuilder.build(context, spec);
 
   @override
+  Widget appBar(BuildContext context, LanguageAppBarSpec spec) => FluentAppBarBuilder.build(context, spec);
+
+  @override
   Widget listRow(BuildContext context, LanguageListRowSpec spec) => FluentListRowBuilder.build(context, spec);
+
+  @override
+  Widget navBar(BuildContext context, LanguageNavBarSpec spec) => FluentNavBarBuilder.build(context, spec);
 
   @override
   Widget toast(BuildContext context, LanguageToastSpec spec) => FluentToastBuilder.build(context, spec);
