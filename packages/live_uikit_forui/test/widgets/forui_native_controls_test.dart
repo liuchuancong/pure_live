@@ -567,7 +567,7 @@ void main() {
           context: tester.element(find.byType(SizedBox)),
           title: 'Leave the room?',
           child: const Text('Unsaved changes'),
-          actions: [LiveButton(label: 'Stay', onPressed: () {})],
+          actions: (_) => [LiveButton(label: 'Stay', onPressed: () {})],
         ),
       );
       await tester.pumpAndSettle();

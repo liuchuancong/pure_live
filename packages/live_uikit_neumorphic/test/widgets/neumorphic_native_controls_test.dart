@@ -1,4 +1,5 @@
 import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_neumorphic_ui_kit/flutter_neumorphic_ui_kit.dart' as neu;
@@ -727,7 +728,7 @@ void main() {
           context: context,
           title: 'Confirm',
           child: const Text('body'),
-          actions: [LiveButton(label: 'OK', onPressed: () {})],
+          actions: (_) => [LiveButton(label: 'OK', onPressed: () {})],
         ),
       );
       await tester.pump();

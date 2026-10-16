@@ -614,12 +614,14 @@ void main() {
   group('the dialog surface and the page switcher (§9)', () {
     testWidgets('a dialog is a Wind panel, and the route stays the core’s', (tester) async {
       await tester.pumpWidget(harness(const SizedBox.shrink()));
-      unawaited(showLiveDialog<void>(
-        context: tester.element(find.byType(SizedBox)),
-        title: 'Leave the room?',
-        child: const Text('Playback stops.'),
-        actions: [LiveButton(label: 'Stay', onPressed: () {})],
-      ));
+      unawaited(
+        showLiveDialog<void>(
+          context: tester.element(find.byType(SizedBox)),
+          title: 'Leave the room?',
+          child: const Text('Playback stops.'),
+          actions: (_) => [LiveButton(label: 'Stay', onPressed: () {})],
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.byType(TokenDialog), findsNothing);

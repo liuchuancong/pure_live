@@ -732,7 +732,7 @@ void main() {
       final shown = showLiveDialog<void>(
         context: tester.element(find.text('anchor')),
         title: 'Leave the room',
-        actions: [LiveButton(label: 'Cancel', onPressed: () {})],
+        actions: (_) => [LiveButton(label: 'Cancel', onPressed: () {})],
         child: const Text('Your session ends.'),
       );
       await tester.pumpAndSettle();
