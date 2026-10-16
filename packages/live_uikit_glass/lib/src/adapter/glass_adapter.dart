@@ -1,11 +1,13 @@
 import 'package:flutter/widgets.dart';
 import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_glass/src/adapter/glass_capabilities.dart';
+import 'package:live_uikit_glass/src/adapter/glass_surfaces.dart';
 import 'package:live_uikit_glass/src/theme/glass_theme_mapper.dart';
 import 'package:live_uikit_glass/src/widgets/glass_app_bar_builder.dart';
 import 'package:live_uikit_glass/src/widgets/glass_button_builder.dart';
 import 'package:live_uikit_glass/src/widgets/glass_card_builder.dart';
 import 'package:live_uikit_glass/src/widgets/glass_checkbox_builder.dart';
+import 'package:live_uikit_glass/src/widgets/glass_host_builder.dart';
 import 'package:live_uikit_glass/src/widgets/glass_list_row_builder.dart';
 import 'package:live_uikit_glass/src/widgets/glass_nav_bar_builder.dart';
 import 'package:live_uikit_glass/src/widgets/glass_progress_builder.dart';
@@ -91,4 +93,10 @@ class GlassLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget toast(BuildContext context, LanguageToastSpec spec) => GlassToastBuilder.build(context, spec);
+
+  @override
+  LiveUiSurfaceCapabilities get surfaces => glassSurfaces;
+
+  @override
+  Widget appHost(BuildContext context, LanguageHostSpec spec) => GlassHostBuilder.build(context, spec);
 }

@@ -35,21 +35,15 @@ abstract final class GlassTabBarBuilder {
               style: (state) => Style(
                 borderRadius: radius,
                 background: switch (state) {
-                  InteractionState.hovered || InteractionState.pressed || InteractionState.focused => glassTheme.color.withValues(
-                    alpha: (glassTheme.opacity * 1.8).clamp(0.0, 1.0),
-                  ),
+                  InteractionState.hovered || InteractionState.pressed || InteractionState.focused =>
+                    glassTheme.color.withValues(alpha: (glassTheme.opacity * 1.8).clamp(0.0, 1.0)),
                   _ => null,
                 },
                 opacity: state == InteractionState.disabled ? theme.token.motion.opacityLoading : null,
               ),
               onTap: select == null ? null : () => select(index),
               enabled: spec.enabled,
-              child: _Tab(
-                tab: spec.tabs[index],
-                selected: index == spec.index,
-                radius: radius,
-                lineWidth: lineWidth,
-              ),
+              child: _Tab(tab: spec.tabs[index], selected: index == spec.index, radius: radius, lineWidth: lineWidth),
             ),
           ),
       ],
@@ -80,13 +74,23 @@ class _Tab extends StatelessWidget {
           Icon(glyph, size: theme.text.label.fontSize, color: tint),
           SizedBox(width: theme.token.scale.sizes.xs),
         ],
-        Text(tab.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.text.label.copyWith(color: tint)),
+        Text(
+          tab.label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.text.label.copyWith(color: tint),
+        ),
       ],
     );
 
     final content = Padding(
       padding: EdgeInsets.symmetric(horizontal: theme.tabs.horizontalPadding, vertical: theme.tabs.verticalGap),
-      child: selected ? DefaultTextStyle(style: const TextStyle(fontWeight: FontWeight.w600), child: label) : label,
+      child: selected
+          ? DefaultTextStyle(
+              style: const TextStyle(fontWeight: FontWeight.w600),
+              child: label,
+            )
+          : label,
     );
 
     return Column(
@@ -104,7 +108,10 @@ class _Tab extends StatelessWidget {
         // The selection mark. A glass sheet cannot shade itself enough to carry
         // a tab on its own, so the strip also rules the accent, as every language
         // in this contract does.
-        SizedBox(height: lineWidth, child: selected ? ColoredBox(color: theme.tabs.inkBarColor) : null),
+        SizedBox(
+          height: lineWidth,
+          child: selected ? ColoredBox(color: theme.tabs.inkBarColor) : null,
+        ),
       ],
     );
   }

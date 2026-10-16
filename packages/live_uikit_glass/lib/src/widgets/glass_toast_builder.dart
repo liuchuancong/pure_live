@@ -32,7 +32,9 @@ abstract final class GlassToastBuilder {
         children: [
           Icon(spec.icon ?? _glyph(spec.type), color: accent, size: theme.text.body.fontSize),
           SizedBox(width: sizes.sm),
-          Flexible(child: Text(spec.message, style: theme.text.body.copyWith(color: theme.colors.text))),
+          Flexible(
+            child: Text(spec.message, style: theme.text.body.copyWith(color: theme.colors.text)),
+          ),
         ],
       ),
     );

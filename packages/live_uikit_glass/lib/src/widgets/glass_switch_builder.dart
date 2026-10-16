@@ -62,9 +62,9 @@ abstract final class GlassSwitchBuilder {
         style: (state) => Style(
           borderRadius: BorderRadius.circular(st.height),
           background: switch (state) {
-            InteractionState.hovered || InteractionState.pressed || InteractionState.focused => glassTheme.color.withValues(
-              alpha: (glassTheme.opacity * 1.8).clamp(0.0, 1.0),
-            ),
+            InteractionState.hovered ||
+            InteractionState.pressed ||
+            InteractionState.focused => glassTheme.color.withValues(alpha: (glassTheme.opacity * 1.8).clamp(0.0, 1.0)),
             _ => null,
           },
           opacity: state == InteractionState.disabled ? st.disabledOpacity : null,

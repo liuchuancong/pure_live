@@ -16,7 +16,7 @@ controls drawn by `glass_morphism_plus`, without business pages importing it.
 
 - Implement `LanguageAdapter` for `LiveDesignLanguage.glass` (stable id `glass`).
 - Map the resolved `DesignToken` into the Glass theme and install it through a
-  theme scope (never a nested application shell).
+  theme scope (never a second application widget inside the host).
 - Build native Glass widgets for all fifteen: **button, card, text field, switch,
   checkbox, slider, segmented, progress, select, tab bar, scaffold, app bar, list
   row, nav bar, toast**. `glass_morphism_plus` is a surface library — it publishes
@@ -28,6 +28,13 @@ controls drawn by `glass_morphism_plus`, without business pages importing it.
 - Declare the whole contract in `glassCapabilities`: a Glass page reports no
   `controlUnsupported` downgrade, and nothing inside a Glass frame is a token
   renderer (§16/§17).
+- Own the app host: the library ships no application widget, so the host is
+  Flutter's `WidgetsApp` with `GlassTheme` above the routed tree — which is what
+  takes the page transition, the scroll physics and a dialog's modal barrier out
+  of Material's hands (§ surfaces). The shell still resolves shared and is
+  reported: the library's only structural widget is `GlassAppBar`, a Material
+  `AppBar` under a frosted `flexibleSpace`, so nothing of this package's wraps a
+  router-owned body yet.
 
 ## What this package must not own
 
@@ -61,6 +68,9 @@ const registry = LanguageRegistry(
 ```
 
 The library reuses the core's localization, so this package adds no delegates.
+The host does need them installed: with no Material application widget above it,
+the strings the composed controls and the library's own field ask for arrive
+through `liveLocalizationsDelegates` and nothing else.
 
 ## Dependencies
 
@@ -98,7 +108,8 @@ still resolves shared and says so (§16/§17).
   cannot afford them; they are never a required dependency (§13).
 - Test coverage is present at four layers: `test/adapter/` (contract and
   resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
-  `test/widgets/` (every native control driven through the real dispatch path), and
+  `test/widgets/` (every native control driven through the real dispatch path and
+  the app host pumped with no Material app above it), and
   `test/integration/` (resolution surface across the contract and a switch to the
   the shared `token` base and back with caller-owned state preserved). What remains
   untested is the part that needs hardware: focus traversal, Android TV D-pad, and

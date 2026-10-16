@@ -52,16 +52,25 @@ abstract final class GlassScaffoldBuilder {
         ],
       );
     } else {
-      body = Column(children: [bar, Expanded(child: content)]);
+      body = Column(
+        children: [
+          bar,
+          Expanded(child: content),
+        ],
+      );
     }
 
     final bottom = spec.bottomBar;
-    final frame = bottom == null ? body : Column(children: [Expanded(child: body), bottom]);
+    final frame = bottom == null
+        ? body
+        : Column(
+            children: [
+              Expanded(child: body),
+              bottom,
+            ],
+          );
 
-    final sheet = glass.GlassContainer(
-      color: spec.background ?? glassTheme.color,
-      child: frame,
-    );
+    final sheet = glass.GlassContainer(color: spec.background ?? glassTheme.color, child: frame);
 
     final action = spec.floatingActionButton;
     if (action == null) {

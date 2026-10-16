@@ -75,7 +75,11 @@ abstract final class GlassAppBarBuilder {
         mainAxisSize: MainAxisSize.min,
         children: [
           row,
-          if (spec.bottom case final strip?) Padding(padding: EdgeInsets.only(top: gap), child: strip),
+          if (spec.bottom case final strip?)
+            Padding(
+              padding: EdgeInsets.only(top: gap),
+              child: strip,
+            ),
         ],
       ),
     );

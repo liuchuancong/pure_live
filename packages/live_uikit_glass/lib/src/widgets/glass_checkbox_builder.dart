@@ -47,9 +47,9 @@ abstract final class GlassCheckboxBuilder {
             style: (state) => Style(
               borderRadius: BorderRadius.circular(ct.borderRadius),
               background: switch (state) {
-                InteractionState.hovered || InteractionState.pressed || InteractionState.focused => ct.hoverBorder.withValues(
-                  alpha: (glassTheme.opacity * 2).clamp(0.0, 1.0),
-                ),
+                InteractionState.hovered ||
+                InteractionState.pressed ||
+                InteractionState.focused => ct.hoverBorder.withValues(alpha: (glassTheme.opacity * 2).clamp(0.0, 1.0)),
                 _ => null,
               },
               opacity: state == InteractionState.disabled ? ct.disabledOpacity : null,

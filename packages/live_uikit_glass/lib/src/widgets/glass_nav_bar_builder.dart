@@ -39,11 +39,8 @@ abstract final class GlassNavBarBuilder {
                   style: (state) => Style(
                     borderRadius: radius,
                     background: switch (state) {
-                      InteractionState.hovered ||
-                      InteractionState.pressed ||
-                      InteractionState.focused => glassTheme.color.withValues(
-                        alpha: (glassTheme.opacity * 1.8).clamp(0.0, 1.0),
-                      ),
+                      InteractionState.hovered || InteractionState.pressed || InteractionState.focused =>
+                        glassTheme.color.withValues(alpha: (glassTheme.opacity * 1.8).clamp(0.0, 1.0)),
                       _ => null,
                     },
                     opacity: state == InteractionState.disabled ? theme.token.motion.opacityLoading : null,
@@ -68,12 +65,7 @@ abstract final class GlassNavBarBuilder {
 /// One destination: its glyph over its label, on a frosted sheet when it is the
 /// one the caller has selected.
 class _Destination extends StatelessWidget {
-  const new({
-    required this.item,
-    required this.selected,
-    required this.radius,
-    required this.iconSize,
-  });
+  const new({required this.item, required this.selected, required this.radius, required this.iconSize});
 
   final LiveNavBarItem item;
   final bool selected;
@@ -112,7 +104,10 @@ class _Destination extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: sizes.xs),
               child: label,
             )
-          : Padding(padding: EdgeInsets.symmetric(horizontal: sizes.xs, vertical: sizes.xxs), child: label),
+          : Padding(
+              padding: EdgeInsets.symmetric(horizontal: sizes.xs, vertical: sizes.xxs),
+              child: label,
+            ),
     );
   }
 }

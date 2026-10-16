@@ -26,21 +26,17 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.toast,
 };
 
-/// The structural surfaces this adapter owns (§ surfaces). None yet: the glass
-/// library has no app widget and no shell, so both still fall back.
-const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{};
+/// The structural surfaces this adapter owns (§ surfaces): the app host, not the
+/// shell.
+const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost};
 
 /// §16 integration pass for `live_uikit_glass`: every one of the fifteen controls
 /// resolves native, so a Glass language change reports no control downgrade at
-/// all, while the two structural surfaces still fall back and are reported, and a
-/// switch to the core token base and back must not cost the caller its controller
-/// or its field state (§11).
-/// The downgrades this language is expected to report: none for the controls, both
-/// surfaces (§15.5/§16.8).
+/// all, and a switch to the core token base and back must not cost the caller its
+/// controller or its field state (§11).
+/// The downgrades this language is expected to report: none for the controls, and
+/// only the shell among the surfaces (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
-  // This adapter owns no structural surface, so both the app host and the shell
-  // fall back while no control does — two kinds of downgrade with two codes
-  // (§ surfaces).
   final controls = sink.where((diagnostic) => diagnostic.control != null);
   final surfaces = sink.where((diagnostic) => diagnostic.surface != null);
   // A language that renders every control reports no control downgrade at all,
@@ -50,9 +46,20 @@ void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   if (expectedControls.isNotEmpty) {
     expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
   }
-  expect(surfaces.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.surfaceUnsupported});
-  expect(surfaces.map((diagnostic) => diagnostic.surface).toSet(), LiveUiSurface.values.toSet().difference(nativeSurfaces));
-  expect(sink, hasLength(expectedControls.length + LiveUiSurface.values.length - nativeSurfaces.length));
+  // This library has no application widget, so the host is the app's own
+  // `WidgetsApp` under `GlassTheme`; the shell is still shared and still
+  // reported — a downgrade of a different kind, with its own code (§ surfaces).
+  final expectedSurfaces = LiveUiSurface.values.toSet().difference(nativeSurfaces);
+  expect(surfaces.map((diagnostic) => diagnostic.surface).toSet(), expectedSurfaces);
+  if (expectedSurfaces.isNotEmpty) {
+    expect(surfaces.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.surfaceUnsupported});
+  }
+  expect(
+    sink,
+    hasLength(
+      LiveUiControl.values.length + LiveUiSurface.values.length - nativeControls.length - nativeSurfaces.length,
+    ),
+  );
 }
 
 void main() {
@@ -73,7 +80,7 @@ void main() {
     ),
   );
 
-  test('every control resolves native, the surfaces do not (§16.3)', () {
+  test('every control resolves native, and so does the host (§16.3)', () {
     for (final control in LiveUiControl.values) {
       final native = nativeControls.contains(control);
       final resolution = resolver.resolveControl(LiveDesignLanguage.glass, control);
@@ -89,9 +96,18 @@ void main() {
       );
     }
     for (final surface in LiveUiSurface.values) {
+      final native = nativeSurfaces.contains(surface);
       final resolution = resolver.resolveSurface(LiveDesignLanguage.glass, surface);
-      expect(resolution.implementation.kind, LiveImplementationKind.shared, reason: '$surface');
-      expect(resolution.diagnostic?.code, LiveUiDiagnosticCode.surfaceUnsupported, reason: '$surface');
+      expect(
+        resolution.implementation.kind,
+        native ? LiveImplementationKind.adapterNative : LiveImplementationKind.shared,
+        reason: '$surface',
+      );
+      expect(
+        resolution.diagnostic?.code,
+        native ? isNull : LiveUiDiagnosticCode.surfaceUnsupported,
+        reason: '$surface',
+      );
     }
   });
 
