@@ -1,0 +1,26 @@
+name: live_device
+description: PureLive device and operating-system capability services.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  battery_plus: ^7.1.2 # 电量与充电状态
+  connectivity_plus: ^7.3.2 # 网络连接状态
+  device_info_plus: ^13.3.0 # 设备与系统信息
+  device_screen_brightness: ^2.0.0 # 屏幕亮度读写
+  flutter:
+    sdk: flutter
+  mobile_scanner: ^7.4.2 # 扫描二维码和条码
+  network_info_plus: ^8.2.2 # 网络与 Wi-Fi 信息
+  refresh_rate: ^2.0.1 # 屏幕刷新率
+  volume_controller: ^3.7.1 # 系统音量读写
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^11.0.0

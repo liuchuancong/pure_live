@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   bitsdojo_window_linux
   desktop_multi_window
+  device_screen_brightness
   file_selector_linux
   flutter_acrylic
   flutter_secure_storage_linux
@@ -14,6 +15,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   restart_app
   screen_retriever_linux
   url_launcher_linux
+  volume_controller
   window_manager
 )
 

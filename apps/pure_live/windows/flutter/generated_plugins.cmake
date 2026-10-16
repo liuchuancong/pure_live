@@ -8,6 +8,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   bitsdojo_window_windows
   connectivity_plus
   desktop_multi_window
+  device_screen_brightness
   file_selector_windows
   flutter_acrylic
   flutter_secure_storage_windows
@@ -18,6 +19,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   screen_retriever_windows
   share_plus
   url_launcher_windows
+  volume_controller
   window_manager
 )
 

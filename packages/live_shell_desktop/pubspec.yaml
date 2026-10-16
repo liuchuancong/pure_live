@@ -15,6 +15,11 @@ environment:
   flutter: '>=3.47.0'
 
 dependencies:
+  bitsdojo_window:
+    git:
+      url: https://github.com/Ali-Fadaei/bitsdojo_window.git
+      path: bitsdojo_window
+      ref: 358bc8dfa9f560ba652fb022956e1c580968c76b
   desktop_multi_window: ^0.3.1
   ffi: ^2.1.0
   flutter:
@@ -23,17 +28,12 @@ dependencies:
     git:
       url: https://github.com/mbpowers/flutter_acrylic.git
       ref: 2fe854639aa3eb6bf7863140e2738dd001cb10a1
-  bitsdojo_window:
-    git:
-      url: https://github.com/Ali-Fadaei/bitsdojo_window.git
-      path: bitsdojo_window
-      ref: 358bc8dfa9f560ba652fb022956e1c580968c76b
   live_platform:
   live_shell:
   screen_retriever: ^0.2.2
   tray_manager: ^0.8.0
   window_manager: ^0.5.2
-  
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

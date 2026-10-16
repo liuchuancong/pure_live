@@ -11,6 +11,10 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
+  errors:
+    # Dependencies here are grouped by purpose (device, windowing, UI, codegen)
+    # with a note per line, which a flat A-Z list cannot express.
+    sort_pub_dependencies: ignore
 
 formatter:
   page_width: 120
