@@ -44,6 +44,7 @@
   "room": {
     "sortPlatform": "Default",
     "sortViewers": "Most viewers",
+    "danmakuFailed": "Danmaku connection failed",
     "quality": "Quality",
     "line": "Line",
     "play": "Play",

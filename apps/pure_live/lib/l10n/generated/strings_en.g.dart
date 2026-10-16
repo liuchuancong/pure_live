@@ -163,6 +163,7 @@ class _Translations$room$en extends Translations$room$zh {
 	// Translations
 	@override String get sortPlatform => 'Default';
 	@override String get sortViewers => 'Most viewers';
+	@override String get danmakuFailed => 'Danmaku connection failed';
 	@override String get quality => 'Quality';
 	@override String get line => 'Line';
 	@override String get play => 'Play';
@@ -415,6 +416,7 @@ extension on TranslationsEn {
 			'design.defaultLanguage' => 'Default (Fluent)',
 			'room.sortPlatform' => 'Default',
 			'room.sortViewers' => 'Most viewers',
+			'room.danmakuFailed' => 'Danmaku connection failed',
 			'room.quality' => 'Quality',
 			'room.line' => 'Line',
 			'room.play' => 'Play',

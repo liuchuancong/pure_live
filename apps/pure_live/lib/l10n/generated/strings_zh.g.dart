@@ -475,6 +475,9 @@ class Translations$room$zh {
 	/// zh: '人气优先'
 	String get sortViewers => '人气优先';
 
+	/// zh: '弹幕连接失败'
+	String get danmakuFailed => '弹幕连接失败';
+
 	/// zh: '清晰度'
 	String get quality => '清晰度';
 
@@ -705,6 +708,7 @@ extension on Translations {
 			'search.anchors' => '主播',
 			'room.sortPlatform' => '默认排序',
 			'room.sortViewers' => '人气优先',
+			'room.danmakuFailed' => '弹幕连接失败',
 			'room.quality' => '清晰度',
 			'room.line' => '线路',
 			'room.play' => '播放',

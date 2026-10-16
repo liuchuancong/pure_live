@@ -125,6 +125,7 @@
   "room": {
     "sortPlatform": "默认排序",
     "sortViewers": "人气优先",
+    "danmakuFailed": "弹幕连接失败",
     "quality": "清晰度",
     "line": "线路",
     "play": "播放",

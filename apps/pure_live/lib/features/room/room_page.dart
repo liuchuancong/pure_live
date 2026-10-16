@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_playback/live_playback.dart' show EngineStopped, PlaybackEngineEvent;
 import 'package:live_sites/live_sites.dart'
     show LivePlayLine, LivePlayQuality, LivePlaybackProvider, LiveRoom, LiveRoomProvider, LiveSite, RoomContent;
@@ -10,6 +11,7 @@ import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitVid
 
 import 'package:pure_live/app/engine/playback_engine.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/features/room/danmaku_pane.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 
@@ -162,12 +164,39 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
 
   @override
   Widget build(BuildContext context) {
+    final wide = switch (ref.watch(environmentProvider).runtime.formFactor) {
+      FormFactor.desktop || FormFactor.tv => true,
+      FormFactor.phone || FormFactor.tablet => false,
+    };
+    final playerColumn = Column(children: [_player(context), _info(context)]);
     return Scaffold(
       appBar: AppBar(
         title: Text(_title(), maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: const [SettingsEntryButton()],
       ),
-      body: ListView(children: [_player(context), _info(context)]),
+      body: wide
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 3, child: playerColumn),
+                SizedBox(
+                  width: 320,
+                  child: Material(
+                    color: Colors.black,
+                    child: DanmakuPane(siteId: widget.siteId, roomId: widget.roomId),
+                  ),
+                ),
+              ],
+            )
+          : ListView(
+              children: [
+                playerColumn,
+                SizedBox(
+                  height: 240,
+                  child: DanmakuPane(siteId: widget.siteId, roomId: widget.roomId),
+                ),
+              ],
+            ),
     );
   }
 
