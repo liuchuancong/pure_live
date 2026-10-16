@@ -19,5 +19,4 @@ const LiveUiCapabilities materialCapabilities = LiveUiCapabilities(<LiveUiContro
   LiveUiControl.appBar,
   LiveUiControl.listRow,
   LiveUiControl.navBar,
-  LiveUiControl.appHost,
 });

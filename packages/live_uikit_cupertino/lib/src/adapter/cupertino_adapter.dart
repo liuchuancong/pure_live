@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:live_uikit/styling.dart';
 import 'package:live_uikit_cupertino/src/adapter/cupertino_capabilities.dart';
+import 'package:live_uikit_cupertino/src/adapter/cupertino_surfaces.dart';
 import 'package:live_uikit_cupertino/src/theme/cupertino_theme_mapper.dart';
 import 'package:live_uikit_cupertino/src/widgets/cupertino_app_bar_builder.dart';
 import 'package:live_uikit_cupertino/src/widgets/cupertino_button_builder.dart';
@@ -35,6 +36,9 @@ class CupertinoLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   LiveUiCapabilities get capabilities => cupertinoCapabilities;
+
+  @override
+  LiveUiSurfaceCapabilities get surfaces => cupertinoSurfaces;
 
   @override
   Widget wrap(BuildContext context, DesignToken token, Widget child) => _theme.wrap(context, token, child);

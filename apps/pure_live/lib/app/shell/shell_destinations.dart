@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:live_uikit/styling.dart' show LiveShellDestination;
+
 import 'package:pure_live/l10n/generated/strings.g.dart';
 
 /// The shell's branches in one table: the display order, each branch's
@@ -37,10 +39,18 @@ enum ShellBranch {
   /// The branch a destination widget's position stands for: the chromes
   /// hand selected indexes over, this turns one back into a branch.
   static ShellBranch at(int index) => values[index];
+
+  /// The branch a shell destination's id stands for.
+  static ShellBranch fromId(String id) => values.firstWhere((branch) => branch.name == id);
 }
 
-/// Every branch as its chrome destination, in display order — the one
-/// list the bottom bars and the rails all render from.
-List<({String label, IconData icon})> shellDestinations(BuildContext context) => [
-  for (final branch in ShellBranch.values) (label: branch.label(context), icon: branch.icon),
+/// Every branch as a shell destination, in display order — the one list the
+/// dispatched the dispatched shell renders from, whichever library draws it.
+///
+/// The id is the branch's own name, so the shell reports a choice as something
+/// the router layer can map back without relying on positions surviving a change
+/// to the table.
+List<LiveShellDestination> shellDestinations(BuildContext context) => [
+  for (final branch in ShellBranch.values)
+    LiveShellDestination(id: branch.name, label: branch.label(context), icon: branch.icon),
 ];

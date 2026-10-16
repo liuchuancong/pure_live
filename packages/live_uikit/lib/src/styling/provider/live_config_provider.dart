@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:live_uikit/src/styling/config/live_config.dart';
 import 'package:live_uikit/src/styling/contracts/live_ui_adapter.dart';
+import 'package:live_uikit/src/styling/contracts/live_ui_surfaces.dart';
 import 'package:live_uikit/src/styling/diagnostics/diagnostics.dart';
 import 'package:live_uikit/src/styling/resolution/live_ui_fallback_policy.dart';
 import 'package:live_uikit/src/styling/resolution/live_ui_registry.dart';
@@ -153,6 +154,11 @@ final class LiveTheme {
   /// than the shared token renderer (§15.2). Lets a test assert the dispatch.
   bool supports(LiveUiControl control) => adapter.capabilities.supports(control);
 
+  /// Whether the active adapter owns [surface] — the app host or the shell — with
+  /// its library's own structural widget (§ surfaces). Declared apart from
+  /// [supports] because owning a button says nothing about owning the window.
+  bool supportsSurface(LiveUiSurface surface) => adapter.surfaces.supports(surface);
+
   /// Resolves the Button style for a [variant], [size] and interaction [state]
   /// — `recipe ⊕ component token` in one call. A widget paints the result and
   /// never inspects the design language or the raw tokens itself.
@@ -264,7 +270,8 @@ class _LiveConfigProviderState extends State<LiveConfigProvider> with WidgetsBin
       if (diagnostic != null) {
         widget.diagnostics?.call(diagnostic);
       } else if (widget.diagnostics != null ||
-          widget.fallbackPolicy.onUnsupportedControl == LiveUiFallbackAction.failFast) {
+          widget.fallbackPolicy.onUnsupportedControl == LiveUiFallbackAction.failFast ||
+          widget.fallbackPolicy.onUnsupportedSurface == LiveUiFallbackAction.failFast) {
         // The language has an adapter, so any control it does not declare is a
         // narrower downgrade with its own fact to report (§15.5): a host that
         // wired a sink learns which controls the active library serves from the
@@ -275,6 +282,15 @@ class _LiveConfigProviderState extends State<LiveConfigProvider> with WidgetsBin
           final controlDiagnostic = resolver.resolveControl(language, control).diagnostic;
           if (controlDiagnostic != null) {
             widget.diagnostics?.call(controlDiagnostic);
+          }
+        }
+        // The structural surfaces join the same once-per-language-change report:
+        // which library owns the window frame and the navigation is a fact about
+        // this build, not something a host should have to notice by looking.
+        for (final surface in LiveUiSurface.values) {
+          final surfaceDiagnostic = resolver.resolveSurface(language, surface).diagnostic;
+          if (surfaceDiagnostic != null) {
+            widget.diagnostics?.call(surfaceDiagnostic);
           }
         }
       }

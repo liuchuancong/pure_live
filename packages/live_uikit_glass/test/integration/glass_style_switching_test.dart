@@ -17,9 +17,16 @@ const Set<LiveUiControl> nativeControls = {LiveUiControl.button, LiveUiControl.c
 /// The downgrades this language is expected to report: every control the adapter
 /// does not declare, each exactly once per language change (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
-  expect(sink.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
-  expect(sink.map((diagnostic) => diagnostic.control).toSet(), LiveUiControl.values.toSet().difference(nativeControls));
-  expect(sink, hasLength(LiveUiControl.values.length - nativeControls.length));
+  // This adapter owns no structural surface, so both the app host and the shell
+  // fall back alongside the controls it does not declare — two kinds of downgrade
+  // with two codes (§ surfaces).
+  final controls = sink.where((diagnostic) => diagnostic.control != null);
+  final surfaces = sink.where((diagnostic) => diagnostic.surface != null);
+  expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
+  expect(controls.map((diagnostic) => diagnostic.control).toSet(), LiveUiControl.values.toSet().difference(nativeControls));
+  expect(surfaces.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.surfaceUnsupported});
+  expect(surfaces.map((diagnostic) => diagnostic.surface).toSet(), LiveUiSurface.values.toSet());
+  expect(sink, hasLength(LiveUiControl.values.length + LiveUiSurface.values.length - nativeControls.length));
 }
 
 void main() {

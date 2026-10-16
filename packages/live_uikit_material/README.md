@@ -22,7 +22,9 @@ core Material coverage rather than inventing a new one.
 - Map the resolved `DesignToken` into the Material theme and install it through a
   theme scope (never a nested application shell).
 - Build native Material widgets for: **button, card, text field, switch, checkbox,
-  slider, segmented, progress, scaffold, app bar, list row, nav bar, app host**.
+  slider, segmented, progress, scaffold, app bar, list row, nav bar**.
+- Own the app-host surface (`mu.MaterialApp`); the shell keeps the shared token
+  renderer for now (§ surfaces).
 - Declare exactly those controls in `materialCapabilities` so the core resolver
   reports a `controlUnsupported` downgrade for the rest (§16/§17).
 - Expose `materialLocalizationsDelegates` (the fork's own Material
@@ -90,7 +92,7 @@ core resolver's native-versus-`controlUnsupported` dispatch (§16/§17).
 - Test coverage is present at four layers: `test/adapter/` (contract and
   resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
   `test/widgets/` (every native control driven through the real dispatch path), and
-  `test/integration/` (resolution surface for all ten controls and a switch to the
+  `test/integration/` (resolution surface across the contract and a switch to the
   the shared `token` base and back with caller-owned state preserved). What remains
   untested is the part that needs hardware: focus traversal, Android TV D-pad, and
   the platform claims in §13.

@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:live_uikit/styling.dart';
 import 'package:live_uikit_fluent/src/adapter/fluent_capabilities.dart';
+import 'package:live_uikit_fluent/src/adapter/fluent_surfaces.dart';
 import 'package:live_uikit_fluent/src/theme/fluent_theme_mapper.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_button_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_card_builder.dart';
@@ -10,6 +11,7 @@ import 'package:live_uikit_fluent/src/widgets/fluent_list_row_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_progress_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_scaffold_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_select_builder.dart';
+import 'package:live_uikit_fluent/src/widgets/fluent_shell_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_slider_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_switch_builder.dart';
 import 'package:live_uikit_fluent/src/widgets/fluent_text_field_builder.dart';
@@ -39,6 +41,9 @@ class FluentLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   LiveUiCapabilities get capabilities => fluentCapabilities;
+
+  @override
+  LiveUiSurfaceCapabilities get surfaces => fluentSurfaces;
 
   @override
   Widget wrap(BuildContext context, DesignToken token, Widget child) => _theme.wrap(context, token, child);
@@ -78,4 +83,7 @@ class FluentLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget appHost(BuildContext context, LanguageHostSpec spec) => FluentHostBuilder.build(context, spec);
+
+  @override
+  Widget shell(BuildContext context, LanguageShellSpec spec) => FluentShellBuilder.build(context, spec);
 }

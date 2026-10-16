@@ -19,11 +19,19 @@ void main() {
     LiveUiControl.scaffold,
     LiveUiControl.appBar,
     LiveUiControl.listRow,
-    LiveUiControl.appHost,
   };
   // Derived rather than listed, so a control added to the contract cannot join the
   // fallback side silently — the suite has to be told (§17).
   final fallback = LiveUiControl.values.toSet().difference(native);
+
+  test('declares exactly the surfaces it owns structurally', () {
+    for (final surface in const <LiveUiSurface>{LiveUiSurface.appHost}) {
+      expect(adapter.surfaces.supports(surface), isTrue, reason: '$surface should be native');
+    }
+    for (final surface in LiveUiSurface.values.toSet().difference(const <LiveUiSurface>{LiveUiSurface.appHost})) {
+      expect(adapter.surfaces.supports(surface), isFalse, reason: '$surface should fall back');
+    }
+  });
 
   group('macOS adapter contract (§7)', () {
     test('exposes a stable id, display name and language', () {

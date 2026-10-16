@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart' show TextInputAction, TextInputType;
 import 'package:flutter/widgets.dart';
 import 'package:live_uikit/src/styling/contracts/live_ui_capabilities.dart';
+import 'package:live_uikit/src/styling/contracts/live_ui_surfaces.dart';
 import 'package:live_uikit/src/styling/style/recipe.dart';
 import 'package:live_uikit/src/styling/style/style.dart';
 import 'package:live_uikit/src/styling/tokens/design_token.dart';
@@ -655,6 +656,89 @@ class LanguageHostSpec {
   final bool debugShowCheckedModeBanner;
 }
 
+/// One destination in the application shell's navigation.
+///
+/// It carries what a destination *is* — an id the caller maps back onto a route,
+/// a label, a glyph, and whether it can be taken at all — rather than a
+/// `NavigationDestination`, a `NavigationPaneItem` or any other library's own
+/// item type, because the shell that receives it is not known yet (§ surfaces).
+class LiveShellDestination {
+  /// A destination.
+  const new({required this.id, required this.label, required this.icon, this.enabled = true});
+
+  /// The stable identity the caller addresses navigation by. A library that keys
+  /// its selection internally still reports the id it was given.
+  final String id;
+
+  /// The label.
+  final String label;
+
+  /// The glyph. `IconData` is a value, not a widget, so it crosses this boundary
+  /// without dragging a widget library's build context with it.
+  final IconData icon;
+
+  /// Whether the destination can be taken; a disabled one stays visible so the
+  /// layout does not shift when it becomes available.
+  final bool enabled;
+}
+
+/// Where the shell's navigation sits, when the caller knows better than the
+/// window width does.
+enum LiveShellPlacement {
+  /// Let the language choose from the environment: a strip under the content on
+  /// a phone, a rail beside it once there is room.
+  adaptive,
+
+  /// A vertical navigation column beside the content.
+  rail,
+
+  /// A horizontal strip under the content.
+  bottom,
+
+  /// No navigation: the shell is a frame around a full-screen page.
+  none,
+}
+
+/// The application shell described the same way every language draws it
+/// (§ surfaces — the structural surface between the host and the page).
+///
+/// The shell owns the navigation *around* the page; the page keeps its own bar,
+/// so [LanguageShellSpec] carries no title. Navigation state belongs to the
+/// caller: the shell reports [onSelected] and renders [selectedId], and never
+/// keeps a second copy of its own that could disagree with the router.
+class LanguageShellSpec {
+  /// A shell spec.
+  const new({
+    required this.child,
+    this.destinations = const <LiveShellDestination>[],
+    this.selectedId,
+    this.onSelected,
+    this.trailing,
+    this.placement = LiveShellPlacement.adaptive,
+  });
+
+  /// The page content.
+  final Widget child;
+
+  /// The destinations, in order.
+  final List<LiveShellDestination> destinations;
+
+  /// The selected destination's id; null selects nothing.
+  final String? selectedId;
+
+  /// Called with a destination's id; null (or an empty list) renders the shell
+  /// without working navigation.
+  final ValueChanged<String>? onSelected;
+
+  /// Content pinned at the far end of the navigation column — a settings entry,
+  /// a footer. The bottom-strip form has no such slot, so a language that draws
+  /// one drops it rather than inventing a place for it.
+  final Widget? trailing;
+
+  /// The caller's intent about where navigation sits.
+  final LiveShellPlacement placement;
+}
+
 /// Renders one design language's controls from the real widget library, themed
 /// from the resolved [DesignToken]. Each language provides an adapter; the
 /// active one is chosen at runtime by `UiConfig.language`, so switching a
@@ -677,6 +761,13 @@ abstract interface class LanguageAdapter {
   /// Which controls this adapter renders natively; the rest fall back to the
   /// shared token renderer and are reported by the resolver (§3.1/§7).
   LiveUiCapabilities get capabilities;
+
+  /// Which structural surfaces — the app host and the shell — this adapter owns
+  /// with its library's own widgets (§ surfaces). Declared apart from
+  /// [capabilities] because owning one says nothing about the other: fluent owns
+  /// both, `macos_ui` owns the host and a sidebar but no bottom strip, and ForUI
+  /// owns neither.
+  LiveUiSurfaceCapabilities get surfaces;
 
   /// Installs this language's theme (from [token]) around [child].
   Widget wrap(BuildContext context, DesignToken token, Widget child);
@@ -727,6 +818,15 @@ abstract interface class LanguageAdapter {
   Widget toast(BuildContext context, LanguageToastSpec spec);
 
   /// Wraps the whole app in the language's own host widget, when its library
-  /// ships one; the shared renderer answers with the token-seeded Material host.
+  /// ships one — a [LiveUiSurface.appHost] capability. The shared renderer answers
+  /// with the token-seeded Material host, which is the documented fallback, not a
+  /// claim that this language owns the root.
   Widget appHost(BuildContext context, LanguageHostSpec spec);
+
+  /// Draws the application shell — the navigation around the page — with the
+  /// language's own structural widget, when its library ships one (a
+  /// [LiveUiSurface.appShell] capability). Otherwise the shared token shell
+  /// stands in, which is a navigation column or strip built from the token
+  /// rather than the language's widget set.
+  Widget shell(BuildContext context, LanguageShellSpec spec);
 }

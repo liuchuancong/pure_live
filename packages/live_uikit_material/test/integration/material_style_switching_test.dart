@@ -5,7 +5,7 @@ import 'package:live_uikit_material/live_uikit_material.dart';
 import 'package:material_ui/material_ui.dart' as mu;
 
 /// The controls `live_uikit_material` renders natively (§3.1 capability
-/// declaration): thirteen of the sixteen the resolver dispatches — everything
+/// declaration): twelve of the fifteen the resolver dispatches — everything
 /// except `select`, `tabBar` (which this fork does not carry) and `toast`
 /// (Material's transient message belongs to the ScaffoldMessenger, not to a
 /// surface the adapter can return).
@@ -22,8 +22,10 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.appBar,
   LiveUiControl.listRow,
   LiveUiControl.navBar,
-  LiveUiControl.appHost,
 };
+
+/// The structural surfaces this adapter owns (§ surfaces).
+const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost};
 
 /// §16 integration pass for `live_uikit_material`.
 ///
@@ -37,9 +39,26 @@ const Set<LiveUiControl> nativeControls = {
 /// does not declare — `select`, `tabBar` and `toast` — each exactly once per
 /// language change (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
-  expect(sink.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
-  expect(sink.map((diagnostic) => diagnostic.control).toSet(), LiveUiControl.values.toSet().difference(nativeControls));
-  expect(sink, hasLength(LiveUiControl.values.length - nativeControls.length));
+  final controls = sink.where((diagnostic) => diagnostic.control != null);
+  final surfaces = sink.where((diagnostic) => diagnostic.surface != null);
+  expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
+  expect(
+    controls.map((diagnostic) => diagnostic.control).toSet(),
+    LiveUiControl.values.toSet().difference(nativeControls),
+  );
+  // A language that owns both surfaces reports no structural downgrade at all,
+  // so the code check only applies when something is actually missing.
+  final expectedSurfaces = LiveUiSurface.values.toSet().difference(nativeSurfaces);
+  expect(surfaces.map((diagnostic) => diagnostic.surface).toSet(), expectedSurfaces);
+  if (expectedSurfaces.isNotEmpty) {
+    expect(surfaces.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.surfaceUnsupported});
+  }
+  expect(
+    sink,
+    hasLength(
+      LiveUiControl.values.length + LiveUiSurface.values.length - nativeControls.length - nativeSurfaces.length,
+    ),
+  );
 }
 
 void main() {
@@ -48,6 +67,19 @@ void main() {
     fallback: SharedLanguageAdapter(),
   );
   const resolver = LiveUiResolver(registry: registry);
+
+  test('the surfaces it owns structurally resolve native, the rest shared', () {
+    for (final surface in LiveUiSurface.values) {
+      final owned = nativeSurfaces.contains(surface);
+      final resolution = resolver.resolveSurface(LiveDesignLanguage.material, surface);
+      expect(
+        resolution.implementation.kind,
+        owned ? LiveImplementationKind.adapterNative : LiveImplementationKind.shared,
+        reason: '$surface',
+      );
+      expect(resolution.diagnostic?.code, owned ? isNull : LiveUiDiagnosticCode.surfaceUnsupported, reason: '$surface');
+    }
+  });
 
   UiConfig config(LiveDesignLanguage language, {UiBrightnessMode brightness = UiBrightnessMode.light, Color? accent}) =>
       UiConfig(language: language, brightness: brightness, accent: accent);

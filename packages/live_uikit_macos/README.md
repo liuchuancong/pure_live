@@ -17,7 +17,10 @@ controls drawn by `macos_ui`, without business pages importing `macos_ui`.
 - Map the resolved `DesignToken` into a `MacosThemeData` and install it through a
   `MacosTheme` scope (never a nested `MacosApp`).
 - Build native macOS widgets for: **button, text field, checkbox, slider,
-  scaffold, app bar, list row, app host**.
+  scaffold, app bar, list row**.
+- Own the app-host surface (`MacosApp`); the shell falls back to the shared token
+  renderer, because `Sidebar` belongs to a `MacosWindow` frame whose owner the
+  contract does not yet decide (§ surfaces).
 - Declare exactly those controls in `macosCapabilities` so the core resolver
   reports a `controlUnsupported` downgrade for the rest (§16/§17).
 
@@ -78,7 +81,7 @@ core resolver's native-versus-`controlUnsupported` dispatch (§16/§17).
 - Test coverage is present at four layers: `test/adapter/` (contract and
   resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
   `test/widgets/` (every native control driven through the real dispatch path), and
-  `test/integration/` (resolution surface for all ten controls and a switch to the
+  `test/integration/` (resolution surface across the contract and a switch to the
   the shared `token` base and back with caller-owned state preserved). What remains
   untested is the part that needs hardware: focus traversal, Android TV D-pad, and
   the platform claims in §13.

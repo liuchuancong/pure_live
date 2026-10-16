@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:live_uikit/src/styling/contracts/live_ui_adapter.dart';
 import 'package:live_uikit/src/styling/contracts/live_ui_capabilities.dart';
+import 'package:live_uikit/src/styling/contracts/live_ui_surfaces.dart';
 import 'package:live_uikit/src/styling/provider/live_config_provider.dart';
 import 'package:live_uikit/src/styling/style/recipe.dart';
 import 'package:live_uikit/src/styling/style/style.dart';
 import 'package:live_uikit/src/styling/tokens/design_token.dart';
 import 'package:live_uikit/src/styling/widgets/chrome/live_app.dart';
 import 'package:live_uikit/src/styling/widgets/chrome/live_app_bar.dart';
+import 'package:live_uikit/src/styling/widgets/chrome/live_app_shell.dart';
 import 'package:live_uikit/src/styling/widgets/chrome/live_nav_bar.dart';
 import 'package:live_uikit/src/styling/widgets/chrome/live_scaffold.dart';
 import 'package:live_uikit/src/styling/widgets/content/live_card.dart';
@@ -101,6 +103,9 @@ class SharedLanguageAdapter implements LanguageAdapter {
 
   @override
   LiveUiCapabilities get capabilities => const LiveUiCapabilities.none();
+
+  @override
+  LiveUiSurfaceCapabilities get surfaces => const LiveUiSurfaceCapabilities.none();
 
   @override
   Widget wrap(BuildContext context, DesignToken token, Widget child) => child;
@@ -203,4 +208,7 @@ class SharedLanguageAdapter implements LanguageAdapter {
 
   @override
   Widget appHost(BuildContext context, LanguageHostSpec spec) => TokenApp(spec: spec);
+
+  @override
+  Widget shell(BuildContext context, LanguageShellSpec spec) => TokenAppShell(spec: spec);
 }

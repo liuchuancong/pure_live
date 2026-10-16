@@ -15,5 +15,4 @@ const LiveUiCapabilities cupertinoCapabilities = LiveUiCapabilities(<LiveUiContr
   LiveUiControl.appBar,
   LiveUiControl.listRow,
   LiveUiControl.navBar,
-  LiveUiControl.appHost,
 });

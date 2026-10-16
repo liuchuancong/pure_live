@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:live_uikit/styling.dart';
 import 'package:live_uikit_macos/src/adapter/macos_capabilities.dart';
+import 'package:live_uikit_macos/src/adapter/macos_surfaces.dart';
 import 'package:live_uikit_macos/src/theme/macos_theme_mapper.dart';
 import 'package:live_uikit_macos/src/widgets/macos_app_bar_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_button_builder.dart';
@@ -34,6 +35,9 @@ class MacosLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   LiveUiCapabilities get capabilities => macosCapabilities;
+
+  @override
+  LiveUiSurfaceCapabilities get surfaces => macosSurfaces;
 
   @override
   Widget wrap(BuildContext context, DesignToken token, Widget child) => _theme.wrap(context, token, child);

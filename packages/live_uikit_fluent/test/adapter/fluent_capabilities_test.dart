@@ -5,6 +5,18 @@ import 'package:live_uikit_fluent/live_uikit_fluent.dart';
 void main() {
   const adapter = fluentAdapter;
 
+  test('declares exactly the surfaces it owns structurally', () {
+    for (final surface in const <LiveUiSurface>{LiveUiSurface.appHost, LiveUiSurface.appShell}) {
+      expect(adapter.surfaces.supports(surface), isTrue, reason: '$surface should be native');
+    }
+    for (final surface in LiveUiSurface.values.toSet().difference(const <LiveUiSurface>{
+      LiveUiSurface.appHost,
+      LiveUiSurface.appShell,
+    })) {
+      expect(adapter.surfaces.supports(surface), isFalse, reason: '$surface should fall back');
+    }
+  });
+
   group('Fluent adapter contract (§7)', () {
     test('exposes a stable id and display name', () {
       expect(adapter.id, fluentAdapterId);
@@ -25,7 +37,6 @@ void main() {
         LiveUiControl.scaffold,
         LiveUiControl.listRow,
         LiveUiControl.toast,
-        LiveUiControl.appHost,
       };
       for (final control in native) {
         expect(adapter.capabilities.supports(control), isTrue, reason: '$control should be native');

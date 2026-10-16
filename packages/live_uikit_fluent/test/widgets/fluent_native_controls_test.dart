@@ -357,6 +357,79 @@ void main() {
     });
   });
 
+  group('the app shell (§ surfaces)', () {
+    const destinations = [
+      LiveShellDestination(id: 'home', label: 'Home', icon: fluent.FluentIcons.home),
+      LiveShellDestination(id: 'follow', label: 'Follow', icon: fluent.FluentIcons.heart),
+    ];
+
+    testWidgets('the shell draws NavigationView, not the token column', (tester) async {
+      var chosen = '';
+      await tester.pumpWidget(
+        harness(
+          SizedBox(
+            width: 720,
+            height: 480,
+            child: LiveAppShell(
+              destinations: destinations,
+              selectedId: 'home',
+              onSelected: (id) => chosen = id,
+              // A rail: the pane is vertical, and the test follows a destination by
+              // its glyph because the compact pane hides the label text.
+              placement: LiveShellPlacement.rail,
+              child: const Text('room list'),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(fluent.NavigationView), findsOneWidget);
+      expect(find.byType(TokenAppShell), findsNothing);
+      // The router owns the body: the pane's own per-item bodies are not what is
+      // on screen, so the page the shell was handed is what shows.
+      expect(find.text('room list'), findsOneWidget);
+      expect(find.byIcon(fluent.FluentIcons.heart), findsOneWidget);
+
+      await tester.tap(find.byIcon(fluent.FluentIcons.heart));
+      await tester.pump();
+      expect(chosen, 'follow');
+      expect(tester.takeException(), isNull);
+
+      // Unmount before teardown: the pane runs a display-mode transition timer
+      // that outlives its subtree, which the test binding counts as a leak. In a
+      // real window that timer is the pane settling into its mode.
+      await tester.pumpAndSettle();
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 2));
+    });
+
+    testWidgets('a bottom request takes the top pane, because Fluent has no bottom strip', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          SizedBox(
+            width: 720,
+            height: 480,
+            child: LiveAppShell(
+              destinations: destinations,
+              selectedId: 'home',
+              onSelected: (_) {},
+              placement: LiveShellPlacement.bottom,
+              child: const Text('room list'),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // `NavigationPane` is the view's configuration object, not a widget, so the
+      // mode is read back off the view.
+      final view = tester.widget<fluent.NavigationView>(find.byType(fluent.NavigationView));
+      expect(view.pane?.displayMode, fluent.PaneDisplayMode.top);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('shared fallback (§15.3)', () {
     testWidgets('a control the adapter does not override still renders', (tester) async {
       await tester.pumpWidget(harness(LiveSegmented(labels: const ['A', 'B'], index: 0, onChanged: (_) {})));

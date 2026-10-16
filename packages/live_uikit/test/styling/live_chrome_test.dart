@@ -29,8 +29,10 @@ class _RecordingAdapter extends SharedLanguageAdapter {
     LiveUiControl.listRow,
     LiveUiControl.navBar,
     LiveUiControl.toast,
-    LiveUiControl.appHost,
   });
+
+  @override
+  LiveUiSurfaceCapabilities get surfaces => const LiveUiSurfaceCapabilities({LiveUiSurface.appHost});
 
   @override
   Widget scaffold(BuildContext context, LanguageScaffoldSpec spec) {
@@ -66,6 +68,12 @@ class _RecordingAdapter extends SharedLanguageAdapter {
   Widget appHost(BuildContext context, LanguageHostSpec spec) {
     captured.add(spec);
     return super.appHost(context, spec);
+  }
+
+  @override
+  Widget shell(BuildContext context, LanguageShellSpec spec) {
+    captured.add(spec);
+    return super.shell(context, spec);
   }
 }
 
@@ -185,6 +193,10 @@ void main() {
       expect(theme.supports(LiveUiControl.navBar), isTrue);
       expect(theme.supports(LiveUiControl.toast), isTrue);
       expect(theme.supports(LiveUiControl.slider), isFalse, reason: 'unclaimed controls stay shared');
+      // The surfaces are a separate declaration: this adapter owns the app host
+      // and not the shell, and owning one says nothing about the other.
+      expect(theme.supportsSurface(LiveUiSurface.appHost), isTrue);
+      expect(theme.supportsSurface(LiveUiSurface.appShell), isFalse);
     });
 
     testWidgets('the token base claims none of them', (tester) async {
@@ -197,6 +209,9 @@ void main() {
         LiveUiControl.toast,
       ]) {
         expect(base.capabilities.supports(control), isFalse, reason: '$control is not native to the token base');
+      }
+      for (final surface in LiveUiSurface.values) {
+        expect(base.surfaces.supports(surface), isFalse, reason: '$surface is not native to the token base');
       }
     });
   });
@@ -403,6 +418,118 @@ void main() {
       // renderer — the same fall-through a control gets.
       expect(find.byType(TokenApp), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('the shell', () {
+    const destinations = [
+      LiveShellDestination(id: 'home', label: 'Home', icon: Icons.home),
+      LiveShellDestination(id: 'follow', label: 'Follow', icon: Icons.favorite),
+      LiveShellDestination(id: 'locked', label: 'Locked', icon: Icons.lock, enabled: false),
+    ];
+
+    // A shell fills a window, so it is pumped inside a bounded box: the rail and
+    // the strip both expand into the space the page leaves, which an unbounded
+    // `Center` does not have.
+    Widget shellHarness(Widget child) => LiveConfigProvider(
+      config: const UiConfig(language: LiveDesignLanguage.fluent),
+      registry: registry,
+      child: MaterialApp(
+        home: Scaffold(body: SizedBox(width: 600, height: 400, child: child)),
+      ),
+    );
+
+    testWidgets('the destinations, the selection and the intent travel to the adapter', (tester) async {
+      var chosen = '';
+      await tester.pumpWidget(
+        shellHarness(
+          LiveAppShell(
+            destinations: destinations,
+            selectedId: 'follow',
+            onSelected: (id) => chosen = id,
+            placement: LiveShellPlacement.rail,
+            trailing: const Text('settings'),
+            child: const Text('page'),
+          ),
+        ),
+      );
+
+      final spec = captured.whereType<LanguageShellSpec>().single;
+      expect(spec.destinations, hasLength(3));
+      expect(spec.destinations.first.id, 'home');
+      expect(spec.destinations.last.enabled, isFalse);
+      expect(spec.selectedId, 'follow');
+      expect(spec.onSelected, isNotNull);
+      expect(spec.placement, LiveShellPlacement.rail);
+      expect(spec.trailing, isNotNull);
+      expect(chosen, '', reason: 'building the shell reports nothing');
+    });
+
+    testWidgets('a language that owns no shell draws the token shell, and its own bar', (tester) async {
+      var chosen = '';
+      await tester.pumpWidget(
+        shellHarness(
+          LiveAppShell(
+            destinations: destinations,
+            selectedId: 'home',
+            onSelected: (id) => chosen = id,
+            placement: LiveShellPlacement.bottom,
+            child: const Text('page'),
+          ),
+        ),
+      );
+
+      // The adapter declares `appHost` but not `appShell`, so the shell is the
+      // token's — while the strip inside it is dispatched, and this adapter does
+      // declare `navBar`. That is the layering the surfaces exist for.
+      expect(find.byType(TokenAppShell), findsOneWidget);
+      expect(find.byType(TokenNavBar), findsOneWidget);
+      expect(find.text('page'), findsOneWidget);
+
+      await tester.tap(find.text('Follow'));
+      await tester.pump();
+      expect(chosen, 'follow');
+    });
+
+    // `none` is not in this list: it draws no navigation at all, which the next
+    // test asserts — there is no cell here to tap.
+    for (final placement in [LiveShellPlacement.rail, LiveShellPlacement.bottom, LiveShellPlacement.adaptive]) {
+      testWidgets('a disabled destination is inert in the ${placement.name} form', (tester) async {
+        var chosen = '';
+        await tester.pumpWidget(
+          shellHarness(
+            LiveAppShell(
+              destinations: destinations,
+              selectedId: 'home',
+              onSelected: (id) => chosen = id,
+              placement: placement,
+              child: const SizedBox.shrink(),
+            ),
+          ),
+        );
+
+        await tester.tap(find.text('Locked'));
+        await tester.pump();
+        expect(chosen, '', reason: '${placement.name} must refuse a disabled destination');
+
+        await tester.tap(find.text('Follow'));
+        await tester.pump();
+        expect(chosen, 'follow', reason: '${placement.name} still reaches a live destination');
+      });
+    }
+
+    testWidgets('a shell with nothing to choose, or asked for no navigation, draws the page alone', (tester) async {
+      await tester.pumpWidget(shellHarness(const LiveAppShell(child: Text('page'))));
+      expect(find.text('Follow'), findsNothing);
+      expect(find.text('page'), findsOneWidget);
+
+      await tester.pumpWidget(
+        shellHarness(
+          const LiveAppShell(destinations: destinations, placement: LiveShellPlacement.none, child: Text('page')),
+        ),
+      );
+      expect(find.text('Home'), findsNothing, reason: 'placement.none asks for a frame, not a navigation');
+      expect(find.text('page'), findsOneWidget);
     });
   });
 }

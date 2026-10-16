@@ -150,7 +150,8 @@ packages/live_uikit/
 │       │   ├── resolution/              # registry, resolver, fallback policy
 │       │   ├── shared/                  # SharedLanguageAdapter (the token renderer)
 │       │   └── widgets/
-│       │       ├── chrome/              # LiveApp + LiveScaffold/LiveAppBar/LiveNavBar
+│       │       ├── chrome/              # LiveApp (host), LiveAppShell (shell),
+│       │       │                        # LiveScaffold, LiveAppBar, LiveNavBar
 │       │       ├── controls/            # button, field, switch, checkbox, slider,
 │       │       │                        # segmented, select, progress, tabs, stepper
 │       │       ├── overlays/            # dialog, menu, toast, tooltip

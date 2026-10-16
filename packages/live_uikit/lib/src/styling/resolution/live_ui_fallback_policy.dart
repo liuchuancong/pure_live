@@ -24,6 +24,7 @@ final class LiveUiFallbackPolicy {
     this.onMissingAdapter = LiveUiFallbackAction.fallbackToShared,
     this.onMissingDefaultAdapter = LiveUiFallbackAction.failFast,
     this.onUnsupportedControl = LiveUiFallbackAction.fallbackToShared,
+    this.onUnsupportedSurface = LiveUiFallbackAction.fallbackToShared,
   });
 
   /// How to serve a language whose adapter is not registered.
@@ -44,4 +45,14 @@ final class LiveUiFallbackPolicy {
   /// Defaults to [LiveUiFallbackAction.fallbackToShared]: that one control falls
   /// back to the token renderer with a `controlUnsupported` diagnostic.
   final LiveUiFallbackAction onUnsupportedControl;
+
+  /// How to serve a structural surface — the app host or the shell — that the
+  /// registered adapter does not own.
+  ///
+  /// Defaults to [LiveUiFallbackAction.fallbackToShared]: the shared token host or
+  /// token shell stands in and a `surfaceUnsupported` diagnostic records it. This
+  /// is a separate knob because the downgrade is the whole window frame rather
+  /// than one widget, and a build that would rather fail than run a Material
+  /// frame under a Fluent setting can set it to fail-fast on its own terms (§ surfaces).
+  final LiveUiFallbackAction onUnsupportedSurface;
 }

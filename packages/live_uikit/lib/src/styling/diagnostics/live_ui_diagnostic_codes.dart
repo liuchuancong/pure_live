@@ -17,6 +17,12 @@ enum LiveUiDiagnosticCode {
   /// the shared implementation for just that control (§15.3 step 2b).
   controlUnsupported,
 
+  /// The registered adapter does not own this structural surface — the app host
+  /// or the shell — so the shared token renderer stands in for the whole window
+  /// frame. Kept apart from [controlUnsupported] because the reader has to know
+  /// that what changed is the app's structure, not one widget (§ surfaces).
+  surfaceUnsupported,
+
   /// The environment cannot afford an effect (blur, TV focus, backdrop
   /// filter), so a verified degraded visual stands in (§15.3 tail).
   unsupportedEffect,

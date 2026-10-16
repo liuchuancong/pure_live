@@ -21,7 +21,9 @@ and have its controls drawn by `fluent_ui`, without any business page importing
 - Map the resolved `DesignToken` into a `FluentThemeData` and install it through a
   `FluentTheme` scope (never a nested `FluentApp`).
 - Build native Fluent widgets for: **button, card, text field, switch, checkbox,
-  slider, progress, select, scaffold, list row, toast, app host**.
+  slider, progress, select, scaffold, list row, toast**.
+- Own both structural surfaces: the app host (`FluentApp`) and the app shell
+  (`NavigationView`) (§ surfaces).
 - Declare exactly those controls in `fluentCapabilities` so the core resolver can
   report a `controlUnsupported` downgrade for the rest (§16/§17).
 - Expose `fluentLocalizationsDelegates` for the composition root to install.
@@ -94,7 +96,7 @@ that the core resolver serves a declared control natively while reporting a
 - Test coverage is present at four layers: `test/adapter/` (contract and
   resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
   `test/widgets/` (every native control driven through the real dispatch path), and
-  `test/integration/` (resolution surface for all ten controls and a switch to the
+  `test/integration/` (resolution surface across the contract and a switch to the
   the shared `token` base and back with caller-owned state preserved). What remains
   untested is the part that needs hardware: focus traversal, Android TV D-pad, and
   the platform claims in §13.

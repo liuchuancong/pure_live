@@ -5,9 +5,9 @@ import 'package:live_uikit_macos/live_uikit_macos.dart';
 import 'package:macos_ui/macos_ui.dart' as macos;
 
 /// The controls `live_uikit_macos` renders natively (§3.1 capability
-/// declaration): eight of the sixteen the resolver dispatches, including the
+/// declaration): seven of the fifteen the resolver dispatches, including the
 /// page frame, the bar and the row mapped onto `MacosScaffold`, `ToolBar` and
-/// `MacosListTile`, and the app host, which is `MacosApp` itself.
+/// `MacosListTile`, and the app host, now a surface (§ surfaces).
 const Set<LiveUiControl> nativeControls = {
   LiveUiControl.button,
   LiveUiControl.textField,
@@ -16,8 +16,10 @@ const Set<LiveUiControl> nativeControls = {
   LiveUiControl.scaffold,
   LiveUiControl.appBar,
   LiveUiControl.listRow,
-  LiveUiControl.appHost,
 };
+
+/// The structural surfaces this adapter owns (§ surfaces).
+const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost};
 
 /// §16 integration pass for `live_uikit_macos`: eight declared controls native,
 /// the other eight shared (`card`, `switchWidget`, `segmented`, `progress`,
@@ -28,9 +30,26 @@ const Set<LiveUiControl> nativeControls = {
 /// The downgrades this language is expected to report: every control the adapter
 /// does not declare, each exactly once per language change (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
-  expect(sink.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
-  expect(sink.map((diagnostic) => diagnostic.control).toSet(), LiveUiControl.values.toSet().difference(nativeControls));
-  expect(sink, hasLength(LiveUiControl.values.length - nativeControls.length));
+  final controls = sink.where((diagnostic) => diagnostic.control != null);
+  final surfaces = sink.where((diagnostic) => diagnostic.surface != null);
+  expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
+  expect(
+    controls.map((diagnostic) => diagnostic.control).toSet(),
+    LiveUiControl.values.toSet().difference(nativeControls),
+  );
+  // A language that owns both surfaces reports no structural downgrade at all,
+  // so the code check only applies when something is actually missing.
+  final expectedSurfaces = LiveUiSurface.values.toSet().difference(nativeSurfaces);
+  expect(surfaces.map((diagnostic) => diagnostic.surface).toSet(), expectedSurfaces);
+  if (expectedSurfaces.isNotEmpty) {
+    expect(surfaces.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.surfaceUnsupported});
+  }
+  expect(
+    sink,
+    hasLength(
+      LiveUiControl.values.length + LiveUiSurface.values.length - nativeControls.length - nativeSurfaces.length,
+    ),
+  );
 }
 
 void main() {
@@ -39,6 +58,19 @@ void main() {
     fallback: SharedLanguageAdapter(),
   );
   const resolver = LiveUiResolver(registry: registry);
+
+  test('the surfaces it owns structurally resolve native, the rest shared', () {
+    for (final surface in LiveUiSurface.values) {
+      final owned = nativeSurfaces.contains(surface);
+      final resolution = resolver.resolveSurface(LiveDesignLanguage.macos, surface);
+      expect(
+        resolution.implementation.kind,
+        owned ? LiveImplementationKind.adapterNative : LiveImplementationKind.shared,
+        reason: '$surface',
+      );
+      expect(resolution.diagnostic?.code, owned ? isNull : LiveUiDiagnosticCode.surfaceUnsupported, reason: '$surface');
+    }
+  });
 
   Widget harness(UiConfig ui, Widget child, List<LiveUiDiagnostic> sink) => LiveConfigProvider(
     config: ui,

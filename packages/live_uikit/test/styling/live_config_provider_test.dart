@@ -48,22 +48,29 @@ void main() {
   Widget harness(UiConfig config, List<LiveUiDiagnostic> sink) =>
       LiveConfigProvider(config: config, registry: registry, diagnostics: sink.add, child: const SizedBox.shrink());
 
-  testWidgets('a registered adapter reports each undeclared control once (§15.5)', (tester) async {
+  testWidgets('a registered adapter reports each undeclared control and surface once (§15.5)', (tester) async {
     final sink = <LiveUiDiagnostic>[];
     await tester.pumpWidget(harness(const UiConfig(language: LiveDesignLanguage.material), sink));
 
-    expect(sink.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
+    // The adapter declares one control and no surface, so the report is the rest
+    // of the control set plus both structural surfaces — two kinds of downgrade
+    // with two codes, and the host learns which window frame it is actually in.
+    final controls = sink.where((diagnostic) => diagnostic.control != null);
+    final surfaces = sink.where((diagnostic) => diagnostic.surface != null);
+    expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
     expect(
-      sink.map((diagnostic) => diagnostic.control).toSet(),
+      controls.map((diagnostic) => diagnostic.control).toSet(),
       LiveUiControl.values.toSet().difference(const {LiveUiControl.button}),
     );
-    expect(sink, hasLength(15));
+    expect(surfaces.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.surfaceUnsupported});
+    expect(surfaces.map((diagnostic) => diagnostic.surface).toSet(), LiveUiSurface.values.toSet());
+    expect(sink, hasLength(LiveUiControl.values.length - 1 + LiveUiSurface.values.length));
     expect(sink.every((diagnostic) => diagnostic.language == LiveDesignLanguage.material), isTrue);
 
     // Rebuilds with the same language report nothing new: the facts are per
     // language change, not per frame (§10 "fired once per language change").
     await tester.pumpWidget(harness(const UiConfig(language: LiveDesignLanguage.material), sink));
-    expect(sink, hasLength(15));
+    expect(sink, hasLength(LiveUiControl.values.length - 1 + LiveUiSurface.values.length));
   });
 
   testWidgets('switching language re-reports for the new adapter', (tester) async {
@@ -75,7 +82,7 @@ void main() {
     expect(sink.length, greaterThan(firstCount));
     expect(
       sink.where((diagnostic) => diagnostic.language == LiveDesignLanguage.wind).length,
-      LiveUiControl.values.length - 1,
+      LiveUiControl.values.length - 1 + LiveUiSurface.values.length,
       reason: 'the new language reports its own set once',
     );
     expect(sink.where((diagnostic) => diagnostic.language == LiveDesignLanguage.material).length, firstCount);

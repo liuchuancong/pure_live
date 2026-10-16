@@ -1,4 +1,5 @@
 import 'package:live_uikit/src/styling/contracts/live_ui_adapter.dart';
+import 'package:live_uikit/src/styling/contracts/live_ui_surfaces.dart';
 import 'package:live_uikit/src/styling/diagnostics/diagnostics.dart';
 import 'package:live_uikit/src/styling/resolution/live_ui_fallback_policy.dart';
 import 'package:live_uikit/src/styling/resolution/live_ui_registry.dart';
@@ -101,6 +102,30 @@ final class LiveUiResolver {
     return LiveUiResolution(
       implementation: LiveResolvedImplementation(adapter: adapter, kind: LiveImplementationKind.shared),
       diagnostic: LiveUiDiagnostic(code: LiveUiDiagnosticCode.controlUnsupported, language: language, control: control),
+    );
+  }
+
+  /// Resolves one structural [surface] — the app host or the shell — for
+  /// [language], recording a `surfaceUnsupported` downgrade when the registered
+  /// adapter does not own it (§ surfaces).
+  ///
+  /// Separate from [resolveControl] by contract, not by accident: a language can
+  /// own the window frame and still borrow the shared navigation column, or the
+  /// other way round, and neither says anything about the buttons inside. The
+  /// shared renderer is the same adapter instance whose method was never
+  /// overridden, so the implementation kind is [LiveImplementationKind.shared].
+  LiveUiResolution resolveSurface(LiveDesignLanguage language, LiveUiSurface surface) {
+    final resolution = resolve(language);
+    final adapter = resolution.implementation.adapter;
+    if (resolution.diagnostic != null || adapter.surfaces.supports(surface)) {
+      return resolution;
+    }
+    if (policy.onUnsupportedSurface == LiveUiFallbackAction.failFast) {
+      throw LiveUiResolutionException(language);
+    }
+    return LiveUiResolution(
+      implementation: LiveResolvedImplementation(adapter: adapter, kind: LiveImplementationKind.shared),
+      diagnostic: LiveUiDiagnostic(code: LiveUiDiagnosticCode.surfaceUnsupported, language: language, surface: surface),
     );
   }
 }

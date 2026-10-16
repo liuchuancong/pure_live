@@ -92,8 +92,14 @@ $controlNamesByProse = @{
     "list row"   = "listRow"
     "nav bar"    = "navBar"
     "toast"      = "toast"
-    "app host"   = "appHost"
 }
+
+# The method that draws each structural surface. The surface names the thing
+# (`LiveUiSurface.appHost`, `LiveUiSurface.appShell`) and the method names the verb
+# (`appHost()`, `shell()`), so the drift check below maps one to the other instead
+# of assuming they read the same (§ surfaces).
+$surfaceMethods = @('appHost', 'shell')
+$surfaceMethodOf = @{ appHost = 'appHost'; appShell = 'shell' }
 
 foreach ($packageName in $packageMap.Keys) {
     $packagePath = $packageMap[$packageName]
@@ -270,7 +276,7 @@ foreach ($adapter in $styleLibraries.Keys) {
     $overrides = @(
         [regex]::Matches((Get-Content -Raw $adapterFile[0].FullName), '(?m)^\s+Widget\s+(_?[a-zA-Z]+)(?:<[^>]*>)?\s*\(') |
             ForEach-Object { $_.Groups[1].Value } |
-            Where-Object { $_ -ne 'wrap' -and $_ -notmatch '^_' } |
+            Where-Object { $_ -ne 'wrap' -and $_ -notin $surfaceMethods -and $_ -notmatch '^_' } |
             Sort-Object -Unique
     )
     $declared = @(
@@ -285,6 +291,39 @@ foreach ($adapter in $styleLibraries.Keys) {
     foreach ($drift in (Compare-Object -ReferenceObject $overrides -DifferenceObject $declared)) {
         $where = if ($drift.SideIndicator -eq '<=') { 'overridden but not declared' } else { 'declared but not overridden' }
         $issues.Add("Capability/override drift in '$adapter': $($drift.InputObject) is $where.")
+    }
+
+    # The structural surfaces are checked the same way, against their own
+    # declaration: owning the app host says nothing about owning the shell, and a
+    # host that reads `surfaceUnsupported` in its log has to be able to trust it.
+    $surfacesFile = @(Get-ChildItem -Path $contractDir -File -Filter "*_surfaces.dart" -ErrorAction SilentlyContinue)
+    $surfaceOverrides = @(
+        [regex]::Matches((Get-Content -Raw $adapterFile[0].FullName), '(?m)^\s+Widget\s+(appHost|shell)(?:<[^>]*>)?\s*\(') |
+            ForEach-Object { $_.Groups[1].Value } |
+            Sort-Object -Unique
+    )
+    if ($surfacesFile.Count -gt 1) {
+        $issues.Add("'$adapter' has more than one *_surfaces.dart under lib/src/adapter.")
+    } elseif ($surfacesFile.Count -eq 1) {
+        $declaredSurfaces = @(
+            [regex]::Matches((Get-Content -Raw $surfacesFile[0].FullName), 'LiveUiSurface\.([a-zA-Z]+)') |
+                ForEach-Object { $_.Groups[1].Value } |
+                ForEach-Object {
+                    if ($surfaceMethodOf.ContainsKey($_)) { $surfaceMethodOf[$_] } else {
+                        $issues.Add("'$adapter' declares the surface '$_', which this guard has no method for.")
+                    }
+                } |
+                Sort-Object -Unique
+        )
+        foreach ($drift in (Compare-Object -ReferenceObject $surfaceOverrides -DifferenceObject $declaredSurfaces)) {
+            $where = if ($drift.SideIndicator -eq '<=') { 'overridden but not declared' } else { 'declared but not overridden' }
+            $issues.Add("Surface/override drift in '$adapter': $($drift.InputObject) is $where.")
+        }
+    } elseif ($surfaceOverrides.Count -gt 0) {
+        $issues.Add(
+            "'$adapter' overrides $($surfaceOverrides -join ', ') but declares no *_surfaces.dart, " +
+            'so the resolver reports those surfaces as shared downgrades that are not.'
+        )
     }
 
     # §6/§14: the documented localization-delegate surface. A delegate that appears
