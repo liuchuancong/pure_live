@@ -19,8 +19,7 @@ abstract final class ForuiNavBarBuilder {
     index: spec.index,
     onChange: spec.enabled ? spec.onChanged : null,
     children: [
-      for (final item in spec.items)
-        forui.FBottomNavigationBarItem(icon: Icon(item.icon), label: Text(item.label)),
+      for (final item in spec.items) forui.FBottomNavigationBarItem(icon: Icon(item.icon), label: Text(item.label)),
     ],
   );
 }

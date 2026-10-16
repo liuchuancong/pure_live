@@ -33,9 +33,6 @@ abstract final class ForuiListRowBuilder {
     if (!spec.divided) {
       return row;
     }
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [row, const forui.FDivider()],
-    );
+    return Column(mainAxisSize: MainAxisSize.min, children: [row, const forui.FDivider()]);
   }
 }

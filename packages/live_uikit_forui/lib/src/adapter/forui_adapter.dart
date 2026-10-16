@@ -1,11 +1,13 @@
 import 'package:flutter/widgets.dart';
 import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_forui/src/adapter/forui_capabilities.dart';
+import 'package:live_uikit_forui/src/adapter/forui_surfaces.dart';
 import 'package:live_uikit_forui/src/theme/forui_theme_mapper.dart';
 import 'package:live_uikit_forui/src/widgets/forui_app_bar_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_button_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_card_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_checkbox_builder.dart';
+import 'package:live_uikit_forui/src/widgets/forui_host_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_list_row_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_nav_bar_builder.dart';
 import 'package:live_uikit_forui/src/widgets/forui_progress_builder.dart';
@@ -94,4 +96,10 @@ class ForuiLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget toast(BuildContext context, LanguageToastSpec spec) => ForuiToastBuilder.build(context, spec);
+
+  @override
+  LiveUiSurfaceCapabilities get surfaces => foruiSurfaces;
+
+  @override
+  Widget appHost(BuildContext context, LanguageHostSpec spec) => ForuiHostBuilder.build(context, spec);
 }

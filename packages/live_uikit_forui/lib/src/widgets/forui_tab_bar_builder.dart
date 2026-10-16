@@ -48,7 +48,10 @@ abstract final class ForuiTabBarBuilder {
   static Widget _label(LiveTab tab) => switch (tab.icon) {
     final IconData glyph => Column(
       mainAxisSize: MainAxisSize.min,
-      children: [Icon(glyph), Text(tab.label, maxLines: 1, overflow: TextOverflow.ellipsis)],
+      children: [
+        Icon(glyph),
+        Text(tab.label, maxLines: 1, overflow: TextOverflow.ellipsis),
+      ],
     ),
     null => Text(tab.label, maxLines: 1, overflow: TextOverflow.ellipsis),
   };

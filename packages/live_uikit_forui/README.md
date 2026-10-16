@@ -21,7 +21,7 @@ and have its controls drawn by `forui`, without any business page importing
 
 - Implement `LanguageAdapter` for `LiveDesignLanguage.forui` (stable id `forui`).
 - Map the resolved `DesignToken` into forui's `FThemeData` and install it through an
-  `FTheme` scope (never a nested application shell). The library's private
+  `FTheme` scope (never a second application widget inside the host). The library's private
   `FThemeData` constructor caps the mapping at the light/dark neutral variant (§8.1);
   the ceiling is pinned by test rather than faked.
 - Build native ForUI widgets for all fifteen: **button, card, text field, switch,
@@ -34,8 +34,11 @@ and have its controls drawn by `forui`, without any business page importing
   contract's body belongs to the caller (§9).
 - Declare the whole contract in `foruiCapabilities`: a ForUI page reports no
   `controlUnsupported` downgrade, and nothing inside a ForUI frame is a token
-  renderer (§16/§17). The structural surfaces (app host, app shell) are not this
-  package's yet, so those two still resolve shared and are reported.
+  renderer (§16/§17).
+- Own the app host: the library ships no application widget, so the host is
+  Flutter's `WidgetsApp` with `FTheme` above the routed tree — which is what takes
+  the page transition and the scroll physics out of Material's hands (§ surfaces).
+  The shell still resolves shared and is reported.
 - Expose `foruiLocalizationsDelegates` for the composition root to install.
 
 ## What this package must not own
@@ -49,7 +52,7 @@ and have its controls drawn by `forui`, without any business page importing
 Nothing in the fifteen-control contract falls back to the core shared token renderer
 any more. What is left is narrower and documented per builder: a few spec fields the
 library has no slot for (`LanguageProgressSpec.showLabel`, `LanguageSliderSpec.focusNode`,
-`LanguageTabsSpec.spacing`), the two structural surfaces this package does not own, and
+`LanguageTabsSpec.spacing`), the app shell this package does not own yet, and
 the theme ceiling described above (spec §18).
 
 ## Public entry point
