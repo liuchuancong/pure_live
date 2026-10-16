@@ -35,6 +35,7 @@
 - [x] 备份/恢复页（archive zip + file_selector）— 775732aea（data 区打包为时间戳 zip 到 backups 树（logs/fonts 除外）；恢复带确认+应用重启（Restart.restartApp）；备份列表/删除/从文件恢复；WebDAV/LAN/TV 随各自波次）
 - [x] 弹幕（live_interaction + live_websocket 加入依赖）— 2b19fa21b（app/engine/danmaku.dart 工厂：能力 createSession→DanmakuInteractionSource→InteractionSession，shield 三列表作过滤链；房间页桌面右列/触摸下方弹幕栏，自动吸底+上滚暂停，内存 200 条；仅 chat 渲染，礼物/观众/发送随后续波）
 - [ ] 录制域（live_record_core 加入依赖）
+  ⛔待裁决 2026-10-16：capture 接缝需要 ffmpeg 运行时（media_core_recording_ffmpeg → ffmpeg_kit_extended_flutter 0.6.2，原生二进制）。此前本机原生媒体库下载曾失败（fvp/MDK 被删）。放行则：加入两依赖 + app/engine/record_services.dart 五接缝（probe 用 LivePlaybackProvider、files 用目录矩阵、guard 用 battery_plus、notices 用 SnackBar/托盘）+ 房间页录制按钮。
 - [ ] 多画面（mosaic_grid + 票据复用）
 
 ## 规则（每次运行必读）
