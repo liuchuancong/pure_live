@@ -6,20 +6,22 @@ import 'package:pure_live/app/adapters/design_language_registry.dart';
 import 'package:pure_live/app/environment/env.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 
-/// The seed `MaterialApp` renders its own chrome with: text selection,
-/// tooltips, dialogs, the route transition background. The real skin is
-/// `LiveTheme`'s, read by every `Live*` widget below — this seed exists so
-/// the few material surfaces a page still meets do not argue with the accent
-/// and brightness the user picked.
+/// The Material surface the chosen appearance resolves to.
+///
+/// The app no longer hosts itself in Material — the root widget asks the active
+/// language for its host — so this is left for the one thing that has to paint
+/// before any widget exists: the desktop window's clear colour, which would
+/// otherwise flash a colour the first frame then covers.
 ThemeData materialThemeSeed(UiConfig config, Brightness brightness) => ThemeData(
   useMaterial3: true,
   colorScheme: ColorScheme.fromSeed(seedColor: config.accent ?? const Color(0xFF6750A4), brightness: brightness),
 );
 
 /// The root of the themed tree: it turns the persisted appearance into the
-/// `LiveTheme` every widget below reads.
+/// `LiveTheme` every widget below reads, including the host the root widget asks
+/// the language for.
 ///
-/// It sits above the router, not inside it, so a pushed route is themed by the
+/// It sits above the host, not inside it, so a pushed route is themed by the
 /// same decision as the page it came from, and a preference change re-skins
 /// every route at once without resetting the navigation stack.
 ///
