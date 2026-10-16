@@ -112,9 +112,9 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
         title: title,
         actions: [
           if (channel != null)
-            IconButton(
+            LiveIconButton(
               tooltip: context.t.iptv.favorite,
-              icon: Icon(channel.favorite ? Icons.favorite : Icons.favorite_border),
+              icon: channel.favorite ? Icons.favorite : Icons.favorite_border,
               onPressed: _toggleFavorite,
             ),
           const SettingsEntryButton(),

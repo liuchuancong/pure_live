@@ -76,10 +76,12 @@ final class _ShieldPageState extends ConsumerState<ShieldPage> {
       title: '${context.t.shield.add} — ${_titleOf(kind)}',
       // A Builder so the submit pops the dialog route, not the page under it.
       child: Builder(
-        builder: (fieldContext) => TextField(
-          controller: field,
+        builder: (fieldContext) => Focus(
           autofocus: true,
-          onSubmitted: (submitted) => Navigator.of(fieldContext).pop(submitted.trim()),
+          child: LiveTextField(
+            controller: field,
+            onSubmitted: (submitted) => Navigator.of(fieldContext).pop(submitted.trim()),
+          ),
         ),
       ),
       actions: (dialogContext) => [
@@ -134,9 +136,9 @@ final class _ShieldPageState extends ConsumerState<ShieldPage> {
                     Row(
                       children: [
                         Expanded(child: Text(_titleOf(kind), style: Theme.of(context).textTheme.titleSmall)),
-                        IconButton(
+                        LiveIconButton(
                           tooltip: context.t.shield.add,
-                          icon: const Icon(Icons.add),
+                          icon: Icons.add,
                           onPressed: () => unawaited(_add(kind)),
                         ),
                       ],

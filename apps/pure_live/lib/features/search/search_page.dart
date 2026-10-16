@@ -177,7 +177,7 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
             hintText: context.t.search.hint,
             textInputAction: TextInputAction.search,
             onSubmitted: (_) => _submit(),
-            trailing: [IconButton(icon: const Icon(Icons.search), onPressed: _submit)],
+            trailing: [LiveIconButton(icon: Icons.search, tooltip: context.t.tabs.search, onPressed: _submit)],
           ),
         ),
         if (controller != null) _modeRow(context)!,
@@ -276,9 +276,7 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
             top: 12,
             child: Opacity(
               opacity: indicator.value.clamp(0, 1),
-              child: IgnorePointer(
-                child: CircularProgressIndicator(value: indicator.isLoading ? null : indicator.value),
-              ),
+              child: IgnorePointer(child: LiveProgress(value: indicator.isLoading ? null : indicator.value, height: 4)),
             ),
           ),
         ],

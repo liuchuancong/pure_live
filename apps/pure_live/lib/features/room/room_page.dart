@@ -268,16 +268,8 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
           const SizedBox(height: 8),
           Row(
             children: [
-              IconButton(
-                tooltip: context.t.room.pause,
-                icon: const Icon(Icons.pause_circle_outline),
-                onPressed: _engine.pause,
-              ),
-              IconButton(
-                tooltip: context.t.room.play,
-                icon: const Icon(Icons.play_circle_outline),
-                onPressed: _engine.resume,
-              ),
+              LiveIconButton(tooltip: context.t.room.pause, icon: Icons.pause_circle_outline, onPressed: _engine.pause),
+              LiveIconButton(tooltip: context.t.room.play, icon: Icons.play_circle_outline, onPressed: _engine.resume),
               const SizedBox(width: 12),
               if (_qualities.isNotEmpty)
                 Expanded(

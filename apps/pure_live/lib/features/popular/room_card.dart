@@ -21,66 +21,63 @@ final class RoomCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cjk = Localizations.localeOf(context).languageCode == 'zh';
     final viewers = room.audience.onlineViewers ?? room.audience.popularity ?? room.audience.totalViewers;
-    return InkWell(
+    return LiveCard(
       onTap: onOpen,
-      borderRadius: const BorderRadius.all(Radius.circular(10)),
-      child: LiveCard(
-        padding: EdgeInsets.zero,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (room.content.coverUrl.isNotEmpty)
-                    CachedNetworkImage(imageUrl: room.content.coverUrl, fit: BoxFit.cover)
-                  else
-                    const ColoredBox(color: Color(0x22888888), child: Icon(Icons.live_tv_outlined)),
-                  if (viewers != null)
-                    Positioned(
-                      right: 6,
-                      bottom: 6,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: const BoxDecoration(
-                          color: Colors.black54,
-                          borderRadius: BorderRadius.all(Radius.circular(6)),
-                        ),
-                        child: Text(
-                          compactCount(viewers, cjk: cjk),
-                          style: const TextStyle(color: Colors.white, fontSize: 11),
-                        ),
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (room.content.coverUrl.isNotEmpty)
+                  CachedNetworkImage(imageUrl: room.content.coverUrl, fit: BoxFit.cover)
+                else
+                  const ColoredBox(color: Color(0x22888888), child: Icon(Icons.live_tv_outlined)),
+                if (viewers != null)
+                  Positioned(
+                    right: 6,
+                    bottom: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: const BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.all(Radius.circular(6)),
+                      ),
+                      child: Text(
+                        compactCount(viewers, cjk: cjk),
+                        style: const TextStyle(color: Colors.white, fontSize: 11),
                       ),
                     ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    room.content.title.isEmpty ? context.t.common.empty : room.content.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: LiveTheme.of(context).text.body,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    room.anchor?.name ?? '',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall
-                        ?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color?.withAlpha(160)),
-                  ),
-                ],
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  room.content.title.isEmpty ? context.t.common.empty : room.content.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LiveTheme.of(context).text.body,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  room.anchor?.name ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color?.withAlpha(160)),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

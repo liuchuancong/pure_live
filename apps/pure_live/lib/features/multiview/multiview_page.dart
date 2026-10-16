@@ -231,9 +231,9 @@ final class _AddCellTileState extends ConsumerState<_AddCellTile> {
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        TextField(
+        LiveTextField(
           controller: _link,
-          decoration: InputDecoration(hintText: context.t.toolbox.hint),
+          placeholder: context.t.toolbox.hint,
           onSubmitted: (_) => unawaited(_addFromLink()),
         ),
         const SizedBox(height: 8),

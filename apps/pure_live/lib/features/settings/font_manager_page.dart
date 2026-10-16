@@ -127,17 +127,17 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
       return const LiveSpinner(size: 20);
     }
     if (_library.isDownloaded(family.id)) {
-      return IconButton(
+      return LiveIconButton(
         tooltip: context.t.fonts.delete,
-        icon: const Icon(Icons.delete_outline),
+        icon: Icons.delete_outline,
         onPressed: ref.read(appearancePreferencesProvider).fontFamily == family.id
             ? null
             : () => unawaited(_delete(family)),
       );
     }
-    return IconButton(
+    return LiveIconButton(
       tooltip: context.t.fonts.download,
-      icon: const Icon(Icons.download_outlined),
+      icon: Icons.download_outlined,
       onPressed: () => unawaited(_download(family)),
     );
   }
@@ -148,7 +148,7 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
       await _library.download(family);
     } on Object {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.t.errors.network)));
+        LiveToast.show(context, context.t.errors.network, type: LiveToastType.error);
       }
     } finally {
       if (mounted) {

@@ -105,14 +105,14 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
             hintText: context.t.toolbox.hint,
             onSubmitted: (_) => unawaited(_resolve()),
             trailing: [
-              IconButton(
+              LiveIconButton(
                 tooltip: context.t.toolbox.readClipboard,
-                icon: const Icon(Icons.content_paste),
+                icon: Icons.content_paste,
                 onPressed: _readClipboard,
               ),
-              IconButton(
+              LiveIconButton(
                 tooltip: context.t.toolbox.resolve,
-                icon: const Icon(Icons.travel_explore),
+                icon: Icons.travel_explore,
                 onPressed: _resolving ? null : _resolve,
               ),
             ],

@@ -171,9 +171,7 @@ final class _SiteFeedState extends State<_SiteFeed> with AutomaticKeepAliveClien
             top: 12,
             child: Opacity(
               opacity: indicator.value.clamp(0, 1),
-              child: IgnorePointer(
-                child: CircularProgressIndicator(value: indicator.isLoading ? null : indicator.value),
-              ),
+              child: IgnorePointer(child: LiveProgress(value: indicator.isLoading ? null : indicator.value, height: 4)),
             ),
           ),
         ],
