@@ -30,13 +30,13 @@ const Set<LiveUiControl> nativeControls = {
 };
 
 /// The structural surfaces this adapter owns (§ surfaces).
-const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost};
+const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost, LiveUiSurface.appShell};
 
 /// §16 integration pass for `live_uikit_macos`: every one of the fifteen controls
-/// resolves native, the app host resolves native and the shell — which macOS keeps
-/// at the window frame, where the library's only navigation widget lives — says so,
-/// and a switch to the core token base and back replaces the rendering path while
-/// the caller keeps its controller (§11).
+/// resolves native, and so do both structural surfaces — `MacosApp` for the host and
+/// the library's own `SidebarItems` list for the shell — so this language reports no
+/// downgrade at all, and a switch to the core token base and back replaces the
+/// rendering path while the caller keeps its controller (§11).
 /// The downgrades this language is expected to report: no control downgrade at all,
 /// because nothing in the contract falls back any more (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {

@@ -25,9 +25,15 @@ controls drawn by `macos_ui`, without business pages importing `macos_ui`.
   bar are rows of the library's `MacosTab` cell with its `MacosIcon` in front,
   because `MacosTabView` is a whole tab *view* with one body per tab, the real
   segmented strip has a text-only cell, and the library has no bottom bar (§9).
-- Own the app-host surface (`MacosApp`); the shell falls back to the shared token
-  renderer, because `Sidebar` belongs to a `MacosWindow` frame whose owner the
-  contract does not yet decide (§ surfaces).
+- Own **both** structural surfaces (§ surfaces): the app host is `MacosApp`, and the
+  app shell is `Sidebar` + `SidebarItems` — the library's own sidebar list, mounted
+  in the column the shell draws beside the page. A `bottom` request goes back
+  through this package's `navBar`, and a window that has no room for a rail (or a
+  shell with fewer than two destinations) draws no navigation, exactly as the shared
+  token shell does, so the form switch happens at the same width in every language.
+  `MacosScaffold` still owns the page frame: `Sidebar` in `macos_ui` 2.2.2 is not a
+  widget but the descriptor `MacosWindow` reads, so the shell contributes the list
+  and its own fixed-width column, not a window.
 - Declare the whole contract in `macosCapabilities`: a macOS page reports no
   `controlUnsupported` downgrade, and nothing inside a macOS frame is a token
   renderer (§16/§17).
@@ -90,6 +96,16 @@ native dispatch for every control (§16/§17).
   parts (`MacosSheet`, `MacosTab`, `MacosIcon`) because the library carries no card,
   no box, no transient message and no bottom bar; they are macOS by its own visual
   vocabulary, but they are not one widget the library ships.
+- The shell's sidebar is fixed-width: `macos_ui` 2.2.2 has no mountable sidebar
+  widget — `Sidebar` and `SidebarItem` are both descriptor classes, read by
+  `MacosWindow` and `SidebarItems` respectively — so drag-resizing, the window
+  breakpoint and the descriptor's `top`/`bottom` slots are unreachable, and the
+  footer is pinned by the shell's own column. The library also has no disabled row
+  (`SidebarItem` has no such field, `SidebarItems.onChanged` is required), so a
+  disabled destination is made inert by the shell, and its `assert(currentIndex >= 0)`
+  means a sidebar cannot show "nothing selected": an id that matches none selects the
+  first row. Its rows size themselves to `134 + visualDensity`, so the rail is
+  floored at 154 logical px instead of the token's 88.
 - Test coverage is present at four layers: `test/adapter/` (contract and
   resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
   `test/widgets/` (every control driven through the real dispatch path, and no

@@ -4,10 +4,11 @@ import 'package:macos_ui/macos_ui.dart' as macos;
 
 /// Builds a macOS destination strip from a [LanguageNavBarSpec] (§9 NavBar).
 ///
-/// Composed, because macOS has no bottom bar: the library's destinations are
-/// `Sidebar` / `SidebarItems`, which belong to a window frame and build a
-/// scrollable `ListView` sized for a column as tall as the window — not a strip
-/// under a page, and not this control but the shell surface. What the library does
+/// Composed, because macOS has no bottom bar: the library's navigational list is
+/// `SidebarItems`, a scrollable `ListView` sized for a column as tall as a window
+/// — not a strip under a page, and the shell's surface rather than this control
+/// (`Sidebar`, its window-side wrapper, is not even a widget in 2.2.2 but a
+/// descriptor `MacosWindow` reads). What the library does
 /// have is its own navigational cell, `MacosTab`, described in its own docs as the
 /// item that "moves the user between the views" of a tab view, and that is what a
 /// horizontal row of destinations is.

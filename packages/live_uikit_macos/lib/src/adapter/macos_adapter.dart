@@ -14,6 +14,7 @@ import 'package:live_uikit_macos/src/widgets/macos_progress_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_scaffold_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_segmented_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_select_builder.dart';
+import 'package:live_uikit_macos/src/widgets/macos_shell_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_slider_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_switch_builder.dart';
 import 'package:live_uikit_macos/src/widgets/macos_tab_bar_builder.dart';
@@ -27,8 +28,11 @@ import 'package:live_uikit_macos/src/widgets/macos_toast_builder.dart';
 /// declared [capabilities] to `macos_capabilities.dart`. Eleven of the fifteen
 /// controls are the library's own widget; the four the library does not carry —
 /// the card, the tab strip, the destination strip and the toast surface — are
-/// assembled from its parts, and each builder says which. macOS widgets reuse the
-/// core's Material/Cupertino localization, so this package adds no delegates.
+/// assembled from its parts, and each builder says which. It owns both structural
+/// surfaces: `MacosApp` as the host and the library's `SidebarItems` list, in a
+/// column of the shell's own, as the shell — the page frame stays with `scaffold`.
+/// macOS widgets reuse the core's Material/Cupertino localization, so this package
+/// adds no delegates.
 class MacosLanguageAdapter extends SharedLanguageAdapter {
   /// The macOS adapter.
   const new();
@@ -120,4 +124,7 @@ class MacosLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget appHost(BuildContext context, LanguageHostSpec spec) => MacosHostBuilder.build(context, spec);
+
+  @override
+  Widget shell(BuildContext context, LanguageShellSpec spec) => MacosShellBuilder.build(context, spec);
 }

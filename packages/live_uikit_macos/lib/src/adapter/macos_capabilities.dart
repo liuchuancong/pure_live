@@ -15,8 +15,8 @@ import 'package:live_uikit/live_uikit.dart';
 /// `MacosTab` cell with its `MacosIcon` in front, because `MacosTabView` is a whole
 /// tab *view* with one body per tab while this contract's strip has no bodies, and
 /// `MacosSegmentedControl` — the real strip — has a text-only cell and moves its
-/// own selection on tap. `macos_ui` also has no bottom bar: its destinations are
-/// the window-frame `Sidebar`, which is the shell surface, not this control.
+/// own selection on tap. `macos_ui` also has no bottom bar: its navigational list,
+/// `SidebarItems`, is the shell surface, not this control.
 ///
 /// Two spec shapes still reach the shared renderer, and both are the library
 /// refusing rather than the adapter not trying: a slider with no callback

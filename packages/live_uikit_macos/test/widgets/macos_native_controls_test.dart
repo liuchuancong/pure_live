@@ -580,4 +580,163 @@ void main() {
       await tester.pump();
     });
   });
+
+  group('the app shell (§ surfaces)', () {
+    const destinations = [
+      LiveShellDestination(id: 'home', label: 'Home', icon: Icons.home),
+      LiveShellDestination(id: 'follow', label: 'Follow', icon: Icons.favorite),
+    ];
+
+    // `SidebarItems` reads the two process-wide listeners the library installs for
+    // a live window, and its rows are focusable; unmount the tree and let anything
+    // still scheduled fire before the binding counts it as a leak.
+    Future<void> detach(WidgetTester tester) async {
+      await tester.pumpAndSettle();
+      await tester.pumpWidget(harness(const SizedBox.shrink()));
+      await tester.pump(const Duration(seconds: 2));
+    }
+
+    testWidgets('the rail form draws a native sidebar list, not the token column', (tester) async {
+      var chosen = '';
+      await tester.pumpWidget(
+        harness(
+          LiveAppShell(
+            destinations: destinations,
+            selectedId: 'home',
+            onSelected: (id) => chosen = id,
+            placement: LiveShellPlacement.rail,
+            trailing: const Text('settings'),
+            child: const Text('room list'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // The list is `macos_ui`'s own widget; the rows are addressed by their labels
+      // because neither `Sidebar` nor `SidebarItem` is a widget in 2.2.2 — both are
+      // plain descriptor classes, the first read only by `MacosWindow` to build its
+      // resizable split, the second consumed by `SidebarItems`, which mounts its own
+      // private row widget. So the column around these rows and the selection
+      // plumbing are the shell's composition, and the list itself is mapped.
+      expect(find.byType(macos.SidebarItems), findsOneWidget);
+      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Follow'), findsOneWidget);
+      expect(find.byType(TokenAppShell), findsNothing);
+      // The router keeps the body, and the footer sits under the list because
+      // `SidebarItems` has no slot for it.
+      expect(find.text('room list'), findsOneWidget);
+      expect(find.text('settings'), findsOneWidget);
+
+      // `find.byIcon` cannot see these: the library paints glyphs with `MacosIcon`.
+      await tester.tap(find.text('Follow'));
+      await tester.pump();
+      expect(chosen, 'follow');
+      expect(tester.takeException(), isNull);
+      await detach(tester);
+    });
+
+    testWidgets('a disabled destination stays visible and inert', (tester) async {
+      var chosen = '';
+      await tester.pumpWidget(
+        harness(
+          LiveAppShell(
+            destinations: const [
+              LiveShellDestination(id: 'home', label: 'Home', icon: Icons.home),
+              LiveShellDestination(id: 'follow', label: 'Follow', icon: Icons.favorite, enabled: false),
+            ],
+            selectedId: 'home',
+            onSelected: (id) => chosen = id,
+            placement: LiveShellPlacement.rail,
+            child: const Text('room list'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // The library has no disabled row to draw, so the row is still there — the
+      // layout does not shift — and the shell is what refuses the tap.
+      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Follow'), findsOneWidget);
+      await tester.tap(find.text('Follow'));
+      await tester.pump();
+      expect(chosen, '');
+      await tester.tap(find.text('Home'));
+      await tester.pump();
+      expect(chosen, 'home');
+      expect(tester.takeException(), isNull);
+      await detach(tester);
+    });
+
+    testWidgets('a bottom request delegates to the native nav bar and drops the footer', (tester) async {
+      await tester.pumpWidget(
+        harness(
+          LiveAppShell(
+            destinations: destinations,
+            selectedId: 'home',
+            onSelected: (_) {},
+            placement: LiveShellPlacement.bottom,
+            trailing: const Text('settings'),
+            child: const Text('room list'),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // The strip is `MacosTab` cells (the nav bar builder), never a sidebar, and a
+      // strip has no trailing slot — the contract says to drop it rather than
+      // invent a place for it.
+      expect(find.byType(macos.MacosTab), findsNWidgets(2));
+      expect(find.byType(macos.SidebarItems), findsNothing);
+      expect(find.text('settings'), findsNothing);
+      expect(find.text('room list'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await detach(tester);
+    });
+
+    testWidgets('adaptive takes the rail form, and a shell with nothing to choose takes none', (tester) async {
+      // No `LiveEnvironmentScope` in this harness, so adaptive reads the same
+      // fallback width the shared token shell reads — the form switch stays put
+      // across languages.
+      await tester.pumpWidget(
+        harness(
+          LiveAppShell(
+            destinations: destinations,
+            selectedId: 'home',
+            onSelected: (_) {},
+            child: const Text('room list'),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(macos.SidebarItems), findsOneWidget);
+
+      // One destination is not a choice, and `none` asks for no navigation: in both
+      // cases the shell stands aside and the page frame is the scaffold's own.
+      const single = [LiveShellDestination(id: 'home', label: 'Home', icon: Icons.home)];
+      await tester.pumpWidget(
+        harness(const LiveAppShell(destinations: single, child: Text('room list'))),
+      );
+      await tester.pump();
+      expect(find.byType(macos.SidebarItems), findsNothing);
+      expect(find.byType(TokenAppShell), findsNothing);
+      expect(find.text('room list'), findsOneWidget);
+
+      await tester.pumpWidget(
+        harness(
+          const LiveAppShell(
+            destinations: destinations,
+            placement: LiveShellPlacement.none,
+            child: Text('room list'),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(macos.SidebarItems), findsNothing);
+      expect(find.byType(TokenAppShell), findsNothing);
+      expect(find.text('room list'), findsOneWidget);
+
+      expect(tester.takeException(), isNull);
+      await detach(tester);
+    });
+  });
 }
