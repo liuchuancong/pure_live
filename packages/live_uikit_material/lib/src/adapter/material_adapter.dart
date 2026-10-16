@@ -13,6 +13,7 @@ import 'package:live_uikit_material/src/widgets/material_nav_bar_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_progress_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_scaffold_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_segmented_builder.dart';
+import 'package:live_uikit_material/src/widgets/material_shell_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_slider_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_switch_builder.dart';
 import 'package:live_uikit_material/src/widgets/material_text_field_builder.dart';
@@ -103,4 +104,7 @@ class MaterialLanguageAdapter extends SharedLanguageAdapter {
 
   @override
   Widget appHost(BuildContext context, LanguageHostSpec spec) => MaterialHostBuilder.build(context, spec);
+
+  @override
+  Widget shell(BuildContext context, LanguageShellSpec spec) => MaterialShellBuilder.build(context, spec);
 }

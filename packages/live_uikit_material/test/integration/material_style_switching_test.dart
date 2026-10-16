@@ -25,7 +25,7 @@ const Set<LiveUiControl> nativeControls = {
 };
 
 /// The structural surfaces this adapter owns (§ surfaces).
-const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost};
+const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost, LiveUiSurface.appShell};
 
 /// §16 integration pass for `live_uikit_material`.
 ///

@@ -23,8 +23,9 @@ core Material coverage rather than inventing a new one.
   theme scope (never a nested application shell).
 - Build native Material widgets for: **button, card, text field, switch, checkbox,
   slider, segmented, progress, scaffold, app bar, list row, nav bar**.
-- Own the app-host surface (`mu.MaterialApp`); the shell keeps the shared token
-  renderer for now (§ surfaces).
+- Own both structural surfaces: the app host (`mu.MaterialApp`) and the shell
+  (`mu.NavigationRail`, or the fork's `NavigationBar` when the caller asks for a
+  bottom strip) (§ surfaces).
 - Declare exactly those controls in `materialCapabilities` so the core resolver
   reports a `controlUnsupported` downgrade for the rest (§16/§17).
 - Expose `materialLocalizationsDelegates` (the fork's own Material

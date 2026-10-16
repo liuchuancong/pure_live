@@ -701,4 +701,92 @@ void main() {
       expect(hosted.scaffoldBackgroundColor, isNot(const Color(0xFFFFFFFF)));
     });
   });
+
+  group('the app shell (§ surfaces)', () {
+    const destinations = [
+      LiveShellDestination(id: 'home', label: 'Home', icon: Icons.home),
+      LiveShellDestination(id: 'follow', label: 'Follow', icon: Icons.favorite),
+    ];
+
+    testWidgets('the rail form draws mu.NavigationRail, not the token column', (tester) async {
+      var chosen = '';
+      await withInkPlatform(() async {
+        await tester.pumpWidget(
+          harness(
+            LiveAppShell(
+              destinations: destinations,
+              selectedId: 'home',
+              onSelected: (id) => chosen = id,
+              placement: LiveShellPlacement.rail,
+              trailing: const Text('settings'),
+              child: const Text('room list'),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.byType(mu.NavigationRail), findsOneWidget);
+        expect(find.byType(TokenAppShell), findsNothing);
+        // The router owns the body, and the rail has a real footer slot for the
+        // trailing entry — the one the bottom strip has to drop.
+        expect(find.text('room list'), findsOneWidget);
+        expect(find.text('settings'), findsOneWidget);
+
+        await tester.tap(find.byIcon(Icons.favorite));
+        await tester.pump();
+        expect(chosen, 'follow');
+        expect(tester.takeException(), isNull);
+      });
+    });
+
+    testWidgets('a disabled destination is inert because the fork models it', (tester) async {
+      var chosen = '';
+      await withInkPlatform(() async {
+        await tester.pumpWidget(
+          harness(
+            LiveAppShell(
+              destinations: const [
+                LiveShellDestination(id: 'home', label: 'Home', icon: Icons.home),
+                LiveShellDestination(id: 'follow', label: 'Follow', icon: Icons.favorite, enabled: false),
+              ],
+              selectedId: 'home',
+              onSelected: (id) => chosen = id,
+              placement: LiveShellPlacement.rail,
+              child: const Text('room list'),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final rail = tester.widget<mu.NavigationRail>(find.byType(mu.NavigationRail));
+        expect(rail.destinations[1].disabled, isTrue);
+        await tester.tap(find.byIcon(Icons.favorite));
+        await tester.pump();
+        expect(chosen, '');
+        expect(tester.takeException(), isNull);
+      });
+    });
+
+    testWidgets('a bottom request draws the fork bar under the page', (tester) async {
+      await withInkPlatform(() async {
+        await tester.pumpWidget(
+          harness(
+            LiveAppShell(
+              destinations: destinations,
+              selectedId: 'home',
+              onSelected: (_) {},
+              placement: LiveShellPlacement.bottom,
+              child: const Text('room list'),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.byType(mu.NavigationBar), findsOneWidget);
+        expect(find.byType(mu.NavigationRail), findsNothing);
+        expect(find.text('room list'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    });
+  });
 }
