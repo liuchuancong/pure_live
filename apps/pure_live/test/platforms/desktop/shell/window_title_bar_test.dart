@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:live_uikit/live_uikit.dart';
+import 'package:live_uikit_material/live_uikit_material.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/platforms/desktop/shell/window_title_bar.dart';
 
@@ -69,7 +71,14 @@ final class _Harness extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TranslationProvider(
     child: MaterialApp(
-      home: Scaffold(body: WindowTitleBar(actions: actions)),
+      // The caption strip takes its colours from the design language now, so the
+      // harness has to give it one — a bare `MaterialApp` is precisely the ancestor
+      // it must no longer lean on.
+      home: LiveConfigProvider(
+        config: const UiConfig(language: LiveDesignLanguage.material),
+        registry: const LanguageRegistry(adapters: {LiveDesignLanguage.material: materialAdapter}),
+        child: Scaffold(body: WindowTitleBar(actions: actions)),
+      ),
     ),
   );
 }

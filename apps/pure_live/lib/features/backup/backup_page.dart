@@ -156,7 +156,7 @@ final class _BackupPageState extends ConsumerState<BackupPage> {
               child: Text(_message!, style: TextStyle(color: LiveTheme.of(context).colors.error)),
             ),
           const SizedBox(height: 18),
-          Text(context.t.backup.existing, style: Theme.of(context).textTheme.titleSmall),
+          Text(context.t.backup.existing, style: LiveTheme.of(context).text.title),
           const SizedBox(height: 8),
           if (_backups.isEmpty)
             LiveEmpty(title: context.t.backup.none)

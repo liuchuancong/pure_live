@@ -176,7 +176,7 @@ final class _Row extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleSmall),
+          Text(title, style: LiveTheme.of(context).text.title),
           const SizedBox(height: 10),
           child,
         ],

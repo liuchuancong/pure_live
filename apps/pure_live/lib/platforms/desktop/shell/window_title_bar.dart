@@ -2,6 +2,7 @@ import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
 import 'package:live_shell/live_shell.dart' show ChromeMetrics;
+import 'package:live_uikit/live_uikit.dart';
 
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:window_manager/window_manager.dart' show DragToMoveArea, WindowListener, windowManager;
@@ -123,11 +124,11 @@ final class _WindowTitleBarState extends State<WindowTitleBar> with WindowListen
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final colors = LiveTheme.of(context).colors;
     return SizedBox(
       height: _metrics.titleBarHeight,
       child: Material(
-        color: colors.surface,
+        color: colors.bgContainer,
         child: Row(
           children: [
             Expanded(
@@ -141,7 +142,7 @@ final class _WindowTitleBarState extends State<WindowTitleBar> with WindowListen
                       padding: const EdgeInsetsDirectional.only(start: 12),
                       child: Text(
                         context.t.app.title,
-                        style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
+                        style: TextStyle(fontSize: 12, color: colors.textSecondary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -199,7 +200,7 @@ final class _CaptionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final colors = LiveTheme.of(context).colors;
     return SizedBox(
       width: width,
       height: height,
@@ -208,8 +209,8 @@ final class _CaptionButton extends StatelessWidget {
         waitDuration: const Duration(milliseconds: 600),
         child: InkWell(
           onTap: () => unawaited(onPressed()),
-          hoverColor: destructiveHover ? const Color(0xFFE81123) : colors.onSurface.withValues(alpha: 0.06),
-          child: Icon(icon, size: 16, color: colors.onSurfaceVariant, semanticLabel: tooltip),
+          hoverColor: destructiveHover ? const Color(0xFFE81123) : colors.text.withValues(alpha: 0.06),
+          child: Icon(icon, size: 16, color: colors.textSecondary, semanticLabel: tooltip),
         ),
       ),
     );

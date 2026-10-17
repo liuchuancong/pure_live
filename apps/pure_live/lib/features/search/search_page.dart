@@ -342,7 +342,7 @@ final class AnchorTile extends StatelessWidget {
           child: anchor.avatarUrl == null || anchor.avatarUrl!.isEmpty ? const Icon(Icons.person_outlined) : null,
         ),
         const SizedBox(height: 8),
-        Text(anchor.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyMedium),
+        Text(anchor.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: LiveTheme.of(context).text.body),
       ],
     ),
   );

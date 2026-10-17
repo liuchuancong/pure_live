@@ -104,7 +104,7 @@ final class _AboutPageState extends ConsumerState<AboutPage> {
               children: [
                 const Icon(Icons.live_tv, size: 56),
                 const SizedBox(height: 8),
-                Text(context.t.app.title, style: Theme.of(context).textTheme.titleLarge),
+                Text(context.t.app.title, style: LiveTheme.of(context).text.headline),
                 const SizedBox(height: 4),
                 Text(version, style: LiveTheme.of(context).text.caption),
               ],
@@ -168,7 +168,7 @@ final class _AboutPageState extends ConsumerState<AboutPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('${release.tag}  ${release.name}', style: Theme.of(context).textTheme.titleSmall),
+                    Text('${release.tag}  ${release.name}', style: LiveTheme.of(context).text.title),
                     if (release.publishedAt != null)
                       Text(
                         release.publishedAt!.toLocal().toString().split(' ').first,

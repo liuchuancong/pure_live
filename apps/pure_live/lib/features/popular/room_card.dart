@@ -71,8 +71,8 @@ final class RoomCard extends StatelessWidget {
                   room.anchor?.name ?? '',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall
-                      ?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color?.withAlpha(160)),
+                  style: LiveTheme.of(context).text.bodySmall
+                      .copyWith(color: LiveTheme.of(context).colors.textSecondary),
                 ),
               ],
             ),

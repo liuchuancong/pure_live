@@ -62,7 +62,7 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(context.t.follow.manageGroups, style: Theme.of(context).textTheme.titleMedium),
+                  Text(context.t.follow.manageGroups, style: LiveTheme.of(context).text.title),
                   const SizedBox(height: 12),
                   for (final group in groups)
                     LiveListRow(
@@ -134,7 +134,7 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(context.t.follow.assign, style: Theme.of(context).textTheme.titleMedium),
+                Text(context.t.follow.assign, style: LiveTheme.of(context).text.title),
                 const SizedBox(height: 8),
                 for (final group in _repository.groups)
                   LiveCheckbox(

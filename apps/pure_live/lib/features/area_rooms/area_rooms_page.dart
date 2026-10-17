@@ -271,7 +271,7 @@ final class _PagedFeedState extends ConsumerState<_PagedFeed> {
     ];
     return Container(
       decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
+        border: Border(top: BorderSide(color: LiveTheme.of(context).colors.border)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: Row(

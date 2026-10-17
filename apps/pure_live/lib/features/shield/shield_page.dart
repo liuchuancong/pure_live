@@ -135,7 +135,7 @@ final class _ShieldPageState extends ConsumerState<ShieldPage> {
                   children: [
                     Row(
                       children: [
-                        Expanded(child: Text(_titleOf(kind), style: Theme.of(context).textTheme.titleSmall)),
+                        Expanded(child: Text(_titleOf(kind), style: LiveTheme.of(context).text.title)),
                         LiveIconButton(
                           tooltip: context.t.shield.add,
                           icon: Icons.add,

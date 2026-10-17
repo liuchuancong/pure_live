@@ -22,7 +22,7 @@ final class MarkdownText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final text = LiveTheme.of(context).text;
     final lines = data.replaceAll('\r\n', '\n').split('\n');
     final widgets = <Widget>[];
     final paragraph = <String>[];
@@ -59,7 +59,7 @@ final class MarkdownText extends StatelessWidget {
             padding: const EdgeInsets.only(top: 10, bottom: 4),
             child: Text(
               _inline(heading.group(2) ?? ''),
-              style: theme.textTheme.titleSmall?.copyWith(
+              style: text.subtitle.copyWith(
                 fontWeight: FontWeight.w700,
                 fontSize: 16 - heading.group(1)!.length.toDouble(),
               ),
