@@ -42,7 +42,7 @@ import 'package:live_uikit_wind/src/widgets/wind_toast_builder.dart';
 /// `PageView` inside the library's own column, since core keeps the route, the
 /// barrier and the transition for itself.
 /// Each builder says which it is. No business state here.
-class WindLanguageAdapter extends SharedLanguageAdapter {
+class WindLanguageAdapter implements LanguageAdapter {
   /// The Wind adapter.
   const new();
 
@@ -64,7 +64,7 @@ class WindLanguageAdapter extends SharedLanguageAdapter {
   Widget wrap(BuildContext context, DesignToken token, Widget child) => _theme.wrap(context, token, child);
 
   @override
-  Widget button(BuildContext context, LanguageButtonSpec spec) => WindButtonBuilder.build(context, spec, this);
+  Widget button(BuildContext context, LanguageButtonSpec spec) => WindButtonBuilder.build(context, spec);
 
   @override
   Widget card(BuildContext context, LanguageCardSpec spec) => WindCardBuilder.build(context, spec);
@@ -76,7 +76,7 @@ class WindLanguageAdapter extends SharedLanguageAdapter {
   Widget switchWidget(BuildContext context, LanguageSwitchSpec spec) => WindSwitchBuilder.build(context, spec);
 
   @override
-  Widget checkbox(BuildContext context, LanguageCheckboxSpec spec) => WindCheckboxBuilder.build(context, spec, this);
+  Widget checkbox(BuildContext context, LanguageCheckboxSpec spec) => WindCheckboxBuilder.build(context, spec);
 
   @override
   Widget select<T>(BuildContext context, LanguageSelectSpec<T> spec) => WindSelectBuilder.build<T>(context, spec);

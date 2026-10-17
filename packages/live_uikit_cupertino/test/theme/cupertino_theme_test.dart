@@ -40,10 +40,7 @@ void main() {
 
     Widget harness(UiConfig config) => LiveConfigProvider(
       config: config,
-      registry: const LanguageRegistry(
-        adapters: {LiveDesignLanguage.cupertino: cupertinoAdapter},
-        fallback: SharedLanguageAdapter(),
-      ),
+      registry: const LanguageRegistry(adapters: {LiveDesignLanguage.cupertino: cupertinoAdapter}),
       child: MaterialApp(
         localizationsDelegates: const [...liveLocalizationsDelegates, ...cupertinoLocalizationsDelegates],
         supportedLocales: const [Locale('en')],

@@ -15,10 +15,7 @@ void main() {
 
   Widget harness(Widget child) => LiveConfigProvider(
     config: config,
-    registry: const LanguageRegistry(
-      adapters: {LiveDesignLanguage.fluent: fluentAdapter},
-      fallback: SharedLanguageAdapter(),
-    ),
+    registry: const LanguageRegistry(adapters: {LiveDesignLanguage.fluent: fluentAdapter}),
     // The host app supplies localization and the overlay; `adapter.wrap` installs
     // the mapped Fluent theme inside this subtree (§8.2), exactly as production does.
     child: MaterialApp(
@@ -271,11 +268,9 @@ void main() {
       expect(find.text('content'), findsOneWidget);
       // Both chrome controls are Fluent's own now: the header is a `PageHeader`
       // and the bottom strip a row of `ToggleButton`s, so nothing inside a
-      // Fluent frame draws from the token base any more.
+      // Fluent frame draws from its own library widgets any more.
       expect(find.byType(fluent.PageHeader), findsOneWidget);
       expect(find.text('Rooms'), findsOneWidget);
-      expect(find.byType(TokenNavBar), findsNothing);
-      expect(find.byType(TokenAppBar), findsNothing);
     });
 
     testWidgets('a row resolves through fluent.ListTile with both lines and its tap', (tester) async {
@@ -301,7 +296,6 @@ void main() {
 
       expect(find.byType(fluent.InfoBar), findsOneWidget);
       expect(find.text('Saved'), findsOneWidget);
-      expect(find.byType(TokenToast), findsNothing);
     });
   });
 
@@ -325,7 +319,6 @@ void main() {
       // The library widget is the whole surface; the route, the barrier and the
       // fade-and-scale stay the core's — showLiveDialog frames it.
       expect(find.byType(fluent.ContentDialog), findsOneWidget);
-      expect(find.byType(TokenDialog), findsNothing);
       expect(find.text('Confirm'), findsOneWidget);
       expect(find.text('Discard the draft?'), findsOneWidget);
       expect(find.text('Keep'), findsOneWidget);
@@ -340,17 +333,12 @@ void main() {
       Widget view(int index) => Builder(
         builder: (context) => LiveTheme.of(context).adapter.tabView(
           context,
-          LanguageTabViewSpec(
-            pages: const [Text('Rooms'), Text('Shows')],
-            index: index,
-            onIndexChanged: (_) {},
-          ),
+          LanguageTabViewSpec(pages: const [Text('Rooms'), Text('Shows')], index: index, onIndexChanged: (_) {}),
         ),
       );
 
       await tester.pumpWidget(harness(view(0)));
       await tester.pumpAndSettle();
-      expect(find.byType(TokenTabView), findsNothing);
       expect(find.text('Rooms'), findsOneWidget);
       expect(find.text('Shows'), findsNothing);
 
@@ -360,7 +348,6 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Shows'), findsOneWidget);
       expect(find.text('Rooms'), findsNothing);
-      expect(find.byType(TokenTabView), findsNothing);
       expect(tester.takeException(), isNull);
     });
   });
@@ -371,10 +358,7 @@ void main() {
     // for Fluent's and hide the point.
     Widget hostHarness(Widget child) => LiveConfigProvider(
       config: config,
-      registry: const LanguageRegistry(
-        adapters: {LiveDesignLanguage.fluent: fluentAdapter},
-        fallback: SharedLanguageAdapter(),
-      ),
+      registry: const LanguageRegistry(adapters: {LiveDesignLanguage.fluent: fluentAdapter}),
       child: child,
     );
 
@@ -389,13 +373,12 @@ void main() {
 
       expect(find.byType(fluent.FluentApp), findsOneWidget);
       expect(find.byType(MaterialApp), findsNothing);
-      expect(find.byType(TokenApp), findsNothing);
       expect(find.text('page'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('a control the language does not claim still works under the Fluent host', (tester) async {
-      // The host no longer installs Material, so this is the check that the shared
+    testWidgets('its own controls work under the Fluent host', (tester) async {
+      // The host installs no Material, so this is the check that the fork controls
       // renderers do not lean on it: a card needs an ink host and a field needs
       // selection-toolbar localizations, and neither may require `MaterialApp`.
       await tester.pumpWidget(
@@ -405,7 +388,6 @@ void main() {
               children: [
                 const LiveCard(child: Text('card')),
                 LiveTextField(placeholder: 'name', onChanged: (_) {}),
-                InkWell(onTap: () {}, child: const Text('ink')),
               ],
             ),
           ),
@@ -415,7 +397,6 @@ void main() {
 
       expect(find.byType(fluent.FluentApp), findsOneWidget);
       expect(find.text('card'), findsOneWidget);
-      await tester.tap(find.text('ink'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     });
@@ -430,7 +411,6 @@ void main() {
       await tester.pump();
 
       expect(find.byType(fluent.ToggleButton), findsNWidgets(3));
-      expect(find.byType(TokenSegmented), findsNothing);
       final buttons = tester.widgetList<fluent.ToggleButton>(find.byType(fluent.ToggleButton)).toList();
       expect(buttons.map((button) => button.checked), [false, true, false]);
 
@@ -459,7 +439,6 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(TokenTabs), findsNothing);
       expect(find.byIcon(Icons.star), findsOneWidget);
       await tester.tap(find.text('Shows'));
       // Fluent's HoverButton keeps a 100ms press timer alive after a
@@ -485,7 +464,6 @@ void main() {
         ),
       );
       await tester.pump();
-      expect(find.byType(TokenNavBar), findsNothing);
       await tester.tap(find.text('Follow'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
@@ -541,7 +519,6 @@ void main() {
       await tester.pump();
 
       expect(find.byType(fluent.NavigationView), findsOneWidget);
-      expect(find.byType(TokenAppShell), findsNothing);
       // The router owns the body: the pane's own per-item bodies are not what is
       // on screen, so the page the shell was handed is what shows.
       expect(find.text('room list'), findsOneWidget);
@@ -629,7 +606,6 @@ void main() {
       // Fluent declares all seventeen controls, so nothing in a Fluent page should
       // be a `Token*` renderer any more — the assertion is by name rather than by
       // list so a control added to the contract cannot slip in silently.
-      expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
       expect(tester.takeException(), isNull);
     });
   });

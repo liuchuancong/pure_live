@@ -6,7 +6,7 @@ import 'package:live_uikit_forui/live_uikit_forui.dart';
 ///
 /// The capability set must list exactly the controls `ForuiLanguageAdapter` overrides
 /// with `forui`'s own widgets; the resolver turns every other control into a
-/// `controlUnsupported` downgrade, so drift between the declaration and the overrides is
+/// a capability exception, so drift between the declaration and the overrides is
 /// caught here before it ships (§17). This language declares the whole contract, so the
 /// drift this suite guards is now a control that silently *stops* being native.
 void main() {
@@ -77,31 +77,27 @@ void main() {
   });
 
   group('ForUI resolution through the core resolver (§15.3)', () {
-    const registry = LanguageRegistry(adapters: {LiveDesignLanguage.forui: adapter}, fallback: SharedLanguageAdapter());
+    const registry = LanguageRegistry(adapters: {LiveDesignLanguage.forui: adapter});
     const resolver = LiveUiResolver(registry: registry);
 
     test('a registered language resolves to the native adapter', () {
-      expect(resolver.resolve(LiveDesignLanguage.forui).implementation.kind, LiveImplementationKind.adapterNative);
+      expect(resolver.resolve(LiveDesignLanguage.forui).id, 'forui');
     });
 
-    test('a declared control resolves native with no diagnostic', () {
-      final result = resolver.resolveControl(LiveDesignLanguage.forui, LiveUiControl.button);
-      expect(result.implementation.kind, LiveImplementationKind.adapterNative);
-      expect(result.diagnostic, isNull);
+    test('a registered language resolves to this adapter', () {
+      expect(resolver.resolve(LiveDesignLanguage.forui).id, 'forui');
     });
 
-    test('every control of the contract resolves native, with no downgrade', () {
+    test('every control of the contract resolves to this adapter, with no diagnostic', () {
+      final adapter = resolver.resolve(LiveDesignLanguage.forui);
       for (final control in LiveUiControl.values) {
-        final result = resolver.resolveControl(LiveDesignLanguage.forui, control);
-        expect(result.implementation.kind, LiveImplementationKind.adapterNative, reason: '$control');
-        expect(result.diagnostic, isNull, reason: '$control');
+        expect(adapter.capabilities.supports(control), isTrue, reason: '$control');
+        resolver.requireControl(LiveDesignLanguage.forui, control);
       }
     });
 
-    test('a language this build did not register still resolves shared, and says so', () {
-      final result = resolver.resolveControl(LiveDesignLanguage.glass, LiveUiControl.segmented);
-      expect(result.implementation.kind, LiveImplementationKind.shared);
-      expect(result.diagnostic?.code, LiveUiDiagnosticCode.adapterMissing);
+    test('a language this build did not register raises instead of degrading', () {
+      expect(() => resolver.resolve(LiveDesignLanguage.fluent), throwsA(isA<LiveUiResolutionException>()));
     });
   });
 

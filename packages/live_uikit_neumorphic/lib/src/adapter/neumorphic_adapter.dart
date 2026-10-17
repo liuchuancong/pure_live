@@ -61,7 +61,7 @@ import 'package:live_uikit_neumorphic/src/widgets/neumorphic_toast_builder.dart'
 /// library-themed `WidgetsApp` (`neumorphic_surfaces.dart`), and the shell is the
 /// column this package composes out of the same faces, because the library has no
 /// rail and its one navigation widget cannot carry the contract (§ surfaces).
-class NeumorphicLanguageAdapter extends SharedLanguageAdapter {
+class NeumorphicLanguageAdapter implements LanguageAdapter {
   /// The Neumorphic adapter.
   const new();
 
@@ -83,7 +83,7 @@ class NeumorphicLanguageAdapter extends SharedLanguageAdapter {
   Widget wrap(BuildContext context, DesignToken token, Widget child) => _theme.wrap(context, token, child);
 
   @override
-  Widget button(BuildContext context, LanguageButtonSpec spec) => NeumorphicButtonBuilder.build(context, spec, this);
+  Widget button(BuildContext context, LanguageButtonSpec spec) => NeumorphicButtonBuilder.build(context, spec);
 
   @override
   Widget card(BuildContext context, LanguageCardSpec spec) => NeumorphicCardBuilder.build(context, spec);
@@ -95,8 +95,7 @@ class NeumorphicLanguageAdapter extends SharedLanguageAdapter {
   Widget switchWidget(BuildContext context, LanguageSwitchSpec spec) => NeumorphicSwitchBuilder.build(context, spec);
 
   @override
-  Widget checkbox(BuildContext context, LanguageCheckboxSpec spec) =>
-      NeumorphicCheckboxBuilder.build(context, spec, this);
+  Widget checkbox(BuildContext context, LanguageCheckboxSpec spec) => NeumorphicCheckboxBuilder.build(context, spec);
 
   @override
   Widget slider(BuildContext context, LanguageSliderSpec spec) => NeumorphicSliderBuilder.build(context, spec);

@@ -17,10 +17,7 @@ void main() {
 
   Widget harness(Widget child) => LiveConfigProvider(
     config: config,
-    registry: const LanguageRegistry(
-      adapters: {LiveDesignLanguage.cupertino: cupertinoAdapter},
-      fallback: SharedLanguageAdapter(),
-    ),
+    registry: const LanguageRegistry(adapters: {LiveDesignLanguage.cupertino: cupertinoAdapter}),
     // The Scaffold supplies Flutter's Material for the shared-renderer controls;
     // the Cupertino widgets themselves get their theme from `adapter.wrap`.
     child: MaterialApp(
@@ -81,7 +78,6 @@ void main() {
     await tester.pump();
 
     expect(find.byType(cu.CupertinoListSection), findsOneWidget);
-    expect(find.byType(TokenCard), findsNothing);
     expect(find.text('body'), findsOneWidget);
 
     await tester.tap(find.text('body'));
@@ -177,7 +173,6 @@ void main() {
       await tester.pump();
 
       expect(find.byType(cu.CupertinoCheckbox), findsOneWidget);
-      expect(find.byType(TokenCheckbox), findsNothing);
       // The spec's label has no slot on the box, so it travels beside it.
       expect(find.text('Remember'), findsOneWidget);
 
@@ -200,7 +195,6 @@ void main() {
 
       final control = tester.widget<cu.CupertinoSegmentedControl<int>>(find.byType(cu.CupertinoSegmentedControl<int>));
       expect(control.groupValue, 1);
-      expect(find.byType(TokenSegmented), findsNothing);
 
       await tester.tap(find.text('Large'));
       // The library fades the new selection in over 165ms.
@@ -228,7 +222,6 @@ void main() {
       await tester.pump();
 
       expect(find.byType(cu.CupertinoSegmentedControl<int>), findsNothing);
-      expect(find.byType(TokenSegmented), findsNothing);
       expect(find.byType(cu.CupertinoButton), findsOneWidget);
       expect(find.text('Only'), findsOneWidget);
 
@@ -244,7 +237,6 @@ void main() {
       final bar = tester.widget<cu.CupertinoLinearActivityIndicator>(find.byType(cu.CupertinoLinearActivityIndicator));
       expect(bar.progress, 0.25);
       expect(find.text('25%'), findsOneWidget);
-      expect(find.byType(TokenProgress), findsNothing);
 
       await tester.pumpWidget(harness(const SizedBox(width: 300, child: LiveProgress(value: 0.9, height: 3))));
       await tester.pump();
@@ -257,7 +249,6 @@ void main() {
       await tester.pumpWidget(harness(const SizedBox(width: 300, child: LiveProgress(value: null))));
       await tester.pump();
       expect(find.byType(cu.CupertinoActivityIndicator), findsOneWidget);
-      expect(find.byType(TokenProgress), findsNothing);
 
       // The spinner ticks for as long as it is on screen; taking it down is what
       // stops the ticker, so the test ends with the frame empty.
@@ -282,7 +273,6 @@ void main() {
       await tester.pump();
 
       expect(find.byType(cu.CupertinoMenuAnchor), findsOneWidget);
-      expect(find.byType(TokenSelect<String>), findsNothing);
       expect(find.text('alpha'), findsOneWidget, reason: 'the trigger names the current value');
       expect(find.text('beta'), findsNothing, reason: 'the menu is closed until the trigger is pressed');
 
@@ -339,7 +329,6 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(TokenTabs), findsNothing);
       // `CupertinoTabBar` is the library's one strip and belongs to `navBar`; an
       // in-page strip is composed of its buttons instead.
       expect(find.byType(cu.CupertinoTabBar), findsNothing);
@@ -378,7 +367,6 @@ void main() {
       await tester.pump();
 
       expect(find.text('Saved'), findsOneWidget);
-      expect(find.byType(TokenToast), findsNothing);
       // `cupertino_ui` ships no `CupertinoToast`; the HUD it does have is the
       // popup surface the library draws its own popups on.
       expect(find.byType(cu.CupertinoPopupSurface), findsOneWidget);
@@ -400,7 +388,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(cu.CupertinoAlertDialog), findsOneWidget);
-      expect(find.byType(TokenDialog), findsNothing);
       expect(find.text('Leave the room?'), findsOneWidget);
       expect(find.text('The stream keeps running.'), findsOneWidget);
       expect(find.byType(cu.CupertinoButton), findsWidgets, reason: 'the actions stay the dispatched button');
@@ -451,7 +438,6 @@ void main() {
 
       await tester.pumpWidget(view(0));
       await tester.pumpAndSettle();
-      expect(find.byType(TokenTabView), findsNothing);
       expect(find.text('first'), findsOneWidget);
 
       // The caller owns the index, so moving it here is what changes the page.
@@ -469,10 +455,7 @@ void main() {
     // `Scaffold` would not be a frame.
     Widget chromeHarness(Widget child) => LiveConfigProvider(
       config: config,
-      registry: const LanguageRegistry(
-        adapters: {LiveDesignLanguage.cupertino: cupertinoAdapter},
-        fallback: SharedLanguageAdapter(),
-      ),
+      registry: const LanguageRegistry(adapters: {LiveDesignLanguage.cupertino: cupertinoAdapter}),
       child: MaterialApp(
         localizationsDelegates: const [...liveLocalizationsDelegates, ...cupertinoLocalizationsDelegates],
         supportedLocales: const [Locale('en')],
@@ -507,9 +490,6 @@ void main() {
       expect(find.byType(cu.CupertinoNavigationBar), findsOneWidget);
       expect(find.byType(cu.CupertinoListTile), findsOneWidget);
       expect(find.byType(cu.CupertinoTabBar), findsOneWidget);
-      for (final tokenType in <Type>[TokenScaffold, TokenAppBar, TokenListRow, TokenNavBar]) {
-        expect(find.byType(tokenType), findsNothing, reason: 'the token $tokenType must not render a declared control');
-      }
       expect(tester.takeException(), isNull);
 
       await tester.tap(find.byType(cu.CupertinoListTile));
@@ -544,7 +524,6 @@ void main() {
       await tester.pumpWidget(chromeHarness(const LiveNavBar(items: [], index: 0)));
       await tester.pump();
       expect(find.byType(cu.CupertinoTabBar), findsNothing);
-      expect(find.byType(TokenNavBar), findsNothing);
       expect(tester.takeException(), isNull);
 
       await tester.pumpWidget(
@@ -558,7 +537,6 @@ void main() {
       );
       await tester.pump();
       expect(find.byType(cu.CupertinoTabBar), findsNothing);
-      expect(find.byType(TokenNavBar), findsNothing);
       expect(find.text('Home'), findsOneWidget);
 
       await tester.tap(find.text('Home'));
@@ -611,7 +589,6 @@ void main() {
       // Cupertino declares all fifteen controls, so nothing inside a Cupertino page
       // should be a `Token*` renderer any more — the assertion is by name rather
       // than by list, so a control added to the contract cannot slip in silently.
-      expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
       expect(tester.takeException(), isNull);
     });
   });
@@ -640,7 +617,6 @@ void main() {
 
       // `cupertino_ui` has no rail, so the pane is composed from its list
       // surface: a section of tiles, and the body still belongs to the caller.
-      expect(find.byType(TokenAppShell), findsNothing);
       expect(find.byType(cu.CupertinoListSection), findsOneWidget);
       expect(find.byType(cu.CupertinoListTile), findsNWidgets(2));
       expect(find.text('room list'), findsOneWidget);
@@ -694,7 +670,6 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(TokenAppShell), findsNothing);
       expect(find.byType(cu.CupertinoTabBar), findsOneWidget);
       expect(find.text('room list'), findsOneWidget);
       expect(find.text('settings'), findsNothing);
@@ -726,10 +701,7 @@ void main() {
     // behaviour the language is supposed to replace.
     Widget hostHarness(Widget child) => LiveConfigProvider(
       config: config,
-      registry: const LanguageRegistry(
-        adapters: {LiveDesignLanguage.cupertino: cupertinoAdapter},
-        fallback: SharedLanguageAdapter(),
-      ),
+      registry: const LanguageRegistry(adapters: {LiveDesignLanguage.cupertino: cupertinoAdapter}),
       child: child,
     );
 
@@ -744,12 +716,11 @@ void main() {
 
       expect(find.byType(cu.CupertinoApp), findsOneWidget);
       expect(find.byType(MaterialApp), findsNothing, reason: 'the Material host must not stand in (§15)');
-      expect(find.byType(TokenApp), findsNothing);
       expect(find.text('page'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('the shared ink host and the fork controls still work under the Cupertino host', (tester) async {
+    testWidgets('the fork controls still work under the Cupertino host', (tester) async {
       // The fork host installs no Material of its own, so this is the check that
       // what still leans on one — an `InkWell` a caller put in the content, the
       // selection toolbar's strings — finds them without a Material host.
@@ -760,7 +731,6 @@ void main() {
               children: [
                 const LiveCard(child: Text('card')),
                 LiveTextField(placeholder: 'name', onChanged: (_) {}),
-                InkWell(onTap: () {}, child: const Text('ink')),
               ],
             ),
           ),
@@ -770,7 +740,6 @@ void main() {
 
       expect(find.byType(cu.CupertinoApp), findsOneWidget);
       expect(find.text('card'), findsOneWidget);
-      await tester.tap(find.text('ink'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     });

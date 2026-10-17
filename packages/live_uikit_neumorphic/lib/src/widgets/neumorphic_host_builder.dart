@@ -9,10 +9,9 @@ import 'package:live_uikit_neumorphic/src/theme/neumorphic_theme_builder.dart';
 /// theme (`NeuTheme`) plus a set of components, and nothing in it owns a route,
 /// a title or a locale — so the host is Flutter's own `WidgetsApp` with the
 /// library's theme installed above the routed tree. That is still a real host
-/// and not a fallback: the shared base hosts everything in a `MaterialApp`,
-/// which hands the page transitions, the scroll physics and the dialog barrier
+/// and not a stand-in: a `MaterialApp` host would hand the page transitions, the scroll physics and the dialog barrier
 /// to Material no matter which controls are drawn above them, and `WidgetsApp`
-/// hands none of that to Material either. A Neumorphic route now slides, scrolls
+/// hands none of that to Material. A Neumorphic route now slides, scrolls
 /// and dims its barrier on the host's own terms instead of Material's, and no
 /// `MaterialApp` stands in.
 ///

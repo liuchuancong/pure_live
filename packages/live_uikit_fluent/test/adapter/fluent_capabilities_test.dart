@@ -61,30 +61,23 @@ void main() {
   });
 
   group('Fluent resolution through the core resolver (§15.3)', () {
-    const registry = LanguageRegistry(
-      adapters: {LiveDesignLanguage.fluent: adapter},
-      fallback: SharedLanguageAdapter(),
-    );
+    const registry = LanguageRegistry(adapters: {LiveDesignLanguage.fluent: adapter});
     const resolver = LiveUiResolver(registry: registry);
 
-    test('a declared control resolves native with no diagnostic', () {
-      final result = resolver.resolveControl(LiveDesignLanguage.fluent, LiveUiControl.button);
-      expect(result.implementation.kind, LiveImplementationKind.adapterNative);
-      expect(result.diagnostic, isNull);
+    test('a registered language resolves to this adapter', () {
+      expect(resolver.resolve(LiveDesignLanguage.fluent).id, 'fluent');
     });
 
-    test('every control of the contract resolves native for Fluent', () {
+    test('every control of the contract resolves to this adapter, with no diagnostic', () {
+      final adapter = resolver.resolve(LiveDesignLanguage.fluent);
       for (final control in LiveUiControl.values) {
-        final result = resolver.resolveControl(LiveDesignLanguage.fluent, control);
-        expect(result.implementation.kind, LiveImplementationKind.adapterNative, reason: '$control');
-        expect(result.diagnostic, isNull, reason: '$control');
+        expect(adapter.capabilities.supports(control), isTrue, reason: '$control');
+        resolver.requireControl(LiveDesignLanguage.fluent, control);
       }
     });
 
-    test('a language this build did not register still resolves shared, and says so', () {
-      final result = resolver.resolveControl(LiveDesignLanguage.neumorphic, LiveUiControl.segmented);
-      expect(result.implementation.kind, LiveImplementationKind.shared);
-      expect(result.diagnostic?.code, LiveUiDiagnosticCode.adapterMissing);
+    test('a language this build did not register raises instead of degrading', () {
+      expect(() => resolver.resolve(LiveDesignLanguage.glass), throwsA(isA<LiveUiResolutionException>()));
     });
   });
 }

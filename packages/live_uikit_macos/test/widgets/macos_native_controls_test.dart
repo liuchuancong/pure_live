@@ -26,10 +26,7 @@ void main() {
 
   Widget harness(Widget child) => LiveConfigProvider(
     config: config,
-    registry: const LanguageRegistry(
-      adapters: {LiveDesignLanguage.macos: macosAdapter},
-      fallback: SharedLanguageAdapter(),
-    ),
+    registry: const LanguageRegistry(adapters: {LiveDesignLanguage.macos: macosAdapter}),
     child: MaterialApp(
       localizationsDelegates: liveLocalizationsDelegates,
       supportedLocales: const [Locale('en')],
@@ -129,7 +126,6 @@ void main() {
       await tester.pump();
       expect(find.byType(macos.MacosSlider), findsNothing);
       expect(find.byType(macos.ProgressBar), findsOneWidget, reason: 'the library rail stands under the thumb');
-      expect(find.byType(TokenSlider), findsNothing);
       expect(find.byType(LiveSlider), findsOneWidget);
 
       await tester.dragFrom(tester.getCenter(find.byType(LiveSlider)), const Offset(60, 0));
@@ -141,7 +137,6 @@ void main() {
       await tester.pump();
       expect(find.byType(macos.MacosSlider), findsNothing);
       expect(find.byType(macos.ProgressBar), findsOneWidget);
-      expect(find.byType(TokenSlider), findsNothing);
       expect(tester.takeException(), isNull);
 
       await tester.pumpWidget(harness(SizedBox(width: 300, child: LiveSlider(value: 0.5, onChanged: (_) {}))));
@@ -258,7 +253,6 @@ void main() {
       await tester.pump();
 
       expect(find.byType(macos.MacosSheet), findsOneWidget);
-      expect(find.byType(TokenCard), findsNothing);
       expect(find.text('body'), findsOneWidget);
 
       await tester.tap(find.text('body'));
@@ -273,7 +267,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(macos.MacosSwitch), findsOneWidget);
-      expect(find.byType(TokenSwitch), findsNothing);
       expect(tester.widget<macos.MacosSwitch>(find.byType(macos.MacosSwitch)).value, isFalse);
 
       await tester.tap(find.byType(macos.MacosSwitch));
@@ -298,7 +291,6 @@ void main() {
       await tester.pump();
 
       expect(find.byType(macos.MacosSegmentedControl), findsOneWidget);
-      expect(find.byType(TokenSegmented), findsNothing);
       expect(tester.widget<macos.MacosSegmentedControl>(find.byType(macos.MacosSegmentedControl)).tabs.length, 3);
 
       await tester.tap(find.text('Large'));
@@ -343,7 +335,6 @@ void main() {
       await tester.pump();
 
       final bar = tester.widget<macos.ProgressBar>(find.byType(macos.ProgressBar));
-      expect(find.byType(TokenProgress), findsNothing);
       // The contract is a 0..1 fraction, the library takes a percentage.
       expect(bar.value, 60);
       expect(bar.height, 6);
@@ -356,7 +347,6 @@ void main() {
 
       expect(find.byType(macos.ProgressCircle), findsOneWidget);
       expect(find.byType(macos.ProgressBar), findsNothing);
-      expect(find.byType(TokenProgress), findsNothing);
       expect(tester.widget<macos.ProgressCircle>(find.byType(macos.ProgressCircle)).value, isNull);
       expect(tester.takeException(), isNull);
 
@@ -384,7 +374,6 @@ void main() {
       await tester.pump();
 
       expect(find.byType(macos.MacosPopupButton<String>), findsOneWidget);
-      expect(find.byType(TokenSelect<String>), findsNothing);
       expect(find.text('Pick one'), findsOneWidget, reason: 'the placeholder rides in the button hint slot');
 
       await tester.tap(find.byType(macos.MacosPopupButton<String>));
@@ -416,7 +405,6 @@ void main() {
       await tester.pump();
 
       expect(find.byType(macos.MacosPopupButton<String>), findsOneWidget);
-      expect(find.byType(TokenSelect<String>), findsNothing);
       expect(find.text('Pick one'), findsOneWidget, reason: 'an off-list value is not a selection');
       expect(find.text('missing'), findsNothing);
       final button = tester.widget<macos.MacosPopupButton<String>>(find.byType(macos.MacosPopupButton<String>));
@@ -441,7 +429,6 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(TokenTabs), findsNothing);
       expect(find.byType(macos.MacosTab), findsNWidgets(2));
       // The cell has no icon slot, which is why the strip is composed: the glyph
       // still has to reach the screen.
@@ -470,7 +457,6 @@ void main() {
 
       await tester.pumpWidget(harness(SizedBox(width: 320, child: bar())));
       await tester.pump();
-      expect(find.byType(TokenNavBar), findsNothing);
       expect(macosGlyph(Icons.favorite), findsOneWidget);
 
       await tester.tap(find.text('Follow'));
@@ -492,7 +478,6 @@ void main() {
       await tester.pump();
 
       expect(find.text('Saved'), findsOneWidget);
-      expect(find.byType(TokenToast), findsNothing);
       // The panel is the library's own; `showMacosSheet` would need a route, and
       // the core owns the overlay, the fade and the timer, so the widget alone is
       // what this slot can return.
@@ -537,7 +522,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(macos.MacosAlertDialog), findsOneWidget);
-      expect(find.byType(TokenDialog), findsNothing);
       expect(find.text('Playback stops.'), findsOneWidget);
       // The library draws `secondaryButton` then `primaryButton`, which is the
       // spec's order and macOS's convention: the default action on the right.
@@ -566,7 +550,6 @@ void main() {
 
       expect(find.byType(macos.MacosAlertDialog), findsNothing);
       expect(find.byType(macos.MacosSheet), findsOneWidget);
-      expect(find.byType(TokenDialog), findsNothing);
       expect(find.text('Three ways out.'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
@@ -577,7 +560,7 @@ void main() {
       Widget view(int index) => SizedBox(
         width: 320,
         height: 160,
-        // The contract has no `LiveTabView` widget yet, so this is the seam the
+        // The contract has no `LiveTabView` widget yet, so this is its own label builder the
         // core's own tab view dispatch would use.
         child: Builder(
           builder: (context) => LiveTheme.of(context).adapter.tabView(
@@ -590,7 +573,6 @@ void main() {
       await tester.pumpWidget(harness(view(0)));
       await tester.pump();
 
-      expect(find.byType(TokenTabView), findsNothing);
       expect(find.text('first page'), findsOneWidget);
       expect(find.text('second page'), findsNothing, reason: 'a macOS pane shows one body at a time');
 
@@ -655,7 +637,6 @@ void main() {
       // be a `Token*` renderer any more — the assertion is by class-name prefix
       // rather than by list, so a control added to the contract cannot slip a
       // shared renderer in silently.
-      expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
       expect(find.byType(macos.MacosScaffold), findsOneWidget);
       expect(find.byType(macos.ToolBar), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -676,10 +657,7 @@ void main() {
     // therefore asserted here as well as at the resolver.
     Widget hostHarness(Widget child) => LiveConfigProvider(
       config: config,
-      registry: const LanguageRegistry(
-        adapters: {LiveDesignLanguage.macos: macosAdapter},
-        fallback: SharedLanguageAdapter(),
-      ),
+      registry: const LanguageRegistry(adapters: {LiveDesignLanguage.macos: macosAdapter}),
       child: child,
     );
 
@@ -698,7 +676,6 @@ void main() {
 
       expect(find.byType(macos.MacosApp), findsOneWidget);
       expect(find.byType(MaterialApp), findsNothing, reason: 'the Material host must not stand in (§15)');
-      expect(find.byType(TokenApp), findsNothing);
       expect(find.text('page'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
@@ -749,7 +726,6 @@ void main() {
       expect(find.byType(macos.SidebarItems), findsOneWidget);
       expect(find.text('Home'), findsOneWidget);
       expect(find.text('Follow'), findsOneWidget);
-      expect(find.byType(TokenAppShell), findsNothing);
       // The router keeps the body, and the footer sits under the list because
       // `SidebarItems` has no slot for it.
       expect(find.text('room list'), findsOneWidget);
@@ -844,7 +820,6 @@ void main() {
       await tester.pumpWidget(harness(const LiveAppShell(destinations: single, child: Text('room list'))));
       await tester.pump();
       expect(find.byType(macos.SidebarItems), findsNothing);
-      expect(find.byType(TokenAppShell), findsNothing);
       expect(find.text('room list'), findsOneWidget);
 
       await tester.pumpWidget(
@@ -854,7 +829,6 @@ void main() {
       );
       await tester.pump();
       expect(find.byType(macos.SidebarItems), findsNothing);
-      expect(find.byType(TokenAppShell), findsNothing);
       expect(find.text('room list'), findsOneWidget);
 
       expect(tester.takeException(), isNull);

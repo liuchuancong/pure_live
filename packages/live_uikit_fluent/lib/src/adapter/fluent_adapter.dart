@@ -30,7 +30,7 @@ import 'package:live_uikit_fluent/src/widgets/fluent_toast_builder.dart';
 /// builder, and the declared [capabilities] to `fluent_capabilities.dart`. A
 /// control the adapter does not override still renders through the shared token
 /// base it extends, so nothing disappears — it just is not Fluent-native (§15.3).
-class FluentLanguageAdapter extends SharedLanguageAdapter {
+class FluentLanguageAdapter implements LanguageAdapter {
   /// The Fluent adapter.
   const new();
 
@@ -55,7 +55,7 @@ class FluentLanguageAdapter extends SharedLanguageAdapter {
   Widget wrap(BuildContext context, DesignToken token, Widget child) => _theme.wrap(context, token, child);
 
   @override
-  Widget button(BuildContext context, LanguageButtonSpec spec) => FluentButtonBuilder.build(context, spec, this);
+  Widget button(BuildContext context, LanguageButtonSpec spec) => FluentButtonBuilder.build(context, spec);
 
   @override
   Widget card(BuildContext context, LanguageCardSpec spec) => FluentCardBuilder.build(context, spec);
@@ -67,7 +67,7 @@ class FluentLanguageAdapter extends SharedLanguageAdapter {
   Widget switchWidget(BuildContext context, LanguageSwitchSpec spec) => FluentSwitchBuilder.build(context, spec);
 
   @override
-  Widget checkbox(BuildContext context, LanguageCheckboxSpec spec) => FluentCheckboxBuilder.build(context, spec, this);
+  Widget checkbox(BuildContext context, LanguageCheckboxSpec spec) => FluentCheckboxBuilder.build(context, spec);
 
   @override
   Widget slider(BuildContext context, LanguageSliderSpec spec) => FluentSliderBuilder.build(context, spec);

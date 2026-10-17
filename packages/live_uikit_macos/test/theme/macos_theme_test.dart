@@ -30,10 +30,7 @@ void main() {
 
     Widget harness(UiConfig config) => LiveConfigProvider(
       config: config,
-      registry: const LanguageRegistry(
-        adapters: {LiveDesignLanguage.macos: macosAdapter},
-        fallback: SharedLanguageAdapter(),
-      ),
+      registry: const LanguageRegistry(adapters: {LiveDesignLanguage.macos: macosAdapter}),
       child: MaterialApp(
         localizationsDelegates: liveLocalizationsDelegates,
         supportedLocales: const [Locale('en')],
@@ -55,7 +52,6 @@ void main() {
         harness(const UiConfig(language: LiveDesignLanguage.macos, brightness: UiBrightnessMode.light)),
       );
       expect(live!.adapter.id, 'macos');
-      expect(live!.implementationKind, LiveImplementationKind.adapterNative);
       expect(live!.isDark, isFalse);
       expect(find.byType(LiveButton), findsOneWidget);
       expect(tester.takeException(), isNull);

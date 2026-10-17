@@ -6,7 +6,7 @@ import 'package:live_uikit_material/live_uikit_material.dart';
 ///
 /// The capability set must list exactly the controls `MaterialLanguageAdapter`
 /// overrides with native `material_ui` widgets; the resolver turns every other
-/// control into a `controlUnsupported` downgrade, so drift between the declaration
+/// control into a a capability exception, so drift between the declaration
 /// and the overrides is caught here before it ships (§17).
 void main() {
   const adapter = materialAdapter;
@@ -60,34 +60,27 @@ void main() {
   });
 
   group('Material UI resolution through the core resolver (§15.3)', () {
-    const registry = LanguageRegistry(
-      adapters: {LiveDesignLanguage.material: adapter},
-      fallback: SharedLanguageAdapter(),
-    );
+    const registry = LanguageRegistry(adapters: {LiveDesignLanguage.material: adapter});
     const resolver = LiveUiResolver(registry: registry);
 
     test('a registered language resolves to the native adapter', () {
-      expect(resolver.resolve(LiveDesignLanguage.material).implementation.kind, LiveImplementationKind.adapterNative);
+      expect(resolver.resolve(LiveDesignLanguage.material).id, 'material');
     });
 
-    test('a declared control resolves native with no diagnostic', () {
-      final result = resolver.resolveControl(LiveDesignLanguage.material, LiveUiControl.button);
-      expect(result.implementation.kind, LiveImplementationKind.adapterNative);
-      expect(result.diagnostic, isNull);
+    test('a registered language resolves to this adapter', () {
+      expect(resolver.resolve(LiveDesignLanguage.material).id, 'material');
     });
 
-    test('every control of the contract resolves native, with no downgrade', () {
+    test('every control of the contract resolves to this adapter, with no diagnostic', () {
+      final adapter = resolver.resolve(LiveDesignLanguage.material);
       for (final control in LiveUiControl.values) {
-        final result = resolver.resolveControl(LiveDesignLanguage.material, control);
-        expect(result.implementation.kind, LiveImplementationKind.adapterNative, reason: '$control');
-        expect(result.diagnostic, isNull, reason: '$control');
+        expect(adapter.capabilities.supports(control), isTrue, reason: '$control');
+        resolver.requireControl(LiveDesignLanguage.material, control);
       }
     });
 
-    test('a language this build did not register still resolves shared, and says so', () {
-      final result = resolver.resolveControl(LiveDesignLanguage.glass, LiveUiControl.select);
-      expect(result.implementation.kind, LiveImplementationKind.shared);
-      expect(result.diagnostic?.code, LiveUiDiagnosticCode.adapterMissing);
+    test('a language this build did not register raises instead of degrading', () {
+      expect(() => resolver.resolve(LiveDesignLanguage.fluent), throwsA(isA<LiveUiResolutionException>()));
     });
   });
 }

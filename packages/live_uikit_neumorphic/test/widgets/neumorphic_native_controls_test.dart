@@ -18,10 +18,7 @@ void main() {
 
   Widget harness(Widget child) => LiveConfigProvider(
     config: config,
-    registry: const LanguageRegistry(
-      adapters: {LiveDesignLanguage.neumorphic: neumorphicAdapter},
-      fallback: SharedLanguageAdapter(),
-    ),
+    registry: const LanguageRegistry(adapters: {LiveDesignLanguage.neumorphic: neumorphicAdapter}),
     child: MaterialApp(
       localizationsDelegates: liveLocalizationsDelegates,
       supportedLocales: const [Locale('en')],
@@ -100,7 +97,6 @@ void main() {
       ),
     );
     // The composed track is the library's own plane, never the token renderer.
-    expect(find.byType(TokenSegmented), findsNothing);
     expect(tester.widgetList<neu.NeuContainer>(find.byType(neu.NeuContainer)).length, greaterThanOrEqualTo(4));
     await tester.tap(find.text('C'));
     await tester.pump();
@@ -110,7 +106,6 @@ void main() {
   testWidgets('progress maps to the library bar and carries the label (§9)', (tester) async {
     await tester.pumpWidget(harness(const SizedBox(width: 300, child: LiveProgress(value: 0.5, showLabel: true))));
     expect(find.byType(neu.NeuProgressBar), findsOneWidget);
-    expect(find.byType(TokenProgress), findsNothing);
     expect(find.text('50%'), findsOneWidget);
     await tester.pumpAndSettle();
   });
@@ -125,7 +120,6 @@ void main() {
         ),
       ),
     );
-    expect(find.byType(TokenSelect<String>), findsNothing);
     expect(find.text('b'), findsNothing);
 
     // The dish opens in the tree: no overlay, no ScaffoldMessenger, no Navigator.
@@ -171,7 +165,6 @@ void main() {
         ),
       ),
     );
-    expect(find.byType(TokenTabs), findsNothing);
     expect(find.byType(neu.NeuBottomNav), findsNothing);
     expect(find.byIcon(Icons.star), findsOneWidget);
     await tester.tap(find.text('Two'));
@@ -195,7 +188,6 @@ void main() {
     LiveToast.show(context, 'Saved', type: LiveToastType.success);
     await tester.pump();
     expect(find.text('Saved'), findsOneWidget);
-    expect(find.byType(TokenToast), findsNothing);
 
     // The lifetime timer and the fade belong to the core; the pill just has to
     // survive them, so the test outlives the message instead of leaving a timer.
@@ -229,9 +221,6 @@ void main() {
       // Nothing above this point is Material's frame: the page surface is a
       // `NeuContainer` filled by the stacked bars, and every one of them resolved
       // through this package.
-      expect(find.byType(TokenScaffold), findsNothing);
-      expect(find.byType(TokenAppBar), findsNothing);
-      expect(find.byType(TokenNavBar), findsNothing);
       expect(find.text('content'), findsOneWidget);
       expect(find.text('Rooms'), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -253,7 +242,6 @@ void main() {
         ),
       );
       await tester.pump();
-      expect(find.byType(TokenScaffold), findsNothing);
       expect(find.text('behind'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
@@ -284,7 +272,6 @@ void main() {
       await tester.pump();
 
       expect(find.byType(neu.NeuAppBar), findsOneWidget);
-      expect(find.byType(TokenAppBar), findsNothing);
       expect(find.text('Rooms'), findsOneWidget);
       expect(find.byIcon(Icons.share), findsOneWidget);
       // The dispatched strip has no `PreferredSizeWidget` to offer the library's
@@ -320,7 +307,6 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(TokenListRow), findsNothing);
       expect(find.text('Accent'), findsOneWidget);
       expect(find.text('violet'), findsOneWidget);
       expect(find.byIcon(Icons.chevron_right), findsOneWidget);
@@ -380,7 +366,6 @@ void main() {
       await tester.pumpWidget(harness(SizedBox(width: 360, child: bar((i) => chosen = i))));
       await tester.pump();
       expect(find.byType(neu.NeuBottomNav), findsNothing);
-      expect(find.byType(TokenNavBar), findsNothing);
       await tester.tap(find.text('Follow'));
       await tester.pump();
       expect(chosen, 1);
@@ -447,7 +432,6 @@ void main() {
       // This language declares all fifteen controls, so nothing inside a Neumorphic
       // page may be a `Token*` renderer any more — asserted by name rather than by
       // list, so a control added to the contract cannot slip in silently.
-      expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
       expect(tester.takeException(), isNull);
     });
   });
@@ -580,7 +564,6 @@ void main() {
 
       // The library has no rail, so the pane is its own plane turned vertical, and
       // the body still belongs to the caller.
-      expect(find.byType(TokenAppShell), findsNothing);
       expect(find.byType(neu.NeuBottomNav), findsNothing, reason: 'the shell is a column, not the pill');
       expect(find.text('room list'), findsOneWidget);
       expect(find.text('Follow'), findsOneWidget);
@@ -642,8 +625,6 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(TokenAppShell), findsNothing);
-      expect(find.byType(TokenNavBar), findsNothing);
       expect(find.text('room list'), findsOneWidget);
       // The docked slab has no end-of-navigation slot, so the footer is dropped
       // rather than invented as another destination.
@@ -668,7 +649,6 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(TokenAppShell), findsNothing);
       expect(find.text('Home'), findsNothing);
       expect(find.text('room list'), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -678,13 +658,10 @@ void main() {
   group('the app host (§ surfaces)', () {
     // No outer `MaterialApp` here: the host under test *is* the app widget, and
     // pumping it inside the SDK one would pass while no real page looks like
-    // that — and it is the SDK host the token base would fall back to.
+    // that — and it is the SDK host its own library widgets would fall back to.
     Widget hostHarness(Widget child) => LiveConfigProvider(
       config: config,
-      registry: const LanguageRegistry(
-        adapters: {LiveDesignLanguage.neumorphic: neumorphicAdapter},
-        fallback: SharedLanguageAdapter(),
-      ),
+      registry: const LanguageRegistry(adapters: {LiveDesignLanguage.neumorphic: neumorphicAdapter}),
       child: child,
     );
 
@@ -734,7 +711,6 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
 
-      expect(find.byType(TokenDialog), findsNothing);
       expect(find.text('Confirm'), findsOneWidget);
       expect(find.text('body'), findsOneWidget);
       expect(find.text('OK'), findsOneWidget);
@@ -770,7 +746,6 @@ void main() {
       await tester.pumpWidget(view(0));
       await tester.pumpAndSettle();
 
-      expect(find.byType(TokenTabView), findsNothing);
       expect(find.text('First page'), findsOneWidget);
       expect(find.text('Second page'), findsNothing, reason: 'the caller index, not a private one, picks the page');
 

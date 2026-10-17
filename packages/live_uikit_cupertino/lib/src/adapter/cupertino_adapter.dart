@@ -38,7 +38,7 @@ import 'package:live_uikit_cupertino/src/widgets/cupertino_toast_builder.dart';
 /// the library's widget refuses to build at all: a segmented track with fewer
 /// than two labels and a destination bar with nothing to choose between — see
 /// [segmented] and [navBar].
-class CupertinoLanguageAdapter extends SharedLanguageAdapter {
+class CupertinoLanguageAdapter implements LanguageAdapter {
   /// The adapter.
   const new();
 
@@ -63,7 +63,7 @@ class CupertinoLanguageAdapter extends SharedLanguageAdapter {
   Widget wrap(BuildContext context, DesignToken token, Widget child) => _theme.wrap(context, token, child);
 
   @override
-  Widget button(BuildContext context, LanguageButtonSpec spec) => CupertinoButtonBuilder.build(context, spec, this);
+  Widget button(BuildContext context, LanguageButtonSpec spec) => CupertinoButtonBuilder.build(context, spec);
 
   @override
   Widget card(BuildContext context, LanguageCardSpec spec) => CupertinoCardBuilder.build(context, spec);

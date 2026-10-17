@@ -37,7 +37,7 @@ import 'package:live_uikit_glass/src/widgets/glass_toast_builder.dart';
 /// structural surfaces — the `WidgetsApp` host and a shell composed from the
 /// library's frosted containers — are declared in [glassSurfaces] and rendered by
 /// this package's own builders. No business state lives here.
-class GlassLanguageAdapter extends SharedLanguageAdapter {
+class GlassLanguageAdapter implements LanguageAdapter {
   /// The Glass adapter.
   const new();
 
@@ -59,7 +59,7 @@ class GlassLanguageAdapter extends SharedLanguageAdapter {
   Widget wrap(BuildContext context, DesignToken token, Widget child) => _theme.wrap(context, token, child);
 
   @override
-  Widget button(BuildContext context, LanguageButtonSpec spec) => GlassButtonBuilder.build(context, spec, this);
+  Widget button(BuildContext context, LanguageButtonSpec spec) => GlassButtonBuilder.build(context, spec);
 
   @override
   Widget card(BuildContext context, LanguageCardSpec spec) => GlassCardBuilder.build(context, spec);

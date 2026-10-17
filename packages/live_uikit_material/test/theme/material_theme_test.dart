@@ -52,10 +52,7 @@ void main() {
 
     Widget harness(UiConfig config) => LiveConfigProvider(
       config: config,
-      registry: const LanguageRegistry(
-        adapters: {LiveDesignLanguage.material: materialAdapter},
-        fallback: SharedLanguageAdapter(),
-      ),
+      registry: const LanguageRegistry(adapters: {LiveDesignLanguage.material: materialAdapter}),
       child: MaterialApp(
         localizationsDelegates: const [...liveLocalizationsDelegates, ...materialLocalizationsDelegates],
         supportedLocales: const [Locale('en')],
@@ -77,7 +74,6 @@ void main() {
       );
       expect(live!.isDark, isFalse);
       expect(live!.adapter.id, 'material');
-      expect(live!.implementationKind, LiveImplementationKind.adapterNative);
       expect(material!.brightness, Brightness.light);
 
       await tester.pumpWidget(

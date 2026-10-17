@@ -35,10 +35,7 @@ void main() {
   });
 
   group('runtime re-skin (§8.3)', () {
-    const registry = LanguageRegistry(
-      adapters: {LiveDesignLanguage.forui: foruiAdapter},
-      fallback: SharedLanguageAdapter(),
-    );
+    const registry = LanguageRegistry(adapters: {LiveDesignLanguage.forui: foruiAdapter});
 
     Widget harness(UiConfig config, Widget child) => LiveConfigProvider(
       config: config,

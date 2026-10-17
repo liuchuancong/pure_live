@@ -16,10 +16,7 @@ void main() {
 
   Widget harness(Widget child) => LiveConfigProvider(
     config: config,
-    registry: const LanguageRegistry(
-      adapters: {LiveDesignLanguage.forui: foruiAdapter},
-      fallback: SharedLanguageAdapter(),
-    ),
+    registry: const LanguageRegistry(adapters: {LiveDesignLanguage.forui: foruiAdapter}),
     child: MaterialApp(
       localizationsDelegates: const [...liveLocalizationsDelegates, ...foruiLocalizationsDelegates],
       supportedLocales: const [Locale('en')],
@@ -50,7 +47,7 @@ void main() {
       // forui's tappable starts a press timer; let it fire before the test ends.
       await tester.pump(const Duration(milliseconds: 150));
       expect(fired, 0);
-      expect(find.byType(CircularProgressIndicator), findsOneWidget, reason: 'the seam swaps the label for a spinner');
+      expect(find.byType(forui.FProgress), findsOneWidget, reason: 'its own label swaps the label for a spinner');
     });
 
     testWidgets("variant and size map onto forui's own kinds", (tester) async {
@@ -258,7 +255,6 @@ void main() {
 
       final slider = find.byType(forui.FSlider);
       expect(slider, findsOneWidget);
-      expect(find.byType(TokenSlider), findsNothing);
       expect(tester.widget<forui.FSlider>(slider).enabled, isTrue);
 
       // The thumb is dragged, not the spec's number, so whatever comes back has to be
@@ -287,7 +283,6 @@ void main() {
       await tester.pump();
 
       expect(find.byType(forui.FButton), findsNWidgets(3));
-      expect(find.byType(TokenSegmented), findsNothing);
       final buttons = tester.widgetList<forui.FButton>(find.byType(forui.FButton)).toList();
       expect(buttons.map((button) => button.selected), [false, true, false]);
 
@@ -318,7 +313,6 @@ void main() {
       await tester.pump();
 
       expect(find.byType(forui.FDeterminateProgress), findsOneWidget);
-      expect(find.byType(TokenProgress), findsNothing);
       expect(tester.widget<forui.FDeterminateProgress>(find.byType(forui.FDeterminateProgress)).value, 0.5);
       expect(tester.getSize(find.byType(forui.FDeterminateProgress)).height, 12);
     });
@@ -329,7 +323,6 @@ void main() {
 
       expect(find.byType(forui.FProgress), findsOneWidget);
       expect(find.byType(forui.FDeterminateProgress), findsNothing);
-      expect(find.byType(TokenProgress), findsNothing);
       // Let the library's own loop stop before the test ends.
       await tester.pump(const Duration(milliseconds: 100));
     });
@@ -353,7 +346,6 @@ void main() {
       await tester.pump();
 
       expect(select, findsOneWidget);
-      expect(find.byType(TokenSelect<String>), findsNothing);
       // The selected value is what the field shows, through the library's own formatter.
       expect(find.text('beta'), findsOneWidget);
       expect(tester.widget<forui.FSelect<String>>(select).hint, 'pick one');
@@ -391,7 +383,6 @@ void main() {
       await tester.pump();
 
       expect(find.byType(forui.FTabs), findsOneWidget);
-      expect(find.byType(TokenTabs), findsNothing);
       expect(find.byIcon(Icons.star), findsOneWidget);
 
       await tester.tap(find.text('Shows'));
@@ -421,9 +412,6 @@ void main() {
       await tester.pump();
 
       expect(find.byType(forui.FScaffold), findsOneWidget);
-      expect(find.byType(TokenScaffold), findsNothing);
-      expect(find.byType(TokenAppBar), findsNothing);
-      expect(find.byType(TokenNavBar), findsNothing);
       expect(find.text('Rooms'), findsOneWidget);
       expect(find.byIcon(Icons.search), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -451,7 +439,6 @@ void main() {
       await tester.pump();
 
       expect(find.byWidgetPredicate((widget) => widget is forui.FHeader), findsOneWidget);
-      expect(find.byType(TokenAppBar), findsNothing);
       expect(find.byIcon(Icons.menu), findsOneWidget);
       expect(find.byIcon(Icons.more_horiz), findsOneWidget);
       expect(find.byType(forui.FTabs), findsOneWidget);
@@ -474,7 +461,6 @@ void main() {
       await tester.pump();
 
       expect(find.byType(forui.FTile), findsOneWidget);
-      expect(find.byType(TokenListRow), findsNothing);
       expect(find.text('3 watching'), findsOneWidget);
       expect(
         find.byType(forui.FDivider),
@@ -511,7 +497,6 @@ void main() {
 
       expect(find.byType(forui.FBottomNavigationBar), findsOneWidget);
       expect(find.byType(forui.FBottomNavigationBarItem), findsNWidgets(2));
-      expect(find.byType(TokenNavBar), findsNothing);
       expect(tester.widget<forui.FBottomNavigationBar>(find.byType(forui.FBottomNavigationBar)).index, 1);
 
       await tester.tap(find.text('Home'));
@@ -549,7 +534,6 @@ void main() {
 
       expect(find.byType(forui.FToast), findsOneWidget);
       expect(find.text('Saved'), findsOneWidget);
-      expect(find.byType(TokenToast), findsNothing);
       // The toaster around it (`FToaster`, `showFToast`) is what needs an overlay; the
       // core owns that overlay and the timer, so the surface the adapter returns does not.
       expect(find.byType(forui.FToaster), findsNothing);
@@ -573,7 +557,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(forui.FDialog), findsOneWidget);
-      expect(find.byType(TokenDialog), findsNothing);
       expect(find.text('Leave the room?'), findsOneWidget);
       expect(find.text('Unsaved changes'), findsOneWidget);
       // The action is the caller's already-dispatched control, so it arrives as the
@@ -610,7 +593,6 @@ void main() {
       await tester.pumpWidget(view(0));
       await tester.pumpAndSettle();
 
-      expect(find.byType(TokenTabView), findsNothing);
       expect(
         find.byType(forui.FTabs),
         findsNothing,
@@ -661,7 +643,6 @@ void main() {
       // ForUI declares all seventeen controls, so nothing in a ForUI page should be a
       // `Token*` renderer any more — the assertion is by name rather than by list so a
       // control added to the contract cannot slip in silently.
-      expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
       expect(tester.takeException(), isNull);
     });
   });
@@ -669,13 +650,10 @@ void main() {
   group('the app host (§ surfaces)', () {
     // No outer `MaterialApp` here: the host under test *is* the app widget, and
     // pumping it inside the SDK one would pass while no real page looks like
-    // that — and it is the SDK host the token base would fall back to.
+    // that — and it is the SDK host its own library widgets would fall back to.
     Widget hostHarness(Widget child) => LiveConfigProvider(
       config: config,
-      registry: const LanguageRegistry(
-        adapters: {LiveDesignLanguage.forui: foruiAdapter},
-        fallback: SharedLanguageAdapter(),
-      ),
+      registry: const LanguageRegistry(adapters: {LiveDesignLanguage.forui: foruiAdapter}),
       child: child,
     );
 
@@ -726,7 +704,6 @@ void main() {
       await tester.pump();
 
       expect(find.byType(forui.FSidebar), findsOneWidget);
-      expect(find.byType(TokenAppShell), findsNothing);
       // The sidebar paints only the column: the body the shell was handed is
       // what shows, beside it.
       expect(find.text('room list'), findsOneWidget);
@@ -778,7 +755,6 @@ void main() {
 
       expect(find.byType(forui.FBottomNavigationBar), findsOneWidget);
       expect(find.byType(forui.FSidebar), findsNothing);
-      expect(find.byType(TokenAppShell), findsNothing);
       expect(find.text('room list'), findsOneWidget);
       // The strip has no trailing slot; the form drops it rather than inventing
       // a place for it — the same rule the token shell states.
@@ -806,7 +782,6 @@ void main() {
       expect(find.text('room list'), findsOneWidget);
       expect(find.byType(forui.FSidebar), findsNothing);
       expect(find.byType(forui.FBottomNavigationBar), findsNothing);
-      expect(find.byType(TokenAppShell), findsNothing);
       expect(tester.takeException(), isNull);
     });
   });

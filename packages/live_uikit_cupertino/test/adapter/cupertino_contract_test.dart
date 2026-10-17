@@ -6,7 +6,7 @@ import 'package:live_uikit_cupertino/live_uikit_cupertino.dart';
 ///
 /// The capability set must list exactly the controls `CupertinoLanguageAdapter`
 /// overrides with `cupertino_ui`'s own widgets; the resolver turns every other
-/// control into a `controlUnsupported` downgrade, so drift between the declaration
+/// control into a a capability exception, so drift between the declaration
 /// and the overrides is caught here before it ships (§17).
 void main() {
   const adapter = cupertinoAdapter;
@@ -65,34 +65,27 @@ void main() {
   });
 
   group('Cupertino UI resolution through the core resolver (§15.3)', () {
-    const registry = LanguageRegistry(
-      adapters: {LiveDesignLanguage.cupertino: adapter},
-      fallback: SharedLanguageAdapter(),
-    );
+    const registry = LanguageRegistry(adapters: {LiveDesignLanguage.cupertino: adapter});
     const resolver = LiveUiResolver(registry: registry);
 
     test('a registered language resolves to the native adapter', () {
-      expect(resolver.resolve(LiveDesignLanguage.cupertino).implementation.kind, LiveImplementationKind.adapterNative);
+      expect(resolver.resolve(LiveDesignLanguage.cupertino).id, 'cupertino');
     });
 
-    test('a declared control resolves native with no diagnostic', () {
-      final result = resolver.resolveControl(LiveDesignLanguage.cupertino, LiveUiControl.button);
-      expect(result.implementation.kind, LiveImplementationKind.adapterNative);
-      expect(result.diagnostic, isNull);
+    test('a registered language resolves to this adapter', () {
+      expect(resolver.resolve(LiveDesignLanguage.cupertino).id, 'cupertino');
     });
 
-    test('every control of the contract resolves native, with no downgrade', () {
+    test('every control of the contract resolves to this adapter, with no diagnostic', () {
+      final adapter = resolver.resolve(LiveDesignLanguage.cupertino);
       for (final control in LiveUiControl.values) {
-        final result = resolver.resolveControl(LiveDesignLanguage.cupertino, control);
-        expect(result.implementation.kind, LiveImplementationKind.adapterNative, reason: '$control');
-        expect(result.diagnostic, isNull, reason: '$control');
+        expect(adapter.capabilities.supports(control), isTrue, reason: '$control');
+        resolver.requireControl(LiveDesignLanguage.cupertino, control);
       }
     });
 
-    test('a language this build did not register still resolves shared, and says so', () {
-      final result = resolver.resolveControl(LiveDesignLanguage.glass, LiveUiControl.card);
-      expect(result.implementation.kind, LiveImplementationKind.shared);
-      expect(result.diagnostic?.code, LiveUiDiagnosticCode.adapterMissing);
+    test('a language this build did not register raises instead of degrading', () {
+      expect(() => resolver.resolve(LiveDesignLanguage.fluent), throwsA(isA<LiveUiResolutionException>()));
     });
   });
 }

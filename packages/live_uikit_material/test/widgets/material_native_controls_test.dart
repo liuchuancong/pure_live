@@ -24,10 +24,7 @@ void main() {
 
   Widget harness(Widget child) => LiveConfigProvider(
     config: config,
-    registry: const LanguageRegistry(
-      adapters: {LiveDesignLanguage.material: materialAdapter},
-      fallback: SharedLanguageAdapter(),
-    ),
+    registry: const LanguageRegistry(adapters: {LiveDesignLanguage.material: materialAdapter}),
     child: MaterialApp(
       localizationsDelegates: const [...liveLocalizationsDelegates, ...materialLocalizationsDelegates],
       supportedLocales: const [Locale('en')],
@@ -200,7 +197,7 @@ void main() {
       expect(danger.style?.foregroundColor?.resolve(const <WidgetState>{}), theme.colors.onPrimary);
     });
 
-    testWidgets('a spec the seam calls non-interactive yields a dead button', (tester) async {
+    testWidgets('a spec its own label builder calls non-interactive yields a dead button', (tester) async {
       var fired = false;
       await tester.pumpWidget(
         harness(
@@ -381,7 +378,6 @@ void main() {
       );
       await tester.pump();
       expect(find.byType(mu.Slider), findsNothing);
-      expect(find.byType(TokenSlider), findsNothing);
       expect(find.byKey(MaterialLanguageAdapter.inertSliderKey), findsOneWidget);
       expect(find.byType(LiveSlider), findsOneWidget);
 
@@ -594,9 +590,6 @@ void main() {
       expect(find.byType(mu.AppBar), findsOneWidget);
       expect(find.byType(mu.ListTile), findsOneWidget);
       expect(find.byType(mu.NavigationBar), findsOneWidget);
-      for (final tokenType in <Type>[TokenScaffold, TokenAppBar, TokenListRow, TokenNavBar]) {
-        expect(find.byType(tokenType), findsNothing, reason: 'the token $tokenType must not render a declared control');
-      }
       expect(tester.takeException(), isNull);
 
       await withInkPlatform(() async {
@@ -656,7 +649,6 @@ void main() {
       );
       await tester.pump();
       expect(find.byType(mu.NavigationBar), findsNothing);
-      expect(find.byType(TokenNavBar), findsNothing);
       expect(find.byKey(MaterialLanguageAdapter.inertNavBarKey), findsOneWidget);
       expect(find.text('Home'), findsOneWidget);
 
@@ -668,7 +660,6 @@ void main() {
       await tester.pumpWidget(harness(const SizedBox(width: 640, child: LiveNavBar(items: [], index: 0))));
       await tester.pump();
       expect(find.byType(mu.NavigationBar), findsNothing);
-      expect(find.byType(TokenNavBar), findsNothing);
       expect(find.byKey(MaterialLanguageAdapter.inertNavBarKey), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
@@ -680,10 +671,7 @@ void main() {
     // like that.
     Widget hostHarness(Widget child) => LiveConfigProvider(
       config: config,
-      registry: const LanguageRegistry(
-        adapters: {LiveDesignLanguage.material: materialAdapter},
-        fallback: SharedLanguageAdapter(),
-      ),
+      registry: const LanguageRegistry(adapters: {LiveDesignLanguage.material: materialAdapter}),
       child: child,
     );
 
@@ -700,7 +688,6 @@ void main() {
 
       expect(find.byType(mu.MaterialApp), findsOneWidget);
       expect(find.byType(MaterialApp), findsNothing, reason: 'the SDK host must not stand in (§15)');
-      expect(find.byType(TokenApp), findsNothing);
       expect(find.text('page'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
@@ -712,10 +699,7 @@ void main() {
       await tester.pumpWidget(
         LiveConfigProvider(
           config: const UiConfig(language: LiveDesignLanguage.material, brightness: UiBrightnessMode.dark),
-          registry: const LanguageRegistry(
-            adapters: {LiveDesignLanguage.material: materialAdapter},
-            fallback: SharedLanguageAdapter(),
-          ),
+          registry: const LanguageRegistry(adapters: {LiveDesignLanguage.material: materialAdapter}),
           child: LiveApp(
             routerConfig: stubRouterConfig(
               child: Builder(
@@ -752,7 +736,6 @@ void main() {
       await tester.pump();
 
       expect(find.byType(mu.DropdownButton<String>), findsOneWidget);
-      expect(find.byType(TokenSelect<String>), findsNothing);
       expect(find.text('beta'), findsOneWidget);
       expect(chosen, isNull);
       expect(tester.takeException(), isNull);
@@ -776,7 +759,6 @@ void main() {
       await tester.pump();
 
       expect(find.byType(mu.DropdownButton<String>), findsOneWidget);
-      expect(find.byType(TokenSelect<String>), findsNothing);
       expect(find.text('Pick one'), findsOneWidget);
       expect(find.text('missing'), findsNothing);
       final button = tester.widget<mu.DropdownButton<String>>(find.byType(mu.DropdownButton<String>));
@@ -802,7 +784,6 @@ void main() {
         await tester.pump();
 
         expect(find.byType(mu.TabBar), findsOneWidget);
-        expect(find.byType(TokenTabs), findsNothing);
         expect(find.byIcon(Icons.play_arrow), findsOneWidget);
 
         await tester.tap(find.text('Library'));
@@ -818,7 +799,6 @@ void main() {
       await tester.pump();
 
       expect(find.text('Saved'), findsOneWidget);
-      expect(find.byType(TokenToast), findsNothing);
       // `mu.SnackBar` cannot be the surface: it reads `widget.animation!` in
       // initState and is only ever built by a ScaffoldMessenger that owns that
       // animation, while the core owns the overlay and the timer here.
@@ -864,7 +844,6 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
       expect(tester.takeException(), isNull);
     });
   });
@@ -888,7 +867,6 @@ void main() {
       // The surface is the adapter's; the route, the barrier and the centred frame
       // stayed in the core, so no token dialog is drawn under a Material page.
       expect(find.byType(mu.AlertDialog), findsOneWidget);
-      expect(find.byType(TokenDialog), findsNothing);
       expect(find.text('Leave the room?'), findsOneWidget);
       expect(find.text('The stream keeps running.'), findsOneWidget);
       expect(find.text('Cancel'), findsOneWidget);
@@ -933,7 +911,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(mu.TabBarView), findsOneWidget);
-      expect(find.byType(TokenTabView), findsNothing);
       // Measured from the view's own origin: the harness centres the 320-wide box,
       // so the absolute coordinates are not the page positions. The fork builds the
       // page the spec names, which is exactly what a controlled view promises.
@@ -978,7 +955,6 @@ void main() {
         await tester.pump();
 
         expect(find.byType(mu.NavigationRail), findsOneWidget);
-        expect(find.byType(TokenAppShell), findsNothing);
         // The router owns the body, and the rail has a real footer slot for the
         // trailing entry — the one the bottom strip has to drop.
         expect(find.text('room list'), findsOneWidget);

@@ -6,7 +6,7 @@ import 'package:live_uikit_neumorphic/live_uikit_neumorphic.dart';
 ///
 /// The capability set must list exactly the controls `NeumorphicLanguageAdapter`
 /// overrides with `flutter_neumorphic_ui_kit` widgets or with that library's own
-/// primitives; the resolver turns every other control into a `controlUnsupported`
+/// primitives; the resolver turns every other control into a `LiveUiCapabilityException`
 /// downgrade, so drift between the declaration and the overrides is caught here
 /// before it ships (§17). This language declares the whole contract, so the drift
 /// that matters is a control joining the fallback side silently.
@@ -63,37 +63,27 @@ void main() {
   });
 
   group('Neumorphic resolution through the core resolver (§15.3)', () {
-    const registry = LanguageRegistry(
-      adapters: {LiveDesignLanguage.neumorphic: adapter},
-      fallback: SharedLanguageAdapter(),
-    );
+    const registry = LanguageRegistry(adapters: {LiveDesignLanguage.neumorphic: adapter});
     const resolver = LiveUiResolver(registry: registry);
 
     test('a registered language resolves to the native adapter', () {
-      expect(resolver.resolve(LiveDesignLanguage.neumorphic).implementation.kind, LiveImplementationKind.adapterNative);
+      expect(resolver.resolve(LiveDesignLanguage.neumorphic).id, 'neumorphic');
     });
 
-    test('a declared control resolves native with no diagnostic', () {
-      final result = resolver.resolveControl(LiveDesignLanguage.neumorphic, LiveUiControl.button);
-      expect(result.implementation.kind, LiveImplementationKind.adapterNative);
-      expect(result.diagnostic, isNull);
+    test('a registered language resolves to this adapter', () {
+      expect(resolver.resolve(LiveDesignLanguage.neumorphic).id, 'neumorphic');
     });
 
-    test('every control of the contract resolves native, with no downgrade', () {
+    test('every control of the contract resolves to this adapter, with no diagnostic', () {
+      final adapter = resolver.resolve(LiveDesignLanguage.neumorphic);
       for (final control in LiveUiControl.values) {
-        final result = resolver.resolveControl(LiveDesignLanguage.neumorphic, control);
-        expect(result.implementation.kind, LiveImplementationKind.adapterNative, reason: '$control');
-        expect(result.diagnostic, isNull, reason: '$control');
+        expect(adapter.capabilities.supports(control), isTrue, reason: '$control');
+        resolver.requireControl(LiveDesignLanguage.neumorphic, control);
       }
     });
 
-    test('a language this build did not register still resolves shared, and says so', () {
-      // The fallback is a report, not a silent stand-in: only the language actually
-      // registered here gets the Neumorphic path, and anything else is named as
-      // missing rather than quietly drawn by the token base.
-      final result = resolver.resolveControl(LiveDesignLanguage.fluent, LiveUiControl.scaffold);
-      expect(result.implementation.kind, LiveImplementationKind.shared);
-      expect(result.diagnostic?.code, LiveUiDiagnosticCode.adapterMissing);
+    test('a language this build did not register raises instead of degrading', () {
+      expect(() => resolver.resolve(LiveDesignLanguage.fluent), throwsA(isA<LiveUiResolutionException>()));
     });
   });
 }

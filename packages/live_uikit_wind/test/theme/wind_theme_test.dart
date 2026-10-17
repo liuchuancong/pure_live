@@ -30,10 +30,7 @@ void main() {
 
     Widget harness(UiConfig config) => LiveConfigProvider(
       config: config,
-      registry: const LanguageRegistry(
-        adapters: {LiveDesignLanguage.wind: windAdapter},
-        fallback: SharedLanguageAdapter(),
-      ),
+      registry: const LanguageRegistry(adapters: {LiveDesignLanguage.wind: windAdapter}),
       child: MaterialApp(
         localizationsDelegates: liveLocalizationsDelegates,
         supportedLocales: const [Locale('en')],

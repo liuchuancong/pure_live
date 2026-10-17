@@ -35,7 +35,7 @@ import 'package:material_ui/material_ui.dart' as mu;
 /// shapes the fork refuses to build: a slider that must not move, a destination
 /// strip that cannot hold a selection and a value no item carries — see
 /// [slider], [navBar] and [select].
-class MaterialLanguageAdapter extends SharedLanguageAdapter {
+class MaterialLanguageAdapter implements LanguageAdapter {
   /// The adapter.
   const new();
 
@@ -73,7 +73,7 @@ class MaterialLanguageAdapter extends SharedLanguageAdapter {
   Widget wrap(BuildContext context, DesignToken token, Widget child) => _theme.wrap(context, token, child);
 
   @override
-  Widget button(BuildContext context, LanguageButtonSpec spec) => MaterialButtonBuilder.build(context, spec, this);
+  Widget button(BuildContext context, LanguageButtonSpec spec) => MaterialButtonBuilder.build(context, spec);
 
   @override
   Widget card(BuildContext context, LanguageCardSpec spec) => MaterialCardBuilder.build(context, spec);
@@ -85,8 +85,7 @@ class MaterialLanguageAdapter extends SharedLanguageAdapter {
   Widget switchWidget(BuildContext context, LanguageSwitchSpec spec) => MaterialSwitchBuilder.build(context, spec);
 
   @override
-  Widget checkbox(BuildContext context, LanguageCheckboxSpec spec) =>
-      MaterialCheckboxBuilder.build(context, spec, this);
+  Widget checkbox(BuildContext context, LanguageCheckboxSpec spec) => MaterialCheckboxBuilder.build(context, spec);
 
   /// The slider, or its inert form.
   ///

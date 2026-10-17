@@ -44,48 +44,28 @@ const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost,
 /// diagnostics a switch is expected to produce — and only those.
 /// The downgrades this language is expected to report: none, because nothing in
 /// the contract falls back any more (§15.5/§16.8).
+/// Nothing in the contract falls back any more: the resolver hands back this
+/// language's adapter, so a run that renders it reports no control or surface
+/// downgrade at all (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
-  final controls = sink.where((diagnostic) => diagnostic.control != null);
-  final surfaces = sink.where((diagnostic) => diagnostic.surface != null);
-  // A language that renders every control reports no control downgrade at all,
-  // so the code check only applies when something actually fell back.
-  final expectedControls = LiveUiControl.values.toSet().difference(nativeControls);
-  expect(controls.map((diagnostic) => diagnostic.control).toSet(), expectedControls);
-  if (expectedControls.isNotEmpty) {
-    expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
-  }
-  // A language that owns both surfaces reports no structural downgrade at all,
-  // so the code check only applies when something is actually missing.
-  final expectedSurfaces = LiveUiSurface.values.toSet().difference(nativeSurfaces);
-  expect(surfaces.map((diagnostic) => diagnostic.surface).toSet(), expectedSurfaces);
-  if (expectedSurfaces.isNotEmpty) {
-    expect(surfaces.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.surfaceUnsupported});
-  }
   expect(
-    sink,
-    hasLength(
-      LiveUiControl.values.length + LiveUiSurface.values.length - nativeControls.length - nativeSurfaces.length,
-    ),
+    sink.where((diagnostic) => diagnostic.control != null || diagnostic.surface != null),
+    isEmpty,
+    reason: 'every control and surface resolves to this adapter',
   );
 }
 
 void main() {
-  const registry = LanguageRegistry(
-    adapters: {LiveDesignLanguage.material: materialAdapter},
-    fallback: SharedLanguageAdapter(),
-  );
+  const registry = LanguageRegistry(adapters: {LiveDesignLanguage.material: materialAdapter});
   const resolver = LiveUiResolver(registry: registry);
 
-  test('the surfaces it owns structurally resolve native, the rest shared', () {
+  test('the surfaces it owns are exactly the ones it declares (§ surfaces)', () {
+    final adapter = resolver.resolve(LiveDesignLanguage.material);
     for (final surface in LiveUiSurface.values) {
-      final owned = nativeSurfaces.contains(surface);
-      final resolution = resolver.resolveSurface(LiveDesignLanguage.material, surface);
-      expect(
-        resolution.implementation.kind,
-        owned ? LiveImplementationKind.adapterNative : LiveImplementationKind.shared,
-        reason: '$surface',
-      );
-      expect(resolution.diagnostic?.code, owned ? isNull : LiveUiDiagnosticCode.surfaceUnsupported, reason: '$surface');
+      expect(adapter.surfaces.supports(surface), nativeSurfaces.contains(surface), reason: '$surface');
+    }
+    for (final surface in nativeSurfaces) {
+      resolver.requireSurface(LiveDesignLanguage.material, surface);
     }
   });
 
@@ -105,26 +85,19 @@ void main() {
   );
 
   group('the resolution surface (§16.3/§16.8)', () {
-    test('the thirteen declared controls resolve native, the other three shared (§16.3)', () {
+    test('every control it declares resolves to this adapter, with no downgrade (§16.3)', () {
+      final adapter = resolver.resolve(LiveDesignLanguage.material);
       for (final control in LiveUiControl.values) {
-        final native = nativeControls.contains(control);
-        final resolution = resolver.resolveControl(LiveDesignLanguage.material, control);
-        expect(
-          resolution.implementation.kind,
-          native ? LiveImplementationKind.adapterNative : LiveImplementationKind.shared,
-          reason: '$control',
-        );
-        expect(
-          resolution.diagnostic?.code,
-          native ? isNull : LiveUiDiagnosticCode.controlUnsupported,
-          reason: '$control must be the only kind of noise',
-        );
+        expect(adapter.capabilities.supports(control), nativeControls.contains(control), reason: '$control');
+      }
+      for (final control in nativeControls) {
+        resolver.requireControl(LiveDesignLanguage.material, control);
       }
     });
   });
 
   group('runtime switching (§11)', () {
-    testWidgets('Material UI ↔ the token base replaces the theme scope both ways', (tester) async {
+    testWidgets('Material UI ↔ its own library widgets replaces the theme scope both ways', (tester) async {
       final diagnostics = <LiveUiDiagnostic>[];
       final controller = TextEditingController(text: 'typed before the switch');
       addTearDown(controller.dispose);
@@ -171,18 +144,6 @@ void main() {
       expectUndeclaredControls(diagnostics);
       await useFallbackControls();
 
-      // Out to the core token base: the fork scope and the fork widgets must all
-      // be gone, and the caller's text must be untouched by the re-render.
-      await tester.pumpWidget(harness(config(LiveDesignLanguage.token), page(), diagnostics));
-      expect(find.byType(mu.TextField), findsNothing);
-      expect(find.byType(mu.Theme), findsNothing);
-      expect(find.byType(TextField), findsOneWidget);
-      expect(controller.text, 'typed before the switch');
-      expect(
-        diagnostics.map((diagnostic) => diagnostic.code),
-        contains(LiveUiDiagnosticCode.adapterMissing),
-        reason: 'the core base has no adapter of its own, so the gap is reported',
-      );
       await useFallbackControls();
 
       // And back in: a fresh fork scope, not the stale one.

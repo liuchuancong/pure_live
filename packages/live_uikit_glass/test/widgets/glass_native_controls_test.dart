@@ -17,10 +17,7 @@ void main() {
 
   Widget harness(Widget child) => LiveConfigProvider(
     config: config,
-    registry: const LanguageRegistry(
-      adapters: {LiveDesignLanguage.glass: glassAdapter},
-      fallback: SharedLanguageAdapter(),
-    ),
+    registry: const LanguageRegistry(adapters: {LiveDesignLanguage.glass: glassAdapter}),
     child: MaterialApp(
       localizationsDelegates: liveLocalizationsDelegates,
       supportedLocales: const [Locale('en')],
@@ -80,7 +77,6 @@ void main() {
       await tester.pumpWidget(harness(LiveSwitch(value: false, onChanged: (v) => reported = v)));
       await tester.pump();
 
-      expect(find.byType(TokenSwitch), findsNothing);
       // The track and the knob, both the library's surfaces.
       expect(find.byType(glass.GlassContainer), findsNWidgets(2));
 
@@ -105,7 +101,6 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(TokenCheckbox), findsNothing);
       expect(find.text('Auto quality'), findsOneWidget);
       expect(find.byIcon(Icons.check), findsOneWidget);
 
@@ -122,7 +117,6 @@ void main() {
 
       // The rail, the filled part of the track and the handle.
       expect(find.byType(glass.GlassContainer), findsNWidgets(3));
-      expect(find.byType(TokenSlider), findsNothing);
 
       await tester.drag(find.byType(LiveSlider), const Offset(80, 0));
       await tester.pump();
@@ -147,7 +141,6 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(TokenSegmented), findsNothing);
       // The groove and the one selected pill; the rest are bare labels.
       expect(find.byType(glass.GlassContainer), findsNWidgets(2));
       expect(find.text('Medium'), findsOneWidget);
@@ -164,7 +157,6 @@ void main() {
       await tester.pump();
 
       expect(find.text('50%'), findsOneWidget);
-      expect(find.byType(TokenProgress), findsNothing);
       expect(find.byType(glass.GlassContainer), findsNWidgets(2));
       expect(tester.takeException(), isNull);
     });
@@ -173,7 +165,6 @@ void main() {
       await tester.pumpWidget(harness(const SizedBox(width: 260, child: LiveProgress(value: null))));
       await tester.pump();
 
-      expect(find.byType(TokenProgress), findsNothing);
       expect(find.byType(LinearProgressIndicator), findsNothing);
       expect(find.byType(glass.GlassContainer), findsNWidgets(2));
 
@@ -202,7 +193,6 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(TokenSelect<String>), findsNothing);
       expect(find.text('B'), findsOneWidget, reason: 'the closed field shows the selected label');
       expect(find.text('A'), findsNothing, reason: 'the menu is a sheet the tap opens');
 
@@ -234,7 +224,6 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(TokenTabs), findsNothing);
       expect(find.byIcon(Icons.star), findsOneWidget);
       expect(find.byType(glass.GlassContainer), findsOneWidget);
 
@@ -259,7 +248,6 @@ void main() {
 
       await tester.pumpWidget(harness(SizedBox(width: 320, child: bar())));
       await tester.pump();
-      expect(find.byType(TokenNavBar), findsNothing);
       await tester.tap(find.text('Shows'));
       await tester.pump();
       expect(chosen, 1);
@@ -291,7 +279,6 @@ void main() {
       await tester.pump();
 
       expect(find.text('Room is live'), findsOneWidget);
-      expect(find.byType(TokenToast), findsNothing);
       expect(find.byType(glass.GlassContainer), findsWidgets);
       expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
 
@@ -321,8 +308,6 @@ void main() {
 
       expect(find.text('content'), findsOneWidget);
       expect(find.text('Rooms'), findsOneWidget);
-      expect(find.byType(TokenScaffold), findsNothing);
-      expect(find.byType(TokenAppBar), findsNothing);
       // The frame is a sheet, the header is a sheet, the strip is a sheet and the
       // one selected destination is a brighter one inside it.
       expect(find.byType(glass.GlassContainer), findsNWidgets(4));
@@ -356,8 +341,6 @@ void main() {
       expect(find.byIcon(Icons.menu), findsOneWidget);
       expect(find.text('act'), findsOneWidget);
       expect(find.text('Two'), findsOneWidget);
-      expect(find.byType(TokenAppBar), findsNothing);
-      expect(find.byType(TokenTabs), findsNothing);
       // Material's own bar, which the library's `GlassAppBar` is built out of, is
       // not what this frame draws (§9).
       expect(find.byType(AppBar), findsNothing);
@@ -382,7 +365,6 @@ void main() {
       await tester.pump();
 
       expect(find.byType(glass.GlassListTile), findsOneWidget);
-      expect(find.byType(TokenListRow), findsNothing);
       expect(find.text('Room 12'), findsOneWidget);
       expect(find.text('3 watching'), findsOneWidget);
       // The library's own divider, because the row asks for one.
@@ -501,7 +483,7 @@ void main() {
       expect(node.hasFocus, isTrue, reason: 'the node reached the focus tree, not just the widget');
     });
 
-    testWidgets('a composed switch routes the caller node through the shared seam', (tester) async {
+    testWidgets('a composed switch routes the caller node through its own label row', (tester) async {
       final node = FocusNode();
       addTearDown(node.dispose);
       await tester.pumpWidget(harness(LiveSwitch(value: false, onChanged: (_) {}, focusNode: node)));
@@ -577,7 +559,6 @@ void main() {
       // Glass declares all seventeen controls, so nothing in a glass page should be
       // a `Token*` renderer any more — the assertion is by name rather than by
       // list so a control added to the contract cannot slip in silently.
-      expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
       expect(find.text('Room 12'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
@@ -608,7 +589,6 @@ void main() {
       // The library ships no navigation structure, so the column is assembled from
       // its own surface pieces: a frosted track and a brighter sheet on the
       // selected destination.
-      expect(find.byType(TokenAppShell), findsNothing);
       expect(find.byType(glass.GlassContainer), findsWidgets);
       expect(find.text('room list'), findsOneWidget);
       // The composed column has a bottom slot of its own, unlike the strip.
@@ -663,7 +643,6 @@ void main() {
 
       // The strip is the package's own frosted nav bar; that form has no trailing
       // slot, so the footer is dropped rather than faked as a third tab.
-      expect(find.byType(TokenAppShell), findsNothing);
       expect(find.byType(glass.GlassContainer), findsWidgets);
       expect(find.text('room list'), findsOneWidget);
       expect(find.text('settings footer'), findsNothing);
@@ -684,7 +663,6 @@ void main() {
       await tester.pump();
 
       // No navigation is drawn — the shell hands the frame back to the page.
-      expect(find.byType(TokenAppShell), findsNothing);
       expect(find.byType(glass.GlassContainer), findsNothing);
       expect(find.text('room list'), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -694,13 +672,10 @@ void main() {
   group('the app host (§ surfaces)', () {
     // No outer `MaterialApp` here: the host under test *is* the app widget, and
     // pumping it inside the SDK one would pass while no real page looks like
-    // that — and it is the SDK host the token base would fall back to.
+    // that — and it is the SDK host its own library widgets would fall back to.
     Widget hostHarness(Widget child) => LiveConfigProvider(
       config: config,
-      registry: const LanguageRegistry(
-        adapters: {LiveDesignLanguage.glass: glassAdapter},
-        fallback: SharedLanguageAdapter(),
-      ),
+      registry: const LanguageRegistry(adapters: {LiveDesignLanguage.glass: glassAdapter}),
       child: child,
     );
 
@@ -737,7 +712,6 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byType(TokenDialog), findsNothing);
       expect(find.byType(glass.GlassContainer), findsWidgets, reason: 'the panel is the library surface');
       expect(find.text('Leave the room'), findsOneWidget);
       expect(find.text('Your session ends.'), findsOneWidget);
@@ -770,7 +744,6 @@ void main() {
       await tester.pumpWidget(harness(view(0)));
       await tester.pumpAndSettle();
 
-      expect(find.byType(TokenTabView), findsNothing);
       expect(find.byType(PageView), findsOneWidget);
       expect(find.text('first page'), findsOneWidget);
 

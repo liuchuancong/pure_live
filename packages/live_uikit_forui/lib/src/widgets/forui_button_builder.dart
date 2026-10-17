@@ -4,17 +4,15 @@ import 'package:live_uikit/live_uikit.dart';
 
 /// Renders a [LanguageButtonSpec] with `FButton` (§9 Button).
 abstract final class ForuiButtonBuilder {
-  /// Builds the button for [spec], reusing the shared seam for label, icon-only
   /// content, disabled verdict and square geometry.
-  static Widget build(BuildContext context, LanguageButtonSpec spec, SharedLanguageAdapter seam) {
+  static Widget build(BuildContext context, LanguageButtonSpec spec) {
     final theme = LiveTheme.of(context);
-    final interactive = seam.interactive(spec);
+    final interactive = spec.enabled && !spec.loading && spec.onPressed != null;
     // `onPress: null` is forui's own disabled state, and a loading button must not act;
     // no swallowing closure is ever invented to keep the widget looking live (§9).
     final onPress = interactive ? spec.onPressed : null;
-    final content = seam.buttonLabel(spec, theme);
+    final content = _label(spec, theme);
 
-    // forui names the accessible content on the glyph the seam builds, so the button
     // itself is not given a second `semanticsLabel` to announce twice.
     final button = spec.iconOnly
         // An icon-only control is forui's own variant, laid out by the library: squeezing
@@ -65,4 +63,43 @@ abstract final class ForuiButtonBuilder {
     ControlSize.md => forui.FButtonSizeVariant.md,
     ControlSize.lg => forui.FButtonSizeVariant.lg,
   };
+
+  /// The button's content, built from this library's own parts: the label, an
+  /// optional leading glyph, a spinner while loading, and the bare glyph of an
+  /// icon-only button, whose empty label is never painted. There is no shared
+  /// renderer to inherit this from any more, so this language composes it —
+  /// the loading state maps to the library's own spinner (§9 Button).
+  static Widget _label(LanguageButtonSpec spec, LiveTheme theme, {Color? foreground}) {
+    final step = theme.text.label.fontSize ?? 14;
+    if (spec.loading) {
+      return SizedBox.square(
+        dimension: step,
+        child: forui.FProgress(
+          style: forui.FProgressStyleDelta.delta(
+            constraints: BoxConstraints.tightFor(width: step, height: step),
+          ),
+        ),
+      );
+    }
+    if (spec.iconOnly) {
+      return Icon(
+        spec.icon,
+        size: step,
+        color: foreground,
+        semanticLabel: spec.tooltip ?? (spec.label.isEmpty ? null : spec.label),
+      );
+    }
+    final text = Text(spec.label, overflow: TextOverflow.ellipsis);
+    if (spec.icon == null) {
+      return text;
+    }
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(spec.icon, size: step, color: foreground),
+        SizedBox(width: theme.token.scale.sizes.xs),
+        Flexible(child: text),
+      ],
+    );
+  }
 }

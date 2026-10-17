@@ -22,7 +22,7 @@ import 'package:live_uikit/live_uikit.dart';
 /// theme's [neu.NeuThemeData.borderRadius] and the base its
 /// [neu.NeuThemeData.baseColor], so the panel stays on the token through the theme
 /// scope. The heading rides in the token's title role and the glyph in the theme's
-/// accent — the same readings `TokenDialog` gives the elevated Material card.
+/// accent — the same readings the library's own dialog surface gives the elevated Material card.
 /// [LanguageDialogSpec.actions] are already-built, dispatched controls, laid out
 /// right-aligned exactly as the token base does, so a dialog's buttons match the
 /// language rather than being re-picked here.

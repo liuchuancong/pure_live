@@ -121,7 +121,7 @@ abstract final class WindShellBuilder {
       child: wind.WAnchor(
         // A disabled destination is the fork's inert state, not a local refusal:
         // `isDisabled` paints `disabled:opacity-50` and ignores the gesture, and
-        // the tap closure is not built for it either, so the look and the seam
+        // the tap closure is not built for it either, so the look and its own label builder
         // cannot disagree.
         isDisabled: !enabled,
         onTap: enabled && onSelected != null ? () => onSelected(destination.id) : null,

@@ -42,10 +42,7 @@ void main() {
 
       Widget harness(UiConfig config) => LiveConfigProvider(
         config: config,
-        registry: const LanguageRegistry(
-          adapters: {LiveDesignLanguage.fluent: fluentAdapter},
-          fallback: SharedLanguageAdapter(),
-        ),
+        registry: const LanguageRegistry(adapters: {LiveDesignLanguage.fluent: fluentAdapter}),
         // No manual `FluentTheme`: `adapter.wrap` installs the scope, which is
         // exactly what this test is checking (§8.2/§8.3).
         child: Builder(
@@ -61,7 +58,6 @@ void main() {
         harness(const UiConfig(language: LiveDesignLanguage.fluent, brightness: UiBrightnessMode.light)),
       );
       expect(live!.adapter.id, 'fluent');
-      expect(live!.implementationKind, LiveImplementationKind.adapterNative);
       expect(theme!.brightness, Brightness.light);
 
       await tester.pumpWidget(

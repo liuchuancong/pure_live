@@ -35,7 +35,7 @@ import 'package:live_uikit_forui/src/widgets/forui_toast_builder.dart';
 /// for, so the gaps are visible rather than silent. No business state lives here. Both
 /// structural surfaces — the app host and the app shell — are declared in
 /// [foruiSurfaces] and rendered by this package's own builders.
-class ForuiLanguageAdapter extends SharedLanguageAdapter {
+class ForuiLanguageAdapter implements LanguageAdapter {
   /// The ForUI adapter.
   const new();
 
@@ -57,7 +57,7 @@ class ForuiLanguageAdapter extends SharedLanguageAdapter {
   Widget wrap(BuildContext context, DesignToken token, Widget child) => _theme.wrap(context, token, child);
 
   @override
-  Widget button(BuildContext context, LanguageButtonSpec spec) => ForuiButtonBuilder.build(context, spec, this);
+  Widget button(BuildContext context, LanguageButtonSpec spec) => ForuiButtonBuilder.build(context, spec);
 
   @override
   Widget card(BuildContext context, LanguageCardSpec spec) => ForuiCardBuilder.build(context, spec);

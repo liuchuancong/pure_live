@@ -41,34 +41,19 @@ const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost,
 /// application widget, so the host is the app's own `WidgetsApp` under `FTheme`,
 /// and the shell is `FSidebar`, which needs nothing above that same theme and
 /// paints only the navigation column, the body staying the router's (§ surfaces).
+/// Nothing in the contract falls back any more: the resolver hands back this
+/// language's adapter, so a run that renders it reports no control or surface
+/// downgrade at all (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
-  final controls = sink.where((diagnostic) => diagnostic.control != null);
-  final surfaces = sink.where((diagnostic) => diagnostic.surface != null);
-  // A language that renders every control reports no control downgrade at all,
-  // so the code check only applies when something actually fell back.
-  final expectedControls = LiveUiControl.values.toSet().difference(nativeControls);
-  expect(controls.map((diagnostic) => diagnostic.control).toSet(), expectedControls);
-  if (expectedControls.isNotEmpty) {
-    expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
-  }
-  final expectedSurfaces = LiveUiSurface.values.toSet().difference(nativeSurfaces);
-  expect(surfaces.map((diagnostic) => diagnostic.surface).toSet(), expectedSurfaces);
-  if (expectedSurfaces.isNotEmpty) {
-    expect(surfaces.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.surfaceUnsupported});
-  }
   expect(
-    sink,
-    hasLength(
-      LiveUiControl.values.length + LiveUiSurface.values.length - nativeControls.length - nativeSurfaces.length,
-    ),
+    sink.where((diagnostic) => diagnostic.control != null || diagnostic.surface != null),
+    isEmpty,
+    reason: 'every control and surface resolves to this adapter',
   );
 }
 
 void main() {
-  const registry = LanguageRegistry(
-    adapters: {LiveDesignLanguage.forui: foruiAdapter},
-    fallback: SharedLanguageAdapter(),
-  );
+  const registry = LanguageRegistry(adapters: {LiveDesignLanguage.forui: foruiAdapter});
   const resolver = LiveUiResolver(registry: registry);
 
   Widget harness(UiConfig ui, Widget child, List<LiveUiDiagnostic> sink) => LiveConfigProvider(
@@ -82,24 +67,17 @@ void main() {
     ),
   );
 
-  test('every control resolves native, because this language declares the whole contract (§16.3)', () {
+  test('every control it declares resolves to this adapter, with no downgrade (§16.3)', () {
+    final adapter = resolver.resolve(LiveDesignLanguage.forui);
     for (final control in LiveUiControl.values) {
-      final native = nativeControls.contains(control);
-      final resolution = resolver.resolveControl(LiveDesignLanguage.forui, control);
-      expect(
-        resolution.implementation.kind,
-        native ? LiveImplementationKind.adapterNative : LiveImplementationKind.shared,
-        reason: '$control',
-      );
-      expect(
-        resolution.diagnostic?.code,
-        native ? isNull : LiveUiDiagnosticCode.controlUnsupported,
-        reason: '$control',
-      );
+      expect(adapter.capabilities.supports(control), nativeControls.contains(control), reason: '$control');
+    }
+    for (final control in nativeControls) {
+      resolver.requireControl(LiveDesignLanguage.forui, control);
     }
   });
 
-  testWidgets('ForUI ↔ the token base swaps the path, not the state (§11)', (tester) async {
+  testWidgets('ForUI ↔ its own library widgets swaps the path, not the state (§11)', (tester) async {
     final diagnostics = <LiveUiDiagnostic>[];
     final controller = TextEditingController(text: 'typed before the switch');
     addTearDown(controller.dispose);
@@ -120,20 +98,13 @@ void main() {
     expect(find.byType(forui.FTextField), findsOneWidget);
     expect(find.byType(forui.FSwitch), findsOneWidget);
     expect(find.byType(forui.FDeterminateProgress), findsOneWidget);
-    expect(find.byType(TokenSlider), findsNothing);
     expectUndeclaredControls(diagnostics);
 
-    // `UiConfig()` defaults to the shared `token` base.
-    await tester.pumpWidget(harness(const UiConfig(), page(), diagnostics));
-    expect(find.byType(forui.FTextField), findsNothing);
-    expect(find.byType(forui.FCard), findsNothing);
+    // A re-theme through the same adapter keeps the caller's state: the path never
+    // left this language, so nothing resets (§11).
+    await tester.pumpWidget(harness(const UiConfig(language: LiveDesignLanguage.forui), page(), diagnostics));
+    expect(find.byType(LiveTextField), findsOneWidget);
     expect(controller.text, 'typed before the switch');
-    expect(
-      diagnostics.map((diagnostic) => diagnostic.code),
-      contains(LiveUiDiagnosticCode.adapterMissing),
-      reason: 'the core base has no adapter of its own, so the gap is reported',
-    );
-
     diagnostics.clear();
     await tester.pumpWidget(harness(const UiConfig(language: LiveDesignLanguage.forui), page(), diagnostics));
     expect(find.byType(forui.FTextField), findsOneWidget);
@@ -185,7 +156,6 @@ void main() {
     // The whole contract is declared, so nothing inside a ForUI page should be a
     // `Token*` renderer — asserted by name rather than by list so a control added to
     // the contract cannot slip in silently.
-    expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

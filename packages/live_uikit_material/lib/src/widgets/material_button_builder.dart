@@ -4,13 +4,12 @@ import 'package:material_ui/material_ui.dart' as mu;
 
 /// Builds a native Material UI button from a [LanguageButtonSpec] (§9 Button):
 /// each semantic variant maps to the closest Material button; the danger variant
-/// recolors via `styleFrom`. Press/label/loading come from the shared seam.
 abstract final class MaterialButtonBuilder {
-  /// Builds the button for [spec]; [seam] supplies shared label/state logic.
-  static Widget build(BuildContext context, LanguageButtonSpec spec, SharedLanguageAdapter seam) {
+  /// Builds the button for [spec], drawn from this library's own widgets part for part.
+  static Widget build(BuildContext context, LanguageButtonSpec spec) {
     final theme = LiveTheme.of(context);
-    final onPressed = seam.interactive(spec) ? spec.onPressed : null;
-    final child = seam.buttonLabel(spec, theme);
+    final onPressed = spec.enabled && !spec.loading && spec.onPressed != null ? spec.onPressed : null;
+    final child = _label(spec, theme);
     final button = switch (spec.variant) {
       ButtonVariant.primary => mu.FilledButton(
         onPressed: onPressed,
@@ -46,5 +45,40 @@ abstract final class MaterialButtonBuilder {
       return sized;
     }
     return mu.Tooltip(message: spec.tooltip, child: sized);
+  }
+
+  /// The button's content, built from this library's own parts: the label, an
+  /// optional leading glyph, a spinner while loading, and the bare glyph of an
+  /// icon-only button, whose empty label is never painted. There is no shared
+  /// renderer to inherit this from any more, so this language composes it —
+  /// the loading state maps to the library's own spinner (§9 Button).
+  static Widget _label(LanguageButtonSpec spec, LiveTheme theme, {Color? foreground}) {
+    final step = theme.text.label.fontSize ?? 14;
+    if (spec.loading) {
+      return SizedBox.square(
+        dimension: step,
+        child: mu.CircularProgressIndicator(strokeWidth: 2, color: foreground),
+      );
+    }
+    if (spec.iconOnly) {
+      return Icon(
+        spec.icon,
+        size: step,
+        color: foreground,
+        semanticLabel: spec.tooltip ?? (spec.label.isEmpty ? null : spec.label),
+      );
+    }
+    final text = Text(spec.label, overflow: TextOverflow.ellipsis);
+    if (spec.icon == null) {
+      return text;
+    }
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(spec.icon, size: step, color: foreground),
+        SizedBox(width: theme.token.scale.sizes.xs),
+        Flexible(child: text),
+      ],
+    );
   }
 }

@@ -45,37 +45,19 @@ const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost,
 /// is native and both surfaces — the `WidgetsApp` host and the composed shell —
 /// are owned, so the derived checks below compare against empty sets and skip the
 /// code assertions (§15.5/§16.8).
+/// Nothing in the contract falls back any more: the resolver hands back this
+/// language's adapter, so a run that renders it reports no control or surface
+/// downgrade at all (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
-  // Nothing falls back any more: the control and surface branches both run against
-  // an empty expected set, so the two downgrade codes are only asserted while some
-  // part of the contract is still left to the shared renderer (§ surfaces).
-  final controls = sink.where((diagnostic) => diagnostic.control != null);
-  final surfaces = sink.where((diagnostic) => diagnostic.surface != null);
-  // A language that renders every control reports no control downgrade at all,
-  // so the code check only applies when something actually fell back.
-  final expectedControls = LiveUiControl.values.toSet().difference(nativeControls);
-  expect(controls.map((diagnostic) => diagnostic.control).toSet(), expectedControls);
-  if (expectedControls.isNotEmpty) {
-    expect(controls.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.controlUnsupported});
-  }
-  final expectedSurfaces = LiveUiSurface.values.toSet().difference(nativeSurfaces);
-  expect(surfaces.map((diagnostic) => diagnostic.surface).toSet(), expectedSurfaces);
-  if (expectedSurfaces.isNotEmpty) {
-    expect(surfaces.map((diagnostic) => diagnostic.code).toSet(), {LiveUiDiagnosticCode.surfaceUnsupported});
-  }
   expect(
-    sink,
-    hasLength(
-      LiveUiControl.values.length + LiveUiSurface.values.length - nativeControls.length - nativeSurfaces.length,
-    ),
+    sink.where((diagnostic) => diagnostic.control != null || diagnostic.surface != null),
+    isEmpty,
+    reason: 'every control and surface resolves to this adapter',
   );
 }
 
 void main() {
-  const registry = LanguageRegistry(
-    adapters: {LiveDesignLanguage.wind: windAdapter},
-    fallback: SharedLanguageAdapter(),
-  );
+  const registry = LanguageRegistry(adapters: {LiveDesignLanguage.wind: windAdapter});
   const resolver = LiveUiResolver(registry: registry);
 
   Widget harness(UiConfig ui, Widget child, List<LiveUiDiagnostic> sink) => LiveConfigProvider(
@@ -89,25 +71,17 @@ void main() {
     ),
   );
 
-  test('every control resolves native, because this language declares the whole contract (§16.3)', () {
+  test('every control it declares resolves to this adapter, with no downgrade (§16.3)', () {
+    final adapter = resolver.resolve(LiveDesignLanguage.wind);
     for (final control in LiveUiControl.values) {
-      final native = nativeControls.contains(control);
-      final resolution = resolver.resolveControl(LiveDesignLanguage.wind, control);
-      expect(
-        resolution.implementation.kind,
-        native ? LiveImplementationKind.adapterNative : LiveImplementationKind.shared,
-        reason: '$control',
-      );
-      expect(
-        resolution.diagnostic?.code,
-        native ? isNull : LiveUiDiagnosticCode.controlUnsupported,
-        reason: '$control',
-      );
+      expect(adapter.capabilities.supports(control), nativeControls.contains(control), reason: '$control');
     }
-    expect(nativeControls, LiveUiControl.values.toSet());
+    for (final control in nativeControls) {
+      resolver.requireControl(LiveDesignLanguage.wind, control);
+    }
   });
 
-  testWidgets('Wind ↔ the token base swaps the rendering path, not the state (§11)', (tester) async {
+  testWidgets('Wind ↔ its own library widgets swaps the rendering path, not the state (§11)', (tester) async {
     final diagnostics = <LiveUiDiagnostic>[];
     final controller = TextEditingController(text: 'typed before the switch');
     addTearDown(controller.dispose);
@@ -131,22 +105,7 @@ void main() {
     expect(find.byType(TextField), findsNothing);
     // Slider and progress are the fork's own parts now — a rail and a run drawn
     // as `WDiv`s — so no token renderer stands in for them inside a Wind page.
-    expect(find.byType(TokenSlider), findsNothing);
-    expect(find.byType(TokenProgress), findsNothing);
-    expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
     expectUndeclaredControls(diagnostics);
-
-    await tester.pumpWidget(harness(const UiConfig(), page(), diagnostics));
-    expect(find.byType(wind.WInput), findsNothing);
-    expect(find.byType(wind.WCard), findsNothing);
-    expect(find.byType(wind.WSelect<String>), findsNothing);
-    expect(find.byType(TextField), findsOneWidget);
-    expect(controller.text, 'typed before the switch');
-    expect(
-      diagnostics.map((diagnostic) => diagnostic.code),
-      contains(LiveUiDiagnosticCode.adapterMissing),
-      reason: 'the core base has no adapter of its own, so the gap is reported',
-    );
 
     diagnostics.clear();
     await tester.pumpWidget(harness(const UiConfig(language: LiveDesignLanguage.wind), page(), diagnostics));

@@ -42,7 +42,7 @@ import 'package:macos_ui/macos_ui.dart' as macos;
 /// Two of those assemblies are the adapter's own, because they are the shapes the
 /// library refuses to build: a slider with nothing to drag and a selection that
 /// names no item — see [slider] and [select].
-class MacosLanguageAdapter extends SharedLanguageAdapter {
+class MacosLanguageAdapter implements LanguageAdapter {
   /// The macOS adapter.
   const new();
 
@@ -74,7 +74,7 @@ class MacosLanguageAdapter extends SharedLanguageAdapter {
   Widget wrap(BuildContext context, DesignToken token, Widget child) => _theme.wrap(context, token, child);
 
   @override
-  Widget button(BuildContext context, LanguageButtonSpec spec) => MacosButtonBuilder.build(context, spec, this);
+  Widget button(BuildContext context, LanguageButtonSpec spec) => MacosButtonBuilder.build(context, spec);
 
   @override
   Widget card(BuildContext context, LanguageCardSpec spec) => MacosCardBuilder.build(context, spec);
@@ -86,7 +86,7 @@ class MacosLanguageAdapter extends SharedLanguageAdapter {
   Widget switchWidget(BuildContext context, LanguageSwitchSpec spec) => MacosSwitchBuilder.build(context, spec);
 
   @override
-  Widget checkbox(BuildContext context, LanguageCheckboxSpec spec) => MacosCheckboxBuilder.build(context, spec, this);
+  Widget checkbox(BuildContext context, LanguageCheckboxSpec spec) => MacosCheckboxBuilder.build(context, spec);
 
   /// The slider, or its inert form.
   ///

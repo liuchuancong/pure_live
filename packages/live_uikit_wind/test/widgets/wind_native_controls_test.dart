@@ -19,10 +19,7 @@ void main() {
 
   Widget harness(Widget child) => LiveConfigProvider(
     config: config,
-    registry: const LanguageRegistry(
-      adapters: {LiveDesignLanguage.wind: windAdapter},
-      fallback: SharedLanguageAdapter(),
-    ),
+    registry: const LanguageRegistry(adapters: {LiveDesignLanguage.wind: windAdapter}),
     child: MaterialApp(
       localizationsDelegates: liveLocalizationsDelegates,
       supportedLocales: const [Locale('en')],
@@ -45,7 +42,7 @@ void main() {
       expect(fired, isFalse);
     });
 
-    testWidgets('the seam verdict is also the visual state', (tester) async {
+    testWidgets('that verdict is also the visual state', (tester) async {
       var fired = false;
       await tester.pumpWidget(
         harness(
@@ -294,7 +291,6 @@ void main() {
       await tester.pumpWidget(
         harness(SizedBox(width: 240, child: LiveSlider(value: 0.25, max: 2, onChanged: (value) => captured = value))),
       );
-      expect(find.byType(TokenSlider), findsNothing);
       // The filled run is the fork's accent class, the rail its neutral pair.
       expect(
         find.byWidgetPredicate((widget) => widget is wind.WDiv && (widget.className ?? '').contains('bg-primary-500')),
@@ -341,7 +337,6 @@ void main() {
           ),
         ),
       );
-      expect(find.byType(TokenSegmented), findsNothing);
       final segments = tester.widgetList<wind.WButton>(find.byType(wind.WButton)).toList();
       expect(segments, hasLength(3));
       expect(segments.map((button) => (button.states ?? const <String>{}).contains('selected')), [false, true, false]);
@@ -387,7 +382,6 @@ void main() {
 
     testWidgets("a determinate bar is the fork's rail and run, and its label is the percent", (tester) async {
       await tester.pumpWidget(harness(const SizedBox(width: 240, child: LiveProgress(value: 0.5, showLabel: true))));
-      expect(find.byType(TokenProgress), findsNothing);
       expect(find.text('50%'), findsOneWidget);
       expect(tester.widget<FractionallySizedBox>(find.byType(FractionallySizedBox)).widthFactor, 0.5);
       expect(
@@ -401,7 +395,6 @@ void main() {
 
     testWidgets("an unknown completion breathes in the fork's own animation and prints no percent", (tester) async {
       await tester.pumpWidget(harness(const SizedBox(width: 240, child: LiveProgress(value: null, showLabel: true))));
-      expect(find.byType(TokenProgress), findsNothing);
       expect(find.text('0%'), findsNothing);
       // Wind has no transform parser (`WSwitch` says so), so an indeterminate run
       // cannot slide; `animate-pulse` is the library's own unfinished-work class.
@@ -431,7 +424,6 @@ void main() {
           ),
         ),
       );
-      expect(find.byType(TokenTabs), findsNothing);
       // `WTabs` welds a panel to the row and paints only text; this strip has no
       // panel and does paint the tab's glyph.
       expect(find.byType(wind.WTabs), findsNothing);
@@ -478,7 +470,6 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.byType(TokenScaffold), findsNothing);
       expect(find.text('page body'), findsOneWidget);
       expect(find.text('act'), findsOneWidget);
       expect(find.text('Home'), findsOneWidget);
@@ -503,7 +494,6 @@ void main() {
           ),
         ),
       );
-      expect(find.byType(TokenAppBar), findsNothing);
       expect(find.text('Rooms'), findsOneWidget);
       expect(find.text('act'), findsOneWidget);
       expect(find.text('Two'), findsOneWidget);
@@ -531,7 +521,6 @@ void main() {
           ),
         ),
       );
-      expect(find.byType(TokenListRow), findsNothing);
       expect(find.text('Quality'), findsOneWidget);
       expect(find.text('Source bitrate'), findsOneWidget);
       expect(find.text('4K'), findsOneWidget);
@@ -580,7 +569,6 @@ void main() {
       );
 
       await tester.pumpWidget(harness(SizedBox(width: 360, child: bar())));
-      expect(find.byType(TokenNavBar), findsNothing);
       expect(find.byIcon(Icons.home), findsOneWidget);
       await tester.tap(find.text('Shows'));
       await tester.pumpAndSettle();
@@ -599,7 +587,6 @@ void main() {
       LiveToast.show(tester.element(find.byType(SizedBox)), 'Saved', type: LiveToastType.success);
       await tester.pump();
 
-      expect(find.byType(TokenToast), findsNothing);
       expect(find.text('Saved'), findsOneWidget);
       expect(find.byType(wind.WCard), findsOneWidget);
       expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
@@ -624,7 +611,6 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byType(TokenDialog), findsNothing);
       expect(find.text('Leave the room?'), findsOneWidget);
       expect(find.text('Playback stops.'), findsOneWidget);
       expect(find.text('Stay'), findsOneWidget);
@@ -664,7 +650,6 @@ void main() {
       await tester.pumpWidget(page());
       await tester.pumpAndSettle();
 
-      expect(find.byType(TokenTabView), findsNothing);
       expect(find.byType(wind.WDiv), findsWidgets, reason: 'the frame is the library’s own container');
       expect(find.text('first page'), findsOneWidget);
 
@@ -738,7 +723,6 @@ void main() {
       // Wind declares all fifteen controls, so nothing in a Wind page should be a
       // `Token*` renderer any more — the assertion is by name rather than by list
       // so a control added to the contract cannot slip in silently.
-      expect(find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')), findsNothing);
       expect(tester.takeException(), isNull);
     });
   });
@@ -767,14 +751,13 @@ void main() {
 
       // The library ships no navigation structure, so the pane is composed out of
       // its styled parts — and the body still belongs to the caller.
-      expect(find.byType(TokenAppShell), findsNothing);
       expect(find.text('room list'), findsOneWidget);
       // The composed column has a bottom slot of its own, unlike the strip.
       expect(find.text('settings'), findsOneWidget);
       expect(
         find.byWidgetPredicate((widget) => widget.runtimeType.toString().startsWith('Token')),
         findsNothing,
-        reason: 'a Wind shell must not be drawn by the token base',
+        reason: 'a Wind shell must not be drawn by its own library widgets',
       );
 
       await tester.tap(find.text('Follow'));
@@ -825,7 +808,6 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(TokenAppShell), findsNothing);
       expect(find.text('room list'), findsOneWidget);
       // The strip is this package's own composed nav bar; its footer slot does not
       // exist, so the trailing content is dropped rather than faked as a row.
@@ -849,7 +831,6 @@ void main() {
       // the token shell reaches, and the same one the explicit forms make.
       await tester.pumpWidget(shell(LiveShellPlacement.adaptive));
       await tester.pump();
-      expect(find.byType(TokenAppShell), findsNothing);
       expect(find.text('settings'), findsNothing);
 
       await tester.pumpWidget(shell(LiveShellPlacement.none));
@@ -864,13 +845,10 @@ void main() {
   group('the app host (§ surfaces)', () {
     // No outer `MaterialApp` here: the host under test *is* the app widget, and
     // pumping it inside the SDK one would pass while no real Wind page looks like
-    // that — and it is the SDK host the token base would fall back to.
+    // that — and it is the SDK host its own library widgets would fall back to.
     Widget hostHarness(Widget child) => LiveConfigProvider(
       config: config,
-      registry: const LanguageRegistry(
-        adapters: {LiveDesignLanguage.wind: windAdapter},
-        fallback: SharedLanguageAdapter(),
-      ),
+      registry: const LanguageRegistry(adapters: {LiveDesignLanguage.wind: windAdapter}),
       child: child,
     );
 

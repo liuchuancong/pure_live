@@ -7,7 +7,7 @@ import 'package:live_uikit_wind/live_uikit_wind.dart';
 /// The capability set must list exactly the controls `WindLanguageAdapter`
 /// overrides with `fluttersdk_wind`'s own parts — mapped where the library has a
 /// widget for the job, composed where it does not; the resolver turns every other
-/// control into a `controlUnsupported` downgrade, so drift between the declaration
+/// control into a a capability exception, so drift between the declaration
 /// and the overrides is caught here before it ships (§17).
 void main() {
   const adapter = windAdapter;
@@ -68,31 +68,27 @@ void main() {
   });
 
   group('Wind resolution through the core resolver (§15.3)', () {
-    const registry = LanguageRegistry(adapters: {LiveDesignLanguage.wind: adapter}, fallback: SharedLanguageAdapter());
+    const registry = LanguageRegistry(adapters: {LiveDesignLanguage.wind: adapter});
     const resolver = LiveUiResolver(registry: registry);
 
     test('a registered language resolves to the native adapter', () {
-      expect(resolver.resolve(LiveDesignLanguage.wind).implementation.kind, LiveImplementationKind.adapterNative);
+      expect(resolver.resolve(LiveDesignLanguage.wind).id, 'wind');
     });
 
-    test('a declared control resolves native with no diagnostic', () {
-      final result = resolver.resolveControl(LiveDesignLanguage.wind, LiveUiControl.button);
-      expect(result.implementation.kind, LiveImplementationKind.adapterNative);
-      expect(result.diagnostic, isNull);
+    test('a registered language resolves to this adapter', () {
+      expect(resolver.resolve(LiveDesignLanguage.wind).id, 'wind');
     });
 
-    test('every control of the contract resolves native, with no downgrade', () {
+    test('every control of the contract resolves to this adapter, with no diagnostic', () {
+      final adapter = resolver.resolve(LiveDesignLanguage.wind);
       for (final control in LiveUiControl.values) {
-        final result = resolver.resolveControl(LiveDesignLanguage.wind, control);
-        expect(result.implementation.kind, LiveImplementationKind.adapterNative, reason: '$control');
-        expect(result.diagnostic, isNull, reason: '$control');
+        expect(adapter.capabilities.supports(control), isTrue, reason: '$control');
+        resolver.requireControl(LiveDesignLanguage.wind, control);
       }
     });
 
-    test('a language this build did not register still resolves shared, and says so', () {
-      final result = resolver.resolveControl(LiveDesignLanguage.neumorphic, LiveUiControl.slider);
-      expect(result.implementation.kind, LiveImplementationKind.shared);
-      expect(result.diagnostic?.code, LiveUiDiagnosticCode.adapterMissing);
+    test('a language this build did not register raises instead of degrading', () {
+      expect(() => resolver.resolve(LiveDesignLanguage.fluent), throwsA(isA<LiveUiResolutionException>()));
     });
   });
 }
