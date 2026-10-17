@@ -9,10 +9,10 @@ to semantic versioning for released packages.
 ### Added
 
 - `LanguageButtonSpec.iconOnly` and `.selected`, so a textless or toggled button is
-  contract data rather than a private rendering path, and `SharedLanguageAdapter`
-  honours both: no `Text` is painted for an icon-only spec, the glyph carries the
-  tooltip as its `semanticLabel`, the control squares to its `ControlSize` height step,
-  and a selected button takes the primary foreground.
+  contract data rather than a private rendering path. Every adapter honours both: no
+  `Text` is painted for an icon-only spec, the glyph carries the tooltip as its
+  `semanticLabel`, the control squares to its `ControlSize` height step, and a
+  selected button takes the primary foreground or its library's own toggle.
 - `LiveIconButton` builds a spec and calls `adapter.button(...)` like every other
   control, instead of painting a `LiveBox` of its own — icon buttons now re-skin with
   the selected language.
@@ -21,19 +21,17 @@ to semantic versioning for released packages.
   `test/backgrounds/live_background_test.dart` for the blur affordance.
 - `LanguageButtonSpec.style`, the button's inline override. `LiveButton` has accepted a
   `style:` parameter since it was written, but the spec it built had no field to carry
-  it, so the override never reached any renderer; `SharedLanguageAdapter.button` now
-  passes it to `LiveBox` as `inlineStyle`, on top of the recipe.
+  it, so the override never reached any renderer; a button builder now passes it to
+  `LiveBox` as `inlineStyle`, on top of the recipe.
 - `test/styling/live_environment_test.dart` covers the layout axis: the breakpoint
   table, the per-mode `Geometry`, `LiveSizing`'s ladder and the numbers `Geometry`
   repeats from it, resize re-resolution, the grid's measured column count, and reading
   the environment with and without a `LiveLayoutBuilder`.
 - `test/styling/live_config_provider_test.dart` covers the reporting surface.
-- `test/styling/token_derivation_test.dart`, `test/styling/style_merge_test.dart`,
-  `test/styling/recipe_test.dart` and `test/styling/shared_renderer_test.dart` cover
-  the four surfaces the spec listed as untested: the seed → `DesignToken` pipeline
-  pinned against Ant's published values, the `Style` cascade, the button recipe's
-  layers and precedence, and the `Token*` renderer's spec-field fidelity (including a
-  pass that draws all ten controls with no adapter registered).
+- `test/styling/token_derivation_test.dart`, `test/styling/style_merge_test.dart` and
+  `test/styling/recipe_test.dart` cover the surfaces the spec listed as untested: the
+  seed → `DesignToken` pipeline pinned against Ant's published values, the `Style`
+  cascade, and the button recipe's layers and precedence.
 - `LiveTabs.enabled`, so a page can express what `LanguageTabsSpec` already carried.
 - `SeedToken.copyWith` accepts `focusOutline`, which is how `UiConfig.focusOutline`
   now reaches the derived `motion.lineWidthFocus`.
@@ -45,15 +43,20 @@ to semantic versioning for released packages.
 - `docs/decisions/0004` records the icon-button decision as accepted and implemented;
   the mapping of `selected` inside third-party libraries is left as its documented
   remainder.
-- `LiveButton.tooltip`, forwarded into `LanguageButtonSpec.tooltip`, and the shared
-  token renderer now wraps an expanded or hinted button the same way the adapters
-  do — so `expand` and `tooltip` are no longer spec fields with no producer.
-- `LiveConfigProvider` now reports the per-control downgrades it was already deciding:
-  with a registered adapter, each undeclared `LiveUiControl` is resolved through
-  `resolveControl` and sent to the host sink once per language change, so
-  `controlUnsupported` reaches production instead of living only in tests (§15.5).
-  A language with no adapter still reports only `adapterMissing`, and a host without a
-  sink is unaffected.
+- `LiveButton.tooltip`, forwarded into `LanguageButtonSpec.tooltip`, and every button
+  builder now wraps an expanded or hinted button the same way — so `expand` and
+  `tooltip` are no longer spec fields with no producer.
+- **The shared token renderer is gone, and with it the `token` language.**
+  `SharedLanguageAdapter`, its `Token*` widgets, `LiveUiFallbackPolicy`,
+  `LiveImplementationKind`, `LiveTheme.implementationKind` and the downgraded
+  diagnostic codes (`adapterMissing`, `controlUnsupported`, `surfaceUnsupported`,
+  `defaultAdapterMissing`) are deleted: the contract is now that every one of the
+  seventeen `LiveUiControl` members and both `LiveUiSurface` members is drawn by the
+  selected library, so a design language can no longer settle for another library's
+  look. `LanguageRegistry` has no `fallback` slot, `UiConfig.language` is required,
+  an unregistered language throws `LiveUiResolutionException`, a declaration without
+  a method behind it throws `LiveUiCapabilityException`, and the only code a
+  `LiveUiDiagnosticSink` still receives is `unsupportedEffect`.
 
 ### Fixed
 
@@ -72,15 +75,16 @@ to semantic versioning for released packages.
 - `Style.isEmpty` answered for ten of the twenty-one properties, reporting a style that
   set only `margin`, `minWidth` or a text role as empty. It now compares against
   `Style()`, so a property added later cannot be left out of it again.
-- `TokenSegmented` claimed its parent's whole width whatever `expand` said: an `Expanded`
-  child fills the row even under `MainAxisSize.min`. The flex child is now applied only
-  on the `expand` branch, so a content-sized segmented control hugs its labels.
-- `TokenTabs` ignored `LanguageTabsSpec.enabled`: the strip stayed tappable, focusable
-  and pointer-cursored while reporting itself disabled. `enabled: false` and a null
-  callback now both refuse input.
-- `TokenTextField` dropped the caller's inline `style` entirely — a `style:` on a field
+- The segmented control claimed its parent's whole width whatever `expand` said: an
+  `Expanded` child fills the row even under `MainAxisSize.min`. The flex child is now
+  applied only on the `expand` branch, so a content-sized segmented control hugs its
+  labels — the rule every adapter's segmented builder now follows.
+- A tab strip ignored `LanguageTabsSpec.enabled`: it stayed tappable, focusable and
+  pointer-cursored while reporting itself disabled. `enabled: false` and a null
+  callback now both refuse input, in the core dispatcher and in every adapter.
+- A text field dropped the caller's inline `style` entirely — a `style:` on a field
   painted nothing. The surface (fill, radius, border, padding, margin, min/max width,
-  alignment, opacity) now takes the override last, like every other renderer.
+  alignment, opacity) now takes the override last, like every other control.
 - `LiveBackground` now honours the resolved affordance flag: with
   `UiConfig.reduceTransparency` set, or a host reporting no hardware blur, the frosted
   surface drops its `BackdropFilter` and keeps its translucent fill, and an image blur
@@ -89,7 +93,7 @@ to semantic versioning for released packages.
   background. Outside a `LiveConfigProvider` the style is still honoured as written.
 - The `LiveBackgroundStyle` documentation named a `LiveBackgroundPresets` type that does
   not exist as the place where that decision lived; it now points at the real gate.
-- `TokenSwitch` announced `toggled` and `checked` on the same semantics node, which
+- A switch announced `toggled` and `checked` on the same semantics node, which
   asserts inside the render tree as soon as a switch is built under a semantics
   owner; a switch is a toggle, so `checked` is dropped.
 - `LiveTabs`' tab laid its ink bar out with `CrossAxisAlignment.stretch` inside the
@@ -102,8 +106,9 @@ to semantic versioning for released packages.
 - An adapter's own library effect (glass blur, fluent acrylic) never reads
   `LiveTheme.canBlur`, so a user's reduce-transparency setting is honoured by the core
   surfaces and not by the third-party ones.
-- `LanguageButtonSpec.selected` is tinted by the token base only; no adapter maps it to
-  its library's own selected affordance yet.
+- `LanguageButtonSpec.selected` has no library equivalent in most languages: forui maps
+  it onto `FButton.selected`, and the others tint the control themselves and record in
+  their §9 that the library has no toggled affordance to carry it.
 - The environment axis lays out, it does not size controls: TV mode moves the page
   padding, icons, gaps and chrome heights, while control height stays a seed value a TV
   composition root has to raise itself. `LiveSizing` states the numbers; nothing in the

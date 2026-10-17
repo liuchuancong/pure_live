@@ -1,7 +1,7 @@
 # `live_uikit` Architecture and Integration Specification
 
 - **Package:** `live_uikit`
-- **Role:** UI core — design-token system, adapter contracts, runtime dispatch, shared renderer
+- **Role:** UI core — design-token system, adapter contracts, runtime dispatch
 - **Status:** Architecture specification (describes the implemented system)
 - **Target:** PureLive 4.x
 - **Platforms:** Android, iOS, Android TV, Windows, macOS, Linux
@@ -43,18 +43,20 @@ never on each other.
    colour or a size.
 2. **Semantics, not appearance, cross the contract boundary.** A caller says
    `variant: danger`, `size: lg`, `loading: true`. How that looks is the adapter's
-   or the renderer's business.
-3. **Every control has a working default.** `SharedLanguageAdapter` paints all ten
-   controls from the tokens, so a language with no adapter — or a control no adapter
-   overrides — is still functional and on-theme.
-4. **Downgrades are observable.** A fallback is a fact the runtime reports through
-   `LiveUiDiagnostic`, never a silent substitution (§10).
+   business alone.
+3. **Every language brings its own renderer.** An adapter implements all seventeen
+   `LiveUiControl` members plus `appHost()` and `shell()`; the core paints nothing,
+   so a control is always drawn by the library the user selected.
+4. **What the device cannot afford is observable.** `LiveUiDiagnostic` reports the
+   one remaining gap — an effect the hardware cannot afford, `unsupportedEffect` —
+   and never a silent substitution (§10).
 5. **Caller-owned state stays caller-owned.** Controllers, focus nodes, form values
    and business state belong to the caller; the core never creates a competing one.
-6. **Adapters extend, they do not replace.** An adapter subclasses
-   `SharedLanguageAdapter` and overrides only what it renders natively, so press,
-   loading and label semantics cannot diverge between a native button and a
-   token-rendered one.
+6. **Adapters implement, they do not inherit.** Each adapter package
+   `implements LanguageAdapter` and draws every control itself, mapping a library
+   widget where its library has one and composing that library's own parts where it
+   does not, so press, loading and label semantics cannot diverge between two
+   languages.
 7. **The core owns no policy decisions.** Which language is active, how it is
    persisted, and what the style selector looks like belong to the application.
 
@@ -68,10 +70,11 @@ never on each other.
 - **Configuration model.** `UiConfig` (language, brightness, accent, pure black,
   density, font family, font scale, transparency, reduced transparency, animations,
   focus outline) with JSON persistence, and its `SeedToken` projection.
-- **Theme surface.** `LiveTheme` (`adapter`, `implementationKind`, `token`,
+- **Theme surface.** `LiveTheme` (`adapter`, `token`,
   `colors`, `text`, `button`, `card`, `input`, `slider`, `switchToken`, `tabs`,
   `listTile`, `checkbox`, `badge`, `select`, `duration`, `canBlur`, `isDark`,
-  `resolveButton`, `supports`), `TextStyles`, and `LiveConfigProvider`.
+  `resolveButton`, `supports`, `supportsSurface`), `TextStyles`, and
+  `LiveConfigProvider`.
 - **Component tokens and recipes.** `ButtonComponentToken` + `ButtonRecipe`, and the
   component tokens for card, input, switch, tabs, list tile, checkbox, slider, badge
   and select.
@@ -79,16 +82,16 @@ never on each other.
   size bounds, background, foreground, border, radius, opacity, blur, shadow, font
   role, alignment, text align) and `InteractionState`
   (normal / hovered / pressed / focused / disabled).
-- **Adapter contracts.** `LanguageAdapter`, the ten `Language*Spec` types,
-  `LiveDesignLanguage`, `LiveUiControl`, `LiveUiCapabilities`,
-  `LiveImplementationKind`.
+- **Adapter contracts.** `LanguageAdapter`, the seventeen `Language*Spec` types,
+  `LiveDesignLanguage`, `LiveUiControl`, `LiveUiCapabilities`, `LiveUiSurface`,
+  `LiveUiSurfaceCapabilities`, `LanguageHostSpec`, `LanguageShellSpec`.
 - **Runtime dispatch.** `LanguageRegistry`, `LiveUiResolver`,
-  `LiveUiFallbackPolicy`, `LiveUiResolution`, `LiveUiResolutionException`.
+  `LiveUiResolutionException`, `LiveUiCapabilityException`.
 - **Diagnostics contract.** `LiveUiDiagnostic`, `LiveUiDiagnosticCode`,
   `LiveUiDiagnosticSink` — a plain typedef, so the core depends on no logging
   implementation.
-- **Shared token renderer.** `SharedLanguageAdapter` and its `Token*` widgets, plus
-  the seam helpers adapters reuse: `interactive()`, `buttonLabel()`, `labelled()`.
+- **The surface adapters paint from.** The resolved `DesignToken`, the component
+  tokens, `Style` and `LiveBox`. The core ships no control renderer of its own.
 - **Components.** Controls: `LiveBox`, `LiveButton`, `LiveIconButton`, `LiveCard`,
   `LiveTextField`, `LiveSwitch`, `LiveCheckbox`, `LiveSlider`, `LiveSegmented`,
   `LiveSelect<T>`, `LiveTabs`/`LiveTab`, `LiveProgress`, `LiveSpinner`,
@@ -144,8 +147,8 @@ packages/live_uikit/
 │       │   │                            # color_engine, theme_algorithm
 │       │   ├── style/                   # Style + InteractionState (+ generated), recipe
 │       │   ├── config/                  # UiConfig (+ generated), liveLocalizationsDelegates
-│       │   ├── contracts/               # LanguageAdapter, the specs, LiveUiCapabilities
-│       │   ├── diagnostics/             # control/kind enums, diagnostic, codes, sink
+│       │   ├── contracts/               # LanguageAdapter, the specs, control + surface capabilities
+│       │   ├── diagnostics/             # the control enum, diagnostic, codes, sink
 │       │   ├── provider/                # LiveConfigProvider, LiveTheme, TextStyles
 │       │   ├── resolution/              # registry, resolver
 │       │   └── widgets/
@@ -195,11 +198,12 @@ One barrel:
 Public surface is exactly what that barrel re-exports — a curated list of
 `src/` files, not the whole tree. `LiveConfigProvider`, `LiveTheme`, `UiConfig`,
 `SeedToken`, `DesignToken`, `Style`, the `Live*` widgets, `LanguageAdapter`,
-`SharedLanguageAdapter`, `LanguageRegistry`, `LiveUiResolver`, the diagnostics
-types, `liveLocalizationsDelegates` and the static scales are the supported surface.
-The exported widget files also carry their `Token*` fallback renderers: those are
-visible because the shared renderer is a reusable composition a host may legitimately
-embed, not because a page should paint a card by hand. What stays private is what the
+`LiveUiCapabilities`, `LiveUiSurfaceCapabilities`, `LanguageRegistry`,
+`LiveUiResolver`, the diagnostics types, `liveLocalizationsDelegates` and the static
+scales are the supported surface.
+The exported widget files are the language-agnostic `Live*` components that dispatch
+through the active adapter; the core carries no renderer a control could fall through
+to. What stays private is what the
 barrels do not name at all — for example `_LiveThemeScope` and the widget files'
 private helpers — and any package importing `package:live_uikit/src/...` directly is
 the violation §15 guards against.
@@ -264,8 +268,8 @@ fields, so a property added later cannot be silently left out of it.
 `ButtonRecipe` is the pattern: `base ⊕ variant ⊕ size ⊕ state`, fed only by the
 resolved `DesignToken` and `ButtonComponentToken`. `LiveTheme.resolveButton` is the
 single entry a widget calls; it never inspects the language. Component tokens without
-a dedicated recipe (card, input, tabs, …) resolve their style inside the corresponding
-`Token*` widget, following the same shape.
+a dedicated recipe (card, input, tabs, …) are read by whichever adapter draws that
+control, following the same shape.
 
 ## 9. Adapter contract
 
@@ -275,24 +279,32 @@ abstract interface class LanguageAdapter {
   String get id;
   String get displayName;
   LiveUiCapabilities get capabilities;
+  LiveUiSurfaceCapabilities get surfaces;
 
   Widget wrap(BuildContext context, DesignToken token, Widget child);
 
   Widget button(...); Widget card(...); Widget textField(...);
   Widget switchWidget(...); Widget checkbox(...); Widget slider(...);
   Widget segmented(...); Widget progress(...); Widget select<T>(...);
-  Widget tabBar(...);
+  Widget tabBar(...); Widget scaffold(...); Widget appBar(...);
+  Widget listRow(...); Widget navBar(...); Widget toast(...);
+  Widget dialog(...); Widget tabView(...);
+
+  Widget appHost(BuildContext context, LanguageHostSpec spec);
+  Widget shell(BuildContext context, LanguageShellSpec spec);
 }
 ```
 
-- `wrap` installs the language's theme scope; the shared adapter returns the child
-  unchanged, because the token renderer reads `LiveTheme` directly.
+- `wrap` installs the language's theme scope around the subtree it renders.
 - `id` is machine-readable and persisted; `displayName` is the selector label;
-  `capabilities` is a declaration of fact about which methods the adapter overrides.
-- `LiveUiControl` has exactly ten members and `LiveUiCapabilities.supports()` is what
-  the resolver consults. A capability set that lists a control the adapter does not
-  override, or omits one it does, is drift — asserted in every adapter's contract test
-  and by the architecture guard.
+  `capabilities` and `surfaces` declare what the adapter actually overrides.
+- `LiveUiControl` has exactly seventeen members and `LiveUiCapabilities.supports()`
+  is what `requireControl` consults; `LiveUiSurface` has two and
+  `LiveUiSurfaceCapabilities.supports()` is what `requireSurface` consults. A
+  declaration that names a control the adapter does not override, or omits one it
+  does, is drift: `requireControl`/`requireSurface` raise
+  `LiveUiCapabilityException`, every adapter's contract test asserts the pair, and
+  the architecture guard compares the two sets.
 - Specs are the whole crossing surface: they carry semantics plus caller-owned
   `controller`/`focusNode`/`autofocus`/`tooltip`/`style`, and nothing else. On the button
   that includes `iconOnly` (a textless control, named by its tooltip), `selected` (a mode
@@ -300,76 +312,68 @@ abstract interface class LanguageAdapter {
   parameter long before the spec could carry it. A spec field a library cannot express is
   documented as unmappable in that adapter's §9, never faked by a hand-painted substitute.
 
-`SharedLanguageAdapter implements LanguageAdapter` (its `language` is
-`LiveDesignLanguage.token`, its capabilities are empty) and additionally exposes
-the seam helpers `interactive(spec)`, `buttonLabel(spec, theme)` and
-`labelled(context, label, control)` that adapters call from their own builders.
+Every adapter package implements this interface directly — the core exports no
+shared base to extend. Each draws all seventeen controls plus `appHost()` and
+`shell()` from its own library, mapping a widget of that library where the library
+has one and composing its parts where it does not, and every builder comment says
+which of the two it is.
 
 ## 10. Runtime dispatch and diagnostics
 
 ```dart
 const registry = LanguageRegistry(
   adapters: {LiveDesignLanguage.material: materialAdapter},
-  fallback: SharedLanguageAdapter(),
 );
-const resolver = LiveUiResolver(registry: registry);
+final adapter = LiveUiResolver(registry: registry).resolve(language);
 ```
 
-- `LanguageRegistry` is keyed by `LiveDesignLanguage`, not by the string id;
-  `defaultLanguageRegistry` registers nothing, so an app that forgets to wire
-  adapters still renders, and reports it.
-- `LiveUiResolver.resolve(language)` answers *who renders this language*: a
-  registered adapter yields `adapterNative` with no diagnostic; a missing one yields
-  the shared fallback plus `adapterMissing`. `resolveControl(language, control)`
-  answers the per-control question: an undeclared control on a registered adapter
-  yields `shared` plus `controlUnsupported`.
-- `LiveUiFallbackPolicy` makes the three gap cases independently configurable:
-  `onMissingAdapter` and `onUnsupportedControl` default to `fallbackToShared`, while
-  `onMissingDefaultAdapter` defaults to `failFast` — a registry that cannot even
-  supply its fallback is a startup fault, surfaced as `LiveUiResolutionException`,
-  never recovered silently.
-- `LiveConfigProvider` performs the resolution **once per language change** and
-  carries the verdict into `LiveTheme.adapter` / `implementationKind`, so a widget
-  re-resolves nothing and a test can assert the decision. `adapterMissing` fires at
-  most once per language change; a host's sink must not treat it as an error.
+- `LanguageRegistry` is keyed by `LiveDesignLanguage`, not by the string id, and has
+  no fallback slot: a language this build claims to support must bring its own
+  adapter, and `UiConfig.language` is required because there is no default language.
+- `LiveUiResolver.resolve(language)` returns the `LanguageAdapter` that renders that
+  language. An unregistered language throws `LiveUiResolutionException`: there is
+  nothing underneath to stand in, so the alternative to throwing is a window painted
+  by a library the user did not choose.
+- `requireControl(language, control)` and `requireSurface(language, surface)` check a
+  declaration against the methods behind it and throw `LiveUiCapabilityException`
+  when an adapter claims a control it does not override or a surface it does not own.
+- `LiveConfigProvider` performs the resolution **once per language change** and puts
+  the adapter itself on `LiveTheme.adapter`, so a widget re-resolves nothing and a
+  test can assert the decision.
 - Diagnostics reach a host-supplied `LiveUiDiagnosticSink` typedef; the core imports
-  no logger.
+  no logger. The one code left is `unsupportedEffect` — an effect the device cannot
+  afford — because a dispatch result is no longer a reportable downgrade.
 
-The provider reports the language-wide gap once per language change, and — when the
-language *does* have an adapter — resolves all ten controls through
-`resolveControl` and reports each undeclared one once. So a host with a wired sink
-learns which controls the active library draws from the shared renderer instead of
-discovering it visually, and `controlUnsupported` is emitted where the decision is
-made (§15.5). Rebuilds with the same language report nothing new; switching languages
-re-reports for the new adapter. A host with no sink stays quiet, and a fail-fast policy
-turns the same call into a loud fault rather than a report.
+The provider reports an unaffordable effect once per language change: rebuilds with
+the same language report nothing new, and switching languages re-reports for the new
+library. A host with no sink stays quiet. There is no per-control downgrade left to
+report — a control is either drawn by the selected library or the build fails loudly
+at resolution time (§15.5).
 
-## 11. The shared token renderer
+## 11. Adapter rendering conventions
 
-`SharedLanguageAdapter` is the base every language inherits and the fallback every
-gap resolves to. Its `Token*` widgets (`TokenCard`, `TokenTextField`, `TokenSwitch`,
-`TokenCheckbox`, `TokenSlider`, `TokenSegmented`, `TokenProgress`, `TokenSelect`,
-`TokenTabs`) compose `LiveBox` + the resolved component tokens, honour the caller's
-`focusNode`/`autofocus`, clamp values into range, treat a null callback as disabled,
-and wrap an expanded button in a full-width box — the exact conventions adapters are
-required to match, which is why adapters reuse `interactive()`, `buttonLabel()` and
-`labelled()` instead of reimplementing them.
+The core ships no renderer. Each of the eight adapter packages draws the whole
+contract from its own library, so the conventions below are obligations every
+adapter reproduces — mapping a library widget where the library has one, composing
+that library's parts where it does not — and each adapter's §16 suite pins them:
+honour the caller's `focusNode`/`autofocus`, clamp a value into range, treat a null
+callback as disabled, and let `expand` fill the parent's width.
 
-Four of those conventions are the renderer's own, not inherited from an adapter, and
-each was verified by a test that first failed:
+Four of them were settled on the way, and each was verified by a test that first
+failed:
 
-- The button renderer hands the caller's `style` to `LiveBox` as `inlineStyle`, so an
+- A button builder hands the caller's `style` to `LiveBox` as `inlineStyle`, so an
   override lands on top of `base ⊕ variant ⊕ size ⊕ state` instead of being dropped —
   `LiveButton` had been accepting `style:` and building a spec that could not carry it.
-- `TokenTextField` paints the caller's `style` last, over the input component token —
+- A text field paints the caller's `style` last, over the input component token —
   fill, radius, border, padding, margin, min/max width, alignment and opacity. Blur is
   a `LiveBox` effect and a field has no frosted state, so an inline `blur` on a field
   stays unpainted by design.
-- `TokenSegmented` only stretches its labels when `expand` is set. `Expanded` claims
+- A segmented control stretches its labels only when `expand` is set. `Expanded` claims
   the whole remaining width even under `MainAxisSize.min`, so a flex child is applied
   on the `expand` branch alone; otherwise `expand: false` looked identical to
   `expand: true`.
-- `TokenTabs` treats `enabled` and a null callback as disabled: no tap handler, no
+- A tab strip treats `enabled` and a null callback as disabled: no tap handler, no
   focus request, a deferred cursor. `LiveTabs` exposes `enabled` so a page can express
   what the spec already carried.
 
@@ -421,12 +425,13 @@ to the other, is an open decision recorded in `docs/decisions/0005-two-livebackg
 
 ## 14. Testing strategy
 
-- `test/styling/live_ui_resolver_test.dart` covers dispatch: registered → native with
-  no diagnostic; unregistered → shared plus `adapterMissing`; fail-fast → throws.
-- `test/styling/live_config_provider_test.dart` covers the reporting surface: a partial
-  adapter reports each undeclared control once and nothing more on rebuild, a language
-  switch re-reports, a language with no adapter reports only `adapterMissing` (not the
-  control set), and a host without a sink stays quiet.
+- `test/styling/live_ui_resolver_test.dart` covers dispatch: a registered language
+  resolves to its own adapter; an unregistered one throws
+  `LiveUiResolutionException`; `requireControl`/`requireSurface` throw
+  `LiveUiCapabilityException` against a declaration that has no method behind it.
+- `test/styling/live_config_provider_test.dart` covers the reporting surface: an
+  effect the device cannot afford is reported once, a rebuild reports nothing new, a
+  language switch re-reports, and a host without a sink stays quiet.
 - `test/backgrounds/live_background_test.dart` covers the affordance surface: a frosted
   background blurs while the theme allows it, `reduceTransparency: true` and
   `hardwareBlur: false` each drop the `BackdropFilter` while keeping the translucent
@@ -461,8 +466,9 @@ to the other, is an open decision recorded in `docs/decisions/0005-two-livebackg
   equality group asserts a change to *every* `Geometry` field is visible, and one test
   keeps a const subtree re-notified when only the radius moves — the case
   `LiveEnvironmentScope.updateShouldNotify` used to miss.
-- The adapter suites carry the rest of the dispatch contract end to end, including a
-  switch to the core base and back with caller-owned state preserved
+- The adapter suites carry the rest of the dispatch contract end to end: all
+  seventeen controls and both surfaces resolve through the real registry, and a
+  switch to another language and back preserves caller-owned state
   (`packages/live_uikit_*/test/integration/`).
 
 ## 15. CI and architectural enforcement
@@ -477,25 +483,23 @@ memory. Formatting, analysis and tests are gated the same way as every package.
 
 ## 16. Acceptance checklist
 
-- [x] Owns tokens, contracts, dispatch, diagnostics and the shared renderer; owns no
-  application policy, persistence, navigation or state management.
+- [x] Owns tokens, contracts, dispatch and diagnostics; owns no application policy,
+  persistence, navigation, state management — and no control renderer.
 - [x] Depends on no third-party UI library and on no adapter.
-- [x] Every control has a token-driven default, and every default honours
-  caller-owned controllers, focus nodes and inline style.
-- [x] A language with no adapter renders and reports; a missing default adapter fails
-  loudly.
-- [x] `LiveUiControl`/`LiveUiCapabilities` are the single capability surface adapters
-  declare against.
-- [x] `controlUnsupported` is emitted from the render path, once per language
-  change, and asserted there (§10).
+- [x] Every language draws every control itself, and the contract keeps
+  caller-owned controllers, focus nodes and inline style reachable (§11).
+- [x] A language with no adapter fails loudly at resolution time; nothing settles
+  for a foreign look.
+- [x] `LiveUiControl`/`LiveUiCapabilities` and `LiveUiSurface`/
+  `LiveUiSurfaceCapabilities` are the capability surfaces adapters declare against.
+- [x] `unsupportedEffect` is emitted from the render path, once per language change,
+  and asserted there (§10).
 - [x] `LiveIconButton` dispatches through the adapter like every other control, carrying
-  `iconOnly`/`selected` on the spec (`docs/decisions/0004-…-adapter.md`): the shared
-  `buttonLabel` makes textless rendering automatic for every adapter, and each spec's §9
-  records that `selected` is mapped by the token base alone.
-- [x] Token derivation, `Style` merge, recipes and the `Token*` renderer have their
-  own tests (§14) — and the merge fix they forced (`merge` had been clearing the layer
-  below, so no token-drawn control ever kept its base style through a state change) is
-  asserted there.
+  `iconOnly`/`selected` on the spec (`docs/decisions/0004-…-adapter.md`): each spec's §9
+  records whether that language's library has a toggled affordance to map onto.
+- [x] Token derivation, `Style` merge and the recipes have their own tests (§14) —
+  and the merge fix they forced (`merge` had been clearing the layer below, so no
+  styled control ever kept its base style through a state change) is asserted there.
 - [x] `UiConfig.reduceTransparency` and the resolved `canBlur` are honoured by the core
   surfaces that blur (`LiveBox`, `LiveBackground`), with tests (§12/§14). Adapter-level
   library effects remain the open part (§12).

@@ -1,45 +1,49 @@
 # live_uikit_forui
 
 The ForUI design-language adapter for PureLive's unified UI system (`live_uikit`).
-It renders every control specification the core dispatches with `forui` widgets
-(`FButton`, `FCard`, `FTextField`, `FSwitch`, `FCheckbox`, `FSlider`, `FProgress`,
-`FSelect`, `FTabs`, `FScaffold`, `FHeader`, `FTile`, `FBottomNavigationBar`, `FToast`)
-and installs the forui theme variant the resolved design token can decide.
+It implements the whole core contract with `forui` widgets
+(`FButton`, `FCard`, `FTextField`, `FSwitch`, `FCheckbox`, `FSlider`, `FDeterminateProgress`,
+`FProgress`, `FSelect`, `FTabs`, `FScaffold`, `FHeader`, `FTile`, `FBottomNavigationBar`,
+`FToast`, `FDialog`), composes the controls the library has no widget for out of its own
+parts, owns both structural surfaces, and installs the forui theme variant the resolved
+design token can decide.
 
 See `live-uikit-forui.md` in this directory for the full architecture and
 integration specification.
 
 ## Purpose
 
-`live_uikit` defines the design-language-agnostic contracts, tokens, runtime
-dispatch and the shared token renderer. This package supplies the **ForUI**
-implementation of that contract so an application can select `forui` at runtime
-and have its controls drawn by `forui`, without any business page importing
-`forui` directly.
+`live_uikit` defines the design-language-agnostic contracts, tokens and runtime
+dispatch. This package supplies the **ForUI** implementation of that contract so an
+application can select `forui` at runtime and have every control, the page frame and the
+application host drawn by `forui`, without any business page importing `forui` directly.
 
 ## Responsibilities
 
-- Implement `LanguageAdapter` for `LiveDesignLanguage.forui` (stable id `forui`).
+- Implement `LanguageAdapter` for `LiveDesignLanguage.forui` (stable id `forui`). The
+  contract is an `abstract interface class`; this adapter implements it directly, and
+  implements all of it — every control and both surfaces.
 - Map the resolved `DesignToken` into forui's `FThemeData` and install it through an
   `FTheme` scope (never a second application widget inside the host). The library's private
   `FThemeData` constructor caps the mapping at the light/dark neutral variant (§8.1);
   the ceiling is pinned by test rather than faked.
 - Build native ForUI widgets for all seventeen: **button, card, text field, switch,
   checkbox, slider, segmented, progress, select, tab bar, scaffold, app bar, list
-  row, nav bar, toast, dialog, tab view**. Two of them are composed out of ForUI's own parts rather than
-  mapped one-for-one — `segmented` is a row of ghost `FButton`s taking
-  `FButton.selected`, because the library's only single-choice row is `FTabs`, which is
-  a tab *view* and is spent on the tab bar — and `tab bar` is `FTabs` itself with an
-  empty content panel per entry, since that widget always paints a body area while this
-  contract's body belongs to the caller (§9). The body itself, `tab view`, is the
-  mirror image of that gap: the library's only page switcher is the same `FTabs`, whose
-  panels hang off labels a page switcher is never given, so the view is the widgets-layer
-  `PageView` over the caller's pages. `dialog` is `FDialog`'s frame, with the inside
-  composed because 0.27.5's frame carries no content padding and no action area; the
-  route, the barrier and the fade stay in the core's `showLiveDialog`.
-- Declare the whole contract in `foruiCapabilities`: a ForUI page reports no
-  `controlUnsupported` downgrade, and nothing inside a ForUI frame is a token
-  renderer (§16/§17).
+  row, nav bar, toast, dialog, tab view**. Fourteen of those are one-for-one mappings
+  onto a `forui` widget. Three are not, and each builder says why: `segmented` is composed
+  as a row of ghost `FButton`s taking `FButton.selected`, because the library's only
+  single-choice row is `FTabs`, which is a tab *view* and is spent on the tab bar; `tab bar`
+  is `FTabs` itself with an empty content panel per entry, since that widget always paints a
+  body area while this contract's body belongs to the caller; and `tab view` is the mirror
+  image of that gap — the library's only page switcher is the same `FTabs`, whose panels hang
+  off labels a page switcher is never given, so the view is the widgets-layer `PageView` over
+  the caller's pages. `dialog` is `FDialog`'s frame, with the inside composed because
+  0.27.5's frame carries no content padding and no action area; the route, the barrier and
+  the fade stay in the core's `showLiveDialog`.
+- Declare the whole contract in `foruiCapabilities` and both structural surfaces in
+  `foruiSurfaces`, and keep each set in step with the methods the adapter overrides (§17).
+  A control or surface declared without an override is a `LiveUiCapabilityException`; a
+  language this build did not register is a `LiveUiResolutionException`.
 - Own both structural surfaces (§ surfaces). The app host: the library ships no
   application widget, so the host is Flutter's `WidgetsApp` with `FTheme` above the
   routed tree — which is what takes the page transition and the scroll physics out of
@@ -58,11 +62,12 @@ and have its controls drawn by `forui`, without any business page importing
 - Direct dependencies on other style adapters, or on `forui` leaking into
   business packages.
 
-Nothing in the seventeen-control contract falls back to the core shared token renderer
-any more, and neither do the two structural surfaces. What is left is narrower and
-documented per builder: a few spec fields the library has no slot for
-(`LanguageProgressSpec.showLabel`, `LanguageSliderSpec.focusNode`,
-`LanguageTabsSpec.spacing`, `FSidebarItem`'s missing disabled state), and
+Every one of the seventeen controls and both structural surfaces is drawn by this package,
+in `forui`'s own widgets where the library has one and out of its own parts where it does
+not. What is left is narrower and documented per builder: a few spec fields the library has
+no slot for (`LanguageProgressSpec.showLabel`, `LanguageSliderSpec.focusNode`,
+`LanguageTabsSpec.spacing`, `FSidebarItem`'s missing disabled state,
+`LanguageDialogSpec.dismissible` which the core's barrier answers), and
 the theme ceiling described above (spec §18).
 
 ## Public entry point
@@ -80,13 +85,12 @@ registers the adapter:
 import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_forui/live_uikit_forui.dart';
 
-const registry = LanguageRegistry(
-  adapters: {LiveDesignLanguage.forui: foruiAdapter},
-  fallback: SharedLanguageAdapter(),
-);
+const registry = LanguageRegistry(adapters: {LiveDesignLanguage.forui: foruiAdapter});
 
-// In the app shell, append forui's delegate to the core's:
-//   MaterialApp(
+// Append forui's delegate to the core's and hand the result to the host, which
+// forwards it to this adapter's `appHost`:
+//   LiveApp(
+//     routerConfig: router,
 //     localizationsDelegates: [
 //       ...liveLocalizationsDelegates,
 //       ...foruiLocalizationsDelegates,
@@ -94,12 +98,14 @@ const registry = LanguageRegistry(
 //   )
 ```
 
-Selecting the style at runtime is `UiConfig.language = LiveDesignLanguage.forui`;
-a `LiveButton` then draws through this adapter with no change to the page.
+Selecting the style at runtime is `UiConfig.language = LiveDesignLanguage.forui`, which
+the configuration requires; a `LiveButton` then draws through this adapter with no change
+to the page, and the window itself is hosted by this adapter's `appHost`. A language the
+build did not register is a `LiveUiResolutionException`, not another language's skin.
 
 ## Dependencies
 
-- `live_uikit` (the contracts and shared renderer)
+- `live_uikit` (the contracts and runtime dispatch)
 - `forui` ^0.27.5 (the native forui widgets and theme)
 - Flutter SDK
 

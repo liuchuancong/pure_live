@@ -30,15 +30,16 @@ without a page changing a line.
   `LiveContentGrid`, and `LiveEnvironment`/`LiveEnvironmentScope` for the
   platform/TV context. Every control is a dispatcher to the active adapter, never a
   branch on a language.
-- **The adapter contract.** `LanguageAdapter`, the ten `Language*Spec` types,
-  `LiveUiControl`, `LiveUiCapabilities`, and `SharedLanguageAdapter` — the
-  token-driven base renderer that serves every control an adapter does not
-  override, including the `interactive()`/`buttonLabel()`/`labelled()` seam
-  adapters reuse so press, loading and label semantics cannot diverge.
+- **The adapter contract.** `LanguageAdapter` — an `abstract interface class` with
+  seventeen control builders plus `appHost()` and `shell()` — the seventeen
+  `Language*Spec` types, `LiveUiControl`/`LiveUiCapabilities` and
+  `LiveUiSurface`/`LiveUiSurfaceCapabilities`. The core ships no renderer: each
+  adapter package draws every control from its own library, so press, loading and
+  label semantics are the contract's job, not a base class's.
 - **Runtime dispatch and observability.** `LanguageRegistry` (keyed by
-  `LiveDesignLanguage`, with the shared fallback), `LiveUiResolver`, the fallback
-  policy, and the `LiveUiDiagnostic`/`LiveUiDiagnosticSink` contracts that make
-  every downgrade reported rather than silent.
+  `LiveDesignLanguage`, with no fallback slot), `LiveUiResolver`, and the
+  `LiveUiDiagnostic`/`LiveUiDiagnosticSink` contracts, which report the one thing
+  still worth reporting — an effect the device cannot afford.
 - **Configuration and localization surface.** `LiveConfig`/`UiConfig` persistence
   models, `LiveConfigProvider`, and `liveLocalizationsDelegates`.
 - **Backgrounds.** `LiveBackground` with its `LiveBackgroundStyle` model (solid,
@@ -90,29 +91,30 @@ import 'package:live_uikit_material/live_uikit_material.dart';
 // The composition root registers the adapters that ship in this build.
 const registry = LanguageRegistry(
   adapters: {LiveDesignLanguage.material: materialAdapter},
-  fallback: SharedLanguageAdapter(),
 );
 
 LiveConfigProvider(
   config: const UiConfig(language: LiveDesignLanguage.material),
   registry: registry,
   diagnostics: myDiagnosticSink,
-  child: MaterialApp(
+  // `LiveApp` asks the active adapter for the host, so the window itself — the
+  // route transition, the overlay, the chrome's strings — changes with the language.
+  child: LiveApp(
+    routerConfig: myRouter,
     localizationsDelegates: const [
       ...liveLocalizationsDelegates,
       ...materialLocalizationsDelegates,
     ],
-    home: LiveButton(label: 'Save', onPressed: save),
   ),
 );
 ```
 
 ## Dependencies
 
-Flutter SDK (`widgets`, `material` primitives for the token renderer and
-`flutter_localizations` for the delegates) and `freezed`/`json_serializable` for
-the persisted configuration models. Nothing else; notably no third-party UI
-library.
+Flutter SDK (`widgets` primitives and `material`'s `RouterConfig`/localization
+types, plus `flutter_localizations` for the delegates) and
+`freezed`/`json_serializable` for the persisted configuration models. Nothing
+else; notably no third-party UI library.
 
 ## Testing
 
@@ -126,31 +128,32 @@ flutter test packages/live_uikit
 `live_config.g.dart`, both checked in); regenerate them after editing
 `lib/src/styling/config/live_config.dart`.
 
-`test/styling/live_ui_resolver_test.dart` covers the dispatch contract: a
-registered language resolves `adapterNative` with no diagnostic, an unregistered
-one downgrades to `shared` and records `adapterMissing`, and a fail-fast policy
-throws instead of rendering a silent blank. `test/styling/live_config_provider_test.dart`
-covers what a host is told, `test/backgrounds/live_background_test.dart` the blur
-affordance, and `token_derivation_test.dart`, `style_merge_test.dart`,
-`recipe_test.dart` and `shared_renderer_test.dart` cover the token pipeline, the
-`Style` cascade, the button recipe and the `Token*` renderer. Per-adapter contract,
-theme, control and switching tests live in the `live_uikit_*` packages.
+`test/styling/live_ui_resolver_test.dart` covers the dispatch contract: a registered
+language hands back its own adapter, an unregistered one throws
+`LiveUiResolutionException`, and `requireControl`/`requireSurface` throw
+`LiveUiCapabilityException` against a declaration with no method behind it.
+`test/styling/live_config_provider_test.dart` covers what a host is told,
+`test/backgrounds/live_background_test.dart` the blur affordance, and
+`token_derivation_test.dart`, `style_merge_test.dart` and `recipe_test.dart` cover
+the token pipeline, the `Style` cascade and the button recipe. Per-adapter
+contract, theme, control and switching tests live in the `live_uikit_*` packages.
 
 ## Known limitations
 
 - An adapter's own library effect (glass blur, fluent acrylic) does not read
   `LiveTheme.canBlur`, so reduce-transparency is honoured by the core surfaces and not
   by those libraries; no adapter theme scope can overrule it today.
-- `LanguageButtonSpec.selected` is painted by the token base only. Each adapter's §9
-  records that its library has no equivalent selected affordance, so a toggled button
-  drawn by an adapter reads unselected.
+- `LanguageButtonSpec.selected` has a library affordance to map onto in only one
+  language (forui's `FButton.selected`). Each adapter's §9 records what it does
+  instead — a tint it composes, or a button that reads unselected.
 - The environment axis (`LiveEnvironmentScope`, `LiveLayoutBuilder`, `LiveContentGrid`)
   resolves layout numbers, not control heights: those come from the seed, so a TV
   composition root has to raise `SeedToken.controlHeight` itself
   (`LiveSizing.controlHeightTv` is the number to use). Nothing in the core reads
   `LiveSizing`; it is the host-facing scale.
-- `SharedLanguageAdapter` is the `token` base — the only renderer the core ships,
-  and the one every language falls through to. The two Material- and iOS-shaped
-  adapters (`material_ui`, `cupertino_ui`) are separate packages, so the visually
-  closest pairs are also the ones most sensitive to a stale theme scope
+- The core ships no renderer, so a language with no adapter in this build is a
+  startup fault rather than a look the app can settle for. The two Material- and
+  iOS-shaped adapters (`material_ui`, `cupertino_ui`) are separate packages from
+  the SDK's own libraries, so the visually closest pairs are also the ones most
+  sensitive to a stale theme scope
   (see `packages/live_uikit_material/live-uikit-material.md` §11).

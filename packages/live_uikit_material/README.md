@@ -7,13 +7,17 @@ theme.
 
 ## Purpose
 
-`live_uikit` defines the design-language-agnostic contracts, tokens, runtime
-dispatch and the shared token renderer. This package supplies the **Material UI**
-implementation so an application can select `material` at runtime and have its
-controls drawn by `material_ui`, without business pages importing it.
+`live_uikit` defines the design-language-agnostic contracts, the tokens, the
+runtime dispatch and the neutral `Live*` widgets a page places. This package
+supplies the **Material UI** implementation of that contract so an application
+can select `material` at runtime and have its controls drawn by `material_ui`,
+without business pages importing it.
 
-`material_ui` is a fork of Flutter's Material widgets, so this adapter mirrors the
-core Material coverage rather than inventing a new one.
+`material_ui` is a fork of Flutter's Material widgets, so this adapter covers the
+whole contract from that library: `MaterialLanguageAdapter` implements
+`LanguageAdapter` and answers all seventeen controls plus both structural
+surfaces, taking one of the fork's widgets where the fork has one and composing
+its own parts where it does not.
 
 ## Responsibilities
 
@@ -23,16 +27,23 @@ core Material coverage rather than inventing a new one.
   theme scope (never a nested application widget).
 - Build native Material widgets for all seventeen: **button, card, text field, switch,
   checkbox, slider, segmented, progress, select, tab bar, scaffold, app bar, list
-  row, nav bar, toast, dialog, tab view**. Three of them are driven differently from the neutral
-  spec: `select` is a `DropdownButton`, `tab bar` is a `TabBar` behind a
-  `TabController` the adapter owns, and `toast` is a `Material` card themed by the
-  fork's own `SnackBarThemeData` (§9).
+  row, nav bar, toast, dialog, tab view**. Sixteen of them are a single fork widget
+  — a `text field` is its `TextField`, a `select` its `DropdownButton`, a `tab bar`
+  its `TabBar` behind a `TabController` this package owns, and a `tab view` its
+  `TabBarView` behind a second one. A `toast` is the exception with nothing to map:
+  it is the fork's `Material` surface themed by its own `SnackBarThemeData`, because
+  a `SnackBar` reads an animation only a `ScaffoldMessenger` supplies. Two controls
+  keep a second, composed form for the one spec shape the fork refuses to build — a
+  `slider` that must not move and a `nav bar` too short to satisfy its assert — drawn
+  from the fork's own disabled slider theme and elevated surface role with no press
+  target under either (§9).
 - Own both structural surfaces: the app host (`mu.MaterialApp`) and the shell
   (`mu.NavigationRail`, or the fork's `NavigationBar` when the caller asks for a
   bottom strip) (§ surfaces).
-- Declare the whole contract in `materialCapabilities`: a Material page reports no
-  `controlUnsupported` downgrade, and nothing inside a Material frame is a token
-  renderer (§16/§17).
+- Declare the whole contract in `materialCapabilities` and both surfaces in
+  `materialSurfaces`. The declaration is checked rather than trusted: a capability
+  named without a matching method is a `LiveUiCapabilityException`, and a language
+  this build did not register is a `LiveUiResolutionException` (§16/§17).
 - Expose `materialLocalizationsDelegates` (the fork's own Material
   localizations) for the composition root to install.
 
@@ -43,8 +54,12 @@ core Material coverage rather than inventing a new one.
 - State management (Riverpod/GetX), navigation, business pages, or playback.
 - Direct dependencies on other style adapters.
 
-Controls not built here (select, tab bar) fall back to the core shared token
-renderer — they still render on-theme.
+Every control of the contract and both structural surfaces are answered here, from
+`material_ui` — one of its widgets where it has one, its own parts where it does
+not. A Material page therefore has nothing left in another library's hands: the
+fields the fork cannot express (`LanguageProgressSpec.showLabel`,
+`LanguageTabsSpec.spacing`, `LanguageButtonSpec.selected` and `.style`) are
+documented at the builder that drops them (§9).
 
 ## Public entry point
 
@@ -62,7 +77,6 @@ import 'package:live_uikit_material/live_uikit_material.dart';
 
 const registry = LanguageRegistry(
   adapters: {LiveDesignLanguage.material: materialAdapter},
-  fallback: SharedLanguageAdapter(),
 );
 
 // In the app shell, append the fork's delegates to the core's:
@@ -76,7 +90,7 @@ const registry = LanguageRegistry(
 
 ## Dependencies
 
-- `live_uikit` (the contracts and shared renderer)
+- `live_uikit` (the contracts, tokens and runtime dispatch)
 - `material_ui` ^1.6.0 (the native widgets and theme)
 - Flutter SDK
 
@@ -87,18 +101,29 @@ flutter pub get
 flutter test packages/live_uikit_material
 ```
 
-`test/adapter/material_contract_test.dart` verifies the stable id/display name,
-that the declared capabilities match the controls the adapter overrides, and the
-core resolver's native-versus-`controlUnsupported` dispatch (§16/§17).
+`test/adapter/material_contract_test.dart` verifies the stable id and display
+name, that the declared capabilities and surfaces match the methods the adapter
+overrides, and that the core resolver hands this language its own adapter and
+raises `LiveUiResolutionException` for a language this build did not register
+(§16/§17).
 
 ## Known limitations
 
-- Select and tab bar are served by the shared token renderer, not by native
-  `material_ui` widgets.
-- Test coverage is present at four layers: `test/adapter/` (contract and
-  resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime re-skin),
-  `test/widgets/` (every native control driven through the real dispatch path), and
-  `test/integration/` (resolution surface across the contract and a switch to the
-  the shared `token` base and back with caller-owned state preserved). What remains
-  untested is the part that needs hardware: focus traversal, Android TV D-pad, and
-  the platform claims in §13.
+- `LanguageProgressSpec.showLabel` has no slot in the fork's indicator, so a
+  Material progress bar never paints the trailing percentage (§9).
+- `material_ui` 1.6.0 cannot build a disabled `mu.Slider`, and its
+  `mu.NavigationBar` asserts at least two destinations with an in-range selection.
+  Those three spec shapes are drawn from the library's own disabled theme and
+  elevated surface instead, value on screen and no input reaching the callback (§9).
+- `LanguageButtonSpec.selected` and the inline `LanguageButtonSpec.style` are not
+  mapped onto the fork's button, and `LanguageTabsSpec.spacing` has no Material
+  counterpart; the tab strip uses the library's own tab padding (§9).
+- Test coverage is present at four layers: `test/adapter/` (contract, capabilities,
+  surfaces and resolver), `test/theme/` (§8.1 mapping plus the §8.3 runtime
+  re-skin), `test/widgets/` (every control driven through the real dispatch path,
+  including the inert slider, the inert destination strip, the chrome pieces, the
+  fork host and the shell), and `test/integration/` (the whole contract resolving
+  through the production resolver, and a changed `UiConfig` re-skinning Material UI
+  in place with caller-owned state preserved). What remains untested is the part
+  that needs hardware: focus traversal, Android TV D-pad, and the platform claims
+  in §13.
