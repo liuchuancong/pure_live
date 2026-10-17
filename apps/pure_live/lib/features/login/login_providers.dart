@@ -1,38 +1,60 @@
 // The named flow-state constructors spell their class name by convention
 // here; the `.new` shorthand hurts readability more than the lint helps.
-// ignore_for_file: unnecessary_type_name_in_constructor
+// riverpod's family types (ProviderFamily, NotifierProviderFamily) are not
+// exported by flutter_riverpod, so the variable annotations the lint asks
+// for cannot be written.
+// ignore_for_file: unnecessary_type_name_in_constructor, specify_nonobvious_property_types
 
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_sites/live_sites.dart' show LiveAuthCapability, LiveAuthPollStatus, LiveAuthSession, LiveCredential;
+import 'package:live_sites/live_sites.dart'
+    show LiveAuthCapability, LiveAuthPollStatus, LiveAuthSession, LiveCredential, LiveSiteError;
 import 'package:pure_live/app/providers/app_providers.dart' show sitesProvider;
 
 import 'package:pure_live/features/login/login_repository.dart';
 
-/// The bilibili site's auth capability, null when the build ships no bilibili
-/// adapter. The registry is static after boot, so the entry never changes.
-final bilibiliAuthProvider = Provider<LiveAuthCapability?>(
-  (ref) => ref.watch(sitesProvider).registry.getById('bilibili')?.capability<LiveAuthCapability>(),
+/// The sites the sign-in covers, in the login page picker's order: bilibili's
+/// QR, then the two cookie pastes.
+const List<String> loginSites = <String>['bilibili', 'douyu', 'huya'];
+
+/// The site whose login is the QR flow (the other two sign in by paste).
+const String qrLoginSite = 'bilibili';
+
+/// The auth capability of a sign-in site, null when the build ships no such
+/// adapter or the adapter signs nobody in. The registry is static after
+/// boot, so the entry never changes.
+final authCapabilityProvider = Provider.family<LiveAuthCapability?, String>(
+  (ref, siteId) => ref.watch(sitesProvider).registry.getById(siteId)?.capability<LiveAuthCapability>(),
 );
 
-/// The login feature's persistence, one per process — the store it wraps
-/// caches the vault's secrets in memory after its first read.
-final loginRepositoryProvider = Provider<LoginRepository>((ref) => LoginRepository());
+/// A site's login persistence, one per process — the store it wraps caches
+/// the vault's secrets in memory after its first read.
+final loginRepositoryProvider = Provider.family<LoginRepository, String>(
+  (ref, siteId) => LoginRepository(siteId: siteId),
+);
 
-/// The signed-in bilibili account, null while signed out.
+/// The signed-in account of the site the family is read with, null while
+/// signed out.
 ///
 /// The first watch initialises lazily (the composition root has no login
 /// hook): the stored credential is loaded and applied back onto the site, so
 /// the site's requests carry the login from the first watch on. Both writing
-/// paths go through this controller — the login flow adopting the exchanged
-/// credential and the sign-out — which keeps the published account and the
-/// applied cookies in step without invalidation races.
-final accountProvider = NotifierProvider<AccountController, LiveCredential?>(AccountController.new);
+/// paths go through this controller — a login (the bilibili QR exchange, a
+/// pasted cookie) adopting its credential and the sign-out — which keeps the
+/// published account and the applied cookies in step without invalidation
+/// races.
+final accountProvider = NotifierProvider.family<AccountController, LiveCredential?, String>(AccountController.new);
 
-/// Keeps the [LiveCredential] the user signed in with under the provider the
-/// account surfaces watch.
+/// Keeps the [LiveCredential] the user signed in with for one site under the
+/// provider the account surfaces watch.
 final class AccountController extends Notifier<LiveCredential?> {
+  /// Keeps the account of this site.
+  AccountController(this.siteId);
+
+  /// The site (`bilibili`, `douyu`, `huya`) this controller signs in.
+  final String siteId;
+
   bool _disposed = false;
 
   @override
@@ -48,12 +70,12 @@ final class AccountController extends Notifier<LiveCredential?> {
   /// dropped together with its stored document — keeping it would fail every
   /// later start-up the same way.
   Future<void> _hydrate() async {
-    final repository = ref.read(loginRepositoryProvider);
+    final repository = ref.read(loginRepositoryProvider(siteId));
     final credential = await repository.load();
     if (credential == null || _disposed) {
       return;
     }
-    final auth = ref.read(bilibiliAuthProvider);
+    final auth = ref.read(authCapabilityProvider(siteId));
     if (auth == null) {
       return;
     }
@@ -68,15 +90,15 @@ final class AccountController extends Notifier<LiveCredential?> {
     }
   }
 
-  /// Adopts the credential a successful login exchanged: applies it to the
+  /// Adopts the credential a successful login granted: applies it to the
   /// site, stores it, and publishes it as the signed-in account.
   Future<void> adopt(LiveCredential credential) async {
-    final auth = ref.read(bilibiliAuthProvider);
+    final auth = ref.read(authCapabilityProvider(siteId));
     if (auth == null) {
       return;
     }
     await auth.applyCredential(credential);
-    await ref.read(loginRepositoryProvider).save(credential);
+    await ref.read(loginRepositoryProvider(siteId)).save(credential);
     if (!_disposed) {
       state = credential;
     }
@@ -86,21 +108,135 @@ final class AccountController extends Notifier<LiveCredential?> {
   /// document, so the next start-up does not sign the user back in.
   Future<void> signOut() async {
     try {
-      await ref.read(bilibiliAuthProvider)?.clearCredential();
+      await ref.read(authCapabilityProvider(siteId))?.clearCredential();
     } on Object catch (_) {
       // The site's detach is best effort: the stored secret must go either
       // way, or the next start-up signs the user back in.
     }
-    await ref.read(loginRepositoryProvider).clear();
+    await ref.read(loginRepositoryProvider(siteId)).clear();
     if (!_disposed) {
       state = null;
     }
   }
 }
 
-/// The bilibili QR login's provider, null when the build ships no capability
+/// Every signed-in account by site id; the account page's list and the
+/// settings row read this.
+final signedInAccountsProvider = Provider<Map<String, LiveCredential>>((ref) {
+  final accounts = <String, LiveCredential>{};
+  for (final siteId in loginSites) {
+    final credential = ref.watch(accountProvider(siteId));
+    if (credential != null) {
+      accounts[siteId] = credential;
+    }
+  }
+  return accounts;
+});
+
+/// How a cookie paste stands while the login page watches it.
+enum CookiePastePhase {
+  /// The field waits for the paste.
+  editing,
+
+  /// The paste is being verified against its site.
+  verifying,
+
+  /// The paste verified and the credential is applied.
+  success,
+
+  /// The site refused the paste; [CookiePasteState.message] is the site's
+  /// own failure text, shown as-is.
+  failure,
+}
+
+/// One snapshot of a cookie paste's state.
+final class CookiePasteState {
+  /// A state of [phase].
+  const CookiePasteState({required this.phase, this.message, this.account});
+
+  /// The field waits for the paste.
+  const CookiePasteState.editing() : this(phase: CookiePastePhase.editing);
+
+  /// The paste is being verified.
+  const CookiePasteState.verifying() : this(phase: CookiePastePhase.verifying);
+
+  /// The paste verified; [account] is the credential it granted.
+  const CookiePasteState.success({required LiveCredential account}) : this(phase: CookiePastePhase.success, account: account);
+
+  /// The site refused the paste; [message] is its failure text.
+  const CookiePasteState.failure({required String message}) : this(phase: CookiePastePhase.failure, message: message);
+
+  /// How the paste stands.
+  final CookiePastePhase phase;
+
+  /// The site's failure text, set once [CookiePastePhase.failure] answers.
+  final String? message;
+
+  /// The granted credential, set once [CookiePastePhase.success] answers.
+  final LiveCredential? account;
+}
+
+/// The cookie paste of the site the family is read with, null when the
+/// build ships no such capability
 /// — the login page degrades to an honest "unsupported" state instead of a
-/// spinner that never lands.
+/// button that never lands.
+///
+/// The provider is auto-dispose, so leaving the page clears the field and
+/// any failure text with it.
+final cookiePasteProvider =
+    NotifierProvider.autoDispose.family<CookiePasteController, CookiePasteState, String>(CookiePasteController.new);
+
+/// Verifies a pasted browser cookie against its site and hands the granted
+/// credential to [accountProvider] — apply, store, publish in one move.
+final class CookiePasteController extends Notifier<CookiePasteState> {
+  /// Pastes into this site.
+  CookiePasteController(this.siteId);
+
+  /// The site the paste signs in.
+  final String siteId;
+
+  bool _disposed = false;
+
+  @override
+  CookiePasteState build() {
+    ref.onDispose(() => _disposed = true);
+    return const CookiePasteState.editing();
+  }
+
+  /// Verifies [rawCookieHeader] and adopts the credential it grants; the
+  /// site's refusal is surfaced with its own message, verbatim.
+  Future<void> verify(String rawCookieHeader) async {
+    final auth = ref.read(authCapabilityProvider(siteId));
+    if (auth == null || _disposed) {
+      return;
+    }
+    state = const CookiePasteState.verifying();
+    try {
+      final credential = await auth.applyPastedCookie(rawCookieHeader);
+      await ref.read(accountProvider(siteId).notifier).adopt(credential);
+      if (!_disposed) {
+        state = CookiePasteState.success(account: credential);
+      }
+    } on Object catch (error) {
+      if (!_disposed) {
+        state = CookiePasteState.failure(message: _messageOf(error));
+      }
+    }
+  }
+
+  /// The failure text to show: a site refusal is a [LiveSiteError] whose
+  /// message is the site's own text, anything else is shown as it reads.
+  static String _messageOf(Object error) {
+    final message = switch (error) {
+      final LiveSiteError failure => failure.message,
+      _ => null,
+    };
+    return message ?? '$error';
+  }
+}
+
+/// The bilibili QR login's provider — the flow starts when the login page's
+/// picker lands on bilibili and stops when the page is left.
 final NotifierProvider<LoginFlowController, LoginFlowState> loginFlowProvider =
     NotifierProvider.autoDispose<LoginFlowController, LoginFlowState>(LoginFlowController.new);
 
@@ -188,12 +324,13 @@ final class LoginFlowController extends Notifier<LoginFlowState> {
   /// session, a first poll that also carries the QR issue, then the timer.
   Future<void> start() async {
     _stop();
-    if (_disposed || ref.read(bilibiliAuthProvider) == null) {
+    final auth = ref.read(authCapabilityProvider(qrLoginSite));
+    if (_disposed || auth == null) {
       return;
     }
     _consecutiveErrors = 0;
     state = const LoginFlowState.generating();
-    _session = ref.read(bilibiliAuthProvider)!.startQrLogin();
+    _session = auth.startQrLogin();
     if (await _poll()) {
       _timer ??= Timer.periodic(_pollInterval, (_) => unawaited(_tick()));
     }
@@ -250,8 +387,8 @@ final class LoginFlowController extends Notifier<LoginFlowState> {
   /// [accountProvider] — apply, store, publish in one move.
   Future<void> _complete(LiveAuthSession session) async {
     try {
-      final credential = await ref.read(bilibiliAuthProvider)!.exchange(session);
-      await ref.read(accountProvider.notifier).adopt(credential);
+      final credential = await ref.read(authCapabilityProvider(qrLoginSite))!.exchange(session);
+      await ref.read(accountProvider(qrLoginSite).notifier).adopt(credential);
       if (!_disposed) {
         state = LoginFlowState.success(account: credential, qrContent: _qrOf(session));
       }

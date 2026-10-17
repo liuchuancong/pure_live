@@ -150,6 +150,14 @@ class _Translations$login$en extends Translations$login$zh {
 	@override String get failed => 'The sign-in did not go through';
 	@override String get done => 'Done';
 	@override String get unsupported => 'This build has no bilibili sign-in capability';
+	@override String get platformBilibili => 'bilibili QR';
+	@override String get platformDouyu => 'douyu cookie';
+	@override String get platformHuya => 'huya cookie';
+	@override String get cookiePlaceholder => 'Cookie: a=b; c=d ...';
+	@override String get verify => 'Verify and sign in';
+	@override String get douyuCookieHint => 'Copy the Cookie header of a signed-in www.douyu.com request from the browser’s network inspector and paste it here.';
+	@override String get huyaCookieHint => 'Copy the Cookie header of a signed-in www.huya.com request from the browser’s network inspector and paste it here.';
+	@override String unsupportedSite({required String site}) => 'This build has no ${site} sign-in capability';
 }
 
 // Path: account
@@ -161,12 +169,14 @@ class _Translations$account$en extends Translations$account$zh {
 	// Translations
 	@override String get title => 'Account';
 	@override String get notSignedIn => 'Not signed in';
-	@override String get notSignedInHint => 'Sign in to bilibili and the live requests carry your account with them.';
+	@override String get notSignedInHint => 'Sign in and the live requests carry your account with them.';
 	@override String get signOut => 'Sign out';
-	@override String get signOutConfirm => 'Sign out of bilibili?';
+	@override String signOutConfirm({required String site}) => 'Sign out of ${site}?';
 	@override String get signOutHint => 'The saved cookies are removed from this device.';
 	@override String userId({required String id}) => 'ID ${id}';
-	@override String get platform => 'bilibili account';
+	@override String get platformBilibili => 'bilibili account';
+	@override String get platformDouyu => 'douyu account';
+	@override String get platformHuya => 'huya account';
 }
 
 // Path: settings
@@ -225,8 +235,8 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get generalSubtitle => 'Refresh, launch, countdown close and window';
 	@override String get sectionGeneral => 'General';
 	@override String get sectionAccount => 'Account';
-	@override String get scanToLogin => 'Scan to sign in to bilibili';
-	@override String get accountSubtitle => 'bilibili account and sign-in';
+	@override String get scanToLogin => 'Sign in to your platforms';
+	@override String get accountSubtitle => 'Platform accounts and sign-in';
 	@override String get refreshSettings => 'Refresh';
 	@override String get refreshSettingsSubtitle => 'Foreground interval and resume threshold';
 	@override String get pageSettings => 'Page settings';
@@ -303,6 +313,8 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get remoteSyncSubtitle => 'Sync playback to another device on this network';
 	@override String get sectionRecorder => 'Recording';
 	@override String get recorderSubtitle => 'Watch rooms and record them live';
+	@override String get pasteCookie => 'Paste cookie to sign in';
+	@override String accountSignedInCount({required int count}) => 'Signed in on ${count} platforms';
 }
 
 // Path: recorder
@@ -894,14 +906,24 @@ extension on TranslationsEn {
 			'login.failed' => 'The sign-in did not go through',
 			'login.done' => 'Done',
 			'login.unsupported' => 'This build has no bilibili sign-in capability',
+			'login.platformBilibili' => 'bilibili QR',
+			'login.platformDouyu' => 'douyu cookie',
+			'login.platformHuya' => 'huya cookie',
+			'login.cookiePlaceholder' => 'Cookie: a=b; c=d ...',
+			'login.verify' => 'Verify and sign in',
+			'login.douyuCookieHint' => 'Copy the Cookie header of a signed-in www.douyu.com request from the browser’s network inspector and paste it here.',
+			'login.huyaCookieHint' => 'Copy the Cookie header of a signed-in www.huya.com request from the browser’s network inspector and paste it here.',
+			'login.unsupportedSite' => ({required String site}) => 'This build has no ${site} sign-in capability',
 			'account.title' => 'Account',
 			'account.notSignedIn' => 'Not signed in',
-			'account.notSignedInHint' => 'Sign in to bilibili and the live requests carry your account with them.',
+			'account.notSignedInHint' => 'Sign in and the live requests carry your account with them.',
 			'account.signOut' => 'Sign out',
-			'account.signOutConfirm' => 'Sign out of bilibili?',
+			'account.signOutConfirm' => ({required String site}) => 'Sign out of ${site}?',
 			'account.signOutHint' => 'The saved cookies are removed from this device.',
 			'account.userId' => ({required String id}) => 'ID ${id}',
-			'account.platform' => 'bilibili account',
+			'account.platformBilibili' => 'bilibili account',
+			'account.platformDouyu' => 'douyu account',
+			'account.platformHuya' => 'huya account',
 			'settings.appearance' => 'Appearance',
 			'settings.fonts' => 'Fonts',
 			'settings.themeMode' => 'Theme mode',
@@ -951,8 +973,8 @@ extension on TranslationsEn {
 			'settings.generalSubtitle' => 'Refresh, launch, countdown close and window',
 			'settings.sectionGeneral' => 'General',
 			'settings.sectionAccount' => 'Account',
-			'settings.scanToLogin' => 'Scan to sign in to bilibili',
-			'settings.accountSubtitle' => 'bilibili account and sign-in',
+			'settings.scanToLogin' => 'Sign in to your platforms',
+			'settings.accountSubtitle' => 'Platform accounts and sign-in',
 			'settings.refreshSettings' => 'Refresh',
 			'settings.refreshSettingsSubtitle' => 'Foreground interval and resume threshold',
 			'settings.pageSettings' => 'Page settings',
@@ -1029,6 +1051,8 @@ extension on TranslationsEn {
 			'settings.remoteSyncSubtitle' => 'Sync playback to another device on this network',
 			'settings.sectionRecorder' => 'Recording',
 			'settings.recorderSubtitle' => 'Watch rooms and record them live',
+			'settings.pasteCookie' => 'Paste cookie to sign in',
+			'settings.accountSignedInCount' => ({required int count}) => 'Signed in on ${count} platforms',
 			'recorder.title' => 'Recorder',
 			'recorder.addRoom' => 'Add room',
 			'recorder.platform' => 'Platform',

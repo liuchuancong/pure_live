@@ -34,17 +34,27 @@
     "refreshQr": "Refresh code",
     "failed": "The sign-in did not go through",
     "done": "Done",
-    "unsupported": "This build has no bilibili sign-in capability"
+    "unsupported": "This build has no bilibili sign-in capability",
+    "platformBilibili": "bilibili QR",
+    "platformDouyu": "douyu cookie",
+    "platformHuya": "huya cookie",
+    "cookiePlaceholder": "Cookie: a=b; c=d ...",
+    "verify": "Verify and sign in",
+    "douyuCookieHint": "Copy the Cookie header of a signed-in www.douyu.com request from the browser’s network inspector and paste it here.",
+    "huyaCookieHint": "Copy the Cookie header of a signed-in www.huya.com request from the browser’s network inspector and paste it here.",
+    "unsupportedSite": "This build has no {site: String} sign-in capability"
   },
   "account": {
     "title": "Account",
     "notSignedIn": "Not signed in",
-    "notSignedInHint": "Sign in to bilibili and the live requests carry your account with them.",
+    "notSignedInHint": "Sign in and the live requests carry your account with them.",
     "signOut": "Sign out",
-    "signOutConfirm": "Sign out of bilibili?",
+    "signOutConfirm": "Sign out of {site: String}?",
     "signOutHint": "The saved cookies are removed from this device.",
     "userId": "ID {id: String}",
-    "platform": "bilibili account"
+    "platformBilibili": "bilibili account",
+    "platformDouyu": "douyu account",
+    "platformHuya": "huya account"
   },
   "settings": {
     "appearance": "Appearance",
@@ -96,8 +106,8 @@
     "generalSubtitle": "Refresh, launch, countdown close and window",
     "sectionGeneral": "General",
     "sectionAccount": "Account",
-    "scanToLogin": "Scan to sign in to bilibili",
-    "accountSubtitle": "bilibili account and sign-in",
+    "scanToLogin": "Sign in to your platforms",
+    "accountSubtitle": "Platform accounts and sign-in",
     "refreshSettings": "Refresh",
     "refreshSettingsSubtitle": "Foreground interval and resume threshold",
     "pageSettings": "Page settings",
@@ -173,7 +183,9 @@
     "remoteSync": "LAN sync",
     "remoteSyncSubtitle": "Sync playback to another device on this network",
     "sectionRecorder": "Recording",
-    "recorderSubtitle": "Watch rooms and record them live"
+    "recorderSubtitle": "Watch rooms and record them live",
+    "pasteCookie": "Paste cookie to sign in",
+    "accountSignedInCount": "Signed in on {count: int} platforms"
   },
   "recorder": {
     "title": "Recorder",

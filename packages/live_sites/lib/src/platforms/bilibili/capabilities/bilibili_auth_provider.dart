@@ -26,6 +26,10 @@ final class BilibiliAuthProvider implements LiveAuthCapability {
   LiveAuthSession startQrLogin() => BilibiliQrLoginSession(provider: this);
 
   @override
+  Future<LiveCredential> applyPastedCookie(String rawCookieHeader) =>
+      throw UnsupportedError('bilibili signs in with its QR code, not a pasted cookie');
+
+  @override
   Future<LiveCredential> exchange(LiveAuthSession session) async {
     if (session is! BilibiliQrLoginSession) {
       throw const BilibiliFailure(

@@ -198,35 +198,37 @@ final class SettingsPage extends ConsumerWidget {
 }
 
 /// The settings index's account entry, the reference's account card: the
-/// signed-in account's avatar and name once a login landed, the bilibili QR
-/// sign-in invitation before it. Either way the row opens the account page.
+/// signed-in accounts' summary once a login landed anywhere, the sign-in
+/// invitation before it. Either way the row opens the account page.
 final class AccountSection extends ConsumerWidget {
   /// The account section.
   const new({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final account = ref.watch(accountProvider);
+    final accounts = ref.watch(signedInAccountsProvider);
     return SettingsSection.card(
       label: context.t.settings.sectionAccount,
       tiles: [
-        switch (account) {
-          null => SettingsEntryTile(
+        if (accounts.isEmpty)
+          SettingsEntryTile(
             icon: Icons.person_outline_rounded,
             title: context.t.settings.scanToLogin,
             subtitle: context.t.settings.accountSubtitle,
             onTap: () => const AccountRoute().push<void>(context),
-          ),
-          final LiveCredential credential => PureListRow(
-            leading: _AccountAvatar(credential: credential),
-            title: credential.nickname ?? context.t.account.title,
-            subtitle: credential.userId == null
+          )
+        else
+          PureListRow(
+            leading: _AccountAvatar(credential: accounts.values.first),
+            title: accounts.values.first.nickname ?? context.t.account.title,
+            subtitle: accounts.length > 1
+                ? context.t.settings.accountSignedInCount(count: accounts.length)
+                : accounts.values.first.userId == null
                 ? context.t.settings.accountSubtitle
-                : context.t.account.userId(id: credential.userId!),
+                : context.t.account.userId(id: accounts.values.first.userId!),
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () => const AccountRoute().push<void>(context),
           ),
-        },
       ],
     );
   }

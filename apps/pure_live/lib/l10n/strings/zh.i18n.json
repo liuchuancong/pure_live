@@ -41,17 +41,27 @@
     "refreshQr": "刷新二维码",
     "failed": "登录未能完成",
     "done": "完成",
-    "unsupported": "当前构建未启用 bilibili 登录"
+    "unsupported": "当前构建未启用 bilibili 登录",
+    "platformBilibili": "bilibili 扫码",
+    "platformDouyu": "斗鱼 Cookie",
+    "platformHuya": "虎牙 Cookie",
+    "cookiePlaceholder": "Cookie: a=b; c=d ...",
+    "verify": "验证并登录",
+    "douyuCookieHint": "在浏览器网络面板中复制已登录 www.douyu.com 请求的 Cookie 头，粘贴到此处。",
+    "huyaCookieHint": "在浏览器网络面板中复制已登录 www.huya.com 请求的 Cookie 头，粘贴到此处。",
+    "unsupportedSite": "当前构建未启用 {site: String} 登录"
   },
   "account": {
     "title": "账号",
     "notSignedIn": "未登录",
-    "notSignedInHint": "登录 bilibili 后，直播相关请求将携带你的账号信息。",
+    "notSignedInHint": "登录后，直播相关请求将携带你的账号信息。",
     "signOut": "退出登录",
-    "signOutConfirm": "退出 bilibili 登录？",
+    "signOutConfirm": "退出 {site: String} 登录？",
     "signOutHint": "本机保存的登录凭据将被移除。",
     "userId": "ID {id: String}",
-    "platform": "bilibili 账号"
+    "platformBilibili": "bilibili 账号",
+    "platformDouyu": "斗鱼账号",
+    "platformHuya": "虎牙账号"
   },
   "settings": {
     "appearance": "外观",
@@ -76,8 +86,8 @@
     "iptvSubtitle": "管理播放源与频道",
     "shieldSubtitle": "按关键词、用户或正则屏蔽弹幕",
     "sectionAccount": "账号",
-    "scanToLogin": "扫码登录 bilibili",
-    "accountSubtitle": "bilibili 账号与登录态",
+    "scanToLogin": "登录平台账号",
+    "accountSubtitle": "平台账号与登录态",
     "cacheAndData": "缓存与数据",
     "cacheAndDataSubtitle": "观看历史与本地数据",
     "backupSubtitle": "备份与恢复本地数据",
@@ -180,7 +190,9 @@
     "remoteSync": "局域网同步",
     "remoteSyncSubtitle": "将播放同步到同一网络下的其他设备",
     "sectionRecorder": "录制",
-    "recorderSubtitle": "监听房间，开播自动录制"
+    "recorderSubtitle": "监听房间，开播自动录制",
+    "pasteCookie": "粘贴 Cookie 登录",
+    "accountSignedInCount": "已登录 {count: int} 个平台"
   },
   "recorder": {
     "title": "录播",

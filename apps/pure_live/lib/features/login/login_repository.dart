@@ -5,19 +5,24 @@ import 'package:live_storage/live_storage.dart' show SecretRefs, SecretStore;
 
 import 'package:pure_live/features/login/secure_vault.dart';
 
-/// The signed-in platform account's persistence: the credential a login
-/// exchange granted, stored as one JSON document under the bilibili cookie
-/// ref of the app's [SecretStore] (device-encrypted, never plain on disk).
+/// A signed-in platform account's persistence: the credential a login
+/// granted, stored as one JSON document under the site's cookie ref
+/// ([SecretRefs.cookie]) of the app's [SecretStore] (device-encrypted, never
+/// plain on disk).
 ///
 /// `LiveAuthCapability` keeps its credential in memory only — carrying the
-/// values between `exchange` and `applyCredential` is all it does — so this
-/// repository is the application's half of the contract: [save] after a
-/// successful login, [load] when the account state initialises (the site's
-/// requests only carry the cookies once the loaded credential is applied
-/// back), [clear] on sign-out.
+/// values between a login (the bilibili QR exchange, a pasted douyu/huya
+/// cookie) and `applyCredential` is all it does — so this repository is the
+/// application's half of the contract: [save] after a successful login,
+/// [load] when the account state initialises (the site's requests only carry
+/// the cookies once the loaded credential is applied back), [clear] on
+/// sign-out. One repository per site.
 final class LoginRepository {
-  /// The one platform this build signs in.
-  static const String _siteId = 'bilibili';
+  /// The repository of [siteId]'s platform (`bilibili`, `douyu`, `huya`).
+  new({required this.siteId});
+
+  /// The platform whose credential this repository stores.
+  final String siteId;
 
   Future<SecretStore>? _store;
 
@@ -30,13 +35,13 @@ final class LoginRepository {
   /// every start-up apply after it.
   Future<LiveCredential?> load() async {
     final store = await _ready();
-    final raw = store.value(SecretRefs.cookie(_siteId));
+    final raw = store.value(SecretRefs.cookie(siteId));
     if (raw == null) {
       return null;
     }
     final credential = _decode(jsonDecode(raw));
     if (credential == null) {
-      await store.remove(SecretRefs.cookie(_siteId));
+      await store.remove(SecretRefs.cookie(siteId));
     }
     return credential;
   }
@@ -44,13 +49,13 @@ final class LoginRepository {
   /// Stores [credential], replacing any previous one.
   Future<void> save(LiveCredential credential) async {
     final store = await _ready();
-    await store.set(SecretRefs.cookie(_siteId), jsonEncode(_encode(credential)));
+    await store.set(SecretRefs.cookie(siteId), jsonEncode(_encode(credential)));
   }
 
   /// Removes the stored credential; a no-op while signed out.
   Future<void> clear() async {
     final store = await _ready();
-    await store.remove(SecretRefs.cookie(_siteId));
+    await store.remove(SecretRefs.cookie(siteId));
   }
 
   Map<String, Object?> _encode(LiveCredential credential) => <String, Object?>{

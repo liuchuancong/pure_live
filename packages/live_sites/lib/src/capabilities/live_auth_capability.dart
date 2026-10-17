@@ -107,8 +107,18 @@ final class LiveCredential {
 /// "result so far" to return alongside an error.
 abstract interface class LiveAuthCapability implements LiveSiteCapability {
   /// Starts a QR login and returns the session to render and poll. The QR
-  /// content may still be in flight; see [LiveAuthSession].
+  /// content may still be in flight; see [LiveAuthSession]. A platform
+  /// without a QR flow throws `UnsupportedError`.
   LiveAuthSession startQrLogin();
+
+  /// Signs the site in with a pasted browser cookie [rawCookieHeader] (a
+  /// `name=value;` header line, a `Cookie:` prefix tolerated), verifying it
+  /// the way the platform's own session is judged, and returns the
+  /// credential — apply it back through [applyCredential]. Platforms without
+  /// a cookie-paste flow throw `UnsupportedError`; a paste that does not
+  /// verify throws the site's authentication failure, whose message says
+  /// what the paste is missing.
+  Future<LiveCredential> applyPastedCookie(String rawCookieHeader);
 
   /// Exchanges a confirmed [session] for the credential: polls once more
   /// when no poll answered success yet, so a session whose last poll said

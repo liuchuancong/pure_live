@@ -5,6 +5,7 @@ import 'dart:math';
 // ignore_for_file: switch_on_type
 
 import 'package:live_sites/src/capabilities/live_area_provider.dart';
+import 'package:live_sites/src/capabilities/live_auth_capability.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
@@ -19,6 +20,7 @@ import 'package:live_sites/src/core/live_site_runtime_info.dart';
 import 'package:live_sites/src/platforms/douyu/api/douyu_endpoints.dart';
 import 'package:live_sites/src/platforms/douyu/api/douyu_http.dart';
 import 'package:live_sites/src/platforms/douyu/capabilities/douyu_area_provider.dart';
+import 'package:live_sites/src/platforms/douyu/capabilities/douyu_auth_provider.dart';
 import 'package:live_sites/src/platforms/douyu/capabilities/douyu_discovery_provider.dart';
 import 'package:live_sites/src/platforms/douyu/capabilities/douyu_link_resolver.dart';
 import 'package:live_sites/src/platforms/douyu/capabilities/douyu_playback_provider.dart';
@@ -138,16 +140,39 @@ final class DouyuSite implements LiveSite {
 
   // Identity ------------------------------------------------------------------
 
-  /// The device id of the next request: the login cookie's `dy_did`, else
+  /// The credential applied through [applyLoginCredential], overriding the
+  /// login store's cookie until [clearLoginCredential] (in-memory only, like
+  /// every capability-carrying value).
+  String? _appliedCookie;
+
+  /// The account cookie of every request: the applied credential when there
+  /// is one, else what the login store supplied at construction.
+  String accountCookie() => _appliedCookie ?? DouyuAccount.normalizeCookie(login?.cookie ?? '');
+
+  /// Applies [cookie] as the account cookie every request carries from now
+  /// on. In-memory only — persistence is the application's business — and it
+  /// survives until [clearLoginCredential].
+  void applyLoginCredential(String cookie) {
+    final normalized = DouyuAccount.normalizeCookie(cookie);
+    _appliedCookie = normalized.isEmpty ? null : normalized;
+  }
+
+  /// Removes the applied credential; requests carry the login store's cookie
+  /// again.
+  void clearLoginCredential() {
+    _appliedCookie = null;
+  }
+
+  /// The device id of the next request: the account cookie's `dy_did`, else
   /// this adapter's random one.
   String get deviceId {
-    final account = DouyuAccount.normalizeCookie(login?.cookie ?? '');
+    final account = DouyuAccount.normalizeCookie(accountCookie());
     return DouyuAccount.deviceId(account, processDid);
   }
 
   /// The request cookie and the device id it carries, read together.
   ({String cookie, String did}) identity() {
-    final account = DouyuAccount.normalizeCookie(login?.cookie ?? '');
+    final account = DouyuAccount.normalizeCookie(accountCookie());
     final did = DouyuAccount.deviceId(account, processDid);
     return (cookie: DouyuAccount.cookieHeader(account: account, did: did), did: did);
   }
@@ -286,11 +311,13 @@ final class DouyuSite implements LiveSite {
   /// With a login store, a stored login that has LTP0 and its device id is
   /// renewed when it is within a day of its end (or has no token). Never
   /// throws: a failed renewal leaves the request to go out with the
-  /// current cookie. Concurrent callers share one renewal.
+  /// current cookie. Concurrent callers share one renewal. The applied
+  /// credential (see [applyLoginCredential]) renews in the store's place when
+  /// there is one.
   Future<void> renewLogin() async {
     final store = login;
     if (store == null) return;
-    final cookie = DouyuAccount.normalizeCookie(store.cookie);
+    final cookie = accountCookie();
     if (cookie.isEmpty) return;
     final credentials = DouyuAccount.renewalCredentials(
       cookie,
@@ -338,6 +365,7 @@ final class DouyuSite implements LiveSite {
   DouyuPlaybackProvider? _playback;
   DouyuDanmakuProvider? _danmaku;
   DouyuLinkResolver? _link;
+  DouyuAuthProvider? _auth;
 
   /// The capability of type [T], or null when douyu does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -350,6 +378,7 @@ final class DouyuSite implements LiveSite {
     final playback = _playback ??= DouyuPlaybackProvider(site: this);
     final danmaku = _danmaku ??= DouyuDanmakuProvider(site: this);
     final link = _link ??= DouyuLinkResolver(site: this);
+    final auth = _auth ??= DouyuAuthProvider(site: this);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -358,6 +387,7 @@ final class DouyuSite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveAuthCapability) => auth as T,
       _ => null,
     };
   }

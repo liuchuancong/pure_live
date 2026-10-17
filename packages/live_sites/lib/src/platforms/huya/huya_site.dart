@@ -5,6 +5,7 @@ import 'dart:math';
 // ignore_for_file: switch_on_type
 
 import 'package:live_sites/src/capabilities/live_area_provider.dart';
+import 'package:live_sites/src/capabilities/live_auth_capability.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
@@ -21,6 +22,7 @@ import 'package:live_sites/src/models/super_chat/live_super_chat_message/live_su
 import 'package:live_sites/src/platforms/huya/api/huya_endpoints.dart';
 import 'package:live_sites/src/platforms/huya/api/huya_http.dart';
 import 'package:live_sites/src/platforms/huya/capabilities/huya_area_provider.dart';
+import 'package:live_sites/src/platforms/huya/capabilities/huya_auth_provider.dart';
 import 'package:live_sites/src/platforms/huya/capabilities/huya_discovery_provider.dart';
 import 'package:live_sites/src/platforms/huya/capabilities/huya_link_resolver.dart';
 import 'package:live_sites/src/platforms/huya/capabilities/huya_playback_provider.dart';
@@ -147,11 +149,34 @@ final class HuyaSite implements LiveSite {
 
   // Identity ------------------------------------------------------------------
 
+  /// The credential applied through [applyLoginCredential], overriding the
+  /// construction-time cookie until [clearLoginCredential] (in-memory only,
+  /// like every capability-carrying value).
+  String? _appliedCookie;
+
   /// The login cookie, control characters and a pasted `Cookie:` prefix
-  /// stripped.
+  /// stripped: the applied credential when there is one, else what the
+  /// application supplied at construction.
   String cookie() {
+    final applied = _appliedCookie;
+    if (applied != null) return applied;
     final raw = loginCookie().replaceAll(_controlCharacters, '').trim();
     return raw.replaceFirst(RegExp(r'^Cookie:\s*', caseSensitive: false), '').trim();
+  }
+
+  /// Applies [cookie] as the login every request carries from now on. In-
+  /// memory only — persistence is the application's business — and it
+  /// survives until [clearLoginCredential].
+  void applyLoginCredential(String cookie) {
+    final raw = cookie.replaceAll(_controlCharacters, '').trim();
+    final value = raw.replaceFirst(RegExp(r'^Cookie:\s*', caseSensitive: false), '').trim();
+    _appliedCookie = value.isEmpty ? null : value;
+  }
+
+  /// Removes the applied credential; requests carry the construction-time
+  /// login again.
+  void clearLoginCredential() {
+    _appliedCookie = null;
   }
 
   /// The viewer uid signing web play lines: the cookie's `yyuid`, else the
@@ -399,6 +424,7 @@ final class HuyaSite implements LiveSite {
   HuyaPlaybackProvider? _playback;
   HuyaDanmakuProvider? _danmaku;
   HuyaLinkResolver? _link;
+  HuyaAuthProvider? _auth;
 
   /// The capability of type [T], or null when huya does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -411,6 +437,7 @@ final class HuyaSite implements LiveSite {
     final playback = _playback ??= HuyaPlaybackProvider(site: this);
     final danmaku = _danmaku ??= HuyaDanmakuProvider(site: this);
     final link = _link ??= HuyaLinkResolver(site: this);
+    final auth = _auth ??= HuyaAuthProvider(site: this);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -419,6 +446,7 @@ final class HuyaSite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveAuthCapability) => auth as T,
       _ => null,
     };
   }

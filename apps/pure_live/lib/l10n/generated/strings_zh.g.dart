@@ -202,6 +202,30 @@ class Translations$login$zh {
 
 	/// zh: '当前构建未启用 bilibili 登录'
 	String get unsupported => '当前构建未启用 bilibili 登录';
+
+	/// zh: 'bilibili 扫码'
+	String get platformBilibili => 'bilibili 扫码';
+
+	/// zh: '斗鱼 Cookie'
+	String get platformDouyu => '斗鱼 Cookie';
+
+	/// zh: '虎牙 Cookie'
+	String get platformHuya => '虎牙 Cookie';
+
+	/// zh: 'Cookie: a=b; c=d ...'
+	String get cookiePlaceholder => 'Cookie: a=b; c=d ...';
+
+	/// zh: '验证并登录'
+	String get verify => '验证并登录';
+
+	/// zh: '在浏览器网络面板中复制已登录 www.douyu.com 请求的 Cookie 头，粘贴到此处。'
+	String get douyuCookieHint => '在浏览器网络面板中复制已登录 www.douyu.com 请求的 Cookie 头，粘贴到此处。';
+
+	/// zh: '在浏览器网络面板中复制已登录 www.huya.com 请求的 Cookie 头，粘贴到此处。'
+	String get huyaCookieHint => '在浏览器网络面板中复制已登录 www.huya.com 请求的 Cookie 头，粘贴到此处。';
+
+	/// zh: '当前构建未启用 {site: String} 登录'
+	String unsupportedSite({required String site}) => '当前构建未启用 ${site} 登录';
 }
 
 // Path: account
@@ -218,14 +242,14 @@ class Translations$account$zh {
 	/// zh: '未登录'
 	String get notSignedIn => '未登录';
 
-	/// zh: '登录 bilibili 后，直播相关请求将携带你的账号信息。'
-	String get notSignedInHint => '登录 bilibili 后，直播相关请求将携带你的账号信息。';
+	/// zh: '登录后，直播相关请求将携带你的账号信息。'
+	String get notSignedInHint => '登录后，直播相关请求将携带你的账号信息。';
 
 	/// zh: '退出登录'
 	String get signOut => '退出登录';
 
-	/// zh: '退出 bilibili 登录？'
-	String get signOutConfirm => '退出 bilibili 登录？';
+	/// zh: '退出 {site: String} 登录？'
+	String signOutConfirm({required String site}) => '退出 ${site} 登录？';
 
 	/// zh: '本机保存的登录凭据将被移除。'
 	String get signOutHint => '本机保存的登录凭据将被移除。';
@@ -234,7 +258,13 @@ class Translations$account$zh {
 	String userId({required String id}) => 'ID ${id}';
 
 	/// zh: 'bilibili 账号'
-	String get platform => 'bilibili 账号';
+	String get platformBilibili => 'bilibili 账号';
+
+	/// zh: '斗鱼账号'
+	String get platformDouyu => '斗鱼账号';
+
+	/// zh: '虎牙账号'
+	String get platformHuya => '虎牙账号';
 }
 
 // Path: settings
@@ -311,11 +341,11 @@ class Translations$settings$zh {
 	/// zh: '账号'
 	String get sectionAccount => '账号';
 
-	/// zh: '扫码登录 bilibili'
-	String get scanToLogin => '扫码登录 bilibili';
+	/// zh: '登录平台账号'
+	String get scanToLogin => '登录平台账号';
 
-	/// zh: 'bilibili 账号与登录态'
-	String get accountSubtitle => 'bilibili 账号与登录态';
+	/// zh: '平台账号与登录态'
+	String get accountSubtitle => '平台账号与登录态';
 
 	/// zh: '缓存与数据'
 	String get cacheAndData => '缓存与数据';
@@ -625,6 +655,12 @@ class Translations$settings$zh {
 
 	/// zh: '监听房间，开播自动录制'
 	String get recorderSubtitle => '监听房间，开播自动录制';
+
+	/// zh: '粘贴 Cookie 登录'
+	String get pasteCookie => '粘贴 Cookie 登录';
+
+	/// zh: '已登录 {count: int} 个平台'
+	String accountSignedInCount({required int count}) => '已登录 ${count} 个平台';
 }
 
 // Path: recorder
@@ -1896,14 +1932,24 @@ extension on Translations {
 			'login.failed' => '登录未能完成',
 			'login.done' => '完成',
 			'login.unsupported' => '当前构建未启用 bilibili 登录',
+			'login.platformBilibili' => 'bilibili 扫码',
+			'login.platformDouyu' => '斗鱼 Cookie',
+			'login.platformHuya' => '虎牙 Cookie',
+			'login.cookiePlaceholder' => 'Cookie: a=b; c=d ...',
+			'login.verify' => '验证并登录',
+			'login.douyuCookieHint' => '在浏览器网络面板中复制已登录 www.douyu.com 请求的 Cookie 头，粘贴到此处。',
+			'login.huyaCookieHint' => '在浏览器网络面板中复制已登录 www.huya.com 请求的 Cookie 头，粘贴到此处。',
+			'login.unsupportedSite' => ({required String site}) => '当前构建未启用 ${site} 登录',
 			'account.title' => '账号',
 			'account.notSignedIn' => '未登录',
-			'account.notSignedInHint' => '登录 bilibili 后，直播相关请求将携带你的账号信息。',
+			'account.notSignedInHint' => '登录后，直播相关请求将携带你的账号信息。',
 			'account.signOut' => '退出登录',
-			'account.signOutConfirm' => '退出 bilibili 登录？',
+			'account.signOutConfirm' => ({required String site}) => '退出 ${site} 登录？',
 			'account.signOutHint' => '本机保存的登录凭据将被移除。',
 			'account.userId' => ({required String id}) => 'ID ${id}',
-			'account.platform' => 'bilibili 账号',
+			'account.platformBilibili' => 'bilibili 账号',
+			'account.platformDouyu' => '斗鱼账号',
+			'account.platformHuya' => '虎牙账号',
 			'settings.appearance' => '外观',
 			'settings.fonts' => '字体管理',
 			'settings.themeMode' => '主题模式',
@@ -1926,8 +1972,8 @@ extension on Translations {
 			'settings.iptvSubtitle' => '管理播放源与频道',
 			'settings.shieldSubtitle' => '按关键词、用户或正则屏蔽弹幕',
 			'settings.sectionAccount' => '账号',
-			'settings.scanToLogin' => '扫码登录 bilibili',
-			'settings.accountSubtitle' => 'bilibili 账号与登录态',
+			'settings.scanToLogin' => '登录平台账号',
+			'settings.accountSubtitle' => '平台账号与登录态',
 			'settings.cacheAndData' => '缓存与数据',
 			'settings.cacheAndDataSubtitle' => '观看历史与本地数据',
 			'settings.backupSubtitle' => '备份与恢复本地数据',
@@ -2031,6 +2077,8 @@ extension on Translations {
 			'settings.remoteSyncSubtitle' => '将播放同步到同一网络下的其他设备',
 			'settings.sectionRecorder' => '录制',
 			'settings.recorderSubtitle' => '监听房间，开播自动录制',
+			'settings.pasteCookie' => '粘贴 Cookie 登录',
+			'settings.accountSignedInCount' => ({required int count}) => '已登录 ${count} 个平台',
 			'recorder.title' => '录播',
 			'recorder.addRoom' => '添加房间',
 			'recorder.platform' => '平台',
