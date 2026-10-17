@@ -59,9 +59,9 @@ class ColorConverter implements JsonConverter<Color?, int?> {
 abstract class UiConfig with _$UiConfig {
   /// A configuration; the defaults reproduce Ant Design out of the box.
   const factory UiConfig({
-    /// The active design language. `token` is the shared base; any other value
-    /// names the widget library that renders the controls.
-    @Default(LiveDesignLanguage.token) LiveDesignLanguage language,
+    /// The design language that renders this configuration. Required: there is
+    /// no neutral base, so a build has to name the library whose widgets it draws.
+    required LiveDesignLanguage language,
 
     /// The light/dark policy.
     @Default(UiBrightnessMode.system) UiBrightnessMode brightness,

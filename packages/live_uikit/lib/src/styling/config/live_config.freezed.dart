@@ -16,8 +16,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$UiConfig {
 
-/// The active design language. `token` is the shared base; any other value
-/// names the widget library that renders the controls.
+/// The design language that renders this configuration. Required: there is
+/// no neutral base, so a build has to name the library whose widgets it draws.
  LiveDesignLanguage get language;/// The light/dark policy.
  UiBrightnessMode get brightness;/// The brand colour; null keeps Ant's `#1677ff` seed primary.
 @ColorConverter() Color? get accent;/// Whether dark surfaces collapse to true black.
@@ -238,12 +238,12 @@ return $default(_that.language,_that.brightness,_that.accent,_that.pureBlack,_th
 @JsonSerializable()
 
 class _UiConfig extends UiConfig {
-  const _UiConfig({this.language = LiveDesignLanguage.token, this.brightness = UiBrightnessMode.system, @ColorConverter() this.accent, this.pureBlack = false, this.density = UiDensity.comfortable, this.fontFamily, this.fontScale = 1.0, this.transparency = 1.0, this.reduceTransparency = false, this.animations = true, this.focusOutline = true}): super._();
+  const _UiConfig({required this.language, this.brightness = UiBrightnessMode.system, @ColorConverter() this.accent, this.pureBlack = false, this.density = UiDensity.comfortable, this.fontFamily, this.fontScale = 1.0, this.transparency = 1.0, this.reduceTransparency = false, this.animations = true, this.focusOutline = true}): super._();
   factory _UiConfig.fromJson(Map<String, dynamic> json) => _$UiConfigFromJson(json);
 
-/// The active design language. `token` is the shared base; any other value
-/// names the widget library that renders the controls.
-@override@JsonKey() final  LiveDesignLanguage language;
+/// The design language that renders this configuration. Required: there is
+/// no neutral base, so a build has to name the library whose widgets it draws.
+@override final  LiveDesignLanguage language;
 /// The light/dark policy.
 @override@JsonKey() final  UiBrightnessMode brightness;
 /// The brand colour; null keeps Ant's `#1677ff` seed primary.

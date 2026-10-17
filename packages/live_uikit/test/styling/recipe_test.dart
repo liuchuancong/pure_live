@@ -188,7 +188,8 @@ void main() {
       late LiveTheme captured;
       await tester.pumpWidget(
         LiveConfigProvider(
-          config: const UiConfig(),
+          config: const UiConfig(language: LiveDesignLanguage.material),
+          registry: _registry,
           buttonToken: (t) => ButtonComponentToken.of(t).copyWith(primaryBg: purple),
           child: Builder(
             builder: (context) {
@@ -208,3 +209,90 @@ void main() {
     });
   });
 }
+
+/// The recipes are pure data, but a provider still has to resolve a language
+/// before it can hand down a theme, and there is no default language any more.
+/// This adapter is the least intrusive way through: it wraps its subtree as-is
+/// and paints placeholders, so what is under test stays the cascade.
+class _PassthroughAdapter implements LanguageAdapter {
+  const new();
+
+  @override
+  LiveDesignLanguage get language => LiveDesignLanguage.material;
+
+  @override
+  String get id => 'passthrough';
+
+  @override
+  String get displayName => 'Passthrough';
+
+  @override
+  LiveUiCapabilities get capabilities => const LiveUiCapabilities.none();
+
+  @override
+  LiveUiSurfaceCapabilities get surfaces => const LiveUiSurfaceCapabilities.none();
+
+  @override
+  Widget wrap(BuildContext context, DesignToken token, Widget child) => child;
+
+  @override
+  Widget button(BuildContext context, LanguageButtonSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget card(BuildContext context, LanguageCardSpec spec) => spec.child;
+
+  @override
+  Widget textField(BuildContext context, LanguageTextFieldSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget switchWidget(BuildContext context, LanguageSwitchSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget checkbox(BuildContext context, LanguageCheckboxSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget slider(BuildContext context, LanguageSliderSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget segmented(BuildContext context, LanguageSegmentedSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget progress(BuildContext context, LanguageProgressSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget select<T>(BuildContext context, LanguageSelectSpec<T> spec) => const SizedBox.shrink();
+
+  @override
+  Widget tabBar(BuildContext context, LanguageTabsSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget scaffold(BuildContext context, LanguageScaffoldSpec spec) => spec.body;
+
+  @override
+  Widget appBar(BuildContext context, LanguageAppBarSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget listRow(BuildContext context, LanguageListRowSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget navBar(BuildContext context, LanguageNavBarSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget toast(BuildContext context, LanguageToastSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget dialog(BuildContext context, LanguageDialogSpec spec) => spec.content ?? const SizedBox.shrink();
+
+  @override
+  Widget tabView(BuildContext context, LanguageTabViewSpec spec) =>
+      spec.pages.isEmpty ? const SizedBox.shrink() : spec.pages[spec.index];
+
+  @override
+  Widget appHost(BuildContext context, LanguageHostSpec spec) =>
+      spec.builder?.call(context, const SizedBox.shrink()) ?? const SizedBox.shrink();
+
+  @override
+  Widget shell(BuildContext context, LanguageShellSpec spec) => spec.child;
+}
+
+const _registry = LanguageRegistry(adapters: {LiveDesignLanguage.material: _PassthroughAdapter()});

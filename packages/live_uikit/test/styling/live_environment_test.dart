@@ -134,7 +134,8 @@ void main() {
 
   group('the scope publishes what the window implies', () {
     Widget shell(Widget child, {SeedToken Function(SeedToken base)? seed}) => LiveConfigProvider(
-      config: const UiConfig(),
+      config: const UiConfig(language: LiveDesignLanguage.material),
+      registry: _registry,
       seed: seed,
       child: MaterialApp(home: stage(1400, child)),
     );
@@ -161,7 +162,8 @@ void main() {
       bigView(tester);
       LiveEnvironment? seen;
       Widget app(double width) => LiveConfigProvider(
-        config: const UiConfig(),
+        config: const UiConfig(language: LiveDesignLanguage.material),
+        registry: _registry,
         child: MaterialApp(
           home: stage(
             width,
@@ -220,7 +222,8 @@ void main() {
       bigView(tester);
       await tester.pumpWidget(
         LiveConfigProvider(
-          config: const UiConfig(),
+          config: const UiConfig(language: LiveDesignLanguage.material),
+          registry: _registry,
           child: MaterialApp(
             home: Builder(
               builder: (context) {
@@ -240,7 +243,8 @@ void main() {
       bigView(tester);
       await tester.pumpWidget(
         LiveConfigProvider(
-          config: const UiConfig(),
+          config: const UiConfig(language: LiveDesignLanguage.material),
+          registry: _registry,
           child: MaterialApp(
             home: stage(
               1600,
@@ -259,7 +263,8 @@ void main() {
       bigView(tester);
       await tester.pumpWidget(
         const LiveConfigProvider(
-          config: UiConfig(),
+          config: UiConfig(language: LiveDesignLanguage.material),
+          registry: _registry,
           child: MaterialApp(home: LiveLoading(compact: true, message: 'connecting')),
         ),
       );
@@ -269,7 +274,8 @@ void main() {
 
   group('the content grid lays out from the geometry', () {
     Widget grid(double width) => LiveConfigProvider(
-      config: const UiConfig(),
+      config: const UiConfig(language: LiveDesignLanguage.material),
+      registry: _registry,
       child: MaterialApp(
         home: stage(
           width,
@@ -304,7 +310,8 @@ void main() {
       bigView(tester);
       await tester.pumpWidget(
         LiveConfigProvider(
-          config: const UiConfig(),
+          config: const UiConfig(language: LiveDesignLanguage.material),
+          registry: _registry,
           child: MaterialApp(
             home: stage(
               420,
@@ -383,3 +390,90 @@ Geometry _copy(
   dialogMaxWidth: dialogMaxWidth ?? base.dialogMaxWidth,
   appBarHeight: appBarHeight ?? base.appBarHeight,
 );
+
+/// The environment is the third axis and is laid out by the core, not by a
+/// language, but a `LiveConfigProvider` still has to resolve an adapter before
+/// it publishes a theme. This one hands the subtree back untouched — it is here
+/// to satisfy the resolution, not to draw anything.
+class _PassthroughAdapter implements LanguageAdapter {
+  const new();
+
+  @override
+  LiveDesignLanguage get language => LiveDesignLanguage.material;
+
+  @override
+  String get id => 'passthrough';
+
+  @override
+  String get displayName => 'Passthrough';
+
+  @override
+  LiveUiCapabilities get capabilities => const LiveUiCapabilities.none();
+
+  @override
+  LiveUiSurfaceCapabilities get surfaces => const LiveUiSurfaceCapabilities.none();
+
+  @override
+  Widget wrap(BuildContext context, DesignToken token, Widget child) => child;
+
+  @override
+  Widget button(BuildContext context, LanguageButtonSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget card(BuildContext context, LanguageCardSpec spec) => spec.child;
+
+  @override
+  Widget textField(BuildContext context, LanguageTextFieldSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget switchWidget(BuildContext context, LanguageSwitchSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget checkbox(BuildContext context, LanguageCheckboxSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget slider(BuildContext context, LanguageSliderSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget segmented(BuildContext context, LanguageSegmentedSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget progress(BuildContext context, LanguageProgressSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget select<T>(BuildContext context, LanguageSelectSpec<T> spec) => const SizedBox.shrink();
+
+  @override
+  Widget tabBar(BuildContext context, LanguageTabsSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget scaffold(BuildContext context, LanguageScaffoldSpec spec) => spec.body;
+
+  @override
+  Widget appBar(BuildContext context, LanguageAppBarSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget listRow(BuildContext context, LanguageListRowSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget navBar(BuildContext context, LanguageNavBarSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget toast(BuildContext context, LanguageToastSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget dialog(BuildContext context, LanguageDialogSpec spec) => spec.content ?? const SizedBox.shrink();
+
+  @override
+  Widget tabView(BuildContext context, LanguageTabViewSpec spec) =>
+      spec.pages.isEmpty ? const SizedBox.shrink() : spec.pages[spec.index];
+
+  @override
+  Widget appHost(BuildContext context, LanguageHostSpec spec) =>
+      spec.builder?.call(context, const SizedBox.shrink()) ?? const SizedBox.shrink();
+
+  @override
+  Widget shell(BuildContext context, LanguageShellSpec spec) => spec.child;
+}
+
+const _registry = LanguageRegistry(adapters: {LiveDesignLanguage.material: _PassthroughAdapter()});

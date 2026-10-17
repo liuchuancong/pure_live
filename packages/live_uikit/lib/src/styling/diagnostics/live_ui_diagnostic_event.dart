@@ -59,36 +59,17 @@ enum LiveUiControl {
   tabView,
 }
 
-/// How a control is rendered for the active design language (§15.2).
-enum LiveImplementationKind {
-  /// A dedicated, registered adapter's native widget.
-  adapterNative,
-
-  /// The shared token renderer — the language has no registered adapter, or
-  /// the adapter does not declare this control.
-  shared,
-
-  /// An application-registered override for this control (combination root).
-  custom,
-}
-
 /// An observable UI-runtime event, delivered to a host-supplied
 /// `LiveUiDiagnosticSink` rather than a concrete logging package (§8.7).
 ///
-/// Carries the language, the control or surface (null for a language- or
-/// environment-wide downgrade), the resolved [kind] and the [code], so a test can
-/// assert "this control, in this style, was rendered by that implementation for
-/// this reason" (§15.6).
+/// What is observable now is what the *device* cannot afford. A language with no
+/// adapter, a control its adapter cannot render and a surface it does not own are
+/// raised as exceptions by the resolver instead: there is no shared renderer left
+/// to fall back to, so those are faults, not downgrades to log.
 @immutable
 final class LiveUiDiagnostic {
   /// A diagnostic for [code] about [language].
-  const new({
-    required this.code,
-    required this.language,
-    this.control,
-    this.surface,
-    this.kind = LiveImplementationKind.shared,
-  });
+  const new({required this.code, required this.language, this.control, this.surface});
 
   /// The reason it fired.
   final LiveUiDiagnosticCode code;
@@ -96,17 +77,13 @@ final class LiveUiDiagnostic {
   /// The design language the diagnostic concerns.
   final LiveDesignLanguage language;
 
-  /// The control the diagnostic concerns, or null when the downgrade is
-  /// language-wide (no adapter), environment-wide (no effect) or structural.
+  /// The control the diagnostic concerns, or null when it concerns the
+  /// environment or the whole language.
   final LiveUiControl? control;
 
   /// The structural surface the diagnostic concerns — the app host or the shell —
-  /// or null unless the downgrade is structural.
+  /// or null unless it is structural.
   final LiveUiSurface? surface;
-
-  /// The implementation the control fell back to, so the host can see the
-  /// downgrade target rather than only that one happened.
-  final LiveImplementationKind kind;
 
   @override
   String toString() {
@@ -115,6 +92,6 @@ final class LiveUiDiagnostic {
       (_, final LiveUiSurface named) => ', ${named.name}',
       (null, null) => '',
     };
-    return 'LiveUiDiagnostic(${code.name}, ${language.name}$detail, -> ${kind.name})';
+    return 'LiveUiDiagnostic(${code.name}, ${language.name}$detail)';
   }
 }

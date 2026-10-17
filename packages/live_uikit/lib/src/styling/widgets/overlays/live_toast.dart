@@ -20,60 +20,6 @@ enum LiveToastType {
   error,
 }
 
-/// The token-driven toast surface: a pill on the elevated background, the
-/// status colour on its glyph, the message in the body role.
-///
-/// It is the message's own body, not its placement — the overlay, the fade and
-/// the timer stay in [LiveToast] because every language wants the same thing
-/// there, and a library that wants a different one overrides this method whole.
-class TokenToast extends StatelessWidget {
-  /// A token pill built from [spec].
-  const new({required this.spec, super.key});
-
-  /// The toast configuration.
-  final LanguageToastSpec spec;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = LiveTheme.of(context);
-    final accent = spec.accent ?? _accent(theme, spec.type);
-    final icon = spec.icon ?? _icon(spec.type);
-
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: theme.token.scale.sizes.md, vertical: theme.token.scale.sizes.sm),
-      decoration: BoxDecoration(
-        color: theme.colors.bgElevated,
-        borderRadius: BorderRadius.circular(theme.card.borderRadius),
-        boxShadow: theme.token.motion.boxShadow,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: theme.text.body.fontSize, color: accent),
-          SizedBox(width: theme.token.scale.sizes.sm),
-          Flexible(
-            child: Text(spec.message, style: theme.text.body.copyWith(color: theme.colors.text)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static Color _accent(LiveTheme theme, LiveToastType type) => switch (type) {
-    LiveToastType.info => theme.colors.info,
-    LiveToastType.success => theme.colors.success,
-    LiveToastType.warning => theme.colors.warning,
-    LiveToastType.error => theme.colors.error,
-  };
-
-  static IconData _icon(LiveToastType type) => switch (type) {
-    LiveToastType.info => Icons.info_outline,
-    LiveToastType.success => Icons.check_circle_outline,
-    LiveToastType.warning => Icons.warning_amber_rounded,
-    LiveToastType.error => Icons.error_outline,
-  };
-}
-
 /// A brief, self-dismissing status message — Ant's `message`.
 ///
 /// The placement, the fade-and-slide and the removal timer are the core's job;

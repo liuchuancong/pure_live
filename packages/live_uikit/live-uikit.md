@@ -147,8 +147,7 @@ packages/live_uikit/
 │       │   ├── contracts/               # LanguageAdapter, the specs, LiveUiCapabilities
 │       │   ├── diagnostics/             # control/kind enums, diagnostic, codes, sink
 │       │   ├── provider/                # LiveConfigProvider, LiveTheme, TextStyles
-│       │   ├── resolution/              # registry, resolver, fallback policy
-│       │   ├── shared/                  # SharedLanguageAdapter (the token renderer)
+│       │   ├── resolution/              # registry, resolver
 │       │   └── widgets/
 │       │       ├── chrome/              # LiveApp (host), LiveAppShell (shell),
 │       │       │                        # LiveScaffold, LiveAppBar, LiveNavBar
@@ -169,7 +168,6 @@ packages/live_uikit/
         ├── live_config_provider_test.dart # what a host is told (§15.5)
         ├── live_icon_button_test.dart     # ADR 0004 through the contract
         ├── live_chrome_test.dart          # the chrome + host specs forward every field
-        ├── shared_renderer_test.dart      # the `Token*` renderer's spec fidelity
         └── stub_router.dart               # the no-op RouterConfig the host tests pump
 ```
 
@@ -455,9 +453,6 @@ to the other, is an open decision recorded in `docs/decisions/0005-two-livebackg
   including the deltas that name nothing (`pressed` on `secondary`/`ghost` keeps the
   variant fill) and that a component-token override repaints the button without moving
   the global primary, through `LiveTheme.resolveButton`.
-- `test/styling/shared_renderer_test.dart` covers the `Token*` renderer the way the
-  adapters are covered — every spec field either reaches the screen or the suite says
-  so — plus a smoke pass that renders all ten controls with no adapter registered.
 - `test/styling/live_environment_test.dart` covers the third axis: the breakpoint table
   (719 mobile, 720 desktop, TV outranking any width), the per-mode `Geometry` numbers and
   their token-derived radii, `LiveSizing`'s ladder and the rail/nav values `Geometry`

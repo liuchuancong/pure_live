@@ -11,15 +11,11 @@ import 'package:live_uikit/src/styling/widgets/overlays/live_toast.dart' show Li
 
 /// The switchable design languages.
 ///
-/// Every entry except [token] names a widget library the app can be drawn from
-/// and has an adapter of its own; [token] is the base every language falls
-/// through to, not a library, so it is never registered.
+/// Every entry names a widget library the app can be drawn from and has an
+/// adapter of its own. There is no shared base to fall through to: a language
+/// this build did not register is a fault the resolver raises, not a skin it can
+/// settle for.
 enum LiveDesignLanguage {
-  /// The shared token base: the resolved `DesignToken` painted with Flutter's
-  /// Material primitives. It is the fallback renderer, claims no control and
-  /// ships no host of its own.
-  token,
-
   /// Windows `fluent_ui`.
   fluent,
 
@@ -39,13 +35,13 @@ enum LiveDesignLanguage {
   forui,
 
   /// `material_ui` — Flutter's Material library, the same one
-  /// `package:flutter/material.dart` was moved into. The design system [token]
-  /// already paints, taken from the library's own widgets, theme and host.
+  /// `package:flutter/material.dart` was moved into: the Material design system,
+  /// taken from the library's own widgets, theme and host.
   material,
 
   /// `cupertino_ui` — Flutter's Cupertino library, the same one
   /// `package:flutter/cupertino.dart` was moved into. This is the iOS language:
-  /// [token] draws Material primitives, so nothing else stands in for it.
+  /// its own widgets, its own host, its own navigation.
   cupertino,
 }
 

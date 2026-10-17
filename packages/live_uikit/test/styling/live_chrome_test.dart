@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_uikit/live_uikit.dart';
@@ -6,9 +8,13 @@ import 'stub_router.dart';
 
 /// The chrome controls are dispatched like every other control, so the spec that
 /// reaches the adapter is the contract a page's call site is held to: a field a
-/// page sets and the adapter never sees is a field that silently stops working
-/// the moment a language draws the frame itself.
-class _RecordingAdapter extends SharedLanguageAdapter {
+/// page sets and the adapter never sees is a field that silently stops working.
+///
+/// There is no shared floor to forward to any more, so every member of the
+/// contract is written out here. Each one records the spec it was handed and
+/// then draws a neutral placeholder — what it paints is irrelevant to these
+/// tests, that it is *asked* at all is the subject.
+class _RecordingAdapter implements LanguageAdapter {
   new(this.captured);
 
   final List<Object?> captured;
@@ -35,57 +41,178 @@ class _RecordingAdapter extends SharedLanguageAdapter {
   LiveUiSurfaceCapabilities get surfaces => const LiveUiSurfaceCapabilities({LiveUiSurface.appHost});
 
   @override
+  Widget wrap(BuildContext context, DesignToken token, Widget child) => child;
+
+  @override
+  Widget button(BuildContext context, LanguageButtonSpec spec) {
+    captured.add(spec);
+    return Text(spec.label, textDirection: TextDirection.ltr);
+  }
+
+  @override
+  Widget card(BuildContext context, LanguageCardSpec spec) {
+    captured.add(spec);
+    return Material(type: MaterialType.transparency, child: spec.child);
+  }
+
+  @override
+  Widget textField(BuildContext context, LanguageTextFieldSpec spec) {
+    captured.add(spec);
+    return Text(spec.placeholder ?? '', textDirection: TextDirection.ltr);
+  }
+
+  @override
+  Widget switchWidget(BuildContext context, LanguageSwitchSpec spec) {
+    captured.add(spec);
+    return const SizedBox.shrink();
+  }
+
+  @override
+  Widget checkbox(BuildContext context, LanguageCheckboxSpec spec) {
+    captured.add(spec);
+    return spec.label == null ? const SizedBox.shrink() : Text(spec.label!, textDirection: TextDirection.ltr);
+  }
+
+  @override
+  Widget slider(BuildContext context, LanguageSliderSpec spec) {
+    captured.add(spec);
+    return const SizedBox.shrink();
+  }
+
+  @override
+  Widget segmented(BuildContext context, LanguageSegmentedSpec spec) {
+    captured.add(spec);
+    return Row(
+      children: [for (final label in spec.labels) Expanded(child: Text(label, textDirection: TextDirection.ltr))],
+    );
+  }
+
+  @override
+  Widget progress(BuildContext context, LanguageProgressSpec spec) {
+    captured.add(spec);
+    return const SizedBox.shrink();
+  }
+
+  @override
+  Widget select<T>(BuildContext context, LanguageSelectSpec<T> spec) {
+    captured.add(spec);
+    return Text(
+      spec.value == null ? (spec.placeholder ?? '') : spec.itemLabel(spec.value as T),
+      textDirection: TextDirection.ltr,
+    );
+  }
+
+  @override
+  Widget tabBar(BuildContext context, LanguageTabsSpec spec) {
+    captured.add(spec);
+    return Row(
+      children: [for (final tab in spec.tabs) Expanded(child: Text(tab.label, textDirection: TextDirection.ltr))],
+    );
+  }
+
+  @override
   Widget scaffold(BuildContext context, LanguageScaffoldSpec spec) {
     captured.add(spec);
-    return super.scaffold(context, spec);
+    return Column(
+      children: [
+        if (spec.appBar != null) spec.appBar!,
+        Expanded(child: spec.body),
+        if (spec.bottomBar != null) spec.bottomBar!,
+      ],
+    );
   }
 
   @override
   Widget appBar(BuildContext context, LanguageAppBarSpec spec) {
     captured.add(spec);
-    return super.appBar(context, spec);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            if (spec.leading != null) spec.leading!,
+            Flexible(child: Text(spec.title, textDirection: TextDirection.ltr)),
+            ...spec.actions,
+          ],
+        ),
+        if (spec.bottom != null) spec.bottom!,
+      ],
+    );
   }
 
   @override
   Widget listRow(BuildContext context, LanguageListRowSpec spec) {
     captured.add(spec);
-    return super.listRow(context, spec);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (spec.leading != null) spec.leading!,
+        Text(spec.title, textDirection: TextDirection.ltr),
+        if (spec.subtitle != null) Text(spec.subtitle!, textDirection: TextDirection.ltr),
+        if (spec.trailing != null) spec.trailing!,
+      ],
+    );
   }
 
   @override
   Widget navBar(BuildContext context, LanguageNavBarSpec spec) {
     captured.add(spec);
-    return super.navBar(context, spec);
+    return Row(
+      children: [for (final item in spec.items) Expanded(child: Text(item.label, textDirection: TextDirection.ltr))],
+    );
   }
 
   @override
   Widget toast(BuildContext context, LanguageToastSpec spec) {
     captured.add(spec);
-    return super.toast(context, spec);
+    return Text(spec.message, textDirection: TextDirection.ltr);
   }
 
   @override
   Widget dialog(BuildContext context, LanguageDialogSpec spec) {
     captured.add(spec);
-    return super.dialog(context, spec);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (spec.title != null) Text(spec.title!, textDirection: TextDirection.ltr),
+        if (spec.content != null) spec.content!,
+        Wrap(alignment: WrapAlignment.end, children: spec.actions),
+      ],
+    );
   }
 
   @override
   Widget tabView(BuildContext context, LanguageTabViewSpec spec) {
     captured.add(spec);
-    return super.tabView(context, spec);
+    if (spec.pages.isEmpty) return const SizedBox.shrink();
+    return spec.pages[spec.index];
   }
 
   @override
   Widget appHost(BuildContext context, LanguageHostSpec spec) {
     captured.add(spec);
-    return super.appHost(context, spec);
+    return MaterialApp.router(
+      routerConfig: spec.routerConfig,
+      title: spec.title,
+      onGenerateTitle: spec.onGenerateTitle,
+      localizationsDelegates: spec.localizationsDelegates,
+      supportedLocales: spec.supportedLocales,
+      locale: spec.locale,
+      builder: spec.builder,
+      debugShowCheckedModeBanner: spec.debugShowCheckedModeBanner,
+    );
   }
 
   @override
   Widget shell(BuildContext context, LanguageShellSpec spec) {
     captured.add(spec);
-    return super.shell(context, spec);
+    return Column(
+      children: [
+        for (final destination in spec.destinations) Text(destination.label, textDirection: TextDirection.ltr),
+        Expanded(child: spec.child),
+        if (spec.trailing != null) spec.trailing!,
+      ],
+    );
   }
 }
 
@@ -96,7 +223,7 @@ void main() {
   setUp(() {
     captured = [];
     final adapter = _RecordingAdapter(captured);
-    registry = LanguageRegistry(adapters: {LiveDesignLanguage.fluent: adapter}, fallback: adapter);
+    registry = LanguageRegistry(adapters: {LiveDesignLanguage.fluent: adapter});
   });
 
   Widget harness(Widget child) => LiveConfigProvider(
@@ -185,8 +312,8 @@ void main() {
     });
   });
 
-  group('the capability declaration is the dispatch decision', () {
-    testWidgets('a language that declares the chrome renders it natively', (tester) async {
+  group('the capability declaration is what an adapter claims', () {
+    testWidgets('a language declares exactly the chrome it renders natively', (tester) async {
       late LiveTheme theme;
       await tester.pumpWidget(
         harness(
@@ -204,67 +331,25 @@ void main() {
       expect(theme.supports(LiveUiControl.listRow), isTrue);
       expect(theme.supports(LiveUiControl.navBar), isTrue);
       expect(theme.supports(LiveUiControl.toast), isTrue);
-      expect(theme.supports(LiveUiControl.slider), isFalse, reason: 'unclaimed controls stay shared');
+      expect(
+        theme.supports(LiveUiControl.slider),
+        isFalse,
+        reason: 'a control the adapter does not list is not claimed for it (§17)',
+      );
       // The surfaces are a separate declaration: this adapter owns the app host
       // and not the shell, and owning one says nothing about the other.
       expect(theme.supportsSurface(LiveUiSurface.appHost), isTrue);
       expect(theme.supportsSurface(LiveUiSurface.appShell), isFalse);
     });
 
-    testWidgets('the token base claims none of them', (tester) async {
-      const base = SharedLanguageAdapter();
-      for (final control in [
-        LiveUiControl.scaffold,
-        LiveUiControl.appBar,
-        LiveUiControl.listRow,
-        LiveUiControl.navBar,
-        LiveUiControl.toast,
-      ]) {
-        expect(base.capabilities.supports(control), isFalse, reason: '$control is not native to the token base');
-      }
-      for (final surface in LiveUiSurface.values) {
-        expect(base.surfaces.supports(surface), isFalse, reason: '$surface is not native to the token base');
-      }
-    });
-  });
+    testWidgets('every control still reaches the adapter, declared or not', (tester) async {
+      // Dispatch no longer reads the declaration — there is nothing to fall
+      // through to — so an undeclared control is the adapter's problem to draw,
+      // and the declaration is only what it claims about itself.
+      await tester.pumpWidget(harness(LiveSlider(value: 0.5, onChanged: (_) {})));
 
-  group('the chrome still hosts Material descendants', () {
-    // The token frame replaced Material's, and Material's frame was also what
-    // gave a page its `Material` ancestor. Without one, an `InkWell` a caller
-    // left in a card's content, text selection and tooltips throw — so the
-    // chrome installs it itself and this asserts it stays installed.
-    testWidgets('a card gives its content a Material ancestor', (tester) async {
-      await tester.pumpWidget(
-        harness(
-          LiveCard(
-            child: InkWell(
-              onTap: () {},
-              child: const SizedBox(height: 40, child: Center(child: Text('room'))),
-            ),
-          ),
-        ),
-      );
-
-      expect(tester.takeException(), isNull);
-      expect(
-        Material.maybeOf(tester.element(find.text('room'))),
-        isNotNull,
-        reason: 'the ink host has to come from the card, not from an ancestor page',
-      );
-    });
-
-    testWidgets('the frame hosts Material for the whole page', (tester) async {
-      await tester.pumpWidget(
-        harness(
-          const SizedBox(
-            height: 300,
-            child: LiveScaffold(body: Center(child: Text('page'))),
-          ),
-        ),
-      );
-
-      expect(tester.takeException(), isNull);
-      expect(Material.maybeOf(tester.element(find.text('page'))), isNotNull);
+      expect(captured.whereType<LanguageSliderSpec>(), isNotEmpty);
+      expect(LiveTheme.of(tester.element(find.byType(LiveSlider))).supports(LiveUiControl.slider), isFalse);
     });
   });
 
@@ -291,31 +376,7 @@ void main() {
       expect(spec.enabled, isTrue);
     });
 
-    testWidgets('a tap reports the destination that was hit', (tester) async {
-      var chosen = -1;
-      await tester.pumpWidget(
-        harness(
-          LiveNavBar(
-            items: const [
-              LiveNavBarItem(label: 'Home', icon: Icons.home),
-              LiveNavBarItem(label: 'Set', icon: Icons.settings),
-            ],
-            index: 0,
-            onChanged: (index) => chosen = index,
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('Set'));
-      await tester.pump();
-      expect(chosen, 1);
-
-      // The selected destination says so to a screen reader; the colour alone
-      // is not a statement anyone else can read.
-      expect(find.bySemanticsLabel('Home'), findsOneWidget);
-    });
-
-    testWidgets('a null callback makes the whole bar inert', (tester) async {
+    testWidgets('a null callback reaches the adapter as an inert bar', (tester) async {
       await tester.pumpWidget(
         harness(
           const LiveNavBar(
@@ -327,7 +388,7 @@ void main() {
 
       final spec = captured.whereType<LanguageNavBarSpec>().single;
       expect(spec.onChanged, isNull);
-      expect(find.byType(TokenNavBar), findsOneWidget);
+      expect(spec.enabled, isTrue, reason: 'the flag says the bar was built interactive; the callback is the gate');
     });
   });
 
@@ -356,7 +417,8 @@ void main() {
       expect(find.text('Saved'), findsOneWidget);
 
       // And it leaves on its own: the timer reverses the entrance and the
-      // overlay entry goes with it.
+      // overlay entry goes with it — the overlay and the timer are the core's,
+      // whichever widget drew the message.
       await tester.pump(const Duration(milliseconds: 120));
       await tester.pumpAndSettle();
       expect(find.text('Saved'), findsNothing);
@@ -395,11 +457,13 @@ void main() {
         ),
       );
 
-      showLiveDialog<void>(
-        context: inside,
-        title: 'Restore',
-        child: const Text('This overwrites the library'),
-        actions: (_) => const [Text('Cancel'), Text('Restore')],
+      unawaited(
+        showLiveDialog<void>(
+          context: inside,
+          title: 'Restore',
+          child: const Text('This overwrites the library'),
+          actions: (_) => const [Text('Cancel'), Text('Restore')],
+        ),
       );
       await tester.pumpAndSettle();
 
@@ -411,7 +475,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('a tab view forwards the caller index and reports a swipe back', (tester) async {
+    testWidgets('a tab view forwards the caller-owned index', (tester) async {
       var index = 0;
       await tester.pumpWidget(
         harness(
@@ -474,16 +538,6 @@ void main() {
       expect(wrapped, greaterThan(0), reason: 'the host runs the wrap above its routes');
       expect(tester.takeException(), isNull);
     });
-
-    testWidgets('a language that declares the host still gets the Material frame from the base', (tester) async {
-      await tester.pumpWidget(hostHarness(LiveApp(routerConfig: stubRouterConfig())));
-      await tester.pumpAndSettle();
-
-      // The recording adapter forwards to `super.host`, which is the token
-      // renderer — the same fall-through a control gets.
-      expect(find.byType(TokenApp), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
   });
 
   group('the shell', () {
@@ -528,73 +582,50 @@ void main() {
       expect(spec.placement, LiveShellPlacement.rail);
       expect(spec.trailing, isNotNull);
       expect(chosen, '', reason: 'building the shell reports nothing');
+      expect(find.text('page'), findsOneWidget);
     });
 
-    testWidgets('a language that owns no shell draws the token shell, and its own bar', (tester) async {
-      var chosen = '';
+    testWidgets('a shell the adapter does not own is still drawn by that adapter', (tester) async {
+      // The surfaces declaration no longer routes anything: it states what the
+      // adapter claims to do with its own library, and the page still gets the
+      // one adapter the language resolved to — so the shell, like every control,
+      // arrives as a spec.
       await tester.pumpWidget(
         shellHarness(
           LiveAppShell(
             destinations: destinations,
             selectedId: 'home',
-            onSelected: (id) => chosen = id,
+            onSelected: (_) {},
             placement: LiveShellPlacement.bottom,
             child: const Text('page'),
           ),
         ),
       );
 
-      // The adapter declares `appHost` but not `appShell`, so the shell is the
-      // token's — while the strip inside it is dispatched, and this adapter does
-      // declare `navBar`. That is the layering the surfaces exist for.
-      expect(find.byType(TokenAppShell), findsOneWidget);
-      expect(find.byType(TokenNavBar), findsOneWidget);
+      expect(captured.whereType<LanguageShellSpec>(), isNotEmpty);
+      expect(captured.whereType<LanguageNavBarSpec>(), isEmpty, reason: 'the shell is one dispatch, not a bar inside');
       expect(find.text('page'), findsOneWidget);
-
-      await tester.tap(find.text('Follow'));
-      await tester.pump();
-      expect(chosen, 'follow');
     });
 
-    // `none` is not in this list: it draws no navigation at all, which the next
-    // test asserts — there is no cell here to tap.
-    for (final placement in [LiveShellPlacement.rail, LiveShellPlacement.bottom, LiveShellPlacement.adaptive]) {
-      testWidgets('a disabled destination is inert in the ${placement.name} form', (tester) async {
-        var chosen = '';
-        await tester.pumpWidget(
-          shellHarness(
-            LiveAppShell(
-              destinations: destinations,
-              selectedId: 'home',
-              onSelected: (id) => chosen = id,
-              placement: placement,
-              child: const SizedBox.shrink(),
-            ),
-          ),
-        );
-
-        await tester.tap(find.text('Locked'));
-        await tester.pump();
-        expect(chosen, '', reason: '${placement.name} must refuse a disabled destination');
-
-        await tester.tap(find.text('Follow'));
-        await tester.pump();
-        expect(chosen, 'follow', reason: '${placement.name} still reaches a live destination');
-      });
-    }
-
-    testWidgets('a shell with nothing to choose, or asked for no navigation, draws the page alone', (tester) async {
+    testWidgets('a shell with no destinations is asked for none', (tester) async {
       await tester.pumpWidget(shellHarness(const LiveAppShell(child: Text('page'))));
-      expect(find.text('Follow'), findsNothing);
-      expect(find.text('page'), findsOneWidget);
 
+      final spec = captured.whereType<LanguageShellSpec>().single;
+      expect(spec.destinations, isEmpty);
+      expect(spec.selectedId, isNull);
+      expect(spec.onSelected, isNull);
+      expect(spec.placement, LiveShellPlacement.adaptive);
+      expect(find.text('page'), findsOneWidget);
+    });
+
+    testWidgets('placement.none is forwarded as asked, not reinterpreted', (tester) async {
       await tester.pumpWidget(
         shellHarness(
           const LiveAppShell(destinations: destinations, placement: LiveShellPlacement.none, child: Text('page')),
         ),
       );
-      expect(find.text('Home'), findsNothing, reason: 'placement.none asks for a frame, not a navigation');
-      expect(find.text('page'), findsOneWidget);
+
+      expect(captured.whereType<LanguageShellSpec>().single.placement, LiveShellPlacement.none);
     });
   });
 }

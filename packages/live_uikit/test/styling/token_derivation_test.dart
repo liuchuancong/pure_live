@@ -308,6 +308,7 @@ void main() {
   group('the config chooses the seed and the pipeline', () {
     test('every seed knob the config exposes reaches the seed', () {
       const config = UiConfig(
+        language: LiveDesignLanguage.material,
         accent: Color(0xFFAA0000),
         fontFamily: 'Inter',
         animations: false,
@@ -324,18 +325,24 @@ void main() {
     });
 
     test('spacious is the one density that reseeds', () {
-      const roomy = UiConfig(density: UiDensity.spacious);
+      const roomy = UiConfig(language: LiveDesignLanguage.material, density: UiDensity.spacious);
       expect(roomy.toSeed().sizeStep, 5);
       expect(roomy.toSeed().controlHeight, 40);
-      expect(const UiConfig(density: UiDensity.compact).toSeed().controlHeight, 32);
+      expect(
+        const UiConfig(language: LiveDesignLanguage.material, density: UiDensity.compact).toSeed().controlHeight,
+        32,
+      );
     });
 
     test('the algorithm list is brightness first, compact last', () {
-      expect(const UiConfig().algorithms(dark: false), hasLength(1));
-      final compactDark = const UiConfig(density: UiDensity.compact).algorithms(dark: true);
+      expect(const UiConfig(language: LiveDesignLanguage.material).algorithms(dark: false), hasLength(1));
+      final compactDark = const UiConfig(
+        language: LiveDesignLanguage.material,
+        density: UiDensity.compact,
+      ).algorithms(dark: true);
       expect(compactDark, hasLength(2));
       final token = ThemeAlgorithms.resolve(
-        const UiConfig(density: UiDensity.compact, pureBlack: true).toSeed(),
+        const UiConfig(language: LiveDesignLanguage.material, density: UiDensity.compact, pureBlack: true).toSeed(),
         compactDark,
       );
       expect(token.isDark, isTrue);
@@ -343,19 +350,45 @@ void main() {
     });
 
     test('brightness policy resolves against the platform', () {
-      expect(const UiConfig(brightness: UiBrightnessMode.light).useDark(platformDark: true), isFalse);
-      expect(const UiConfig(brightness: UiBrightnessMode.dark).useDark(platformDark: false), isTrue);
-      expect(const UiConfig().useDark(platformDark: true), isTrue);
-      expect(const UiConfig().useDark(platformDark: false), isFalse);
+      expect(
+        const UiConfig(
+          language: LiveDesignLanguage.material,
+          brightness: UiBrightnessMode.light,
+        ).useDark(platformDark: true),
+        isFalse,
+      );
+      expect(
+        const UiConfig(
+          language: LiveDesignLanguage.material,
+          brightness: UiBrightnessMode.dark,
+        ).useDark(platformDark: false),
+        isTrue,
+      );
+      expect(const UiConfig(language: LiveDesignLanguage.material).useDark(platformDark: true), isTrue);
+      expect(const UiConfig(language: LiveDesignLanguage.material).useDark(platformDark: false), isFalse);
     });
 
     test('transparency folds reduceTransparency and a zero multiplier', () {
-      expect(const UiConfig().effectiveTransparency, 1);
-      expect(const UiConfig().allowsTransparency, isTrue);
-      expect(const UiConfig(transparency: 0.5).effectiveTransparency, 0.5);
-      expect(const UiConfig(transparency: 0).allowsTransparency, isFalse);
-      expect(const UiConfig(transparency: 0.5, reduceTransparency: true).effectiveTransparency, 0);
-      expect(const UiConfig(transparency: 0.5, reduceTransparency: true).allowsTransparency, isFalse);
+      expect(const UiConfig(language: LiveDesignLanguage.material).effectiveTransparency, 1);
+      expect(const UiConfig(language: LiveDesignLanguage.material).allowsTransparency, isTrue);
+      expect(const UiConfig(language: LiveDesignLanguage.material, transparency: 0.5).effectiveTransparency, 0.5);
+      expect(const UiConfig(language: LiveDesignLanguage.material, transparency: 0).allowsTransparency, isFalse);
+      expect(
+        const UiConfig(
+          language: LiveDesignLanguage.material,
+          transparency: 0.5,
+          reduceTransparency: true,
+        ).effectiveTransparency,
+        0,
+      );
+      expect(
+        const UiConfig(
+          language: LiveDesignLanguage.material,
+          transparency: 0.5,
+          reduceTransparency: true,
+        ).allowsTransparency,
+        isFalse,
+      );
     });
   });
 }

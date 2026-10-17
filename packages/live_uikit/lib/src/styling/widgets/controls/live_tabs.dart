@@ -16,52 +16,6 @@ class LiveTab {
   final IconData? icon;
 }
 
-/// A horizontal tab strip in the token model, controlled by [index] /
-/// [onChanged]. Selected, hover and the ink bar all come from the tabs
-/// component token; each tab is keyboard/remote focusable. This is the base for
-/// languages that do not map tabs to their own widget.
-class TokenTabs extends StatelessWidget {
-  /// A token tab strip.
-  const new({
-    required this.tabs,
-    required this.index,
-    this.onChanged,
-    this.spacing = 0,
-    this.enabled = true,
-    super.key,
-  });
-
-  /// The tabs, in order.
-  final List<LiveTab> tabs;
-
-  /// The selected index.
-  final int index;
-
-  /// Called with a tab's index when it is chosen; null disables the tabs.
-  final ValueChanged<int>? onChanged;
-
-  /// The gap between tabs.
-  final double spacing;
-
-  /// Whether the strip responds to input.
-  final bool enabled;
-
-  @override
-  Widget build(BuildContext context) {
-    final interactive = enabled && onChanged != null;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (var i = 0; i < tabs.length; i++)
-          Padding(
-            padding: EdgeInsets.only(right: i == tabs.length - 1 ? 0 : spacing),
-            child: _TabButton(tab: tabs[i], selected: i == index, onTap: interactive ? () => onChanged!(i) : null),
-          ),
-      ],
-    );
-  }
-}
-
 /// The public tab strip: a thin dispatcher to the active language adapter, so
 /// switching `UiConfig.language` renders tabs with the real library's control
 /// (Material's `TabBar`) or the token base.
@@ -193,56 +147,6 @@ class _TabButtonState extends State<_TabButton> {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// The token-driven page switcher under a tab strip: a swipeable page view that
-/// follows the caller's index and reports a swipe back.
-///
-/// The token base swipes because that is what a tab view is for; a language whose
-/// own view does not (Fluent's `Pivot` does, a Windows shell page often does not)
-/// overrides [LanguageAdapter.tabView] rather than arguing with this one.
-class TokenTabView extends StatefulWidget {
-  /// A token tab view built from [spec].
-  const new({required this.spec, super.key});
-
-  /// The view configuration.
-  final LanguageTabViewSpec spec;
-
-  @override
-  State<TokenTabView> createState() => _TokenTabViewState();
-}
-
-class _TokenTabViewState extends State<TokenTabView> {
-  late final PageController _controller = PageController(initialPage: widget.spec.index);
-
-  @override
-  void didUpdateWidget(TokenTabView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final index = widget.spec.index;
-    if (oldWidget.spec.index != index && !_atPage(index)) {
-      _controller.animateToPage(index, duration: widget.spec.duration, curve: Curves.easeInOutCubic);
-    }
-  }
-
-  bool _atPage(int index) => _controller.hasClients && _controller.page == index.toDouble();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final spec = widget.spec;
-    final swipeable = spec.onIndexChanged != null && spec.pages.length > 1;
-    return PageView(
-      controller: _controller,
-      physics: swipeable ? const PageScrollPhysics() : const NeverScrollableScrollPhysics(),
-      onPageChanged: swipeable ? (index) => spec.onIndexChanged?.call(index) : null,
-      children: spec.pages,
     );
   }
 }

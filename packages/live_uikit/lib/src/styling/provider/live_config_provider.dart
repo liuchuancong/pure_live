@@ -3,7 +3,6 @@ import 'package:live_uikit/src/styling/config/live_config.dart';
 import 'package:live_uikit/src/styling/contracts/live_ui_adapter.dart';
 import 'package:live_uikit/src/styling/contracts/live_ui_surfaces.dart';
 import 'package:live_uikit/src/styling/diagnostics/diagnostics.dart';
-import 'package:live_uikit/src/styling/resolution/live_ui_fallback_policy.dart';
 import 'package:live_uikit/src/styling/resolution/live_ui_registry.dart';
 import 'package:live_uikit/src/styling/resolution/live_ui_resolver.dart';
 import 'package:live_uikit/src/styling/style/recipe.dart';
@@ -85,7 +84,6 @@ final class LiveTheme {
     required this.text,
     required this.button,
     required this.adapter,
-    required this.implementationKind,
     required this.canBlur,
     required this.isDark,
   });
@@ -96,10 +94,6 @@ final class LiveTheme {
   /// The active language adapter — the widget-library renderer controls route
   /// through (Material, Cupertino, macOS, …). Chosen from [UiConfig.language].
   final LanguageAdapter adapter;
-
-  /// How controls resolve for the active language — native adapter or shared
-  /// fallback (§15.2). Lets a caller assert/observe the dispatch decision.
-  final LiveImplementationKind implementationKind;
 
   /// The full resolved design token set.
   final DesignToken token;
@@ -150,8 +144,9 @@ final class LiveTheme {
   /// The medium transition duration, honoured by animated components.
   Duration get duration => config.animations ? token.motion.durationMid : Duration.zero;
 
-  /// Whether the active adapter renders [control] with a native widget rather
-  /// than the shared token renderer (§15.2). Lets a test assert the dispatch.
+  /// Whether the active adapter renders [control] with its library's own widget
+  /// (§15.2). Every adapter declares the full set, so a false here is a
+  /// declaration that has drifted from the methods it overrides (§17).
   bool supports(LiveUiControl control) => adapter.capabilities.supports(control);
 
   /// Whether the active adapter owns [surface] — the app host or the shell — with
@@ -185,11 +180,10 @@ class LiveConfigProvider extends StatefulWidget {
   /// A provider over [child].
   const new({
     required this.config,
+    required this.registry,
     required this.child,
     this.seed,
     this.buttonToken,
-    this.registry = defaultLanguageRegistry,
-    this.fallbackPolicy = const LiveUiFallbackPolicy(),
     this.hardwareBlur = true,
     this.systemTextScale = 1,
     this.diagnostics,
@@ -207,17 +201,15 @@ class LiveConfigProvider extends StatefulWidget {
   /// An override of the Button component tokens (Ant's `components.Button`).
   final ButtonComponentToken Function(DesignToken token)? buttonToken;
 
-  /// The design-language adapters (which library renders each language).
+  /// The design-language adapters: which library renders which language.
+  ///
+  /// Required, and there is no default — a build that could name no library for
+  /// the selected language would have nothing to render it with.
   final LanguageRegistry registry;
 
-  /// The downgrade rules applied when a language has no adapter (§15.4). The
-  /// default serves the shared token renderer and records it; a host can demand
-  /// fail-fast so a gap crashes loudly instead of re-skinning silently.
-  final LiveUiFallbackPolicy fallbackPolicy;
-
-  /// An optional receiver for UI-runtime diagnostics (§3.10/§7): e.g. a
-  /// selected language that has no registered adapter is reported here rather
-  /// than silently falling back. Null keeps the core quiet.
+  /// An optional receiver for UI-runtime diagnostics (§3.10/§7): what the device
+  /// cannot afford is reported here rather than silently dropped. Null keeps the
+  /// core quiet.
   final LiveUiDiagnosticSink? diagnostics;
 
   /// Whether the device can afford a backdrop filter.
@@ -235,7 +227,7 @@ class LiveConfigProvider extends StatefulWidget {
 
 class _LiveConfigProviderState extends State<LiveConfigProvider> with WidgetsBindingObserver {
   late Brightness _platformBrightness;
-  LiveDesignLanguage? _reported;
+  bool? _blurLost;
 
   @override
   void initState() {
@@ -260,39 +252,16 @@ class _LiveConfigProviderState extends State<LiveConfigProvider> with WidgetsBin
     // The single dispatch decision (§15.3): who renders this language, and any
     // downgrade the fallback policy implies, resolved once and carried in the
     // theme as [LiveTheme.adapter] + [LiveTheme.implementationKind].
-    final resolver = LiveUiResolver(registry: widget.registry, policy: widget.fallbackPolicy);
-    final resolution = resolver.resolve(language);
-    final adapter = resolution.implementation.adapter;
-    // Report a downgrade once per language change, never silently (§7/§8.10).
-    if (language != _reported) {
-      _reported = language;
-      final diagnostic = resolution.diagnostic;
-      if (diagnostic != null) {
-        widget.diagnostics?.call(diagnostic);
-      } else if (widget.diagnostics != null ||
-          widget.fallbackPolicy.onUnsupportedControl == LiveUiFallbackAction.failFast ||
-          widget.fallbackPolicy.onUnsupportedSurface == LiveUiFallbackAction.failFast) {
-        // The language has an adapter, so any control it does not declare is a
-        // narrower downgrade with its own fact to report (§15.5): a host that
-        // wired a sink learns which controls the active library serves from the
-        // shared renderer, rather than discovering it visually. A fail-fast
-        // policy is honoured even without a sink — the demand is the loud fault,
-        // not the log line (§7).
-        for (final control in LiveUiControl.values) {
-          final controlDiagnostic = resolver.resolveControl(language, control).diagnostic;
-          if (controlDiagnostic != null) {
-            widget.diagnostics?.call(controlDiagnostic);
-          }
-        }
-        // The structural surfaces join the same once-per-language-change report:
-        // which library owns the window frame and the navigation is a fact about
-        // this build, not something a host should have to notice by looking.
-        for (final surface in LiveUiSurface.values) {
-          final surfaceDiagnostic = resolver.resolveSurface(language, surface).diagnostic;
-          if (surfaceDiagnostic != null) {
-            widget.diagnostics?.call(surfaceDiagnostic);
-          }
-        }
+    final adapter = LiveUiResolver(registry: widget.registry).resolve(language);
+    // §15.3 tail: the one thing still worth reporting is an effect the
+    // configuration asked for and this device cannot afford. A backdrop blur the
+    // hardware cannot do is a verified degradation the host should hear about
+    // once, rather than a window that quietly looks flatter than configured.
+    final blurLost = widget.config.allowsTransparency && !widget.hardwareBlur;
+    if (blurLost != _blurLost) {
+      _blurLost = blurLost;
+      if (blurLost) {
+        widget.diagnostics?.call(LiveUiDiagnostic(code: LiveUiDiagnosticCode.unsupportedEffect, language: language));
       }
     }
     final theme = LiveTheme(
@@ -301,7 +270,6 @@ class _LiveConfigProviderState extends State<LiveConfigProvider> with WidgetsBin
       text: TextStyles.from(token, scale: scale, family: widget.config.fontFamily),
       button: widget.buttonToken?.call(token) ?? ButtonComponentToken.of(token),
       adapter: adapter,
-      implementationKind: resolution.implementation.kind,
       canBlur: widget.config.allowsTransparency && widget.hardwareBlur,
       isDark: dark,
     );

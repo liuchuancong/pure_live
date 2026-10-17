@@ -3,10 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:live_uikit/live_uikit.dart';
 
 /// The adapter receives what the icon button means (§11): a spec, not a painting.
-class _RecordingAdapter extends SharedLanguageAdapter {
+/// Everything it is not asked about draws a neutral placeholder — there is no
+/// shared floor left to inherit, so the contract is implemented in full.
+class _RecordingAdapter implements LanguageAdapter {
   const new({this.native = const <LiveUiControl>{}});
 
   final Set<LiveUiControl> native;
+
+  static LanguageButtonSpec? last;
 
   @override
   LiveDesignLanguage get language => LiveDesignLanguage.material;
@@ -20,25 +24,82 @@ class _RecordingAdapter extends SharedLanguageAdapter {
   @override
   LiveUiCapabilities get capabilities => LiveUiCapabilities(native);
 
-  static LanguageButtonSpec? last;
+  @override
+  LiveUiSurfaceCapabilities get surfaces => const LiveUiSurfaceCapabilities.none();
+
+  @override
+  Widget wrap(BuildContext context, DesignToken token, Widget child) => child;
 
   @override
   Widget button(BuildContext context, LanguageButtonSpec spec) {
     last = spec;
     return const SizedBox.shrink();
   }
+
+  @override
+  Widget card(BuildContext context, LanguageCardSpec spec) => spec.child;
+
+  @override
+  Widget textField(BuildContext context, LanguageTextFieldSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget switchWidget(BuildContext context, LanguageSwitchSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget checkbox(BuildContext context, LanguageCheckboxSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget slider(BuildContext context, LanguageSliderSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget segmented(BuildContext context, LanguageSegmentedSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget progress(BuildContext context, LanguageProgressSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget select<T>(BuildContext context, LanguageSelectSpec<T> spec) => const SizedBox.shrink();
+
+  @override
+  Widget tabBar(BuildContext context, LanguageTabsSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget scaffold(BuildContext context, LanguageScaffoldSpec spec) => spec.body;
+
+  @override
+  Widget appBar(BuildContext context, LanguageAppBarSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget listRow(BuildContext context, LanguageListRowSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget navBar(BuildContext context, LanguageNavBarSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget toast(BuildContext context, LanguageToastSpec spec) => const SizedBox.shrink();
+
+  @override
+  Widget dialog(BuildContext context, LanguageDialogSpec spec) => spec.content ?? const SizedBox.shrink();
+
+  @override
+  Widget tabView(BuildContext context, LanguageTabViewSpec spec) =>
+      spec.pages.isEmpty ? const SizedBox.shrink() : spec.pages[spec.index];
+
+  @override
+  Widget appHost(BuildContext context, LanguageHostSpec spec) =>
+      spec.builder?.call(context, const SizedBox.shrink()) ?? const SizedBox.shrink();
+
+  @override
+  Widget shell(BuildContext context, LanguageShellSpec spec) => spec.child;
 }
 
 void main() {
-  const providerRegistry = LanguageRegistry(
-    adapters: {LiveDesignLanguage.material: _RecordingAdapter()},
-    fallback: SharedLanguageAdapter(),
-  );
+  const providerRegistry = LanguageRegistry(adapters: {LiveDesignLanguage.material: _RecordingAdapter()});
 
-  // A real app shell: the tooltip the renderer wraps needs an Overlay, and the
-  // text direction comes with the MaterialApp rather than being asserted by hand.
-  Widget harness(Widget child, {UiConfig? config}) => LiveConfigProvider(
-    config: config ?? const UiConfig(language: LiveDesignLanguage.material),
+  // A real app shell: the text direction comes with the MaterialApp rather than
+  // being asserted by hand, and the Scaffold gives the dispatched control a page.
+  Widget harness(Widget child) => LiveConfigProvider(
+    config: const UiConfig(language: LiveDesignLanguage.material),
     registry: providerRegistry,
     child: MaterialApp(home: Scaffold(body: child)),
   );
@@ -81,63 +142,22 @@ void main() {
       expect(_RecordingAdapter.last!.enabled, isFalse);
     });
 
-    testWidgets('the token renderer draws glyph, name and square — no text', (tester) async {
-      // The default language is the shared token base, so this is the renderer
-      // the adapters are required to agree with.
+    testWidgets('the size step travels with the spec, so the language squares it', (tester) async {
+      // The geometry is no longer drawn by a core base: what the page owes the
+      // adapter is the step, and nothing else.
+      _RecordingAdapter.last = null;
       await tester.pumpWidget(
-        harness(
-          LiveIconButton(key: const Key('icon-button'), icon: Icons.favorite, tooltip: 'Favourite', onPressed: () {}),
-          config: const UiConfig(),
-        ),
+        harness(LiveIconButton(icon: Icons.share, tooltip: 'Share', size: ControlSize.sm, onPressed: () {})),
       );
-
-      expect(find.byType(Icon), findsOneWidget);
-      expect(find.byType(Text), findsNothing, reason: 'the empty label must never reach the screen');
-      expect(find.byType(Tooltip), findsOneWidget);
-
-      // The square comes from the icon-only branch, sized by the md height step.
-      final sized = tester
-          .widgetList<SizedBox>(find.ancestor(of: find.byType(LiveBox), matching: find.byType(SizedBox)))
-          .toList();
-      final theme = LiveTheme.of(tester.element(find.byKey(const Key('icon-button'))));
-      expect(sized.any((box) => box.width == theme.button.controlHeight), isTrue);
-      expect(sized.any((box) => box.height == theme.button.controlHeight), isTrue);
-    });
-
-    testWidgets('the accessible name survives as the icon semantics label', (tester) async {
-      final handle = tester.ensureSemantics();
-      await tester.pumpWidget(
-        harness(
-          LiveIconButton(icon: Icons.favorite, tooltip: 'Favourite', onPressed: () {}),
-          config: const UiConfig(),
-        ),
-      );
-      expect(
-        tester.getSemantics(find.byType(Icon)).getSemanticsData().label,
-        contains('Favourite'),
-        reason: 'an icon with no text still has to say what it does',
-      );
-      handle.dispose();
-    });
-
-    testWidgets('selected paints the primary foreground (§2.3)', (tester) async {
-      late LiveBox rendered;
-      await tester.pumpWidget(
-        harness(
-          LiveIconButton(icon: Icons.favorite, tooltip: 'Favourite', selected: true, onPressed: () {}),
-          config: const UiConfig(),
-        ),
-      );
-      rendered = tester.widget<LiveBox>(find.byType(LiveBox));
-      final theme = LiveTheme.of(tester.element(find.byType(LiveBox)));
-      expect(rendered.style(InteractionState.normal).foreground, theme.colors.primary);
-      expect(rendered.style(InteractionState.disabled).foreground, theme.colors.textDisabled);
+      expect(_RecordingAdapter.last!.size, ControlSize.sm);
+      expect(_RecordingAdapter.last!.iconOnly, isTrue);
     });
   });
 
   test('the recording adapter declares no native controls, so the spec still reaches it', () {
     // Guards the test double itself: `capabilities` is empty by default, which is
-    // what makes `button` the override under observation rather than a fallback.
+    // what makes `button` the override under observation rather than a claim
+    // about what the language renders natively (§17).
     expect(const _RecordingAdapter().capabilities.supports(LiveUiControl.button), isFalse);
     expect(const _RecordingAdapter(native: {LiveUiControl.button}).capabilities.supports(LiveUiControl.button), isTrue);
   });
