@@ -34,16 +34,14 @@ const Set<LiveUiControl> nativeControls = {
 /// since it ships no navigation structure of its own.
 const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost, LiveUiSurface.appShell};
 
-/// §16 integration pass for `live_uikit_glass`: every one of the seventeen controls
-/// resolves native, so a Glass language change reports no control downgrade at
-/// all, and a switch to the core token base and back must not cost the caller its
-/// controller or its field state (§11).
-/// The downgrades this language is expected to report: none at all. Every control
-/// and both structural surfaces are native, so the derived checks below compare
-/// against empty sets and skip the code assertions (§15.5/§16.8).
-/// Nothing in the contract falls back any more: the resolver hands back this
-/// language's adapter, so a run that renders it reports no control or surface
-/// downgrade at all (§15.5/§16.8).
+/// §16 integration pass for `live_uikit_glass`: all seventeen controls and both
+/// structural surfaces resolve to this adapter, so a run that renders Glass
+/// reports no downgrade at all, and re-theming through the same language must not
+/// cost the caller its controller or its field state (§11).
+///
+/// The helper below is the assertion behind that claim: the diagnostics a Glass
+/// run hands the host name no control and no surface, because every part of the
+/// contract is answered by this adapter rather than by another one (§15/§16).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   expect(
     sink.where((diagnostic) => diagnostic.control != null || diagnostic.surface != null),
@@ -96,8 +94,8 @@ void main() {
     expect(find.byType(glass.GlassCard), findsOneWidget);
     expect(find.byType(glass.GlassTextField), findsOneWidget);
     expect(find.byType(ElevatedButton), findsNothing);
-    // The progress bar has no library widget either, so it is the composed frosted
-    // groove — and nothing on this page is a token renderer (§15.3).
+    // The progress bar has no library widget either, so it is this package's own
+    // composed frosted groove — every control on this page is drawn here (§15).
     expectUndeclaredControls(diagnostics);
 
     // A re-theme through the same adapter keeps the caller's state: the path never
@@ -110,7 +108,8 @@ void main() {
     expect(find.byType(glass.GlassTextField), findsOneWidget);
     expect(controller.text, 'typed before the switch');
     expectUndeclaredControls(diagnostics);
-    // Progress renders on both sides: a glass groove here, a token bar there.
+    // The composed progress bar is still drawn after the re-theme, so a page that
+    // mixes the library's own widgets with the composed ones keeps both.
     expect(find.byType(LiveProgress), findsOneWidget);
   });
 }

@@ -15,19 +15,18 @@ import 'package:live_uikit/live_uikit.dart';
 /// (the swipe is a `UIScrollView` behaviour the app assembles), so the switcher is
 /// composed from [PageView] — `package:flutter/widgets.dart`, no Material — and
 /// given the library's own scroll chrome, `cu.CupertinoScrollBehavior`: no
-/// overscroll glow and a `CupertinoScrollbar` where a desktop shows one, which is
-/// what the shared token base gets wrong about a Cupertino page.
+/// overscroll glow and a `CupertinoScrollbar` where a desktop shows one, which a
+/// bare [PageView] would not give a Cupertino page.
 ///
 /// Every field is read. [LanguageTabViewSpec.pages] are the view's children, in
 /// order; [LanguageTabViewSpec.index] is the page shown, and a change to it from
 /// the caller animates across in [LanguageTabViewSpec.duration] — with a
-/// decelerating curve, because an iOS page settles rather than easing in and out
-/// the way the token base drives its own controller.
+/// decelerating curve, because an iOS page settles rather than easing in and out.
 /// [LanguageTabViewSpec.onIndexChanged] reports a swipe back, and a null callback
 /// or a single page makes the view non-swipeable, exactly as the contract's
 /// wording asks. The one field with no counterpart is an empty [LanguageTabViewSpec.pages]:
 /// [PageView] asserts a non-empty child list, so the switcher answers with nothing
-/// rather than throwing — the shared base would have thrown on it too.
+/// rather than throwing.
 abstract final class CupertinoTabViewBuilder {
   /// Builds the page switcher for [spec].
   static Widget build(BuildContext context, LanguageTabViewSpec spec) => _CupertinoTabView(spec: spec);

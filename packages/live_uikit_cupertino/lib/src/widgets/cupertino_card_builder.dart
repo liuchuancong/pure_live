@@ -10,8 +10,8 @@ import 'package:live_uikit/live_uikit.dart';
 /// control can be put on. The iOS card *is* the inset-grouped section: the 10pt
 /// rounded panel Notes and Reminders drop each item into, filled with the
 /// library's own `secondarySystemGroupedBackground` and clipped to its own
-/// superellipse. So the card is that widget rather than the shared renderer's
-/// Material-shaped box.
+/// superellipse. So the card is that widget: a Material-shaped box would be the
+/// wrong answer for an iOS page.
 ///
 /// Two of the section's own decisions are reset because they belong to a grouped
 /// list and not to a card: `margin` is zeroed (its default is the page gutter an

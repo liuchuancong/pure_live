@@ -12,10 +12,9 @@ import 'package:live_uikit/live_uikit.dart';
 /// delta, which replaces only the field named and leaves the library's pill shape and
 /// track colour alone, so the bar stays the theme's.
 ///
-/// [LanguageProgressSpec.showLabel] is the token renderer's affordance: forui's
-/// indicator paints a bar and nothing else, so the label is dropped rather than
-/// overlaid with a hand-built percentage (§9/§15). It is the one field of this control
-/// the library cannot express.
+/// [LanguageProgressSpec.showLabel] has no slot: forui's indicator paints a bar and
+/// nothing else, so the label is dropped rather than overlaid with a hand-built
+/// percentage (§9/§15). It is the one field of this control the library cannot express.
 abstract final class ForuiProgressBuilder {
   /// Builds the progress bar for [spec].
   static Widget build(BuildContext context, LanguageProgressSpec spec) {

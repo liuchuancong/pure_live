@@ -19,10 +19,10 @@ import 'package:live_uikit/live_uikit.dart';
 /// forui has no disabled state for tabs, and the observable behaviour the spec asks for
 /// is the one the lifted control gives (§9).
 ///
-/// Two things are handled rather than mapped: [LanguageTabsSpec.spacing] is the token
-/// renderer's knob and the library pads its own strip, and the controller cannot show
-/// "nothing selected", so an out-of-range [LanguageTabsSpec.index] is clamped into the
-/// tabs that exist. An empty list returns nothing at all, because `FTabs` asserts on it.
+/// Two things are handled rather than mapped: [LanguageTabsSpec.spacing] has no slot,
+/// because the library pads its own strip, and the controller cannot show "nothing
+/// selected", so an out-of-range [LanguageTabsSpec.index] is clamped into the tabs that
+/// exist. An empty list returns nothing at all, because `FTabs` asserts on it.
 abstract final class ForuiTabBarBuilder {
   /// Builds the strip for [spec].
   static Widget build(BuildContext context, LanguageTabsSpec spec) {

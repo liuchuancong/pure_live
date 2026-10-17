@@ -26,7 +26,7 @@ import 'package:live_uikit/live_uikit.dart';
 /// full-size column, because `WTabs` welds a strip to its panel and the core hands
 /// the two separately.
 ///
-/// Composing them here, rather than leaving them to the shared renderer, is what
+/// Composing them here, rather than borrowing another library's widget, is what
 /// keeps a Wind page from having a Material-shaped bar in it.
 ///
 /// This must stay in sync with the methods `WindLanguageAdapter` actually

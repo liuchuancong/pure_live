@@ -55,12 +55,15 @@ import 'package:live_uikit_neumorphic/src/widgets/neumorphic_toast_builder.dart'
 /// drives, slid by Flutter's own `PageView` inside a `concave` well — the inverse of
 /// the domed tab).
 ///
-/// Nothing here falls through to the shared token base: [capabilities] is the whole
-/// contract (§15.3), and a page that mixes these controls has no Material renderer in
-/// its subtree. Both structural surfaces are owned too — the app host is the
-/// library-themed `WidgetsApp` (`neumorphic_surfaces.dart`), and the shell is the
-/// column this package composes out of the same faces, because the library has no
-/// rail and its one navigation widget cannot carry the contract (§ surfaces).
+/// [capabilities] is therefore the whole contract (§15.3): every control the
+/// resolver can dispatch has an override here, so a page that mixes these
+/// controls has neither a Material widget nor another library's renderer in its
+/// subtree, and a declaration that drifted from these overrides surfaces as a
+/// `LiveUiCapabilityException` rather than a foreign-looking widget. Both
+/// structural surfaces are owned too — the app host is the library-themed
+/// `WidgetsApp` (`neumorphic_surfaces.dart`), and the shell is the column this
+/// package composes out of the same faces, because the library has no rail and
+/// its one navigation widget cannot carry the contract (§ surfaces).
 class NeumorphicLanguageAdapter implements LanguageAdapter {
   /// The Neumorphic adapter.
   const new();

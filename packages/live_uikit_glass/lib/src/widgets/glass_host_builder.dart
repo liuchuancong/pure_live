@@ -9,15 +9,12 @@ import 'package:live_uikit_glass/src/theme/glass_theme_scope.dart';
 /// — so the host is Flutter's own `WidgetsApp` with this language's [GlassThemeScope]
 /// installed above the routed tree.
 ///
-/// That is still this language's host and not the shared one, which is the point
-/// of the surface (§9 app host). The shared base hosts everything in a
-/// `MaterialApp`, and an app widget — not the controls — is what decides how a
-/// route slides in, which physics a scroll view obeys and where a dialog's modal
-/// barrier lives: on the Material host every Glass page transitioned, scrolled
-/// and dimmed like Material however its buttons were drawn. `WidgetsApp` asks
-/// nothing of Material and gives nothing to it, so all three now come from the
-/// widgets-layer defaults, and the surface the barrier covers is the library's
-/// own frosted one.
+/// That is this language's own host, which is the point of the surface (§9 app
+/// host). An app widget — not the controls — decides how a route slides in, which
+/// physics a scroll view obeys and where a dialog's modal barrier lives.
+/// `WidgetsApp` asks nothing of Material and gives nothing to it, so all three
+/// come from the widgets-layer defaults, and the surface the barrier covers is the
+/// library's own frosted one.
 ///
 /// [LanguageHostSpec.localizationsDelegates] carries what the app needs from
 /// here: with no Material application widget above, the strings Glass's composed

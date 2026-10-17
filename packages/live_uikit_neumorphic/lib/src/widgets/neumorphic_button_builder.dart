@@ -2,13 +2,19 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_neumorphic_ui_kit/flutter_neumorphic_ui_kit.dart' as neu;
 import 'package:live_uikit/live_uikit.dart';
 
-/// Builds a soft-embossed Neumorphic button from a [LanguageButtonSpec]
-/// driven. `expand` wraps the button in a full-width box and `tooltip` wraps it in
-/// the core's language-neutral [LiveTooltip] — `NeuButton` exposes no hint slot,
-/// and neither wrap changes the shadow surface. `focusNode`/`autofocus` have no
-/// parameter to land on and are recorded as unmappable (§9/§15).
+/// Builds a soft-embossed Neumorphic button from a [LanguageButtonSpec] (§9 Button).
+///
+/// **Mapped.** `NeuButton` is the library's own button, and its pressed state is
+/// the style's whole answer to a tap. Press enabled-ness is decided here — enabled,
+/// not loading, and holding a callback — because `NeuButton` takes a null `onPressed`
+/// as its inert state. `expand` wraps the button in a full-width box
+/// and `tooltip` wraps it in the core's language-neutral [LiveTooltip] —
+/// `NeuButton` exposes no hint slot, and neither wrap changes the shadow surface.
+/// `focusNode`/`autofocus` have no parameter to land on and are recorded as
+/// unmappable (§15), as are `selected` and the inline [Style]: this widget paints
+/// its own surface, and layering either onto it would mean hand-painting an overlay.
 abstract final class NeumorphicButtonBuilder {
-  /// Builds the button for [spec], drawn from this library's own widgets part for part.
+  /// Builds the button for [spec] with the library's own [neu.NeuButton].
   static Widget build(BuildContext context, LanguageButtonSpec spec) {
     final theme = LiveTheme.of(context);
     Widget button = neu.NeuButton(
@@ -30,9 +36,9 @@ abstract final class NeumorphicButtonBuilder {
 
   /// The button's content, built from this library's own parts: the label, an
   /// optional leading glyph, a spinner while loading, and the bare glyph of an
-  /// icon-only button, whose empty label is never painted. There is no shared
-  /// renderer to inherit this from any more, so this language composes it —
-  /// the library ships no button spinner, so the loading state is composed from its own surface part (§9 Button).
+  /// icon-only button, whose empty label is never painted. The library gives
+  /// `NeuButton` a child and nothing else, and ships no spinner of its own, so the
+  /// loading state is composed from its progress face (§9 Button).
   static Widget _label(LanguageButtonSpec spec, LiveTheme theme, {Color? foreground}) {
     final step = theme.text.label.fontSize ?? 14;
     if (spec.loading) {

@@ -5,12 +5,12 @@ import 'package:live_uikit/live_uikit.dart';
 /// Builds a frosted glass text input from a [LanguageTextFieldSpec] (§9 Text
 /// field).
 ///
-/// The controller and focus node pass through untouched, and the fork carries
+/// The controller and focus node pass through untouched, and the library carries
 /// hint, obscuring, keyboard hints, line count, enable and read-only state, plus
-/// leading and trailing slots. It has no error slot, so `errorText` is drawn the
-/// way the token renderer draws it — a caption in the error colour under the
-/// field — and the field itself keeps the library's own focus treatment rather
-/// than an approximation of a Material error border (§15).
+/// leading and trailing slots. It has no error slot, so `errorText` is drawn here
+/// as a caption in the token's error colour under the field, and the field itself
+/// keeps the library's own focus treatment rather than an approximation of a
+/// Material error border (§15).
 abstract final class GlassTextFieldBuilder {
   /// Builds the field for [spec].
   static Widget build(BuildContext context, LanguageTextFieldSpec spec) {

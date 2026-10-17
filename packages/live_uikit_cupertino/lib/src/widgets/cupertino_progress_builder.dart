@@ -9,8 +9,8 @@ import 'package:live_uikit/live_uikit.dart';
 /// different widgets: a known fraction is `cu.CupertinoLinearActivityIndicator`
 /// — the fork's own linear bar, whose `progress` is the same 0..1 the contract
 /// carries — and a null one is `cu.CupertinoActivityIndicator`, the spinning tick
-/// ring iOS uses while work has no measurable end. The shared renderer answers
-/// both cases with Material's `LinearProgressIndicator` and its marquee.
+/// ring iOS uses while work has no measurable end. Two iOS widgets answer the two
+/// states; one Material bar with a marquee would answer both.
 ///
 /// The fill colour follows the token, because a bar that is `warning` yellow in
 /// this app stays `warning` yellow in iOS; the track, the cap shape and the spin
@@ -18,9 +18,8 @@ import 'package:live_uikit/live_uikit.dart';
 /// thickness parameter, and it means nothing to a round spinner, so the spinner
 /// keeps the library's radius.
 ///
-/// [LanguageProgressSpec.showLabel] draws the percentage beside the bar the way
-/// the token renderer does it — only when the value is known, since a spinner has
-/// no percentage to name.
+/// [LanguageProgressSpec.showLabel] draws the percentage beside the bar, and only
+/// when the value is known, since a spinner has no percentage to name.
 abstract final class CupertinoProgressBuilder {
   /// Builds the indicator for [spec].
   static Widget build(BuildContext context, LanguageProgressSpec spec) {

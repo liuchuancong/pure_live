@@ -26,8 +26,8 @@ import 'package:macos_ui/macos_ui.dart' as macos;
 /// `scaffold` (`MacosScaffold`), not to the shell. The shell adds one sidebar
 /// beside the page and nothing else: no `MacosWindow`, no `ToolBar`, no title bar.
 ///
-/// [LanguageShellSpec.placement] is honoured with the same rule the shared token
-/// shell uses — `rail` always, `bottom` never, `adaptive` whenever the environment
+/// [LanguageShellSpec.placement] is honoured by this shell's own rule — `rail`
+/// always, `bottom` never, `adaptive` whenever the environment
 /// reports a rail width above zero — so the same app changes form at the same
 /// window width whichever language is active. The rail's own *width* is not that
 /// rule: it is this library's metric, floored at the width a sidebar row needs
@@ -38,7 +38,7 @@ import 'package:macos_ui/macos_ui.dart' as macos;
 /// list of rows and nothing else (the descriptor's `bottom` slot is `MacosWindow`'s
 /// code, unreachable from outside a window), so the shell pins it under the list
 /// inside its own column. The `bottom` strip form has no footer at all, so that
-/// form drops it — like the token shell and Material's rail.
+/// form drops the entry, which is what the spec documents for a strip.
 ///
 /// [LiveShellDestination.enabled] has no counterpart in the library: `SidebarItem`
 /// has no `disabled` field (unlike Material's `NavigationRailDestination`) and
@@ -149,8 +149,8 @@ abstract final class MacosShellBuilder {
   static bool _wantsRail(LiveShellPlacement placement, BuildContext context) => switch (placement) {
     LiveShellPlacement.rail => true,
     LiveShellPlacement.bottom || LiveShellPlacement.none => false,
-    // The same predicate the shared token shell reads, so the form switch happens
-    // at the same width in every language (§ surfaces).
+    // The same width rule every language reads, so the form switch happens at
+    // one breakpoint across the family (§ surfaces).
     LiveShellPlacement.adaptive =>
       (LiveEnvironmentScope.maybeOf(context)?.geometry.railWidth ?? LiveSizing.railWidth) > 0,
   };

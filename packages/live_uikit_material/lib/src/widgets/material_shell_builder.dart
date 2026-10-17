@@ -15,8 +15,9 @@ import 'package:material_ui/material_ui.dart' as mu;
 /// [LanguageShellSpec.placement] is honoured rather than folded: a `bottom`
 /// request goes back through the adapter's `navBar` — the fork's own
 /// `NavigationBar`, with its guard for a bar too short to satisfy its assert —
-/// and an `adaptive` one reads the same window geometry the token shell reads, so
-/// a narrow window switches form at the same width whichever language is active.
+/// and an `adaptive` one reads the same window geometry the rest of the layout
+/// reads, so a narrow window switches form at the same width whichever language is
+/// active.
 /// [LanguageShellSpec.trailing] has a real slot in the rail and is pinned to its
 /// bottom; the bottom strip has none, so that form drops it.
 abstract final class MaterialShellBuilder {

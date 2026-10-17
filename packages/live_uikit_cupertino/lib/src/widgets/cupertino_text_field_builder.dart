@@ -4,9 +4,10 @@ import 'package:live_uikit/live_uikit.dart';
 
 /// Builds a native Cupertino UI text field from a [LanguageTextFieldSpec]
 /// (§9 Text field), passing the caller's controller and focus node through and
-/// styling the decoration from the resolved theme tokens. An error redraws the
-/// border and adds the caption line, the same two signals the token renderer
-/// uses, so a field does not change meaning when the style is switched (§9/§15).
+/// styling the decoration from the resolved theme tokens. An error carries two
+/// signals here — it redraws the border and adds a caption line beneath the field
+/// — so the field means the same thing on either signal and keeps that meaning
+/// across a style switch (§9/§15).
 abstract final class CupertinoTextFieldBuilder {
   /// Builds the field for [spec].
   static Widget build(BuildContext context, LanguageTextFieldSpec spec) {

@@ -30,18 +30,19 @@ import 'package:live_uikit/live_uikit.dart';
 /// tabs from its bar from its shell by touch, without a single Material widget in
 /// the subtree.
 ///
-/// [LanguageShellSpec.placement] follows the rule the token shell uses, so the two
-/// forms switch at the same width whichever language is active: `rail` and an
-/// `adaptive` request with room for a pane compose the column at
-/// `LiveEnvironmentScope`'s rail width (falling back to [LiveSizing.railWidth]),
-/// `bottom` hands the strip back through the adapter's `navBar` — this package's
-/// own slab — and `none` or a single destination gives the frame back to the page.
+/// [LanguageShellSpec.placement] is read the way the contract states it, so the two
+/// forms switch at the same width whichever language is active: `rail`, and an
+/// `adaptive` request with room for a pane, compose the column at
+/// `LiveEnvironmentScope`'s rail width — or [LiveSizing.railWidth] when no environment
+/// scope sits above — while `bottom` hands the strip back through this adapter's own
+/// `navBar`, and `none` or a single destination gives the frame back to the page.
 /// [LanguageShellSpec.trailing] has a slot in the column the composed pane
-/// provides for itself, pinned under a `Spacer`; the bottom strip's library bar has
-/// no such slot, so this builder drops it rather than inventing a place for it.
-/// A disabled destination keeps its cell so the column does not shift when it
-/// opens, and is refused here — the `NeuContainer` has no disabled state to ask
-/// for — exactly as the token shell refuses it.
+/// provides for itself, pinned under a `Spacer`; the docked slab shares its width
+/// equally between destinations and has no end-of-navigation slot, so this builder
+/// drops the footer there rather than inventing a place for it. A disabled
+/// destination keeps its cell so the column does not shift when it opens, takes the
+/// token's disabled text role and loses its callback — the `NeuContainer` has no
+/// disabled state to ask for.
 abstract final class NeumorphicShellBuilder {
   /// Builds the shell for [spec].
   static Widget build(BuildContext context, LanguageShellSpec spec) {

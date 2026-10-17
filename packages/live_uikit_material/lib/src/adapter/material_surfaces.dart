@@ -5,7 +5,7 @@ import 'package:live_uikit/live_uikit.dart';
 ///
 /// Both of them. `MaterialApp` is the application host, and the shell is the
 /// fork's `NavigationRail` — a destination column with the Material 3 indicator
-/// and a real footer slot — falling back to its `NavigationBar` when the caller
+/// and a real footer slot — switching to its `NavigationBar` when the caller
 /// asks for a bottom strip. Declaring the shell here says something the control
 /// list cannot: the rail is the one place the fork's own theme scope has to be
 /// the one painting, because a token rail beside a fork `Scaffold` reads as two

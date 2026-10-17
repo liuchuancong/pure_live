@@ -17,8 +17,8 @@ import 'package:live_uikit/live_uikit.dart';
 ///
 /// A slider is dragged rather than tapped, so its gesture layer is the widgets
 /// library's own [GestureDetector] instead of the core's [LiveBox]: a [Focus]
-/// routes [LanguageSliderSpec.focusNode] and steps the value on the arrow keys, as
-/// the token renderer does, and [Semantics] reports the number rather than the
+/// routes [LanguageSliderSpec.focusNode] and steps the value by a twentieth of the
+/// range on the arrow keys, and [Semantics] reports the number rather than the
 /// geometry.
 abstract final class GlassSliderBuilder {
   /// Builds the slider for [spec].

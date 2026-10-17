@@ -6,13 +6,12 @@ import 'package:live_uikit_forui/src/theme/forui_theme_builder.dart';
 /// Builds a ForUI application host from a [LanguageHostSpec] (§ surfaces).
 ///
 /// forui ships no application widget — the library is a theme and a set of
-/// components, and nothing in it owns a route, a title or a locale — so the host
-/// is Flutter's own `WidgetsApp` with the library's theme installed above the
-/// routed tree. That is still a real host and not the shared one: the shared
-/// base hosts everything in a `MaterialApp`, which hands the page transitions,
-/// the scroll physics and the dialog barrier to Material no matter which
-/// controls are drawn above them, and `WidgetsApp` hands none of that to
-/// Material either.
+/// components, and nothing in it owns a route, a title or a locale — so this
+/// adapter hosts the app itself, on Flutter's own `WidgetsApp` with the library's
+/// theme installed above the routed tree. `WidgetsApp` is what keeps the language
+/// honest: a `MaterialApp` would hand the page transitions, the scroll physics and
+/// the dialog barrier to Material no matter which controls are drawn above them,
+/// and `WidgetsApp` hands none of that to Material either.
 ///
 /// [LanguageHostSpec.localizationsDelegates] carries what the app needs from
 /// here: with no Material application widget above, the labels and text

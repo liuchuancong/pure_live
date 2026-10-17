@@ -24,10 +24,11 @@ import 'package:live_uikit/live_uikit.dart';
 /// which this contract keeps with the caller. `macos_ui` also has no bottom bar:
 /// its navigational list, `SidebarItems`, is the shell surface, not this control.
 ///
-/// Two spec shapes still reach the shared renderer, and both are the library
-/// refusing rather than the adapter not trying: a slider with no callback
-/// (`MacosSlider.onChanged` is required) and a select whose current value is not
-/// one of its items or whose items repeat, which `MacosPopupButton` asserts on.
+/// Two spec shapes are assembled from the library's parts rather than handed to a
+/// fork widget, and both are the library refusing rather than the adapter not
+/// trying: a slider with no callback (`MacosSlider.onChanged` is required) and a
+/// select whose current value is not one of its items or whose items repeat,
+/// which `MacosPopupButton` asserts on.
 ///
 /// This must stay in sync with the methods `MacosLanguageAdapter` actually
 /// overrides (§17).

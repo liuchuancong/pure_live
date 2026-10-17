@@ -3,7 +3,8 @@ import 'package:flutter/widgets.dart';
 import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
 import 'package:live_uikit/live_uikit.dart';
 
-/// Builds a Wind button from a [LanguageButtonSpec] (§9 Button). The press and
+/// Builds a Wind button from a [LanguageButtonSpec] (§9 Button), press and surface
+/// in the library's own widget.
 ///
 /// `WButton` owns its focus handling inside `WAnchor`, which creates and tracks
 /// its own node, so neither `focusNode` nor `autofocus` has a slot to land on —
@@ -38,9 +39,9 @@ abstract final class WindButtonBuilder {
 
   /// The button's content, built from this library's own parts: the label, an
   /// optional leading glyph, a spinner while loading, and the bare glyph of an
-  /// icon-only button, whose empty label is never painted. There is no shared
-  /// renderer to inherit this from any more, so this language composes it —
-  /// the library ships no button spinner, so the loading state is composed from its own surface part (§9 Button).
+  /// icon-only button, whose empty label is never painted. This language composes
+  /// it: the library ships no button spinner, so the loading state is built from
+  /// its own surface part (§9 Button).
   static Widget _label(LanguageButtonSpec spec, LiveTheme theme, {Color? foreground}) {
     final step = theme.text.label.fontSize ?? 14;
     if (spec.loading) {

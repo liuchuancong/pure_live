@@ -16,11 +16,12 @@ Finder macosGlyph(IconData icon) =>
     find.byWidgetPredicate((widget) => widget is macos.MacosIcon && widget.icon == icon);
 
 /// §16 widget tests for `live_uikit_macos`, driven through the real runtime path
-/// so `Live*` controls dispatch to the `macos_ui` widgets — the eleven the library
-/// has a widget for, and the six it had to be given a builder for (the card, the
-/// toast surface and the dialogs its own alert cannot take out of its `MacosSheet`
-/// panel, the two strips out of its own `MacosTab` cell and `MacosIcon`, and the
-/// page switcher out of its pane treatment).
+/// so the `Live*` controls dispatch to this language's builders — the eleven that
+/// hand the spec to a `macos_ui` widget, and the six the library has no widget for,
+/// assembled out of its own parts: the card, the toast surface and the dialogs the
+/// library's alert cannot take come out of its `MacosSheet` panel, the two strips
+/// out of its `MacosTab` cell and `MacosIcon`, and the page switcher out of its own
+/// pane treatment wrapped around an `IndexedStack`.
 void main() {
   const config = UiConfig(language: LiveDesignLanguage.macos, brightness: UiBrightnessMode.light);
 
@@ -471,7 +472,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('a toast surface is a MacosSheet panel, not the token pill', (tester) async {
+    testWidgets('a toast surface is a MacosSheet panel, not a core-drawn pill', (tester) async {
       const anchor = Key('toast-anchor');
       await tester.pumpWidget(harness(const SizedBox(key: anchor, width: 1, height: 1)));
       LiveToast.show(tester.element(find.byKey(anchor)), 'Saved', type: LiveToastType.success);
@@ -506,7 +507,7 @@ void main() {
     macos.PushButton action(String label) =>
         macos.PushButton(controlSize: macos.ControlSize.large, onPressed: () {}, child: Text(label));
 
-    testWidgets('a dialog the library has slots for is MacosAlertDialog, not the token card', (tester) async {
+    testWidgets('a dialog the library has slots for is MacosAlertDialog, not a core-drawn card', (tester) async {
       const anchor = Key('dialog-anchor');
       await tester.pumpWidget(harness(const SizedBox(key: anchor, width: 1, height: 1)));
       final anchorContext = tester.element(find.byKey(anchor));
@@ -531,7 +532,7 @@ void main() {
       await detach(tester, pop: () => Navigator.of(anchorContext).pop());
     });
 
-    testWidgets('a dialog the alert cannot take is a MacosSheet panel, still not the token card', (tester) async {
+    testWidgets('a dialog the alert cannot take is a MacosSheet panel, still not a core-drawn card', (tester) async {
       const anchor = Key('dialog-anchor');
       await tester.pumpWidget(harness(const SizedBox(key: anchor, width: 1, height: 1)));
       final anchorContext = tester.element(find.byKey(anchor));
@@ -560,8 +561,9 @@ void main() {
       Widget view(int index) => SizedBox(
         width: 320,
         height: 160,
-        // The contract has no `LiveTabView` widget yet, so this is its own label builder the
-        // core's own tab view dispatch would use.
+        // The core's own `LiveTabView` is a thin pass-through to the adapter's
+        // `tabView` method, so this calls that method directly with an index the
+        // test owns — the pane is asserted without a strip driving it.
         child: Builder(
           builder: (context) => LiveTheme.of(context).adapter.tabView(
             context,
@@ -586,7 +588,7 @@ void main() {
     });
   });
 
-  group('no token renderer inside a macOS frame (§15.3)', () {
+  group('no core-drawn control inside a macOS frame (§15.3)', () {
     testWidgets('the whole chrome set draws from macos_ui, not from the shared base', (tester) async {
       await tester.pumpWidget(
         harness(
@@ -633,10 +635,10 @@ void main() {
       );
       await tester.pump();
 
-      // macOS declares all seventeen controls, so nothing inside a macOS page should
-      // be a `Token*` renderer any more — the assertion is by class-name prefix
-      // rather than by list, so a control added to the contract cannot slip a
-      // shared renderer in silently.
+      // macOS declares all seventeen controls, so a page framed by this language has
+      // no control left to be drawn by anything else: the frame and its bar are the
+      // library's own `MacosScaffold` and `ToolBar`, and the rest of the page is the
+      // builders asserted above.
       expect(find.byType(macos.MacosScaffold), findsOneWidget);
       expect(find.byType(macos.ToolBar), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -701,7 +703,7 @@ void main() {
       await tester.pump(const Duration(seconds: 2));
     }
 
-    testWidgets('the rail form draws a native sidebar list, not the token column', (tester) async {
+    testWidgets('the rail form draws a native sidebar list, not a core-drawn column', (tester) async {
       var chosen = '';
       await tester.pumpWidget(
         harness(
@@ -798,9 +800,9 @@ void main() {
     });
 
     testWidgets('adaptive takes the rail form, and a shell with nothing to choose takes none', (tester) async {
-      // No `LiveEnvironmentScope` in this harness, so adaptive reads the same
-      // fallback width the shared token shell reads — the form switch stays put
-      // across languages.
+      // No `LiveEnvironmentScope` in this harness, so adaptive reads the core's own
+      // default rail width (`LiveSizing.railWidth`), which is above zero and so
+      // takes the rail form; the shell then widens it to its own sidebar minimum.
       await tester.pumpWidget(
         harness(
           LiveAppShell(

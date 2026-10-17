@@ -39,8 +39,9 @@ import 'package:live_uikit/live_uikit.dart';
 ///   or a scroll view can reach the top; ignored when there is no bar to run under.
 /// - [LanguageScaffoldSpec.floatingActionButton]: neither the library nor the plane
 ///   has a slot for it, so the core's overlay geometry places it at the trailing
-///   bottom corner — [LiveEnvironmentScope]'s page padding, falling back to the
-///   token's `md` — exactly where the shared frame puts one.
+///   bottom corner of the page, inset by [LiveEnvironmentScope]'s page padding — or
+///   by the token's `md` when the environment gives none — which is where the
+///   contract puts one.
 /// - [LanguageScaffoldSpec.background] maps onto the plane's `baseColor` rather than
 ///   onto a fill painted over it: overriding a surface in this style means changing
 ///   the surface. Null keeps the theme's base colour, which the token already drove.

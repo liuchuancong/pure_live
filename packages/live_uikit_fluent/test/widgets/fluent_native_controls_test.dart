@@ -7,9 +7,9 @@ import 'package:live_uikit_fluent/live_uikit_fluent.dart';
 import 'stub_router.dart';
 
 /// §16 widget tests for `live_uikit_fluent`, driving the `Live*` controls through
-/// the real runtime so they dispatch to the native `fluent_ui` widgets rather
-/// than the shared token renderer. Covers §9 gating (callback, disabled, loading,
-/// controlled value, controller passthrough) plus the chrome set, which Fluent now renders in full.
+/// the real runtime so they dispatch to this language's own `fluent_ui` widgets.
+/// Covers §9 gating (callback, disabled, loading,
+/// controlled value, controller passthrough) plus the chrome set, which Fluent renders in full.
 void main() {
   const config = UiConfig(language: LiveDesignLanguage.fluent, brightness: UiBrightnessMode.light);
 
@@ -266,9 +266,9 @@ void main() {
 
       expect(find.byType(fluent.ScaffoldPage), findsOneWidget);
       expect(find.text('content'), findsOneWidget);
-      // Both chrome controls are Fluent's own now: the header is a `PageHeader`
-      // and the bottom strip a row of `ToggleButton`s, so nothing inside a
-      // Fluent frame draws from its own library widgets any more.
+      // Both chrome controls are Fluent's own: the header is a `PageHeader` and
+      // the bottom strip a row of `ToggleButton`s, so a Fluent frame draws its
+      // chrome from this library alone.
       expect(find.byType(fluent.PageHeader), findsOneWidget);
       expect(find.text('Rooms'), findsOneWidget);
     });
@@ -289,7 +289,7 @@ void main() {
       expect(taps, 1);
     });
 
-    testWidgets('a toast surface is the Fluent InfoBar, not the token pill', (tester) async {
+    testWidgets('a toast surface is the Fluent InfoBar, not a core-drawn pill', (tester) async {
       await tester.pumpWidget(harness(const SizedBox.shrink()));
       LiveToast.show(tester.element(find.byType(SizedBox)), 'Saved', type: LiveToastType.success);
       await tester.pump();
@@ -300,7 +300,7 @@ void main() {
   });
 
   group('dialog and tab view (§9)', () {
-    testWidgets('the dialog surface is the library ContentDialog, not the token card', (tester) async {
+    testWidgets('the dialog surface is the library ContentDialog, not a core-drawn card', (tester) async {
       await tester.pumpWidget(harness(const SizedBox.shrink()));
       late BuildContext routeContext;
       final result = showLiveDialog<void>(
@@ -497,7 +497,7 @@ void main() {
       LiveShellDestination(id: 'follow', label: 'Follow', icon: fluent.FluentIcons.heart),
     ];
 
-    testWidgets('the shell draws NavigationView, not the token column', (tester) async {
+    testWidgets('the shell draws NavigationView, not a core-drawn column', (tester) async {
       var chosen = '';
       await tester.pumpWidget(
         harness(
@@ -563,7 +563,7 @@ void main() {
     });
   });
 
-  group('no token renderer inside a Fluent frame (§15.3)', () {
+  group('no core-drawn control inside a Fluent frame (§15.3)', () {
     testWidgets('the whole chrome set draws from Fluent, not from the shared base', (tester) async {
       await tester.pumpWidget(
         harness(
@@ -603,9 +603,10 @@ void main() {
       );
       await tester.pump();
 
-      // Fluent declares all seventeen controls, so nothing in a Fluent page should
-      // be a `Token*` renderer any more — the assertion is by name rather than by
-      // list so a control added to the contract cannot slip in silently.
+      // Fluent serves all seventeen controls from its own builders, so a page this
+      // dense has to build without a complaint. The check is the whole scaffold at
+      // once rather than one builder at a time, so a control that quietly stopped
+      // dispatching here cannot slip through.
       expect(tester.takeException(), isNull);
     });
   });

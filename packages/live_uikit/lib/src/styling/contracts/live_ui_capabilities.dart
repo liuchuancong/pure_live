@@ -21,7 +21,7 @@ final class LiveUiCapabilities {
   /// The controls this adapter builds with its library's real widgets.
   final Set<LiveUiControl> supported;
 
-  /// Whether [control] is rendered natively (otherwise the shared renderer is
-  /// used for it).
+  /// Whether [control] is rendered natively. An unsupported one is not
+  /// substituted: `requireControl` raises.
   bool supports(LiveUiControl control) => supported.contains(control);
 }

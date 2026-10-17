@@ -4,8 +4,8 @@ import 'package:live_uikit/src/styling/contracts/live_ui_adapter.dart';
 import 'package:live_uikit/src/styling/provider/live_config_provider.dart';
 
 /// The public dropdown: a thin dispatcher to the active language adapter, so
-/// switching `UiConfig.language` renders the select with the real library's
-/// control (Material's [DropdownButton]) or the token base.
+/// switching `UiConfig.language` renders the select with the selected library's
+/// own dropdown — Material's [DropdownButton], iOS's menu anchor, and so on.
 class LiveSelect<T> extends StatelessWidget {
   /// A select over [items].
   const new({

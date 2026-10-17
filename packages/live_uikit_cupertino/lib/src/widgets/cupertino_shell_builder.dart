@@ -24,8 +24,9 @@ import 'package:live_uikit/live_uikit.dart';
 /// disabled one `tertiaryLabel`, and the disabled row is refused by this builder —
 /// its `onTap` is null — because the tile has no disabled state of its own.
 ///
-/// [LanguageShellSpec.placement] is honoured on the rule the token shell uses, so
-/// a narrow window switches form at the same width whichever language is active:
+/// [LanguageShellSpec.placement] is honoured on the width rule the core's shell
+/// uses, so a narrow window switches form at the same width whichever language is
+/// active:
 /// `rail` and an `adaptive` request with room for a pane compose the column,
 /// `bottom` goes back through the adapter's `navBar` — the fork's own
 /// `CupertinoTabBar`, with its guard for a bar it would assert on — and `none` or

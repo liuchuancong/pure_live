@@ -18,12 +18,12 @@ import 'package:live_uikit/live_uikit.dart';
 /// (`titleTextStyle`/`bodyTextStyle`), and the title and the body are handed to those
 /// roles rather than re-styled by hand. Three of the library's behaviours are turned
 /// down because the core already does them: the library's `insetPadding` is zeroed —
-/// the shared frame insets the surface itself — and its `animation` is left null, so
+/// the core's frame insets the surface itself — and its `animation` is left null, so
 /// the entrance stays the core's fade-and-scale instead of a second one inside it.
 ///
 /// The rest is composed, because the library's frame has no slot for it: it ships no
 /// content padding at all, so the token card padding wraps the column (the same number
-/// the shared surface uses), and it has no action area, so [LanguageDialogSpec.actions]
+/// this language's card fills with), and it has no action area, so [LanguageDialogSpec.actions]
 /// arrive as a right-aligned row of the widgets the caller already dispatched — the
 /// frame must not re-pick the language's button. [LanguageDialogSpec.icon] keeps the
 /// token's own accent for the same reason the toast does (§9/ADR 0004).
@@ -38,7 +38,7 @@ abstract final class ForuiDialogBuilder {
     return forui.FDialog(
       // The core centres, insets and caps the surface, so the library's own inset —
       // which exists to keep a full-screen dialog off the viewport edges — is dropped
-      // rather than stacked on top of the shared one.
+      // rather than stacked on top of the core's.
       style: const forui.FDialogStyleDelta.delta(
         insetPadding: forui.EdgeInsetsGeometryDelta.value(EdgeInsets.zero),
       ),

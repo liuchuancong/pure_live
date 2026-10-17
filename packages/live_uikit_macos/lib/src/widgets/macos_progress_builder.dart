@@ -13,9 +13,9 @@ import 'package:macos_ui/macos_ui.dart' as macos;
 ///
 /// [LanguageProgressSpec.height] is the track thickness and maps to the bar's own
 /// height; a spinner has no track, so it keeps the library's radius there.
-/// [LanguageProgressSpec.showLabel] has no slot on either widget and is not
-/// overlaid with a hand-built percentage, the same degradation the Material and
-/// Fluent bars record (§15).
+/// [LanguageProgressSpec.showLabel] has no slot on either widget, and this builder
+/// does not overlay a hand-built percentage on the bar, so the label is not drawn
+/// in this language at all (§15).
 abstract final class MacosProgressBuilder {
   /// Builds the indicator for [spec].
   static Widget build(BuildContext context, LanguageProgressSpec spec) {

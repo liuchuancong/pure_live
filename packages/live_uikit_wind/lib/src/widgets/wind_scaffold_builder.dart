@@ -19,7 +19,7 @@ import 'package:live_uikit/live_uikit.dart';
 /// the container's own inline `backgroundColor` hook — the channel the library
 /// documents for a colour that is not a static class token;
 /// [LanguageScaffoldSpec.avoidKeyboard] is answered with the view insets the same
-/// way the token frame answers it, because the fork has no resize policy of its
+/// way a full-height column answers it, because the fork has no resize policy of its
 /// own; and [LanguageScaffoldSpec.floatingActionButton] is placed by the core's
 /// own page padding, since a Wind page has no FAB corner to put it in.
 abstract final class WindScaffoldBuilder {
@@ -36,7 +36,7 @@ abstract final class WindScaffoldBuilder {
       child: SafeArea(
         // The top inset belongs to the bar once the page has one that the content
         // does not run under; the bottom one belongs to the frame unless a bar
-        // already sits there — the token frame's split, kept so both paths agree.
+        // already sits there — the split a full-height column makes, kept so both paths agree.
         top: bar == null && !spec.extendBodyBehindAppBar,
         bottom: spec.bottomBar == null,
         child: spec.body,

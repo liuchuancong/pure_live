@@ -32,8 +32,8 @@ import 'package:live_uikit/live_uikit.dart';
 /// `flexibleSpace`, it asserts `No MaterialLocalizations found.` outside a Material
 /// host, it takes the loose constraints a bar is handed rather than its own height,
 /// and its `bottom` slot wants a `PreferredSizeWidget` rather than the dispatched
-/// strip the spec carries. Composing the bar out of the library's surface is what
-/// keeps this language from borrowing the shared renderer's shape (§15).
+/// strip the spec carries. Composing the bar out of the library's own surface is
+/// what keeps this language from borrowing another's shape (§15).
 ///
 /// Keep in sync with the methods `GlassLanguageAdapter` overrides (§17).
 const LiveUiCapabilities glassCapabilities = LiveUiCapabilities(<LiveUiControl>{

@@ -9,9 +9,8 @@ import 'stub_router.dart';
 /// §16 widget tests for `live_uikit_glass`, driving the `Live*` controls through
 /// the real runtime so they render with `glass_morphism_plus` — the library's own
 /// widgets where it has them, its frosted surfaces and theme values where it does
-/// not — rather than the shared token renderer. Covers §9 gating (callback,
-/// disabled, controlled value, controller passthrough) and the chrome set, which
-/// Glass now renders in full.
+/// not. Covers §9 gating (callback, disabled, controlled value, controller
+/// passthrough) and the chrome set, which Glass builds in full itself.
 void main() {
   const config = UiConfig(language: LiveDesignLanguage.glass, brightness: UiBrightnessMode.light);
 
@@ -161,7 +160,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('an indeterminate bar loops the frosted fill without a token spinner', (tester) async {
+    testWidgets('an indeterminate bar loops the frosted fill without a core-drawn spinner', (tester) async {
       await tester.pumpWidget(harness(const SizedBox(width: 260, child: LiveProgress(value: null))));
       await tester.pump();
 
@@ -261,7 +260,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('a toast surface is the core overlay with a frosted pill, not a token pill', (tester) async {
+    testWidgets('a toast surface is the core overlay with a frosted pill, not a core-drawn pill', (tester) async {
       late BuildContext context;
       await tester.pumpWidget(
         harness(
@@ -397,7 +396,7 @@ void main() {
         ),
       );
       expect(find.byType(GestureDetector), findsNothing);
-      // The fork applies `padding` inside its own surface, so the assertion reads
+      // The library applies `padding` inside its own surface, so the assertion reads
       // the property rather than hunting for a Padding widget.
       final paddings = tester
           .widgetList<glass.GlassCard>(find.byType(glass.GlassCard))
@@ -494,7 +493,7 @@ void main() {
     });
   });
 
-  group('no token renderer inside a glass frame (§15.3)', () {
+  group('no core-drawn control inside a glass frame (§15.3)', () {
     testWidgets('the whole contract draws from Glass, not from the shared base', (tester) async {
       await tester.pumpWidget(
         harness(
@@ -556,9 +555,9 @@ void main() {
       );
       await tester.pump();
 
-      // Glass declares all seventeen controls, so nothing in a glass page should be
-      // a `Token*` renderer any more — the assertion is by name rather than by
-      // list so a control added to the contract cannot slip in silently.
+      // Glass declares all seventeen controls, so every widget on this page is
+      // drawn by this library — the assertion is by name rather than by list so a
+      // control added to the contract cannot slip in untested.
       expect(find.text('Room 12'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
@@ -570,7 +569,7 @@ void main() {
       LiveShellDestination(id: 'follow', label: 'Follow', icon: Icons.favorite),
     ];
 
-    testWidgets('the rail is a frosted column this package composes, not the token shell', (tester) async {
+    testWidgets('the rail is a frosted column this package composes, not a core-drawn shell', (tester) async {
       var chosen = '';
       await tester.pumpWidget(
         harness(
@@ -672,14 +671,15 @@ void main() {
   group('the app host (§ surfaces)', () {
     // No outer `MaterialApp` here: the host under test *is* the app widget, and
     // pumping it inside the SDK one would pass while no real page looks like
-    // that — and it is the SDK host its own library widgets would fall back to.
+    // that — a Material app above it would supply the route transition, the ink
+    // host and the scroll physics this host is meant to answer for itself.
     Widget hostHarness(Widget child) => LiveConfigProvider(
       config: config,
       registry: const LanguageRegistry(adapters: {LiveDesignLanguage.glass: glassAdapter}),
       child: child,
     );
 
-    testWidgets('the tree is hosted by WidgetsApp under the library theme, not by the token host', (tester) async {
+    testWidgets('the tree is hosted by WidgetsApp under the library theme, not by a core-drawn host', (tester) async {
       await tester.pumpWidget(
         hostHarness(
           LiveApp(
@@ -699,7 +699,7 @@ void main() {
   });
 
   group('the overlay surface and the page switcher Glass has no widget for (§9)', () {
-    testWidgets('a dialog is a frosted panel inside the core route, not the token card', (tester) async {
+    testWidgets('a dialog is a frosted panel inside the core route, not a core-drawn card', (tester) async {
       await tester.pumpWidget(harness(const Text('anchor')));
 
       // Routing, the barrier and the fade-and-scale are the core's; this only asks

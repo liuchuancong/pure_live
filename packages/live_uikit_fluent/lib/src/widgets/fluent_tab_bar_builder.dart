@@ -12,8 +12,8 @@ import 'package:live_uikit/live_uikit.dart';
 /// the selection drawn the way Fluent draws it: accent text and a short accent
 /// underline over the surface colour.
 ///
-/// [LanguageTabsSpec.spacing] is the token renderer's knob; the Fluent strip uses
-/// the library's own header padding.
+/// [LanguageTabsSpec.spacing] has no counterpart in this strip: the cells take the
+/// library's own header padding, so the gap knob is documented as unmapped (§15).
 abstract final class FluentTabBarBuilder {
   /// Builds the strip for [spec].
   static Widget build(BuildContext context, LanguageTabsSpec spec) {

@@ -5,9 +5,10 @@ import 'package:live_uikit_material/live_uikit_material.dart';
 /// The Material UI adapter's contract and capability declarations (§7/§16/§17).
 ///
 /// The capability set must list exactly the controls `MaterialLanguageAdapter`
-/// overrides with native `material_ui` widgets; the resolver turns every other
-/// control into a a capability exception, so drift between the declaration
-/// and the overrides is caught here before it ships (§17).
+/// overrides with `material_ui` widgets, and its surfaces exactly the two it owns:
+/// the resolver raises a `LiveUiCapabilityException` for a declaration with no
+/// override behind it, so drift between the sets and the methods is caught here
+/// before it ships (§17).
 void main() {
   const adapter = materialAdapter;
 
@@ -53,8 +54,8 @@ void main() {
       for (final control in native) {
         expect(adapter.capabilities.supports(control), isTrue, reason: '$control should be native');
       }
-      // The other half of the point: this language has no fallback side at all,
-      // so the set above has to be the whole contract.
+      // The other half of the point: this language serves the whole contract, so
+      // the set above has to be every member of the enum and not merely a subset.
       expect(adapter.capabilities.supported, LiveUiControl.values.toSet());
     });
   });

@@ -98,7 +98,8 @@ class MaterialLanguageAdapter implements LanguageAdapter {
   /// inert M3 form is exactly what they describe — the rail at `trackHeight`, the
   /// filled portion up to the value and the thumb dot sitting on it, the whole
   /// thing under an `IgnorePointer` and tagged with [inertSliderKey]. The value
-  /// stays on screen and no drag reaches the callback (§15: no shared floor).
+  /// stays on screen and no drag reaches the callback (§15: nothing is drawn by
+  /// another library).
   @override
   Widget slider(BuildContext context, LanguageSliderSpec spec) {
     if (spec.enabled && spec.onChanged != null) {
@@ -123,7 +124,7 @@ class MaterialLanguageAdapter implements LanguageAdapter {
   /// already rides. So the off-list value is dropped to null — the field shows
   /// its placeholder instead of pretending the value is selected — and the opened
   /// menu keeps only choosable items, dropping null and repeated item values for
-  /// the same "exactly one" reason (§15: no shared floor).
+  /// the same "exactly one" reason (§15: nothing is drawn by another library).
   @override
   Widget select<T>(BuildContext context, LanguageSelectSpec<T> spec) =>
       MaterialSelectBuilder.build<T>(context, _chosenOrNull(spec));
@@ -146,7 +147,8 @@ class MaterialLanguageAdapter implements LanguageAdapter {
   /// sits on, one unlabelled-as-selected cell per destination in
   /// `theme.tabs.itemColor` (the unselected role — nothing carries a selection),
   /// and no press target at all, so a tap reports nothing. An empty list is the
-  /// surface alone ([inertNavBarKey] tags it) (§15: no shared floor).
+  /// surface alone ([inertNavBarKey] tags it) (§15: nothing is drawn by another
+  /// library).
   @override
   Widget navBar(BuildContext context, LanguageNavBarSpec spec) {
     if (spec.items.length >= 2 && spec.index >= 0 && spec.index < spec.items.length) {

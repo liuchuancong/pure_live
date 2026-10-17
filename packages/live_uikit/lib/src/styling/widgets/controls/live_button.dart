@@ -66,8 +66,8 @@ class LiveButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Delegates to the active language adapter: Material/Cupertino/macOS/…
-    // draw it with their real widgets; languages without one fall back to the
-    // shared token renderer. Switching UiConfig.language re-skins every button.
+    // each draw it with their own library's widgets, or compose that library's
+    // parts where it has none. Switching UiConfig.language re-skins every button.
     return LiveTheme.of(context).adapter.button(
       context,
       LanguageButtonSpec(

@@ -31,19 +31,18 @@ const Set<LiveUiControl> nativeControls = {
 const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost, LiveUiSurface.appShell};
 
 /// §16 integration pass for `live_uikit_forui`: every one of the seventeen controls
-/// resolves native — the page frame, the bars, the toast surface and the dialog frame
-/// included, since
+/// resolves to this adapter — the page frame, the bars, the toast surface and the dialog
+/// frame included, since
 /// `forui` 0.27.5 ships `FScaffold`, `FHeader`, `FTile`, `FBottomNavigationBar`,
-/// `FToast` and `FDialog` — and switching to the core token base and back must not cost the caller
+/// `FToast` and `FDialog` — and re-themeing inside this language must not cost the caller
 /// its controller or its field state (§11).
 /// The downgrades this language is expected to report: none at all — every
-/// control and both structural surfaces are native now. `forui` ships no
+/// control and both structural surfaces are native here. `forui` ships no
 /// application widget, so the host is the app's own `WidgetsApp` under `FTheme`,
 /// and the shell is `FSidebar`, which needs nothing above that same theme and
 /// paints only the navigation column, the body staying the router's (§ surfaces).
-/// Nothing in the contract falls back any more: the resolver hands back this
-/// language's adapter, so a run that renders it reports no control or surface
-/// downgrade at all (§15.5/§16.8).
+/// The resolver hands back this language's adapter for the whole contract, so a run that
+/// renders it reports no control or surface downgrade at all (§15/§16).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   expect(
     sink.where((diagnostic) => diagnostic.control != null || diagnostic.surface != null),
@@ -114,7 +113,7 @@ void main() {
     expect(find.byType(forui.FDeterminateProgress), findsOneWidget);
   });
 
-  testWidgets('no token renderer inside a ForUI frame (§15.3)', (tester) async {
+  testWidgets('no core-drawn control inside a ForUI frame (§15.3)', (tester) async {
     final diagnostics = <LiveUiDiagnostic>[];
     await tester.pumpWidget(
       harness(
@@ -153,9 +152,9 @@ void main() {
     );
     await tester.pump();
 
-    // The whole contract is declared, so nothing inside a ForUI page should be a
-    // `Token*` renderer — asserted by name rather than by list so a control added to
-    // the contract cannot slip in silently.
+    // The whole contract is declared and both surfaces are owned, so every widget this
+    // page draws comes from this adapter and its library — asserted by name rather than
+    // by list so a control added to the contract cannot slip in silently.
     expect(tester.takeException(), isNull);
   });
 }

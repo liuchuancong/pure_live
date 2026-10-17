@@ -11,7 +11,7 @@ import 'package:live_uikit/live_uikit.dart';
 /// carrying the current value (or [LanguageSelectSpec.placeholder] in the
 /// secondary colour, which is how iOS marks an empty field) with the library's own
 /// `chevron_down`, and the choices open below it with a checkmark on the one that
-/// is selected. Nothing here is the shared renderer's Material dropdown.
+/// is selected. Nothing here is a Material dropdown.
 ///
 /// [cu.CupertinoPicker] was the other candidate and is the wrong one: it is a
 /// wheel that needs a fixed height, shows every option at once and has no trigger

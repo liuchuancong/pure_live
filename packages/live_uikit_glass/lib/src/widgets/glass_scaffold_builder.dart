@@ -12,9 +12,9 @@ import 'package:live_uikit/live_uikit.dart';
 /// it, which is the whole point of the language: a glass page is a lit panel over
 /// a background, not a colour.
 ///
-/// Unlike the token frame, this one paints no `Material`: the library wraps the
-/// ink host inside any surface that takes a tap, so a page that does not supply
-/// one is not a page that crashes (§15).
+/// This frame paints no `Material` of its own: the library wraps an ink host
+/// inside any surface that takes a tap, and the page sheet takes none, so a frame
+/// that supplies no ink host of its own is not a frame that crashes (§15).
 ///
 /// [LanguageScaffoldSpec.background] tints that sheet instead of replacing it — a
 /// glass frame has no opaque side to swap — and keeps the theme's tint when the

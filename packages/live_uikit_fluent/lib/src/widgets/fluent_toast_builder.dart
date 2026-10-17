@@ -9,8 +9,8 @@ import 'package:live_uikit/live_uikit.dart';
 /// shadow. So the severity drives `InfoBar.severity` and the library draws the
 /// icon — [LanguageToastSpec.icon] and [LanguageToastSpec.accent] overrides are
 /// recorded as unmapped because an `InfoBar` picks both from its severity, and
-/// forcing the token pill's colours onto it would give a Fluent screen a
-/// non-Fluent banner.
+/// forcing an override glyph or colour onto it would give a Fluent screen a
+/// banner Fluent does not recognise.
 ///
 /// The placement, the fade-and-slide and the dismissal timer are the core's
 /// (`LiveToast`), so the message still arrives from the top of the window and

@@ -22,7 +22,7 @@ import 'package:live_uikit/live_uikit.dart';
 ///
 /// [LanguageNavBarSpec.enabled] is the fork's inert state: `isDisabled` on every
 /// anchor, so `disabled:opacity-50` paints and nothing reports. The bar's height
-/// comes from the layout environment like the token renderer's, but the icon size
+/// comes from the layout environment like the rest of the strip's geometry, but the icon size
 /// does not: Wind's glyph step is a class token (`text-lg`), and interpolating
 /// `text-[..]` per device is the runtime-into-cache pattern its widgets warn
 /// against, so the strip keeps the library's own step.

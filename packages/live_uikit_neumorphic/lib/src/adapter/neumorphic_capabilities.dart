@@ -4,9 +4,10 @@ import 'package:live_uikit/live_uikit.dart';
 /// own widgets, or with that library's own primitives where it has no widget for
 /// the job (§3.1 / §7 capability declaration).
 ///
-/// This is the whole contract: the language renders every control the resolver can
-/// ask for, so nothing in a Neumorphic page reaches the shared token renderer and no
-/// control is reported as a a capability exception (§15.3).
+/// This is the whole contract: the language renders every control the resolver
+/// can ask for, so a Neumorphic page is drawn end to end by `flutter_neumorphic_ui_kit`
+/// and a declaration that drifted from the adapter's overrides surfaces as a
+/// `LiveUiCapabilityException` instead of a missing widget (§15.3).
 ///
 /// Eight are mappings to a widget the library ships — `button`, `card`,
 /// `textField`, `switchWidget`, `checkbox`, `slider`, `progress` (`NeuProgressBar` is

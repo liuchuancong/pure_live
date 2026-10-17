@@ -9,9 +9,8 @@ import 'package:live_uikit/live_uikit.dart';
 /// groove is a [glass.GlassContainer] sheet and the chosen segment is a second,
 /// brighter one sitting in it — the way glassmorphism marks a selection (a lit
 /// surface, not a filled shape), with the library's own blur, tint, radius and
-/// stroke inherited from [glass.GlassTheme] (§8). The unchosen segments get no
-/// sheet at all, which is also what the token base does: only the active pill has
-/// a surface.
+/// stroke taken from [glass.GlassTheme] (§8). Only the active pill gets a
+/// sheet; the unchosen segments are bare.
 ///
 /// Taps and interaction tints ride on the core's [LiveBox], for the reason every
 /// composed glass control gives: the library's own ink host would carry a focus

@@ -9,7 +9,7 @@ import 'package:live_uikit/live_uikit.dart';
 /// for a strip of destinations gets the library's own mutually-exclusive control
 /// instead — a row of `ToggleButton`s, one checked, each carrying its icon over
 /// its label. That keeps the strip inside `FluentTheme`'s metrics and accent
-/// rather than borrowing the shared renderer's Material-shaped bar.
+/// rather than in a bar shape some other library drew.
 ///
 /// [LanguageNavBarSpec.enabled] is the library's inert state: the buttons keep
 /// their labels and lose their callback.

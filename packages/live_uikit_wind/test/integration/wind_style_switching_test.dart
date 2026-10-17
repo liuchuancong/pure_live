@@ -39,7 +39,7 @@ const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost,
 ///
 /// Wind renders the whole control contract and owns both structural surfaces, so
 /// a switch into it replaces every rendering path at once. Switching to the core
-/// token base and back still has to prove a caller-owned controller survives the
+/// another registered language and back still has to prove a caller-owned controller survives the
 /// re-render (§11).
 /// The downgrades this language is expected to report: none at all. Every control
 /// is native and both surfaces — the `WidgetsApp` host and the composed shell —
@@ -104,7 +104,7 @@ void main() {
     expect(find.byType(wind.WSelect<String>), findsOneWidget);
     expect(find.byType(TextField), findsNothing);
     // Slider and progress are the fork's own parts now — a rail and a run drawn
-    // as `WDiv`s — so no token renderer stands in for them inside a Wind page.
+    // as `WDiv`s — so no core-drawn control stands in for them inside a Wind page.
     expectUndeclaredControls(diagnostics);
 
     diagnostics.clear();

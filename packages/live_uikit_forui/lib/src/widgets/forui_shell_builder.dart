@@ -6,14 +6,15 @@ import 'package:live_uikit/live_uikit.dart';
 ///
 /// `FSidebar` is the library's own structural navigation column, and it is
 /// usable on its own: its only ancestor requirement is the `FTheme` scope this
-/// adapter already installs (`FSidebarItem` resolves its style through
-/// `FSidebarData` → the theme's `sidebarStyle` fallback, and the sidebar paints
-/// nothing but its own header/content/footer strip). It does *not* carry a body
+/// adapter already installs — an `FSidebarItem` resolves its style through
+/// `FSidebarData` to the theme's `sidebarStyle` when no `FSidebarGroup` wraps it,
+/// and the sidebar paints
+/// nothing but its own header/content/footer strip. It does *not* carry a body
 /// area — the router-owned page stays outside it — so the shell composes the
 /// `Row[sidebar, Expanded(child)]` itself, exactly as Material composes its
 /// `NavigationRail`. The library's default width (256, a constraint inside
 /// `FSidebarStyle`) is kept rather than the token's rail metric: the form rules
-/// are the shared contract's, the column's own look is the language's.
+/// are the contract's, and the column's own look is the language's.
 ///
 /// [LiveShellDestination.enabled] has no slot on `FSidebarItem` — the widget
 /// models a `selected` state but never a disabled one — so a disabled

@@ -5,6 +5,7 @@ import 'package:live_uikit_neumorphic/src/theme/neumorphic_theme_builder.dart';
 
 /// Builds a Neumorphic application host from a [LanguageHostSpec] (§ surfaces).
 ///
+/// **Composed, and composed of this library's theme plus Flutter's own app widget.**
 /// `flutter_neumorphic_ui_kit` ships no application widget — the library is a
 /// theme (`NeuTheme`) plus a set of components, and nothing in it owns a route,
 /// a title or a locale — so the host is Flutter's own `WidgetsApp` with the

@@ -5,8 +5,8 @@ import 'package:live_uikit_forui/live_uikit_forui.dart';
 /// The ForUI adapter's contract and capability declarations (§7/§16/§17).
 ///
 /// The capability set must list exactly the controls `ForuiLanguageAdapter` overrides
-/// with `forui`'s own widgets; the resolver turns every other control into a
-/// a capability exception, so drift between the declaration and the overrides is
+/// with `forui`'s own widgets; a control the adapter declares without overriding turns
+/// into a capability exception, so drift between the declaration and the overrides is
 /// caught here before it ships (§17). This language declares the whole contract, so the
 /// drift this suite guards is now a control that silently *stops* being native.
 void main() {
@@ -32,7 +32,7 @@ void main() {
     LiveUiControl.tabView,
   };
   // Derived rather than listed, so a control added to the contract cannot join
-  // the fallback side silently — the suite has to be told, and that is the
+  // the undeclared side silently — the suite has to be told, and that is the
   // point of the assertion (§17).
   final fallback = LiveUiControl.values.toSet().difference(native);
 
@@ -55,23 +55,23 @@ void main() {
       for (final surface in LiveUiSurface.values.toSet().difference(owned)) {
         expect(adapter.surfaces.supports(surface), isFalse, reason: '$surface should fall back');
       }
-      // Derived, so a surface added to the contract cannot join the fallback
-      // side silently — the same rule as the control set below (§17).
+      // Derived, so a surface added to the contract cannot join the unowned side
+      // silently — the same rule as the control set below (§17).
       expect(adapter.surfaces.supported, LiveUiSurface.values.toSet());
     });
 
     test('declares exactly the controls it renders natively', () {
-      // All seventeen: forui 0.27.5 carries a widget for every control the contract
-      // names but one, and the controls it lacks are composed from its own parts or
-      // from the widgets layer (§9).
+      // All seventeen: fourteen map one-for-one onto a `forui` widget of their own, and
+      // the three that do not are composed from the library's own parts or from the
+      // widgets layer (§9).
       for (final control in native) {
         expect(adapter.capabilities.supports(control), isTrue, reason: '$control should be native');
       }
       for (final control in fallback) {
         expect(adapter.capabilities.supports(control), isFalse, reason: '$control should fall back');
       }
-      // The other half of the point: this language has no fallback side at all,
-      // so the set above has to be the whole contract.
+      // The other half of the point: this language leaves nothing in the contract
+      // undeclared, so the set above has to be the whole contract.
       expect(adapter.capabilities.supported, LiveUiControl.values.toSet());
     });
   });

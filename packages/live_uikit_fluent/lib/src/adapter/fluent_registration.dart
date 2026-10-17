@@ -10,7 +10,8 @@ const String fluentAdapterId = 'fluent';
 const LanguageAdapter fluentAdapter = FluentLanguageAdapter();
 
 /// Localization delegates fluent widgets require; append to the core's
-/// `liveLocalizationsDelegates` in the app's `MaterialApp`.
+/// `liveLocalizationsDelegates` on the app's `LiveApp`, which this language hosts
+/// with `FluentApp` (§14).
 const List<LocalizationsDelegate<dynamic>> fluentLocalizationsDelegates = [fluent.FluentLocalizations.delegate];
 
 /// Creates the Fluent adapter for the application composition root to register

@@ -23,7 +23,7 @@ abstract final class MaterialCheckboxBuilder {
   }
 
   /// The control followed by its optional label, laid out with this language's
-  /// own text role — composed here because the shared renderer is gone (§9 Checkbox).
+  /// own text role, because this library's checkbox paints no label of its own (§9 Checkbox).
   static Widget _labelled(BuildContext context, String? label, Widget control) {
     if (label == null) {
       return control;

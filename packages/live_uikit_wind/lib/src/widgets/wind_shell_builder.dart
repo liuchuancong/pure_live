@@ -30,9 +30,9 @@ import 'package:live_uikit/live_uikit.dart';
 /// while the cell keeps its place in the column so nothing shifts when it opens.
 /// The callback is also not built for a disabled destination, so the two agree.
 ///
-/// The width and the form switch come from the layout environment on the rule the
-/// token shell uses — `railWidth > 0` — so a narrow window changes shape at the
-/// same width whichever language is active; the glyph step, by contrast, is one
+/// The width and the form switch come from the layout environment, bending at
+/// `railWidth > 0`, so a narrow window changes shape at the same width whichever
+/// language is active; the glyph step, by contrast, is one
 /// of the library's own class tokens (`text-lg`), because interpolating
 /// `text-[..]` per device is the runtime-into-cache pattern its widgets warn
 /// against.
@@ -100,7 +100,7 @@ abstract final class WindShellBuilder {
     );
   }
 
-  /// The same rule the token shell uses, so both languages bend at one width.
+  /// The one threshold both shell forms share, so a narrow window bends at one width.
   static bool _wantsRail(LiveShellPlacement placement, BuildContext context) => switch (placement) {
     LiveShellPlacement.rail => true,
     LiveShellPlacement.bottom || LiveShellPlacement.none => false,

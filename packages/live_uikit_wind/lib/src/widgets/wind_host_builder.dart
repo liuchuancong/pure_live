@@ -10,11 +10,10 @@ import 'package:live_uikit_wind/src/theme/wind_theme_builder.dart';
 /// route, a title or a locale — so the host is Flutter's own `WidgetsApp` with
 /// Wind's theme installed above the routed tree.
 ///
-/// That is still a real host and not a fallback. The shared base hosts everything
-/// in a `MaterialApp`, and the app widget is what decides the page transition,
-/// the scroll physics and the dialog barrier colour of every page below it — so
-/// as long as a Wind page sat inside the Material one, its window kept behaving
-/// like Material no matter that `WDiv`/`WText`/`WButton` drew its controls.
+/// That is a real host and a Wind one. The app widget is what decides the page
+/// transition, the scroll physics and the dialog barrier colour of every page
+/// below it, so a Wind page living inside a Material one keeps behaving like
+/// Material however `WDiv`/`WText`/`WButton` draw its controls.
 /// `WidgetsApp` hands none of that to Material either: the transitions come from
 /// the router, the physics from the platform, the barrier from the route. The
 /// only thing Wind cannot do for itself is supply the strings and the local

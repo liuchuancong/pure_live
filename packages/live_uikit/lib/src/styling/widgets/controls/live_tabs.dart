@@ -17,8 +17,8 @@ class LiveTab {
 }
 
 /// The public tab strip: a thin dispatcher to the active language adapter, so
-/// switching `UiConfig.language` renders tabs with the real library's control
-/// (Material's `TabBar`) or the token base.
+/// switching `UiConfig.language` renders tabs with the selected library's own
+/// tab strip — Material's `TabBar`, iOS's `CupertinoSegmentedControl`, and so on.
 class LiveTabs extends StatelessWidget {
   /// A tab strip.
   const new({

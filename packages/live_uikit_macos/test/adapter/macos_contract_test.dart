@@ -58,8 +58,8 @@ void main() {
       for (final control in LiveUiControl.values.toSet().difference(native)) {
         expect(adapter.capabilities.supports(control), isFalse, reason: '$control should fall back');
       }
-      // The other half of the point: this language has no fallback side at all,
-      // so the set above has to be the whole contract.
+      // The other half of the point: the set above has to be the whole contract,
+      // because every control of it is answered by an override of this adapter.
       expect(adapter.capabilities.supported, LiveUiControl.values.toSet());
     });
   });

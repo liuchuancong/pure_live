@@ -22,7 +22,7 @@ import 'package:live_uikit/live_uikit.dart';
 ///    `secondaryLabel` because that is the colour the alert's message text uses.
 ///  * [LanguageDialogSpec.dismissible]: the barrier and the route belong to the
 ///    core, exactly as [LanguageToastSpec.duration] does, so it is not read here.
-///  * the shared frame's width cap: the alert fixes its own width and insets
+///  * the core frame's width cap: the alert fixes its own width and insets
 ///    itself off the keyboard with an `AnimatedPadding`, which is the iOS answer;
 ///    the core's `ConstrainedBox` still holds it, so nothing is re-applied here.
 ///

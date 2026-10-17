@@ -13,8 +13,8 @@ import 'package:live_uikit/live_uikit.dart';
 /// adapter, and it keeps the bar's blur, tint, radius and stroke on the values
 /// [glass.GlassTheme] publishes (§8).
 ///
-/// Height and glyph size come from the layout geometry, falling back to the
-/// shared sizing scale, because a glass strip has no metrics of its own;
+/// Height and glyph size come from the layout geometry, or from `LiveSizing` when
+/// the environment supplies none, because a glass strip has no metrics of its own;
 /// `spec.enabled` false keeps every label and stops reporting taps.
 abstract final class GlassNavBarBuilder {
   /// Builds the strip for [spec].

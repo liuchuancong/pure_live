@@ -10,7 +10,7 @@ import 'package:macos_ui/macos_ui.dart' as macos;
 /// as it is: wrapping it in a closure that swallows the value would leave a
 /// live-looking box that never calls the caller (§9/§15).
 abstract final class MacosCheckboxBuilder {
-  /// Builds the checkbox for [spec], drawn from this library's own widgets part for part.
+  /// Builds the checkbox for [spec] as the library's own `MacosCheckbox`.
   static Widget build(BuildContext context, LanguageCheckboxSpec spec) => _labelled(
     context,
     spec.label,
@@ -18,7 +18,7 @@ abstract final class MacosCheckboxBuilder {
   );
 
   /// The control followed by its optional label, laid out with this language's
-  /// own text role — composed here because the shared renderer is gone (§9 Checkbox).
+  /// own text role, because this library's checkbox paints no label of its own (§9 Checkbox).
   static Widget _labelled(BuildContext context, String? label, Widget control) {
     if (label == null) {
       return control;

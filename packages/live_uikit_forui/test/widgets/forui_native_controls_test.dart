@@ -129,7 +129,7 @@ void main() {
     });
 
     testWidgets("the inside space is the token padding, the density step, or the caller's", (tester) async {
-      // The same card token the shared renderer resolves, derived directly so the
+      // The card role of the resolved token, derived directly so the
       // assertion does not depend on the widget tree it is checking.
       final card = CardComponentToken.of(DesignToken.derive(const SeedToken(), dark: false));
 
@@ -354,7 +354,7 @@ void main() {
         harness(LiveSelect<String>(items: const ['alpha'], itemLabel: (i) => i, onChanged: (v) => chosen = v)),
       );
       await tester.pump();
-      // No placeholder: the field falls back to the library's own localized hint.
+      // No placeholder: the library labels the empty field with its own localized hint.
       expect(tester.widget<forui.FSelect<String>>(select).hint, isNull);
 
       await tester.pumpWidget(
@@ -527,7 +527,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets("a toast surface is the library's FToast, not the token pill", (tester) async {
+    testWidgets("a toast surface is the library's FToast, not a core-drawn pill", (tester) async {
       await tester.pumpWidget(harness(const SizedBox.shrink()));
       LiveToast.show(tester.element(find.byType(SizedBox)), 'Saved', type: LiveToastType.success);
       await tester.pump();
@@ -610,7 +610,7 @@ void main() {
     });
   });
 
-  group('no token renderer inside a ForUI frame (§15.3)', () {
+  group('no core-drawn control inside a ForUI frame (§15.3)', () {
     testWidgets('every control of the contract dispatches native', (tester) async {
       await tester.pumpWidget(
         harness(
@@ -640,9 +640,9 @@ void main() {
       );
       await tester.pump();
 
-      // ForUI declares all seventeen controls, so nothing in a ForUI page should be a
-      // `Token*` renderer any more — the assertion is by name rather than by list so a
-      // control added to the contract cannot slip in silently.
+      // ForUI declares all seventeen controls, so every widget in a ForUI page is drawn
+      // by this adapter and its library — the assertion is by name rather than by list so
+      // a control added to the contract cannot slip in silently.
       expect(tester.takeException(), isNull);
     });
   });
@@ -650,14 +650,14 @@ void main() {
   group('the app host (§ surfaces)', () {
     // No outer `MaterialApp` here: the host under test *is* the app widget, and
     // pumping it inside the SDK one would pass while no real page looks like
-    // that — and it is the SDK host its own library widgets would fall back to.
+    // that — and the SDK host would then be what supplies the tree's chrome.
     Widget hostHarness(Widget child) => LiveConfigProvider(
       config: config,
       registry: const LanguageRegistry(adapters: {LiveDesignLanguage.forui: foruiAdapter}),
       child: child,
     );
 
-    testWidgets('the tree is hosted by WidgetsApp under the library theme, not by the token host', (tester) async {
+    testWidgets('the tree is hosted by WidgetsApp under the library theme, not by a core-drawn host', (tester) async {
       await tester.pumpWidget(
         hostHarness(
           LiveApp(
@@ -683,7 +683,7 @@ void main() {
       LiveShellDestination(id: 'archive', label: 'Archive', icon: Icons.archive, enabled: false),
     ];
 
-    testWidgets("the rail draws the library's own FSidebar, not the token column", (tester) async {
+    testWidgets("the rail draws the library's own FSidebar, not a core-drawn column", (tester) async {
       var chosen = '';
       await tester.pumpWidget(
         harness(
@@ -757,7 +757,7 @@ void main() {
       expect(find.byType(forui.FSidebar), findsNothing);
       expect(find.text('room list'), findsOneWidget);
       // The strip has no trailing slot; the form drops it rather than inventing
-      // a place for it — the same rule the token shell states.
+      // a place for it — the same rule the contract states.
       expect(find.text('settings footer'), findsNothing);
       expect(tester.takeException(), isNull);
 

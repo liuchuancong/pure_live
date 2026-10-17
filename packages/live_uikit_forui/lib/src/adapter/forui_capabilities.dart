@@ -24,8 +24,9 @@ import 'package:live_uikit/live_uikit.dart';
 /// to the library in its *lifted* form, which is what keeps them controlled by the spec's
 /// value instead of by a controller minted here.
 ///
-/// Nothing in this set falls back. Keep it in sync with the methods
-/// `ForuiLanguageAdapter` actually overrides (§17).
+/// This set is the whole contract — every control the resolver can ask this language
+/// for is in it. Keep it in sync with the methods `ForuiLanguageAdapter` actually
+/// overrides (§17).
 const LiveUiCapabilities foruiCapabilities = LiveUiCapabilities(<LiveUiControl>{
   LiveUiControl.button,
   LiveUiControl.card,

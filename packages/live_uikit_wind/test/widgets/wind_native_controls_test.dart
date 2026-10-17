@@ -11,8 +11,8 @@ import 'stub_router.dart';
 /// §16 widget tests for `live_uikit_wind`, driving the `Live*` controls through
 /// the real runtime so they render with `fluttersdk_wind`'s own widgets. Covers
 /// §9 gating (callback, disabled, loading, controlled value, controller
-/// passthrough) plus the nine controls the fork has no widget for, which Wind
-/// now composes out of its parts rather than leaving to the shared renderer, and
+/// passthrough) plus the eleven controls the fork has no widget for, which Wind
+/// now composes out of its parts, and
 /// the composed app shell (§ surfaces).
 void main() {
   const config = UiConfig(language: LiveDesignLanguage.wind, brightness: UiBrightnessMode.light);
@@ -54,7 +54,7 @@ void main() {
           ),
         ),
       );
-      // `disabled` comes from the same `interactive(spec)` verdict that nulls the
+      // `disabled` comes from the same verdict that nulls the
       // callback, so a Wind button cannot look live while being dead (§2.3).
       final buttons = tester.widgetList<wind.WButton>(find.byType(wind.WButton)).toList();
       expect(buttons.map((button) => button.onTap).every((tap) => tap == null), isTrue);
@@ -582,7 +582,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('a toast surface is a Wind panel, not the token pill', (tester) async {
+    testWidgets('a toast surface is a Wind panel, not a core-drawn pill', (tester) async {
       await tester.pumpWidget(harness(const SizedBox.shrink()));
       LiveToast.show(tester.element(find.byType(SizedBox)), 'Saved', type: LiveToastType.success);
       await tester.pump();
@@ -669,7 +669,7 @@ void main() {
     });
   });
 
-  group('no token renderer inside a Wind frame (§15.3)', () {
+  group('no core-drawn control inside a Wind frame (§15.3)', () {
     testWidgets('the whole chrome set draws from Wind, not from the shared base', (tester) async {
       await tester.pumpWidget(
         harness(
@@ -720,8 +720,8 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
-      // Wind declares all fifteen controls, so nothing in a Wind page should be a
-      // `Token*` renderer any more — the assertion is by name rather than by list
+      // Wind implements the whole contract, so nothing in a Wind page should be
+      // drawn outside this library — the assertion is by name rather than by list
       // so a control added to the contract cannot slip in silently.
       expect(tester.takeException(), isNull);
     });
@@ -733,7 +733,7 @@ void main() {
       LiveShellDestination(id: 'follow', label: 'Follow', icon: Icons.favorite),
     ];
 
-    testWidgets('the rail form is the composed column, not the token shell', (tester) async {
+    testWidgets('the rail form is the composed column, not a core-drawn shell', (tester) async {
       var chosen = '';
       await tester.pumpWidget(
         harness(
@@ -826,9 +826,9 @@ void main() {
         ),
       );
 
-      // With no environment in scope the shared rule falls back to a rail width of
-      // its own, so a bare adaptive request composes the column — the same verdict
-      // the token shell reaches, and the same one the explicit forms make.
+      // With no environment in scope the adaptive rule takes its own default rail
+      // width, so a bare adaptive request composes the column — the same verdict
+      // the explicit rail form reaches, and the same one the other forms make.
       await tester.pumpWidget(shell(LiveShellPlacement.adaptive));
       await tester.pump();
       expect(find.text('settings'), findsNothing);
@@ -852,7 +852,7 @@ void main() {
       child: child,
     );
 
-    testWidgets('the tree is hosted by WidgetsApp under the Wind theme, not by the token host', (tester) async {
+    testWidgets('the tree is hosted by WidgetsApp under the Wind theme, not by a core-drawn host', (tester) async {
       await tester.pumpWidget(
         hostHarness(
           LiveApp(

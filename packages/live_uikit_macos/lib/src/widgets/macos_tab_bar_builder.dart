@@ -7,8 +7,8 @@ import 'package:macos_ui/macos_ui.dart' as macos;
 /// Composed, not mapped, and for two measured reasons. `MacosTabView` is a tab
 /// *view*: it asserts `controller.length == children.length` and paints a padded,
 /// bordered content area under the strip, while this contract's tabs are the
-/// strip only — the caller's router owns the body, exactly as in every other
-/// language. `MacosSegmentedControl` is the strip, but its cells are `MacosTab`s,
+/// strip only — the caller's router owns the body, and this builder paints none of
+/// it. `MacosSegmentedControl` is the strip, but its cells are `MacosTab`s,
 /// which carry a `label: String` and no icon slot, and a tab that was given a
 /// glyph must keep it.
 ///
@@ -20,8 +20,9 @@ import 'package:macos_ui/macos_ui.dart' as macos;
 /// controlled: the checked cell is wherever [LanguageTabsSpec.index] says, and a
 /// tap only reports an index.
 ///
-/// [LanguageTabsSpec.spacing] is the token renderer's knob and has no macOS
-/// counterpart, so the strip takes the cell's own padding.
+/// [LanguageTabsSpec.spacing] has no macOS counterpart — the library's cell carries
+/// its own padding and takes none from the caller — so the gap between segments is
+/// this widget's fixed 3/2 inset and nothing else.
 abstract final class MacosTabBarBuilder {
   /// Builds the strip for [spec].
   static Widget build(BuildContext context, LanguageTabsSpec spec) {

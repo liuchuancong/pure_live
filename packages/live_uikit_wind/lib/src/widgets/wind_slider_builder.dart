@@ -18,8 +18,8 @@ import 'package:live_uikit/live_uikit.dart';
 ///   library warns against interpolating a runtime value into a className
 ///   because it bloats its parser cache, so the fill width and the thumb offset
 ///   are computed from a measured rail and applied with `Positioned`. The
-///   measurement falls back to `MediaQuery`'s width when the incoming main axis
-///   is unbounded, which is the fallback `WDiv`'s own grid layout takes.
+///   measurement uses `MediaQuery`'s width when the incoming main axis
+///   is unbounded, which is the width `WDiv`'s own grid layout takes.
 /// * **The drag.** `WAnchor` is the library's only interaction widget and it
 ///   offers tap, long-press and double-tap, so the drag sits on a
 ///   `GestureDetector` over the parts; a tap positions the value the same way,

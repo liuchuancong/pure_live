@@ -20,8 +20,8 @@ abstract final class CupertinoScaffoldBuilder {
     final theme = LiveTheme.of(context);
 
     // The nav-bar slot takes the library's own bar type. A bar from another
-    // language is not one, so it goes above the content instead — which is what
-    // the token frame does with it — rather than being dropped.
+    // language is not one, so it goes above the content rather than being
+    // dropped.
     final cu.ObstructingPreferredSizeWidget? navBar;
     final Widget body;
     switch (spec.appBar) {

@@ -4,10 +4,10 @@ import 'package:live_uikit/live_uikit.dart';
 
 /// Builds a native Cupertino UI button from a [LanguageButtonSpec] (§9 Button):
 /// ghost → a plain [cu.CupertinoButton], otherwise the filled variant; press and
-/// fork's own parameters; `expand` and `tooltip` wrap the button the way the
-/// token renderer wraps its buttons — the tooltip through the core's
-/// language-neutral [LiveTooltip], since this library has no hint widget and an
-/// SDK Material one does not belong in a Cupertino subtree.
+/// the fork's own parameters; `expand` fills the button to its parent's width and
+/// `tooltip` shows through the core's language-neutral [LiveTooltip], since this
+/// library has no hint widget and an SDK Material one does not belong in a
+/// Cupertino subtree.
 abstract final class CupertinoButtonBuilder {
   /// Builds the button for [spec], drawn from this library's own widgets part for part.
   static Widget build(BuildContext context, LanguageButtonSpec spec) {
@@ -35,9 +35,9 @@ abstract final class CupertinoButtonBuilder {
 
   /// The button's content, built from this library's own parts: the label, an
   /// optional leading glyph, a spinner while loading, and the bare glyph of an
-  /// icon-only button, whose empty label is never painted. There is no shared
-  /// renderer to inherit this from any more, so this language composes it —
-  /// the loading state maps to the library's own spinner (§9 Button).
+  /// icon-only button, whose empty label is never painted. This language composes
+  /// the content from its own widgets — the loading state maps to the library's
+  /// own spinner (§9 Button).
   static Widget _label(LanguageButtonSpec spec, LiveTheme theme, {Color? foreground}) {
     final step = theme.text.label.fontSize ?? 14;
     if (spec.loading) {

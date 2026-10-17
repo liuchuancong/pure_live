@@ -6,10 +6,10 @@ import 'package:live_uikit_neumorphic/live_uikit_neumorphic.dart';
 ///
 /// The capability set must list exactly the controls `NeumorphicLanguageAdapter`
 /// overrides with `flutter_neumorphic_ui_kit` widgets or with that library's own
-/// primitives; the resolver turns every other control into a `LiveUiCapabilityException`
-/// downgrade, so drift between the declaration and the overrides is caught here
-/// before it ships (§17). This language declares the whole contract, so the drift
-/// that matters is a control joining the fallback side silently.
+/// primitives; `requireControl` raises a `LiveUiCapabilityException` for anything
+/// declared without an override behind it, so drift between the declaration and the
+/// methods is caught here before it ships (§17). This language declares the whole
+/// contract, so the drift that matters is a control leaving that set silently.
 void main() {
   const adapter = neumorphicAdapter;
 
@@ -45,9 +45,9 @@ void main() {
       for (final control in native) {
         expect(adapter.capabilities.supports(control), isTrue, reason: '$control should be native');
       }
-      // The other half of the point: this language has no fallback side at all, so
-      // the set above has to be the whole contract — a control added to the
-      // interface could not join the downgrade list without failing here (§17).
+      // The other half of the point: this language answers every control, so the set
+      // above has to be the whole contract — a control added to the interface could
+      // not go unhandled here without failing this expectation (§17).
       expect(adapter.capabilities.supported, LiveUiControl.values.toSet());
     });
 

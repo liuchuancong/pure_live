@@ -13,12 +13,11 @@ import 'package:live_uikit/live_uikit.dart';
 /// current tab is bold and tinted and the others are secondary. So the row is
 /// composed here out of the library's own press target, `cu.CupertinoButton` with
 /// its minimum tap size and fill taken off, and the selection drawn the way iOS
-/// draws it rather than by falling through to the shared renderer's Material tabs
-/// with their ink bar.
+/// draws it rather than with a Material tab strip and its ink bar.
 ///
 /// [LanguageTabsSpec.enabled] is the library's inert state: a button with no
-/// callback keeps its label and loses its tap. [LanguageTabsSpec.spacing] is the
-/// token renderer's knob and has no counterpart — a Cupertino strip spaces its
+/// callback keeps its label and loses its tap. [LanguageTabsSpec.spacing] has no
+/// counterpart — a Cupertino strip spaces its
 /// tabs by the buttons' own padding.
 abstract final class CupertinoTabBarBuilder {
   /// Builds the strip for [spec].

@@ -46,8 +46,8 @@ void main() {
     await tester.enterText(find.byType(EditableText), 'yo');
     await tester.pump();
     expect(controller.text, 'yo');
-    // The Neumorphic field forwards only controller/focus, not onChanged, so the
-    // change callback is intentionally not asserted here (§9 limitation).
+    // The field forwards the caller's controller, focus node and change callbacks,
+    // so the text above is the proof the controller was never replaced (§9).
   });
 
   testWidgets('switch reports the next value (§9)', (tester) async {
@@ -96,7 +96,7 @@ void main() {
         ),
       ),
     );
-    // The composed track is the library's own plane, never the token renderer.
+    // The composed track is the library's own plane: a dish and its domed cells.
     expect(tester.widgetList<neu.NeuContainer>(find.byType(neu.NeuContainer)).length, greaterThanOrEqualTo(4));
     await tester.tap(find.text('C'));
     await tester.pump();
@@ -395,7 +395,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('a Neumorphic page holds no token renderer at all (§15.3)', (tester) async {
+    testWidgets('a Neumorphic page holds no core-drawn control at all (§15.3)', (tester) async {
       await tester.pumpWidget(
         harness(
           LiveScaffold(
@@ -429,9 +429,10 @@ void main() {
       );
       await tester.pump();
 
-      // This language declares all fifteen controls, so nothing inside a Neumorphic
-      // page may be a `Token*` renderer any more — asserted by name rather than by
-      // list, so a control added to the contract cannot slip in silently.
+      // This language declares all seventeen controls, so every widget inside a
+      // Neumorphic page is drawn by this library — asserted by pumping the real
+      // dispatch path rather than reading a list, so a control added to the contract
+      // cannot arrive here unhandled.
       expect(tester.takeException(), isNull);
     });
   });
@@ -546,7 +547,7 @@ void main() {
       LiveShellDestination(id: 'follow', label: 'Follow', icon: Icons.favorite),
     ];
 
-    testWidgets('the rail form is a composed column of the library faces, not the token shell', (tester) async {
+    testWidgets('the rail form is a composed column of the library faces, not a core-drawn shell', (tester) async {
       var chosen = '';
       await tester.pumpWidget(
         harness(
@@ -658,14 +659,15 @@ void main() {
   group('the app host (§ surfaces)', () {
     // No outer `MaterialApp` here: the host under test *is* the app widget, and
     // pumping it inside the SDK one would pass while no real page looks like
-    // that — and it is the SDK host its own library widgets would fall back to.
+    // that — and an SDK host above would decide the transitions and the scroll
+    // physics this adapter is supposed to own.
     Widget hostHarness(Widget child) => LiveConfigProvider(
       config: config,
       registry: const LanguageRegistry(adapters: {LiveDesignLanguage.neumorphic: neumorphicAdapter}),
       child: child,
     );
 
-    testWidgets('the tree is hosted by WidgetsApp under the library theme, not by the token host', (tester) async {
+    testWidgets('the tree is hosted by WidgetsApp under the library theme, not by a core-drawn host', (tester) async {
       await tester.pumpWidget(
         hostHarness(
           LiveApp(

@@ -50,12 +50,12 @@ void main() {
         expect(adapter.capabilities.supports(control), isTrue, reason: '$control should be native');
       }
       // Derived rather than listed, so a control added to the contract cannot
-      // join the fallback side silently — the suite has to be told (§17).
+      // join the undeclared side silently — the suite has to be told (§17).
       for (final control in LiveUiControl.values.toSet().difference(native)) {
         expect(adapter.capabilities.supports(control), isFalse, reason: '$control should fall back');
       }
-      // The other half of the point: this language has no fallback side at all,
-      // so the set above has to be the whole contract.
+      // The other half of the point: this language declares no gap at all, so the
+      // set above has to be the whole contract.
       expect(adapter.capabilities.supported, LiveUiControl.values.toSet());
     });
   });

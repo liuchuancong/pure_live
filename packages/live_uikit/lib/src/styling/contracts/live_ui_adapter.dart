@@ -414,7 +414,8 @@ class LanguageTabsSpec {
   /// Called with a tab's index when chosen; null (or `enabled: false`) disables.
   final ValueChanged<int>? onChanged;
 
-  /// The gap between tabs (token renderer).
+  /// The gap between tabs; an adapter maps it only where its own strip has a
+  /// spacing slot (§9).
   final double spacing;
 
   /// Whether the strip responds to input.
@@ -460,9 +461,9 @@ class LanguageScaffoldSpec {
   final bool extendBodyBehindAppBar;
 
   /// Whether the content keeps clear of an open on-screen keyboard. A library
-  /// whose frame handles this itself maps it natively; the token renderer
-  /// answers with the view insets, which is what the Material frame it replaced
-  /// did by default.
+  /// whose frame handles this itself maps it natively; the others read the view
+  /// insets into their own padding, which is what the Material frame this contract
+  /// replaces did by default.
   final bool avoidKeyboard;
 }
 
@@ -821,9 +822,9 @@ abstract interface class LanguageAdapter {
 
   /// Which structural surfaces — the app host and the shell — this adapter owns
   /// with its library's own widgets (§ surfaces). Declared apart from
-  /// [capabilities] because owning one says nothing about the other: fluent owns
-  /// both, `macos_ui` owns the host and a sidebar but no bottom strip, and ForUI
-  /// owns neither.
+  /// [capabilities] because owning one says nothing about the other: a library
+  /// that ships an `App` widget may still ship no navigation rail, and one that
+  /// ships neither still has to answer both, by composing its own parts.
   LiveUiSurfaceCapabilities get surfaces;
 
   /// Installs this language's theme (from [token]) around [child].
@@ -880,16 +881,15 @@ abstract interface class LanguageAdapter {
   /// Draws the page switcher under a tab strip with the language's real widget.
   Widget tabView(BuildContext context, LanguageTabViewSpec spec);
 
-  /// Wraps the whole app in the language's own host widget, when its library
-  /// ships one — a [LiveUiSurface.appHost] capability. The shared renderer answers
-  /// with the token-seeded Material host, which is the documented fallback, not a
-  /// claim that this language owns the root.
+  /// Wraps the whole app in the language's own host widget — a
+  /// [LiveUiSurface.appHost] capability. A library with no application widget is
+  /// hosted on Flutter's `WidgetsApp` seeded from this language's theme, which is
+  /// still this adapter's own answer rather than another language's window.
   Widget appHost(BuildContext context, LanguageHostSpec spec);
 
   /// Draws the application shell — the navigation around the page — with the
-  /// language's own structural widget, when its library ships one (a
-  /// [LiveUiSurface.appShell] capability). Otherwise the shell stands aside and
-  /// the page frame is the caller's, which is a navigation column or strip built from the token
-  /// rather than the language's widget set.
+  /// language's own structural widget (a [LiveUiSurface.appShell] capability).
+  /// Where the library ships no shell widget the adapter composes one from its
+  /// own parts, so the rail or strip still speaks the language.
   Widget shell(BuildContext context, LanguageShellSpec spec);
 }

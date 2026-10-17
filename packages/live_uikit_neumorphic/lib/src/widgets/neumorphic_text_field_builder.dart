@@ -2,14 +2,15 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_neumorphic_ui_kit/flutter_neumorphic_ui_kit.dart' as neu;
 import 'package:live_uikit/live_uikit.dart';
 
-/// Builds a Neumorphic text field from a [LanguageTextFieldSpec] (§9 Text field),
-/// passing the caller's controller and focus node through.
-/// Builds a native Neumorphic text field from a [LanguageTextFieldSpec]
-/// (§9 Text field). The fork's field carries hint, error, helper icons,
-/// obscuring, keyboard hints, line count and enable state, so they pass straight
-/// through; the inline [Style] layers onto the token body text. `readOnly` has no
-/// equivalent in `NeuTextField` and is recorded as unmappable (§15) rather than
-/// emulated by dropping the callback, which would change what the field means.
+/// Builds a Neumorphic text field from a [LanguageTextFieldSpec] (§9 Text field).
+///
+/// **Mapped.** `NeuTextField` is the library's own field, and it carries hint,
+/// error, prefix/suffix icons, obscuring, keyboard type and action, line count and
+/// enable state, so those pass straight through along with the caller's controller
+/// and focus node; the field owns its controller when the spec supplies none. The
+/// inline [Style] layers onto the token body text. `readOnly` has no parameter on
+/// `NeuTextField` and is recorded as unmappable (§15) rather than emulated by
+/// dropping the callback, which would change what the field means.
 abstract final class NeumorphicTextFieldBuilder {
   /// Builds the field for [spec].
   static Widget build(BuildContext context, LanguageTextFieldSpec spec) {

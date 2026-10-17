@@ -3,14 +3,20 @@ import 'package:glass_morphism_plus/glass_morphism_plus.dart' as glass;
 import 'package:live_uikit/live_uikit.dart';
 
 /// Builds a frosted glass button from a [LanguageButtonSpec] (§9 Button). The
+/// surface is `glass_morphism_plus`'s own [glass.GlassButton]; everything the
+/// library's button does not carry is composed here.
 ///
 /// `expand` wraps the button in a full-width box and `tooltip` wraps it in the
 /// core's language-neutral [LiveTooltip]; `GlassButton` exposes neither a hint
 /// slot nor a focus parameter, so `focusNode`/`autofocus` are recorded as
 /// unmappable (§9/§15) rather than emulated by wrapping the control in a second
-/// focus node that would not drive activation.
+/// focus node that would not drive activation. `selected` has no frosted
+/// affordance in this library and the inline `style` has no slot on a widget that
+/// paints its own surface, so both draw as an ordinary button and are recorded as
+/// unmapped here (§9/§15).
 abstract final class GlassButtonBuilder {
-  /// Builds the button for [spec], drawn from this library's own widgets part for part.
+  /// Builds the button for [spec]: the library's own [glass.GlassButton], carrying
+  /// content this package composes around it.
   static Widget build(BuildContext context, LanguageButtonSpec spec) {
     final theme = LiveTheme.of(context);
     Widget button = glass.GlassButton(
@@ -29,10 +35,10 @@ abstract final class GlassButtonBuilder {
   }
 
   /// The button's content, built from this library's own parts: the label, an
-  /// optional leading glyph, a spinner while loading, and the bare glyph of an
-  /// icon-only button, whose empty label is never painted. There is no shared
-  /// renderer to inherit this from any more, so this language composes it —
-  /// the library ships no button spinner, so the loading state is composed from its own surface part (§9 Button).
+  /// optional leading glyph, the loading plate, and the bare glyph of an
+  /// icon-only button, whose empty label is never painted. The library ships no
+  /// button spinner, so the loading state is built out of its own surface part
+  /// here (§9 Button).
   static Widget _label(LanguageButtonSpec spec, LiveTheme theme, {Color? foreground}) {
     final step = theme.text.label.fontSize ?? 14;
     if (spec.loading) {

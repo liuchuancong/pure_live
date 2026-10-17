@@ -6,9 +6,9 @@ import 'package:live_uikit/live_uikit.dart';
 ///
 /// **Composed, and paired with the strip on purpose.** The library ships no page
 /// view, so the content is slid with Flutter's own `PageView` (a `widgets.dart`
-/// scrollable, not a Material render widget) — the same mechanism the token base
-/// uses, because a tab view swipes for a reason and refusing that would only make
-/// this language's strip less capable than the fallback. What the language adds is
+/// scrollable, not a Material render widget) — a tab view swipes for a reason, and a
+/// view that refused the gesture would be less capable than the strip that drives it.
+/// What the language adds is
 /// the surface it swipes across: the pages sit inside a `NeuContainer` on its
 /// recessed ([neu.NeuShape.concave]) face, a well the content drops into, at the
 /// theme's base colour, radius, depth and distance.

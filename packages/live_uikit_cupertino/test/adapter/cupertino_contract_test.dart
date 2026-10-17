@@ -5,9 +5,10 @@ import 'package:live_uikit_cupertino/live_uikit_cupertino.dart';
 /// The Cupertino UI adapter's contract and capability declarations (§7/§16/§17).
 ///
 /// The capability set must list exactly the controls `CupertinoLanguageAdapter`
-/// overrides with `cupertino_ui`'s own widgets; the resolver turns every other
-/// control into a a capability exception, so drift between the declaration
-/// and the overrides is caught here before it ships (§17).
+/// overrides and the surfaces it owns; the resolver raises a
+/// `LiveUiCapabilityException` for anything declared without a matching override,
+/// so drift between the declaration and the overrides is caught here before it
+/// ships (§17).
 void main() {
   const adapter = cupertinoAdapter;
 
@@ -58,8 +59,8 @@ void main() {
       for (final control in LiveUiControl.values.toSet().difference(native)) {
         expect(adapter.capabilities.supports(control), isFalse, reason: '$control should fall back');
       }
-      // The other half of the point: this language has no fallback side at all,
-      // so the set above has to be the whole contract.
+      // The other half of the point: this language declares the whole contract,
+      // so the set above has to be every control `LiveUiControl` exposes.
       expect(adapter.capabilities.supported, LiveUiControl.values.toSet());
     });
   });

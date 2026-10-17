@@ -14,9 +14,9 @@ import 'package:live_uikit/live_uikit.dart';
 /// while [LanguageProgressSpec.height] sizes the track.
 ///
 /// [LanguageProgressSpec.showLabel] has no counterpart — the library's bar carries
-/// no text — so the percentage is appended in the token's caption role, the same
-/// row shape the shared renderer uses, and a label asked for on an indeterminate
-/// bar is dropped rather than invented. A null `value` is the library's own
+/// no text — so the percentage is appended beside the bar in the token's caption
+/// role, and a label asked for on an indeterminate bar is dropped rather than
+/// invented. A null `value` is the library's own
 /// pulse, which repeats until the widget leaves the tree; the core's contract
 /// asks no timer of the language, so nothing here disposes it.
 abstract final class NeumorphicProgressBuilder {

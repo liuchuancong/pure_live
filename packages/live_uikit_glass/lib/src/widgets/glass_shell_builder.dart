@@ -14,8 +14,8 @@ import 'package:live_uikit/live_uikit.dart';
 /// destination — the idiom glassmorphism marks a selection with everywhere else in
 /// this adapter. Every visible value comes from [glass.GlassTheme] (§8): the blur,
 /// tint (`color`), opacity and corner radius (`borderRadius`) are the library's
-/// inherited values, and the layout geometry falls back to the shared sizing scale
-/// because a glass column has no metrics of its own.
+/// inherited values, and the layout geometry takes `LiveSizing`'s numbers when the
+/// environment supplies none, because a glass column has no metrics of its own.
 ///
 /// Interaction goes through the core's [LiveBox]/[Style], not a tappable
 /// [glass.GlassContainer]: the library's `onTap` installs its own transparent
@@ -24,14 +24,14 @@ import 'package:live_uikit/live_uikit.dart';
 /// Underneath the host's ink surface that fights the dispatch system's focus
 /// order, so the cell stays a [LiveBox] and the frosted sheets are purely paint.
 ///
-/// `LiveShellPlacement` is honoured on the rule the token shell uses, so a
+/// `LiveShellPlacement` is honoured on the width the environment reports, so a
 /// narrow window switches form at the same width whichever language is active:
 /// `rail`, and an `adaptive` request with room for a pane, compose the column;
 /// `bottom` hands the strip back through the adapter's `navBar` — this package's
 /// own frosted bar — and `none` or a single destination gives the frame back to
 /// the page. [LanguageShellSpec.trailing] is pinned to the foot of the composed
 /// column; the bottom form has no such slot, so it is dropped there rather than
-/// invented, exactly as the token shell states.
+/// invented.
 abstract final class GlassShellBuilder {
   /// Builds the shell for [spec].
   static Widget build(BuildContext context, LanguageShellSpec spec) {
@@ -45,7 +45,7 @@ abstract final class GlassShellBuilder {
       // The phone form. `GlassAppBar` is a Material bar, not a bottom strip, so
       // the strip goes back through the adapter's own nav bar; that form carries
       // no trailing slot, so `spec.trailing` is dropped here rather than faked as
-      // a fifth tab — the same rule the token shell states.
+      // a fifth tab.
       return Column(
         children: [
           Expanded(child: spec.child),

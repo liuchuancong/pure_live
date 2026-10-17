@@ -11,8 +11,8 @@ import 'package:material_ui/material_ui.dart' as mu;
 /// controlled: a tap reports the index and the caller's next rebuild moves the
 /// indicator to wherever the spec says, which is also how a refused tap is undone.
 ///
-/// [LanguageTabsSpec.spacing] is the token renderer's knob and has no Material
-/// counterpart; the strip uses the library's own tab padding.
+/// [LanguageTabsSpec.spacing] has no Material counterpart, so the strip is left
+/// with the library's own tab padding.
 abstract final class MaterialTabBarBuilder {
   /// Builds the strip for [spec].
   static Widget build(BuildContext context, LanguageTabsSpec spec) => _ControlledTabBar(spec: spec);

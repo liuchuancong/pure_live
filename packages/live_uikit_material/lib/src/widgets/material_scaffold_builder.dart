@@ -10,10 +10,10 @@ import 'package:material_ui/material_ui.dart' as mu;
 ///
 /// The bar and the bottom strip arrive as already-dispatched widgets, and
 /// `Scaffold` asks for a `PreferredSizeWidget` in both slots — so one that is
-/// one goes straight in, and a foreign one (a token bar, or another language's
-/// rendering inside a mixed tree) is given the height its own frame would have
-/// used. Material then owns the body's extent, safe area and scroll-under
-/// behaviour, which is what this language exists to get.
+/// one goes straight in, and a foreign one (a bar composed from plain widgets, or
+/// another language's rendering inside a mixed tree) is given the height its own
+/// frame would have used. Material then owns the body's extent, safe area and
+/// scroll-under behaviour, which is what this language exists to get.
 abstract final class MaterialScaffoldBuilder {
   /// Builds the frame for [spec].
   static Widget build(BuildContext context, LanguageScaffoldSpec spec) {

@@ -3,7 +3,8 @@ import 'package:live_uikit/live_uikit.dart';
 import 'package:macos_ui/macos_ui.dart' as macos;
 
 /// Builds a native macOS text field from a [LanguageTextFieldSpec] (§9 Text
-/// field), passing the caller's controller and focus node straight through.
+/// field). Mapped: the field is the library's own `MacosTextField`, and the
+/// caller's controller and focus node are passed straight through to it.
 abstract final class MacosTextFieldBuilder {
   /// Builds the field for [spec].
   static Widget build(BuildContext context, LanguageTextFieldSpec spec) {
@@ -22,9 +23,9 @@ abstract final class MacosTextFieldBuilder {
       suffix: spec.suffix,
       onSubmitted: spec.onSubmitted,
       onChanged: spec.onChanged,
-      // The fork has no error slot: an error redraws the border with the token
-      // error colour — the same signal the token renderer sends — and the message
-      // rides underneath it (§9).
+      // The library has no error slot: an error redraws the border in the token
+      // error colour and the message rides underneath it as its own caption line
+      // (§9).
       decoration: BoxDecoration(
         border: Border.all(color: spec.errorText == null ? theme.colors.border : theme.colors.error),
         borderRadius: BorderRadius.circular(theme.input.borderRadius),

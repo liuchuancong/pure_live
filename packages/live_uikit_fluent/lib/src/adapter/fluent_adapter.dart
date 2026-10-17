@@ -25,11 +25,13 @@ import 'package:live_uikit_fluent/src/widgets/fluent_toast_builder.dart';
 
 /// Fluent — the `fluent_ui` design-language adapter (§1).
 ///
-/// Implements the core [LanguageAdapter] contract for [LiveDesignLanguage.fluent]:
-/// theme mapping is delegated to `theme/`, each control to its `widgets/`
-/// builder, and the declared [capabilities] to `fluent_capabilities.dart`. A
-/// control the adapter does not override still renders through the shared token
-/// base it extends, so nothing disappears — it just is not Fluent-native (§15.3).
+/// Implements the whole core [LanguageAdapter] contract for
+/// [LiveDesignLanguage.fluent]: theme mapping is delegated to `theme/`, each of
+/// the seventeen controls to its `widgets/` builder, the two structural surfaces
+/// to the host and shell builders, and the declared [capabilities] to
+/// `fluent_capabilities.dart`. Every rendering here is this language's own — a
+/// `fluent_ui` widget where the library has one for the job, Fluent's parts
+/// composed out of the library's own widgets where it does not (§7/§9).
 class FluentLanguageAdapter implements LanguageAdapter {
   /// The Fluent adapter.
   const new();

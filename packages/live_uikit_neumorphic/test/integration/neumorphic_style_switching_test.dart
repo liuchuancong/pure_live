@@ -34,15 +34,14 @@ const Set<LiveUiControl> nativeControls = {
 /// it ships no rail.
 const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost, LiveUiSurface.appShell};
 
-/// §16 integration pass for `live_uikit_neumorphic`: the whole contract native, so a
-/// Neumorphic language change reports no control downgrade at all, and a switch to the
-/// core token base and back leaves the caller's controller and values intact (§11).
-/// The downgrades this language is expected to report: none at all. Every control is
-/// native and both structural surfaces are owned, so the derived checks below compare
-/// against empty sets and skip the code assertions (§15.5/§16.8).
-/// Nothing in the contract falls back any more: the resolver hands back this
-/// language's adapter, so a run that renders it reports no control or surface
-/// downgrade at all (§15.5/§16.8).
+/// §16 integration pass for `live_uikit_neumorphic`: every control of the contract is
+/// served by this adapter, so a Neumorphic run reports no control or surface downgrade
+/// at all, and re-resolving the same language leaves the caller's controller and values
+/// intact (§11).
+///
+/// What this language is expected to report: nothing. Each of the seventeen controls has
+/// an override behind its declaration and both structural surfaces are owned, so the
+/// helper below asserts an empty control-and-surface diagnostic list (§15/§16).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   expect(
     sink.where((diagnostic) => diagnostic.control != null || diagnostic.surface != null),
@@ -111,8 +110,8 @@ void main() {
     expect(controller.text, 'typed before the switch');
     expectUndeclaredControls(diagnostics);
 
-    // Segmented is composed here now, in the language's own dish-and-dome track,
-    // and still callable (§16.7).
+    // Segmented is composed here, in the language's own dish-and-dome track,
+    // and it is still callable (§16).
     await tester.tap(find.text('B'));
     await tester.pump();
     expect(segmented, 1);

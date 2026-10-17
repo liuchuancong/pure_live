@@ -5,8 +5,8 @@ import 'package:live_uikit/live_uikit.dart';
 /// Builds a frosted progress bar from a [LanguageProgressSpec] (§9 Progress).
 ///
 /// Composed, not mapped: the library has no indicator, so the groove is a
-/// [glass.GlassContainer] at the spec's height — blur, tint, corner radius and
-/// stroke inherited from [glass.GlassTheme] (§8) — and the fill is a solid one
+/// [glass.GlassContainer] at the spec's height — taking its blur, tint, corner
+/// radius and stroke from [glass.GlassTheme] (§8) — and the fill is a solid one
 /// inside it (`isBlurEnabled: false`: one backdrop filter per bar is the
 /// library's own budget). The fill takes the primary colour, or
 /// [LanguageProgressSpec.barColor] when the caller names one, at full opacity so

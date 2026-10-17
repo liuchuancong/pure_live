@@ -4,7 +4,7 @@ import 'package:live_uikit/live_uikit.dart';
 
 /// Renders a [LanguageButtonSpec] with `FButton` (§9 Button).
 abstract final class ForuiButtonBuilder {
-  /// content, disabled verdict and square geometry.
+  /// Builds the button, its content and its press eligibility.
   static Widget build(BuildContext context, LanguageButtonSpec spec) {
     final theme = LiveTheme.of(context);
     final interactive = spec.enabled && !spec.loading && spec.onPressed != null;
@@ -13,6 +13,7 @@ abstract final class ForuiButtonBuilder {
     final onPress = interactive ? spec.onPressed : null;
     final content = _label(spec, theme);
 
+    // The accessible name goes on the glyph the button carries, so the button
     // itself is not given a second `semanticsLabel` to announce twice.
     final button = spec.iconOnly
         // An icon-only control is forui's own variant, laid out by the library: squeezing
@@ -66,8 +67,8 @@ abstract final class ForuiButtonBuilder {
 
   /// The button's content, built from this library's own parts: the label, an
   /// optional leading glyph, a spinner while loading, and the bare glyph of an
-  /// icon-only button, whose empty label is never painted. There is no shared
-  /// renderer to inherit this from any more, so this language composes it —
+  /// icon-only button, whose empty label is never painted. The contract's spec
+  /// describes the content but does not draw it, so this builder composes it —
   /// the loading state maps to the library's own spinner (§9 Button).
   static Widget _label(LanguageButtonSpec spec, LiveTheme theme, {Color? foreground}) {
     final step = theme.text.label.fontSize ?? 14;

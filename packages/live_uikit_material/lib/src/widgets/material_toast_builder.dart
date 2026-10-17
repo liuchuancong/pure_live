@@ -6,14 +6,14 @@ import 'package:material_ui/material_ui.dart' as mu;
 /// Builds a Material UI toast surface from a [LanguageToastSpec] (§9 Toast).
 ///
 /// Only the surface is built here: the overlay it floats in, the fade and the
-/// removal timer stay in the core's `LiveToast.show`, which is why the spec
-/// carries no duration. That is also why this is a `mu.Material` card rather than
+/// removal timer stay in the core's `LiveToast.show`, which is what reads the
+/// spec's duration. That is also why this is a `mu.Material` card rather than
 /// a `mu.SnackBar` — the fork's bar reads `widget.animation!` in `initState` and
 /// is only ever built by a `ScaffoldMessenger` that owns that animation, so a
 /// SnackBar handed to a caller-owned overlay throws. The card takes its colour,
 /// elevation, shape and text role from the fork's own `SnackBarThemeData`, which
 /// is where Material keeps those decisions, so the surface is still the library's
-/// rather than the shared renderer's.
+/// rather than a foreign one.
 ///
 /// The status colour is the token's, because the token decides that `warning`
 /// looks like this app's `warning` in every language; the glyph is Material's own.

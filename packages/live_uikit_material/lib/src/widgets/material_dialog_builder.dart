@@ -28,7 +28,7 @@ import 'package:material_ui/material_ui.dart' as mu;
 ///   text role is the token's body, handed as `contentTextStyle` so a caller that
 ///   gives no style still gets the token's.
 /// * [LanguageDialogSpec.actions] → `actions`, a `List<Widget>` the fork lays out in
-///   an end-aligned `OverflowBar` — the same reading order the token renderer uses,
+///   an end-aligned `OverflowBar` — the reading order the contract asks for,
 ///   and the buttons arrive as dispatched controls so they match the language. An
 ///   empty list becomes null rather than an empty bar, since the fork omits the
 ///   slot (and its padding) only for a null `actions`.

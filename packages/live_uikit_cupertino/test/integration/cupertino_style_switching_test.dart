@@ -35,14 +35,13 @@ const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost,
 
 /// §16 integration pass for `live_uikit_cupertino`: every one of the seventeen
 /// controls resolves native, so a Cupertino language change reports no control
-/// downgrade at all, and switching to the core token base and back replaces the
-/// rendering path without touching the caller's controller (§11).
+/// downgrade at all, and re-rendering through this adapter keeps the rendering
+/// path and the caller's controller intact (§11).
 /// The downgrades this language is expected to report: none at all. Every control
 /// is native and both structural surfaces are owned, so the derived checks below
-/// compare against empty sets and skip the code assertions (§15.5/§16.8).
-/// Nothing in the contract falls back any more: the resolver hands back this
-/// language's adapter, so a run that renders it reports no control or surface
-/// downgrade at all (§15.5/§16.8).
+/// compare against empty sets (§15.5/§16.8).
+/// Every control and surface resolves to this language's own adapter, so a run
+/// that renders it reports no control or surface downgrade at all (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   expect(
     sink.where((diagnostic) => diagnostic.control != null || diagnostic.surface != null),

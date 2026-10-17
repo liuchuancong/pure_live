@@ -11,7 +11,7 @@ import 'package:live_uikit/live_uikit.dart';
 /// [wind.InputType], so the spec's two fields collapse into the closest single
 /// intent here (`obscure` wins, then an email/number keyboard, then the line
 /// count). The error message has no slot in the fork either, so it is drawn the
-/// same way the token renderer draws it — the same caption text under the same
+/// same caption this package composes elsewhere — the same caption text under the same
 /// error border state — rather than invented differently here (§2.3).
 abstract final class WindTextFieldBuilder {
   /// Builds the field for [spec].

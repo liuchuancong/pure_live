@@ -3,7 +3,8 @@ import 'package:live_uikit/live_uikit.dart';
 import 'package:material_ui/material_ui.dart' as mu;
 
 /// Builds a native Material UI button from a [LanguageButtonSpec] (§9 Button):
-/// each semantic variant maps to the closest Material button; the danger variant
+/// each semantic variant maps to the closest Material button, and the danger
+/// variant takes the token's error fill on the filled class.
 abstract final class MaterialButtonBuilder {
   /// Builds the button for [spec], drawn from this library's own widgets part for part.
   static Widget build(BuildContext context, LanguageButtonSpec spec) {
@@ -38,8 +39,8 @@ abstract final class MaterialButtonBuilder {
       ),
     };
     // `expand` and `tooltip` are the two spec fields a Material button cannot
-    // carry in its own constructor, so they wrap it the way the token renderer
-    // wraps its buttons: full width, and the caller's text verbatim (§9).
+    // carry in its own constructor, so they are wrapped here: full width, and the
+    // caller's text verbatim as the tooltip (§9).
     final sized = spec.expand ? SizedBox(width: double.infinity, child: button) : button;
     if (spec.tooltip == null) {
       return sized;
@@ -47,11 +48,11 @@ abstract final class MaterialButtonBuilder {
     return mu.Tooltip(message: spec.tooltip, child: sized);
   }
 
-  /// The button's content, built from this library's own parts: the label, an
+  /// The button's content, composed from this library's own parts: the label, an
   /// optional leading glyph, a spinner while loading, and the bare glyph of an
-  /// icon-only button, whose empty label is never painted. There is no shared
-  /// renderer to inherit this from any more, so this language composes it —
-  /// the loading state maps to the library's own spinner (§9 Button).
+  /// icon-only button, whose empty label is never painted. This language writes that
+  /// composition itself, so its press and loading states cannot diverge from its own
+  /// button — loading maps to the library's own spinner (§9 Button).
   static Widget _label(LanguageButtonSpec spec, LiveTheme theme, {Color? foreground}) {
     final step = theme.text.label.fontSize ?? 14;
     if (spec.loading) {

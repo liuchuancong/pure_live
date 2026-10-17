@@ -9,8 +9,8 @@ import 'package:live_uikit/live_uikit.dart';
 /// (`lib/src/controls/flyouts/content_dialog.dart`): its `build` only asserts
 /// `debugCheckHasFluentTheme` — it needs a `FluentTheme` ancestor, which
 /// [LanguageAdapter.wrap] installs, never a `Navigator` or a route — so the
-/// adapter can hand it straight to the core's route instead of falling back to
-/// the theme values.
+/// adapter can hand it straight to the core's route and keep the library's own
+/// surface.
 ///
 /// The division of labour: the surface belongs to the adapter, the route, the
 /// barrier, the fade-and-scale and the dismissal belong to core's

@@ -264,9 +264,9 @@ foreach ($adapter in $styleLibraries.Keys) {
         }
     }
 
-    # Capability/override drift: declaring a control with no override makes the
-    # resolver report `adapterNative` for a shared rendering, and overriding
-    # without declaring makes the downgrade silent. Both are lies to diagnostics.
+    # Capability/override drift: declaring a control with no override is a claim
+    # the adapter cannot serve, and overriding without declaring hides a working
+    # control from `requireControl`. Both are lies about the contract.
     $contractDir = Join-Path (Join-Path $adapterDir "lib") "src/adapter"
     $adapterFile = @(Get-ChildItem -Path $contractDir -File -Filter "*_adapter.dart" -ErrorAction SilentlyContinue)
     $capabilitiesFile = @(Get-ChildItem -Path $contractDir -File -Filter "*_capabilities.dart" -ErrorAction SilentlyContinue)
@@ -297,7 +297,7 @@ foreach ($adapter in $styleLibraries.Keys) {
 
     # The structural surfaces are checked the same way, against their own
     # declaration: owning the app host says nothing about owning the shell, and a
-    # host that reads `surfaceUnsupported` in its log has to be able to trust it.
+    # app root that trusts `surfaces` has to be able to rely on it.
     $surfacesFile = @(Get-ChildItem -Path $contractDir -File -Filter "*_surfaces.dart" -ErrorAction SilentlyContinue)
     $surfaceOverrides = @(
         [regex]::Matches((Get-Content -Raw $adapterFile[0].FullName), '(?m)^\s+Widget\s+(appHost|shell)(?:<[^>]*>)?\s*\(') |

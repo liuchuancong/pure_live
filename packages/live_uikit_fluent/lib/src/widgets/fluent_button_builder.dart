@@ -7,6 +7,10 @@ import 'package:live_uikit/live_uikit.dart';
 /// Primary and danger map to `FilledButton`, secondary/ghost to `Button`; the
 /// loading button behaves identically across every style. Business actions stay
 /// in the spec's `onPressed` — never here.
+///
+/// Two spec fields are deliberately not mapped: `selected` and `style`. Both
+/// would mean painting over a surface the library's own button owns, and a
+/// hand-painted overlay is exactly what §9 rules out.
 abstract final class FluentButtonBuilder {
   /// Builds the button for [spec], drawn from this library's own widgets part for part.
   static Widget build(BuildContext context, LanguageButtonSpec spec) {
@@ -23,7 +27,7 @@ abstract final class FluentButtonBuilder {
     final hint = spec.tooltip;
     if (hint != null) {
       // `TooltipButton` is Fluent's own hint affordance and only exists on
-      // `Button`, so the shared language-neutral tooltip wraps either class
+      // `Button`, so the core's language-neutral `LiveTooltip` wraps either class
       // identically rather than dropping the filled variant to get it (§9).
       button = LiveTooltip(message: hint, child: button);
     }
@@ -32,9 +36,9 @@ abstract final class FluentButtonBuilder {
 
   /// The button's content, built from this library's own parts: the label, an
   /// optional leading glyph, a spinner while loading, and the bare glyph of an
-  /// icon-only button, whose empty label is never painted. There is no shared
-  /// renderer to inherit this from any more, so this language composes it —
-  /// the loading state maps to the library's own spinner (§9 Button).
+  /// icon-only button, whose empty label is never painted. The loading state is
+  /// the library's own `ProgressRing`, and the glyph size is the theme's label
+  /// step, so a Fluent button is composed entirely inside this language (§9 Button).
   static Widget _label(LanguageButtonSpec spec, LiveTheme theme, {Color? foreground}) {
     final step = theme.text.label.fontSize ?? 14;
     if (spec.loading) {

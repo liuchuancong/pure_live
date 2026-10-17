@@ -5,9 +5,9 @@ import 'package:material_ui/material_ui.dart' as mu;
 /// Builds a Material UI linear progress indicator from a [LanguageProgressSpec]
 /// (§9), tinting the fill and track from the theme (or a `barColor` override).
 ///
-/// `spec.showLabel` is a token-renderer affordance: the fork's indicator paints a
-/// bar only, and §9 forbids overlaying a hand-built percentage widget. A Material
-/// UI progress bar therefore never shows the trailing label — the degradation is
+/// `spec.showLabel` has no counterpart in this library: the fork's indicator paints
+/// a bar only, and §9 forbids overlaying a hand-built percentage widget. A Material
+/// UI progress bar therefore never shows the trailing label — the omission is
 /// documented here rather than silently approximated (§15).
 abstract final class MaterialProgressBuilder {
   /// Builds the progress bar for [spec].

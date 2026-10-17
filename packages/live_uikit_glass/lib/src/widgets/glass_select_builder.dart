@@ -5,20 +5,19 @@ import 'package:live_uikit/live_uikit.dart';
 
 /// Builds a frosted dropdown from a [LanguageSelectSpec] (§9 Select).
 ///
-/// Composed, not mapped: `glass_morphism_plus` carries no select, and the core
-/// renderer's popup cannot be borrowed either — it opens an [Overlay] entry, and
-/// the contract asks this builder for a widget that renders where it is placed. So
-/// the field is a [glass.GlassContainer] sheet with the chosen label (or
+/// Composed, not mapped: `glass_morphism_plus` carries no select, and an
+/// overlay-anchored popup is not what this contract asks of the builder — it asks
+/// for a widget that renders where it is placed, and the caller owns the overlay.
+/// So the field is a [glass.GlassContainer] sheet with the chosen label (or
 /// [LanguageSelectSpec.placeholder]) and the token's glyph, and choosing opens the
 /// option list as a second frosted sheet *in flow*, under the field. The list
 /// pushes the page rather than floating over it, which is the one behaviour a glass
 /// surface can do without taking the caller's overlay (§15); it is capped and
 /// scrollable, so a long list cannot run the page off the screen.
 ///
-/// Being composed also means there is nothing to guard: the library asserts
+/// Being composed also means there is nothing to guard: the builder asserts
 /// nothing about [LanguageSelectSpec.items], so duplicate, null or off-list values
-/// draw as rows rather than throwing, and no spec is routed back to the shared
-/// renderer for its shape.
+/// draw as rows rather than throwing.
 abstract final class GlassSelectBuilder {
   /// Builds the select for [spec].
   static Widget build<T>(BuildContext context, LanguageSelectSpec<T> spec) => _GlassSelect<T>(spec: spec);

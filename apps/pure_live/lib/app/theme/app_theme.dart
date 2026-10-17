@@ -40,10 +40,10 @@ class AppTheme extends ConsumerWidget {
   /// Whether this device can draw a backdrop filter.
   final bool hardwareBlur;
 
-  /// Where a downgrade is reported — a language with no registered adapter, a
-  /// control the active library serves from the shared renderer. Null keeps
-  /// the core quiet; the composition root hands it a logger so the fact is
-  /// visible instead of being re-skinned silently.
+  /// Where an unaffordable effect is reported — a backdrop blur this device
+  /// cannot draw, say. Null keeps the core quiet; the composition root hands it a
+  /// logger so the fact is visible instead of the window quietly looking flatter
+  /// than configured.
   final LiveUiDiagnosticSink? diagnostics;
 
   @override

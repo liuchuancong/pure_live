@@ -27,12 +27,13 @@ import 'package:live_uikit_forui/src/widgets/forui_toast_builder.dart';
 ///
 /// Implements the core contract for [LiveDesignLanguage.forui]: the theme mapping
 /// delegates to `theme/`, every one of the seventeen controls to its `widgets/` builder, and
-/// the declared [capabilities] to `forui_capabilities.dart` — so nothing inside a ForUI
-/// page is drawn by the shared token renderer. The two controls with no library widget to
-/// map are `segmented`, composed out of forui's own `FButton` group, and `tabView`, the
-/// widgets-layer `PageView` over the caller's pages, and each says so in its builder;
-/// every other builder records the spec fields the library has no slot
-/// for, so the gaps are visible rather than silent. No business state lives here. Both
+/// the declared [capabilities] to `forui_capabilities.dart`, so a ForUI page is drawn end to
+/// end by this package. Fourteen controls are one-for-one mappings onto a `forui` widget;
+/// three are not, and each builder says why: `segmented` is composed out of forui's own
+/// `FButton` group, `tabBar` is `FTabs` with an empty content panel per entry, and `tabView`
+/// is the widgets-layer `PageView` over the caller's pages. `dialog` maps onto `FDialog`'s
+/// frame and composes the inside of it. Every builder records the spec fields the library
+/// has no slot for, so the gaps are visible rather than silent. No business state lives here. Both
 /// structural surfaces — the app host and the app shell — are declared in
 /// [foruiSurfaces] and rendered by this package's own builders.
 class ForuiLanguageAdapter implements LanguageAdapter {

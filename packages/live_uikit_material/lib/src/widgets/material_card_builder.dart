@@ -11,8 +11,8 @@ abstract final class MaterialCardBuilder {
     final theme = LiveTheme.of(context);
     final interactive = spec.onTap != null || spec.onLongPress != null;
     final override = spec.style;
-    // An inline `style` wins over the theme, the same precedence the token
-    // renderer gives it. Only the properties a Material card can express are
+    // An inline `style` is the caller's top layer and wins over the theme.
+    // Only the properties a Material card can express are
     // read — fill, radius and border — and the rest stay library defaults
     // (§8.1 "map only supported") rather than being hand-painted on top.
     final radius = override?.borderRadius ?? mu.BorderRadius.circular(theme.card.borderRadius);

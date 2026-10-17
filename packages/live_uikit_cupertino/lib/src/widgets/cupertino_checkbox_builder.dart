@@ -5,8 +5,8 @@ import 'package:live_uikit/live_uikit.dart';
 /// Builds a Cupertino checkbox from a [LanguageCheckboxSpec] (§9 Checkbox).
 ///
 /// Mapped: `cu.CupertinoCheckbox` is the library's only checkbox, and it is the
-/// one a Cupertino subtree is allowed to use — the shared renderer would answer
-/// with a Material box instead. The fork documents this widget as macOS-styled
+/// one a Cupertino subtree is allowed to use, since any other answer would put a
+/// Material box in an iOS page. The fork documents this widget as macOS-styled
 /// and notes that the iOS HIG has no checkbox at all (it points at
 /// [cu.CupertinoSwitch], which this adapter already renders); the square with the
 /// white tick is still what `cupertino_ui` draws for a multi-selection box, so

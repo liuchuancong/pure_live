@@ -26,9 +26,11 @@ import 'package:macos_ui/macos_ui.dart' as macos;
 
 /// macOS — the `macos_ui` design-language adapter (§1).
 ///
-/// Implements the core contract for [LiveDesignLanguage.macos]: theme mapping
-/// delegates to `theme/`, each control to its `widgets/` builder, and the
-/// declared [capabilities] to `macos_capabilities.dart`. Eleven of the seventeen
+/// Implements the core [LanguageAdapter] interface for [LiveDesignLanguage.macos]
+/// directly; the interface is the whole contract and this class answers every
+/// member of it. Theme mapping delegates to `theme/`, each control to its
+/// `widgets/` builder, and the declared [capabilities] and [surfaces] to
+/// `macos_capabilities.dart` and `macos_surfaces.dart`. Eleven of the seventeen
 /// controls are the library's own widget; the six the library does not carry in
 /// this shape — the card, the tab strip, the destination strip, the toast surface,
 /// the dialog surface whose actions the library's alert cannot take, and the page
@@ -39,9 +41,9 @@ import 'package:macos_ui/macos_ui.dart' as macos;
 /// macOS widgets reuse the core's Material/Cupertino localization, so this package
 /// adds no delegates.
 ///
-/// Two of those assemblies are the adapter's own, because they are the shapes the
-/// library refuses to build: a slider with nothing to drag and a selection that
-/// names no item — see [slider] and [select].
+/// Two of the mapped builders carry an assembly of their own as well, because the
+/// library refuses those two shapes outright: a slider with nothing to drag and a
+/// selection that names no item — see [slider] and [select].
 class MacosLanguageAdapter implements LanguageAdapter {
   /// The macOS adapter.
   const new();
@@ -98,8 +100,8 @@ class MacosLanguageAdapter implements LanguageAdapter {
   /// `macos.ProgressBar` (a track with a filled portion, inert by construction,
   /// whose value is a percentage) in the token's primary, and the thumb in the
   /// library's published `MacosColors.sliderThumbColor`, parked at the value's
-  /// fraction under an `IgnorePointer`. Same rail-and-thumb reading, nothing to
-  /// drag, and no shared floor to hand the spec to (§9/§15).
+  /// fraction under an `IgnorePointer`. Same rail-and-thumb reading as the live
+  /// control, nothing to drag, and every part of it this library's own (§9/§15).
   @override
   Widget slider(BuildContext context, LanguageSliderSpec spec) {
     if (spec.enabled && spec.onChanged != null) {
@@ -124,7 +126,7 @@ class MacosLanguageAdapter implements LanguageAdapter {
   /// rides in as the button's `hint`. So the off-list value is dropped to null —
   /// the field shows the placeholder and the value is not treated as legal — and
   /// the menu keeps only choosable values, dropping null and repeated item values
-  /// for the same "exactly one" reason (§15: no shared floor).
+  /// for the same "exactly one" reason (§15).
   @override
   Widget select<T>(BuildContext context, LanguageSelectSpec<T> spec) =>
       MacosSelectBuilder.build<T>(context, _chosenOrNull(spec));

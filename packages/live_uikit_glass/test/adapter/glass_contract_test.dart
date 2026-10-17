@@ -7,8 +7,9 @@ import 'package:live_uikit_glass/live_uikit_glass.dart';
 /// The capability set must list exactly the controls `GlassLanguageAdapter`
 /// renders with `glass_morphism_plus` — its own widgets where the library has
 /// them, its own frosted surfaces and theme values where it does not. The whole
-/// contract is in that set, so this language has no fallback side and drift
-/// between the declaration and the overrides is caught here before it ships (§17).
+/// contract is in that set, so no control of it is answered by another adapter,
+/// and drift between the declaration and the overrides is caught here before it
+/// ships (§17).
 void main() {
   const adapter = glassAdapter;
 
@@ -51,8 +52,9 @@ void main() {
       for (final surface in LiveUiSurface.values.toSet().difference(owned)) {
         expect(adapter.surfaces.supports(surface), isFalse, reason: '$surface should fall back');
       }
-      // Derived, so a surface added to the contract cannot join the fallback side
-      // silently — the same rule as the control set below (§17).
+      // Derived from the whole enum, so a surface added to the contract cannot
+      // be left off the declaration silently — the same rule as the control set
+      // below (§17).
       expect(adapter.surfaces.supported, LiveUiSurface.values.toSet());
     });
 
@@ -63,9 +65,9 @@ void main() {
       for (final control in LiveUiControl.values.toSet().difference(native)) {
         expect(adapter.capabilities.supports(control), isFalse, reason: '$control should fall back');
       }
-      // The other half of the point: a glass page has no fallback side at all, so
-      // the set above has to be the whole contract — and a control added to the
-      // contract cannot join the shared side silently (§17).
+      // The other half of the point: a glass page asks this adapter for every
+      // control, so the set above has to be the whole contract — and a control
+      // added to the contract cannot go undeclared here silently (§17).
       expect(adapter.capabilities.supported, LiveUiControl.values.toSet());
     });
   });

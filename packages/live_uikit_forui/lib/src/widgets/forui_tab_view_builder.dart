@@ -16,8 +16,8 @@ import 'package:live_uikit/live_uikit.dart';
 /// There is therefore nothing to theme: no library knob covers a page change, so
 /// [LanguageTabViewSpec.duration] drives the library-free `PageController.animateToPage`
 /// with the widgets-layer curve, and the view follows the caller's index rather than
-/// owning a page of its own. As in the token base and in `tabBar`, a swipe is only
-/// possible when the caller can receive one: no [LanguageTabViewSpec.onIndexChanged],
+/// owning a page of its own. As in `tabBar`, a swipe is only possible when the caller can
+/// receive one: no [LanguageTabViewSpec.onIndexChanged],
 /// or a single page, and the physics refuse scroll and the callback is not wired.
 abstract final class ForuiTabViewBuilder {
   /// Builds the page switcher for [spec].

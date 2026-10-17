@@ -17,7 +17,8 @@ import 'package:macos_ui/macos_ui.dart' as macos;
 /// front of it, one cell checked — the checked cell paints its own selection chip,
 /// so the accent decision stays with the library. Every destination shares the
 /// row's width the way a macOS toolbar group does, and a disabled bar keeps its
-/// labels and stops reporting, which is the inert state the other adapters use.
+/// labels and stops reporting, which is the inert state the contract asks of
+/// `enabled: false`.
 abstract final class MacosNavBarBuilder {
   /// Builds the strip for [spec].
   static Widget build(BuildContext context, LanguageNavBarSpec spec) {

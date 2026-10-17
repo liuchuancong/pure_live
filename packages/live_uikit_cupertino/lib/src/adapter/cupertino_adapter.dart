@@ -89,7 +89,7 @@ class CupertinoLanguageAdapter implements LanguageAdapter {
   /// `CupertinoTabBarBuilder` already uses for a dead tab: the label keeps its
   /// place, tinted with `theme.tabs.itemColor` (the unselected role, so nothing
   /// reads as chosen), and it reports no tap. An empty label list is no cell at
-  /// all (§15: there is no shared floor to hand these specs to).
+  /// all (§15).
   @override
   Widget segmented(BuildContext context, LanguageSegmentedSpec spec) {
     if (spec.labels.length >= 2) {
@@ -140,7 +140,7 @@ class CupertinoLanguageAdapter implements LanguageAdapter {
   /// top of it, with one inert cell per destination — `cu.CupertinoButton` with a
   /// null callback in `theme.tabs.itemColor`, so no cell carries a selection and
   /// none reports a tap. No destinations leaves the surface and its hairline only
-  /// (§15: there is no shared floor to hand these specs to).
+  /// (§15).
   @override
   Widget navBar(BuildContext context, LanguageNavBarSpec spec) {
     if (spec.items.length >= 2 && spec.index >= 0 && spec.index < spec.items.length) {

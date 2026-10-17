@@ -3,21 +3,24 @@ import 'package:live_uikit/live_uikit.dart';
 import 'package:macos_ui/macos_ui.dart' as macos;
 
 /// Builds a native macOS push button from a [LanguageButtonSpec] (§9 Button).
-/// The core [ControlSize] maps onto `macos_ui`'s control sizes; the label,
+/// Mapped: the control is the library's own `PushButton`, and the core
+/// [ControlSize] maps onto `macos_ui`'s small/regular/large sizes. The label,
+/// its leading glyph and the loading spinner are placed inside that widget's own
+/// child slot.
 ///
-/// Variants ride on `PushButton.color`, the one variant affordance the fork
+/// Variants ride on `PushButton.color`, the one variant affordance the library
 /// exposes: `primary` becomes the macOS prominent button (accent fill, solid
 /// label), `danger` the same shape in the token error, and `secondary` stays
 /// the library's own standard grey. `ghost` keeps its primary-tinted label.
 ///
 /// `expand` wraps the button in a full-width box and `tooltip` uses the core's
-/// language-neutral [LiveTooltip] plus the fork's own `semanticLabel`, which is
+/// language-neutral [LiveTooltip] plus the library's own `semanticLabel`, which is
 /// also the accessible name. `focusNode` and `autofocus` are recorded as
 /// unexpressible: `PushButton` creates and owns its focus handler internally, and
 /// a second `Focus` above it would hold the focus that actually handles keyboard
 /// activation (§9/§15).
 abstract final class MacosButtonBuilder {
-  /// Builds the button for [spec], drawn from this library's own widgets part for part.
+  /// Builds the button for [spec] as the library's own `PushButton`.
   static Widget build(BuildContext context, LanguageButtonSpec spec) {
     final theme = LiveTheme.of(context);
     final fill = switch (spec.variant) {
@@ -51,11 +54,11 @@ abstract final class MacosButtonBuilder {
     return button;
   }
 
-  /// The button's content, built from this library's own parts: the label, an
+  /// The button's content, built from this language's own parts: the label, an
   /// optional leading glyph, a spinner while loading, and the bare glyph of an
-  /// icon-only button, whose empty label is never painted. There is no shared
-  /// renderer to inherit this from any more, so this language composes it —
-  /// the loading state maps to the library's own spinner (§9 Button).
+  /// icon-only button, whose empty label is never painted. This builder lays it
+  /// out itself and hands it to `PushButton`'s child slot — the loading state
+  /// maps to the library's own spinner (§9 Button).
   static Widget _label(LanguageButtonSpec spec, LiveTheme theme, {Color? foreground}) {
     final step = theme.text.label.fontSize ?? 14;
     if (spec.loading) {

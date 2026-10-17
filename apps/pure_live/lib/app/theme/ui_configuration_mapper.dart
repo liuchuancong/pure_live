@@ -54,9 +54,9 @@ AppearancePreferences appearanceFromUiConfig(UiConfig config) => AppearancePrefe
 
 /// The skin this build ships on when the user has not chosen: fluent, a
 /// fully registered third-party language. The default only decides which
-/// adapter answers first — the shared token base still renders anything a
-/// language does not implement, and a user who explicitly picked the base keeps
-/// it, since their stored id names it exactly.
+/// adapter answers first — every language renders its own whole contract, and a
+/// stored id that names a language this build does not register is a fault the
+/// resolver raises rather than a look to settle for.
 const LiveDesignLanguage _defaultLanguage = LiveDesignLanguage.fluent;
 
 /// Ids that named something the enum no longer has.

@@ -6,9 +6,9 @@ import 'package:live_uikit/live_uikit.dart';
 ///
 /// The controller and focus node pass through untouched, and the fork carries
 /// placeholder, enable, read-only, obscuring, keyboard hints, line count and the
-/// leading/trailing slots. It has no error slot, so `errorText` is drawn the way
-/// the token renderer draws it — a caption in the error colour under the box —
-/// while the inline [Style] layers onto the token body text (§9).
+/// leading/trailing slots. It has no error slot, so `errorText` is composed here
+/// as a caption in the error colour under the box rather than dropped, while the
+/// inline [Style] layers onto the token body text (§9/§15).
 abstract final class FluentTextFieldBuilder {
   /// Builds the field for [spec].
   static Widget build(BuildContext context, LanguageTextFieldSpec spec) {

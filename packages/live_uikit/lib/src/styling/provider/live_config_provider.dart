@@ -175,7 +175,7 @@ final class LiveTheme {
 /// The provider — Ant Design's `ConfigProvider`: it turns a [UiConfig] (plus
 /// optional seed / component-token overrides and device facts) into a resolved
 /// [LiveTheme] for the subtree, and can be nested so a region re-themes
-/// independently while the shared token pipeline still applies.
+/// independently while the same dispatch pipeline still applies.
 class LiveConfigProvider extends StatefulWidget {
   /// A provider over [child].
   const new({
@@ -249,9 +249,9 @@ class _LiveConfigProviderState extends State<LiveConfigProvider> with WidgetsBin
     final token = ThemeAlgorithms.resolve(seed, widget.config.algorithms(dark: dark));
     final scale = widget.config.fontScale * widget.systemTextScale;
     final language = widget.config.language;
-    // The single dispatch decision (§15.3): who renders this language, and any
-    // downgrade the fallback policy implies, resolved once and carried in the
-    // theme as [LiveTheme.adapter] + [LiveTheme.implementationKind].
+    // The single dispatch decision (§15.3): which adapter renders this language,
+    // resolved once and carried in the theme as [LiveTheme.adapter]. A language
+    // with no adapter throws rather than degrading.
     final adapter = LiveUiResolver(registry: widget.registry).resolve(language);
     // §15.3 tail: the one thing still worth reporting is an effect the
     // configuration asked for and this device cannot afford. A backdrop blur the

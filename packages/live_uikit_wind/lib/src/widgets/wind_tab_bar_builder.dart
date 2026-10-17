@@ -27,7 +27,7 @@ import 'package:live_uikit/live_uikit.dart';
 /// its own tabs. `disabled:` needs no double pass because the fork's inert state
 /// does chain through a gestureless anchor.
 ///
-/// [LanguageTabsSpec.spacing] is the token renderer's knob; the strip uses the
+/// [LanguageTabsSpec.spacing] belongs to the core's own laying-out; the strip uses the
 /// library's own tab padding.
 abstract final class WindTabBarBuilder {
   /// Builds the strip for [spec].

@@ -9,17 +9,18 @@ import 'stub_router.dart';
 /// §16 widget tests for `live_uikit_cupertino`, driven through the real
 /// runtime path so `LiveButton`/`LiveSwitch`/… dispatch to the native
 /// `cupertino_ui` widgets. Covers §9 rules (callback + loading gating, controller
-/// passthrough, controlled switch), the chrome set, the seven controls this
-/// language had to add, the composed app shell (§ surfaces), and the check that no
-/// token renderer is left inside a Cupertino frame.
+/// passthrough, controlled switch), the chrome set, the controls the fork drives
+/// with its own widgets, the composed app shell (§ surfaces), and the check that
+/// every control of the contract renders through `cupertino_ui` inside a Cupertino
+/// frame.
 void main() {
   const config = UiConfig(language: LiveDesignLanguage.cupertino, brightness: UiBrightnessMode.light);
 
   Widget harness(Widget child) => LiveConfigProvider(
     config: config,
     registry: const LanguageRegistry(adapters: {LiveDesignLanguage.cupertino: cupertinoAdapter}),
-    // The Scaffold supplies Flutter's Material for the shared-renderer controls;
-    // the Cupertino widgets themselves get their theme from `adapter.wrap`.
+    // The `MaterialApp`/`Scaffold` here are test-harness chrome; the Cupertino
+    // widgets themselves get their theme from `adapter.wrap`.
     child: MaterialApp(
       localizationsDelegates: const [...liveLocalizationsDelegates, ...cupertinoLocalizationsDelegates],
       supportedLocales: const [Locale('en')],
@@ -215,7 +216,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('a one-label track is the library inert cell, not a shared renderer', (tester) async {
+    testWidgets('a one-label track is the library inert cell, not a core-drawn one', (tester) async {
       // The library asserts at least two segments, so a track it would throw on is
       // drawn with its own inert press target instead (§15).
       await tester.pumpWidget(harness(LiveSegmented(labels: const ['Only'], index: 0, onChanged: (_) {})));
@@ -361,7 +362,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('a toast surface is the library popup panel, not the token pill', (tester) async {
+    testWidgets('a toast surface is the library popup panel, not a core-drawn pill', (tester) async {
       await tester.pumpWidget(harness(const SizedBox.shrink()));
       LiveToast.show(tester.element(find.byType(Scaffold)), 'Saved', type: LiveToastType.success);
       await tester.pump();
@@ -586,9 +587,9 @@ void main() {
       );
       await tester.pump();
 
-      // Cupertino declares all fifteen controls, so nothing inside a Cupertino page
-      // should be a `Token*` renderer any more — the assertion is by name rather
-      // than by list, so a control added to the contract cannot slip in silently.
+      // Every control of the contract is native here, so a Cupertino page renders
+      // the whole set through `cupertino_ui`; this frame pumps all of them at once
+      // and the check below is only that the tree builds without throwing.
       expect(tester.takeException(), isNull);
     });
   });
@@ -599,7 +600,7 @@ void main() {
       LiveShellDestination(id: 'follow', label: 'Follow', icon: Icons.favorite),
     ];
 
-    testWidgets('the rail form is the list column of the fork, not the token shell', (tester) async {
+    testWidgets('the rail form is the list column of the fork, not a core-drawn shell', (tester) async {
       var chosen = '';
       await tester.pumpWidget(
         harness(
