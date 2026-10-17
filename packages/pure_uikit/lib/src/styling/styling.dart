@@ -14,8 +14,6 @@ library;
 
 // Pure, non-design-language utilities the token components and pages reuse: the
 // background painter + its style, and the static radius / spacing / size scales.
-export '../backgrounds/background_style.dart';
-export '../backgrounds/pure_background.dart';
 export '../scales/radii.dart';
 export '../scales/sizing.dart';
 export '../scales/spacing.dart';

@@ -2,7 +2,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/features/wallpaper/wallpaper_style.dart';
-import 'package:pure_uikit/pure_uikit.dart' show PureBackgroundStyle;
 import 'package:pure_uikit/pure_uikit.dart' show PureCanvasScope;
 import 'package:pure_uikit_background/pure_uikit_background.dart' as bg;
 
@@ -10,12 +9,6 @@ import 'package:pure_uikit_background/pure_uikit_background.dart' as bg;
 /// appearance; null paints nothing and the themed surfaces show.
 final wallpaperBackgroundConfigProvider = Provider<bg.BackgroundConfig?>(
   (ref) => wallpaperConfigOf(ref.watch(appearancePreferencesProvider)),
-);
-
-/// The same wallpaper in `pure_uikit` token form, for the consumers that
-/// style a surface through [PureBackgroundStyle] rather than the layer.
-final wallpaperBackgroundStyleProvider = Provider<PureBackgroundStyle?>(
-  (ref) => wallpaperStyleOf(ref.watch(appearancePreferencesProvider)),
 );
 
 /// Tells the subtree whether a wallpaper currently owns the backdrop, so a
@@ -29,8 +22,7 @@ final class WallpaperScope extends InheritedWidget {
   final bool hasWallpaper;
 
   /// The nearest scope, or null when the layer is not mounted above.
-  static WallpaperScope? maybeOf(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<WallpaperScope>();
+  static WallpaperScope? maybeOf(BuildContext context) => context.dependOnInheritedWidgetOfExactType<WallpaperScope>();
 
   @override
   bool updateShouldNotify(WallpaperScope oldWidget) => oldWidget.hasWallpaper != hasWallpaper;
@@ -66,8 +58,11 @@ final class WallpaperBackgroundLayer extends ConsumerWidget {
       child: WallpaperScope(
         hasWallpaper: config != null,
         child: Stack(
-        fit: StackFit.expand,
-          children: [Positioned.fill(child: bg.PureBackground(config: config)), child],
+          fit: StackFit.expand,
+          children: [
+            Positioned.fill(child: bg.PureBackground(config: config)),
+            child,
+          ],
         ),
       ),
     );
