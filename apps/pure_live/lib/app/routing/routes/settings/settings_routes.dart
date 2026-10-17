@@ -2,9 +2,9 @@ import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:pure_live/app/routing/route_paths.dart';
-import 'package:pure_live/features/settings/appearance_page.dart';
-import 'package:pure_live/features/settings/cache_data_page.dart';
-import 'package:pure_live/features/settings/font_manager_page.dart';
+import 'package:pure_live/features/settings/appearance/appearance_page.dart';
+import 'package:pure_live/features/settings/data/cache_data_page.dart';
+import 'package:pure_live/features/settings/fonts/font_manager_page.dart';
 import 'package:pure_live/features/settings/settings_page.dart';
 
 part 'settings_routes.g.dart';

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/theme/appearance_preferences/appearance_preferences.dart';
-import 'package:pure_live/features/settings/font_manager_page.dart';
+import 'package:pure_live/features/settings/fonts/font_manager_page.dart';
 import 'package:pure_live/features/settings/widgets/settings_sections.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_uikit/pure_uikit.dart';
