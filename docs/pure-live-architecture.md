@@ -202,7 +202,7 @@ lib/
 - **错误:** TransportFailure/SiteError/PlatformException 在 `core/errors.dart` 统一翻译成
   slang 文案;页面不显示原始异常。
 - **l10n:** slang(依赖已备,未铺);delegate 装配已在 `app/delegates.dart`。
-- **诊断:** live_log 输出;distribution 冲突、resolver 降级(`controlUnsupported`)、录制失败
+- **诊断:** live_log 输出;distribution 冲突、resolver 解析失败(`LiveUiResolutionException`)、录制失败
   阶段必须可见。敏感值(cookie/ticket)脱敏后才能进日志。
 - **测试纪律:** 纯逻辑离线测试进各包 `test/`(站点编解码/解析/定价为逐站 DoD);
   `tool/check_architecture.ps1` 是提交门禁;**提交前 `git status`,绝不混入并行 WIP**。
