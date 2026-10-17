@@ -1,16 +1,19 @@
+import 'package:flutter/foundation.dart' show TargetPlatform, debugDefaultTargetPlatformOverride;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_uikit/live_uikit.dart';
 import 'package:live_uikit_material/live_uikit_material.dart';
 import 'package:material_ui/material_ui.dart' as mu;
 
-/// The controls `live_uikit_material` renders natively (§3.1 capability
-/// declaration): all fifteen the resolver dispatches — the controls, the four
-/// chrome pieces, and the three the fork drives differently from the neutral
-/// spec: `select` is a `DropdownButton`, `tabBar` a `TabBar` behind a controller
-/// the adapter owns, and `toast` a `Material` card themed by the fork's own
-/// `SnackBarThemeData` — a `SnackBar` needs the animation a
-/// `ScaffoldMessenger` owns, and the core keeps the overlay and the timer.
+/// The controls `live_uikit_material` renders itself (§3.1 capability
+/// declaration): all seventeen the resolver dispatches — the eight input and
+/// container controls, the four chrome pieces, and the five the fork drives
+/// differently from the neutral spec: `select` is a `DropdownButton`, `tabBar` a
+/// `TabBar` behind a controller this package owns, `tabView` a `TabBarView` behind a
+/// second one, `dialog` an `AlertDialog` handed back as a plain surface, and `toast`
+/// a `Material` card themed by the fork's own `SnackBarThemeData` — a `SnackBar`
+/// needs the animation a `ScaffoldMessenger` owns, and the core keeps the overlay
+/// and the timer.
 const Set<LiveUiControl> nativeControls = {
   LiveUiControl.button,
   LiveUiControl.card,
@@ -36,17 +39,16 @@ const Set<LiveUiSurface> nativeSurfaces = <LiveUiSurface>{LiveUiSurface.appHost,
 
 /// §16 integration pass for `live_uikit_material`.
 ///
-/// Material UI and the shared `token` base are the pair §11 calls the most
-/// error-prone to switch between: both are Material-shaped, so a stale fork theme
-/// or a mis-imported SDK type survives a switch unnoticed. These tests drive the
-/// real [LiveConfigProvider] → [LiveUiResolver] → adapter path in both
-/// directions, keep one caller-owned controller across the switch, and check the
-/// diagnostics a switch is expected to produce — and only those.
-/// The downgrades this language is expected to report: none, because nothing in
-/// the contract falls back any more (§15.5/§16.8).
-/// Nothing in the contract falls back any more: the resolver hands back this
-/// language's adapter, so a run that renders it reports no control or surface
-/// downgrade at all (§15.5/§16.8).
+/// Material UI and the SDK's own Material are the pair §11 calls the most
+/// error-prone to tell apart: both are Material-shaped, so a stale fork theme or a
+/// mis-imported SDK type survives a re-pump unnoticed. These tests drive the real
+/// [LiveConfigProvider] → [LiveUiResolver] → adapter path, keep one caller-owned
+/// controller across the pumps, and check the diagnostics a Material run is expected
+/// to produce.
+///
+/// Which is none: the resolver hands back this language's own adapter for every
+/// control and both surfaces, so a run that renders Material UI reports no control
+/// or surface diagnostic at all (§15.5/§16.8).
 void expectUndeclaredControls(List<LiveUiDiagnostic> sink) {
   expect(
     sink.where((diagnostic) => diagnostic.control != null || diagnostic.surface != null),
@@ -96,6 +98,17 @@ void main() {
     });
   });
 
+  // Drives a body under a platform whose Material ink needs no fragment shader,
+  // and restores the override before the binding's invariant check runs.
+  Future<void> withInkPlatform(Future<void> Function() body) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    try {
+      await body();
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  }
+
   group('runtime switching (§11)', () {
     testWidgets('Material UI ↔ its own library widgets replaces the theme scope both ways', (tester) async {
       final diagnostics = <LiveUiDiagnostic>[];
@@ -120,10 +133,10 @@ void main() {
         ],
       );
 
-      // §16.7: the controls Material UI serves through the shared renderer — the
-      // two exercised here, tabs and select — must stay usable, and keep their
-      // typed selection, whichever language is drawing the rest of the page.
-      Future<void> useFallbackControls() async {
+      // §16.7: tabs and select are the two controls whose rendering moves most
+      // between the fork and another language, so both sides are exercised —
+      // usable, and keeping their typed selection, whichever language draws them.
+      Future<void> useSwitchedControls() async {
         tabs = -1;
         selected = '';
         await tester.tap(find.text('Two'));
@@ -136,24 +149,29 @@ void main() {
         expect(selected, 'b', reason: 'select must stay typed and callable');
       }
 
-      await tester.pumpWidget(harness(config(LiveDesignLanguage.material), page(), diagnostics));
-      expect(find.byType(mu.TextField), findsOneWidget);
-      expect(find.byType(TextField), findsNothing);
-      expect(find.byType(mu.Switch), findsOneWidget);
-      expect(find.byType(mu.Theme), findsWidgets);
-      expectUndeclaredControls(diagnostics);
-      await useFallbackControls();
+      // The whole tree is built and pressed under a desktop platform: the fork
+      // paints `InkSparkle` — a shader `flutter test` does not bundle — whenever
+      // the theme's platform is Android, which the test binding reports by default.
+      await withInkPlatform(() async {
+        await tester.pumpWidget(harness(config(LiveDesignLanguage.material), page(), diagnostics));
+        expect(find.byType(mu.TextField), findsOneWidget);
+        expect(find.byType(TextField), findsNothing);
+        expect(find.byType(mu.Switch), findsOneWidget);
+        expect(find.byType(mu.Theme), findsWidgets);
+        expectUndeclaredControls(diagnostics);
+        await useSwitchedControls();
 
-      await useFallbackControls();
+        await useSwitchedControls();
 
-      // And back in: a fresh fork scope, not the stale one.
-      diagnostics.clear();
-      await tester.pumpWidget(harness(config(LiveDesignLanguage.material), page(), diagnostics));
-      expect(find.byType(mu.TextField), findsOneWidget);
-      expect(find.byType(mu.Theme), findsWidgets);
-      expect(controller.text, 'typed before the switch');
-      expectUndeclaredControls(diagnostics);
-      await useFallbackControls();
+        // And back in: a fresh fork scope, not the stale one.
+        diagnostics.clear();
+        await tester.pumpWidget(harness(config(LiveDesignLanguage.material), page(), diagnostics));
+        expect(find.byType(mu.TextField), findsOneWidget);
+        expect(find.byType(mu.Theme), findsWidgets);
+        expect(controller.text, 'typed before the switch');
+        expectUndeclaredControls(diagnostics);
+        await useSwitchedControls();
+      });
     });
 
     testWidgets('brightness and accent re-skin Material UI without a restart (§16.4)', (tester) async {

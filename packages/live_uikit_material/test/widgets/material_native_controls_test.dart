@@ -14,11 +14,11 @@ import 'stub_router.dart';
 ///
 /// Every control is driven through the real runtime path — a [LiveConfigProvider]
 /// with the Material UI adapter registered, so `LiveButton`, `LiveSwitch`, …
-/// dispatch to the native `material_ui` widgets rather than the shared renderer.
+/// dispatch to the native `material_ui` widgets the fork ships.
 /// Assertions cover the contract rules in §9 (callback preservation, disabled /
 /// loading gating, controlled value, controller passthrough) plus a render smoke
-/// for the controls and the fallback path, so a break in the adapter→library
-/// wiring fails here instead of in the app.
+/// for every control, including the two inert forms this package draws itself, so a
+/// break in the adapter→library wiring fails here instead of in the app.
 void main() {
   const config = UiConfig(language: LiveDesignLanguage.material, brightness: UiBrightnessMode.light);
 
@@ -134,10 +134,11 @@ void main() {
     });
   });
 
-  group('shared fallback (§15.3)', () {
-    testWidgets('a control the adapter does not override still renders', (tester) async {
-      // Material UI declares neither select nor tabs; they resolve through the
-      // shared token renderer the adapter extends, so nothing disappears.
+  group('select and tabs (§15.3)', () {
+    testWidgets('the two late-added controls render and stay callable', (tester) async {
+      // Select and the tab strip are the two controls whose fork widgets need
+      // extra state — a hint slot and a controller — so they get an explicit
+      // render-and-tap pass of their own.
       await tester.pumpWidget(
         harness(
           SizedBox(
@@ -565,34 +566,36 @@ void main() {
     testWidgets('the frame, bar, row and bottom strip render through the fork', (tester) async {
       var taps = 0;
       var picked = -1;
-      await tester.pumpWidget(
-        harness(
-          SizedBox(
-            width: 640,
-            height: 480,
-            child: LiveScaffold(
-              appBar: const LiveAppBar(title: 'Rooms'),
-              body: LiveListRow(title: 'Accent', subtitle: 'violet', onTap: () => taps++),
-              bottomBar: LiveNavBar(
-                items: const [
-                  LiveNavBarItem(label: 'Home', icon: Icons.home),
-                  LiveNavBarItem(label: 'More', icon: Icons.more_horiz),
-                ],
-                index: 0,
-                onChanged: (i) => picked = i,
+      // Built under a desktop platform too: the strip's own ink picks `InkSparkle`
+      // on the binding's default Android platform, and its shader is not bundled.
+      await withInkPlatform(() async {
+        await tester.pumpWidget(
+          harness(
+            SizedBox(
+              width: 640,
+              height: 480,
+              child: LiveScaffold(
+                appBar: const LiveAppBar(title: 'Rooms'),
+                body: LiveListRow(title: 'Accent', subtitle: 'violet', onTap: () => taps++),
+                bottomBar: LiveNavBar(
+                  items: const [
+                    LiveNavBarItem(label: 'Home', icon: Icons.home),
+                    LiveNavBarItem(label: 'More', icon: Icons.more_horiz),
+                  ],
+                  index: 0,
+                  onChanged: (i) => picked = i,
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.byType(mu.Scaffold), findsOneWidget);
-      expect(find.byType(mu.AppBar), findsOneWidget);
-      expect(find.byType(mu.ListTile), findsOneWidget);
-      expect(find.byType(mu.NavigationBar), findsOneWidget);
-      expect(tester.takeException(), isNull);
+        expect(find.byType(mu.Scaffold), findsOneWidget);
+        expect(find.byType(mu.AppBar), findsOneWidget);
+        expect(find.byType(mu.ListTile), findsOneWidget);
+        expect(find.byType(mu.NavigationBar), findsOneWidget);
+        expect(tester.takeException(), isNull);
 
-      await withInkPlatform(() async {
         await tester.tap(find.byType(mu.ListTile));
         await tester.pump();
         expect(taps, 1);
@@ -605,35 +608,37 @@ void main() {
 
     testWidgets('a disabled bottom strip keeps its destinations and stops reporting', (tester) async {
       var picked = -1;
-      await tester.pumpWidget(
-        harness(
-          SizedBox(
-            width: 640,
-            child: LiveNavBar(
-              items: const [
-                LiveNavBarItem(label: 'Home', icon: Icons.home),
-                LiveNavBarItem(label: 'More', icon: Icons.more_horiz),
-              ],
-              index: 0,
-              enabled: false,
-              onChanged: (i) => picked = i,
+      // The fork still draws ink on a bar whose callback is dropped, so the theme
+      // has to be built under a platform whose ink needs no shader (§15).
+      await withInkPlatform(() async {
+        await tester.pumpWidget(
+          harness(
+            SizedBox(
+              width: 640,
+              child: LiveNavBar(
+                items: const [
+                  LiveNavBarItem(label: 'Home', icon: Icons.home),
+                  LiveNavBarItem(label: 'More', icon: Icons.more_horiz),
+                ],
+                index: 0,
+                enabled: false,
+                onChanged: (i) => picked = i,
+              ),
             ),
           ),
-        ),
-      );
-      final bar = tester.widget<mu.NavigationBar>(find.byType(mu.NavigationBar));
-      expect(bar.onDestinationSelected, isNull);
-      await withInkPlatform(() async {
+        );
+        final bar = tester.widget<mu.NavigationBar>(find.byType(mu.NavigationBar));
+        expect(bar.onDestinationSelected, isNull);
         await tester.tap(find.text('Home'));
         await tester.pump();
+        expect(picked, -1);
       });
-      expect(picked, -1);
     });
 
     testWidgets('a strip the library cannot assert for is the fork inert bar', (tester) async {
       // The fork requires two destinations and an in-range selection, and one
       // destination is not a selection either: the bar keeps its surface and an
-      // inert cell instead of crashing or falling through (§15).
+      // inert cell instead of crashing (§15).
       var picked = -1;
       await tester.pumpWidget(
         harness(
@@ -652,8 +657,10 @@ void main() {
       expect(find.byKey(MaterialLanguageAdapter.inertNavBarKey), findsOneWidget);
       expect(find.text('Home'), findsOneWidget);
 
-      await tester.tap(find.text('Home'));
-      await tester.pump();
+      await withInkPlatform(() async {
+        await tester.tap(find.text('Home'));
+        await tester.pump();
+      });
       expect(picked, -1, reason: 'an inert cell keeps its label and stops reporting');
       expect(tester.takeException(), isNull);
 
@@ -793,7 +800,7 @@ void main() {
       });
     });
 
-    testWidgets('a toast surface is the themed card of the fork, not the token pill', (tester) async {
+    testWidgets('a toast surface is the themed card of the fork, not a core-drawn pill', (tester) async {
       await tester.pumpWidget(harness(const SizedBox.shrink()));
       LiveToast.show(tester.element(find.byType(SizedBox)), 'Saved', type: LiveToastType.success);
       await tester.pump();
@@ -808,7 +815,7 @@ void main() {
     });
   });
 
-  group('no token renderer inside a Material frame (§15.3)', () {
+  group('no core-drawn control inside a Material frame (§15.3)', () {
     testWidgets('the whole chrome set draws from the fork, not from the shared base', (tester) async {
       await tester.pumpWidget(
         harness(
@@ -849,7 +856,7 @@ void main() {
   });
 
   group('the dialog surface and the page view (§9)', () {
-    testWidgets('the core route hands the surface to the fork, not to the token card', (tester) async {
+    testWidgets('the core route hands the surface to the fork, not to a core-drawn card', (tester) async {
       await tester.pumpWidget(harness(const SizedBox.shrink()));
       unawaited(
         showLiveDialog<void>(
@@ -864,8 +871,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // The surface is the adapter's; the route, the barrier and the centred frame
-      // stayed in the core, so no token dialog is drawn under a Material page.
+      // The surface is this package's; the route, the barrier and the centred frame
+      // stayed in the core, so the dialog under a Material page is the fork's own.
       expect(find.byType(mu.AlertDialog), findsOneWidget);
       expect(find.text('Leave the room?'), findsOneWidget);
       expect(find.text('The stream keeps running.'), findsOneWidget);
@@ -937,7 +944,7 @@ void main() {
       LiveShellDestination(id: 'follow', label: 'Follow', icon: Icons.favorite),
     ];
 
-    testWidgets('the rail form draws mu.NavigationRail, not the token column', (tester) async {
+    testWidgets('the rail form draws mu.NavigationRail, not a core-drawn column', (tester) async {
       var chosen = '';
       await withInkPlatform(() async {
         await tester.pumpWidget(
