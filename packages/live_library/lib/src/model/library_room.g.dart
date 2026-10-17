@@ -42,6 +42,8 @@ _WatchRecord _$WatchRecordFromJson(Map<String, dynamic> json) => _WatchRecord(
   room: LiveRoom.fromJson(json['room'] as Map<String, dynamic>),
   watchedAt: DateTime.parse(json['watchedAt'] as String),
   seq: (json['seq'] as num?)?.toInt() ?? 0,
+  progress: (json['progress'] as num?)?.toDouble(),
+  position: const DurationMillisConverter().fromJson(json['position']),
 );
 
 Map<String, dynamic> _$WatchRecordToJson(_WatchRecord instance) =>
@@ -49,4 +51,6 @@ Map<String, dynamic> _$WatchRecordToJson(_WatchRecord instance) =>
       'room': instance.room,
       'watchedAt': instance.watchedAt.toIso8601String(),
       'seq': instance.seq,
+      'progress': instance.progress,
+      'position': const DurationMillisConverter().toJson(instance.position),
     };

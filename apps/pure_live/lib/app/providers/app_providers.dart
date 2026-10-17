@@ -3,6 +3,7 @@ import 'package:live_iptv/live_iptv.dart' show IptvLibrary;
 import 'package:live_library/live_library.dart' show FollowRepository, HistoryRepository;
 import 'package:live_net/live_net.dart' show LiveHttp;
 import 'package:live_platform/live_platform.dart' show PlatformEnvironment;
+import 'package:live_shell/live_shell.dart' show InstanceChannel;
 import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart' show StorageBootstrap;
 import 'package:pure_live/app/composition/sites.dart';
@@ -37,6 +38,19 @@ final pathsProvider = Provider<AppPaths>((ref) => throw UnimplementedError('over
 /// The booted shell preferences (title-bar mode, remembered close action),
 /// overridden at start-up; null off the desktop, where no shell exists.
 final shellPreferencesProvider = Provider<ShellPreferencesStore?>((ref) => null);
+
+/// The desktop single-instance channel this process took at start-up — the
+/// door every second launch's request arrives through — and null off the
+/// desktop, where there is no instance logic. Overridden in the composition
+/// root; the router subscribes to its forwarded requests (deep_link).
+final desktopInstanceChannelProvider = Provider<InstanceChannel?>((ref) => null);
+
+/// Brings the desktop window to the front, before a launch request acts on
+/// it — a room opened into a hidden window is a taskbar icon that appears
+/// to do nothing. The composition root overrides this with the desktop
+/// entry's own show-and-focus; the default no-op covers every platform
+/// without a window to raise.
+final revealMainWindowProvider = Provider<Future<void> Function()>((ref) => () async {});
 
 /// The title-bar mode this start was launched with.
 ///

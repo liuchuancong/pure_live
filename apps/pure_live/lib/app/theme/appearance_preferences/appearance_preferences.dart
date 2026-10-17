@@ -15,6 +15,21 @@ enum AppThemeMode {
   dark,
 }
 
+/// What the app-wide wallpaper layer paints behind the pages.
+enum WallpaperKind {
+  /// No wallpaper: the themed surfaces show.
+  none,
+
+  /// One flat colour.
+  solid,
+
+  /// A linear gradient from the built-in catalog.
+  gradient,
+
+  /// A picture on the device.
+  image,
+}
+
 /// The user's appearance choices, as persisted.
 ///
 /// Every field is a primitive or a registry id — never a `pure_uikit` type.
@@ -62,6 +77,41 @@ abstract class AppearancePreferences with _$AppearancePreferences {
 
     /// Whether focused controls draw a visible outline.
     @Default(true) bool focusOutline,
+
+    /// What the wallpaper layer paints behind the pages.
+    @Default(WallpaperKind.none) WallpaperKind wallpaperKind,
+
+    /// The solid wallpaper colour as a 32-bit ARGB value; read when
+    /// [WallpaperKind.solid].
+    int? wallpaperColor,
+
+    /// The gradient stops as 32-bit ARGB values, in order; two or more when
+    /// [WallpaperKind.gradient]. Stored as colours rather than a catalog id,
+    /// so a preset being renamed or removed never breaks a stored choice.
+    @Default(<int>[]) List<int> wallpaperGradientColors,
+
+    /// The gradient direction as a CSS angle (0 points up, clockwise
+    /// positive); the wallpaper feature converts it to alignments.
+    @Default(0) int wallpaperGradientAngle,
+
+    /// The gradient stop positions, aligned with
+    /// [wallpaperGradientColors]; empty spaces them evenly.
+    @Default(<double>[]) List<double> wallpaperGradientStops,
+
+    /// The wallpaper picture's absolute path; read when
+    /// [WallpaperKind.image]. A path that no longer exists degrades the
+    /// wallpaper to none at resolve time.
+    @Default('') String wallpaperImagePath,
+
+    /// How the wallpaper picture fills the surface, as a `BoxFit` name
+    /// (`cover`, `contain` or `fill`); anything else resolves to cover.
+    @Default('cover') String wallpaperFit,
+
+    /// The Gaussian blur over the wallpaper picture, 0..20.
+    @Default(0.0) double wallpaperBlur,
+
+    /// How strongly the wallpaper picture is dimmed for legibility, 0..1.
+    @Default(0.35) double wallpaperScrim,
   }) = _AppearancePreferences;
 
   /// Restores appearance preferences from JSON.

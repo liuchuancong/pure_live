@@ -65,6 +65,12 @@ final class AppearancePage extends ConsumerWidget {
                 onTap: () => _chooseAccent(context, update),
               ),
               SettingsEntryTile(
+                icon: Icons.wallpaper_outlined,
+                title: t.wallpaper.title,
+                subtitle: _wallpaperSummary(context, appearance),
+                onTap: () => const WallpaperRoute().push<void>(context),
+              ),
+              SettingsEntryTile(
                 icon: Icons.format_line_spacing,
                 title: t.settings.density,
                 subtitle: t.settings.densitySubtitle,
@@ -160,6 +166,15 @@ final class AppearancePage extends ConsumerWidget {
     final family = appearance.fontFamily;
     return (family == null || family.isEmpty) ? context.t.fonts.system : family;
   }
+
+  /// One line on what the wallpaper layer currently paints.
+  static String _wallpaperSummary(BuildContext context, AppearancePreferences appearance) =>
+      switch (appearance.wallpaperKind) {
+        WallpaperKind.none => context.t.wallpaper.currentNone,
+        WallpaperKind.solid => context.t.wallpaper.currentSolid,
+        WallpaperKind.gradient => context.t.wallpaper.currentGradient,
+        WallpaperKind.image => context.t.wallpaper.currentImage,
+      };
 
   static Future<void> _chooseThemeMode(
     BuildContext context,

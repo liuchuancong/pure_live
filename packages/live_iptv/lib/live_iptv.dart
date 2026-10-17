@@ -19,6 +19,12 @@
 /// The one implementation of that seam lives in `live_net_line_probe.dart`,
 /// which adapts live_net's `MediaProbe` and is the only file here that knows
 /// a transport exists.
+///
+/// An Xtream Codes account is read without a playlist at all:
+/// `XtreamCatalogService` asks the server's player API for its live streams
+/// and hands back ordinary `IptvChannel`s. A downloaded programme guide
+/// becomes an `EpgGuide`, whose lookups answer what is on a channel now and
+/// what comes next.
 library;
 
 export 'src/catchup/catchup.dart';
@@ -33,3 +39,4 @@ export 'src/order/iptv_zap_sequence.dart';
 export 'src/playlist/playlist.dart';
 export 'src/probe/probe.dart';
 export 'src/sync/sync.dart';
+export 'src/xtream/xtream_catalog_service/xtream_catalog_service.dart';

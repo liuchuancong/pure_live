@@ -598,7 +598,7 @@ as int,
 /// @nodoc
 mixin _$WatchRecord {
 
- LiveRoom get room; DateTime get watchedAt; int get seq;
+ LiveRoom get room; DateTime get watchedAt; int get seq; double? get progress;@DurationMillisConverter() Duration? get position;
 /// Create a copy of WatchRecord
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -612,20 +612,20 @@ $WatchRecordCopyWith<WatchRecord> get copyWith => _$WatchRecordCopyWithImpl<Watc
 @override
 bool operator ==(Object other) {
   final _this = this as WatchRecord;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WatchRecord&&(identical(other.room, _this.room) || other.room == _this.room)&&(identical(other.watchedAt, _this.watchedAt) || other.watchedAt == _this.watchedAt)&&(identical(other.seq, _this.seq) || other.seq == _this.seq));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WatchRecord&&(identical(other.room, _this.room) || other.room == _this.room)&&(identical(other.watchedAt, _this.watchedAt) || other.watchedAt == _this.watchedAt)&&(identical(other.seq, _this.seq) || other.seq == _this.seq)&&(identical(other.progress, _this.progress) || other.progress == _this.progress)&&(identical(other.position, _this.position) || other.position == _this.position));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as WatchRecord;
-  return Object.hash(runtimeType,_this.room,_this.watchedAt,_this.seq);
+  return Object.hash(runtimeType,_this.room,_this.watchedAt,_this.seq,_this.progress,_this.position);
 }
 
 @override
 String toString() {
   final _this = this as WatchRecord;
-  return 'WatchRecord(room: ${_this.room}, watchedAt: ${_this.watchedAt}, seq: ${_this.seq})';
+  return 'WatchRecord(room: ${_this.room}, watchedAt: ${_this.watchedAt}, seq: ${_this.seq}, progress: ${_this.progress}, position: ${_this.position})';
 }
 
 
@@ -636,7 +636,7 @@ abstract mixin class $WatchRecordCopyWith<$Res>  {
   factory $WatchRecordCopyWith(WatchRecord value, $Res Function(WatchRecord) _then) = _$WatchRecordCopyWithImpl;
 @useResult
 $Res call({
- LiveRoom room, DateTime watchedAt, int seq
+ LiveRoom room, DateTime watchedAt, int seq, double? progress,@DurationMillisConverter() Duration? position
 });
 
 
@@ -653,12 +653,14 @@ class _$WatchRecordCopyWithImpl<$Res>
 
 /// Create a copy of WatchRecord
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? room = null,Object? watchedAt = null,Object? seq = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? room = null,Object? watchedAt = null,Object? seq = null,Object? progress = freezed,Object? position = freezed,}) {
   return _then(WatchRecord(
 room: null == room ? _self.room : room // ignore: cast_nullable_to_non_nullable
 as LiveRoom,watchedAt: null == watchedAt ? _self.watchedAt : watchedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,seq: null == seq ? _self.seq : seq // ignore: cast_nullable_to_non_nullable
-as int,
+as int,progress: freezed == progress ? _self.progress : progress // ignore: cast_nullable_to_non_nullable
+as double?,position: freezed == position ? _self.position : position // ignore: cast_nullable_to_non_nullable
+as Duration?,
   ));
 }
 /// Create a copy of WatchRecord
@@ -752,10 +754,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LiveRoom room,  DateTime watchedAt,  int seq)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LiveRoom room,  DateTime watchedAt,  int seq,  double? progress, @DurationMillisConverter()  Duration? position)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _WatchRecord() when $default != null:
-return $default(_that.room,_that.watchedAt,_that.seq);case _:
+return $default(_that.room,_that.watchedAt,_that.seq,_that.progress,_that.position);case _:
   return orElse();
 
 }
@@ -773,10 +775,10 @@ return $default(_that.room,_that.watchedAt,_that.seq);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LiveRoom room,  DateTime watchedAt,  int seq)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LiveRoom room,  DateTime watchedAt,  int seq,  double? progress, @DurationMillisConverter()  Duration? position)  $default,) {final _that = this;
 switch (_that) {
 case _WatchRecord():
-return $default(_that.room,_that.watchedAt,_that.seq);case _:
+return $default(_that.room,_that.watchedAt,_that.seq,_that.progress,_that.position);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -793,10 +795,10 @@ return $default(_that.room,_that.watchedAt,_that.seq);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LiveRoom room,  DateTime watchedAt,  int seq)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LiveRoom room,  DateTime watchedAt,  int seq,  double? progress, @DurationMillisConverter()  Duration? position)?  $default,) {final _that = this;
 switch (_that) {
 case _WatchRecord() when $default != null:
-return $default(_that.room,_that.watchedAt,_that.seq);case _:
+return $default(_that.room,_that.watchedAt,_that.seq,_that.progress,_that.position);case _:
   return null;
 
 }
@@ -808,12 +810,14 @@ return $default(_that.room,_that.watchedAt,_that.seq);case _:
 @JsonSerializable()
 
 class _WatchRecord implements WatchRecord {
-  const _WatchRecord({required this.room, required this.watchedAt, this.seq = 0});
+  const _WatchRecord({required this.room, required this.watchedAt, this.seq = 0, this.progress, @DurationMillisConverter() this.position});
   factory _WatchRecord.fromJson(Map<String, dynamic> json) => _$WatchRecordFromJson(json);
 
 @override final  LiveRoom room;
 @override final  DateTime watchedAt;
 @override@JsonKey() final  int seq;
+@override final  double? progress;
+@override@DurationMillisConverter() final  Duration? position;
 
 /// Create a copy of WatchRecord
 /// with the given fields replaced by the non-null parameter values.
@@ -828,18 +832,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WatchRecord&&(identical(other.room, room) || other.room == room)&&(identical(other.watchedAt, watchedAt) || other.watchedAt == watchedAt)&&(identical(other.seq, seq) || other.seq == seq));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WatchRecord&&(identical(other.room, room) || other.room == room)&&(identical(other.watchedAt, watchedAt) || other.watchedAt == watchedAt)&&(identical(other.seq, seq) || other.seq == seq)&&(identical(other.progress, progress) || other.progress == progress)&&(identical(other.position, position) || other.position == position));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,room,watchedAt,seq);
+    return Object.hash(runtimeType,room,watchedAt,seq,progress,position);
 }
 
 @override
 String toString() {
-    return 'WatchRecord(room: $room, watchedAt: $watchedAt, seq: $seq)';
+    return 'WatchRecord(room: $room, watchedAt: $watchedAt, seq: $seq, progress: $progress, position: $position)';
 }
 
 
@@ -850,7 +854,7 @@ abstract mixin class _$WatchRecordCopyWith<$Res> implements $WatchRecordCopyWith
   factory _$WatchRecordCopyWith(_WatchRecord value, $Res Function(_WatchRecord) _then) = __$WatchRecordCopyWithImpl;
 @override @useResult
 $Res call({
- LiveRoom room, DateTime watchedAt, int seq
+ LiveRoom room, DateTime watchedAt, int seq, double? progress,@DurationMillisConverter() Duration? position
 });
 
 
@@ -867,12 +871,14 @@ class __$WatchRecordCopyWithImpl<$Res>
 
 /// Create a copy of WatchRecord
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? room = null,Object? watchedAt = null,Object? seq = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? room = null,Object? watchedAt = null,Object? seq = null,Object? progress = freezed,Object? position = freezed,}) {
   return _then(_WatchRecord(
 room: null == room ? _self.room : room // ignore: cast_nullable_to_non_nullable
 as LiveRoom,watchedAt: null == watchedAt ? _self.watchedAt : watchedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,seq: null == seq ? _self.seq : seq // ignore: cast_nullable_to_non_nullable
-as int,
+as int,progress: freezed == progress ? _self.progress : progress // ignore: cast_nullable_to_non_nullable
+as double?,position: freezed == position ? _self.position : position // ignore: cast_nullable_to_non_nullable
+as Duration?,
   ));
 }
 

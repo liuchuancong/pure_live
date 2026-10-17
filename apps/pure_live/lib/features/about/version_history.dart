@@ -1,6 +1,7 @@
 import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:pure_live/features/about/markdown_text.dart';
 import 'package:pure_live/features/about/update_feed.dart';
 import 'package:pure_live/features/version/app_update_flow.dart';
@@ -15,9 +16,10 @@ import 'package:pure_uikit/pure_uikit.dart';
 /// app's routes own no history page, so the same presentation runs as a
 /// sheet: two panes when the sheet is wide, list + dialog when narrow.
 ///
-/// The reference's download-files section needs per-release asset metadata,
-/// which the app's feed does not carry, so it has nothing to show and is
-/// left out.
+/// The changelog detail carries the reference's download-files section: the
+/// release's published files, each with its size and download count and
+/// copy/download actions — downloading hands the file's URL to the system
+/// browser, the app ships no download pipeline of its own.
 
 /// Opens the history as a sheet over [context].
 Future<void> showVersionHistorySheet(
@@ -269,12 +271,54 @@ final class _VersionHistorySheetState extends State<VersionHistorySheet> {
                 border: Border.all(color: theme.colors.border.withValues(alpha: 0.3)),
               ),
               padding: const EdgeInsets.all(20),
-              child: SingleChildScrollView(child: MarkdownText(release.body)),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [MarkdownText(release.body), ..._filesSection(context, release)],
+                ),
+              ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// The changelog detail's download-files section: the release's published
+  /// files (3.x `_VersionChangelogAndFilesWidget`'s tail), empty when the
+  /// release publishes none.
+  List<Widget> _filesSection(BuildContext context, AppRelease release) {
+    if (release.assets.isEmpty) {
+      return const <Widget>[];
+    }
+    return [
+      const SizedBox(height: 20),
+      Text(context.t.about.downloadFiles, style: PureTheme.of(context).text.body.copyWith(fontWeight: FontWeight.bold)),
+      const SizedBox(height: 10),
+      for (final asset in release.assets)
+        ReleaseFileCard(
+          asset: asset,
+          onCopy: () => unawaited(_copyAssetLink(context, asset)),
+          onDownload: () {
+            final uri = asset.uri;
+            if (uri != null) {
+              unawaited(openReleaseUri(context, uri));
+            }
+          },
+        ),
+    ];
+  }
+
+  /// Copies an asset's download link (3.x `_copyDownloadLink`).
+  Future<void> _copyAssetLink(BuildContext context, ReleaseAsset asset) async {
+    final uri = asset.uri;
+    if (uri == null) {
+      return;
+    }
+    await Clipboard.setData(ClipboardData(text: uri.toString()));
+    if (context.mounted) {
+      PureToast.show(context, context.t.about.copied, type: PureToastType.success);
+    }
   }
 
   /// The narrow layout's detail dialog (3.x `_showMobileDetailsDialog`).
@@ -296,6 +340,7 @@ final class _VersionHistorySheetState extends State<VersionHistorySheet> {
                 ),
               const SizedBox(height: 8),
               MarkdownText(release.body),
+              ..._filesSection(context, release),
             ],
           ),
         ),
@@ -316,6 +361,79 @@ final class _VersionHistorySheetState extends State<VersionHistorySheet> {
           onPressed: () => Navigator.of(dialogContext).pop(),
         ),
       ],
+    );
+  }
+}
+
+/// One published release file (3.x `_ReleaseFileCard`): the file's name over
+/// its size and download count, with copy-link and download actions —
+/// downloading hands the URL to the system browser, so it is the same
+/// external-launch the release page uses.
+final class ReleaseFileCard extends StatelessWidget {
+  /// Shows [asset] with [onCopy] and [onDownload] as its actions.
+  const new({required this.asset, required this.onCopy, required this.onDownload, super.key});
+
+  /// The release file.
+  final ReleaseAsset asset;
+
+  /// Copies the file's download link.
+  final VoidCallback onCopy;
+
+  /// Downloads the file (opens it in the system browser).
+  final VoidCallback onDownload;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = PureTheme.of(context);
+    final hasLink = asset.uri != null;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: theme.colors.fillSecondary.withValues(alpha: 0.35),
+        border: Border.all(color: theme.colors.border.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(color: theme.colors.primaryBg, borderRadius: BorderRadius.circular(10)),
+            child: Icon(Icons.insert_drive_file_outlined, color: theme.colors.primary, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  asset.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.text.body.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  context.t.about.assetMeta(size: asset.sizeLabel, count: asset.downloads),
+                  style: theme.text.caption.copyWith(color: theme.colors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          PureIconButton(
+            tooltip: context.t.about.copyLink,
+            icon: Icons.copy_outlined,
+            onPressed: hasLink ? onCopy : null,
+          ),
+          PureIconButton(
+            tooltip: context.t.about.download,
+            icon: Icons.download_outlined,
+            onPressed: hasLink ? onDownload : null,
+          ),
+        ],
+      ),
     );
   }
 }

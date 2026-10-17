@@ -44,7 +44,10 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$home$en home = _Translations$home$en._(_root);
 	@override late final _Translations$common$en common = _Translations$common$en._(_root);
 	@override late final _Translations$tray$en tray = _Translations$tray$en._(_root);
+	@override late final _Translations$login$en login = _Translations$login$en._(_root);
+	@override late final _Translations$account$en account = _Translations$account$en._(_root);
 	@override late final _Translations$settings$en settings = _Translations$settings$en._(_root);
+	@override late final _Translations$recorder$en recorder = _Translations$recorder$en._(_root);
 	@override late final _Translations$theme$en theme = _Translations$theme$en._(_root);
 	@override late final _Translations$design$en design = _Translations$design$en._(_root);
 	@override late final _Translations$room$en room = _Translations$room$en._(_root);
@@ -67,6 +70,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$closePrompt$en closePrompt = _Translations$closePrompt$en._(_root);
 	@override late final _Translations$shellSettings$en shellSettings = _Translations$shellSettings$en._(_root);
 	@override late final _Translations$webdav$en webdav = _Translations$webdav$en._(_root);
+	@override late final _Translations$wallpaper$en wallpaper = _Translations$wallpaper$en._(_root);
 }
 
 // Path: app
@@ -128,6 +132,43 @@ class _Translations$tray$en extends Translations$tray$zh {
 	@override String get quit => 'Quit';
 }
 
+// Path: login
+class _Translations$login$en extends Translations$login$zh {
+	_Translations$login$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Sign in';
+	@override String get generating => 'Generating QR code';
+	@override String get waitingScan => 'Waiting for scan';
+	@override String get scanHint => 'Open the bilibili app and scan this code to confirm the sign-in.';
+	@override String get success => 'Signed in';
+	@override String welcome({required String name}) => 'Welcome, ${name}';
+	@override String get expired => 'The QR code has expired';
+	@override String get refreshQr => 'Refresh code';
+	@override String get failed => 'The sign-in did not go through';
+	@override String get done => 'Done';
+	@override String get unsupported => 'This build has no bilibili sign-in capability';
+}
+
+// Path: account
+class _Translations$account$en extends Translations$account$zh {
+	_Translations$account$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Account';
+	@override String get notSignedIn => 'Not signed in';
+	@override String get notSignedInHint => 'Sign in to bilibili and the live requests carry your account with them.';
+	@override String get signOut => 'Sign out';
+	@override String get signOutConfirm => 'Sign out of bilibili?';
+	@override String get signOutHint => 'The saved cookies are removed from this device.';
+	@override String userId({required String id}) => 'ID ${id}';
+	@override String get platform => 'bilibili account';
+}
+
 // Path: settings
 class _Translations$settings$en extends Translations$settings$zh {
 	_Translations$settings$en._(TranslationsEn root) : this._root = root, super.internal(root);
@@ -183,6 +224,9 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get general => 'General';
 	@override String get generalSubtitle => 'Refresh, launch, countdown close and window';
 	@override String get sectionGeneral => 'General';
+	@override String get sectionAccount => 'Account';
+	@override String get scanToLogin => 'Scan to sign in to bilibili';
+	@override String get accountSubtitle => 'bilibili account and sign-in';
 	@override String get refreshSettings => 'Refresh';
 	@override String get refreshSettingsSubtitle => 'Foreground interval and resume threshold';
 	@override String get pageSettings => 'Page settings';
@@ -257,6 +301,59 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get roomCardScopeHint => 'Applies to the popular, areas, follow and search grids.';
 	@override String get remoteSync => 'LAN sync';
 	@override String get remoteSyncSubtitle => 'Sync playback to another device on this network';
+	@override String get sectionRecorder => 'Recording';
+	@override String get recorderSubtitle => 'Watch rooms and record them live';
+}
+
+// Path: recorder
+class _Translations$recorder$en extends Translations$recorder$zh {
+	_Translations$recorder$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Recorder';
+	@override String get addRoom => 'Add room';
+	@override String get platform => 'Platform';
+	@override String get roomId => 'Room ID';
+	@override String get startWatching => 'Start watching';
+	@override String get watchStarted => 'Watching; recording starts when the room goes live';
+	@override String watchFailed({required String error}) => 'Watching failed: ${error}';
+	@override String get noSites => 'No platform here can look rooms up';
+	@override String get openFolder => 'Open output folder';
+	@override String get folderNotOpened => 'The folder could not be opened';
+	@override String get outputDirectory => 'Output directory';
+	@override String get outputDirectoryDefault => 'The app\'s recordings folder';
+	@override String get chooseDirectory => 'Choose the recordings folder';
+	@override String get segmentLength => 'Segment length';
+	@override String minutesValue({required int minutes}) => '${minutes} min';
+	@override String segmentsValue({required int count}) => '${count} segments';
+	@override String get restoring => 'Finishing the previous run’s recordings…';
+	@override String engineFailed({required String error}) => 'The recording engine failed to start: ${error}';
+	@override String get filterAll => 'All';
+	@override String get filterActive => 'Active';
+	@override String get filterFinished => 'Finished';
+	@override String get emptyTitle => 'No rooms watched yet';
+	@override String get emptySubtitle => 'Add a room and it is recorded once it goes live';
+	@override String get nothingToJoin => 'Nothing to join yet';
+	@override String get actionStop => 'Stop';
+	@override String get actionFinishNow => 'Join now';
+	@override String get actionRestart => 'Record again';
+	@override String get statusQueued => 'Queued';
+	@override String get statusResolving => 'Resolving';
+	@override String get statusRecording => 'Recording';
+	@override String get statusRetrying => 'Reconnecting';
+	@override String get statusMerging => 'Joining';
+	@override String get statusCompleted => 'Completed';
+	@override String get statusFailed => 'Failed';
+	@override String get statusStopped => 'Stopped';
+	@override String get statusInterrupted => 'Interrupted';
+	@override String get roomUnknown => 'Not asked yet';
+	@override String get roomWaiting => 'Waiting for the stream';
+	@override String get roomLive => 'Live now';
+	@override String get roomEnded => 'Broadcast ended';
+	@override String get roomStalled => 'Signal stalled';
+	@override String get roomUnavailable => 'Room unavailable';
 }
 
 // Path: theme
@@ -351,6 +448,7 @@ class _Translations$history$en extends Translations$history$zh {
 
 	// Translations
 	@override String get clear => 'Clear history';
+	@override String get resume => 'Resume';
 	@override String get clearConfirm => 'Clear the whole watch history? This cannot be undone.';
 	@override String get empty => 'Nothing watched yet';
 	@override String get today => 'Today';
@@ -388,6 +486,17 @@ class _Translations$iptv$en extends Translations$iptv$zh {
 	@override String get importFromFile => 'Import from file';
 	@override String get importFailed => 'Import failed';
 	@override String lineOf({required int index, required int total}) => 'Line ${index}/${total}';
+	@override String get kindPlaylist => 'M3U / TXT';
+	@override String get kindXtream => 'Xtream';
+	@override String get xtreamServer => 'Server URL (http://host:port)';
+	@override String get xtreamUsername => 'Username';
+	@override String get xtreamPassword => 'Password';
+	@override String get epgUrl => 'EPG URL (optional)';
+	@override String get xtreamAuthFailed => 'The server rejected these credentials';
+	@override String get refreshSource => 'Refresh this source';
+	@override String get epgNow => 'Now';
+	@override String get epgNext => 'Next';
+	@override String get refreshEpg => 'Refresh programme guide';
 }
 
 // Path: fonts
@@ -506,6 +615,11 @@ class _Translations$about$en extends Translations$about$zh {
 	@override String get browserNotOpened => 'The system browser did not open. Check the default browser settings.';
 	@override String get checkRunning => 'Checking…';
 	@override String get checkFailed => 'Check failed — tap to retry';
+	@override String get downloadFiles => 'Download files';
+	@override String get copyLink => 'Copy link';
+	@override String get copied => 'Link copied';
+	@override String get download => 'Download';
+	@override String assetMeta({required String size, required int count}) => '${size} · ${count} downloads';
 }
 
 // Path: shield
@@ -712,6 +826,41 @@ class _Translations$webdav$en extends Translations$webdav$zh {
 	@override String get helpOpenFailed => 'Could not open the browser';
 }
 
+// Path: wallpaper
+class _Translations$wallpaper$en extends Translations$wallpaper$zh {
+	_Translations$wallpaper$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Wallpaper';
+	@override String get entrySubtitle => 'Solid colours, gradients or a picture';
+	@override String get currentNone => 'Theme default';
+	@override String get currentSolid => 'Solid colour';
+	@override String get currentGradient => 'Gradient';
+	@override String get currentImage => 'Picture';
+	@override String get groupPresets => 'Presets';
+	@override String get groupSolid => 'Solid colours';
+	@override String get groupGradient => 'Gradients';
+	@override String get groupDevice => 'From this device';
+	@override String get groupDisplay => 'Picture display';
+	@override String get none => 'No wallpaper';
+	@override String get noneSubtitle => 'Keep the themed surfaces';
+	@override String get pickImage => 'Pick a picture';
+	@override String get pickImageSubtitle => 'Choose an image stored on this device';
+	@override String get imagePath => 'Image path';
+	@override String get imagePathHint => 'Enter an absolute image path';
+	@override String get scrim => 'Dim picture';
+	@override String get scrimSubtitle => 'A wash over the picture so text stays readable';
+	@override String get blur => 'Blur picture';
+	@override String get blurOff => 'Off';
+	@override String get fit => 'Fill mode';
+	@override String get fitCover => 'Cover';
+	@override String get fitContain => 'Contain';
+	@override String get fitFill => 'Stretch';
+	@override String get imageMissing => 'Picture not found; check the path';
+}
+
 /// The flat map containing all translations for locale <en>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -734,6 +883,25 @@ extension on TranslationsEn {
 			'common.pageOf' => ({required int page, required int total}) => 'Page ${page} of ${total}',
 			'tray.show' => 'Show Pure Live',
 			'tray.quit' => 'Quit',
+			'login.title' => 'Sign in',
+			'login.generating' => 'Generating QR code',
+			'login.waitingScan' => 'Waiting for scan',
+			'login.scanHint' => 'Open the bilibili app and scan this code to confirm the sign-in.',
+			'login.success' => 'Signed in',
+			'login.welcome' => ({required String name}) => 'Welcome, ${name}',
+			'login.expired' => 'The QR code has expired',
+			'login.refreshQr' => 'Refresh code',
+			'login.failed' => 'The sign-in did not go through',
+			'login.done' => 'Done',
+			'login.unsupported' => 'This build has no bilibili sign-in capability',
+			'account.title' => 'Account',
+			'account.notSignedIn' => 'Not signed in',
+			'account.notSignedInHint' => 'Sign in to bilibili and the live requests carry your account with them.',
+			'account.signOut' => 'Sign out',
+			'account.signOutConfirm' => 'Sign out of bilibili?',
+			'account.signOutHint' => 'The saved cookies are removed from this device.',
+			'account.userId' => ({required String id}) => 'ID ${id}',
+			'account.platform' => 'bilibili account',
 			'settings.appearance' => 'Appearance',
 			'settings.fonts' => 'Fonts',
 			'settings.themeMode' => 'Theme mode',
@@ -782,6 +950,9 @@ extension on TranslationsEn {
 			'settings.general' => 'General',
 			'settings.generalSubtitle' => 'Refresh, launch, countdown close and window',
 			'settings.sectionGeneral' => 'General',
+			'settings.sectionAccount' => 'Account',
+			'settings.scanToLogin' => 'Scan to sign in to bilibili',
+			'settings.accountSubtitle' => 'bilibili account and sign-in',
 			'settings.refreshSettings' => 'Refresh',
 			'settings.refreshSettingsSubtitle' => 'Foreground interval and resume threshold',
 			'settings.pageSettings' => 'Page settings',
@@ -856,6 +1027,50 @@ extension on TranslationsEn {
 			'settings.roomCardScopeHint' => 'Applies to the popular, areas, follow and search grids.',
 			'settings.remoteSync' => 'LAN sync',
 			'settings.remoteSyncSubtitle' => 'Sync playback to another device on this network',
+			'settings.sectionRecorder' => 'Recording',
+			'settings.recorderSubtitle' => 'Watch rooms and record them live',
+			'recorder.title' => 'Recorder',
+			'recorder.addRoom' => 'Add room',
+			'recorder.platform' => 'Platform',
+			'recorder.roomId' => 'Room ID',
+			'recorder.startWatching' => 'Start watching',
+			'recorder.watchStarted' => 'Watching; recording starts when the room goes live',
+			'recorder.watchFailed' => ({required String error}) => 'Watching failed: ${error}',
+			'recorder.noSites' => 'No platform here can look rooms up',
+			'recorder.openFolder' => 'Open output folder',
+			'recorder.folderNotOpened' => 'The folder could not be opened',
+			'recorder.outputDirectory' => 'Output directory',
+			'recorder.outputDirectoryDefault' => 'The app\'s recordings folder',
+			'recorder.chooseDirectory' => 'Choose the recordings folder',
+			'recorder.segmentLength' => 'Segment length',
+			'recorder.minutesValue' => ({required int minutes}) => '${minutes} min',
+			'recorder.segmentsValue' => ({required int count}) => '${count} segments',
+			'recorder.restoring' => 'Finishing the previous run’s recordings…',
+			'recorder.engineFailed' => ({required String error}) => 'The recording engine failed to start: ${error}',
+			'recorder.filterAll' => 'All',
+			'recorder.filterActive' => 'Active',
+			'recorder.filterFinished' => 'Finished',
+			'recorder.emptyTitle' => 'No rooms watched yet',
+			'recorder.emptySubtitle' => 'Add a room and it is recorded once it goes live',
+			'recorder.nothingToJoin' => 'Nothing to join yet',
+			'recorder.actionStop' => 'Stop',
+			'recorder.actionFinishNow' => 'Join now',
+			'recorder.actionRestart' => 'Record again',
+			'recorder.statusQueued' => 'Queued',
+			'recorder.statusResolving' => 'Resolving',
+			'recorder.statusRecording' => 'Recording',
+			'recorder.statusRetrying' => 'Reconnecting',
+			'recorder.statusMerging' => 'Joining',
+			'recorder.statusCompleted' => 'Completed',
+			'recorder.statusFailed' => 'Failed',
+			'recorder.statusStopped' => 'Stopped',
+			'recorder.statusInterrupted' => 'Interrupted',
+			'recorder.roomUnknown' => 'Not asked yet',
+			'recorder.roomWaiting' => 'Waiting for the stream',
+			'recorder.roomLive' => 'Live now',
+			'recorder.roomEnded' => 'Broadcast ended',
+			'recorder.roomStalled' => 'Signal stalled',
+			'recorder.roomUnavailable' => 'Room unavailable',
 			'theme.system' => 'System',
 			'theme.dark' => 'Dark',
 			'theme.light' => 'Light',
@@ -896,6 +1111,7 @@ extension on TranslationsEn {
 			'areas.empty' => 'No areas here',
 			'popular.empty' => 'Nothing live right now',
 			'history.clear' => 'Clear history',
+			'history.resume' => 'Resume',
 			'history.clearConfirm' => 'Clear the whole watch history? This cannot be undone.',
 			'history.empty' => 'Nothing watched yet',
 			'history.today' => 'Today',
@@ -924,6 +1140,17 @@ extension on TranslationsEn {
 			'iptv.importFromFile' => 'Import from file',
 			'iptv.importFailed' => 'Import failed',
 			'iptv.lineOf' => ({required int index, required int total}) => 'Line ${index}/${total}',
+			'iptv.kindPlaylist' => 'M3U / TXT',
+			'iptv.kindXtream' => 'Xtream',
+			'iptv.xtreamServer' => 'Server URL (http://host:port)',
+			'iptv.xtreamUsername' => 'Username',
+			'iptv.xtreamPassword' => 'Password',
+			'iptv.epgUrl' => 'EPG URL (optional)',
+			'iptv.xtreamAuthFailed' => 'The server rejected these credentials',
+			'iptv.refreshSource' => 'Refresh this source',
+			'iptv.epgNow' => 'Now',
+			'iptv.epgNext' => 'Next',
+			'iptv.refreshEpg' => 'Refresh programme guide',
 			'fonts.fonts' => 'Fonts',
 			'fonts.system' => 'System default',
 			'fonts.systemDesc' => 'Use the fonts the system ships',
@@ -997,6 +1224,11 @@ extension on TranslationsEn {
 			'about.browserNotOpened' => 'The system browser did not open. Check the default browser settings.',
 			'about.checkRunning' => 'Checking…',
 			'about.checkFailed' => 'Check failed — tap to retry',
+			'about.downloadFiles' => 'Download files',
+			'about.copyLink' => 'Copy link',
+			'about.copied' => 'Link copied',
+			'about.download' => 'Download',
+			'about.assetMeta' => ({required String size, required int count}) => '${size} · ${count} downloads',
 			'shield.title' => 'Danmaku shield',
 			'shield.keywords' => 'Keywords',
 			'shield.users' => 'Users',
@@ -1111,6 +1343,32 @@ extension on TranslationsEn {
 			'webdav.helpIssues' => 'Connection failed? Check that the address ends with /dav/, that you used the app password rather than the login password, and that your network does not block WebDAV ports.',
 			'webdav.openOfficialHelp' => 'Open the official Jianguoyun help',
 			'webdav.helpOpenFailed' => 'Could not open the browser',
+			'wallpaper.title' => 'Wallpaper',
+			'wallpaper.entrySubtitle' => 'Solid colours, gradients or a picture',
+			'wallpaper.currentNone' => 'Theme default',
+			'wallpaper.currentSolid' => 'Solid colour',
+			'wallpaper.currentGradient' => 'Gradient',
+			'wallpaper.currentImage' => 'Picture',
+			'wallpaper.groupPresets' => 'Presets',
+			'wallpaper.groupSolid' => 'Solid colours',
+			'wallpaper.groupGradient' => 'Gradients',
+			'wallpaper.groupDevice' => 'From this device',
+			'wallpaper.groupDisplay' => 'Picture display',
+			'wallpaper.none' => 'No wallpaper',
+			'wallpaper.noneSubtitle' => 'Keep the themed surfaces',
+			'wallpaper.pickImage' => 'Pick a picture',
+			'wallpaper.pickImageSubtitle' => 'Choose an image stored on this device',
+			'wallpaper.imagePath' => 'Image path',
+			'wallpaper.imagePathHint' => 'Enter an absolute image path',
+			'wallpaper.scrim' => 'Dim picture',
+			'wallpaper.scrimSubtitle' => 'A wash over the picture so text stays readable',
+			'wallpaper.blur' => 'Blur picture',
+			'wallpaper.blurOff' => 'Off',
+			'wallpaper.fit' => 'Fill mode',
+			'wallpaper.fitCover' => 'Cover',
+			'wallpaper.fitContain' => 'Contain',
+			'wallpaper.fitFill' => 'Stretch',
+			'wallpaper.imageMissing' => 'Picture not found; check the path',
 			_ => null,
 		};
 	}

@@ -31,6 +31,13 @@ abstract interface class LibraryStore {
 }
 
 /// The keys the library owns in its keyed table.
+///
+/// The `.v1` suffix on each key is the schema-version handling: a
+/// document evolves in place while its reads stay tolerant of missing
+/// fields (optional, nullable additions only — e.g. the history's watch
+/// progress); a breaking reshape bumps the suffix and starts a fresh
+/// document, leaving the old one behind. No migration runner is wired
+/// for the library.
 abstract final class LibraryKeys {
   /// The table the library owns in the shared database.
   static const String table = 'library';

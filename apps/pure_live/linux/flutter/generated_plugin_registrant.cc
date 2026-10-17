@@ -9,10 +9,12 @@
 #include <bitsdojo_window_linux/bitsdojo_window_plugin.h>
 #include <desktop_multi_window/desktop_multi_window_plugin.h>
 #include <device_screen_brightness/device_screen_brightness_plugin.h>
+#include <ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter_plugin.h>
 #include <file_selector_linux/file_selector_plugin.h>
 #include <flutter_acrylic/flutter_acrylic_plugin.h>
 #include <flutter_secure_storage_linux/flutter_secure_storage_linux_plugin.h>
 #include <gtk/gtk_plugin.h>
+#include <media_core_native/media_core_native_plugin.h>
 #include <media_kit_video/media_kit_video_plugin.h>
 #include <open_file_linux/open_file_linux_plugin.h>
 #include <refresh_rate/refresh_rate_plugin.h>
@@ -33,6 +35,9 @@ void fl_register_plugins(FlPluginRegistry* registry) {
   g_autoptr(FlPluginRegistrar) device_screen_brightness_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "DeviceScreenBrightnessPlugin");
   device_screen_brightness_plugin_register_with_registrar(device_screen_brightness_registrar);
+  g_autoptr(FlPluginRegistrar) ffmpeg_kit_extended_flutter_registrar =
+      fl_plugin_registry_get_registrar_for_plugin(registry, "FfmpegKitExtendedFlutterPlugin");
+  ffmpeg_kit_extended_flutter_plugin_register_with_registrar(ffmpeg_kit_extended_flutter_registrar);
   g_autoptr(FlPluginRegistrar) file_selector_linux_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "FileSelectorPlugin");
   file_selector_plugin_register_with_registrar(file_selector_linux_registrar);
@@ -45,6 +50,9 @@ void fl_register_plugins(FlPluginRegistry* registry) {
   g_autoptr(FlPluginRegistrar) gtk_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "GtkPlugin");
   gtk_plugin_register_with_registrar(gtk_registrar);
+  g_autoptr(FlPluginRegistrar) media_core_native_registrar =
+      fl_plugin_registry_get_registrar_for_plugin(registry, "MediaCoreNativePlugin");
+  media_core_native_plugin_register_with_registrar(media_core_native_registrar);
   g_autoptr(FlPluginRegistrar) media_kit_video_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "MediaKitVideoPlugin");
   media_kit_video_plugin_register_with_registrar(media_kit_video_registrar);

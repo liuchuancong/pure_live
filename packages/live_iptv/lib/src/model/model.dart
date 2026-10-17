@@ -28,3 +28,4 @@ export 'iptv_playlist/iptv_playlist.dart';
 export 'iptv_programme_slot/iptv_programme_slot.dart';
 export 'iptv_stream_type/iptv_stream_type.dart';
 export 'parsed_guide/parsed_guide.dart';
+export 'xtream_source/xtream_source.dart';

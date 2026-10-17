@@ -49,3 +49,12 @@ abstract class EpgProgramme with _$EpgProgramme {
   /// Restores a programme from JSON.
   factory EpgProgramme.fromJson(Map<String, Object?> json) => _$EpgProgrammeFromJson(json);
 }
+
+/// The guide entry the viewer-facing lookups are written against:
+/// [EpgProgramme] under its playback name.
+///
+/// The parsers and the library speak of programmes; the guide a player
+/// holds hands the same record back as its entries. One record, two names,
+/// so the lookups on `EpgGuide` never have to convert a whole guide to be
+/// useful.
+typedef EpgEntry = EpgProgramme;

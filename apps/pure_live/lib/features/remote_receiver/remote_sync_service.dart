@@ -7,6 +7,7 @@ import 'package:live_library/live_library.dart';
 import 'package:live_storage/live_storage.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import 'package:pure_live/app/preferences/app_preferences.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_device.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_payload.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_protocol.dart';
@@ -29,13 +30,17 @@ import 'package:pure_live/features/remote_receiver/remote_sync_protocol.dart';
 /// or QR); two of this app's builds also find each other by themselves.
 final class RemoteSyncService extends ChangeNotifier {
   /// A service over this app's repositories.
-  new({required this.follows, required this.history});
+  new({required this.follows, required this.history, required this.preferences});
 
   /// Where followed rooms and groups are applied and exported from.
   final FollowRepository follows;
 
   /// Where watch history is applied and exported from.
   final HistoryRepository history;
+
+  /// Where the general preference groups are exported from and applied to —
+  /// the store the settings pages edit.
+  final AppPreferencesStore preferences;
 
   // ---------------------------------------------------------------------------
   // State
@@ -140,9 +145,8 @@ final class RemoteSyncService extends ChangeNotifier {
   String get address => _localIp.isEmpty ? '' : '$_localIp:$_localPort';
 
   /// The QR payload of this device's sync endpoint, empty when no address.
-  String get qrData => _localIp.isEmpty
-      ? ''
-      : RemoteSyncProtocol.createQrUri(ip: _localIp, port: _localPort).toString();
+  String get qrData =>
+      _localIp.isEmpty ? '' : RemoteSyncProtocol.createQrUri(ip: _localIp, port: _localPort).toString();
 
   /// The mDNS-era broadcast name; the identity suffix keeps two devices of
   /// one user distinguishable in a peer's own list.
@@ -230,9 +234,7 @@ final class RemoteSyncService extends ChangeNotifier {
         box: await StorageBoxManager().keyed<Map<dynamic, dynamic>>(_prefsBox),
       );
       final stored = repository.get(_prefsDocument)?[_deviceIdKey]?.toString() ?? '';
-      _deviceId = stored.isNotEmpty
-          ? stored
-          : '${Platform.operatingSystem}-${DateTime.now().microsecondsSinceEpoch}';
+      _deviceId = stored.isNotEmpty ? stored : '${Platform.operatingSystem}-${DateTime.now().microsecondsSinceEpoch}';
       await repository.save(_prefsDocument, {_deviceIdKey: _deviceId});
     } on Object {
       // A read-only box still leaves the session usable: the identity just
@@ -422,7 +424,14 @@ final class RemoteSyncService extends ChangeNotifier {
     await _writeResponse(request.response, {
       'code': 200,
       'msg': 'ok',
-      'data': {'id': _deviceId, 'name': deviceName, 'platform': platform, 'version': version, 'ip': _localIp, 'port': _localPort},
+      'data': {
+        'id': _deviceId,
+        'name': deviceName,
+        'platform': platform,
+        'version': version,
+        'ip': _localIp,
+        'port': _localPort,
+      },
     });
   }
 
@@ -542,6 +551,7 @@ final class RemoteSyncService extends ChangeNotifier {
   /// [sections] when the picker ticked a subset.
   Map<String, dynamic> buildLocalPayload({Iterable<String>? sections}) {
     return RemoteSyncPayload.buildExport(
+      preferences: preferences.value,
       follows: follows.rooms,
       groups: follows.groups,
       history: history.records,
@@ -560,6 +570,7 @@ final class RemoteSyncService extends ChangeNotifier {
       return await RemoteSyncPayload.apply(
         settings,
         sections: sections,
+        preferences: preferences,
         follows: follows,
         history: history,
         shield: sink,
@@ -576,10 +587,9 @@ final class RemoteSyncService extends ChangeNotifier {
     if (existing != null) {
       return Future<HiveStorageRepository<List<String>>>.value(existing);
     }
-    final opening =
-        _shieldOpening ??= StorageBoxManager()
-            .keyed<List<String>>(_shieldBox)
-            .then((box) => HiveStorageRepository<List<String>>(box: box));
+    final opening = _shieldOpening ??= StorageBoxManager()
+        .keyed<List<String>>(_shieldBox)
+        .then((box) => HiveStorageRepository<List<String>>(box: box));
     return opening.then((repository) {
       _shieldRepository = repository;
       return repository;
@@ -611,10 +621,7 @@ final class RemoteSyncService extends ChangeNotifier {
           // A dead discovery socket needs no second close.
         }
       }
-      final socket = await RawDatagramSocket.bind(
-        InternetAddress.anyIPv4,
-        RemoteSyncProtocol.discoveryPort,
-      );
+      final socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, RemoteSyncProtocol.discoveryPort);
       if (_disposed) {
         socket.close();
         return false;
@@ -670,11 +677,7 @@ final class RemoteSyncService extends ChangeNotifier {
     final targets = <String>{'255.255.255.255', for (final ip in _localIps) '${_ipv4Prefix(ip) ?? ip}.255'};
     for (final target in targets) {
       try {
-        socket.send(
-          utf8.encode(jsonEncode(packet)),
-          InternetAddress(target),
-          RemoteSyncProtocol.discoveryPort,
-        );
+        socket.send(utf8.encode(jsonEncode(packet)), InternetAddress(target), RemoteSyncProtocol.discoveryPort);
       } on Object {
         // One unreachable broadcast address must not stop the others.
       }
@@ -709,9 +712,7 @@ final class RemoteSyncService extends ChangeNotifier {
     }
     final device = RemoteSyncDevice(
       id: id,
-      name: packet['name']?.toString().trim().isNotEmpty == true
-          ? packet['name']!.toString().trim()
-          : 'PureLive',
+      name: packet['name']?.toString().trim().isNotEmpty == true ? packet['name']!.toString().trim() : 'PureLive',
       platform: packet['platform']?.toString() ?? '',
       version: packet['version']?.toString() ?? '',
       ip: address,

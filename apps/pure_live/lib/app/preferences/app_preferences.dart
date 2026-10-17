@@ -26,12 +26,20 @@ enum AppLaunchBranch {
   /// The followed streamers' grid.
   follow,
 
+  /// The popular / super-deal grid.
+  popular,
+
+  /// The areas catalogue.
+  areas,
+
   /// The watch history.
   history;
 
   /// Resolves a stored identifier; an unknown one falls back to [home].
   static AppLaunchBranch fromId(String? id) => switch (id) {
     'follow' => AppLaunchBranch.follow,
+    'popular' => AppLaunchBranch.popular,
+    'areas' => AppLaunchBranch.areas,
     'history' => AppLaunchBranch.history,
     _ => AppLaunchBranch.home,
   };
@@ -101,7 +109,7 @@ enum RoomCardCoverAspect {
 /// The shell branches, in the order the chromes render them — the visible
 /// subset. The home branch is the floor: a shell with no destination cannot
 /// be walked, so every writer keeps at least one id.
-const List<String> defaultShellBranches = ['home', 'follow', 'history'];
+const List<String> defaultShellBranches = ['home', 'follow', 'popular', 'areas', 'history'];
 
 /// The app's general choices — general, refresh, page, navigation, proxy,
 /// loading and room-card preferences — as one persisted document.

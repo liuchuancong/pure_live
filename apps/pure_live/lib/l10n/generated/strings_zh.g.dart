@@ -46,7 +46,10 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$home$zh home = Translations$home$zh.internal(_root);
 	late final Translations$common$zh common = Translations$common$zh.internal(_root);
 	late final Translations$tray$zh tray = Translations$tray$zh.internal(_root);
+	late final Translations$login$zh login = Translations$login$zh.internal(_root);
+	late final Translations$account$zh account = Translations$account$zh.internal(_root);
 	late final Translations$settings$zh settings = Translations$settings$zh.internal(_root);
+	late final Translations$recorder$zh recorder = Translations$recorder$zh.internal(_root);
 	late final Translations$theme$zh theme = Translations$theme$zh.internal(_root);
 	late final Translations$design$zh design = Translations$design$zh.internal(_root);
 	late final Translations$history$zh history = Translations$history$zh.internal(_root);
@@ -69,6 +72,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$closePrompt$zh closePrompt = Translations$closePrompt$zh.internal(_root);
 	late final Translations$shellSettings$zh shellSettings = Translations$shellSettings$zh.internal(_root);
 	late final Translations$webdav$zh webdav = Translations$webdav$zh.internal(_root);
+	late final Translations$wallpaper$zh wallpaper = Translations$wallpaper$zh.internal(_root);
 }
 
 // Path: app
@@ -158,6 +162,81 @@ class Translations$tray$zh {
 	String get quit => '退出';
 }
 
+// Path: login
+class Translations$login$zh {
+	Translations$login$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '扫码登录'
+	String get title => '扫码登录';
+
+	/// zh: '生成二维码中'
+	String get generating => '生成二维码中';
+
+	/// zh: '等待扫描'
+	String get waitingScan => '等待扫描';
+
+	/// zh: '打开 bilibili App 扫描二维码并确认登录'
+	String get scanHint => '打开 bilibili App 扫描二维码并确认登录';
+
+	/// zh: '登录成功'
+	String get success => '登录成功';
+
+	/// zh: '欢迎，{name: String}'
+	String welcome({required String name}) => '欢迎，${name}';
+
+	/// zh: '二维码已过期'
+	String get expired => '二维码已过期';
+
+	/// zh: '刷新二维码'
+	String get refreshQr => '刷新二维码';
+
+	/// zh: '登录未能完成'
+	String get failed => '登录未能完成';
+
+	/// zh: '完成'
+	String get done => '完成';
+
+	/// zh: '当前构建未启用 bilibili 登录'
+	String get unsupported => '当前构建未启用 bilibili 登录';
+}
+
+// Path: account
+class Translations$account$zh {
+	Translations$account$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '账号'
+	String get title => '账号';
+
+	/// zh: '未登录'
+	String get notSignedIn => '未登录';
+
+	/// zh: '登录 bilibili 后，直播相关请求将携带你的账号信息。'
+	String get notSignedInHint => '登录 bilibili 后，直播相关请求将携带你的账号信息。';
+
+	/// zh: '退出登录'
+	String get signOut => '退出登录';
+
+	/// zh: '退出 bilibili 登录？'
+	String get signOutConfirm => '退出 bilibili 登录？';
+
+	/// zh: '本机保存的登录凭据将被移除。'
+	String get signOutHint => '本机保存的登录凭据将被移除。';
+
+	/// zh: 'ID {id: String}'
+	String userId({required String id}) => 'ID ${id}';
+
+	/// zh: 'bilibili 账号'
+	String get platform => 'bilibili 账号';
+}
+
 // Path: settings
 class Translations$settings$zh {
 	Translations$settings$zh.internal(this._root);
@@ -228,6 +307,15 @@ class Translations$settings$zh {
 
 	/// zh: '按关键词、用户或正则屏蔽弹幕'
 	String get shieldSubtitle => '按关键词、用户或正则屏蔽弹幕';
+
+	/// zh: '账号'
+	String get sectionAccount => '账号';
+
+	/// zh: '扫码登录 bilibili'
+	String get scanToLogin => '扫码登录 bilibili';
+
+	/// zh: 'bilibili 账号与登录态'
+	String get accountSubtitle => 'bilibili 账号与登录态';
 
 	/// zh: '缓存与数据'
 	String get cacheAndData => '缓存与数据';
@@ -531,6 +619,147 @@ class Translations$settings$zh {
 
 	/// zh: '将播放同步到同一网络下的其他设备'
 	String get remoteSyncSubtitle => '将播放同步到同一网络下的其他设备';
+
+	/// zh: '录制'
+	String get sectionRecorder => '录制';
+
+	/// zh: '监听房间，开播自动录制'
+	String get recorderSubtitle => '监听房间，开播自动录制';
+}
+
+// Path: recorder
+class Translations$recorder$zh {
+	Translations$recorder$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '录播'
+	String get title => '录播';
+
+	/// zh: '添加房间'
+	String get addRoom => '添加房间';
+
+	/// zh: '平台'
+	String get platform => '平台';
+
+	/// zh: '房间号'
+	String get roomId => '房间号';
+
+	/// zh: '开始监听'
+	String get startWatching => '开始监听';
+
+	/// zh: '已开始监听，开播后自动录制'
+	String get watchStarted => '已开始监听，开播后自动录制';
+
+	/// zh: '监听失败：{error:String}'
+	String watchFailed({required String error}) => '监听失败：${error}';
+
+	/// zh: '没有支持房间查询的平台'
+	String get noSites => '没有支持房间查询的平台';
+
+	/// zh: '打开输出目录'
+	String get openFolder => '打开输出目录';
+
+	/// zh: '无法打开文件夹'
+	String get folderNotOpened => '无法打开文件夹';
+
+	/// zh: '输出目录'
+	String get outputDirectory => '输出目录';
+
+	/// zh: '应用的录制目录'
+	String get outputDirectoryDefault => '应用的录制目录';
+
+	/// zh: '选择录制目录'
+	String get chooseDirectory => '选择录制目录';
+
+	/// zh: '分段时长'
+	String get segmentLength => '分段时长';
+
+	/// zh: '{minutes:int} 分钟'
+	String minutesValue({required int minutes}) => '${minutes} 分钟';
+
+	/// zh: '{count:int} 个分段'
+	String segmentsValue({required int count}) => '${count} 个分段';
+
+	/// zh: '正在恢复上次未完成的录制…'
+	String get restoring => '正在恢复上次未完成的录制…';
+
+	/// zh: '录制引擎启动失败：{error:String}'
+	String engineFailed({required String error}) => '录制引擎启动失败：${error}';
+
+	/// zh: '全部'
+	String get filterAll => '全部';
+
+	/// zh: '进行中'
+	String get filterActive => '进行中';
+
+	/// zh: '已结束'
+	String get filterFinished => '已结束';
+
+	/// zh: '还没有监听的房间'
+	String get emptyTitle => '还没有监听的房间';
+
+	/// zh: '添加一个房间，开播后自动录制'
+	String get emptySubtitle => '添加一个房间，开播后自动录制';
+
+	/// zh: '没有待合并的分段'
+	String get nothingToJoin => '没有待合并的分段';
+
+	/// zh: '停止'
+	String get actionStop => '停止';
+
+	/// zh: '立即合并'
+	String get actionFinishNow => '立即合并';
+
+	/// zh: '重新录制'
+	String get actionRestart => '重新录制';
+
+	/// zh: '排队中'
+	String get statusQueued => '排队中';
+
+	/// zh: '解析中'
+	String get statusResolving => '解析中';
+
+	/// zh: '录制中'
+	String get statusRecording => '录制中';
+
+	/// zh: '重连中'
+	String get statusRetrying => '重连中';
+
+	/// zh: '合并中'
+	String get statusMerging => '合并中';
+
+	/// zh: '已完成'
+	String get statusCompleted => '已完成';
+
+	/// zh: '失败'
+	String get statusFailed => '失败';
+
+	/// zh: '已停止'
+	String get statusStopped => '已停止';
+
+	/// zh: '已中断'
+	String get statusInterrupted => '已中断';
+
+	/// zh: '未查询'
+	String get roomUnknown => '未查询';
+
+	/// zh: '等待开播'
+	String get roomWaiting => '等待开播';
+
+	/// zh: '正在直播'
+	String get roomLive => '正在直播';
+
+	/// zh: '直播已结束'
+	String get roomEnded => '直播已结束';
+
+	/// zh: '信号停滞'
+	String get roomStalled => '信号停滞';
+
+	/// zh: '房间不可用'
+	String get roomUnavailable => '房间不可用';
 }
 
 // Path: theme
@@ -573,6 +802,9 @@ class Translations$history$zh {
 
 	/// zh: '清空记录'
 	String get clear => '清空记录';
+
+	/// zh: '继续播放'
+	String get resume => '继续播放';
 
 	/// zh: '清空全部观看记录？此操作不可撤销。'
 	String get clearConfirm => '清空全部观看记录？此操作不可撤销。';
@@ -666,6 +898,39 @@ class Translations$iptv$zh {
 
 	/// zh: '线路 {index: int}/{total: int}'
 	String lineOf({required int index, required int total}) => '线路 ${index}/${total}';
+
+	/// zh: 'M3U / TXT'
+	String get kindPlaylist => 'M3U / TXT';
+
+	/// zh: 'Xtream'
+	String get kindXtream => 'Xtream';
+
+	/// zh: '服务器地址（http://host:port）'
+	String get xtreamServer => '服务器地址（http://host:port）';
+
+	/// zh: '用户名'
+	String get xtreamUsername => '用户名';
+
+	/// zh: '密码'
+	String get xtreamPassword => '密码';
+
+	/// zh: 'EPG 地址（可选）'
+	String get epgUrl => 'EPG 地址（可选）';
+
+	/// zh: '服务器拒绝了这组账号信息'
+	String get xtreamAuthFailed => '服务器拒绝了这组账号信息';
+
+	/// zh: '刷新该源'
+	String get refreshSource => '刷新该源';
+
+	/// zh: '当前节目'
+	String get epgNow => '当前节目';
+
+	/// zh: '接下来'
+	String get epgNext => '接下来';
+
+	/// zh: '刷新节目单'
+	String get refreshEpg => '刷新节目单';
 }
 
 // Path: fonts
@@ -930,6 +1195,21 @@ class Translations$about$zh {
 
 	/// zh: '检查失败，点此重试'
 	String get checkFailed => '检查失败，点此重试';
+
+	/// zh: '下载文件'
+	String get downloadFiles => '下载文件';
+
+	/// zh: '复制链接'
+	String get copyLink => '复制链接';
+
+	/// zh: '链接已复制'
+	String get copied => '链接已复制';
+
+	/// zh: '下载'
+	String get download => '下载';
+
+	/// zh: '{size: String} · {count: int} 次下载'
+	String assetMeta({required String size, required int count}) => '${size} · ${count} 次下载';
 }
 
 // Path: shield
@@ -1496,6 +1776,93 @@ class Translations$webdav$zh {
 	String get helpOpenFailed => '无法打开浏览器';
 }
 
+// Path: wallpaper
+class Translations$wallpaper$zh {
+	Translations$wallpaper$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '背景壁纸'
+	String get title => '背景壁纸';
+
+	/// zh: '纯色、渐变或本地图片'
+	String get entrySubtitle => '纯色、渐变或本地图片';
+
+	/// zh: '跟随主题'
+	String get currentNone => '跟随主题';
+
+	/// zh: '纯色'
+	String get currentSolid => '纯色';
+
+	/// zh: '渐变'
+	String get currentGradient => '渐变';
+
+	/// zh: '图片'
+	String get currentImage => '图片';
+
+	/// zh: '预设'
+	String get groupPresets => '预设';
+
+	/// zh: '纯色'
+	String get groupSolid => '纯色';
+
+	/// zh: '渐变'
+	String get groupGradient => '渐变';
+
+	/// zh: '本机图片'
+	String get groupDevice => '本机图片';
+
+	/// zh: '图片显示'
+	String get groupDisplay => '图片显示';
+
+	/// zh: '无背景'
+	String get none => '无背景';
+
+	/// zh: '保留主题表面'
+	String get noneSubtitle => '保留主题表面';
+
+	/// zh: '选择图片'
+	String get pickImage => '选择图片';
+
+	/// zh: '从本机选择一张图片'
+	String get pickImageSubtitle => '从本机选择一张图片';
+
+	/// zh: '图片路径'
+	String get imagePath => '图片路径';
+
+	/// zh: '输入图片的绝对路径'
+	String get imagePathHint => '输入图片的绝对路径';
+
+	/// zh: '压暗图片'
+	String get scrim => '压暗图片';
+
+	/// zh: '在图片上加一层暗色，保证文字可读'
+	String get scrimSubtitle => '在图片上加一层暗色，保证文字可读';
+
+	/// zh: '模糊图片'
+	String get blur => '模糊图片';
+
+	/// zh: '关闭'
+	String get blurOff => '关闭';
+
+	/// zh: '填充方式'
+	String get fit => '填充方式';
+
+	/// zh: '裁剪填充'
+	String get fitCover => '裁剪填充';
+
+	/// zh: '完整显示'
+	String get fitContain => '完整显示';
+
+	/// zh: '拉伸'
+	String get fitFill => '拉伸';
+
+	/// zh: '找不到图片，请检查路径'
+	String get imageMissing => '找不到图片，请检查路径';
+}
+
 /// The flat map containing all translations for locale <zh>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -1518,6 +1885,25 @@ extension on Translations {
 			'common.pageOf' => ({required int page, required int total}) => '第 ${page} / ${total} 页',
 			'tray.show' => '显示主界面',
 			'tray.quit' => '退出',
+			'login.title' => '扫码登录',
+			'login.generating' => '生成二维码中',
+			'login.waitingScan' => '等待扫描',
+			'login.scanHint' => '打开 bilibili App 扫描二维码并确认登录',
+			'login.success' => '登录成功',
+			'login.welcome' => ({required String name}) => '欢迎，${name}',
+			'login.expired' => '二维码已过期',
+			'login.refreshQr' => '刷新二维码',
+			'login.failed' => '登录未能完成',
+			'login.done' => '完成',
+			'login.unsupported' => '当前构建未启用 bilibili 登录',
+			'account.title' => '账号',
+			'account.notSignedIn' => '未登录',
+			'account.notSignedInHint' => '登录 bilibili 后，直播相关请求将携带你的账号信息。',
+			'account.signOut' => '退出登录',
+			'account.signOutConfirm' => '退出 bilibili 登录？',
+			'account.signOutHint' => '本机保存的登录凭据将被移除。',
+			'account.userId' => ({required String id}) => 'ID ${id}',
+			'account.platform' => 'bilibili 账号',
 			'settings.appearance' => '外观',
 			'settings.fonts' => '字体管理',
 			'settings.themeMode' => '主题模式',
@@ -1539,6 +1925,9 @@ extension on Translations {
 			'settings.fontsSubtitle' => '下载并应用云端字体',
 			'settings.iptvSubtitle' => '管理播放源与频道',
 			'settings.shieldSubtitle' => '按关键词、用户或正则屏蔽弹幕',
+			'settings.sectionAccount' => '账号',
+			'settings.scanToLogin' => '扫码登录 bilibili',
+			'settings.accountSubtitle' => 'bilibili 账号与登录态',
 			'settings.cacheAndData' => '缓存与数据',
 			'settings.cacheAndDataSubtitle' => '观看历史与本地数据',
 			'settings.backupSubtitle' => '备份与恢复本地数据',
@@ -1640,11 +2029,56 @@ extension on Translations {
 			'settings.roomCardScopeHint' => '作用于推荐、分区、关注与搜索的卡片网格。',
 			'settings.remoteSync' => '局域网同步',
 			'settings.remoteSyncSubtitle' => '将播放同步到同一网络下的其他设备',
+			'settings.sectionRecorder' => '录制',
+			'settings.recorderSubtitle' => '监听房间，开播自动录制',
+			'recorder.title' => '录播',
+			'recorder.addRoom' => '添加房间',
+			'recorder.platform' => '平台',
+			'recorder.roomId' => '房间号',
+			'recorder.startWatching' => '开始监听',
+			'recorder.watchStarted' => '已开始监听，开播后自动录制',
+			'recorder.watchFailed' => ({required String error}) => '监听失败：${error}',
+			'recorder.noSites' => '没有支持房间查询的平台',
+			'recorder.openFolder' => '打开输出目录',
+			'recorder.folderNotOpened' => '无法打开文件夹',
+			'recorder.outputDirectory' => '输出目录',
+			'recorder.outputDirectoryDefault' => '应用的录制目录',
+			'recorder.chooseDirectory' => '选择录制目录',
+			'recorder.segmentLength' => '分段时长',
+			'recorder.minutesValue' => ({required int minutes}) => '${minutes} 分钟',
+			'recorder.segmentsValue' => ({required int count}) => '${count} 个分段',
+			'recorder.restoring' => '正在恢复上次未完成的录制…',
+			'recorder.engineFailed' => ({required String error}) => '录制引擎启动失败：${error}',
+			'recorder.filterAll' => '全部',
+			'recorder.filterActive' => '进行中',
+			'recorder.filterFinished' => '已结束',
+			'recorder.emptyTitle' => '还没有监听的房间',
+			'recorder.emptySubtitle' => '添加一个房间，开播后自动录制',
+			'recorder.nothingToJoin' => '没有待合并的分段',
+			'recorder.actionStop' => '停止',
+			'recorder.actionFinishNow' => '立即合并',
+			'recorder.actionRestart' => '重新录制',
+			'recorder.statusQueued' => '排队中',
+			'recorder.statusResolving' => '解析中',
+			'recorder.statusRecording' => '录制中',
+			'recorder.statusRetrying' => '重连中',
+			'recorder.statusMerging' => '合并中',
+			'recorder.statusCompleted' => '已完成',
+			'recorder.statusFailed' => '失败',
+			'recorder.statusStopped' => '已停止',
+			'recorder.statusInterrupted' => '已中断',
+			'recorder.roomUnknown' => '未查询',
+			'recorder.roomWaiting' => '等待开播',
+			'recorder.roomLive' => '正在直播',
+			'recorder.roomEnded' => '直播已结束',
+			'recorder.roomStalled' => '信号停滞',
+			'recorder.roomUnavailable' => '房间不可用',
 			'theme.system' => '跟随系统',
 			'theme.dark' => '深色',
 			'theme.light' => '浅色',
 			'design.defaultLanguage' => '默认（Fluent）',
 			'history.clear' => '清空记录',
+			'history.resume' => '继续播放',
 			'history.clearConfirm' => '清空全部观看记录？此操作不可撤销。',
 			'history.empty' => '还没有观看记录',
 			'history.today' => '今天',
@@ -1673,6 +2107,17 @@ extension on Translations {
 			'iptv.importFromFile' => '从文件导入',
 			'iptv.importFailed' => '导入失败',
 			'iptv.lineOf' => ({required int index, required int total}) => '线路 ${index}/${total}',
+			'iptv.kindPlaylist' => 'M3U / TXT',
+			'iptv.kindXtream' => 'Xtream',
+			'iptv.xtreamServer' => '服务器地址（http://host:port）',
+			'iptv.xtreamUsername' => '用户名',
+			'iptv.xtreamPassword' => '密码',
+			'iptv.epgUrl' => 'EPG 地址（可选）',
+			'iptv.xtreamAuthFailed' => '服务器拒绝了这组账号信息',
+			'iptv.refreshSource' => '刷新该源',
+			'iptv.epgNow' => '当前节目',
+			'iptv.epgNext' => '接下来',
+			'iptv.refreshEpg' => '刷新节目单',
 			'fonts.fonts' => '字体管理',
 			'fonts.system' => '系统默认',
 			'fonts.systemDesc' => '使用系统自带字体',
@@ -1746,6 +2191,11 @@ extension on Translations {
 			'about.browserNotOpened' => '系统浏览器未打开，请检查默认浏览器设置',
 			'about.checkRunning' => '正在检查…',
 			'about.checkFailed' => '检查失败，点此重试',
+			'about.downloadFiles' => '下载文件',
+			'about.copyLink' => '复制链接',
+			'about.copied' => '链接已复制',
+			'about.download' => '下载',
+			'about.assetMeta' => ({required String size, required int count}) => '${size} · ${count} 次下载',
 			'shield.title' => '弹幕屏蔽',
 			'shield.keywords' => '关键词',
 			'shield.users' => '用户',
@@ -1895,6 +2345,32 @@ extension on Translations {
 			'webdav.helpIssues' => '连接失败？检查地址是否以 /dav/ 结尾、是否使用应用密码而非登录密码，以及网络是否屏蔽了 WebDAV 端口。',
 			'webdav.openOfficialHelp' => '打开坚果云官方帮助',
 			'webdav.helpOpenFailed' => '无法打开浏览器',
+			'wallpaper.title' => '背景壁纸',
+			'wallpaper.entrySubtitle' => '纯色、渐变或本地图片',
+			'wallpaper.currentNone' => '跟随主题',
+			'wallpaper.currentSolid' => '纯色',
+			'wallpaper.currentGradient' => '渐变',
+			'wallpaper.currentImage' => '图片',
+			'wallpaper.groupPresets' => '预设',
+			'wallpaper.groupSolid' => '纯色',
+			'wallpaper.groupGradient' => '渐变',
+			'wallpaper.groupDevice' => '本机图片',
+			'wallpaper.groupDisplay' => '图片显示',
+			'wallpaper.none' => '无背景',
+			'wallpaper.noneSubtitle' => '保留主题表面',
+			'wallpaper.pickImage' => '选择图片',
+			'wallpaper.pickImageSubtitle' => '从本机选择一张图片',
+			'wallpaper.imagePath' => '图片路径',
+			'wallpaper.imagePathHint' => '输入图片的绝对路径',
+			'wallpaper.scrim' => '压暗图片',
+			'wallpaper.scrimSubtitle' => '在图片上加一层暗色，保证文字可读',
+			'wallpaper.blur' => '模糊图片',
+			'wallpaper.blurOff' => '关闭',
+			'wallpaper.fit' => '填充方式',
+			'wallpaper.fitCover' => '裁剪填充',
+			'wallpaper.fitContain' => '完整显示',
+			'wallpaper.fitFill' => '拉伸',
+			'wallpaper.imageMissing' => '找不到图片，请检查路径',
 			_ => null,
 		};
 	}

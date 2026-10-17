@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:pure_live/app/routing/route_paths.dart';
+import 'package:pure_live/features/recorder/recorder_page.dart';
 import 'package:pure_live/features/settings/appearance/appearance_page.dart';
 import 'package:pure_live/features/settings/data/cache_data_page.dart';
 import 'package:pure_live/features/settings/fonts/font_manager_page.dart';
@@ -13,6 +14,7 @@ import 'package:pure_live/features/settings/pages/page_settings_page.dart';
 import 'package:pure_live/features/settings/refresh/refresh_settings_page.dart';
 import 'package:pure_live/features/settings/room_card/room_card_settings_page.dart';
 import 'package:pure_live/features/settings/settings_page.dart';
+import 'package:pure_live/features/wallpaper/wallpaper_picker_page.dart';
 
 part 'settings_routes.g.dart';
 
@@ -47,6 +49,17 @@ class FontManagerRoute extends GoRouteData with $FontManagerRoute {
 
   @override
   Widget build(BuildContext context, GoRouterState state) => const FontManagerPage();
+}
+
+/// The wallpaper picker: `/settings/wallpaper`, reached from the theme
+/// section.
+@TypedGoRoute<WallpaperRoute>(path: RoutePath.settingsWallpaper)
+class WallpaperRoute extends GoRouteData with $WallpaperRoute {
+  /// The wallpaper route.
+  const new();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const WallpaperPickerPage();
 }
 
 /// Cache & data: `/settings/data`, reached from the data section.
@@ -131,4 +144,14 @@ class RoomCardSettingsRoute extends GoRouteData with $RoomCardSettingsRoute {
 
   @override
   Widget build(BuildContext context, GoRouterState state) => const RoomCardSettingsPage();
+}
+
+/// The recorder: `/settings/recorder`, reached from the recording section.
+@TypedGoRoute<RecorderRoute>(path: RoutePath.settingsRecorder)
+class RecorderRoute extends GoRouteData with $RecorderRoute {
+  /// The recorder route.
+  const new();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const RecorderPage();
 }

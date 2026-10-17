@@ -9,6 +9,73 @@ const String updateRepo = 'pure_live';
 /// The project page.
 final Uri projectUrl = Uri.parse('https://github.com/$updateOwner/$updateRepo');
 
+/// One file published with a release (a GitHub release asset).
+final class ReleaseAsset {
+  /// Parses one entry of the release's `assets` array.
+  new fromJson(Map<Object?, Object?> json)
+    : name = '${json['name'] ?? ''}',
+      sizeBytes = (json['size'] as num?)?.toInt() ?? 0,
+      downloads = (json['download_count'] as num?)?.toInt() ?? 0,
+      url = '${json['browser_download_url'] ?? ''}';
+
+  /// The file's name (e.g. `pure_live-1.2.0.apk`).
+  final String name;
+
+  /// The file's size in bytes; 0 when the feed omits it.
+  final int sizeBytes;
+
+  /// How often the file was downloaded.
+  final int downloads;
+
+  /// The direct download URL; empty when the feed omits it.
+  final String url;
+
+  /// The extensions a release file can carry and still be an app package a
+  /// device could install or a desktop could run.
+  static const Set<String> _installableExtensions = <String>{
+    '.apk',
+    '.exe',
+    '.msix',
+    '.appx',
+    '.dmg',
+    '.pkg',
+    '.deb',
+    '.rpm',
+    '.appimage',
+    '.zip',
+  };
+
+  /// The download URL as a URI; null when the feed omitted it or it does not
+  /// parse.
+  Uri? get uri {
+    final text = url.trim();
+    if (text.isEmpty) {
+      return null;
+    }
+    return Uri.tryParse(text);
+  }
+
+  /// Whether the file looks like an installable app package (by extension),
+  /// as opposed to source archives or checksum sidecars.
+  bool get installable {
+    final path = uri?.path.toLowerCase() ?? '';
+    return _installableExtensions.any(path.endsWith);
+  }
+
+  /// The size as a human-readable label (`12.34 MB`, `845 KB`, `512 B`).
+  String get sizeLabel {
+    const kilo = 1024;
+    const mega = kilo * kilo;
+    if (sizeBytes >= mega) {
+      return '${(sizeBytes / mega).toStringAsFixed(2)} MB';
+    }
+    if (sizeBytes >= kilo) {
+      return '${(sizeBytes / kilo).toStringAsFixed(0)} KB';
+    }
+    return '$sizeBytes B';
+  }
+}
+
 /// One GitHub release of the app's repository.
 final class AppRelease {
   /// Parses one release entry of the GitHub releases API.
@@ -18,7 +85,8 @@ final class AppRelease {
       body = '${json['body'] ?? ''}',
       publishedAt = DateTime.tryParse('${json['published_at'] ?? ''}'),
       htmlUrl = '${json['html_url'] ?? ''}',
-      prerelease = json['prerelease'] == true;
+      prerelease = json['prerelease'] == true,
+      assets = _assets(json['assets']);
 
   /// The release tag (e.g. `v3.2.0`).
   final String tag;
@@ -37,6 +105,22 @@ final class AppRelease {
 
   /// Whether the release is marked prerelease.
   final bool prerelease;
+
+  /// The files published with the release, in feed order.
+  final List<ReleaseAsset> assets;
+
+  /// The release's installable packages, in feed order.
+  List<ReleaseAsset> get installableAssets => [
+    for (final asset in assets)
+      if (asset.installable) asset,
+  ];
+
+  /// Decodes the release's `assets` array, skipping unreadable entries.
+  static List<ReleaseAsset> _assets(Object? raw) => [
+    if (raw is List)
+      for (final entry in raw)
+        if (entry is Map<Object?, Object?>) ReleaseAsset.fromJson(entry),
+  ];
 
   /// Whether [tag] carries a readable version for comparisons.
   bool get hasVersion => tag.trim().isNotEmpty;

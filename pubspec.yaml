@@ -42,7 +42,13 @@ dev_dependencies:
 # pin disjoint dbus majors; force dbus 0.8 so the workspace resolves. If a
 # device-info feature later needs upower against 0.8, align the *_plus versions
 # instead of relying on this override.
+# code_assets / hooks: the ffmpeg_kit_extended_flutter that the recording
+# backend binds declares code_assets ^1.2.1 / hooks ^2.0.2 while the media_kit
+# fork needs code_assets ^2.1.0; the media_core workspace carries the same two
+# overrides for the same reason (see its root pubspec).
 dependency_overrides:
+  code_assets: ^2.1.0
+  hooks: ^2.2.0
   dbus: ^0.8.0
   equatable: ^3.0.0
   platform: ^3.2.0

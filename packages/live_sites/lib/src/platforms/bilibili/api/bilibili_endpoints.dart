@@ -164,10 +164,8 @@ abstract final class BilibiliEndpoints {
   /// The page `w_webid`'s access id is read out of.
   static Uri lol() => Uri.https(liveHost, '/lol');
 
-  /// A QR login: the key to poll with, and the URL to encode. Not parsed by
-  /// this adapter — the shared contract has no login capability, so the
-  /// passport endpoints stay unused here (see `account()` on the site, which
-  /// only reads the stored cookie's uid).
+  /// A QR login: the key to poll with, and the URL to encode (the auth
+  /// capability's QR issue reads both).
   static Uri qrGenerate() => Uri.https(passportHost, '/x/passport-login/web/qrcode/generate');
 
   /// One poll of the QR login [key].

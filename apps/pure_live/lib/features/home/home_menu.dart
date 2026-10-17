@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/app/routing/routes/about/about_routes.dart';
-import 'package:pure_live/app/routing/routes/areas/areas_routes.dart';
 import 'package:pure_live/app/routing/routes/iptv/iptv_routes.dart';
 import 'package:pure_live/app/routing/routes/multiview/multiview_routes.dart';
 import 'package:pure_live/app/routing/routes/search/search_routes.dart';

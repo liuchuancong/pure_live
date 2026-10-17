@@ -6,33 +6,7 @@ part of 'areas_routes.dart';
 // GoRouterGenerator
 // **************************************************************************
 
-List<RouteBase> get $appRoutes => [$areasRoute, $areaRoomsRoute];
-
-RouteBase get $areasRoute => GoRouteData.$route(
-  path: '/areas',
-  hasOverriddenOnExit: false,
-  factory: $AreasRoute._fromState,
-);
-
-mixin $AreasRoute on GoRouteData {
-  static AreasRoute _fromState(GoRouterState state) => const AreasRoute();
-
-  @override
-  String get location => GoRouteData.$location('/areas');
-
-  @override
-  void go(BuildContext context) => context.go(location);
-
-  @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  @override
-  void replace(BuildContext context) => context.replace(location);
-}
+List<RouteBase> get $appRoutes => [$areaRoomsRoute];
 
 RouteBase get $areaRoomsRoute => GoRouteData.$route(
   path: '/areas/:siteId/:areaId',

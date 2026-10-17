@@ -27,9 +27,14 @@ Uri releasePageUri(AppRelease release) {
 /// Opens [release]'s page in the system browser. A browser that does not
 /// open toasts instead of throwing — the update action must never die on a
 /// missing external handler.
-Future<void> openReleasePage(BuildContext context, AppRelease release) async {
+Future<void> openReleasePage(BuildContext context, AppRelease release) =>
+    openReleaseUri(context, releasePageUri(release));
+
+/// Opens [uri] in the system browser, with the same never-die toast as
+/// [openReleasePage] — the download-file actions hand release assets here.
+Future<void> openReleaseUri(BuildContext context, Uri uri) async {
   try {
-    final opened = await launchUrl(releasePageUri(release), mode: LaunchMode.externalApplication);
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!opened && context.mounted) {
       PureToast.show(context, context.t.about.browserNotOpened, type: PureToastType.error);
     }

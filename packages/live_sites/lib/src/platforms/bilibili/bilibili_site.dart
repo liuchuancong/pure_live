@@ -6,6 +6,7 @@ import 'dart:math';
 // ignore_for_file: switch_on_type
 
 import 'package:live_sites/src/capabilities/live_area_provider.dart';
+import 'package:live_sites/src/capabilities/live_auth_capability.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
@@ -22,12 +23,14 @@ import 'package:live_sites/src/platforms/bilibili/api/bilibili_http.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_wbi.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_manifest.dart';
 import 'package:live_sites/src/platforms/bilibili/capabilities/bilibili_area_provider.dart';
+import 'package:live_sites/src/platforms/bilibili/capabilities/bilibili_auth_provider.dart';
 import 'package:live_sites/src/platforms/bilibili/capabilities/bilibili_discovery_provider.dart';
 import 'package:live_sites/src/platforms/bilibili/capabilities/bilibili_link_resolver.dart';
 import 'package:live_sites/src/platforms/bilibili/capabilities/bilibili_playback_provider.dart';
 import 'package:live_sites/src/platforms/bilibili/capabilities/bilibili_room_provider.dart';
 import 'package:live_sites/src/platforms/bilibili/capabilities/bilibili_search_provider.dart';
 import 'package:live_sites/src/platforms/bilibili/danmaku/bilibili_danmaku_session.dart';
+import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_auth_parser.dart';
 import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_failure.dart';
 import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_room_parser.dart';
 
@@ -153,6 +156,8 @@ final class BilibiliSite implements LiveSite {
   final Random random;
 
   _Session? _session;
+  String? _appliedLogin;
+  int _appliedUid = 0;
   final Map<String, String> _longIds = {};
   ({BilibiliGiftCatalog catalog, DateTime at})? _gifts;
   Future<BilibiliGiftCatalog>? _giftsFetch;
@@ -176,10 +181,32 @@ final class BilibiliSite implements LiveSite {
   // Session -------------------------------------------------------------------
 
   /// The login cookie, control characters and a pasted `Cookie:` prefix
-  /// stripped.
-  String login() {
-    final raw = loginCookie().replaceAll(_controlCharacters, '').trim();
-    return raw.replaceFirst(RegExp(r'^Cookie:\s*', caseSensitive: false), '').trim();
+  /// stripped: the credential applied through [applyLoginCredential] when
+  /// there is one, else what the application supplied at construction.
+  String login() => _sanitizeCookie(_appliedLogin ?? loginCookie());
+
+  /// Sanitizes a cookie header the way [login] hands it out: control
+  /// characters and a pasted `Cookie:` prefix gone.
+  static String _sanitizeCookie(String raw) {
+    final value = raw.replaceAll(_controlCharacters, '').trim();
+    return value.replaceFirst(RegExp(r'^Cookie:\s*', caseSensitive: false), '').trim();
+  }
+
+  /// Applies [cookie] as the login every request of this site carries from
+  /// now on, with [uid] for the danmaku when the cookie itself names no
+  /// `DedeUserID`. In-memory only — persistence is the application's business
+  /// — and it survives until [clearLoginCredential].
+  void applyLoginCredential({required String cookie, int? uid}) {
+    final sanitized = _sanitizeCookie(cookie);
+    _appliedLogin = sanitized.isEmpty ? null : sanitized;
+    _appliedUid = uid ?? 0;
+  }
+
+  /// Removes the applied credential; requests carry the construction-time
+  /// login again.
+  void clearLoginCredential() {
+    _appliedLogin = null;
+    _appliedUid = 0;
   }
 
   /// The session of the current cookie; a changed cookie starts a new one
@@ -445,7 +472,9 @@ final class BilibiliSite implements LiveSite {
 
   int _verifiedUid() {
     final session = _current();
-    return session.verifiedUid > 0 ? session.verifiedUid : storedUid();
+    if (session.verifiedUid > 0) return session.verifiedUid;
+    if (_appliedUid > 0) return _appliedUid;
+    return storedUid();
   }
 
   // Gifts ---------------------------------------------------------------------
@@ -483,16 +512,16 @@ final class BilibiliSite implements LiveSite {
   Future<({int uid, String name})> account() async {
     final session = _current();
     if (session.login.isEmpty) throw const BilibiliFailure(BilibiliFailureKind.needsLogin, 'no cookie');
-    final response = await http.get(BilibiliEndpoints.account(), headers: {'cookie': session.login});
-    final root = BilibiliRoomParser.checked(response.text, status: response.status, what: 'member/web/account');
-    final data = root['data'];
-    final name = data is Map ? data['uname']?.toString() : null;
-    final uid = data is Map ? BilibiliRoomParser.roomIdOf(data['mid']) : null;
-    if (name == null || name.isEmpty || uid == null) {
-      throw const BilibiliFailure(BilibiliFailureKind.apiChanged, 'member/web/account: no uname or mid');
-    }
-    session.verifiedUid = int.parse(uid);
-    return (uid: int.parse(uid), name: name);
+    final account = await accountOf(cookie: session.login);
+    session.verifiedUid = account.uid;
+    return (uid: account.uid, name: account.name);
+  }
+
+  /// The account behind [cookie], read without touching the session: only the
+  /// applied login (see [applyLoginCredential]) feeds the verified uid back.
+  Future<({int uid, String name, String face})> accountOf({required String cookie}) async {
+    final response = await http.get(BilibiliEndpoints.account(), headers: {'cookie': cookie});
+    return BilibiliAuthParser.account(response.text, status: response.status);
   }
 
   // Capability wiring ---------------------------------------------------------
@@ -504,6 +533,7 @@ final class BilibiliSite implements LiveSite {
   BilibiliPlaybackProvider? _playback;
   BilibiliDanmakuProvider? _danmaku;
   BilibiliLinkResolver? _link;
+  BilibiliAuthProvider? _auth;
 
   /// The capability of type [T], or null when bilibili does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -516,6 +546,7 @@ final class BilibiliSite implements LiveSite {
     final playback = _playback ??= BilibiliPlaybackProvider(site: this);
     final danmaku = _danmaku ??= BilibiliDanmakuProvider(site: this);
     final link = _link ??= BilibiliLinkResolver(site: this);
+    final auth = _auth ??= BilibiliAuthProvider(site: this);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -524,6 +555,7 @@ final class BilibiliSite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveAuthCapability) => auth as T,
       _ => null,
     };
   }

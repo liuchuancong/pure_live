@@ -9,9 +9,11 @@ list(APPEND FLUTTER_PLUGIN_LIST
   connectivity_plus
   desktop_multi_window
   device_screen_brightness
+  ffmpeg_kit_extended_flutter
   file_selector_windows
   flutter_acrylic
   flutter_secure_storage_windows
+  media_core_native
   media_kit_libs_windows_video
   media_kit_video
   refresh_rate

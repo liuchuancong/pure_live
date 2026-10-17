@@ -72,10 +72,7 @@ final class _RemoteSyncPageState extends ConsumerState<RemoteSyncPage> {
           variant: ButtonVariant.ghost,
           onPressed: () => Navigator.of(dialogContext).pop(false),
         ),
-        PureButton(
-          label: dialogContext.t.common.confirm,
-          onPressed: () => Navigator.of(dialogContext).pop(true),
-        ),
+        PureButton(label: dialogContext.t.common.confirm, onPressed: () => Navigator.of(dialogContext).pop(true)),
       ],
     );
     return confirmed == true;
@@ -93,6 +90,11 @@ final class _RemoteSyncPageState extends ConsumerState<RemoteSyncPage> {
       'favorite' => context.t.remoteSync.sectionFavorite,
       'history' => context.t.remoteSync.sectionHistory,
       'tags' => context.t.remoteSync.sectionGroups,
+      'roomCard' => context.t.settings.roomCardSettings,
+      'refresh' => context.t.settings.refreshSettings,
+      'page' => context.t.settings.pageSettings,
+      'proxy' => context.t.settings.proxySettings,
+      'loading' => context.t.settings.loadingStyle,
       _ => section,
     };
     return showPureDialog<List<String>>(
@@ -228,11 +230,7 @@ final class _RemoteSyncPageState extends ConsumerState<RemoteSyncPage> {
             Container(
               padding: const EdgeInsets.all(12),
               color: Colors.white,
-              child: SizedBox(
-                width: 180,
-                height: 180,
-                child: PrettyQrView.data(data: _service.qrData),
-              ),
+              child: SizedBox(width: 180, height: 180, child: PrettyQrView.data(data: _service.qrData)),
             ),
           const SizedBox(height: 12),
           SelectableText(
@@ -258,10 +256,7 @@ final class _RemoteSyncPageState extends ConsumerState<RemoteSyncPage> {
               Text(_service.isServerRunning ? context.t.remoteSync.running : context.t.remoteSync.notRunning),
             ],
           ),
-          if (_service.isSyncing || _service.isApplying) ...[
-            const SizedBox(height: 12),
-            const LinearIndeterminate(),
-          ],
+          if (_service.isSyncing || _service.isApplying) ...[const SizedBox(height: 12), const LinearIndeterminate()],
         ],
       ),
     );
@@ -309,10 +304,7 @@ final class _RemoteSyncPageState extends ConsumerState<RemoteSyncPage> {
                   children: [
                     Text(device.name, style: theme.text.body.copyWith(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),
-                    Text(
-                      device.address,
-                      style: theme.text.caption.copyWith(color: theme.colors.textSecondary),
-                    ),
+                    Text(device.address, style: theme.text.caption.copyWith(color: theme.colors.textSecondary)),
                   ],
                 ),
               ),

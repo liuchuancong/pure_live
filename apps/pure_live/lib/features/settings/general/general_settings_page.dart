@@ -104,6 +104,8 @@ final class GeneralSettingsPage extends ConsumerWidget {
     return switch (launch) {
       AppLaunchBranch.home => context.t.tabs.home,
       AppLaunchBranch.follow => context.t.tabs.favorites,
+      AppLaunchBranch.popular => context.t.tabs.popular,
+      AppLaunchBranch.areas => context.t.tabs.areas,
       AppLaunchBranch.history => context.t.tabs.history,
     };
   }

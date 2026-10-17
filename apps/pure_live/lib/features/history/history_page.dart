@@ -3,6 +3,7 @@ import 'dart:async' show StreamSubscription, unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_library/live_library.dart' show HistoryRepository, WatchRecord;
+import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
 import 'package:pure_live/features/popular/room_card.dart';
@@ -188,16 +189,20 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
 }
 
 /// One history entry: the shared room card, tappable to resume the room,
-/// with a corner remove control over the cover.
-final class _HistoryTile extends StatelessWidget {
+/// with a corner remove control over the cover. An entry with watch
+/// progress — a replay or VOD that got part-watched — adds a thin progress
+/// bar along the card's foot and a resume pill over the caption's free
+/// corner; records without progress render exactly as before.
+final class _HistoryTile extends ConsumerWidget {
   const new({required this.record, required this.onRemove});
 
   final WatchRecord record;
   final VoidCallback onRemove;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final room = record.room;
+    final progress = record.progress;
     return Stack(
       children: [
         RoomCard(
@@ -230,6 +235,54 @@ final class _HistoryTile extends StatelessWidget {
             ),
           ),
         ),
+        if (progress != null) ...[
+          Positioned(
+            right: 6,
+            bottom: 10,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.55),
+                borderRadius: const BorderRadius.all(Radius.circular(6)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 12),
+                  const SizedBox(width: 3),
+                  Text(
+                    context.t.history.resume,
+                    maxLines: 1,
+                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: ClipRRect(
+              // The card's own corner preference, so the bar reads as the
+              // card's foot instead of a strip glued across it.
+              borderRadius: BorderRadius.vertical(
+                bottom: Radius.circular(ref.watch(roomCardStyleProvider).cornerRadius),
+              ),
+              child: SizedBox(
+                height: 3,
+                child: ColoredBox(
+                  color: PureTheme.of(context).colors.fillQuaternary,
+                  child: FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: progress.clamp(0.0, 1.0),
+                    child: ColoredBox(color: PureTheme.of(context).colors.primary),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }

@@ -4,6 +4,7 @@ import 'package:pure_live/app/delegates.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/app/theme/app_theme.dart';
+import 'package:pure_live/features/wallpaper/wallpaper_background_layer.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart' show TranslationProvider, t;
 import 'package:pure_uikit/pure_uikit.dart';
 
@@ -39,8 +40,10 @@ final class PureLiveApp extends ConsumerWidget {
       locale: appFlutterLocale,
       // The preferences host mounts the timers the app runs on its own
       // behalf: the countdown close and the lifecycle feed the list pages'
-      // refresh-on-resume reads.
-      builder: (context, child) => AppPreferencesHost(child: TranslationProvider(child: child!)),
+      // refresh-on-resume reads. The wallpaper layer sits inside it, once,
+      // painting the chosen background behind every route.
+      builder: (context, child) =>
+          AppPreferencesHost(child: TranslationProvider(child: WallpaperBackgroundLayer(child: child!))),
     );
   }
 

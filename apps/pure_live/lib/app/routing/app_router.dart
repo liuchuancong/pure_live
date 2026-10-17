@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,17 +7,20 @@ import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:pure_live/app/navigation/app_navigator_key.dart' show appNavigatorKey;
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/routing/deep_link.dart';
 import 'package:pure_live/app/routing/route_paths.dart';
 import 'package:pure_live/app/routing/routes/about/about_routes.dart' as about_routes;
 import 'package:pure_live/app/routing/routes/about/version_routes.dart' as version_routes;
 import 'package:pure_live/app/routing/routes/areas/areas_routes.dart' as areas_routes;
 import 'package:pure_live/app/routing/routes/iptv/iptv_routes.dart' as iptv_routes;
+import 'package:pure_live/app/routing/routes/login/login_routes.dart' as login_routes;
 import 'package:pure_live/app/routing/routes/multiview/multiview_routes.dart' as multiview_routes;
 import 'package:pure_live/app/routing/routes/search/search_routes.dart' as search_routes;
 import 'package:pure_live/app/routing/routes/settings/settings_routes.dart' as settings_routes;
 import 'package:pure_live/app/routing/routes/splash/splash_routes.dart' as splash_routes;
 import 'package:pure_live/app/routing/routes/toolbox/remote_sync_routes.dart' as remote_sync_routes;
 import 'package:pure_live/app/routing/routes/toolbox/toolbox_routes.dart' as toolbox_routes;
+import 'package:pure_live/features/areas/areas_page.dart';
 import 'package:pure_live/features/follow/follow_page.dart';
 import 'package:pure_live/features/history/history_page.dart';
 import 'package:pure_live/features/home/home_page.dart';
@@ -29,12 +34,19 @@ part 'app_router.g.dart';
 
 /// The app's navigation graph in typed-route form (go_router_builder).
 ///
-/// The shell and its three branches are declared in one table here, because
+/// The shell and its five branches are declared in one table here, because
 /// the branch nesting is part of a single annotation; the settings and
 /// search routes live in their own files so the chrome and the pages can
 /// reach them without importing this library back. When a domain grows real
 /// parametrised routes, its `routes/<域>_routes.dart` takes its own
 /// annotations and joins [routerProvider] the same way those two lists do.
+///
+/// The branch table is the reference's home tab (3.x `HomeMenu`): favorites,
+/// popular and areas are tabs of the shell, not pages pushed over it — the
+/// popular and areas entries were full pages above the shell before the
+/// conversion and keep their paths, so stored links keep resolving. History
+/// stays the tab it already was, and the settings cluster keeps its entry
+/// button above the shell instead of becoming one.
 @TypedStatefulShellRoute<AppShellRouteData>(
   branches: <TypedStatefulShellBranch<StatefulShellBranchData>>[
     TypedStatefulShellBranch<HomeBranchData>(
@@ -42,6 +54,12 @@ part 'app_router.g.dart';
     ),
     TypedStatefulShellBranch<FollowBranchData>(
       routes: <TypedRoute<RouteData>>[TypedGoRoute<FollowRoute>(path: RoutePath.follow)],
+    ),
+    TypedStatefulShellBranch<PopularBranchData>(
+      routes: <TypedRoute<RouteData>>[TypedGoRoute<PopularRoute>(path: RoutePath.popular)],
+    ),
+    TypedStatefulShellBranch<AreasBranchData>(
+      routes: <TypedRoute<RouteData>>[TypedGoRoute<AreasRoute>(path: RoutePath.areas)],
     ),
     TypedStatefulShellBranch<HistoryBranchData>(
       routes: <TypedRoute<RouteData>>[TypedGoRoute<HistoryRoute>(path: RoutePath.history)],
@@ -80,6 +98,18 @@ class FollowBranchData extends StatefulShellBranchData {
   const new();
 }
 
+/// Marks the popular branch inside the shell.
+class PopularBranchData extends StatefulShellBranchData {
+  /// The branch marker.
+  const new();
+}
+
+/// Marks the areas branch inside the shell.
+class AreasBranchData extends StatefulShellBranchData {
+  /// The branch marker.
+  const new();
+}
+
 /// Marks the history branch inside the shell.
 class HistoryBranchData extends StatefulShellBranchData {
   /// The branch marker.
@@ -113,15 +143,24 @@ class HistoryRoute extends GoRouteData with $HistoryRoute {
   Widget build(BuildContext context, GoRouterState state) => const HistoryPage();
 }
 
-/// The popular page: every platform's recommend feed, a full page above the
-/// shell.
-@TypedGoRoute<PopularRoute>(path: RoutePath.popular)
+/// The popular branch's root route: `/popular` — the reference's popular
+/// tab, a shell branch since the tab conversion.
 class PopularRoute extends GoRouteData with $PopularRoute {
   /// The popular route.
   const new();
 
   @override
   Widget build(BuildContext context, GoRouterState state) => const PopularPage();
+}
+
+/// The areas branch's root route: `/areas` — the reference's areas tab, a
+/// shell branch since the tab conversion.
+class AreasRoute extends GoRouteData with $AreasRoute {
+  /// The areas route.
+  const new();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const AreasPage();
 }
 
 /// The assembled graph: this library's shell table plus every standalone
@@ -134,16 +173,26 @@ class PopularRoute extends GoRouteData with $PopularRoute {
 ///
 /// The launch route is the splash (the splash wave owns the start flow); the
 /// launch-page and restore-last-tab preferences decide the branch the splash
-/// hands over to, through `launchLocationFor` — read once per construction
-/// here as the deep-link fallback, and again at the splash's handover.
-final routerProvider = Provider<GoRouter>(
-  (ref) => GoRouter(
+/// hands over to, through `launchLocationFor` at the splash's handover — a
+/// parked deep-link room rides above that branch (deep_link).
+///
+/// Two hand-off doors join the graph here. The top-level redirect rewrites a
+/// cold-start `purelive://room` deep link to the room route before any
+/// matching, so a cold-start link wins over the initial location (go_router
+/// only falls back to that when no deep link exists). On the desktop the
+/// single-instance channel's forwarded requests are answered for as long as
+/// this provider lives: a second launch's room link pushes on top of
+/// whatever page the app is on (deep_link).
+final routerProvider = Provider<GoRouter>((ref) {
+  final router = GoRouter(
     navigatorKey: appNavigatorKey,
     // The launch route is the splash: everything the boot initialises is
     // ready before the first frame, so the splash only brands the wait and
     // then hands over to the launch branch. A cold-start deep link still wins
-    // over the initial location — go_router only falls back to it.
+    // over the initial location — the redirect below rewrites it before
+    // matching, and go_router only falls back to the initial location.
     initialLocation: RoutePath.splash,
+    redirect: launchDeepLinkRedirect,
     routes: <RouteBase>[
       ...$appRoutes,
       ...splash_routes.$appRoutes,
@@ -155,7 +204,19 @@ final routerProvider = Provider<GoRouter>(
       ...toolbox_routes.$appRoutes,
       ...remote_sync_routes.$appRoutes,
       ...search_routes.$appRoutes,
+      ...login_routes.$appRoutes,
       ...settings_routes.$appRoutes,
     ],
-  ),
-);
+  );
+  // The single-instance requests a second desktop launch forwards. The
+  // channel queues what arrived before this subscription exists, so a
+  // cold-start payload is not lost while the splash is the only route.
+  final channel = ref.watch(desktopInstanceChannelProvider);
+  if (channel != null) {
+    final subscription = channel.forwarded.listen(
+      (intent) => unawaited(handleLaunchIntent(ref, router, intent)),
+    );
+    ref.onDispose(subscription.cancel);
+  }
+  return router;
+});

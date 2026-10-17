@@ -1,7 +1,10 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
+import 'package:pure_live/app/routing/deep_link.dart';
 import 'package:pure_live/app/routing/route_paths.dart';
 import 'package:pure_live/app/shell/shell_destinations.dart';
 import 'package:pure_live/features/splash/splash_screen.dart';
@@ -53,8 +56,24 @@ class SplashRoute extends GoRouteData with $SplashRoute {
         logoText: context.t.splash.welcome,
         loaderType: LoaderType.progressBar,
         duration: const Duration(seconds: 2),
-        onNextPressed: () => context.go(launchLocationFor(ref.read(appPreferencesProvider))),
+        onNextPressed: () => handOverFromSplash(context, ref),
       ),
     );
+  }
+}
+
+/// The splash's route-on: the launch branch the preferences name, and any
+/// room a launch handoff parked while the splash was up on top of it.
+///
+/// The parked room is what keeps a command-line or protocol launch from
+/// losing its room to the `go` below — replacing the stack would drop
+/// anything pushed during the splash, so the room waits here and is pushed
+/// after the branch lands (deep_link).
+void handOverFromSplash(BuildContext context, WidgetRef ref) {
+  final launchLocation = launchLocationFor(ref.read(appPreferencesProvider));
+  final room = ref.read(pendingLaunchRoomProvider.notifier).take();
+  context.go(launchLocation);
+  if (room != null) {
+    unawaited(context.push(room.toRoute().location));
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/features/about/markdown_text.dart';
 import 'package:pure_live/features/about/update_feed.dart';
@@ -19,9 +20,9 @@ import 'package:pure_uikit/pure_uikit.dart';
 /// Adapted to this app's graph: the state comes from
 /// [versionControllerProvider] over the shared `updateFeedProvider` (no
 /// GetX), the notes render through the app's own [MarkdownText], and the
-/// update action opens the release's page (app_update_flow) because the app
-/// ships no download pipeline — the reference's per-platform download
-/// sections need per-release asset metadata the feed does not carry.
+/// update action opens the release's page (app_update_flow) — the app ships
+/// no in-app installer, but the latest release's installable packages are
+/// listed under the action, each handed to the system browser.
 /// History is the one list [showVersionHistorySheet] already presents; this
 /// page references it rather than growing a second one.
 final class VersionPage extends ConsumerWidget {
@@ -108,6 +109,7 @@ final class VersionPage extends ConsumerWidget {
                       ),
                   ],
                 ),
+                ..._installableAssets(context, latest),
                 const SizedBox(height: 8),
                 MarkdownText(latest.body),
               ],
@@ -124,6 +126,45 @@ final class VersionPage extends ConsumerWidget {
       return state.error != null ? context.t.about.checkFailed : context.t.about.checkRunning;
     }
     return state.hasUpdate ? '${context.t.about.newVersion} ${_tag(state.releases.first)}' : context.t.about.upToDate;
+  }
+
+  /// The latest release's installable packages, listed under the update
+  /// action (the page-level counterpart of the history sheet's download
+  /// files): one row per package, downloading opens it in the browser.
+  List<Widget> _installableAssets(BuildContext context, AppRelease latest) {
+    final assets = latest.installableAssets;
+    if (assets.isEmpty) {
+      return const <Widget>[];
+    }
+    return [
+      const SizedBox(height: 12),
+      Text(
+        context.t.about.downloadFiles,
+        style: PureTheme.of(context).text.caption
+            .copyWith(color: PureTheme.of(context).colors.textSecondary, fontWeight: FontWeight.w600),
+      ),
+      const SizedBox(height: 8),
+      for (final asset in assets)
+        ReleaseFileCard(
+          asset: asset,
+          onCopy: () async {
+            final uri = asset.uri;
+            if (uri == null) {
+              return;
+            }
+            await Clipboard.setData(ClipboardData(text: uri.toString()));
+            if (context.mounted) {
+              PureToast.show(context, context.t.about.copied, type: PureToastType.success);
+            }
+          },
+          onDownload: () {
+            final uri = asset.uri;
+            if (uri != null) {
+              unawaited(openReleaseUri(context, uri));
+            }
+          },
+        ),
+    ];
   }
 
   /// The release's tag, v-prefixed.

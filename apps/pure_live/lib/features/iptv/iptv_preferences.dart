@@ -20,17 +20,99 @@ abstract final class IptvKeys {
   static const String document = 'preferences.iptv.v1';
 }
 
+/// An Xtream Codes account the user added as a source, as persisted.
+///
+/// The credentials are everything an Xtream catalogue read needs; [epgUrl]
+/// is the per-source programme guide the play page reads when it is set — an
+/// empty one means no guide, and no guide strip, rather than a guessed
+/// address.
+final class IptvXtreamSource {
+  /// An Xtream source record.
+  const new({
+    required this.id,
+    required this.name,
+    required this.url,
+    required this.username,
+    required this.password,
+    this.epgUrl = '',
+  });
+
+  /// Restores a record; unknown shapes decode to the blanks.
+  factory IptvXtreamSource.fromJson(Map<String, Object?> json) => IptvXtreamSource(
+    id: json['id'] as String? ?? '',
+    name: json['name'] as String? ?? '',
+    url: json['url'] as String? ?? '',
+    username: json['username'] as String? ?? '',
+    password: json['password'] as String? ?? '',
+    epgUrl: json['epgUrl'] as String? ?? '',
+  );
+
+  /// The record's id, stable across refreshes.
+  final String id;
+
+  /// The name the user gave the source.
+  final String name;
+
+  /// The server's base address, such as `http://example.tv:8080`.
+  final String url;
+
+  /// The account's user name.
+  final String username;
+
+  /// The account's password.
+  final String password;
+
+  /// The source's XMLTV guide address; empty when the user named none.
+  final String epgUrl;
+
+  /// Writes the record.
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'name': name,
+    'url': url,
+    'username': username,
+    'password': password,
+    'epgUrl': epgUrl,
+  };
+
+  /// Returns a copy with the given fields replaced.
+  IptvXtreamSource copyWith({String? name, String? url, String? username, String? password, String? epgUrl}) =>
+      IptvXtreamSource(
+        id: id,
+        name: name ?? this.name,
+        url: url ?? this.url,
+        username: username ?? this.username,
+        password: password ?? this.password,
+        epgUrl: epgUrl ?? this.epgUrl,
+      );
+
+  @override
+  String toString() => 'IptvXtreamSource($id, $name, $url, user: $username)'; // the password stays out of logs.
+}
+
 /// The IPTV viewer's own choices, as persisted: the channel and group a
-/// session ended on, so the next one opens where the last one left off.
+/// session ended on, so the next one opens where the last one left off, and
+/// the Xtream sources — whose credentials live here because the playlists
+/// document of the library has no room for a second source shape.
 final class IptvPreferences {
-  /// The shipping defaults: no channel remembered, every group shown.
-  const new({this.lastChannelId = '', this.lastGroup = '', this.favoritesOnly = false});
+  /// The shipping defaults: no channel remembered, every group shown, no
+  /// Xtream source.
+  const new({
+    this.lastChannelId = '',
+    this.lastGroup = '',
+    this.favoritesOnly = false,
+    this.xtreamSources = const [],
+  });
 
   /// Reads the document; unknown shapes decode to the defaults.
   factory IptvPreferences.fromJson(Map<String, Object?> json) => IptvPreferences(
     lastChannelId: json['lastChannelId'] as String? ?? '',
     lastGroup: json['lastGroup'] as String? ?? '',
     favoritesOnly: json['favoritesOnly'] as bool? ?? false,
+    xtreamSources: [
+      for (final source in (json['xtreamSources'] as List<Object?>? ?? const <Object?>[]))
+        if (source is Map) IptvXtreamSource.fromJson(Map<String, Object?>.from(source)),
+    ],
   );
 
   /// The channel the last session played; empty when none did.
@@ -42,18 +124,28 @@ final class IptvPreferences {
   /// Whether the channel list was filtered to favourites.
   final bool favoritesOnly;
 
+  /// The Xtream sources, in the order the user added them.
+  final List<IptvXtreamSource> xtreamSources;
+
   /// Writes the document.
   Map<String, Object?> toJson() => {
     'lastChannelId': lastChannelId,
     'lastGroup': lastGroup,
     'favoritesOnly': favoritesOnly,
+    'xtreamSources': [for (final source in xtreamSources) source.toJson()],
   };
 
   /// Returns a copy with the given fields replaced.
-  IptvPreferences copyWith({String? lastChannelId, String? lastGroup, bool? favoritesOnly}) => IptvPreferences(
+  IptvPreferences copyWith({
+    String? lastChannelId,
+    String? lastGroup,
+    bool? favoritesOnly,
+    List<IptvXtreamSource>? xtreamSources,
+  }) => IptvPreferences(
     lastChannelId: lastChannelId ?? this.lastChannelId,
     lastGroup: lastGroup ?? this.lastGroup,
     favoritesOnly: favoritesOnly ?? this.favoritesOnly,
+    xtreamSources: xtreamSources ?? this.xtreamSources,
   );
 }
 

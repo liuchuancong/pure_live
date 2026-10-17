@@ -18,8 +18,16 @@ enum ShellBranch {
   /// favorites (3.x `HomeMenu.favorites`, heart glyph).
   follow(1, Icons.favorite),
 
+  /// The recommend feed — the reference's second tab (3.x
+  /// `HomeMenu.popular`, fire glyph), first-class since the tab conversion.
+  popular(2, Icons.local_fire_department),
+
+  /// The category catalogue — the reference's third tab (3.x
+  /// `HomeMenu.areas`, grid glyph), first-class since the tab conversion.
+  areas(3, Icons.apps),
+
   /// The watch history.
-  history(2, Icons.history);
+  history(4, Icons.history);
 
   new(this.branchIndex, this.icon);
 
@@ -34,6 +42,8 @@ enum ShellBranch {
   String label(BuildContext context) => switch (this) {
     ShellBranch.home => context.t.tabs.home,
     ShellBranch.follow => context.t.tabs.favorites,
+    ShellBranch.popular => context.t.tabs.popular,
+    ShellBranch.areas => context.t.tabs.areas,
     ShellBranch.history => context.t.tabs.history,
   };
 
@@ -42,6 +52,8 @@ enum ShellBranch {
   String get location => switch (this) {
     ShellBranch.home => '/',
     ShellBranch.follow => '/follow',
+    ShellBranch.popular => '/popular',
+    ShellBranch.areas => '/areas',
     ShellBranch.history => '/history',
   };
 
@@ -70,19 +82,37 @@ enum ShellBranch {
 /// An id the enum does not know is dropped; an empty or unknown document
 /// falls back to every branch in table order — a shell with no destination
 /// cannot be walked, so this never returns an empty list.
+///
+/// A stored document that is still the untouched default (`shellBranches`
+/// before the popular and areas branches existed) has never been customised,
+/// so it grows the new branches instead of hiding them: the tab conversion
+/// must not land as two tabs going missing. A document that differs from the
+/// default at all is a real choice and stands as stored.
 List<ShellBranch> visibleShellBranches(AppPreferences preferences) {
+  final stored = preferences.shellBranches;
   final seen = <ShellBranch>{};
   final result = <ShellBranch>[];
-  for (final id in preferences.shellBranches) {
-    final branch = ShellBranch.maybeFromId(id);
-    if (branch != null && seen.add(branch)) {
-      result.add(branch);
+  if (stored.length != defaultShellBranches.length || !_sameIds(stored, defaultShellBranches)) {
+    for (final id in stored) {
+      final branch = ShellBranch.maybeFromId(id);
+      if (branch != null && seen.add(branch)) {
+        result.add(branch);
+      }
     }
   }
   if (result.isEmpty) {
     result.addAll(ShellBranch.values);
   }
   return result;
+}
+
+bool _sameIds(List<String> a, List<String> b) {
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /// The location the router starts on: the last visited branch when the

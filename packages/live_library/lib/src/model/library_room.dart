@@ -39,13 +39,43 @@ abstract class FollowGroup with _$FollowGroup {
 }
 
 /// One watch-history entry: the room as it was watched.
+///
+/// [progress] (the watched fraction, 0.0–1.0) and [position] (where
+/// playback stopped) record how far a watch got. Both are optional so
+/// records persisted before watch progress keep loading unchanged — the
+/// tolerant read is the migration, in place under the versioned
+/// `library.history.v1` key (see `LibraryKeys`).
 @freezed
 abstract class WatchRecord with _$WatchRecord {
   /// A history record; [seq] orders the list (newest first).
-  const factory WatchRecord({required LiveRoom room, required DateTime watchedAt, @Default(0) int seq}) = _WatchRecord;
+  const factory WatchRecord({
+    required LiveRoom room,
+    required DateTime watchedAt,
+    @Default(0) int seq,
+    double? progress,
+    @DurationMillisConverter() Duration? position,
+  }) = _WatchRecord;
 
   /// Restores a record from JSON.
   factory WatchRecord.fromJson(Map<String, Object?> json) => _$WatchRecordFromJson(json);
+}
+
+/// Total milliseconds ↔ `Duration?`.
+///
+/// Writes [Duration.inMilliseconds]; reads accept a missing or malformed
+/// field and yield null, so old history documents keep loading.
+final class DurationMillisConverter implements JsonConverter<Duration?, Object?> {
+  /// Creates a const converter instance for field annotations.
+  const DurationMillisConverter();
+
+  @override
+  Duration? fromJson(Object? json) => switch (json) {
+    final num millis when millis >= 0 => Duration(milliseconds: millis.toInt()),
+    _ => null,
+  };
+
+  @override
+  Object? toJson(Duration? value) => value?.inMilliseconds;
 }
 
 /// The identity helper shared by the library lists.

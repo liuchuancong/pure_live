@@ -67,6 +67,9 @@ abstract final class RoutePath {
   /// The font manager, one level under the settings index.
   static const String settingsFonts = '/settings/fonts';
 
+  /// The wallpaper picker, one level under the settings index.
+  static const String settingsWallpaper = '/settings/wallpaper';
+
   /// The cache & data page, one level under the settings index.
   static const String settingsData = '/settings/data';
 
@@ -97,4 +100,13 @@ abstract final class RoutePath {
 
   /// The room card settings page, one level under the settings index.
   static const String settingsRoomCard = '/settings/room-card';
+
+  /// The recorder page, one level under the settings index.
+  static const String settingsRecorder = '/settings/recorder';
+
+  /// The account page, one level under the settings index.
+  static const String settingsAccount = '/settings/account';
+
+  /// The bilibili QR login page, pushed from the account page.
+  static const String login = '/login';
 }

@@ -10,6 +10,7 @@ List<RouteBase> get $appRoutes => [
   $settingsRoute,
   $appearanceRoute,
   $fontManagerRoute,
+  $wallpaperRoute,
   $cacheDataRoute,
   $generalSettingsRoute,
   $refreshSettingsRoute,
@@ -18,6 +19,7 @@ List<RouteBase> get $appRoutes => [
   $networkProxySettingsRoute,
   $loadingStyleSettingsRoute,
   $roomCardSettingsRoute,
+  $recorderRoute,
 ];
 
 RouteBase get $settingsRoute => GoRouteData.$route(
@@ -85,6 +87,33 @@ mixin $FontManagerRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location('/settings/fonts');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $wallpaperRoute => GoRouteData.$route(
+  path: '/settings/wallpaper',
+  hasOverriddenOnExit: false,
+  factory: $WallpaperRoute._fromState,
+);
+
+mixin $WallpaperRoute on GoRouteData {
+  static WallpaperRoute _fromState(GoRouterState state) =>
+      const WallpaperRoute();
+
+  @override
+  String get location => GoRouteData.$location('/settings/wallpaper');
 
   @override
   void go(BuildContext context) => context.go(location);
@@ -301,6 +330,32 @@ mixin $RoomCardSettingsRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location('/settings/room-card');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $recorderRoute => GoRouteData.$route(
+  path: '/settings/recorder',
+  hasOverriddenOnExit: false,
+  factory: $RecorderRoute._fromState,
+);
+
+mixin $RecorderRoute on GoRouteData {
+  static RecorderRoute _fromState(GoRouterState state) => const RecorderRoute();
+
+  @override
+  String get location => GoRouteData.$location('/settings/recorder');
 
   @override
   void go(BuildContext context) => context.go(location);

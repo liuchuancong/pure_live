@@ -71,6 +71,7 @@ dependencies:
   live_platform: # 平台能力抽象
   live_platform_path_provider: # 平台数据路径
   live_playback: # 播放业务与控制器
+  live_record_core: # 录播任务内核（任务账本、命名、恢复）
   live_shell: # 通用应用外壳
   live_shell_desktop: # 桌面端外壳
   live_sites: # 直播平台与站点适配
@@ -85,6 +86,8 @@ dependencies:
     path: ../../../../media_core/packages/media_core
   media_core_media_kit:
     path: ../../../../media_core/packages/media_core_media_kit
+  media_core_recording_ffmpeg:
+    path: ../../../../media_core/packages/media_core_recording_ffmpeg # FFmpeg 录制后端（分段采集与合并）
   media_kit_libs_windows_video: ^1.0.10 # Windows 播放库与编解码支持
 
   # 路由、配置与序列化

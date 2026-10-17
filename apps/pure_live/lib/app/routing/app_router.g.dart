@@ -6,7 +6,7 @@ part of 'app_router.dart';
 // GoRouterGenerator
 // **************************************************************************
 
-List<RouteBase> get $appRoutes => [$appShellRouteData, $popularRoute];
+List<RouteBase> get $appRoutes => [$appShellRouteData];
 
 RouteBase get $appShellRouteData => StatefulShellRouteData.$route(
   factory: $AppShellRouteDataExtension._fromState,
@@ -26,6 +26,24 @@ RouteBase get $appShellRouteData => StatefulShellRouteData.$route(
           path: '/follow',
           hasOverriddenOnExit: false,
           factory: $FollowRoute._fromState,
+        ),
+      ],
+    ),
+    StatefulShellBranchData.$branch(
+      routes: [
+        GoRouteData.$route(
+          path: '/popular',
+          hasOverriddenOnExit: false,
+          factory: $PopularRoute._fromState,
+        ),
+      ],
+    ),
+    StatefulShellBranchData.$branch(
+      routes: [
+        GoRouteData.$route(
+          path: '/areas',
+          hasOverriddenOnExit: false,
+          factory: $AreasRoute._fromState,
         ),
       ],
     ),
@@ -86,11 +104,11 @@ mixin $FollowRoute on GoRouteData {
   void replace(BuildContext context) => context.replace(location);
 }
 
-mixin $HistoryRoute on GoRouteData {
-  static HistoryRoute _fromState(GoRouterState state) => const HistoryRoute();
+mixin $PopularRoute on GoRouteData {
+  static PopularRoute _fromState(GoRouterState state) => const PopularRoute();
 
   @override
-  String get location => GoRouteData.$location('/history');
+  String get location => GoRouteData.$location('/popular');
 
   @override
   void go(BuildContext context) => context.go(location);
@@ -106,17 +124,31 @@ mixin $HistoryRoute on GoRouteData {
   void replace(BuildContext context) => context.replace(location);
 }
 
-RouteBase get $popularRoute => GoRouteData.$route(
-  path: '/popular',
-  hasOverriddenOnExit: false,
-  factory: $PopularRoute._fromState,
-);
-
-mixin $PopularRoute on GoRouteData {
-  static PopularRoute _fromState(GoRouterState state) => const PopularRoute();
+mixin $AreasRoute on GoRouteData {
+  static AreasRoute _fromState(GoRouterState state) => const AreasRoute();
 
   @override
-  String get location => GoRouteData.$location('/popular');
+  String get location => GoRouteData.$location('/areas');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $HistoryRoute on GoRouteData {
+  static HistoryRoute _fromState(GoRouterState state) => const HistoryRoute();
+
+  @override
+  String get location => GoRouteData.$location('/history');
 
   @override
   void go(BuildContext context) => context.go(location);

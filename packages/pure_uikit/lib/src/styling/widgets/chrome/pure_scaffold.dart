@@ -8,6 +8,7 @@ import 'package:glass_morphism_plus/glass_morphism_plus.dart' as glass;
 import 'package:macos_ui/macos_ui.dart' as macos;
 import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
+import 'package:pure_uikit/src/styling/widgets/chrome/pure_canvas_scope.dart';
 import 'package:pure_uikit/src/styling/widgets/layout/pure_environment.dart';
 
 /// The public page frame: one widget, every design language.
@@ -87,7 +88,7 @@ class PureScaffold extends StatelessWidget {
       floatingActionButton: floatingActionButton,
       extendBodyBehindAppBar: extendBodyBehindAppBar,
       resizeToAvoidBottomInset: avoidKeyboard,
-      backgroundColor: background,
+      backgroundColor: background ?? (PureCanvasScope.transparentOf(context) ? const Color(0x00000000) : null),
     );
   }
 
@@ -136,7 +137,7 @@ class PureScaffold extends StatelessWidget {
 
     final page = cupertino.CupertinoPageScaffold(
       navigationBar: navBar,
-      backgroundColor: background ?? theme.colors.bgLayout,
+      backgroundColor: background ?? (PureCanvasScope.transparentOf(context) ? const Color(0x00000000) : theme.colors.bgLayout),
       resizeToAvoidBottomInset: avoidKeyboard,
       child: pageBody,
     );
@@ -177,7 +178,7 @@ class PureScaffold extends StatelessWidget {
   /// keyboard.
   Widget _macosFrame(BuildContext context, PureTheme theme) {
     final scaffold = macos.MacosScaffold(
-      backgroundColor: background,
+      backgroundColor: background ?? (PureCanvasScope.transparentOf(context) ? const Color(0x00000000) : null),
       children: [
         // `ContentArea` hands its builder a scroll controller; the body owns
         // its own scrolling, so the controller is not taken.
@@ -230,7 +231,7 @@ class PureScaffold extends StatelessWidget {
       ],
     );
     final page = DecoratedBox(
-      decoration: BoxDecoration(color: background ?? f2.FluentTheme.of(context).colors.neutralBackground1),
+      decoration: BoxDecoration(color: background ?? (PureCanvasScope.transparentOf(context) ? const Color(0x00000000) : f2.FluentTheme.of(context).colors.neutralBackground1)),
       child: content,
     );
 
@@ -500,7 +501,7 @@ class PureScaffold extends StatelessWidget {
 
     final frame = wind.WDiv(
       className: 'flex flex-col w-full h-full bg-gray-50 dark:bg-gray-900',
-      backgroundColor: background,
+      backgroundColor: background ?? (PureCanvasScope.transparentOf(context) ? const Color(0x00000000) : null),
       children: [
         Expanded(child: frameBody),
         ?bottomBar,

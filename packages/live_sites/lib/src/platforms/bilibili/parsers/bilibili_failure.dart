@@ -36,6 +36,10 @@ enum BilibiliFailureKind {
   /// The room has no stream for this client (offline, a paid broadcast
   /// without a ticket, a carousel with nothing in rotation).
   streamUnavailable,
+
+  /// A caller handed the platform something it cannot use (a credential of
+  /// another site, a session that is not this platform's).
+  invalidArgument,
 }
 
 /// A bilibili platform failure.
@@ -61,6 +65,7 @@ final class BilibiliFailure implements Exception {
     BilibiliFailureKind.rateLimited => LiveSiteError.rateLimit(siteId: siteId, message: message),
     BilibiliFailureKind.riskControl => LiveSiteError.rateLimit(siteId: siteId, message: message),
     BilibiliFailureKind.streamUnavailable => LiveSiteError.contentUnavailable(siteId: siteId, message: message),
+    BilibiliFailureKind.invalidArgument => LiveSiteError.invalidArgument(siteId: siteId, message: message),
   };
 
   @override

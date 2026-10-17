@@ -2,6 +2,7 @@ import 'dart:async' show unawaited;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_service.dart';
 
@@ -13,6 +14,7 @@ final remoteSyncServiceProvider = Provider<RemoteSyncService>((ref) {
   final service = RemoteSyncService(
     follows: ref.watch(followRepositoryProvider),
     history: ref.watch(historyRepositoryProvider),
+    preferences: ref.watch(appPreferencesStoreProvider),
   );
   ref.onDispose(service.dispose);
   unawaited(service.start());

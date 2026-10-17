@@ -9,6 +9,7 @@ import 'package:live_sites/live_sites.dart' show LivePlayFormatSource, LivePlayL
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitVideoView;
 import 'package:pure_live/app/engine/playback_engine.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/features/iptv/iptv_epg.dart' show IptvGuideCache, iptvEpgProvider;
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 import 'package:pure_uikit/pure_uikit.dart';
@@ -88,6 +89,17 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
   String _dialed = '';
   Timer? _dialTimer;
 
+  /// The session's programme guides; empty until a source names an EPG
+  /// address, and empty is exactly when no strip is drawn.
+  late final IptvGuideCache _epg = ref.read(iptvEpgProvider);
+  Timer? _epgTimer;
+
+  /// The EPG addresses the viewer's Xtream sources named.
+  List<String> get _epgUrls => [
+    for (final source in ref.read(iptvPreferencesProvider).xtreamSources)
+      if (source.epgUrl.isNotEmpty) source.epgUrl,
+  ];
+
   IptvLibrary get _library => ref.read(iptvLibraryProvider);
 
   IptvChannel? get _channel => _library.channelById(_channelId);
@@ -98,6 +110,23 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
     _engineSub = _engine.events.listen(_onEngineEvent);
     unawaited(_library.load());
     unawaited(_load());
+    // The guides are fetched once per address; a "now" that creeps is the
+    // periodic tick's business, not a refetch.
+    final epgUrls = _epgUrls;
+    if (epgUrls.isNotEmpty) {
+      unawaited(
+        _epg.ensureLoaded(epgUrls).then((_) {
+          if (mounted) {
+            setState(() {});
+          }
+        }),
+      );
+    }
+    _epgTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted && _osdVisible) {
+        setState(() {});
+      }
+    });
   }
 
   @override
@@ -105,6 +134,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
     _epoch++;
     _osdTimer?.cancel();
     _dialTimer?.cancel();
+    _epgTimer?.cancel();
     _panelSearch.dispose();
     unawaited(_engineSub?.cancel());
     unawaited(_engine.dispose());
@@ -228,6 +258,19 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
   void _toggleFavorite() {
     unawaited(_library.toggleFavorite(_channelId));
     setState(() {});
+  }
+
+  /// Reads the guides again; the strip comes back with them, or stays away
+  /// when the addresses answer nothing — absence is never faked.
+  Future<void> _refreshEpg() async {
+    final urls = _epgUrls;
+    if (urls.isEmpty) {
+      return;
+    }
+    await _epg.refresh(urls);
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   // On-screen display ---------------------------------------------------------
@@ -466,6 +509,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
                   ],
                 ],
               ),
+              if (channel != null) _epgStrip(context, channel),
               Expanded(
                 child: Center(
                   child: _dialed.isEmpty
@@ -516,6 +560,81 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// The wall-clock spelling a programme time carries: hours and minutes.
+  static String _clock(DateTime time) =>
+      '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+
+  /// The guide strip under the channel name: what is on now and what comes
+  /// next, matched by the channel's `tvg-id` or its name, from the session's
+  /// guides. No guide loaded, or none that names this channel — no strip,
+  /// and no stand-in rows either.
+  Widget _epgStrip(BuildContext context, IptvChannel channel) {
+    if (_epg.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final now = DateTime.now();
+    final current = _epg.currentFor(channel, now);
+    final upcoming = _epg.upcomingFor(channel, now, limit: 2);
+    if (current == null && upcoming.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              SizedBox(
+                width: 68,
+                child: Text(context.t.iptv.epgNow, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              ),
+              Expanded(
+                child: Text(
+                  current == null || current.title.isEmpty ? '—' : current.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+              ),
+              if (current != null)
+                Text(
+                  '${_clock(current.start.toLocal())} - ${_clock(current.stop.toLocal())}',
+                  style: const TextStyle(color: Colors.white70, fontFeatures: [FontFeature.tabularFigures()]),
+                ),
+              PureIconButton(
+                tooltip: context.t.iptv.refreshEpg,
+                icon: Icons.refresh,
+                onPressed: () => unawaited(_refreshEpg()),
+              ),
+            ],
+          ),
+          if (upcoming.isNotEmpty)
+            Row(
+              children: [
+                SizedBox(
+                  width: 68,
+                  child: Text(context.t.iptv.epgNext, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                ),
+                Expanded(
+                  child: Text(
+                    [
+                      for (final programme in upcoming)
+                        '${_clock(programme.start.toLocal())} ${programme.title}'.trim(),
+                    ].join('  ·  '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+        ],
       ),
     );
   }

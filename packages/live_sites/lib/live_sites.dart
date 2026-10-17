@@ -8,6 +8,7 @@ library;
 // capabilities
 export 'src/capabilities/live_anchor_provider.dart';
 export 'src/capabilities/live_area_provider.dart';
+export 'src/capabilities/live_auth_capability.dart';
 export 'src/capabilities/live_danmaku_provider.dart';
 export 'src/capabilities/live_discovery_provider.dart';
 export 'src/capabilities/live_hot_provider.dart';
@@ -16,6 +17,7 @@ export 'src/capabilities/live_playback_provider.dart';
 export 'src/capabilities/live_room_provider.dart';
 export 'src/capabilities/live_search_provider.dart';
 export 'src/capabilities/live_site_capability.dart';
+export 'src/capabilities/live_suggest_capability.dart';
 export 'src/capabilities/live_web_search_provider.dart';
 
 // core

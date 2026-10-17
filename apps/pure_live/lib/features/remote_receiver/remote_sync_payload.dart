@@ -1,6 +1,9 @@
 import 'package:live_library/live_library.dart';
 import 'package:live_sites/live_sites.dart';
 
+import 'package:pure_live/app/preferences/app_preferences.dart';
+import 'package:pure_live/app/shell/shell_destinations.dart';
+
 /// Writes one shield list under one of the shield page's keys; the same
 /// keyed box the shield page owns, handed in by the service.
 typedef ShieldListSink = Future<void> Function(String key, List<String> values);
@@ -10,14 +13,24 @@ typedef ShieldListSink = Future<void> Function(String key, List<String> values);
 ///
 /// The 3.x sender POSTs a `BackupController.exportAllSettings` document —
 /// one top-level key per settings module (`favorite`, `history`, `tags`,
-/// ...), each a self-contained map. This app persists follows, watch history
-/// and the danmaku shield lists, and only those three sections carry data a
-/// local store can hold, so only they are produced and consumed here:
+/// ...), each a self-contained map. The sections this app produces and
+/// consumes are the ones a local store can hold:
 ///
 /// - `favorite` → [FollowRepository] rooms (with `shieldList` /
 ///   `blockedDanmakuUsers` mapping onto the shield's keywords / users);
 /// - `history` → [HistoryRepository];
-/// - `tags` → follow groups and each record's group memberships.
+/// - `tags` → follow groups and each record's group memberships;
+/// - `roomCard`, `refresh`, `page`, `proxy`, `loading` → the general
+///   preference document ([AppPreferences]), the same groups the settings
+///   pages edit.
+///
+/// The preference sections keep the 3.x wire shapes — the keys its own
+/// controllers serialize — so a 3.x peer applies them and theirs apply here.
+/// Where the 3.x shape has no key for a value this app holds (the page
+/// group's branch order), the app's own keys ride inside the section; a 3.x
+/// receiver reads only its own keys and ignores the rest. `loading` is a new
+/// section: the 3.x build keeps the loading style inside its `theme`
+/// section, and the importer reads it from there too.
 ///
 /// Everything else the 3.x payload can carry (app, theme, player, danmaku,
 /// iptv, ...) has no store on this side and is skipped by the importer.
@@ -25,8 +38,28 @@ typedef ShieldListSink = Future<void> Function(String key, List<String> values);
 /// instead of clobbering them.
 abstract final class RemoteSyncPayload {
   /// The sections this app exports and applies.
-  static const List<String> sectionNames = <String>['favorite', 'history', 'tags'];
+  static const List<String> sectionNames = <String>[
+    'favorite',
+    'history',
+    'tags',
+    'roomCard',
+    'refresh',
+    'page',
+    'proxy',
+    'loading',
+  ];
 
+  /// The 3.x `RefreshConfigController` shipping defaults, emitted for the
+  /// keys this app holds no answer for.
+  static const int _referenceDefaultInterval = 30;
+
+  /// The 3.x `ProxySettingsController`'s second (per-app) proxy, emitted off
+  /// because this app holds one proxy only.
+  static const int _referenceDefaultProxyPort = 7890;
+
+  /// The 3.x loading-style key that means its shimmer; every other 3.x key
+  /// (`AppConsts.loadingStyleKeys`) names a spinner animation.
+  static const String _referenceDefaultLoadingStyle = 'default';
 
   /// The 3.x backup format version reproduced on export.
   static const int _backupVersion = 3;
@@ -48,6 +81,7 @@ abstract final class RemoteSyncPayload {
   /// Builds a 3.x-shaped export from this device's stores, narrowed to
   /// [sections] when the picker ticked a subset.
   static Map<String, dynamic> buildExport({
+    required AppPreferences preferences,
     required List<LibraryRoom> follows,
     required List<FollowGroup> groups,
     required List<WatchRecord> history,
@@ -69,14 +103,18 @@ abstract final class RemoteSyncPayload {
       },
       'tags': <String, dynamic>{
         'tags': [
-          for (final group in groups)
-            {'id': group.id, 'name': group.name, 'description': '', 'order': group.position},
+          for (final group in groups) {'id': group.id, 'name': group.name, 'description': '', 'order': group.position},
         ],
         'roomTagsMap': {
           for (final record in follows)
             if (record.groupIds.isNotEmpty) record.identity: List<String>.from(record.groupIds),
         },
       },
+      'roomCard': _roomCardSection(preferences),
+      'refresh': _refreshSection(preferences),
+      'page': _pageSection(preferences),
+      'proxy': _proxySection(preferences),
+      'loading': _loadingSection(preferences),
     };
     if (sections == null) {
       return data;
@@ -88,6 +126,67 @@ abstract final class RemoteSyncPayload {
     };
   }
 
+  /// The `roomCard` section: the 3.x per-viewport appearance both built from
+  /// the one card style this app draws.
+  static Map<String, dynamic> _roomCardSection(AppPreferences preferences) {
+    final appearance = <String, dynamic>{
+      'layout': 'cover',
+      'showAvatar': preferences.roomCardShowAnchor,
+      'showAnchorName': preferences.roomCardShowAnchor,
+      'showPlatformBadge': preferences.roomCardShowPlatform,
+      'automaticPlatformBadge': false,
+      'showAudience': preferences.roomCardShowAudience,
+      'showReplayBadge': true,
+      'cornerRadius': preferences.roomCardCornerRadius,
+    };
+    return <String, dynamic>{
+      'mobilePreset': 'custom',
+      'desktopPreset': 'custom',
+      'mobileConfig': appearance,
+      'desktopConfig': Map<String, dynamic>.from(appearance),
+    };
+  }
+
+  /// The `refresh` section: the 3.x feed-refresh answers this app keeps an
+  /// equivalent of; its other keys go out at the shipping defaults.
+  static Map<String, dynamic> _refreshSection(AppPreferences preferences) {
+    final minutes = preferences.autoRefreshMinutes;
+    return <String, dynamic>{
+      'autoRefreshFavorite': minutes > 0,
+      'refreshFavoriteOnResume': preferences.refreshOnResume,
+      'autoRefreshInterval': minutes > 0 ? minutes.clamp(5, 360) : _referenceDefaultInterval,
+      'maxConcurrentRefresh': 4,
+      'autoRefreshThumbnails': false,
+      'thumbnailRefreshInterval': _referenceDefaultInterval,
+    };
+  }
+
+  /// The `page` section: the app's own page-group answers (launch page,
+  /// branch order) ride as extra keys — a 3.x receiver reads only its own
+  /// keys out of a section and ignores the rest.
+  static Map<String, dynamic> _pageSection(AppPreferences preferences) => <String, dynamic>{
+    'launchBranch': preferences.launchBranch.id,
+    'restoreLastTab': preferences.restoreLastTab,
+    'shellBranches': List<String>.from(preferences.shellBranches),
+  };
+
+  /// The `proxy` section: the one proxy this app routes through; the 3.x
+  /// per-app proxy goes out off.
+  static Map<String, dynamic> _proxySection(AppPreferences preferences) => <String, dynamic>{
+    'enableProxy': preferences.proxyEnabled,
+    'proxyHost': preferences.proxyHost,
+    'proxyPort': preferences.proxyPort,
+    'enableAppProxy': false,
+    'appProxyHost': '',
+    'appProxyPort': _referenceDefaultProxyPort,
+  };
+
+  /// The `loading` section: a new top-level section for the loading style —
+  /// a 3.x receiver ignores sections it does not know.
+  static Map<String, dynamic> _loadingSection(AppPreferences preferences) => <String, dynamic>{
+    'loadingStyle': preferences.loadingStyle.id,
+  };
+
   /// The sections of [payload] this app can apply, in canonical order.
   static List<String> presentSections(Map<String, dynamic> payload) {
     bool has(String section, String key) => payload[section] is Map && (payload[section] as Map).containsKey(key);
@@ -95,16 +194,31 @@ abstract final class RemoteSyncPayload {
       if (has('favorite', 'favoriteRooms')) 'favorite',
       if (has('history', 'historyRooms')) 'history',
       if (has('tags', 'tags') || has('tags', 'roomTagsMap')) 'tags',
+      if (has('roomCard', 'mobileConfig') || has('roomCard', 'desktopConfig') || has('roomCard', 'mobilePreset'))
+        'roomCard',
+      if (has('refresh', 'autoRefreshFavorite') ||
+          has('refresh', 'refreshFavoriteOnResume') ||
+          has('refresh', 'autoRefreshInterval'))
+        'refresh',
+      if (has('page', 'shellBranches') ||
+          has('page', 'launchBranch') ||
+          has('page', 'defaultPageSize') ||
+          has('page', 'showPageSizeSelector'))
+        'page',
+      if (has('proxy', 'enableProxy') || has('proxy', 'proxyHost')) 'proxy',
+      if (has('loading', 'loadingStyle') || has('theme', 'loadingStyle')) 'loading',
     ];
   }
 
   /// Applies the received [payload] through this app's real repositories,
   /// narrowed to [sections] when the receiver ticked a subset.
   ///
-  /// Reads and writes the shield lists through [shield], the same keyed
-  /// box the shield page owns. Returns whether anything applied.
+  /// Reads and writes the shield lists through [shield], the same keyed box
+  /// the shield page owns, and the preference groups through [preferences],
+  /// the store the settings pages edit. Returns whether anything applied.
   static Future<bool> apply(
     Map<String, dynamic> payload, {
+    required AppPreferencesStore preferences,
     required FollowRepository follows,
     required HistoryRepository history,
     required ShieldListSink shield,
@@ -149,7 +263,160 @@ abstract final class RemoteSyncPayload {
       final mapped = await _applyGroups(tags, follows: follows);
       applied = applied || mapped;
     }
+
+    if (wanted('roomCard')) {
+      final roomCard = _section(payload, 'roomCard');
+      // One card style here; the desktop viewport is the sender's fuller
+      // one, the mobile config the fallback.
+      final appearance =
+          _referenceAppearance(roomCard?['desktopConfig']) ?? _referenceAppearance(roomCard?['mobileConfig']);
+      if (appearance != null) {
+        await preferences.update(
+          (p) => p.copyWith(
+            roomCardCornerRadius: appearance.radius ?? p.roomCardCornerRadius,
+            roomCardShowPlatform: appearance.showPlatform ?? p.roomCardShowPlatform,
+            roomCardShowAudience: appearance.showAudience ?? p.roomCardShowAudience,
+            roomCardShowAnchor: appearance.showAnchor ?? p.roomCardShowAnchor,
+          ),
+        );
+        applied = true;
+      }
+    }
+
+    if (wanted('refresh')) {
+      final refresh = _section(payload, 'refresh');
+      if (refresh != null &&
+          _hasAny(refresh, const {'autoRefreshFavorite', 'refreshFavoriteOnResume', 'autoRefreshInterval'})) {
+        final enabled = refresh['autoRefreshFavorite'];
+        final interval = _int(refresh['autoRefreshInterval']);
+        final onResume = refresh['refreshFavoriteOnResume'];
+        await preferences.update(
+          (p) => p.copyWith(
+            refreshOnResume: onResume is bool ? onResume : p.refreshOnResume,
+            // The sender's master switch wins over its interval: off is off.
+            autoRefreshMinutes: enabled == false
+                ? 0
+                : interval == null
+                ? p.autoRefreshMinutes
+                : interval.clamp(0, 24 * 60),
+          ),
+        );
+        applied = true;
+      }
+    }
+
+    if (wanted('page')) {
+      final page = _section(payload, 'page');
+      if (page != null) {
+        final branches = _stringList(page['shellBranches']).where((id) => ShellBranch.maybeFromId(id) != null).toList();
+        final restore = page['restoreLastTab'];
+        final launch = page['launchBranch'] == null ? null : AppLaunchBranch.fromId(page['launchBranch']?.toString());
+        final launchKnown = page['launchBranch'] == null
+            ? null
+            : ShellBranch.maybeFromId(page['launchBranch']?.toString() ?? '');
+        if (branches.isNotEmpty || restore is bool || launchKnown != null) {
+          await preferences.update(
+            (p) => p.copyWith(
+              shellBranches: branches.isNotEmpty ? branches : p.shellBranches,
+              restoreLastTab: restore is bool ? restore : p.restoreLastTab,
+              launchBranch: launchKnown == null ? p.launchBranch : launch,
+            ),
+          );
+          applied = true;
+        }
+      }
+    }
+
+    if (wanted('proxy')) {
+      final proxy = _section(payload, 'proxy');
+      if (proxy != null && _hasAny(proxy, const {'enableProxy', 'proxyHost', 'proxyPort'})) {
+        final enabled = proxy['enableProxy'];
+        final host = proxy['proxyHost']?.toString().trim();
+        final port = _int(proxy['proxyPort']);
+        await preferences.update(
+          (p) => p.copyWith(
+            proxyEnabled: enabled is bool ? enabled : p.proxyEnabled,
+            proxyHost: host != null && host.isNotEmpty ? host : p.proxyHost,
+            proxyPort: port == null ? p.proxyPort : port.clamp(1, 65535),
+          ),
+        );
+        applied = true;
+      }
+    }
+
+    if (wanted('loading')) {
+      // This app's own builds carry a `loading` section; a 3.x sender keeps
+      // the same answer inside its `theme` section, so read both.
+      final styleId =
+          _section(payload, 'loading')?['loadingStyle']?.toString() ??
+          _section(payload, 'theme')?['loadingStyle']?.toString();
+      final style = _loadingStyleFromReference(styleId);
+      if (style != null) {
+        await preferences.update((p) => p.copyWith(loadingStyle: style));
+        applied = true;
+      }
+    }
     return applied;
+  }
+
+  /// Whether [section] carries at least one of [keys].
+  static bool _hasAny(Map<String, dynamic> section, Set<String> keys) => keys.any(section.containsKey);
+
+  /// Parses the 3.x room-card appearance JSON into the fields this app's
+  /// card style holds; null when the map carries none of them.
+  static ({double? radius, bool? showPlatform, bool? showAudience, bool? showAnchor})? _referenceAppearance(
+    Object? raw,
+  ) {
+    if (raw is! Map) {
+      return null;
+    }
+    final rawRadius = raw['cornerRadius'] ?? raw['cardBorderRadius'];
+    final radius = rawRadius is num ? rawRadius.toDouble() : null;
+    final platform = raw['showPlatformBadge'] ?? raw['showPlatform'];
+    final audience = raw['showAudience'];
+    // The app draws the anchor line (avatar and name) as one; the sender's
+    // anchor-name flag is the intent, its avatar flag the fallback.
+    final anchor = raw['showAnchorName'] ?? raw['showAvatar'];
+    if (radius == null && platform is! bool && audience is! bool && anchor is! bool) {
+      return null;
+    }
+    return (
+      radius: radius,
+      showPlatform: platform is bool ? platform : null,
+      showAudience: audience is bool ? audience : null,
+      showAnchor: anchor is bool ? anchor : null,
+    );
+  }
+
+  /// The 3.x loading-style identifier → this app's [LoadingStyle]; its own
+  /// ids pass through, the 3.x `default` is its shimmer and every other 3.x
+  /// key names a spinner. Unknown ids change nothing (null).
+  static LoadingStyle? _loadingStyleFromReference(String? raw) {
+    final id = raw?.trim() ?? '';
+    if (id.isEmpty) {
+      return null;
+    }
+    return switch (id) {
+      'shimmer' => LoadingStyle.shimmer,
+      'spinner' => LoadingStyle.spinner,
+      'none' => LoadingStyle.none,
+      _referenceDefaultLoadingStyle => LoadingStyle.shimmer,
+      // A real peer's other keys are the 3.x spinner animations; junk from
+      // anywhere else costs at most a cosmetic placeholder flip.
+      _ => LoadingStyle.spinner,
+    };
+  }
+
+  /// Parses a count that may arrive as an int or a numeric string; null when
+  /// neither.
+  static int? _int(Object? raw) {
+    if (raw is int) {
+      return raw;
+    }
+    if (raw is num) {
+      return raw.toInt();
+    }
+    return int.tryParse(raw?.toString().trim() ?? '');
   }
 
   /// Maps the 3.x `tags` section onto follow groups: one group per incoming
@@ -298,9 +565,7 @@ abstract final class RemoteSyncPayload {
           ),
           // The 3.x room carries only the area's display name; it becomes
           // both the id and the name, which is all a label needs.
-          area: areaName.isEmpty
-              ? null
-              : LiveArea.normalized(platform: platform, areaId: areaName, areaName: areaName),
+          area: areaName.isEmpty ? null : LiveArea.normalized(platform: platform, areaId: areaName, areaName: areaName),
           local: RoomLocal(lastWatchedAt: _dateTimeMillis(entry['lastWatchedAt'])),
         ),
       );
@@ -314,7 +579,9 @@ abstract final class RemoteSyncPayload {
   }
 
   static List<String> _stringList(Object? raw) => [
-    if (raw is List) for (final entry in raw) if (entry != null) entry.toString(),
+    if (raw is List)
+      for (final entry in raw)
+        if (entry != null) entry.toString(),
   ];
 
   /// The 3.x status index → this app's [LiveStatus]; anything unreadable

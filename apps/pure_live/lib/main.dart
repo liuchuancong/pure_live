@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:io' show Platform, exit;
 import 'dart:ui' show PlatformDispatcher;
 
@@ -73,6 +74,10 @@ Future<void> main(List<String> args) async {
       log: log.forCategory('shell'),
     );
     await desktopEntry.prepare();
+    // The purelive scheme this build answers (`purelive://room?...`) is
+    // claimed per user, best effort — a refusal only means the deep link
+    // stays unregistered, and must not hold the start up or fail it.
+    unawaited(registerDesktopSchemes(kind: kind, log: log.root));
   }
 
   // A debug build can pin the design language for one run with
@@ -99,6 +104,13 @@ Future<void> main(List<String> args) async {
         appearanceStoreProvider.overrideWithValue(services.appearance),
         shellPreferencesProvider.overrideWithValue(services.shell),
         appPreferencesStoreProvider.overrideWithValue(services.appPreferences),
+        // The single-instance channel is the door a second desktop launch's
+        // request arrives through; the router subscribes to it and pushes
+        // the room or route the request asked for (deep_link).
+        if (channel != null) desktopInstanceChannelProvider.overrideWithValue(channel),
+        // A request acts only after the window is on screen; the desktop
+        // entry owns the show-and-focus path.
+        if (desktopEntry != null) revealMainWindowProvider.overrideWithValue(desktopEntry.show),
         // The countdown close exits through the desktop shell's own quit —
         // the graceful path that runs the app shutdown and destroys the
         // window — and through the framework's navigator pop elsewhere.

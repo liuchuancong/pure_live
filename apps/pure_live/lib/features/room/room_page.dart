@@ -4,9 +4,12 @@ import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatf
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_library/live_library.dart' show WatchRecordIdentity;
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_playback/live_playback.dart' show EngineProgress, EngineReady, EngineStopped, PlaybackEngineEvent;
 import 'package:live_sites/live_sites.dart';
+import 'package:media_core/media_core.dart'
+    show PlayerAdapterDurationChanged, PlayerAdapterEvent, PlayerAdapterPlaying, PlayerAdapterPositionChanged;
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitVideoView;
 import 'package:pure_live/app/engine/playback_engine.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
@@ -52,6 +55,15 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
   /// How long the fullscreen overlay stays up after a tap.
   static const _overlayHold = Duration(seconds: 4);
 
+  /// How often watch progress is written back while playback runs. Deliberately
+  /// coarse: each write is a history upsert (a store save), and a resume target
+  /// five seconds off is close enough.
+  static const _progressWriteInterval = Duration(seconds: 5);
+
+  /// A saved position closer than this to the start is not worth seeking to —
+  /// the room would play from the top anyway.
+  static const _seekWorthwhile = Duration(seconds: 5);
+
   /// The narrow layout's sheet stops, as fractions of the body height (the
   /// reference's `portraitPanelRange`): the pane is always on screen.
   static const _sheetMinFraction = 0.32;
@@ -80,6 +92,23 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
 
   bool _paused = false;
 
+  /// The watch-progress writeback: a coarse ticker, the last position it
+  /// wrote (equal positions — a paused or ended player — are skipped) and
+  /// whether the saved resume position has already been applied.
+  Timer? _progressTimer;
+  Duration? _lastWrittenPosition;
+  bool _resumeApplied = false;
+
+  /// Where to seek once a real duration shows up — the position the watch
+  /// history saved, carried from [_load]. Null for a first watch, and never
+  /// honoured on a live stream (no duration, nothing to resume).
+  Duration? _pendingResumePosition;
+
+  /// Events of the currently playing adapter, watched for the first real
+  /// duration report that arms the resume seek. Re-subscribed on every
+  /// line switch — a switch swaps the adapter underneath the engine.
+  StreamSubscription<PlayerAdapterEvent>? _adapterSub;
+
   /// The presentation mode: a black canvas, the chrome hidden. On the
   /// desktop it drives the OS window's fullscreen; elsewhere it is in-app.
   bool _fullscreen = false;
@@ -106,11 +135,17 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
   void initState() {
     super.initState();
     _engineSub = _engine.events.listen(_onEngineEvent);
+    _progressTimer = Timer.periodic(_progressWriteInterval, (_) => _writeProgress());
     unawaited(_load());
   }
 
   @override
   void dispose() {
+    _progressTimer?.cancel();
+    unawaited(_adapterSub?.cancel());
+    // The final write goes first: it reads the adapter that
+    // _engine.dispose() is about to tear down.
+    _writeProgress(force: true);
     _overlayTimer?.cancel();
     unawaited(_engineSub?.cancel());
     unawaited(_engine.dispose());
@@ -138,6 +173,81 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
       case EngineProgress():
         break;
     }
+  }
+
+  /// Adapter events feed the resume seek only; the writeback ticks on its
+  /// own timer and reads the adapter's current position and duration.
+  void _onAdapterEvent(PlayerAdapterEvent event) {
+    switch (event) {
+      case PlayerAdapterDurationChanged() || PlayerAdapterPositionChanged() || PlayerAdapterPlaying():
+        _maybeResumeSeek();
+      default:
+        break;
+    }
+  }
+
+  /// Applies the saved resume position, once per room visit, when the
+  /// adapter reports a real duration — the sign the source is a replay or
+  /// VOD rather than a live stream. The seek waits for that report instead
+  /// of racing the open (a seek handed to mpv before the media is loaded is
+  /// accepted but easy to lose); every position, duration and playing event
+  /// re-runs this until the report lands.
+  void _maybeResumeSeek() {
+    final target = _pendingResumePosition;
+    if (target == null || _resumeApplied) {
+      return;
+    }
+    final adapter = _engine.surfaceAdapter;
+    final duration = adapter?.duration;
+    if (adapter == null || duration == null || duration <= Duration.zero) {
+      return;
+    }
+    _resumeApplied = true;
+    if (target <= _seekWorthwhile || target >= duration) {
+      // At the start there is nothing to resume; at the end a seek would
+      // complete the source the moment it plays.
+      return;
+    }
+    unawaited(adapter.seek(target).catchError((_) {}));
+  }
+
+  /// Writes the watched fraction back to the history — the resume point the
+  /// history cards draw.
+  ///
+  /// Only a source with a real duration (a replay or VOD) has progress; a
+  /// live stream reports none, and its entry keeps the visit snapshot the
+  /// `_load` upsert made. A tick whose position has not moved since the
+  /// last write — paused, ended, stalled — is skipped; [force] writes
+  /// regardless, for the pause and room-exit flushes.
+  void _writeProgress({bool force = false}) {
+    if (!mounted || !_entryValid) {
+      return;
+    }
+    final adapter = _engine.surfaceAdapter;
+    final duration = adapter?.duration;
+    if (adapter == null || duration == null || duration <= Duration.zero) {
+      return;
+    }
+    final position = adapter.position;
+    if (position <= Duration.zero) {
+      // Nothing watched yet: the record the `_load` upsert (and its
+      // re-asserted resume point) made stands.
+      return;
+    }
+    if (!force && position == _lastWrittenPosition) {
+      return;
+    }
+    _lastWrittenPosition = position;
+    unawaited(
+      ref
+          .read(historyRepositoryProvider)
+          .updateProgress(
+            siteId: widget.siteId,
+            roomId: widget.roomId,
+            progress: position.inMilliseconds / duration.inMilliseconds,
+            position: position,
+          ),
+    );
   }
 
   Future<void> _load() async {
@@ -169,16 +279,33 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
       // The visit enters the watch history as soon as the room resolves —
       // whether or not any line ends up playing.
       final known = _room;
-      await ref
-          .read(historyRepositoryProvider)
-          .record(
-            known ??
-                LiveRoom.normalized(
-                  platform: widget.siteId,
-                  roomId: widget.roomId,
-                  content: RoomContent(title: widget.roomName),
-                ),
-          );
+      final repository = ref.read(historyRepositoryProvider);
+      // `record` rewrites the entry without watch progress, so the saved
+      // resume point is read off the previous entry first and re-asserted
+      // after the upsert — a visit whose playback never starts keeps its
+      // progress instead of silently resetting it.
+      final previous = repository.records
+          .where((record) => record.identity == LiveRoom.normalized(platform: widget.siteId, roomId: widget.roomId).identityKey)
+          .firstOrNull;
+      final savedProgress = previous?.progress;
+      final savedPosition = previous?.position;
+      await repository.record(
+        known ??
+            LiveRoom.normalized(
+              platform: widget.siteId,
+              roomId: widget.roomId,
+              content: RoomContent(title: widget.roomName),
+            ),
+      );
+      if (previous != null && (savedProgress != null || savedPosition != null)) {
+        _pendingResumePosition = savedPosition;
+        await repository.updateProgress(
+          siteId: widget.siteId,
+          roomId: widget.roomId,
+          progress: savedProgress ?? 0.0,
+          position: savedPosition,
+        );
+      }
       await _loadQualities();
     } finally {
       if (mounted) {
@@ -244,6 +371,15 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
       _paused = false;
     });
     await _engine.open(line);
+    if (!mounted) {
+      return;
+    }
+    // A line switch swaps the adapter; watch the new one for the duration
+    // report that arms the resume seek. The direct call covers a duration
+    // the adapter already knows.
+    unawaited(_adapterSub?.cancel());
+    _adapterSub = _engine.surfaceAdapter?.events.listen(_onAdapterEvent);
+    _maybeResumeSeek();
   }
 
   /// A retry re-resolves the current quality's lines: a lease-expired or
@@ -255,6 +391,9 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
   void _togglePause() {
     setState(() => _paused = !_paused);
     if (_paused) {
+      // The pause position is the one the user chose to stop on: flush it
+      // past the five-second throttle.
+      _writeProgress(force: true);
       unawaited(_engine.pause());
     } else {
       unawaited(_engine.resume());

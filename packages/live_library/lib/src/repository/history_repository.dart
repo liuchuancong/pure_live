@@ -44,15 +44,35 @@ final class HistoryRepository {
 
   /// Records a visit to [room]; an existing entry moves to the top.
   Future<void> record(LiveRoom room) async {
-    final entry = WatchRecord(room: room, watchedAt: DateTime.now(), seq: _seq++);
-    _history = [
-      entry,
-      for (final record in _history)
-        if (record.identity != room.identityKey) record,
-    ];
-    if (_history.length > capacity) {
-      _history = _history.sublist(0, capacity);
-    }
+    _moveToTop(WatchRecord(room: room, watchedAt: DateTime.now(), seq: _seq++));
+    await _commit();
+  }
+
+  /// Upserts the watch progress of [siteId]'s [roomId].
+  ///
+  /// [progress] is the watched fraction, clamped to 0.0–1.0; [position]
+  /// is where playback stopped, kept as-is when omitted and an entry
+  /// already exists. An existing entry moves to the top with a refreshed
+  /// timestamp — an in-progress room surfaces as recently watched; a room
+  /// not seen before gets a placeholder snapshot that the next [record]
+  /// call fills in. Emits on [changes].
+  Future<void> updateProgress({
+    required String siteId,
+    required String roomId,
+    required double progress,
+    Duration? position,
+  }) async {
+    final room = LiveRoom.normalized(platform: siteId, roomId: roomId);
+    final existing = _history.where((record) => record.identity == room.identityKey).firstOrNull;
+    _moveToTop(
+      WatchRecord(
+        room: existing?.room ?? room,
+        watchedAt: DateTime.now(),
+        seq: _seq++,
+        progress: progress.clamp(0.0, 1.0),
+        position: position ?? existing?.position,
+      ),
+    );
     await _commit();
   }
 
@@ -88,6 +108,17 @@ final class HistoryRepository {
   Future<void> _commit() async {
     await store.saveHistory(_history);
     _changes.add(null);
+  }
+
+  void _moveToTop(WatchRecord entry) {
+    _history = [
+      entry,
+      for (final record in _history)
+        if (record.identity != entry.identity) record,
+    ];
+    if (_history.length > capacity) {
+      _history = _history.sublist(0, capacity);
+    }
   }
 
   Future<void> _reload() async {

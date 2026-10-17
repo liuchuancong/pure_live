@@ -31,6 +31,18 @@ final class BilibiliHttp {
     }
   }
 
+  /// GETs [url] with [headers], keeping the whole [LiveResponse] — the raw
+  /// `Set-Cookie` lines come out of it, which the QR login's cookies arrive
+  /// as ([headers] joins repeated values, which cannot be split back apart).
+  Future<LiveResponse> getRaw(Uri url, {Map<String, String> headers = const {}}) async {
+    try {
+      return await http.send(LiveRequest.custom(method: 'GET', site: 'bilibili', url: url, headers: headers));
+    } on TransportFailure catch (failure) {
+      if (failure is CancelledFailure) rethrow;
+      throw BilibiliFailure(BilibiliFailureKind.network, 'GET $url: $failure', cause: failure);
+    }
+  }
+
   /// The header value of [name], looked up case-insensitively (the transport
   /// lower-cases them, but a caller-supplied map need not be).
   static String? header(Map<String, String> headers, String name) {

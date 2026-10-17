@@ -33,6 +33,7 @@ export 'tokens/theme_algorithm.dart';
 export 'widgets/chrome/pure_app.dart';
 export 'widgets/chrome/pure_app_bar.dart';
 export 'widgets/chrome/pure_app_shell.dart';
+export 'widgets/chrome/pure_canvas_scope.dart';
 export 'widgets/chrome/pure_nav_bar.dart';
 export 'widgets/chrome/pure_scaffold.dart';
 export 'widgets/chrome/pure_shell_types.dart';
