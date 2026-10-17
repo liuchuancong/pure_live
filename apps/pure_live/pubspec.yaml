@@ -128,3 +128,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/tray/ # 系统托盘图标
+
