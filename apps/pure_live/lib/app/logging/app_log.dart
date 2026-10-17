@@ -60,16 +60,18 @@ final class AppLog {
   /// `forCategory('paths')` on that, yields the `storage.paths` category.
   LiveLog forCategory(String name) => root.forCategory(name);
 
-  /// The sink `AppTheme` reports UI downgrades through: which control, in
-  /// which design language, fell back to which implementation, and why.
+  /// The sink `AppTheme` reports UI-runtime facts through: which effect this
+  /// device could not afford, for which language and which control. A language
+  /// with no adapter is no longer a line here — it is a fault the resolver
+  /// raises, because there is nothing left to fall back to.
   LiveUiDiagnosticSink get uiSink =>
       (diagnostic) => forCategory('ui').info(
-        'ui downgrade',
+        'ui diagnostic',
         fields: {
           'code': diagnostic.code.name,
           'language': diagnostic.language.name,
           if (diagnostic.control case final control?) 'control': control.name,
-          'kind': diagnostic.kind.name,
+          if (diagnostic.surface case final surface?) 'surface': surface.name,
         },
       );
 

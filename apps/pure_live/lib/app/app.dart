@@ -37,7 +37,7 @@ final class PureLiveApp extends ConsumerWidget {
     final adapter = appLanguageRegistry.adapterFor(config.language);
     if (kDebugMode) {
       debugPrint(
-        '[ui] language=${config.language.name} adapter=${adapter.id} '
+        '[ui] language=${config.language.name} adapter=${adapter?.id ?? 'MISSING'} '
         'host=${_surface(adapter, LiveUiSurface.appHost)} '
         'shell=${_surface(adapter, LiveUiSurface.appShell)}',
       );
@@ -52,8 +52,14 @@ final class PureLiveApp extends ConsumerWidget {
     );
   }
 
-  /// Names the surface, with the token fallback marked — a language that owns
-  /// neither surface still renders a window, just not one of its library's.
-  static String _surface(LanguageAdapter adapter, LiveUiSurface surface) =>
-      adapter.surfaces.supports(surface) ? surface.name : '${surface.name}->token';
+  /// Names the surface the active adapter owns, marking the two
+  /// ways it can be absent: no adapter at all, or an adapter that does not own
+  /// that surface. There is no fallback to name — the resolver raises the first
+  /// case, and the second is what the `[ui]` line exists to make visible.
+  static String _surface(LanguageAdapter? adapter, LiveUiSurface surface) {
+    if (adapter == null) {
+      return '${surface.name}->none';
+    }
+    return adapter.surfaces.supports(surface) ? surface.name : '${surface.name}->unowned';
+  }
 }

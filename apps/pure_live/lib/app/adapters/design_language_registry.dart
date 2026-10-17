@@ -12,10 +12,11 @@ import 'package:live_uikit_wind/live_uikit_wind.dart';
 /// this build ships, keyed by the language it renders.
 ///
 /// Adapters never self-register — the core ships contracts plus the shared
-/// token fallback only, so the app is the single place that decides which
-/// libraries are linked in. `LiveDesignLanguage.token` is not listed because it
-/// *is* that fallback; registering it would hide the `adapterMissing` report for
-/// anything this build genuinely does not support.
+/// adapters only, so the app is the single place that decides which libraries
+/// are linked in. There is no fallback to register: a language listed here
+/// without an adapter, or a language this build does not list, is a
+/// `LiveUiResolutionException` at boot rather than a silently foreign-looking
+/// window.
 const appLanguageRegistry = LanguageRegistry(
   adapters: {
     LiveDesignLanguage.macos: macosAdapter,
@@ -27,5 +28,4 @@ const appLanguageRegistry = LanguageRegistry(
     LiveDesignLanguage.cupertino: cupertinoAdapter,
     LiveDesignLanguage.material: materialAdapter,
   },
-  fallback: SharedLanguageAdapter(),
 );
