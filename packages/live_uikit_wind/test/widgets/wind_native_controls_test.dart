@@ -815,7 +815,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('an adaptive request bends at the same width the token shell uses', (tester) async {
+    testWidgets('an adaptive request bends at the same width every language bends at', (tester) async {
       Widget shell(LiveShellPlacement placement) => harness(
         LiveAppShell(
           destinations: destinations,
