@@ -25,18 +25,19 @@
 
 ## 1. 现状矩阵(实测)
 
-十七控件 + 两面在八家都已实现。每家「映射 vs 拼」的比例如下,**逐控件的具体说法以该包 md 的 §7 表为准**:
+十七控件 + 两面在八家都已实现。**逐控件「映射 vs 拼」的权威说法在该包 md 的 §7 实现映射表 +
+每个 builder 的文件头注释**,这里只给可靠的事实:
 
-| 包 | 映射到库控件 | 用本库零件拼 | 备注 |
+| 包 | 库提供的控件面 | 典型映射 | 典型拼出来的 |
 |---|---|---|---|
-| material | 16 | 1(toast) | 另有禁用态 slider 与本库 assert 拒绝的底栏,由本包画非交互形态 |
-| forui | 14 | 3(segmented / tab bar / tab view) | 库十件俱全,拼的三处是形状不合 |
-| cupertino | 12 | 5(card / select / toast / tab bar / tab view) | `cupertino_ui` 1.1.2 无 card/select/toast |
-| fluent | 12 | 5(segmented / nav bar / tab bar / app bar / tab view) | tab view 用 `AnimatedSwitcher`(4.16.1 无 `Pivot`) |
-| macos | 11 | 6(card / tab bar / nav bar / toast / tab view / dialog 动作区) | `macos_ui` 2.2.2 无 card/toast/裸 tab 条 |
-| neumorphic | 8 | 9 | 库本体是 `NeuContainer` 主题容器 |
-| wind | 6 | 11 | `fluttersdk_wind` 本质是 styling 库 |
-| glass | 4 | 13 | `glass_morphism_plus` 只有 container/tile/divider |
+| material | 宽 | `mu.*` 覆盖绝大多数控件 | toast(`mu.SnackBar` 需要 `ScaffoldMessenger` 的动画,不能当独立表面) |
+| forui | 宽(0.27.5 十件俱全) | `FButton`/`FCard`/`FTextField`/`FSwitch`/`FCheckbox`/`FSlider`/`FSelect`/`FTabs`/`FScaffold`/`FTile`/`FBottomNavigationBar`/`FToast`/`FDialog` | 形状不合处(§7 逐条写明) |
+| cupertino | 中 | `CupertinoButton`/`CupertinoTextField`/`CupertinoSwitch`/`CupertinoCheckbox`/`CupertinoSlider`/`CupertinoSegmentedControl`/`CupertinoAlertDialog` | card(`CupertinoListSection.insetGrouped`)、select(menu anchor)、toast(`CupertinoPopupSurface`) |
+| fluent | 中 | `Button`/`ToggleSwitch`/`CheckBox`/`Slider`/`ProgressBar`/`ComboBox`/`InfoBar`/`ContentDialog`/`NavigationView` | tab view(`AnimatedSwitcher`;4.16.1 无 `Pivot`) |
+| macos | 中 | `PushButton`/`MacosTextField`/`MacosSwitch`/`MacosCheckbox`/`MacosSlider`/`MacosPopupButton`/`MacosScaffold`/`ToolBar`/`MacosApp` | card/toast(`MacosSheet`)、tab 条、底栏(`macos_ui` 2.2.2 无这些件) |
+| neumorphic | 窄(本体是 `NeuContainer` 主题容器) | `NeuButton`/`NeuCard`/`NeuTextField`/`NeuSwitch`/`NeuCheckbox`/`NeuSlider`/`NeuProgressBar`/`NeuAppBar` | 其余用 `NeuContainer` 的 flat/pressed/convex 面拼 |
+| wind | 很窄(本质是 styling 库) | `WButton`/`WCard`/`WInput`/`WSwitch`/`WCheckbox`/`WSelect<T>` | slider / segmented / progress / 裸 tab 条 / 页面框架 / 顶栏 / list row / 底栏 / toast 全用 `WDiv`+`WCard`+`WAnchor`+`WText`/`WIcon` 拼 |
+| glass | 最窄(只有 container/tile/divider) | `GlassButton`/`GlassCard`/`GlassTextField`/`GlassListTile` | 其余全是 `GlassContainer` 表面 + core 的 `LiveBox`/`Style` 做交互态 |
 
 两条已经定死的形状规则,别再动摇:
 
