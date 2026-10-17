@@ -20,13 +20,13 @@ import 'package:pure_uikit/src/styling/widgets/layout/pure_environment.dart';
 /// It sits between the host and the page — the routing layer's `ShellRoute` in
 /// an app — and takes only neutral data: the destinations, the selected id,
 /// the callback and the body. There is no adapter and no spec in between:
-/// [build] switches on `UiConfig.language` and draws the navigation with the
+/// [PureAppShellState.build] switches on `UiConfig.language` and draws the navigation with the
 /// library's own structural widget — Material's `NavigationRail`, macOS's
 /// `SidebarItems` and forui's `FSidebar` — or, where the library ships no
 /// navigation column (cupertino, fluent, glass, neumorphic, wind), composes one
 /// out of that library's own surfaces. Switching `UiConfig.language` re-skins
 /// the shell.
-class PureAppShell extends StatelessWidget {
+class PureAppShell extends StatefulWidget {
   /// A shell around [child].
   const new({
     required this.child,
@@ -56,6 +56,36 @@ class PureAppShell extends StatelessWidget {
 
   /// Where the caller wants the navigation.
   final PureShellPlacement placement;
+
+  @override
+  PureAppShellState createState() => PureAppShellState();
+}
+
+/// The shell's state: only the fluent narrow form keeps any — whether its
+/// overlay drawer is showing. Every other form is a pure function of the
+/// placement and the destinations, so the configuration below reads exactly
+/// as it did when the whole shell was stateless.
+class PureAppShellState extends State<PureAppShell> {
+  /// Whether the fluent narrow form's overlay drawer is showing.
+  bool _fluentDrawerOpen = false;
+
+  /// The page content.
+  Widget get child => widget.child;
+
+  /// The destinations, in order.
+  List<PureShellDestination> get destinations => widget.destinations;
+
+  /// The selected destination's id.
+  String? get selectedId => widget.selectedId;
+
+  /// Called with a destination's id.
+  ValueChanged<String>? get onSelected => widget.onSelected;
+
+  /// Content pinned at the end of a navigation column.
+  Widget? get trailing => widget.trailing;
+
+  /// Where the caller wants the navigation.
+  PureShellPlacement get placement => widget.placement;
 
   @override
   Widget build(BuildContext context) {
@@ -346,6 +376,21 @@ class PureAppShell extends StatelessWidget {
     if (!_wantsRail(placement, context)) {
       return _bottomStrip();
     }
+    // Windows 11 Settings grammar: the pane stands beside the content while
+    // there is room, and below the breakpoint the pane is gone entirely —
+    // a hamburger strip takes its place and the nav comes back as an
+    // overlay drawer. The buckets come from the shared [PureBreakpoints]
+    // qualification (720/1024), the same source every dynamic layout reads.
+    return PureAdaptiveLayout(
+      child: child,
+      mobile: (context, child) => _fluentNarrow(context, child!),
+      tablet: (context, child) => _fluentWide(context, child!),
+      desktop: (context, child) => _fluentWide(context, child!),
+    );
+  }
+
+  /// The wide forms: the nav pane stands inline beside the page.
+  Widget _fluentWide(BuildContext context, Widget child) {
     return Row(
       children: [
         f2.FluentNavDrawer(
@@ -353,31 +398,80 @@ class PureAppShell extends StatelessWidget {
           type: f2.FluentDrawerType.inline,
           separator: true,
           footer: [if (trailing case final Widget footer) footer],
-          child: f2.FluentNav(
-            selectedValue: selectedId,
-            onSelect: (value) {
-              for (final destination in destinations) {
-                // A disabled destination is refused here rather than handed
-                // to the nav, which marks its row inert but answers selection
-                // all the same.
-                if (destination.id == value && destination.enabled) {
-                  onSelected?.call(destination.id);
-                }
-              }
-            },
-            children: [
-              for (final destination in destinations)
-                f2.FluentNavItem(
-                  value: destination.id,
-                  enabled: destination.enabled,
-                  icon: Icon(destination.icon),
-                  child: Text(destination.label, maxLines: 1, overflow: TextOverflow.ellipsis),
-                ),
-            ],
-          ),
+          child: _fluentNav(context),
         ),
         Expanded(child: child),
       ],
+    );
+  }
+
+  /// The narrow form: the pane is gone — a hamburger strip takes its place
+  /// and the nav comes back as an overlay drawer over the full-width page.
+  Widget _fluentNarrow(BuildContext context, Widget child) {
+    return Stack(
+      children: [
+        Column(
+          children: [
+            _fluentTopStrip(context),
+            Expanded(child: child),
+          ],
+        ),
+        f2.FluentNavDrawer(
+          open: _fluentDrawerOpen,
+          onDismiss: () => setState(() => _fluentDrawerOpen = false),
+          footer: [if (trailing case final Widget footer) footer],
+          child: _fluentNav(context),
+        ),
+      ],
+    );
+  }
+  /// The nav both fluent forms share: one [f2.FluentNav] whose items map the
+  /// destinations one-for-one, a disabled destination refused before it ever
+  /// reaches the nav.
+  Widget _fluentNav(BuildContext context) {
+    return f2.FluentNav(
+      selectedValue: selectedId,
+      onSelect: (value) {
+        for (final destination in destinations) {
+          // A disabled destination is refused here rather than handed
+          // to the nav, which marks its row inert but answers selection
+          // all the same.
+          if (destination.id == value && destination.enabled) {
+            onSelected?.call(destination.id);
+          }
+        }
+      },
+      children: [
+        for (final destination in destinations)
+          f2.FluentNavItem(
+            value: destination.id,
+            enabled: destination.enabled,
+            icon: Icon(destination.icon),
+            child: Text(destination.label, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ),
+      ],
+    );
+  }
+
+  /// The narrow form's top strip: the hamburger that summons the overlay
+  /// drawer, over the theme's own surface.
+  Widget _fluentTopStrip(BuildContext context) {
+    final colors = PureTheme.of(context).colors;
+    return SizedBox(
+      height: 40,
+      child: Material(
+        color: colors.bgContainer,
+        child: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.only(start: 8),
+            child: f2.FluentHamburger(
+              onPressed: () => setState(() => _fluentDrawerOpen = true),
+              semanticLabel: '菜单',
+            ),
+          ),
+        ),
+      ),
     );
   }
 

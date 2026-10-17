@@ -20,6 +20,7 @@ dependencies:
   fluent_2: ^0.0.7
   flutter:
     sdk: flutter
+  flutter_adaptive_layout: ^1.1.0
   flutter_localizations:
     sdk: flutter
   flutter_neumorphic_ui_kit:

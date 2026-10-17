@@ -118,17 +118,25 @@ final class _VersionHistorySheetState extends State<VersionHistorySheet> {
           Expanded(
             child: _releases.isEmpty
                 ? PureEmpty(title: context.t.common.empty)
-                : LayoutBuilder(
-                    builder: (context, constraints) {
-                      final wide = constraints.maxWidth > 700;
-                      final list = _list(context, wide: wide);
-                      if (!wide) {
-                        return list;
-                      }
+                : PureAdaptiveLayout(
+                    child: _list(context, wide: false),
+                    tablet: (context, list) {
+                      final wideList = _list(context, wide: true);
                       return Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(width: 300, child: list),
+                          SizedBox(width: 300, child: wideList),
+                          const SizedBox(width: 16),
+                          Expanded(child: _detailPane(context, _releases[_selected.clamp(0, _releases.length - 1)])),
+                        ],
+                      );
+                    },
+                    desktop: (context, list) {
+                      final wideList = _list(context, wide: true);
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(width: 300, child: wideList),
                           const SizedBox(width: 16),
                           Expanded(child: _detailPane(context, _releases[_selected.clamp(0, _releases.length - 1)])),
                         ],

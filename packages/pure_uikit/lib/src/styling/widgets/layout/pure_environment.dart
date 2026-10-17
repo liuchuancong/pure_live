@@ -1,4 +1,6 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter_adaptive_layout/flutter_adaptive_layout.dart'
+    show AdaptiveLayout, BreakpointsSetting, ScreenSize, ScreenSizeQualifier;
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 import 'package:pure_uikit/src/styling/tokens/design_token.dart';
 
@@ -17,8 +19,18 @@ enum PureLayoutMode {
   tv,
 }
 
-/// The window-size thresholds that separate the layout modes.
-class PureBreakpoints {
+/// The window-size thresholds that separate the layout modes — the single
+/// source every dynamic layout in the app qualifies through.
+///
+/// The qualification mechanism is `flutter_adaptive_layout`'s: this set
+/// implements [ScreenSizeQualifier], so [AdaptiveLayout]-style widgets and
+/// hand-rolled checks both read the same buckets from the same thresholds —
+/// below [mobileMax] is [ScreenSize.small] (mobile), up to [desktopMin] is
+/// [ScreenSize.medium] (tablet / narrow desktop), and at or above it is
+/// [ScreenSize.large] (desktop). To retune the breakpoints app-wide, install
+/// a [BreakpointsSetting] above the tree or change the defaults here — never
+/// a local constant.
+class PureBreakpoints implements ScreenSizeQualifier {
   /// A breakpoint set.
   const new({this.mobileMax = 720, this.desktopMin = 1024});
 
@@ -44,6 +56,23 @@ class PureBreakpoints {
       return PureLayoutMode.desktop;
     }
     return PureLayoutMode.mobile;
+  }
+
+  /// The width class for [context]'s window, on this set's thresholds.
+  ///
+  /// Window width, not `shortestSide`: a desktop window resizes on one axis
+  /// and the layouts respond to that axis, so rotation-stability (the
+  /// package default) would misclassify a short wide window.
+  @override
+  ScreenSize qualify(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    if (width >= desktopMin) {
+      return ScreenSize.large;
+    }
+    if (width >= mobileMax) {
+      return ScreenSize.medium;
+    }
+    return ScreenSize.small;
   }
 }
 
@@ -307,3 +336,49 @@ class PureContentGrid extends StatelessWidget {
     );
   }
 }
+
+/// One builder per width class, resolved through the shared breakpoints —
+/// the same qualification every dynamic layout shares.
+///
+/// The child is built once and handed to the matching builder (the adaptive
+/// package's contract), so switching buckets never rebuilds the content
+/// subtree. A mode without a builder falls through to [child].
+class PureAdaptiveLayout extends StatelessWidget {
+  /// Qualifies the context and builds the matching variant around the child.
+  const new({
+    required this.child,
+    this.mobile,
+    this.tablet,
+    this.desktop,
+    this.breakpoints = PureBreakpoints.standard,
+    super.key,
+  });
+
+  /// The content every variant receives, built once.
+  final Widget child;
+
+  /// The below-[PureBreakpoints.mobileMax] variant.
+  final PureAdaptiveBuilder? mobile;
+
+  /// The between-thresholds variant.
+  final PureAdaptiveBuilder? tablet;
+
+  /// The at-or-above-[PureBreakpoints.desktopMin] variant.
+  final PureAdaptiveBuilder? desktop;
+
+  /// The threshold set to qualify with.
+  final PureBreakpoints breakpoints;
+
+  @override
+  Widget build(BuildContext context) {
+    final child = this.child;
+    return switch (breakpoints.qualify(context)) {
+      ScreenSize.small => mobile?.call(context, child) ?? child,
+      ScreenSize.medium => tablet?.call(context, child) ?? child,
+      ScreenSize.large => desktop?.call(context, child) ?? child,
+    };
+  }
+}
+
+/// The signature of one adaptive variant's builder.
+typedef PureAdaptiveBuilder = Widget Function(BuildContext context, Widget? child);

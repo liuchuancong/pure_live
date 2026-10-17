@@ -145,26 +145,35 @@ class PureAppBar extends StatelessWidget {
   }
 
   /// fluent_2 ships no page-header widget, so the header composes the
-  /// library's own primitives: the title on the theme's subtitle ramp, the
-  /// actions as an ordinary row. A fluent header is left-titled and
-  /// content-sized, so [centerTitle] and [height] are not mapped — centring
-  /// it would be the bar saying something about iOS rather than about the
-  /// caller.
+  /// library's own primitives in the Windows 11 Settings grammar: a large
+  /// 28 px left-titled page name (the title ramp's own `display` size, so the
+  /// density and font tokens still drive it), actions on the same row's end,
+  /// no bar chrome behind. A fluent header is left-titled and content-sized,
+  /// so [centerTitle] and [height] are not mapped — centring it would be the
+  /// bar saying something about iOS rather than about the caller.
   Widget _fluentHeader(BuildContext context, Widget? leading) {
     final typography = f2.FluentTheme.of(context).typography;
     final header = Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(12, 4, 12, 4),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 8),
       child: Row(
         children: [
           ?leading,
-          const SizedBox(width: 8),
           Expanded(
             child: Semantics(
               header: true,
-              child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: typography.subtitle1),
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                // The ramp's largest member (subtitle1) is the 20/28 semibold
+                // the drawer headers use; the page name is Windows 11's 28 px
+                // semibold, so the ramp is overridden at the one axis the
+                // page-name grammar needs. Family and colour stay the ramp's.
+                style: typography.subtitle1.copyWith(fontSize: 28),
+              ),
             ),
           ),
-          if (actions.isNotEmpty) ...[const SizedBox(width: 8), Row(mainAxisSize: MainAxisSize.min, children: actions)],
+          if (actions.isNotEmpty) Row(mainAxisSize: MainAxisSize.min, children: actions),
         ],
       ),
     );

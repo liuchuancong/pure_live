@@ -12,6 +12,8 @@
 /// rebuilding.
 library;
 
+export '../app/pure_app.dart';
+export '../app/pure_app_host.dart';
 // Pure, non-design-language utilities the token components and pages reuse: the
 // background painter + its style, and the static radius / spacing / size scales.
 export '../scales/radii.dart';
@@ -28,7 +30,6 @@ export 'tokens/component_token.dart';
 export 'tokens/design_token.dart';
 export 'tokens/seed_token.dart';
 export 'tokens/theme_algorithm.dart';
-export 'widgets/chrome/pure_app.dart';
 export 'widgets/chrome/pure_app_bar.dart';
 export 'widgets/chrome/pure_app_shell.dart';
 export 'widgets/chrome/pure_canvas_scope.dart';
