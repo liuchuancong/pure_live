@@ -47,6 +47,8 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$theme$en theme = _Translations$theme$en._(_root);
 	@override late final _Translations$design$en design = _Translations$design$en._(_root);
 	@override late final _Translations$room$en room = _Translations$room$en._(_root);
+	@override late final _Translations$areas$en areas = _Translations$areas$en._(_root);
+	@override late final _Translations$popular$en popular = _Translations$popular$en._(_root);
 	@override late final _Translations$history$en history = _Translations$history$en._(_root);
 	@override late final _Translations$iptv$en iptv = _Translations$iptv$en._(_root);
 	@override late final _Translations$fonts$en fonts = _Translations$fonts$en._(_root);
@@ -96,6 +98,7 @@ class _Translations$common$en extends Translations$common$zh {
 	@override String get retry => 'Retry';
 	@override String get close => 'Close';
 	@override String get save => 'Save';
+	@override String get clear => 'Clear';
 	@override String get loading => 'Loading';
 	@override String get empty => 'Nothing here yet';
 	@override String pageOf({required int page, required int total}) => 'Page ${page} of ${total}';
@@ -131,6 +134,39 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get reduceTransparency => 'Reduce transparency';
 	@override String get animations => 'Animations';
 	@override String get focusOutline => 'Focus outline';
+	@override String get sectionTheme => 'Theme & display';
+	@override String get sectionIptv => 'IPTV';
+	@override String get sectionDanmaku => 'Danmaku';
+	@override String get sectionData => 'Data';
+	@override String get sectionBackup => 'Backup';
+	@override String get appearanceSubtitle => 'Theme mode, colour, density and motion';
+	@override String get fontsSubtitle => 'Download and apply cloud fonts';
+	@override String get iptvSubtitle => 'Manage playlists and channels';
+	@override String get shieldSubtitle => 'Hide danmaku by keyword, user or regex';
+	@override String get cacheAndData => 'Cache & data';
+	@override String get cacheAndDataSubtitle => 'Watch history and stored data';
+	@override String get backupSubtitle => 'Back up and restore your data';
+	@override String get groupTheme => 'Theme';
+	@override String get groupFontFamily => 'Font';
+	@override String get groupTextSize => 'Text size';
+	@override String get themeModeSubtitle => 'Follow the system, or stay light or dark';
+	@override String get designLanguageSubtitle => 'The design language the whole app is drawn with';
+	@override String get accentSubtitle => 'The colour the controls are tinted with';
+	@override String get densitySubtitle => 'How compact the layout is';
+	@override String get pureBlackSubtitle => 'Draw dark surfaces pure black, for OLED screens';
+	@override String get transparencySubtitle => 'A multiplier on glass and scrim opacity';
+	@override String get reduceTransparencySubtitle => 'Force opaque surfaces and disable blur';
+	@override String get animationsSubtitle => 'Whether motion runs';
+	@override String get focusOutlineSubtitle => 'Draw a visible outline on focused controls';
+	@override String get fontScaleSubtitle => 'A multiplier on every font size';
+	@override String get previewText => 'The quick brown fox jumps over the lazy dog';
+	@override String fontFamilyCurrent({required String name}) => 'Current: ${name}';
+	@override String get defaultOption => 'Default';
+	@override String get historyEntry => 'Watch history';
+	@override String historyCount({required int count}) => '${count} entries';
+	@override String get clearHistory => 'Clear watch history';
+	@override String get clearHistorySubtitle => 'Remove every watched entry from this device';
+	@override String get historyCleared => 'Watch history cleared';
 }
 
 // Path: theme
@@ -170,6 +206,28 @@ class _Translations$room$en extends Translations$room$zh {
 	@override String get play => 'Play';
 	@override String get pause => 'Pause';
 	@override String get failed => 'Playback failed — try again';
+	@override String get replay => 'Replay';
+	@override String get offline => 'Offline';
+}
+
+// Path: areas
+class _Translations$areas$en extends Translations$areas$zh {
+	_Translations$areas$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get empty => 'No areas here';
+}
+
+// Path: popular
+class _Translations$popular$en extends Translations$popular$zh {
+	_Translations$popular$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get empty => 'Nothing live right now';
 }
 
 // Path: history
@@ -214,6 +272,8 @@ class _Translations$fonts$en extends Translations$fonts$zh {
 	@override String get systemDesc => 'Use the fonts the system ships';
 	@override String get download => 'Download';
 	@override String get delete => 'Delete';
+	@override String get factoryDefault => 'Factory default';
+	@override String get cloudFonts => 'Cloud fonts';
 }
 
 // Path: follow
@@ -250,6 +310,22 @@ class _Translations$toolbox$en extends Translations$toolbox$zh {
 	@override String get resolve => 'Resolve';
 	@override String get failed => 'No platform recognised this link';
 	@override String get openRoom => 'Open the room';
+	@override String get roomJump => 'Jump to Room';
+	@override String get linkJump => 'Open Link';
+	@override String get directLink => 'Get Direct Link';
+	@override String get parse => 'Parse Link';
+	@override String get inputHint => 'Paste platform link here...';
+	@override String get supportList => 'Supported Platforms';
+	@override String get supportContent => 'Supported link formats:\n\nBilibili:\nhttps://live.bilibili.com/xxxxx\nhttps://www.bilibili.com/xxxxx\nhttps://b23.tv/xxxxx\n\nHuya:\nhttps://www.huya.com/xxxxx\n\nDouyu:\nhttps://www.douyu.com/xxxxx\n\nDouyin Live/Video:\nhttps://live.douyin.com/xxxxx\nhttps://www.douyin.com/xxxxx\nhttps://v.douyin.com/xxxxx\nhttps://webcast.amemv.com/douyin/webcast/reflow/xxxxx\n\nKuaishou Live:\nhttps://live.kuaishou.com/u/xxxxx\nhttps://live.kuaishou.cn/u/xxxxx\n\nNetEase CC:\nhttps://cc.163.com/xxxxx\n\nTwitch:\nhttps://www.twitch.tv/xxxxx\nhttps://twitch.tv/xxxxx\n\nSOOP Live:\nhttps://www.sooplive.com/xxxxx\nhttps://sooplive.com/xxxxx\nhttps://play.sooplive.com/xxxxx\nhttps://www.sooplive.co.kr/xxxxx\nhttps://sooplive.co.kr/xxxxx\nhttps://play.sooplive.co.kr/xxxxx\n\nYY Live:\nhttps://www.yy.com/xxxxx\nhttps://yy.com/xxxxx\nhttps://www.yy.com/xxxxx/xxxxx?tempId=xxxxx\nhttps://yy.com/xxxxx/xxxxx?tempId=xxxxx\n\nAcFun Live:\nhttps://live.acfun.cn/live/123456\n\nPicarto:\nhttps://picarto.tv/ChannelName\n\nTwitCasting:\nhttps://twitcasting.tv/ChannelName\nhttps://twitcasting.tv/c:ChannelName\n\nCHZZK:\nhttps://chzzk.naver.com/live/0123456789abcdef0123456789abcdef\n\nKick:\nhttps://kick.com/ChannelName\n\n17LIVE:\nhttps://17.live/en/live/1234567';
+	@override String get emptyLink => 'Link cannot be empty';
+	@override String get parseFailed => 'Unable to parse this link';
+	@override String get getUrlFailed => 'Failed to get direct link';
+	@override String get selectQuality => 'Select Quality';
+	@override String get selectLine => 'Select Line';
+	@override String line({required int index}) => 'Line ${index}';
+	@override String get detectLink => 'Link Detected';
+	@override String get autoFill => 'Live link from clipboard has been auto-filled';
+	@override String get copySuccess => 'Direct link copied';
 }
 
 // Path: backup
@@ -277,12 +353,25 @@ class _Translations$about$en extends Translations$about$zh {
 
 	// Translations
 	@override String get title => 'About';
+	@override String get group => 'About';
 	@override String get checkUpdate => 'Check for updates';
+	@override String get onlineUpdate => 'Online Update';
 	@override String get upToDate => 'Up to date';
 	@override String get newVersion => 'New version available:';
+	@override String get noNewVersion => 'You are using the latest version.';
+	@override String get openSourceFree => 'This app is open source and free';
+	@override String get update => 'Update';
+	@override String get refresh => 'Refresh';
 	@override String get versionHistory => 'Version history';
-	@override String get licenses => 'Licenses';
+	@override String get historyDesc => 'Update history records';
+	@override String publishedAt({required String date}) => 'Published at ${date}';
+	@override String get openRelease => 'Open release page';
+	@override String get licenses => 'License';
 	@override String get project => 'Project page';
+	@override String get projectSection => 'Project';
+	@override String get projectAlert => 'Project Alert';
+	@override String get legalese => '© 2026 PureLive Open-Source Project. This program is a pure local client application that directly requests the official public APIs of media platforms. The project itself does not store, host, reproduce, or distribute any audio/video resources. The developer solemnly pledges that this application does not collect, process, or retain any user personal data or privacy information. All operational parameters, local configurations, and synchronized metadata are exclusively retained and controlled by the end-user. Users shall assume all legal responsibilities arising from the use of this testing tool.';
+	@override String get browserNotOpened => 'The system browser did not open. Check the default browser settings.';
 	@override String get checkRunning => 'Checking…';
 	@override String get checkFailed => 'Check failed — tap to retry';
 }
@@ -349,6 +438,7 @@ class _Translations$tabs$en extends Translations$tabs$zh {
 
 	// Translations
 	@override String get home => 'Home';
+	@override String get favorites => 'Favorites';
 	@override String get follow => 'Follow';
 	@override String get history => 'History';
 	@override String get popular => 'Popular';
@@ -412,6 +502,7 @@ extension on TranslationsEn {
 			'common.retry' => 'Retry',
 			'common.close' => 'Close',
 			'common.save' => 'Save',
+			'common.clear' => 'Clear',
 			'common.loading' => 'Loading',
 			'common.empty' => 'Nothing here yet',
 			'common.pageOf' => ({required int page, required int total}) => 'Page ${page} of ${total}',
@@ -429,6 +520,39 @@ extension on TranslationsEn {
 			'settings.reduceTransparency' => 'Reduce transparency',
 			'settings.animations' => 'Animations',
 			'settings.focusOutline' => 'Focus outline',
+			'settings.sectionTheme' => 'Theme & display',
+			'settings.sectionIptv' => 'IPTV',
+			'settings.sectionDanmaku' => 'Danmaku',
+			'settings.sectionData' => 'Data',
+			'settings.sectionBackup' => 'Backup',
+			'settings.appearanceSubtitle' => 'Theme mode, colour, density and motion',
+			'settings.fontsSubtitle' => 'Download and apply cloud fonts',
+			'settings.iptvSubtitle' => 'Manage playlists and channels',
+			'settings.shieldSubtitle' => 'Hide danmaku by keyword, user or regex',
+			'settings.cacheAndData' => 'Cache & data',
+			'settings.cacheAndDataSubtitle' => 'Watch history and stored data',
+			'settings.backupSubtitle' => 'Back up and restore your data',
+			'settings.groupTheme' => 'Theme',
+			'settings.groupFontFamily' => 'Font',
+			'settings.groupTextSize' => 'Text size',
+			'settings.themeModeSubtitle' => 'Follow the system, or stay light or dark',
+			'settings.designLanguageSubtitle' => 'The design language the whole app is drawn with',
+			'settings.accentSubtitle' => 'The colour the controls are tinted with',
+			'settings.densitySubtitle' => 'How compact the layout is',
+			'settings.pureBlackSubtitle' => 'Draw dark surfaces pure black, for OLED screens',
+			'settings.transparencySubtitle' => 'A multiplier on glass and scrim opacity',
+			'settings.reduceTransparencySubtitle' => 'Force opaque surfaces and disable blur',
+			'settings.animationsSubtitle' => 'Whether motion runs',
+			'settings.focusOutlineSubtitle' => 'Draw a visible outline on focused controls',
+			'settings.fontScaleSubtitle' => 'A multiplier on every font size',
+			'settings.previewText' => 'The quick brown fox jumps over the lazy dog',
+			'settings.fontFamilyCurrent' => ({required String name}) => 'Current: ${name}',
+			'settings.defaultOption' => 'Default',
+			'settings.historyEntry' => 'Watch history',
+			'settings.historyCount' => ({required int count}) => '${count} entries',
+			'settings.clearHistory' => 'Clear watch history',
+			'settings.clearHistorySubtitle' => 'Remove every watched entry from this device',
+			'settings.historyCleared' => 'Watch history cleared',
 			'theme.system' => 'System',
 			'theme.dark' => 'Dark',
 			'theme.light' => 'Light',
@@ -441,6 +565,10 @@ extension on TranslationsEn {
 			'room.play' => 'Play',
 			'room.pause' => 'Pause',
 			'room.failed' => 'Playback failed — try again',
+			'room.replay' => 'Replay',
+			'room.offline' => 'Offline',
+			'areas.empty' => 'No areas here',
+			'popular.empty' => 'Nothing live right now',
 			'history.clear' => 'Clear history',
 			'history.clearConfirm' => 'Clear the whole watch history? This cannot be undone.',
 			'history.empty' => 'Nothing watched yet',
@@ -458,6 +586,8 @@ extension on TranslationsEn {
 			'fonts.systemDesc' => 'Use the fonts the system ships',
 			'fonts.download' => 'Download',
 			'fonts.delete' => 'Delete',
+			'fonts.factoryDefault' => 'Factory default',
+			'fonts.cloudFonts' => 'Cloud fonts',
 			'follow.all' => 'All',
 			'follow.empty' => 'No followed rooms yet',
 			'follow.follow' => 'Follow',
@@ -476,6 +606,22 @@ extension on TranslationsEn {
 			'toolbox.resolve' => 'Resolve',
 			'toolbox.failed' => 'No platform recognised this link',
 			'toolbox.openRoom' => 'Open the room',
+			'toolbox.roomJump' => 'Jump to Room',
+			'toolbox.linkJump' => 'Open Link',
+			'toolbox.directLink' => 'Get Direct Link',
+			'toolbox.parse' => 'Parse Link',
+			'toolbox.inputHint' => 'Paste platform link here...',
+			'toolbox.supportList' => 'Supported Platforms',
+			'toolbox.supportContent' => 'Supported link formats:\n\nBilibili:\nhttps://live.bilibili.com/xxxxx\nhttps://www.bilibili.com/xxxxx\nhttps://b23.tv/xxxxx\n\nHuya:\nhttps://www.huya.com/xxxxx\n\nDouyu:\nhttps://www.douyu.com/xxxxx\n\nDouyin Live/Video:\nhttps://live.douyin.com/xxxxx\nhttps://www.douyin.com/xxxxx\nhttps://v.douyin.com/xxxxx\nhttps://webcast.amemv.com/douyin/webcast/reflow/xxxxx\n\nKuaishou Live:\nhttps://live.kuaishou.com/u/xxxxx\nhttps://live.kuaishou.cn/u/xxxxx\n\nNetEase CC:\nhttps://cc.163.com/xxxxx\n\nTwitch:\nhttps://www.twitch.tv/xxxxx\nhttps://twitch.tv/xxxxx\n\nSOOP Live:\nhttps://www.sooplive.com/xxxxx\nhttps://sooplive.com/xxxxx\nhttps://play.sooplive.com/xxxxx\nhttps://www.sooplive.co.kr/xxxxx\nhttps://sooplive.co.kr/xxxxx\nhttps://play.sooplive.co.kr/xxxxx\n\nYY Live:\nhttps://www.yy.com/xxxxx\nhttps://yy.com/xxxxx\nhttps://www.yy.com/xxxxx/xxxxx?tempId=xxxxx\nhttps://yy.com/xxxxx/xxxxx?tempId=xxxxx\n\nAcFun Live:\nhttps://live.acfun.cn/live/123456\n\nPicarto:\nhttps://picarto.tv/ChannelName\n\nTwitCasting:\nhttps://twitcasting.tv/ChannelName\nhttps://twitcasting.tv/c:ChannelName\n\nCHZZK:\nhttps://chzzk.naver.com/live/0123456789abcdef0123456789abcdef\n\nKick:\nhttps://kick.com/ChannelName\n\n17LIVE:\nhttps://17.live/en/live/1234567',
+			'toolbox.emptyLink' => 'Link cannot be empty',
+			'toolbox.parseFailed' => 'Unable to parse this link',
+			'toolbox.getUrlFailed' => 'Failed to get direct link',
+			'toolbox.selectQuality' => 'Select Quality',
+			'toolbox.selectLine' => 'Select Line',
+			'toolbox.line' => ({required int index}) => 'Line ${index}',
+			'toolbox.detectLink' => 'Link Detected',
+			'toolbox.autoFill' => 'Live link from clipboard has been auto-filled',
+			'toolbox.copySuccess' => 'Direct link copied',
 			'backup.title' => 'Backup & restore',
 			'backup.create' => 'Create backup',
 			'backup.restoreFile' => 'Restore from file',
@@ -485,12 +631,25 @@ extension on TranslationsEn {
 			'backup.restore' => 'Restore',
 			'backup.restoreConfirm' => ({required String name}) => 'Overwrite current data with “${name}”? The app restarts.',
 			'about.title' => 'About',
+			'about.group' => 'About',
 			'about.checkUpdate' => 'Check for updates',
+			'about.onlineUpdate' => 'Online Update',
 			'about.upToDate' => 'Up to date',
 			'about.newVersion' => 'New version available:',
+			'about.noNewVersion' => 'You are using the latest version.',
+			'about.openSourceFree' => 'This app is open source and free',
+			'about.update' => 'Update',
+			'about.refresh' => 'Refresh',
 			'about.versionHistory' => 'Version history',
-			'about.licenses' => 'Licenses',
+			'about.historyDesc' => 'Update history records',
+			'about.publishedAt' => ({required String date}) => 'Published at ${date}',
+			'about.openRelease' => 'Open release page',
+			'about.licenses' => 'License',
 			'about.project' => 'Project page',
+			'about.projectSection' => 'Project',
+			'about.projectAlert' => 'Project Alert',
+			'about.legalese' => '© 2026 PureLive Open-Source Project. This program is a pure local client application that directly requests the official public APIs of media platforms. The project itself does not store, host, reproduce, or distribute any audio/video resources. The developer solemnly pledges that this application does not collect, process, or retain any user personal data or privacy information. All operational parameters, local configurations, and synchronized metadata are exclusively retained and controlled by the end-user. Users shall assume all legal responsibilities arising from the use of this testing tool.',
+			'about.browserNotOpened' => 'The system browser did not open. Check the default browser settings.',
 			'about.checkRunning' => 'Checking…',
 			'about.checkFailed' => 'Check failed — tap to retry',
 			'shield.title' => 'Danmaku shield',
@@ -512,6 +671,7 @@ extension on TranslationsEn {
 			'errors.cancelled' => 'Cancelled.',
 			'errors.unsupported' => 'This source doesn\'t support that.',
 			'tabs.home' => 'Home',
+			'tabs.favorites' => 'Favorites',
 			'tabs.follow' => 'Follow',
 			'tabs.history' => 'History',
 			'tabs.popular' => 'Popular',

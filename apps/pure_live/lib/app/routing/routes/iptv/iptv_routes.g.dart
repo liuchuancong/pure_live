@@ -8,8 +8,11 @@ part of 'iptv_routes.dart';
 
 List<RouteBase> get $appRoutes => [$iptvRoute, $iptvPlayRoute];
 
-RouteBase get $iptvRoute =>
-    GoRouteData.$route(path: '/iptv', hasOverriddenOnExit: false, factory: $IptvRoute._fromState);
+RouteBase get $iptvRoute => GoRouteData.$route(
+  path: '/iptv',
+  hasOverriddenOnExit: false,
+  factory: $IptvRoute._fromState,
+);
 
 mixin $IptvRoute on GoRouteData {
   static IptvRoute _fromState(GoRouterState state) => const IptvRoute();
@@ -24,18 +27,24 @@ mixin $IptvRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
 }
 
-RouteBase get $iptvPlayRoute =>
-    GoRouteData.$route(path: '/iptv/play/:channelId', hasOverriddenOnExit: false, factory: $IptvPlayRoute._fromState);
+RouteBase get $iptvPlayRoute => GoRouteData.$route(
+  path: '/iptv/play/:channelId',
+  hasOverriddenOnExit: false,
+  factory: $IptvPlayRoute._fromState,
+);
 
 mixin $IptvPlayRoute on GoRouteData {
-  static IptvPlayRoute _fromState(GoRouterState state) =>
-      IptvPlayRoute(channelId: state.pathParameters['channelId']!, name: state.uri.queryParameters['name'] ?? '');
+  static IptvPlayRoute _fromState(GoRouterState state) => IptvPlayRoute(
+    channelId: state.pathParameters['channelId']!,
+    name: state.uri.queryParameters['name'] ?? '',
+  );
 
   IptvPlayRoute get _self => this as IptvPlayRoute;
 
@@ -52,7 +61,8 @@ mixin $IptvPlayRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);

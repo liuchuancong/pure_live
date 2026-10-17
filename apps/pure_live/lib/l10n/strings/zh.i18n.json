@@ -18,6 +18,7 @@
     "retry": "重试",
     "close": "关闭",
     "save": "保存",
+    "clear": "清空",
     "loading": "加载中",
     "empty": "暂无内容",
     "pageOf": "第 {page: int} / {total: int} 页"
@@ -38,7 +39,40 @@
     "transparency": "透明度",
     "reduceTransparency": "减少透明效果",
     "animations": "动画",
-    "focusOutline": "焦点轮廓"
+    "focusOutline": "焦点轮廓",
+    "sectionTheme": "主题与外观",
+    "sectionIptv": "IPTV",
+    "sectionDanmaku": "弹幕",
+    "sectionData": "数据",
+    "sectionBackup": "备份",
+    "appearanceSubtitle": "主题模式、色彩、密度与动效",
+    "fontsSubtitle": "下载并应用云端字体",
+    "iptvSubtitle": "管理播放源与频道",
+    "shieldSubtitle": "按关键词、用户或正则屏蔽弹幕",
+    "cacheAndData": "缓存与数据",
+    "cacheAndDataSubtitle": "观看历史与本地数据",
+    "backupSubtitle": "备份与恢复本地数据",
+    "groupTheme": "主题",
+    "groupFontFamily": "字体",
+    "groupTextSize": "文字大小",
+    "themeModeSubtitle": "跟随系统，或始终浅色、始终深色",
+    "designLanguageSubtitle": "整个应用绘制所用的设计语言",
+    "accentSubtitle": "控件着色所用的颜色",
+    "densitySubtitle": "布局的紧凑程度",
+    "pureBlackSubtitle": "深色表面绘制为纯黑，适合 OLED 屏幕",
+    "transparencySubtitle": "玻璃与遮罩透明度的倍率",
+    "reduceTransparencySubtitle": "强制不透明表面并禁用模糊",
+    "animationsSubtitle": "是否开启动效",
+    "focusOutlineSubtitle": "聚焦控件显示可见轮廓",
+    "fontScaleSubtitle": "所有字体大小的倍率",
+    "previewText": "千里之行，始于足下",
+    "fontFamilyCurrent": "当前：{name: String}",
+    "defaultOption": "默认",
+    "historyEntry": "观看历史",
+    "historyCount": "{count: int} 条记录",
+    "clearHistory": "清空观看历史",
+    "clearHistorySubtitle": "删除本机全部观看记录",
+    "historyCleared": "观看历史已清空"
   },
   "theme": {
     "system": "跟随系统",
@@ -69,7 +103,9 @@
     "system": "系统默认",
     "systemDesc": "使用系统自带字体",
     "download": "下载",
-    "delete": "删除"
+    "delete": "删除",
+    "factoryDefault": "出厂默认",
+    "cloudFonts": "云端字体"
   },
   "follow": {
     "all": "全部",
@@ -78,12 +114,12 @@
     "unfollow": "取消关注",
     "unfollowConfirm": "不再关注「{name: String}」？",
     "newGroup": "新建分组",
-        "manageGroups": "管理分组",
+    "manageGroups": "管理分组",
     "renameGroup": "重命名分组",
     "deleteGroup": "删除分组",
     "deleteGroupConfirm": "删除分组不影响已关注的房间。确认删除？",
     "assign": "移动到分组",
-"groupName": "分组名称"
+    "groupName": "分组名称"
   },
   "toolbox": {
     "title": "工具箱",
@@ -91,7 +127,23 @@
     "readClipboard": "读取剪贴板",
     "resolve": "解析",
     "failed": "没有平台识别该链接",
-    "openRoom": "打开房间"
+    "openRoom": "打开房间",
+    "roomJump": "直播间跳转",
+    "linkJump": "链接跳转",
+    "directLink": "获取直链",
+    "parse": "获取解析",
+    "inputHint": "请在此处粘贴平台链接...",
+    "supportList": "支持解析列表",
+    "supportContent": "支持以下类型的链接解析：\n\n哔哩哔哩：\nhttps://live.bilibili.com/xxxxx\nhttps://www.bilibili.com/xxxxx\nhttps://b23.tv/xxxxx\n\n虎牙直播：\nhttps://www.huya.com/xxxxx\n\n斗鱼直播：\nhttps://www.douyu.com/xxxxx\n\n抖音直播/视频：\nhttps://live.douyin.com/xxxxx\nhttps://www.douyin.com/xxxxx\nhttps://v.douyin.com/xxxxx\nhttps://webcast.amemv.com/douyin/webcast/reflow/xxxxx\n\n快手直播：\nhttps://live.kuaishou.com/u/xxxxx\nhttps://live.kuaishou.cn/u/xxxxx\n\n网易CC直播：\nhttps://cc.163.com/xxxxx\n\nTwitch直播：\nhttps://www.twitch.tv/xxxxx\nhttps://twitch.tv/xxxxx\n\nSOOP直播：\nhttps://www.sooplive.com/xxxxx\nhttps://sooplive.com/xxxxx\nhttps://play.sooplive.com/xxxxx\nhttps://www.sooplive.co.kr/xxxxx\nhttps://sooplive.co.kr/xxxxx\nhttps://play.sooplive.co.kr/xxxxx\n\nYY直播：\nhttps://www.yy.com/xxxxx\nhttps://yy.com/xxxxx\nhttps://www.yy.com/xxxxx/xxxxx?tempId=xxxxx\nhttps://yy.com/xxxxx/xxxxx?tempId=xxxxx\n\nAcFun直播:\nhttps://live.acfun.cn/live/123456\n\nPicarto:\nhttps://picarto.tv/ChannelName\n\nTwitCasting:\nhttps://twitcasting.tv/ChannelName\nhttps://twitcasting.tv/c:ChannelName\n\nCHZZK:\nhttps://chzzk.naver.com/live/0123456789abcdef0123456789abcdef\n\nKick:\nhttps://kick.com/ChannelName\n\n17LIVE:\nhttps://17.live/en/live/1234567",
+    "emptyLink": "链接不能为空",
+    "parseFailed": "无法解析此链接",
+    "getUrlFailed": "读取直链失败",
+    "selectQuality": "选择清晰度",
+    "selectLine": "选择线路",
+    "line": "线路{index: int}",
+    "detectLink": "检测到链接",
+    "autoFill": "已自动填充剪贴板中的直播链接",
+    "copySuccess": "已复制直链"
   },
   "backup": {
     "title": "备份与恢复",
@@ -105,12 +157,25 @@
   },
   "about": {
     "title": "关于",
+    "group": "关于",
     "checkUpdate": "检查更新",
+    "onlineUpdate": "在线更新",
     "upToDate": "已是最新版本",
     "newVersion": "发现新版本",
+    "noNewVersion": "已在使用最新版本",
+    "openSourceFree": "本软件开源免费",
+    "update": "更新",
+    "refresh": "刷新",
     "versionHistory": "版本历史",
-    "licenses": "许可",
+    "historyDesc": "历史版本更新记录",
+    "publishedAt": "发布于 {date: String}",
+    "openRelease": "打开发布页面",
+    "licenses": "开源许可证",
     "project": "项目主页",
+    "projectSection": "项目",
+    "projectAlert": "项目声明",
+    "legalese": "© 2026 PureLive 开源项目。本程序为纯本地客户端应用，直接请求媒体平台官方公开接口，项目本身不存储、不制作、不分发任何音视频资源。本程序登录及云同步功能由第三方基础设施服务商 Firebase 提供。开发者郑重承诺，本程序本身不收集、不处理且不留存任何用户个人隐私信息。所有运行、配置及同步数据均由用户自行留存与控制，数据所有权及隐私权益完全归属于用户。用户需自行承担使用本测试工具所产生的相关法律责任。",
+    "browserNotOpened": "系统浏览器未打开，请检查默认浏览器设置",
     "checkRunning": "正在检查…",
     "checkFailed": "检查失败，点此重试"
   },
@@ -141,7 +206,15 @@
     "line": "线路",
     "play": "播放",
     "pause": "暂停",
-    "failed": "播放失败，请重试"
+    "failed": "播放失败，请重试",
+    "replay": "回放",
+    "offline": "未开播"
+  },
+  "areas": {
+    "empty": "暂无分区"
+  },
+  "popular": {
+    "empty": "暂时没有热门直播"
   },
   "errors": {
     "generic": "出了点问题，请稍后再试。",
@@ -152,6 +225,7 @@
   },
   "tabs": {
     "home": "首页",
+    "favorites": "关注",
     "follow": "关注",
     "history": "历史",
     "popular": "热门",

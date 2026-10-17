@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:pure_live/app/routing/route_paths.dart';
 import 'package:pure_live/features/settings/appearance_page.dart';
+import 'package:pure_live/features/settings/cache_data_page.dart';
+import 'package:pure_live/features/settings/font_manager_page.dart';
 import 'package:pure_live/features/settings/settings_page.dart';
 
 part 'settings_routes.g.dart';
@@ -28,4 +30,24 @@ class AppearanceRoute extends GoRouteData with $AppearanceRoute {
 
   @override
   Widget build(BuildContext context, GoRouterState state) => const AppearancePage();
+}
+
+/// The font manager: `/settings/fonts`, reached from the theme section.
+@TypedGoRoute<FontManagerRoute>(path: RoutePath.settingsFonts)
+class FontManagerRoute extends GoRouteData with $FontManagerRoute {
+  /// The font manager route.
+  const new();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const FontManagerPage();
+}
+
+/// Cache & data: `/settings/data`, reached from the data section.
+@TypedGoRoute<CacheDataRoute>(path: RoutePath.settingsData)
+class CacheDataRoute extends GoRouteData with $CacheDataRoute {
+  /// The cache & data route.
+  const new();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const CacheDataPage();
 }

@@ -13,8 +13,9 @@ enum ShellBranch {
   /// The home feed — the first destination and the launch default.
   home(0, Icons.home_outlined),
 
-  /// The followed streamers' live grid.
-  follow(1, Icons.favorite_border),
+  /// The followed streamers' live grid — the reference's first tab, the
+  /// favorites (3.x `HomeMenu.favorites`, heart glyph).
+  follow(1, Icons.favorite),
 
   /// The watch history.
   history(2, Icons.history);
@@ -27,10 +28,11 @@ enum ShellBranch {
   /// The icon every chrome renders for this branch.
   final IconData icon;
 
-  /// The localized label.
+  /// The localized label. The favorites branch carries the reference's
+  /// favorites tab label (3.x `favorites_title`).
   String label(BuildContext context) => switch (this) {
     ShellBranch.home => context.t.tabs.home,
-    ShellBranch.follow => context.t.tabs.follow,
+    ShellBranch.follow => context.t.tabs.favorites,
     ShellBranch.history => context.t.tabs.history,
   };
 

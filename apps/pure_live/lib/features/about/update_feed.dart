@@ -17,6 +17,7 @@ final class AppRelease {
       name = '${json['name'] ?? json['tag_name'] ?? ''}',
       body = '${json['body'] ?? ''}',
       publishedAt = DateTime.tryParse('${json['published_at'] ?? ''}'),
+      htmlUrl = '${json['html_url'] ?? ''}',
       prerelease = json['prerelease'] == true;
 
   /// The release tag (e.g. `v3.2.0`).
@@ -30,6 +31,9 @@ final class AppRelease {
 
   /// When the release was published; null while unpublished/draft-shaped.
   final DateTime? publishedAt;
+
+  /// The release's page on the project site; empty when the feed omits it.
+  final String htmlUrl;
 
   /// Whether the release is marked prerelease.
   final bool prerelease;

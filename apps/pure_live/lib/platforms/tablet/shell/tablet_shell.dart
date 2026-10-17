@@ -1,10 +1,12 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pure_live/app/shell/shell_destinations.dart';
+import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
-/// The tablet chrome. Touch first, so a bottom strip today; a compact rail
-/// arrives with the tablet layout pass if the landscape grid wants one.
+/// The tablet chrome: the reference tablet's rail — destinations in a column
+/// beside the content (3.x `HomeTabletView`'s `NavigationRail`), with the
+/// settings entry pinned to the column's end.
 final class TabletShell extends StatelessWidget {
   /// Wraps [navigationShell] in the tablet chrome.
   const new({required this.navigationShell, super.key});
@@ -17,7 +19,8 @@ final class TabletShell extends StatelessWidget {
     destinations: shellDestinations(context),
     selectedId: ShellBranch.at(navigationShell.currentIndex).name,
     onSelected: _goBranch,
-    placement: PureShellPlacement.bottom,
+    placement: PureShellPlacement.rail,
+    trailing: const Padding(padding: EdgeInsets.only(bottom: 16), child: SettingsEntryButton()),
     child: navigationShell,
   );
 

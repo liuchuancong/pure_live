@@ -5,16 +5,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/features/about/markdown_text.dart';
 import 'package:pure_live/features/about/update_feed.dart';
+import 'package:pure_live/features/about/version_dialog.dart';
+import 'package:pure_live/features/about/version_history.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// About (3.x `AboutPage`): the app's identity, the update check against
-/// the repository's published releases, the release notes, the project
-/// page and the licenses.
+/// About (3.x `AboutPage`): the app's identity under a version pill, the
+/// update check against the repository's published releases (3.x
+/// `online_update`), the release history, the open-source licences, then the
+/// project group with its homepage and its legal note.
+///
+/// The check runs once on open (the current app's own behaviour) and again
+/// from the update row, whose verdict is the reference's version dialog.
 final class AboutPage extends ConsumerStatefulWidget {
   /// The about page.
   const new({super.key});
@@ -28,6 +33,7 @@ final class _AboutPageState extends ConsumerState<AboutPage> {
   List<AppRelease>? _releases;
   Object? _feedError;
   bool _checking = false;
+  bool _openingProject = false;
 
   @override
   void initState() {
@@ -43,10 +49,11 @@ final class _AboutPageState extends ConsumerState<AboutPage> {
     }
   }
 
-  /// Fetches the releases; the first one answers the update check.
-  Future<void> _check() async {
+  /// Fetches the releases; the first one answers the update check. Returns
+  /// them for callers that present the verdict; null on failure or re-entry.
+  Future<List<AppRelease>?> _check() async {
     if (_checking) {
-      return;
+      return null;
     }
     setState(() {
       _checking = true;
@@ -55,14 +62,16 @@ final class _AboutPageState extends ConsumerState<AboutPage> {
     try {
       final releases = await ref.read(updateFeedProvider).fetch();
       if (!mounted) {
-        return;
+        return null;
       }
       setState(() => _releases = releases);
+      return releases;
     } on Object catch (error) {
       if (!mounted) {
-        return;
+        return null;
       }
       setState(() => _feedError = error);
+      return null;
     } finally {
       if (mounted) {
         setState(() => _checking = false);
@@ -84,101 +93,233 @@ final class _AboutPageState extends ConsumerState<AboutPage> {
     }
   }
 
+  /// The check's verdict as a dialog (3.x): the newest release's notes when
+  /// a newer version exists, the up-to-date note otherwise. A failed check
+  /// offers the retry the row's subtitle already states.
+  Future<void> _promptUpdate() async {
+    final releases = _releases ?? await _check();
+    if (!mounted || releases == null) {
+      return;
+    }
+    final version = _info?.version;
+    if (version != null && _hasUpdate(releases, version)) {
+      await showNewVersionDialog(context, release: releases.first);
+    } else {
+      await showNoUpdateDialog(context);
+    }
+  }
+
+  Future<void> _openProject() async {
+    if (_openingProject) {
+      return;
+    }
+    _openingProject = true;
+    try {
+      final opened = await launchUrl(projectUrl, mode: LaunchMode.externalApplication);
+      if (!opened && mounted) {
+        PureToast.show(context, context.t.about.browserNotOpened, type: PureToastType.error);
+      }
+    } on Object {
+      if (mounted) {
+        PureToast.show(context, context.t.about.browserNotOpened, type: PureToastType.error);
+      }
+    } finally {
+      _openingProject = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final version = _info == null ? '…' : '${_info!.version}+${_info!.buildNumber}';
+    final theme = PureTheme.of(context);
+    final version = _info?.version;
     final releases = _releases;
     final updateText = releases == null || releases.isEmpty
         ? (_feedError != null ? context.t.about.checkFailed : context.t.about.checkRunning)
-        : (_hasUpdate(releases, version)
+        : (_hasUpdate(releases, version ?? '')
               ? '${context.t.about.newVersion} ${releases.first.tag}'
               : context.t.about.upToDate);
+    final hasUpdate = version != null && releases != null && _hasUpdate(releases, version);
+
     return PureScaffold(
       appBar: PureAppBar(title: context.t.about.title, actions: const [SettingsEntryButton()]),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
+          _hero(context, theme, version),
+          _groupTitle(context, context.t.about.group),
           PureCard(
-            padding: const EdgeInsets.symmetric(vertical: 20),
+            padding: EdgeInsets.zero,
             child: Column(
               children: [
-                const Icon(Icons.live_tv, size: 56),
-                const SizedBox(height: 8),
-                Text(context.t.app.title, style: PureTheme.of(context).text.headline),
-                const SizedBox(height: 4),
-                Text(version, style: PureTheme.of(context).text.caption),
+                PureListRow(
+                  leading: const Icon(Icons.cloud_download_outlined),
+                  title: context.t.about.onlineUpdate,
+                  subtitle: updateText,
+                  trailing: _checking
+                      ? const PureSpinner()
+                      : _versionPill(
+                          theme,
+                          hasUpdate && releases.first.tag.isNotEmpty ? releases.first.tag : 'v${version ?? '…'}',
+                          highlight: hasUpdate,
+                        ),
+                  onTap: _checking ? null : () => unawaited(_promptUpdate()),
+                ),
+                PureListRow(
+                  leading: const Icon(Icons.history),
+                  title: context.t.about.versionHistory,
+                  subtitle: context.t.about.historyDesc,
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () =>
+                      unawaited(showVersionHistorySheet(context, releases: releases ?? const [], refresh: _check)),
+                ),
+                PureListRow(
+                  leading: const Icon(Icons.verified_user_outlined),
+                  title: context.t.about.licenses,
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => showLicensePage(
+                    context: context,
+                    applicationName: context.t.app.title,
+                    applicationLegalese: context.t.about.legalese,
+                    applicationVersion: 'v${version ?? '…'}',
+                    useRootNavigator: true,
+                  ),
+                  divided: false,
+                ),
               ],
             ),
           ),
-          PureListRow(
-            leading: const Icon(Icons.system_update_outlined),
-            title: context.t.about.checkUpdate,
-            subtitle: updateText,
-            trailing: _checking ? const PureSpinner(size: 20) : const Icon(Icons.chevron_right),
-            onTap: _checking ? null : _check,
-            divided: false,
+          const SizedBox(height: 24),
+          _groupTitle(context, context.t.about.projectSection),
+          PureCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _longRow(
+                  context,
+                  icon: Icons.code,
+                  title: context.t.about.project,
+                  subtitle: projectUrl.toString(),
+                  onTap: () => unawaited(_openProject()),
+                  trailing: Icon(Icons.open_in_new, size: 18, color: theme.colors.textSecondary),
+                ),
+                _longRow(
+                  context,
+                  icon: Icons.warning_amber_outlined,
+                  iconColor: theme.colors.error,
+                  title: context.t.about.projectAlert,
+                  subtitle: context.t.about.legalese,
+                ),
+              ],
+            ),
           ),
-          PureListRow(
-            leading: const Icon(Icons.history_outlined),
-            title: context.t.about.versionHistory,
-            trailing: const Icon(Icons.chevron_right),
-            onTap: releases == null || releases.isEmpty ? null : () => _showHistory(context, releases),
-            divided: false,
-          ),
-          PureListRow(
-            leading: const Icon(Icons.description_outlined),
-            title: context.t.about.licenses,
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () =>
-                showLicensePage(context: context, applicationName: context.t.app.title, applicationVersion: version),
-            divided: false,
-          ),
-          PureListRow(
-            leading: const Icon(Icons.public_outlined),
-            title: context.t.about.project,
-            trailing: const Icon(Icons.open_in_new),
-            onTap: () => unawaited(launchUrl(projectUrl, mode: LaunchMode.externalApplication)),
-            divided: false,
-          ),
-          if (releases != null && releases.isNotEmpty)
-            Padding(padding: const EdgeInsets.only(top: 18), child: MarkdownText(releases.first.body)),
         ],
       ),
     );
   }
 
-  Future<void> _showHistory(BuildContext context, List<AppRelease> releases) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      constraints: const BoxConstraints(maxWidth: 720),
-      builder: (context) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.7,
-        builder: (context, scrollController) => ListView(
-          controller: scrollController,
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          children: [
-            Text(context.t.about.versionHistory, style: PureTheme.of(context).text.title),
-            const SizedBox(height: 12),
-            for (final release in releases)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('${release.tag}  ${release.name}', style: PureTheme.of(context).text.title),
-                    if (release.publishedAt != null)
-                      Text(
-                        release.publishedAt!.toLocal().toString().split(' ').first,
-                        style: PureTheme.of(context).text.caption,
-                      ),
-                    const SizedBox(height: 6),
-                    MarkdownText(release.body),
-                  ],
+  /// The identity block (3.x): the icon tile scaling in, the app name, the
+  /// version pill. The app ships no icon asset, so the tile carries the
+  /// app's glyph.
+  Widget _hero(BuildContext context, PureTheme theme, String? version) => Center(
+    child: Column(
+      children: [
+        TweenAnimationBuilder<double>(
+          tween: Tween<double>(begin: 0, end: 1),
+          duration: const Duration(milliseconds: 1000),
+          curve: Curves.elasticOut,
+          builder: (context, value, child) => Transform.scale(scale: value, child: child),
+          child: Container(
+            width: 96,
+            height: 96,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: theme.colors.primary.withValues(alpha: 0.08)),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colors.primary.withValues(alpha: 0.06),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
                 ),
+              ],
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Icon(Icons.live_tv_rounded, size: 48, color: theme.colors.primary),
+          ),
+        ),
+        const SizedBox(height: 18),
+        Text(context.t.app.title, style: theme.text.headline.copyWith(fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+        const SizedBox(height: 6),
+        _versionPill(theme, 'v${version ?? '…'}'),
+        const SizedBox(height: 28),
+      ],
+    ),
+  );
+
+  /// The version pill (3.x): the rounded quiet chip, highlighted while an
+  /// update is pending.
+  Widget _versionPill(PureTheme theme, String text, {bool highlight = false}) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+    decoration: BoxDecoration(
+      color: highlight ? theme.colors.primaryBg : theme.colors.fillSecondary,
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Text(
+      text,
+      style: theme.text.caption.copyWith(
+        color: highlight ? theme.colors.primaryText : theme.colors.textSecondary,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  );
+
+  /// The group header above a card (3.x `buildGroupTitle`).
+  Widget _groupTitle(BuildContext context, String title) => Padding(
+    padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+    child: Text(
+      title,
+      style: PureTheme.of(context).text.caption
+          .copyWith(color: PureTheme.of(context).colors.textSecondary, fontWeight: FontWeight.w600),
+    ),
+  );
+
+  /// A tile with a wrapping subtitle (3.x `buildTile(isLong:)`) — the
+  /// [PureListRow] subtitle is a single line, and the project URL and the
+  /// legal note both wrap.
+  Widget _longRow(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    Color? iconColor,
+    VoidCallback? onTap,
+    Widget? trailing,
+  }) {
+    final theme = PureTheme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(theme.card.borderRadius),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Icon(icon, size: 22, color: iconColor ?? theme.colors.icon),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: theme.text.body.copyWith(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: theme.text.caption.copyWith(color: theme.colors.textSecondary, height: 1.5)),
+                ],
               ),
+            ),
+            if (trailing != null) ...[const SizedBox(width: 8), trailing],
           ],
         ),
       ),

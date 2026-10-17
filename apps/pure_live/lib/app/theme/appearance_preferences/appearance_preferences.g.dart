@@ -6,9 +6,13 @@ part of 'appearance_preferences.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_AppearancePreferences _$AppearancePreferencesFromJson(Map<String, dynamic> json) => _AppearancePreferences(
+_AppearancePreferences _$AppearancePreferencesFromJson(
+  Map<String, dynamic> json,
+) => _AppearancePreferences(
   designLanguageId: json['designLanguageId'] as String? ?? '',
-  themeMode: $enumDecodeNullable(_$AppThemeModeEnumMap, json['themeMode']) ?? AppThemeMode.system,
+  themeMode:
+      $enumDecodeNullable(_$AppThemeModeEnumMap, json['themeMode']) ??
+      AppThemeMode.system,
   accentColor: (json['accentColor'] as num?)?.toInt(),
   pureBlack: json['pureBlack'] as bool? ?? false,
   densityId: json['densityId'] as String? ?? '',
@@ -20,7 +24,9 @@ _AppearancePreferences _$AppearancePreferencesFromJson(Map<String, dynamic> json
   focusOutline: json['focusOutline'] as bool? ?? true,
 );
 
-Map<String, dynamic> _$AppearancePreferencesToJson(_AppearancePreferences instance) => <String, dynamic>{
+Map<String, dynamic> _$AppearancePreferencesToJson(
+  _AppearancePreferences instance,
+) => <String, dynamic>{
   'designLanguageId': instance.designLanguageId,
   'themeMode': _$AppThemeModeEnumMap[instance.themeMode]!,
   'accentColor': instance.accentColor,
@@ -34,4 +40,8 @@ Map<String, dynamic> _$AppearancePreferencesToJson(_AppearancePreferences instan
   'focusOutline': instance.focusOutline,
 };
 
-const _$AppThemeModeEnumMap = {AppThemeMode.system: 'system', AppThemeMode.light: 'light', AppThemeMode.dark: 'dark'};
+const _$AppThemeModeEnumMap = {
+  AppThemeMode.system: 'system',
+  AppThemeMode.light: 'light',
+  AppThemeMode.dark: 'dark',
+};

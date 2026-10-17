@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/fonts/font_library.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/features/settings/widgets/settings_sections.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
-import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
-/// The font manager (3.x `FontManagerPage`, app-font slice): the system
-/// default plus every family in the cloud manifest — download, apply and
-/// delete.
+/// The font manager (3.x `FontFamilyManagerPage`, app-font slice): the
+/// reference's two groups — the factory default and the cloud manifest —
+/// with download, apply and delete on each cloud family.
 ///
 /// Applying writes the family id into the persisted appearance
 /// (`fontFamily`), which the mapper carries into the uikit's `UiConfig`;
@@ -19,6 +19,11 @@ import 'package:pure_uikit/pure_uikit.dart';
 final class FontManagerPage extends ConsumerStatefulWidget {
   /// The font manager.
   const new({super.key});
+
+  /// Opens the manager above the current page (it has no route path yet).
+  static void open(BuildContext context) {
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const FontManagerPage()));
+  }
 
   @override
   ConsumerState<FontManagerPage> createState() => _FontManagerPageState();
@@ -58,7 +63,7 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
     final update = ref.read(appearancePreferencesProvider.notifier).update;
     final families = _families;
     return PureScaffold(
-      appBar: PureAppBar(title: context.t.settings.fonts, actions: const [SettingsEntryButton()]),
+      appBar: PureAppBar(title: context.t.settings.fonts),
       body: families == null
           ? Center(
               child: _error != null
@@ -75,51 +80,61 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
           : ListView(
               padding: const EdgeInsets.all(12),
               children: [
-                _row(
-                  context,
-                  title: context.t.fonts.system,
-                  selected: appearance.fontFamily?.isEmpty ?? true,
-                  action: (appearance.fontFamily?.isEmpty ?? true)
-                      ? null
-                      : () => update((a) => a.copyWith(fontFamily: '')),
+                SettingsSection.card(
+                  label: context.t.fonts.factoryDefault,
+                  tiles: [
+                    _row(
+                      context,
+                      title: context.t.fonts.system,
+                      selected: appearance.fontFamily?.isEmpty ?? true,
+                      action: (appearance.fontFamily?.isEmpty ?? true)
+                          ? null
+                          : () => update((a) => a.copyWith(fontFamily: '')),
+                    ),
+                  ],
                 ),
-                for (final family in families)
-                  _row(
-                    context,
-                    title: family.name,
-                    selected: appearance.fontFamily == family.id,
-                    action: _library.isDownloaded(family.id)
-                        ? () => update((a) => a.copyWith(fontFamily: family.id))
-                        : null,
-                    trailing: _familyAction(context, family),
+                if (families.isNotEmpty) ...[
+                  const SettingsSectionGap(),
+                  SettingsSection.card(
+                    label: context.t.fonts.cloudFonts,
+                    tiles: [
+                      for (var i = 0; i < families.length; i++)
+                        _row(
+                          context,
+                          title: families[i].name,
+                          selected: appearance.fontFamily == families[i].id,
+                          action: _library.isDownloaded(families[i].id)
+                              ? () => update((a) => a.copyWith(fontFamily: families[i].id))
+                              : null,
+                          trailing: _familyAction(context, families[i]),
+                          divided: i < families.length - 1,
+                        ),
+                    ],
                   ),
+                ],
+                const SizedBox(height: 32),
               ],
             ),
     );
   }
 
-  Widget _row(
+  PureListRow _row(
     BuildContext context, {
     required String title,
     required bool selected,
     required VoidCallback? action,
     String? subtitle,
     Widget? trailing,
-  }) => Padding(
-    padding: const EdgeInsets.only(bottom: 10),
-    child: PureCard(
-      padding: EdgeInsets.zero,
-      child: PureListRow(
-        leading: selected
-            ? Icon(Icons.check_circle, color: PureTheme.of(context).colors.primary)
-            : const Icon(Icons.radio_button_unchecked),
-        title: title,
-        subtitle: (subtitle == null || subtitle.isEmpty) ? null : subtitle,
-        trailing: trailing,
-        onTap: action,
-        divided: false,
-      ),
-    ),
+    bool divided = false,
+  }) => PureListRow(
+    leading: selected
+        ? Icon(Icons.check_circle, color: PureTheme.of(context).colors.primary)
+        : const Icon(Icons.radio_button_unchecked),
+    title: title,
+    subtitle: (subtitle == null || subtitle.isEmpty) ? null : subtitle,
+    trailing: trailing,
+    onTap: action,
+    divided: divided,
   );
 
   Widget? _familyAction(BuildContext context, FontFamily family) {

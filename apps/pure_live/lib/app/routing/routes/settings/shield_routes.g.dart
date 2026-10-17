@@ -8,8 +8,11 @@ part of 'shield_routes.dart';
 
 List<RouteBase> get $appRoutes => [$shieldRoute];
 
-RouteBase get $shieldRoute =>
-    GoRouteData.$route(path: '/settings/shield', hasOverriddenOnExit: false, factory: $ShieldRoute._fromState);
+RouteBase get $shieldRoute => GoRouteData.$route(
+  path: '/settings/shield',
+  hasOverriddenOnExit: false,
+  factory: $ShieldRoute._fromState,
+);
 
 mixin $ShieldRoute on GoRouteData {
   static ShieldRoute _fromState(GoRouterState state) => const ShieldRoute();
@@ -24,7 +27,8 @@ mixin $ShieldRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);

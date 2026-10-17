@@ -11,6 +11,7 @@
     "retry": "Retry",
     "close": "Close",
     "save": "Save",
+    "clear": "Clear",
     "loading": "Loading",
     "empty": "Nothing here yet",
     "pageOf": "Page {page: int} of {total: int}"
@@ -31,7 +32,40 @@
     "transparency": "Transparency",
     "reduceTransparency": "Reduce transparency",
     "animations": "Animations",
-    "focusOutline": "Focus outline"
+    "focusOutline": "Focus outline",
+    "sectionTheme": "Theme & display",
+    "sectionIptv": "IPTV",
+    "sectionDanmaku": "Danmaku",
+    "sectionData": "Data",
+    "sectionBackup": "Backup",
+    "appearanceSubtitle": "Theme mode, colour, density and motion",
+    "fontsSubtitle": "Download and apply cloud fonts",
+    "iptvSubtitle": "Manage playlists and channels",
+    "shieldSubtitle": "Hide danmaku by keyword, user or regex",
+    "cacheAndData": "Cache & data",
+    "cacheAndDataSubtitle": "Watch history and stored data",
+    "backupSubtitle": "Back up and restore your data",
+    "groupTheme": "Theme",
+    "groupFontFamily": "Font",
+    "groupTextSize": "Text size",
+    "themeModeSubtitle": "Follow the system, or stay light or dark",
+    "designLanguageSubtitle": "The design language the whole app is drawn with",
+    "accentSubtitle": "The colour the controls are tinted with",
+    "densitySubtitle": "How compact the layout is",
+    "pureBlackSubtitle": "Draw dark surfaces pure black, for OLED screens",
+    "transparencySubtitle": "A multiplier on glass and scrim opacity",
+    "reduceTransparencySubtitle": "Force opaque surfaces and disable blur",
+    "animationsSubtitle": "Whether motion runs",
+    "focusOutlineSubtitle": "Draw a visible outline on focused controls",
+    "fontScaleSubtitle": "A multiplier on every font size",
+    "previewText": "The quick brown fox jumps over the lazy dog",
+    "fontFamilyCurrent": "Current: {name: String}",
+    "defaultOption": "Default",
+    "historyEntry": "Watch history",
+    "historyCount": "{count: int} entries",
+    "clearHistory": "Clear watch history",
+    "clearHistorySubtitle": "Remove every watched entry from this device",
+    "historyCleared": "Watch history cleared"
   },
   "theme": {
     "system": "System",
@@ -49,7 +83,15 @@
     "line": "Line",
     "play": "Play",
     "pause": "Pause",
-    "failed": "Playback failed — try again"
+    "failed": "Playback failed — try again",
+    "replay": "Replay",
+    "offline": "Offline"
+  },
+  "areas": {
+    "empty": "No areas here"
+  },
+  "popular": {
+    "empty": "Nothing live right now"
   },
   "history": {
     "clear": "Clear history",
@@ -72,7 +114,9 @@
     "system": "System default",
     "systemDesc": "Use the fonts the system ships",
     "download": "Download",
-    "delete": "Delete"
+    "delete": "Delete",
+    "factoryDefault": "Factory default",
+    "cloudFonts": "Cloud fonts"
   },
   "follow": {
     "all": "All",
@@ -81,12 +125,12 @@
     "unfollow": "Unfollow",
     "unfollowConfirm": "Unfollow \"{name: String}\"?",
     "newGroup": "New group",
-        "manageGroups": "Manage groups",
+    "manageGroups": "Manage groups",
     "renameGroup": "Rename group",
     "deleteGroup": "Delete group",
     "deleteGroupConfirm": "Deleting a group leaves followed rooms untouched. Delete?",
     "assign": "Move to groups",
-"groupName": "Group name"
+    "groupName": "Group name"
   },
   "toolbox": {
     "title": "Toolbox",
@@ -94,7 +138,23 @@
     "readClipboard": "Read clipboard",
     "resolve": "Resolve",
     "failed": "No platform recognised this link",
-    "openRoom": "Open the room"
+    "openRoom": "Open the room",
+    "roomJump": "Jump to Room",
+    "linkJump": "Open Link",
+    "directLink": "Get Direct Link",
+    "parse": "Parse Link",
+    "inputHint": "Paste platform link here...",
+    "supportList": "Supported Platforms",
+    "supportContent": "Supported link formats:\n\nBilibili:\nhttps://live.bilibili.com/xxxxx\nhttps://www.bilibili.com/xxxxx\nhttps://b23.tv/xxxxx\n\nHuya:\nhttps://www.huya.com/xxxxx\n\nDouyu:\nhttps://www.douyu.com/xxxxx\n\nDouyin Live/Video:\nhttps://live.douyin.com/xxxxx\nhttps://www.douyin.com/xxxxx\nhttps://v.douyin.com/xxxxx\nhttps://webcast.amemv.com/douyin/webcast/reflow/xxxxx\n\nKuaishou Live:\nhttps://live.kuaishou.com/u/xxxxx\nhttps://live.kuaishou.cn/u/xxxxx\n\nNetEase CC:\nhttps://cc.163.com/xxxxx\n\nTwitch:\nhttps://www.twitch.tv/xxxxx\nhttps://twitch.tv/xxxxx\n\nSOOP Live:\nhttps://www.sooplive.com/xxxxx\nhttps://sooplive.com/xxxxx\nhttps://play.sooplive.com/xxxxx\nhttps://www.sooplive.co.kr/xxxxx\nhttps://sooplive.co.kr/xxxxx\nhttps://play.sooplive.co.kr/xxxxx\n\nYY Live:\nhttps://www.yy.com/xxxxx\nhttps://yy.com/xxxxx\nhttps://www.yy.com/xxxxx/xxxxx?tempId=xxxxx\nhttps://yy.com/xxxxx/xxxxx?tempId=xxxxx\n\nAcFun Live:\nhttps://live.acfun.cn/live/123456\n\nPicarto:\nhttps://picarto.tv/ChannelName\n\nTwitCasting:\nhttps://twitcasting.tv/ChannelName\nhttps://twitcasting.tv/c:ChannelName\n\nCHZZK:\nhttps://chzzk.naver.com/live/0123456789abcdef0123456789abcdef\n\nKick:\nhttps://kick.com/ChannelName\n\n17LIVE:\nhttps://17.live/en/live/1234567",
+    "emptyLink": "Link cannot be empty",
+    "parseFailed": "Unable to parse this link",
+    "getUrlFailed": "Failed to get direct link",
+    "selectQuality": "Select Quality",
+    "selectLine": "Select Line",
+    "line": "Line {index: int}",
+    "detectLink": "Link Detected",
+    "autoFill": "Live link from clipboard has been auto-filled",
+    "copySuccess": "Direct link copied"
   },
   "backup": {
     "title": "Backup & restore",
@@ -108,12 +168,25 @@
   },
   "about": {
     "title": "About",
+    "group": "About",
     "checkUpdate": "Check for updates",
+    "onlineUpdate": "Online Update",
     "upToDate": "Up to date",
     "newVersion": "New version available:",
+    "noNewVersion": "You are using the latest version.",
+    "openSourceFree": "This app is open source and free",
+    "update": "Update",
+    "refresh": "Refresh",
     "versionHistory": "Version history",
-    "licenses": "Licenses",
+    "historyDesc": "Update history records",
+    "publishedAt": "Published at {date: String}",
+    "openRelease": "Open release page",
+    "licenses": "License",
     "project": "Project page",
+    "projectSection": "Project",
+    "projectAlert": "Project Alert",
+    "legalese": "© 2026 PureLive Open-Source Project. This program is a pure local client application that directly requests the official public APIs of media platforms. The project itself does not store, host, reproduce, or distribute any audio/video resources. The developer solemnly pledges that this application does not collect, process, or retain any user personal data or privacy information. All operational parameters, local configurations, and synchronized metadata are exclusively retained and controlled by the end-user. Users shall assume all legal responsibilities arising from the use of this testing tool.",
+    "browserNotOpened": "The system browser did not open. Check the default browser settings.",
     "checkRunning": "Checking…",
     "checkFailed": "Check failed — tap to retry"
   },
@@ -145,6 +218,7 @@
   },
   "tabs": {
     "home": "Home",
+    "favorites": "Favorites",
     "follow": "Follow",
     "history": "History",
     "popular": "Popular",

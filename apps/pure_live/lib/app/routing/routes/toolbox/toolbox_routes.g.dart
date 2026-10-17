@@ -8,8 +8,11 @@ part of 'toolbox_routes.dart';
 
 List<RouteBase> get $appRoutes => [$toolboxRoute];
 
-RouteBase get $toolboxRoute =>
-    GoRouteData.$route(path: '/toolbox', hasOverriddenOnExit: false, factory: $ToolboxRoute._fromState);
+RouteBase get $toolboxRoute => GoRouteData.$route(
+  path: '/toolbox',
+  hasOverriddenOnExit: false,
+  factory: $ToolboxRoute._fromState,
+);
 
 mixin $ToolboxRoute on GoRouteData {
   static ToolboxRoute _fromState(GoRouterState state) => const ToolboxRoute();
@@ -24,7 +27,8 @@ mixin $ToolboxRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);

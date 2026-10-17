@@ -8,8 +8,11 @@ part of 'backup_routes.dart';
 
 List<RouteBase> get $appRoutes => [$backupRoute];
 
-RouteBase get $backupRoute =>
-    GoRouteData.$route(path: '/settings/backup', hasOverriddenOnExit: false, factory: $BackupRoute._fromState);
+RouteBase get $backupRoute => GoRouteData.$route(
+  path: '/settings/backup',
+  hasOverriddenOnExit: false,
+  factory: $BackupRoute._fromState,
+);
 
 mixin $BackupRoute on GoRouteData {
   static BackupRoute _fromState(GoRouterState state) => const BackupRoute();
@@ -24,7 +27,8 @@ mixin $BackupRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);

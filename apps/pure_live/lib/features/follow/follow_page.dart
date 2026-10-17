@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_library/live_library.dart' show FollowRepository, LibraryRoom;
-import 'package:live_sites/live_sites.dart' show LiveRoom;
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
 import 'package:pure_live/features/follow/follow_group_sheet.dart';
@@ -214,27 +213,41 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
         ),
       ),
       body: visible.isEmpty
-          ? PureEmpty(title: context.t.follow.empty)
-          : GridView.builder(
-              padding: const EdgeInsets.all(12),
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 340,
-                childAspectRatio: 0.82,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-              ),
-              itemCount: visible.length,
-              itemBuilder: (context, index) => GestureDetector(
-                onLongPress: () => unawaited(_assignGroups(visible[index])),
-                child: _tile(context, visible[index].room),
-              ),
+          ? PureEmpty(title: context.t.follow.empty, icon: Icons.favorite_border)
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                // The reference favourite grid: one wide card on a phone,
+                // more columns as the window grows.
+                final width = constraints.maxWidth;
+                final columns = width > 1280 ? 4 : (width > 960 ? 3 : (width > 640 ? 2 : 1));
+                return GridView.builder(
+                  padding: const EdgeInsets.all(PureSpacing.md),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    crossAxisSpacing: PureSpacing.sm,
+                    mainAxisSpacing: PureSpacing.sm,
+                    mainAxisExtent: RoomGridMetrics.mainAxisExtent(
+                      (width - 2 * PureSpacing.md - PureSpacing.sm * (columns - 1)) / columns,
+                      MediaQuery.textScalerOf(context),
+                    ),
+                  ),
+                  itemCount: visible.length,
+                  itemBuilder: (context, index) {
+                    final record = visible[index];
+                    return RoomCard(
+                      room: record.room,
+                      onOpen: () => RoomRoute(
+                        siteId: record.room.ref.platform,
+                        roomId: record.room.ref.roomId,
+                        roomName: record.room.content.title,
+                      ).push<void>(context),
+                      // Long press moves the room between groups.
+                      onLongPress: () => unawaited(_assignGroups(record)),
+                    );
+                  },
+                );
+              },
             ),
     );
   }
-
-  Widget _tile(BuildContext context, LiveRoom room) => RoomCard(
-    room: room,
-    onOpen: () =>
-        RoomRoute(siteId: room.ref.platform, roomId: room.ref.roomId, roomName: room.content.title).push<void>(context),
-  );
 }

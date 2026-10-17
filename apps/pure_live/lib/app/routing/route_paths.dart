@@ -55,6 +55,12 @@ abstract final class RoutePath {
   /// The appearance page, one level under the settings index.
   static const String settingsAppearance = '/settings/appearance';
 
+  /// The font manager, one level under the settings index.
+  static const String settingsFonts = '/settings/fonts';
+
+  /// The cache & data page, one level under the settings index.
+  static const String settingsData = '/settings/data';
+
   /// The danmaku shield, under the settings cluster.
   static const String settingsShield = '/settings/shield';
 

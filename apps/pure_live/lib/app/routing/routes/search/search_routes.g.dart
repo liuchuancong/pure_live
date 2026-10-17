@@ -8,8 +8,11 @@ part of 'search_routes.dart';
 
 List<RouteBase> get $appRoutes => [$searchRoute];
 
-RouteBase get $searchRoute =>
-    GoRouteData.$route(path: '/search', hasOverriddenOnExit: false, factory: $SearchRoute._fromState);
+RouteBase get $searchRoute => GoRouteData.$route(
+  path: '/search',
+  hasOverriddenOnExit: false,
+  factory: $SearchRoute._fromState,
+);
 
 mixin $SearchRoute on GoRouteData {
   static SearchRoute _fromState(GoRouterState state) => const SearchRoute();
@@ -24,7 +27,8 @@ mixin $SearchRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);

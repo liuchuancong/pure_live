@@ -170,22 +170,19 @@ final class _InfiniteFeedState extends ConsumerState<_InfiniteFeed> {
           ),
         ],
       ),
-      child: GridView.builder(
-        controller: _scroll,
-        padding: const EdgeInsets.all(12),
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 340,
-          childAspectRatio: 0.82,
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
+      child: LayoutBuilder(
+        builder: (context, constraints) => GridView.builder(
+          controller: _scroll,
+          padding: const EdgeInsets.fromLTRB(PureSpacing.sm, PureSpacing.sm, PureSpacing.sm, PureSpacing.xl),
+          gridDelegate: _roomGridDelegate(context, constraints.maxWidth),
+          itemCount: rooms.length + 1,
+          itemBuilder: (context, index) {
+            if (index < rooms.length) {
+              return _tile(context, rooms[index]);
+            }
+            return state.isLoadingMore ? const Center(child: PureSpinner(size: 40)) : const SizedBox.shrink();
+          },
         ),
-        itemCount: rooms.length + 1,
-        itemBuilder: (context, index) {
-          if (index < rooms.length) {
-            return _tile(context, rooms[index]);
-          }
-          return state.isLoadingMore ? const Center(child: PureSpinner(size: 40)) : const SizedBox.shrink();
-        },
       ),
     );
   }
@@ -249,16 +246,13 @@ final class _PagedFeedState extends ConsumerState<_PagedFeed> {
       );
     }
     final rooms = widget.sort == _RoomSort.viewers ? _sortByViewers(state.items) : state.items;
-    return GridView.builder(
-      padding: const EdgeInsets.all(12),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
-        childAspectRatio: 0.82,
-        mainAxisSpacing: 10,
-        crossAxisSpacing: 10,
+    return LayoutBuilder(
+      builder: (context, constraints) => GridView.builder(
+        padding: const EdgeInsets.fromLTRB(PureSpacing.sm, PureSpacing.sm, PureSpacing.sm, PureSpacing.xl),
+        gridDelegate: _roomGridDelegate(context, constraints.maxWidth),
+        itemCount: rooms.length,
+        itemBuilder: (context, index) => _tile(context, rooms[index]),
       ),
-      itemCount: rooms.length,
-      itemBuilder: (context, index) => _tile(context, rooms[index]),
     );
   }
 
@@ -324,6 +318,12 @@ final class _PagedFeedState extends ConsumerState<_PagedFeed> {
 
 /// Shared pieces of both feeds.
 
+/// The grid both feeds lay their cards into (3.x `area_rooms` delegate):
+/// columns react to the window's width and every tile reserves the 16:9
+/// cover plus its caption through [RoomGridMetrics].
+SliverGridDelegateWithFixedCrossAxisCount _roomGridDelegate(BuildContext context, double width) =>
+    RoomGridMetrics.delegateFor(context, width);
+
 List<LiveRoom> _sortByViewers(List<LiveRoom> rooms) {
   int viewers(LiveRoom room) => room.audience.onlineViewers ?? room.audience.popularity ?? 0;
   return [...rooms]..sort((a, b) => viewers(b).compareTo(viewers(a)));
@@ -342,49 +342,55 @@ Widget _placeholder(
   required VoidCallback onRetry,
 }) {
   if (error != null) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(context.t.errors.network, textAlign: TextAlign.center),
-          const SizedBox(height: 12),
-          PureButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: onRetry),
-        ],
-      ),
-    );
+    return PureError(message: context.t.errors.network, onRetry: onRetry, retryLabel: context.t.common.retry);
   }
   if (loading) {
-    return Skeletonizer(
-      child: GridView.count(
-        crossAxisCount: 4,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(12),
-        mainAxisSpacing: 10,
-        crossAxisSpacing: 10,
-        childAspectRatio: 0.82,
-        children: [
-          for (var i = 0; i < 12; i++)
-            PureCard(
-              padding: EdgeInsets.zero,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Container(color: Colors.white24),
+    // A bone grid shaped exactly like the room grid, so content replaces
+    // the skeleton without a layout jump. Fixed-height bars rather than
+    // placeholder letters: a skeleton has to fit its tile in every design
+    // language and text scale.
+    return LayoutBuilder(
+      builder: (context, constraints) => Skeletonizer(
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(PureSpacing.sm),
+          gridDelegate: _roomGridDelegate(context, constraints.maxWidth),
+          itemCount: RoomGridMetrics.columnsFor(constraints.maxWidth) * 3,
+          itemBuilder: (context, index) => PureCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const AspectRatio(aspectRatio: 16 / 9, child: ColoredBox(color: Colors.white24)),
+                Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white24),
+                      ),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(height: 12, width: double.infinity, child: ColoredBox(color: Colors.white24)),
+                            SizedBox(height: 6),
+                            SizedBox(width: 96, height: 10, child: ColoredBox(color: Color(0x26FFFFFF))),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const Padding(
-                    padding: EdgeInsets.all(8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [Text('XXXXXXXXXXXXXXXX'), SizedBox(height: 4), Text('XXXX')],
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-        ],
+          ),
+        ),
       ),
     );
   }
