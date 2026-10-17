@@ -7,6 +7,7 @@ import 'package:pure_uikit/src/app/hosts/macos_app_host.dart';
 import 'package:pure_uikit/src/app/hosts/material_app_host.dart';
 import 'package:pure_uikit/src/app/hosts/themed_widgets_app_host.dart';
 import 'package:pure_uikit/src/app/hosts/yaru_app_host.dart';
+import 'package:pure_uikit/src/app/pure_app_config.dart';
 import 'package:pure_uikit/src/app/pure_app_host.dart';
 import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
@@ -39,7 +40,7 @@ export 'package:pure_uikit/src/app/pure_app_host.dart';
 /// accent, font or density change re-skins the host along with everything
 /// under it while the language stays the one this process was born with.
 class PureApp extends StatefulWidget {
-  /// A host over [routerConfig].
+  /// A host over [routerConfig] — the parameter form.
   const new({
     required this.routerConfig,
     this.title = '',
@@ -49,8 +50,15 @@ class PureApp extends StatefulWidget {
     this.locale,
     this.builder,
     this.debugShowCheckedModeBanner = false,
+    this.config,
     super.key,
   });
+
+
+  /// The config-object form, when the caller built a [PureAppConfig]; null
+  /// when the parameter form above is in use. [config] folds whichever is
+  /// present into one shape the build reads.
+  final PureAppConfig? config;
 
   /// The router the app runs on.
   final RouterConfig<Object>? routerConfig;
@@ -90,16 +98,17 @@ class _PureAppState extends State<PureApp> {
 
   @override
   Widget build(BuildContext context) {
+    final config = widget.config;
     final binding = PureAppHostBinding(
       theme: PureTheme.of(context),
-      routerConfig: widget.routerConfig,
-      title: widget.title,
-      onGenerateTitle: widget.onGenerateTitle,
-      localizationsDelegates: widget.localizationsDelegates,
-      supportedLocales: widget.supportedLocales,
-      locale: widget.locale,
-      builder: widget.builder,
-      debugShowCheckedModeBanner: widget.debugShowCheckedModeBanner,
+      routerConfig: config?.routerConfig ?? widget.routerConfig,
+      title: config?.title ?? widget.title,
+      onGenerateTitle: config?.onGenerateTitle ?? widget.onGenerateTitle,
+      localizationsDelegates: config?.localizationsDelegates ?? widget.localizationsDelegates,
+      supportedLocales: config?.supportedLocales ?? widget.supportedLocales,
+      locale: config?.locale ?? widget.locale,
+      builder: config?.builder ?? widget.builder,
+      debugShowCheckedModeBanner: config?.debugShowCheckedModeBanner ?? widget.debugShowCheckedModeBanner,
     );
     final incoming = binding.theme.config.language;
     final mounted = _mounted;

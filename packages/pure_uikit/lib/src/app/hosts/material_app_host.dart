@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-
 import 'package:pure_uikit/src/app/pure_app_host.dart';
+import 'package:pure_uikit/src/styling/adapters/material_theme_adapter.dart';
 
 /// The Material host: `MaterialApp.router` themed by a seeded [ThemeData].
 ///
@@ -10,17 +10,7 @@ import 'package:pure_uikit/src/app/pure_app_host.dart';
 /// the token already picked the brightness, so the host must not re-pick it
 /// from the platform. The builder runs once per frame inside the theme scope.
 MaterialApp buildMaterialAppHost(PureAppHostBinding b) {
-  final token = b.theme.token;
-  final brightness = token.isDark ? Brightness.dark : Brightness.light;
-  final data = ThemeData(
-    brightness: brightness,
-    // A seeded scheme follows the accent, while the page and card surfaces
-    // and the global font family follow the resolved token.
-    colorScheme: ColorScheme.fromSeed(seedColor: token.color.primary, brightness: brightness),
-    fontFamily: token.type.fontFamily,
-    scaffoldBackgroundColor: token.color.surface,
-    cardColor: token.color.surfaceElevated,
-  );
+  final data = const MaterialThemeAdapter().resolve(b.theme);
   return MaterialApp.router(
     routerConfig: b.routerConfig,
     title: b.title,

@@ -1,0 +1,37 @@
+name: pure_settings_ui
+description: >-
+  PureLive's settings grammar: the settings_ui 4.0.2 API (SettingsList,
+  SettingsSection, SettingsTile, SettingsDestination, SettingsSplitView)
+  vendored under Apache-2.0 and re-keyed from the device platform onto
+  pure_uikit's PureDesignLanguage, so one declarative settings tree renders in
+  every design language the app can switch to. Five styles are upstream's own
+  renderings — iOS 26, Android 16, macOS 26 System Settings, Windows 11 and
+  GNOME/libadwaita. The sixth is built on pure_uikit's components and so covers
+  forui, glass, neumorphic and wind with each library's real widgets, without
+  this package naming a single design-language library.
+version: 0.1.0
+publish_to: none
+
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  pure_uikit:
+
+dev_dependencies:
+  # Only the tests name these. The package itself reaches every design language
+  # through pure_uikit's components, so `lib/` imports none of them — but a test
+  # that installs a library's theme scope has to depend on that library, and
+  # without the scope the four pure-family languages cannot be exercised at all.
+  flutter_neumorphic_ui_kit:
+  flutter_test:
+    sdk: flutter
+  fluttersdk_wind:
+  forui: ^0.27.5
+  glass_morphism_plus:
+  very_good_analysis: ^11.0.0

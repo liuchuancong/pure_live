@@ -146,11 +146,14 @@ class PureCard extends StatelessWidget {
         selected: selected,
         focusNode: focusNode,
         autofocus: autofocus,
+        // Windows 11 Settings card grammar: an 8 px radius, no outline — the
+        // card separates by fill against the muted page canvas, not by a
+        // stroke. A border appears only when the caller asks for one.
         style: f2.FluentCardStyle(
           backgroundColor: style?.background == null ? null : WidgetStatePropertyAll(style!.background),
-          borderColor: edge == null ? null : WidgetStatePropertyAll(edge),
-          borderWidth: style?.borderWidth == null ? null : WidgetStatePropertyAll(style!.borderWidth),
-          borderRadius: style?.borderRadius == null ? null : WidgetStatePropertyAll(style!.borderRadius),
+          borderColor: WidgetStatePropertyAll(edge ?? const Color(0x00000000)),
+          borderWidth: WidgetStatePropertyAll(edge == null ? 0.0 : (style?.borderWidth ?? 1.0)),
+          borderRadius: WidgetStatePropertyAll(style?.borderRadius ?? BorderRadius.circular(8)),
           padding: WidgetStatePropertyAll<EdgeInsetsGeometry>(inset),
         ),
         // FluentCard has no long-press slot; the wrapper recognises it without

@@ -1,7 +1,7 @@
 import 'package:fluent_2/fluent_2.dart' as f2;
-import 'package:flutter/material.dart' show Brightness;
 
 import 'package:pure_uikit/src/app/pure_app_host.dart';
+import 'package:pure_uikit/src/styling/adapters/fluent_theme_adapter.dart';
 
 /// The Fluent host: `FluentApp` wraps `WidgetsApp` — not `MaterialApp`, so
 /// nothing in the tree pulls in Material — and supplies the `FluentTheme`,
@@ -13,11 +13,7 @@ import 'package:pure_uikit/src/app/pure_app_host.dart';
 /// the whole fluent subtree. The theme fills both slots; the host never
 /// re-picks the brightness.
 f2.FluentApp buildFluentAppHost(PureAppHostBinding b) {
-  final token = b.theme.token;
-  final data = f2.FluentThemeData.from(
-    brightness: token.isDark ? Brightness.dark : Brightness.light,
-    brand: f2.FluentBrandRamp.fromKeyColor(token.color.primary),
-  );
+  final data = const FluentThemeAdapter().resolve(b.theme);
   return f2.FluentApp.router(
     routerConfig: b.routerConfig,
     title: b.title,

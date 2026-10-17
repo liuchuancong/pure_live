@@ -26,6 +26,7 @@ workspace:
   - packages/live_sites
   - packages/live_storage
   - packages/live_storage/example
+  - packages/pure_settings_ui
   - packages/pure_uikit
   - packages/pure_uikit_background
   - packages/pure_uikit_background/example

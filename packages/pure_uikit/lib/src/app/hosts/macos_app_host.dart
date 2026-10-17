@@ -1,7 +1,6 @@
-import 'package:flutter/material.dart' show Brightness;
 import 'package:macos_ui/macos_ui.dart' as macos;
-
 import 'package:pure_uikit/src/app/pure_app_host.dart';
+import 'package:pure_uikit/src/styling/adapters/macos_theme_adapter.dart';
 
 /// The macOS host: `MacosApp.router` owns what a macOS window feels like —
 /// the cupertino route stack, the window-active/inactive tinting the library
@@ -9,12 +8,7 @@ import 'package:pure_uikit/src/app/pure_app_host.dart';
 /// reads from the platform. The window canvas follows the resolved surface;
 /// the theme fills both slots so the host never re-picks the brightness.
 macos.MacosApp buildMacosAppHost(PureAppHostBinding b) {
-  final token = b.theme.token;
-  final data = macos.MacosThemeData(
-    brightness: token.isDark ? Brightness.dark : Brightness.light,
-    primaryColor: token.color.primary,
-    canvasColor: token.color.surface,
-  );
+  final data = const MacosThemeAdapter().resolve(b.theme);
   return macos.MacosApp.router(
     routerConfig: b.routerConfig,
     title: b.title,

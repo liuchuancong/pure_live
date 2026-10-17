@@ -13,7 +13,6 @@
 library;
 
 export '../app/pure_app.dart';
-export '../app/pure_app_host.dart';
 // Pure, non-design-language utilities the token components and pages reuse: the
 // background painter + its style, and the static radius / spacing / size scales.
 export '../scales/radii.dart';

@@ -209,7 +209,8 @@ class PureScaffold extends StatelessWidget {
 
   /// fluent_2 ships no page frame, so the frame composes its own primitives —
   /// a column of the already-dispatched bars around the body — and paints the
-  /// surface the `FluentTheme` resolves.
+  /// Windows 11 Settings page canvas: `neutralBackground3`, the muted layer
+  /// the white rounded cards sit on.
   ///
   /// Two fields have no fluent slot and are handled rather than dropped: the
   /// floating action is placed by the environment's page margin (fluent pages
@@ -231,7 +232,7 @@ class PureScaffold extends StatelessWidget {
       ],
     );
     final page = DecoratedBox(
-      decoration: BoxDecoration(color: background ?? (PureCanvasScope.transparentOf(context) ? const Color(0x00000000) : f2.FluentTheme.of(context).colors.neutralBackground1)),
+      decoration: BoxDecoration(color: background ?? (PureCanvasScope.transparentOf(context) ? const Color(0x00000000) : f2.FluentTheme.of(context).colors.neutralBackground3)),
       child: content,
     );
 

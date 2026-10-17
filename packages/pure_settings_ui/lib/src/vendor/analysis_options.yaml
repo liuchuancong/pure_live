@@ -1,0 +1,43 @@
+# The vendored settings_ui 4.0.2 tree.
+#
+# These files are third-party code (Apache-2.0, yako-dev/flutter-settings-ui)
+# kept byte-comparable against upstream so that bumping the vendor is a re-copy
+# plus the patch list in ../../../NOTICE.md, not a re-review of 14,000 lines.
+# Rewriting it into this workspace's house style would destroy that property and
+# buy nothing: the rules turned off below are formatting and documentation
+# preferences, not correctness rules. Every correctness rule very_good_analysis
+# carries stays on, so a real error in the vendored tree still fails the build.
+#
+# Code this package authors itself lives outside this directory and is held to
+# the workspace's full rule set by ../../../analysis_options.yaml.
+include: package:very_good_analysis/analysis_options.yaml
+
+analyzer:
+  exclude:
+    - build/**
+
+linter:
+  rules:
+    avoid_escaping_inner_quotes: false
+    discarded_futures: false
+    no_default_cases: false
+    prefer_asserts_with_message: false
+    prefer_const_constructors: false
+    prefer_constructors_over_static_methods: false
+    prefer_if_elements_to_conditional_expressions: false
+    specify_nonobvious_property_types: false
+    unnecessary_null_checks: false
+    use_enums: false
+    always_put_required_named_parameters_first: false
+    avoid_positional_boolean_parameters: false
+    avoid_redundant_argument_values: false
+    avoid_types_on_closure_parameters: false
+    cascade_invocations: false
+    comment_references: false
+    directives_ordering: false
+    lines_longer_than_80_chars: false
+    omit_local_variable_types: false
+    prefer_int_literals: false
+    public_member_api_docs: false
+    sort_constructors_first: false
+    unnecessary_type_name_in_constructor: false
