@@ -3,14 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:pure_live/app/navigation/app_navigator_key.dart' show appNavigatorKey;
+import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/route_paths.dart';
 import 'package:pure_live/app/routing/routes/about/about_routes.dart' as about_routes;
+import 'package:pure_live/app/routing/routes/about/version_routes.dart' as version_routes;
 import 'package:pure_live/app/routing/routes/areas/areas_routes.dart' as areas_routes;
 import 'package:pure_live/app/routing/routes/iptv/iptv_routes.dart' as iptv_routes;
 import 'package:pure_live/app/routing/routes/multiview/multiview_routes.dart' as multiview_routes;
 import 'package:pure_live/app/routing/routes/search/search_routes.dart' as search_routes;
 import 'package:pure_live/app/routing/routes/settings/settings_routes.dart' as settings_routes;
+import 'package:pure_live/app/routing/routes/splash/splash_routes.dart' as splash_routes;
+import 'package:pure_live/app/routing/routes/toolbox/remote_sync_routes.dart' as remote_sync_routes;
 import 'package:pure_live/app/routing/routes/toolbox/toolbox_routes.dart' as toolbox_routes;
 import 'package:pure_live/features/follow/follow_page.dart';
 import 'package:pure_live/features/history/history_page.dart';
@@ -50,11 +54,16 @@ class AppShellRouteData extends StatefulShellRouteData {
 
   @override
   Widget builder(BuildContext context, GoRouterState state, StatefulNavigationShell navigationShell) => Consumer(
-    builder: (context, ref, _) => switch (ref.watch(environmentProvider).runtime.formFactor) {
-      FormFactor.phone => MobileShell(navigationShell: navigationShell),
-      FormFactor.tablet => TabletShell(navigationShell: navigationShell),
-      FormFactor.tv => TvShell(navigationShell: navigationShell),
-      FormFactor.desktop => DesktopShell(navigationShell: navigationShell),
+    builder: (context, ref, _) {
+      final shell = switch (ref.watch(environmentProvider).runtime.formFactor) {
+        FormFactor.phone => MobileShell(navigationShell: navigationShell),
+        FormFactor.tablet => TabletShell(navigationShell: navigationShell),
+        FormFactor.tv => TvShell(navigationShell: navigationShell),
+        FormFactor.desktop => DesktopShell(navigationShell: navigationShell),
+      };
+      // Page settings can hide the branch the viewer stands on; the guard
+      // walks the shell to the first visible one when that happens.
+      return ShellBranchGuard(navigationShell: navigationShell, child: shell);
     },
   );
 }
@@ -122,16 +131,29 @@ class PopularRoute extends GoRouteData with $PopularRoute {
 ///
 /// The navigator key is the app's one global navigator: the desktop shell's
 /// close prompt reaches it from outside the widget tree (app_navigator_key).
+///
+/// The launch route is the splash (the splash wave owns the start flow); the
+/// launch-page and restore-last-tab preferences decide the branch the splash
+/// hands over to, through `launchLocationFor` — read once per construction
+/// here as the deep-link fallback, and again at the splash's handover.
 final routerProvider = Provider<GoRouter>(
   (ref) => GoRouter(
     navigatorKey: appNavigatorKey,
+    // The launch route is the splash: everything the boot initialises is
+    // ready before the first frame, so the splash only brands the wait and
+    // then hands over to the launch branch. A cold-start deep link still wins
+    // over the initial location — go_router only falls back to it.
+    initialLocation: RoutePath.splash,
     routes: <RouteBase>[
       ...$appRoutes,
+      ...splash_routes.$appRoutes,
       ...about_routes.$appRoutes,
+      ...version_routes.$appRoutes,
       ...areas_routes.$appRoutes,
       ...iptv_routes.$appRoutes,
       ...multiview_routes.$appRoutes,
       ...toolbox_routes.$appRoutes,
+      ...remote_sync_routes.$appRoutes,
       ...search_routes.$appRoutes,
       ...settings_routes.$appRoutes,
     ],

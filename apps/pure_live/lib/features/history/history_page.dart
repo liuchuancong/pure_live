@@ -1,18 +1,25 @@
-import 'dart:async';
+import 'dart:async' show StreamSubscription, unawaited;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_library/live_library.dart' show HistoryRepository;
+import 'package:live_library/live_library.dart' show HistoryRepository, WatchRecord;
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
+import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
-/// The history domain's shell page: what the user watched, newest first.
-/// An entry re-opens its room; one entry or the whole list can be
-/// cleared. The list renders from the repository's own change stream, so
-/// a second window's watches appear here too.
+/// How many records render before the scroll loads more (the repository
+/// already holds the whole capped list; the page just reveals it in chunks).
+const int _pageChunk = 30;
+
+/// The watch history (3.x `HistoryPage`): what the user watched, newest
+/// first, grouped by when — today, yesterday, this week, this month,
+/// earlier. An entry re-opens its room; one entry or the whole list can be
+/// removed, each behind its own confirmation. The list renders from the
+/// repository's own change stream, so a second window's watches appear
+/// here too.
 final class HistoryPage extends ConsumerStatefulWidget {
   /// The history page.
   const new({super.key});
@@ -23,6 +30,8 @@ final class HistoryPage extends ConsumerStatefulWidget {
 
 final class _HistoryPageState extends ConsumerState<HistoryPage> {
   StreamSubscription<void>? _changes;
+  late final ScrollController _scroll = ScrollController()..addListener(_onScroll);
+  int _limit = _pageChunk;
 
   HistoryRepository get _repository => ref.read(historyRepositoryProvider);
 
@@ -40,14 +49,66 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
   @override
   void dispose() {
     unawaited(_changes?.cancel());
+    _scroll.dispose();
     super.dispose();
   }
 
+  /// Reveals the next chunk when the scroll nears the end.
+  void _onScroll() {
+    final records = _repository.records;
+    if (mounted && _limit < records.length && _scroll.position.extentAfter < 600) {
+      setState(() => _limit += _pageChunk);
+    }
+  }
+
+  /// The visible records bucketed by recency; records are newest first, so
+  /// the buckets come out in the same order.
+  List<({String label, List<WatchRecord> records})> _groups(List<WatchRecord> records) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final groups = <String, List<WatchRecord>>{};
+    for (final record in records.take(_limit)) {
+      final watched = record.watchedAt.toLocal();
+      final days = today.difference(DateTime(watched.year, watched.month, watched.day)).inDays;
+      final label = days <= 0
+          ? context.t.history.today
+          : days == 1
+          ? context.t.history.yesterday
+          : days < 7
+          ? context.t.history.thisWeek
+          : days < 30
+          ? context.t.history.thisMonth
+          : context.t.history.earlier;
+      (groups[label] ??= []).add(record);
+    }
+    return [for (final entry in groups.entries) (label: entry.key, records: entry.value)];
+  }
+
+  Future<void> _confirmRemove(WatchRecord record) async {
+    final confirmed = await _confirm(
+      context.t.history.remove,
+      context.t.history.removeConfirm,
+      context.t.history.remove,
+    );
+    if (confirmed) {
+      await _repository.remove(record.room);
+    }
+  }
+
   Future<void> _confirmClear() async {
+    final confirmed = await _confirm(context.t.history.clear, context.t.history.clearConfirm, context.t.history.clear);
+    if (confirmed) {
+      await _repository.clear();
+    }
+  }
+
+  /// The destructive-confirmation dialog the two removals share; false on
+  /// dismissal, like the reference's `showDestructiveConfirmation`.
+  Future<bool> _confirm(String title, String message, String actionLabel) async {
     final confirmed = await showPureDialog<bool>(
       context: context,
-      title: context.t.history.clear,
-      child: Text(context.t.history.clearConfirm),
+      title: title,
+      child: Text(message),
       actions: (dialogContext) => [
         PureButton(
           label: dialogContext.t.common.cancel,
@@ -55,15 +116,13 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
           onPressed: () => Navigator.of(dialogContext).pop(false),
         ),
         PureButton(
-          label: dialogContext.t.history.clear,
+          label: actionLabel,
           variant: ButtonVariant.danger,
           onPressed: () => Navigator.of(dialogContext).pop(true),
         ),
       ],
     );
-    if (confirmed == true) {
-      await _repository.clear();
-    }
+    return confirmed == true;
   }
 
   @override
@@ -83,35 +142,95 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
         ],
       ),
       body: records.isEmpty
-          ? PureEmpty(title: context.t.history.empty)
-          : ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: records.length,
-              itemBuilder: (context, index) {
-                final record = records[index];
-                final room = record.room;
-                final watchedAt = record.watchedAt.toLocal();
-                final when =
-                    '${watchedAt.month}-${watchedAt.day.toString().padLeft(2, '0')} '
-                    '${watchedAt.hour.toString().padLeft(2, '0')}:${watchedAt.minute.toString().padLeft(2, '0')}';
-                return PureListRow(
-                  leading: const Icon(Icons.live_tv_outlined),
-                  title: room.content.title.isEmpty ? room.ref.roomId : room.content.title,
-                  subtitle: '${room.anchor?.name ?? room.ref.platform} · $when',
-                  trailing: PureIconButton(
-                    tooltip: context.t.common.cancel,
-                    icon: Icons.close,
-                    onPressed: () => unawaited(_repository.remove(room)),
-                  ),
-                  divided: false,
-                  onTap: () => RoomRoute(
-                    siteId: room.ref.platform,
-                    roomId: room.ref.roomId,
-                    roomName: room.content.title,
-                  ).push<void>(context),
-                );
-              },
+          ? PureEmpty(title: context.t.history.empty, icon: Icons.history_rounded)
+          : LayoutBuilder(
+              builder: (context, constraints) => CustomScrollView(
+                controller: _scroll,
+                slivers: [
+                  for (final group in _groups(records)) ...[
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(PureSpacing.sm, PureSpacing.md, PureSpacing.sm, PureSpacing.xs),
+                        child: Text(
+                          group.label,
+                          style: PureTheme.of(context).text.bodySmall.copyWith(
+                            color: PureTheme.of(context).colors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: PureSpacing.sm),
+                      sliver: SliverGrid(
+                        gridDelegate: RoomGridMetrics.delegateFor(context, constraints.maxWidth),
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) => _HistoryTile(
+                            record: group.records[index],
+                            onRemove: () => unawaited(_confirmRemove(group.records[index])),
+                          ),
+                          childCount: group.records.length,
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (records.length > _limit)
+                    const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.all(PureSpacing.md),
+                        child: Center(child: PureSpinner()),
+                      ),
+                    ),
+                ],
+              ),
             ),
+    );
+  }
+}
+
+/// One history entry: the shared room card, tappable to resume the room,
+/// with a corner remove control over the cover.
+final class _HistoryTile extends StatelessWidget {
+  const new({required this.record, required this.onRemove});
+
+  final WatchRecord record;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final room = record.room;
+    return Stack(
+      children: [
+        RoomCard(
+          room: room,
+          onOpen: () => RoomRoute(
+            siteId: room.ref.platform,
+            roomId: room.ref.roomId,
+            roomName: room.content.title,
+          ).push<void>(context),
+          onLongPress: onRemove,
+        ),
+        Positioned(
+          top: 6,
+          right: 6,
+          child: Tooltip(
+            message: context.t.history.remove,
+            child: Material(
+              // The same dark scrim as the card's cover pills, so the control
+              // reads over any thumbnail.
+              color: Colors.black.withValues(alpha: 0.55),
+              shape: const CircleBorder(),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: onRemove,
+                child: const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: Icon(Icons.close, size: 14, color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

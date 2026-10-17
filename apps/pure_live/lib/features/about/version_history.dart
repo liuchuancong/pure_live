@@ -3,9 +3,9 @@ import 'dart:async' show unawaited;
 import 'package:flutter/material.dart';
 import 'package:pure_live/features/about/markdown_text.dart';
 import 'package:pure_live/features/about/update_feed.dart';
+import 'package:pure_live/features/version/app_update_flow.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_uikit/pure_uikit.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// The version-history presentation (3.x `VersionHistoryPage`): the release
 /// list beside its changelog detail, refreshed from the update feed.
@@ -87,29 +87,7 @@ final class _VersionHistorySheetState extends State<VersionHistorySheet> {
     }
   }
 
-  /// The release's page; the feed's own link when it has one, the project's
-  /// release tag otherwise.
-  Uri _releaseUrl(AppRelease release) {
-    final htmlUrl = release.htmlUrl.trim();
-    if (htmlUrl.isNotEmpty) {
-      return Uri.parse(htmlUrl);
-    }
-    final tag = release.tag.trim();
-    return Uri.parse(tag.isEmpty ? '$projectUrl/releases' : '$projectUrl/releases/tag/$tag');
-  }
-
-  Future<void> _openRelease(AppRelease release) async {
-    try {
-      final opened = await launchUrl(_releaseUrl(release), mode: LaunchMode.externalApplication);
-      if (!opened && mounted) {
-        PureToast.show(context, context.t.about.browserNotOpened, type: PureToastType.error);
-      }
-    } on Object {
-      if (mounted) {
-        PureToast.show(context, context.t.about.browserNotOpened, type: PureToastType.error);
-      }
-    }
-  }
+  Future<void> _openRelease(AppRelease release) => openReleasePage(context, release);
 
   String _date(AppRelease release) => release.publishedAt?.toLocal().toString().split(' ').first ?? '—';
 

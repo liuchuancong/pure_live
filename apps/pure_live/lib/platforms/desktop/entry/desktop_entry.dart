@@ -1,10 +1,12 @@
 import 'dart:async' show unawaited;
+import 'dart:ui' show Size;
 
 import 'package:live_log/live_log.dart' show LiveLog;
 import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/live_shell.dart';
 
 import 'package:pure_live/app/navigation/app_navigator_key.dart';
+import 'package:pure_live/app/preferences/app_preferences.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/platforms/desktop/shell/close_prompt.dart';
 import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart';
@@ -25,9 +27,10 @@ final class DesktopEntry with WindowListener {
   /// Prepares the desktop window for [kind]; [onQuitRequest] runs the app's
   /// own shutdown (storage, log) before the window goes away. The shell
   /// preferences carry the remembered choices (title-bar mode, close action)
-  /// and take the "remember" writes; the log is where the tray's refusals
+  /// and take the "remember" writes; the app preferences carry the stored
+  /// window size this start opens at; the log is where the tray's refusals
   /// land.
-  new({required this.kind, required this.onQuitRequest, this._preferences, this._log});
+  new({required this.kind, required this.onQuitRequest, this._preferences, this._appPreferences, this._log});
 
   /// The desktop platform this window lives on.
   final PlatformKind kind;
@@ -36,6 +39,7 @@ final class DesktopEntry with WindowListener {
   final Future<void> Function() onQuitRequest;
 
   final ShellPreferencesStore? _preferences;
+  final AppPreferencesStore? _appPreferences;
   final LiveLog? _log;
 
   late final AppTray _tray = AppTray(
@@ -49,10 +53,16 @@ final class DesktopEntry with WindowListener {
 
   /// Sets the window up, creates the tray and starts intercepting closes.
   Future<void> prepare() async {
+    final preferences = _appPreferences?.value;
     await setUpDesktopWindow(
       kind: kind,
       title: t.app.title,
       chrome: _preferences?.value.windowChrome ?? ShellWindowChrome.app,
+      // The stored window size (general settings); 0 keeps the launch
+      // default.
+      initialSize: preferences == null || preferences.windowWidth <= 0 || preferences.windowHeight <= 0
+          ? null
+          : Size(preferences.windowWidth.toDouble(), preferences.windowHeight.toDouble()),
     );
     _trayUp = await _tray.create();
     await windowManager.setPreventClose(true);

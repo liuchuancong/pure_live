@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:live_playback/src/config/window_preference_store.dart';
 import 'package:live_playback/src/presentation/window_geometry.dart';
 import 'package:live_playback/src/presentation/window_sizing_engine.dart';
-import 'package:media_core/geometry/video_geometry.dart';
+import 'package:media_core/media_core.dart';
 
 /// Answers "how big was this window last time" and remembers the answer.
 ///

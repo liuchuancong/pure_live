@@ -24,20 +24,11 @@ dependencies:
   live_sites:
   live_storage:
   media_core:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      ref: f4322cc74acf3e35d6c16c36c15b62df96622052
-      path: packages/media_core
+    path: ../../../../media_core/packages/media_core
   media_core_danmaku:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      ref: f4322cc74acf3e35d6c16c36c15b62df96622052
-      path: packages/media_core_danmaku
+    path: ../../../../media_core/packages/media_core_danmaku
   media_core_mediasession:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      ref: f4322cc74acf3e35d6c16c36c15b62df96622052
-      path: packages/media_core_mediasession
+    path: ../../../../media_core/packages/media_core_mediasession
   meta: ^1.19.0
   rxdart: ^0.28.0
 

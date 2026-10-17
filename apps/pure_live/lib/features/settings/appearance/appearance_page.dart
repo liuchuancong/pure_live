@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/routing/routes/settings/settings_routes.dart';
 import 'package:pure_live/app/theme/appearance_preferences/appearance_preferences.dart';
-import 'package:pure_live/features/settings/fonts/font_manager_page.dart';
 import 'package:pure_live/features/settings/widgets/settings_sections.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_uikit/pure_uikit.dart';
@@ -109,7 +109,7 @@ final class AppearancePage extends ConsumerWidget {
                 icon: Icons.font_download_outlined,
                 title: t.settings.fonts,
                 subtitle: t.settings.fontFamilyCurrent(name: _currentFontName(context, appearance)),
-                onTap: () => FontManagerPage.open(context),
+                onTap: () => const FontManagerRoute().push<void>(context),
                 divided: false,
               ),
             ],

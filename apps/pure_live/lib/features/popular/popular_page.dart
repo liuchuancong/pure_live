@@ -5,13 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_pagination/live_pagination.dart';
 import 'package:live_sites/live_sites.dart' show LiveDiscoveryProvider, LivePageRequest, LiveRoom, LiveSite;
+import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
 import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/widgets/list_loading.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 import 'package:pure_uikit/pure_uikit.dart';
-import 'package:skeletonizer/skeletonizer.dart';
 
 /// Popular: every discovery-capable platform as a tab over its recommend
 /// feed.
@@ -63,7 +64,9 @@ final class _PopularPageState extends ConsumerState<PopularPage> {
       body: PureTabView(
         index: index,
         onIndexChanged: (value) => setState(() => _selected = value),
-        pages: [for (final site in discoverable) _SiteFeed(site: site)],
+        pages: [
+          for (var i = 0; i < discoverable.length; i++) _SiteFeed(site: discoverable[i], active: i == index),
+        ],
       ),
     );
   }
@@ -74,22 +77,38 @@ final class _PopularPageState extends ConsumerState<PopularPage> {
 
 /// One platform's recommend feed: an infinite grid over the discovery
 /// capability, kept alive across tab switches.
-final class _SiteFeed extends StatefulWidget {
+///
+/// The feed carries the refresh settings' own timers — the foreground
+/// interval ticks the visible tab, and a resume past the threshold
+/// refreshes it — and its first-load placeholder follows the loading-style
+/// preference.
+final class _SiteFeed extends ConsumerStatefulWidget {
   /// A feed for [site].
-  const new({required this.site});
+  const new({required this.site, required this.active});
 
   final LiveSite site;
 
+  /// Whether this feed's tab is the one on screen; hidden tabs skip their
+  /// refresh ticks.
+  final bool active;
+
   @override
-  State<_SiteFeed> createState() => _SiteFeedState();
+  ConsumerState<_SiteFeed> createState() => _SiteFeedState();
 }
 
-final class _SiteFeedState extends State<_SiteFeed> with AutomaticKeepAliveClientMixin {
+final class _SiteFeedState extends ConsumerState<_SiteFeed>
+    with AutomaticKeepAliveClientMixin, FeedAutoRefresh<_SiteFeed> {
   late final InfiniteController<LiveRoom> _controller = InfiniteController(loader: _load);
   late final ScrollController _scroll = ScrollController()..addListener(_onScroll);
 
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  bool get feedVisible => widget.active;
+
+  @override
+  Future<void> feedRefresh() => _controller.refresh();
 
   @override
   void initState() {
@@ -141,6 +160,7 @@ final class _SiteFeedState extends State<_SiteFeed> with AutomaticKeepAliveClien
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final coverAspect = ref.watch(roomCardStyleProvider).aspect.ratio;
     final state = _controller.state;
     if (state.items.isEmpty) {
       if (state.error != null) {
@@ -151,7 +171,7 @@ final class _SiteFeedState extends State<_SiteFeed> with AutomaticKeepAliveClien
         );
       }
       if (state.isRefreshing || state.isUnloaded) {
-        return const _SkeletonFeed();
+        return FeedLoadingPlaceholder(delegateBuilder: (width) => RoomGridMetrics.delegateFor(context, width, coverAspect: coverAspect));
       }
       return PureEmpty(
         title: context.t.popular.empty,
@@ -178,7 +198,7 @@ final class _SiteFeedState extends State<_SiteFeed> with AutomaticKeepAliveClien
         builder: (context, constraints) => GridView.builder(
           controller: _scroll,
           padding: const EdgeInsets.fromLTRB(PureSpacing.sm, PureSpacing.sm, PureSpacing.sm, PureSpacing.xl),
-          gridDelegate: RoomGridMetrics.delegateFor(context, constraints.maxWidth),
+          gridDelegate: RoomGridMetrics.delegateFor(context, constraints.maxWidth, coverAspect: coverAspect),
           itemCount: state.items.length + 1,
           itemBuilder: (context, index) {
             if (index < state.items.length) {
@@ -198,67 +218,6 @@ final class _SiteFeedState extends State<_SiteFeed> with AutomaticKeepAliveClien
       ),
     );
   }
-}
-
-/// The first-load placeholder: a bone grid shaped exactly like the room
-/// grid, so content replaces the skeleton without a layout jump.
-final class _SkeletonFeed extends StatelessWidget {
-  /// The skeleton feed.
-  const new();
-
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final width = constraints.maxWidth;
-      // Fixed-height bars rather than placeholder letters: a skeleton
-      // has to fit its tile in every design language and text scale,
-      // and a `Text('XXXX')` is measured by whichever of those is
-      // active — under a larger one it pushed this column past the
-      // tile and the grid reported an overflow on every card.
-      return Skeletonizer(
-        child: GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(PureSpacing.sm),
-          gridDelegate: RoomGridMetrics.delegateFor(context, width),
-          itemCount: RoomGridMetrics.columnsFor(width) * 3,
-          itemBuilder: (context, index) => PureCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const AspectRatio(aspectRatio: 16 / 9, child: ColoredBox(color: Colors.white24)),
-                Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white24),
-                      ),
-                      const SizedBox(width: 8),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(height: 12, width: double.infinity, child: ColoredBox(color: Colors.white24)),
-                            SizedBox(height: 6),
-                            SizedBox(width: 96, height: 10, child: ColoredBox(color: Color(0x26FFFFFF))),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    },
-  );
 }
 
 /// Wraps a site error for the loader contract; the controller stores it on

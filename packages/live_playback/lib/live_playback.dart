@@ -15,8 +15,6 @@
 /// window itself.
 library;
 
-import 'package:media_core/kernel/library.dart' show PlayerHandle;
-import 'package:media_core/kernel/player_handle.dart' show PlayerHandle;
 import 'package:media_core/media_core.dart' show PlayerHandle;
 
 export 'src/background/background_playback_manager.dart';

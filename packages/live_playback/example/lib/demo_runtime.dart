@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:live_playback/live_playback.dart';
 import 'package:media_core/media_core.dart';
-import 'package:media_core/testing/library.dart';
+import 'package:media_core/testing.dart';
 
 /// A presentation adapter the demo's buttons can poke.
 ///

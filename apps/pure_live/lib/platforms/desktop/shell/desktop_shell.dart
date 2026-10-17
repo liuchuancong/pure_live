@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/shell/shell_destinations.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
@@ -27,9 +28,9 @@ final class DesktopShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final shell = PureAppShell(
-      destinations: shellDestinations(context),
+      destinations: shellDestinations(context, branches: ref.watch(visibleShellBranchesProvider)),
       selectedId: ShellBranch.at(navigationShell.currentIndex).name,
-      onSelected: _goBranch,
+      onSelected: (id) => goShellBranch(ref, navigationShell, id),
       placement: PureShellPlacement.rail,
       trailing: const Padding(padding: EdgeInsets.only(bottom: 16), child: SettingsEntryButton()),
       child: navigationShell,
@@ -56,10 +57,5 @@ final class DesktopShell extends ConsumerWidget {
         Expanded(child: shell),
       ],
     );
-  }
-
-  void _goBranch(String id) {
-    final branch = ShellBranch.fromId(id);
-    navigationShell.goBranch(branch.branchIndex, initialLocation: branch.branchIndex == navigationShell.currentIndex);
   }
 }

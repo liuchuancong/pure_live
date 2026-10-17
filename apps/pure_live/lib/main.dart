@@ -2,6 +2,7 @@ import 'dart:io' show Platform, exit;
 import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_log/live_log.dart' show ErrorReporter;
@@ -10,6 +11,7 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/app/composition/app_services.dart';
 import 'package:pure_live/app/engine/playback_engine.dart';
 import 'package:pure_live/app/logging/app_log.dart';
+import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/theme/app_theme.dart';
 import 'package:pure_live/platforms/desktop/entry/desktop_entry.dart';
@@ -67,6 +69,7 @@ Future<void> main(List<String> args) async {
         await services.shutdown();
       },
       preferences: services.shell,
+      appPreferences: services.appPreferences,
       log: log.forCategory('shell'),
     );
     await desktopEntry.prepare();
@@ -90,9 +93,16 @@ Future<void> main(List<String> args) async {
         followRepositoryProvider.overrideWithValue(services.followRepository),
         historyRepositoryProvider.overrideWithValue(services.historyRepository),
         iptvLibraryProvider.overrideWithValue(services.iptvLibrary),
+        iptvPreferencesStoreProvider.overrideWithValue(services.iptvPreferences),
+        multiviewPreferencesStoreProvider.overrideWithValue(services.multiviewPreferences),
         fontLibraryProvider.overrideWithValue(services.fontLibrary),
         appearanceStoreProvider.overrideWithValue(services.appearance),
         shellPreferencesProvider.overrideWithValue(services.shell),
+        appPreferencesStoreProvider.overrideWithValue(services.appPreferences),
+        // The countdown close exits through the desktop shell's own quit —
+        // the graceful path that runs the app shutdown and destroys the
+        // window — and through the framework's navigator pop elsewhere.
+        appQuitProvider.overrideWithValue(desktopEntry == null ? SystemNavigator.pop : desktopEntry.quit),
       ],
       child: const AppTheme(child: PureLiveApp()),
     ),

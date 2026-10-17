@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_library/live_library.dart' show FollowRepository, LibraryRoom;
+import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
 import 'package:pure_live/features/follow/follow_group_sheet.dart';
 import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/widgets/list_loading.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
@@ -23,11 +25,25 @@ final class FollowPage extends ConsumerStatefulWidget {
   ConsumerState<FollowPage> createState() => _FollowPageState();
 }
 
-final class _FollowPageState extends ConsumerState<FollowPage> {
+final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefresh<FollowPage> {
   StreamSubscription<void>? _changes;
   String? _selectedGroup;
 
   FollowRepository get _repository => ref.read(followRepositoryProvider);
+
+  @override
+  bool get feedVisible => true;
+
+  @override
+  Future<void> feedRefresh() async {
+    // The grid reads the repository's own store, so a refresh is a re-read:
+    // it picks up what other windows wrote since, and the change stream
+    // repaints the grid.
+    await _repository.load();
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   @override
   void initState() {
@@ -217,8 +233,10 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
           : LayoutBuilder(
               builder: (context, constraints) {
                 // The reference favourite grid: one wide card on a phone,
-                // more columns as the window grows.
+                // more columns as the window grows. The cover reserves the
+                // room-card aspect preference's shape.
                 final width = constraints.maxWidth;
+                final coverAspect = ref.watch(roomCardStyleProvider).aspect.ratio;
                 final columns = width > 1280 ? 4 : (width > 960 ? 3 : (width > 640 ? 2 : 1));
                 return GridView.builder(
                   padding: const EdgeInsets.all(PureSpacing.md),
@@ -229,6 +247,7 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
                     mainAxisExtent: RoomGridMetrics.mainAxisExtent(
                       (width - 2 * PureSpacing.md - PureSpacing.sm * (columns - 1)) / columns,
                       MediaQuery.textScalerOf(context),
+                      coverAspect: coverAspect,
                     ),
                   ),
                   itemCount: visible.length,

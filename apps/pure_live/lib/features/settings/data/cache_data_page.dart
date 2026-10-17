@@ -19,11 +19,6 @@ final class CacheDataPage extends ConsumerStatefulWidget {
   /// The cache & data page.
   const new({super.key});
 
-  /// Opens the page above the current one (it has no route path yet).
-  static void open(BuildContext context) {
-    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const CacheDataPage()));
-  }
-
   @override
   ConsumerState<CacheDataPage> createState() => _CacheDataPageState();
 }

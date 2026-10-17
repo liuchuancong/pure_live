@@ -82,15 +82,9 @@ dependencies:
 
   # 播放内核
   media_core:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      path: packages/media_core
-      ref: f4322cc74acf3e35d6c16c36c15b62df96622052
+    path: ../../../../media_core/packages/media_core
   media_core_media_kit:
-    git:
-      url: https://github.com/liuchuancong/media_core
-      path: packages/media_core_media_kit
-      ref: f4322cc74acf3e35d6c16c36c15b62df96622052
+    path: ../../../../media_core/packages/media_core_media_kit
   media_kit_libs_windows_video: ^1.0.10 # Windows 播放库与编解码支持
 
   # 路由、配置与序列化

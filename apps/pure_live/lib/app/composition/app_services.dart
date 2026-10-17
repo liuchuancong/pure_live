@@ -11,7 +11,10 @@ import 'package:pure_live/app/environment/env.dart';
 import 'package:pure_live/app/environment/os_roots.dart';
 import 'package:pure_live/app/fonts/font_library.dart';
 import 'package:pure_live/app/logging/app_log.dart';
+import 'package:pure_live/app/preferences/app_preferences.dart';
 import 'package:pure_live/app/theme/appearance_store.dart';
+import 'package:pure_live/features/iptv/iptv_preferences.dart';
+import 'package:pure_live/features/multiview/multiview_preferences.dart';
 import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart';
 
 /// The services the app runs on, in the order they depend on each other.
@@ -47,10 +50,13 @@ final class AppServices {
     required this.storage,
     required this.appearance,
     required this.shell,
+    required this.appPreferences,
     required this.sites,
     required this.followRepository,
     required this.historyRepository,
     required this.iptvLibrary,
+    required this.iptvPreferences,
+    required this.multiviewPreferences,
     required this.fontLibrary,
   });
 
@@ -79,6 +85,10 @@ final class AppServices {
   /// already loaded from disk.
   final ShellPreferencesStore shell;
 
+  /// The app's general choices (refresh, launch, proxy, loading, room card),
+  /// already loaded from disk.
+  final AppPreferencesStore appPreferences;
+
   /// The network and site graph: the transport factory, the site HTTP
   /// client and every built-in site, initialized and ready.
   final AppSites sites;
@@ -91,6 +101,13 @@ final class AppServices {
 
   /// The IPTV library (imported playlists and their channels).
   final IptvLibrary iptvLibrary;
+
+  /// The IPTV viewer's persisted choices (last channel, group, favourites
+  /// filter), already loaded from disk.
+  final IptvPreferencesStore iptvPreferences;
+
+  /// The multi-view wall's persisted layout, already loaded from disk.
+  final MultiviewPreferencesStore multiviewPreferences;
 
   /// The cloud font library: manifest, downloads and registration.
   final FontLibrary fontLibrary;
@@ -164,6 +181,30 @@ final class AppServices {
     );
     await shell.load();
 
+    // The IPTV and multi-view documents live in the same box under their own
+    // keys: one open, one document per preference group.
+    final iptvPreferences = IptvPreferencesStore(
+      repository: HiveStorageRepository<Map<dynamic, dynamic>>(box: box),
+      onError: (failure, error, stack) =>
+          storageLog.warning('iptv document ${failure.name} failed', fields: {'error': '$error'}),
+    );
+    await iptvPreferences.load();
+    final multiviewPreferences = MultiviewPreferencesStore(
+      repository: HiveStorageRepository<Map<dynamic, dynamic>>(box: box),
+      onError: (failure, error, stack) =>
+          storageLog.warning('multiview document ${failure.name} failed', fields: {'error': '$error'}),
+    );
+    await multiviewPreferences.load();
+    // The general-preferences document lives in the same box under its own
+    // key. It loads before the sites because its proxy answer is one of the
+    // things the site graph adapts to.
+    final appPreferences = AppPreferencesStore(
+      repository: HiveStorageRepository<Map<dynamic, dynamic>>(box: box),
+      onError: (failure, error, stack) =>
+          storageLog.warning('app preferences document ${failure.name} failed', fields: {'error': '$error'}),
+    );
+    await appPreferences.load();
+
     // Real files in two trees is a fact the user has to hear about, not
     // something to merge quietly.
     final conflict = await paths.detectSplitBrain();
@@ -197,6 +238,10 @@ final class AppServices {
       proxy: Env.proxy,
       kind: environment.runtime.kind,
       formFactor: environment.runtime.formFactor,
+      // The user's network-proxy preference wraps the boot's own route
+      // decision: while it is disabled the requests fall through to the
+      // build-time or system route, so the shipped behaviour is unchanged.
+      proxyPolicyBuilder: (fallback) => PreferenceProxyPolicy(store: appPreferences, fallback: fallback),
     );
 
     // The font library downloads and registers through the shared client.
@@ -214,10 +259,13 @@ final class AppServices {
       storage: storage,
       appearance: appearance,
       shell: shell,
+      appPreferences: appPreferences,
       sites: sites,
       followRepository: followRepository,
       historyRepository: historyRepository,
       iptvLibrary: iptvLibrary,
+      iptvPreferences: iptvPreferences,
+      multiviewPreferences: multiviewPreferences,
       fontLibrary: fontLibrary,
     );
   }
@@ -228,8 +276,11 @@ final class AppServices {
   /// pooled transports, the log last — it was opened first, and the
   /// teardown itself should be the last thing it records.
   Future<void> shutdown() async {
+    await appPreferences.dispose();
     await appearance.dispose();
     await shell.dispose();
+    await iptvPreferences.dispose();
+    await multiviewPreferences.dispose();
     await storage.shutdown();
     await followRepository.dispose();
     await historyRepository.dispose();

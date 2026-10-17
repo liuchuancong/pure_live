@@ -3,8 +3,10 @@ import 'dart:async' show unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/routing/route_paths.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
@@ -318,7 +320,27 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
             onAction: _exportDirectLink,
             footer: _supportFooter(context),
           ),
+          const SizedBox(height: 16),
+          _syncCard(context),
         ],
+      ),
+    );
+  }
+
+  /// The LAN sync tile (3.x `RemoteSyncPage` behind the tool box): the third
+  /// tool card, a row instead of a paste tile — the sync page carries its own
+  /// discovery and address entry.
+  Widget _syncCard(BuildContext context) {
+    final theme = PureTheme.of(context);
+    return PureCard(
+      padding: EdgeInsets.zero,
+      child: PureListRow(
+        leading: Icon(Icons.sync, color: theme.colors.primary),
+        title: context.t.remoteSync.title,
+        subtitle: context.t.remoteSync.tileSubtitle,
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => unawaited(context.push<void>(RoutePath.remoteSync)),
+        divided: false,
       ),
     );
   }

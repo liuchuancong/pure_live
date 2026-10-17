@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/environment/app_directory.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/features/backup/backup_archive.dart';
+import 'package:pure_live/features/backup/web_dav_page.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 import 'package:pure_uikit/pure_uikit.dart';
@@ -155,6 +156,18 @@ final class _BackupPageState extends ConsumerState<BackupPage> {
               padding: const EdgeInsets.only(top: 10),
               child: Text(_message!, style: TextStyle(color: PureTheme.of(context).colors.error)),
             ),
+          const SizedBox(height: 12),
+          // The WebDAV slice: the same archive, pushed to the user's own
+          // cloud drive instead of the local backups tree.
+          PureListRow(
+            leading: const Icon(Icons.cloud_outlined),
+            title: _webdavText('entryTitle'),
+            subtitle: _webdavText('entrySubtitle'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: _busy
+                ? null
+                : () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const WebDavPage())),
+          ),
           const SizedBox(height: 18),
           Text(context.t.backup.existing, style: PureTheme.of(context).text.title),
           const SizedBox(height: 8),
@@ -194,4 +207,18 @@ final class _BackupPageState extends ConsumerState<BackupPage> {
   static String _when(DateTime local) =>
       '${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')} '
       '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+
+  /// Reads a `webdav.*` string through the map lookup, which keeps working
+  /// before and after the strings are regenerated.
+  static String _webdavText(String key) {
+    try {
+      final value = t['webdav.$key'];
+      if (value is String && value.isNotEmpty) {
+        return value;
+      }
+    } on Object {
+      // Fall through to the key itself.
+    }
+    return key;
+  }
 }

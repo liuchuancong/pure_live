@@ -2,7 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:live_playback/src/presentation/window_geometry.dart';
-import 'package:media_core/geometry/video_geometry.dart';
+import 'package:media_core/media_core.dart';
 
 /// Where a small window's margin and chrome sit inside its surface.
 final class WindowClearance {

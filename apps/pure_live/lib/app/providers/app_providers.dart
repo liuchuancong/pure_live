@@ -12,6 +12,8 @@ import 'package:pure_live/app/theme/appearance_preferences/appearance_preference
 import 'package:pure_live/app/theme/appearance_store.dart';
 import 'package:pure_live/app/theme/ui_configuration_mapper.dart';
 import 'package:pure_live/features/about/update_feed.dart';
+import 'package:pure_live/features/iptv/iptv_preferences.dart';
+import 'package:pure_live/features/multiview/multiview_preferences.dart';
 import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart' show ShellPreferencesStore, ShellWindowChrome;
 import 'package:pure_uikit/pure_uikit.dart';
 
@@ -124,6 +126,16 @@ final iptvLibraryProvider = Provider<IptvLibrary>(
   (ref) => throw UnimplementedError('overridden by the composition root'),
 );
 
+/// The IPTV viewer's persisted choices, overridden at start-up.
+final iptvPreferencesStoreProvider = Provider<IptvPreferencesStore>(
+  (ref) => throw UnimplementedError('overridden by the composition root'),
+);
+
+/// The multi-view wall's persisted layout, overridden at start-up.
+final multiviewPreferencesStoreProvider = Provider<MultiviewPreferencesStore>(
+  (ref) => throw UnimplementedError('overridden by the composition root'),
+);
+
 /// The cloud font library, overridden at start-up.
 final fontLibraryProvider = Provider<FontLibrary>(
   (ref) => throw UnimplementedError('overridden by the composition root'),
@@ -181,4 +193,52 @@ final class AppearancePreferencesNotifier extends Notifier<AppearancePreferences
 
   /// Restores the shipping appearance and removes the stored document.
   Future<void> reset() => ref.read(appearanceStoreProvider).reset();
+}
+
+/// The persisted IPTV viewer state (last channel, group, favourites filter),
+/// the single source the IPTV pages derive their resting state from.
+///
+/// The store applies a change to its in-memory value before it is durable, so
+/// this provider updates immediately; the write that follows never comes back
+/// as a second change.
+final iptvPreferencesProvider = NotifierProvider<IptvPreferencesNotifier, IptvPreferences>(IptvPreferencesNotifier.new);
+
+/// Reads the persisted IPTV viewer state and writes every change back through
+/// the store.
+final class IptvPreferencesNotifier extends Notifier<IptvPreferences> {
+  @override
+  IptvPreferences build() {
+    final store = ref.watch(iptvPreferencesStoreProvider);
+    final subscription = store.changes.listen((preferences) => state = preferences);
+    ref.onDispose(subscription.cancel);
+    return store.value;
+  }
+
+  /// Applies [transform] to the choices; the returned future completes once
+  /// the change is durable.
+  Future<void> update(IptvPreferences Function(IptvPreferences preferences) transform) =>
+      ref.read(iptvPreferencesStoreProvider).update(transform);
+}
+
+/// The persisted multi-view layout, the single source the wall derives its
+/// grid from.
+final multiviewPreferencesProvider = NotifierProvider<MultiviewPreferencesNotifier, MultiviewPreferences>(
+  MultiviewPreferencesNotifier.new,
+);
+
+/// Reads the persisted multi-view layout and writes every change back through
+/// the store.
+final class MultiviewPreferencesNotifier extends Notifier<MultiviewPreferences> {
+  @override
+  MultiviewPreferences build() {
+    final store = ref.watch(multiviewPreferencesStoreProvider);
+    final subscription = store.changes.listen((preferences) => state = preferences);
+    ref.onDispose(subscription.cancel);
+    return store.value;
+  }
+
+  /// Applies [transform] to the choices; the returned future completes once
+  /// the change is durable.
+  Future<void> update(MultiviewPreferences Function(MultiviewPreferences preferences) transform) =>
+      ref.read(multiviewPreferencesStoreProvider).update(transform);
 }

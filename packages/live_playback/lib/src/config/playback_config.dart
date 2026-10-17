@@ -1,4 +1,4 @@
-import 'package:media_core/presentation/device_profile.dart';
+import 'package:media_core/media_core.dart';
 
 /// What the viewer allows and what device the system is on.
 ///

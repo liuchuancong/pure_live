@@ -180,7 +180,7 @@ final class PlaybackSession {
     }
 
     _mutedSubject.add(muted);
-    await handle.setMute(muted);
+    await handle.setMute(muted: muted);
   }
 
   /// Sets the playback rate.
@@ -229,8 +229,13 @@ final class PlaybackSession {
   }
 
   /// Updates the viewer's blocklist for this room.
+  // The controller exposes the blocklist as a plain field; the session keeps
+  // its method shape so callers never reach into the danmaku controller.
+  // ignore: use_setters_to_change_properties
   void updateDanmakuPolicy(DanmakuFilterPolicy policy) {
-    danmaku?.updatePolicy(policy);
+    // The controller exposes the viewer blocklist as a plain field; the
+    // session keeps its method shape so callers do not reach into it.
+    danmaku?.policy = policy;
   }
 
   /// Updates the danmaku transport tuning (timeouts, dedup windows).

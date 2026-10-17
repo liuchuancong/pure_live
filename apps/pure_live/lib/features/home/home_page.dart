@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pub_semver/pub_semver.dart';
+import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/about/about_routes.dart';
 import 'package:pure_live/features/about/markdown_text.dart';
@@ -61,6 +62,11 @@ final class _HomePageState extends ConsumerState<HomePage> {
   /// newest release, prompt when the release is newer. Every failure is
   /// swallowed — a start-up check must never surface an error dialog.
   Future<void> _checkForStartupUpdate() async {
+    // The general settings' update-check switch gates this; off means the
+    // About page's manual check stays the only path.
+    if (!ref.read(appPreferencesProvider).autoCheckUpdate) {
+      return;
+    }
     try {
       final info = await PackageInfo.fromPlatform();
       final releases = await ref.read(updateFeedProvider).fetch(limit: 1);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pure_live/app/preferences/app_preferences.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
@@ -36,21 +37,80 @@ enum ShellBranch {
     ShellBranch.history => context.t.tabs.history,
   };
 
+  /// The route location this branch's root answers — what the router starts
+  /// on when the launch preference names this branch.
+  String get location => switch (this) {
+    ShellBranch.home => '/',
+    ShellBranch.follow => '/follow',
+    ShellBranch.history => '/history',
+  };
+
   /// The branch a destination widget's position stands for: the chromes
   /// hand selected indexes over, this turns one back into a branch.
   static ShellBranch at(int index) => values[index];
 
+  /// The branch a shell destination's id stands for, null for an unknown id
+  /// (a stored document written by a newer or older build).
+  static ShellBranch? maybeFromId(String id) {
+    for (final branch in values) {
+      if (branch.name == id) {
+        return branch;
+      }
+    }
+    return null;
+  }
+
   /// The branch a shell destination's id stands for.
-  static ShellBranch fromId(String id) => values.firstWhere((branch) => branch.name == id);
+  static ShellBranch fromId(String id) => maybeFromId(id) ?? ShellBranch.home;
+}
+
+/// The shell branches the user's page settings keep visible, in the order
+/// they arranged them.
+///
+/// An id the enum does not know is dropped; an empty or unknown document
+/// falls back to every branch in table order — a shell with no destination
+/// cannot be walked, so this never returns an empty list.
+List<ShellBranch> visibleShellBranches(AppPreferences preferences) {
+  final seen = <ShellBranch>{};
+  final result = <ShellBranch>[];
+  for (final id in preferences.shellBranches) {
+    final branch = ShellBranch.maybeFromId(id);
+    if (branch != null && seen.add(branch)) {
+      result.add(branch);
+    }
+  }
+  if (result.isEmpty) {
+    result.addAll(ShellBranch.values);
+  }
+  return result;
+}
+
+/// The location the router starts on: the last visited branch when the
+/// navigation preference asks for it and that branch is still visible, else
+/// the configured launch branch, else the first visible one.
+String launchLocationFor(AppPreferences preferences) {
+  final visible = visibleShellBranches(preferences);
+  if (preferences.restoreLastTab) {
+    final last = ShellBranch.maybeFromId(preferences.lastBranchId ?? '');
+    if (last != null && visible.contains(last)) {
+      return last.location;
+    }
+  }
+  for (final branch in visible) {
+    if (branch.name == preferences.launchBranch.id) {
+      return branch.location;
+    }
+  }
+  return visible.first.location;
 }
 
 /// Every branch as a shell destination, in display order — the one list the
-/// dispatched the dispatched shell renders from, whichever library draws it.
+/// dispatched shell renders from, whichever library draws it.
 ///
 /// The id is the branch's own name, so the shell reports a choice as something
 /// the router layer can map back without relying on positions surviving a change
 /// to the table.
-List<PureShellDestination> shellDestinations(BuildContext context) => [
-  for (final branch in ShellBranch.values)
+List<PureShellDestination> shellDestinations(BuildContext context, {List<ShellBranch>? branches}) => [
+  for (final branch in branches ?? ShellBranch.values)
     PureShellDestination(id: branch.name, label: branch.label(context), icon: branch.icon),
 ];

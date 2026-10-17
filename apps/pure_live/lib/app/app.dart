@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/delegates.dart';
+import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/app/theme/app_theme.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart' show TranslationProvider, t;
@@ -36,7 +37,10 @@ final class PureLiveApp extends ConsumerWidget {
       localizationsDelegates: appLocalizationsDelegates,
       supportedLocales: appSupportedLocales,
       locale: appFlutterLocale,
-      builder: (context, child) => TranslationProvider(child: child!),
+      // The preferences host mounts the timers the app runs on its own
+      // behalf: the countdown close and the lifecycle feed the list pages'
+      // refresh-on-resume reads.
+      builder: (context, child) => AppPreferencesHost(child: TranslationProvider(child: child!)),
     );
   }
 

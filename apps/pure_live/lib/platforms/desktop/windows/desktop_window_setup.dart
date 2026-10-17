@@ -1,4 +1,4 @@
-import 'dart:ui' show Brightness, Color, PlatformDispatcher;
+import 'dart:ui' show Brightness, Color, PlatformDispatcher, Size;
 
 import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/live_shell.dart';
@@ -23,12 +23,20 @@ import 'package:window_manager/window_manager.dart' show TitleBarStyle;
 /// choice is read once per start — the native helper has no runtime toggle —
 /// and macOS/Linux always take [ChromeStage.nativeFirst]: their runners never
 /// install the helper, and macOS keeps its traffic lights.
+///
+/// [initialSize] is the window-size preference's stored answer, clamped to
+/// the window's minimum; null keeps the launch default.
 Future<void> setUpDesktopWindow({
   required PlatformKind kind,
   required String title,
   ShellWindowChrome chrome = ShellWindowChrome.app,
+  Size? initialSize,
 }) {
   final isWindows = kind == PlatformKind.windows;
+  const minimum = Size(900, 600);
+  final size = initialSize == null
+      ? defaultWindowSize
+      : Size(initialSize.width.clamp(minimum.width, 3840.0), initialSize.height.clamp(minimum.height, 2160.0));
   final brightness = PlatformDispatcher.instance.platformBrightness;
   final plan = isWindows && chrome == ShellWindowChrome.app
       ? const ChromePlan(
@@ -55,9 +63,9 @@ Future<void> setUpDesktopWindow({
     // their own arrangement for now.
     requestMaterial: isWindows,
     materialDark: brightness == Brightness.dark,
+    initialSize: size,
   );
 }
-
 /// The clear colour of the window before Flutter paints, matched to the
 /// surface the first frame will actually show.
 ///

@@ -30,23 +30,27 @@ final class AppSites {
   /// The locale handed to the sites follows the process locale and falls
   /// back to the app's base language; sites read the context and the
   /// platform to adapt, never the process directly.
+  ///
+  /// [proxyPolicyBuilder] wraps the boot's own route decision (the build's
+  /// `PURE_LIVE_PROXY`, else the process environment) — how the user's
+  /// network-proxy preference joins: enabled requests take its route,
+  /// disabled ones fall through to the boot default.
   static Future<AppSites> boot({
     required LiveLog log,
     required PlatformKind kind,
     required FormFactor formFactor,
     Uri? proxy,
+    ProxyPolicy Function(ProxyPolicy fallback)? proxyPolicyBuilder,
   }) async {
-    final factory = DioFactory(
-      log: log.forCategory('net'),
-      proxyPolicy: FixedProxyPolicy(
-        global: proxy == null
-            ? const SystemProxyRoute()
-            : HttpProxyRoute(
-                host: proxy.host.isEmpty ? '127.0.0.1' : proxy.host,
-                port: proxy.port == 0 ? 7897 : proxy.port,
-              ),
-      ),
+    final fallbackPolicy = FixedProxyPolicy(
+      global: proxy == null
+          ? const SystemProxyRoute()
+          : HttpProxyRoute(
+              host: proxy.host.isEmpty ? '127.0.0.1' : proxy.host,
+              port: proxy.port == 0 ? 7897 : proxy.port,
+            ),
     );
+    final factory = DioFactory(log: log.forCategory('net'), proxyPolicy: proxyPolicyBuilder?.call(fallbackPolicy) ?? fallbackPolicy);
     final http = factory.create();
     final registry = LiveSiteRegistry(createBuiltInLiveSites(http: http));
 

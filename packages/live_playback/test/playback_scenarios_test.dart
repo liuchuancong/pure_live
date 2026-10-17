@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_playback/live_playback.dart';
 import 'package:media_core/media_core.dart';
-import 'package:media_core/testing/library.dart';
+import 'package:media_core/testing.dart';
 
 /// End-to-end walks through the playback states a viewer actually produces:
 /// backgrounding with and without PiP, a live room displaced by a recorded

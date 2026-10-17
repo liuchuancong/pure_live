@@ -8,6 +8,9 @@
 /// and are the way pages and the chrome move around. The table is also
 /// what deep links and route tests quote.
 abstract final class RoutePath {
+  /// The start-up splash, the launch route ahead of the shell.
+  static const String splash = '/splash';
+
   /// The home branch's root.
   static const String home = '/';
 
@@ -34,8 +37,14 @@ abstract final class RoutePath {
   /// The about page.
   static const String about = '/about';
 
+  /// The version page, one level under the about cluster.
+  static const String version = '/about/version';
+
   /// The toolbox: link resolution.
   static const String toolbox = '/toolbox';
+
+  /// The LAN sync page (the toolbox's remote receiver).
+  static const String remoteSync = '/remote-sync';
 
   /// The IPTV library page.
   static const String iptv = '/iptv';
@@ -66,4 +75,26 @@ abstract final class RoutePath {
 
   /// The backup and restore page, under the settings cluster.
   static const String settingsBackup = '/settings/backup';
+
+  /// The general settings page, one level under the settings index.
+  static const String settingsGeneral = '/settings/general';
+
+  /// The refresh settings page, one level under the settings index.
+  static const String settingsRefresh = '/settings/refresh';
+
+  /// The page settings page (shell branches), one level under the settings
+  /// index.
+  static const String settingsPages = '/settings/pages';
+
+  /// The navigation settings page, one level under the settings index.
+  static const String settingsNavigation = '/settings/navigation';
+
+  /// The network proxy settings page, one level under the settings index.
+  static const String settingsProxy = '/settings/proxy';
+
+  /// The loading style settings page, one level under the settings index.
+  static const String settingsLoadingStyle = '/settings/loading-style';
+
+  /// The room card settings page, one level under the settings index.
+  static const String settingsRoomCard = '/settings/room-card';
 }

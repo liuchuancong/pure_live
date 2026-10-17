@@ -6,13 +6,14 @@ import 'package:flutter_adaptive_layout/flutter_adaptive_layout.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_pagination/live_pagination.dart';
 import 'package:live_sites/live_sites.dart' show LivePageRequest, LiveRoom;
+import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
 import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/widgets/list_loading.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 import 'package:pure_uikit/pure_uikit.dart';
-import 'package:skeletonizer/skeletonizer.dart';
 
 /// How the loaded rooms are ordered.
 enum _RoomSort { platform, viewers }
@@ -111,9 +112,12 @@ final class _InfiniteFeed extends ConsumerStatefulWidget {
   ConsumerState<_InfiniteFeed> createState() => _InfiniteFeedState();
 }
 
-final class _InfiniteFeedState extends ConsumerState<_InfiniteFeed> {
+final class _InfiniteFeedState extends ConsumerState<_InfiniteFeed> with FeedAutoRefresh<_InfiniteFeed> {
   late final InfiniteController<LiveRoom> _controller = InfiniteController(loader: widget.loader);
   late final ScrollController _scroll = ScrollController()..addListener(_onScroll);
+
+  @override
+  Future<void> feedRefresh() => _controller.refresh();
 
   @override
   void initState() {
@@ -145,10 +149,12 @@ final class _InfiniteFeedState extends ConsumerState<_InfiniteFeed> {
 
   @override
   Widget build(BuildContext context) {
+    final coverAspect = ref.watch(roomCardStyleProvider).aspect.ratio;
     final state = _controller.state;
     if (state.items.isEmpty) {
       return _placeholder(
         context,
+        coverAspect: coverAspect,
         error: state.error,
         loading: state.isRefreshing || state.isUnloaded,
         onRetry: () => unawaited(_controller.refresh()),
@@ -174,7 +180,7 @@ final class _InfiniteFeedState extends ConsumerState<_InfiniteFeed> {
         builder: (context, constraints) => GridView.builder(
           controller: _scroll,
           padding: const EdgeInsets.fromLTRB(PureSpacing.sm, PureSpacing.sm, PureSpacing.sm, PureSpacing.xl),
-          gridDelegate: _roomGridDelegate(context, constraints.maxWidth),
+          gridDelegate: _roomGridDelegate(context, constraints.maxWidth, coverAspect),
           itemCount: rooms.length + 1,
           itemBuilder: (context, index) {
             if (index < rooms.length) {
@@ -200,8 +206,11 @@ final class _PagedFeed extends ConsumerStatefulWidget {
   ConsumerState<_PagedFeed> createState() => _PagedFeedState();
 }
 
-final class _PagedFeedState extends ConsumerState<_PagedFeed> {
+final class _PagedFeedState extends ConsumerState<_PagedFeed> with FeedAutoRefresh<_PagedFeed> {
   late final PagedController<LiveRoom> _controller = PagedController(loader: widget.loader);
+
+  @override
+  Future<void> feedRefresh() => _controller.refresh();
 
   @override
   void initState() {
@@ -237,9 +246,11 @@ final class _PagedFeedState extends ConsumerState<_PagedFeed> {
   }
 
   Widget _body(BuildContext context, PagedState<LiveRoom> state) {
+    final coverAspect = ref.watch(roomCardStyleProvider).aspect.ratio;
     if (state.items.isEmpty) {
       return _placeholder(
         context,
+        coverAspect: coverAspect,
         error: state.error,
         loading: state.isLoading || state.isUnloaded,
         onRetry: () => unawaited(_controller.refresh()),
@@ -249,7 +260,7 @@ final class _PagedFeedState extends ConsumerState<_PagedFeed> {
     return LayoutBuilder(
       builder: (context, constraints) => GridView.builder(
         padding: const EdgeInsets.fromLTRB(PureSpacing.sm, PureSpacing.sm, PureSpacing.sm, PureSpacing.xl),
-        gridDelegate: _roomGridDelegate(context, constraints.maxWidth),
+        gridDelegate: _roomGridDelegate(context, constraints.maxWidth, coverAspect),
         itemCount: rooms.length,
         itemBuilder: (context, index) => _tile(context, rooms[index]),
       ),
@@ -319,10 +330,11 @@ final class _PagedFeedState extends ConsumerState<_PagedFeed> {
 /// Shared pieces of both feeds.
 
 /// The grid both feeds lay their cards into (3.x `area_rooms` delegate):
-/// columns react to the window's width and every tile reserves the 16:9
-/// cover plus its caption through [RoomGridMetrics].
-SliverGridDelegateWithFixedCrossAxisCount _roomGridDelegate(BuildContext context, double width) =>
-    RoomGridMetrics.delegateFor(context, width);
+/// columns react to the window's width and every tile reserves a cover of
+/// the room-card aspect preference plus its caption through
+/// [RoomGridMetrics].
+SliverGridDelegateWithFixedCrossAxisCount _roomGridDelegate(BuildContext context, double width, double coverAspect) =>
+    RoomGridMetrics.delegateFor(context, width, coverAspect: coverAspect);
 
 List<LiveRoom> _sortByViewers(List<LiveRoom> rooms) {
   int viewers(LiveRoom room) => room.audience.onlineViewers ?? room.audience.popularity ?? 0;
@@ -337,6 +349,7 @@ Widget _tile(BuildContext context, LiveRoom room) => RoomCard(
 
 Widget _placeholder(
   BuildContext context, {
+  required double coverAspect,
   required Object? error,
   required bool loading,
   required VoidCallback onRetry,
@@ -345,54 +358,10 @@ Widget _placeholder(
     return PureError(message: context.t.errors.network, onRetry: onRetry, retryLabel: context.t.common.retry);
   }
   if (loading) {
-    // A bone grid shaped exactly like the room grid, so content replaces
-    // the skeleton without a layout jump. Fixed-height bars rather than
-    // placeholder letters: a skeleton has to fit its tile in every design
-    // language and text scale.
-    return LayoutBuilder(
-      builder: (context, constraints) => Skeletonizer(
-        child: GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(PureSpacing.sm),
-          gridDelegate: _roomGridDelegate(context, constraints.maxWidth),
-          itemCount: RoomGridMetrics.columnsFor(constraints.maxWidth) * 3,
-          itemBuilder: (context, index) => PureCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const AspectRatio(aspectRatio: 16 / 9, child: ColoredBox(color: Colors.white24)),
-                Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white24),
-                      ),
-                      const SizedBox(width: 8),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(height: 12, width: double.infinity, child: ColoredBox(color: Colors.white24)),
-                            SizedBox(height: 6),
-                            SizedBox(width: 96, height: 10, child: ColoredBox(color: Color(0x26FFFFFF))),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+    // The shared placeholder follows the loading-style preference and tiles
+    // its bones exactly like the room grid, so content replaces it without
+    // a layout jump.
+    return FeedLoadingPlaceholder(delegateBuilder: (width) => _roomGridDelegate(context, width, coverAspect));
   }
   return PureEmpty(title: context.t.common.empty);
 }

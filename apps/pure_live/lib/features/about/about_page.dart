@@ -5,8 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/routing/routes/about/version_routes.dart';
 import 'package:pure_live/features/about/update_feed.dart';
-import 'package:pure_live/features/about/version_dialog.dart';
 import 'package:pure_live/features/about/version_history.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
@@ -19,7 +19,9 @@ import 'package:url_launcher/url_launcher.dart';
 /// project group with its homepage and its legal note.
 ///
 /// The check runs once on open (the current app's own behaviour) and again
-/// from the update row, whose verdict is the reference's version dialog.
+/// from the update row, whose verdict answers in place; the row itself
+/// opens the version page, where the reference's update page lives
+/// (3.x `RoutePath.kVersionPage`).
 final class AboutPage extends ConsumerStatefulWidget {
   /// The about page.
   const new({super.key});
@@ -93,22 +95,6 @@ final class _AboutPageState extends ConsumerState<AboutPage> {
     }
   }
 
-  /// The check's verdict as a dialog (3.x): the newest release's notes when
-  /// a newer version exists, the up-to-date note otherwise. A failed check
-  /// offers the retry the row's subtitle already states.
-  Future<void> _promptUpdate() async {
-    final releases = _releases ?? await _check();
-    if (!mounted || releases == null) {
-      return;
-    }
-    final version = _info?.version;
-    if (version != null && _hasUpdate(releases, version)) {
-      await showNewVersionDialog(context, release: releases.first);
-    } else {
-      await showNoUpdateDialog(context);
-    }
-  }
-
   Future<void> _openProject() async {
     if (_openingProject) {
       return;
@@ -162,7 +148,7 @@ final class _AboutPageState extends ConsumerState<AboutPage> {
                           hasUpdate && releases.first.tag.isNotEmpty ? releases.first.tag : 'v${version ?? '…'}',
                           highlight: hasUpdate,
                         ),
-                  onTap: _checking ? null : () => unawaited(_promptUpdate()),
+                  onTap: _checking ? null : () => unawaited(const VersionRoute().push(context)),
                 ),
                 PureListRow(
                   leading: const Icon(Icons.history),

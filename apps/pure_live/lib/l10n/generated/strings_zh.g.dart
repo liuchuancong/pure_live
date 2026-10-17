@@ -42,6 +42,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 
 	// Translations
 	late final Translations$app$zh app = Translations$app$zh.internal(_root);
+	late final Translations$splash$zh splash = Translations$splash$zh.internal(_root);
 	late final Translations$home$zh home = Translations$home$zh.internal(_root);
 	late final Translations$common$zh common = Translations$common$zh.internal(_root);
 	late final Translations$tray$zh tray = Translations$tray$zh.internal(_root);
@@ -61,11 +62,13 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$room$zh room = Translations$room$zh.internal(_root);
 	late final Translations$areas$zh areas = Translations$areas$zh.internal(_root);
 	late final Translations$popular$zh popular = Translations$popular$zh.internal(_root);
+	late final Translations$remoteSync$zh remoteSync = Translations$remoteSync$zh.internal(_root);
 	late final Translations$errors$zh errors = Translations$errors$zh.internal(_root);
 	late final Translations$tabs$zh tabs = Translations$tabs$zh.internal(_root);
 	late final Translations$window$zh window = Translations$window$zh.internal(_root);
 	late final Translations$closePrompt$zh closePrompt = Translations$closePrompt$zh.internal(_root);
 	late final Translations$shellSettings$zh shellSettings = Translations$shellSettings$zh.internal(_root);
+	late final Translations$webdav$zh webdav = Translations$webdav$zh.internal(_root);
 }
 
 // Path: app
@@ -78,6 +81,18 @@ class Translations$app$zh {
 
 	/// zh: 'Pure Live'
 	String get title => 'Pure Live';
+}
+
+// Path: splash
+class Translations$splash$zh {
+	Translations$splash$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '欢迎使用'
+	String get welcome => '欢迎使用';
 }
 
 // Path: home
@@ -285,6 +300,237 @@ class Translations$settings$zh {
 
 	/// zh: '观看历史已清空'
 	String get historyCleared => '观看历史已清空';
+
+	/// zh: '通用'
+	String get general => '通用';
+
+	/// zh: '刷新、启动、倒计时关闭与窗口'
+	String get generalSubtitle => '刷新、启动、倒计时关闭与窗口';
+
+	/// zh: '通用'
+	String get sectionGeneral => '通用';
+
+	/// zh: '刷新'
+	String get refreshSettings => '刷新';
+
+	/// zh: '前台刷新间隔与恢复阈值'
+	String get refreshSettingsSubtitle => '前台刷新间隔与恢复阈值';
+
+	/// zh: '页面设置'
+	String get pageSettings => '页面设置';
+
+	/// zh: '显示哪些页签及其顺序'
+	String get pageSettingsSubtitle => '显示哪些页签及其顺序';
+
+	/// zh: '导航'
+	String get navigationSettings => '导航';
+
+	/// zh: '应用启动位置'
+	String get navigationSettingsSubtitle => '应用启动位置';
+
+	/// zh: '列表显示'
+	String get sectionFeedDisplay => '列表显示';
+
+	/// zh: '加载样式'
+	String get loadingStyle => '加载样式';
+
+	/// zh: '加载占位的呈现方式'
+	String get loadingStyleSubtitle => '加载占位的呈现方式';
+
+	/// zh: '房间卡片'
+	String get roomCardSettings => '房间卡片';
+
+	/// zh: '圆角、封面比例与信息行'
+	String get roomCardSettingsSubtitle => '圆角、封面比例与信息行';
+
+	/// zh: '网络'
+	String get sectionNetwork => '网络';
+
+	/// zh: '网络代理'
+	String get proxySettings => '网络代理';
+
+	/// zh: '通过代理转发请求'
+	String get proxySettingsSubtitle => '通过代理转发请求';
+
+	/// zh: '回到前台时刷新'
+	String get refreshOnResume => '回到前台时刷新';
+
+	/// zh: '离开足够久后回到应用时刷新列表'
+	String get refreshOnResumeSubtitle => '离开足够久后回到应用时刷新列表';
+
+	/// zh: '启动时检查更新'
+	String get autoCheckUpdate => '启动时检查更新';
+
+	/// zh: '从发布源检查新版本；关于页随时可以手动检查'
+	String get autoCheckUpdateSubtitle => '从发布源检查新版本；关于页随时可以手动检查';
+
+	/// zh: '倒计时退出'
+	String get countdownClose => '倒计时退出';
+
+	/// zh: '倒计时结束后退出应用'
+	String get countdownCloseSubtitle => '倒计时结束后退出应用';
+
+	/// zh: '倒计时时长'
+	String get countdownDuration => '倒计时时长';
+
+	/// zh: '{minutes: int} 分钟'
+	String minutesValue({required int minutes}) => '${minutes} 分钟';
+
+	/// zh: '离开 {minutes: int} 分钟后'
+	String minutesAway({required int minutes}) => '离开 ${minutes} 分钟后';
+
+	/// zh: '启动页'
+	String get launchPage => '启动页';
+
+	/// zh: '应用启动所在的页签。导航设置可以让上次访问的页签优先。'
+	String get launchPageHint => '应用启动所在的页签。导航设置可以让上次访问的页签优先。';
+
+	/// zh: '窗口大小'
+	String get windowSize => '窗口大小';
+
+	/// zh: '启动默认'
+	String get windowSizeDefault => '启动默认';
+
+	/// zh: '立即生效，并在下次启动时沿用。'
+	String get windowSizeHint => '立即生效，并在下次启动时沿用。';
+
+	/// zh: '自动刷新'
+	String get groupAutoRefresh => '自动刷新';
+
+	/// zh: '前台刷新间隔'
+	String get autoRefreshInterval => '前台刷新间隔';
+
+	/// zh: '当前列表自动刷新的间隔。默认关闭。'
+	String get autoRefreshIntervalHint => '当前列表自动刷新的间隔。默认关闭。';
+
+	/// zh: '恢复刷新阈值'
+	String get refreshResumeThreshold => '恢复刷新阈值';
+
+	/// zh: '离开多久后才值得在回到前台时刷新。'
+	String get refreshResumeThresholdHint => '离开多久后才值得在回到前台时刷新。';
+
+	/// zh: '关闭'
+	String get refreshOff => '关闭';
+
+	/// zh: '每次回到前台'
+	String get refreshEveryResume => '每次回到前台';
+
+	/// zh: '显示的页签'
+	String get groupVisibleBranches => '显示的页签';
+
+	/// zh: '隐藏的页签'
+	String get groupHiddenBranches => '隐藏的页签';
+
+	/// zh: '在外壳中显示此页签'
+	String get showBranchSubtitle => '在外壳中显示此页签';
+
+	/// zh: '拖动排序。至少保留一个页签。'
+	String get pageSettingsHint => '拖动排序。至少保留一个页签。';
+
+	/// zh: '至少需要保留一个页签'
+	String get atLeastOneBranch => '至少需要保留一个页签';
+
+	/// zh: '启动'
+	String get groupLaunch => '启动';
+
+	/// zh: '回到上次的位置'
+	String get restoreLastTab => '回到上次的位置';
+
+	/// zh: '启动时回到上次访问的页签'
+	String get restoreLastTabSubtitle => '启动时回到上次访问的页签';
+
+	/// zh: '启动时回到上次访问的页签（上次：{branch: String}）'
+	String restoreLastTabOn({required String branch}) => '启动时回到上次访问的页签（上次：${branch}）';
+
+	/// zh: '决定启动页跳转的目标；更改在下次启动生效。'
+	String get navigationHint => '决定启动页跳转的目标；更改在下次启动生效。';
+
+	/// zh: '代理'
+	String get proxyGroup => '代理';
+
+	/// zh: '使用代理'
+	String get proxyEnable => '使用代理';
+
+	/// zh: '通过下方代理转发请求'
+	String get proxyEnableSubtitle => '通过下方代理转发请求';
+
+	/// zh: '代理地址'
+	String get proxyEndpoint => '代理地址';
+
+	/// zh: '地址'
+	String get proxyHost => '地址';
+
+	/// zh: '端口'
+	String get proxyPort => '端口';
+
+	/// zh: '端口需在 1-65535 之间'
+	String get proxyPortInvalid => '端口需在 1-65535 之间';
+
+	/// zh: '对新连接立即生效，无需重启。'
+	String get proxyHint => '对新连接立即生效，无需重启。';
+
+	/// zh: '预览'
+	String get loadingPreview => '预览';
+
+	/// zh: '微光骨架'
+	String get loadingShimmer => '微光骨架';
+
+	/// zh: '加载圈'
+	String get loadingSpinner => '加载圈';
+
+	/// zh: '无'
+	String get loadingNone => '无';
+
+	/// zh: '预览'
+	String get roomCardPreview => '预览';
+
+	/// zh: '外观'
+	String get roomCardAppearance => '外观';
+
+	/// zh: '圆角半径'
+	String get roomCardRadius => '圆角半径';
+
+	/// zh: '封面比例'
+	String get roomCardAspect => '封面比例';
+
+	/// zh: '16:9'
+	String get aspectSixteenByNine => '16:9';
+
+	/// zh: '4:3'
+	String get aspectFourByThree => '4:3';
+
+	/// zh: '1:1'
+	String get aspectSquare => '1:1';
+
+	/// zh: '显示内容'
+	String get roomCardContent => '显示内容';
+
+	/// zh: '平台角标'
+	String get roomCardShowPlatform => '平台角标';
+
+	/// zh: '封面上方的平台角标'
+	String get roomCardShowPlatformSubtitle => '封面上方的平台角标';
+
+	/// zh: '人气与状态'
+	String get roomCardShowAudience => '人气与状态';
+
+	/// zh: '观看人数、回放与离线角标'
+	String get roomCardShowAudienceSubtitle => '观看人数、回放与离线角标';
+
+	/// zh: '主播行'
+	String get roomCardShowAnchor => '主播行';
+
+	/// zh: '头像与主播名'
+	String get roomCardShowAnchorSubtitle => '头像与主播名';
+
+	/// zh: '作用于推荐、分区、关注与搜索的卡片网格。'
+	String get roomCardScopeHint => '作用于推荐、分区、关注与搜索的卡片网格。';
+
+	/// zh: '局域网同步'
+	String get remoteSync => '局域网同步';
+
+	/// zh: '将播放同步到同一网络下的其他设备'
+	String get remoteSyncSubtitle => '将播放同步到同一网络下的其他设备';
 }
 
 // Path: theme
@@ -333,6 +579,27 @@ class Translations$history$zh {
 
 	/// zh: '还没有观看记录'
 	String get empty => '还没有观看记录';
+
+	/// zh: '今天'
+	String get today => '今天';
+
+	/// zh: '昨天'
+	String get yesterday => '昨天';
+
+	/// zh: '本周'
+	String get thisWeek => '本周';
+
+	/// zh: '本月'
+	String get thisMonth => '本月';
+
+	/// zh: '更早'
+	String get earlier => '更早';
+
+	/// zh: '删除记录'
+	String get remove => '删除记录';
+
+	/// zh: '删除这条观看记录？'
+	String get removeConfirm => '删除这条观看记录？';
 }
 
 // Path: iptv
@@ -369,6 +636,36 @@ class Translations$iptv$zh {
 
 	/// zh: '还没有导入任何源'
 	String get empty => '还没有导入任何源';
+
+	/// zh: '搜索频道'
+	String get search => '搜索频道';
+
+	/// zh: '只看收藏'
+	String get favoritesOnly => '只看收藏';
+
+	/// zh: '没有匹配的频道'
+	String get noMatch => '没有匹配的频道';
+
+	/// zh: '频道列表'
+	String get channels => '频道列表';
+
+	/// zh: '切换频道'
+	String get switchChannel => '切换频道';
+
+	/// zh: '数字选台'
+	String get dialPad => '数字选台';
+
+	/// zh: '没有 {number: int} 号频道'
+	String noNumber({required int number}) => '没有 ${number} 号频道';
+
+	/// zh: '从文件导入'
+	String get importFromFile => '从文件导入';
+
+	/// zh: '导入失败'
+	String get importFailed => '导入失败';
+
+	/// zh: '线路 {index: int}/{total: int}'
+	String lineOf({required int index, required int total}) => '线路 ${index}/${total}';
 }
 
 // Path: fonts
@@ -574,6 +871,12 @@ class Translations$about$zh {
 	/// zh: '在线更新'
 	String get onlineUpdate => '在线更新';
 
+	/// zh: '版本更新'
+	String get versionUpdate => '版本更新';
+
+	/// zh: '更新日志'
+	String get updateLog => '更新日志';
+
 	/// zh: '已是最新版本'
 	String get upToDate => '已是最新版本';
 
@@ -675,6 +978,39 @@ class Translations$multiview$zh {
 
 	/// zh: '添加格子'
 	String get add => '添加格子';
+
+	/// zh: '布局'
+	String get layout => '布局';
+
+	/// zh: '选择房间'
+	String get pickRoom => '选择房间';
+
+	/// zh: '粘贴房间链接，或从关注列表选择'
+	String get pickHint => '粘贴房间链接，或从关注列表选择';
+
+	/// zh: '点击选择房间'
+	String get emptyCell => '点击选择房间';
+
+	/// zh: '静音'
+	String get mute => '静音';
+
+	/// zh: '取消静音'
+	String get unmute => '取消静音';
+
+	/// zh: '全部静音'
+	String get muteAll => '全部静音';
+
+	/// zh: '取消全部静音'
+	String get unmuteAll => '取消全部静音';
+
+	/// zh: '正在播放声音'
+	String get audioFocus => '正在播放声音';
+
+	/// zh: '移除格子'
+	String get removeCell => '移除格子';
+
+	/// zh: '还没有关注或历史房间'
+	String get noPick => '还没有关注或历史房间';
 }
 
 // Path: search
@@ -693,6 +1029,18 @@ class Translations$search$zh {
 
 	/// zh: '主播'
 	String get anchors => '主播';
+
+	/// zh: '分区'
+	String get areas => '分区';
+
+	/// zh: '全部'
+	String get allSites => '全部';
+
+	/// zh: '搜索历史'
+	String get historyTitle => '搜索历史';
+
+	/// zh: '删除该搜索'
+	String get historyRemove => '删除该搜索';
 }
 
 // Path: room
@@ -732,6 +1080,75 @@ class Translations$room$zh {
 
 	/// zh: '未开播'
 	String get offline => '未开播';
+
+	/// zh: '房间打开失败'
+	String get entryFailed => '房间打开失败';
+
+	/// zh: '聊天'
+	String get chat => '聊天';
+
+	/// zh: '醒目留言'
+	String get superChat => '醒目留言';
+
+	/// zh: '礼物'
+	String get gifts => '礼物';
+
+	/// zh: '弹幕屏蔽'
+	String get shield => '弹幕屏蔽';
+
+	/// zh: '弹幕连接已断开'
+	String get danmakuEnded => '弹幕连接已断开';
+
+	/// zh: '弹幕重连中…'
+	String get reconnecting => '弹幕重连中…';
+
+	/// zh: '发个弹幕吧…'
+	String get sendPlaceholder => '发个弹幕吧…';
+
+	/// zh: '发送弹幕需要登录平台账号（暂未接入）'
+	String get sendUnavailable => '发送弹幕需要登录平台账号（暂未接入）';
+
+	/// zh: '回到底部'
+	String get backToLive => '回到底部';
+
+	/// zh: '{count} 条新消息'
+	String newMessages({required Object count}) => '${count} 条新消息';
+
+	/// zh: '暂无醒目留言'
+	String get superChatEmpty => '暂无醒目留言';
+
+	/// zh: '观众的付费高亮消息会显示在这里'
+	String get superChatEmptyHint => '观众的付费高亮消息会显示在这里';
+
+	/// zh: '暂无礼物'
+	String get giftsEmpty => '暂无礼物';
+
+	/// zh: '直播间收到的礼物会显示在这里'
+	String get giftsEmptyHint => '直播间收到的礼物会显示在这里';
+
+	/// zh: '关注'
+	String get follow => '关注';
+
+	/// zh: '已关注'
+	String get followed => '已关注';
+
+	/// zh: '{count} 粉丝'
+	String followers({required Object count}) => '${count} 粉丝';
+
+	/// zh: '人气'
+	String get popularity => '人气';
+
+	/// zh: '在线'
+	String get online => '在线';
+
+	/// zh: '线路 {n}'
+	String lineN({required Object n}) => '线路 ${n}';
+
+	/// zh: '全屏'
+	String get fullscreen => '全屏';
+
+	/// zh: '退出全屏'
+	String get exitFullscreen => '退出全屏';
 }
 
 // Path: areas
@@ -756,6 +1173,90 @@ class Translations$popular$zh {
 
 	/// zh: '暂时没有热门直播'
 	String get empty => '暂时没有热门直播';
+}
+
+// Path: remoteSync
+class Translations$remoteSync$zh {
+	Translations$remoteSync$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '局域网同步'
+	String get title => '局域网同步';
+
+	/// zh: '在同一网络下的设备间同步关注与历史'
+	String get tileSubtitle => '在同一网络下的设备间同步关注与历史';
+
+	/// zh: '本机'
+	String get myDevice => '本机';
+
+	/// zh: '未找到局域网地址'
+	String get noAddress => '未找到局域网地址';
+
+	/// zh: '让另一台设备扫描此二维码，或在对方输入本机地址'
+	String get scanHint => '让另一台设备扫描此二维码，或在对方输入本机地址';
+
+	/// zh: '同步服务运行中'
+	String get running => '同步服务运行中';
+
+	/// zh: '同步服务未运行'
+	String get notRunning => '同步服务未运行';
+
+	/// zh: '启动'
+	String get start => '启动';
+
+	/// zh: '停止'
+	String get stop => '停止';
+
+	/// zh: '网络中的设备'
+	String get devices => '网络中的设备';
+
+	/// zh: '尚未发现设备——请确认两台设备在同一网络'
+	String get noDevices => '尚未发现设备——请确认两台设备在同一网络';
+
+	/// zh: '地址'
+	String get manual => '地址';
+
+	/// zh: '发送'
+	String get send => '发送';
+
+	/// zh: '接收'
+	String get receive => '接收';
+
+	/// zh: '发送成功'
+	String get sendSuccess => '发送成功';
+
+	/// zh: '发送失败——请检查地址，并确认对方已同意'
+	String get sendFailed => '发送失败——请检查地址，并确认对方已同意';
+
+	/// zh: '接收并应用成功'
+	String get receiveSuccess => '接收并应用成功';
+
+	/// zh: '接收失败'
+	String get receiveFailed => '接收失败';
+
+	/// zh: '请先输入对方设备地址'
+	String get enterAddress => '请先输入对方设备地址';
+
+	/// zh: '地址格式不正确'
+	String get invalidAddress => '地址格式不正确';
+
+	/// zh: '{address: String} 想要覆盖本机的关注、历史与弹幕屏蔽，是否允许？'
+	String incomingImport({required String address}) => '${address} 想要覆盖本机的关注、历史与弹幕屏蔽，是否允许？';
+
+	/// zh: '{address: String} 想要读取本机的关注、历史与弹幕屏蔽，是否允许？'
+	String incomingExport({required String address}) => '${address} 想要读取本机的关注、历史与弹幕屏蔽，是否允许？';
+
+	/// zh: '关注列表'
+	String get sectionFavorite => '关注列表';
+
+	/// zh: '观看历史'
+	String get sectionHistory => '观看历史';
+
+	/// zh: '关注分组'
+	String get sectionGroups => '关注分组';
 }
 
 // Path: errors
@@ -881,6 +1382,120 @@ class Translations$shellSettings$zh {
 	String get titleBarHint => '应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式；切换在重启应用后生效。';
 }
 
+// Path: webdav
+class Translations$webdav$zh {
+	Translations$webdav$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: 'WebDAV 云备份'
+	String get title => 'WebDAV 云备份';
+
+	/// zh: 'WebDAV 云同步'
+	String get entryTitle => 'WebDAV 云同步';
+
+	/// zh: '备份到你自己的 WebDAV 服务器'
+	String get entrySubtitle => '备份到你自己的 WebDAV 服务器';
+
+	/// zh: '服务器'
+	String get sectionConfig => '服务器';
+
+	/// zh: 'https://dav.jianguoyun.com/dav/'
+	String get addressHint => 'https://dav.jianguoyun.com/dav/';
+
+	/// zh: '请输入有效的 http(s) 地址'
+	String get addressInvalid => '请输入有效的 http(s) 地址';
+
+	/// zh: '账户'
+	String get username => '账户';
+
+	/// zh: '应用密码'
+	String get password => '应用密码';
+
+	/// zh: '目录（可选）'
+	String get directory => '目录（可选）';
+
+	/// zh: '测试连接'
+	String get testConnection => '测试连接';
+
+	/// zh: '正在连接…'
+	String get testing => '正在连接…';
+
+	/// zh: '连接成功，地址、账户和密码均有效。'
+	String get testOk => '连接成功，地址、账户和密码均有效。';
+
+	/// zh: '连接失败'
+	String get testFailed => '连接失败';
+
+	/// zh: '立即备份'
+	String get backupNow => '立即备份';
+
+	/// zh: '正在上传备份…'
+	String get backingUp => '正在上传备份…';
+
+	/// zh: '备份已上传'
+	String get backupDone => '备份已上传';
+
+	/// zh: '请先填写服务器地址、账户和应用密码'
+	String get configIncomplete => '请先填写服务器地址、账户和应用密码';
+
+	/// zh: '上次备份'
+	String get lastBackup => '上次备份';
+
+	/// zh: '上次恢复'
+	String get lastRestore => '上次恢复';
+
+	/// zh: '从未'
+	String get never => '从未';
+
+	/// zh: '云端备份'
+	String get remote => '云端备份';
+
+	/// zh: '还没有云端备份'
+	String get remoteEmpty => '还没有云端备份';
+
+	/// zh: '恢复'
+	String get restore => '恢复';
+
+	/// zh: '下载该备份并覆盖当前数据？应用将重启。'
+	String get restoreConfirm => '下载该备份并覆盖当前数据？应用将重启。';
+
+	/// zh: '删除'
+	String get delete => '删除';
+
+	/// zh: '从服务器删除该备份？'
+	String get deleteConfirm => '从服务器删除该备份？';
+
+	/// zh: '配置说明'
+	String get helpTitle => '配置说明';
+
+	/// zh: '云备份把与本地备份相同的压缩包上传到你自己的 WebDAV 服务器，让关注、历史和设置在重装后依然可用。任何 WebDAV 服务都可以，下面以坚果云为例。'
+	String get helpIntro => '云备份把与本地备份相同的压缩包上传到你自己的 WebDAV 服务器，让关注、历史和设置在重装后依然可用。任何 WebDAV 服务都可以，下面以坚果云为例。';
+
+	/// zh: '1. 在 www.jianguoyun.com 注册并登录。 2. 打开「选项 → 安全选项」，生成应用密码。 3. 在上方填写服务器地址、账户和该应用密码。'
+	String get helpSteps => '1. 在 www.jianguoyun.com 注册并登录。\n2. 打开「选项 → 安全选项」，生成应用密码。\n3. 在上方填写服务器地址、账户和该应用密码。';
+
+	/// zh: '服务器：坚果云的 WebDAV 地址为 https://dav.jianguoyun.com/dav/'
+	String get helpServer => '服务器：坚果云的 WebDAV 地址为 https://dav.jianguoyun.com/dav/';
+
+	/// zh: '账户：坚果云的登录名（通常是手机号或邮箱）。'
+	String get helpAccount => '账户：坚果云的登录名（通常是手机号或邮箱）。';
+
+	/// zh: '密码：不是登录密码 —— WebDAV 使用「选项 → 安全选项」中生成的应用密码。'
+	String get helpPassword => '密码：不是登录密码 —— WebDAV 使用「选项 → 安全选项」中生成的应用密码。';
+
+	/// zh: '连接失败？检查地址是否以 /dav/ 结尾、是否使用应用密码而非登录密码，以及网络是否屏蔽了 WebDAV 端口。'
+	String get helpIssues => '连接失败？检查地址是否以 /dav/ 结尾、是否使用应用密码而非登录密码，以及网络是否屏蔽了 WebDAV 端口。';
+
+	/// zh: '打开坚果云官方帮助'
+	String get openOfficialHelp => '打开坚果云官方帮助';
+
+	/// zh: '无法打开浏览器'
+	String get helpOpenFailed => '无法打开浏览器';
+}
+
 /// The flat map containing all translations for locale <zh>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -890,6 +1505,7 @@ extension on Translations {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'Pure Live',
+			'splash.welcome' => '欢迎使用',
 			'home.recommended' => '推荐流',
 			'common.confirm' => '确定',
 			'common.cancel' => '取消',
@@ -947,6 +1563,83 @@ extension on Translations {
 			'settings.clearHistory' => '清空观看历史',
 			'settings.clearHistorySubtitle' => '删除本机全部观看记录',
 			'settings.historyCleared' => '观看历史已清空',
+			'settings.general' => '通用',
+			'settings.generalSubtitle' => '刷新、启动、倒计时关闭与窗口',
+			'settings.sectionGeneral' => '通用',
+			'settings.refreshSettings' => '刷新',
+			'settings.refreshSettingsSubtitle' => '前台刷新间隔与恢复阈值',
+			'settings.pageSettings' => '页面设置',
+			'settings.pageSettingsSubtitle' => '显示哪些页签及其顺序',
+			'settings.navigationSettings' => '导航',
+			'settings.navigationSettingsSubtitle' => '应用启动位置',
+			'settings.sectionFeedDisplay' => '列表显示',
+			'settings.loadingStyle' => '加载样式',
+			'settings.loadingStyleSubtitle' => '加载占位的呈现方式',
+			'settings.roomCardSettings' => '房间卡片',
+			'settings.roomCardSettingsSubtitle' => '圆角、封面比例与信息行',
+			'settings.sectionNetwork' => '网络',
+			'settings.proxySettings' => '网络代理',
+			'settings.proxySettingsSubtitle' => '通过代理转发请求',
+			'settings.refreshOnResume' => '回到前台时刷新',
+			'settings.refreshOnResumeSubtitle' => '离开足够久后回到应用时刷新列表',
+			'settings.autoCheckUpdate' => '启动时检查更新',
+			'settings.autoCheckUpdateSubtitle' => '从发布源检查新版本；关于页随时可以手动检查',
+			'settings.countdownClose' => '倒计时退出',
+			'settings.countdownCloseSubtitle' => '倒计时结束后退出应用',
+			'settings.countdownDuration' => '倒计时时长',
+			'settings.minutesValue' => ({required int minutes}) => '${minutes} 分钟',
+			'settings.minutesAway' => ({required int minutes}) => '离开 ${minutes} 分钟后',
+			'settings.launchPage' => '启动页',
+			'settings.launchPageHint' => '应用启动所在的页签。导航设置可以让上次访问的页签优先。',
+			'settings.windowSize' => '窗口大小',
+			'settings.windowSizeDefault' => '启动默认',
+			'settings.windowSizeHint' => '立即生效，并在下次启动时沿用。',
+			'settings.groupAutoRefresh' => '自动刷新',
+			'settings.autoRefreshInterval' => '前台刷新间隔',
+			'settings.autoRefreshIntervalHint' => '当前列表自动刷新的间隔。默认关闭。',
+			'settings.refreshResumeThreshold' => '恢复刷新阈值',
+			'settings.refreshResumeThresholdHint' => '离开多久后才值得在回到前台时刷新。',
+			'settings.refreshOff' => '关闭',
+			'settings.refreshEveryResume' => '每次回到前台',
+			'settings.groupVisibleBranches' => '显示的页签',
+			'settings.groupHiddenBranches' => '隐藏的页签',
+			'settings.showBranchSubtitle' => '在外壳中显示此页签',
+			'settings.pageSettingsHint' => '拖动排序。至少保留一个页签。',
+			'settings.atLeastOneBranch' => '至少需要保留一个页签',
+			'settings.groupLaunch' => '启动',
+			'settings.restoreLastTab' => '回到上次的位置',
+			'settings.restoreLastTabSubtitle' => '启动时回到上次访问的页签',
+			'settings.restoreLastTabOn' => ({required String branch}) => '启动时回到上次访问的页签（上次：${branch}）',
+			'settings.navigationHint' => '决定启动页跳转的目标；更改在下次启动生效。',
+			'settings.proxyGroup' => '代理',
+			'settings.proxyEnable' => '使用代理',
+			'settings.proxyEnableSubtitle' => '通过下方代理转发请求',
+			'settings.proxyEndpoint' => '代理地址',
+			'settings.proxyHost' => '地址',
+			'settings.proxyPort' => '端口',
+			'settings.proxyPortInvalid' => '端口需在 1-65535 之间',
+			'settings.proxyHint' => '对新连接立即生效，无需重启。',
+			'settings.loadingPreview' => '预览',
+			'settings.loadingShimmer' => '微光骨架',
+			'settings.loadingSpinner' => '加载圈',
+			'settings.loadingNone' => '无',
+			'settings.roomCardPreview' => '预览',
+			'settings.roomCardAppearance' => '外观',
+			'settings.roomCardRadius' => '圆角半径',
+			'settings.roomCardAspect' => '封面比例',
+			'settings.aspectSixteenByNine' => '16:9',
+			'settings.aspectFourByThree' => '4:3',
+			'settings.aspectSquare' => '1:1',
+			'settings.roomCardContent' => '显示内容',
+			'settings.roomCardShowPlatform' => '平台角标',
+			'settings.roomCardShowPlatformSubtitle' => '封面上方的平台角标',
+			'settings.roomCardShowAudience' => '人气与状态',
+			'settings.roomCardShowAudienceSubtitle' => '观看人数、回放与离线角标',
+			'settings.roomCardShowAnchor' => '主播行',
+			'settings.roomCardShowAnchorSubtitle' => '头像与主播名',
+			'settings.roomCardScopeHint' => '作用于推荐、分区、关注与搜索的卡片网格。',
+			'settings.remoteSync' => '局域网同步',
+			'settings.remoteSyncSubtitle' => '将播放同步到同一网络下的其他设备',
 			'theme.system' => '跟随系统',
 			'theme.dark' => '深色',
 			'theme.light' => '浅色',
@@ -954,6 +1647,13 @@ extension on Translations {
 			'history.clear' => '清空记录',
 			'history.clearConfirm' => '清空全部观看记录？此操作不可撤销。',
 			'history.empty' => '还没有观看记录',
+			'history.today' => '今天',
+			'history.yesterday' => '昨天',
+			'history.thisWeek' => '本周',
+			'history.thisMonth' => '本月',
+			'history.earlier' => '更早',
+			'history.remove' => '删除记录',
+			'history.removeConfirm' => '删除这条观看记录？',
 			'iptv.title' => 'IPTV',
 			'iptv.addSource' => '添加源',
 			'iptv.sourceName' => '源名称',
@@ -963,6 +1663,16 @@ extension on Translations {
 			'iptv.allGroups' => '全部分组',
 			'iptv.favorite' => '收藏',
 			'iptv.empty' => '还没有导入任何源',
+			'iptv.search' => '搜索频道',
+			'iptv.favoritesOnly' => '只看收藏',
+			'iptv.noMatch' => '没有匹配的频道',
+			'iptv.channels' => '频道列表',
+			'iptv.switchChannel' => '切换频道',
+			'iptv.dialPad' => '数字选台',
+			'iptv.noNumber' => ({required int number}) => '没有 ${number} 号频道',
+			'iptv.importFromFile' => '从文件导入',
+			'iptv.importFailed' => '导入失败',
+			'iptv.lineOf' => ({required int index, required int total}) => '线路 ${index}/${total}',
 			'fonts.fonts' => '字体管理',
 			'fonts.system' => '系统默认',
 			'fonts.systemDesc' => '使用系统自带字体',
@@ -1016,6 +1726,8 @@ extension on Translations {
 			'about.group' => '关于',
 			'about.checkUpdate' => '检查更新',
 			'about.onlineUpdate' => '在线更新',
+			'about.versionUpdate' => '版本更新',
+			'about.updateLog' => '更新日志',
 			'about.upToDate' => '已是最新版本',
 			'about.newVersion' => '发现新版本',
 			'about.noNewVersion' => '已在使用最新版本',
@@ -1044,9 +1756,24 @@ extension on Translations {
 			'multiview.platform' => '平台',
 			'multiview.roomId' => '房间号',
 			'multiview.add' => '添加格子',
+			'multiview.layout' => '布局',
+			'multiview.pickRoom' => '选择房间',
+			'multiview.pickHint' => '粘贴房间链接，或从关注列表选择',
+			'multiview.emptyCell' => '点击选择房间',
+			'multiview.mute' => '静音',
+			'multiview.unmute' => '取消静音',
+			'multiview.muteAll' => '全部静音',
+			'multiview.unmuteAll' => '取消全部静音',
+			'multiview.audioFocus' => '正在播放声音',
+			'multiview.removeCell' => '移除格子',
+			'multiview.noPick' => '还没有关注或历史房间',
 			'search.hint' => '输入关键词搜索房间',
 			'search.rooms' => '房间',
 			'search.anchors' => '主播',
+			'search.areas' => '分区',
+			'search.allSites' => '全部',
+			'search.historyTitle' => '搜索历史',
+			'search.historyRemove' => '删除该搜索',
 			'room.sortPlatform' => '默认排序',
 			'room.sortViewers' => '人气优先',
 			'room.danmakuFailed' => '弹幕连接失败',
@@ -1057,8 +1784,56 @@ extension on Translations {
 			'room.failed' => '播放失败，请重试',
 			'room.replay' => '回放',
 			'room.offline' => '未开播',
+			'room.entryFailed' => '房间打开失败',
+			'room.chat' => '聊天',
+			'room.superChat' => '醒目留言',
+			'room.gifts' => '礼物',
+			'room.shield' => '弹幕屏蔽',
+			'room.danmakuEnded' => '弹幕连接已断开',
+			'room.reconnecting' => '弹幕重连中…',
+			'room.sendPlaceholder' => '发个弹幕吧…',
+			'room.sendUnavailable' => '发送弹幕需要登录平台账号（暂未接入）',
+			'room.backToLive' => '回到底部',
+			'room.newMessages' => ({required Object count}) => '${count} 条新消息',
+			'room.superChatEmpty' => '暂无醒目留言',
+			'room.superChatEmptyHint' => '观众的付费高亮消息会显示在这里',
+			'room.giftsEmpty' => '暂无礼物',
+			'room.giftsEmptyHint' => '直播间收到的礼物会显示在这里',
+			'room.follow' => '关注',
+			'room.followed' => '已关注',
+			'room.followers' => ({required Object count}) => '${count} 粉丝',
+			'room.popularity' => '人气',
+			'room.online' => '在线',
+			'room.lineN' => ({required Object n}) => '线路 ${n}',
+			'room.fullscreen' => '全屏',
+			'room.exitFullscreen' => '退出全屏',
 			'areas.empty' => '暂无分区',
 			'popular.empty' => '暂时没有热门直播',
+			'remoteSync.title' => '局域网同步',
+			'remoteSync.tileSubtitle' => '在同一网络下的设备间同步关注与历史',
+			'remoteSync.myDevice' => '本机',
+			'remoteSync.noAddress' => '未找到局域网地址',
+			'remoteSync.scanHint' => '让另一台设备扫描此二维码，或在对方输入本机地址',
+			'remoteSync.running' => '同步服务运行中',
+			'remoteSync.notRunning' => '同步服务未运行',
+			'remoteSync.start' => '启动',
+			'remoteSync.stop' => '停止',
+			'remoteSync.devices' => '网络中的设备',
+			'remoteSync.noDevices' => '尚未发现设备——请确认两台设备在同一网络',
+			'remoteSync.manual' => '地址',
+			'remoteSync.send' => '发送',
+			'remoteSync.receive' => '接收',
+			'remoteSync.sendSuccess' => '发送成功',
+			'remoteSync.sendFailed' => '发送失败——请检查地址，并确认对方已同意',
+			'remoteSync.receiveSuccess' => '接收并应用成功',
+			'remoteSync.receiveFailed' => '接收失败',
+			'remoteSync.enterAddress' => '请先输入对方设备地址',
+			'remoteSync.invalidAddress' => '地址格式不正确',
+			'remoteSync.incomingImport' => ({required String address}) => '${address} 想要覆盖本机的关注、历史与弹幕屏蔽，是否允许？',
+			'remoteSync.incomingExport' => ({required String address}) => '${address} 想要读取本机的关注、历史与弹幕屏蔽，是否允许？',
+			'remoteSync.sectionFavorite' => '关注列表',
+			'remoteSync.sectionHistory' => '观看历史',
+			'remoteSync.sectionGroups' => '关注分组',
 			'errors.generic' => '出了点问题，请稍后再试。',
 			'errors.network' => '网络连接不可用，请检查网络后重试。',
 			'errors.notFound' => '没有找到相关内容。',
@@ -1085,6 +1860,41 @@ extension on Translations {
 			'shellSettings.titleBarApp' => '应用标题栏',
 			'shellSettings.titleBarSystem' => '系统标题栏',
 			'shellSettings.titleBarHint' => '应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式；切换在重启应用后生效。',
+			'webdav.title' => 'WebDAV 云备份',
+			'webdav.entryTitle' => 'WebDAV 云同步',
+			'webdav.entrySubtitle' => '备份到你自己的 WebDAV 服务器',
+			'webdav.sectionConfig' => '服务器',
+			'webdav.addressHint' => 'https://dav.jianguoyun.com/dav/',
+			'webdav.addressInvalid' => '请输入有效的 http(s) 地址',
+			'webdav.username' => '账户',
+			'webdav.password' => '应用密码',
+			'webdav.directory' => '目录（可选）',
+			'webdav.testConnection' => '测试连接',
+			'webdav.testing' => '正在连接…',
+			'webdav.testOk' => '连接成功，地址、账户和密码均有效。',
+			'webdav.testFailed' => '连接失败',
+			'webdav.backupNow' => '立即备份',
+			'webdav.backingUp' => '正在上传备份…',
+			'webdav.backupDone' => '备份已上传',
+			'webdav.configIncomplete' => '请先填写服务器地址、账户和应用密码',
+			'webdav.lastBackup' => '上次备份',
+			'webdav.lastRestore' => '上次恢复',
+			'webdav.never' => '从未',
+			'webdav.remote' => '云端备份',
+			'webdav.remoteEmpty' => '还没有云端备份',
+			'webdav.restore' => '恢复',
+			'webdav.restoreConfirm' => '下载该备份并覆盖当前数据？应用将重启。',
+			'webdav.delete' => '删除',
+			'webdav.deleteConfirm' => '从服务器删除该备份？',
+			'webdav.helpTitle' => '配置说明',
+			'webdav.helpIntro' => '云备份把与本地备份相同的压缩包上传到你自己的 WebDAV 服务器，让关注、历史和设置在重装后依然可用。任何 WebDAV 服务都可以，下面以坚果云为例。',
+			'webdav.helpSteps' => '1. 在 www.jianguoyun.com 注册并登录。\n2. 打开「选项 → 安全选项」，生成应用密码。\n3. 在上方填写服务器地址、账户和该应用密码。',
+			'webdav.helpServer' => '服务器：坚果云的 WebDAV 地址为 https://dav.jianguoyun.com/dav/',
+			'webdav.helpAccount' => '账户：坚果云的登录名（通常是手机号或邮箱）。',
+			'webdav.helpPassword' => '密码：不是登录密码 —— WebDAV 使用「选项 → 安全选项」中生成的应用密码。',
+			'webdav.helpIssues' => '连接失败？检查地址是否以 /dav/ 结尾、是否使用应用密码而非登录密码，以及网络是否屏蔽了 WebDAV 端口。',
+			'webdav.openOfficialHelp' => '打开坚果云官方帮助',
+			'webdav.helpOpenFailed' => '无法打开浏览器',
 			_ => null,
 		};
 	}

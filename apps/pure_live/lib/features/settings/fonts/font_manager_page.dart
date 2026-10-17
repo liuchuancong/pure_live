@@ -20,11 +20,6 @@ final class FontManagerPage extends ConsumerStatefulWidget {
   /// The font manager.
   const new({super.key});
 
-  /// Opens the manager above the current page (it has no route path yet).
-  static void open(BuildContext context) {
-    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const FontManagerPage()));
-  }
-
   @override
   ConsumerState<FontManagerPage> createState() => _FontManagerPageState();
 }
