@@ -475,6 +475,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.2"
+  convert_object:
+    dependency: transitive
+    description:
+      name: convert_object
+      sha256: a35faeb03782a26e23521a73e0d7e71e3dd4294edf9f31f2e62cc5dc28f12d93
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.1"
   cookie_jar:
     dependency: transitive
     description:
@@ -523,6 +531,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.2"
+  dart_helper_utils:
+    dependency: transitive
+    description:
+      name: dart_helper_utils
+      sha256: a4c1e943555f2c187bd99df54e86ba0270f63d0948a0ce83fa39a47378c933a5
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.1.0"
   dart_style:
     dependency: transitive
     description:
@@ -913,14 +929,6 @@ packages:
       url: "https://github.com/mbpowers/flutter_acrylic.git"
     source: git
     version: "1.1.4"
-  flutter_adaptive_layout:
-    dependency: transitive
-    description:
-      name: flutter_adaptive_layout
-      sha256: "70532dec56005c415e2afb8972123ca4899bb202e30e2596c419a1667ed222b0"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.0"
   flutter_cache_manager:
     dependency: transitive
     description:
@@ -929,6 +937,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.4.5"
+  flutter_helper_utils:
+    dependency: transitive
+    description:
+      name: flutter_helper_utils
+      sha256: d394968c4608c4d0fbc29d30808a8e1011bddda5388f42d1d0b86fd98b450f0f
+      url: "https://pub.dev"
+    source: hosted
+    version: "10.0.0"
   flutter_keyboard_visibility:
     dependency: transitive
     description:
@@ -998,6 +1014,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.4.3"
+  flutter_screenutil_plus:
+    dependency: transitive
+    description:
+      name: flutter_screenutil_plus
+      sha256: b5e3820a93f332d8079579df7df39bfc2734c6bfadc00114ecdc6a037b961617
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.0"
   flutter_secure_storage:
     dependency: transitive
     description:
@@ -1468,10 +1492,10 @@ packages:
     dependency: transitive
     description:
       name: material_ui
-      sha256: "98ab9eda579ecae623e4b376c603035c5def78ce706f735f30bd632af5814695"
+      sha256: "27ea1af251a79728ee63068417f2ab469d294931a9bb8366ba8b85b0ef839060"
       url: "https://pub.dev"
     source: hosted
-    version: "1.6.0"
+    version: "1.7.0"
   matrix4_transform:
     dependency: transitive
     description:
@@ -2327,6 +2351,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.1"
+  stringo:
+    dependency: transitive
+    description:
+      name: stringo
+      sha256: c81711b419454f32fe0401ab5fd99d35ae119b4f84a7559641c08bd498eb92d4
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   sugar:
     dependency: transitive
     description:
@@ -2776,5 +2808,5 @@ packages:
     source: hosted
     version: "0.0.4"
 sdks:
-  dart: ">=3.13.0 <4.0.0"
-  flutter: ">=3.47.0"
+  dart: ">=3.13.5 <4.0.0"
+  flutter: ">=3.47.7"

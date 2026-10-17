@@ -3,6 +3,7 @@ import 'dart:async' show Timer, unawaited;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_helper_utils/flutter_helper_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_pagination/live_pagination.dart';
 import 'package:live_sites/live_sites.dart';
@@ -95,7 +96,7 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
   }
 
   Future<void> _commit(String query) async {
-    FocusManager.instance.primaryFocus?.unfocus();
+    context.unfocus();
     if (query.isEmpty) {
       if (_query.isNotEmpty) {
         setState(() => _query = '');

@@ -43,7 +43,8 @@ dependencies:
   cached_network_image: ^4.0.4 # 网络图片缓存
   cached_network_image_ce: ^4.13.1 # 社区维护的图片缓存实现
   custom_refresh_indicator: ^4.0.2 # 自定义下拉刷新
-  flutter_adaptive_layout: ^1.1.0 # 自适应布局辅助
+  flutter_helper_utils: ^10.0.0
+  flutter_screenutil_plus: ^2.0.0 # 自适应布局辅助
   flutter_keyboard_visibility: ^7.0.1 # 监听软键盘状态
   flutter_svg: ^2.3.0 # SVG 图片渲染
   mosaic_grid: ^0.1.2 # 瀑布流网格

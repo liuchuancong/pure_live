@@ -125,6 +125,12 @@ class Translations$common$zh {
 	/// zh: '取消'
 	String get cancel => '取消';
 
+	/// zh: '立即重启'
+	String get restartNow => '立即重启';
+
+	/// zh: '稍后'
+	String get restartLater => '稍后';
+
 	/// zh: '重试'
 	String get retry => '重试';
 
@@ -370,6 +376,15 @@ class Translations$settings$zh {
 
 	/// zh: '整个应用绘制所用的设计语言'
 	String get designLanguageSubtitle => '整个应用绘制所用的设计语言';
+
+	/// zh: '切换设计语言'
+	String get designLanguageRestartTitle => '切换设计语言';
+
+	/// zh: '设计语言决定应用使用哪套宿主，只在下次启动生效。本次仍使用「{current: String}」绘制。现在重启应用？'
+	String designLanguageRestartConfirm({required String current}) => '设计语言决定应用使用哪套宿主，只在下次启动生效。本次仍使用「${current}」绘制。现在重启应用？';
+
+	/// zh: '重启后切换为 {name: String}'
+	String designLanguagePending({required String name}) => '重启后切换为 ${name}';
 
 	/// zh: '控件着色所用的颜色'
 	String get accentSubtitle => '控件着色所用的颜色';
@@ -967,6 +982,33 @@ class Translations$iptv$zh {
 
 	/// zh: '刷新节目单'
 	String get refreshEpg => '刷新节目单';
+
+	/// zh: '热门频道'
+	String get hotChannels => '热门频道';
+
+	/// zh: '查看全部'
+	String get viewAll => '查看全部';
+
+	/// zh: '正在直播'
+	String get liveNow => '正在直播';
+
+	/// zh: '上一频道'
+	String get prevChannel => '上一频道';
+
+	/// zh: '频道列表'
+	String get channelList => '频道列表';
+
+	/// zh: '播放设置'
+	String get playbackSettings => '播放设置';
+
+	/// zh: '选择线路'
+	String get lineSelect => '选择线路';
+
+	/// zh: '数字选台'
+	String get numberPad => '数字选台';
+
+	/// zh: '刷新节目单'
+	String get refreshGuide => '刷新节目单';
 }
 
 // Path: fonts
@@ -1912,6 +1954,8 @@ extension on Translations {
 			'home.recommended' => '推荐流',
 			'common.confirm' => '确定',
 			'common.cancel' => '取消',
+			'common.restartNow' => '立即重启',
+			'common.restartLater' => '稍后',
 			'common.retry' => '重试',
 			'common.close' => '关闭',
 			'common.save' => '保存',
@@ -1982,6 +2026,9 @@ extension on Translations {
 			'settings.groupTextSize' => '文字大小',
 			'settings.themeModeSubtitle' => '跟随系统，或始终浅色、始终深色',
 			'settings.designLanguageSubtitle' => '整个应用绘制所用的设计语言',
+			'settings.designLanguageRestartTitle' => '切换设计语言',
+			'settings.designLanguageRestartConfirm' => ({required String current}) => '设计语言决定应用使用哪套宿主，只在下次启动生效。本次仍使用「${current}」绘制。现在重启应用？',
+			'settings.designLanguagePending' => ({required String name}) => '重启后切换为 ${name}',
 			'settings.accentSubtitle' => '控件着色所用的颜色',
 			'settings.densitySubtitle' => '布局的紧凑程度',
 			'settings.pureBlackSubtitle' => '深色表面绘制为纯黑，适合 OLED 屏幕',
@@ -2166,6 +2213,15 @@ extension on Translations {
 			'iptv.epgNow' => '当前节目',
 			'iptv.epgNext' => '接下来',
 			'iptv.refreshEpg' => '刷新节目单',
+			'iptv.hotChannels' => '热门频道',
+			'iptv.viewAll' => '查看全部',
+			'iptv.liveNow' => '正在直播',
+			'iptv.prevChannel' => '上一频道',
+			'iptv.channelList' => '频道列表',
+			'iptv.playbackSettings' => '播放设置',
+			'iptv.lineSelect' => '选择线路',
+			'iptv.numberPad' => '数字选台',
+			'iptv.refreshGuide' => '刷新节目单',
 			'fonts.fonts' => '字体管理',
 			'fonts.system' => '系统默认',
 			'fonts.systemDesc' => '使用系统自带字体',
@@ -2405,6 +2461,8 @@ extension on Translations {
 			'wallpaper.groupDevice' => '本机图片',
 			'wallpaper.groupDisplay' => '图片显示',
 			'wallpaper.none' => '无背景',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.noneSubtitle' => '保留主题表面',
 			'wallpaper.pickImage' => '选择图片',
 			'wallpaper.pickImageSubtitle' => '从本机选择一张图片',

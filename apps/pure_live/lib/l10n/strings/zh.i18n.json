@@ -18,6 +18,8 @@
   "common": {
     "confirm": "确定",
     "cancel": "取消",
+    "restartNow": "立即重启",
+    "restartLater": "稍后",
     "retry": "重试",
     "close": "关闭",
     "save": "保存",
@@ -96,6 +98,9 @@
     "groupTextSize": "文字大小",
     "themeModeSubtitle": "跟随系统，或始终浅色、始终深色",
     "designLanguageSubtitle": "整个应用绘制所用的设计语言",
+    "designLanguageRestartTitle": "切换设计语言",
+    "designLanguageRestartConfirm": "设计语言决定应用使用哪套宿主，只在下次启动生效。本次仍使用「{current: String}」绘制。现在重启应用？",
+    "designLanguagePending": "重启后切换为 {name: String}",
     "accentSubtitle": "控件着色所用的颜色",
     "densitySubtitle": "布局的紧凑程度",
     "pureBlackSubtitle": "深色表面绘制为纯黑，适合 OLED 屏幕",
@@ -289,7 +294,16 @@
     "refreshSource": "刷新该源",
     "epgNow": "当前节目",
     "epgNext": "接下来",
-    "refreshEpg": "刷新节目单"
+    "refreshEpg": "刷新节目单",
+    "hotChannels": "热门频道",
+    "viewAll": "查看全部",
+    "liveNow": "正在直播",
+    "prevChannel": "上一频道",
+    "channelList": "频道列表",
+    "playbackSettings": "播放设置",
+    "lineSelect": "选择线路",
+    "numberPad": "数字选台",
+    "refreshGuide": "刷新节目单"
   },
   "fonts": {
     "fonts": "字体管理",

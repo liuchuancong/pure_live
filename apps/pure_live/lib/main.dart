@@ -15,9 +15,10 @@ import 'package:pure_live/app/logging/app_log.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/theme/app_theme.dart';
+import 'package:pure_live/app/theme/ui_configuration_mapper.dart';
 import 'package:pure_live/platforms/desktop/entry/desktop_entry.dart';
 import 'package:pure_live/platforms/desktop/entry/desktop_launch.dart';
-import 'package:pure_uikit/pure_uikit.dart' show PureDesignLanguage;
+import 'package:pure_uikit/pure_uikit.dart' show PureDesignLanguage, PureUiStartupResolver;
 
 /// The process entry point: open the log, boot the service graph, then hand
 /// it to the widget tree through `ProviderScope` overrides.
@@ -87,10 +88,24 @@ Future<void> main(List<String> args) async {
   // appearance box, which the user then has to un-pick. A release never reads the
   // argument — what the user chose is the whole answer there.
   final pinnedLanguage = kDebugMode ? _pinnedLanguageFrom(args) : null;
+
+  // The design language is decided here and never again: it picks which app
+  // host gets mounted, and a host is not swapped inside a running process. The
+  // appearance document is already loaded (`AppServices.boot` awaited it), so
+  // the store, the pin and the product default resolve to one frozen value
+  // that the rest of the tree reads through `uiStartupConfigProvider`. Picking
+  // another language in settings writes the document and waits for the next
+  // launch.
+  final startupUi = PureUiStartupResolver.resolve(
+    defaultLanguage: defaultDesignLanguage,
+    storedLanguageId: services.appearance.value.designLanguageId,
+    decode: designLanguageByStoredId,
+    launchPin: pinnedLanguage,
+  );
   runApp(
     ProviderScope(
       overrides: [
-        if (pinnedLanguage != null) pinnedLanguageProvider.overrideWithValue(pinnedLanguage),
+        uiStartupConfigProvider.overrideWithValue(startupUi),
         environmentProvider.overrideWithValue(services.environment),
         pathsProvider.overrideWithValue(services.paths),
         storageProvider.overrideWithValue(services.storage),
@@ -119,9 +134,11 @@ Future<void> main(List<String> args) async {
       child: const AppTheme(child: PureLiveApp()),
     ),
   );
-  if (pinnedLanguage != null) {
-    debugPrint('[ui] language pinned by launch argument: ${pinnedLanguage.name}');
-  }
+  // Says which language was mounted and which of the four inputs decided it —
+  // stored value, absent store, unrecognised id, launch pin, degraded
+  // dependency. "I switched the style and nothing changed" is a question about
+  // this line and the one after it, not about guessing.
+  debugPrint('[ui] ${startupUi.reason}');
   if (kDebugMode) {
     WidgetsBinding.instance.addPostFrameCallback((_) => _reportHostChain());
   }
@@ -151,8 +168,8 @@ PureDesignLanguage? _pinnedLanguageFrom(List<String> args) {
 /// Prints which host and shell the running tree actually mounted, once, after
 /// the first frame.
 ///
-/// The `[ui] language=` line says what the resolver *chose*; this says what is
-/// on screen — `FluentApp`, `CupertinoApp`, `MacosApp`, the fork's `MaterialApp`
+/// The `[ui] design language` line says what the resolver *chose*; this says
+/// what is on screen — `FluentApp`, `CupertinoApp`, `MacosApp`, `MaterialApp`
 /// or the token host — because "did the language change the window" is a question
 /// about the mounted tree, and answering it used to mean attaching a debugger.
 void _reportHostChain() {

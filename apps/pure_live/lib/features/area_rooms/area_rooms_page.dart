@@ -2,7 +2,6 @@ import 'dart:async' show unawaited;
 
 import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_adaptive_layout/flutter_adaptive_layout.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_pagination/live_pagination.dart';
 import 'package:live_sites/live_sites.dart' show LivePageRequest, LiveRoom;
@@ -43,10 +42,11 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
   /// How the loaded rooms are ordered.
   _RoomSort _sort = _RoomSort.platform;
 
-  /// Whether this window pages (large) or grows the list (small/medium).
-  bool _pagedLayout(BuildContext context) => switch (BreakpointsQualifier().qualify(context)) {
-    ScreenSize.large => true,
-    ScreenSize.small || ScreenSize.medium => false,
+  /// Whether this window pages (large) or grows the list (small/medium),
+  /// qualified through the shared breakpoints.
+  bool _pagedLayout(BuildContext context) => switch (PureBreakpoints.standard.qualify(context)) {
+    PureWidthClass.desktop => true,
+    PureWidthClass.mobile || PureWidthClass.tablet => false,
   };
 
   Widget _appBar(BuildContext context) => PureAppBar(

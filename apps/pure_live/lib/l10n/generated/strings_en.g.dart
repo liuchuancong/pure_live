@@ -112,6 +112,8 @@ class _Translations$common$en extends Translations$common$zh {
 	// Translations
 	@override String get confirm => 'OK';
 	@override String get cancel => 'Cancel';
+	@override String get restartNow => 'Restart now';
+	@override String get restartLater => 'Later';
 	@override String get retry => 'Retry';
 	@override String get close => 'Close';
 	@override String get save => 'Save';
@@ -215,6 +217,9 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get groupTextSize => 'Text size';
 	@override String get themeModeSubtitle => 'Follow the system, or stay light or dark';
 	@override String get designLanguageSubtitle => 'The design language the whole app is drawn with';
+	@override String get designLanguageRestartTitle => 'Change design language';
+	@override String designLanguageRestartConfirm({required String current}) => 'The design language decides which app host runs, so it takes effect on the next launch. This session keeps drawing with ${current}. Restart the app now?';
+	@override String designLanguagePending({required String name}) => 'Applies after restart: ${name}';
 	@override String get accentSubtitle => 'The colour the controls are tinted with';
 	@override String get densitySubtitle => 'How compact the layout is';
 	@override String get pureBlackSubtitle => 'Draw dark surfaces pure black, for OLED screens';
@@ -509,6 +514,15 @@ class _Translations$iptv$en extends Translations$iptv$zh {
 	@override String get epgNow => 'Now';
 	@override String get epgNext => 'Next';
 	@override String get refreshEpg => 'Refresh programme guide';
+	@override String get hotChannels => 'Hot channels';
+	@override String get viewAll => 'View all';
+	@override String get liveNow => 'Live';
+	@override String get prevChannel => 'Previous channel';
+	@override String get channelList => 'Channel list';
+	@override String get playbackSettings => 'Playback settings';
+	@override String get lineSelect => 'Select line';
+	@override String get numberPad => 'Number pad';
+	@override String get refreshGuide => 'Refresh guide';
 }
 
 // Path: fonts
@@ -886,6 +900,8 @@ extension on TranslationsEn {
 			'home.recommended' => 'Recommendations',
 			'common.confirm' => 'OK',
 			'common.cancel' => 'Cancel',
+			'common.restartNow' => 'Restart now',
+			'common.restartLater' => 'Later',
 			'common.retry' => 'Retry',
 			'common.close' => 'Close',
 			'common.save' => 'Save',
@@ -953,6 +969,9 @@ extension on TranslationsEn {
 			'settings.groupTextSize' => 'Text size',
 			'settings.themeModeSubtitle' => 'Follow the system, or stay light or dark',
 			'settings.designLanguageSubtitle' => 'The design language the whole app is drawn with',
+			'settings.designLanguageRestartTitle' => 'Change design language',
+			'settings.designLanguageRestartConfirm' => ({required String current}) => 'The design language decides which app host runs, so it takes effect on the next launch. This session keeps drawing with ${current}. Restart the app now?',
+			'settings.designLanguagePending' => ({required String name}) => 'Applies after restart: ${name}',
 			'settings.accentSubtitle' => 'The colour the controls are tinted with',
 			'settings.densitySubtitle' => 'How compact the layout is',
 			'settings.pureBlackSubtitle' => 'Draw dark surfaces pure black, for OLED screens',
@@ -1175,6 +1194,15 @@ extension on TranslationsEn {
 			'iptv.epgNow' => 'Now',
 			'iptv.epgNext' => 'Next',
 			'iptv.refreshEpg' => 'Refresh programme guide',
+			'iptv.hotChannels' => 'Hot channels',
+			'iptv.viewAll' => 'View all',
+			'iptv.liveNow' => 'Live',
+			'iptv.prevChannel' => 'Previous channel',
+			'iptv.channelList' => 'Channel list',
+			'iptv.playbackSettings' => 'Playback settings',
+			'iptv.lineSelect' => 'Select line',
+			'iptv.numberPad' => 'Number pad',
+			'iptv.refreshGuide' => 'Refresh guide',
 			'fonts.fonts' => 'Fonts',
 			'fonts.system' => 'System default',
 			'fonts.systemDesc' => 'Use the fonts the system ships',
@@ -1379,6 +1407,8 @@ extension on TranslationsEn {
 			'wallpaper.groupDevice' => 'From this device',
 			'wallpaper.groupDisplay' => 'Picture display',
 			'wallpaper.none' => 'No wallpaper',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.noneSubtitle' => 'Keep the themed surfaces',
 			'wallpaper.pickImage' => 'Pick a picture',
 			'wallpaper.pickImageSubtitle' => 'Choose an image stored on this device',

@@ -11,6 +11,8 @@
   "common": {
     "confirm": "OK",
     "cancel": "Cancel",
+    "restartNow": "Restart now",
+    "restartLater": "Later",
     "retry": "Retry",
     "close": "Close",
     "save": "Save",
@@ -86,6 +88,9 @@
     "groupTextSize": "Text size",
     "themeModeSubtitle": "Follow the system, or stay light or dark",
     "designLanguageSubtitle": "The design language the whole app is drawn with",
+    "designLanguageRestartTitle": "Change design language",
+    "designLanguageRestartConfirm": "The design language decides which app host runs, so it takes effect on the next launch. This session keeps drawing with {current: String}. Restart the app now?",
+    "designLanguagePending": "Applies after restart: {name: String}",
     "accentSubtitle": "The colour the controls are tinted with",
     "densitySubtitle": "How compact the layout is",
     "pureBlackSubtitle": "Draw dark surfaces pure black, for OLED screens",
@@ -323,7 +328,16 @@
     "refreshSource": "Refresh this source",
     "epgNow": "Now",
     "epgNext": "Next",
-    "refreshEpg": "Refresh programme guide"
+    "refreshEpg": "Refresh programme guide",
+    "hotChannels": "Hot channels",
+    "viewAll": "View all",
+    "liveNow": "Live",
+    "prevChannel": "Previous channel",
+    "channelList": "Channel list",
+    "playbackSettings": "Playback settings",
+    "lineSelect": "Select line",
+    "numberPad": "Number pad",
+    "refreshGuide": "Refresh guide"
   },
   "fonts": {
     "fonts": "Fonts",

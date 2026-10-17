@@ -15,7 +15,7 @@ import 'package:pure_uikit/pure_uikit.dart';
 /// Builds a [UiConfig] from [appearance]; an unknown language or density id
 /// falls back to the default rather than blocking start-up.
 UiConfig uiConfigFromAppearance(AppearancePreferences appearance) => UiConfig(
-  language: _languageById(appearance.designLanguageId),
+  language: designLanguageOrDefault(appearance.designLanguageId),
   brightness: switch (appearance.themeMode) {
     AppThemeMode.system => UiBrightnessMode.system,
     AppThemeMode.light => UiBrightnessMode.light,
@@ -54,10 +54,13 @@ AppearancePreferences appearanceFromUiConfig(UiConfig config) => AppearancePrefe
 
 /// The skin this build ships on when the user has not chosen: fluent, a
 /// fully registered third-party language. The default only decides which
-/// adapter answers first — every language renders its own whole contract, and a
+/// host answers first — every language renders its own whole contract, and a
 /// stored id that names a language this build does not register is a fault the
-/// resolver raises rather than a look to settle for.
-const PureDesignLanguage _defaultLanguage = PureDesignLanguage.fluent;
+/// startup resolver reports rather than a look to settle for.
+///
+/// One product value, not a per-platform guess: §6.3 of the v4 spec asks for
+/// the default to be stated, so a Linux and an Android first run agree.
+const PureDesignLanguage defaultDesignLanguage = PureDesignLanguage.fluent;
 
 /// Ids that named something the enum no longer has.
 ///
@@ -72,18 +75,34 @@ const Map<String, PureDesignLanguage> _retiredIds = {
   'cupertinoUi': PureDesignLanguage.cupertino,
 };
 
-/// The language an id names; empty or unknown ids take the build's default
-/// skin ([_defaultLanguage]).
-PureDesignLanguage _languageById(String id) {
-  if (id.isEmpty) {
-    return _defaultLanguage;
+/// The language a stored id names, null when it names none.
+///
+/// Null covers both halves of §6.3's first two rows — nothing stored (an empty
+/// id) and something stored that this build cannot read — and the startup
+/// resolver is what turns each into its own origin, so the difference the user
+/// needs reported survives the decode instead of collapsing into a default.
+PureDesignLanguage? designLanguageByStoredId(String? id) {
+  if (id == null || id.isEmpty) {
+    return null;
   }
   final retired = _retiredIds[id];
   if (retired != null) {
     return retired;
   }
-  return _byName(PureDesignLanguage.values, id, _defaultLanguage);
+  for (final language in PureDesignLanguage.values) {
+    if (language.name == id) {
+      return language;
+    }
+  }
+  return null;
 }
+
+/// The language an id names, or the product default when it names none.
+///
+/// Empty and unknown ids both land here; [designLanguageByStoredId] is the
+/// version that keeps the two apart, which is what the startup resolver needs
+/// to report why a language was not the one the user picked.
+PureDesignLanguage designLanguageOrDefault(String? id) => designLanguageByStoredId(id) ?? defaultDesignLanguage;
 
 T _byName<T>(List<T> values, String name, T fallback) {
   for (final value in values) {

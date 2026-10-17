@@ -3,15 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/settings/settings_routes.dart';
 import 'package:pure_live/app/theme/appearance_preferences/appearance_preferences.dart';
+import 'package:pure_live/app/theme/ui_configuration_mapper.dart' show designLanguageByStoredId;
 import 'package:pure_live/features/settings/widgets/settings_sections.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_uikit/pure_uikit.dart';
+import 'package:restart_app/restart_app.dart';
 
 /// The appearance page (3.x `ThemeSettingsPage`, trimmed to the backed
 /// controls): the reference's sectioned shape — a themed group, a font group
 /// and a text-size group over rounded cards of rows — with every control
-/// writing straight into the persisted appearance, so the app re-skins under
-/// the viewer's finger.
+/// writing straight into the persisted appearance.
+///
+/// One control is not like the others. Brightness, accent, density, font and
+/// transparency re-skin the running tree under the viewer's finger; the design
+/// language picks which app host gets mounted, and a host is not swapped inside
+/// a live process, so its write is stored and waits for a relaunch (§2.4 of the
+/// v4 spec). The row reports the pending language and the picker offers the
+/// restart.
 ///
 /// The reference's chooser rows open dialogs; the same interaction lives here
 /// as a chooser dialog over the uikit's rows. The controls the reference ships
@@ -37,6 +45,10 @@ final class AppearancePage extends ConsumerWidget {
     final t = context.t;
     final appearance = ref.watch(appearancePreferencesProvider);
     final update = ref.read(appearancePreferencesProvider.notifier).update;
+    // The language this process mounted is frozen, so a stored change to it is
+    // pending rather than applied: the row says which language the next launch
+    // will use, and every other control on this page still re-skins live.
+    final pendingLanguage = ref.watch(pendingDesignLanguageProvider);
     return PureScaffold(
       appBar: PureAppBar(title: t.settings.appearance),
       body: ListView(
@@ -54,8 +66,13 @@ final class AppearancePage extends ConsumerWidget {
               SettingsEntryTile(
                 icon: Icons.style_outlined,
                 title: t.settings.designLanguage,
-                subtitle: t.settings.designLanguageSubtitle,
-                onTap: () => _chooseDesignLanguage(context, appearance, update),
+                // The language is the one appearance setting this page cannot
+                // apply live: it picks the app host, so the stored choice waits
+                // for a relaunch and the row says so until then (§2.4).
+                subtitle: pendingLanguage == null
+                    ? t.settings.designLanguageSubtitle
+                    : t.settings.designLanguagePending(name: pendingLanguage.name),
+                onTap: () => _chooseDesignLanguage(context, ref, appearance, update),
               ),
               SettingsEntryTile(
                 icon: Icons.colorize_outlined,
@@ -195,20 +212,70 @@ final class AppearancePage extends ConsumerWidget {
     );
   }
 
+  /// Picks the design language and, when the pick is not the one this process
+  /// mounted, offers the restart that would apply it.
+  ///
+  /// The write lands either way: §6.2 of the v4 spec has the stored
+  /// configuration move first and the running process keep its host, so a
+  /// declined restart leaves the choice recorded and pending rather than lost.
   static Future<void> _chooseDesignLanguage(
     BuildContext context,
+    WidgetRef ref,
     AppearancePreferences appearance,
     Future<void> Function(AppearancePreferences Function(AppearancePreferences)) update,
-  ) {
+  ) async {
+    final startup = ref.read(uiStartupConfigProvider);
     final registered = PureDesignLanguage.values.map((language) => language.name).toList()..sort();
     final ids = ['', ...registered];
-    return _choose<String>(
+    await _choose<String>(
       context,
       title: context.t.settings.designLanguage,
       current: appearance.designLanguageId,
       options: [for (final id in ids) (id, _designLanguageLabel(context, id))],
       onPicked: (id) => update((a) => a.copyWith(designLanguageId: id)),
     );
+    // Read back rather than trust the picked id: the empty id means "the
+    // product default", and the language that resolves to is the one the next
+    // launch mounts.
+    final stored = designLanguageByStoredId(ref.read(appearancePreferencesProvider).designLanguageId);
+    final next = stored ?? startup.defaultLanguage;
+    if (next == startup.language) {
+      return;
+    }
+    if (!context.mounted) {
+      return;
+    }
+    await _offerRestart(context, mounted: startup.language);
+  }
+
+  /// The "restart to apply" offer.
+  ///
+  /// A relaunch is the only way the new language takes effect, and it is the
+  /// user's call when to take it — the backup restore restarts without asking
+  /// because an open box cannot be read consistently, while here the running
+  /// app is perfectly usable and only differently dressed.
+  static Future<void> _offerRestart(BuildContext context, {required PureDesignLanguage mounted}) async {
+    final t = context.t;
+    final restart = await showPureDialog<bool>(
+      context: context,
+      title: t.settings.designLanguageRestartTitle,
+      child: Text(t.settings.designLanguageRestartConfirm(current: mounted.name)),
+      actions: (dialogContext) => [
+        PureButton(
+          label: dialogContext.t.common.restartLater,
+          variant: ButtonVariant.ghost,
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+        ),
+        PureButton(
+          label: dialogContext.t.common.restartNow,
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+        ),
+      ],
+    );
+    if (restart != true) {
+      return;
+    }
+    await Restart.restartApp();
   }
 
   static String _designLanguageLabel(BuildContext context, String id) =>

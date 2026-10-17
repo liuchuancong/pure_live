@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil_plus/flutter_screenutil_plus.dart';
 import 'package:pure_live/app/environment/env.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_uikit/pure_uikit.dart';
+
 
 /// The Material surface the chosen appearance resolves to.
 ///
@@ -41,10 +43,18 @@ class AppTheme extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return PureConfigProvider(
-      config: ref.watch(uiConfigProvider),
-      hardwareBlur: hardwareBlur,
-      child: PureLayoutBuilder(isTv: Env.isTv, builder: (context, environment) => child),
+    // The design-size reference every `.w`/`.h`/`.sp` scaling extension reads.
+    // Desktop-first: a 1280x800 window is the 1:1 baseline; phone and TV scale
+    // around it. minTextAdapt keeps labels legible at the small end.
+    return ScreenUtilPlusInit(
+      designSize: const Size(1280, 800),
+      minTextAdapt: true,
+      splitScreenMode: true,
+      child: PureConfigProvider(
+        config: ref.watch(uiConfigProvider),
+        hardwareBlur: hardwareBlur,
+        child: PureLayoutBuilder(isTv: Env.isTv, builder: (context, environment) => child),
+      ),
     );
   }
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_helper_utils/flutter_helper_utils.dart' show tryToColor;
 import 'package:live_sites/live_sites.dart' show LiveSuperChatMessage;
 import 'package:pure_uikit/pure_uikit.dart';
 
@@ -185,16 +186,12 @@ final class _SuperChatCardState extends State<SuperChatCard> {
     return CachedNetworkImageProvider(url);
   }
 
-  /// A platform-prescribed `#RRGGBB` colour, or [fallback] when the platform
+  /// A platform-prescribed colour, or [fallback] when the platform
   /// prescribed none (the model leaves the field blank rather than inventing
-  /// a colour).
-  Color _platformColor(String source, Color fallback) {
-    final value = source.trim().startsWith('#') ? source.trim().substring(1) : source.trim();
-    if (!RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(value)) {
-      return fallback;
-    }
-    return Color(0xFF000000 | int.parse(value, radix: 16));
-  }
+  /// a colour). The helper parses `#RRGGBB` and anything CSS-adjacent a
+  /// platform might emit, resolving to null instead of throwing.
+  Color _platformColor(String source, Color fallback) =>
+      tryToColor(source.trim())?.withValues(alpha: 1) ?? fallback;
 
   Color _contrastText(Color background) =>
       background.computeLuminance() > 0.55 ? const Color(0xFF18181A) : Colors.white;

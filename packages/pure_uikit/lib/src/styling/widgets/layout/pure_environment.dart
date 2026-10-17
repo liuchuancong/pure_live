@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter_adaptive_layout/flutter_adaptive_layout.dart'
-    show AdaptiveLayout, BreakpointsSetting, ScreenSize, ScreenSizeQualifier;
+import 'package:flutter_screenutil_plus/flutter_screenutil_plus.dart'
+    show Breakpoint, Breakpoints;
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 import 'package:pure_uikit/src/styling/tokens/design_token.dart';
 
@@ -22,26 +22,24 @@ enum PureLayoutMode {
 /// The window-size thresholds that separate the layout modes — the single
 /// source every dynamic layout in the app qualifies through.
 ///
-/// The qualification mechanism is `flutter_adaptive_layout`'s: this set
-/// implements [ScreenSizeQualifier], so [AdaptiveLayout]-style widgets and
-/// hand-rolled checks both read the same buckets from the same thresholds —
-/// below [mobileMax] is [ScreenSize.small] (mobile), up to [desktopMin] is
-/// [ScreenSize.medium] (tablet / narrow desktop), and at or above it is
-/// [ScreenSize.large] (desktop). To retune the breakpoints app-wide, install
-/// a [BreakpointsSetting] above the tree or change the defaults here — never
-/// a local constant.
-class PureBreakpoints implements ScreenSizeQualifier {
-  /// A breakpoint set.
-  const new({this.mobileMax = 720, this.desktopMin = 1024});
+/// The thresholds come from `flutter_screenutil_plus`'s own breakpoint set
+/// (Tailwind's: mobile below `md` 768, tablet to `lg` 1024, desktop at and
+/// above it), and the qualification runs through the package's
+/// [Breakpoints.getBreakpoint] — so the two packages cannot disagree about
+/// where a form changes. To retune the breakpoints app-wide, swap the preset
+/// here or install the package's `LayoutScope` — never a local constant.
+abstract final class PureBreakpoints {
+  /// The breakpoint set this app qualifies through.
+  static const Breakpoints screenutil = Breakpoints.tailwind;
+
+  /// The set this app qualifies with, as a value callers can pass along.
+  static const PureAdaptiveBreakpoints standard = PureAdaptiveBreakpoints.standard;
 
   /// Widths below this are laid out as [PureLayoutMode.mobile].
-  final double mobileMax;
+  double get mobileMax => screenutil.md;
 
   /// Widths at or above this are full [PureLayoutMode.desktop].
-  final double desktopMin;
-
-  /// The default thresholds.
-  static const PureBreakpoints standard = PureBreakpoints();
+  double get desktopMin => screenutil.lg;
 
   /// The mode a [width] implies for this breakpoint set.
   PureLayoutMode resolve(double width, {required bool isTv}) {
@@ -58,21 +56,79 @@ class PureBreakpoints implements ScreenSizeQualifier {
     return PureLayoutMode.mobile;
   }
 
-  /// The width class for [context]'s window, on this set's thresholds.
+  /// The width class for [context]'s window, qualified through the package's
+  /// breakpoint table.
   ///
   /// Window width, not `shortestSide`: a desktop window resizes on one axis
-  /// and the layouts respond to that axis, so rotation-stability (the
-  /// package default) would misclassify a short wide window.
-  @override
-  ScreenSize qualify(BuildContext context) {
+  /// and the layouts respond to that axis.
+  PureWidthClass qualify(BuildContext context) {
+    final breakpoint = screenutil.getBreakpoint(MediaQuery.sizeOf(context).width);
+    return switch (breakpoint) {
+      // Below Tailwind's `md`: one column, touch-first.
+      Breakpoint.xs ||
+      Breakpoint.sm => PureWidthClass.mobile,
+      // `md` to `lg`: desktop chrome with wider touch margins.
+      Breakpoint.md => PureWidthClass.tablet,
+      // `lg` and up: the full desktop canvas.
+      Breakpoint.lg ||
+      Breakpoint.xl ||
+      Breakpoint.xxl => PureWidthClass.desktop,
+    };
+  }
+}
+
+/// The three width classes [PureBreakpoints.qualify] resolves to.
+enum PureWidthClass {
+  /// Below Tailwind's `md` — one column, touch-first.
+  mobile,
+
+  /// `md` to `lg` — desktop chrome with wider touch margins.
+  tablet,
+
+  /// `lg` and up — the full desktop canvas.
+  desktop,
+}
+
+/// A concrete pair of thresholds for callers that pass breakpoints as data
+/// (the environment's compute, the adaptive layout's default). Defaults to
+/// the shared Tailwind set.
+class PureAdaptiveBreakpoints {
+  /// Thresholds; defaults mirror [PureBreakpoints.screenutil].
+  const new({this.mobileMax = 768, this.desktopMin = 1024});
+
+  /// The shared default set.
+  static const PureAdaptiveBreakpoints standard = PureAdaptiveBreakpoints();
+
+  /// Widths below this are laid out mobile-first.
+  final double mobileMax;
+
+  /// Widths at or above this are full desktop.
+  final double desktopMin;
+
+  /// The width class for [context]'s window, on these thresholds.
+  PureWidthClass qualify(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
     if (width >= desktopMin) {
-      return ScreenSize.large;
+      return PureWidthClass.desktop;
     }
     if (width >= mobileMax) {
-      return ScreenSize.medium;
+      return PureWidthClass.tablet;
     }
-    return ScreenSize.small;
+    return PureWidthClass.mobile;
+  }
+
+  /// The mode a [width] implies for this threshold set.
+  PureLayoutMode resolve(double width, {required bool isTv}) {
+    if (isTv) {
+      return PureLayoutMode.tv;
+    }
+    if (width >= desktopMin) {
+      return PureLayoutMode.desktop;
+    }
+    if (width >= mobileMax) {
+      return PureLayoutMode.desktop;
+    }
+    return PureLayoutMode.mobile;
   }
 }
 
@@ -211,7 +267,7 @@ final class PureEnvironment {
     required double width,
     required bool isTv,
     required DesignToken token,
-    PureBreakpoints breakpoints = PureBreakpoints.standard,
+    PureAdaptiveBreakpoints breakpoints = PureAdaptiveBreakpoints.standard,
   }) {
     final mode = breakpoints.resolve(width, isTv: isTv);
     return PureEnvironment(mode: mode, geometry: Geometry.forTokens(token, mode), isTv: isTv);
@@ -337,7 +393,7 @@ class PureContentGrid extends StatelessWidget {
   }
 }
 
-/// One builder per width class, resolved through the shared breakpoints —
+/// One builder per [PureWidthClass], resolved through the shared breakpoints —
 /// the same qualification every dynamic layout shares.
 ///
 /// The child is built once and handed to the matching builder (the adaptive
@@ -350,7 +406,7 @@ class PureAdaptiveLayout extends StatelessWidget {
     this.mobile,
     this.tablet,
     this.desktop,
-    this.breakpoints = PureBreakpoints.standard,
+    this.breakpoints = PureAdaptiveBreakpoints.standard,
     super.key,
   });
 
@@ -367,15 +423,15 @@ class PureAdaptiveLayout extends StatelessWidget {
   final PureAdaptiveBuilder? desktop;
 
   /// The threshold set to qualify with.
-  final PureBreakpoints breakpoints;
+  final PureAdaptiveBreakpoints breakpoints;
 
   @override
   Widget build(BuildContext context) {
     final child = this.child;
     return switch (breakpoints.qualify(context)) {
-      ScreenSize.small => mobile?.call(context, child) ?? child,
-      ScreenSize.medium => tablet?.call(context, child) ?? child,
-      ScreenSize.large => desktop?.call(context, child) ?? child,
+      PureWidthClass.mobile => mobile?.call(context, child) ?? child,
+      PureWidthClass.tablet => tablet?.call(context, child) ?? child,
+      PureWidthClass.desktop => desktop?.call(context, child) ?? child,
     };
   }
 }

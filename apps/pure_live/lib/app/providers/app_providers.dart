@@ -164,29 +164,43 @@ final appearancePreferencesProvider = NotifierProvider<AppearancePreferencesNoti
   AppearancePreferencesNotifier.new,
 );
 
-/// A debug-only pin of the design language, which the composition root sets from
-/// the launch argument `--ui-language=<id>`.
+/// The design language this process started with, plus why.
 ///
-/// Null unless a debug build was started with that flag. The pin replaces the
-/// language the persisted appearance chose for the whole tree — the app host and
-/// the shell included — while the appearance itself is left alone, so a language
-/// checked on a real device is not one the user has to un-pick afterwards, and
-/// the settings page still reports what they actually chose. While a pin is
-/// active a language picked in settings persists but does not repaint — the pin
-/// wins until the next launch, which is the point of a run-time pin.
-final pinnedLanguageProvider = Provider<PureDesignLanguage?>((ref) => null);
+/// Resolved by the composition root before the first frame and overridden here
+/// like every other booted fact — the store, the paths, the site registry —
+/// because the value is a start-up decision and a provider that could re-derive
+/// it would be a provider that could change it (§6.1 of the v4 spec).
+///
+/// Editing the language in settings writes the store and leaves this alone.
+/// [pendingDesignLanguageProvider] is how the UI knows to ask for a restart.
+final uiStartupConfigProvider = Provider<PureUiStartupConfig>(
+  (ref) => throw UnimplementedError('overridden by the composition root'),
+);
+
+/// The language the store asks for that this process is not drawing with, null
+/// when the two agree.
+///
+/// The restart-pending marker: it compares the live preference against the
+/// frozen startup language rather than tracking the edit, so it survives a
+/// rebuild and reads the same truth after a navigate-away and back.
+final pendingDesignLanguageProvider = Provider<PureDesignLanguage?>((ref) {
+  final startup = ref.watch(uiStartupConfigProvider);
+  final stored = designLanguageByStoredId(ref.watch(appearancePreferencesProvider).designLanguageId);
+  return stored == null || stored == startup.language ? null : stored;
+});
 
 /// The [UiConfig] the app renders with.
 ///
-/// Derived from [appearancePreferencesProvider], with [pinnedLanguageProvider]
-/// taking the language off it when a debug run pinned one: a preference change
-/// rebuilds the theme and the widgets under it, and nothing that watches this
-/// instead of the appearance — no playback session, no danmaku connection — is
-/// rebuilt with it.
+/// Derived from [appearancePreferencesProvider] for every field the user can
+/// change live — brightness, accent, density, font, transparency — and from
+/// [uiStartupConfigProvider] for the one they cannot: the design language picks
+/// the app host, and a host is not swapped inside a running process. A
+/// preference change therefore re-skins the tree without re-hosting it, and
+/// nothing that watches this instead of the appearance — no playback session,
+/// no danmaku connection — is rebuilt with it.
 final uiConfigProvider = Provider<UiConfig>((ref) {
   final config = uiConfigFromAppearance(ref.watch(appearancePreferencesProvider));
-  final pinned = ref.watch(pinnedLanguageProvider);
-  return pinned == null ? config : config.copyWith(language: pinned);
+  return config.copyWith(language: ref.watch(uiStartupConfigProvider).language);
 });
 
 /// Reads the persisted appearance and writes every change back through the

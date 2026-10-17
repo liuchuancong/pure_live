@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart' show IptvChannel, IptvLibrary, IptvLineCandidate;
 import 'package:live_playback/live_playback.dart' show EngineProgress, EngineReady, EngineStopped, PlaybackEngineEvent;
 import 'package:live_sites/live_sites.dart' show LivePlayFormatSource, LivePlayLine, LiveStreamFormat;
-import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitVideoView;
+import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitPlayerAdapter, MediaKitVideoView;
 import 'package:pure_live/app/engine/playback_engine.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/features/iptv/iptv_epg.dart' show IptvGuideCache, iptvEpgProvider;
@@ -403,47 +403,357 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
     final channel = _channel;
     final title = (channel != null && channel.entry.name.isNotEmpty) ? channel.entry.name : widget.name;
     final adapter = _engine.surfaceAdapter;
+    final player = _playerSurface(context, adapter);
+
+    // Desktop/TV keeps the full-bleed dark stage; phone and tablet get the
+    // vertical page the design mockup lays out: brand bar, 16:9 player, the
+    // channel's info row, quick actions and the hot-channels list.
+    if (PureBreakpoints.standard.qualify(context) == PureWidthClass.desktop) {
+      return PureScaffold(
+        appBar: PureAppBar(
+          title: title,
+          actions: [
+            if (channel != null)
+              PureIconButton(
+                tooltip: context.t.iptv.favorite,
+                icon: channel.favorite ? Icons.favorite : Icons.favorite_border,
+                onPressed: _toggleFavorite,
+              ),
+            const SettingsEntryButton(),
+          ],
+        ),
+        body: Focus(
+          autofocus: true,
+          onKeyEvent: _onKeyEvent,
+          child: Stack(
+            children: [
+              Center(child: player),
+              if (_osdVisible) _osd(context),
+              if (_panelOpen) _channelPanel(context),
+              if (_keypadOpen) _keypad(context),
+            ],
+          ),
+        ),
+      );
+    }
     return PureScaffold(
       appBar: PureAppBar(
-        title: title,
+        leading: PureIconButton(
+          tooltip: context.t.iptv.channelList,
+          icon: Icons.menu,
+          onPressed: () => setState(() => _panelOpen = true),
+        ),
+        title: 'PureLive',
         actions: [
-          if (channel != null)
-            PureIconButton(
-              tooltip: context.t.iptv.favorite,
-              icon: channel.favorite ? Icons.favorite : Icons.favorite_border,
-              onPressed: _toggleFavorite,
-            ),
+          PureIconButton(
+            tooltip: context.t.iptv.channelList,
+            icon: Icons.search,
+            onPressed: () => setState(() => _panelOpen = true),
+          ),
           const SettingsEntryButton(),
         ],
       ),
       body: Focus(
         autofocus: true,
         onKeyEvent: _onKeyEvent,
-        child: Stack(
-          children: [
-            Center(
-              child: AspectRatio(
-                aspectRatio: 16 / 9,
-                child: GestureDetector(
-                  onTap: _toggleOsd,
-                  child: ColoredBox(
-                    color: Colors.black,
-                    child: adapter != null
-                        ? MediaKitVideoView(adapter: adapter)
-                        : Center(
-                            child: switch (_phase) {
-                              _PlayPhase.loading => const PureSpinner(size: 40),
-                              _PlayPhase.failed => _errorView(context),
-                              _PlayPhase.playing => const PureSpinner(size: 40),
-                            },
+        child: SafeArea(
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  player,
+                  Expanded(child: _mobileBody(context, channel)),
+                ],
+              ),
+              if (_osdVisible) Positioned(top: 0, left: 0, right: 0, child: _mobileOsd(context)),
+              if (_panelOpen) _channelPanel(context),
+              if (_keypadOpen) _keypad(context),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The 16:9 video surface: black behind, the engine's view when a line is
+  /// open, phase spinners/errors when not. Taps toggle the OSD.
+  Widget _playerSurface(BuildContext context, MediaKitPlayerAdapter? adapter) {
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: GestureDetector(
+        onTap: _toggleOsd,
+        child: ColoredBox(
+          color: Colors.black,
+          child: adapter != null
+              ? MediaKitVideoView(adapter: adapter)
+              : Center(
+                  child: switch (_phase) {
+                    _PlayPhase.loading => const PureSpinner(size: 40),
+                    _PlayPhase.failed => _errorView(context),
+                    _PlayPhase.playing => const PureSpinner(size: 40),
+                  },
+                ),
+        ),
+      ),
+    );
+  }
+
+  /// The mobile page under the player: the channel's info row (name, live
+  /// badge, favourite and line picker), the three quick actions, then the
+  /// hot-channels list.
+  Widget _mobileBody(BuildContext context, IptvChannel? channel) {
+    final t = context.t;
+    final colors = PureTheme.of(context).colors;
+    final channels = _library.zapSequence().channels;
+    final hot = [...channels]..sort((a, b) {
+      if (a.favorite != b.favorite) {
+        return a.favorite ? -1 : 1;
+      }
+      return 0;
+    });
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        (channel != null && channel.entry.name.isNotEmpty)
+                            ? channel.entry.name
+                            : widget.name,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(color: colors.error, shape: BoxShape.circle),
                           ),
+                          const SizedBox(width: 6),
+                          Text(
+                            _lines.length > 1
+                                ? '${t.iptv.liveNow} · ${t.iptv.lineOf(index: _lineIndex + 1, total: _lines.length)}'
+                                : t.iptv.liveNow,
+                            style: TextStyle(fontSize: 12, color: colors.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
+                if (channel != null)
+                  IconButton(
+                    tooltip: t.iptv.favorite,
+                    icon: Icon(
+                      channel.favorite ? Icons.favorite : Icons.favorite_border,
+                      color: channel.favorite ? colors.error : colors.textSecondary,
+                    ),
+                    onPressed: _toggleFavorite,
+                  ),
+                if (_lines.length > 1)
+                  IconButton(
+                    tooltip: t.iptv.lineSelect,
+                    icon: const Icon(Icons.tune),
+                    onPressed: _cycleLine,
+                  ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _quickAction(
+                  context,
+                  icon: Icons.skip_previous,
+                  label: t.iptv.prevChannel,
+                  onPressed: () => _zap(-1),
+                ),
+                _quickAction(
+                  context,
+                  icon: Icons.format_list_bulleted,
+                  label: t.iptv.channelList,
+                  onPressed: () => setState(() => _panelOpen = true),
+                ),
+                _quickAction(
+                  context,
+                  icon: Icons.tune,
+                  label: t.iptv.playbackSettings,
+                  onPressed: _openPlaybackSheet,
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Row(
+              children: [
+                Expanded(child: Text(t.iptv.hotChannels, style: const TextStyle(fontWeight: FontWeight.w700))),
+                TextButton(onPressed: () => setState(() => _panelOpen = true), child: Text(t.iptv.viewAll)),
+              ],
+            ),
+          ),
+          for (final hotChannel in hot.take(8))
+            ListTile(
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(color: colors.bgLayout, borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.live_tv, size: 20),
+              ),
+              title: Text(hotChannel.entry.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+              subtitle: Text(
+                hotChannel.entry.group?.isEmpty ?? true ? hotChannel.entry.url : hotChannel.entry.group!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 12, color: colors.textSecondary),
+              ),
+              trailing: IconButton(
+                icon: Icon(
+                  hotChannel.favorite ? Icons.favorite : Icons.favorite_border,
+                  color: hotChannel.favorite ? colors.error : colors.textSecondary,
+                  size: 20,
+                ),
+                onPressed: _toggleFavorite,
+              ),
+              onTap: () => _switchTo(hotChannel),
+            ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  /// One of the three labelled quick actions under the info row.
+  Widget _quickAction(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+  }) {
+    final colors = PureTheme.of(context).colors;
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: onPressed,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 22, color: colors.textSecondary),
+            const SizedBox(height: 6),
+            Text(label, style: TextStyle(fontSize: 12, color: colors.textSecondary)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Cycles to the next candidate line for the current channel.
+  void _cycleLine() {
+    if (_lines.length < 2) {
+      return;
+    }
+    setState(() => _lineIndex = (_lineIndex + 1) % _lines.length);
+    unawaited(_openCurrentLine(_epoch));
+  }
+
+  /// The playback settings sheet: line selection, the number pad, and an EPG
+  /// refresh — the knobs that genuinely exist for IPTV playback.
+  Future<void> _openPlaybackSheet() async {
+    final t = context.t;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_lines.length > 1)
+              ListTile(
+                leading: const Icon(Icons.tune),
+                title: Text(t.iptv.lineSelect),
+                subtitle: Text(t.iptv.lineOf(index: _lineIndex + 1, total: _lines.length)),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _cycleLine();
+                },
+              ),
+            ListTile(
+              leading: const Icon(Icons.dialpad),
+              title: Text(t.iptv.numberPad),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                setState(() => _keypadOpen = true);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.refresh),
+              title: Text(t.iptv.refreshGuide),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                final epgUrls = _epgUrls;
+                if (epgUrls.isEmpty) {
+                  return;
+                }
+                unawaited(
+                  _epg.ensureLoaded(epgUrls).then((_) {
+                    if (mounted) {
+                      setState(() {});
+                    }
+                  }),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// The slim OSD for the mobile layout: channel number and name over the
+  /// video, no side chrome — the page below carries the controls.
+  Widget _mobileOsd(BuildContext context) {
+    final channel = _channel;
+    if (channel == null) {
+      return const SizedBox.shrink();
+    }
+    return IgnorePointer(
+      child: Container(
+        color: Colors.black38,
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Text(
+              channel.number == null ? 'TV' : 'CH ${channel.number}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                fontFeatures: [FontFeature.tabularFigures()],
               ),
             ),
-            if (_osdVisible) _osd(context),
-            if (_panelOpen) _channelPanel(context),
-            if (_keypadOpen) _keypad(context),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                channel.entry.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+            ),
           ],
         ),
       ),
