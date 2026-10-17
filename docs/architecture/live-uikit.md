@@ -1,8 +1,30 @@
 # LiveUIKit 核心包实现边界
 
-`live_uikit` 的核心包必须明确定位为：统一 UI 契约、设计令牌、主题解析、控件分派与共享控件实现的基础设施层。它不负责实现七套 UI 风格，也不负责管理 PureLive 的业务状态。
+`live_uikit` 的核心包必须明确定位为：统一 UI 契约、设计令牌、主题解析与控件分派的基础设施层。它不负责实现八套 UI 风格，也不负责管理 PureLive 的业务状态。
 
-本文是核心包的正式“实现边界”规范。
+本文是核心包的边界设计稿，现行实现与本文的出入见下一节。
+
+## 修订状态（2026-10-17）
+
+> 本文是**实现之前的边界设计稿**。文中的模块名与类型名（`shared/`、`root/`、`LiveUiAdapter`、
+> `LiveControl`、`LiveImplementationKind`、`LiveUiFallbackPolicy`、`Styled*`）大多没有按此落地，
+> 现行实现请以 [`packages/live_uikit/live-uikit.md`](../packages/live_uikit/live-uikit.md) 和八份
+> `packages/live_uikit_*/live-uikit-*.md` 为准。留下本文是为了记录当初的边界理由。
+>
+> 尤其要注意：**本文要求核心提供“共享控件实现”，并在能力缺失时回退到它 —— 这套地板已经在
+> 2026-10-17 被整体删除**。`SharedLanguageAdapter` 及其 `Token*` 渲染器、`LiveUiFallbackPolicy`、
+> `LiveImplementationKind`、`LiveTheme.implementationKind`、`LiveDesignLanguage.token`，以及
+> `adapterMissing` / `controlUnsupported` / `surfaceUnsupported` / `defaultAdapterMissing` 四个降级码，
+> 都不存在了。
+>
+> 现行契约：`LiveUiControl` **十七**个成员 + `LiveUiSurface` 两个成员（`appHost` / `appShell`）；
+> 每家适配器 `implements LanguageAdapter`，自己实现全部控件与两面 —— 库有对应件就映射，没有就用
+> 该库自己的零件按该库视觉拼。`LanguageRegistry` 没有 `fallback` 槽；未注册语言抛
+> `LiveUiResolutionException`，声明了却没有覆写抛 `LiveUiCapabilityException`；诊断只剩
+> `unsupportedEffect`（设备做不到的效果）。
+>
+> 读 §15.1–§15.6 时，把里面的三 kind 与 shared 回退按上面这段替换理解。
+
 
 ## 1. 核心定位
 
@@ -881,6 +903,10 @@ Runtime 只处理已由应用组合根注册的适配器。
 
 ## 15. 控件分派与降级流程
 
+> 本节(§15.1–§15.6)是提案原设计:三 kind 派发结果与 shared 回退。
+> 现行模型没有这两样 —— 见文首「修订状态(2026-10-17)」。
+
+
 本章把 §3.6 Runtime、§3.7 Shared、§7 错误与降级落到一条明确的、可测试的分派路径上。目标：任何 `Live*` 公共控件在任意“风格 × 平台 × 能力 × 注册状态”组合下，其实现选择都是确定的、可诊断的，且不静默隐藏问题。
 
 ### 15.1 分派入口与时序
@@ -949,7 +975,7 @@ Runtime 只处理已由应用组合根注册的适配器。
 
 平台能力（如玻璃模糊、TV 焦点、backdrop filter）在步骤 2/4 中作为额外门控：环境不支持某效果时，适配器或共享实现必须走**已验证**的降级视觉（如不透明平面色），并通过 diagnostics 记录降级原因，而非直接崩溃或忽略。
 
-### 15.4 LiveUiFallbackPolicy
+### 15.4 LiveUiFallbackPolicy（该类型已删除，见文首修订说明）
 
 `runtime/live_ui_fallback_policy.dart` 集中定义降级规则，使流程可测、可配置：
 
@@ -978,12 +1004,25 @@ Runtime 只处理已由应用组合根注册的适配器。
 
 > 本节记录“现状 vs 本文规范”的客观差距，供迁移排期参考；不代表这些规则可被豁免。
 
-当前 `packages/live_uikit` 的 `styling/` 子系统已实现三层令牌、`LiveConfigProvider`、`LanguageAdapter` 契约、`Styled*` 薄分派器与共享 token 基座——方向与本文一致，但**尚未满足以下边界**，属后续重构项：
+本节按 2026-10-17 的现状重写：上面第 1、2、3 条差距**都已了结**，而且第 3 条的解法比本文当初的设计更严格。
 
-1. **§1.2/§2/§8.2/§8.3（最核心的违反）**：`live_uikit/pubspec.yaml` 目前**直接依赖** `fluent_ui / macos_ui / flutter_neumorphic_ui_kit / glass_morphism_plus / fluttersdk_wind`，且 `lib/src/styling/language_adapters.dart` **在核心包内实现全部七套适配器**。目标要求把这些拆到独立适配器包 `live_uikit_*`，核心包只留契约 + 注册表 + 共享实现。
-2. **§3.1 命名**：当前公共控件名为 `Styled*`（`StyledButton`/`StyledCard`…），目标命名是 `Live*`（`LiveButton`…）。可先别名过渡再统一。
-3. **§3.6 分派模型**：当前是 `Styled*→LiveTheme.adapter→方法`；目标是 `Live*→LiveUiResolver.resolve→(adapterNative|shared|custom)+diagnostics` 的显式、可诊断链路。缺失能力目前回退到 `SharedLanguageAdapter`（token 基座），方向对，但缺 `LiveUiFallbackPolicy` 与诊断事件。
-4. **§5/§10.4 配置持久化**：当前 `UiConfig` 的持久化在 app 层（`live_preferences` + `appearance_mapping`），符合“核心不碰存储”，但核心未定义 `LiveUiConfigStore` 契约接口。
-5. **§3.10/§15 诊断**：当前无 `diagnostics/` 与降级事件。
+1. ✅ 核心包 `pubspec.yaml` 里没有任何第三方 UI 库，`lib/src/styling/language_adapters.dart` 也不存在了：
+   八套风格各在独立的 `live_uikit_<style>` 包里，`tool/check_architecture.ps1` 机器校验这条边界。
+2. ✅ 公共控件统一叫 `Live*`（`LiveButton` / `LiveCard` / …），每个都是一层薄派发器：
+   建 `Language*Spec` → `LiveTheme.of(context).adapter.<control>(...)`，源码内不 `switch` 风格。
+3. ✅ 分派链路是 `Live* → LiveConfigProvider（每次语言变更解析一次）→ LiveUiResolver.resolve → LanguageAdapter`。
+   本文设想的“共享实现兜底”先建后删：核心**不出任何控件渲染器**，因此没有 `adapterNative|shared|custom` 三 kind，
+   也没有“缺失能力落到 shared”。未注册语言抛 `LiveUiResolutionException`，声明与覆写不一致抛
+   `LiveUiCapabilityException` —— 派发结果本身不再是可上报的降级。
+
+仍然成立的差距：
+
+4. **§5/§10.4 配置持久化**：`UiConfig` 的持久化在 app 层（外观偏好），符合“核心不碰存储”，
+   但核心没有本文要求的 `LiveUiConfigStore` 契约接口。
+5. **§3.10/§15 诊断**：诊断已在（`LiveUiDiagnostic` + `LiveUiDiagnosticSink` typedef，核心不依赖日志实现），
+   但只剩 `unsupportedEffect` 一个码；适配器库自己的特效（glass 毛玻璃、fluent acrylic）仍不读
+   `LiveTheme.canBlur`，这条半边仍开放。
+
+原文的迁移顺序已按 §1–§4 走完，保留在下面作为当时为什么这样排序的理由：
 
 建议迁移顺序（低风险优先）：先抽 `contracts/`（把 `LanguageAdapter`/各 `Spec` 归位并去除对第三方类型的暴露）→ 逐个把 `language_adapters.dart` 中的各库实现**外迁**为 `live_uikit_*` 包并从核心 pubspec 删除对应依赖 → 建 `runtime/`（registry/resolver/fallback/policy）+ `diagnostics/` → 统一 `Live*` 命名。迁移期以“核心包 `pubspec` 不再出现任何第三方 UI 库”作为 §9/§14 的关键里程碑门禁。

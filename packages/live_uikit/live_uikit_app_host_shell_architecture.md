@@ -3,9 +3,35 @@
 - **Package:** `live_uikit`
 - **Application:** PureLive 4.x (`apps/pure_live`)
 - **Document type:** Architecture / Integration Decision
-- **Status:** Proposed
+- **Status:** Accepted — implemented; 文中 Shared 兜底层已于 2026-10-17 删除（见修订说明）
 - **Scope:** App Host dispatch、App Shell renderer、Theme scope、Router、Overlay、Material compatibility boundary、adapter diagnostics
 - **Platforms:** Android、iOS、Android TV、Windows、macOS、Linux
+
+## 修订说明（2026-10-17）
+
+> 本文件是**已实现的设计提案**，其主体分层（App Host / App Shell / Component 三种能力各自宣告、
+> 各自解析，Host 由语言自己管，Shell 吃中立规格，Router 实例保持稳定）**照原样落地了**。
+> 但提案里那层「没有原生能力就用 Shared Token Host / Shared Token Shell 兜底」的设计，
+> 在 2026-10-17 被整体删除。以下段落是历史，不是现行规则：§1.3 目标里的「没有原生 Shell 的
+> Adapter 则使用 Token-driven Shared Shell」、§4 架构图里的 `Shared Token Host/Shell`、
+> §5 的 Shared 预设实作、§6.2 的 Host 选择表、§7.3/§7.4、**整个 §8**、§11 的降级矩阵、
+> Phase 3「先实作 Shared Token Shell」与 §14.1/§14.2 的 fallback 验收项。
+>
+> 现行规则：
+>
+> - `LiveUiControl` 十七个成员（`dialog`、`tabView` 已入契约），`LiveUiSurface` 两个成员
+>   （`appHost`、`appShell`），`LiveUiSurfaceCapabilities` 独立宣告 —— 拥有 Host 不蕴涵拥有 Shell。
+> - 八家适配器各 `implements LanguageAdapter`，**十七控件 + 两面全部自己答**：库有对应件就映射，
+>   没有就用该库自己的零件按该库视觉拼（forui/glass/neumorphic/wind 的 Host 是 `WidgetsApp` + 本库主题
+>   scope，仍是该语言的答案，不是别人的窗口；macOS 的 Shell 自绘固定宽侧栏 + `SidebarItems`）。
+> - `LanguageRegistry` 没有 `fallback` 槽，`SharedLanguageAdapter` / `Token*` / `LiveUiFallbackPolicy` /
+>   `LiveImplementationKind` / `LiveTheme.implementationKind` / `LiveDesignLanguage.token` 均已删除，
+>   §7.4 提出的「`shellSharedFallback`」这类降级诊断码也不存在：未注册语言抛
+>   `LiveUiResolutionException`，声明与覆写漂移抛 `LiveUiCapabilityException`。
+> - 诊断只剩 `unsupportedEffect`（设备做不到的效果），去重单位仍是「语言变更」而非 rebuild —— 这条
+>   提案判断正确，保留。
+> - 验收：八语言真机批跑全部 `host=appHost shell=appShell`，0 诊断 0 异常。
+
 
 ---
 

@@ -64,7 +64,7 @@ v2 的五条架构决策(不可回退,均有 ADR 或用户定案背书):
 | `live_shell` / `live_shell_desktop` | 窗口角色/关窗语义/托盘/单实例(`ChromeStage`/`QuitLedger`/`WindowRole`)与其插件实现 | app/desktop 部分 |
 | `live_log` | 日志内核 | app_log |
 | `live_pagination` | 分页内核 | live_core 分页部分 |
-| `live_uikit`(+9 适配器+background) | token 管线、10 控件契约、共享渲染器、LiveEnvironment(TV/桌面/触摸几何) | live_ui |
+| `live_uikit`(+8 适配器+background) | token 管线、17 控件 + appHost/appShell 两面契约(核心只出契约不画控件)、LiveEnvironment(TV/桌面/触摸几何) | live_ui |
 
 原应用两个包在 v2 **尚无对应**:live_cast(DLNA 投屏)、live_vod(TV 点播+音乐)——见 §7 差距表。
 

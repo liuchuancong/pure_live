@@ -1,8 +1,23 @@
 # 0004 — `LiveIconButton` does not dispatch through the adapter
 
-- **Status:** Accepted — implemented 2026-10-14
+- **Status:** Accepted — implemented 2026-10-14, amended 2026-10-17 (see the note below)
 - **Date:** 2026-10-14
 - **Affects:** `live_uikit`, every `live_uikit_<style>` adapter, `apps/pure_live`
+
+> **Amended 2026-10-17 — the seam this decision leaned on is gone.**
+>
+> The decision still holds: `LiveIconButton` builds a `LanguageButtonSpec` carrying
+> `iconOnly`/`selected` and calls `adapter.button(...)`, and a spec field a library
+> cannot express is documented rather than silently dropped. What changed is *who*
+> honours it. The core's `SharedLanguageAdapter.buttonLabel` — the shared seam every
+> adapter inherited textless rendering from — was deleted together with the shared
+> token renderer, so the glyph-only rendering (no `Text`, the tooltip as the
+> `semanticLabel`, the square `ControlSize` step, the selected tint) is now
+> reproduced by each adapter's own button builder, and the eight adapter packages
+> each state in their §9 whether their library has a toggled affordance to map
+> `selected` onto. The `Landed state` paragraphs below are kept verbatim as the
+> record of what was built at the time; read them as history, not as the current
+> shape.
 
 ## Context
 
