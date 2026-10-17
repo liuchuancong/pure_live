@@ -1,12 +1,13 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/shell/shell_destinations.dart';
+import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart' show ShellWindowChrome;
 import 'package:pure_live/platforms/desktop/shell/window_title_bar.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The desktop chrome: the app's own caption strip, when this start took over the
 /// window frame, over the dispatched navigation rail.
@@ -25,11 +26,11 @@ final class DesktopShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final shell = LiveAppShell(
+    final shell = PureAppShell(
       destinations: shellDestinations(context),
       selectedId: ShellBranch.at(navigationShell.currentIndex).name,
       onSelected: _goBranch,
-      placement: LiveShellPlacement.rail,
+      placement: PureShellPlacement.rail,
       trailing: const Padding(padding: EdgeInsets.only(bottom: 16), child: SettingsEntryButton()),
       child: navigationShell,
     );
@@ -42,7 +43,16 @@ final class DesktopShell extends ConsumerWidget {
     }
     return Column(
       children: [
-        const WindowTitleBar(),
+        PureTitleBar(
+          labels: PureTitleBarLabels(
+            title: context.t.app.title,
+            minimize: context.t.window.minimize,
+            maximize: context.t.window.maximize,
+            restore: context.t.window.restore,
+            close: context.t.window.close,
+          ),
+          actions: const WindowManagerChromeActions(),
+        ),
         Expanded(child: shell),
       ],
     );

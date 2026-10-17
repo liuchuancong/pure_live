@@ -3,9 +3,9 @@ import 'dart:async' show unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart';
-import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The danmaku shield (3.x `ShieldPage`, trimmed to the three lists): the
 /// keywords, the viewers and the regexes whose messages never render.
@@ -71,26 +71,26 @@ final class _ShieldPageState extends ConsumerState<ShieldPage> {
 
   Future<void> _add(_ShieldKind kind) async {
     final field = TextEditingController();
-    final value = await showLiveDialog<String>(
+    final value = await showPureDialog<String>(
       context: context,
       title: '${context.t.shield.add} — ${_titleOf(kind)}',
       // A Builder so the submit pops the dialog route, not the page under it.
       child: Builder(
         builder: (fieldContext) => Focus(
           autofocus: true,
-          child: LiveTextField(
+          child: PureTextField(
             controller: field,
             onSubmitted: (submitted) => Navigator.of(fieldContext).pop(submitted.trim()),
           ),
         ),
       ),
       actions: (dialogContext) => [
-        LiveButton(
+        PureButton(
           label: dialogContext.t.common.cancel,
           variant: ButtonVariant.ghost,
           onPressed: () => Navigator.of(dialogContext).pop(),
         ),
-        LiveButton(
+        PureButton(
           label: dialogContext.t.common.confirm,
           onPressed: () => Navigator.of(dialogContext).pop(field.text.trim()),
         ),
@@ -115,28 +115,28 @@ final class _ShieldPageState extends ConsumerState<ShieldPage> {
   @override
   Widget build(BuildContext context) {
     if (!_loaded) {
-      return LiveScaffold(
-        appBar: LiveAppBar(title: context.t.shield.title, actions: const [SettingsEntryButton()]),
-        body: const Center(child: LiveSpinner(size: 40)),
+      return PureScaffold(
+        appBar: PureAppBar(title: context.t.shield.title, actions: const [SettingsEntryButton()]),
+        body: const Center(child: PureSpinner(size: 40)),
       );
     }
-    return LiveScaffold(
-      appBar: LiveAppBar(title: context.t.shield.title, actions: const [SettingsEntryButton()]),
+    return PureScaffold(
+      appBar: PureAppBar(title: context.t.shield.title, actions: const [SettingsEntryButton()]),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
           for (final kind in _ShieldKind.values)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: LiveCard(
+              child: PureCard(
                 padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Expanded(child: Text(_titleOf(kind), style: LiveTheme.of(context).text.title)),
-                        LiveIconButton(
+                        Expanded(child: Text(_titleOf(kind), style: PureTheme.of(context).text.title)),
+                        PureIconButton(
                           tooltip: context.t.shield.add,
                           icon: Icons.add,
                           onPressed: () => unawaited(_add(kind)),

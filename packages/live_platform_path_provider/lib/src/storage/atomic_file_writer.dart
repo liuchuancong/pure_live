@@ -10,7 +10,7 @@ import 'package:path/path.dart' as p;
 /// the target; a power loss before the OS writes through still can.
 ///
 /// A crash mid-write leaves the target untouched and at most one stray
-/// `.pure_live_tmp` file behind. Windows note: `rename` cannot clobber an
+/// `.pure_tmp` file behind. Windows note: `rename` cannot clobber an
 /// existing target, so the old file is removed in the same window — the
 /// remove+rename pair is not fully atomic there; the temp copy still
 /// guards against truncated writes.
@@ -33,7 +33,7 @@ abstract final class AtomicFileWriter {
       await target.parent.create(recursive: true);
       // The target name is kept in the temp name so an orphan left by a crash
       // identifies the file it was writing.
-      temp = File(p.join(target.parent.path, '.pure_live_tmp_${pid}_${++_sequence}_${p.basename(target.path)}'));
+      temp = File(p.join(target.parent.path, '.pure_tmp_${pid}_${++_sequence}_${p.basename(target.path)}'));
       final sink = temp.openWrite();
       try {
         sink.add(bytes);

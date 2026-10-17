@@ -5,7 +5,6 @@ import 'package:live_net/live_net.dart' show LiveHttp;
 import 'package:live_platform/live_platform.dart' show PlatformEnvironment;
 import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart' show StorageBootstrap;
-import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/composition/sites.dart';
 import 'package:pure_live/app/environment/app_paths.dart';
 import 'package:pure_live/app/fonts/font_library.dart';
@@ -14,6 +13,7 @@ import 'package:pure_live/app/theme/appearance_store.dart';
 import 'package:pure_live/app/theme/ui_configuration_mapper.dart';
 import 'package:pure_live/features/about/update_feed.dart';
 import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart' show ShellPreferencesStore, ShellWindowChrome;
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The booted [AppearanceStore], overridden in the `ProviderScope` at
 /// start-up — the store owns an open box, so nothing here can invent one.
@@ -148,7 +148,7 @@ final appearancePreferencesProvider = NotifierProvider<AppearancePreferencesNoti
 /// the settings page still reports what they actually chose. While a pin is
 /// active a language picked in settings persists but does not repaint — the pin
 /// wins until the next launch, which is the point of a run-time pin.
-final pinnedLanguageProvider = Provider<LiveDesignLanguage?>((ref) => null);
+final pinnedLanguageProvider = Provider<PureDesignLanguage?>((ref) => null);
 
 /// The [UiConfig] the app renders with.
 ///

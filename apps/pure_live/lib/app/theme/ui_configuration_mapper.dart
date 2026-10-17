@@ -1,15 +1,15 @@
 import 'package:flutter/widgets.dart' show Color;
-import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/theme/appearance_preferences/appearance_preferences.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The one place that knows both the persisted [AppearancePreferences]
-/// document and live_uikit's [UiConfig].
+/// document and pure_uikit's [UiConfig].
 ///
 /// The two stay decoupled on purpose: preferences stores plain primitives and
-/// registry ids (never a `live_uikit` type), so a stored document survives a
+/// registry ids (never a `pure_uikit` type), so a stored document survives a
 /// language or density being added, renamed or removed. These helpers are that
 /// translation — the composition root loads preferences, turns them into a
-/// [UiConfig] for `LiveConfigProvider`, and writes the reverse mapping back
+/// [UiConfig] for `PureConfigProvider`, and writes the reverse mapping back
 /// whenever the config changes.
 
 /// Builds a [UiConfig] from [appearance]; an unknown language or density id
@@ -57,7 +57,7 @@ AppearancePreferences appearanceFromUiConfig(UiConfig config) => AppearancePrefe
 /// adapter answers first — every language renders its own whole contract, and a
 /// stored id that names a language this build does not register is a fault the
 /// resolver raises rather than a look to settle for.
-const LiveDesignLanguage _defaultLanguage = LiveDesignLanguage.fluent;
+const PureDesignLanguage _defaultLanguage = PureDesignLanguage.fluent;
 
 /// Ids that named something the enum no longer has.
 ///
@@ -67,14 +67,14 @@ const LiveDesignLanguage _defaultLanguage = LiveDesignLanguage.fluent;
 /// default skin — a language change they never asked for. The base, which that
 /// older enum called `material`, is now `token`, and a stored `material` names
 /// the Material library it visually matched all along.
-const Map<String, LiveDesignLanguage> _retiredIds = {
-  'materialUi': LiveDesignLanguage.material,
-  'cupertinoUi': LiveDesignLanguage.cupertino,
+const Map<String, PureDesignLanguage> _retiredIds = {
+  'materialUi': PureDesignLanguage.material,
+  'cupertinoUi': PureDesignLanguage.cupertino,
 };
 
 /// The language an id names; empty or unknown ids take the build's default
 /// skin ([_defaultLanguage]).
-LiveDesignLanguage _languageById(String id) {
+PureDesignLanguage _languageById(String id) {
   if (id.isEmpty) {
     return _defaultLanguage;
   }
@@ -82,7 +82,7 @@ LiveDesignLanguage _languageById(String id) {
   if (retired != null) {
     return retired;
   }
-  return _byName(LiveDesignLanguage.values, id, _defaultLanguage);
+  return _byName(PureDesignLanguage.values, id, _defaultLanguage);
 }
 
 T _byName<T>(List<T> values, String name, T fallback) {

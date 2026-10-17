@@ -1,0 +1,27 @@
+name: pure_uikit_background
+description: >-
+  Cross-cutting background subsystem for Pure Live. Provides a sealed
+  BackgroundConfig union (solid, gradient, image, video), a rendering pipeline
+  that owns BoxFit/alignment/overlay/placeholder/failure-fallback and a
+  lifecycle observer that keeps video backgrounds cheap when the app is not
+  visible. Video playback is reached through the BackgroundVideoSource seam so
+  this package stays independent of any player kernel (media_core is wired by
+  the app, not by us). Style adapters and business pages share this package
+  instead of re-implementing the media handling per page.
+version: 0.1.0
+publish_to: none
+
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  blur: ^4.0.2
+  flutter:
+    sdk: flutter
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^11.0.0

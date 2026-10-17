@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_playback/live_playback.dart' show EngineStopped, PlaybackEngineEvent;
 import 'package:live_sites/live_sites.dart';
-import 'package:live_uikit/live_uikit.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitVideoView;
 import 'package:mosaic_grid/mosaic_grid.dart';
 import 'package:pure_live/app/engine/playback_engine.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// Multi-view (3.x `MultiViewPage`): up to four rooms playing side by
 /// side, each cell its own engine instance, added by link.
@@ -46,8 +46,8 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
         .all
         .where((site) => site.capability<LiveLinkResolver>() != null)
         .toList();
-    return LiveScaffold(
-      appBar: LiveAppBar(title: context.t.multiview.title, actions: const [SettingsEntryButton()]),
+    return PureScaffold(
+      appBar: PureAppBar(title: context.t.multiview.title, actions: const [SettingsEntryButton()]),
       body: MosaicGrid(
         columnGap: 10,
         padding: const EdgeInsets.all(12),
@@ -138,7 +138,7 @@ final class _PlayingCellState extends ConsumerState<_PlayingCell> {
   @override
   Widget build(BuildContext context) {
     final adapter = _engine.surfaceAdapter;
-    return LiveCard(
+    return PureCard(
       padding: EdgeInsets.zero,
       child: Stack(
         fit: StackFit.expand,
@@ -149,12 +149,12 @@ final class _PlayingCellState extends ConsumerState<_PlayingCell> {
                 ? MediaKitVideoView(adapter: adapter)
                 : Center(
                     child: _engineStopped
-                        ? LiveButton(
+                        ? PureButton(
                             label: context.t.common.retry,
                             icon: Icons.refresh,
                             onPressed: () => unawaited(_open()),
                           )
-                        : const LiveSpinner(size: 40),
+                        : const PureSpinner(size: 40),
                   ),
           ),
           Positioned(
@@ -226,18 +226,18 @@ final class _AddCellTileState extends ConsumerState<_AddCellTile> {
   }
 
   @override
-  Widget build(BuildContext context) => LiveCard(
+  Widget build(BuildContext context) => PureCard(
     padding: const EdgeInsets.all(12),
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        LiveTextField(
+        PureTextField(
           controller: _link,
           placeholder: context.t.toolbox.hint,
           onSubmitted: (_) => unawaited(_addFromLink()),
         ),
         const SizedBox(height: 8),
-        LiveButton(label: context.t.multiview.add, icon: Icons.add, onPressed: () => unawaited(_addFromLink())),
+        PureButton(label: context.t.multiview.add, icon: Icons.add, onPressed: () => unawaited(_addFromLink())),
       ],
     ),
   );

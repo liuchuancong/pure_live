@@ -27,7 +27,7 @@ void main() {
       .listSync()
       .whereType<File>()
       .map((file) => file.uri.pathSegments.last)
-      .where((name) => name.startsWith('.pure_live_tmp'))
+      .where((name) => name.startsWith('.pure_tmp'))
       .toList();
 
   test('the bytes land and the target exists afterwards', () async {

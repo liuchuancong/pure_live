@@ -362,7 +362,7 @@ final class AppPaths {
   static Future<bool> _writable(Directory directory) async {
     try {
       await directory.create(recursive: true);
-      final probe = File('${directory.path}/.pure_live_probe_${pid}_${++_probeSequence}');
+      final probe = File('${directory.path}/.pure_probe_${pid}_${++_probeSequence}');
       await probe.writeAsBytes(const [0], flush: true);
       await probe.delete();
       return true;

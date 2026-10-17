@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:live_log/live_log.dart';
-import 'package:live_uikit/live_uikit.dart';
 
 /// The log policy this build ships.
 ///
@@ -60,20 +59,6 @@ final class AppLog {
   /// `forCategory('paths')` on that, yields the `storage.paths` category.
   LiveLog forCategory(String name) => root.forCategory(name);
 
-  /// The sink `AppTheme` reports UI-runtime facts through: which effect this
-  /// device could not afford, for which language and which control. A language
-  /// with no adapter is no longer a line here — it is a fault the resolver
-  /// raises, because there is nothing left to fall back to.
-  LiveUiDiagnosticSink get uiSink =>
-      (diagnostic) => forCategory('ui').info(
-        'ui diagnostic',
-        fields: {
-          'code': diagnostic.code.name,
-          'language': diagnostic.language.name,
-          if (diagnostic.control case final control?) 'control': control.name,
-          if (diagnostic.surface case final surface?) 'surface': surface.name,
-        },
-      );
 
   /// Adds the rotating file sink under [directory].
   ///

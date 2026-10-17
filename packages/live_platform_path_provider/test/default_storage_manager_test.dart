@@ -53,7 +53,7 @@ void main() {
       .listSync()
       .whereType<File>()
       .map((file) => file.uri.pathSegments.last)
-      .where((name) => name.startsWith('.pure_live_probe'))
+      .where((name) => name.startsWith('.pure_probe'))
       .toList();
 
   test('the first writable candidate wins and is then memoised', () async {
@@ -99,7 +99,7 @@ void main() {
     );
 
     final location = await manager.resolve(StorageArea.cache);
-    expect(location.path, '${systemTemp.path}${Platform.pathSeparator}pure_live_cache');
+    expect(location.path, '${systemTemp.path}${Platform.pathSeparator}pure_cache');
     expect(location.isPersistent, isFalse);
   });
 

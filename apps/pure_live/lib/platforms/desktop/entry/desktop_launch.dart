@@ -26,7 +26,7 @@ Future<SocketInstanceChannel?> acquireDesktopInstance({required LiveLog log, req
   final profile = Platform.environment['USERPROFILE'] ?? Platform.environment['HOME'] ?? Directory.systemTemp.path;
   final channel = SocketInstanceChannel(
     appId: 'live.pure.desktop',
-    nonceFile: File('$profile/.pure_live_instance_nonce'),
+    nonceFile: File('$profile/.pure_instance_nonce'),
   );
   final launchLog = log.forCategory('launch');
   final role = await channel.acquire(arguments: args);

@@ -1,21 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:live_uikit/live_uikit.dart';
-import 'package:live_uikit_material/live_uikit_material.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/platforms/desktop/shell/window_title_bar.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The strip's wiring, against a fake instead of a window manager.
 ///
-/// The geometry comes from the shell's own `ChromeMetrics.windows`, and the
-/// buttons' semantics — which call is wired to which glyph, and that close
-/// goes through the seam rather than doing anything itself — are what a
-/// regression here would break.
+/// The strip is the core's shared `PureTitleBar`; the geometry comes from the
+/// shared Windows caption metrics, and the buttons' semantics — which call is
+/// wired to which glyph, and that close goes through the seam rather than
+/// doing anything itself — are what a regression here would break.
 void main() {
   testWidgets('the strip is caption-height and carries the three buttons', (tester) async {
     await tester.pumpWidget(const _Harness());
 
-    expect(tester.getSize(find.byType(WindowTitleBar)).height, 32);
+    expect(tester.getSize(find.byType(PureTitleBar)).height, 32);
     expect(find.byTooltip('最小化'), findsOneWidget);
     expect(find.byTooltip('最大化'), findsOneWidget);
     expect(find.byTooltip('关闭'), findsOneWidget);
@@ -74,10 +73,20 @@ final class _Harness extends StatelessWidget {
       // The caption strip takes its colours from the design language now, so the
       // harness has to give it one — a bare `MaterialApp` is precisely the ancestor
       // it must no longer lean on.
-      home: LiveConfigProvider(
-        config: const UiConfig(language: LiveDesignLanguage.material),
-        registry: const LanguageRegistry(adapters: {LiveDesignLanguage.material: materialAdapter}),
-        child: Scaffold(body: WindowTitleBar(actions: actions)),
+      home: PureConfigProvider(
+        config: const UiConfig(language: PureDesignLanguage.material),
+        child: Scaffold(
+          body: PureTitleBar(
+            labels: const PureTitleBarLabels(
+              title: 'Pure Live',
+              minimize: '最小化',
+              maximize: '最大化',
+              restore: '还原',
+              close: '关闭',
+            ),
+            actions: actions,
+          ),
+        ),
       ),
     ),
   );

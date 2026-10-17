@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:live_sites/live_sites.dart' show LiveArea;
-import 'package:live_uikit/live_uikit.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// An area tile (3.x `AreaCard`): the square picture and the name.
 final class AreaCard extends StatelessWidget {
@@ -15,13 +15,13 @@ final class AreaCard extends StatelessWidget {
   final VoidCallback onOpen;
 
   @override
-  Widget build(BuildContext context) => LiveCard(
+  Widget build(BuildContext context) => PureCard(
     onTap: onOpen,
     child: Column(
       children: [
         AspectRatio(
           aspectRatio: 1,
-          child: LiveCard(
+          child: PureCard(
             padding: EdgeInsets.zero,
             child: switch (area.iconUrl) {
               final url? when url.isNotEmpty => CachedNetworkImage(imageUrl: url, fit: BoxFit.cover),
@@ -30,7 +30,7 @@ final class AreaCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-        Text(area.areaName, maxLines: 1, overflow: TextOverflow.ellipsis, style: LiveTheme.of(context).text.caption),
+        Text(area.areaName, maxLines: 1, overflow: TextOverflow.ellipsis, style: PureTheme.of(context).text.caption),
       ],
     ),
   );

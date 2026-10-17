@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveLinkResolver;
-import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The toolbox (3.x `lib/modules/toolbox`): paste a platform link, the
 /// resolver that owns it follows it to the canonical room, and the room
@@ -95,8 +95,8 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
   @override
   Widget build(BuildContext context) {
     final resolved = _resolved;
-    return LiveScaffold(
-      appBar: LiveAppBar(title: context.t.toolbox.title, actions: const [SettingsEntryButton()]),
+    return PureScaffold(
+      appBar: PureAppBar(title: context.t.toolbox.title, actions: const [SettingsEntryButton()]),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
@@ -105,12 +105,12 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
             hintText: context.t.toolbox.hint,
             onSubmitted: (_) => unawaited(_resolve()),
             trailing: [
-              LiveIconButton(
+              PureIconButton(
                 tooltip: context.t.toolbox.readClipboard,
                 icon: Icons.content_paste,
                 onPressed: _readClipboard,
               ),
-              LiveIconButton(
+              PureIconButton(
                 tooltip: context.t.toolbox.resolve,
                 icon: Icons.travel_explore,
                 onPressed: _resolving ? null : _resolve,
@@ -119,39 +119,39 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
           ),
           const SizedBox(height: 16),
           if (_resolving)
-            const Center(child: LiveSpinner(size: 40))
+            const Center(child: PureSpinner(size: 40))
           else if (resolved != null)
             _resolvedCard(context, resolved)
           else ...[
             if (_failure != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: Text(_failure!, style: TextStyle(color: LiveTheme.of(context).colors.error)),
+                child: Text(_failure!, style: TextStyle(color: PureTheme.of(context).colors.error)),
               ),
-            LiveEmpty(title: context.t.toolbox.hint),
+            PureEmpty(title: context.t.toolbox.hint),
           ],
         ],
       ),
     );
   }
 
-  Widget _resolvedCard(BuildContext context, ({String site, String roomId, Uri url}) resolved) => LiveCard(
+  Widget _resolvedCard(BuildContext context, ({String site, String roomId, Uri url}) resolved) => PureCard(
     padding: const EdgeInsets.all(12),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(resolved.site, style: LiveTheme.of(context).text.caption),
+        Text(resolved.site, style: PureTheme.of(context).text.caption),
         const SizedBox(height: 4),
-        Text(resolved.roomId, style: LiveTheme.of(context).text.title),
+        Text(resolved.roomId, style: PureTheme.of(context).text.title),
         const SizedBox(height: 4),
         Text(
           resolved.url.toString(),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: LiveTheme.of(context).text.caption,
+          style: PureTheme.of(context).text.caption,
         ),
         const SizedBox(height: 12),
-        LiveButton(
+        PureButton(
           label: context.t.toolbox.openRoom,
           icon: Icons.play_circle_outline,
           onPressed: () =>

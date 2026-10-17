@@ -3,12 +3,12 @@ import 'dart:async' show unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveArea, LiveAreaProvider, LiveSite;
-import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/areas/areas_routes.dart';
 import 'package:pure_live/features/areas/area_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// Areas: every area-capable platform as a tab over its category catalogue
 /// (3.x `AreasPage`); a category chip row splits the platforms that group
@@ -29,14 +29,14 @@ final class _AreasPageState extends ConsumerState<AreasPage> {
     final sites = ref.watch(sitesProvider);
     final capable = sites.registry.all.where((site) => site.capability<LiveAreaProvider>() != null).toList();
     if (capable.isEmpty) {
-      return LiveScaffold(
-        appBar: LiveAppBar(title: context.t.tabs.areas, actions: const [SettingsEntryButton()]),
-        body: LiveEmpty(title: context.t.common.empty),
+      return PureScaffold(
+        appBar: PureAppBar(title: context.t.tabs.areas, actions: const [SettingsEntryButton()]),
+        body: PureEmpty(title: context.t.common.empty),
       );
     }
     final index = _selected.clamp(0, capable.length - 1);
-    return LiveScaffold(
-      appBar: LiveAppBar(
+    return PureScaffold(
+      appBar: PureAppBar(
         title: context.t.tabs.areas,
         actions: const [SettingsEntryButton()],
         bottom: PreferredSize(
@@ -44,15 +44,15 @@ final class _AreasPageState extends ConsumerState<AreasPage> {
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: LiveTabs(
+            child: PureTabs(
               index: index,
               onChanged: (value) => setState(() => _selected = value),
-              tabs: [for (final site in capable) LiveTab(label: site.manifest.localizedName(_tag(context), 'zh-CN'))],
+              tabs: [for (final site in capable) PureTab(label: site.manifest.localizedName(_tag(context), 'zh-CN'))],
             ),
           ),
         ),
       ),
-      body: LiveTabView(
+      body: PureTabView(
         index: index,
         onIndexChanged: (value) => setState(() => _selected = value),
         pages: [for (final site in capable) _PlatformAreas(key: ValueKey(site.manifest.id), site: site)],
@@ -120,15 +120,15 @@ final class _PlatformAreasState extends State<_PlatformAreas> with AutomaticKeep
             children: [
               Text(context.t.errors.network, textAlign: TextAlign.center),
               const SizedBox(height: 12),
-              LiveButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: _load),
+              PureButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: _load),
             ],
           ),
         );
       }
-      return const Center(child: LiveSpinner(size: 40));
+      return const Center(child: PureSpinner(size: 40));
     }
     if (areas.isEmpty) {
-      return LiveEmpty(title: context.t.common.empty);
+      return PureEmpty(title: context.t.common.empty);
     }
     // The parent groups, in the order the site presents them; a platform
     // without parents is one group and shows no chip row.

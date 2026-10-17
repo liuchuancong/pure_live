@@ -1,9 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:live_sites/live_sites.dart' show LiveRoom;
-import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/formatters/formatters.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// One room in a discovery grid: cover, title, anchor and viewer count.
 /// Tapping it opens the room.
@@ -21,7 +21,7 @@ final class RoomCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cjk = Localizations.localeOf(context).languageCode == 'zh';
     final viewers = room.audience.onlineViewers ?? room.audience.popularity ?? room.audience.totalViewers;
-    return LiveCard(
+    return PureCard(
       onTap: onOpen,
       padding: EdgeInsets.zero,
       child: Column(
@@ -64,15 +64,15 @@ final class RoomCard extends StatelessWidget {
                   room.content.title.isEmpty ? context.t.common.empty : room.content.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: LiveTheme.of(context).text.body,
+                  style: PureTheme.of(context).text.body,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   room.anchor?.name ?? '',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: LiveTheme.of(context).text.bodySmall
-                      .copyWith(color: LiveTheme.of(context).colors.textSecondary),
+                  style: PureTheme.of(context).text.bodySmall
+                      .copyWith(color: PureTheme.of(context).colors.textSecondary),
                 ),
               ],
             ),

@@ -1,8 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:live_shell/live_shell.dart' show CloseAction;
-import 'package:live_uikit/live_uikit.dart';
-
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// What the close prompt came back with.
 final class ClosePromptResult {
@@ -24,18 +23,18 @@ final class ClosePromptResult {
 /// viewer's habit.
 Future<ClosePromptResult?> showClosePrompt(BuildContext context) {
   final draft = _ClosePromptDraft();
-  return showLiveDialog<ClosePromptResult>(
+  return showPureDialog<ClosePromptResult>(
     context: context,
     title: context.t.closePrompt.title,
     dismissible: false,
     child: _ClosePromptBody(draft: draft),
     actions: (dialogContext) => [
-      LiveButton(
+      PureButton(
         label: dialogContext.t.common.cancel,
         variant: ButtonVariant.ghost,
         onPressed: () => Navigator.of(dialogContext).pop(),
       ),
-      LiveButton(
+      PureButton(
         label: dialogContext.t.common.confirm,
         onPressed: () =>
             Navigator.of(dialogContext).pop(ClosePromptResult(action: draft.action, remember: draft.remember)),
@@ -46,7 +45,7 @@ Future<ClosePromptResult?> showClosePrompt(BuildContext context) {
 
 /// The answer the body has picked so far, read by the dialog's confirm button.
 ///
-/// The actions are built by the caller of [showLiveDialog] and the choices live
+/// The actions are built by the caller of [showPureDialog] and the choices live
 /// in its child, so the two meet here rather than through a callback the child
 /// would have to be handed.
 final class _ClosePromptDraft {
@@ -77,14 +76,14 @@ class _ClosePromptBodyState extends State<_ClosePromptBody> {
         // Two mutually exclusive answers, so the language's own choice control
         // rather than a radio group: the dispatched set has no radio, and a
         // segmented track says the same thing.
-        LiveSegmented(
+        PureSegmented(
           labels: [t.toTray, t.quit],
           index: _action == CloseAction.hideToTray ? 0 : 1,
           onChanged: (index) => _choose(index == 0 ? CloseAction.hideToTray : CloseAction.quit),
         ),
         Padding(
-          padding: EdgeInsets.only(top: LiveTheme.of(context).token.scale.sizes.md),
-          child: LiveCheckbox(
+          padding: EdgeInsets.only(top: PureTheme.of(context).token.scale.sizes.md),
+          child: PureCheckbox(
             value: _remember,
             label: t.remember,
             onChanged: _rememberChoice,

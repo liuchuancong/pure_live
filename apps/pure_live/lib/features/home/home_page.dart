@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/features/home/home_menu.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The home domain's shell page: the section menu the user opens the app's
 /// destinations from (3.x `HomeMenu`; the destinations open as full pages
@@ -15,17 +15,17 @@ final class HomePage extends StatelessWidget {
   const new({super.key});
 
   @override
-  Widget build(BuildContext context) => LiveScaffold(
-    appBar: LiveAppBar(title: context.t.tabs.home, actions: const [SettingsEntryButton()]),
+  Widget build(BuildContext context) => PureScaffold(
+    appBar: PureAppBar(title: context.t.tabs.home, actions: const [SettingsEntryButton()]),
     body: ListView(
       padding: const EdgeInsets.all(12),
       children: [
         for (final entry in HomeMenuEntry.all(context))
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: LiveCard(
+            child: PureCard(
               padding: EdgeInsets.zero,
-              child: LiveListRow(
+              child: PureListRow(
                 leading: Icon(entry.icon),
                 title: entry.label,
                 trailing: const Icon(Icons.chevron_right),

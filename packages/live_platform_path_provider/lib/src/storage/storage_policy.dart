@@ -95,11 +95,11 @@ final class DefaultStoragePolicy implements StoragePolicy {
       StorageArea.cache => [
         if (portable && portableRoot != null) Directory('${portableRoot!.path}/cache'),
         if (!portable && cacheRoot != null) Directory('${cacheRoot!.path}/pure_live'),
-        if (!portable && tempRoot != null) Directory('${tempRoot!.path}/pure_live_cache'),
+        if (!portable && tempRoot != null) Directory('${tempRoot!.path}/pure_cache'),
       ],
       StorageArea.temporary => [
         if (portable && portableRoot != null) Directory('${portableRoot!.path}/temp'),
-        if (!portable && tempRoot != null) Directory('${tempRoot!.path}/pure_live_temp'),
+        if (!portable && tempRoot != null) Directory('${tempRoot!.path}/pure_temp'),
       ],
       _ => const [],
     };

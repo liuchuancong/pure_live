@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_interaction/live_interaction.dart';
 import 'package:live_sites/live_sites.dart' show LiveGift, LiveMessage, LiveMessageType;
-import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/engine/danmaku.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The room's danmaku pane: the interaction session's messages, newest at
 /// the bottom, auto-scrolling while the viewer stays at the bottom and
@@ -122,7 +122,7 @@ final class _DanmakuPaneState extends ConsumerState<DanmakuPane> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
-            LiveButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: _open),
+            PureButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: _open),
           ],
         ),
       );

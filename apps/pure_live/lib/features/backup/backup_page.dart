@@ -4,12 +4,12 @@ import 'dart:io';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/environment/app_directory.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/features/backup/backup_archive.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 import 'package:restart_app/restart_app.dart';
 
 /// Backup and restore (3.x `BackupPage`, local slice): a timestamped zip
@@ -81,17 +81,17 @@ final class _BackupPageState extends ConsumerState<BackupPage> {
   /// Restores [backup] and restarts — the zip overwrites box files that
   /// are open, and a reload is the only way to read them consistently.
   Future<void> _restore(BackupEntry backup) async {
-    final confirmed = await showLiveDialog<bool>(
+    final confirmed = await showPureDialog<bool>(
       context: context,
       title: context.t.backup.restore,
       child: Text(context.t.backup.restoreConfirm(name: backup.name)),
       actions: (dialogContext) => [
-        LiveButton(
+        PureButton(
           label: dialogContext.t.common.cancel,
           variant: ButtonVariant.ghost,
           onPressed: () => Navigator.of(dialogContext).pop(false),
         ),
-        LiveButton(
+        PureButton(
           label: dialogContext.t.backup.restore,
           variant: ButtonVariant.danger,
           onPressed: () => Navigator.of(dialogContext).pop(true),
@@ -126,15 +126,15 @@ final class _BackupPageState extends ConsumerState<BackupPage> {
 
   @override
   Widget build(BuildContext context) {
-    return LiveScaffold(
-      appBar: LiveAppBar(title: context.t.backup.title, actions: const [SettingsEntryButton()]),
+    return PureScaffold(
+      appBar: PureAppBar(title: context.t.backup.title, actions: const [SettingsEntryButton()]),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
           Row(
             children: [
               Expanded(
-                child: LiveButton(
+                child: PureButton(
                   label: context.t.backup.create,
                   icon: Icons.backup_outlined,
                   onPressed: _busy ? null : _create,
@@ -142,7 +142,7 @@ final class _BackupPageState extends ConsumerState<BackupPage> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: LiveButton(
+                child: PureButton(
                   label: context.t.backup.restoreFile,
                   icon: Icons.file_open_outlined,
                   onPressed: _busy ? null : _restoreFromFile,
@@ -153,20 +153,20 @@ final class _BackupPageState extends ConsumerState<BackupPage> {
           if (_message != null)
             Padding(
               padding: const EdgeInsets.only(top: 10),
-              child: Text(_message!, style: TextStyle(color: LiveTheme.of(context).colors.error)),
+              child: Text(_message!, style: TextStyle(color: PureTheme.of(context).colors.error)),
             ),
           const SizedBox(height: 18),
-          Text(context.t.backup.existing, style: LiveTheme.of(context).text.title),
+          Text(context.t.backup.existing, style: PureTheme.of(context).text.title),
           const SizedBox(height: 8),
           if (_backups.isEmpty)
-            LiveEmpty(title: context.t.backup.none)
+            PureEmpty(title: context.t.backup.none)
           else
             for (final backup in _backups)
-              LiveListRow(
+              PureListRow(
                 leading: const Icon(Icons.archive_outlined),
                 title: backup.name,
                 subtitle: _when(backup.modified),
-                trailing: LiveIconButton(
+                trailing: PureIconButton(
                   tooltip: context.t.backup.delete,
                   icon: Icons.delete_outline,
                   onPressed: _busy

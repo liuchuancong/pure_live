@@ -26,17 +26,9 @@ workspace:
   - packages/live_sites
   - packages/live_storage
   - packages/live_storage/example
-  - packages/live_uikit
-  - packages/live_uikit_background
-  - packages/live_uikit_background/example
-  - packages/live_uikit_cupertino
-  - packages/live_uikit_fluent
-  - packages/live_uikit_forui
-  - packages/live_uikit_glass
-  - packages/live_uikit_macos
-  - packages/live_uikit_material
-  - packages/live_uikit_neumorphic
-  - packages/live_uikit_wind
+  - packages/pure_uikit
+  - packages/pure_uikit_background
+  - packages/pure_uikit_background/example
   - packages/live_websocket
 
 dev_dependencies:

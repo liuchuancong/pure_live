@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
-import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/shell/shell_destinations.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The TV chrome: a labelled rail the D-pad walks top to bottom.
 ///
@@ -18,11 +18,11 @@ final class TvShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
   @override
-  Widget build(BuildContext context) => LiveAppShell(
+  Widget build(BuildContext context) => PureAppShell(
     destinations: shellDestinations(context),
     selectedId: ShellBranch.at(navigationShell.currentIndex).name,
     onSelected: _goBranch,
-    placement: LiveShellPlacement.rail,
+    placement: PureShellPlacement.rail,
     child: navigationShell,
   );
 

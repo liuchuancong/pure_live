@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/routing/routes/backup/backup_routes.dart';
 import 'package:pure_live/app/routing/routes/settings/settings_routes.dart';
 import 'package:pure_live/app/routing/routes/settings/shield_routes.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The settings cluster's index page: one row per shipped settings page.
 ///
@@ -15,16 +15,16 @@ final class SettingsPage extends StatelessWidget {
   const new({super.key});
 
   @override
-  Widget build(BuildContext context) => LiveScaffold(
-    appBar: LiveAppBar(title: context.t.tabs.settings, actions: const [SettingsEntryButton()]),
+  Widget build(BuildContext context) => PureScaffold(
+    appBar: PureAppBar(title: context.t.tabs.settings, actions: const [SettingsEntryButton()]),
     body: ListView(
       padding: const EdgeInsets.all(12),
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: 10),
-          child: LiveCard(
+          child: PureCard(
             padding: EdgeInsets.zero,
-            child: LiveListRow(
+            child: PureListRow(
               leading: const Icon(Icons.palette_outlined),
               title: context.t.settings.appearance,
               trailing: const Icon(Icons.chevron_right),
@@ -35,9 +35,9 @@ final class SettingsPage extends StatelessWidget {
         ),
         Padding(
           padding: const EdgeInsets.only(bottom: 10),
-          child: LiveCard(
+          child: PureCard(
             padding: EdgeInsets.zero,
-            child: LiveListRow(
+            child: PureListRow(
               leading: const Icon(Icons.shield_outlined),
               title: context.t.shield.title,
               trailing: const Icon(Icons.chevron_right),
@@ -48,9 +48,9 @@ final class SettingsPage extends StatelessWidget {
         ),
         Padding(
           padding: const EdgeInsets.only(bottom: 10),
-          child: LiveCard(
+          child: PureCard(
             padding: EdgeInsets.zero,
-            child: LiveListRow(
+            child: PureListRow(
               leading: const Icon(Icons.backup_outlined),
               title: context.t.backup.title,
               trailing: const Icon(Icons.chevron_right),

@@ -17,7 +17,7 @@ enum AppThemeMode {
 
 /// The user's appearance choices, as persisted.
 ///
-/// Every field is a primitive or a registry id — never a `live_uikit` type.
+/// Every field is a primitive or a registry id — never a `pure_uikit` type.
 /// The design languages, densities and brightness modes belong to the UI
 /// library, so a stored document must survive one being added, renamed or
 /// removed; `ui_configuration_mapper.dart` resolves an unknown id to the

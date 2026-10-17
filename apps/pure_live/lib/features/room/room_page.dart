@@ -5,13 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_playback/live_playback.dart' show EngineStopped, PlaybackEngineEvent;
 import 'package:live_sites/live_sites.dart';
-import 'package:live_uikit/live_uikit.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitVideoView;
 import 'package:pure_live/app/engine/playback_engine.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/features/room/danmaku_pane.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The room page: the player surface, the room's own words, and the two
 /// selectors that matter live — quality and line.
@@ -167,8 +167,8 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
       FormFactor.phone || FormFactor.tablet => false,
     };
     final playerColumn = Column(children: [_player(context), _info(context)]);
-    return LiveScaffold(
-      appBar: LiveAppBar(title: _title(), actions: const [SettingsEntryButton()]),
+    return PureScaffold(
+      appBar: PureAppBar(title: _title(), actions: const [SettingsEntryButton()]),
       body: wide
           ? Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,7 +214,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
     } else if (_engineStopped) {
       surface = _failedSurface(context);
     } else if (_loadingLines || _currentLine != null) {
-      surface = const Center(child: LiveSpinner(size: 40));
+      surface = const Center(child: PureSpinner(size: 40));
     } else {
       surface = const SizedBox.expand();
     }
@@ -230,7 +230,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
       children: [
         Text(context.t.room.failed, style: const TextStyle(color: Colors.white70)),
         const SizedBox(height: 12),
-        LiveButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: _retry),
+        PureButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: _retry),
       ],
     ),
   );
@@ -252,28 +252,28 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
           if (anchor.isNotEmpty)
             Text(
               anchor,
-              style: LiveTheme.of(context).text.caption.copyWith(color: LiveTheme.of(context).colors.primary),
+              style: PureTheme.of(context).text.caption.copyWith(color: PureTheme.of(context).colors.primary),
             ),
           if (_engineStopped && _currentLine != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Row(
                 children: [
-                  Text(context.t.room.failed, style: TextStyle(color: LiveTheme.of(context).colors.error)),
+                  Text(context.t.room.failed, style: TextStyle(color: PureTheme.of(context).colors.error)),
                   const SizedBox(width: 12),
-                  LiveButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: _retry),
+                  PureButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: _retry),
                 ],
               ),
             ),
           const SizedBox(height: 8),
           Row(
             children: [
-              LiveIconButton(tooltip: context.t.room.pause, icon: Icons.pause_circle_outline, onPressed: _engine.pause),
-              LiveIconButton(tooltip: context.t.room.play, icon: Icons.play_circle_outline, onPressed: _engine.resume),
+              PureIconButton(tooltip: context.t.room.pause, icon: Icons.pause_circle_outline, onPressed: _engine.pause),
+              PureIconButton(tooltip: context.t.room.play, icon: Icons.play_circle_outline, onPressed: _engine.resume),
               const SizedBox(width: 12),
               if (_qualities.isNotEmpty)
                 Expanded(
-                  child: LiveSelect<LivePlayQuality>(
+                  child: PureSelect<LivePlayQuality>(
                     items: _qualities,
                     value: _selectedQuality,
                     itemLabel: (quality) => quality.label,
@@ -285,7 +285,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
           if (_lines.length > 1)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: LiveSelect<int>(
+              child: PureSelect<int>(
                 items: [for (var i = 0; i < _lines.length; i++) i],
                 value: _currentLine == null ? null : _lines.indexOf(_currentLine!),
                 itemLabel: (index) {

@@ -6,12 +6,12 @@ import 'package:flutter_adaptive_layout/flutter_adaptive_layout.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_pagination/live_pagination.dart';
 import 'package:live_sites/live_sites.dart' show LiveDiscoveryProvider, LivePageRequest, LiveRoom, LiveSite;
-import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
 import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 /// Popular: every discovery-capable platform as a tab over its recommend
@@ -35,14 +35,14 @@ final class _PopularPageState extends ConsumerState<PopularPage> {
     final sites = ref.watch(sitesProvider);
     final discoverable = sites.registry.all.where((site) => site.capability<LiveDiscoveryProvider>() != null).toList();
     if (discoverable.isEmpty) {
-      return LiveScaffold(
-        appBar: LiveAppBar(title: context.t.tabs.popular, actions: const [SettingsEntryButton()]),
-        body: LiveEmpty(title: context.t.common.empty),
+      return PureScaffold(
+        appBar: PureAppBar(title: context.t.tabs.popular, actions: const [SettingsEntryButton()]),
+        body: PureEmpty(title: context.t.common.empty),
       );
     }
     final index = _selected.clamp(0, discoverable.length - 1);
-    return LiveScaffold(
-      appBar: LiveAppBar(
+    return PureScaffold(
+      appBar: PureAppBar(
         title: context.t.tabs.popular,
         actions: const [SettingsEntryButton()],
         bottom: PreferredSize(
@@ -50,18 +50,18 @@ final class _PopularPageState extends ConsumerState<PopularPage> {
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: LiveTabs(
+            child: PureTabs(
               index: index,
               onChanged: (value) => setState(() => _selected = value),
               tabs: [
                 for (final site in discoverable)
-                  LiveTab(label: site.manifest.localizedName(_tag(context, site), 'zh-CN')),
+                  PureTab(label: site.manifest.localizedName(_tag(context, site), 'zh-CN')),
               ],
             ),
           ),
         ),
       ),
-      body: LiveTabView(
+      body: PureTabView(
         index: index,
         onIndexChanged: (value) => setState(() => _selected = value),
         pages: [for (final site in discoverable) _SiteFeed(site: site)],
@@ -151,7 +151,7 @@ final class _SiteFeedState extends State<_SiteFeed> with AutomaticKeepAliveClien
             children: [
               Text(context.t.errors.network, textAlign: TextAlign.center),
               const SizedBox(height: 12),
-              LiveButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: _controller.retry),
+              PureButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: _controller.retry),
             ],
           ),
         );
@@ -159,7 +159,7 @@ final class _SiteFeedState extends State<_SiteFeed> with AutomaticKeepAliveClien
       if (state.isRefreshing || state.isUnloaded) {
         return _SkeletonFeed(columns: _columns(context));
       }
-      return LiveEmpty(title: context.t.common.empty);
+      return PureEmpty(title: context.t.common.empty);
     }
     return CustomRefreshIndicator(
       onRefresh: _controller.refresh,
@@ -171,7 +171,7 @@ final class _SiteFeedState extends State<_SiteFeed> with AutomaticKeepAliveClien
             top: 12,
             child: Opacity(
               opacity: indicator.value.clamp(0, 1),
-              child: IgnorePointer(child: LiveProgress(value: indicator.isLoading ? null : indicator.value, height: 4)),
+              child: IgnorePointer(child: PureProgress(value: indicator.isLoading ? null : indicator.value, height: 4)),
             ),
           ),
         ],
@@ -198,7 +198,7 @@ final class _SiteFeedState extends State<_SiteFeed> with AutomaticKeepAliveClien
               ).push<void>(context),
             );
           }
-          return state.isLoadingMore ? const Center(child: LiveSpinner()) : const SizedBox.shrink();
+          return state.isLoadingMore ? const Center(child: PureSpinner()) : const SizedBox.shrink();
         },
       ),
     );
@@ -232,7 +232,7 @@ final class _SkeletonFeed extends StatelessWidget {
       childAspectRatio: 0.82,
       children: [
         for (var i = 0; i < columns * 3; i++)
-          LiveCard(
+          PureCard(
             padding: EdgeInsets.zero,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

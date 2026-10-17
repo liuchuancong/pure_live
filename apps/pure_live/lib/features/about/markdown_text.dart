@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:live_uikit/live_uikit.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The update notes' markdown, rendered lightly (3.x `MarkdownText`):
 /// headings, bullets, numbered lists, rules and paragraphs, with inline
@@ -22,7 +22,7 @@ final class MarkdownText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = LiveTheme.of(context).text;
+    final text = PureTheme.of(context).text;
     final lines = data.replaceAll('\r\n', '\n').split('\n');
     final widgets = <Widget>[];
     final paragraph = <String>[];
@@ -49,7 +49,7 @@ final class MarkdownText extends StatelessWidget {
         widgets.add(
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Container(height: 1, color: LiveTheme.of(context).colors.border),
+            child: Container(height: 1, color: PureTheme.of(context).colors.border),
           ),
         );
       } else if (heading != null) {

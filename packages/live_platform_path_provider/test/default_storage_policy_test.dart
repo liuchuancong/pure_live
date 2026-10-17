@@ -79,7 +79,7 @@ void main() {
 
     expect(paths(policy.candidatesFor(StorageArea.cache, snapshot(portable: false))), [
       '${cacheRoot.path}/pure_live',
-      '${tempRoot.path}/pure_live_cache',
+      '${tempRoot.path}/pure_cache',
     ]);
   });
 
@@ -88,7 +88,7 @@ void main() {
 
     expect(paths(policy.candidatesFor(StorageArea.temporary, snapshot(portable: true))), ['${exeRoot.path}/temp']);
     expect(paths(policy.candidatesFor(StorageArea.temporary, snapshot(portable: false))), [
-      '${tempRoot.path}/pure_live_temp',
+      '${tempRoot.path}/pure_temp',
     ]);
   });
 

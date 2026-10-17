@@ -3,11 +3,11 @@ import 'dart:async' show StreamSubscription, unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart' show IptvChannel, IptvLibrary, iptvFetcherFor;
-import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/iptv/iptv_routes.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// IPTV: the imported playlists, their channels grouped, and the way a new
 /// playlist enters the library — a name and a URL, fetched through the
@@ -50,7 +50,7 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
   Future<void> _addSource() async {
     final name = TextEditingController();
     final url = TextEditingController();
-    final form = await showLiveDialog<({String name, String url})>(
+    final form = await showPureDialog<({String name, String url})>(
       context: context,
       title: context.t.iptv.addSource,
       // A Builder so the submit pops the dialog route, not the page under it.
@@ -60,10 +60,10 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
           children: [
             Focus(
               autofocus: true,
-              child: LiveTextField(controller: name, placeholder: fieldContext.t.iptv.sourceName),
+              child: PureTextField(controller: name, placeholder: fieldContext.t.iptv.sourceName),
             ),
             const SizedBox(height: 8),
-            LiveTextField(
+            PureTextField(
               controller: url,
               placeholder: fieldContext.t.iptv.sourceUrl,
               onSubmitted: (_) => Navigator.of(fieldContext).pop((name: name.text.trim(), url: url.text.trim())),
@@ -72,12 +72,12 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
         ),
       ),
       actions: (dialogContext) => [
-        LiveButton(
+        PureButton(
           label: dialogContext.t.common.cancel,
           variant: ButtonVariant.ghost,
           onPressed: () => Navigator.of(dialogContext).pop(),
         ),
-        LiveButton(
+        PureButton(
           label: dialogContext.t.common.confirm,
           onPressed: () => Navigator.of(dialogContext).pop((name: name.text.trim(), url: url.text.trim())),
         ),
@@ -92,11 +92,11 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
       final text = await fetch(Uri.parse(form.url));
       final count = await _library.importFromText(text, name: form.name, url: form.url);
       if (mounted) {
-        LiveToast.show(context, context.t.iptv.imported(count: count), type: LiveToastType.success);
+        PureToast.show(context, context.t.iptv.imported(count: count), type: PureToastType.success);
       }
     } on Object {
       if (mounted) {
-        LiveToast.show(context, context.t.errors.network, type: LiveToastType.error);
+        PureToast.show(context, context.t.errors.network, type: PureToastType.error);
       }
     } finally {
       if (mounted) {
@@ -106,17 +106,17 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
   }
 
   Future<void> _deleteSource(String id) async {
-    final confirmed = await showLiveDialog<bool>(
+    final confirmed = await showPureDialog<bool>(
       context: context,
       title: context.t.iptv.deleteSource,
       child: const SizedBox.shrink(),
       actions: (dialogContext) => [
-        LiveButton(
+        PureButton(
           label: dialogContext.t.common.cancel,
           variant: ButtonVariant.ghost,
           onPressed: () => Navigator.of(dialogContext).pop(false),
         ),
-        LiveButton(
+        PureButton(
           label: dialogContext.t.common.confirm,
           variant: ButtonVariant.danger,
           onPressed: () => Navigator.of(dialogContext).pop(true),
@@ -138,11 +138,11 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
       for (final channel in library.orderedChannels)
         if (group == null || channel.entry.group == group) channel,
     ];
-    return LiveScaffold(
-      appBar: LiveAppBar(
+    return PureScaffold(
+      appBar: PureAppBar(
         title: context.t.iptv.title,
         actions: [
-          LiveIconButton(
+          PureIconButton(
             tooltip: context.t.iptv.addSource,
             icon: Icons.add_link,
             onPressed: _importing ? null : _addSource,
@@ -198,22 +198,22 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
 
   Widget _channelList(BuildContext context, List<IptvChannel> channels) {
     if (_importing) {
-      return const Center(child: LiveSpinner(size: 40));
+      return const Center(child: PureSpinner(size: 40));
     }
     if (channels.isEmpty) {
-      return LiveEmpty(title: context.t.iptv.empty);
+      return PureEmpty(title: context.t.iptv.empty);
     }
     return ListView.builder(
       padding: const EdgeInsets.all(12),
       itemCount: channels.length,
       itemBuilder: (context, index) {
         final channel = channels[index];
-        return LiveListRow(
+        return PureListRow(
           leading: const Icon(Icons.live_tv_outlined),
           title: channel.entry.name,
           subtitle: channel.entry.group ?? '',
           onTap: () => IptvPlayRoute(channelId: channel.id, name: channel.entry.name).push<void>(context),
-          trailing: LiveIconButton(
+          trailing: PureIconButton(
             tooltip: context.t.iptv.favorite,
             icon: channel.favorite ? Icons.favorite : Icons.favorite_border,
             onPressed: () => unawaited(_library.toggleFavorite(channel.id)),

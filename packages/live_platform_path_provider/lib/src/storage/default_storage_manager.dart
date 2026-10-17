@@ -59,7 +59,7 @@ final class DefaultStorageManager implements StorageManager {
       // The same names the policy's own temp candidates use, so a degraded
       // area never changes directory depending on which tier failed.
       final fallback = Directory(
-        p.join(_systemTemp.path, area == StorageArea.cache ? 'pure_live_cache' : 'pure_live_temp'),
+        p.join(_systemTemp.path, area == StorageArea.cache ? 'pure_cache' : 'pure_temp'),
       );
       final location = await _probe(area, fallback, snapshot.kind);
       if (location != null) {
@@ -81,7 +81,7 @@ final class DefaultStorageManager implements StorageManager {
   Future<StorageLocation?> _probe(StorageArea area, Directory candidate, PlatformKind kind) async {
     try {
       await candidate.create(recursive: true);
-      final probe = File(p.join(candidate.path, '.pure_live_probe_${pid}_${++_probeSequence}'));
+      final probe = File(p.join(candidate.path, '.pure_probe_${pid}_${++_probeSequence}'));
       final sink = probe.openWrite();
       await sink.close();
       await probe.delete();

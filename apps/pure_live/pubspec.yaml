@@ -3,7 +3,7 @@ description: >-
   Pure Live: the application composition root. It boots the platform layer,
   opens the storage, installs the logging and network stacks, resolves the theme
   from the user's preferences and assembles the pages out of the business
-  packages and live_uikit.
+  packages and pure_uikit.
 version: 0.1.0
 publish_to: none
 
@@ -77,16 +77,8 @@ dependencies:
   live_storage: # 存储与数据仓库
 
   # UIKit 核心与风格适配器
-  live_uikit: # UI Token、组件与运行时分派
-  live_uikit_background: # 背景样式与图层
-  live_uikit_cupertino: # Cupertino 风格
-  live_uikit_fluent: # Fluent 风格
-  live_uikit_forui: # ForUI 风格
-  live_uikit_glass: # 玻璃效果风格
-  live_uikit_macos: # macOS 风格
-  live_uikit_material: # Material 风格
-  live_uikit_neumorphic: # 新拟物风格
-  live_uikit_wind: # Wind 风格
+  pure_uikit: # UI Token、组件与运行时分派
+  pure_uikit_background: # 背景样式与图层
 
   # 播放内核
   media_core:
@@ -113,6 +105,8 @@ dependencies:
   slang: ^4.19.2 # 多语言代码生成基础
   slang_flutter: ^4.19.0 # Flutter 多语言集成
   webview_flutter: ^4.14.1 # 内嵌网页视图
+  fluent_2: any
+  forui: any
 dev_dependencies:
   # 代码生成
   build_runner: ^2.16.2 # 运行代码生成器

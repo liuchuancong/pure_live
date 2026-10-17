@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_uikit/live_uikit.dart';
-import 'package:pure_live/app/adapters/design_language_registry.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/theme/appearance_preferences/appearance_preferences.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The appearance page: every control writes straight into the persisted
 /// appearance — the store applies in memory before it is durable, so the
@@ -18,8 +17,8 @@ final class AppearancePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appearance = ref.watch(appearancePreferencesProvider);
     final update = ref.read(appearancePreferencesProvider.notifier).update;
-    return LiveScaffold(
-      appBar: LiveAppBar(title: context.t.settings.appearance, actions: const [SettingsEntryButton()]),
+    return PureScaffold(
+      appBar: PureAppBar(title: context.t.settings.appearance, actions: const [SettingsEntryButton()]),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
@@ -28,7 +27,7 @@ final class AppearancePage extends ConsumerWidget {
           _Row(title: context.t.settings.accent, child: _accent(context, appearance, update)),
           _Row(
             title: context.t.settings.pureBlack,
-            child: LiveSwitch(
+            child: PureSwitch(
               value: appearance.pureBlack,
               onChanged: (value) => update((a) => a.copyWith(pureBlack: value)),
             ),
@@ -36,7 +35,7 @@ final class AppearancePage extends ConsumerWidget {
           _Row(title: context.t.settings.density, child: _density(context, appearance, update)),
           _Row(
             title: context.t.settings.fontScale,
-            child: LiveSlider(
+            child: PureSlider(
               value: appearance.fontScale,
               min: 0.8,
               max: 1.4,
@@ -45,28 +44,28 @@ final class AppearancePage extends ConsumerWidget {
           ),
           _Row(
             title: context.t.settings.transparency,
-            child: LiveSlider(
+            child: PureSlider(
               value: appearance.transparency,
               onChanged: (value) => update((a) => a.copyWith(transparency: value)),
             ),
           ),
           _Row(
             title: context.t.settings.reduceTransparency,
-            child: LiveSwitch(
+            child: PureSwitch(
               value: appearance.reduceTransparency,
               onChanged: (value) => update((a) => a.copyWith(reduceTransparency: value)),
             ),
           ),
           _Row(
             title: context.t.settings.animations,
-            child: LiveSwitch(
+            child: PureSwitch(
               value: appearance.animations,
               onChanged: (value) => update((a) => a.copyWith(animations: value)),
             ),
           ),
           _Row(
             title: context.t.settings.focusOutline,
-            child: LiveSwitch(
+            child: PureSwitch(
               value: appearance.focusOutline,
               onChanged: (value) => update((a) => a.copyWith(focusOutline: value)),
             ),
@@ -80,7 +79,7 @@ final class AppearancePage extends ConsumerWidget {
     BuildContext context,
     AppearancePreferences appearance,
     Future<void> Function(AppearancePreferences Function(AppearancePreferences)) update,
-  ) => LiveSegmented(
+  ) => PureSegmented(
     labels: [context.t.theme.system, context.t.theme.dark, context.t.theme.light],
     index: switch (appearance.themeMode) {
       AppThemeMode.system => 0,
@@ -104,11 +103,11 @@ final class AppearancePage extends ConsumerWidget {
     AppearancePreferences appearance,
     Future<void> Function(AppearancePreferences Function(AppearancePreferences)) update,
   ) {
-    final registered = appLanguageRegistry.adapters.keys.map((language) => language.name).toList()..sort();
+    final registered = PureDesignLanguage.values.map((language) => language.name).toList()..sort();
     final ids = ['', ...registered];
     String label(String id) =>
-        id.isEmpty ? context.t.design.defaultLanguage : LiveDesignLanguage.values.byName(id).name;
-    return LiveSelect<String>(
+        id.isEmpty ? context.t.design.defaultLanguage : PureDesignLanguage.values.byName(id).name;
+    return PureSelect<String>(
       items: ids,
       value: appearance.designLanguageId,
       itemLabel: label,
@@ -122,7 +121,7 @@ final class AppearancePage extends ConsumerWidget {
     Future<void> Function(AppearancePreferences Function(AppearancePreferences)) update,
   ) {
     final ids = UiDensity.values.map((density) => density.name).toList();
-    return LiveSelect<String>(
+    return PureSelect<String>(
       items: ids,
       value: appearance.densityId,
       itemLabel: (id) => id,
@@ -171,12 +170,12 @@ final class _Row extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 18),
-    child: LiveCard(
+    child: PureCard(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: LiveTheme.of(context).text.title),
+          Text(title, style: PureTheme.of(context).text.title),
           const SizedBox(height: 10),
           child,
         ],

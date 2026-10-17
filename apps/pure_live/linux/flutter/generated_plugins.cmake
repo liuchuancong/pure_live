@@ -9,6 +9,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_linux
   flutter_acrylic
   flutter_secure_storage_linux
+  gtk
   media_kit_video
   open_file_linux
   refresh_rate
@@ -17,6 +18,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   url_launcher_linux
   volume_controller
   window_manager
+  yaru_window_linux
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

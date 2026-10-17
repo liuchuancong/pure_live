@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_library/live_library.dart' show FollowRepository, LibraryRoom;
 import 'package:live_sites/live_sites.dart' show LiveRoom;
-import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
 import 'package:pure_live/features/follow/follow_group_sheet.dart';
 import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The follow domain's shell page (3.x `FavoritePage`, trimmed): every
 /// followed room as a card, filtered by group, with unfollow on long
@@ -62,22 +62,22 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(context.t.follow.manageGroups, style: LiveTheme.of(context).text.title),
+                  Text(context.t.follow.manageGroups, style: PureTheme.of(context).text.title),
                   const SizedBox(height: 12),
                   for (final group in groups)
-                    LiveListRow(
+                    PureListRow(
                       leading: const Icon(Icons.folder_outlined),
                       title: group.name,
                       divided: false,
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          LiveIconButton(
+                          PureIconButton(
                             tooltip: context.t.follow.renameGroup,
                             icon: Icons.edit_outlined,
                             onPressed: () => unawaited(_renameGroupFromSheet(context, group.id, group.name)),
                           ),
-                          LiveIconButton(
+                          PureIconButton(
                             tooltip: context.t.follow.deleteGroup,
                             icon: Icons.delete_outline,
                             onPressed: () => unawaited(_deleteGroupFromSheet(context, group.id)),
@@ -86,7 +86,7 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
                       ),
                     ),
                   const SizedBox(height: 8),
-                  LiveButton(
+                  PureButton(
                     label: context.t.follow.newGroup,
                     icon: Icons.add,
                     onPressed: () => unawaited(_createGroupFromSheet(context)),
@@ -134,10 +134,10 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(context.t.follow.assign, style: LiveTheme.of(context).text.title),
+                Text(context.t.follow.assign, style: PureTheme.of(context).text.title),
                 const SizedBox(height: 8),
                 for (final group in _repository.groups)
-                  LiveCheckbox(
+                  PureCheckbox(
                     label: group.name,
                     value: selected.contains(group.id),
                     onChanged: (checked) => setSheetState(() {
@@ -148,7 +148,7 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
                 Row(
                   children: [
                     Expanded(
-                      child: LiveButton(
+                      child: PureButton(
                         label: context.t.common.confirm,
                         icon: Icons.check,
                         onPressed: () => Navigator.of(sheetContext).pop(true),
@@ -156,7 +156,7 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: LiveButton(
+                      child: PureButton(
                         label: context.t.follow.unfollow,
                         icon: Icons.heart_broken_outlined,
                         onPressed: () {
@@ -186,11 +186,11 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
         ? records
         : records.where((record) => record.groupIds.contains(_selectedGroup)).toList();
     final groupPosition = groups.indexWhere((group) => group.id == _selectedGroup);
-    return LiveScaffold(
-      appBar: LiveAppBar(
+    return PureScaffold(
+      appBar: PureAppBar(
         title: context.t.tabs.follow,
         actions: [
-          LiveIconButton(
+          PureIconButton(
             tooltip: context.t.follow.manageGroups,
             icon: Icons.folder_copy_outlined,
             onPressed: _manageGroups,
@@ -202,19 +202,19 @@ final class _FollowPageState extends ConsumerState<FollowPage> {
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: LiveTabs(
+            child: PureTabs(
               index: _selectedGroup == null || groupPosition < 0 ? 0 : groupPosition + 1,
               onChanged: (index) => setState(() => _selectedGroup = index == 0 ? null : groups[index - 1].id),
               tabs: [
-                LiveTab(label: context.t.follow.all),
-                for (final group in groups) LiveTab(label: group.name),
+                PureTab(label: context.t.follow.all),
+                for (final group in groups) PureTab(label: group.name),
               ],
             ),
           ),
         ),
       ),
       body: visible.isEmpty
-          ? LiveEmpty(title: context.t.follow.empty)
+          ? PureEmpty(title: context.t.follow.empty)
           : GridView.builder(
               padding: const EdgeInsets.all(12),
               gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(

@@ -1,18 +1,15 @@
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_uikit/live_uikit.dart';
-import 'package:pure_live/app/adapters/design_language_registry.dart';
 import 'package:pure_live/app/delegates.dart';
-import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/app/theme/app_theme.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart' show TranslationProvider, t;
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The root widget: the app host the chosen design language ships.
 ///
 /// [AppTheme] sits above this and turns the persisted appearance into a
-/// `LiveTheme`; this hands the router to that language's own app widget —
+/// `PureTheme`; this hands the router to that language's own app widget —
 /// `FluentApp`, `MacosApp`, the `material_ui` fork's `MaterialApp`, the
 /// `cupertino_ui` fork's `CupertinoApp`, and the token Material host for the
 /// languages whose library ships none.
@@ -33,16 +30,7 @@ final class PureLiveApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final config = ref.watch(uiConfigProvider);
-    final adapter = appLanguageRegistry.adapterFor(config.language);
-    if (kDebugMode) {
-      debugPrint(
-        '[ui] language=${config.language.name} adapter=${adapter?.id ?? 'MISSING'} '
-        'host=${_surface(adapter, LiveUiSurface.appHost)} '
-        'shell=${_surface(adapter, LiveUiSurface.appShell)}',
-      );
-    }
-    return LiveApp(
+    return PureApp(
       routerConfig: ref.watch(routerProvider),
       onGenerateTitle: (context) => t.app.title,
       localizationsDelegates: appLocalizationsDelegates,
@@ -52,14 +40,4 @@ final class PureLiveApp extends ConsumerWidget {
     );
   }
 
-  /// Names the surface the active adapter owns, marking the two
-  /// ways it can be absent: no adapter at all, or an adapter that does not own
-  /// that surface. There is no fallback to name — the resolver raises the first
-  /// case, and the second is what the `[ui]` line exists to make visible.
-  static String _surface(LanguageAdapter? adapter, LiveUiSurface surface) {
-    if (adapter == null) {
-      return '${surface.name}->none';
-    }
-    return adapter.surfaces.supports(surface) ? surface.name : '${surface.name}->unowned';
-  }
 }

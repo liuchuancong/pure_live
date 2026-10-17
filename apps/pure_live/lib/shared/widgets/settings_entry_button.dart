@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-
-import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/routing/routes/settings/settings_routes.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The chrome's and the pages' way into settings: a rail's trailing corner
 /// on desktop, a page app bar's action under touch. A push, not a branch
@@ -12,7 +11,7 @@ final class SettingsEntryButton extends StatelessWidget {
   const new({super.key});
 
   @override
-  Widget build(BuildContext context) => LiveIconButton(
+  Widget build(BuildContext context) => PureIconButton(
     icon: Icons.settings_outlined,
     tooltip: context.t.tabs.settings,
     onPressed: () => const SettingsRoute().push<void>(context),

@@ -1,0 +1,27 @@
+name: pure_uikit_background_example
+description: >-
+  Runnable gallery that exercises every caller-owned knob on
+  pure_uikit_background: variant dispatch, underlay, fallback, letterbox
+  fill sigma, blur sigma, overlay scrim, provider passthrough and the
+  paused signal fed through LiveBackground.
+publish_to: none
+version: 0.1.0
+
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  pure_uikit_background:
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^11.0.0
+
+flutter:
+  uses-material-design: true

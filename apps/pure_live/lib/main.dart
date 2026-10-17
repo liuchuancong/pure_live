@@ -6,8 +6,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_log/live_log.dart' show ErrorReporter;
 import 'package:live_platform/live_platform.dart' show PlatformKind;
-import 'package:live_uikit/live_uikit.dart' show LiveDesignLanguage;
-
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/app/composition/app_services.dart';
 import 'package:pure_live/app/engine/playback_engine.dart';
@@ -16,6 +14,7 @@ import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/theme/app_theme.dart';
 import 'package:pure_live/platforms/desktop/entry/desktop_entry.dart';
 import 'package:pure_live/platforms/desktop/entry/desktop_launch.dart';
+import 'package:pure_uikit/pure_uikit.dart' show PureDesignLanguage;
 
 /// The process entry point: open the log, boot the service graph, then hand
 /// it to the widget tree through `ProviderScope` overrides.
@@ -95,7 +94,7 @@ Future<void> main(List<String> args) async {
         appearanceStoreProvider.overrideWithValue(services.appearance),
         shellPreferencesProvider.overrideWithValue(services.shell),
       ],
-      child: AppTheme(diagnostics: log.uiSink, child: const PureLiveApp()),
+      child: const AppTheme(child: PureLiveApp()),
     ),
   );
   if (pinnedLanguage != null) {
@@ -112,14 +111,14 @@ Future<void> main(List<String> args) async {
 /// An unknown id is a typo in a command line, and the only reader of it is the
 /// person who just typed it, so it fails at boot rather than quietly rendering
 /// the persisted language.
-LiveDesignLanguage? _pinnedLanguageFrom(List<String> args) {
+PureDesignLanguage? _pinnedLanguageFrom(List<String> args) {
   const prefix = '--ui-language=';
   for (final arg in args) {
     if (!arg.startsWith(prefix)) {
       continue;
     }
     final id = arg.substring(prefix.length);
-    return LiveDesignLanguage.values.firstWhere(
+    return PureDesignLanguage.values.firstWhere(
       (language) => language.name == id,
       orElse: () => throw ArgumentError.value(id, 'ui-language', 'not a design language'),
     );

@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_playback/live_playback.dart' show EngineStopped, PlaybackEngineEvent;
 import 'package:live_sites/live_sites.dart' show LivePlayFormatSource, LivePlayLine, LiveStreamFormat;
-import 'package:live_uikit/live_uikit.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitVideoView;
 import 'package:pure_live/app/engine/playback_engine.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The stream format a channel's URL implies, from its extension.
 LiveStreamFormat iptvFormatOf(String url) {
@@ -107,12 +107,12 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
     final channel = library.channelById(widget.channelId);
     final title = channel?.entry.name.isNotEmpty ?? false ? channel!.entry.name : widget.name;
     final adapter = _engine.surfaceAdapter;
-    return LiveScaffold(
-      appBar: LiveAppBar(
+    return PureScaffold(
+      appBar: PureAppBar(
         title: title,
         actions: [
           if (channel != null)
-            LiveIconButton(
+            PureIconButton(
               tooltip: context.t.iptv.favorite,
               icon: channel.favorite ? Icons.favorite : Icons.favorite_border,
               onPressed: _toggleFavorite,
@@ -135,14 +135,14 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
                               children: [
                                 Text(context.t.room.failed, style: const TextStyle(color: Colors.white70)),
                                 const SizedBox(height: 12),
-                                LiveButton(
+                                PureButton(
                                   label: context.t.common.retry,
                                   icon: Icons.refresh,
                                   onPressed: () => unawaited(_open()),
                                 ),
                               ],
                             )
-                          : const LiveSpinner(size: 40),
+                          : const PureSpinner(size: 40),
                     ),
             ),
           ),

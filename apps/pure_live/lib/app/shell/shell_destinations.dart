@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The shell's branches in one table: the display order, each branch's
 /// icon and localized label, and the position `goBranch` addresses.
@@ -48,7 +48,7 @@ enum ShellBranch {
 /// The id is the branch's own name, so the shell reports a choice as something
 /// the router layer can map back without relying on positions surviving a change
 /// to the table.
-List<LiveShellDestination> shellDestinations(BuildContext context) => [
+List<PureShellDestination> shellDestinations(BuildContext context) => [
   for (final branch in ShellBranch.values)
-    LiveShellDestination(id: branch.name, label: branch.label(context), icon: branch.icon),
+    PureShellDestination(id: branch.name, label: branch.label(context), icon: branch.icon),
 ];

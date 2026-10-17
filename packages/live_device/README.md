@@ -201,7 +201,7 @@ final DeviceIdentity device = await const PlatformDeviceIdentityService().read()
 - `live_platform`：识别运行环境和设备形态。
 - `live_device`：提供亮度、音量、电量、刷新率、网络、屏幕常亮和设备身份等设备 API。
 - `live_playback`：决定播放期间何时调节、在何时恢复状态，并控制播放器自身音量。
-- `live_uikit`：只提供滑块、图标和交互呈现，不直接依赖这些设备插件。
+- `pure_uikit`：只提供滑块、图标和交互呈现，不直接依赖这些设备插件。
 
 ## 公共 API
 

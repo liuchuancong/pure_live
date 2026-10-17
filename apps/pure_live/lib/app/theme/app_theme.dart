@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_uikit/live_uikit.dart';
-import 'package:pure_live/app/adapters/design_language_registry.dart';
 import 'package:pure_live/app/environment/env.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The Material surface the chosen appearance resolves to.
 ///
@@ -17,7 +16,7 @@ ThemeData materialThemeSeed(UiConfig config, Brightness brightness) => ThemeData
 );
 
 /// The root of the themed tree: it turns the persisted appearance into the
-/// `LiveTheme` every widget below reads, including the host the root widget asks
+/// `PureTheme` every widget below reads, including the host the root widget asks
 /// the language for.
 ///
 /// It sits above the host, not inside it, so a pushed route is themed by the
@@ -32,7 +31,7 @@ class AppTheme extends ConsumerWidget {
   /// Themes [child]; [hardwareBlur] says whether the device can afford a
   /// backdrop filter, and belongs to the platform facts of this build (a TV
   /// build declares false because it cannot).
-  const new({required this.child, this.hardwareBlur = true, this.diagnostics, super.key});
+  const new({required this.child, this.hardwareBlur = true, super.key});
 
   /// The themed subtree.
   final Widget child;
@@ -40,22 +39,12 @@ class AppTheme extends ConsumerWidget {
   /// Whether this device can draw a backdrop filter.
   final bool hardwareBlur;
 
-  /// Where an unaffordable effect is reported — a backdrop blur this device
-  /// cannot draw, say. Null keeps the core quiet; the composition root hands it a
-  /// logger so the fact is visible instead of the window quietly looking flatter
-  /// than configured.
-  final LiveUiDiagnosticSink? diagnostics;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return LiveConfigProvider(
+    return PureConfigProvider(
       config: ref.watch(uiConfigProvider),
-      // The composition root registers every third-party adapter; the core
-      // itself never depends on a UI library.
-      registry: appLanguageRegistry,
       hardwareBlur: hardwareBlur,
-      diagnostics: diagnostics,
-      child: LiveLayoutBuilder(isTv: Env.isTv, builder: (context, environment) => child),
+      child: PureLayoutBuilder(isTv: Env.isTv, builder: (context, environment) => child),
     );
   }
 }

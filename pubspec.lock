@@ -57,6 +57,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.1.0"
+  animated_vector:
+    dependency: transitive
+    description:
+      name: animated_vector
+      sha256: "44c09df5b11a8416c49dfd7433cc08714308addda61acdd8b97ea87a7d8e8f76"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.3"
+  animated_vector_annotations:
+    dependency: transitive
+    description:
+      name: animated_vector_annotations
+      sha256: c1bf348882940b64d7b86b8fc09572310a5dc28091cdde8436156844ca15a30d
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.0"
   animations:
     dependency: transitive
     description:
@@ -105,6 +121,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.7.0"
+  assorted_layout_widgets:
+    dependency: transitive
+    description:
+      name: assorted_layout_widgets
+      sha256: "86c6942f569f7f70bfb03b9cb0ada9bf5aee72264aaefdb0e2be0fbee70cfb06"
+      url: "https://pub.dev"
+    source: hosted
+    version: "11.0.0"
   async:
     dependency: transitive
     description:
@@ -795,14 +819,78 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.0.9"
-  fluent_ui:
+  fluent_2:
     dependency: transitive
     description:
-      name: fluent_ui
-      sha256: "64c2b9dd208f8e3134d3e38db107235ee30c1dd9b792843274687a7ecc063590"
+      name: fluent_2
+      sha256: bf26a46bde13dd40d36a11e693c7cbdedcd3a61c26d0852744fc0ac871e14cf2
       url: "https://pub.dev"
     source: hosted
-    version: "4.16.1"
+    version: "0.0.7"
+  fluent_2_core:
+    dependency: transitive
+    description:
+      name: fluent_2_core
+      sha256: b91c1ddca503bb13ff13d216178ddcccfc3ed19fffa86deeb06d1192792020a7
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.4"
+  fluent_2_fonts:
+    dependency: transitive
+    description:
+      name: fluent_2_fonts
+      sha256: "91f86c016def15c29d7d5191276bdf1f0092a56eebfe6f52ee06efb71a1c6afe"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.2"
+  fluent_2_fonts_android:
+    dependency: transitive
+    description:
+      name: fluent_2_fonts_android
+      sha256: e08ad6e63699401994b402faeeddaf21287f3d8027e048e180f1aa9a2a3c77de
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.2"
+  fluent_2_fonts_ios:
+    dependency: transitive
+    description:
+      name: fluent_2_fonts_ios
+      sha256: c002c9b975d3215167265140ed7918923b14cf3d9c1989b4bacf069dd4491454
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.2"
+  fluent_2_fonts_macos:
+    dependency: transitive
+    description:
+      name: fluent_2_fonts_macos
+      sha256: "90a65a3ded60c3306111395c0dc4682621df815a6926e4ec8788f5f2e9ff435c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.2"
+  fluent_2_fonts_web:
+    dependency: transitive
+    description:
+      name: fluent_2_fonts_web
+      sha256: "469520621cf12d275b2d7e16d499f34877e9781118951d5e9c27417fcd10e0c6"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.2"
+  fluent_2_fonts_windows:
+    dependency: transitive
+    description:
+      name: fluent_2_fonts_windows
+      sha256: "7281ade428abf80dec54b6f730e72091d4091a65c0e43db791baf670c0efcb37"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.2"
+  fluentui_system_icons:
+    dependency: transitive
+    description:
+      name: fluentui_system_icons
+      sha256: "1592ae32dae75fb66741ab2c0607bc6554ef086f1c457e27ef937fb4901d33da"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.273"
   flutter:
     dependency: transitive
     description: flutter
@@ -1088,6 +1176,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.2"
+  gsettings:
+    dependency: transitive
+    description:
+      name: gsettings
+      sha256: "5e3e299b871a16d142691aa91595a4d73bab7a7fa65d53db0bf2c576959aaefc"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.9"
+  gtk:
+    dependency: transitive
+    description:
+      name: gtk
+      sha256: "4ff85b2a16724029dd9e5bbb5a94b6918f9973f74ba571c949d2002801879cf5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.0"
   hive_box_manager:
     dependency: transitive
     description:
@@ -1360,14 +1464,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.6.0"
-  math_expressions:
+  matrix4_transform:
     dependency: transitive
     description:
-      name: math_expressions
-      sha256: "22aca3a24e445be5f42ecf186cbded1f9951bf9ec5eb48fcddbd55e102bb11f5"
+      name: matrix4_transform
+      sha256: "1346e53517e3081d3e8362377be97e285e2bd348855c177eae2a18aa965cafa0"
       url: "https://pub.dev"
     source: hosted
-    version: "3.2.0"
+    version: "4.0.1"
   mcp_dart:
     dependency: transitive
     description:
@@ -1768,6 +1872,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.2.0"
+  platform_linux:
+    dependency: transitive
+    description:
+      name: platform_linux
+      sha256: "907b7c6da6ee6eea61cd1266b7bd72e2d5bbf7e85160221e8ac5583a44e7a1c7"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.2+1"
   plugin_platform_interface:
     dependency: transitive
     description:
@@ -1976,14 +2088,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.2"
-  scroll_pos:
-    dependency: transitive
-    description:
-      name: scroll_pos
-      sha256: cebf602b2dd939de6832bb902ffefb574608d1b84f420b82b381a4007d3c1e1b
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.5.0"
   serial_csv:
     dependency: transitive
     description:
@@ -2613,6 +2717,54 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
+  yaru:
+    dependency: transitive
+    description:
+      name: yaru
+      sha256: b4f3167b9f138ffd20998bfa36d003dcf5e7979cf2652e4a01835dec66361e33
+      url: "https://pub.dev"
+    source: hosted
+    version: "11.0.0"
+  yaru_window:
+    dependency: transitive
+    description:
+      name: yaru_window
+      sha256: "58539a9abe9901891dadce142c7a5d303920b780dd0f7bd21f076a80adeeb744"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.2"
+  yaru_window_linux:
+    dependency: transitive
+    description:
+      name: yaru_window_linux
+      sha256: "885ad0ba5832d350c42862ce02da478599ef550280eb7f6b15285481fcff6f53"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.2"
+  yaru_window_manager:
+    dependency: transitive
+    description:
+      name: yaru_window_manager
+      sha256: "6288fd6ccd8bb9d5be56073c6f277e2da08dd38e346507bf88bc9332b08dd180"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.3"
+  yaru_window_platform_interface:
+    dependency: transitive
+    description:
+      name: yaru_window_platform_interface
+      sha256: d514387cc96750112ecf1933b6f12a1912beca199178d00052c0e87a94e232fa
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.3"
+  yaru_window_web:
+    dependency: transitive
+    description:
+      name: yaru_window_web
+      sha256: cf4d79e0760fbdcb78d4bbca3b5563f99518629224b9e5611f0ebd592befe1d9
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.4"
 sdks:
   dart: ">=3.13.0 <4.0.0"
   flutter: ">=3.47.0"

@@ -7,7 +7,6 @@ import 'package:flutter_adaptive_layout/flutter_adaptive_layout.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_pagination/live_pagination.dart';
 import 'package:live_sites/live_sites.dart';
-import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/areas/areas_routes.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
@@ -15,6 +14,7 @@ import 'package:pure_live/features/areas/area_card.dart';
 import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 /// Search: every search-capable platform as a tab over its results, across
@@ -35,14 +35,14 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
     final sites = ref.watch(sitesProvider);
     final searchable = sites.registry.all.where((site) => site.capability<LiveSearchProvider>() != null).toList();
     if (searchable.isEmpty) {
-      return LiveScaffold(
-        appBar: LiveAppBar(title: context.t.tabs.search, actions: const [SettingsEntryButton()]),
-        body: LiveEmpty(title: context.t.common.empty),
+      return PureScaffold(
+        appBar: PureAppBar(title: context.t.tabs.search, actions: const [SettingsEntryButton()]),
+        body: PureEmpty(title: context.t.common.empty),
       );
     }
     final index = _selected.clamp(0, searchable.length - 1);
-    return LiveScaffold(
-      appBar: LiveAppBar(
+    return PureScaffold(
+      appBar: PureAppBar(
         title: context.t.tabs.search,
         actions: const [SettingsEntryButton()],
         bottom: PreferredSize(
@@ -50,17 +50,17 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: LiveTabs(
+            child: PureTabs(
               index: index,
               onChanged: (value) => setState(() => _selected = value),
               tabs: [
-                for (final site in searchable) LiveTab(label: site.manifest.localizedName(_tag(context), 'zh-CN')),
+                for (final site in searchable) PureTab(label: site.manifest.localizedName(_tag(context), 'zh-CN')),
               ],
             ),
           ),
         ),
       ),
-      body: LiveTabView(
+      body: PureTabView(
         index: index,
         onIndexChanged: (value) => setState(() => _selected = value),
         pages: [for (final site in searchable) _SiteSearch(key: ValueKey(site.manifest.id), site: site)],
@@ -177,7 +177,7 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
             hintText: context.t.search.hint,
             textInputAction: TextInputAction.search,
             onSubmitted: (_) => _submit(),
-            trailing: [LiveIconButton(icon: Icons.search, tooltip: context.t.tabs.search, onPressed: _submit)],
+            trailing: [PureIconButton(icon: Icons.search, tooltip: context.t.tabs.search, onPressed: _submit)],
           ),
         ),
         if (controller != null) _modeRow(context)!,
@@ -196,7 +196,7 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
     }
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-      child: LiveSegmented(
+      child: PureSegmented(
         labels: [context.t.search.rooms, context.t.search.anchors],
         index: _target == LiveSearchTarget.rooms ? 0 : 1,
         onChanged: (index) => _submit(target: index == 0 ? LiveSearchTarget.rooms : LiveSearchTarget.anchors),
@@ -204,7 +204,7 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
     );
   }
 
-  Widget _idle(BuildContext context) => LiveEmpty(title: context.t.search.hint);
+  Widget _idle(BuildContext context) => PureEmpty(title: context.t.search.hint);
 
   Widget _results(BuildContext context, InfiniteController<LiveSearchResult> controller) {
     final state = controller.state;
@@ -216,7 +216,7 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
             children: [
               Text(context.t.errors.network, textAlign: TextAlign.center),
               const SizedBox(height: 12),
-              LiveButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: controller.retry),
+              PureButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: controller.retry),
             ],
           ),
         );
@@ -233,7 +233,7 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
             childAspectRatio: 0.82,
             children: [
               for (var i = 0; i < _columns(context) * 3; i++)
-                LiveCard(
+                PureCard(
                   padding: EdgeInsets.zero,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,7 +264,7 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
           ),
         );
       }
-      return LiveEmpty(title: context.t.errors.notFound);
+      return PureEmpty(title: context.t.errors.notFound);
     }
     return CustomRefreshIndicator(
       onRefresh: controller.refresh,
@@ -276,7 +276,7 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
             top: 12,
             child: Opacity(
               opacity: indicator.value.clamp(0, 1),
-              child: IgnorePointer(child: LiveProgress(value: indicator.isLoading ? null : indicator.value, height: 4)),
+              child: IgnorePointer(child: PureProgress(value: indicator.isLoading ? null : indicator.value, height: 4)),
             ),
           ),
         ],
@@ -313,7 +313,7 @@ final class _SiteSearchState extends State<_SiteSearch> with AutomaticKeepAliveC
               ),
             };
           }
-          return state.isLoadingMore ? const Center(child: LiveSpinner()) : const SizedBox.shrink();
+          return state.isLoadingMore ? const Center(child: PureSpinner()) : const SizedBox.shrink();
         },
       ),
     );
@@ -342,7 +342,7 @@ final class AnchorTile extends StatelessWidget {
           child: anchor.avatarUrl == null || anchor.avatarUrl!.isEmpty ? const Icon(Icons.person_outlined) : null,
         ),
         const SizedBox(height: 8),
-        Text(anchor.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: LiveTheme.of(context).text.body),
+        Text(anchor.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: PureTheme.of(context).text.body),
       ],
     ),
   );

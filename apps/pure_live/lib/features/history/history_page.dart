@@ -3,11 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_library/live_library.dart' show HistoryRepository;
-import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The history domain's shell page: what the user watched, newest first.
 /// An entry re-opens its room; one entry or the whole list can be
@@ -44,17 +44,17 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
   }
 
   Future<void> _confirmClear() async {
-    final confirmed = await showLiveDialog<bool>(
+    final confirmed = await showPureDialog<bool>(
       context: context,
       title: context.t.history.clear,
       child: Text(context.t.history.clearConfirm),
       actions: (dialogContext) => [
-        LiveButton(
+        PureButton(
           label: dialogContext.t.common.cancel,
           variant: ButtonVariant.ghost,
           onPressed: () => Navigator.of(dialogContext).pop(false),
         ),
-        LiveButton(
+        PureButton(
           label: dialogContext.t.history.clear,
           variant: ButtonVariant.danger,
           onPressed: () => Navigator.of(dialogContext).pop(true),
@@ -69,12 +69,12 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
   @override
   Widget build(BuildContext context) {
     final records = _repository.records;
-    return LiveScaffold(
-      appBar: LiveAppBar(
+    return PureScaffold(
+      appBar: PureAppBar(
         title: context.t.tabs.history,
         actions: [
           if (records.isNotEmpty)
-            LiveIconButton(
+            PureIconButton(
               tooltip: context.t.history.clear,
               icon: Icons.delete_sweep_outlined,
               onPressed: _confirmClear,
@@ -83,7 +83,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
         ],
       ),
       body: records.isEmpty
-          ? LiveEmpty(title: context.t.history.empty)
+          ? PureEmpty(title: context.t.history.empty)
           : ListView.builder(
               padding: const EdgeInsets.all(12),
               itemCount: records.length,
@@ -94,11 +94,11 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
                 final when =
                     '${watchedAt.month}-${watchedAt.day.toString().padLeft(2, '0')} '
                     '${watchedAt.hour.toString().padLeft(2, '0')}:${watchedAt.minute.toString().padLeft(2, '0')}';
-                return LiveListRow(
+                return PureListRow(
                   leading: const Icon(Icons.live_tv_outlined),
                   title: room.content.title.isEmpty ? room.ref.roomId : room.content.title,
                   subtitle: '${room.anchor?.name ?? room.ref.platform} · $when',
-                  trailing: LiveIconButton(
+                  trailing: PureIconButton(
                     tooltip: context.t.common.cancel,
                     icon: Icons.close,
                     onPressed: () => unawaited(_repository.remove(room)),

@@ -2,11 +2,11 @@ import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/fonts/font_library.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The font manager (3.x `FontManagerPage`, app-font slice): the system
 /// default plus every family in the cloud manifest — download, apply and
@@ -57,8 +57,8 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
     final appearance = ref.watch(appearancePreferencesProvider);
     final update = ref.read(appearancePreferencesProvider.notifier).update;
     final families = _families;
-    return LiveScaffold(
-      appBar: LiveAppBar(title: context.t.settings.fonts, actions: const [SettingsEntryButton()]),
+    return PureScaffold(
+      appBar: PureAppBar(title: context.t.settings.fonts, actions: const [SettingsEntryButton()]),
       body: families == null
           ? Center(
               child: _error != null
@@ -67,10 +67,10 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
                       children: [
                         Text(context.t.errors.network, textAlign: TextAlign.center),
                         const SizedBox(height: 12),
-                        LiveButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: _loadFamilies),
+                        PureButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: _loadFamilies),
                       ],
                     )
-                  : const Center(child: LiveSpinner(size: 40)),
+                  : const Center(child: PureSpinner(size: 40)),
             )
           : ListView(
               padding: const EdgeInsets.all(12),
@@ -107,11 +107,11 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
     Widget? trailing,
   }) => Padding(
     padding: const EdgeInsets.only(bottom: 10),
-    child: LiveCard(
+    child: PureCard(
       padding: EdgeInsets.zero,
-      child: LiveListRow(
+      child: PureListRow(
         leading: selected
-            ? Icon(Icons.check_circle, color: LiveTheme.of(context).colors.primary)
+            ? Icon(Icons.check_circle, color: PureTheme.of(context).colors.primary)
             : const Icon(Icons.radio_button_unchecked),
         title: title,
         subtitle: (subtitle == null || subtitle.isEmpty) ? null : subtitle,
@@ -124,10 +124,10 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
 
   Widget? _familyAction(BuildContext context, FontFamily family) {
     if (_downloading.contains(family.id)) {
-      return const LiveSpinner(size: 20);
+      return const PureSpinner(size: 20);
     }
     if (_library.isDownloaded(family.id)) {
-      return LiveIconButton(
+      return PureIconButton(
         tooltip: context.t.fonts.delete,
         icon: Icons.delete_outline,
         onPressed: ref.read(appearancePreferencesProvider).fontFamily == family.id
@@ -135,7 +135,7 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
             : () => unawaited(_delete(family)),
       );
     }
-    return LiveIconButton(
+    return PureIconButton(
       tooltip: context.t.fonts.download,
       icon: Icons.download_outlined,
       onPressed: () => unawaited(_download(family)),
@@ -148,7 +148,7 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
       await _library.download(family);
     } on Object {
       if (mounted) {
-        LiveToast.show(context, context.t.errors.network, type: LiveToastType.error);
+        PureToast.show(context, context.t.errors.network, type: PureToastType.error);
       }
     } finally {
       if (mounted) {

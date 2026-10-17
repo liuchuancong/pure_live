@@ -6,12 +6,12 @@ import 'package:flutter_adaptive_layout/flutter_adaptive_layout.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_pagination/live_pagination.dart';
 import 'package:live_sites/live_sites.dart' show LivePageRequest, LiveRoom;
-import 'package:live_uikit/live_uikit.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
 import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 /// How the loaded rooms are ordered.
@@ -48,7 +48,7 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
     ScreenSize.small || ScreenSize.medium => false,
   };
 
-  Widget _appBar(BuildContext context) => LiveAppBar(
+  Widget _appBar(BuildContext context) => PureAppBar(
     title: widget.areaName.isEmpty ? widget.areaId : widget.areaName,
     actions: [
       Padding(
@@ -72,7 +72,7 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
   @override
   Widget build(BuildContext context) {
     final paged = _pagedLayout(context);
-    return LiveScaffold(
+    return PureScaffold(
       appBar: _appBar(context),
       body: paged ? _PagedFeed(loader: _load, sort: _sort) : _InfiniteFeed(loader: _load, sort: _sort),
     );
@@ -165,7 +165,7 @@ final class _InfiniteFeedState extends ConsumerState<_InfiniteFeed> {
             top: 12,
             child: Opacity(
               opacity: indicator.value.clamp(0, 1),
-              child: IgnorePointer(child: LiveProgress(value: indicator.isLoading ? null : indicator.value)),
+              child: IgnorePointer(child: PureProgress(value: indicator.isLoading ? null : indicator.value)),
             ),
           ),
         ],
@@ -184,7 +184,7 @@ final class _InfiniteFeedState extends ConsumerState<_InfiniteFeed> {
           if (index < rooms.length) {
             return _tile(context, rooms[index]);
           }
-          return state.isLoadingMore ? const Center(child: LiveSpinner(size: 40)) : const SizedBox.shrink();
+          return state.isLoadingMore ? const Center(child: PureSpinner(size: 40)) : const SizedBox.shrink();
         },
       ),
     );
@@ -271,23 +271,23 @@ final class _PagedFeedState extends ConsumerState<_PagedFeed> {
     ];
     return Container(
       decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: LiveTheme.of(context).colors.border)),
+        border: Border(top: BorderSide(color: PureTheme.of(context).colors.border)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          LiveIconButton(
+          PureIconButton(
             tooltip: context.t.common.retry,
             icon: Icons.refresh,
             onPressed: busy ? null : () => unawaited(_controller.refresh()),
           ),
-          LiveIconButton(
+          PureIconButton(
             tooltip: '|<',
             icon: Icons.first_page,
             onPressed: page > 1 && !busy ? () => unawaited(_controller.first()) : null,
           ),
-          LiveIconButton(
+          PureIconButton(
             tooltip: '<',
             icon: Icons.chevron_left,
             onPressed: page > 1 && !busy ? () => unawaited(_controller.previous()) : null,
@@ -298,15 +298,15 @@ final class _PagedFeedState extends ConsumerState<_PagedFeed> {
               child: number == page
                   ? Text(
                       '$number',
-                      style: TextStyle(fontWeight: FontWeight.w700, color: LiveTheme.of(context).colors.primary),
+                      style: TextStyle(fontWeight: FontWeight.w700, color: PureTheme.of(context).colors.primary),
                     )
-                  : LiveButton(
+                  : PureButton(
                       label: '$number',
                       variant: ButtonVariant.ghost,
                       onPressed: busy ? null : () => unawaited(_controller.loadPage(number)),
                     ),
             ),
-          LiveIconButton(
+          PureIconButton(
             tooltip: '>',
             icon: Icons.chevron_right,
             onPressed: (lastPage == null || page < lastPage) && !busy ? () => unawaited(_controller.next()) : null,
@@ -314,7 +314,7 @@ final class _PagedFeedState extends ConsumerState<_PagedFeed> {
           const SizedBox(width: 12),
           Text(
             context.t.common.pageOf(page: page, total: lastPage ?? 0),
-            style: LiveTheme.of(context).text.caption,
+            style: PureTheme.of(context).text.caption,
           ),
         ],
       ),
@@ -348,7 +348,7 @@ Widget _placeholder(
         children: [
           Text(context.t.errors.network, textAlign: TextAlign.center),
           const SizedBox(height: 12),
-          LiveButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: onRetry),
+          PureButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: onRetry),
         ],
       ),
     );
@@ -365,7 +365,7 @@ Widget _placeholder(
         childAspectRatio: 0.82,
         children: [
           for (var i = 0; i < 12; i++)
-            LiveCard(
+            PureCard(
               padding: EdgeInsets.zero,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -388,7 +388,7 @@ Widget _placeholder(
       ),
     );
   }
-  return LiveEmpty(title: context.t.common.empty);
+  return PureEmpty(title: context.t.common.empty);
 }
 
 /// Wraps a site error for the loader contract; the controllers store it on
