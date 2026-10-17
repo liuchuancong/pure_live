@@ -22,17 +22,18 @@ enum LiveUiSurface {
 /// Which structural surfaces an adapter draws with its own library (§7).
 ///
 /// Same declaration rule as [LiveUiCapabilities]: it states what the adapter
-/// actually overrides, anything missing resolves to the shared token renderer and
-/// reports `surfaceUnsupported`, and the architecture guard asserts the set
-/// matches the methods (§17). An adapter with a native host but no native shell
-/// is the normal case, not a contradiction — fluent_ui ships `FluentApp` and
-/// `NavigationView`, while ForUI ships neither.
+/// actually overrides, the architecture guard asserts the set matches the
+/// methods (§17), and a claim the adapter cannot serve is a
+/// `LiveUiCapabilityException`. An adapter that owns the host but not the shell
+/// was the normal case while the floor existed; now both have to be answered,
+/// which is why `live_uikit_forui` hosts itself on `WidgetsApp` rather than
+/// settling for someone else's window.
 final class LiveUiSurfaceCapabilities {
   /// The surfaces rendered natively by an adapter.
   const new(this.supported);
 
-  /// A declaration with no native surface: the shared token host and shell stand
-  /// in for both. The shared adapter's own capability.
+  /// A declaration with no native surface. No adapter uses it: it exists for a
+  /// test that wants to assert a claimed surface is checked.
   // ignore: unnecessary_type_name_in_constructor
   const LiveUiSurfaceCapabilities.none() : supported = const <LiveUiSurface>{};
 

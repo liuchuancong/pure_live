@@ -89,13 +89,13 @@ class LanguageButtonSpec {
   /// Whether the button carries an icon and no visible text, as a toolbar or
   /// control-bar action does. [tooltip] is then the accessible name, so the
   /// renderer never paints the empty [label] the caller passed to satisfy the
-  /// contract. `LiveIconButton` sets it; the token base also squares the control
-  /// to its [size] step, which is the geometry a text button never needs.
+  /// contract. `LiveIconButton` sets it; an adapter squares the control to its
+  /// [size] step for an icon-only one, which is the geometry a text button never needs.
   final bool iconOnly;
 
   /// Whether the button shows a mode that is currently on — a toggled filter, an
-  /// active view. This is state, not emphasis: the token base tints the
-  /// foreground with the primary colour, and an adapter maps it only where its
+  /// active view. This is state, not emphasis: the selected control takes the
+  /// primary colour, and an adapter maps it only where its
   /// library has an equivalent; where it does not, the button renders unselected
   /// and the spec says so.
   final bool selected;
@@ -799,9 +799,10 @@ class LanguageShellSpec {
 /// active one is chosen at runtime by `UiConfig.language`, so switching a
 /// language re-skins the whole subtree without the page changing a line.
 ///
-/// Where a library has no equivalent for a control, the adapter delegates to
-/// the shared token-driven fallback renderer — so every component still
-/// works and stays on-theme.
+/// There is no fallback: an adapter implements every control of the contract,
+/// with its library's widget where the library has one and its library's own
+/// parts where it does not. A language that cannot serve a control is a
+/// `LiveUiCapabilityException`, not a silently foreign-looking widget.
 abstract interface class LanguageAdapter {
   /// The language this adapter renders.
   LiveDesignLanguage get language;
@@ -813,8 +814,9 @@ abstract interface class LanguageAdapter {
   /// A human-readable name for the style selector (e.g. `Fluent`) (§7).
   String get displayName;
 
-  /// Which controls this adapter renders natively; the rest fall back to the
-  /// shared token renderer and are reported by the resolver (§3.1/§7).
+  /// Which controls this adapter renders with its library's own widgets
+  /// (§3.1/§7). The declaration is checked, not trusted: the resolver raises a
+  /// `LiveUiCapabilityException` for anything claimed but not overridden.
   LiveUiCapabilities get capabilities;
 
   /// Which structural surfaces — the app host and the shell — this adapter owns
@@ -886,8 +888,8 @@ abstract interface class LanguageAdapter {
 
   /// Draws the application shell — the navigation around the page — with the
   /// language's own structural widget, when its library ships one (a
-  /// [LiveUiSurface.appShell] capability). Otherwise the shared token shell
-  /// stands in, which is a navigation column or strip built from the token
+  /// [LiveUiSurface.appShell] capability). Otherwise the shell stands aside and
+  /// the page frame is the caller's, which is a navigation column or strip built from the token
   /// rather than the language's widget set.
   Widget shell(BuildContext context, LanguageShellSpec spec);
 }
