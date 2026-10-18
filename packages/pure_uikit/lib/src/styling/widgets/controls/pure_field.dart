@@ -194,23 +194,44 @@ class PureTextField extends StatelessWidget {
       // contract composes elsewhere, and the field keeps the library's own
       // focus treatment rather than an approximation of a Material error
       // border.
+      // The library's own frosted plate (`GlassContainer`) with Flutter's
+      // official field on it. `GlassTextField` hard-codes white text, hint
+      // and cursor — right on a photo backdrop, invisible on the app's own
+      // light surface — so the surface stays the library's while the ink
+      // follows the tokens, as every other language's field does.
       PureDesignLanguage.glass => _withError(
         theme,
-        glass.GlassTextField(
-          controller: controller,
-          focusNode: focusNode,
-          hintText: placeholder,
-          enabled: enabled,
-          readOnly: readOnly,
-          obscureText: obscure,
-          maxLines: obscure ? 1 : (maxLines ?? 1),
-          keyboardType: keyboardType,
-          textInputAction: textInputAction,
-          prefixIcon: prefix,
-          suffixIcon: suffix,
-          onChanged: onChanged,
-          onSubmitted: onSubmitted,
-          style: _textStyle(theme),
+        glass.GlassContainer(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          opacity: 0.12,
+          borderRadius: 16,
+          child: TextField(
+            controller: controller,
+            focusNode: focusNode,
+            enabled: enabled,
+            readOnly: readOnly,
+            obscureText: obscure,
+            maxLines: obscure ? 1 : (maxLines ?? 1),
+            keyboardType: keyboardType,
+            textInputAction: textInputAction,
+            onChanged: onChanged,
+            onSubmitted: onSubmitted,
+            style: _textStyle(theme),
+            cursorColor: theme.colors.text,
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: placeholder,
+              hintStyle: theme.text.body.copyWith(color: theme.colors.textTertiary),
+              prefixIcon: prefix,
+              suffixIcon: suffix,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              errorBorder: InputBorder.none,
+              focusedErrorBorder: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
         ),
       ),
       // The library's own field, carrying hint, error, prefix/suffix icons,

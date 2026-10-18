@@ -78,27 +78,29 @@ class PureNumberStepper extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // The step buttons ride one size below the control's own line: the
+        // value is the subject, the arrows the affordance — and at the full
+        // md plate the neumorphic branch's emboss dwarfs the number.
         PureButton(
           label: '',
           icon: Icons.remove,
           variant: ButtonVariant.secondary,
+          size: ControlSize.sm,
           onPressed: canDecrement ? () => _apply(-step) : null,
         ),
-        ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 56),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: theme.token.scale.sizes.sm),
-            child: Text(
-              value.toStringAsFixed(decimals),
-              textAlign: TextAlign.center,
-              style: theme.text.body.copyWith(color: theme.colors.text),
-            ),
+        SizedBox(
+          width: 44,
+          child: Text(
+            value.toStringAsFixed(decimals),
+            textAlign: TextAlign.center,
+            style: theme.text.body.copyWith(color: theme.colors.text),
           ),
         ),
         PureButton(
           label: '',
           icon: Icons.add,
           variant: ButtonVariant.secondary,
+          size: ControlSize.sm,
           onPressed: canIncrement ? () => _apply(step) : null,
         ),
       ],

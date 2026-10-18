@@ -77,8 +77,20 @@ class PureSwitch extends StatelessWidget {
       PureDesignLanguage.glass => Switch(value: value, onChanged: select, focusNode: focusNode, autofocus: autofocus),
       PureDesignLanguage.neumorphic => neu.NeuSwitch(value: value, onChanged: select),
       // Wind's fork paints its own `disabled:` state from this flag, so the
-      // flag and the nulled callback come from the same verdict.
-      PureDesignLanguage.wind => wind.WSwitch(value: value, onChanged: select, disabled: select == null),
+      // flag and the nulled callback come from the same verdict. The fork is
+      // utility-class driven: with no classes the track and thumb are bare
+      // boxes and the switch is invisible, so the grammar is spelled here in
+      // its own dialect (the thumb rides `justify-start` → `checked:
+      // justify-end`, the only motion its parser understands).
+      PureDesignLanguage.wind => wind.WSwitch(
+        value: value,
+        onChanged: select,
+        disabled: select == null,
+        className:
+            'w-11 h-6 rounded-full px-0.5 flex items-center justify-start checked:justify-end '
+            'bg-gray-300 checked:bg-blue-600 disabled:opacity-50',
+        thumbClassName: 'w-5 h-5 rounded-full bg-white',
+      ),
       // Yaru IS Material theming — its character comes from the host theme, not
       // from a different switch.
       PureDesignLanguage.material ||

@@ -110,12 +110,18 @@ class PureTabs extends StatelessWidget {
         children: [for (final tab in tabs) forui.FTabEntry(label: _foruiLabel(tab), child: const SizedBox.shrink())],
       ),
       // Wind's own tabs. The fork always builds the active panel; the caller
-      // owns the body, so the panel is empty.
+      // owns the body, so the panel is empty. The strip's grammar — a row of
+      // muted labels over a hairline, the selected one in the accent with the
+      // underline — is spelled in the fork's utility classes, which is how it
+      // ships a tab strip at all.
       PureDesignLanguage.wind => wind.WTabs(
         tabs: [for (final tab in tabs) tab.label],
         selectedIndex: selected,
         onChanged: select,
         panelBuilder: (_) => const SizedBox.shrink(),
+        listClassName: 'flex flex-row border-b border-gray-200',
+        tabClassName: 'flex flex-row items-center px-4 py-2 text-sm text-gray-600 selected:text-blue-600',
+        selectedTabClassName: 'border-b-2 border-blue-600',
       ),
     };
   }

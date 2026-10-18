@@ -156,7 +156,8 @@ class PureCheckbox extends StatelessWidget {
       children: [
         control,
         SizedBox(width: gap),
-        label,
+        // The label yields to a tight parent rather than overflowing it.
+        Flexible(child: label),
       ],
     );
   }
