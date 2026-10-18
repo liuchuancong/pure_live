@@ -5,6 +5,7 @@ import 'package:pure_live/app/preferences/app_preferences.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/features/settings/widgets/settings_chooser.dart';
+import 'package:pure_live/features/settings/widgets/settings_chrome.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart' show ShellPreferencesStore, ShellWindowChrome;
 import 'package:pure_settings_ui/pure_settings_ui.dart';
@@ -51,8 +52,8 @@ final class GeneralSettingsPage extends ConsumerWidget {
       PlatformKind.windows || PlatformKind.macos || PlatformKind.linux => true,
       _ => false,
     };
-    return PureScaffold(
-      appBar: PureAppBar(title: t.settings.general),
+    return SettingsChrome(
+      title: t.settings.general,
       body: SettingsList(
         sections: [
           SettingsSection(

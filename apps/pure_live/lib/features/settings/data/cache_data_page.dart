@@ -3,6 +3,7 @@ import 'dart:async' show StreamSubscription, unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/features/settings/widgets/settings_chrome.dart';
 import 'package:pure_live/features/settings/widgets/settings_rows.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_settings_ui/pure_settings_ui.dart';
@@ -77,8 +78,8 @@ final class _CacheDataPageState extends ConsumerState<CacheDataPage> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    return PureScaffold(
-      appBar: PureAppBar(title: t.settings.cacheAndData),
+    return SettingsChrome(
+      title: t.settings.cacheAndData,
       body: SettingsList(
         sections: [
           SettingsSection(

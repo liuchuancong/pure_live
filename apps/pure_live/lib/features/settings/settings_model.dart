@@ -16,13 +16,6 @@ import 'package:pure_live/features/settings/refresh/refresh_settings_page.dart';
 import 'package:pure_live/features/settings/video/video_settings_page.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 
-/// From this page width (not screen width) the overview and the open section
-/// sit side by side — the reference's `settingsTwoPaneBreakpoint`.
-const double settingsTwoPaneBreakpoint = 840;
-
-/// The overview column's width in the two-pane layout.
-const double settingsOverviewWidth = 360;
-
 /// The five groups of the settings overview (the reference's `SettingsArea`;
 /// the old index's eleven sections collapse into these).
 enum SettingsArea {

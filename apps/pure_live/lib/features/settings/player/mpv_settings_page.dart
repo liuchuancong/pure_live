@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/engine/mpv_tuning.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/features/room/room_controller.dart' show RoomController;
+import 'package:pure_live/features/settings/widgets/settings_chrome.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_settings_ui/pure_settings_ui.dart';
 import 'package:pure_uikit/pure_uikit.dart';
@@ -41,8 +42,8 @@ final class MpvSettingsPage extends ConsumerWidget {
       unawaited(_pickSheet(context, title, options, current, onPick));
     }
 
-    return PureScaffold(
-      appBar: PureAppBar(title: t.settings.playerTitle),
+    return SettingsChrome(
+      title: t.settings.playerTitle,
       body: SettingsList(
       sections: [
         SettingsSection(

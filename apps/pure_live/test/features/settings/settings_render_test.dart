@@ -52,7 +52,9 @@ void main() {
       final seen = await _pump(tester, language: language, child: const SettingsPage());
       expect(seen, language, reason: 'the host fell back to another language');
       expect(tester.takeException(), isNull, reason: language.name);
-      expect(find.text('设置'), findsWidgets);
+      // The search bar is the one piece always on screen: the split view's
+      // pane title hides itself in the narrow forms (the Windows rail).
+      expect(find.text('搜索设置'), findsOneWidget);
       // Hosts schedule their own one-shot timers (a tooltip, a reveal); the
       // tree must be drained before the framework checks for pending ones.
       await tester.pumpAndSettle();

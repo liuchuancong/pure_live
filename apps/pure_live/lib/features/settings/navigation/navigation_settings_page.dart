@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/shell/shell_destinations.dart';
+import 'package:pure_live/features/settings/widgets/settings_chrome.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_settings_ui/pure_settings_ui.dart';
 import 'package:pure_uikit/pure_uikit.dart';
@@ -21,8 +22,8 @@ final class NavigationSettingsPage extends ConsumerWidget {
     final preferences = ref.watch(appPreferencesProvider);
     final update = ref.read(appPreferencesProvider.notifier).update;
     final lastBranch = ShellBranch.maybeFromId(preferences.lastBranchId ?? '');
-    return PureScaffold(
-      appBar: PureAppBar(title: t.settings.navigationSettings),
+    return SettingsChrome(
+      title: t.settings.navigationSettings,
       body: SettingsList(
         sections: [
           SettingsSection(

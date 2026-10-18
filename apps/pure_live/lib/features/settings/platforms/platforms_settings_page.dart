@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/routing/app_router.dart';
+import 'package:pure_live/features/settings/widgets/settings_chrome.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_settings_ui/pure_settings_ui.dart';
-import 'package:pure_uikit/pure_uikit.dart';
 
 /// The platforms page (the reference's `SettingsSection.platforms`): the
 /// visibility/order of the platform list, the follow tags and the platform
@@ -22,8 +22,8 @@ final class PlatformsSettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    return PureScaffold(
-      appBar: PureAppBar(title: t.settings.platformsTitle),
+    return SettingsChrome(
+      title: t.settings.platformsTitle,
       body: SettingsList(
         sections: [
           SettingsSection(

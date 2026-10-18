@@ -9,6 +9,7 @@ import 'package:pure_live/app/environment/app_directory.dart';
 import 'package:pure_live/app/logging/app_log.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/features/settings/widgets/settings_chrome.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_settings_ui/pure_settings_ui.dart';
 import 'package:pure_uikit/pure_uikit.dart';
@@ -33,8 +34,8 @@ final class LogsSettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final preferences = ref.watch(appPreferencesProvider);
-    return PureScaffold(
-      appBar: PureAppBar(title: t.logs.title),
+    return SettingsChrome(
+      title: t.logs.title,
       body: SettingsList(
         sections: [
           SettingsSection(

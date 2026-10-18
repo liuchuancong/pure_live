@@ -8,6 +8,7 @@ import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/app/theme/appearance_preferences/appearance_preferences.dart';
 import 'package:pure_live/app/theme/ui_configuration_mapper.dart' show designLanguageByStoredId;
 import 'package:pure_live/features/settings/widgets/settings_chooser.dart';
+import 'package:pure_live/features/settings/widgets/settings_chrome.dart';
 import 'package:pure_live/features/settings/widgets/settings_rows.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_settings_ui/pure_settings_ui.dart';
@@ -52,8 +53,8 @@ final class AppearancePage extends ConsumerWidget {
     // pending rather than applied: the row says which language the next launch
     // will use, and every other control on this page still re-skins live.
     final pendingLanguage = ref.watch(pendingDesignLanguageProvider);
-    return PureScaffold(
-      appBar: PureAppBar(title: t.settings.appearance),
+    return SettingsChrome(
+      title: t.settings.appearance,
       body: SettingsList(
         sections: [
           SettingsSection(
