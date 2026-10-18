@@ -160,7 +160,8 @@ bool defaultShowsTwoPanes({
     case SettingsStyleFamily.pure:
       // The same rule AOSP Settings uses: wide enough for two panes, and on a
       // phone only when the shortest side says it is really a tablet.
-      return width >= pureSettingsSplitBreakpoint && (desktop || shortestSide >= 600);
+      return width >= pureSettingsSplitBreakpoint &&
+          (desktop || shortestSide >= 600);
   }
 }
 

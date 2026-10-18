@@ -19,5 +19,4 @@ String? pureTextOf(Widget? slot) => switch (slot) {
 ///
 /// A [Text.rich] counts as not text: it carries a span, not a string, so it
 /// cannot cross into a row that takes one.
-bool pureSlotsAreText(Iterable<Widget?> slots) =>
-    slots.every((slot) => slot == null || pureTextOf(slot) != null);
+bool pureSlotsAreText(Iterable<Widget?> slots) => slots.every((slot) => slot == null || pureTextOf(slot) != null);

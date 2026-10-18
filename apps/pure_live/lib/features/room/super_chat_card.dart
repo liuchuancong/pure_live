@@ -190,8 +190,7 @@ final class _SuperChatCardState extends State<SuperChatCard> {
   /// prescribed none (the model leaves the field blank rather than inventing
   /// a colour). The helper parses `#RRGGBB` and anything CSS-adjacent a
   /// platform might emit, resolving to null instead of throwing.
-  Color _platformColor(String source, Color fallback) =>
-      tryToColor(source.trim())?.withValues(alpha: 1) ?? fallback;
+  Color _platformColor(String source, Color fallback) => tryToColor(source.trim())?.withValues(alpha: 1) ?? fallback;
 
   Color _contrastText(Color background) =>
       background.computeLuminance() > 0.55 ? const Color(0xFF18181A) : Colors.white;

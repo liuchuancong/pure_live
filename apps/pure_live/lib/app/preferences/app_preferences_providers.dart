@@ -19,9 +19,7 @@ final appPreferencesStoreProvider = Provider<AppPreferencesStore>(
 /// The store applies a change to its in-memory value before it is durable, so
 /// this provider notifies immediately; the write that follows never comes
 /// back as a second change.
-final appPreferencesProvider = NotifierProvider<AppPreferencesNotifier, AppPreferences>(
-  AppPreferencesNotifier.new,
-);
+final appPreferencesProvider = NotifierProvider<AppPreferencesNotifier, AppPreferences>(AppPreferencesNotifier.new);
 
 /// Reads the persisted preferences and writes every change back through the
 /// store.
@@ -95,9 +93,7 @@ final class RoomCardStyle {
 final feedRefreshProvider = Provider<FeedRefreshSettings>((ref) {
   final preferences = ref.watch(appPreferencesProvider);
   return FeedRefreshSettings(
-    interval: preferences.autoRefreshMinutes <= 0
-        ? null
-        : Duration(minutes: preferences.autoRefreshMinutes),
+    interval: preferences.autoRefreshMinutes <= 0 ? null : Duration(minutes: preferences.autoRefreshMinutes),
     resumeThreshold: Duration(minutes: preferences.refreshResumeThresholdMinutes.clamp(0, 24 * 60)),
     refreshOnResume: preferences.refreshOnResume,
   );
@@ -239,14 +235,54 @@ final class _AppPreferencesHostState extends ConsumerState<AppPreferencesHost> w
   }
 }
 
+/// The shell's re-tap signal — the reference's `onDestinationSelected`
+/// special case: tapping the branch already on screen refreshes its feed
+/// instead of navigating. The follow branch consumes it (its list is the
+/// reference's pull-style favorites); the other branches reset their scroll
+/// through `goBranch(initialLocation:)` and ignore the pulse.
+final shellReTapSignalsProvider = Provider<ShellReTapSignals>((ref) {
+  final signals = ShellReTapSignals();
+  ref.onDispose(signals.dispose);
+  return signals;
+});
+
+/// The broadcast behind [shellReTapSignalsProvider].
+final class ShellReTapSignals {
+  /// The signals hub.
+  new();
+
+  final StreamController<String> _controller = StreamController<String>.broadcast();
+
+  /// Emits the branch id of each re-tapped destination.
+  Stream<String> get reTaps => _controller.stream;
+
+  /// Announces a re-tap; the chrome's navigation entry point calls this.
+  void reTapped(String branchId) {
+    if (!_controller.isClosed) {
+      _controller.add(branchId);
+    }
+  }
+
+  /// Closes the stream.
+  Future<void> dispose() => _controller.close();
+}
+
 /// Applies a chrome's destination selection: navigates to the branch and
 /// remembers it as the one the app was left on — what restore-last-tab
 /// launches read back.
 void goShellBranch(WidgetRef ref, StatefulNavigationShell navigationShell, String id) {
   final branch = ShellBranch.fromId(id);
-  navigationShell.goBranch(branch.branchIndex, initialLocation: branch.branchIndex == navigationShell.currentIndex);
+  final reTapped = branch.branchIndex == navigationShell.currentIndex;
+  navigationShell.goBranch(branch.branchIndex, initialLocation: reTapped);
+  if (reTapped) {
+    ref.read(shellReTapSignalsProvider).reTapped(branch.name);
+  }
   if (ref.read(appPreferencesProvider).lastBranchId != branch.name) {
-    unawaited(ref.read(appPreferencesProvider.notifier).update((preferences) => preferences.copyWith(lastBranchId: branch.name)));
+    unawaited(
+      ref
+          .read(appPreferencesProvider.notifier)
+          .update((preferences) => preferences.copyWith(lastBranchId: branch.name)),
+    );
   }
 }
 

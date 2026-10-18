@@ -59,7 +59,6 @@ final class AppLog {
   /// `forCategory('paths')` on that, yields the `storage.paths` category.
   LiveLog forCategory(String name) => root.forCategory(name);
 
-
   /// Adds the rotating file sink under [directory].
   ///
   /// Idempotency is the caller's concern — boot calls this once, when the

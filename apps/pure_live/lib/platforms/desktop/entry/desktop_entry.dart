@@ -12,6 +12,7 @@ import 'package:pure_live/platforms/desktop/shell/close_prompt.dart';
 import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart';
 import 'package:pure_live/platforms/desktop/tray/app_tray.dart';
 import 'package:pure_live/platforms/desktop/windows/desktop_window_setup.dart';
+import 'package:pure_live/platforms/desktop/windows/native_frame_flag.dart' show NativeFrameFlag;
 import 'package:window_manager/window_manager.dart';
 
 /// The desktop window's life: set up before the first frame, asked about
@@ -30,7 +31,14 @@ final class DesktopEntry with WindowListener {
   /// and take the "remember" writes; the app preferences carry the stored
   /// window size this start opens at; the log is where the tray's refusals
   /// land.
-  new({required this.kind, required this.onQuitRequest, this._preferences, this._appPreferences, this._log});
+  new({
+    required this.kind,
+    required this.onQuitRequest,
+    this._preferences,
+    this._appPreferences,
+    this._log,
+    this._launchArguments = const <String>[],
+  });
 
   /// The desktop platform this window lives on.
   final PlatformKind kind;
@@ -38,9 +46,27 @@ final class DesktopEntry with WindowListener {
   /// Runs the app shutdown; the window is destroyed after it returns.
   final Future<void> Function() onQuitRequest;
 
+  /// The title-bar mode this process actually runs in, decided once in
+  /// [prepare] and read from then on.
+  ///
+  /// On Windows that is what the native helper was configured with — the flag
+  /// file, or a `--native-frame` / `--custom-frame` argument — and NOT the
+  /// stored preference, because the frame is taken or left before this isolate
+  /// exists to have an opinion. Reading the preference instead is how a window
+  /// ends up with a system caption and an app-drawn strip over it, or the
+  /// reverse and no caption at all.
+  ///
+  /// Changing the setting mid-run rewrites the flag for the next start and
+  /// leaves this value alone; the settings screen says so.
+  late final ShellWindowChrome windowChrome;
+
   final ShellPreferencesStore? _preferences;
   final AppPreferencesStore? _appPreferences;
   final LiveLog? _log;
+
+  /// This process's command line, read only to give the frame flag the same
+  /// precedence the runner gives it.
+  final List<String> _launchArguments;
 
   late final AppTray _tray = AppTray(
     onShow: show,
@@ -54,10 +80,20 @@ final class DesktopEntry with WindowListener {
   /// Sets the window up, creates the tray and starts intercepting closes.
   Future<void> prepare() async {
     final preferences = _appPreferences?.value;
+    // Resolved before the window is set up and never re-read: this is the mode
+    // the frame is about to get, and it has to be the mode the rest of the
+    // process believes it has. On Windows that is the runner's answer — argument,
+    // then an explicit override file, then the operating system — and NOT the
+    // stored preference, which may already name the mode for the *next* start.
+    // Off Windows nothing takes the frame over natively, so the preference is
+    // simply what it says.
+    windowChrome = kind == PlatformKind.windows
+        ? NativeFrameFlag.resolve(args: _launchArguments)
+        : (_preferences?.value.windowChrome ?? ShellWindowChrome.app);
     await setUpDesktopWindow(
       kind: kind,
       title: t.app.title,
-      chrome: _preferences?.value.windowChrome ?? ShellWindowChrome.app,
+      chrome: windowChrome,
       // The stored window size (general settings); 0 keeps the launch
       // default.
       initialSize: preferences == null || preferences.windowWidth <= 0 || preferences.windowHeight <= 0

@@ -8,6 +8,17 @@ to semantic versioning for released packages.
 
 ### Added
 
+- The `adaptive` module, ported from the standalone Fluent-inspired kit: the
+  `AdaptiveBreakpoint` width classes (600 / 1024 / 1440) with `AdaptiveBreakpoints`
+  helpers and `AdaptiveBreakpointBuilder`, `AdaptiveScaffold` resolving one of five
+  `PureNavigationMode` surfaces (bottom bar, rail, labelled sidebar, drawer,
+  focus-first TV rail), the `PureNavDestination` / `PureNavigationTile` vocabulary,
+  `PureBottomNavigation`, `PureNavigationRail`, `DesktopNavigation`,
+  `PureNavigationDrawer`, `PureTvNavigation`, `AdaptiveContentLayout`,
+  `ResponsiveGrid` / `SliverResponsiveGrid` and `ResponsiveContent` /
+  `SliverResponsiveContent`. The surfaces take their colours from the active design
+  language through `AdaptiveSurfaceColors.of(context)` rather than a palette of
+  their own, so the same shell structure serves every language the package ships.
 - `LanguageButtonSpec.iconOnly` and `.selected`, so a textless or toggled button is
   contract data rather than a private rendering path. Every adapter honours both: no
   `Text` is painted for an icon-only spec, the glyph carries the tooltip as its
@@ -39,6 +50,17 @@ to semantic versioning for released packages.
   integration, testing and limitations (§13.1 of the package standards).
 
 ### Changed
+
+- **Every visual widget now dispatches to an official component.** The
+  `PureDesignLanguage` switch in `PureSwitch`, `PureCheckbox`, `PureSlider`,
+  `PureProgress`, `PureSegmented`, `PureSelect`, `PureTabs`, `PureButton`,
+  `PureAvatar`, `PureBadge`, `PureAppBar`, `PureNavBar`, `PureScaffold`,
+  `PureMenu`, `PureDialog`, `PureTooltip` and `PureToast` returns a widget from
+  the active language's own library. Where a surface library genuinely ships
+  no such component (glass, neumorphic, wind), the branch returns Flutter's
+  official Material component rather than a hand-drawn imitation. Only
+  controller adapters (Material/macOS tab controllers), the OS title-bar chrome,
+  and non-visual layout mechanics remain custom.
 
 - `docs/decisions/0004` records the icon-button decision as accepted and implemented;
   the mapping of `selected` inside third-party libraries is left as its documented

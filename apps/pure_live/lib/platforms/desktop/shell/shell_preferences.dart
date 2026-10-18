@@ -25,6 +25,13 @@ abstract final class ShellKeys {
 /// (`BDW_CUSTOM_FRAME` in `windows/runner/main.cpp`), which is configured
 /// before the window exists and has no runtime toggle — a change here is a
 /// next-start change, and the settings screen says so.
+///
+/// Stored as nullable on purpose: **null is a third answer, "I never picked"**,
+/// and then the mode comes from the operating system — Windows 11 draws a
+/// window's own edge so the app-drawn strip is the default, Windows 10 draws
+/// neither an edge nor rounded corners so the native caption is. Keeping that
+/// undecided rather than recording the first run's answer is what lets an
+/// upgrade from 10 to 11 pick up the strip without anyone changing a setting.
 enum ShellWindowChrome {
   /// The app draws the caption strip and its buttons in Flutter.
   app,
@@ -32,10 +39,15 @@ enum ShellWindowChrome {
   /// The operating system draws the native caption.
   system;
 
-  /// Resolves a stored identifier; an unknown one falls back to [app].
-  static ShellWindowChrome fromId(String? id) => switch (id) {
+  /// Resolves a stored identifier; null and unknown both mean "not chosen".
+  ///
+  /// Not falling back to [app] is the point: a document written by an older
+  /// build, or a value edited by hand, must not silently become an explicit
+  /// choice the viewer never made.
+  static ShellWindowChrome? tryFromId(String? id) => switch (id) {
     'system' => ShellWindowChrome.system,
-    _ => ShellWindowChrome.app,
+    'app' => ShellWindowChrome.app,
+    _ => null,
   };
 
   /// The stable identifier persisted in the document.
@@ -47,13 +59,16 @@ enum ShellWindowChrome {
 
 /// The desktop shell's own choices, as persisted.
 final class ShellPreferences {
-  /// The shipping defaults: draw the app's own strip, ask about closing until
-  /// the viewer answers with "remember".
-  const new({this.windowChrome = ShellWindowChrome.app, this.closeAction});
+  /// The shipping defaults: leave the title bar to the operating system, and ask
+  /// about closing until the viewer answers with "remember". Both are the answers
+  /// for someone who has never opened the settings screen, which is why neither
+  /// records a choice — see [ShellWindowChrome] for what the un-chosen title bar
+  /// resolves to.
+  const new({this.windowChrome, this.closeAction});
 
   /// Reads the document; unknown shapes decode to the defaults.
   factory ShellPreferences.fromJson(Map<String, Object?> json) => ShellPreferences(
-    windowChrome: ShellWindowChrome.fromId(json['windowChrome'] as String?),
+    windowChrome: ShellWindowChrome.tryFromId(json['windowChrome'] as String?),
     closeAction: switch (json['closeAction'] as String?) {
       'hideToTray' => CloseAction.hideToTray,
       'minimise' => CloseAction.minimise,
@@ -62,8 +77,14 @@ final class ShellPreferences {
     },
   );
 
-  /// Which title bar mode this start (and the next) uses.
-  final ShellWindowChrome windowChrome;
+  /// The title bar mode the viewer chose, or null to leave it to the operating
+  /// system.
+  ///
+  /// This is the *intent for the next start*, not what the live window is drawn
+  /// in — `windowChromeProvider` carries that, and `NativeFrameFlag` explains how
+  /// the intent reaches the native code that has to decide before this process
+  /// can speak.
+  final ShellWindowChrome? windowChrome;
 
   /// What the close button means, once the viewer has answered "remember" in
   /// the close prompt; null keeps asking every time.
@@ -71,17 +92,18 @@ final class ShellPreferences {
 
   /// Writes the document.
   Map<String, Object?> toJson() => {
-    'windowChrome': windowChrome.id,
+    if (windowChrome != null) 'windowChrome': windowChrome!.id,
     if (closeAction != null) 'closeAction': closeAction!.name,
   };
 
   /// Returns a copy with the given fields replaced.
   ShellPreferences copyWith({
     ShellWindowChrome? windowChrome,
+    bool clearWindowChrome = false,
     CloseAction? closeAction,
     bool clearCloseAction = false,
   }) => ShellPreferences(
-    windowChrome: windowChrome ?? this.windowChrome,
+    windowChrome: clearWindowChrome ? null : (windowChrome ?? this.windowChrome),
     closeAction: clearCloseAction ? null : (closeAction ?? this.closeAction),
   );
 }

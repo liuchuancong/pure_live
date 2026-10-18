@@ -1,10 +1,7 @@
 import 'package:fluent_2/fluent_2.dart' as f2;
 import 'package:flutter/cupertino.dart' as cupertino;
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphic_ui_kit/flutter_neumorphic_ui_kit.dart' as neu;
-import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
 import 'package:forui/forui.dart' as forui;
-import 'package:glass_morphism_plus/glass_morphism_plus.dart' as glass;
 import 'package:macos_ui/macos_ui.dart' as macos;
 import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
@@ -78,8 +75,8 @@ Future<T?> showPureDialog<T>({
 }
 
 /// The dialog surface for the active design language: the language's own
-/// dialog widget, or — for the surface libraries that ship no dialog — the
-/// language's own panel composed into one.
+/// dialog widget, or Flutter's official Material `AlertDialog` where the
+/// library ships no dialog.
 Widget _dialogSurface(
   BuildContext dialogContext,
   PureTheme theme, {
@@ -113,12 +110,27 @@ Widget _dialogSurface(
       content: content,
       actions: actions,
     ),
-    PureDesignLanguage.macos => _macosDialogSurface(dialogContext, theme, title: title, content: content, actions: actions),
+    PureDesignLanguage.macos => _macosDialogSurface(
+      dialogContext,
+      theme,
+      title: title,
+      content: content,
+      actions: actions,
+    ),
     PureDesignLanguage.fluent => _fluentDialogSurface(dialogContext, title: title, content: content, actions: actions),
     PureDesignLanguage.forui => _foruiDialogSurface(theme, title: title, content: content, actions: actions),
-    PureDesignLanguage.glass => _glassDialogSurface(dialogContext, theme, title: title, content: content, actions: actions),
-    PureDesignLanguage.neumorphic => _neumorphicDialogSurface(dialogContext, theme, title: title, content: content, actions: actions),
-    PureDesignLanguage.wind => _windDialogSurface(theme, title: title, content: content, actions: actions),
+    // glass_morphism_plus, flutter_neumorphic_ui_kit and fluttersdk_wind ship
+    // no dialog. Use Flutter's official Material AlertDialog rather than a
+    // hand-built panel.
+    PureDesignLanguage.glass || PureDesignLanguage.neumorphic || PureDesignLanguage.wind => AlertDialog(
+      title: title == null ? null : Text(title, style: theme.text.title.copyWith(color: theme.colors.text)),
+      content: content,
+      contentTextStyle: theme.text.body.copyWith(color: theme.colors.text),
+      actions: actions.isEmpty ? null : actions,
+      backgroundColor: theme.colors.bgElevated,
+      insetPadding: EdgeInsets.zero,
+      scrollable: true,
+    ),
   };
 }
 
@@ -168,7 +180,10 @@ Widget _macosDialogSurface(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 for (final action in actions)
-                  Padding(padding: EdgeInsets.only(left: theme.token.scale.sizes.sm), child: action),
+                  Padding(
+                    padding: EdgeInsets.only(left: theme.token.scale.sizes.sm),
+                    child: action,
+                  ),
               ],
             ),
           ],
@@ -241,9 +256,7 @@ Widget _foruiDialogSurface(
     // The core centres, insets and caps the surface, so the library's own inset —
     // which exists to keep a full-screen dialog off the viewport edges — is dropped
     // rather than stacked on top of the core's.
-    style: const forui.FDialogStyleDelta.delta(
-      insetPadding: forui.EdgeInsetsGeometryDelta.value(EdgeInsets.zero),
-    ),
+    style: const forui.FDialogStyleDelta.delta(insetPadding: forui.EdgeInsetsGeometryDelta.value(EdgeInsets.zero)),
     builder: (context, style) => Padding(
       // The frame ships no content padding, so the token card padding wraps the
       // column, and it has no action area, so the actions arrive as a
@@ -264,131 +277,15 @@ Widget _foruiDialogSurface(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 for (final action in actions)
-                  Padding(padding: EdgeInsets.only(left: theme.token.scale.sizes.sm), child: action),
+                  Padding(
+                    padding: EdgeInsets.only(left: theme.token.scale.sizes.sm),
+                    child: action,
+                  ),
               ],
             ),
           ],
         ],
       ),
-    ),
-  );
-}
-
-// Hand-rolled because the library ships no dialog widget: a frosted
-// `GlassContainer` panel, its blur, stroke and shadow read from the library's
-// own `GlassTheme`.
-Widget _glassDialogSurface(
-  BuildContext dialogContext,
-  PureTheme theme, {
-  required String? title,
-  required Widget content,
-  required List<Widget> actions,
-}) {
-  final glassTheme = glass.GlassTheme.of(dialogContext);
-  final gap = theme.token.scale.sizes.md;
-
-  // A dialog floats *over* the page rather than on it, so the library's sheet
-  // opacity — tuned for surfaces that sit behind content — has to be floored
-  // or the barrier shows through the body text.
-  final opacity = glassTheme.opacity < 0.6 ? 0.72 : glassTheme.opacity;
-
-  return glass.GlassContainer(
-    blur: glassTheme.blur,
-    opacity: opacity,
-    borderRadius: glassTheme.borderRadius,
-    color: theme.colors.bgElevated,
-    elevation: glassTheme.elevation ?? 12,
-    shadowColor: glassTheme.shadowColor ?? theme.colors.shadowBase,
-    padding: EdgeInsets.all(theme.card.padding),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (title case final String heading) ...[
-          Text(heading, style: theme.text.title.copyWith(color: theme.colors.text)),
-          SizedBox(height: gap),
-        ],
-        content,
-        if (actions.isNotEmpty) ...[
-          SizedBox(height: gap),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              for (final action in actions)
-                Padding(padding: EdgeInsets.only(left: theme.token.scale.sizes.sm), child: action),
-            ],
-          ),
-        ],
-      ],
-    ),
-  );
-}
-
-// Hand-rolled because the library ships no dialog widget: a `NeuContainer`
-// domed ([neu.NeuShape.convex]) at twice the theme's depth, so the panel reads
-// as lifted clear off the page.
-Widget _neumorphicDialogSurface(
-  BuildContext dialogContext,
-  PureTheme theme, {
-  required String? title,
-  required Widget content,
-  required List<Widget> actions,
-}) {
-  final surface = neu.NeuTheme.of(dialogContext);
-  final gap = theme.token.scale.sizes.md;
-
-  return neu.NeuContainer(
-    shape: neu.NeuShape.convex,
-    baseColor: surface.baseColor,
-    depth: surface.depth * 2,
-    distance: surface.distance,
-    borderRadius: surface.borderRadius,
-    padding: EdgeInsets.all(theme.card.padding),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (title case final String heading) ...[
-          Text(heading, style: theme.text.title.copyWith(color: theme.colors.text)),
-          SizedBox(height: gap),
-        ],
-        content,
-        if (actions.isNotEmpty) ...[
-          SizedBox(height: gap),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              for (final action in actions)
-                Padding(padding: EdgeInsets.only(left: theme.token.scale.sizes.sm), child: action),
-            ],
-          ),
-        ],
-      ],
-    ),
-  );
-}
-
-// Hand-rolled because the library ships no dialog widget and its one floating
-// panel (`WPopover`) is widget-anchored, not centred over a page: the panel is
-// the library's own elevated `WCard` — `rounded-xl shadow-xl border` over its
-// elevated background pair, content in a `flex flex-col` `WDiv`.
-Widget _windDialogSurface(
-  PureTheme theme, {
-  required String? title,
-  required Widget content,
-  required List<Widget> actions,
-}) {
-  return wind.WCard(
-    className:
-        'rounded-xl shadow-xl border bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
-        ' text-gray-900 dark:text-gray-100',
-    child: wind.WDiv(
-      className: 'flex flex-col gap-4 p-6',
-      children: [
-        if (title case final String heading) wind.WText(heading, className: 'text-lg font-semibold'),
-        content,
-        if (actions.isNotEmpty) wind.WDiv(className: 'flex flex-row wrap justify-end gap-2', children: actions),
-      ],
     ),
   );
 }

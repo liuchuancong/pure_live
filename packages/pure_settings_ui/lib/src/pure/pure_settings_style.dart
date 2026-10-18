@@ -1,90 +1,68 @@
 import 'package:flutter/widgets.dart';
-import 'package:pure_settings_ui/src/pure/styles/forui_settings_style.dart';
-import 'package:pure_settings_ui/src/pure/styles/glass_settings_style.dart';
-import 'package:pure_settings_ui/src/pure/styles/neumorphic_settings_style.dart';
-import 'package:pure_settings_ui/src/pure/styles/pure_settings_base_style.dart';
-import 'package:pure_settings_ui/src/pure/styles/wind_settings_style.dart';
+import 'package:pure_settings_ui/src/vendor/utils/platform_utils.dart' show DevicePlatform;
 import 'package:pure_settings_ui/src/vendor/utils/settings_theme.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
-/// What one design language's settings style states.
+/// What one design language's settings theme states about itself.
 ///
-/// Each language has its own file under `styles/`, the way `pure_uikit`'s
-/// `app/hosts/` has one host per language: a theme's surface, its separators
-/// and the space its controls need are that theme's business, and folding four
-/// of them into one switch would make every one of them a special case of a
-/// style that belongs to none.
+/// Every language has its own file under `languages/`, the way `pure_uikit`'s
+/// `app/hosts/` has one host per language, and this is the shape they all
+/// answer to. A theme's surface, its separators and the space its controls need
+/// are that theme's own business: they are declared once, in that theme's file,
+/// and never as a case in another theme's branch.
 ///
-/// Only the parts that actually differ are here. The row, the section and the
-/// page bar are shared, because they are pure_uikit's `PureCard`, `PureListRow`
-/// and `PureAppBar` — those already construct the library's own widgets, so a
-/// per-language copy of them would be four files saying the same thing.
+/// Only the parts that differ between themes are here. The row, the section and
+/// the page bar are shared code, because they are pure_uikit's `PureCard`,
+/// `PureListRow` and `PureAppBar` — those already construct the library's own
+/// widgets, so a per-language copy of them would be nine files saying the same
+/// thing about geometry that the library has already decided.
 @immutable
 final class PureSettingsStyle {
-  /// A style naming itself, painting its own palette and spacing its own card.
-  const PureSettingsStyle({
-    required this.name,
-    required this.palette,
-    this.cardPadding = EdgeInsets.zero,
-    this.cardBordered = false,
-    this.rowDividers = true,
-    this.tintsSelectedCard = true,
-  });
-
-  /// The language this style draws, for failures worth reading.
-  final String name;
+  /// A style stating its palette, its card padding, its border and its separators.
+  const new({required this.palette, required this.cardPadding, required this.cardBordered, required this.rowDividers});
 
   /// The colours the list paints its page and its hairlines with.
   ///
-  /// A function of the resolved theme rather than a constant, because the pure
-  /// style follows the user's accent and brightness — the one thing no upstream
-  /// style except Android's and Chrome's does.
+  /// A function of the resolved theme rather than a constant, because this
+  /// family follows the user's accent and brightness — the one thing no
+  /// upstream style except Android's and Chrome's does.
   final SettingsThemeData Function(PureTheme theme) palette;
 
   /// The padding between a card's edge and its rows.
   ///
-  /// Zero is right when the card's own surface reaches its border, as forui's
-  /// `FCard` does. A language whose card is embossed or frosted needs inset
-  /// rows so the surface's edge — its shadow, its blur, its stroke — stays
-  /// visible around them.
+  /// Zero is right when the card's own surface reaches its border. A language
+  /// whose card is embossed or inset needs its rows pulled in so the surface's
+  /// edge — its shadow, its stroke, its rounded corner — stays visible around
+  /// them.
   final EdgeInsetsGeometry cardPadding;
 
   /// Whether the card is stroked.
   ///
-  /// A library whose card paints no surface of its own needs the token's
-  /// border to say where the group ends; a library whose card is already a
-  /// surface would only gain a second edge.
+  /// A card that paints no surface of its own needs the token's border to say
+  /// where the group ends; a card that is already a surface would only gain a
+  /// second edge.
   final bool cardBordered;
 
   /// Whether the section draws a separator between two rows.
   final bool rowDividers;
-
-  /// Whether a selected card takes the token's selected tint.
-  ///
-  /// A card defined by its depth has no fill to recolour, so it states
-  /// selection the way its own library does and this stays false.
-  final bool tintsSelectedCard;
 }
 
-/// The settings style of [language].
+/// One design language's place in the settings system.
 ///
-/// The five languages that have an upstream rendering never reach it:
-/// `devicePlatformOf` sends them to that rendering, and the dispatch switches
-/// in the vendored tree route them there before this is asked. It answers for
-/// them only when a caller forces `platform: DevicePlatform.pure` — and then
-/// with the neutral base, since there is nothing language-specific to say.
-PureSettingsStyle pureSettingsStyleOf(PureDesignLanguage language) => switch (language) {
-  PureDesignLanguage.forui => foruiSettingsStyle,
-  PureDesignLanguage.glass => glassSettingsStyle,
-  PureDesignLanguage.neumorphic => neumorphicSettingsStyle,
-  PureDesignLanguage.wind => windSettingsStyle,
-  PureDesignLanguage.material ||
-  PureDesignLanguage.cupertino ||
-  PureDesignLanguage.macos ||
-  PureDesignLanguage.fluent ||
-  PureDesignLanguage.yaru => pureSettingsBaseStyle,
-};
+/// The whole of a theme's dispatch — which upstream rendering it borrows, and
+/// what its own style says — is one constant, in one file. Nothing here decides
+/// anything on another theme's behalf. Which language a constant belongs to is
+/// the registry key in `settings_language.dart`, stated once there rather than
+/// repeated here, so the two cannot disagree.
+@immutable
+final class SettingsLanguage {
+  /// A language, the style key it draws, and the style it states for itself.
+  const new({required this.platform, required this.style});
 
-/// The style the list resolves for the subtree around [context].
-PureSettingsStyle pureSettingsStyle(BuildContext context) =>
-    pureSettingsStyleOf(PureTheme.of(context).config.language);
+  /// The vendored style key this language resolves to: one of upstream's own
+  /// for the five that have a rendering, `DevicePlatform.pure` for the rest.
+  final DevicePlatform platform;
+
+  /// The theme's own style, consulted by the pure rendering.
+  final PureSettingsStyle style;
+}

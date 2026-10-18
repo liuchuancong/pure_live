@@ -3,8 +3,9 @@ import 'dart:async' show StreamSubscription, unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/features/settings/widgets/settings_sections.dart';
+import 'package:pure_live/features/settings/widgets/settings_rows.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_settings_ui/pure_settings_ui.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The cache & data page (3.x `CacheDataSettingsPage`, trimmed to the backed
@@ -78,27 +79,29 @@ final class _CacheDataPageState extends ConsumerState<CacheDataPage> {
     final t = context.t;
     return PureScaffold(
       appBar: PureAppBar(title: t.settings.cacheAndData),
-      body: ListView(
-        padding: const EdgeInsets.all(12),
-        children: [
-          SettingsSection.card(
-            label: t.settings.sectionData,
+      body: SettingsList(
+        sections: [
+          SettingsSection(
+            title: Text(t.settings.sectionData),
             tiles: [
-              PureListRow(
-                leading: const Icon(Icons.history, size: 22),
-                title: t.settings.historyEntry,
-                subtitle: t.settings.historyCount(count: _count),
+              // The count is a reading, not a control, so it is a row without a
+              // destination — the kit's navigation tile would grow a chevron
+              // that promises a page that does not exist.
+              SettingsRowTile(
+                row: PureListRow(
+                  leading: const Icon(Icons.history, size: 22),
+                  title: t.settings.historyEntry,
+                  subtitle: t.settings.historyCount(count: _count),
+                ),
               ),
-              SettingsEntryTile(
-                icon: Icons.delete_sweep_outlined,
-                title: t.settings.clearHistory,
-                subtitle: t.settings.clearHistorySubtitle,
-                onTap: () => unawaited(_confirmClear()),
-                divided: false,
+              SettingsTile.navigation(
+                leading: const Icon(Icons.delete_sweep_outlined),
+                title: Text(t.settings.clearHistory),
+                description: Text(t.settings.clearHistorySubtitle),
+                onPressed: (_) => unawaited(_confirmClear()),
               ),
             ],
           ),
-          const SizedBox(height: 32),
         ],
       ),
     );

@@ -4,12 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic_ui_kit/flutter_neumorphic_ui_kit.dart' as neu;
 import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
 import 'package:forui/forui.dart' as forui;
-import 'package:glass_morphism_plus/glass_morphism_plus.dart' as glass;
 import 'package:macos_ui/macos_ui.dart' as macos;
 import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
-import 'package:pure_uikit/src/styling/style/style.dart' show InteractionState, Style;
-import 'package:pure_uikit/src/styling/widgets/layout/pure_box.dart';
 
 /// The public switch: one widget, every theme and density. It carries only
 /// semantics (`value`, `onChanged`, `enabled`); its appearance comes straight
@@ -74,114 +71,18 @@ class PureSwitch extends StatelessWidget {
         focusNode: focusNode,
         autofocus: autofocus,
       ),
-      // Hand-rolled glass-style composition: glass_morphism_plus ships no
-      // toggle, so the track is a frosted [glass.GlassContainer] with a solid
-      // frosted disc for the knob — the library's own surfaces, themed from its
-      // [glass.GlassTheme] — and the tap, focus node and hover/press tint ride
-      // on the core's [PureBox], because the container's own `onTap` would
-      // build a Material ink host with a focus node of its own.
-      PureDesignLanguage.glass => _GlassSwitch(
-        value: value,
-        enabled: enabled,
-        onChanged: select,
-        focusNode: focusNode,
-        autofocus: autofocus,
-      ),
+      // glass_morphism_plus ships no toggle. Fall back to Flutter's official
+      // Material switch rather than drawing a hand-rolled one; the surrounding
+      // glass surfaces still carry the language.
+      PureDesignLanguage.glass => Switch(value: value, onChanged: select, focusNode: focusNode, autofocus: autofocus),
       PureDesignLanguage.neumorphic => neu.NeuSwitch(value: value, onChanged: select),
       // Wind's fork paints its own `disabled:` state from this flag, so the
       // flag and the nulled callback come from the same verdict.
       PureDesignLanguage.wind => wind.WSwitch(value: value, onChanged: select, disabled: select == null),
       // Yaru IS Material theming — its character comes from the host theme, not
       // from a different switch.
-      PureDesignLanguage.material || PureDesignLanguage.yaru => Switch(
-        value: value,
-        onChanged: select,
-        focusNode: focusNode,
-        autofocus: autofocus,
-      ),
+      PureDesignLanguage.material ||
+      PureDesignLanguage.yaru => Switch(value: value, onChanged: select, focusNode: focusNode, autofocus: autofocus),
     };
-  }
-}
-
-/// The glass switch: a hand-rolled glassmorphism composition — the library
-/// ships no toggle, so the track is a frosted [glass.GlassContainer] sheet
-/// whose blur, tint, radius and stroke come from [glass.GlassTheme], tinted
-/// with the primary colour when it is on, and the knob is a solid frosted disc
-/// (one backdrop filter per control is the library's own budget, so the knob
-/// opts out of its own). The geometry is the switch component token's, because
-/// the library has no metrics for a control it does not ship; the tap, the
-/// focus node and the interaction tint are the core's [PureBox].
-class _GlassSwitch extends StatelessWidget {
-  const new({
-    required this.value,
-    required this.enabled,
-    required this.onChanged,
-    required this.focusNode,
-    required this.autofocus,
-  });
-
-  final bool value;
-  final bool enabled;
-  final ValueChanged<bool>? onChanged;
-  final FocusNode? focusNode;
-  final bool autofocus;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = PureTheme.of(context);
-    final glassTheme = glass.GlassTheme.of(context);
-    final st = theme.switchToken;
-    final interactive = enabled && onChanged != null;
-    final lineWidth = theme.token.motion.lineWidth;
-
-    final track = glass.GlassContainer(
-      width: st.width,
-      height: st.height,
-      padding: EdgeInsets.all(lineWidth * 2),
-      customBorderRadius: BorderRadius.circular(st.height),
-      color: value ? theme.colors.primary : glassTheme.color,
-      opacity: value ? (glassTheme.opacity * 2.4).clamp(0.0, 1.0) : glassTheme.opacity,
-      child: AnimatedAlign(
-        duration: theme.duration,
-        curve: Curves.easeOut,
-        alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-        child: glass.GlassContainer(
-          width: st.handleSize,
-          height: st.handleSize,
-          shape: BoxShape.circle,
-          color: st.handleColor,
-          opacity: 1,
-          // The knob is a solid frosted disc: one backdrop filter for the whole
-          // control is the library's own budget, and a second inside the first
-          // would blur the track it sits on.
-          isBlurEnabled: false,
-          boxShadow: theme.token.motion.boxShadowTertiary,
-        ),
-      ),
-    );
-
-    return Semantics(
-      // A switch is a toggle, not a checkbox: announcing both `toggled` and
-      // `checked` asserts inside the render tree.
-      toggled: value,
-      enabled: interactive,
-      child: PureBox(
-        style: (state) => Style(
-          borderRadius: BorderRadius.circular(st.height),
-          background: switch (state) {
-            InteractionState.hovered ||
-            InteractionState.pressed ||
-            InteractionState.focused => glassTheme.color.withValues(alpha: (glassTheme.opacity * 1.8).clamp(0.0, 1.0)),
-            _ => null,
-          },
-          opacity: state == InteractionState.disabled ? st.disabledOpacity : null,
-        ),
-        onTap: interactive ? () => onChanged?.call(!value) : null,
-        enabled: enabled,
-        focusNode: focusNode,
-        autofocus: autofocus,
-        child: track,
-      ),
-    );
   }
 }

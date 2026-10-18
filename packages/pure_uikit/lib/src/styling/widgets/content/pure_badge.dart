@@ -1,11 +1,14 @@
-import 'package:flutter/widgets.dart';
+import 'package:fluent_2/fluent_2.dart' as f2;
+import 'package:flutter/material.dart';
+import 'package:forui/forui.dart' as forui;
+import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
-import 'package:pure_uikit/src/styling/tokens/component_token.dart' show BadgeComponentToken;
 
-/// A status badge in the token model — Ant's `Badge`. Overlays a dot or a
-/// counted pill on the top-right of [child], or renders standalone when no
-/// [child] is given. Colours, size and the pill radius come from
-/// [BadgeComponentToken].
+/// A status badge anchored to [child] — Ant's `Badge`.
+///
+/// The pill itself is the active language's own badge component where one
+/// exists; the languages whose library ships no badge use Flutter's official
+/// Material `Badge`.
 class PureBadge extends StatelessWidget {
   /// A badge.
   const new({
@@ -55,27 +58,21 @@ class PureBadge extends StatelessWidget {
       text = label;
     }
 
-    final pill = dot
-        ? Container(
-            width: bt.dotSize,
-            height: bt.dotSize,
-            decoration: BoxDecoration(color: background, shape: BoxShape.circle),
-          )
-        : Container(
-            constraints: BoxConstraints(minWidth: bt.height),
-            height: bt.height,
-            padding: EdgeInsets.symmetric(horizontal: bt.paddingInline),
-            decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(bt.height)),
-            alignment: Alignment.center,
-            child: Text(
-              text ?? '',
-              style: theme.text.caption.copyWith(
-                color: bt.foreground,
-                fontWeight: FontWeight.w500,
-                fontSize: bt.fontSize,
-              ),
-            ),
-          );
+    final Widget pill = switch (theme.config.language) {
+      PureDesignLanguage.fluent when !dot && text != null => f2.FluentBadge(
+        size: f2.FluentBadgeSize.small,
+        child: Text(text),
+      ),
+      PureDesignLanguage.forui when !dot && text != null => forui.FBadge(child: Text(text)),
+      // Material, Yaru, Cupertino, macOS, glass, neumorphic and wind use
+      // Flutter's official Material Badge; the dot form also uses it, because
+      // several libraries' badges require a label.
+      _ => Badge(
+        backgroundColor: background,
+        smallSize: dot ? bt.dotSize : null,
+        label: dot || text == null ? null : Text(text),
+      ),
+    };
 
     if (!enabled || (text == null && !dot)) {
       return child ?? const SizedBox.shrink();

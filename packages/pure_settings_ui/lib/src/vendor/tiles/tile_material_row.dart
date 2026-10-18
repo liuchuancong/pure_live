@@ -193,9 +193,8 @@ class MaterialTileRow extends StatelessWidget {
     final enabled = tile.enabled;
     // Trailing icons and the chevron keep their color in a selected tile.
     Widget tinted(Widget child) => IconTheme(
-      data: IconTheme.of(
-        context,
-      ).copyWith(color: theme.iconColorFor(enabled: enabled)),
+      data: IconTheme.of(context)
+          .copyWith(color: theme.iconColorFor(enabled: enabled)),
       child: child,
     );
     late final toggle = Switch(

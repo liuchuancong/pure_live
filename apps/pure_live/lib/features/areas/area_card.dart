@@ -10,8 +10,15 @@ import 'package:pure_uikit/pure_uikit.dart';
 /// widens, and every tile reserves the square picture plus its one or two
 /// label lines.
 abstract final class AreaGridMetrics {
-  /// Columns by width: three on a phone up to nine on a wide desktop.
-  static int columnsFor(double width) => width > 1280 ? 9 : (width > 960 ? 7 : (width > 640 ? 5 : 3));
+  /// Columns by width class: three through compact, five on a tablet, seven
+  /// on an expanded desktop and nine from the large class up — square
+  /// category tiles pack tighter than room cards, so every class fits more.
+  static int columnsFor(double width) => AdaptiveBreakpoints.fromWidth(width).resolve<int>(
+    compact: 3,
+    medium: 5,
+    expanded: 7,
+    large: 9,
+  );
 
   /// The tile height for an [itemWidth]: the square picture plus the labels,
   /// growing with the ambient text scale.

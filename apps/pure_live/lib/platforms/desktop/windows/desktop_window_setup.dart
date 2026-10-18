@@ -66,6 +66,7 @@ Future<void> setUpDesktopWindow({
     initialSize: size,
   );
 }
+
 /// The clear colour of the window before Flutter paints, matched to the
 /// surface the first frame will actually show.
 ///

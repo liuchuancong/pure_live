@@ -3,129 +3,99 @@ import 'dart:async' show unawaited;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_sites/live_sites.dart' show LiveCredential;
+import 'package:live_sites/live_sites.dart' show LiveCredential, LiveSite;
 import 'package:pure_live/app/routing/routes/login/login_routes.dart';
 import 'package:pure_live/features/login/login_providers.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_settings_ui/pure_settings_ui.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The account page (`/settings/account`): who the app signs each site's
 /// requests with.
 ///
-/// One row per sign-in site: signed in it shows the account the login
-/// granted (avatar, nickname, id) and the sign-out, which detaches the
-/// credential from that site and removes the stored secret; signed out it
-/// shows the way into the login page.
+/// The reference's hub shape (`account_page.dart:16-231`): one card of rows, each
+/// a leading mark, the platform's name, a state line and a trailing control that
+/// is a sign-out once a credential is live; a second card carries the destructive
+/// clear-everything, inert while no site holds one.
+///
+/// Two things differ from the reference on purpose. The rows come from the site
+/// registry's auth capabilities rather than a hardcoded list of nine platforms —
+/// this build ships the three that have adapters today, and a platform that grows
+/// a login appears here by itself. And the page is written as one
+/// `pure_settings_ui` tree, so it re-skins with the rest of the settings cluster.
 final class AccountPage extends ConsumerWidget {
   /// The account page.
   const new({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final sites = ref.watch(authSitesProvider);
     final accounts = ref.watch(signedInAccountsProvider);
     final t = context.t;
     return PureScaffold(
       appBar: PureAppBar(title: t.account.title),
-      body: ListView(
-        padding: const EdgeInsets.all(12),
-        children: [
-          for (final siteId in loginSites) ...[
-            PureCard(
-              padding: const EdgeInsets.all(20),
-              child: switch (accounts[siteId]) {
-                null => _SignedOutCard(siteId: siteId, onSignIn: () => const LoginRoute().push<void>(context)),
-                final LiveCredential credential => _SignedInCard(siteId: siteId, credential: credential),
-              },
-            ),
-            const SizedBox(height: 12),
-          ],
+      body: SettingsList(
+        sections: [
+          SettingsSection(
+            tiles: [
+              if (sites.isEmpty)
+                SettingsTile(title: Text(t.account.noAuthSites), description: Text(t.account.notSignedInHint))
+              else
+                for (final site in sites) _row(context, ref, site, accounts[site.manifest.id]),
+            ],
+          ),
+          SettingsSection(
+            tiles: [
+              SettingsTile.navigation(
+                leading: Icon(
+                  Icons.delete_sweep_outlined,
+                  color: accounts.isEmpty ? null : PureTheme.of(context).colors.error,
+                ),
+                title: Text(t.account.clearAllAccounts),
+                description: Text(t.account.clearAllAccountsHint),
+                enabled: accounts.isNotEmpty,
+                onPressed: (_) => unawaited(_confirmClearAll(context, ref)),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
-}
 
-/// The display name of a site's platform, as the account rows say it.
-String _platformName(String siteId, Translations t) => switch (siteId) {
-  'bilibili' => t.account.platformBilibili,
-  'douyu' => t.account.platformDouyu,
-  _ => t.account.platformHuya,
-};
-
-/// The signed-out half of one site's row: what the login is for, and the way
-/// into it.
-final class _SignedOutCard extends ConsumerWidget {
-  const new({required this.siteId, required this.onSignIn});
-
-  final String siteId;
-
-  final VoidCallback onSignIn;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = PureTheme.of(context);
-    final canSignIn = ref.watch(authCapabilityProvider(siteId)) != null;
-    return Column(
-      children: [
-        PureAvatar(name: _platformName(siteId, context.t), size: 64),
-        const SizedBox(height: 12),
-        Text(_platformName(siteId, context.t), style: theme.text.title),
-        const SizedBox(height: 6),
-        Text(
-          context.t.account.notSignedInHint,
-          textAlign: TextAlign.center,
-          style: theme.text.caption.copyWith(color: theme.colors.textSecondary),
-        ),
-        const SizedBox(height: 16),
-        PureButton(
-          label: siteId == qrLoginSite ? context.t.settings.scanToLogin : context.t.settings.pasteCookie,
-          icon: siteId == qrLoginSite ? Icons.qr_code_scanner_rounded : Icons.content_paste_rounded,
-          onPressed: canSignIn ? onSignIn : null,
-        ),
-      ],
-    );
-  }
-}
-
-/// The signed-in half of one site's row: the account and the sign-out.
-final class _SignedInCard extends ConsumerWidget {
-  const new({required this.siteId, required this.credential});
-
-  final String siteId;
-
-  final LiveCredential credential;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = PureTheme.of(context);
-    final nickname = credential.nickname;
-    return Column(
-      children: [
-        PureAvatar(name: nickname, src: _avatarOf(credential.avatar), size: 64),
-        const SizedBox(height: 12),
-        Text(nickname ?? _platformName(siteId, context.t), style: theme.text.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-        const SizedBox(height: 6),
-        Text(
-          credential.userId == null
-              ? _platformName(siteId, context.t)
-              : context.t.account.userId(id: credential.userId!),
-          style: theme.text.caption.copyWith(color: theme.colors.textSecondary),
-        ),
-        const SizedBox(height: 16),
-        PureButton(
-          label: context.t.account.signOut,
-          variant: ButtonVariant.danger,
-          icon: Icons.logout_rounded,
-          onPressed: () => unawaited(_confirmSignOut(context, ref)),
-        ),
-      ],
+  /// One platform's row. A signed-in row reads as the account it holds and its
+  /// tap signs out; a signed-out row points into the login flow.
+  AbstractSettingsTile _row(BuildContext context, WidgetRef ref, LiveSite site, LiveCredential? credential) {
+    final t = context.t;
+    final name = _siteName(site, context);
+    final signedIn = credential != null;
+    final state = switch (credential) {
+      null => t.account.notSignedInHint,
+      final LiveCredential value when value.nickname != null && value.nickname!.isNotEmpty => value.nickname!,
+      final LiveCredential value => t.account.userId(id: value.userId ?? value.siteId),
+    };
+    return SettingsTile.navigation(
+      leading: PureAvatar(
+        name: credential?.nickname ?? name,
+        src: credential == null ? null : _imageOf(credential.avatar),
+        size: 32,
+      ),
+      title: Text(name),
+      // The value column is where the reference puts the live state, and it is
+      // the line that changes when a login lands — not a description of the row.
+      value: Text(state),
+      trailing: signedIn
+          ? Icon(Icons.logout_rounded, color: PureTheme.of(context).colors.error)
+          : const Icon(Icons.chevron_right_rounded),
+      onPressed: (_) =>
+          unawaited(signedIn ? _confirmSignOut(context, ref, site) : const LoginRoute().push<void>(context)),
     );
   }
 
-  Future<void> _confirmSignOut(BuildContext context, WidgetRef ref) async {
+  static Future<void> _confirmSignOut(BuildContext context, WidgetRef ref, LiveSite site) async {
     final confirmed = await showPureDialog<bool>(
       context: context,
-      title: context.t.account.signOutConfirm(site: _platformName(siteId, context.t)),
+      title: context.t.account.signOutConfirm(site: _siteName(site, context)),
       child: Text(context.t.account.signOutHint),
       actions: (dialogContext) => [
         PureButton(
@@ -141,10 +111,45 @@ final class _SignedInCard extends ConsumerWidget {
       ],
     );
     if (confirmed ?? false) {
-      await ref.read(accountProvider(siteId).notifier).signOut();
+      await ref.read(accountProvider(site.manifest.id).notifier).signOut();
     }
   }
 
-  ImageProvider? _avatarOf(String? avatar) =>
-      avatar == null || avatar.isEmpty ? null : CachedNetworkImageProvider(avatar);
+  static Future<void> _confirmClearAll(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showPureDialog<bool>(
+      context: context,
+      title: context.t.account.clearAllAccounts,
+      child: Text(context.t.account.clearAllAccountsHint),
+      actions: (dialogContext) => [
+        PureButton(
+          label: dialogContext.t.common.cancel,
+          variant: ButtonVariant.ghost,
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+        ),
+        PureButton(
+          label: dialogContext.t.account.signOut,
+          variant: ButtonVariant.danger,
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+        ),
+      ],
+    );
+    if (!(confirmed ?? false)) {
+      return;
+    }
+    // One sign-out per site, awaited: the reference wraps the same sequence in a
+    // single logout transaction so a half-cleared list never renders.
+    for (final site in ref.read(authSitesProvider)) {
+      await ref.read(accountProvider(site.manifest.id).notifier).signOut();
+    }
+  }
+}
+
+/// The platform's own display name, in the language the app is showing. The
+/// manifest carries it, so a new platform needs no row of literals here.
+String _siteName(LiveSite site, BuildContext context) =>
+    site.manifest.localizedName(Localizations.localeOf(context).toLanguageTag(), 'zh-CN');
+
+ImageProvider? _imageOf(String? url) {
+  final value = url?.trim() ?? '';
+  return value.isEmpty ? null : CachedNetworkImageProvider(value);
 }

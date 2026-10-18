@@ -26,10 +26,7 @@ Future<SocketInstanceChannel?> acquireDesktopInstance({required LiveLog log, req
     return null;
   }
   final profile = Platform.environment['USERPROFILE'] ?? Platform.environment['HOME'] ?? Directory.systemTemp.path;
-  final channel = SocketInstanceChannel(
-    appId: 'live.pure.desktop',
-    nonceFile: File('$profile/.pure_instance_nonce'),
-  );
+  final channel = SocketInstanceChannel(appId: 'live.pure.desktop', nonceFile: File('$profile/.pure_instance_nonce'));
   final launchLog = log.forCategory('launch');
   // A protocol-handler start carries the raw URI on the command line
   // (`purelive://room?site=...`, what the registry command launches); the

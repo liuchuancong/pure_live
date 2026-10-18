@@ -26,7 +26,10 @@
     "clear": "清空",
     "loading": "加载中",
     "empty": "暂无内容",
-    "pageOf": "第 {page: int} / {total: int} 页"
+    "pageOf": "第 {page: int} / {total: int} 页",
+    "back": "返回",
+    "menu": "菜单",
+    "off": "关闭"
   },
   "tray": {
     "show": "显示主界面",
@@ -63,7 +66,10 @@
     "userId": "ID {id: String}",
     "platformBilibili": "bilibili 账号",
     "platformDouyu": "斗鱼账号",
-    "platformHuya": "虎牙账号"
+    "platformHuya": "虎牙账号",
+    "noAuthSites": "这个构建还没有可登录的平台",
+    "clearAllAccounts": "清除全部账号",
+    "clearAllAccountsHint": "退出所有平台并删除已存的登录信息"
   },
   "settings": {
     "appearance": "外观",
@@ -197,7 +203,51 @@
     "sectionRecorder": "录制",
     "recorderSubtitle": "监听房间，开播自动录制",
     "pasteCookie": "粘贴 Cookie 登录",
-    "accountSignedInCount": "已登录 {count: int} 个平台"
+    "accountSignedInCount": "已登录 {count: int} 个平台",
+    "sectionVideo": "视频与弹幕",
+    "video": "视频与弹幕",
+    "videoSubtitle": "房间打开时的声音与弹幕",
+    "groupDanmaku": "弹幕",
+    "groupAudio": "声音",
+    "groupAppearance": "弹幕外观",
+    "groupLocalInteraction": "本地互动",
+    "localInteraction": "本地互动",
+    "localInteractionSubtitle": "开启后房间出现输入框，发送的弹幕只在自己画面显示",
+    "localInteractionName": "本地昵称",
+    "danmakuVisible": "默认显示弹幕",
+    "danmakuVisibleSubtitle": "新房间打开时是否在画面上叠加弹幕",
+    "defaultVolume": "默认音量",
+    "defaultVolumeSubtitle": "下一个房间开始播放时的音量",
+    "language": "界面语言",
+    "languageSubtitle": "跟随系统，或指定一种语言",
+    "languageSystem": "跟随系统",
+    "mpvTuning": "播放器调校",
+    "mpvTuningSubtitle": "libmpv 的输出、解码与缓存选项",
+    "mpvOutputSection": "输出",
+    "mpvCustomOutput": "自定义输出驱动",
+    "mpvCustomOutputSubtitle": "关闭时引擎使用平台默认输出;打开后驱动选择才会写入",
+    "mpvNeedsCustomOutput": "需先打开\"自定义输出驱动\"",
+    "mpvVideoOutput": "视频输出 (vo)",
+    "mpvAudioOutput": "音频输出 (ao)",
+    "mpvDecodeSection": "解码与渲染",
+    "mpvHardwareDecoder": "硬件解码 (hwdec)",
+    "mpvDeinterlace": "去隔行 (deinterlace)",
+    "mpvInterpolation": "帧插值 (interpolation)",
+    "mpvInterpolationSubtitle": "补帧更流畅,GPU 开销更高;仅桌面",
+    "mpvScaler": "缩放算法 (scale)",
+    "mpvCacheSection": "缓存",
+    "mpvCacheSeconds": "流缓存秒数",
+    "mpvCacheSecondsSubtitle": "0 表示不改引擎的默认缓存",
+    "mpvReset": "恢复默认",
+    "mpvResetSubtitle": "清空本页全部调校选项",
+    "mpvEffectiveNote": "生效方式",
+    "mpvEffectiveNoteBody": "视频/音频输出与硬件解码在下一次打开流时生效;其余选项即时应用到正在播放的房间。",
+    "localConfig": "本地配置预览",
+    "localConfigSubtitle": "只读展示当前保存的设置文档",
+    "localConfigNote": "本页只读;要修改请回到对应的设置项。",
+    "localConfigCopy": "复制该文档",
+    "localConfigApp": "通用偏好",
+    "localConfigAppearance": "外观"
   },
   "recorder": {
     "title": "录播",
@@ -360,7 +410,8 @@
     "none": "还没有备份",
     "delete": "删除备份",
     "restore": "恢复",
-    "restoreConfirm": "用「{name: String}」覆盖当前数据？应用将重启。"
+    "restoreConfirm": "用「{name: String}」覆盖当前数据？应用将重启。",
+    "sectionCloud": "云端与同步"
   },
   "about": {
     "title": "关于",
@@ -391,7 +442,8 @@
     "copyLink": "复制链接",
     "copied": "链接已复制",
     "download": "下载",
-    "assetMeta": "{size: String} · {count: int} 次下载"
+    "assetMeta": "{size: String} · {count: int} 次下载",
+    "startupUpdateBody": "最新版本 {tag} 已发布。现在打开更新页面吗?"
   },
   "shield": {
     "title": "弹幕屏蔽",
@@ -399,7 +451,9 @@
     "users": "用户",
     "regexes": "正则",
     "add": "添加",
-    "none": "暂无"
+    "none": "暂无",
+    "keywordHint": "输入要屏蔽的关键词",
+    "emptyKeyword": "请输入关键词"
   },
   "multiview": {
     "title": "多画面",
@@ -460,7 +514,50 @@
     "online": "在线",
     "lineN": "线路 {n}",
     "fullscreen": "全屏",
-    "exitFullscreen": "退出全屏"
+    "exitFullscreen": "退出全屏",
+    "barrageOn": "显示弹幕",
+    "barrageOff": "关闭弹幕",
+    "toolbox": "工具箱",
+    "copyLink": "复制房间链接",
+    "linkCopied": "已复制",
+    "record": "录制",
+    "stopRecording": "停止录制",
+    "rateNormal": "原速",
+    "audienceWaiting": "等待观众数据",
+    "mute": "静音",
+    "unmute": "取消静音",
+    "danmakuOn": "弹幕已开",
+    "sleepTimer": "睡眠定时",
+    "sleepTimerOn": "睡眠定时（已开启）",
+    "sleepTimerEnable": "启用播放定时",
+    "sleepTimerDesc": "到时后暂停当前房间的播放",
+    "timerDuration": "定时时长",
+    "timerDurationHint": "1 - 525600 分钟",
+    "timerInvalid": "请输入 1 到 525600 之间的分钟数",
+    "timerFinished": "播放定时已结束，已暂停",
+    "minutesUnit": "分钟",
+    "minutesN": "{minutes} 分钟",
+    "roomVolume": "房间音量",
+    "roomVolumeDesc": "设置静音与手机、桌面各自的默认音量",
+    "globalMute": "全局静音",
+    "globalMuteSubtitle": "所有房间以静音开始，音量数值保留",
+    "mobileDefaultVolume": "手机默认音量",
+    "desktopDefaultVolume": "桌面默认音量",
+    "resetDefault": "恢复默认",
+    "volumeApplyFailed": "当前房间无法应用音量，请确认后重试",
+    "send": "发送",
+    "localMe": "我",
+    "barrageSettings": "弹幕设置",
+    "keywordBlock": "关键词屏蔽",
+    "barrageHiddenHint": "弹幕已全局关闭",
+    "barrageOnSubtitle": "在画面上叠加滚动弹幕",
+    "barrageFontSize": "弹幕字号",
+    "barrageOpacity": "弹幕透明度",
+    "barrageSettingsNote": "这些设置即时生效，并作为新房间的默认值",
+    "enterLandscapeFullscreen": "横屏全屏",
+    "enterPortraitFullscreenHint": "继续下滑进入竖屏全屏",
+    "portraitPanelResize": "面板高度",
+    "portraitPanelResizeHint": "拖动调整面板高度"
   },
   "areas": {
     "empty": "暂无分区"
@@ -510,7 +607,8 @@
     "popular": "热门",
     "areas": "分区",
     "search": "搜索",
-    "settings": "设置"
+    "settings": "设置",
+    "record": "录制中心"
   },
   "window": {
     "minimize": "最小化",
@@ -527,9 +625,10 @@
   "shellSettings": {
     "sectionWindow": "窗口",
     "titleBar": "窗口标题栏",
+    "titleBarAuto": "自动（按系统版本）",
     "titleBarApp": "应用标题栏",
     "titleBarSystem": "系统标题栏",
-    "titleBarHint": "应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式；切换在重启应用后生效。"
+    "titleBarHint": "自动：Windows 11 用应用标题栏，Windows 10 用系统标题栏。应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式。切换在重启应用后生效。"
   },
   "webdav": {
     "title": "WebDAV 云备份",

@@ -3,10 +3,7 @@ import 'dart:async';
 import 'package:fluent_2/fluent_2.dart' as f2;
 import 'package:flutter/cupertino.dart' as cupertino;
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphic_ui_kit/flutter_neumorphic_ui_kit.dart' as neu;
-import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
 import 'package:forui/forui.dart' as forui;
-import 'package:glass_morphism_plus/glass_morphism_plus.dart' as glass;
 import 'package:macos_ui/macos_ui.dart' as macos;
 
 import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
@@ -35,10 +32,10 @@ enum PureToastType {
 /// component — Fluent's `FluentToast`, a macOS `MacosSheet` HUD, a Cupertino
 /// `CupertinoPopupSurface` panel, a Material card dressed from the library's
 /// own `SnackBarThemeData`, ForUI's `FToast`, and for the surface libraries
-/// that ship no message widget (glass, neumorphic, wind) a hand-rolled pill in
-/// that language's own idiom — so what the user sees is exactly what that
-/// library's own documentation shows. Switching `UiConfig.language` re-skins
-/// every toast. Nothing here needs a
+/// that ship no message widget (glass, neumorphic, wind) the same official
+/// Material card — so what the user sees is exactly what that library's own
+/// documentation shows. Switching `UiConfig.language` re-skins every toast.
+/// Nothing here needs a
 /// `Scaffold`: the message goes to the root [Overlay], so a toast fired from a
 /// route, a dialog or a second desktop window still finds its way to the top
 /// of the screen.
@@ -78,8 +75,8 @@ abstract final class PureToast {
   }
 
   /// The toast surface for the active design language: the language's own
-  /// toast widget, or — for the surface libraries that ship no toast — the
-  /// language's own panel composed into one.
+  /// toast widget, or the official Material card where the library ships no
+  /// transient message.
   static Widget _toastSurface(BuildContext context, PureTheme theme, _ToastSpec spec) {
     return switch (theme.config.language) {
       // Yaru draws toasts with the Material card — that is what Yaru itself is;
@@ -89,9 +86,12 @@ abstract final class PureToast {
       PureDesignLanguage.macos => _macosToast(context, theme, spec),
       PureDesignLanguage.fluent => _fluentToast(context, spec),
       PureDesignLanguage.forui => _foruiToast(theme, spec),
-      PureDesignLanguage.glass => _glassToast(context, theme, spec),
-      PureDesignLanguage.neumorphic => _neumorphicToast(context, theme, spec),
-      PureDesignLanguage.wind => _windToast(theme, spec),
+      // glass_morphism_plus, flutter_neumorphic_ui_kit and fluttersdk_wind
+      // ship no transient message widget. Use the Material card surface built
+      // from the official `SnackBarThemeData`, not a hand-drawn panel.
+      PureDesignLanguage.glass ||
+      PureDesignLanguage.neumorphic ||
+      PureDesignLanguage.wind => _materialToast(context, theme, spec),
     };
   }
 
@@ -223,76 +223,6 @@ abstract final class PureToast {
     );
   }
 
-  // Hand-rolled because the library ships no message widget: a frosted
-  // `GlassContainer` pill — its blur, tint, corner radius and stroke all the
-  // values `GlassTheme` publishes. Glass marks severity on the glyph rather
-  // than a solid fill, which a translucent surface could not hold.
-  static Widget _glassToast(BuildContext context, PureTheme theme, _ToastSpec spec) {
-    final glassTheme = glass.GlassTheme.of(context);
-    final accent = spec.accent ?? _accent(theme, spec);
-    final sizes = theme.token.scale.sizes;
-
-    return glass.GlassContainer(
-      padding: EdgeInsets.symmetric(horizontal: sizes.md, vertical: sizes.sm),
-      elevation: 6,
-      shadowColor: glassTheme.shadowColor ?? theme.colors.shadowBase,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(spec.icon ?? _glyph(spec.type), color: accent, size: theme.text.body.fontSize),
-          SizedBox(width: sizes.sm),
-          Flexible(child: Text(spec.message, style: theme.text.body.copyWith(color: theme.colors.text))),
-        ],
-      ),
-    );
-  }
-
-  // Hand-rolled because the library ships no transient message: the pill is a
-  // `NeuContainer` plane at the theme's own depth, radius and base colour.
-  static Widget _neumorphicToast(BuildContext context, PureTheme theme, _ToastSpec spec) {
-    final surface = neu.NeuTheme.of(context);
-    final accent = spec.accent ?? _accent(theme, spec);
-    final sizes = theme.token.scale.sizes;
-
-    return neu.NeuContainer(
-      baseColor: surface.baseColor,
-      borderRadius: surface.borderRadius,
-      depth: surface.depth,
-      distance: surface.distance,
-      padding: EdgeInsets.symmetric(horizontal: sizes.md, vertical: sizes.sm),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(spec.icon ?? _glyph(spec.type), color: accent, size: theme.text.body.fontSize),
-          SizedBox(width: sizes.sm),
-          Flexible(child: Text(spec.message, style: theme.text.body.copyWith(color: theme.colors.text))),
-        ],
-      ),
-    );
-  }
-
-  // Hand-rolled because the fork has no transient message widget at all: the
-  // pill is the library's own floating panel, `WCard` — `rounded-2xl
-  // shadow-lg border` over its elevated background pair, the message at the
-  // library's `text-sm` step — with the status colour arriving through the
-  // fork's documented runtime-colour channel (`WIcon.foregroundColor`).
-  static Widget _windToast(PureTheme theme, _ToastSpec spec) {
-    final accent = spec.accent ?? _accent(theme, spec);
-    return wind.WCard(
-      className:
-          'rounded-2xl shadow-lg border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-          ' text-gray-900 dark:text-gray-100',
-      child: wind.WDiv(
-        className: 'flex flex-row items-center gap-2 px-4 py-2',
-        children: [
-          wind.WIcon(spec.icon ?? _glyph(spec.type), className: 'text-sm', foregroundColor: accent),
-          wind.WText(spec.message, className: 'text-sm shrink'),
-        ],
-      ),
-    );
-  }
-
-  /// The glyphs the Cupertino set draws.
   static IconData _cupertinoGlyph(PureToastType type) => switch (type) {
     PureToastType.info => cupertino.CupertinoIcons.info,
     PureToastType.success => cupertino.CupertinoIcons.checkmark_circle,

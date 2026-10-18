@@ -97,12 +97,7 @@ final class IptvXtreamSource {
 final class IptvPreferences {
   /// The shipping defaults: no channel remembered, every group shown, no
   /// Xtream source.
-  const new({
-    this.lastChannelId = '',
-    this.lastGroup = '',
-    this.favoritesOnly = false,
-    this.xtreamSources = const [],
-  });
+  const new({this.lastChannelId = '', this.lastGroup = '', this.favoritesOnly = false, this.xtreamSources = const []});
 
   /// Reads the document; unknown shapes decode to the defaults.
   factory IptvPreferences.fromJson(Map<String, Object?> json) => IptvPreferences(

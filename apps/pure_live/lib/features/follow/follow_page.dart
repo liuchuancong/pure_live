@@ -2,10 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_library/live_library.dart' show FollowRepository, LibraryRoom;
+import 'package:live_library/live_library.dart' show FollowGroup, FollowRepository, LibraryRoom;
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
+import 'package:pure_live/app/shell/main_layout.dart';
+import 'package:pure_live/app/shell/main_page_frame.dart';
+import 'package:pure_live/app/shell/shell_destinations.dart' show ShellBranch;
 import 'package:pure_live/features/follow/follow_group_sheet.dart';
 import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
@@ -27,6 +30,7 @@ final class FollowPage extends ConsumerStatefulWidget {
 
 final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefresh<FollowPage> {
   StreamSubscription<void>? _changes;
+  StreamSubscription<String>? _reTaps;
   String? _selectedGroup;
 
   FollowRepository get _repository => ref.read(followRepositoryProvider);
@@ -54,11 +58,19 @@ final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefr
         setState(() {});
       }
     });
+    // Re-tapping the tab already on screen refreshes the grid — the
+    // reference's `onDestinationSelected` favorites special case.
+    _reTaps = ref
+        .read(shellReTapSignalsProvider)
+        .reTaps
+        .where((branchId) => branchId == ShellBranch.follow.name)
+        .listen((_) => unawaited(feedRefresh()));
   }
 
   @override
   void dispose() {
     unawaited(_changes?.cancel());
+    unawaited(_reTaps?.cancel());
     super.dispose();
   }
 
@@ -201,32 +213,32 @@ final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefr
         ? records
         : records.where((record) => record.groupIds.contains(_selectedGroup)).toList();
     final groupPosition = groups.indexWhere((group) => group.id == _selectedGroup);
-    return PureScaffold(
-      appBar: PureAppBar(
-        title: context.t.tabs.follow,
-        actions: [
-          PureIconButton(
-            tooltip: context.t.follow.manageGroups,
-            icon: Icons.folder_copy_outlined,
-            onPressed: _manageGroups,
-          ),
-          const SettingsEntryButton(),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: PureTabs(
-              index: _selectedGroup == null || groupPosition < 0 ? 0 : groupPosition + 1,
-              onChanged: (index) => setState(() => _selectedGroup = index == 0 ? null : groups[index - 1].id),
-              tabs: [
-                PureTab(label: context.t.follow.all),
-                for (final group in groups) PureTab(label: group.name),
-              ],
-            ),
-          ),
+    return MainPageFrame(
+      title: context.t.tabs.follow,
+      actions: [
+        PureIconButton(
+          tooltip: context.t.follow.manageGroups,
+          icon: Icons.folder_copy_outlined,
+          onPressed: _manageGroups,
         ),
+        const SettingsEntryButton(),
+      ],
+      // The group filter travels two ways: a horizontal tab strip on phones
+      // and tablets, and a context column beside the grid from the expanded
+      // class up — the desktop grammar of filter-left, content-right. The
+      // frame picks; the page supplies both forms from one state.
+      tabs: [
+        PureTab(label: context.t.follow.all),
+        for (final group in groups) PureTab(label: group.name),
+      ],
+      tabIndex: _selectedGroup == null || groupPosition < 0 ? 0 : groupPosition + 1,
+      onTabChanged: (index) => setState(() => _selectedGroup = index == 0 ? null : groups[index - 1].id),
+      pane: _GroupPane(
+        allLabel: context.t.follow.all,
+        groups: groups,
+        selectedId: _selectedGroup,
+        onSelected: (id) => setState(() => _selectedGroup = id),
+        onManage: _manageGroups,
       ),
       body: visible.isEmpty
           ? PureEmpty(title: context.t.follow.empty, icon: Icons.favorite_border)
@@ -237,18 +249,18 @@ final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefr
                 // room-card aspect preference's shape.
                 final width = constraints.maxWidth;
                 final coverAspect = ref.watch(roomCardStyleProvider).aspect.ratio;
-                final columns = width > 1280 ? 4 : (width > 960 ? 3 : (width > 640 ? 2 : 1));
+                // The gutter is both the grid's own padding and the amount
+                // `delegateFor` takes back out of `width`; sharing the value
+                // keeps the two from drifting and overflowing the row.
+                final gutter = MainLayout.gutterOf(context);
                 return GridView.builder(
-                  padding: const EdgeInsets.all(PureSpacing.md),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: columns,
-                    crossAxisSpacing: PureSpacing.sm,
-                    mainAxisSpacing: PureSpacing.sm,
-                    mainAxisExtent: RoomGridMetrics.mainAxisExtent(
-                      (width - 2 * PureSpacing.md - PureSpacing.sm * (columns - 1)) / columns,
-                      MediaQuery.textScalerOf(context),
-                      coverAspect: coverAspect,
-                    ),
+                  padding: EdgeInsets.fromLTRB(gutter, PureSpacing.sm, gutter, PureSpacing.xxl),
+                  gridDelegate: RoomGridMetrics.delegateFor(
+                    context,
+                    width,
+                    coverAspect: coverAspect,
+                    columns: RoomGridMetrics.favouriteColumnsFor(width),
+                    gutter: gutter,
                   ),
                   itemCount: visible.length,
                   itemBuilder: (context, index) {
@@ -270,3 +282,64 @@ final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefr
     );
   }
 }
+
+/// The follow page's desktop context column: every group as a navigation tile,
+/// with the manage action pinned at the foot.
+///
+/// It renders from the same state the tab strip does — selecting here is
+/// selecting there — so the group list is a re-embodiment of the filter, not a
+/// second one.
+final class _GroupPane extends StatelessWidget {
+  const new({
+    required this.allLabel,
+    required this.groups,
+    required this.selectedId,
+    required this.onSelected,
+    required this.onManage,
+  });
+
+  final String allLabel;
+  final List<FollowGroup> groups;
+  final String? selectedId;
+  final ValueChanged<String?> onSelected;
+  final VoidCallback onManage;
+
+  @override
+  Widget build(BuildContext context) {
+    final destinations = [
+      PureNavDestination(id: _allId, label: allLabel, icon: Icons.favorite),
+      for (final group in groups)
+        PureNavDestination(id: group.id, label: group.name, icon: Icons.folder_outlined),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.symmetric(vertical: PureSpacing.xs),
+            children: [
+              for (final destination in destinations)
+                PureNavigationTile(
+                  destination: destination,
+                  selected: destination.id == (selectedId ?? _allId),
+                  onTap: () => onSelected(destination.id == _allId ? null : destination.id),
+                ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: PureSpacing.sm),
+          child: PureButton(
+            label: context.t.follow.manageGroups,
+            icon: Icons.folder_copy_outlined,
+            variant: ButtonVariant.secondary,
+            onPressed: onManage,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The pseudo id the "all" tile answers to; no group may use it.
+const _allId = '__all__';

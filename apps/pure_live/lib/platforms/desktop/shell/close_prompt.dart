@@ -83,11 +83,7 @@ class _ClosePromptBodyState extends State<_ClosePromptBody> {
         ),
         Padding(
           padding: EdgeInsets.only(top: PureTheme.of(context).token.scale.sizes.md),
-          child: PureCheckbox(
-            value: _remember,
-            label: t.remember,
-            onChanged: _rememberChoice,
-          ),
+          child: PureCheckbox(value: _remember, label: t.remember, onChanged: _rememberChoice),
         ),
       ],
     );

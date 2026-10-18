@@ -1,15 +1,10 @@
 import 'package:fluent_2/fluent_2.dart' as f2;
 import 'package:flutter/cupertino.dart' as cupertino;
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphic_ui_kit/flutter_neumorphic_ui_kit.dart' as neu;
-import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
 import 'package:forui/forui.dart' as forui;
-import 'package:glass_morphism_plus/glass_morphism_plus.dart' as glass;
 import 'package:macos_ui/macos_ui.dart' as macos;
 import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
-import 'package:pure_uikit/src/styling/style/style.dart' show InteractionState, Style;
-import 'package:pure_uikit/src/styling/widgets/layout/pure_box.dart';
 
 /// The public segmented control: one widget, every theme and density. [build]
 /// switches on `UiConfig.language` and constructs the language's own answer to
@@ -69,20 +64,16 @@ class PureSegmented extends StatelessWidget {
         mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
         children: [
           for (var i = 0; i < labels.length; i++)
-            if (expand)
-              Expanded(child: _fluentSegment(i, select))
-            else
-              _fluentSegment(i, select),
+            if (expand) Expanded(child: _fluentSegment(i, select)) else _fluentSegment(i, select),
         ],
       ),
-      // Hand-rolled forui-style composition: forui has no segmented-track
-      // widget — its only single choice out of a row is `FTabs`, and that is a
-      // tab view every entry of which carries a content panel this contract
-      // already spends on the tab strip. A segment is a value, not a view, so
-      // the track is assembled out of the library's own `FButton`s in the
-      // ghost variant, where the chosen one takes `FButton.selected` — the
-      // library's real toggled affordance, drawn by its style table rather
-      // than painted over it.
+      // forui has no segmented-track widget — its only single choice out of a
+      // row is `FTabs`, and that is a tab view every entry of which carries a
+      // content panel this contract already spends on the tab strip. A segment
+      // is a value, not a view, so the track is assembled out of the library's
+      // own `FButton`s in the ghost variant, where the chosen one takes
+      // `FButton.selected` — the library's real toggled affordance, drawn by
+      // its style table rather than painted over it.
       PureDesignLanguage.forui => Row(
         mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
         children: [
@@ -90,38 +81,31 @@ class PureSegmented extends StatelessWidget {
             if (expand) Expanded(child: _foruiSegment(i, select)) else _foruiSegment(i, select),
         ],
       ),
-      // Hand-rolled glass-style composition: glass_morphism_plus ships no
-      // choice track, so the groove is a frosted [glass.GlassContainer] sheet
-      // and the chosen segment a second, brighter one sitting in it — a lit
-      // surface, not a filled shape, which is how glassmorphism marks a
-      // selection. Taps and interaction tints ride on the core's [PureBox],
-      // for the reason every composed glass control gives.
-      PureDesignLanguage.glass => _glass(context, theme, select),
-      // Hand-rolled neumorphic-style composition: the library ships no
-      // segmented track, and the style answers "one choice out of a row" with
-      // depth rather than with colour fill — a recessed dish
-      // (`NeuContainer` in [neu.NeuShape.pressed]) holding one cell per
-      // segment, the chosen cell pushed back out as a dome
-      // ([neu.NeuShape.convex]) at the theme's depth with the accent on its
-      // label, the library's own idle/pressed pair read as a selection.
-      PureDesignLanguage.neumorphic => _neumorphic(context, select),
-      // Hand-rolled wind-style composition: the fork has no segmented track,
-      // so it is a row of `WButton`s where the chosen one carries the
-      // library's own `selected:` state prefix — the very mechanism `WTabs`
-      // uses to mark its active tab — through the fork's state pipeline. The
-      // accent carries the choice and the neutral greys the hover, because
-      // Wind's `primary` scale reaches this subtree as one flat accent.
-      PureDesignLanguage.wind => _wind(select),
+      // glass_morphism_plus ships no segmented control. Use Flutter's official
+      // Material segmented button rather than a hand-painted glass track.
+      PureDesignLanguage.glass => _materialSegmented(select),
+      // The neumorphic library ships no segmented track; the official Material
+      // segmented button is the fallback control.
+      PureDesignLanguage.neumorphic => _materialSegmented(select),
+      // fluttersdk_wind ships no segmented track; the official Material
+      // segmented button is the fallback control.
+      PureDesignLanguage.wind => _materialSegmented(select),
       // Yaru IS Material theming — its character comes from the host theme, not
       // from a different track.
-      PureDesignLanguage.material || PureDesignLanguage.yaru => SegmentedButton<int>(
-        showSelectedIcon: false,
-        expandedInsets: expand ? EdgeInsets.zero : null,
-        segments: [for (var i = 0; i < labels.length; i++) ButtonSegment(value: i, label: Text(labels[i]))],
-        selected: {index},
-        onSelectionChanged: select == null ? null : (selection) => select(selection.first),
-      ),
+      PureDesignLanguage.material || PureDesignLanguage.yaru => _materialSegmented(select),
     };
+  }
+
+  /// The official Material segmented button, shared by the languages whose
+  /// libraries do not ship a segmented track.
+  Widget _materialSegmented(ValueChanged<int>? select) {
+    return SegmentedButton<int>(
+      showSelectedIcon: false,
+      expandedInsets: expand ? EdgeInsets.zero : null,
+      segments: [for (var i = 0; i < labels.length; i++) ButtonSegment(value: i, label: Text(labels[i]))],
+      selected: {index},
+      onSelectionChanged: select == null ? null : (selection) => select(selection.first),
+    );
   }
 
   /// The Cupertino track, or its inert forms: `CupertinoSegmentedControl`
@@ -140,7 +124,9 @@ class PureSegmented extends StatelessWidget {
         child: Text(labels.first, maxLines: 1, overflow: TextOverflow.ellipsis),
       );
     }
-    final children = {for (var i = 0; i < labels.length; i++) i: Text(labels[i], maxLines: 1, overflow: TextOverflow.ellipsis)};
+    final children = {
+      for (var i = 0; i < labels.length; i++) i: Text(labels[i], maxLines: 1, overflow: TextOverflow.ellipsis),
+    };
     return cupertino.CupertinoSegmentedControl<int>(
       children: children,
       groupValue: children.containsKey(index) ? index : null,
@@ -168,189 +154,6 @@ class PureSegmented extends StatelessWidget {
       onPress: select == null ? null : () => select(i),
       mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
       child: Text(labels[i], maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
-    );
-  }
-
-  /// The glass track: the frosted groove and its lit chosen segment, taps on
-  /// the core's [PureBox].
-  Widget _glass(BuildContext context, PureTheme theme, ValueChanged<int>? select) {
-    final glassTheme = glass.GlassTheme.of(context);
-    final radius = BorderRadius.circular(glassTheme.borderRadius - theme.token.motion.lineWidth);
-
-    Widget segment(int i) {
-      final selected = i == index;
-      final text = Text(
-        labels[i],
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.center,
-        style: theme.text.label.copyWith(color: selected ? theme.colors.text : theme.colors.textSecondary),
-      );
-      return PureBox(
-        style: (state) => Style(
-          borderRadius: radius,
-          background: switch (state) {
-            InteractionState.hovered ||
-            InteractionState.pressed ||
-            InteractionState.focused => glassTheme.color.withValues(alpha: (glassTheme.opacity * 1.8).clamp(0.0, 1.0)),
-            InteractionState.disabled => null,
-            InteractionState.normal => null,
-          },
-          opacity: state == InteractionState.disabled ? theme.token.motion.opacityLoading : null,
-        ),
-        onTap: select == null ? null : () => select(i),
-        enabled: enabled,
-        child: selected
-            ? glass.GlassContainer(
-                padding: EdgeInsets.symmetric(horizontal: theme.tabs.horizontalPadding, vertical: theme.token.scale.sizes.xs),
-                customBorderRadius: radius,
-                color: theme.colors.primary,
-                opacity: (glassTheme.opacity * 2.6).clamp(0.0, 1.0),
-                child: text,
-              )
-            : Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: theme.tabs.horizontalPadding,
-                  vertical: theme.token.scale.sizes.xs,
-                ),
-                child: text,
-              ),
-      );
-    }
-
-    final track = glass.GlassContainer(
-      padding: EdgeInsets.all(theme.token.motion.lineWidth),
-      child: Row(
-        mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
-        children: [
-          for (var i = 0; i < labels.length; i++)
-            if (expand) Expanded(child: segment(i)) else segment(i),
-        ],
-      ),
-    );
-    return expand ? SizedBox(width: double.infinity, child: track) : track;
-  }
-
-  /// The neumorphic track: a recessed dish of cells, the chosen one domed back
-  /// out with the accent on its label.
-  Widget _neumorphic(BuildContext context, ValueChanged<int>? select) {
-    final theme = PureTheme.of(context);
-    final surface = neu.NeuTheme.of(context);
-    final inset = theme.token.scale.sizes.xs;
-    final trackRadius = surface.borderRadius.resolve(Directionality.of(context));
-    final cellRadius = BorderRadius.circular(trackRadius.topLeft.x <= inset ? 0.0 : trackRadius.topLeft.x - inset);
-
-    Widget cell(int i) => _NeumorphicSegmentCell(
-      label: labels[i],
-      selected: i == index,
-      enabled: enabled,
-      onTap: select == null ? null : () => select(i),
-      radius: cellRadius,
-      surface: surface,
-      theme: theme,
-    );
-
-    return neu.NeuContainer(
-      shape: neu.NeuShape.pressed,
-      borderRadius: trackRadius,
-      baseColor: surface.baseColor,
-      depth: 2.5,
-      padding: EdgeInsets.all(inset),
-      child: Row(
-        mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
-        children: [
-          for (var i = 0; i < labels.length; i++)
-            if (expand) Expanded(child: cell(i)) else cell(i),
-        ],
-      ),
-    );
-  }
-
-  /// The wind track: one `WButton` per segment, the chosen one carrying the
-  /// library's own `selected:` tokens. `flex-1` is a `WDiv`/`WText` feature
-  /// and `WButton` reads only its own width classes, so `expand` wraps each
-  /// button in an `Expanded` with `w-full` on it.
-  Widget _wind(ValueChanged<int>? select) {
-    const selectedStates = <String>{'selected'};
-    const segmentClasses =
-        'px-4 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-300 transition-colors'
-        ' hover:bg-gray-100 dark:hover:bg-gray-800'
-        ' selected:bg-primary-500 selected:text-white'
-        ' disabled:opacity-50';
-
-    Widget segment(int i) {
-      final inert = select == null;
-      final button = wind.WButton(
-        onTap: inert ? null : () => select(i),
-        disabled: inert,
-        states: i == index ? selectedStates : null,
-        semanticLabel: labels[i],
-        className: expand ? '$segmentClasses w-full' : segmentClasses,
-        child: wind.WText(labels[i], className: 'text-center truncate'),
-      );
-      return expand ? Expanded(child: button) : button;
-    }
-
-    return wind.WDiv(
-      className: expand ? 'flex flex-row items-center gap-1 w-full' : 'flex flex-row items-center gap-1',
-      children: [for (var i = 0; i < labels.length; i++) segment(i)],
-    );
-  }
-}
-
-/// One cell of the neumorphic track: the same plane the dish is made of, domed
-/// out ([neu.NeuShape.convex]) when it is the chosen one — the library's own
-/// idle/pressed pair read as a selection instead of as a touch.
-class _NeumorphicSegmentCell extends StatelessWidget {
-  const new({
-    required this.label,
-    required this.selected,
-    required this.enabled,
-    required this.onTap,
-    required this.radius,
-    required this.surface,
-    required this.theme,
-  });
-
-  final String label;
-  final bool selected;
-  final bool enabled;
-  final VoidCallback? onTap;
-  final BorderRadius radius;
-  final neu.NeuThemeData surface;
-  final PureTheme theme;
-
-  @override
-  Widget build(BuildContext context) {
-    final Color tint;
-    if (!enabled) {
-      tint = theme.colors.textDisabled;
-    } else if (selected) {
-      tint = surface.accentColor;
-    } else {
-      tint = theme.colors.text;
-    }
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: neu.NeuContainer(
-        shape: selected ? neu.NeuShape.convex : neu.NeuShape.flat,
-        borderRadius: radius,
-        baseColor: surface.baseColor,
-        depth: selected ? surface.depth : 0.0,
-        distance: selected ? surface.distance : 0.0,
-        alignment: Alignment.center,
-        padding: EdgeInsets.symmetric(horizontal: theme.token.scale.sizes.md, vertical: theme.token.scale.sizes.sm),
-        child: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: selected
-              ? theme.text.body.copyWith(color: tint, fontWeight: FontWeight.w600)
-              : theme.text.body.copyWith(color: tint),
-        ),
-      ),
     );
   }
 }

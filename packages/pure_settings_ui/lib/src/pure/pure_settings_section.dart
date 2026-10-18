@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:pure_settings_ui/src/pure/pure_settings_metrics.dart';
-import 'package:pure_settings_ui/src/pure/pure_settings_style.dart';
 import 'package:pure_settings_ui/src/pure/pure_settings_tile.dart';
+import 'package:pure_settings_ui/src/pure/settings_language.dart';
 import 'package:pure_settings_ui/src/vendor/sections/section_header.dart';
 import 'package:pure_settings_ui/src/vendor/tiles/abstract_settings_tile.dart';
 import 'package:pure_settings_ui/src/vendor/utils/settings_theme.dart';
@@ -22,13 +22,7 @@ import 'package:pure_uikit/pure_uikit.dart';
 /// margin only spaces one section from the next.
 class PureSettingsSection extends StatelessWidget {
   /// A section of [tiles] under [title].
-  const new({
-    required this.tiles,
-    required this.margin,
-    required this.title,
-    this.titlePadding,
-    super.key,
-  });
+  const new({required this.tiles, required this.margin, required this.title, this.titlePadding, super.key});
 
   /// The rows, top to bottom. Never empty: `SettingsSection` renders nothing
   /// at all for a section with no tiles.
@@ -60,14 +54,13 @@ class PureSettingsSection extends StatelessWidget {
           if (heading != null)
             sectionHeader(
               title: heading,
-              padding: titlePadding ??
-                  const EdgeInsetsDirectional.only(start: PureSpacing.sm, bottom: pureSettingsTitleGap),
+              padding:
+                  titlePadding ?? const EdgeInsetsDirectional.only(start: PureSpacing.sm, bottom: pureSettingsTitleGap),
               style: (settings.titleTextStyle ?? theme.text.caption).copyWith(color: settings.titleTextColor),
             ),
           PureCard(
             padding: style.cardPadding,
             bordered: style.cardBordered,
-            selected: false,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [

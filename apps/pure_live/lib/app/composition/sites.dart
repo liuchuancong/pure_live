@@ -50,7 +50,10 @@ final class AppSites {
               port: proxy.port == 0 ? 7897 : proxy.port,
             ),
     );
-    final factory = DioFactory(log: log.forCategory('net'), proxyPolicy: proxyPolicyBuilder?.call(fallbackPolicy) ?? fallbackPolicy);
+    final factory = DioFactory(
+      log: log.forCategory('net'),
+      proxyPolicy: proxyPolicyBuilder?.call(fallbackPolicy) ?? fallbackPolicy,
+    );
     final http = factory.create();
     final registry = LiveSiteRegistry(createBuiltInLiveSites(http: http));
 

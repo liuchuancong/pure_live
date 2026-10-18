@@ -4,12 +4,15 @@ import 'dart:io';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pure_live/app/environment/app_directory.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/routing/route_paths.dart';
+import 'package:pure_live/app/routing/routes/login/login_routes.dart';
 import 'package:pure_live/features/backup/backup_archive.dart';
 import 'package:pure_live/features/backup/web_dav_page.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
-import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_settings_ui/pure_settings_ui.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 import 'package:restart_app/restart_app.dart';
 
@@ -18,7 +21,9 @@ import 'package:restart_app/restart_app.dart';
 /// tree or from a picked file — the app restarts after a restore, because
 /// the boxes the zip overwrites are open.
 ///
-/// WebDAV, LAN sync and the TV hand-off join with their waves.
+/// Written as one `pure_settings_ui` tree like the rest of the settings cluster,
+/// and it carries the three doors the reference's hub carries: the WebDAV drive,
+/// the LAN remote-sync receiver, and the cloud account.
 final class BackupPage extends ConsumerStatefulWidget {
   /// The backup page.
   const new({super.key});
@@ -127,78 +132,86 @@ final class _BackupPageState extends ConsumerState<BackupPage> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.t;
+    final busy = _busy;
     return PureScaffold(
-      appBar: PureAppBar(title: context.t.backup.title, actions: const [SettingsEntryButton()]),
-      body: ListView(
-        padding: const EdgeInsets.all(12),
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: PureButton(
-                  label: context.t.backup.create,
-                  icon: Icons.backup_outlined,
-                  onPressed: _busy ? null : _create,
-                ),
+      appBar: PureAppBar(title: t.backup.title),
+      body: SettingsList(
+        sections: [
+          SettingsSection(
+            title: Text(t.backup.title),
+            tiles: [
+              SettingsTile.navigation(
+                leading: const Icon(Icons.backup_outlined),
+                title: Text(t.backup.create),
+                enabled: !busy,
+                onPressed: (_) => unawaited(_create()),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: PureButton(
-                  label: context.t.backup.restoreFile,
-                  icon: Icons.file_open_outlined,
-                  onPressed: _busy ? null : _restoreFromFile,
+              SettingsTile.navigation(
+                leading: const Icon(Icons.file_open_outlined),
+                title: Text(t.backup.restoreFile),
+                enabled: !busy,
+                onPressed: (_) => unawaited(_restoreFromFile()),
+              ),
+              if (_message case final String message)
+                CustomSettingsTile(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                    child: Text(message, style: TextStyle(color: PureTheme.of(context).colors.error)),
+                  ),
                 ),
+            ],
+          ),
+          SettingsSection(
+            title: Text(t.backup.sectionCloud),
+            tiles: [
+              SettingsTile.navigation(
+                leading: const Icon(Icons.cloud_outlined),
+                title: Text(_webdavText('entryTitle')),
+                description: Text(_webdavText('entrySubtitle')),
+                enabled: !busy,
+                // The WebDAV page is its own route class; this page reaches it
+                // the same way it reaches the archive: a push above the shell.
+                onPressed: (_) =>
+                    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const WebDavPage())),
+              ),
+              SettingsTile.navigation(
+                leading: const Icon(Icons.sync_outlined),
+                title: Text(t.settings.remoteSync),
+                description: Text(t.settings.remoteSyncSubtitle),
+                onPressed: (_) => unawaited(context.push<void>(RoutePath.remoteSync)),
+              ),
+              SettingsTile.navigation(
+                leading: const Icon(Icons.person_outline_rounded),
+                title: Text(t.account.title),
+                description: Text(t.settings.accountSubtitle),
+                onPressed: (_) => unawaited(const AccountRoute().push<void>(context)),
               ),
             ],
           ),
-          if (_message != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: Text(_message!, style: TextStyle(color: PureTheme.of(context).colors.error)),
-            ),
-          const SizedBox(height: 12),
-          // The WebDAV slice: the same archive, pushed to the user's own
-          // cloud drive instead of the local backups tree.
-          PureListRow(
-            leading: const Icon(Icons.cloud_outlined),
-            title: _webdavText('entryTitle'),
-            subtitle: _webdavText('entrySubtitle'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: _busy
-                ? null
-                : () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const WebDavPage())),
+          SettingsSection(
+            title: Text(t.backup.existing),
+            tiles: [
+              if (_backups.isEmpty)
+                SettingsTile(title: Text(t.backup.none))
+              else
+                for (final backup in _backups)
+                  SettingsTile.navigation(
+                    leading: const Icon(Icons.archive_outlined),
+                    title: Text(backup.name),
+                    value: Text(_when(backup.modified)),
+                    // The row restores; the trash is the only thing that
+                    // destroys, and it never sits under the row's own tap.
+                    trailing: PureIconButton(
+                      tooltip: t.backup.delete,
+                      icon: Icons.delete_outline,
+                      onPressed: busy ? null : () => unawaited(_setBusy(() async => deleteBackup(backup))),
+                    ),
+                    enabled: !busy,
+                    onPressed: (_) => unawaited(_setBusy(() => _restore(backup))),
+                  ),
+            ],
           ),
-          const SizedBox(height: 18),
-          Text(context.t.backup.existing, style: PureTheme.of(context).text.title),
-          const SizedBox(height: 8),
-          if (_backups.isEmpty)
-            PureEmpty(title: context.t.backup.none)
-          else
-            for (final backup in _backups)
-              PureListRow(
-                leading: const Icon(Icons.archive_outlined),
-                title: backup.name,
-                subtitle: _when(backup.modified),
-                trailing: PureIconButton(
-                  tooltip: context.t.backup.delete,
-                  icon: Icons.delete_outline,
-                  onPressed: _busy
-                      ? null
-                      : () => unawaited(
-                          _setBusy(() async {
-                            deleteBackup(backup);
-                          }),
-                        ),
-                ),
-                onTap: _busy
-                    ? null
-                    : () => unawaited(
-                        _setBusy(() async {
-                          await _restore(backup);
-                        }),
-                      ),
-                divided: false,
-              ),
         ],
       ),
     );

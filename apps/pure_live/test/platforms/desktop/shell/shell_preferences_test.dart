@@ -20,10 +20,12 @@ void main() {
     store = ShellPreferencesStore(repository: storage);
   });
 
-  test('a fresh install keeps the defaults: app-drawn strip, ask on every close', () async {
+  test('a fresh install keeps the defaults: no pinned strip, ask on every close', () async {
     await store.load();
 
-    expect(store.value.windowChrome, ShellWindowChrome.app);
+    // Null is the "never picked" answer: the runner asks the operating system
+    // which frame arrangement to use, so a Windows 10 to 11 upgrade re-asks.
+    expect(store.value.windowChrome, isNull);
     expect(store.value.closeAction, isNull);
   });
 
@@ -47,11 +49,11 @@ void main() {
     expect(store.value.closeAction, isNull);
   });
 
-  test('an unknown stored identifier falls back instead of failing to load', () async {
+  test('an unknown stored identifier counts as never picked', () async {
     storage.documents[ShellKeys.document] = {'windowChrome': 'aurora', 'closeAction': 'maybe'};
     await store.load();
 
-    expect(store.value.windowChrome, ShellWindowChrome.app);
+    expect(store.value.windowChrome, isNull);
     expect(store.value.closeAction, isNull);
   });
 
@@ -61,7 +63,7 @@ void main() {
     storage.documents[ShellKeys.document] = {'windowChrome': 42};
     await failing.load();
 
-    expect(failing.value.windowChrome, ShellWindowChrome.app);
+    expect(failing.value.windowChrome, isNull);
     expect(failures, 1);
   });
 

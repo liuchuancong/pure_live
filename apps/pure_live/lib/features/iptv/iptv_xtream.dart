@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_iptv/live_iptv.dart'
-    show IptvLibrary, PlaylistParseResult, XtreamCatalogService, XtreamSource;
+import 'package:live_iptv/live_iptv.dart' show IptvLibrary, PlaylistParseResult, XtreamCatalogService, XtreamSource;
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/features/iptv/iptv_preferences.dart';
 
@@ -76,5 +75,4 @@ final xtreamCatalogProvider = Provider<XtreamCatalogService>(
 /// The catalogue service reports a refused account as the `FormatException`
 /// whose message names the credentials — the one failure a user can fix by
 /// retyping, so it gets its own words on screen.
-bool isXtreamCredentialError(Object error) =>
-    error is FormatException && error.message.contains('credentials');
+bool isXtreamCredentialError(Object error) => error is FormatException && error.message.contains('credentials');

@@ -20,8 +20,7 @@ class PurePaneStyle extends SplitPaneStyle {
   const new(super.platform, super.geometry);
 
   @override
-  EdgeInsetsGeometry? get listPadding =>
-      isSplit ? const EdgeInsets.only(bottom: pureSettingsBottomPadding) : null;
+  EdgeInsetsGeometry? get listPadding => isSplit ? const EdgeInsets.only(bottom: pureSettingsBottomPadding) : null;
 
   @override
   Widget buildListPane(SplitListPaneParts pane) => settingsHeaderOverBody(

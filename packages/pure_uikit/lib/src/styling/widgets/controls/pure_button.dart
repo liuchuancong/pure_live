@@ -177,8 +177,11 @@ class PureButton extends StatelessWidget {
       },
     };
 
-    if (tooltip != null && language != PureDesignLanguage.forui && language != PureDesignLanguage.glass &&
-        language != PureDesignLanguage.neumorphic && language != PureDesignLanguage.wind) {
+    if (tooltip != null &&
+        language != PureDesignLanguage.forui &&
+        language != PureDesignLanguage.glass &&
+        language != PureDesignLanguage.neumorphic &&
+        language != PureDesignLanguage.wind) {
       return Tooltip(message: tooltip, child: button);
     }
     return button;
@@ -322,10 +325,7 @@ class PureButton extends StatelessWidget {
     if (loading) {
       return SizedBox.square(
         dimension: step,
-        child: wind.WDiv(
-          className: 'w-full h-full rounded-full animate-pulse',
-          backgroundColor: theme.colors.primary,
-        ),
+        child: wind.WDiv(className: 'w-full h-full rounded-full animate-pulse', backgroundColor: theme.colors.primary),
       );
     }
     return _plainContent(theme, step);
@@ -384,10 +384,7 @@ class PureButton extends StatelessWidget {
     if (icon == null) {
       return Text(label);
     }
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [Icon(icon, size: 16), const SizedBox(width: 6), Text(label)],
-    );
+    return Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 16), const SizedBox(width: 6), Text(label)]);
   }
 }
 
@@ -460,10 +457,7 @@ class PureIconButton extends StatelessWidget {
           ControlSize.lg => f2.FluentButtonSize.large,
         },
       ),
-      PureDesignLanguage.macos => macos.MacosIconButton(
-        icon: glyph,
-        onPressed: active ? onPressed : null,
-      ),
+      PureDesignLanguage.macos => macos.MacosIconButton(icon: glyph, onPressed: active ? onPressed : null),
       PureDesignLanguage.cupertino => cupertino.CupertinoButton(
         padding: EdgeInsets.zero,
         onPressed: active ? onPressed : null,
@@ -473,12 +467,22 @@ class PureIconButton extends StatelessWidget {
       // squeezing the token square around a full `FButton` clipped the glyph,
       // so this language does not use that geometry.
       PureDesignLanguage.forui => _foruiIcon(theme, active),
-      // The library has no icon variant of `GlassButton`, so the glyph rides
-      // in the content slot of the same frosted plane, tooltip wrapped.
-      PureDesignLanguage.glass => _glassIcon(theme, active),
-      // The library's one button shape carries the glyph, padded to the token
-      // geometry inside the embossed plane, tooltip wrapped.
-      PureDesignLanguage.neumorphic => _neumorphicIcon(theme, active),
+      // The library's own icon button: a frosted square carrying the glyph.
+      PureDesignLanguage.glass => glass.GlassIconButton(
+        icon: glyph,
+        onPressed: active ? onPressed : null,
+        size: theme.token.scale.controlHeight,
+        shape: BoxShape.rectangle,
+        borderRadius: theme.button.borderRadius,
+        tooltip: tooltip,
+      ),
+      // The library's own icon button: the same embossed plane as NeuButton.
+      PureDesignLanguage.neumorphic => neu.NeuIconButton(
+        icon: glyph,
+        onPressed: active ? onPressed : null,
+        size: theme.token.scale.controlHeight,
+        tooltip: tooltip,
+      ),
       // The fork's one button shape carries the glyph, the accessible name on
       // the button itself (`WButton` has no icon variant either).
       PureDesignLanguage.wind => _windIcon(theme, active),
@@ -487,11 +491,7 @@ class PureIconButton extends StatelessWidget {
         onPressed: active ? onPressed : null,
         isSelected: selected ? true : null,
       ),
-      PureDesignLanguage.material => IconButton(
-        icon: glyph,
-        tooltip: tooltip,
-        onPressed: active ? onPressed : null,
-      ),
+      PureDesignLanguage.material => IconButton(icon: glyph, tooltip: tooltip, onPressed: active ? onPressed : null),
     };
 
     return Tooltip(message: tooltip, child: button);
@@ -514,30 +514,6 @@ class PureIconButton extends StatelessWidget {
     );
   }
 
-  /// The glass icon button: the glyph in `GlassButton`'s content slot, sized
-  /// to the token label.
-  Widget _glassIcon(PureTheme theme, bool active) {
-    final step = theme.text.label.fontSize ?? 14;
-    return glass.GlassButton(
-      onPressed: active ? onPressed : null,
-      padding: EdgeInsets.symmetric(horizontal: theme.button.paddingInline, vertical: theme.token.scale.sizes.sm),
-      child: Icon(icon, size: step, semanticLabel: tooltip),
-    );
-  }
-
-  /// The neumorphic icon button: the glyph in `NeuButton`'s child slot, padded
-  /// to the token geometry inside the embossed plane.
-  Widget _neumorphicIcon(PureTheme theme, bool active) {
-    final step = theme.text.label.fontSize ?? 14;
-    return neu.NeuButton(
-      onPressed: active ? onPressed : null,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: theme.button.paddingInline, vertical: theme.token.scale.sizes.sm),
-        child: Icon(icon, size: step, semanticLabel: tooltip),
-      ),
-    );
-  }
-
   /// The wind icon button: the glyph in `WButton`'s child slot, the accessible
   /// name on the button itself.
   Widget _windIcon(PureTheme theme, bool active) {
@@ -554,8 +530,8 @@ class PureIconButton extends StatelessWidget {
   }
 }
 
-/// A standalone circular spinner tinted with the primary colour — the small
-/// loading indicator used inline (a table cell, a section header).
+/// A standalone circular spinner built from the active language's own progress
+/// control where it has one and Flutter's official Material spinner elsewhere.
 class PureSpinner extends StatelessWidget {
   /// A spinner.
   const new({this.size = 18, this.color, super.key});
@@ -569,9 +545,23 @@ class PureSpinner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = PureTheme.of(context);
-    return SizedBox.square(
-      dimension: size,
-      child: CircularProgressIndicator(strokeWidth: 2, color: color ?? theme.colors.primary),
-    );
+    final tint = color ?? theme.colors.primary;
+    final language = theme.config.language;
+
+    final spinner = switch (language) {
+      PureDesignLanguage.fluent => f2.FluentSpinner(
+        style: f2.FluentSpinnerStyle.from(diameter: size, indicatorColor: tint),
+      ),
+      PureDesignLanguage.macos => macos.ProgressCircle(radius: size / 2),
+      PureDesignLanguage.cupertino => cupertino.CupertinoActivityIndicator(radius: size / 2, color: tint),
+      PureDesignLanguage.forui => const forui.FCircularProgress(),
+      PureDesignLanguage.neumorphic => neu.NeuCircularProgress(size: size, strokeWidth: 2, progressColor: tint),
+      PureDesignLanguage.yaru => yaru.YaruCircularProgressIndicator(strokeWidth: 2, color: tint),
+      PureDesignLanguage.material ||
+      PureDesignLanguage.glass ||
+      PureDesignLanguage.wind => CircularProgressIndicator(strokeWidth: 2, color: tint),
+    };
+
+    return SizedBox.square(dimension: size, child: spinner);
   }
 }

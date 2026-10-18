@@ -1,7 +1,6 @@
 import 'package:fluent_2/fluent_2.dart' as f2;
 import 'package:flutter/cupertino.dart' as cupertino;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show KeyUpEvent, LogicalKeyboardKey;
 import 'package:flutter_neumorphic_ui_kit/flutter_neumorphic_ui_kit.dart' as neu;
 import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
 import 'package:forui/forui.dart' as forui;
@@ -305,8 +304,10 @@ class PureListRow extends StatelessWidget {
       PureDesignLanguage.fluent => _fluentRow(theme),
       PureDesignLanguage.forui => _foruiRow(),
       PureDesignLanguage.glass => _glassRow(context, theme),
-      PureDesignLanguage.neumorphic => _neumorphicRow(context, theme),
-      PureDesignLanguage.wind => _windRow(),
+      // The neumorphic library and Wind ship no settings row; Flutter's
+      // official Material ListTile is the fallback.
+      PureDesignLanguage.neumorphic => _materialRow(theme),
+      PureDesignLanguage.wind => _materialRow(theme),
     };
   }
 
@@ -314,18 +315,21 @@ class PureListRow extends StatelessWidget {
   /// no slot for (a Material list puts separators between items), so the
   /// library's own `Divider` is drawn under it.
   Widget _materialRow(PureTheme theme) {
-    final tile = ListTile(
-      leading: leading,
-      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: subtitle == null ? null : Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis),
-      trailing: trailing,
-      onTap: onTap,
-      onLongPress: onLongPress,
-      selected: selected,
-      selectedColor: selected ? theme.colors.primary : null,
-      enabled: onTap != null || onLongPress != null,
-      focusNode: focusNode,
-      autofocus: autofocus,
+    final tile = Material(
+      type: MaterialType.transparency,
+      child: ListTile(
+        leading: leading,
+        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+        subtitle: subtitle == null ? null : Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis),
+        trailing: trailing,
+        onTap: onTap,
+        onLongPress: onLongPress,
+        selected: selected,
+        selectedColor: selected ? theme.colors.primary : null,
+        enabled: onTap != null || onLongPress != null,
+        focusNode: focusNode,
+        autofocus: autofocus,
+      ),
     );
     if (!divided) {
       return tile;
@@ -521,181 +525,21 @@ class PureListRow extends StatelessWidget {
       borderColor: selected ? theme.colors.primary : glassTheme.borderColor,
     );
 
+    // `GlassListTile` paints a Material row inside its sheet. Placed on a
+    // surface that is not itself Material — the frosted column a glass page is
+    // built out of — that inner row has no sheet to print on and Flutter throws
+    // for it. The transparent Material here is that sheet: it paints nothing and
+    // changes no pixel of the frost.
+    final tile = Material(type: MaterialType.transparency, child: row);
     if (!divided) {
-      return row;
+      return tile;
     }
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        row,
+        tile,
         glass.GlassDivider(thickness: theme.token.motion.lineWidth, color: theme.listTile.dividerColor),
       ],
     );
   }
-
-  /// Hand-rolled Neumorphic-style composition because the library ships no
-  /// list tile: its widgets are surfaces a caller places (container, card,
-  /// button, field), and `NeuCard` is the wrong one for a row — an embossed
-  /// plane whose whole job is to stand apart from the page. So the row is
-  /// assembled from the library's own face (`NeuContainer`) and its own theme
-  /// values. Selection is stated the way this style states every active thing
-  /// — with depth, not with a fill: a selected row sinks into `NeuShape`
-  /// pressed and lifts its title in the theme's accent, the same dish the nav
-  /// bar's active destination uses; an idle row is a flat plane at zero depth,
-  /// which is the page itself. The library has no concept of focus, so the
-  /// node rides the core's own `Focus` plumbing and Space/Enter/Select
-  /// activate the row the way a tap does; a row with no `onTap` cannot take
-  /// focus. `divided` draws the hairline itself, a Neumorphic surface has no
-  /// divider of its own to borrow.
-  Widget _neumorphicRow(BuildContext context, PureTheme theme) {
-    final surface = neu.NeuTheme.of(context);
-    final listTile = theme.listTile;
-
-    final row = neu.NeuContainer(
-      shape: selected ? neu.NeuShape.pressed : neu.NeuShape.flat,
-      baseColor: surface.baseColor,
-      borderRadius: surface.borderRadius,
-      depth: selected ? surface.depth : 0.0,
-      distance: selected ? surface.distance : 0.0,
-      padding: EdgeInsets.symmetric(horizontal: listTile.paddingHorizontal, vertical: listTile.textPaddingVertical),
-      child: Row(
-        children: [
-          if (leading case final leading?) ...[leading, SizedBox(width: listTile.gap)],
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.text.body.copyWith(
-                    color: selected ? surface.accentColor : theme.colors.text,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                  ),
-                ),
-                if (subtitle case final subtitle?) ...[
-                  SizedBox(height: listTile.gap / 2),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.text.caption.copyWith(color: theme.colors.textSecondary),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          if (trailing case final trailing?) ...[SizedBox(width: listTile.gap), trailing],
-        ],
-      ),
-    );
-
-    final pressable = GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      onLongPress: onLongPress,
-      child: row,
-    );
-
-    final focusable = Focus(
-      focusNode: focusNode,
-      autofocus: autofocus,
-      canRequestFocus: onTap != null,
-      onKeyEvent: (node, event) {
-        if (event is! KeyUpEvent) {
-          return KeyEventResult.ignored;
-        }
-        final key = event.logicalKey;
-        if (key == LogicalKeyboardKey.space ||
-            key == LogicalKeyboardKey.enter ||
-            key == LogicalKeyboardKey.numpadEnter ||
-            key == LogicalKeyboardKey.select) {
-          onTap?.call();
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: pressable,
-    );
-
-    if (!divided) {
-      return focusable;
-    }
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        focusable,
-        Container(height: theme.token.motion.lineWidth, color: listTile.dividerColor),
-      ],
-    );
-  }
-
-  /// Hand-rolled Wind-style composition because the fork ships no list row,
-  /// but it has every part one — the interactive `WAnchor` its own `WTabs`,
-  /// `WSwitch` and `WCheckbox` are built on, the `WDiv` container that carries
-  /// the row's tone, and `WText` for the two lines — so the row is anchored,
-  /// flexed and toned in the fork's vocabulary: `px-4 py-3` for its padding,
-  /// the library's own hover and gray steps for the pointer state and the
-  /// secondary line, `gap-3` between the parts. Selection takes the two marks
-  /// Wind gives a chosen row: a fill one step above the hover fill, and an
-  /// accent bar reserved on every row (`border-l-2 border-transparent`) that
-  /// only the chosen one recolours. No `semanticLabel`: the fork excludes the
-  /// descendant subtree when one is set, and a settings row carries a live
-  /// trailing control whose own semantics must survive — the merged title and
-  /// subtitle name the row instead. The fork creates and tracks the focus node
-  /// inside `WAnchor`, so the row has no focus slot of its own.
-  Widget _windRow() {
-    final interactive = onTap != null || onLongPress != null;
-    final states = selected ? _windSelectedStates : null;
-
-    final row = wind.WAnchor(
-      onTap: interactive ? onTap : null,
-      onLongPress: interactive ? onLongPress : null,
-      isDisabled: !interactive,
-      states: states,
-      child: wind.WDiv(
-        className: _windRowClasses,
-        states: states,
-        children: [
-          ?leading,
-          Expanded(
-            child: wind.WDiv(
-              className: 'flex flex-col gap-0.5 w-full',
-              children: [
-                wind.WText(title, className: 'text-sm text-gray-900 dark:text-gray-100 truncate'),
-                if (subtitle case final subtitle?)
-                  wind.WText(subtitle, className: 'text-xs text-gray-500 dark:text-gray-400 truncate'),
-              ],
-            ),
-          ),
-          ?trailing,
-        ],
-      ),
-    );
-
-    if (!divided) {
-      return row;
-    }
-    return wind.WDiv(
-      className: 'flex flex-col w-full',
-      children: [
-        row,
-        const wind.WDiv(className: 'w-full h-[1px] bg-gray-200 dark:bg-gray-700'),
-      ],
-    );
-  }
-
-  /// The Wind selection marker set, matched by `WAnchor`/`WDiv` against the
-  /// `selected:` variants in [_windRowClasses].
-  static const Set<String> _windSelectedStates = <String>{'selected'};
-
-  /// The row's Tailwind classes: reserved accent bar, hover and selected fills
-  /// one step apart, and the dimmed disabled tone.
-  static const String _windRowClasses =
-      'flex flex-row items-center gap-3 w-full px-4 py-3 border-l-2 border-transparent transition-colors'
-      ' hover:bg-gray-50 dark:hover:bg-gray-800'
-      ' selected:bg-gray-100 dark:selected:bg-gray-800 selected:border-primary-500'
-      ' disabled:opacity-60';
 }

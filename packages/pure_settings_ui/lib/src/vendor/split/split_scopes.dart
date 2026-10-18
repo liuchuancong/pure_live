@@ -3,8 +3,10 @@ import 'package:pure_settings_ui/src/vendor/split/settings_destination.dart';
 import 'package:pure_settings_ui/src/vendor/split/settings_split_view.dart';
 
 /// Opens a destination from a tile of a split view's list pane.
-typedef SettingsDestinationOpener =
-    void Function(SettingsDestination destination, Widget tileTitle);
+typedef SettingsDestinationOpener = void Function(
+  SettingsDestination destination,
+  Widget tileTitle,
+);
 
 /// Put around the list pane of a `SettingsSplitView`. Internal.
 ///

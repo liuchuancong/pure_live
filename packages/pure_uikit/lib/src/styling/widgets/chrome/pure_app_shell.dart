@@ -1,18 +1,13 @@
 import 'package:fluent_2/fluent_2.dart' as f2;
 import 'package:flutter/cupertino.dart' as cupertino;
 import 'package:flutter/material.dart';
-import 'package:flutter_neumorphic_ui_kit/flutter_neumorphic_ui_kit.dart' as neu;
-import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
 import 'package:forui/forui.dart' as forui;
-import 'package:glass_morphism_plus/glass_morphism_plus.dart' as glass;
 import 'package:macos_ui/macos_ui.dart' as macos;
 import 'package:pure_uikit/src/scales/sizing.dart';
 import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
-import 'package:pure_uikit/src/styling/style/style.dart';
 import 'package:pure_uikit/src/styling/widgets/chrome/pure_nav_bar.dart';
 import 'package:pure_uikit/src/styling/widgets/chrome/pure_shell_types.dart';
-import 'package:pure_uikit/src/styling/widgets/layout/pure_box.dart';
 import 'package:pure_uikit/src/styling/widgets/layout/pure_environment.dart';
 
 /// The public application shell: one widget, every design language.
@@ -22,9 +17,10 @@ import 'package:pure_uikit/src/styling/widgets/layout/pure_environment.dart';
 /// the callback and the body. There is no adapter and no spec in between:
 /// [PureAppShellState.build] switches on `UiConfig.language` and draws the navigation with the
 /// library's own structural widget — Material's `NavigationRail`, macOS's
-/// `SidebarItems` and forui's `FSidebar` — or, where the library ships no
-/// navigation column (cupertino, fluent, glass, neumorphic, wind), composes one
-/// out of that library's own surfaces. Switching `UiConfig.language` re-skins
+/// `SidebarItems`, Fluent's `FluentNavDrawer`, forui's `FSidebar`, and
+/// Cupertino's own list section — while glass, neumorphic and wind, which ship
+/// no navigation column, use Flutter's official Material
+/// `NavigationRail`/`NavigationBar`. Switching `UiConfig.language` re-skins
 /// the shell.
 class PureAppShell extends StatefulWidget {
   /// A shell around [child].
@@ -33,6 +29,7 @@ class PureAppShell extends StatefulWidget {
     this.destinations = const <PureShellDestination>[],
     this.selectedId,
     this.onSelected,
+    this.leading,
     this.trailing,
     this.placement = PureShellPlacement.adaptive,
     super.key,
@@ -50,8 +47,14 @@ class PureAppShell extends StatefulWidget {
   /// Called with a destination's id.
   final ValueChanged<String>? onSelected;
 
+  /// Content pinned at the head of a navigation column, above the
+  /// destinations — the entries a rail carries that are not destinations
+  /// (a menu, a search, a tool that opens its own page).
+  final Widget? leading;
+
   /// Content pinned at the end of a navigation column; the bottom-strip form
-  /// has no such slot and drops it rather than inventing a place for it.
+  /// has neither a head nor a foot slot and drops both rather than inventing a
+  /// place for them.
   final Widget? trailing;
 
   /// Where the caller wants the navigation.
@@ -81,6 +84,9 @@ class PureAppShellState extends State<PureAppShell> {
   /// Called with a destination's id.
   ValueChanged<String>? get onSelected => widget.onSelected;
 
+  /// Content pinned at the head of a navigation column.
+  Widget? get leading => widget.leading;
+
   /// Content pinned at the end of a navigation column.
   Widget? get trailing => widget.trailing;
 
@@ -93,14 +99,17 @@ class PureAppShellState extends State<PureAppShell> {
     return switch (theme.config.language) {
       // Yaru draws chrome with the Material widgets — that is what Yaru
       // itself is; its character comes from the host theme (see
-      // `PureApp._yaruHost`), not from a different shell.
-      PureDesignLanguage.material || PureDesignLanguage.yaru => _materialShell(context),
+      // `PureApp._yaruHost`), not from a different shell. Glass, neumorphic
+      // and wind ship no navigation structure, so Flutter's official Material
+      // NavigationRail/NavigationBar is the shared fallback.
+      PureDesignLanguage.material ||
+      PureDesignLanguage.yaru ||
+      PureDesignLanguage.glass ||
+      PureDesignLanguage.neumorphic ||
+      PureDesignLanguage.wind => _materialShell(context),
       PureDesignLanguage.cupertino => _cupertinoShell(context),
       PureDesignLanguage.macos => _macosShell(context, theme),
       PureDesignLanguage.fluent => _fluentShell(context),
-      PureDesignLanguage.neumorphic => _neumorphicShell(context, theme),
-      PureDesignLanguage.glass => _glassShell(context, theme),
-      PureDesignLanguage.wind => _windShell(context),
       PureDesignLanguage.forui => _foruiShell(context),
     };
   }
@@ -122,8 +131,8 @@ class PureAppShellState extends State<PureAppShell> {
 
   /// The bottom-strip form: the shell delegates to [PureNavBar] — the same
   /// dispatched control a page names — rather than drawing a second strip, so
-  /// the two forms cannot drift apart. `trailing` has no slot in a strip and
-  /// is dropped, as the contract documents.
+  /// the two forms cannot drift apart. `leading` and `trailing` have no slot in
+  /// a strip and are dropped, as the contract documents.
   Widget _bottomStrip() {
     return Column(
       children: [
@@ -181,6 +190,7 @@ class PureAppShellState extends State<PureAppShell> {
                 disabled: !destination.enabled,
               ),
           ],
+          leading: leading,
           trailing: trailing,
           trailingAtBottom: trailing != null,
         ),
@@ -218,6 +228,8 @@ class PureAppShellState extends State<PureAppShell> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (leading case final Widget head)
+                  Padding(padding: const EdgeInsets.fromLTRB(10, 10, 10, 0), child: head),
                 cupertino.CupertinoListSection(
                   // The section paints the surface; the column behind it
                   // already is that surface, so the rows sit on it without a
@@ -308,6 +320,8 @@ class PureAppShellState extends State<PureAppShell> {
             color: macos.MacosTheme.of(context).canvasColor,
             child: Column(
               children: [
+                if (leading case final Widget head)
+                  Padding(padding: const EdgeInsets.fromLTRB(10, 10, 10, 0), child: head),
                 // Expanded because the list scrolls: `SidebarItems` is a
                 // `ListView`, and a sidebar that cannot scroll is not a macOS
                 // sidebar.
@@ -398,7 +412,7 @@ class PureAppShellState extends State<PureAppShell> {
           type: f2.FluentDrawerType.inline,
           separator: true,
           footer: [if (trailing case final Widget footer) footer],
-          child: _fluentNav(context),
+          child: _fluentNavWithLeading(context),
         ),
         Expanded(child: child),
       ],
@@ -420,11 +434,29 @@ class PureAppShellState extends State<PureAppShell> {
           open: _fluentDrawerOpen,
           onDismiss: () => setState(() => _fluentDrawerOpen = false),
           footer: [if (trailing case final Widget footer) footer],
-          child: _fluentNav(context),
+          child: _fluentNavWithLeading(context),
         ),
       ],
     );
   }
+
+  /// The pane's content: a leading column above the nav. `FluentNavDrawer`
+  /// models a footer but no header, so the head is composed rather than
+  /// promised to the library.
+  Widget _fluentNavWithLeading(BuildContext context) {
+    final head = leading;
+    if (head == null) {
+      return _fluentNav(context);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        head,
+        Expanded(child: _fluentNav(context)),
+      ],
+    );
+  }
+
   /// The nav both fluent forms share: one [f2.FluentNav] whose items map the
   /// destinations one-for-one, a disabled destination refused before it ever
   /// reaches the nav.
@@ -465,10 +497,7 @@ class PureAppShellState extends State<PureAppShell> {
           alignment: AlignmentDirectional.centerStart,
           child: Padding(
             padding: const EdgeInsetsDirectional.only(start: 8),
-            child: f2.FluentHamburger(
-              onPressed: () => setState(() => _fluentDrawerOpen = true),
-              semanticLabel: '菜单',
-            ),
+            child: f2.FluentHamburger(onPressed: () => setState(() => _fluentDrawerOpen = true), semanticLabel: '菜单'),
           ),
         ),
       ),
@@ -504,6 +533,7 @@ class PureAppShellState extends State<PureAppShell> {
           // trailing slot.
           footer: trailing,
           children: [
+            if (leading case final Widget head) head,
             for (final destination in destinations)
               forui.FSidebarItem(
                 icon: Icon(destination.icon),
@@ -518,387 +548,6 @@ class PureAppShellState extends State<PureAppShell> {
         ),
         Expanded(child: child),
       ],
-    );
-  }
-
-  /// Glass composes the column out of the same frosted pieces the nav bar is
-  /// made of — the library ships no navigation structure at all. One
-  /// full-height [glass.GlassContainer] is the track, and a second, brighter
-  /// sheet behind the selected destination is the idiom glassmorphism marks a
-  /// selection with everywhere else in this toolkit. Every visible value comes
-  /// from [glass.GlassTheme]; the layout geometry takes [PureSizing]'s numbers
-  /// when the environment supplies none.
-  ///
-  /// Interaction goes through the core's [PureBox], not a tappable
-  /// [glass.GlassContainer]: the library's `onTap` installs its own transparent
-  /// `Material` wrapping an `InkWell` with a focus node of its own, and that
-  /// fights the dispatch system's focus order — so the cell stays a [PureBox]
-  /// and the frosted sheets are purely paint. [trailing] is pinned to the foot
-  /// of the composed column; the bottom form has no such slot and drops it.
-  Widget _glassShell(BuildContext context, PureTheme theme) {
-    if (_standsAside) {
-      return child;
-    }
-    if (!_wantsRail(placement, context)) {
-      return _bottomStrip();
-    }
-    final glassTheme = glass.GlassTheme.of(context);
-    final geometry = PureEnvironmentScope.maybeOf(context)?.geometry;
-    // The track and its cells share one radius, inset by the library's stroke
-    // so the brighter sheet sits inside the frosted track rather than on its
-    // border.
-    final radius = BorderRadius.circular(glassTheme.borderRadius - theme.token.motion.lineWidth);
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SizedBox(
-          width: geometry?.railWidth ?? PureSizing.railWidth,
-          // One frosted sheet for the whole column: the library's own surface,
-          // blurring whatever the page paints behind the rail.
-          child: glass.GlassContainer(
-            padding: EdgeInsets.all(theme.token.motion.lineWidth * 2),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (final destination in destinations)
-                  _GlassRailCell(
-                    destination: destination,
-                    selected: destination.id == selectedId,
-                    iconSize: geometry?.iconSize ?? 18,
-                    radius: radius,
-                    onSelected: onSelected,
-                  ),
-                if (trailing case final Widget footer) ...[
-                  const Spacer(),
-                  Align(alignment: Alignment.bottomCenter, child: footer),
-                ],
-              ],
-            ),
-          ),
-        ),
-        Expanded(child: child),
-      ],
-    );
-  }
-
-  /// Neumorphic composes the column from the library's own faces, turned
-  /// vertical — the library's one navigation widget, `NeuBottomNav`, is a
-  /// horizontal floating pill that asserts at least two items, takes a
-  /// non-null callback and vibrates on every change. One full-height
-  /// `NeuContainer` on its default flat face at the theme's depth is the track,
-  /// and the chosen cell sinks into `NeuShape.pressed` with its glyph and label
-  /// in the theme's accent, the others left flat at zero depth — the same
-  /// pressed reading the docked nav-bar slab gives, drawn as a column beside
-  /// the page. A disabled destination keeps its cell, takes the token's
-  /// disabled text role and loses its callback.
-  Widget _neumorphicShell(BuildContext context, PureTheme theme) {
-    if (_standsAside) {
-      return child;
-    }
-    if (!_wantsRail(placement, context)) {
-      return _bottomStrip();
-    }
-    final geometry = PureEnvironmentScope.maybeOf(context)?.geometry;
-    return Row(
-      children: [
-        SizedBox(
-          width: geometry?.railWidth ?? PureSizing.railWidth,
-          child: _NeumorphicRail(
-            destinations: destinations,
-            selectedId: selectedId,
-            iconSize: geometry?.iconSize ?? 18,
-            trailing: trailing,
-            onSelected: (id) => onSelected?.call(id),
-          ),
-        ),
-        Expanded(child: child),
-      ],
-    );
-  }
-
-  /// Wind composes the rail from the styling library's own parts — it ships no
-  /// navigation structure of any kind. A `WDiv` surface on its
-  /// `bg-white dark:bg-gray-900` pair, closed by the Tailwind side hairline,
-  /// holds `WAnchor` cells over a `WDiv` column carrying `WIcon` over `WText`.
-  /// The accent reaches this subtree flat through the host's `WindTheme`, so
-  /// `selected:text-primary-500` is the token accent. The states are passed to
-  /// the styled `WDiv` as well as to the anchor: a `hover:` class makes `WDiv`
-  /// wrap itself in a gestureless anchor and read its state from the nearest
-  /// provider. A disabled destination is the fork's inert state (`isDisabled`),
-  /// not a local refusal, and the glyph step is a class token — interpolating
-  /// `text-[..]` per device is the runtime-into-cache pattern the library warns
-  /// against.
-  Widget _windShell(BuildContext context) {
-    if (_standsAside) {
-      return child;
-    }
-    if (!_wantsRail(placement, context)) {
-      return _bottomStrip();
-    }
-    final geometry = PureEnvironmentScope.maybeOf(context)?.geometry;
-    return Row(
-      children: [
-        SizedBox(
-          width: geometry?.railWidth ?? PureSizing.railWidth,
-          child: wind.WDiv(
-            className: 'flex flex-col w-full h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700',
-            children: [
-              for (final destination in destinations)
-                _windShellCell(destination, selected: destination.id == selectedId, onSelected: onSelected),
-              if (trailing case final Widget footer) ...[
-                const Expanded(child: SizedBox.shrink()),
-                Align(alignment: Alignment.bottomCenter, child: footer),
-              ],
-            ],
-          ),
-        ),
-        Expanded(child: child),
-      ],
-    );
-  }
-
-  /// One Wind destination as the library's own interactive column cell.
-  static Widget _windShellCell(PureShellDestination destination, {required bool selected, required ValueChanged<String>? onSelected}) {
-    final enabled = destination.enabled;
-    final states = selected ? _selectedStates : null;
-    return Semantics(
-      selected: selected,
-      child: wind.WAnchor(
-        // A disabled destination is the fork's inert state, not a local
-        // refusal: `isDisabled` paints `disabled:opacity-50` and ignores the
-        // gesture, and the tap closure is not built for it either, so the look
-        // and its own label builder cannot disagree.
-        isDisabled: !enabled,
-        onTap: enabled && onSelected != null ? () => onSelected(destination.id) : null,
-        states: states,
-        semanticLabel: destination.label,
-        child: wind.WDiv(
-          className: _windCellClasses,
-          states: states,
-          child: wind.WDiv(
-            className: 'flex flex-col items-center gap-1 w-full',
-            children: [
-              wind.WIcon(destination.icon, className: 'text-lg'),
-              wind.WText(destination.label, className: 'text-xs truncate w-full text-center'),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  static const Set<String> _selectedStates = <String>{'selected'};
-
-  static const String _windCellClasses =
-      'flex flex-col items-center justify-center w-full px-2 py-3'
-      ' text-gray-500 dark:text-gray-400 transition-colors'
-      ' hover:bg-gray-50 dark:hover:bg-gray-800'
-      ' selected:text-primary-500 selected:bg-gray-100 dark:selected:bg-gray-800'
-      ' disabled:opacity-50';
-}
-
-/// One glass rail destination: its glyph over its label, on a brighter frosted
-/// sheet when the caller has selected it. A hover or press tints the cell
-/// through the core's [PureBox]; a disabled one keeps its row, dims, and takes
-/// no tap, because a tappable [glass.GlassContainer] would bring its own ink
-/// and focus node into the tree.
-final class _GlassRailCell extends StatelessWidget {
-  const new({
-    required this.destination,
-    required this.selected,
-    required this.iconSize,
-    required this.radius,
-    this.onSelected,
-  });
-
-  final PureShellDestination destination;
-  final bool selected;
-  final double iconSize;
-  final BorderRadius radius;
-  final ValueChanged<String>? onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = PureTheme.of(context);
-    final glassTheme = glass.GlassTheme.of(context);
-    final sizes = theme.token.scale.sizes;
-    final enabled = destination.enabled;
-    final tint = !enabled
-        ? theme.colors.textDisabled
-        : selected
-        ? theme.colors.primary
-        : theme.colors.textSecondary;
-
-    final label = Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(destination.icon, size: iconSize, color: tint),
-        SizedBox(height: sizes.xxs),
-        Text(
-          destination.label,
-          style: theme.text.caption.copyWith(color: tint),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-
-    return Semantics(
-      selected: selected,
-      child: PureBox(
-        style: (state) => Style(
-          borderRadius: radius,
-          alignment: Alignment.center,
-          padding: EdgeInsets.symmetric(vertical: sizes.xs),
-          background: enabled && (state == InteractionState.hovered || state == InteractionState.pressed)
-              ? glassTheme.color.withValues(alpha: (glassTheme.opacity * 1.8).clamp(0.0, 1.0))
-              : null,
-          opacity: state == InteractionState.disabled ? theme.token.motion.opacityLoading : null,
-        ),
-        enabled: enabled,
-        onTap: enabled ? () => onSelected?.call(destination.id) : null,
-        child: selected
-            ? glass.GlassContainer(
-                customBorderRadius: radius,
-                color: glassTheme.color,
-                opacity: (glassTheme.opacity * 2.6).clamp(0.0, 1.0),
-                padding: EdgeInsets.symmetric(horizontal: sizes.sm, vertical: sizes.xs),
-                child: label,
-              )
-            : Padding(
-                padding: EdgeInsets.symmetric(horizontal: sizes.sm),
-                child: label,
-              ),
-      ),
-    );
-  }
-}
-
-/// The neumorphic composed column: the theme's flat plane, and one sunk cell
-/// per destination. Radius is read off the theme and inset for the cells so the
-/// dishes nest inside the plane instead of cutting it.
-final class _NeumorphicRail extends StatelessWidget {
-  const new({
-    required this.destinations,
-    required this.selectedId,
-    required this.iconSize,
-    required this.onSelected,
-    this.trailing,
-  });
-
-  final List<PureShellDestination> destinations;
-  final String? selectedId;
-  final double iconSize;
-  final ValueChanged<String> onSelected;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = PureTheme.of(context);
-    final surface = neu.NeuTheme.of(context);
-    final inset = theme.token.scale.sizes.xs;
-    final barRadius = surface.borderRadius.resolve(Directionality.of(context));
-    final cellRadius = BorderRadius.circular(barRadius.topLeft.x <= inset ? 0.0 : barRadius.topLeft.x - inset);
-
-    return neu.NeuContainer(
-      borderRadius: barRadius,
-      baseColor: surface.baseColor,
-      depth: surface.depth,
-      distance: surface.distance,
-      padding: EdgeInsets.symmetric(horizontal: inset, vertical: inset),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (final destination in destinations) ...[
-            _NeumorphicRailCell(
-              destination: destination,
-              selected: destination.id == selectedId,
-              enabled: destination.enabled,
-              iconSize: iconSize,
-              onTap: destination.enabled ? () => onSelected(destination.id) : null,
-              radius: cellRadius,
-              surface: surface,
-              theme: theme,
-            ),
-            SizedBox(height: inset),
-          ],
-          if (trailing case final Widget footer) ...[
-            const Spacer(),
-            Align(alignment: Alignment.bottomCenter, child: footer),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// One neumorphic rail destination: the chosen one sunk into
-/// [neu.NeuShape.pressed], the others left flat at zero depth.
-final class _NeumorphicRailCell extends StatelessWidget {
-  const new({
-    required this.destination,
-    required this.selected,
-    required this.enabled,
-    required this.iconSize,
-    required this.onTap,
-    required this.radius,
-    required this.surface,
-    required this.theme,
-  });
-
-  final PureShellDestination destination;
-  final bool selected;
-  final bool enabled;
-  final double iconSize;
-  final VoidCallback? onTap;
-  final BorderRadius radius;
-  final neu.NeuThemeData surface;
-  final PureTheme theme;
-
-  @override
-  Widget build(BuildContext context) {
-    final Color tint;
-    if (!enabled) {
-      tint = theme.colors.textDisabled;
-    } else if (selected) {
-      tint = surface.accentColor;
-    } else {
-      tint = theme.colors.textSecondary;
-    }
-
-    return Semantics(
-      selected: selected,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: neu.NeuContainer(
-          shape: selected ? neu.NeuShape.pressed : neu.NeuShape.flat,
-          borderRadius: radius,
-          baseColor: surface.baseColor,
-          depth: selected ? surface.depth : 0.0,
-          distance: selected ? surface.distance : 0.0,
-          padding: EdgeInsets.symmetric(horizontal: theme.token.scale.sizes.xs, vertical: theme.token.scale.sizes.sm),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(destination.icon, color: tint, size: iconSize),
-              SizedBox(height: theme.token.scale.sizes.xxs),
-              Text(
-                destination.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: theme.text.caption.copyWith(
-                  color: tint,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

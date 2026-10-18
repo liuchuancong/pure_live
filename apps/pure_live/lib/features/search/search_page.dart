@@ -63,9 +63,7 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
   /// fail, so the picker only ever offers these.
   Set<LiveSearchTarget> _targetsFor(List<LiveSite> searchable) {
     if (_selected == 0) {
-      return {
-        for (final site in searchable) ...?site.capability<LiveSearchProvider>()?.supportedTargets,
-      };
+      return {for (final site in searchable) ...?site.capability<LiveSearchProvider>()?.supportedTargets};
     }
     final index = (_selected - 1).clamp(0, searchable.length - 1);
     return searchable[index].capability<LiveSearchProvider>()?.supportedTargets ?? const {};
@@ -178,8 +176,7 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
                   }),
                   tabs: [
                     PureTab(label: context.t.search.allSites),
-                    for (final site in searchable)
-                      PureTab(label: site.manifest.localizedName(_tag(context), 'zh-CN')),
+                    for (final site in searchable) PureTab(label: site.manifest.localizedName(_tag(context), 'zh-CN')),
                   ],
                 ),
               ),
@@ -245,9 +242,8 @@ final class _SearchHistoryPanel extends ConsumerWidget {
               Expanded(
                 child: Text(
                   context.t.search.historyTitle,
-                  style: PureTheme.of(context).text.bodySmall.copyWith(
-                    color: PureTheme.of(context).colors.textSecondary,
-                  ),
+                  style: PureTheme.of(context).text.bodySmall
+                      .copyWith(color: PureTheme.of(context).colors.textSecondary),
                 ),
               ),
               PureButton(
@@ -287,13 +283,7 @@ final class _SearchHistoryPanel extends ConsumerWidget {
 /// capability. The pane runs only once shown ([activated]), and re-runs
 /// whenever the shared query or target changes.
 final class _SitePane extends StatefulWidget {
-  const new({
-    required this.site,
-    required this.query,
-    required this.target,
-    required this.activated,
-    super.key,
-  });
+  const new({required this.site, required this.query, required this.target, required this.activated, super.key});
 
   final LiveSite site;
   final String query;
@@ -351,8 +341,7 @@ final class _SitePaneState extends State<_SitePane> with AutomaticKeepAliveClien
   void _run() {
     _teardown();
     _ran = (query: widget.query, target: widget.target);
-    final controller = InfiniteController<LiveSearchResult>(loader: _load)
-      ..addListener(_onState);
+    final controller = InfiniteController<LiveSearchResult>(loader: _load)..addListener(_onState);
     _controller = controller;
     _scroll = ScrollController()..addListener(_onScroll);
     unawaited(controller.initialize());
@@ -389,7 +378,11 @@ final class _SitePaneState extends State<_SitePane> with AutomaticKeepAliveClien
     final state = controller.state;
     if (state.items.isEmpty) {
       if (state.error != null) {
-        return PureError(message: context.t.errors.network, onRetry: controller.retry, retryLabel: context.t.common.retry);
+        return PureError(
+          message: context.t.errors.network,
+          onRetry: controller.retry,
+          retryLabel: context.t.common.retry,
+        );
       }
       if (state.isRefreshing || state.isUnloaded) {
         return const _SkeletonGrid();
@@ -404,9 +397,23 @@ final class _SitePaneState extends State<_SitePane> with AutomaticKeepAliveClien
           child,
           Positioned(
             top: 12,
-            child: Opacity(
-              opacity: indicator.value.clamp(0, 1),
-              child: IgnorePointer(child: PureProgress(value: indicator.isLoading ? null : indicator.value, height: 4)),
+            left: 0,
+            right: 0,
+            // The bar needs bounded constraints: a Positioned pinned on `top`
+            // alone hands its child unbounded constraints, which a progress bar
+            // cannot resolve to a size — a kept-alive off-screen tab then
+            // crashes the hit test. Pinning the sides and fixing the width
+            // keeps the box laid out in every state.
+            child: Center(
+              child: SizedBox(
+                width: 140,
+                child: Opacity(
+                  opacity: indicator.value.clamp(0, 1),
+                  child: IgnorePointer(
+                    child: PureProgress(value: indicator.isLoading ? null : indicator.value, height: 4),
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -434,13 +441,7 @@ final class _SitePaneState extends State<_SitePane> with AutomaticKeepAliveClien
 /// own section under one scroll, each filling in as its answers arrive — the
 /// whole grid never waits behind the slowest site.
 final class _AllSitesPane extends StatefulWidget {
-  const new({
-    required this.sites,
-    required this.query,
-    required this.target,
-    required this.activated,
-    super.key,
-  });
+  const new({required this.sites, required this.query, required this.target, required this.activated, super.key});
 
   final List<LiveSite> sites;
   final String query;
@@ -549,11 +550,7 @@ final class _AllSitesPaneState extends State<_AllSitesPane> with AutomaticKeepAl
     final anyError = _sections.values.any((controller) => controller.state.error != null);
     if (totalItems == 0 && !anyLoading) {
       if (anyError && _sections.values.every((controller) => controller.state.items.isEmpty)) {
-        return PureError(
-          message: context.t.errors.network,
-          onRetry: _refreshAll,
-          retryLabel: context.t.common.retry,
-        );
+        return PureError(message: context.t.errors.network, onRetry: _refreshAll, retryLabel: context.t.common.retry);
       }
       if (_sections.values.every((controller) => !controller.state.isRefreshing && !controller.state.isUnloaded)) {
         return PureEmpty(title: context.t.errors.notFound, icon: Icons.search_off_outlined);
@@ -567,9 +564,23 @@ final class _AllSitesPaneState extends State<_AllSitesPane> with AutomaticKeepAl
           child,
           Positioned(
             top: 12,
-            child: Opacity(
-              opacity: indicator.value.clamp(0, 1),
-              child: IgnorePointer(child: PureProgress(value: indicator.isLoading ? null : indicator.value, height: 4)),
+            left: 0,
+            right: 0,
+            // The bar needs bounded constraints: a Positioned pinned on `top`
+            // alone hands its child unbounded constraints, which a progress bar
+            // cannot resolve to a size — a kept-alive off-screen tab then
+            // crashes the hit test. Pinning the sides and fixing the width
+            // keeps the box laid out in every state.
+            child: Center(
+              child: SizedBox(
+                width: 140,
+                child: Opacity(
+                  opacity: indicator.value.clamp(0, 1),
+                  child: IgnorePointer(
+                    child: PureProgress(value: indicator.isLoading ? null : indicator.value, height: 4),
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -577,9 +588,7 @@ final class _AllSitesPaneState extends State<_AllSitesPane> with AutomaticKeepAl
       child: ListView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.fromLTRB(PureSpacing.sm, PureSpacing.xs, PureSpacing.sm, PureSpacing.xl),
-        children: [
-          for (final entry in _sections.entries) _section(context, entry.key, entry.value),
-        ],
+        children: [for (final entry in _sections.entries) _section(context, entry.key, entry.value)],
       ),
     );
   }
@@ -606,10 +615,7 @@ final class _AllSitesPaneState extends State<_AllSitesPane> with AutomaticKeepAl
                 child: Text(name, style: PureTheme.of(context).text.body.copyWith(fontWeight: FontWeight.w600)),
               ),
               if (state.isRefreshing || state.isUnloaded)
-                const Padding(
-                  padding: EdgeInsets.all(PureSpacing.sm),
-                  child: PureSpinner(size: 16),
-                )
+                const Padding(padding: EdgeInsets.all(PureSpacing.sm), child: PureSpinner(size: 16))
               else if (state.error != null && state.items.isEmpty)
                 PureButton(
                   label: context.t.common.retry,
@@ -628,9 +634,7 @@ final class _AllSitesPaneState extends State<_AllSitesPane> with AutomaticKeepAl
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Text(
                 context.t.errors.network,
-                style: PureTheme.of(context).text.bodySmall.copyWith(
-                  color: PureTheme.of(context).colors.textSecondary,
-                ),
+                style: PureTheme.of(context).text.bodySmall.copyWith(color: PureTheme.of(context).colors.textSecondary),
               ),
             )
         else
@@ -671,11 +675,8 @@ final class SearchResultTile extends StatelessWidget {
     AnchorSearchResult(:final anchor) => AnchorTile(anchor: anchor),
     AreaSearchResult(:final area) => AreaCard(
       area: area,
-      onOpen: () => AreaRoomsRoute(
-        siteId: area.platform,
-        areaId: area.areaId,
-        areaName: area.areaName,
-      ).push<void>(context),
+      onOpen: () =>
+          AreaRoomsRoute(siteId: area.platform, areaId: area.areaId, areaName: area.areaName).push<void>(context),
     ),
   };
 }
@@ -732,7 +733,10 @@ final class _SkeletonGrid extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const AspectRatio(aspectRatio: 16 / 9, child: ColoredBox(color: Colors.white24)),
+                const AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: ColoredBox(color: Colors.white24),
+                ),
                 Padding(
                   padding: const EdgeInsets.all(10),
                   child: Row(
@@ -748,7 +752,11 @@ final class _SkeletonGrid extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            SizedBox(height: 12, width: double.infinity, child: ColoredBox(color: Colors.white24)),
+                            SizedBox(
+                              height: 12,
+                              width: double.infinity,
+                              child: ColoredBox(color: Colors.white24),
+                            ),
                             SizedBox(height: 6),
                             SizedBox(width: 96, height: 10, child: ColoredBox(color: Color(0x26FFFFFF))),
                           ],
@@ -783,12 +791,14 @@ Future<PageResult<LiveSearchResult>> searchPage({
     throw StateError('${site.manifest.id} does not answer ${target.name}');
   }
   final request = LiveSearchRequest(query: query, target: target, page: page, pageSize: pageSize);
-  return capability.search(request).then(
-    (result) => result.fold(
-      (error) => throw _SearchException(error),
-      (page) => PageResult(items: page.items, totalCount: page.totalCount, hasMore: page.hasMore),
-    ),
-  );
+  return capability
+      .search(request)
+      .then(
+        (result) => result.fold(
+          (error) => throw _SearchException(error),
+          (page) => PageResult(items: page.items, totalCount: page.totalCount, hasMore: page.hasMore),
+        ),
+      );
 }
 
 /// Wraps a site error for the loader contract; the controller stores it on

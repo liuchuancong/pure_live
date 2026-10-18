@@ -8,6 +8,8 @@ import 'package:live_sites/live_sites.dart' show LiveDiscoveryProvider, LivePage
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/room/room_routes.dart';
+import 'package:pure_live/app/shell/main_layout.dart';
+import 'package:pure_live/app/shell/main_page_frame.dart';
 import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/list_loading.dart';
@@ -35,38 +37,34 @@ final class _PopularPageState extends ConsumerState<PopularPage> {
     final sites = ref.watch(sitesProvider);
     final discoverable = sites.registry.all.where((site) => site.capability<LiveDiscoveryProvider>() != null).toList();
     if (discoverable.isEmpty) {
-      return PureScaffold(
-        appBar: PureAppBar(title: context.t.tabs.popular, actions: const [SettingsEntryButton()]),
+      return MainPageFrame(
+        title: context.t.tabs.popular,
+        actions: const [SettingsEntryButton()],
         body: PureEmpty(title: context.t.common.empty),
       );
     }
     final index = _selected.clamp(0, discoverable.length - 1);
-    return PureScaffold(
-      appBar: PureAppBar(
-        title: context.t.tabs.popular,
-        actions: const [SettingsEntryButton()],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: PureTabs(
-              index: index,
-              onChanged: (value) => setState(() => _selected = value),
-              tabs: [
-                for (final site in discoverable)
-                  PureTab(label: site.manifest.localizedName(_tag(context, site), 'zh-CN')),
-              ],
-            ),
-          ),
-        ),
+    return MainPageFrame(
+      title: context.t.tabs.popular,
+      actions: const [SettingsEntryButton()],
+      // The platform filter travels two ways: a horizontal tab strip on phones
+      // and tablets, a context column beside the feed from the expanded class
+      // up — one state, whichever form the frame picks.
+      tabs: [
+        for (final site in discoverable) PureTab(label: site.manifest.localizedName(_tag(context, site), 'zh-CN')),
+      ],
+      tabIndex: index,
+      onTabChanged: (value) => setState(() => _selected = value),
+      pane: _SitePane(
+        sites: discoverable,
+        selectedIndex: index,
+        tag: (site) => site.manifest.localizedName(_tag(context, site), 'zh-CN'),
+        onSelected: (value) => setState(() => _selected = discoverable.indexOf(value)),
       ),
       body: PureTabView(
         index: index,
         onIndexChanged: (value) => setState(() => _selected = value),
-        pages: [
-          for (var i = 0; i < discoverable.length; i++) _SiteFeed(site: discoverable[i], active: i == index),
-        ],
+        pages: [for (var i = 0; i < discoverable.length; i++) _SiteFeed(site: discoverable[i], active: i == index)],
       ),
     );
   }
@@ -161,6 +159,7 @@ final class _SiteFeedState extends ConsumerState<_SiteFeed>
   Widget build(BuildContext context) {
     super.build(context);
     final coverAspect = ref.watch(roomCardStyleProvider).aspect.ratio;
+    final gutter = MainLayout.gutterOf(context);
     final state = _controller.state;
     if (state.items.isEmpty) {
       if (state.error != null) {
@@ -171,7 +170,11 @@ final class _SiteFeedState extends ConsumerState<_SiteFeed>
         );
       }
       if (state.isRefreshing || state.isUnloaded) {
-        return FeedLoadingPlaceholder(delegateBuilder: (width) => RoomGridMetrics.delegateFor(context, width, coverAspect: coverAspect));
+        return FeedLoadingPlaceholder(
+          padding: EdgeInsets.fromLTRB(gutter, PureSpacing.sm, gutter, PureSpacing.xl),
+          delegateBuilder: (width) =>
+              RoomGridMetrics.delegateFor(context, width, coverAspect: coverAspect, gutter: gutter),
+        );
       }
       return PureEmpty(
         title: context.t.popular.empty,
@@ -187,9 +190,24 @@ final class _SiteFeedState extends ConsumerState<_SiteFeed>
           child,
           Positioned(
             top: 12,
-            child: Opacity(
-              opacity: indicator.value.clamp(0, 1),
-              child: IgnorePointer(child: PureProgress(value: indicator.isLoading ? null : indicator.value, height: 4)),
+            left: 0,
+            right: 0,
+            // The bar needs bounded constraints: a Positioned pinned on `top`
+            // alone hands its child unbounded constraints in both axes, which a
+            // progress bar cannot resolve to a size — a kept-alive off-screen
+            // tab then crashes the hit test ("Cannot hit test a render box with
+            // no size"). Pinning the sides and fixing the width keeps the box
+            // laid out in every state.
+            child: Center(
+              child: SizedBox(
+                width: 140,
+                child: Opacity(
+                  opacity: indicator.value.clamp(0, 1),
+                  child: IgnorePointer(
+                    child: PureProgress(value: indicator.isLoading ? null : indicator.value, height: 4),
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -197,8 +215,13 @@ final class _SiteFeedState extends ConsumerState<_SiteFeed>
       child: LayoutBuilder(
         builder: (context, constraints) => GridView.builder(
           controller: _scroll,
-          padding: const EdgeInsets.fromLTRB(PureSpacing.sm, PureSpacing.sm, PureSpacing.sm, PureSpacing.xl),
-          gridDelegate: RoomGridMetrics.delegateFor(context, constraints.maxWidth, coverAspect: coverAspect),
+          padding: EdgeInsets.fromLTRB(gutter, PureSpacing.sm, gutter, PureSpacing.xl),
+          gridDelegate: RoomGridMetrics.delegateFor(
+            context,
+            constraints.maxWidth,
+            coverAspect: coverAspect,
+            gutter: gutter,
+          ),
           itemCount: state.items.length + 1,
           itemBuilder: (context, index) {
             if (index < state.items.length) {
@@ -230,4 +253,42 @@ final class _FeedException implements Exception {
 
   @override
   String toString() => 'feed failed: $cause';
+}
+
+/// The popular page's desktop context column: every discovery-capable platform
+/// as a navigation tile.
+///
+/// It renders from the same state the tab strip does, so the platform list is
+/// the filter re-embodied, not a second one.
+final class _SitePane extends StatelessWidget {
+  const new({
+    required this.sites,
+    required this.selectedIndex,
+    required this.tag,
+    required this.onSelected,
+  });
+
+  final List<LiveSite> sites;
+  final int selectedIndex;
+  final String Function(LiveSite site) tag;
+  final ValueChanged<LiveSite> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: PureSpacing.xs),
+      children: [
+        for (var index = 0; index < sites.length; index++)
+          PureNavigationTile(
+            destination: PureNavDestination(
+              id: sites[index].manifest.id,
+              label: tag(sites[index]),
+              icon: Icons.live_tv_outlined,
+            ),
+            selected: index == selectedIndex,
+            onTap: () => onSelected(sites[index]),
+          ),
+      ],
+    );
+  }
 }

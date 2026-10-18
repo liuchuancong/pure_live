@@ -11,20 +11,21 @@ abstract final class RoutePath {
   /// The start-up splash, the launch route ahead of the shell.
   static const String splash = '/splash';
 
-  /// The home branch's root.
-  static const String home = '/';
+  /// The favorites branch's root, and the shell's first screen — the
+  /// reference's favorites tab (3.x `HomeMenu.favorites`).
+  static const String favorites = '/';
 
-  /// The follow branch's root.
-  static const String follow = '/follow';
-
-  /// The history branch's root.
+  /// The history page, pushed from the shell's menu.
   static const String history = '/history';
 
-  /// The popular feed, a full page above the shell.
+  /// The popular feed.
   static const String popular = '/popular';
 
-  /// The category catalogue, a full page above the shell.
+  /// The category catalogue.
   static const String areas = '/areas';
+
+  /// The recording centre, the reference's fourth tab (3.x `record_center`).
+  static const String recorder = '/recorder';
 
   /// One area's room list — [areas] with the site and area ids as path
   /// segments.
@@ -100,6 +101,15 @@ abstract final class RoutePath {
 
   /// The room card settings page, one level under the settings index.
   static const String settingsRoomCard = '/settings/room-card';
+
+  /// The video and danmaku settings, one level under the settings index.
+  static const String settingsVideo = '/settings/video';
+
+  /// The mpv tuning, one level under the settings index.
+  static const String settingsMpv = '/settings/mpv';
+
+  /// The read-only local configuration dump, under the settings index.
+  static const String settingsLocalConfig = '/settings/local-config';
 
   /// The recorder page, one level under the settings index.
   static const String settingsRecorder = '/settings/recorder';

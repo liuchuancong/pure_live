@@ -151,6 +151,15 @@ class Translations$common$zh {
 
 	/// zh: '第 {page: int} / {total: int} 页'
 	String pageOf({required int page, required int total}) => '第 ${page} / ${total} 页';
+
+	/// zh: '返回'
+	String get back => '返回';
+
+	/// zh: '菜单'
+	String get menu => '菜单';
+
+	/// zh: '关闭'
+	String get off => '关闭';
 }
 
 // Path: tray
@@ -271,6 +280,15 @@ class Translations$account$zh {
 
 	/// zh: '虎牙账号'
 	String get platformHuya => '虎牙账号';
+
+	/// zh: '这个构建还没有可登录的平台'
+	String get noAuthSites => '这个构建还没有可登录的平台';
+
+	/// zh: '清除全部账号'
+	String get clearAllAccounts => '清除全部账号';
+
+	/// zh: '退出所有平台并删除已存的登录信息'
+	String get clearAllAccountsHint => '退出所有平台并删除已存的登录信息';
 }
 
 // Path: settings
@@ -676,6 +694,138 @@ class Translations$settings$zh {
 
 	/// zh: '已登录 {count: int} 个平台'
 	String accountSignedInCount({required int count}) => '已登录 ${count} 个平台';
+
+	/// zh: '视频与弹幕'
+	String get sectionVideo => '视频与弹幕';
+
+	/// zh: '视频与弹幕'
+	String get video => '视频与弹幕';
+
+	/// zh: '房间打开时的声音与弹幕'
+	String get videoSubtitle => '房间打开时的声音与弹幕';
+
+	/// zh: '弹幕'
+	String get groupDanmaku => '弹幕';
+
+	/// zh: '声音'
+	String get groupAudio => '声音';
+
+	/// zh: '弹幕外观'
+	String get groupAppearance => '弹幕外观';
+
+	/// zh: '本地互动'
+	String get groupLocalInteraction => '本地互动';
+
+	/// zh: '本地互动'
+	String get localInteraction => '本地互动';
+
+	/// zh: '开启后房间出现输入框，发送的弹幕只在自己画面显示'
+	String get localInteractionSubtitle => '开启后房间出现输入框，发送的弹幕只在自己画面显示';
+
+	/// zh: '本地昵称'
+	String get localInteractionName => '本地昵称';
+
+	/// zh: '默认显示弹幕'
+	String get danmakuVisible => '默认显示弹幕';
+
+	/// zh: '新房间打开时是否在画面上叠加弹幕'
+	String get danmakuVisibleSubtitle => '新房间打开时是否在画面上叠加弹幕';
+
+	/// zh: '默认音量'
+	String get defaultVolume => '默认音量';
+
+	/// zh: '下一个房间开始播放时的音量'
+	String get defaultVolumeSubtitle => '下一个房间开始播放时的音量';
+
+	/// zh: '界面语言'
+	String get language => '界面语言';
+
+	/// zh: '跟随系统，或指定一种语言'
+	String get languageSubtitle => '跟随系统，或指定一种语言';
+
+	/// zh: '跟随系统'
+	String get languageSystem => '跟随系统';
+
+	/// zh: '播放器调校'
+	String get mpvTuning => '播放器调校';
+
+	/// zh: 'libmpv 的输出、解码与缓存选项'
+	String get mpvTuningSubtitle => 'libmpv 的输出、解码与缓存选项';
+
+	/// zh: '输出'
+	String get mpvOutputSection => '输出';
+
+	/// zh: '自定义输出驱动'
+	String get mpvCustomOutput => '自定义输出驱动';
+
+	/// zh: '关闭时引擎使用平台默认输出;打开后驱动选择才会写入'
+	String get mpvCustomOutputSubtitle => '关闭时引擎使用平台默认输出;打开后驱动选择才会写入';
+
+	/// zh: '需先打开"自定义输出驱动"'
+	String get mpvNeedsCustomOutput => '需先打开"自定义输出驱动"';
+
+	/// zh: '视频输出 (vo)'
+	String get mpvVideoOutput => '视频输出 (vo)';
+
+	/// zh: '音频输出 (ao)'
+	String get mpvAudioOutput => '音频输出 (ao)';
+
+	/// zh: '解码与渲染'
+	String get mpvDecodeSection => '解码与渲染';
+
+	/// zh: '硬件解码 (hwdec)'
+	String get mpvHardwareDecoder => '硬件解码 (hwdec)';
+
+	/// zh: '去隔行 (deinterlace)'
+	String get mpvDeinterlace => '去隔行 (deinterlace)';
+
+	/// zh: '帧插值 (interpolation)'
+	String get mpvInterpolation => '帧插值 (interpolation)';
+
+	/// zh: '补帧更流畅,GPU 开销更高;仅桌面'
+	String get mpvInterpolationSubtitle => '补帧更流畅,GPU 开销更高;仅桌面';
+
+	/// zh: '缩放算法 (scale)'
+	String get mpvScaler => '缩放算法 (scale)';
+
+	/// zh: '缓存'
+	String get mpvCacheSection => '缓存';
+
+	/// zh: '流缓存秒数'
+	String get mpvCacheSeconds => '流缓存秒数';
+
+	/// zh: '0 表示不改引擎的默认缓存'
+	String get mpvCacheSecondsSubtitle => '0 表示不改引擎的默认缓存';
+
+	/// zh: '恢复默认'
+	String get mpvReset => '恢复默认';
+
+	/// zh: '清空本页全部调校选项'
+	String get mpvResetSubtitle => '清空本页全部调校选项';
+
+	/// zh: '生效方式'
+	String get mpvEffectiveNote => '生效方式';
+
+	/// zh: '视频/音频输出与硬件解码在下一次打开流时生效;其余选项即时应用到正在播放的房间。'
+	String get mpvEffectiveNoteBody => '视频/音频输出与硬件解码在下一次打开流时生效;其余选项即时应用到正在播放的房间。';
+
+	/// zh: '本地配置预览'
+	String get localConfig => '本地配置预览';
+
+	/// zh: '只读展示当前保存的设置文档'
+	String get localConfigSubtitle => '只读展示当前保存的设置文档';
+
+	/// zh: '本页只读;要修改请回到对应的设置项。'
+	String get localConfigNote => '本页只读;要修改请回到对应的设置项。';
+
+	/// zh: '复制该文档'
+	String get localConfigCopy => '复制该文档';
+
+	/// zh: '通用偏好'
+	String get localConfigApp => '通用偏好';
+
+	/// zh: '外观'
+	String get localConfigAppearance => '外观';
 }
 
 // Path: recorder
@@ -1192,6 +1342,9 @@ class Translations$backup$zh {
 
 	/// zh: '用「{name: String}」覆盖当前数据？应用将重启。'
 	String restoreConfirm({required String name}) => '用「${name}」覆盖当前数据？应用将重启。';
+
+	/// zh: '云端与同步'
+	String get sectionCloud => '云端与同步';
 }
 
 // Path: about
@@ -1288,6 +1441,9 @@ class Translations$about$zh {
 
 	/// zh: '{size: String} · {count: int} 次下载'
 	String assetMeta({required String size, required int count}) => '${size} · ${count} 次下载';
+
+	/// zh: '最新版本 {tag} 已发布。现在打开更新页面吗?'
+	String startupUpdateBody({required Object tag}) => '最新版本 ${tag} 已发布。现在打开更新页面吗?';
 }
 
 // Path: shield
@@ -1315,6 +1471,12 @@ class Translations$shield$zh {
 
 	/// zh: '暂无'
 	String get none => '暂无';
+
+	/// zh: '输入要屏蔽的关键词'
+	String get keywordHint => '输入要屏蔽的关键词';
+
+	/// zh: '请输入关键词'
+	String get emptyKeyword => '请输入关键词';
 }
 
 // Path: multiview
@@ -1507,6 +1669,135 @@ class Translations$room$zh {
 
 	/// zh: '退出全屏'
 	String get exitFullscreen => '退出全屏';
+
+	/// zh: '显示弹幕'
+	String get barrageOn => '显示弹幕';
+
+	/// zh: '关闭弹幕'
+	String get barrageOff => '关闭弹幕';
+
+	/// zh: '工具箱'
+	String get toolbox => '工具箱';
+
+	/// zh: '复制房间链接'
+	String get copyLink => '复制房间链接';
+
+	/// zh: '已复制'
+	String get linkCopied => '已复制';
+
+	/// zh: '录制'
+	String get record => '录制';
+
+	/// zh: '停止录制'
+	String get stopRecording => '停止录制';
+
+	/// zh: '原速'
+	String get rateNormal => '原速';
+
+	/// zh: '等待观众数据'
+	String get audienceWaiting => '等待观众数据';
+
+	/// zh: '静音'
+	String get mute => '静音';
+
+	/// zh: '取消静音'
+	String get unmute => '取消静音';
+
+	/// zh: '弹幕已开'
+	String get danmakuOn => '弹幕已开';
+
+	/// zh: '睡眠定时'
+	String get sleepTimer => '睡眠定时';
+
+	/// zh: '睡眠定时（已开启）'
+	String get sleepTimerOn => '睡眠定时（已开启）';
+
+	/// zh: '启用播放定时'
+	String get sleepTimerEnable => '启用播放定时';
+
+	/// zh: '到时后暂停当前房间的播放'
+	String get sleepTimerDesc => '到时后暂停当前房间的播放';
+
+	/// zh: '定时时长'
+	String get timerDuration => '定时时长';
+
+	/// zh: '1 - 525600 分钟'
+	String get timerDurationHint => '1 - 525600 分钟';
+
+	/// zh: '请输入 1 到 525600 之间的分钟数'
+	String get timerInvalid => '请输入 1 到 525600 之间的分钟数';
+
+	/// zh: '播放定时已结束，已暂停'
+	String get timerFinished => '播放定时已结束，已暂停';
+
+	/// zh: '分钟'
+	String get minutesUnit => '分钟';
+
+	/// zh: '{minutes} 分钟'
+	String minutesN({required Object minutes}) => '${minutes} 分钟';
+
+	/// zh: '房间音量'
+	String get roomVolume => '房间音量';
+
+	/// zh: '设置静音与手机、桌面各自的默认音量'
+	String get roomVolumeDesc => '设置静音与手机、桌面各自的默认音量';
+
+	/// zh: '全局静音'
+	String get globalMute => '全局静音';
+
+	/// zh: '所有房间以静音开始，音量数值保留'
+	String get globalMuteSubtitle => '所有房间以静音开始，音量数值保留';
+
+	/// zh: '手机默认音量'
+	String get mobileDefaultVolume => '手机默认音量';
+
+	/// zh: '桌面默认音量'
+	String get desktopDefaultVolume => '桌面默认音量';
+
+	/// zh: '恢复默认'
+	String get resetDefault => '恢复默认';
+
+	/// zh: '当前房间无法应用音量，请确认后重试'
+	String get volumeApplyFailed => '当前房间无法应用音量，请确认后重试';
+
+	/// zh: '发送'
+	String get send => '发送';
+
+	/// zh: '我'
+	String get localMe => '我';
+
+	/// zh: '弹幕设置'
+	String get barrageSettings => '弹幕设置';
+
+	/// zh: '关键词屏蔽'
+	String get keywordBlock => '关键词屏蔽';
+
+	/// zh: '弹幕已全局关闭'
+	String get barrageHiddenHint => '弹幕已全局关闭';
+
+	/// zh: '在画面上叠加滚动弹幕'
+	String get barrageOnSubtitle => '在画面上叠加滚动弹幕';
+
+	/// zh: '弹幕字号'
+	String get barrageFontSize => '弹幕字号';
+
+	/// zh: '弹幕透明度'
+	String get barrageOpacity => '弹幕透明度';
+
+	/// zh: '这些设置即时生效，并作为新房间的默认值'
+	String get barrageSettingsNote => '这些设置即时生效，并作为新房间的默认值';
+
+	/// zh: '横屏全屏'
+	String get enterLandscapeFullscreen => '横屏全屏';
+
+	/// zh: '继续下滑进入竖屏全屏'
+	String get enterPortraitFullscreenHint => '继续下滑进入竖屏全屏';
+
+	/// zh: '面板高度'
+	String get portraitPanelResize => '面板高度';
+
+	/// zh: '拖动调整面板高度'
+	String get portraitPanelResizeHint => '拖动调整面板高度';
 }
 
 // Path: areas
@@ -1672,6 +1963,9 @@ class Translations$tabs$zh {
 
 	/// zh: '设置'
 	String get settings => '设置';
+
+	/// zh: '录制中心'
+	String get record => '录制中心';
 }
 
 // Path: window
@@ -1730,14 +2024,17 @@ class Translations$shellSettings$zh {
 	/// zh: '窗口标题栏'
 	String get titleBar => '窗口标题栏';
 
+	/// zh: '自动（按系统版本）'
+	String get titleBarAuto => '自动（按系统版本）';
+
 	/// zh: '应用标题栏'
 	String get titleBarApp => '应用标题栏';
 
 	/// zh: '系统标题栏'
 	String get titleBarSystem => '系统标题栏';
 
-	/// zh: '应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式；切换在重启应用后生效。'
-	String get titleBarHint => '应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式；切换在重启应用后生效。';
+	/// zh: '自动：Windows 11 用应用标题栏，Windows 10 用系统标题栏。应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式。切换在重启应用后生效。'
+	String get titleBarHint => '自动：Windows 11 用应用标题栏，Windows 10 用系统标题栏。应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式。切换在重启应用后生效。';
 }
 
 // Path: webdav
@@ -1963,6 +2260,9 @@ extension on Translations {
 			'common.loading' => '加载中',
 			'common.empty' => '暂无内容',
 			'common.pageOf' => ({required int page, required int total}) => '第 ${page} / ${total} 页',
+			'common.back' => '返回',
+			'common.menu' => '菜单',
+			'common.off' => '关闭',
 			'tray.show' => '显示主界面',
 			'tray.quit' => '退出',
 			'login.title' => '扫码登录',
@@ -1994,6 +2294,9 @@ extension on Translations {
 			'account.platformBilibili' => 'bilibili 账号',
 			'account.platformDouyu' => '斗鱼账号',
 			'account.platformHuya' => '虎牙账号',
+			'account.noAuthSites' => '这个构建还没有可登录的平台',
+			'account.clearAllAccounts' => '清除全部账号',
+			'account.clearAllAccountsHint' => '退出所有平台并删除已存的登录信息',
 			'settings.appearance' => '外观',
 			'settings.fonts' => '字体管理',
 			'settings.themeMode' => '主题模式',
@@ -2126,6 +2429,50 @@ extension on Translations {
 			'settings.recorderSubtitle' => '监听房间，开播自动录制',
 			'settings.pasteCookie' => '粘贴 Cookie 登录',
 			'settings.accountSignedInCount' => ({required int count}) => '已登录 ${count} 个平台',
+			'settings.sectionVideo' => '视频与弹幕',
+			'settings.video' => '视频与弹幕',
+			'settings.videoSubtitle' => '房间打开时的声音与弹幕',
+			'settings.groupDanmaku' => '弹幕',
+			'settings.groupAudio' => '声音',
+			'settings.groupAppearance' => '弹幕外观',
+			'settings.groupLocalInteraction' => '本地互动',
+			'settings.localInteraction' => '本地互动',
+			'settings.localInteractionSubtitle' => '开启后房间出现输入框，发送的弹幕只在自己画面显示',
+			'settings.localInteractionName' => '本地昵称',
+			'settings.danmakuVisible' => '默认显示弹幕',
+			'settings.danmakuVisibleSubtitle' => '新房间打开时是否在画面上叠加弹幕',
+			'settings.defaultVolume' => '默认音量',
+			'settings.defaultVolumeSubtitle' => '下一个房间开始播放时的音量',
+			'settings.language' => '界面语言',
+			'settings.languageSubtitle' => '跟随系统，或指定一种语言',
+			'settings.languageSystem' => '跟随系统',
+			'settings.mpvTuning' => '播放器调校',
+			'settings.mpvTuningSubtitle' => 'libmpv 的输出、解码与缓存选项',
+			'settings.mpvOutputSection' => '输出',
+			'settings.mpvCustomOutput' => '自定义输出驱动',
+			'settings.mpvCustomOutputSubtitle' => '关闭时引擎使用平台默认输出;打开后驱动选择才会写入',
+			'settings.mpvNeedsCustomOutput' => '需先打开"自定义输出驱动"',
+			'settings.mpvVideoOutput' => '视频输出 (vo)',
+			'settings.mpvAudioOutput' => '音频输出 (ao)',
+			'settings.mpvDecodeSection' => '解码与渲染',
+			'settings.mpvHardwareDecoder' => '硬件解码 (hwdec)',
+			'settings.mpvDeinterlace' => '去隔行 (deinterlace)',
+			'settings.mpvInterpolation' => '帧插值 (interpolation)',
+			'settings.mpvInterpolationSubtitle' => '补帧更流畅,GPU 开销更高;仅桌面',
+			'settings.mpvScaler' => '缩放算法 (scale)',
+			'settings.mpvCacheSection' => '缓存',
+			'settings.mpvCacheSeconds' => '流缓存秒数',
+			'settings.mpvCacheSecondsSubtitle' => '0 表示不改引擎的默认缓存',
+			'settings.mpvReset' => '恢复默认',
+			'settings.mpvResetSubtitle' => '清空本页全部调校选项',
+			'settings.mpvEffectiveNote' => '生效方式',
+			'settings.mpvEffectiveNoteBody' => '视频/音频输出与硬件解码在下一次打开流时生效;其余选项即时应用到正在播放的房间。',
+			'settings.localConfig' => '本地配置预览',
+			'settings.localConfigSubtitle' => '只读展示当前保存的设置文档',
+			'settings.localConfigNote' => '本页只读;要修改请回到对应的设置项。',
+			'settings.localConfigCopy' => '复制该文档',
+			'settings.localConfigApp' => '通用偏好',
+			'settings.localConfigAppearance' => '外观',
 			'recorder.title' => '录播',
 			'recorder.addRoom' => '添加房间',
 			'recorder.platform' => '平台',
@@ -2271,6 +2618,7 @@ extension on Translations {
 			'backup.delete' => '删除备份',
 			'backup.restore' => '恢复',
 			'backup.restoreConfirm' => ({required String name}) => '用「${name}」覆盖当前数据？应用将重启。',
+			'backup.sectionCloud' => '云端与同步',
 			'about.title' => '关于',
 			'about.group' => '关于',
 			'about.checkUpdate' => '检查更新',
@@ -2300,12 +2648,15 @@ extension on Translations {
 			'about.copied' => '链接已复制',
 			'about.download' => '下载',
 			'about.assetMeta' => ({required String size, required int count}) => '${size} · ${count} 次下载',
+			'about.startupUpdateBody' => ({required Object tag}) => '最新版本 ${tag} 已发布。现在打开更新页面吗?',
 			'shield.title' => '弹幕屏蔽',
 			'shield.keywords' => '关键词',
 			'shield.users' => '用户',
 			'shield.regexes' => '正则',
 			'shield.add' => '添加',
 			'shield.none' => '暂无',
+			'shield.keywordHint' => '输入要屏蔽的关键词',
+			'shield.emptyKeyword' => '请输入关键词',
 			'multiview.title' => '多画面',
 			'multiview.platform' => '平台',
 			'multiview.roomId' => '房间号',
@@ -2361,9 +2712,54 @@ extension on Translations {
 			'room.lineN' => ({required Object n}) => '线路 ${n}',
 			'room.fullscreen' => '全屏',
 			'room.exitFullscreen' => '退出全屏',
+			'room.barrageOn' => '显示弹幕',
+			'room.barrageOff' => '关闭弹幕',
+			'room.toolbox' => '工具箱',
+			'room.copyLink' => '复制房间链接',
+			'room.linkCopied' => '已复制',
+			'room.record' => '录制',
+			'room.stopRecording' => '停止录制',
+			'room.rateNormal' => '原速',
+			'room.audienceWaiting' => '等待观众数据',
+			'room.mute' => '静音',
+			'room.unmute' => '取消静音',
+			'room.danmakuOn' => '弹幕已开',
+			'room.sleepTimer' => '睡眠定时',
+			'room.sleepTimerOn' => '睡眠定时（已开启）',
+			'room.sleepTimerEnable' => '启用播放定时',
+			'room.sleepTimerDesc' => '到时后暂停当前房间的播放',
+			'room.timerDuration' => '定时时长',
+			'room.timerDurationHint' => '1 - 525600 分钟',
+			'room.timerInvalid' => '请输入 1 到 525600 之间的分钟数',
+			'room.timerFinished' => '播放定时已结束，已暂停',
+			'room.minutesUnit' => '分钟',
+			'room.minutesN' => ({required Object minutes}) => '${minutes} 分钟',
+			'room.roomVolume' => '房间音量',
+			'room.roomVolumeDesc' => '设置静音与手机、桌面各自的默认音量',
+			'room.globalMute' => '全局静音',
+			'room.globalMuteSubtitle' => '所有房间以静音开始，音量数值保留',
+			'room.mobileDefaultVolume' => '手机默认音量',
+			'room.desktopDefaultVolume' => '桌面默认音量',
+			'room.resetDefault' => '恢复默认',
+			'room.volumeApplyFailed' => '当前房间无法应用音量，请确认后重试',
+			'room.send' => '发送',
+			'room.localMe' => '我',
+			'room.barrageSettings' => '弹幕设置',
+			'room.keywordBlock' => '关键词屏蔽',
+			'room.barrageHiddenHint' => '弹幕已全局关闭',
+			'room.barrageOnSubtitle' => '在画面上叠加滚动弹幕',
+			'room.barrageFontSize' => '弹幕字号',
+			'room.barrageOpacity' => '弹幕透明度',
+			'room.barrageSettingsNote' => '这些设置即时生效，并作为新房间的默认值',
+			'room.enterLandscapeFullscreen' => '横屏全屏',
+			'room.enterPortraitFullscreenHint' => '继续下滑进入竖屏全屏',
+			'room.portraitPanelResize' => '面板高度',
+			'room.portraitPanelResizeHint' => '拖动调整面板高度',
 			'areas.empty' => '暂无分区',
 			'popular.empty' => '暂时没有热门直播',
 			'remoteSync.title' => '局域网同步',
+			_ => null,
+		} ?? switch (path) {
 			'remoteSync.tileSubtitle' => '在同一网络下的设备间同步关注与历史',
 			'remoteSync.myDevice' => '本机',
 			'remoteSync.noAddress' => '未找到局域网地址',
@@ -2401,6 +2797,7 @@ extension on Translations {
 			'tabs.areas' => '分区',
 			'tabs.search' => '搜索',
 			'tabs.settings' => '设置',
+			'tabs.record' => '录制中心',
 			'window.minimize' => '最小化',
 			'window.maximize' => '最大化',
 			'window.restore' => '还原',
@@ -2411,9 +2808,10 @@ extension on Translations {
 			'closePrompt.remember' => '记住我的选择，不再询问',
 			'shellSettings.sectionWindow' => '窗口',
 			'shellSettings.titleBar' => '窗口标题栏',
+			'shellSettings.titleBarAuto' => '自动（按系统版本）',
 			'shellSettings.titleBarApp' => '应用标题栏',
 			'shellSettings.titleBarSystem' => '系统标题栏',
-			'shellSettings.titleBarHint' => '应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式；切换在重启应用后生效。',
+			'shellSettings.titleBarHint' => '自动：Windows 11 用应用标题栏，Windows 10 用系统标题栏。应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式。切换在重启应用后生效。',
 			'webdav.title' => 'WebDAV 云备份',
 			'webdav.entryTitle' => 'WebDAV 云同步',
 			'webdav.entrySubtitle' => '备份到你自己的 WebDAV 服务器',
@@ -2461,8 +2859,6 @@ extension on Translations {
 			'wallpaper.groupDevice' => '本机图片',
 			'wallpaper.groupDisplay' => '图片显示',
 			'wallpaper.none' => '无背景',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.noneSubtitle' => '保留主题表面',
 			'wallpaper.pickImage' => '选择图片',
 			'wallpaper.pickImageSubtitle' => '从本机选择一张图片',

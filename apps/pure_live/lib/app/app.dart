@@ -6,6 +6,7 @@ import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/app/theme/app_theme.dart';
 import 'package:pure_live/features/wallpaper/wallpaper_background_layer.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart' show TranslationProvider, t;
+import 'package:pure_live/platforms/desktop/shell/window_frame_edge.dart' show WindowFrameEdge;
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The root widget: the app host the chosen design language ships.
@@ -42,9 +43,15 @@ final class PureLiveApp extends ConsumerWidget {
       // behalf: the countdown close and the lifecycle feed the list pages'
       // refresh-on-resume reads. The wallpaper layer sits inside it, once,
       // painting the chosen background behind every route.
-      builder: (context, child) =>
-          AppPreferencesHost(child: TranslationProvider(child: WallpaperBackgroundLayer(child: child!))),
+      // The frame edge is the outermost thing Flutter paints: it sits on the
+      // window's own boundary, over the wallpaper layer, and it is a Windows
+      // concern rather than a route concern, so it belongs here and not in any
+      // scaffold. See WindowFrameEdge for why the app has to draw it at all.
+      builder: (context, child) => WindowFrameEdge(
+        child: AppPreferencesHost(
+          child: TranslationProvider(child: WallpaperBackgroundLayer(child: child!)),
+        ),
+      ),
     );
   }
-
 }

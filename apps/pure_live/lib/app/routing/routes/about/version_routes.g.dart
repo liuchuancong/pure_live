@@ -8,11 +8,8 @@ part of 'version_routes.dart';
 
 List<RouteBase> get $appRoutes => [$versionRoute];
 
-RouteBase get $versionRoute => GoRouteData.$route(
-  path: '/about/version',
-  hasOverriddenOnExit: false,
-  factory: $VersionRoute._fromState,
-);
+RouteBase get $versionRoute =>
+    GoRouteData.$route(path: '/about/version', hasOverriddenOnExit: false, factory: $VersionRoute._fromState);
 
 mixin $VersionRoute on GoRouteData {
   static VersionRoute _fromState(GoRouterState state) => const VersionRoute();
@@ -27,8 +24,7 @@ mixin $VersionRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);

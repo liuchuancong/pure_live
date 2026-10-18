@@ -15,6 +15,7 @@ import 'package:pure_live/app/preferences/app_preferences.dart';
 import 'package:pure_live/app/theme/appearance_store.dart';
 import 'package:pure_live/features/iptv/iptv_preferences.dart';
 import 'package:pure_live/features/multiview/multiview_preferences.dart';
+import 'package:pure_live/l10n/generated/strings.g.dart' show LocaleSettings;
 import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart';
 
 /// The services the app runs on, in the order they depend on each other.
@@ -204,6 +205,14 @@ final class AppServices {
           storageLog.warning('app preferences document ${failure.name} failed', fields: {'error': '$error'}),
     );
     await appPreferences.load();
+
+    // A stored language wins over the system's before the first frame: the tree
+    // is translated by the delegate the app builds around it, so this is the one
+    // moment a locale choice costs nothing.
+    final storedLanguage = appPreferences.value.languageId;
+    if (storedLanguage.isNotEmpty) {
+      LocaleSettings.setLocaleRawSync(storedLanguage);
+    }
 
     // Real files in two trees is a fact the user has to hear about, not
     // something to merge quietly.

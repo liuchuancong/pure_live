@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:live_sites/live_sites.dart' show LiveSite;
 import 'package:pretty_qr_code/pretty_qr_code.dart';
 import 'package:pure_live/features/login/login_providers.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
@@ -27,9 +28,36 @@ final class LoginPage extends ConsumerStatefulWidget {
 final class _LoginPageState extends ConsumerState<LoginPage> {
   int _mode = 0;
 
+  /// The tabs, QR first then the cookie pastes, in the registry's order.
+  ///
+  /// The page shows whichever sign-in flows this build's sites actually ship:
+  /// a platform that gains an auth adapter grows a tab here without an edit.
+  List<LiveSite> _tabs() {
+    final sites = ref.watch(authSitesProvider);
+    final qr = [
+      for (final site in sites)
+        if (siteUsesQrLogin(site.manifest.id)) site,
+    ];
+    final paste = [
+      for (final site in sites)
+        if (!siteUsesQrLogin(site.manifest.id)) site,
+    ];
+    return [...qr, ...paste];
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final tabs = _tabs();
+    if (tabs.isEmpty) {
+      return PureScaffold(
+        appBar: PureAppBar(title: t.login.title),
+        body: Center(child: Text(t.account.noAuthSites)),
+      );
+    }
+    final index = _mode.clamp(0, tabs.length - 1);
+    final selected = tabs[index];
+    final qrSelected = siteUsesQrLogin(selected.manifest.id);
     return PureScaffold(
       appBar: PureAppBar(title: t.login.title),
       body: Column(
@@ -37,24 +65,28 @@ final class _LoginPageState extends ConsumerState<LoginPage> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: PureSegmented(
-              labels: [t.login.platformBilibili, t.login.platformDouyu, t.login.platformHuya],
-              index: _mode,
+              labels: [for (final site in tabs) _siteName(site, context)],
+              index: index,
               expand: true,
-              onChanged: (index) => setState(() => _mode = index),
+              onChanged: (value) => setState(() => _mode = value),
             ),
           ),
           Expanded(
-            child: switch (_mode) {
-              0 => const Center(child: _QrBody()),
-              _ => Center(
-                child: _PasteCard(key: ValueKey(loginSites[_mode]), siteId: loginSites[_mode]),
-              ),
-            },
+            child: Center(
+              child: qrSelected
+                  // One QR tab per build: the flow is the same session loop, the
+                  // site is whichever of the auth sites declares it.
+                  ? const _QrBody()
+                  : _PasteCard(key: ValueKey(selected.manifest.id), siteId: selected.manifest.id),
+            ),
           ),
         ],
       ),
     );
   }
+
+  static String _siteName(LiveSite site, BuildContext context) =>
+      site.manifest.localizedName(Localizations.localeOf(context).toLanguageTag(), 'zh-CN');
 }
 
 /// The bilibili half of the page: the QR flow, or the honest "unsupported"
@@ -135,10 +167,7 @@ final class _PasteCardState extends ConsumerState<_PasteCard> {
               ),
               if (paste.phase == CookiePastePhase.failure) ...[
                 const SizedBox(height: 8),
-                Text(
-                  paste.message ?? '',
-                  style: theme.text.caption.copyWith(color: theme.colors.error),
-                ),
+                Text(paste.message ?? '', style: theme.text.caption.copyWith(color: theme.colors.error)),
               ],
               const SizedBox(height: 16),
               PureButton(
@@ -162,11 +191,7 @@ final class _PasteCardState extends ConsumerState<_PasteCard> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        PureAvatar(
-          name: account?.nickname,
-          src: _avatarOf(account?.avatar),
-          size: 64,
-        ),
+        PureAvatar(name: account?.nickname, src: _avatarOf(account?.avatar), size: 64),
         const SizedBox(height: 12),
         Text(context.t.login.success, textAlign: TextAlign.center, style: theme.text.title),
         const SizedBox(height: 6),
@@ -236,11 +261,7 @@ final class _FlowCard extends ConsumerWidget {
           LoginPhase.success => _phaseColumn(
             context,
             children: [
-              PureAvatar(
-                name: flow.account?.nickname,
-                src: _avatarOf(flow.account?.avatar),
-                size: 64,
-              ),
+              PureAvatar(name: flow.account?.nickname, src: _avatarOf(flow.account?.avatar), size: 64),
               const SizedBox(height: 12),
               _status(context, context.t.login.success),
               const SizedBox(height: 6),
@@ -297,11 +318,8 @@ final class _FlowCard extends ConsumerWidget {
   Widget _phaseColumn(BuildContext context, {required List<Widget> children}) =>
       Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: children);
 
-  Widget _status(BuildContext context, String text) => Text(
-    text,
-    textAlign: TextAlign.center,
-    style: PureTheme.of(context).text.title,
-  );
+  Widget _status(BuildContext context, String text) =>
+      Text(text, textAlign: TextAlign.center, style: PureTheme.of(context).text.title);
 
   /// The QR code on its white ground (the code has to scan against any
   /// theme), dimmed once the platform has expired it.
@@ -314,9 +332,7 @@ final class _FlowCard extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.all(Radius.circular(8))),
-      child: dimmed
-          ? ExcludeSemantics(child: Opacity(opacity: 0.35, child: ground))
-          : ground,
+      child: dimmed ? ExcludeSemantics(child: Opacity(opacity: 0.35, child: ground)) : ground,
     );
   }
 

@@ -11,10 +11,12 @@ import 'package:live_record_core/live_record_core.dart'
 import 'package:live_sites/live_sites.dart' show LiveRoomProvider, LiveSite, LiveSiteManifest;
 import 'package:open_file/open_file.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/shell/main_layout.dart';
+import 'package:pure_live/app/shell/main_page_frame.dart';
 import 'package:pure_live/features/recorder/recorder_engine.dart';
 import 'package:pure_live/features/recorder/recorder_preferences.dart';
 import 'package:pure_live/features/recorder/recorder_providers.dart';
-import 'package:pure_live/features/settings/widgets/settings_sections.dart';
+import 'package:pure_live/features/settings/widgets/settings_chooser.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
@@ -207,23 +209,20 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
       }
     });
 
-    return PureScaffold(
-      appBar: PureAppBar(
-        title: t.recorder.title,
-        actions: [
-          IconButton(
-            tooltip: t.recorder.addRoom,
-            icon: const Icon(Icons.add_circle_outline),
-            onPressed: runtime.hasValue ? _addRoom : null,
-          ),
-          IconButton(
-            tooltip: t.recorder.openFolder,
-            icon: const Icon(Icons.folder_open_outlined),
-            onPressed: () => _openOutputDirectory(root),
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
+    return MainPageFrame(
+      title: t.recorder.title,
+      actions: [
+        PureIconButton(
+          tooltip: t.recorder.addRoom,
+          icon: Icons.add_circle_outline,
+          onPressed: runtime.hasValue ? _addRoom : null,
+        ),
+        PureIconButton(
+          tooltip: t.recorder.openFolder,
+          icon: Icons.folder_open_outlined,
+          onPressed: () => _openOutputDirectory(root),
+        ),
+      ],
       body: runtime.when(
         loading: () => PureLoading(message: t.recorder.restoring),
         error: (error, _) => PureError(
@@ -231,21 +230,93 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           onRetry: () => ref.invalidate(recorderRuntimeProvider),
           retryLabel: t.common.retry,
         ),
-        data: (_) => _buildList(context, preferences, root),
+        data: (_) => AdaptiveBreakpoints.of(context).isAtLeastExpanded
+            ? AdaptiveContentLayout(
+                // The desktop arrangement: settings and the add action ride a
+                // context column, the tasks keep the wide reading pane.
+                primary: _buildTasks(context),
+                secondary: _buildSettingsPane(context, preferences, root),
+              )
+            : LayoutBuilder(
+                builder: (context, constraints) {
+                  // A recording task is a wide information card, not a tile:
+                  // cap the reading column so it does not stretch across an
+                  // ultrawide window.
+                  final width = constraints.maxWidth > 1040 ? 1040.0 : constraints.maxWidth;
+                  return Align(
+                    alignment: Alignment.topCenter,
+                    child: SizedBox(
+                      width: width,
+                      height: constraints.maxHeight,
+                      child: _buildList(context, preferences, root),
+                    ),
+                  );
+                },
+              ),
       ),
     );
   }
 
+  /// The desktop settings column: output directory, segment length and the
+  /// add-room action — the three things a viewer reaches for between lists.
+  Widget _buildSettingsPane(BuildContext context, RecorderPreferences preferences, String root) {
+    final t = context.t;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(0, 12, 0, 32),
+      children: [
+        PureCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              PureListRow(
+                leading: const Icon(Icons.folder_outlined, size: 22),
+                title: t.recorder.outputDirectory,
+                subtitle: root.isEmpty ? t.recorder.outputDirectoryDefault : root,
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => _chooseDirectory(preferences),
+              ),
+              PureListRow(
+                leading: const Icon(Icons.timelapse_outlined, size: 22),
+                title: t.recorder.segmentLength,
+                subtitle: t.recorder.minutesValue(minutes: preferences.clampedSegmentMinutes),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => _chooseSegmentLength(preferences),
+                divided: false,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        PureButton(label: t.recorder.addRoom, icon: Icons.add, expand: true, onPressed: _addRoom),
+      ],
+    );
+  }
+
+  /// The desktop task pane: the status filter over the task cards.
+  Widget _buildTasks(BuildContext context) {
+    final t = context.t;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(0, 12, 0, 32),
+      children: [
+        PureSegmented(
+          labels: [t.recorder.filterAll, t.recorder.filterActive, t.recorder.filterFinished],
+          index: _filter,
+          onChanged: (index) => setState(() => _filter = index),
+          expand: true,
+        ),
+        const SizedBox(height: 12),
+        ..._taskCards(context),
+      ],
+    );
+  }
+
+  /// The compact stack: settings card, filter and tasks in one scroll — the
+  /// phone and narrow-desktop form.
   Widget _buildList(BuildContext context, RecorderPreferences preferences, String root) {
     final t = context.t;
-    final tasks = _ordered(switch (_filter) {
-      1 => _tasks.where((task) => statusIsBusy(task.status)).toList(growable: false),
-      2 => _tasks.where((task) => !statusIsBusy(task.status)).toList(growable: false),
-      _ => _tasks,
-    });
-
     return ListView(
-      padding: const EdgeInsets.all(12),
+      padding: MainLayout.bodyPadding(context, top: 12, bottom: 32),
       children: [
         PureCard(
           padding: EdgeInsets.zero,
@@ -278,27 +349,44 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           expand: true,
         ),
         const SizedBox(height: 12),
-        if (tasks.isEmpty)
-          PureEmpty(
-            title: t.recorder.emptyTitle,
-            message: t.recorder.emptySubtitle,
-            icon: Icons.video_collection_outlined,
-            action: PureButton(label: t.recorder.addRoom, icon: Icons.add, onPressed: _addRoom),
-          )
-        else
-          for (var i = 0; i < tasks.length; i++) ...[
-            RecorderTaskCard(
-              key: ValueKey(tasks[i].taskId),
-              task: tasks[i],
-              onStop: () => _stop(tasks[i]),
-              onFinish: () => _finish(tasks[i]),
-              onRestart: () => _restart(tasks[i]),
-            ),
-            if (i < tasks.length - 1) const SizedBox(height: 12),
-          ],
-        const SizedBox(height: 32),
+        ..._taskCards(context),
       ],
     );
+  }
+
+  /// The visible tasks after the status filter, before ordering.
+  List<RecordTask> _filtered() => switch (_filter) {
+    1 => _tasks.where((task) => statusIsBusy(task.status)).toList(growable: false),
+    2 => _tasks.where((task) => !statusIsBusy(task.status)).toList(growable: false),
+    _ => _tasks,
+  };
+
+  /// The task cards with their separators, or the empty state.
+  List<Widget> _taskCards(BuildContext context) {
+    final t = context.t;
+    final tasks = _ordered(_filtered());
+    if (tasks.isEmpty) {
+      return [
+        PureEmpty(
+          title: t.recorder.emptyTitle,
+          message: t.recorder.emptySubtitle,
+          icon: Icons.video_collection_outlined,
+          action: PureButton(label: t.recorder.addRoom, icon: Icons.add, onPressed: _addRoom),
+        ),
+      ];
+    }
+    return [
+      for (var i = 0; i < tasks.length; i++) ...[
+        RecorderTaskCard(
+          key: ValueKey(tasks[i].taskId),
+          task: tasks[i],
+          onStop: () => _stop(tasks[i]),
+          onFinish: () => _finish(tasks[i]),
+          onRestart: () => _restart(tasks[i]),
+        ),
+        const SizedBox(height: 12),
+      ],
+    ];
   }
 
   /// Busy tasks first, then the newest.

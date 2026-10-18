@@ -1,8 +1,10 @@
 # The vendored settings_ui 4.0.2 tree.
 #
-# These files are third-party code (Apache-2.0, yako-dev/flutter-settings-ui)
-# kept byte-comparable against upstream so that bumping the vendor is a re-copy
-# plus the patch list in ../../../NOTICE.md, not a re-review of 14,000 lines.
+# These files are third-party code (Apache-2.0, yako-dev/flutter-settings-ui),
+# kept upstream's own files in upstream's own directories so that bumping the
+# vendor is a re-copy plus the patch list in ../../../NOTICE.md rather than a
+# re-review of 14,000 lines. The workspace formatter reflows them; that is
+# cosmetic and NOTICE.md says so.
 # Rewriting it into this workspace's house style would destroy that property and
 # buy nothing: the rules turned off below are formatting and documentation
 # preferences, not correctness rules. Every correctness rule very_good_analysis

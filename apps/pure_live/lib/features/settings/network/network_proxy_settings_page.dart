@@ -4,18 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show FilteringTextInputFormatter, LengthLimitingTextInputFormatter;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
-import 'package:pure_live/features/settings/widgets/settings_sections.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_settings_ui/pure_settings_ui.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The network proxy settings page (3.x `NetworkProxySettingsPage`, the app
 /// proxy half): route outgoing requests through a user HTTP proxy.
 ///
 /// The policy the network stack consults per request reads the persisted
-/// preferences' in-memory value, so flipping the switch or editing the
-/// endpoint reroutes new connections immediately — no restart. The player
-/// proxy of the reference has no separate backing in this build and stays
-/// out.
+/// preferences' in-memory value, so flipping the switch or editing the endpoint
+/// reroutes new connections immediately — no restart. The player proxy of the
+/// reference has no separate backing in this build and stays out.
 final class NetworkProxySettingsPage extends ConsumerStatefulWidget {
   /// The network proxy settings page.
   const new({super.key});
@@ -53,7 +52,9 @@ final class _NetworkProxySettingsPageState extends ConsumerState<NetworkProxySet
   void _updateHost(String raw) {
     final normalized = raw.trim();
     unawaited(
-      ref.read(appPreferencesProvider.notifier).update((p) => p.copyWith(proxyHost: normalized.isEmpty ? '127.0.0.1' : normalized)),
+      ref
+          .read(appPreferencesProvider.notifier)
+          .update((p) => p.copyWith(proxyHost: normalized.isEmpty ? '127.0.0.1' : normalized)),
     );
   }
 
@@ -75,73 +76,75 @@ final class _NetworkProxySettingsPageState extends ConsumerState<NetworkProxySet
     final preferences = ref.watch(appPreferencesProvider);
     return PureScaffold(
       appBar: PureAppBar(title: t.settings.proxySettings),
-      body: ListView(
-        padding: const EdgeInsets.all(12),
-        children: [
-          SettingsSection.card(
-            label: t.settings.proxyGroup,
+      body: SettingsList(
+        sections: [
+          SettingsSection(
+            title: Text(t.settings.proxyGroup),
             tiles: [
-              SettingsSwitchTile(
-                icon: Icons.vpn_key_outlined,
-                title: t.settings.proxyEnable,
-                subtitle: t.settings.proxyEnableSubtitle,
-                value: preferences.proxyEnabled,
-                onChanged: (value) {
-                  unawaited(ref.read(appPreferencesProvider.notifier).update((p) => p.copyWith(proxyEnabled: value)));
-                },
+              SettingsTile.switchTile(
+                leading: const Icon(Icons.vpn_key_outlined),
+                title: Text(t.settings.proxyEnable),
+                description: Text(t.settings.proxyEnableSubtitle),
+                initialValue: preferences.proxyEnabled,
+                onToggle: (value) =>
+                    unawaited(ref.read(appPreferencesProvider.notifier).update((p) => p.copyWith(proxyEnabled: value))),
               ),
             ],
           ),
-          if (preferences.proxyEnabled) ...[
-            const SettingsSectionGap(),
+          // The endpoint fields exist only for a proxy that is on; a row the
+          // switch hides is the reference's own gate, kept here.
+          if (preferences.proxyEnabled)
             SettingsSection(
-              label: t.settings.proxyEndpoint,
-              children: [
-                PureCard(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: _host,
-                        keyboardType: TextInputType.url,
-                        autocorrect: false,
-                        enableSuggestions: false,
-                        decoration: InputDecoration(
-                          labelText: t.settings.proxyHost,
-                          hintText: '127.0.0.1',
-                          border: const OutlineInputBorder(),
-                          isDense: true,
+              title: Text(t.settings.proxyEndpoint),
+              tiles: [
+                CustomSettingsTile(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextField(
+                          controller: _host,
+                          keyboardType: TextInputType.url,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          decoration: InputDecoration(
+                            labelText: t.settings.proxyHost,
+                            hintText: '127.0.0.1',
+                            border: const OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          onChanged: _updateHost,
                         ),
-                        onChanged: _updateHost,
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _port,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(5)],
-                        decoration: InputDecoration(
-                          labelText: t.settings.proxyPort,
-                          hintText: '7890',
-                          errorText: _portInvalid ? t.settings.proxyPortInvalid : null,
-                          border: const OutlineInputBorder(),
-                          isDense: true,
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _port,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(5),
+                          ],
+                          decoration: InputDecoration(
+                            labelText: t.settings.proxyPort,
+                            hintText: '7890',
+                            errorText: _portInvalid ? t.settings.proxyPortInvalid : null,
+                            border: const OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          onChanged: _updatePort,
                         ),
-                        onChanged: _updatePort,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        t.settings.proxyHint,
-                        style: theme.text.caption.copyWith(color: theme.colors.textSecondary),
-                      ),
-                    ],
+                        const SizedBox(height: 8),
+                        Text(
+                          t.settings.proxyHint,
+                          style: theme.text.caption.copyWith(color: theme.colors.textSecondary),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
-          ],
-          const SizedBox(height: 32),
         ],
       ),
     );

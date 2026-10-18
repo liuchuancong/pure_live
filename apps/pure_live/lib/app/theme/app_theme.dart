@@ -5,7 +5,6 @@ import 'package:pure_live/app/environment/env.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
-
 /// The Material surface the chosen appearance resolves to.
 ///
 /// The app no longer hosts itself in Material — the root widget asks the active

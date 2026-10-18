@@ -55,13 +55,15 @@ bool FlutterWindow::OnCreate() {
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
-    // The window comes up through here, so a hidden start skips it: `show()` on
-    // window_manager is what raises it later, when the viewer clicks the tray or a
-    // second instance hands over its request.
-    if (!StartsHidden()) {
-      this->Show();
-    }
-  });
+  OutputDebugStringW(L"[PureLive] First frame callback fired\n");
+
+  if (!StartsHidden()) {
+    OutputDebugStringW(L"[PureLive] Showing main window\n");
+    this->Show();
+  } else {
+    OutputDebugStringW(L"[PureLive] Hidden startup requested\n");
+  }
+});
 
   // Flutter can complete the first frame before the "show window" callback is
   // registered. The following call ensures a frame is pending to ensure the

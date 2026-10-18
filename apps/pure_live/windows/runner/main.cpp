@@ -7,42 +7,45 @@
 #include "flutter_window.h"
 #include "utils.h"
 
-int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
-                      _In_ wchar_t *command_line, _In_ int show_command) {
-  // Attach to console when present (e.g., 'flutter run') or create a
-  // new console when running with a debugger.
-  if (!::AttachConsole(ATTACH_PARENT_PROCESS) && ::IsDebuggerPresent()) {
+int APIENTRY wWinMain(
+    _In_ HINSTANCE instance,
+    _In_opt_ HINSTANCE prev,
+    _In_ wchar_t* command_line,
+    _In_ int show_command) {
+  if (!::AttachConsole(ATTACH_PARENT_PROCESS) &&
+      ::IsDebuggerPresent()) {
     CreateAndAttachConsole();
   }
 
-  // Initialize COM, so that it is available for use in the library and/or
-  // plugins.
   ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
-  // Frame takeover for the self-drawn title bar (the shell's
-  // `windowChrome: app` mode): bitsdojo subclasses the window before creation
-  // and answers WM_NCCALCSIZE / WM_NCHITTEST itself, which keeps edge resize
-  // and Aero Snap while the caption strip is drawn in Flutter. Only the frame
-  // is taken — window management stays with window_manager, which is left on
-  // TitleBarStyle.normal so the two never fight over the non-client area.
-  // Deliberately NOT BDW_HIDE_ON_STARTUP: the runner's own `--hidden` handling
-  // owns launch visibility. The choice is made once here, before the window
-  // exists; switching modes is a next-start setting, not a runtime toggle.
-  bitsdojo_window_configure(BDW_CUSTOM_FRAME);
+  // Use the native frame unless the user selected a custom Flutter frame.
+  const bool use_native_frame = UseNativeWindowFrame();
+
+  if (use_native_frame) {
+    bitsdojo_window_configure(0u);
+  } else {
+    bitsdojo_window_configure(BDW_CUSTOM_FRAME);
+  }
 
   flutter::DartProject project(L"data");
 
   std::vector<std::string> command_line_arguments =
       GetCommandLineArguments();
 
-  project.set_dart_entrypoint_arguments(std::move(command_line_arguments));
+  project.set_dart_entrypoint_arguments(
+      std::move(command_line_arguments));
 
   FlutterWindow window(project);
+
   Win32Window::Point origin(10, 10);
   Win32Window::Size size(1280, 720);
+
   if (!window.Create(L"pure_live", origin, size)) {
+    ::CoUninitialize();
     return EXIT_FAILURE;
   }
+
   window.SetQuitOnClose(true);
 
   ::MSG msg;

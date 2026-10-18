@@ -8,11 +8,8 @@ part of 'splash_routes.dart';
 
 List<RouteBase> get $appRoutes => [$splashRoute];
 
-RouteBase get $splashRoute => GoRouteData.$route(
-  path: '/splash',
-  hasOverriddenOnExit: false,
-  factory: $SplashRoute._fromState,
-);
+RouteBase get $splashRoute =>
+    GoRouteData.$route(path: '/splash', hasOverriddenOnExit: false, factory: $SplashRoute._fromState);
 
 mixin $SplashRoute on GoRouteData {
   static SplashRoute _fromState(GoRouterState state) => const SplashRoute();
@@ -27,8 +24,7 @@ mixin $SplashRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);

@@ -19,7 +19,10 @@
     "clear": "Clear",
     "loading": "Loading",
     "empty": "Nothing here yet",
-    "pageOf": "Page {page: int} of {total: int}"
+    "pageOf": "Page {page: int} of {total: int}",
+    "back": "Back",
+    "menu": "Menu",
+    "off": "Off"
   },
   "tray": {
     "show": "Show Pure Live",
@@ -56,7 +59,10 @@
     "userId": "ID {id: String}",
     "platformBilibili": "bilibili account",
     "platformDouyu": "douyu account",
-    "platformHuya": "huya account"
+    "platformHuya": "huya account",
+    "noAuthSites": "No platform in this build can sign in yet",
+    "clearAllAccounts": "Clear all accounts",
+    "clearAllAccountsHint": "Sign out of every platform and drop the stored credentials"
   },
   "settings": {
     "appearance": "Appearance",
@@ -190,7 +196,51 @@
     "sectionRecorder": "Recording",
     "recorderSubtitle": "Watch rooms and record them live",
     "pasteCookie": "Paste cookie to sign in",
-    "accountSignedInCount": "Signed in on {count: int} platforms"
+    "accountSignedInCount": "Signed in on {count: int} platforms",
+    "sectionVideo": "Video & danmaku",
+    "video": "Video & danmaku",
+    "videoSubtitle": "What a room opens with",
+    "groupDanmaku": "Danmaku",
+    "groupAudio": "Audio",
+    "danmakuVisible": "Show danmaku by default",
+    "danmakuVisibleSubtitle": "Overlay the barrage when a room opens",
+    "defaultVolume": "Default volume",
+    "defaultVolumeSubtitle": "The level the next stream starts at",
+    "language": "Language",
+    "languageSubtitle": "Follow the system, or pick one",
+    "languageSystem": "Follow system",
+    "groupAppearance": "Barrage look",
+    "groupLocalInteraction": "Local interaction",
+    "localInteraction": "Local interaction",
+    "localInteractionSubtitle": "Adds the room composer; your messages show only on your screen",
+    "localInteractionName": "Local display name",
+    "mpvTuning": "Player tuning",
+    "mpvTuningSubtitle": "libmpv output, decoding and cache options",
+    "mpvOutputSection": "Output",
+    "mpvCustomOutput": "Custom output drivers",
+    "mpvCustomOutputSubtitle": "Off keeps the engine's platform defaults; on lets the drivers below be written",
+    "mpvNeedsCustomOutput": "Turn on \"Custom output drivers\" first",
+    "mpvVideoOutput": "Video output (vo)",
+    "mpvAudioOutput": "Audio output (ao)",
+    "mpvDecodeSection": "Decoding & rendering",
+    "mpvHardwareDecoder": "Hardware decoder (hwdec)",
+    "mpvDeinterlace": "Deinterlace",
+    "mpvInterpolation": "Frame interpolation",
+    "mpvInterpolationSubtitle": "Smoother motion at a higher GPU cost; desktop only",
+    "mpvScaler": "Scaler (scale)",
+    "mpvCacheSection": "Cache",
+    "mpvCacheSeconds": "Stream cache seconds",
+    "mpvCacheSecondsSubtitle": "0 leaves the engine's cache alone",
+    "mpvReset": "Reset defaults",
+    "mpvResetSubtitle": "Clears every tuning on this page",
+    "mpvEffectiveNote": "How it takes effect",
+    "mpvEffectiveNoteBody": "Video/audio output and the hardware decoder land on the next stream open; the rest apply to the playing room immediately.",
+    "localConfig": "Local configuration",
+    "localConfigSubtitle": "A read-only view of the documents this device stores",
+    "localConfigNote": "This page writes nothing; edit the settings it mirrors instead.",
+    "localConfigCopy": "Copy this document",
+    "localConfigApp": "General preferences",
+    "localConfigAppearance": "Appearance"
   },
   "recorder": {
     "title": "Recorder",
@@ -277,7 +327,50 @@
     "online": "Online",
     "lineN": "Line {n}",
     "fullscreen": "Fullscreen",
-    "exitFullscreen": "Exit fullscreen"
+    "exitFullscreen": "Exit fullscreen",
+    "barrageOn": "Show danmaku",
+    "barrageOff": "Hide danmaku",
+    "toolbox": "Toolbox",
+    "copyLink": "Copy room link",
+    "linkCopied": "Copied",
+    "record": "Record",
+    "stopRecording": "Stop recording",
+    "rateNormal": "Normal speed",
+    "audienceWaiting": "Waiting for audience data",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "danmakuOn": "Danmaku on",
+    "sleepTimer": "Sleep timer",
+    "sleepTimerOn": "Sleep timer (on)",
+    "sleepTimerEnable": "Enable the playback timer",
+    "sleepTimerDesc": "Pauses this room's playback when it runs out",
+    "timerDuration": "Timer duration",
+    "timerDurationHint": "1 - 525600 minutes",
+    "timerInvalid": "Enter minutes between 1 and 525600",
+    "timerFinished": "Playback timer finished — paused",
+    "minutesUnit": "min",
+    "minutesN": "{minutes} min",
+    "roomVolume": "Room volume",
+    "roomVolumeDesc": "The mute and the per-device default levels",
+    "globalMute": "Global mute",
+    "globalMuteSubtitle": "Rooms open silenced; the level is kept",
+    "mobileDefaultVolume": "Phone default volume",
+    "desktopDefaultVolume": "Desktop default volume",
+    "resetDefault": "Reset defaults",
+    "volumeApplyFailed": "The active room refused the volume update",
+    "send": "Send",
+    "localMe": "Me",
+    "barrageSettings": "Barrage settings",
+    "keywordBlock": "Keyword block",
+    "barrageHiddenHint": "Barrage is globally off",
+    "barrageOnSubtitle": "Scroll the barrage over the picture",
+    "barrageFontSize": "Barrage text size",
+    "barrageOpacity": "Barrage opacity",
+    "barrageSettingsNote": "Applies immediately and is the default for new rooms",
+    "enterLandscapeFullscreen": "Landscape fullscreen",
+    "enterPortraitFullscreenHint": "Drag down to enter portrait fullscreen",
+    "portraitPanelResize": "Panel height",
+    "portraitPanelResizeHint": "Drag to resize the panel"
   },
   "areas": {
     "empty": "No areas here"
@@ -394,7 +487,8 @@
     "none": "No backups yet",
     "delete": "Delete backup",
     "restore": "Restore",
-    "restoreConfirm": "Overwrite current data with “{name: String}”? The app restarts."
+    "restoreConfirm": "Overwrite current data with “{name: String}”? The app restarts.",
+    "sectionCloud": "Cloud & sync"
   },
   "about": {
     "title": "About",
@@ -425,7 +519,8 @@
     "copyLink": "Copy link",
     "copied": "Link copied",
     "download": "Download",
-    "assetMeta": "{size: String} · {count: int} downloads"
+    "assetMeta": "{size: String} · {count: int} downloads",
+    "startupUpdateBody": "Version {tag} is out. Open the update page now?"
   },
   "shield": {
     "title": "Danmaku shield",
@@ -433,7 +528,9 @@
     "users": "Users",
     "regexes": "Regexes",
     "add": "Add",
-    "none": "Nothing here"
+    "none": "Nothing here",
+    "keywordHint": "Keyword to block",
+    "emptyKeyword": "Type a keyword first"
   },
   "multiview": {
     "title": "Multi-view",
@@ -503,7 +600,8 @@
     "popular": "Popular",
     "areas": "Areas",
     "search": "Search",
-    "settings": "Settings"
+    "settings": "Settings",
+    "record": "Recordings"
   },
   "window": {
     "minimize": "Minimize",
@@ -520,9 +618,10 @@
   "shellSettings": {
     "sectionWindow": "Window",
     "titleBar": "Window title bar",
+    "titleBarAuto": "Auto (by Windows version)",
     "titleBarApp": "App title bar",
     "titleBarSystem": "System title bar",
-    "titleBarHint": "The app title bar is drawn by Pure Live; the system title bar uses the native Windows style. A switch applies after the app restarts."
+    "titleBarHint": "Auto: the app title bar on Windows 11, the system title bar on Windows 10. The app title bar is drawn by Pure Live; the system title bar is the native Windows one. A switch applies after the app restarts."
   },
   "webdav": {
     "title": "WebDAV cloud backup",

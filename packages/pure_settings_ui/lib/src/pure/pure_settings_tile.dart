@@ -49,13 +49,7 @@ class PureSettingsRowScope extends InheritedWidget {
 /// [_PureWidgetRow], so an inline icon or a badge in a title still renders.
 class PureSettingsTile extends StatelessWidget {
   /// A row drawing [tile].
-  const new(
-    this.tile, {
-    this.hideLeading = false,
-    this.selected = false,
-    this.semanticsSelected,
-    super.key,
-  });
+  const new(this.tile, {this.hideLeading = false, this.selected = false, this.semanticsSelected, super.key});
 
   /// The tile's fields, with its destination already folded into `onPressed`.
   final SettingsTileData tile;
@@ -82,7 +76,7 @@ class PureSettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final settings = SettingsTheme.of(context).themeData;
     final onTap = _tap(context);
-    final trailing = _trailing(context, settings);
+    final trailing = _trailing(settings);
     final leading = hideLeading ? null : tile.leading;
     final textual = pureSlotsAreText([tile.title, tile.titleDescription, tile.description, tile.value]);
 
@@ -132,7 +126,7 @@ class PureSettingsTile extends StatelessWidget {
 
   /// The row's end: the switch, or the value, the caller's trailing widget and
   /// the navigation chevron, in that order.
-  Widget? _trailing(BuildContext context, SettingsThemeData settings) {
+  Widget? _trailing(SettingsThemeData settings) {
     if (tile.isSwitch) {
       return tile.labelSwitchIfSeparate(
         PureSwitch(value: tile.initialValue, onChanged: tile.enabled ? tile.onToggle : null),
@@ -143,9 +137,7 @@ class PureSettingsTile extends StatelessWidget {
       if (value != null)
         tileValue(
           value,
-          style: (settings.tileDescriptionTextStyle ?? const TextStyle()).copyWith(
-            color: settings.trailingTextColor,
-          ),
+          style: (settings.tileDescriptionTextStyle ?? const TextStyle()).copyWith(color: settings.trailingTextColor),
           maxWidth: pureSettingsValueMaxWidth,
         ),
       if (tile.trailing != null) tile.trailing!,

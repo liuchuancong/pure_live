@@ -20,13 +20,22 @@ import 'package:skeletonizer/skeletonizer.dart';
 /// the placeholder without a layout jump.
 final class FeedLoadingPlaceholder extends ConsumerWidget {
   /// A placeholder tiling like [delegateBuilder]'s grid.
-  const new({required this.delegateBuilder, this.rows = 3, super.key});
+  const new({
+    required this.delegateBuilder,
+    this.rows = 3,
+    this.padding = const EdgeInsets.all(PureSpacing.sm),
+    super.key,
+  });
 
   /// The grid delegate the bones lay into, for the resolved width.
   final SliverGridDelegateWithFixedCrossAxisCount Function(double width) delegateBuilder;
 
   /// How many rows of bones to draw.
   final int rows;
+
+  /// The grid's own padding. It must match the inset the delegate took back out
+  /// of the width, or the bones stand wider than the cards they replace.
+  final EdgeInsetsGeometry padding;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -46,7 +55,7 @@ final class FeedLoadingPlaceholder extends ConsumerWidget {
                 child: GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(PureSpacing.sm),
+                  padding: padding,
                   gridDelegate: delegateBuilder(constraints.maxWidth),
                   itemCount: delegateBuilder(constraints.maxWidth).crossAxisCount * rows,
                   itemBuilder: (context, index) => const _BoneTile(),
@@ -74,7 +83,10 @@ final class _BoneTile extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const AspectRatio(aspectRatio: 16 / 9, child: ColoredBox(color: Colors.white24)),
+        const AspectRatio(
+          aspectRatio: 16 / 9,
+          child: ColoredBox(color: Colors.white24),
+        ),
         Padding(
           padding: const EdgeInsets.all(10),
           child: Row(
@@ -90,7 +102,11 @@ final class _BoneTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    SizedBox(height: 12, width: double.infinity, child: ColoredBox(color: Colors.white24)),
+                    SizedBox(
+                      height: 12,
+                      width: double.infinity,
+                      child: ColoredBox(color: Colors.white24),
+                    ),
                     SizedBox(height: 6),
                     SizedBox(width: 96, height: 10, child: ColoredBox(color: Color(0x26FFFFFF))),
                   ],

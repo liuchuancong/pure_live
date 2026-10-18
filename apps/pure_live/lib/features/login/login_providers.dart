@@ -9,17 +9,34 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart'
-    show LiveAuthCapability, LiveAuthPollStatus, LiveAuthSession, LiveCredential, LiveSiteError;
+    show LiveAuthCapability, LiveAuthPollStatus, LiveAuthSession, LiveCredential, LiveSite, LiveSiteError;
 import 'package:pure_live/app/providers/app_providers.dart' show sitesProvider;
 
 import 'package:pure_live/features/login/login_repository.dart';
 
-/// The sites the sign-in covers, in the login page picker's order: bilibili's
-/// QR, then the two cookie pastes.
-const List<String> loginSites = <String>['bilibili', 'douyu', 'huya'];
+/// The sites the build can sign somebody into, in registration order.
+///
+/// The account hub's list and the login page's picker both read this, so a
+/// platform that grows an auth adapter appears in both without a second edit —
+/// the reference ships one cookie page per platform it can sign in, and a
+/// hardcoded list is how that list goes stale.
+final authSitesProvider = Provider<List<LiveSite>>(
+  (ref) => [
+    for (final site in ref.watch(sitesProvider).registry.all)
+      if (site.capability<LiveAuthCapability>() != null) site,
+  ],
+);
 
-/// The site whose login is the QR flow (the other two sign in by paste).
+/// The site whose login is the QR flow (the others sign in by paste).
+///
+/// `LiveAuthCapability` answers both flows and throws `UnsupportedError` from
+/// the one a platform does not ship, which is not something a row can ask
+/// without trying to start a session — so the flow a site signs in with stays
+/// stated here until the capability says it.
 const String qrLoginSite = 'bilibili';
+
+/// Whether a site's row offers the QR scan or the cookie paste.
+bool siteUsesQrLogin(String siteId) => siteId == qrLoginSite;
 
 /// The auth capability of a sign-in site, null when the build ships no such
 /// adapter or the adapter signs nobody in. The registry is static after
@@ -124,7 +141,7 @@ final class AccountController extends Notifier<LiveCredential?> {
 /// settings row read this.
 final signedInAccountsProvider = Provider<Map<String, LiveCredential>>((ref) {
   final accounts = <String, LiveCredential>{};
-  for (final siteId in loginSites) {
+  for (final siteId in ref.watch(authSitesProvider).map((site) => site.manifest.id)) {
     final credential = ref.watch(accountProvider(siteId));
     if (credential != null) {
       accounts[siteId] = credential;
@@ -161,7 +178,8 @@ final class CookiePasteState {
   const CookiePasteState.verifying() : this(phase: CookiePastePhase.verifying);
 
   /// The paste verified; [account] is the credential it granted.
-  const CookiePasteState.success({required LiveCredential account}) : this(phase: CookiePastePhase.success, account: account);
+  const CookiePasteState.success({required LiveCredential account})
+    : this(phase: CookiePastePhase.success, account: account);
 
   /// The site refused the paste; [message] is its failure text.
   const CookiePasteState.failure({required String message}) : this(phase: CookiePastePhase.failure, message: message);
@@ -183,8 +201,9 @@ final class CookiePasteState {
 ///
 /// The provider is auto-dispose, so leaving the page clears the field and
 /// any failure text with it.
-final cookiePasteProvider =
-    NotifierProvider.autoDispose.family<CookiePasteController, CookiePasteState, String>(CookiePasteController.new);
+final cookiePasteProvider = NotifierProvider.autoDispose.family<CookiePasteController, CookiePasteState, String>(
+  CookiePasteController.new,
+);
 
 /// Verifies a pasted browser cookie against its site and hands the granted
 /// credential to [accountProvider] — apply, store, publish in one move.

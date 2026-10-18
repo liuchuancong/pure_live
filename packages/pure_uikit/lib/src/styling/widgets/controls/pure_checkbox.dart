@@ -4,12 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic_ui_kit/flutter_neumorphic_ui_kit.dart' as neu;
 import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
 import 'package:forui/forui.dart' as forui;
-import 'package:glass_morphism_plus/glass_morphism_plus.dart' as glass;
 import 'package:macos_ui/macos_ui.dart' as macos;
 import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
-import 'package:pure_uikit/src/styling/style/style.dart' show InteractionState, Style;
-import 'package:pure_uikit/src/styling/widgets/layout/pure_box.dart';
 
 /// The public checkbox: one widget, every theme and density. It carries only
 /// semantics (`value`, `onChanged`, `label`, `enabled`); its appearance comes
@@ -100,18 +97,12 @@ class PureCheckbox extends StatelessWidget {
         focusNode: focusNode,
         autofocus: autofocus,
       ),
-      // Hand-rolled glass-style composition: glass_morphism_plus ships no box,
-      // so it is a small frosted [glass.GlassContainer] — the library's own
-      // sheet, checked by swapping its tint for the primary colour — with the
-      // tap, the focus node and the interaction tint on the core's [PureBox],
-      // and the label beside it in the token's body role.
-      PureDesignLanguage.glass => _GlassCheckbox(
-        value: value,
-        label: text,
-        enabled: enabled,
-        onChanged: onChanged,
-        focusNode: focusNode,
-        autofocus: autofocus,
+      // glass_morphism_plus ships no checkbox. Use Flutter's official Material
+      // checkbox rather than a hand-painted glass box.
+      PureDesignLanguage.glass => _labelled(
+        labelText,
+        theme.token.scale.sizes.sm,
+        Checkbox(value: value, onChanged: _triStateSelect, focusNode: focusNode, autofocus: autofocus),
       ),
       PureDesignLanguage.neumorphic => _labelled(
         labelText,
@@ -126,11 +117,7 @@ class PureCheckbox extends StatelessWidget {
       PureDesignLanguage.wind => _labelled(
         labelText,
         theme.token.scale.sizes.sm,
-        wind.WCheckbox(
-          value: value,
-          onChanged: enabled ? onChanged : null,
-          disabled: !enabled || onChanged == null,
-        ),
+        wind.WCheckbox(value: value, onChanged: enabled ? onChanged : null, disabled: !enabled || onChanged == null),
       ),
       // Yaru IS Material theming — its character comes from the host theme, not
       // from a different checkbox.
@@ -166,83 +153,10 @@ class PureCheckbox extends StatelessWidget {
     }
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [control, SizedBox(width: gap), label],
-    );
-  }
-}
-
-/// The glass checkbox: a hand-rolled glassmorphism composition — the library
-/// ships no box, so it is a small frosted [glass.GlassContainer] whose blur,
-/// tint, radius and stroke come from [glass.GlassTheme], checked by swapping
-/// that tint for the primary colour at a raised opacity and dropping the token's
-/// tick into it. The tap, the focus node and the interaction tint ride on the
-/// core's [PureBox] (the container's own `onTap` would build a Material ink
-/// host with a focus node of its own), and the label is the token's body role,
-/// since a glass surface says nothing about type.
-class _GlassCheckbox extends StatelessWidget {
-  const new({
-    required this.value,
-    required this.label,
-    required this.enabled,
-    required this.onChanged,
-    required this.focusNode,
-    required this.autofocus,
-  });
-
-  final bool value;
-  final String? label;
-  final bool enabled;
-  final ValueChanged<bool>? onChanged;
-  final FocusNode? focusNode;
-  final bool autofocus;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = PureTheme.of(context);
-    final glassTheme = glass.GlassTheme.of(context);
-    final ct = theme.checkbox;
-    final interactive = enabled && onChanged != null;
-
-    final box = glass.GlassContainer(
-      width: ct.boxSize,
-      height: ct.boxSize,
-      customBorderRadius: BorderRadius.circular(ct.borderRadius),
-      color: value ? theme.colors.primary : glassTheme.color,
-      opacity: value ? (glassTheme.opacity * 2.6).clamp(0.0, 1.0) : glassTheme.opacity,
-      borderColor: value ? theme.colors.primary : ct.boxBorder,
-      alignment: Alignment.center,
-      child: value ? Icon(Icons.check, size: ct.boxSize * 0.82, color: ct.checkedIcon) : null,
-    );
-
-    final labelText = label;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
-        Semantics(
-          checked: value,
-          enabled: interactive,
-          child: PureBox(
-            style: (state) => Style(
-              borderRadius: BorderRadius.circular(ct.borderRadius),
-              background: switch (state) {
-                InteractionState.hovered ||
-                InteractionState.pressed ||
-                InteractionState.focused => ct.hoverBorder.withValues(alpha: (glassTheme.opacity * 2).clamp(0.0, 1.0)),
-                _ => null,
-              },
-              opacity: state == InteractionState.disabled ? ct.disabledOpacity : null,
-            ),
-            onTap: interactive ? () => onChanged?.call(!value) : null,
-            enabled: enabled,
-            focusNode: focusNode,
-            autofocus: autofocus,
-            child: box,
-          ),
-        ),
-        if (labelText case final text?) ...[
-          SizedBox(width: theme.token.scale.sizes.sm),
-          Text(text, style: theme.text.body.copyWith(color: theme.colors.text)),
-        ],
+        control,
+        SizedBox(width: gap),
+        label,
       ],
     );
   }

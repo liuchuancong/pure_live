@@ -2,7 +2,6 @@ import 'package:fluent_2/fluent_2.dart' as f2;
 import 'package:flutter/cupertino.dart' as cupertino;
 import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic_ui_kit/flutter_neumorphic_ui_kit.dart' as neu;
-import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
 import 'package:forui/forui.dart' as forui;
 import 'package:glass_morphism_plus/glass_morphism_plus.dart' as glass;
 import 'package:macos_ui/macos_ui.dart' as macos;
@@ -17,9 +16,10 @@ import 'package:pure_uikit/src/styling/widgets/layout/pure_environment.dart';
 /// its appearance comes straight from the active design language's own widget
 /// library. There is no adapter and no spec in between: [build] switches on
 /// `UiConfig.language` and constructs the library's real bar directly —
-/// Material's `AppBar`, Cupertino's `CupertinoNavigationBar`, macOS's `ToolBar`
-/// and forui's `FHeader.nested` — or, where the library ships no bar of its
-/// own (fluent, glass, neumorphic, wind), composes one out of that library's
+/// Material's `AppBar`, Cupertino's `CupertinoNavigationBar`, macOS's `ToolBar`,
+/// glass's `GlassAppBar`, forui's `FHeader.nested`, and Flutter's official
+/// Material `AppBar` for wind. Fluent has no app-bar widget, so it keeps the
+/// minimal layout row around its own typography and actions.
 /// own surfaces and typography, as the languages' package builders did — so
 /// what the user sees is exactly what that library's own documentation shows.
 /// Switching `UiConfig.language` re-skins every bar.
@@ -100,8 +100,34 @@ class PureAppBar extends StatelessWidget {
       PureDesignLanguage.macos => _macosBar(context, theme, leading),
       PureDesignLanguage.fluent => _fluentHeader(context, leading),
       PureDesignLanguage.neumorphic => _neumorphicBar(context, leading),
-      PureDesignLanguage.glass => _glassBar(context, theme, leading),
-      PureDesignLanguage.wind => _windBar(context, theme, leading),
+      PureDesignLanguage.glass => glass.GlassAppBar(
+        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+        leading: leading,
+        actions: actions.isEmpty ? null : actions,
+        bottom: switch (bottom) {
+          final PreferredSizeWidget sized => sized,
+          _ => null,
+        },
+        centerTitle: centerTitle,
+        automaticallyImplyLeading: false,
+        toolbarHeight: height ?? PureEnvironmentScope.maybeOf(context)?.geometry.appBarHeight ?? kToolbarHeight,
+        color: background ?? glass.GlassTheme.of(context).color,
+        opacity: glass.GlassTheme.of(context).opacity,
+      ),
+      // fluttersdk_wind ships no app bar. Flutter's official Material AppBar is
+      // the fallback; the wind page content still carries the language.
+      PureDesignLanguage.wind => AppBar(
+        leading: leading,
+        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+        actions: actions,
+        centerTitle: centerTitle,
+        toolbarHeight: height,
+        backgroundColor: background,
+        bottom: switch (bottom) {
+          final PreferredSizeWidget sized => sized,
+          _ => null,
+        },
+      ),
       PureDesignLanguage.forui => _foruiHeader(leading),
     };
   }
@@ -253,119 +279,6 @@ class PureAppBar extends StatelessWidget {
       return bar;
     }
     return Column(mainAxisSize: MainAxisSize.min, children: [bar, strip]);
-  }
-
-  /// Glass composes the bar, and measures first: the library does have a
-  /// `GlassAppBar`, but it is a Material `AppBar` with a frosted `flexibleSpace`
-  /// pasted into it — it asserts `No MaterialLocalizations found.` outside a
-  /// Material host, takes the whole window under loose constraints, and its
-  /// `bottom` slot wants a `PreferredSizeWidget`. So the bar here is the
-  /// library's *surface*: a floating [glass.GlassContainer] sheet, squared along
-  /// its bottom edge, taking its blur, tint, stroke and radius from
-  /// [glass.GlassTheme]. [centerTitle] defaults to centred — a glass header
-  /// reads as an iOS-style sheet — and [background] tints the sheet rather than
-  /// replacing it, because a glass header has no opaque side.
-  Widget _glassBar(BuildContext context, PureTheme theme, Widget? leading) {
-    final glassTheme = glass.GlassTheme.of(context);
-    final geometry = PureEnvironmentScope.maybeOf(context)?.geometry;
-    final barHeight = height ?? geometry?.appBarHeight ?? 56;
-    final padding = geometry?.pagePadding ?? theme.token.scale.sizes.md;
-    final gap = theme.token.scale.sizes.sm;
-    final center = centerTitle ?? true;
-    final radius = glassTheme.borderRadius;
-
-    final row = SizedBox(
-      height: barHeight,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: padding),
-        child: Row(
-          children: [
-            if (leading case final lead?) ...[lead, SizedBox(width: gap)],
-            Expanded(
-              child: Semantics(
-                header: true,
-                child: Text(
-                  title,
-                  textAlign: center ? TextAlign.center : TextAlign.start,
-                  style: theme.text.title.copyWith(color: theme.colors.text),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-            for (final action in actions) ...[SizedBox(width: gap), action],
-          ],
-        ),
-      ),
-    );
-
-    return glass.GlassContainer(
-      padding: EdgeInsets.symmetric(vertical: theme.token.scale.sizes.xs),
-      customBorderRadius: BorderRadius.only(
-        topLeft: Radius.circular(radius),
-        topRight: Radius.circular(radius),
-        bottomLeft: Radius.circular(radius / 2),
-        bottomRight: Radius.circular(radius / 2),
-      ),
-      color: background ?? glassTheme.color,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          row,
-          if (bottom case final strip?)
-            Padding(
-              padding: EdgeInsets.only(top: gap),
-              child: strip,
-            ),
-        ],
-      ),
-    );
-  }
-
-  /// Wind composes the bar — the fork has no bar of any kind. The surface is
-  /// its own container, a `WDiv` panel in the library's `bg-white dark:bg-gray-900`
-  /// pair closed by the Tailwind bottom hairline, with the title in `WText` at
-  /// the library's `text-lg font-semibold` step and [actions] appended as the
-  /// widgets the caller already dispatched. [height] and [background] are
-  /// runtime values, so neither is interpolated into a className (the library
-  /// caches parsed class strings): the height goes to a `SizedBox` and the
-  /// colour override to the container's inline `backgroundColor` hook.
-  /// [centerTitle] defaults to left; asking for the centre is answered with
-  /// `text-center` on a title that already takes the leftover width.
-  Widget _windBar(BuildContext context, PureTheme theme, Widget? leading) {
-    final geometry = PureEnvironmentScope.maybeOf(context)?.geometry;
-    final barHeight = height ?? geometry?.appBarHeight ?? 56;
-    final padding = geometry?.pagePadding ?? theme.token.scale.sizes.md;
-    final centered = (centerTitle ?? false) ? ' text-center' : '';
-
-    final titleText = wind.WText(
-      title,
-      className: 'text-lg font-semibold text-gray-900 dark:text-gray-100 truncate$centered',
-    );
-
-    final row = wind.WDiv(
-      className: 'flex flex-row items-center gap-2 w-full h-full',
-      children: [
-        ?leading,
-        Expanded(child: titleText),
-        for (final action in actions) action,
-      ],
-    );
-
-    return wind.WDiv(
-      className: 'flex flex-col w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700',
-      backgroundColor: background,
-      children: [
-        SizedBox(
-          height: barHeight,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: padding),
-            child: row,
-          ),
-        ),
-        ?bottom,
-      ],
-    );
   }
 
   /// The shared back affordance, or null where the route cannot pop.

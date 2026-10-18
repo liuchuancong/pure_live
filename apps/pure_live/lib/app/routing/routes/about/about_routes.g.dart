@@ -8,11 +8,8 @@ part of 'about_routes.dart';
 
 List<RouteBase> get $appRoutes => [$aboutRoute];
 
-RouteBase get $aboutRoute => GoRouteData.$route(
-  path: '/about',
-  hasOverriddenOnExit: false,
-  factory: $AboutRoute._fromState,
-);
+RouteBase get $aboutRoute =>
+    GoRouteData.$route(path: '/about', hasOverriddenOnExit: false, factory: $AboutRoute._fromState);
 
 mixin $AboutRoute on GoRouteData {
   static AboutRoute _fromState(GoRouterState state) => const AboutRoute();
@@ -27,8 +24,7 @@ mixin $AboutRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);

@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart' as acrylic;
+import 'package:live_shell_desktop/src/windows_version.dart' show kWindowsRoundedFrameBuild, windowsBuildNumber;
 
 /// The material a window ended up with, or [none] when nothing was applied
 /// and the surface must stay opaque.
@@ -49,8 +50,9 @@ Future<AppliedWindowMaterial> applyWindowMaterial({required bool dark}) async {
     return AppliedWindowMaterial.none;
   }
   // The backdrop attribute exists from build 22000; asking earlier builds
-  // fails outright, so the version gate spares them the call.
-  if (_windowsBuildNumber() >= 22000) {
+  // fails outright, so the version gate spares them the call. Same threshold
+  // the window frame policy reads, from one shared probe.
+  if (windowsBuildNumber() >= kWindowsRoundedFrameBuild) {
     try {
       await acrylic.Window.setEffect(effect: acrylic.WindowEffect.mica, dark: dark);
     } on Object {
@@ -135,44 +137,6 @@ int _onWindow(int hwnd, int _) {
   }
   _candidates.found = hwnd;
   return 0;
-}
-
-int _windowsBuildNumber() {
-  final ntdll = ffi.DynamicLibrary.open('ntdll.dll');
-  final rtlGetVersion = ntdll
-      .lookupFunction<ffi.Int32 Function(ffi.Pointer<_OsVersionInfo>), int Function(ffi.Pointer<_OsVersionInfo>)>(
-        'RtlGetVersion',
-      );
-  final info = calloc<_OsVersionInfo>();
-  try {
-    info.ref.size = ffi.sizeOf<_OsVersionInfo>();
-    if (rtlGetVersion(info) != 0) {
-      return 0;
-    }
-    return info.ref.build;
-  } finally {
-    calloc.free(info);
-  }
-}
-
-final class _OsVersionInfo extends ffi.Struct {
-  @ffi.Uint32()
-  external int size;
-
-  @ffi.Uint32()
-  external int major;
-
-  @ffi.Uint32()
-  external int minor;
-
-  @ffi.Uint32()
-  external int build;
-
-  @ffi.Uint32()
-  external int platformId;
-
-  @ffi.Array(128)
-  external ffi.Array<ffi.Uint16> servicePack;
 }
 
 /// Reads the window's `DWMWA_SYSTEMBACKDROP_TYPE` back: a Mica request only

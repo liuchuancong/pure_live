@@ -240,9 +240,8 @@ class _MacosSettingsTileState extends State<MacosSettingsTile> {
     MacosSettingsTileScope? scope,
   ) {
     final isDark = macosIsDark(context, theme);
-    final verticalPadding = MediaQuery.textScalerOf(
-      context,
-    ).scale(kMacosRowVerticalPadding / (tile.compact ? 2 : 1));
+    final verticalPadding = MediaQuery.textScalerOf(context)
+        .scale(kMacosRowVerticalPadding / (tile.compact ? 2 : 1));
     Widget row = ConstrainedBox(
       constraints: BoxConstraints(
         minHeight: tile.leading == null

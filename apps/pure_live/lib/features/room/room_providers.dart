@@ -5,6 +5,7 @@ import 'package:live_interaction/live_interaction.dart';
 import 'package:live_sites/live_sites.dart' show LiveDanmakuProvider;
 import 'package:pure_live/app/engine/danmaku.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/features/room/local_message_bus.dart';
 
 /// Which room a feature piece serves: the platform id plus the
 /// platform-specific room id, exactly what the room route carries.
@@ -37,4 +38,14 @@ final danmakuSessionProvider = FutureProvider.autoDispose.family<InteractionSess
   final session = await openDanmakuSession(site: site, roomId: identity.roomId, shieldRules: await loadShieldRules());
   ref.onDispose(() => unawaited(session.dispose()));
   return session;
+});
+
+/// The room's local-message bus — the reference's local interaction delivery
+/// queue. One per room identity, disposed with the room page like the session.
+// riverpod's family type cannot be spelled with this lint on; see above.
+// ignore: specify_nonobvious_property_types
+final roomLocalMessageBusProvider = Provider.autoDispose.family<RoomLocalMessageBus, RoomIdentity>((ref, identity) {
+  final bus = RoomLocalMessageBus();
+  ref.onDispose(() => unawaited(bus.dispose()));
+  return bus;
 });

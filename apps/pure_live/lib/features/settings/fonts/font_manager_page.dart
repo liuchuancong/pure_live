@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/fonts/font_library.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/features/settings/widgets/settings_sections.dart';
+import 'package:pure_live/features/settings/widgets/settings_rows.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_settings_ui/pure_settings_ui.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The font manager (3.x `FontFamilyManagerPage`, app-font slice): the
@@ -72,42 +73,45 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
                     )
                   : const Center(child: PureSpinner(size: 40)),
             )
-          : ListView(
-              padding: const EdgeInsets.all(12),
-              children: [
-                SettingsSection.card(
-                  label: context.t.fonts.factoryDefault,
+          : SettingsList(
+              sections: [
+                SettingsSection(
+                  title: Text(context.t.fonts.factoryDefault),
                   tiles: [
-                    _row(
-                      context,
-                      title: context.t.fonts.system,
-                      selected: appearance.fontFamily?.isEmpty ?? true,
-                      action: (appearance.fontFamily?.isEmpty ?? true)
-                          ? null
-                          : () => update((a) => a.copyWith(fontFamily: '')),
+                    SettingsRowTile(
+                      row: _row(
+                        context,
+                        title: context.t.fonts.system,
+                        selected: appearance.fontFamily?.isEmpty ?? true,
+                        action: (appearance.fontFamily?.isEmpty ?? true)
+                            ? null
+                            : () => update((a) => a.copyWith(fontFamily: '')),
+                      ),
                     ),
                   ],
                 ),
-                if (families.isNotEmpty) ...[
-                  const SettingsSectionGap(),
-                  SettingsSection.card(
-                    label: context.t.fonts.cloudFonts,
+                // A cloud family is a radio row with an action of its own (a
+                // download, a delete), which the kit's tiles do not model — the
+                // rows stay the uikit's, inside the section's card.
+                if (families.isNotEmpty)
+                  SettingsSection(
+                    title: Text(context.t.fonts.cloudFonts),
                     tiles: [
                       for (var i = 0; i < families.length; i++)
-                        _row(
-                          context,
-                          title: families[i].name,
-                          selected: appearance.fontFamily == families[i].id,
-                          action: _library.isDownloaded(families[i].id)
-                              ? () => update((a) => a.copyWith(fontFamily: families[i].id))
-                              : null,
-                          trailing: _familyAction(context, families[i]),
-                          divided: i < families.length - 1,
+                        SettingsRowTile(
+                          row: _row(
+                            context,
+                            title: families[i].name,
+                            selected: appearance.fontFamily == families[i].id,
+                            action: _library.isDownloaded(families[i].id)
+                                ? () => update((a) => a.copyWith(fontFamily: families[i].id))
+                                : null,
+                            trailing: _familyAction(context, families[i]),
+                            divided: i < families.length - 1,
+                          ),
                         ),
                     ],
                   ),
-                ],
-                const SizedBox(height: 32),
               ],
             ),
     );

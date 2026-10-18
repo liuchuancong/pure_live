@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:pure_settings_ui/src/pure/pure_settings_style.dart';
+import 'package:pure_settings_ui/src/pure/settings_language.dart';
 import 'package:pure_settings_ui/src/vendor/utils/fluent_tokens.dart';
 import 'package:pure_settings_ui/src/vendor/utils/platform_utils.dart';
 import 'package:pure_settings_ui/src/vendor/utils/settings_style.dart';
@@ -38,7 +38,8 @@ class ThemeProvider {
       case DevicePlatform.pure:
         // One file per language: forui's, glass's, neumorphic's and wind's own
         // style, each stating its own palette rather than a shared switch.
-        return pureSettingsStyleOf(PureTheme.of(context).config.language).palette(PureTheme.of(context));
+        return pureSettingsStyleOf(PureTheme.of(context).config.language)
+            .palette(PureTheme.of(context));
       case DevicePlatform.device:
         throwUnresolvedPlatform('ThemeProvider.getTheme');
     }

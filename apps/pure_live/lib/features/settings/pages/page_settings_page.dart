@@ -4,18 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/shell/shell_destinations.dart';
-import 'package:pure_live/features/settings/widgets/settings_sections.dart';
+import 'package:pure_live/features/settings/widgets/settings_rows.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_settings_ui/pure_settings_ui.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The page settings page (3.x `PageSettingsPage` re-scoped to what this
 /// build's shell has): which shell branches the chromes render, and in what
 /// order.
 ///
-/// The visible branches are one reorderable list — drag to arrange; a
-/// hidden branch keeps its follow position for when it is shown again. The
-/// home branch is the floor: a shell with no destination cannot be walked,
-/// so the last visible switch refuses to turn off.
+/// The visible branches are one reorderable list — drag to arrange; a hidden
+/// branch keeps its follow position for when it is shown again. The favorites
+/// branch is the floor: a shell with no destination cannot be walked, so the
+/// last visible switch refuses to turn off.
 final class PageSettingsPage extends ConsumerWidget {
   /// The page settings page.
   const new({super.key});
@@ -30,15 +31,16 @@ final class PageSettingsPage extends ConsumerWidget {
 
     return PureScaffold(
       appBar: PureAppBar(title: t.settings.pageSettings),
-      body: ListView(
-        padding: const EdgeInsets.all(12),
-        children: [
+      body: SettingsList(
+        sections: [
           SettingsSection(
-            label: t.settings.groupVisibleBranches,
-            children: [
-              PureCard(
-                padding: EdgeInsets.zero,
-                child: ReorderableListView.builder(
+            title: Text(t.settings.groupVisibleBranches),
+            tiles: [
+              // A reorderable list is not a tile the kit models — the drag
+              // handle and the per-row switch are the app's own rows, inside the
+              // section the language already draws a card around.
+              SettingsRowTile(
+                row: ReorderableListView.builder(
                   shrinkWrap: true,
                   buildDefaultDragHandles: false,
                   physics: const NeverScrollableScrollPhysics(),
@@ -49,9 +51,7 @@ final class PageSettingsPage extends ConsumerWidget {
                     }
                     final reordered = [...visible]..removeAt(oldIndex);
                     reordered.insert(newIndex.clamp(0, reordered.length), visible[oldIndex]);
-                    unawaited(
-                      update((p) => p.copyWith(shellBranches: [for (final branch in reordered) branch.name])),
-                    );
+                    unawaited(update((p) => p.copyWith(shellBranches: [for (final branch in reordered) branch.name])));
                   },
                   itemBuilder: (context, index) {
                     final branch = visible[index];
@@ -72,7 +72,7 @@ final class PageSettingsPage extends ConsumerWidget {
                                 _announceFloor(context);
                                 return;
                               }
-                              unawaited(_hide(context, ref, branch));
+                              unawaited(_hide(ref, branch));
                             },
                           ),
                           ReorderableDragStartListener(
@@ -91,51 +91,53 @@ final class PageSettingsPage extends ConsumerWidget {
               ),
             ],
           ),
-          if (hidden.isNotEmpty) ...[
-            const SettingsSectionGap(),
-            SettingsSection.card(
-              label: t.settings.groupHiddenBranches,
+          if (hidden.isNotEmpty)
+            SettingsSection(
+              title: Text(t.settings.groupHiddenBranches),
               tiles: [
-                for (var i = 0; i < hidden.length; i++)
-                  SettingsSwitchTile(
-                    icon: hidden[i].icon,
-                    title: hidden[i].label(context),
-                    subtitle: t.settings.showBranchSubtitle,
-                    value: false,
-                    onChanged: (value) {
+                for (final branch in hidden)
+                  SettingsTile.switchTile(
+                    leading: Icon(branch.icon),
+                    title: Text(branch.label(context)),
+                    description: Text(t.settings.showBranchSubtitle),
+                    initialValue: false,
+                    onToggle: (value) {
                       if (!value) {
                         return;
                       }
-                      final shown = [...visible, hidden[i]];
-                      unawaited(update((p) => p.copyWith(shellBranches: [for (final branch in shown) branch.name])));
+                      final shown = [...visible, branch];
+                      unawaited(update((p) => p.copyWith(shellBranches: [for (final item in shown) item.name])));
                     },
-                    divided: i < hidden.length - 1,
                   ),
               ],
             ),
-          ],
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Text(
-              t.settings.pageSettingsHint,
-              style: PureTheme.of(context).text.caption.copyWith(color: PureTheme.of(context).colors.textSecondary),
-            ),
+          SettingsSection(
+            tiles: [
+              CustomSettingsTile(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    t.settings.pageSettingsHint,
+                    style: PureTheme.of(context).text.caption
+                        .copyWith(color: PureTheme.of(context).colors.textSecondary),
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 32),
         ],
       ),
     );
   }
 
-  static Future<void> _hide(BuildContext context, WidgetRef ref, ShellBranch branch) {
+  static Future<void> _hide(WidgetRef ref, ShellBranch branch) {
     final preferences = ref.read(appPreferencesProvider);
     final remaining = preferences.shellBranches.where((id) => id != branch.name).toList();
     return ref.read(appPreferencesProvider.notifier).update((p) => p.copyWith(shellBranches: remaining));
   }
 
-  /// The one visible branch cannot hide: a shell with no destination cannot
-  /// be walked.
+  /// The one visible branch cannot hide: a shell with no destination cannot be
+  /// walked.
   static void _announceFloor(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.t.settings.atLeastOneBranch)));
   }

@@ -1,38 +1,68 @@
-import 'package:pure_settings_ui/src/vendor/utils/platform_utils.dart';
-import 'package:pure_uikit/pure_uikit.dart' show PureDesignLanguage;
+import 'package:flutter/widgets.dart';
+import 'package:pure_settings_ui/src/pure/languages/cupertino_settings_language.dart';
+import 'package:pure_settings_ui/src/pure/languages/fluent_settings_language.dart';
+import 'package:pure_settings_ui/src/pure/languages/forui_settings_language.dart';
+import 'package:pure_settings_ui/src/pure/languages/glass_settings_language.dart';
+import 'package:pure_settings_ui/src/pure/languages/macos_settings_language.dart';
+import 'package:pure_settings_ui/src/pure/languages/material_settings_language.dart';
+import 'package:pure_settings_ui/src/pure/languages/neumorphic_settings_language.dart';
+import 'package:pure_settings_ui/src/pure/languages/wind_settings_language.dart';
+import 'package:pure_settings_ui/src/pure/languages/yaru_settings_language.dart';
+import 'package:pure_settings_ui/src/pure/pure_settings_style.dart';
+import 'package:pure_settings_ui/src/vendor/utils/platform_utils.dart' show DevicePlatform;
+import 'package:pure_uikit/pure_uikit.dart';
 
-/// The settings style each pure_uikit design language resolves to.
+/// Every design language's settings theme: one entry per theme, each declared in
+/// its own file under `languages/`.
 ///
-/// Five of the nine languages already have a rendering upstream drew, and each
-/// maps onto the device platform whose settings app that rendering follows — so
-/// the tile, section, split-view and page-header switches that key on
-/// [DevicePlatform] keep working untouched, and the mapping is the whole seam:
-///
-/// | [PureDesignLanguage] | style | look |
-/// |---|---|---|
-/// | `material` | [DevicePlatform.android] | Android 16 cards off the Material theme |
-/// | `cupertino` | [DevicePlatform.iOS] | iOS 26 grouped cards |
-/// | `fluent` | [DevicePlatform.windows] | Windows 11 Settings |
-/// | `macos` | [DevicePlatform.macOS] | macOS 26 System Settings |
-/// | `yaru` | [DevicePlatform.linux] | GNOME/libadwaita boxed lists |
-/// | `forui`, `glass`, `neumorphic`, `wind` | [DevicePlatform.pure] | pure_uikit's own |
-///
-/// The last four are the reason this package exists: upstream has no rendering
-/// for them, so they resolve to [DevicePlatform.pure], whose section, tile,
-/// switch, sidebar and page header are built on pure_uikit's components. Those
-/// components read the active language themselves and construct forui's,
-/// glass_morphism_plus's, flutter_neumorphic_ui_kit's or fluttersdk_wind's real
-/// widgets, so one implementation covers all four and each looks like its own
-/// library — the same rule the rest of pure_uikit follows, and the reason this
-/// package names no design-language library in its `pubspec.yaml`.
-DevicePlatform devicePlatformOf(PureDesignLanguage language) => switch (language) {
-  PureDesignLanguage.material => DevicePlatform.android,
-  PureDesignLanguage.cupertino => DevicePlatform.iOS,
-  PureDesignLanguage.fluent => DevicePlatform.windows,
-  PureDesignLanguage.macos => DevicePlatform.macOS,
-  PureDesignLanguage.yaru => DevicePlatform.linux,
-  PureDesignLanguage.forui ||
-  PureDesignLanguage.glass ||
-  PureDesignLanguage.neumorphic ||
-  PureDesignLanguage.wind => DevicePlatform.pure,
+/// This is a lookup, not a decision. Adding a design language means adding a
+/// file and a line here — never a case that some other language is already
+/// sitting in, which is how a shared branch turns two themes into one by
+/// accident.
+const Map<PureDesignLanguage, SettingsLanguage> settingsLanguages = {
+  PureDesignLanguage.material: materialSettingsLanguage,
+  PureDesignLanguage.cupertino: cupertinoSettingsLanguage,
+  PureDesignLanguage.macos: macosSettingsLanguage,
+  PureDesignLanguage.fluent: fluentSettingsLanguage,
+  PureDesignLanguage.yaru: yaruSettingsLanguage,
+  PureDesignLanguage.forui: foruiSettingsLanguage,
+  PureDesignLanguage.glass: glassSettingsLanguage,
+  PureDesignLanguage.neumorphic: neumorphicSettingsLanguage,
+  PureDesignLanguage.wind: windSettingsLanguage,
 };
+
+/// The theme of [language].
+SettingsLanguage settingsLanguageOf(PureDesignLanguage language) {
+  final theme = settingsLanguages[language];
+  if (theme == null) {
+    throw StateError(
+      'No settings theme declares ${language.name}. Add '
+      'languages/${language.name}_settings_language.dart and list it in '
+      'settingsLanguages.',
+    );
+  }
+  return theme;
+}
+
+/// The settings style key [language] resolves to.
+///
+/// Five languages borrow a rendering upstream already drew — Android 16 cards,
+/// iOS 26 grouped cards, macOS 26 System Settings, Windows 11 Settings and
+/// GNOME's boxed lists — and each names which one in its own file. The rest
+/// name [DevicePlatform.pure], whose widgets are built on pure_uikit's
+/// components, so forui's, glass's, flutter_neumorphic_ui_kit's and
+/// fluttersdk_wind's real widgets draw them according to whichever language is
+/// active. That is why this package names no design-language library in its
+/// `pubspec.yaml`, and why the same nine-value dispatch that re-skins the rest
+/// of the app re-skins a settings screen as well.
+DevicePlatform devicePlatformOf(PureDesignLanguage language) => settingsLanguageOf(language).platform;
+
+/// The style [language] states for itself.
+///
+/// Consulted only by the pure rendering; a language whose [devicePlatformOf] is
+/// one of upstream's never reaches it unless a caller forces
+/// `platform: DevicePlatform.pure`.
+PureSettingsStyle pureSettingsStyleOf(PureDesignLanguage language) => settingsLanguageOf(language).style;
+
+/// The style of the design language resolved for the subtree around [context].
+PureSettingsStyle pureSettingsStyle(BuildContext context) => pureSettingsStyleOf(PureTheme.of(context).config.language);

@@ -100,78 +100,71 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
     // The playlist kind's answer: the same two-field record the dialog has
     // always popped with, its blank fields read again as a cancellation.
     void submitPlaylist(BuildContext fieldContext) {
-      Navigator.of(
-        fieldContext,
-      ).pop((name: name.text.trim(), url: url.text.trim(), username: null, password: null, epgUrl: null));
+      Navigator.of(fieldContext)
+          .pop((name: name.text.trim(), url: url.text.trim(), username: null, password: null, epgUrl: null));
     }
 
-    final form =
-        await showPureDialog<({String name, String url, String? username, String? password, String? epgUrl})>(
-          context: context,
-          title: context.t.iptv.addSource,
-          // A Builder so the submit pops the dialog route, not the page under it.
-          child: StatefulBuilder(
-            builder: (fieldContext, setDialogState) => Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                PureSegmented(
-                  labels: [fieldContext.t.iptv.kindPlaylist, fieldContext.t.iptv.kindXtream],
-                  index: kind == _SourceKind.playlist ? 0 : 1,
-                  onChanged: (index) =>
-                      setDialogState(() => kind = index == 0 ? _SourceKind.playlist : _SourceKind.xtream),
-                ),
-                const SizedBox(height: 8),
-                Focus(
-                  autofocus: true,
-                  child: PureTextField(controller: name, placeholder: fieldContext.t.iptv.sourceName),
-                ),
-                const SizedBox(height: 8),
-                if (kind == _SourceKind.playlist)
-                  PureTextField(
-                    controller: url,
-                    placeholder: fieldContext.t.iptv.sourceUrl,
-                    onSubmitted: (_) => submitPlaylist(fieldContext),
-                  )
-                else ...[
-                  PureTextField(controller: url, placeholder: fieldContext.t.iptv.xtreamServer),
-                  const SizedBox(height: 8),
-                  PureTextField(controller: username, placeholder: fieldContext.t.iptv.xtreamUsername),
-                  const SizedBox(height: 8),
-                  PureTextField(
-                    controller: password,
-                    placeholder: fieldContext.t.iptv.xtreamPassword,
-                    obscure: true,
-                  ),
-                  const SizedBox(height: 8),
-                  PureTextField(controller: epgUrl, placeholder: fieldContext.t.iptv.epgUrl),
-                ],
-              ],
+    final form = await showPureDialog<({String name, String url, String? username, String? password, String? epgUrl})>(
+      context: context,
+      title: context.t.iptv.addSource,
+      // A Builder so the submit pops the dialog route, not the page under it.
+      child: StatefulBuilder(
+        builder: (fieldContext, setDialogState) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            PureSegmented(
+              labels: [fieldContext.t.iptv.kindPlaylist, fieldContext.t.iptv.kindXtream],
+              index: kind == _SourceKind.playlist ? 0 : 1,
+              onChanged: (index) => setDialogState(() => kind = index == 0 ? _SourceKind.playlist : _SourceKind.xtream),
             ),
-          ),
-          actions: (dialogContext) => [
-            PureButton(
-              label: dialogContext.t.common.cancel,
-              variant: ButtonVariant.ghost,
-              onPressed: () => Navigator.of(dialogContext).pop(),
+            const SizedBox(height: 8),
+            Focus(
+              autofocus: true,
+              child: PureTextField(controller: name, placeholder: fieldContext.t.iptv.sourceName),
             ),
-            PureButton(
-              label: dialogContext.t.common.confirm,
-              onPressed: () {
-                if (kind == _SourceKind.playlist) {
-                  submitPlaylist(dialogContext);
-                } else {
-                  Navigator.of(dialogContext).pop((
-                    name: name.text.trim(),
-                    url: url.text.trim(),
-                    username: username.text.trim(),
-                    password: password.text,
-                    epgUrl: epgUrl.text.trim(),
-                  ));
-                }
-              },
-            ),
+            const SizedBox(height: 8),
+            if (kind == _SourceKind.playlist)
+              PureTextField(
+                controller: url,
+                placeholder: fieldContext.t.iptv.sourceUrl,
+                onSubmitted: (_) => submitPlaylist(fieldContext),
+              )
+            else ...[
+              PureTextField(controller: url, placeholder: fieldContext.t.iptv.xtreamServer),
+              const SizedBox(height: 8),
+              PureTextField(controller: username, placeholder: fieldContext.t.iptv.xtreamUsername),
+              const SizedBox(height: 8),
+              PureTextField(controller: password, placeholder: fieldContext.t.iptv.xtreamPassword, obscure: true),
+              const SizedBox(height: 8),
+              PureTextField(controller: epgUrl, placeholder: fieldContext.t.iptv.epgUrl),
+            ],
           ],
-        );
+        ),
+      ),
+      actions: (dialogContext) => [
+        PureButton(
+          label: dialogContext.t.common.cancel,
+          variant: ButtonVariant.ghost,
+          onPressed: () => Navigator.of(dialogContext).pop(),
+        ),
+        PureButton(
+          label: dialogContext.t.common.confirm,
+          onPressed: () {
+            if (kind == _SourceKind.playlist) {
+              submitPlaylist(dialogContext);
+            } else {
+              Navigator.of(dialogContext).pop((
+                name: name.text.trim(),
+                url: url.text.trim(),
+                username: username.text.trim(),
+                password: password.text,
+                epgUrl: epgUrl.text.trim(),
+              ));
+            }
+          },
+        ),
+      ],
+    );
     for (final controller in [name, url, username, password, epgUrl]) {
       controller.dispose();
     }
@@ -296,8 +289,12 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
       await _library.deletePlaylist(playlistId);
     }
     await _setPreferences(
-      (preferences) =>
-          preferences.copyWith(xtreamSources: [for (final kept in preferences.xtreamSources) if (kept.id != source.id) kept]),
+      (preferences) => preferences.copyWith(
+        xtreamSources: [
+          for (final kept in preferences.xtreamSources)
+            if (kept.id != source.id) kept,
+        ],
+      ),
     );
   }
 

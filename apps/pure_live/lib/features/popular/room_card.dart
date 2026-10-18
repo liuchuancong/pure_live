@@ -13,10 +13,36 @@ import 'package:pure_uikit/pure_uikit.dart';
 /// column count reacts to the window's width and every tile reserves a
 /// cover of the room-card aspect preference plus a caption tall enough for
 /// its two text lines.
+///
+/// Both ladders are anchored to the adaptive width classes (600 / 1024 / 1440)
+/// rather than ad-hoc thresholds, so the cards re-flow at exactly the widths
+/// the shell's navigation changes at.
 abstract final class RoomGridMetrics {
-  /// Columns for the discovery and area-room grids: tighter on phones,
-  /// five across a wide desktop window.
-  static int columnsFor(double width) => width > 1280 ? 5 : (width > 960 ? 4 : (width > 640 ? 3 : 2));
+  /// Columns for the discovery and area-room grids: two through the compact
+  /// class, three on a tablet, four on an expanded desktop and five from the
+  /// large class up — the reference's single row.
+  static int columnsFor(double width) => AdaptiveBreakpoints.fromWidth(width).resolve<int>(
+    compact: 2,
+    medium: 3,
+    expanded: 4,
+    large: 5,
+  );
+
+  /// Columns for the favourites grid: **one wide card on a phone**, and from
+  /// the medium class up a column fewer than the discovery grid until the
+  /// large class joins it at the five-across reference row.
+  ///
+  /// The two ladders share their classes and differ only in how many cards
+  /// fit, which is the point — a room you followed reads larger than one the
+  /// feed is recommending. Keeping both numbers here rather than one of them
+  /// inline in a page is what makes that difference legible instead of
+  /// looking like a stale copy.
+  static int favouriteColumnsFor(double width) => AdaptiveBreakpoints.fromWidth(width).resolve<int>(
+    compact: 1,
+    medium: 3,
+    expanded: 4,
+    large: 5,
+  );
 
   /// The tile height for an [itemWidth]: the cover — [coverAspect] wide
   /// over tall — plus the caption, which grows with the ambient text scale
@@ -35,14 +61,23 @@ abstract final class RoomGridMetrics {
     BuildContext context,
     double width, {
     double coverAspect = 16 / 9,
+    int? columns,
+    double? gutter,
   }) {
-    const spacing = PureSpacing.sm;
-    final columns = columnsFor(width);
-    final itemWidth = (width - 2 * spacing - spacing * (columns - 1)) / columns;
+    const gap = PureSpacing.sm;
+    final count = columns ?? columnsFor(width);
+    // Two different measurements, whatever the old single `spacing` implied.
+    // `gap` separates neighbouring tiles and is the grid's own business;
+    // [gutter] is the padding the *caller* put on the `GridView`, which
+    // `width` still has to give back before the tiles share what is left.
+    // Passing one and not the other is how a grid ends up overflowing by
+    // exactly the difference.
+    final side = gutter ?? gap;
+    final itemWidth = (width - 2 * side - gap * (count - 1)) / count;
     return SliverGridDelegateWithFixedCrossAxisCount(
-      crossAxisCount: columns,
-      crossAxisSpacing: spacing,
-      mainAxisSpacing: spacing,
+      crossAxisCount: count,
+      crossAxisSpacing: gap,
+      mainAxisSpacing: gap,
       mainAxisExtent: mainAxisExtent(itemWidth, MediaQuery.textScalerOf(context), coverAspect: coverAspect),
     );
   }

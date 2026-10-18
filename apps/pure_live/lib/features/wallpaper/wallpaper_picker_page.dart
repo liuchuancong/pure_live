@@ -5,11 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/theme/appearance_preferences/appearance_preferences.dart';
-import 'package:pure_live/features/settings/widgets/settings_sections.dart';
+import 'package:pure_live/features/settings/widgets/settings_rows.dart';
 import 'package:pure_live/features/wallpaper/wallpaper_background_layer.dart';
 import 'package:pure_live/features/wallpaper/wallpaper_catalog.dart';
 import 'package:pure_live/features/wallpaper/wallpaper_style.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_settings_ui/pure_settings_ui.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 import 'package:pure_uikit_background/pure_uikit_background.dart' as bg;
 
@@ -48,14 +49,14 @@ final class _WallpaperPickerPageState extends ConsumerState<WallpaperPickerPage>
 
   Future<void> _pickImage() async {
     final file = await openFile(
-      acceptedTypeGroups: [const XTypeGroup(label: 'image', extensions: ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'])],
+      acceptedTypeGroups: [
+        const XTypeGroup(label: 'image', extensions: ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp']),
+      ],
     );
     if (file == null || file.path.isEmpty) {
       return;
     }
-    await _update(
-      (a) => a.copyWith(wallpaperKind: WallpaperKind.image, wallpaperImagePath: file.path),
-    );
+    await _update((a) => a.copyWith(wallpaperKind: WallpaperKind.image, wallpaperImagePath: file.path));
   }
 
   Future<void> _applyTypedPath() async {
@@ -79,162 +80,159 @@ final class _WallpaperPickerPageState extends ConsumerState<WallpaperPickerPage>
       // configures, so the change is visible where the viewer is looking.
       background: hasWallpaper ? Colors.transparent : null,
       appBar: PureAppBar(title: t.wallpaper.title),
-      body: ListView(
-        padding: const EdgeInsets.all(12),
-        children: [
-          _PreviewCard(config: config),
-          const SizedBox(height: 12),
-          SettingsSection.card(
-            label: t.wallpaper.groupPresets,
+      body: SettingsList(
+        sections: [
+          // The preview is the page's own card, drawn by the same dispatcher the
+          // app-wide layer uses — a section's frame would fight it.
+          SettingsSection(
+            tiles: [CustomSettingsTile(child: _PreviewCard(config: config))],
+          ),
+          SettingsSection(
+            title: Text(t.wallpaper.groupPresets),
             tiles: [
-              SettingsEntryTile(
-                icon: Icons.block_outlined,
-                title: t.wallpaper.none,
-                subtitle: t.wallpaper.noneSubtitle,
+              SettingsTile.navigation(
+                leading: const Icon(Icons.block_outlined),
+                title: Text(t.wallpaper.none),
+                description: Text(t.wallpaper.noneSubtitle),
                 trailing: appearance.wallpaperKind == WallpaperKind.none
                     ? Icon(Icons.check_circle, color: PureTheme.of(context).colors.primary)
                     : null,
-                onTap: () => update((a) => a.copyWith(wallpaperKind: WallpaperKind.none)),
-                divided: false,
+                onPressed: (_) => update((a) => a.copyWith(wallpaperKind: WallpaperKind.none)),
               ),
             ],
           ),
-          const SettingsSectionGap(),
           SettingsSection(
-            label: t.wallpaper.groupSolid,
-            children: [
-              PureCard(
-                padding: const EdgeInsets.all(12),
-                child: Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    for (final preset in kWallpaperSolidPresets)
-                      _SolidSwatch(
-                        preset: preset,
-                        selected:
-                            appearance.wallpaperKind == WallpaperKind.solid &&
-                            appearance.wallpaperColor == preset.argb,
-                        onTap: () => update(
-                          (a) => a.copyWith(
-                            wallpaperKind: WallpaperKind.solid,
-                            wallpaperColor: preset.argb,
+            title: Text(t.wallpaper.groupSolid),
+            tiles: [
+              CustomSettingsTile(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  child: Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      for (final preset in kWallpaperSolidPresets)
+                        _SolidSwatch(
+                          preset: preset,
+                          selected:
+                              appearance.wallpaperKind == WallpaperKind.solid &&
+                              appearance.wallpaperColor == preset.argb,
+                          onTap: () => update(
+                            (a) => a.copyWith(wallpaperKind: WallpaperKind.solid, wallpaperColor: preset.argb),
                           ),
                         ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SettingsSectionGap(),
-          SettingsSection(
-            label: t.wallpaper.groupGradient,
-            children: [
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 220,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  childAspectRatio: 1.9,
-                ),
-                itemCount: kWallpaperGradientPresets.length,
-                itemBuilder: (context, index) {
-                  final preset = kWallpaperGradientPresets[index];
-                  return _GradientTile(
-                    preset: preset,
-                    selected: appearance.wallpaperKind == WallpaperKind.gradient &&
-                        appearance.wallpaperGradientColors.length == preset.argbColors.length &&
-                        appearance.wallpaperGradientColors.first == preset.argbColors.first,
-                    onTap: () => update(
-                      (a) => a.copyWith(
-                        wallpaperKind: WallpaperKind.gradient,
-                        wallpaperGradientColors: preset.argbColors,
-                        wallpaperGradientStops: preset.positions,
-                        wallpaperGradientAngle: preset.angle,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-          const SettingsSectionGap(),
-          SettingsSection.card(
-            label: t.wallpaper.groupDevice,
-            tiles: [
-              SettingsEntryTile(
-                icon: Icons.image_outlined,
-                title: t.wallpaper.pickImage,
-                subtitle: t.wallpaper.pickImageSubtitle,
-                onTap: _pickImage,
-              ),
-              PureListRow(
-                leading: const Icon(Icons.edit_location_alt_outlined, size: 22),
-                title: t.wallpaper.imagePath,
-                subtitle: appearance.wallpaperKind == WallpaperKind.image && appearance.wallpaperImagePath.isNotEmpty
-                    ? appearance.wallpaperImagePath
-                    : null,
-                trailing: SizedBox(
-                  width: 220,
-                  child: PureTextField(
-                    controller: _pathController,
-                    placeholder: t.wallpaper.imagePathHint,
-                    keyboardType: TextInputType.url,
-                    onSubmitted: (_) => _applyTypedPath(),
+                    ],
                   ),
                 ),
-                onTap: _applyTypedPath,
-                divided: false,
               ),
             ],
           ),
-          if (appearance.wallpaperKind == WallpaperKind.image) ...[
-            const SettingsSectionGap(),
+          SettingsSection(
+            title: Text(t.wallpaper.groupGradient),
+            tiles: [
+              CustomSettingsTile(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 220,
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      childAspectRatio: 1.9,
+                    ),
+                    itemCount: kWallpaperGradientPresets.length,
+                    itemBuilder: (context, index) {
+                      final preset = kWallpaperGradientPresets[index];
+                      return _GradientTile(
+                        preset: preset,
+                        selected:
+                            appearance.wallpaperKind == WallpaperKind.gradient &&
+                            appearance.wallpaperGradientColors.length == preset.argbColors.length &&
+                            appearance.wallpaperGradientColors.first == preset.argbColors.first,
+                        onTap: () => update(
+                          (a) => a.copyWith(
+                            wallpaperKind: WallpaperKind.gradient,
+                            wallpaperGradientColors: preset.argbColors,
+                            wallpaperGradientStops: preset.positions,
+                            wallpaperGradientAngle: preset.angle,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SettingsSection(
+            title: Text(t.wallpaper.groupDevice),
+            tiles: [
+              SettingsTile.navigation(
+                leading: const Icon(Icons.image_outlined),
+                title: Text(t.wallpaper.pickImage),
+                description: Text(t.wallpaper.pickImageSubtitle),
+                onPressed: (_) => _pickImage(),
+              ),
+              SettingsRowTile(
+                row: PureListRow(
+                  leading: const Icon(Icons.edit_location_alt_outlined, size: 22),
+                  title: t.wallpaper.imagePath,
+                  subtitle: appearance.wallpaperKind == WallpaperKind.image && appearance.wallpaperImagePath.isNotEmpty
+                      ? appearance.wallpaperImagePath
+                      : null,
+                  trailing: SizedBox(
+                    width: 220,
+                    child: PureTextField(
+                      controller: _pathController,
+                      placeholder: t.wallpaper.imagePathHint,
+                      keyboardType: TextInputType.url,
+                      onSubmitted: (_) => _applyTypedPath(),
+                    ),
+                  ),
+                  onTap: _applyTypedPath,
+                ),
+              ),
+            ],
+          ),
+          if (appearance.wallpaperKind == WallpaperKind.image)
             SettingsSection(
-              label: t.wallpaper.groupDisplay,
-              children: [
-                SettingsSliderCard(
-                  icon: Icons.opacity_outlined,
-                  title: t.wallpaper.scrim,
-                  subtitle: t.wallpaper.scrimSubtitle,
-                  child: PureSlider(
+              title: Text(t.wallpaper.groupDisplay),
+              tiles: [
+                CustomSettingsTile(
+                  child: SettingsSliderRow(
+                    icon: Icons.opacity_outlined,
+                    title: t.wallpaper.scrim,
+                    subtitle: t.wallpaper.scrimSubtitle,
                     value: appearance.wallpaperScrim.clamp(0.0, 1.0),
                     onChanged: (value) => update((a) => a.copyWith(wallpaperScrim: value)),
                   ),
                 ),
-                SettingsSliderCard(
-                  icon: Icons.blur_on_outlined,
-                  title: t.wallpaper.blur,
-                  subtitle: appearance.wallpaperBlur <= 0
-                      ? t.wallpaper.blurOff
-                      : appearance.wallpaperBlur.toStringAsFixed(0),
-                  child: PureSlider(
+                CustomSettingsTile(
+                  child: SettingsSliderRow(
+                    icon: Icons.blur_on_outlined,
+                    title: t.wallpaper.blur,
+                    subtitle: appearance.wallpaperBlur <= 0 ? t.wallpaper.blurOff : null,
                     value: appearance.wallpaperBlur.clamp(0.0, kWallpaperMaxBlurSigma),
                     max: kWallpaperMaxBlurSigma,
+                    valueLabel: appearance.wallpaperBlur.toStringAsFixed(0),
                     onChanged: (value) => update((a) => a.copyWith(wallpaperBlur: value)),
                   ),
                 ),
-                PureCard(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 16, bottom: 10),
-                        child: Text(
+                CustomSettingsTile(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
                           t.wallpaper.fit,
-                          style: PureTheme.of(context).text.caption.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: PureTheme.of(context).colors.primary,
-                          ),
+                          style: PureTheme.of(context).text.caption
+                              .copyWith(fontWeight: FontWeight.w700, color: PureTheme.of(context).colors.primary),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: PureSegmented(
+                        const SizedBox(height: 8),
+                        PureSegmented(
                           labels: [t.wallpaper.fitCover, t.wallpaper.fitContain, t.wallpaper.fitFill],
                           index: switch (appearance.wallpaperFit) {
                             'contain' => 1,
@@ -243,18 +241,20 @@ final class _WallpaperPickerPageState extends ConsumerState<WallpaperPickerPage>
                           },
                           onChanged: (index) => update(
                             (a) => a.copyWith(
-                              wallpaperFit: switch (index) { 1 => 'contain', 2 => 'fill', _ => 'cover' },
+                              wallpaperFit: switch (index) {
+                                1 => 'contain',
+                                2 => 'fill',
+                                _ => 'cover',
+                              },
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
-          ],
-          const SizedBox(height: 32),
         ],
       ),
     );

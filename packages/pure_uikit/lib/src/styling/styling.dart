@@ -12,6 +12,9 @@
 /// rebuilding.
 library;
 
+// The adaptive layout module: breakpoints, the responsive shell and its
+// navigation surfaces, theme-agnostic so every design language serves it.
+export '../adaptive/adaptive.dart';
 export '../app/pure_app.dart';
 // Pure, non-design-language utilities the token components and pages reuse: the
 // background painter + its style, and the static radius / spacing / size scales.

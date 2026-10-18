@@ -1,4 +1,6 @@
+import 'package:fluent_2/fluent_2.dart' as f2;
 import 'package:flutter/material.dart';
+import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 import 'package:pure_uikit/src/styling/style/recipe.dart';
 import 'package:pure_uikit/src/styling/widgets/controls/pure_button.dart';
@@ -52,6 +54,26 @@ class PureNumberStepper extends StatelessWidget {
     final theme = PureTheme.of(context);
     final canDecrement = _interactive && value > min;
     final canIncrement = _interactive && value < max;
+
+    // Fluent ships a real numeric spin button. The other libraries do not ship
+    // a number control at all, so the fallback composes Flutter buttons — the
+    // one place a shared control has no official counterpart to dispatch to.
+    if (theme.config.language == PureDesignLanguage.fluent) {
+      return f2.FluentSpinButton(
+        value: value,
+        onChanged: _interactive
+            ? (next) {
+                if (next != null) {
+                  onChanged?.call(next.clamp(min, max));
+                }
+              }
+            : null,
+        min: min.isFinite ? min : null,
+        max: max.isFinite ? max : null,
+        step: step,
+        precision: decimals,
+      );
+    }
 
     return Row(
       mainAxisSize: MainAxisSize.min,

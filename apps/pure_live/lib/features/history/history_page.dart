@@ -151,12 +151,16 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
                   for (final group in _groups(records)) ...[
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(PureSpacing.sm, PureSpacing.md, PureSpacing.sm, PureSpacing.xs),
+                        padding: const EdgeInsets.fromLTRB(
+                          PureSpacing.sm,
+                          PureSpacing.md,
+                          PureSpacing.sm,
+                          PureSpacing.xs,
+                        ),
                         child: Text(
                           group.label,
-                          style: PureTheme.of(context).text.bodySmall.copyWith(
-                            color: PureTheme.of(context).colors.textSecondary,
-                          ),
+                          style: PureTheme.of(context).text.bodySmall
+                              .copyWith(color: PureTheme.of(context).colors.textSecondary),
                         ),
                       ),
                     ),

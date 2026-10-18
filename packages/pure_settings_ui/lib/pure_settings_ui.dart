@@ -58,8 +58,7 @@ export 'src/vendor/sections/abstract_settings_section.dart';
 export 'src/vendor/sections/custom_settings_section.dart';
 export 'src/vendor/sections/settings_section.dart';
 export 'src/vendor/split/settings_destination.dart';
-export 'src/vendor/split/settings_split_view.dart'
-    show SettingsSplitController, SettingsSplitLayout, SettingsSplitView;
+export 'src/vendor/split/settings_split_view.dart' show SettingsSplitController, SettingsSplitLayout, SettingsSplitView;
 export 'src/vendor/tiles/abstract_settings_tile.dart';
 export 'src/vendor/tiles/custom_settings_tile.dart';
 export 'src/vendor/tiles/platforms/adwaita_settings_switch.dart';

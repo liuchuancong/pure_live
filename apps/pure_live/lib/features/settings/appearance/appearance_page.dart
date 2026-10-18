@@ -1,30 +1,33 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/routes/settings/settings_routes.dart';
 import 'package:pure_live/app/theme/appearance_preferences/appearance_preferences.dart';
 import 'package:pure_live/app/theme/ui_configuration_mapper.dart' show designLanguageByStoredId;
-import 'package:pure_live/features/settings/widgets/settings_sections.dart';
+import 'package:pure_live/features/settings/widgets/settings_chooser.dart';
+import 'package:pure_live/features/settings/widgets/settings_rows.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_settings_ui/pure_settings_ui.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 import 'package:restart_app/restart_app.dart';
 
 /// The appearance page (3.x `ThemeSettingsPage`, trimmed to the backed
-/// controls): the reference's sectioned shape — a themed group, a font group
-/// and a text-size group over rounded cards of rows — with every control
-/// writing straight into the persisted appearance.
+/// controls): the reference's sectioned shape — a themed group, a font group and
+/// a text-size group — written as one `SettingsList`, so each design language
+/// draws its own cards and rows instead of this page's hand-drawn Material card.
 ///
 /// One control is not like the others. Brightness, accent, density, font and
 /// transparency re-skin the running tree under the viewer's finger; the design
-/// language picks which app host gets mounted, and a host is not swapped inside
-/// a live process, so its write is stored and waits for a relaunch (§2.4 of the
-/// v4 spec). The row reports the pending language and the picker offers the
-/// restart.
+/// language picks which app host gets mounted, and a host is not swapped inside a
+/// live process, so its write is stored and waits for a relaunch (§2.4 of the v4
+/// spec). The row reports the pending language and the picker offers the restart.
 ///
-/// The reference's chooser rows open dialogs; the same interaction lives here
-/// as a chooser dialog over the uikit's rows. The controls the reference ships
-/// without a backing in this build (dynamic colour, loading style, room card,
-/// grid spacing, page settings, language) stay out.
+/// The controls the reference ships without a backing in this build (dynamic
+/// colour, loading style, room card, grid spacing, page settings, language) stay
+/// out — except the ones that live on their own pages here.
 final class AppearancePage extends ConsumerWidget {
   /// The appearance page.
   const new({super.key});
@@ -51,119 +54,127 @@ final class AppearancePage extends ConsumerWidget {
     final pendingLanguage = ref.watch(pendingDesignLanguageProvider);
     return PureScaffold(
       appBar: PureAppBar(title: t.settings.appearance),
-      body: ListView(
-        padding: const EdgeInsets.all(12),
-        children: [
-          SettingsSection.card(
-            label: t.settings.groupTheme,
+      body: SettingsList(
+        sections: [
+          SettingsSection(
+            title: Text(t.settings.groupTheme),
             tiles: [
-              SettingsEntryTile(
-                icon: Icons.dark_mode_outlined,
-                title: t.settings.themeMode,
-                subtitle: t.settings.themeModeSubtitle,
-                onTap: () => _chooseThemeMode(context, appearance, update),
+              SettingsTile.navigation(
+                leading: const Icon(Icons.dark_mode_outlined),
+                title: Text(t.settings.themeMode),
+                description: Text(t.settings.themeModeSubtitle),
+                onPressed: (_) => unawaited(_chooseThemeMode(context, appearance, update)),
               ),
-              SettingsEntryTile(
-                icon: Icons.style_outlined,
-                title: t.settings.designLanguage,
+              SettingsTile.navigation(
+                leading: const Icon(Icons.style_outlined),
+                title: Text(t.settings.designLanguage),
                 // The language is the one appearance setting this page cannot
                 // apply live: it picks the app host, so the stored choice waits
                 // for a relaunch and the row says so until then (§2.4).
-                subtitle: pendingLanguage == null
-                    ? t.settings.designLanguageSubtitle
-                    : t.settings.designLanguagePending(name: pendingLanguage.name),
-                onTap: () => _chooseDesignLanguage(context, ref, appearance, update),
+                description: Text(
+                  pendingLanguage == null
+                      ? t.settings.designLanguageSubtitle
+                      : t.settings.designLanguagePending(name: pendingLanguage.name),
+                ),
+                onPressed: (_) => unawaited(_chooseDesignLanguage(context, ref, appearance, update)),
               ),
-              SettingsEntryTile(
-                icon: Icons.colorize_outlined,
-                title: t.settings.accent,
-                subtitle: t.settings.accentSubtitle,
-                trailing: _accentSwatch(context, appearance.accentColor, selected: true),
-                onTap: () => _chooseAccent(context, update),
+              SettingsTile.navigation(
+                leading: const Icon(Icons.colorize_outlined),
+                title: Text(t.settings.accent),
+                description: Text(t.settings.accentSubtitle),
+                trailing: _accentSwatch(context, appearance.accentColor),
+                onPressed: (_) => unawaited(_chooseAccent(context, update)),
               ),
-              SettingsEntryTile(
-                icon: Icons.wallpaper_outlined,
-                title: t.wallpaper.title,
-                subtitle: _wallpaperSummary(context, appearance),
-                onTap: () => const WallpaperRoute().push<void>(context),
+              SettingsTile.navigation(
+                leading: const Icon(Icons.wallpaper_outlined),
+                title: Text(t.wallpaper.title),
+                // The answer, not a subtitle: which surface the app paints on
+                // is a state the row reports.
+                value: Text(_wallpaperSummary(context, appearance)),
+                onPressed: (_) => unawaited(const WallpaperRoute().push<void>(context)),
               ),
-              SettingsEntryTile(
-                icon: Icons.format_line_spacing,
-                title: t.settings.density,
-                subtitle: t.settings.densitySubtitle,
-                onTap: () => _chooseDensity(context, appearance, update),
+              SettingsTile.navigation(
+                leading: const Icon(Icons.format_line_spacing),
+                title: Text(t.settings.density),
+                description: Text(t.settings.densitySubtitle),
+                onPressed: (_) => unawaited(_chooseDensity(context, appearance, update)),
               ),
-              SettingsSwitchTile(
-                icon: Icons.contrast_outlined,
-                title: t.settings.pureBlack,
-                subtitle: t.settings.pureBlackSubtitle,
-                value: appearance.pureBlack,
-                onChanged: (value) => update((a) => a.copyWith(pureBlack: value)),
+              SettingsTile.navigation(
+                leading: const Icon(Icons.translate_outlined),
+                title: Text(t.settings.language),
+                description: Text(t.settings.languageSubtitle),
+                value: Text(_languageLabel(context, ref.read(appPreferencesProvider).languageId)),
+                onPressed: (_) => unawaited(_chooseLanguage(context, ref)),
               ),
-              SettingsSwitchTile(
-                icon: Icons.blur_off_outlined,
-                title: t.settings.reduceTransparency,
-                subtitle: t.settings.reduceTransparencySubtitle,
-                value: appearance.reduceTransparency,
-                onChanged: (value) => update((a) => a.copyWith(reduceTransparency: value)),
+              SettingsTile.switchTile(
+                leading: const Icon(Icons.contrast_outlined),
+                title: Text(t.settings.pureBlack),
+                description: Text(t.settings.pureBlackSubtitle),
+                initialValue: appearance.pureBlack,
+                onToggle: (value) => update((a) => a.copyWith(pureBlack: value)),
               ),
-              SettingsSwitchTile(
-                icon: Icons.animation_outlined,
-                title: t.settings.animations,
-                subtitle: t.settings.animationsSubtitle,
-                value: appearance.animations,
-                onChanged: (value) => update((a) => a.copyWith(animations: value)),
+              SettingsTile.switchTile(
+                leading: const Icon(Icons.blur_off_outlined),
+                title: Text(t.settings.reduceTransparency),
+                description: Text(t.settings.reduceTransparencySubtitle),
+                initialValue: appearance.reduceTransparency,
+                onToggle: (value) => update((a) => a.copyWith(reduceTransparency: value)),
               ),
-              SettingsSwitchTile(
-                icon: Icons.filter_center_focus_outlined,
-                title: t.settings.focusOutline,
-                subtitle: t.settings.focusOutlineSubtitle,
-                value: appearance.focusOutline,
-                onChanged: (value) => update((a) => a.copyWith(focusOutline: value)),
-                divided: false,
+              SettingsTile.switchTile(
+                leading: const Icon(Icons.animation_outlined),
+                title: Text(t.settings.animations),
+                description: Text(t.settings.animationsSubtitle),
+                initialValue: appearance.animations,
+                onToggle: (value) => update((a) => a.copyWith(animations: value)),
               ),
-            ],
-          ),
-          const SettingsSectionGap(),
-          SettingsSection.card(
-            label: t.settings.groupFontFamily,
-            tiles: [
-              SettingsEntryTile(
-                icon: Icons.font_download_outlined,
-                title: t.settings.fonts,
-                subtitle: t.settings.fontFamilyCurrent(name: _currentFontName(context, appearance)),
-                onTap: () => const FontManagerRoute().push<void>(context),
-                divided: false,
+              SettingsTile.switchTile(
+                leading: const Icon(Icons.filter_center_focus_outlined),
+                title: Text(t.settings.focusOutline),
+                description: Text(t.settings.focusOutlineSubtitle),
+                initialValue: appearance.focusOutline,
+                onToggle: (value) => update((a) => a.copyWith(focusOutline: value)),
               ),
             ],
           ),
-          const SettingsSectionGap(),
           SettingsSection(
-            label: t.settings.groupTextSize,
-            children: [
-              SettingsSliderCard(
-                icon: Icons.format_size_outlined,
-                title: t.settings.fontScale,
-                subtitle: t.settings.fontScaleSubtitle,
-                child: PureSlider(
+            title: Text(t.settings.groupFontFamily),
+            tiles: [
+              SettingsTile.navigation(
+                leading: const Icon(Icons.font_download_outlined),
+                title: Text(t.settings.fonts),
+                value: Text(_currentFontName(context, appearance)),
+                onPressed: (_) => unawaited(const FontManagerRoute().push<void>(context)),
+              ),
+            ],
+          ),
+          SettingsSection(
+            title: Text(t.settings.groupTextSize),
+            tiles: [
+              CustomSettingsTile(
+                child: SettingsSliderRow(
+                  icon: Icons.format_size_outlined,
+                  title: t.settings.fontScale,
+                  subtitle: t.settings.fontScaleSubtitle,
                   value: appearance.fontScale,
                   min: 0.8,
                   max: 1.4,
                   onChanged: (value) => update((a) => a.copyWith(fontScale: value)),
                 ),
               ),
-              SettingsSliderCard(
-                icon: Icons.opacity_outlined,
-                title: t.settings.transparency,
-                subtitle: t.settings.transparencySubtitle,
-                child: PureSlider(
+              CustomSettingsTile(
+                child: SettingsSliderRow(
+                  icon: Icons.opacity_outlined,
+                  title: t.settings.transparency,
+                  subtitle: t.settings.transparencySubtitle,
                   value: appearance.transparency,
                   onChanged: (value) => update((a) => a.copyWith(transparency: value)),
                 ),
               ),
-              PureCard(
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                child: Center(
+              // The preview line is the reference's, and it is the real thing:
+              // drawn with the text role the slider above drives.
+              CustomSettingsTile(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 18, 8, 18),
                   child: Text(
                     t.settings.previewText,
                     style: PureTheme.of(context).text.body,
@@ -173,7 +184,6 @@ final class AppearancePage extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 32),
         ],
       ),
     );
@@ -252,8 +262,8 @@ final class AppearancePage extends ConsumerWidget {
   ///
   /// A relaunch is the only way the new language takes effect, and it is the
   /// user's call when to take it — the backup restore restarts without asking
-  /// because an open box cannot be read consistently, while here the running
-  /// app is perfectly usable and only differently dressed.
+  /// because an open box cannot be read consistently, while here the running app
+  /// is perfectly usable and only differently dressed.
   static Future<void> _offerRestart(BuildContext context, {required PureDesignLanguage mounted}) async {
     final t = context.t;
     final restart = await showPureDialog<bool>(
@@ -266,10 +276,7 @@ final class AppearancePage extends ConsumerWidget {
           variant: ButtonVariant.ghost,
           onPressed: () => Navigator.of(dialogContext).pop(false),
         ),
-        PureButton(
-          label: dialogContext.t.common.restartNow,
-          onPressed: () => Navigator.of(dialogContext).pop(true),
-        ),
+        PureButton(label: dialogContext.t.common.restartNow, onPressed: () => Navigator.of(dialogContext).pop(true)),
       ],
     );
     if (restart != true) {
@@ -280,6 +287,41 @@ final class AppearancePage extends ConsumerWidget {
 
   static String _designLanguageLabel(BuildContext context, String id) =>
       id.isEmpty ? context.t.design.defaultLanguage : PureDesignLanguage.values.byName(id).name;
+
+  /// The interface language, each name written in its own language — a language
+  /// is never translated into the language the user is leaving. The empty id is
+  /// the system's answer, so its label comes from the strings.
+  static const List<(String, String)> _languages = [('', ''), ('zh', '简体中文'), ('en', 'English')];
+
+  /// The language choice.
+  ///
+  /// It writes the general preferences — the document the boot reads before the
+  /// first frame — and re-translates the running tree at once: slang swaps the
+  /// locale under the `TranslationProvider` the app is wrapped in, so this page
+  /// repaints in the new language as the dialog closes.
+  static Future<void> _chooseLanguage(BuildContext context, WidgetRef ref) async {
+    final current = ref.read(appPreferencesProvider).languageId;
+    final picked = await showSettingsChooser<String>(
+      context,
+      title: context.t.settings.language,
+      current: current,
+      options: [
+        for (final entry in _languages) (entry.$1, entry.$1.isEmpty ? context.t.settings.languageSystem : entry.$2),
+      ],
+    );
+    if (picked == null) {
+      return;
+    }
+    await ref.read(appPreferencesProvider.notifier).update((p) => p.copyWith(languageId: picked));
+    if (picked.isEmpty) {
+      LocaleSettings.useDeviceLocaleSync();
+    } else {
+      LocaleSettings.setLocaleRawSync(picked);
+    }
+  }
+
+  static String _languageLabel(BuildContext context, String id) =>
+      id.isEmpty ? context.t.settings.languageSystem : _languages.firstWhere((entry) => entry.$1 == id).$2;
 
   static Future<void> _chooseDensity(
     BuildContext context,
@@ -318,8 +360,8 @@ final class AppearancePage extends ConsumerWidget {
     await update((a) => a.copyWith(accentColor: _accentPresets[picked]));
   }
 
-  /// The chooser dialog: the reference's radio-list interaction over the
-  /// uikit's rows — the current choice marked by its leading check.
+  /// The chooser: the settings cluster's shared radio-list dialog, then the
+  /// write it picked.
   static Future<void> _choose<T>(
     BuildContext context, {
     required String title,
@@ -327,51 +369,20 @@ final class AppearancePage extends ConsumerWidget {
     required List<(T, String)> options,
     required Future<void> Function(T value) onPicked,
   }) async {
-    final picked = await showPureDialog<T>(
-      context: context,
-      title: title,
-      // A Builder so a row's submit pops the dialog route, not the page under
-      // it — the dialog builds on the root navigator.
-      child: Builder(
-        builder: (dialogContext) => ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 360),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (var i = 0; i < options.length; i++)
-                  PureListRow(
-                    title: options[i].$2,
-                    leading: Icon(
-                      options[i].$1 == current ? Icons.check_circle : Icons.radio_button_unchecked,
-                      color: options[i].$1 == current ? PureTheme.of(context).colors.primary : null,
-                    ),
-                    selected: options[i].$1 == current,
-                    onTap: () => Navigator.of(dialogContext).pop(options[i].$1),
-                    divided: i < options.length - 1,
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+    final picked = await showSettingsChooser<T>(context, title: title, current: current, options: options);
     if (picked == null) {
       return;
     }
     await onPicked(picked);
   }
 
-  static Widget _accentSwatch(BuildContext context, int? argb, {required bool selected}) => Container(
-    width: selected ? 26 : 34,
-    height: selected ? 26 : 34,
+  static Widget _accentSwatch(BuildContext context, int? argb) => Container(
+    width: 26,
+    height: 26,
     decoration: BoxDecoration(
       color: argb == null ? const Color(0xFF888888) : Color(argb),
       shape: BoxShape.circle,
-      border: Border.all(
-        color: selected ? PureTheme.of(context).colors.onPrimary : Colors.white24,
-        width: selected ? 3 : 1,
-      ),
+      border: Border.all(color: PureTheme.of(context).colors.onPrimary, width: 3),
     ),
     child: argb == null ? const Icon(Icons.block_outlined, size: 14, color: Colors.white70) : null,
   );

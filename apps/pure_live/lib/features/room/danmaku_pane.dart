@@ -5,29 +5,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_interaction/live_interaction.dart';
 import 'package:live_sites/live_sites.dart';
-import 'package:pure_live/app/routing/routes/settings/shield_routes.dart';
+import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/features/room/room_providers.dart';
 import 'package:pure_live/features/room/super_chat_card.dart';
+import 'package:pure_live/features/shield/shield_lists.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_uikit/pure_uikit.dart' hide InteractionState;
 
 /// The room's interaction pane (the reference's `DanmakuTabView`): the live
-/// danmaku list, the super-chat board and the gift feed as tabs over one
-/// [InteractionSession], plus the way into the danmaku shield.
+/// danmaku list, the super-chat board, the barrage settings and the keyword
+/// block — the reference's own four-tab set — over one [InteractionSession].
 ///
 /// The session is owned by [danmakuSessionProvider] — the pane only renders
 /// it. Chat keeps the newest line pinned to the bottom and pauses the follow
 /// the moment the viewer scrolls up, with a "back to live" pill that counts
-/// what arrived in the meantime.
+/// what arrived in the meantime. Gifts render inline in the chat feed, as the
+/// reference does; the block tab edits the same rules the standalone shield
+/// page hosts.
 ///
-/// Degraded on purpose:
-/// - **Sending** renders unavailable. The app has no platform login /
-///   credential layer yet (the reference's cookie settings and per-site send
-///   channels have no workspace counterpart), so there is nothing real to
-///   send with; faking a send would violate the no-mock rule.
-/// - **Gifts** lists what the room *received* (the `LiveGift` payloads of the
-///   stream). The reference's local gift centre is a coins simulation, not a
-///   platform capability, so it is not carried over.
+/// Sending is the reference's local interaction: what is typed is injected
+/// into this room's own feed and the video barrage through
+/// [roomLocalMessageBusProvider], and the composer only appears when the
+/// setting is on. It is not a platform send — the reference never had one.
 final class DanmakuPane extends ConsumerWidget {
   /// A pane for the room [identity]; [dark] dresses the pane for the black
   /// sidebar next to the video instead of a light sheet surface.
@@ -45,12 +44,10 @@ final class DanmakuPane extends ConsumerWidget {
     return switch (session) {
       AsyncData(:final value) when value != null => _SessionPane(identity: identity, session: value, dark: dark),
       // The site exposes no danmaku capability: degrade honestly instead of
-      // showing a connection failure.
-      AsyncData() => PureEmpty(
-        title: context.t.room.danmakuFailed,
-        message: context.t.errors.unsupported,
-        icon: Icons.forum_outlined,
-      ),
+      // showing a connection failure. The composer still works — local
+      // messages need no socket — but with nothing to answer them a phone's
+      // sheet is better spent on the picture.
+      AsyncData() => _EmptySupport(identity: identity, dark: dark),
       AsyncError() => PureError(
         message: context.t.room.danmakuFailed,
         retryLabel: context.t.common.retry,
@@ -61,12 +58,53 @@ final class DanmakuPane extends ConsumerWidget {
   }
 }
 
-/// One session's three feeds and their shared tab strip.
+/// The no-danmaku-support shape: the composer alone, when local interaction
+/// is on, so the reference's "iptv shows nothing here" honesty is kept while
+/// the feature the user did ask for still works.
+final class _EmptySupport extends ConsumerStatefulWidget {
+  const new({required this.identity, required this.dark});
+
+  final RoomIdentity identity;
+  final bool dark;
+
+  @override
+  ConsumerState<_EmptySupport> createState() => _EmptySupportState();
+}
+
+final class _EmptySupportState extends ConsumerState<_EmptySupport> {
+  final TextEditingController _draft = TextEditingController();
+
+  @override
+  void dispose() {
+    _draft.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!ref.watch(appPreferencesProvider).localInteractionEnabled) {
+      return PureEmpty(
+        title: context.t.room.danmakuFailed,
+        message: context.t.errors.unsupported,
+        icon: Icons.forum_outlined,
+      );
+    }
+    return Column(
+      children: [
+        Expanded(
+          child: Center(child: Text(context.t.errors.unsupported, style: PureTheme.of(context).text.caption)),
+        ),
+        _SendBar(identity: widget.identity, draft: _draft, dark: widget.dark),
+      ],
+    );
+  }
+}
+
+/// One session's feeds and their shared tab strip.
 final class _SessionPane extends ConsumerStatefulWidget {
   const new({required this.identity, required this.session, required this.dark});
 
-  /// The room this pane renders; the shield entry needs it to re-open the
-  /// session's provider.
+  /// The room this pane renders; the bus and the block rules key off it.
   final RoomIdentity identity;
 
   final InteractionSession session;
@@ -80,19 +118,19 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
   /// How long message bursts are coalesced before a rebuild.
   static const _throttle = Duration(milliseconds: 60);
 
-  /// The per-feed caps: the room's tail is what matters, and an unbounded
+  /// The feed cap: the room's tail is what matters, and an unbounded
   /// list is one long-session memory leak.
   static const _chatCap = 200;
   static const _superChatCap = 50;
-  static const _giftCap = 60;
 
   StreamSubscription<LiveMessage>? _messages;
+  StreamSubscription<LiveMessage>? _local;
   StreamSubscription<InteractionState>? _states;
   final ScrollController _chatScroll = ScrollController();
+  final TextEditingController _draft = TextEditingController();
 
   final List<LiveMessage> _chats = [];
   final List<LiveSuperChatMessage> _superChats = [];
-  final List<LiveGift> _gifts = [];
 
   InteractionPhase _phase = InteractionPhase.idle;
   int _tab = 0;
@@ -114,7 +152,6 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
       // feeds: replaying the old tail would blur what is happening now.
       _chats.clear();
       _superChats.clear();
-      _gifts.clear();
       _pinned = true;
       _pendingCount = 0;
       _subscribe();
@@ -125,15 +162,21 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
   void dispose() {
     _throttleTimer?.cancel();
     _chatScroll.dispose();
+    _draft.dispose();
     unawaited(_messages?.cancel());
+    unawaited(_local?.cancel());
     unawaited(_states?.cancel());
     super.dispose();
   }
 
   void _subscribe() {
     unawaited(_messages?.cancel());
+    unawaited(_local?.cancel());
     unawaited(_states?.cancel());
     _messages = widget.session.messages.listen(_onMessage, onError: (Object _) {});
+    // The bus is the reference's local delivery queue: what the viewer types
+    // lands in the same feed, marked local, and the barrage draws it too.
+    _local = ref.read(roomLocalMessageBusProvider(widget.identity)).messages.listen(_onMessage);
     _states = widget.session.states.listen((state) {
       if (mounted) {
         setState(() => _phase = state.phase);
@@ -149,10 +192,6 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
         _markArrival();
       case LiveMessageType.gift:
         _chats.add(message);
-        final gift = message.giftOrNull;
-        if (gift is LiveGift) {
-          _gifts.add(gift);
-        }
         _markArrival();
       case LiveMessageType.superChat:
         final payload = message.payload;
@@ -179,7 +218,12 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
           _markArrival();
         }
     }
-    _trim();
+    if (_chats.length > _chatCap) {
+      _chats.removeRange(0, _chats.length - _chatCap);
+    }
+    if (_superChats.length > _superChatCap) {
+      _superChats.removeRange(0, _superChats.length - _superChatCap);
+    }
   }
 
   void _markArrival() {
@@ -194,18 +238,6 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
     });
   }
 
-  void _trim() {
-    if (_chats.length > _chatCap) {
-      _chats.removeRange(0, _chats.length - _chatCap);
-    }
-    if (_superChats.length > _superChatCap) {
-      _superChats.removeRange(0, _superChats.length - _superChatCap);
-    }
-    if (_gifts.length > _giftCap) {
-      _gifts.removeRange(0, _gifts.length - _giftCap);
-    }
-  }
-
   void _backToLive() {
     // The reverse list follows the tail by itself while pinned; resuming
     // only has to walk back to the live edge.
@@ -218,41 +250,27 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
     });
   }
 
-  /// Opens the shield page; the rules it changes only reach a running
-  /// session through a fresh one, so the provider is invalidated on return.
-  Future<void> _openShield() async {
-    await const ShieldRoute().push<void>(context);
-    if (mounted) {
-      ref.invalidate(danmakuSessionProvider(widget.identity));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final t = context.t;
     final dark = widget.dark;
+    // The reference gates the chat feed on the same answer the overlay uses:
+    // a viewer who turned the barrage off globally gets the hint, not the
+    // list — and the settings tab is where they turn it back.
+    final hidden = !ref.watch(appPreferencesProvider).danmakuVisible;
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Row(
-            children: [
-              Expanded(
-                child: PureTabs(
-                  tabs: [
-                    PureTab(label: context.t.room.chat),
-                    PureTab(label: context.t.room.superChat),
-                    PureTab(label: context.t.room.gifts),
-                  ],
-                  index: _tab,
-                  onChanged: (index) => setState(() => _tab = index),
-                ),
-              ),
-              PureIconButton(
-                icon: Icons.block_outlined,
-                tooltip: context.t.room.shield,
-                onPressed: () => unawaited(_openShield()),
-              ),
+          child: PureTabs(
+            tabs: [
+              PureTab(label: t.room.chat),
+              PureTab(label: t.room.superChat),
+              PureTab(label: t.room.barrageSettings),
+              PureTab(label: t.room.keywordBlock),
             ],
+            index: _tab,
+            onChanged: (index) => setState(() => _tab = index),
           ),
         ),
         if (_phase == InteractionPhase.reconnecting)
@@ -264,7 +282,7 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
                 const SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 1.6)),
                 const SizedBox(width: 6),
                 Text(
-                  context.t.room.reconnecting,
+                  t.room.reconnecting,
                   style: PureTheme.of(context).text.caption
                       .copyWith(color: dark ? Colors.white54 : PureTheme.of(context).colors.textSecondary),
                 ),
@@ -278,14 +296,14 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
               children: [
                 Expanded(
                   child: Text(
-                    context.t.room.danmakuEnded,
+                    t.room.danmakuEnded,
                     style: PureTheme.of(context).text.caption
                         .copyWith(color: dark ? Colors.white54 : PureTheme.of(context).colors.textSecondary),
                   ),
                 ),
                 PureIconButton(
                   icon: Icons.refresh,
-                  tooltip: context.t.common.retry,
+                  tooltip: t.common.retry,
                   onPressed: () => ref.invalidate(danmakuSessionProvider(widget.identity)),
                 ),
               ],
@@ -294,11 +312,46 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
         Expanded(
           child: IndexedStack(
             index: _tab,
-            children: [_chatTab(context, dark), _superChatTab(context, dark), _giftTab(context, dark)],
+            children: [
+              if (hidden) _hiddenHint(context, dark) else _chatTab(context, dark),
+              _superChatTab(context, dark),
+              _settingsTab(context),
+              const ShieldListsPanel(),
+            ],
           ),
         ),
-        _sendBar(context, dark),
+        if (ref.watch(appPreferencesProvider).localInteractionEnabled)
+          _SendBar(identity: widget.identity, draft: _draft, dark: dark),
       ],
+    );
+  }
+
+  /// The reference's `danmaku_display_disabled_hint` shape: the reason, and
+  /// the way back to the tab that flips it.
+  Widget _hiddenHint(BuildContext context, bool dark) {
+    final theme = PureTheme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(context.t.room.barrageHiddenHint, textAlign: TextAlign.center, style: theme.text.caption),
+            const SizedBox(height: 10),
+            PureButton(
+              label: context.t.room.barrageOn,
+              icon: Icons.comment_outlined,
+              size: ControlSize.sm,
+              variant: ButtonVariant.secondary,
+              onPressed: () => unawaited(
+                ref
+                    .read(appPreferencesProvider.notifier)
+                    .update((preferences) => preferences.copyWith(danmakuVisible: true)),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -455,60 +508,81 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
     );
   }
 
-  Widget _giftTab(BuildContext context, bool dark) {
-    if (_gifts.isEmpty) {
-      return PureEmpty(
-        title: context.t.room.giftsEmpty,
-        message: context.t.room.giftsEmptyHint,
-        icon: Icons.card_giftcard_outlined,
-      );
-    }
-    return ListView.builder(
-      padding: const EdgeInsets.all(10),
-      itemCount: _gifts.length,
-      itemBuilder: (context, index) {
-        final gift = _gifts[_gifts.length - 1 - index];
-        final price = gift.value.unitPrice;
-        final priced = price != null && gift.value.unit != LiveGiftUnit.free && gift.value.unit != LiveGiftUnit.silver;
-        return PureListRow(
-          divided: false,
-          leading: gift.iconUrl == null || gift.iconUrl!.isEmpty
-              ? const Icon(Icons.card_giftcard_outlined)
-              : CachedNetworkImage(
-                  imageUrl: gift.iconUrl!,
-                  width: 32,
-                  height: 32,
-                  errorWidget: (_, _, _) => const Icon(Icons.card_giftcard_outlined),
+  /// The barrage answers the overlay draws with, edited where they are read —
+  /// the reference's third tab, scoped to what this build's surface honours:
+  /// the global visibility, the text size and the opacity.
+  Widget _settingsTab(BuildContext context) {
+    final t = context.t;
+    final theme = PureTheme.of(context);
+    final preferences = ref.watch(appPreferencesProvider);
+    final update = ref.read(appPreferencesProvider.notifier).update;
+    return ListView(
+      padding: const EdgeInsets.all(12),
+      children: [
+        PureCard(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(t.room.barrageOn, style: theme.text.title),
+                    Text(
+                      t.room.barrageOnSubtitle,
+                      style: theme.text.caption.copyWith(color: theme.colors.textSecondary),
+                    ),
+                  ],
                 ),
-          title: gift.count > 1 ? '${gift.name} ×${gift.count}' : gift.name,
-          subtitle: priced ? '￥$price' : null,
-        );
-      },
-    );
-  }
-
-  /// The composer, degraded to unavailable: this app has no platform login /
-  /// credential layer yet, so there is no account to speak with — the field
-  /// and the send action stay disabled rather than pretending.
-  Widget _sendBar(BuildContext context, bool dark) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
-      child: Row(
-        children: [
-          Expanded(
-            child: PureTextField(
-              enabled: false,
-              readOnly: true,
-              textInputAction: TextInputAction.send,
-              placeholder: context.t.room.sendUnavailable,
-            ),
+              ),
+              PureSwitch(
+                value: preferences.danmakuVisible,
+                onChanged: (value) => unawaited(update((p) => p.copyWith(danmakuVisible: value))),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          // Disabled on purpose: sending is unavailable until the app grows
-          // a platform login layer (see the class doc).
-          PureIconButton(icon: Icons.send_rounded, tooltip: context.t.room.sendUnavailable),
-        ],
-      ),
+        ),
+        const SizedBox(height: 12),
+        PureCard(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(child: Text(t.room.barrageFontSize, style: theme.text.body)),
+                  Text('${preferences.barrageFontSize.round()} px', style: theme.text.caption),
+                ],
+              ),
+              PureSlider(
+                value: preferences.barrageFontSize,
+                min: 10,
+                max: 28,
+                onChanged: (value) => unawaited(update((p) => p.copyWith(barrageFontSize: value))),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(child: Text(t.room.barrageOpacity, style: theme.text.body)),
+                  Text('${(preferences.barrageOpacity * 100).round()}%', style: theme.text.caption),
+                ],
+              ),
+              PureSlider(
+                value: preferences.barrageOpacity,
+                min: 0.2,
+                onChanged: (value) => unawaited(update((p) => p.copyWith(barrageOpacity: value))),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            t.room.barrageSettingsNote,
+            style: theme.text.caption.copyWith(color: theme.colors.textSecondary),
+          ),
+        ),
+      ],
     );
   }
 
@@ -524,5 +598,60 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
     final hsl = HSLColor.fromColor(base);
     final lightness = dark ? hsl.lightness.clamp(0.62, 0.86) : hsl.lightness.clamp(0.28, 0.55);
     return hsl.withLightness(lightness).toColor();
+  }
+}
+
+/// The composer, the reference's local-message input: what is typed goes onto
+/// the room's bus, lands in the chat feed and crosses the barrage. It is
+/// visible only while the local-interaction setting is on — the reference
+/// ships the same gate, and this build has no platform send channel to fake.
+final class _SendBar extends ConsumerStatefulWidget {
+  const new({required this.identity, required this.draft, required this.dark});
+
+  final RoomIdentity identity;
+
+  /// Shared with the pane so a tab rebuild never drops a half-typed line.
+  final TextEditingController draft;
+  final bool dark;
+
+  @override
+  ConsumerState<_SendBar> createState() => _SendBarState();
+}
+
+final class _SendBarState extends ConsumerState<_SendBar> {
+  void _send() {
+    final text = widget.draft.text;
+    if (text.trim().isEmpty) {
+      return;
+    }
+    final preferences = ref.read(appPreferencesProvider);
+    final name = preferences.localInteractionUserName.trim().isEmpty
+        ? context.t.room.localMe
+        : preferences.localInteractionUserName.trim();
+    ref
+        .read(roomLocalMessageBusProvider(widget.identity))
+        .sendChat(text: text, userName: name, colorArgb: preferences.localInteractionColor);
+    widget.draft.clear();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: PureTextField(
+              controller: widget.draft,
+              textInputAction: TextInputAction.send,
+              placeholder: context.t.room.sendPlaceholder,
+              onSubmitted: (_) => _send(),
+            ),
+          ),
+          const SizedBox(width: 8),
+          PureIconButton(icon: Icons.send_rounded, tooltip: context.t.room.send, onPressed: _send),
+        ],
+      ),
+    );
   }
 }

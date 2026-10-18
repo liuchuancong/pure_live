@@ -505,12 +505,13 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
     final t = context.t;
     final colors = PureTheme.of(context).colors;
     final channels = _library.zapSequence().channels;
-    final hot = [...channels]..sort((a, b) {
-      if (a.favorite != b.favorite) {
-        return a.favorite ? -1 : 1;
-      }
-      return 0;
-    });
+    final hot = [...channels]
+      ..sort((a, b) {
+        if (a.favorite != b.favorite) {
+          return a.favorite ? -1 : 1;
+        }
+        return 0;
+      });
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -524,9 +525,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        (channel != null && channel.entry.name.isNotEmpty)
-                            ? channel.entry.name
-                            : widget.name,
+                        (channel != null && channel.entry.name.isNotEmpty) ? channel.entry.name : widget.name,
                         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -561,11 +560,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
                     onPressed: _toggleFavorite,
                   ),
                 if (_lines.length > 1)
-                  IconButton(
-                    tooltip: t.iptv.lineSelect,
-                    icon: const Icon(Icons.tune),
-                    onPressed: _cycleLine,
-                  ),
+                  IconButton(tooltip: t.iptv.lineSelect, icon: const Icon(Icons.tune), onPressed: _cycleLine),
               ],
             ),
           ),
@@ -574,24 +569,14 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _quickAction(
-                  context,
-                  icon: Icons.skip_previous,
-                  label: t.iptv.prevChannel,
-                  onPressed: () => _zap(-1),
-                ),
+                _quickAction(context, icon: Icons.skip_previous, label: t.iptv.prevChannel, onPressed: () => _zap(-1)),
                 _quickAction(
                   context,
                   icon: Icons.format_list_bulleted,
                   label: t.iptv.channelList,
                   onPressed: () => setState(() => _panelOpen = true),
                 ),
-                _quickAction(
-                  context,
-                  icon: Icons.tune,
-                  label: t.iptv.playbackSettings,
-                  onPressed: _openPlaybackSheet,
-                ),
+                _quickAction(context, icon: Icons.tune, label: t.iptv.playbackSettings, onPressed: _openPlaybackSheet),
               ],
             ),
           ),
@@ -600,7 +585,9 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: Row(
               children: [
-                Expanded(child: Text(t.iptv.hotChannels, style: const TextStyle(fontWeight: FontWeight.w700))),
+                Expanded(
+                  child: Text(t.iptv.hotChannels, style: const TextStyle(fontWeight: FontWeight.w700)),
+                ),
                 TextButton(onPressed: () => setState(() => _panelOpen = true), child: Text(t.iptv.viewAll)),
               ],
             ),
@@ -933,10 +920,8 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
                 ),
                 Expanded(
                   child: Text(
-                    [
-                      for (final programme in upcoming)
-                        '${_clock(programme.start.toLocal())} ${programme.title}'.trim(),
-                    ].join('  ·  '),
+                    [for (final programme in upcoming) '${_clock(programme.start.toLocal())} ${programme.title}'.trim()]
+                        .join('  ·  '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(color: Colors.white70, fontSize: 12),

@@ -12,6 +12,7 @@ import 'package:pure_live/app/routing/route_paths.dart';
 import 'package:pure_live/app/routing/routes/about/about_routes.dart' as about_routes;
 import 'package:pure_live/app/routing/routes/about/version_routes.dart' as version_routes;
 import 'package:pure_live/app/routing/routes/areas/areas_routes.dart' as areas_routes;
+import 'package:pure_live/app/routing/routes/history/history_routes.dart' as history_routes;
 import 'package:pure_live/app/routing/routes/iptv/iptv_routes.dart' as iptv_routes;
 import 'package:pure_live/app/routing/routes/login/login_routes.dart' as login_routes;
 import 'package:pure_live/app/routing/routes/multiview/multiview_routes.dart' as multiview_routes;
@@ -22,38 +23,32 @@ import 'package:pure_live/app/routing/routes/toolbox/remote_sync_routes.dart' as
 import 'package:pure_live/app/routing/routes/toolbox/toolbox_routes.dart' as toolbox_routes;
 import 'package:pure_live/features/areas/areas_page.dart';
 import 'package:pure_live/features/follow/follow_page.dart';
-import 'package:pure_live/features/history/history_page.dart';
-import 'package:pure_live/features/home/home_page.dart';
 import 'package:pure_live/features/popular/popular_page.dart';
-import 'package:pure_live/platforms/desktop/shell/desktop_shell.dart';
-import 'package:pure_live/platforms/mobile/shell/mobile_shell.dart';
-import 'package:pure_live/platforms/tablet/shell/tablet_shell.dart';
+import 'package:pure_live/features/recorder/recorder_page.dart';
+import 'package:pure_live/features/version/startup_update_check.dart';
+import 'package:pure_live/platforms/adaptive/shell/adaptive_shell.dart';
 import 'package:pure_live/platforms/tv/shell/tv_shell.dart';
 
 part 'app_router.g.dart';
 
 /// The app's navigation graph in typed-route form (go_router_builder).
 ///
-/// The shell and its five branches are declared in one table here, because
+/// The shell and its four branches are declared in one table here, because
 /// the branch nesting is part of a single annotation; the settings and
 /// search routes live in their own files so the chrome and the pages can
 /// reach them without importing this library back. When a domain grows real
 /// parametrised routes, its `routes/<域>_routes.dart` takes its own
 /// annotations and joins [routerProvider] the same way those two lists do.
 ///
-/// The branch table is the reference's home tab (3.x `HomeMenu`): favorites,
-/// popular and areas are tabs of the shell, not pages pushed over it — the
-/// popular and areas entries were full pages above the shell before the
-/// conversion and keep their paths, so stored links keep resolving. History
-/// stays the tab it already was, and the settings cluster keeps its entry
-/// button above the shell instead of becoming one.
+/// The branch table is the reference's home tab set (3.x `HomeMenu`):
+/// favorites, popular, areas and the recording centre. Favorites is the
+/// shell's first screen — the reference has no launcher page above its tabs —
+/// and the watch history is a page pushed from the rail's menu, where
+/// `MenuButton` keeps it.
 @TypedStatefulShellRoute<AppShellRouteData>(
   branches: <TypedStatefulShellBranch<StatefulShellBranchData>>[
-    TypedStatefulShellBranch<HomeBranchData>(
-      routes: <TypedRoute<RouteData>>[TypedGoRoute<HomeRoute>(path: RoutePath.home)],
-    ),
     TypedStatefulShellBranch<FollowBranchData>(
-      routes: <TypedRoute<RouteData>>[TypedGoRoute<FollowRoute>(path: RoutePath.follow)],
+      routes: <TypedRoute<RouteData>>[TypedGoRoute<FollowRoute>(path: RoutePath.favorites)],
     ),
     TypedStatefulShellBranch<PopularBranchData>(
       routes: <TypedRoute<RouteData>>[TypedGoRoute<PopularRoute>(path: RoutePath.popular)],
@@ -61,8 +56,8 @@ part 'app_router.g.dart';
     TypedStatefulShellBranch<AreasBranchData>(
       routes: <TypedRoute<RouteData>>[TypedGoRoute<AreasRoute>(path: RoutePath.areas)],
     ),
-    TypedStatefulShellBranch<HistoryBranchData>(
-      routes: <TypedRoute<RouteData>>[TypedGoRoute<HistoryRoute>(path: RoutePath.history)],
+    TypedStatefulShellBranch<RecordBranchData>(
+      routes: <TypedRoute<RouteData>>[TypedGoRoute<RecorderRoute>(path: RoutePath.recorder)],
     ),
   ],
 )
@@ -73,23 +68,23 @@ class AppShellRouteData extends StatefulShellRouteData {
   @override
   Widget builder(BuildContext context, GoRouterState state, StatefulNavigationShell navigationShell) => Consumer(
     builder: (context, ref, _) {
+      // One chrome for phone, tablet and desktop — the shell pins the
+      // navigation mode from the form factor and, on desktop, from the window
+      // width. TV keeps its own focus-first shell: D-pad traversal wants the
+      // autofocus ordering only that shell arranges.
       final shell = switch (ref.watch(environmentProvider).runtime.formFactor) {
-        FormFactor.phone => MobileShell(navigationShell: navigationShell),
-        FormFactor.tablet => TabletShell(navigationShell: navigationShell),
         FormFactor.tv => TvShell(navigationShell: navigationShell),
-        FormFactor.desktop => DesktopShell(navigationShell: navigationShell),
+        _ => AdaptiveShell(navigationShell: navigationShell),
       };
       // Page settings can hide the branch the viewer stands on; the guard
-      // walks the shell to the first visible one when that happens.
-      return ShellBranchGuard(navigationShell: navigationShell, child: shell);
+      // walks the shell to the first visible one when that happens. The
+      // startup update check rides the same shell — the reference runs it
+      // from the home page, once, after the cold start settles.
+      return StartupUpdateCheck(
+        child: ShellBranchGuard(navigationShell: navigationShell, child: shell),
+      );
     },
   );
-}
-
-/// Marks the home branch inside the shell.
-class HomeBranchData extends StatefulShellBranchData {
-  /// The branch marker.
-  const new();
 }
 
 /// Marks the follow branch inside the shell.
@@ -110,22 +105,13 @@ class AreasBranchData extends StatefulShellBranchData {
   const new();
 }
 
-/// Marks the history branch inside the shell.
-class HistoryBranchData extends StatefulShellBranchData {
+/// Marks the recording centre branch inside the shell.
+class RecordBranchData extends StatefulShellBranchData {
   /// The branch marker.
   const new();
 }
 
-/// The home branch's root route: `/`.
-class HomeRoute extends GoRouteData with $HomeRoute {
-  /// The home route.
-  const new();
-
-  @override
-  Widget build(BuildContext context, GoRouterState state) => const HomePage();
-}
-
-/// The follow branch's root route: `/follow`.
+/// The favorites branch's root route: `/` — the shell's first screen.
 class FollowRoute extends GoRouteData with $FollowRoute {
   /// The follow route.
   const new();
@@ -134,13 +120,13 @@ class FollowRoute extends GoRouteData with $FollowRoute {
   Widget build(BuildContext context, GoRouterState state) => const FollowPage();
 }
 
-/// The history branch's root route: `/history`.
-class HistoryRoute extends GoRouteData with $HistoryRoute {
-  /// The history route.
+/// The recording centre's root route: `/recorder` — the reference's record tab.
+class RecorderRoute extends GoRouteData with $RecorderRoute {
+  /// The recorder route.
   const new();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => const HistoryPage();
+  Widget build(BuildContext context, GoRouterState state) => const RecorderPage();
 }
 
 /// The popular branch's root route: `/popular` — the reference's popular
@@ -204,6 +190,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ...toolbox_routes.$appRoutes,
       ...remote_sync_routes.$appRoutes,
       ...search_routes.$appRoutes,
+      ...history_routes.$appRoutes,
       ...login_routes.$appRoutes,
       ...settings_routes.$appRoutes,
     ],
@@ -213,9 +200,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   // cold-start payload is not lost while the splash is the only route.
   final channel = ref.watch(desktopInstanceChannelProvider);
   if (channel != null) {
-    final subscription = channel.forwarded.listen(
-      (intent) => unawaited(handleLaunchIntent(ref, router, intent)),
-    );
+    final subscription = channel.forwarded.listen((intent) => unawaited(handleLaunchIntent(ref, router, intent)));
     ref.onDispose(subscription.cancel);
   }
   return router;

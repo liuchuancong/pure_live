@@ -79,6 +79,7 @@ dependencies:
   live_storage: # 存储与数据仓库
 
   # UIKit 核心与风格适配器
+  pure_settings_ui: # 设置页语法：settings_ui 的设计语言分派
   pure_uikit: # UI Token、组件与运行时分派
   pure_uikit_background: # 背景样式与图层
 

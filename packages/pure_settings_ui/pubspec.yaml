@@ -24,14 +24,4 @@ dependencies:
   pure_uikit:
 
 dev_dependencies:
-  # Only the tests name these. The package itself reaches every design language
-  # through pure_uikit's components, so `lib/` imports none of them — but a test
-  # that installs a library's theme scope has to depend on that library, and
-  # without the scope the four pure-family languages cannot be exercised at all.
-  flutter_neumorphic_ui_kit:
-  flutter_test:
-    sdk: flutter
-  fluttersdk_wind:
-  forui: ^0.27.5
-  glass_morphism_plus:
   very_good_analysis: ^11.0.0

@@ -8,15 +8,11 @@ part of 'multiview_routes.dart';
 
 List<RouteBase> get $appRoutes => [$multiviewRoute];
 
-RouteBase get $multiviewRoute => GoRouteData.$route(
-  path: '/multiview',
-  hasOverriddenOnExit: false,
-  factory: $MultiviewRoute._fromState,
-);
+RouteBase get $multiviewRoute =>
+    GoRouteData.$route(path: '/multiview', hasOverriddenOnExit: false, factory: $MultiviewRoute._fromState);
 
 mixin $MultiviewRoute on GoRouteData {
-  static MultiviewRoute _fromState(GoRouterState state) =>
-      const MultiviewRoute();
+  static MultiviewRoute _fromState(GoRouterState state) => const MultiviewRoute();
 
   @override
   String get location => GoRouteData.$location('/multiview');
@@ -28,8 +24,7 @@ mixin $MultiviewRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);

@@ -1,18 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
-import 'package:pure_live/features/settings/widgets/settings_sections.dart';
+import 'package:pure_live/features/settings/widgets/settings_chooser.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_settings_ui/pure_settings_ui.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
-/// The refresh settings page (3.x `RefreshSettingsPage`, trimmed to the
-/// backed knobs): how often the visible feed refreshes itself in the
-/// foreground, and how long away counts as worth a refresh on resume.
+/// The refresh settings page (3.x `RefreshSettingsPage`, trimmed to the backed
+/// knobs): how often the visible feed refreshes itself in the foreground, and
+/// how long away counts as worth a refresh on resume.
 ///
-/// The interval and the threshold are read by the list feeds through the
-/// shared auto-refresh mixin, so a change here re-arms their timers live.
-/// The reference's per-favourite refresh, concurrency cap and thumbnail
-/// refresh have no backing in this build and stay out.
+/// The interval and the threshold are read by the list feeds through the shared
+/// auto-refresh mixin, so a change here re-arms their timers live. The
+/// reference's per-favourite refresh, concurrency cap and thumbnail refresh have
+/// no backing in this build and stay out.
 final class RefreshSettingsPage extends ConsumerWidget {
   /// The refresh settings page.
   const new({super.key});
@@ -30,60 +33,65 @@ final class RefreshSettingsPage extends ConsumerWidget {
     final update = ref.read(appPreferencesProvider.notifier).update;
     return PureScaffold(
       appBar: PureAppBar(title: t.settings.refreshSettings),
-      body: ListView(
-        padding: const EdgeInsets.all(12),
-        children: [
-          SettingsSection.card(
-            label: t.settings.groupAutoRefresh,
+      body: SettingsList(
+        sections: [
+          SettingsSection(
+            title: Text(t.settings.groupAutoRefresh),
             tiles: [
-              SettingsEntryTile(
-                icon: Icons.update_outlined,
-                title: t.settings.autoRefreshInterval,
-                subtitle: _intervalLabel(context, preferences.autoRefreshMinutes),
-                onTap: () async {
-                  final picked = await showSettingsChooser<int>(
+              SettingsTile.navigation(
+                leading: const Icon(Icons.update_outlined),
+                title: Text(t.settings.autoRefreshInterval),
+                value: Text(_intervalLabel(context, preferences.autoRefreshMinutes)),
+                onPressed: (_) => unawaited(
+                  _choose<int>(
                     context,
                     title: t.settings.autoRefreshInterval,
                     hint: t.settings.autoRefreshIntervalHint,
                     current: preferences.autoRefreshMinutes,
                     options: [for (final minutes in _intervalChoices) (minutes, _intervalLabel(context, minutes))],
-                  );
-                  if (picked != null) {
-                    await update((p) => p.copyWith(autoRefreshMinutes: picked));
-                  }
-                },
+                    apply: (value) => update((p) => p.copyWith(autoRefreshMinutes: value)),
+                  ),
+                ),
               ),
-              SettingsEntryTile(
-                icon: Icons.history_outlined,
-                title: t.settings.refreshResumeThreshold,
-                subtitle: _thresholdLabel(context, preferences.refreshResumeThresholdMinutes),
-                onTap: () async {
-                  final picked = await showSettingsChooser<int>(
+              SettingsTile.navigation(
+                leading: const Icon(Icons.history_outlined),
+                title: Text(t.settings.refreshResumeThreshold),
+                value: Text(_thresholdLabel(context, preferences.refreshResumeThresholdMinutes)),
+                onPressed: (_) => unawaited(
+                  _choose<int>(
                     context,
                     title: t.settings.refreshResumeThreshold,
                     hint: t.settings.refreshResumeThresholdHint,
                     current: preferences.refreshResumeThresholdMinutes,
                     options: [for (final minutes in _thresholdChoices) (minutes, _thresholdLabel(context, minutes))],
-                  );
-                  if (picked != null) {
-                    await update((p) => p.copyWith(refreshResumeThresholdMinutes: picked));
-                  }
-                },
-                divided: false,
+                    apply: (value) => update((p) => p.copyWith(refreshResumeThresholdMinutes: value)),
+                  ),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 32),
         ],
       ),
     );
   }
 
-  static String _intervalLabel(BuildContext context, int minutes) => minutes <= 0
-      ? context.t.settings.refreshOff
-      : context.t.settings.minutesValue(minutes: minutes);
+  static Future<void> _choose<T>(
+    BuildContext context, {
+    required String title,
+    required String? hint,
+    required T current,
+    required List<(T, String)> options,
+    required Future<void> Function(T) apply,
+  }) async {
+    final picked = await showSettingsChooser<T>(context, title: title, hint: hint, current: current, options: options);
+    if (picked != null) {
+      await apply(picked);
+    }
+  }
 
-  static String _thresholdLabel(BuildContext context, int minutes) => minutes <= 0
-      ? context.t.settings.refreshEveryResume
-      : context.t.settings.minutesAway(minutes: minutes);
+  static String _intervalLabel(BuildContext context, int minutes) =>
+      minutes <= 0 ? context.t.settings.refreshOff : context.t.settings.minutesValue(minutes: minutes);
+
+  static String _thresholdLabel(BuildContext context, int minutes) =>
+      minutes <= 0 ? context.t.settings.refreshEveryResume : context.t.settings.minutesAway(minutes: minutes);
 }

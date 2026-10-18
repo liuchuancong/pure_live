@@ -121,6 +121,9 @@ class _Translations$common$en extends Translations$common$zh {
 	@override String get loading => 'Loading';
 	@override String get empty => 'Nothing here yet';
 	@override String pageOf({required int page, required int total}) => 'Page ${page} of ${total}';
+	@override String get back => 'Back';
+	@override String get menu => 'Menu';
+	@override String get off => 'Off';
 }
 
 // Path: tray
@@ -179,6 +182,9 @@ class _Translations$account$en extends Translations$account$zh {
 	@override String get platformBilibili => 'bilibili account';
 	@override String get platformDouyu => 'douyu account';
 	@override String get platformHuya => 'huya account';
+	@override String get noAuthSites => 'No platform in this build can sign in yet';
+	@override String get clearAllAccounts => 'Clear all accounts';
+	@override String get clearAllAccountsHint => 'Sign out of every platform and drop the stored credentials';
 }
 
 // Path: settings
@@ -320,6 +326,50 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get recorderSubtitle => 'Watch rooms and record them live';
 	@override String get pasteCookie => 'Paste cookie to sign in';
 	@override String accountSignedInCount({required int count}) => 'Signed in on ${count} platforms';
+	@override String get sectionVideo => 'Video & danmaku';
+	@override String get video => 'Video & danmaku';
+	@override String get videoSubtitle => 'What a room opens with';
+	@override String get groupDanmaku => 'Danmaku';
+	@override String get groupAudio => 'Audio';
+	@override String get danmakuVisible => 'Show danmaku by default';
+	@override String get danmakuVisibleSubtitle => 'Overlay the barrage when a room opens';
+	@override String get defaultVolume => 'Default volume';
+	@override String get defaultVolumeSubtitle => 'The level the next stream starts at';
+	@override String get language => 'Language';
+	@override String get languageSubtitle => 'Follow the system, or pick one';
+	@override String get languageSystem => 'Follow system';
+	@override String get groupAppearance => 'Barrage look';
+	@override String get groupLocalInteraction => 'Local interaction';
+	@override String get localInteraction => 'Local interaction';
+	@override String get localInteractionSubtitle => 'Adds the room composer; your messages show only on your screen';
+	@override String get localInteractionName => 'Local display name';
+	@override String get mpvTuning => 'Player tuning';
+	@override String get mpvTuningSubtitle => 'libmpv output, decoding and cache options';
+	@override String get mpvOutputSection => 'Output';
+	@override String get mpvCustomOutput => 'Custom output drivers';
+	@override String get mpvCustomOutputSubtitle => 'Off keeps the engine\'s platform defaults; on lets the drivers below be written';
+	@override String get mpvNeedsCustomOutput => 'Turn on "Custom output drivers" first';
+	@override String get mpvVideoOutput => 'Video output (vo)';
+	@override String get mpvAudioOutput => 'Audio output (ao)';
+	@override String get mpvDecodeSection => 'Decoding & rendering';
+	@override String get mpvHardwareDecoder => 'Hardware decoder (hwdec)';
+	@override String get mpvDeinterlace => 'Deinterlace';
+	@override String get mpvInterpolation => 'Frame interpolation';
+	@override String get mpvInterpolationSubtitle => 'Smoother motion at a higher GPU cost; desktop only';
+	@override String get mpvScaler => 'Scaler (scale)';
+	@override String get mpvCacheSection => 'Cache';
+	@override String get mpvCacheSeconds => 'Stream cache seconds';
+	@override String get mpvCacheSecondsSubtitle => '0 leaves the engine\'s cache alone';
+	@override String get mpvReset => 'Reset defaults';
+	@override String get mpvResetSubtitle => 'Clears every tuning on this page';
+	@override String get mpvEffectiveNote => 'How it takes effect';
+	@override String get mpvEffectiveNoteBody => 'Video/audio output and the hardware decoder land on the next stream open; the rest apply to the playing room immediately.';
+	@override String get localConfig => 'Local configuration';
+	@override String get localConfigSubtitle => 'A read-only view of the documents this device stores';
+	@override String get localConfigNote => 'This page writes nothing; edit the settings it mirrors instead.';
+	@override String get localConfigCopy => 'Copy this document';
+	@override String get localConfigApp => 'General preferences';
+	@override String get localConfigAppearance => 'Appearance';
 }
 
 // Path: recorder
@@ -435,6 +485,49 @@ class _Translations$room$en extends Translations$room$zh {
 	@override String lineN({required Object n}) => 'Line ${n}';
 	@override String get fullscreen => 'Fullscreen';
 	@override String get exitFullscreen => 'Exit fullscreen';
+	@override String get barrageOn => 'Show danmaku';
+	@override String get barrageOff => 'Hide danmaku';
+	@override String get toolbox => 'Toolbox';
+	@override String get copyLink => 'Copy room link';
+	@override String get linkCopied => 'Copied';
+	@override String get record => 'Record';
+	@override String get stopRecording => 'Stop recording';
+	@override String get rateNormal => 'Normal speed';
+	@override String get audienceWaiting => 'Waiting for audience data';
+	@override String get mute => 'Mute';
+	@override String get unmute => 'Unmute';
+	@override String get danmakuOn => 'Danmaku on';
+	@override String get sleepTimer => 'Sleep timer';
+	@override String get sleepTimerOn => 'Sleep timer (on)';
+	@override String get sleepTimerEnable => 'Enable the playback timer';
+	@override String get sleepTimerDesc => 'Pauses this room\'s playback when it runs out';
+	@override String get timerDuration => 'Timer duration';
+	@override String get timerDurationHint => '1 - 525600 minutes';
+	@override String get timerInvalid => 'Enter minutes between 1 and 525600';
+	@override String get timerFinished => 'Playback timer finished — paused';
+	@override String get minutesUnit => 'min';
+	@override String minutesN({required Object minutes}) => '${minutes} min';
+	@override String get roomVolume => 'Room volume';
+	@override String get roomVolumeDesc => 'The mute and the per-device default levels';
+	@override String get globalMute => 'Global mute';
+	@override String get globalMuteSubtitle => 'Rooms open silenced; the level is kept';
+	@override String get mobileDefaultVolume => 'Phone default volume';
+	@override String get desktopDefaultVolume => 'Desktop default volume';
+	@override String get resetDefault => 'Reset defaults';
+	@override String get volumeApplyFailed => 'The active room refused the volume update';
+	@override String get send => 'Send';
+	@override String get localMe => 'Me';
+	@override String get barrageSettings => 'Barrage settings';
+	@override String get keywordBlock => 'Keyword block';
+	@override String get barrageHiddenHint => 'Barrage is globally off';
+	@override String get barrageOnSubtitle => 'Scroll the barrage over the picture';
+	@override String get barrageFontSize => 'Barrage text size';
+	@override String get barrageOpacity => 'Barrage opacity';
+	@override String get barrageSettingsNote => 'Applies immediately and is the default for new rooms';
+	@override String get enterLandscapeFullscreen => 'Landscape fullscreen';
+	@override String get enterPortraitFullscreenHint => 'Drag down to enter portrait fullscreen';
+	@override String get portraitPanelResize => 'Panel height';
+	@override String get portraitPanelResizeHint => 'Drag to resize the panel';
 }
 
 // Path: areas
@@ -608,6 +701,7 @@ class _Translations$backup$en extends Translations$backup$zh {
 	@override String get delete => 'Delete backup';
 	@override String get restore => 'Restore';
 	@override String restoreConfirm({required String name}) => 'Overwrite current data with “${name}”? The app restarts.';
+	@override String get sectionCloud => 'Cloud & sync';
 }
 
 // Path: about
@@ -646,6 +740,7 @@ class _Translations$about$en extends Translations$about$zh {
 	@override String get copied => 'Link copied';
 	@override String get download => 'Download';
 	@override String assetMeta({required String size, required int count}) => '${size} · ${count} downloads';
+	@override String startupUpdateBody({required Object tag}) => 'Version ${tag} is out. Open the update page now?';
 }
 
 // Path: shield
@@ -661,6 +756,8 @@ class _Translations$shield$en extends Translations$shield$zh {
 	@override String get regexes => 'Regexes';
 	@override String get add => 'Add';
 	@override String get none => 'Nothing here';
+	@override String get keywordHint => 'Keyword to block';
+	@override String get emptyKeyword => 'Type a keyword first';
 }
 
 // Path: multiview
@@ -766,6 +863,7 @@ class _Translations$tabs$en extends Translations$tabs$zh {
 	@override String get areas => 'Areas';
 	@override String get search => 'Search';
 	@override String get settings => 'Settings';
+	@override String get record => 'Recordings';
 }
 
 // Path: window
@@ -803,9 +901,10 @@ class _Translations$shellSettings$en extends Translations$shellSettings$zh {
 	// Translations
 	@override String get sectionWindow => 'Window';
 	@override String get titleBar => 'Window title bar';
+	@override String get titleBarAuto => 'Auto (by Windows version)';
 	@override String get titleBarApp => 'App title bar';
 	@override String get titleBarSystem => 'System title bar';
-	@override String get titleBarHint => 'The app title bar is drawn by Pure Live; the system title bar uses the native Windows style. A switch applies after the app restarts.';
+	@override String get titleBarHint => 'Auto: the app title bar on Windows 11, the system title bar on Windows 10. The app title bar is drawn by Pure Live; the system title bar is the native Windows one. A switch applies after the app restarts.';
 }
 
 // Path: webdav
@@ -909,6 +1008,9 @@ extension on TranslationsEn {
 			'common.loading' => 'Loading',
 			'common.empty' => 'Nothing here yet',
 			'common.pageOf' => ({required int page, required int total}) => 'Page ${page} of ${total}',
+			'common.back' => 'Back',
+			'common.menu' => 'Menu',
+			'common.off' => 'Off',
 			'tray.show' => 'Show Pure Live',
 			'tray.quit' => 'Quit',
 			'login.title' => 'Sign in',
@@ -940,6 +1042,9 @@ extension on TranslationsEn {
 			'account.platformBilibili' => 'bilibili account',
 			'account.platformDouyu' => 'douyu account',
 			'account.platformHuya' => 'huya account',
+			'account.noAuthSites' => 'No platform in this build can sign in yet',
+			'account.clearAllAccounts' => 'Clear all accounts',
+			'account.clearAllAccountsHint' => 'Sign out of every platform and drop the stored credentials',
 			'settings.appearance' => 'Appearance',
 			'settings.fonts' => 'Fonts',
 			'settings.themeMode' => 'Theme mode',
@@ -1072,6 +1177,50 @@ extension on TranslationsEn {
 			'settings.recorderSubtitle' => 'Watch rooms and record them live',
 			'settings.pasteCookie' => 'Paste cookie to sign in',
 			'settings.accountSignedInCount' => ({required int count}) => 'Signed in on ${count} platforms',
+			'settings.sectionVideo' => 'Video & danmaku',
+			'settings.video' => 'Video & danmaku',
+			'settings.videoSubtitle' => 'What a room opens with',
+			'settings.groupDanmaku' => 'Danmaku',
+			'settings.groupAudio' => 'Audio',
+			'settings.danmakuVisible' => 'Show danmaku by default',
+			'settings.danmakuVisibleSubtitle' => 'Overlay the barrage when a room opens',
+			'settings.defaultVolume' => 'Default volume',
+			'settings.defaultVolumeSubtitle' => 'The level the next stream starts at',
+			'settings.language' => 'Language',
+			'settings.languageSubtitle' => 'Follow the system, or pick one',
+			'settings.languageSystem' => 'Follow system',
+			'settings.groupAppearance' => 'Barrage look',
+			'settings.groupLocalInteraction' => 'Local interaction',
+			'settings.localInteraction' => 'Local interaction',
+			'settings.localInteractionSubtitle' => 'Adds the room composer; your messages show only on your screen',
+			'settings.localInteractionName' => 'Local display name',
+			'settings.mpvTuning' => 'Player tuning',
+			'settings.mpvTuningSubtitle' => 'libmpv output, decoding and cache options',
+			'settings.mpvOutputSection' => 'Output',
+			'settings.mpvCustomOutput' => 'Custom output drivers',
+			'settings.mpvCustomOutputSubtitle' => 'Off keeps the engine\'s platform defaults; on lets the drivers below be written',
+			'settings.mpvNeedsCustomOutput' => 'Turn on "Custom output drivers" first',
+			'settings.mpvVideoOutput' => 'Video output (vo)',
+			'settings.mpvAudioOutput' => 'Audio output (ao)',
+			'settings.mpvDecodeSection' => 'Decoding & rendering',
+			'settings.mpvHardwareDecoder' => 'Hardware decoder (hwdec)',
+			'settings.mpvDeinterlace' => 'Deinterlace',
+			'settings.mpvInterpolation' => 'Frame interpolation',
+			'settings.mpvInterpolationSubtitle' => 'Smoother motion at a higher GPU cost; desktop only',
+			'settings.mpvScaler' => 'Scaler (scale)',
+			'settings.mpvCacheSection' => 'Cache',
+			'settings.mpvCacheSeconds' => 'Stream cache seconds',
+			'settings.mpvCacheSecondsSubtitle' => '0 leaves the engine\'s cache alone',
+			'settings.mpvReset' => 'Reset defaults',
+			'settings.mpvResetSubtitle' => 'Clears every tuning on this page',
+			'settings.mpvEffectiveNote' => 'How it takes effect',
+			'settings.mpvEffectiveNoteBody' => 'Video/audio output and the hardware decoder land on the next stream open; the rest apply to the playing room immediately.',
+			'settings.localConfig' => 'Local configuration',
+			'settings.localConfigSubtitle' => 'A read-only view of the documents this device stores',
+			'settings.localConfigNote' => 'This page writes nothing; edit the settings it mirrors instead.',
+			'settings.localConfigCopy' => 'Copy this document',
+			'settings.localConfigApp' => 'General preferences',
+			'settings.localConfigAppearance' => 'Appearance',
 			'recorder.title' => 'Recorder',
 			'recorder.addRoom' => 'Add room',
 			'recorder.platform' => 'Platform',
@@ -1151,6 +1300,49 @@ extension on TranslationsEn {
 			'room.lineN' => ({required Object n}) => 'Line ${n}',
 			'room.fullscreen' => 'Fullscreen',
 			'room.exitFullscreen' => 'Exit fullscreen',
+			'room.barrageOn' => 'Show danmaku',
+			'room.barrageOff' => 'Hide danmaku',
+			'room.toolbox' => 'Toolbox',
+			'room.copyLink' => 'Copy room link',
+			'room.linkCopied' => 'Copied',
+			'room.record' => 'Record',
+			'room.stopRecording' => 'Stop recording',
+			'room.rateNormal' => 'Normal speed',
+			'room.audienceWaiting' => 'Waiting for audience data',
+			'room.mute' => 'Mute',
+			'room.unmute' => 'Unmute',
+			'room.danmakuOn' => 'Danmaku on',
+			'room.sleepTimer' => 'Sleep timer',
+			'room.sleepTimerOn' => 'Sleep timer (on)',
+			'room.sleepTimerEnable' => 'Enable the playback timer',
+			'room.sleepTimerDesc' => 'Pauses this room\'s playback when it runs out',
+			'room.timerDuration' => 'Timer duration',
+			'room.timerDurationHint' => '1 - 525600 minutes',
+			'room.timerInvalid' => 'Enter minutes between 1 and 525600',
+			'room.timerFinished' => 'Playback timer finished — paused',
+			'room.minutesUnit' => 'min',
+			'room.minutesN' => ({required Object minutes}) => '${minutes} min',
+			'room.roomVolume' => 'Room volume',
+			'room.roomVolumeDesc' => 'The mute and the per-device default levels',
+			'room.globalMute' => 'Global mute',
+			'room.globalMuteSubtitle' => 'Rooms open silenced; the level is kept',
+			'room.mobileDefaultVolume' => 'Phone default volume',
+			'room.desktopDefaultVolume' => 'Desktop default volume',
+			'room.resetDefault' => 'Reset defaults',
+			'room.volumeApplyFailed' => 'The active room refused the volume update',
+			'room.send' => 'Send',
+			'room.localMe' => 'Me',
+			'room.barrageSettings' => 'Barrage settings',
+			'room.keywordBlock' => 'Keyword block',
+			'room.barrageHiddenHint' => 'Barrage is globally off',
+			'room.barrageOnSubtitle' => 'Scroll the barrage over the picture',
+			'room.barrageFontSize' => 'Barrage text size',
+			'room.barrageOpacity' => 'Barrage opacity',
+			'room.barrageSettingsNote' => 'Applies immediately and is the default for new rooms',
+			'room.enterLandscapeFullscreen' => 'Landscape fullscreen',
+			'room.enterPortraitFullscreenHint' => 'Drag down to enter portrait fullscreen',
+			'room.portraitPanelResize' => 'Panel height',
+			'room.portraitPanelResizeHint' => 'Drag to resize the panel',
 			'areas.empty' => 'No areas here',
 			'popular.empty' => 'Nothing live right now',
 			'history.clear' => 'Clear history',
@@ -1252,6 +1444,7 @@ extension on TranslationsEn {
 			'backup.delete' => 'Delete backup',
 			'backup.restore' => 'Restore',
 			'backup.restoreConfirm' => ({required String name}) => 'Overwrite current data with “${name}”? The app restarts.',
+			'backup.sectionCloud' => 'Cloud & sync',
 			'about.title' => 'About',
 			'about.group' => 'About',
 			'about.checkUpdate' => 'Check for updates',
@@ -1281,12 +1474,15 @@ extension on TranslationsEn {
 			'about.copied' => 'Link copied',
 			'about.download' => 'Download',
 			'about.assetMeta' => ({required String size, required int count}) => '${size} · ${count} downloads',
+			'about.startupUpdateBody' => ({required Object tag}) => 'Version ${tag} is out. Open the update page now?',
 			'shield.title' => 'Danmaku shield',
 			'shield.keywords' => 'Keywords',
 			'shield.users' => 'Users',
 			'shield.regexes' => 'Regexes',
 			'shield.add' => 'Add',
 			'shield.none' => 'Nothing here',
+			'shield.keywordHint' => 'Keyword to block',
+			'shield.emptyKeyword' => 'Type a keyword first',
 			'multiview.title' => 'Multi-view',
 			'multiview.platform' => 'Platform',
 			'multiview.roomId' => 'Room ID',
@@ -1310,6 +1506,8 @@ extension on TranslationsEn {
 			'search.historyTitle' => 'Recent searches',
 			'search.historyRemove' => 'Remove this search',
 			'remoteSync.title' => 'LAN sync',
+			_ => null,
+		} ?? switch (path) {
 			'remoteSync.tileSubtitle' => 'Sync follows and history between devices on this network',
 			'remoteSync.myDevice' => 'This device',
 			'remoteSync.noAddress' => 'No LAN address found',
@@ -1347,6 +1545,7 @@ extension on TranslationsEn {
 			'tabs.areas' => 'Areas',
 			'tabs.search' => 'Search',
 			'tabs.settings' => 'Settings',
+			'tabs.record' => 'Recordings',
 			'window.minimize' => 'Minimize',
 			'window.maximize' => 'Maximize',
 			'window.restore' => 'Restore',
@@ -1357,9 +1556,10 @@ extension on TranslationsEn {
 			'closePrompt.remember' => 'Remember my choice, stop asking',
 			'shellSettings.sectionWindow' => 'Window',
 			'shellSettings.titleBar' => 'Window title bar',
+			'shellSettings.titleBarAuto' => 'Auto (by Windows version)',
 			'shellSettings.titleBarApp' => 'App title bar',
 			'shellSettings.titleBarSystem' => 'System title bar',
-			'shellSettings.titleBarHint' => 'The app title bar is drawn by Pure Live; the system title bar uses the native Windows style. A switch applies after the app restarts.',
+			'shellSettings.titleBarHint' => 'Auto: the app title bar on Windows 11, the system title bar on Windows 10. The app title bar is drawn by Pure Live; the system title bar is the native Windows one. A switch applies after the app restarts.',
 			'webdav.title' => 'WebDAV cloud backup',
 			'webdav.entryTitle' => 'WebDAV cloud sync',
 			'webdav.entrySubtitle' => 'Back up to your own WebDAV server',
@@ -1407,8 +1607,6 @@ extension on TranslationsEn {
 			'wallpaper.groupDevice' => 'From this device',
 			'wallpaper.groupDisplay' => 'Picture display',
 			'wallpaper.none' => 'No wallpaper',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.noneSubtitle' => 'Keep the themed surfaces',
 			'wallpaper.pickImage' => 'Pick a picture',
 			'wallpaper.pickImageSubtitle' => 'Choose an image stored on this device',

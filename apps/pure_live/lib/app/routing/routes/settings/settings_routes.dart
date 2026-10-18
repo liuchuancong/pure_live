@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
-
 import 'package:pure_live/app/routing/route_paths.dart';
 import 'package:pure_live/features/recorder/recorder_page.dart';
 import 'package:pure_live/features/settings/appearance/appearance_page.dart';
@@ -8,12 +7,15 @@ import 'package:pure_live/features/settings/data/cache_data_page.dart';
 import 'package:pure_live/features/settings/fonts/font_manager_page.dart';
 import 'package:pure_live/features/settings/general/general_settings_page.dart';
 import 'package:pure_live/features/settings/loading/loading_style_settings_page.dart';
+import 'package:pure_live/features/settings/local_config/local_config_preview_page.dart';
 import 'package:pure_live/features/settings/navigation/navigation_settings_page.dart';
 import 'package:pure_live/features/settings/network/network_proxy_settings_page.dart';
 import 'package:pure_live/features/settings/pages/page_settings_page.dart';
+import 'package:pure_live/features/settings/player/mpv_settings_page.dart';
 import 'package:pure_live/features/settings/refresh/refresh_settings_page.dart';
 import 'package:pure_live/features/settings/room_card/room_card_settings_page.dart';
 import 'package:pure_live/features/settings/settings_page.dart';
+import 'package:pure_live/features/settings/video/video_settings_page.dart';
 import 'package:pure_live/features/wallpaper/wallpaper_picker_page.dart';
 
 part 'settings_routes.g.dart';
@@ -146,9 +148,39 @@ class RoomCardSettingsRoute extends GoRouteData with $RoomCardSettingsRoute {
   Widget build(BuildContext context, GoRouterState state) => const RoomCardSettingsPage();
 }
 
+/// The video and danmaku settings: `/settings/video`.
+@TypedGoRoute<VideoSettingsRoute>(path: RoutePath.settingsVideo)
+class VideoSettingsRoute extends GoRouteData with $VideoSettingsRoute {
+  /// The route.
+  const new();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const VideoSettingsPage();
+}
+
+/// The mpv tuning: `/settings/mpv`, reached from the video section.
+@TypedGoRoute<MpvSettingsRoute>(path: RoutePath.settingsMpv)
+class MpvSettingsRoute extends GoRouteData with $MpvSettingsRoute {
+  /// The route.
+  const new();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const MpvSettingsPage();
+}
+
+/// The read-only local configuration preview: `/settings/local-config`.
+@TypedGoRoute<LocalConfigPreviewRoute>(path: RoutePath.settingsLocalConfig)
+class LocalConfigPreviewRoute extends GoRouteData with $LocalConfigPreviewRoute {
+  /// The route.
+  const new();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const LocalConfigPreviewPage();
+}
+
 /// The recorder: `/settings/recorder`, reached from the recording section.
-@TypedGoRoute<RecorderRoute>(path: RoutePath.settingsRecorder)
-class RecorderRoute extends GoRouteData with $RecorderRoute {
+@TypedGoRoute<RecorderSettingsRoute>(path: RoutePath.settingsRecorder)
+class RecorderSettingsRoute extends GoRouteData with $RecorderSettingsRoute {
   /// The recorder route.
   const new();
 

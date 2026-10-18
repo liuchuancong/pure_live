@@ -40,7 +40,7 @@ class PureLoading extends StatelessWidget {
     final theme = PureTheme.of(context);
     final geometry = _geometry(context, theme);
     return _stateColumn(context, theme, [
-      CircularProgressIndicator(color: theme.colors.primary),
+      const PureSpinner(size: 32),
       if (message case final m?) ...[
         SizedBox(height: geometry.sectionGap),
         Text(m, style: theme.text.bodySmall.copyWith(color: theme.colors.textSecondary)),

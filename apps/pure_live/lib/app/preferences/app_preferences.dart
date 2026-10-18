@@ -20,10 +20,8 @@ abstract final class AppPreferenceKeys {
 /// The branch the router starts on, when the last visited one is not asked
 /// for (`restoreLastTab` off).
 enum AppLaunchBranch {
-  /// The home feed — the shipping default.
-  home,
-
-  /// The followed streamers' grid.
+  /// The followed streamers' grid — the shipping default, the reference's
+  /// first tab.
   follow,
 
   /// The popular / super-deal grid.
@@ -32,16 +30,17 @@ enum AppLaunchBranch {
   /// The areas catalogue.
   areas,
 
-  /// The watch history.
-  history;
+  /// The recording centre.
+  record;
 
-  /// Resolves a stored identifier; an unknown one falls back to [home].
+  /// Resolves a stored identifier. A document written before the shell took
+  /// the reference's tab set (which named a `home` launcher and a `history`
+  /// branch) lands on the favorites branch rather than losing the choice.
   static AppLaunchBranch fromId(String? id) => switch (id) {
-    'follow' => AppLaunchBranch.follow,
     'popular' => AppLaunchBranch.popular,
     'areas' => AppLaunchBranch.areas,
-    'history' => AppLaunchBranch.history,
-    _ => AppLaunchBranch.home,
+    'record' => AppLaunchBranch.record,
+    _ => AppLaunchBranch.follow,
   };
 
   /// The stable identifier persisted in the document.
@@ -89,10 +88,8 @@ enum RoomCardCoverAspect {
 
   /// The [RoomCardCoverAspect] whose ratio is closest to [ratio] — how a
   /// stored double round-trips through the chooser.
-  static RoomCardCoverAspect of(double ratio) => values.reduce(
-    (best, aspect) =>
-        (aspect.ratio - ratio).abs() < (best.ratio - ratio).abs() ? aspect : best,
-  );
+  static RoomCardCoverAspect of(double ratio) =>
+      values.reduce((best, aspect) => (aspect.ratio - ratio).abs() < (best.ratio - ratio).abs() ? aspect : best);
 
   /// Resolves a stored identifier; an unknown one falls back to
   /// [sixteenByNine].
@@ -109,7 +106,7 @@ enum RoomCardCoverAspect {
 /// The shell branches, in the order the chromes render them — the visible
 /// subset. The home branch is the floor: a shell with no destination cannot
 /// be walked, so every writer keeps at least one id.
-const List<String> defaultShellBranches = ['home', 'follow', 'popular', 'areas', 'history'];
+const List<String> defaultShellBranches = ['follow', 'popular', 'areas', 'record'];
 
 /// The app's general choices — general, refresh, page, navigation, proxy,
 /// loading and room-card preferences — as one persisted document.
@@ -127,10 +124,28 @@ final class AppPreferences {
   /// The shipping defaults.
   const new({
     this.refreshOnResume = true,
+    this.danmakuVisible = true,
+    this.volumeMuted = false,
+    this.defaultMobileVolume = 0.5,
+    this.defaultDesktopVolume = 1,
+    this.localInteractionEnabled = false,
+    this.localInteractionUserName = '',
+    this.localInteractionColor = 0xFFFFFFFF,
+    this.barrageFontSize = 15,
+    this.barrageOpacity = 1,
+    this.videoOutputDriver = 'auto',
+    this.audioOutputDriver = 'auto',
+    this.hardwareDecoder = 'auto',
+    this.frameInterpolation = false,
+    this.scaler = 'auto',
+    this.deinterlace = 'auto',
+    this.streamCacheSeconds = 0,
+    this.customPlayerOutput = false,
+    this.languageId = '',
     this.autoCheckUpdate = true,
     this.countdownCloseEnabled = false,
     this.countdownCloseMinutes = 60,
-    this.launchBranch = AppLaunchBranch.home,
+    this.launchBranch = AppLaunchBranch.follow,
     this.restoreLastTab = false,
     this.lastBranchId,
     this.windowWidth = 0,
@@ -152,8 +167,33 @@ final class AppPreferences {
   /// Reads the document; unknown shapes decode to the defaults.
   factory AppPreferences.fromJson(Map<String, Object?> json) {
     final branches = (json['shellBranches'] as List<Object?>?)?.whereType<String>().toList();
+    // The one volume field a pre-split document stored seeds both answers;
+    // after that the mobile and desktop levels are kept apart, the way the
+    // reference's volume dialog edits and reads them.
+    final legacyVolume = (json['defaultVolume'] as num?)?.toDouble();
     return AppPreferences(
       refreshOnResume: json['refreshOnResume'] as bool? ?? true,
+      danmakuVisible: json['danmakuVisible'] as bool? ?? true,
+      volumeMuted: json['volumeMuted'] as bool? ?? false,
+      defaultMobileVolume: (json['defaultMobileVolume'] as num?)?.toDouble() ?? legacyVolume ?? 0.5,
+      defaultDesktopVolume: (json['defaultDesktopVolume'] as num?)?.toDouble() ?? legacyVolume ?? 1,
+      localInteractionEnabled: json['localInteractionEnabled'] as bool? ?? false,
+      localInteractionUserName: json['localInteractionUserName'] as String? ?? '',
+      localInteractionColor: (json['localInteractionColor'] as num?)?.toInt() ?? 0xFFFFFFFF,
+      barrageFontSize: (json['barrageFontSize'] as num?)?.toDouble() ?? 15,
+      barrageOpacity: (json['barrageOpacity'] as num?)?.toDouble() ?? 1,
+      // The mpv tuning answers. The defaults are what the engine did before
+      // this page existed — auto for everything, no interpolation, the
+      // adapter's own cache — so an existing document keeps behaving the same.
+      videoOutputDriver: json['videoOutputDriver'] as String? ?? 'auto',
+      audioOutputDriver: json['audioOutputDriver'] as String? ?? 'auto',
+      hardwareDecoder: json['hardwareDecoder'] as String? ?? 'auto',
+      frameInterpolation: json['frameInterpolation'] as bool? ?? false,
+      scaler: json['scaler'] as String? ?? 'auto',
+      deinterlace: json['deinterlace'] as String? ?? 'auto',
+      streamCacheSeconds: (json['streamCacheSeconds'] as num?)?.toInt() ?? 0,
+      customPlayerOutput: json['customPlayerOutput'] as bool? ?? false,
+      languageId: json['languageId'] as String? ?? '',
       autoCheckUpdate: json['autoCheckUpdate'] as bool? ?? true,
       countdownCloseEnabled: json['countdownCloseEnabled'] as bool? ?? false,
       countdownCloseMinutes: json['countdownCloseMinutes'] as int? ?? 60,
@@ -179,6 +219,70 @@ final class AppPreferences {
 
   /// Whether a feed refreshes when the app comes back to the foreground.
   final bool refreshOnResume;
+
+  /// Whether a room draws the barrage over its video. The reference's
+  /// `danmaku.hideDanmaku`, inverted: the switch says what is on.
+  final bool danmakuVisible;
+
+  /// The volume a room starts at on a touch phone, 0..1 — the reference's
+  /// `vol.defaultMobileVolume`, one of the two answers its volume dialog edits.
+  final double defaultMobileVolume;
+
+  /// The volume a room starts at on a desktop window, 0..1.
+  final double defaultDesktopVolume;
+
+  /// Whether every room opens silenced, the reference's `vol.globalVolumeMute`.
+  /// The level itself survives the mute; un-muting returns to it.
+  final bool volumeMuted;
+
+  /// Whether the room's local-interaction composer and bus are live — the
+  /// reference's `localInteraction.enabled` gate on the same feature.
+  final bool localInteractionEnabled;
+
+  /// The name the local messages carry. Empty draws the localized "me".
+  final String localInteractionUserName;
+
+  /// The colour local messages are drawn in, packed ARGB.
+  final int localInteractionColor;
+
+  /// The barrage text size, in logical pixels.
+  final double barrageFontSize;
+
+  /// The barrage text opacity, 0..1.
+  final double barrageOpacity;
+
+  /// Whether the stored video/audio output drivers are used at all; off, the
+  /// engine's own platform default answers — the reference's
+  /// `customPlayerOutput` gate on its vo/ao rows.
+  final bool customPlayerOutput;
+
+  /// mpv `vo` — the video output driver, an entry of the platform's catalog.
+  final String videoOutputDriver;
+
+  /// mpv `ao` — the audio output driver.
+  final String audioOutputDriver;
+
+  /// mpv `hwdec` — the hardware decoder, `auto` letting mpv choose.
+  final String hardwareDecoder;
+
+  /// mpv `interpolation` — frame blending; desktop only, the reference's
+  /// own gate on the cost.
+  final bool frameInterpolation;
+
+  /// mpv `scale` — the upscaling filter; `auto` keeps mpv's default.
+  final String scaler;
+
+  /// mpv `deinterlace`.
+  final String deinterlace;
+
+  /// mpv `cache`/`cache-secs` — the streaming read-ahead in seconds; 0 leaves
+  /// the adapter's own cache settings untouched.
+  final int streamCacheSeconds;
+
+  /// The interface language: an empty id follows the system, otherwise a slang
+  /// locale code (`zh`, `en`). Frozen at boot — the whole tree is translated by
+  /// the delegate the app builds before the first frame.
+  final String languageId;
 
   /// Whether the home page checks the release feed at start-up.
   final bool autoCheckUpdate;
@@ -246,6 +350,24 @@ final class AppPreferences {
   /// Writes the document.
   Map<String, Object?> toJson() => {
     'refreshOnResume': refreshOnResume,
+    'danmakuVisible': danmakuVisible,
+    'volumeMuted': volumeMuted,
+    'defaultMobileVolume': defaultMobileVolume,
+    'defaultDesktopVolume': defaultDesktopVolume,
+    'localInteractionEnabled': localInteractionEnabled,
+    'localInteractionUserName': localInteractionUserName,
+    'localInteractionColor': localInteractionColor,
+    'barrageFontSize': barrageFontSize,
+    'barrageOpacity': barrageOpacity,
+    'customPlayerOutput': customPlayerOutput,
+    'videoOutputDriver': videoOutputDriver,
+    'audioOutputDriver': audioOutputDriver,
+    'hardwareDecoder': hardwareDecoder,
+    'frameInterpolation': frameInterpolation,
+    'scaler': scaler,
+    'deinterlace': deinterlace,
+    'streamCacheSeconds': streamCacheSeconds,
+    'languageId': languageId,
     'autoCheckUpdate': autoCheckUpdate,
     'countdownCloseEnabled': countdownCloseEnabled,
     'countdownCloseMinutes': countdownCloseMinutes,
@@ -272,6 +394,24 @@ final class AppPreferences {
   /// takes an empty list — a shell with no destination cannot be walked.
   AppPreferences copyWith({
     bool? refreshOnResume,
+    bool? danmakuVisible,
+    bool? volumeMuted,
+    double? defaultMobileVolume,
+    double? defaultDesktopVolume,
+    bool? localInteractionEnabled,
+    String? localInteractionUserName,
+    int? localInteractionColor,
+    double? barrageFontSize,
+    double? barrageOpacity,
+    bool? customPlayerOutput,
+    String? videoOutputDriver,
+    String? audioOutputDriver,
+    String? hardwareDecoder,
+    bool? frameInterpolation,
+    String? scaler,
+    String? deinterlace,
+    int? streamCacheSeconds,
+    String? languageId,
     bool? autoCheckUpdate,
     bool? countdownCloseEnabled,
     int? countdownCloseMinutes,
@@ -295,6 +435,24 @@ final class AppPreferences {
     List<String>? shellBranches,
   }) => AppPreferences(
     refreshOnResume: refreshOnResume ?? this.refreshOnResume,
+    danmakuVisible: danmakuVisible ?? this.danmakuVisible,
+    volumeMuted: volumeMuted ?? this.volumeMuted,
+    defaultMobileVolume: defaultMobileVolume ?? this.defaultMobileVolume,
+    defaultDesktopVolume: defaultDesktopVolume ?? this.defaultDesktopVolume,
+    localInteractionEnabled: localInteractionEnabled ?? this.localInteractionEnabled,
+    localInteractionUserName: localInteractionUserName ?? this.localInteractionUserName,
+    localInteractionColor: localInteractionColor ?? this.localInteractionColor,
+    barrageFontSize: barrageFontSize ?? this.barrageFontSize,
+    barrageOpacity: barrageOpacity ?? this.barrageOpacity,
+    customPlayerOutput: customPlayerOutput ?? this.customPlayerOutput,
+    videoOutputDriver: videoOutputDriver ?? this.videoOutputDriver,
+    audioOutputDriver: audioOutputDriver ?? this.audioOutputDriver,
+    hardwareDecoder: hardwareDecoder ?? this.hardwareDecoder,
+    frameInterpolation: frameInterpolation ?? this.frameInterpolation,
+    scaler: scaler ?? this.scaler,
+    deinterlace: deinterlace ?? this.deinterlace,
+    streamCacheSeconds: streamCacheSeconds ?? this.streamCacheSeconds,
+    languageId: languageId ?? this.languageId,
     autoCheckUpdate: autoCheckUpdate ?? this.autoCheckUpdate,
     countdownCloseEnabled: countdownCloseEnabled ?? this.countdownCloseEnabled,
     countdownCloseMinutes: countdownCloseMinutes ?? this.countdownCloseMinutes,
@@ -314,14 +472,33 @@ final class AppPreferences {
     roomCardShowAudience: roomCardShowAudience ?? this.roomCardShowAudience,
     roomCardShowAnchor: roomCardShowAnchor ?? this.roomCardShowAnchor,
     roomCardAspect: roomCardAspect ?? this.roomCardAspect,
-    shellBranches:
-        (shellBranches == null || shellBranches.isEmpty) ? this.shellBranches : List.unmodifiable(shellBranches),
+    shellBranches: (shellBranches == null || shellBranches.isEmpty)
+        ? this.shellBranches
+        : List.unmodifiable(shellBranches),
   );
 
   @override
   bool operator ==(Object other) =>
       other is AppPreferences &&
       other.refreshOnResume == refreshOnResume &&
+      other.danmakuVisible == danmakuVisible &&
+      other.volumeMuted == volumeMuted &&
+      other.defaultMobileVolume == defaultMobileVolume &&
+      other.defaultDesktopVolume == defaultDesktopVolume &&
+      other.localInteractionEnabled == localInteractionEnabled &&
+      other.localInteractionUserName == localInteractionUserName &&
+      other.localInteractionColor == localInteractionColor &&
+      other.barrageFontSize == barrageFontSize &&
+      other.barrageOpacity == barrageOpacity &&
+      other.customPlayerOutput == customPlayerOutput &&
+      other.videoOutputDriver == videoOutputDriver &&
+      other.audioOutputDriver == audioOutputDriver &&
+      other.hardwareDecoder == hardwareDecoder &&
+      other.frameInterpolation == frameInterpolation &&
+      other.scaler == scaler &&
+      other.deinterlace == deinterlace &&
+      other.streamCacheSeconds == streamCacheSeconds &&
+      other.languageId == languageId &&
       other.autoCheckUpdate == autoCheckUpdate &&
       other.countdownCloseEnabled == countdownCloseEnabled &&
       other.countdownCloseMinutes == countdownCloseMinutes &&
@@ -364,7 +541,28 @@ final class AppPreferences {
     roomCardShowPlatform,
     roomCardShowAudience,
     roomCardShowAnchor,
-    Object.hash(roomCardAspect, Object.hashAll(shellBranches)),
+    Object.hash(
+      roomCardAspect,
+      Object.hashAll(shellBranches),
+      danmakuVisible,
+      volumeMuted,
+      defaultMobileVolume,
+      defaultDesktopVolume,
+      localInteractionEnabled,
+      localInteractionUserName,
+      localInteractionColor,
+      barrageFontSize,
+      barrageOpacity,
+      customPlayerOutput,
+      videoOutputDriver,
+      audioOutputDriver,
+      hardwareDecoder,
+      frameInterpolation,
+      scaler,
+      deinterlace,
+      streamCacheSeconds,
+      languageId,
+    ),
   );
 
   static bool _listEquals(List<String> a, List<String> b) {

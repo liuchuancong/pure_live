@@ -8,11 +8,8 @@ part of 'room_routes.dart';
 
 List<RouteBase> get $appRoutes => [$roomRoute];
 
-RouteBase get $roomRoute => GoRouteData.$route(
-  path: '/room/:siteId/:roomId',
-  hasOverriddenOnExit: false,
-  factory: $RoomRoute._fromState,
-);
+RouteBase get $roomRoute =>
+    GoRouteData.$route(path: '/room/:siteId/:roomId', hasOverriddenOnExit: false, factory: $RoomRoute._fromState);
 
 mixin $RoomRoute on GoRouteData {
   static RoomRoute _fromState(GoRouterState state) => RoomRoute(
@@ -36,8 +33,7 @@ mixin $RoomRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);

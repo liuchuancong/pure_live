@@ -4,7 +4,8 @@ import 'package:live_playback/live_playback.dart' show EngineReady, EngineStoppe
 import 'package:live_sites/live_sites.dart' show LivePlayLine, LiveStreamFormat;
 import 'package:media_core/media_core.dart'
     show PlayerHandle, PlayerKernel, PlayerSource, SourceHeaders, SourceId, SourceProtocol, SourceType;
-import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitPlayerAdapter, registerMediaKitRegistry;
+import 'package:media_core_media_kit/media_core_media_kit.dart'
+    show MediaKitPlayerAdapter, NativePlayer, registerMediaKitRegistry;
 
 /// Loads the media_kit native libraries; a desktop-startup step.
 ///
@@ -19,10 +20,36 @@ void ensureMediaEngineInitialized() => MediaKitPlayerAdapter.ensureInitialized()
 /// Each [open] replaces the current handle — re-resolving a lease, switching
 /// quality or switching line is one call. Failures never throw: they arrive
 /// as [EngineStopped] and the room page decides between retry and giving up.
+///
+/// `mpvOptions` is the tuning channel — the reference's mpv option page
+/// written onto this build's engine: read fresh before every open and pushed
+/// into the native player as mpv properties, so vo/ao/hwdec changes take
+/// effect on the next stream without rebuilding the app.
 final class MediaCorePlaybackEngine implements PlaybackEngine {
   /// Creates the engine with its own kernel and a fresh media_kit backend.
-  new() {
-    registerMediaKitRegistry(_kernel.registry);
+  new({Map<String, String> Function()? mpvOptions}) {
+    registerMediaKitRegistry(
+      _kernel.registry,
+      // The hook is asked per open, not at registration: the settings can
+      // change between two streams in the same process.
+      beforeOpen: mpvOptions == null
+          ? null
+          : (player, source) async {
+              final platform = player.platform;
+              if (platform is! NativePlayer) {
+                return;
+              }
+              for (final entry in mpvOptions().entries) {
+                // Best effort: an mpv build without the option answers false
+                // or throws in the channel — the untuned default still plays.
+                try {
+                  await platform.setProperty(entry.key, entry.value);
+                } on Object {
+                  continue;
+                }
+              }
+            },
+    );
   }
 
   final PlayerKernel _kernel = PlayerKernel();

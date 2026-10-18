@@ -19,14 +19,14 @@ List<RouteBase> get $appRoutes => [
   $networkProxySettingsRoute,
   $loadingStyleSettingsRoute,
   $roomCardSettingsRoute,
-  $recorderRoute,
+  $videoSettingsRoute,
+  $mpvSettingsRoute,
+  $localConfigPreviewRoute,
+  $recorderSettingsRoute,
 ];
 
-RouteBase get $settingsRoute => GoRouteData.$route(
-  path: '/settings',
-  hasOverriddenOnExit: false,
-  factory: $SettingsRoute._fromState,
-);
+RouteBase get $settingsRoute =>
+    GoRouteData.$route(path: '/settings', hasOverriddenOnExit: false, factory: $SettingsRoute._fromState);
 
 mixin $SettingsRoute on GoRouteData {
   static SettingsRoute _fromState(GoRouterState state) => const SettingsRoute();
@@ -41,22 +41,17 @@ mixin $SettingsRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
 }
 
-RouteBase get $appearanceRoute => GoRouteData.$route(
-  path: '/settings/appearance',
-  hasOverriddenOnExit: false,
-  factory: $AppearanceRoute._fromState,
-);
+RouteBase get $appearanceRoute =>
+    GoRouteData.$route(path: '/settings/appearance', hasOverriddenOnExit: false, factory: $AppearanceRoute._fromState);
 
 mixin $AppearanceRoute on GoRouteData {
-  static AppearanceRoute _fromState(GoRouterState state) =>
-      const AppearanceRoute();
+  static AppearanceRoute _fromState(GoRouterState state) => const AppearanceRoute();
 
   @override
   String get location => GoRouteData.$location('/settings/appearance');
@@ -68,22 +63,17 @@ mixin $AppearanceRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
 }
 
-RouteBase get $fontManagerRoute => GoRouteData.$route(
-  path: '/settings/fonts',
-  hasOverriddenOnExit: false,
-  factory: $FontManagerRoute._fromState,
-);
+RouteBase get $fontManagerRoute =>
+    GoRouteData.$route(path: '/settings/fonts', hasOverriddenOnExit: false, factory: $FontManagerRoute._fromState);
 
 mixin $FontManagerRoute on GoRouteData {
-  static FontManagerRoute _fromState(GoRouterState state) =>
-      const FontManagerRoute();
+  static FontManagerRoute _fromState(GoRouterState state) => const FontManagerRoute();
 
   @override
   String get location => GoRouteData.$location('/settings/fonts');
@@ -95,22 +85,17 @@ mixin $FontManagerRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
 }
 
-RouteBase get $wallpaperRoute => GoRouteData.$route(
-  path: '/settings/wallpaper',
-  hasOverriddenOnExit: false,
-  factory: $WallpaperRoute._fromState,
-);
+RouteBase get $wallpaperRoute =>
+    GoRouteData.$route(path: '/settings/wallpaper', hasOverriddenOnExit: false, factory: $WallpaperRoute._fromState);
 
 mixin $WallpaperRoute on GoRouteData {
-  static WallpaperRoute _fromState(GoRouterState state) =>
-      const WallpaperRoute();
+  static WallpaperRoute _fromState(GoRouterState state) => const WallpaperRoute();
 
   @override
   String get location => GoRouteData.$location('/settings/wallpaper');
@@ -122,22 +107,17 @@ mixin $WallpaperRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
 }
 
-RouteBase get $cacheDataRoute => GoRouteData.$route(
-  path: '/settings/data',
-  hasOverriddenOnExit: false,
-  factory: $CacheDataRoute._fromState,
-);
+RouteBase get $cacheDataRoute =>
+    GoRouteData.$route(path: '/settings/data', hasOverriddenOnExit: false, factory: $CacheDataRoute._fromState);
 
 mixin $CacheDataRoute on GoRouteData {
-  static CacheDataRoute _fromState(GoRouterState state) =>
-      const CacheDataRoute();
+  static CacheDataRoute _fromState(GoRouterState state) => const CacheDataRoute();
 
   @override
   String get location => GoRouteData.$location('/settings/data');
@@ -149,8 +129,7 @@ mixin $CacheDataRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
@@ -163,8 +142,7 @@ RouteBase get $generalSettingsRoute => GoRouteData.$route(
 );
 
 mixin $GeneralSettingsRoute on GoRouteData {
-  static GeneralSettingsRoute _fromState(GoRouterState state) =>
-      const GeneralSettingsRoute();
+  static GeneralSettingsRoute _fromState(GoRouterState state) => const GeneralSettingsRoute();
 
   @override
   String get location => GoRouteData.$location('/settings/general');
@@ -176,8 +154,7 @@ mixin $GeneralSettingsRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
@@ -190,8 +167,7 @@ RouteBase get $refreshSettingsRoute => GoRouteData.$route(
 );
 
 mixin $RefreshSettingsRoute on GoRouteData {
-  static RefreshSettingsRoute _fromState(GoRouterState state) =>
-      const RefreshSettingsRoute();
+  static RefreshSettingsRoute _fromState(GoRouterState state) => const RefreshSettingsRoute();
 
   @override
   String get location => GoRouteData.$location('/settings/refresh');
@@ -203,22 +179,17 @@ mixin $RefreshSettingsRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
 }
 
-RouteBase get $pageSettingsRoute => GoRouteData.$route(
-  path: '/settings/pages',
-  hasOverriddenOnExit: false,
-  factory: $PageSettingsRoute._fromState,
-);
+RouteBase get $pageSettingsRoute =>
+    GoRouteData.$route(path: '/settings/pages', hasOverriddenOnExit: false, factory: $PageSettingsRoute._fromState);
 
 mixin $PageSettingsRoute on GoRouteData {
-  static PageSettingsRoute _fromState(GoRouterState state) =>
-      const PageSettingsRoute();
+  static PageSettingsRoute _fromState(GoRouterState state) => const PageSettingsRoute();
 
   @override
   String get location => GoRouteData.$location('/settings/pages');
@@ -230,8 +201,7 @@ mixin $PageSettingsRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
@@ -244,8 +214,7 @@ RouteBase get $navigationSettingsRoute => GoRouteData.$route(
 );
 
 mixin $NavigationSettingsRoute on GoRouteData {
-  static NavigationSettingsRoute _fromState(GoRouterState state) =>
-      const NavigationSettingsRoute();
+  static NavigationSettingsRoute _fromState(GoRouterState state) => const NavigationSettingsRoute();
 
   @override
   String get location => GoRouteData.$location('/settings/navigation');
@@ -257,8 +226,7 @@ mixin $NavigationSettingsRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
@@ -271,8 +239,7 @@ RouteBase get $networkProxySettingsRoute => GoRouteData.$route(
 );
 
 mixin $NetworkProxySettingsRoute on GoRouteData {
-  static NetworkProxySettingsRoute _fromState(GoRouterState state) =>
-      const NetworkProxySettingsRoute();
+  static NetworkProxySettingsRoute _fromState(GoRouterState state) => const NetworkProxySettingsRoute();
 
   @override
   String get location => GoRouteData.$location('/settings/proxy');
@@ -284,8 +251,7 @@ mixin $NetworkProxySettingsRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
@@ -298,8 +264,7 @@ RouteBase get $loadingStyleSettingsRoute => GoRouteData.$route(
 );
 
 mixin $LoadingStyleSettingsRoute on GoRouteData {
-  static LoadingStyleSettingsRoute _fromState(GoRouterState state) =>
-      const LoadingStyleSettingsRoute();
+  static LoadingStyleSettingsRoute _fromState(GoRouterState state) => const LoadingStyleSettingsRoute();
 
   @override
   String get location => GoRouteData.$location('/settings/loading-style');
@@ -311,8 +276,7 @@ mixin $LoadingStyleSettingsRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
@@ -325,8 +289,7 @@ RouteBase get $roomCardSettingsRoute => GoRouteData.$route(
 );
 
 mixin $RoomCardSettingsRoute on GoRouteData {
-  static RoomCardSettingsRoute _fromState(GoRouterState state) =>
-      const RoomCardSettingsRoute();
+  static RoomCardSettingsRoute _fromState(GoRouterState state) => const RoomCardSettingsRoute();
 
   @override
   String get location => GoRouteData.$location('/settings/room-card');
@@ -338,21 +301,89 @@ mixin $RoomCardSettingsRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
 }
 
-RouteBase get $recorderRoute => GoRouteData.$route(
-  path: '/settings/recorder',
+RouteBase get $videoSettingsRoute =>
+    GoRouteData.$route(path: '/settings/video', hasOverriddenOnExit: false, factory: $VideoSettingsRoute._fromState);
+
+mixin $VideoSettingsRoute on GoRouteData {
+  static VideoSettingsRoute _fromState(GoRouterState state) => const VideoSettingsRoute();
+
+  @override
+  String get location => GoRouteData.$location('/settings/video');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $mpvSettingsRoute =>
+    GoRouteData.$route(path: '/settings/mpv', hasOverriddenOnExit: false, factory: $MpvSettingsRoute._fromState);
+
+mixin $MpvSettingsRoute on GoRouteData {
+  static MpvSettingsRoute _fromState(GoRouterState state) => const MpvSettingsRoute();
+
+  @override
+  String get location => GoRouteData.$location('/settings/mpv');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $localConfigPreviewRoute => GoRouteData.$route(
+  path: '/settings/local-config',
   hasOverriddenOnExit: false,
-  factory: $RecorderRoute._fromState,
+  factory: $LocalConfigPreviewRoute._fromState,
 );
 
-mixin $RecorderRoute on GoRouteData {
-  static RecorderRoute _fromState(GoRouterState state) => const RecorderRoute();
+mixin $LocalConfigPreviewRoute on GoRouteData {
+  static LocalConfigPreviewRoute _fromState(GoRouterState state) => const LocalConfigPreviewRoute();
+
+  @override
+  String get location => GoRouteData.$location('/settings/local-config');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $recorderSettingsRoute => GoRouteData.$route(
+  path: '/settings/recorder',
+  hasOverriddenOnExit: false,
+  factory: $RecorderSettingsRoute._fromState,
+);
+
+mixin $RecorderSettingsRoute on GoRouteData {
+  static RecorderSettingsRoute _fromState(GoRouterState state) => const RecorderSettingsRoute();
 
   @override
   String get location => GoRouteData.$location('/settings/recorder');
@@ -364,8 +395,7 @@ mixin $RecorderRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
