@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:live_net/live_net.dart';
 
 /// Where the app's releases live.
@@ -169,4 +170,22 @@ final class FeedUnavailable implements Exception {
 
   @override
   String toString() => message;
+}
+
+/// Whether [asset] is the package built for the device running the app —
+/// the reference marks it 本机 on the update and history pages. Name
+/// patterns only; a build this app cannot install never claims the tag.
+bool isNativeAsset(ReleaseAsset asset) {
+  final name = asset.name.toLowerCase();
+  if (defaultTargetPlatform == TargetPlatform.windows) return name.endsWith('.exe');
+  if (defaultTargetPlatform == TargetPlatform.linux) {
+    return name.endsWith('.appimage') || name.endsWith('.deb') || name.endsWith('.tar.xz');
+  }
+  if (defaultTargetPlatform == TargetPlatform.macOS) return name.endsWith('.dmg');
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    // The modern 64-bit phone package; a 32-bit or tablet-only build is not
+    // this device's answer.
+    return name.endsWith('.apk') && name.contains('arm64-v8a');
+  }
+  return false;
 }

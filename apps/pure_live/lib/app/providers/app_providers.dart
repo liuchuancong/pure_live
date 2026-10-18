@@ -9,6 +9,7 @@ import 'package:live_storage/live_storage.dart' show StorageBootstrap;
 import 'package:pure_live/app/composition/sites.dart';
 import 'package:pure_live/app/environment/app_paths.dart';
 import 'package:pure_live/app/fonts/font_library.dart';
+import 'package:pure_live/app/logging/app_log.dart';
 import 'package:pure_live/app/theme/appearance_preferences/appearance_preferences.dart';
 import 'package:pure_live/app/theme/appearance_store.dart';
 import 'package:pure_live/app/theme/ui_configuration_mapper.dart';
@@ -72,6 +73,11 @@ final storageProvider = Provider<StorageBootstrap>(
 /// The network and site graph, overridden at start-up — the sites are
 /// initialized before the first frame and never re-created.
 final sitesProvider = Provider<AppSites>((ref) => throw UnimplementedError('overridden by the composition root'));
+
+/// The process log, overridden at start-up. The log page reads the in-memory
+/// ring through it and re-tunes the live tree's minimum level; nothing else
+/// should hold the AppLog below the composition root.
+final appLogProvider = Provider<AppLog>((ref) => throw UnimplementedError('overridden by the composition root'));
 
 /// The discovery capability of a site id, null when the site does not
 /// expose one. The registry is static after boot, so a family entry never

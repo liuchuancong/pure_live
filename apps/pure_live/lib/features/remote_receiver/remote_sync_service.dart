@@ -30,7 +30,12 @@ import 'package:pure_live/features/remote_receiver/remote_sync_protocol.dart';
 /// or QR); two of this app's builds also find each other by themselves.
 final class RemoteSyncService extends ChangeNotifier {
   /// A service over this app's repositories.
-  new({required this.follows, required this.history, required this.preferences});
+  new({required this.follows, required this.history, required this.preferences}) : _inert = false;
+
+  /// A service that never binds a port, never broadcasts and never opens a
+  /// box — what the render tests hand the page so pumping it cannot touch
+  /// the network or the storage layer.
+  new inert({required this.follows, required this.history, required this.preferences}) : _inert = true;
 
   /// Where followed rooms and groups are applied and exported from.
   final FollowRepository follows;
@@ -41,6 +46,9 @@ final class RemoteSyncService extends ChangeNotifier {
   /// Where the general preference groups are exported from and applied to —
   /// the store the settings pages edit.
   final AppPreferencesStore preferences;
+
+  /// Whether this is the inert render-test shape.
+  final bool _inert;
 
   // ---------------------------------------------------------------------------
   // State
@@ -158,13 +166,28 @@ final class RemoteSyncService extends ChangeNotifier {
   /// The sections this device exports, for the picker UI.
   List<String> exportSectionNames() => RemoteSyncPayload.sectionNames;
 
+  /// The name the device behind [address] announced with, or null when it
+  /// was never heard on discovery — what the confirmation dialog shows so
+  /// the user answers to a name and not to a bare IP (3.x's `nameOf`).
+  String? nameOf(String address) {
+    final at = address.lastIndexOf(':');
+    final ip = at > 0 ? address.substring(0, at) : address;
+    for (final device in _devices) {
+      if (device.ip == ip) {
+        return device.name;
+      }
+    }
+    return null;
+  }
+
   // ---------------------------------------------------------------------------
   // Lifecycle
   // ---------------------------------------------------------------------------
 
-  /// Starts the server and discovery; idempotent while running.
+  /// Starts the server and discovery; idempotent while running. The inert
+  /// shape answers "started" without ever touching a socket or a box.
   Future<void> start() async {
-    if (_disposed || _running) {
+    if (_disposed || _running || _inert) {
       return;
     }
     _running = true;

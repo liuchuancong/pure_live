@@ -3,6 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/features/about/markdown_text.dart';
 import 'package:pure_live/features/about/update_feed.dart';
 import 'package:pure_live/features/about/version_history.dart';
@@ -80,7 +81,7 @@ final class VersionPage extends ConsumerWidget {
                 title: context.t.about.versionHistory,
                 subtitle: context.t.about.historyDesc,
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => unawaited(_showHistory(context, ref)),
+                onTap: () => unawaited(const VersionHistoryRoute().push<void>(context)),
                 divided: false,
               ),
             ],
@@ -147,6 +148,7 @@ final class VersionPage extends ConsumerWidget {
       for (final asset in assets)
         ReleaseFileCard(
           asset: asset,
+          native: isNativeAsset(asset),
           onCopy: () async {
             final uri = asset.uri;
             if (uri == null) {
@@ -169,20 +171,6 @@ final class VersionPage extends ConsumerWidget {
 
   /// The release's tag, v-prefixed.
   String _tag(AppRelease release) => release.tag.startsWith('v') ? release.tag : 'v${release.tag}';
-
-  /// Opens the same history presentation the about page uses — one history
-  /// list, refreshed through the version controller's check.
-  Future<void> _showHistory(BuildContext context, WidgetRef ref) {
-    final controller = ref.read(versionControllerProvider.notifier);
-    return showVersionHistorySheet(
-      context,
-      releases: ref.read(versionControllerProvider).releases,
-      refresh: () async {
-        await controller.check();
-        return ref.read(versionControllerProvider).releases;
-      },
-    );
-  }
 
   /// The identity block: the glyph tile (the app ships no icon asset), the
   /// app name and the running build's pill — the about page's hero, at rest.

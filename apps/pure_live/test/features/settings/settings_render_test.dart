@@ -18,12 +18,16 @@ import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/theme/appearance_store.dart';
 import 'package:pure_live/features/login/login_providers.dart' show signedInAccountsProvider;
 import 'package:pure_live/features/settings/appearance/appearance_page.dart';
+import 'package:pure_live/features/settings/danmaku/danmaku_settings_page.dart';
 import 'package:pure_live/features/settings/general/general_settings_page.dart';
 import 'package:pure_live/features/settings/loading/loading_style_settings_page.dart';
 import 'package:pure_live/features/settings/local_config/local_config_preview_page.dart';
+import 'package:pure_live/features/settings/local_interaction/local_interaction_settings_page.dart';
+import 'package:pure_live/features/settings/logs/logs_settings_page.dart';
 import 'package:pure_live/features/settings/navigation/navigation_settings_page.dart';
 import 'package:pure_live/features/settings/network/network_proxy_settings_page.dart';
 import 'package:pure_live/features/settings/pages/page_settings_page.dart';
+import 'package:pure_live/features/settings/platforms/platforms_settings_page.dart';
 import 'package:pure_live/features/settings/player/mpv_settings_page.dart';
 import 'package:pure_live/features/settings/refresh/refresh_settings_page.dart';
 import 'package:pure_live/features/settings/room_card/room_card_settings_page.dart';
@@ -75,9 +79,27 @@ void main() {
     });
   }
 
-  testWidgets('the video page writes the default a room opens with', (tester) async {
-    final stores = _Stores();
-    await _pump(tester, language: PureDesignLanguage.material, child: const VideoSettingsPage(), stores: stores);
+  testWidgets('the two-pane index opens a section and finds rows by search', (tester) async {
+    await _pump(tester, language: PureDesignLanguage.material, child: const SettingsPage());
+
+    // 900 logical px wide is past the two-pane breakpoint: the overview and a
+    // pane sit side by side and the appearance section is open at once.
+    expect(find.text('界面'), findsOneWidget);
+    expect(find.byKey(const ValueKey('settings-section-network')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('settings-section-network')));
+    await tester.pumpAndSettle();
+    expect(find.text('代理'), findsWidgets);
+
+    // Search filters the catalogue behind its debounce; a hit opens its page.
+    await tester.enterText(find.byType(TextField).first, '弹幕');
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('settings-entry-danmaku_visible')), findsOneWidget);
+  });
+
+  testWidgets('the danmaku page writes the default a room opens with', (tester) async {    final stores = _Stores();
+    await _pump(tester, language: PureDesignLanguage.material, child: const DanmakuSettingsPage(), stores: stores);
 
     expect(stores.preferences.value.danmakuVisible, isTrue);
     await tester.tap(find.text('默认显示弹幕'));
@@ -115,6 +137,10 @@ const List<_Page> _pages = [
   _Page('network proxy', NetworkProxySettingsPage.new, custom: true),
   _Page('appearance', AppearancePage.new, custom: true),
   _Page('video', VideoSettingsPage.new, custom: true),
+  _Page('danmaku', DanmakuSettingsPage.new, custom: true),
+  _Page('platforms', PlatformsSettingsPage.new),
+  _Page('local interaction', LocalInteractionSettingsPage.new, custom: true),
+  _Page('logs', LogsSettingsPage.new),
   _Page('mpv tuning', MpvSettingsPage.new),
   _Page('local config', LocalConfigPreviewPage.new, custom: true),
 ];

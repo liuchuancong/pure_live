@@ -3,7 +3,6 @@
 import 'dart:async';
 import 'dart:io' show Directory;
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_record_core/live_record_core.dart'
@@ -11,6 +10,7 @@ import 'package:live_record_core/live_record_core.dart'
 import 'package:live_sites/live_sites.dart' show LiveRoomProvider, LiveSite, LiveSiteManifest;
 import 'package:open_file/open_file.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/app/shell/main_layout.dart';
 import 'package:pure_live/app/shell/main_page_frame.dart';
 import 'package:pure_live/features/recorder/recorder_engine.dart';
@@ -146,40 +146,6 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     }
   }
 
-  Future<void> _chooseDirectory(RecorderPreferences preferences) async {
-    final t = context.t;
-    final current = preferences.outputDirectory;
-    final selected = await FilePickerPlatform.instance.getDirectoryPath(
-      dialogTitle: t.recorder.chooseDirectory,
-      initialDirectory: current.isEmpty ? null : current,
-    );
-    if (selected == null || selected == current || !mounted) {
-      return;
-    }
-    await updateRecorderPreferences(
-      () => ref.read(recorderPreferencesStoreProvider.future),
-      (value) => value.copyWith(outputDirectory: selected),
-    );
-  }
-
-  Future<void> _chooseSegmentLength(RecorderPreferences preferences) async {
-    final t = context.t;
-    const options = [1, 2, 5, 10, 15, 30, 60];
-    final picked = await showSettingsChooser<int>(
-      context,
-      title: t.recorder.segmentLength,
-      current: preferences.segmentMinutes,
-      options: [for (final minutes in options) (minutes, t.recorder.minutesValue(minutes: minutes))],
-    );
-    if (picked == null) {
-      return;
-    }
-    await updateRecorderPreferences(
-      () => ref.read(recorderPreferencesStoreProvider.future),
-      (value) => value.copyWith(segmentMinutes: picked),
-    );
-  }
-
   Future<void> _openOutputDirectory(String root) async {
     final t = context.t;
     try {
@@ -210,6 +176,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     });
 
     return MainPageFrame(
+      inHome: true,
       title: t.recorder.title,
       actions: [
         PureIconButton(
@@ -222,6 +189,11 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           icon: Icons.folder_open_outlined,
           onPressed: () => _openOutputDirectory(root),
         ),
+        PureIconButton(
+          tooltip: t.recorder.recordSettings,
+          icon: Icons.tune_outlined,
+          onPressed: () => unawaited(const RecordingSettingsRoute().push<void>(context)),
+        ),
       ],
       body: runtime.when(
         loading: () => PureLoading(message: t.recorder.restoring),
@@ -230,165 +202,125 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           onRetry: () => ref.invalidate(recorderRuntimeProvider),
           retryLabel: t.common.retry,
         ),
-        data: (_) => AdaptiveBreakpoints.of(context).isAtLeastExpanded
-            ? AdaptiveContentLayout(
-                // The desktop arrangement: settings and the add action ride a
-                // context column, the tasks keep the wide reading pane.
-                primary: _buildTasks(context),
-                secondary: _buildSettingsPane(context, preferences, root),
-              )
-            : LayoutBuilder(
-                builder: (context, constraints) {
-                  // A recording task is a wide information card, not a tile:
-                  // cap the reading column so it does not stretch across an
-                  // ultrawide window.
-                  final width = constraints.maxWidth > 1040 ? 1040.0 : constraints.maxWidth;
-                  return Align(
-                    alignment: Alignment.topCenter,
-                    child: SizedBox(
-                      width: width,
-                      height: constraints.maxHeight,
-                      child: _buildList(context, preferences, root),
-                    ),
-                  );
-                },
+        data: (_) => LayoutBuilder(
+          builder: (context, constraints) {
+            // The reference's task grid: one column until the window fits a
+            // second 400-wide card, up to four on an ultrawide.
+            final width = constraints.maxWidth;
+            final columns = width >= 840 ? (width / 400).floor().clamp(1, 4) : 1;
+            return Align(
+              alignment: Alignment.topCenter,
+              child: SizedBox(
+                width: width > 1600 ? 1600.0 : width,
+                height: constraints.maxHeight,
+                child: _buildTasks(context, columns),
               ),
+            );
+          },
+        ),
       ),
     );
   }
 
-  /// The desktop settings column: output directory, segment length and the
-  /// add-room action — the three things a viewer reaches for between lists.
-  Widget _buildSettingsPane(BuildContext context, RecorderPreferences preferences, String root) {
+  /// The reference's five buckets: all, capturing (active), waiting for a
+  /// slot or the stream address (waiting), finished with a file (saved), and
+  /// ended broken (failed).
+  static bool _inBucket(RecordTask task, int bucket) => switch (bucket) {
+    1 => switch (task.status) { RecordStatus.recording || RecordStatus.retrying || RecordStatus.merging => true, _ => false },
+    2 => switch (task.status) { RecordStatus.queued || RecordStatus.resolving => true, _ => false },
+    3 => switch (task.status) { RecordStatus.completed || RecordStatus.stopped => true, _ => false },
+    4 => switch (task.status) { RecordStatus.failed || RecordStatus.interrupted => true, _ => false },
+    _ => true,
+  };
+
+  /// The visible tasks after the status filter, before ordering.
+  List<RecordTask> _filtered() => [
+    for (final task in _tasks)
+      if (_inBucket(task, _filter)) task,
+  ];
+
+  /// The filter bar: five equal chips, each with its count (the reference's
+  /// _FilterBar).
+  Widget _filterBar(BuildContext context) {
     final t = context.t;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(0, 12, 0, 32),
-      children: [
-        PureCard(
-          padding: EdgeInsets.zero,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              PureListRow(
-                leading: const Icon(Icons.folder_outlined, size: 22),
-                title: t.recorder.outputDirectory,
-                subtitle: root.isEmpty ? t.recorder.outputDirectoryDefault : root,
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => _chooseDirectory(preferences),
+    final labels = [
+      t.recorder.filterAll,
+      t.recorder.filterActive,
+      t.recorder.filterWaiting,
+      t.recorder.filterSaved,
+      t.recorder.filterFailed,
+    ];
+    final counts = [for (var bucket = 0; bucket < 5; bucket++) _tasks.where((task) => _inBucket(task, bucket)).length];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        children: [
+          for (var bucket = 0; bucket < 5; bucket++)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: ChoiceChip(
+                  label: Text('${labels[bucket]} ${counts[bucket]}'),
+                  selected: _filter == bucket,
+                  onSelected: (_) => setState(() => _filter = bucket),
+                ),
               ),
-              PureListRow(
-                leading: const Icon(Icons.timelapse_outlined, size: 22),
-                title: t.recorder.segmentLength,
-                subtitle: t.recorder.minutesValue(minutes: preferences.clampedSegmentMinutes),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => _chooseSegmentLength(preferences),
-                divided: false,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        PureButton(label: t.recorder.addRoom, icon: Icons.add, expand: true, onPressed: _addRoom),
-      ],
+            ),
+        ],
+      ),
     );
   }
 
-  /// The desktop task pane: the status filter over the task cards.
-  Widget _buildTasks(BuildContext context) {
+  /// The task list: filter bar over the task cards in [columns] columns —
+  /// the reference's _TaskGrid (one column on a phone, up to four when the
+  /// window is wide). The directory and segment settings live on the
+  /// recording settings page, reached from the bar.
+  Widget _buildTasks(BuildContext context, int columns) {
     final t = context.t;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(0, 12, 0, 32),
-      children: [
-        PureSegmented(
-          labels: [t.recorder.filterAll, t.recorder.filterActive, t.recorder.filterFinished],
-          index: _filter,
-          onChanged: (index) => setState(() => _filter = index),
-          expand: true,
-        ),
-        const SizedBox(height: 12),
-        ..._taskCards(context),
-      ],
-    );
-  }
-
-  /// The compact stack: settings card, filter and tasks in one scroll — the
-  /// phone and narrow-desktop form.
-  Widget _buildList(BuildContext context, RecorderPreferences preferences, String root) {
-    final t = context.t;
+    final tasks = _ordered(_filtered());
     return ListView(
       padding: MainLayout.bodyPadding(context, top: 12, bottom: 32),
       children: [
-        PureCard(
-          padding: EdgeInsets.zero,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              PureListRow(
-                leading: const Icon(Icons.folder_outlined, size: 22),
-                title: t.recorder.outputDirectory,
-                subtitle: root.isEmpty ? t.recorder.outputDirectoryDefault : root,
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => _chooseDirectory(preferences),
-              ),
-              PureListRow(
-                leading: const Icon(Icons.timelapse_outlined, size: 22),
-                title: t.recorder.segmentLength,
-                subtitle: t.recorder.minutesValue(minutes: preferences.clampedSegmentMinutes),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => _chooseSegmentLength(preferences),
-                divided: false,
-              ),
-            ],
+        _filterBar(context),
+        const Divider(height: 1),
+        const SizedBox(height: 12),
+        if (tasks.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 48),
+            child: PureEmpty(
+              title: t.recorder.emptyTitle,
+              message: t.recorder.emptySubtitle,
+              icon: Icons.video_collection_outlined,
+              action: PureButton(label: t.recorder.addRoom, icon: Icons.add, onPressed: _addRoom),
+            ),
+          )
+        else
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const spacing = 12.0;
+              final itemWidth = (constraints.maxWidth - spacing * (columns - 1)) / columns;
+              return Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: [
+                  for (final task in tasks)
+                    SizedBox(
+                      width: itemWidth,
+                      child: RecorderTaskCard(
+                        key: ValueKey(task.taskId),
+                        task: task,
+                        onStop: () => _stop(task),
+                        onFinish: () => _finish(task),
+                        onRestart: () => _restart(task),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
-        ),
-        const SizedBox(height: 12),
-        PureSegmented(
-          labels: [t.recorder.filterAll, t.recorder.filterActive, t.recorder.filterFinished],
-          index: _filter,
-          onChanged: (index) => setState(() => _filter = index),
-          expand: true,
-        ),
-        const SizedBox(height: 12),
-        ..._taskCards(context),
       ],
     );
   }
-
-  /// The visible tasks after the status filter, before ordering.
-  List<RecordTask> _filtered() => switch (_filter) {
-    1 => _tasks.where((task) => statusIsBusy(task.status)).toList(growable: false),
-    2 => _tasks.where((task) => !statusIsBusy(task.status)).toList(growable: false),
-    _ => _tasks,
-  };
-
-  /// The task cards with their separators, or the empty state.
-  List<Widget> _taskCards(BuildContext context) {
-    final t = context.t;
-    final tasks = _ordered(_filtered());
-    if (tasks.isEmpty) {
-      return [
-        PureEmpty(
-          title: t.recorder.emptyTitle,
-          message: t.recorder.emptySubtitle,
-          icon: Icons.video_collection_outlined,
-          action: PureButton(label: t.recorder.addRoom, icon: Icons.add, onPressed: _addRoom),
-        ),
-      ];
-    }
-    return [
-      for (var i = 0; i < tasks.length; i++) ...[
-        RecorderTaskCard(
-          key: ValueKey(tasks[i].taskId),
-          task: tasks[i],
-          onStop: () => _stop(tasks[i]),
-          onFinish: () => _finish(tasks[i]),
-          onRestart: () => _restart(tasks[i]),
-        ),
-        const SizedBox(height: 12),
-      ],
-    ];
-  }
-
   /// Busy tasks first, then the newest.
   List<RecordTask> _ordered(List<RecordTask> tasks) {
     int rank(RecordTask task) => statusIsBusy(task.status) ? 0 : 1;

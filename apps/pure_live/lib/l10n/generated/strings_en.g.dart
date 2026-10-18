@@ -47,6 +47,9 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$login$en login = _Translations$login$en._(_root);
 	@override late final _Translations$account$en account = _Translations$account$en._(_root);
 	@override late final _Translations$settings$en settings = _Translations$settings$en._(_root);
+	@override late final _Translations$hotAreas$en hotAreas = _Translations$hotAreas$en._(_root);
+	@override late final _Translations$tags$en tags = _Translations$tags$en._(_root);
+	@override late final _Translations$logs$en logs = _Translations$logs$en._(_root);
 	@override late final _Translations$recorder$en recorder = _Translations$recorder$en._(_root);
 	@override late final _Translations$theme$en theme = _Translations$theme$en._(_root);
 	@override late final _Translations$design$en design = _Translations$design$en._(_root);
@@ -123,7 +126,17 @@ class _Translations$common$en extends Translations$common$zh {
 	@override String pageOf({required int page, required int total}) => 'Page ${page} of ${total}';
 	@override String get back => 'Back';
 	@override String get menu => 'Menu';
+	@override String get more => 'More';
 	@override String get off => 'Off';
+	@override String get refresh => 'Refresh';
+	@override String get prevPage => 'Previous';
+	@override String get nextPage => 'Next';
+	@override String get perPage => 'Per page';
+	@override String get goTo => 'Go to';
+	@override String get pageUnit => 'Page';
+	@override String get toTop => 'To the top';
+	@override String get toBottom => 'To the bottom';
+	@override String get addOne => 'Add';
 }
 
 // Path: tray
@@ -370,6 +383,117 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get localConfigCopy => 'Copy this document';
 	@override String get localConfigApp => 'General preferences';
 	@override String get localConfigAppearance => 'Appearance';
+	@override String get areaInterface => 'Interface';
+	@override String get areaSources => 'Sources';
+	@override String get areaPlayback => 'Playback';
+	@override String get areaGeneral => 'General';
+	@override String get areaData => 'Data';
+	@override String get searchHint => 'Search settings';
+	@override String get searchEmpty => 'No matching settings';
+	@override String get searchEmptyHint => 'Try a different keyword';
+	@override String get platformsTitle => 'Platforms';
+	@override String get platformsDesc => 'Visibility, order and accounts';
+	@override String get danmakuTitle => 'Danmaku';
+	@override String get danmakuDesc => 'Display, size, opacity and blocking';
+	@override String get recordingTitle => 'Recording';
+	@override String get recordingDesc => 'Output folder and segment length';
+	@override String get playerTitle => 'Player';
+	@override String get playerDesc => 'Decoding, output and cache tuning';
+	@override String get logTitle => 'Logs';
+	@override String get logDesc => 'Log level and export';
+	@override String get localInteractionDesc => 'Local danmaku identity and switch';
+	@override String get localInteractionColor => 'Danmaku colour';
+	@override String get navigationDesc => 'Navigation bar and start page';
+	@override String get videoDesc => 'Volume, quality and background play';
+	@override String get refreshDesc => 'Auto refresh and live alerts';
+	@override String get generalDesc => 'Startup, updates and window';
+	@override String get proxyDesc => 'App and player proxies';
+	@override String get cacheDesc => 'Cache size and cleanup';
+	@override String get backupDesc => 'Back up and restore local data';
+	@override String get iptvDesc => 'Manage playlists and channels';
+	@override String get pageDesc => 'Paging and scrolling';
+	@override String get pagerGroup => 'Pager (computers)';
+	@override String get pageDefaultSize => 'Default page size';
+	@override String get pageDefaultSizeHint => 'Rooms per page when a list opens; the pager can change it for now';
+	@override String get pageSizeAuto => 'Automatic';
+	@override String get itemsPerPage => 'items/page';
+	@override String get pageSizeOptionsTitle => 'Page Size Options';
+	@override String get pageSizeRestore => 'Restore recommended';
+	@override String get pageSizeInputHint => '1–100';
+	@override String get pageSizeRangeError => 'Enter a whole number from 1 to 100';
+	@override String get pageSizeDuplicateError => 'That page size is already listed';
+	@override String get pageSizeCurrent => 'Current active options';
+	@override String get pageShowScrollTop => 'Show Scroll-to-Top Button';
+	@override String get pageShowScrollTopSubtitle => 'Displays a floating button in the corner after scrolling a distance';
+	@override String get pageShowSizeSelector => 'Show Page Size Selector';
+	@override String get pageShowSizeSelectorSubtitle => 'Displays a dropdown menu for items per page in the control bar';
+	@override String get pageShowGoto => 'Show Go-To Page Button';
+	@override String get pageShowGotoSubtitle => 'Enables manual page number input for quick jumping';
+	@override String get configPreviewDesc => 'Read-only view of the saved document';
+}
+
+// Path: hotAreas
+class _Translations$hotAreas$en extends Translations$hotAreas$zh {
+	_Translations$hotAreas$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Platform visibility';
+	@override String get note => 'Hidden platforms are left out of popular, areas and search.';
+	@override String get orderNote => 'Drag to reorder the platforms.';
+	@override String get visible => 'Visible';
+	@override String get hidden => 'Hidden';
+	@override String get restore => 'Restore defaults';
+	@override String get keepAtLeastOne => 'Keep at least one platform';
+}
+
+// Path: tags
+class _Translations$tags$en extends Translations$tags$zh {
+	_Translations$tags$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Tags';
+	@override String get add => 'New tag';
+	@override String get name => 'Tag name';
+	@override String get rename => 'Rename';
+	@override String get delete => 'Delete';
+	@override String deleteConfirm({required Object name}) => 'Delete "${name}"? Its rooms stay followed.';
+	@override String get pin => 'Pin to top';
+	@override String get unpin => 'Unpin';
+	@override String get pinned => 'Pinned';
+	@override String get empty => 'No tags yet';
+	@override String get emptyHint => 'Long-press a followed room to add it to a tag.';
+	@override String countValue({required int count}) => '${count} tags';
+	@override String get nameEmpty => 'Name cannot be empty';
+	@override String get nameTaken => 'A tag with this name already exists';
+}
+
+// Path: logs
+class _Translations$logs$en extends Translations$logs$zh {
+	_Translations$logs$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Logs';
+	@override String get level => 'Log level';
+	@override String get levelHint => 'Lower levels record more; the choice persists across launches.';
+	@override String get levelTrace => 'Everything (trace)';
+	@override String get levelDebug => 'Detailed (debug)';
+	@override String get levelInfo => 'Regular (info)';
+	@override String get levelWarning => 'Warnings (warning)';
+	@override String get levelError => 'Errors (error)';
+	@override String get levelFatal => 'Fatal only';
+	@override String get levelOff => 'Off';
+	@override String get levelDefault => 'Follow build default';
+	@override String get export => 'Export recent logs';
+	@override String exportDone({required int count}) => 'Copied ${count} log lines to the clipboard';
+	@override String get exportEmpty => 'No logs in memory yet';
+	@override String get openFolder => 'Open log folder';
+	@override String get note => 'Log files live under the logs directory and rotate.';
 }
 
 // Path: recorder
@@ -399,6 +523,10 @@ class _Translations$recorder$en extends Translations$recorder$zh {
 	@override String engineFailed({required String error}) => 'The recording engine failed to start: ${error}';
 	@override String get filterAll => 'All';
 	@override String get filterActive => 'Active';
+	@override String get filterWaiting => 'Waiting';
+	@override String get filterSaved => 'Saved';
+	@override String get filterFailed => 'Failed';
+	@override String get recordSettings => 'Recording settings';
 	@override String get filterFinished => 'Finished';
 	@override String get emptyTitle => 'No rooms watched yet';
 	@override String get emptySubtitle => 'Add a room and it is recorded once it goes live';
@@ -484,6 +612,12 @@ class _Translations$room$en extends Translations$room$zh {
 	@override String get online => 'Online';
 	@override String lineN({required Object n}) => 'Line ${n}';
 	@override String get fullscreen => 'Fullscreen';
+	@override String get lock => 'Lock screen';
+	@override String get unlock => 'Unlock screen';
+	@override String get videoFit => 'Aspect ratio';
+	@override String get fitContain => 'Fit';
+	@override String get fitCover => 'Cover';
+	@override String get fitFill => 'Stretch';
 	@override String get exitFullscreen => 'Exit fullscreen';
 	@override String get barrageOn => 'Show danmaku';
 	@override String get barrageOff => 'Hide danmaku';
@@ -547,6 +681,10 @@ class _Translations$popular$en extends Translations$popular$zh {
 	final TranslationsEn _root; // ignore: unused_field
 
 	// Translations
+	@override String get allPlatforms => 'All platforms';
+	@override String get allPlatformsHint => 'Tap to switch; platform settings hide and order them.';
+	@override String get noPlatforms => 'No platforms to show';
+	@override String get noPlatformsHint => 'Enable at least one platform in platform settings.';
 	@override String get empty => 'Nothing live right now';
 }
 
@@ -557,6 +695,21 @@ class _Translations$history$en extends Translations$history$zh {
 	final TranslationsEn _root; // ignore: unused_field
 
 	// Translations
+	@override String countOfLimit({required int count, required int limit}) => '${count} / ${limit} entries';
+	@override String countUnlimited({required int count}) => '${count} entries';
+	@override String get filterOpen => 'Filter';
+	@override String get filterClose => 'Close filter';
+	@override String get filterHint => 'Filter by title or streamer';
+	@override String filterMatches({required int count}) => '${count} matches';
+	@override String get filterEmpty => 'No history entries match';
+	@override String get refreshStatus => 'Refresh watch status';
+	@override String refreshDone({required int count}) => 'Refreshed ${count} entries';
+	@override String refreshPartial({required int failed, required int count}) => '${failed} of ${count} failed to refresh';
+	@override String get refreshSaveFailed => 'Saving the refreshed history failed';
+	@override String get limitTitle => 'History limit';
+	@override String get limitHint => '0 keeps everything; older entries beyond the limit are deleted.';
+	@override String get removed => 'Entry removed';
+	@override String cleared({required int count}) => 'Cleared ${count} entries';
 	@override String get clear => 'Clear history';
 	@override String get resume => 'Resume';
 	@override String get clearConfirm => 'Clear the whole watch history? This cannot be undone.';
@@ -577,6 +730,7 @@ class _Translations$iptv$en extends Translations$iptv$zh {
 	final TranslationsEn _root; // ignore: unused_field
 
 	// Translations
+	@override String get epgTitle => 'Guides';
 	@override String get title => 'IPTV';
 	@override String get addSource => 'Add source';
 	@override String get sourceName => 'Source name';
@@ -646,6 +800,14 @@ class _Translations$follow$en extends Translations$follow$zh {
 	@override String get follow => 'Follow';
 	@override String get unfollow => 'Unfollow';
 	@override String unfollowConfirm({required String name}) => 'Unfollow "${name}"?';
+	@override String get liveRoom => 'Live';
+	@override String get replayRoom => 'Replays';
+	@override String get offlineRoom => 'Offline';
+	@override String get emptyLive => 'No followed rooms are live';
+	@override String get emptyReplay => 'No replay follows';
+	@override String get emptyOffline => 'No offline follows';
+	@override String get showOffline => 'View offline';
+	@override String refreshFailed({required int count}) => '${count} rooms failed to refresh';
 	@override String get newGroup => 'New group';
 	@override String get manageGroups => 'Manage groups';
 	@override String get renameGroup => 'Rename group';
@@ -711,6 +873,8 @@ class _Translations$about$en extends Translations$about$zh {
 	final TranslationsEn _root; // ignore: unused_field
 
 	// Translations
+	@override String get native => 'This device';
+	@override String downloadFilesOf({required Object platform}) => 'Downloads · ${platform}';
 	@override String get title => 'About';
 	@override String get group => 'About';
 	@override String get checkUpdate => 'Check for updates';
@@ -807,31 +971,44 @@ class _Translations$remoteSync$en extends Translations$remoteSync$zh {
 	final TranslationsEn _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'LAN sync';
+	@override String get title => 'Device Sync';
 	@override String get tileSubtitle => 'Sync follows and history between devices on this network';
-	@override String get myDevice => 'This device';
+	@override String get myDevice => 'My Device';
 	@override String get noAddress => 'No LAN address found';
-	@override String get scanHint => 'Let the other device scan this code, or type this device\'s address there';
+	@override String get scanHint => 'Let the other device scan this code, or type this device’s address there';
 	@override String get running => 'Sync service running';
-	@override String get notRunning => 'Sync service stopped';
+	@override String get notRunning => 'Sync service is not running';
 	@override String get start => 'Start';
 	@override String get stop => 'Stop';
-	@override String get devices => 'Devices on this network';
-	@override String get noDevices => 'No device found yet — make sure both devices run on the same network';
-	@override String get manual => 'Address';
-	@override String get send => 'Send';
-	@override String get receive => 'Receive';
+	@override String get devices => 'Discovered Devices';
+	@override String get noDevices => 'No other devices found';
+	@override String get manual => 'Manual Input';
+	@override String get send => 'Send Settings';
+	@override String get receive => 'Receive Settings';
 	@override String get sendSuccess => 'Sent';
 	@override String get sendFailed => 'Send failed — check the address and whether the other device confirmed';
 	@override String get receiveSuccess => 'Received and applied';
 	@override String get receiveFailed => 'Receive failed';
-	@override String get enterAddress => 'Enter the other device\'s address first';
+	@override String get enterAddress => 'Enter the other device’s address first';
 	@override String get invalidAddress => 'That is not a valid address';
-	@override String incomingImport({required String address}) => '${address} wants to overwrite this device\'s follows, history and shield. Allow?';
-	@override String incomingExport({required String address}) => '${address} wants to read this device\'s follows, history and shield. Allow?';
+	@override String incomingImport({required String address}) => '${address} wants to overwrite this device’s follows, history and shield. Allow?';
+	@override String incomingExport({required String address}) => '${address} wants to read this device’s follows, history and shield. Allow?';
 	@override String get sectionFavorite => 'Followed rooms';
 	@override String get sectionHistory => 'Watch history';
 	@override String get sectionGroups => 'Follow groups';
+	@override String get noAddressHint => 'Connect to Wi-Fi or a wired network; on Android allow the "Nearby devices / local network" permission, then tap Start at the top right';
+	@override String get description => 'Make sure both devices are connected to the same local network';
+	@override String get searching => 'Searching for devices on the local network...';
+	@override String get searchingShort => 'Searching';
+	@override String get manualHint => 'Enter the other device’s address, or paste the sync link from its QR code';
+	@override String get copyAddress => 'Copy Address';
+	@override String get addressCopied => 'Address copied';
+	@override String fromName({required String name}) => 'From ${name}';
+	@override String get legacyDevice => 'Pure Live 3.x device';
+	@override String get allow => 'Allow';
+	@override String get reject => 'Reject';
+	@override String incomingImportNamed({required Object address, required Object name}) => '${address} (${name}) asks to replace this device’s settings with its own. Allow?';
+	@override String incomingExportNamed({required Object address, required Object name}) => '${address} (${name}) asks to read this device’s settings. Allow?';
 }
 
 // Path: errors
@@ -1010,7 +1187,17 @@ extension on TranslationsEn {
 			'common.pageOf' => ({required int page, required int total}) => 'Page ${page} of ${total}',
 			'common.back' => 'Back',
 			'common.menu' => 'Menu',
+			'common.more' => 'More',
 			'common.off' => 'Off',
+			'common.refresh' => 'Refresh',
+			'common.prevPage' => 'Previous',
+			'common.nextPage' => 'Next',
+			'common.perPage' => 'Per page',
+			'common.goTo' => 'Go to',
+			'common.pageUnit' => 'Page',
+			'common.toTop' => 'To the top',
+			'common.toBottom' => 'To the bottom',
+			'common.addOne' => 'Add',
 			'tray.show' => 'Show Pure Live',
 			'tray.quit' => 'Quit',
 			'login.title' => 'Sign in',
@@ -1221,6 +1408,90 @@ extension on TranslationsEn {
 			'settings.localConfigCopy' => 'Copy this document',
 			'settings.localConfigApp' => 'General preferences',
 			'settings.localConfigAppearance' => 'Appearance',
+			'settings.areaInterface' => 'Interface',
+			'settings.areaSources' => 'Sources',
+			'settings.areaPlayback' => 'Playback',
+			'settings.areaGeneral' => 'General',
+			'settings.areaData' => 'Data',
+			'settings.searchHint' => 'Search settings',
+			'settings.searchEmpty' => 'No matching settings',
+			'settings.searchEmptyHint' => 'Try a different keyword',
+			'settings.platformsTitle' => 'Platforms',
+			'settings.platformsDesc' => 'Visibility, order and accounts',
+			'settings.danmakuTitle' => 'Danmaku',
+			'settings.danmakuDesc' => 'Display, size, opacity and blocking',
+			'settings.recordingTitle' => 'Recording',
+			'settings.recordingDesc' => 'Output folder and segment length',
+			'settings.playerTitle' => 'Player',
+			'settings.playerDesc' => 'Decoding, output and cache tuning',
+			'settings.logTitle' => 'Logs',
+			'settings.logDesc' => 'Log level and export',
+			'settings.localInteractionDesc' => 'Local danmaku identity and switch',
+			'settings.localInteractionColor' => 'Danmaku colour',
+			'settings.navigationDesc' => 'Navigation bar and start page',
+			'settings.videoDesc' => 'Volume, quality and background play',
+			'settings.refreshDesc' => 'Auto refresh and live alerts',
+			'settings.generalDesc' => 'Startup, updates and window',
+			'settings.proxyDesc' => 'App and player proxies',
+			'settings.cacheDesc' => 'Cache size and cleanup',
+			'settings.backupDesc' => 'Back up and restore local data',
+			'settings.iptvDesc' => 'Manage playlists and channels',
+			'settings.pageDesc' => 'Paging and scrolling',
+			'settings.pagerGroup' => 'Pager (computers)',
+			'settings.pageDefaultSize' => 'Default page size',
+			'settings.pageDefaultSizeHint' => 'Rooms per page when a list opens; the pager can change it for now',
+			'settings.pageSizeAuto' => 'Automatic',
+			'settings.itemsPerPage' => 'items/page',
+			'settings.pageSizeOptionsTitle' => 'Page Size Options',
+			'settings.pageSizeRestore' => 'Restore recommended',
+			'settings.pageSizeInputHint' => '1–100',
+			'settings.pageSizeRangeError' => 'Enter a whole number from 1 to 100',
+			'settings.pageSizeDuplicateError' => 'That page size is already listed',
+			'settings.pageSizeCurrent' => 'Current active options',
+			'settings.pageShowScrollTop' => 'Show Scroll-to-Top Button',
+			'settings.pageShowScrollTopSubtitle' => 'Displays a floating button in the corner after scrolling a distance',
+			'settings.pageShowSizeSelector' => 'Show Page Size Selector',
+			'settings.pageShowSizeSelectorSubtitle' => 'Displays a dropdown menu for items per page in the control bar',
+			'settings.pageShowGoto' => 'Show Go-To Page Button',
+			'settings.pageShowGotoSubtitle' => 'Enables manual page number input for quick jumping',
+			'settings.configPreviewDesc' => 'Read-only view of the saved document',
+			'hotAreas.title' => 'Platform visibility',
+			'hotAreas.note' => 'Hidden platforms are left out of popular, areas and search.',
+			'hotAreas.orderNote' => 'Drag to reorder the platforms.',
+			'hotAreas.visible' => 'Visible',
+			'hotAreas.hidden' => 'Hidden',
+			'hotAreas.restore' => 'Restore defaults',
+			'hotAreas.keepAtLeastOne' => 'Keep at least one platform',
+			'tags.title' => 'Tags',
+			'tags.add' => 'New tag',
+			'tags.name' => 'Tag name',
+			'tags.rename' => 'Rename',
+			'tags.delete' => 'Delete',
+			'tags.deleteConfirm' => ({required Object name}) => 'Delete "${name}"? Its rooms stay followed.',
+			'tags.pin' => 'Pin to top',
+			'tags.unpin' => 'Unpin',
+			'tags.pinned' => 'Pinned',
+			'tags.empty' => 'No tags yet',
+			'tags.emptyHint' => 'Long-press a followed room to add it to a tag.',
+			'tags.countValue' => ({required int count}) => '${count} tags',
+			'tags.nameEmpty' => 'Name cannot be empty',
+			'tags.nameTaken' => 'A tag with this name already exists',
+			'logs.title' => 'Logs',
+			'logs.level' => 'Log level',
+			'logs.levelHint' => 'Lower levels record more; the choice persists across launches.',
+			'logs.levelTrace' => 'Everything (trace)',
+			'logs.levelDebug' => 'Detailed (debug)',
+			'logs.levelInfo' => 'Regular (info)',
+			'logs.levelWarning' => 'Warnings (warning)',
+			'logs.levelError' => 'Errors (error)',
+			'logs.levelFatal' => 'Fatal only',
+			'logs.levelOff' => 'Off',
+			'logs.levelDefault' => 'Follow build default',
+			'logs.export' => 'Export recent logs',
+			'logs.exportDone' => ({required int count}) => 'Copied ${count} log lines to the clipboard',
+			'logs.exportEmpty' => 'No logs in memory yet',
+			'logs.openFolder' => 'Open log folder',
+			'logs.note' => 'Log files live under the logs directory and rotate.',
 			'recorder.title' => 'Recorder',
 			'recorder.addRoom' => 'Add room',
 			'recorder.platform' => 'Platform',
@@ -1241,6 +1512,10 @@ extension on TranslationsEn {
 			'recorder.engineFailed' => ({required String error}) => 'The recording engine failed to start: ${error}',
 			'recorder.filterAll' => 'All',
 			'recorder.filterActive' => 'Active',
+			'recorder.filterWaiting' => 'Waiting',
+			'recorder.filterSaved' => 'Saved',
+			'recorder.filterFailed' => 'Failed',
+			'recorder.recordSettings' => 'Recording settings',
 			'recorder.filterFinished' => 'Finished',
 			'recorder.emptyTitle' => 'No rooms watched yet',
 			'recorder.emptySubtitle' => 'Add a room and it is recorded once it goes live',
@@ -1299,6 +1574,12 @@ extension on TranslationsEn {
 			'room.online' => 'Online',
 			'room.lineN' => ({required Object n}) => 'Line ${n}',
 			'room.fullscreen' => 'Fullscreen',
+			'room.lock' => 'Lock screen',
+			'room.unlock' => 'Unlock screen',
+			'room.videoFit' => 'Aspect ratio',
+			'room.fitContain' => 'Fit',
+			'room.fitCover' => 'Cover',
+			'room.fitFill' => 'Stretch',
 			'room.exitFullscreen' => 'Exit fullscreen',
 			'room.barrageOn' => 'Show danmaku',
 			'room.barrageOff' => 'Hide danmaku',
@@ -1344,7 +1625,26 @@ extension on TranslationsEn {
 			'room.portraitPanelResize' => 'Panel height',
 			'room.portraitPanelResizeHint' => 'Drag to resize the panel',
 			'areas.empty' => 'No areas here',
+			'popular.allPlatforms' => 'All platforms',
+			'popular.allPlatformsHint' => 'Tap to switch; platform settings hide and order them.',
+			'popular.noPlatforms' => 'No platforms to show',
+			'popular.noPlatformsHint' => 'Enable at least one platform in platform settings.',
 			'popular.empty' => 'Nothing live right now',
+			'history.countOfLimit' => ({required int count, required int limit}) => '${count} / ${limit} entries',
+			'history.countUnlimited' => ({required int count}) => '${count} entries',
+			'history.filterOpen' => 'Filter',
+			'history.filterClose' => 'Close filter',
+			'history.filterHint' => 'Filter by title or streamer',
+			'history.filterMatches' => ({required int count}) => '${count} matches',
+			'history.filterEmpty' => 'No history entries match',
+			'history.refreshStatus' => 'Refresh watch status',
+			'history.refreshDone' => ({required int count}) => 'Refreshed ${count} entries',
+			'history.refreshPartial' => ({required int failed, required int count}) => '${failed} of ${count} failed to refresh',
+			'history.refreshSaveFailed' => 'Saving the refreshed history failed',
+			'history.limitTitle' => 'History limit',
+			'history.limitHint' => '0 keeps everything; older entries beyond the limit are deleted.',
+			'history.removed' => 'Entry removed',
+			'history.cleared' => ({required int count}) => 'Cleared ${count} entries',
 			'history.clear' => 'Clear history',
 			'history.resume' => 'Resume',
 			'history.clearConfirm' => 'Clear the whole watch history? This cannot be undone.',
@@ -1356,6 +1656,7 @@ extension on TranslationsEn {
 			'history.earlier' => 'Earlier',
 			'history.remove' => 'Remove entry',
 			'history.removeConfirm' => 'Remove this watch record?',
+			'iptv.epgTitle' => 'Guides',
 			'iptv.title' => 'IPTV',
 			'iptv.addSource' => 'Add source',
 			'iptv.sourceName' => 'Source name',
@@ -1382,6 +1683,8 @@ extension on TranslationsEn {
 			'iptv.xtreamPassword' => 'Password',
 			'iptv.epgUrl' => 'EPG URL (optional)',
 			'iptv.xtreamAuthFailed' => 'The server rejected these credentials',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.refreshSource' => 'Refresh this source',
 			'iptv.epgNow' => 'Now',
 			'iptv.epgNext' => 'Next',
@@ -1407,6 +1710,14 @@ extension on TranslationsEn {
 			'follow.follow' => 'Follow',
 			'follow.unfollow' => 'Unfollow',
 			'follow.unfollowConfirm' => ({required String name}) => 'Unfollow "${name}"?',
+			'follow.liveRoom' => 'Live',
+			'follow.replayRoom' => 'Replays',
+			'follow.offlineRoom' => 'Offline',
+			'follow.emptyLive' => 'No followed rooms are live',
+			'follow.emptyReplay' => 'No replay follows',
+			'follow.emptyOffline' => 'No offline follows',
+			'follow.showOffline' => 'View offline',
+			'follow.refreshFailed' => ({required int count}) => '${count} rooms failed to refresh',
 			'follow.newGroup' => 'New group',
 			'follow.manageGroups' => 'Manage groups',
 			'follow.renameGroup' => 'Rename group',
@@ -1445,6 +1756,8 @@ extension on TranslationsEn {
 			'backup.restore' => 'Restore',
 			'backup.restoreConfirm' => ({required String name}) => 'Overwrite current data with “${name}”? The app restarts.',
 			'backup.sectionCloud' => 'Cloud & sync',
+			'about.native' => 'This device',
+			'about.downloadFilesOf' => ({required Object platform}) => 'Downloads · ${platform}',
 			'about.title' => 'About',
 			'about.group' => 'About',
 			'about.checkUpdate' => 'Check for updates',
@@ -1505,33 +1818,44 @@ extension on TranslationsEn {
 			'search.allSites' => 'All',
 			'search.historyTitle' => 'Recent searches',
 			'search.historyRemove' => 'Remove this search',
-			'remoteSync.title' => 'LAN sync',
-			_ => null,
-		} ?? switch (path) {
+			'remoteSync.title' => 'Device Sync',
 			'remoteSync.tileSubtitle' => 'Sync follows and history between devices on this network',
-			'remoteSync.myDevice' => 'This device',
+			'remoteSync.myDevice' => 'My Device',
 			'remoteSync.noAddress' => 'No LAN address found',
-			'remoteSync.scanHint' => 'Let the other device scan this code, or type this device\'s address there',
+			'remoteSync.scanHint' => 'Let the other device scan this code, or type this device’s address there',
 			'remoteSync.running' => 'Sync service running',
-			'remoteSync.notRunning' => 'Sync service stopped',
+			'remoteSync.notRunning' => 'Sync service is not running',
 			'remoteSync.start' => 'Start',
 			'remoteSync.stop' => 'Stop',
-			'remoteSync.devices' => 'Devices on this network',
-			'remoteSync.noDevices' => 'No device found yet — make sure both devices run on the same network',
-			'remoteSync.manual' => 'Address',
-			'remoteSync.send' => 'Send',
-			'remoteSync.receive' => 'Receive',
+			'remoteSync.devices' => 'Discovered Devices',
+			'remoteSync.noDevices' => 'No other devices found',
+			'remoteSync.manual' => 'Manual Input',
+			'remoteSync.send' => 'Send Settings',
+			'remoteSync.receive' => 'Receive Settings',
 			'remoteSync.sendSuccess' => 'Sent',
 			'remoteSync.sendFailed' => 'Send failed — check the address and whether the other device confirmed',
 			'remoteSync.receiveSuccess' => 'Received and applied',
 			'remoteSync.receiveFailed' => 'Receive failed',
-			'remoteSync.enterAddress' => 'Enter the other device\'s address first',
+			'remoteSync.enterAddress' => 'Enter the other device’s address first',
 			'remoteSync.invalidAddress' => 'That is not a valid address',
-			'remoteSync.incomingImport' => ({required String address}) => '${address} wants to overwrite this device\'s follows, history and shield. Allow?',
-			'remoteSync.incomingExport' => ({required String address}) => '${address} wants to read this device\'s follows, history and shield. Allow?',
+			'remoteSync.incomingImport' => ({required String address}) => '${address} wants to overwrite this device’s follows, history and shield. Allow?',
+			'remoteSync.incomingExport' => ({required String address}) => '${address} wants to read this device’s follows, history and shield. Allow?',
 			'remoteSync.sectionFavorite' => 'Followed rooms',
 			'remoteSync.sectionHistory' => 'Watch history',
 			'remoteSync.sectionGroups' => 'Follow groups',
+			'remoteSync.noAddressHint' => 'Connect to Wi-Fi or a wired network; on Android allow the "Nearby devices / local network" permission, then tap Start at the top right',
+			'remoteSync.description' => 'Make sure both devices are connected to the same local network',
+			'remoteSync.searching' => 'Searching for devices on the local network...',
+			'remoteSync.searchingShort' => 'Searching',
+			'remoteSync.manualHint' => 'Enter the other device’s address, or paste the sync link from its QR code',
+			'remoteSync.copyAddress' => 'Copy Address',
+			'remoteSync.addressCopied' => 'Address copied',
+			'remoteSync.fromName' => ({required String name}) => 'From ${name}',
+			'remoteSync.legacyDevice' => 'Pure Live 3.x device',
+			'remoteSync.allow' => 'Allow',
+			'remoteSync.reject' => 'Reject',
+			'remoteSync.incomingImportNamed' => ({required Object address, required Object name}) => '${address} (${name}) asks to replace this device’s settings with its own. Allow?',
+			'remoteSync.incomingExportNamed' => ({required Object address, required Object name}) => '${address} (${name}) asks to read this device’s settings. Allow?',
 			'errors.generic' => 'Something went wrong. Please try again later.',
 			'errors.network' => 'Network unavailable. Check your connection and retry.',
 			'errors.notFound' => 'Nothing found.',

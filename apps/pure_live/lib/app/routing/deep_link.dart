@@ -32,8 +32,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:live_shell/live_shell.dart' show LaunchIntent, NewWindow, OpenRoomLink, ShowMainWindow;
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/app/routing/route_paths.dart';
-import 'package:pure_live/app/routing/routes/room/room_routes.dart';
 
 /// One room a deep link or a launch handoff asks to open.
 final class RoomDeepLink {

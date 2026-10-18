@@ -49,6 +49,9 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$login$zh login = Translations$login$zh.internal(_root);
 	late final Translations$account$zh account = Translations$account$zh.internal(_root);
 	late final Translations$settings$zh settings = Translations$settings$zh.internal(_root);
+	late final Translations$hotAreas$zh hotAreas = Translations$hotAreas$zh.internal(_root);
+	late final Translations$tags$zh tags = Translations$tags$zh.internal(_root);
+	late final Translations$logs$zh logs = Translations$logs$zh.internal(_root);
 	late final Translations$recorder$zh recorder = Translations$recorder$zh.internal(_root);
 	late final Translations$theme$zh theme = Translations$theme$zh.internal(_root);
 	late final Translations$design$zh design = Translations$design$zh.internal(_root);
@@ -158,8 +161,38 @@ class Translations$common$zh {
 	/// zh: '菜单'
 	String get menu => '菜单';
 
+	/// zh: '更多'
+	String get more => '更多';
+
 	/// zh: '关闭'
 	String get off => '关闭';
+
+	/// zh: '刷新'
+	String get refresh => '刷新';
+
+	/// zh: '上一页'
+	String get prevPage => '上一页';
+
+	/// zh: '下一页'
+	String get nextPage => '下一页';
+
+	/// zh: '每页'
+	String get perPage => '每页';
+
+	/// zh: '跳转至'
+	String get goTo => '跳转至';
+
+	/// zh: '页'
+	String get pageUnit => '页';
+
+	/// zh: '回到顶部'
+	String get toTop => '回到顶部';
+
+	/// zh: '到底部'
+	String get toBottom => '到底部';
+
+	/// zh: '添加'
+	String get addOne => '添加';
 }
 
 // Path: tray
@@ -826,6 +859,285 @@ class Translations$settings$zh {
 
 	/// zh: '外观'
 	String get localConfigAppearance => '外观';
+
+	/// zh: '界面'
+	String get areaInterface => '界面';
+
+	/// zh: '内容来源'
+	String get areaSources => '内容来源';
+
+	/// zh: '播放'
+	String get areaPlayback => '播放';
+
+	/// zh: '通用'
+	String get areaGeneral => '通用';
+
+	/// zh: '数据'
+	String get areaData => '数据';
+
+	/// zh: '搜索设置'
+	String get searchHint => '搜索设置';
+
+	/// zh: '没有找到相关设置'
+	String get searchEmpty => '没有找到相关设置';
+
+	/// zh: '换个关键词试试'
+	String get searchEmptyHint => '换个关键词试试';
+
+	/// zh: '平台'
+	String get platformsTitle => '平台';
+
+	/// zh: '平台显示、排序与账号'
+	String get platformsDesc => '平台显示、排序与账号';
+
+	/// zh: '弹幕'
+	String get danmakuTitle => '弹幕';
+
+	/// zh: '弹幕显示、字号、透明度与屏蔽'
+	String get danmakuDesc => '弹幕显示、字号、透明度与屏蔽';
+
+	/// zh: '录制'
+	String get recordingTitle => '录制';
+
+	/// zh: '输出目录与分段时长'
+	String get recordingDesc => '输出目录与分段时长';
+
+	/// zh: '播放器'
+	String get playerTitle => '播放器';
+
+	/// zh: '解码、输出与缓存调优'
+	String get playerDesc => '解码、输出与缓存调优';
+
+	/// zh: '日志'
+	String get logTitle => '日志';
+
+	/// zh: '日志级别与导出'
+	String get logDesc => '日志级别与导出';
+
+	/// zh: '本地弹幕身份与开关'
+	String get localInteractionDesc => '本地弹幕身份与开关';
+
+	/// zh: '弹幕颜色'
+	String get localInteractionColor => '弹幕颜色';
+
+	/// zh: '导航栏显示与启动页'
+	String get navigationDesc => '导航栏显示与启动页';
+
+	/// zh: '音量、清晰度与后台播放'
+	String get videoDesc => '音量、清晰度与后台播放';
+
+	/// zh: '自动刷新与开播提醒'
+	String get refreshDesc => '自动刷新与开播提醒';
+
+	/// zh: '启动、更新与窗口'
+	String get generalDesc => '启动、更新与窗口';
+
+	/// zh: '应用与播放器代理'
+	String get proxyDesc => '应用与播放器代理';
+
+	/// zh: '缓存大小与清理'
+	String get cacheDesc => '缓存大小与清理';
+
+	/// zh: '备份与恢复本地数据'
+	String get backupDesc => '备份与恢复本地数据';
+
+	/// zh: '管理播放源与频道'
+	String get iptvDesc => '管理播放源与频道';
+
+	/// zh: '分页与翻页方式'
+	String get pageDesc => '分页与翻页方式';
+
+	/// zh: '分页条（电脑）'
+	String get pagerGroup => '分页条（电脑）';
+
+	/// zh: '默认每页条数'
+	String get pageDefaultSize => '默认每页条数';
+
+	/// zh: '进入列表时每页显示多少条；分页条上也能临时改'
+	String get pageDefaultSizeHint => '进入列表时每页显示多少条；分页条上也能临时改';
+
+	/// zh: '自动'
+	String get pageSizeAuto => '自动';
+
+	/// zh: '条/页'
+	String get itemsPerPage => '条/页';
+
+	/// zh: '单页可选数量列表'
+	String get pageSizeOptionsTitle => '单页可选数量列表';
+
+	/// zh: '恢复推荐'
+	String get pageSizeRestore => '恢复推荐';
+
+	/// zh: '输入 1–100'
+	String get pageSizeInputHint => '输入 1–100';
+
+	/// zh: '请输入 1 至 100 的整数'
+	String get pageSizeRangeError => '请输入 1 至 100 的整数';
+
+	/// zh: '该单页数量已在列表中'
+	String get pageSizeDuplicateError => '该单页数量已在列表中';
+
+	/// zh: '当前已启用的可选项'
+	String get pageSizeCurrent => '当前已启用的可选项';
+
+	/// zh: '显示一键置顶按钮'
+	String get pageShowScrollTop => '显示一键置顶按钮';
+
+	/// zh: '列表滑动超过设定距离后在右下角悬浮置顶按钮'
+	String get pageShowScrollTopSubtitle => '列表滑动超过设定距离后在右下角悬浮置顶按钮';
+
+	/// zh: '显示单页数量选择器'
+	String get pageShowSizeSelector => '显示单页数量选择器';
+
+	/// zh: '在列表控制条显示每页显示行数下拉选单'
+	String get pageShowSizeSelectorSubtitle => '在列表控制条显示每页显示行数下拉选单';
+
+	/// zh: '显示页码跳转按钮'
+	String get pageShowGoto => '显示页码跳转按钮';
+
+	/// zh: '开启后支持手动输入页码进行快速跳转'
+	String get pageShowGotoSubtitle => '开启后支持手动输入页码进行快速跳转';
+
+	/// zh: '只读展示当前保存的设置'
+	String get configPreviewDesc => '只读展示当前保存的设置';
+}
+
+// Path: hotAreas
+class Translations$hotAreas$zh {
+	Translations$hotAreas$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '平台显示'
+	String get title => '平台显示';
+
+	/// zh: '隐藏的平台不会出现在热门、分区与搜索中。'
+	String get note => '隐藏的平台不会出现在热门、分区与搜索中。';
+
+	/// zh: '拖动调整平台的显示顺序。'
+	String get orderNote => '拖动调整平台的显示顺序。';
+
+	/// zh: '显示'
+	String get visible => '显示';
+
+	/// zh: '隐藏'
+	String get hidden => '隐藏';
+
+	/// zh: '恢复默认'
+	String get restore => '恢复默认';
+
+	/// zh: '至少保留一个平台'
+	String get keepAtLeastOne => '至少保留一个平台';
+}
+
+// Path: tags
+class Translations$tags$zh {
+	Translations$tags$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '标签管理'
+	String get title => '标签管理';
+
+	/// zh: '新建标签'
+	String get add => '新建标签';
+
+	/// zh: '标签名称'
+	String get name => '标签名称';
+
+	/// zh: '重命名'
+	String get rename => '重命名';
+
+	/// zh: '删除'
+	String get delete => '删除';
+
+	/// zh: '删除标签「{name}」？标签内的房间仍会被关注。'
+	String deleteConfirm({required Object name}) => '删除标签「${name}」？标签内的房间仍会被关注。';
+
+	/// zh: '置顶'
+	String get pin => '置顶';
+
+	/// zh: '取消置顶'
+	String get unpin => '取消置顶';
+
+	/// zh: '已置顶'
+	String get pinned => '已置顶';
+
+	/// zh: '还没有标签'
+	String get empty => '还没有标签';
+
+	/// zh: '在关注页长按房间可以加入标签。'
+	String get emptyHint => '在关注页长按房间可以加入标签。';
+
+	/// zh: '{count: int} 个标签'
+	String countValue({required int count}) => '${count} 个标签';
+
+	/// zh: '名称不能为空'
+	String get nameEmpty => '名称不能为空';
+
+	/// zh: '已有同名标签'
+	String get nameTaken => '已有同名标签';
+}
+
+// Path: logs
+class Translations$logs$zh {
+	Translations$logs$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '日志'
+	String get title => '日志';
+
+	/// zh: '日志级别'
+	String get level => '日志级别';
+
+	/// zh: '级别越低记录越多；保存后每次启动都会沿用。'
+	String get levelHint => '级别越低记录越多；保存后每次启动都会沿用。';
+
+	/// zh: '全部（trace）'
+	String get levelTrace => '全部（trace）';
+
+	/// zh: '详细（debug）'
+	String get levelDebug => '详细（debug）';
+
+	/// zh: '常规（info）'
+	String get levelInfo => '常规（info）';
+
+	/// zh: '警告（warning）'
+	String get levelWarning => '警告（warning）';
+
+	/// zh: '错误（error）'
+	String get levelError => '错误（error）';
+
+	/// zh: '严重（fatal）'
+	String get levelFatal => '严重（fatal）';
+
+	/// zh: '关闭'
+	String get levelOff => '关闭';
+
+	/// zh: '跟随构建默认值'
+	String get levelDefault => '跟随构建默认值';
+
+	/// zh: '导出最近日志'
+	String get export => '导出最近日志';
+
+	/// zh: '已复制 {count: int} 条日志到剪贴板'
+	String exportDone({required int count}) => '已复制 ${count} 条日志到剪贴板';
+
+	/// zh: '内存里还没有日志'
+	String get exportEmpty => '内存里还没有日志';
+
+	/// zh: '打开日志目录'
+	String get openFolder => '打开日志目录';
+
+	/// zh: '日志文件保存在数据目录的 logs 下，会滚动清理。'
+	String get note => '日志文件保存在数据目录的 logs 下，会滚动清理。';
 }
 
 // Path: recorder
@@ -895,6 +1207,18 @@ class Translations$recorder$zh {
 
 	/// zh: '进行中'
 	String get filterActive => '进行中';
+
+	/// zh: '等待中'
+	String get filterWaiting => '等待中';
+
+	/// zh: '已保存'
+	String get filterSaved => '已保存';
+
+	/// zh: '失败'
+	String get filterFailed => '失败';
+
+	/// zh: '录制设置'
+	String get recordSettings => '录制设置';
 
 	/// zh: '已结束'
 	String get filterFinished => '已结束';
@@ -1001,6 +1325,51 @@ class Translations$history$zh {
 
 	// Translations
 
+	/// zh: '{count: int} / {limit: int} 条'
+	String countOfLimit({required int count, required int limit}) => '${count} / ${limit} 条';
+
+	/// zh: '{count: int} 条记录'
+	String countUnlimited({required int count}) => '${count} 条记录';
+
+	/// zh: '筛选'
+	String get filterOpen => '筛选';
+
+	/// zh: '关闭筛选'
+	String get filterClose => '关闭筛选';
+
+	/// zh: '按标题或主播筛选'
+	String get filterHint => '按标题或主播筛选';
+
+	/// zh: '{count: int} 条匹配'
+	String filterMatches({required int count}) => '${count} 条匹配';
+
+	/// zh: '没有匹配的观看记录'
+	String get filterEmpty => '没有匹配的观看记录';
+
+	/// zh: '刷新观看状态'
+	String get refreshStatus => '刷新观看状态';
+
+	/// zh: '已刷新 {count: int} 条记录'
+	String refreshDone({required int count}) => '已刷新 ${count} 条记录';
+
+	/// zh: '{failed: int} 条刷新失败（共 {count: int} 条）'
+	String refreshPartial({required int failed, required int count}) => '${failed} 条刷新失败（共 ${count} 条）';
+
+	/// zh: '刷新结果保存失败'
+	String get refreshSaveFailed => '刷新结果保存失败';
+
+	/// zh: '记录上限'
+	String get limitTitle => '记录上限';
+
+	/// zh: '0 表示不限制；超出的旧记录会被删除。'
+	String get limitHint => '0 表示不限制；超出的旧记录会被删除。';
+
+	/// zh: '已移除该记录'
+	String get removed => '已移除该记录';
+
+	/// zh: '已清空 {count: int} 条记录'
+	String cleared({required int count}) => '已清空 ${count} 条记录';
+
 	/// zh: '清空记录'
 	String get clear => '清空记录';
 
@@ -1042,6 +1411,9 @@ class Translations$iptv$zh {
 	final Translations _root; // ignore: unused_field
 
 	// Translations
+
+	/// zh: '节目单'
+	String get epgTitle => '节目单';
 
 	/// zh: 'IPTV'
 	String get title => 'IPTV';
@@ -1214,6 +1586,30 @@ class Translations$follow$zh {
 	/// zh: '不再关注「{name: String}」？'
 	String unfollowConfirm({required String name}) => '不再关注「${name}」？';
 
+	/// zh: '直播'
+	String get liveRoom => '直播';
+
+	/// zh: '回放'
+	String get replayRoom => '回放';
+
+	/// zh: '离线'
+	String get offlineRoom => '离线';
+
+	/// zh: '没有正在直播的关注'
+	String get emptyLive => '没有正在直播的关注';
+
+	/// zh: '没有可看回放的关注'
+	String get emptyReplay => '没有可看回放的关注';
+
+	/// zh: '没有离线的关注'
+	String get emptyOffline => '没有离线的关注';
+
+	/// zh: '查看离线'
+	String get showOffline => '查看离线';
+
+	/// zh: '{count: int} 个房间刷新失败'
+	String refreshFailed({required int count}) => '${count} 个房间刷新失败';
+
 	/// zh: '新建分组'
 	String get newGroup => '新建分组';
 
@@ -1354,6 +1750,12 @@ class Translations$about$zh {
 	final Translations _root; // ignore: unused_field
 
 	// Translations
+
+	/// zh: '本机'
+	String get native => '本机';
+
+	/// zh: '下载文件 · {platform}'
+	String downloadFilesOf({required Object platform}) => '下载文件 · ${platform}';
 
 	/// zh: '关于'
 	String get title => '关于';
@@ -1667,6 +2069,24 @@ class Translations$room$zh {
 	/// zh: '全屏'
 	String get fullscreen => '全屏';
 
+	/// zh: '锁定屏幕'
+	String get lock => '锁定屏幕';
+
+	/// zh: '解锁屏幕'
+	String get unlock => '解锁屏幕';
+
+	/// zh: '画面比例'
+	String get videoFit => '画面比例';
+
+	/// zh: '适配'
+	String get fitContain => '适配';
+
+	/// zh: '填满'
+	String get fitCover => '填满';
+
+	/// zh: '拉伸'
+	String get fitFill => '拉伸';
+
 	/// zh: '退出全屏'
 	String get exitFullscreen => '退出全屏';
 
@@ -1820,6 +2240,18 @@ class Translations$popular$zh {
 
 	// Translations
 
+	/// zh: '全部平台'
+	String get allPlatforms => '全部平台';
+
+	/// zh: '点按切换平台；平台显示设置可隐藏或排序。'
+	String get allPlatformsHint => '点按切换平台；平台显示设置可隐藏或排序。';
+
+	/// zh: '没有可显示的平台'
+	String get noPlatforms => '没有可显示的平台';
+
+	/// zh: '在平台显示设置里至少开启一个平台。'
+	String get noPlatformsHint => '在平台显示设置里至少开启一个平台。';
+
 	/// zh: '暂时没有热门直播'
 	String get empty => '暂时没有热门直播';
 }
@@ -1832,14 +2264,14 @@ class Translations$remoteSync$zh {
 
 	// Translations
 
-	/// zh: '局域网同步'
-	String get title => '局域网同步';
+	/// zh: '设备同步'
+	String get title => '设备同步';
 
 	/// zh: '在同一网络下的设备间同步关注与历史'
 	String get tileSubtitle => '在同一网络下的设备间同步关注与历史';
 
-	/// zh: '本机'
-	String get myDevice => '本机';
+	/// zh: '我的设备'
+	String get myDevice => '我的设备';
 
 	/// zh: '未找到局域网地址'
 	String get noAddress => '未找到局域网地址';
@@ -1859,20 +2291,20 @@ class Translations$remoteSync$zh {
 	/// zh: '停止'
 	String get stop => '停止';
 
-	/// zh: '网络中的设备'
-	String get devices => '网络中的设备';
+	/// zh: '发现的设备'
+	String get devices => '发现的设备';
 
-	/// zh: '尚未发现设备——请确认两台设备在同一网络'
-	String get noDevices => '尚未发现设备——请确认两台设备在同一网络';
+	/// zh: '未发现其他设备'
+	String get noDevices => '未发现其他设备';
 
-	/// zh: '地址'
-	String get manual => '地址';
+	/// zh: '手动输入'
+	String get manual => '手动输入';
 
-	/// zh: '发送'
-	String get send => '发送';
+	/// zh: '发送配置'
+	String get send => '发送配置';
 
-	/// zh: '接收'
-	String get receive => '接收';
+	/// zh: '接收配置'
+	String get receive => '接收配置';
 
 	/// zh: '发送成功'
 	String get sendSuccess => '发送成功';
@@ -1906,6 +2338,45 @@ class Translations$remoteSync$zh {
 
 	/// zh: '关注分组'
 	String get sectionGroups => '关注分组';
+
+	/// zh: '请连接 Wi-Fi 或有线网络；Android 需要允许"附近设备 / 局域网"权限，然后点右上角开始'
+	String get noAddressHint => '请连接 Wi-Fi 或有线网络；Android 需要允许"附近设备 / 局域网"权限，然后点右上角开始';
+
+	/// zh: '请确保两台设备连接到同一个局域网'
+	String get description => '请确保两台设备连接到同一个局域网';
+
+	/// zh: '正在搜索局域网设备...'
+	String get searching => '正在搜索局域网设备...';
+
+	/// zh: '正在搜索'
+	String get searchingShort => '正在搜索';
+
+	/// zh: '输入对方设备的地址，或粘贴对方二维码里的同步链接'
+	String get manualHint => '输入对方设备的地址，或粘贴对方二维码里的同步链接';
+
+	/// zh: '复制地址'
+	String get copyAddress => '复制地址';
+
+	/// zh: '地址已复制'
+	String get addressCopied => '地址已复制';
+
+	/// zh: '来自 {name: String}'
+	String fromName({required String name}) => '来自 ${name}';
+
+	/// zh: '3.x 版本的设备'
+	String get legacyDevice => '3.x 版本的设备';
+
+	/// zh: '允许'
+	String get allow => '允许';
+
+	/// zh: '拒绝'
+	String get reject => '拒绝';
+
+	/// zh: '设备 {address}（{name}）请求用它的设置覆盖本机设置，是否允许？'
+	String incomingImportNamed({required Object address, required Object name}) => '设备 ${address}（${name}）请求用它的设置覆盖本机设置，是否允许？';
+
+	/// zh: '设备 {address}（{name}）请求读取本机设置，是否允许？'
+	String incomingExportNamed({required Object address, required Object name}) => '设备 ${address}（${name}）请求读取本机设置，是否允许？';
 }
 
 // Path: errors
@@ -2262,7 +2733,17 @@ extension on Translations {
 			'common.pageOf' => ({required int page, required int total}) => '第 ${page} / ${total} 页',
 			'common.back' => '返回',
 			'common.menu' => '菜单',
+			'common.more' => '更多',
 			'common.off' => '关闭',
+			'common.refresh' => '刷新',
+			'common.prevPage' => '上一页',
+			'common.nextPage' => '下一页',
+			'common.perPage' => '每页',
+			'common.goTo' => '跳转至',
+			'common.pageUnit' => '页',
+			'common.toTop' => '回到顶部',
+			'common.toBottom' => '到底部',
+			'common.addOne' => '添加',
 			'tray.show' => '显示主界面',
 			'tray.quit' => '退出',
 			'login.title' => '扫码登录',
@@ -2473,6 +2954,90 @@ extension on Translations {
 			'settings.localConfigCopy' => '复制该文档',
 			'settings.localConfigApp' => '通用偏好',
 			'settings.localConfigAppearance' => '外观',
+			'settings.areaInterface' => '界面',
+			'settings.areaSources' => '内容来源',
+			'settings.areaPlayback' => '播放',
+			'settings.areaGeneral' => '通用',
+			'settings.areaData' => '数据',
+			'settings.searchHint' => '搜索设置',
+			'settings.searchEmpty' => '没有找到相关设置',
+			'settings.searchEmptyHint' => '换个关键词试试',
+			'settings.platformsTitle' => '平台',
+			'settings.platformsDesc' => '平台显示、排序与账号',
+			'settings.danmakuTitle' => '弹幕',
+			'settings.danmakuDesc' => '弹幕显示、字号、透明度与屏蔽',
+			'settings.recordingTitle' => '录制',
+			'settings.recordingDesc' => '输出目录与分段时长',
+			'settings.playerTitle' => '播放器',
+			'settings.playerDesc' => '解码、输出与缓存调优',
+			'settings.logTitle' => '日志',
+			'settings.logDesc' => '日志级别与导出',
+			'settings.localInteractionDesc' => '本地弹幕身份与开关',
+			'settings.localInteractionColor' => '弹幕颜色',
+			'settings.navigationDesc' => '导航栏显示与启动页',
+			'settings.videoDesc' => '音量、清晰度与后台播放',
+			'settings.refreshDesc' => '自动刷新与开播提醒',
+			'settings.generalDesc' => '启动、更新与窗口',
+			'settings.proxyDesc' => '应用与播放器代理',
+			'settings.cacheDesc' => '缓存大小与清理',
+			'settings.backupDesc' => '备份与恢复本地数据',
+			'settings.iptvDesc' => '管理播放源与频道',
+			'settings.pageDesc' => '分页与翻页方式',
+			'settings.pagerGroup' => '分页条（电脑）',
+			'settings.pageDefaultSize' => '默认每页条数',
+			'settings.pageDefaultSizeHint' => '进入列表时每页显示多少条；分页条上也能临时改',
+			'settings.pageSizeAuto' => '自动',
+			'settings.itemsPerPage' => '条/页',
+			'settings.pageSizeOptionsTitle' => '单页可选数量列表',
+			'settings.pageSizeRestore' => '恢复推荐',
+			'settings.pageSizeInputHint' => '输入 1–100',
+			'settings.pageSizeRangeError' => '请输入 1 至 100 的整数',
+			'settings.pageSizeDuplicateError' => '该单页数量已在列表中',
+			'settings.pageSizeCurrent' => '当前已启用的可选项',
+			'settings.pageShowScrollTop' => '显示一键置顶按钮',
+			'settings.pageShowScrollTopSubtitle' => '列表滑动超过设定距离后在右下角悬浮置顶按钮',
+			'settings.pageShowSizeSelector' => '显示单页数量选择器',
+			'settings.pageShowSizeSelectorSubtitle' => '在列表控制条显示每页显示行数下拉选单',
+			'settings.pageShowGoto' => '显示页码跳转按钮',
+			'settings.pageShowGotoSubtitle' => '开启后支持手动输入页码进行快速跳转',
+			'settings.configPreviewDesc' => '只读展示当前保存的设置',
+			'hotAreas.title' => '平台显示',
+			'hotAreas.note' => '隐藏的平台不会出现在热门、分区与搜索中。',
+			'hotAreas.orderNote' => '拖动调整平台的显示顺序。',
+			'hotAreas.visible' => '显示',
+			'hotAreas.hidden' => '隐藏',
+			'hotAreas.restore' => '恢复默认',
+			'hotAreas.keepAtLeastOne' => '至少保留一个平台',
+			'tags.title' => '标签管理',
+			'tags.add' => '新建标签',
+			'tags.name' => '标签名称',
+			'tags.rename' => '重命名',
+			'tags.delete' => '删除',
+			'tags.deleteConfirm' => ({required Object name}) => '删除标签「${name}」？标签内的房间仍会被关注。',
+			'tags.pin' => '置顶',
+			'tags.unpin' => '取消置顶',
+			'tags.pinned' => '已置顶',
+			'tags.empty' => '还没有标签',
+			'tags.emptyHint' => '在关注页长按房间可以加入标签。',
+			'tags.countValue' => ({required int count}) => '${count} 个标签',
+			'tags.nameEmpty' => '名称不能为空',
+			'tags.nameTaken' => '已有同名标签',
+			'logs.title' => '日志',
+			'logs.level' => '日志级别',
+			'logs.levelHint' => '级别越低记录越多；保存后每次启动都会沿用。',
+			'logs.levelTrace' => '全部（trace）',
+			'logs.levelDebug' => '详细（debug）',
+			'logs.levelInfo' => '常规（info）',
+			'logs.levelWarning' => '警告（warning）',
+			'logs.levelError' => '错误（error）',
+			'logs.levelFatal' => '严重（fatal）',
+			'logs.levelOff' => '关闭',
+			'logs.levelDefault' => '跟随构建默认值',
+			'logs.export' => '导出最近日志',
+			'logs.exportDone' => ({required int count}) => '已复制 ${count} 条日志到剪贴板',
+			'logs.exportEmpty' => '内存里还没有日志',
+			'logs.openFolder' => '打开日志目录',
+			'logs.note' => '日志文件保存在数据目录的 logs 下，会滚动清理。',
 			'recorder.title' => '录播',
 			'recorder.addRoom' => '添加房间',
 			'recorder.platform' => '平台',
@@ -2493,6 +3058,10 @@ extension on Translations {
 			'recorder.engineFailed' => ({required String error}) => '录制引擎启动失败：${error}',
 			'recorder.filterAll' => '全部',
 			'recorder.filterActive' => '进行中',
+			'recorder.filterWaiting' => '等待中',
+			'recorder.filterSaved' => '已保存',
+			'recorder.filterFailed' => '失败',
+			'recorder.recordSettings' => '录制设置',
 			'recorder.filterFinished' => '已结束',
 			'recorder.emptyTitle' => '还没有监听的房间',
 			'recorder.emptySubtitle' => '添加一个房间，开播后自动录制',
@@ -2519,6 +3088,21 @@ extension on Translations {
 			'theme.dark' => '深色',
 			'theme.light' => '浅色',
 			'design.defaultLanguage' => '默认（Fluent）',
+			'history.countOfLimit' => ({required int count, required int limit}) => '${count} / ${limit} 条',
+			'history.countUnlimited' => ({required int count}) => '${count} 条记录',
+			'history.filterOpen' => '筛选',
+			'history.filterClose' => '关闭筛选',
+			'history.filterHint' => '按标题或主播筛选',
+			'history.filterMatches' => ({required int count}) => '${count} 条匹配',
+			'history.filterEmpty' => '没有匹配的观看记录',
+			'history.refreshStatus' => '刷新观看状态',
+			'history.refreshDone' => ({required int count}) => '已刷新 ${count} 条记录',
+			'history.refreshPartial' => ({required int failed, required int count}) => '${failed} 条刷新失败（共 ${count} 条）',
+			'history.refreshSaveFailed' => '刷新结果保存失败',
+			'history.limitTitle' => '记录上限',
+			'history.limitHint' => '0 表示不限制；超出的旧记录会被删除。',
+			'history.removed' => '已移除该记录',
+			'history.cleared' => ({required int count}) => '已清空 ${count} 条记录',
 			'history.clear' => '清空记录',
 			'history.resume' => '继续播放',
 			'history.clearConfirm' => '清空全部观看记录？此操作不可撤销。',
@@ -2530,6 +3114,7 @@ extension on Translations {
 			'history.earlier' => '更早',
 			'history.remove' => '删除记录',
 			'history.removeConfirm' => '删除这条观看记录？',
+			'iptv.epgTitle' => '节目单',
 			'iptv.title' => 'IPTV',
 			'iptv.addSource' => '添加源',
 			'iptv.sourceName' => '源名称',
@@ -2581,6 +3166,14 @@ extension on Translations {
 			'follow.follow' => '关注',
 			'follow.unfollow' => '取消关注',
 			'follow.unfollowConfirm' => ({required String name}) => '不再关注「${name}」？',
+			'follow.liveRoom' => '直播',
+			'follow.replayRoom' => '回放',
+			'follow.offlineRoom' => '离线',
+			'follow.emptyLive' => '没有正在直播的关注',
+			'follow.emptyReplay' => '没有可看回放的关注',
+			'follow.emptyOffline' => '没有离线的关注',
+			'follow.showOffline' => '查看离线',
+			'follow.refreshFailed' => ({required int count}) => '${count} 个房间刷新失败',
 			'follow.newGroup' => '新建分组',
 			'follow.manageGroups' => '管理分组',
 			'follow.renameGroup' => '重命名分组',
@@ -2619,6 +3212,8 @@ extension on Translations {
 			'backup.restore' => '恢复',
 			'backup.restoreConfirm' => ({required String name}) => '用「${name}」覆盖当前数据？应用将重启。',
 			'backup.sectionCloud' => '云端与同步',
+			'about.native' => '本机',
+			'about.downloadFilesOf' => ({required Object platform}) => '下载文件 · ${platform}',
 			'about.title' => '关于',
 			'about.group' => '关于',
 			'about.checkUpdate' => '检查更新',
@@ -2634,6 +3229,8 @@ extension on Translations {
 			'about.versionHistory' => '版本历史',
 			'about.historyDesc' => '历史版本更新记录',
 			'about.publishedAt' => ({required String date}) => '发布于 ${date}',
+			_ => null,
+		} ?? switch (path) {
 			'about.openRelease' => '打开发布页面',
 			'about.licenses' => '开源许可证',
 			'about.project' => '项目主页',
@@ -2711,6 +3308,12 @@ extension on Translations {
 			'room.online' => '在线',
 			'room.lineN' => ({required Object n}) => '线路 ${n}',
 			'room.fullscreen' => '全屏',
+			'room.lock' => '锁定屏幕',
+			'room.unlock' => '解锁屏幕',
+			'room.videoFit' => '画面比例',
+			'room.fitContain' => '适配',
+			'room.fitCover' => '填满',
+			'room.fitFill' => '拉伸',
 			'room.exitFullscreen' => '退出全屏',
 			'room.barrageOn' => '显示弹幕',
 			'room.barrageOff' => '关闭弹幕',
@@ -2756,23 +3359,25 @@ extension on Translations {
 			'room.portraitPanelResize' => '面板高度',
 			'room.portraitPanelResizeHint' => '拖动调整面板高度',
 			'areas.empty' => '暂无分区',
+			'popular.allPlatforms' => '全部平台',
+			'popular.allPlatformsHint' => '点按切换平台；平台显示设置可隐藏或排序。',
+			'popular.noPlatforms' => '没有可显示的平台',
+			'popular.noPlatformsHint' => '在平台显示设置里至少开启一个平台。',
 			'popular.empty' => '暂时没有热门直播',
-			'remoteSync.title' => '局域网同步',
-			_ => null,
-		} ?? switch (path) {
+			'remoteSync.title' => '设备同步',
 			'remoteSync.tileSubtitle' => '在同一网络下的设备间同步关注与历史',
-			'remoteSync.myDevice' => '本机',
+			'remoteSync.myDevice' => '我的设备',
 			'remoteSync.noAddress' => '未找到局域网地址',
 			'remoteSync.scanHint' => '让另一台设备扫描此二维码，或在对方输入本机地址',
 			'remoteSync.running' => '同步服务运行中',
 			'remoteSync.notRunning' => '同步服务未运行',
 			'remoteSync.start' => '启动',
 			'remoteSync.stop' => '停止',
-			'remoteSync.devices' => '网络中的设备',
-			'remoteSync.noDevices' => '尚未发现设备——请确认两台设备在同一网络',
-			'remoteSync.manual' => '地址',
-			'remoteSync.send' => '发送',
-			'remoteSync.receive' => '接收',
+			'remoteSync.devices' => '发现的设备',
+			'remoteSync.noDevices' => '未发现其他设备',
+			'remoteSync.manual' => '手动输入',
+			'remoteSync.send' => '发送配置',
+			'remoteSync.receive' => '接收配置',
 			'remoteSync.sendSuccess' => '发送成功',
 			'remoteSync.sendFailed' => '发送失败——请检查地址，并确认对方已同意',
 			'remoteSync.receiveSuccess' => '接收并应用成功',
@@ -2784,6 +3389,19 @@ extension on Translations {
 			'remoteSync.sectionFavorite' => '关注列表',
 			'remoteSync.sectionHistory' => '观看历史',
 			'remoteSync.sectionGroups' => '关注分组',
+			'remoteSync.noAddressHint' => '请连接 Wi-Fi 或有线网络；Android 需要允许"附近设备 / 局域网"权限，然后点右上角开始',
+			'remoteSync.description' => '请确保两台设备连接到同一个局域网',
+			'remoteSync.searching' => '正在搜索局域网设备...',
+			'remoteSync.searchingShort' => '正在搜索',
+			'remoteSync.manualHint' => '输入对方设备的地址，或粘贴对方二维码里的同步链接',
+			'remoteSync.copyAddress' => '复制地址',
+			'remoteSync.addressCopied' => '地址已复制',
+			'remoteSync.fromName' => ({required String name}) => '来自 ${name}',
+			'remoteSync.legacyDevice' => '3.x 版本的设备',
+			'remoteSync.allow' => '允许',
+			'remoteSync.reject' => '拒绝',
+			'remoteSync.incomingImportNamed' => ({required Object address, required Object name}) => '设备 ${address}（${name}）请求用它的设置覆盖本机设置，是否允许？',
+			'remoteSync.incomingExportNamed' => ({required Object address, required Object name}) => '设备 ${address}（${name}）请求读取本机设置，是否允许？',
 			'errors.generic' => '出了点问题，请稍后再试。',
 			'errors.network' => '网络连接不可用，请检查网络后重试。',
 			'errors.notFound' => '没有找到相关内容。',

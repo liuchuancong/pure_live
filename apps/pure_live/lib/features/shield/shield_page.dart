@@ -16,7 +16,14 @@ final class ShieldPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return PureScaffold(
       appBar: PureAppBar(title: context.t.shield.title, actions: const [SettingsEntryButton()]),
-      body: const ShieldListsPanel(),
+      // The reference's c6: the cards keep a readable column at most 720
+      // wide, centred, with the whole window scrolling.
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 744),
+          child: const ShieldListsPanel(),
+        ),
+      ),
     );
   }
 }

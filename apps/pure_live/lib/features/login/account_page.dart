@@ -4,7 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveCredential, LiveSite;
-import 'package:pure_live/app/routing/routes/login/login_routes.dart';
+import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/features/login/login_providers.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_settings_ui/pure_settings_ui.dart';

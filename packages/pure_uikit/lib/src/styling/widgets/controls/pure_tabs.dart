@@ -35,6 +35,7 @@ class PureTabs extends StatelessWidget {
     required this.onChanged,
     this.spacing = 0,
     this.enabled = true,
+    this.isScrollable = false,
     super.key,
   });
 
@@ -54,6 +55,12 @@ class PureTabs extends StatelessWidget {
   /// Whether the strip responds to input.
   final bool enabled;
 
+  /// Whether a long strip scrolls instead of squeezing its tabs. The
+  /// Material family gets the TabBar's own scroll; the libraries that ship
+  /// no scrollable strip keep their shrink-to-fit row — the strip must then
+  /// sit in a bounded width, never an unbounded scroll view.
+  final bool isScrollable;
+
   @override
   Widget build(BuildContext context) {
     final theme = PureTheme.of(context);
@@ -69,7 +76,7 @@ class PureTabs extends StatelessWidget {
       PureDesignLanguage.material ||
       PureDesignLanguage.yaru ||
       PureDesignLanguage.glass ||
-      PureDesignLanguage.neumorphic => _MaterialTabBar(tabs: tabs, index: selected, onChanged: select),
+      PureDesignLanguage.neumorphic => _MaterialTabBar(tabs: tabs, index: selected, onChanged: select, isScrollable: isScrollable),
       // iOS's own segmented strip: a sliding thumb over the library's cells.
       PureDesignLanguage.cupertino => _CupertinoTabBar(tabs: tabs, index: selected, onChanged: select),
       // macOS's own segmented control, driven by the library controller.
@@ -92,6 +99,13 @@ class PureTabs extends StatelessWidget {
       // router owns the body here, so each entry gets an empty panel.
       PureDesignLanguage.forui => forui.FTabs(
         key: ValueKey<String>('forui-tabs-${tabs.length}'),
+        // The caller owns the body; the panel entries are empty, so the
+        // bar-to-panel spacing is dead height — zero it or the strip
+        // overflows the 48 the bar reserves.
+        style: const forui.FTabsStyleDelta.delta(
+          spacing: 0,
+          padding: forui.EdgeInsetsGeometryDelta.value(EdgeInsets.zero),
+        ),
         control: forui.FTabControl.lifted(index: selected, onChange: (next) => select?.call(next)),
         children: [for (final tab in tabs) forui.FTabEntry(label: _foruiLabel(tab), child: const SizedBox.shrink())],
       ),
@@ -147,11 +161,12 @@ class PureTabView extends StatelessWidget {
 
 /// The official Material TabBar with a controller adapter.
 class _MaterialTabBar extends StatefulWidget {
-  const new({required this.tabs, required this.index, required this.onChanged});
+  const new({required this.tabs, required this.index, required this.onChanged, this.isScrollable = false});
 
   final List<PureTab> tabs;
   final int index;
   final ValueChanged<int>? onChanged;
+  final bool isScrollable;
 
   @override
   State<_MaterialTabBar> createState() => _MaterialTabBarState();

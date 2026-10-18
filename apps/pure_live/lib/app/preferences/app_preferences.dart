@@ -162,6 +162,15 @@ final class AppPreferences {
     this.roomCardShowAnchor = true,
     this.roomCardAspect = RoomCardCoverAspect.sixteenByNine,
     this.shellBranches = defaultShellBranches,
+    this.hiddenSiteIds = const [],
+    this.siteOrder = const [],
+    this.logLevelId = '',
+    this.historyLimit = 50,
+    this.pageDefaultSize = 0,
+    this.pageSizeOptions = '',
+    this.pageShowScrollTop = true,
+    this.pageShowSizeSelector = true,
+    this.pageShowGoto = true,
   });
 
   /// Reads the document; unknown shapes decode to the defaults.
@@ -214,6 +223,15 @@ final class AppPreferences {
       roomCardShowAnchor: json['roomCardShowAnchor'] as bool? ?? true,
       roomCardAspect: RoomCardCoverAspect.fromId(json['roomCardAspect'] as String?),
       shellBranches: branches == null || branches.isEmpty ? defaultShellBranches : branches,
+      hiddenSiteIds: (json['hiddenSiteIds'] as List<Object?>?)?.whereType<String>().toList() ?? const [],
+      siteOrder: (json['siteOrder'] as List<Object?>?)?.whereType<String>().toList() ?? const [],
+      logLevelId: json['logLevelId'] as String? ?? '',
+      historyLimit: (json['historyLimit'] as num?)?.toInt() ?? 50,
+      pageDefaultSize: (json['pageDefaultSize'] as num?)?.toInt() ?? 0,
+      pageSizeOptions: json['pageSizeOptions'] as String? ?? '',
+      pageShowScrollTop: json['pageShowScrollTop'] as bool? ?? true,
+      pageShowSizeSelector: json['pageShowSizeSelector'] as bool? ?? true,
+      pageShowGoto: json['pageShowGoto'] as bool? ?? true,
     );
   }
 
@@ -347,6 +365,43 @@ final class AppPreferences {
   /// floor, so this is never empty.
   final List<String> shellBranches;
 
+  /// The platform ids the user hid from the platform list (3.x
+  /// `Settings.hiddenSettingPlatforms`): hidden platforms are left out of
+  /// popular, areas and search. An unknown id is simply never matched.
+  final List<String> hiddenSiteIds;
+
+  /// The user's manual platform order (3.x `Settings.hotAreasList` order);
+  /// ids not listed keep their registry position after the listed ones.
+  final List<String> siteOrder;
+
+  /// The persisted log threshold — a `LogLevel.name`, empty for the
+  /// build default the `AppLog` already opened with.
+  final String logLevelId;
+
+  /// How many watch-history entries are kept; 0 keeps everything (the
+  /// reference's `Settings.historyLimit`, default 50).
+  final int historyLimit;
+
+  /// Rooms per desktop page; 0 picks the width answer (20 above 960 px,
+  /// else 12) — the reference's `pageDefaultSize`.
+  final int pageDefaultSize;
+
+  /// The page-size choices as a comma-separated text; empty means the
+  /// width rule (20/40/60/80 above 960 px, else 12/24/36/48) — the
+  /// reference's `pageSizeOptions`.
+  final String pageSizeOptions;
+
+  /// Whether paged lists show the scroll-to-top/bottom buttons
+  /// (`pageShowScrollTop`).
+  final bool pageShowScrollTop;
+
+  /// Whether the page bar offers the rooms-per-page menu
+  /// (`pageShowSizeSelector`).
+  final bool pageShowSizeSelector;
+
+  /// Whether the page bar offers 'go to page' (`pageShowGotoButton`).
+  final bool pageShowGoto;
+
   /// Writes the document.
   Map<String, Object?> toJson() => {
     'refreshOnResume': refreshOnResume,
@@ -388,6 +443,15 @@ final class AppPreferences {
     'roomCardShowAnchor': roomCardShowAnchor,
     'roomCardAspect': roomCardAspect.id,
     'shellBranches': shellBranches,
+    'hiddenSiteIds': hiddenSiteIds,
+    'siteOrder': siteOrder,
+    'logLevelId': logLevelId,
+    'historyLimit': historyLimit,
+    'pageDefaultSize': pageDefaultSize,
+    'pageSizeOptions': pageSizeOptions,
+    'pageShowScrollTop': pageShowScrollTop,
+    'pageShowSizeSelector': pageShowSizeSelector,
+    'pageShowGoto': pageShowGoto,
   };
 
   /// Returns a copy with the given fields replaced. [shellBranches] never
@@ -433,6 +497,15 @@ final class AppPreferences {
     bool? roomCardShowAnchor,
     RoomCardCoverAspect? roomCardAspect,
     List<String>? shellBranches,
+    List<String>? hiddenSiteIds,
+    List<String>? siteOrder,
+    String? logLevelId,
+    int? historyLimit,
+    int? pageDefaultSize,
+    String? pageSizeOptions,
+    bool? pageShowScrollTop,
+    bool? pageShowSizeSelector,
+    bool? pageShowGoto,
   }) => AppPreferences(
     refreshOnResume: refreshOnResume ?? this.refreshOnResume,
     danmakuVisible: danmakuVisible ?? this.danmakuVisible,
@@ -475,6 +548,15 @@ final class AppPreferences {
     shellBranches: (shellBranches == null || shellBranches.isEmpty)
         ? this.shellBranches
         : List.unmodifiable(shellBranches),
+    hiddenSiteIds: List.unmodifiable(hiddenSiteIds ?? this.hiddenSiteIds),
+    siteOrder: List.unmodifiable(siteOrder ?? this.siteOrder),
+    logLevelId: logLevelId ?? this.logLevelId,
+    historyLimit: historyLimit ?? this.historyLimit,
+    pageDefaultSize: pageDefaultSize ?? this.pageDefaultSize,
+    pageSizeOptions: pageSizeOptions ?? this.pageSizeOptions,
+    pageShowScrollTop: pageShowScrollTop ?? this.pageShowScrollTop,
+    pageShowSizeSelector: pageShowSizeSelector ?? this.pageShowSizeSelector,
+    pageShowGoto: pageShowGoto ?? this.pageShowGoto,
   );
 
   @override
@@ -518,7 +600,16 @@ final class AppPreferences {
       other.roomCardShowAudience == roomCardShowAudience &&
       other.roomCardShowAnchor == roomCardShowAnchor &&
       other.roomCardAspect == roomCardAspect &&
-      _listEquals(other.shellBranches, shellBranches);
+      _listEquals(other.shellBranches, shellBranches) &&
+      _listEquals(other.hiddenSiteIds, hiddenSiteIds) &&
+      _listEquals(other.siteOrder, siteOrder) &&
+      other.logLevelId == logLevelId &&
+      other.historyLimit == historyLimit &&
+      other.pageDefaultSize == pageDefaultSize &&
+      other.pageSizeOptions == pageSizeOptions &&
+      other.pageShowScrollTop == pageShowScrollTop &&
+      other.pageShowSizeSelector == pageShowSizeSelector &&
+      other.pageShowGoto == pageShowGoto;
 
   @override
   int get hashCode => Object.hash(
@@ -561,7 +652,18 @@ final class AppPreferences {
       scaler,
       deinterlace,
       streamCacheSeconds,
-      languageId,
+      Object.hash(
+        languageId,
+        logLevelId,
+        historyLimit,
+        pageDefaultSize,
+        pageSizeOptions,
+        pageShowScrollTop,
+        pageShowSizeSelector,
+        pageShowGoto,
+        Object.hashAll(hiddenSiteIds),
+        Object.hashAll(siteOrder),
+      ),
     ),
   );
 

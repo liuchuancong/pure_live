@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/app/routing/routes/settings/settings_routes.dart';
+import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/app/theme/appearance_preferences/appearance_preferences.dart';
 import 'package:pure_live/app/theme/ui_configuration_mapper.dart' show designLanguageByStoredId;
 import 'package:pure_live/features/settings/widgets/settings_chooser.dart';

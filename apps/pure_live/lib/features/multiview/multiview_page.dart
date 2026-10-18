@@ -144,7 +144,9 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
           const SettingsEntryButton(),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(52),
+          // 52 clipped the neumorphic segmented control (its buttons carry
+          // their own shadow padding); 64 is the tallest language's row.
+          preferredSize: const Size.fromHeight(64),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
             child: Row(
@@ -547,60 +549,73 @@ final class _RoomPickerState extends ConsumerState<_RoomPicker> {
     ];
     return SizedBox(
       width: 420,
-      height: 420,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            context.t.multiview.pickHint,
-            style: PureTheme.of(context).text.caption.copyWith(color: PureTheme.of(context).colors.textSecondary),
-          ),
-          const SizedBox(height: 8),
-          Row(
+      // A capped height, not a fixed one: the neumorphic fields and segmented
+      // control render taller than the other languages, and a fixed 420 let
+      // the top rows alone overflow the box by a few pixels. The list keeps
+      // its own scroll; the dialog grows only up to the cap.
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 420),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: PureTextField(
-                  controller: _link,
-                  placeholder: context.t.toolbox.hint,
-                  onSubmitted: (_) => unawaited(_addFromLink()),
-                ),
+              Text(
+                context.t.multiview.pickHint,
+                style: PureTheme.of(context).text.caption.copyWith(color: PureTheme.of(context).colors.textSecondary),
               ),
-              const SizedBox(width: 8),
-              PureButton(
-                label: context.t.multiview.add,
-                icon: Icons.add,
-                onPressed: _resolving ? null : () => unawaited(_addFromLink()),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: PureTextField(
+                      controller: _link,
+                      placeholder: context.t.toolbox.hint,
+                      onSubmitted: (_) => unawaited(_addFromLink()),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  PureButton(
+                    label: context.t.multiview.add,
+                    icon: Icons.add,
+                    onPressed: _resolving ? null : () => unawaited(_addFromLink()),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              PureSegmented(
+                labels: [context.t.tabs.follow, context.t.tabs.history],
+                index: _fromHistory ? 1 : 0,
+                onChanged: (index) => setState(() => _fromHistory = index == 1),
+              ),
+              const SizedBox(height: 8),
+              PureTextField(
+                controller: _query,
+                placeholder: context.t.search.hint,
+                prefix: const Icon(Icons.search),
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 200),
+                child: rooms.isEmpty
+                    ? Center(
+                        child: Padding(padding: const EdgeInsets.all(16), child: Text(context.t.multiview.noPick)),
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: rooms.length,
+                        itemBuilder: (context, index) => PureListRow(
+                          title: rooms[index].title,
+                          subtitle: rooms[index].siteId,
+                          onTap: () => Navigator.of(context).pop(rooms[index]),
+                          divided: false,
+                        ),
+                      ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          PureSegmented(
-            labels: [context.t.tabs.follow, context.t.tabs.history],
-            index: _fromHistory ? 1 : 0,
-            onChanged: (index) => setState(() => _fromHistory = index == 1),
-          ),
-          const SizedBox(height: 8),
-          PureTextField(
-            controller: _query,
-            placeholder: context.t.search.hint,
-            prefix: const Icon(Icons.search),
-            onChanged: (_) => setState(() {}),
-          ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: rooms.isEmpty
-                ? Center(child: Text(context.t.multiview.noPick))
-                : ListView.builder(
-                    itemCount: rooms.length,
-                    itemBuilder: (context, index) => PureListRow(
-                      title: rooms[index].title,
-                      subtitle: rooms[index].siteId,
-                      onTap: () => Navigator.of(context).pop(rooms[index]),
-                      divided: false,
-                    ),
-                  ),
-          ),
-        ],
+        ),
       ),
     );
   }

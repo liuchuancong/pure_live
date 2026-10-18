@@ -6,8 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/app/routing/route_paths.dart';
-import 'package:pure_live/app/routing/routes/room/room_routes.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 import 'package:pure_uikit/pure_uikit.dart';
@@ -45,8 +45,7 @@ final class ToolboxPage extends ConsumerStatefulWidget {
 }
 
 final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
-  final _jump = TextEditingController();
-  final _direct = TextEditingController();
+  final _link = TextEditingController();
   _Tool? _busy;
   int _generation = 0;
   bool _clipboardChecked = false;
@@ -63,8 +62,7 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
 
   @override
   void dispose() {
-    _jump.dispose();
-    _direct.dispose();
+    _link.dispose();
     super.dispose();
   }
 
@@ -99,10 +97,10 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
     }
     final text = data?.text?.trim() ?? '';
     final uri = Uri.tryParse(text);
-    if (!mounted || _jump.text.isNotEmpty || text.isEmpty || uri == null || !uri.hasScheme) {
+    if (!mounted || _link.text.isNotEmpty || text.isEmpty || uri == null || !uri.hasScheme) {
       return;
     }
-    setState(() => _jump.text = text);
+    setState(() => _link.text = text);
     _toast(context.t.toolbox.autoFill, type: PureToastType.info);
   }
 
@@ -139,7 +137,7 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
 
   /// 3.x `jumpToRoom`: resolve, then open the room.
   Future<void> _jumpToRoom() async {
-    final text = _jump.text.trim();
+    final text = _link.text.trim();
     if (text.isEmpty) {
       _toast(context.t.toolbox.emptyLink);
       return;
@@ -168,7 +166,7 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
   /// URL. The clipboard is the export — the app has no external-player
   /// hand-off to jump to.
   Future<void> _exportDirectLink() async {
-    final text = _direct.text.trim();
+    final text = _link.text.trim();
     if (text.isEmpty) {
       _toast(context.t.toolbox.emptyLink);
       return;
@@ -296,32 +294,23 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
     return PureScaffold(
       appBar: PureAppBar(title: context.t.toolbox.title, actions: const [SettingsEntryButton()]),
       body: ListView(
+        key: const ValueKey('toolbox-scroll'),
         padding: const EdgeInsets.all(12),
         children: [
-          _toolCard(
-            context,
-            tool: _Tool.jump,
-            icon: Icons.open_in_new,
-            title: context.t.toolbox.roomJump,
-            controller: _jump,
-            buttonIcon: Icons.play_circle_outline,
-            buttonLabel: context.t.toolbox.linkJump,
-            onAction: _jumpToRoom,
+          Center(
+            child: ConstrainedBox(
+              // c9: the cards of the settings pages, at most 720 wide.
+              constraints: const BoxConstraints(maxWidth: 720),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _linkCard(context),
+                  const SizedBox(height: 16),
+                  _syncCard(context),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: 16),
-          _toolCard(
-            context,
-            tool: _Tool.directLink,
-            icon: Icons.link,
-            title: context.t.toolbox.directLink,
-            controller: _direct,
-            buttonIcon: Icons.download_outlined,
-            buttonLabel: context.t.toolbox.parse,
-            onAction: _exportDirectLink,
-            footer: _supportFooter(context),
-          ),
-          const SizedBox(height: 16),
-          _syncCard(context),
         ],
       ),
     );
@@ -345,68 +334,91 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
     );
   }
 
-  /// One tool card (3.x `_buildToolCard`): the expanded tile with the paste
-  /// field and the action, the cancel link while it runs, and an optional
-  /// [footer] that stays outside the tile.
-  Widget _toolCard(
-    BuildContext context, {
-    required _Tool tool,
-    required IconData icon,
-    required String title,
-    required TextEditingController controller,
-    required IconData buttonIcon,
-    required String buttonLabel,
-    required Future<void> Function() onAction,
-    Widget? footer,
-  }) {
+  /// The card of the link (the reference's `_LinkCard`, c2/c3/c5/c6): a line
+  /// on what it does, the box (paste when empty, clear when not), the two
+  /// actions side by side, and what is being done with "取消" while an
+  /// action runs. The supported-formats list sits at the card's foot.
+  Widget _linkCard(BuildContext context) {
     final theme = PureTheme.of(context);
-    final busy = _busy == tool;
+    final busy = _busy;
     return PureCard(
       padding: EdgeInsets.zero,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ExpansionTile(
-            leading: Icon(icon, color: theme.colors.primary),
-            title: Text(title, style: theme.text.body.copyWith(fontWeight: FontWeight.bold)),
-            initiallyExpanded: true,
-            shape: const RoundedRectangleBorder(side: BorderSide(color: Colors.transparent)),
-            childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            expandedCrossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              PureTextField(
-                controller: controller,
-                placeholder: context.t.toolbox.inputHint,
-                maxLines: 5,
-                keyboardType: TextInputType.url,
-                suffix: PureIconButton(
-                  tooltip: context.t.common.clear,
-                  icon: Icons.cancel_outlined,
-                  size: ControlSize.sm,
-                  onPressed: () => controller.clear(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              PureButton(
-                label: buttonLabel,
-                icon: buttonIcon,
-                expand: true,
-                loading: busy,
-                onPressed: _busy == null ? onAction : null,
-              ),
-              if (busy)
-                Align(
-                  alignment: AlignmentDirectional.centerEnd,
-                  child: PureButton(
-                    label: context.t.common.cancel,
-                    variant: ButtonVariant.ghost,
-                    size: ControlSize.sm,
-                    onPressed: _cancel,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            child: Row(
+              children: [
+                Icon(Icons.link, color: theme.colors.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    context.t.toolbox.title,
+                    style: theme.text.body.copyWith(fontWeight: FontWeight.bold),
                   ),
                 ),
-            ],
+                if (busy == null)
+                  PureIconButton(
+                    tooltip: context.t.common.clear,
+                    icon: Icons.clear_rounded,
+                    size: ControlSize.sm,
+                    onPressed: _link.text.isEmpty ? null : () => setState(_link.clear),
+                  ),
+              ],
+            ),
           ),
-          if (footer != null) Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 16), child: footer),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+            child: PureTextField(
+              controller: _link,
+              placeholder: context.t.toolbox.inputHint,
+              maxLines: 4,
+              keyboardType: TextInputType.url,
+              enabled: busy == null,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: PureButton(
+                    label: context.t.toolbox.linkJump,
+                    icon: Icons.play_circle_outline,
+                    expand: true,
+                    loading: busy == _Tool.jump,
+                    onPressed: busy == null ? () => unawaited(_jumpToRoom()) : null,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: PureButton(
+                    label: context.t.toolbox.directLink,
+                    icon: Icons.link,
+                    variant: ButtonVariant.secondary,
+                    expand: true,
+                    loading: busy == _Tool.directLink,
+                    onPressed: busy == null ? () => unawaited(_exportDirectLink()) : null,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (busy != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(0, 0, 16, 12),
+              child: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: PureButton(
+                  label: context.t.common.cancel,
+                  variant: ButtonVariant.ghost,
+                  size: ControlSize.sm,
+                  onPressed: _cancel,
+                ),
+              ),
+            ),
+          _supportFooter(context),
         ],
       ),
     );

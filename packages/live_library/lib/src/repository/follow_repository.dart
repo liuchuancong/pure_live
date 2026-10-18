@@ -137,6 +137,21 @@ final class FollowRepository {
     await _commitGroups();
   }
 
+  /// Moves the group [id] to [targetIndex] in the position order, rewriting
+  /// every position — the tag manager's drag handle and pin-to-top both
+  /// address this.
+  Future<void> reorderGroup(String id, int targetIndex) async {
+    final ordered = [..._groups]..sort((a, b) => a.position.compareTo(b.position));
+    final index = ordered.indexWhere((group) => group.id == id);
+    if (index < 0) {
+      return;
+    }
+    final moved = ordered.removeAt(index);
+    ordered.insert(targetIndex.clamp(0, ordered.length - 1), moved);
+    _groups = [for (final (position, group) in ordered.indexed) group.copyWith(position: position)];
+    await _commitGroups();
+  }
+
   /// Deletes a group; its members keep their records but lose the id.
   Future<void> deleteGroup(String id) async {
     final nextGroups = [

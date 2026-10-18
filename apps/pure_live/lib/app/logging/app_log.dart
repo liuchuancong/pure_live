@@ -41,7 +41,8 @@ final class LogSettings {
 final class AppLog {
   /// The process log for [settings].
   new({LogSettings? settings}) : _settings = settings ?? LogSettings.forBuild() {
-    _attachable = FanOutSink([MemorySink()]);
+    ring = MemorySink();
+    _attachable = FanOutSink([ring]);
     root = LiveLog.root(
       sinks: [if (kDebugMode) const StdoutConsoleSink(), _attachable],
       minLevel: _settings.minLevel,
@@ -51,6 +52,10 @@ final class AppLog {
 
   final LogSettings _settings;
   late final FanOutSink _attachable;
+
+  /// The in-memory ring every record also passes through — the log page's
+  /// export reads recent history from here (`query`/`exportJsonLines`).
+  late final MemorySink ring;
 
   /// The tree every category view branches from.
   late final LiveLog root;
@@ -69,4 +74,23 @@ final class AppLog {
 
   /// Closes every sink; the tree goes quiet. Later emits are no-ops.
   Future<void> close() => root.close();
+}
+
+/// Maps a stored log-level id (the log page's preference; '' is "build
+/// default") to the tree threshold to apply, null when there is none.
+LogLevel? logLevelForStoredId(String levelId) => switch (levelId) {
+  'trace' => LogLevel.trace,
+  'debug' => LogLevel.debug,
+  'info' => LogLevel.info,
+  'warning' => LogLevel.warning,
+  'error' => LogLevel.error,
+  'off' => LogLevel.off,
+  _ => null,
+};
+
+/// Re-tunes the live tree from the stored preference — start-up replays it,
+/// and the log page applies it on every change.
+void applyStoredLogLevel(AppLog log, String levelId) {
+  final level = logLevelForStoredId(levelId);
+  if (level != null) log.root.setMinLevel(level);
 }

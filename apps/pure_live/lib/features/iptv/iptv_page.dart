@@ -3,9 +3,9 @@ import 'dart:async' show StreamSubscription, unawaited;
 import 'package:file_selector/file_selector.dart' show XTypeGroup, openFile;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_iptv/live_iptv.dart' show IptvChannel, IptvLibrary, iptvFetcherFor;
+import 'package:live_iptv/live_iptv.dart' show IptvChannel, IptvLibrary, IptvPlaylist, iptvFetcherFor;
 import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/app/routing/routes/iptv/iptv_routes.dart';
+import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/features/iptv/iptv_preferences.dart' show IptvPreferences, IptvXtreamSource;
 import 'package:pure_live/features/iptv/iptv_xtream.dart'
     show importXtreamChannels, isXtreamCredentialError, isXtreamPlaylistUrl, xtreamCatalogProvider, xtreamPlaylistId;
@@ -270,6 +270,23 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
     }
   }
 
+  /// Reads [playlist]'s URL again and reconciles it (the reference's card
+  /// "同步"): channels that vanished with the file are removed, new ones
+  /// arrive, the record keeps its place.
+  Future<void> _syncPlaylist(IptvPlaylist playlist) => _runImport(() async {
+    final url = playlist.url;
+    if (url == null) {
+      return 0;
+    }
+    final uri = Uri.tryParse(url);
+    if (uri == null || !uri.hasScheme) {
+      return 0;
+    }
+    final fetch = iptvFetcherFor(ref.read(httpProvider));
+    final text = await fetch(uri);
+    return await _library.importFromText(text, name: playlist.name, url: url, removeMissing: true);
+  });
+
   Future<void> _deleteSource(String id) async {
     if (!await _confirmDeleteSource()) {
       return;
@@ -408,9 +425,23 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
                 children: [
                   for (final playlist in playlists)
                     if (!isXtreamPlaylistUrl(playlist.url))
-                      InputChip(
-                        label: Text('${playlist.name} (${playlist.channelCount})'),
-                        onDeleted: () => unawaited(_deleteSource(playlist.id)),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          InputChip(
+                            label: Text('${playlist.name} (${playlist.channelCount})'),
+                            onDeleted: _importing ? null : () => unawaited(_deleteSource(playlist.id)),
+                          ),
+                          // A local file has no URL to read again — only a
+                          // remote playlist gets the sync button (the
+                          // reference's card, c4).
+                          if (playlist.url != null && playlist.url!.isNotEmpty)
+                            PureIconButton(
+                              tooltip: context.t.iptv.refreshSource,
+                              icon: Icons.sync,
+                              onPressed: _importing ? null : () => unawaited(_syncPlaylist(playlist)),
+                            ),
+                        ],
                       ),
                   for (final source in xtreamSources)
                     Row(
@@ -426,6 +457,29 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
                           onPressed: _importing ? null : () => unawaited(_refreshXtream(source)),
                         ),
                       ],
+                    ),
+                ],
+              ),
+            ),
+          // The guide sources (the reference's guide cards, trimmed to the
+          // backed operations): each stored XMLTV source with its channel
+          // count and a delete.
+          if (library.guideSources.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(
+                    context.t.iptv.epgTitle,
+                    style: PureTheme.of(context).text.caption.copyWith(color: PureTheme.of(context).colors.textSecondary),
+                  ),
+                  for (final guide in library.guideSources)
+                    InputChip(
+                      label: Text('${guide.name} (${library.guideChannels(guide.id).length})'),
+                      onDeleted: () => unawaited(library.deleteGuideSource(guide.id)),
                     ),
                 ],
               ),

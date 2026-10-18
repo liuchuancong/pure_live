@@ -4,7 +4,9 @@ import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show StatefulNavigationShell;
+import 'package:pure_live/app/logging/app_log.dart' show applyStoredLogLevel;
 import 'package:pure_live/app/preferences/app_preferences.dart';
+import 'package:pure_live/app/providers/app_providers.dart' show appLogProvider;
 import 'package:pure_live/app/shell/shell_destinations.dart';
 
 /// The booted [AppPreferencesStore], overridden in the `ProviderScope` at
@@ -189,6 +191,10 @@ final class _AppPreferencesHostState extends ConsumerState<AppPreferencesHost> w
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _armCountdown();
+    // The stored log threshold re-tunes the live tree at start-up — the log
+    // page applies it live on every change, this replays it after boot. An
+    // empty id means "build default", which the tree already opened with.
+    applyStoredLogLevel(ref.read(appLogProvider), ref.read(appPreferencesProvider).logLevelId);
   }
 
   @override
@@ -208,6 +214,9 @@ final class _AppPreferencesHostState extends ConsumerState<AppPreferencesHost> w
     // Re-arms the countdown whenever the countdown preferences move — and
     // does nothing (the timer keeps running) while they hold still.
     ref.listen(appPreferencesProvider, (previous, next) {
+      if (previous != null && previous.logLevelId != next.logLevelId) {
+        applyStoredLogLevel(ref.read(appLogProvider), next.logLevelId);
+      }
       if (previous == null) {
         return;
       }

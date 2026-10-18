@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
+import 'package:flutter/painting.dart' show BoxFit;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_library/live_library.dart' show WatchRecordIdentity;
 import 'package:live_platform/live_platform.dart' show FormFactor;
@@ -69,6 +70,8 @@ final class RoomState {
     this.rate = 1,
     this.videoWidth,
     this.videoHeight,
+    this.videoFit = BoxFit.contain,
+    this.locked = false,
   });
 
   /// The resolved room detail; null until [RoomController.load] lands.
@@ -143,6 +146,14 @@ final class RoomState {
   /// The video track's height, as the engine last reported it.
   final int? videoHeight;
 
+  /// The viewport fit the bar's 画面比例 menu last chose (the adapter owns
+  /// the live value; this mirrors it for the menu's tick).
+  final BoxFit videoFit;
+
+  /// The landscape screen lock (the reference's 锁定): while on, the video
+  /// ignores taps, drags and the bars, and only the unlock affordance answers.
+  final bool locked;
+
   /// Whether anything is playing.
   bool get playing => line != null;
 
@@ -189,6 +200,8 @@ final class RoomState {
     double? rate,
     Object? videoWidth = _keep,
     Object? videoHeight = _keep,
+    BoxFit? videoFit,
+    bool? locked,
   }) => RoomState(
     room: room == _keep ? this.room : room as LiveRoom?,
     detailError: detailError == _keep ? this.detailError : detailError,
@@ -212,6 +225,8 @@ final class RoomState {
     rate: rate ?? this.rate,
     videoWidth: videoWidth == _keep ? this.videoWidth : videoWidth as int?,
     videoHeight: videoHeight == _keep ? this.videoHeight : videoHeight as int?,
+    videoFit: videoFit ?? this.videoFit,
+    locked: locked ?? this.locked,
   );
 }
 
@@ -557,6 +572,23 @@ final class RoomController extends Notifier<RoomState> {
     final value = rate.clamp(0.5, 3.0);
     state = state.copyWith(rate: value);
     unawaited(_engine.surfaceAdapter?.setRate(value).catchError((_) {}));
+  }
+
+  /// The viewport fit (the reference's 画面比例 row): contain keeps the
+  /// source's ratio, cover fills the box cropping, fill stretches. The
+  /// adapter owns the live value; the state mirrors it so the menu can show
+  /// the tick without reading the engine.
+  /// Turns the landscape lock on or off; the unlock chip stays reachable
+  /// because the lock hides the bars but not itself.
+  void toggleLock() => state = state.copyWith(locked: !state.locked);
+
+  /// Applies the viewport fit (the reference's 画面比例 row): contain keeps
+  /// the source's ratio, cover fills the box cropping, fill stretches. The
+  /// adapter owns the live value; the state mirrors it so the menu can show
+  /// the tick without reading the engine.
+  void setVideoFit(BoxFit fit) {
+    state = state.copyWith(videoFit: fit);
+    _engine.surfaceAdapter?.setVideoFit(fit);
   }
 
   /// Takes the presentation. On a desktop the OS window follows; on touch the

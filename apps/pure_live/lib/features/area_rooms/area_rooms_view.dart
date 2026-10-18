@@ -2,14 +2,16 @@ import 'dart:async' show unawaited;
 
 import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_pagination/live_pagination.dart';
 import 'package:live_sites/live_sites.dart' show LivePageRequest, LiveRoom;
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/app/routing/routes/room/room_routes.dart';
+import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/rooms/paging.dart';
 import 'package:pure_live/shared/widgets/list_loading.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
@@ -59,17 +61,32 @@ final class AreaRoomsView extends ConsumerStatefulWidget {
 }
 
 final class _AreaRoomsViewState extends ConsumerState<AreaRoomsView> {
-  /// Whether this window pages (large) or grows the list (small/medium),
-  /// qualified through the shared breakpoints.
-  bool _pagedLayout(BuildContext context) => switch (PureBreakpoints.standard.qualify(context)) {
-    PureWidthClass.desktop => true,
-    PureWidthClass.mobile || PureWidthClass.tablet => false,
-  };
-
   @override
   Widget build(BuildContext context) {
-    final paged = _pagedLayout(context);
-    return paged ? _PagedFeed(loader: _load, sort: widget.sort) : _InfiniteFeed(loader: _load, sort: widget.sort);
+    final preferences = ref.watch(appPreferencesProvider);
+    final width = MediaQuery.sizeOf(context).width;
+    // The shared rule: wider than 680 and not a phone pages; the paging
+    // controls answer to the pager settings, as the reference's does.
+    final paged = desktopPagesIn(ref, width);
+    final heroTag = 'area-rooms-${widget.siteId}-${widget.areaId}';
+    if (paged) {
+      final sizes = pageSizesOf(preferences, width);
+      return _PagedFeed(
+        loader: _load,
+        sort: widget.sort,
+        pageSize: sizes.size,
+        pageSizes: preferences.pageShowSizeSelector ? sizes.options : null,
+        showGoto: preferences.pageShowGoto,
+        showJumps: preferences.pageShowScrollTop,
+        heroTag: heroTag,
+      );
+    }
+    return _InfiniteFeed(
+      loader: _load,
+      sort: widget.sort,
+      showJumps: preferences.pageShowScrollTop,
+      heroTag: heroTag,
+    );
   }
 
   Future<PageResult<LiveRoom>> _load(PageRequest request) {
@@ -96,16 +113,28 @@ final class _AreaRoomsViewState extends ConsumerState<AreaRoomsView> {
 /// The touch model: one accumulated list, pull to refresh, load more at
 /// the end.
 final class _InfiniteFeed extends ConsumerStatefulWidget {
-  const new({required this.loader, required this.sort});
+  const new({
+    required this.loader,
+    required this.sort,
+    this.showJumps = true,
+    this.heroTag = 'infinite',
+  });
 
   final PageLoader<LiveRoom> loader;
   final RoomSort sort;
+
+  /// The floating to-top/to-bottom buttons (pager setting).
+  final bool showJumps;
+
+  /// Unique per list — two lists may be alive at once.
+  final String heroTag;
 
   @override
   ConsumerState<_InfiniteFeed> createState() => _InfiniteFeedState();
 }
 
 final class _InfiniteFeedState extends ConsumerState<_InfiniteFeed> with FeedAutoRefresh<_InfiniteFeed> {
+  // The reference's phone page size — what `InfiniteController` defaults to.
   late final InfiniteController<LiveRoom> _controller = InfiniteController(loader: widget.loader);
   late final ScrollController _scroll = ScrollController()..addListener(_onScroll);
 
@@ -181,38 +210,79 @@ final class _InfiniteFeedState extends ConsumerState<_InfiniteFeed> with FeedAut
           ),
         ],
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) => GridView.builder(
-          controller: _scroll,
-          padding: const EdgeInsets.fromLTRB(PureSpacing.sm, PureSpacing.sm, PureSpacing.sm, PureSpacing.xl),
-          gridDelegate: _roomGridDelegate(context, constraints.maxWidth, coverAspect),
-          itemCount: rooms.length + 1,
-          itemBuilder: (context, index) {
-            if (index < rooms.length) {
-              return _tile(context, rooms[index]);
-            }
-            return state.isLoadingMore ? const Center(child: PureSpinner(size: 40)) : const SizedBox.shrink();
-          },
-        ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: LayoutBuilder(
+              builder: (context, constraints) => GridView.builder(
+                controller: _scroll,
+                padding: const EdgeInsets.fromLTRB(PureSpacing.sm, PureSpacing.sm, PureSpacing.sm, PureSpacing.xl),
+                gridDelegate: _roomGridDelegate(context, constraints.maxWidth, coverAspect),
+                itemCount: rooms.length + 1,
+                itemBuilder: (context, index) {
+                  if (index < rooms.length) {
+                    return _tile(context, rooms[index]);
+                  }
+                  return state.isLoadingMore ? const Center(child: PureSpinner(size: 40)) : const SizedBox.shrink();
+                },
+              ),
+            ),
+          ),
+          if (widget.showJumps)
+            Positioned(
+              right: 16,
+              bottom: 16,
+              child: PureJumpButtons(controller: _scroll, heroTag: widget.heroTag),
+            ),
+        ],
       ),
     );
   }
 }
 
-/// The desktop model: exactly one visible page, first/previous/next and a
-/// window of page numbers.
+/// The desktop model: exactly one visible page and the shared pagination
+/// bar — refresh, page numbers, rooms per page, go to page — with ← → and
+/// the jump buttons, as on the reference's paged lists.
 final class _PagedFeed extends ConsumerStatefulWidget {
-  const new({required this.loader, required this.sort});
+  const new({
+    required this.loader,
+    required this.sort,
+    this.pageSize = 20,
+    this.pageSizes,
+    this.showGoto = true,
+    this.showJumps = true,
+    this.heroTag = 'paged',
+  });
 
   final PageLoader<LiveRoom> loader;
   final RoomSort sort;
+
+  /// Rooms on a page at first; the bar can change it for the rest of the
+  /// visit (the reference's local override).
+  final int pageSize;
+
+  /// The per-page choices; null hides the selector (setting).
+  final List<int>? pageSizes;
+
+  /// The "go to page" field (setting).
+  final bool showGoto;
+
+  /// The floating to-top/to-bottom buttons (pager setting).
+  final bool showJumps;
+
+  /// Unique per list — two lists may be alive at once.
+  final String heroTag;
 
   @override
   ConsumerState<_PagedFeed> createState() => _PagedFeedState();
 }
 
 final class _PagedFeedState extends ConsumerState<_PagedFeed> with FeedAutoRefresh<_PagedFeed> {
-  late final PagedController<LiveRoom> _controller = PagedController(loader: widget.loader);
+  late final PagedController<LiveRoom> _controller = PagedController(
+    loader: widget.loader,
+    pageSize: widget.pageSize,
+  );
+  final ScrollController _scroll = ScrollController();
 
   @override
   Future<void> feedRefresh() => _controller.refresh();
@@ -229,6 +299,7 @@ final class _PagedFeedState extends ConsumerState<_PagedFeed> with FeedAutoRefre
     _controller
       ..removeListener(_onState)
       ..dispose();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -238,15 +309,71 @@ final class _PagedFeedState extends ConsumerState<_PagedFeed> with FeedAutoRefre
     }
   }
 
+  /// A page change starts the new page at its top (3.x).
+  void _goTo(int page) {
+    if (_scroll.hasClients) {
+      _scroll.jumpTo(0);
+    }
+    unawaited(_controller.loadPage(page));
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = _controller.state;
+    final busy = state.isLoading;
     final lastPage = state.totalCount == null ? null : (state.totalCount! / state.pageSize).ceil().clamp(1, 1 << 31);
-    return Column(
-      children: [
-        Expanded(child: _body(context, state)),
-        _bar(context, state, lastPage),
-      ],
+    // The total is often unknown until the platform runs out: a known last
+    // page closes the walk, an unknown one keeps "next" alive.
+    final canNext = lastPage == null || state.page < lastPage;
+    final choices = widget.pageSizes;
+    final pageSizes = choices == null || choices.contains(state.pageSize)
+        ? choices
+        : ([...choices, state.pageSize]..sort());
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.arrowLeft): () {
+          if (state.page > 1 && !busy) {
+            _goTo(state.page - 1);
+          }
+        },
+        const SingleActivator(LogicalKeyboardKey.arrowRight): () {
+          if (!busy && canNext) {
+            _goTo(state.page + 1);
+          }
+        },
+      },
+      child: Focus(
+        autofocus: true,
+        child: Column(
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  Positioned.fill(child: _body(context, state)),
+                  if (widget.showJumps && state.items.isNotEmpty)
+                    Positioned(
+                      right: 16,
+                      bottom: 16,
+                      child: PureJumpButtons(controller: _scroll, heroTag: widget.heroTag),
+                    ),
+                ],
+              ),
+            ),
+            PurePaginationBar(
+              page: state.page == 0 ? 1 : state.page,
+              lastPage: lastPage,
+              canNext: canNext,
+              busy: busy,
+              pageSize: state.pageSize,
+              pageSizes: pageSizes,
+              showGoto: widget.showGoto,
+              onPage: _goTo,
+              onPageSize: (size) => unawaited(_controller.changePageSize(size)),
+              onRefresh: () => unawaited(_controller.refresh()),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -264,69 +391,11 @@ final class _PagedFeedState extends ConsumerState<_PagedFeed> with FeedAutoRefre
     final rooms = widget.sort == RoomSort.viewers ? _sortByViewers(state.items) : state.items;
     return LayoutBuilder(
       builder: (context, constraints) => GridView.builder(
+        controller: _scroll,
         padding: const EdgeInsets.fromLTRB(PureSpacing.sm, PureSpacing.sm, PureSpacing.sm, PureSpacing.xl),
         gridDelegate: _roomGridDelegate(context, constraints.maxWidth, coverAspect),
         itemCount: rooms.length,
         itemBuilder: (context, index) => _tile(context, rooms[index]),
-      ),
-    );
-  }
-
-  Widget _bar(BuildContext context, PagedState<LiveRoom> state, int? lastPage) {
-    final busy = state.isLoading;
-    final page = state.page;
-    final numbers = [
-      for (var candidate = page - 2; candidate <= page + 2; candidate++)
-        if (candidate >= 1 && (lastPage == null || candidate <= lastPage)) candidate,
-    ];
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: PureTheme.of(context).colors.border)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          PureIconButton(
-            tooltip: context.t.common.retry,
-            icon: Icons.refresh,
-            onPressed: busy ? null : () => unawaited(_controller.refresh()),
-          ),
-          PureIconButton(
-            tooltip: '|<',
-            icon: Icons.first_page,
-            onPressed: page > 1 && !busy ? () => unawaited(_controller.first()) : null,
-          ),
-          PureIconButton(
-            tooltip: '<',
-            icon: Icons.chevron_left,
-            onPressed: page > 1 && !busy ? () => unawaited(_controller.previous()) : null,
-          ),
-          for (final number in numbers)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: number == page
-                  ? Text(
-                      '$number',
-                      style: TextStyle(fontWeight: FontWeight.w700, color: PureTheme.of(context).colors.primary),
-                    )
-                  : PureButton(
-                      label: '$number',
-                      variant: ButtonVariant.ghost,
-                      onPressed: busy ? null : () => unawaited(_controller.loadPage(number)),
-                    ),
-            ),
-          PureIconButton(
-            tooltip: '>',
-            icon: Icons.chevron_right,
-            onPressed: (lastPage == null || page < lastPage) && !busy ? () => unawaited(_controller.next()) : null,
-          ),
-          const SizedBox(width: 12),
-          Text(
-            context.t.common.pageOf(page: page, total: lastPage ?? 0),
-            style: PureTheme.of(context).text.caption,
-          ),
-        ],
       ),
     );
   }

@@ -41,7 +41,9 @@ final class MpvSettingsPage extends ConsumerWidget {
       unawaited(_pickSheet(context, title, options, current, onPick));
     }
 
-    return SettingsList(
+    return PureScaffold(
+      appBar: PureAppBar(title: t.settings.playerTitle),
+      body: SettingsList(
       sections: [
         SettingsSection(
           title: Text(t.settings.mpvOutputSection),
@@ -171,6 +173,7 @@ final class MpvSettingsPage extends ConsumerWidget {
           ],
         ),
       ],
+      ),
     );
   }
 

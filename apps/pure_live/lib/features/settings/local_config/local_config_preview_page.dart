@@ -30,7 +30,9 @@ final class LocalConfigPreviewPage extends ConsumerWidget {
       t.settings.localConfigAppearance: ref.watch(appearancePreferencesProvider).toJson(),
     };
     const encoder = JsonEncoder.withIndent('  ');
-    return SettingsList(
+    return PureScaffold(
+      appBar: PureAppBar(title: t.settings.localConfig),
+      body: SettingsList(
       sections: [
         SettingsSection(
           tiles: [SettingsTile(leading: const Icon(Icons.info_outline), title: Text(t.settings.localConfigNote))],
@@ -62,6 +64,7 @@ final class LocalConfigPreviewPage extends ConsumerWidget {
             ],
           ),
       ],
+      ),
     );
   }
 }

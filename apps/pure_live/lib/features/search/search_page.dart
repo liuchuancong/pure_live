@@ -9,8 +9,7 @@ import 'package:live_pagination/live_pagination.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/composition/sites.dart' show AppSites;
 import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/app/routing/routes/areas/areas_routes.dart';
-import 'package:pure_live/app/routing/routes/room/room_routes.dart';
+import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/features/areas/area_card.dart';
 import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/features/search/search_providers.dart';
@@ -22,6 +21,14 @@ import 'package:skeletonizer/skeletonizer.dart';
 /// How long typing waits for company before the search runs (the debounce
 /// that makes typing itself a query trigger; submitting always runs at once).
 const Duration _searchDebounce = Duration(milliseconds: 500);
+
+/// From this width the field and the platform strip share the app bar line
+/// (the reference's `searchOneRowWidth`, A09.7 c12).
+const double searchOneRowWidth = 600;
+
+/// The widest the search field gets on that shared line (the reference's
+/// `searchFieldMaxWidth`).
+const double searchFieldMaxWidth = 480;
 
 /// Search across every search-capable platform (3.x `SearchPage`): one
 /// keyword bar over a scope strip — every site at once, or one site — with
@@ -139,49 +146,65 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
     }
     final orderedTargets = LiveSearchTarget.values.where(targets.contains).toList();
     final query = _query;
+    // The reference's split (A09.7 c12/c13): from 600 the field and the
+    // platform strip share the app bar's title line; below it the field owns
+    // the bar and the strip rides at the head of the body.
+    final oneRow = MediaQuery.sizeOf(context).width >= searchOneRowWidth;
+    final field = ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: searchFieldMaxWidth),
+      child: SearchBar(
+        controller: _keyword,
+        hintText: context.t.search.hint,
+        textInputAction: TextInputAction.search,
+        onChanged: _onChanged,
+        onSubmitted: (_) => _searchNow(),
+        trailing: [PureIconButton(icon: Icons.search, tooltip: context.t.tabs.search, onPressed: _searchNow)],
+      ),
+    );
+    final strip = SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: PureTabs(
+        index: _selected,
+        onChanged: (value) => setState(() {
+          _selected = value;
+          _visited.add(value);
+        }),
+        tabs: [
+          PureTab(label: context.t.search.allSites),
+          for (final site in searchable) PureTab(label: site.manifest.localizedName(_tag(context), 'zh-CN')),
+        ],
+      ),
+    );
     return PureScaffold(
-      appBar: PureAppBar(title: context.t.tabs.search, actions: const [SettingsEntryButton()]),
+      appBar: PureAppBar(
+        title: context.t.tabs.search,
+        titleWidget: oneRow
+            ? Row(
+                children: [
+                  Flexible(child: field),
+                  const SizedBox(width: 4),
+                  Expanded(child: strip),
+                ],
+              )
+            : field,
+        actions: const [SettingsEntryButton()],
+      ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-            child: SearchBar(
-              controller: _keyword,
-              hintText: context.t.search.hint,
-              textInputAction: TextInputAction.search,
-              onChanged: _onChanged,
-              onSubmitted: (_) => _searchNow(),
-              trailing: [PureIconButton(icon: Icons.search, tooltip: context.t.tabs.search, onPressed: _searchNow)],
-            ),
-          ),
-          if (query.isNotEmpty) ...[
-            if (orderedTargets.length > 1)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-                child: PureSegmented(
-                  labels: _targetLabels(targets),
-                  index: orderedTargets.indexOf(_target),
-                  onChanged: (index) => setState(() => _target = orderedTargets[index]),
-                ),
-              ),
+          if (!oneRow)
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: PureTabs(
-                  index: _selected,
-                  onChanged: (value) => setState(() {
-                    _selected = value;
-                    _visited.add(value);
-                  }),
-                  tabs: [
-                    PureTab(label: context.t.search.allSites),
-                    for (final site in searchable) PureTab(label: site.manifest.localizedName(_tag(context), 'zh-CN')),
-                  ],
-                ),
+              child: Align(alignment: AlignmentDirectional.centerStart, child: strip),
+            ),
+          if (query.isNotEmpty && orderedTargets.length > 1)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              child: PureSegmented(
+                labels: _targetLabels(targets),
+                index: orderedTargets.indexOf(_target),
+                onChanged: (index) => setState(() => _target = orderedTargets[index]),
               ),
             ),
-          ],
           Expanded(
             child: query.isEmpty
                 ? _SearchHistoryPanel(onSelect: _useHistoryEntry)

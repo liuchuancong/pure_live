@@ -73,15 +73,21 @@ final class RoomVideoSurface extends ConsumerWidget {
   }
 
   Widget _tapLayer(BuildContext context) {
+    final locked = state.locked;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       // One tap brings the chrome up (or takes it back down); two take the
-      // window, the reference's own surface grammar.
-      onTap: () => controller.revealChrome(toggle: immersive),
-      onDoubleTap: () => controller.setPresentation(immersive ? RoomPresentation.normal : RoomPresentation.fullscreen),
+      // window, the reference's own surface grammar. The lock silences all
+      // of it — only the unlock chip answers.
+      onTap: locked ? null : () => controller.revealChrome(toggle: immersive),
+      onDoubleTap: locked
+          ? null
+          : () => controller.setPresentation(immersive ? RoomPresentation.normal : RoomPresentation.fullscreen),
       // A vertical drag on the right half is volume, on the left it is nothing
       // — brightness needs a system channel this app does not own.
-      onVerticalDragUpdate: (details) {
+      onVerticalDragUpdate: locked
+          ? null
+          : (details) {
         final box = context.findRenderObject() as RenderBox?;
         if (box == null) {
           return;
@@ -98,12 +104,28 @@ final class RoomVideoSurface extends ConsumerWidget {
           _picture(context),
           if (state.barrageOn && state.playing)
             RoomBarrageOverlay(identity: identity, lanes: barrageRows, fontSize: barrageFontSize),
-          RoomControlOverlay(
-            identity: identity,
-            immersive: immersive,
-            compact: compact,
-            onExit: onExitImmersive ?? () => controller.setPresentation(RoomPresentation.normal),
-          ),
+          if (!locked)
+            RoomControlOverlay(
+              identity: identity,
+              immersive: immersive,
+              compact: compact,
+              onExit: onExitImmersive ?? () => controller.setPresentation(RoomPresentation.normal),
+            ),
+          if (locked)
+            // The one control the lock leaves on screen — the reference's
+            // unlock chip, at the leading edge of the bottom bar.
+            Align(
+              alignment: AlignmentDirectional.bottomStart,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 8, bottom: 20),
+                child: IconButton(
+                  key: const ValueKey('room-unlock'),
+                  tooltip: context.t.room.unlock,
+                  onPressed: controller.toggleLock,
+                  icon: const Icon(Icons.lock, color: Colors.white),
+                ),
+              ),
+            ),
         ],
       ),
     );

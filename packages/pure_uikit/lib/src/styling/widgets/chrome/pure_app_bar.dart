@@ -28,10 +28,11 @@ import 'package:pure_uikit/src/styling/widgets/layout/pure_environment.dart';
 /// languages have no such convention, so this widget owns the semantics: a
 /// page that can pop and gave no [leading] of its own gets the shared back
 /// affordance (a [PureIconButton]), whatever language draws the bar.
-class PureAppBar extends StatelessWidget {
+class PureAppBar extends StatelessWidget implements PreferredSizeWidget {
   /// A bar titled [title].
   const new({
     required this.title,
+    this.titleWidget,
     this.leading,
     this.actions = const <Widget>[],
     this.bottom,
@@ -43,6 +44,11 @@ class PureAppBar extends StatelessWidget {
 
   /// The page title.
   final String title;
+
+  /// A widget in the title slot instead of the text — the reference puts a
+  /// page's own tab bar there. Languages whose bar has no widget slot fall
+  /// back to [title].
+  final Widget? titleWidget;
 
   /// A widget before the title — a back affordance or a drawer button.
   final Widget? leading;
@@ -63,6 +69,21 @@ class PureAppBar extends StatelessWidget {
   /// The title-row height; null takes the environment's bar height.
   final double? height;
 
+  /// The bar's total height: the title row plus a stacked bottom strip. The
+  /// Material Scaffold frame reserves exactly this much; a bar that composed
+  /// itself from a column (macOS, fluent, forui, neumorphic stack the strip
+  /// under the bar because those libraries' bars have no bottom slot) must
+  /// report the sum, or the strip overflows the reserved slot.
+  @override
+  Size get preferredSize {
+    final bar = height ?? kToolbarHeight;
+    final strip = switch (bottom) {
+      final PreferredSizeWidget sized => sized.preferredSize.height,
+      _ => 0.0,
+    };
+    return Size.fromHeight(bar + strip);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = PureTheme.of(context);
@@ -73,7 +94,7 @@ class PureAppBar extends StatelessWidget {
       // `PureApp._yaruHost`), not from a different bar.
       PureDesignLanguage.material || PureDesignLanguage.yaru => AppBar(
         leading: leading,
-        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+        title: titleWidget ?? Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: actions,
         centerTitle: centerTitle,
         bottom: switch (bottom) {
@@ -85,7 +106,7 @@ class PureAppBar extends StatelessWidget {
       ),
       PureDesignLanguage.cupertino => cupertino.CupertinoNavigationBar(
         leading: leading,
-        middle: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+        middle: titleWidget ?? Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
         trailing: switch (actions) {
           [] => null,
           [final Widget only] => only,
@@ -101,7 +122,7 @@ class PureAppBar extends StatelessWidget {
       PureDesignLanguage.fluent => _fluentHeader(context, leading),
       PureDesignLanguage.neumorphic => _neumorphicBar(context, leading),
       PureDesignLanguage.glass => glass.GlassAppBar(
-        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+        title: titleWidget ?? Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
         leading: leading,
         actions: actions.isEmpty ? null : actions,
         bottom: switch (bottom) {
@@ -118,7 +139,7 @@ class PureAppBar extends StatelessWidget {
       // the fallback; the wind page content still carries the language.
       PureDesignLanguage.wind => AppBar(
         leading: leading,
-        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+        title: titleWidget ?? Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: actions,
         centerTitle: centerTitle,
         toolbarHeight: height,
@@ -228,22 +249,19 @@ class PureAppBar extends StatelessWidget {
   /// than inside it.
   Widget _foruiHeader(Widget? leading) {
     final header = forui.FHeader.nested(
-      title: Text(title),
+      title: titleWidget ?? Text(title),
       titleAlignment: centerTitle == true ? Alignment.center : AlignmentDirectional.centerStart,
       prefixes: leading == null ? const <Widget>[] : <Widget>[leading],
       suffixes: actions,
-      style: background == null && height == null
-          ? const forui.FHeaderStyleDelta.context()
-          : forui.FHeaderStyleDelta.delta(
-              constraints: switch (height) {
-                final height? => BoxConstraints.tightFor(height: height),
-                null => null,
-              },
-              decoration: switch (background) {
-                final color? => forui.DecorationDelta.boxDelta(color: color),
-                null => null,
-              },
-            ),
+      style: forui.FHeaderStyleDelta.delta(
+        // The frame reserves [preferredSize]'s height; the header is pinned to
+        // it so its natural 64 never overflows the slot by a few pixels.
+        constraints: BoxConstraints.tightFor(height: height ?? kToolbarHeight),
+        decoration: switch (background) {
+          final color? => forui.DecorationDelta.boxDelta(color: color),
+          null => null,
+        },
+      ),
     );
 
     final strip = bottom;
@@ -266,7 +284,7 @@ class PureAppBar extends StatelessWidget {
     // because this file is not the library's own source.
     const toolbarHeight = 56.0;
     final bar = neu.NeuAppBar(
-      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+      title: titleWidget ?? Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
       leading: leading,
       actions: actions.isEmpty ? null : actions,
       centerTitle: centerTitle ?? true,

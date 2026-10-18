@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pure_live/app/routing/routes/settings/settings_routes.dart';
+import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 

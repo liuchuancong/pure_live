@@ -147,6 +147,33 @@ final class RoomControlOverlay extends ConsumerWidget {
               if (!compact)
                 PureMenu(
                   items: [
+                    PureMenuItem(
+                      id: 'contain',
+                      label: context.t.room.fitContain,
+                      icon: Icons.fit_screen_outlined,
+                      onTap: () => controller.setVideoFit(BoxFit.contain),
+                    ),
+                    PureMenuItem(
+                      id: 'cover',
+                      label: context.t.room.fitCover,
+                      icon: Icons.crop_free,
+                      onTap: () => controller.setVideoFit(BoxFit.cover),
+                    ),
+                    PureMenuItem(
+                      id: 'fill',
+                      label: context.t.room.fitFill,
+                      icon: Icons.open_in_full,
+                      onTap: () => controller.setVideoFit(BoxFit.fill),
+                    ),
+                  ],
+                  child: const Padding(
+                    padding: EdgeInsets.all(11),
+                    child: Icon(Icons.aspect_ratio, color: Colors.white, size: 22),
+                  ),
+                ),
+              if (!compact)
+                PureMenu(
+                  items: [
                     for (final rate in const [0.75, 1.0, 1.25, 1.5, 2.0])
                       PureMenuItem(
                         id: '$rate',
@@ -158,6 +185,12 @@ final class RoomControlOverlay extends ConsumerWidget {
                     padding: EdgeInsets.all(11),
                     child: Icon(Icons.speed, color: Colors.white, size: 22),
                   ),
+                ),
+              if (!compact)
+                _BarButton(
+                  icon: Icons.lock_open,
+                  tooltip: context.t.room.lock,
+                  onPressed: controller.toggleLock,
                 ),
               _BarButton(
                 icon: state.presentation == RoomPresentation.normal ? Icons.fullscreen : Icons.fullscreen_exit,

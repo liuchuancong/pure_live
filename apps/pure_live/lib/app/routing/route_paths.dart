@@ -41,6 +41,10 @@ abstract final class RoutePath {
   /// The version page, one level under the about cluster.
   static const String version = '/about/version';
 
+  /// The release history page, under the version page (the reference's
+  /// `kVersionHistory`).
+  static const String versionHistory = '/about/version/history';
+
   /// The toolbox: link resolution.
   static const String toolbox = '/toolbox';
 
@@ -116,6 +120,28 @@ abstract final class RoutePath {
 
   /// The account page, one level under the settings index.
   static const String settingsAccount = '/settings/account';
+
+  /// The platforms page (visibility, order, accounts, tags), under the
+  /// settings index.
+  static const String settingsPlatforms = '/settings/platforms';
+
+  /// The danmaku settings page, under the settings index.
+  static const String settingsDanmaku = '/settings/danmaku';
+
+  /// The recording settings page, under the settings index.
+  static const String settingsRecording = '/settings/recording';
+
+  /// The local interaction settings page, under the settings index.
+  static const String settingsLocalInteraction = '/settings/local-interaction';
+
+  /// The log page, under the settings index.
+  static const String settingsLogs = '/settings/logs';
+
+  /// The platform visibility/order page, pushed from the platforms page.
+  static const String settingsHotAreas = '/settings/hot-areas';
+
+  /// The tag manager page, pushed from the platforms page.
+  static const String settingsTags = '/settings/tags';
 
   /// The bilibili QR login page, pushed from the account page.
   static const String login = '/login';

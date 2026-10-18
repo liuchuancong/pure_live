@@ -1,5 +1,6 @@
 import 'dart:async' show unawaited;
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic_ui_kit/flutter_neumorphic_ui_kit.dart' as neu;
 import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
@@ -98,12 +99,17 @@ final class PureTitleBarLabels {
 /// surfaces and buttons, and the token floor (material / fluent / forui)
 /// keeps the Windows-11-style caption. Switching `UiConfig.language`
 /// re-skins the strip along with everything else.
+///
+/// The caption buttons carry the reference's keys (`title-bar`,
+/// `title-minimize`, `title-maximize`, `title-close`) under every look, so
+/// the frame's tests can drive them whichever language mounted.
 final class PureTitleBar extends StatefulWidget {
   /// A caption strip driven by [actions].
   const new({
     required this.labels,
     required this.actions,
     this.metrics = const PureCaptionMetrics.windows(),
+    this.maximized,
     super.key,
   });
 
@@ -116,6 +122,10 @@ final class PureTitleBar extends StatefulWidget {
   /// The strip's geometry.
   final PureCaptionMetrics metrics;
 
+  /// The window's live maximised state, when the app tracks it (the desktop
+  /// frame does); null leaves the strip polling [actions] after each toggle.
+  final ValueListenable<bool>? maximized;
+
   @override
   State<PureTitleBar> createState() => _PureTitleBarState();
 }
@@ -126,7 +136,34 @@ final class _PureTitleBarState extends State<PureTitleBar> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _readMaximized());
+    widget.maximized?.addListener(_onMaximized);
+    _maximized = widget.maximized?.value ?? false;
+    if (widget.maximized == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _readMaximized());
+    }
+  }
+
+  @override
+  void didUpdateWidget(PureTitleBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.maximized != widget.maximized) {
+      oldWidget.maximized?.removeListener(_onMaximized);
+      widget.maximized?.addListener(_onMaximized);
+      _maximized = widget.maximized?.value ?? _maximized;
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.maximized?.removeListener(_onMaximized);
+    super.dispose();
+  }
+
+  void _onMaximized() {
+    final value = widget.maximized?.value ?? false;
+    if (mounted && value != _maximized) {
+      setState(() => _maximized = value);
+    }
   }
 
   Future<void> _readMaximized() async {
@@ -138,34 +175,39 @@ final class _PureTitleBarState extends State<PureTitleBar> {
 
   Future<void> _toggle() async {
     await widget.actions.toggleMaximize();
-    // The toggle's own echo keeps the glyph honest; a window-listener host
-    // additionally receives the real maximise/restore events.
-    final maximized = await widget.actions.isMaximized();
-    if (mounted) {
-      setState(() => _maximized = maximized);
+    // The toggle's own echo keeps the glyph honest when nothing else tracks
+    // the window; a listener host gets the real maximise/restore events.
+    if (widget.maximized == null) {
+      final maximized = await widget.actions.isMaximized();
+      if (mounted) {
+        setState(() => _maximized = maximized);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final language = PureTheme.of(context).config.language;
-    return switch (language) {
-      // macOS windowing puts the traffic lights on the left and the title in
-      // the middle; cupertino on the desktop is the same windowing.
-      PureDesignLanguage.macos ||
-      PureDesignLanguage.cupertino => _trafficLights(context),
-      // Ubuntu's headerbar: centred title, one circular close on the right.
-      PureDesignLanguage.yaru => _yaruHeaderBar(context),
-      // Surfaces and buttons in the language's own material.
-      PureDesignLanguage.glass => _glassStrip(context),
-      PureDesignLanguage.neumorphic => _neumorphicStrip(context),
-      PureDesignLanguage.wind => _windStrip(context),
-      // The token floor doubles as the Windows-11 caption for fluent and the
-      // forui and material languages, whose libraries ship no title bar.
-      PureDesignLanguage.material ||
-      PureDesignLanguage.fluent ||
-      PureDesignLanguage.forui => _tokenStrip(context),
-    };
+    return KeyedSubtree(
+      key: const ValueKey('title-bar'),
+      child: switch (language) {
+        // macOS windowing puts the traffic lights on the left and the title in
+        // the middle; cupertino on the desktop is the same windowing.
+        PureDesignLanguage.macos ||
+        PureDesignLanguage.cupertino => _trafficLights(context),
+        // Ubuntu's headerbar: centred title, one circular close on the right.
+        PureDesignLanguage.yaru => _yaruHeaderBar(context),
+        // Surfaces and buttons in the language's own material.
+        PureDesignLanguage.glass => _glassStrip(context),
+        PureDesignLanguage.neumorphic => _neumorphicStrip(context),
+        PureDesignLanguage.wind => _windStrip(context),
+        // The token floor doubles as the Windows-11 caption for fluent and the
+        // forui and material languages, whose libraries ship no title bar.
+        PureDesignLanguage.material ||
+        PureDesignLanguage.fluent ||
+        PureDesignLanguage.forui => _tokenStrip(context),
+      },
+    );
   }
 
   // ---------------------------------------------------------------- shared
@@ -226,6 +268,7 @@ final class _PureTitleBarState extends State<PureTitleBar> {
             _dragRegion(context),
             _tokenCaptionButton(
               context,
+              buttonKey: const ValueKey('title-minimize'),
               width: metrics.buttonWidth,
               tooltip: widget.labels.minimize,
               icon: Icons.horizontal_rule,
@@ -233,6 +276,7 @@ final class _PureTitleBarState extends State<PureTitleBar> {
             ),
             _tokenCaptionButton(
               context,
+              buttonKey: const ValueKey('title-maximize'),
               width: metrics.buttonWidth,
               tooltip: _maximized ? widget.labels.restore : widget.labels.maximize,
               icon: _maximized ? Icons.filter_none : Icons.crop_square,
@@ -240,6 +284,7 @@ final class _PureTitleBarState extends State<PureTitleBar> {
             ),
             _tokenCaptionButton(
               context,
+              buttonKey: const ValueKey('title-close'),
               width: metrics.buttonWidth,
               tooltip: widget.labels.close,
               icon: Icons.close,
@@ -254,6 +299,7 @@ final class _PureTitleBarState extends State<PureTitleBar> {
 
   Widget _tokenCaptionButton(
     BuildContext context, {
+    required Key buttonKey,
     required double width,
     required String tooltip,
     required IconData icon,
@@ -262,6 +308,7 @@ final class _PureTitleBarState extends State<PureTitleBar> {
   }) {
     final colors = PureTheme.of(context).colors;
     return SizedBox(
+      key: buttonKey,
       width: width,
       height: widget.metrics.buttonHeight,
       child: Tooltip(
@@ -287,11 +334,13 @@ final class _PureTitleBarState extends State<PureTitleBar> {
 
     Widget light(
       Color color, {
+      required Key buttonKey,
       required IconData glyph,
       required Future<void> Function() onPressed,
       required String label,
     }) {
       return Tooltip(
+        key: buttonKey,
         message: label,
         child: MouseRegion(
           cursor: SystemMouseCursors.click,
@@ -319,6 +368,7 @@ final class _PureTitleBarState extends State<PureTitleBar> {
             const SizedBox(width: 13),
             light(
               const Color(0xFFFF5F57),
+              buttonKey: const ValueKey('title-close'),
               glyph: Icons.close,
               onPressed: widget.actions.close,
               label: widget.labels.close,
@@ -326,6 +376,7 @@ final class _PureTitleBarState extends State<PureTitleBar> {
             const SizedBox(width: 8),
             light(
               const Color(0xFFFEBC2E),
+              buttonKey: const ValueKey('title-minimize'),
               glyph: Icons.remove,
               onPressed: widget.actions.minimize,
               label: widget.labels.minimize,
@@ -333,6 +384,7 @@ final class _PureTitleBarState extends State<PureTitleBar> {
             const SizedBox(width: 8),
             light(
               const Color(0xFF28C840),
+              buttonKey: const ValueKey('title-maximize'),
               glyph: _maximized ? Icons.crop_square : Icons.add,
               onPressed: _toggle,
               label: _maximized ? widget.labels.restore : widget.labels.maximize,
@@ -361,6 +413,7 @@ final class _PureTitleBarState extends State<PureTitleBar> {
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 8),
               child: Tooltip(
+                key: const ValueKey('title-close'),
                 message: widget.labels.close,
                 child: MouseRegion(
                   cursor: SystemMouseCursors.click,
@@ -410,18 +463,21 @@ final class _PureTitleBarState extends State<PureTitleBar> {
             _dragRegion(context),
             _glassIconButton(
               context,
+              buttonKey: const ValueKey('title-minimize'),
               icon: Icons.horizontal_rule,
               tooltip: widget.labels.minimize,
               onPressed: widget.actions.minimize,
             ),
             _glassIconButton(
               context,
+              buttonKey: const ValueKey('title-maximize'),
               icon: _maximized ? Icons.filter_none : Icons.crop_square,
               tooltip: _maximized ? widget.labels.restore : widget.labels.maximize,
               onPressed: _toggle,
             ),
             _glassIconButton(
               context,
+              buttonKey: const ValueKey('title-close'),
               icon: Icons.close,
               tooltip: widget.labels.close,
               destructive: true,
@@ -433,22 +489,36 @@ final class _PureTitleBarState extends State<PureTitleBar> {
     );
   }
 
+  /// The glass button: no `InkWell` here — the glass host is a `WidgetsApp`
+  /// with no Material ancestor, and the ink lookup throws. The hover wash is
+  /// drawn from the language's own colours instead.
   Widget _glassIconButton(
     BuildContext context, {
+    required Key buttonKey,
     required IconData icon,
     required String tooltip,
     required Future<void> Function() onPressed,
     bool destructive = false,
   }) {
     final theme = PureTheme.of(context);
+    final wash = (destructive ? theme.colors.error : theme.colors.primary).withValues(alpha: 0.18);
     return Tooltip(
+      key: buttonKey,
       message: tooltip,
-      child: InkWell(
-        onTap: () => unawaited(onPressed()),
-        hoverColor: (destructive ? theme.colors.error : theme.colors.primary).withValues(alpha: 0.18),
-        child: SizedBox(
-          width: 40,
-          child: Icon(icon, size: 16, color: theme.colors.textSecondary, semanticLabel: tooltip),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => unawaited(onPressed()),
+          child: _HoverBuilder(
+            builder: ({required hovered}) => ColoredBox(
+              color: hovered ? wash : Colors.transparent,
+              child: SizedBox(
+                width: 40,
+                child: Center(child: Icon(icon, size: 16, color: theme.colors.textSecondary, semanticLabel: tooltip)),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -471,17 +541,25 @@ final class _PureTitleBarState extends State<PureTitleBar> {
             _dragRegion(context),
             _neuIconButton(
               context,
+              buttonKey: const ValueKey('title-minimize'),
               icon: Icons.horizontal_rule,
               tooltip: widget.labels.minimize,
               onPressed: widget.actions.minimize,
             ),
             _neuIconButton(
               context,
+              buttonKey: const ValueKey('title-maximize'),
               icon: _maximized ? Icons.filter_none : Icons.crop_square,
               tooltip: _maximized ? widget.labels.restore : widget.labels.maximize,
               onPressed: _toggle,
             ),
-            _neuIconButton(context, icon: Icons.close, tooltip: widget.labels.close, onPressed: widget.actions.close),
+            _neuIconButton(
+              context,
+              buttonKey: const ValueKey('title-close'),
+              icon: Icons.close,
+              tooltip: widget.labels.close,
+              onPressed: widget.actions.close,
+            ),
           ],
         ),
       ),
@@ -490,12 +568,14 @@ final class _PureTitleBarState extends State<PureTitleBar> {
 
   Widget _neuIconButton(
     BuildContext context, {
+    required Key buttonKey,
     required IconData icon,
     required String tooltip,
     required Future<void> Function() onPressed,
   }) {
     final colors = PureTheme.of(context).colors;
     return Tooltip(
+      key: buttonKey,
       message: tooltip,
       child: Padding(
         padding: const EdgeInsets.all(5),
@@ -538,16 +618,23 @@ final class _PureTitleBarState extends State<PureTitleBar> {
               ),
             ),
             _windIconButton(
+              buttonKey: const ValueKey('title-minimize'),
               icon: Icons.horizontal_rule,
               tooltip: widget.labels.minimize,
               onPressed: widget.actions.minimize,
             ),
             _windIconButton(
+              buttonKey: const ValueKey('title-maximize'),
               icon: _maximized ? Icons.filter_none : Icons.crop_square,
               tooltip: _maximized ? widget.labels.restore : widget.labels.maximize,
               onPressed: _toggle,
             ),
-            _windIconButton(icon: Icons.close, tooltip: widget.labels.close, onPressed: widget.actions.close),
+            _windIconButton(
+              buttonKey: const ValueKey('title-close'),
+              icon: Icons.close,
+              tooltip: widget.labels.close,
+              onPressed: widget.actions.close,
+            ),
           ],
         ),
       ),
@@ -555,11 +642,13 @@ final class _PureTitleBarState extends State<PureTitleBar> {
   }
 
   Widget _windIconButton({
+    required Key buttonKey,
     required IconData icon,
     required String tooltip,
     required Future<void> Function() onPressed,
   }) {
     return wind.WButton(
+      key: buttonKey,
       className: 'rounded-none w-10 h-full text-gray-500 dark:text-gray-400'
           ' hover:bg-gray-200 dark:hover:bg-gray-700',
       onTap: () => unawaited(onPressed()),

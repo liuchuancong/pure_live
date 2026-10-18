@@ -1,52 +1,82 @@
-import 'package:fluent_2/fluent_2.dart' as f2;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pure_live/app/delegates.dart' show appLocalizationsDelegates, appSupportedLocales;
+import 'package:pure_live/app/shell/home_views.dart';
 import 'package:pure_live/app/shell/main_page_frame.dart';
-import 'package:pure_live/app/shell/main_sidebar.dart';
-import 'package:pure_live/app/shell/main_workspace.dart';
 import 'package:pure_live/app/shell/shell_actions.dart';
+import 'package:pure_live/app/shell/shell_destinations.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
-/// The new shell's two layouts, run through the real Fluent host chain.
+/// The reference-shaped shell, run through the real host chain.
 ///
-/// The workspace frame and the compact tablet rail are structural choices, not
-/// pixel details: these tests pin which form is mounted at each width and that
-/// the whole tree lays out without an exception.
+/// The rail/bottom-bar split at [homeRailBreakpoint] and the phone-only
+/// placement of the menu/search buttons are structural choices, not pixel
+/// details: these tests pin which form is mounted at each width and that the
+/// whole tree lays out without an exception.
 void main() {
-  testWidgets('wide host mounts the workspace toolbar and in-page header', (tester) async {
+  for (final language in PureDesignLanguage.values) {
+  testWidgets('the rail mounts at 600 under ${language.name}', (tester) async {
     await _pumpAt(
       tester,
-      const Size(1400, 900),
-      child: MainWorkspaceHost(
-        child: MainPageFrame(
-          title: '热门',
-          tabs: const [
-            PureTab(label: '全部'),
-            PureTab(label: '斗鱼'),
-          ],
-          onTabChanged: (_) {},
-          body: const ColoredBox(color: Color(0xFFF5F5F5), child: Text('BODY')),
+      const Size(900, 900),
+      language: language,
+      child: HomeLayoutScope(
+        phone: false,
+        child: Scaffold(
+          body: Row(
+            children: [
+              SizedBox(
+                width: HomeRailMetrics.width,
+                child: HomeRail(
+                  branches: ShellBranch.values,
+                  selected: ShellBranch.follow,
+                  onSelected: (_) {},
+                ),
+              ),
+              Expanded(
+                child: MainPageFrame(
+                  title: '热门',
+                  inHome: true,
+                  tabs: const [
+                    PureTab(label: '全部'),
+                    PureTab(label: '斗鱼'),
+                  ],
+                  onTabChanged: (_) {},
+                  body: const ColoredBox(color: Color(0xFFF5F5F5), child: Text('BODY')),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
 
-    expect(find.byType(MainWorkspaceBar), findsOneWidget);
-    expect(find.byType(MainPageFrame), findsOneWidget);
-    expect(find.text('热门'), findsOneWidget);
-    expect(find.text('BODY'), findsOneWidget);
+    expect(find.byKey(const ValueKey('home-rail')), findsNothing); // the rail box is the shell's; the column is here
+    expect(find.byKey(const ValueKey('home-menu')), findsOneWidget);
+    for (final action in homeActions()) {
+      expect(find.byKey(ValueKey('home-rail-${action.name}')), findsOneWidget, reason: action.name);
+    }
+    expect(find.byKey(const ValueKey('home-rail-separator')), findsOneWidget);
+    for (final branch in ShellBranch.values) {
+      expect(find.byKey(ValueKey('home-nav-${branch.name}')), findsOneWidget, reason: branch.name);
+    }
+    // Rail mode: the page bar carries no shell buttons.
+    expect(find.byKey(const ValueKey('home-search')), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('phone host falls back to the page app bar', (tester) async {
+  testWidgets('a phone home tab puts the menu and search buttons on its bar', (tester) async {
     await _pumpAt(
       tester,
       const Size(390, 844),
-      child: MainWorkspaceHost(
+      language: language,
+      child: HomeLayoutScope(
+        phone: true,
         child: MainPageFrame(
           title: '热门',
+          inHome: true,
           tabs: const [PureTab(label: '全部')],
           onTabChanged: (_) {},
           body: const ColoredBox(color: Color(0xFFF5F5F5), child: Text('BODY')),
@@ -54,72 +84,51 @@ void main() {
       ),
     );
 
-    expect(find.byType(MainWorkspaceBar), findsNothing);
-    expect(find.byType(PureAppBar), findsOneWidget);
+    expect(find.byKey(const ValueKey('home-menu')), findsOneWidget);
+    expect(find.byKey(const ValueKey('home-search')), findsOneWidget);
+    expect(find.byKey(const ValueKey('home-more')), findsOneWidget);
     expect(find.text('热门'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('fluent tablet keeps the official nav drawer', (tester) async {
+  testWidgets('a pushed page outside the home tabs shows no shell buttons', (tester) async {
     await _pumpAt(
       tester,
-      const Size(900, 900),
-      child: PureAppShell(
-        destinations: _destinations,
-        selectedId: 'home',
-        onSelected: (_) {},
-        placement: PureShellPlacement.rail,
-        leading: const MainSidebarBrand(),
-        trailing: const ShellRailActions(),
-        child: const ColoredBox(color: Color(0xFFF5F5F5), child: Text('PAGE')),
+      const Size(390, 844),
+      child: const MainPageFrame(
+        title: '历史',
+        body: ColoredBox(color: Color(0xFFF5F5F5), child: Text('BODY')),
       ),
     );
 
-    expect(find.byType(f2.FluentNavDrawer), findsOneWidget);
-    expect(find.text('首页'), findsOneWidget);
-    expect(find.text('PureLive'), findsOneWidget);
-    expect(find.text('PAGE'), findsOneWidget);
+    expect(find.byKey(const ValueKey('home-menu')), findsNothing);
+    expect(find.byKey(const ValueKey('home-search')), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('fluent desktop keeps the wide nav drawer', (tester) async {
-    await _pumpAt(
-      tester,
-      const Size(1400, 900),
-      child: PureAppShell(
-        destinations: _destinations,
-        selectedId: 'home',
-        onSelected: (_) {},
-        placement: PureShellPlacement.rail,
-        leading: const MainSidebarBrand(),
-        trailing: const ShellRailActions(),
-        child: const ColoredBox(color: Color(0xFFF5F5F5), child: Text('PAGE')),
-      ),
-    );
-
-    expect(find.byType(f2.FluentNavDrawer), findsOneWidget);
-    expect(find.text('首页'), findsOneWidget);
-    expect(find.text('PureLive'), findsOneWidget);
-    expect(tester.takeException(), isNull);
+  }
+  testWidgets('the rail is 80 wide and the breakpoint is 600', (tester) async {
+    expect(HomeRailMetrics.width, 80);
+    expect(isHomeRailWidth(599), isFalse);
+    expect(isHomeRailWidth(600), isTrue);
   });
 }
 
-const List<PureShellDestination> _destinations = <PureShellDestination>[
-  PureShellDestination(id: 'home', label: '首页', icon: Icons.home_rounded),
-  PureShellDestination(id: 'popular', label: '热门', icon: Icons.local_fire_department_rounded),
-  PureShellDestination(id: 'areas', label: '分区', icon: Icons.apps_rounded),
-];
-
 /// Pumps [child] through the same host chain the app uses: PureTheme above
 /// PureApp, which mounts FluentApp for this configuration.
-Future<void> _pumpAt(WidgetTester tester, Size size, {required Widget child}) async {
+Future<void> _pumpAt(
+  WidgetTester tester,
+  Size size, {
+  required Widget child,
+  PureDesignLanguage language = PureDesignLanguage.fluent,
+}) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
   addTearDown(tester.view.reset);
 
   await tester.pumpWidget(
     PureConfigProvider(
-      config: const UiConfig(language: PureDesignLanguage.fluent),
+      config: UiConfig(language: language),
       child: PureApp(
         routerConfig: GoRouter(
           routes: [GoRoute(path: '/', builder: (context, state) => child)],

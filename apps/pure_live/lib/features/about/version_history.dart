@@ -2,9 +2,11 @@ import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/features/about/markdown_text.dart';
 import 'package:pure_live/features/about/update_feed.dart';
 import 'package:pure_live/features/version/app_update_flow.dart';
+import 'package:pure_live/features/version/version_controller.dart' show versionControllerProvider;
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
@@ -306,6 +308,7 @@ final class _VersionHistorySheetState extends State<VersionHistorySheet> {
       for (final asset in release.assets)
         ReleaseFileCard(
           asset: asset,
+          native: isNativeAsset(asset),
           onCopy: () => unawaited(_copyAssetLink(context, asset)),
           onDownload: () {
             final uri = asset.uri;
@@ -378,8 +381,12 @@ final class _VersionHistorySheetState extends State<VersionHistorySheet> {
 /// downloading hands the URL to the system browser, so it is the same
 /// external-launch the release page uses.
 final class ReleaseFileCard extends StatelessWidget {
-  /// Shows [asset] with [onCopy] and [onDownload] as its actions.
-  const new({required this.asset, required this.onCopy, required this.onDownload, super.key});
+  /// Shows [asset] with [onCopy] and [onDownload] as its actions; [native]
+  /// marks the package built for this device (the reference's 本机 pill).
+  const new({required this.asset, required this.onCopy, required this.onDownload, this.native = false, super.key});
+
+  /// Whether this file runs on the current device.
+  final bool native;
 
   /// The release file.
   final ReleaseAsset asset;
@@ -415,11 +422,31 @@ final class ReleaseFileCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  asset.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.text.body.copyWith(fontWeight: FontWeight.w600),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        asset.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.text.body.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    if (native) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: theme.colors.primaryBg,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          context.t.about.native,
+                          style: theme.text.caption.copyWith(color: theme.colors.primaryText, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -441,6 +468,29 @@ final class ReleaseFileCard extends StatelessWidget {
             onPressed: hasLink ? onDownload : null,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The release history as a page (the reference's `ReleaseHistoryView`):
+/// the sheet's content under a scaffold, reachable from the about page and
+/// the version page alike.
+final class VersionHistoryPage extends ConsumerWidget {
+  /// The history page.
+  const new({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final controller = ref.read(versionControllerProvider.notifier);
+    return PureScaffold(
+      appBar: PureAppBar(title: context.t.about.versionHistory),
+      body: VersionHistorySheet(
+        releases: ref.watch(versionControllerProvider).releases,
+        refresh: () async {
+          await controller.check();
+          return ref.read(versionControllerProvider).releases;
+        },
       ),
     );
   }

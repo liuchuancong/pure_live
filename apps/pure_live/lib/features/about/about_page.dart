@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/app/routing/routes/about/version_routes.dart';
+import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/features/about/update_feed.dart';
 import 'package:pure_live/features/about/version_history.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
@@ -282,9 +282,14 @@ final class _AboutPageState extends ConsumerState<AboutPage> {
     Widget? trailing,
   }) {
     final theme = PureTheme.of(context);
-    return InkWell(
+    // PureBox, not a raw InkWell: cupertino, fluent and forui hosts have no
+    // Material ancestor for the ink to paint on, and the tap would assert.
+    return PureBox(
+      style: (state) => Style(
+        background: state == InteractionState.hovered ? theme.colors.fillQuaternary : null,
+        borderRadius: BorderRadius.circular(theme.card.borderRadius),
+      ),
       onTap: onTap,
-      borderRadius: BorderRadius.circular(theme.card.borderRadius),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(

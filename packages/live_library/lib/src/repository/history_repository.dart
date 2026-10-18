@@ -16,8 +16,9 @@ final class HistoryRepository {
   /// The persistence seam.
   final LibraryStore store;
 
-  /// The largest list kept; older entries fall off.
-  final int capacity;
+  /// The largest list kept; older entries fall off. The history page drives
+  /// this from the `historyLimit` preference (0 keeps everything).
+  int capacity;
 
   final _changes = StreamController<void>.broadcast();
   List<WatchRecord> _history = const [];
@@ -86,6 +87,31 @@ final class HistoryRepository {
       return;
     }
     _history = next;
+    await _commit();
+  }
+
+  /// Sets the kept capacity and trims immediately (newest first are kept);
+  /// 0 keeps everything.
+  Future<void> applyCapacity(int value) async {
+    capacity = value;
+    if (value > 0 && _history.length > value) {
+      _history = _history.sublist(0, value);
+      await _commit();
+    }
+  }
+
+  /// Replaces the room snapshot of every record whose identity appears in
+  /// [rooms] — the history page's state refresh writes through this. The
+  /// watch timestamp, progress and order stay the user's.
+  Future<void> replaceRooms(Iterable<LiveRoom> rooms) async {
+    final byId = {for (final room in rooms) room.identityKey: room};
+    if (byId.isEmpty) {
+      return;
+    }
+    _history = [
+      for (final record in _history)
+        if (byId[record.room.identityKey] case final fresh?) record.copyWith(room: fresh) else record,
+    ];
     await _commit();
   }
 

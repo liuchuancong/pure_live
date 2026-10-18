@@ -26,15 +26,25 @@ enum RoomShell {
   tvFocus,
 }
 
-/// The width at and below which the pane goes under the video instead of
-/// beside it — the reference's `resolveLivePlayNormalLayout` threshold.
-const double roomSplitThreshold = 680;
+/// The least width that puts the chat beside the video — the reference's
+/// `roomWideMinWidth` (840; 3.x split from 680, which squeezed the video).
+const double roomWideMinWidth = 840;
+
+/// Heights below this make a sideways window a phone held landscape, whatever
+/// its width — the reference's `windowCompactHeight`.
+const double roomCompactMaxHeight = 480;
 
 /// Resolves the shape from the live box, not from a boot-time fact.
 ///
 /// [width] and [height] are the body's constraints so the answer flips when
 /// the window is dragged or the phone is turned; [formFactor] only separates a
 /// touch device from a windowed one and picks up the TV.
+///
+/// The rules are the reference's `roomPageLayout`: a short wide window is the
+/// landscape shape on a touch device and keeps the split on a desktop (where
+/// a short window is just a small window); the split starts at 840; below it
+/// the upright phone layout carries the portrait panel when the stream is
+/// vertical (the three-stop sheet lives inside [RoomShell.phonePortrait]).
 RoomShell resolveRoomShell({
   required double width,
   required double height,
@@ -44,13 +54,13 @@ RoomShell resolveRoomShell({
   if (formFactor == FormFactor.tv) {
     return RoomShell.tvFocus;
   }
-  // A phone on its side never has the height for a stacked column, whatever
-  // its width reads — that is the one case where the width threshold lies.
-  if (isTouch && formFactor == FormFactor.phone && width > height) {
+  // A phone held sideways (or a touch window too short for a column): the
+  // video fills the height and the pane becomes a narrow side column.
+  if (isTouch && height < roomCompactMaxHeight && width > height && width >= 600) {
     return RoomShell.phoneLandscape;
   }
-  if (width <= roomSplitThreshold) {
-    return RoomShell.phonePortrait;
+  if (width >= roomWideMinWidth) {
+    return formFactor == FormFactor.desktop ? RoomShell.desktopSplit : RoomShell.tabletSplit;
   }
-  return formFactor == FormFactor.desktop ? RoomShell.desktopSplit : RoomShell.tabletSplit;
+  return RoomShell.phonePortrait;
 }

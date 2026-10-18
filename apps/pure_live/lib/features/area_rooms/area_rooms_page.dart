@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pure_live/app/providers/app_providers.dart' show sitesProvider;
 import 'package:pure_live/features/area_rooms/area_rooms_view.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
@@ -29,9 +30,34 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
   /// How the loaded rooms are ordered.
   RoomSort _sort = RoomSort.platform;
 
-  Widget _appBar(BuildContext context) => PureAppBar(
-    title: widget.areaName.isEmpty ? widget.areaId : widget.areaName,
-    actions: [
+  Widget _appBar(BuildContext context) {
+    final theme = PureTheme.of(context);
+    final site = ref.watch(sitesProvider).registry.getById(widget.siteId);
+    final platform =
+        site?.manifest.localizedName(Localizations.localeOf(context).toLanguageTag(), 'zh-CN') ?? widget.siteId;
+    return PureAppBar(
+      title: widget.areaName.isEmpty ? widget.areaId : widget.areaName,
+      // The reference's c2: the area's name with "platform · category"
+      // under it, kept inside the shortest bar.
+      titleWidget: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.areaName.isEmpty ? widget.areaId : widget.areaName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.text.body.copyWith(fontWeight: FontWeight.w700),
+          ),
+          Text(
+            platform,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.text.caption.copyWith(color: theme.colors.textSecondary),
+          ),
+        ],
+      ),
+      actions: [
       Padding(
         padding: const EdgeInsets.only(right: 8),
         child: Center(
@@ -47,8 +73,9 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
         ),
       ),
       const SettingsEntryButton(),
-    ],
-  );
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
