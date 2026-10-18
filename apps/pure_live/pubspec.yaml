@@ -131,3 +131,17 @@ flutter:
   assets:
     - assets/tray/ # 系统托盘图标
 
+# 启动图标：assets/icon/app_icon.png 是唯一母图，各平台的图标资源全部由它生成。
+# 换图标只改母图，然后跑：dart run icons_launcher:launch
+icons_launcher:
+  image_path: assets/icon/app_icon.png
+  platforms:
+    android:
+      enable: true
+    ios:
+      enable: true
+    macos:
+      enable: true
+    windows:
+      enable: true
+
