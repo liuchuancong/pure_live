@@ -106,7 +106,13 @@ class PureNavBar extends StatelessWidget {
         // of staying live with a swallowed callback.
         onChange: select,
         children: [
-          for (final item in items) forui.FBottomNavigationBarItem(icon: Icon(item.icon), label: Text(item.label)),
+          for (final item in items)
+            forui.FBottomNavigationBarItem(
+              icon: Icon(item.icon),
+              // The library sizes and weights its own nav labels; only the family the
+              // viewer picked has to be added, or it never reaches them.
+              label: Text(item.label, style: TextStyle(fontFamily: PureTheme.of(context).text.label.fontFamily)),
+            ),
         ],
       ),
     };
@@ -143,7 +149,9 @@ final class _FluentBar extends StatelessWidget {
       color: theme.colors.bgElevated,
       child: DecoratedBox(
         position: DecorationPosition.foreground,
-        decoration: BoxDecoration(border: Border(top: BorderSide(color: theme.colors.borderSecondary))),
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: theme.colors.borderSecondary)),
+        ),
         child: SafeArea(
           top: false,
           left: false,
@@ -215,7 +223,9 @@ class _FluentFooterCellState extends State<_FluentFooterCell> {
             children: [
               if (_hovered && widget.onTap != null)
                 Positioned.fill(
-                  child: ColoredBox(color: widget.selected ? widget.accent.withValues(alpha: 0.06) : const Color(0x0A000000)),
+                  child: ColoredBox(
+                    color: widget.selected ? widget.accent.withValues(alpha: 0.06) : const Color(0x0A000000),
+                  ),
                 ),
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -230,10 +240,7 @@ class _FluentFooterCellState extends State<_FluentFooterCell> {
                         duration: const Duration(milliseconds: 150),
                         width: widget.selected ? 6 : 0,
                         height: 3,
-                        decoration: BoxDecoration(
-                          color: widget.accent,
-                          borderRadius: BorderRadius.circular(1.5),
-                        ),
+                        decoration: BoxDecoration(color: widget.accent, borderRadius: BorderRadius.circular(1.5)),
                       ),
                     ),
                   ),
@@ -272,7 +279,9 @@ final class _MacosBar extends StatelessWidget {
       color: theme.colors.bgElevated,
       child: DecoratedBox(
         position: DecorationPosition.foreground,
-        decoration: BoxDecoration(border: Border(top: BorderSide(color: theme.colors.borderSecondary))),
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: theme.colors.borderSecondary)),
+        ),
         child: SafeArea(
           top: false,
           left: false,
@@ -362,7 +371,9 @@ class _MacosDestinationCellState extends State<_MacosDestinationCell> {
                 widget.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 10.5, color: tint),
+                // The dense label size is this tile's own answer; the family is
+                // the theme's, and without it the picked font never appears here.
+                style: TextStyle(fontSize: 10.5, color: tint, fontFamily: PureTheme.of(context).text.label.fontFamily),
               ),
             ],
           ),

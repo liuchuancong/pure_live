@@ -302,7 +302,7 @@ class PureListRow extends StatelessWidget {
       PureDesignLanguage.cupertino => _cupertinoRow(theme),
       PureDesignLanguage.macos => _macosRow(theme),
       PureDesignLanguage.fluent => _fluentRow(theme),
-      PureDesignLanguage.forui => _foruiRow(),
+      PureDesignLanguage.forui => _foruiRow(theme),
       PureDesignLanguage.glass => _glassRow(context, theme),
       // The neumorphic library and Wind ship no settings row; Flutter's
       // official Material ListTile is the fallback.
@@ -319,8 +319,10 @@ class PureListRow extends StatelessWidget {
       type: MaterialType.transparency,
       child: ListTile(
         leading: leading,
-        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-        subtitle: subtitle == null ? null : Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis),
+        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: _rowTitle(theme)),
+        subtitle: subtitle == null
+            ? null
+            : Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis, style: _rowSubtitle(theme)),
         trailing: trailing,
         onTap: onTap,
         onLongPress: onLongPress,
@@ -353,8 +355,10 @@ class PureListRow extends StatelessWidget {
   Widget _cupertinoRow(PureTheme theme) {
     Widget tile = cupertino.CupertinoListTile(
       leading: leading,
-      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: subtitle == null ? null : Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis),
+      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: _rowTitle(theme)),
+      subtitle: subtitle == null
+          ? null
+          : Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis, style: _rowSubtitle(theme)),
       trailing: trailing,
       onTap: onTap,
       backgroundColor: selected ? theme.listTile.selectedBackground : null,
@@ -384,14 +388,14 @@ class PureListRow extends StatelessWidget {
     final trailing = this.trailing;
     Widget tile = macos.MacosListTile(
       leading: leading,
-      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: _rowTitle(theme)),
       subtitle: subtitle == null
           ? null
           : Text(
               subtitle!,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle().copyWith(color: theme.colors.textSecondary),
+              style: _rowSubtitle(theme).copyWith(color: theme.colors.textSecondary),
             ),
       onClick: onTap,
       onLongPress: onLongPress,
@@ -439,9 +443,19 @@ class PureListRow extends StatelessWidget {
         f2.FluentListItem<int>(
           value: 0,
           media: leading,
-          secondary: subtitle == null ? null : Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis),
+          secondary: subtitle == null
+              ? null
+              : Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis, style: _rowSubtitle(theme)),
           trailing: trailing,
-          child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+          // A selected row is Fluent's own plain-list treatment — a semibold
+          // title — so the role is asked for its type and the weight is put
+          // back on top.
+          child: Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: _rowTitle(theme).copyWith(fontWeight: selected ? FontWeight.w600 : null),
+          ),
         ),
       ],
     );
@@ -467,10 +481,12 @@ class PureListRow extends StatelessWidget {
   /// (the library puts separators between items, through `FTileGroup`), so the
   /// row draws the library's own `FDivider` under itself — the same widget a
   /// grouped list would paint, not an invented hairline.
-  Widget _foruiRow() {
+  Widget _foruiRow(PureTheme theme) {
     final row = forui.FTile(
-      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: subtitle == null ? null : Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis),
+      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: _rowTitle(theme)),
+      subtitle: subtitle == null
+          ? null
+          : Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis, style: _rowSubtitle(theme)),
       prefix: leading,
       suffix: trailing,
       onPress: onTap,
@@ -543,3 +559,16 @@ class PureListRow extends StatelessWidget {
     );
   }
 }
+
+/// The type a row's title wears: the theme's body role.
+///
+/// The roles deliberately carry no colour — only family, size, weight and line
+/// height — so a branch keeps the answer its text colour needs (a disabled row,
+/// a selected one, a secondary line). Without this a row's label is whatever the
+/// host library's own tile style decides, and the family the viewer picked in the
+/// appearance settings never reaches it.
+TextStyle _rowTitle(PureTheme theme) => theme.text.body;
+
+/// The type a row's subtitle wears; smaller and lighter than [_rowTitle], and
+/// still colour-free for the same reason.
+TextStyle _rowSubtitle(PureTheme theme) => theme.text.bodySmall;
