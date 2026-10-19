@@ -271,7 +271,10 @@ Future<void> loadAppFonts() async {
         final data = await rootBundle.load(font['asset']! as String);
         final bytes = data.buffer.asUint8List();
         await ui.loadFontFromList(bytes, fontFamily: family);
-        if (family.endsWith('/Inter')) {
+        // The manifest lists the italic and the regular face under one family,
+        // and a second registration replaces the first — taking whichever came
+        // last rendered the whole sheet in italic. The regular face is the alias.
+        if (family.endsWith('/Inter') && !(font['asset']! as String).contains('Italic')) {
           textFace = bytes;
         }
       } on Exception catch (_) {

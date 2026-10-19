@@ -123,9 +123,11 @@ class PureButton extends StatelessWidget {
         },
         shape: fluentShape ?? f2.FluentButtonShape.rounded,
         icon: icon == null ? null : Icon(icon, size: m.icon),
+        // The library's own label style would drop the theme's family and size
+        // step, so the label is built here and only the danger tint is added.
         child: variant == ButtonVariant.danger
-            ? Text(label, style: TextStyle(color: enabled ? theme.colors.error : null))
-            : Text(label),
+            ? Text(label, style: _labelStyle(theme, m).copyWith(color: enabled ? theme.colors.error : null))
+            : Text(label, style: _labelStyle(theme, m)),
       ),
       // macOS fills the default action's button with the accent (a white
       // capsule is the library's plain answer, which reads as no primary at
@@ -233,9 +235,7 @@ class PureButton extends StatelessWidget {
       ControlSize.md => const VisualDensity(horizontal: -0.5, vertical: -0.5),
       ControlSize.lg => VisualDensity.standard,
     },
-    textStyle: WidgetStatePropertyAll(
-      theme.text.label.copyWith(fontSize: m.fontSize, fontWeight: FontWeight.w500),
-    ),
+    textStyle: WidgetStatePropertyAll(theme.text.label.copyWith(fontSize: m.fontSize, fontWeight: FontWeight.w500)),
   );
 
   /// The forui branch: the library's `FButton` under its own `FTooltip`.
@@ -277,11 +277,7 @@ class PureButton extends StatelessWidget {
       label: Text(
         label,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: fg,
-          fontSize: m.fontSize,
-          fontWeight: FontWeight.w600,
-        ),
+        style: TextStyle(color: fg, fontSize: m.fontSize, fontWeight: FontWeight.w600),
       ),
     );
     if (!expand) {
@@ -356,9 +352,8 @@ class PureButton extends StatelessWidget {
   Color? _foreground(PureTheme theme) {
     final language = theme.config.language;
     return switch (variant) {
-      ButtonVariant.primary => language == PureDesignLanguage.glass || language == PureDesignLanguage.wind
-          ? theme.colors.onPrimary
-          : null,
+      ButtonVariant.primary =>
+        language == PureDesignLanguage.glass || language == PureDesignLanguage.wind ? theme.colors.onPrimary : null,
       ButtonVariant.danger => language == PureDesignLanguage.wind ? theme.colors.onPrimary : theme.colors.error,
       ButtonVariant.ghost => language == PureDesignLanguage.wind ? null : theme.colors.primary,
       ButtonVariant.secondary => null,
@@ -374,15 +369,16 @@ class PureButton extends StatelessWidget {
         PureDesignLanguage.macos || PureDesignLanguage.cupertino => theme.colors.onPrimary,
         _ => null,
       },
-      ButtonVariant.danger => theme.config.language == PureDesignLanguage.cupertino
-          ? theme.colors.error
-          : null,
+      ButtonVariant.danger => theme.config.language == PureDesignLanguage.cupertino ? theme.colors.error : null,
       ButtonVariant.ghost || ButtonVariant.secondary => null,
     };
     if (color == null) return child;
     return DefaultTextStyle.merge(
       style: TextStyle(color: color),
-      child: IconTheme.merge(data: IconThemeData(color: color), child: child),
+      child: IconTheme.merge(
+        data: IconThemeData(color: color),
+        child: child,
+      ),
     );
   }
 
@@ -407,7 +403,7 @@ class PureButton extends StatelessWidget {
   /// Label and optional leading glyph, the shape every one of the four
   /// composed branches shares once its loading face is decided.
   Widget _plainContent(PureTheme theme, double step, {double? icon}) {
-    final text = Text(label, overflow: TextOverflow.ellipsis);
+    final text = Text(label, overflow: TextOverflow.ellipsis, style: theme.text.label);
     if (this.icon == null) {
       return text;
     }
@@ -441,16 +437,14 @@ class PureButton extends StatelessWidget {
   /// The button's inside: optional leading icon, label, or a spinner while
   /// [loading].
   Widget _content(BuildContext context, {required bool iconOnly, required _Metrics metrics}) {
+    final labelStyle = _labelStyle(PureTheme.of(context), metrics);
     if (loading) {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox.square(
-            dimension: metrics.fontSize,
-            child: const CircularProgressIndicator(strokeWidth: 2),
-          ),
+          SizedBox.square(dimension: metrics.fontSize, child: const CircularProgressIndicator(strokeWidth: 2)),
           const SizedBox(width: 8),
-          Text(label),
+          Text(label, style: labelStyle),
         ],
       );
     }
@@ -458,18 +452,27 @@ class PureButton extends StatelessWidget {
       return Icon(icon, size: metrics.icon);
     }
     if (icon == null) {
-      return Text(label);
+      return Text(label, style: labelStyle);
     }
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: metrics.icon),
         SizedBox(width: metrics.size == ControlSize.sm ? 4 : 6),
-        Text(label),
+        Text(label, style: labelStyle),
       ],
     );
   }
 }
+
+/// The label a button draws with: the theme's label style at the size step this
+/// control asked for.
+///
+/// A bare `Text(label)` inherits whatever the surrounding library decides its
+/// text should be, which silently dropped two things the design system owns —
+/// the family the viewer picked in the appearance settings, and the size step —
+/// so every button rendered in the platform font at one size.
+TextStyle _labelStyle(PureTheme theme, _Metrics metrics) => theme.text.label.copyWith(fontSize: metrics.fontSize);
 
 /// The token's three size steps, read out of the resolved theme: the control
 /// height, the label size, the horizontal padding and the glyph size a branch
@@ -651,7 +654,12 @@ class PureIconButton extends StatelessWidget {
     return wind.WButton(
       onTap: active ? onPressed : null,
       disabled: !active,
-      className: '$surface ${switch (m.size) { ControlSize.sm => 'p-1', ControlSize.md => 'p-2', ControlSize.lg => 'p-2.5' }}',
+      className:
+          '$surface ${switch (m.size) {
+            ControlSize.sm => 'p-1',
+            ControlSize.md => 'p-2',
+            ControlSize.lg => 'p-2.5',
+          }}',
       semanticLabel: tooltip,
       child: Icon(icon, size: m.icon),
     );
