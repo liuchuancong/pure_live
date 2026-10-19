@@ -9,6 +9,7 @@
 // it is run by name.
 // ignore_for_file: unnecessary_type_name_in_constructor
 import 'dart:convert' show jsonDecode;
+import 'dart:typed_data' show Uint8List;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -112,20 +113,21 @@ class _Showcase extends StatelessWidget {
                   const SizedBox(width: 12),
                   PureSwitch(value: false, onChanged: (_) {}),
                   const SizedBox(width: 12),
-                  SizedBox(width: 170, child: PureCheckbox(value: true, onChanged: (_) {}, label: 'Checked')),
+                  SizedBox(
+                    width: 170,
+                    child: PureCheckbox(value: true, onChanged: (_) {}, label: 'Checked'),
+                  ),
                   const SizedBox(width: 12),
-                  SizedBox(width: 190, child: PureCheckbox(value: false, onChanged: (_) {}, label: 'Unchecked')),
+                  SizedBox(
+                    width: 190,
+                    child: PureCheckbox(value: false, onChanged: (_) {}, label: 'Unchecked'),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
               PureSegmented(labels: const ['All', 'Following', 'Popular'], index: 1, onChanged: (_) {}),
               const SizedBox(height: 8),
-              PureSelect<int>(
-                items: const [1, 2, 3],
-                itemLabel: (i) => 'Option $i',
-                value: 2,
-                onChanged: (_) {},
-              ),
+              PureSelect<int>(items: const [1, 2, 3], itemLabel: (i) => 'Option $i', value: 2, onChanged: (_) {}),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -155,7 +157,10 @@ class _Showcase extends StatelessWidget {
                   SizedBox(width: 12),
                   PureBadge(count: 5, child: PureAvatar(name: 'Liu', size: 36)),
                   SizedBox(width: 16),
-                  PureBadge(label: 'New', child: PureAvatar(name: 'AB', size: 36, shape: PureAvatarShape.rounded)),
+                  PureBadge(
+                    label: 'New',
+                    child: PureAvatar(name: 'AB', size: 36, shape: PureAvatarShape.rounded),
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -241,25 +246,61 @@ class _Showcase extends StatelessWidget {
 }
 
 /// Widget tests serve no fonts by default, so every glyph would render as a
-/// box. Loads what the bundle's FontManifest declares (Roboto, MaterialIcons,
-/// each library's icon font) the way golden_toolkit does. CJK is not bundled
-/// by the app, so the sheet's labels are English.
+/// box. Loads what the bundle's FontManifest declares (MaterialIcons, Ubuntu,
+/// Inter, each library's icon font) the way golden_toolkit does. CJK is not
+/// bundled by the app, so the sheet's labels are English.
+///
+/// Then registers that Latin text face a second time under the **system** family
+/// names the host libraries ask for — `.SF Pro Text` for Cupertino,
+/// `Segoe UI Variable` for Fluent, `Roboto` for Material and so on — and names it
+/// on the sheet's `UiConfig` as well. Both are needed, and which one is missing
+/// tells you where a box came from: the section headers render off the theme's
+/// own family, the fields, segmented control and tabs only came legible once the
+/// system names were aliased, and what is *still* a box (button labels, list
+/// rows, navigation labels, the settings rows) is text a library widget styles
+/// for itself, which no amount of font registration in a test can route through
+/// the app's font preference. That last part is a product gap, not a harness one.
 Future<void> loadAppFonts() async {
   TestWidgetsFlutterBinding.ensureInitialized();
   final manifest = jsonDecode(await rootBundle.loadString('FontManifest.json')) as List<Object?>;
+  Uint8List? textFace;
   for (final entry in manifest.cast<Map<String, Object?>>()) {
     final family = entry['family']! as String;
     for (final font in (entry['fonts']! as List<Object?>).cast<Map<String, Object?>>()) {
       try {
         final data = await rootBundle.load(font['asset']! as String);
-        await ui.loadFontFromList(data.buffer.asUint8List(), fontFamily: family);
+        final bytes = data.buffer.asUint8List();
+        await ui.loadFontFromList(bytes, fontFamily: family);
+        if (family.endsWith('/Inter')) {
+          textFace = bytes;
+        }
       } on Exception catch (_) {
         // A family the bundle cannot serve (an app font path) is not fatal
         // for the review sheet.
       }
     }
   }
+  if (textFace == null) {
+    return;
+  }
+  for (final systemName in _systemTextFamilies) {
+    await ui.loadFontFromList(textFace, fontFamily: systemName);
+  }
 }
+
+/// The family names the host libraries hand to the text engine, none of which a
+/// test bundle serves.
+const List<String> _systemTextFamilies = [
+  '.SF Pro Text',
+  '.SF Pro Display',
+  '.AppleSystemUIFont',
+  'Roboto',
+  'Segoe UI',
+  'Segoe UI Variable Text',
+  'Segoe UI Variable Display',
+  'Ubuntu',
+  'Inter',
+];
 
 Future<void> _pump(WidgetTester tester, {required PureDesignLanguage language}) async {
   tester.view.devicePixelRatio = 1;
