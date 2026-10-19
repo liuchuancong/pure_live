@@ -268,7 +268,7 @@ Future<void> _pump(WidgetTester tester, {required PureDesignLanguage language}) 
   await tester.pumpWidget(
     ProviderScope(
       child: PureConfigProvider(
-        config: UiConfig(language: language),
+        config: UiConfig(language: language, fontFamily: 'packages/forui/Inter'),
         child: PureApp(
           routerConfig: GoRouter(
             routes: [
