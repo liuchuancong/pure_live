@@ -128,8 +128,14 @@ final class DesktopEntry with WindowListener implements DesktopTrayPort {
   @override
   void reportRecordingCount(int count) => unawaited(_tray.setRecordingCount(count));
 
+  @override
   Future<void> notifyTray({required String title, String body = ''}) async {
+    // Best effort by contract: a platform with no notification surface, or
+    // one that refuses the call, drops the notice — recording results are
+    // facts on disk before they are toasts.
     _notifications.show(title: title, body: body);
+  }
+
   /// The quit flow: app shutdown first, then tray and window. Idempotent —
   /// the close button and the tray can both ask.
   Future<void> quit() async {
