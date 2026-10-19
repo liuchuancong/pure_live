@@ -8,7 +8,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 // The sweep boots the real storage layer, which speaks Hive directly.
-// ignore: depend_on_referenced_packages
 import 'package:hive_ce/hive.dart';
 import 'package:live_iptv/live_iptv.dart' show InMemoryIptvStore, IptvLibrary;
 import 'package:live_library/live_library.dart' show FollowRepository, HistoryRepository, InMemoryLibraryStore;
@@ -28,6 +27,7 @@ import 'package:pure_live/features/history/history_page.dart';
 import 'package:pure_live/features/iptv/iptv_page.dart';
 import 'package:pure_live/features/iptv/iptv_preferences.dart';
 import 'package:pure_live/features/login/account_page.dart';
+import 'package:pure_live/features/login/cookie_editor_page.dart';
 import 'package:pure_live/features/login/login_providers.dart' show signedInAccountsProvider;
 import 'package:pure_live/features/multiview/multiview_page.dart';
 import 'package:pure_live/features/multiview/multiview_preferences.dart';
@@ -69,6 +69,7 @@ void main() {
     ('multiview', const MultiviewPage()),
     ('wallpaper', const WallpaperPickerPage()),
     ('account', const AccountPage()),
+    ('account-cookie-editor', const CookieEditorPage(siteId: 'douyu')),
     ('remote-sync', const RemoteSyncPage()),
   ];
 

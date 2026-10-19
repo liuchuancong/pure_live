@@ -10,6 +10,8 @@ import 'package:media_core/media_core.dart'
     show RecordingConfig, RecordingResult, RecordingSource, RecordingState, RecordingStatus;
 import 'package:media_core_recording_ffmpeg/media_core_recording_ffmpeg.dart';
 import 'package:path/path.dart' as p;
+import 'package:pure_live/features/recorder/record_chat_writer.dart';
+import 'package:pure_live/features/recorder/recorder_preferences.dart';
 
 /// The app shell's side of the `live_record_core` contracts.
 ///
@@ -440,15 +442,21 @@ final class FfmpegRecordFiles implements RecordFiles {
 /// The kernel's outside world, wired to this app's site graph and the FFmpeg
 /// recording backend.
 final class AppRecordServices implements RecordServices {
-  /// Services over [registry], reading the segment length through
-  /// [segmentSecondsOf] at the moment a capture opens.
-  new({required this.registry, required this.segmentSecondsOf});
+  /// Services over [registry], reading the whole preference document through
+  /// [settingsOf] at the moment each decision is made — a settings edit
+  /// reaches the next capture without a restart. [onNotice] receives the
+  /// kernel's composed lines (started, saved, recovered) as system
+  /// notifications; null keeps the old answer of accepting and dropping them.
+  new({required this.registry, required this.settingsOf, this.onNotice});
 
   /// The site graph the rooms are asked through.
   final LiveSiteRegistry registry;
 
-  /// The capture segment length, in seconds, as the preferences hold it.
-  final int Function() segmentSecondsOf;
+  /// The recorder's stored answers, read per decision.
+  final RecorderPreferences Function() settingsOf;
+
+  /// The notification sink: title line and body, fired and forgotten.
+  final Future<void> Function(String title, String body)? onNotice;
 
   final FfmpegRecordFiles _files = FfmpegRecordFiles();
 
@@ -490,7 +498,7 @@ final class AppRecordServices implements RecordServices {
     final lines = await playback
         .getLines(roomId: target.roomId)
         .then((value) => value.fold((error) => <LivePlayLine>[], (lines) => lines));
-    final url = lines.map((line) => line.url).where((url) => url.trim().isNotEmpty).firstOrNull;
+    final url = _preferredLine(lines)?.url;
 
     if (url == null) {
       return RoomProbe(outcome: ProbeOutcome.unknown, roomTitle: title, anchorName: anchor, detail: '房间在播但没有可用的播放地址');
@@ -499,13 +507,61 @@ final class AppRecordServices implements RecordServices {
     return RoomProbe(outcome: ProbeOutcome.live, streamUrl: url, roomTitle: title, anchorName: anchor);
   }
 
+  /// The line a capture opens on: the platform's own line labelled with the
+  /// recording quality preference when the site names its lines, otherwise
+  /// the first — sites order best first, which is what "原画" asks for.
+  LivePlayLine? _preferredLine(List<LivePlayLine> lines) {
+    final quality = settingsOf().defaultQuality;
+    for (final line in lines) {
+      final label = line.lineLabel?.trim();
+      if (label != null && label.isNotEmpty && label.contains(quality) && line.url.trim().isNotEmpty) {
+        return line;
+      }
+    }
+    return lines.where((line) => line.url.trim().isNotEmpty).firstOrNull;
+  }
+
   @override
-  Future<RecordCapture> openCapture({required RecordTask task, required String streamUrl}) {
-    return BackendRecordCapture.start(
+  Future<RecordCapture> openCapture({required RecordTask task, required String streamUrl}) async {
+    final settings = settingsOf();
+    final capture = await BackendRecordCapture.start(
       task: task,
       streamUrl: streamUrl,
-      config: FfmpegRecordConfig.defaults.copyWith(segmentTime: segmentSecondsOf().clamp(10, 86400)),
+      config: FfmpegRecordConfig.defaults.copyWith(
+        segmentTime: settings.clampedSegmentMinutes * 60,
+        rwTimeout: settings.rwTimeout,
+        threadQueueSize: settings.threadQueueSize,
+        preferBestStream: settings.preferBestStream,
+      ),
     );
+    if (settings.recordDanmaku) {
+      await _attachChat(task: task, capture: capture, includeGifts: settings.recordDanmakuGifts);
+    }
+    return capture;
+  }
+
+  /// The saved chat beside the recording ("录制弹幕"): the room's own danmaku
+  /// session written to the session directory until the capture ends. A
+  /// failure attaches nothing — the recording itself must not hinge on the
+  /// chat.
+  Future<void> _attachChat({required RecordTask task, required RecordCapture capture, required bool includeGifts}) async {
+    final site = registry.getById(task.target.platform);
+    if (site == null) {
+      return;
+    }
+    final writer = await RecordChatWriter.attach(
+      site: site,
+      roomId: task.target.roomId,
+      sessionDirectory: task.paths.sessionDirectory,
+      taskId: task.taskId,
+      includeGifts: includeGifts,
+    );
+    if (writer == null) {
+      return;
+    }
+    // The capture's own end closes the file: whether the stream dropped, the
+    // room closed or the host stopped it, the chat ends with the media.
+    unawaited(capture.ended.then((_) => writer.close()).catchError((_) {}));
   }
 
   @override
@@ -518,9 +574,22 @@ final class AppRecordServices implements RecordServices {
 
   @override
   Future<void> notify(RecordNotice notice) async {
-    // The kernel composes the line; this build has no surface for it yet, so
-    // it is accepted and dropped — a notification that is not shown must
-    // never stall or fail the recording.
+    // The kernel composes the line; the app's own notification sink shows
+    // it when one is wired. Without a sink — and when the platform's
+    // notification surface refuses — the notice is accepted and dropped:
+    // a notification that is not shown must never stall or fail the
+    // recording.
+    final onNotice = this.onNotice;
+    if (onNotice == null) {
+      return;
+    }
+    final detail = notice.detail;
+    try {
+      await onNotice('Pure Live · 录制', detail == null ? notice.text : '${notice.text}\n$detail');
+    } on Object {
+      // Swallowed by the rule above: the recording is the product, the
+      // toast is the courtesy.
+    }
   }
 }
 
@@ -535,17 +604,22 @@ final class RecorderRuntime {
   /// Opens a runtime over [slots], restoring what a previous run left
   /// (joining unmerged segments, applying owed display names) before it
   /// answers.
+  ///
+  /// [policy] and [naming] are held by reference, not copied: the recorder
+  /// providers write the live answers into them when the settings change, so
+  /// an edit reaches the next decision without re-opening — and re-opening
+  /// would stop the recordings that are running.
   static Future<RecorderRuntime> open({
     required RecordServices services,
     required RecordSlotIo slots,
-    required String rootDirectory,
-    int maxConcurrent = 2,
+    required RecordPolicy policy,
+    required RecordNaming naming,
   }) async {
     final orchestrator = RecordOrchestrator(
       services: services,
       store: RecordJsonStore(slots),
-      naming: RecordNaming(rootDirectory: rootDirectory),
-      policy: RecordPolicy(maxConcurrent: maxConcurrent),
+      naming: naming,
+      policy: policy,
     );
     final runtime = RecorderRuntime._(orchestrator: orchestrator);
     await orchestrator.restore();

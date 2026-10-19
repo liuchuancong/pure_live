@@ -1,8 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
-import 'package:flutter/painting.dart' show BoxFit;
+import 'package:flutter/painting.dart' show BoxFit, Rect;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_device/live_device.dart' show NetworkInterface, PlatformNetworkConnectivityService;
 import 'package:live_library/live_library.dart' show WatchRecordIdentity;
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_playback/live_playback.dart' show EngineProgress, EngineReady, EngineStopped, PlaybackEngineEvent;
@@ -18,11 +19,16 @@ import 'package:media_core/media_core.dart'
         PlayerAdapterVideoSizeChanged,
         PlayerAdapterVolumeChanged;
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitPlayerAdapter;
+import 'package:pure_live/app/engine/danmaku.dart';
 import 'package:pure_live/app/engine/mpv_tuning.dart';
 import 'package:pure_live/app/engine/playback_engine.dart';
+import 'package:pure_live/app/engine/window_surface_hooks.dart';
+import 'package:pure_live/app/preferences/app_preferences.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/features/room/portrait_rules.dart';
 import 'package:pure_live/features/room/room_providers.dart';
+import 'package:pure_live/shared/rooms/play_quality.dart';
 import 'package:window_manager/window_manager.dart' show windowManager;
 
 /// How the room is presented — the reference's `VideoMode`.
@@ -36,6 +42,14 @@ enum RoomPresentation {
   /// A vertical source fills the window; the sheet has been dismissed off its
   /// foot and only the picture (over its ambient backdrop) remains.
   portraitFullscreen,
+
+  /// The OS window itself is an always-on-top, aspect-locked PiP tile —
+  /// media_core's presentation driver, desktop only.
+  pip,
+
+  /// The OS window is a free-floating mini player, aspect unlocked; the
+  /// driver's `floating` mode, desktop only.
+  miniWindow,
 }
 
 /// A sentinel so [RoomState.copyWith] can tell "leave it" from "clear it" on
@@ -287,6 +301,7 @@ final class RoomController extends Notifier<RoomState> {
     _engineSub = _engine.events.listen(_onEngineEvent);
     _progressTimer = Timer.periodic(_progressWriteInterval, (_) => writeProgress());
     ref.onDispose(() {
+      _clearTileCloseHook();
       _progressTimer?.cancel();
       _chromeTimer?.cancel();
       _sleepTimer?.cancel();
@@ -301,6 +316,9 @@ final class RoomController extends Notifier<RoomState> {
     // the running player immediately; vo/ao/hwdec wait for the next open and
     // the page says so.
     ref.listen(appPreferencesProvider, (previous, next) {
+      // The barrage filter answers live on the open session — the emote gate
+      // and the repeat-collapse apply at once, the reference's 改动立即生效.
+      applyBarrageFilterSettings(ref.read(danmakuSessionProvider(identity)).value, next);
       if (previous == null || MpvTuning.nextOpenOnlyChanged(previous, next)) {
         return;
       }
@@ -321,7 +339,12 @@ final class RoomController extends Notifier<RoomState> {
     // window keep separate answers, and the global mute outranks both.
     final preferences = ref.read(appPreferencesProvider);
     final level = isMobile ? preferences.defaultMobileVolume : preferences.defaultDesktopVolume;
-    return RoomState(barrageOn: preferences.danmakuVisible, volume: level, muted: preferences.volumeMuted);
+    return RoomState(
+      barrageOn: preferences.danmakuVisible,
+      volume: level,
+      muted: preferences.volumeMuted,
+      videoFit: videoFits[preferences.videoFitIndex.clamp(0, videoFits.length - 1)],
+    );
   }
 
   /// The form factor the app booted as — a fact, not a width. The layouts
@@ -340,6 +363,15 @@ final class RoomController extends Notifier<RoomState> {
     switch (event) {
       case EngineReady():
         state = state.copyWith(engineStopped: false, streamError: null, paused: false);
+        // The stored 画面比例 rides every open — a quality switch rebuilds
+        // the adapter, and a new one starts from the engine's own default.
+        _engine.surfaceAdapter?.setVideoFit(state.videoFit);
+        if (ref.read(appPreferencesProvider).openRoomFullscreen && state.presentation == RoomPresentation.normal) {
+          // 自动全屏: the room walks itself into fullscreen once the stream
+          // plays (the reference's enableFullScreenDefault), and only from
+          // the inline layout — a PiP/mini window stays a window.
+          setPresentation(RoomPresentation.fullscreen);
+        }
         // The engine's own level is whatever the last handle left; the room's is
         // the stored answer, so it is re-asserted on every open.
         unawaited(_engine.surfaceAdapter?.setVolume(state.muted ? 0 : state.volume).catchError((_) {}));
@@ -499,12 +531,43 @@ final class RoomController extends Notifier<RoomState> {
       return;
     }
     final result = await capability.getQualities(roomId: identity.roomId);
-    state = result.fold(
-      (error) => state.copyWith(streamError: error),
-      (qualities) => state.copyWith(qualities: qualities, quality: qualities.firstOrNull),
-    );
+    state = result.fold((error) => state.copyWith(streamError: error), (qualities) {
+      if (qualities.isEmpty) {
+        return state.copyWith(qualities: qualities, quality: null);
+      }
+      // The stored preference decides the opening quality (the reference's
+      // defaultQualityIndex: the labelled name, else the same relative
+      // position, with H.264 passed first when the setting asks).
+      final index = defaultQualityIndex(
+        qualities,
+        _preferredQualityName(ref.read(appPreferencesProvider)),
+        preferH264: ref.read(appPreferencesProvider).preferH264,
+      );
+      return state.copyWith(qualities: qualities, quality: qualities[index.clamp(0, qualities.length - 1)]);
+    });
     await openLines();
   }
+
+  /// The quality name for the network now — the cellular answer when the
+  /// device is only on a metered link (the reference's `_preferredQuality`;
+  /// a reading that cannot be had answers Wi-Fi, the safer default).
+  String _preferredQualityName(AppPreferences preferences) {
+    final last = _lastCellular;
+    if (last == null) {
+      // No reading yet: kick one off for the next room, and use the Wi-Fi
+      // answer now rather than holding the stream open on a future.
+      unawaited(
+        const PlatformNetworkConnectivityService()
+            .read()
+            .then((reading) => _lastCellular = reading.interfaces.contains(NetworkInterface.cellular))
+            .catchError((_) => _lastCellular = false),
+      );
+      return preferences.preferResolution;
+    }
+    return last ? preferences.preferResolutionCellular : preferences.preferResolution;
+  }
+
+  static bool? _lastCellular;
 
   /// Resolves the lines for [quality] (the current one when omitted) and opens
   /// the first — a quality switch lands here too.
@@ -552,6 +615,16 @@ final class RoomController extends Notifier<RoomState> {
     }
   }
 
+  /// Hands playback to another surface — a cast receiver, the desktop PiP
+  /// window — while the room page stays open: the local engine pauses (the
+  /// stream keeps its lease), and resuming is just [togglePause].
+  void takeLocalControl({required bool pause}) {
+    if (pause == state.paused) {
+      return;
+    }
+    togglePause();
+  }
+
   /// Sets the player volume, 0..1, and unmutes it — the overlay's slider owns
   /// the number and the adapter only ever takes the command.
   void setVolume(double volume) {
@@ -589,24 +662,188 @@ final class RoomController extends Notifier<RoomState> {
   void setVideoFit(BoxFit fit) {
     state = state.copyWith(videoFit: fit);
     _engine.surfaceAdapter?.setVideoFit(fit);
+    // The reference stores the choice: the next room — and the next open of
+    // this one — starts with the same fit.
+    final index = videoFitIndexOf(fit);
+    unawaited(
+      ref
+          .read(appPreferencesProvider.notifier)
+          .update(
+            (preferences) =>
+                preferences.videoFitIndex == index ? preferences : preferences.copyWith(videoFitIndex: index),
+          ),
+    );
   }
 
   /// Takes the presentation. On a desktop the OS window follows; on touch the
   /// same mode is an in-app presentation, so the chrome can float over it.
+  /// The two window surfaces (PiP, mini) are media_core's presentation driver
+  /// rather than a hand-rolled window call, and only the desktop answers.
   void setPresentation(RoomPresentation mode) {
-    if (mode == RoomPresentation.normal && state.presentation != RoomPresentation.normal) {
+    final preferences = ref.read(appPreferencesProvider);
+    // The 竖屏直播适配 answers decide the direction an immersive entry takes:
+    // a phone watching a vertical source follows the policy (and the room's
+    // remembered override), everything else goes where the caller asked.
+    final overrideKey = portraitRoomKey(siteId: identity.siteId, roomId: identity.roomId);
+    final target = resolveFullscreenEntry(
+      mode,
+      preferences: preferences,
+      verticalSource: state.isVerticalSource && isMobile,
+      roomOverride: preferences.portraitRoomOverrides[overrideKey],
+    );
+    final previous = state.presentation;
+    if (previous == target) {
+      return;
+    }
+    if (fullscreenOverrideOf(target) case final String choice) {
+      if (preferences.rememberPortraitRoomOverride && preferences.portraitRoomOverrides[overrideKey] != choice) {
+        unawaited(
+          ref.read(appPreferencesProvider.notifier).update(
+            (old) => old.copyWith(
+              portraitRoomOverrides: {...old.portraitRoomOverrides, overrideKey: choice},
+            ),
+          ),
+        );
+      }
+    }
+    if (_isWindowSurface(target)) {
+      unawaited(_enterWindowSurface(target));
+      return;
+    }
+    if (_isWindowSurface(previous)) {
+      // Leaving a tile for a layout mode restores the window first: the
+      // driver owns the shape until it hands it back. The mini window's
+      // last place is read while it still has one, and the close hook
+      // retires with the tile.
+      _rememberMiniGeometry();
+      _clearTileCloseHook();
+      unawaited(_engine.restoreWindow());
+    }
+    if (target == RoomPresentation.normal) {
       _chromeTimer?.cancel();
-      state = state.copyWith(presentation: mode);
+      state = state.copyWith(presentation: target);
       if (_isDesktop) {
         unawaited(windowManager.setFullScreen(false));
       }
       return;
     }
-    state = state.copyWith(presentation: mode, chromeVisible: true);
+    state = state.copyWith(presentation: target, chromeVisible: true);
     if (_isDesktop) {
-      unawaited(windowManager.setFullScreen(mode != RoomPresentation.normal));
+      unawaited(windowManager.setFullScreen(true));
     }
     scheduleChromeHide();
+  }
+
+  /// Whether the window is currently one of the media_core surfaces.
+  static bool _isWindowSurface(RoomPresentation mode) =>
+      mode == RoomPresentation.pip || mode == RoomPresentation.miniWindow;
+
+  /// Whether this device can turn its window into a PiP/mini surface. The
+  /// control bar keeps the two buttons out of the way when it cannot.
+  bool get windowPresentationAvailable => _isDesktop && _engine.supportsWindowPresentation;
+
+  Future<void> _enterWindowSurface(RoomPresentation mode) async {
+    // A tile starts from the normal window — an OS-fullscreen window shrinks
+    // badly — so the in-app fullscreen comes down first.
+    if (_isDesktop &&
+        (state.presentation == RoomPresentation.fullscreen ||
+            state.presentation == RoomPresentation.portraitFullscreen)) {
+      await windowManager.setFullScreen(false);
+    }
+    final entered = mode == RoomPresentation.pip ? await _engine.enterPip() : await _engine.enterMiniWindow();
+    if (!ref.mounted) {
+      return;
+    }
+    if (!entered) {
+      // No frame reported yet, or the window refused: stay where the user
+      // was rather than dressing the page for a surface that never came.
+      state = state.copyWith(presentation: RoomPresentation.normal);
+      return;
+    }
+    state = state.copyWith(presentation: mode, chromeVisible: true);
+    scheduleChromeHide();
+    await _tuneWindowSurface(mode);
+    _installTileCloseHook();
+  }
+
+  /// While the window is a tile, the shell's close runs through this room:
+  /// restore the window and pause, the reference's 关闭小窗即暂停.
+  void _installTileCloseHook() {
+    WindowSurfaceHooks.onTileWindowClose = () async {
+      _rememberMiniGeometry();
+      await _engine.restoreWindow();
+      if (ref.mounted && !state.paused) {
+        togglePause();
+      }
+    };
+  }
+
+  void _clearTileCloseHook() {
+    if (WindowSurfaceHooks.onTileWindowClose != null) {
+      WindowSurfaceHooks.onTileWindowClose = null;
+    }
+  }
+
+  /// The two window-surface answers the settings own: the reference's
+  /// 小窗始终置顶 is applied over the driver's own on-top choice, and the
+  /// remembered mini-window geometry over the driver's corner placement.
+  Future<void> _tuneWindowSurface(RoomPresentation mode) async {
+    if (!_isDesktop || !ref.mounted) {
+      return;
+    }
+    final preferences = ref.read(appPreferencesProvider);
+    if (mode == RoomPresentation.pip && !preferences.pipAlwaysOnTop) {
+      // The driver raises the tile; the answer says it may be covered like
+      // an ordinary window instead.
+      await windowManager.setAlwaysOnTop(false).catchError((_) {});
+      return;
+    }
+    if (mode == RoomPresentation.miniWindow && preferences.miniRememberPosition) {
+      final placed = _parseRect(preferences.miniWindowRect);
+      if (placed != null) {
+        await windowManager
+            .setSize(placed.size)
+            .catchError((_) {})
+            .then((_) => windowManager.setPosition(placed.topLeft).catchError((_) {}));
+      }
+    }
+  }
+
+  /// Stores where the mini window was left, the next entry's starting place.
+  void _rememberMiniGeometry() {
+    if (!_isDesktop) {
+      return;
+    }
+    final preferences = ref.read(appPreferencesProvider);
+    if (!preferences.miniRememberPosition || state.presentation != RoomPresentation.miniWindow) {
+      return;
+    }
+    unawaited(() async {
+      try {
+        final size = await windowManager.getSize();
+        final position = await windowManager.getPosition();
+        final rect = '${position.dx.toStringAsFixed(0)},${position.dy.toStringAsFixed(0)},'
+            '${size.width.toStringAsFixed(0)},${size.height.toStringAsFixed(0)}';
+        if (rect != preferences.miniWindowRect) {
+          await ref.read(appPreferencesProvider.notifier).update((p) => p.copyWith(miniWindowRect: rect));
+        }
+      } on Object {
+        // A geometry that cannot be read is a geometry not remembered.
+      }
+    }());
+  }
+
+  static Rect? _parseRect(String text) {
+    final parts = text.split(',');
+    if (parts.length != 4) {
+      return null;
+    }
+    final values = [for (final part in parts) double.tryParse(part)];
+    if (values.any((value) => value == null)) {
+      return null;
+    }
+    final rect = Rect.fromLTWH(values[0]!, values[1]!, values[2]!, values[3]!);
+    return rect.width > 60 && rect.height > 60 ? rect : null;
   }
 
   bool get _isDesktop => switch (defaultTargetPlatform) {

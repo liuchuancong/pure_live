@@ -88,6 +88,13 @@ abstract final class MpvTuning {
       options['cache'] = 'yes';
       options['cache-secs'] = '${preferences.streamCacheSeconds}';
     }
+    // 播放器代理: the stream itself is pulled through http(s) proxies mpv
+    // speaks — both spellings, because a live room hands out either scheme.
+    if (preferences.playerProxyEnabled) {
+      final proxy = 'http://${preferences.playerProxyHost}:${preferences.playerProxyPort}';
+      options['proxy'] = proxy;
+      options['https-proxy'] = proxy;
+    }
     return options;
   }
 
@@ -114,7 +121,10 @@ abstract final class MpvTuning {
       previous.customPlayerOutput != next.customPlayerOutput ||
       previous.videoOutputDriver != next.videoOutputDriver ||
       previous.audioOutputDriver != next.audioOutputDriver ||
-      previous.hardwareDecoder != next.hardwareDecoder;
+      previous.hardwareDecoder != next.hardwareDecoder ||
+      previous.playerProxyEnabled != next.playerProxyEnabled ||
+      previous.playerProxyHost != next.playerProxyHost ||
+      previous.playerProxyPort != next.playerProxyPort;
 
   /// The picker label for a video-output key — media_kit's own annotation.
   static String videoOutputLabel(String key) => _videoOutputLabels[key] ?? key;

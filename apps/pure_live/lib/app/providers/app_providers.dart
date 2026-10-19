@@ -3,13 +3,14 @@ import 'package:live_iptv/live_iptv.dart' show IptvLibrary;
 import 'package:live_library/live_library.dart' show FollowRepository, HistoryRepository;
 import 'package:live_net/live_net.dart' show LiveHttp;
 import 'package:live_platform/live_platform.dart' show PlatformEnvironment;
-import 'package:live_shell/live_shell.dart' show InstanceChannel;
+import 'package:live_shell/live_shell.dart' show InstanceChannel, StartupRegistration;
 import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart' show StorageBootstrap;
 import 'package:pure_live/app/composition/sites.dart';
 import 'package:pure_live/app/environment/app_paths.dart';
 import 'package:pure_live/app/fonts/font_library.dart';
 import 'package:pure_live/app/logging/app_log.dart';
+import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/theme/appearance_preferences/appearance_preferences.dart';
 import 'package:pure_live/app/theme/appearance_store.dart';
 import 'package:pure_live/app/theme/ui_configuration_mapper.dart';
@@ -60,6 +61,10 @@ final revealMainWindowProvider = Provider<Future<void> Function()>((ref) => () a
 abstract interface class DesktopTrayPort {
   /// How many rooms are recording right now.
   void reportRecordingCount(int count);
+
+  /// Posts one system notification ("Pure Live · 录制" as its own title
+  /// line and [body] beneath it); dropped where the platform has no
+  /// notification surface.
   Future<void> notifyTray({required String title, String body = ''});
 }
 
@@ -71,6 +76,8 @@ final class NoopDesktopTrayPort implements DesktopTrayPort {
 
   @override
   void reportRecordingCount(int count) {}
+
+  @override
   Future<void> notifyTray({required String title, String body = ''}) async {}
 }
 
@@ -152,8 +159,18 @@ LivePlaybackProvider? _playbackOf(Ref ref, String siteId) =>
 /// The app's shared HTTP client (the site graph's own transport).
 final httpProvider = Provider<LiveHttp>((ref) => ref.watch(sitesProvider).http);
 
+/// The launch-at-sign-in registrar; the composition root overrides it on
+/// the desktop, where the OS can be asked. Null means this run has no way
+/// to register — the settings row says so instead of pretending.
+final startupRegistrationProvider = Provider<StartupRegistration?>(
+  (ref) => null,
+);
+
+/// The app's shared release feed, honouring the 更新源 answer.
 /// The update feed over the shared client.
-final updateFeedProvider = Provider<UpdateFeed>((ref) => UpdateFeed(http: ref.watch(httpProvider)));
+final updateFeedProvider = Provider<UpdateFeed>(
+  (ref) => UpdateFeed(http: ref.watch(httpProvider), githubOnly: ref.watch(appPreferencesProvider).githubOnlyUpdates),
+);
 
 /// The user's followed rooms and groups, overridden at start-up.
 final followRepositoryProvider = Provider<FollowRepository>(

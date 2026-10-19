@@ -74,6 +74,9 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$shellSettings$en shellSettings = _Translations$shellSettings$en._(_root);
 	@override late final _Translations$webdav$en webdav = _Translations$webdav$en._(_root);
 	@override late final _Translations$wallpaper$en wallpaper = _Translations$wallpaper$en._(_root);
+	@override late final _Translations$cast$en cast = _Translations$cast$en._(_root);
+	@override late final _Translations$danmaku$en danmaku = _Translations$danmaku$en._(_root);
+	@override late final _Translations$clipboard$en clipboard = _Translations$clipboard$en._(_root);
 }
 
 // Path: app
@@ -137,6 +140,7 @@ class _Translations$common$en extends Translations$common$zh {
 	@override String get toTop => 'To the top';
 	@override String get toBottom => 'To the bottom';
 	@override String get addOne => 'Add';
+	@override String get ignore => 'Ignore';
 }
 
 // Path: tray
@@ -201,6 +205,52 @@ class _Translations$account$en extends Translations$account$zh {
 	@override String get noAuthSites => 'No platform in this build can sign in yet';
 	@override String get clearAllAccounts => 'Clear all accounts';
 	@override String get clearAllAccountsHint => 'Sign out of every platform and drop the stored credentials';
+	@override String editorTitle({required Object name}) => '${name} account';
+	@override String get cookieGroup => 'Cookie';
+	@override String get paste => 'Paste';
+	@override String get clearInput => 'Clear';
+	@override String get cookieInvalid => 'This does not look like a cookie: expected name=value; name2=value2';
+	@override String get clipboardEmpty => 'The clipboard has no text';
+	@override String get editorNoneHint => 'Not set: paste the cookie of a signed-in browser';
+	@override String get saved => 'Saved';
+	@override String signedIn({required Object name}) => 'Signed in: ${name}';
+	@override String statusUid({required Object uid}) => 'Saved · account id ${uid}';
+	@override String get verifying => 'Verifying account…';
+	@override String get savingVerifying => 'Checking and saving…';
+	@override String openSite({required Object name}) => 'Open ${name} website';
+	@override String get privacyNote => 'Cookies are stored encrypted on this device only and never uploaded.';
+	@override String get discardTitle => 'Discard Cookie changes?';
+	@override String get discardDetail => 'Your edited Cookie has not been saved. Discard these changes and leave this page?';
+	@override String get discard => 'Discard';
+	@override String get keepEditing => 'Keep editing';
+	@override String get cookieTip => 'Sign in on the platform in a browser, open the developer tools and copy the whole Cookie request header below.';
+	@override String get statusExpired => 'Expired — paste the cookie again';
+	@override String get douyuLtp0 => 'LTP0 (long-term key)';
+	@override String get douyuLtp0Hint => 'the LTP0 in the passport.douyu.com request cookie; filled automatically when you paste above';
+	@override String get douyuDid => 'dy_did (device id)';
+	@override String get douyuDidHint => 'the dy_did in that same request (32 hex characters); filled automatically';
+	@override String get douyuRenew => 'Renew now';
+	@override String get douyuRenewNeedPair => 'Renewal needs LTP0 and dy_did: sign in to Douyu in a browser and paste the cookie again';
+	@override String get douyuStatusGuest => 'Saved, but there is no acf_jwt_token: this is a guest cookie, so HD/UHD are unavailable';
+	@override String get douyuStatusNoExpiry => 'Signed in (the cookie carries no end time; add LTP0 to renew it automatically)';
+	@override String douyuStatusAutoRenew({required Object time}) => 'Signed in (about 7 days, until ${time}); LTP0 is set, so it renews before it ends';
+	@override String douyuStatusRepaste({required Object time}) => 'Signed in (about 7 days, until ${time}); no LTP0, so paste it again after that';
+	@override String douyuStatusRenewable({required Object time}) => 'Session expired at ${time}; saved, and the next playback renews it with LTP0';
+	@override String douyuStatusExpired({required Object time}) => 'Session expired at ${time} and the cookie has no LTP0: paste a fresh one';
+	@override String get savedAccounts => 'Remembered accounts';
+	@override String savedAccountsNote({required Object count}) => 'Accounts you signed in with are kept here (up to ${count}); switching needs no new scan. Sign-ins are stored encrypted on this device only and are erased when you sign out or remove them.';
+	@override String accountUid({required Object uid}) => 'UID ${uid}';
+	@override String get accountCurrent => 'Current';
+	@override String get accountSwitch => 'Switch';
+	@override String get accountForget => 'Remove this account';
+	@override String accountSwitchConfirm({required Object name}) => 'Switch to “${name}”? Rooms you are watching reconnect their danmaku with this account.';
+	@override String accountForgetConfirm({required Object name}) => 'Remove the sign-in of “${name}” from this device? Using that account again needs a new sign-in.';
+	@override String get accountAdd => 'Add an account';
+	@override String get accountAddHint => 'Sign another account in with the QR code; the current one stays here';
+	@override String accountAddFull({required Object count}) => '${count} remembered; adding another forgets the one unused the longest';
+	@override String accountSwitched({required Object name}) => 'Switched to “${name}”';
+	@override String accountForgot({required Object name}) => 'Removed “${name}”';
+	@override String accountAdded({required Object name}) => '“${name}” is remembered';
 }
 
 // Path: settings
@@ -433,6 +483,119 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get pageShowGoto => 'Show Go-To Page Button';
 	@override String get pageShowGotoSubtitle => 'Enables manual page number input for quick jumping';
 	@override String get configPreviewDesc => 'Read-only view of the saved document';
+	@override String get groupQuality => 'Quality';
+	@override String get preferResolution => 'Preferred quality';
+	@override String get preferResolutionDesc => 'The quality a room opens with';
+	@override String get mobileQuality => 'Cellular quality';
+	@override String get mobileQualityDesc => 'The default picture quality on mobile data';
+	@override String get preferH264 => 'Prefer H.264';
+	@override String get preferH264Desc => 'When a quality ships several codecs, start with the most compatible H.264; HEVC stays one manual tap away';
+	@override String get videoFit => 'Picture fit';
+	@override String get videoFitDesc => 'How the picture fills a box of another ratio (the in-room menu remembers its choice)';
+	@override String get fitDefault => 'Default';
+	@override String get fitCrop => 'Crop to fill';
+	@override String get fitFillScreen => 'Stretch to screen';
+	@override String get fitHeight => 'Fit height';
+	@override String get fitWidth => 'Fit width';
+	@override String get fitScaleDown => 'Scale down';
+	@override String get groupPlayback => 'Playback behaviour';
+	@override String get autoFullscreen => 'Auto fullscreen';
+	@override String get autoFullscreenDesc => 'Enter fullscreen once the stream starts playing';
+	@override String get blockList => 'Danmaku block list';
+	@override String get blockListDesc => 'Keyword, user and regex blocks';
+	@override String get groupAudience => 'Viewer counts';
+	@override String get audienceMode => 'Which figure leads';
+	@override String get audienceModeDesc => 'Whether the room shows the platform’s concurrent-online number or its heat';
+	@override String get audienceModeHeat => 'Heat (popularity)';
+	@override String get audienceModeOnline => 'Online viewers';
+	@override String get audiencePlatforms => 'Platforms with a trusted online count';
+	@override String audienceHeatOnlyCount({required Object count}) => 'The other ${count} platforms report heat only';
+	@override String get portraitLiveSettings => 'Portrait stream adaptation';
+	@override String get portraitLiveSettingsDesc => 'Detect the source orientation and shape the normal page, fullscreen and mini window alike';
+	@override String get portraitGroupDetect => 'Detection & layout';
+	@override String get portraitDetect => 'Detect portrait live sources';
+	@override String get portraitDetectDesc => 'Recognised from the decoded frame size, and re-decided when the line or quality switches';
+	@override String get portraitAdaptiveHeight => 'Adaptive height on the normal page';
+	@override String get portraitAdaptiveHeightDesc => 'A tall source keeps the bigger watch area while the chat list keeps its room; off pins the panel at the middle stop';
+	@override String get portraitLayoutMode => 'Normal-page layout';
+	@override String get portraitLayoutModeDesc => 'Applies to portrait sources only; landscape rooms are untouched';
+	@override String get portraitLayoutBalanced => 'Balanced (recommended)';
+	@override String get portraitLayoutImmersive => 'Immersive';
+	@override String get portraitLayoutCompatibility => 'Compatibility 16:9';
+	@override String get portraitGroupPresentation => 'Fullscreen presentation';
+	@override String get portraitFullscreenPolicy => 'Direction on entering fullscreen';
+	@override String get portraitFullscreenPolicyDesc => 'Big and split-screen devices hand this to the system; a phone may follow the source';
+	@override String get portraitFollowSource => 'Follow the source (recommended)';
+	@override String get portraitFollowSystem => 'Follow the system';
+	@override String get portraitAlwaysLandscape => 'Always landscape';
+	@override String get portraitDisplayMode => 'Portrait-fullscreen canvas';
+	@override String get portraitDisplayModeDesc => 'Only the upright fullscreen of a portrait stream; applies at once';
+	@override String get portraitDisplayComplete => 'Complete picture';
+	@override String get portraitDisplayAmbient => 'Ambient backdrop (recommended)';
+	@override String get portraitDisplayBalanced => 'Balanced fill';
+	@override String get portraitDisplayCover => 'Crop to fill';
+	@override String get portraitDanmakuMode => 'Portrait danmaku band';
+	@override String get portraitDanmakuModeDesc => 'Bounds the flying danmaku over a portrait picture without touching the global style numbers';
+	@override String get portraitDanmakuFollowGlobal => 'Follow global';
+	@override String get portraitDanmakuUpperQuarter => 'Top 25%';
+	@override String get portraitDanmakuReduced => 'Reduced 50%';
+	@override String get portraitDanmakuHidden => 'Hidden on portrait';
+	@override String get portraitRemember => 'Remember a room’s direction';
+	@override String get portraitRememberDesc => 'A direction picked by hand in the player is kept for the next visit to the same room';
+	@override String get portraitGroupDiagnostics => 'Diagnostics';
+	@override String get portraitDiagnostics => 'Show the detection state';
+	@override String get portraitDiagnosticsDesc => 'Draw the raw size, ratio and the rule in force over the picture';
+	@override String get portraitReset => 'Restore portrait defaults';
+	@override String get portraitResetDesc => 'Including the remembered per-room direction overrides';
+	@override String get portraitResetConfirm => 'Reset every portrait-adaptation setting to its default?';
+	@override String get pipOnTop => 'Keep the mini player on top';
+	@override String get pipOnTopDesc => 'When off, other applications can cover the mini player';
+	@override String get miniRemember => 'Remember the mini window position';
+	@override String get miniRememberDesc => 'The tile re-opens where it was left; off returns it to the corner each time';
+	@override String get pauseOnTileClose => 'Pause when the tile closes';
+	@override String get pauseOnTileCloseDesc => 'Closing the window while it is a PiP/mini tile restores and pauses the stream first — no audio left running behind a hidden window';
+	@override String get splashAnimation => 'Start-up animation';
+	@override String get splashAnimationDesc => 'Show the logo while the app starts';
+	@override String get githubUpdates => 'Use the official GitHub update source';
+	@override String get githubUpdatesDesc => 'Checks and downloads go straight to GitHub — for runs behind a proxy; off uses the mirrors';
+	@override String get clipboardRooms => 'Recognise room links on the clipboard';
+	@override String get clipboardRoomsDesc => 'When the app opens or resumes and the clipboard holds a room link, ask before entering; one link is asked once';
+	@override String get startup => 'Start at sign-in';
+	@override String get startupDesc => 'Launch automatically when you sign in';
+	@override String get startupFailed => 'The system refused the autostart entry';
+	@override String get closeWindow => 'When closing the window';
+	@override String get closeWindowDesc => 'What the window\'s close button does';
+	@override String get closeAsk => 'Ask every time';
+	@override String get closeHide => 'Hide to the tray';
+	@override String get closeMinimise => 'Minimise';
+	@override String get closeQuit => 'Quit the app';
+	@override String get sectionCache => 'Cache';
+	@override String get currentCacheSize => 'Current cache size';
+	@override String cacheSizeValue({required Object count}) => '${count} MB';
+	@override String get cacheMeasuring => 'Measuring…';
+	@override String get clearCache => 'Clear the picture cache';
+	@override String get clearCacheDesc => 'Covers re-pull right after the clear';
+	@override String cacheCleared({required Object count}) => 'Freed ${count} MB';
+	@override String get cacheAutoClear => 'Auto-clear the picture cache';
+	@override String get cacheAutoClearDesc => 'Empty the cache when a resume finds it past the cap';
+	@override String get cacheLimit => 'Cache cap';
+	@override String get refreshCoversNow => 'Refresh covers now';
+	@override String get refreshCoversNowDesc => 'Empty the picture cache so every cover re-pulls on the next pass';
+	@override String mbValue({required Object count}) => '${count} MB';
+	@override String get groupCovers => 'Covers';
+	@override String get autoRefreshThumbnails => 'Refresh covers automatically';
+	@override String get autoRefreshThumbnailsDesc => 'Re-pull room covers on a timer so the pictures stay current';
+	@override String get thumbnailRefreshInterval => 'Cover refresh interval';
+	@override String get groupHistory => 'History';
+	@override String get historyLimit => 'History size';
+	@override String get historyLimitDesc => 'How many watched rooms are kept; 0 is no limit';
+	@override String get noLimit => 'No limit';
+	@override String get playerProxyGroup => 'Player proxy';
+	@override String get playerProxyEnable => 'Enable the player proxy';
+	@override String get playerProxyEnableDesc => 'Live streams are pulled through this proxy by the player, apart from the app\'s own requests';
+	@override String get playerProxyHint => 'Applies to the next stream; a running one keeps what it started with';
+	@override String get thumbnailKeepOldFiles => 'Keep old thumbnails';
+	@override String get thumbnailKeepOldFilesDesc => 'Superseded covers stay until the cache policy drops them; off clears what is past two intervals';
 }
 
 // Path: hotAreas
@@ -552,6 +715,53 @@ class _Translations$recorder$en extends Translations$recorder$zh {
 	@override String get roomEnded => 'Broadcast ended';
 	@override String get roomStalled => 'Signal stalled';
 	@override String get roomUnavailable => 'Room unavailable';
+	@override String get groupDefaults => 'Recording defaults';
+	@override String get defaultQuality => 'Default recording quality';
+	@override String get defaultQualityDesc => 'When the room offers several qualities, record the address labelled with it; the best line when none is labelled.';
+	@override String get usePinyinFolder => 'Name folders in pinyin';
+	@override String get usePinyinFolderDesc => 'On: the anchor folder is pinyin (zhubo8891). Off: the room id, the safest component.';
+	@override String get recordDanmaku => 'Save the chat';
+	@override String get recordDanmakuDesc => 'Writes a chat file beside each recording; a chat that cannot connect never costs the recording.';
+	@override String get recordDanmakuGifts => 'Include gifts in the saved chat';
+	@override String get recordDanmakuGiftsDesc => 'The chat file also carries gifts and super chats.';
+	@override String get groupFiles => 'Recording files';
+	@override String get recordSizeLimit => 'Recording size limit';
+	@override String get recordSizeLimitDesc => 'Delete the oldest recordings (older than an hour) when the folder passes the cap.';
+	@override String get recordSizeCap => 'Size cap';
+	@override String get recordUsedSpace => 'Used space';
+	@override String get recordUsedSpaceDesc => 'Tap to re-measure the recordings folder.';
+	@override String get clearAllCache => 'Clear all recordings';
+	@override String get clearAllCacheDesc => 'Delete every video file in the recordings folder; the hour’s newest stay.';
+	@override String clearFreed({required Object mb}) => 'Freed ${mb} MB';
+	@override String mbValue({required Object count}) => '${count} MB';
+	@override String get groupPerformance => 'Performance & quality';
+	@override String get preferBestStream => 'Record the first stream only';
+	@override String get preferBestStreamDesc => 'Map only the first video and audio track of a multi-track container.';
+	@override String get rwTimeout => 'Read/write timeout';
+	@override String get rwTimeoutDesc => 'A silent input fails the read after this long and the retry path takes over.';
+	@override String get queueSize => 'Input queue size';
+	@override String get queueSizeDesc => 'Recording favours completeness over latency, so the queue is much larger than a player’s.';
+	@override String get segmentLengthDesc => 'Shorter segments lose less to a crash and cost more overhead.';
+	@override String get maxRecordTasks => 'Concurrent recording tasks';
+	@override String get maxRecordTasksDesc => 'How many rooms may record at once; each is one FFmpeg process.';
+	@override String get groupReconnect => 'Auto reconnect';
+	@override String get autoReconnectSwitch => 'Auto reconnect';
+	@override String get autoReconnectDesc => 'Retry an interrupted capture; off ends the session at the drop.';
+	@override String get maxRetryCount => 'Max retries';
+	@override String get retryDelay => 'Retry delay';
+	@override String timesValue({required int count}) => '${count} times';
+	@override String secondsValue({required int count}) => '${count} s';
+	@override String get groupLiveCheck => 'Live check';
+	@override String get enablePolling => 'Check for the first broadcast';
+	@override String get enablePollingDesc => 'Re-check rooms that are not up yet and start recording the moment they are.';
+	@override String get checkInterval => 'Check interval';
+	@override String get enableBackoff => 'Grow the interval';
+	@override String get enableBackoffDesc => 'Double the wait after each still-offline answer to spare the API.';
+	@override String get maxCheckInterval => 'Interval ceiling';
+	@override String get autoStartBoot => 'Resume recordings when the app starts';
+	@override String get autoStartBootDesc => 'Waiting and interrupted tasks re-arm themselves on launch.';
+	@override String get decrease => 'Decrease';
+	@override String get increase => 'Increase';
 }
 
 // Path: theme
@@ -665,6 +875,23 @@ class _Translations$room$en extends Translations$room$zh {
 	@override String get enterPortraitFullscreenHint => 'Drag down to enter portrait fullscreen';
 	@override String get portraitPanelResize => 'Panel height';
 	@override String get portraitPanelResizeHint => 'Drag to resize the panel';
+	@override String get pip => 'Picture-in-picture';
+	@override String get exitPip => 'Exit picture-in-picture';
+	@override String get miniWindow => 'Floating mini window';
+	@override String get exitMiniWindow => 'Exit the mini window';
+	@override String get messageActions => 'Danmaku';
+	@override String get copyMessage => 'Copy';
+	@override String get copiedToClipboard => 'Copied to clipboard';
+	@override String get blockViewer => 'Block this viewer';
+	@override String blockViewerDesc({required Object name}) => 'Messages from ${name} are no longer shown';
+	@override String userBlocked({required Object name}) => 'Blocked ${name}';
+	@override String get blockWord => 'Block a keyword…';
+	@override String get blockWordDesc => 'Enter a word; messages containing it are no longer shown';
+	@override String get keywordBlocked => 'Keyword added to the danmaku block list';
+	@override String userLevel({required Object level}) => 'Level ${level}';
+	@override String get blockKeywordTitle => 'Block a danmaku keyword';
+	@override String get block => 'Block';
+	@override String get portraitFullscreenRestoreHint => 'Portrait fullscreen — swipe up to bring the danmaku bar back';
 }
 
 // Path: areas
@@ -867,6 +1094,41 @@ class _Translations$backup$en extends Translations$backup$zh {
 	@override String get restore => 'Restore';
 	@override String restoreConfirm({required String name}) => 'Overwrite current data with “${name}”? The app restarts.';
 	@override String get sectionCloud => 'Cloud & sync';
+	@override String get devicesGroup => 'Cloud and other devices';
+	@override String get localGroup => 'Local backup';
+	@override String get createSubtitle => 'Saves a full copy of the app data (settings, follows, history and more)';
+	@override String get restoreFileSubtitle => 'Restore from a backup file; the app restarts afterwards';
+	@override String get filesTitle => 'Backups in the folder';
+	@override String filesCount({required Object count}) => 'Backups in the folder · ${count}';
+	@override String get filesEmpty => 'No backups yet';
+	@override String get filesHint => 'Backups made here are listed; you can also drop backup files into this folder';
+	@override String get filesError => 'The backup folder cannot be read';
+	@override String get retry => 'Retry';
+	@override String get loading => 'Reading…';
+	@override String get kindFull => 'Full backup';
+	@override String get directoryGroup => 'Backup Directory';
+	@override String get directory => 'Backup directory';
+	@override String get directoryDefaultLabel => 'Backup folder (default)';
+	@override String get directoryDefault => 'The app\'s default folder';
+	@override String get chooseDirectory => 'Choose the backup folder';
+	@override String get resetDirectory => 'Use the default folder';
+	@override String get openDirectory => 'Open the backup folder';
+	@override String get directoryUnwritable => 'This folder cannot be written; pick another one';
+	@override String get directoryUpdateFailed => 'The backup directory was not changed. Try again.';
+	@override String deleteConfirm({required Object name}) => 'Delete the backup file "${name}"?';
+	@override String created({required Object name}) => 'Backed up to ${name}';
+	@override String get readFailed => 'The backup file cannot be read';
+	@override String restored({required Object name}) => 'Restored ${name}';
+	@override String get moreActions => 'More actions';
+	@override String get fileTooltip => 'Click to restore; right-click or ⋮ for more';
+	@override String get previewTitle => 'Restore preview';
+	@override String previewRooms({required Object current, required Object incoming}) => 'Followed rooms: ${current} → ${incoming}';
+	@override String previewGroups({required Object current, required Object incoming}) => 'Follow groups: ${current} → ${incoming}';
+	@override String get previewNote => 'Everything else stays as it is.';
+	@override String get restoreNow => 'Restore now';
+	@override String get followsScopeHint => 'Followed rooms and groups only; other settings stay unchanged';
+	@override String get kindFollows => 'Follows only';
+	@override String get deleteFailed => 'The file could not be deleted';
 }
 
 // Path: about
@@ -965,6 +1227,22 @@ class _Translations$search$en extends Translations$search$zh {
 	@override String get allSites => 'All';
 	@override String get historyTitle => 'Recent searches';
 	@override String get historyRemove => 'Remove this search';
+	@override String get webSearch => 'Web search';
+	@override String get webSearchTooltip => 'Web-search the current platform';
+	@override String get continueWeb => 'Continue in web search';
+	@override String get selectPlatformFirst => 'Pick a platform first';
+	@override String get needKeyword => 'Type a keyword first';
+	@override String webUnavailableFor({required Object site}) => '${site} has no web search page.';
+	@override String get webExternalTip => 'The web search opens in the system browser. Find the live room you want, copy its link, and paste it into the search box to open it here.';
+	@override String get openInSystemBrowser => 'Open in system browser';
+	@override String get externalBrowserNotOpened => 'The system browser did not open; check the default-browser settings';
+	@override String get webSearchRoomBanner => 'This is a live room';
+	@override String roomIdLabel({required String roomId}) => 'room ${roomId}';
+	@override String get roomEnter => 'Enter';
+	@override String get webSearchRoomDismiss => 'Stop offering this room';
+	@override String get webSearchInvalidAddress => 'The web-search address is invalid; go back to the search page and try again.';
+	@override String get webSearchLoadFailed => 'The page failed to load; check the network or proxy and retry.';
+	@override String get webSearchUnavailableTitle => 'Web search unavailable';
 }
 
 // Path: remoteSync
@@ -975,7 +1253,7 @@ class _Translations$remoteSync$en extends Translations$remoteSync$zh {
 
 	// Translations
 	@override String get title => 'Device Sync';
-	@override String get tileSubtitle => 'Sync follows and history between devices on this network';
+	@override String get tileSubtitle => 'Sync configurations between devices over the LAN';
 	@override String get myDevice => 'My Device';
 	@override String get noAddress => 'No LAN address found';
 	@override String get scanHint => 'Let the other device scan this code, or type this device’s address there';
@@ -1003,7 +1281,7 @@ class _Translations$remoteSync$en extends Translations$remoteSync$zh {
 	@override String get description => 'Make sure both devices are connected to the same local network';
 	@override String get searching => 'Searching for devices on the local network...';
 	@override String get searchingShort => 'Searching';
-	@override String get manualHint => 'Enter the other device’s address, or paste the sync link from its QR code';
+	@override String get manualHint => 'Type the other device\'s address, or paste its QR code\'s sync link (it carries the pairing code)';
 	@override String get copyAddress => 'Copy Address';
 	@override String get addressCopied => 'Address copied';
 	@override String fromName({required String name}) => 'From ${name}';
@@ -1012,6 +1290,32 @@ class _Translations$remoteSync$en extends Translations$remoteSync$zh {
 	@override String get reject => 'Reject';
 	@override String incomingImportNamed({required Object address, required Object name}) => '${address} (${name}) asks to replace this device’s settings with its own. Allow?';
 	@override String incomingExportNamed({required Object address, required Object name}) => '${address} (${name}) asks to read this device’s settings. Allow?';
+	@override String get pairingCode => 'Pairing code';
+	@override String pairingCodeFor({required String name}) => 'Enter the 6-digit pairing code shown on “${name}”';
+	@override String get pairingCodeInvalid => 'The pairing code should be 6 digits';
+	@override String get partsAll => 'Select all';
+	@override String get partsLegacy => 'The other device is version 3.x or earlier (or did not answer), so it can only receive everything.';
+	@override String partsSendNamed({required String name}) => 'Tick what to send to “${name}”. After it confirms, the ticked parts replace its own; unticked parts stay.';
+	@override String confirmSendNamed({required String name}) => 'Send this device\'s full configuration to “${name}”? Its user confirms, and it replaces the other device\'s.';
+	@override String get previewTitle => 'Receiving would change this:';
+	@override String previewSettings({required int count, required int changed}) => 'Settings: ${count} items, ${changed} differ from this device';
+	@override String get previewNoAccounts => 'Accounts: the other device left “Sync account cookies” off; this device\'s sign-ins stay';
+	@override String get previewAccountsEmpty => 'Accounts: the other device has no sign-ins; this device\'s stay as they are';
+	@override String get previewWarning => 'Receiving merges the ticked parts; unticked ones stay. Settings follow the other device and cannot be undone — create a backup under “Backup & restore” first if needed.';
+	@override String partCount({required String part, required int count}) => '${part} (${count})';
+	@override String get partSettings => 'Settings';
+	@override String get partFollows => 'Follow list';
+	@override String get partHistory => 'Watch history';
+	@override String get partGroups => 'Follow groups';
+	@override String get partKeywords => 'Blocked keywords';
+	@override String get partUsers => 'Blocked users';
+	@override String get partWebdav => 'WebDAV servers';
+	@override String get partAccounts => 'Account cookies';
+	@override String get includeAccounts => 'Sync account cookies';
+	@override String get includeAccountsHint => 'Sends or serves the platform login cookies and WebDAV passwords; turn it on only between devices you trust';
+	@override String get receiveAction => 'Receive';
+	@override String get sendAction => 'Send';
+	@override String get invalidQr => 'Not a PureLive sync QR code';
 }
 
 // Path: errors
@@ -1129,6 +1433,37 @@ class _Translations$webdav$en extends Translations$webdav$zh {
 	@override String get helpIssues => 'Connection failed? Check that the address ends with /dav/, that you used the app password rather than the login password, and that your network does not block WebDAV ports.';
 	@override String get openOfficialHelp => 'Open the official Jianguoyun help';
 	@override String get helpOpenFailed => 'Could not open the browser';
+	@override String get servers => 'WebDAV servers';
+	@override String get noServer => 'No server yet';
+	@override String get noConfigCreateFirst => 'No configs yet — create a WebDAV config first';
+	@override String get intro => 'Add a WebDAV drive (Jianguoyun, Nextcloud…) to upload backups and restore them on other devices.';
+	@override String get createNew => 'Create a config';
+	@override String get openList => 'Open the config list';
+	@override String get refresh => 'Refresh';
+	@override String get moreActions => 'More actions';
+	@override String get uploadFavorites => 'Upload the follows list only';
+	@override String get uploadFull => 'Upload the full backup';
+	@override String get helpTutorial => 'Help tutorial';
+	@override String get nameExists => 'That config name already exists';
+	@override String get selectFailed => 'The WebDAV selection was not saved. Try again.';
+	@override String get configDeleteFailed => 'The WebDAV config was not deleted. Try again.';
+	@override String confirmDeleteConfig({required Object name}) => 'Delete the config “${name}”?';
+	@override String confirmDeleteItem({required Object name}) => 'Delete “${name}” from WebDAV?';
+	@override String get deleteSuccess => 'File deleted successfully';
+	@override String get deleteFailed => 'File deletion failed';
+	@override String get uploadFailed => 'File upload failed';
+	@override String get downloadFailed => 'File download failed';
+	@override String get restoreAllSettings => 'Restore all settings';
+	@override String get restoreFavorites => 'Restore the follows list only';
+	@override String get folderEmpty => 'This folder is empty';
+	@override String get serverName => 'Config name';
+	@override String get editServer => 'Edit config';
+	@override String get deleteServer => 'Delete config';
+	@override String get activeMark => 'In use';
+	@override String get saved => 'Config saved';
+	@override String restored({required Object name}) => 'Restored from ${name}';
+	@override String uploaded({required Object name}) => 'Uploaded ${name}';
+	@override String get secretsNote => 'This device cannot open its secret vault — the password lives only in this page';
 }
 
 // Path: wallpaper
@@ -1166,6 +1501,120 @@ class _Translations$wallpaper$en extends Translations$wallpaper$zh {
 	@override String get imageMissing => 'Picture not found; check the path';
 }
 
+// Path: cast
+class _Translations$cast$en extends Translations$cast$zh {
+	_Translations$cast$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Cast';
+	@override String get hint => 'Pick a device on this network that can receive the cast';
+	@override String get searching => 'Searching for cast devices on the network…';
+	@override String get noDevices => 'No cast devices yet';
+	@override String castingTo({required String name}) => 'Casting to ${name}';
+	@override String get stop => 'Stop casting';
+	@override String get failed => 'Cast failed — the device may not be able to reach this URL';
+	@override String get statePlaying => 'Playing';
+	@override String get statePaused => 'Paused';
+	@override String get stateBuffering => 'Buffering';
+	@override String get stateStopped => 'Stopped';
+	@override String get stateUnreachable => 'Device not answering';
+}
+
+// Path: danmaku
+class _Translations$danmaku$en extends Translations$danmaku$zh {
+	_Translations$danmaku$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get liveHint => 'Changes apply at once';
+	@override String get templateGroup => 'Viewing template';
+	@override String get templateBest => 'Top 20% · Balanced';
+	@override String get templateComfort => 'Top 35% · Comfortable';
+	@override String get templateDense => 'Top 55% · Dense';
+	@override String get templateReset => 'Reset';
+	@override String get bestDesc => 'Barrage stays in the top 20% of the picture at a middle speed and density, clear of the subject.';
+	@override String get comfortDesc => 'Barrage takes the top 35%; a slightly larger font and slower lines, easier to read.';
+	@override String get denseDesc => 'Barrage takes the top 55%; a smaller font and faster lines keep up with a busy room.';
+	@override String get resetDesc => 'Back to the defaults: full height, opaque, default speed and size.';
+	@override String get customDesc => 'Custom: the current answers match none of the templates — save them as yours.';
+	@override String get saveMine => 'Save the current look as my template';
+	@override String get useMine => 'Use my template';
+	@override String get templateApplied => 'Danmaku template applied';
+	@override String get templateSaved => 'Current danmaku look saved';
+	@override String get templateEmpty => 'No saved danmaku template yet';
+	@override String get templateInvalid => 'The saved danmaku template is broken or out of range';
+	@override String get rangeGroup => 'Display area';
+	@override String get area => 'Height used at the top';
+	@override String get marginTop => 'Top margin (px)';
+	@override String get marginBottom => 'Bottom margin (px)';
+	@override String get pausedBehavior => 'Barrage while paused';
+	@override String get pausedBehaviorDesc => 'When the video pauses, the barrage holds or keeps flying';
+	@override String get pausedPause => 'Pause with the video';
+	@override String get pausedFly => 'Keep flying';
+	@override String get styleGroup => 'Style';
+	@override String get opacity => 'Opacity';
+	@override String get speed => 'Speed (px/s)';
+	@override String get fontSize => 'Font size';
+	@override String get fontWeight => 'Font weight';
+	@override String get weightThin => 'Thin';
+	@override String get weightExtraLight => 'Extra light';
+	@override String get weightLight => 'Light';
+	@override String get weightNormal => 'Normal';
+	@override String get weightMedium => 'Medium';
+	@override String get weightSemiBold => 'Semibold';
+	@override String get weightBold => 'Bold';
+	@override String get weightExtraBold => 'Extra bold';
+	@override String get weightBlack => 'Black';
+	@override String get stroke => 'Barrage outline';
+	@override String get strokeWidth => 'Outline width';
+	@override String get noEmoji => 'Pure text mode (hide emoji)';
+	@override String get smoothGroup => 'Smoothness';
+	@override String get repeatGroup => 'Repeated danmaku';
+	@override String get collapse => 'Collapse identical danmaku bursts';
+	@override String get collapseDesc => 'Keep the first copy when different users send the same text. Local and system messages are unaffected.';
+	@override String get collapseWindow => 'Identical-text window (seconds)';
+	@override String get fps => 'Barrage frame rate';
+	@override String fpsValue({required int count}) => '${count} FPS';
+	@override String get maxVisible => 'Most lines on screen';
+	@override String maxVisibleValue({required int count}) => '${count} lines';
+	@override String get interactionGroup => 'Touch interaction';
+	@override String get holdOnPress => 'Hold a line to stop it';
+	@override String get holdOnPressDesc => 'Pressing a flying line holds only that line; the rest keep flying, and it resumes on release.';
+	@override String get listGroup => 'Chat list';
+	@override String get listStyle => 'Chat list style';
+	@override String get listCompact => 'Compact';
+	@override String get listCard => 'Card';
+	@override String get listFontSize => 'Chat text size';
+	@override String get listLineSpacing => 'Line spacing';
+	@override String get showSender => 'Show sender names';
+	@override String get showGifts => 'Gifts in flying danmaku';
+	@override String get showGiftsDesc => 'Gift messages fly over the picture as well';
+	@override String get tapAction => 'Tap an on-screen danmaku for actions';
+	@override String get longPressAction => 'Long-press an on-screen danmaku for block actions';
+	@override String get autoFps => 'Danmaku frame rate follows the display';
+	@override String get autoFpsDesc => 'Follows the power saving, balanced or highest level; turn it off to set the rate yourself.';
+	@override String get fpsMode => 'Refresh-rate tier';
+	@override String get fpsModePowerSaving => 'Power saving';
+	@override String get fpsModeBalanced => 'Balanced';
+	@override String get fpsModeHighest => 'Highest';
+	@override String get fontFamily => 'Danmaku font';
+}
+
+// Path: clipboard
+class _Translations$clipboard$en extends Translations$clipboard$zh {
+	_Translations$clipboard$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'A live-room link in your clipboard';
+	@override String found({required Object site, required Object room}) => '${site} room ${room} — take a look now?';
+	@override String get go => 'Open';
+}
+
 /// The flat map containing all translations for locale <en>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -1201,6 +1650,7 @@ extension on TranslationsEn {
 			'common.toTop' => 'To the top',
 			'common.toBottom' => 'To the bottom',
 			'common.addOne' => 'Add',
+			'common.ignore' => 'Ignore',
 			'tray.show' => 'Show Pure Live',
 			'tray.quit' => 'Quit',
 			'tray.hide' => 'Hide window',
@@ -1238,6 +1688,52 @@ extension on TranslationsEn {
 			'account.noAuthSites' => 'No platform in this build can sign in yet',
 			'account.clearAllAccounts' => 'Clear all accounts',
 			'account.clearAllAccountsHint' => 'Sign out of every platform and drop the stored credentials',
+			'account.editorTitle' => ({required Object name}) => '${name} account',
+			'account.cookieGroup' => 'Cookie',
+			'account.paste' => 'Paste',
+			'account.clearInput' => 'Clear',
+			'account.cookieInvalid' => 'This does not look like a cookie: expected name=value; name2=value2',
+			'account.clipboardEmpty' => 'The clipboard has no text',
+			'account.editorNoneHint' => 'Not set: paste the cookie of a signed-in browser',
+			'account.saved' => 'Saved',
+			'account.signedIn' => ({required Object name}) => 'Signed in: ${name}',
+			'account.statusUid' => ({required Object uid}) => 'Saved · account id ${uid}',
+			'account.verifying' => 'Verifying account…',
+			'account.savingVerifying' => 'Checking and saving…',
+			'account.openSite' => ({required Object name}) => 'Open ${name} website',
+			'account.privacyNote' => 'Cookies are stored encrypted on this device only and never uploaded.',
+			'account.discardTitle' => 'Discard Cookie changes?',
+			'account.discardDetail' => 'Your edited Cookie has not been saved. Discard these changes and leave this page?',
+			'account.discard' => 'Discard',
+			'account.keepEditing' => 'Keep editing',
+			'account.cookieTip' => 'Sign in on the platform in a browser, open the developer tools and copy the whole Cookie request header below.',
+			'account.statusExpired' => 'Expired — paste the cookie again',
+			'account.douyuLtp0' => 'LTP0 (long-term key)',
+			'account.douyuLtp0Hint' => 'the LTP0 in the passport.douyu.com request cookie; filled automatically when you paste above',
+			'account.douyuDid' => 'dy_did (device id)',
+			'account.douyuDidHint' => 'the dy_did in that same request (32 hex characters); filled automatically',
+			'account.douyuRenew' => 'Renew now',
+			'account.douyuRenewNeedPair' => 'Renewal needs LTP0 and dy_did: sign in to Douyu in a browser and paste the cookie again',
+			'account.douyuStatusGuest' => 'Saved, but there is no acf_jwt_token: this is a guest cookie, so HD/UHD are unavailable',
+			'account.douyuStatusNoExpiry' => 'Signed in (the cookie carries no end time; add LTP0 to renew it automatically)',
+			'account.douyuStatusAutoRenew' => ({required Object time}) => 'Signed in (about 7 days, until ${time}); LTP0 is set, so it renews before it ends',
+			'account.douyuStatusRepaste' => ({required Object time}) => 'Signed in (about 7 days, until ${time}); no LTP0, so paste it again after that',
+			'account.douyuStatusRenewable' => ({required Object time}) => 'Session expired at ${time}; saved, and the next playback renews it with LTP0',
+			'account.douyuStatusExpired' => ({required Object time}) => 'Session expired at ${time} and the cookie has no LTP0: paste a fresh one',
+			'account.savedAccounts' => 'Remembered accounts',
+			'account.savedAccountsNote' => ({required Object count}) => 'Accounts you signed in with are kept here (up to ${count}); switching needs no new scan. Sign-ins are stored encrypted on this device only and are erased when you sign out or remove them.',
+			'account.accountUid' => ({required Object uid}) => 'UID ${uid}',
+			'account.accountCurrent' => 'Current',
+			'account.accountSwitch' => 'Switch',
+			'account.accountForget' => 'Remove this account',
+			'account.accountSwitchConfirm' => ({required Object name}) => 'Switch to “${name}”? Rooms you are watching reconnect their danmaku with this account.',
+			'account.accountForgetConfirm' => ({required Object name}) => 'Remove the sign-in of “${name}” from this device? Using that account again needs a new sign-in.',
+			'account.accountAdd' => 'Add an account',
+			'account.accountAddHint' => 'Sign another account in with the QR code; the current one stays here',
+			'account.accountAddFull' => ({required Object count}) => '${count} remembered; adding another forgets the one unused the longest',
+			'account.accountSwitched' => ({required Object name}) => 'Switched to “${name}”',
+			'account.accountForgot' => ({required Object name}) => 'Removed “${name}”',
+			'account.accountAdded' => ({required Object name}) => '“${name}” is remembered',
 			'settings.appearance' => 'Appearance',
 			'settings.fonts' => 'Fonts',
 			'settings.themeMode' => 'Theme mode',
@@ -1461,6 +1957,119 @@ extension on TranslationsEn {
 			'settings.pageShowGoto' => 'Show Go-To Page Button',
 			'settings.pageShowGotoSubtitle' => 'Enables manual page number input for quick jumping',
 			'settings.configPreviewDesc' => 'Read-only view of the saved document',
+			'settings.groupQuality' => 'Quality',
+			'settings.preferResolution' => 'Preferred quality',
+			'settings.preferResolutionDesc' => 'The quality a room opens with',
+			'settings.mobileQuality' => 'Cellular quality',
+			'settings.mobileQualityDesc' => 'The default picture quality on mobile data',
+			'settings.preferH264' => 'Prefer H.264',
+			'settings.preferH264Desc' => 'When a quality ships several codecs, start with the most compatible H.264; HEVC stays one manual tap away',
+			'settings.videoFit' => 'Picture fit',
+			'settings.videoFitDesc' => 'How the picture fills a box of another ratio (the in-room menu remembers its choice)',
+			'settings.fitDefault' => 'Default',
+			'settings.fitCrop' => 'Crop to fill',
+			'settings.fitFillScreen' => 'Stretch to screen',
+			'settings.fitHeight' => 'Fit height',
+			'settings.fitWidth' => 'Fit width',
+			'settings.fitScaleDown' => 'Scale down',
+			'settings.groupPlayback' => 'Playback behaviour',
+			'settings.autoFullscreen' => 'Auto fullscreen',
+			'settings.autoFullscreenDesc' => 'Enter fullscreen once the stream starts playing',
+			'settings.blockList' => 'Danmaku block list',
+			'settings.blockListDesc' => 'Keyword, user and regex blocks',
+			'settings.groupAudience' => 'Viewer counts',
+			'settings.audienceMode' => 'Which figure leads',
+			'settings.audienceModeDesc' => 'Whether the room shows the platform’s concurrent-online number or its heat',
+			'settings.audienceModeHeat' => 'Heat (popularity)',
+			'settings.audienceModeOnline' => 'Online viewers',
+			'settings.audiencePlatforms' => 'Platforms with a trusted online count',
+			'settings.audienceHeatOnlyCount' => ({required Object count}) => 'The other ${count} platforms report heat only',
+			'settings.portraitLiveSettings' => 'Portrait stream adaptation',
+			'settings.portraitLiveSettingsDesc' => 'Detect the source orientation and shape the normal page, fullscreen and mini window alike',
+			'settings.portraitGroupDetect' => 'Detection & layout',
+			'settings.portraitDetect' => 'Detect portrait live sources',
+			'settings.portraitDetectDesc' => 'Recognised from the decoded frame size, and re-decided when the line or quality switches',
+			'settings.portraitAdaptiveHeight' => 'Adaptive height on the normal page',
+			'settings.portraitAdaptiveHeightDesc' => 'A tall source keeps the bigger watch area while the chat list keeps its room; off pins the panel at the middle stop',
+			'settings.portraitLayoutMode' => 'Normal-page layout',
+			'settings.portraitLayoutModeDesc' => 'Applies to portrait sources only; landscape rooms are untouched',
+			'settings.portraitLayoutBalanced' => 'Balanced (recommended)',
+			'settings.portraitLayoutImmersive' => 'Immersive',
+			'settings.portraitLayoutCompatibility' => 'Compatibility 16:9',
+			'settings.portraitGroupPresentation' => 'Fullscreen presentation',
+			'settings.portraitFullscreenPolicy' => 'Direction on entering fullscreen',
+			'settings.portraitFullscreenPolicyDesc' => 'Big and split-screen devices hand this to the system; a phone may follow the source',
+			'settings.portraitFollowSource' => 'Follow the source (recommended)',
+			'settings.portraitFollowSystem' => 'Follow the system',
+			'settings.portraitAlwaysLandscape' => 'Always landscape',
+			'settings.portraitDisplayMode' => 'Portrait-fullscreen canvas',
+			'settings.portraitDisplayModeDesc' => 'Only the upright fullscreen of a portrait stream; applies at once',
+			'settings.portraitDisplayComplete' => 'Complete picture',
+			'settings.portraitDisplayAmbient' => 'Ambient backdrop (recommended)',
+			'settings.portraitDisplayBalanced' => 'Balanced fill',
+			'settings.portraitDisplayCover' => 'Crop to fill',
+			'settings.portraitDanmakuMode' => 'Portrait danmaku band',
+			'settings.portraitDanmakuModeDesc' => 'Bounds the flying danmaku over a portrait picture without touching the global style numbers',
+			'settings.portraitDanmakuFollowGlobal' => 'Follow global',
+			'settings.portraitDanmakuUpperQuarter' => 'Top 25%',
+			'settings.portraitDanmakuReduced' => 'Reduced 50%',
+			'settings.portraitDanmakuHidden' => 'Hidden on portrait',
+			'settings.portraitRemember' => 'Remember a room’s direction',
+			'settings.portraitRememberDesc' => 'A direction picked by hand in the player is kept for the next visit to the same room',
+			'settings.portraitGroupDiagnostics' => 'Diagnostics',
+			'settings.portraitDiagnostics' => 'Show the detection state',
+			'settings.portraitDiagnosticsDesc' => 'Draw the raw size, ratio and the rule in force over the picture',
+			'settings.portraitReset' => 'Restore portrait defaults',
+			'settings.portraitResetDesc' => 'Including the remembered per-room direction overrides',
+			'settings.portraitResetConfirm' => 'Reset every portrait-adaptation setting to its default?',
+			'settings.pipOnTop' => 'Keep the mini player on top',
+			'settings.pipOnTopDesc' => 'When off, other applications can cover the mini player',
+			'settings.miniRemember' => 'Remember the mini window position',
+			'settings.miniRememberDesc' => 'The tile re-opens where it was left; off returns it to the corner each time',
+			'settings.pauseOnTileClose' => 'Pause when the tile closes',
+			'settings.pauseOnTileCloseDesc' => 'Closing the window while it is a PiP/mini tile restores and pauses the stream first — no audio left running behind a hidden window',
+			'settings.splashAnimation' => 'Start-up animation',
+			'settings.splashAnimationDesc' => 'Show the logo while the app starts',
+			'settings.githubUpdates' => 'Use the official GitHub update source',
+			'settings.githubUpdatesDesc' => 'Checks and downloads go straight to GitHub — for runs behind a proxy; off uses the mirrors',
+			'settings.clipboardRooms' => 'Recognise room links on the clipboard',
+			'settings.clipboardRoomsDesc' => 'When the app opens or resumes and the clipboard holds a room link, ask before entering; one link is asked once',
+			'settings.startup' => 'Start at sign-in',
+			'settings.startupDesc' => 'Launch automatically when you sign in',
+			'settings.startupFailed' => 'The system refused the autostart entry',
+			'settings.closeWindow' => 'When closing the window',
+			'settings.closeWindowDesc' => 'What the window\'s close button does',
+			'settings.closeAsk' => 'Ask every time',
+			'settings.closeHide' => 'Hide to the tray',
+			'settings.closeMinimise' => 'Minimise',
+			'settings.closeQuit' => 'Quit the app',
+			'settings.sectionCache' => 'Cache',
+			'settings.currentCacheSize' => 'Current cache size',
+			'settings.cacheSizeValue' => ({required Object count}) => '${count} MB',
+			'settings.cacheMeasuring' => 'Measuring…',
+			'settings.clearCache' => 'Clear the picture cache',
+			'settings.clearCacheDesc' => 'Covers re-pull right after the clear',
+			'settings.cacheCleared' => ({required Object count}) => 'Freed ${count} MB',
+			'settings.cacheAutoClear' => 'Auto-clear the picture cache',
+			'settings.cacheAutoClearDesc' => 'Empty the cache when a resume finds it past the cap',
+			'settings.cacheLimit' => 'Cache cap',
+			'settings.refreshCoversNow' => 'Refresh covers now',
+			'settings.refreshCoversNowDesc' => 'Empty the picture cache so every cover re-pulls on the next pass',
+			'settings.mbValue' => ({required Object count}) => '${count} MB',
+			'settings.groupCovers' => 'Covers',
+			'settings.autoRefreshThumbnails' => 'Refresh covers automatically',
+			'settings.autoRefreshThumbnailsDesc' => 'Re-pull room covers on a timer so the pictures stay current',
+			'settings.thumbnailRefreshInterval' => 'Cover refresh interval',
+			'settings.groupHistory' => 'History',
+			'settings.historyLimit' => 'History size',
+			'settings.historyLimitDesc' => 'How many watched rooms are kept; 0 is no limit',
+			'settings.noLimit' => 'No limit',
+			'settings.playerProxyGroup' => 'Player proxy',
+			'settings.playerProxyEnable' => 'Enable the player proxy',
+			'settings.playerProxyEnableDesc' => 'Live streams are pulled through this proxy by the player, apart from the app\'s own requests',
+			'settings.playerProxyHint' => 'Applies to the next stream; a running one keeps what it started with',
+			'settings.thumbnailKeepOldFiles' => 'Keep old thumbnails',
+			'settings.thumbnailKeepOldFilesDesc' => 'Superseded covers stay until the cache policy drops them; off clears what is past two intervals',
 			'hotAreas.title' => 'Platform visibility',
 			'hotAreas.note' => 'Hidden platforms are left out of popular, areas and search.',
 			'hotAreas.orderNote' => 'Drag to reorder the platforms.',
@@ -1526,6 +2135,8 @@ extension on TranslationsEn {
 			'recorder.emptyTitle' => 'No rooms watched yet',
 			'recorder.emptySubtitle' => 'Add a room and it is recorded once it goes live',
 			'recorder.nothingToJoin' => 'Nothing to join yet',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.actionStop' => 'Stop',
 			'recorder.actionFinishNow' => 'Join now',
 			'recorder.actionRestart' => 'Record again',
@@ -1544,6 +2155,53 @@ extension on TranslationsEn {
 			'recorder.roomEnded' => 'Broadcast ended',
 			'recorder.roomStalled' => 'Signal stalled',
 			'recorder.roomUnavailable' => 'Room unavailable',
+			'recorder.groupDefaults' => 'Recording defaults',
+			'recorder.defaultQuality' => 'Default recording quality',
+			'recorder.defaultQualityDesc' => 'When the room offers several qualities, record the address labelled with it; the best line when none is labelled.',
+			'recorder.usePinyinFolder' => 'Name folders in pinyin',
+			'recorder.usePinyinFolderDesc' => 'On: the anchor folder is pinyin (zhubo8891). Off: the room id, the safest component.',
+			'recorder.recordDanmaku' => 'Save the chat',
+			'recorder.recordDanmakuDesc' => 'Writes a chat file beside each recording; a chat that cannot connect never costs the recording.',
+			'recorder.recordDanmakuGifts' => 'Include gifts in the saved chat',
+			'recorder.recordDanmakuGiftsDesc' => 'The chat file also carries gifts and super chats.',
+			'recorder.groupFiles' => 'Recording files',
+			'recorder.recordSizeLimit' => 'Recording size limit',
+			'recorder.recordSizeLimitDesc' => 'Delete the oldest recordings (older than an hour) when the folder passes the cap.',
+			'recorder.recordSizeCap' => 'Size cap',
+			'recorder.recordUsedSpace' => 'Used space',
+			'recorder.recordUsedSpaceDesc' => 'Tap to re-measure the recordings folder.',
+			'recorder.clearAllCache' => 'Clear all recordings',
+			'recorder.clearAllCacheDesc' => 'Delete every video file in the recordings folder; the hour’s newest stay.',
+			'recorder.clearFreed' => ({required Object mb}) => 'Freed ${mb} MB',
+			'recorder.mbValue' => ({required Object count}) => '${count} MB',
+			'recorder.groupPerformance' => 'Performance & quality',
+			'recorder.preferBestStream' => 'Record the first stream only',
+			'recorder.preferBestStreamDesc' => 'Map only the first video and audio track of a multi-track container.',
+			'recorder.rwTimeout' => 'Read/write timeout',
+			'recorder.rwTimeoutDesc' => 'A silent input fails the read after this long and the retry path takes over.',
+			'recorder.queueSize' => 'Input queue size',
+			'recorder.queueSizeDesc' => 'Recording favours completeness over latency, so the queue is much larger than a player’s.',
+			'recorder.segmentLengthDesc' => 'Shorter segments lose less to a crash and cost more overhead.',
+			'recorder.maxRecordTasks' => 'Concurrent recording tasks',
+			'recorder.maxRecordTasksDesc' => 'How many rooms may record at once; each is one FFmpeg process.',
+			'recorder.groupReconnect' => 'Auto reconnect',
+			'recorder.autoReconnectSwitch' => 'Auto reconnect',
+			'recorder.autoReconnectDesc' => 'Retry an interrupted capture; off ends the session at the drop.',
+			'recorder.maxRetryCount' => 'Max retries',
+			'recorder.retryDelay' => 'Retry delay',
+			'recorder.timesValue' => ({required int count}) => '${count} times',
+			'recorder.secondsValue' => ({required int count}) => '${count} s',
+			'recorder.groupLiveCheck' => 'Live check',
+			'recorder.enablePolling' => 'Check for the first broadcast',
+			'recorder.enablePollingDesc' => 'Re-check rooms that are not up yet and start recording the moment they are.',
+			'recorder.checkInterval' => 'Check interval',
+			'recorder.enableBackoff' => 'Grow the interval',
+			'recorder.enableBackoffDesc' => 'Double the wait after each still-offline answer to spare the API.',
+			'recorder.maxCheckInterval' => 'Interval ceiling',
+			'recorder.autoStartBoot' => 'Resume recordings when the app starts',
+			'recorder.autoStartBootDesc' => 'Waiting and interrupted tasks re-arm themselves on launch.',
+			'recorder.decrease' => 'Decrease',
+			'recorder.increase' => 'Increase',
 			'theme.system' => 'System',
 			'theme.dark' => 'Dark',
 			'theme.light' => 'Light',
@@ -1630,6 +2288,23 @@ extension on TranslationsEn {
 			'room.enterPortraitFullscreenHint' => 'Drag down to enter portrait fullscreen',
 			'room.portraitPanelResize' => 'Panel height',
 			'room.portraitPanelResizeHint' => 'Drag to resize the panel',
+			'room.pip' => 'Picture-in-picture',
+			'room.exitPip' => 'Exit picture-in-picture',
+			'room.miniWindow' => 'Floating mini window',
+			'room.exitMiniWindow' => 'Exit the mini window',
+			'room.messageActions' => 'Danmaku',
+			'room.copyMessage' => 'Copy',
+			'room.copiedToClipboard' => 'Copied to clipboard',
+			'room.blockViewer' => 'Block this viewer',
+			'room.blockViewerDesc' => ({required Object name}) => 'Messages from ${name} are no longer shown',
+			'room.userBlocked' => ({required Object name}) => 'Blocked ${name}',
+			'room.blockWord' => 'Block a keyword…',
+			'room.blockWordDesc' => 'Enter a word; messages containing it are no longer shown',
+			'room.keywordBlocked' => 'Keyword added to the danmaku block list',
+			'room.userLevel' => ({required Object level}) => 'Level ${level}',
+			'room.blockKeywordTitle' => 'Block a danmaku keyword',
+			'room.block' => 'Block',
+			'room.portraitFullscreenRestoreHint' => 'Portrait fullscreen — swipe up to bring the danmaku bar back',
 			'areas.empty' => 'No areas here',
 			'popular.allPlatforms' => 'All platforms',
 			'popular.allPlatformsHint' => 'Tap to switch; platform settings hide and order them.',
@@ -1689,8 +2364,6 @@ extension on TranslationsEn {
 			'iptv.xtreamPassword' => 'Password',
 			'iptv.epgUrl' => 'EPG URL (optional)',
 			'iptv.xtreamAuthFailed' => 'The server rejected these credentials',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.refreshSource' => 'Refresh this source',
 			'iptv.epgNow' => 'Now',
 			'iptv.epgNext' => 'Next',
@@ -1762,6 +2435,41 @@ extension on TranslationsEn {
 			'backup.restore' => 'Restore',
 			'backup.restoreConfirm' => ({required String name}) => 'Overwrite current data with “${name}”? The app restarts.',
 			'backup.sectionCloud' => 'Cloud & sync',
+			'backup.devicesGroup' => 'Cloud and other devices',
+			'backup.localGroup' => 'Local backup',
+			'backup.createSubtitle' => 'Saves a full copy of the app data (settings, follows, history and more)',
+			'backup.restoreFileSubtitle' => 'Restore from a backup file; the app restarts afterwards',
+			'backup.filesTitle' => 'Backups in the folder',
+			'backup.filesCount' => ({required Object count}) => 'Backups in the folder · ${count}',
+			'backup.filesEmpty' => 'No backups yet',
+			'backup.filesHint' => 'Backups made here are listed; you can also drop backup files into this folder',
+			'backup.filesError' => 'The backup folder cannot be read',
+			'backup.retry' => 'Retry',
+			'backup.loading' => 'Reading…',
+			'backup.kindFull' => 'Full backup',
+			'backup.directoryGroup' => 'Backup Directory',
+			'backup.directory' => 'Backup directory',
+			'backup.directoryDefaultLabel' => 'Backup folder (default)',
+			'backup.directoryDefault' => 'The app\'s default folder',
+			'backup.chooseDirectory' => 'Choose the backup folder',
+			'backup.resetDirectory' => 'Use the default folder',
+			'backup.openDirectory' => 'Open the backup folder',
+			'backup.directoryUnwritable' => 'This folder cannot be written; pick another one',
+			'backup.directoryUpdateFailed' => 'The backup directory was not changed. Try again.',
+			'backup.deleteConfirm' => ({required Object name}) => 'Delete the backup file "${name}"?',
+			'backup.created' => ({required Object name}) => 'Backed up to ${name}',
+			'backup.readFailed' => 'The backup file cannot be read',
+			'backup.restored' => ({required Object name}) => 'Restored ${name}',
+			'backup.moreActions' => 'More actions',
+			'backup.fileTooltip' => 'Click to restore; right-click or ⋮ for more',
+			'backup.previewTitle' => 'Restore preview',
+			'backup.previewRooms' => ({required Object current, required Object incoming}) => 'Followed rooms: ${current} → ${incoming}',
+			'backup.previewGroups' => ({required Object current, required Object incoming}) => 'Follow groups: ${current} → ${incoming}',
+			'backup.previewNote' => 'Everything else stays as it is.',
+			'backup.restoreNow' => 'Restore now',
+			'backup.followsScopeHint' => 'Followed rooms and groups only; other settings stay unchanged',
+			'backup.kindFollows' => 'Follows only',
+			'backup.deleteFailed' => 'The file could not be deleted',
 			'about.native' => 'This device',
 			'about.downloadFilesOf' => ({required Object platform}) => 'Downloads · ${platform}',
 			'about.title' => 'About',
@@ -1824,8 +2532,24 @@ extension on TranslationsEn {
 			'search.allSites' => 'All',
 			'search.historyTitle' => 'Recent searches',
 			'search.historyRemove' => 'Remove this search',
+			'search.webSearch' => 'Web search',
+			'search.webSearchTooltip' => 'Web-search the current platform',
+			'search.continueWeb' => 'Continue in web search',
+			'search.selectPlatformFirst' => 'Pick a platform first',
+			'search.needKeyword' => 'Type a keyword first',
+			'search.webUnavailableFor' => ({required Object site}) => '${site} has no web search page.',
+			'search.webExternalTip' => 'The web search opens in the system browser. Find the live room you want, copy its link, and paste it into the search box to open it here.',
+			'search.openInSystemBrowser' => 'Open in system browser',
+			'search.externalBrowserNotOpened' => 'The system browser did not open; check the default-browser settings',
+			'search.webSearchRoomBanner' => 'This is a live room',
+			'search.roomIdLabel' => ({required String roomId}) => 'room ${roomId}',
+			'search.roomEnter' => 'Enter',
+			'search.webSearchRoomDismiss' => 'Stop offering this room',
+			'search.webSearchInvalidAddress' => 'The web-search address is invalid; go back to the search page and try again.',
+			'search.webSearchLoadFailed' => 'The page failed to load; check the network or proxy and retry.',
+			'search.webSearchUnavailableTitle' => 'Web search unavailable',
 			'remoteSync.title' => 'Device Sync',
-			'remoteSync.tileSubtitle' => 'Sync follows and history between devices on this network',
+			'remoteSync.tileSubtitle' => 'Sync configurations between devices over the LAN',
 			'remoteSync.myDevice' => 'My Device',
 			'remoteSync.noAddress' => 'No LAN address found',
 			'remoteSync.scanHint' => 'Let the other device scan this code, or type this device’s address there',
@@ -1853,7 +2577,7 @@ extension on TranslationsEn {
 			'remoteSync.description' => 'Make sure both devices are connected to the same local network',
 			'remoteSync.searching' => 'Searching for devices on the local network...',
 			'remoteSync.searchingShort' => 'Searching',
-			'remoteSync.manualHint' => 'Enter the other device’s address, or paste the sync link from its QR code',
+			'remoteSync.manualHint' => 'Type the other device\'s address, or paste its QR code\'s sync link (it carries the pairing code)',
 			'remoteSync.copyAddress' => 'Copy Address',
 			'remoteSync.addressCopied' => 'Address copied',
 			'remoteSync.fromName' => ({required String name}) => 'From ${name}',
@@ -1862,6 +2586,32 @@ extension on TranslationsEn {
 			'remoteSync.reject' => 'Reject',
 			'remoteSync.incomingImportNamed' => ({required Object address, required Object name}) => '${address} (${name}) asks to replace this device’s settings with its own. Allow?',
 			'remoteSync.incomingExportNamed' => ({required Object address, required Object name}) => '${address} (${name}) asks to read this device’s settings. Allow?',
+			'remoteSync.pairingCode' => 'Pairing code',
+			'remoteSync.pairingCodeFor' => ({required String name}) => 'Enter the 6-digit pairing code shown on “${name}”',
+			'remoteSync.pairingCodeInvalid' => 'The pairing code should be 6 digits',
+			'remoteSync.partsAll' => 'Select all',
+			'remoteSync.partsLegacy' => 'The other device is version 3.x or earlier (or did not answer), so it can only receive everything.',
+			'remoteSync.partsSendNamed' => ({required String name}) => 'Tick what to send to “${name}”. After it confirms, the ticked parts replace its own; unticked parts stay.',
+			'remoteSync.confirmSendNamed' => ({required String name}) => 'Send this device\'s full configuration to “${name}”? Its user confirms, and it replaces the other device\'s.',
+			'remoteSync.previewTitle' => 'Receiving would change this:',
+			'remoteSync.previewSettings' => ({required int count, required int changed}) => 'Settings: ${count} items, ${changed} differ from this device',
+			'remoteSync.previewNoAccounts' => 'Accounts: the other device left “Sync account cookies” off; this device\'s sign-ins stay',
+			'remoteSync.previewAccountsEmpty' => 'Accounts: the other device has no sign-ins; this device\'s stay as they are',
+			'remoteSync.previewWarning' => 'Receiving merges the ticked parts; unticked ones stay. Settings follow the other device and cannot be undone — create a backup under “Backup & restore” first if needed.',
+			'remoteSync.partCount' => ({required String part, required int count}) => '${part} (${count})',
+			'remoteSync.partSettings' => 'Settings',
+			'remoteSync.partFollows' => 'Follow list',
+			'remoteSync.partHistory' => 'Watch history',
+			'remoteSync.partGroups' => 'Follow groups',
+			'remoteSync.partKeywords' => 'Blocked keywords',
+			'remoteSync.partUsers' => 'Blocked users',
+			'remoteSync.partWebdav' => 'WebDAV servers',
+			'remoteSync.partAccounts' => 'Account cookies',
+			'remoteSync.includeAccounts' => 'Sync account cookies',
+			'remoteSync.includeAccountsHint' => 'Sends or serves the platform login cookies and WebDAV passwords; turn it on only between devices you trust',
+			'remoteSync.receiveAction' => 'Receive',
+			'remoteSync.sendAction' => 'Send',
+			'remoteSync.invalidQr' => 'Not a PureLive sync QR code',
 			'errors.generic' => 'Something went wrong. Please try again later.',
 			'errors.network' => 'Network unavailable. Check your connection and retry.',
 			'errors.notFound' => 'Nothing found.',
@@ -1899,6 +2649,8 @@ extension on TranslationsEn {
 			'webdav.username' => 'Account',
 			'webdav.password' => 'App password',
 			'webdav.directory' => 'Directory (optional)',
+			_ => null,
+		} ?? switch (path) {
 			'webdav.testConnection' => 'Test connection',
 			'webdav.testing' => 'Connecting…',
 			'webdav.testOk' => 'Connected. The address, account and password all work.',
@@ -1925,6 +2677,37 @@ extension on TranslationsEn {
 			'webdav.helpIssues' => 'Connection failed? Check that the address ends with /dav/, that you used the app password rather than the login password, and that your network does not block WebDAV ports.',
 			'webdav.openOfficialHelp' => 'Open the official Jianguoyun help',
 			'webdav.helpOpenFailed' => 'Could not open the browser',
+			'webdav.servers' => 'WebDAV servers',
+			'webdav.noServer' => 'No server yet',
+			'webdav.noConfigCreateFirst' => 'No configs yet — create a WebDAV config first',
+			'webdav.intro' => 'Add a WebDAV drive (Jianguoyun, Nextcloud…) to upload backups and restore them on other devices.',
+			'webdav.createNew' => 'Create a config',
+			'webdav.openList' => 'Open the config list',
+			'webdav.refresh' => 'Refresh',
+			'webdav.moreActions' => 'More actions',
+			'webdav.uploadFavorites' => 'Upload the follows list only',
+			'webdav.uploadFull' => 'Upload the full backup',
+			'webdav.helpTutorial' => 'Help tutorial',
+			'webdav.nameExists' => 'That config name already exists',
+			'webdav.selectFailed' => 'The WebDAV selection was not saved. Try again.',
+			'webdav.configDeleteFailed' => 'The WebDAV config was not deleted. Try again.',
+			'webdav.confirmDeleteConfig' => ({required Object name}) => 'Delete the config “${name}”?',
+			'webdav.confirmDeleteItem' => ({required Object name}) => 'Delete “${name}” from WebDAV?',
+			'webdav.deleteSuccess' => 'File deleted successfully',
+			'webdav.deleteFailed' => 'File deletion failed',
+			'webdav.uploadFailed' => 'File upload failed',
+			'webdav.downloadFailed' => 'File download failed',
+			'webdav.restoreAllSettings' => 'Restore all settings',
+			'webdav.restoreFavorites' => 'Restore the follows list only',
+			'webdav.folderEmpty' => 'This folder is empty',
+			'webdav.serverName' => 'Config name',
+			'webdav.editServer' => 'Edit config',
+			'webdav.deleteServer' => 'Delete config',
+			'webdav.activeMark' => 'In use',
+			'webdav.saved' => 'Config saved',
+			'webdav.restored' => ({required Object name}) => 'Restored from ${name}',
+			'webdav.uploaded' => ({required Object name}) => 'Uploaded ${name}',
+			'webdav.secretsNote' => 'This device cannot open its secret vault — the password lives only in this page',
 			'wallpaper.title' => 'Wallpaper',
 			'wallpaper.entrySubtitle' => 'Solid colours, gradients or a picture',
 			'wallpaper.currentNone' => 'Theme default',
@@ -1951,6 +2734,93 @@ extension on TranslationsEn {
 			'wallpaper.fitContain' => 'Contain',
 			'wallpaper.fitFill' => 'Stretch',
 			'wallpaper.imageMissing' => 'Picture not found; check the path',
+			'cast.title' => 'Cast',
+			'cast.hint' => 'Pick a device on this network that can receive the cast',
+			'cast.searching' => 'Searching for cast devices on the network…',
+			'cast.noDevices' => 'No cast devices yet',
+			'cast.castingTo' => ({required String name}) => 'Casting to ${name}',
+			'cast.stop' => 'Stop casting',
+			'cast.failed' => 'Cast failed — the device may not be able to reach this URL',
+			'cast.statePlaying' => 'Playing',
+			'cast.statePaused' => 'Paused',
+			'cast.stateBuffering' => 'Buffering',
+			'cast.stateStopped' => 'Stopped',
+			'cast.stateUnreachable' => 'Device not answering',
+			'danmaku.liveHint' => 'Changes apply at once',
+			'danmaku.templateGroup' => 'Viewing template',
+			'danmaku.templateBest' => 'Top 20% · Balanced',
+			'danmaku.templateComfort' => 'Top 35% · Comfortable',
+			'danmaku.templateDense' => 'Top 55% · Dense',
+			'danmaku.templateReset' => 'Reset',
+			'danmaku.bestDesc' => 'Barrage stays in the top 20% of the picture at a middle speed and density, clear of the subject.',
+			'danmaku.comfortDesc' => 'Barrage takes the top 35%; a slightly larger font and slower lines, easier to read.',
+			'danmaku.denseDesc' => 'Barrage takes the top 55%; a smaller font and faster lines keep up with a busy room.',
+			'danmaku.resetDesc' => 'Back to the defaults: full height, opaque, default speed and size.',
+			'danmaku.customDesc' => 'Custom: the current answers match none of the templates — save them as yours.',
+			'danmaku.saveMine' => 'Save the current look as my template',
+			'danmaku.useMine' => 'Use my template',
+			'danmaku.templateApplied' => 'Danmaku template applied',
+			'danmaku.templateSaved' => 'Current danmaku look saved',
+			'danmaku.templateEmpty' => 'No saved danmaku template yet',
+			'danmaku.templateInvalid' => 'The saved danmaku template is broken or out of range',
+			'danmaku.rangeGroup' => 'Display area',
+			'danmaku.area' => 'Height used at the top',
+			'danmaku.marginTop' => 'Top margin (px)',
+			'danmaku.marginBottom' => 'Bottom margin (px)',
+			'danmaku.pausedBehavior' => 'Barrage while paused',
+			'danmaku.pausedBehaviorDesc' => 'When the video pauses, the barrage holds or keeps flying',
+			'danmaku.pausedPause' => 'Pause with the video',
+			'danmaku.pausedFly' => 'Keep flying',
+			'danmaku.styleGroup' => 'Style',
+			'danmaku.opacity' => 'Opacity',
+			'danmaku.speed' => 'Speed (px/s)',
+			'danmaku.fontSize' => 'Font size',
+			'danmaku.fontWeight' => 'Font weight',
+			'danmaku.weightThin' => 'Thin',
+			'danmaku.weightExtraLight' => 'Extra light',
+			'danmaku.weightLight' => 'Light',
+			'danmaku.weightNormal' => 'Normal',
+			'danmaku.weightMedium' => 'Medium',
+			'danmaku.weightSemiBold' => 'Semibold',
+			'danmaku.weightBold' => 'Bold',
+			'danmaku.weightExtraBold' => 'Extra bold',
+			'danmaku.weightBlack' => 'Black',
+			'danmaku.stroke' => 'Barrage outline',
+			'danmaku.strokeWidth' => 'Outline width',
+			'danmaku.noEmoji' => 'Pure text mode (hide emoji)',
+			'danmaku.smoothGroup' => 'Smoothness',
+			'danmaku.repeatGroup' => 'Repeated danmaku',
+			'danmaku.collapse' => 'Collapse identical danmaku bursts',
+			'danmaku.collapseDesc' => 'Keep the first copy when different users send the same text. Local and system messages are unaffected.',
+			'danmaku.collapseWindow' => 'Identical-text window (seconds)',
+			'danmaku.fps' => 'Barrage frame rate',
+			'danmaku.fpsValue' => ({required int count}) => '${count} FPS',
+			'danmaku.maxVisible' => 'Most lines on screen',
+			'danmaku.maxVisibleValue' => ({required int count}) => '${count} lines',
+			'danmaku.interactionGroup' => 'Touch interaction',
+			'danmaku.holdOnPress' => 'Hold a line to stop it',
+			'danmaku.holdOnPressDesc' => 'Pressing a flying line holds only that line; the rest keep flying, and it resumes on release.',
+			'danmaku.listGroup' => 'Chat list',
+			'danmaku.listStyle' => 'Chat list style',
+			'danmaku.listCompact' => 'Compact',
+			'danmaku.listCard' => 'Card',
+			'danmaku.listFontSize' => 'Chat text size',
+			'danmaku.listLineSpacing' => 'Line spacing',
+			'danmaku.showSender' => 'Show sender names',
+			'danmaku.showGifts' => 'Gifts in flying danmaku',
+			'danmaku.showGiftsDesc' => 'Gift messages fly over the picture as well',
+			'danmaku.tapAction' => 'Tap an on-screen danmaku for actions',
+			'danmaku.longPressAction' => 'Long-press an on-screen danmaku for block actions',
+			'danmaku.autoFps' => 'Danmaku frame rate follows the display',
+			'danmaku.autoFpsDesc' => 'Follows the power saving, balanced or highest level; turn it off to set the rate yourself.',
+			'danmaku.fpsMode' => 'Refresh-rate tier',
+			'danmaku.fpsModePowerSaving' => 'Power saving',
+			'danmaku.fpsModeBalanced' => 'Balanced',
+			'danmaku.fpsModeHighest' => 'Highest',
+			'danmaku.fontFamily' => 'Danmaku font',
+			'clipboard.title' => 'A live-room link in your clipboard',
+			'clipboard.found' => ({required Object site, required Object room}) => '${site} room ${room} — take a look now?',
+			'clipboard.go' => 'Open',
 			_ => null,
 		};
 	}

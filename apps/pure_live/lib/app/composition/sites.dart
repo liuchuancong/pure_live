@@ -4,6 +4,7 @@ import 'package:live_log/live_log.dart' show LiveLog, LogLevel;
 import 'package:live_net/live_net.dart';
 import 'package:live_platform/live_platform.dart' show FormFactor, PlatformKind;
 import 'package:live_sites/live_sites.dart';
+import 'package:pure_live/features/login/douyu_login_store.dart' show AppDouyuLoginStore;
 
 /// The network and site graph: one transport factory, the site HTTP client
 /// and the registry of built-in sites.
@@ -14,7 +15,7 @@ import 'package:live_sites/live_sites.dart';
 /// must not cost the other sixteen.
 final class AppSites {
   /// The graph over the parts [boot] assembled.
-  new({required this.factory, required this.http, required this.registry});
+  new({required this.factory, required this.http, required this.registry, this.douyuLogin});
 
   /// The transport factory, kept for cache purges and cookie clears.
   final DioFactory factory;
@@ -24,6 +25,12 @@ final class AppSites {
 
   /// The built-in sites, in registration order.
   final LiveSiteRegistry registry;
+
+  /// The douyu renewal store the registry was built over (null when the
+  /// vault would not open — douyu then behaves as before: every request a
+  /// guest). The cookie page reads the same instance through
+  /// `douyuLoginStoreProvider`.
+  final AppDouyuLoginStore? douyuLogin;
 
   /// Builds the graph and initializes every site.
   ///
@@ -55,7 +62,16 @@ final class AppSites {
       proxyPolicy: proxyPolicyBuilder?.call(fallbackPolicy) ?? fallbackPolicy,
     );
     final http = factory.create();
-    final registry = LiveSiteRegistry(createBuiltInLiveSites(http: http));
+    // The douyu renewal seam: the vault's snapshot the adapter renews
+    // stored logins through. A vault this process cannot open leaves it
+    // null — the same guest behaviour the build had before it existed.
+    AppDouyuLoginStore? douyuLogin;
+    try {
+      douyuLogin = await AppDouyuLoginStore.load();
+    } on Object {
+      douyuLogin = null;
+    }
+    final registry = LiveSiteRegistry(createBuiltInLiveSites(http: http, douyuLogin: douyuLogin));
 
     final context = LiveSiteContext(
       platform: switch ((kind, formFactor)) {
@@ -86,7 +102,7 @@ final class AppSites {
         );
       }
     }
-    return AppSites(factory: factory, http: http, registry: registry);
+    return AppSites(factory: factory, http: http, registry: registry, douyuLogin: douyuLogin);
   }
 
   /// Releases every site and the pooled transports, in registration order.

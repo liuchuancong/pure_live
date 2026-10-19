@@ -6,6 +6,8 @@ import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show StatefulNavigationShell;
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
+import 'package:pure_live/app/services/clipboard_room_watcher.dart';
+import 'package:pure_live/app/services/image_cache.dart' show cacheAutoClearWatcherProvider;
 import 'package:pure_live/app/shell/home_views.dart';
 import 'package:pure_live/app/shell/shell_destinations.dart';
 import 'package:pure_uikit/pure_uikit.dart';
@@ -19,19 +21,39 @@ import 'package:pure_uikit/pure_uikit.dart';
 /// The window's caption is not the shell's business: the app-level
 /// `DesktopTitleFrame` draws it once above the whole navigator, so pushed
 /// pages keep the strip (the reference frames the app, not the home page).
-final class HomeShell extends ConsumerWidget {
+final class HomeShell extends ConsumerStatefulWidget {
   /// Wraps [navigationShell] in the shell chrome.
   const new({required this.navigationShell, super.key});
 
   /// The indexed stack of shell branches the router owns.
   final StatefulNavigationShell navigationShell;
 
-  void _select(BuildContext context, WidgetRef ref, ShellBranch branch) {
-    goShellBranch(ref, navigationShell, branch.name);
+  @override
+  ConsumerState<HomeShell> createState() => _HomeShellState();
+}
+
+final class _HomeShellState extends ConsumerState<HomeShell> {
+  @override
+  void initState() {
+    super.initState();
+    // 剪贴板口令: the clipboard's room links are looked for when the app
+    // comes back to the foreground, for as long as the shell is up.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref
+          ..read(clipboardRoomWatcherProvider).start()
+          ..read(cacheAutoClearWatcherProvider).start();
+      }
+    });
+  }
+
+  void _select(BuildContext context, ShellBranch branch) {
+    goShellBranch(ref, widget.navigationShell, branch.name);
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final navigationShell = widget.navigationShell;
     return LayoutBuilder(
       builder: (context, constraints) {
         final rail = isHomeRailWidth(constraints.maxWidth);
@@ -68,7 +90,7 @@ final class HomeShell extends ConsumerWidget {
                           child: HomeRail(
                             branches: branches,
                             selected: selected,
-                            onSelected: (branch) => _select(context, ref, branch),
+                            onSelected: (branch) => _select(context, branch),
                           ),
                         ),
                       ),
@@ -86,15 +108,10 @@ final class HomeShell extends ConsumerWidget {
           bottomNavigationBar: PureBottomNavigation(
             destinations: [
               for (final branch in branches)
-                PureNavDestination(
-                  id: branch.name,
-                  label: branch.label(context),
-                  icon: branch.icon,
-                ),
+                PureNavDestination(id: branch.name, label: branch.label(context), icon: branch.icon),
             ],
             selectedId: selected.name,
-            onDestinationSelected: (destination) =>
-                _select(context, ref, ShellBranch.fromId(destination.id)),
+            onDestinationSelected: (destination) => _select(context, ShellBranch.fromId(destination.id)),
           ),
           body: body,
         );

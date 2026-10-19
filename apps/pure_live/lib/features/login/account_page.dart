@@ -63,8 +63,11 @@ final class AccountPage extends ConsumerWidget {
     );
   }
 
-  /// One platform's row. A signed-in row reads as the account it holds and its
-  /// tap signs out; a signed-out row points into the login flow.
+  /// One platform's row. Every row points at the platform's own page: the
+  /// cookie editor for the paste sites (signed in or not — the editor opens
+  /// on its stored credential), the QR login for the scan site. The
+  /// reference keeps the same split (`account_page.dart` dispatches to
+  /// `CookieEditorScaffold` per platform).
   AbstractSettingsTile _row(BuildContext context, WidgetRef ref, LiveSite site, LiveCredential? credential) {
     final t = context.t;
     final name = _siteName(site, context);
@@ -87,32 +90,12 @@ final class AccountPage extends ConsumerWidget {
       trailing: signedIn
           ? Icon(Icons.logout_rounded, color: PureTheme.of(context).colors.error)
           : const Icon(Icons.chevron_right_rounded),
-      onPressed: (_) =>
-          unawaited(signedIn ? _confirmSignOut(context, ref, site) : const LoginRoute().push<void>(context)),
+      onPressed: (_) => unawaited(
+        siteUsesQrLogin(site.manifest.id)
+            ? const LoginRoute().push<void>(context)
+            : AccountCookieRoute(siteId: site.manifest.id).push<void>(context),
+      ),
     );
-  }
-
-  static Future<void> _confirmSignOut(BuildContext context, WidgetRef ref, LiveSite site) async {
-    final confirmed = await showPureDialog<bool>(
-      context: context,
-      title: context.t.account.signOutConfirm(site: _siteName(site, context)),
-      child: Text(context.t.account.signOutHint),
-      actions: (dialogContext) => [
-        PureButton(
-          label: dialogContext.t.common.cancel,
-          variant: ButtonVariant.ghost,
-          onPressed: () => Navigator.of(dialogContext).pop(false),
-        ),
-        PureButton(
-          label: dialogContext.t.account.signOut,
-          variant: ButtonVariant.danger,
-          onPressed: () => Navigator.of(dialogContext).pop(true),
-        ),
-      ],
-    );
-    if (confirmed ?? false) {
-      await ref.read(accountProvider(site.manifest.id).notifier).signOut();
-    }
   }
 
   static Future<void> _confirmClearAll(BuildContext context, WidgetRef ref) async {

@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:live_sites/live_sites.dart' show LiveCredential;
-import 'package:live_storage/live_storage.dart' show SecretRefs, SecretStore;
+import 'package:live_storage/live_storage.dart' show SecretRefs, SecretStore, SecretVault;
 
 import 'package:pure_live/features/login/secure_vault.dart';
 
@@ -19,16 +19,20 @@ import 'package:pure_live/features/login/secure_vault.dart';
 /// sign-out. One repository per site.
 final class LoginRepository {
   /// The repository of [siteId]'s platform (`bilibili`, `douyu`, `huya`).
-  new({required this.siteId});
+  /// [vaultOf] is injectable so a test (or a later sync feature) can hand
+  /// the repository an in-memory vault without touching the platform.
+  new({required this.siteId, SecretVault Function()? vaultOf}) : _vaultOf = vaultOf ?? SecureVault.new;
 
   /// The platform whose credential this repository stores.
   final String siteId;
+
+  final SecretVault Function() _vaultOf;
 
   Future<SecretStore>? _store;
 
   /// The loaded store, waiting for a load still in flight so a login that
   /// lands before the first read never writes past it.
-  Future<SecretStore> _ready() => _store ??= SecretStore.load(vault: SecureVault());
+  Future<SecretStore> _ready() => _store ??= SecretStore.load(vault: _vaultOf());
 
   /// The stored credential, null while signed out. A document that cannot be
   /// read back is removed rather than kept — a broken credential would fail
@@ -57,6 +61,40 @@ final class LoginRepository {
     final store = await _ready();
     await store.remove(SecretRefs.cookie(siteId));
   }
+
+  /// The stored document as it stands, for a device-sync export; null while
+  /// signed out.
+  Future<String?> exportDocument() async {
+    final store = await _ready();
+    return store.value(SecretRefs.cookie(siteId));
+  }
+
+  /// Stores [document] (one [save] wrote, from any device) as this site's
+  /// credential when it decodes, and answers the parsed credential; an
+  /// unreadable document changes nothing and answers null.
+  Future<LiveCredential?> saveDocument(String document) async {
+    final credential = decodeDocument(document);
+    if (credential == null) {
+      return null;
+    }
+    final store = await _ready();
+    await store.set(SecretRefs.cookie(siteId), document);
+    return credential;
+  }
+
+  /// Reads [document] back into a credential without storing it — the shape
+  /// [load] checks; null when the text is no credential document at all.
+  LiveCredential? decodeDocument(String document) {
+    try {
+      return _decode(jsonDecode(document));
+    } on FormatException {
+      return null;
+    }
+  }
+
+  /// The document [save] would write for [credential], without writing it —
+  /// what a device-sync export sends for a roster entry.
+  String encodeDocument(LiveCredential credential) => jsonEncode(_encode(credential));
 
   Map<String, Object?> _encode(LiveCredential credential) => <String, Object?>{
     'siteId': credential.siteId,

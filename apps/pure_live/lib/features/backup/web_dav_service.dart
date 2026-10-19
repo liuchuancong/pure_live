@@ -105,6 +105,20 @@ final class WebDavService {
   /// `/` — the address plus the configured directory.
   Uri get directoryUri => _uri(_directoryPath());
 
+  /// [path] (a `/`-joined sequence of sub-directory names, '' for the
+  /// configured directory itself) as an absolute server path ending in `/`
+  /// — the browse door the page walks through.
+  Uri uriAt(String path) => _uri(_joined(path));
+
+  String _joined(String path) {
+    final base = _directoryPath();
+    final parts = path.split('/').where((part) => part.isNotEmpty).map(Uri.encodeComponent).join('/');
+    if (parts.isEmpty) {
+      return base;
+    }
+    return '$base$parts/';
+  }
+
   /// The Basic auth header value for the configured credentials.
   String get _authHeader {
     final credentials = base64Encode(utf8.encode('${config.username}:${config.password}'));
@@ -126,57 +140,69 @@ final class WebDavService {
     _expect(response, const {207, 200}, WebDavFailure.server);
   }
 
-  /// Lists the directory, newest entry first. The directory's own entry is
-  /// dropped; what remains is what the page shows.
-  Future<List<WebDavEntry>> listDirectory() async {
+  /// Lists the configured directory (or the sub-folder [path] inside it),
+  /// directories first and each group newest-entry first; the directory's
+  /// own entry is dropped. This is the browse listing the page walks —
+  /// folders included, unlike the plain backup list.
+  Future<List<WebDavEntry>> list({String path = ''}) async {
     final response = await _send(
       method: 'PROPFIND',
-      url: directoryUri,
+      url: uriAt(path),
       headers: const {'Depth': '1'},
       body: _propfindBody,
       contentType: 'application/xml',
       timeout: _callTimeout,
     );
     _expect(response, const {207, 200}, WebDavFailure.server);
-    final selfPath = _directoryPath();
-    final entries =
-        _parseMultistatus(response.text)
-            .where((entry) => !entry.isDirectory)
-            .where((entry) => _pathOf(entry.href) != selfPath)
-            .toList()
+    final selfPath = _joined(path);
+    final entries = _parseMultistatus(response.text)
+        .where((entry) => _pathOf(entry.href) != selfPath)
+        .toList()
           ..sort((a, b) {
+            // Folders lead a browse listing; inside each group, newest
+            // first, names breaking equal (or missing) timestamps.
+            if (a.isDirectory != b.isDirectory) {
+              return a.isDirectory ? -1 : 1;
+            }
             final byTime = (b.modified ?? DateTime.fromMillisecondsSinceEpoch(0)).compareTo(
               a.modified ?? DateTime.fromMillisecondsSinceEpoch(0),
             );
-            // equal timestamps (or no timestamps at all): names are timestamped
-            // too, so the lexical order keeps newest first.
             return byTime != 0 ? byTime : b.name.compareTo(a.name);
           });
     return entries;
   }
+
+  /// The plain backup list: the files of the configured directory, newest
+  /// first (the page's flat view when it is not browsing).
+  Future<List<WebDavEntry>> listDirectory() async => [
+    for (final entry in await list())
+      if (!entry.isDirectory) entry,
+  ];
 
   /// Uploads [bytes] as [fileName] into the configured directory,
   /// overwriting an older file of the same name (a re-upload of the same
   /// backup is a repair, not an error). A server that refuses to
   /// auto-create the target collection (404/409) gets one `MKCOL` attempt
   /// and a second PUT before the failure is reported.
-  Future<void> upload(String fileName, Uint8List bytes) async {
+  Future<void> upload(String fileName, Uint8List bytes, {String path = ''}) async {
+    final target = _childAt(fileName, path);
+    final contentType = fileName.toLowerCase().endsWith('.json') ? 'application/json' : 'application/zip';
     var response = await _send(
       method: 'PUT',
-      url: _child(fileName),
+      url: target,
       headers: const {'Overwrite': 'T'},
       bodyBytes: bytes,
-      contentType: 'application/zip',
+      contentType: contentType,
       timeout: _transferTimeout,
     );
     if (response.statusCode == 404 || response.statusCode == 409) {
-      await _mkcol();
+      await _mkcol(path);
       response = await _send(
         method: 'PUT',
-        url: _child(fileName),
+        url: target,
         headers: const {'Overwrite': 'T'},
         bodyBytes: bytes,
-        contentType: 'application/zip',
+        contentType: contentType,
         timeout: _transferTimeout,
       );
     }
@@ -187,11 +213,23 @@ final class WebDavService {
   /// address' own path does), so one `MKCOL` answers the common first-run
   /// case. A server that already has the directory answers 405/301 and the
   /// failure is deliberately swallowed — the upload after it decides.
-  Future<void> _mkcol() async {
+  Future<void> _mkcol([String path = '']) async {
     try {
-      await _send(method: 'MKCOL', url: directoryUri, timeout: _callTimeout);
+      await _send(method: 'MKCOL', url: uriAt(path), timeout: _callTimeout);
     } on WebDavException {
       // The retry PUT reports the real failure.
+    }
+  }
+
+  /// Creates [path] (and any missing parents, one MKCOL per step) under the
+  /// configured directory — the folder the page just entered on a server
+  /// that does not auto-create on upload.
+  Future<void> ensureFolder(String path) async {
+    final steps = path.split('/').where((part) => part.isNotEmpty).toList();
+    final walked = StringBuffer();
+    for (final step in steps) {
+      walked.write('$step/');
+      await _mkcol(walked.toString());
     }
   }
 
@@ -275,7 +313,10 @@ final class WebDavService {
   Uri _uri(String path) => Uri.parse(config.address.trim()).replace(path: path);
 
   /// The directory's own URL with [child] appended.
-  Uri _child(String child) => _uri('${_directoryPath()}${Uri.encodeComponent(child).replaceAll('%2F', '/')}');
+  Uri _child(String child) => _childAt(child, '');
+
+  Uri _childAt(String child, String path) =>
+      _uri('${_joined(path)}${Uri.encodeComponent(child).replaceAll('%2F', '/')}');
 
   /// Resolves an href exactly as the server returned it: a full URL stands
   /// alone, a path resolves against the server's origin.

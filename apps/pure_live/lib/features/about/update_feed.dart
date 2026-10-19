@@ -129,34 +129,67 @@ final class AppRelease {
 
 /// The update feed: the repository's published releases, newest first.
 final class UpdateFeed {
-  /// A feed over [http].
-  const new({required this.http});
+  /// A feed over [http]. [githubOnly] (the 更新源 setting) asks GitHub
+  /// itself; off, the release JSON is raced across the mirrors first with
+  /// GitHub as the last door — the reference's `updateRepository.mirrors`.
+  const new({required this.http, this.githubOnly = true});
 
   /// The app's shared HTTP client.
   final LiveHttp http;
 
+  /// Whether only GitHub is asked.
+  final bool githubOnly;
+
+  /// The mirror hosts that stand in for `api.github.com` when the setting
+  /// does not ask for the origin itself. The path is replayed against each,
+  /// with a cache-busting `ts` — the pattern 3.x used for its release reads.
+  static const List<String> _mirrors = ['gh-proxy.com', 'mirror.ghproxy.com'];
+
   /// Fetches up to [limit] published releases.
   ///
   /// Any non-200 answer and any transport failure becomes an exception —
-  /// the caller renders it and offers a retry.
+  /// the caller renders it and offers a retry. With mirrors on, the first
+  /// source to answer a valid list wins; every one failing together is the
+  /// `FeedUnavailable` the page shows.
   Future<List<AppRelease>> fetch({int limit = 10}) async {
-    final response = await http.send(
-      LiveRequest.get(
-        Uri.https('api.github.com', '/repos/$updateOwner/$updateRepo/releases', {'per_page': '$limit'}),
-        headers: {'Accept': 'application/vnd.github+json'},
-      ),
-    );
-    if (response.statusCode != 200) {
-      throw FeedUnavailable('GitHub answered ${response.statusCode}');
-    }
-    final decoded = response.json;
-    if (decoded is! List) {
-      throw const FeedUnavailable('unexpected releases payload');
-    }
-    return [
-      for (final entry in decoded)
-        if (entry is Map<Object?, Object?>) AppRelease.fromJson(entry),
+    const path = '/repos/$updateOwner/$updateRepo/releases';
+    const timeout = Duration(seconds: 10);
+    final stamp = DateTime.now().millisecondsSinceEpoch.toString();
+    final uris = <Uri>[
+      if (!githubOnly)
+        for (final host in _mirrors)
+          Uri.https(host, path, {'per_page': '$limit', 'ts': stamp}),
+      Uri.parse(githubOnly ? 'https://api.github.com$path' : 'https://github.com$path')
+          .replace(queryParameters: {'per_page': '$limit', 'ts': stamp}),
     ];
+    Exception? lastError;
+    for (final uri in uris) {
+      try {
+        final response = await http.send(
+          LiveRequest.get(
+            uri,
+            headers: {'Accept': 'application/vnd.github+json'},
+            timeout: timeout,
+          ),
+        );
+        if (response.statusCode != 200) {
+          lastError = FeedUnavailable('${uri.host} answered ${response.statusCode}');
+          continue;
+        }
+        final decoded = response.json;
+        if (decoded is! List) {
+          lastError = const FeedUnavailable('unexpected releases payload');
+          continue;
+        }
+        return [
+          for (final entry in decoded)
+            if (entry is Map<Object?, Object?>) AppRelease.fromJson(entry),
+        ];
+      } on Object catch (error) {
+        lastError = error is Exception ? error : FeedUnavailable('$error');
+      }
+    }
+    throw lastError ?? const FeedUnavailable('no update source answered');
   }
 }
 

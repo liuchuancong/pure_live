@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show KeyDownEvent, SystemUiOverlayStyle;
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The loader the splash draws under the brand.
@@ -74,8 +75,13 @@ class SplashScreen extends StatefulWidget {
   /// moves the app on.
   final Widget? nextButton;
 
-  /// How long the splash holds before [onNextPressed] runs.
+  /// How long the splash holds before [onNextPressed] runs; a tap or any
+  /// key hands over sooner (the reference's own answer).
   final Duration duration;
+
+  /// How long the icon and the text take to appear (A06.4: short enough to
+  /// finish inside the page's own stay).
+  static const Duration animation = Duration(milliseconds: 400);
 
   /// The text logo's style; the theme's headline when null.
   final TextStyle? textStyle;
@@ -89,30 +95,46 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
   Timer? _navigationTimer;
+  bool _left = false;
 
   @override
   void initState() {
     super.initState();
 
-    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 2));
+    _controller = AnimationController(vsync: this, duration: SplashScreen.animation);
     _fadeAnimation = Tween<double>(
       begin: 0,
       end: 1,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.decelerate));
     _scaleAnimation = Tween<double>(
-      begin: 0.8,
+      begin: 0.9,
       end: 1,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.decelerate));
 
     _controller.forward();
 
     if (widget.onNextPressed != null) {
-      _navigationTimer = Timer(widget.duration, () {
-        if (mounted) {
-          widget.onNextPressed!();
-        }
-      });
+      _navigationTimer = Timer(widget.duration, _leave);
     }
+  }
+
+  /// Hands over, once: the timer, a tap and a key all come through here and
+  /// the first one wins (the reference's _left guard).
+  void _leave() {
+    if (_left) {
+      return;
+    }
+    _left = true;
+    _navigationTimer?.cancel();
+    widget.onNextPressed?.call();
+  }
+
+  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent || widget.onNextPressed == null) {
+      return KeyEventResult.ignored;
+    }
+    _leave();
+    return KeyEventResult.handled;
   }
 
   @override
@@ -135,46 +157,85 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          color: widget.bgGradient == null ? widget.bgColor ?? _fallbackBackground : null,
-          gradient: widget.bgGradient,
-        ),
-        width: double.infinity,
-        height: double.infinity,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (widget.showLogo && widget.logo != null)
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: ScaleTransition(scale: _scaleAnimation, child: widget.logo),
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // See-through bars with icons for the page's brightness (A06.5).
+      value: dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        body: Focus(
+          autofocus: widget.onNextPressed != null,
+          onKeyEvent: _onKey,
+          child: GestureDetector(
+            key: const ValueKey('splash'),
+            behavior: HitTestBehavior.opaque,
+            // A06.4: a tap takes the app on at once; the splash never
+            // outstays its welcome.
+            onTap: widget.onNextPressed == null ? null : _leave,
+            child: DecoratedBox(
+              key: const ValueKey('splash-background'),
+              decoration: BoxDecoration(
+                color: widget.bgGradient == null && widget.bgColor != null ? widget.bgColor : null,
+                gradient: widget.bgGradient ?? _defaultGradient(context, dark: dark),
               ),
-            if (widget.showTextLogo && widget.logoText != null)
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: ScaleTransition(
-                  scale: _scaleAnimation,
-                  child: Text(widget.logoText!, style: widget.textStyle ?? _defaultTextStyle),
+              child: SizedBox.expand(
+                child: SafeArea(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: ScaleTransition(
+                          scale: _scaleAnimation,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            key: const ValueKey('splash-logo'),
+                            children: [
+                              if (widget.showLogo && widget.logo != null) widget.logo!,
+                              if (widget.showTextLogo && widget.logoText != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 16),
+                                  child: Text(widget.logoText!, style: widget.textStyle ?? _defaultTextStyle),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      if (widget.showLoader) _buildLoader(),
+                      const SizedBox(height: 30),
+                      if (widget.nextButton != null)
+                        GestureDetector(onTap: widget.onNextPressed, child: widget.nextButton),
+                    ],
+                  ),
                 ),
               ),
-            const SizedBox(height: 30),
-            if (widget.showLoader) _buildLoader(),
-            const SizedBox(height: 30),
-            if (widget.nextButton != null) GestureDetector(onTap: widget.onNextPressed, child: widget.nextButton),
-          ],
+            ),
+          ),
         ),
       ),
     );
   }
 
+  /// The reference's 160-degree wash: the surface, and the primary lifted
+  /// in at the lower right so the brand block sits on light ground. With a
+  /// [SplashScreen.bgColor] given, that flat ground answers alone.
+  Gradient _defaultGradient(BuildContext context, {required bool dark}) {
+    final colors = PureTheme.of(context).colors;
+    final surface = widget.bgColor ?? colors.surface;
+    return LinearGradient(
+      begin: const Alignment(-0.36, -1),
+      end: const Alignment(0.36, 1),
+      stops: const [0, 0.45, 1],
+      colors: [
+        surface,
+        surface,
+        Color.alphaBlend(colors.primary.withValues(alpha: dark ? 0.30 : 0.55), surface),
+      ],
+    );
+  }
+
   TextStyle get _defaultTextStyle =>
       PureTheme.of(context).text.headline.copyWith(fontWeight: FontWeight.bold, color: _foreground);
-
-  /// The gradient-less background, from the ambient brightness.
-  Color get _fallbackBackground =>
-      Theme.of(context).brightness == Brightness.dark ? const Color(0xFF0D1B2A) : const Color(0xFFE0F7FA);
 
   Widget _buildLoader() {
     switch (widget.loaderType) {
@@ -184,6 +245,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         return AnimatedDots(color: _foreground);
       case LoaderType.progressBar:
         return SizedBox(
+          key: const ValueKey('splash-progress'),
           width: 200,
           child: LinearProgressIndicator(
             minHeight: 3,

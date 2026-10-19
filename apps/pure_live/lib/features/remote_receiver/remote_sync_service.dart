@@ -9,33 +9,64 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:pure_live/app/preferences/app_preferences.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_device.dart';
+import 'package:pure_live/features/remote_receiver/remote_sync_parts.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_payload.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_protocol.dart';
+
+/// Asks the user whether the remote address may read ('export') or
+/// overwrite ('import') this device's payload. Requests are refused
+/// without it.
+typedef RemoteSyncConfirm = Future<bool> Function(String action, String remoteAddress);
+
+/// Asks the user which parts of the payload [remoteAddress] POSTs to apply
+/// here; null (or an empty pick) refuses them all. When set it answers
+/// imports instead of the flat [RemoteSyncConfirm].
+typedef RemoteSyncChooseImport = Future<Set<RemoteSyncPart>?> Function(
+  String remoteAddress,
+  Map<String, dynamic> settings,
+);
 
 /// The LAN sync service, ported from the 3.x `RemoteSyncService`: it serves
 /// this device's payload over HTTP, applies an incoming payload through this
 /// app's real repositories, and sends/receives to a peer by address.
 ///
 /// Wire behaviour is the 3.x one, so a 3.x build and this app interoperate:
-/// the same envelope (`{code, msg, data}`), the same endpoints, the same
-/// gate — every read or overwrite of this device's payload needs the
-/// on-screen [confirmRequest] answer, and a page-less service refuses
-/// everything.
+/// the same envelope (`{code, msg, data}`), the same endpoints, and the same
+/// pairing gate — every read or overwrite of this device's payload must
+/// carry the six-digit [pairingCode] shown on this device's screen (header
+/// `x-purelive-pairing`) AND the on-screen [confirmRequest] / [chooseImport]
+/// answer; a page-less service refuses everything, and [maxWrongCodes] wrong
+/// codes roll the code over.
 ///
-/// One deviation: 3.x discovered peers over mDNS (bonsoir), a package this
-/// app does not carry. Discovery runs over the protocol's own UDP broadcast
-/// (`RemoteSyncProtocol.discoveryPacket` on
-/// `RemoteSyncProtocol.discoveryPort`) instead, with the same packet fields
-/// the 3.x mDNS TXT records carried. A 3.x peer is reached by address (typed
-/// or QR); two of this app's builds also find each other by themselves.
+/// Two deviations, both honest: 3.x discovered peers over mDNS (bonsoir, a
+/// native-socket package this desktop-first build does not carry), so
+/// discovery runs over the protocol's own UDP broadcast; and the payload is
+/// this app's own section document (see [RemoteSyncPayload]) rather than the
+/// 3.x backup file — the 3.x-side importer reads the parts it knows.
 final class RemoteSyncService extends ChangeNotifier {
-  /// A service over this app's repositories.
-  new({required this.follows, required this.history, required this.preferences}) : _inert = false;
+  /// A service over this app's repositories. The sensitive-section thunks
+  /// ([webdavExport]/[accountsExport]/[webdavApply]/[accountsApply]) are the
+  /// composition root's bridges to the WebDAV store and the login
+  /// repositories; without them "同步账号 Cookie" ships and applies nothing.
+  new({
+    required this.follows,
+    required this.history,
+    required this.preferences,
+    this.webdavExport,
+    this.accountsExport,
+    this.webdavApply,
+    this.accountsApply,
+  }) : _inert = false;
 
   /// A service that never binds a port, never broadcasts and never opens a
   /// box — what the render tests hand the page so pumping it cannot touch
   /// the network or the storage layer.
-  new inert({required this.follows, required this.history, required this.preferences}) : _inert = true;
+  new inert({required this.follows, required this.history, required this.preferences})
+    : webdavExport = null,
+      accountsExport = null,
+      webdavApply = null,
+      accountsApply = null,
+      _inert = true;
 
   /// Where followed rooms and groups are applied and exported from.
   final FollowRepository follows;
@@ -47,6 +78,19 @@ final class RemoteSyncService extends ChangeNotifier {
   /// the store the settings pages edit.
   final AppPreferencesStore preferences;
 
+  /// Reads this device's WebDAV servers (with their vault passwords) for a
+  /// sensitive send; null means there is nothing sensitive to ship.
+  final Future<List<Map<String, dynamic>>> Function()? webdavExport;
+
+  /// Reads this device's platform sign-ins for a sensitive send.
+  final Future<List<Map<String, dynamic>>> Function()? accountsExport;
+
+  /// Stores one incoming WebDAV server through the WebDAV store.
+  final WebDavServerSink? webdavApply;
+
+  /// Stores one incoming platform credential through the login side.
+  final AccountCredentialSink? accountsApply;
+
   /// Whether this is the inert render-test shape.
   final bool _inert;
 
@@ -57,23 +101,21 @@ final class RemoteSyncService extends ChangeNotifier {
   bool _isServerRunning = false;
   bool _isDiscovering = false;
   bool _isSyncing = false;
-  bool _isApplying = false;
 
   String _localIp = '';
   int _localPort = RemoteSyncProtocol.defaultHttpPort;
   var _devices = <RemoteSyncDevice>[];
+  int _wrongCodes = 0;
+  bool _includeAccounts = false;
 
-  /// Whether the HTTP sync server answers.
+  /// Whether the server answers requests.
   bool get isServerRunning => _isServerRunning;
 
   /// Whether LAN discovery is listening and announcing.
   bool get isDiscovering => _isDiscovering;
 
-  /// Whether a payload is being sent or applied right now.
+  /// Whether a payload is being sent, received or applied right now.
   bool get isSyncing => _isSyncing;
-
-  /// Whether an incoming payload is being applied right now.
-  bool get isApplying => _isApplying;
 
   /// The LAN address the server picked, empty when none was found.
   String get localIp => _localIp;
@@ -84,10 +126,38 @@ final class RemoteSyncService extends ChangeNotifier {
   /// The devices currently on the LAN, in discovery order.
   List<RemoteSyncDevice> get devices => List.unmodifiable(_devices);
 
+  /// The six-digit code another device must present with every settings
+  /// request; empty while the server is stopped (3.x).
+  String pairingCode = '';
+
+  /// Wrong pairing codes before the code rolls over — guessing a six-digit
+  /// code takes many tries, and a new code stops the guessing (3.x).
+  static const int maxWrongCodes = 10;
+
+  /// Whether account cookies and WebDAV passwords travel (off by default,
+  /// 3.x); the sensitive sections are exported and applied only with it.
+  bool get includeAccounts => _includeAccounts;
+
+  set includeAccounts(bool value) {
+    if (_includeAccounts == value) {
+      return;
+    }
+    _includeAccounts = value;
+    _notify();
+  }
+
+  /// How long a send or receive waits (the other device asks its user
+  /// first).
+  Duration requestTimeout = const Duration(minutes: 2);
+
   /// Asks the user whether the remote address may read ('export') or
   /// overwrite ('import') this device's payload. Requests are refused
   /// without it.
-  Future<bool> Function(String action, String remoteAddress)? confirmRequest;
+  RemoteSyncConfirm? confirmRequest;
+
+  /// Asks the user which parts of an incoming payload to apply; when set it
+  /// answers imports instead of [confirmRequest].
+  RemoteSyncChooseImport? chooseImport;
 
   // ---------------------------------------------------------------------------
   // Internal
@@ -152,9 +222,11 @@ final class RemoteSyncService extends ChangeNotifier {
   /// This device's `ip:port`, empty when no address was found.
   String get address => _localIp.isEmpty ? '' : '$_localIp:$_localPort';
 
-  /// The QR payload of this device's sync endpoint, empty when no address.
-  String get qrData =>
-      _localIp.isEmpty ? '' : RemoteSyncProtocol.createQrUri(ip: _localIp, port: _localPort).toString();
+  /// The QR payload of this device's sync endpoint — address, port and the
+  /// pairing code — empty until the server runs on a real address.
+  String get qrData => _localIp.isEmpty || pairingCode.isEmpty
+      ? ''
+      : RemoteSyncProtocol.createQrUri(ip: _localIp, port: _localPort, code: pairingCode).toString();
 
   /// The mDNS-era broadcast name; the identity suffix keeps two devices of
   /// one user distinguishable in a peer's own list.
@@ -162,9 +234,6 @@ final class RemoteSyncService extends ChangeNotifier {
     final id = _deviceId.length > 6 ? _deviceId.substring(_deviceId.length - 6) : _deviceId;
     return 'PureLive-$id';
   }
-
-  /// The sections this device exports, for the picker UI.
-  List<String> exportSectionNames() => RemoteSyncPayload.sectionNames;
 
   /// The name the device behind [address] announced with, or null when it
   /// was never heard on discovery — what the confirmation dialog shows so
@@ -202,14 +271,19 @@ final class RemoteSyncService extends ChangeNotifier {
       if (_disposed) {
         return;
       }
+      pairingCode = RemoteSyncProtocol.newPairingCode();
+      _wrongCodes = 0;
       await _startDiscovery();
     } finally {
       _running = false;
     }
   }
 
-  /// Stops serving and discovery; [start] can resume.
+  /// Stops serving and discovery; [start] can resume. The pairing code goes
+  /// with the server — a stopped device answers nothing.
   Future<void> stop() async {
+    pairingCode = '';
+    _wrongCodes = 0;
     _announceTimer?.cancel();
     _announceTimer = null;
     _cleanupTimer?.cancel();
@@ -394,7 +468,7 @@ final class RemoteSyncService extends ChangeNotifier {
     _isServerRunning = true;
     _notify();
     server.listen(
-      _handleRequest,
+      handleRequest,
       onError: (Object _) {
         if (!_disposed) {
           _isServerRunning = false;
@@ -405,7 +479,9 @@ final class RemoteSyncService extends ChangeNotifier {
     _startCleanupTimer();
   }
 
-  Future<void> _handleRequest(HttpRequest request) async {
+  /// Answers one request (public for tests; [start] wires it to the server).
+  @visibleForTesting
+  Future<void> handleRequest(HttpRequest request) async {
     if (_disposed) {
       try {
         await request.response.close();
@@ -454,92 +530,109 @@ final class RemoteSyncService extends ChangeNotifier {
         'version': version,
         'ip': _localIp,
         'port': _localPort,
+        // Senders leave parts out only for a device that says this (J05.1).
+        RemoteSyncProtocol.partsKey: [for (final part in RemoteSyncPart.values) part.wireName],
       },
     });
   }
 
-  /// /settings — GET exports, POST imports. Both need the on-screen confirm.
+  /// /settings — GET exports, POST imports. Both first need the pairing
+  /// code shown on this device (settings hold the payload, so being on the
+  /// same network is not enough, 3.x); after it passes, the user answers —
+  /// an import through the part picker ([chooseImport]) when the page
+  /// offers one, the plain confirm otherwise.
   Future<void> _handleSettings(HttpRequest request) async {
+    final response = request.response;
+    if (!RemoteSyncProtocol.pairingCodesMatch(pairingCode, request.headers.value(RemoteSyncProtocol.pairingHeader))) {
+      // Guessing a six-digit code takes many tries: a new code stops it.
+      if (++_wrongCodes >= maxWrongCodes) {
+        _wrongCodes = 0;
+        pairingCode = RemoteSyncProtocol.newPairingCode();
+        _notify();
+      }
+      response.statusCode = HttpStatus.forbidden;
+      await _writeResponse(response, {'code': 403, 'msg': 'Pairing code required', 'data': false});
+      return;
+    }
     final action = switch (request.method) {
       'GET' => 'export',
       'POST' => 'import',
       _ => null,
     };
-    if (action != null && !await _confirm(action, request)) {
-      request.response.statusCode = HttpStatus.forbidden;
-      await _writeResponse(request.response, {'code': 403, 'msg': 'Rejected on the device', 'data': false});
+    if (action == null) {
+      await _writeMethodNotAllowed(response);
       return;
     }
-    switch (request.method) {
-      case 'GET':
-        await _handleGetSettings(request);
-      case 'POST':
-        await _handlePostSettings(request);
-      default:
-        await _writeMethodNotAllowed(request.response);
+    // Read the body before asking: a bad packet is refused without a prompt.
+    Map<String, dynamic>? incoming;
+    if (action == 'import') {
+      incoming = await _readSyncPacket(request);
+      if (incoming == null) {
+        response.statusCode = HttpStatus.badRequest;
+        await _writeResponse(response, {'code': 400, 'msg': 'Invalid sync packet', 'data': false});
+        return;
+      }
     }
+    Set<RemoteSyncPart>? parts;
+    var allowed = false;
+    final choose = chooseImport;
+    if (incoming != null && choose != null) {
+      try {
+        parts = _disposed ? null : await choose(request.connectionInfo?.remoteAddress.address ?? '', incoming);
+        allowed = parts != null && parts.isNotEmpty;
+      } on Object {
+        allowed = false;
+      }
+    } else {
+      allowed = await _confirm(action, request);
+    }
+    if (!allowed) {
+      response.statusCode = HttpStatus.forbidden;
+      await _writeResponse(response, {'code': 403, 'msg': 'Rejected on the device', 'data': false});
+      return;
+    }
+    if (incoming == null) {
+      try {
+        final settings = await outgoing();
+        await _writeResponse(response, {'code': 200, 'msg': 'ok', 'data': settings});
+      } on Object {
+        response.statusCode = HttpStatus.internalServerError;
+        await _writeResponse(response, {'code': 500, 'msg': 'Export settings failed', 'data': false});
+      }
+      return;
+    }
+    _isSyncing = true;
+    _notify();
+    final success = await applyRemoteSettings(onlySyncParts(incoming, parts));
+    _isSyncing = false;
+    _notify();
+    await _writeResponse(response, {
+      'code': success ? 200 : 500,
+      'msg': success ? 'ok' : 'apply settings failed',
+      'data': success,
+    });
   }
 
-  /// GET /settings — this device's payload leaves it.
-  Future<void> _handleGetSettings(HttpRequest request) async {
-    try {
-      final settings = buildLocalPayload();
-      await _writeResponse(request.response, {'code': 200, 'msg': 'ok', 'data': settings});
-    } on Object {
-      request.response.statusCode = HttpStatus.internalServerError;
-      await _writeResponse(request.response, {'code': 500, 'msg': 'Export settings failed', 'data': false});
-    }
-  }
-
-  /// POST /settings — another device's payload arrives and is applied.
-  Future<void> _handlePostSettings(HttpRequest request) async {
+  /// The POSTed sync packet, narrowed to the sections it lists (a whole
+  /// backup without a list); null when the body is not a sync packet at all.
+  Future<Map<String, dynamic>?> _readSyncPacket(HttpRequest request) async {
     try {
       final content = await utf8.decoder.bind(request).join();
       if (content.trim().isEmpty) {
-        request.response.statusCode = HttpStatus.badRequest;
-        await _writeResponse(request.response, {'code': 400, 'msg': 'Empty request', 'data': false});
-        return;
+        return null;
       }
       final body = jsonDecode(content);
-      if (body is! Map<String, dynamic>) {
-        request.response.statusCode = HttpStatus.badRequest;
-        await _writeResponse(request.response, {'code': 400, 'msg': 'Invalid request', 'data': false});
-        return;
+      if (body is! Map || body['type']?.toString() != RemoteSyncProtocol.syncType || body['settings'] is! Map) {
+        return null;
       }
-      if (body['type']?.toString() != RemoteSyncProtocol.syncType) {
-        request.response.statusCode = HttpStatus.badRequest;
-        await _writeResponse(request.response, {'code': 400, 'msg': 'Invalid sync type', 'data': false});
-        return;
-      }
-      final settings = body['settings'];
-      if (settings is! Map) {
-        request.response.statusCode = HttpStatus.badRequest;
-        await _writeResponse(request.response, {'code': 400, 'msg': 'Settings is empty', 'data': false});
-        return;
-      }
-      final sections = body['sections'];
-      _isSyncing = true;
-      _notify();
-      final success = await applyRemoteSettings(
-        Map<String, dynamic>.from(settings),
-        sections: sections is List ? [for (final entry in sections) entry.toString()] : null,
+      final settings = Map<String, dynamic>.from(body['settings']! as Map);
+      final rawSections = body['sections'];
+      return withinSyncSections(
+        settings,
+        rawSections is List ? [for (final entry in rawSections) entry.toString()] : null,
       );
-      _isSyncing = false;
-      _notify();
-      await _writeResponse(request.response, {
-        'code': success ? 200 : 500,
-        'msg': success ? 'ok' : 'apply settings failed',
-        'data': success,
-      });
     } on Object {
-      _isSyncing = false;
-      _notify();
-      try {
-        request.response.statusCode = HttpStatus.internalServerError;
-        await _writeResponse(request.response, {'code': 500, 'msg': 'Internal Server Error', 'data': false});
-      } on Object {
-        // Response may already be closed.
-      }
+      return null;
     }
   }
 
@@ -571,8 +664,30 @@ final class RemoteSyncService extends ChangeNotifier {
   // ---------------------------------------------------------------------------
 
   /// Reads this device's payload from its real stores, narrowed to
-  /// [sections] when the picker ticked a subset.
-  Map<String, dynamic> buildLocalPayload({Iterable<String>? sections}) {
+  /// [sections] when the picker ticked a subset. With [includeAccounts] the
+  /// sensitive sections (WebDAV servers with their passwords, platform
+  /// sign-ins) ride along — through the composition root's thunks, so a
+  /// build without them ships without them.
+  Future<Map<String, dynamic>> buildLocalPayload({Iterable<String>? sections}) async {
+    List<Map<String, dynamic>>? webdavServers;
+    List<Map<String, dynamic>>? accountCredentials;
+    if (_includeAccounts) {
+      if (webdavExport != null) {
+        try {
+          webdavServers = await webdavExport!.call();
+        } on Object {
+          // A store that will not open simply has nothing sensitive to ship.
+          webdavServers = const [];
+        }
+      }
+      if (accountsExport != null) {
+        try {
+          accountCredentials = await accountsExport!.call();
+        } on Object {
+          accountCredentials = const [];
+        }
+      }
+    }
     return RemoteSyncPayload.buildExport(
       preferences: preferences.value,
       follows: follows.rooms,
@@ -580,12 +695,31 @@ final class RemoteSyncService extends ChangeNotifier {
       history: history.records,
       shieldKeywords: _shieldRepository?.get(_shieldKeywordsKey) ?? const <String>[],
       shieldUsers: _shieldRepository?.get(_shieldUsersKey) ?? const <String>[],
+      webdavServers: webdavServers,
+      accountCredentials: accountCredentials,
       sections: sections,
     );
   }
 
-  /// Applies the received payload, narrowed to [sections] when the receiver
-  /// ticked a subset on the module page.
+  /// What a send carries: this device's whole payload, sensitive sections
+  /// included only while [includeAccounts] is on.
+  Future<Map<String, dynamic>> outgoing() => buildLocalPayload();
+
+  /// This device's own answer for the preference sections, in the wire
+  /// shape — what the receive preview compares the incoming settings
+  /// against to say how many items would actually change.
+  Map<String, dynamic> localSettingsSections() => RemoteSyncPayload.buildExport(
+    preferences: preferences.value,
+    follows: const [],
+    groups: const [],
+    history: const [],
+    shieldKeywords: const [],
+    shieldUsers: const [],
+    sections: RemoteSyncPayload.preferenceSectionNames,
+  );
+
+  /// Applies the received payload through the real repositories; the two
+  /// sensitive sections only run through their sinks when they exist.
   Future<bool> applyRemoteSettings(Map<String, dynamic> settings, {Iterable<String>? sections}) async {
     try {
       final repository = _shieldRepository ?? await _openShieldRepository();
@@ -597,6 +731,8 @@ final class RemoteSyncService extends ChangeNotifier {
         follows: follows,
         history: history,
         shield: sink,
+        webdav: webdavApply,
+        accounts: accountsApply,
       );
     } on Object {
       return false;
@@ -776,35 +912,69 @@ final class RemoteSyncService extends ChangeNotifier {
   // Send / receive
   // ---------------------------------------------------------------------------
 
-  /// Sends this device's payload to [device], narrowed to [sections].
-  Future<bool> syncToDevice(RemoteSyncDevice device, {List<String>? sections}) {
-    return syncToAddress(device.ip, device.port, sections: sections);
+  /// Whether the device at `ip:port` takes parts on their own (its status
+  /// answer lists [RemoteSyncProtocol.partsKey]). False for 3.x devices,
+  /// older builds and when nothing answers — they get whole sends. Needs no
+  /// code and asks nothing on the other device.
+  Future<bool> takesParts(String ip, int port) => _busy(() async {
+    final answer = await _request(
+      'GET',
+      ip,
+      port,
+      null,
+      null,
+      path: RemoteSyncProtocol.apiStatus,
+    ).timeout(const Duration(seconds: 5));
+    return answer is Map && RemoteSyncProtocol.takesParts(answer['data']);
+  });
+
+  /// Sends this device's payload to `ip:port` with the other device's
+  /// pairing [code]; true when it applied the payload. With [parts] that
+  /// leave something out, only those parts travel and the packet lists its
+  /// sections — send them only to a device that [takesParts].
+  Future<bool> send(String ip, int port, String code, {Set<RemoteSyncPart>? parts}) => _busy(() async {
+    final settings = await outgoing();
+    final partial = syncPartsLeaveOut(settings, parts);
+    final body = partial ? pickSyncParts(settings, parts!) : settings;
+    final answer = await _request(
+      'POST',
+      ip,
+      port,
+      code,
+      RemoteSyncProtocol.settingsPacket(settings: body, sections: partial ? syncSectionsOf(body) : null),
+    );
+    return answer is Map && answer['data'] == true;
+  });
+
+  /// Reads `ip:port`'s payload with [code] without applying it (the page
+  /// previews what it changes first); null when the other device refused or
+  /// did not answer.
+  Future<Map<String, dynamic>?> fetch(String ip, int port, String code) async {
+    Map<String, dynamic>? settings;
+    await _busy(() async {
+      final answer = await _request('GET', ip, port, code, null);
+      if (answer is! Map || answer['code'] != 200 || answer['data'] is! Map) {
+        return false;
+      }
+      settings = Map<String, dynamic>.from(answer['data']! as Map);
+      return true;
+    });
+    return settings;
   }
 
-  /// Sends this device's payload to the [ip]:[port] endpoint.
-  Future<bool> syncToAddress(String ip, int port, {List<String>? sections}) async {
+  /// Applies a payload [fetch] read — only [parts] of them when given, the
+  /// rest stays as it is; true on success.
+  Future<bool> apply(Map<String, dynamic> settings, {Set<RemoteSyncPart>? parts}) =>
+      _busy(() async => await applyRemoteSettings(onlySyncParts(settings, parts)));
+
+  Future<bool> _busy(Future<bool> Function() work) async {
     if (_disposed || _isSyncing) {
       return false;
     }
     _isSyncing = true;
     _notify();
     try {
-      final payload = buildLocalPayload(sections: sections);
-      final client = HttpClient();
-      try {
-        final request = await client.postUrl(Uri.parse('http://$ip:$port${RemoteSyncProtocol.apiSettings}'));
-        request.headers.contentType = ContentType('application', 'json', charset: 'utf-8');
-        request.write(jsonEncode(RemoteSyncProtocol.settingsPacket(settings: payload, sections: sections)));
-        final response = await request.close();
-        final responseBody = await utf8.decoder.bind(response).join();
-        if (response.statusCode != HttpStatus.ok) {
-          return false;
-        }
-        final result = jsonDecode(responseBody);
-        return result is Map && result['data'] == true;
-      } finally {
-        client.close(force: true);
-      }
+      return await work().timeout(requestTimeout);
     } on Object {
       return false;
     } finally {
@@ -813,71 +983,46 @@ final class RemoteSyncService extends ChangeNotifier {
     }
   }
 
-  /// Checks whether the remote device is reachable. It does NOT receive a
-  /// payload — that is [getRemoteSettings] plus [applyRemoteSettings].
-  Future<bool> receiveFromAddress(String ip, int port) async {
-    if (_disposed || _isApplying) {
-      return false;
-    }
-    _isApplying = true;
-    _notify();
+  Future<Object?> _request(
+    String method,
+    String ip,
+    int port,
+    String? code,
+    Object? body, {
+    String path = RemoteSyncProtocol.apiSettings,
+  }) async {
+    final client = HttpClient()..connectionTimeout = const Duration(seconds: 5);
     try {
-      final client = HttpClient();
-      try {
-        final request = await client.getUrl(Uri.parse('http://$ip:$port${RemoteSyncProtocol.apiStatus}'));
-        final response = await request.close();
-        await response.drain<void>();
-        return response.statusCode == HttpStatus.ok;
-      } finally {
-        client.close(force: true);
+      final request = await client.openUrl(method, Uri(scheme: 'http', host: ip, port: port, path: path));
+      if (code != null) {
+        request.headers.set(RemoteSyncProtocol.pairingHeader, RemoteSyncProtocol.normalizePairingCode(code));
       }
-    } on Object {
-      return false;
+      if (body != null) {
+        request.headers.contentType = ContentType('application', 'json', charset: 'utf-8');
+        request.write(jsonEncode(body));
+      }
+      final response = await request.close();
+      final text = await utf8.decoder.bind(response).join();
+      if (response.statusCode != HttpStatus.ok) {
+        return null;
+      }
+      return jsonDecode(text);
     } finally {
-      _isApplying = false;
-      _notify();
+      client.close(force: true);
     }
   }
 
-  /// Fetches another device's payload. This uses GET /settings, not GET
-  /// /status — the remote device confirms the read on its own screen.
-  Future<Map<String, dynamic>?> getRemoteSettings(String ip, int port) async {
-    if (_disposed) {
-      return null;
+  /// Lists [device] as heard on the network (tests; the UDP discovery calls
+  /// the same shape).
+  @visibleForTesting
+  void heard(RemoteSyncDevice device) {
+    final index = _devices.indexWhere((item) => item.id == device.id);
+    if (index >= 0) {
+      _devices[index] = device;
+    } else {
+      _devices = [..._devices, device];
     }
-    try {
-      final client = HttpClient();
-      try {
-        final request = await client.getUrl(Uri.parse('http://$ip:$port${RemoteSyncProtocol.apiSettings}'));
-        final response = await request.close();
-        final body = await utf8.decoder.bind(response).join();
-        if (response.statusCode != HttpStatus.ok) {
-          return null;
-        }
-        final result = jsonDecode(body);
-        if (result is! Map || result['code'] != 200) {
-          return null;
-        }
-        final data = result['data'];
-        if (data is! Map) {
-          return null;
-        }
-        return Map<String, dynamic>.from(data);
-      } finally {
-        client.close(force: true);
-      }
-    } on Object {
-      return null;
-    }
-  }
-
-  /// Sends this device's payload to a typed `ip:port` or URL.
-  Future<bool> syncByAddress(String value) {
-    final parsed = RemoteSyncProtocol.parseHttpAddress(value);
-    if (parsed == null) {
-      return Future<bool>.value(false);
-    }
-    return syncToAddress(parsed.ip, parsed.port);
+    _notify();
   }
 
   // ---------------------------------------------------------------------------

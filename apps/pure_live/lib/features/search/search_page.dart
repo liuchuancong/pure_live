@@ -13,6 +13,7 @@ import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/features/areas/area_card.dart';
 import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/features/search/search_providers.dart';
+import 'package:pure_live/features/search/web_search_url.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 import 'package:pure_uikit/pure_uikit.dart';
@@ -98,6 +99,36 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
   void _searchNow() {
     _debounce?.cancel();
     unawaited(_commit(_keyword.text.trim()));
+  }
+
+  /// The chosen platform's web search (3.x `openWebSearch`, A09.8): the
+  /// search page keeps the "all sites" tab for API scopes only — a web
+  /// search is one platform's page. On a build without an in-app WebView
+  /// the route itself answers with the system browser.
+  Future<void> _openWebSearch([LiveSite? site]) async {
+    final t = context.t;
+    final searchable = _searchable(ref.read(sitesProvider));
+    final target = site ?? (searchable.isEmpty || _selected == 0 ? null : searchable[_selected - 1]);
+    if (target == null) {
+      PureToast.show(context, t.search.selectPlatformFirst);
+      return;
+    }
+    final text = _keyword.text.trim();
+    if (text.isEmpty) {
+      PureToast.show(context, t.search.needKeyword);
+      return;
+    }
+    final uri = webSearchUrl(target.manifest.id, text);
+    if (uri == null) {
+      PureToast.show(
+        context,
+        t.search.webUnavailableFor(
+          site: target.manifest.localizedName(Localizations.localeOf(context).toLanguageTag(), 'zh-CN'),
+        ),
+      );
+      return;
+    }
+    await WebSearchRoute(url: uri.toString(), platform: target.manifest.id, keyword: text).push<void>(context);
   }
 
   Future<void> _commit(String query) async {
@@ -187,7 +218,17 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
                 ],
               )
             : field,
-        actions: const [SettingsEntryButton()],
+        actions: [
+          // A09.8: the chosen platform's web search, next to the settings
+          // entry the shell always carries.
+          PureIconButton(
+            key: const ValueKey('search-web-entry'),
+            tooltip: context.t.search.webSearchTooltip,
+            icon: Icons.language,
+            onPressed: () => unawaited(_openWebSearch()),
+          ),
+          const SettingsEntryButton(),
+        ],
       ),
       body: Column(
         children: [
@@ -229,6 +270,11 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
                           query: query,
                           target: _target,
                           activated: _visited.contains(i + 1),
+                          // The escape hatch appears only where a web page
+                          // for these words exists (A09.8 继续网页搜索).
+                          onContinueWebSearch: webSearchUrl(searchable[i].manifest.id, query) == null
+                              ? null
+                              : () => unawaited(_openWebSearch(searchable[i])),
                         ),
                     ],
                   ),
@@ -306,12 +352,23 @@ final class _SearchHistoryPanel extends ConsumerWidget {
 /// capability. The pane runs only once shown ([activated]), and re-runs
 /// whenever the shared query or target changes.
 final class _SitePane extends StatefulWidget {
-  const new({required this.site, required this.query, required this.target, required this.activated, super.key});
+  const new({
+    required this.site,
+    required this.query,
+    required this.target,
+    required this.activated,
+    this.onContinueWebSearch,
+    super.key,
+  });
 
   final LiveSite site;
   final String query;
   final LiveSearchTarget target;
   final bool activated;
+
+  /// The A09.8 escape hatch under the empty state: the same words in this
+  /// platform's web search. Null when the platform has no web page for it.
+  final VoidCallback? onContinueWebSearch;
 
   @override
   State<_SitePane> createState() => _SitePaneState();
@@ -391,6 +448,28 @@ final class _SitePaneState extends State<_SitePane> with AutomaticKeepAliveClien
     pageSize: request.pageSize,
   );
 
+  /// The empty state with the A09.8 escape hatch underneath: the same
+  /// words in this platform's web page, where one exists.
+  Widget _emptyWithWebSearch(BuildContext context, String title) {
+    if (widget.onContinueWebSearch == null) {
+      return PureEmpty(title: title, icon: Icons.search_off_outlined);
+    }
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        PureEmpty(title: title, icon: Icons.search_off_outlined),
+        const SizedBox(height: 8),
+        PureButton(
+          key: const ValueKey('search-continue-web'),
+          label: context.t.search.continueWeb,
+          icon: Icons.language,
+          variant: ButtonVariant.secondary,
+          onPressed: widget.onContinueWebSearch,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -410,7 +489,7 @@ final class _SitePaneState extends State<_SitePane> with AutomaticKeepAliveClien
       if (state.isRefreshing || state.isUnloaded) {
         return const _SkeletonGrid();
       }
-      return PureEmpty(title: context.t.errors.notFound, icon: Icons.search_off_outlined);
+      return _emptyWithWebSearch(context, context.t.errors.notFound);
     }
     return CustomRefreshIndicator(
       onRefresh: controller.refresh,

@@ -63,6 +63,9 @@ abstract final class RoutePath {
   /// The search page, a full page above the shell.
   static const String search = '/search';
 
+  /// The web search branch of the search page (A09.8).
+  static const String webSearch = '/search/web';
+
   /// The settings cluster's index page, a full page above the shell.
   static const String settings = '/settings';
 
@@ -121,12 +124,19 @@ abstract final class RoutePath {
   /// The account page, one level under the settings index.
   static const String settingsAccount = '/settings/account';
 
+  /// The per-platform cookie editor, one level under the account page
+  /// (the reference's `CookieEditorScaffold` route). The site is a query.
+  static const String settingsAccountCookie = '/settings/account/cookie';
+
   /// The platforms page (visibility, order, accounts, tags), under the
   /// settings index.
   static const String settingsPlatforms = '/settings/platforms';
 
   /// The danmaku settings page, under the settings index.
   static const String settingsDanmaku = '/settings/danmaku';
+
+  /// The portrait-stream adaptation page of the video settings.
+  static const String settingsPortrait = '/settings/portrait';
 
   /// The recording settings page, under the settings index.
   static const String settingsRecording = '/settings/recording';

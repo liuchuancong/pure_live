@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveRoom;
+import 'package:pure_live/app/preferences/app_preferences.dart' show AppPreferences;
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/formatters/formatters.dart';
@@ -126,7 +127,7 @@ final class RoomCard extends ConsumerWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                _cover(context, theme),
+                _cover(context, theme, ref),
                 if (style.showPlatform && room.ref.platform.isNotEmpty)
                   _pill(text: room.ref.platform.toUpperCase(), align: Alignment.topLeft),
                 if (style.showAudience && room.broadcast.isLiveNow && viewers != null)
@@ -187,7 +188,7 @@ final class RoomCard extends ConsumerWidget {
 
   /// The cover, or a quiet token-coloured placeholder when there is none or
   /// it fails to load.
-  Widget _cover(BuildContext context, PureTheme theme) {
+  Widget _cover(BuildContext context, PureTheme theme, WidgetRef ref) {
     final fallback = ColoredBox(
       color: theme.colors.fillQuaternary,
       child: Center(child: Icon(Icons.live_tv_outlined, color: theme.colors.textQuaternary)),
@@ -195,7 +196,28 @@ final class RoomCard extends ConsumerWidget {
     if (room.content.coverUrl.isEmpty) {
       return fallback;
     }
-    return CachedNetworkImage(imageUrl: room.content.coverUrl, fit: BoxFit.cover, errorWidget: (_, _, _) => fallback);
+    return CachedNetworkImage(
+      imageUrl: coverUrlFor(room, ref.watch(appPreferencesProvider)),
+      fit: BoxFit.cover,
+      errorWidget: (_, _, _) => fallback,
+    );
+  }
+
+  /// The cover address with the configured refresh triggers folded in as
+  /// query busters (the appearance page's 封面刷新时机): a changed live status
+  /// or a moved popularity bucket reads as a new address, so the picture
+  /// re-pulls while everything else keeps its cached copy. The platforms
+  /// ignore the extra parameters.
+  static String coverUrlFor(LiveRoom room, AppPreferences preferences) {
+    final base = room.content.coverUrl;
+    if (!preferences.autoRefreshThumbnails) {
+      return base;
+    }
+    // One bucket per interval: every room's cover re-pulls once when the
+    // window turns, nothing re-pulls mid-window (the reference's
+    // autoRefreshThumbnails + thumbnailRefreshInterval pair).
+    final bucket = DateTime.now().toUtc().millisecondsSinceEpoch ~/ (preferences.thumbnailRefreshMinutes.clamp(5, 360) * 60000);
+    return '$base${base.contains('?') ? '&' : '?'}t=$bucket';
   }
 
   /// A cover pill (3.x `CoverMetricBadge`): a dark scrim keeps it readable

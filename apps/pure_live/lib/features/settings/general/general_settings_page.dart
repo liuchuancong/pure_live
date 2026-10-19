@@ -1,6 +1,9 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_platform/live_platform.dart' show PlatformKind;
+import 'package:live_shell/live_shell.dart' show CloseAction, StartupRegistration;
 import 'package:pure_live/app/preferences/app_preferences.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
@@ -12,6 +15,10 @@ import 'package:pure_settings_ui/pure_settings_ui.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 import 'package:restart_app/restart_app.dart';
 import 'package:window_manager/window_manager.dart';
+
+/// The close row's \"ask every time\" — the absence of a stored action, given
+/// a value of its own so the chooser can offer and compare it.
+const Object _askClose = Object();
 
 /// The title-bar choices the settings screen offers, one more than the stored
 /// preference has: `auto` is the absence of a choice, and it needs a value of
@@ -47,6 +54,7 @@ final class GeneralSettingsPage extends ConsumerWidget {
     final t = context.t;
     final preferences = ref.watch(appPreferencesProvider);
     final shell = ref.watch(shellPreferencesProvider);
+    final registration = ref.watch(startupRegistrationProvider);
     final update = ref.read(appPreferencesProvider.notifier).update;
     final isDesktop = switch (ref.watch(environmentProvider).runtime.kind) {
       PlatformKind.windows || PlatformKind.macos || PlatformKind.linux => true,
@@ -92,8 +100,65 @@ final class GeneralSettingsPage extends ConsumerWidget {
                 value: Text(_launchBranchLabel(context, preferences)),
                 onPressed: (_) => _chooseLaunchPage(context, preferences, update),
               ),
+              SettingsTile.switchTile(
+                key: const ValueKey('general-splash'),
+                leading: const Icon(Icons.branding_watermark_outlined),
+                title: Text(t.settings.splashAnimation),
+                description: Text(t.settings.splashAnimationDesc),
+                initialValue: preferences.showSplash,
+                onToggle: (value) => unawaited(update((p) => p.copyWith(showSplash: value))),
+              ),
+              SettingsTile.switchTile(
+                key: const ValueKey('general-github-updates'),
+                leading: const Icon(Icons.hub_outlined),
+                title: Text(t.settings.githubUpdates),
+                description: Text(t.settings.githubUpdatesDesc),
+                initialValue: preferences.githubOnlyUpdates,
+                onToggle: (value) => unawaited(update((p) => p.copyWith(githubOnlyUpdates: value))),
+              ),
+              SettingsTile.switchTile(
+                key: const ValueKey('general-clipboard-rooms'),
+                leading: const Icon(Icons.content_paste_go_outlined),
+                title: Text(t.settings.clipboardRooms),
+                description: Text(t.settings.clipboardRoomsDesc),
+                initialValue: preferences.detectClipboardRooms,
+                onToggle: (value) => unawaited(update((p) => p.copyWith(detectClipboardRooms: value))),
+              ),
             ],
           ),
+          // 开机启动: the OS verb lives only on the desktop; a run without a
+          // registrar (a mobile platform, a test harness) shows no row at all.
+          if (registration case final registrar?)
+            SettingsSection(
+              title: Text(t.settings.general),
+              tiles: [
+                SettingsTile.switchTile(
+                  key: const ValueKey('general-start-at-login'),
+                  leading: const Icon(Icons.login_outlined),
+                  title: Text(t.settings.startup),
+                  description: Text(t.settings.startupDesc),
+                  initialValue: preferences.startAtLogin,
+                  onToggle: (value) => unawaited(_setStartAtLogin(context, ref, registrar, value)),
+                ),
+              ],
+            ),
+          // The close-button answer the shell runs; `ask every time` is the
+          // absence of one, which is the same null the first-close prompt
+          // replaces when the viewer checks \"remember\".
+          if (isDesktop)
+            SettingsSection(
+              title: Text(t.shellSettings.sectionWindow),
+              tiles: [
+                SettingsTile.navigation(
+                  key: const ValueKey('general-close-window'),
+                  leading: const Icon(Icons.close_outlined),
+                  title: Text(t.settings.closeWindow),
+                  description: Text(t.settings.closeWindowDesc),
+                  value: Text(_closeActionLabel(context, shell?.value.closeAction)),
+                  onPressed: (_) => _chooseCloseAction(context, ref, shell),
+                ),
+              ],
+            ),
           // The stored window size is a desktop answer only: a touch run has no
           // window to size.
           if (isDesktop)
@@ -252,6 +317,68 @@ final class GeneralSettingsPage extends ConsumerWidget {
     if (picked != null) {
       await update((p) => p.copyWith(launchBranch: picked));
     }
+  }
+
+  /// Writes the launch-at-sign-in entry through the OS and stores the answer
+  /// only when the OS accepted it — a toggle that flips while nothing was
+  /// registered is the lie the doc comment warns about.
+  static Future<void> _setStartAtLogin(
+    BuildContext context,
+    WidgetRef ref,
+    StartupRegistration registrar,
+    bool enabled,
+  ) async {
+    final t = context.t;
+    final ok = await registrar.setLaunchAtLogin(enabled: enabled);
+    if (ok) {
+      await ref.read(appPreferencesProvider.notifier).update((p) => p.copyWith(startAtLogin: enabled));
+      return;
+    }
+    if (context.mounted) {
+      PureToast.show(context, t.settings.startupFailed, type: PureToastType.error);
+    }
+  }
+
+  /// What the close-window row says about the standing answer.
+  static String _closeActionLabel(BuildContext context, CloseAction? action) {
+    final t = context.t;
+    return switch (action) {
+      CloseAction.hideToTray => t.settings.closeHide,
+      CloseAction.minimise => t.settings.closeMinimise,
+      CloseAction.quit => t.settings.closeQuit,
+      null => t.settings.closeAsk,
+    };
+  }
+
+  /// Picks the window-close answer. `ask every time` clears the stored
+  /// action, which is exactly what re-arms the first-close prompt.
+  static Future<void> _chooseCloseAction(BuildContext context, WidgetRef ref, ShellPreferencesStore? shell) async {
+    if (shell == null) {
+      return;
+    }
+    final t = context.t;
+    final current = shell.value.closeAction ?? _askClose;
+    final picked = await showSettingsChooser<Object>(
+      context,
+      title: t.settings.closeWindow,
+      hint: t.settings.closeWindowDesc,
+      current: current,
+      options: [
+        (_askClose, t.settings.closeAsk),
+        (CloseAction.hideToTray, t.settings.closeHide),
+        (CloseAction.minimise, t.settings.closeMinimise),
+        (CloseAction.quit, t.settings.closeQuit),
+      ],
+    );
+    if (picked == null || picked == current) {
+      return;
+    }
+    await shell.update(
+      (preferences) => preferences.copyWith(
+        closeAction: picked is CloseAction ? picked : null,
+        clearCloseAction: picked == _askClose,
+      ),
+    );
   }
 
   /// The window-size chooser: presets plus the entry in use, applied live

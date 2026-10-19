@@ -164,7 +164,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   Widget build(BuildContext context) {
     final t = context.t;
     final runtime = ref.watch(recorderRuntimeProvider);
-    final preferences = ref.watch(recorderPreferencesProvider).value ?? const RecorderPreferences();
+    final preferences = ref.watch(recorderPreferencesProvider).value ?? RecorderPreferences();
     final root = ref.watch(recorderRootProvider).value ?? preferences.outputDirectory;
 
     // A rebuilt runtime (a moved output directory re-opens it) rebinds the

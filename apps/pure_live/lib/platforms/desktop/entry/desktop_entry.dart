@@ -6,6 +6,7 @@ import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/live_shell.dart';
 import 'package:live_shell_desktop/live_shell_desktop.dart' show DesktopNotificationCenter;
 
+import 'package:pure_live/app/engine/window_surface_hooks.dart';
 import 'package:pure_live/app/navigation/app_navigator_key.dart';
 import 'package:pure_live/app/preferences/app_preferences.dart';
 import 'package:pure_live/app/providers/app_providers.dart' show DesktopTrayPort;
@@ -193,6 +194,15 @@ final class DesktopEntry with WindowListener implements DesktopTrayPort {
 
   /// Runs the close policy for [action] and applies the disposition.
   Future<void> _applyClose(CloseAction action) async {
+    // 关闭小窗即暂停: the tile's room hands the stream back — window restored,
+    // playback paused — before the window goes anywhere, so a closed tile is
+    // a stopped tile.
+    if (_appPreferences?.value.pauseOnPipClose ?? false) {
+      final hook = WindowSurfaceHooks.onTileWindowClose;
+      if (hook != null) {
+        await hook();
+      }
+    }
     final disposition = resolveCloseDisposition(
       platform: kind,
       action: action,

@@ -3,8 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LivePlayQuality;
+import 'package:media_core/media_core.dart' show CastMedia;
+import 'package:pure_live/features/cast/cast_providers.dart';
+import 'package:pure_live/features/cast/cast_service.dart' show CastService;
+import 'package:pure_live/features/cast/cast_sheet.dart';
 import 'package:pure_live/features/room/room_controller.dart';
 import 'package:pure_live/features/room/room_providers.dart';
+import 'package:pure_live/features/room/widgets/room_bar_parts.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
@@ -22,7 +27,14 @@ import 'package:pure_uikit/pure_uikit.dart';
 /// line chips too.
 final class RoomControlOverlay extends ConsumerWidget {
   /// The bars over [identity]'s video.
-  const new({required this.identity, this.immersive = false, this.compact = false, this.onExit, super.key});
+  const new({
+    required this.identity,
+    this.immersive = false,
+    this.compact = false,
+    this.twoRows = false,
+    this.onExit,
+    super.key,
+  });
 
   /// The room whose player these bars drive.
   final RoomIdentity identity;
@@ -33,16 +45,28 @@ final class RoomControlOverlay extends ConsumerWidget {
   /// Narrow bar: fewer buttons, no inline volume slider.
   final bool compact;
 
+  /// The reference's portrait-fullscreen arrangement (A07.2): the top chrome
+  /// takes a second row — clock, battery and the picture-mode menu on a
+  /// 48-high line of their own, where the upright fullscreen keeps the
+  /// danmaku band clear above them.
+  final bool twoRows;
+
   /// Leaves the immersive presentation; required when [immersive].
   final VoidCallback? onExit;
 
   /// The bar height, the reference's `barHeight`.
   static const _barHeight = 56.0;
 
+  /// The second top row's height — the reference's `portraitRowHeight`.
+  static const _rowHeight = 48.0;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(roomControllerProvider(identity));
     final controller = ref.read(roomControllerProvider(identity).notifier);
+    // The cast button only exists where casting can work at all, and it
+    // lights up while a receiver is playing this room elsewhere.
+    final castService = ref.watch(castServiceProvider);
     // The chrome slides out under the edge rather than blinking off, and the
     // bars stay mounted so a hover on desktop brings them back where they are.
     return Positioned.fill(
@@ -57,7 +81,7 @@ final class RoomControlOverlay extends ConsumerWidget {
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 260),
                 curve: Curves.easeOut,
-                top: state.chromeVisible ? 0 : -_barHeight,
+                top: state.chromeVisible ? 0 : -(twoRows ? _barHeight + _rowHeight : _barHeight),
                 left: 0,
                 right: 0,
                 child: _topBar(context, state, controller),
@@ -68,7 +92,7 @@ final class RoomControlOverlay extends ConsumerWidget {
               bottom: state.chromeVisible || !immersive ? 0 : -_barHeight,
               left: 0,
               right: 0,
-              child: _bottomBar(context, state, controller),
+              child: _bottomBar(context, state, controller, castService),
             ),
           ],
         ),
@@ -77,41 +101,69 @@ final class RoomControlOverlay extends ConsumerWidget {
   }
 
   /// The immersive top bar: exit, the room's title, and the barrage toggle the
-  /// header would otherwise have carried.
+  /// header would otherwise have carried. In the portrait arrangement the
+  /// clock, the battery and the picture-mode menu take their own second row
+  /// (the reference's `live-play-top-second-row`).
   Widget _topBar(BuildContext context, RoomState state, RoomController controller) {
     final padding = MediaQuery.paddingOf(context);
     return _Scrim(
-      child: SizedBox(
-        height: _barHeight,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(4, padding.top / 2, 4, 0),
-          child: Row(
-            children: [
-              _BarButton(icon: Icons.arrow_back, tooltip: context.t.room.exitFullscreen, onPressed: onExit),
-              Expanded(
-                child: Text(
-                  state.room?.content.title ?? '',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: _barHeight,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(4, padding.top / 2, 4, 0),
+              child: Row(
+                children: [
+                  _BarButton(icon: Icons.arrow_back, tooltip: context.t.room.exitFullscreen, onPressed: onExit),
+                  Expanded(
+                    child: Text(
+                      state.room?.content.title ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  _BarButton(
+                    icon: Icons.comment_outlined,
+                    tooltip: state.barrageOn ? context.t.room.barrageOff : context.t.room.barrageOn,
+                    selected: state.barrageOn,
+                    onPressed: () => controller.setBarrage(on: !state.barrageOn),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (twoRows)
+            SizedBox(
+              height: _rowHeight,
+              // B09 c3 (audit B-11): a split screen or large display text can
+              // crowd the row; it scrolls sideways rather than clipping.
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Row(
+                  children: [
+                    const PlayerClock(),
+                    const PlayerBattery(),
+                    const SizedBox(width: 8),
+                    if (state.isVerticalSource) const PortraitModeButton(),
+                    const SizedBox(width: 8),
+                  ],
                 ),
               ),
-              _BarButton(
-                icon: Icons.comment_outlined,
-                tooltip: state.barrageOn ? context.t.room.barrageOff : context.t.room.barrageOn,
-                selected: state.barrageOn,
-                onPressed: () => controller.setBarrage(on: !state.barrageOn),
-              ),
-            ],
-          ),
-        ),
+            ),
+        ],
       ),
     );
   }
 
   /// The transport row: what plays, what the stream is, and how big it is.
-  Widget _bottomBar(BuildContext context, RoomState state, RoomController controller) {
+  Widget _bottomBar(BuildContext context, RoomState state, RoomController controller, CastService castService) {
     final padding = MediaQuery.paddingOf(context);
+    final line = state.line;
+    final canCast = !compact && castService.supported && line != null;
     return _Scrim(
       child: SizedBox(
         height: _barHeight + padding.bottom,
@@ -149,21 +201,39 @@ final class RoomControlOverlay extends ConsumerWidget {
                   items: [
                     PureMenuItem(
                       id: 'contain',
-                      label: context.t.room.fitContain,
+                      label: context.t.settings.fitDefault,
                       icon: Icons.fit_screen_outlined,
                       onTap: () => controller.setVideoFit(BoxFit.contain),
                     ),
                     PureMenuItem(
                       id: 'cover',
-                      label: context.t.room.fitCover,
+                      label: context.t.settings.fitCrop,
                       icon: Icons.crop_free,
                       onTap: () => controller.setVideoFit(BoxFit.cover),
                     ),
                     PureMenuItem(
                       id: 'fill',
-                      label: context.t.room.fitFill,
+                      label: context.t.settings.fitFillScreen,
                       icon: Icons.open_in_full,
                       onTap: () => controller.setVideoFit(BoxFit.fill),
+                    ),
+                    PureMenuItem(
+                      id: 'fitHeight',
+                      label: context.t.settings.fitHeight,
+                      icon: Icons.height,
+                      onTap: () => controller.setVideoFit(BoxFit.fitHeight),
+                    ),
+                    PureMenuItem(
+                      id: 'fitWidth',
+                      label: context.t.settings.fitWidth,
+                      icon: Icons.width_full,
+                      onTap: () => controller.setVideoFit(BoxFit.fitWidth),
+                    ),
+                    PureMenuItem(
+                      id: 'scaleDown',
+                      label: context.t.settings.fitScaleDown,
+                      icon: Icons.compress,
+                      onTap: () => controller.setVideoFit(BoxFit.scaleDown),
                     ),
                   ],
                   child: const Padding(
@@ -191,6 +261,62 @@ final class RoomControlOverlay extends ConsumerWidget {
                   icon: Icons.lock_open,
                   tooltip: context.t.room.lock,
                   onPressed: controller.toggleLock,
+                ),
+              // The two window surfaces media_core's driver can put the whole
+              // window into; they only exist where the window can be resized
+              // at all, and only once a stream is up (the tile takes the
+              // video's shape from the first frame it saw).
+              if (controller.windowPresentationAvailable)
+                _BarButton(
+                  key: const ValueKey('room-pip'),
+                  icon: Icons.picture_in_picture_alt_rounded,
+                  tooltip: state.presentation == RoomPresentation.pip
+                      ? context.t.room.exitPip
+                      : context.t.room.pip,
+                  selected: state.presentation == RoomPresentation.pip,
+                  onPressed: state.playing
+                      ? () => controller.setPresentation(
+                          state.presentation == RoomPresentation.pip
+                              ? RoomPresentation.normal
+                              : RoomPresentation.pip,
+                        )
+                      : null,
+                ),
+              if (controller.windowPresentationAvailable)
+                _BarButton(
+                  key: const ValueKey('room-mini'),
+                  icon: Icons.picture_in_picture_rounded,
+                  tooltip: state.presentation == RoomPresentation.miniWindow
+                      ? context.t.room.exitMiniWindow
+                      : context.t.room.miniWindow,
+                  selected: state.presentation == RoomPresentation.miniWindow,
+                  onPressed: state.playing
+                      ? () => controller.setPresentation(
+                          state.presentation == RoomPresentation.miniWindow
+                              ? RoomPresentation.normal
+                              : RoomPresentation.miniWindow,
+                        )
+                      : null,
+                ),
+              if (canCast)
+                _BarButton(
+                  key: const ValueKey('room-cast'),
+                  icon: Icons.cast,
+                  tooltip: context.t.cast.title,
+                  selected: castService.isCasting,
+                  onPressed: () => unawaited(
+                    showCastSheet(
+                      context,
+                      media: CastMedia(
+                        url: line.url,
+                        title: state.room?.content.title ?? '',
+                        headers: line.headers,
+                      ),
+                      // The TV plays its own fetch now; the local engine
+                      // stands down so the room does not keep decoding.
+                      onCastStarted: () => controller.takeLocalControl(pause: true),
+                    ),
+                  ),
                 ),
               _BarButton(
                 icon: state.presentation == RoomPresentation.normal ? Icons.fullscreen : Icons.fullscreen_exit,
@@ -232,7 +358,7 @@ final class _Scrim extends StatelessWidget {
 /// the picture behind it is not the app's surface, so it is not dressed by the
 /// tokens; the app's own surfaces keep using `PureIconButton`.
 final class _BarButton extends StatelessWidget {
-  const new({required this.icon, required this.tooltip, this.onPressed, this.selected = false});
+  const new({required this.icon, required this.tooltip, this.onPressed, this.selected = false, super.key});
 
   final IconData icon;
   final String tooltip;

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_interaction/live_interaction.dart';
 import 'package:live_sites/live_sites.dart' show LiveDanmakuProvider;
 import 'package:pure_live/app/engine/danmaku.dart';
+import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/features/room/local_message_bus.dart';
 
@@ -35,7 +36,12 @@ final danmakuSessionProvider = FutureProvider.autoDispose.family<InteractionSess
   if (site.capability<LiveDanmakuProvider>() == null) {
     return null;
   }
-  final session = await openDanmakuSession(site: site, roomId: identity.roomId, shieldRules: await loadShieldRules());
+  final session = await openDanmakuSession(
+    site: site,
+    roomId: identity.roomId,
+    shieldRules: await loadShieldRules(),
+    barrage: ref.read(appPreferencesProvider),
+  );
   ref.onDispose(() => unawaited(session.dispose()));
   return session;
 });

@@ -7,16 +7,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:live_net/live_net.dart' show DioFactory;
 import 'package:live_platform/live_platform.dart'
     show DesktopDistribution, FormFactor, PlatformCapabilities, PlatformEnvironment, PlatformKind, PlatformRuntimeInfo;
-import 'package:live_sites/live_sites.dart' show LiveCredential;
+import 'package:live_sites/live_sites.dart' show LiveCredential, LiveSiteRegistry;
 import 'package:live_storage/live_storage.dart' show StorageRepository;
+import 'package:pure_live/app/composition/sites.dart' show AppSites;
 import 'package:pure_live/app/delegates.dart' show appLocalizationsDelegates, appSupportedLocales;
+import 'package:pure_live/app/fonts/font_library.dart' show FontLibrary;
 import 'package:pure_live/app/preferences/app_preferences.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/theme/appearance_store.dart';
 import 'package:pure_live/features/login/login_providers.dart' show signedInAccountsProvider;
+import 'package:pure_live/features/recorder/recorder_preferences.dart';
+import 'package:pure_live/features/recorder/recorder_providers.dart';
 import 'package:pure_live/features/settings/appearance/appearance_page.dart';
 import 'package:pure_live/features/settings/danmaku/danmaku_settings_page.dart';
 import 'package:pure_live/features/settings/general/general_settings_page.dart';
@@ -29,9 +34,11 @@ import 'package:pure_live/features/settings/network/network_proxy_settings_page.
 import 'package:pure_live/features/settings/pages/page_settings_page.dart';
 import 'package:pure_live/features/settings/platforms/platforms_settings_page.dart';
 import 'package:pure_live/features/settings/player/mpv_settings_page.dart';
+import 'package:pure_live/features/settings/recording/record_settings_page.dart';
 import 'package:pure_live/features/settings/refresh/refresh_settings_page.dart';
 import 'package:pure_live/features/settings/room_card/room_card_settings_page.dart';
 import 'package:pure_live/features/settings/settings_page.dart';
+import 'package:pure_live/features/settings/video/portrait_settings_page.dart';
 import 'package:pure_live/features/settings/video/video_settings_page.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_uikit/pure_uikit.dart';
@@ -139,11 +146,13 @@ const List<_Page> _pages = [
   _Page('network proxy', NetworkProxySettingsPage.new, custom: true),
   _Page('appearance', AppearancePage.new, custom: true),
   _Page('video', VideoSettingsPage.new, custom: true),
+  _Page('portrait', PortraitSettingsPage.new, custom: true),
   _Page('danmaku', DanmakuSettingsPage.new, custom: true),
   _Page('platforms', PlatformsSettingsPage.new),
   _Page('local interaction', LocalInteractionSettingsPage.new, custom: true),
   _Page('logs', LogsSettingsPage.new),
   _Page('mpv tuning', MpvSettingsPage.new),
+  _Page('record', RecordSettingsPage.new, custom: true),
   _Page('local config', LocalConfigPreviewPage.new, custom: true),
 ];
 
@@ -182,6 +191,31 @@ Future<PureDesignLanguage?> _pump(
         appearanceStoreProvider.overrideWithValue(resolved.appearance),
         signedInAccountsProvider.overrideWith((ref) => const <String, LiveCredential>{}),
         environmentProvider.overrideWithValue(const _DesktopEnvironment()),
+        // The video page's audience chips enumerate the site graph; the
+        // harness hands it the empty one — the row still renders, the chips
+        // just have no platforms to name here.
+        sitesProvider.overrideWithValue(
+          AppSites(factory: DioFactory(), http: DioFactory().create(), registry: LiveSiteRegistry(const [])),
+        ),
+        // The danmaku style group lists the registered cloud fonts; the
+        // harness hands it an empty library — the row renders the 系统默认
+        // answer and the chooser just has nothing more to offer.
+        fontLibraryProvider.overrideWithValue(
+          FontLibrary(
+            root: Directory.systemTemp.createTempSync('pure-live-fonts'),
+            http: DioFactory().create(),
+            commit: 'main',
+          ),
+        ),
+        // The recording page keeps its own document store; the harness hands
+        // it the same in-memory repository the app stores get, and a fixed
+        // root so the used-space row never asks the platform for one.
+        recorderPreferencesStoreProvider.overrideWith((ref) async {
+          final store = RecorderPreferencesStore(repository: _MapRepository());
+          ref.onDispose(store.dispose);
+          return store;
+        }),
+        recorderRootProvider.overrideWith((ref) async => 'C:/recordings'),
         // The appearance page reads the frozen boot language to say whether an
         // edit is waiting for a restart; the harness starts every language
         // fresh, which is the notRecorded case.

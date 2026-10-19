@@ -70,10 +70,80 @@ final class RefreshSettingsPage extends ConsumerWidget {
               ),
             ],
           ),
+          SettingsSection(
+            title: Text(t.settings.groupCovers),
+            tiles: [
+              SettingsTile.switchTile(
+                key: const ValueKey('refresh-auto-covers'),
+                leading: const Icon(Icons.image_outlined),
+                title: Text(t.settings.autoRefreshThumbnails),
+                description: Text(t.settings.autoRefreshThumbnailsDesc),
+                initialValue: preferences.autoRefreshThumbnails,
+                onToggle: (value) => unawaited(update((p) => p.copyWith(autoRefreshThumbnails: value))),
+              ),
+              SettingsTile.switchTile(
+                key: const ValueKey('refresh-keep-old-covers'),
+                leading: const Icon(Icons.archive_outlined),
+                title: Text(t.settings.thumbnailKeepOldFiles),
+                description: Text(t.settings.thumbnailKeepOldFilesDesc),
+                initialValue: preferences.thumbnailKeepOldFiles,
+                enabled: preferences.autoRefreshThumbnails,
+                onToggle: (value) => unawaited(update((p) => p.copyWith(thumbnailKeepOldFiles: value))),
+              ),
+              SettingsTile.navigation(
+                key: const ValueKey('refresh-cover-interval'),
+                leading: const Icon(Icons.timelapse_outlined),
+                title: Text(t.settings.thumbnailRefreshInterval),
+                value: Text(_minutesLabel(context, preferences.thumbnailRefreshMinutes)),
+                enabled: preferences.autoRefreshThumbnails,
+                onPressed: (_) => unawaited(
+                  _choose<int>(
+                    context,
+                    title: t.settings.thumbnailRefreshInterval,
+                    hint: t.settings.autoRefreshThumbnailsDesc,
+                    current: preferences.thumbnailRefreshMinutes,
+                    options: [for (final minutes in _coverChoices) (minutes, _minutesLabel(context, minutes))],
+                    apply: (value) => update((p) => p.copyWith(thumbnailRefreshMinutes: value)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          // 3.x kept the history size on the history page; v4 put it here.
+          SettingsSection(
+            title: Text(t.settings.groupHistory),
+            tiles: [
+              SettingsTile.navigation(
+                key: const ValueKey('refresh-history-limit'),
+                leading: const Icon(Icons.history_outlined),
+                title: Text(t.settings.historyLimit),
+                description: Text(t.settings.historyLimitDesc),
+                value: Text(preferences.historyLimit == 0 ? t.settings.noLimit : '${preferences.historyLimit}'),
+                onPressed: (_) => unawaited(
+                  _choose<int>(
+                    context,
+                    title: t.settings.historyLimit,
+                    hint: t.settings.historyLimitDesc,
+                    current: preferences.historyLimit,
+                    options: [
+                      for (final count in const [0, 20, 50, 100, 200, 500])
+                        (count, count == 0 ? t.settings.noLimit : '$count'),
+                    ],
+                    apply: (value) => update((p) => p.copyWith(historyLimit: value)),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
+
+  /// The cover-refresh interval choices, minutes.
+  static const List<int> _coverChoices = [5, 10, 15, 30, 60, 120, 180, 240, 300, 360];
+
+  static String _minutesLabel(BuildContext context, int minutes) => context.t.settings.minutesValue(minutes: minutes);
 
   static Future<void> _choose<T>(
     BuildContext context, {

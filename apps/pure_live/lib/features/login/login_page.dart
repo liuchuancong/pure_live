@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:live_sites/live_sites.dart' show LiveSite;
 import 'package:pretty_qr_code/pretty_qr_code.dart';
+import 'package:pure_live/features/login/account_roster.dart' show RememberedAccountsGroup;
 import 'package:pure_live/features/login/login_providers.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_uikit/pure_uikit.dart';
@@ -78,6 +79,28 @@ final class _LoginPageState extends ConsumerState<LoginPage> {
                   // site is whichever of the auth sites declares it.
                   ? const _QrBody()
                   : _PasteCard(key: ValueKey(selected.manifest.id), siteId: selected.manifest.id),
+            ),
+          ),
+          // K01.2: the remembered sign-ins of the selected platform, under
+          // the flow — a new login joins the list, a switch needs no scan.
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 280),
+            child: ListView(
+              shrinkWrap: true,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text(
+                    t.account.savedAccounts,
+                    style: PureTheme.of(context).text.bodySmall.copyWith(
+                      color: PureTheme.of(context).colors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                RememberedAccountsGroup(siteId: selected.manifest.id),
+              ],
             ),
           ),
         ],

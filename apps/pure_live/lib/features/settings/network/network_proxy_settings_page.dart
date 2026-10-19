@@ -9,13 +9,12 @@ import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_settings_ui/pure_settings_ui.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
-/// The network proxy settings page (3.x `NetworkProxySettingsPage`, the app
-/// proxy half): route outgoing requests through a user HTTP proxy.
-///
-/// The policy the network stack consults per request reads the persisted
-/// preferences' in-memory value, so flipping the switch or editing the endpoint
-/// reroutes new connections immediately — no restart. The player proxy of the
-/// reference has no separate backing in this build and stays out.
+/// The network proxy settings page (the reference's two halves): the app
+/// proxy every HTTP request consults per call (reroutes new connections
+/// immediately, no restart), and the player proxy mpv pulls live streams
+/// through — stored separately because the two often want different doors,
+/// and read at each stream open (a running stream keeps the proxy it
+/// started with, like every other next-open option).
 final class NetworkProxySettingsPage extends ConsumerStatefulWidget {
   /// The network proxy settings page.
   const new({super.key});
@@ -27,7 +26,10 @@ final class NetworkProxySettingsPage extends ConsumerStatefulWidget {
 final class _NetworkProxySettingsPageState extends ConsumerState<NetworkProxySettingsPage> {
   late final TextEditingController _host;
   late final TextEditingController _port;
+  late final TextEditingController _playerHost;
+  late final TextEditingController _playerPort;
   bool _portInvalid = false;
+  bool _playerPortInvalid = false;
 
   @override
   void initState() {
@@ -36,12 +38,17 @@ final class _NetworkProxySettingsPageState extends ConsumerState<NetworkProxySet
     _host = TextEditingController(text: preferences.proxyHost);
     _port = TextEditingController(text: preferences.proxyPort.toString());
     _portInvalid = _parsePort(_port.text) == null;
+    _playerHost = TextEditingController(text: preferences.playerProxyHost);
+    _playerPort = TextEditingController(text: preferences.playerProxyPort.toString());
+    _playerPortInvalid = _parsePort(_playerPort.text) == null;
   }
 
   @override
   void dispose() {
     _host.dispose();
     _port.dispose();
+    _playerHost.dispose();
+    _playerPort.dispose();
     super.dispose();
   }
 
@@ -67,6 +74,26 @@ final class _NetworkProxySettingsPageState extends ConsumerState<NetworkProxySet
     }
     if (port != null) {
       unawaited(ref.read(appPreferencesProvider.notifier).update((p) => p.copyWith(proxyPort: port)));
+    }
+  }
+
+  void _updatePlayerHost(String raw) {
+    final normalized = raw.trim();
+    unawaited(
+      ref
+          .read(appPreferencesProvider.notifier)
+          .update((p) => p.copyWith(playerProxyHost: normalized.isEmpty ? '127.0.0.1' : normalized)),
+    );
+  }
+
+  void _updatePlayerPort(String raw) {
+    final port = _parsePort(raw);
+    final invalid = port == null;
+    if (_playerPortInvalid != invalid) {
+      setState(() => _playerPortInvalid = invalid);
+    }
+    if (port != null) {
+      unawaited(ref.read(appPreferencesProvider.notifier).update((p) => p.copyWith(playerProxyPort: port)));
     }
   }
 
@@ -138,6 +165,75 @@ final class _NetworkProxySettingsPageState extends ConsumerState<NetworkProxySet
                         const SizedBox(height: 8),
                         Text(
                           t.settings.proxyHint,
+                          style: theme.text.caption.copyWith(color: theme.colors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          SettingsSection(
+            title: Text(t.settings.playerProxyGroup),
+            tiles: [
+              SettingsTile.switchTile(
+                key: const ValueKey('player-proxy-enable'),
+                leading: const Icon(Icons.play_circle_outlined),
+                title: Text(t.settings.playerProxyEnable),
+                description: Text(t.settings.playerProxyEnableDesc),
+                initialValue: preferences.playerProxyEnabled,
+                onToggle: (value) => unawaited(
+                  ref.read(appPreferencesProvider.notifier).update((p) => p.copyWith(playerProxyEnabled: value)),
+                ),
+              ),
+            ],
+          ),
+          if (preferences.playerProxyEnabled)
+            SettingsSection(
+              title: Text(t.settings.proxyEndpoint),
+              tiles: [
+                CustomSettingsTile(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextField(
+                          key: const ValueKey('player-proxy-host'),
+                          controller: _playerHost,
+                          keyboardType: TextInputType.url,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          decoration: InputDecoration(
+                            labelText: t.settings.proxyHost,
+                            hintText: '127.0.0.1',
+                            border: const OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          onChanged: _updatePlayerHost,
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          key: const ValueKey('player-proxy-port'),
+                          controller: _playerPort,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(5),
+                          ],
+                          decoration: InputDecoration(
+                            labelText: t.settings.proxyPort,
+                            hintText: '7890',
+                            errorText: _playerPortInvalid ? t.settings.proxyPortInvalid : null,
+                            border: const OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          onChanged: _updatePlayerPort,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          t.settings.playerProxyHint,
                           style: theme.text.caption.copyWith(color: theme.colors.textSecondary),
                         ),
                       ],

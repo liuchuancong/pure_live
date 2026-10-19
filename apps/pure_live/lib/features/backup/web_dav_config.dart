@@ -1,23 +1,33 @@
 import 'package:flutter/foundation.dart' show immutable;
 
-/// One WebDAV server the user configured for cloud backups.
-///
-/// A plain immutable value with hand-written JSON — the shape is three
-/// strings, so the codegen a freezed model would need buys nothing here.
+/// The runtime credentials of one WebDAV server: the stored `WebDavServer`
+/// entry with the vault's password merged in — what `WebDavService` speaks
+/// through. The password never sits in the settings document (the v1 shape
+/// did; the store migrates it out).
 @immutable
 final class WebDavConfig {
   /// A WebDAV configuration.
-  const new({required this.address, required this.username, required this.password, this.directory = ''});
+  const new({
+    required this.address,
+    required this.username,
+    required this.password,
+    this.name = '',
+    this.directory = '',
+  });
 
   /// Reads a configuration from JSON. A stored address that is not a usable
   /// URL is kept as it is — the form asks for a fix, and nothing requests
   /// with a config before [isComplete] says it may.
   factory fromJson(Map<String, Object?> json) => WebDavConfig(
+    name: json['name']?.toString() ?? '',
     address: json['address']?.toString() ?? '',
     username: json['username']?.toString() ?? '',
     password: json['password']?.toString() ?? '',
     directory: json['directory']?.toString() ?? '',
   );
+
+  /// The label of the server this belongs to (the vault key of [password]).
+  final String name;
 
   /// The server's base URL, e.g. `https://dav.jianguoyun.com/dav/`.
   final String address;
@@ -38,6 +48,7 @@ final class WebDavConfig {
 
   /// Writes this configuration to JSON.
   Map<String, Object?> toJson() => {
+    'name': name,
     'address': address,
     'username': username,
     'password': password,
@@ -45,7 +56,8 @@ final class WebDavConfig {
   };
 
   /// Returns a copy with the given fields replaced.
-  WebDavConfig copyWith({String? address, String? username, String? password, String? directory}) => WebDavConfig(
+  WebDavConfig copyWith({String? name, String? address, String? username, String? password, String? directory}) => WebDavConfig(
+    name: name ?? this.name,
     address: address ?? this.address,
     username: username ?? this.username,
     password: password ?? this.password,
@@ -87,11 +99,12 @@ final class WebDavConfig {
   @override
   bool operator ==(Object other) =>
       other is WebDavConfig &&
+      other.name == name &&
       other.address == address &&
       other.username == username &&
       other.password == password &&
       other.directory == directory;
 
   @override
-  int get hashCode => Object.hash(address, username, password, directory);
+  int get hashCode => Object.hash(name, address, username, password, directory);
 }

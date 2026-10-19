@@ -8,17 +8,21 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_log/live_log.dart' show ErrorReporter;
 import 'package:live_platform/live_platform.dart' show PlatformKind;
+import 'package:live_shell/live_shell.dart' show CommandStartupRegistration;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/app/composition/app_services.dart';
 import 'package:pure_live/app/engine/playback_engine.dart';
+import 'package:pure_live/app/engine/playback_surfaces.dart';
 import 'package:pure_live/app/logging/app_log.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/theme/app_theme.dart';
 import 'package:pure_live/app/theme/ui_configuration_mapper.dart';
+import 'package:pure_live/features/login/douyu_login_store.dart' show douyuLoginStoreProvider;
 import 'package:pure_live/platforms/desktop/entry/desktop_entry.dart';
 import 'package:pure_live/platforms/desktop/entry/desktop_launch.dart';
 import 'package:pure_live/platforms/desktop/windows/native_frame_flag.dart' show NativeFrameFlag;
+import 'package:pure_live/shared/in_app_web.dart';
 import 'package:pure_uikit/pure_uikit.dart' show PureDesignLanguage, PureUiStartupResolver;
 
 /// The process entry point: open the log, boot the service graph, then hand
@@ -59,6 +63,12 @@ Future<void> main(List<String> args) async {
   }
 
   final services = await AppServices.boot(log: log);
+
+  // A09.8: web search runs in the app where webview_flutter ships a plugin
+  // (Android/iOS/macOS); elsewhere the page hands the search to the system
+  // browser. Detection cannot fail, but it stays out of the boot's own
+  // error path.
+  InAppWeb.available = await InAppWeb.detect();
 
   // The desktop window's life starts before the first frame (size, title,
   // tray, close interception) and its quit runs the app's own shutdown.
@@ -108,6 +118,13 @@ Future<void> main(List<String> args) async {
   // argument — what the user chose is the whole answer there.
   final pinnedLanguage = kDebugMode ? _pinnedLanguageFrom(args) : null;
 
+  // media_core's own playback surfaces, turned on before the first window so
+  // its media-session driver is installed before any room's PlayerKernel is
+  // built (a cold-start deep link can open a room immediately). Best effort:
+  // the call swallows a platform that refuses (web, no Android audio_service
+  // manifest), and an unregistered Windows toast identity simply reports false.
+  await enablePlaybackSurfaces();
+
   // The design language is decided here and never again: it picks which app
   // host gets mounted, and a host is not swapped inside a running process. The
   // appearance document is already loaded (`AppServices.boot` awaited it), so
@@ -129,6 +146,9 @@ Future<void> main(List<String> args) async {
         pathsProvider.overrideWithValue(services.paths),
         storageProvider.overrideWithValue(services.storage),
         sitesProvider.overrideWithValue(services.sites),
+        // The same renewal store the douyu adapter was built over, so the
+        // cookie page reads and writes what the requests renew through.
+        douyuLoginStoreProvider.overrideWithValue(services.sites.douyuLogin),
         appLogProvider.overrideWithValue(log),
         followRepositoryProvider.overrideWithValue(services.followRepository),
         historyRepositoryProvider.overrideWithValue(services.historyRepository),
@@ -149,6 +169,18 @@ Future<void> main(List<String> args) async {
         // This run's frame, as the native layer actually set it up — not the
         // stored preference, which may already name the mode for the next start.
         if (desktopEntry != null) windowChromeProvider.overrideWithValue(desktopEntry.windowChrome),
+        // 开机自启 needs the OS verb — the registry entry, the autostart file,
+        // the Login Items record — which only a desktop run can write.
+        if (desktopEntry != null)
+          startupRegistrationProvider.overrideWithValue(
+            CommandStartupRegistration(
+              platform: kind,
+              executablePath: Platform.resolvedExecutable,
+              registryValueName: 'PureLive',
+              displayName: 'Pure Live',
+              arguments: Platform.executableArguments,
+            ),
+          ),
         // The tray's recording row: the recorder reports its live count to
         // the desktop entry, which forwards it to the icon's menu and hint.
         if (desktopEntry != null) desktopTrayPortProvider.overrideWithValue(desktopEntry),

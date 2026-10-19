@@ -20,7 +20,7 @@ import 'package:pure_uikit/pure_uikit.dart';
 /// What is not the caller's business is the chrome: it always overlays the
 /// picture. A control strip under a video costs a phone both a line of danmaku
 /// and the height to show it in.
-final class RoomVideoSurface extends ConsumerWidget {
+final class RoomVideoSurface extends ConsumerStatefulWidget {
   /// The surface for [identity].
   const new({
     required this.identity,
@@ -29,8 +29,12 @@ final class RoomVideoSurface extends ConsumerWidget {
     this.aspectRatio,
     this.immersive = false,
     this.compact = false,
+    this.twoRows = false,
+    this.onPortraitRestore,
     this.barrageRows = 4,
     this.barrageFontSize,
+    this.barrageArea,
+    this.barrageHidden = false,
     this.onExitImmersive,
     super.key,
   });
@@ -53,6 +57,15 @@ final class RoomVideoSurface extends ConsumerWidget {
   /// Narrow bars: fewer buttons.
   final bool compact;
 
+  /// The portrait-fullscreen bars: the top chrome takes its second row
+  /// (clock, battery, picture mode) beside the first.
+  final bool twoRows;
+
+  /// The portrait fullscreen's 上滑恢复弹幕栏 (A07.2): a deliberate upward
+  /// fling on the leading half of the picture brings the sheet back. The
+  /// trailing half stays the reference's volume drag.
+  final VoidCallback? onPortraitRestore;
+
   /// How many barrage rows fit this surface.
   final int barrageRows;
 
@@ -60,56 +73,101 @@ final class RoomVideoSurface extends ConsumerWidget {
   /// own (desktop, TV) pins one.
   final double? barrageFontSize;
 
+  /// A band rule for the flying barrage (the portrait page's 竖屏弹幕布局);
+  /// null follows the stored display area.
+  final double? barrageArea;
+
+  /// Takes the flying barrage off this surface (竖屏弹幕布局 隐藏) without
+  /// touching the room's own switch or the stored style numbers.
+  final bool barrageHidden;
+
   /// Leaves the immersive presentation.
   final VoidCallback? onExitImmersive;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RoomVideoSurface> createState() => _RoomVideoSurfaceState();
+}
+
+final class _RoomVideoSurfaceState extends ConsumerState<RoomVideoSurface> {
+  /// The running vertical drag's first touch and total travel — what tells
+  /// the portrait restore fling from a volume slide.
+  Offset? _dragFrom;
+  double _dragDy = 0;
+
+  @override
+  Widget build(BuildContext context) {
     final core = _tapLayer(context);
     return ColoredBox(
       color: Colors.black,
-      child: aspectRatio == null ? core : AspectRatio(aspectRatio: aspectRatio!, child: core),
+      child: widget.aspectRatio == null ? core : AspectRatio(aspectRatio: widget.aspectRatio!, child: core),
     );
   }
 
   Widget _tapLayer(BuildContext context) {
-    final locked = state.locked;
+    final locked = widget.state.locked;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       // One tap brings the chrome up (or takes it back down); two take the
       // window, the reference's own surface grammar. The lock silences all
       // of it — only the unlock chip answers.
-      onTap: locked ? null : () => controller.revealChrome(toggle: immersive),
+      onTap: locked ? null : () => widget.controller.revealChrome(toggle: widget.immersive),
       onDoubleTap: locked
           ? null
-          : () => controller.setPresentation(immersive ? RoomPresentation.normal : RoomPresentation.fullscreen),
-      // A vertical drag on the right half is volume, on the left it is nothing
-      // — brightness needs a system channel this app does not own.
+          : () =>
+                widget.controller.setPresentation(widget.immersive ? RoomPresentation.normal : RoomPresentation.fullscreen),
+      // A vertical drag on the right half is volume; on the left it is the
+      // portrait fullscreen's 上滑恢复 — brightness needs a system channel
+      // this app does not own, so the half is free for the restore.
+      onVerticalDragStart: locked
+          ? null
+          : (details) {
+        _dragFrom = details.globalPosition;
+        _dragDy = 0;
+      },
       onVerticalDragUpdate: locked
           ? null
           : (details) {
+        _dragDy += details.delta.dy;
         final box = context.findRenderObject() as RenderBox?;
-        if (box == null) {
+        final from = _dragFrom;
+        if (box == null || from == null) {
           return;
         }
-        final local = box.globalToLocal(details.globalPosition);
+        final local = box.globalToLocal(from);
         if (local.dx < box.size.width * 0.5) {
           return;
         }
-        controller.setVolume(state.volume - details.delta.dy / box.size.height);
+        widget.controller.setVolume(widget.state.volume - details.delta.dy / box.size.height);
+      },
+      onVerticalDragEnd: locked
+          ? null
+          : (details) {
+        final velocity = details.primaryVelocity ?? 0;
+        final restore = widget.onPortraitRestore;
+        _dragFrom = null;
+        if (restore == null || velocity > -600 || _dragDy > -80) {
+          return;
+        }
+        restore();
       },
       child: Stack(
         fit: StackFit.expand,
         children: [
           _picture(context),
-          if (state.barrageOn && state.playing)
-            RoomBarrageOverlay(identity: identity, lanes: barrageRows, fontSize: barrageFontSize),
+          if (widget.state.barrageOn && widget.state.playing && !widget.barrageHidden)
+            RoomBarrageOverlay(
+              identity: widget.identity,
+              laneCap: widget.barrageRows,
+              fontSize: widget.barrageFontSize,
+              areaOverride: widget.barrageArea,
+            ),
           if (!locked)
             RoomControlOverlay(
-              identity: identity,
-              immersive: immersive,
-              compact: compact,
-              onExit: onExitImmersive ?? () => controller.setPresentation(RoomPresentation.normal),
+              identity: widget.identity,
+              immersive: widget.immersive,
+              compact: widget.compact,
+              twoRows: widget.twoRows,
+              onExit: widget.onExitImmersive ?? () => widget.controller.setPresentation(RoomPresentation.normal),
             ),
           if (locked)
             // The one control the lock leaves on screen — the reference's
@@ -121,7 +179,7 @@ final class RoomVideoSurface extends ConsumerWidget {
                 child: IconButton(
                   key: const ValueKey('room-unlock'),
                   tooltip: context.t.room.unlock,
-                  onPressed: controller.toggleLock,
+                  onPressed: widget.controller.toggleLock,
                   icon: const Icon(Icons.lock, color: Colors.white),
                 ),
               ),
@@ -134,24 +192,28 @@ final class RoomVideoSurface extends ConsumerWidget {
   /// The live surface, or the state that stands in for it: a room that never
   /// resolved, a stream that failed, a platform that says the anchor is off.
   Widget _picture(BuildContext context) {
-    final adapter = controller.adapter;
+    final adapter = widget.controller.adapter;
     if (adapter != null) {
       return MediaKitVideoView(adapter: adapter);
     }
-    if (state.loadingLines || state.loadingDetail) {
+    if (widget.state.loadingLines || widget.state.loadingDetail) {
       return const Center(child: PureSpinner(size: 40));
     }
-    if (state.engineStopped || state.streamError != null) {
-      return _Failed(onRetry: () => unawaited(controller.retry()), message: context.t.room.failed);
+    if (widget.state.engineStopped || widget.state.streamError != null) {
+      return _Failed(onRetry: () => unawaited(widget.controller.retry()), message: context.t.room.failed);
     }
-    if (state.explicitlyOffline) {
-      return PureEmpty(title: context.t.room.offline, icon: Icons.tv_off_outlined, message: state.room?.content.title);
+    if (widget.state.explicitlyOffline) {
+      return PureEmpty(
+        title: context.t.room.offline,
+        icon: Icons.tv_off_outlined,
+        message: widget.state.room?.content.title,
+      );
     }
-    if (state.detailError != null) {
+    if (widget.state.detailError != null) {
       return PureError(
         message: context.t.room.entryFailed,
         retryLabel: context.t.common.retry,
-        onRetry: () => unawaited(controller.load()),
+        onRetry: () => unawaited(widget.controller.load()),
       );
     }
     return const SizedBox.shrink();

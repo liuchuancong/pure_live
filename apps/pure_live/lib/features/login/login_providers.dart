@@ -12,6 +12,8 @@ import 'package:live_sites/live_sites.dart'
     show LiveAuthCapability, LiveAuthPollStatus, LiveAuthSession, LiveCredential, LiveSite, LiveSiteError;
 import 'package:pure_live/app/providers/app_providers.dart' show sitesProvider;
 
+import 'package:pure_live/features/login/account_roster.dart' show accountRosterProvider;
+
 import 'package:pure_live/features/login/login_repository.dart';
 
 /// The sites the build can sign somebody into, in registration order.
@@ -85,10 +87,16 @@ final class AccountController extends Notifier<LiveCredential?> {
   ///
   /// A credential the site refuses (an expired cookie, a changed format) is
   /// dropped together with its stored document — keeping it would fail every
-  /// later start-up the same way.
+  /// later start-up the same way. A vault this process cannot open (a headless
+  /// run, a broken keychain) leaves the account simply unsigned-in.
   Future<void> _hydrate() async {
     final repository = ref.read(loginRepositoryProvider(siteId));
-    final credential = await repository.load();
+    final LiveCredential? credential;
+    try {
+      credential = await repository.load();
+    } on Object {
+      return;
+    }
     if (credential == null || _disposed) {
       return;
     }
@@ -116,8 +124,22 @@ final class AccountController extends Notifier<LiveCredential?> {
     }
     await auth.applyCredential(credential);
     await ref.read(loginRepositoryProvider(siteId)).save(credential);
+    // The remembered sign-ins (K01.2): every login this app adopts joins
+    // the roster under its uid, so the group can switch back to it without
+    // a fresh scan or paste.
+    unawaited(_remember(credential));
     if (!_disposed) {
       state = credential;
+    }
+  }
+
+  Future<void> _remember(LiveCredential credential) async {
+    try {
+      final roster = await ref.read(accountRosterProvider.future);
+      await roster.remember(credential);
+    } on Object {
+      // A vault that cannot be opened keeps the login; only the roster
+      // misses it, and the next adopt that can write will list it again.
     }
   }
 

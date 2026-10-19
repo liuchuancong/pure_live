@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_interaction/live_interaction.dart' show InteractionSession;
 import 'package:live_sites/live_sites.dart' show LivePlayLine, LivePlayQuality;
+import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/features/room/room_controller.dart' show RoomController, RoomState;
 import 'package:pure_live/features/room/room_providers.dart' show RoomIdentity, danmakuSessionProvider;
 import 'package:pure_live/l10n/generated/strings.g.dart';
@@ -36,6 +37,11 @@ final class RoomResolutionRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(danmakuSessionProvider(identity)).value;
+    final preferences = ref.watch(appPreferencesProvider);
+    // The audience answers (the reference's preferRealOnlineCounts): a room
+    // on a trusted platform leads with its concurrent-online figure, every
+    // other one with the platform's own heat.
+    final leadOnline = preferences.preferRealOnlineCounts && preferences.realOnlinePlatforms.contains(identity.siteId);
     return Container(
       constraints: const BoxConstraints(minHeight: 56),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -44,7 +50,7 @@ final class RoomResolutionRow extends ConsumerWidget {
           if (!dense)
             Expanded(
               flex: 3,
-              child: _Audience(state: state, session: session, cjk: _cjk(context)),
+              child: _Audience(state: state, session: session, cjk: _cjk(context), leadOnline: leadOnline),
             ),
           if (state.qualities.isNotEmpty)
             Expanded(
@@ -94,11 +100,15 @@ final class RoomResolutionRow extends ConsumerWidget {
 /// The audience figures the platform gave, or the barrage's own tracker for
 /// whatever it is currently reporting.
 final class _Audience extends StatelessWidget {
-  const new({required this.state, required this.session, required this.cjk});
+  const new({required this.state, required this.session, required this.cjk, required this.leadOnline});
 
   final RoomState state;
   final InteractionSession? session;
   final bool cjk;
+
+  /// Whether the online figure leads; false puts the platform's heat first
+  /// (the video settings' 观众 display-mode answer).
+  final bool leadOnline;
 
   @override
   Widget build(BuildContext context) {
@@ -109,16 +119,26 @@ final class _Audience extends StatelessWidget {
     final online = session?.audience.onlineViewers ?? audience?.onlineViewers;
     final popularity = audience?.popularity;
     final style = theme.text.caption.copyWith(color: theme.colors.textSecondary);
+    final metrics = [
+      if (online != null)
+        _metric(Icons.people_alt_outlined, '${context.t.room.online} ${compactCount(online, cjk: cjk)}', style),
+      if (popularity != null)
+        _metric(Icons.whatshot_outlined, '${context.t.room.popularity} ${compactCount(popularity, cjk: cjk)}', style),
+    ];
+    // The chosen figure reads first; the other stays behind it when both
+    // exist — dropping a number the platform sent would be its own lie.
+    if (metrics.length == 2 && !leadOnline) {
+      metrics
+        ..removeAt(0)
+        ..insert(0, metrics.removeLast());
+    }
     return Wrap(
       spacing: 12,
       runSpacing: 2,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        if (online != null)
-          _metric(Icons.people_alt_outlined, '${context.t.room.online} ${compactCount(online, cjk: cjk)}', style),
-        if (popularity != null)
-          _metric(Icons.whatshot_outlined, '${context.t.room.popularity} ${compactCount(popularity, cjk: cjk)}', style),
-        if (online == null && popularity == null) Text(context.t.room.audienceWaiting, style: style),
+        ...metrics,
+        if (metrics.isEmpty) Text(context.t.room.audienceWaiting, style: style),
       ],
     );
   }

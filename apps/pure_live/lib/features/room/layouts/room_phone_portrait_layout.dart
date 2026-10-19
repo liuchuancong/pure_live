@@ -4,10 +4,15 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveRoom;
+import 'package:pure_live/app/preferences/app_preferences.dart';
+import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/features/room/danmaku_pane.dart' show DanmakuPane;
+import 'package:pure_live/features/room/portrait_rules.dart';
 import 'package:pure_live/features/room/room_controller.dart' show RoomController, RoomPresentation, RoomState;
 import 'package:pure_live/features/room/room_providers.dart' show RoomIdentity;
+import 'package:pure_live/features/room/widgets/room_bar_parts.dart' show PortraitEntryHint;
 import 'package:pure_live/features/room/widgets/room_header_parts.dart';
 import 'package:pure_live/features/room/widgets/room_resolution_row.dart';
 import 'package:pure_live/features/room/widgets/room_video_surface.dart';
@@ -26,7 +31,7 @@ import 'package:pure_uikit/pure_uikit.dart';
 /// reference keeps the panel height, the dismiss travel and the pending
 /// fullscreen entry in `_PortraitLiveRoomLayoutState`, because they are facts
 /// about this shape of screen, and a rotation disposes them with it.
-final class RoomPhonePortraitLayout extends StatefulWidget {
+final class RoomPhonePortraitLayout extends ConsumerStatefulWidget {
   /// The phone layout for [identity].
   const new({
     required this.identity,
@@ -53,10 +58,10 @@ final class RoomPhonePortraitLayout extends StatefulWidget {
   final String siteName;
 
   @override
-  State<RoomPhonePortraitLayout> createState() => _RoomPhonePortraitLayoutState();
+  ConsumerState<RoomPhonePortraitLayout> createState() => _RoomPhonePortraitLayoutState();
 }
 
-final class _RoomPhonePortraitLayoutState extends State<RoomPhonePortraitLayout> {
+final class _RoomPhonePortraitLayoutState extends ConsumerState<RoomPhonePortraitLayout> {
   double? _panelHeight;
   double _dismissOffset = 0;
   bool _settling = false;
@@ -66,6 +71,12 @@ final class _RoomPhonePortraitLayoutState extends State<RoomPhonePortraitLayout>
   /// sideways rotation the OS owns, offered from the sheet handle itself.
   bool get _entryEnabled =>
       defaultTargetPlatform == TargetPlatform.android && widget.state.presentation == RoomPresentation.normal;
+
+  AppPreferences get _preferences => ref.watch(appPreferencesProvider);
+
+  /// The barrage bounds the vertical picture gets (竖屏弹幕布局).
+  ({int rows, double? area, bool hidden}) get _barrage =>
+      portraitBarrage(_preferences, globalRows: widget.state.presentation == RoomPresentation.normal ? 2 : 3);
 
   @override
   void didUpdateWidget(covariant RoomPhonePortraitLayout oldWidget) {
@@ -87,8 +98,9 @@ final class _RoomPhonePortraitLayoutState extends State<RoomPhonePortraitLayout>
     }
     final bar = _bar(context);
     // A vertical source cannot be letterboxed into 16/9 without losing half of
-    // it, so it takes the canvas and the pane rides a sheet over its foot.
-    if (widget.state.isVerticalSource) {
+    // it, so it takes the canvas and the pane rides a sheet over its foot —
+    // when the adaptation and the layout-mode answers allow that shape.
+    if (usesPortraitShape(_preferences, verticalSource: widget.state.isVerticalSource)) {
       return Column(
         children: [
           bar,
@@ -156,7 +168,7 @@ final class _RoomPhonePortraitLayoutState extends State<RoomPhonePortraitLayout>
     return LayoutBuilder(
       builder: (context, constraints) {
         final height = constraints.maxHeight;
-        final stops = portraitPanelRange(height);
+        final stops = applyPanelStops(portraitPanelRange(height), _preferences);
         final current = (_panelHeight ?? stops.initial).clamp(stops.minimum, stops.maximum);
         return Stack(
           key: const ValueKey('live-play-portrait-stack'),
@@ -172,7 +184,9 @@ final class _RoomPhonePortraitLayoutState extends State<RoomPhonePortraitLayout>
                     controller: widget.controller,
                     state: widget.state,
                     compact: true,
-                    barrageRows: 2,
+                    barrageRows: _barrage.rows,
+                    barrageArea: _barrage.area,
+                    barrageHidden: _barrage.hidden,
                   ),
                 ),
               ),
@@ -412,29 +426,48 @@ final class _RoomPhonePortraitLayoutState extends State<RoomPhonePortraitLayout>
   Widget _immersive(BuildContext context) {
     final state = widget.state;
     if (state.presentation == RoomPresentation.portraitFullscreen && state.isVerticalSource) {
-      final cover = _ambientCover();
+      final preferences = _preferences;
+      final displayMode = preferences.portraitDisplayMode;
+      final cover = displayMode == 'ambient' || displayMode == 'balanced' ? _ambientCover() : '';
+      final veil = switch (displayMode) {
+        'balanced' => const Color(0x14000000),
+        'complete' || 'cover' => null,
+        _ => const Color(0x26000000),
+      };
+      final barrage = portraitBarrage(preferences, globalRows: 3);
+      Widget picture = RepaintBoundary(
+        child: RoomVideoSurface(
+          identity: widget.identity,
+          controller: widget.controller,
+          state: state,
+          immersive: true,
+          compact: true,
+          twoRows: true,
+          // A07.2: the sheet comes back with a deliberate upward fling on
+          // the leading half of the picture, as the entry hint says.
+          onPortraitRestore: () => widget.controller.setPresentation(RoomPresentation.normal),
+          barrageRows: barrage.rows,
+          barrageArea: barrage.area,
+          barrageHidden: barrage.hidden,
+        ),
+      );
+      // 铺满裁剪 crops the tall picture to the window; the rest fit it and
+      // let the backdrop answer for what is left over.
+      if (displayMode != 'cover') {
+        picture = AspectRatio(aspectRatio: state.sourceAspectRatio, child: picture);
+      }
       return ColoredBox(
         key: const ValueKey('fullscreen-portrait-presentation'),
         color: Colors.black,
         child: Stack(
           fit: StackFit.expand,
           children: [
-            const DecoratedBox(
-              key: ValueKey('fullscreen-portrait-ambient-fallback'),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF342B3A), Color(0xFF171B27), Color(0xFF2A202B)],
-                ),
-              ),
-            ),
             if (cover.isNotEmpty)
               ImageFiltered(
                 key: const ValueKey('fullscreen-portrait-ambient-image'),
                 imageFilter: ui.ImageFilter.blur(sigmaX: 28, sigmaY: 28, tileMode: ui.TileMode.mirror),
                 child: Transform.scale(
-                  scale: 1.14,
+                  scale: displayMode == 'balanced' ? 1.0 : 1.14,
                   child: CachedNetworkImage(
                     imageUrl: cover,
                     fit: BoxFit.cover,
@@ -444,24 +477,29 @@ final class _RoomPhonePortraitLayoutState extends State<RoomPhonePortraitLayout>
                   ),
                 ),
               ),
-            const ColoredBox(key: ValueKey('fullscreen-portrait-ambient-veil'), color: Color(0x26000000)),
-            SafeArea(
-              child: Center(
-                child: AspectRatio(
-                  aspectRatio: state.sourceAspectRatio,
-                  child: RepaintBoundary(
-                    child: RoomVideoSurface(
-                      identity: widget.identity,
-                      controller: widget.controller,
-                      state: state,
-                      immersive: true,
-                      compact: true,
-                      barrageRows: 3,
-                    ),
+            if (cover.isEmpty)
+              const DecoratedBox(
+                key: ValueKey('fullscreen-portrait-ambient-fallback'),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF342B3A), Color(0xFF171B27), Color(0xFF2A202B)],
                   ),
                 ),
               ),
+            if (veil case final shade?) ColoredBox(key: const ValueKey('fullscreen-portrait-ambient-veil'), color: shade),
+            SafeArea(
+              child: displayMode == 'cover'
+                  ? picture
+                  : Center(
+                      child: picture,
+                    ),
             ),
+            if (preferences.showPortraitDiagnostics) _diagnostics(context, state),
+            // The hint after entering (3.x `PortraitFullscreenEntryHint`):
+            // what the fling does, above the bars, gone in three seconds.
+            const PortraitEntryHint(key: ValueKey('portrait-entry-hint'), bottom: 76),
           ],
         ),
       );
@@ -476,6 +514,35 @@ final class _RoomPhonePortraitLayoutState extends State<RoomPhonePortraitLayout>
           immersive: true,
           compact: true,
           barrageRows: 3,
+        ),
+      ),
+    );
+  }
+
+  /// The 显示识别状态 read-out: the raw frame, its ratio, the shape decision and
+  /// the rule that produced it — what the reference's diagnostics chip says.
+  Widget _diagnostics(BuildContext context, RoomState state) {
+    final width = state.videoWidth;
+    final height = state.videoHeight;
+    final ratio = state.sourceAspectRatio;
+    final verdict = state.isVerticalSource ? 'portrait' : 'landscape';
+    final rules = '${_preferences.portraitLayoutMode}/${_preferences.portraitFullscreenPolicy}'
+        '/${_preferences.portraitDisplayMode}';
+    final text = '${width ?? 0}×${height ?? 0}  ${ratio.toStringAsFixed(2)} · $verdict \n$rules';
+    return Positioned(
+      key: const ValueKey('portrait-diagnostics-chip'),
+      left: 12,
+      top: 60,
+      child: IgnorePointer(
+        child: DecoratedBox(
+          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.55), borderRadius: BorderRadius.circular(8)),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            child: Text(
+              text,
+              style: const TextStyle(color: Color(0xFFB9F6CA), fontSize: 11, fontFamily: 'monospace'),
+            ),
+          ),
         ),
       ),
     );

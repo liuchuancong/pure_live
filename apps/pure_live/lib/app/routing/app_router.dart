@@ -23,6 +23,7 @@ import 'package:pure_live/features/hot_areas/hot_areas_page.dart';
 import 'package:pure_live/features/iptv/iptv_page.dart';
 import 'package:pure_live/features/iptv/iptv_play_page.dart';
 import 'package:pure_live/features/login/account_page.dart';
+import 'package:pure_live/features/login/cookie_editor_page.dart';
 import 'package:pure_live/features/login/login_page.dart';
 import 'package:pure_live/features/multiview/multiview_page.dart';
 import 'package:pure_live/features/popular/popular_page.dart';
@@ -30,6 +31,7 @@ import 'package:pure_live/features/recorder/recorder_page.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_page.dart';
 import 'package:pure_live/features/room/room_page.dart';
 import 'package:pure_live/features/search/search_page.dart';
+import 'package:pure_live/features/search/web_search_view.dart';
 import 'package:pure_live/features/settings/appearance/appearance_page.dart';
 import 'package:pure_live/features/settings/danmaku/danmaku_settings_page.dart';
 import 'package:pure_live/features/settings/data/cache_data_page.dart';
@@ -48,6 +50,7 @@ import 'package:pure_live/features/settings/recording/record_settings_page.dart'
 import 'package:pure_live/features/settings/refresh/refresh_settings_page.dart';
 import 'package:pure_live/features/settings/room_card/room_card_settings_page.dart';
 import 'package:pure_live/features/settings/settings_page.dart';
+import 'package:pure_live/features/settings/video/portrait_settings_page.dart';
 import 'package:pure_live/features/settings/video/video_settings_page.dart';
 import 'package:pure_live/features/shield/shield_page.dart';
 import 'package:pure_live/features/splash/splash_screen.dart';
@@ -58,7 +61,6 @@ import 'package:pure_live/features/version/version_page.dart';
 import 'package:pure_live/features/wallpaper/wallpaper_picker_page.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/platforms/tv/shell/tv_shell.dart';
-import 'package:pure_uikit/pure_uikit.dart';
 
 part 'app_router.g.dart';
 
@@ -312,6 +314,51 @@ class AccountRoute extends GoRouteData with $AccountRoute {
   Widget build(BuildContext context, GoRouterState state) => const AccountPage();
 }
 
+/// The per-platform cookie editor: `/settings/account/cookie?site=…`, the
+/// reference's one cookie page per sign-in platform. The site id is a query
+/// because the editor is opened from the account hub's rows, and a deep
+/// path segment (`/cookie/douyu`) would need the platform list to exist
+/// before the route can be declared.
+@TypedGoRoute<AccountCookieRoute>(path: RoutePath.settingsAccountCookie)
+class AccountCookieRoute extends GoRouteData with $AccountCookieRoute {
+  /// The editor route for [siteId].
+  const new({required this.siteId});
+
+  /// The platform whose cookie is edited.
+  final String siteId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) => CookieEditorPage(siteId: siteId);
+}
+
+/// The web search page (A09.8): the platform's search page in the app
+/// where a WebView exists, handed to the system browser where it does not.
+/// [url] is the built search address, [platform] its id and [keyword] the
+/// words shown under the title.
+@TypedGoRoute<WebSearchRoute>(path: RoutePath.webSearch)
+class WebSearchRoute extends GoRouteData with $WebSearchRoute {
+  /// The web search route.
+  const new({required this.url, this.platform = '', this.keyword = ''});
+
+  /// The search address to open.
+  final String url;
+
+  /// The platform being searched.
+  final String platform;
+
+  /// The words searched.
+  final String keyword;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) => WebSearchView(
+    request: WebSearchRequest.fromQuery(<String, String?>{
+      'url': state.uri.queryParameters['url'] ?? url,
+      'platform': state.uri.queryParameters['platform'] ?? platform,
+      'keyword': state.uri.queryParameters['keyword'] ?? keyword,
+    }),
+  );
+}
+
 /// The multi-view page: up to four rooms playing side by side.
 @TypedGoRoute<MultiviewRoute>(path: RoutePath.multiview)
 class MultiviewRoute extends GoRouteData with $MultiviewRoute {
@@ -549,6 +596,16 @@ class DanmakuSettingsRoute extends GoRouteData with $DanmakuSettingsRoute {
   Widget build(BuildContext context, GoRouterState state) => const DanmakuSettingsPage();
 }
 
+/// The portrait-stream adaptation settings: a page of the video section.
+@TypedGoRoute<PortraitSettingsRoute>(path: RoutePath.settingsPortrait)
+class PortraitSettingsRoute extends GoRouteData with $PortraitSettingsRoute {
+  /// The route.
+  const new();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const PortraitSettingsPage();
+}
+
 /// The recording settings: the settings cluster's recording section.
 @TypedGoRoute<RecordingSettingsRoute>(path: RoutePath.settingsRecording)
 class RecordingSettingsRoute extends GoRouteData with $RecordingSettingsRoute {
@@ -624,35 +681,21 @@ class SplashRoute extends GoRouteData with $SplashRoute {
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    final theme = PureTheme.of(context);
     // The handover target is the user's launch page (general settings), or
     // the branch the app was last left on when the navigation preference
     // asks for it — read once, when the splash routes on.
     return Consumer(
       builder: (context, ref, _) => SplashScreen(
-        // The app ships no icon asset, so the brand block carries the glyph —
-        // the about page's identity tile, enlarged.
-        logo: Container(
-          width: 110,
-          height: 110,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: theme.colors.primary.withValues(alpha: 0.08)),
-            boxShadow: [
-              BoxShadow(
-                color: theme.colors.primary.withValues(alpha: 0.06),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.all(20),
-          child: Icon(Icons.live_tv_rounded, size: 56, color: theme.colors.primary),
-        ),
+        // A06.4: the app's own icon, 150 wide — the master image the
+        // launcher icons are generated from, now bundled for the splash.
+        logo: Image.asset('assets/icon/app_icon.png', width: 150, height: 150),
         showTextLogo: true,
         logoText: context.t.splash.welcome,
         loaderType: LoaderType.progressBar,
-        duration: const Duration(seconds: 2),
+        // 显示启动页 off hands over on the first timer tick — the splash
+        // still owns the route-on, it just does not linger (the reference's
+        // showSplashPage).
+        duration: ref.watch(appPreferencesProvider).showSplash ? const Duration(seconds: 1) : Duration.zero,
         onNextPressed: () => handOverFromSplash(context, ref),
       ),
     );

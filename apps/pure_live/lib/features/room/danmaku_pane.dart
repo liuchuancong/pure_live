@@ -8,8 +8,10 @@ import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/features/room/room_providers.dart';
 import 'package:pure_live/features/room/super_chat_card.dart';
+import 'package:pure_live/features/room/widgets/room_message_actions.dart' show showRoomMessageActions;
 import 'package:pure_live/features/shield/shield_lists.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/danmaku/danmaku_settings_content.dart';
 import 'package:pure_uikit/pure_uikit.dart' hide InteractionState;
 
 /// The room's interaction pane (the reference's `DanmakuTabView`): the live
@@ -430,8 +432,13 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
     };
     final giftNote = gift == null ? '' : (gift.count > 1 ? ' ×${gift.count}' : '');
     final accent = gift != null ? const Color(0xFFFFC107) : _readable(message.effectiveColor, dark);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+    // The list's look answers to the shared barrage settings: size, spacing,
+    // plain rows or cards, and whether the sender's name leads the line.
+    final listPrefs = ref.watch(appPreferencesProvider);
+    final cardStyle = listPrefs.barrageListStyle == 'card';
+    final family = listPrefs.barrageFontFamily.trim();
+    final row = Padding(
+      padding: EdgeInsets.symmetric(vertical: (listPrefs.barrageListLineSpacing / 2).clamp(1, 14)),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -469,7 +476,7 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
                         ),
                       ),
                     ),
-                  if (sender.userName.isNotEmpty)
+                  if (sender.userName.isNotEmpty && listPrefs.barrageShowSender)
                     TextSpan(
                       text: '${sender.userName}: ',
                       style: TextStyle(fontWeight: FontWeight.w700, color: accent),
@@ -485,10 +492,34 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
                   ),
                 ],
               ),
-              style: const TextStyle(fontSize: 13, height: 1.35),
+              style: TextStyle(fontSize: listPrefs.barrageListFontSize, fontFamily: family.isEmpty ? null : family, height: 1.35),
             ),
           ),
         ],
+      ),
+    );
+    if (!cardStyle) {
+      // U.2k c10: the line keeps its long press — the same message actions
+      // the line on the picture opens.
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onLongPress: () => unawaited(showRoomMessageActions(context, message, identity: widget.identity)),
+        child: row,
+      );
+    }
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onLongPress: () => unawaited(showRoomMessageActions(context, message, identity: widget.identity)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+        child: Container(
+          decoration: BoxDecoration(
+            color: dark ? Colors.white.withValues(alpha: 0.06) : PureTheme.of(context).colors.fillSecondary,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: row,
+        ),
       ),
     );
   }
@@ -508,9 +539,10 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
     );
   }
 
-  /// The barrage answers the overlay draws with, edited where they are read —
-  /// the reference's third tab, scoped to what this build's surface honours:
-  /// the global visibility, the text size and the opacity.
+  /// The barrage answers the overlay and the list draw with, edited where
+  /// they are read — the reference's third tab: the shared
+  /// `DanmakuSettingsContent` with the room's visibility switch on top, and
+  /// the "改动立即生效" note beside the first group.
   Widget _settingsTab(BuildContext context) {
     final t = context.t;
     final theme = PureTheme.of(context);
@@ -542,39 +574,8 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
             ],
           ),
         ),
-        const SizedBox(height: 12),
-        PureCard(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(child: Text(t.room.barrageFontSize, style: theme.text.body)),
-                  Text('${preferences.barrageFontSize.round()} px', style: theme.text.caption),
-                ],
-              ),
-              PureSlider(
-                value: preferences.barrageFontSize,
-                min: 10,
-                max: 28,
-                onChanged: (value) => unawaited(update((p) => p.copyWith(barrageFontSize: value))),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(child: Text(t.room.barrageOpacity, style: theme.text.body)),
-                  Text('${(preferences.barrageOpacity * 100).round()}%', style: theme.text.caption),
-                ],
-              ),
-              PureSlider(
-                value: preferences.barrageOpacity,
-                min: 0.2,
-                onChanged: (value) => unawaited(update((p) => p.copyWith(barrageOpacity: value))),
-              ),
-            ],
-          ),
-        ),
+        const SizedBox(height: 4),
+        DanmakuSettingsContent(preferences: preferences, update: update, hint: t.danmaku.liveHint),
         Padding(
           padding: const EdgeInsets.only(top: 8),
           child: Text(

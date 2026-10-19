@@ -7,10 +7,17 @@ import 'package:path/path.dart' as p;
 /// diagnostics, fonts are re-downloadable.
 const Set<String> _excludedTrees = {'logs', 'fonts'};
 
-/// One backup archive in the backups tree.
+/// One backup in the backups tree — a full zip of the data area or a
+/// follows-only JSON document (the reference's two file kinds).
 final class BackupEntry {
   /// A backup entry.
-  const new({required this.file, required this.name, required this.modified, required this.size});
+  const new({
+    required this.file,
+    required this.name,
+    required this.modified,
+    required this.size,
+    this.followsOnly = false,
+  });
 
   /// The archive file.
   final File file;
@@ -24,8 +31,24 @@ final class BackupEntry {
   /// The size in bytes.
   final int size;
 
+  /// Whether this is a follows-only backup (the `-follows-` name the
+  /// document writer stamps).
+  final bool followsOnly;
+
   /// The file's size in bytes.
   int get sizeBytes => file.lengthSync();
+}
+
+/// The size in the file list's words — KB under a meg, MB above (the
+/// reference's `formatFileSize`).
+String formatBackupSize(int bytes) {
+  if (bytes < 1024) {
+    return '$bytes B';
+  }
+  if (bytes < 1024 * 1024) {
+    return '${(bytes / 1024).toStringAsFixed(1)} KB';
+  }
+  return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
 }
 
 /// Creates a timestamped backup of [dataDir] in [backupsDir] and returns
@@ -45,19 +68,22 @@ File createBackup({required Directory dataDir, required Directory backupsDir}) {
   return File(p.join(backupsDir.path, name))..writeAsBytesSync(bytes, flush: true);
 }
 
-/// Lists the backups in [backupsDir], newest first.
+/// Lists the backups in [backupsDir], newest first: the zips and the
+/// follows-only JSON documents the page writes.
 List<BackupEntry> listBackups(Directory backupsDir) {
   if (!backupsDir.existsSync()) {
     return const [];
   }
   final entries = [
     for (final entity in backupsDir.listSync())
-      if (entity is File && entity.path.toLowerCase().endsWith('.zip'))
+      if (entity is File &&
+          (entity.path.toLowerCase().endsWith('.zip') || entity.path.toLowerCase().endsWith('.json')))
         BackupEntry(
           file: entity,
           name: p.basenameWithoutExtension(entity.path),
           modified: entity.statSync().modified,
           size: entity.lengthSync(),
+          followsOnly: entity.path.toLowerCase().endsWith('.json') && p.basename(entity.path).contains('-follows-'),
         ),
   ]..sort((a, b) => b.modified.compareTo(a.modified));
   return entries;

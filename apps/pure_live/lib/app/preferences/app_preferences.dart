@@ -108,6 +108,20 @@ enum RoomCardCoverAspect {
 /// be walked, so every writer keeps at least one id.
 const List<String> defaultShellBranches = ['follow', 'popular', 'areas', 'record'];
 
+/// The platforms whose concurrent-online figure is trusted, as the reference
+/// `Settings.realOnlinePlatforms` ships them (3.x's audience audit); the
+/// audience settings row starts here and every check-box rewrites it.
+const List<String> defaultRealOnlinePlatforms = [
+  'douyin',
+  'kuaishou',
+  'cc',
+  'twitch',
+  'soop',
+  'acfun',
+  'picarto',
+  'twitcasting',
+];
+
 /// The app's general choices — general, refresh, page, navigation, proxy,
 /// loading and room-card preferences — as one persisted document.
 ///
@@ -133,6 +147,66 @@ final class AppPreferences {
     this.localInteractionColor = 0xFFFFFFFF,
     this.barrageFontSize = 15,
     this.barrageOpacity = 1,
+    this.barrageArea = 1,
+    this.barrageTopArea = 0,
+    this.barrageBottomArea = 0,
+    this.barrageSpeed = 120,
+    this.barrageFontWeight = 600,
+    this.barrageStroke = true,
+    this.barrageStrokeWidth = 3,
+    this.barrageShowSender = true,
+    this.barrageMaxVisible = 48,
+    this.barrageFps = 30,
+    this.barrageNoEmoji = false,
+    this.barrageCollapse = false,
+    this.barrageCollapseWindow = 5,
+    this.barragePausedBehavior = 'pause',
+    this.barrageAutoFps = true,
+    this.barrageFpsMode = 'powerSaving',
+    this.barrageShowGifts = false,
+    this.barrageTapAction = true,
+    this.barrageLongPressAction = true,
+    this.barrageFontFamily = '',
+    this.backupDirectory = '',
+    this.barrageHoldOnPress = false,
+    this.barrageListFontSize = 13,
+    this.barrageListLineSpacing = 4,
+    this.barrageListStyle = 'compact',
+    this.barrageTemplate = '',
+    this.preferResolution = '原画',
+    this.preferResolutionCellular = '原画',
+    this.preferH264 = true,
+    this.videoFitIndex = 0,
+    this.openRoomFullscreen = false,
+    this.preferRealOnlineCounts = false,
+    this.realOnlinePlatforms = defaultRealOnlinePlatforms,
+    this.portraitAdapt = true,
+    this.portraitAdaptiveHeight = true,
+    this.portraitLayoutMode = 'balanced',
+    this.portraitFullscreenPolicy = 'followSource',
+    this.portraitDisplayMode = 'ambient',
+    this.portraitDanmakuMode = 'followGlobal',
+    this.rememberPortraitRoomOverride = true,
+    this.showPortraitDiagnostics = false,
+    this.portraitRoomOverrides = const {},
+    this.pipAlwaysOnTop = false,
+    this.miniRememberPosition = true,
+    this.miniWindowRect = '',
+    this.pauseOnPipClose = false,
+    this.showSplash = true,
+    this.githubOnlyUpdates = false,
+    this.detectClipboardRooms = true,
+    this.startAtLogin = false,
+    this.cacheMaxMB = 1024,
+    this.cacheAutoClear = false,
+    this.cacheKeepDays = 7,
+    this.cacheKeepCount = 500,
+    this.autoRefreshThumbnails = false,
+    this.thumbnailRefreshMinutes = 30,
+    this.thumbnailKeepOldFiles = false,
+    this.playerProxyEnabled = false,
+    this.playerProxyHost = '127.0.0.1',
+    this.playerProxyPort = 7890,
     this.videoOutputDriver = 'auto',
     this.audioOutputDriver = 'auto',
     this.hardwareDecoder = 'auto',
@@ -191,6 +265,40 @@ final class AppPreferences {
       localInteractionColor: (json['localInteractionColor'] as num?)?.toInt() ?? 0xFFFFFFFF,
       barrageFontSize: (json['barrageFontSize'] as num?)?.toDouble() ?? 15,
       barrageOpacity: (json['barrageOpacity'] as num?)?.toDouble() ?? 1,
+      barrageArea: (json['barrageArea'] as num?)?.toDouble() ?? 1,
+      barrageTopArea: (json['barrageTopArea'] as num?)?.toDouble() ?? 0,
+      barrageBottomArea: (json['barrageBottomArea'] as num?)?.toDouble() ?? 0,
+      barrageSpeed: (json['barrageSpeed'] as num?)?.toDouble() ?? 120,
+      barrageFontWeight: (json['barrageFontWeight'] as num?)?.toInt() ?? 600,
+      barrageStroke: json['barrageStroke'] as bool? ?? true,
+      barrageStrokeWidth: (json['barrageStrokeWidth'] as num?)?.toDouble() ?? 3,
+      barrageShowSender: json['barrageShowSender'] as bool? ?? true,
+      barrageMaxVisible: (json['barrageMaxVisible'] as num?)?.toInt() ?? 48,
+      barrageFps: (json['barrageFps'] as num?)?.toInt() ?? 30,
+      barrageNoEmoji: json['barrageNoEmoji'] as bool? ?? false,
+      barrageCollapse: json['barrageCollapse'] as bool? ?? false,
+      barrageCollapseWindow: (json['barrageCollapseWindow'] as num?)?.toInt() ?? 5,
+      barragePausedBehavior: json['barragePausedBehavior'] as String? ?? 'pause',
+      barrageAutoFps: json['barrageAutoFps'] as bool? ?? true,
+      barrageFpsMode: json['barrageFpsMode'] as String? ?? 'powerSaving',
+      barrageShowGifts: json['barrageShowGifts'] as bool? ?? false,
+      barrageTapAction: json['barrageTapAction'] as bool? ?? true,
+      barrageLongPressAction: json['barrageLongPressAction'] as bool? ?? true,
+      barrageFontFamily: json['barrageFontFamily'] as String? ?? '',
+      backupDirectory: json['backupDirectory'] as String? ?? '',
+      barrageHoldOnPress: json['barrageHoldOnPress'] as bool? ?? false,
+      barrageListFontSize: (json['barrageListFontSize'] as num?)?.toDouble() ?? 13,
+      barrageListLineSpacing: (json['barrageListLineSpacing'] as num?)?.toDouble() ?? 4,
+      barrageListStyle: json['barrageListStyle'] as String? ?? 'compact',
+      barrageTemplate: json['barrageTemplate'] as String? ?? '',
+      preferResolution: json['preferResolution'] as String? ?? '原画',
+      preferResolutionCellular: json['preferResolutionCellular'] as String? ?? '原画',
+      preferH264: json['preferH264'] as bool? ?? true,
+      videoFitIndex: (json['videoFitIndex'] as num?)?.toInt() ?? 0,
+      openRoomFullscreen: json['openRoomFullscreen'] as bool? ?? false,
+      preferRealOnlineCounts: json['preferRealOnlineCounts'] as bool? ?? false,
+      realOnlinePlatforms:
+          (json['realOnlinePlatforms'] as List<Object?>?)?.whereType<String>().toList() ?? defaultRealOnlinePlatforms,
       // The mpv tuning answers. The defaults are what the engine did before
       // this page existed — auto for everything, no interpolation, the
       // adapter's own cache — so an existing document keeps behaving the same.
@@ -268,6 +376,249 @@ final class AppPreferences {
 
   /// The barrage text opacity, 0..1.
   final double barrageOpacity;
+
+  /// The share of the video the flying barrage may use, 0..1 — the
+  /// reference's `danmakuArea`.
+  final double barrageArea;
+
+  /// The blank band kept under the top edge, in logical pixels
+  /// (`danmakuTopArea`).
+  final double barrageTopArea;
+
+  /// The blank band kept above the bottom edge, in logical pixels
+  /// (`danmakuBottomArea`).
+  final double barrageBottomArea;
+
+  /// How fast a line crosses, in pixels per second (`danmakuSpeed`).
+  final double barrageSpeed;
+
+  /// The barrage text weight, a CSS weight (100..900, `danmakuFontWeight`).
+  final int barrageFontWeight;
+
+  /// Whether the barrage text carries its dark outline (`enableDanmakuStroke`).
+  final bool barrageStroke;
+
+  /// The outline's blur radius, the stroke width (`danmakuFontBorder`).
+  final double barrageStrokeWidth;
+
+  /// Whether the sender's name rides in front of the line (`showChatNames`).
+  final bool barrageShowSender;
+
+  /// How many lines may fly at once (`danmakuMaxVisibleCount`).
+  final int barrageMaxVisible;
+
+  /// The repaint rate of the flying barrage, 25..240 FPS
+  /// (`danmakuFps`; the automatic variant follows the display in the
+  /// reference — this build drives the manual answer).
+  final int barrageFps;
+
+  /// Whether emote-only chats are dropped (`noEmojiMode`).
+  final bool barrageNoEmoji;
+
+  /// Whether an identical chat seen again inside [barrageCollapseWindow]
+  /// keeps only its first copy (`collapseRepeatedDanmaku`).
+  final bool barrageCollapse;
+
+  /// The collapse window in seconds, 1..30 (`repeatedDanmakuWindowSeconds`).
+  final int barrageCollapseWindow;
+
+  /// What the barrage does while the video is paused: `pause` holds every
+  /// line in place, `fly` lets it cross on (`danmakuPausedBehavior`).
+  final String barragePausedBehavior;
+
+  /// Whether the repaint clock follows the display instead of the manual
+  /// number (the reference's danmakuAutoFps; true ships it there).
+  final bool barrageAutoFps;
+
+  /// What the automatic clock may reach: `powerSaving`/`balanced` cap at 60,
+  /// `performance` lets the display's own maximum through (the reference's
+  /// refreshRateMode trio).
+  final String barrageFpsMode;
+
+  /// Whether the platform's gift messages fly over the picture beside the
+  /// chat (A08.12; off keeps the surface chat-only).
+  final bool barrageShowGifts;
+
+  /// Whether tapping a flying line opens its sender's card (画面弹幕交互).
+  final bool barrageTapAction;
+
+  /// Whether long-pressing a flying line offers to block its sender.
+  final bool barrageLongPressAction;
+
+  /// The danmaku font family registered from the font library; '' is the
+  /// system default.
+  final String barrageFontFamily;
+
+  /// Where backups are written and listed: the reference's
+  /// `Settings.backupDirectory`; '' takes the data area's own backups
+  /// tree (the app's default folder).
+  final String backupDirectory;
+
+  /// Whether pressing the picture holds the lines under the finger
+  /// (`holdDanmakuOnPress`).
+  final bool barrageHoldOnPress;
+
+  /// The chat list's text size (`danmakuListFontSize`).
+  final double barrageListFontSize;
+
+  /// The chat list's line spacing (`danmakuListLineSpacing`).
+  final double barrageListLineSpacing;
+
+  /// The chat list's look: `compact` rows or `card` bubbles
+  /// (`danmakuListStyle`).
+  final String barrageListStyle;
+
+  /// The viewer's own saved barrage look, a `key=value;` string; empty when
+  /// nothing was saved yet (`savedDanmakuTemplate`).
+  final String barrageTemplate;
+
+  /// The quality name to open a room with on Wi-Fi — one of
+  /// `playQualityNames`, matched against the platform's own quality labels
+  /// (the reference's preferResolution).
+  final String preferResolution;
+
+  /// The same answer for a cellular connection; the reference keeps a
+  /// separate one so a metered network can start lower.
+  final String preferResolutionCellular;
+
+  /// Whether an HEVC-labelled quality is passed over while the room offers
+  /// anything else (the reference's "优先 H.264 编码"); HEVC stays one menu tap
+  /// away either way.
+  final bool preferH264;
+
+  /// Index into the six viewport fits (default, crop, fill, height, width,
+  /// scale-down) a room opens with; anything out of range reads 0.
+  final int videoFitIndex;
+
+  /// Whether the room walks itself into fullscreen once the stream starts
+  /// playing (the reference's "自动全屏").
+  final bool openRoomFullscreen;
+
+  /// Whether a room on a trusted platform shows its concurrent-online figure
+  /// as the headline audience number; off, the platform's own heat/popularity
+  /// number leads (the reference's preferRealOnlineCounts).
+  final bool preferRealOnlineCounts;
+
+  /// The platforms whose online figure is trusted (the reference's
+  /// realOnlinePlatforms); the audience row of the video settings edits it.
+  final List<String> realOnlinePlatforms;
+
+  /// Whether a decoded tall frame re-dresses the room for a vertical stream
+  /// (the reference's 智能识别竖屏直播源); off, every source plays in the
+  /// plain landscape stack.
+  final bool portraitAdapt;
+
+  /// Whether the sheet's ceiling follows the body — a tall source gets the
+  /// bigger watch area while the chat list keeps its room (the reference's
+  /// portraitAdaptiveHeight). Off, the panel sits fixed at the middle stop.
+  final bool portraitAdaptiveHeight;
+
+  /// The normal-page shape for a vertical source: `balanced` (sheet over the
+  /// full-bleed picture), `immersive` (same, opening at the lowest panel),
+  /// `compatibility` (the plain letterboxed stack, like landscape rooms).
+  final String portraitLayoutMode;
+
+  /// Which direction a fullscreen entry takes for a vertical source:
+  /// `followSource` keeps the picture upright (portrait fullscreen),
+  /// `followSystem` defers to the device, `landscape` always turns the
+  /// sideways room.
+  final String portraitFullscreenPolicy;
+
+  /// The portrait-fullscreen canvas: `complete` (no backdrop, the fitted
+  /// picture), `ambient` (blurred cover behind it — the reference's own
+  /// default), `balanced` (ambient, lighter veil), `cover` (cropped to fill).
+  final String portraitDisplayMode;
+
+  /// How the flying barrage is bounded over a vertical source's picture:
+  /// `followGlobal`, `upperQuarter` (top quarter only), `reduced` (half the
+  /// rows), `hidden`; it bounds the overlay, never the global style numbers.
+  final String portraitDanmakuMode;
+
+  /// Whether a direction picked by hand in the player is remembered for the
+  /// room (the reference's portraitRoomOverrides).
+  final bool rememberPortraitRoomOverride;
+
+  /// Whether the picture shows the detection read-out — source size, ratio
+  /// and the rule in force (the reference's 显示识别状态).
+  final bool showPortraitDiagnostics;
+
+  /// The per-room direction overrides: room key to `portrait`/`landscape`.
+  final Map<String, String> portraitRoomOverrides;
+
+  /// Whether the desktop picture-in-picture tile stays above the other
+  /// windows (the reference's 小窗始终置顶).
+  final bool pipAlwaysOnTop;
+
+  /// Whether the free-floating mini window re-opens where it was last left
+  /// (the reference's rememberPipPosition). Off, every entry starts at the
+  /// corner the driver chooses.
+  final bool miniRememberPosition;
+
+  /// The last mini-window geometry as `x,y,w,h`; '' is never-left. Written
+  /// only while [miniRememberPosition] is on.
+  final String miniWindowRect;
+
+  /// Whether closing the window while it is a PiP/mini tile pauses playback
+  /// (the reference's pauseOnPipClose) instead of letting the stream run
+  /// behind a hidden window.
+  final bool pauseOnPipClose;
+
+  /// Whether the start-up splash holds its two seconds of branding before it
+  /// hands over (the reference's showSplashPage); off goes straight to the
+  /// launch page.
+  final bool showSplash;
+
+  /// Whether the update feed asks GitHub only (the reference's
+  /// useGitHubOriginForUpdates); off races the release assets through the
+  /// mirrors first, GitHub as the last door — the shape for networks where
+  /// GitHub is the slow one.
+  final bool githubOnlyUpdates;
+
+  /// Whether a room link found on the clipboard at resume is offered as a
+  /// jump (the reference's detectClipboardRooms; 3.x always looked).
+  final bool detectClipboardRooms;
+
+  /// The stored answer behind the desktop 开机自启 row; the truth is read
+  /// from the OS, and the row rewrites the store when the OS refuses.
+  final bool startAtLogin;
+
+  /// The picture cache's ceiling in MB (the reference's currentCacheSize
+  /// display pairs with it); 0 or negative means no cap.
+  final int cacheMaxMB;
+
+  /// Whether the cache prunes itself when it crosses [cacheMaxMB] after a
+  /// resume (the reference's automatic cache-clear answer).
+  final bool cacheAutoClear;
+
+  /// How many days a pruned cache may keep pictures for (1..90).
+  final int cacheKeepDays;
+
+  /// How many files a pruned cache may keep (100..2000).
+  final int cacheKeepCount;
+
+  /// Whether room covers re-pull on a timer (the reference's
+  /// autoRefreshThumbnails); off, a cover is fetched once and kept.
+  final bool autoRefreshThumbnails;
+
+  /// Minutes between cover re-pulls (5..360, the reference's
+  /// thumbnailRefreshInterval); the bucket lands in the cover URL, so every
+  /// window reads as a new address once and only once.
+  final int thumbnailRefreshMinutes;
+
+  /// Whether a cover refresh keeps the superseded pictures instead of
+  /// letting the cache drop them (the reference's thumbnailKeepOldFiles).
+  final bool thumbnailKeepOldFiles;
+
+  /// The player's own proxy (the reference's 播放器代理): mpv pulls the live
+  /// stream through `http://host:port`, separate from the app's own HTTP
+  /// proxy because the two often want different doors.
+  final bool playerProxyEnabled;
+
+  /// The player proxy's host.
+  final String playerProxyHost;
+
+  /// The player proxy's port (1..65535 as the field page validates it).
+  final int playerProxyPort;
 
   /// Whether the stored video/audio output drivers are used at all; off, the
   /// engine's own platform default answers — the reference's
@@ -414,6 +765,66 @@ final class AppPreferences {
     'localInteractionColor': localInteractionColor,
     'barrageFontSize': barrageFontSize,
     'barrageOpacity': barrageOpacity,
+    'barrageArea': barrageArea,
+    'barrageTopArea': barrageTopArea,
+    'barrageBottomArea': barrageBottomArea,
+    'barrageSpeed': barrageSpeed,
+    'barrageFontWeight': barrageFontWeight,
+    'barrageStroke': barrageStroke,
+    'barrageStrokeWidth': barrageStrokeWidth,
+    'barrageShowSender': barrageShowSender,
+    'barrageMaxVisible': barrageMaxVisible,
+    'barrageFps': barrageFps,
+    'barrageNoEmoji': barrageNoEmoji,
+    'barrageCollapse': barrageCollapse,
+    'barrageCollapseWindow': barrageCollapseWindow,
+    'barragePausedBehavior': barragePausedBehavior,
+    'barrageAutoFps': barrageAutoFps,
+    'barrageFpsMode': barrageFpsMode,
+    'barrageShowGifts': barrageShowGifts,
+    'barrageTapAction': barrageTapAction,
+    'barrageLongPressAction': barrageLongPressAction,
+    'barrageFontFamily': barrageFontFamily,
+    'backupDirectory': backupDirectory,
+    'barrageHoldOnPress': barrageHoldOnPress,
+    'barrageListFontSize': barrageListFontSize,
+    'barrageListLineSpacing': barrageListLineSpacing,
+    'barrageListStyle': barrageListStyle,
+    'barrageTemplate': barrageTemplate,
+    'preferResolution': preferResolution,
+    'preferResolutionCellular': preferResolutionCellular,
+    'preferH264': preferH264,
+    'videoFitIndex': videoFitIndex,
+    'openRoomFullscreen': openRoomFullscreen,
+    'preferRealOnlineCounts': preferRealOnlineCounts,
+    'realOnlinePlatforms': realOnlinePlatforms,
+    'portraitAdapt': portraitAdapt,
+    'portraitAdaptiveHeight': portraitAdaptiveHeight,
+    'portraitLayoutMode': portraitLayoutMode,
+    'portraitFullscreenPolicy': portraitFullscreenPolicy,
+    'portraitDisplayMode': portraitDisplayMode,
+    'portraitDanmakuMode': portraitDanmakuMode,
+    'rememberPortraitRoomOverride': rememberPortraitRoomOverride,
+    'showPortraitDiagnostics': showPortraitDiagnostics,
+    'portraitRoomOverrides': portraitRoomOverrides,
+    'pipAlwaysOnTop': pipAlwaysOnTop,
+    'miniRememberPosition': miniRememberPosition,
+    'miniWindowRect': miniWindowRect,
+    'pauseOnPipClose': pauseOnPipClose,
+    'showSplash': showSplash,
+    'githubOnlyUpdates': githubOnlyUpdates,
+    'detectClipboardRooms': detectClipboardRooms,
+    'startAtLogin': startAtLogin,
+    'cacheMaxMB': cacheMaxMB,
+    'cacheAutoClear': cacheAutoClear,
+    'cacheKeepDays': cacheKeepDays,
+    'cacheKeepCount': cacheKeepCount,
+    'autoRefreshThumbnails': autoRefreshThumbnails,
+    'thumbnailRefreshMinutes': thumbnailRefreshMinutes,
+    'thumbnailKeepOldFiles': thumbnailKeepOldFiles,
+    'playerProxyEnabled': playerProxyEnabled,
+    'playerProxyHost': playerProxyHost,
+    'playerProxyPort': playerProxyPort,
     'customPlayerOutput': customPlayerOutput,
     'videoOutputDriver': videoOutputDriver,
     'audioOutputDriver': audioOutputDriver,
@@ -467,6 +878,66 @@ final class AppPreferences {
     int? localInteractionColor,
     double? barrageFontSize,
     double? barrageOpacity,
+    double? barrageArea,
+    double? barrageTopArea,
+    double? barrageBottomArea,
+    double? barrageSpeed,
+    int? barrageFontWeight,
+    bool? barrageStroke,
+    double? barrageStrokeWidth,
+    bool? barrageShowSender,
+    int? barrageMaxVisible,
+    int? barrageFps,
+    bool? barrageNoEmoji,
+    bool? barrageCollapse,
+    int? barrageCollapseWindow,
+    String? barragePausedBehavior,
+    bool? barrageAutoFps,
+    String? barrageFpsMode,
+    bool? barrageShowGifts,
+    bool? barrageTapAction,
+    bool? barrageLongPressAction,
+    String? barrageFontFamily,
+    String? backupDirectory,
+    bool? barrageHoldOnPress,
+    double? barrageListFontSize,
+    double? barrageListLineSpacing,
+    String? barrageListStyle,
+    String? barrageTemplate,
+    String? preferResolution,
+    String? preferResolutionCellular,
+    bool? preferH264,
+    int? videoFitIndex,
+    bool? openRoomFullscreen,
+    bool? preferRealOnlineCounts,
+    List<String>? realOnlinePlatforms,
+    bool? portraitAdapt,
+    bool? portraitAdaptiveHeight,
+    String? portraitLayoutMode,
+    String? portraitFullscreenPolicy,
+    String? portraitDisplayMode,
+    String? portraitDanmakuMode,
+    bool? rememberPortraitRoomOverride,
+    bool? showPortraitDiagnostics,
+    Map<String, String>? portraitRoomOverrides,
+    bool? pipAlwaysOnTop,
+    bool? miniRememberPosition,
+    String? miniWindowRect,
+    bool? pauseOnPipClose,
+    bool? showSplash,
+    bool? githubOnlyUpdates,
+    bool? detectClipboardRooms,
+    bool? startAtLogin,
+    int? cacheMaxMB,
+    bool? cacheAutoClear,
+    int? cacheKeepDays,
+    int? cacheKeepCount,
+    bool? autoRefreshThumbnails,
+    int? thumbnailRefreshMinutes,
+    bool? thumbnailKeepOldFiles,
+    bool? playerProxyEnabled,
+    String? playerProxyHost,
+    int? playerProxyPort,
     bool? customPlayerOutput,
     String? videoOutputDriver,
     String? audioOutputDriver,
@@ -517,6 +988,66 @@ final class AppPreferences {
     localInteractionColor: localInteractionColor ?? this.localInteractionColor,
     barrageFontSize: barrageFontSize ?? this.barrageFontSize,
     barrageOpacity: barrageOpacity ?? this.barrageOpacity,
+    barrageArea: barrageArea ?? this.barrageArea,
+    barrageTopArea: barrageTopArea ?? this.barrageTopArea,
+    barrageBottomArea: barrageBottomArea ?? this.barrageBottomArea,
+    barrageSpeed: barrageSpeed ?? this.barrageSpeed,
+    barrageFontWeight: barrageFontWeight ?? this.barrageFontWeight,
+    barrageStroke: barrageStroke ?? this.barrageStroke,
+    barrageStrokeWidth: barrageStrokeWidth ?? this.barrageStrokeWidth,
+    barrageShowSender: barrageShowSender ?? this.barrageShowSender,
+    barrageMaxVisible: barrageMaxVisible ?? this.barrageMaxVisible,
+    barrageFps: barrageFps ?? this.barrageFps,
+    barrageNoEmoji: barrageNoEmoji ?? this.barrageNoEmoji,
+    barrageCollapse: barrageCollapse ?? this.barrageCollapse,
+    barrageCollapseWindow: barrageCollapseWindow ?? this.barrageCollapseWindow,
+    barragePausedBehavior: barragePausedBehavior ?? this.barragePausedBehavior,
+    barrageAutoFps: barrageAutoFps ?? this.barrageAutoFps,
+    barrageFpsMode: barrageFpsMode ?? this.barrageFpsMode,
+    barrageShowGifts: barrageShowGifts ?? this.barrageShowGifts,
+    barrageTapAction: barrageTapAction ?? this.barrageTapAction,
+    barrageLongPressAction: barrageLongPressAction ?? this.barrageLongPressAction,
+    barrageFontFamily: barrageFontFamily ?? this.barrageFontFamily,
+    backupDirectory: backupDirectory ?? this.backupDirectory,
+    barrageHoldOnPress: barrageHoldOnPress ?? this.barrageHoldOnPress,
+    barrageListFontSize: barrageListFontSize ?? this.barrageListFontSize,
+    barrageListLineSpacing: barrageListLineSpacing ?? this.barrageListLineSpacing,
+    barrageListStyle: barrageListStyle ?? this.barrageListStyle,
+    barrageTemplate: barrageTemplate ?? this.barrageTemplate,
+    preferResolution: preferResolution ?? this.preferResolution,
+    preferResolutionCellular: preferResolutionCellular ?? this.preferResolutionCellular,
+    preferH264: preferH264 ?? this.preferH264,
+    videoFitIndex: videoFitIndex ?? this.videoFitIndex,
+    openRoomFullscreen: openRoomFullscreen ?? this.openRoomFullscreen,
+    preferRealOnlineCounts: preferRealOnlineCounts ?? this.preferRealOnlineCounts,
+    realOnlinePlatforms: List.unmodifiable(realOnlinePlatforms ?? this.realOnlinePlatforms),
+    portraitAdapt: portraitAdapt ?? this.portraitAdapt,
+    portraitAdaptiveHeight: portraitAdaptiveHeight ?? this.portraitAdaptiveHeight,
+    portraitLayoutMode: portraitLayoutMode ?? this.portraitLayoutMode,
+    portraitFullscreenPolicy: portraitFullscreenPolicy ?? this.portraitFullscreenPolicy,
+    portraitDisplayMode: portraitDisplayMode ?? this.portraitDisplayMode,
+    portraitDanmakuMode: portraitDanmakuMode ?? this.portraitDanmakuMode,
+    rememberPortraitRoomOverride: rememberPortraitRoomOverride ?? this.rememberPortraitRoomOverride,
+    showPortraitDiagnostics: showPortraitDiagnostics ?? this.showPortraitDiagnostics,
+    portraitRoomOverrides: Map.unmodifiable(portraitRoomOverrides ?? this.portraitRoomOverrides),
+    pipAlwaysOnTop: pipAlwaysOnTop ?? this.pipAlwaysOnTop,
+    miniRememberPosition: miniRememberPosition ?? this.miniRememberPosition,
+    miniWindowRect: miniWindowRect ?? this.miniWindowRect,
+    pauseOnPipClose: pauseOnPipClose ?? this.pauseOnPipClose,
+    showSplash: showSplash ?? this.showSplash,
+    githubOnlyUpdates: githubOnlyUpdates ?? this.githubOnlyUpdates,
+    detectClipboardRooms: detectClipboardRooms ?? this.detectClipboardRooms,
+    startAtLogin: startAtLogin ?? this.startAtLogin,
+    cacheMaxMB: cacheMaxMB ?? this.cacheMaxMB,
+    cacheAutoClear: cacheAutoClear ?? this.cacheAutoClear,
+    cacheKeepDays: cacheKeepDays ?? this.cacheKeepDays,
+    cacheKeepCount: cacheKeepCount ?? this.cacheKeepCount,
+    autoRefreshThumbnails: autoRefreshThumbnails ?? this.autoRefreshThumbnails,
+    thumbnailRefreshMinutes: thumbnailRefreshMinutes ?? this.thumbnailRefreshMinutes,
+    thumbnailKeepOldFiles: thumbnailKeepOldFiles ?? this.thumbnailKeepOldFiles,
+    playerProxyEnabled: playerProxyEnabled ?? this.playerProxyEnabled,
+    playerProxyHost: playerProxyHost ?? this.playerProxyHost,
+    playerProxyPort: playerProxyPort ?? this.playerProxyPort,
     customPlayerOutput: customPlayerOutput ?? this.customPlayerOutput,
     videoOutputDriver: videoOutputDriver ?? this.videoOutputDriver,
     audioOutputDriver: audioOutputDriver ?? this.audioOutputDriver,
@@ -572,6 +1103,66 @@ final class AppPreferences {
       other.localInteractionColor == localInteractionColor &&
       other.barrageFontSize == barrageFontSize &&
       other.barrageOpacity == barrageOpacity &&
+      other.barrageArea == barrageArea &&
+      other.barrageTopArea == barrageTopArea &&
+      other.barrageBottomArea == barrageBottomArea &&
+      other.barrageSpeed == barrageSpeed &&
+      other.barrageFontWeight == barrageFontWeight &&
+      other.barrageStroke == barrageStroke &&
+      other.barrageStrokeWidth == barrageStrokeWidth &&
+      other.barrageShowSender == barrageShowSender &&
+      other.barrageMaxVisible == barrageMaxVisible &&
+      other.barrageFps == barrageFps &&
+      other.barrageNoEmoji == barrageNoEmoji &&
+      other.barrageCollapse == barrageCollapse &&
+      other.barrageCollapseWindow == barrageCollapseWindow &&
+      other.barragePausedBehavior == barragePausedBehavior &&
+      other.barrageAutoFps == barrageAutoFps &&
+      other.barrageFpsMode == barrageFpsMode &&
+      other.barrageShowGifts == barrageShowGifts &&
+      other.barrageTapAction == barrageTapAction &&
+      other.barrageLongPressAction == barrageLongPressAction &&
+      other.barrageFontFamily == barrageFontFamily &&
+      other.backupDirectory == backupDirectory &&
+      other.barrageHoldOnPress == barrageHoldOnPress &&
+      other.barrageListFontSize == barrageListFontSize &&
+      other.barrageListLineSpacing == barrageListLineSpacing &&
+      other.barrageListStyle == barrageListStyle &&
+      other.barrageTemplate == barrageTemplate &&
+      other.preferResolution == preferResolution &&
+      other.preferResolutionCellular == preferResolutionCellular &&
+      other.preferH264 == preferH264 &&
+      other.videoFitIndex == videoFitIndex &&
+      other.openRoomFullscreen == openRoomFullscreen &&
+      other.preferRealOnlineCounts == preferRealOnlineCounts &&
+      _listEquals(other.realOnlinePlatforms, realOnlinePlatforms) &&
+      other.portraitAdapt == portraitAdapt &&
+      other.portraitAdaptiveHeight == portraitAdaptiveHeight &&
+      other.portraitLayoutMode == portraitLayoutMode &&
+      other.portraitFullscreenPolicy == portraitFullscreenPolicy &&
+      other.portraitDisplayMode == portraitDisplayMode &&
+      other.portraitDanmakuMode == portraitDanmakuMode &&
+      other.rememberPortraitRoomOverride == rememberPortraitRoomOverride &&
+      other.showPortraitDiagnostics == showPortraitDiagnostics &&
+      _mapEquals(other.portraitRoomOverrides, portraitRoomOverrides) &&
+      other.pipAlwaysOnTop == pipAlwaysOnTop &&
+      other.miniRememberPosition == miniRememberPosition &&
+      other.miniWindowRect == miniWindowRect &&
+      other.pauseOnPipClose == pauseOnPipClose &&
+      other.showSplash == showSplash &&
+      other.githubOnlyUpdates == githubOnlyUpdates &&
+      other.detectClipboardRooms == detectClipboardRooms &&
+      other.startAtLogin == startAtLogin &&
+      other.cacheMaxMB == cacheMaxMB &&
+      other.cacheAutoClear == cacheAutoClear &&
+      other.cacheKeepDays == cacheKeepDays &&
+      other.cacheKeepCount == cacheKeepCount &&
+      other.autoRefreshThumbnails == autoRefreshThumbnails &&
+      other.thumbnailRefreshMinutes == thumbnailRefreshMinutes &&
+      other.thumbnailKeepOldFiles == thumbnailKeepOldFiles &&
+      other.playerProxyEnabled == playerProxyEnabled &&
+      other.playerProxyHost == playerProxyHost &&
+      other.playerProxyPort == playerProxyPort &&
       other.customPlayerOutput == customPlayerOutput &&
       other.videoOutputDriver == videoOutputDriver &&
       other.audioOutputDriver == audioOutputDriver &&
@@ -642,8 +1233,72 @@ final class AppPreferences {
       localInteractionEnabled,
       localInteractionUserName,
       localInteractionColor,
-      barrageFontSize,
-      barrageOpacity,
+      // The barrage block hashed as one list: `Object.hash` caps at 20
+      // positional parts and the danmaku settings alone pass that.
+      Object.hashAll(<Object?>[
+        barrageFontSize,
+        barrageOpacity,
+        barrageArea,
+        barrageTopArea,
+        barrageBottomArea,
+        barrageSpeed,
+        barrageFontWeight,
+        barrageStroke,
+        barrageStrokeWidth,
+        barrageShowSender,
+        barrageMaxVisible,
+        barrageFps,
+        barrageNoEmoji,
+        barrageCollapse,
+        barrageCollapseWindow,
+        barragePausedBehavior,
+        barrageAutoFps,
+        barrageFpsMode,
+        barrageShowGifts,
+        barrageTapAction,
+        barrageLongPressAction,
+        barrageFontFamily,
+        backupDirectory,
+        barrageHoldOnPress,
+        barrageListFontSize,
+        barrageListLineSpacing,
+        barrageListStyle,
+        barrageTemplate,
+        preferResolution,
+        preferResolutionCellular,
+        preferH264,
+        videoFitIndex,
+        openRoomFullscreen,
+        preferRealOnlineCounts,
+        Object.hashAll(realOnlinePlatforms),
+        portraitAdapt,
+        portraitAdaptiveHeight,
+        portraitLayoutMode,
+        portraitFullscreenPolicy,
+        portraitDisplayMode,
+        portraitDanmakuMode,
+        rememberPortraitRoomOverride,
+        showPortraitDiagnostics,
+        Object.hashAllUnordered(portraitRoomOverrides.entries),
+        pipAlwaysOnTop,
+        miniRememberPosition,
+        miniWindowRect,
+        pauseOnPipClose,
+        showSplash,
+        githubOnlyUpdates,
+        detectClipboardRooms,
+        startAtLogin,
+        cacheMaxMB,
+        cacheAutoClear,
+        cacheKeepDays,
+        cacheKeepCount,
+        autoRefreshThumbnails,
+        thumbnailRefreshMinutes,
+        thumbnailKeepOldFiles,
+        playerProxyEnabled,
+        playerProxyHost,
+        playerProxyPort,
+      ]),
       customPlayerOutput,
       videoOutputDriver,
       audioOutputDriver,
@@ -673,6 +1328,18 @@ final class AppPreferences {
     }
     for (var i = 0; i < a.length; i++) {
       if (a[i] != b[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static bool _mapEquals(Map<String, String> a, Map<String, String> b) {
+    if (a.length != b.length) {
+      return false;
+    }
+    for (final entry in a.entries) {
+      if (b[entry.key] != entry.value) {
         return false;
       }
     }

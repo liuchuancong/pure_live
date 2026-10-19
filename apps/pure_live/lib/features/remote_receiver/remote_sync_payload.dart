@@ -8,6 +8,15 @@ import 'package:pure_live/app/shell/shell_destinations.dart';
 /// keyed box the shield page owns, handed in by the service.
 typedef ShieldListSink = Future<void> Function(String key, List<String> values);
 
+/// Stores one incoming WebDAV server (name, address, username, directory and
+/// the vault password); the WebDAV store's own `saveServer`, handed in by
+/// the service.
+typedef WebDavServerSink = Future<void> Function(Map<String, dynamic> server);
+
+/// Stores one incoming platform credential (site + the login repository's
+/// credential document); the login side's save, handed in by the service.
+typedef AccountCredentialSink = Future<void> Function(Map<String, dynamic> credential);
+
 /// The sync payload codec: the bridge between the 3.x backup wire format and
 /// this app's own stores.
 ///
@@ -32,6 +41,11 @@ typedef ShieldListSink = Future<void> Function(String key, List<String> values);
 /// section: the 3.x build keeps the loading style inside its `theme`
 /// section, and the importer reads it from there too.
 ///
+/// `webdav` and `accounts` are this build's sensitive sections: they are
+/// exported only while "同步账号 Cookie" is on, and applied through sinks
+/// the service hands in (the WebDAV store and the login repositories) — a
+/// receiver without them leaves that part untouched.
+///
 /// Everything else the 3.x payload can carry (app, theme, player, danmaku,
 /// iptv, ...) has no store on this side and is skipped by the importer.
 /// Application is a merge, not a replace: sync converges the devices
@@ -48,6 +62,15 @@ abstract final class RemoteSyncPayload {
     'proxy',
     'loading',
   ];
+
+  /// The sensitive sections: they travel only when the user ticks
+  /// "同步账号 Cookie" (the reference's `includeAccounts` /
+  /// `includeSensitiveData`).
+  static const List<String> sensitiveSectionNames = <String>['webdav', 'accounts'];
+
+  /// The sections the settings part covers — the preference groups the
+  /// settings pages edit (the receive preview diffs these).
+  static const List<String> preferenceSectionNames = <String>['roomCard', 'refresh', 'page', 'proxy', 'loading'];
 
   /// The 3.x `RefreshConfigController` shipping defaults, emitted for the
   /// keys this app holds no answer for.
@@ -79,7 +102,11 @@ abstract final class RemoteSyncPayload {
   ];
 
   /// Builds a 3.x-shaped export from this device's stores, narrowed to
-  /// [sections] when the picker ticked a subset.
+  /// [sections] when the picker ticked a subset. [webdavServers] and
+  /// [accountCredentials] are the sensitive sections, handed in by the
+  /// service only while "同步账号 Cookie" is on (the reference's
+  /// `includeSensitiveData`); with them the document says
+  /// `sensitiveDataIncluded`.
   static Map<String, dynamic> buildExport({
     required AppPreferences preferences,
     required List<LibraryRoom> follows,
@@ -87,11 +114,13 @@ abstract final class RemoteSyncPayload {
     required List<WatchRecord> history,
     required List<String> shieldKeywords,
     required List<String> shieldUsers,
+    List<Map<String, dynamic>>? webdavServers,
+    List<Map<String, dynamic>>? accountCredentials,
     Iterable<String>? sections,
   }) {
     final data = <String, dynamic>{
       'backupVersion': _backupVersion,
-      'sensitiveDataIncluded': false,
+      'sensitiveDataIncluded': webdavServers != null || accountCredentials != null,
       'favorite': <String, dynamic>{
         'shieldList': List<String>.from(shieldKeywords),
         'blockedDanmakuUsers': List<String>.from(shieldUsers),
@@ -115,6 +144,14 @@ abstract final class RemoteSyncPayload {
       'page': _pageSection(preferences),
       'proxy': _proxySection(preferences),
       'loading': _loadingSection(preferences),
+      if (webdavServers case final servers?)
+        'webdav': <String, dynamic>{
+          'servers': [for (final server in servers) Map<String, dynamic>.from(server)],
+        },
+      if (accountCredentials case final credentials?)
+        'accounts': <String, dynamic>{
+          'credentials': [for (final entry in credentials) Map<String, dynamic>.from(entry)],
+        },
     };
     if (sections == null) {
       return data;
@@ -207,6 +244,8 @@ abstract final class RemoteSyncPayload {
         'page',
       if (has('proxy', 'enableProxy') || has('proxy', 'proxyHost')) 'proxy',
       if (has('loading', 'loadingStyle') || has('theme', 'loadingStyle')) 'loading',
+      if (has('webdav', 'servers')) 'webdav',
+      if (has('accounts', 'credentials')) 'accounts',
     ];
   }
 
@@ -215,13 +254,19 @@ abstract final class RemoteSyncPayload {
   ///
   /// Reads and writes the shield lists through [shield], the same keyed box
   /// the shield page owns, and the preference groups through [preferences],
-  /// the store the settings pages edit. Returns whether anything applied.
+  /// the store the settings pages edit. The sensitive sections go through
+  /// [webdav] and [accounts] — sinks the service hands in from the WebDAV
+  /// store and the login repositories; a payload that carries a section the
+  /// receiver cannot store leaves that part out. Returns whether anything
+  /// applied.
   static Future<bool> apply(
     Map<String, dynamic> payload, {
     required AppPreferencesStore preferences,
     required FollowRepository follows,
     required HistoryRepository history,
     required ShieldListSink shield,
+    WebDavServerSink? webdav,
+    AccountCredentialSink? accounts,
     Iterable<String>? sections,
   }) async {
     final selected = sections?.toSet();
@@ -354,6 +399,26 @@ abstract final class RemoteSyncPayload {
       if (style != null) {
         await preferences.update((p) => p.copyWith(loadingStyle: style));
         applied = true;
+      }
+    }
+
+    if (wanted('webdav') && webdav != null) {
+      final servers = _section(payload, 'webdav')?['servers'];
+      if (servers is List) {
+        for (final server in servers.whereType<Map<Object?, Object?>>()) {
+          await webdav(Map<String, dynamic>.from(server));
+          applied = true;
+        }
+      }
+    }
+
+    if (wanted('accounts') && accounts != null) {
+      final credentials = _section(payload, 'accounts')?['credentials'];
+      if (credentials is List) {
+        for (final entry in credentials.whereType<Map<Object?, Object?>>()) {
+          await accounts(Map<String, dynamic>.from(entry));
+          applied = true;
+        }
       }
     }
     return applied;
