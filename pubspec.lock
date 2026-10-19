@@ -993,6 +993,46 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
+  flutter_local_notifications:
+    dependency: transitive
+    description:
+      name: flutter_local_notifications
+      sha256: "9ee28742343dd13df758bb4185e8ded37ac2d1aeca6648c3ba7862c99797517e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "22.3.2"
+  flutter_local_notifications_linux:
+    dependency: transitive
+    description:
+      name: flutter_local_notifications_linux
+      sha256: "3b89a4bf095fa5f8a99beeabf982c5bd506c3ad25e7b9e61da945e994dc5b615"
+      url: "https://pub.dev"
+    source: hosted
+    version: "8.0.2"
+  flutter_local_notifications_platform_interface:
+    dependency: transitive
+    description:
+      name: flutter_local_notifications_platform_interface
+      sha256: "43c3761d916c9bd3d5c7ebbc44d82f4990329840c0c5d62ad5260cc1b5d399bd"
+      url: "https://pub.dev"
+    source: hosted
+    version: "12.2.0"
+  flutter_local_notifications_web:
+    dependency: transitive
+    description:
+      name: flutter_local_notifications_web
+      sha256: "516afaf97a2d1e67a036c6617321b00d205d72f7a67b6eccf936cd565f985878"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
+  flutter_local_notifications_windows:
+    dependency: transitive
+    description:
+      name: flutter_local_notifications_windows
+      sha256: "6f43bdd03b171b7a90f22647506fea33e2bb12294b7c7c7a3d690e960a382945"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.1"
   flutter_localizations:
     dependency: transitive
     description: flutter
@@ -1006,6 +1046,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.1"
+  flutter_overlay_window:
+    dependency: transitive
+    description:
+      name: flutter_overlay_window
+      sha256: "90326bffe7e387703b1c9f1b091d0c1a2183d040272f01a6ef305bbf35d65228"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   flutter_riverpod:
     dependency: transitive
     description:
@@ -1513,9 +1561,16 @@ packages:
     source: hosted
     version: "2.4.3"
   media_core:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       path: "../../media_core/packages/media_core"
+      relative: true
+    source: path
+    version: "0.1.0"
+  media_core_cast_dlna:
+    dependency: transitive
+    description:
+      path: "../../media_core/packages/media_core_cast_dlna"
       relative: true
     source: path
     version: "0.1.0"
@@ -1523,6 +1578,13 @@ packages:
     dependency: transitive
     description:
       path: "../../media_core/packages/media_core_danmaku"
+      relative: true
+    source: path
+    version: "0.1.0"
+  media_core_fullscreen:
+    dependency: transitive
+    description:
+      path: "../../media_core/packages/media_core_fullscreen"
       relative: true
     source: path
     version: "0.1.0"
@@ -1555,16 +1617,44 @@ packages:
     source: path
     version: "0.1.0"
   media_core_native:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       path: "../../media_core/packages/media_core_native"
       relative: true
     source: path
     version: "0.2.0"
+  media_core_notify:
+    dependency: transitive
+    description:
+      path: "../../media_core/packages/media_core_notify"
+      relative: true
+    source: path
+    version: "0.1.0"
+  media_core_pip:
+    dependency: transitive
+    description:
+      path: "../../media_core/packages/media_core_pip"
+      relative: true
+    source: path
+    version: "0.1.0"
+  media_core_presentation:
+    dependency: transitive
+    description:
+      path: "../../media_core/packages/media_core_presentation"
+      relative: true
+    source: path
+    version: "0.1.0"
   media_core_recording_ffmpeg:
     dependency: transitive
     description:
       path: "../../media_core/packages/media_core_recording_ffmpeg"
+      relative: true
+    source: path
+    version: "0.1.0"
+  media_core_win32:
+    dependency: transitive
+    description:
+      path: "../../media_core/packages/media_core_win32"
       relative: true
     source: path
     version: "0.1.0"
@@ -1898,6 +1988,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.0.1"
+  pip_kit:
+    dependency: transitive
+    description:
+      name: pip_kit
+      sha256: cb4c79e0cf7592c65c9f79fd19f1cab6be459cd978f35dfce5da0282e0be92b0
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2"
   platform:
     dependency: "direct overridden"
     description:
@@ -2407,6 +2505,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.6.21"
+  timezone:
+    dependency: transitive
+    description:
+      name: timezone
+      sha256: "9f4e5a1a0e4fef7dd3424842c0575db01bfb7a11730e8d55753fcd5c5c98767b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.11.2"
   tray_manager:
     dependency: transitive
     description:

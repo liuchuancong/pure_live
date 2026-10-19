@@ -42,6 +42,7 @@ dependencies:
   any_image_view: ^2.5.0 # 多来源图片展示
   cached_network_image: ^4.0.4 # 网络图片缓存
   cached_network_image_ce: ^4.13.1 # 社区维护的图片缓存实现
+  flutter_cache_manager: ^3.4.5 # 图片缓存的体积与清理
   custom_refresh_indicator: ^4.0.2 # 自定义下拉刷新
   flutter_helper_utils: ^10.0.0
   flutter_screenutil_plus: ^2.0.0 # 自适应布局辅助
@@ -90,10 +91,23 @@ dependencies:
     path: ../../../../media_core/packages/media_core_media_kit
   media_core_recording_ffmpeg:
     path: ../../../../media_core/packages/media_core_recording_ffmpeg # FFmpeg 录制后端（分段采集与合并）
+  media_core_presentation:
+    path: ../../../../media_core/packages/media_core_presentation # 朝向感知的呈现 + 视频叠加图层
+  media_core_fullscreen:
+    path: ../../../../media_core/packages/media_core_fullscreen # 全屏 / 窗口全屏驱动
+  media_core_pip:
+    path: ../../../../media_core/packages/media_core_pip # 画中画驱动（桌面小窗 / 移动端 overlay）
+  media_core_cast_dlna:
+    path: ../../../../media_core/packages/media_core_cast_dlna # DLNA/UPnP 投屏后端
+  media_core_mediasession:
+    path: ../../../../media_core/packages/media_core_mediasession # 媒体会话通知（锁屏/SMTC/MPRIS 播放控制）
+  media_core_notify:
+    path: ../../../../media_core/packages/media_core_notify # 用户通知（录制/下载结果、前台任务行）
   media_kit_libs_windows_video: ^1.0.10 # Windows 播放库与编解码支持
 
   # 路由、配置与序列化
   envied: ^1.3.10 # 编译期环境变量
+  fpdart: ^1.2.0
   freezed_annotation: ^3.1.0 # 不可变模型注解
   go_router: ^18.0.2 # 路由管理
   json_annotation: ^4.12.0 # JSON 序列化注解
@@ -126,10 +140,12 @@ dev_dependencies:
   # 开发辅助
   slang_mcp: ^0.2.1 # 多语言开发辅助工具
 
+  hive_ce: any
 flutter:
   uses-material-design: true
   assets:
     - assets/tray/ # 系统托盘图标
+    - assets/icon/ # 启动页的品牌图（母图）
 
 # 启动图标：assets/icon/app_icon.png 是唯一母图，各平台的图标资源全部由它生成。
 # 换图标只改母图，然后跑：dart run icons_launcher:launch

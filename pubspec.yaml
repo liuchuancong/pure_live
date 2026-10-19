@@ -57,6 +57,17 @@ dependency_overrides:
   wakelock_plus: 1.8.1
   win32: ^6.4.0
   xml: ^7.0.0
+  # media_core_notify is the one capability package that still names its
+  # media_core / media_core_native dependency by published version rather
+  # than by path (its siblings all use `path: ../media_core`). Inside the
+  # media_core workspace that resolves through `workspace:`; consumed by path
+  # from this app it would pull the hosted copies and clash with the local
+  # path one. Pinning both to the local packages keeps a single source of
+  # truth without editing the shared media_core repo.
+  media_core:
+    path: ../../media_core/packages/media_core
+  media_core_native:
+    path: ../../media_core/packages/media_core_native
 
 melos:
   scripts:
