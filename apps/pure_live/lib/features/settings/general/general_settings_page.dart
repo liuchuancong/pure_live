@@ -94,13 +94,13 @@ final class GeneralSettingsPage extends ConsumerWidget {
                 leading: const Icon(Icons.av_timer_outlined),
                 title: Text(t.settings.countdownDuration),
                 value: Text(t.settings.minutesValue(minutes: preferences.countdownCloseMinutes)),
-                onPressed: (_) => _chooseCountdownDuration(context, preferences, update),
+                onPressed: (_) => _chooseCountdownDuration(context, ref, preferences, update),
               ),
               SettingsTile.navigation(
                 leading: const Icon(Icons.start_outlined),
                 title: Text(t.settings.launchPage),
                 value: Text(_launchBranchLabel(context, preferences)),
-                onPressed: (_) => _chooseLaunchPage(context, preferences, update),
+                onPressed: (_) => _chooseLaunchPage(context, ref, preferences, update),
               ),
               SettingsTile.switchTile(
                 key: const ValueKey('general-splash'),
@@ -240,6 +240,7 @@ final class GeneralSettingsPage extends ConsumerWidget {
     };
     final picked = await showSettingsChooser<_ChromeOption>(
       context,
+      ref,
       title: t.shellSettings.titleBar,
       hint: t.shellSettings.titleBarHint,
       current: current,
@@ -299,12 +300,14 @@ final class GeneralSettingsPage extends ConsumerWidget {
 
   static Future<void> _chooseCountdownDuration(
     BuildContext context,
+    WidgetRef ref,
     AppPreferences preferences,
     Future<void> Function(AppPreferences Function(AppPreferences)) update,
   ) async {
     const minutesOptions = [15, 30, 45, 60, 90, 120, 180];
     final picked = await showSettingsChooser<int>(
       context,
+      ref,
       title: context.t.settings.countdownDuration,
       current: preferences.countdownCloseMinutes,
       options: [for (final minutes in minutesOptions) (minutes, context.t.settings.minutesValue(minutes: minutes))],
@@ -316,11 +319,13 @@ final class GeneralSettingsPage extends ConsumerWidget {
 
   static Future<void> _chooseLaunchPage(
     BuildContext context,
+    WidgetRef ref,
     AppPreferences preferences,
     Future<void> Function(AppPreferences Function(AppPreferences)) update,
   ) async {
     final picked = await showSettingsChooser<AppLaunchBranch>(
       context,
+      ref,
       title: context.t.settings.launchPage,
       hint: context.t.settings.launchPageHint,
       current: preferences.launchBranch,
@@ -377,6 +382,7 @@ final class GeneralSettingsPage extends ConsumerWidget {
     final current = shell.value.closeAction ?? _askClose;
     final picked = await showSettingsChooser<Object>(
       context,
+      ref,
       title: t.settings.closeWindow,
       hint: t.settings.closeWindowDesc,
       current: current,
@@ -406,6 +412,7 @@ final class GeneralSettingsPage extends ConsumerWidget {
     final current = (preferences.windowWidth, preferences.windowHeight);
     final picked = await showSettingsChooser<(int, int)>(
       context,
+      ref,
       title: context.t.settings.windowSize,
       hint: context.t.settings.windowSizeHint,
       current: current,

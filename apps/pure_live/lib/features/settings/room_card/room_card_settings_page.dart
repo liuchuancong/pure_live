@@ -86,7 +86,7 @@ final class RoomCardSettingsPage extends ConsumerWidget {
                 leading: const Icon(Icons.crop_original_outlined),
                 title: Text(t.settings.roomCardAspect),
                 value: Text(_aspectLabel(context, preferences.roomCardAspect)),
-                onPressed: (_) => unawaited(_chooseAspect(context, preferences, update)),
+                onPressed: (_) => unawaited(_chooseAspect(context, ref, preferences, update)),
               ),
             ],
           ),
@@ -137,11 +137,13 @@ final class RoomCardSettingsPage extends ConsumerWidget {
 
   static Future<void> _chooseAspect(
     BuildContext context,
+    WidgetRef ref,
     AppPreferences preferences,
     Future<void> Function(AppPreferences Function(AppPreferences)) update,
   ) async {
     final picked = await showSettingsChooser<RoomCardCoverAspect>(
       context,
+      ref,
       title: context.t.settings.roomCardAspect,
       current: preferences.roomCardAspect,
       options: [for (final aspect in RoomCardCoverAspect.values) (aspect, _aspectLabel(context, aspect))],

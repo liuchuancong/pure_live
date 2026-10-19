@@ -101,6 +101,8 @@ final class VideoSettingsPage extends ConsumerWidget {
                 onPressed: (tileContext) => unawaited(
                   showSettingsChooser<String>(
                     tileContext,
+
+                    ref,
                     title: t.settings.preferResolution,
                     current: preferences.preferResolution,
                     options: [for (final name in playQualityNames) (name, name)],
@@ -117,6 +119,8 @@ final class VideoSettingsPage extends ConsumerWidget {
                   onPressed: (tileContext) => unawaited(
                     showSettingsChooser<String>(
                       tileContext,
+
+                      ref,
                       title: t.settings.mobileQuality,
                       current: preferences.preferResolutionCellular,
                       options: [for (final name in playQualityNames) (name, name)],
@@ -157,6 +161,8 @@ final class VideoSettingsPage extends ConsumerWidget {
                 onPressed: (tileContext) => unawaited(
                   showSettingsChooser<bool>(
                     tileContext,
+
+                    ref,
                     title: t.settings.audienceMode,
                     current: preferences.preferRealOnlineCounts,
                     options: [(false, t.settings.audienceModeHeat), (true, t.settings.audienceModeOnline)],
@@ -317,6 +323,7 @@ final class VideoSettingsPage extends ConsumerWidget {
     ];
     final picked = await showSettingsChooser<int>(
       context,
+      ref,
       title: t.settings.videoFit,
       current: preferences.videoFitIndex,
       options: [for (final (index, name) in names.indexed) (index, name)],

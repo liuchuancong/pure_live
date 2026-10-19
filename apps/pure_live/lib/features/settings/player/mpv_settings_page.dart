@@ -6,10 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/engine/mpv_tuning.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/features/room/room_controller.dart' show RoomController;
+import 'package:pure_live/features/settings/widgets/settings_chooser.dart';
 import 'package:pure_live/features/settings/widgets/settings_chrome.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_settings_ui/pure_settings_ui.dart';
-import 'package:pure_uikit/pure_uikit.dart';
 
 /// The mpv tuning page — the reference's mpv option set, ported onto this
 /// build's engine-option channel.
@@ -39,189 +39,156 @@ final class MpvSettingsPage extends ConsumerWidget {
     final update = ref.read(appPreferencesProvider.notifier).update;
 
     void pick(String title, Map<String, String> options, String current, ValueChanged<String> onPick) {
-      unawaited(_pickSheet(context, title, options, current, onPick));
+      unawaited(
+        showSettingsChooser<String>(
+          context,
+          ref,
+          title: title,
+          current: current,
+          options: [for (final entry in options.entries) (entry.key, entry.value)],
+        ).then((picked) {
+          if (picked != null) {
+            onPick(picked);
+          }
+        }),
+      );
     }
 
     return SettingsChrome(
       title: t.settings.playerTitle,
       body: SettingsList(
-      sections: [
-        SettingsSection(
-          title: Text(t.settings.mpvOutputSection),
-          tiles: [
-            SettingsTile.switchTile(
-              leading: const Icon(Icons.input_outlined),
-              title: Text(t.settings.mpvCustomOutput),
-              description: Text(t.settings.mpvCustomOutputSubtitle),
-              initialValue: preferences.customPlayerOutput,
-              onToggle: (value) => unawaited(update((p) => p.copyWith(customPlayerOutput: value))),
-            ),
-            SettingsTile.navigation(
-              leading: const Icon(Icons.smart_display_outlined),
-              title: Text(t.settings.mpvVideoOutput),
-              value: Text(preferences.videoOutputDriver),
-              description: preferences.customPlayerOutput ? null : Text(t.settings.mpvNeedsCustomOutput),
-              onPressed: (_) => pick(
-                t.settings.mpvVideoOutput,
-                MpvTuning.videoOutputs(_platform),
-                preferences.videoOutputDriver,
-                (value) => unawaited(update((p) => p.copyWith(videoOutputDriver: value))),
-              ),
-            ),
-            SettingsTile.navigation(
-              leading: const Icon(Icons.graphic_eq_outlined),
-              title: Text(t.settings.mpvAudioOutput),
-              value: Text(preferences.audioOutputDriver),
-              description: preferences.customPlayerOutput ? null : Text(t.settings.mpvNeedsCustomOutput),
-              onPressed: (_) => pick(
-                t.settings.mpvAudioOutput,
-                MpvTuning.audioOutputs(_platform),
-                preferences.audioOutputDriver,
-                (value) => unawaited(update((p) => p.copyWith(audioOutputDriver: value))),
-              ),
-            ),
-          ],
-        ),
-        SettingsSection(
-          title: Text(t.settings.mpvDecodeSection),
-          tiles: [
-            SettingsTile.navigation(
-              leading: const Icon(Icons.memory_outlined),
-              title: Text(t.settings.mpvHardwareDecoder),
-              value: Text(preferences.hardwareDecoder),
-              onPressed: (_) => pick(
-                t.settings.mpvHardwareDecoder,
-                MpvTuning.hardwareDecoders(_platform),
-                preferences.hardwareDecoder,
-                (value) => unawaited(update((p) => p.copyWith(hardwareDecoder: value))),
-              ),
-            ),
-            SettingsTile.navigation(
-              leading: const Icon(Icons.layers_outlined),
-              title: Text(t.settings.mpvDeinterlace),
-              value: Text(preferences.deinterlace),
-              onPressed: (_) => pick(
-                t.settings.mpvDeinterlace,
-                {for (final value in MpvTuning.deinterlaceValues) value: value},
-                preferences.deinterlace,
-                (value) => unawaited(update((p) => p.copyWith(deinterlace: value))),
-              ),
-            ),
-            if (_isDesktop)
+        sections: [
+          SettingsSection(
+            title: Text(t.settings.mpvOutputSection),
+            tiles: [
               SettingsTile.switchTile(
-                leading: const Icon(Icons.blur_circular_outlined),
-                title: Text(t.settings.mpvInterpolation),
-                description: Text(t.settings.mpvInterpolationSubtitle),
-                initialValue: preferences.frameInterpolation,
-                onToggle: (value) => unawaited(update((p) => p.copyWith(frameInterpolation: value))),
+                leading: const Icon(Icons.input_outlined),
+                title: Text(t.settings.mpvCustomOutput),
+                description: Text(t.settings.mpvCustomOutputSubtitle),
+                initialValue: preferences.customPlayerOutput,
+                onToggle: (value) => unawaited(update((p) => p.copyWith(customPlayerOutput: value))),
               ),
-            if (_isDesktop)
               SettingsTile.navigation(
-                leading: const Icon(Icons.gradient_outlined),
-                title: Text(t.settings.mpvScaler),
-                value: Text(preferences.scaler),
+                leading: const Icon(Icons.smart_display_outlined),
+                title: Text(t.settings.mpvVideoOutput),
+                value: Text(preferences.videoOutputDriver),
+                description: preferences.customPlayerOutput ? null : Text(t.settings.mpvNeedsCustomOutput),
                 onPressed: (_) => pick(
-                  t.settings.mpvScaler,
-                  {for (final value in MpvTuning.scaleFilters) value: value},
-                  preferences.scaler,
-                  (value) => unawaited(update((p) => p.copyWith(scaler: value))),
+                  t.settings.mpvVideoOutput,
+                  MpvTuning.videoOutputs(_platform),
+                  preferences.videoOutputDriver,
+                  (value) => unawaited(update((p) => p.copyWith(videoOutputDriver: value))),
                 ),
               ),
-          ],
-        ),
-        SettingsSection(
-          title: Text(t.settings.mpvCacheSection),
-          tiles: [
-            SettingsTile.navigation(
-              leading: const Icon(Icons.schedule_outlined),
-              title: Text(t.settings.mpvCacheSeconds),
-              description: Text(t.settings.mpvCacheSecondsSubtitle),
-              value: Text(preferences.streamCacheSeconds == 0 ? t.common.off : '${preferences.streamCacheSeconds} s'),
-              onPressed: (_) => pick(
-                t.settings.mpvCacheSeconds,
-                {
-                  '0': t.common.off,
-                  for (final seconds in const [1, 2, 5, 10, 20, 30, 60]) '$seconds': '$seconds s',
-                },
-                '${preferences.streamCacheSeconds}',
-                (value) => unawaited(update((p) => p.copyWith(streamCacheSeconds: int.parse(value)))),
-              ),
-            ),
-            SettingsTile(
-              leading: const Icon(Icons.refresh_outlined),
-              title: Text(t.settings.mpvReset),
-              description: Text(t.settings.mpvResetSubtitle),
-              onPressed: (_) => unawaited(
-                update(
-                  (p) => p.copyWith(
-                    customPlayerOutput: false,
-                    videoOutputDriver: MpvTuning.auto,
-                    audioOutputDriver: MpvTuning.auto,
-                    hardwareDecoder: MpvTuning.auto,
-                    frameInterpolation: false,
-                    scaler: MpvTuning.auto,
-                    deinterlace: MpvTuning.auto,
-                    streamCacheSeconds: 0,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        SettingsSection(
-          tiles: [
-            SettingsTile(title: Text(t.settings.mpvEffectiveNote), description: Text(t.settings.mpvEffectiveNoteBody)),
-          ],
-        ),
-      ],
-      ),
-    );
-  }
-
-  /// The option sheet: one row per driver, the stored one marked — the
-  /// reference's `MpvOptionPage` list, expressed as a sheet because these
-  /// live inside the settings split rather than a page of their own.
-  Future<void> _pickSheet(
-    BuildContext context,
-    String title,
-    Map<String, String> options,
-    String current,
-    ValueChanged<String> onPick,
-  ) {
-    return showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) => SafeArea(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.7),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(14),
-                child: Text(title, style: PureTheme.of(sheetContext).text.title),
-              ),
-              Flexible(
-                child: ListView(
-                  shrinkWrap: true,
-                  children: [
-                    for (final entry in options.entries)
-                      ListTile(
-                        title: Text(entry.value),
-                        trailing: entry.key == current
-                            ? Icon(Icons.check, color: PureTheme.of(sheetContext).colors.primary)
-                            : null,
-                        onTap: () {
-                          Navigator.of(sheetContext).pop();
-                          onPick(entry.key);
-                        },
-                      ),
-                  ],
+              SettingsTile.navigation(
+                leading: const Icon(Icons.graphic_eq_outlined),
+                title: Text(t.settings.mpvAudioOutput),
+                value: Text(preferences.audioOutputDriver),
+                description: preferences.customPlayerOutput ? null : Text(t.settings.mpvNeedsCustomOutput),
+                onPressed: (_) => pick(
+                  t.settings.mpvAudioOutput,
+                  MpvTuning.audioOutputs(_platform),
+                  preferences.audioOutputDriver,
+                  (value) => unawaited(update((p) => p.copyWith(audioOutputDriver: value))),
                 ),
               ),
             ],
           ),
-        ),
+          SettingsSection(
+            title: Text(t.settings.mpvDecodeSection),
+            tiles: [
+              SettingsTile.navigation(
+                leading: const Icon(Icons.memory_outlined),
+                title: Text(t.settings.mpvHardwareDecoder),
+                value: Text(preferences.hardwareDecoder),
+                onPressed: (_) => pick(
+                  t.settings.mpvHardwareDecoder,
+                  MpvTuning.hardwareDecoders(_platform),
+                  preferences.hardwareDecoder,
+                  (value) => unawaited(update((p) => p.copyWith(hardwareDecoder: value))),
+                ),
+              ),
+              SettingsTile.navigation(
+                leading: const Icon(Icons.layers_outlined),
+                title: Text(t.settings.mpvDeinterlace),
+                value: Text(preferences.deinterlace),
+                onPressed: (_) => pick(
+                  t.settings.mpvDeinterlace,
+                  {for (final value in MpvTuning.deinterlaceValues) value: value},
+                  preferences.deinterlace,
+                  (value) => unawaited(update((p) => p.copyWith(deinterlace: value))),
+                ),
+              ),
+              if (_isDesktop)
+                SettingsTile.switchTile(
+                  leading: const Icon(Icons.blur_circular_outlined),
+                  title: Text(t.settings.mpvInterpolation),
+                  description: Text(t.settings.mpvInterpolationSubtitle),
+                  initialValue: preferences.frameInterpolation,
+                  onToggle: (value) => unawaited(update((p) => p.copyWith(frameInterpolation: value))),
+                ),
+              if (_isDesktop)
+                SettingsTile.navigation(
+                  leading: const Icon(Icons.gradient_outlined),
+                  title: Text(t.settings.mpvScaler),
+                  value: Text(preferences.scaler),
+                  onPressed: (_) => pick(
+                    t.settings.mpvScaler,
+                    {for (final value in MpvTuning.scaleFilters) value: value},
+                    preferences.scaler,
+                    (value) => unawaited(update((p) => p.copyWith(scaler: value))),
+                  ),
+                ),
+            ],
+          ),
+          SettingsSection(
+            title: Text(t.settings.mpvCacheSection),
+            tiles: [
+              SettingsTile.navigation(
+                leading: const Icon(Icons.schedule_outlined),
+                title: Text(t.settings.mpvCacheSeconds),
+                description: Text(t.settings.mpvCacheSecondsSubtitle),
+                value: Text(preferences.streamCacheSeconds == 0 ? t.common.off : '${preferences.streamCacheSeconds} s'),
+                onPressed: (_) => pick(
+                  t.settings.mpvCacheSeconds,
+                  {
+                    '0': t.common.off,
+                    for (final seconds in const [1, 2, 5, 10, 20, 30, 60]) '$seconds': '$seconds s',
+                  },
+                  '${preferences.streamCacheSeconds}',
+                  (value) => unawaited(update((p) => p.copyWith(streamCacheSeconds: int.parse(value)))),
+                ),
+              ),
+              SettingsTile(
+                leading: const Icon(Icons.refresh_outlined),
+                title: Text(t.settings.mpvReset),
+                description: Text(t.settings.mpvResetSubtitle),
+                onPressed: (_) => unawaited(
+                  update(
+                    (p) => p.copyWith(
+                      customPlayerOutput: false,
+                      videoOutputDriver: MpvTuning.auto,
+                      audioOutputDriver: MpvTuning.auto,
+                      hardwareDecoder: MpvTuning.auto,
+                      frameInterpolation: false,
+                      scaler: MpvTuning.auto,
+                      deinterlace: MpvTuning.auto,
+                      streamCacheSeconds: 0,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SettingsSection(
+            tiles: [
+              SettingsTile(
+                title: Text(t.settings.mpvEffectiveNote),
+                description: Text(t.settings.mpvEffectiveNoteBody),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

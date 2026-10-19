@@ -9,6 +9,7 @@ import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/shell/shell_destinations.dart';
 import 'package:pure_live/features/settings/widgets/settings_chooser.dart';
 import 'package:pure_live/features/settings/widgets/settings_rows.dart';
+import 'package:pure_live/features/settings/widgets/settings_surface.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/rooms/paging.dart';
 import 'package:pure_settings_ui/pure_settings_ui.dart';
@@ -132,6 +133,7 @@ final class PageSettingsPage extends ConsumerWidget {
                   onPressed: (_) => unawaited(
                     _choose<int>(
                       context,
+                      ref,
                       title: t.settings.pageDefaultSize,
                       hint: t.settings.pageDefaultSizeHint,
                       current: preferences.pageDefaultSize,
@@ -148,7 +150,7 @@ final class PageSettingsPage extends ConsumerWidget {
                   key: const ValueKey('settings-page-size-options'),
                   title: Text(t.settings.pageSizeOptionsTitle),
                   value: Text(pageSizesOf(preferences, MediaQuery.sizeOf(context).width).options.join(', ')),
-                  onPressed: (_) => unawaited(_editPageSizeOptions(context, preferences, update)),
+                  onPressed: (_) => unawaited(_editPageSizeOptions(context, ref, preferences, update)),
                 ),
                 SettingsTile.switchTile(
                   leading: const Icon(Icons.vertical_align_top),
@@ -209,14 +211,22 @@ final class PageSettingsPage extends ConsumerWidget {
 
   /// A choice row — the same chooser the refresh page drives.
   static Future<void> _choose<T>(
-    BuildContext context, {
+    BuildContext context,
+    WidgetRef ref, {
     required String title,
     required String? hint,
     required T current,
     required List<(T, String)> options,
     required Future<void> Function(T) apply,
   }) async {
-    final picked = await showSettingsChooser<T>(context, title: title, hint: hint, current: current, options: options);
+    final picked = await showSettingsChooser<T>(
+      context,
+      ref,
+      title: title,
+      hint: hint,
+      current: current,
+      options: options,
+    );
     if (picked != null) {
       await apply(picked);
     }
@@ -227,15 +237,17 @@ final class PageSettingsPage extends ConsumerWidget {
   /// least one choice stays.
   static Future<void> _editPageSizeOptions(
     BuildContext context,
+    WidgetRef ref,
     AppPreferences preferences,
     Future<void> Function(AppPreferences Function(AppPreferences)) update,
   ) async {
     final t = context.t;
     final key = GlobalKey<_PageSizeDialogState>(debugLabel: 'page-size-options');
-    final result = await showPureDialog<List<int>>(
-      context: context,
+    final result = await showSettingsSurface<List<int>>(
+      context,
+      ref,
       title: t.settings.pageSizeOptionsTitle,
-      child: _PageSizeDialog(
+      body: (surfaceContext) => _PageSizeDialog(
         key: key,
         initial: parsePageSizeOptions(preferences.pageSizeOptions),
         recommended: MediaQuery.sizeOf(context).width > 960 ? const [20, 40, 60, 80] : const [12, 24, 36, 48],
@@ -335,10 +347,7 @@ final class _PageSizeDialogState extends State<_PageSizeDialog> {
               Container(
                 key: ValueKey('settings-page-size-$value'),
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: theme.colors.fillSecondary,
-                  borderRadius: BorderRadius.circular(14),
-                ),
+                decoration: BoxDecoration(color: theme.colors.fillSecondary, borderRadius: BorderRadius.circular(14)),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

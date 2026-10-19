@@ -316,6 +316,7 @@ final class DanmakuSettingsContent extends ConsumerWidget {
       onTap: () async {
         final picked = await showSettingsChooser<String>(
           context,
+          ref,
           title: context.t.danmaku.fontFamily,
           current: current,
           options: [('', context.t.fonts.system), for (final id in families) (id, id)],
@@ -327,7 +328,8 @@ final class DanmakuSettingsContent extends ConsumerWidget {
     );
   }
 
-  static String _weightName(BuildContext context, int weight) {    final t = context.t;
+  static String _weightName(BuildContext context, int weight) {
+    final t = context.t;
     return switch (weight) {
       <= 100 => t.danmaku.weightThin,
       <= 200 => t.danmaku.weightExtraLight,
@@ -356,8 +358,7 @@ final class DanmakuSettingsContent extends ConsumerWidget {
               ),
             ),
           ),
-          if (hint case final note?)
-            Text(note, style: theme.text.caption.copyWith(color: theme.colors.textTertiary)),
+          if (hint case final note?) Text(note, style: theme.text.caption.copyWith(color: theme.colors.textTertiary)),
         ],
       ),
     );
@@ -383,7 +384,8 @@ final class _Card extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (final (index, child) in children.indexed) ...[
-            if (index > 0) Divider(height: 1, indent: 14, endIndent: 14, color: theme.colors.border.withValues(alpha: 0.5)),
+            if (index > 0)
+              Divider(height: 1, indent: 14, endIndent: 14, color: theme.colors.border.withValues(alpha: 0.5)),
             child,
           ],
         ],

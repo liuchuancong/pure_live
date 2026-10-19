@@ -226,10 +226,22 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   /// slot or the stream address (waiting), finished with a file (saved), and
   /// ended broken (failed).
   static bool _inBucket(RecordTask task, int bucket) => switch (bucket) {
-    1 => switch (task.status) { RecordStatus.recording || RecordStatus.retrying || RecordStatus.merging => true, _ => false },
-    2 => switch (task.status) { RecordStatus.queued || RecordStatus.resolving => true, _ => false },
-    3 => switch (task.status) { RecordStatus.completed || RecordStatus.stopped => true, _ => false },
-    4 => switch (task.status) { RecordStatus.failed || RecordStatus.interrupted => true, _ => false },
+    1 => switch (task.status) {
+      RecordStatus.recording || RecordStatus.retrying || RecordStatus.merging => true,
+      _ => false,
+    },
+    2 => switch (task.status) {
+      RecordStatus.queued || RecordStatus.resolving => true,
+      _ => false,
+    },
+    3 => switch (task.status) {
+      RecordStatus.completed || RecordStatus.stopped => true,
+      _ => false,
+    },
+    4 => switch (task.status) {
+      RecordStatus.failed || RecordStatus.interrupted => true,
+      _ => false,
+    },
     _ => true,
   };
 
@@ -321,6 +333,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
       ],
     );
   }
+
   /// Busy tasks first, then the newest.
   List<RecordTask> _ordered(List<RecordTask> tasks) {
     int rank(RecordTask task) => statusIsBusy(task.status) ? 0 : 1;
@@ -606,17 +619,17 @@ final class _StatChip extends StatelessWidget {
 
 /// The add-room form: the platform picked from the sites that can look rooms
 /// up, and the room id typed in.
-final class _AddRoomForm extends StatefulWidget {
+final class _AddRoomForm extends ConsumerStatefulWidget {
   const _AddRoomForm({required this.sites, required this.onSubmit});
 
   final List<LiveSite> sites;
   final void Function(String platformId, String roomId) onSubmit;
 
   @override
-  State<_AddRoomForm> createState() => _AddRoomFormState();
+  ConsumerState<_AddRoomForm> createState() => _AddRoomFormState();
 }
 
-final class _AddRoomFormState extends State<_AddRoomForm> {
+final class _AddRoomFormState extends ConsumerState<_AddRoomForm> {
   late String _platformId = widget.sites.first.manifest.id;
   final TextEditingController _roomId = TextEditingController();
 
@@ -633,6 +646,7 @@ final class _AddRoomFormState extends State<_AddRoomForm> {
     final t = context.t;
     final picked = await showSettingsChooser<String>(
       context,
+      ref,
       title: t.recorder.platform,
       current: _platformId,
       options: [for (final site in widget.sites) (site.manifest.id, _siteName(site.manifest))],

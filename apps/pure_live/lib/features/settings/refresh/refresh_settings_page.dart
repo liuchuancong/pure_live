@@ -45,6 +45,7 @@ final class RefreshSettingsPage extends ConsumerWidget {
                 onPressed: (_) => unawaited(
                   _choose<int>(
                     context,
+                    ref,
                     title: t.settings.autoRefreshInterval,
                     hint: t.settings.autoRefreshIntervalHint,
                     current: preferences.autoRefreshMinutes,
@@ -60,6 +61,7 @@ final class RefreshSettingsPage extends ConsumerWidget {
                 onPressed: (_) => unawaited(
                   _choose<int>(
                     context,
+                    ref,
                     title: t.settings.refreshResumeThreshold,
                     hint: t.settings.refreshResumeThresholdHint,
                     current: preferences.refreshResumeThresholdMinutes,
@@ -99,6 +101,7 @@ final class RefreshSettingsPage extends ConsumerWidget {
                 onPressed: (_) => unawaited(
                   _choose<int>(
                     context,
+                    ref,
                     title: t.settings.thumbnailRefreshInterval,
                     hint: t.settings.autoRefreshThumbnailsDesc,
                     current: preferences.thumbnailRefreshMinutes,
@@ -122,6 +125,7 @@ final class RefreshSettingsPage extends ConsumerWidget {
                 onPressed: (_) => unawaited(
                   _choose<int>(
                     context,
+                    ref,
                     title: t.settings.historyLimit,
                     hint: t.settings.historyLimitDesc,
                     current: preferences.historyLimit,
@@ -146,14 +150,22 @@ final class RefreshSettingsPage extends ConsumerWidget {
   static String _minutesLabel(BuildContext context, int minutes) => context.t.settings.minutesValue(minutes: minutes);
 
   static Future<void> _choose<T>(
-    BuildContext context, {
+    BuildContext context,
+    WidgetRef ref, {
     required String title,
     required String? hint,
     required T current,
     required List<(T, String)> options,
     required Future<void> Function(T) apply,
   }) async {
-    final picked = await showSettingsChooser<T>(context, title: title, hint: hint, current: current, options: options);
+    final picked = await showSettingsChooser<T>(
+      context,
+      ref,
+      title: title,
+      hint: hint,
+      current: current,
+      options: options,
+    );
     if (picked != null) {
       await apply(picked);
     }

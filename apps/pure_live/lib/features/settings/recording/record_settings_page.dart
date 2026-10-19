@@ -132,7 +132,7 @@ class _RecordSettingsPageState extends ConsumerState<RecordSettingsPage> {
     required List<(T, String)> options,
     required Future<void> Function(T value) apply,
   }) async {
-    final picked = await showSettingsChooser<T>(context, title: title, current: current, options: options);
+    final picked = await showSettingsChooser<T>(context, ref, title: title, current: current, options: options);
     if (picked != null) {
       await apply(picked);
     }
@@ -232,10 +232,8 @@ class _RecordSettingsPageState extends ConsumerState<RecordSettingsPage> {
                     title: t.recorder.recordSizeCap,
                     current: preferences.maxCacheMB,
                     options: [
-                      for (final mb in const [512, 1024, 2048, 4096, 8192, 16384, 32768]) (
-                        mb,
-                        t.recorder.mbValue(count: mb),
-                      ),
+                      for (final mb in const [512, 1024, 2048, 4096, 8192, 16384, 32768])
+                        (mb, t.recorder.mbValue(count: mb)),
                     ],
                     apply: (value) => _write((p) => p.copyWith(maxCacheMB: value)),
                   ),
@@ -287,10 +285,8 @@ class _RecordSettingsPageState extends ConsumerState<RecordSettingsPage> {
                     title: t.recorder.rwTimeout,
                     current: preferences.rwTimeout,
                     options: [
-                      for (final seconds in RecorderPreferences.supportedRwTimeouts) (
-                        seconds,
-                        t.recorder.secondsValue(count: seconds),
-                      ),
+                      for (final seconds in RecorderPreferences.supportedRwTimeouts)
+                        (seconds, t.recorder.secondsValue(count: seconds)),
                     ],
                     apply: (value) => _write((p) => p.copyWith(rwTimeout: value)),
                   ),
@@ -358,8 +354,7 @@ class _RecordSettingsPageState extends ConsumerState<RecordSettingsPage> {
                 divisions: 19,
                 enabled: preferences.autoReconnect,
                 label: t.recorder.timesValue(count: preferences.maxRetryCount),
-                onChanged: (value) =>
-                    unawaited(_write((p) => p.copyWith(maxRetryCount: value.round().clamp(1, 20)))),
+                onChanged: (value) => unawaited(_write((p) => p.copyWith(maxRetryCount: value.round().clamp(1, 20)))),
               ),
               _sliderTile(
                 key: 'record-retry-delay',
@@ -419,9 +414,8 @@ class _RecordSettingsPageState extends ConsumerState<RecordSettingsPage> {
                 divisions: 55,
                 enabled: preferences.enablePolling && preferences.enableBackoff,
                 label: t.recorder.minutesValue(minutes: (preferences.maxCheckInterval / 60).round()),
-                onChanged: (minutes) => unawaited(
-                  _write((p) => p.copyWith(maxCheckInterval: (minutes.round() * 60).clamp(300, 3600))),
-                ),
+                onChanged: (minutes) =>
+                    unawaited(_write((p) => p.copyWith(maxCheckInterval: (minutes.round() * 60).clamp(300, 3600)))),
               ),
               SettingsTile.switchTile(
                 key: const ValueKey('record-auto-start-boot'),

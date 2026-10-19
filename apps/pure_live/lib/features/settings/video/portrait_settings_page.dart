@@ -191,7 +191,7 @@ final class PortraitSettingsPage extends ConsumerWidget {
     required List<(T, String)> options,
     required _ApplyFn<T> apply,
   }) async {
-    final picked = await showSettingsChooser<T>(context, title: title, current: current, options: options);
+    final picked = await showSettingsChooser<T>(context, ref, title: title, current: current, options: options);
     if (picked != null) {
       await ref.read(appPreferencesProvider.notifier).update((p) => apply(p, picked));
     }
@@ -211,10 +211,7 @@ final class PortraitSettingsPage extends ConsumerWidget {
           variant: ButtonVariant.ghost,
           onPressed: () => Navigator.of(dialogContext).pop(false),
         ),
-        PureButton(
-          label: dialogContext.t.common.confirm,
-          onPressed: () => Navigator.of(dialogContext).pop(true),
-        ),
+        PureButton(label: dialogContext.t.common.confirm, onPressed: () => Navigator.of(dialogContext).pop(true)),
       ],
     );
     if (confirmed == true) {

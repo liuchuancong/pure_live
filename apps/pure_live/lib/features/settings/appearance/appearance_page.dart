@@ -64,7 +64,7 @@ final class AppearancePage extends ConsumerWidget {
                 leading: const Icon(Icons.dark_mode_outlined),
                 title: Text(t.settings.themeMode),
                 description: Text(t.settings.themeModeSubtitle),
-                onPressed: (_) => unawaited(_chooseThemeMode(context, appearance, update)),
+                onPressed: (_) => unawaited(_chooseThemeMode(context, ref, appearance, update)),
               ),
               SettingsTile.navigation(
                 leading: const Icon(Icons.style_outlined),
@@ -98,7 +98,7 @@ final class AppearancePage extends ConsumerWidget {
                 leading: const Icon(Icons.format_line_spacing),
                 title: Text(t.settings.density),
                 description: Text(t.settings.densitySubtitle),
-                onPressed: (_) => unawaited(_chooseDensity(context, appearance, update)),
+                onPressed: (_) => unawaited(_chooseDensity(context, ref, appearance, update)),
               ),
               SettingsTile.navigation(
                 leading: const Icon(Icons.translate_outlined),
@@ -206,12 +206,14 @@ final class AppearancePage extends ConsumerWidget {
 
   static Future<void> _chooseThemeMode(
     BuildContext context,
+    WidgetRef ref,
     AppearancePreferences appearance,
     Future<void> Function(AppearancePreferences Function(AppearancePreferences)) update,
   ) {
     final t = context.t;
     return _choose<AppThemeMode>(
       context,
+      ref,
       title: t.settings.themeMode,
       current: appearance.themeMode,
       options: [
@@ -240,6 +242,7 @@ final class AppearancePage extends ConsumerWidget {
     final ids = ['', ...registered];
     await _choose<String>(
       context,
+      ref,
       title: context.t.settings.designLanguage,
       current: appearance.designLanguageId,
       options: [for (final id in ids) (id, _designLanguageLabel(context, id))],
@@ -304,6 +307,7 @@ final class AppearancePage extends ConsumerWidget {
     final current = ref.read(appPreferencesProvider).languageId;
     final picked = await showSettingsChooser<String>(
       context,
+      ref,
       title: context.t.settings.language,
       current: current,
       options: [
@@ -326,12 +330,14 @@ final class AppearancePage extends ConsumerWidget {
 
   static Future<void> _chooseDensity(
     BuildContext context,
+    WidgetRef ref,
     AppearancePreferences appearance,
     Future<void> Function(AppearancePreferences Function(AppearancePreferences)) update,
   ) {
     final ids = UiDensity.values.map((density) => density.name).toList();
     return _choose<String>(
       context,
+      ref,
       title: context.t.settings.density,
       current: appearance.densityId,
       options: [for (final id in ids) (id, id.isEmpty ? context.t.settings.defaultOption : id)],
@@ -364,13 +370,14 @@ final class AppearancePage extends ConsumerWidget {
   /// The chooser: the settings cluster's shared radio-list dialog, then the
   /// write it picked.
   static Future<void> _choose<T>(
-    BuildContext context, {
+    BuildContext context,
+    WidgetRef ref, {
     required String title,
     required T current,
     required List<(T, String)> options,
     required Future<void> Function(T value) onPicked,
   }) async {
-    final picked = await showSettingsChooser<T>(context, title: title, current: current, options: options);
+    final picked = await showSettingsChooser<T>(context, ref, title: title, current: current, options: options);
     if (picked == null) {
       return;
     }

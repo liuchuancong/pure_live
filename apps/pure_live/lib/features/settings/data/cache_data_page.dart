@@ -169,6 +169,7 @@ final class _CacheDataPageState extends ConsumerState<CacheDataPage> {
                 onPressed: (_) => unawaited(
                   showSettingsChooser<int>(
                     context,
+                    ref,
                     title: t.settings.cacheLimit,
                     current: preferences.cacheMaxMB,
                     options: [

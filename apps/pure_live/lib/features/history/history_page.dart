@@ -185,6 +185,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
     const options = [0, 20, 50, 100, 200, 500];
     final picked = await showSettingsChooser<int>(
       context,
+      ref,
       title: t.history.limitTitle,
       hint: t.history.limitHint,
       current: _limit,
