@@ -3,7 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_uikit/pure_uikit.dart';
-import 'package:window_manager/window_manager.dart' show WindowListener, windowManager;
+import 'package:window_frame_kit/window_frame_kit.dart' show WindowListener, windowManager;
 
 export 'package:pure_uikit/pure_uikit.dart'
     show PureCaptionMetrics, PureTitleBar, PureTitleBarLabels, WindowChromeActions;
@@ -101,7 +101,7 @@ final windowChromeStateProvider = Provider<WindowChromeState>((ref) {
   return state;
 });
 
-/// The default actions: [windowManager] is the only window this strip drives.
+/// The default actions: the plugin's facade is the only window this strip drives.
 ///
 /// The strip itself is the core's shared [PureTitleBar]; this file keeps only
 /// the windowing half of the seam, the part that cannot live in a package
@@ -115,7 +115,7 @@ final class WindowManagerChromeActions implements WindowChromeActions {
 
   @override
   Future<void> toggleMaximize() async {
-    // window_manager exposes no toggle; maximise/restore is the pair.
+    // The plugin exposes no toggle; maximise/restore is the pair.
     if (await windowManager.isMaximized()) {
       await windowManager.unmaximize();
     } else {

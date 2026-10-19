@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/live_shell.dart';
 import 'package:live_shell_desktop/live_shell_desktop.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:window_frame_kit/window_frame_kit.dart';
 
 /// What the shell's decisions actually look like on the way to the operating
 /// system.
@@ -17,19 +17,9 @@ import 'package:window_manager/window_manager.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const channel = MethodChannel('window_manager');
-  const displaysChannel = MethodChannel('dev.leanflutter.plugins/screen_retriever');
-  final calls = <MethodCall>[];
+  const channel = MethodChannel('window_frame_kit');
 
-  // The shape `screen_retriever` decodes a Display from, at 100% on a 1920x1080
-  // panel with a 40px taskbar.
-  const primaryDisplay = <String, Object?>{
-    'id': '1',
-    'size': {'width': 1920.0, 'height': 1080.0},
-    'visiblePosition': {'dx': 0.0, 'dy': 0.0},
-    'visibleSize': {'width': 1920.0, 'height': 1040.0},
-    'scaleFactor': 1.0,
-  };
+  final calls = <MethodCall>[];
 
   MethodCall find(String method) => calls.firstWhere((call) => call.method == method);
   bool sent(String method) => calls.any((call) => call.method == method);
@@ -37,19 +27,7 @@ void main() {
 
   setUp(() {
     calls.clear();
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      displaysChannel,
-      (call) async => switch (call.method) {
-        'getPrimaryDisplay' => primaryDisplay,
-        // Wrapped, not a bare list: the plugin reads `result['displays']`.
-        'getAllDisplays' => {
-          'displays': [primaryDisplay],
-        },
-        // Reached while centring: the plugin builds an Offset from these two.
-        'getCursorScreenPoint' => {'dx': 240.0, 'dy': 180.0},
-        _ => null,
-      },
-    );
+
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
       calls.add(call);
       // The plugin asks these before applying options, and answering anything
@@ -67,7 +45,6 @@ void main() {
 
   tearDown(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, null);
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(displaysChannel, null);
   });
 
   Future<void> configure({
@@ -79,6 +56,9 @@ void main() {
     TitleBarStyle? titleBarStyle,
     bool requestMaterial = false,
     WindowMaterialApplier? applyMaterial,
+    // The plugin's own centering reads the display API through FFI handles, which
+    // a unit test cannot answer, so every case here places the window by hand.
+    WindowOriginReader? placeWindow,
   }) => configureMainWindow(
     role: role,
     plan: primaryChromePlan(platform, stage: stage),
@@ -86,6 +66,7 @@ void main() {
     title: 'Pure Live',
     background: background,
     titleBarStyle: titleBarStyle,
+    placeWindow: placeWindow ?? ((_) async => const Offset(320, 140)),
     requestMaterial: requestMaterial,
     applyMaterial: applyMaterial,
   );
@@ -150,6 +131,33 @@ void main() {
       calls.clear();
       await configure(role: WindowRole.popup);
       expect(argsOf(find('setSkipTaskbar'))['isSkipTaskbar'], isTrue);
+    });
+  });
+
+  group('placement', () {
+    test('the origin the reader hands back is sent, and nothing shows yet', () async {
+      await configure();
+
+      // `setPosition` is a partial `setBounds` in this plugin: position only,
+      // with the size keys absent so the window keeps what it was created with.
+      // The last one, because applying the creation options issues its own
+      // `setBounds` for the size first.
+      final call = calls.lastWhere((entry) => entry.method == 'setBounds');
+      expect(argsOf(call)['x'], 320.0);
+      expect(argsOf(call)['y'], 140.0);
+      expect(argsOf(call).containsKey('width'), isFalse);
+      expect(argsOf(call).containsKey('height'), isFalse);
+      // The order that matters is against `show`, not against the chrome calls:
+      // `configureMainWindow` never shows the window — the host does, after this
+      // returns — so a placement made here is already in place for the first frame.
+      expect(sent('show'), isFalse);
+    });
+
+    test('a display that cannot be read leaves the window where the system put it', () async {
+      await configure(placeWindow: (_) async => null);
+
+      expect(sent('setPosition'), isFalse);
+      expect(sent('setTitleBarStyle'), isTrue, reason: 'the rest of the plan still applies');
     });
   });
 

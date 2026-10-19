@@ -19,7 +19,7 @@
 ///
 /// Nothing here talks to a plugin: `WindowHost`, `WindowLauncher`, `TrayHost`,
 /// `InstanceChannel` and `StartupRegistration` are seams the application
-/// implements over `window_manager`, `desktop_multi_window`, `tray_manager` and
+/// implements over `window_frame_kit`, `desktop_multi_window`, `tray_manager` and
 /// the platform channels. That keeps every decision in this package a function
 /// that can be tested without a display server.
 library;

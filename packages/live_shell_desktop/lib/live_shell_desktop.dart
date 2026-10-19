@@ -3,7 +3,7 @@
 /// `live_shell` decides what a window should do — what closing means, whether
 /// the tray came up, where the window was last seen, which launch request came
 /// from a second instance. This package answers the part where something has to
-/// be asked of the operating system, over `window_manager` (the current engine's
+/// be asked of the operating system, over `window_frame_kit` (the current engine's
 /// window), `tray_manager` (the notification area), `screen_retriever` (the
 /// displays) and `desktop_multi_window` (windows in other engines).
 ///

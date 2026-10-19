@@ -16,7 +16,7 @@ import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart';
 import 'package:pure_live/platforms/desktop/tray/app_tray.dart';
 import 'package:pure_live/platforms/desktop/windows/desktop_window_setup.dart';
 import 'package:pure_live/platforms/desktop/windows/native_frame_flag.dart' show NativeFrameFlag;
-import 'package:window_manager/window_manager.dart';
+import 'package:window_frame_kit/window_frame_kit.dart';
 
 /// The desktop window's life: set up before the first frame, asked about
 /// every close, gone last.

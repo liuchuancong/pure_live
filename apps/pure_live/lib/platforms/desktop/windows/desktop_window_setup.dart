@@ -8,7 +8,7 @@ import 'package:pure_live/app/theme/app_theme.dart' show materialThemeSeed;
 import 'package:pure_live/app/theme/appearance_preferences/appearance_preferences.dart';
 import 'package:pure_live/app/theme/ui_configuration_mapper.dart' show uiConfigFromAppearance;
 import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart' show ShellWindowChrome;
-import 'package:window_manager/window_manager.dart' show TitleBarStyle;
+import 'package:window_frame_kit/window_frame_kit.dart' show TitleBarStyle;
 
 /// Sets the desktop window up before the first frame: size, minimum size,
 /// title, background, and who owns the top edge.
@@ -17,7 +17,7 @@ import 'package:window_manager/window_manager.dart' show TitleBarStyle;
 /// takes the frame over with the `bitsdojo_window` fork — `BDW_CUSTOM_FRAME`
 /// in `windows/runner/main.cpp` strips the caption natively and answers
 /// `WM_NCHITTEST`, so the plan below declares the self-drawn mode with
-/// `ownsResize: false` (the helper sizes the window) and window_manager is
+/// `ownsResize: false` (the helper sizes the window) and the plugin is
 /// explicitly held at [TitleBarStyle.normal] so the two never fight over the
 /// non-client area. [ShellWindowChrome.system] keeps the stock caption. The
 /// choice is read once per start — the native helper has no runtime toggle —

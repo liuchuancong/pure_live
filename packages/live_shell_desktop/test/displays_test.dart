@@ -4,7 +4,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/live_shell.dart';
 import 'package:live_shell_desktop/live_shell_desktop.dart';
-import 'package:screen_retriever/screen_retriever.dart';
+
+/// One display's geometry, without the plugin's FFI handle.
+DisplayGeometry geometry({
+  required int id,
+  required Size size,
+  required Rect workArea,
+  Offset position = Offset.zero,
+  double scaleFactor = 1,
+}) => (id: id, position: position, size: size, workArea: workArea, scaleFactor: scaleFactor);
 
 void main() {
   group('rect ↔ PixelRect', () {
@@ -38,14 +46,8 @@ void main() {
   });
 
   group('toDisplayFrame', () {
-    test('the visible area is the work area and the full size is the bounds', () {
-      const display = Display(
-        id: '1',
-        size: Size(1920, 1080),
-        visiblePosition: Offset.zero,
-        visibleSize: Size(1920, 1010),
-        scaleFactor: 1,
-      );
+    test('the work area is the work area and the full extent is the bounds', () {
+      final display = geometry(id: 1, size: const Size(1920, 1080), workArea: const Rect.fromLTWH(0, 0, 1920, 1010));
 
       final frame = const ScreenRetrieverDisplays().toDisplayFrame(display);
 
@@ -54,17 +56,36 @@ void main() {
       expect(frame.bounds.height, 1080);
     });
 
-    test('a display with no visible geometry reported still yields something usable', () {
-      const display = Display(id: '2', size: Size(2560, 1440));
+    test('a display left of the primary one keeps its own origin in bounds', () {
+      // The 0.2 bridge could not report a full frame's origin at all, so a
+      // secondary monitor's coordinates were lost here; the display API answers
+      // that directly now.
+      final display = geometry(
+        id: 2,
+        position: const Offset(-2560, 0),
+        size: const Size(2560, 1440),
+        workArea: const Rect.fromLTWH(-2560, 0, 2560, 1400),
+      );
 
       final frame = const ScreenRetrieverDisplays().toDisplayFrame(display);
 
-      expect(frame.workArea, frame.bounds);
-      expect(frame.scaleFactor, 1);
+      expect(frame.bounds.left, -2560);
+      expect(frame.workArea.left, -2560);
     });
 
-    test("a scale factor comes back as a double from the plugin's num", () {
-      const display = Display(id: '3', size: Size(1920, 1080), scaleFactor: 1.5);
+    test('the plugin id reaches the shell as the string the geometry stores', () {
+      final display = geometry(id: 7, size: const Size(1920, 1080), workArea: const Rect.fromLTWH(0, 0, 1920, 1080));
+
+      expect(const ScreenRetrieverDisplays().toDisplayFrame(display).id, '7');
+    });
+
+    test('a scale factor is carried through', () {
+      final display = geometry(
+        id: 3,
+        size: const Size(1920, 1080),
+        workArea: const Rect.fromLTWH(0, 0, 1920, 1080),
+        scaleFactor: 1.5,
+      );
 
       expect(const ScreenRetrieverDisplays().toDisplayFrame(display).scaleFactor, 1.5);
     });

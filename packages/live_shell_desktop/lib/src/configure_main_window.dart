@@ -2,9 +2,9 @@ import 'dart:ui' show Color, Size;
 
 import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/live_shell.dart';
-import 'package:live_shell_desktop/src/displays.dart' show defaultWindowSize;
+import 'package:live_shell_desktop/src/displays.dart' show WindowOriginReader, centerOnWorkArea, defaultWindowSize;
 import 'package:live_shell_desktop/src/window_material.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:window_frame_kit/window_frame_kit.dart';
 
 /// Applies a [ChromePlan] and the rendering fallbacks to the window, before the
 /// first frame is shown.
@@ -42,6 +42,7 @@ Future<void> configureMainWindow({
   Size minimumSize = const Size(900, 600),
   Size initialSize = defaultWindowSize,
   TitleBarStyle? titleBarStyle,
+  WindowOriginReader placeWindow = centerOnWorkArea,
   bool requestMaterial = false,
   bool materialDark = false,
   WindowMaterialApplier? applyMaterial,
@@ -55,7 +56,6 @@ Future<void> configureMainWindow({
       title: title,
       size: initialSize,
       minimumSize: minimumSize,
-      center: true,
       // Always opaque at creation: on Windows 10 an unbacked transparent
       // surface shows the desktop through, because the compositor there has
       // no default backdrop to fall back on. Only a material that actually
@@ -69,13 +69,22 @@ Future<void> configureMainWindow({
       skipTaskbar: !role.showsInTaskbar,
     ),
   );
+  // The origin is ours to compute, not the plugin's: `WindowOptions.center` and
+  // `center()` both reach the display API through FFI handles, which a unit test has
+  // no way to answer, and a placement nobody can observe is a placement nobody can
+  // say is wrong. `placeWindow` is that seam; a null answer means the display could
+  // not be read, and the window keeps wherever the system put it.
+  final origin = await placeWindow(initialSize);
+  if (origin != null) {
+    await windowManager.setPosition(origin);
+  }
   if (plan.mode == ChromeMode.selfDrawn && plan.ownsResize) {
     await windowManager.setAsFrameless();
   }
   // macOS's `hidden` style keeps the traffic lights and the app draws beneath
   // them; a true inset — moving the buttons into a sidebar — needs a change in
   // macos/Runner/MainFlutterWindow.swift (titlebarAppearsTransparent plus the
-  // standardWindowButton frames), because window_manager exposes no offset.
+  // standardWindowButton frames), because the window plugin exposes no offset.
   await windowManager.setResizable(!plan.ownsResize || plan.mode != ChromeMode.selfDrawn);
   // The window exists only after waitUntilReadyToShow, so the material is
   // applied here rather than before the options: on success the surface

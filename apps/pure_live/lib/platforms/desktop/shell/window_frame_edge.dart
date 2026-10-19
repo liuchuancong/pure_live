@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/providers/app_providers.dart' show windowChromeProvider;
 import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart' show ShellWindowChrome;
 import 'package:pure_uikit/pure_uikit.dart' show PureTheme;
-import 'package:window_manager/window_manager.dart';
+import 'package:window_frame_kit/window_frame_kit.dart';
 
 /// The line Windows used to draw around the window, drawn here instead.
 ///

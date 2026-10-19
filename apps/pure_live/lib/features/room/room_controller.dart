@@ -29,7 +29,7 @@ import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/features/room/portrait_rules.dart';
 import 'package:pure_live/features/room/room_providers.dart';
 import 'package:pure_live/shared/rooms/play_quality.dart';
-import 'package:window_manager/window_manager.dart' show windowManager;
+import 'package:window_frame_kit/window_frame_kit.dart' show windowManager;
 
 /// How the room is presented — the reference's `VideoMode`.
 enum RoomPresentation {

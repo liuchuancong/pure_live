@@ -17,15 +17,13 @@
 #include <flutter_acrylic/flutter_acrylic_plugin.h>
 #include <flutter_secure_storage_windows/flutter_secure_storage_windows_plugin.h>
 #include <media_core_native/media_core_native_plugin_c_api.h>
-#include <media_kit_libs_windows_video/media_kit_libs_windows_video_plugin_c_api.h>
 #include <media_kit_video/media_kit_video_plugin_c_api.h>
 #include <refresh_rate/refresh_rate_plugin_c_api.h>
 #include <restart_app/restart_app_plugin_c_api.h>
-#include <screen_retriever_windows/screen_retriever_windows_plugin_c_api.h>
 #include <share_plus/share_plus_windows_plugin_c_api.h>
 #include <url_launcher_windows/url_launcher_windows.h>
 #include <volume_controller/volume_controller_plugin_c_api.h>
-#include <window_manager/window_manager_plugin.h>
+#include <window_frame_kit/window_frame_kit_plugin_c_api.h>
 
 void RegisterPlugins(flutter::PluginRegistry* registry) {
   AudioServiceWinPluginCApiRegisterWithRegistrar(
@@ -50,22 +48,18 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("FlutterSecureStorageWindowsPlugin"));
   MediaCoreNativePluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("MediaCoreNativePluginCApi"));
-  MediaKitLibsWindowsVideoPluginCApiRegisterWithRegistrar(
-      registry->GetRegistrarForPlugin("MediaKitLibsWindowsVideoPluginCApi"));
   MediaKitVideoPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("MediaKitVideoPluginCApi"));
   RefreshRatePluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("RefreshRatePluginCApi"));
   RestartAppPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("RestartAppPluginCApi"));
-  ScreenRetrieverWindowsPluginCApiRegisterWithRegistrar(
-      registry->GetRegistrarForPlugin("ScreenRetrieverWindowsPluginCApi"));
   SharePlusWindowsPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("SharePlusWindowsPluginCApi"));
   UrlLauncherWindowsRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("UrlLauncherWindows"));
   VolumeControllerPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("VolumeControllerPluginCApi"));
-  WindowManagerPluginRegisterWithRegistrar(
-      registry->GetRegistrarForPlugin("WindowManagerPlugin"));
+  WindowFrameKitPluginCApiRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("WindowFrameKitPluginCApi"));
 }

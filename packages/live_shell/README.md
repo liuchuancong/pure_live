@@ -35,7 +35,7 @@ they can be tested without a display server, a tray, or a window manager.
 
 ## Explicitly not owned
 
-- **No plugin calls.** `window_manager`, `tray_manager` and `desktop_multi_window` are
+- **No plugin calls.** `window_frame_kit`, `tray_manager` and `desktop_multi_window` are
   implemented against the seams declared here (`WindowHost`, `TrayHost`,
   `WindowLauncher`) by `live_shell_desktop`.
 - No widgets, no painting, no theme. Caption *buttons* are `pure_uikit`'s; this

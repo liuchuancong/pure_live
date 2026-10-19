@@ -75,7 +75,7 @@ enum WindowEvent {
 
 /// One window the shell controls.
 ///
-/// The application implements this over `window_manager` (main window) or
+/// The application implements this over `window_frame_kit` (main window) or
 /// `desktop_multi_window` (secondary ones); everything in `live_shell` decides
 /// behaviour against this interface instead of against a plugin, which is what
 /// lets the policy code be tested without a display server.

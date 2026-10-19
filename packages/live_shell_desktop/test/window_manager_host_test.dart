@@ -14,7 +14,7 @@ import 'package:live_shell_desktop/live_shell_desktop.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const channel = MethodChannel('window_manager');
+  const channel = MethodChannel('window_frame_kit');
   const displays = [
     DisplayFrame(id: 'eDP-1', bounds: PixelRect(0, 0, 1920, 1080), workArea: PixelRect(0, 0, 1920, 1040)),
   ];

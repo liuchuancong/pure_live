@@ -16,10 +16,9 @@ list(APPEND FLUTTER_PLUGIN_LIST
   open_file_linux
   refresh_rate
   restart_app
-  screen_retriever_linux
   url_launcher_linux
   volume_controller
-  window_manager
+  window_frame_kit
   yaru_window_linux
 )
 

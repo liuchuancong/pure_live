@@ -22,10 +22,10 @@ dependencies:
   desktop_multi_window: ^0.3.1 # 多窗口支持
   dynamic_app_icon_flutter_plus: ^2.2.1 # 动态应用图标
   restart_app: ^1.10.1 # 重启应用
-  screen_retriever: ^0.2.2 # 屏幕与显示器信息
+  screen_retriever: ^0.3.0 # 屏幕与显示器信息
   tray_manager: ^0.8.0 # 系统托盘
   vibrancy: ^0.1.1 # 窗口透明与材质效果
-  window_manager: ^0.5.2 # 桌面窗口管理
+  window_frame_kit: ^0.3.0 # 桌面窗口管理 + 自绘边框接管
 
   # 文件与外部操作
   archive: ^4.5.2 # 压缩包读写
@@ -86,24 +86,50 @@ dependencies:
 
   # 播放内核
   media_core:
-    path: ../../../../media_core/packages/media_core
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core
+      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c
   media_core_media_kit:
-    path: ../../../../media_core/packages/media_core_media_kit
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core_media_kit
+      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c
   media_core_recording_ffmpeg:
-    path: ../../../../media_core/packages/media_core_recording_ffmpeg # FFmpeg 录制后端（分段采集与合并）
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core_recording_ffmpeg
+      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c # FFmpeg 录制后端（分段采集与合并）
   media_core_presentation:
-    path: ../../../../media_core/packages/media_core_presentation # 朝向感知的呈现 + 视频叠加图层
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core_presentation
+      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c # 朝向感知的呈现 + 视频叠加图层
   media_core_fullscreen:
-    path: ../../../../media_core/packages/media_core_fullscreen # 全屏 / 窗口全屏驱动
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core_fullscreen
+      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c # 全屏 / 窗口全屏驱动
   media_core_pip:
-    path: ../../../../media_core/packages/media_core_pip # 画中画驱动（桌面小窗 / 移动端 overlay）
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core_pip
+      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c # 画中画驱动（桌面小窗 / 移动端 overlay）
   media_core_cast_dlna:
-    path: ../../../../media_core/packages/media_core_cast_dlna # DLNA/UPnP 投屏后端
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core_cast_dlna
+      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c # DLNA/UPnP 投屏后端
   media_core_mediasession:
-    path: ../../../../media_core/packages/media_core_mediasession # 媒体会话通知（锁屏/SMTC/MPRIS 播放控制）
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core_mediasession
+      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c # 媒体会话通知（锁屏/SMTC/MPRIS 播放控制）
   media_core_notify:
-    path: ../../../../media_core/packages/media_core_notify # 用户通知（录制/下载结果、前台任务行）
-  media_kit_libs_windows_video: ^1.0.10 # Windows 播放库与编解码支持
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core_notify
+      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c # 用户通知（录制/下载结果、前台任务行）
 
   # 路由、配置与序列化
   envied: ^1.3.10 # 编译期环境变量
@@ -161,3 +187,16 @@ icons_launcher:
     windows:
       enable: true
 
+
+ffmpeg_kit_extended_config:
+  type: "base" # pre-bundled builds: debug, base, full, audio, video, video_hw
+  gpl: true # enable to include GPL libraries. WARNING: Make sure you understand what GPL license means before enabling. Check https://www.ffmpeg.org/legal.html for more information.
+  small: true # enable to use smaller builds
+  # == OR ==
+  # -------------------------------------------------------------
+  # You can specify remote or local path to libffmpegkit libraries for each platform
+  # This allows you to deploy custom builds of libffmpegkit.
+  # See: https://github.com/akashskypatel/ffmpeg-kit-builders
+  # Example:
+  # windows: "path/to/ffmpeg-kit/libraries"
+  # ios: "https://path/to/bundle.xcframework.zip"

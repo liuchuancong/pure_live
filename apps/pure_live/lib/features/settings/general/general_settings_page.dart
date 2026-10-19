@@ -14,7 +14,7 @@ import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart' show S
 import 'package:pure_settings_ui/pure_settings_ui.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 import 'package:restart_app/restart_app.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:window_frame_kit/window_frame_kit.dart';
 
 /// The close row's \"ask every time\" — the absence of a stored action, given
 /// a value of its own so the chooser can offer and compare it.

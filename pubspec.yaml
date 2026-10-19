@@ -48,6 +48,12 @@ dev_dependencies:
 # fork needs code_assets ^2.1.0; the media_core workspace carries the same two
 # overrides for the same reason (see its root pubspec).
 dependency_overrides:
+  # yaru's window layer only exists as yaru_window_manager, which depends on window_manager;
+  # window_manager pins screen_retriever ^0.2.x and window_frame_kit 0.3.0 needs ^0.3.0, and
+  # neither compiles against the other's version. The fork under third_party/ swaps one import
+  # (window_frame_kit is a verbatim port), so the app ends up with a single window delegate.
+  yaru_window_manager:
+    path: third_party/yaru_window_manager
   code_assets: ^2.1.0
   dbus: ^0.8.0
   equatable: ^3.0.0
@@ -57,17 +63,16 @@ dependency_overrides:
   wakelock_plus: 1.8.1
   win32: ^6.4.0
   xml: ^7.0.0
-  # media_core_notify is the one capability package that still names its
-  # media_core / media_core_native dependency by published version rather
-  # than by path (its siblings all use `path: ../media_core`). Inside the
-  # media_core workspace that resolves through `workspace:`; consumed by path
-  # from this app it would pull the hosted copies and clash with the local
-  # path one. Pinning both to the local packages keeps a single source of
-  # truth without editing the shared media_core repo.
   media_core:
-    path: ../../media_core/packages/media_core
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core
+      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c
   media_core_native:
-    path: ../../media_core/packages/media_core_native
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core_native
+      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c
 
 melos:
   scripts:

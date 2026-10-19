@@ -18,7 +18,7 @@ import 'package:live_shell/live_shell.dart';
 /// * **Its geometry is its own business.** The plugin's controller offers
 ///   `show`, `hide` and messaging only: there is no `setFrame`, no `setTitle` and
 ///   no `close` for a remote caller. Sizing and titling happen inside that
-///   window, where `window_manager` addresses *its* engine's window. This is not
+///   window, where `window_frame_kit` addresses *its* engine's window. This is not
 ///   a limitation to route around; it is the shape of the thing.
 /// * **Its role must arrive in the launch arguments**, because a window cannot
 ///   ask what it is, and `live_shell` decides lifetime, taskbar presence and

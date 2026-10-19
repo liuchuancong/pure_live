@@ -14,15 +14,13 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_acrylic
   flutter_secure_storage_windows
   media_core_native
-  media_kit_libs_windows_video
   media_kit_video
   refresh_rate
   restart_app
-  screen_retriever_windows
   share_plus
   url_launcher_windows
   volume_controller
-  window_manager
+  window_frame_kit
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
