@@ -30,6 +30,7 @@ dependencies:
       ref: 2fe854639aa3eb6bf7863140e2738dd001cb10a1
   live_platform:
   live_shell:
+  nativeapi: ^0.5.2 # 系统通知（nativeapi 的 NotificationManager，与 tray_manager 同栈）
   screen_retriever: ^0.2.2
   tray_manager: ^0.8.0
   window_manager: ^0.5.2

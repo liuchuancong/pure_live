@@ -60,6 +60,7 @@ final revealMainWindowProvider = Provider<Future<void> Function()>((ref) => () a
 abstract interface class DesktopTrayPort {
   /// How many rooms are recording right now.
   void reportRecordingCount(int count);
+  Future<void> notifyTray({required String title, String body = ''});
 }
 
 /// The port that keeps no tray: every platform without a notification area,
@@ -70,6 +71,7 @@ final class NoopDesktopTrayPort implements DesktopTrayPort {
 
   @override
   void reportRecordingCount(int count) {}
+  Future<void> notifyTray({required String title, String body = ''}) async {}
 }
 
 /// The [DesktopTrayPort]; the composition root overrides it with the desktop

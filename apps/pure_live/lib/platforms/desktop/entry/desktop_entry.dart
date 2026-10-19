@@ -4,6 +4,7 @@ import 'dart:ui' show Size;
 import 'package:live_log/live_log.dart' show LiveLog;
 import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/live_shell.dart';
+import 'package:live_shell_desktop/live_shell_desktop.dart' show DesktopNotificationCenter;
 
 import 'package:pure_live/app/navigation/app_navigator_key.dart';
 import 'package:pure_live/app/preferences/app_preferences.dart';
@@ -76,6 +77,7 @@ final class DesktopEntry with WindowListener implements DesktopTrayPort {
     windowVisible: windowManager.isVisible,
     onCreateError: (error) => _log?.warning('tray icon did not appear', fields: {'error': '$error'}),
   );
+  final DesktopNotificationCenter _notifications = DesktopNotificationCenter();
   bool _trayUp = false;
   bool _quitting = false;
   bool _closePromptOpen = false;
@@ -126,6 +128,8 @@ final class DesktopEntry with WindowListener implements DesktopTrayPort {
   @override
   void reportRecordingCount(int count) => unawaited(_tray.setRecordingCount(count));
 
+  Future<void> notifyTray({required String title, String body = ''}) async {
+    _notifications.show(title: title, body: body);
   /// The quit flow: app shutdown first, then tray and window. Idempotent —
   /// the close button and the tray can both ask.
   Future<void> quit() async {

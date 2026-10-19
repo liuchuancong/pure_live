@@ -13,6 +13,7 @@
 library;
 
 export 'src/configure_main_window.dart';
+export 'src/desktop_notifications.dart';
 export 'src/desktop_window_launcher.dart';
 export 'src/displays.dart';
 export 'src/system_idle.dart';
