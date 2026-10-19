@@ -27,6 +27,7 @@ import 'package:live_sites/src/platforms/douyu/capabilities/douyu_playback_provi
 import 'package:live_sites/src/platforms/douyu/capabilities/douyu_room_provider.dart';
 import 'package:live_sites/src/platforms/douyu/capabilities/douyu_search_provider.dart';
 import 'package:live_sites/src/platforms/douyu/danmaku/douyu_danmaku_session.dart';
+import 'package:live_sites/src/platforms/douyu/douyu_login_store.dart';
 import 'package:live_sites/src/platforms/douyu/douyu_manifest.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_account.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_failure.dart';
@@ -68,24 +69,8 @@ final class DouyuDanmakuArgs {
 }
 
 /// Where the adapter reads what renewing a douyu login needs beside the
-/// cookie, and where a renewed cookie goes. The app implements it over its
-/// settings/account store; null means every request goes out as a guest.
-abstract interface class DouyuLoginStore {
-  /// The login cookie (a pasted browser cookie counts).
-  String get cookie;
-
-  /// LTP0 saved apart from the cookie.
-  String? get longTermKey;
-
-  /// The login's `dy_did` saved apart from the cookie.
-  String? get deviceId;
-
-  /// When the cookie was saved or last renewed.
-  DateTime? get savedAt;
-
-  /// Stores [cookie] as the login, renewed at [renewedAt].
-  Future<void> saveRenewed(String cookie, DateTime renewedAt);
-}
+/// cookie lives in `douyu_login_store.dart` (the seam the application
+/// implements; null means every request goes out as a guest).
 
 /// The douyu adapter: manifest + capability discovery + lifecycle
 /// (ARCHITECTURE.md §7.2); requests in `api/`, parsing in `parsers/`,
@@ -313,8 +298,9 @@ final class DouyuSite implements LiveSite {
   /// throws: a failed renewal leaves the request to go out with the
   /// current cookie. Concurrent callers share one renewal. The applied
   /// credential (see [applyLoginCredential]) renews in the store's place when
-  /// there is one.
-  Future<void> renewLogin() async {
+  /// there is one. [force] (the cookie page's 立即续期) asks for the renewal
+  /// now even when the session is nowhere near its end.
+  Future<void> renewLogin({bool force = false}) async {
     final store = login;
     if (store == null) return;
     final cookie = accountCookie();
@@ -327,7 +313,7 @@ final class DouyuSite implements LiveSite {
     final ltp0 = credentials.ltp0;
     final did = credentials.did;
     if (ltp0 == null || did == null) return;
-    if (!DouyuAccount.shouldRenew(cookie, now: now(), savedAt: store.savedAt)) return;
+    if (!force && !DouyuAccount.shouldRenew(cookie, now: now(), savedAt: store.savedAt)) return;
     final running = _renewal;
     if (running != null) {
       await running;
@@ -345,7 +331,11 @@ final class DouyuSite implements LiveSite {
           'cookie': '${DouyuAccount.deviceIdName}=$did;${DouyuAccount.longTermKeyName}=$ltp0',
         });
         final renewed = DouyuAccount.renewedCookie(cookie, lines);
-        if (renewed != null) await store.saveRenewed(renewed, now());
+        if (renewed != null) {
+          await store.saveRenewed(renewed, now());
+          // The renewed cookie leads from now on, in memory as in the store.
+          applyLoginCredential(renewed);
+        }
       } on DouyuFailure {
         // Keep the current cookie; the request may go out as a guest.
       } finally {

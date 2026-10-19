@@ -48,6 +48,17 @@ final class FollowRepository {
     _external ??= store.changes.listen((_) => unawaited(_reload()));
   }
 
+  /// Replaces the whole follow list with [rooms] and the whole group list
+  /// with [groups] — the follows-backup restore door (the reference writes
+  /// the two keys in one document). One commit, so the follow page sees the
+  /// new state as a single change rather than a flicker of un-follows.
+  Future<void> replaceAll({required List<LibraryRoom> rooms, required List<FollowGroup> groups}) async {
+    _rooms = rooms;
+    _groups = groups;
+    await _commitRooms();
+    await _commitGroups();
+  }
+
   /// Whether [room] is followed (by identity).
   bool isFollowed(LiveRoom room) => _rooms.any((record) => record.identity == room.identityKey);
 

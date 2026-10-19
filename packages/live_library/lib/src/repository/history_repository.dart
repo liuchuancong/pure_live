@@ -115,6 +115,14 @@ final class HistoryRepository {
     await _commit();
   }
 
+  /// Replaces the whole list with [records] — the backup restore's door
+  /// (the file carries the records as they were saved, order and progress
+  /// included).
+  Future<void> replaceAll(List<WatchRecord> records) async {
+    _history = List.of(records);
+    await _commit();
+  }
+
   /// Clears the whole history.
   Future<void> clear() async {
     if (_history.isEmpty) {

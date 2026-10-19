@@ -46,5 +46,11 @@ export 'src/models/play/play.dart';
 export 'src/models/room/room.dart';
 export 'src/models/search/search.dart';
 export 'src/models/super_chat/super_chat.dart';
+// Douyu renewal seam (consumed by the application's account store): the
+// login store the adapter reads beside the cookie, the adapter's public
+// renewal surface, and the cookie parser the status cards answer from.
+export 'src/platforms/douyu/douyu_login_store.dart';
+export 'src/platforms/douyu/douyu_site.dart';
+export 'src/platforms/douyu/parsers/douyu_account.dart';
 // iptv seam (consumed by live_iptv; see ARCHITECTURE.md §11)
 export 'src/platforms/iptv/iptv_channel_source.dart';

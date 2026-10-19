@@ -13,6 +13,7 @@ import 'package:live_sites/src/platforms/chzzk/chzzk_site.dart';
 import 'package:live_sites/src/platforms/douyin/api/douyin_http.dart';
 import 'package:live_sites/src/platforms/douyin/douyin_site.dart';
 import 'package:live_sites/src/platforms/douyu/api/douyu_http.dart';
+import 'package:live_sites/src/platforms/douyu/douyu_login_store.dart';
 import 'package:live_sites/src/platforms/douyu/douyu_site.dart';
 import 'package:live_sites/src/platforms/fc2live/api/fc2live_http.dart';
 import 'package:live_sites/src/platforms/fc2live/fc2live_site.dart';
@@ -68,10 +69,13 @@ import 'package:live_sites/src/platforms/yy/yy_site.dart';
 /// Only platforms implemented against this contract belong here; an
 /// unimplemented platform is not registered. The application composition
 /// root calls this and hands the result to `LiveSiteRegistry`.
-List<LiveSite> createBuiltInLiveSites({LiveHttp? http}) {
+/// [douyuLogin] is the douyu renewal seam (see [DouyuLoginStore]): the app
+/// hands its secret store in so stored logins renew themselves before they
+/// end; null makes every douyu request a guest, exactly as before.
+List<LiveSite> createBuiltInLiveSites({LiveHttp? http, DouyuLoginStore? douyuLogin}) {
   final transport = http ?? DioFactory().create();
   return <LiveSite>[
-    DouyuSite(http: DouyuHttp(transport)),
+    DouyuSite(http: DouyuHttp(transport), login: douyuLogin),
     HuyaSite(http: HuyaHttp(transport)),
     DouyinSite(http: DouyinHttp(transport)),
     BilibiliSite(http: BilibiliHttp(transport)),

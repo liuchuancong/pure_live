@@ -6,7 +6,7 @@ import 'support/fakes.dart';
 
 void main() {
   group('capture-safe naming', () {
-    const naming = RecordNaming(rootDirectory: '/rec');
+    final naming = RecordNaming(rootDirectory: '/rec');
     final started = DateTime(2026, 10, 14, 22, 40);
 
     test('ffmpeg only ever sees an ASCII path', () {
@@ -44,7 +44,7 @@ void main() {
     });
 
     test('the identifier style drops pinyin entirely', () {
-      const byId = RecordNaming(rootDirectory: '/rec', anchorDirectoryStyle: AnchorDirectoryStyle.identifier);
+      final byId = RecordNaming(rootDirectory: '/rec', anchorDirectoryStyle: AnchorDirectoryStyle.identifier);
       final paths = byId.paths(
         taskId: 'rec_1',
         platformId: 'douyin',

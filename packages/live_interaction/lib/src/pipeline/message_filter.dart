@@ -38,8 +38,14 @@ typedef MessagePredicate = bool Function(LiveMessage message);
 /// an invalid pattern is ignored rather than throwing at match time.
 final class MessageFilter {
   /// A filter over [rules]; [dropPureEmoji] removes messages that are
-  /// nothing but emotes/whitespace.
-  new({required List<BlockRule> rules, this.dropPureEmoji = true}) {
+  /// nothing but emotes/whitespace, and [collapseRepeated] keeps only the
+  /// first copy of a text seen again within [repeatedWindow].
+  new({
+    required List<BlockRule> rules,
+    this.dropPureEmoji = true,
+    this.collapseRepeated = false,
+    this.repeatedWindow = const Duration(seconds: 10),
+  }) {
     for (final rule in rules) {
       switch (rule.kind) {
         case BlockKind.user:
@@ -55,14 +61,46 @@ final class MessageFilter {
     }
   }
 
-  /// Whether pure-emoji messages are dropped.
-  final bool dropPureEmoji;
+  /// Whether pure-emoji messages are dropped. Mutable: the room's danmaku
+  /// settings apply live, and a re-created filter would drop the
+  /// deduplication memory below.
+  bool dropPureEmoji;
+
+  /// Whether an identical text from a *different* sender inside the window
+  /// is dropped (the reference's 合并短时间内的相同弹幕).
+  bool collapseRepeated;
+
+  /// How long a text stays remembered for [collapseRepeated].
+  Duration repeatedWindow;
+
+  /// user|text → when its first copy passed, for the collapse window.
+  final Map<String, DateTime> _recent = {};
 
   final Set<String> _users = {};
   final List<RegExp> _keywords = [];
   final Set<String> _plain = {};
 
-  static final RegExp _emoji = RegExp(r'^[\s\[\w\-:：]{0,8}$');
+  /// What may be left of a pure-emote chat once its emote codes are
+  /// removed: whitespace and punctuation, nothing you could read.
+  static final RegExp _spacers = RegExp(r'^[\s\[\]()（）\-—_:：.,!?。，！？~～*]*$');
+
+  /// Blocks [name] as a sender from now on (the room's long-press 屏蔽 writes
+  /// here and into the stored list — the running session picks it up without
+  /// a reconnect).
+  void addUser(String name) {
+    _users.add(name.toLowerCase());
+  }
+
+  /// Blocks [pattern] from now on: a `/regex/` spelling compiles, anything
+  /// else matches plain text.
+  void addKeyword(String pattern) {
+    final regex = _compile(pattern);
+    if (regex != null) {
+      _keywords.add(regex);
+    } else {
+      _plain.add(pattern.toLowerCase());
+    }
+  }
 
   /// Whether [message] may be shown.
   bool allows(LiveMessage message) {
@@ -85,6 +123,20 @@ final class MessageFilter {
     if (dropPureEmoji && _isPureEmoji(message)) {
       return false;
     }
+    if (collapseRepeated && message.type == LiveMessageType.chat) {
+      final now = DateTime.now();
+      // Local and system messages keep their own copy (the reference's
+      // note); among platform chats the same text collapses whoever sent it.
+      final key = text.toLowerCase();
+      final seen = _recent[key];
+      if (seen != null && now.difference(seen) <= repeatedWindow) {
+        return false;
+      }
+      _recent[key] = now;
+      if (_recent.length > 500) {
+        _recent.removeWhere((_, at) => now.difference(at) > repeatedWindow);
+      }
+    }
     return true;
   }
 
@@ -97,7 +149,7 @@ final class MessageFilter {
     for (final emote in message.emotes) {
       stripped = stripped.replaceAll(emote.code, '');
     }
-    return _emoji.hasMatch(stripped);
+    return _spacers.hasMatch(stripped);
   }
 
   static RegExp? _compile(String pattern) {

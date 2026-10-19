@@ -95,14 +95,17 @@ enum AnchorDirectoryStyle {
 
 /// Builds [RecordPaths] for tasks under one root directory.
 final class RecordNaming {
-  /// Creates the naming layer.
-  const new({required this.rootDirectory, this.anchorDirectoryStyle = AnchorDirectoryStyle.pinyin});
+  /// Creates the naming layer. Not const: [anchorDirectoryStyle] is edited
+  /// live by the recorder settings.
+  new({required this.rootDirectory, this.anchorDirectoryStyle = AnchorDirectoryStyle.pinyin});
 
   /// Root every recording lives under.
   final String rootDirectory;
 
-  /// Which ASCII form the anchor directory takes.
-  final AnchorDirectoryStyle anchorDirectoryStyle;
+  /// Which ASCII form the anchor directory takes. Mutable: the recorder
+  /// settings' 拼音命名 edit reaches the next created task without re-opening
+  /// the runtime, which would stop the recordings already running.
+  AnchorDirectoryStyle anchorDirectoryStyle;
 
   static final Random _entropy = Random.secure();
 

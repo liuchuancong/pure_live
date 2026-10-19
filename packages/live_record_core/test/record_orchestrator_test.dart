@@ -4,7 +4,7 @@ import 'package:test/test.dart';
 import 'support/fakes.dart';
 
 void main() {
-  const naming = RecordNaming(rootDirectory: '/rec');
+  final naming = RecordNaming(rootDirectory: '/rec');
 
   RecordOrchestrator build({required FakeServices services, required RecordStore store, RecordPolicy? policy}) {
     final orchestrator = RecordOrchestrator(

@@ -55,10 +55,11 @@ final class RecordOrchestrator {
     required this.services,
     required this.store,
     required this.naming,
-    this.policy = const RecordPolicy(),
+    RecordPolicy? policy,
     DateTime Function()? now,
     Random? random,
-  }) : _now = now ?? DateTime.now,
+  }) : policy = policy ?? RecordPolicy(),
+       _now = now ?? DateTime.now,
        _random = random ?? Random();
 
   /// The outside world: probe, capture, files, guard, notices.
@@ -304,7 +305,9 @@ final class RecordOrchestrator {
   }
 
   Future<void> _whileLive(RecordTask task, RoomProbe probe) async {
-    final run = _running.putIfAbsent(task.taskId, () => _Running(task))..probeFailures = 0;
+    final run = _running.putIfAbsent(task.taskId, () => _Running(task))
+      ..probeFailures = 0
+      ..offlinePolls = 0;
 
     if (!probe.isCaptureable) {
       await _afterProbeFailure(task, 'the room says live but returned no address');
@@ -362,6 +365,7 @@ final class RecordOrchestrator {
 
   Future<void> _whileOffline(RecordTask task, RoomProbe probe) async {
     final run = _running.putIfAbsent(task.taskId, () => _Running(task))..probeFailures = 0;
+    run.offlinePolls++;
 
     final endedSession = task.sawLive && task.status != RecordStatus.completed;
     _set(task, roomState: endedSession ? RoomState.ended : RoomState.waiting);
@@ -384,7 +388,16 @@ final class RecordOrchestrator {
       await _announce(task, RecordNoticeKind.liveEnded, '直播已结束');
     }
 
-    _schedule(task, task.hasOutstandingWork ? policy.recheckInterval : _jitteredPoll());
+    // Polling off (the recorder settings' 开播检测): a room that has never been
+    // seen live is not asked again on a timer — the task waits until the host
+    // re-watches it or a launch resumes waiting tasks. A room this session saw
+    // live keeps being watched either way: noticing its close is what lets the
+    // segments be joined and re-detects the next broadcast.
+    if (!policy.enablePolling && !task.sawLive) {
+      return;
+    }
+
+    _schedule(task, task.hasOutstandingWork ? policy.recheckInterval : _jitteredPoll(task));
   }
 
   /// The capture ended by itself: the stream closed, or the room went away.
@@ -404,7 +417,7 @@ final class RecordOrchestrator {
 
     if (task.failureCount + 1 > policy.maxCaptureFailures) {
       await _finish(task);
-      _schedule(task, _jitteredPoll());
+      _schedule(task, _jitteredPoll(task));
       return;
     }
 
@@ -453,7 +466,7 @@ final class RecordOrchestrator {
 
     if (task.failureCount + 1 > policy.maxCaptureFailures) {
       await _finish(task);
-      _schedule(task, _jitteredPoll());
+      _schedule(task, _jitteredPoll(task));
       return;
     }
 
@@ -469,7 +482,7 @@ final class RecordOrchestrator {
 
     if (task.failureCount >= policy.maxCaptureFailures) {
       await _finish(task);
-      _schedule(task, _jitteredPoll());
+      _schedule(task, _jitteredPoll(task));
       return;
     }
 
@@ -655,12 +668,21 @@ final class RecordOrchestrator {
     return free >= policy.diskFloorBytes;
   }
 
-  Duration _jitteredPoll() {
-    if (policy.pollJitter <= Duration.zero) {
-      return policy.pollInterval;
+  /// The wait before the next check of a room that is not up: the ordinary
+  /// interval, doubled once per consecutive offline answer while
+  /// [RecordPolicy.pollBackoff] is on (capped at `maxPollInterval`), plus the
+  /// anti-rate-limit jitter.
+  Duration _jitteredPoll(RecordTask task) {
+    final offlinePolls = _running[task.taskId]?.offlinePolls ?? 0;
+    var base = policy.pollInterval;
+    if (policy.pollBackoff && offlinePolls > 1 && policy.maxPollInterval > base) {
+      final doubled = base * (1 << min(offlinePolls - 1, 16));
+      base = doubled > policy.maxPollInterval ? policy.maxPollInterval : doubled;
     }
-
-    return policy.pollInterval + Duration(milliseconds: _random.nextInt(policy.pollJitter.inMilliseconds + 1));
+    if (policy.pollJitter <= Duration.zero) {
+      return base;
+    }
+    return base + Duration(milliseconds: _random.nextInt(policy.pollJitter.inMilliseconds + 1));
   }
 
   void _set(
@@ -792,5 +814,9 @@ final class _Running {
   RecordProgress lastProgress = const RecordProgress(mediaTime: Duration.zero, bytes: 0, segments: 0);
   int stallTicks = 0;
   int probeFailures = 0;
+
+  /// Consecutive offline answers, the backoff's exponent; reset when the
+  /// room is seen live.
+  int offlinePolls = 0;
   bool stoppedByHost = false;
 }

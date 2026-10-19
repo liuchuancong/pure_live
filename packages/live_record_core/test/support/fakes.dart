@@ -105,6 +105,9 @@ class FakeServices implements RecordServices {
 
   int _probeIndex = 0;
 
+  /// How many probes have been answered so far.
+  int get probeCount => _probeIndex;
+
   /// Re-arms the probe sequence, for a test that needs the same script twice.
   void resetProbe() => _probeIndex = 0;
 

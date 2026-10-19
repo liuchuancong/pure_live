@@ -26,6 +26,9 @@ abstract final class SecretRefs {
   /// Douyu's passport device id.
   static const String douyuDid = 'cookie/douyu.did';
 
+  /// When Douyu's login cookie was saved or last renewed.
+  static const String douyuSavedAt = 'cookie/douyu.savedAt';
+
   /// A remembered sign-in [uid] on platform [site].
   static String account(String site, int uid) => 'account/${site.trim().toLowerCase()}/$uid';
 

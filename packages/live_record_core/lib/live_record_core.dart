@@ -7,7 +7,7 @@
 /// final orchestrator = RecordOrchestrator(
 ///   services: MyRecordServices(),   // capture, probe, files, guard, notices
 ///   store: RecordJsonStore(mySlots),
-/// )..naming = const RecordNaming(rootDirectory: '/sdcard/…/recordings');
+/// )..naming = RecordNaming(rootDirectory: '/sdcard/…/recordings');
 ///
 /// final left = await orchestrator.restore();      // joins and names what a crash left
 /// await orchestrator.watch(
