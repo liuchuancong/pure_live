@@ -11,6 +11,7 @@ import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/features/settings/widgets/settings_chooser.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/list_loading.dart';
+import 'package:pure_live/shared/widgets/room_grid.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The watch history, in the reference's v5 shape (A09.9): "观看记录" with
@@ -309,7 +310,10 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
                       placeholder: t.history.filterHint,
                       prefix: const Icon(Icons.filter_alt_outlined, size: 18),
                       suffix: shown.length != records.length
-                          ? Text(t.history.filterMatches(count: shown.length), style: PureTheme.of(context).text.caption)
+                          ? Text(
+                              t.history.filterMatches(count: shown.length),
+                              style: PureTheme.of(context).text.caption,
+                            )
                           : null,
                     ),
                   ),
@@ -319,7 +323,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
         body: Stack(
           children: [
             Positioned.fill(
-              child: switch (( _loaded, records.isEmpty, shown.isEmpty)) {
+              child: switch ((_loaded, records.isEmpty, shown.isEmpty)) {
                 (false, _, _) => FeedLoadingPlaceholder(
                   delegateBuilder: (width) => RoomGridMetrics.delegateFor(context, width),
                 ),
@@ -366,14 +370,12 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
             ),
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: PureSpacing.sm),
-              sliver: SliverGrid(
-                gridDelegate: RoomGridMetrics.delegateFor(context, constraints.maxWidth),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) => _HistoryTile(
-                    record: group.records[index],
-                    onRemove: () => unawaited(_confirmRemove(group.records[index])),
-                  ),
-                  childCount: group.records.length,
+              sliver: SliverRoomGrid(
+                width: constraints.maxWidth,
+                itemCount: group.records.length,
+                itemBuilder: (context, index) => _HistoryTile(
+                  record: group.records[index],
+                  onRemove: () => unawaited(_confirmRemove(group.records[index])),
                 ),
               ),
             ),

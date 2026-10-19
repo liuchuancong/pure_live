@@ -15,6 +15,7 @@ import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/features/search/search_providers.dart';
 import 'package:pure_live/features/search/web_search_url.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/widgets/room_grid.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -520,20 +521,13 @@ final class _SitePaneState extends State<_SitePane> with AutomaticKeepAliveClien
           ),
         ],
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) => GridView.builder(
-          controller: _scroll,
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.fromLTRB(PureSpacing.sm, PureSpacing.xs, PureSpacing.sm, PureSpacing.xl),
-          gridDelegate: RoomGridMetrics.delegateFor(context, constraints.maxWidth),
-          itemCount: state.items.length + 1,
-          itemBuilder: (context, index) {
-            if (index < state.items.length) {
-              return SearchResultTile(result: state.items[index]);
-            }
-            return state.isLoadingMore ? const Center(child: PureSpinner()) : const SizedBox.shrink();
-          },
-        ),
+      child: RoomGrid(
+        scrollController: _scroll,
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.fromLTRB(PureSpacing.sm, PureSpacing.xs, PureSpacing.sm, PureSpacing.xl),
+        itemCount: state.items.length,
+        itemBuilder: (context, index) => SearchResultTile(result: state.items[index]),
+        footer: state.isLoadingMore ? const Center(child: PureSpinner()) : null,
       ),
     );
   }
@@ -740,15 +734,12 @@ final class _AllSitesPaneState extends State<_AllSitesPane> with AutomaticKeepAl
               ),
             )
         else
-          LayoutBuilder(
-            builder: (context, constraints) => GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: EdgeInsets.zero,
-              gridDelegate: RoomGridMetrics.delegateFor(context, constraints.maxWidth),
-              itemCount: state.items.length,
-              itemBuilder: (context, index) => SearchResultTile(result: state.items[index]),
-            ),
+          RoomGrid(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            itemCount: state.items.length,
+            itemBuilder: (context, index) => SearchResultTile(result: state.items[index]),
           ),
       ],
     );

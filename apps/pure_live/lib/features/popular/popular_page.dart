@@ -18,6 +18,7 @@ import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/rooms/paging.dart';
 import 'package:pure_live/shared/widgets/list_loading.dart';
+import 'package:pure_live/shared/widgets/room_grid.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// Popular, in the reference's v5 shape (A09.2): one tab per visible,
@@ -83,12 +84,14 @@ final class _PopularPageState extends ConsumerState<PopularPage> {
     final preferences = ref.watch(appPreferencesProvider);
     final sites = ref
         .watch(sitesProvider)
-        .registry.all
+        .registry
+        .all
         .where((site) => site.capability<LiveDiscoveryProvider>() != null)
         .toList();
-    final visible = HotAreasPage.orderedSites(sites, preferences.siteOrder)
-        .where((site) => !preferences.hiddenSiteIds.contains(site.manifest.id))
-        .toList();
+    final visible = HotAreasPage.orderedSites(
+      sites,
+      preferences.siteOrder,
+    ).where((site) => !preferences.hiddenSiteIds.contains(site.manifest.id)).toList();
     final phoneTab = MainPageFrame.showsHomeBarButtons(context, inHome: true);
     final index = visible.isEmpty ? 0 : _selected.clamp(0, visible.length - 1);
     if (_currentId == null && visible.isNotEmpty) {
@@ -222,7 +225,11 @@ class _PlatformPicker extends StatelessWidget {
                     unawaited(const HotAreasRoute().push<void>(context));
                   },
                 ),
-                PureIconButton(icon: Icons.close_rounded, tooltip: t.common.close, onPressed: () => Navigator.of(context).pop()),
+                PureIconButton(
+                  icon: Icons.close_rounded,
+                  tooltip: t.common.close,
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
               ],
             ),
           ),
@@ -296,10 +303,7 @@ class _PlatformTile extends StatelessWidget {
                       CircleAvatar(
                         radius: 18,
                         backgroundColor: theme.colors.fillTertiary,
-                        child: Text(
-                          name.characters.first,
-                          style: theme.text.title.copyWith(color: theme.colors.text),
-                        ),
+                        child: Text(name.characters.first, style: theme.text.title.copyWith(color: theme.colors.text)),
                       ),
                       if (selected)
                         Positioned(
@@ -593,32 +597,26 @@ final class _SiteFeedState extends ConsumerState<_SiteFeed>
           )
         : state.items;
 
-    Widget grid() => LayoutBuilder(
-      builder: (context, constraints) => GridView.builder(
-        controller: _scroll,
-        padding: EdgeInsets.fromLTRB(gutter, PureSpacing.sm, gutter, PureSpacing.xl),
-        gridDelegate: RoomGridMetrics.delegateFor(
-          context,
-          constraints.maxWidth,
-          coverAspect: coverAspect,
-          gutter: gutter,
-        ),
-        itemCount: shown.length + (desktop ? 0 : 1),
-        itemBuilder: (context, index) {
-          if (index < shown.length) {
-            final room = shown[index];
-            return RoomCard(
-              room: room,
-              onOpen: () => RoomRoute(
-                siteId: room.ref.platform,
-                roomId: room.ref.roomId,
-                roomName: room.content.title,
-              ).push<void>(context),
-            );
-          }
-          return state.isLoadingMore ? const Center(child: PureSpinner()) : const SizedBox.shrink();
-        },
-      ),
+    Widget grid() => RoomGrid(
+      scrollController: _scroll,
+      padding: EdgeInsets.fromLTRB(gutter, PureSpacing.sm, gutter, PureSpacing.xl),
+      itemCount: shown.length,
+      itemBuilder: (context, index) {
+        final room = shown[index];
+        return RoomCard(
+          room: room,
+          onOpen: () => RoomRoute(
+            siteId: room.ref.platform,
+            roomId: room.ref.roomId,
+            roomName: room.content.title,
+          ).push<void>(context),
+        );
+      },
+      // A phone has no pager row to press, so the end of the list is where the
+      // next page announces itself — as a row of its own, not as one more card:
+      // in a waterfall a spinner that is a tile sits in one column at half the
+      // window's width.
+      footer: !desktop && state.isLoadingMore ? const Center(child: PureSpinner()) : null,
     );
 
     // The floating to-top/to-bottom buttons answer to the same setting on

@@ -10,10 +10,18 @@ import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/formatters/formatters.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
-/// Shared geometry for the room grids (3.x `room_card_layout.dart`): the
-/// column count reacts to the window's width and every tile reserves a
-/// cover of the room-card aspect preference plus a caption tall enough for
-/// its two text lines.
+/// Shared geometry for the room grids (3.x `room_card_layout.dart`).
+///
+/// The **column ladder** is the live one: it reacts to the window's width and
+/// both the waterfall ([`RoomGrid`]) and the loading placeholder read it, so the
+/// skeleton and the cards it stands in for break at the same widths.
+///
+/// The **height** half — [mainAxisExtent], [delegateFor] — is only what a
+/// placeholder has to draw: the real grid lays its cards content-sized and never
+/// asks for an estimate. It is kept because a skeleton needs a box to put its
+/// bones in, and because the widths the two agree on are the point; the height it
+/// computes is an approximation, measured out of the sizes below rather than from
+/// a laid-out card.
 ///
 /// Both ladders are anchored to the adaptive width classes (600 / 1024 / 1440)
 /// rather than ad-hoc thresholds, so the cards re-flow at exactly the widths

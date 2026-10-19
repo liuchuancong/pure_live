@@ -16,6 +16,7 @@ import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/rooms/paging.dart';
 import 'package:pure_live/shared/widgets/list_loading.dart';
+import 'package:pure_live/shared/widgets/room_grid.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The page width from which the platform tabs join the status tabs in the
@@ -136,14 +137,18 @@ final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefr
     final tagId = _tagId;
     final records = _repository.rooms;
     if (tagId == null) return records;
-    return [for (final record in records) if (record.groupIds.contains(tagId)) record];
+    return [
+      for (final record in records)
+        if (record.groupIds.contains(tagId)) record,
+    ];
   }
 
   /// The rooms of one status group on one platform (the reference's
   /// `roomsFor`).
   List<LibraryRoom> _roomsFor(LiveFollowGroup group, String platform) => [
     for (final record in _tagged)
-      if (record.room.broadcast.followGroup == group && (platform == _allPlatforms || record.room.ref.platform == platform))
+      if (record.room.broadcast.followGroup == group &&
+          (platform == _allPlatforms || record.room.ref.platform == platform))
         record,
   ];
 
@@ -165,11 +170,10 @@ final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefr
     // Both tab rows show their numbers, counted within the other row's
     // selection (the reference's groupCounts).
     final statusCounts = [
-      for (final group in LiveFollowGroup.values) _roomsFor(group, _platforms[_platform.clamp(0, _platforms.length - 1)]).length,
+      for (final group in LiveFollowGroup.values)
+        _roomsFor(group, _platforms[_platform.clamp(0, _platforms.length - 1)]).length,
     ];
-    final platformCounts = [
-      for (final id in _platforms) _roomsFor(_group, id).length,
-    ];
+    final platformCounts = [for (final id in _platforms) _roomsFor(_group, id).length];
 
     final statusTabs = PureTabs(
       tabs: [
@@ -182,7 +186,8 @@ final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefr
     );
     final platformTabs = PureTabs(
       tabs: [
-        for (var index = 0; index < _platforms.length; index++) PureTab(label: '${_platformLabel(_platforms[index])} ${platformCounts[index]}'),
+        for (var index = 0; index < _platforms.length; index++)
+          PureTab(label: '${_platformLabel(_platforms[index])} ${platformCounts[index]}'),
       ],
       index: _platform.clamp(0, _platforms.length - 1),
       onChanged: (index) => setState(() => _platform = index),
@@ -235,24 +240,19 @@ final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefr
     final Widget content;
     if (!_loaded) {
       content = FeedLoadingPlaceholder(
-        delegateBuilder: (width) => RoomGridMetrics.delegateFor(context, width, coverAspect: ref.watch(roomCardStyleProvider).aspect.ratio),
+        delegateBuilder: (width) =>
+            RoomGridMetrics.delegateFor(context, width, coverAspect: ref.watch(roomCardStyleProvider).aspect.ratio),
       );
     } else if (tagged.isEmpty) {
       content = PureEmpty(
         title: t.follow.empty,
         icon: Icons.favorite_border,
-        action: PureButton(
-          label: t.tabs.search,
-          onPressed: () => HomeAction.search.run(context),
-        ),
+        action: PureButton(label: t.tabs.search, onPressed: () => HomeAction.search.run(context)),
       );
     } else {
       content = Column(
         children: [
-          _TagStrip(
-            selectedId: _tagId,
-            onSelected: (id) => setState(() => _tagId = id),
-          ),
+          _TagStrip(selectedId: _tagId, onSelected: (id) => setState(() => _tagId = id)),
           Expanded(
             child: PureTabView(
               index: _platform.clamp(0, _platforms.length - 1),
@@ -395,10 +395,7 @@ class _TagStrip extends ConsumerWidget {
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 12),
-        children: [
-          chip(null, context.t.follow.all),
-          for (final group in groups) chip(group.id, group.name),
-        ],
+        children: [chip(null, context.t.follow.all), for (final group in groups) chip(group.id, group.name)],
       ),
     );
   }
@@ -508,7 +505,6 @@ class _FollowGridState extends ConsumerState<_FollowGrid> {
           ),
         );
       }
-      final coverAspect = ref.watch(roomCardStyleProvider).aspect.ratio;
       return LayoutBuilder(
         builder: (context, constraints) {
           final listWidth = constraints.maxWidth;
@@ -525,16 +521,12 @@ class _FollowGridState extends ConsumerState<_FollowGrid> {
               ),
             );
           }
-          return GridView.builder(
-            controller: _scroll,
+          return RoomGrid(
+            scrollController: _scroll,
             padding: EdgeInsets.fromLTRB(gutter, PureSpacing.sm, gutter, PureSpacing.xxl),
-            gridDelegate: RoomGridMetrics.delegateFor(
-              context,
-              listWidth,
-              coverAspect: coverAspect,
-              columns: RoomGridMetrics.favouriteColumnsFor(listWidth),
-              gutter: gutter,
-            ),
+            // The favourites ladder reads one card wider than the discovery grid
+            // at the same width; the cards themselves set their own height.
+            columns: RoomGridMetrics.favouriteColumnsFor(listWidth),
             itemCount: rooms.length,
             itemBuilder: (context, index) {
               final record = rooms[index];
