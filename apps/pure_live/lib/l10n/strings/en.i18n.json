@@ -36,7 +36,9 @@
   },
   "tray": {
     "show": "Show Pure Live",
-    "quit": "Quit"
+    "hide": "Hide window",
+    "recordingCount": "Recording {count} room(s)",
+    "tooltipRecording": "Pure Live · recording {count} room(s)"
   },
   "login": {
     "title": "Sign in",

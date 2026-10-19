@@ -43,7 +43,9 @@
   },
   "tray": {
     "show": "显示主界面",
-    "quit": "退出"
+    "hide": "隐藏主界面",
+    "recordingCount": "正在录制 {count} 个直播间",
+    "tooltipRecording": "Pure Live · 正在录制 {count} 个直播间"
   },
   "login": {
     "title": "扫码登录",

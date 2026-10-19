@@ -53,6 +53,29 @@ final desktopInstanceChannelProvider = Provider<InstanceChannel?>((ref) => null)
 /// without a window to raise.
 final revealMainWindowProvider = Provider<Future<void> Function()>((ref) => () async {});
 
+/// The desktop tray's receiving end: what the rest of the app tells the
+/// notification-area icon when it has no other way to know. The recorder
+/// reports how many rooms it still works for here, and the tray says it in
+/// its menu's first row and its tooltip (the reference's A16.1 T4).
+abstract interface class DesktopTrayPort {
+  /// How many rooms are recording right now.
+  void reportRecordingCount(int count);
+}
+
+/// The port that keeps no tray: every platform without a notification area,
+/// every test, and the run where the tray refused to be created.
+final class NoopDesktopTrayPort implements DesktopTrayPort {
+  /// A port that drops the counts.
+  const new();
+
+  @override
+  void reportRecordingCount(int count) {}
+}
+
+/// The [DesktopTrayPort]; the composition root overrides it with the desktop
+/// entry, which forwards to the live tray.
+final desktopTrayPortProvider = Provider<DesktopTrayPort>((ref) => const NoopDesktopTrayPort());
+
 /// The title-bar mode this start was launched with.
 ///
 /// Read from the store once: the native frame helper behind the self-drawn

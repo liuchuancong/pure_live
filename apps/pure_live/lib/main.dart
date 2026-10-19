@@ -149,6 +149,9 @@ Future<void> main(List<String> args) async {
         // This run's frame, as the native layer actually set it up — not the
         // stored preference, which may already name the mode for the next start.
         if (desktopEntry != null) windowChromeProvider.overrideWithValue(desktopEntry.windowChrome),
+        // The tray's recording row: the recorder reports its live count to
+        // the desktop entry, which forwards it to the icon's menu and hint.
+        if (desktopEntry != null) desktopTrayPortProvider.overrideWithValue(desktopEntry),
         // The countdown close exits through the desktop shell's own quit —
         // the graceful path that runs the app shutdown and destroys the
         // window — and through the framework's navigator pop elsewhere.

@@ -148,6 +148,9 @@ class _Translations$tray$en extends Translations$tray$zh {
 	// Translations
 	@override String get show => 'Show Pure Live';
 	@override String get quit => 'Quit';
+	@override String get hide => 'Hide window';
+	@override String recordingCount({required Object count}) => 'Recording ${count} room(s)';
+	@override String tooltipRecording({required Object count}) => 'Pure Live · recording ${count} room(s)';
 }
 
 // Path: login
@@ -1200,6 +1203,9 @@ extension on TranslationsEn {
 			'common.addOne' => 'Add',
 			'tray.show' => 'Show Pure Live',
 			'tray.quit' => 'Quit',
+			'tray.hide' => 'Hide window',
+			'tray.recordingCount' => ({required Object count}) => 'Recording ${count} room(s)',
+			'tray.tooltipRecording' => ({required Object count}) => 'Pure Live · recording ${count} room(s)',
 			'login.title' => 'Sign in',
 			'login.generating' => 'Generating QR code',
 			'login.waitingScan' => 'Waiting for scan',

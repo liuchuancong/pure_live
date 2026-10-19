@@ -7,6 +7,7 @@ import 'package:live_shell/live_shell.dart';
 
 import 'package:pure_live/app/navigation/app_navigator_key.dart';
 import 'package:pure_live/app/preferences/app_preferences.dart';
+import 'package:pure_live/app/providers/app_providers.dart' show DesktopTrayPort;
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/platforms/desktop/shell/close_prompt.dart';
 import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart';
@@ -24,7 +25,7 @@ import 'package:window_manager/window_manager.dart';
 /// straight to [resolveCloseDisposition], which still weighs the tray's
 /// health (a hidden window nothing can bring back is a lost window) and an
 /// in-flight quit.
-final class DesktopEntry with WindowListener {
+final class DesktopEntry with WindowListener implements DesktopTrayPort {
   /// Prepares the desktop window for [kind]; [onQuitRequest] runs the app's
   /// own shutdown (storage, log) before the window goes away. The shell
   /// preferences carry the remembered choices (title-bar mode, close action)
@@ -70,7 +71,9 @@ final class DesktopEntry with WindowListener {
 
   late final AppTray _tray = AppTray(
     onShow: show,
+    onHide: _hide,
     onQuit: () => unawaited(quit()),
+    windowVisible: windowManager.isVisible,
     onCreateError: (error) => _log?.warning('tray icon did not appear', fields: {'error': '$error'}),
   );
   bool _trayUp = false;
@@ -109,7 +112,19 @@ final class DesktopEntry with WindowListener {
   Future<void> show() async {
     await windowManager.show();
     await windowManager.focus();
+    await _tray.setWindowVisible(visible: true);
   }
+
+  /// Takes the window away without quitting — the tray's own hide row. The
+  /// close-to-hide disposition goes through [_applyClose] and reports here
+  /// too, so the menu's next word is always the truth.
+  Future<void> _hide() async {
+    await windowManager.hide();
+    await _tray.setWindowVisible(visible: false);
+  }
+
+  @override
+  void reportRecordingCount(int count) => unawaited(_tray.setRecordingCount(count));
 
   /// The quit flow: app shutdown first, then tray and window. Idempotent —
   /// the close button and the tray can both ask.
@@ -176,7 +191,7 @@ final class DesktopEntry with WindowListener {
     );
     switch (disposition) {
       case CloseDisposition.hide:
-        await windowManager.hide();
+        await _hide();
       case CloseDisposition.minimise:
         await windowManager.minimize();
       case CloseDisposition.destroy:

@@ -208,6 +208,10 @@ class Translations$tray$zh {
 
 	/// zh: '退出'
 	String get quit => '退出';
+	/// zh: '隐藏主界面'
+	String get hide => '隐藏主界面';
+	String recordingCount({required Object count}) => '正在录制 ${count} 个直播间';
+	String tooltipRecording({required Object count}) => 'Pure Live · 正在录制 ${count} 个直播间';
 }
 
 // Path: login
@@ -2746,6 +2750,9 @@ extension on Translations {
 			'common.addOne' => '添加',
 			'tray.show' => '显示主界面',
 			'tray.quit' => '退出',
+			'tray.hide' => '隐藏主界面',
+			'tray.recordingCount' => ({required Object count}) => '正在录制 ${count} 个直播间',
+			'tray.tooltipRecording' => ({required Object count}) => 'Pure Live · 正在录制 ${count} 个直播间',
 			'login.title' => '扫码登录',
 			'login.generating' => '生成二维码中',
 			'login.waitingScan' => '等待扫描',
