@@ -5,8 +5,6 @@ import 'package:live_sites/live_sites.dart';
 import 'package:live_sites/src/platforms/douyu/api/douyu_http.dart';
 import 'package:live_sites/src/platforms/douyu/danmaku/douyu_danmaku_session.dart';
 import 'package:live_sites/src/platforms/douyu/danmaku/douyu_stt_codec.dart';
-import 'package:live_sites/src/platforms/douyu/douyu_site.dart';
-import 'package:live_sites/src/platforms/douyu/parsers/douyu_account.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_gift_parser.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_play_parser.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_room_parser.dart';

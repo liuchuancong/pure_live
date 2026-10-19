@@ -188,15 +188,3 @@ icons_launcher:
       enable: true
 
 
-ffmpeg_kit_extended_config:
-  type: "base" # pre-bundled builds: debug, base, full, audio, video, video_hw
-  gpl: true # enable to include GPL libraries. WARNING: Make sure you understand what GPL license means before enabling. Check https://www.ffmpeg.org/legal.html for more information.
-  small: true # enable to use smaller builds
-  # == OR ==
-  # -------------------------------------------------------------
-  # You can specify remote or local path to libffmpegkit libraries for each platform
-  # This allows you to deploy custom builds of libffmpegkit.
-  # See: https://github.com/akashskypatel/ffmpeg-kit-builders
-  # Example:
-  # windows: "path/to/ffmpeg-kit/libraries"
-  # ios: "https://path/to/bundle.xcframework.zip"

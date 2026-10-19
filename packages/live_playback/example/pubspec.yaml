@@ -20,7 +20,10 @@ dependencies:
   # Path rather than a version: media_core is not a pub.dev package. In a real
   # app this is the same line, pointing at the checkout you build against.
   media_core:
-    path: ../../../../../media_core/packages/media_core
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core
+      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c
 
 dev_dependencies:
   flutter_test:

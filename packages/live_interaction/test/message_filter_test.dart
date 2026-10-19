@@ -7,24 +7,35 @@ LiveMessage _chat(
   String user = 'viewer',
   List<LiveEmote> emotes = const [],
   LiveMessageType type = LiveMessageType.chat,
-}) => LiveMessage(type: type, text: text, sender: MessageSender(userName: user), emotes: emotes);
+}) => LiveMessage(
+  type: type,
+  text: text,
+  sender: MessageSender(userName: user),
+  emotes: emotes,
+);
 
 void main() {
   group('block rules', () {
     test('a keyword rule drops the text containing it', () {
-      final filter = MessageFilter(rules: [const BlockRule(kind: BlockKind.keyword, pattern: '广告')]);
+      final filter = MessageFilter(
+        rules: [const BlockRule(kind: BlockKind.keyword, pattern: '广告')],
+      );
       expect(filter.allows(_chat('免费领 广告 链接')), isFalse);
       expect(filter.allows(_chat('今天播什么')), isTrue);
     });
 
     test('a /regex/ rule matches as a pattern', () {
-      final filter = MessageFilter(rules: [const BlockRule(kind: BlockKind.keyword, pattern: r'/^出\d+$/')]);
+      final filter = MessageFilter(
+        rules: [const BlockRule(kind: BlockKind.keyword, pattern: r'/^出\d+$/')],
+      );
       expect(filter.allows(_chat('出12')), isFalse);
       expect(filter.allows(_chat('不出12')), isTrue);
     });
 
     test('a user rule matches the sender name case-insensitively', () {
-      final filter = MessageFilter(rules: [const BlockRule(kind: BlockKind.user, pattern: 'Spammer')]);
+      final filter = MessageFilter(
+        rules: [const BlockRule(kind: BlockKind.user, pattern: 'Spammer')],
+      );
       expect(filter.allows(_chat('hello', user: 'SPAMMER')), isFalse);
       expect(filter.allows(_chat('hello')), isTrue);
     });
@@ -40,9 +51,9 @@ void main() {
     });
 
     test('addKeyword matches plain words and the /regex/ spelling', () {
-      final filter = MessageFilter(rules: const []);
-      filter.addKeyword('刷屏');
-      filter.addKeyword(r'/^出\d+$/');
+      final filter = MessageFilter(rules: const [])
+        ..addKeyword('刷屏')
+        ..addKeyword(r'/^出\d+$/');
       expect(filter.allows(_chat('别刷屏了')), isFalse);
       expect(filter.allows(_chat('出7')), isFalse);
       expect(filter.allows(_chat('你好')), isTrue);
@@ -84,7 +95,11 @@ void main() {
     });
 
     test('the same text after the window passes again', () async {
-      final filter = MessageFilter(rules: const [], collapseRepeated: true, repeatedWindow: const Duration(milliseconds: 30));
+      final filter = MessageFilter(
+        rules: const [],
+        collapseRepeated: true,
+        repeatedWindow: const Duration(milliseconds: 30),
+      );
       expect(filter.allows(_chat('666', user: 'a')), isTrue);
       await Future<void>.delayed(const Duration(milliseconds: 60));
       expect(filter.allows(_chat('666', user: 'b')), isTrue);
