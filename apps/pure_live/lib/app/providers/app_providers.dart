@@ -87,10 +87,10 @@ final desktopTrayPortProvider = Provider<DesktopTrayPort>((ref) => const NoopDes
 
 /// The title-bar mode this start was launched with.
 ///
-/// Read from the store once: the native frame helper behind the self-drawn
-/// strip is configured before the window exists and has no runtime toggle,
-/// so a settings change lands on the next start instead of re-dressing a
-/// live window whose frame says something else.
+/// Overridden with `DesktopEntry.windowChrome` — the resolved mode, not the
+/// stored intent — because the frame is taken or left before the widget tree
+/// exists, and a strip drawn under a window the plugin did not take over is two
+/// captions, while one drawn under a window it did is no caption at all.
 final windowChromeProvider = Provider<ShellWindowChrome>(
   (ref) => ref.watch(shellPreferencesProvider)?.value.windowChrome ?? ShellWindowChrome.app,
 );
@@ -162,9 +162,7 @@ final httpProvider = Provider<LiveHttp>((ref) => ref.watch(sitesProvider).http);
 /// The launch-at-sign-in registrar; the composition root overrides it on
 /// the desktop, where the OS can be asked. Null means this run has no way
 /// to register — the settings row says so instead of pretending.
-final startupRegistrationProvider = Provider<StartupRegistration?>(
-  (ref) => null,
-);
+final startupRegistrationProvider = Provider<StartupRegistration?>((ref) => null);
 
 /// The app's shared release feed, honouring the 更新源 answer.
 /// The update feed over the shared client.

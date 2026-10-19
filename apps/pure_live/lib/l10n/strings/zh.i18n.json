@@ -1085,7 +1085,19 @@
     "titleBarAuto": "自动（按系统版本）",
     "titleBarApp": "应用标题栏",
     "titleBarSystem": "系统标题栏",
-    "titleBarHint": "自动：Windows 11 用应用标题栏，Windows 10 用系统标题栏。应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式。切换在重启应用后生效。"
+    "titleBarHint": "自动：Windows 11 用应用标题栏，Windows 10 用系统标题栏。应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式。切换在重启应用后生效。",
+    "frameDiagnosis": "窗口边框诊断",
+    "frameTakeover": "边框接管",
+    "frameTakeoverOn": "已开启 — 标题栏已由窗口自身移除，四边缩放由窗口的命中测试应答",
+    "frameTakeoverOff": "未开启 — 标题栏与窗口尺寸都由系统负责",
+    "frameEdge": "系统描边",
+    "frameEdgeNative": "由 Windows 绘制",
+    "frameEdgeNone": "当前 Windows 版本不绘制描边，接管后的边框四边都没有线",
+    "frameBuild": "Windows 构建号",
+    "frameSweep": "运行缩放扫描",
+    "frameSweepRunning": "扫描中…",
+    "frameSweepHint": "会连续改变本窗口大小两轮然后还原。两行数字分别对应视图预同步关闭与打开，第二行的过期帧更少才说明边框跟上了拖动。",
+    "frameSweepUnavailable": "缩放扫描需要开启边框接管，且运行在 Windows。"
   },
   "webdav": {
     "title": "WebDAV 云备份",

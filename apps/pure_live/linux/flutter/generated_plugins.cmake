@@ -3,7 +3,6 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  bitsdojo_window_linux
   desktop_multi_window
   device_screen_brightness
   ffmpeg_kit_extended_flutter

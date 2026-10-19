@@ -21,15 +21,16 @@ abstract final class ShellKeys {
 
 /// How the window's top edge is drawn.
 ///
-/// The self-drawn strip is taken over natively by the `bitsdojo_window` fork
-/// (`BDW_CUSTOM_FRAME` in `windows/runner/main.cpp`), which is configured
-/// before the window exists and has no runtime toggle — a change here is a
-/// next-start change, and the settings screen says so.
+/// The self-drawn strip is taken over natively by the window plugin's own frame
+/// takeover (`WindowOptions.customFrame`, armed from the chrome plan), which
+/// answers `WM_NCCALCSIZE` and the edge hit-test while keeping `WS_THICKFRAME`.
+/// The mode is resolved once, before the window is dressed, so a change here is
+/// a next-start change and the settings screen says so.
 ///
 /// Stored as nullable on purpose: **null is a third answer, "I never picked"**,
-/// and then the mode comes from the operating system — Windows 11 draws a
-/// window's own edge so the app-drawn strip is the default, Windows 10 draws
-/// neither an edge nor rounded corners so the native caption is. Keeping that
+/// and then the mode comes from the operating system — Windows 11 composes a
+/// custom frame's edge and rounded corners itself so the app-drawn strip is the
+/// default, Windows 10 does neither so the native caption is. Keeping that
 /// undecided rather than recording the first run's answer is what lets an
 /// upgrade from 10 to 11 pick up the strip without anyone changing a setting.
 enum ShellWindowChrome {
@@ -81,9 +82,9 @@ final class ShellPreferences {
   /// system.
   ///
   /// This is the *intent for the next start*, not what the live window is drawn
-  /// in — `windowChromeProvider` carries that, and `NativeFrameFlag` explains how
-  /// the intent reaches the native code that has to decide before this process
-  /// can speak.
+  /// in: `resolveWindowChrome` folds it with the launch arguments and the
+  /// operating system's default into the mode this process runs in, and
+  /// `DesktopEntry` publishes that as `windowChromeProvider`.
   final ShellWindowChrome? windowChrome;
 
   /// What the close button means, once the viewer has answered "remember" in

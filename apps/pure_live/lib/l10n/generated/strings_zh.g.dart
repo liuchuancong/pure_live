@@ -3421,6 +3421,42 @@ class Translations$shellSettings$zh {
 
 	/// zh: '自动：Windows 11 用应用标题栏，Windows 10 用系统标题栏。应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式。切换在重启应用后生效。'
 	String get titleBarHint => '自动：Windows 11 用应用标题栏，Windows 10 用系统标题栏。应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式。切换在重启应用后生效。';
+
+	/// zh: '窗口边框诊断'
+	String get frameDiagnosis => '窗口边框诊断';
+
+	/// zh: '边框接管'
+	String get frameTakeover => '边框接管';
+
+	/// zh: '已开启 — 标题栏已由窗口自身移除，四边缩放由窗口的命中测试应答'
+	String get frameTakeoverOn => '已开启 — 标题栏已由窗口自身移除，四边缩放由窗口的命中测试应答';
+
+	/// zh: '未开启 — 标题栏与窗口尺寸都由系统负责'
+	String get frameTakeoverOff => '未开启 — 标题栏与窗口尺寸都由系统负责';
+
+	/// zh: '系统描边'
+	String get frameEdge => '系统描边';
+
+	/// zh: '由 Windows 绘制'
+	String get frameEdgeNative => '由 Windows 绘制';
+
+	/// zh: '当前 Windows 版本不绘制描边，接管后的边框四边都没有线'
+	String get frameEdgeNone => '当前 Windows 版本不绘制描边，接管后的边框四边都没有线';
+
+	/// zh: 'Windows 构建号'
+	String get frameBuild => 'Windows 构建号';
+
+	/// zh: '运行缩放扫描'
+	String get frameSweep => '运行缩放扫描';
+
+	/// zh: '扫描中…'
+	String get frameSweepRunning => '扫描中…';
+
+	/// zh: '会连续改变本窗口大小两轮然后还原。两行数字分别对应视图预同步关闭与打开，第二行的过期帧更少才说明边框跟上了拖动。'
+	String get frameSweepHint => '会连续改变本窗口大小两轮然后还原。两行数字分别对应视图预同步关闭与打开，第二行的过期帧更少才说明边框跟上了拖动。';
+
+	/// zh: '缩放扫描需要开启边框接管，且运行在 Windows。'
+	String get frameSweepUnavailable => '缩放扫描需要开启边框接管，且运行在 Windows。';
 }
 
 // Path: webdav
@@ -5030,6 +5066,20 @@ extension on Translations {
 			'shellSettings.titleBarApp' => '应用标题栏',
 			'shellSettings.titleBarSystem' => '系统标题栏',
 			'shellSettings.titleBarHint' => '自动：Windows 11 用应用标题栏，Windows 10 用系统标题栏。应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式。切换在重启应用后生效。',
+			'shellSettings.frameDiagnosis' => '窗口边框诊断',
+			'shellSettings.frameTakeover' => '边框接管',
+			'shellSettings.frameTakeoverOn' => '已开启 — 标题栏已由窗口自身移除，四边缩放由窗口的命中测试应答',
+			'shellSettings.frameTakeoverOff' => '未开启 — 标题栏与窗口尺寸都由系统负责',
+			'shellSettings.frameEdge' => '系统描边',
+			'shellSettings.frameEdgeNative' => '由 Windows 绘制',
+			'shellSettings.frameEdgeNone' => '当前 Windows 版本不绘制描边，接管后的边框四边都没有线',
+			'shellSettings.frameBuild' => 'Windows 构建号',
+			'shellSettings.frameSweep' => '运行缩放扫描',
+			_ => null,
+		} ?? switch (path) {
+			'shellSettings.frameSweepRunning' => '扫描中…',
+			'shellSettings.frameSweepHint' => '会连续改变本窗口大小两轮然后还原。两行数字分别对应视图预同步关闭与打开，第二行的过期帧更少才说明边框跟上了拖动。',
+			'shellSettings.frameSweepUnavailable' => '缩放扫描需要开启边框接管，且运行在 Windows。',
 			'webdav.title' => 'WebDAV 云备份',
 			'webdav.entryTitle' => 'WebDAV 云同步',
 			'webdav.entrySubtitle' => '备份到你自己的 WebDAV 服务器',
@@ -5039,8 +5089,6 @@ extension on Translations {
 			'webdav.username' => '账户',
 			'webdav.password' => '应用密码',
 			'webdav.directory' => '目录（可选）',
-			_ => null,
-		} ?? switch (path) {
 			'webdav.testConnection' => '测试连接',
 			'webdav.testing' => '正在连接…',
 			'webdav.testOk' => '连接成功，地址、账户和密码均有效。',

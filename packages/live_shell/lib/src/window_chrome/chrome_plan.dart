@@ -16,10 +16,11 @@ enum ChromeStage {
   /// worth preserving across GTK and KDE themes.
   nativeFirst,
 
-  /// All three platforms draw their own strip. Only sensible together with a
-  /// native helper that keeps `WS_THICKFRAME` and answers `WM_NCCALCSIZE` by
-  /// eating the non-client area, which is how Chrome and VS Code get a seamless
-  /// title bar without giving up the window manager's behaviour. A plain
+  /// All three platforms draw their own strip. On Windows that is only correct
+  /// with the window plugin's own frame takeover armed — the whole window becomes
+  /// client area while `WS_THICKFRAME` stays on the window and the plugin answers
+  /// `WM_NCCALCSIZE` and the edge hit-test. That is how Chrome and VS Code get a
+  /// seamless title bar without giving up the window manager's behaviour. A plain
   /// frameless window here loses resize, snap and the shadow, and each of those
   /// has to be rebuilt in [ChromeHit] terms.
   seamlessSelfDrawn,
@@ -152,7 +153,9 @@ final class ChromePlan {
   /// enum: keep the native caption. Everything the second stage would buy —
   /// pixels of visual seamlessness — costs the window manager's cooperation,
   /// and that is not a cosmetic loss: snap, resize, shadow and DPI are the ones
-  /// users report as "the desktop app feels broken".
+  /// users report as "the desktop app feels broken". [ChromeStage.seamlessSelfDrawn]
+  /// only holds that shape when the frame comes with them, which is what the
+  /// window plugin's takeover is for.
   factory select({required PlatformKind platform, required ChromeStage stage}) {
     return switch ((platform, stage)) {
       (PlatformKind.macos, ChromeStage.nativeFirst) => const ChromePlan(
@@ -179,13 +182,15 @@ final class ChromePlan {
         workAreaClampNeeded: false,
       ),
       (PlatformKind.windows, ChromeStage.seamlessSelfDrawn) => const ChromePlan(
-        // Only correct when a native helper keeps WS_THICKFRAME and answers
-        // WM_NCCALCSIZE; the flags below say what is otherwise given up.
+        // The frame takeover is armed for exactly this combination, so what the
+        // stage is usually charged against the shell does not move: the takeover
+        // keeps `WS_THICKFRAME` (snap, `Win`+arrow, the shadow, per-monitor DPI)
+        // and fits a maximised window to the work area itself.
         mode: ChromeMode.selfDrawn,
-        metrics: ChromeMetrics.selfDrawn(),
+        metrics: ChromeMetrics.windows(),
         ownsResize: true,
-        ownsSnap: true,
-        workAreaClampNeeded: true,
+        ownsSnap: false,
+        workAreaClampNeeded: false,
       ),
       // KDE and GNOME disagree about server-side decorations, so Linux draws
       // its own strip in both stages.
@@ -205,13 +210,20 @@ final class ChromePlan {
   /// The strip's geometry.
   final ChromeMetrics metrics;
 
-  /// Whether the shell must implement edge resizing itself.
+  /// Whether the caption is off this window, so the edges are the shell's frame
+  /// rather than the system's. The resize itself may still be native: with the
+  /// plugin's frame takeover it is answered by the window's hit-test, while
+  /// [hitTestChrome] is what a shell needs to answer it in Flutter instead.
   final bool ownsResize;
 
   /// Whether the shell must implement snap-to-edge and `Win`+arrow behaviour.
+  /// False whenever the frame takeover keeps `WS_THICKFRAME`, which is what gives
+  /// both of those for free.
   final bool ownsSnap;
 
   /// Whether maximising must be clamped to the display's work area by hand.
+  /// False for a native caption, and false for a frame takeover that fits the
+  /// work area itself.
   final bool workAreaClampNeeded;
 
   /// Whether the buttons belong on the left (macOS convention).
@@ -227,9 +239,9 @@ final class ChromePlan {
 
 /// Classifies a point in window-local coordinates against the caption strip.
 ///
-/// Only needed when [ChromePlan.drawsButtons] or [ChromePlan.ownsResize] — with
-/// a native caption the OS has already done this and knows more about it than
-/// this function can.
+/// Only needed when the shell answers the edges from Flutter — with a native
+/// caption, or with the plugin's frame takeover, the operating system has
+/// already done this and knows more about it than this function can.
 ///
 /// The button block is claimed **before** the resize band. A pointer near the
 /// top-right corner is ambiguous — it is inside both the 8-pixel grab and the

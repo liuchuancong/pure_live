@@ -11,6 +11,7 @@ import 'package:pure_live/features/settings/widgets/settings_chooser.dart';
 import 'package:pure_live/features/settings/widgets/settings_chrome.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart' show ShellPreferencesStore, ShellWindowChrome;
+import 'package:pure_live/platforms/desktop/shell/window_frame_report.dart';
 import 'package:pure_settings_ui/pure_settings_ui.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 import 'package:restart_app/restart_app.dart';
@@ -60,6 +61,7 @@ final class GeneralSettingsPage extends ConsumerWidget {
       PlatformKind.windows || PlatformKind.macos || PlatformKind.linux => true,
       _ => false,
     };
+    final isWindows = ref.watch(environmentProvider).runtime.kind == PlatformKind.windows;
     return SettingsChrome(
       title: t.settings.general,
       body: SettingsList(
@@ -181,6 +183,20 @@ final class GeneralSettingsPage extends ConsumerWidget {
                   ),
                   onPressed: (_) => _chooseWindowSize(context, ref),
                 ),
+                // The frame the window is actually wearing, and a measurement
+                // of how it keeps up. Only Windows takes a frame over, so only
+                // there is there anything to report.
+                if (isWindows)
+                  SettingsTile.navigation(
+                    key: const ValueKey('general-window-frame'),
+                    leading: const Icon(Icons.border_outer_outlined),
+                    title: Text(t.shellSettings.frameDiagnosis),
+                    onPressed: (_) => showPureDialog<void>(
+                      context: context,
+                      title: t.shellSettings.frameDiagnosis,
+                      child: const _WindowFrameDiagnosis(),
+                    ),
+                  ),
               ],
             ),
         ],
@@ -190,11 +206,12 @@ final class GeneralSettingsPage extends ConsumerWidget {
 
   /// What the title-bar row says about the viewer's choice.
   ///
-  /// It states the *choice*, not the frame the window is wearing. The native
-  /// helper settles the frame before this process can speak, so a choice made
-  /// here is a true statement about the next start and a stale one about the
-  /// live window — the row says which it is, and the restart offer that follows
-  /// keeps the two from drifting apart silently.
+  /// It states the *choice*, not the frame the window is wearing. The mode is
+  /// settled once, before the window is dressed, so a choice made here is a true
+  /// statement about the next start and a stale one about the live window — the
+  /// row says which it is, the restart offer that follows keeps the two from
+  /// drifting apart silently, and [_WindowFrameDiagnosis] is where to look when
+  /// the two need comparing.
   static String _chromeLabel(BuildContext context, ShellPreferencesStore? shell) {
     final t = context.t;
     return switch (shell?.value.windowChrome) {
@@ -407,5 +424,86 @@ final class GeneralSettingsPage extends ConsumerWidget {
     await ref
         .read(appPreferencesProvider.notifier)
         .update((p) => p.copyWith(windowWidth: picked.$1, windowHeight: picked.$2));
+  }
+}
+
+/// The frame the live window is actually wearing, and a sweep that measures it.
+///
+/// The title-bar row above states the viewer's *intent*; this states what the
+/// window plugin applied. A complaint about the border is always a question about
+/// the applied frame, and the two differ exactly when a change is waiting on a
+/// restart.
+///
+/// The sweep is what turns "it flickered while I dragged" into a number: the
+/// plugin resizes the window natively, alternating all four edges, and counts the
+/// compositions that showed a view whose size did not match the window's — once
+/// with its view pre-sync off, once with it on. It moves the viewer's window to
+/// get that, so it never runs by itself and the button sits under a hint saying
+/// what it does.
+final class _WindowFrameDiagnosis extends StatefulWidget {
+  const new();
+
+  @override
+  State<_WindowFrameDiagnosis> createState() => _WindowFrameDiagnosisState();
+}
+
+final class _WindowFrameDiagnosisState extends State<_WindowFrameDiagnosis> {
+  WindowFrameReport? _report;
+  bool _sweeping = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_read(sweep: false));
+  }
+
+  Future<void> _read({required bool sweep}) async {
+    if (sweep) {
+      setState(() => _sweeping = true);
+    }
+    final report = await readWindowFrameReport(runSweep: sweep);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _report = report;
+      _sweeping = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final report = _report;
+    if (report == null) {
+      return Text(t.shellSettings.frameSweepRunning);
+    }
+    // The sweep is a Windows measurement of a taken-over frame; either half
+    // missing and there is nothing for the native harness to resize.
+    final canSweep = report.takesFrameOver && report.buildNumber > 0;
+    final takeover = report.takesFrameOver ? t.shellSettings.frameTakeoverOn : t.shellSettings.frameTakeoverOff;
+    final edge = report.systemDrawsEdge ? t.shellSettings.frameEdgeNative : t.shellSettings.frameEdgeNone;
+    final lines = [
+      '${t.shellSettings.frameTakeover}: $takeover',
+      if (report.takesFrameOver) '${t.shellSettings.frameEdge}: $edge',
+      if (report.buildNumber > 0) '${t.shellSettings.frameBuild}: ${report.buildNumber}',
+      if (report.withoutPreSync != null) 'pre-sync off — ${report.withoutPreSync}',
+      if (report.withPreSync != null) 'pre-sync on — ${report.withPreSync}',
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final line in lines) Padding(padding: const EdgeInsets.only(bottom: 6), child: Text(line)),
+        Text(canSweep ? t.shellSettings.frameSweepHint : t.shellSettings.frameSweepUnavailable),
+        const SizedBox(height: 12),
+        PureButton(
+          label: t.shellSettings.frameSweep,
+          variant: ButtonVariant.ghost,
+          loading: _sweeping,
+          onPressed: canSweep && !_sweeping ? () => unawaited(_read(sweep: true)) : null,
+        ),
+      ],
+    );
   }
 }

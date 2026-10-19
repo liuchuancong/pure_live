@@ -5,7 +5,6 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   audio_service_win
   battery_plus
-  bitsdojo_window_windows
   connectivity_plus
   desktop_multi_window
   device_screen_brightness

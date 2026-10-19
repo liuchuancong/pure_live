@@ -15,11 +15,6 @@ environment:
   flutter: '>=3.47.0'
 
 dependencies:
-  bitsdojo_window:
-    git:
-      url: https://github.com/Ali-Fadaei/bitsdojo_window.git
-      path: bitsdojo_window
-      ref: 358bc8dfa9f560ba652fb022956e1c580968c76b
   desktop_multi_window: ^0.3.1
   ffi: ^2.1.0
   flutter:

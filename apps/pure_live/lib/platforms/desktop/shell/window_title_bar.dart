@@ -107,7 +107,8 @@ final windowChromeStateProvider = Provider<WindowChromeState>((ref) {
 /// the windowing half of the seam, the part that cannot live in a package
 /// with no windowing dependency.
 final class WindowManagerChromeActions implements WindowChromeActions {
-  /// The singleton instance; the class is stateless.
+  /// The singleton instance; the class has no fields, the one fact it reads
+  /// ([_dragInFlight]) belongs to the window and not to a caller.
   const new();
 
   @override
@@ -129,6 +130,28 @@ final class WindowManagerChromeActions implements WindowChromeActions {
   @override
   Future<void> close() => windowManager.close();
 
+  /// Starts the system's move loop for the window.
+  ///
+  /// This call is **modal**: it does not return until the pointer is released,
+  /// and the engine keeps pumping frames and mouse messages while the loop runs.
+  /// That is what makes a second pan start possible *inside* the first drag — the
+  /// capture is released before the loop is entered, so the strip can be handed
+  /// another down — and a second `SC_MOVE` re-enters the loop and re-asks the
+  /// window for its non-client area. One drag is in flight at a time, and a
+  /// re-entrant start is dropped rather than stacked.
   @override
-  Future<void> startDragging() => windowManager.startDragging();
+  Future<void> startDragging() async {
+    if (_dragInFlight) {
+      return;
+    }
+    _dragInFlight = true;
+    try {
+      await windowManager.startDragging();
+    } finally {
+      _dragInFlight = false;
+    }
+  }
 }
+
+/// Whether the modal move loop is currently running for this window.
+bool _dragInFlight = false;

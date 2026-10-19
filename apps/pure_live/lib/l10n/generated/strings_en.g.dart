@@ -1389,6 +1389,18 @@ class _Translations$shellSettings$en extends Translations$shellSettings$zh {
 	@override String get titleBarApp => 'App title bar';
 	@override String get titleBarSystem => 'System title bar';
 	@override String get titleBarHint => 'Auto: the app title bar on Windows 11, the system title bar on Windows 10. The app title bar is drawn by Pure Live; the system title bar is the native Windows one. A switch applies after the app restarts.';
+	@override String get frameDiagnosis => 'Window frame diagnosis';
+	@override String get frameTakeover => 'Frame takeover';
+	@override String get frameTakeoverOn => 'On — the caption is gone and the window\'s own hit-test answers the four edges';
+	@override String get frameTakeoverOff => 'Off — the system draws the caption and sizes the window';
+	@override String get frameEdge => 'Frame edge';
+	@override String get frameEdgeNative => 'Windows draws it';
+	@override String get frameEdgeNone => 'This Windows version draws none, so a taken-over window has no line on any side';
+	@override String get frameBuild => 'Windows build';
+	@override String get frameSweep => 'Run the resize sweep';
+	@override String get frameSweepRunning => 'Sweeping…';
+	@override String get frameSweepHint => 'Resizes this window repeatedly, twice, then puts it back. The two lines compare the plugin\'s view pre-sync off and on — fewer stale frames on the second line is the frame keeping up with the drag.';
+	@override String get frameSweepUnavailable => 'The sweep needs the frame takeover on, on Windows.';
 }
 
 // Path: webdav
@@ -2640,6 +2652,20 @@ extension on TranslationsEn {
 			'shellSettings.titleBarApp' => 'App title bar',
 			'shellSettings.titleBarSystem' => 'System title bar',
 			'shellSettings.titleBarHint' => 'Auto: the app title bar on Windows 11, the system title bar on Windows 10. The app title bar is drawn by Pure Live; the system title bar is the native Windows one. A switch applies after the app restarts.',
+			'shellSettings.frameDiagnosis' => 'Window frame diagnosis',
+			'shellSettings.frameTakeover' => 'Frame takeover',
+			'shellSettings.frameTakeoverOn' => 'On — the caption is gone and the window\'s own hit-test answers the four edges',
+			'shellSettings.frameTakeoverOff' => 'Off — the system draws the caption and sizes the window',
+			'shellSettings.frameEdge' => 'Frame edge',
+			'shellSettings.frameEdgeNative' => 'Windows draws it',
+			'shellSettings.frameEdgeNone' => 'This Windows version draws none, so a taken-over window has no line on any side',
+			'shellSettings.frameBuild' => 'Windows build',
+			'shellSettings.frameSweep' => 'Run the resize sweep',
+			_ => null,
+		} ?? switch (path) {
+			'shellSettings.frameSweepRunning' => 'Sweeping…',
+			'shellSettings.frameSweepHint' => 'Resizes this window repeatedly, twice, then puts it back. The two lines compare the plugin\'s view pre-sync off and on — fewer stale frames on the second line is the frame keeping up with the drag.',
+			'shellSettings.frameSweepUnavailable' => 'The sweep needs the frame takeover on, on Windows.',
 			'webdav.title' => 'WebDAV cloud backup',
 			'webdav.entryTitle' => 'WebDAV cloud sync',
 			'webdav.entrySubtitle' => 'Back up to your own WebDAV server',
@@ -2649,8 +2675,6 @@ extension on TranslationsEn {
 			'webdav.username' => 'Account',
 			'webdav.password' => 'App password',
 			'webdav.directory' => 'Directory (optional)',
-			_ => null,
-		} ?? switch (path) {
 			'webdav.testConnection' => 'Test connection',
 			'webdav.testing' => 'Connecting…',
 			'webdav.testOk' => 'Connected. The address, account and password all work.',

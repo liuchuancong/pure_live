@@ -16,23 +16,24 @@ import 'package:window_frame_kit/window_frame_kit.dart';
 ///   change, and the settings screen has to say so — a toggle that appears to do
 ///   nothing is worse than no toggle, because the viewer keeps reaching for it
 ///   while their screen is broken.
-/// * **Frameless is asked for only when the plan says the shell owns resize.**
-///   Calling `setAsFrameless()` "to hide the title bar" while leaving
-///   [ChromePlan.ownsResize] false is the trap on Windows: the buttons go, and
-///   with them the snap layouts, the edge resize, `Win`+arrow, the shadow and the
-///   taskbar-aware maximise — everything `WS_THICKFRAME` was doing for free.
+/// * **The frame takeover is asked for only when the plan says the shell owns
+///   resize.** `WindowOptions.customFrame` is the plugin's own non-client-area
+///   handler — the whole window becomes client area, all four edges and corners
+///   resize through one hit-test, and maximising still fits the work area — so
+///   a plan that draws its own strip *and* takes the edges is exactly what it is
+///   for. Asking for it under a plan that does not own the edges, or leaving it
+///   off under one that does, is how a window ends up with no resize band, or
+///   with two components answering `WM_NCCALCSIZE` for the same window.
+///   [ChromeStage.seamlessSelfDrawn]'s note about needing "a native helper that
+///   keeps `WS_THICKFRAME`" is this option: the helper is in the same plugin now,
+///   so there is one delegate and no second dependency.
 /// * **The background colour is set when the effects are off**, so an opaque
 ///   window does not clear to a colour that shows through the corners as a black
 ///   square, which is the artefact the effects switch exists to escape.
 ///
-/// [titleBarStyle] overrides the style the [plan]'s mode would pick. It exists
-/// for the Windows arrangement where an external frame helper (the
-/// `bitsdojo_window` fork's `BDW_CUSTOM_FRAME`) strips the caption itself and
-/// answers `WM_NCCALCSIZE`: there the self-drawn mode must *not* also ask for
-/// `TitleBarStyle.hidden`, or two components own the same non-client area and
-/// every restore/maximise cycle re-fights over it. The helper-backed caller
-/// passes [TitleBarStyle.normal] and keeps `mode: ChromeMode.selfDrawn` purely
-/// as the record of who draws the buttons.
+/// The order is the plugin's, not a choice made here: `customFrame` is applied
+/// after `titleBarStyle` and before any fullscreen/maximised state is restored,
+/// so the native subclass is installed before anything moves the window.
 Future<void> configureMainWindow({
   required WindowRole role,
   required ChromePlan plan,
@@ -41,12 +42,14 @@ Future<void> configureMainWindow({
   required Color background,
   Size minimumSize = const Size(900, 600),
   Size initialSize = defaultWindowSize,
-  TitleBarStyle? titleBarStyle,
   WindowOriginReader placeWindow = centerOnWorkArea,
   bool requestMaterial = false,
   bool materialDark = false,
   WindowMaterialApplier? applyMaterial,
 }) async {
+  // Who owns the non-client area is one question, and the plan answers it: the
+  // shell draws the strip and takes the edges, or the operating system does.
+  final takesFrameOver = plan.mode == ChromeMode.selfDrawn && plan.ownsResize;
   await windowManager.ensureInitialized();
   // The plugin's ready-callback is a synchronous VoidCallback and nothing awaits
   // it, so the steps that matter are done after this call returns rather than
@@ -61,8 +64,14 @@ Future<void> configureMainWindow({
       // no default backdrop to fall back on. Only a material that actually
       // applied clears the surface, and it does so after this call, below.
       backgroundColor: background,
-      titleBarStyle:
-          titleBarStyle ?? (plan.mode == ChromeMode.nativeCaption ? TitleBarStyle.normal : TitleBarStyle.hidden),
+      // macOS's `hidden` style keeps the traffic lights and the app draws beneath
+      // them; a true inset — moving the buttons into a sidebar — needs a change in
+      // macos/Runner/MainFlutterWindow.swift (titlebarAppearsTransparent plus the
+      // standardWindowButton frames), because the window plugin exposes no offset.
+      titleBarStyle: plan.mode == ChromeMode.nativeCaption ? TitleBarStyle.normal : TitleBarStyle.hidden,
+      // `null` sends no channel call at all, so a plan that leaves the frame to
+      // the system is untouched — the window keeps the caption it was created with.
+      customFrame: takesFrameOver ? true : null,
       // From the role, not a literal: a floating video window and a corner toast
       // asked for by name must not clutter alt-tab, and hard-coding `false` here
       // is how that promise gets broken by the next caller.
@@ -78,14 +87,14 @@ Future<void> configureMainWindow({
   if (origin != null) {
     await windowManager.setPosition(origin);
   }
-  if (plan.mode == ChromeMode.selfDrawn && plan.ownsResize) {
-    await windowManager.setAsFrameless();
+  // The takeover's resize bands are gated on the window being resizable: a
+  // custom frame that is told it is not says so by answering the hit-test with
+  // no band at all, which leaves the window undraggable at every edge. So the
+  // flag is set where the frame is ours, and left alone everywhere else — the
+  // system's own caption already sizes the window.
+  if (takesFrameOver) {
+    await windowManager.setResizable(true);
   }
-  // macOS's `hidden` style keeps the traffic lights and the app draws beneath
-  // them; a true inset — moving the buttons into a sidebar — needs a change in
-  // macos/Runner/MainFlutterWindow.swift (titlebarAppearsTransparent plus the
-  // standardWindowButton frames), because the window plugin exposes no offset.
-  await windowManager.setResizable(!plan.ownsResize || plan.mode != ChromeMode.selfDrawn);
   // The window exists only after waitUntilReadyToShow, so the material is
   // applied here rather than before the options: on success the surface
   // clears transparent so the material shows; on refusal the opaque

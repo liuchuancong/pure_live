@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/live_shell.dart';
 import 'package:live_shell_desktop/live_shell_desktop.dart';
-import 'package:window_frame_kit/window_frame_kit.dart';
 
 /// What the shell's decisions actually look like on the way to the operating
 /// system.
@@ -53,7 +52,6 @@ void main() {
     ChromeStage stage = ChromeStage.nativeFirst,
     RenderFallbacks fallbacks = const RenderFallbacks(),
     Color background = const Color(0xFF101418),
-    TitleBarStyle? titleBarStyle,
     bool requestMaterial = false,
     WindowMaterialApplier? applyMaterial,
     // The plugin's own centering reads the display API through FFI handles, which
@@ -65,53 +63,52 @@ void main() {
     fallbacks: fallbacks,
     title: 'Pure Live',
     background: background,
-    titleBarStyle: titleBarStyle,
     placeWindow: placeWindow ?? ((_) async => const Offset(320, 140)),
     requestMaterial: requestMaterial,
     applyMaterial: applyMaterial,
   );
 
   group('the chrome plan', () {
-    test('a native caption keeps the system title bar and stays resizable', () async {
+    test('a native caption keeps the system title bar and never touches the frame', () async {
       await configure();
 
       expect(argsOf(find('setTitleBarStyle'))['titleBarStyle'], 'normal');
-      expect(sent('setAsFrameless'), isFalse);
-      expect(argsOf(find('setResizable'))['isResizable'], isTrue);
+      expect(sent('setCustomFrame'), isFalse, reason: 'null option means no channel call, so the caption survives');
+      expect(sent('setResizable'), isFalse, reason: 'the system caption already sizes this window');
     });
 
-    test('an explicit style outranks the mode-derived one, for the external frame helper', () async {
-      // The bitsdojo arrangement: the helper strips the caption natively, so
-      // the self-drawn mode's `hidden` would put two components over the same
-      // non-client area. The override holds the window manager at normal.
-      await configure(
-        platform: PlatformKind.linux,
-        stage: ChromeStage.seamlessSelfDrawn,
-        titleBarStyle: TitleBarStyle.normal,
-      );
-
-      expect(argsOf(find('setTitleBarStyle'))['titleBarStyle'], 'normal');
-    });
-
-    test('a self-drawn strip that owns the edges goes frameless and stops being resizable by the system', () async {
+    test('a self-drawn strip that owns the edges takes the frame over', () async {
       await configure(platform: PlatformKind.linux, stage: ChromeStage.seamlessSelfDrawn);
 
       expect(argsOf(find('setTitleBarStyle'))['titleBarStyle'], 'hidden');
-      expect(sent('setAsFrameless'), isTrue);
+      expect(argsOf(find('setCustomFrame'))['isCustomFrame'], isTrue);
       expect(
         argsOf(find('setResizable'))['isResizable'],
-        isFalse,
-        reason: 'both answering WM_GETMINMAXINFO and letting the system size the window is two answers',
+        isTrue,
+        reason: 'the takeover answers the hit-test with resize bands only while the window is resizable',
       );
     });
 
-    test('a strip we draw but the system still sizes keeps resizing', () async {
-      // macOS at the first stage: hidden title bar, native resize.
+    test('the takeover lands before the window is placed or sized', () async {
+      // The native subclass has to be installed before any geometry-affecting
+      // transition, and the plugin applies `customFrame` inside
+      // `waitUntilReadyToShow` — so nothing this function does afterwards, and
+      // nothing that carries the frame, may come first.
+      await configure(platform: PlatformKind.linux, stage: ChromeStage.seamlessSelfDrawn);
+
+      final frame = calls.indexWhere((call) => call.method == 'setCustomFrame');
+      final placed = calls.indexWhere((call) => call.method == 'setBounds');
+      expect(frame, greaterThanOrEqualTo(0));
+      expect(placed, greaterThan(frame));
+    });
+
+    test('a strip we draw but the system still sizes keeps its frame', () async {
+      // macOS at the first stage: hidden title bar, traffic lights, native resize.
       await configure(platform: PlatformKind.macos);
 
       expect(argsOf(find('setTitleBarStyle'))['titleBarStyle'], 'hidden');
-      expect(sent('setAsFrameless'), isFalse);
-      expect(argsOf(find('setResizable'))['isResizable'], isTrue);
+      expect(sent('setCustomFrame'), isFalse);
+      expect(sent('setResizable'), isFalse);
     });
   });
 

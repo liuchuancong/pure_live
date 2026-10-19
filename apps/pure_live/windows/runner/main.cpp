@@ -2,8 +2,6 @@
 #include <flutter/flutter_view_controller.h>
 #include <windows.h>
 
-#include <bitsdojo_window_windows/bitsdojo_window_plugin.h>
-
 #include "flutter_window.h"
 #include "utils.h"
 
@@ -18,15 +16,6 @@ int APIENTRY wWinMain(
   }
 
   ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-
-  // Use the native frame unless the user selected a custom Flutter frame.
-  const bool use_native_frame = UseNativeWindowFrame();
-
-  if (use_native_frame) {
-    bitsdojo_window_configure(0u);
-  } else {
-    bitsdojo_window_configure(BDW_CUSTOM_FRAME);
-  }
 
   flutter::DartProject project(L"data");
 

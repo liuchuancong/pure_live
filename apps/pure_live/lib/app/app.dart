@@ -7,7 +7,6 @@ import 'package:pure_live/app/shell/desktop_title_frame.dart' show DesktopTitleF
 import 'package:pure_live/app/theme/app_theme.dart';
 import 'package:pure_live/features/wallpaper/wallpaper_background_layer.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart' show TranslationProvider, t;
-import 'package:pure_live/platforms/desktop/shell/window_frame_edge.dart' show WindowFrameEdge;
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The root widget: the app host the chosen design language ships.
@@ -44,19 +43,15 @@ final class PureLiveApp extends ConsumerWidget {
       // behalf: the countdown close and the lifecycle feed the list pages'
       // refresh-on-resume reads. The wallpaper layer sits inside it, once,
       // painting the chosen background behind every route.
-      // The frame edge is the outermost thing Flutter paints: it sits on the
-      // window's own boundary, over the wallpaper layer, and it is a Windows
-      // concern rather than a route concern, so it belongs here and not in any
-      // scaffold. See WindowFrameEdge for why the app has to draw it at all.
-      // Inside it rides the caption strip (the reference's `DesktopFrame`):
-      // one strip above the whole navigator, so every route — a pushed room,
-      // settings, search — keeps its drag band and window buttons, not just
-      // the home tabs the shell used to be the only thing under a bar.
-      builder: (context, child) => WindowFrameEdge(
-        child: AppPreferencesHost(
-          child: TranslationProvider(
-            child: DesktopTitleFrame(child: WallpaperBackgroundLayer(child: child!)),
-          ),
+      // The caption strip (the reference's `DesktopFrame`): one strip above the
+      // whole navigator, so every route — a pushed room, settings, search — keeps
+      // its drag band and window buttons, not just the home tabs the shell used to
+      // be the only thing under a bar. The window's own edge is not drawn here:
+      // the frame takeover leaves it to the compositor, which keeps the rounded
+      // corners and the one-pixel border on Windows 11.
+      builder: (context, child) => AppPreferencesHost(
+        child: TranslationProvider(
+          child: DesktopTitleFrame(child: WallpaperBackgroundLayer(child: child!)),
         ),
       ),
     );

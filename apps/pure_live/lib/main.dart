@@ -21,7 +21,6 @@ import 'package:pure_live/app/theme/ui_configuration_mapper.dart';
 import 'package:pure_live/features/login/douyu_login_store.dart' show douyuLoginStoreProvider;
 import 'package:pure_live/platforms/desktop/entry/desktop_entry.dart';
 import 'package:pure_live/platforms/desktop/entry/desktop_launch.dart';
-import 'package:pure_live/platforms/desktop/windows/native_frame_flag.dart' show NativeFrameFlag;
 import 'package:pure_live/shared/in_app_web.dart';
 import 'package:pure_uikit/pure_uikit.dart' show PureDesignLanguage, PureUiStartupResolver;
 
@@ -82,28 +81,19 @@ Future<void> main(List<String> args) async {
         await services.shutdown();
       },
       preferences: services.shell,
-      // The frame mode is decided from this, on Windows: the runner reads the
-      // same arguments, so both sides must apply the same precedence.
+      // The frame mode is decided from this plus the launch arguments, both read
+      // in Dart before the window is dressed — `resolveWindowChrome` is the only
+      // list of rules now, where the runner used to keep a second copy of it.
       launchArguments: args,
       appPreferences: services.appPreferences,
       log: log.forCategory('shell'),
     );
     await desktopEntry.prepare();
-    // The frame is decided before Dart runs, so a title-bar change is a
-    // next-start change: nothing here can re-dress a live window. Mirroring the
-    // preference into the flag file is what carries it across the restart, and
-    // the window on screen keeps the mode it started in — the settings screen
-    // says so rather than pretending the choice applied now.
-    services.shell.changes.listen((preferences) async {
-      // null means "leave it to the operating system", which the runner reads as
-      // an absent file — so an un-choice has to withdraw the override, not write
-      // a word for it.
-      final chosen = preferences.windowChrome;
-      final settled = chosen == null ? await NativeFrameFlag.clear() : await NativeFrameFlag.write(chosen);
-      if (!settled) {
-        log.root.warning('title-bar mode did not reach the next start', fields: {'windowChrome': chosen?.id ?? 'auto'});
-      }
-    });
+    // A title-bar change is still a next-start change: `desktopEntry.windowChrome`
+    // is resolved once and the live window keeps the frame it was given. Nothing
+    // has to carry the choice across the restart any more — the store it is read
+    // from is the same store the next start reads — so the settings screen offers
+    // the restart rather than a mirror file pretending to be one.
     // The purelive scheme this build answers (`purelive://room?...`) is
     // claimed per user, best effort — a refusal only means the deep link
     // stays unregistered, and must not hold the start up or fail it.

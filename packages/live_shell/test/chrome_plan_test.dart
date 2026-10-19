@@ -33,11 +33,18 @@ void main() {
       expect(plan.workAreaClampNeeded, isTrue);
     });
 
-    test('the second stage is the one that takes the window manager over', () {
+    test('the second stage takes the caption over and keeps what the frame leaves on', () {
       final plan = ChromePlan.select(platform: PlatformKind.windows, stage: ChromeStage.seamlessSelfDrawn);
 
       expect(plan.mode, ChromeMode.selfDrawn);
-      expect(plan.ownsSnap, isTrue, reason: 'snap, resize and the shadow are now ours to reimplement');
+      expect(plan.ownsResize, isTrue, reason: 'the caption is gone, so the edges are the shell frame');
+      expect(plan.metrics.titleBarHeight, 32, reason: 'the strip still matches the caption it replaces');
+      expect(
+        plan.ownsSnap,
+        isFalse,
+        reason: 'a takeover that keeps WS_THICKFRAME leaves snap, Win+arrow and the shadow where they were',
+      );
+      expect(plan.workAreaClampNeeded, isFalse, reason: 'the takeover fits the work area itself');
     });
   });
 

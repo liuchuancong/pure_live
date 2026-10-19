@@ -1078,7 +1078,19 @@
     "titleBarAuto": "Auto (by Windows version)",
     "titleBarApp": "App title bar",
     "titleBarSystem": "System title bar",
-    "titleBarHint": "Auto: the app title bar on Windows 11, the system title bar on Windows 10. The app title bar is drawn by Pure Live; the system title bar is the native Windows one. A switch applies after the app restarts."
+    "titleBarHint": "Auto: the app title bar on Windows 11, the system title bar on Windows 10. The app title bar is drawn by Pure Live; the system title bar is the native Windows one. A switch applies after the app restarts.",
+    "frameDiagnosis": "Window frame diagnosis",
+    "frameTakeover": "Frame takeover",
+    "frameTakeoverOn": "On — the caption is gone and the window's own hit-test answers the four edges",
+    "frameTakeoverOff": "Off — the system draws the caption and sizes the window",
+    "frameEdge": "Frame edge",
+    "frameEdgeNative": "Windows draws it",
+    "frameEdgeNone": "This Windows version draws none, so a taken-over window has no line on any side",
+    "frameBuild": "Windows build",
+    "frameSweep": "Run the resize sweep",
+    "frameSweepRunning": "Sweeping…",
+    "frameSweepHint": "Resizes this window repeatedly, twice, then puts it back. The two lines compare the plugin's view pre-sync off and on — fewer stale frames on the second line is the frame keeping up with the drag.",
+    "frameSweepUnavailable": "The sweep needs the frame takeover on, on Windows."
   },
   "webdav": {
     "title": "WebDAV cloud backup",

@@ -15,7 +15,6 @@ import 'package:pure_live/platforms/desktop/shell/close_prompt.dart';
 import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart';
 import 'package:pure_live/platforms/desktop/tray/app_tray.dart';
 import 'package:pure_live/platforms/desktop/windows/desktop_window_setup.dart';
-import 'package:pure_live/platforms/desktop/windows/native_frame_flag.dart' show NativeFrameFlag;
 import 'package:window_frame_kit/window_frame_kit.dart';
 
 /// The desktop window's life: set up before the first frame, asked about
@@ -52,23 +51,21 @@ final class DesktopEntry with WindowListener implements DesktopTrayPort {
   /// The title-bar mode this process actually runs in, decided once in
   /// [prepare] and read from then on.
   ///
-  /// On Windows that is what the native helper was configured with — the flag
-  /// file, or a `--native-frame` / `--custom-frame` argument — and NOT the
-  /// stored preference, because the frame is taken or left before this isolate
-  /// exists to have an opinion. Reading the preference instead is how a window
-  /// ends up with a system caption and an app-drawn strip over it, or the
-  /// reverse and no caption at all.
-  ///
-  /// Changing the setting mid-run rewrites the flag for the next start and
-  /// leaves this value alone; the settings screen says so.
+  /// It is the *resolved* answer — launch argument, then the stored choice, then
+  /// the operating system's default — and NOT the stored preference, because a
+  /// change made mid-run is the next window's mode while this one keeps what it
+  /// was dressed in. Reading the preference instead is how a window ends up with
+  /// a system caption and an app-drawn strip over it, or the reverse and no
+  /// caption at all; `main.dart` overrides `windowChromeProvider` with this value
+  /// so the widgets and the frame can never disagree.
   late final ShellWindowChrome windowChrome;
 
   final ShellPreferencesStore? _preferences;
   final AppPreferencesStore? _appPreferences;
   final LiveLog? _log;
 
-  /// This process's command line, read only to give the frame flag the same
-  /// precedence the runner gives it.
+  /// This process's command line, read only for the frame mode's development pin
+  /// (`--native-frame` / `--custom-frame`).
   final List<String> _launchArguments;
 
   late final AppTray _tray = AppTray(
@@ -87,19 +84,17 @@ final class DesktopEntry with WindowListener implements DesktopTrayPort {
   Future<void> prepare() async {
     final preferences = _appPreferences?.value;
     // Resolved before the window is set up and never re-read: this is the mode
-    // the frame is about to get, and it has to be the mode the rest of the
-    // process believes it has. On Windows that is the runner's answer — argument,
-    // then an explicit override file, then the operating system — and NOT the
-    // stored preference, which may already name the mode for the *next* start.
-    // Off Windows nothing takes the frame over natively, so the preference is
-    // simply what it says.
-    windowChrome = kind == PlatformKind.windows
-        ? NativeFrameFlag.resolve(args: _launchArguments)
-        : (_preferences?.value.windowChrome ?? ShellWindowChrome.app);
+    // the frame is about to get, and everything that draws under it — the strip,
+    // the content inset — has to believe the same thing. The stored preference may
+    // already name the mode for the *next* start, so it is an input, not the answer.
+    windowChrome = resolveWindowChrome(kind: kind, args: _launchArguments, stored: _preferences?.value.windowChrome);
     await setUpDesktopWindow(
       kind: kind,
       title: t.app.title,
       chrome: windowChrome,
+      // A launch-pinned solid surface, for telling a material artefact from a
+      // frame one; absent, the material is asked for wherever it exists.
+      opaqueSurface: launchPinsOpaqueSurface(_launchArguments),
       // The stored window size (general settings); 0 keeps the launch
       // default.
       initialSize: preferences == null || preferences.windowWidth <= 0 || preferences.windowHeight <= 0
