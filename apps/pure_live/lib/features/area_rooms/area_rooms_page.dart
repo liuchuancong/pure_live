@@ -66,14 +66,10 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
         Padding(
           padding: const EdgeInsets.only(right: 8),
           child: Center(
-            child: SegmentedButton<RoomSort>(
-              segments: [
-                ButtonSegment(value: RoomSort.platform, label: Text(context.t.room.sortPlatform)),
-                ButtonSegment(value: RoomSort.viewers, label: Text(context.t.room.sortViewers)),
-              ],
-              selected: {_sort},
-              onSelectionChanged: (selection) => setState(() => _sort = selection.first),
-              showSelectedIcon: false,
+            child: PureSegmented(
+              labels: [context.t.room.sortPlatform, context.t.room.sortViewers],
+              index: _sort.index,
+              onChanged: (value) => setState(() => _sort = RoomSort.values[value]),
             ),
           ),
         ),

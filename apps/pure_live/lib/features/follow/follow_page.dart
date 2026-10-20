@@ -319,7 +319,7 @@ final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefr
           child: ValueListenableBuilder<double?>(
             valueListenable: _progress,
             builder: (context, value, _) =>
-                value == null ? const SizedBox.shrink() : const LinearProgressIndicator(minHeight: 2.5),
+                value == null ? const SizedBox.shrink() : const PureProgress(value: null, height: 2.5),
           ),
         ),
       ],

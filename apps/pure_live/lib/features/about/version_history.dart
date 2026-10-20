@@ -119,7 +119,7 @@ final class _VersionHistorySheetState extends State<VersionHistorySheet> {
               ],
             ),
           ),
-          if (_loading) const LinearProgressIndicator(minHeight: 2),
+          if (_loading) const PureProgress(value: null, height: 2),
           Expanded(
             child: _releases.isEmpty
                 ? PureEmpty(title: context.t.common.empty)

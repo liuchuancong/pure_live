@@ -405,7 +405,7 @@ final class _RemoteSyncPageState extends ConsumerState<RemoteSyncPage> {
         bottom: _service.isSyncing
             ? const PreferredSize(
                 preferredSize: Size.fromHeight(2),
-                child: LinearProgressIndicator(key: ValueKey('remote-sync-progress'), minHeight: 2),
+                child: PureProgress(key: ValueKey('remote-sync-progress'), value: null, height: 2),
               )
             : null,
       ),

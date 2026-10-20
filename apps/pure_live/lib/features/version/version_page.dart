@@ -90,7 +90,7 @@ final class VersionPage extends ConsumerWidget {
         if (latest != null) ...[
           const SizedBox(height: 24),
           _groupTitle(context, context.t.about.updateLog),
-          if (state.checking) const LinearProgressIndicator(minHeight: 2),
+          if (state.checking) const PureProgress(value: null, height: 2),
           PureCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
