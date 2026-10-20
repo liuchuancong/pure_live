@@ -80,13 +80,17 @@ class PureCard extends StatelessWidget {
     return switch (language) {
       // Yaru draws cards with the Material widgets — that is what Yaru itself
       // is; its character comes from the host theme, not from a different card.
+      // `shape` is the only slot Material offers a stroke through, so a plain
+      // card names none and keeps the host theme's own card shape.
       PureDesignLanguage.material || PureDesignLanguage.yaru => Card(
         clipBehavior: Clip.antiAlias,
         color: fill,
-        shape: RoundedRectangleBorder(
-          side: edge == null ? BorderSide.none : BorderSide(color: edge, width: style?.borderWidth ?? 1),
-          borderRadius: style?.borderRadius ?? BorderRadius.circular(theme.card.borderRadius),
-        ),
+        shape: edge == null && style?.borderRadius == null
+            ? null
+            : RoundedRectangleBorder(
+                side: edge == null ? BorderSide.none : BorderSide(color: edge, width: style?.borderWidth ?? 1),
+                borderRadius: style?.borderRadius ?? BorderRadius.circular(theme.card.borderRadius),
+              ),
         child: InkWell(
           onTap: onTap,
           onLongPress: onLongPress,
@@ -138,21 +142,22 @@ class PureCard extends StatelessWidget {
         ),
       ),
       // Fluent's card is interactive itself, and `selected` selects its real
-      // `*Selected` tokens — no token fill is forced on top. Only the
-      // properties [style] names are mapped; the rest stay Fluent's own.
+      // `*Selected` tokens — no token fill is forced on top. Fluent's style
+      // inherits whatever a slot leaves out, so only the properties the caller
+      // actually named go in: the radius, the stroke and its width stay the
+      // library's own card grammar rather than a remembered 8 px.
       PureDesignLanguage.fluent => f2.FluentCard(
         onPressed: onTap,
         selected: selected,
         focusNode: focusNode,
         autofocus: autofocus,
-        // Windows 11 Settings card grammar: an 8 px radius, no outline — the
-        // card separates by fill against the muted page canvas, not by a
-        // stroke. A border appears only when the caller asks for one.
         style: f2.FluentCardStyle(
           backgroundColor: style?.background == null ? null : WidgetStatePropertyAll(style!.background),
-          borderColor: WidgetStatePropertyAll(edge ?? const Color(0x00000000)),
-          borderWidth: WidgetStatePropertyAll(edge == null ? 0.0 : (style?.borderWidth ?? 1.0)),
-          borderRadius: WidgetStatePropertyAll(style?.borderRadius ?? BorderRadius.circular(8)),
+          borderColor: edge == null ? null : WidgetStatePropertyAll<Color>(edge),
+          borderWidth: edge == null ? null : WidgetStatePropertyAll<double>(style?.borderWidth ?? 1.0),
+          borderRadius: style?.borderRadius == null
+              ? null
+              : WidgetStatePropertyAll<BorderRadius>(style!.borderRadius!),
           padding: WidgetStatePropertyAll<EdgeInsetsGeometry>(inset),
         ),
         // FluentCard has no long-press slot; the wrapper recognises it without

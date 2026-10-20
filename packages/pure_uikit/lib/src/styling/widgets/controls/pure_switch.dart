@@ -93,7 +93,7 @@ class PureSwitch extends StatelessWidget {
         disabled: select == null,
         className:
             'w-11 h-6 rounded-full px-0.5 flex items-center justify-start checked:justify-end '
-            'bg-gray-300 checked:bg-blue-600 disabled:opacity-50',
+            'bg-gray-300 checked:bg-primary-500 disabled:opacity-50',
         thumbClassName: 'w-5 h-5 rounded-full bg-white',
       ),
       // Yaru's own switch: Ubuntu draws a wider pill with a squared thumb, and

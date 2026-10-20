@@ -29,13 +29,15 @@ class LinearIndeterminate extends StatelessWidget {
 /// `UiConfig.language` re-skins every bar.
 class PureProgress extends StatelessWidget {
   /// A progress bar at [value] (0..1).
-  const new({required this.value, this.height = 8, this.showLabel = false, this.barColor, super.key});
+  const new({required this.value, this.height, this.showLabel = false, this.barColor, super.key});
 
   /// The completion fraction, or null for indeterminate.
   final double? value;
 
-  /// The track thickness.
-  final double height;
+  /// The track thickness, or null to keep whichever thickness the active
+  /// library draws by default — macOS and iOS both set 4.5, neumorphic 14 and
+  /// Yaru 4, so a single literal here flattened every one of them.
+  final double? height;
 
   /// Whether to show the trailing percentage.
   final bool showLabel;
@@ -51,13 +53,10 @@ class PureProgress extends StatelessWidget {
 
     return switch (theme.config.language) {
       // A null value stays null: the fork renders its own indeterminate
-      // animation, which is the contract, not a determinate bar at 0.
-      PureDesignLanguage.material => LinearProgressIndicator(
-        value: value,
-        minHeight: height,
-        color: fill,
-        backgroundColor: theme.colors.fillSecondary,
-      ),
+      // animation, which is the contract, not a determinate bar at 0. The
+      // groove is the scheme's own — a token fill colour painted over it reads
+      // as a different material, not as the library's track.
+      PureDesignLanguage.material => LinearProgressIndicator(value: value, minHeight: height, color: fill),
       // A known fraction is iOS's own linear bar; a null one is the spinning
       // ring, which is what iOS itself uses for work of unknown length — it
       // has no thickness or fill to carry, so `height` and `barColor` mean
@@ -67,30 +66,31 @@ class PureProgress extends StatelessWidget {
             ? cupertino.CupertinoActivityIndicator(color: barColor)
             : _labelled(
                 theme,
-                cupertino.CupertinoLinearActivityIndicator(progress: fraction, height: height, color: fill),
+                cupertino.CupertinoLinearActivityIndicator(
+                  progress: fraction,
+                  height: height ?? 4.5,
+                  color: fill,
+                ),
                 fraction,
               ),
       // macOS answers the two states with two widgets of its own: the
       // determinate bar (a percentage, so the fraction is scaled) and the
-      // `ProgressCircle` spinner, which takes only a radius.
+      // `ProgressCircle` spinner, which takes only a radius. Its `trackColor`
+      // is the filled portion and `backgroundColor` the groove, so only the
+      // first is the contract's fill.
       PureDesignLanguage.macos =>
         fraction == null
             ? const macos.ProgressCircle()
-            : macos.ProgressBar(
-                value: (fraction * 100).clamp(0.0, 100.0),
-                height: height,
-                trackColor: fill,
-                backgroundColor: theme.colors.fillSecondary,
-              ),
+            : macos.ProgressBar(value: (fraction * 100).clamp(0.0, 100.0), height: height ?? 4.5, trackColor: fill),
       // fluent_2's bar reads its colours from its own theme and has no colour
       // or thickness slot, so the spec's knobs ride in through the style
-      // override; `value` is the same 0..1-or-null the contract carries.
+      // override; `value` is the same 0..1-or-null the contract carries. A null
+      // thickness leaves the rail's colour to the library.
       PureDesignLanguage.fluent => f2.FluentProgressBar(
         value: fraction,
         style: f2.FluentProgressBarStyle(
           thickness: WidgetStatePropertyAll<double?>(height),
           indicatorColor: WidgetStatePropertyAll<Color?>(fill),
-          railColor: WidgetStatePropertyAll<Color?>(theme.colors.fillSecondary),
         ),
       ),
       // The library splits the two states the contract expresses with a null
@@ -102,28 +102,12 @@ class PureProgress extends StatelessWidget {
       // indicator paints a bar and nothing else, so `showLabel` is the one
       // field of this control the library cannot express and is dropped rather
       // than overlaid with a hand-built percentage.
-      PureDesignLanguage.forui =>
-        fraction == null
-            ? forui.FProgress(
-                style: forui.FProgressStyleDelta.delta(constraints: BoxConstraints.tightFor(height: height)),
-              )
-            : forui.FDeterminateProgress(
-                value: fraction,
-                style: forui.FDeterminateProgressStyleDelta.delta(
-                  constraints: BoxConstraints.tightFor(height: height),
-                  fillDecoration: barColor == null ? null : forui.DecorationDelta.shapeDelta(color: barColor),
-                ),
-              ),
+      PureDesignLanguage.forui => _forui(fraction),
       // glass_morphism_plus ships no indicator. Use Flutter's official Material
       // progress bar rather than a hand-built frosted groove.
       PureDesignLanguage.glass => _labelled(
         theme,
-        LinearProgressIndicator(
-          value: fraction,
-          minHeight: height,
-          color: fill,
-          backgroundColor: theme.colors.fillSecondary,
-        ),
+        LinearProgressIndicator(value: fraction, minHeight: height, color: fill),
         fraction,
       ),
       // The library's own linear bar: a recessed trough with an elevated dome
@@ -134,12 +118,7 @@ class PureProgress extends StatelessWidget {
       // Material indicator.
       PureDesignLanguage.wind => _labelled(
         theme,
-        LinearProgressIndicator(
-          value: fraction,
-          minHeight: height,
-          color: fill,
-          backgroundColor: theme.colors.fillSecondary,
-        ),
+        LinearProgressIndicator(value: fraction, minHeight: height, color: fill),
         fraction,
       ),
       // Yaru's own bar: Ubuntu's progress is a thinner stroke on a track of its
@@ -150,9 +129,30 @@ class PureProgress extends StatelessWidget {
         strokeWidth: height,
         trackStrokeWidth: height,
         color: fill,
-        trackColor: theme.colors.fillSecondary,
       ),
     };
+  }
+
+  /// forui's two states, each with only the deltas the contract actually asks
+  /// for — a null `height` leaves the library's own track constraints in place
+  /// rather than replacing them with a loose box.
+  Widget _forui(double? fraction) {
+    if (fraction == null) {
+      final thickness = height;
+      if (thickness == null) {
+        return const forui.FProgress();
+      }
+      return forui.FProgress(
+        style: forui.FProgressStyleDelta.delta(constraints: BoxConstraints.tightFor(height: thickness)),
+      );
+    }
+    return forui.FDeterminateProgress(
+      value: fraction,
+      style: forui.FDeterminateProgressStyleDelta.delta(
+        constraints: height == null ? null : BoxConstraints.tightFor(height: height),
+        fillDecoration: barColor == null ? null : forui.DecorationDelta.shapeDelta(color: barColor),
+      ),
+    );
   }
 
   /// The library's own linear bar: a recessed trough ([neu.NeuShape.pressed])
@@ -164,9 +164,8 @@ class PureProgress extends StatelessWidget {
     final surface = neu.NeuTheme.of(context);
     return neu.NeuProgressBar(
       value: fraction,
-      height: height,
+      height: height ?? 14.0,
       progressColor: barColor ?? surface.accentColor,
-      trackColor: surface.baseColor,
     );
   }
 

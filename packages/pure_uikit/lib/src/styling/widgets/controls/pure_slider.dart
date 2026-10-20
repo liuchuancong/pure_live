@@ -65,13 +65,14 @@ class PureSlider extends StatelessWidget {
         onChanged: select,
         focusNode: focusNode,
       ),
-      // `MacosSlider.onChanged` is required. When the caller disables the
-      // control, use Flutter's official disabled Material slider rather than
-      // painting the library's rail by hand.
-      PureDesignLanguage.macos =>
-        select == null
-            ? Slider(value: clamped, min: min, max: max, onChanged: null)
-            : macos.MacosSlider(value: clamped, min: min, max: max, onChanged: select),
+      // `MacosSlider.onChanged` is required and the widget has no disabled
+      // state of its own, so the inert form is the library's rail with its
+      // gestures taken away — borrowing Material's slider would have drawn a
+      // different control wherever a caller disabled one.
+      PureDesignLanguage.macos => IgnorePointer(
+        ignoring: select == null,
+        child: macos.MacosSlider(value: clamped, min: min, max: max, onChanged: select ?? _ignoreValue),
+      ),
       // The Cupertino slider takes no focus node; a null callback is its inert
       // state.
       PureDesignLanguage.cupertino => cupertino.CupertinoSlider(value: clamped, min: min, max: max, onChanged: select),
@@ -101,4 +102,8 @@ class PureSlider extends StatelessWidget {
       PureDesignLanguage.yaru => Slider(value: clamped, min: min, max: max, onChanged: select, focusNode: focusNode),
     };
   }
+
+  /// The callback that fills the one slot [macos.MacosSlider] insists on while
+  /// the control is disabled; [IgnorePointer] keeps it from ever firing.
+  static void _ignoreValue(double _) {}
 }

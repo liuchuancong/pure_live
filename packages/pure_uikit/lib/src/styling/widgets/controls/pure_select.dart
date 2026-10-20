@@ -84,7 +84,9 @@ class _PureSelectState<T> extends cupertino.State<PureSelect<T>> {
         ],
         value: chosen.value,
         hint: widget.placeholder == null ? null : Text(widget.placeholder!),
-        style: theme.text.body.copyWith(color: theme.colors.text),
+        // No `style:`: the library reads its own `typography.body` when the
+        // slot is empty, and the adapter already lays the picked family and the
+        // token text colour over that role.
         onChanged: select == null
             ? null
             : (value) {
@@ -139,17 +141,24 @@ class _PureSelectState<T> extends cupertino.State<PureSelect<T>> {
       // whose label is this contract's `itemLabel`, and the chosen option's
       // value comes back unchanged. A null callback or `enabled: false`
       // disables the fork outright (`disabled: true` plus no `onChange`).
-      PureDesignLanguage.wind => wind.WSelect<T>(
-        value: widget.value,
-        options: [for (final item in widget.items) wind.SelectOption<T>(value: item, label: widget.itemLabel(item))],
-        onChange: select,
-        placeholder: widget.placeholder ?? '',
-        disabled: select == null,
-      ),
+      PureDesignLanguage.wind => _wind(select),
       // Yaru ships no combobox — the library has no drop-down at all, so the
       // official Material control is the fallback.
       PureDesignLanguage.material || PureDesignLanguage.yaru => _materialDropdown(chosen, select),
     };
+  }
+
+  /// Wind's own select. Its `placeholder` slot is a non-null string with a
+  /// default of its own, so the contract's null answers with that default
+  /// rather than with an empty label that leaves the box bare.
+  Widget _wind(ValueChanged<T>? select) {
+    return wind.WSelect<T>(
+      value: widget.value,
+      options: [for (final item in widget.items) wind.SelectOption<T>(value: item, label: widget.itemLabel(item))],
+      onChange: select,
+      placeholder: widget.placeholder ?? 'Select an option',
+      disabled: select == null,
+    );
   }
 
   /// The official Material dropdown, shared by the languages whose libraries
