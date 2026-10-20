@@ -41,16 +41,12 @@ void main() {
         config: const UiConfig(language: PureDesignLanguage.macos),
         child: MacosTheme(
           data: MacosThemeData.light(),
-          child: MaterialApp(
+          child: const MaterialApp(
             home: Scaffold(
               body: SizedBox(
                 width: 360,
                 child: PureTabs(
-                  tabs: const [
-                    PureTab(label: 'All'),
-                    PureTab(label: 'Followed'),
-                    PureTab(label: 'Recently watched a lot'),
-                  ],
+                  tabs: [PureTab(label: 'All'), PureTab(label: 'Followed'), PureTab(label: 'Recently watched a lot')],
                   index: 0,
                   onChanged: _select,
                 ),
@@ -75,7 +71,9 @@ Future<void> _pump(WidgetTester tester, Widget child) async {
   await tester.pumpWidget(
     PureConfigProvider(
       config: const UiConfig(language: PureDesignLanguage.material),
-      child: MaterialApp(home: Scaffold(body: SizedBox(width: 300, child: child))),
+      child: MaterialApp(
+        home: Scaffold(body: SizedBox(width: 300, child: child)),
+      ),
     ),
   );
   await tester.pumpAndSettle();

@@ -19,7 +19,7 @@ void main() {
 
     final clips = find.descendant(of: find.byKey(const ValueKey('av')), matching: find.byType(ClipRRect));
     final clip = tester.widget<ClipRRect>(clips);
-    final radius = (clip.borderRadius! as BorderRadius).topLeft.x;
+    final radius = (clip.borderRadius as BorderRadius).topLeft.x;
     expect(radius, greaterThan(0));
     // A quarter of the edge is the cap: a small avatar must keep straight sides.
     expect(radius, lessThanOrEqualTo(10));

@@ -6,7 +6,7 @@ import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart' show ShellWindowChrome;
 import 'package:pure_live/platforms/desktop/shell/window_title_bar.dart'
     show windowChromeActionsProvider, windowChromeStateProvider;
-import 'package:pure_uikit/pure_uikit.dart' show PureTheme, PureTitleBar, PureTitleBarLabels;
+import 'package:pure_uikit/pure_uikit.dart' show PureTitleBar, PureTitleBarLabels;
 
 /// The window's own strip above every page (the reference's `DesktopFrame`,
 /// A16.1): where the desktop shell took the caption over from the system —
@@ -41,9 +41,6 @@ final class DesktopTitleFrame extends ConsumerWidget {
     }
     final state = ref.watch(windowChromeStateProvider);
     final actions = ref.watch(windowChromeActionsProvider);
-    // The strip is the design language's own — this frame only says where it
-    // goes, so the language is read from the theme rather than decided here.
-    final language = PureTheme.of(context).config.language;
     final t = context.t;
     final labels = PureTitleBarLabels(
       title: t.app.title,
@@ -56,7 +53,8 @@ final class DesktopTitleFrame extends ConsumerWidget {
     // business — it listens to [WindowChromeState.maximized] — so handing the
     // page subtree to the builder as `child` keeps a maximize from rebuilding
     // every route under this frame, which is what a `ListenableBuilder` over
-    // both notifiers used to do.
+    // both notifiers used to do. The strip's language is the theme's, decided by
+    // `PureTitleBar` like every other control here.
     return ValueListenableBuilder<bool>(
       valueListenable: state.fullScreen,
       child: child,
@@ -65,12 +63,7 @@ final class DesktopTitleFrame extends ConsumerWidget {
           : Overlay.wrap(
               child: Column(
                 children: [
-                  PureTitleBar(
-                    designLanguage: language,
-                    labels: labels,
-                    actions: actions,
-                    maximized: state.maximized,
-                  ),
+                  PureTitleBar(labels: labels, actions: actions, maximized: state.maximized),
                   Expanded(child: content!),
                 ],
               ),
