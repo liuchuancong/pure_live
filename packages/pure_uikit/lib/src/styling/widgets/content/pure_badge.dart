@@ -6,9 +6,10 @@ import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 
 /// A status badge anchored to [child] — Ant's `Badge`.
 ///
-/// The pill itself is the active language's own badge component where one
-/// exists; the languages whose library ships no badge use Flutter's official
-/// Material `Badge`.
+/// The pill is Flutter's official Material `Badge` when the badge is anchored
+/// to [child] — that widget owns the corner-indicator grammar every language
+/// needs here — and the active language's own badge component when it stands
+/// alone as a tag.
 class PureBadge extends StatelessWidget {
   /// A badge.
   const new({
@@ -64,16 +65,24 @@ class PureBadge extends StatelessWidget {
       text = label;
     }
 
+    // Two components share this contract, and they disagree on size. Anchored
+    // to a child, a badge is a small indicator in its corner — Flutter's
+    // official `Badge` is the only widget with that grammar, because fluent's
+    // and forui's pills are *tags*: laid out at their own padding, a count over
+    // a 36dp avatar filled the avatar. Standalone, the text is a tag and the
+    // library's own badge is the right thing to draw.
+    final anchored = child != null;
+
     final Widget pill = switch (theme.config.language) {
       // Both of these libraries name a badge's colour by its semantic family
       // rather than by a colour, so the token's error background selects the
       // danger family and any other choice the brand/primary one.
-      PureDesignLanguage.fluent when !dot && text != null => f2.FluentBadge(
+      PureDesignLanguage.fluent when !anchored && !dot && text != null => f2.FluentBadge(
         size: f2.FluentBadgeSize.small,
         color: isErrorBadge ? f2.FluentBadgeColor.danger : f2.FluentBadgeColor.brand,
         child: Text(text),
       ),
-      PureDesignLanguage.forui when !dot && text != null => forui.FBadge(
+      PureDesignLanguage.forui when !anchored && !dot && text != null => forui.FBadge(
         variant: isErrorBadge ? forui.FBadgeVariant.destructive : forui.FBadgeVariant.primary,
         child: Text(text),
       ),

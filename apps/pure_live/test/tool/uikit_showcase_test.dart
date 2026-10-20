@@ -161,6 +161,10 @@ class _Showcase extends StatelessWidget {
                     label: 'New',
                     child: PureAvatar(name: 'AB', size: 36, shape: PureAvatarShape.rounded),
                   ),
+                  // The tag form, which is where the libraries with their own
+                  // badge component get to draw it.
+                  SizedBox(width: 16),
+                  PureBadge(label: 'Beta'),
                 ],
               ),
               const SizedBox(height: 16),
