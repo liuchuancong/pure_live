@@ -87,27 +87,6 @@ class PureTextField extends StatelessWidget {
     final theme = PureTheme.of(context);
 
     return switch (theme.config.language) {
-      PureDesignLanguage.material => TextField(
-        controller: controller,
-        focusNode: focusNode,
-        enabled: enabled,
-        readOnly: readOnly,
-        obscureText: obscure,
-        maxLines: obscure ? 1 : maxLines,
-        keyboardType: keyboardType,
-        textInputAction: textInputAction,
-        onChanged: onChanged,
-        onSubmitted: onSubmitted,
-        style: _textStyle(theme),
-        decoration: InputDecoration(
-          hintText: placeholder,
-          errorText: errorText,
-          prefixIcon: prefix == null
-              ? null
-              : IconTheme.merge(data: IconThemeData(color: theme.colors.icon), child: prefix!),
-          suffixIcon: suffix,
-        ),
-      ),
       // An error carries two signals here — it redraws the border and adds a
       // caption line beneath the field — so the field means the same thing on
       // either signal and keeps that meaning across a style switch.
@@ -282,6 +261,15 @@ class PureTextField extends StatelessWidget {
         decoration: InputDecoration(
           hintText: placeholder,
           errorText: errorText,
+          // The outlined box rather than the bare `InputDecoration` default,
+          // which is the underline variant: this family's field then carries
+          // the token's input corner and error colour like every other
+          // language's, instead of a rule with no shape to it.
+          border: _outline(theme, theme.colors.border),
+          enabledBorder: _outline(theme, theme.colors.border),
+          focusedBorder: _outline(theme, theme.colors.primary),
+          errorBorder: _outline(theme, theme.colors.error),
+          focusedErrorBorder: _outline(theme, theme.colors.error),
           prefixIcon: prefix == null
               ? null
               : IconTheme.merge(data: IconThemeData(color: theme.colors.icon), child: prefix!),
@@ -290,6 +278,12 @@ class PureTextField extends StatelessWidget {
       ),
     };
   }
+
+  /// The Material family's field border: the token's input corner, in [color].
+  OutlineInputBorder _outline(PureTheme theme, Color color) => OutlineInputBorder(
+    borderRadius: BorderRadius.circular(theme.input.borderRadius),
+    borderSide: BorderSide(color: color),
+  );
 
   /// The fluent branch: the library's input, wrapped in its validation field
   /// when there is an error to report.

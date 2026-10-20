@@ -89,7 +89,10 @@ class PureNumberStepper extends StatelessWidget {
           onPressed: canDecrement ? () => _apply(-step) : null,
         ),
         SizedBox(
-          width: 44,
+          // The value gets the large control step for its column: wide enough
+          // for the numbers a stepper reaches, and it follows the density the
+          // rest of the control is laid out at.
+          width: theme.token.scale.controlHeightLG,
           child: Text(
             value.toStringAsFixed(decimals),
             textAlign: TextAlign.center,

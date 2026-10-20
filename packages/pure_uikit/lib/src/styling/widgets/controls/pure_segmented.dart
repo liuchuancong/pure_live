@@ -108,9 +108,15 @@ class PureSegmented extends StatelessWidget {
     );
   }
 
-  /// The Cupertino track, or its inert forms: `CupertinoSegmentedControl`
-  /// asserts at least two segments, so one label is drawn as the library's own
-  /// dead press cell and none at all as an empty box.
+  /// The Cupertino track, or its inert forms: the sliding control asserts at
+  /// least two segments, so one label is drawn as the library's own dead press
+  /// cell and none at all as an empty box.
+  ///
+  /// This is the same control the tab strip dispatches to — iOS's segmented
+  /// track with the sliding thumb. The legacy `CupertinoSegmentedControl` is a
+  /// different object in the same library, and having one of each meant the same
+  /// idea arrived at two heights (28 and 32) depending on which control the
+  /// caller reached for.
   Widget _cupertino(PureTheme theme, ValueChanged<int>? select) {
     if (labels.isEmpty) {
       return const SizedBox.shrink();
@@ -127,10 +133,16 @@ class PureSegmented extends StatelessWidget {
     final children = {
       for (var i = 0; i < labels.length; i++) i: Text(labels[i], maxLines: 1, overflow: TextOverflow.ellipsis),
     };
-    return cupertino.CupertinoSegmentedControl<int>(
+    return cupertino.CupertinoSlidingSegmentedControl<int>(
       children: children,
       groupValue: children.containsKey(index) ? index : null,
-      onValueChanged: (i) => select?.call(i),
+      // The sliding control reports a null value when the thumb is released off
+      // any cell; the legacy one never did.
+      onValueChanged: (i) {
+        if (i != null) {
+          select?.call(i);
+        }
+      },
       disabledChildren: enabled ? const <int>{} : children.keys.toSet(),
     );
   }

@@ -104,7 +104,9 @@ class PureButton extends StatelessWidget {
     final language = theme.config.language;
     final enabled = onPressed != null && !loading;
     final m = _metrics(theme, size);
-    final child = _tint(_content(context, iconOnly: false, metrics: m), theme);
+    // An empty label means the caller wants the glyph alone: laying out a label
+    // slot for it added the icon-to-label gap around a string that is not there.
+    final child = _tint(_content(context, iconOnly: icon != null && label.isEmpty, metrics: m), theme);
 
     final button = switch (language) {
       PureDesignLanguage.fluent => f2.FluentButton(
