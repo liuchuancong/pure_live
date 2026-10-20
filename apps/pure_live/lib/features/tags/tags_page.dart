@@ -48,15 +48,18 @@ class _TagsPageState extends ConsumerState<TagsPage> {
     return PureScaffold(
       appBar: PureAppBar(
         title: t.tags.title,
-        actions: [
-          PureIconButton(icon: Icons.add_rounded, tooltip: t.tags.add, onPressed: () => unawaited(_create())),
-        ],
+        actions: [PureIconButton(icon: Icons.add_rounded, tooltip: t.tags.add, onPressed: () => unawaited(_create()))],
       ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 720),
           child: groups.isEmpty
-              ? _Empty(hint: t.tags.emptyHint, title: t.tags.empty, onCreate: () => unawaited(_create()))
+              ? PureEmpty(
+                  icon: Icons.sell_outlined,
+                  title: t.tags.empty,
+                  message: t.tags.emptyHint,
+                  action: PureButton(label: t.tags.add, onPressed: () => unawaited(_create())),
+                )
               : ListView(
                   padding: const EdgeInsets.only(bottom: 32),
                   children: [
@@ -164,32 +167,5 @@ class _TagsPageState extends ConsumerState<TagsPage> {
     if (confirmed == true) {
       await ref.read(followRepositoryProvider).deleteGroup(id);
     }
-  }
-}
-
-class _Empty extends StatelessWidget {
-  const new({required this.title, required this.hint, required this.onCreate});
-
-  final String title;
-  final String hint;
-  final VoidCallback onCreate;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = PureTheme.of(context);
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.sell_outlined, size: 48, color: theme.colors.textTertiary),
-          const SizedBox(height: PureSpacing.md),
-          Text(title, style: theme.text.title),
-          const SizedBox(height: PureSpacing.xs),
-          Text(hint, style: theme.text.bodySmall.copyWith(color: theme.colors.textSecondary)),
-          const SizedBox(height: PureSpacing.lg),
-          PureButton(label: context.t.tags.add, onPressed: onCreate),
-        ],
-      ),
-    );
   }
 }
