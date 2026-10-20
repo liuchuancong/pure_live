@@ -75,13 +75,17 @@ class PureSwitch extends StatelessWidget {
       // Material switch rather than drawing a hand-rolled one; the surrounding
       // glass surfaces still carry the language.
       PureDesignLanguage.glass => Switch(value: value, onChanged: select, focusNode: focusNode, autofocus: autofocus),
+      // `NeuSwitch` takes colours, geometry and a callback — no focus node and
+      // no autofocus — so [focusNode] has nowhere to go in this library.
       PureDesignLanguage.neumorphic => neu.NeuSwitch(value: value, onChanged: select),
       // Wind's fork paints its own `disabled:` state from this flag, so the
       // flag and the nulled callback come from the same verdict. The fork is
       // utility-class driven: with no classes the track and thumb are bare
       // boxes and the switch is invisible, so the grammar is spelled here in
       // its own dialect (the thumb rides `justify-start` → `checked:
-      // justify-end`, the only motion its parser understands).
+      // justify-end`, the only motion its parser understands). Like the other
+      // libraries without a focus slot, `WSwitch` takes no node — its tap is a
+      // gesture, not a focusable control.
       PureDesignLanguage.wind => wind.WSwitch(
         value: value,
         onChanged: select,
