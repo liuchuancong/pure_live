@@ -58,7 +58,11 @@ final class BoxLibraryStore implements LibraryStore {
   new(this.store);
 
   /// The library repository, one document per concern.
-  final StorageListRepository<Map<dynamic, dynamic>> store;
+  ///
+  /// The element type is `Object?`, not `Map`: Hive hands a stored list back
+  /// as a `List<dynamic>`, so a box typed any narrower fails its own value
+  /// codec on the first read after a write.
+  final StorageListRepository<Object?> store;
 
   @override
   Stream<void> get changes => store.watch();
@@ -87,9 +91,19 @@ final class BoxLibraryStore implements LibraryStore {
     if (raw == null) {
       return const [];
     }
+    // One unreadable entry drops out, not the document: history and follows
+    // written before the nested room serialized correctly must still leave a
+    // readable list rather than throwing the whole load at every caller.
     final items = <T>[];
     for (final entry in raw) {
-      items.add(fromJson(entry.cast<String, Object?>()));
+      if (entry is! Map) {
+        continue;
+      }
+      try {
+        items.add(fromJson(entry.cast<String, Object?>()));
+      } on Object {
+        continue;
+      }
     }
     return items;
   }

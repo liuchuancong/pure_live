@@ -102,9 +102,8 @@ final class BarrageGeometry {
 
   /// The repaint clock: manual frame rate, 25..240 FPS; a resolved
   /// automatic rate ([fps]) wins over the stored number.
-  Duration get frameInterval => Duration(
-    microseconds: (1000000 / (fps > 0 ? fps : preferences.barrageFps).clamp(25, 240)).round(),
-  );
+  Duration get frameInterval =>
+      Duration(microseconds: (1000000 / (fps > 0 ? fps : preferences.barrageFps).clamp(25, 240)).round());
 }
 
 /// The danmaku drawn over the video — the reference's `PlayerDanmakuSurface`.
@@ -305,10 +304,7 @@ final class _RoomBarrageOverlayState extends ConsumerState<RoomBarrageOverlay> w
           },
           child: IgnorePointer(
             ignoring: !(tap || longPress),
-            child: AnimatedBuilder(
-              animation: _ticker,
-              builder: (context, _) => _paint(context, geometry, preferences),
-            ),
+            child: AnimatedBuilder(animation: _ticker, builder: (context, _) => _paint(context, geometry, preferences)),
           ),
         );
       },
@@ -329,12 +325,7 @@ final class _RoomBarrageOverlayState extends ConsumerState<RoomBarrageOverlay> w
     }
     setState(() => _actionsHeld = true);
     try {
-      await showRoomMessageActions(
-        context,
-        message,
-        identity: widget.identity,
-        onBlockedUser: _purgeUser,
-      );
+      await showRoomMessageActions(context, ref, message, identity: widget.identity, onBlockedUser: _purgeUser);
     } finally {
       if (mounted) {
         setState(() => _actionsHeld = false);
@@ -390,8 +381,7 @@ final class _RoomBarrageOverlayState extends ConsumerState<RoomBarrageOverlay> w
     );
   }
 
-  double _elapsed(_Barrage entry, DateTime now) =>
-      (now.difference(entry.startedAt) - _held).inMilliseconds / 1000.0;
+  double _elapsed(_Barrage entry, DateTime now) => (now.difference(entry.startedAt) - _held).inMilliseconds / 1000.0;
 
   /// How far the line has travelled: from just off the right edge to just off
   /// the left one, so the exit is as smooth as the entry.

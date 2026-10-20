@@ -7,6 +7,7 @@ import 'package:pure_live/features/room/room_controller.dart' show RoomControlle
 import 'package:pure_live/features/room/room_providers.dart' show RoomIdentity;
 import 'package:pure_live/features/room/widgets/room_barrage_overlay.dart';
 import 'package:pure_live/features/room/widgets/room_control_overlay.dart';
+import 'package:pure_live/features/room/widgets/room_on_video_controls.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
@@ -113,43 +114,44 @@ final class _RoomVideoSurfaceState extends ConsumerState<RoomVideoSurface> {
       onTap: locked ? null : () => widget.controller.revealChrome(toggle: widget.immersive),
       onDoubleTap: locked
           ? null
-          : () =>
-                widget.controller.setPresentation(widget.immersive ? RoomPresentation.normal : RoomPresentation.fullscreen),
+          : () => widget.controller.setPresentation(
+              widget.immersive ? RoomPresentation.normal : RoomPresentation.fullscreen,
+            ),
       // A vertical drag on the right half is volume; on the left it is the
       // portrait fullscreen's 上滑恢复 — brightness needs a system channel
       // this app does not own, so the half is free for the restore.
       onVerticalDragStart: locked
           ? null
           : (details) {
-        _dragFrom = details.globalPosition;
-        _dragDy = 0;
-      },
+              _dragFrom = details.globalPosition;
+              _dragDy = 0;
+            },
       onVerticalDragUpdate: locked
           ? null
           : (details) {
-        _dragDy += details.delta.dy;
-        final box = context.findRenderObject() as RenderBox?;
-        final from = _dragFrom;
-        if (box == null || from == null) {
-          return;
-        }
-        final local = box.globalToLocal(from);
-        if (local.dx < box.size.width * 0.5) {
-          return;
-        }
-        widget.controller.setVolume(widget.state.volume - details.delta.dy / box.size.height);
-      },
+              _dragDy += details.delta.dy;
+              final box = context.findRenderObject() as RenderBox?;
+              final from = _dragFrom;
+              if (box == null || from == null) {
+                return;
+              }
+              final local = box.globalToLocal(from);
+              if (local.dx < box.size.width * 0.5) {
+                return;
+              }
+              widget.controller.setVolume(widget.state.volume - details.delta.dy / box.size.height);
+            },
       onVerticalDragEnd: locked
           ? null
           : (details) {
-        final velocity = details.primaryVelocity ?? 0;
-        final restore = widget.onPortraitRestore;
-        _dragFrom = null;
-        if (restore == null || velocity > -600 || _dragDy > -80) {
-          return;
-        }
-        restore();
-      },
+              final velocity = details.primaryVelocity ?? 0;
+              final restore = widget.onPortraitRestore;
+              _dragFrom = null;
+              if (restore == null || velocity > -600 || _dragDy > -80) {
+                return;
+              }
+              restore();
+            },
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -176,11 +178,11 @@ final class _RoomVideoSurfaceState extends ConsumerState<RoomVideoSurface> {
               alignment: AlignmentDirectional.bottomStart,
               child: Padding(
                 padding: const EdgeInsets.only(left: 8, bottom: 20),
-                child: IconButton(
+                child: RoomOnVideoButton(
                   key: const ValueKey('room-unlock'),
                   tooltip: context.t.room.unlock,
                   onPressed: widget.controller.toggleLock,
-                  icon: const Icon(Icons.lock, color: Colors.white),
+                  icon: Icons.lock,
                 ),
               ),
             ),

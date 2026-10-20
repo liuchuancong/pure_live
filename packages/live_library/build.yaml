@@ -1,0 +1,13 @@
+# Shared codegen options for live_library models.
+#
+# explicit_to_json makes json_serializable call `.toJson()` on nested
+# freezed values (`WatchRecord.room`, `LibraryRoom.room`) instead of
+# embedding the objects raw. Records land in a Hive box, where a raw
+# `_LiveRoom` is an unregistered type: the write throws `HiveError:
+# Cannot write, unknown type` and the read throws a `Map` cast.
+targets:
+  $default:
+    builders:
+      json_serializable:
+        options:
+          explicit_to_json: true

@@ -16,7 +16,11 @@ final class StorageBoxManager {
 
   /// Opens or reuses the keyed box [name] whose values are lists of
   /// [E].
-  Future<KeyedBox<List<E>, String>> list<E extends Object>(String name) {
+  ///
+  /// [E] stays unbounded: Hive reads a stored list back as `List<dynamic>`, so
+  /// a document whose elements are JSON values (a map per record, and a map
+  /// can hold a null) cannot be pinned to `Object`.
+  Future<KeyedBox<List<E>, String>> list<E>(String name) {
     _validateName(name);
     return KeyedBox.open<List<E>, String>(name).run();
   }

@@ -7,6 +7,7 @@ import 'package:live_interaction/live_interaction.dart' show MessageFilter;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/engine/danmaku.dart' show addShieldKeyword, addShieldUser;
 import 'package:pure_live/features/room/room_providers.dart' show RoomIdentity, danmakuSessionProvider;
+import 'package:pure_live/features/settings/widgets/settings_surface.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
@@ -32,19 +33,18 @@ String chatCopyText(LiveMessage message) {
 /// that viewer's lines already in flight.
 Future<void> showRoomMessageActions(
   BuildContext context,
+  WidgetRef ref,
   LiveMessage message, {
   required RoomIdentity identity,
   void Function(String userName)? onBlockedUser,
 }) async {
-  await showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
-    builder: (sheetContext) => _RoomMessageSheet(
-      message: message,
-      identity: identity,
-      onBlockedUser: onBlockedUser,
-    ),
+  // The same surface rule as every other floating panel: centred on a desktop
+  // window, rising from the bottom edge on a handheld.
+  await showSettingsSurface<void>(
+    context,
+    ref,
+    title: null,
+    body: (surfaceContext) => _RoomMessageSheet(message: message, identity: identity, onBlockedUser: onBlockedUser),
   );
 }
 
@@ -63,8 +63,7 @@ final class _RoomMessageSheetState extends ConsumerState<_RoomMessageSheet> {
   /// The keyword page is open (the reference's second page: no centred
   /// dialog over the picture, which is often fullscreen).
   bool _keyword = false;
-  late final TextEditingController _keywordInput =
-      TextEditingController(text: _initialKeyword(widget.message));
+  late final TextEditingController _keywordInput = TextEditingController(text: _initialKeyword(widget.message));
 
   static const _keywordMaxLength = 40;
 
@@ -142,10 +141,7 @@ final class _RoomMessageSheetState extends ConsumerState<_RoomMessageSheet> {
                     onPressed: () => setState(() => _keyword = false),
                   ),
                 Expanded(
-                  child: Text(
-                    _keyword ? t.room.blockKeywordTitle : t.room.messageActions,
-                    style: theme.text.title,
-                  ),
+                  child: Text(_keyword ? t.room.blockKeywordTitle : t.room.messageActions, style: theme.text.title),
                 ),
                 PureIconButton(
                   key: const ValueKey('message-panel-close'),
@@ -192,10 +188,7 @@ final class _RoomMessageSheetState extends ConsumerState<_RoomMessageSheet> {
                       if (name.isNotEmpty)
                         Text(
                           name,
-                          style: theme.text.body.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: _nameColor(sender),
-                          ),
+                          style: theme.text.body.copyWith(fontWeight: FontWeight.w700, color: _nameColor(sender)),
                         ),
                       Text(message.text.isEmpty ? ' ' : message.text, style: theme.text.body),
                       if (level.isNotEmpty)

@@ -510,13 +510,13 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
       // the line on the picture opens.
       return GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onLongPress: () => unawaited(showRoomMessageActions(context, message, identity: widget.identity)),
+        onLongPress: () => unawaited(showRoomMessageActions(context, ref, message, identity: widget.identity)),
         child: row,
       );
     }
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onLongPress: () => unawaited(showRoomMessageActions(context, message, identity: widget.identity)),
+      onLongPress: () => unawaited(showRoomMessageActions(context, ref, message, identity: widget.identity)),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
         child: Container(

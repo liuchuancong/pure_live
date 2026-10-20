@@ -5,6 +5,7 @@ import 'package:flutter/painting.dart' show BoxFit, Rect;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_device/live_device.dart' show NetworkInterface, PlatformNetworkConnectivityService;
 import 'package:live_library/live_library.dart' show WatchRecordIdentity;
+import 'package:live_log/live_log.dart' show ErrorReporter;
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_playback/live_playback.dart' show EngineProgress, EngineReady, EngineStopped, PlaybackEngineEvent;
 import 'package:live_sites/live_sites.dart';
@@ -12,6 +13,7 @@ import 'package:media_core/media_core.dart'
     show
         EngineOptionOutcome,
         PlayerAdapterDurationChanged,
+        PlayerAdapterErrorEvent,
         PlayerAdapterEvent,
         PlayerAdapterPlaying,
         PlayerAdapterPositionChanged,
@@ -360,8 +362,13 @@ final class RoomController extends Notifier<RoomState> {
   bool get _entryValid => identity.siteId.trim().isNotEmpty && identity.roomId.trim().isNotEmpty;
 
   void _onEngineEvent(PlaybackEngineEvent event) {
+    final log = ref.read(appLogProvider).forCategory('room');
     switch (event) {
       case EngineReady():
+        log.info(
+          'engine ready',
+          fields: {'site': identity.siteId, 'room': identity.roomId, 'fit': state.videoFit.name},
+        );
         state = state.copyWith(engineStopped: false, streamError: null, paused: false);
         // The stored 画面比例 rides every open — a quality switch rebuilds
         // the adapter, and a new one starts from the engine's own default.
@@ -375,7 +382,16 @@ final class RoomController extends Notifier<RoomState> {
         // The engine's own level is whatever the last handle left; the room's is
         // the stored answer, so it is re-asserted on every open.
         unawaited(_engine.surfaceAdapter?.setVolume(state.muted ? 0 : state.volume).catchError((_) {}));
-      case EngineStopped():
+      case EngineStopped(:final error):
+        // The engine answers an open that failed, and nothing else: a stream
+        // that dies mid-play stays silent here, which is why the room shows a
+        // black picture rather than a complaint.
+        ErrorReporter.report(
+          ref.read(appLogProvider).forCategory('room'),
+          error ?? StateError('engine stopped'),
+          null,
+          message: 'engine stopped (${identity.siteId} ${identity.roomId})',
+        );
         state = state.copyWith(engineStopped: true);
       case EngineProgress():
         break;
@@ -387,12 +403,25 @@ final class RoomController extends Notifier<RoomState> {
   /// timer and reads the adapter directly.
   void onAdapterEvent(PlayerAdapterEvent event) {
     switch (event) {
-      case PlayerAdapterDurationChanged() || PlayerAdapterPositionChanged() || PlayerAdapterPlaying():
-        _maybeResumeSeek();
+      case PlayerAdapterErrorEvent(:final message, :final error):
+        // libmpv answers *after* a successful open too — a lease that expired,
+        // a CDN that refused the referer, a decoder that gave up. The engine's
+        // own event stream only carries the open, so without this the room
+        // keeps a black picture and never says why.
+        ErrorReporter.report(
+          ref.read(appLogProvider).forCategory('room'),
+          error ?? StateError(message),
+          null,
+          message: 'player error: $message',
+        );
+        state = state.copyWith(engineStopped: true, streamError: StateError(message));
       case PlayerAdapterVideoSizeChanged(:final width, :final height):
         if (width != state.videoWidth || height != state.videoHeight) {
+          ref.read(appLogProvider).forCategory('room').debug('video size $width x $height');
           state = state.copyWith(videoWidth: width, videoHeight: height);
         }
+      case PlayerAdapterDurationChanged() || PlayerAdapterPositionChanged() || PlayerAdapterPlaying():
+        _maybeResumeSeek();
       case PlayerAdapterVolumeChanged(:final volume):
         state = state.copyWith(volume: volume.clamp(0.0, 1.0));
       case PlayerAdapterRateChanged(:final rate):
@@ -458,7 +487,17 @@ final class RoomController extends Notifier<RoomState> {
             roomId: identity.roomId,
             progress: position.inMilliseconds / duration.inMilliseconds,
             position: position,
-          ),
+          )
+          // This ticks every [_progressWriteInterval]; a store that rejects the
+          // write would answer as an unhandled error each time.
+          .catchError((Object error, StackTrace stackTrace) {
+            ErrorReporter.report(
+              ref.read(appLogProvider).forCategory('room'),
+              error,
+              stackTrace,
+              message: 'history progress write',
+            );
+          }),
     );
   }
 
@@ -488,6 +527,33 @@ final class RoomController extends Notifier<RoomState> {
           room: detail.fold((_) => null, (room) => room),
         );
       }
+      await _enterHistory();
+      await _loadQualities();
+    } on Object catch (error, stackTrace) {
+      // Everything between the route and the player that can throw lands here.
+      // Without it the page renders neither a spinner, a message nor a retry:
+      // the finally clears the loading flag and the surface falls through to an
+      // empty box, so the room looks broken in a way nobody can report.
+      ErrorReporter.report(ref.read(appLogProvider).forCategory('room'), error, stackTrace, message: 'room load');
+      if (ref.mounted) {
+        state = state.copyWith(detailError: error);
+      }
+    } finally {
+      _loadingDetail = false;
+      // A load that outlived its room page must not write into a disposed
+      // provider; the last watcher leaving already tore the controller down.
+      if (ref.mounted) {
+        state = state.copyWith(loadingDetail: false);
+      }
+    }
+  }
+
+  /// Writes the watch-history entry for this visit.
+  ///
+  /// A side effect of opening the room, never a precondition of playing it: a
+  /// store that rejects the record is logged and the stream opens anyway.
+  Future<void> _enterHistory() async {
+    try {
       final known = state.room;
       final repository = ref.read(historyRepositoryProvider);
       // `record` rewrites the entry without watch progress, so the saved resume
@@ -512,14 +578,8 @@ final class RoomController extends Notifier<RoomState> {
           position: savedPosition,
         );
       }
-      await _loadQualities();
-    } finally {
-      _loadingDetail = false;
-      // A load that outlived its room page must not write into a disposed
-      // provider; the last watcher leaving already tore the controller down.
-      if (ref.mounted) {
-        state = state.copyWith(loadingDetail: false);
-      }
+    } on Object catch (error, stackTrace) {
+      ErrorReporter.report(ref.read(appLogProvider).forCategory('room'), error, stackTrace, message: 'history record');
     }
   }
 
@@ -592,6 +652,13 @@ final class RoomController extends Notifier<RoomState> {
   /// Opens [line] on the engine, then follows the new adapter for the duration
   /// report that arms the resume seek — a switch swaps the adapter underneath.
   Future<void> play(LivePlayLine line) async {
+    ref
+        .read(appLogProvider)
+        .forCategory('room')
+        .debug(
+          'opening a ${line.format.name} line',
+          fields: {'host': Uri.tryParse(line.url)?.host ?? '', 'headers': line.headers.keys.toList()},
+        );
     state = state.copyWith(line: line, engineStopped: false, paused: false);
     await _engine.open(line);
     unawaited(_adapterSub?.cancel());
@@ -698,11 +765,11 @@ final class RoomController extends Notifier<RoomState> {
     if (fullscreenOverrideOf(target) case final String choice) {
       if (preferences.rememberPortraitRoomOverride && preferences.portraitRoomOverrides[overrideKey] != choice) {
         unawaited(
-          ref.read(appPreferencesProvider.notifier).update(
-            (old) => old.copyWith(
-              portraitRoomOverrides: {...old.portraitRoomOverrides, overrideKey: choice},
-            ),
-          ),
+          ref
+              .read(appPreferencesProvider.notifier)
+              .update(
+                (old) => old.copyWith(portraitRoomOverrides: {...old.portraitRoomOverrides, overrideKey: choice}),
+              ),
         );
       }
     }
@@ -822,7 +889,8 @@ final class RoomController extends Notifier<RoomState> {
       try {
         final size = await windowManager.getSize();
         final position = await windowManager.getPosition();
-        final rect = '${position.dx.toStringAsFixed(0)},${position.dy.toStringAsFixed(0)},'
+        final rect =
+            '${position.dx.toStringAsFixed(0)},${position.dy.toStringAsFixed(0)},'
             '${size.width.toStringAsFixed(0)},${size.height.toStringAsFixed(0)}';
         if (rect != preferences.miniWindowRect) {
           await ref.read(appPreferencesProvider.notifier).update((p) => p.copyWith(miniWindowRect: rect));

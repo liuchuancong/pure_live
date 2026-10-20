@@ -18,7 +18,7 @@ _IptvChannel _$IptvChannelFromJson(Map<String, dynamic> json) => _IptvChannel(
 
 Map<String, dynamic> _$IptvChannelToJson(_IptvChannel instance) => <String, dynamic>{
   'id': instance.id,
-  'entry': instance.entry,
+  'entry': instance.entry.toJson(),
   'favorite': instance.favorite,
   'hidden': instance.hidden,
   'pinned': instance.pinned,

@@ -14,6 +14,7 @@ import 'package:pure_live/features/room/room_controller.dart' show RoomControlle
 import 'package:pure_live/features/room/room_providers.dart' show RoomIdentity;
 import 'package:pure_live/features/room/widgets/room_bar_parts.dart' show PortraitEntryHint;
 import 'package:pure_live/features/room/widgets/room_header_parts.dart';
+import 'package:pure_live/features/room/widgets/room_on_video_controls.dart';
 import 'package:pure_live/features/room/widgets/room_resolution_row.dart';
 import 'package:pure_live/features/room/widgets/room_video_surface.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
@@ -488,14 +489,9 @@ final class _RoomPhonePortraitLayoutState extends ConsumerState<RoomPhonePortrai
                   ),
                 ),
               ),
-            if (veil case final shade?) ColoredBox(key: const ValueKey('fullscreen-portrait-ambient-veil'), color: shade),
-            SafeArea(
-              child: displayMode == 'cover'
-                  ? picture
-                  : Center(
-                      child: picture,
-                    ),
-            ),
+            if (veil case final shade?)
+              ColoredBox(key: const ValueKey('fullscreen-portrait-ambient-veil'), color: shade),
+            SafeArea(child: displayMode == 'cover' ? picture : Center(child: picture)),
             if (preferences.showPortraitDiagnostics) _diagnostics(context, state),
             // The hint after entering (3.x `PortraitFullscreenEntryHint`):
             // what the fling does, above the bars, gone in three seconds.
@@ -526,7 +522,8 @@ final class _RoomPhonePortraitLayoutState extends ConsumerState<RoomPhonePortrai
     final height = state.videoHeight;
     final ratio = state.sourceAspectRatio;
     final verdict = state.isVerticalSource ? 'portrait' : 'landscape';
-    final rules = '${_preferences.portraitLayoutMode}/${_preferences.portraitFullscreenPolicy}'
+    final rules =
+        '${_preferences.portraitLayoutMode}/${_preferences.portraitFullscreenPolicy}'
         '/${_preferences.portraitDisplayMode}';
     final text = '${width ?? 0}×${height ?? 0}  ${ratio.toStringAsFixed(2)} · $verdict \n$rules';
     return Positioned(
@@ -535,7 +532,10 @@ final class _RoomPhonePortraitLayoutState extends ConsumerState<RoomPhonePortrai
       top: 60,
       child: IgnorePointer(
         child: DecoratedBox(
-          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.55), borderRadius: BorderRadius.circular(8)),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(8),
+          ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
             child: Text(
@@ -593,42 +593,12 @@ final class _LandscapePill extends StatelessWidget {
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 180),
         opacity: visible ? 1 : 0,
-        child: Material(
-          color: Colors.black.withValues(alpha: 0.68),
-          borderRadius: BorderRadius.circular(24),
-          clipBehavior: Clip.antiAlias,
-          child: Tooltip(
-            message: t.room.enterLandscapeFullscreen,
-            child: InkWell(
-              key: const ValueKey('portrait-landscape-fullscreen'),
-              onTap: visible ? onTap : null,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  minWidth: kMinInteractiveDimension,
-                  minHeight: kMinInteractiveDimension,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.screen_rotation_rounded, color: Colors.white, size: 20),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          t.room.enterLandscapeFullscreen,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+        child: RoomOnVideoChip(
+          key: const ValueKey('portrait-landscape-fullscreen'),
+          label: t.room.enterLandscapeFullscreen,
+          icon: Icons.screen_rotation_rounded,
+          maxLabelWidth: 220,
+          onTap: visible ? onTap : null,
         ),
       ),
     );

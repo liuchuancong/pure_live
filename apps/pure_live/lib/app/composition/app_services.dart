@@ -161,17 +161,18 @@ final class AppServices {
     await appearance.load();
 
     // The library (follows, groups, watch history) owns one list box; its
-    // repositories watch the box, so a second window stays in step.
-    final libraryBox = await StorageBoxManager().list<Map<dynamic, dynamic>>('library');
-    final libraryStore = BoxLibraryStore(HiveStorageListRepository<Map<dynamic, dynamic>>(box: libraryBox));
+    // repositories watch the box, so a second window stays in step. The element
+    // type is `Object?` because Hive reads a list back as `List<dynamic>`.
+    final libraryBox = await StorageBoxManager().list<Object?>('library');
+    final libraryStore = BoxLibraryStore(HiveStorageListRepository<Object?>(box: libraryBox));
     final followRepository = FollowRepository(libraryStore);
     await followRepository.load();
     final historyRepository = HistoryRepository(libraryStore);
     await historyRepository.load();
 
     // The IPTV library owns its own list box, the same second-window rule.
-    final iptvBox = await StorageBoxManager().list<Map<dynamic, dynamic>>('iptv');
-    final iptvLibrary = IptvLibrary(BoxIptvStore(HiveStorageListRepository<Map<dynamic, dynamic>>(box: iptvBox)));
+    final iptvBox = await StorageBoxManager().list<Object?>('iptv');
+    final iptvLibrary = IptvLibrary(BoxIptvStore(HiveStorageListRepository<Object?>(box: iptvBox)));
     await iptvLibrary.load();
     // The shell document lives in the same box under its own key: one open,
     // one document per preference group.

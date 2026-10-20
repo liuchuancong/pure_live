@@ -16,7 +16,11 @@ final class BoxIptvStore implements IptvStore {
   new(this.store);
 
   /// The IPTV repository, one document per concern.
-  final StorageListRepository<Map<dynamic, dynamic>> store;
+  ///
+  /// The element type is `Object?`, not `Map`: Hive hands a stored list back as
+  /// a `List<dynamic>`, so a box typed any narrower fails its own value codec
+  /// on the first read after a write.
+  final StorageListRepository<Object?> store;
 
   @override
   Stream<void> get changes => store.watch();
@@ -78,7 +82,10 @@ final class BoxIptvStore implements IptvStore {
     // A record whose address is gone is dropped rather than guessed at:
     // half a verdict about an unknown URL would rank a line the probe never
     // asked about.
-    return [for (final entry in raw) ?IptvLineHealth.fromJson(entry.cast<String, Object?>())];
+    return [
+      for (final entry in raw)
+        if (entry is Map) ?IptvLineHealth.fromJson(entry.cast<String, Object?>()),
+    ];
   }
 
   @override
@@ -90,7 +97,27 @@ final class BoxIptvStore implements IptvStore {
     if (raw == null) {
       return const [];
     }
-    return [for (final entry in raw) fromJson(entry.cast<String, Object?>())];
+    // One unreadable entry drops out, not the document: a record written by
+    // an older schema must not blank the whole library.
+    final items = <T>[];
+    for (final entry in raw) {
+      if (entry is! Map) {
+        continue;
+      }
+      final decoded = _decode(fromJson, entry.cast<String, Object?>());
+      if (decoded != null) {
+        items.add(decoded);
+      }
+    }
+    return items;
+  }
+
+  static T? _decode<T>(T Function(Map<String, Object?>) fromJson, Map<String, Object?> json) {
+    try {
+      return fromJson(json);
+    } on Object {
+      return null;
+    }
   }
 
   Future<void> _save<T>(String key, List<T> items, Map<String, Object?> Function(T) toJson) =>

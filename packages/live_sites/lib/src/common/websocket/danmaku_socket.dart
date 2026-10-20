@@ -97,7 +97,11 @@ final class DanmakuSocket {
     });
     _live = true;
     await client.connect();
-    if (!_wasConnected) {
+    // The client's own answer, not the state event: a broadcast stream delivers
+    // `connected` a microtask after `connect` returns, so reading `_wasConnected`
+    // here decided "no connection" for a socket that had just opened and tore it
+    // down — every site's danmaku then retried forever.
+    if (!client.isConnected) {
       await stop();
       return false;
     }

@@ -3,8 +3,10 @@ import 'package:live_sites/live_sites.dart' show LiveRoom;
 import 'package:pure_live/features/room/danmaku_pane.dart' show DanmakuPane;
 import 'package:pure_live/features/room/room_controller.dart' show RoomController, RoomState;
 import 'package:pure_live/features/room/room_providers.dart' show RoomIdentity;
+import 'package:pure_live/features/room/widgets/room_on_video_controls.dart';
 import 'package:pure_live/features/room/widgets/room_resolution_row.dart';
 import 'package:pure_live/features/room/widgets/room_video_surface.dart';
+import 'package:pure_live/l10n/generated/strings.g.dart';
 
 /// The sideways phone room.
 ///
@@ -67,7 +69,7 @@ final class RoomPhoneLandscapeLayout extends StatelessWidget {
               // A quarter of the window, floored where a quarter would not fit
               // a line of chat and capped so a foldable never loses its picture.
               width: (width * 0.26).clamp(200.0, 300.0),
-              child: _strip(),
+              child: _strip(context),
             ),
         ],
       ),
@@ -76,7 +78,7 @@ final class RoomPhoneLandscapeLayout extends StatelessWidget {
 
   /// The chat strip: a scrim so the barrage under it stays readable, the
   /// quality row, then the pane.
-  Widget _strip() {
+  Widget _strip(BuildContext context) {
     return DecoratedBox(
       decoration: const BoxDecoration(
         color: Color(0xCC000000),
@@ -101,8 +103,9 @@ final class RoomPhoneLandscapeLayout extends StatelessWidget {
                   // The strip covers a slice of the picture. Closing it drops
                   // the chrome, which is what a tap on the video does too, so
                   // one gesture reopens both.
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white70),
+                  RoomOnVideoButton(
+                    icon: Icons.close,
+                    tooltip: context.t.common.close,
                     onPressed: controller.hideChrome,
                   ),
                 ],

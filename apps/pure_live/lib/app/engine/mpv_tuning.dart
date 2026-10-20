@@ -63,10 +63,14 @@ abstract final class MpvTuning {
     required bool isDesktop,
   }) {
     final options = <String, String>{};
-    // vo/ao only when the user opted into custom output: the media_kit
-    // adapter's own defaults are what an untouched app ran with before.
+    // ao only when the user opted into custom output: the media_kit adapter's
+    // own defaults are what an untouched app ran with before.
+    //
+    // `vo` is never written. media_kit feeds its Flutter surface from mpv's
+    // `libmpv` video output, and any other output — including mpv's own
+    // `auto` — leaves the embedded widget with no frames at all: a black
+    // picture while the audio keeps running.
     if (preferences.customPlayerOutput) {
-      options['vo'] = MpvPlatformProfile.normalizeVideoOutputDriverForPlatform(preferences.videoOutputDriver, platform);
       final ao = MpvPlatformProfile.normalizeAudioOutputDriverForPlatform(preferences.audioOutputDriver, platform);
       if (ao.isNotEmpty) {
         options['ao'] = ao;
