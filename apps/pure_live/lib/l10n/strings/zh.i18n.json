@@ -979,7 +979,11 @@
   },
   "areas": {
     "followedAreas": "关注的分区",
-    "empty": "暂无分区"
+    "empty": "暂无分区",
+    "followEmpty": "还没有关注的分区",
+    "followEmptyHint": "点进一个分区，再用右上角的按钮关注它。",
+    "followDone": "已关注「{name: String}」",
+    "unfollowDone": "已取消关注「{name: String}」"
   },
   "popular": {
     "allPlatforms": "全部平台",

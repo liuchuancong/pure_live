@@ -24,6 +24,9 @@ abstract final class RoutePath {
   /// The category catalogue.
   static const String areas = '/areas';
 
+  /// The followed partitions, reached from the areas page's pill.
+  static const String followedAreas = '/areas/followed';
+
   /// The recording centre, the reference's fourth tab (3.x `record_center`).
   static const String recorder = '/recorder';
 

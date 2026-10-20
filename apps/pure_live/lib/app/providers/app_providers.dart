@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart' show IptvLibrary;
-import 'package:live_library/live_library.dart' show FollowRepository, HistoryRepository;
+import 'package:live_library/live_library.dart' show FollowAreaRepository, FollowRepository, HistoryRepository;
 import 'package:live_net/live_net.dart' show LiveHttp;
 import 'package:live_platform/live_platform.dart' show PlatformEnvironment;
 import 'package:live_shell/live_shell.dart' show InstanceChannel, StartupRegistration;
@@ -172,6 +172,11 @@ final updateFeedProvider = Provider<UpdateFeed>(
 
 /// The user's followed rooms and groups, overridden at start-up.
 final followRepositoryProvider = Provider<FollowRepository>(
+  (ref) => throw UnimplementedError('overridden by the composition root'),
+);
+
+/// The user's followed partitions (areas), overridden at start-up.
+final followAreaRepositoryProvider = Provider<FollowAreaRepository>(
   (ref) => throw UnimplementedError('overridden by the composition root'),
 );
 

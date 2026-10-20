@@ -54,6 +54,7 @@ final class AppServices {
     required this.appPreferences,
     required this.sites,
     required this.followRepository,
+    required this.followAreaRepository,
     required this.historyRepository,
     required this.iptvLibrary,
     required this.iptvPreferences,
@@ -96,6 +97,9 @@ final class AppServices {
 
   /// The user's followed rooms and their groups.
   final FollowRepository followRepository;
+
+  /// The user's followed partitions (areas), in display order.
+  final FollowAreaRepository followAreaRepository;
 
   /// The user's watch history.
   final HistoryRepository historyRepository;
@@ -167,6 +171,8 @@ final class AppServices {
     final libraryStore = BoxLibraryStore(HiveStorageListRepository<Object?>(box: libraryBox));
     final followRepository = FollowRepository(libraryStore);
     await followRepository.load();
+    final followAreaRepository = FollowAreaRepository(libraryStore);
+    await followAreaRepository.load();
     final historyRepository = HistoryRepository(libraryStore);
     await historyRepository.load();
 
@@ -272,6 +278,7 @@ final class AppServices {
       appPreferences: appPreferences,
       sites: sites,
       followRepository: followRepository,
+      followAreaRepository: followAreaRepository,
       historyRepository: historyRepository,
       iptvLibrary: iptvLibrary,
       iptvPreferences: iptvPreferences,
@@ -293,6 +300,7 @@ final class AppServices {
     await multiviewPreferences.dispose();
     await storage.shutdown();
     await followRepository.dispose();
+    await followAreaRepository.dispose();
     await historyRepository.dispose();
     await iptvLibrary.dispose();
     await sites.dispose();

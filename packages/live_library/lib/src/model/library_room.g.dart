@@ -34,6 +34,22 @@ Map<String, dynamic> _$FollowGroupToJson(_FollowGroup instance) => <String, dyna
   'position': instance.position,
 };
 
+_FollowArea _$FollowAreaFromJson(Map<String, dynamic> json) => _FollowArea(
+  platform: json['platform'] as String,
+  areaId: json['areaId'] as String,
+  name: json['name'] as String,
+  followedAt: DateTime.parse(json['followedAt'] as String),
+  position: (json['position'] as num?)?.toInt() ?? 0,
+);
+
+Map<String, dynamic> _$FollowAreaToJson(_FollowArea instance) => <String, dynamic>{
+  'platform': instance.platform,
+  'areaId': instance.areaId,
+  'name': instance.name,
+  'followedAt': instance.followedAt.toIso8601String(),
+  'position': instance.position,
+};
+
 _WatchRecord _$WatchRecordFromJson(Map<String, dynamic> json) => _WatchRecord(
   room: LiveRoom.fromJson(json['room'] as Map<String, dynamic>),
   watchedAt: DateTime.parse(json['watchedAt'] as String),

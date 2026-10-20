@@ -596,6 +596,288 @@ as int,
 
 
 /// @nodoc
+mixin _$FollowArea {
+
+ String get platform; String get areaId; String get name; DateTime get followedAt; int get position;
+/// Create a copy of FollowArea
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$FollowAreaCopyWith<FollowArea> get copyWith => _$FollowAreaCopyWithImpl<FollowArea>(this as FollowArea, _$identity);
+
+  /// Serializes this FollowArea to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  final _this = this as FollowArea;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FollowArea&&(identical(other.platform, _this.platform) || other.platform == _this.platform)&&(identical(other.areaId, _this.areaId) || other.areaId == _this.areaId)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.followedAt, _this.followedAt) || other.followedAt == _this.followedAt)&&(identical(other.position, _this.position) || other.position == _this.position));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+  final _this = this as FollowArea;
+  return Object.hash(runtimeType,_this.platform,_this.areaId,_this.name,_this.followedAt,_this.position);
+}
+
+@override
+String toString() {
+  final _this = this as FollowArea;
+  return 'FollowArea(platform: ${_this.platform}, areaId: ${_this.areaId}, name: ${_this.name}, followedAt: ${_this.followedAt}, position: ${_this.position})';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $FollowAreaCopyWith<$Res>  {
+  factory $FollowAreaCopyWith(FollowArea value, $Res Function(FollowArea) _then) = _$FollowAreaCopyWithImpl;
+@useResult
+$Res call({
+ String platform, String areaId, String name, DateTime followedAt, int position
+});
+
+
+
+
+}
+/// @nodoc
+class _$FollowAreaCopyWithImpl<$Res>
+    implements $FollowAreaCopyWith<$Res> {
+  _$FollowAreaCopyWithImpl(this._self, this._then);
+
+  final FollowArea _self;
+  final $Res Function(FollowArea) _then;
+
+/// Create a copy of FollowArea
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? platform = null,Object? areaId = null,Object? name = null,Object? followedAt = null,Object? position = null,}) {
+  return _then(FollowArea(
+platform: null == platform ? _self.platform : platform // ignore: cast_nullable_to_non_nullable
+as String,areaId: null == areaId ? _self.areaId : areaId // ignore: cast_nullable_to_non_nullable
+as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,followedAt: null == followedAt ? _self.followedAt : followedAt // ignore: cast_nullable_to_non_nullable
+as DateTime,position: null == position ? _self.position : position // ignore: cast_nullable_to_non_nullable
+as int,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [FollowArea].
+extension FollowAreaPatterns on FollowArea {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _FollowArea value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _FollowArea() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _FollowArea value)  $default,){
+final _that = this;
+switch (_that) {
+case _FollowArea():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _FollowArea value)?  $default,){
+final _that = this;
+switch (_that) {
+case _FollowArea() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String platform,  String areaId,  String name,  DateTime followedAt,  int position)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _FollowArea() when $default != null:
+return $default(_that.platform,_that.areaId,_that.name,_that.followedAt,_that.position);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String platform,  String areaId,  String name,  DateTime followedAt,  int position)  $default,) {final _that = this;
+switch (_that) {
+case _FollowArea():
+return $default(_that.platform,_that.areaId,_that.name,_that.followedAt,_that.position);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String platform,  String areaId,  String name,  DateTime followedAt,  int position)?  $default,) {final _that = this;
+switch (_that) {
+case _FollowArea() when $default != null:
+return $default(_that.platform,_that.areaId,_that.name,_that.followedAt,_that.position);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _FollowArea extends FollowArea {
+  const _FollowArea({required this.platform, required this.areaId, required this.name, required this.followedAt, this.position = 0}): super._();
+  factory _FollowArea.fromJson(Map<String, dynamic> json) => _$FollowAreaFromJson(json);
+
+@override final  String platform;
+@override final  String areaId;
+@override final  String name;
+@override final  DateTime followedAt;
+@override@JsonKey() final  int position;
+
+/// Create a copy of FollowArea
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$FollowAreaCopyWith<_FollowArea> get copyWith => __$FollowAreaCopyWithImpl<_FollowArea>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$FollowAreaToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _FollowArea&&(identical(other.platform, platform) || other.platform == platform)&&(identical(other.areaId, areaId) || other.areaId == areaId)&&(identical(other.name, name) || other.name == name)&&(identical(other.followedAt, followedAt) || other.followedAt == followedAt)&&(identical(other.position, position) || other.position == position));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+    return Object.hash(runtimeType,platform,areaId,name,followedAt,position);
+}
+
+@override
+String toString() {
+    return 'FollowArea(platform: $platform, areaId: $areaId, name: $name, followedAt: $followedAt, position: $position)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$FollowAreaCopyWith<$Res> implements $FollowAreaCopyWith<$Res> {
+  factory _$FollowAreaCopyWith(_FollowArea value, $Res Function(_FollowArea) _then) = __$FollowAreaCopyWithImpl;
+@override @useResult
+$Res call({
+ String platform, String areaId, String name, DateTime followedAt, int position
+});
+
+
+
+
+}
+/// @nodoc
+class __$FollowAreaCopyWithImpl<$Res>
+    implements _$FollowAreaCopyWith<$Res> {
+  __$FollowAreaCopyWithImpl(this._self, this._then);
+
+  final _FollowArea _self;
+  final $Res Function(_FollowArea) _then;
+
+/// Create a copy of FollowArea
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? platform = null,Object? areaId = null,Object? name = null,Object? followedAt = null,Object? position = null,}) {
+  return _then(_FollowArea(
+platform: null == platform ? _self.platform : platform // ignore: cast_nullable_to_non_nullable
+as String,areaId: null == areaId ? _self.areaId : areaId // ignore: cast_nullable_to_non_nullable
+as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,followedAt: null == followedAt ? _self.followedAt : followedAt // ignore: cast_nullable_to_non_nullable
+as DateTime,position: null == position ? _self.position : position // ignore: cast_nullable_to_non_nullable
+as int,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
 mixin _$WatchRecord {
 
  LiveRoom get room; DateTime get watchedAt; int get seq; double? get progress;@DurationMillisConverter() Duration? get position;

@@ -12,6 +12,7 @@ List<RouteBase> get $appRoutes => [
   $versionRoute,
   $versionHistoryRoute,
   $areaRoomsRoute,
+  $followedAreasRoute,
   $backupRoute,
   $historyRoute,
   $iptvRoute,
@@ -236,6 +237,28 @@ mixin $AreaRoomsRoute on GoRouteData {
     '/areas/${Uri.encodeComponent(_self.siteId)}/${Uri.encodeComponent(_self.areaId)}',
     queryParams: {if (_self.areaName != '') 'area-name': _self.areaName},
   );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $followedAreasRoute =>
+    GoRouteData.$route(path: '/areas/followed', hasOverriddenOnExit: false, factory: $FollowedAreasRoute._fromState);
+
+mixin $FollowedAreasRoute on GoRouteData {
+  static FollowedAreasRoute _fromState(GoRouterState state) => const FollowedAreasRoute();
+
+  @override
+  String get location => GoRouteData.$location('/areas/followed');
 
   @override
   void go(BuildContext context) => context.go(location);

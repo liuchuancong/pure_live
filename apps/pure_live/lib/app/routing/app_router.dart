@@ -16,6 +16,7 @@ import 'package:pure_live/features/about/about_page.dart';
 import 'package:pure_live/features/about/version_history.dart' show VersionHistoryPage;
 import 'package:pure_live/features/area_rooms/area_rooms_page.dart';
 import 'package:pure_live/features/areas/areas_page.dart';
+import 'package:pure_live/features/areas/followed_areas_page.dart';
 import 'package:pure_live/features/backup/backup_page.dart';
 import 'package:pure_live/features/follow/follow_page.dart';
 import 'package:pure_live/features/history/history_page.dart';
@@ -245,6 +246,17 @@ class AreaRoomsRoute extends GoRouteData with $AreaRoomsRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) =>
       AreaRoomsPage(siteId: siteId, areaId: areaId, areaName: areaName);
+}
+
+/// The followed partitions, a full page above the shell — the reference's
+/// `FavoriteAreasPage`, opened from the pill on the areas page.
+@TypedGoRoute<FollowedAreasRoute>(path: RoutePath.followedAreas)
+class FollowedAreasRoute extends GoRouteData with $FollowedAreasRoute {
+  /// The followed-areas route.
+  const new();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const FollowedAreasPage();
 }
 
 /// The backup and restore page, under the settings cluster.

@@ -711,7 +711,11 @@
   },
   "areas": {
     "followedAreas": "Followed areas",
-    "empty": "No areas here"
+    "empty": "No areas here",
+    "followEmpty": "No followed areas yet",
+    "followEmptyHint": "Open an area and follow it with the button in its top-right corner.",
+    "followDone": "Following {name: String}",
+    "unfollowDone": "Unfollowed {name: String}"
   },
   "popular": {
     "allPlatforms": "All platforms",

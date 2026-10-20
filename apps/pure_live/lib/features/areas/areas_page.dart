@@ -39,14 +39,16 @@ final class _AreasPageState extends ConsumerState<AreasPage> {
     final preferences = ref.watch(appPreferencesProvider);
     final sites = ref
         .watch(sitesProvider)
-        .registry.all
+        .registry
+        .all
         .where((site) => site.capability<LiveAreaProvider>() != null)
         .toList();
     // The platform display setting: hidden platforms have no tab, the
     // stored order drives the tabs (the reference's availableIds).
-    final capable = HotAreasPage.orderedSites(sites, preferences.siteOrder)
-        .where((site) => !preferences.hiddenSiteIds.contains(site.manifest.id))
-        .toList();
+    final capable = HotAreasPage.orderedSites(
+      sites,
+      preferences.siteOrder,
+    ).where((site) => !preferences.hiddenSiteIds.contains(site.manifest.id)).toList();
     final phoneTab = MainPageFrame.showsHomeBarButtons(context, inHome: true);
     if (capable.isEmpty) {
       return PureScaffold(
@@ -83,16 +85,34 @@ final class _AreasPageState extends ConsumerState<AreasPage> {
         ),
         actions: phoneTab ? const [CommonAppBarActions()] : const [],
       ),
-      body: PureTabView(
-        index: index,
-        onIndexChanged: (value) => setState(() => _selected = value),
-        pages: [
-          for (var position = 0; position < capable.length; position++)
-            _PlatformAreas(
-              key: ValueKey(capable[position].manifest.id),
-              site: capable[position],
-              active: position == index,
+      body: Stack(
+        children: [
+          PureTabView(
+            index: index,
+            onIndexChanged: (value) => setState(() => _selected = value),
+            pages: [
+              for (var position = 0; position < capable.length; position++)
+                _PlatformAreas(
+                  key: ValueKey(capable[position].manifest.id),
+                  site: capable[position],
+                  active: position == index,
+                ),
+            ],
+          ),
+          // The followed partitions sit on their own page, so the way in
+          // rides along with the catalogue (the reference's floating pill).
+          // Wide windows are spending their bottom edge on the pager.
+          PositionedDirectional(
+            end: MainLayout.gutterOf(context),
+            bottom: desktopPagesIn(ref, MediaQuery.sizeOf(context).width) ? 88 : 24,
+            child: PureButton(
+              key: const ValueKey('areas-followed-button'),
+              label: t.areas.followedAreas,
+              icon: Icons.favorite_outline,
+              size: ControlSize.sm,
+              onPressed: () => unawaited(const FollowedAreasRoute().push<void>(context)),
             ),
+          ),
         ],
       ),
     );

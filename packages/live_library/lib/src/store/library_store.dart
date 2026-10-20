@@ -17,6 +17,9 @@ abstract interface class LibraryStore {
   /// Loads the watch history (newest first).
   Future<List<WatchRecord>> loadHistory();
 
+  /// Loads the followed partitions (in the user's order).
+  Future<List<FollowArea>> loadAreas();
+
   /// Stores the followed rooms.
   Future<void> saveRooms(List<LibraryRoom> rooms);
 
@@ -25,6 +28,9 @@ abstract interface class LibraryStore {
 
   /// Stores the watch history.
   Future<void> saveHistory(List<WatchRecord> history);
+
+  /// Stores the followed partitions.
+  Future<void> saveAreas(List<FollowArea> areas);
 
   /// Emits whenever another writer changed the library (second window).
   Stream<void> get changes;
@@ -50,6 +56,9 @@ abstract final class LibraryKeys {
 
   /// Watch history.
   static const String history = 'library.history.v1';
+
+  /// Followed partitions.
+  static const String areas = 'library.areas.v1';
 }
 
 /// A [LibraryStore] over a live_storage list repository.
@@ -77,6 +86,9 @@ final class BoxLibraryStore implements LibraryStore {
   Future<List<WatchRecord>> loadHistory() => _load(LibraryKeys.history, WatchRecord.fromJson);
 
   @override
+  Future<List<FollowArea>> loadAreas() => _load(LibraryKeys.areas, FollowArea.fromJson);
+
+  @override
   Future<void> saveRooms(List<LibraryRoom> rooms) => _save(LibraryKeys.rooms, rooms, (room) => room.toJson());
 
   @override
@@ -85,6 +97,9 @@ final class BoxLibraryStore implements LibraryStore {
   @override
   Future<void> saveHistory(List<WatchRecord> history) =>
       _save(LibraryKeys.history, history, (record) => record.toJson());
+
+  @override
+  Future<void> saveAreas(List<FollowArea> areas) => _save(LibraryKeys.areas, areas, (area) => area.toJson());
 
   Future<List<T>> _load<T>(String key, T Function(Map<String, Object?>) fromJson) async {
     final raw = store.get(key);
@@ -121,6 +136,7 @@ final class InMemoryLibraryStore implements LibraryStore {
   List<LibraryRoom> _rooms = const [];
   List<FollowGroup> _groups = const [];
   List<WatchRecord> _history = const [];
+  List<FollowArea> _areas = const [];
 
   @override
   Stream<void> get changes => _changes.stream;
@@ -133,6 +149,15 @@ final class InMemoryLibraryStore implements LibraryStore {
 
   @override
   Future<List<WatchRecord>> loadHistory() async => _history;
+
+  @override
+  Future<List<FollowArea>> loadAreas() async => _areas;
+
+  @override
+  Future<void> saveAreas(List<FollowArea> areas) async {
+    _areas = List.unmodifiable(areas);
+    _changes.add(null);
+  }
 
   @override
   Future<void> saveRooms(List<LibraryRoom> rooms) async {

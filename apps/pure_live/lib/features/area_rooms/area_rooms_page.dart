@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_sites/live_sites.dart' show LiveArea;
 import 'package:pure_live/app/providers/app_providers.dart' show sitesProvider;
 import 'package:pure_live/features/area_rooms/area_rooms_view.dart';
+import 'package:pure_live/features/area_rooms/follow_area_button.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 import 'package:pure_uikit/pure_uikit.dart';
@@ -58,21 +60,24 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
         ],
       ),
       actions: [
-      Padding(
-        padding: const EdgeInsets.only(right: 8),
-        child: Center(
-          child: SegmentedButton<RoomSort>(
-            segments: [
-              ButtonSegment(value: RoomSort.platform, label: Text(context.t.room.sortPlatform)),
-              ButtonSegment(value: RoomSort.viewers, label: Text(context.t.room.sortViewers)),
-            ],
-            selected: {_sort},
-            onSelectionChanged: (selection) => setState(() => _sort = selection.first),
-            showSelectedIcon: false,
+        FollowAreaButton(
+          area: LiveArea.normalized(platform: widget.siteId, areaId: widget.areaId, areaName: widget.areaName),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: Center(
+            child: SegmentedButton<RoomSort>(
+              segments: [
+                ButtonSegment(value: RoomSort.platform, label: Text(context.t.room.sortPlatform)),
+                ButtonSegment(value: RoomSort.viewers, label: Text(context.t.room.sortViewers)),
+              ],
+              selected: {_sort},
+              onSelectionChanged: (selection) => setState(() => _sort = selection.first),
+              showSelectedIcon: false,
+            ),
           ),
         ),
-      ),
-      const SettingsEntryButton(),
+        const SettingsEntryButton(),
       ],
     );
   }

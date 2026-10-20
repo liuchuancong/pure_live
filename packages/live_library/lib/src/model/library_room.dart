@@ -38,6 +38,32 @@ abstract class FollowGroup with _$FollowGroup {
   factory FollowGroup.fromJson(Map<String, Object?> json) => _$FollowGroupFromJson(json);
 }
 
+/// A partition the user follows.
+///
+/// The area is stored by the platform's own id with the name the platform
+/// gave it, and nothing else: the rooms inside it are fetched fresh every
+/// time, so a follow survives an area changing its cover or its listing.
+@freezed
+abstract class FollowArea with _$FollowArea {
+  /// A followed partition.
+  const factory FollowArea({
+    required String platform,
+    required String areaId,
+    required String name,
+    required DateTime followedAt,
+    @Default(0) int position,
+  }) = _FollowArea;
+
+  /// Restores a followed partition from JSON.
+  factory FollowArea.fromJson(Map<String, Object?> json) => _$FollowAreaFromJson(json);
+
+  const FollowArea._();
+
+  /// `platform:areaId` — what a follow is keyed by, and what the store
+  /// deduplicates on.
+  String get identityKey => '$platform:$areaId';
+}
+
 /// One watch-history entry: the room as it was watched.
 ///
 /// [progress] (the watched fraction, 0.0–1.0) and [position] (where

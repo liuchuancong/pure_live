@@ -51,7 +51,10 @@ void main() {
     });
 
     test('a group is JSON safe too', () {
-      _expectJsonSafe(const FollowGroup(id: 'g1', name: '分组').toJson(), path: 'FollowGroup');
+      _expectJsonSafe(
+        const FollowGroup(id: 'g1', name: '分组').toJson(),
+        path: 'FollowGroup',
+      );
     });
   });
 

@@ -149,6 +149,7 @@ Future<void> main(List<String> args) async {
         douyuLoginStoreProvider.overrideWithValue(services.sites.douyuLogin),
         appLogProvider.overrideWithValue(log),
         followRepositoryProvider.overrideWithValue(services.followRepository),
+        followAreaRepositoryProvider.overrideWithValue(services.followAreaRepository),
         historyRepositoryProvider.overrideWithValue(services.historyRepository),
         iptvLibraryProvider.overrideWithValue(services.iptvLibrary),
         iptvPreferencesStoreProvider.overrideWithValue(services.iptvPreferences),

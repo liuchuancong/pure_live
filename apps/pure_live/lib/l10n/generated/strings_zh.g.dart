@@ -3082,6 +3082,18 @@ class Translations$areas$zh {
 
 	/// zh: '暂无分区'
 	String get empty => '暂无分区';
+
+	/// zh: '还没有关注的分区'
+	String get followEmpty => '还没有关注的分区';
+
+	/// zh: '点进一个分区，再用右上角的按钮关注它。'
+	String get followEmptyHint => '点进一个分区，再用右上角的按钮关注它。';
+
+	/// zh: '已关注「{name: String}」'
+	String followDone({required String name}) => '已关注「${name}」';
+
+	/// zh: '已取消关注「{name: String}」'
+	String unfollowDone({required String name}) => '已取消关注「${name}」';
 }
 
 // Path: popular
@@ -4989,6 +5001,10 @@ extension on Translations {
 			'room.portraitFullscreenRestoreHint' => '已进入竖屏全屏 · 上滑恢复弹幕栏',
 			'areas.followedAreas' => '关注的分区',
 			'areas.empty' => '暂无分区',
+			'areas.followEmpty' => '还没有关注的分区',
+			'areas.followEmptyHint' => '点进一个分区，再用右上角的按钮关注它。',
+			'areas.followDone' => ({required String name}) => '已关注「${name}」',
+			'areas.unfollowDone' => ({required String name}) => '已取消关注「${name}」',
 			'popular.allPlatforms' => '全部平台',
 			'popular.allPlatformsHint' => '点按切换平台；平台显示设置可隐藏或排序。',
 			'popular.noPlatforms' => '没有可显示的平台',
@@ -5086,12 +5102,12 @@ extension on Translations {
 			'shellSettings.titleBarApp' => '应用标题栏',
 			'shellSettings.titleBarSystem' => '系统标题栏',
 			'shellSettings.titleBarHint' => '自动：Windows 11 用应用标题栏，Windows 10 用系统标题栏。应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式。切换在重启应用后生效。',
+			_ => null,
+		} ?? switch (path) {
 			'shellSettings.frameDiagnosis' => '窗口边框诊断',
 			'shellSettings.frameTakeover' => '边框接管',
 			'shellSettings.frameTakeoverOn' => '已开启 — 标题栏已由窗口自身移除，四边缩放由窗口的命中测试应答',
 			'shellSettings.frameTakeoverOff' => '未开启 — 标题栏与窗口尺寸都由系统负责',
-			_ => null,
-		} ?? switch (path) {
 			'shellSettings.frameEdge' => '系统描边',
 			'shellSettings.frameEdgeNative' => '由 Windows 绘制',
 			'shellSettings.frameEdgeNone' => '当前 Windows 版本不绘制描边，接管后的边框四边都没有线',

@@ -13,12 +13,8 @@ abstract final class AreaGridMetrics {
   /// Columns by width class: three through compact, five on a tablet, seven
   /// on an expanded desktop and nine from the large class up — square
   /// category tiles pack tighter than room cards, so every class fits more.
-  static int columnsFor(double width) => AdaptiveBreakpoints.fromWidth(width).resolve<int>(
-    compact: 3,
-    medium: 5,
-    expanded: 7,
-    large: 9,
-  );
+  static int columnsFor(double width) =>
+      AdaptiveBreakpoints.fromWidth(width).resolve<int>(compact: 3, medium: 5, expanded: 7, large: 9);
 
   /// The tile height for an [itemWidth]: the square picture plus the labels,
   /// growing with the ambient text scale.
@@ -35,10 +31,16 @@ abstract final class AreaGridMetrics {
 /// room list.
 final class AreaCard extends StatelessWidget {
   /// Shows [area]; [onOpen] opens the area's room list.
-  const new({required this.area, required this.onOpen, super.key});
+  ///
+  /// [subtitle] replaces the area's own parent category under the name — a
+  /// list that mixes platforms says which platform instead.
+  const new({required this.area, required this.onOpen, this.subtitle, super.key});
 
   /// The area this tile shows.
   final LiveArea area;
+
+  /// The line under the name, in place of the area's category.
+  final String? subtitle;
 
   /// Called when the tile is tapped.
   final VoidCallback onOpen;
@@ -46,7 +48,7 @@ final class AreaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = PureTheme.of(context);
-    final parent = area.parentAreaName ?? '';
+    final parent = subtitle ?? area.parentAreaName ?? '';
     return PureCard(
       onTap: onOpen,
       padding: EdgeInsets.zero,

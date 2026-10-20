@@ -11,6 +11,7 @@
 library;
 
 export 'src/model/library_room.dart';
+export 'src/repository/follow_area_repository.dart';
 export 'src/repository/follow_repository.dart';
 export 'src/repository/history_repository.dart';
 export 'src/store/library_store.dart';

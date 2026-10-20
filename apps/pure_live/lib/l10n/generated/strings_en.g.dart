@@ -903,6 +903,10 @@ class _Translations$areas$en extends Translations$areas$zh {
 	// Translations
 	@override String get followedAreas => 'Followed areas';
 	@override String get empty => 'No areas here';
+	@override String get followEmpty => 'No followed areas yet';
+	@override String get followEmptyHint => 'Open an area and follow it with the button in its top-right corner.';
+	@override String followDone({required String name}) => 'Following ${name}';
+	@override String unfollowDone({required String name}) => 'Unfollowed ${name}';
 }
 
 // Path: popular
@@ -2324,6 +2328,10 @@ extension on TranslationsEn {
 			'room.portraitFullscreenRestoreHint' => 'Portrait fullscreen — swipe up to bring the danmaku bar back',
 			'areas.followedAreas' => 'Followed areas',
 			'areas.empty' => 'No areas here',
+			'areas.followEmpty' => 'No followed areas yet',
+			'areas.followEmptyHint' => 'Open an area and follow it with the button in its top-right corner.',
+			'areas.followDone' => ({required String name}) => 'Following ${name}',
+			'areas.unfollowDone' => ({required String name}) => 'Unfollowed ${name}',
 			'popular.allPlatforms' => 'All platforms',
 			'popular.allPlatformsHint' => 'Tap to switch; platform settings hide and order them.',
 			'popular.noPlatforms' => 'No platforms to show',
@@ -2662,12 +2670,12 @@ extension on TranslationsEn {
 			'shellSettings.titleBarApp' => 'App title bar',
 			'shellSettings.titleBarSystem' => 'System title bar',
 			'shellSettings.titleBarHint' => 'Auto: the app title bar on Windows 11, the system title bar on Windows 10. The app title bar is drawn by Pure Live; the system title bar is the native Windows one. A switch applies after the app restarts.',
+			_ => null,
+		} ?? switch (path) {
 			'shellSettings.frameDiagnosis' => 'Window frame diagnosis',
 			'shellSettings.frameTakeover' => 'Frame takeover',
 			'shellSettings.frameTakeoverOn' => 'On — the caption is gone and the window\'s own hit-test answers the four edges',
 			'shellSettings.frameTakeoverOff' => 'Off — the system draws the caption and sizes the window',
-			_ => null,
-		} ?? switch (path) {
 			'shellSettings.frameEdge' => 'Frame edge',
 			'shellSettings.frameEdgeNative' => 'Windows draws it',
 			'shellSettings.frameEdgeNone' => 'This Windows version draws none, so a taken-over window has no line on any side',
