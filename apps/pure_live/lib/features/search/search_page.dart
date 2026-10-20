@@ -787,16 +787,16 @@ final class AnchorTile extends StatelessWidget {
   final LiveAnchor anchor;
 
   @override
-  Widget build(BuildContext context) => Card(
+  Widget build(BuildContext context) => PureCard(
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        CircleAvatar(
-          radius: 30,
-          backgroundImage: anchor.avatarUrl == null || anchor.avatarUrl!.isEmpty
+        PureAvatar(
+          name: anchor.name,
+          size: 60,
+          src: anchor.avatarUrl == null || anchor.avatarUrl!.isEmpty
               ? null
               : CachedNetworkImageProvider(anchor.avatarUrl!),
-          child: anchor.avatarUrl == null || anchor.avatarUrl!.isEmpty ? const Icon(Icons.person_outlined) : null,
         ),
         const SizedBox(height: 8),
         Text(anchor.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: PureTheme.of(context).text.body),

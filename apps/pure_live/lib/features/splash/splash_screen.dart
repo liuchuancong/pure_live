@@ -161,7 +161,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     return AnnotatedRegion<SystemUiOverlayStyle>(
       // See-through bars with icons for the page's brightness (A06.5).
       value: dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
-      child: Scaffold(
+      child: PureScaffold(
         body: Focus(
           autofocus: widget.onNextPressed != null,
           onKeyEvent: _onKey,
