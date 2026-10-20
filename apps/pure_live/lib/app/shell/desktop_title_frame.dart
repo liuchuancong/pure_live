@@ -6,7 +6,7 @@ import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart' show ShellWindowChrome;
 import 'package:pure_live/platforms/desktop/shell/window_title_bar.dart'
     show windowChromeActionsProvider, windowChromeStateProvider;
-import 'package:pure_uikit/pure_uikit.dart' show PureTitleBar, PureTitleBarLabels;
+import 'package:pure_uikit/pure_uikit.dart' show PureCanvasScope, PureTheme, PureTitleBar, PureTitleBarLabels;
 
 /// The window's own strip above every page (the reference's `DesktopFrame`,
 /// A16.1): where the desktop shell took the caption over from the system —
@@ -61,11 +61,21 @@ final class DesktopTitleFrame extends ConsumerWidget {
       builder: (context, fullScreen, content) => fullScreen
           ? content!
           : Overlay.wrap(
-              child: Column(
-                children: [
-                  PureTitleBar(labels: labels, actions: actions, maximized: state.maximized),
-                  Expanded(child: content!),
-                ],
+              child: ColoredBox(
+                // The band the strip floats on wears the pages' own surface —
+                // transparent over a window material (the surface continues
+                // under the strip, the way the system shell's does), the layout
+                // colour otherwise — so the strip is an inset of the page, not
+                // a bar painted on top of it. The strip itself paints nothing.
+                color: PureCanvasScope.transparentOf(context)
+                    ? const Color(0x00000000)
+                    : PureTheme.of(context).colors.bgLayout,
+                child: Column(
+                  children: [
+                    PureTitleBar(labels: labels, actions: actions, maximized: state.maximized),
+                    Expanded(child: content!),
+                  ],
+                ),
               ),
             ),
     );

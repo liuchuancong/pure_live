@@ -83,18 +83,18 @@ final class _HomeShellState extends ConsumerState<HomeShell> {
                   // attach to the page's primary scroll controller.
                   PrimaryScrollController.none(
                     // The `Material` is not a surface choice: the rail's items
-                    // are `InkWell`s, and ink needs a Material ancestor.
+                    // are `InkWell`s, and ink needs a Material ancestor. The
+                    // colour is — transparent keeps the scaffold's surface (a
+                    // window material where one exists, the layout colour
+                    // otherwise) running under the rail, so the sidebar reads
+                    // as part of the page rather than a panel on it.
                     child: Material(
                       key: const ValueKey('home-rail'),
-                      color: theme.colors.bgElevated,
+                      color: Colors.transparent,
                       child: SizedBox(
                         width: HomeRailMetrics.width,
                         child: FocusTraversalGroup(
-                          child: HomeRail(
-                            branches: branches,
-                            selected: selected,
-                            onSelected: _select,
-                          ),
+                          child: HomeRail(branches: branches, selected: selected, onSelected: _select),
                         ),
                       ),
                     ),
