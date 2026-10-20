@@ -147,7 +147,7 @@ class PureButton extends StatelessWidget {
         },
         color: variant == ButtonVariant.primary ? theme.colors.primary : null,
         secondary: variant != ButtonVariant.primary,
-        child: child,
+        child: _macosChild(theme, child, enabled),
       ),
       // iOS fills the primary blue with a white label, greys the secondary,
       // and leaves ghost and danger as tinted text — the system's own three
@@ -361,6 +361,20 @@ class PureButton extends StatelessWidget {
       button = Tooltip(message: hint, child: button);
     }
     return button;
+  }
+
+  /// macOS dims a disabled push button by drawing its label at a quarter of the
+  /// luminance-matched text colour, but it routes that through
+  /// `DefaultTextStyle` — and an [Icon] does not read it, so a disabled button's
+  /// glyph stayed at full accent while its words sank (the number stepper's two
+  /// arrows are the case in the review sheet). This hands the same quarter to the
+  /// icon theme, which is the only channel the glyph does read.
+  Widget _macosChild(PureTheme theme, Widget child, bool enabled) {
+    if (enabled) {
+      return child;
+    }
+    final label = variant == ButtonVariant.primary ? theme.colors.onPrimary : theme.colors.text;
+    return IconTheme.merge(data: IconThemeData(color: label.withValues(alpha: 0.25)), child: child);
   }
 
   /// The label colour a filled or tinted variant owes its content, or null
