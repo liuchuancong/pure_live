@@ -69,18 +69,6 @@ final class MpvSettingsPage extends ConsumerWidget {
                 onToggle: (value) => unawaited(update((p) => p.copyWith(customPlayerOutput: value))),
               ),
               SettingsTile.navigation(
-                leading: const Icon(Icons.smart_display_outlined),
-                title: Text(t.settings.mpvVideoOutput),
-                value: Text(preferences.videoOutputDriver),
-                description: preferences.customPlayerOutput ? null : Text(t.settings.mpvNeedsCustomOutput),
-                onPressed: (_) => pick(
-                  t.settings.mpvVideoOutput,
-                  MpvTuning.videoOutputs(_platform),
-                  preferences.videoOutputDriver,
-                  (value) => unawaited(update((p) => p.copyWith(videoOutputDriver: value))),
-                ),
-              ),
-              SettingsTile.navigation(
                 leading: const Icon(Icons.graphic_eq_outlined),
                 title: Text(t.settings.mpvAudioOutput),
                 value: Text(preferences.audioOutputDriver),
@@ -167,7 +155,6 @@ final class MpvSettingsPage extends ConsumerWidget {
                   update(
                     (p) => p.copyWith(
                       customPlayerOutput: false,
-                      videoOutputDriver: MpvTuning.auto,
                       audioOutputDriver: MpvTuning.auto,
                       hardwareDecoder: MpvTuning.auto,
                       frameInterpolation: false,

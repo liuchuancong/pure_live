@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart' show TargetPlatform;
 import 'package:media_core/media_core.dart' show EngineOption;
-import 'package:media_core_media_kit/media_core_media_kit.dart' show MpvPlatformProfile, PlayerConsts;
+import 'package:media_core_media_kit/media_core_media_kit.dart' show MpvPlatformProfile;
 import 'package:pure_live/app/preferences/app_preferences.dart';
 
 /// The mpv tuning, ported from the reference's mpv option set and backed by
@@ -39,11 +39,6 @@ abstract final class MpvTuning {
   /// The deinterlace answers, the reference's `no/auto/yes`.
   static const List<String> deinterlaceValues = [auto, 'no', 'yes'];
 
-  /// The picker entries for the video output driver, this platform's filtered
-  /// view of media_kit's catalog (the keys mpv actually accepts).
-  static Map<String, String> videoOutputs(TargetPlatform platform) =>
-      MpvPlatformProfile.videoOutputDriversForPlatform(platform);
-
   /// The picker entries for the audio output driver.
   static Map<String, String> audioOutputs(TargetPlatform platform) =>
       MpvPlatformProfile.audioOutputDriversForPlatform(platform);
@@ -51,10 +46,6 @@ abstract final class MpvTuning {
   /// The picker entries for the hardware decoder.
   static Map<String, String> hardwareDecoders(TargetPlatform platform) =>
       MpvPlatformProfile.hardwareDecodersForPlatform(platform);
-
-  /// The labels media_kit's catalog carries for the video outputs, kept for
-  /// the picker's platform annotations.
-  static Map<String, String> get _videoOutputLabels => PlayerConsts.videoOutputDrivers;
 
   /// The raw mpv properties to write before each open.
   static Map<String, String> nativeOptions(
@@ -123,13 +114,9 @@ abstract final class MpvTuning {
   /// settings edit uses to decide between a live apply and a note.
   static bool nextOpenOnlyChanged(AppPreferences previous, AppPreferences next) =>
       previous.customPlayerOutput != next.customPlayerOutput ||
-      previous.videoOutputDriver != next.videoOutputDriver ||
       previous.audioOutputDriver != next.audioOutputDriver ||
       previous.hardwareDecoder != next.hardwareDecoder ||
       previous.playerProxyEnabled != next.playerProxyEnabled ||
       previous.playerProxyHost != next.playerProxyHost ||
       previous.playerProxyPort != next.playerProxyPort;
-
-  /// The picker label for a video-output key — media_kit's own annotation.
-  static String videoOutputLabel(String key) => _videoOutputLabels[key] ?? key;
 }

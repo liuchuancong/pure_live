@@ -207,7 +207,6 @@ final class AppPreferences {
     this.playerProxyEnabled = false,
     this.playerProxyHost = '127.0.0.1',
     this.playerProxyPort = 7890,
-    this.videoOutputDriver = 'auto',
     this.audioOutputDriver = 'auto',
     this.hardwareDecoder = 'auto',
     this.frameInterpolation = false,
@@ -302,7 +301,6 @@ final class AppPreferences {
       // The mpv tuning answers. The defaults are what the engine did before
       // this page existed — auto for everything, no interpolation, the
       // adapter's own cache — so an existing document keeps behaving the same.
-      videoOutputDriver: json['videoOutputDriver'] as String? ?? 'auto',
       audioOutputDriver: json['audioOutputDriver'] as String? ?? 'auto',
       hardwareDecoder: json['hardwareDecoder'] as String? ?? 'auto',
       frameInterpolation: json['frameInterpolation'] as bool? ?? false,
@@ -620,13 +618,13 @@ final class AppPreferences {
   /// The player proxy's port (1..65535 as the field page validates it).
   final int playerProxyPort;
 
-  /// Whether the stored video/audio output drivers are used at all; off, the
-  /// engine's own platform default answers — the reference's
-  /// `customPlayerOutput` gate on its vo/ao rows.
+  /// Whether the stored audio output driver is used at all; off, the engine's
+  /// own platform default answers — the reference's `customPlayerOutput` gate.
+  ///
+  /// There is no video-output answer any more: media_kit renders through mpv's
+  /// `libmpv` output, and writing any other value leaves the embedded surface
+  /// with no frames at all.
   final bool customPlayerOutput;
-
-  /// mpv `vo` — the video output driver, an entry of the platform's catalog.
-  final String videoOutputDriver;
 
   /// mpv `ao` — the audio output driver.
   final String audioOutputDriver;
@@ -826,7 +824,6 @@ final class AppPreferences {
     'playerProxyHost': playerProxyHost,
     'playerProxyPort': playerProxyPort,
     'customPlayerOutput': customPlayerOutput,
-    'videoOutputDriver': videoOutputDriver,
     'audioOutputDriver': audioOutputDriver,
     'hardwareDecoder': hardwareDecoder,
     'frameInterpolation': frameInterpolation,
@@ -939,7 +936,6 @@ final class AppPreferences {
     String? playerProxyHost,
     int? playerProxyPort,
     bool? customPlayerOutput,
-    String? videoOutputDriver,
     String? audioOutputDriver,
     String? hardwareDecoder,
     bool? frameInterpolation,
@@ -1049,7 +1045,6 @@ final class AppPreferences {
     playerProxyHost: playerProxyHost ?? this.playerProxyHost,
     playerProxyPort: playerProxyPort ?? this.playerProxyPort,
     customPlayerOutput: customPlayerOutput ?? this.customPlayerOutput,
-    videoOutputDriver: videoOutputDriver ?? this.videoOutputDriver,
     audioOutputDriver: audioOutputDriver ?? this.audioOutputDriver,
     hardwareDecoder: hardwareDecoder ?? this.hardwareDecoder,
     frameInterpolation: frameInterpolation ?? this.frameInterpolation,
@@ -1164,7 +1159,6 @@ final class AppPreferences {
       other.playerProxyHost == playerProxyHost &&
       other.playerProxyPort == playerProxyPort &&
       other.customPlayerOutput == customPlayerOutput &&
-      other.videoOutputDriver == videoOutputDriver &&
       other.audioOutputDriver == audioOutputDriver &&
       other.hardwareDecoder == hardwareDecoder &&
       other.frameInterpolation == frameInterpolation &&
@@ -1300,7 +1294,6 @@ final class AppPreferences {
         playerProxyPort,
       ]),
       customPlayerOutput,
-      videoOutputDriver,
       audioOutputDriver,
       hardwareDecoder,
       frameInterpolation,
