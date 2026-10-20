@@ -272,6 +272,9 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
               PureTab(label: t.room.keywordBlock),
             ],
             index: _tab,
+            // Four labels in a chat column that is narrower on a phone than
+            // the text is wide: let the strip scroll rather than squeeze.
+            isScrollable: true,
             onChanged: (index) => setState(() => _tab = index),
           ),
         ),

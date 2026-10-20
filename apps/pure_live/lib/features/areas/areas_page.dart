@@ -78,6 +78,7 @@ final class _AreasPageState extends ConsumerState<AreasPage> {
         titleWidget: PureTabs(
           tabs: [for (final site in capable) PureTab(label: site.manifest.localizedName(_tag(context), 'zh-CN'))],
           index: index,
+          isScrollable: true,
           onChanged: (value) => setState(() => _selected = value),
         ),
         actions: phoneTab ? const [CommonAppBarActions()] : const [],
@@ -368,11 +369,11 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas>
         if (groups.length > 1)
           SizedBox(
             height: 48,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
+            child: Padding(
               padding: EdgeInsets.fromLTRB(gutter, 4, gutter, 0),
               child: PureTabs(
                 index: _selectedGroup,
+                isScrollable: true,
                 onChanged: (value) => setState(() => _selectedGroup = value),
                 tabs: [for (final parent in parents) PureTab(label: parent.isEmpty ? context.t.tabs.areas : parent)],
               ),

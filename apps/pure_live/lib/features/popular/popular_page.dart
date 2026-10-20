@@ -110,6 +110,9 @@ final class _PopularPageState extends ConsumerState<PopularPage> {
                 child: PureTabs(
                   tabs: [for (final site in visible) PureTab(label: _name(context, site))],
                   index: index,
+                  // One tab per visible platform in the space left of the
+                  // "all platforms" button; the count is the user's.
+                  isScrollable: true,
                   onChanged: (value) => _selectTo(visible, value),
                 ),
               ),

@@ -194,19 +194,21 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
         trailing: [PureIconButton(icon: Icons.search, tooltip: context.t.tabs.search, onPressed: _searchNow)],
       ),
     );
-    final strip = SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: PureTabs(
-        index: _selected,
-        onChanged: (value) => setState(() {
-          _selected = value;
-          _visited.add(value);
-        }),
-        tabs: [
-          PureTab(label: context.t.search.allSites),
-          for (final site in searchable) PureTab(label: site.manifest.localizedName(_tag(context), 'zh-CN')),
-        ],
-      ),
+    // The platform count is dynamic, so the strip scrolls: PureTabs owns that
+    // for every language rather than the page wrapping it in its own scroll
+    // view — an outer scroll view handed the strip an unbounded width, and the
+    // forui and wind renderers throw there.
+    final strip = PureTabs(
+      index: _selected,
+      isScrollable: true,
+      onChanged: (value) => setState(() {
+        _selected = value;
+        _visited.add(value);
+      }),
+      tabs: [
+        PureTab(label: context.t.search.allSites),
+        for (final site in searchable) PureTab(label: site.manifest.localizedName(_tag(context), 'zh-CN')),
+      ],
     );
     return PureScaffold(
       appBar: PureAppBar(

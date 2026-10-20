@@ -81,16 +81,20 @@ class MainPageFrame extends StatelessWidget {
         bottom: tabs == null || tabs.isEmpty
             ? null
             : PreferredSize(
-                // PureTabs owns its own overflow (the Material family scrolls
-                // inside the bounded bar); wrapping it in a horizontal scroll
-                // view hands the strip unbounded width and the tab renderer
-                // asserts.
+                // The strip scrolls its own tabs (see [PureTabs.isScrollable]),
+                // so the bar hands it a bounded width and the caller only asks
+                // for the left-aligned pack rather than a stretched row.
                 preferredSize: const Size.fromHeight(48),
                 child: SizedBox(
                   height: 48,
                   child: Align(
                     alignment: AlignmentDirectional.centerStart,
-                    child: PureTabs(tabs: tabs, index: tabIndex, onChanged: onTabChanged),
+                    child: PureTabs(
+                      tabs: tabs,
+                      index: tabIndex,
+                      isScrollable: true,
+                      onChanged: onTabChanged,
+                    ),
                   ),
                 ),
               ),

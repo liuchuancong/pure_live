@@ -198,6 +198,9 @@ final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefr
           PureTab(label: '${_platformLabel(_platforms[index])} ${platformCounts[index]}'),
       ],
       index: _platform.clamp(0, _platforms.length - 1),
+      // One tab per followed platform, and the count is the user's: the strip
+      // has to scroll rather than squeeze eight labels into a phone bar.
+      isScrollable: true,
       onChanged: (index) => setState(() => _platform = index),
     );
 
