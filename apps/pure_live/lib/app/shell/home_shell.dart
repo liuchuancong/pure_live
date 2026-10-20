@@ -10,6 +10,8 @@ import 'package:pure_live/app/services/clipboard_room_watcher.dart';
 import 'package:pure_live/app/services/image_cache.dart' show cacheAutoClearWatcherProvider;
 import 'package:pure_live/app/shell/home_views.dart';
 import 'package:pure_live/app/shell/shell_destinations.dart';
+import 'package:pure_live/features/follow/live_alert_service.dart';
+import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The home shell, in the reference's shape (v5 `HomePage`): a bottom bar
@@ -53,6 +55,22 @@ final class _HomeShellState extends ConsumerState<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    // 开播提醒: the interval pass over the followed rooms reports each room that
+    // started since the last look. The shell owns the notice because it is the
+    // only thing up for the whole visit, and listening here is what keeps the
+    // service alive.
+    ref.listen(liveAlertsProvider, (previous, next) {
+      final room = next.value;
+      if (room == null || !mounted) {
+        return;
+      }
+      final anchor = room.anchor?.name.trim();
+      final title = room.content.title.trim();
+      final who = anchor == null || anchor.isEmpty ? room.ref.roomId : anchor;
+      // 直播 · 主播 · 房间标题 — the three parts every locale already has words
+      // for; a notice that names the room is the whole job.
+      PureToast.show(context, [context.t.follow.liveRoom, who, if (title.isNotEmpty) title].join(' · '));
+    });
     final navigationShell = widget.navigationShell;
     return LayoutBuilder(
       builder: (context, constraints) {

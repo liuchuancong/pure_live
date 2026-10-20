@@ -12,6 +12,7 @@ import 'package:pure_live/app/shell/main_layout.dart';
 import 'package:pure_live/app/shell/main_page_frame.dart';
 import 'package:pure_live/app/shell/shell_actions.dart';
 import 'package:pure_live/app/shell/shell_destinations.dart' show ShellBranch;
+import 'package:pure_live/features/follow/live_alert_service.dart';
 import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/features/settings/widgets/settings_surface.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
@@ -72,6 +73,13 @@ final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefr
     _progress.value = 0;
     try {
       await _repository.load();
+      // The stored list is only as good as the last time someone asked the
+      // platforms: this is the pass that turns 关注 into "who is live now", and
+      // the same pass the interval clock runs.
+      final result = await ref.read(liveAlertServiceProvider).refresh();
+      if (result.failed > 0 && mounted) {
+        PureToast.show(context, context.t.follow.refreshFailed(count: result.failed), type: PureToastType.warning);
+      }
     } on Object {
       // The list keeps whatever it already showed, and the viewer hears that
       // this refresh did not land. Without the catch the failure left the
