@@ -2756,13 +2756,14 @@ packages:
     source: hosted
     version: "3.0.3"
   window_frame_kit:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: window_frame_kit
-      sha256: dc12c5a3c005a7de734802acdb94ed009b8b947fe6239a95ec7b442507a32a8c
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.0"
+      path: "."
+      ref: "1e0db6871150d0e11cf67ab2f8ee1e9173fd9bee"
+      resolved-ref: "1e0db6871150d0e11cf67ab2f8ee1e9173fd9bee"
+      url: "https://github.com/TATboy210/window_frame_kit"
+    source: git
+    version: "0.3.1"
   windows_file_picker:
     dependency: transitive
     description:

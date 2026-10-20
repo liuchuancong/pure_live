@@ -67,6 +67,18 @@ dependency_overrides:
   test_api: ^0.7.15
   wakelock_plus: 1.8.1
   win32: ^6.4.0
+  # The published 0.3.0 discards the whole window surface on every step of a
+  # caption drag (it forces SWP_NOCOPYBITS at WM_WINDOWPOSCHANGING whenever
+  # SWP_NOSIZE is absent, and a pure move passes unchanged cx/cy without that
+  # flag), which is the title-bar flicker. The fix — gate the discard on the
+  # size actually changing — landed on master as 0.3.1 (2026-10-17) and is not
+  # published or tagged yet, so the git source is pinned to that commit rather
+  # than to the branch name. The Dart API is byte-identical to 0.3.0; only three
+  # files under `windows/` differ. Drop this override once pub.dev serves 0.3.1.
+  window_frame_kit:
+    git:
+      url: https://github.com/TATboy210/window_frame_kit
+      ref: 1e0db6871150d0e11cf67ab2f8ee1e9173fd9bee
   xml: ^7.0.0
   # yaru's window layer only exists as yaru_window_manager, which depends on window_manager;
   # window_manager pins screen_retriever ^0.2.x and window_frame_kit 0.3.0 needs ^0.3.0, and
