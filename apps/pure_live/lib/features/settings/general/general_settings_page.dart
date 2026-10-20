@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/live_shell.dart' show CloseAction, StartupRegistration;
+import 'package:live_shell_desktop/live_shell_desktop.dart' show windowsDrawsFrameEdgeItself;
 import 'package:pure_live/app/preferences/app_preferences.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
@@ -62,6 +63,11 @@ final class GeneralSettingsPage extends ConsumerWidget {
       _ => false,
     };
     final isWindows = ref.watch(environmentProvider).runtime.kind == PlatformKind.windows;
+    // Windows 10 cannot carry the app-drawn frame (the takeover there loses the
+    // window edge and flashes the themed caption during drags), so the row
+    // states the system caption and the chooser never opens — the same gate
+    // `resolveWindowChrome` applies at start-up.
+    final chromeLockedToSystem = isWindows && !windowsDrawsFrameEdgeItself();
     return SettingsChrome(
       title: t.settings.general,
       body: SettingsList(
@@ -170,8 +176,8 @@ final class GeneralSettingsPage extends ConsumerWidget {
                 SettingsTile.navigation(
                   leading: const Icon(Icons.title_outlined),
                   title: Text(t.shellSettings.titleBar),
-                  value: Text(_chromeLabel(context, shell)),
-                  onPressed: (_) => _chooseWindowChrome(context, ref, shell),
+                  value: Text(_chromeLabel(context, shell, lockedToSystem: chromeLockedToSystem)),
+                  onPressed: chromeLockedToSystem ? null : (_) => _chooseWindowChrome(context, ref, shell),
                 ),
                 SettingsTile.navigation(
                   leading: const Icon(Icons.aspect_ratio_outlined),
@@ -211,9 +217,14 @@ final class GeneralSettingsPage extends ConsumerWidget {
   /// statement about the next start and a stale one about the live window — the
   /// row says which it is, the restart offer that follows keeps the two from
   /// drifting apart silently, and [_WindowFrameDiagnosis] is where to look when
-  /// the two need comparing.
-  static String _chromeLabel(BuildContext context, ShellPreferencesStore? shell) {
+  /// the two need comparing. On a Windows locked to the system caption the
+  /// stored value does not matter — the gate folds it — so the row says
+  /// `system` whatever the document holds.
+  static String _chromeLabel(BuildContext context, ShellPreferencesStore? shell, {required bool lockedToSystem}) {
     final t = context.t;
+    if (lockedToSystem) {
+      return t.shellSettings.titleBarSystem;
+    }
     return switch (shell?.value.windowChrome) {
       ShellWindowChrome.app => t.shellSettings.titleBarApp,
       ShellWindowChrome.system => t.shellSettings.titleBarSystem,

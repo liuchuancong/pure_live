@@ -18,7 +18,11 @@ import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart' show S
 /// natively, keeps `WS_THICKFRAME` so snap, `Win`+arrow and the shadow carry on
 /// working, and answers the edge hit-test for all four sides. The plan therefore
 /// declares the self-drawn mode with the edges taken; nothing else has to be
-/// told, and there is no second component to hold back.
+/// told, and there is no second component to hold back. A Windows below build
+/// 22000 cannot carry the takeover, so there [chrome] folds to the system
+/// caption whatever the caller passed — the same rule [resolveWindowChrome]
+/// applies, repeated here because this function is the one that dresses the
+/// window.
 /// [ShellWindowChrome.system] keeps the stock caption. macOS and Linux take
 /// [ChromeStage.nativeFirst] whatever the choice says: their runners never armed
 /// a takeover, and macOS keeps its traffic lights.
@@ -41,7 +45,7 @@ Future<void> setUpDesktopWindow({
       ? defaultWindowSize
       : Size(initialSize.width.clamp(minimum.width, 3840.0), initialSize.height.clamp(minimum.height, 2160.0));
   final brightness = PlatformDispatcher.instance.platformBrightness;
-  final plan = isWindows && chrome == ShellWindowChrome.app
+  final plan = windowsCanTakeFrameOver(kind) && chrome == ShellWindowChrome.app
       ? ChromePlan.select(platform: kind, stage: ChromeStage.seamlessSelfDrawn)
       : ChromePlan.select(platform: kind, stage: ChromeStage.nativeFirst);
   return configureMainWindow(
@@ -73,6 +77,16 @@ Future<void> setUpDesktopWindow({
 /// to look right has a bug to fix rather than a mode to ship.
 bool launchPinsOpaqueSurface(List<String> args) => args.contains('--opaque-surface');
 
+/// Whether this platform's Windows may wear the app-drawn frame at all.
+///
+/// Build 22000 is where the compositor draws a custom frame's edge and rounded
+/// corners itself; below it a taken-over window is an edgeless rectangle, and
+/// the themed caption flashes over the client on activation and drags — the
+/// flicker a frame takeover reports on Windows 10. The gate is a rule, not a
+/// default: the stored choice and the `--custom-frame` dev pin both fold to the
+/// system caption through it, so no path can arm the takeover on Windows 10.
+bool windowsCanTakeFrameOver(PlatformKind kind) => kind == PlatformKind.windows && windowsDrawsFrameEdgeItself();
+
 /// The frame mode this process runs in.
 ///
 /// Three steps, in this order, and both sides of the window's existence now read
@@ -80,13 +94,17 @@ bool launchPinsOpaqueSurface(List<String> args) => args.contains('--opaque-surfa
 ///
 /// 1. `--native-frame` / `--custom-frame` on the command line (last one wins) —
 ///    a development pin, so a real-device check of one mode does not have to go
-///    through the settings screen and a restart.
+///    through the settings screen and a restart. The pin asks, the gate decides:
+///    on a Windows that cannot carry the takeover `--custom-frame` answers the
+///    system caption.
 /// 2. The stored choice, which is what the settings screen writes.
 /// 3. The operating system's default, from [windowsDrawsFrameEdgeItself].
 ///
 /// Step 3 is why the stored value stays nullable: an upgrade from Windows 10 to
 /// 11 has to pick up the strip without anyone changing a setting, and nothing
-/// should have pinned the answer on the first start.
+/// should have pinned the answer on the first start. On Windows 10 the answer
+/// is `system` outright — step 2 never runs there, because the takeover is not
+/// a mode that platform can ship.
 ///
 /// This used to be a file in the user's profile, read by `wWinMain` before the
 /// window existed, because the decision belonged to a native helper that had no
@@ -107,14 +125,17 @@ ShellWindowChrome resolveWindowChrome({
     switch (argument) {
       case '--native-frame':
         return ShellWindowChrome.system;
-      case '--custom-frame':
+      case '--custom-frame' when windowsCanTakeFrameOver(kind):
         return ShellWindowChrome.app;
     }
   }
   if (kind != PlatformKind.windows) {
     return stored ?? ShellWindowChrome.app;
   }
-  return stored ?? (windowsDrawsFrameEdgeItself() ? ShellWindowChrome.app : ShellWindowChrome.system);
+  if (!windowsCanTakeFrameOver(kind)) {
+    return ShellWindowChrome.system;
+  }
+  return stored ?? ShellWindowChrome.app;
 }
 
 /// The clear colour of the window before Flutter paints, matched to the
