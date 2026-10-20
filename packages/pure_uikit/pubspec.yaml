@@ -17,6 +17,10 @@ environment:
   flutter: ">=3.47.0"
 
 dependencies:
+  # The Cupertino glyph face. `flutter/cupertino` ships the `CupertinoIcons`
+  # constants but not the font — an app that draws them has to depend on this
+  # package or every one of those codepoints renders as a fallback box.
+  cupertino_icons: ^1.0.9
   fluent_2: ^0.0.7
   flutter:
     sdk: flutter
