@@ -4,6 +4,10 @@ import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
 import 'package:forui/forui.dart' as forui;
 import 'package:glass_morphism_plus/glass_morphism_plus.dart' as glass;
 import 'package:pure_uikit/src/app/pure_app_host.dart';
+import 'package:pure_uikit/src/styling/adapters/forui_theme_adapter.dart';
+import 'package:pure_uikit/src/styling/adapters/glass_theme_adapter.dart';
+import 'package:pure_uikit/src/styling/adapters/neumorphic_theme_adapter.dart';
+import 'package:pure_uikit/src/styling/adapters/wind_theme_adapter.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 
 /// The hosts for the four languages whose libraries ship no application
@@ -46,13 +50,11 @@ Widget _materialScope(PureTheme theme, Widget child) {
   );
 }
 
-/// The forui host. What the token can decide is the palette *variant*:
-/// `isDark` selects forui's neutral dark theme, everything else stays on the
-/// library's own defaults — forui exposes no way for a host to recolor it
-/// (`FThemeData` has a private constructor, and its supported path for a
-/// custom palette is generating a theme file).
+/// The forui host: the mapped `FThemeData` installed above the routed tree.
+/// The palette *variant* and the chosen font family are what the token decides;
+/// the rest is forui's own look, and it is [ForuiThemeAdapter] that says how the
+/// mapping goes.
 WidgetsApp buildForuiAppHost(PureAppHostBinding b) {
-  final token = b.theme.token;
   return WidgetsApp.router(
     routerConfig: b.routerConfig,
     title: b.title,
@@ -61,7 +63,7 @@ WidgetsApp buildForuiAppHost(PureAppHostBinding b) {
     supportedLocales: b.supportedLocales,
     locale: b.locale,
     builder: (context, child) => forui.FTheme(
-      data: token.isDark ? forui.FTheme.neutral.dark.touch : forui.FTheme.neutral.light.touch,
+      data: const ForuiThemeAdapter().resolve(b.theme),
       // The app widget hands its builder a child it has not built yet when
       // the router has nothing to show; the theme scope still has to wrap
       // something.
@@ -73,14 +75,12 @@ WidgetsApp buildForuiAppHost(PureAppHostBinding b) {
 }
 
 /// The glass host: the mapped `GlassTheme` installed above the routed tree —
-/// the panel's tint, corner radius and shadow follow the resolved token, so
-/// a brightness, accent or surface change re-skins the glass surfaces. The
-/// frosted `blur` radius stays a constant: glassmorphism blur is a
-/// transparency *effect*, driven by `UiConfig.transparency` rather than the
-/// design token, so mapping it here would imply a token→blur link that does
-/// not exist.
+/// the panel's tint, corner radius and shadow follow the resolved token, so a
+/// brightness, accent or surface change re-skins the glass surfaces. The mapping
+/// itself is [GlassThemeAdapter]'s; the library's theme object has no font slot,
+/// so the chosen family reaches this language through the Material scope below
+/// and the token-typed text of the controls drawn here.
 WidgetsApp buildGlassAppHost(PureAppHostBinding b) {
-  final token = b.theme.token;
   return WidgetsApp.router(
     routerConfig: b.routerConfig,
     title: b.title,
@@ -89,12 +89,7 @@ WidgetsApp buildGlassAppHost(PureAppHostBinding b) {
     supportedLocales: b.supportedLocales,
     locale: b.locale,
     builder: (context, child) => glass.GlassTheme(
-      data: glass.GlassThemeData(
-        blur: 16,
-        color: token.color.bgContainer,
-        borderRadius: token.scale.radii.lg,
-        shadowColor: token.color.shadowBase,
-      ),
+      data: const GlassThemeAdapter().resolve(b.theme),
       child: _materialScope(b.theme, b.builder?.call(context, child) ?? child ?? const SizedBox.shrink()),
     ),
     color: b.theme.colors.primary,
@@ -102,13 +97,11 @@ WidgetsApp buildGlassAppHost(PureAppHostBinding b) {
   );
 }
 
-/// The neumorphic host: the base surface and accent colour come straight
-/// from the token, the panel corner radius follows the token's `lg` radius
-/// and the shadow tint follows the token's shadow base. Light source /
-/// depth / curvature are the style's fixed geometry, not token-driven, so
-/// they stay at the library defaults.
+/// The neumorphic host: the base surface, accent, corner radius and shadow tint
+/// come from the token through [NeumorphicThemeAdapter]. Light source / depth /
+/// curvature are the style's fixed geometry, not token-driven, so they stay at
+/// the library defaults.
 WidgetsApp buildNeumorphicAppHost(PureAppHostBinding b) {
-  final token = b.theme.token;
   return WidgetsApp.router(
     routerConfig: b.routerConfig,
     title: b.title,
@@ -117,12 +110,7 @@ WidgetsApp buildNeumorphicAppHost(PureAppHostBinding b) {
     supportedLocales: b.supportedLocales,
     locale: b.locale,
     builder: (context, child) => neu.NeuTheme(
-      data: neu.NeuThemeData(
-        baseColor: token.color.bgLayout,
-        accentColor: token.color.primary,
-        borderRadius: BorderRadius.all(Radius.circular(token.scale.radii.lg)),
-        customShadowColor: token.color.shadowBase,
-      ),
+      data: const NeumorphicThemeAdapter().resolve(b.theme),
       child: _materialScope(b.theme, b.builder?.call(context, child) ?? child ?? const SizedBox.shrink()),
     ),
     color: b.theme.colors.primary,
@@ -130,21 +118,12 @@ WidgetsApp buildNeumorphicAppHost(PureAppHostBinding b) {
   );
 }
 
-/// The wind host: the brightness follows the token, the accent overrides
-/// Wind's `primary` colour and a configured global font family overrides
-/// Wind's `sans` scale. Wind keeps the rest of its colour/space/typography
-/// maps at their defaults rather than being half-mapped. `syncWithSystem` is
-/// forced false: the core owns the brightness decision, so Wind must not
-/// second-guess it against the platform setting.
+/// The wind host: the brightness, the accent's tonal ramp and the chosen font
+/// family are mapped by [WindThemeAdapter]; Wind keeps the rest of its
+/// colour/space/typography maps at their defaults rather than being
+/// half-mapped, and `syncWithSystem` is forced false because the core owns the
+/// brightness decision.
 WidgetsApp buildWindAppHost(PureAppHostBinding b) {
-  final token = b.theme.token;
-  final family = token.type.fontFamily;
-  // Wind's `colors` scale is typed `MaterialColor`, and Wind reads shades
-  // off it for hovers, presses and disabled states — so the single accent
-  // seed is expanded into a real tonal ramp (500 = the seed, lighter and
-  // darker steps around it) instead of a flat swatch that would flatten
-  // every interaction state to the same colour.
-  final accent = _windAccentSwatch(token.color.primary);
   return WidgetsApp.router(
     routerConfig: b.routerConfig,
     title: b.title,
@@ -153,35 +132,10 @@ WidgetsApp buildWindAppHost(PureAppHostBinding b) {
     supportedLocales: b.supportedLocales,
     locale: b.locale,
     builder: (context, child) => wind.WindTheme(
-      data: wind.WindThemeData(
-        brightness: token.isDark ? Brightness.dark : Brightness.light,
-        syncWithSystem: false,
-        colors: {'primary': accent},
-        fontFamilies: family == null ? null : {'sans': family},
-      ),
+      data: const WindThemeAdapter().resolve(b.theme),
       child: _materialScope(b.theme, b.builder?.call(context, child) ?? child ?? const SizedBox.shrink()),
     ),
     color: b.theme.colors.primary,
     debugShowCheckedModeBanner: b.debugShowCheckedModeBanner,
   );
-}
-
-/// Grows a Material swatch around [seed]: 500 is the seed itself, 50–400 are
-/// lighter steps and 600–900 darker ones, walked in HSL lightness so the hue
-/// and saturation the user picked survive at every step.
-MaterialColor _windAccentSwatch(Color seed) {
-  final hsl = HSLColor.fromColor(seed);
-  Color step(double delta) => hsl.withLightness((hsl.lightness + delta).clamp(0.05, 0.95)).toColor();
-  return MaterialColor(seed.toARGB32(), <int, Color>{
-    50: step(0.36),
-    100: step(0.28),
-    200: step(0.20),
-    300: step(0.12),
-    400: step(0.05),
-    500: seed,
-    600: step(-0.06),
-    700: step(-0.13),
-    800: step(-0.21),
-    900: step(-0.30),
-  });
 }
