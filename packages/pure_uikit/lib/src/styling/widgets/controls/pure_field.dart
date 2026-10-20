@@ -244,8 +244,8 @@ class PureTextField extends StatelessWidget {
       // slot in the fork either, so it is drawn the same caption under the
       // same error border state.
       PureDesignLanguage.wind => _windField(theme),
-      // Yaru IS Material theming — its character comes from the host theme, not
-      // from a different field.
+      // Yaru ships no text field of its own — the library's parts are buttons,
+      // tiles, chips and bars — so the official Material field is the fallback.
       PureDesignLanguage.material || PureDesignLanguage.yaru => TextField(
         controller: controller,
         focusNode: focusNode,

@@ -296,8 +296,10 @@ class PureListRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = PureTheme.of(context);
     return switch (theme.config.language) {
-      // Yaru draws rows with the Material widgets — that is what Yaru itself
-      // is; its character comes from the host theme, not from a different row.
+      // Material's tile is the row for Material, Yaru, the neumorphic and wind
+      // languages. Yaru does ship `YaruListTile`, but it has no slot for
+      // `selected`, `selectedColor` or `onLongPress`, all of which this contract
+      // carries — so the official tile is the one that loses nothing.
       PureDesignLanguage.material || PureDesignLanguage.yaru => _materialRow(theme),
       PureDesignLanguage.cupertino => _cupertinoRow(theme),
       PureDesignLanguage.macos => _macosRow(theme),

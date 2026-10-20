@@ -1,5 +1,6 @@
 import 'package:fluent_2/fluent_2.dart' as f2;
 import 'package:flutter/material.dart';
+import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
 import 'package:forui/forui.dart' as forui;
 import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
@@ -86,9 +87,17 @@ class PureBadge extends StatelessWidget {
         variant: isErrorBadge ? forui.FBadgeVariant.destructive : forui.FBadgeVariant.primary,
         child: Text(text),
       ),
-      // Material, Yaru, Cupertino, macOS, glass, neumorphic and wind use
-      // Flutter's official Material Badge; the dot form also uses it, because
-      // several libraries' badges require a label.
+      // Wind's own pill: the fork takes its tone as utility classes, so the same
+      // error/brand verdict the two arms above resolve to a family is spelled
+      // here in the fork's dialect.
+      PureDesignLanguage.wind when !anchored && !dot && text != null => wind.WBadge(
+        text,
+        className: isErrorBadge ? 'bg-red-600 text-white' : 'bg-blue-600 text-white',
+      ),
+      // Material, Yaru, Cupertino, macOS, glass and neumorphic — and the
+      // anchored and dot forms of every language — use Flutter's official
+      // Material Badge, because that is the widget with corner-anchor and
+      // no-label grammar; several libraries' badges require a label.
       _ => Badge(
         backgroundColor: background,
         smallSize: dot ? bt.dotSize : null,

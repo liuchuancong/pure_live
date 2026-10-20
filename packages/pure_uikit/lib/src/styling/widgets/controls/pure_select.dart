@@ -146,8 +146,8 @@ class _PureSelectState<T> extends cupertino.State<PureSelect<T>> {
         placeholder: widget.placeholder ?? '',
         disabled: select == null,
       ),
-      // Yaru IS Material theming — its character comes from the host theme, not
-      // from a different dropdown.
+      // Yaru ships no combobox — the library has no drop-down at all, so the
+      // official Material control is the fallback.
       PureDesignLanguage.material || PureDesignLanguage.yaru => _materialDropdown(chosen, select),
     };
   }

@@ -7,6 +7,7 @@ import 'package:forui/forui.dart' as forui;
 import 'package:macos_ui/macos_ui.dart' as macos;
 import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
+import 'package:yaru/yaru.dart' as yaru;
 
 /// The public checkbox: one widget, every theme and density. It carries only
 /// semantics (`value`, `onChanged`, `label`, `enabled`); its appearance comes
@@ -119,9 +120,14 @@ class PureCheckbox extends StatelessWidget {
         theme.token.scale.sizes.sm,
         wind.WCheckbox(value: value, onChanged: enabled ? onChanged : null, disabled: !enabled || onChanged == null),
       ),
-      // Yaru IS Material theming — its character comes from the host theme, not
-      // from a different checkbox.
-      PureDesignLanguage.material || PureDesignLanguage.yaru => _labelled(
+      // Yaru's own checkbox — the Ubuntu square. Same slots as Material's, plus
+      // the tri-state flag this contract does not use.
+      PureDesignLanguage.yaru => _labelled(
+        labelText,
+        theme.token.scale.sizes.sm,
+        yaru.YaruCheckbox(value: value, onChanged: _triStateSelect, focusNode: focusNode, autofocus: autofocus),
+      ),
+      PureDesignLanguage.material => _labelled(
         labelText,
         theme.token.scale.sizes.sm,
         Checkbox(value: value, onChanged: _triStateSelect, focusNode: focusNode, autofocus: autofocus),

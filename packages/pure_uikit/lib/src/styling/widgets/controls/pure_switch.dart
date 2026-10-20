@@ -7,6 +7,7 @@ import 'package:forui/forui.dart' as forui;
 import 'package:macos_ui/macos_ui.dart' as macos;
 import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
+import 'package:yaru/yaru.dart' as yaru;
 
 /// The public switch: one widget, every theme and density. It carries only
 /// semantics (`value`, `onChanged`, `enabled`); its appearance comes straight
@@ -95,10 +96,21 @@ class PureSwitch extends StatelessWidget {
             'bg-gray-300 checked:bg-blue-600 disabled:opacity-50',
         thumbClassName: 'w-5 h-5 rounded-full bg-white',
       ),
-      // Yaru IS Material theming — its character comes from the host theme, not
-      // from a different switch.
-      PureDesignLanguage.material ||
-      PureDesignLanguage.yaru => Switch(value: value, onChanged: select, focusNode: focusNode, autofocus: autofocus),
+      // Yaru's own switch: Ubuntu draws a wider pill with a squared thumb, and
+      // `YaruSwitch` takes the same four slots this contract needs (value,
+      // callback, focus node, autofocus), so the language has nothing to give up.
+      PureDesignLanguage.yaru => yaru.YaruSwitch(
+        value: value,
+        onChanged: select,
+        focusNode: focusNode,
+        autofocus: autofocus,
+      ),
+      PureDesignLanguage.material => Switch(
+        value: value,
+        onChanged: select,
+        focusNode: focusNode,
+        autofocus: autofocus,
+      ),
     };
   }
 }

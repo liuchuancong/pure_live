@@ -95,8 +95,8 @@ class PureSlider extends StatelessWidget {
       // fluttersdk_wind ships no slider: fall back to the official Material
       // slider.
       PureDesignLanguage.wind => Slider(value: clamped, min: min, max: max, onChanged: select, focusNode: focusNode),
-      // Yaru IS Material theming — its character comes from the host theme, not
-      // from a different slider.
+      // Yaru ships no slider: the library has nothing between its chips and its
+      // switches, so the official Material slider is the fallback.
       PureDesignLanguage.material ||
       PureDesignLanguage.yaru => Slider(value: clamped, min: min, max: max, onChanged: select, focusNode: focusNode),
     };

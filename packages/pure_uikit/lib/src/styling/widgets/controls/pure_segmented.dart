@@ -90,8 +90,9 @@ class PureSegmented extends StatelessWidget {
       // fluttersdk_wind ships no segmented track; the official Material
       // segmented button is the fallback control.
       PureDesignLanguage.wind => _materialSegmented(select),
-      // Yaru IS Material theming — its character comes from the host theme, not
-      // from a different track.
+      // Yaru's nearest thing is `YaruChoiceChipBar` — chips, which select,
+      // deselect and wrap, rather than one track with one thumb. Flutter's
+      // official segmented button is the control this contract describes.
       PureDesignLanguage.material || PureDesignLanguage.yaru => _materialSegmented(select),
     };
   }

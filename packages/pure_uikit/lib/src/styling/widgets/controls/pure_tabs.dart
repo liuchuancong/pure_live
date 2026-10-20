@@ -79,6 +79,8 @@ class PureTabs extends StatelessWidget {
     return switch (theme.config.language) {
       // Material, Yaru (Material's token tables) and the two surface libraries
       // that ship no tab strip all use Flutter's official Material TabBar.
+      // Yaru has a `YaruTabBar`, but it takes neither `isScrollable` nor
+      // `tabAlignment`, so it cannot carry this contract's scroll flag.
       PureDesignLanguage.material ||
       PureDesignLanguage.yaru ||
       PureDesignLanguage.glass ||

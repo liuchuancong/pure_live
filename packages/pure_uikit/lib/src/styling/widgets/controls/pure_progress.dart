@@ -6,6 +6,7 @@ import 'package:forui/forui.dart' as forui;
 import 'package:macos_ui/macos_ui.dart' as macos;
 import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
+import 'package:yaru/yaru.dart' as yaru;
 
 /// A tiny marquee for an indeterminate value (null [PureProgress.value]).
 class LinearIndeterminate extends StatelessWidget {
@@ -141,13 +142,15 @@ class PureProgress extends StatelessWidget {
         ),
         fraction,
       ),
-      // Yaru IS Material theming — its character comes from the host theme, not
-      // from a different bar.
-      PureDesignLanguage.material || PureDesignLanguage.yaru => LinearProgressIndicator(
+      // Yaru's own bar: Ubuntu's progress is a thinner stroke on a track of its
+      // own colour, and the library names the thickness `strokeWidth` where
+      // Material names it `minHeight`. A null value is its indeterminate run.
+      PureDesignLanguage.yaru => yaru.YaruLinearProgressIndicator(
         value: value,
-        minHeight: height,
+        strokeWidth: height,
+        trackStrokeWidth: height,
         color: fill,
-        backgroundColor: theme.colors.fillSecondary,
+        trackColor: theme.colors.fillSecondary,
       ),
     };
   }
