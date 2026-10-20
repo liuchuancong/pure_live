@@ -170,7 +170,11 @@ final class RoomCard extends ConsumerWidget {
                     children: [
                       Text(
                         room.content.title.isEmpty ? context.t.common.empty : room.content.title,
-                        maxLines: 1,
+                        // Two lines, and no more: the grid is a masonry, so a
+                        // longer title makes this card taller than its neighbour
+                        // — which is the point of the waterfall — while an
+                        // unbounded title would stretch one card to a paragraph.
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: theme.text.body.copyWith(fontWeight: FontWeight.w600),
                       ),
