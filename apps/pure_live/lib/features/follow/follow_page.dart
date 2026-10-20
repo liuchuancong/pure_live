@@ -71,6 +71,14 @@ final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefr
     _progress.value = 0;
     try {
       await _repository.load();
+    } on Object {
+      // The list keeps whatever it already showed, and the viewer hears that
+      // this refresh did not land. Without the catch the failure left the
+      // `unawaited(...)` that starts it and nothing on screen moved — the
+      // class doc's promise of a toast was the one thing the code did not do.
+      if (mounted) {
+        PureToast.show(context, context.t.errors.network, type: PureToastType.error);
+      }
     } finally {
       _progress.value = null;
     }
