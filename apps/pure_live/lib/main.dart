@@ -37,7 +37,15 @@ Future<void> main(List<String> args) async {
   final log = AppLog();
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
-    ErrorReporter.report(log.forCategory('flutter'), details.exception, details.stack, message: 'framework error');
+    ErrorReporter.report(
+      log.forCategory('flutter'),
+      details.exception,
+      details.stack,
+      message: 'framework error',
+      // The widget chain is what names the offender; the exception alone says a
+      // row overflowed and the stack ends in the framework.
+      fields: {'tree': details.context?.toDescription().trim() ?? ''},
+    );
   };
   PlatformDispatcher.instance.onError = (error, stack) {
     ErrorReporter.report(log.forCategory('uncaught'), error, stack);

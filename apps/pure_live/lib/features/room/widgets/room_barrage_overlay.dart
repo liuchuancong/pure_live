@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -63,6 +64,13 @@ final class BarrageGeometry {
   static const _minLanes = 1;
   static const _maxLanes = 16;
 
+  /// The pixels a new line keeps between itself and the tail of the line in
+  /// front of it.
+  static const rowGapPixels = 24.0;
+
+  /// The lowest pixel the flying band may use.
+  double get bandBottom => _bandBottom;
+
   /// The vertical pitch of one row.
   double get laneHeight => fontSize * 1.6;
 
@@ -93,9 +101,32 @@ final class BarrageGeometry {
   /// estimated width plus the screen, so long lines are not faster than short
   /// ones (3.x's `danmakuSpeed` arithmetic).
   double secondsFor(LiveMessage message) {
-    final estimated = message.text.length * fontSize * 0.62;
-    return ((width + estimated) / preferences.barrageSpeed.clamp(20, 400)).clamp(2, 60).toDouble();
+    final estimated = estimatedWidth(message);
+    return ((width + estimated) / _pixelsPerSecond).clamp(2, 60).toDouble();
   }
+
+  /// The text's own width. The drawn string is the sender plus the message, cut
+  /// at the line's cap, and a CJK glyph takes a whole em where a latin one takes
+  /// about half: `length * 0.62` under-counted a Chinese room by half, so a row
+  /// was called free while the line in front still covered the entry edge.
+  double estimatedWidth(LiveMessage message) {
+    final name = preferences.barrageShowSender ? message.effectiveSender.userName.trim() : '';
+    final drawn = name.isEmpty ? message.text : '$name  ${message.text}';
+    var ems = 0.0;
+    for (final rune in drawn.runes) {
+      ems += rune >= 0x2e80 ? 1.0 : 0.55;
+    }
+    return math.min(ems * fontSize, width * 0.62);
+  }
+
+  /// How long a row must wait before another line may enter it: the previous
+  /// line's width plus the gap, crossed at the configured speed. A fixed slice
+  /// of clock time says nothing about a line that takes seconds to cross, so a
+  /// busy room stacked two and three lines into one row.
+  Duration entryClearance(LiveMessage message) =>
+      Duration(milliseconds: ((estimatedWidth(message) + rowGapPixels) / _pixelsPerSecond * 1000).round());
+
+  double get _pixelsPerSecond => preferences.barrageSpeed.clamp(20, 400);
 
   /// How many lines may fly at once (the reference's `danmakuMaxVisibleCount`).
   int get maxLive => preferences.barrageMaxVisible.clamp(10, 120);
@@ -140,7 +171,6 @@ final class RoomBarrageOverlay extends ConsumerStatefulWidget {
 final class _RoomBarrageOverlayState extends ConsumerState<RoomBarrageOverlay> with SingleTickerProviderStateMixin {
   /// How long a pinned line stays.
   static const _pinnedSeconds = 5.0;
-  static const _rowGapMilliseconds = 700;
 
   late final AnimationController _ticker = AnimationController(vsync: this, duration: const Duration(milliseconds: 33))
     ..repeat();
@@ -197,37 +227,37 @@ final class _RoomBarrageOverlayState extends ConsumerState<RoomBarrageOverlay> w
   void _onMessage(LiveMessage message) {
     final chat = message.type == LiveMessageType.chat;
     final gift = message.type == LiveMessageType.gift && (_preferences?.barrageShowGifts ?? false);
-    if ((!chat && !gift) || message.text.isEmpty || !mounted) {
+    final geometry = _measured;
+    if ((!chat && !gift) || message.text.isEmpty || !mounted || geometry == null) {
       return;
     }
     setState(() {
-      if (_live.length >= _maxLiveHint) {
+      if (_live.length >= geometry.maxLive) {
         _live.removeAt(0);
       }
-      final row = _freeRow(_lanesHint);
+      final row = _freeRow(geometry);
       _live.add(_Barrage(message: message, row: row ?? -1, pinned: row == null, startedAt: DateTime.now()));
     });
   }
 
-  /// The band geometry of the last built frame; the cap and row count for
-  /// a burst that arrives between two frames.
-  int _maxLiveHint = 48;
-  int _lanesHint = 4;
+  /// The band geometry of the last built frame. Null before the first frame:
+  /// with no measured picture there is no band to fly a line in.
+  BarrageGeometry? _measured;
 
-  /// The scroll row whose last line has cleared enough of the head of the row,
-  /// or null when every row is still busy.
-  int? _freeRow(int lanes) {
+  /// The scroll row whose last line has cleared the entry edge, or null when
+  /// every row is still busy.
+  int? _freeRow(BarrageGeometry geometry) {
     final now = DateTime.now();
-    for (var offset = 0; offset < lanes; offset++) {
-      final row = (_cursor + offset) % lanes;
+    for (var offset = 0; offset < geometry.lanes; offset++) {
+      final row = (_cursor + offset) % geometry.lanes;
       _Barrage? last;
       for (final entry in _live) {
         if (!entry.pinned && entry.row == row) {
           last = entry;
         }
       }
-      if (last == null || now.difference(last.startedAt).inMilliseconds > _rowGapMilliseconds) {
-        _cursor = (row + 1) % lanes;
+      if (last == null || now.difference(last.startedAt) - _held >= geometry.entryClearance(last.message)) {
+        _cursor = (row + 1) % geometry.lanes;
         return row;
       }
     }
@@ -275,8 +305,7 @@ final class _RoomBarrageOverlayState extends ConsumerState<RoomBarrageOverlay> w
             currentHz: rate?.currentHz,
           ),
         );
-        _maxLiveHint = geometry.maxLive;
-        _lanesHint = geometry.lanes;
+        _measured = geometry;
         if (_ticker.duration != geometry.frameInterval) {
           _ticker.duration = geometry.frameInterval;
         }
@@ -360,13 +389,22 @@ final class _RoomBarrageOverlayState extends ConsumerState<RoomBarrageOverlay> w
       (entry) => _elapsed(entry, now) >= (entry.pinned ? _pinnedSeconds : geometry.secondsFor(entry.message)),
     );
     final pinned = _live.where((entry) => entry.pinned).toList(growable: false);
+    // Only the rows the picture still has below the flying band answer; the rest
+    // of a burst is dropped, which is what a barrage is for.
+    final pinnedCount = math.min(
+      pinned.length,
+      ((geometry.height - geometry.bandBottom - 8) / geometry.laneHeight).floor().clamp(0, 4),
+    );
     return ClipRect(
       child: Stack(
         children: [
-          for (var index = 0; index < pinned.length; index++)
+          for (var index = 0; index < pinnedCount; index++)
             Positioned(
               left: 12,
-              top: geometry.topOf(index % geometry.lanes),
+              // The overflow band sits under the flying one. Pinned lines used
+              // to take rows from the same ladder the traffic flies in, so a
+              // busy room drew three lines on top of each other.
+              top: geometry.bandBottom + 8 + index * geometry.laneHeight,
               child: _line(pinned[index], width, fontSize, opacity, preferences),
             ),
           for (final entry in _live)
