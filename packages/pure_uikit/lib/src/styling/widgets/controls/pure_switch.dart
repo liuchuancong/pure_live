@@ -53,6 +53,15 @@ class PureSwitch extends StatelessWidget {
     return switch (theme.config.language) {
       PureDesignLanguage.fluent => f2.FluentSwitch(
         checked: value,
+        // The library's checked track is its own blue token rather than the
+        // theme's accent, so a page that puts these switches beside the settings
+        // suite's accent-tinted tiles shows two accents at once. The unchecked
+        // track is left to the library — only the filled state carries a colour.
+        style: f2.FluentSwitchStyle(
+          trackColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected) ? theme.colors.primary : null,
+          ),
+        ),
         onChanged: select,
         focusNode: focusNode,
         autofocus: autofocus,

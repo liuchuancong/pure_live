@@ -61,12 +61,7 @@ abstract final class HomeRailMetrics {
 /// scrolls (the reference's fix for 3.x pushing destinations off screen).
 class HomeRail extends StatelessWidget {
   /// Builds the rail over [branches].
-  const new({
-    required this.branches,
-    required this.selected,
-    required this.onSelected,
-    super.key,
-  });
+  const new({required this.branches, required this.selected, required this.onSelected, super.key});
 
   /// The destinations, in their display order.
   final List<ShellBranch> branches;
@@ -84,10 +79,7 @@ class HomeRail extends StatelessWidget {
     final top = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(12, 12, 12, 8),
-          child: HomeMenuButton(),
-        ),
+        const Padding(padding: EdgeInsets.fromLTRB(12, 12, 12, 8), child: HomeMenuButton()),
         for (final action in homeActions())
           _RailTool(
             key: ValueKey('home-rail-${action.name}'),
@@ -115,10 +107,7 @@ class HomeRail extends StatelessWidget {
     );
     return LayoutBuilder(
       builder: (context, constraints) {
-        final content = Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [top, separator, ...destinations],
-        );
+        final content = Column(mainAxisSize: MainAxisSize.min, children: [top, separator, ...destinations]);
         // The row heights are the reference's Material metrics; the other
         // design languages draw taller buttons and labels, so the fixed
         // arithmetic that decides "top scrolls, destinations stay" cannot
@@ -208,6 +197,7 @@ class _RailTool extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = PureTheme.of(context);
+    final fluent = theme.config.language == PureDesignLanguage.fluent;
     return _RailItem(
       label: label,
       onTap: onTap,
@@ -218,12 +208,17 @@ class _RailTool extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 120),
+                curve: Curves.easeOut,
                 width: kMinInteractiveDimension,
                 height: kMinInteractiveDimension,
                 decoration: BoxDecoration(
                   color: state.layer,
-                  shape: BoxShape.circle,
+                  // Fluent's toolbar buttons are a 4-point square plate; the
+                  // circle is Material's touch target.
+                  shape: fluent ? BoxShape.rectangle : BoxShape.circle,
+                  borderRadius: fluent ? BorderRadius.circular(4) : null,
                   border: state.focused ? Border.all(color: theme.colors.primary, width: 2) : null,
                 ),
                 child: Icon(icon, color: theme.colors.textSecondary),
@@ -240,9 +235,10 @@ class _RailTool extends StatelessWidget {
   }
 }
 
-/// A destination of the rail, as Material 3 draws it: the icon in a 56 × 32
-/// indicator (filled when selected) and the name under it (the reference's
-/// `_RailDestination`).
+/// A destination of the rail. Material 3 draws it as an icon inside a 56 × 32
+/// indicator with the name under it; Fluent owns the whole cell instead — a
+/// 4-point row that fills on hover and selection, marked by a short accent pill
+/// on its left edge (WinUI's NavigationViewItem).
 class _RailDestination extends StatelessWidget {
   const new({required this.branch, required this.selected, required this.onTap, super.key});
 
@@ -254,46 +250,78 @@ class _RailDestination extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = PureTheme.of(context);
     final label = branch.label(context);
+    final fluent = theme.config.language == PureDesignLanguage.fluent;
     return _RailItem(
       label: label,
       selected: selected,
       onTap: onTap,
-      builder: (context, state) => ConstrainedBox(
-        constraints: const BoxConstraints.tightFor(width: HomeRailMetrics.width),
-        child: Padding(
-          padding: const EdgeInsets.only(top: 4, bottom: 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+      builder: (context, state) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOut,
+          width: HomeRailMetrics.width - 12,
+          decoration: BoxDecoration(
+            color: fluent ? (state.layer ?? (selected ? theme.colors.fillQuaternary : null)) : null,
+            borderRadius: BorderRadius.circular(4),
+            border: state.focused ? Border.all(color: theme.colors.primary, width: 2) : null,
+          ),
+          child: Stack(
+            alignment: AlignmentDirectional.center,
             children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                curve: Curves.easeOut,
-                width: 56,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: selected ? theme.colors.fillSecondary : null,
-                  borderRadius: BorderRadius.circular(16),
-                  border: state.focused ? Border.all(color: theme.colors.primary, width: 2) : null,
-                ),
-                foregroundDecoration: state.layer == null
-                    ? null
-                    : BoxDecoration(color: state.layer, borderRadius: BorderRadius.circular(16)),
-                child: Icon(
-                  branch.icon,
-                  color: selected ? theme.colors.text : theme.colors.textSecondary,
-                ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(0, fluent ? 8 : 4, 0, fluent ? 4 : 0),
+                    child: fluent
+                        ? Icon(branch.icon, color: selected ? theme.colors.text : theme.colors.textSecondary)
+                        : AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            curve: Curves.easeOut,
+                            width: 56,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: selected ? theme.colors.fillSecondary : null,
+                              borderRadius: BorderRadius.circular(16),
+                              border: state.focused ? Border.all(color: theme.colors.primary, width: 2) : null,
+                            ),
+                            // The Material layer sits on the indicator, which is
+                            // the cell the language highlights.
+                            foregroundDecoration: state.layer == null
+                                ? null
+                                : BoxDecoration(color: state.layer, borderRadius: BorderRadius.circular(16)),
+                            child: Icon(branch.icon, color: selected ? theme.colors.text : theme.colors.textSecondary),
+                          ),
+                  ),
+                  _railLabel(
+                    context,
+                    label,
+                    color: theme.colors.text,
+                    weight: selected ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                  SizedBox(height: fluent ? 7 : 12),
+                ],
               ),
-              const SizedBox(height: 4),
-              _railLabel(
-                context,
-                label,
-                color: theme.colors.text,
-                weight: selected ? FontWeight.w600 : FontWeight.w400,
-              ),
+              if (fluent && selected)
+                const PositionedDirectional(top: 0, bottom: 0, start: 2, child: Center(child: _RailAccent())),
             ],
           ),
         ),
       ),
     );
   }
+}
+
+/// The 3 × 16 accent pill Fluent puts on the leading edge of the selected
+/// navigation item.
+class _RailAccent extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 3,
+    height: 16,
+    decoration: BoxDecoration(color: PureTheme.of(context).colors.primary, borderRadius: BorderRadius.circular(1.5)),
+  );
 }

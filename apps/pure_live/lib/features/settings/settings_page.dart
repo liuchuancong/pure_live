@@ -54,8 +54,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     _search.addListener(_searchChanged);
     // A deep link: picked before the view exists, it is the first page the
     // view shows — also in one pane, which is what the route asks for.
-    if (SettingsSection.maybeFromId(widget.section) case final SettingsSection section
-        when section.route == null) {
+    if (SettingsSection.maybeFromId(widget.section) case final SettingsSection section when section.route == null) {
       _split.select(section.name);
     }
   }
@@ -115,24 +114,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       // Another route of the app: pushed above everything, not a pane page.
       return sui.SettingsTile.navigation(
         key: ValueKey('settings-section-${section.name}'),
-        leading: Icon(section.icon),
+        leading: Icon(section.icon, size: 20),
         title: title,
         description: description,
-        trailing: const Icon(Icons.open_in_new_rounded),
+        trailing: const Icon(Icons.open_in_new, size: 18),
         onPressed: (_) => unawaited(context.push<void>(route)),
       );
     }
     return sui.SettingsTile.navigation(
       key: ValueKey('settings-section-${section.name}'),
-      leading: Icon(section.icon),
+      leading: Icon(section.icon, size: 20),
       title: title,
       description: description,
       destination: sui.SettingsDestination(
         id: section.name,
         title: title,
-        builder: (context) => SettingsEmbedded(
-          child: section.buildPage() ?? const SizedBox.shrink(),
-        ),
+        builder: (context) => SettingsEmbedded(child: section.buildPage() ?? const SizedBox.shrink()),
       ),
     );
   }
@@ -166,10 +163,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             const SizedBox(height: PureSpacing.md),
             Text(t.settings.searchEmpty),
             const SizedBox(height: PureSpacing.xs),
-            Text(
-              t.settings.searchEmptyHint,
-              style: TextStyle(color: PureTheme.of(context).colors.textSecondary),
-            ),
+            Text(t.settings.searchEmptyHint, style: TextStyle(color: PureTheme.of(context).colors.textSecondary)),
           ],
         ),
       );
@@ -191,9 +185,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     sui.SettingsTile.navigation(
                       key: ValueKey('settings-entry-${entry.id}'),
                       title: Text(entry.titleText(t)),
-                      description: entry.descriptionText(t) == null
-                          ? null
-                          : Text(entry.descriptionText(t)!),
+                      description: entry.descriptionText(t) == null ? null : Text(entry.descriptionText(t)!),
                       onPressed: (_) => _reveal(entry),
                     ),
                 ],
@@ -243,10 +235,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                     child: Align(
                       alignment: AlignmentDirectional.centerStart,
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 720),
-                        child: _searchField(),
-                      ),
+                      child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 720), child: _searchField()),
                     ),
                   ),
                 ),
@@ -261,10 +250,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         sections: _indexSections(t),
                       ),
                       if (_query.isNotEmpty)
-                        Material(
-                          color: PureTheme.of(context).colors.bgLayout,
-                          child: _searchPanel(t),
-                        ),
+                        Material(color: PureTheme.of(context).colors.bgLayout, child: _searchPanel(t)),
                     ],
                   ),
                 ),

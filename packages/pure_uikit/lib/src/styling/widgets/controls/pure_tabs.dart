@@ -103,6 +103,14 @@ class PureTabs extends StatelessWidget {
         f2.FluentTabList<int>(
           selectedValue: selected,
           onSelect: select,
+          // WinUI marks the chosen header with the accent colour as well as the
+          // selector bar; the library's own resting foreground leaves every tab
+          // reading the same weight.
+          style: f2.FluentTabStyle(
+            foregroundColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.selected) ? theme.colors.primary : theme.colors.textSecondary,
+            ),
+          ),
           tabs: [
             for (var i = 0; i < tabs.length; i++)
               f2.FluentTab<int>(
@@ -113,6 +121,10 @@ class PureTabs extends StatelessWidget {
               ),
           ],
         ),
+        // The strip runs from the leading edge. Centred, it floats in the middle
+        // of a wide header with dead space on both sides, and a header title sits
+        // nowhere near it.
+        leading: true,
       ),
       // forui's own tabs. Its tab view requires a content panel per entry; the
       // router owns the body here, so each entry gets an empty panel.
@@ -160,9 +172,16 @@ class PureTabs extends StatelessWidget {
   /// [always] is for the one library that cannot honour the flag's other half:
   /// its cells neither shrink nor ellipsize, so squeezing into the box is not a
   /// state it can be in.
-  Widget _scrolled(Widget strip, {bool always = false}) => always || isScrollable
-      ? SingleChildScrollView(scrollDirection: Axis.horizontal, child: IntrinsicWidth(child: strip))
-      : strip;
+  Widget _scrolled(Widget strip, {bool always = false, bool leading = false}) {
+    if (!(always || isScrollable)) {
+      return strip;
+    }
+    final scroll = SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: IntrinsicWidth(child: strip),
+    );
+    return leading ? Align(alignment: AlignmentDirectional.centerStart, child: scroll) : scroll;
+  }
 
   static Widget _foruiLabel(PureTab tab) => switch (tab.icon) {
     final IconData glyph => Column(
@@ -330,7 +349,11 @@ class _CupertinoTabBar extends StatelessWidget {
     // control's height by a third for the sake of the icon.
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [cupertino.Icon(glyph, size: 14), const SizedBox(width: 4), Flexible(child: label)],
+      children: [
+        cupertino.Icon(glyph, size: 14),
+        const SizedBox(width: 4),
+        Flexible(child: label),
+      ],
     );
   }
 }
