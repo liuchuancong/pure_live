@@ -369,14 +369,24 @@ final class WebSearchRoomBar extends StatelessWidget {
   /// Hides the bar for this room.
   final VoidCallback onDismiss;
 
+  /// The width from which the bar keeps its own column instead of spanning the
+  /// page: the shell's medium class, the same bound the navigation changes at.
+  static const double _spanningMaxWidth = AdaptiveBreakpoints.medium;
+
+  /// The width at which the bar gets the wide-window insets and a wider column.
+  /// Deliberately between the `expanded` (1024) and `large` (1440) class bounds:
+  /// the bar is meant to sit beside a two-column page, which is what the desktop
+  /// shell looks like from here, and neither class bound is that width.
+  static const double _wideMinWidth = 1200;
+
   /// Places [bar] over a page [width] wide: the full width on phones held
   /// upright, on the right 420 wide on sideways phones and 440 on wide
   /// windows.
   static Widget place({required double width, required Widget bar}) {
-    if (width < 600) {
+    if (width < _spanningMaxWidth) {
       return Positioned(left: 12, right: 12, bottom: 16, child: SafeArea(top: false, child: bar));
     }
-    final wide = width >= 1200;
+    final wide = width >= _wideMinWidth;
     return Positioned(
       right: wide ? 24 : 12,
       bottom: wide ? 24 : 16,

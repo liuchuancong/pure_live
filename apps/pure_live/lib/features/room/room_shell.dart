@@ -1,4 +1,5 @@
 import 'package:live_platform/live_platform.dart' show FormFactor;
+import 'package:pure_uikit/pure_uikit.dart' show AdaptiveBreakpoints;
 
 /// The room page's shapes. Each one is drawn by its own layout file — there is
 /// no single adaptive tree that guesses at all of them, because a phone in
@@ -56,7 +57,7 @@ RoomShell resolveRoomShell({
   }
   // A phone held sideways (or a touch window too short for a column): the
   // video fills the height and the pane becomes a narrow side column.
-  if (isTouch && height < roomCompactMaxHeight && width > height && width >= 600) {
+  if (isTouch && height < roomCompactMaxHeight && width > height && width >= AdaptiveBreakpoints.medium) {
     return RoomShell.phoneLandscape;
   }
   if (width >= roomWideMinWidth) {
