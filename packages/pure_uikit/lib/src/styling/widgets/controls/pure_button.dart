@@ -106,7 +106,7 @@ class PureButton extends StatelessWidget {
     final m = _metrics(theme, size);
     // An empty label means the caller wants the glyph alone: laying out a label
     // slot for it added the icon-to-label gap around a string that is not there.
-    final child = _tint(_content(context, iconOnly: icon != null && label.isEmpty, metrics: m), theme);
+    final child = _tint(_content(context, iconOnly: icon != null && label.isEmpty, metrics: m), theme, enabled);
 
     final button = switch (language) {
       PureDesignLanguage.fluent => f2.FluentButton(
@@ -196,9 +196,8 @@ class PureButton extends StatelessWidget {
       // so the variant and the size step are spelled in its own dialect here.
       // Its focus handling lives inside `WAnchor`, so [focusNode]/[autofocus]
       // have no slot to land on and are ignored rather than faked with a
-      // wrapper that would steal focus from the node that actually handles
-      // activation. The fork paints its own `disabled:` state from the same
-      // flag that nulls the callback — one source of truth.
+      // wrapper that would steal focus from the node that actually activates
+      // the button.
       PureDesignLanguage.wind => _wind(theme, m),
       // Yaru draws buttons with the Material widgets — that is what Yaru
       // itself is; its character comes from the host theme (see
@@ -274,6 +273,12 @@ class PureButton extends StatelessWidget {
   /// radius (16), blur and elevation are the fork's own: they are what makes a
   /// glass button look like glass, and overriding them with the token's 32/6
   /// made this language's buttons read as small Material ones.
+  ///
+  /// A disabled plate is the fork's known gap: `GlassButton` only drops the tap
+  /// (`onTap: isLoading || onPressed == null ? null : …`) and changes no pixel,
+  /// and its label is hardcoded white whatever the brightness, so there is no
+  /// foreground here to dim either. Left as the library draws it rather than
+  /// wrapped in a hand-painted opacity, which would also sink the loading ring.
   Widget _glass(PureTheme theme) {
     final fg = _foreground(theme);
     Widget button = glass.GlassButton(
@@ -333,6 +338,10 @@ class PureButton extends StatelessWidget {
   /// a secondary button stayed white on a dark surface.
   Widget _wind(PureTheme theme, _Metrics m) {
     final interactive = onPressed != null && !loading;
+    // The fork's `disabled:` flag only *activates* the `disabled:` class prefix,
+    // and its `opacity` utility never reaches `WButton`'s plate (measured on
+    // 1.8.4: a plain `opacity-50` changes no pixel), so no class spells a sunken
+    // face here — the wrap below is the compensation.
     final surface = switch (variant) {
       ButtonVariant.primary => 'bg-primary-500 text-white rounded hover:bg-primary-600',
       ButtonVariant.secondary =>
@@ -356,6 +365,12 @@ class PureButton extends StatelessWidget {
       loadingColor: _foreground(theme),
       child: _plainContent(theme),
     );
+    // The sunken face the fork cannot state in a class. Loading is left out:
+    // the fork swaps the content for its own ring there, and the two states are
+    // mutually exclusive, so a disabled plate is the only one to sink.
+    if (!interactive && !loading) {
+      button = Opacity(opacity: 0.5, child: button);
+    }
     final hint = tooltip;
     if (hint != null) {
       button = Tooltip(message: hint, child: button);
@@ -373,8 +388,7 @@ class PureButton extends StatelessWidget {
     if (enabled) {
       return child;
     }
-    final label = variant == ButtonVariant.primary ? theme.colors.onPrimary : theme.colors.text;
-    return IconTheme.merge(data: IconThemeData(color: label.withValues(alpha: 0.25)), child: child);
+    return _macosDim(child, variant == ButtonVariant.primary ? theme.colors.onPrimary : theme.colors.text);
   }
 
   /// The label colour a filled or tinted variant owes its content, or null
@@ -393,7 +407,16 @@ class PureButton extends StatelessWidget {
   /// Tints the shared [child] (the macOS, Cupertino and Material branches)
   /// for the variants whose surface the token model fills: a primary label
   /// sits on the accent, a danger label carries the error colour.
-  Widget _tint(Widget child, PureTheme theme) {
+  ///
+  /// A disabled button is left alone. macOS dims its disabled face by drawing
+  /// the label at a quarter of its own luminance-matched colour, and a colour
+  /// named here replaces that rather than layering over it — the button then
+  /// reads live behind a sunken plate. Cupertino's disabled face is an opacity
+  /// over the whole child, so nothing is lost by standing down there either.
+  Widget _tint(Widget child, PureTheme theme, bool enabled) {
+    if (!enabled) {
+      return child;
+    }
     final color = switch (variant) {
       ButtonVariant.primary => switch (theme.config.language) {
         PureDesignLanguage.macos || PureDesignLanguage.cupertino => theme.colors.onPrimary,
@@ -610,7 +633,13 @@ class PureIconButton extends StatelessWidget {
           ControlSize.lg => f2.FluentButtonSize.large,
         },
       ),
-      PureDesignLanguage.macos => macos.MacosIconButton(icon: glyph, onPressed: active ? onPressed : null),
+      // `MacosIconButton` sinks only its plate when disabled — the glyph is the
+      // caller's and the library leaves it at full colour, so a dead button's
+      // mark looked live. It carries `PushButton`'s own quarter-alpha rule over.
+      PureDesignLanguage.macos => macos.MacosIconButton(
+        icon: active ? glyph : _macosDim(glyph, color ?? IconTheme.of(context).color ?? theme.colors.text),
+        onPressed: active ? onPressed : null,
+      ),
       PureDesignLanguage.cupertino => cupertino.CupertinoButton(
         onPressed: active ? onPressed : null,
         sizeStyle: switch (size) {
@@ -694,14 +723,18 @@ class PureIconButton extends StatelessWidget {
 
   /// The wind icon button: the glyph in `WButton`'s child slot, the accessible
   /// name on the button itself, the plate in the fork's own classes.
+  ///
+  /// The primary plate rides the fork's `primary-*` family like the text
+  /// button's does, and the disabled face is the same `Opacity` compensation,
+  /// because `WButton` states neither in a class.
   Widget _windIcon(PureTheme theme, _Metrics m, bool active) {
     final surface = switch (variant) {
-      ButtonVariant.primary => 'bg-blue-600 text-white rounded hover:bg-blue-700',
+      ButtonVariant.primary => 'bg-primary-500 text-white rounded hover:bg-primary-600',
       ButtonVariant.secondary => 'bg-white text-gray-900 border border-gray-400 rounded hover:bg-gray-100',
       ButtonVariant.danger => 'bg-red-600 text-white rounded hover:bg-red-700',
       ButtonVariant.ghost => 'text-gray-900 rounded hover:bg-gray-100',
     };
-    return wind.WButton(
+    Widget button = wind.WButton(
       onTap: active ? onPressed : null,
       disabled: !active,
       className:
@@ -711,8 +744,12 @@ class PureIconButton extends StatelessWidget {
             ControlSize.lg => 'p-2.5',
           }}',
       semanticLabel: tooltip,
-      child: Icon(icon, size: m.icon),
+      child: Icon(icon, size: m.icon, color: color, semanticLabel: tooltip),
     );
+    if (!active) {
+      button = Opacity(opacity: 0.5, child: button);
+    }
+    return button;
   }
 }
 
@@ -751,3 +788,12 @@ class PureSpinner extends StatelessWidget {
     return SizedBox.square(dimension: size, child: spinner);
   }
 }
+
+/// macOS's own disabled foreground: the label colour at a quarter alpha
+/// (`PushButton` lines 306-308). The library reaches its text through
+/// `DefaultTextStyle` unaided; this carries the same rule to a glyph, which
+/// reads only the icon theme.
+Widget _macosDim(Widget child, Color label) => IconTheme.merge(
+  data: IconThemeData(color: label.withValues(alpha: 0.25)),
+  child: child,
+);
