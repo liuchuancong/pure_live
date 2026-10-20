@@ -5,9 +5,17 @@ import 'package:flutter/services.dart';
 import 'package:window_frame_kit/window_frame_kit.dart';
 import 'package:yaru_window_platform_interface/yaru_window_platform_interface.dart';
 
+/// The [YaruWindowPlatform] whose calls ride the `window_frame_kit` delegate.
+///
+/// The fork's whole reason to exist: upstream depends on `window_manager`,
+/// whose native window messages fight the frame takeover over the same HWND.
+/// Here every method goes through the one [WindowManager] singleton the app's
+/// own window dressing already uses, so the window answers a single delegate.
 class YaruWindowManager extends YaruWindowPlatform {
+  /// Creates the manager; the delegate is injectable for tests.
   YaruWindowManager([@visibleForTesting this.__wm]);
 
+  /// Makes this class the platform's [YaruWindowPlatform.instance].
   static void registerWith() {
     YaruWindowPlatform.instance = YaruWindowManager();
   }
@@ -44,11 +52,11 @@ class YaruWindowManager extends YaruWindowPlatform {
   @override
   Future<void> restore(int id) async {
     if (await _wm.invokeGetter(_wm.isFullScreen, orElse: false)) {
-      return _wm.invokeSetter(_wm.setFullScreen, false);
+      return await _wm.invokeSetter(_wm.setFullScreen, false);
     } else if (await _wm.invokeGetter(_wm.isMaximized, orElse: false)) {
-      return _wm.invokeMethod(_wm.unmaximize);
+      return await _wm.invokeMethod(_wm.unmaximize);
     } else if (await _wm.invokeGetter(_wm.isMinimized, orElse: false)) {
-      return _wm.invokeMethod(_wm.restore);
+      return await _wm.invokeMethod(_wm.restore);
     }
   }
 

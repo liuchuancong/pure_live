@@ -48,22 +48,11 @@ dev_dependencies:
 # fork needs code_assets ^2.1.0; the media_core workspace carries the same two
 # overrides for the same reason (see its root pubspec).
 dependency_overrides:
-  # yaru's window layer only exists as yaru_window_manager, which depends on window_manager;
-  # window_manager pins screen_retriever ^0.2.x and window_frame_kit 0.3.0 needs ^0.3.0, and
-  # neither compiles against the other's version. The fork under third_party/ swaps one import
-  # (window_frame_kit is a verbatim port), so the app ends up with a single window delegate.
-  yaru_window_manager:
-    path: third_party/yaru_window_manager
   code_assets: ^2.1.0
   dbus: ^0.8.0
   equatable: ^3.0.0
-  hooks: ^2.2.0
   ffmpeg_kit_extended_flutter: ^0.6.2
-  platform: ^3.2.0
-  test_api: ^0.7.15
-  wakelock_plus: 1.8.1
-  win32: ^6.4.0
-  xml: ^7.0.0
+  hooks: ^2.2.0
   media_core:
     git:
       url: https://github.com/liuchuancong/media_core.git
@@ -74,6 +63,17 @@ dependency_overrides:
       url: https://github.com/liuchuancong/media_core.git
       path: ./packages/media_core_native
       ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c
+  platform: ^3.2.0
+  test_api: ^0.7.15
+  wakelock_plus: 1.8.1
+  win32: ^6.4.0
+  xml: ^7.0.0
+  # yaru's window layer only exists as yaru_window_manager, which depends on window_manager;
+  # window_manager pins screen_retriever ^0.2.x and window_frame_kit 0.3.0 needs ^0.3.0, and
+  # neither compiles against the other's version. The fork under third_party/ swaps one import
+  # (window_frame_kit is a verbatim port), so the app ends up with a single window delegate.
+  yaru_window_manager:
+    path: third_party/yaru_window_manager
 
 melos:
   scripts:
