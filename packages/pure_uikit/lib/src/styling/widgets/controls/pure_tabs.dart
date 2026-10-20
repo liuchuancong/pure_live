@@ -63,7 +63,8 @@ class PureTabs extends StatelessWidget {
   /// (fluent, macOS, Cupertino, wind) are handed the width their tabs ask for
   /// inside a horizontal scroll view. With the flag false every strip fits the
   /// box it was given: the Material family stretches its tabs across it, the
-  /// rest squeeze.
+  /// rest squeeze — except macOS, whose cells can do neither, so it scrolls
+  /// whatever this says.
   final bool isScrollable;
 
   @override
@@ -90,9 +91,11 @@ class PureTabs extends StatelessWidget {
       // iOS's own segmented strip: a sliding thumb over the library's cells.
       PureDesignLanguage.cupertino => _scrolled(_CupertinoTabBar(tabs: tabs, index: selected, onChanged: select)),
       // macOS's own segmented control, driven by the library controller. Its
-      // row cannot shrink — measured, three long labels overflowed a 360dp box
-      // by 167px — so it is the clearest case for the scroll wrapper.
-      PureDesignLanguage.macos => _scrolled(_MacosTabBar(tabs: tabs, index: selected, onChanged: select)),
+      // row cannot shrink and cannot ellipsize — `MacosTab` builds a bare `Text`
+      // per cell, so three long labels overflowed a 360dp box by 167px — so it
+      // rides the scroll wrapper whatever the caller asked for. A segmented
+      // control that sizes to its content is also what macOS itself draws.
+      PureDesignLanguage.macos => _scrolled(_MacosTabBar(tabs: tabs, index: selected, onChanged: select), always: true),
       // fluent_2's own tab list.
       PureDesignLanguage.fluent => _scrolled(
         f2.FluentTabList<int>(
@@ -151,7 +154,11 @@ class PureTabs extends StatelessWidget {
   /// exceptions. Bounding the child to the width its own tabs ask for keeps
   /// the strip scrollable without putting a library container in a shape it
   /// cannot lay out.
-  Widget _scrolled(Widget strip) => isScrollable
+  ///
+  /// [always] is for the one library that cannot honour the flag's other half:
+  /// its cells neither shrink nor ellipsize, so squeezing into the box is not a
+  /// state it can be in.
+  Widget _scrolled(Widget strip, {bool always = false}) => always || isScrollable
       ? SingleChildScrollView(scrollDirection: Axis.horizontal, child: IntrinsicWidth(child: strip))
       : strip;
 

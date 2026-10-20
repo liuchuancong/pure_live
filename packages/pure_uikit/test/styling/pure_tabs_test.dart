@@ -1,6 +1,7 @@
 // The seams where PureTabs used to accept `isScrollable` and never read it.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:macos_ui/macos_ui.dart' show MacosTheme, MacosThemeData;
 import 'package:pure_uikit/pure_uikit.dart';
 
 const List<PureTab> _tabs = [PureTab(label: 'One'), PureTab(label: 'Two'), PureTab(label: 'Three')];
@@ -30,6 +31,39 @@ void main() {
     expect(centers.first, lessThan(50));
     expect(centers[1] - centers[0], isNot(equals(100)));
     expect(centers.last, lessThan(250));
+  });
+
+  testWidgets('the macOS strip scrolls rather than overflowing its box', (tester) async {
+    // Measured: its cells neither shrink nor ellipsize, so three labels of
+    // uneven length overflowed a 360dp box by 167px with the flag left false.
+    await tester.pumpWidget(
+      PureConfigProvider(
+        config: const UiConfig(language: PureDesignLanguage.macos),
+        child: MacosTheme(
+          data: MacosThemeData.light(),
+          child: MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 360,
+                child: PureTabs(
+                  tabs: const [
+                    PureTab(label: 'All'),
+                    PureTab(label: 'Followed'),
+                    PureTab(label: 'Recently watched a lot'),
+                  ],
+                  index: 0,
+                  onChanged: _select,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(SingleChildScrollView), findsOneWidget);
   });
 }
 
