@@ -132,35 +132,33 @@ final class _NetworkProxySettingsPageState extends ConsumerState<NetworkProxySet
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        TextField(
-                          controller: _host,
-                          keyboardType: TextInputType.url,
-                          autocorrect: false,
-                          enableSuggestions: false,
-                          decoration: InputDecoration(
-                            labelText: t.settings.proxyHost,
-                            hintText: '127.0.0.1',
-                            border: const OutlineInputBorder(),
-                            isDense: true,
+                        _proxyField(
+                          context,
+                          label: t.settings.proxyHost,
+                          field: PureTextField(
+                            controller: _host,
+                            placeholder: '127.0.0.1',
+                            keyboardType: TextInputType.url,
+                            autocorrect: false,
+                            enableSuggestions: false,
+                            onChanged: _updateHost,
                           ),
-                          onChanged: _updateHost,
                         ),
                         const SizedBox(height: 12),
-                        TextField(
-                          controller: _port,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(5),
-                          ],
-                          decoration: InputDecoration(
-                            labelText: t.settings.proxyPort,
-                            hintText: '7890',
+                        _proxyField(
+                          context,
+                          label: t.settings.proxyPort,
+                          field: PureTextField(
+                            controller: _port,
+                            placeholder: '7890',
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(5),
+                            ],
                             errorText: _portInvalid ? t.settings.proxyPortInvalid : null,
-                            border: const OutlineInputBorder(),
-                            isDense: true,
+                            onChanged: _updatePort,
                           ),
-                          onChanged: _updatePort,
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -199,37 +197,35 @@ final class _NetworkProxySettingsPageState extends ConsumerState<NetworkProxySet
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        TextField(
-                          key: const ValueKey('player-proxy-host'),
-                          controller: _playerHost,
-                          keyboardType: TextInputType.url,
-                          autocorrect: false,
-                          enableSuggestions: false,
-                          decoration: InputDecoration(
-                            labelText: t.settings.proxyHost,
-                            hintText: '127.0.0.1',
-                            border: const OutlineInputBorder(),
-                            isDense: true,
+                        _proxyField(
+                          context,
+                          label: t.settings.proxyHost,
+                          field: PureTextField(
+                            key: const ValueKey('player-proxy-host'),
+                            controller: _playerHost,
+                            placeholder: '127.0.0.1',
+                            keyboardType: TextInputType.url,
+                            autocorrect: false,
+                            enableSuggestions: false,
+                            onChanged: _updatePlayerHost,
                           ),
-                          onChanged: _updatePlayerHost,
                         ),
                         const SizedBox(height: 12),
-                        TextField(
-                          key: const ValueKey('player-proxy-port'),
-                          controller: _playerPort,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(5),
-                          ],
-                          decoration: InputDecoration(
-                            labelText: t.settings.proxyPort,
-                            hintText: '7890',
+                        _proxyField(
+                          context,
+                          label: t.settings.proxyPort,
+                          field: PureTextField(
+                            key: const ValueKey('player-proxy-port'),
+                            controller: _playerPort,
+                            placeholder: '7890',
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(5),
+                            ],
                             errorText: _playerPortInvalid ? t.settings.proxyPortInvalid : null,
-                            border: const OutlineInputBorder(),
-                            isDense: true,
+                            onChanged: _updatePlayerPort,
                           ),
-                          onChanged: _updatePlayerPort,
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -246,4 +242,22 @@ final class _NetworkProxySettingsPageState extends ConsumerState<NetworkProxySet
       ),
     );
   }
+}
+
+/// A field with the name the Material `labelText` used to float inside it. The
+/// dispatching field has no label slot in most of the nine libraries, so the
+/// caption sits above it — the same line every other settings page uses.
+Widget _proxyField(BuildContext context, {required String label, required Widget field}) {
+  final theme = PureTheme.of(context);
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(bottom: 4, left: 2),
+        child: Text(label, style: theme.text.caption.copyWith(color: theme.colors.textSecondary)),
+      ),
+      field,
+    ],
+  );
 }

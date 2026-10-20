@@ -22,7 +22,7 @@ Future<T?> showSettingsChooser<T>(
   String? hint,
 }) => showSettingsSurface<T>(
   context,
-  ref,
+  ref.settingsFormFactor,
   title: title,
   body: (surfaceContext) => Column(
     mainAxisSize: MainAxisSize.min,

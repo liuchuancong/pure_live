@@ -245,7 +245,7 @@ final class PageSettingsPage extends ConsumerWidget {
     final key = GlobalKey<_PageSizeDialogState>(debugLabel: 'page-size-options');
     final result = await showSettingsSurface<List<int>>(
       context,
-      ref,
+      ref.settingsFormFactor,
       title: t.settings.pageSizeOptionsTitle,
       body: (surfaceContext) => _PageSizeDialog(
         key: key,

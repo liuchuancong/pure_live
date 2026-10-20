@@ -283,66 +283,71 @@ class _PlatformTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = PureTheme.of(context);
     final name = _PopularPageState._name(context, site);
-    return Material(
-      color: selected ? theme.colors.fillSecondary : Colors.transparent,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        key: ValueKey('popular-platform-${site.manifest.id}'),
+    return PureBox(
+      key: ValueKey('popular-platform-${site.manifest.id}'),
+      style: (state) => Style(
+        background: selected
+            ? theme.colors.fillSecondary
+            : switch (state) {
+                InteractionState.hovered => theme.colors.fillQuaternary,
+                InteractionState.pressed => theme.colors.fillTertiary,
+                _ => null,
+              },
         borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Semantics(
-          selected: selected,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox.square(
-                  dimension: 40,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    alignment: Alignment.center,
-                    children: [
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundColor: theme.colors.fillTertiary,
-                        child: Text(name.characters.first, style: theme.text.title.copyWith(color: theme.colors.text)),
-                      ),
-                      if (selected)
-                        Positioned(
-                          right: -6,
-                          top: -6,
-                          child: Container(
-                            width: 20,
-                            height: 20,
-                            decoration: BoxDecoration(
-                              color: theme.colors.primary,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: theme.colors.bgElevated, width: 2),
-                            ),
-                            child: Icon(Icons.check_rounded, size: 12, color: theme.colors.textLightSolid),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 6),
-                // A long Latin name (SHOWROOM, YouTube Live) narrows a
-                // little rather than losing its end to an ellipsis.
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    name,
-                    maxLines: 1,
-                    textAlign: TextAlign.center,
-                    style: theme.text.bodySmall.copyWith(
-                      color: selected ? theme.colors.text : theme.colors.textSecondary,
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+      ),
+      onTap: onTap,
+      child: Semantics(
+        selected: selected,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox.square(
+                dimension: 40,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.center,
+                  children: [
+                    CircleAvatar(
+                      radius: 18,
+                      backgroundColor: theme.colors.fillTertiary,
+                      child: Text(name.characters.first, style: theme.text.title.copyWith(color: theme.colors.text)),
                     ),
+                    if (selected)
+                      Positioned(
+                        right: -6,
+                        top: -6,
+                        child: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            color: theme.colors.primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: theme.colors.bgElevated, width: 2),
+                          ),
+                          child: Icon(Icons.check_rounded, size: 12, color: theme.colors.textLightSolid),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              // A long Latin name (SHOWROOM, YouTube Live) narrows a
+              // little rather than losing its end to an ellipsis.
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  name,
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                  style: theme.text.bodySmall.copyWith(
+                    color: selected ? theme.colors.text : theme.colors.textSecondary,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

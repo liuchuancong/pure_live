@@ -667,7 +667,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
     final t = context.t;
     await showSettingsSurface<void>(
       context,
-      ref,
+      ref.settingsFormFactor,
       title: null,
       body: (sheetContext) => Column(
         mainAxisSize: MainAxisSize.min,

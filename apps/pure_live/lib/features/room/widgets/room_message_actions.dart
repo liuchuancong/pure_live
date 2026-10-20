@@ -42,7 +42,7 @@ Future<void> showRoomMessageActions(
   // window, rising from the bottom edge on a handheld.
   await showSettingsSurface<void>(
     context,
-    ref,
+    ref.settingsFormFactor,
     title: null,
     body: (surfaceContext) => _RoomMessageSheet(message: message, identity: identity, onBlockedUser: onBlockedUser),
   );

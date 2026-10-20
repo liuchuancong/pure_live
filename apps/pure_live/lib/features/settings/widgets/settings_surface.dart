@@ -21,16 +21,19 @@ import 'package:pure_uikit/pure_uikit.dart';
 /// avoid — this function owns the scroll view and the height cap for both
 /// surfaces, and a nested one is unbounded.
 ///
-/// [ref] is read once, when the surface opens: the environment is not going to
-/// change form factor while a sheet is up.
+/// [formFactor] is the booted environment's, taken once when the surface opens:
+/// the window is not going to change shape while a sheet is up. Both a widget's
+/// `ref` and a service's `Ref` answer it through the `settingsFormFactor` getter
+/// below, so a prompt raised from outside the tree (the clipboard watcher) gets
+/// the same split as one raised from a row.
 Future<T?> showSettingsSurface<T>(
   BuildContext context,
-  WidgetRef ref, {
+  FormFactor formFactor, {
   required String? title,
   required Widget Function(BuildContext surfaceContext) body,
   List<Widget> Function(BuildContext surfaceContext)? actions,
   bool dismissible = true,
-}) => switch (ref.read(environmentProvider).runtime.formFactor) {
+}) => switch (formFactor) {
   FormFactor.phone || FormFactor.tablet => showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
@@ -76,3 +79,15 @@ Future<T?> showSettingsSurface<T>(
     ),
   ),
 };
+
+/// The form factor a surface should open in, for a widget's [WidgetRef].
+extension SettingsSurfaceRef on WidgetRef {
+  /// The booted environment's shape.
+  FormFactor get settingsFormFactor => read(environmentProvider).runtime.formFactor;
+}
+
+/// The same fact for a service's [Ref], which has no widget to ask.
+extension SettingsSurfaceServiceRef on Ref {
+  /// The booted environment's shape.
+  FormFactor get settingsFormFactor => read(environmentProvider).runtime.formFactor;
+}

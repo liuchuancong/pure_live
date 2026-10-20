@@ -1,6 +1,7 @@
 import 'package:fluent_2/fluent_2.dart' as f2;
 import 'package:flutter/cupertino.dart' as cupertino;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show TextInputFormatter;
 import 'package:flutter_neumorphic_ui_kit/flutter_neumorphic_ui_kit.dart' as neu;
 import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
 import 'package:forui/forui.dart' as forui;
@@ -29,6 +30,9 @@ class PureTextField extends StatelessWidget {
     this.maxLines = 1,
     this.textInputAction,
     this.keyboardType,
+    this.inputFormatters,
+    this.autocorrect = true,
+    this.enableSuggestions = true,
     this.prefix,
     this.suffix,
     this.style,
@@ -67,6 +71,18 @@ class PureTextField extends StatelessWidget {
   /// The keyboard type.
   final TextInputType? keyboardType;
 
+  /// The edits the text can take (a digits-only port field is one). A language
+  /// whose library cannot be handed formatters ignores it, like the other
+  /// unmappable slots documented per branch below.
+  final List<TextInputFormatter>? inputFormatters;
+
+  /// Whether the platform may autocorrect what is typed. Off for a host, a path
+  /// or a room id, where "capitalising" the value is a corruption.
+  final bool autocorrect;
+
+  /// Whether the platform may offer suggestions while typing.
+  final bool enableSuggestions;
+
   /// A widget before the text.
   final Widget? prefix;
 
@@ -102,6 +118,9 @@ class PureTextField extends StatelessWidget {
           maxLines: obscure ? 1 : (maxLines ?? 1),
           keyboardType: keyboardType,
           textInputAction: textInputAction,
+          inputFormatters: inputFormatters,
+          autocorrect: autocorrect,
+          enableSuggestions: enableSuggestions,
           prefix: prefix,
           suffix: suffix,
           onSubmitted: onSubmitted,
@@ -130,6 +149,9 @@ class PureTextField extends StatelessWidget {
           obscureText: obscure,
           keyboardType: keyboardType,
           textInputAction: textInputAction,
+          inputFormatters: inputFormatters,
+          autocorrect: autocorrect,
+          enableSuggestions: enableSuggestions,
           maxLines: obscure ? 1 : (maxLines ?? 1),
           prefix: prefix,
           suffix: suffix,
@@ -171,6 +193,9 @@ class PureTextField extends StatelessWidget {
         maxLines: obscure ? 1 : (maxLines ?? 1),
         keyboardType: keyboardType,
         textInputAction: textInputAction,
+        inputFormatters: inputFormatters,
+        autocorrect: autocorrect,
+        enableSuggestions: enableSuggestions,
         focusNode: focusNode,
         prefixBuilder: prefix == null ? null : (context, style, variants) => prefix!,
         suffixBuilder: suffix == null ? null : (context, style, variants) => suffix!,
@@ -202,6 +227,9 @@ class PureTextField extends StatelessWidget {
             maxLines: obscure ? 1 : (maxLines ?? 1),
             keyboardType: keyboardType,
             textInputAction: textInputAction,
+            inputFormatters: inputFormatters,
+            autocorrect: autocorrect,
+            enableSuggestions: enableSuggestions,
             onChanged: onChanged,
             onSubmitted: onSubmitted,
             style: _textStyle(theme),
@@ -238,6 +266,9 @@ class PureTextField extends StatelessWidget {
         maxLines: obscure ? 1 : (maxLines ?? 1),
         keyboardType: keyboardType,
         textInputAction: textInputAction,
+        // NeuTextField builds its own field without these three slots: a
+        // neumorphic field cannot be restricted to digits or told not to
+        // autocorrect, so the values are unmappable rather than emulated.
         enabled: enabled,
         onChanged: onChanged,
         onSubmitted: onSubmitted,
@@ -264,6 +295,9 @@ class PureTextField extends StatelessWidget {
         maxLines: obscure ? 1 : maxLines,
         keyboardType: keyboardType,
         textInputAction: textInputAction,
+        inputFormatters: inputFormatters,
+        autocorrect: autocorrect,
+        enableSuggestions: enableSuggestions,
         onChanged: onChanged,
         onSubmitted: onSubmitted,
         style: _textStyle(theme),
@@ -276,7 +310,10 @@ class PureTextField extends StatelessWidget {
           // replaced both with a 1px line in every state.
           prefixIcon: prefix == null
               ? null
-              : IconTheme.merge(data: IconThemeData(color: theme.colors.icon), child: prefix!),
+              : IconTheme.merge(
+                  data: IconThemeData(color: theme.colors.icon),
+                  child: prefix!,
+                ),
           suffixIcon: suffix,
         ),
       ),
@@ -298,6 +335,9 @@ class PureTextField extends StatelessWidget {
       maxLines: obscure ? 1 : (maxLines ?? 1),
       keyboardType: keyboardType,
       textInputAction: textInputAction,
+      // FluentInput takes neither formatters nor the two suggestion flags: the
+      // library's input owns its editing context, so a digits-only port field
+      // keeps its rule everywhere else and only relaxes here.
       contentBefore: prefix,
       contentAfter: suffix,
       onChanged: onChanged,
@@ -328,6 +368,9 @@ class PureTextField extends StatelessWidget {
       readOnly: readOnly,
       maxLines: maxLines,
       textInputAction: textInputAction,
+      inputFormatters: inputFormatters,
+      autocorrect: autocorrect,
+      enableSuggestions: enableSuggestions,
       onChanged: onChanged,
       onSubmitted: onSubmitted,
       prefix: prefix,

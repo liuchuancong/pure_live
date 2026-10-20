@@ -362,7 +362,7 @@ final class _StreamChip extends ConsumerWidget {
     unawaited(
       showSettingsSurface<void>(
         context,
-        ref,
+        ref.settingsFormFactor,
         title: context.t.toolbox.selectQuality,
         body: (surfaceContext) => Column(
           mainAxisSize: MainAxisSize.min,

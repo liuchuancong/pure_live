@@ -34,7 +34,7 @@ Future<void> showVersionHistorySheet(
 }) {
   return showSettingsSurface<void>(
     context,
-    ref,
+    ref.settingsFormFactor,
     title: null,
     // The height is the list's own budget: the surface scrolls on the phone and
     // caps on the desktop, and an unbounded `ListView.separated` asserts in the
@@ -163,8 +163,18 @@ final class _VersionHistorySheetState extends State<VersionHistorySheet> {
       itemBuilder: (context, index) {
         final release = _releases[index];
         final current = index == _selected;
-        return InkWell(
-          borderRadius: BorderRadius.circular(16),
+        return PureBox(
+          // The hover and press layer sits behind the card's own fill, which is
+          // translucent — ink would need a Material ancestor the Fluent dialog
+          // that hosts this list does not have.
+          style: (state) => Style(
+            borderRadius: BorderRadius.circular(16),
+            background: switch (state) {
+              InteractionState.pressed => theme.colors.fillTertiary,
+              InteractionState.hovered => theme.colors.fillQuaternary,
+              _ => null,
+            },
+          ),
           onTap: () {
             if (wide) {
               setState(() => _selected = index);

@@ -409,7 +409,7 @@ final class _PlayingCellState extends ConsumerState<_PlayingCell> {
                 if (widget.focused)
                   Padding(
                     padding: const EdgeInsets.only(right: 6),
-                    child: Tooltip(
+                    child: PureTooltip(
                       message: context.t.multiview.audioFocus,
                       child: Icon(
                         _shouldSound ? Icons.volume_up : Icons.volume_off,
@@ -457,17 +457,17 @@ final class _CellGlyph extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Tooltip(
+  Widget build(BuildContext context) => PureTooltip(
     message: tooltip,
-    child: InkWell(
-      onTap: onTap,
-      customBorder: const CircleBorder(),
-      child: Container(
+    child: PureBox(
+      style: (state) => Style(
+        background: state == InteractionState.pressed ? Colors.black54 : Colors.black38,
+        borderRadius: BorderRadius.circular(999),
         margin: const EdgeInsets.only(left: PureSpacing.xs),
         padding: const EdgeInsets.all(3),
-        decoration: const BoxDecoration(color: Colors.black38, shape: BoxShape.circle),
-        child: Icon(icon, size: 16, color: Colors.white),
       ),
+      onTap: onTap,
+      child: Icon(icon, size: 16, color: Colors.white, semanticLabel: tooltip),
     ),
   );
 }
@@ -600,7 +600,10 @@ final class _RoomPickerState extends ConsumerState<_RoomPicker> {
                 constraints: const BoxConstraints(maxHeight: 200),
                 child: rooms.isEmpty
                     ? Center(
-                        child: Padding(padding: const EdgeInsets.all(PureSpacing.lg), child: Text(context.t.multiview.noPick)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(PureSpacing.lg),
+                          child: Text(context.t.multiview.noPick),
+                        ),
                       )
                     : ListView.builder(
                         shrinkWrap: true,

@@ -324,7 +324,7 @@ final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefr
     final selected = {...record.groupIds};
     final confirmed = await showSettingsSurface<bool>(
       context,
-      ref,
+      ref.settingsFormFactor,
       title: context.t.follow.assign,
       body: (surfaceContext) => StatefulBuilder(
         builder: (context, setSurfaceState) => Column(

@@ -458,7 +458,16 @@ final class RecorderTaskCard extends StatelessWidget {
           ],
           if (output case final file?) ...[
             const SizedBox(height: 10),
-            InkWell(
+            PureBox(
+              style: (state) => Style(
+                borderRadius: BorderRadius.circular(8),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                background: switch (state) {
+                  InteractionState.pressed => theme.colors.fillTertiary,
+                  InteractionState.hovered => theme.colors.fillQuaternary,
+                  _ => null,
+                },
+              ),
               onTap: () => unawaited(_openFile(file, context)),
               child: Row(
                 children: [

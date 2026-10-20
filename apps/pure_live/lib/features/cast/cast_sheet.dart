@@ -22,7 +22,7 @@ Future<void> showCastSheet(
   VoidCallback? onCastStarted,
 }) => showSettingsSurface<void>(
   context,
-  ref,
+  ref.settingsFormFactor,
   title: null,
   body: (surfaceContext) => _CastSheet(media: media, onCastStarted: onCastStarted),
 );

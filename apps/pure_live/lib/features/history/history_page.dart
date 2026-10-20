@@ -440,20 +440,23 @@ final class _HistoryTile extends ConsumerWidget {
         Positioned(
           top: 6,
           right: 6,
-          child: Tooltip(
+          child: PureTooltip(
             message: context.t.history.remove,
-            child: Material(
-              // The same dark scrim as the card's cover pills, so the control
-              // reads over any thumbnail.
-              color: Colors.black.withValues(alpha: 0.55),
-              shape: const CircleBorder(),
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: onRemove,
-                child: const Padding(
-                  padding: EdgeInsets.all(PureSpacing.xs),
-                  child: Icon(Icons.close, size: 14, color: Colors.white),
-                ),
+            child: PureBox(
+              style: (state) => Style(
+                background: switch (state) {
+                  InteractionState.pressed => Colors.black54,
+                  InteractionState.hovered => Colors.black.withValues(alpha: 0.7),
+                  _ => Colors.black.withValues(alpha: 0.55),
+                },
+                // The same dark scrim as the card's cover pills, so the control
+                // reads over any thumbnail.
+                borderRadius: BorderRadius.circular(999),
+              ),
+              onTap: onRemove,
+              child: const Padding(
+                padding: EdgeInsets.all(PureSpacing.xs),
+                child: Icon(Icons.close, size: 14, color: Colors.white),
               ),
             ),
           ),

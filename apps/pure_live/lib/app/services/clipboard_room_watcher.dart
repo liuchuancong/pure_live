@@ -8,6 +8,7 @@ import 'package:pure_live/app/navigation/app_navigator_key.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/app_router.dart';
+import 'package:pure_live/features/settings/widgets/settings_surface.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
@@ -113,47 +114,27 @@ final class ClipboardRoomWatcher {
     final locale = Localizations.localeOf(context);
     final names = _ref.read(sitesProvider).registry.getById(room.site)?.manifest.name ?? const {};
     final siteName = names[locale.toLanguageTag()] ?? names[locale.languageCode] ?? names['zh'] ?? room.site;
-    final go = await showModalBottomSheet<bool>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(t.clipboard.title, style: Theme.of(sheetContext).textTheme.titleMedium),
-              const SizedBox(height: 6),
-              Text(
-                t.clipboard.found(site: siteName, room: room.roomId),
-                style: Theme.of(sheetContext).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: PureButton(
-                      key: const ValueKey('clipboard-room-ignore'),
-                      label: t.common.ignore,
-                      variant: ButtonVariant.ghost,
-                      onPressed: () => Navigator.of(sheetContext).pop(false),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: PureButton(
-                      key: const ValueKey('clipboard-room-go'),
-                      label: t.clipboard.go,
-                      onPressed: () => Navigator.of(sheetContext).pop(true),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+    final go = await showSettingsSurface<bool>(
+      context,
+      _ref.settingsFormFactor,
+      title: t.clipboard.title,
+      body: (surfaceContext) => Text(
+        t.clipboard.found(site: siteName, room: room.roomId),
+        style: PureTheme.of(surfaceContext).text.body,
       ),
+      actions: (surfaceContext) => [
+        PureButton(
+          key: const ValueKey('clipboard-room-ignore'),
+          label: t.common.ignore,
+          variant: ButtonVariant.ghost,
+          onPressed: () => Navigator.of(surfaceContext).pop(false),
+        ),
+        PureButton(
+          key: const ValueKey('clipboard-room-go'),
+          label: t.clipboard.go,
+          onPressed: () => Navigator.of(surfaceContext).pop(true),
+        ),
+      ],
     );
     if (go == true && context.mounted) {
       unawaited(RoomRoute(siteId: room.site, roomId: room.roomId, roomName: room.roomId).push<void>(context));
