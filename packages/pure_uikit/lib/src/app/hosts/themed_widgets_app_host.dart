@@ -4,6 +4,7 @@ import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
 import 'package:forui/forui.dart' as forui;
 import 'package:glass_morphism_plus/glass_morphism_plus.dart' as glass;
 import 'package:pure_uikit/src/app/pure_app_host.dart';
+import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 
 /// The hosts for the four languages whose libraries ship no application
 /// widget — forui, glass, neumorphic and wind are each a theme plus a set of
@@ -20,6 +21,30 @@ import 'package:pure_uikit/src/app/pure_app_host.dart';
 /// `WidgetsApp` asks for one colour outright; every host answers with the
 /// token's accent so the host's own chrome (a scrollbar thumb, a selection)
 /// is on-theme even where no language widget paints it.
+///
+/// The Material scope below answers the other half. Each of these four
+/// languages falls back to Flutter's official Material widget for whatever its
+/// library does not ship — a slider, a badge, a tooltip, a settings row, the
+/// indeterminate progress bar — and under a bare `WidgetsApp` those widgets
+/// build the framework's own default theme: Material 3's baseline purple and
+/// the platform default font, whatever the user chose. Seeding the scheme from
+/// the token is what makes a fallback read as the same language as the controls
+/// beside it.
+Widget _materialScope(PureTheme theme, Widget child) {
+  final token = theme.token;
+  final data = ThemeData(
+    useMaterial3: true,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: token.color.primary,
+      brightness: token.isDark ? Brightness.dark : Brightness.light,
+    ).copyWith(primary: token.color.primary, onPrimary: token.color.onPrimary),
+  );
+  final family = token.type.fontFamily;
+  return Theme(
+    data: family == null ? data : data.copyWith(textTheme: data.textTheme.apply(fontFamily: family)),
+    child: child,
+  );
+}
 
 /// The forui host. What the token can decide is the palette *variant*:
 /// `isDark` selects forui's neutral dark theme, everything else stays on the
@@ -40,7 +65,7 @@ WidgetsApp buildForuiAppHost(PureAppHostBinding b) {
       // The app widget hands its builder a child it has not built yet when
       // the router has nothing to show; the theme scope still has to wrap
       // something.
-      child: b.builder?.call(context, child) ?? child ?? const SizedBox.shrink(),
+      child: _materialScope(b.theme, b.builder?.call(context, child) ?? child ?? const SizedBox.shrink()),
     ),
     color: b.theme.colors.primary,
     debugShowCheckedModeBanner: b.debugShowCheckedModeBanner,
@@ -70,7 +95,7 @@ WidgetsApp buildGlassAppHost(PureAppHostBinding b) {
         borderRadius: token.scale.radii.lg,
         shadowColor: token.color.shadowBase,
       ),
-      child: b.builder?.call(context, child) ?? child ?? const SizedBox.shrink(),
+      child: _materialScope(b.theme, b.builder?.call(context, child) ?? child ?? const SizedBox.shrink()),
     ),
     color: b.theme.colors.primary,
     debugShowCheckedModeBanner: b.debugShowCheckedModeBanner,
@@ -98,7 +123,7 @@ WidgetsApp buildNeumorphicAppHost(PureAppHostBinding b) {
         borderRadius: BorderRadius.all(Radius.circular(token.scale.radii.lg)),
         customShadowColor: token.color.shadowBase,
       ),
-      child: b.builder?.call(context, child) ?? child ?? const SizedBox.shrink(),
+      child: _materialScope(b.theme, b.builder?.call(context, child) ?? child ?? const SizedBox.shrink()),
     ),
     color: b.theme.colors.primary,
     debugShowCheckedModeBanner: b.debugShowCheckedModeBanner,
@@ -134,7 +159,7 @@ WidgetsApp buildWindAppHost(PureAppHostBinding b) {
         colors: {'primary': accent},
         fontFamilies: family == null ? null : {'sans': family},
       ),
-      child: b.builder?.call(context, child) ?? child ?? const SizedBox.shrink(),
+      child: _materialScope(b.theme, b.builder?.call(context, child) ?? child ?? const SizedBox.shrink()),
     ),
     color: b.theme.colors.primary,
     debugShowCheckedModeBanner: b.debugShowCheckedModeBanner,
