@@ -15,6 +15,7 @@ class PureTitleBarCaptionButton extends StatelessWidget {
     this.height = 32,
     this.iconSize = 16,
     this.foregroundColor,
+    this.hoverForegroundColor,
     this.backgroundColor,
     this.hoverColor,
     this.borderRadius = BorderRadius.zero,
@@ -46,6 +47,11 @@ class PureTitleBarCaptionButton extends StatelessWidget {
   /// The icon and text foreground color.
   final Color? foregroundColor;
 
+  /// The icon color while hovered, for the close button's white-on-red swap.
+  ///
+  /// Null keeps [foregroundColor] under every state.
+  final Color? hoverForegroundColor;
+
   /// The button background color.
   final Color? backgroundColor;
 
@@ -61,6 +67,7 @@ class PureTitleBarCaptionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final restingColor = foregroundColor ?? theme.colorScheme.onSurface;
 
     return SizedBox(
       key: buttonKey,
@@ -70,8 +77,14 @@ class PureTitleBarCaptionButton extends StatelessWidget {
         tooltip: tooltip,
         onPressed: onPressed,
         iconSize: iconSize,
-        color: foregroundColor ?? theme.colorScheme.onSurface,
         style: ButtonStyle(
+          iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
+            if (states.contains(WidgetState.hovered)) {
+              return hoverForegroundColor ?? restingColor;
+            }
+
+            return restingColor;
+          }),
           backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
             if (states.contains(WidgetState.hovered)) {
               return hoverColor;
@@ -82,6 +95,11 @@ class PureTitleBarCaptionButton extends StatelessWidget {
           shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: borderRadius)),
           padding: const WidgetStatePropertyAll(EdgeInsets.zero),
           minimumSize: WidgetStatePropertyAll(Size(width, height)),
+          // Declared beside the minimum because a host theme caps its icon
+          // buttons (yaru's IconButtonTheme clamps to kYaruButtonHeight): an
+          // uncapped minimum over a themed cap resolves to min > max, and the
+          // button throws before its first frame.
+          maximumSize: WidgetStatePropertyAll(Size(width, height)),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
         icon: Icon(icon, semanticLabel: semanticLabel),

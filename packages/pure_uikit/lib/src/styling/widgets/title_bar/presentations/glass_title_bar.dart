@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 import 'package:pure_uikit/src/styling/widgets/title_bar/pure_title_bar_actions.dart';
 import 'package:pure_uikit/src/styling/widgets/title_bar/pure_title_bar_caption_button.dart';
 import 'package:pure_uikit/src/styling/widgets/title_bar/pure_title_bar_drag_region.dart';
@@ -9,7 +10,10 @@ import 'package:pure_uikit/src/styling/widgets/title_bar/pure_title_bar_types.da
 /// Renders a glass-inspired title bar with a translucent background.
 ///
 /// The blur effect is implemented with Flutter's [BackdropFilter], keeping
-/// this presentation independent of a third-party glass widget library.
+/// this presentation independent of a third-party glass widget library. The
+/// tint and every control colour come from the [PureTheme] tokens, so the
+/// strip reads correctly in both brightnesses over whatever the window
+/// shows behind it.
 class PureGlassTitleBar extends StatelessWidget {
   /// Creates a glass-inspired title bar.
   const new({
@@ -21,7 +25,7 @@ class PureGlassTitleBar extends StatelessWidget {
     super.key,
   });
 
-  /// The title and localized control labels.
+  /// The title and localized window-control labels.
   final PureTitleBarLabels labels;
 
   /// The window operations provided by the application Shell.
@@ -39,15 +43,15 @@ class PureGlassTitleBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final colors = PureTheme.of(context).colors;
 
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: colors.surface.withValues(alpha: 0.72),
-            border: Border(bottom: BorderSide(color: colors.outlineVariant.withValues(alpha: 0.45))),
+            color: colors.bgContainer.withValues(alpha: 0.72),
+            border: Border(bottom: BorderSide(color: colors.borderSecondary.withValues(alpha: 0.45))),
           ),
           child: SizedBox(
             height: metrics.titleBarHeight,
@@ -57,7 +61,7 @@ class PureGlassTitleBar extends StatelessWidget {
                   child: PureTitleBarDragRegion(
                     title: labels.title,
                     startDragging: actions.startDragging,
-                    titleStyle: theme.textTheme.titleSmall?.copyWith(color: colors.onSurface),
+                    titleStyle: theme.textTheme.titleSmall?.copyWith(color: colors.text),
                     onDoubleTap: onToggleMaximize,
                     padding: const EdgeInsetsDirectional.only(start: 14),
                     alignment: AlignmentDirectional.centerStart,
@@ -69,8 +73,8 @@ class PureGlassTitleBar extends StatelessWidget {
                   tooltip: labels.minimize,
                   width: metrics.buttonWidth,
                   height: metrics.buttonHeight,
-                  foregroundColor: colors.onSurface,
-                  hoverColor: colors.onSurface.withValues(alpha: 0.08),
+                  foregroundColor: colors.text,
+                  hoverColor: colors.fillSecondary,
                   onPressed: actions.minimize,
                 ),
                 PureTitleBarCaptionButton(
@@ -79,8 +83,8 @@ class PureGlassTitleBar extends StatelessWidget {
                   tooltip: isMaximized ? labels.restore : labels.maximize,
                   width: metrics.buttonWidth,
                   height: metrics.buttonHeight,
-                  foregroundColor: colors.onSurface,
-                  hoverColor: colors.onSurface.withValues(alpha: 0.08),
+                  foregroundColor: colors.text,
+                  hoverColor: colors.fillSecondary,
                   onPressed: onToggleMaximize,
                 ),
                 PureTitleBarCaptionButton(
@@ -89,8 +93,9 @@ class PureGlassTitleBar extends StatelessWidget {
                   tooltip: labels.close,
                   width: metrics.buttonWidth,
                   height: metrics.buttonHeight,
-                  foregroundColor: colors.onSurface,
+                  foregroundColor: colors.text,
                   hoverColor: colors.error,
+                  hoverForegroundColor: colors.textLightSolid,
                   onPressed: actions.close,
                 ),
               ],

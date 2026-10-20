@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 import 'package:pure_uikit/src/styling/widgets/title_bar/pure_title_bar_actions.dart';
 import 'package:pure_uikit/src/styling/widgets/title_bar/pure_title_bar_caption_button.dart';
 import 'package:pure_uikit/src/styling/widgets/title_bar/pure_title_bar_drag_region.dart';
@@ -6,8 +7,10 @@ import 'package:pure_uikit/src/styling/widgets/title_bar/pure_title_bar_types.da
 
 /// Renders a compact Wind-inspired desktop title bar.
 ///
-/// This presentation uses Flutter's standard widgets for layout and controls.
-/// Window operations are injected by the application Shell.
+/// The strip paints nothing — the window's own surface continues behind it —
+/// and every colour comes from the [PureTheme] tokens, so the strip reads
+/// correctly in both brightnesses. Window operations are injected by the
+/// application Shell.
 class PureWindTitleBar extends StatelessWidget {
   /// Creates a Wind-inspired title bar.
   const new({
@@ -19,7 +22,7 @@ class PureWindTitleBar extends StatelessWidget {
     super.key,
   });
 
-  /// The title and localized control labels.
+  /// The title and localized window-control labels.
   final PureTitleBarLabels labels;
 
   /// The window operations provided by the application Shell.
@@ -37,56 +40,54 @@ class PureWindTitleBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final colors = PureTheme.of(context).colors;
 
-    return Material(
-      color: colors.surface,
-      child: SizedBox(
-        height: metrics.titleBarHeight,
-        child: Row(
-          children: [
-            Expanded(
-              child: PureTitleBarDragRegion(
-                title: labels.title,
-                startDragging: actions.startDragging,
-                titleStyle: theme.textTheme.titleSmall?.copyWith(color: colors.onSurface),
-                onDoubleTap: onToggleMaximize,
-                padding: const EdgeInsetsDirectional.only(start: 12),
-                alignment: AlignmentDirectional.centerStart,
-              ),
+    return SizedBox(
+      height: metrics.titleBarHeight,
+      child: Row(
+        children: [
+          Expanded(
+            child: PureTitleBarDragRegion(
+              title: labels.title,
+              startDragging: actions.startDragging,
+              titleStyle: theme.textTheme.titleSmall?.copyWith(color: colors.text),
+              onDoubleTap: onToggleMaximize,
+              padding: const EdgeInsetsDirectional.only(start: 12),
+              alignment: AlignmentDirectional.centerStart,
             ),
-            PureTitleBarCaptionButton(
-              buttonKey: const ValueKey('title-minimize'),
-              icon: Icons.remove,
-              tooltip: labels.minimize,
-              width: metrics.buttonWidth,
-              height: metrics.buttonHeight,
-              foregroundColor: colors.onSurface,
-              hoverColor: colors.onSurface.withValues(alpha: 0.08),
-              onPressed: actions.minimize,
-            ),
-            PureTitleBarCaptionButton(
-              buttonKey: const ValueKey('title-maximize'),
-              icon: isMaximized ? Icons.filter_none : Icons.crop_square,
-              tooltip: isMaximized ? labels.restore : labels.maximize,
-              width: metrics.buttonWidth,
-              height: metrics.buttonHeight,
-              foregroundColor: colors.onSurface,
-              hoverColor: colors.onSurface.withValues(alpha: 0.08),
-              onPressed: onToggleMaximize,
-            ),
-            PureTitleBarCaptionButton(
-              buttonKey: const ValueKey('title-close'),
-              icon: Icons.close,
-              tooltip: labels.close,
-              width: metrics.buttonWidth,
-              height: metrics.buttonHeight,
-              foregroundColor: colors.onSurface,
-              hoverColor: colors.error,
-              onPressed: actions.close,
-            ),
-          ],
-        ),
+          ),
+          PureTitleBarCaptionButton(
+            buttonKey: const ValueKey('title-minimize'),
+            icon: Icons.remove,
+            tooltip: labels.minimize,
+            width: metrics.buttonWidth,
+            height: metrics.buttonHeight,
+            foregroundColor: colors.text,
+            hoverColor: colors.fillSecondary,
+            onPressed: actions.minimize,
+          ),
+          PureTitleBarCaptionButton(
+            buttonKey: const ValueKey('title-maximize'),
+            icon: isMaximized ? Icons.filter_none : Icons.crop_square,
+            tooltip: isMaximized ? labels.restore : labels.maximize,
+            width: metrics.buttonWidth,
+            height: metrics.buttonHeight,
+            foregroundColor: colors.text,
+            hoverColor: colors.fillSecondary,
+            onPressed: onToggleMaximize,
+          ),
+          PureTitleBarCaptionButton(
+            buttonKey: const ValueKey('title-close'),
+            icon: Icons.close,
+            tooltip: labels.close,
+            width: metrics.buttonWidth,
+            height: metrics.buttonHeight,
+            foregroundColor: colors.text,
+            hoverColor: colors.error,
+            hoverForegroundColor: colors.textLightSolid,
+            onPressed: actions.close,
+          ),
+        ],
       ),
     );
   }

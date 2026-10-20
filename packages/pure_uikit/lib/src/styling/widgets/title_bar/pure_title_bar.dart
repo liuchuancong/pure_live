@@ -249,19 +249,16 @@ final class _ReportingWindowChrome implements WindowChromeActions {
   final _PureTitleBarState _state;
 
   @override
-  Future<void> minimize() => _state._runWindowAction(
-    _state.widget.actions.minimize,
-    description: 'Failed to minimize the window.',
-  );
+  Future<void> minimize() =>
+      _state._runWindowAction(_state.widget.actions.minimize, description: 'Failed to minimize the window.');
 
   @override
-  Future<void> close() => _state._runWindowAction(_state.widget.actions.close, description: 'Failed to close the window.');
+  Future<void> close() =>
+      _state._runWindowAction(_state.widget.actions.close, description: 'Failed to close the window.');
 
   @override
-  Future<void> startDragging() => _state._runWindowAction(
-    _state.widget.actions.startDragging,
-    description: 'Failed to start dragging the window.',
-  );
+  Future<void> startDragging() =>
+      _state._runWindowAction(_state.widget.actions.startDragging, description: 'Failed to start dragging the window.');
 
   @override
   Future<bool> isMaximized() => _state.widget.actions.isMaximized();

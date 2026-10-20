@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 import 'package:pure_uikit/src/styling/widgets/title_bar/pure_title_bar_actions.dart';
 import 'package:pure_uikit/src/styling/widgets/title_bar/pure_title_bar_drag_region.dart';
 import 'package:pure_uikit/src/styling/widgets/title_bar/pure_title_bar_types.dart';
 
 /// Renders a macOS-style title bar with red, yellow, and green controls.
 ///
-/// The traffic-light controls use Flutter widgets, keeping this presentation
-/// independent of platform-specific window management plugins.
+/// The strip paints nothing — the window's own surface continues behind it —
+/// and the title colour comes from the [PureTheme] tokens, so the strip reads
+/// correctly in both brightnesses. The traffic-light controls use Flutter
+/// widgets, keeping this presentation independent of platform-specific window
+/// management plugins.
 class PureMacOSTitleBar extends StatelessWidget {
   /// Creates a macOS-style title bar.
   const new({
@@ -18,7 +22,7 @@ class PureMacOSTitleBar extends StatelessWidget {
     super.key,
   });
 
-  /// The title and localized control labels.
+  /// The title and localized window-control labels.
   final PureTitleBarLabels labels;
 
   /// The window operations provided by the application Shell.
@@ -36,50 +40,47 @@ class PureMacOSTitleBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final colors = PureTheme.of(context).colors;
 
-    return Material(
-      color: colors.surface,
-      child: SizedBox(
-        height: metrics.titleBarHeight,
-        child: Row(
-          children: [
-            const SizedBox(width: 13),
-            _TrafficLightButton(
-              color: const Color(0xFFFF5F57),
-              tooltip: labels.close,
-              semanticLabel: labels.close,
-              onPressed: actions.close,
-              key: const ValueKey('title-close'),
+    return SizedBox(
+      height: metrics.titleBarHeight,
+      child: Row(
+        children: [
+          const SizedBox(width: 13),
+          _TrafficLightButton(
+            color: const Color(0xFFFF5F57),
+            tooltip: labels.close,
+            semanticLabel: labels.close,
+            onPressed: actions.close,
+            key: const ValueKey('title-close'),
+          ),
+          const SizedBox(width: 8),
+          _TrafficLightButton(
+            color: const Color(0xFFFFBD2E),
+            tooltip: labels.minimize,
+            semanticLabel: labels.minimize,
+            onPressed: actions.minimize,
+            key: const ValueKey('title-minimize'),
+          ),
+          const SizedBox(width: 8),
+          _TrafficLightButton(
+            color: const Color(0xFF28C840),
+            tooltip: isMaximized ? labels.restore : labels.maximize,
+            semanticLabel: isMaximized ? labels.restore : labels.maximize,
+            onPressed: onToggleMaximize,
+            key: const ValueKey('title-maximize'),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: PureTitleBarDragRegion(
+              title: labels.title,
+              startDragging: actions.startDragging,
+              titleStyle: theme.textTheme.titleSmall?.copyWith(color: colors.text),
+              onDoubleTap: onToggleMaximize,
             ),
-            const SizedBox(width: 8),
-            _TrafficLightButton(
-              color: const Color(0xFFFFBD2E),
-              tooltip: labels.minimize,
-              semanticLabel: labels.minimize,
-              onPressed: actions.minimize,
-              key: const ValueKey('title-minimize'),
-            ),
-            const SizedBox(width: 8),
-            _TrafficLightButton(
-              color: const Color(0xFF28C840),
-              tooltip: isMaximized ? labels.restore : labels.maximize,
-              semanticLabel: isMaximized ? labels.restore : labels.maximize,
-              onPressed: onToggleMaximize,
-              key: const ValueKey('title-maximize'),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: PureTitleBarDragRegion(
-                title: labels.title,
-                startDragging: actions.startDragging,
-                titleStyle: theme.textTheme.titleSmall?.copyWith(color: colors.onSurface),
-                onDoubleTap: onToggleMaximize,
-              ),
-            ),
-            const SizedBox(width: 12),
-          ],
-        ),
+          ),
+          const SizedBox(width: 12),
+        ],
       ),
     );
   }

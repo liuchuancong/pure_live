@@ -7,6 +7,7 @@ import 'package:glass_morphism_plus/glass_morphism_plus.dart' as glass;
 import 'package:macos_ui/macos_ui.dart' as macos;
 import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
+import 'package:pure_uikit/src/styling/widgets/chrome/pure_canvas_scope.dart';
 import 'package:pure_uikit/src/styling/widgets/controls/pure_button.dart';
 import 'package:pure_uikit/src/styling/widgets/layout/pure_environment.dart';
 
@@ -60,7 +61,10 @@ class PureAppBar extends StatelessWidget implements PreferredSizeWidget {
   /// A strip under the title row, typically a tab strip.
   final Widget? bottom;
 
-  /// A background override; null keeps the theme's header surface.
+  /// A background override; null keeps the theme's header surface —
+  /// transparent where the window's own material shows through (the bar reads
+  /// as part of that surface, the way the system shell's header does), the
+  /// elevated header colour otherwise.
   final Color? background;
 
   /// Whether the title sits in the middle; null defers to the language.
@@ -88,6 +92,7 @@ class PureAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final theme = PureTheme.of(context);
     final leading = this.leading ?? _impliedBack(context);
+    final defaultSurface = PureCanvasScope.transparentOf(context) ? const Color(0x00000000) : theme.colors.bgElevated;
     return switch (theme.config.language) {
       // Yaru draws chrome with the Material widgets — that is what Yaru
       // itself is; its character comes from the host theme (see
@@ -102,7 +107,7 @@ class PureAppBar extends StatelessWidget implements PreferredSizeWidget {
           _ => null,
         },
         toolbarHeight: height,
-        backgroundColor: background ?? theme.colors.bgElevated,
+        backgroundColor: background ?? defaultSurface,
       ),
       PureDesignLanguage.cupertino => cupertino.CupertinoNavigationBar(
         leading: leading,
@@ -116,7 +121,7 @@ class PureAppBar extends StatelessWidget implements PreferredSizeWidget {
           final PreferredSizeWidget sized => sized,
           _ => null,
         },
-        backgroundColor: background ?? theme.colors.bgElevated,
+        backgroundColor: background ?? defaultSurface,
       ),
       PureDesignLanguage.macos => _macosBar(context, theme, leading),
       PureDesignLanguage.fluent => _fluentHeader(context, leading),
@@ -143,7 +148,7 @@ class PureAppBar extends StatelessWidget implements PreferredSizeWidget {
         actions: actions,
         centerTitle: centerTitle,
         toolbarHeight: height,
-        backgroundColor: background,
+        backgroundColor: background ?? defaultSurface,
         bottom: switch (bottom) {
           final PreferredSizeWidget sized => sized,
           _ => null,
