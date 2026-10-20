@@ -57,6 +57,7 @@ final class _WebDavPageState extends ConsumerState<WebDavPage> {
     }
     return key;
   }
+
   List<WebDavEntry> _entries = const [];
 
   /// The folder being browsed, relative to the server's own directory;
@@ -88,7 +89,10 @@ final class _WebDavPageState extends ConsumerState<WebDavPage> {
 
   bool get _ready {
     final config = _config;
-    return config != null && config.address.trim().isNotEmpty && config.username.trim().isNotEmpty && config.password.isNotEmpty;
+    return config != null &&
+        config.address.trim().isNotEmpty &&
+        config.username.trim().isNotEmpty &&
+        config.password.isNotEmpty;
   }
 
   /// The live service for the active server; rebuilt when the server (or
@@ -347,24 +351,28 @@ final class _WebDavPageState extends ConsumerState<WebDavPage> {
     return clean.toLowerCase().endsWith('.zip') ? clean : '$clean.zip';
   }
 
-  Future<bool?> _confirm({required String title, required String message, required String confirmLabel, bool danger = false}) =>
-      showPureDialog<bool>(
-        context: context,
-        title: title,
-        child: Text(message),
-        actions: (dialogContext) => [
-          PureButton(
-            label: dialogContext.t.common.cancel,
-            variant: ButtonVariant.ghost,
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-          ),
-          PureButton(
-            label: confirmLabel,
-            variant: danger ? ButtonVariant.danger : ButtonVariant.primary,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-          ),
-        ],
-      );
+  Future<bool?> _confirm({
+    required String title,
+    required String message,
+    required String confirmLabel,
+    bool danger = false,
+  }) => showPureDialog<bool>(
+    context: context,
+    title: title,
+    child: Text(message),
+    actions: (dialogContext) => [
+      PureButton(
+        label: dialogContext.t.common.cancel,
+        variant: ButtonVariant.ghost,
+        onPressed: () => Navigator.of(dialogContext).pop(false),
+      ),
+      PureButton(
+        label: confirmLabel,
+        variant: danger ? ButtonVariant.danger : ButtonVariant.primary,
+        onPressed: () => Navigator.of(dialogContext).pop(true),
+      ),
+    ],
+  );
 
   // ——— the server sheet ———
 
@@ -392,11 +400,8 @@ final class _WebDavPageState extends ConsumerState<WebDavPage> {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (sheetContext) => _WebDavServerForm(
-        store: _store!,
-        existing: existing,
-        onSaved: () => Navigator.of(sheetContext).pop(),
-      ),
+      builder: (sheetContext) =>
+          _WebDavServerForm(store: _store!, existing: existing, onSaved: () => Navigator.of(sheetContext).pop()),
     );
   }
 
@@ -406,7 +411,10 @@ final class _WebDavPageState extends ConsumerState<WebDavPage> {
   Widget build(BuildContext context) {
     final theme = PureTheme.of(context);
     if (_store == null) {
-      return PureScaffold(appBar: PureAppBar(title: t.webdav.title), body: const Center(child: PureLoading()));
+      return PureScaffold(
+        appBar: PureAppBar(title: t.webdav.title),
+        body: const Center(child: PureLoading()),
+      );
     }
     final active = _active;
     return PureScaffold(
@@ -440,10 +448,7 @@ final class _WebDavPageState extends ConsumerState<WebDavPage> {
                 onTap: () => unawaited(_openOfficialHelp()),
               ),
             ],
-            child: const Padding(
-              padding: EdgeInsets.all(10),
-              child: Icon(Icons.more_vert),
-            ),
+            child: const Padding(padding: EdgeInsets.all(10), child: Icon(Icons.more_vert)),
           ),
         ],
       ),
@@ -494,14 +499,22 @@ final class _WebDavPageState extends ConsumerState<WebDavPage> {
               subtitle: _when(active.lastBackupAt),
               divided: false,
             ),
-            PureListRow(leading: const Icon(Icons.cloud_download_outlined), title: t.webdav.lastRestore, subtitle: _when(active.lastRestoreAt), divided: false),
-            const SizedBox(height: 8),
+            PureListRow(
+              leading: const Icon(Icons.cloud_download_outlined),
+              title: t.webdav.lastRestore,
+              subtitle: _when(active.lastRestoreAt),
+              divided: false,
+            ),
+            const SizedBox(height: PureSpacing.sm),
             _breadcrumbs(theme),
-            const SizedBox(height: 4),
+            const SizedBox(height: PureSpacing.xs),
             if (_status != null)
               Padding(
-                padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
-                child: Text(_status!, style: TextStyle(color: _statusIsError ? theme.colors.error : theme.colors.primary)),
+                padding: const EdgeInsets.fromLTRB(PureSpacing.xs, PureSpacing.xs, PureSpacing.xs, PureSpacing.sm),
+                child: Text(
+                  _status!,
+                  style: TextStyle(color: _statusIsError ? theme.colors.error : theme.colors.primary),
+                ),
               ),
             _folder(theme),
           ],
@@ -519,7 +532,7 @@ final class _WebDavPageState extends ConsumerState<WebDavPage> {
     var walked = '';
     final crumbs = <Widget>[
       Padding(
-        padding: const EdgeInsets.only(right: 2),
+        padding: const EdgeInsets.only(right: PureSpacing.xxs),
         child: PureButton(
           key: const ValueKey('webdav-crumb-root'),
           label: _active?.directory.isEmpty ?? true ? '/' : _active!.directory,
@@ -581,7 +594,9 @@ final class _WebDavPageState extends ConsumerState<WebDavPage> {
                     items: [
                       PureMenuItem(
                         id: 'restore',
-                        label: entry.name.toLowerCase().endsWith('.json') ? t.webdav.restoreFavorites : t.webdav.restoreAllSettings,
+                        label: entry.name.toLowerCase().endsWith('.json')
+                            ? t.webdav.restoreFavorites
+                            : t.webdav.restoreAllSettings,
                         icon: Icons.restore,
                         onTap: _busy ? null : () => unawaited(_restore(entry)),
                       ),
@@ -610,11 +625,11 @@ final class _WebDavPageState extends ConsumerState<WebDavPage> {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(t.webdav.helpTitle, style: theme.text.title),
-      const SizedBox(height: 8),
+      const SizedBox(height: PureSpacing.sm),
       Text(t.webdav.helpIntro, style: theme.text.bodySmall),
-      const SizedBox(height: 8),
+      const SizedBox(height: PureSpacing.sm),
       Text(t.webdav.helpSteps, style: theme.text.bodySmall),
-      const SizedBox(height: 8),
+      const SizedBox(height: PureSpacing.sm),
       Text(t.webdav.helpServer, style: theme.text.bodySmall.copyWith(color: theme.colors.textSecondary)),
       Text(t.webdav.helpAccount, style: theme.text.bodySmall.copyWith(color: theme.colors.textSecondary)),
       Text(t.webdav.helpPassword, style: theme.text.bodySmall.copyWith(color: theme.colors.textSecondary)),
@@ -646,10 +661,9 @@ final class _WebDavPageState extends ConsumerState<WebDavPage> {
     }
   }
 
-  static String _when(DateTime? at) =>
-      at == null
-          ? '—'
-          : '${at.year}-${at.month.toString().padLeft(2, '0')}-${at.day.toString().padLeft(2, '0')} '
+  static String _when(DateTime? at) => at == null
+      ? '—'
+      : '${at.year}-${at.month.toString().padLeft(2, '0')}-${at.day.toString().padLeft(2, '0')} '
             '${at.hour.toString().padLeft(2, '0')}:${at.minute.toString().padLeft(2, '0')}';
 }
 
@@ -708,13 +722,13 @@ final class _WebDavServersSheetState extends State<_WebDavServersSheet> {
     final servers = widget.preferences.servers;
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        padding: const EdgeInsets.fromLTRB(PureSpacing.md, 0, PureSpacing.md, PureSpacing.md),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+              padding: const EdgeInsets.fromLTRB(PureSpacing.sm, 0, PureSpacing.sm, PureSpacing.sm),
               child: Text(t.webdav.servers, style: PureTheme.of(context).text.title),
             ),
             Flexible(
@@ -725,7 +739,9 @@ final class _WebDavServersSheetState extends State<_WebDavServersSheet> {
                       PureListRow(
                         key: ValueKey('webdav-server-${server.name}'),
                         leading: Icon(
-                          server.name == widget.preferences.activeServer?.name ? Icons.check_circle : Icons.cloud_outlined,
+                          server.name == widget.preferences.activeServer?.name
+                              ? Icons.check_circle
+                              : Icons.cloud_outlined,
                         ),
                         title: server.name,
                         subtitle: server.address,
@@ -754,7 +770,7 @@ final class _WebDavServersSheetState extends State<_WebDavServersSheet> {
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: PureSpacing.sm),
             PureButton(
               key: const ValueKey('webdav-server-add'),
               label: t.webdav.createNew,
@@ -771,7 +787,6 @@ final class _WebDavServersSheetState extends State<_WebDavServersSheet> {
       ),
     );
   }
-
 }
 
 /// The add/edit form of one server (the reference's config dialog): name,
@@ -846,10 +861,12 @@ final class _WebDavServerFormState extends State<_WebDavServerForm> {
       return true;
     } on WebDavException catch (error) {
       if (mounted) {
-        setState(() => _status = switch (error.kind) {
-          WebDavFailure.unauthorized => '401/403',
-          _ => '${error.kind.name}${error.statusCode == null ? '' : ' ${error.statusCode}'}',
-        });
+        setState(
+          () => _status = switch (error.kind) {
+            WebDavFailure.unauthorized => '401/403',
+            _ => '${error.kind.name}${error.statusCode == null ? '' : ' ${error.statusCode}'}',
+          },
+        );
       }
       return false;
     } on Object catch (error) {
@@ -877,8 +894,7 @@ final class _WebDavServerFormState extends State<_WebDavServerForm> {
       return;
     }
     final renaming = widget.existing != null && widget.existing!.name != server.name;
-    if ((renaming || widget.existing == null) &&
-        widget.store.value.servers.any((entry) => entry.name == server.name)) {
+    if ((renaming || widget.existing == null) && widget.store.value.servers.any((entry) => entry.name == server.name)) {
       setState(() => _nameError = t.webdav.nameExists);
       return;
     }
@@ -889,7 +905,8 @@ final class _WebDavServerFormState extends State<_WebDavServerForm> {
     setState(() => _saving = true);
     try {
       // The same door the 测试连接 button uses: nothing half-verified is kept.
-      final proved = _password.text.isNotEmpty || widget.existing != null && widget.store.passwordOf(server.name).isNotEmpty;
+      final proved =
+          _password.text.isNotEmpty || widget.existing != null && widget.store.passwordOf(server.name).isNotEmpty;
       if (!proved || !await _test()) {
         if (mounted) {
           setState(() => _saving = false);
@@ -921,7 +938,7 @@ final class _WebDavServerFormState extends State<_WebDavServerForm> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(widget.existing == null ? t.webdav.createNew : t.webdav.editServer, style: theme.text.title),
-            const SizedBox(height: 12),
+            const SizedBox(height: PureSpacing.md),
             PureTextField(
               key: const ValueKey('webdav-field-name'),
               controller: _name,
@@ -952,10 +969,12 @@ final class _WebDavServerFormState extends State<_WebDavServerForm> {
             PureTextField(controller: _directory, placeholder: t.webdav.directory),
             if (_status != null)
               Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.only(top: PureSpacing.sm),
                 child: Text(
                   _status == 'ok' ? t.webdav.testOk : '${t.webdav.testFailed}: $_status',
-                  style: theme.text.caption.copyWith(color: _status == 'ok' ? theme.colors.success : theme.colors.error),
+                  style: theme.text.caption.copyWith(
+                    color: _status == 'ok' ? theme.colors.success : theme.colors.error,
+                  ),
                 ),
               ),
             const SizedBox(height: 14),
@@ -971,7 +990,7 @@ final class _WebDavServerFormState extends State<_WebDavServerForm> {
                     onPressed: _busy ? null : () => unawaited(_test()),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: PureSpacing.md),
                 Expanded(
                   child: PureButton(
                     key: const ValueKey('webdav-form-save'),
