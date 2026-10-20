@@ -10,6 +10,7 @@ import 'package:pure_live/features/iptv/iptv_preferences.dart' show IptvPreferen
 import 'package:pure_live/features/iptv/iptv_xtream.dart'
     show importXtreamChannels, isXtreamCredentialError, isXtreamPlaylistUrl, xtreamCatalogProvider, xtreamPlaylistId;
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/widgets/feed_chip.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
@@ -388,10 +389,10 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
                       for (final name in groups)
                         Padding(
                           padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: Text(name.isEmpty ? context.t.iptv.allGroups : name),
+                          child: FeedChip(
+                            label: name.isEmpty ? context.t.iptv.allGroups : name,
                             selected: _selectedGroup == name || (_selectedGroup == null && name.isEmpty),
-                            onSelected: (_) {
+                            onTap: () {
                               setState(() => _selectedGroup = name);
                               unawaited(_setPreferences((preferences) => preferences.copyWith(lastGroup: name)));
                             },
@@ -428,8 +429,8 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          InputChip(
-                            label: Text('${playlist.name} (${playlist.channelCount})'),
+                          FeedChip(
+                            label: '${playlist.name} (${playlist.channelCount})',
                             onDeleted: _importing ? null : () => unawaited(_deleteSource(playlist.id)),
                           ),
                           // A local file has no URL to read again — only a
@@ -447,8 +448,8 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        InputChip(
-                          label: Text('${source.name} (${_xtreamChannelCount(source)})'),
+                        FeedChip(
+                          label: '${source.name} (${_xtreamChannelCount(source)})',
                           onDeleted: _importing ? null : () => unawaited(_deleteXtreamSource(source)),
                         ),
                         PureIconButton(
@@ -474,11 +475,12 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
                 children: [
                   Text(
                     context.t.iptv.epgTitle,
-                    style: PureTheme.of(context).text.caption.copyWith(color: PureTheme.of(context).colors.textSecondary),
+                    style: PureTheme.of(context).text.caption
+                        .copyWith(color: PureTheme.of(context).colors.textSecondary),
                   ),
                   for (final guide in library.guideSources)
-                    InputChip(
-                      label: Text('${guide.name} (${library.guideChannels(guide.id).length})'),
+                    FeedChip(
+                      label: '${guide.name} (${library.guideChannels(guide.id).length})',
                       onDeleted: () => unawaited(library.deleteGuideSource(guide.id)),
                     ),
                 ],

@@ -18,6 +18,7 @@ import 'package:pure_live/features/recorder/recorder_preferences.dart';
 import 'package:pure_live/features/recorder/recorder_providers.dart';
 import 'package:pure_live/features/settings/widgets/settings_chooser.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/widgets/feed_chip.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The recorder: the rooms being watched, each with its state chip and its
@@ -271,10 +272,10 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: ChoiceChip(
-                  label: Text('${labels[bucket]} ${counts[bucket]}'),
+                child: FeedChip(
+                  label: '${labels[bucket]} ${counts[bucket]}',
                   selected: _filter == bucket,
-                  onSelected: (_) => setState(() => _filter = bucket),
+                  onTap: () => setState(() => _filter = bucket),
                 ),
               ),
             ),

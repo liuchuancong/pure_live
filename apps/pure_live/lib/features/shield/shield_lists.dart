@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/features/room/room_providers.dart' show danmakuSessionProvider;
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/widgets/feed_chip.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The shield's editable lists, as a panel the room's block tab can embed and
@@ -198,7 +199,7 @@ final class _ShieldListsPanelState extends ConsumerState<ShieldListsPanel> {
                     runSpacing: 8,
                     children: [
                       for (final value in _lists[kind] ?? const <String>[])
-                        InputChip(label: Text(value), onDeleted: () => unawaited(_remove(kind, value))),
+                        FeedChip(label: value, onDeleted: () => unawaited(_remove(kind, value))),
                       if ((_lists[kind] ?? const []).isEmpty)
                         Text(t.shield.none, style: theme.text.caption.copyWith(color: theme.colors.textSecondary)),
                     ],

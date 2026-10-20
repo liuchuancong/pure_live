@@ -124,6 +124,7 @@ class _Translations$common$en extends Translations$common$zh {
 	@override String get close => 'Close';
 	@override String get save => 'Save';
 	@override String get clear => 'Clear';
+	@override String get delete => 'Delete';
 	@override String get loading => 'Loading';
 	@override String get empty => 'Nothing here yet';
 	@override String pageOf({required int page, required int total}) => 'Page ${page} of ${total}';
@@ -1655,6 +1656,7 @@ extension on TranslationsEn {
 			'common.close' => 'Close',
 			'common.save' => 'Save',
 			'common.clear' => 'Clear',
+			'common.delete' => 'Delete',
 			'common.loading' => 'Loading',
 			'common.empty' => 'Nothing here yet',
 			'common.pageOf' => ({required int page, required int total}) => 'Page ${page} of ${total}',
@@ -2155,9 +2157,9 @@ extension on TranslationsEn {
 			'recorder.filterFinished' => 'Finished',
 			'recorder.emptyTitle' => 'No rooms watched yet',
 			'recorder.emptySubtitle' => 'Add a room and it is recorded once it goes live',
-			'recorder.nothingToJoin' => 'Nothing to join yet',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.nothingToJoin' => 'Nothing to join yet',
 			'recorder.actionStop' => 'Stop',
 			'recorder.actionFinishNow' => 'Join now',
 			'recorder.actionRestart' => 'Record again',
@@ -2669,9 +2671,9 @@ extension on TranslationsEn {
 			'shellSettings.titleBarAuto' => 'Auto (by Windows version)',
 			'shellSettings.titleBarApp' => 'App title bar',
 			'shellSettings.titleBarSystem' => 'System title bar',
-			'shellSettings.titleBarHint' => 'Auto: the app title bar on Windows 11, the system title bar on Windows 10. The app title bar is drawn by Pure Live; the system title bar is the native Windows one. A switch applies after the app restarts.',
 			_ => null,
 		} ?? switch (path) {
+			'shellSettings.titleBarHint' => 'Auto: the app title bar on Windows 11, the system title bar on Windows 10. The app title bar is drawn by Pure Live; the system title bar is the native Windows one. A switch applies after the app restarts.',
 			'shellSettings.frameDiagnosis' => 'Window frame diagnosis',
 			'shellSettings.frameTakeover' => 'Frame takeover',
 			'shellSettings.frameTakeoverOn' => 'On — the caption is gone and the window\'s own hit-test answers the four edges',

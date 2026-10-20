@@ -17,6 +17,7 @@
     "close": "Close",
     "save": "Save",
     "clear": "Clear",
+    "delete": "Delete",
     "loading": "Loading",
     "empty": "Nothing here yet",
     "pageOf": "Page {page: int} of {total: int}",

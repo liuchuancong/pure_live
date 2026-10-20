@@ -384,24 +384,25 @@ class _TagStrip extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final groups = ref.watch(followRepositoryProvider).groups;
     if (groups.isEmpty) return const SizedBox.shrink();
-    Widget chip(String? id, String label) => Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: Center(
-        child: ChoiceChip(
-          key: ValueKey('favorite-tag-${id ?? 'all'}'),
-          label: Text(label),
-          selected: selectedId == id,
-          onSelected: (_) => onSelected(id),
-        ),
-      ),
-    );
+    // One choice out of a scrolling strip is the tab strip's own contract;
+    // the library's chip needs a Material sheet to print on, and this page
+    // has none.
+    final ids = <String?>[null, for (final group in groups) group.id];
+    final selected = ids.indexOf(selectedId).clamp(0, ids.length - 1);
     return SizedBox(
       key: const ValueKey('favorite-tag-strip'),
       height: 48,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
+      child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
-        children: [chip(null, context.t.follow.all), for (final group in groups) chip(group.id, group.name)],
+        child: PureTabs(
+          index: selected,
+          isScrollable: true,
+          onChanged: (value) => onSelected(ids[value]),
+          tabs: [
+            PureTab(label: context.t.follow.all),
+            for (final group in groups) PureTab(label: group.name),
+          ],
+        ),
       ),
     );
   }

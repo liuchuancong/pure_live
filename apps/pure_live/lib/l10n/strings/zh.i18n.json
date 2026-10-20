@@ -24,6 +24,7 @@
     "close": "关闭",
     "save": "保存",
     "clear": "清空",
+    "delete": "删除",
     "loading": "加载中",
     "empty": "暂无内容",
     "pageOf": "第 {page: int} / {total: int} 页",

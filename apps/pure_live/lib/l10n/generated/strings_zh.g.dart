@@ -149,6 +149,9 @@ class Translations$common$zh {
 	/// zh: '清空'
 	String get clear => '清空';
 
+	/// zh: '删除'
+	String get delete => '删除';
+
 	/// zh: '加载中'
 	String get loading => '加载中';
 
@@ -4087,6 +4090,7 @@ extension on Translations {
 			'common.close' => '关闭',
 			'common.save' => '保存',
 			'common.clear' => '清空',
+			'common.delete' => '删除',
 			'common.loading' => '加载中',
 			'common.empty' => '暂无内容',
 			'common.pageOf' => ({required int page, required int total}) => '第 ${page} / ${total} 页',
@@ -4587,9 +4591,9 @@ extension on Translations {
 			'recorder.filterFinished' => '已结束',
 			'recorder.emptyTitle' => '还没有监听的房间',
 			'recorder.emptySubtitle' => '添加一个房间，开播后自动录制',
-			'recorder.nothingToJoin' => '没有待合并的分段',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.nothingToJoin' => '没有待合并的分段',
 			'recorder.actionStop' => '停止',
 			'recorder.actionFinishNow' => '立即合并',
 			'recorder.actionRestart' => '重新录制',
@@ -5101,9 +5105,9 @@ extension on Translations {
 			'shellSettings.titleBarAuto' => '自动（按系统版本）',
 			'shellSettings.titleBarApp' => '应用标题栏',
 			'shellSettings.titleBarSystem' => '系统标题栏',
-			'shellSettings.titleBarHint' => '自动：Windows 11 用应用标题栏，Windows 10 用系统标题栏。应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式。切换在重启应用后生效。',
 			_ => null,
 		} ?? switch (path) {
+			'shellSettings.titleBarHint' => '自动：Windows 11 用应用标题栏，Windows 10 用系统标题栏。应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式。切换在重启应用后生效。',
 			'shellSettings.frameDiagnosis' => '窗口边框诊断',
 			'shellSettings.frameTakeover' => '边框接管',
 			'shellSettings.frameTakeoverOn' => '已开启 — 标题栏已由窗口自身移除，四边缩放由窗口的命中测试应答',
