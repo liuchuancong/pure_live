@@ -978,6 +978,7 @@
     "portraitFullscreenRestoreHint": "已进入竖屏全屏 · 上滑恢复弹幕栏"
   },
   "areas": {
+    "followedAreas": "关注的分区",
     "empty": "暂无分区"
   },
   "popular": {

@@ -710,6 +710,7 @@
     "portraitFullscreenRestoreHint": "Portrait fullscreen — swipe up to bring the danmaku bar back"
   },
   "areas": {
+    "followedAreas": "Followed areas",
     "empty": "No areas here"
   },
   "popular": {

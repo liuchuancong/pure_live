@@ -3077,6 +3077,9 @@ class Translations$areas$zh {
 
 	// Translations
 
+	/// zh: '关注的分区'
+	String get followedAreas => '关注的分区';
+
 	/// zh: '暂无分区'
 	String get empty => '暂无分区';
 }
@@ -4984,6 +4987,7 @@ extension on Translations {
 			'room.blockKeywordTitle' => '屏蔽弹幕关键词',
 			'room.block' => '屏蔽',
 			'room.portraitFullscreenRestoreHint' => '已进入竖屏全屏 · 上滑恢复弹幕栏',
+			'areas.followedAreas' => '关注的分区',
 			'areas.empty' => '暂无分区',
 			'popular.allPlatforms' => '全部平台',
 			'popular.allPlatformsHint' => '点按切换平台；平台显示设置可隐藏或排序。',
@@ -5086,9 +5090,9 @@ extension on Translations {
 			'shellSettings.frameTakeover' => '边框接管',
 			'shellSettings.frameTakeoverOn' => '已开启 — 标题栏已由窗口自身移除，四边缩放由窗口的命中测试应答',
 			'shellSettings.frameTakeoverOff' => '未开启 — 标题栏与窗口尺寸都由系统负责',
-			'shellSettings.frameEdge' => '系统描边',
 			_ => null,
 		} ?? switch (path) {
+			'shellSettings.frameEdge' => '系统描边',
 			'shellSettings.frameEdgeNative' => '由 Windows 绘制',
 			'shellSettings.frameEdgeNone' => '当前 Windows 版本不绘制描边，接管后的边框四边都没有线',
 			'shellSettings.frameBuild' => 'Windows 构建号',

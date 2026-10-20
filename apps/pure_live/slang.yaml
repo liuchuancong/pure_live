@@ -1,0 +1,22 @@
+# The app's translations: slang's own config, consumed by `dart run slang`.
+#
+# This used to live in build.yaml under slang_build_runner. That path cannot
+# write `lib/l10n/generated/strings*.dart` back over the committed files any
+# more: the build_runner release dropped --delete-conflicting-outputs, so the
+# runner answers "Asset already exists" and writes nothing. The CLI writes the
+# same files from the same options, so the generated artefacts stay committed
+# (a clone builds without a codegen step) and one command regenerates them.
+base_locale: zh
+fallback_strategy: base_locale
+input_directory: lib/l10n/strings
+input_file_pattern: .i18n.json
+output_directory: lib/l10n/generated
+output_file_name: strings.g.dart
+string_interpolation: braces
+# Deferred (lazy) loading would make the non-base locale an async import, which
+# the second desktop window and the widget tests cannot rely on. Two locales
+# cost little; keep them eager.
+lazy: false
+# The generated file is committed, so a per-run timestamp would only produce
+# diff noise.
+timestamp: false

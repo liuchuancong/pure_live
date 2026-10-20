@@ -901,6 +901,7 @@ class _Translations$areas$en extends Translations$areas$zh {
 	final TranslationsEn _root; // ignore: unused_field
 
 	// Translations
+	@override String get followedAreas => 'Followed areas';
 	@override String get empty => 'No areas here';
 }
 
@@ -2321,6 +2322,7 @@ extension on TranslationsEn {
 			'room.blockKeywordTitle' => 'Block a danmaku keyword',
 			'room.block' => 'Block',
 			'room.portraitFullscreenRestoreHint' => 'Portrait fullscreen — swipe up to bring the danmaku bar back',
+			'areas.followedAreas' => 'Followed areas',
 			'areas.empty' => 'No areas here',
 			'popular.allPlatforms' => 'All platforms',
 			'popular.allPlatformsHint' => 'Tap to switch; platform settings hide and order them.',
@@ -2664,9 +2666,9 @@ extension on TranslationsEn {
 			'shellSettings.frameTakeover' => 'Frame takeover',
 			'shellSettings.frameTakeoverOn' => 'On — the caption is gone and the window\'s own hit-test answers the four edges',
 			'shellSettings.frameTakeoverOff' => 'Off — the system draws the caption and sizes the window',
-			'shellSettings.frameEdge' => 'Frame edge',
 			_ => null,
 		} ?? switch (path) {
+			'shellSettings.frameEdge' => 'Frame edge',
 			'shellSettings.frameEdgeNative' => 'Windows draws it',
 			'shellSettings.frameEdgeNone' => 'This Windows version draws none, so a taken-over window has no line on any side',
 			'shellSettings.frameBuild' => 'Windows build',
