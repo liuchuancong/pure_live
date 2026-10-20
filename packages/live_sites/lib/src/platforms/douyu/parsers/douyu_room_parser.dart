@@ -1,4 +1,5 @@
 import 'package:live_sites/src/common/normalization/site_counts.dart';
+import 'package:live_sites/src/common/normalization/site_urls.dart';
 import 'package:live_sites/src/models/anchor/live_anchor/live_anchor.dart';
 import 'package:live_sites/src/models/area/live_area/live_area.dart';
 import 'package:live_sites/src/models/enums/live_audience_metric_type.dart';
@@ -137,7 +138,7 @@ abstract final class DouyuRoomParser {
       anchor: LiveAnchor.normalized(
         platform: _site,
         name: decodeHtmlEntities(jsonString(item['nn']) ?? ''),
-        avatarUrl: _listAvatar(item['av']),
+        avatarUrl: anchorAvatar(item['av']),
       ),
       area: LiveArea.normalized(platform: _site, areaName: jsonString(item['c2name']) ?? ''),
       audience: RoomAudience(popularity: parseAudienceNumberOrNull(hot)),
@@ -146,15 +147,19 @@ abstract final class DouyuRoomParser {
     );
   }
 
-  /// `av` of the room lists: a full URL as it is, a path on mixList
-  /// (`avatar_v3/2026…`, made
-  /// `https://apic.douyucdn.cn/upload/{av}_middle.jpg`); empty when there
-  /// is none (3.x wrote `…/upload/null_middle.jpg`).
-  static String _listAvatar(Object? value) {
+  /// An anchor avatar: an absolute address as it is, and a bare path
+  /// (`avatar_v3/2026…`) made into the CDN's own
+  /// `https://apic.douyucdn.cn/upload/{path}_middle.jpg` — the room lists'
+  /// `av`, the search's `avatar` and the detail's `owner_avatar` all give the
+  /// path form, and an unhosted string handed to an image loader is a codec
+  /// error rather than a missing picture. Empty for anything that is neither.
+  static String anchorAvatar(Object? value) {
     final url = normalizeImageUrl(value);
     if (url.isNotEmpty) return url;
-    final path = jsonString(value);
-    if (path == null || !RegExp(r'^[\w./-]+$').hasMatch(path)) return '';
+    final path = value?.toString().trim() ?? '';
+    // The endpoints write the word `null` for an anchor with no picture; the
+    // old client turned that into `…/upload/null_middle.jpg`, a 404 per card.
+    if (path.isEmpty || path.toLowerCase() == 'null' || !RegExp(r'^[\w./-]+$').hasMatch(path)) return '';
     return 'https://apic.douyucdn.cn/upload/${path.startsWith('/') ? path.substring(1) : path}_middle.jpg';
   }
 
@@ -190,7 +195,7 @@ abstract final class DouyuRoomParser {
         anchor: LiveAnchor.normalized(
           platform: _site,
           name: decodeHtmlEntities(jsonString(item['nickName']) ?? ''),
-          avatarUrl: normalizeImageUrl(item['avatar']),
+          avatarUrl: anchorAvatar(item['avatar']),
         ),
         area: LiveArea.normalized(platform: _site, areaName: jsonString(item['cateName']) ?? ''),
         audience: RoomAudience(popularity: parseAudienceNumberOrNull(hot)),
@@ -210,7 +215,7 @@ abstract final class DouyuRoomParser {
               platform: _site,
               anchorId: roomId(anchor['rid'])!,
               name: decodeHtmlEntities(jsonString(anchor['nickName']) ?? ''),
-              avatarUrl: normalizeImageUrl(anchor['avatar']),
+              avatarUrl: anchorAvatar(anchor['avatar']),
               liveStatus: jsonInt(anchor['isLive']) == 1 && (jsonInt(anchor['roomType']) ?? 0) == 0
                   ? LiveStatus.live
                   : LiveStatus.offline,
@@ -273,7 +278,7 @@ abstract final class DouyuRoomParser {
         anchor: LiveAnchor.normalized(
           platform: _site,
           name: decodeHtmlEntities(jsonString(room['owner_name']) ?? ''),
-          avatarUrl: normalizeImageUrl(room['owner_avatar']),
+          avatarUrl: anchorAvatar(room['owner_avatar']),
         ),
         area: LiveArea.normalized(platform: _site, areaName: jsonString(room['second_lvl_name']) ?? ''),
         audience: RoomAudience(
@@ -334,15 +339,6 @@ abstract final class DouyuRoomParser {
     final id = jsonInt(value);
     return id != null && id > 0 ? '$id' : null;
   }
-}
-
-/// An image address: absolute as it is (`//` completed to https), else
-/// empty. Null-safe against the platforms' `null`/blank fields.
-String normalizeImageUrl(Object? value) {
-  final text = value?.toString().trim() ?? '';
-  if (text.isEmpty) return '';
-  if (text.startsWith('//')) return 'https:$text';
-  return text;
 }
 
 /// The gifts of a decoded `betard` answer ([DouyuRoomParser.roomDetail]

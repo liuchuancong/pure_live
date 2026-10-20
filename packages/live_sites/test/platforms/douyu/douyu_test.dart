@@ -63,6 +63,27 @@ void main() {
     expect(DouyuDanmakuProtocol.bodies(frameOf(bodies)), bodies);
   });
 
+  group('DouyuRoomParser.anchorAvatar', () {
+    test('a bare path becomes the CDN address, a URL stays itself', () {
+      expect(
+        DouyuRoomParser.anchorAvatar('avatar_v3/202609/a3416f.jpg'),
+        'https://apic.douyucdn.cn/upload/avatar_v3/202609/a3416f.jpg_middle.jpg',
+      );
+      expect(DouyuRoomParser.anchorAvatar('//m.yubojp.com/a.jpg'), 'https://m.yubojp.com/a.jpg');
+      expect(
+        DouyuRoomParser.anchorAvatar('https://apic.douyucdn.cn/upload/x_middle.jpg'),
+        'https://apic.douyucdn.cn/upload/x_middle.jpg',
+      );
+    });
+
+    test('nothing and junk give no picture', () {
+      expect(DouyuRoomParser.anchorAvatar(null), '');
+      expect(DouyuRoomParser.anchorAvatar(''), '');
+      expect(DouyuRoomParser.anchorAvatar('null'), '');
+      expect(DouyuRoomParser.anchorAvatar('not a url at all'), '');
+    });
+  });
+
   group('DouyuDanmakuProtocol decoding', () {
     test('chatmsg becomes a chat message for the joined room', () {
       final r = DouyuDanmakuProtocol.read(
