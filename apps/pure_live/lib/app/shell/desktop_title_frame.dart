@@ -5,7 +5,8 @@ import 'package:pure_live/app/providers/app_providers.dart' show environmentProv
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart' show ShellWindowChrome;
 import 'package:pure_live/platforms/desktop/shell/window_title_bar.dart'
-    show PureTitleBar, PureTitleBarLabels, windowChromeActionsProvider, windowChromeStateProvider;
+    show windowChromeActionsProvider, windowChromeStateProvider;
+import 'package:pure_uikit/pure_uikit.dart' show PureTheme, PureTitleBar, PureTitleBarLabels;
 
 /// The window's own strip above every page (the reference's `DesktopFrame`,
 /// A16.1): where the desktop shell took the caption over from the system —
@@ -39,31 +40,41 @@ final class DesktopTitleFrame extends ConsumerWidget {
       return child;
     }
     final state = ref.watch(windowChromeStateProvider);
-    return ListenableBuilder(
-      listenable: Listenable.merge([state.maximized, state.fullScreen]),
-      builder: (context, _) {
-        if (state.fullScreen.value) {
-          return child;
-        }
-        return Overlay.wrap(
-          child: Column(
-            children: [
-              PureTitleBar(
-                labels: PureTitleBarLabels(
-                  title: context.t.app.title,
-                  minimize: context.t.window.minimize,
-                  maximize: context.t.window.maximize,
-                  restore: context.t.window.restore,
-                  close: context.t.window.close,
-                ),
-                actions: ref.watch(windowChromeActionsProvider),
-                maximized: state.maximized,
+    final actions = ref.watch(windowChromeActionsProvider);
+    // The strip is the design language's own — this frame only says where it
+    // goes, so the language is read from the theme rather than decided here.
+    final language = PureTheme.of(context).config.language;
+    final t = context.t;
+    final labels = PureTitleBarLabels(
+      title: t.app.title,
+      minimize: t.window.minimize,
+      maximize: t.window.maximize,
+      restore: t.window.restore,
+      close: t.window.close,
+    );
+    // Only full screen changes the frame's shape. Maximising is the strip's own
+    // business — it listens to [WindowChromeState.maximized] — so handing the
+    // page subtree to the builder as `child` keeps a maximize from rebuilding
+    // every route under this frame, which is what a `ListenableBuilder` over
+    // both notifiers used to do.
+    return ValueListenableBuilder<bool>(
+      valueListenable: state.fullScreen,
+      child: child,
+      builder: (context, fullScreen, content) => fullScreen
+          ? content!
+          : Overlay.wrap(
+              child: Column(
+                children: [
+                  PureTitleBar(
+                    designLanguage: language,
+                    labels: labels,
+                    actions: actions,
+                    maximized: state.maximized,
+                  ),
+                  Expanded(child: content!),
+                ],
               ),
-              Expanded(child: child),
-            ],
-          ),
-        );
-      },
+            ),
     );
   }
 }

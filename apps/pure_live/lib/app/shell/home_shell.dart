@@ -47,7 +47,7 @@ final class _HomeShellState extends ConsumerState<HomeShell> {
     });
   }
 
-  void _select(BuildContext context, ShellBranch branch) {
+  void _select(ShellBranch branch) {
     goShellBranch(ref, widget.navigationShell, branch.name);
   }
 
@@ -56,6 +56,7 @@ final class _HomeShellState extends ConsumerState<HomeShell> {
     final navigationShell = widget.navigationShell;
     return LayoutBuilder(
       builder: (context, constraints) {
+        final theme = PureTheme.of(context);
         final rail = isHomeRailWidth(constraints.maxWidth);
         final branches = ref.watch(visibleShellBranchesProvider);
         final current = ShellBranch.at(navigationShell.currentIndex);
@@ -74,44 +75,46 @@ final class _HomeShellState extends ConsumerState<HomeShell> {
           ),
         );
         if (rail) {
-          return Scaffold(
+          return PureScaffold(
             body: SafeArea(
               child: Row(
                 children: [
                   // The rail scrolls in short windows; its position must not
                   // attach to the page's primary scroll controller.
                   PrimaryScrollController.none(
+                    // The `Material` is not a surface choice: the rail's items
+                    // are `InkWell`s, and ink needs a Material ancestor.
                     child: Material(
                       key: const ValueKey('home-rail'),
-                      color: PureTheme.of(context).colors.bgElevated,
+                      color: theme.colors.bgElevated,
                       child: SizedBox(
                         width: HomeRailMetrics.width,
                         child: FocusTraversalGroup(
                           child: HomeRail(
                             branches: branches,
                             selected: selected,
-                            onSelected: (branch) => _select(context, branch),
+                            onSelected: _select,
                           ),
                         ),
                       ),
                     ),
                   ),
-                  VerticalDivider(width: 1, color: PureTheme.of(context).colors.border),
+                  VerticalDivider(width: 1, color: theme.colors.border),
                   Expanded(child: body),
                 ],
               ),
             ),
           );
         }
-        if (branches.length <= 1) return Scaffold(body: body);
-        return Scaffold(
-          bottomNavigationBar: PureBottomNavigation(
+        if (branches.length <= 1) return PureScaffold(body: body);
+        return PureScaffold(
+          bottomBar: PureBottomNavigation(
             destinations: [
               for (final branch in branches)
                 PureNavDestination(id: branch.name, label: branch.label(context), icon: branch.icon),
             ],
             selectedId: selected.name,
-            onDestinationSelected: (destination) => _select(context, ShellBranch.fromId(destination.id)),
+            onDestinationSelected: (destination) => _select(ShellBranch.fromId(destination.id)),
           ),
           body: body,
         );
