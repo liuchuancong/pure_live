@@ -55,10 +55,14 @@ class PureTabs extends StatelessWidget {
   /// Whether the strip responds to input.
   final bool enabled;
 
-  /// Whether a long strip scrolls instead of squeezing its tabs. The
-  /// Material family gets the TabBar's own scroll; the libraries that ship
-  /// no scrollable strip keep their shrink-to-fit row — the strip must then
-  /// sit in a bounded width, never an unbounded scroll view.
+  /// Whether a long strip scrolls instead of squeezing its tabs.
+  ///
+  /// Material's own scrollable bar drives the Material family, forui's
+  /// `scrollable` drives forui, and the libraries whose strip is a fixed row
+  /// (fluent, macOS, Cupertino, wind) are handed the width their tabs ask for
+  /// inside a horizontal scroll view. With the flag false every strip fits the
+  /// box it was given: the Material family stretches its tabs across it, the
+  /// rest squeeze.
   final bool isScrollable;
 
   @override
@@ -76,24 +80,33 @@ class PureTabs extends StatelessWidget {
       PureDesignLanguage.material ||
       PureDesignLanguage.yaru ||
       PureDesignLanguage.glass ||
-      PureDesignLanguage.neumorphic => _MaterialTabBar(tabs: tabs, index: selected, onChanged: select, isScrollable: isScrollable),
+      PureDesignLanguage.neumorphic => _MaterialTabBar(
+        tabs: tabs,
+        index: selected,
+        onChanged: select,
+        isScrollable: isScrollable,
+      ),
       // iOS's own segmented strip: a sliding thumb over the library's cells.
-      PureDesignLanguage.cupertino => _CupertinoTabBar(tabs: tabs, index: selected, onChanged: select),
-      // macOS's own segmented control, driven by the library controller.
-      PureDesignLanguage.macos => _MacosTabBar(tabs: tabs, index: selected, onChanged: select),
+      PureDesignLanguage.cupertino => _scrolled(_CupertinoTabBar(tabs: tabs, index: selected, onChanged: select)),
+      // macOS's own segmented control, driven by the library controller. Its
+      // row cannot shrink — measured, three long labels overflowed a 360dp box
+      // by 167px — so it is the clearest case for the scroll wrapper.
+      PureDesignLanguage.macos => _scrolled(_MacosTabBar(tabs: tabs, index: selected, onChanged: select)),
       // fluent_2's own tab list.
-      PureDesignLanguage.fluent => f2.FluentTabList<int>(
-        selectedValue: selected,
-        onSelect: select,
-        tabs: [
-          for (var i = 0; i < tabs.length; i++)
-            f2.FluentTab<int>(
-              value: i,
-              icon: tabs[i].icon == null ? null : Icon(tabs[i].icon),
-              enabled: select != null,
-              child: Text(tabs[i].label, maxLines: 1, overflow: TextOverflow.ellipsis),
-            ),
-        ],
+      PureDesignLanguage.fluent => _scrolled(
+        f2.FluentTabList<int>(
+          selectedValue: selected,
+          onSelect: select,
+          tabs: [
+            for (var i = 0; i < tabs.length; i++)
+              f2.FluentTab<int>(
+                value: i,
+                icon: tabs[i].icon == null ? null : Icon(tabs[i].icon),
+                enabled: select != null,
+                child: Text(tabs[i].label, maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
+          ],
+        ),
       ),
       // forui's own tabs. Its tab view requires a content panel per entry; the
       // router owns the body here, so each entry gets an empty panel.
@@ -106,6 +119,7 @@ class PureTabs extends StatelessWidget {
           spacing: 0,
           padding: forui.EdgeInsetsGeometryDelta.value(EdgeInsets.zero),
         ),
+        scrollable: isScrollable,
         control: forui.FTabControl.lifted(index: selected, onChange: (next) => select?.call(next)),
         children: [for (final tab in tabs) forui.FTabEntry(label: _foruiLabel(tab), child: const SizedBox.shrink())],
       ),
@@ -114,17 +128,31 @@ class PureTabs extends StatelessWidget {
       // muted labels over a hairline, the selected one in the accent with the
       // underline — is spelled in the fork's utility classes, which is how it
       // ships a tab strip at all.
-      PureDesignLanguage.wind => wind.WTabs(
-        tabs: [for (final tab in tabs) tab.label],
-        selectedIndex: selected,
-        onChanged: select,
-        panelBuilder: (_) => const SizedBox.shrink(),
-        listClassName: 'flex flex-row border-b border-gray-200',
-        tabClassName: 'flex flex-row items-center px-4 py-2 text-sm text-gray-600 selected:text-blue-600',
-        selectedTabClassName: 'border-b-2 border-blue-600',
+      PureDesignLanguage.wind => _scrolled(
+        wind.WTabs(
+          tabs: [for (final tab in tabs) tab.label],
+          selectedIndex: selected,
+          onChanged: select,
+          panelBuilder: (_) => const SizedBox.shrink(),
+          listClassName: 'flex flex-row border-b border-gray-200',
+          tabClassName: 'flex flex-row items-center px-4 py-2 text-sm text-gray-600 selected:text-blue-600',
+          selectedTabClassName: 'border-b-2 border-blue-600',
+        ),
       ),
     };
   }
+
+  /// The scroll wrapper for the libraries that lay their tabs in a fixed row.
+  ///
+  /// `IntrinsicWidth` is not decoration: a scroll view hands its child an
+  /// unbounded width, and both wind's flex row and forui's tab view throw
+  /// during layout there — measured, the two of them raised 23 and 33
+  /// exceptions. Bounding the child to the width its own tabs ask for keeps
+  /// the strip scrollable without putting a library container in a shape it
+  /// cannot lay out.
+  Widget _scrolled(Widget strip) => isScrollable
+      ? SingleChildScrollView(scrollDirection: Axis.horizontal, child: IntrinsicWidth(child: strip))
+      : strip;
 
   static Widget _foruiLabel(PureTab tab) => switch (tab.icon) {
     final IconData glyph => Column(
@@ -226,8 +254,11 @@ class _MaterialTabBarState extends State<_MaterialTabBar> with SingleTickerProvi
       ignoring: !enabled,
       child: TabBar(
         controller: _controller,
-        isScrollable: true,
-        tabAlignment: TabAlignment.start,
+        isScrollable: widget.isScrollable,
+        // `TabAlignment.start` is only legal on a scrollable bar; on a fixed
+        // one the SDK stretches the tabs across the box instead, which is what
+        // the caller asked for by leaving [PureTabs.isScrollable] false.
+        tabAlignment: widget.isScrollable ? TabAlignment.start : TabAlignment.fill,
         onTap: enabled ? widget.onChanged : null,
         tabs: [
           for (final tab in widget.tabs)

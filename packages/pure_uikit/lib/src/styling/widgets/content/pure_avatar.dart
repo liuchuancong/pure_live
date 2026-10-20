@@ -61,7 +61,11 @@ class PureAvatar extends StatelessWidget {
         size: _fluentSize(edge),
         shape: rounded ? f2.FluentAvatarShape.square : f2.FluentAvatarShape.circular,
       ),
-      PureDesignLanguage.forui =>
+      // forui's avatar only draws a circle: its `BoxDecoration` pins
+      // `shape: circle` and no style delta can loosen it. So the rounded form
+      // falls through to the shared rounded surface below, and the circle uses
+      // the library's own component.
+      PureDesignLanguage.forui when !rounded =>
         src == null
             ? forui.FAvatar.raw(
                 size: edge,
@@ -75,30 +79,58 @@ class PureAvatar extends StatelessWidget {
       // Material, Yaru, Cupertino, macOS, glass, neumorphic and wind either
       // ship no avatar or ship one without an image/initials slot. Flutter's
       // official CircleAvatar is the shared fallback; the token colours keep it
-      // inside this theme.
+      // inside this theme. For the rounded square the library widget cannot be
+      // used at all — `CircleAvatar` takes no shape or corner radius — so the
+      // same token colours paint a rounded box instead.
       PureDesignLanguage.material ||
       PureDesignLanguage.yaru ||
       PureDesignLanguage.cupertino ||
       PureDesignLanguage.macos ||
       PureDesignLanguage.glass ||
       PureDesignLanguage.neumorphic ||
-      PureDesignLanguage.wind => CircleAvatar(
-        radius: edge / 2,
-        backgroundColor: theme.colors.fillSecondary,
-        foregroundImage: src,
-        foregroundColor: theme.colors.textSecondary,
-        child: src == null
-            ? Text(
-                initials,
-                style: theme.text.label.copyWith(
-                  color: theme.colors.textSecondary,
-                  fontSize: edge * 0.4,
-                  fontWeight: FontWeight.w600,
-                ),
-              )
-            : null,
-      ),
+      PureDesignLanguage.wind ||
+      PureDesignLanguage.forui => rounded
+        ? _roundedSurface(theme, edge, initials)
+        : CircleAvatar(
+            radius: edge / 2,
+            backgroundColor: theme.colors.fillSecondary,
+            foregroundImage: src,
+            foregroundColor: theme.colors.textSecondary,
+            child: src == null ? Text(initials, style: _initialsStyle(theme, edge)) : null,
+          ),
     };
+  }
+
+  /// The initials' type: the token's label role at a size that scales with the
+  /// avatar rather than a fixed point size.
+  TextStyle _initialsStyle(PureTheme theme, double edge) => theme.text.label.copyWith(
+    color: theme.colors.textSecondary,
+    fontSize: edge * 0.4,
+    fontWeight: FontWeight.w600,
+  );
+
+  /// The rounded-square surface for the languages whose avatar cannot take a
+  /// corner radius. Clipping a `CircleAvatar` would not do it: the circle is
+  /// already inside the square, so every corner would stay empty.
+  ///
+  /// The radius is the token's control radius, capped at a quarter of the edge
+  /// so that a 16dp avatar keeps straight edges instead of turning into a blob.
+  Widget _roundedSurface(PureTheme theme, double edge, String initials) {
+    final radius = theme.token.scale.radii.base.clamp(0.0, edge / 4);
+    final fallback = Center(child: Text(initials, style: _initialsStyle(theme, edge)));
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: ColoredBox(
+        color: theme.colors.fillSecondary,
+        child: SizedBox(
+          width: edge,
+          height: edge,
+          child: src == null
+              ? fallback
+              : Image(image: src!, fit: BoxFit.cover, errorBuilder: (context, error, stack) => fallback),
+        ),
+      ),
+    );
   }
 
   /// Fluent avatars are enum-sized; pick the nearest published step.
