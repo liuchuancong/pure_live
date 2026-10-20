@@ -46,7 +46,7 @@ final class NavigationSettingsPage extends ConsumerWidget {
             tiles: [
               CustomSettingsTile(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: PureSpacing.lg),
                   child: Text(
                     t.settings.navigationHint,
                     style: PureTheme.of(context).text.caption

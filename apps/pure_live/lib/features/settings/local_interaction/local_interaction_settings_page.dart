@@ -64,7 +64,7 @@ final class LocalInteractionSettingsPage extends ConsumerWidget {
               ),
               CustomSettingsTile(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: PureSpacing.lg, vertical: PureSpacing.sm),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

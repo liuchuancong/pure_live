@@ -175,7 +175,7 @@ final class AppearancePage extends ConsumerWidget {
               // drawn with the text role the slider above drives.
               CustomSettingsTile(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 18, 8, 18),
+                  padding: const EdgeInsets.fromLTRB(PureSpacing.lg, 18, PureSpacing.lg, 18),
                   child: Text(
                     t.settings.previewText,
                     style: PureTheme.of(context).text.body,

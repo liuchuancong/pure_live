@@ -49,7 +49,7 @@ final class RoomCardSettingsPage extends ConsumerWidget {
             tiles: [
               CustomSettingsTile(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: PureSpacing.lg),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 420),
                     child: RoomCard(room: _previewRoom, onOpen: () {}),
@@ -68,6 +68,7 @@ final class RoomCardSettingsPage extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(t.settings.roomCardRadius, style: PureTheme.of(context).text.title),
+                      const SizedBox(height: PureSpacing.sm),
                       PureSlider(
                         value: preferences.roomCardCornerRadius.clamp(0, 28),
                         max: 28,
@@ -120,7 +121,7 @@ final class RoomCardSettingsPage extends ConsumerWidget {
             tiles: [
               CustomSettingsTile(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: PureSpacing.lg),
                   child: Text(
                     t.settings.roomCardScopeHint,
                     style: PureTheme.of(context).text.caption
