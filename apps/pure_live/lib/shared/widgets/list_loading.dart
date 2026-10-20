@@ -1,6 +1,3 @@
-// The named `.card` factory cannot use the `new` shorthand.
-// ignore_for_file: unnecessary_type_name_in_constructor
-
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -58,7 +55,7 @@ final class FeedLoadingPlaceholder extends ConsumerWidget {
                   padding: padding,
                   gridDelegate: delegateBuilder(constraints.maxWidth),
                   itemCount: delegateBuilder(constraints.maxWidth).crossAxisCount * rows,
-                  itemBuilder: (context, index) => const _BoneTile(),
+                  itemBuilder: (context, index) => const RoomBoneTile(),
                 ),
               ),
             );
@@ -69,13 +66,14 @@ final class FeedLoadingPlaceholder extends ConsumerWidget {
 }
 
 /// One bone: a 16:9 cover block over an avatar-and-two-lines caption — the
-/// room card's silhouette.
+/// room card's silhouette, shared by every grid that loads one.
 ///
 /// Fixed-height bars rather than placeholder letters: a skeleton has to fit
 /// its tile in every design language and text scale, and a `Text('XXXX')`
 /// is measured by whichever of those is active.
-final class _BoneTile extends StatelessWidget {
-  const _BoneTile();
+final class RoomBoneTile extends StatelessWidget {
+  /// One bone of a room grid.
+  const new({super.key});
 
   @override
   Widget build(BuildContext context) => PureCard(

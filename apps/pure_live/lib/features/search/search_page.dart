@@ -15,6 +15,7 @@ import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/features/search/search_providers.dart';
 import 'package:pure_live/features/search/web_search_url.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/widgets/list_loading.dart' show RoomBoneTile;
 import 'package:pure_live/shared/widgets/room_grid.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 import 'package:pure_uikit/pure_uikit.dart';
@@ -821,46 +822,7 @@ final class _SkeletonGrid extends StatelessWidget {
           padding: const EdgeInsets.all(PureSpacing.sm),
           gridDelegate: RoomGridMetrics.delegateFor(context, constraints.maxWidth),
           itemCount: compact ? columns : columns * 3,
-          itemBuilder: (context, index) => PureCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: ColoredBox(color: Colors.white24),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white24),
-                      ),
-                      const SizedBox(width: 8),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              height: 12,
-                              width: double.infinity,
-                              child: ColoredBox(color: Colors.white24),
-                            ),
-                            SizedBox(height: 6),
-                            SizedBox(width: 96, height: 10, child: ColoredBox(color: Color(0x26FFFFFF))),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+          itemBuilder: (context, index) => const RoomBoneTile(),
         ),
       );
     },
