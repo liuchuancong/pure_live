@@ -71,27 +71,27 @@ class _TagsPageState extends ConsumerState<TagsPage> {
                       ),
                     ),
                     for (final (index, group) in groups.indexed)
-                      ListTile(
+                      PureListRow(
                         leading: const Icon(Icons.sell_outlined),
-                        title: Text(group.name),
+                        title: group.name,
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             if (index > 0)
-                              IconButton(
+                              PureIconButton(
                                 tooltip: t.tags.pin,
-                                icon: const Icon(Icons.vertical_align_top_outlined),
+                                icon: Icons.vertical_align_top_outlined,
                                 onPressed: () =>
                                     unawaited(ref.read(followRepositoryProvider).reorderGroup(group.id, 0)),
                               ),
-                            IconButton(
+                            PureIconButton(
                               tooltip: t.tags.rename,
-                              icon: const Icon(Icons.edit_outlined),
+                              icon: Icons.edit_outlined,
                               onPressed: () => unawaited(_rename(group.id, group.name)),
                             ),
-                            IconButton(
+                            PureIconButton(
                               tooltip: t.tags.delete,
-                              icon: const Icon(Icons.delete_outline_rounded),
+                              icon: Icons.delete_outline_rounded,
                               onPressed: () => unawaited(_delete(group.id, group.name)),
                             ),
                           ],
