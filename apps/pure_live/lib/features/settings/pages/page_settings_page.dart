@@ -206,7 +206,7 @@ final class PageSettingsPage extends ConsumerWidget {
   /// The one visible branch cannot hide: a shell with no destination cannot be
   /// walked.
   static void _announceFloor(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.t.settings.atLeastOneBranch)));
+    PureToast.show(context, context.t.settings.atLeastOneBranch, type: PureToastType.error);
   }
 
   /// A choice row — the same chooser the refresh page drives.

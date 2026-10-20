@@ -444,18 +444,14 @@ final class _StreamChip extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               for (final quality in state.qualities)
-                ListTile(
-                  title: Text(
-                    quality.label,
-                    style: TextStyle(
-                      fontWeight: quality == state.quality ? FontWeight.w700 : null,
-                      color: quality == state.quality ? Theme.of(sheetContext).colorScheme.primary : null,
-                    ),
-                  ),
+                PureListRow(
+                  title: quality.label,
+                  selected: quality == state.quality,
                   onTap: () {
                     Navigator.of(sheetContext).pop();
                     onSelect(quality);
                   },
+                  divided: false,
                 ),
             ],
           ),

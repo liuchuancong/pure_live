@@ -588,25 +588,24 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
                 Expanded(
                   child: Text(t.iptv.hotChannels, style: const TextStyle(fontWeight: FontWeight.w700)),
                 ),
-                TextButton(onPressed: () => setState(() => _panelOpen = true), child: Text(t.iptv.viewAll)),
+                PureButton(
+                  label: t.iptv.viewAll,
+                  variant: ButtonVariant.ghost,
+                  onPressed: () => setState(() => _panelOpen = true),
+                ),
               ],
             ),
           ),
           for (final hotChannel in hot.take(8))
-            ListTile(
+            PureListRow(
               leading: Container(
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(color: colors.bgLayout, borderRadius: BorderRadius.circular(8)),
                 child: const Icon(Icons.live_tv, size: 20),
               ),
-              title: Text(hotChannel.entry.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-              subtitle: Text(
-                hotChannel.entry.group?.isEmpty ?? true ? hotChannel.entry.url : hotChannel.entry.group!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 12, color: colors.textSecondary),
-              ),
+              title: hotChannel.entry.name,
+              subtitle: hotChannel.entry.group?.isEmpty ?? true ? hotChannel.entry.url : hotChannel.entry.group!,
               trailing: IconButton(
                 icon: Icon(
                   hotChannel.favorite ? Icons.favorite : Icons.favorite_border,
@@ -616,6 +615,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
                 onPressed: _toggleFavorite,
               ),
               onTap: () => _switchTo(hotChannel),
+              divided: false,
             ),
           const SizedBox(height: 16),
         ],
@@ -669,26 +669,28 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (_lines.length > 1)
-              ListTile(
+              PureListRow(
                 leading: const Icon(Icons.tune),
-                title: Text(t.iptv.lineSelect),
-                subtitle: Text(t.iptv.lineOf(index: _lineIndex + 1, total: _lines.length)),
+                title: t.iptv.lineSelect,
+                subtitle: t.iptv.lineOf(index: _lineIndex + 1, total: _lines.length),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
                   _cycleLine();
                 },
+                divided: false,
               ),
-            ListTile(
+            PureListRow(
               leading: const Icon(Icons.dialpad),
-              title: Text(t.iptv.numberPad),
+              title: t.iptv.numberPad,
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 setState(() => _keypadOpen = true);
               },
+              divided: false,
             ),
-            ListTile(
+            PureListRow(
               leading: const Icon(Icons.refresh),
-              title: Text(t.iptv.refreshGuide),
+              title: t.iptv.refreshGuide,
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 final epgUrls = _epgUrls;
@@ -703,6 +705,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
                   }),
                 );
               },
+              divided: false,
             ),
           ],
         ),
