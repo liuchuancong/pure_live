@@ -15,7 +15,8 @@ class PureTab {
   /// The tab label.
   final String label;
 
-  /// An optional leading icon.
+  /// An optional leading icon. Every language with a slot for one shows it;
+  /// macOS's `MacosTab` accepts a label string and nothing else.
   final IconData? icon;
 }
 
@@ -290,12 +291,10 @@ class _CupertinoTabBar extends StatelessWidget {
         minimumSize: Size.zero,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         onPressed: null,
-        child: Text(tabs.first.label, maxLines: 1, overflow: TextOverflow.ellipsis),
+        child: _cupertinoCell(tabs.first),
       );
     }
-    final children = <int, Widget>{
-      for (var i = 0; i < tabs.length; i++) i: Text(tabs[i].label, maxLines: 1, overflow: TextOverflow.ellipsis),
-    };
+    final children = <int, Widget>{for (var i = 0; i < tabs.length; i++) i: _cupertinoCell(tabs[i])};
     return cupertino.CupertinoSlidingSegmentedControl<int>(
       children: children,
       groupValue: index,
@@ -305,6 +304,24 @@ class _CupertinoTabBar extends StatelessWidget {
           onChanged?.call(value);
         }
       },
+    );
+  }
+
+  /// An iOS segmented cell: the label, with the tab's icon leading it when the
+  /// tab has one. The library takes any widget as a cell, so this stays the
+  /// library's control with the library's thumb — only the cell's contents are
+  /// composed, the same way the other languages compose their label.
+  static Widget _cupertinoCell(PureTab tab) {
+    final label = Text(tab.label, maxLines: 1, overflow: TextOverflow.ellipsis);
+    final glyph = tab.icon;
+    if (glyph == null) {
+      return label;
+    }
+    // The cell's own text is ~13pt, so the default 24pt glyph would grow the
+    // control's height by a third for the sake of the icon.
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [cupertino.Icon(glyph, size: 14), const SizedBox(width: 4), Flexible(child: label)],
     );
   }
 }
@@ -324,6 +341,10 @@ class _MacosTabBar extends StatefulWidget {
 class _MacosTabBarState extends State<_MacosTabBar> {
   late macos.MacosTabController _controller = _createController();
 
+  /// True while the index change came from this widget rather than from a tap,
+  /// so the listener does not report the caller's own value back to it.
+  bool _asserting = false;
+
   macos.MacosTabController _createController() {
     return macos.MacosTabController(
       length: widget.tabs.length,
@@ -332,6 +353,9 @@ class _MacosTabBarState extends State<_MacosTabBar> {
   }
 
   void _handleChange() {
+    if (_asserting) {
+      return;
+    }
     widget.onChanged?.call(_controller.index);
   }
 
@@ -346,7 +370,9 @@ class _MacosTabBarState extends State<_MacosTabBar> {
       return;
     }
     if (_controller.index != widget.index) {
+      _asserting = true;
       _controller.index = widget.index.clamp(0, widget.tabs.length - 1);
+      _asserting = false;
     }
   }
 
@@ -364,6 +390,8 @@ class _MacosTabBarState extends State<_MacosTabBar> {
       ignoring: widget.onChanged == null,
       child: macos.MacosSegmentedControl(
         controller: _controller,
+        // `MacosTab` takes a label string and nothing else — no icon, no widget
+        // slot — so a tab's icon has nowhere to go in this library.
         tabs: [for (final tab in widget.tabs) macos.MacosTab(label: tab.label)],
       ),
     );

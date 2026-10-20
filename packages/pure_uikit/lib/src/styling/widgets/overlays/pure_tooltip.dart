@@ -10,7 +10,8 @@ import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 ///
 /// Cupertino, glass, neumorphic and wind ship no tooltip widget, so Flutter's
 /// official Material `Tooltip` is the shared fallback instead of a hand-built
-/// overlay.
+/// overlay. [waitDuration] reaches every library that has a slot for its own
+/// delay; fluent_2's is a constant inside the library.
 class PureTooltip extends StatelessWidget {
   /// A tooltip around [child].
   const new({
@@ -38,9 +39,25 @@ class PureTooltip extends StatelessWidget {
       PureDesignLanguage.glass ||
       PureDesignLanguage.neumorphic ||
       PureDesignLanguage.wind => Tooltip(message: message, waitDuration: waitDuration, child: child),
-      PureDesignLanguage.macos => macos.MacosTooltip(message: message, child: child),
+      // `MacosTooltip` has no wait of its own: it reads `waitDuration` off
+      // `MacosTooltipTheme`, and that theme is used verbatim rather than merged
+      // with the defaults — so the ambient data is taken and only the wait
+      // changes, or every other field of the bubble arrives null.
+      PureDesignLanguage.macos => macos.MacosTooltipTheme(
+        data: macos.MacosTheme.of(context).tooltipTheme.copyWith(waitDuration: waitDuration),
+        child: macos.MacosTooltip(message: message, child: child),
+      ),
+      // fluent_2's tooltip delay is a private 250ms constant: the widget takes
+      // no duration and its style has no such field, so the caller's wait has
+      // nowhere to go in this library.
       PureDesignLanguage.fluent => f2.FluentTooltip(content: Text(message), child: child),
-      PureDesignLanguage.forui => forui.FTooltip(tipBuilder: (context, controller) => Text(message), child: child),
+      // forui's wait is the style's hover-enter duration, which its delta does
+      // expose.
+      PureDesignLanguage.forui => forui.FTooltip(
+        style: forui.FTooltipStyleDelta.delta(hoverEnterDuration: waitDuration),
+        tipBuilder: (context, controller) => Text(message),
+        child: child,
+      ),
     };
   }
 }

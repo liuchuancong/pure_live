@@ -40,7 +40,9 @@ class PureBadge extends StatelessWidget {
   /// The count ceiling before it collapses to `max+`.
   final int max;
 
-  /// An optional background override (defaults to the error colour).
+  /// An optional background override (defaults to the error colour). Fluent and
+  /// forui resolve it to the nearest colour family rather than to the exact
+  /// colour, because that is all their badge component takes.
   final Color? color;
 
   @override
@@ -48,6 +50,10 @@ class PureBadge extends StatelessWidget {
     final theme = PureTheme.of(context);
     final bt = theme.badge;
     final background = color ?? bt.background;
+    // The badge's colour family: the component token seeds the background from
+    // the error colour, and the family is as far as fluent and forui can be
+    // told — both name a badge's colour by what it means, not by a value.
+    final isErrorBadge = background == theme.token.color.error;
 
     final String? text;
     if (dot) {
@@ -59,11 +65,18 @@ class PureBadge extends StatelessWidget {
     }
 
     final Widget pill = switch (theme.config.language) {
+      // Both of these libraries name a badge's colour by its semantic family
+      // rather than by a colour, so the token's error background selects the
+      // danger family and any other choice the brand/primary one.
       PureDesignLanguage.fluent when !dot && text != null => f2.FluentBadge(
         size: f2.FluentBadgeSize.small,
+        color: isErrorBadge ? f2.FluentBadgeColor.danger : f2.FluentBadgeColor.brand,
         child: Text(text),
       ),
-      PureDesignLanguage.forui when !dot && text != null => forui.FBadge(child: Text(text)),
+      PureDesignLanguage.forui when !dot && text != null => forui.FBadge(
+        variant: isErrorBadge ? forui.FBadgeVariant.destructive : forui.FBadgeVariant.primary,
+        child: Text(text),
+      ),
       // Material, Yaru, Cupertino, macOS, glass, neumorphic and wind use
       // Flutter's official Material Badge; the dot form also uses it, because
       // several libraries' badges require a label.
