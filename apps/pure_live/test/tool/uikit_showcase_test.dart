@@ -36,6 +36,9 @@ void main() {
   }
 }
 
+/// The retry callback the error state asks for; the sheet never presses it.
+void _noop() {}
+
 /// The review sheet: the whole control set in one column.
 class _Showcase extends StatelessWidget {
   const _Showcase();
@@ -241,6 +244,17 @@ class _Showcase extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
+              Text('States', style: theme.text.title),
+              const SizedBox(height: 8),
+              // The three full-view states are the only place the state glyphs
+              // are drawn, and those glyphs come from a font the app has to
+              // depend on — a missing `cupertino_icons` showed up here as a
+              // solid box and nowhere else on the sheet.
+              const PureError(message: 'The stream could not be reached', onRetry: _noop),
+              const SizedBox(height: 8),
+              const PureEmpty(title: 'Nothing followed yet', message: 'Follow a channel to fill this page'),
+              const SizedBox(height: 8),
+              const PureLoading(message: 'Loading'),
             ],
           ),
         ),
@@ -251,8 +265,17 @@ class _Showcase extends StatelessWidget {
 
 /// Widget tests serve no fonts by default, so every glyph would render as a
 /// box. Loads what the bundle's FontManifest declares (MaterialIcons, Ubuntu,
-/// Inter, each library's icon font) the way golden_toolkit does. CJK is not
-/// bundled by the app, so the sheet's labels are English.
+/// Inter, CupertinoIcons, each library's icon font) the way golden_toolkit does.
+/// CJK is not bundled by the app, so the sheet's labels are English.
+///
+/// **Read a box on this sheet by which family it belongs to.** A whole page of
+/// boxes means the loader did not run; one box where a tick, a chevron or a
+/// status mark should be means the icon font's *package* is missing from the
+/// dependency graph — `flutter/cupertino` ships the `CupertinoIcons` constants
+/// but not the face, so nothing renders the glyph and the golden shows a solid
+/// square instead. That is a product defect the sheet can hide for months, and
+/// changing a pubspec does not rebuild `build/unit_test_assets` on its own:
+/// touch it, rerun, then grep the manifest for the family.
 ///
 /// Then registers that Latin text face a second time under the **system** family
 /// names the host libraries ask for — `.SF Pro Text` for Cupertino,
@@ -311,7 +334,7 @@ const List<String> _systemTextFamilies = [
 
 Future<void> _pump(WidgetTester tester, {required PureDesignLanguage language}) async {
   tester.view.devicePixelRatio = 1;
-  tester.view.physicalSize = const Size(1000, 1900);
+  tester.view.physicalSize = const Size(1000, 2600);
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     ProviderScope(
