@@ -124,7 +124,10 @@ class PureButton extends StatelessWidget {
           ControlSize.lg => f2.FluentButtonSize.large,
         },
         shape: fluentShape ?? f2.FluentButtonShape.rounded,
-        icon: icon == null ? null : Icon(icon, size: m.icon),
+        // The glyph goes in bare: the library sizes it per its own button size
+        // (`iconSize` 20/24), and the token's 14/16/18 made every Fluent icon
+        // look a size step smaller than WinUI's.
+        icon: icon == null ? null : Icon(icon),
         // The library's own label style would drop the theme's family and size
         // step, so the label is built here and only the danger tint is added.
         child: variant == ButtonVariant.danger
@@ -148,16 +151,23 @@ class PureButton extends StatelessWidget {
       ),
       // iOS fills the primary blue with a white label, greys the secondary,
       // and leaves ghost and danger as tinted text — the system's own three
-      // button weights. The size step drives the button's own minSize and
-      // padding; the library's 44-point default is a touch target, not a
-      // size the token should ignore.
+      // button weights. The size step is handed to the library's own
+      // `sizeStyle`, which carries the platform's min size, padding and corner
+      // radius per step (28/32/44 and the 16pt vertical padding); passing the
+      // token's numbers instead flattened all three steps to one height and
+      // dropped the padding the fork computes.
       PureDesignLanguage.cupertino => cupertino.CupertinoButton(
         onPressed: enabled ? onPressed : null,
-        minimumSize: Size(m.height, m.height),
-        padding: EdgeInsets.symmetric(horizontal: m.padH),
+        sizeStyle: switch (size) {
+          ControlSize.sm => cupertino.CupertinoButtonSize.small,
+          ControlSize.md => cupertino.CupertinoButtonSize.medium,
+          ControlSize.lg => cupertino.CupertinoButtonSize.large,
+        },
         color: switch (variant) {
           ButtonVariant.primary => theme.colors.primary,
-          ButtonVariant.secondary => theme.colors.bgContainer,
+          // iOS's own supporting weight is the system grey plate, not the
+          // container colour the token model shares with the surfaces.
+          ButtonVariant.secondary => cupertino.CupertinoColors.secondaryLabel.withAlpha(24),
           _ => null,
         },
         child: child,
@@ -172,7 +182,7 @@ class PureButton extends StatelessWidget {
       // slots and its own height. Left unbounded the frosted plate fills its
       // parent's width (the fork's container aligns to stretch), so a
       // non-expanding button is pinned to its content by a minimum Row.
-      PureDesignLanguage.glass => _glass(theme, m),
+      PureDesignLanguage.glass => _glass(theme),
       // The library's own button — a soft embossed plane whose pressed state
       // is the style's whole answer to a tap. The size step lands on the
       // plane's height and padding; the loading face is the library's own
@@ -260,26 +270,25 @@ class PureButton extends StatelessWidget {
 
   /// The glass branch: the library's `GlassButton` through its own slots —
   /// the primary takes the accent as its frosted colour, the rest keep the
-  /// library's white plate.
-  Widget _glass(PureTheme theme, _Metrics m) {
+  /// library's white plate. The plate's height (48), padding (20×10), corner
+  /// radius (16), blur and elevation are the fork's own: they are what makes a
+  /// glass button look like glass, and overriding them with the token's 32/6
+  /// made this language's buttons read as small Material ones.
+  Widget _glass(PureTheme theme) {
     final fg = _foreground(theme);
     Widget button = glass.GlassButton(
       onPressed: onPressed != null && !loading ? onPressed : null,
       isLoading: loading,
-      loadingWidget: SizedBox.square(
-        dimension: m.fontSize,
-        child: CircularProgressIndicator(strokeWidth: 2, color: fg ?? theme.colors.text),
-      ),
-      height: m.height,
       width: expand ? double.infinity : null,
-      padding: EdgeInsets.symmetric(horizontal: m.padH + 6),
-      borderRadius: m.height / 2 > theme.button.borderRadius ? theme.button.borderRadius : m.height / 2,
       color: variant == ButtonVariant.primary ? theme.colors.primary : Colors.white,
-      icon: icon == null || loading ? null : Icon(icon, size: m.icon, color: fg),
+      icon: icon == null || loading ? null : Icon(icon, color: fg),
+      // The fork's own label role is 15/w600; only the picked family and a
+      // legible colour are added — its hardcoded white disappears on a light
+      // plate, which is a legibility bug rather than a style.
       label: Text(
         label,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(color: fg, fontSize: m.fontSize, fontWeight: FontWeight.w600),
+        style: TextStyle(color: fg ?? theme.colors.text, fontFamily: theme.token.type.fontFamily),
       ),
     );
     if (!expand) {
@@ -292,16 +301,16 @@ class PureButton extends StatelessWidget {
     return button;
   }
 
-  /// The neumorphic branch: the library's `NeuButton`, its height and padding
-  /// from the token's size step, its loading face the library's own ring.
+  /// The neumorphic branch: the library's `NeuButton`, whose own content sizing
+  /// (20×14 padding, the emboss derived from the theme's depth) is the style.
+  /// The loading face is the library's own ring — sized, because its default is
+  /// an 80-point progress circle that would burst the button.
   Widget _neumorphic(PureTheme theme, _Metrics m) {
     Widget button = neu.NeuButton(
       onPressed: onPressed != null && !loading ? onPressed : null,
-      height: m.height,
-      padding: EdgeInsets.symmetric(horizontal: m.padH + 4),
       child: loading
           ? neu.NeuCircularProgress(size: m.fontSize, strokeWidth: 2, progressColor: theme.colors.primary)
-          : _plainContent(theme, m.fontSize, icon: m.icon),
+          : _plainContent(theme),
     );
     if (expand) {
       button = SizedBox(width: double.infinity, child: button);
@@ -316,31 +325,36 @@ class PureButton extends StatelessWidget {
   /// The wind branch: the fork's `WButton`, its variant and size spelled in
   /// the utility classes the fork parses, the accessible name and the shared
   /// bubble beside them.
+  ///
+  /// The accent rides the fork's own `primary-*` family, which its theme builder
+  /// fills from the token — hard-coding `bg-blue-600` made every wind button
+  /// ignore the accent the viewer picked. The plate also carries its `dark:`
+  /// pair: the fork resolves those against its own brightness, and without them
+  /// a secondary button stayed white on a dark surface.
   Widget _wind(PureTheme theme, _Metrics m) {
     final interactive = onPressed != null && !loading;
     final surface = switch (variant) {
-      ButtonVariant.primary => 'bg-blue-600 text-white rounded hover:bg-blue-700',
-      ButtonVariant.secondary => 'bg-white text-gray-900 border border-gray-400 rounded hover:bg-gray-100',
+      ButtonVariant.primary => 'bg-primary-500 text-white rounded hover:bg-primary-600',
+      ButtonVariant.secondary =>
+        'bg-white text-gray-900 dark:bg-gray-800 dark:text-gray-100 border border-gray-400 rounded hover:bg-gray-100',
       ButtonVariant.danger => 'bg-red-600 text-white rounded hover:bg-red-700',
-      ButtonVariant.ghost => 'text-blue-600 rounded hover:bg-gray-100',
+      ButtonVariant.ghost => 'text-primary-600 rounded hover:bg-gray-100 dark:hover:bg-gray-800',
     };
     final shape = switch (m.size) {
       ControlSize.sm => 'px-2.5 py-0.5 text-xs',
       ControlSize.md => 'px-3.5 py-1.5 text-sm',
       ControlSize.lg => 'px-4.5 py-2.5 text-base',
     };
-    final fg = _foreground(theme);
     Widget button = wind.WButton(
       onTap: interactive ? onPressed : null,
       disabled: !interactive,
       className: expand ? 'w-full $surface $shape' : '$surface $shape',
       semanticLabel: tooltip,
-      child: loading
-          ? SizedBox.square(
-              dimension: m.fontSize,
-              child: CircularProgressIndicator(strokeWidth: 2, color: fg ?? theme.colors.text),
-            )
-          : _plainContent(theme, m.fontSize, icon: m.icon),
+      // The fork owns the loading face: it swaps the content for its own ring at
+      // its own size and colour, so nothing here has to be hand-drawn.
+      isLoading: loading,
+      loadingColor: _foreground(theme),
+      child: _plainContent(theme),
     );
     final hint = tooltip;
     if (hint != null) {
@@ -384,39 +398,38 @@ class PureButton extends StatelessWidget {
     );
   }
 
-  /// The forui button's inside: the label, an optional leading glyph, and the
-  /// library's own spinner while [loading] (forui ships a progress face of
-  /// its own).
+  /// The forui button's inside. The loading face is forui's own circular
+  /// progress — the linear `FProgress` bar is a different control and read as a
+  /// broken button.
   Widget _foruiContent(PureTheme theme) {
-    final step = theme.text.label.fontSize ?? 14;
     if (loading) {
-      return SizedBox.square(
-        dimension: step,
-        child: forui.FProgress(
-          style: forui.FProgressStyleDelta.delta(
-            constraints: BoxConstraints.tightFor(width: step, height: step),
-          ),
-        ),
-      );
+      return const forui.FCircularProgress();
     }
-    return _plainContent(theme, step);
+    return _plainContent(theme);
   }
 
-  /// Label and optional leading glyph, the shape every one of the four
-  /// composed branches shares once its loading face is decided.
-  Widget _plainContent(PureTheme theme, double step, {double? icon}) {
-    final text = Text(label, overflow: TextOverflow.ellipsis, style: theme.text.label);
-    if (this.icon == null) {
+  /// Label and optional leading glyph. The only thing the label carries is the
+  /// family the viewer picked: a merged `TextStyle` with nothing but that field
+  /// leaves each library's own type role in charge of size, weight and colour
+  /// (forui's `contentStyle`, wind's `text-*` classes, glass's 15/w600 label),
+  /// which a full token style used to silence.
+  Widget _plainContent(PureTheme theme) {
+    final text = Text(label, overflow: TextOverflow.ellipsis, style: _familyOnly(theme));
+    if (icon == null) {
       return text;
     }
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(this.icon, size: icon ?? step),
-        SizedBox(width: theme.token.scale.sizes.xs),
-        Flexible(child: text),
-      ],
+      children: [Icon(icon), const SizedBox(width: 6), Flexible(child: text)],
     );
+  }
+
+  /// The picked font family and nothing else. Merged onto whatever the
+  /// surrounding library decides, it adds the family without taking the type
+  /// role away from the library.
+  TextStyle? _familyOnly(PureTheme theme) {
+    final family = theme.token.type.fontFamily;
+    return family == null ? null : TextStyle(fontFamily: family);
   }
 
   /// The token variant as forui's closest kind. `secondary` maps to `outline`:
@@ -551,7 +564,10 @@ class PureIconButton extends StatelessWidget {
     final language = theme.config.language;
     final active = enabled && onPressed != null;
     final m = _metrics(theme, size);
-    final glyph = Icon(icon, size: m.icon, semanticLabel: tooltip);
+    // Bare: the libraries size their own icon buttons (Fluent 20/24, Yaru's
+    // `iconSize`, glass and neumorphic their plate metrics); the token's
+    // 14/16/18 shrank every one of them.
+    final glyph = Icon(icon, semanticLabel: tooltip);
 
     final button = switch (language) {
       PureDesignLanguage.fluent => f2.FluentButton.icon(
@@ -570,38 +586,27 @@ class PureIconButton extends StatelessWidget {
           ControlSize.lg => f2.FluentButtonSize.large,
         },
       ),
-      PureDesignLanguage.macos => macos.MacosIconButton(
-        icon: glyph,
-        onPressed: active ? onPressed : null,
-        boxConstraints: BoxConstraints.tightFor(width: m.height, height: m.height),
-      ),
+      PureDesignLanguage.macos => macos.MacosIconButton(icon: glyph, onPressed: active ? onPressed : null),
       PureDesignLanguage.cupertino => cupertino.CupertinoButton(
-        padding: EdgeInsets.zero,
-        minimumSize: Size(m.height, m.height),
         onPressed: active ? onPressed : null,
+        sizeStyle: switch (size) {
+          ControlSize.sm => cupertino.CupertinoButtonSize.small,
+          ControlSize.md => cupertino.CupertinoButtonSize.medium,
+          ControlSize.lg => cupertino.CupertinoButtonSize.large,
+        },
         child: glyph,
       ),
       // An icon-only control is forui's own variant, laid out by the library —
       // squeezing the token square around a full `FButton` clipped the glyph,
       // so this language does not use that geometry.
       PureDesignLanguage.forui => _foruiIcon(theme, active),
-      // The library's own icon button: a frosted square carrying the glyph,
-      // sized to the token's step.
-      PureDesignLanguage.glass => glass.GlassIconButton(
-        icon: glyph,
-        onPressed: active ? onPressed : null,
-        size: m.height,
-        shape: BoxShape.rectangle,
-        borderRadius: theme.button.borderRadius,
-        tooltip: tooltip,
-      ),
+      // The library's own icon button: its frosted plate, at its own 44-point
+      // circular default.
+      PureDesignLanguage.glass =>
+        glass.GlassIconButton(icon: glyph, onPressed: active ? onPressed : null, tooltip: tooltip),
       // The library's own icon button: the same embossed plane as NeuButton.
-      PureDesignLanguage.neumorphic => neu.NeuIconButton(
-        icon: glyph,
-        onPressed: active ? onPressed : null,
-        size: m.height,
-        tooltip: tooltip,
-      ),
+      PureDesignLanguage.neumorphic =>
+        neu.NeuIconButton(icon: glyph, onPressed: active ? onPressed : null, tooltip: tooltip),
       // The fork's one button shape carries the glyph, the accessible name on
       // the button itself (`WButton` has no icon variant either) and the
       // surface in its own utility classes.
@@ -611,7 +616,6 @@ class PureIconButton extends StatelessWidget {
         onPressed: active ? onPressed : null,
         isSelected: selected ? true : null,
         tooltip: tooltip,
-        constraints: BoxConstraints.tightFor(width: m.height, height: m.height),
       ),
       PureDesignLanguage.material => IconButton(
         icon: glyph,
@@ -646,7 +650,6 @@ class PureIconButton extends StatelessWidget {
 
   /// The forui icon button: the library's own `FButton.icon`.
   Widget _foruiIcon(PureTheme theme, bool active) {
-    final step = theme.text.label.fontSize ?? 14;
     final button = forui.FButton.icon(
       onPress: active ? onPressed : null,
       variant: PureButton._foruiVariant(variant),
@@ -654,7 +657,7 @@ class PureIconButton extends StatelessWidget {
       selected: selected,
       focusNode: focusNode,
       autofocus: autofocus,
-      child: Icon(icon, size: step, semanticLabel: tooltip),
+      child: Icon(icon, semanticLabel: tooltip),
     );
     return forui.FTooltip(tipBuilder: (context, controller) => Text(tooltip), child: button);
   }

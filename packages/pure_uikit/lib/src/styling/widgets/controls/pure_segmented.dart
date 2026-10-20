@@ -101,7 +101,6 @@ class PureSegmented extends StatelessWidget {
   /// libraries do not ship a segmented track.
   Widget _materialSegmented(ValueChanged<int>? select) {
     return SegmentedButton<int>(
-      showSelectedIcon: false,
       expandedInsets: expand ? EdgeInsets.zero : null,
       segments: [for (var i = 0; i < labels.length; i++) ButtonSegment(value: i, label: Text(labels[i]))],
       selected: {index},
