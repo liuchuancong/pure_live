@@ -1,4 +1,7 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/widgets.dart' show Color;
+import 'package:live_shell_desktop/live_shell_desktop.dart' show readWindowsAccentColor;
 import 'package:pure_live/app/theme/appearance_preferences/appearance_preferences.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
@@ -14,23 +17,35 @@ import 'package:pure_uikit/pure_uikit.dart';
 
 /// Builds a [UiConfig] from [appearance]; an unknown language or density id
 /// falls back to the default rather than blocking start-up.
-UiConfig uiConfigFromAppearance(AppearancePreferences appearance) => UiConfig(
-  language: designLanguageOrDefault(appearance.designLanguageId),
-  brightness: switch (appearance.themeMode) {
-    AppThemeMode.system => UiBrightnessMode.system,
-    AppThemeMode.light => UiBrightnessMode.light,
-    AppThemeMode.dark => UiBrightnessMode.dark,
-  },
-  accent: appearance.accentColor == null ? null : Color(appearance.accentColor!),
-  pureBlack: appearance.pureBlack,
-  density: _byName(UiDensity.values, appearance.densityId, UiDensity.comfortable),
-  fontFamily: appearance.fontFamily,
-  fontScale: appearance.fontScale,
-  transparency: appearance.transparency,
-  reduceTransparency: appearance.reduceTransparency,
-  animations: appearance.animations,
-  focusOutline: appearance.focusOutline,
-);
+UiConfig uiConfigFromAppearance(AppearancePreferences appearance) {
+  final language = designLanguageOrDefault(appearance.designLanguageId);
+  return UiConfig(
+    language: language,
+    brightness: switch (appearance.themeMode) {
+      AppThemeMode.system => UiBrightnessMode.system,
+      AppThemeMode.light => UiBrightnessMode.light,
+      AppThemeMode.dark => UiBrightnessMode.dark,
+    },
+    // Fluent's shipped accent is the machine's own: an install left at its
+    // defaults reads the accent Windows already chose, the way the system's
+    // Fluent apps do. A stored choice — any other language — keeps its own
+    // answer, and a machine without a readable accent keeps the language's
+    // seed default.
+    accent: switch ((language, appearance.accentColor)) {
+      (PureDesignLanguage.fluent, null) when Platform.isWindows => readWindowsAccentColor(),
+      (_, final int stored) => Color(stored),
+      _ => null,
+    },
+    pureBlack: appearance.pureBlack,
+    density: _byName(UiDensity.values, appearance.densityId, UiDensity.comfortable),
+    fontFamily: appearance.fontFamily,
+    fontScale: appearance.fontScale,
+    transparency: appearance.transparency,
+    reduceTransparency: appearance.reduceTransparency,
+    animations: appearance.animations,
+    focusOutline: appearance.focusOutline,
+  );
+}
 
 /// The persisted form of [config]; enums are stored as their `name`, so a later
 /// rename or removal degrades to the default instead of failing to decode.

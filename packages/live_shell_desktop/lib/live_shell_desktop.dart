@@ -20,4 +20,5 @@ export 'src/system_idle.dart';
 export 'src/tray_manager_host.dart';
 export 'src/window_manager_host.dart';
 export 'src/window_material.dart';
+export 'src/windows_accent_color.dart' show readWindowsAccentColor;
 export 'src/windows_version.dart' show kWindowsRoundedFrameBuild, windowsBuildNumber, windowsDrawsFrameEdgeItself;
