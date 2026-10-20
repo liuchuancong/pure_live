@@ -92,7 +92,7 @@ final class RoomTvLayout extends StatelessWidget {
                       ),
                     ),
                     RoomResolutionRow(identity: identity, controller: controller, state: state, dense: true),
-                    const Divider(height: 1),
+                    const PureDivider(),
                     Expanded(child: DanmakuPane(identity: identity, dark: false)),
                   ],
                 ),

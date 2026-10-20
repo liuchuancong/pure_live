@@ -385,7 +385,7 @@ final class _Card extends StatelessWidget {
         children: [
           for (final (index, child) in children.indexed) ...[
             if (index > 0)
-              Divider(height: 1, indent: 14, endIndent: 14, color: theme.colors.border.withValues(alpha: 0.5)),
+              PureDivider(indent: 14, endIndent: 14, color: theme.colors.border.withValues(alpha: 0.5)),
             child,
           ],
         ],

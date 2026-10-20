@@ -431,7 +431,7 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Divider(height: 1),
+        const PureDivider(),
         const SizedBox(height: 16),
         Row(
           children: [

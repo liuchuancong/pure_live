@@ -244,6 +244,25 @@ class _Showcase extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
+              Text('Dividers', style: theme.text.title),
+              // Three shapes the contract carries: the bare rule, one inset from
+              // both ends, and one set in a band. Each library draws these with
+              // its own widget where it has one.
+              const SizedBox(
+                width: 420,
+                child: Column(
+                  children: [
+                    Text('Above'),
+                    PureDivider(),
+                    Text('Plain rule'),
+                    PureDivider(indent: 24, endIndent: 24),
+                    Text('Inset rule'),
+                    PureDivider(extent: 32),
+                    Text('Rule in a band'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
               Text('States', style: theme.text.title),
               const SizedBox(height: 8),
               // The three full-view states are the only place the state glyphs

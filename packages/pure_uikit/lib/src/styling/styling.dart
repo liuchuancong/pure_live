@@ -41,6 +41,7 @@ export 'widgets/chrome/pure_shell_types.dart';
 export 'widgets/content/pure_avatar.dart';
 export 'widgets/content/pure_badge.dart';
 export 'widgets/content/pure_card.dart';
+export 'widgets/content/pure_divider.dart';
 export 'widgets/content/pure_state_views.dart';
 export 'widgets/controls/pure_button.dart';
 export 'widgets/controls/pure_checkbox.dart';

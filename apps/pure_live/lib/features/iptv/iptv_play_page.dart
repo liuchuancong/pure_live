@@ -579,7 +579,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
               ],
             ),
           ),
-          const Divider(height: 1),
+          const PureDivider(),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: Row(

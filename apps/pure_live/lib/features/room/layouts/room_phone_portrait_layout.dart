@@ -120,7 +120,7 @@ final class _RoomPhonePortraitLayoutState extends ConsumerState<RoomPhonePortrai
           compact: true,
         ),
         RoomResolutionRow(identity: widget.identity, controller: widget.controller, state: widget.state),
-        const Divider(height: 1),
+        const PureDivider(),
         Expanded(
           child: ColoredBox(
             color: PureTheme.of(context).colors.bgContainer,
@@ -225,7 +225,7 @@ final class _RoomPhonePortraitLayoutState extends ConsumerState<RoomPhonePortrai
                             state: widget.state,
                             dense: true,
                           ),
-                          const Divider(height: 1),
+                          const PureDivider(),
                           Expanded(
                             key: const ValueKey('live-play-portrait-danmaku'),
                             child: DanmakuPane(identity: widget.identity, dark: false),

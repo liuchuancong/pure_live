@@ -74,7 +74,7 @@ final class RoomTabletLayout extends StatelessWidget {
                     child: Column(
                       children: [
                         RoomResolutionRow(identity: identity, controller: controller, state: state),
-                        const Divider(height: 1),
+                        const PureDivider(),
                         Expanded(child: DanmakuPane(identity: identity, dark: false)),
                       ],
                     ),

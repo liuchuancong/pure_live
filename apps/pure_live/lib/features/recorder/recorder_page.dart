@@ -294,7 +294,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
       padding: MainLayout.bodyPadding(context, top: 12, bottom: 32),
       children: [
         _filterBar(context),
-        const Divider(height: 1),
+        const PureDivider(),
         const SizedBox(height: 12),
         if (tasks.isEmpty)
           Padding(

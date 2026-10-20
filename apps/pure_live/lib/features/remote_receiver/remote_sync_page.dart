@@ -662,7 +662,7 @@ final class _RemoteSyncPageState extends ConsumerState<RemoteSyncPage> {
     return Column(
       children: [
         for (final (index, device) in devices.indexed) ...[
-          if (index > 0) Divider(height: 1, indent: 16, endIndent: 16, color: theme.colors.border),
+          if (index > 0) PureDivider(indent: 16, endIndent: 16, color: theme.colors.border),
           _device(theme, device),
         ],
       ],

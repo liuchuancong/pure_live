@@ -124,7 +124,7 @@ final class _RoomVolumeDialogState extends ConsumerState<_RoomVolumeDialog> {
                                   }),
                           ),
                         ),
-                        const Divider(height: 32),
+                        const PureDivider(extent: 32),
                         _VolumeRow(
                           sliderKey: const ValueKey('room-volume-mobile-slider'),
                           icon: Icons.phone_android,
@@ -181,7 +181,7 @@ final class _RoomVolumeDialogState extends ConsumerState<_RoomVolumeDialog> {
                     ),
                   ),
                 ),
-                const Divider(height: 1),
+                const PureDivider(),
                 SafeArea(
                   top: false,
                   child: Padding(
@@ -446,7 +446,7 @@ final class _RoomTimerDialogState extends ConsumerState<_RoomTimerDialog> {
                   ),
                 ),
               ),
-              const Divider(height: 1),
+              const PureDivider(),
               SafeArea(
                 top: false,
                 child: Padding(
