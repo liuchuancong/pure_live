@@ -340,7 +340,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
               child: ValueListenableBuilder<double?>(
                 valueListenable: _progress,
                 builder: (context, value, _) =>
-                    value == null ? const SizedBox.shrink() : LinearProgressIndicator(value: value, minHeight: 2),
+                    value == null ? const SizedBox.shrink() : PureProgress(value: value, height: 2),
               ),
             ),
           ],

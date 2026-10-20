@@ -257,11 +257,7 @@ final class RoomControlOverlay extends ConsumerWidget {
                   ),
                 ),
               if (!compact)
-                _BarButton(
-                  icon: Icons.lock_open,
-                  tooltip: context.t.room.lock,
-                  onPressed: controller.toggleLock,
-                ),
+                _BarButton(icon: Icons.lock_open, tooltip: context.t.room.lock, onPressed: controller.toggleLock),
               // The two window surfaces media_core's driver can put the whole
               // window into; they only exist where the window can be resized
               // at all, and only once a stream is up (the tile takes the
@@ -270,15 +266,11 @@ final class RoomControlOverlay extends ConsumerWidget {
                 _BarButton(
                   key: const ValueKey('room-pip'),
                   icon: Icons.picture_in_picture_alt_rounded,
-                  tooltip: state.presentation == RoomPresentation.pip
-                      ? context.t.room.exitPip
-                      : context.t.room.pip,
+                  tooltip: state.presentation == RoomPresentation.pip ? context.t.room.exitPip : context.t.room.pip,
                   selected: state.presentation == RoomPresentation.pip,
                   onPressed: state.playing
                       ? () => controller.setPresentation(
-                          state.presentation == RoomPresentation.pip
-                              ? RoomPresentation.normal
-                              : RoomPresentation.pip,
+                          state.presentation == RoomPresentation.pip ? RoomPresentation.normal : RoomPresentation.pip,
                         )
                       : null,
                 ),
@@ -307,11 +299,7 @@ final class RoomControlOverlay extends ConsumerWidget {
                   onPressed: () => unawaited(
                     showCastSheet(
                       context,
-                      media: CastMedia(
-                        url: line.url,
-                        title: state.room?.content.title ?? '',
-                        headers: line.headers,
-                      ),
+                      media: CastMedia(url: line.url, title: state.room?.content.title ?? '', headers: line.headers),
                       // The TV plays its own fetch now; the local engine
                       // stands down so the room does not keep decoding.
                       onCastStarted: () => controller.takeLocalControl(pause: true),
@@ -428,10 +416,7 @@ final class _StreamChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (state.switching)
-              const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-            else
-              const Icon(Icons.tune, size: 17, color: Colors.white),
+            if (state.switching) const PureSpinner(size: 14) else const Icon(Icons.tune, size: 17, color: Colors.white),
             if (label.isNotEmpty) ...[
               const SizedBox(width: 6),
               ConstrainedBox(

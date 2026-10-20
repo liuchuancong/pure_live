@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:pure_uikit/pure_uikit.dart' show PureProgress;
 import 'package:webview_flutter/webview_flutter.dart';
 
 /// The in-app browser (the reference's `InAppWeb`, backed by
@@ -158,11 +159,7 @@ final class InAppWebPageState extends State<InAppWebPage> {
           SizedBox(
             height: widget.progressHeight,
             width: double.infinity,
-            child: LinearProgressIndicator(
-              key: widget.progressKey,
-              value: _progress / 100,
-              minHeight: widget.progressHeight,
-            ),
+            child: PureProgress(key: widget.progressKey, value: _progress / 100, height: widget.progressHeight),
           ),
         Expanded(
           child: _failed

@@ -281,7 +281,7 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 1.6)),
+                const PureSpinner(size: 10),
                 const SizedBox(width: 6),
                 Text(
                   t.room.reconnecting,
@@ -492,7 +492,11 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
                   ),
                 ],
               ),
-              style: TextStyle(fontSize: listPrefs.barrageListFontSize, fontFamily: family.isEmpty ? null : family, height: 1.35),
+              style: TextStyle(
+                fontSize: listPrefs.barrageListFontSize,
+                fontFamily: family.isEmpty ? null : family,
+                height: 1.35,
+              ),
             ),
           ),
         ],

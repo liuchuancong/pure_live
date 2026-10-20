@@ -48,8 +48,14 @@ final class HotAreasPage extends ConsumerWidget {
     final sites = ref.watch(sitesProvider).registry.all;
     final ordered = orderedSites(sites, preferences.siteOrder);
     final hidden = preferences.hiddenSiteIds.toSet();
-    final visible = [for (final site in ordered) if (!hidden.contains(site.manifest.id)) site];
-    final hiddenSites = [for (final site in ordered) if (hidden.contains(site.manifest.id)) site];
+    final visible = [
+      for (final site in ordered)
+        if (!hidden.contains(site.manifest.id)) site,
+    ];
+    final hiddenSites = [
+      for (final site in ordered)
+        if (hidden.contains(site.manifest.id)) site,
+    ];
 
     return PureScaffold(
       appBar: PureAppBar(title: t.hotAreas.title),
@@ -163,19 +169,12 @@ final class HotAreasPage extends ConsumerWidget {
     await ref.read(appPreferencesProvider.notifier).update((p) => p.copyWith(hiddenSiteIds: orderedHidden));
   }
 
-  Future<void> _restoreDefaults(WidgetRef ref) => ref
-      .read(appPreferencesProvider.notifier)
-      .update((p) => p.copyWith(hiddenSiteIds: const [], siteOrder: const []));
+  Future<void> _restoreDefaults(WidgetRef ref) =>
+      ref.read(appPreferencesProvider.notifier).update((p) => p.copyWith(hiddenSiteIds: const [], siteOrder: const []));
 }
 
 class _SiteRow extends StatelessWidget {
-  const new({
-    required this.site,
-    required this.hidden,
-    required this.onToggle,
-    this.dragIndex,
-    super.key,
-  });
+  const new({required this.site, required this.hidden, required this.onToggle, this.dragIndex, super.key});
 
   final LiveSite site;
   final bool hidden;
@@ -203,12 +202,22 @@ class _SiteRow extends StatelessWidget {
               child: Icon(Icons.visibility_off_outlined, size: 20, color: theme.colors.textTertiary),
             ),
           Expanded(
-            child: Text(HotAreasPage.siteName(context, site), maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.text.body),
+            child: Text(
+              HotAreasPage.siteName(context, site),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.text.body,
+            ),
           ),
           if (hidden)
-            PureButton(label: context.t.hotAreas.restore, variant: ButtonVariant.ghost, size: ControlSize.sm, onPressed: onToggle)
+            PureButton(
+              label: context.t.hotAreas.restore,
+              variant: ButtonVariant.ghost,
+              size: ControlSize.sm,
+              onPressed: onToggle,
+            )
           else
-            Switch(value: true, onChanged: (_) => onToggle()),
+            PureSwitch(value: true, onChanged: (_) => onToggle()),
         ],
       ),
     );
