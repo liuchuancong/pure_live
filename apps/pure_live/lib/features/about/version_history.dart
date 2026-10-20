@@ -5,6 +5,7 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/features/about/markdown_text.dart';
 import 'package:pure_live/features/about/update_feed.dart';
+import 'package:pure_live/features/settings/widgets/settings_surface.dart';
 import 'package:pure_live/features/version/app_update_flow.dart';
 import 'package:pure_live/features/version/version_controller.dart' show versionControllerProvider;
 import 'package:pure_live/l10n/generated/strings.g.dart';
@@ -23,22 +24,24 @@ import 'package:pure_uikit/pure_uikit.dart';
 /// copy/download actions — downloading hands the file's URL to the system
 /// browser, the app ships no download pipeline of its own.
 
-/// Opens the history as a sheet over [context].
+/// Opens the history as a floating surface: centred on a desktop window, rising
+/// from the bottom edge on a handheld.
 Future<void> showVersionHistorySheet(
-  BuildContext context, {
+  BuildContext context,
+  WidgetRef ref, {
   required List<AppRelease> releases,
   required Future<List<AppRelease>?> Function() refresh,
 }) {
-  return showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
-    constraints: const BoxConstraints(maxWidth: 860),
-    builder: (sheetContext) => SafeArea(
-      child: SizedBox(
-        height: MediaQuery.of(sheetContext).size.height * 0.75,
-        child: VersionHistorySheet(releases: releases, refresh: refresh),
-      ),
+  return showSettingsSurface<void>(
+    context,
+    ref,
+    title: null,
+    // The height is the list's own budget: the surface scrolls on the phone and
+    // caps on the desktop, and an unbounded `ListView.separated` asserts in the
+    // first of those.
+    body: (surfaceContext) => ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(surfaceContext).height * 0.65),
+      child: VersionHistorySheet(releases: releases, refresh: refresh),
     ),
   );
 }
@@ -442,7 +445,10 @@ final class ReleaseFileCard extends StatelessWidget {
                         ),
                         child: Text(
                           context.t.about.native,
-                          style: theme.text.caption.copyWith(color: theme.colors.primaryText, fontWeight: FontWeight.w600),
+                          style: theme.text.caption.copyWith(
+                            color: theme.colors.primaryText,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],

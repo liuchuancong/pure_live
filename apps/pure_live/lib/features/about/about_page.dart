@@ -156,7 +156,7 @@ final class _AboutPageState extends ConsumerState<AboutPage> {
                   subtitle: context.t.about.historyDesc,
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () =>
-                      unawaited(showVersionHistorySheet(context, releases: releases ?? const [], refresh: _check)),
+                      unawaited(showVersionHistorySheet(context, ref, releases: releases ?? const [], refresh: _check)),
                 ),
                 PureListRow(
                   leading: const Icon(Icons.verified_user_outlined),

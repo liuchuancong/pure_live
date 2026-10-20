@@ -420,7 +420,11 @@ class PureButton extends StatelessWidget {
     }
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [Icon(icon), const SizedBox(width: 6), Flexible(child: text)],
+      children: [
+        Icon(icon),
+        const SizedBox(width: 6),
+        Flexible(child: text),
+      ],
     );
   }
 
@@ -526,6 +530,7 @@ class PureIconButton extends StatelessWidget {
     this.size = ControlSize.md,
     this.selected = false,
     this.enabled = true,
+    this.color,
     this.autofocus = false,
     this.focusNode,
     super.key,
@@ -552,6 +557,11 @@ class PureIconButton extends StatelessWidget {
   /// Whether the button accepts input.
   final bool enabled;
 
+  /// An explicit glyph colour. A control that carries meaning by colour (a
+  /// favourite in the error red, a glyph over a picture in white) needs the
+  /// override; null keeps the library's own foreground.
+  final Color? color;
+
   /// Whether it takes focus on first appearance.
   final bool autofocus;
 
@@ -567,7 +577,7 @@ class PureIconButton extends StatelessWidget {
     // Bare: the libraries size their own icon buttons (Fluent 20/24, Yaru's
     // `iconSize`, glass and neumorphic their plate metrics); the token's
     // 14/16/18 shrank every one of them.
-    final glyph = Icon(icon, semanticLabel: tooltip);
+    final glyph = Icon(icon, color: color, semanticLabel: tooltip);
 
     final button = switch (language) {
       PureDesignLanguage.fluent => f2.FluentButton.icon(
@@ -602,11 +612,17 @@ class PureIconButton extends StatelessWidget {
       PureDesignLanguage.forui => _foruiIcon(theme, active),
       // The library's own icon button: its frosted plate, at its own 44-point
       // circular default.
-      PureDesignLanguage.glass =>
-        glass.GlassIconButton(icon: glyph, onPressed: active ? onPressed : null, tooltip: tooltip),
+      PureDesignLanguage.glass => glass.GlassIconButton(
+        icon: glyph,
+        onPressed: active ? onPressed : null,
+        tooltip: tooltip,
+      ),
       // The library's own icon button: the same embossed plane as NeuButton.
-      PureDesignLanguage.neumorphic =>
-        neu.NeuIconButton(icon: glyph, onPressed: active ? onPressed : null, tooltip: tooltip),
+      PureDesignLanguage.neumorphic => neu.NeuIconButton(
+        icon: glyph,
+        onPressed: active ? onPressed : null,
+        tooltip: tooltip,
+      ),
       // The fork's one button shape carries the glyph, the accessible name on
       // the button itself (`WButton` has no icon variant either) and the
       // surface in its own utility classes.

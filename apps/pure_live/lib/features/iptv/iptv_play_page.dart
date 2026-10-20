@@ -10,6 +10,7 @@ import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitPla
 import 'package:pure_live/app/engine/playback_engine.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/features/iptv/iptv_epg.dart' show IptvGuideCache, iptvEpgProvider;
+import 'package:pure_live/features/settings/widgets/settings_surface.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 import 'package:pure_uikit/pure_uikit.dart';
@@ -551,16 +552,14 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
                   ),
                 ),
                 if (channel != null)
-                  IconButton(
+                  PureIconButton(
                     tooltip: t.iptv.favorite,
-                    icon: Icon(
-                      channel.favorite ? Icons.favorite : Icons.favorite_border,
-                      color: channel.favorite ? colors.error : colors.textSecondary,
-                    ),
+                    icon: channel.favorite ? Icons.favorite : Icons.favorite_border,
+                    color: channel.favorite ? colors.error : colors.textSecondary,
                     onPressed: _toggleFavorite,
                   ),
                 if (_lines.length > 1)
-                  IconButton(tooltip: t.iptv.lineSelect, icon: const Icon(Icons.tune), onPressed: _cycleLine),
+                  PureIconButton(tooltip: t.iptv.lineSelect, icon: Icons.tune, onPressed: _cycleLine),
               ],
             ),
           ),
@@ -606,12 +605,11 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
               ),
               title: hotChannel.entry.name,
               subtitle: hotChannel.entry.group?.isEmpty ?? true ? hotChannel.entry.url : hotChannel.entry.group!,
-              trailing: IconButton(
-                icon: Icon(
-                  hotChannel.favorite ? Icons.favorite : Icons.favorite_border,
-                  color: hotChannel.favorite ? colors.error : colors.textSecondary,
-                  size: 20,
-                ),
+              trailing: PureIconButton(
+                icon: hotChannel.favorite ? Icons.favorite : Icons.favorite_border,
+                color: hotChannel.favorite ? colors.error : colors.textSecondary,
+                size: ControlSize.sm,
+                tooltip: t.iptv.favorite,
                 onPressed: _toggleFavorite,
               ),
               onTap: () => _switchTo(hotChannel),
@@ -630,20 +628,26 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
     required String label,
     required VoidCallback onPressed,
   }) {
-    final colors = PureTheme.of(context).colors;
-    return InkWell(
-      borderRadius: BorderRadius.circular(10),
-      onTap: onPressed,
-      child: Padding(
+    final theme = PureTheme.of(context);
+    final colors = theme.colors;
+    return PureBox(
+      style: (state) => Style(
+        background: switch (state) {
+          InteractionState.pressed || InteractionState.focused => colors.fillTertiary,
+          InteractionState.hovered => colors.fillQuaternary,
+          _ => null,
+        },
+        borderRadius: BorderRadius.circular(10),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 22, color: colors.textSecondary),
-            const SizedBox(height: 6),
-            Text(label, style: TextStyle(fontSize: 12, color: colors.textSecondary)),
-          ],
-        ),
+      ),
+      onTap: onPressed,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 22, color: colors.textSecondary),
+          const SizedBox(height: 6),
+          Text(label, style: TextStyle(fontSize: 12, color: colors.textSecondary)),
+        ],
       ),
     );
   }
@@ -661,54 +665,53 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
   /// refresh — the knobs that genuinely exist for IPTV playback.
   Future<void> _openPlaybackSheet() async {
     final t = context.t;
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_lines.length > 1)
-              PureListRow(
-                leading: const Icon(Icons.tune),
-                title: t.iptv.lineSelect,
-                subtitle: t.iptv.lineOf(index: _lineIndex + 1, total: _lines.length),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _cycleLine();
-                },
-                divided: false,
-              ),
+    await showSettingsSurface<void>(
+      context,
+      ref,
+      title: null,
+      body: (sheetContext) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_lines.length > 1)
             PureListRow(
-              leading: const Icon(Icons.dialpad),
-              title: t.iptv.numberPad,
+              leading: const Icon(Icons.tune),
+              title: t.iptv.lineSelect,
+              subtitle: t.iptv.lineOf(index: _lineIndex + 1, total: _lines.length),
               onTap: () {
                 Navigator.of(sheetContext).pop();
-                setState(() => _keypadOpen = true);
+                _cycleLine();
               },
               divided: false,
             ),
-            PureListRow(
-              leading: const Icon(Icons.refresh),
-              title: t.iptv.refreshGuide,
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                final epgUrls = _epgUrls;
-                if (epgUrls.isEmpty) {
-                  return;
-                }
-                unawaited(
-                  _epg.ensureLoaded(epgUrls).then((_) {
-                    if (mounted) {
-                      setState(() {});
-                    }
-                  }),
-                );
-              },
-              divided: false,
-            ),
-          ],
-        ),
+          PureListRow(
+            leading: const Icon(Icons.dialpad),
+            title: t.iptv.numberPad,
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              setState(() => _keypadOpen = true);
+            },
+            divided: false,
+          ),
+          PureListRow(
+            leading: const Icon(Icons.refresh),
+            title: t.iptv.refreshGuide,
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              final epgUrls = _epgUrls;
+              if (epgUrls.isEmpty) {
+                return;
+              }
+              unawaited(
+                _epg.ensureLoaded(epgUrls).then((_) {
+                  if (mounted) {
+                    setState(() {});
+                  }
+                }),
+              );
+            },
+            divided: false,
+          ),
+        ],
       ),
     );
   }

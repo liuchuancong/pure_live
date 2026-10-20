@@ -13,6 +13,7 @@ import 'package:pure_live/app/shell/main_page_frame.dart';
 import 'package:pure_live/app/shell/shell_actions.dart';
 import 'package:pure_live/app/shell/shell_destinations.dart' show ShellBranch;
 import 'package:pure_live/features/popular/room_card.dart';
+import 'package:pure_live/features/settings/widgets/settings_surface.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/rooms/paging.dart';
 import 'package:pure_live/shared/widgets/list_loading.dart';
@@ -321,55 +322,41 @@ final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefr
   /// tag manager edits).
   Future<void> _assignGroups(LibraryRoom record) async {
     final selected = {...record.groupIds};
-    final confirmed = await showModalBottomSheet<bool>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => StatefulBuilder(
-        builder: (context, setSheetState) => SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(context.t.follow.assign, style: PureTheme.of(context).text.title),
-                const SizedBox(height: 8),
-                for (final group in _repository.groups)
-                  PureCheckbox(
-                    label: group.name,
-                    value: selected.contains(group.id),
-                    onChanged: (checked) => setSheetState(() {
-                      checked ? selected.add(group.id) : selected.remove(group.id);
-                    }),
-                  ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: PureButton(
-                        label: context.t.common.confirm,
-                        icon: Icons.check,
-                        onPressed: () => Navigator.of(sheetContext).pop(true),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: PureButton(
-                        label: context.t.follow.unfollow,
-                        icon: Icons.heart_broken_outlined,
-                        onPressed: () {
-                          unawaited(_repository.unfollow(record.room));
-                          Navigator.of(sheetContext).pop(true);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+    final confirmed = await showSettingsSurface<bool>(
+      context,
+      ref,
+      title: context.t.follow.assign,
+      body: (surfaceContext) => StatefulBuilder(
+        builder: (context, setSurfaceState) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final group in _repository.groups)
+              PureCheckbox(
+                label: group.name,
+                value: selected.contains(group.id),
+                onChanged: (checked) => setSurfaceState(() {
+                  checked ? selected.add(group.id) : selected.remove(group.id);
+                }),
+              ),
+          ],
         ),
       ),
+      actions: (surfaceContext) => [
+        PureButton(
+          label: surfaceContext.t.common.confirm,
+          icon: Icons.check,
+          onPressed: () => Navigator.of(surfaceContext).pop(true),
+        ),
+        PureButton(
+          label: surfaceContext.t.follow.unfollow,
+          icon: Icons.heart_broken_outlined,
+          onPressed: () {
+            unawaited(_repository.unfollow(record.room));
+            Navigator.of(surfaceContext).pop(true);
+          },
+        ),
+      ],
     );
     if (confirmed == true) {
       await _repository.setGroups(record.room, selected.toList());

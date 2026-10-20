@@ -94,7 +94,7 @@ final class RoomControlOverlay extends ConsumerWidget {
               bottom: state.chromeVisible || !immersive ? 0 : -_barHeight,
               left: 0,
               right: 0,
-              child: _bottomBar(context, state, controller, castService),
+              child: _bottomBar(context, ref, state, controller, castService),
             ),
           ],
         ),
@@ -162,7 +162,13 @@ final class RoomControlOverlay extends ConsumerWidget {
   }
 
   /// The transport row: what plays, what the stream is, and how big it is.
-  Widget _bottomBar(BuildContext context, RoomState state, RoomController controller, CastService castService) {
+  Widget _bottomBar(
+    BuildContext context,
+    WidgetRef ref,
+    RoomState state,
+    RoomController controller,
+    CastService castService,
+  ) {
     final padding = MediaQuery.paddingOf(context);
     final line = state.line;
     final canCast = !compact && castService.supported && line != null;
@@ -305,6 +311,7 @@ final class RoomControlOverlay extends ConsumerWidget {
                   onPressed: () => unawaited(
                     showCastSheet(
                       context,
+                      ref,
                       media: CastMedia(url: line.url, title: state.room?.content.title ?? '', headers: line.headers),
                       // The TV plays its own fetch now; the local engine
                       // stands down so the room does not keep decoding.
