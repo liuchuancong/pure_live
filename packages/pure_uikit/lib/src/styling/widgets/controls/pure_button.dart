@@ -111,6 +111,8 @@ class PureButton extends StatelessWidget {
     final button = switch (language) {
       PureDesignLanguage.fluent => f2.FluentButton(
         onPressed: enabled ? onPressed : null,
+        focusNode: focusNode,
+        autofocus: autofocus,
         appearance: switch (variant) {
           ButtonVariant.primary => f2.FluentButtonAppearance.primary,
           ButtonVariant.secondary => f2.FluentButtonAppearance.secondary,
@@ -158,6 +160,8 @@ class PureButton extends StatelessWidget {
       // dropped the padding the fork computes.
       PureDesignLanguage.cupertino => cupertino.CupertinoButton(
         onPressed: enabled ? onPressed : null,
+        focusNode: focusNode,
+        autofocus: autofocus,
         sizeStyle: switch (size) {
           ControlSize.sm => cupertino.CupertinoButtonSize.small,
           ControlSize.md => cupertino.CupertinoButtonSize.medium,
@@ -203,24 +207,35 @@ class PureButton extends StatelessWidget {
       // itself is; its character comes from the host theme (see
       // `PureApp._yaruHost`), not from a different button. The size step maps
       // onto the Material button's own minimum height, density and label size.
+      // Every Material button shape takes the node and the flag, so the
+      // contract's focus fields land on the control rather than being accepted
+      // and dropped.
       PureDesignLanguage.material || PureDesignLanguage.yaru => switch (variant) {
         ButtonVariant.primary => FilledButton(
           onPressed: enabled ? onPressed : null,
+          focusNode: focusNode,
+          autofocus: autofocus,
           style: _materialStyle(theme, m),
           child: child,
         ),
         ButtonVariant.secondary => OutlinedButton(
           onPressed: enabled ? onPressed : null,
+          focusNode: focusNode,
+          autofocus: autofocus,
           style: _materialStyle(theme, m),
           child: child,
         ),
         ButtonVariant.danger => FilledButton(
           onPressed: enabled ? onPressed : null,
+          focusNode: focusNode,
+          autofocus: autofocus,
           style: _materialStyle(theme, m).copyWith(backgroundColor: WidgetStatePropertyAll(theme.colors.error)),
           child: child,
         ),
         ButtonVariant.ghost => TextButton(
           onPressed: enabled ? onPressed : null,
+          focusNode: focusNode,
+          autofocus: autofocus,
           style: _materialStyle(theme, m),
           child: child,
         ),
@@ -621,6 +636,8 @@ class PureIconButton extends StatelessWidget {
         icon: glyph,
         semanticLabel: tooltip,
         onPressed: active ? onPressed : null,
+        focusNode: focusNode,
+        autofocus: autofocus,
         appearance: switch (variant) {
           ButtonVariant.primary => f2.FluentButtonAppearance.primary,
           ButtonVariant.secondary => f2.FluentButtonAppearance.secondary,
@@ -642,6 +659,8 @@ class PureIconButton extends StatelessWidget {
       ),
       PureDesignLanguage.cupertino => cupertino.CupertinoButton(
         onPressed: active ? onPressed : null,
+        focusNode: focusNode,
+        autofocus: autofocus,
         sizeStyle: switch (size) {
           ControlSize.sm => cupertino.CupertinoButtonSize.small,
           ControlSize.md => cupertino.CupertinoButtonSize.medium,
@@ -673,6 +692,8 @@ class PureIconButton extends StatelessWidget {
       PureDesignLanguage.yaru => yaru.YaruIconButton(
         icon: glyph,
         onPressed: active ? onPressed : null,
+        focusNode: focusNode,
+        autofocus: autofocus,
         isSelected: selected ? true : null,
         tooltip: tooltip,
       ),
@@ -680,6 +701,8 @@ class PureIconButton extends StatelessWidget {
         icon: glyph,
         tooltip: tooltip,
         onPressed: active ? onPressed : null,
+        focusNode: focusNode,
+        autofocus: autofocus,
         visualDensity: switch (size) {
           ControlSize.sm => VisualDensity.compact,
           ControlSize.md => const VisualDensity(horizontal: -0.5, vertical: -0.5),
