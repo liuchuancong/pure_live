@@ -321,89 +321,94 @@ final class _PageSizeDialogState extends State<_PageSizeDialog> {
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = PureTheme.of(context);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(child: Text(t.settings.pageSizeCurrent, style: theme.text.bodySmall)),
-            PureButton(
-              key: const ValueKey('settings-page-sizes-recommended'),
-              label: t.settings.pageSizeRestore,
-              icon: Icons.auto_fix_high_outlined,
-              size: ControlSize.sm,
-              variant: ButtonVariant.ghost,
-              onPressed: () => setState(() => _options = []),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final value in _shown)
-              Container(
-                key: ValueKey('settings-page-size-$value'),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: theme.colors.fillSecondary, borderRadius: BorderRadius.circular(14)),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+    return Padding(
+      // The surface hands the body no horizontal inset and draws its title at
+      // this gutter, so the form has to be pulled in to sit under it.
+      padding: const EdgeInsets.symmetric(horizontal: settingsSheetSide),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text(t.settings.pageSizeCurrent, style: theme.text.bodySmall)),
+              PureButton(
+                key: const ValueKey('settings-page-sizes-recommended'),
+                label: t.settings.pageSizeRestore,
+                icon: Icons.auto_fix_high_outlined,
+                size: ControlSize.sm,
+                variant: ButtonVariant.ghost,
+                onPressed: () => setState(() => _options = []),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final value in _shown)
+                Container(
+                  key: ValueKey('settings-page-size-$value'),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: theme.colors.fillSecondary, borderRadius: BorderRadius.circular(14)),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('$value', style: theme.text.bodySmall),
+                      // At least one stays (3.x).
+                      if (_shown.length > 1)
+                        PureIconButton(
+                          icon: Icons.close_rounded,
+                          tooltip: t.common.clear,
+                          size: ControlSize.sm,
+                          onPressed: () => setState(() => _options = [..._shown]..remove(value)),
+                        ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text('$value', style: theme.text.bodySmall),
-                    // At least one stays (3.x).
-                    if (_shown.length > 1)
-                      PureIconButton(
-                        icon: Icons.close_rounded,
-                        tooltip: t.common.clear,
-                        size: ControlSize.sm,
-                        onPressed: () => setState(() => _options = [..._shown]..remove(value)),
-                      ),
+                    PureTextField(
+                      key: const ValueKey('settings-page-size-input'),
+                      controller: _input,
+                      placeholder: '${t.settings.pageSizeInputHint} ${t.settings.itemsPerPage}',
+                      keyboardType: TextInputType.number,
+                      errorText: _error,
+                      onChanged: (text) {
+                        final digits = text.replaceAll(RegExp(r'\D'), '');
+                        if (digits != text) {
+                          _input.text = digits;
+                          _input.selection = TextSelection.collapsed(offset: digits.length);
+                        }
+                        if (_error != null) {
+                          setState(() => _error = null);
+                        }
+                      },
+                      onSubmitted: (_) => _add(),
+                    ),
                   ],
                 ),
               ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  PureTextField(
-                    key: const ValueKey('settings-page-size-input'),
-                    controller: _input,
-                    placeholder: '${t.settings.pageSizeInputHint} ${t.settings.itemsPerPage}',
-                    keyboardType: TextInputType.number,
-                    errorText: _error,
-                    onChanged: (text) {
-                      final digits = text.replaceAll(RegExp(r'\D'), '');
-                      if (digits != text) {
-                        _input.text = digits;
-                        _input.selection = TextSelection.collapsed(offset: digits.length);
-                      }
-                      if (_error != null) {
-                        setState(() => _error = null);
-                      }
-                    },
-                    onSubmitted: (_) => _add(),
-                  ),
-                ],
+              const SizedBox(width: 8),
+              PureButton(
+                key: const ValueKey('settings-page-size-add'),
+                label: t.common.addOne,
+                icon: Icons.add,
+                onPressed: _add,
               ),
-            ),
-            const SizedBox(width: 8),
-            PureButton(
-              key: const ValueKey('settings-page-size-add'),
-              label: t.common.addOne,
-              icon: Icons.add,
-              onPressed: _add,
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

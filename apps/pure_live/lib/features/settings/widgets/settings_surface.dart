@@ -18,8 +18,15 @@ import 'package:pure_uikit/pure_uikit.dart';
 /// routes sit on the root navigator, above whatever router the page lives under,
 /// so a `Navigator.of(pageContext).pop()` would close the page and leave the
 /// surface open. A body that brings its own scroll view is the other thing to
-/// avoid — this function owns the scroll view and the height cap for both
-/// surfaces, and a nested one is unbounded.
+/// avoid: the sheet scrolls and caps it here, and on the dialog route
+/// `showPureDialog` owns the cap and the viewport for every language whose own
+/// surface lays a body out in a plain column. A nested scroll view is unbounded
+/// and reads as a body that cannot be dragged.
+///
+/// Neither route insets the body horizontally — the dialog's own frame does that
+/// on its side, and a body here that did the same would double it. A body that
+/// wants a gutter brings its own, and the surfaces' own headers are drawn at the
+/// same measure so the two line up.
 ///
 /// [formFactor] is the booted environment's, taken once when the surface opens:
 /// the window is not going to change shape while a sheet is up. Both a widget's
@@ -47,7 +54,7 @@ Future<T?> showSettingsSurface<T>(
           children: [
             if (title != null)
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                padding: const EdgeInsets.fromLTRB(settingsSheetSide, 16, settingsSheetSide, 8),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(title, style: PureTheme.of(surfaceContext).text.title),
@@ -73,12 +80,17 @@ Future<T?> showSettingsSurface<T>(
     title: title,
     dismissible: dismissible,
     actions: actions,
-    child: ConstrainedBox(
-      constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.7),
-      child: Builder(builder: body),
-    ),
+    child: Builder(builder: body),
   ),
 };
+
+/// The gutter the sheet's own title is drawn at.
+///
+/// A sheet body that runs edge to edge while that header does not is the report
+/// this constant exists to stop: a chooser's rows, a page-size form's fields, and
+/// any other column handed to [showSettingsSurface] should wrap themselves in it
+/// so the surface reads as one block.
+const double settingsSheetSide = 20;
 
 /// The form factor a surface should open in, for a widget's [WidgetRef].
 extension SettingsSurfaceRef on WidgetRef {

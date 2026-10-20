@@ -10,6 +10,7 @@ import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 import 'package:pure_uikit/src/styling/style/recipe.dart';
 import 'package:pure_uikit/src/styling/style/style.dart';
+import 'package:pure_uikit/src/styling/widgets/overlays/pure_dialog_action_scope.dart';
 import 'package:pure_uikit/src/styling/widgets/overlays/pure_tooltip.dart';
 import 'package:yaru/yaru.dart' as yaru;
 
@@ -104,9 +105,14 @@ class PureButton extends StatelessWidget {
     final language = theme.config.language;
     final enabled = onPressed != null && !loading;
     final m = _metrics(theme, size);
+    // A dialog's footer is a different control in two of the libraries: iOS
+    // draws a `CupertinoDialogAction` band, macOS an alert row of large buttons.
+    final dialogAction = PureDialogActionScope.maybeOf(context);
+    final inDialogAction = dialogAction != null;
     // An empty label means the caller wants the glyph alone: laying out a label
     // slot for it added the icon-to-label gap around a string that is not there.
-    final child = _tint(_content(context, iconOnly: icon != null && label.isEmpty, metrics: m), theme, enabled);
+    final plain = _content(context, iconOnly: icon != null && label.isEmpty, metrics: m);
+    final child = _tint(plain, theme, enabled);
 
     final button = switch (language) {
       PureDesignLanguage.fluent => f2.FluentButton(
@@ -139,14 +145,17 @@ class PureButton extends StatelessWidget {
       // macOS fills the default action's button with the accent (a white
       // capsule is the library's plain answer, which reads as no primary at
       // all); the destructive keeps the label colour, like every other
-      // language's danger.
+      // language's danger. In a dialog's action row the library's own metric is
+      // the large step, whatever step the caller asked for.
       PureDesignLanguage.macos => macos.PushButton(
         onPressed: enabled ? onPressed : null,
-        controlSize: switch (size) {
-          ControlSize.sm => macos.ControlSize.small,
-          ControlSize.md => macos.ControlSize.regular,
-          ControlSize.lg => macos.ControlSize.large,
-        },
+        controlSize: inDialogAction
+            ? macos.ControlSize.large
+            : switch (size) {
+                ControlSize.sm => macos.ControlSize.small,
+                ControlSize.md => macos.ControlSize.regular,
+                ControlSize.lg => macos.ControlSize.large,
+              },
         color: variant == ButtonVariant.primary ? theme.colors.primary : null,
         secondary: variant != ButtonVariant.primary,
         child: _macosChild(theme, child, enabled),
@@ -158,24 +167,38 @@ class PureButton extends StatelessWidget {
       // radius per step (28/32/44 and the 16pt vertical padding); passing the
       // token's numbers instead flattened all three steps to one height and
       // dropped the padding the fork computes.
-      PureDesignLanguage.cupertino => cupertino.CupertinoButton(
-        onPressed: enabled ? onPressed : null,
-        focusNode: focusNode,
-        autofocus: autofocus,
-        sizeStyle: switch (size) {
-          ControlSize.sm => cupertino.CupertinoButtonSize.small,
-          ControlSize.md => cupertino.CupertinoButtonSize.medium,
-          ControlSize.lg => cupertino.CupertinoButtonSize.large,
-        },
-        color: switch (variant) {
-          ButtonVariant.primary => theme.colors.primary,
-          // iOS's own supporting weight is the system grey plate, not the
-          // container colour the token model shares with the surfaces.
-          ButtonVariant.secondary => cupertino.CupertinoColors.secondaryLabel.withAlpha(24),
-          _ => null,
-        },
-        child: child,
-      ),
+      // In a dialog the library's own action band replaces the button: iOS
+      // separates the footer with hairlines, sets the default choice in semibold
+      // and keeps the destructive red — none of which a `CupertinoButton` placed
+      // there draws, and its white primary label would sit on the sheet's own
+      // white. The un-tinted content goes in so the widget answers for the
+      // colour; it has no focus slot, so the node is the ordinary button's.
+      PureDesignLanguage.cupertino =>
+        inDialogAction
+            ? cupertino.CupertinoDialogAction(
+                onPressed: enabled ? onPressed : null,
+                isDefaultAction: dialogAction.isDefault,
+                isDestructiveAction: variant == ButtonVariant.danger,
+                child: plain,
+              )
+            : cupertino.CupertinoButton(
+                onPressed: enabled ? onPressed : null,
+                focusNode: focusNode,
+                autofocus: autofocus,
+                sizeStyle: switch (size) {
+                  ControlSize.sm => cupertino.CupertinoButtonSize.small,
+                  ControlSize.md => cupertino.CupertinoButtonSize.medium,
+                  ControlSize.lg => cupertino.CupertinoButtonSize.large,
+                },
+                color: switch (variant) {
+                  ButtonVariant.primary => theme.colors.primary,
+                  // iOS's own supporting weight is the system grey plate, not the
+                  // container colour the token model shares with the surfaces.
+                  ButtonVariant.secondary => cupertino.CupertinoColors.secondaryLabel.withAlpha(24),
+                  _ => null,
+                },
+                child: child,
+              ),
       // The library's own button, its variant and size tables carrying the
       // token kinds (`secondary` maps to `outline`: the token's secondary is a
       // bordered supporting action, which is what forui's `outline` paints).

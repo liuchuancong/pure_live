@@ -5,6 +5,7 @@ import 'package:forui/forui.dart' as forui;
 import 'package:macos_ui/macos_ui.dart' as macos;
 import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
+import 'package:pure_uikit/src/styling/widgets/overlays/pure_dialog_action_scope.dart';
 
 /// Shows a modal — the Ant `Modal` counterpart.
 ///
@@ -56,7 +57,7 @@ Future<T?> showPureDialog<T>({
             theme,
             title: title,
             content: child,
-            actions: actions?.call(dialogContext) ?? const [],
+            actions: _actionRow(actions?.call(dialogContext)),
           ),
         ),
       ),
@@ -107,7 +108,7 @@ Widget _dialogSurface(
       // Plain widgets: the alert merges its own iOS heading and message styles
       // over each slot, so a token text style here would overwrite the very
       // thing the widget is used for.
-      content: content,
+      content: _scrollingBody(dialogContext, content),
       actions: actions,
     ),
     PureDesignLanguage.macos => _macosDialogSurface(
@@ -134,14 +135,45 @@ Widget _dialogSurface(
   };
 }
 
-/// The macOS surface: the library's `MacosAlertDialog` when the actions fit
-/// its two `PushButton` slots, else the library's own `MacosSheet` panel.
+/// The actions in the dialog's own action form: the last is the default, which
+/// is where both macOS and iOS put the answer to the question the dialog asks.
 ///
-/// The library's alert requires every action to be a `macos.PushButton` at
-/// `ControlSize.large` — its asserts refuse anything else — and takes the last
-/// one as the default (`primaryButton`, drawn right) and the first as
-/// `secondaryButton`. Callers normally hand back dispatched buttons, so in
-/// practice the composed panel below is the surface that draws.
+/// An [PureDialogActionScope] is an inherited widget, so it adds no box and moves
+/// no pixel — the libraries' ordinary action rows are untouched, and only a
+/// dispatched button that reads the scope changes shape.
+List<Widget> _actionRow(List<Widget>? actions) => switch (actions) {
+  null => const <Widget>[],
+  final list when list.isEmpty => const <Widget>[],
+  final list => [
+    for (var i = 0; i < list.length; i++) PureDialogActionScope(isDefault: i == list.length - 1, child: list[i]),
+  ],
+};
+
+/// The content slot for a surface that lays its body in a plain column.
+///
+/// iOS's alert, macOS's alert and sheet and ForUI's frame all hand the message
+/// a child slot of its own size, so a body taller than the window does not
+/// scroll — it pushes the action row off the screen. Material's `AlertDialog`
+/// is excluded: it takes `scrollable:` itself and a second viewport inside it
+/// would fight the library's. Fluent's renderer already wraps its body in a
+/// `Flexible` + scroll view for the same reason.
+///
+/// The cap is a height the scroll view can measure. A `SingleChildScrollView`
+/// alone is not enough: inside those columns it is given an unbounded main axis
+/// and simply grows to its content, so the bound has to be named here.
+Widget _scrollingBody(BuildContext context, Widget content) => ConstrainedBox(
+  constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.55),
+  child: SingleChildScrollView(child: content),
+);
+
+/// The macOS surface: the library's own `MacosSheet` panel.
+///
+/// `MacosAlertDialog` is not reachable from here. It asserts that both of its
+/// slots are a `macos.PushButton` at `ControlSize.large`, and the actions this
+/// route is handed are dispatched `PureButton`s — the app never names a library
+/// widget, which is the whole point of the kit. So the panel is the surface macOS
+/// draws, and the alert's own metric reaches it through the action scope: the
+/// buttons inside come back at the large step, which is what the alert row is.
 Widget _macosDialogSurface(
   BuildContext dialogContext,
   PureTheme theme, {
@@ -149,16 +181,6 @@ Widget _macosDialogSurface(
   required Widget content,
   required List<Widget> actions,
 }) {
-  if (_alertSlots(actions) case final _AlertSlots slots) {
-    return macos.MacosAlertDialog(
-      appIcon: const SizedBox.shrink(),
-      title: title == null ? const SizedBox.shrink() : Text(title),
-      message: content,
-      primaryButton: slots.primary,
-      secondaryButton: slots.secondary,
-    );
-  }
-
   final gap = theme.token.scale.sizes.md;
   return macos.MacosSheet(
     insetPadding: EdgeInsets.zero,
@@ -173,7 +195,7 @@ Widget _macosDialogSurface(
             Text(heading, style: theme.text.title.copyWith(color: theme.colors.text)),
             SizedBox(height: gap),
           ],
-          content,
+          _scrollingBody(dialogContext, content),
           if (actions.isNotEmpty) ...[
             SizedBox(height: gap),
             Row(
@@ -192,29 +214,6 @@ Widget _macosDialogSurface(
     ),
   );
 }
-
-/// The library's two action slots for [actions], or null when it cannot take
-/// them: an empty row, more than two buttons, or a button whose shape the
-/// widget's asserts would refuse.
-_AlertSlots? _alertSlots(List<Widget> actions) {
-  final buttons = <macos.PushButton>[];
-  for (final action in actions) {
-    if (action is! macos.PushButton || action.controlSize != macos.ControlSize.large) {
-      return null;
-    }
-    buttons.add(action);
-  }
-  if (buttons.isEmpty || buttons.length > 2) {
-    return null;
-  }
-  // macOS puts the default button on the right, and the library draws
-  // `secondaryButton` before `primaryButton`, which is the spec's order.
-  return (primary: buttons.last, secondary: buttons.length == 2 ? buttons.first : null);
-}
-
-/// The library widget's action slots, named so [_macosDialogSurface] can read
-/// them as a pattern.
-typedef _AlertSlots = ({macos.PushButton primary, macos.PushButton? secondary});
 
 /// The Fluent surface, from the library's own renderer.
 ///
@@ -270,7 +269,7 @@ Widget _foruiDialogSurface(
             DefaultTextStyle(style: style.titleTextStyle, child: Text(heading)),
             SizedBox(height: gap),
           ],
-          DefaultTextStyle(style: style.bodyTextStyle, child: content),
+          DefaultTextStyle(style: style.bodyTextStyle, child: _scrollingBody(context, content)),
           if (actions.isNotEmpty) ...[
             SizedBox(height: gap),
             Row(

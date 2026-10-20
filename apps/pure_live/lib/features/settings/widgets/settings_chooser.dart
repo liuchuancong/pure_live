@@ -24,29 +24,38 @@ Future<T?> showSettingsChooser<T>(
   context,
   ref.settingsFormFactor,
   title: title,
-  body: (surfaceContext) => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      if (hint != null)
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-          child: Text(
-            hint,
-            style: PureTheme.of(surfaceContext).text.caption
-                .copyWith(color: PureTheme.of(surfaceContext).colors.textSecondary),
+  body: (surfaceContext) => Padding(
+    // The sheet draws its title at this gutter and hands the body no inset of
+    // its own, so the rows and their dividers have to be pulled in here or they
+    // run edge to edge under a header that does not.
+    padding: const EdgeInsets.symmetric(horizontal: settingsSheetSide),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (hint != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                hint,
+                style: PureTheme.of(surfaceContext).text.caption
+                    .copyWith(color: PureTheme.of(surfaceContext).colors.textSecondary),
+              ),
+            ),
           ),
-        ),
-      for (var i = 0; i < options.length; i++)
-        PureListRow(
-          title: options[i].$2,
-          leading: Icon(
-            options[i].$1 == current ? Icons.check_circle : Icons.radio_button_unchecked,
-            color: options[i].$1 == current ? PureTheme.of(surfaceContext).colors.primary : null,
+        for (var i = 0; i < options.length; i++)
+          PureListRow(
+            title: options[i].$2,
+            leading: Icon(
+              options[i].$1 == current ? Icons.check_circle : Icons.radio_button_unchecked,
+              color: options[i].$1 == current ? PureTheme.of(surfaceContext).colors.primary : null,
+            ),
+            selected: options[i].$1 == current,
+            onTap: () => Navigator.of(surfaceContext).pop(options[i].$1),
+            divided: i < options.length - 1,
           ),
-          selected: options[i].$1 == current,
-          onTap: () => Navigator.of(surfaceContext).pop(options[i].$1),
-          divided: i < options.length - 1,
-        ),
-    ],
+      ],
+    ),
   ),
 );
