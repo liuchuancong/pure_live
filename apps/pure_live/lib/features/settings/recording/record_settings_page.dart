@@ -248,7 +248,7 @@ class _RecordSettingsPageState extends ConsumerState<RecordSettingsPage> {
                     ? const PureSpinner()
                     : Text(
                         _sizeMB == null ? '--' : t.recorder.mbValue(count: _sizeMB!.toStringAsFixed(1)),
-                        style: Theme.of(context).textTheme.bodyMedium,
+                        style: PureTheme.of(context).text.body,
                       ),
                 onPressed: (_) => unawaited(_refreshStorage()),
               ),
@@ -450,13 +450,13 @@ class _RecordSettingsPageState extends ConsumerState<RecordSettingsPage> {
     String? description,
     bool enabled = true,
   }) {
-    final theme = Theme.of(context);
+    final theme = PureTheme.of(context);
     return SettingsTile(
       key: ValueKey(key),
       leading: Icon(icon),
       title: Text(title),
       description: description == null ? null : Text(description),
-      value: Text(label, style: theme.textTheme.bodyMedium),
+      value: Text(label, style: theme.text.body),
       enabled: enabled,
       trailing: SizedBox(
         width: 160,
@@ -506,7 +506,7 @@ class _RecordSettingsPageState extends ConsumerState<RecordSettingsPage> {
           ),
           SizedBox(
             width: 32,
-            child: Text('$value', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
+            child: Text('$value', textAlign: TextAlign.center, style: PureTheme.of(context).text.body),
           ),
           PureIconButton(
             key: ValueKey('$key-increase'),

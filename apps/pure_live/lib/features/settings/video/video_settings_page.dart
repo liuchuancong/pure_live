@@ -175,7 +175,7 @@ final class VideoSettingsPage extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(t.settings.audiencePlatforms, style: Theme.of(context).textTheme.bodyMedium),
+                      Text(t.settings.audiencePlatforms, style: PureTheme.of(context).text.body),
                       const SizedBox(height: 8),
                       Wrap(
                         spacing: 8,
@@ -207,7 +207,7 @@ final class VideoSettingsPage extends ConsumerWidget {
                       const SizedBox(height: 6),
                       Text(
                         t.settings.audienceHeatOnlyCount(count: '${sites.length - trustedHere}'),
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: PureTheme.of(context).text.bodySmall,
                       ),
                     ],
                   ),

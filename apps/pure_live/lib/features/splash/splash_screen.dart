@@ -157,7 +157,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
+    final dark = PureTheme.of(context).token.isDark;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       // See-through bars with icons for the page's brightness (A06.5).
       value: dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
