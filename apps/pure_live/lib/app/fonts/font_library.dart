@@ -25,6 +25,10 @@ final class FontFamily {
 
   const FontFamily._({required this.id, required this.name, required this.files, this.description = ''});
 
+  /// A family the user imported from their own disk: no manifest entry to read
+  /// it from, so the id and the shown name are derived from the file name.
+  const new imported({required this.id, required this.name, required this.files}) : description = '';
+
   /// The id: the folder name and the registered family name.
   final String id;
 
@@ -111,6 +115,87 @@ final class FontLibrary {
   /// The folder of [id].
   Directory folderOf(String id) => Directory(p.join(root.path, id));
 
+  /// The extensions an import accepts, without the dot. The engine reads all
+  /// three through `FontLoader`, so a user's `.otf` is as usable as a
+  /// manifest `.ttf`.
+  static const List<String> importExtensions = ['ttf', 'otf', 'ttc'];
+
+  /// The prefix naming an imported family. It is what tells an import apart
+  /// from a manifest family without asking the network — the manifest may not
+  /// have loaded, or may have gone away entirely.
+  static const String importedPrefix = 'local-';
+
+  /// Whether [id] is an imported family rather than a manifest one.
+  static bool isImported(String id) => id.startsWith(importedPrefix);
+
+  /// The id a chosen file becomes: [importedPrefix] plus the file's stem with
+  /// everything a folder name cannot hold folded to `-`. A stem written in
+  /// another language survives — it is only the reserved Windows and POSIX
+  /// characters that have to go.
+  static String idForImport(String path) {
+    final stem = p.basenameWithoutExtension(path).trim();
+    final folded = stem.replaceAll(RegExp(r'[\\/:*?"<>|\s]+'), '-').replaceAll(RegExp(r'^-+|-+$'), '');
+    return '$importedPrefix${folded.isEmpty ? 'font' : folded}';
+  }
+
+  /// The shown name of an imported family: its id read back with the word
+  /// separators as spaces.
+  static String nameForImport(String id) => id.substring(importedPrefix.length).replaceAll(RegExp('[-_]+'), ' ');
+
+  /// Copies the chosen font [source] into the tree under [idForImport] and
+  /// registers it live, so picking it needs no restart. Re-importing the same
+  /// file name replaces the previous copy. Returns the family id, which is what
+  /// the appearance's `fontFamily` stores.
+  Future<String> importFile(File source) async {
+    final extension = p.extension(source.path).replaceFirst('.', '').toLowerCase();
+    if (!importExtensions.contains(extension)) {
+      throw StateError('unsupported font file: $extension');
+    }
+    if (!source.existsSync()) {
+      throw StateError('font file is gone');
+    }
+    final id = idForImport(source.path);
+    final folder = folderOf(id);
+    final staged = Directory(p.join(root.path, '.$id.pending'));
+    if (staged.existsSync()) {
+      staged.deleteSync(recursive: true);
+    }
+    staged.createSync(recursive: true);
+    try {
+      await File(p.join(staged.path, 'font.$extension')).writeAsBytes(await source.readAsBytes(), flush: true);
+      if (folder.existsSync()) {
+        folder.deleteSync(recursive: true);
+      }
+      staged.renameSync(folder.path);
+      await _register(id, filesOf(id));
+      return id;
+    } on Object {
+      if (staged.existsSync()) {
+        staged.deleteSync(recursive: true);
+      }
+      rethrow;
+    }
+  }
+
+  /// The families on disk that came from an import, sorted by shown name. The
+  /// page lists these without reading the manifest, so an offline host still
+  /// shows the fonts the user brought.
+  List<FontFamily> importedFamilies() {
+    if (!root.existsSync()) {
+      return const [];
+    }
+    final families = [
+      for (final entity in root.listSync())
+        if (entity is Directory && isImported(p.basename(entity.path)) && filesOf(p.basename(entity.path)).isNotEmpty)
+          FontFamily.imported(
+            id: p.basename(entity.path),
+            name: nameForImport(p.basename(entity.path)),
+            files: [for (final file in filesOf(p.basename(entity.path))) file.path],
+          ),
+    ];
+    return families..sort((a, b) => a.name.compareTo(b.name));
+  }
+
   /// The downloaded font files of [id], sorted; empty when not downloaded.
   List<File> filesOf(String id) {
     if (!isSafeFontId(id)) {
@@ -122,7 +207,8 @@ final class FontLibrary {
     }
     return [
       for (final entity in folder.listSync())
-        if (entity is File && entity.path.toLowerCase().endsWith('.ttf')) entity,
+        if (entity is File && importExtensions.contains(p.extension(entity.path).replaceFirst('.', '').toLowerCase()))
+          entity,
     ]..sort((a, b) => a.path.compareTo(b.path));
   }
 

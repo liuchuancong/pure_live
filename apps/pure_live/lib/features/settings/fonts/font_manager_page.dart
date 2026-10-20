@@ -1,5 +1,7 @@
 import 'dart:async' show unawaited;
+import 'dart:io' show File;
 
+import 'package:file_selector/file_selector.dart' show XTypeGroup, openFile;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/fonts/font_library.dart';
@@ -57,64 +59,139 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
   Widget build(BuildContext context) {
     final appearance = ref.watch(appearancePreferencesProvider);
     final update = ref.read(appearancePreferencesProvider.notifier).update;
-    final families = _families;
+    final cloud = _families;
+    // The imported families are read from disk on every build: they are a
+    // directory listing of the fonts tree, and the page has to show a font the
+    // user imported a second ago without a reload.
+    final imported = _library.importedFamilies();
     return PureScaffold(
       appBar: PureAppBar(title: context.t.settings.fonts),
-      body: families == null
-          ? Center(
-              child: _error != null
-                  ? Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(context.t.errors.network, textAlign: TextAlign.center),
-                        const SizedBox(height: 12),
-                        PureButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: _loadFamilies),
-                      ],
-                    )
-                  : const Center(child: PureSpinner(size: 40)),
-            )
-          : SettingsList(
-              sections: [
-                SettingsSection(
-                  title: Text(context.t.fonts.factoryDefault),
-                  tiles: [
-                    SettingsRowTile(
-                      row: _row(
-                        context,
-                        title: context.t.fonts.system,
-                        selected: appearance.fontFamily?.isEmpty ?? true,
-                        action: (appearance.fontFamily?.isEmpty ?? true)
-                            ? null
-                            : () => update((a) => a.copyWith(fontFamily: '')),
-                      ),
-                    ),
-                  ],
+      body: SettingsList(
+        sections: [
+          SettingsSection(
+            title: Text(context.t.fonts.factoryDefault),
+            tiles: [
+              SettingsRowTile(
+                row: _row(
+                  context,
+                  title: context.t.fonts.system,
+                  subtitle: context.t.fonts.systemDesc,
+                  selected: appearance.fontFamily?.isEmpty ?? true,
+                  action: (appearance.fontFamily?.isEmpty ?? true)
+                      ? null
+                      : () => update((a) => a.copyWith(fontFamily: '')),
                 ),
+              ),
+            ],
+          ),
+          // A font the user brought needs no network: the manifest may be
+          // unreachable, and the imported list still has to be readable, so this
+          // section sits outside the cloud one's loading and error states.
+          SettingsSection(
+            title: Text(context.t.fonts.custom),
+            tiles: [
+              SettingsRowTile(
+                row: PureListRow(
+                  leading: const Icon(Icons.add_circle_outline),
+                  title: context.t.fonts.import,
+                  subtitle: context.t.fonts.customDesc,
+                  onTap: _import,
+                ),
+              ),
+              for (var i = 0; i < imported.length; i++)
+                SettingsRowTile(
+                  row: _row(
+                    context,
+                    title: imported[i].name,
+                    selected: appearance.fontFamily == imported[i].id,
+                    action: () => update((a) => a.copyWith(fontFamily: imported[i].id)),
+                    trailing: PureIconButton(
+                      tooltip: context.t.fonts.delete,
+                      icon: Icons.delete_outline,
+                      onPressed: appearance.fontFamily == imported[i].id
+                          ? null
+                          : () => unawaited(_delete(imported[i])),
+                    ),
+                    divided: i < imported.length - 1,
+                  ),
+                ),
+            ],
+          ),
+          if (cloud == null && _error != null)
+            SettingsSection(
+              title: Text(context.t.fonts.cloudFonts),
+              tiles: [
+                SettingsRowTile(
+                  row: PureListRow(
+                    leading: const Icon(Icons.cloud_off_outlined),
+                    title: context.t.errors.network,
+                    trailing: PureButton(
+                      label: context.t.common.retry,
+                      icon: Icons.refresh,
+                      variant: ButtonVariant.secondary,
+                      onPressed: _loadFamilies,
+                    ),
+                  ),
+                ),
+              ],
+            )
+          else if (cloud == null)
+            SettingsSection(
+              tiles: [
+                SettingsRowTile(
+                  row: const SizedBox(height: 48, child: Center(child: PureSpinner(size: 24))),
+                ),
+              ],
+            )
+          else if (cloud.isNotEmpty)
+            SettingsSection(
+              title: Text(context.t.fonts.cloudFonts),
+              tiles: [
                 // A cloud family is a radio row with an action of its own (a
                 // download, a delete), which the kit's tiles do not model — the
                 // rows stay the uikit's, inside the section's card.
-                if (families.isNotEmpty)
-                  SettingsSection(
-                    title: Text(context.t.fonts.cloudFonts),
-                    tiles: [
-                      for (var i = 0; i < families.length; i++)
-                        SettingsRowTile(
-                          row: _row(
-                            context,
-                            title: families[i].name,
-                            selected: appearance.fontFamily == families[i].id,
-                            action: _library.isDownloaded(families[i].id)
-                                ? () => update((a) => a.copyWith(fontFamily: families[i].id))
-                                : null,
-                            trailing: _familyAction(context, families[i]),
-                            divided: i < families.length - 1,
-                          ),
-                        ),
-                    ],
+                for (var i = 0; i < cloud.length; i++)
+                  SettingsRowTile(
+                    row: _row(
+                      context,
+                      title: cloud[i].name,
+                      subtitle: cloud[i].description,
+                      selected: appearance.fontFamily == cloud[i].id,
+                      action: _library.isDownloaded(cloud[i].id)
+                          ? () => update((a) => a.copyWith(fontFamily: cloud[i].id))
+                          : null,
+                      trailing: _familyAction(context, cloud[i]),
+                      divided: i < cloud.length - 1,
+                    ),
                   ),
               ],
             ),
+        ],
+      ),
     );
+  }
+
+  /// Opens the platform's file picker, copies the chosen font into the library
+  /// and selects it — a user who imported a font came to use it.
+  Future<void> _import() async {
+    const group = XTypeGroup(label: 'fonts', extensions: FontLibrary.importExtensions);
+    final picked = await openFile(acceptedTypeGroups: [group]);
+    if (picked?.path case final path?) {
+      try {
+        final id = await _library.importFile(File(path));
+        if (!mounted) {
+          return;
+        }
+        await ref.read(appearancePreferencesProvider.notifier).update((a) => a.copyWith(fontFamily: id));
+        if (mounted) {
+          setState(() {});
+        }
+      } on Object {
+        if (mounted) {
+          PureToast.show(context, context.t.fonts.importFailed, type: PureToastType.error);
+        }
+      }
+    }
   }
 
   PureListRow _row(

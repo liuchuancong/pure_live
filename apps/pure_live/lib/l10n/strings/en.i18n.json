@@ -796,7 +796,11 @@
     "download": "Download",
     "delete": "Delete",
     "factoryDefault": "Factory default",
-    "cloudFonts": "Cloud fonts"
+    "cloudFonts": "Cloud fonts",
+    "custom": "Custom fonts",
+    "customDesc": "Pick a ttf, otf or ttc font file from this device",
+    "import": "Import a font file",
+    "importFailed": "That file could not be imported"
   },
   "follow": {
     "all": "All",

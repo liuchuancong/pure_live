@@ -692,7 +692,11 @@
     "download": "下载",
     "delete": "删除",
     "factoryDefault": "出厂默认",
-    "cloudFonts": "云端字体"
+    "cloudFonts": "云端字体",
+    "custom": "自定义字体",
+    "customDesc": "从本机选择 ttf、otf 或 ttc 字体文件",
+    "import": "导入字体文件",
+    "importFailed": "这个文件没能导入"
   },
   "follow": {
     "all": "全部",

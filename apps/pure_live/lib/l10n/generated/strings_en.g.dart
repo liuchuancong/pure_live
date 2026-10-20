@@ -1016,6 +1016,10 @@ class _Translations$fonts$en extends Translations$fonts$zh {
 	@override String get delete => 'Delete';
 	@override String get factoryDefault => 'Factory default';
 	@override String get cloudFonts => 'Cloud fonts';
+	@override String get custom => 'Custom fonts';
+	@override String get customDesc => 'Pick a ttf, otf or ttc font file from this device';
+	@override String get import => 'Import a font file';
+	@override String get importFailed => 'That file could not be imported';
 }
 
 // Path: follow
@@ -2396,6 +2400,10 @@ extension on TranslationsEn {
 			'fonts.delete' => 'Delete',
 			'fonts.factoryDefault' => 'Factory default',
 			'fonts.cloudFonts' => 'Cloud fonts',
+			'fonts.custom' => 'Custom fonts',
+			'fonts.customDesc' => 'Pick a ttf, otf or ttc font file from this device',
+			'fonts.import' => 'Import a font file',
+			'fonts.importFailed' => 'That file could not be imported',
 			'follow.all' => 'All',
 			'follow.empty' => 'No followed rooms yet',
 			'follow.follow' => 'Follow',
@@ -2657,12 +2665,12 @@ extension on TranslationsEn {
 			'shellSettings.frameTakeoverOn' => 'On — the caption is gone and the window\'s own hit-test answers the four edges',
 			'shellSettings.frameTakeoverOff' => 'Off — the system draws the caption and sizes the window',
 			'shellSettings.frameEdge' => 'Frame edge',
+			_ => null,
+		} ?? switch (path) {
 			'shellSettings.frameEdgeNative' => 'Windows draws it',
 			'shellSettings.frameEdgeNone' => 'This Windows version draws none, so a taken-over window has no line on any side',
 			'shellSettings.frameBuild' => 'Windows build',
 			'shellSettings.frameSweep' => 'Run the resize sweep',
-			_ => null,
-		} ?? switch (path) {
 			'shellSettings.frameSweepRunning' => 'Sweeping…',
 			'shellSettings.frameSweepHint' => 'Resizes this window repeatedly, twice, then puts it back. The two lines compare the plugin\'s view pre-sync off and on — fewer stale frames on the second line is the frame keeping up with the drag.',
 			'shellSettings.frameSweepUnavailable' => 'The sweep needs the frame takeover on, on Windows.',

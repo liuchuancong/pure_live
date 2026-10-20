@@ -2194,6 +2194,18 @@ class Translations$fonts$zh {
 
 	/// zh: '云端字体'
 	String get cloudFonts => '云端字体';
+
+	/// zh: '自定义字体'
+	String get custom => '自定义字体';
+
+	/// zh: '从本机选择 ttf、otf 或 ttc 字体文件'
+	String get customDesc => '从本机选择 ttf、otf 或 ttc 字体文件';
+
+	/// zh: '导入字体文件'
+	String get import => '导入字体文件';
+
+	/// zh: '这个文件没能导入'
+	String get importFailed => '这个文件没能导入';
 }
 
 // Path: follow
@@ -4705,6 +4717,10 @@ extension on Translations {
 			'fonts.delete' => '删除',
 			'fonts.factoryDefault' => '出厂默认',
 			'fonts.cloudFonts' => '云端字体',
+			'fonts.custom' => '自定义字体',
+			'fonts.customDesc' => '从本机选择 ttf、otf 或 ttc 字体文件',
+			'fonts.import' => '导入字体文件',
+			'fonts.importFailed' => '这个文件没能导入',
 			'follow.all' => '全部',
 			'follow.empty' => '还没有关注任何房间',
 			'follow.follow' => '关注',
@@ -5071,12 +5087,12 @@ extension on Translations {
 			'shellSettings.frameTakeoverOn' => '已开启 — 标题栏已由窗口自身移除，四边缩放由窗口的命中测试应答',
 			'shellSettings.frameTakeoverOff' => '未开启 — 标题栏与窗口尺寸都由系统负责',
 			'shellSettings.frameEdge' => '系统描边',
+			_ => null,
+		} ?? switch (path) {
 			'shellSettings.frameEdgeNative' => '由 Windows 绘制',
 			'shellSettings.frameEdgeNone' => '当前 Windows 版本不绘制描边，接管后的边框四边都没有线',
 			'shellSettings.frameBuild' => 'Windows 构建号',
 			'shellSettings.frameSweep' => '运行缩放扫描',
-			_ => null,
-		} ?? switch (path) {
 			'shellSettings.frameSweepRunning' => '扫描中…',
 			'shellSettings.frameSweepHint' => '会连续改变本窗口大小两轮然后还原。两行数字分别对应视图预同步关闭与打开，第二行的过期帧更少才说明边框跟上了拖动。',
 			'shellSettings.frameSweepUnavailable' => '缩放扫描需要开启边框接管，且运行在 Windows。',
