@@ -610,6 +610,7 @@ class PureIconButton extends StatelessWidget {
         icon: glyph,
         onPressed: active ? onPressed : null,
         isSelected: selected ? true : null,
+        tooltip: tooltip,
         constraints: BoxConstraints.tightFor(width: m.height, height: m.height),
       ),
       PureDesignLanguage.material => IconButton(
@@ -624,24 +625,38 @@ class PureIconButton extends StatelessWidget {
       ),
     };
 
+    // The languages whose button shows the hint itself must not be handed a
+    // second one — Material, Yaru, glass, neumorphic and forui all take the
+    // string, and wrapping them stacked two bubbles on the same hover.
+    if (_showsItsOwnTooltip(language)) {
+      return button;
+    }
     return Tooltip(message: tooltip, child: button);
   }
+
+  /// Whether this language's icon button already reveals [tooltip] on hover.
+  bool _showsItsOwnTooltip(PureDesignLanguage language) => switch (language) {
+    PureDesignLanguage.material ||
+    PureDesignLanguage.yaru ||
+    PureDesignLanguage.glass ||
+    PureDesignLanguage.neumorphic ||
+    PureDesignLanguage.forui => true,
+    _ => false,
+  };
 
   /// The forui icon button: the library's own `FButton.icon`.
   Widget _foruiIcon(PureTheme theme, bool active) {
     final step = theme.text.label.fontSize ?? 14;
-    return forui.FTooltip(
-      tipBuilder: (context, controller) => Text(tooltip),
-      child: forui.FButton.icon(
-        onPress: active ? onPressed : null,
-        variant: PureButton._foruiVariant(variant),
-        size: PureButton._foruiSize(size),
-        selected: selected,
-        focusNode: focusNode,
-        autofocus: autofocus,
-        child: Icon(icon, size: step, semanticLabel: tooltip),
-      ),
+    final button = forui.FButton.icon(
+      onPress: active ? onPressed : null,
+      variant: PureButton._foruiVariant(variant),
+      size: PureButton._foruiSize(size),
+      selected: selected,
+      focusNode: focusNode,
+      autofocus: autofocus,
+      child: Icon(icon, size: step, semanticLabel: tooltip),
     );
+    return forui.FTooltip(tipBuilder: (context, controller) => Text(tooltip), child: button);
   }
 
   /// The wind icon button: the glyph in `WButton`'s child slot, the accessible
