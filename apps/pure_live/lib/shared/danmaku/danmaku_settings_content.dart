@@ -346,7 +346,7 @@ final class DanmakuSettingsContent extends ConsumerWidget {
   Widget _title(BuildContext context, String title, {String? hint}) {
     final theme = PureTheme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 14, 4, 8),
+      padding: const EdgeInsets.fromLTRB(PureSpacing.xs, 14, PureSpacing.xs, PureSpacing.sm),
       child: Row(
         children: [
           Expanded(
@@ -418,7 +418,7 @@ Widget _slider(
             Text(label, style: theme.text.caption.copyWith(color: theme.colors.textSecondary)),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: PureSpacing.xs),
         PureSlider(
           key: ValueKey('danmaku-slider-$title'),
           value: value,
@@ -512,10 +512,10 @@ Widget _choice(
         Text(title, style: theme.text.body),
         if (subtitle case final note?)
           Padding(
-            padding: const EdgeInsets.only(top: 2),
+            padding: const EdgeInsets.only(top: PureSpacing.xxs),
             child: Text(note, style: theme.text.caption.copyWith(color: theme.colors.textSecondary)),
           ),
-        const SizedBox(height: 8),
+        const SizedBox(height: PureSpacing.sm),
         Align(
           alignment: AlignmentDirectional.centerStart,
           child: PureSegmented(labels: labels, index: index, onChanged: onChanged),
@@ -573,7 +573,7 @@ final class _Templates extends StatelessWidget {
     return _Card(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          padding: const EdgeInsets.fromLTRB(14, PureSpacing.md, 14, PureSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -597,13 +597,13 @@ final class _Templates extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: PureSpacing.sm),
               Text(
                 description(),
                 key: const ValueKey('danmaku-template-description'),
                 style: theme.text.caption.copyWith(color: theme.colors.textSecondary),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: PureSpacing.xs),
               Row(
                 children: [
                   Expanded(
@@ -619,7 +619,7 @@ final class _Templates extends StatelessWidget {
                       },
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: PureSpacing.sm),
                   PureButton(
                     key: const ValueKey('danmaku-template-load'),
                     label: t.danmaku.useMine,

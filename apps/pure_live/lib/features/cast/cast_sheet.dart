@@ -69,7 +69,7 @@ class _CastSheetState extends ConsumerState<_CastSheet> {
     final service = ref.watch(castServiceProvider);
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, PureSpacing.md),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -88,7 +88,7 @@ class _CastSheetState extends ConsumerState<_CastSheet> {
                   ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: PureSpacing.xs),
             Text(
               service.isCasting ? t.cast.castingTo(name: service.device?.name ?? '') : t.cast.hint,
               style: theme.text.bodySmall.copyWith(color: theme.colors.textSecondary),
@@ -99,7 +99,7 @@ class _CastSheetState extends ConsumerState<_CastSheet> {
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(error, style: theme.text.bodySmall.copyWith(color: theme.colors.error)),
               ),
-            const SizedBox(height: 8),
+            const SizedBox(height: PureSpacing.sm),
             Flexible(
               child: service.devices.isEmpty
                   ? Padding(

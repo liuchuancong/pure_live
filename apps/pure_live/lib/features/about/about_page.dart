@@ -129,7 +129,7 @@ final class _AboutPageState extends ConsumerState<AboutPage> {
     return PureScaffold(
       appBar: PureAppBar(title: context.t.about.title, actions: const [SettingsEntryButton()]),
       body: ListView(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(PureSpacing.md),
         children: [
           _hero(context, theme, version),
           _groupTitle(context, context.t.about.group),
@@ -174,7 +174,7 @@ final class _AboutPageState extends ConsumerState<AboutPage> {
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: PureSpacing.xl),
           _groupTitle(context, context.t.about.projectSection),
           PureCard(
             padding: EdgeInsets.zero,
@@ -229,7 +229,7 @@ final class _AboutPageState extends ConsumerState<AboutPage> {
                 ),
               ],
             ),
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(PureSpacing.lg),
             child: Icon(Icons.live_tv_rounded, size: 48, color: theme.colors.primary),
           ),
         ),
@@ -261,7 +261,7 @@ final class _AboutPageState extends ConsumerState<AboutPage> {
 
   /// The group header above a card (3.x `buildGroupTitle`).
   Widget _groupTitle(BuildContext context, String title) => Padding(
-    padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+    padding: const EdgeInsets.fromLTRB(PureSpacing.xs, 0, PureSpacing.xs, PureSpacing.sm),
     child: Text(
       title,
       style: PureTheme.of(context).text.caption
@@ -291,26 +291,26 @@ final class _AboutPageState extends ConsumerState<AboutPage> {
       ),
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(PureSpacing.lg),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.only(top: 2),
+              padding: const EdgeInsets.only(top: PureSpacing.xxs),
               child: Icon(icon, size: 22, color: iconColor ?? theme.colors.icon),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: PureSpacing.lg),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: theme.text.body.copyWith(fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: PureSpacing.xxs),
                   Text(subtitle, style: theme.text.caption.copyWith(color: theme.colors.textSecondary, height: 1.5)),
                 ],
               ),
             ),
-            if (trailing != null) ...[const SizedBox(width: 8), trailing],
+            if (trailing != null) ...[const SizedBox(width: PureSpacing.sm), trailing],
           ],
         ),
       ),

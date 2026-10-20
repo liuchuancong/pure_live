@@ -106,7 +106,7 @@ final class _WallpaperPickerPageState extends ConsumerState<WallpaperPickerPage>
             tiles: [
               CustomSettingsTile(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  padding: const EdgeInsets.fromLTRB(PureSpacing.lg, PureSpacing.md, PureSpacing.lg, PureSpacing.md),
                   child: Wrap(
                     spacing: 10,
                     runSpacing: 10,
@@ -132,7 +132,7 @@ final class _WallpaperPickerPageState extends ConsumerState<WallpaperPickerPage>
             tiles: [
               CustomSettingsTile(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                  padding: const EdgeInsets.fromLTRB(PureSpacing.lg, PureSpacing.xs, PureSpacing.lg, PureSpacing.md),
                   child: GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -222,7 +222,7 @@ final class _WallpaperPickerPageState extends ConsumerState<WallpaperPickerPage>
                 ),
                 CustomSettingsTile(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
+                    padding: const EdgeInsets.fromLTRB(PureSpacing.lg, 6, PureSpacing.lg, 14),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -231,7 +231,7 @@ final class _WallpaperPickerPageState extends ConsumerState<WallpaperPickerPage>
                           style: PureTheme.of(context).text.caption
                               .copyWith(fontWeight: FontWeight.w700, color: PureTheme.of(context).colors.primary),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: PureSpacing.sm),
                         PureSegmented(
                           labels: [t.wallpaper.fitCover, t.wallpaper.fitContain, t.wallpaper.fitFill],
                           index: switch (appearance.wallpaperFit) {

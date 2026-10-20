@@ -303,7 +303,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
               ? PreferredSize(
                   preferredSize: const Size.fromHeight(56),
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+                    padding: const EdgeInsets.fromLTRB(PureSpacing.md, 0, PureSpacing.md, 10),
                     child: PureTextField(
                       key: const ValueKey('history-filter-field'),
                       controller: _query,
@@ -360,7 +360,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
           for (final group in groups) ...[
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
+                padding: const EdgeInsets.fromLTRB(PureSpacing.md, PureSpacing.md, PureSpacing.md, 6),
                 child: Text(
                   '${group.label} · ${group.records.length}',
                   key: ValueKey('history-section-$group.label'),
@@ -451,7 +451,7 @@ final class _HistoryTile extends ConsumerWidget {
               child: InkWell(
                 onTap: onRemove,
                 child: const Padding(
-                  padding: EdgeInsets.all(4),
+                  padding: EdgeInsets.all(PureSpacing.xs),
                   child: Icon(Icons.close, size: 14, color: Colors.white),
                 ),
               ),

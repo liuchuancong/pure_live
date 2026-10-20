@@ -99,12 +99,12 @@ final class _VersionHistorySheetState extends State<VersionHistorySheet> {
   Widget build(BuildContext context) {
     final theme = PureTheme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.fromLTRB(PureSpacing.lg, 0, PureSpacing.lg, PureSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(4, 8, 4, 12),
+            padding: const EdgeInsets.fromLTRB(PureSpacing.xs, PureSpacing.sm, PureSpacing.xs, PureSpacing.md),
             child: Row(
               children: [
                 Expanded(child: Text(context.t.about.versionHistory, style: theme.text.title)),
@@ -128,7 +128,7 @@ final class _VersionHistorySheetState extends State<VersionHistorySheet> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           SizedBox(width: 300, child: wideList),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: PureSpacing.lg),
                           Expanded(child: _detailPane(context, _releases[_selected.clamp(0, _releases.length - 1)])),
                         ],
                       );
@@ -139,7 +139,7 @@ final class _VersionHistorySheetState extends State<VersionHistorySheet> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           SizedBox(width: 300, child: wideList),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: PureSpacing.lg),
                           Expanded(child: _detailPane(context, _releases[_selected.clamp(0, _releases.length - 1)])),
                         ],
                       );
@@ -154,9 +154,9 @@ final class _VersionHistorySheetState extends State<VersionHistorySheet> {
   Widget _list(BuildContext context, {required bool wide}) {
     final theme = PureTheme.of(context);
     return ListView.separated(
-      padding: const EdgeInsets.only(top: 4, bottom: 8),
+      padding: const EdgeInsets.only(top: PureSpacing.xs, bottom: PureSpacing.sm),
       itemCount: _releases.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 8),
+      separatorBuilder: (context, index) => const SizedBox(height: PureSpacing.sm),
       itemBuilder: (context, index) {
         final release = _releases[index];
         final current = index == _selected;
@@ -208,7 +208,7 @@ final class _VersionHistorySheetState extends State<VersionHistorySheet> {
                           color: current && wide ? theme.colors.primaryText : theme.colors.text,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: PureSpacing.xxs),
                       Text(
                         _date(release),
                         maxLines: 1,
@@ -232,7 +232,7 @@ final class _VersionHistorySheetState extends State<VersionHistorySheet> {
   Widget _detailPane(BuildContext context, AppRelease release) {
     final theme = PureTheme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(top: 4),
+      padding: const EdgeInsets.only(top: PureSpacing.xs),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -245,7 +245,7 @@ final class _VersionHistorySheetState extends State<VersionHistorySheet> {
                 decoration: BoxDecoration(color: theme.colors.primaryBg, borderRadius: BorderRadius.circular(10)),
                 child: Icon(Icons.tag, size: 18, color: theme.colors.primary),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: PureSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,7 +271,7 @@ final class _VersionHistorySheetState extends State<VersionHistorySheet> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: PureSpacing.lg),
           Expanded(
             child: Container(
               width: double.infinity,
@@ -349,7 +349,7 @@ final class _VersionHistorySheetState extends State<VersionHistorySheet> {
                   context.t.about.publishedAt(date: _date(release)),
                   style: PureTheme.of(context).text.caption.copyWith(color: PureTheme.of(context).colors.textSecondary),
                 ),
-              const SizedBox(height: 8),
+              const SizedBox(height: PureSpacing.sm),
               MarkdownText(release.body),
               ..._filesSection(context, release),
             ],
@@ -402,8 +402,8 @@ final class ReleaseFileCard extends StatelessWidget {
     final theme = PureTheme.of(context);
     final hasLink = asset.uri != null;
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: PureSpacing.sm),
+      padding: const EdgeInsets.all(PureSpacing.md),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
         color: theme.colors.fillSecondary.withValues(alpha: 0.35),
@@ -417,7 +417,7 @@ final class ReleaseFileCard extends StatelessWidget {
             decoration: BoxDecoration(color: theme.colors.primaryBg, borderRadius: BorderRadius.circular(10)),
             child: Icon(Icons.insert_drive_file_outlined, color: theme.colors.primary, size: 18),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: PureSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -433,9 +433,9 @@ final class ReleaseFileCard extends StatelessWidget {
                       ),
                     ),
                     if (native) ...[
-                      const SizedBox(width: 8),
+                      const SizedBox(width: PureSpacing.sm),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: PureSpacing.xxs),
                         decoration: BoxDecoration(
                           color: theme.colors.primaryBg,
                           borderRadius: BorderRadius.circular(8),
@@ -448,7 +448,7 @@ final class ReleaseFileCard extends StatelessWidget {
                     ],
                   ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: PureSpacing.xxs),
                 Text(
                   context.t.about.assetMeta(size: asset.sizeLabel, count: asset.downloads),
                   style: theme.text.caption.copyWith(color: theme.colors.textSecondary),
@@ -456,7 +456,7 @@ final class ReleaseFileCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: PureSpacing.sm),
           PureIconButton(
             tooltip: context.t.about.copyLink,
             icon: Icons.copy_outlined,

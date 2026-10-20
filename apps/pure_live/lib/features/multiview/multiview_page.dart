@@ -148,11 +148,11 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
           // their own shadow padding); 64 is the tallest language's row.
           preferredSize: const Size.fromHeight(64),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            padding: const EdgeInsets.fromLTRB(PureSpacing.md, 0, PureSpacing.md, PureSpacing.sm),
             child: Row(
               children: [
                 Text(context.t.multiview.layout),
-                const SizedBox(width: 12),
+                const SizedBox(width: PureSpacing.md),
                 Expanded(
                   child: PureSegmented(
                     labels: const ['1', '2', '4', '6', '9'],
@@ -175,7 +175,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
         columns: MosaicColumns.count(current.columns),
         columnGap: 10,
         rowGap: 10,
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(PureSpacing.md),
         children: [
           for (final (index, cell) in _cells.indexed)
             if (cell == null)
@@ -230,7 +230,7 @@ final class _EmptyCellTile extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.add, size: 32, color: PureTheme.of(context).colors.textQuaternary),
-          const SizedBox(height: 8),
+          const SizedBox(height: PureSpacing.sm),
           Text(
             context.t.multiview.emptyCell,
             style: PureTheme.of(context).text.caption.copyWith(color: PureTheme.of(context).colors.textSecondary),
@@ -463,7 +463,7 @@ final class _CellGlyph extends StatelessWidget {
       onTap: onTap,
       customBorder: const CircleBorder(),
       child: Container(
-        margin: const EdgeInsets.only(left: 4),
+        margin: const EdgeInsets.only(left: PureSpacing.xs),
         padding: const EdgeInsets.all(3),
         decoration: const BoxDecoration(color: Colors.black38, shape: BoxShape.circle),
         child: Icon(icon, size: 16, color: Colors.white),
@@ -564,7 +564,7 @@ final class _RoomPickerState extends ConsumerState<_RoomPicker> {
                 context.t.multiview.pickHint,
                 style: PureTheme.of(context).text.caption.copyWith(color: PureTheme.of(context).colors.textSecondary),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: PureSpacing.sm),
               Row(
                 children: [
                   Expanded(
@@ -574,7 +574,7 @@ final class _RoomPickerState extends ConsumerState<_RoomPicker> {
                       onSubmitted: (_) => unawaited(_addFromLink()),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: PureSpacing.sm),
                   PureButton(
                     label: context.t.multiview.add,
                     icon: Icons.add,
@@ -582,25 +582,25 @@ final class _RoomPickerState extends ConsumerState<_RoomPicker> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: PureSpacing.md),
               PureSegmented(
                 labels: [context.t.tabs.follow, context.t.tabs.history],
                 index: _fromHistory ? 1 : 0,
                 onChanged: (index) => setState(() => _fromHistory = index == 1),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: PureSpacing.sm),
               PureTextField(
                 controller: _query,
                 placeholder: context.t.search.hint,
                 prefix: const Icon(Icons.search),
                 onChanged: (_) => setState(() {}),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: PureSpacing.sm),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 200),
                 child: rooms.isEmpty
                     ? Center(
-                        child: Padding(padding: const EdgeInsets.all(16), child: Text(context.t.multiview.noPick)),
+                        child: Padding(padding: const EdgeInsets.all(PureSpacing.lg), child: Text(context.t.multiview.noPick)),
                       )
                     : ListView.builder(
                         shrinkWrap: true,
