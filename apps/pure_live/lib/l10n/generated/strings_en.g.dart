@@ -935,6 +935,9 @@ class _Translations$room$en extends Translations$room$zh {
 	@override String get diagnosticsFullscreen => 'full screen';
 	@override String get diagnosticsPortrait => 'portrait full';
 	@override String get diagnosticsPip => 'PiP';
+	@override String recBadgeRecording({required String time}) => 'Recording ${time}';
+	@override String recBadgeRetrying({required String time}) => 'Reconnecting ${time}';
+	@override String get recBadgeMerging => 'Merging';
 }
 
 // Path: areas
@@ -2449,6 +2452,9 @@ extension on TranslationsEn {
 			'room.diagnosticsFullscreen' => 'full screen',
 			'room.diagnosticsPortrait' => 'portrait full',
 			'room.diagnosticsPip' => 'PiP',
+			'room.recBadgeRecording' => ({required String time}) => 'Recording ${time}',
+			'room.recBadgeRetrying' => ({required String time}) => 'Reconnecting ${time}',
+			'room.recBadgeMerging' => 'Merging',
 			'areas.followedAreas' => 'Followed areas',
 			'areas.empty' => 'No areas here',
 			'areas.followEmpty' => 'No followed areas yet',
@@ -2749,11 +2755,11 @@ extension on TranslationsEn {
 			'remoteSync.pairingCode' => 'Pairing code',
 			'remoteSync.pairingCodeFor' => ({required String name}) => 'Enter the 6-digit pairing code shown on “${name}”',
 			'remoteSync.pairingCodeInvalid' => 'The pairing code should be 6 digits',
+			_ => null,
+		} ?? switch (path) {
 			'remoteSync.partsAll' => 'Select all',
 			'remoteSync.partsLegacy' => 'The other device is version 3.x or earlier (or did not answer), so it can only receive everything.',
 			'remoteSync.partsSendNamed' => ({required String name}) => 'Tick what to send to “${name}”. After it confirms, the ticked parts replace its own; unticked parts stay.',
-			_ => null,
-		} ?? switch (path) {
 			'remoteSync.confirmSendNamed' => ({required String name}) => 'Send this device\'s full configuration to “${name}”? Its user confirms, and it replaces the other device\'s.',
 			'remoteSync.previewTitle' => 'Receiving would change this:',
 			'remoteSync.previewSettings' => ({required int count, required int changed}) => 'Settings: ${count} items, ${changed} differ from this device',

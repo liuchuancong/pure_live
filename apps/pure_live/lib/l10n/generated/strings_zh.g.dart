@@ -3213,6 +3213,15 @@ class Translations$room$zh {
 
 	/// zh: '小窗'
 	String get diagnosticsPip => '小窗';
+
+	/// zh: '录制中 {time: String}'
+	String recBadgeRecording({required String time}) => '录制中 ${time}';
+
+	/// zh: '重连中 {time: String}'
+	String recBadgeRetrying({required String time}) => '重连中 ${time}';
+
+	/// zh: '合成中'
+	String get recBadgeMerging => '合成中';
 }
 
 // Path: areas
@@ -5253,6 +5262,9 @@ extension on Translations {
 			'room.diagnosticsFullscreen' => '全屏',
 			'room.diagnosticsPortrait' => '竖屏全屏',
 			'room.diagnosticsPip' => '小窗',
+			'room.recBadgeRecording' => ({required String time}) => '录制中 ${time}',
+			'room.recBadgeRetrying' => ({required String time}) => '重连中 ${time}',
+			'room.recBadgeMerging' => '合成中',
 			'areas.followedAreas' => '关注的分区',
 			'areas.empty' => '暂无分区',
 			'areas.followEmpty' => '还没有关注的分区',
@@ -5305,11 +5317,11 @@ extension on Translations {
 			'remoteSync.pairingCode' => '配对码',
 			'remoteSync.pairingCodeFor' => ({required String name}) => '输入“${name}”上显示的 6 位配对码',
 			'remoteSync.pairingCodeInvalid' => '配对码应为 6 位数字',
+			_ => null,
+		} ?? switch (path) {
 			'remoteSync.partsAll' => '全选',
 			'remoteSync.partsLegacy' => '对方是 3.x 或较早的版本（或者暂时没有回应），只能发送全部内容。',
 			'remoteSync.partsSendNamed' => ({required String name}) => '勾选要发送到“${name}”的内容。对方确认后，勾选的内容会替换它原有的，没勾的保持不变。',
-			_ => null,
-		} ?? switch (path) {
 			'remoteSync.confirmSendNamed' => ({required String name}) => '确定要将当前设备的全部配置发送到“${name}”吗？对方确认后会覆盖它的配置。',
 			'remoteSync.previewTitle' => '接收后会这样变化：',
 			'remoteSync.previewSettings' => ({required int count, required int changed}) => '设置：对方 ${count} 项，其中 ${changed} 项与本机不同',

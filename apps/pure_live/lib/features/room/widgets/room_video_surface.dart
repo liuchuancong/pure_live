@@ -7,6 +7,7 @@ import 'package:pure_live/features/room/local/local_gift_overlay.dart';
 import 'package:pure_live/features/room/room_controller.dart' show RoomController, RoomPresentation, RoomState;
 import 'package:pure_live/features/room/room_providers.dart' show RoomIdentity;
 import 'package:pure_live/features/room/widgets/portrait_diagnostics_badge.dart';
+import 'package:pure_live/features/room/widgets/recording_badge.dart';
 import 'package:pure_live/features/room/widgets/room_barrage_overlay.dart';
 import 'package:pure_live/features/room/widgets/room_control_overlay.dart';
 import 'package:pure_live/features/room/widgets/room_gesture_layer.dart';
@@ -126,6 +127,15 @@ final class _RoomVideoSurfaceState extends ConsumerState<RoomVideoSurface> {
           // A gift the viewer sends crosses the picture on its own layer,
           // apart from the barrage and the controls.
           LocalGiftOverlay(identity: widget.identity),
+          // This room's recorder, when it is busy: the mark and its clock in
+          // the top-end corner.
+          Align(
+            alignment: AlignmentDirectional.topEnd,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: RoomRecordingBadge(identity: widget.identity),
+            ),
+          ),
           // 显示识别状态: the picture's own metrics, top-start, only when the
           // setting asks.
           Align(

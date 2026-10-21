@@ -1023,7 +1023,10 @@
     "diagnosticsNormal": "普通",
     "diagnosticsFullscreen": "全屏",
     "diagnosticsPortrait": "竖屏全屏",
-    "diagnosticsPip": "小窗"
+    "diagnosticsPip": "小窗",
+    "recBadgeRecording": "录制中 {time: String}",
+    "recBadgeRetrying": "重连中 {time: String}",
+    "recBadgeMerging": "合成中"
   },
   "areas": {
     "followedAreas": "关注的分区",

@@ -748,7 +748,10 @@
     "diagnosticsNormal": "inline",
     "diagnosticsFullscreen": "full screen",
     "diagnosticsPortrait": "portrait full",
-    "diagnosticsPip": "PiP"
+    "diagnosticsPip": "PiP",
+    "recBadgeRecording": "Recording {time: String}",
+    "recBadgeRetrying": "Reconnecting {time: String}",
+    "recBadgeMerging": "Merging"
   },
   "areas": {
     "followedAreas": "Followed areas",
