@@ -127,11 +127,18 @@ final class _HomeShellState extends ConsumerState<HomeShell> {
         final expanded =
             width >= AdaptiveBreakpoints.expanded && (!desktop || ref.watch(appPreferencesProvider).shellNavExpanded);
         final toggle = desktop
-            ? PureIconButton(
-                key: const ValueKey('home-nav-toggle'),
-                icon: Icons.menu_rounded,
-                tooltip: context.t.common.menu,
-                onPressed: () => _setExpanded(!expanded),
+            ? Material(
+                color: Colors.transparent,
+                // The toggle dispatches to the design language's own button,
+                // and some of those spell it with Material widgets — ink
+                // needs a Material ancestor the navigation columns do not
+                // carry.
+                child: PureIconButton(
+                  key: const ValueKey('home-nav-toggle'),
+                  icon: Icons.menu_rounded,
+                  tooltip: context.t.common.menu,
+                  onPressed: () => _setExpanded(!expanded),
+                ),
               )
             : null;
         final destinations = shellNavDestinations(context, branches: branches);
@@ -207,39 +214,47 @@ class _BrandHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 12, 12, 8),
-      child: Row(
-        children: [
-          ?toggle,
-          Expanded(
-            child: Semantics(
-              button: true,
-              label: t.app.title,
-              child: InkWell(
-                onTap: onBrandTap,
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                  child: Row(
-                    children: [
-                      const AdaptiveBrandMark(size: 26),
-                      const SizedBox(width: 9),
-                      Expanded(
-                        child: Text(
-                          t.app.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: PureTheme.of(context).text.body.copyWith(fontSize: 14.5, fontWeight: FontWeight.w700),
+    // The Material is not a surface choice: the head carries an InkWell (and
+    // a toggle that some design languages spell with Material's own button),
+    // and the dispatched navigation column provides no Material ancestor of
+    // its own — ink needs one.
+    return Material(
+      color: Colors.transparent,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(8, 12, 12, 8),
+        child: Row(
+          children: [
+            ?toggle,
+            Expanded(
+              child: Semantics(
+                button: true,
+                label: t.app.title,
+                child: InkWell(
+                  onTap: onBrandTap,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                    child: Row(
+                      children: [
+                        const AdaptiveBrandMark(size: 26),
+                        const SizedBox(width: 9),
+                        Expanded(
+                          child: Text(
+                            t.app.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: PureTheme.of(context).text.body
+                                .copyWith(fontSize: 14.5, fontWeight: FontWeight.w700),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
