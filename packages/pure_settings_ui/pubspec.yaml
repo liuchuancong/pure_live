@@ -24,4 +24,6 @@ dependencies:
   pure_uikit:
 
 dev_dependencies:
+  flutter_test:
+    sdk: flutter
   very_good_analysis: ^11.0.0
