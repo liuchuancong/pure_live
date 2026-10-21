@@ -4,7 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core/media_core.dart' show PlayerKernel;
 import 'package:media_core_audio/media_core_audio.dart'
-    show AudioPlaybackController, AudioPlaybackState, LyricDocument, LyricLine, MusicSourceRegistry, MusicTrack, PlayMode;
+    show
+        AudioPlaybackController,
+        AudioPlaybackState,
+        LyricDocument,
+        LyricLine,
+        MusicSourceRegistry,
+        MusicTrack,
+        PlayMode;
 import 'package:media_core_media_kit/media_core_media_kit.dart' show registerMediaKitRegistry;
 import 'package:pure_live/features/vod/music/bilibili_music_source.dart';
 import 'package:pure_live/features/vod/vod_page.dart' show vodClientProvider;
@@ -221,7 +228,10 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Text(
-                  [line.text, if (line.translation != null && line.translation!.isNotEmpty) line.translation!].join('\n'),
+                  [
+                    line.text,
+                    if (line.translation != null && line.translation!.isNotEmpty) line.translation!,
+                  ].join('\n'),
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
