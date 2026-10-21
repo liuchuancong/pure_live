@@ -35,7 +35,7 @@
 | B5 | 多画面：布局与单元格交互 | multiview/10 | ⬜ |
 | B6 | 录制/IPTV：录制视图与控制、IPTV 增强 | recorder/、iptv/ | ⬜ |
 | B7 | 账号/备份：账号三视图、WebDAV、日志页 | account/14、backup/5、web_dav/5 | 🟡 盘点：v2 已有等价（账号名单/编辑器/QR 登录、备份+WebDAV 1012 行、日志页）；开播提醒按标签 f8a6a2760 |
-| B8 | 设置全量：逐项对照参考 settings | settings/16 | ⬜ |
+| B8 | 设置全量：逐项对照参考 settings | settings/16 | 🟡 并发刷新任务 522969fc0、播放时屏幕常亮 e1893639e；剩余：外观（纯黑/动态取色/主题色）、小窗系列（随 B3）、内核/兼容模式、双指手势系列 |
 | B9 | TV UI 树 | tv/54 | ⬜ |
 | B10 | VOD | live_vod 包、tv/video | ⬜ |
 
