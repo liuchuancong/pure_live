@@ -44,6 +44,7 @@ dependencies:
   cached_network_image_ce: ^4.13.1 # 社区维护的图片缓存实现
   flutter_cache_manager: ^3.4.5 # 图片缓存的体积与清理
   custom_refresh_indicator: ^4.0.2 # 自定义下拉刷新
+  dynamic_color: ^1.7.0 # Android 12+ 动态取色
   flutter_helper_utils: ^10.0.0
   flutter_screenutil_plus: ^2.0.0 # 自适应布局辅助
   flutter_keyboard_visibility: ^7.0.1 # 监听软键盘状态

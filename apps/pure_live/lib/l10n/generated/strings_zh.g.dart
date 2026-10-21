@@ -1567,6 +1567,12 @@ class Translations$settings$zh {
 
 	/// zh: '按平台顺序'
 	String get preferredPlatformNone => '按平台顺序';
+
+	/// zh: '动态取色'
+	String get dynamicColor => '动态取色';
+
+	/// zh: 'Android 12+ 跟随系统壁纸取强调色'
+	String get dynamicColorSubtitle => 'Android 12+ 跟随系统壁纸取强调色';
 }
 
 // Path: hotAreas
@@ -4662,6 +4668,8 @@ extension on Translations {
 			'settings.preferredPlatform' => '首选直播平台',
 			'settings.preferredPlatformDesc' => '热门、分区与搜索默认打开这个平台',
 			'settings.preferredPlatformNone' => '按平台顺序',
+			'settings.dynamicColor' => '动态取色',
+			'settings.dynamicColorSubtitle' => 'Android 12+ 跟随系统壁纸取强调色',
 			'hotAreas.title' => '平台显示',
 			'hotAreas.note' => '隐藏的平台不会出现在热门、分区与搜索中。',
 			'hotAreas.orderNote' => '拖动调整平台的显示顺序。',
@@ -4700,10 +4708,10 @@ extension on Translations {
 			'logs.openFolder' => '打开日志目录',
 			'logs.note' => '日志文件保存在数据目录的 logs 下，会滚动清理。',
 			'recorder.title' => '录播',
-			'recorder.addRoom' => '添加房间',
-			'recorder.platform' => '平台',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.addRoom' => '添加房间',
+			'recorder.platform' => '平台',
 			'recorder.roomId' => '房间号',
 			'recorder.startWatching' => '开始监听',
 			'recorder.watchStarted' => '已开始监听，开播后自动录制',
@@ -5214,10 +5222,10 @@ extension on Translations {
 			'remoteSync.previewWarning' => '接收会合入勾选的内容，没勾的保持不变；设置项以对方为准，无法撤销，需要时先在“备份与恢复”创建一份备份。',
 			'remoteSync.partCount' => ({required String part, required int count}) => '${part}（${count}）',
 			'remoteSync.partSettings' => '设置',
-			'remoteSync.partFollows' => '关注列表',
-			'remoteSync.partHistory' => '观看历史',
 			_ => null,
 		} ?? switch (path) {
+			'remoteSync.partFollows' => '关注列表',
+			'remoteSync.partHistory' => '观看历史',
 			'remoteSync.partGroups' => '关注分组',
 			'remoteSync.partKeywords' => '屏蔽关键词',
 			'remoteSync.partUsers' => '屏蔽用户',

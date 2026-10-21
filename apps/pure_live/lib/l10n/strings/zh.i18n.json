@@ -492,7 +492,9 @@
     "screenKeepOnDesc": "直播间播放期间不让屏幕自动熄灭",
     "preferredPlatform": "首选直播平台",
     "preferredPlatformDesc": "热门、分区与搜索默认打开这个平台",
-    "preferredPlatformNone": "按平台顺序"
+    "preferredPlatformNone": "按平台顺序",
+    "dynamicColor": "动态取色",
+    "dynamicColorSubtitle": "Android 12+ 跟随系统壁纸取强调色"
   },
   "hotAreas": {
     "title": "平台显示",

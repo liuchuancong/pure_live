@@ -621,6 +621,8 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get preferredPlatform => 'Preferred platform';
 	@override String get preferredPlatformDesc => 'Popular, areas and search open on this platform';
 	@override String get preferredPlatformNone => 'Platform order';
+	@override String get dynamicColor => 'Dynamic colour';
+	@override String get dynamicColorSubtitle => 'Take the accent from the system wallpaper (Android 12+)';
 }
 
 // Path: hotAreas
@@ -2154,6 +2156,8 @@ extension on TranslationsEn {
 			'settings.preferredPlatform' => 'Preferred platform',
 			'settings.preferredPlatformDesc' => 'Popular, areas and search open on this platform',
 			'settings.preferredPlatformNone' => 'Platform order',
+			'settings.dynamicColor' => 'Dynamic colour',
+			'settings.dynamicColorSubtitle' => 'Take the accent from the system wallpaper (Android 12+)',
 			'hotAreas.title' => 'Platform visibility',
 			'hotAreas.note' => 'Hidden platforms are left out of popular, areas and search.',
 			'hotAreas.orderNote' => 'Drag to reorder the platforms.',
@@ -2192,10 +2196,10 @@ extension on TranslationsEn {
 			'logs.openFolder' => 'Open log folder',
 			'logs.note' => 'Log files live under the logs directory and rotate.',
 			'recorder.title' => 'Recorder',
-			'recorder.addRoom' => 'Add room',
-			'recorder.platform' => 'Platform',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.addRoom' => 'Add room',
+			'recorder.platform' => 'Platform',
 			'recorder.roomId' => 'Room ID',
 			'recorder.startWatching' => 'Start watching',
 			'recorder.watchStarted' => 'Watching; recording starts when the room goes live',
@@ -2706,10 +2710,10 @@ extension on TranslationsEn {
 			'remoteSync.previewWarning' => 'Receiving merges the ticked parts; unticked ones stay. Settings follow the other device and cannot be undone — create a backup under “Backup & restore” first if needed.',
 			'remoteSync.partCount' => ({required String part, required int count}) => '${part} (${count})',
 			'remoteSync.partSettings' => 'Settings',
-			'remoteSync.partFollows' => 'Follow list',
-			'remoteSync.partHistory' => 'Watch history',
 			_ => null,
 		} ?? switch (path) {
+			'remoteSync.partFollows' => 'Follow list',
+			'remoteSync.partHistory' => 'Watch history',
 			'remoteSync.partGroups' => 'Follow groups',
 			'remoteSync.partKeywords' => 'Blocked keywords',
 			'remoteSync.partUsers' => 'Blocked users',

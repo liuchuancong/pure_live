@@ -108,6 +108,14 @@ final class AppearancePage extends ConsumerWidget {
                 onPressed: (_) => unawaited(_chooseLanguage(context, ref)),
               ),
               SettingsTile.switchTile(
+                key: const ValueKey('appearance-dynamic-color'),
+                leading: const Icon(Icons.color_lens_outlined),
+                title: Text(t.settings.dynamicColor),
+                description: Text(t.settings.dynamicColorSubtitle),
+                initialValue: appearance.dynamicColor,
+                onToggle: (value) => update((a) => a.copyWith(dynamicColor: value)),
+              ),
+              SettingsTile.switchTile(
                 leading: const Icon(Icons.contrast_outlined),
                 title: Text(t.settings.pureBlack),
                 description: Text(t.settings.pureBlackSubtitle),

@@ -57,6 +57,10 @@ abstract class AppearancePreferences with _$AppearancePreferences {
     /// Whether dark surfaces are drawn pure black, for OLED screens.
     @Default(false) bool pureBlack,
 
+    /// Whether the accent follows the system's wallpaper colours (Android
+    /// 12+); other platforms report none and keep their own accent.
+    @Default(false) bool dynamicColor,
+
     /// The layout density registry id; empty means the default density.
     @Default('') String densityId,
 

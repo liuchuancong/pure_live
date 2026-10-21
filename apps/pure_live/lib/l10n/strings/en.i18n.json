@@ -485,7 +485,9 @@
     "screenKeepOnDesc": "Stop the screen from sleeping while a room plays",
     "preferredPlatform": "Preferred platform",
     "preferredPlatformDesc": "Popular, areas and search open on this platform",
-    "preferredPlatformNone": "Platform order"
+    "preferredPlatformNone": "Platform order",
+    "dynamicColor": "Dynamic colour",
+    "dynamicColorSubtitle": "Take the accent from the system wallpaper (Android 12+)"
   },
   "hotAreas": {
     "title": "Platform visibility",

@@ -1,8 +1,10 @@
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil_plus/flutter_screenutil_plus.dart';
 import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/system/environment/env.dart';
+import 'package:pure_live/system/theme/ui_configuration_mapper.dart' show uiConfigFromAppearance;
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The Material surface the chosen appearance resolves to.
@@ -45,15 +47,29 @@ class AppTheme extends ConsumerWidget {
     // The design-size reference every `.w`/`.h`/`.sp` scaling extension reads.
     // Desktop-first: a 1280x800 window is the 1:1 baseline; phone and TV scale
     // around it. minTextAdapt keeps labels legible at the small end.
-    return ScreenUtilPlusInit(
-      designSize: const Size(1280, 800),
-      minTextAdapt: true,
-      splitScreenMode: true,
-      child: PureConfigProvider(
-        config: ref.watch(uiConfigProvider),
-        hardwareBlur: hardwareBlur,
-        child: PureLayoutBuilder(isTv: Env.isTv, builder: (context, environment) => child),
-      ),
+    // 动态取色: the system's wallpaper accent (Android 12+) overrides the
+    // stored one while the switch is on; elsewhere the builder reports none
+    // and the stored answer stands. The config is resolved here rather than
+    // from [uiConfigProvider] so the system's light and dark schemes both
+    // arrive without writing preferences.
+    return DynamicColorBuilder(
+      builder: (light, dark) {
+        final appearance = ref.watch(appearancePreferencesProvider);
+        final dynamic = appearance.dynamicColor ? (light?.primary ?? dark?.primary) : null;
+        final config = appearance.dynamicColor
+            ? uiConfigFromAppearance(appearance, dynamicAccent: dynamic)
+            : ref.watch(uiConfigProvider);
+        return ScreenUtilPlusInit(
+          designSize: const Size(1280, 800),
+          minTextAdapt: true,
+          splitScreenMode: true,
+          child: PureConfigProvider(
+            config: config,
+            hardwareBlur: hardwareBlur,
+            child: PureLayoutBuilder(isTv: Env.isTv, builder: (context, environment) => child),
+          ),
+        );
+      },
     );
   }
 }

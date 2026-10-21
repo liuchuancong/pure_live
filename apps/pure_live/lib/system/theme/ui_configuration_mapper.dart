@@ -17,7 +17,7 @@ import 'package:pure_uikit/pure_uikit.dart';
 
 /// Builds a [UiConfig] from [appearance]; an unknown language or density id
 /// falls back to the default rather than blocking start-up.
-UiConfig uiConfigFromAppearance(AppearancePreferences appearance) {
+UiConfig uiConfigFromAppearance(AppearancePreferences appearance, {Color? dynamicAccent}) {
   final language = designLanguageOrDefault(appearance.designLanguageId);
   return UiConfig(
     language: language,
@@ -31,9 +31,11 @@ UiConfig uiConfigFromAppearance(AppearancePreferences appearance) {
     // Fluent apps do. A stored choice — any other language — keeps its own
     // answer, and a machine without a readable accent keeps the language's
     // seed default.
-    accent: switch ((language, appearance.accentColor)) {
-      (PureDesignLanguage.fluent, null) when Platform.isWindows => readWindowsAccentColor(),
+    // 动态取色 outranks a stored accent when the system has one to give.
+    accent: switch ((dynamicAccent, appearance.accentColor)) {
+      (final Color fromSystem?, _) => fromSystem,
       (_, final int stored) => Color(stored),
+      (_, null) when language == PureDesignLanguage.fluent && Platform.isWindows => readWindowsAccentColor(),
       _ => null,
     },
     pureBlack: appearance.pureBlack,
