@@ -37,7 +37,17 @@ final class HomeShell extends ConsumerStatefulWidget {
   ConsumerState<HomeShell> createState() => _HomeShellState();
 }
 
+/// The labelled sidebar's width bounds and default — what the drag handle
+/// clamps to and what a double tap takes back.
+const double _sidebarMinWidth = 150;
+const double _sidebarMaxWidth = 300;
+const double _sidebarDefaultWidth = 180;
+
 final class _HomeShellState extends ConsumerState<HomeShell> {
+  /// The width while a drag is moving the handle; null lets the stored value
+  /// rule.
+  double? _dragWidth;
+
   @override
   void initState() {
     super.initState();
@@ -50,6 +60,14 @@ final class _HomeShellState extends ConsumerState<HomeShell> {
           ..read(cacheAutoClearWatcherProvider).start();
       }
     });
+  }
+
+  /// Persists the dragged width; the store's own debounce batches a drag
+  /// into one write.
+  void _storeWidth(double value) {
+    unawaited(
+      ref.read(appPreferencesProvider.notifier).update((preferences) => preferences.copyWith(sidebarWidth: value)),
+    );
   }
 
   /// Hands a menu branch to the content pane — what the shell's chrome and
@@ -124,10 +142,17 @@ final class _HomeShellState extends ConsumerState<HomeShell> {
         // the window's title bar, and the foot is settings.
         final expanded = width >= AdaptiveBreakpoints.expanded;
         final destinations = shellColumnDestinations(context, branches: branches);
+        // The labelled sidebar's width is the user's: dragged on the handle
+        // between the panes, held in the preferences, reset by a double tap.
+        final sidebarWidth = (_dragWidth ?? ref.watch(appPreferencesProvider).sidebarWidth).clamp(
+          _sidebarMinWidth,
+          _sidebarMaxWidth,
+        );
         final Widget navigation;
         if (expanded) {
           navigation = DesktopNavigation(
             key: const ValueKey('home-sidebar'),
+            width: sidebarWidth,
             destinations: destinations,
             selectedId: selected.name,
             onDestinationSelected: (destination) =>
@@ -162,12 +187,79 @@ final class _HomeShellState extends ConsumerState<HomeShell> {
                 // The column scrolls in short windows; its position must not
                 // attach to the page's primary scroll controller.
                 PrimaryScrollController.none(child: FocusTraversalGroup(child: navigation)),
+                if (expanded)
+                  _ColumnResizeHandle(
+                    width: sidebarWidth,
+                    onChanged: (value) => setState(() => _dragWidth = value),
+                    onChangeEnd: _storeWidth,
+                    onReset: () {
+                      setState(() => _dragWidth = _sidebarDefaultWidth);
+                      _storeWidth(_sidebarDefaultWidth);
+                    },
+                  ),
                 Expanded(child: body),
               ],
             ),
           ),
         );
       },
+    );
+  }
+}
+
+/// The grip between the sidebar and the content: drag it to change the
+/// column's width, double-tap to take the default back. The pill stays
+/// invisible until the pointer arrives, so the resting edge is the column's
+/// own border.
+class _ColumnResizeHandle extends StatefulWidget {
+  /// Draws the handle for a column [width] wide.
+  const new({required this.width, required this.onChanged, required this.onChangeEnd, required this.onReset});
+
+  /// The column's current width — the drag adds to it.
+  final double width;
+
+  /// Carries the width the drag has reached.
+  final ValueChanged<double> onChanged;
+
+  /// The drag ended; the width is final.
+  final ValueChanged<double> onChangeEnd;
+
+  /// The default width was asked for.
+  final VoidCallback onReset;
+
+  @override
+  State<_ColumnResizeHandle> createState() => _ColumnResizeHandleState();
+}
+
+class _ColumnResizeHandleState extends State<_ColumnResizeHandle> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = PureTheme.of(context).colors;
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeLeftRight,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onHorizontalDragUpdate: (details) =>
+            widget.onChanged((widget.width + details.delta.dx).clamp(_sidebarMinWidth, _sidebarMaxWidth)),
+        onHorizontalDragEnd: (_) => widget.onChangeEnd(widget.width),
+        onDoubleTap: widget.onReset,
+        child: SizedBox(
+          width: 6,
+          height: double.infinity,
+          child: Center(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 120),
+              width: 3,
+              height: _hover ? 56 : 0,
+              decoration: BoxDecoration(color: colors.primary, borderRadius: BorderRadius.circular(1.5)),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

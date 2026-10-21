@@ -230,6 +230,7 @@ final class AppPreferences extends Equatable {
     this.launchBranch = AppLaunchBranch.follow,
     this.restoreLastTab = false,
     this.lastBranchId,
+    this.sidebarWidth = 180,
     this.windowWidth = 0,
     this.windowHeight = 0,
     this.autoRefreshMinutes = 0,
@@ -324,6 +325,7 @@ final class AppPreferences extends Equatable {
       launchBranch: AppLaunchBranch.fromId(json['launchBranch'] as String?),
       restoreLastTab: json['restoreLastTab'] as bool? ?? false,
       lastBranchId: json['lastBranchId'] as String?,
+      sidebarWidth: (json['sidebarWidth'] as num?)?.toDouble() ?? 224,
       windowWidth: json['windowWidth'] as int? ?? 0,
       windowHeight: json['windowHeight'] as int? ?? 0,
       autoRefreshMinutes: json['autoRefreshMinutes'] as int? ?? 0,
@@ -679,6 +681,11 @@ final class AppPreferences extends Equatable {
   /// tab switch.
   final String? lastBranchId;
 
+  /// The labelled sidebar's width, in logical pixels — what the drag handle
+  /// between the panes writes and every boot restores. The shell clamps it
+  /// before drawing, so a hand-edited document cannot stretch it absurdly.
+  final double sidebarWidth;
+
   /// The desktop window's stored width; 0 keeps the launch default.
   final int windowWidth;
 
@@ -846,6 +853,7 @@ final class AppPreferences extends Equatable {
     'launchBranch': launchBranch.id,
     'restoreLastTab': restoreLastTab,
     if (lastBranchId != null) 'lastBranchId': lastBranchId,
+    'sidebarWidth': sidebarWidth,
     'windowWidth': windowWidth,
     'windowHeight': windowHeight,
     'autoRefreshMinutes': autoRefreshMinutes,
@@ -959,6 +967,7 @@ final class AppPreferences extends Equatable {
     bool? restoreLastTab,
     String? lastBranchId,
     bool clearLastBranchId = false,
+    double? sidebarWidth,
     int? windowWidth,
     int? windowHeight,
     int? autoRefreshMinutes,
@@ -1067,6 +1076,7 @@ final class AppPreferences extends Equatable {
     launchBranch: launchBranch ?? this.launchBranch,
     restoreLastTab: restoreLastTab ?? this.restoreLastTab,
     lastBranchId: clearLastBranchId ? null : (lastBranchId ?? this.lastBranchId),
+    sidebarWidth: sidebarWidth ?? this.sidebarWidth,
     windowWidth: windowWidth ?? this.windowWidth,
     windowHeight: windowHeight ?? this.windowHeight,
     autoRefreshMinutes: autoRefreshMinutes ?? this.autoRefreshMinutes,
@@ -1179,6 +1189,9 @@ final class AppPreferences extends Equatable {
     countdownCloseMinutes,
     launchBranch,
     restoreLastTab,
+    lastBranchId,
+    sidebarWidth,
+    windowWidth,
     windowHeight,
     autoRefreshMinutes,
     refreshResumeThresholdMinutes,
