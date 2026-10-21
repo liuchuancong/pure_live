@@ -11,6 +11,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_acrylic
   flutter_secure_storage_linux
   gtk
+  media_core_audio
   media_core_native
   media_kit_video
   open_file_linux

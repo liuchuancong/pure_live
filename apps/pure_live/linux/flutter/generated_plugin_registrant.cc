@@ -14,6 +14,7 @@
 #include <flutter_acrylic/flutter_acrylic_plugin.h>
 #include <flutter_secure_storage_linux/flutter_secure_storage_linux_plugin.h>
 #include <gtk/gtk_plugin.h>
+#include <media_core_audio/media_core_audio_plugin.h>
 #include <media_core_native/media_core_native_plugin.h>
 #include <media_kit_video/media_kit_video_plugin.h>
 #include <open_file_linux/open_file_linux_plugin.h>
@@ -49,6 +50,9 @@ void fl_register_plugins(FlPluginRegistry* registry) {
   g_autoptr(FlPluginRegistrar) gtk_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "GtkPlugin");
   gtk_plugin_register_with_registrar(gtk_registrar);
+  g_autoptr(FlPluginRegistrar) media_core_audio_registrar =
+      fl_plugin_registry_get_registrar_for_plugin(registry, "MediaCoreAudioPlugin");
+  media_core_audio_plugin_register_with_registrar(media_core_audio_registrar);
   g_autoptr(FlPluginRegistrar) media_core_native_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "MediaCoreNativePlugin");
   media_core_native_plugin_register_with_registrar(media_core_native_registrar);
