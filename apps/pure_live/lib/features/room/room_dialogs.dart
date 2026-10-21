@@ -16,13 +16,15 @@ import 'package:pure_uikit/pure_uikit.dart' hide InteractionState;
 /// too: the dialog keeps a draft, the draft is only committed on confirm, a
 /// commit that the live player refuses keeps the dialog open with the reason,
 /// and the reset restores 0.5 / 1.0 / unmuted without submitting.
-Future<void> showRoomVolumeDialog(BuildContext context, RoomIdentity identity) {
-  return showDialog<void>(
-    context: context,
-    barrierDismissible: false,
-    builder: (_) => _RoomVolumeDialog(identity: identity),
-  );
-}
+Future<void> showRoomVolumeDialog(BuildContext context, RoomIdentity identity) => showPureDialog<void>(
+  context: context,
+  dismissible: false,
+  maxWidth: 520,
+  // The toolkit's own dialog surface: the language draws the frame, the
+  // dialog below only brings its content. `showDialog` + `Dialog` printed a
+  // Material card under every non-Material host.
+  child: _RoomVolumeDialog(identity: identity),
+);
 
 final class _RoomVolumeDialog extends ConsumerStatefulWidget {
   const new({required this.identity});
@@ -84,129 +86,122 @@ final class _RoomVolumeDialogState extends ConsumerState<_RoomVolumeDialog> {
     final height = MediaQuery.sizeOf(context).height;
     return PopScope(
       canPop: !_saving,
-      child: Dialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        clipBehavior: Clip.antiAlias,
-        backgroundColor: theme.colors.bgElevated,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(theme.token.scale.radii.lg)),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: 520, maxHeight: height > 40 ? height - 40 : height),
-          child: SizedBox(
-            width: 480,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: SingleChildScrollView(
-                    key: const ValueKey('room-volume-scroll'),
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(t.room.roomVolume, style: theme.text.title),
-                        const SizedBox(height: 8),
-                        Text(t.room.roomVolumeDesc, style: theme.text.body.copyWith(color: theme.colors.textSecondary)),
-                        const SizedBox(height: 12),
-                        _Row(
-                          icon: _mute ? Icons.volume_off : Icons.volume_up,
-                          iconColor: _mute ? theme.colors.error : theme.colors.primary,
-                          title: t.room.globalMute,
-                          subtitle: t.room.globalMuteSubtitle,
-                          trailing: PureSwitch(
-                            value: _mute,
-                            enabled: !_saving,
-                            onChanged: _saving
-                                ? null
-                                : (value) => setState(() {
-                                    _mute = value;
-                                    _applyError = null;
-                                  }),
-                          ),
-                        ),
-                        const PureDivider(extent: 32),
-                        _VolumeRow(
-                          sliderKey: const ValueKey('room-volume-mobile-slider'),
-                          icon: Icons.phone_android,
-                          title: t.room.mobileDefaultVolume,
-                          value: _mobileVolume,
-                          disabled: _mute || _saving,
-                          onChanged: (value) => setState(() {
-                            _mobileVolume = value;
-                            _applyError = null;
-                          }),
-                        ),
-                        const SizedBox(height: 16),
-                        _VolumeRow(
-                          sliderKey: const ValueKey('room-volume-desktop-slider'),
-                          icon: Icons.computer,
-                          title: t.room.desktopDefaultVolume,
-                          value: _desktopVolume,
-                          disabled: _mute || _saving,
-                          onChanged: (value) => setState(() {
-                            _desktopVolume = value;
-                            _applyError = null;
-                          }),
-                        ),
-                        const SizedBox(height: 12),
-                        if (_applyError case final error?) ...[
-                          Semantics(
-                            liveRegion: true,
-                            child: Text(
-                              error,
-                              key: const ValueKey('room-volume-error'),
-                              style: theme.text.body.copyWith(color: theme.colors.error),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                        ],
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: PureButton(
-                            label: t.room.resetDefault,
-                            icon: Icons.refresh,
-                            variant: ButtonVariant.ghost,
-                            size: ControlSize.sm,
-                            onPressed: _saving
-                                ? null
-                                : () => setState(() {
-                                    _mute = false;
-                                    _mobileVolume = 0.5;
-                                    _desktopVolume = 1;
-                                    _applyError = null;
-                                  }),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const PureDivider(),
-                SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: Wrap(
-                        alignment: WrapAlignment.end,
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          PureButton(
-                            label: t.common.cancel,
-                            variant: ButtonVariant.ghost,
-                            onPressed: _saving ? null : () => Navigator.of(context).pop(),
-                          ),
-                          PureButton(label: t.common.confirm, onPressed: _saving ? null : () => unawaited(_submit())),
-                        ],
+      // The surface comes from showPureDialog now; this only caps its height
+      // so the body scrolls and the footer stays reachable on a short window.
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: height > 40 ? height - 40 : height),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: SingleChildScrollView(
+                key: const ValueKey('room-volume-scroll'),
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(t.room.roomVolume, style: theme.text.title),
+                    const SizedBox(height: 8),
+                    Text(t.room.roomVolumeDesc, style: theme.text.body.copyWith(color: theme.colors.textSecondary)),
+                    const SizedBox(height: 12),
+                    _Row(
+                      icon: _mute ? Icons.volume_off : Icons.volume_up,
+                      iconColor: _mute ? theme.colors.error : theme.colors.primary,
+                      title: t.room.globalMute,
+                      subtitle: t.room.globalMuteSubtitle,
+                      trailing: PureSwitch(
+                        value: _mute,
+                        enabled: !_saving,
+                        onChanged: _saving
+                            ? null
+                            : (value) => setState(() {
+                                _mute = value;
+                                _applyError = null;
+                              }),
                       ),
                     ),
+                    const PureDivider(extent: 32),
+                    _VolumeRow(
+                      sliderKey: const ValueKey('room-volume-mobile-slider'),
+                      icon: Icons.phone_android,
+                      title: t.room.mobileDefaultVolume,
+                      value: _mobileVolume,
+                      disabled: _mute || _saving,
+                      onChanged: (value) => setState(() {
+                        _mobileVolume = value;
+                        _applyError = null;
+                      }),
+                    ),
+                    const SizedBox(height: 16),
+                    _VolumeRow(
+                      sliderKey: const ValueKey('room-volume-desktop-slider'),
+                      icon: Icons.computer,
+                      title: t.room.desktopDefaultVolume,
+                      value: _desktopVolume,
+                      disabled: _mute || _saving,
+                      onChanged: (value) => setState(() {
+                        _desktopVolume = value;
+                        _applyError = null;
+                      }),
+                    ),
+                    const SizedBox(height: 12),
+                    if (_applyError case final error?) ...[
+                      Semantics(
+                        liveRegion: true,
+                        child: Text(
+                          error,
+                          key: const ValueKey('room-volume-error'),
+                          style: theme.text.body.copyWith(color: theme.colors.error),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: PureButton(
+                        label: t.room.resetDefault,
+                        icon: Icons.refresh,
+                        variant: ButtonVariant.ghost,
+                        size: ControlSize.sm,
+                        onPressed: _saving
+                            ? null
+                            : () => setState(() {
+                                _mute = false;
+                                _mobileVolume = 0.5;
+                                _desktopVolume = 1;
+                                _applyError = null;
+                              }),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const PureDivider(),
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Wrap(
+                    alignment: WrapAlignment.end,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      PureButton(
+                        label: t.common.cancel,
+                        variant: ButtonVariant.ghost,
+                        onPressed: _saving ? null : () => Navigator.of(context).pop(),
+                      ),
+                      PureButton(label: t.common.confirm, onPressed: _saving ? null : () => unawaited(_submit())),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -301,12 +296,12 @@ final class _VolumeRow extends StatelessWidget {
 /// field edit the dialog's own draft; the countdown only re-arms on confirm;
 /// cancelling an active timer still works while the duration is an unfinished
 /// draft; a draft out of range refuses to confirm with a reason.
-Future<void> showRoomTimerDialog(BuildContext context, RoomIdentity identity) {
-  return showDialog<void>(
-    context: context,
-    builder: (_) => _RoomTimerDialog(identity: identity),
-  );
-}
+Future<void> showRoomTimerDialog(BuildContext context, RoomIdentity identity) => showPureDialog<void>(
+  context: context,
+  maxWidth: 520,
+  // The language's own dialog surface; see the volume dialog above.
+  child: _RoomTimerDialog(identity: identity),
+);
 
 final class _RoomTimerDialog extends ConsumerStatefulWidget {
   const new({required this.identity});
@@ -374,104 +369,95 @@ final class _RoomTimerDialogState extends ConsumerState<_RoomTimerDialog> {
     final t = context.t;
     final theme = PureTheme.of(context);
     final height = MediaQuery.sizeOf(context).height;
-    return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      clipBehavior: Clip.antiAlias,
-      backgroundColor: theme.colors.bgElevated,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(theme.token.scale.radii.lg)),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: 520, maxHeight: height > 40 ? height - 40 : height),
-        child: SizedBox(
-          width: 480,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Flexible(
-                child: SingleChildScrollView(
-                  key: const ValueKey('room-timer-scroll'),
-                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(t.room.sleepTimer, style: theme.text.title),
-                      const SizedBox(height: 16),
-                      _Row(
-                        icon: Icons.bedtime_outlined,
-                        title: t.room.sleepTimerEnable,
-                        subtitle: t.room.sleepTimerDesc,
-                        trailing: PureSwitch(
-                          key: const ValueKey('room-timer-enabled'),
-                          value: _enabled,
-                          onChanged: (value) => setState(() {
-                            _enabled = value;
-                            _durationError = null;
-                          }),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          for (final minutes in _presets)
-                            PureButton(
-                              key: ValueKey('room-timer-preset-$minutes'),
-                              label: t.room.minutesN(minutes: '$minutes'),
-                              size: ControlSize.sm,
-                              variant: _enabled ? ButtonVariant.secondary : ButtonVariant.ghost,
-                              onPressed: _enabled ? () => _selectPreset(minutes) : null,
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      PureTextField(
-                        controller: _durationController,
-                        enabled: _enabled,
-                        keyboardType: TextInputType.number,
-                        placeholder: t.room.timerDurationHint,
-                        // The reference spells the accepted range out under the
-                        // field; the kit's field has no helper line, so the hint
-                        // rides in the placeholder and the error says the rest.
-                        errorText: _durationError,
-                        suffix: Text(t.room.minutesUnit),
-                        onChanged: (_) {
-                          if (_durationError != null) {
-                            setState(() => _durationError = null);
-                          }
-                        },
-                        onSubmitted: (_) => _submit(),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const PureDivider(),
-              SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Wrap(
-                      alignment: WrapAlignment.end,
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        PureButton(
-                          label: t.common.cancel,
-                          variant: ButtonVariant.ghost,
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                        PureButton(label: t.common.confirm, onPressed: _submit),
-                      ],
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: height > 40 ? height - 40 : height),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: SingleChildScrollView(
+              key: const ValueKey('room-timer-scroll'),
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(t.room.sleepTimer, style: theme.text.title),
+                  const SizedBox(height: 16),
+                  _Row(
+                    icon: Icons.bedtime_outlined,
+                    title: t.room.sleepTimerEnable,
+                    subtitle: t.room.sleepTimerDesc,
+                    trailing: PureSwitch(
+                      key: const ValueKey('room-timer-enabled'),
+                      value: _enabled,
+                      onChanged: (value) => setState(() {
+                        _enabled = value;
+                        _durationError = null;
+                      }),
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final minutes in _presets)
+                        PureButton(
+                          key: ValueKey('room-timer-preset-$minutes'),
+                          label: t.room.minutesN(minutes: '$minutes'),
+                          size: ControlSize.sm,
+                          variant: _enabled ? ButtonVariant.secondary : ButtonVariant.ghost,
+                          onPressed: _enabled ? () => _selectPreset(minutes) : null,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  PureTextField(
+                    controller: _durationController,
+                    enabled: _enabled,
+                    keyboardType: TextInputType.number,
+                    placeholder: t.room.timerDurationHint,
+                    // The reference spells the accepted range out under the
+                    // field; the kit's field has no helper line, so the hint
+                    // rides in the placeholder and the error says the rest.
+                    errorText: _durationError,
+                    suffix: Text(t.room.minutesUnit),
+                    onChanged: (_) {
+                      if (_durationError != null) {
+                        setState(() => _durationError = null);
+                      }
+                    },
+                    onSubmitted: (_) => _submit(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const PureDivider(),
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    PureButton(
+                      label: t.common.cancel,
+                      variant: ButtonVariant.ghost,
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                    PureButton(label: t.common.confirm, onPressed: _submit),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

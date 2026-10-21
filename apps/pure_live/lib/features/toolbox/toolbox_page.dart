@@ -262,16 +262,9 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 for (var i = 0; i < items.length; i++)
-                  ListTile(
-                    title: Text(label(items[i], i), textAlign: TextAlign.center),
-                    subtitle: subtitle == null
-                        ? null
-                        : Text(
-                            subtitle(items[i]),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                          ),
+                  PureListRow(
+                    title: label(items[i], i),
+                    subtitle: subtitle == null ? null : subtitle(items[i]),
                     onTap: () => Navigator.of(dialogContext).pop(items[i]),
                   ),
               ],
@@ -303,11 +296,7 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
               constraints: const BoxConstraints(maxWidth: 720),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _linkCard(context),
-                  const SizedBox(height: 16),
-                  _syncCard(context),
-                ],
+                children: [_linkCard(context), const SizedBox(height: 16), _syncCard(context)],
               ),
             ),
           ),
@@ -353,10 +342,7 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
                 Icon(Icons.link, color: theme.colors.primary),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    context.t.toolbox.title,
-                    style: theme.text.body.copyWith(fontWeight: FontWeight.bold),
-                  ),
+                  child: Text(context.t.toolbox.title, style: theme.text.body.copyWith(fontWeight: FontWeight.bold)),
                 ),
                 if (busy == null)
                   PureIconButton(

@@ -67,7 +67,11 @@ final class _CookieEditorPageState extends ConsumerState<CookieEditorPage> {
     _seeded = true;
     final store = ref.read(douyuLoginStoreProvider);
     final credential = ref.read(accountProvider(widget.siteId));
-    final header = _isDouyu && (store?.cookie ?? '').isNotEmpty ? store!.cookie : credential == null ? '' : cookieHeaderOf(credential);
+    final header = _isDouyu && (store?.cookie ?? '').isNotEmpty
+        ? store!.cookie
+        : credential == null
+        ? ''
+        : cookieHeaderOf(credential);
     if (header.isNotEmpty) {
       _savedText = header;
       _cookie.value = TextEditingValue(
@@ -84,7 +88,8 @@ final class _CookieEditorPageState extends ConsumerState<CookieEditorPage> {
   }
 
   void _changed([String? _]) {
-    final dirty = cleanPastedCookie(_cookie.text) != cleanPastedCookie(_savedText) ||
+    final dirty =
+        cleanPastedCookie(_cookie.text) != cleanPastedCookie(_savedText) ||
         (_ltp0?.text.trim() ?? '') != _savedLtp0 ||
         (_did?.text.trim() ?? '') != _savedDid;
     if (dirty != _dirty || _error != null) {
@@ -252,7 +257,11 @@ final class _CookieEditorPageState extends ConsumerState<CookieEditorPage> {
   AccountStatus _douyuStatus(AppDouyuLoginStore? store) {
     final t = context.t;
     final credential = ref.read(accountProvider(widget.siteId));
-    final header = (store?.cookie ?? '').isNotEmpty ? store!.cookie : credential == null ? '' : cookieHeaderOf(credential);
+    final header = (store?.cookie ?? '').isNotEmpty
+        ? store!.cookie
+        : credential == null
+        ? ''
+        : cookieHeaderOf(credential);
     final credentials = DouyuAccount.renewalCredentials(
       header,
       storedLtp0: store?.longTermKey,
@@ -271,15 +280,31 @@ final class _CookieEditorPageState extends ConsumerState<CookieEditorPage> {
     return switch (state) {
       DouyuSessionState.none => AccountStatus(t.account.editorNoneHint),
       DouyuSessionState.guest => AccountStatus(t.account.douyuStatusGuest, tone: AccountTone.warning, signedIn: true),
-      DouyuSessionState.valid when expiry == null =>
-        AccountStatus(t.account.douyuStatusNoExpiry, tone: AccountTone.ok, signedIn: true),
-      DouyuSessionState.valid when credentials.ltp0 != null && credentials.did != null =>
-        AccountStatus(t.account.douyuStatusAutoRenew(time: at), tone: AccountTone.ok, signedIn: true),
-      DouyuSessionState.valid =>
-        AccountStatus(t.account.douyuStatusRepaste(time: at), tone: AccountTone.ok, signedIn: true),
-      DouyuSessionState.expiredRefreshable =>
-        AccountStatus(t.account.douyuStatusRenewable(time: at), tone: AccountTone.warning, signedIn: true),
-      DouyuSessionState.expired => AccountStatus(t.account.douyuStatusExpired(time: at), tone: AccountTone.error, signedIn: true),
+      DouyuSessionState.valid when expiry == null => AccountStatus(
+        t.account.douyuStatusNoExpiry,
+        tone: AccountTone.ok,
+        signedIn: true,
+      ),
+      DouyuSessionState.valid when credentials.ltp0 != null && credentials.did != null => AccountStatus(
+        t.account.douyuStatusAutoRenew(time: at),
+        tone: AccountTone.ok,
+        signedIn: true,
+      ),
+      DouyuSessionState.valid => AccountStatus(
+        t.account.douyuStatusRepaste(time: at),
+        tone: AccountTone.ok,
+        signedIn: true,
+      ),
+      DouyuSessionState.expiredRefreshable => AccountStatus(
+        t.account.douyuStatusRenewable(time: at),
+        tone: AccountTone.warning,
+        signedIn: true,
+      ),
+      DouyuSessionState.expired => AccountStatus(
+        t.account.douyuStatusExpired(time: at),
+        tone: AccountTone.error,
+        signedIn: true,
+      ),
     };
   }
 
@@ -351,7 +376,12 @@ final class _CookieEditorPageState extends ConsumerState<CookieEditorPage> {
 
   /// A labelled one-line field (the reference's `AccountField`) for the
   /// renewal pair.
-  Widget _field(PureTheme theme, {required String label, required String hint, required TextEditingController controller}) {
+  Widget _field(
+    PureTheme theme, {
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -359,11 +389,7 @@ final class _CookieEditorPageState extends ConsumerState<CookieEditorPage> {
           padding: const EdgeInsets.only(left: 4, bottom: 4),
           child: Text(label, style: theme.text.caption.copyWith(color: theme.colors.primary)),
         ),
-        PureTextField(
-          controller: controller,
-          placeholder: hint,
-          onChanged: (_) => _changed(),
-        ),
+        PureTextField(controller: controller, placeholder: hint, onChanged: (_) => _changed()),
       ],
     );
   }
@@ -388,9 +414,7 @@ final class _CookieEditorPageState extends ConsumerState<CookieEditorPage> {
     // the applied account otherwise.
     final hasLogin = (store?.cookie ?? '').isNotEmpty || credential != null;
     final children = <Widget>[
-      AccountStatusCard(
-        status: _isDouyu ? _douyuStatus(store) : accountStatusFor(t, credential, now: DateTime.now()),
-      ),
+      AccountStatusCard(status: _isDouyu ? _douyuStatus(store) : accountStatusFor(t, credential, now: DateTime.now())),
       // K01.2: the remembered sign-ins right under the status card (the
       // reference's accounts slot) — a switch re-adopts, the add row says
       // what a new login does.
@@ -406,10 +430,7 @@ final class _CookieEditorPageState extends ConsumerState<CookieEditorPage> {
       _tip(theme, name),
       const SizedBox(height: 12),
       _cookieCard(theme, busy),
-      if (_isDouyu) ...[
-        const SizedBox(height: 8),
-        _douyuCard(theme, store, busy),
-      ],
+      if (_isDouyu) ...[const SizedBox(height: 8), _douyuCard(theme, store, busy)],
       if (hasLogin) ...[
         const SizedBox(height: 12),
         PureButton(
@@ -484,30 +505,20 @@ final class _CookieEditorPageState extends ConsumerState<CookieEditorPage> {
         children: [
           Text(t.account.cookieGroup, style: theme.text.bodySmall.copyWith(color: theme.colors.primary)),
           const SizedBox(height: 8),
-          // The TextField is Material to the bone (minLines/maxLines and the
-          // paste handle layers); a transparent Material sheet gives the
-          // non-Material hosts the ancestor it asserts for.
-          Material(
-            type: MaterialType.transparency,
-            child: TextField(
-              key: const ValueKey('account-cookie-field'),
-              controller: _cookie,
-              minLines: 3,
-              maxLines: 7,
-              autocorrect: false,
-              enableSuggestions: false,
-              smartDashesType: SmartDashesType.disabled,
-              smartQuotesType: SmartQuotesType.disabled,
-              onChanged: (_) => _changed(),
-              scrollPadding: const EdgeInsets.only(bottom: 120),
-              decoration: InputDecoration(
-                hintText: 'name=value; name2=value2',
-                errorText: _error,
-                errorMaxLines: 3,
-                border: const OutlineInputBorder(),
-                isDense: true,
-              ),
-            ),
+          // The cookie is pasted, so the box is sized for the paste: seven
+          // lines tall at most and never shorter than the three the old
+          // minLines asked for, which the dispatched field expresses as a
+          // minimum height.
+          PureTextField(
+            key: const ValueKey('account-cookie-field'),
+            controller: _cookie,
+            maxLines: 7,
+            autocorrect: false,
+            enableSuggestions: false,
+            placeholder: 'name=value; name2=value2',
+            errorText: _error,
+            style: const Style(minHeight: 76, padding: EdgeInsets.all(8)),
+            onChanged: (_) => _changed(),
           ),
           const SizedBox(height: 10),
           Wrap(
