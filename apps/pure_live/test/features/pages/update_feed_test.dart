@@ -12,7 +12,7 @@ import 'package:pure_live/features/about/update_feed.dart';
 /// A transport that records every address and answers with one release list —
 /// or with [status], so a test can walk the whole ordered list of doors.
 final class _FeedHttp implements LiveHttp {
-  _FeedHttp({this.status = 200});
+  new({this.status = 200});
 
   final int status;
   final List<Uri> asked = [];
@@ -56,7 +56,7 @@ void main() {
   group('UpdateFeed.fetch', () {
     test('githubOnly asks the api host and nothing else', () async {
       final http = _FeedHttp();
-      final releases = await UpdateFeed(http: http, githubOnly: true).fetch(limit: 3);
+      final releases = await UpdateFeed(http: http).fetch(limit: 3);
       expect(releases.single.tag, 'v9.9.9');
       expect(http.asked, hasLength(1));
       expect(http.asked.single.host, 'api.github.com');
