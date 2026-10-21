@@ -13,11 +13,11 @@ import 'package:pure_live/app/shell/home_views.dart' show isHomeRailWidth;
 import 'package:pure_live/app/shell/main_layout.dart';
 import 'package:pure_live/app/shell/main_page_frame.dart';
 import 'package:pure_live/app/shell/shell_actions.dart';
-import 'package:pure_live/features/hot_areas/hot_areas_page.dart' show HotAreasPage;
-import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/rooms/paging.dart';
+import 'package:pure_live/shared/sites_order.dart' show orderedSites;
 import 'package:pure_live/shared/widgets/list_loading.dart';
+import 'package:pure_live/shared/widgets/room_card.dart';
 import 'package:pure_live/shared/widgets/room_grid.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
@@ -88,7 +88,7 @@ final class _PopularPageState extends ConsumerState<PopularPage> {
         .all
         .where((site) => site.capability<LiveDiscoveryProvider>() != null)
         .toList();
-    final visible = HotAreasPage.orderedSites(
+    final visible = orderedSites(
       sites,
       preferences.siteOrder,
     ).where((site) => !preferences.hiddenSiteIds.contains(site.manifest.id)).toList();

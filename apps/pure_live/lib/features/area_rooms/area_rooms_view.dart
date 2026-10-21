@@ -9,10 +9,10 @@ import 'package:live_sites/live_sites.dart' show LivePageRequest, LiveRoom;
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/app_router.dart';
-import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/rooms/paging.dart';
 import 'package:pure_live/shared/widgets/list_loading.dart';
+import 'package:pure_live/shared/widgets/room_card.dart';
 import 'package:pure_live/shared/widgets/room_grid.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 

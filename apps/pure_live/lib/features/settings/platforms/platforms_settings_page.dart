@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/routing/app_router.dart';
-import 'package:pure_live/features/settings/widgets/settings_chrome.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/widgets/settings_chrome.dart';
 import 'package:pure_settings_ui/pure_settings_ui.dart';
 
 /// The platforms page (the reference's `SettingsSection.platforms`): the

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:live_sites/live_sites.dart' show LiveCredential;
 import 'package:live_storage/live_storage.dart' show SecretRefs, SecretStore, SecretVault;
 
-import 'package:pure_live/features/login/secure_vault.dart';
+import 'package:pure_live/app/services/secure_vault.dart';
 
 /// A signed-in platform account's persistence: the credential a login
 /// granted, stored as one JSON document under the site's cookie ref

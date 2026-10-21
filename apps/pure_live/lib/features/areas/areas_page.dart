@@ -11,10 +11,10 @@ import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/app/shell/main_layout.dart';
 import 'package:pure_live/app/shell/main_page_frame.dart';
 import 'package:pure_live/app/shell/shell_actions.dart';
-import 'package:pure_live/features/areas/area_card.dart';
-import 'package:pure_live/features/hot_areas/hot_areas_page.dart' show HotAreasPage;
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/rooms/paging.dart';
+import 'package:pure_live/shared/sites_order.dart' show orderedSites;
+import 'package:pure_live/shared/widgets/area_card.dart';
 import 'package:pure_live/shared/widgets/list_loading.dart' show FeedAutoRefresh;
 import 'package:pure_uikit/pure_uikit.dart';
 
@@ -45,7 +45,7 @@ final class _AreasPageState extends ConsumerState<AreasPage> {
         .toList();
     // The platform display setting: hidden platforms have no tab, the
     // stored order drives the tabs (the reference's availableIds).
-    final capable = HotAreasPage.orderedSites(
+    final capable = orderedSites(
       sites,
       preferences.siteOrder,
     ).where((site) => !preferences.hiddenSiteIds.contains(site.manifest.id)).toList();

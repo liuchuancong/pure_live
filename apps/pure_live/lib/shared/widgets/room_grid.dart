@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mosaic_grid/mosaic_grid.dart';
-import 'package:pure_live/features/popular/room_card.dart' show RoomGridMetrics;
+import 'package:pure_live/shared/widgets/room_card.dart' show RoomGridMetrics;
 import 'package:pure_uikit/pure_uikit.dart' show PureSpacing;
 
 /// The room cards, in a waterfall.

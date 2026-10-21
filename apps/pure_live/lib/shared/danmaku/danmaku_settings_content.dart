@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/preferences/app_preferences.dart';
 import 'package:pure_live/app/providers/app_providers.dart' show fontLibraryProvider;
-import 'package:pure_live/features/settings/widgets/settings_chooser.dart' show showSettingsChooser;
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/danmaku/danmaku_fps.dart' show displayRefreshRateProvider, resolvedDanmakuFps;
 import 'package:pure_live/shared/danmaku/danmaku_template.dart';
+import 'package:pure_live/shared/widgets/settings_chooser.dart' show showSettingsChooser;
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The shared barrage settings — the reference's `DanmakuSettingsContent`

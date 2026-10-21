@@ -7,8 +7,8 @@ import 'package:live_interaction/live_interaction.dart' show MessageFilter;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/engine/danmaku.dart' show addShieldKeyword, addShieldUser;
 import 'package:pure_live/features/room/room_providers.dart' show RoomIdentity, danmakuSessionProvider;
-import 'package:pure_live/features/settings/widgets/settings_surface.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/widgets/settings_surface.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// A masked display name (a Bilibili guest's `观***`) stands for many

@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show HiveStorageRepository, SecretRefs, SecretStore, StorageBoxManager, StorageRepository;
+import 'package:pure_live/app/services/secure_vault.dart' show SecureVault;
 import 'package:pure_live/features/backup/web_dav_preferences.dart';
-import 'package:pure_live/features/login/secure_vault.dart' show SecureVault;
 
 /// Where the WebDAV documents are persisted. The documents share the
 /// appearance box: one open box, one document per preference group, each

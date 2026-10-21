@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pure_live/features/settings/widgets/settings_surface.dart';
+import 'package:pure_live/shared/widgets/settings_surface.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The settings chooser: the reference's radio-list interaction over the uikit's

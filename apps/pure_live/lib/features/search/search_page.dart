@@ -12,13 +12,13 @@ import 'package:pure_live/app/preferences/app_preferences.dart' show AppPreferen
 import 'package:pure_live/app/preferences/app_preferences_providers.dart' show appPreferencesProvider;
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/app_router.dart';
-import 'package:pure_live/features/areas/area_card.dart';
-import 'package:pure_live/features/hot_areas/hot_areas_page.dart' show HotAreasPage;
-import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/features/search/search_providers.dart';
 import 'package:pure_live/features/search/web_search_url.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/sites_order.dart' show orderedSites;
+import 'package:pure_live/shared/widgets/area_card.dart';
 import 'package:pure_live/shared/widgets/list_loading.dart' show RoomBoneTile;
+import 'package:pure_live/shared/widgets/room_card.dart';
 import 'package:pure_live/shared/widgets/room_grid.dart';
 import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 import 'package:pure_uikit/pure_uikit.dart';
@@ -75,7 +75,7 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
   /// promise holds here too. [preferences] comes from the caller: the tabs
   /// watch it, a tap reads it.
   List<LiveSite> _searchable(AppSites sites, AppPreferences preferences) =>
-      HotAreasPage.orderedSites(sites.registry.all, preferences.siteOrder)
+      orderedSites(sites.registry.all, preferences.siteOrder)
           .where((site) => !preferences.hiddenSiteIds.contains(site.manifest.id))
           .where((site) => site.capability<LiveSearchProvider>() != null)
           .toList();

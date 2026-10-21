@@ -3,7 +3,7 @@ import 'dart:convert' show jsonDecode, jsonEncode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show DouyuAccount, DouyuLoginStore, LiveCredential;
 import 'package:live_storage/live_storage.dart' show SecretRefs, SecretStore, SecretVault;
-import 'package:pure_live/features/login/secure_vault.dart';
+import 'package:pure_live/app/services/secure_vault.dart';
 
 /// The app's half of the douyu renewal seam: what the adapter reads beside
 /// the cookie (LTP0, the login's `dy_did`, the saved-at clock) and where a

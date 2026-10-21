@@ -6,6 +6,7 @@ import 'package:live_sites/live_sites.dart' show LiveSite;
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/sites_order.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The platform visibility and order page (the reference's `HotAreasPage`,
@@ -28,18 +29,6 @@ final class HotAreasPage extends ConsumerWidget {
 
   /// The registry's sites in the user's stored order: stored ids first in
   /// their stored order, the rest behind them in registry order.
-  static List<LiveSite> orderedSites(List<LiveSite> sites, List<String> order) {
-    if (order.isEmpty) return sites;
-    final remaining = {for (final site in sites) site.manifest.id: site};
-    final result = <LiveSite>[];
-    for (final id in order) {
-      final site = remaining.remove(id);
-      if (site != null) result.add(site);
-    }
-    result.addAll(remaining.values);
-    return result;
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;

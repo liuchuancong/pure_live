@@ -7,9 +7,9 @@ import 'package:live_shell/live_shell.dart';
 import 'package:live_shell_desktop/live_shell_desktop.dart' show DesktopNotificationCenter;
 
 import 'package:pure_live/app/engine/window_surface_hooks.dart';
-import 'package:pure_live/app/navigation/app_navigator_key.dart';
 import 'package:pure_live/app/preferences/app_preferences.dart';
 import 'package:pure_live/app/providers/app_providers.dart' show DesktopTrayPort;
+import 'package:pure_live/app/routing/app_navigator_key.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/platforms/desktop/shell/close_prompt.dart';
 import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart';

@@ -6,10 +6,10 @@ import 'package:pure_live/app/preferences/app_preferences_providers.dart' show a
 import 'package:pure_live/app/providers/app_providers.dart' show sitesProvider;
 import 'package:pure_live/app/routing/app_router.dart' show AreaRoomsRoute, AreasRoute;
 import 'package:pure_live/app/shell/main_layout.dart' show MainLayout;
-import 'package:pure_live/features/areas/area_card.dart';
 import 'package:pure_live/features/areas/areas_common.dart' show followedAreasProvider, toggleAreaFollow;
-import 'package:pure_live/features/hot_areas/hot_areas_page.dart' show HotAreasPage;
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/sites_order.dart' show orderedSites;
+import 'package:pure_live/shared/widgets/area_card.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The followed partitions (the reference's `FavoriteAreasPage`): "全部" and
@@ -61,7 +61,7 @@ final class _FollowedAreasPageState extends ConsumerState<FollowedAreasPage> {
     final t = context.t;
     final areas = ref.watch(followedAreasProvider).value ?? const <FollowArea>[];
     final preferences = ref.watch(appPreferencesProvider);
-    final sites = HotAreasPage.orderedSites(ref.watch(sitesProvider).registry.all, preferences.siteOrder);
+    final sites = orderedSites(ref.watch(sitesProvider).registry.all, preferences.siteOrder);
     final names = {for (final site in sites) site.manifest.id: site.manifest.localizedName(_tag(context), 'zh-CN')};
     final tabs = _tabs(areas, sites);
     final index = tabs.isEmpty ? 0 : _selected.clamp(0, tabs.length - 1);

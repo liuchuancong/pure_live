@@ -16,9 +16,9 @@ import 'package:pure_live/app/shell/main_page_frame.dart';
 import 'package:pure_live/features/recorder/recorder_engine.dart';
 import 'package:pure_live/features/recorder/recorder_preferences.dart';
 import 'package:pure_live/features/recorder/recorder_providers.dart';
-import 'package:pure_live/features/settings/widgets/settings_chooser.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/feed_chip.dart';
+import 'package:pure_live/shared/widgets/settings_chooser.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The recorder: the rooms being watched, each with its state chip and its

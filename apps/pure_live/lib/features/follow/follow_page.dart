@@ -13,12 +13,12 @@ import 'package:pure_live/app/shell/main_page_frame.dart';
 import 'package:pure_live/app/shell/shell_actions.dart';
 import 'package:pure_live/app/shell/shell_destinations.dart' show ShellBranch;
 import 'package:pure_live/features/follow/live_alert_service.dart';
-import 'package:pure_live/features/popular/room_card.dart';
-import 'package:pure_live/features/settings/widgets/settings_surface.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/rooms/paging.dart';
 import 'package:pure_live/shared/widgets/list_loading.dart';
+import 'package:pure_live/shared/widgets/room_card.dart';
 import 'package:pure_live/shared/widgets/room_grid.dart';
+import 'package:pure_live/shared/widgets/settings_surface.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The page width from which the platform tabs join the status tabs in the

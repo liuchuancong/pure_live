@@ -8,11 +8,11 @@ import 'package:live_shell_desktop/live_shell_desktop.dart' show windowsDrawsFra
 import 'package:pure_live/app/preferences/app_preferences.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/features/settings/widgets/settings_chooser.dart';
-import 'package:pure_live/features/settings/widgets/settings_chrome.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart' show ShellPreferencesStore, ShellWindowChrome;
 import 'package:pure_live/platforms/desktop/shell/window_frame_report.dart';
+import 'package:pure_live/shared/widgets/settings_chooser.dart';
+import 'package:pure_live/shared/widgets/settings_chrome.dart';
 import 'package:pure_settings_ui/pure_settings_ui.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 import 'package:restart_app/restart_app.dart';

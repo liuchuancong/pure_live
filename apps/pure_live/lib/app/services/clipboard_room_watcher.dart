@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveLinkResolver;
-import 'package:pure_live/app/navigation/app_navigator_key.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/routing/app_navigator_key.dart';
 import 'package:pure_live/app/routing/app_router.dart';
-import 'package:pure_live/features/settings/widgets/settings_surface.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/rooms/room_share_code.dart' show OwnClipboardTexts, decodeRoomShareCode;
+import 'package:pure_live/shared/widgets/settings_surface.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The clipboard's room links — the reference's 剪贴板口令检测, 3.x always

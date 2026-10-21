@@ -3,9 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_library/live_library.dart' show FollowArea, FollowAreaRepository;
 import 'package:live_sites/live_sites.dart' show LiveArea, LiveAreaIdentity;
 import 'package:pure_live/app/providers/app_providers.dart' show followAreaRepositoryProvider;
-import 'package:pure_live/features/settings/widgets/settings_surface.dart'
-    show SettingsSurfaceRef, showSettingsSurface;
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/widgets/settings_surface.dart' show SettingsSurfaceRef, showSettingsSurface;
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The followed partitions, in the user's order, re-read on every change —
