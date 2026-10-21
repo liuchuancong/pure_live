@@ -26,8 +26,8 @@
 
 | 批 | 范围 | 参考文件 | 状态 |
 |---|---|---|---|
-| B1 | 发现流收尾：搜索/历史接入发现过滤 | search/9、history/4 | ✅ 已接（搜索、历史） |
-| B1b | 搜索排序：4 模式 + 离线过滤 + 排序 UI | search/search_ranking.dart | ⬜ 下一步 |
+| B1 | 发现流收尾：搜索/历史接入发现过滤 | search/9、history/4 | ✅ 182ab726c |
+| B1b | 搜索排序：4 模式 + 离线过滤 + 排序 UI | search/search_ranking.dart | ✅ 77b2b03a6（+5 测试） |
 | B2 | 房间·本地互动：发送器/面板/样式/礼物目录/等级/成长 | live_play/local_interaction/16（6.8k 行） | ⬜ |
 | B3 | 房间·附件：mini 播放器/悬浮窗、切房间、后台播放/音频焦点/重连看护/播放列表/预测返回 | live_play/{mini,switch_room,logic} | ⬜ |
 | B4 | 播放器视图：控制条/手势/状态/竖屏诊断对齐 | live_play/player/8 | ⬜（手势 W1 已完成） |
