@@ -200,6 +200,52 @@ final class BilibiliVodClient {
     throw const VodFailure('the video offered no address');
   }
 
+  /// Resolves the audio-only address of [video]'s first part — 音乐模式 plays
+  /// the sound and never needs the picture, so the DASH audio stream is the
+  /// right answer here where the video page needed the muxed mp4.
+  Future<VodPlayInfo> audio(VodVideo video) async {
+    final address = await _firstCid(video);
+    final play = await http.send(
+      LiveRequest.custom(
+        method: 'GET',
+        url: Uri.https('api.bilibili.com', '/x/player/playurl', {
+          'bvid': video.bvid ?? video.id,
+          'cid': address,
+          'fnval': '16',
+          'fourk': '1',
+        }),
+        headers: _headers,
+      ),
+    );
+    final data = _body(play)['data'];
+    final dash = data is Map ? data['dash'] : null;
+    final audios = dash is Map ? (dash['audio'] as List<Object?>?) ?? const <Object?>[] : const <Object?>[];
+    final first = audios.isEmpty ? null : audios.first;
+    final url = first is Map ? first['baseUrl'] : null;
+    if (url is! String || url.isEmpty) {
+      throw const VodFailure('the video offered no audio stream');
+    }
+    return VodPlayInfo(url: url, headers: _headers, format: 'm4s', quality: 'audio');
+  }
+
+  /// The first part's cid, through the page list.
+  Future<String> _firstCid(VodVideo video) async {
+    final pages = await http.send(
+      LiveRequest.custom(
+        method: 'GET',
+        url: Uri.https('api.bilibili.com', '/x/player/pagelist', {'bvid': video.bvid ?? video.id}),
+        headers: _headers,
+      ),
+    );
+    final pageList = _body(pages)['data'];
+    final first = pageList is List && pageList.isNotEmpty ? pageList.first : null;
+    final cid = first is Map ? '${first['cid'] ?? ''}' : '';
+    if (cid.isEmpty) {
+      throw const VodFailure('the video names no cid');
+    }
+    return cid;
+  }
+
   /// The first video a search returns for [keyword], or null.
   Future<VodVideo?> first(String keyword) async {
     final page = await search(keyword, pageSize: 1);
