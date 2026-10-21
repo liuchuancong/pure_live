@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core/media_core.dart' show PlayerKernel;
 import 'package:media_core_audio/media_core_audio.dart'
-    show AudioPlaybackController, AudioPlaybackState, MusicSourceRegistry, MusicTrack, PlayMode;
+    show AudioPlaybackController, AudioPlaybackState, LyricDocument, LyricLine, MusicSourceRegistry, MusicTrack, PlayMode;
 import 'package:media_core_media_kit/media_core_media_kit.dart' show registerMediaKitRegistry;
 import 'package:pure_live/features/vod/music/bilibili_music_source.dart';
 import 'package:pure_live/features/vod/vod_page.dart' show vodClientProvider;
@@ -33,6 +33,13 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
   StreamSubscription<AudioPlaybackState>? _states;
   AudioPlaybackState _state = AudioPlaybackState.idle;
   List<MusicTrack> _results = const [];
+
+  /// The current track's lyric, when the source has one; null hides the
+  /// strip.
+  LyricDocument? _lyric;
+
+  /// The track the lyric was loaded for, so a track change reloads.
+  String? _lyricTrack;
   bool _loading = false;
   Object? _failure;
 
@@ -45,9 +52,11 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
       registry: MusicSourceRegistry([BilibiliMusicSource(ref.read(vodClientProvider))]),
     );
     _states = _player.stateStream.listen((state) {
-      if (mounted) {
-        setState(() => _state = state);
+      if (!mounted) {
+        return;
       }
+      setState(() => _state = state);
+      unawaited(_loadLyric(state.track));
     });
   }
 
@@ -58,6 +67,32 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
     unawaited(_kernel.dispose());
     _keyword.dispose();
     super.dispose();
+  }
+
+  /// Loads the current track's lyric once per track; the module caches, so a
+  /// re-load costs nothing.
+  Future<void> _loadLyric(MusicTrack? track) async {
+    final key = track == null ? null : '${track.sourceId}:${track.id}';
+    if (key == _lyricTrack) {
+      return;
+    }
+    _lyricTrack = key;
+    if (key == null) {
+      if (mounted) {
+        setState(() => _lyric = null);
+      }
+      return;
+    }
+    try {
+      final document = await _player.loadCurrentLyric();
+      if (mounted && _lyricTrack == key) {
+        setState(() => _lyric = document.lines.isEmpty ? null : document);
+      }
+    } on Object {
+      if (mounted && _lyricTrack == key) {
+        setState(() => _lyric = null);
+      }
+    }
   }
 
   Future<void> _search() async {
@@ -155,8 +190,51 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
                     },
                   ),
           ),
+          // The lyric strip: the module's parsed LRC, synced to the position
+          // it reports; a tap on a line seeks to it.
+          if (track != null && _lyric != null) _lyricStrip(context, theme, state, _lyric!),
           // The now-playing bar: what media_core_audio reports.
           if (track != null) _nowPlaying(context, theme, state),
+        ],
+      ),
+    );
+  }
+
+  /// Three lines of the lyric around the current one, the middle emphasised;
+  /// unsynchronised documents show the first three and no current line.
+  Widget _lyricStrip(BuildContext context, PureTheme theme, AudioPlaybackState state, LyricDocument lyric) {
+    final index = lyric.isSynchronized ? lyric.indexAt(state.position) : 0;
+    final window = <LyricLine>[
+      for (var at = index - 1; at <= index + 1; at++)
+        if (at >= 0 && at < lyric.lines.length) lyric.lines[at],
+    ];
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: PureSpacing.md, vertical: PureSpacing.sm),
+      color: theme.colors.bgContainer,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final line in window)
+            GestureDetector(
+              onTap: lyric.isSynchronized ? () => unawaited(_player.seek(line.start)) : null,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Text(
+                  [line.text, if (line.translation != null && line.translation!.isNotEmpty) line.translation!].join('\n'),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.text.bodySmall.copyWith(
+                    fontSize: line == (lyric.isSynchronized ? lyric.lineAt(state.position) : null) ? 15 : 12.5,
+                    color: line == (lyric.isSynchronized ? lyric.lineAt(state.position) : null)
+                        ? theme.colors.primary
+                        : theme.colors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
