@@ -37,7 +37,7 @@
 | B7 | 账号/备份：账号三视图、WebDAV、日志页 | account/14、backup/5、web_dav/5 | 🟡 盘点：v2 已有等价（账号名单/编辑器/QR 登录、备份+WebDAV 1012 行、日志页）；开播提醒按标签 f8a6a2760 |
 | B8 | 设置全量 | settings/16 | ✅ 并发刷新 522969fc0、屏幕常亮 e1893639e、首选平台 937cb4d8a、动态取色 c9fee55c4；仅剩内核/兼容模式（依赖引擎能力，随 media_core） |
 | B9 | TV UI 树 | tv/54 | ✅ 关注/热门/分区/历史/频道/设置/视频/音乐 全部落地（08695da19…ed2e2ed54）；播放器抽为 musicPlayerProvider 供双端共用 |
-| B10 | VOD | live_vod 包、tv/video | 🟡 B10a ✅；**B10b ✅ 音乐**：队列/音频地址 d631d7fc6、音乐页走 media_core_audio 5564347a7、歌词条 6710ed886；B10c TV 视频 ✅ e266eda90 / 音乐 ✅ ed2e2ed54；仅剩 B10b-3 歌词匹配源（B站视频→LRC，需定第三方歌词源） |
+| B10 | VOD | live_vod 包、tv/video | 🟡 B10a ✅；**B10b ✅ 音乐**：队列/音频地址 d631d7fc6、音乐页走 media_core_audio 5564347a7、歌词条 6710ed886；B10c TV 视频 ✅ e266eda90 / 音乐 ✅ ed2e2ed54；**B10b-3 ✅ 6e54a6e15**：标题解析（7 测试）+ 可插拔 LyricProvider（出厂无服务；覆盖 lyricProvider 即接外部歌词源，歌词条自动生效） |
 
 ## 顺序调整（2026-10-21 用户指令）
 
