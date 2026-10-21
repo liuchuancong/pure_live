@@ -9,6 +9,7 @@ import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/app/shell/main_page_frame.dart';
 import 'package:pure_live/app/shell/shell_actions.dart';
 import 'package:pure_live/app/shell/shell_destinations.dart' show ShellBranch;
+import 'package:pure_live/features/follow/follow_rules.dart';
 import 'package:pure_live/features/follow/live_alert_service.dart';
 import 'package:pure_live/features/room/paging.dart';
 import 'package:pure_live/features/settings/widgets/settings_surface.dart';
@@ -128,11 +129,14 @@ final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefr
   /// by id; a platform that lost its last follow falls back to "all".
   void _syncPlatforms() {
     final records = _repository.rooms;
-    final seen = <String>{_allPlatforms};
+    final preferences = ref.read(appPreferencesProvider);
     final ids = <String>[
       _allPlatforms,
-      for (final record in records)
-        if (seen.add(record.room.ref.platform)) record.room.ref.platform,
+      ...followPlatformTabs(
+        [for (final record in records) record.room],
+        preferences.siteOrder,
+        registryOrder: [for (final site in ref.read(sitesProvider).registry.all) site.manifest.id],
+      ),
     ];
     if (_sameIds(ids, _platforms)) return;
     final current = _platforms[_platform.clamp(0, _platforms.length - 1)];
@@ -161,13 +165,45 @@ final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefr
   }
 
   /// The rooms of one status group on one platform (the reference's
-  /// `roomsFor`).
-  List<LibraryRoom> _roomsFor(LiveFollowGroup group, String platform) => [
-    for (final record in _tagged)
-      if (record.room.broadcast.followGroup == group &&
-          (platform == _allPlatforms || record.room.ref.platform == platform))
-        record,
-  ];
+  /// `roomsFor`): filtered, then ordered — live and replay follows by the
+  /// tag and audience ranking, offline follows in the user's own order.
+  List<LibraryRoom> _roomsFor(LiveFollowGroup group, String platform) {
+    final rooms = [
+      for (final record in _tagged)
+        if (record.room.broadcast.followGroup == group &&
+            (platform == _allPlatforms || record.room.ref.platform == platform))
+          record,
+    ];
+    if (group != LiveFollowGroup.offline) {
+      final preferences = ref.read(appPreferencesProvider);
+      final ordering = FollowOrdering(
+        preferRealOnline: preferences.preferRealOnlineCounts,
+        realOnlinePlatforms: preferences.realOnlinePlatforms.toSet(),
+        tagRank: _tagRanks(),
+      );
+      rooms.sort((a, b) => ordering.compare(a.room, b.room));
+    }
+    return rooms;
+  }
+
+  /// Each room's best tag rank, when a tag is chosen: the strip's order is
+  /// the weight, so the first tag outweighs the ones under it.
+  Map<String, int> _tagRanks() {
+    final tagId = _tagId;
+    if (tagId == null) {
+      return const {};
+    }
+    final groups = _repository.groups;
+    final index = groups.indexWhere((group) => group.id == tagId);
+    if (index < 0) {
+      return const {};
+    }
+    final weight = groups.length - index;
+    return {
+      for (final record in _repository.rooms)
+        if (record.groupIds.contains(tagId)) '${record.room.ref.platform}:${record.room.ref.roomId}': weight,
+    };
+  }
 
   String _platformLabel(String id) {
     if (id == _allPlatforms) return context.t.follow.all;
@@ -233,7 +269,7 @@ final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefr
         leading: phoneTab ? const HomeMenuButton() : null,
         title: t.tabs.follow,
         titleWidget: title,
-                bottom: oneRow
+        bottom: oneRow
             ? null
             : PreferredSize(
                 preferredSize: const Size.fromHeight(48),
