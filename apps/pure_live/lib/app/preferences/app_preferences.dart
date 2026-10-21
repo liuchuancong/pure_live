@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart' show immutable;
 import 'package:live_net/live_net.dart' show HttpProxyRoute, ProxyPolicy, ProxyRoute;
 import 'package:live_storage/live_storage.dart' show StorageRepository;
@@ -128,13 +129,16 @@ const List<String> defaultRealOnlinePlatforms = [
 /// Plain fields, like the shell document: the shape is closed, an unknown
 /// stored value decodes to its enum's default, and [copyWith] is written by
 /// hand so a rename fails to compile instead of regenerating silently.
+/// Equality is equatable's: [props] carries every field in one order, and the
+/// package's deep iterable/map comparison is what the hand-written version
+/// spelled out for the list and map fields.
 ///
 /// The `new` shorthand is reserved for the constructor name; the fromJson
 /// factory and [copyWith] spell the class name, which the lint otherwise
 /// asks to shorten.
 // ignore_for_file: unnecessary_type_name_in_constructor
 @immutable
-final class AppPreferences {
+final class AppPreferences extends Equatable {
   /// The shipping defaults.
   const new({
     this.refreshOnResume = true,
@@ -221,6 +225,7 @@ final class AppPreferences {
     this.launchBranch = AppLaunchBranch.follow,
     this.restoreLastTab = false,
     this.lastBranchId,
+    this.shellNavExpanded = true,
     this.windowWidth = 0,
     this.windowHeight = 0,
     this.autoRefreshMinutes = 0,
@@ -315,6 +320,7 @@ final class AppPreferences {
       launchBranch: AppLaunchBranch.fromId(json['launchBranch'] as String?),
       restoreLastTab: json['restoreLastTab'] as bool? ?? false,
       lastBranchId: json['lastBranchId'] as String?,
+      shellNavExpanded: json['shellNavExpanded'] as bool? ?? true,
       windowWidth: json['windowWidth'] as int? ?? 0,
       windowHeight: json['windowHeight'] as int? ?? 0,
       autoRefreshMinutes: json['autoRefreshMinutes'] as int? ?? 0,
@@ -670,6 +676,12 @@ final class AppPreferences {
   /// tab switch.
   final String? lastBranchId;
 
+  /// Whether the desktop navigation column is drawn expanded (the labelled
+  /// sidebar) or collapsed (the icon rail). The width classes apply on top —
+  /// a narrow window draws the rail whatever this says — and the choice is
+  /// never rewritten when the window crosses a class.
+  final bool shellNavExpanded;
+
   /// The desktop window's stored width; 0 keeps the launch default.
   final int windowWidth;
 
@@ -837,6 +849,7 @@ final class AppPreferences {
     'launchBranch': launchBranch.id,
     'restoreLastTab': restoreLastTab,
     if (lastBranchId != null) 'lastBranchId': lastBranchId,
+    'shellNavExpanded': shellNavExpanded,
     'windowWidth': windowWidth,
     'windowHeight': windowHeight,
     'autoRefreshMinutes': autoRefreshMinutes,
@@ -950,6 +963,7 @@ final class AppPreferences {
     bool? restoreLastTab,
     String? lastBranchId,
     bool clearLastBranchId = false,
+    bool? shellNavExpanded,
     int? windowWidth,
     int? windowHeight,
     int? autoRefreshMinutes,
@@ -1058,6 +1072,7 @@ final class AppPreferences {
     launchBranch: launchBranch ?? this.launchBranch,
     restoreLastTab: restoreLastTab ?? this.restoreLastTab,
     lastBranchId: clearLastBranchId ? null : (lastBranchId ?? this.lastBranchId),
+    shellNavExpanded: shellNavExpanded ?? this.shellNavExpanded,
     windowWidth: windowWidth ?? this.windowWidth,
     windowHeight: windowHeight ?? this.windowHeight,
     autoRefreshMinutes: autoRefreshMinutes ?? this.autoRefreshMinutes,
@@ -1086,125 +1101,92 @@ final class AppPreferences {
   );
 
   @override
-  bool operator ==(Object other) =>
-      other is AppPreferences &&
-      other.refreshOnResume == refreshOnResume &&
-      other.danmakuVisible == danmakuVisible &&
-      other.volumeMuted == volumeMuted &&
-      other.defaultMobileVolume == defaultMobileVolume &&
-      other.defaultDesktopVolume == defaultDesktopVolume &&
-      other.localInteractionEnabled == localInteractionEnabled &&
-      other.localInteractionUserName == localInteractionUserName &&
-      other.localInteractionColor == localInteractionColor &&
-      other.barrageFontSize == barrageFontSize &&
-      other.barrageOpacity == barrageOpacity &&
-      other.barrageArea == barrageArea &&
-      other.barrageTopArea == barrageTopArea &&
-      other.barrageBottomArea == barrageBottomArea &&
-      other.barrageSpeed == barrageSpeed &&
-      other.barrageFontWeight == barrageFontWeight &&
-      other.barrageStroke == barrageStroke &&
-      other.barrageStrokeWidth == barrageStrokeWidth &&
-      other.barrageShowSender == barrageShowSender &&
-      other.barrageMaxVisible == barrageMaxVisible &&
-      other.barrageFps == barrageFps &&
-      other.barrageNoEmoji == barrageNoEmoji &&
-      other.barrageCollapse == barrageCollapse &&
-      other.barrageCollapseWindow == barrageCollapseWindow &&
-      other.barragePausedBehavior == barragePausedBehavior &&
-      other.barrageAutoFps == barrageAutoFps &&
-      other.barrageFpsMode == barrageFpsMode &&
-      other.barrageShowGifts == barrageShowGifts &&
-      other.barrageTapAction == barrageTapAction &&
-      other.barrageLongPressAction == barrageLongPressAction &&
-      other.barrageFontFamily == barrageFontFamily &&
-      other.backupDirectory == backupDirectory &&
-      other.barrageHoldOnPress == barrageHoldOnPress &&
-      other.barrageListFontSize == barrageListFontSize &&
-      other.barrageListLineSpacing == barrageListLineSpacing &&
-      other.barrageListStyle == barrageListStyle &&
-      other.barrageTemplate == barrageTemplate &&
-      other.preferResolution == preferResolution &&
-      other.preferResolutionCellular == preferResolutionCellular &&
-      other.preferH264 == preferH264 &&
-      other.videoFitIndex == videoFitIndex &&
-      other.openRoomFullscreen == openRoomFullscreen &&
-      other.preferRealOnlineCounts == preferRealOnlineCounts &&
-      _listEquals(other.realOnlinePlatforms, realOnlinePlatforms) &&
-      other.portraitAdapt == portraitAdapt &&
-      other.portraitAdaptiveHeight == portraitAdaptiveHeight &&
-      other.portraitLayoutMode == portraitLayoutMode &&
-      other.portraitFullscreenPolicy == portraitFullscreenPolicy &&
-      other.portraitDisplayMode == portraitDisplayMode &&
-      other.portraitDanmakuMode == portraitDanmakuMode &&
-      other.rememberPortraitRoomOverride == rememberPortraitRoomOverride &&
-      other.showPortraitDiagnostics == showPortraitDiagnostics &&
-      _mapEquals(other.portraitRoomOverrides, portraitRoomOverrides) &&
-      other.pipAlwaysOnTop == pipAlwaysOnTop &&
-      other.miniRememberPosition == miniRememberPosition &&
-      other.miniWindowRect == miniWindowRect &&
-      other.pauseOnPipClose == pauseOnPipClose &&
-      other.showSplash == showSplash &&
-      other.githubOnlyUpdates == githubOnlyUpdates &&
-      other.detectClipboardRooms == detectClipboardRooms &&
-      other.startAtLogin == startAtLogin &&
-      other.cacheMaxMB == cacheMaxMB &&
-      other.cacheAutoClear == cacheAutoClear &&
-      other.cacheKeepDays == cacheKeepDays &&
-      other.cacheKeepCount == cacheKeepCount &&
-      other.autoRefreshThumbnails == autoRefreshThumbnails &&
-      other.thumbnailRefreshMinutes == thumbnailRefreshMinutes &&
-      other.thumbnailKeepOldFiles == thumbnailKeepOldFiles &&
-      other.playerProxyEnabled == playerProxyEnabled &&
-      other.playerProxyHost == playerProxyHost &&
-      other.playerProxyPort == playerProxyPort &&
-      other.customPlayerOutput == customPlayerOutput &&
-      other.audioOutputDriver == audioOutputDriver &&
-      other.hardwareDecoder == hardwareDecoder &&
-      other.frameInterpolation == frameInterpolation &&
-      other.scaler == scaler &&
-      other.deinterlace == deinterlace &&
-      other.streamCacheSeconds == streamCacheSeconds &&
-      other.languageId == languageId &&
-      other.autoCheckUpdate == autoCheckUpdate &&
-      other.countdownCloseEnabled == countdownCloseEnabled &&
-      other.countdownCloseMinutes == countdownCloseMinutes &&
-      other.launchBranch == launchBranch &&
-      other.restoreLastTab == restoreLastTab &&
-      other.lastBranchId == lastBranchId &&
-      other.windowWidth == windowWidth &&
-      other.windowHeight == windowHeight &&
-      other.autoRefreshMinutes == autoRefreshMinutes &&
-      other.refreshResumeThresholdMinutes == refreshResumeThresholdMinutes &&
-      other.proxyEnabled == proxyEnabled &&
-      other.proxyHost == proxyHost &&
-      other.proxyPort == proxyPort &&
-      other.loadingStyle == loadingStyle &&
-      other.roomCardCornerRadius == roomCardCornerRadius &&
-      other.roomCardShowPlatform == roomCardShowPlatform &&
-      other.roomCardShowAudience == roomCardShowAudience &&
-      other.roomCardShowAnchor == roomCardShowAnchor &&
-      other.roomCardAspect == roomCardAspect &&
-      _listEquals(other.shellBranches, shellBranches) &&
-      _listEquals(other.hiddenSiteIds, hiddenSiteIds) &&
-      _listEquals(other.siteOrder, siteOrder) &&
-      other.logLevelId == logLevelId &&
-      other.historyLimit == historyLimit &&
-      other.pageDefaultSize == pageDefaultSize &&
-      other.pageSizeOptions == pageSizeOptions &&
-      other.pageShowScrollTop == pageShowScrollTop &&
-      other.pageShowSizeSelector == pageShowSizeSelector &&
-      other.pageShowGoto == pageShowGoto;
-
-  @override
-  int get hashCode => Object.hash(
+  List<Object?> get props => <Object?>[
     refreshOnResume,
+    danmakuVisible,
+    volumeMuted,
+    defaultMobileVolume,
+    defaultDesktopVolume,
+    localInteractionEnabled,
+    localInteractionUserName,
+    localInteractionColor,
+    barrageFontSize,
+    barrageOpacity,
+    barrageArea,
+    barrageTopArea,
+    barrageBottomArea,
+    barrageSpeed,
+    barrageFontWeight,
+    barrageStroke,
+    barrageStrokeWidth,
+    barrageShowSender,
+    barrageMaxVisible,
+    barrageFps,
+    barrageNoEmoji,
+    barrageCollapse,
+    barrageCollapseWindow,
+    barragePausedBehavior,
+    barrageAutoFps,
+    barrageFpsMode,
+    barrageShowGifts,
+    barrageTapAction,
+    barrageLongPressAction,
+    barrageFontFamily,
+    backupDirectory,
+    barrageHoldOnPress,
+    barrageListFontSize,
+    barrageListLineSpacing,
+    barrageListStyle,
+    barrageTemplate,
+    preferResolution,
+    preferResolutionCellular,
+    preferH264,
+    videoFitIndex,
+    openRoomFullscreen,
+    preferRealOnlineCounts,
+    realOnlinePlatforms,
+    portraitAdapt,
+    portraitAdaptiveHeight,
+    portraitLayoutMode,
+    portraitFullscreenPolicy,
+    portraitDisplayMode,
+    portraitDanmakuMode,
+    rememberPortraitRoomOverride,
+    showPortraitDiagnostics,
+    portraitRoomOverrides,
+    pipAlwaysOnTop,
+    miniRememberPosition,
+    miniWindowRect,
+    pauseOnPipClose,
+    showSplash,
+    githubOnlyUpdates,
+    detectClipboardRooms,
+    startAtLogin,
+    cacheMaxMB,
+    cacheAutoClear,
+    cacheKeepDays,
+    cacheKeepCount,
+    autoRefreshThumbnails,
+    thumbnailRefreshMinutes,
+    thumbnailKeepOldFiles,
+    playerProxyEnabled,
+    playerProxyHost,
+    playerProxyPort,
+    customPlayerOutput,
+    audioOutputDriver,
+    hardwareDecoder,
+    frameInterpolation,
+    scaler,
+    deinterlace,
+    streamCacheSeconds,
+    languageId,
     autoCheckUpdate,
     countdownCloseEnabled,
     countdownCloseMinutes,
     launchBranch,
     restoreLastTab,
     lastBranchId,
+    shellNavExpanded,
     windowWidth,
     windowHeight,
     autoRefreshMinutes,
@@ -1217,127 +1199,23 @@ final class AppPreferences {
     roomCardShowPlatform,
     roomCardShowAudience,
     roomCardShowAnchor,
-    Object.hash(
-      roomCardAspect,
-      Object.hashAll(shellBranches),
-      danmakuVisible,
-      volumeMuted,
-      defaultMobileVolume,
-      defaultDesktopVolume,
-      localInteractionEnabled,
-      localInteractionUserName,
-      localInteractionColor,
-      // The barrage block hashed as one list: `Object.hash` caps at 20
-      // positional parts and the danmaku settings alone pass that.
-      Object.hashAll(<Object?>[
-        barrageFontSize,
-        barrageOpacity,
-        barrageArea,
-        barrageTopArea,
-        barrageBottomArea,
-        barrageSpeed,
-        barrageFontWeight,
-        barrageStroke,
-        barrageStrokeWidth,
-        barrageShowSender,
-        barrageMaxVisible,
-        barrageFps,
-        barrageNoEmoji,
-        barrageCollapse,
-        barrageCollapseWindow,
-        barragePausedBehavior,
-        barrageAutoFps,
-        barrageFpsMode,
-        barrageShowGifts,
-        barrageTapAction,
-        barrageLongPressAction,
-        barrageFontFamily,
-        backupDirectory,
-        barrageHoldOnPress,
-        barrageListFontSize,
-        barrageListLineSpacing,
-        barrageListStyle,
-        barrageTemplate,
-        preferResolution,
-        preferResolutionCellular,
-        preferH264,
-        videoFitIndex,
-        openRoomFullscreen,
-        preferRealOnlineCounts,
-        Object.hashAll(realOnlinePlatforms),
-        portraitAdapt,
-        portraitAdaptiveHeight,
-        portraitLayoutMode,
-        portraitFullscreenPolicy,
-        portraitDisplayMode,
-        portraitDanmakuMode,
-        rememberPortraitRoomOverride,
-        showPortraitDiagnostics,
-        Object.hashAllUnordered(portraitRoomOverrides.entries),
-        pipAlwaysOnTop,
-        miniRememberPosition,
-        miniWindowRect,
-        pauseOnPipClose,
-        showSplash,
-        githubOnlyUpdates,
-        detectClipboardRooms,
-        startAtLogin,
-        cacheMaxMB,
-        cacheAutoClear,
-        cacheKeepDays,
-        cacheKeepCount,
-        autoRefreshThumbnails,
-        thumbnailRefreshMinutes,
-        thumbnailKeepOldFiles,
-        playerProxyEnabled,
-        playerProxyHost,
-        playerProxyPort,
-      ]),
-      customPlayerOutput,
-      audioOutputDriver,
-      hardwareDecoder,
-      frameInterpolation,
-      scaler,
-      deinterlace,
-      streamCacheSeconds,
-      Object.hash(
-        languageId,
-        logLevelId,
-        historyLimit,
-        pageDefaultSize,
-        pageSizeOptions,
-        pageShowScrollTop,
-        pageShowSizeSelector,
-        pageShowGoto,
-        Object.hashAll(hiddenSiteIds),
-        Object.hashAll(siteOrder),
-      ),
-    ),
-  );
+    roomCardAspect,
+    shellBranches,
+    hiddenSiteIds,
+    siteOrder,
+    logLevelId,
+    historyLimit,
+    pageDefaultSize,
+    pageSizeOptions,
+    pageShowScrollTop,
+    pageShowSizeSelector,
+    pageShowGoto,
+  ];
 
-  static bool _listEquals(List<String> a, List<String> b) {
-    if (a.length != b.length) {
-      return false;
-    }
-    for (var i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  static bool _mapEquals(Map<String, String> a, Map<String, String> b) {
-    if (a.length != b.length) {
-      return false;
-    }
-    for (final entry in a.entries) {
-      if (b[entry.key] != entry.value) {
-        return false;
-      }
-    }
-    return true;
-  }
+  // The framework's own toString is what this class always showed; equatable
+  // would otherwise dump the whole document on every debug log line.
+  @override
+  bool? get stringify => false;
 }
 
 /// What a [AppPreferencesStore.load] or write found wrong.

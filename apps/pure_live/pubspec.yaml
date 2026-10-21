@@ -36,7 +36,7 @@ dependencies:
   path_provider: ^2.1.6 # 获取应用目录
   share_plus: ^13.3.1 # 系统分享面板
   url_launcher: ^6.3.3 # 打开链接或外部应用
-
+  equatable: ^3.0.0
   # UI、图片与布局
   animations: ^3.0.0 # 常用动画效果
   any_image_view: ^2.5.0 # 多来源图片展示
