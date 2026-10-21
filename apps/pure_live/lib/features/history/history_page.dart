@@ -6,6 +6,7 @@ import 'package:live_library/live_library.dart' show HistoryRepository, WatchRec
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_sites/live_sites.dart' show LiveRoom;
 import 'package:pure_live/app/app_providers.dart';
+import 'package:pure_live/features/room/room_playlist.dart';
 import 'package:pure_live/features/settings/widgets/settings_chooser.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/platforms/tv/features/history/tv_history_view.dart';
@@ -13,7 +14,6 @@ import 'package:pure_live/shared/widgets/list_loading.dart';
 import 'package:pure_live/shared/widgets/room_card.dart';
 import 'package:pure_live/shared/widgets/room_grid.dart';
 import 'package:pure_live/system/configuration/app_preferences_providers.dart';
-import 'package:pure_live/system/navigation/app_router.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The watch history, in the reference's v5 shape (A09.9): "观看记录" with
@@ -391,6 +391,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
                 itemCount: group.records.length,
                 itemBuilder: (context, index) => _HistoryTile(
                   record: group.records[index],
+                  playlist: [for (final record in group.records) record.room],
                   onRemove: () => unawaited(_confirmRemove(group.records[index])),
                 ),
               ),
@@ -432,9 +433,13 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
 /// bar along the card's foot and a resume pill over the caption's free
 /// corner; records without progress render exactly as before.
 final class _HistoryTile extends ConsumerWidget {
-  const new({required this.record, required this.onRemove});
+  const new({required this.record, required this.playlist, required this.onRemove});
 
   final WatchRecord record;
+
+  /// The rooms of the same day, the order a previous/next switch follows.
+  final List<LiveRoom> playlist;
+
   final VoidCallback onRemove;
 
   @override
@@ -445,11 +450,7 @@ final class _HistoryTile extends ConsumerWidget {
       children: [
         RoomCard(
           room: room,
-          onOpen: () => RoomRoute(
-            siteId: room.ref.platform,
-            roomId: room.ref.roomId,
-            roomName: room.content.title,
-          ).push<void>(context),
+          onOpen: () => unawaited(openRoomWithPlaylist(context, ref, playlist, room)),
           onLongPress: onRemove,
         ),
         Positioned(

@@ -12,6 +12,7 @@ import 'package:pure_live/features/recorder/recorder_engine.dart' show RecorderR
 import 'package:pure_live/features/recorder/recorder_providers.dart' show recorderRuntimeProvider;
 import 'package:pure_live/features/room/room_controller.dart' show RoomController, RoomPresentation, RoomState;
 import 'package:pure_live/features/room/room_dialogs.dart';
+import 'package:pure_live/features/room/room_playlist.dart';
 import 'package:pure_live/features/room/room_providers.dart' show RoomIdentity, danmakuSessionProvider;
 import 'package:pure_live/features/room/room_share_code.dart' show OwnClipboardTexts, encodeRoomShareCode;
 import 'package:pure_live/l10n/generated/strings.g.dart';
@@ -22,8 +23,9 @@ import 'package:pure_uikit/pure_uikit.dart';
 /// own way — a phone spends its width on the stream, a desktop can afford the
 /// name and the actions on one line — so these carry content, not a bar.
 
-/// The anchor and the room line under it, the reference's header title.
-final class RoomIdentityBadge extends StatelessWidget {
+/// The anchor and the room line under it, the reference's header title, plus
+/// the previous/next switch when the room was opened from a list.
+final class RoomIdentityBadge extends ConsumerWidget {
   /// A badge for [room] on a site shown as [siteName].
   const new({required this.room, required this.siteName, this.size = 40, this.titleStyle, super.key});
 
@@ -40,11 +42,15 @@ final class RoomIdentityBadge extends StatelessWidget {
   final TextStyle? titleStyle;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = PureTheme.of(context);
     final anchor = room.anchor;
     final area = room.area?.areaName;
     final style = titleStyle ?? theme.text.subtitle;
+    // The list the room was entered from; a deep link or a clipboard paste
+    // leaves nothing to step through.
+    final playlist = ref.watch(roomPlaylistProvider);
+    final linked = playlist != null && RoomPlaylist.sameRoom(playlist.currentRoom, room);
     return Row(
       children: [
         PureAvatar(name: anchor?.name, src: _imageOf(anchor?.avatarUrl), size: size),
@@ -69,6 +75,30 @@ final class RoomIdentityBadge extends StatelessWidget {
             ],
           ),
         ),
+        if (linked && playlist.switchable)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${playlist.index + 1}/${playlist.rooms.length}',
+                style: theme.text.caption.copyWith(color: theme.colors.textSecondary),
+              ),
+              PureIconButton(
+                key: const ValueKey('room-previous'),
+                icon: Icons.skip_previous,
+                tooltip: context.t.room.previousRoom,
+                size: ControlSize.sm,
+                onPressed: () => switchRoom(context, ref, -1),
+              ),
+              PureIconButton(
+                key: const ValueKey('room-next'),
+                icon: Icons.skip_next,
+                tooltip: context.t.room.nextRoom,
+                size: ControlSize.sm,
+                onPressed: () => switchRoom(context, ref, 1),
+              ),
+            ],
+          ),
       ],
     );
   }

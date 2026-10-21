@@ -12,6 +12,7 @@ import 'package:pure_live/app/shell/home_views.dart' show isHomeRailWidth;
 import 'package:pure_live/app/shell/main_page_frame.dart';
 import 'package:pure_live/app/shell/shell_actions.dart';
 import 'package:pure_live/features/room/paging.dart';
+import 'package:pure_live/features/room/room_playlist.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/platforms/tv/features/discovery/tv_popular_view.dart';
 import 'package:pure_live/shared/utilities/sites_order.dart' show orderedSites;
@@ -633,14 +634,7 @@ final class _SiteFeedState extends ConsumerState<_SiteFeed>
       itemCount: shown.length,
       itemBuilder: (context, index) {
         final room = shown[index];
-        return RoomCard(
-          room: room,
-          onOpen: () => RoomRoute(
-            siteId: room.ref.platform,
-            roomId: room.ref.roomId,
-            roomName: room.content.title,
-          ).push<void>(context),
-        );
+        return RoomCard(room: room, onOpen: () => unawaited(openRoomWithPlaylist(context, ref, items, room)));
       },
       // A phone has no pager row to press, so the end of the list is where the
       // next page announces itself — as a row of its own, not as one more card:

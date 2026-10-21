@@ -30,7 +30,7 @@
 | B1b | 搜索排序：4 模式 + 离线过滤 + 排序 UI | search/search_ranking.dart | ✅ 77b2b03a6（+5 测试） |
 | B2 | 房间·本地互动 | live_play/local_interaction/16（6.8k 行） | ✅ B2a 3c9d55d98（礼物+等级）、B2b f2e58692b（预设样式+等级读数） |
 | B2c | 礼物横幅（一屏一张、大额大卡、预设着色、可关） | local_gift_effect | ✅ e1897b16a |
-| B3 | 房间·附件（⏸ 用户指令：先基础页面） | live_play/{mini,switch_room,logic} | 🟡 重连阶梯 6106be436、后台播放 acd14002b；剩 mini 播放器/切房间/音频焦点/预测返回（需原生或列表上下文） |
+| B3 | 房间·附件（基础页面已完成，恢复执行） | live_play/{mini,switch_room,logic} | 🟡 重连阶梯 6106be436、后台播放 acd14002b、**切房间 ✅**（RoomPlaylist：列表上下文 + 头部前后切换，接入关注/热门/分区/历史/搜索/TV 墙）；剩 mini 播放器/音频焦点/预测返回（需原生） |
 | B4 | 播放器视图 | live_play/player/8 | ✅ 手势 W1、诊断徽章 967502f97、录制徽章 24717c3be、弹幕设置入口 c63a7fb90；控制条逐项核对完毕；**节目单审计**：参考的 view_schedule 是 IPTV 频道节目单（iptv_guide），v2 的 IPTV 播放页已有 EPG 条与节目列表，房间页不适用 |
 | B5 | 多画面 | multiview/10 | ✅ 审计：v2 有 1/2/4/6/9 布局、选房、逐格静音与全静音、布局持久化；参考多出的是 TV 焦点栏/几何细化 |
 | B6 | 录制/IPTV | recorder/、iptv/ | ✅ 审计：v2 体量相当（录制 718+649 行、IPTV 544+1104 行），既有等价 |
@@ -49,7 +49,7 @@
 
 - 全量 `flutter analyze`：零问题。
 - 全量 `flutter test`：**299 通过 / 12 失败**；失败全部是 `test/tool/` 的金图（uikit_closeup ×4、uikit_showcase ×8）——这套金图是用户的视觉验收工具，本轮功能改动（导航/房间/音乐/TV）改变了渲染，**金图需用户重录**，本轮刻意未动 `test/tool/failures/` 与金图。
-- 台账剩余：**B3（暂停中）**；其余 B1–B10 全部 ✅。
+- 台账剩余：**B3（已恢复）**——切房间已落地（+11 测试）；剩 mini 播放器/音频焦点/预测返回（需原生与设备验证）。其余 B1–B10 全部 ✅。
 
 ## 逐页推进（用户 2026-10-21 指定顺序）
 

@@ -2881,6 +2881,12 @@ class Translations$room$zh {
 	/// zh: '人气优先'
 	String get sortViewers => '人气优先';
 
+	/// zh: '上一个直播间'
+	String get previousRoom => '上一个直播间';
+
+	/// zh: '下一个直播间'
+	String get nextRoom => '下一个直播间';
+
 	/// zh: '弹幕连接失败'
 	String get danmakuFailed => '弹幕连接失败';
 
@@ -5151,6 +5157,8 @@ extension on Translations {
 			'search.includeOffline' => '显示未开播',
 			'room.sortPlatform' => '默认排序',
 			'room.sortViewers' => '人气优先',
+			'room.previousRoom' => '上一个直播间',
+			'room.nextRoom' => '下一个直播间',
 			'room.danmakuFailed' => '弹幕连接失败',
 			'room.quality' => '清晰度',
 			'room.line' => '线路',
@@ -5315,10 +5323,10 @@ extension on Translations {
 			'remoteSync.incomingImportNamed' => ({required Object address, required Object name}) => '设备 ${address}（${name}）请求用它的设置覆盖本机设置，是否允许？',
 			'remoteSync.incomingExportNamed' => ({required Object address, required Object name}) => '设备 ${address}（${name}）请求读取本机设置，是否允许？',
 			'remoteSync.pairingCode' => '配对码',
-			'remoteSync.pairingCodeFor' => ({required String name}) => '输入“${name}”上显示的 6 位配对码',
-			'remoteSync.pairingCodeInvalid' => '配对码应为 6 位数字',
 			_ => null,
 		} ?? switch (path) {
+			'remoteSync.pairingCodeFor' => ({required String name}) => '输入“${name}”上显示的 6 位配对码',
+			'remoteSync.pairingCodeInvalid' => '配对码应为 6 位数字',
 			'remoteSync.partsAll' => '全选',
 			'remoteSync.partsLegacy' => '对方是 3.x 或较早的版本（或者暂时没有回应），只能发送全部内容。',
 			'remoteSync.partsSendNamed' => ({required String name}) => '勾选要发送到“${name}”的内容。对方确认后，勾选的内容会替换它原有的，没勾的保持不变。',

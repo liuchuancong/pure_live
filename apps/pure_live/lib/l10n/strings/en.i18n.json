@@ -638,6 +638,8 @@
   "room": {
     "sortPlatform": "Default",
     "sortViewers": "Most viewers",
+    "previousRoom": "Previous room",
+    "nextRoom": "Next room",
     "danmakuFailed": "Danmaku connection failed",
     "quality": "Quality",
     "line": "Line",

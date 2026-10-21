@@ -13,6 +13,7 @@ import 'package:pure_live/app/shell/shell_destinations.dart' show ShellBranch;
 import 'package:pure_live/features/follow/follow_rules.dart';
 import 'package:pure_live/features/follow/live_alert_service.dart';
 import 'package:pure_live/features/room/paging.dart';
+import 'package:pure_live/features/room/room_playlist.dart';
 import 'package:pure_live/features/settings/widgets/settings_surface.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/platforms/tv/features/follow/tv_follow_view.dart';
@@ -21,7 +22,6 @@ import 'package:pure_live/shared/widgets/room_card.dart';
 import 'package:pure_live/shared/widgets/room_grid.dart';
 import 'package:pure_live/system/configuration/app_preferences_providers.dart';
 import 'package:pure_live/system/layout/main_layout.dart';
-import 'package:pure_live/system/navigation/app_router.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The page width from which the platform tabs join the status tabs in the
@@ -333,11 +333,9 @@ final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefr
                     progress: _progress,
                     onRefresh: feedRefresh,
                     onOpen: (record) => unawaited(
-                      RoomRoute(
-                        siteId: record.room.ref.platform,
-                        roomId: record.room.ref.roomId,
-                        roomName: record.room.content.title,
-                      ).push<void>(context),
+                      openRoomWithPlaylist(context, ref, [
+                        for (final visible in _roomsFor(_group, id)) visible.room,
+                      ], record.room),
                     ),
                     onLongPress: (record) => unawaited(_assignGroups(record)),
                     emptyLabel: switch (_group) {

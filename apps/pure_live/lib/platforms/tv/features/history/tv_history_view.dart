@@ -6,11 +6,11 @@ import 'package:live_library/live_library.dart' show HistoryRepository, WatchRec
 import 'package:live_sites/live_sites.dart' show LiveRoom;
 import 'package:pure_live/app/app_providers.dart' show historyRepositoryProvider, sitesProvider;
 import 'package:pure_live/features/follow/live_alert_service.dart' show liveAlertServiceProvider;
+import 'package:pure_live/features/room/room_playlist.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/platforms/tv/widgets/tv_pill.dart';
 import 'package:pure_live/platforms/tv/widgets/tv_room_wall.dart';
 import 'package:pure_live/system/configuration/app_preferences_providers.dart';
-import 'package:pure_live/system/navigation/app_router.dart' show RoomRoute;
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// When a watch happened, in the four sections the TV pane offers as tabs.
@@ -174,11 +174,8 @@ final class _TvHistoryViewState extends ConsumerState<TvHistoryView> {
     }
   }
 
-  void _open(LiveRoom room) {
-    unawaited(
-      RoomRoute(siteId: room.ref.platform, roomId: room.ref.roomId, roomName: room.content.title).push<void>(context),
-    );
-  }
+  void _open(LiveRoom room) =>
+      unawaited(openRoomWithPlaylist(context, ref, [for (final record in _inDay()) record.room], room));
 
   @override
   Widget build(BuildContext context) {

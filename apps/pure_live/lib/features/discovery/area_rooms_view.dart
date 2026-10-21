@@ -8,12 +8,12 @@ import 'package:live_pagination/live_pagination.dart';
 import 'package:live_sites/live_sites.dart' show LivePageRequest, LiveRoom;
 import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/features/room/paging.dart';
+import 'package:pure_live/features/room/room_playlist.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/list_loading.dart';
 import 'package:pure_live/shared/widgets/room_card.dart';
 import 'package:pure_live/shared/widgets/room_grid.dart';
 import 'package:pure_live/system/configuration/app_preferences_providers.dart';
-import 'package:pure_live/system/navigation/app_router.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// How the loaded rooms are ordered.
@@ -214,7 +214,7 @@ final class _InfiniteFeedState extends ConsumerState<_InfiniteFeed> with FeedAut
             child: RoomGrid(
               scrollController: _scroll,
               itemCount: rooms.length,
-              itemBuilder: (context, index) => _tile(context, rooms[index]),
+              itemBuilder: (context, index) => _tile(context, ref, rooms, rooms[index]),
               footer: state.isLoadingMore ? const Center(child: PureSpinner(size: 40)) : null,
             ),
           ),
@@ -386,7 +386,7 @@ final class _PagedFeedState extends ConsumerState<_PagedFeed> with FeedAutoRefre
     return RoomGrid(
       scrollController: _scroll,
       itemCount: rooms.length,
-      itemBuilder: (context, index) => _tile(context, rooms[index]),
+      itemBuilder: (context, index) => _tile(context, ref, rooms, rooms[index]),
     );
   }
 }
@@ -398,11 +398,8 @@ List<LiveRoom> _sortByViewers(List<LiveRoom> rooms) {
   return [...rooms]..sort((a, b) => viewers(b).compareTo(viewers(a)));
 }
 
-Widget _tile(BuildContext context, LiveRoom room) => RoomCard(
-  room: room,
-  onOpen: () =>
-      RoomRoute(siteId: room.ref.platform, roomId: room.ref.roomId, roomName: room.content.title).push<void>(context),
-);
+Widget _tile(BuildContext context, WidgetRef ref, List<LiveRoom> playlist, LiveRoom room) =>
+    RoomCard(room: room, onOpen: () => unawaited(openRoomWithPlaylist(context, ref, playlist, room)));
 
 Widget _placeholder(
   BuildContext context, {

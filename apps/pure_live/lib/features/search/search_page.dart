@@ -9,6 +9,7 @@ import 'package:live_pagination/live_pagination.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/app/composition/sites.dart' show AppSites;
+import 'package:pure_live/features/room/room_playlist.dart';
 import 'package:pure_live/features/search/search_providers.dart';
 import 'package:pure_live/features/search/search_ranking.dart';
 import 'package:pure_live/features/search/web_search_url.dart';
@@ -552,6 +553,7 @@ final class _SitePaneState extends State<_SitePane> with AutomaticKeepAliveClien
       includeOffline: widget.includeOffline,
       platformOrder: widget.platformOrder,
     );
+    final playlist = roomHits(results);
     if (state.items.isEmpty) {
       if (state.error != null) {
         return PureError(
@@ -599,7 +601,7 @@ final class _SitePaneState extends State<_SitePane> with AutomaticKeepAliveClien
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.fromLTRB(PureSpacing.sm, PureSpacing.xs, PureSpacing.sm, PureSpacing.xl),
         itemCount: results.length,
-        itemBuilder: (context, index) => SearchResultTile(result: results[index]),
+        itemBuilder: (context, index) => SearchResultTile(result: results[index], playlist: playlist),
         footer: state.isLoadingMore ? const Center(child: PureSpinner()) : null,
       ),
     );
@@ -791,6 +793,7 @@ final class _AllSitesPaneState extends State<_AllSitesPane> with AutomaticKeepAl
       includeOffline: widget.includeOffline,
       platformOrder: widget.platformOrder,
     );
+    final playlist = roomHits(visible);
     // A section that answered nothing stays quiet — the pane's overall empty
     // state speaks for it once every section has answered. A failed one keeps
     // only its header with the retry where the spinner would sit.
@@ -837,7 +840,7 @@ final class _AllSitesPaneState extends State<_AllSitesPane> with AutomaticKeepAl
             physics: const NeverScrollableScrollPhysics(),
             padding: EdgeInsets.zero,
             itemCount: visible.length,
-            itemBuilder: (context, index) => SearchResultTile(result: visible[index]),
+            itemBuilder: (context, index) => SearchResultTile(result: visible[index], playlist: playlist),
           ),
       ],
     );
@@ -876,24 +879,31 @@ List<LiveSearchResult> visibleSearchResults(
   return [for (final room in ordered) LiveSearchResult.room(room), ...others];
 }
 
+/// The room hits of [results], in list order: what a room opened from these
+/// results switches through.
+List<LiveRoom> roomHits(List<LiveSearchResult> results) => [
+  for (final result in results)
+    if (result case RoomSearchResult(:final room)) room,
+];
+
 /// One typed search hit, drawn with the shared room card — anchors keep
 /// their avatar tile and areas open their room list.
-final class SearchResultTile extends StatelessWidget {
+final class SearchResultTile extends ConsumerWidget {
   /// Renders [result].
-  const new({required this.result, super.key});
+  const new({required this.result, this.playlist, super.key});
 
   /// The search hit this tile shows.
   final LiveSearchResult result;
 
+  /// The room hits of the list this tile is drawn in, for a previous/next
+  /// switch; null when it stands alone.
+  final List<LiveRoom>? playlist;
+
   @override
-  Widget build(BuildContext context) => switch (result) {
+  Widget build(BuildContext context, WidgetRef ref) => switch (result) {
     RoomSearchResult(:final room) => RoomCard(
       room: room,
-      onOpen: () => RoomRoute(
-        siteId: room.ref.platform,
-        roomId: room.ref.roomId,
-        roomName: room.content.title,
-      ).push<void>(context),
+      onOpen: () => unawaited(openRoomWithPlaylist(context, ref, playlist ?? [room], room)),
     ),
     AnchorSearchResult(:final anchor) => AnchorTile(anchor: anchor),
     AreaSearchResult(:final area) => AreaCard(

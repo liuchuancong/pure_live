@@ -824,6 +824,8 @@ class _Translations$room$en extends Translations$room$zh {
 	// Translations
 	@override String get sortPlatform => 'Default';
 	@override String get sortViewers => 'Most viewers';
+	@override String get previousRoom => 'Previous room';
+	@override String get nextRoom => 'Next room';
 	@override String get danmakuFailed => 'Danmaku connection failed';
 	@override String get quality => 'Quality';
 	@override String get line => 'Line';
@@ -2341,6 +2343,8 @@ extension on TranslationsEn {
 			'design.defaultLanguage' => 'Default (Fluent)',
 			'room.sortPlatform' => 'Default',
 			'room.sortViewers' => 'Most viewers',
+			'room.previousRoom' => 'Previous room',
+			'room.nextRoom' => 'Next room',
 			'room.danmakuFailed' => 'Danmaku connection failed',
 			'room.quality' => 'Quality',
 			'room.line' => 'Line',
@@ -2753,10 +2757,10 @@ extension on TranslationsEn {
 			'remoteSync.incomingImportNamed' => ({required Object address, required Object name}) => '${address} (${name}) asks to replace this device’s settings with its own. Allow?',
 			'remoteSync.incomingExportNamed' => ({required Object address, required Object name}) => '${address} (${name}) asks to read this device’s settings. Allow?',
 			'remoteSync.pairingCode' => 'Pairing code',
-			'remoteSync.pairingCodeFor' => ({required String name}) => 'Enter the 6-digit pairing code shown on “${name}”',
-			'remoteSync.pairingCodeInvalid' => 'The pairing code should be 6 digits',
 			_ => null,
 		} ?? switch (path) {
+			'remoteSync.pairingCodeFor' => ({required String name}) => 'Enter the 6-digit pairing code shown on “${name}”',
+			'remoteSync.pairingCodeInvalid' => 'The pairing code should be 6 digits',
 			'remoteSync.partsAll' => 'Select all',
 			'remoteSync.partsLegacy' => 'The other device is version 3.x or earlier (or did not answer), so it can only receive everything.',
 			'remoteSync.partsSendNamed' => ({required String name}) => 'Tick what to send to “${name}”. After it confirms, the ticked parts replace its own; unticked parts stay.',

@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveArea, LiveAreaProvider, LivePageRequest, LiveRoom, LiveSite;
 import 'package:pure_live/app/app_providers.dart' show sitesProvider;
+import 'package:pure_live/features/room/room_playlist.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/platforms/tv/widgets/tv_pill.dart';
 import 'package:pure_live/platforms/tv/widgets/tv_room_wall.dart';
 import 'package:pure_live/shared/utilities/sites_order.dart' show orderedSites;
 import 'package:pure_live/system/configuration/app_preferences_providers.dart';
-import 'package:pure_live/system/navigation/app_router.dart' show RoomRoute;
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// 分区 on the ten-foot screen: the platform pills, the areas as a focus grid
@@ -137,11 +137,7 @@ final class _TvAreasViewState extends ConsumerState<TvAreasView> {
     unawaited(_loadCatalogue());
   }
 
-  void _open(LiveRoom room) {
-    unawaited(
-      RoomRoute(siteId: room.ref.platform, roomId: room.ref.roomId, roomName: room.content.title).push<void>(context),
-    );
-  }
+  void _open(LiveRoom room) => unawaited(openRoomWithPlaylist(context, ref, _rooms ?? const <LiveRoom>[], room));
 
   @override
   Widget build(BuildContext context) {
