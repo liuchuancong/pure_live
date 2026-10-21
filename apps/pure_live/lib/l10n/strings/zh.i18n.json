@@ -666,7 +666,8 @@
     "thisMonth": "本月",
     "earlier": "更早",
     "remove": "删除记录",
-    "removeConfirm": "删除这条观看记录？"
+    "removeConfirm": "删除这条观看记录？",
+    "week": "近 7 天"
   },
   "iptv": {
     "epgTitle": "节目单",

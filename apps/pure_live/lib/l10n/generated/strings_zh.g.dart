@@ -2110,6 +2110,9 @@ class Translations$history$zh {
 
 	/// zh: '删除这条观看记录？'
 	String get removeConfirm => '删除这条观看记录？';
+
+	/// zh: '近 7 天'
+	String get week => '近 7 天';
 }
 
 // Path: iptv
@@ -4821,6 +4824,7 @@ extension on Translations {
 			'history.earlier' => '更早',
 			'history.remove' => '删除记录',
 			'history.removeConfirm' => '删除这条观看记录？',
+			'history.week' => '近 7 天',
 			'iptv.epgTitle' => '节目单',
 			'iptv.title' => 'IPTV',
 			'iptv.addSource' => '添加源',
@@ -5212,9 +5216,9 @@ extension on Translations {
 			'remoteSync.partSettings' => '设置',
 			'remoteSync.partFollows' => '关注列表',
 			'remoteSync.partHistory' => '观看历史',
-			'remoteSync.partGroups' => '关注分组',
 			_ => null,
 		} ?? switch (path) {
+			'remoteSync.partGroups' => '关注分组',
 			'remoteSync.partKeywords' => '屏蔽关键词',
 			'remoteSync.partUsers' => '屏蔽用户',
 			'remoteSync.partWebdav' => 'WebDAV 服务器',

@@ -987,6 +987,7 @@ class _Translations$history$en extends Translations$history$zh {
 	@override String get earlier => 'Earlier';
 	@override String get remove => 'Remove entry';
 	@override String get removeConfirm => 'Remove this watch record?';
+	@override String get week => 'This week';
 }
 
 // Path: iptv
@@ -2431,6 +2432,7 @@ extension on TranslationsEn {
 			'history.earlier' => 'Earlier',
 			'history.remove' => 'Remove entry',
 			'history.removeConfirm' => 'Remove this watch record?',
+			'history.week' => 'This week',
 			'iptv.epgTitle' => 'Guides',
 			'iptv.title' => 'IPTV',
 			'iptv.addSource' => 'Add source',
@@ -2706,9 +2708,9 @@ extension on TranslationsEn {
 			'remoteSync.partSettings' => 'Settings',
 			'remoteSync.partFollows' => 'Follow list',
 			'remoteSync.partHistory' => 'Watch history',
-			'remoteSync.partGroups' => 'Follow groups',
 			_ => null,
 		} ?? switch (path) {
+			'remoteSync.partGroups' => 'Follow groups',
 			'remoteSync.partKeywords' => 'Blocked keywords',
 			'remoteSync.partUsers' => 'Blocked users',
 			'remoteSync.partWebdav' => 'WebDAV servers',

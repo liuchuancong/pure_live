@@ -3,10 +3,12 @@ import 'dart:async' show StreamSubscription, unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_library/live_library.dart' show HistoryRepository, WatchRecord;
+import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_sites/live_sites.dart' show LiveRoom;
 import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/features/settings/widgets/settings_chooser.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/platforms/tv/features/history/tv_history_view.dart';
 import 'package:pure_live/shared/widgets/list_loading.dart';
 import 'package:pure_live/shared/widgets/room_card.dart';
 import 'package:pure_live/shared/widgets/room_grid.dart';
@@ -238,6 +240,11 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    // The TV draws its own pane: sections and platforms as focus pills over
+    // the same repository.
+    if (ref.read(environmentProvider).runtime.formFactor == FormFactor.tv) {
+      return const TvHistoryView();
+    }
     final t = context.t;
     // Re-apply the kept capacity whenever the preference moves (the limit
     // dialog writes it, and so does another window).

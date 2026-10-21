@@ -781,7 +781,8 @@
     "thisMonth": "This month",
     "earlier": "Earlier",
     "remove": "Remove entry",
-    "removeConfirm": "Remove this watch record?"
+    "removeConfirm": "Remove this watch record?",
+    "week": "This week"
   },
   "iptv": {
     "epgTitle": "Guides",
