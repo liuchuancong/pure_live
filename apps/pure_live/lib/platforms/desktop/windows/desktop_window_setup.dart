@@ -3,11 +3,10 @@ import 'dart:ui' show Brightness, Color, PlatformDispatcher, Size;
 import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/live_shell.dart';
 import 'package:live_shell_desktop/live_shell_desktop.dart';
-
-import 'package:pure_live/app/theme/app_theme.dart' show materialThemeSeed;
-import 'package:pure_live/app/theme/appearance_preferences/appearance_preferences.dart';
-import 'package:pure_live/app/theme/ui_configuration_mapper.dart' show uiConfigFromAppearance;
-import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart' show ShellWindowChrome;
+import 'package:pure_live/system/theme/app_theme.dart' show materialThemeSeed;
+import 'package:pure_live/system/theme/appearance_preferences/appearance_preferences.dart';
+import 'package:pure_live/system/theme/ui_configuration_mapper.dart' show uiConfigFromAppearance;
+import 'package:pure_live/system/window/shell_preferences.dart' show ShellWindowChrome;
 
 /// Sets the desktop window up before the first frame: size, minimum size,
 /// title, background, and who owns the top edge.
@@ -56,6 +55,7 @@ Future<void> setUpDesktopWindow({
     fallbacks: RenderFallbacks(effects: !opaqueSurface),
     title: title,
     background: _startBackground(brightness),
+    minimumSize: const Size(450, 600),
     // Windows is where the compositor offers a material and where a bare
     // transparent surface shows the desktop through; macOS and Linux keep
     // their own arrangement for now.
