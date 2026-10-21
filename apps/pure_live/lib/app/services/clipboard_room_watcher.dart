@@ -10,6 +10,7 @@ import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/features/settings/widgets/settings_surface.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/rooms/room_share_code.dart' show OwnClipboardTexts, decodeRoomShareCode;
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The clipboard's room links — the reference's 剪贴板口令检测, 3.x always
@@ -48,7 +49,11 @@ final class ClipboardRoomWatcher {
       _busy = false;
       return;
     }
-    if (text.isEmpty || text == _seen || !active) {
+    if (text.isEmpty ||
+        text == _seen ||
+        // A code or link this app wrote is not somebody else's find.
+        OwnClipboardTexts.contains(text) ||
+        !active) {
       _busy = false;
       return;
     }
@@ -82,9 +87,15 @@ final class ClipboardRoomWatcher {
     _listener = null;
   }
 
-  /// The toolbox walk: every site's resolver in turn, the first owner wins;
-  /// a bare room id with a known platform prefix reads directly.
+  /// The toolbox walk: a share code first, since it names the room itself,
+  /// then every site's link resolver in turn and the first owner wins.
   Future<({String site, String roomId, String title})?> _resolve(String text) async {
+    // The 口令 carries platform, room id and the room's own title, so it needs
+    // no network round-trip to be recognised.
+    if (decodeRoomShareCode(text) case final coded?) {
+      final title = coded.content.title.trim();
+      return (site: coded.ref.platform, roomId: coded.ref.roomId, title: title.isEmpty ? coded.ref.roomId : title);
+    }
     final resolvers = _ref
         .read(sitesProvider)
         .registry
@@ -137,7 +148,7 @@ final class ClipboardRoomWatcher {
       ],
     );
     if (go == true && context.mounted) {
-      unawaited(RoomRoute(siteId: room.site, roomId: room.roomId, roomName: room.roomId).push<void>(context));
+      unawaited(RoomRoute(siteId: room.site, roomId: room.roomId, roomName: room.title).push<void>(context));
     }
   }
 }

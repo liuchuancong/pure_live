@@ -838,6 +838,9 @@ class _Translations$room$en extends Translations$room$zh {
 	@override String get toolbox => 'Toolbox';
 	@override String get copyLink => 'Copy room link';
 	@override String get linkCopied => 'Copied';
+	@override String get shareCode => 'Copy share code';
+	@override String get shareCodeCopied => 'Share code copied — paste it back to open this room';
+	@override String get shareCodeFailed => 'The room is not named well enough to share by code';
 	@override String get record => 'Record';
 	@override String get stopRecording => 'Stop recording';
 	@override String get rateNormal => 'Normal speed';
@@ -2273,6 +2276,9 @@ extension on TranslationsEn {
 			'room.toolbox' => 'Toolbox',
 			'room.copyLink' => 'Copy room link',
 			'room.linkCopied' => 'Copied',
+			'room.shareCode' => 'Copy share code',
+			'room.shareCodeCopied' => 'Share code copied — paste it back to open this room',
+			'room.shareCodeFailed' => 'The room is not named well enough to share by code',
 			'room.record' => 'Record',
 			'room.stopRecording' => 'Stop recording',
 			'room.rateNormal' => 'Normal speed',
@@ -2668,11 +2674,11 @@ extension on TranslationsEn {
 			'closePrompt.remember' => 'Remember my choice, stop asking',
 			'shellSettings.sectionWindow' => 'Window',
 			'shellSettings.titleBar' => 'Window title bar',
+			_ => null,
+		} ?? switch (path) {
 			'shellSettings.titleBarAuto' => 'Auto (by Windows version)',
 			'shellSettings.titleBarApp' => 'App title bar',
 			'shellSettings.titleBarSystem' => 'System title bar',
-			_ => null,
-		} ?? switch (path) {
 			'shellSettings.titleBarHint' => 'Auto: the app title bar on Windows 11, the system title bar on Windows 10. The app title bar is drawn by Pure Live; the system title bar is the native Windows one. A switch applies after the app restarts.',
 			'shellSettings.frameDiagnosis' => 'Window frame diagnosis',
 			'shellSettings.frameTakeover' => 'Frame takeover',

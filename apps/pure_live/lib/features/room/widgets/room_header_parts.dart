@@ -15,6 +15,7 @@ import 'package:pure_live/features/room/room_controller.dart' show RoomControlle
 import 'package:pure_live/features/room/room_dialogs.dart';
 import 'package:pure_live/features/room/room_providers.dart' show RoomIdentity, danmakuSessionProvider;
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/rooms/room_share_code.dart' show OwnClipboardTexts, encodeRoomShareCode;
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The pieces the room header is built from. The layouts arrange them their
@@ -312,6 +313,15 @@ final class RoomOverflowMenu extends ConsumerWidget {
           icon: Icons.link,
           onTap: () => unawaited(_copyLink(context)),
         ),
+        // The 口令 is the other half of the same action: a code the app can
+        // read back out of a chat message or a note, where a bare URL needs a
+        // browser.
+        PureMenuItem(
+          id: 'share-code',
+          label: context.t.room.shareCode,
+          icon: Icons.emoji_emotions_outlined,
+          onTap: () => unawaited(_copyShareCode(context)),
+        ),
         PureMenuItem(
           id: 'fullscreen',
           label: immersive ? context.t.room.exitFullscreen : context.t.room.fullscreen,
@@ -333,9 +343,30 @@ final class RoomOverflowMenu extends ConsumerWidget {
   Future<void> _copyLink(BuildContext context) async {
     final links = state.room?.links;
     final url = links?.webUrl ?? links?.shareUrl ?? '${identity.siteId}/${identity.roomId}';
+    // Remembered so the clipboard check does not offer the app its own find.
+    OwnClipboardTexts.remember(url);
     await Clipboard.setData(ClipboardData(text: url));
     if (context.mounted) {
       PureToast.show(context, context.t.room.linkCopied);
+    }
+  }
+
+  /// Copies the room's share code, or says so when the room is not named well
+  /// enough to point at (the reference's `share_failed`).
+  Future<void> _copyShareCode(BuildContext context) async {
+    final t = context.t;
+    final room = state.room;
+    final code = room == null ? '' : encodeRoomShareCode(room);
+    if (code.isEmpty) {
+      if (context.mounted) {
+        PureToast.show(context, t.room.shareCodeFailed, type: PureToastType.warning);
+      }
+      return;
+    }
+    OwnClipboardTexts.remember(code);
+    await Clipboard.setData(ClipboardData(text: code));
+    if (context.mounted) {
+      PureToast.show(context, t.room.shareCodeCopied);
     }
   }
 }

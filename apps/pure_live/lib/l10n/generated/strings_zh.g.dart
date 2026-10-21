@@ -2906,6 +2906,15 @@ class Translations$room$zh {
 	/// zh: '已复制'
 	String get linkCopied => '已复制';
 
+	/// zh: '复制口令'
+	String get shareCode => '复制口令';
+
+	/// zh: '口令已复制，贴回去就能打开这个房间'
+	String get shareCodeCopied => '口令已复制，贴回去就能打开这个房间';
+
+	/// zh: '房间还没认全，复制不了口令'
+	String get shareCodeFailed => '房间还没认全，复制不了口令';
+
 	/// zh: '录制'
 	String get record => '录制';
 
@@ -4948,6 +4957,9 @@ extension on Translations {
 			'room.toolbox' => '工具箱',
 			'room.copyLink' => '复制房间链接',
 			'room.linkCopied' => '已复制',
+			'room.shareCode' => '复制口令',
+			'room.shareCodeCopied' => '口令已复制，贴回去就能打开这个房间',
+			'room.shareCodeFailed' => '房间还没认全，复制不了口令',
 			'room.record' => '录制',
 			'room.stopRecording' => '停止录制',
 			'room.rateNormal' => '原速',
@@ -5102,11 +5114,11 @@ extension on Translations {
 			'closePrompt.remember' => '记住我的选择，不再询问',
 			'shellSettings.sectionWindow' => '窗口',
 			'shellSettings.titleBar' => '窗口标题栏',
+			_ => null,
+		} ?? switch (path) {
 			'shellSettings.titleBarAuto' => '自动（按系统版本）',
 			'shellSettings.titleBarApp' => '应用标题栏',
 			'shellSettings.titleBarSystem' => '系统标题栏',
-			_ => null,
-		} ?? switch (path) {
 			'shellSettings.titleBarHint' => '自动：Windows 11 用应用标题栏，Windows 10 用系统标题栏。应用标题栏由 Pure Live 绘制，系统标题栏使用 Windows 原生样式。切换在重启应用后生效。',
 			'shellSettings.frameDiagnosis' => '窗口边框诊断',
 			'shellSettings.frameTakeover' => '边框接管',
