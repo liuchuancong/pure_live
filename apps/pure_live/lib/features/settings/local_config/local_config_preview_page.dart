@@ -34,37 +34,37 @@ final class LocalConfigPreviewPage extends ConsumerWidget {
     return SettingsChrome(
       title: t.settings.localConfig,
       body: SettingsList(
-      sections: [
-        SettingsSection(
-          tiles: [SettingsTile(leading: const Icon(Icons.info_outline), title: Text(t.settings.localConfigNote))],
-        ),
-        for (final entry in documents.entries)
+        sections: [
           SettingsSection(
-            title: Text(entry.key),
-            tiles: [
-              CustomSettingsTile(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                  child: SelectableText(
-                    encoder.convert(entry.value),
-                    style: PureTheme.of(context).text.caption.copyWith(fontFamily: 'monospace'),
+            tiles: [SettingsTile(leading: const Icon(Icons.info_outline), title: Text(t.settings.localConfigNote))],
+          ),
+          for (final entry in documents.entries)
+            SettingsSection(
+              title: Text(entry.key),
+              tiles: [
+                CustomSettingsTile(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    child: SelectableText(
+                      encoder.convert(entry.value),
+                      style: PureTheme.of(context).text.caption.copyWith(fontFamily: 'monospace'),
+                    ),
                   ),
                 ),
-              ),
-              SettingsTile(
-                leading: const Icon(Icons.copy_outlined),
-                title: Text(t.settings.localConfigCopy),
-                onPressed: (_) => unawaited(
-                  Clipboard.setData(ClipboardData(text: encoder.convert(entry.value))).then((_) {
-                    if (context.mounted) {
-                      PureToast.show(context, t.room.linkCopied);
-                    }
-                  }),
+                SettingsTile(
+                  leading: const Icon(Icons.copy_outlined),
+                  title: Text(t.settings.localConfigCopy),
+                  onPressed: (_) => unawaited(
+                    Clipboard.setData(ClipboardData(text: encoder.convert(entry.value))).then((_) {
+                      if (context.mounted) {
+                        PureToast.show(context, t.room.linkCopied);
+                      }
+                    }),
+                  ),
                 ),
-              ),
-            ],
-          ),
-      ],
+              ],
+            ),
+        ],
       ),
     );
   }

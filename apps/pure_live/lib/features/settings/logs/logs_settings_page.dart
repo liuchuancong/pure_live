@@ -67,7 +67,8 @@ final class LogsSettingsPage extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: PureSpacing.lg),
                   child: Text(
                     t.logs.note,
-                    style: PureTheme.of(context).text.caption.copyWith(color: PureTheme.of(context).colors.textSecondary),
+                    style: PureTheme.of(context).text.caption
+                        .copyWith(color: PureTheme.of(context).colors.textSecondary),
                   ),
                 ),
               ),

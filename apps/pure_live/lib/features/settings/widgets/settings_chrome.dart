@@ -13,8 +13,7 @@ class SettingsEmbedded extends InheritedWidget {
   const new({required super.child, super.key});
 
   /// Whether this [context] sits under a [SettingsEmbedded].
-  static bool of(BuildContext context) =>
-      context.getInheritedWidgetOfExactType<SettingsEmbedded>() != null;
+  static bool of(BuildContext context) => context.getInheritedWidgetOfExactType<SettingsEmbedded>() != null;
 
   @override
   bool updateShouldNotify(SettingsEmbedded oldWidget) => false;
@@ -30,12 +29,7 @@ class SettingsEmbedded extends InheritedWidget {
 /// [PureScaffold] + [PureAppBar], as before).
 class SettingsChrome extends StatelessWidget {
   /// The page [body], under a bar titled [title] when standalone.
-  const new({
-    required this.title,
-    required this.body,
-    this.actions = const <Widget>[],
-    super.key,
-  });
+  const new({required this.title, required this.body, this.actions = const <Widget>[], super.key});
 
   /// The page title, for the standalone bar.
   final String title;

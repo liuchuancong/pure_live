@@ -384,8 +384,7 @@ final class _Card extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (final (index, child) in children.indexed) ...[
-            if (index > 0)
-              PureDivider(indent: 14, endIndent: 14, color: theme.colors.border.withValues(alpha: 0.5)),
+            if (index > 0) PureDivider(indent: 14, endIndent: 14, color: theme.colors.border.withValues(alpha: 0.5)),
             child,
           ],
         ],

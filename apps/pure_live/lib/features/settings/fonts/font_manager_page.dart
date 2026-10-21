@@ -108,9 +108,7 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
                     trailing: PureIconButton(
                       tooltip: context.t.fonts.delete,
                       icon: Icons.delete_outline,
-                      onPressed: appearance.fontFamily == imported[i].id
-                          ? null
-                          : () => unawaited(_delete(imported[i])),
+                      onPressed: appearance.fontFamily == imported[i].id ? null : () => unawaited(_delete(imported[i])),
                     ),
                     divided: i < imported.length - 1,
                   ),
