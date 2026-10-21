@@ -3189,6 +3189,30 @@ class Translations$room$zh {
 
 	/// zh: '正在重连（第 {count: int} 次）'
 	String autoReconnecting({required int count}) => '正在重连（第 ${count} 次）';
+
+	/// zh: '画面 {size: String} · 比例 {ratio: String}'
+	String diagnosticsSize({required String size, required String ratio}) => '画面 ${size} · 比例 ${ratio}';
+
+	/// zh: '等待首帧…'
+	String get diagnosticsWaiting => '等待首帧…';
+
+	/// zh: '解码器'
+	String get diagnosticsFromDecoder => '解码器';
+
+	/// zh: '平台声明'
+	String get diagnosticsFromPlatform => '平台声明';
+
+	/// zh: '普通'
+	String get diagnosticsNormal => '普通';
+
+	/// zh: '全屏'
+	String get diagnosticsFullscreen => '全屏';
+
+	/// zh: '竖屏全屏'
+	String get diagnosticsPortrait => '竖屏全屏';
+
+	/// zh: '小窗'
+	String get diagnosticsPip => '小窗';
 }
 
 // Path: areas
@@ -5221,6 +5245,14 @@ extension on Translations {
 			'room.gift' => '送礼物',
 			'room.sentGift' => '送出',
 			'room.autoReconnecting' => ({required int count}) => '正在重连（第 ${count} 次）',
+			'room.diagnosticsSize' => ({required String size, required String ratio}) => '画面 ${size} · 比例 ${ratio}',
+			'room.diagnosticsWaiting' => '等待首帧…',
+			'room.diagnosticsFromDecoder' => '解码器',
+			'room.diagnosticsFromPlatform' => '平台声明',
+			'room.diagnosticsNormal' => '普通',
+			'room.diagnosticsFullscreen' => '全屏',
+			'room.diagnosticsPortrait' => '竖屏全屏',
+			'room.diagnosticsPip' => '小窗',
 			'areas.followedAreas' => '关注的分区',
 			'areas.empty' => '暂无分区',
 			'areas.followEmpty' => '还没有关注的分区',
@@ -5276,6 +5308,8 @@ extension on Translations {
 			'remoteSync.partsAll' => '全选',
 			'remoteSync.partsLegacy' => '对方是 3.x 或较早的版本（或者暂时没有回应），只能发送全部内容。',
 			'remoteSync.partsSendNamed' => ({required String name}) => '勾选要发送到“${name}”的内容。对方确认后，勾选的内容会替换它原有的，没勾的保持不变。',
+			_ => null,
+		} ?? switch (path) {
 			'remoteSync.confirmSendNamed' => ({required String name}) => '确定要将当前设备的全部配置发送到“${name}”吗？对方确认后会覆盖它的配置。',
 			'remoteSync.previewTitle' => '接收后会这样变化：',
 			'remoteSync.previewSettings' => ({required int count, required int changed}) => '设置：对方 ${count} 项，其中 ${changed} 项与本机不同',
@@ -5284,8 +5318,6 @@ extension on Translations {
 			'remoteSync.previewWarning' => '接收会合入勾选的内容，没勾的保持不变；设置项以对方为准，无法撤销，需要时先在“备份与恢复”创建一份备份。',
 			'remoteSync.partCount' => ({required String part, required int count}) => '${part}（${count}）',
 			'remoteSync.partSettings' => '设置',
-			_ => null,
-		} ?? switch (path) {
 			'remoteSync.partFollows' => '关注列表',
 			'remoteSync.partHistory' => '观看历史',
 			'remoteSync.partGroups' => '关注分组',

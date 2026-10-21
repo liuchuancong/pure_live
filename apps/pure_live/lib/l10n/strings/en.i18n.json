@@ -740,7 +740,15 @@
     "portraitFullscreenRestoreHint": "Portrait fullscreen — swipe up to bring the danmaku bar back",
     "gift": "Send a gift",
     "sentGift": "sent",
-    "autoReconnecting": "Reconnecting (attempt {count: int})"
+    "autoReconnecting": "Reconnecting (attempt {count: int})",
+    "diagnosticsSize": "Picture {size: String} · ratio {ratio: String}",
+    "diagnosticsWaiting": "Waiting for the first frame…",
+    "diagnosticsFromDecoder": "decoder",
+    "diagnosticsFromPlatform": "platform",
+    "diagnosticsNormal": "inline",
+    "diagnosticsFullscreen": "full screen",
+    "diagnosticsPortrait": "portrait full",
+    "diagnosticsPip": "PiP"
   },
   "areas": {
     "followedAreas": "Followed areas",

@@ -1015,7 +1015,15 @@
     "portraitFullscreenRestoreHint": "已进入竖屏全屏 · 上滑恢复弹幕栏",
     "gift": "送礼物",
     "sentGift": "送出",
-    "autoReconnecting": "正在重连（第 {count: int} 次）"
+    "autoReconnecting": "正在重连（第 {count: int} 次）",
+    "diagnosticsSize": "画面 {size: String} · 比例 {ratio: String}",
+    "diagnosticsWaiting": "等待首帧…",
+    "diagnosticsFromDecoder": "解码器",
+    "diagnosticsFromPlatform": "平台声明",
+    "diagnosticsNormal": "普通",
+    "diagnosticsFullscreen": "全屏",
+    "diagnosticsPortrait": "竖屏全屏",
+    "diagnosticsPip": "小窗"
   },
   "areas": {
     "followedAreas": "关注的分区",

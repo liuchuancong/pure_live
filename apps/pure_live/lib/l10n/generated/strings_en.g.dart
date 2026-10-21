@@ -927,6 +927,14 @@ class _Translations$room$en extends Translations$room$zh {
 	@override String get gift => 'Send a gift';
 	@override String get sentGift => 'sent';
 	@override String autoReconnecting({required int count}) => 'Reconnecting (attempt ${count})';
+	@override String diagnosticsSize({required String size, required String ratio}) => 'Picture ${size} · ratio ${ratio}';
+	@override String get diagnosticsWaiting => 'Waiting for the first frame…';
+	@override String get diagnosticsFromDecoder => 'decoder';
+	@override String get diagnosticsFromPlatform => 'platform';
+	@override String get diagnosticsNormal => 'inline';
+	@override String get diagnosticsFullscreen => 'full screen';
+	@override String get diagnosticsPortrait => 'portrait full';
+	@override String get diagnosticsPip => 'PiP';
 }
 
 // Path: areas
@@ -2433,6 +2441,14 @@ extension on TranslationsEn {
 			'room.gift' => 'Send a gift',
 			'room.sentGift' => 'sent',
 			'room.autoReconnecting' => ({required int count}) => 'Reconnecting (attempt ${count})',
+			'room.diagnosticsSize' => ({required String size, required String ratio}) => 'Picture ${size} · ratio ${ratio}',
+			'room.diagnosticsWaiting' => 'Waiting for the first frame…',
+			'room.diagnosticsFromDecoder' => 'decoder',
+			'room.diagnosticsFromPlatform' => 'platform',
+			'room.diagnosticsNormal' => 'inline',
+			'room.diagnosticsFullscreen' => 'full screen',
+			'room.diagnosticsPortrait' => 'portrait full',
+			'room.diagnosticsPip' => 'PiP',
 			'areas.followedAreas' => 'Followed areas',
 			'areas.empty' => 'No areas here',
 			'areas.followEmpty' => 'No followed areas yet',
@@ -2736,6 +2752,8 @@ extension on TranslationsEn {
 			'remoteSync.partsAll' => 'Select all',
 			'remoteSync.partsLegacy' => 'The other device is version 3.x or earlier (or did not answer), so it can only receive everything.',
 			'remoteSync.partsSendNamed' => ({required String name}) => 'Tick what to send to “${name}”. After it confirms, the ticked parts replace its own; unticked parts stay.',
+			_ => null,
+		} ?? switch (path) {
 			'remoteSync.confirmSendNamed' => ({required String name}) => 'Send this device\'s full configuration to “${name}”? Its user confirms, and it replaces the other device\'s.',
 			'remoteSync.previewTitle' => 'Receiving would change this:',
 			'remoteSync.previewSettings' => ({required int count, required int changed}) => 'Settings: ${count} items, ${changed} differ from this device',
@@ -2744,8 +2762,6 @@ extension on TranslationsEn {
 			'remoteSync.previewWarning' => 'Receiving merges the ticked parts; unticked ones stay. Settings follow the other device and cannot be undone — create a backup under “Backup & restore” first if needed.',
 			'remoteSync.partCount' => ({required String part, required int count}) => '${part} (${count})',
 			'remoteSync.partSettings' => 'Settings',
-			_ => null,
-		} ?? switch (path) {
 			'remoteSync.partFollows' => 'Follow list',
 			'remoteSync.partHistory' => 'Watch history',
 			'remoteSync.partGroups' => 'Follow groups',
