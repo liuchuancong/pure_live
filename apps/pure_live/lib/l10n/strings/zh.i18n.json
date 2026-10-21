@@ -30,6 +30,8 @@
     "pageOf": "第 {page: int} / {total: int} 页",
     "back": "返回",
     "menu": "菜单",
+    "expandSidebar": "展开边栏",
+    "collapseSidebar": "收起边栏",
     "more": "更多",
     "off": "关闭",
     "refresh": "刷新",

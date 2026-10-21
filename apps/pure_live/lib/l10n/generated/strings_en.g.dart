@@ -130,6 +130,8 @@ class _Translations$common$en extends Translations$common$zh {
 	@override String pageOf({required int page, required int total}) => 'Page ${page} of ${total}';
 	@override String get back => 'Back';
 	@override String get menu => 'Menu';
+	@override String get expandSidebar => 'Expand sidebar';
+	@override String get collapseSidebar => 'Collapse sidebar';
 	@override String get more => 'More';
 	@override String get off => 'Off';
 	@override String get refresh => 'Refresh';
@@ -1665,6 +1667,8 @@ extension on TranslationsEn {
 			'common.pageOf' => ({required int page, required int total}) => 'Page ${page} of ${total}',
 			'common.back' => 'Back',
 			'common.menu' => 'Menu',
+			'common.expandSidebar' => 'Expand sidebar',
+			'common.collapseSidebar' => 'Collapse sidebar',
 			'common.more' => 'More',
 			'common.off' => 'Off',
 			'common.refresh' => 'Refresh',
@@ -2158,10 +2162,10 @@ extension on TranslationsEn {
 			'recorder.filterFailed' => 'Failed',
 			'recorder.recordSettings' => 'Recording settings',
 			'recorder.filterFinished' => 'Finished',
-			'recorder.emptyTitle' => 'No rooms watched yet',
-			'recorder.emptySubtitle' => 'Add a room and it is recorded once it goes live',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.emptyTitle' => 'No rooms watched yet',
+			'recorder.emptySubtitle' => 'Add a room and it is recorded once it goes live',
 			'recorder.nothingToJoin' => 'Nothing to join yet',
 			'recorder.actionStop' => 'Stop',
 			'recorder.actionFinishNow' => 'Join now',
@@ -2672,10 +2676,10 @@ extension on TranslationsEn {
 			'closePrompt.toTray' => 'Hide to tray, keep playback',
 			'closePrompt.quit' => 'Quit Pure Live',
 			'closePrompt.remember' => 'Remember my choice, stop asking',
-			'shellSettings.sectionWindow' => 'Window',
-			'shellSettings.titleBar' => 'Window title bar',
 			_ => null,
 		} ?? switch (path) {
+			'shellSettings.sectionWindow' => 'Window',
+			'shellSettings.titleBar' => 'Window title bar',
 			'shellSettings.titleBarAuto' => 'Auto (by Windows version)',
 			'shellSettings.titleBarApp' => 'App title bar',
 			'shellSettings.titleBarSystem' => 'System title bar',

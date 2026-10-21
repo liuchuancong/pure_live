@@ -167,6 +167,12 @@ class Translations$common$zh {
 	/// zh: '菜单'
 	String get menu => '菜单';
 
+	/// zh: '展开边栏'
+	String get expandSidebar => '展开边栏';
+
+	/// zh: '收起边栏'
+	String get collapseSidebar => '收起边栏';
+
 	/// zh: '更多'
 	String get more => '更多';
 
@@ -4105,6 +4111,8 @@ extension on Translations {
 			'common.pageOf' => ({required int page, required int total}) => '第 ${page} / ${total} 页',
 			'common.back' => '返回',
 			'common.menu' => '菜单',
+			'common.expandSidebar' => '展开边栏',
+			'common.collapseSidebar' => '收起边栏',
 			'common.more' => '更多',
 			'common.off' => '关闭',
 			'common.refresh' => '刷新',
@@ -4598,10 +4606,10 @@ extension on Translations {
 			'recorder.filterFailed' => '失败',
 			'recorder.recordSettings' => '录制设置',
 			'recorder.filterFinished' => '已结束',
-			'recorder.emptyTitle' => '还没有监听的房间',
-			'recorder.emptySubtitle' => '添加一个房间，开播后自动录制',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.emptyTitle' => '还没有监听的房间',
+			'recorder.emptySubtitle' => '添加一个房间，开播后自动录制',
 			'recorder.nothingToJoin' => '没有待合并的分段',
 			'recorder.actionStop' => '停止',
 			'recorder.actionFinishNow' => '立即合并',
@@ -5112,10 +5120,10 @@ extension on Translations {
 			'closePrompt.toTray' => '隐藏到托盘，保留播放',
 			'closePrompt.quit' => '退出 Pure Live',
 			'closePrompt.remember' => '记住我的选择，不再询问',
-			'shellSettings.sectionWindow' => '窗口',
-			'shellSettings.titleBar' => '窗口标题栏',
 			_ => null,
 		} ?? switch (path) {
+			'shellSettings.sectionWindow' => '窗口',
+			'shellSettings.titleBar' => '窗口标题栏',
 			'shellSettings.titleBarAuto' => '自动（按系统版本）',
 			'shellSettings.titleBarApp' => '应用标题栏',
 			'shellSettings.titleBarSystem' => '系统标题栏',

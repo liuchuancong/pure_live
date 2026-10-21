@@ -70,6 +70,15 @@ final class _HomeShellState extends ConsumerState<HomeShell> {
     );
   }
 
+  /// Writes the wide column's shape; the next build draws it.
+  void _setExpanded(bool expanded) {
+    unawaited(
+      ref
+          .read(appPreferencesProvider.notifier)
+          .update((preferences) => preferences.copyWith(shellNavExpanded: expanded)),
+    );
+  }
+
   /// Hands a menu branch to the content pane — what the shell's chrome and
   /// the pages' own entries both land on across a wide layout.
   void _activateBranch(ShellBranch branch) {
@@ -140,13 +149,24 @@ final class _HomeShellState extends ConsumerState<HomeShell> {
         // divider — the four menu branches as rows of their own; a menu
         // branch highlights its row like a primary one. The brand lives in
         // the window's title bar, and the foot is settings.
-        final expanded = width >= AdaptiveBreakpoints.expanded;
+        // The column's shape is width first, then the user's toggle: a wide
+        // window draws the labelled sidebar unless they collapsed it, and a
+        // narrow one draws the rail whatever the toggle says.
+        final expanded = width >= AdaptiveBreakpoints.expanded && ref.watch(appPreferencesProvider).shellNavExpanded;
         final destinations = shellColumnDestinations(context, branches: branches);
         // The labelled sidebar's width is the user's: dragged on the handle
         // between the panes, held in the preferences, reset by a double tap.
         final sidebarWidth = (_dragWidth ?? ref.watch(appPreferencesProvider).sidebarWidth).clamp(
           _sidebarMinWidth,
           _sidebarMaxWidth,
+        );
+        final toggle = PureIconButton(
+          key: const ValueKey('home-nav-toggle'),
+          icon: Icons.view_sidebar_rounded,
+          tooltip: ref.watch(appPreferencesProvider).shellNavExpanded
+              ? context.t.common.collapseSidebar
+              : context.t.common.expandSidebar,
+          onPressed: () => _setExpanded(!ref.watch(appPreferencesProvider).shellNavExpanded),
         );
         final Widget navigation;
         if (expanded) {
@@ -163,6 +183,10 @@ final class _HomeShellState extends ConsumerState<HomeShell> {
             // the column, so the sidebar reads as part of the page rather
             // than a panel on it.
             backgroundColor: Colors.transparent,
+            header: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 12, 12, 8),
+              child: Row(children: [toggle]),
+            ),
             footer: const _SettingsCard(),
           );
         } else {
@@ -174,6 +198,10 @@ final class _HomeShellState extends ConsumerState<HomeShell> {
                 activateShellDestination(context, ref: ref, navigationShell: navigationShell, id: destination.id),
             showBrand: false,
             backgroundColor: Colors.transparent,
+            header: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Center(child: toggle),
+            ),
             footer: const Padding(
               padding: EdgeInsets.only(bottom: 8),
               child: Center(child: _SettingsIcon()),

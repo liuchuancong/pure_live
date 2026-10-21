@@ -230,6 +230,7 @@ final class AppPreferences extends Equatable {
     this.launchBranch = AppLaunchBranch.follow,
     this.restoreLastTab = false,
     this.lastBranchId,
+    this.shellNavExpanded = true,
     this.sidebarWidth = 180,
     this.windowWidth = 0,
     this.windowHeight = 0,
@@ -325,7 +326,8 @@ final class AppPreferences extends Equatable {
       launchBranch: AppLaunchBranch.fromId(json['launchBranch'] as String?),
       restoreLastTab: json['restoreLastTab'] as bool? ?? false,
       lastBranchId: json['lastBranchId'] as String?,
-      sidebarWidth: (json['sidebarWidth'] as num?)?.toDouble() ?? 224,
+      shellNavExpanded: json['shellNavExpanded'] as bool? ?? true,
+      sidebarWidth: (json['sidebarWidth'] as num?)?.toDouble() ?? 180,
       windowWidth: json['windowWidth'] as int? ?? 0,
       windowHeight: json['windowHeight'] as int? ?? 0,
       autoRefreshMinutes: json['autoRefreshMinutes'] as int? ?? 0,
@@ -681,6 +683,12 @@ final class AppPreferences extends Equatable {
   /// tab switch.
   final String? lastBranchId;
 
+  /// Whether the wide column is drawn expanded (the labelled sidebar) or
+  /// collapsed (the icon rail). The toggle in the column's head flips it, the
+  /// choice survives restarts, and the width classes apply on top without
+  /// ever rewriting it — a narrow window draws the rail whatever this says.
+  final bool shellNavExpanded;
+
   /// The labelled sidebar's width, in logical pixels — what the drag handle
   /// between the panes writes and every boot restores. The shell clamps it
   /// before drawing, so a hand-edited document cannot stretch it absurdly.
@@ -853,6 +861,7 @@ final class AppPreferences extends Equatable {
     'launchBranch': launchBranch.id,
     'restoreLastTab': restoreLastTab,
     if (lastBranchId != null) 'lastBranchId': lastBranchId,
+    'shellNavExpanded': shellNavExpanded,
     'sidebarWidth': sidebarWidth,
     'windowWidth': windowWidth,
     'windowHeight': windowHeight,
@@ -967,6 +976,7 @@ final class AppPreferences extends Equatable {
     bool? restoreLastTab,
     String? lastBranchId,
     bool clearLastBranchId = false,
+    bool? shellNavExpanded,
     double? sidebarWidth,
     int? windowWidth,
     int? windowHeight,
@@ -1076,6 +1086,7 @@ final class AppPreferences extends Equatable {
     launchBranch: launchBranch ?? this.launchBranch,
     restoreLastTab: restoreLastTab ?? this.restoreLastTab,
     lastBranchId: clearLastBranchId ? null : (lastBranchId ?? this.lastBranchId),
+    shellNavExpanded: shellNavExpanded ?? this.shellNavExpanded,
     sidebarWidth: sidebarWidth ?? this.sidebarWidth,
     windowWidth: windowWidth ?? this.windowWidth,
     windowHeight: windowHeight ?? this.windowHeight,
@@ -1190,6 +1201,7 @@ final class AppPreferences extends Equatable {
     launchBranch,
     restoreLastTab,
     lastBranchId,
+    shellNavExpanded,
     sidebarWidth,
     windowWidth,
     windowHeight,

@@ -23,6 +23,8 @@
     "pageOf": "Page {page: int} of {total: int}",
     "back": "Back",
     "menu": "Menu",
+    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Collapse sidebar",
     "more": "More",
     "off": "Off",
     "refresh": "Refresh",
