@@ -157,9 +157,7 @@ final class _TvHistoryViewState extends ConsumerState<TvHistoryView> {
             ListTile(
               // The unlimited row says how many records it keeps (全部
               // 保留), the numbered rows say the cap itself.
-              title: Text(
-                limit == 0 ? context.t.history.countUnlimited(count: _repository.records.length) : '$limit',
-              ),
+              title: Text(limit == 0 ? context.t.history.countUnlimited(count: _repository.records.length) : '$limit'),
               trailing: limit == current ? const Icon(Icons.check) : null,
               onTap: () => Navigator.of(context).pop(limit),
             ),

@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:live_platform/live_platform.dart' show FormFactor;
+import 'package:pure_live/app/app_providers.dart' show environmentProvider;
 import 'package:pure_live/features/settings/settings_catalog.dart';
 import 'package:pure_live/features/settings/settings_model.dart';
 import 'package:pure_live/features/settings/widgets/settings_chrome.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/platforms/tv/features/settings/tv_settings_view.dart';
 import 'package:pure_settings_ui/pure_settings_ui.dart' as sui;
 import 'package:pure_uikit/pure_uikit.dart';
 
@@ -198,6 +201,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    // The TV shows the sections as a focus wall; each page opens above it.
+    if (ref.read(environmentProvider).runtime.formFactor == FormFactor.tv) {
+      return const TvSettingsView();
+    }
     final t = context.t;
     return PopScope(
       // Back closes the search panel before it leaves settings.
