@@ -1260,6 +1260,12 @@ class _Translations$search$en extends Translations$search$zh {
 	@override String get webSearchInvalidAddress => 'The web-search address is invalid; go back to the search page and try again.';
 	@override String get webSearchLoadFailed => 'The page failed to load; check the network or proxy and retry.';
 	@override String get webSearchUnavailableTitle => 'Web search unavailable';
+	@override String get sortMode => 'Sort';
+	@override String get sortSmart => 'Smart';
+	@override String get sortPlatform => 'By platform';
+	@override String get sortAudience => 'By viewers';
+	@override String get sortFollowers => 'By followers';
+	@override String get includeOffline => 'Show offline';
 }
 
 // Path: remoteSync
@@ -2594,6 +2600,12 @@ extension on TranslationsEn {
 			'search.webSearchInvalidAddress' => 'The web-search address is invalid; go back to the search page and try again.',
 			'search.webSearchLoadFailed' => 'The page failed to load; check the network or proxy and retry.',
 			'search.webSearchUnavailableTitle' => 'Web search unavailable',
+			'search.sortMode' => 'Sort',
+			'search.sortSmart' => 'Smart',
+			'search.sortPlatform' => 'By platform',
+			'search.sortAudience' => 'By viewers',
+			'search.sortFollowers' => 'By followers',
+			'search.includeOffline' => 'Show offline',
 			'remoteSync.title' => 'Device Sync',
 			'remoteSync.tileSubtitle' => 'Sync configurations between devices over the LAN',
 			'remoteSync.myDevice' => 'My Device',
@@ -2672,14 +2684,14 @@ extension on TranslationsEn {
 			'tabs.search' => 'Search',
 			'tabs.settings' => 'Settings',
 			'tabs.record' => 'Recordings',
+			_ => null,
+		} ?? switch (path) {
 			'window.minimize' => 'Minimize',
 			'window.maximize' => 'Maximize',
 			'window.restore' => 'Restore',
 			'window.close' => 'Close',
 			'closePrompt.title' => 'What should closing the window do?',
 			'closePrompt.toTray' => 'Hide to tray, keep playback',
-			_ => null,
-		} ?? switch (path) {
 			'closePrompt.quit' => 'Quit Pure Live',
 			'closePrompt.remember' => 'Remember my choice, stop asking',
 			'shellSettings.sectionWindow' => 'Window',

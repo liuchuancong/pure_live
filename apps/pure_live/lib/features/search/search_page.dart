@@ -10,6 +10,7 @@ import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/app/composition/sites.dart' show AppSites;
 import 'package:pure_live/features/search/search_providers.dart';
+import 'package:pure_live/features/search/search_ranking.dart';
 import 'package:pure_live/features/search/web_search_url.dart';
 import 'package:pure_live/features/settings/widgets/settings_entry_button.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
@@ -57,6 +58,13 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
   String _query = '';
   int _selected = 0;
   LiveSearchTarget _target = LiveSearchTarget.rooms;
+
+  /// How room results are ordered; the page keeps it for the session, as the
+  /// reference does.
+  SearchSortMode _sortMode = SearchSortMode.smart;
+
+  /// Whether rooms that are not live and cannot play still appear.
+  bool _includeOffline = true;
 
   /// The tabs already opened; a pane searches the shared query the first
   /// time it is shown, so typing runs one scope, not every tab at once.
@@ -234,6 +242,32 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
               )
             : field,
         actions: [
+          // The ordering menu: the four modes the reference offers and the
+          // offline switch, kept for the session.
+          PureMenu(
+            key: const ValueKey('search-sort'),
+            items: [
+              for (final mode in SearchSortMode.values)
+                PureMenuItem(
+                  id: mode.name,
+                  label: switch (mode) {
+                    SearchSortMode.smart => context.t.search.sortSmart,
+                    SearchSortMode.platform => context.t.search.sortPlatform,
+                    SearchSortMode.audience => context.t.search.sortAudience,
+                    SearchSortMode.followers => context.t.search.sortFollowers,
+                  },
+                  icon: _sortMode == mode ? Icons.check : Icons.sort,
+                  onTap: () => setState(() => _sortMode = mode),
+                ),
+              PureMenuItem(
+                id: 'offline',
+                label: context.t.search.includeOffline,
+                icon: _includeOffline ? Icons.check_box_outlined : Icons.check_box_outline_blank,
+                onTap: () => setState(() => _includeOffline = !_includeOffline),
+              ),
+            ],
+            child: PureIconButton(icon: Icons.sort_rounded, tooltip: context.t.search.sortMode),
+          ),
           // A09.8: the chosen platform's web search, next to the settings
           // entry the shell always carries.
           PureIconButton(
@@ -272,19 +306,25 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
                     }),
                     pages: [
                       _AllSitesPane(
-                        key: ValueKey('all|$query|$_target'),
+                        key: ValueKey('all|$query|$_target|$_sortMode|$_includeOffline'),
                         sites: searchable,
                         query: query,
                         target: _target,
                         activated: _visited.contains(0),
+                        sortMode: _sortMode,
+                        includeOffline: _includeOffline,
+                        platformOrder: ref.watch(appPreferencesProvider).siteOrder,
                       ),
                       for (var i = 0; i < searchable.length; i++)
                         _SitePane(
-                          key: ValueKey('${searchable[i].manifest.id}|$query|$_target'),
+                          key: ValueKey('${searchable[i].manifest.id}|$query|$_target|$_sortMode|$_includeOffline'),
                           site: searchable[i],
                           query: query,
                           target: _target,
                           activated: _visited.contains(i + 1),
+                          sortMode: _sortMode,
+                          includeOffline: _includeOffline,
+                          platformOrder: ref.watch(appPreferencesProvider).siteOrder,
                           // The escape hatch appears only where a web page
                           // for these words exists (A09.8 继续网页搜索).
                           onContinueWebSearch: webSearchUrl(searchable[i].manifest.id, query) == null
@@ -372,6 +412,9 @@ final class _SitePane extends StatefulWidget {
     required this.query,
     required this.target,
     required this.activated,
+    required this.sortMode,
+    required this.includeOffline,
+    required this.platformOrder,
     this.onContinueWebSearch,
     super.key,
   });
@@ -379,6 +422,15 @@ final class _SitePane extends StatefulWidget {
   final LiveSite site;
   final String query;
   final LiveSearchTarget target;
+
+  /// The order room results are shown in.
+  final SearchSortMode sortMode;
+
+  /// Whether rooms that can neither play nor are live still appear.
+  final bool includeOffline;
+
+  /// The user's platform order, the secondary key of the platform mode.
+  final List<String> platformOrder;
   final bool activated;
 
   /// The A09.8 escape hatch under the empty state: the same words in this
@@ -496,6 +548,9 @@ final class _SitePaneState extends State<_SitePane> with AutomaticKeepAliveClien
     final results = visibleSearchResults(
       state.items,
       ProviderScope.containerOf(context, listen: false).read(discoveryRoomFilterProvider),
+      mode: widget.sortMode,
+      includeOffline: widget.includeOffline,
+      platformOrder: widget.platformOrder,
     );
     if (state.items.isEmpty) {
       if (state.error != null) {
@@ -555,11 +610,29 @@ final class _SitePaneState extends State<_SitePane> with AutomaticKeepAliveClien
 /// own section under one scroll, each filling in as its answers arrive — the
 /// whole grid never waits behind the slowest site.
 final class _AllSitesPane extends StatefulWidget {
-  const new({required this.sites, required this.query, required this.target, required this.activated, super.key});
+  const new({
+    required this.sites,
+    required this.query,
+    required this.target,
+    required this.activated,
+    required this.sortMode,
+    required this.includeOffline,
+    required this.platformOrder,
+    super.key,
+  });
 
   final List<LiveSite> sites;
   final String query;
   final LiveSearchTarget target;
+
+  /// The order room results are shown in.
+  final SearchSortMode sortMode;
+
+  /// Whether rooms that can neither play nor are live still appear.
+  final bool includeOffline;
+
+  /// The user's platform order.
+  final List<String> platformOrder;
   final bool activated;
 
   @override
@@ -714,6 +787,9 @@ final class _AllSitesPaneState extends State<_AllSitesPane> with AutomaticKeepAl
     final visible = visibleSearchResults(
       state.items,
       ProviderScope.containerOf(context, listen: false).read(discoveryRoomFilterProvider),
+      mode: widget.sortMode,
+      includeOffline: widget.includeOffline,
+      platformOrder: widget.platformOrder,
     );
     // A section that answered nothing stays quiet — the pane's overall empty
     // state speaks for it once every section has answered. A failed one keeps
@@ -768,16 +844,37 @@ final class _AllSitesPaneState extends State<_AllSitesPane> with AutomaticKeepAl
   }
 }
 
-/// Drops room hits the discovery rule hides, leaving anchors and areas as
-/// they are — one rule for every list the discovery pages show.
-List<LiveSearchResult> visibleSearchResults(List<LiveSearchResult> results, bool Function(LiveRoom) roomVisible) => [
-  for (final result in results)
-    if (switch (result) {
-      RoomSearchResult(:final room) => roomVisible(room),
-      _ => true,
-    })
-      result,
-];
+/// The hits a list shows: room hits the discovery rule hides are dropped
+/// (anchors and areas pass through), and the rooms left are ordered by the
+/// picked sort mode before anchors and areas follow in their own order.
+List<LiveSearchResult> visibleSearchResults(
+  List<LiveSearchResult> results,
+  bool Function(LiveRoom) roomVisible, {
+  SearchSortMode mode = SearchSortMode.smart,
+  bool includeOffline = true,
+  List<String> platformOrder = const [],
+}) {
+  final rooms = <LiveRoom>[];
+  final others = <LiveSearchResult>[];
+  for (final result in results) {
+    switch (result) {
+      case RoomSearchResult(:final room) when roomVisible(room):
+        rooms.add(room);
+      case RoomSearchResult():
+        break;
+      default:
+        others.add(result);
+    }
+  }
+  final ordered = rankedSearchRooms(
+    rooms,
+    mode: mode,
+    includeOffline: includeOffline,
+    platformOrder: platformOrder,
+    playable: roomVisible,
+  );
+  return [for (final room in ordered) LiveSearchResult.room(room), ...others];
+}
 
 /// One typed search hit, drawn with the shared room card — anchors keep
 /// their avatar tile and areas open their room list.

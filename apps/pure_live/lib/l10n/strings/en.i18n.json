@@ -991,7 +991,13 @@
     "webSearchRoomDismiss": "Stop offering this room",
     "webSearchInvalidAddress": "The web-search address is invalid; go back to the search page and try again.",
     "webSearchLoadFailed": "The page failed to load; check the network or proxy and retry.",
-    "webSearchUnavailableTitle": "Web search unavailable"
+    "webSearchUnavailableTitle": "Web search unavailable",
+    "sortMode": "Sort",
+    "sortSmart": "Smart",
+    "sortPlatform": "By platform",
+    "sortAudience": "By viewers",
+    "sortFollowers": "By followers",
+    "includeOffline": "Show offline"
   },
   "remoteSync": {
     "title": "Device Sync",

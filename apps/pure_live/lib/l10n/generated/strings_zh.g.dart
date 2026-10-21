@@ -2776,6 +2776,24 @@ class Translations$search$zh {
 
 	/// zh: '网页搜索暂不可用'
 	String get webSearchUnavailableTitle => '网页搜索暂不可用';
+
+	/// zh: '排序'
+	String get sortMode => '排序';
+
+	/// zh: '智能'
+	String get sortSmart => '智能';
+
+	/// zh: '按平台'
+	String get sortPlatform => '按平台';
+
+	/// zh: '按人气'
+	String get sortAudience => '按人气';
+
+	/// zh: '按粉丝'
+	String get sortFollowers => '按粉丝';
+
+	/// zh: '显示未开播'
+	String get includeOffline => '显示未开播';
 }
 
 // Path: room
@@ -4929,6 +4947,12 @@ extension on Translations {
 			'search.webSearchInvalidAddress' => '网页搜索地址无效，请返回搜索页后重试。',
 			'search.webSearchLoadFailed' => '网页加载失败，请检查网络或代理后重试。',
 			'search.webSearchUnavailableTitle' => '网页搜索暂不可用',
+			'search.sortMode' => '排序',
+			'search.sortSmart' => '智能',
+			'search.sortPlatform' => '按平台',
+			'search.sortAudience' => '按人气',
+			'search.sortFollowers' => '按粉丝',
+			'search.includeOffline' => '显示未开播',
 			'room.sortPlatform' => '默认排序',
 			'room.sortViewers' => '人气优先',
 			'room.danmakuFailed' => '弹幕连接失败',
@@ -5120,14 +5144,14 @@ extension on Translations {
 			'tabs.search' => '搜索',
 			'tabs.settings' => '设置',
 			'tabs.record' => '录制中心',
+			_ => null,
+		} ?? switch (path) {
 			'window.minimize' => '最小化',
 			'window.maximize' => '最大化',
 			'window.restore' => '还原',
 			'window.close' => '关闭',
 			'closePrompt.title' => '关闭窗口时要执行什么？',
 			'closePrompt.toTray' => '隐藏到托盘，保留播放',
-			_ => null,
-		} ?? switch (path) {
 			'closePrompt.quit' => '退出 Pure Live',
 			'closePrompt.remember' => '记住我的选择，不再询问',
 			'shellSettings.sectionWindow' => '窗口',

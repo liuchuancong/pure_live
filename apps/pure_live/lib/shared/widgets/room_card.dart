@@ -30,12 +30,8 @@ abstract final class RoomGridMetrics {
   /// Columns for the discovery and area-room grids: two through the compact
   /// class, three on a tablet, four on an expanded desktop and five from the
   /// large class up — the reference's single row.
-  static int columnsFor(double width) => AdaptiveBreakpoints.fromWidth(width).resolve<int>(
-    compact: 2,
-    medium: 3,
-    expanded: 4,
-    large: 5,
-  );
+  static int columnsFor(double width) =>
+      AdaptiveBreakpoints.fromWidth(width).resolve<int>(compact: 2, medium: 3, expanded: 4, large: 5);
 
   /// Columns for the favourites grid: **one wide card on a phone**, and from
   /// the medium class up a column fewer than the discovery grid until the
@@ -46,12 +42,8 @@ abstract final class RoomGridMetrics {
   /// feed is recommending. Keeping both numbers here rather than one of them
   /// inline in a page is what makes that difference legible instead of
   /// looking like a stale copy.
-  static int favouriteColumnsFor(double width) => AdaptiveBreakpoints.fromWidth(width).resolve<int>(
-    compact: 1,
-    medium: 3,
-    expanded: 4,
-    large: 5,
-  );
+  static int favouriteColumnsFor(double width) =>
+      AdaptiveBreakpoints.fromWidth(width).resolve<int>(compact: 1, medium: 3, expanded: 4, large: 5);
 
   /// The tile height for an [itemWidth]: the cover — [coverAspect] wide
   /// over tall — plus the caption, which grows with the ambient text scale
@@ -228,7 +220,8 @@ final class RoomCard extends ConsumerWidget {
     // One bucket per interval: every room's cover re-pulls once when the
     // window turns, nothing re-pulls mid-window (the reference's
     // autoRefreshThumbnails + thumbnailRefreshInterval pair).
-    final bucket = DateTime.now().toUtc().millisecondsSinceEpoch ~/ (preferences.thumbnailRefreshMinutes.clamp(5, 360) * 60000);
+    final bucket =
+        DateTime.now().toUtc().millisecondsSinceEpoch ~/ (preferences.thumbnailRefreshMinutes.clamp(5, 360) * 60000);
     return '$base${base.contains('?') ? '&' : '?'}t=$bucket';
   }
 

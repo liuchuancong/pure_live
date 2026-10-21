@@ -879,7 +879,13 @@
     "webSearchRoomDismiss": "不再提示这个直播间",
     "webSearchInvalidAddress": "网页搜索地址无效，请返回搜索页后重试。",
     "webSearchLoadFailed": "网页加载失败，请检查网络或代理后重试。",
-    "webSearchUnavailableTitle": "网页搜索暂不可用"
+    "webSearchUnavailableTitle": "网页搜索暂不可用",
+    "sortMode": "排序",
+    "sortSmart": "智能",
+    "sortPlatform": "按平台",
+    "sortAudience": "按人气",
+    "sortFollowers": "按粉丝",
+    "includeOffline": "显示未开播"
   },
   "room": {
     "sortPlatform": "默认排序",
