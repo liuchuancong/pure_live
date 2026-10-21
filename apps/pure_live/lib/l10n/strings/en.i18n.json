@@ -715,7 +715,8 @@
     "userLevel": "Level {level}",
     "blockKeywordTitle": "Block a danmaku keyword",
     "block": "Block",
-    "portraitFullscreenRestoreHint": "Portrait fullscreen — swipe up to bring the danmaku bar back"
+    "portraitFullscreenRestoreHint": "Portrait fullscreen — swipe up to bring the danmaku bar back",
+    "gift": "Send a gift"
   },
   "areas": {
     "followedAreas": "Followed areas",

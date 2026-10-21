@@ -59,15 +59,13 @@ String? fullscreenOverrideOf(RoomPresentation presentation) => switch (presentat
 
 /// The barrage bounds over a vertical picture (竖屏弹幕布局): rows and band
 /// the surface gets, never the stored global style numbers.
-({int rows, double? area, bool hidden}) portraitBarrage(
-  AppPreferences preferences, {
-  required int globalRows,
-}) => switch (preferences.portraitDanmakuMode) {
-  'upperQuarter' => (rows: globalRows, area: 0.25, hidden: false),
-  'reduced' => (rows: (globalRows ~/ 2).clamp(1, 16), area: null, hidden: false),
-  'hidden' => (rows: globalRows, area: null, hidden: true),
-  _ => (rows: globalRows, area: null, hidden: false),
-};
+({int rows, double? area, bool hidden}) portraitBarrage(AppPreferences preferences, {required int globalRows}) =>
+    switch (preferences.portraitDanmakuMode) {
+      'upperQuarter' => (rows: globalRows, area: 0.25, hidden: false),
+      'reduced' => (rows: (globalRows ~/ 2).clamp(1, 16), area: null, hidden: false),
+      'hidden' => (rows: globalRows, area: null, hidden: true),
+      _ => (rows: globalRows, area: null, hidden: false),
+    };
 
 /// The room key the direction override is stored under — the same
 /// platform/room spelling the history records use.

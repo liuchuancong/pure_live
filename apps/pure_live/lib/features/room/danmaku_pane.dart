@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_interaction/live_interaction.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:pure_live/features/room/local/local_catalog.dart';
 import 'package:pure_live/features/room/room_providers.dart';
 import 'package:pure_live/features/room/shield_lists_panel.dart';
 import 'package:pure_live/features/room/super_chat_card.dart';
@@ -631,19 +632,91 @@ final class _SendBar extends ConsumerStatefulWidget {
 }
 
 final class _SendBarState extends ConsumerState<_SendBar> {
+  /// The preferences one send reads: the name, the colour and the level the
+  /// badge shows.
+  ({String name, int color, int level}) _identity() {
+    final preferences = ref.read(appPreferencesProvider);
+    final name = preferences.localInteractionUserName.trim().isEmpty
+        ? context.t.room.localMe
+        : preferences.localInteractionUserName.trim();
+    return (
+      name: name,
+      color: preferences.localInteractionColor,
+      level: LocalCatalog.levelFor(preferences.localInteractionExperience),
+    );
+  }
+
+  /// Adds [experience] to the stored total; the level is the arithmetic the
+  /// page reads back on the next send.
+  void _grow(int experience) {
+    unawaited(
+      ref
+          .read(appPreferencesProvider.notifier)
+          .update(
+            (preferences) =>
+                preferences.copyWith(localInteractionExperience: preferences.localInteractionExperience + experience),
+          ),
+    );
+  }
+
   void _send() {
     final text = widget.draft.text;
     if (text.trim().isEmpty) {
       return;
     }
-    final preferences = ref.read(appPreferencesProvider);
-    final name = preferences.localInteractionUserName.trim().isEmpty
-        ? context.t.room.localMe
-        : preferences.localInteractionUserName.trim();
+    final who = _identity();
     ref
         .read(roomLocalMessageBusProvider(widget.identity))
-        .sendChat(text: text, userName: name, colorArgb: preferences.localInteractionColor);
+        .sendChat(text: text, userName: who.name, colorArgb: who.color, level: who.level);
+    _grow(LocalCatalog.chatExp);
     widget.draft.clear();
+  }
+
+  /// The gift picker: the catalogue as a grid; a tap sends one and closes.
+  Future<void> _pickGift() async {
+    final who = _identity();
+    final picked = await showModalBottomSheet<LocalGift>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(PureSpacing.md),
+          child: Wrap(
+            spacing: PureSpacing.sm,
+            runSpacing: PureSpacing.sm,
+            children: [
+              for (final gift in LocalCatalog.gifts)
+                SizedBox(
+                  width: 96,
+                  child: PureCard(
+                    onTap: () => Navigator.of(sheetContext).pop(gift),
+                    padding: const EdgeInsets.symmetric(vertical: PureSpacing.sm),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(gift.emoji, style: const TextStyle(fontSize: 26)),
+                        const SizedBox(height: 4),
+                        Text(
+                          gift.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: PureTheme.of(context).text.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+    ref
+        .read(roomLocalMessageBusProvider(widget.identity))
+        .sendGift(gift: picked, count: 1, userName: who.name, colorArgb: who.color, level: who.level);
+    _grow(picked.exp);
   }
 
   @override
@@ -660,7 +733,14 @@ final class _SendBarState extends ConsumerState<_SendBar> {
               onSubmitted: (_) => _send(),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
+          PureIconButton(
+            key: const ValueKey('local-gift'),
+            icon: Icons.card_giftcard_rounded,
+            tooltip: context.t.room.gift,
+            onPressed: () => unawaited(_pickGift()),
+          ),
+          const SizedBox(width: 4),
           PureIconButton(icon: Icons.send_rounded, tooltip: context.t.room.send, onPressed: _send),
         ],
       ),

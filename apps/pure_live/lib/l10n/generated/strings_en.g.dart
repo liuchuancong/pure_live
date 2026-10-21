@@ -900,6 +900,7 @@ class _Translations$room$en extends Translations$room$zh {
 	@override String get blockKeywordTitle => 'Block a danmaku keyword';
 	@override String get block => 'Block';
 	@override String get portraitFullscreenRestoreHint => 'Portrait fullscreen — swipe up to bring the danmaku bar back';
+	@override String get gift => 'Send a gift';
 }
 
 // Path: areas
@@ -2348,6 +2349,7 @@ extension on TranslationsEn {
 			'room.blockKeywordTitle' => 'Block a danmaku keyword',
 			'room.block' => 'Block',
 			'room.portraitFullscreenRestoreHint' => 'Portrait fullscreen — swipe up to bring the danmaku bar back',
+			'room.gift' => 'Send a gift',
 			'areas.followedAreas' => 'Followed areas',
 			'areas.empty' => 'No areas here',
 			'areas.followEmpty' => 'No followed areas yet',
@@ -2683,9 +2685,9 @@ extension on TranslationsEn {
 			'tabs.areas' => 'Areas',
 			'tabs.search' => 'Search',
 			'tabs.settings' => 'Settings',
-			'tabs.record' => 'Recordings',
 			_ => null,
 		} ?? switch (path) {
+			'tabs.record' => 'Recordings',
 			'window.minimize' => 'Minimize',
 			'window.maximize' => 'Maximize',
 			'window.restore' => 'Restore',

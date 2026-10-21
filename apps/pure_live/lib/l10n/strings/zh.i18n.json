@@ -989,7 +989,8 @@
     "userLevel": "等级 {level}",
     "blockKeywordTitle": "屏蔽弹幕关键词",
     "block": "屏蔽",
-    "portraitFullscreenRestoreHint": "已进入竖屏全屏 · 上滑恢复弹幕栏"
+    "portraitFullscreenRestoreHint": "已进入竖屏全屏 · 上滑恢复弹幕栏",
+    "gift": "送礼物"
   },
   "areas": {
     "followedAreas": "关注的分区",

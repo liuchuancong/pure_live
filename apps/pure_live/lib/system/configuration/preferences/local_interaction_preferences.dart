@@ -10,6 +10,7 @@ final class LocalInteractionPreferences extends Equatable {
     this.localInteractionEnabled = false,
     this.localInteractionUserName = '',
     this.localInteractionColor = 0xFFFFFFFF,
+    this.localInteractionExperience = 0,
   });
 
   /// Reads the domain's keys from the flat document; unknown shapes decode
@@ -19,6 +20,7 @@ final class LocalInteractionPreferences extends Equatable {
       localInteractionEnabled: json['localInteractionEnabled'] as bool? ?? false,
       localInteractionUserName: json['localInteractionUserName'] as String? ?? '',
       localInteractionColor: (json['localInteractionColor'] as num?)?.toInt() ?? 0xFFFFFFFF,
+      localInteractionExperience: (json['localInteractionExperience'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -32,11 +34,16 @@ final class LocalInteractionPreferences extends Equatable {
   /// The colour local messages are drawn in, packed ARGB.
   final int localInteractionColor;
 
+  /// The local experience the viewer's own lines and gifts accumulate; the
+  /// level in the badge is this figure's arithmetic (500 per level).
+  final int localInteractionExperience;
+
   /// The domain's keys as stored, flat.
   Map<String, Object?> toJson() => {
     'localInteractionEnabled': localInteractionEnabled,
     'localInteractionUserName': localInteractionUserName,
     'localInteractionColor': localInteractionColor,
+    'localInteractionExperience': localInteractionExperience,
   };
 
   /// Returns a copy with the given fields replaced.
@@ -44,6 +51,7 @@ final class LocalInteractionPreferences extends Equatable {
     bool? localInteractionEnabled,
     String? localInteractionUserName,
     int? localInteractionColor,
+    int? localInteractionExperience,
   }) => LocalInteractionPreferences(
     localInteractionEnabled: localInteractionEnabled ?? this.localInteractionEnabled,
     localInteractionUserName: localInteractionUserName ?? this.localInteractionUserName,
@@ -52,5 +60,10 @@ final class LocalInteractionPreferences extends Equatable {
 
   @override
   /// Every field, in declaration order.
-  List<Object?> get props => [localInteractionEnabled, localInteractionUserName, localInteractionColor];
+  List<Object?> get props => [
+    localInteractionEnabled,
+    localInteractionUserName,
+    localInteractionColor,
+    localInteractionExperience,
+  ];
 }

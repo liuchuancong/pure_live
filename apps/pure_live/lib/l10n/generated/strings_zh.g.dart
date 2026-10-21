@@ -3109,6 +3109,9 @@ class Translations$room$zh {
 
 	/// zh: '已进入竖屏全屏 · 上滑恢复弹幕栏'
 	String get portraitFullscreenRestoreHint => '已进入竖屏全屏 · 上滑恢复弹幕栏';
+
+	/// zh: '送礼物'
+	String get gift => '送礼物';
 }
 
 // Path: areas
@@ -5055,6 +5058,7 @@ extension on Translations {
 			'room.blockKeywordTitle' => '屏蔽弹幕关键词',
 			'room.block' => '屏蔽',
 			'room.portraitFullscreenRestoreHint' => '已进入竖屏全屏 · 上滑恢复弹幕栏',
+			'room.gift' => '送礼物',
 			'areas.followedAreas' => '关注的分区',
 			'areas.empty' => '暂无分区',
 			'areas.followEmpty' => '还没有关注的分区',
@@ -5143,9 +5147,9 @@ extension on Translations {
 			'tabs.areas' => '分区',
 			'tabs.search' => '搜索',
 			'tabs.settings' => '设置',
-			'tabs.record' => '录制中心',
 			_ => null,
 		} ?? switch (path) {
+			'tabs.record' => '录制中心',
 			'window.minimize' => '最小化',
 			'window.maximize' => '最大化',
 			'window.restore' => '还原',
