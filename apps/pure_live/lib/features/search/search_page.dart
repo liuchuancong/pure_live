@@ -8,9 +8,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_pagination/live_pagination.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/composition/sites.dart' show AppSites;
+import 'package:pure_live/app/preferences/app_preferences.dart' show AppPreferences;
+import 'package:pure_live/app/preferences/app_preferences_providers.dart' show appPreferencesProvider;
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/features/areas/area_card.dart';
+import 'package:pure_live/features/hot_areas/hot_areas_page.dart' show HotAreasPage;
 import 'package:pure_live/features/popular/room_card.dart';
 import 'package:pure_live/features/search/search_providers.dart';
 import 'package:pure_live/features/search/web_search_url.dart';
@@ -66,8 +69,16 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
     super.dispose();
   }
 
-  List<LiveSite> _searchable(AppSites sites) =>
-      sites.registry.all.where((site) => site.capability<LiveSearchProvider>() != null).toList();
+  /// The platforms the search asks. The platform-display setting is the same
+  /// one the popular and areas tabs honour — a hidden platform answers no
+  /// query, and the stored order is the tab order — so the settings page's
+  /// promise holds here too. [preferences] comes from the caller: the tabs
+  /// watch it, a tap reads it.
+  List<LiveSite> _searchable(AppSites sites, AppPreferences preferences) =>
+      HotAreasPage.orderedSites(sites.registry.all, preferences.siteOrder)
+          .where((site) => !preferences.hiddenSiteIds.contains(site.manifest.id))
+          .where((site) => site.capability<LiveSearchProvider>() != null)
+          .toList();
 
   /// The targets the current scope answers; a request for any other must
   /// fail, so the picker only ever offers these.
@@ -109,7 +120,7 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
   /// the route itself answers with the system browser.
   Future<void> _openWebSearch([LiveSite? site]) async {
     final t = context.t;
-    final searchable = _searchable(ref.read(sitesProvider));
+    final searchable = _searchable(ref.read(sitesProvider), ref.read(appPreferencesProvider));
     final target = site ?? (searchable.isEmpty || _selected == 0 ? null : searchable[_selected - 1]);
     if (target == null) {
       PureToast.show(context, t.search.selectPlatformFirst);
@@ -163,7 +174,7 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
-    final searchable = _searchable(ref.watch(sitesProvider));
+    final searchable = _searchable(ref.watch(sitesProvider), ref.watch(appPreferencesProvider));
     if (searchable.isEmpty) {
       return PureScaffold(
         appBar: PureAppBar(title: context.t.tabs.search, actions: const [SettingsEntryButton()]),
