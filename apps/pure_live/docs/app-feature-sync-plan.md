@@ -37,7 +37,7 @@
 | B7 | 账号/备份：账号三视图、WebDAV、日志页 | account/14、backup/5、web_dav/5 | 🟡 盘点：v2 已有等价（账号名单/编辑器/QR 登录、备份+WebDAV 1012 行、日志页）；开播提醒按标签 f8a6a2760 |
 | B8 | 设置全量 | settings/16 | ✅ 并发刷新 522969fc0、屏幕常亮 e1893639e、首选平台 937cb4d8a、动态取色 c9fee55c4；仅剩内核/兼容模式（依赖引擎能力，随 media_core） |
 | B9 | TV UI 树 | tv/54 | 🟡 关注/热门/分区/历史/频道/设置 全部落地（08695da19…f058e0e15）；仅剩视频/音乐模式，依赖 B10 |
-| B10 | VOD | live_vod 包、tv/video | 🟡 **B10a-1 包与客户端 b252a812e**（搜索/分P/playurl、DASH 无声标注、4 测试）；下一步 B10a-2 app `features/vod` 页（media_core 播放、进度/时长）+ 工具箱入口；随后 B10b 音乐、B10c TV 模式 |
+| B10 | VOD | live_vod 包、tv/video | 🟡 **B10a 完成**：包与客户端 b252a812e、视频页 5f379d33b（搜索/卡片/播放走 media_core、DASH 无声提示、工具箱入口）；下一步 B10b 音乐模式、B10c TV 视频/音乐 |
 
 ## 顺序调整（2026-10-21 用户指令）
 
