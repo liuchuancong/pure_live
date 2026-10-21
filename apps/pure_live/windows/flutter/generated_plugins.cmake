@@ -8,6 +8,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   connectivity_plus
   desktop_multi_window
   device_screen_brightness
+  dynamic_color
   ffmpeg_kit_extended_flutter
   file_selector_windows
   flutter_acrylic

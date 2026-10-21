@@ -11,6 +11,7 @@
 #include <connectivity_plus/connectivity_plus_windows_plugin.h>
 #include <desktop_multi_window/desktop_multi_window_plugin.h>
 #include <device_screen_brightness/device_screen_brightness_plugin_c_api.h>
+#include <dynamic_color/dynamic_color_plugin_c_api.h>
 #include <ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter_plugin.h>
 #include <file_selector_windows/file_selector_windows.h>
 #include <flutter_acrylic/flutter_acrylic_plugin.h>
@@ -35,6 +36,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("DesktopMultiWindowPlugin"));
   DeviceScreenBrightnessPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("DeviceScreenBrightnessPluginCApi"));
+  DynamicColorPluginCApiRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("DynamicColorPluginCApi"));
   FfmpegKitExtendedFlutterPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FfmpegKitExtendedFlutterPlugin"));
   FileSelectorWindowsRegisterWithRegistrar(

@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   desktop_multi_window
   device_screen_brightness
+  dynamic_color
   ffmpeg_kit_extended_flutter
   file_selector_linux
   flutter_acrylic

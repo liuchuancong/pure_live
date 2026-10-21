@@ -609,6 +609,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.1"
+  dynamic_color:
+    dependency: transitive
+    description:
+      name: dynamic_color
+      sha256: "4aeb76de323e8eb660bab5557d826ad7ebbf1434a598f0c6aa8a11a9696a6757"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.9.0"
   envied:
     dependency: transitive
     description:
