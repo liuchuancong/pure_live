@@ -12,14 +12,10 @@ import 'package:live_platform/live_platform.dart'
     show DesktopDistribution, FormFactor, PlatformCapabilities, PlatformEnvironment, PlatformKind, PlatformRuntimeInfo;
 import 'package:live_sites/live_sites.dart' show LiveCredential, LiveSiteRegistry;
 import 'package:live_storage/live_storage.dart' show StorageRepository;
+import 'package:pure_live/app/app_delegates.dart' show appLocalizationsDelegates, appSupportedLocales;
+import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/app/composition/sites.dart' show AppSites;
-import 'package:pure_live/app/delegates.dart' show appLocalizationsDelegates, appSupportedLocales;
-import 'package:pure_live/app/fonts/font_library.dart' show FontLibrary;
-import 'package:pure_live/app/preferences/app_preferences.dart';
-import 'package:pure_live/app/preferences/app_preferences_providers.dart';
-import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/app/theme/appearance_store.dart';
-import 'package:pure_live/features/login/login_providers.dart' show signedInAccountsProvider;
+import 'package:pure_live/features/account/login_providers.dart' show signedInAccountsProvider;
 import 'package:pure_live/features/recorder/recorder_preferences.dart';
 import 'package:pure_live/features/recorder/recorder_providers.dart';
 import 'package:pure_live/features/settings/appearance/appearance_page.dart';
@@ -41,6 +37,10 @@ import 'package:pure_live/features/settings/settings_page.dart';
 import 'package:pure_live/features/settings/video/portrait_settings_page.dart';
 import 'package:pure_live/features/settings/video/video_settings_page.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/system/configuration/app_preferences.dart';
+import 'package:pure_live/system/configuration/app_preferences_providers.dart';
+import 'package:pure_live/system/resources/font_library.dart' show FontLibrary;
+import 'package:pure_live/system/theme/appearance_store.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// Every settings screen, run through the app's real host chain in each design

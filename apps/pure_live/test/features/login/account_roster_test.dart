@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_sites/live_sites.dart' show LiveCredential;
 import 'package:live_storage/live_storage.dart' show SecretRefs, SecretStore, SecretVault;
-import 'package:pure_live/features/login/account_roster.dart';
+import 'package:pure_live/features/account/account_roster.dart';
 
 final class _MapVault implements SecretVault {
   final Map<String, String> values = <String, String>{};

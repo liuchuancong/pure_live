@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/features/wallpaper/wallpaper_style.dart';
 import 'package:pure_uikit/pure_uikit.dart' show PureCanvasScope;
 import 'package:pure_uikit_background/pure_uikit_background.dart' as bg;

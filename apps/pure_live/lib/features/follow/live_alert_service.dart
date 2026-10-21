@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveRoom;
-import 'package:pure_live/app/preferences/app_preferences_providers.dart' show feedRefreshProvider;
-import 'package:pure_live/app/providers/app_providers.dart' show followRepositoryProvider, sitesProvider;
+import 'package:pure_live/app/app_providers.dart' show followRepositoryProvider, sitesProvider;
 import 'package:pure_live/features/follow/follow_refresher.dart';
+import 'package:pure_live/system/configuration/app_preferences_providers.dart' show feedRefreshProvider;
 
 /// The service that keeps the followed rooms' state fresh while the app is up,
 /// and reports the rooms that started broadcasting.

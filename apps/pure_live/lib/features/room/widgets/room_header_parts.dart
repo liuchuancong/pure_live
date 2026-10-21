@@ -7,15 +7,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_library/live_library.dart' show FollowRepository;
 import 'package:live_record_core/live_record_core.dart' show RecordTarget, RecordTask, statusIsBusy;
 import 'package:live_sites/live_sites.dart' show LiveRoom;
-import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/app/routing/app_router.dart';
+import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/features/recorder/recorder_engine.dart' show RecorderRuntime;
 import 'package:pure_live/features/recorder/recorder_providers.dart' show recorderRuntimeProvider;
 import 'package:pure_live/features/room/room_controller.dart' show RoomController, RoomPresentation, RoomState;
 import 'package:pure_live/features/room/room_dialogs.dart';
 import 'package:pure_live/features/room/room_providers.dart' show RoomIdentity, danmakuSessionProvider;
+import 'package:pure_live/features/room/room_share_code.dart' show OwnClipboardTexts, encodeRoomShareCode;
 import 'package:pure_live/l10n/generated/strings.g.dart';
-import 'package:pure_live/shared/rooms/room_share_code.dart' show OwnClipboardTexts, encodeRoomShareCode;
+import 'package:pure_live/system/navigation/app_router.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The pieces the room header is built from. The layouts arrange them their

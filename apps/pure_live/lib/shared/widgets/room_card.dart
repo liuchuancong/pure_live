@@ -4,10 +4,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveRoom;
-import 'package:pure_live/app/preferences/app_preferences.dart' show AppPreferences;
-import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/formatters/formatters.dart';
+import 'package:pure_live/system/configuration/app_preferences.dart' show AppPreferences;
+import 'package:pure_live/system/configuration/app_preferences_providers.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// Shared geometry for the room grids (3.x `room_card_layout.dart`).

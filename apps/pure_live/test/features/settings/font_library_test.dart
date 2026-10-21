@@ -5,7 +5,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_net/live_net.dart';
-import 'package:pure_live/app/fonts/font_library.dart';
+import 'package:pure_live/system/resources/font_library.dart';
 
 void main() {
   group('idForImport', () {

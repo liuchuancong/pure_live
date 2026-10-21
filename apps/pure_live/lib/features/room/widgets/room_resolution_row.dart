@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_interaction/live_interaction.dart' show InteractionSession;
 import 'package:live_sites/live_sites.dart' show LivePlayLine, LivePlayQuality;
-import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/features/room/room_controller.dart' show RoomController, RoomState;
 import 'package:pure_live/features/room/room_providers.dart' show RoomIdentity, danmakuSessionProvider;
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/formatters/formatters.dart' show compactCount;
+import 'package:pure_live/system/configuration/app_preferences_providers.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The strip between the video and the pane: what the room is worth, and which

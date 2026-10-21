@@ -6,8 +6,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveRoom;
-import 'package:pure_live/app/preferences/app_preferences.dart';
-import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/features/room/danmaku_pane.dart' show DanmakuPane;
 import 'package:pure_live/features/room/portrait_rules.dart';
 import 'package:pure_live/features/room/room_controller.dart' show RoomController, RoomPresentation, RoomState;
@@ -18,6 +16,8 @@ import 'package:pure_live/features/room/widgets/room_on_video_controls.dart';
 import 'package:pure_live/features/room/widgets/room_resolution_row.dart';
 import 'package:pure_live/features/room/widgets/room_video_surface.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/system/configuration/app_preferences.dart';
+import 'package:pure_live/system/configuration/app_preferences_providers.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The upright phone room — the reference's `portraitStack` and, for a vertical

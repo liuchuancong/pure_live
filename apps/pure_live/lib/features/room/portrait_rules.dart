@@ -1,5 +1,5 @@
-import 'package:pure_live/app/preferences/app_preferences.dart';
 import 'package:pure_live/features/room/room_controller.dart' show RoomPresentation;
+import 'package:pure_live/system/configuration/app_preferences.dart';
 
 /// The portrait-adaptation rules — the answers the 竖屏直播适配 page stores,
 /// read as decisions. Broken out of the widgets so each rule is testable

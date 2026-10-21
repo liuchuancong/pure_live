@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:pure_live/app/preferences/app_preferences.dart';
-import 'package:pure_live/app/routing/route_paths.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/system/configuration/app_preferences.dart';
+import 'package:pure_live/system/navigation/route_paths.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The shell's branches in one table: the display order, each branch's

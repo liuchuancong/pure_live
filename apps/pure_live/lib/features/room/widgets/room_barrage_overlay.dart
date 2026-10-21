@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_interaction/live_interaction.dart' show InteractionSession;
 import 'package:live_sites/live_sites.dart';
-import 'package:pure_live/app/preferences/app_preferences.dart';
-import 'package:pure_live/app/preferences/app_preferences_providers.dart';
+import 'package:pure_live/features/room/danmaku_fps.dart' show displayRefreshRateProvider, resolvedDanmakuFps;
 import 'package:pure_live/features/room/room_controller.dart' show roomControllerProvider;
 import 'package:pure_live/features/room/room_providers.dart';
 import 'package:pure_live/features/room/widgets/room_emote_text.dart';
 import 'package:pure_live/features/room/widgets/room_message_actions.dart' show showRoomMessageActions;
-import 'package:pure_live/shared/danmaku/danmaku_fps.dart' show displayRefreshRateProvider, resolvedDanmakuFps;
+import 'package:pure_live/system/configuration/app_preferences.dart';
+import 'package:pure_live/system/configuration/app_preferences_providers.dart';
 
 /// One barrage in flight.
 final class _Barrage {

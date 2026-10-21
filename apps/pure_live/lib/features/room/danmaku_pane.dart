@@ -5,14 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_interaction/live_interaction.dart';
 import 'package:live_sites/live_sites.dart';
-import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/features/room/room_providers.dart';
 import 'package:pure_live/features/room/shield_lists_panel.dart';
 import 'package:pure_live/features/room/super_chat_card.dart';
 import 'package:pure_live/features/room/widgets/room_emote_text.dart';
 import 'package:pure_live/features/room/widgets/room_message_actions.dart' show showRoomMessageActions;
+import 'package:pure_live/features/settings/danmaku/danmaku_settings_content.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
-import 'package:pure_live/shared/danmaku/danmaku_settings_content.dart';
+import 'package:pure_live/system/configuration/app_preferences_providers.dart';
 import 'package:pure_uikit/pure_uikit.dart' hide InteractionState;
 
 /// The room's interaction pane (the reference's `DanmakuTabView`): the live

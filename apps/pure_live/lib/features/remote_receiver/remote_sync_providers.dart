@@ -2,13 +2,13 @@ import 'dart:async' show unawaited;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:pure_live/app/preferences/app_preferences_providers.dart';
-import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/app_providers.dart';
+import 'package:pure_live/features/account/account_roster.dart';
+import 'package:pure_live/features/account/login_providers.dart';
 import 'package:pure_live/features/backup/web_dav_preferences.dart';
 import 'package:pure_live/features/backup/web_dav_store.dart';
-import 'package:pure_live/features/login/account_roster.dart';
-import 'package:pure_live/features/login/login_providers.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_service.dart';
+import 'package:pure_live/system/configuration/app_preferences_providers.dart';
 
 /// The LAN sync service, created on first entry to the sync page and kept
 /// for the rest of the process (the 3.x binding was a lazy singleton the

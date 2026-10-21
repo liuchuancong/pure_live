@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_shell/live_shell.dart' show CloseAction;
 import 'package:live_storage/live_storage.dart';
-import 'package:pure_live/platforms/desktop/shell/shell_preferences.dart';
+import 'package:pure_live/system/window/shell_preferences.dart';
 
 /// What survives the trip to the box and back.
 ///

@@ -1,8 +1,8 @@
 import 'package:live_library/live_library.dart';
 import 'package:live_sites/live_sites.dart';
 
-import 'package:pure_live/app/preferences/app_preferences.dart';
 import 'package:pure_live/app/shell/shell_destinations.dart';
+import 'package:pure_live/system/configuration/app_preferences.dart';
 
 /// Writes one shield list under one of the shield page's keys; the same
 /// keyed box the shield page owns, handed in by the service.

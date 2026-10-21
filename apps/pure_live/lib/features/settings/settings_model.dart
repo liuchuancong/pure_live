@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:pure_live/app/routing/route_paths.dart';
 import 'package:pure_live/features/settings/appearance/appearance_page.dart';
 import 'package:pure_live/features/settings/danmaku/danmaku_settings_page.dart';
 import 'package:pure_live/features/settings/data/cache_data_page.dart';
@@ -15,6 +14,7 @@ import 'package:pure_live/features/settings/recording/record_settings_page.dart'
 import 'package:pure_live/features/settings/refresh/refresh_settings_page.dart';
 import 'package:pure_live/features/settings/video/video_settings_page.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/system/navigation/route_paths.dart';
 
 /// The five groups of the settings overview (the reference's `SettingsArea`;
 /// the old index's eleven sections collapse into these).

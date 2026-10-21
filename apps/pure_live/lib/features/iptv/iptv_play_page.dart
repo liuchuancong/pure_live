@@ -7,12 +7,12 @@ import 'package:live_iptv/live_iptv.dart' show IptvChannel, IptvLibrary, IptvLin
 import 'package:live_playback/live_playback.dart' show EngineProgress, EngineReady, EngineStopped, PlaybackEngineEvent;
 import 'package:live_sites/live_sites.dart' show LivePlayFormatSource, LivePlayLine, LiveStreamFormat;
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitPlayerAdapter, MediaKitVideoView;
-import 'package:pure_live/app/engine/playback_engine.dart';
-import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/features/iptv/iptv_epg.dart' show IptvGuideCache, iptvEpgProvider;
+import 'package:pure_live/features/settings/widgets/settings_entry_button.dart';
+import 'package:pure_live/features/settings/widgets/settings_surface.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
-import 'package:pure_live/shared/widgets/settings_entry_button.dart';
-import 'package:pure_live/shared/widgets/settings_surface.dart';
+import 'package:pure_live/system/playback/playback_engine.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// How long the on-screen display stays up without interaction.

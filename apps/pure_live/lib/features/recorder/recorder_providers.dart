@@ -4,12 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_record_core/live_record_core.dart'
     show AnchorDirectoryStyle, RecordNaming, RecordPolicy, statusIsTerminal;
 import 'package:live_storage/live_storage.dart';
-import 'package:pure_live/app/environment/app_directory.dart';
-import 'package:pure_live/app/environment/app_paths.dart' show AppPaths;
-import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/features/recorder/record_storage_cleaner.dart';
 import 'package:pure_live/features/recorder/recorder_engine.dart';
 import 'package:pure_live/features/recorder/recorder_preferences.dart';
+import 'package:pure_live/system/environment/app_directory.dart';
+import 'package:pure_live/system/environment/app_paths.dart' show AppPaths;
 
 /// The recorder's persisted choices, opened lazily on its first reader — the
 /// store owns an open box, and unlike the boot-time documents nothing here

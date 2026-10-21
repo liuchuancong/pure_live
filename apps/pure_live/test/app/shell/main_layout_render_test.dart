@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pure_live/app/delegates.dart' show appLocalizationsDelegates, appSupportedLocales;
+import 'package:pure_live/app/app_delegates.dart' show appLocalizationsDelegates, appSupportedLocales;
 import 'package:pure_live/app/shell/home_views.dart';
 import 'package:pure_live/app/shell/main_page_frame.dart';
 import 'package:pure_live/app/shell/shell_destinations.dart';

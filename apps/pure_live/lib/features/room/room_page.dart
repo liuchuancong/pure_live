@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveRoom, LiveRoomIdentity, RoomContent;
-import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/features/room/room_controller.dart';
 import 'package:pure_live/features/room/room_providers.dart' show RoomIdentity;
 import 'package:pure_live/features/room/room_shell.dart';

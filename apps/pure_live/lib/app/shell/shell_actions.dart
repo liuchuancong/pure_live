@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show StatefulNavigationShell;
-import 'package:pure_live/app/preferences/app_preferences_providers.dart' show goShellBranch;
-import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/system/configuration/app_preferences_providers.dart' show goShellBranch;
+import 'package:pure_live/system/navigation/app_router.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The ways to find a room that every home layout offers (the reference's

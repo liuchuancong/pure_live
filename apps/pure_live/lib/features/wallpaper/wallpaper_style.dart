@@ -4,7 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart' show Colors;
 import 'package:flutter/painting.dart' show BoxFit, FileImage, ImageProvider;
 import 'package:flutter/widgets.dart' show Alignment, Color;
-import 'package:pure_live/app/theme/appearance_preferences/appearance_preferences.dart';
+import 'package:pure_live/system/theme/appearance_preferences/appearance_preferences.dart';
 import 'package:pure_uikit_background/pure_uikit_background.dart'
     show BackgroundConfig, BackgroundOverlay, GradientBackground, ImageBackground, ProviderImageSource, SolidBackground;
 

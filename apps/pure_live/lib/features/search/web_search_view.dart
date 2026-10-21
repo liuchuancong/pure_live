@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveLinkResolver;
 
-import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/app/routing/app_router.dart';
+import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/in_app_web.dart';
+import 'package:pure_live/system/navigation/app_router.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 import 'package:url_launcher/url_launcher.dart';
 

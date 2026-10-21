@@ -4,7 +4,7 @@ import 'package:live_log/live_log.dart' show LiveLog, LogLevel;
 import 'package:live_net/live_net.dart';
 import 'package:live_platform/live_platform.dart' show FormFactor, PlatformKind;
 import 'package:live_sites/live_sites.dart';
-import 'package:pure_live/features/login/douyu_login_store.dart' show AppDouyuLoginStore;
+import 'package:pure_live/features/account/douyu_login_store.dart' show AppDouyuLoginStore;
 
 /// The network and site graph: one transport factory, the site HTTP client
 /// and the registry of built-in sites.

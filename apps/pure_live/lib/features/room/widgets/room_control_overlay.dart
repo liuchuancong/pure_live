@@ -11,8 +11,8 @@ import 'package:pure_live/features/room/room_controller.dart';
 import 'package:pure_live/features/room/room_providers.dart';
 import 'package:pure_live/features/room/widgets/room_bar_parts.dart';
 import 'package:pure_live/features/room/widgets/room_on_video_controls.dart';
+import 'package:pure_live/features/settings/widgets/settings_surface.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
-import 'package:pure_live/shared/widgets/settings_surface.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The player's control bars, drawn over the video surface — the reference's

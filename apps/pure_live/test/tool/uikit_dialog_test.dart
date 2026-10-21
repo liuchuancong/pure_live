@@ -16,7 +16,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pure_live/app/delegates.dart' show appLocalizationsDelegates, appSupportedLocales;
+import 'package:pure_live/app/app_delegates.dart' show appLocalizationsDelegates, appSupportedLocales;
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 

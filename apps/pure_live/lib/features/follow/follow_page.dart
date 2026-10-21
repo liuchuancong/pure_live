@@ -5,20 +5,20 @@ import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_library/live_library.dart' show FollowRepository, LibraryRoom;
 import 'package:live_sites/live_sites.dart' show LiveFollowGroup;
-import 'package:pure_live/app/preferences/app_preferences_providers.dart';
-import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/app/routing/app_router.dart';
-import 'package:pure_live/app/shell/main_layout.dart';
+import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/app/shell/main_page_frame.dart';
 import 'package:pure_live/app/shell/shell_actions.dart';
 import 'package:pure_live/app/shell/shell_destinations.dart' show ShellBranch;
 import 'package:pure_live/features/follow/live_alert_service.dart';
+import 'package:pure_live/features/room/paging.dart';
+import 'package:pure_live/features/settings/widgets/settings_surface.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
-import 'package:pure_live/shared/rooms/paging.dart';
 import 'package:pure_live/shared/widgets/list_loading.dart';
 import 'package:pure_live/shared/widgets/room_card.dart';
 import 'package:pure_live/shared/widgets/room_grid.dart';
-import 'package:pure_live/shared/widgets/settings_surface.dart';
+import 'package:pure_live/system/configuration/app_preferences_providers.dart';
+import 'package:pure_live/system/layout/main_layout.dart';
+import 'package:pure_live/system/navigation/app_router.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The page width from which the platform tabs join the status tabs in the

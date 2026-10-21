@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/app/preferences/app_preferences_providers.dart';
+import 'package:pure_live/system/configuration/app_preferences_providers.dart';
 
 /// The shell's re-tap signal — the raw channel `goShellBranch` pulses and the
 /// follow branch listens to. Its contract is tested directly; the navigation

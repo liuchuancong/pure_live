@@ -6,8 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pure_live/features/settings/settings_catalog.dart';
 import 'package:pure_live/features/settings/settings_model.dart';
+import 'package:pure_live/features/settings/widgets/settings_chrome.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
-import 'package:pure_live/shared/widgets/settings_chrome.dart';
 import 'package:pure_settings_ui/pure_settings_ui.dart' as sui;
 import 'package:pure_uikit/pure_uikit.dart';
 

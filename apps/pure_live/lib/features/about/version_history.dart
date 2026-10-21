@@ -7,8 +7,8 @@ import 'package:pure_live/features/about/app_update_flow.dart';
 import 'package:pure_live/features/about/markdown_text.dart';
 import 'package:pure_live/features/about/update_feed.dart';
 import 'package:pure_live/features/about/version_controller.dart' show versionControllerProvider;
+import 'package:pure_live/features/settings/widgets/settings_surface.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
-import 'package:pure_live/shared/widgets/settings_surface.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The version-history presentation (3.x `VersionHistoryPage`): the release

@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart' show IptvLibrary, PlaylistParseResult, XtreamCatalogService, XtreamSource;
-import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/features/iptv/iptv_preferences.dart';
 
 /// The prefix every Xtream playlist record's [IptvLibrary] url key carries.

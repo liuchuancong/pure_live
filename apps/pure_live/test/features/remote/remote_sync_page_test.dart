@@ -7,15 +7,15 @@ import 'package:live_net/live_net.dart' show DioFactory;
 import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart' show StorageRepository;
 
+import 'package:pure_live/app/app_delegates.dart' show appLocalizationsDelegates, appSupportedLocales;
+import 'package:pure_live/app/app_providers.dart' show sitesProvider;
 import 'package:pure_live/app/composition/sites.dart' show AppSites;
-import 'package:pure_live/app/delegates.dart' show appLocalizationsDelegates, appSupportedLocales;
-import 'package:pure_live/app/preferences/app_preferences.dart';
-import 'package:pure_live/app/providers/app_providers.dart' show sitesProvider;
 import 'package:pure_live/features/remote_receiver/remote_sync_device.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_page.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_providers.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_service.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/system/configuration/app_preferences.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 final class _MapRepository implements StorageRepository<Map<dynamic, dynamic>> {

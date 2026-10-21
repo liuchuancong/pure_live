@@ -16,20 +16,17 @@ import 'package:live_platform/live_platform.dart'
     show DesktopDistribution, FormFactor, PlatformCapabilities, PlatformEnvironment, PlatformKind, PlatformRuntimeInfo;
 import 'package:live_sites/live_sites.dart' show LiveCredential, LiveSiteRegistry;
 import 'package:live_storage/live_storage.dart' show StorageRepository;
+import 'package:pure_live/app/app_delegates.dart' show appLocalizationsDelegates, appSupportedLocales;
+import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/app/composition/sites.dart' show AppSites;
-import 'package:pure_live/app/delegates.dart' show appLocalizationsDelegates, appSupportedLocales;
-import 'package:pure_live/app/preferences/app_preferences.dart' show AppPreferencesStore;
-import 'package:pure_live/app/preferences/app_preferences_providers.dart';
-import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/app/theme/appearance_store.dart';
 import 'package:pure_live/features/about/about_page.dart';
 import 'package:pure_live/features/about/version_page.dart';
+import 'package:pure_live/features/account/account_page.dart';
+import 'package:pure_live/features/account/cookie_editor_page.dart';
+import 'package:pure_live/features/account/login_providers.dart' show signedInAccountsProvider;
 import 'package:pure_live/features/history/history_page.dart';
 import 'package:pure_live/features/iptv/iptv_page.dart';
 import 'package:pure_live/features/iptv/iptv_preferences.dart';
-import 'package:pure_live/features/login/account_page.dart';
-import 'package:pure_live/features/login/cookie_editor_page.dart';
-import 'package:pure_live/features/login/login_providers.dart' show signedInAccountsProvider;
 import 'package:pure_live/features/multiview/multiview_page.dart';
 import 'package:pure_live/features/multiview/multiview_preferences.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_page.dart';
@@ -40,6 +37,9 @@ import 'package:pure_live/features/shield/shield_page.dart';
 import 'package:pure_live/features/toolbox/toolbox_page.dart';
 import 'package:pure_live/features/wallpaper/wallpaper_picker_page.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/system/configuration/app_preferences.dart' show AppPreferencesStore;
+import 'package:pure_live/system/configuration/app_preferences_providers.dart';
+import 'package:pure_live/system/theme/appearance_store.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// Every secondary page, run through every design language's real host chain.

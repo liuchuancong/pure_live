@@ -6,11 +6,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:live_library/live_library.dart';
 import 'package:live_storage/live_storage.dart' show StorageRepository;
 
-import 'package:pure_live/app/preferences/app_preferences.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_parts.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_payload.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_protocol.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_service.dart';
+import 'package:pure_live/system/configuration/app_preferences.dart';
 
 final class _MapRepository implements StorageRepository<Map<dynamic, dynamic>> {
   final Map<String, Map<dynamic, dynamic>> documents = {};

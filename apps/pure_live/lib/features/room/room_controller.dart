@@ -21,16 +21,16 @@ import 'package:media_core/media_core.dart'
         PlayerAdapterVideoSizeChanged,
         PlayerAdapterVolumeChanged;
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitPlayerAdapter;
-import 'package:pure_live/app/engine/danmaku.dart';
-import 'package:pure_live/app/engine/mpv_tuning.dart';
-import 'package:pure_live/app/engine/playback_engine.dart';
-import 'package:pure_live/app/engine/window_surface_hooks.dart';
-import 'package:pure_live/app/preferences/app_preferences.dart';
-import 'package:pure_live/app/preferences/app_preferences_providers.dart';
-import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/app_providers.dart';
+import 'package:pure_live/features/room/danmaku.dart';
+import 'package:pure_live/features/room/play_quality.dart';
 import 'package:pure_live/features/room/portrait_rules.dart';
 import 'package:pure_live/features/room/room_providers.dart';
-import 'package:pure_live/shared/rooms/play_quality.dart';
+import 'package:pure_live/system/configuration/app_preferences.dart';
+import 'package:pure_live/system/configuration/app_preferences_providers.dart';
+import 'package:pure_live/system/playback/mpv_tuning.dart';
+import 'package:pure_live/system/playback/playback_engine.dart';
+import 'package:pure_live/system/playback/window_surface_hooks.dart';
 import 'package:window_frame_kit/window_frame_kit.dart' show windowManager;
 
 /// How the room is presented — the reference's `VideoMode`.

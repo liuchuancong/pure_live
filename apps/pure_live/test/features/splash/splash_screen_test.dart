@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/features/splash/splash_screen.dart';
+import 'package:pure_live/bootstrap/splash_screen.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 void main() {

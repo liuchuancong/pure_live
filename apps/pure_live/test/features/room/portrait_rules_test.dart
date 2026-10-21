@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/app/preferences/app_preferences.dart';
 import 'package:pure_live/features/room/portrait_rules.dart';
 import 'package:pure_live/features/room/room_controller.dart' show RoomPresentation;
+import 'package:pure_live/system/configuration/app_preferences.dart';
 
 const AppPreferences _p = AppPreferences();
 

@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_interaction/live_interaction.dart';
 import 'package:live_sites/live_sites.dart' show LiveDanmakuProvider;
-import 'package:pure_live/app/engine/danmaku.dart';
-import 'package:pure_live/app/preferences/app_preferences_providers.dart';
-import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/app_providers.dart';
+import 'package:pure_live/features/room/danmaku.dart';
 import 'package:pure_live/features/room/local_message_bus.dart';
+import 'package:pure_live/system/configuration/app_preferences_providers.dart';
 
 /// Which room a feature piece serves: the platform id plus the
 /// platform-specific room id, exactly what the room route carries.

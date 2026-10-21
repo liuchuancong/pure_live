@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart' show TargetPlatform;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/app/engine/mpv_tuning.dart';
-import 'package:pure_live/app/preferences/app_preferences.dart';
+import 'package:pure_live/system/configuration/app_preferences.dart';
+import 'package:pure_live/system/playback/mpv_tuning.dart';
 
 void main() {
   group('MpvTuning.nativeOptions — 播放器代理', () {

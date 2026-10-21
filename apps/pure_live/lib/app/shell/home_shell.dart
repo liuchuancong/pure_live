@@ -6,16 +6,16 @@ import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show StatefulNavigationShell;
 import 'package:live_platform/live_platform.dart' show FormFactor;
-import 'package:pure_live/app/preferences/app_preferences_providers.dart';
-import 'package:pure_live/app/providers/app_providers.dart' show environmentProvider;
-import 'package:pure_live/app/routing/app_router.dart' show AccountRoute;
-import 'package:pure_live/app/services/clipboard_room_watcher.dart';
-import 'package:pure_live/app/services/image_cache.dart' show cacheAutoClearWatcherProvider;
+import 'package:pure_live/app/app_providers.dart' show environmentProvider;
 import 'package:pure_live/app/shell/home_views.dart';
 import 'package:pure_live/app/shell/shell_actions.dart' show activateShellDestination;
 import 'package:pure_live/app/shell/shell_destinations.dart';
 import 'package:pure_live/features/follow/live_alert_service.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/system/configuration/app_preferences_providers.dart';
+import 'package:pure_live/system/input/clipboard_room_watcher.dart';
+import 'package:pure_live/system/navigation/app_router.dart' show AccountRoute;
+import 'package:pure_live/system/resources/image_cache.dart' show cacheAutoClearWatcherProvider;
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The home shell, in the design table's shape: a bottom bar under the phone

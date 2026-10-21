@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:live_log/live_log.dart' show LiveLog;
 import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/live_shell.dart';
-import 'package:pure_live/app/routing/deep_link.dart' show RoomDeepLink;
+import 'package:pure_live/system/navigation/deep_link.dart' show RoomDeepLink;
 
 /// The desktop single-instance handoff, taken before anything writes.
 ///

@@ -7,11 +7,11 @@ import 'package:live_library/live_library.dart';
 import 'package:live_storage/live_storage.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-import 'package:pure_live/app/preferences/app_preferences.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_device.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_parts.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_payload.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_protocol.dart';
+import 'package:pure_live/system/configuration/app_preferences.dart';
 
 /// Asks the user whether the remote address may read ('export') or
 /// overwrite ('import') this device's payload. Requests are refused

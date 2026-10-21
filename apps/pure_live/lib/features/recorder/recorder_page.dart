@@ -9,16 +9,16 @@ import 'package:live_record_core/live_record_core.dart'
     show RecordStatus, RecordTarget, RecordTask, RoomState, statusIsBusy;
 import 'package:live_sites/live_sites.dart' show LiveRoomProvider, LiveSite, LiveSiteManifest;
 import 'package:open_file/open_file.dart';
-import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/app/routing/app_router.dart';
-import 'package:pure_live/app/shell/main_layout.dart';
+import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/app/shell/main_page_frame.dart';
 import 'package:pure_live/features/recorder/recorder_engine.dart';
 import 'package:pure_live/features/recorder/recorder_preferences.dart';
 import 'package:pure_live/features/recorder/recorder_providers.dart';
+import 'package:pure_live/features/settings/widgets/settings_chooser.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/feed_chip.dart';
-import 'package:pure_live/shared/widgets/settings_chooser.dart';
+import 'package:pure_live/system/layout/main_layout.dart';
+import 'package:pure_live/system/navigation/app_router.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The recorder: the rooms being watched, each with its state chip and its

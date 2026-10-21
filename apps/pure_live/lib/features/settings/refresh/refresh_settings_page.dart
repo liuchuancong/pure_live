@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pure_live/app/preferences/app_preferences_providers.dart';
+import 'package:pure_live/features/settings/widgets/settings_chooser.dart';
+import 'package:pure_live/features/settings/widgets/settings_chrome.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
-import 'package:pure_live/shared/widgets/settings_chooser.dart';
-import 'package:pure_live/shared/widgets/settings_chrome.dart';
+import 'package:pure_live/system/configuration/app_preferences_providers.dart';
 import 'package:pure_settings_ui/pure_settings_ui.dart';
 
 /// The refresh settings page (3.x `RefreshSettingsPage`, trimmed to the backed

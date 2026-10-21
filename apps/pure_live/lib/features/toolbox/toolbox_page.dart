@@ -5,11 +5,11 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:live_sites/live_sites.dart';
-import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/app/routing/app_router.dart';
-import 'package:pure_live/app/routing/route_paths.dart';
+import 'package:pure_live/app/app_providers.dart';
+import 'package:pure_live/features/settings/widgets/settings_entry_button.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
-import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_live/system/navigation/app_router.dart';
+import 'package:pure_live/system/navigation/route_paths.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The toolbox (3.x `ToolBoxPage`): two tool cards, each an expanded tile

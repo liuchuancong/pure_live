@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pure_live/app/delegates.dart' show appLocalizationsDelegates, appSupportedLocales;
-import 'package:pure_live/app/preferences/app_preferences.dart';
+import 'package:pure_live/app/app_delegates.dart' show appLocalizationsDelegates, appSupportedLocales;
+import 'package:pure_live/features/room/paging.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
-import 'package:pure_live/shared/rooms/paging.dart';
+import 'package:pure_live/system/configuration/app_preferences.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The shared paging system (the reference's `shared/rooms/paging.dart`):

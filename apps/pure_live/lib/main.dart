@@ -10,18 +10,18 @@ import 'package:live_log/live_log.dart' show ErrorReporter;
 import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/live_shell.dart' show CommandStartupRegistration;
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/app/composition/app_services.dart';
-import 'package:pure_live/app/engine/playback_engine.dart';
-import 'package:pure_live/app/engine/playback_surfaces.dart';
-import 'package:pure_live/app/logging/app_log.dart';
-import 'package:pure_live/app/preferences/app_preferences_providers.dart';
-import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/app/theme/app_theme.dart';
-import 'package:pure_live/app/theme/ui_configuration_mapper.dart';
-import 'package:pure_live/features/login/douyu_login_store.dart' show douyuLoginStoreProvider;
+import 'package:pure_live/app/app_providers.dart';
+import 'package:pure_live/app/app_services.dart';
+import 'package:pure_live/features/account/douyu_login_store.dart' show douyuLoginStoreProvider;
 import 'package:pure_live/platforms/desktop/entry/desktop_entry.dart';
 import 'package:pure_live/platforms/desktop/entry/desktop_launch.dart';
 import 'package:pure_live/shared/in_app_web.dart';
+import 'package:pure_live/system/configuration/app_preferences_providers.dart';
+import 'package:pure_live/system/logging/app_log.dart';
+import 'package:pure_live/system/playback/playback_engine.dart';
+import 'package:pure_live/system/playback/playback_surfaces.dart';
+import 'package:pure_live/system/theme/app_theme.dart';
+import 'package:pure_live/system/theme/ui_configuration_mapper.dart';
 import 'package:pure_uikit/pure_uikit.dart' show PureDesignLanguage, PureUiStartupResolver;
 
 /// The process entry point: open the log, boot the service graph, then hand

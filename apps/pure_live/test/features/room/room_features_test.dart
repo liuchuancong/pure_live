@@ -11,18 +11,18 @@ import 'package:live_platform/live_platform.dart'
     show DesktopDistribution, FormFactor, PlatformCapabilities, PlatformEnvironment, PlatformKind, PlatformRuntimeInfo;
 import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart' show StorageRepository;
+import 'package:pure_live/app/app_delegates.dart' show appLocalizationsDelegates, appSupportedLocales;
+import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/app/composition/sites.dart' show AppSites;
-import 'package:pure_live/app/delegates.dart' show appLocalizationsDelegates, appSupportedLocales;
-import 'package:pure_live/app/preferences/app_preferences.dart';
-import 'package:pure_live/app/preferences/app_preferences_providers.dart';
-import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/app/theme/appearance_store.dart';
 import 'package:pure_live/features/room/local_message_bus.dart';
 import 'package:pure_live/features/room/room_controller.dart' show RoomController, roomControllerProvider;
 import 'package:pure_live/features/room/room_dialogs.dart';
 import 'package:pure_live/features/room/room_providers.dart' show RoomIdentity;
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/platforms/mobile/features/room/room_phone_portrait_layout.dart' show portraitPanelRange;
+import 'package:pure_live/system/configuration/app_preferences.dart';
+import 'package:pure_live/system/configuration/app_preferences_providers.dart';
+import 'package:pure_live/system/theme/appearance_store.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The room page's second-round features, tested without a live room: the

@@ -2,7 +2,7 @@ import 'dart:async' show unawaited;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart' show EpgEntry, EpgGuide, EpgParser, IptvChannel, iptvBytesFetcherFor;
-import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/app_providers.dart';
 
 /// How long a channel or guide name may travel before name matching gives
 /// up — the matcher's own normalisation, so both sides of a comparison are

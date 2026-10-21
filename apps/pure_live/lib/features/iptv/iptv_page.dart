@@ -4,14 +4,14 @@ import 'package:file_selector/file_selector.dart' show XTypeGroup, openFile;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart' show IptvChannel, IptvLibrary, IptvPlaylist, iptvFetcherFor;
-import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/app/routing/app_router.dart';
+import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/features/iptv/iptv_preferences.dart' show IptvPreferences, IptvXtreamSource;
 import 'package:pure_live/features/iptv/iptv_xtream.dart'
     show importXtreamChannels, isXtreamCredentialError, isXtreamPlaylistUrl, xtreamCatalogProvider, xtreamPlaylistId;
+import 'package:pure_live/features/settings/widgets/settings_entry_button.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/widgets/feed_chip.dart';
-import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_live/system/navigation/app_router.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The two shapes a source can have, as the add dialog's segmented control

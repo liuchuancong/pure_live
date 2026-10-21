@@ -5,14 +5,14 @@ import 'package:go_router/go_router.dart';
 import 'package:live_net/live_net.dart' show DioFactory;
 import 'package:live_sites/live_sites.dart';
 
+import 'package:pure_live/app/app_delegates.dart' show appLocalizationsDelegates, appSupportedLocales;
+import 'package:pure_live/app/app_providers.dart' show sitesProvider;
 import 'package:pure_live/app/composition/sites.dart' show AppSites;
-import 'package:pure_live/app/delegates.dart' show appLocalizationsDelegates, appSupportedLocales;
-import 'package:pure_live/app/providers/app_providers.dart' show sitesProvider;
-import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/features/search/web_search_url.dart';
 import 'package:pure_live/features/search/web_search_view.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/shared/in_app_web.dart';
+import 'package:pure_live/system/navigation/app_router.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The page host: translations, the design language and a one-route router.

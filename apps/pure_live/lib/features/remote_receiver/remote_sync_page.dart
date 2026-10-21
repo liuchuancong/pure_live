@@ -12,8 +12,8 @@ import 'package:pure_live/features/remote_receiver/remote_sync_payload.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_protocol.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_providers.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_service.dart';
+import 'package:pure_live/features/settings/widgets/settings_entry_button.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
-import 'package:pure_live/shared/widgets/settings_entry_button.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The width from which the page lays its two halves side by side (the

@@ -7,11 +7,11 @@ import 'package:live_playback/live_playback.dart' show EngineProgress, EngineRea
 import 'package:live_sites/live_sites.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitVideoView;
 import 'package:mosaic_grid/mosaic_grid.dart' show MosaicColumns, MosaicGrid;
-import 'package:pure_live/app/engine/playback_engine.dart';
-import 'package:pure_live/app/providers/app_providers.dart';
+import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/features/multiview/multiview_preferences.dart';
+import 'package:pure_live/features/settings/widgets/settings_entry_button.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
-import 'package:pure_live/shared/widgets/settings_entry_button.dart';
+import 'package:pure_live/system/playback/playback_engine.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// Multi-view: a wall of rooms playing side by side, each cell its own
