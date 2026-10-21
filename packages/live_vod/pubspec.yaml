@@ -1,0 +1,15 @@
+name: live_vod
+description: Video-on-demand sources for PureLive — the ids, search hits and play addresses of a platform's videos, independent of any player.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  live_net:
+
+dev_dependencies:
+  test: ^1.26.0
+  very_good_analysis: ^11.0.0

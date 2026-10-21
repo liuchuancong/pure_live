@@ -24,6 +24,7 @@ workspace:
   - packages/live_shell
   - packages/live_shell_desktop
   - packages/live_sites
+  - packages/live_vod
   - packages/live_storage
   - packages/live_storage/example
   - packages/pure_settings_ui
