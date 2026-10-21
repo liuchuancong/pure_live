@@ -9,6 +9,7 @@ import 'package:pure_live/app/preferences/app_preferences.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/features/room/room_controller.dart' show roomControllerProvider;
 import 'package:pure_live/features/room/room_providers.dart';
+import 'package:pure_live/features/room/widgets/room_emote_text.dart';
 import 'package:pure_live/features/room/widgets/room_message_actions.dart' show showRoomMessageActions;
 import 'package:pure_live/shared/danmaku/danmaku_fps.dart' show displayRefreshRateProvider, resolvedDanmakuFps;
 
@@ -433,29 +434,37 @@ final class _RoomBarrageOverlayState extends ConsumerState<RoomBarrageOverlay> w
     final family = preferences.barrageFontFamily.trim();
     final tap = preferences.barrageTapAction;
     final longPress = preferences.barrageLongPressAction;
+    final lineStyle = TextStyle(
+      color: _readable(entry.message.effectiveColor).withValues(alpha: opacity),
+      fontSize: fontSize,
+      fontFamily: family.isEmpty ? null : family,
+      fontWeight: FontWeight(preferences.barrageFontWeight.clamp(100, 900)),
+      shadows: preferences.barrageStroke
+          ? [
+              Shadow(
+                color: Colors.black87,
+                blurRadius: preferences.barrageStrokeWidth.clamp(0, 4),
+                offset: const Offset(1, 1),
+              ),
+            ]
+          : const [],
+    );
     final line = ConstrainedBox(
       constraints: BoxConstraints(maxWidth: width * 0.62),
-      child: Text(
-        preferences.barrageShowSender && entry.message.effectiveSender.userName.isNotEmpty
-            ? '${entry.message.effectiveSender.userName}  ${entry.message.text}'
-            : entry.message.text,
+      child: Text.rich(
+        // The表情码 become the platform's own pictures, inline; the text keeps
+        // the stroke and the colour because the spans carry this style.
+        TextSpan(
+          children: emoteSpans(
+            text: preferences.barrageShowSender && entry.message.effectiveSender.userName.isNotEmpty
+                ? '${entry.message.effectiveSender.userName}  ${entry.message.text}'
+                : entry.message.text,
+            emotes: entry.message.emotes,
+            style: lineStyle,
+          ),
+        ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: _readable(entry.message.effectiveColor).withValues(alpha: opacity),
-          fontSize: fontSize,
-          fontFamily: family.isEmpty ? null : family,
-          fontWeight: FontWeight(preferences.barrageFontWeight.clamp(100, 900)),
-          shadows: preferences.barrageStroke
-              ? [
-                  Shadow(
-                    color: Colors.black87,
-                    blurRadius: preferences.barrageStrokeWidth.clamp(0, 4),
-                    offset: const Offset(1, 1),
-                  ),
-                ]
-              : const [],
-        ),
       ),
     );
     if (!tap && !longPress) {

@@ -8,6 +8,7 @@ import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/features/room/room_providers.dart';
 import 'package:pure_live/features/room/super_chat_card.dart';
+import 'package:pure_live/features/room/widgets/room_emote_text.dart';
 import 'package:pure_live/features/room/widgets/room_message_actions.dart' show showRoomMessageActions;
 import 'package:pure_live/features/shield/shield_lists.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
@@ -484,8 +485,11 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
                       text: '${sender.userName}: ',
                       style: TextStyle(fontWeight: FontWeight.w700, color: accent),
                     ),
-                  TextSpan(
+                  ...emoteSpans(
+                    // The platform's own表情图, inline; the gift note rides the
+                    // same style as the rest of the line.
                     text: '${message.text}$giftNote',
+                    emotes: message.emotes,
                     style: TextStyle(
                       color: dark
                           ? (gift != null ? Colors.white : Colors.white.withValues(alpha: 0.88))
