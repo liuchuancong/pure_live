@@ -4,15 +4,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveRoom, LiveRoomIdentity, RoomContent;
 import 'package:pure_live/app/providers/app_providers.dart';
-import 'package:pure_live/features/room/layouts/room_desktop_layout.dart';
-import 'package:pure_live/features/room/layouts/room_phone_landscape_layout.dart';
-import 'package:pure_live/features/room/layouts/room_phone_portrait_layout.dart';
-import 'package:pure_live/features/room/layouts/room_tablet_layout.dart';
-import 'package:pure_live/features/room/layouts/room_tv_layout.dart';
 import 'package:pure_live/features/room/room_controller.dart';
 import 'package:pure_live/features/room/room_providers.dart' show RoomIdentity;
 import 'package:pure_live/features/room/room_shell.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/platforms/desktop/features/room/room_desktop_layout.dart';
+import 'package:pure_live/platforms/mobile/features/room/room_phone_landscape_layout.dart';
+import 'package:pure_live/platforms/mobile/features/room/room_phone_portrait_layout.dart';
+import 'package:pure_live/platforms/tablet/features/room/room_tablet_layout.dart';
+import 'package:pure_live/platforms/tv/features/room/room_tv_layout.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The live room page — the reference's `LivePlayPage`.

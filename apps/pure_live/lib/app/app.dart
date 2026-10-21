@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/delegates.dart';
 import 'package:pure_live/app/preferences/app_preferences_providers.dart';
 import 'package:pure_live/app/routing/app_router.dart';
-import 'package:pure_live/app/shell/desktop_title_frame.dart' show DesktopTitleFrame;
 import 'package:pure_live/app/theme/app_theme.dart';
 import 'package:pure_live/features/wallpaper/wallpaper_background_layer.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart' show TranslationProvider, t;
+import 'package:pure_live/platforms/desktop/shell/desktop_title_frame.dart' show DesktopTitleFrame;
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The root widget: the app host the chosen design language ships.
