@@ -614,6 +614,8 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get liveAlertScope => 'Alert scope';
 	@override String get liveAlertScopeDesc => 'Alert only for follows carrying a chosen tag; none chosen alerts every follow';
 	@override String get liveAlertAll => 'All follows';
+	@override String get refreshConcurrency => 'Parallel refresh jobs';
+	@override String get refreshConcurrencyHint => 'How many followed rooms refresh at once';
 }
 
 // Path: hotAreas
@@ -2139,6 +2141,8 @@ extension on TranslationsEn {
 			'settings.liveAlertScope' => 'Alert scope',
 			'settings.liveAlertScopeDesc' => 'Alert only for follows carrying a chosen tag; none chosen alerts every follow',
 			'settings.liveAlertAll' => 'All follows',
+			'settings.refreshConcurrency' => 'Parallel refresh jobs',
+			'settings.refreshConcurrencyHint' => 'How many followed rooms refresh at once',
 			'hotAreas.title' => 'Platform visibility',
 			'hotAreas.note' => 'Hidden platforms are left out of popular, areas and search.',
 			'hotAreas.orderNote' => 'Drag to reorder the platforms.',
@@ -2184,10 +2188,10 @@ extension on TranslationsEn {
 			'recorder.watchStarted' => 'Watching; recording starts when the room goes live',
 			'recorder.watchFailed' => ({required String error}) => 'Watching failed: ${error}',
 			'recorder.noSites' => 'No platform here can look rooms up',
-			'recorder.openFolder' => 'Open output folder',
-			'recorder.folderNotOpened' => 'The folder could not be opened',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.openFolder' => 'Open output folder',
+			'recorder.folderNotOpened' => 'The folder could not be opened',
 			'recorder.outputDirectory' => 'Output directory',
 			'recorder.outputDirectoryDefault' => 'The app\'s recordings folder',
 			'recorder.chooseDirectory' => 'Choose the recordings folder',
@@ -2698,10 +2702,10 @@ extension on TranslationsEn {
 			'remoteSync.partWebdav' => 'WebDAV servers',
 			'remoteSync.partAccounts' => 'Account cookies',
 			'remoteSync.includeAccounts' => 'Sync account cookies',
-			'remoteSync.includeAccountsHint' => 'Sends or serves the platform login cookies and WebDAV passwords; turn it on only between devices you trust',
-			'remoteSync.receiveAction' => 'Receive',
 			_ => null,
 		} ?? switch (path) {
+			'remoteSync.includeAccountsHint' => 'Sends or serves the platform login cookies and WebDAV passwords; turn it on only between devices you trust',
+			'remoteSync.receiveAction' => 'Receive',
 			'remoteSync.sendAction' => 'Send',
 			'remoteSync.invalidQr' => 'Not a PureLive sync QR code',
 			'errors.generic' => 'Something went wrong. Please try again later.',

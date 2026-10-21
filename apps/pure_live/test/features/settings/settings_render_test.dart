@@ -13,6 +13,7 @@ import 'package:live_platform/live_platform.dart'
 import 'package:live_sites/live_sites.dart' show LiveCredential, LiveSiteRegistry;
 import 'package:live_storage/live_storage.dart' show StorageRepository;
 import 'package:pure_live/app/app_delegates.dart' show appLocalizationsDelegates, appSupportedLocales;
+import 'package:live_library/live_library.dart' show FollowRepository, InMemoryLibraryStore;
 import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/app/composition/sites.dart' show AppSites;
 import 'package:pure_live/features/account/login_providers.dart' show signedInAccountsProvider;
@@ -107,7 +108,8 @@ void main() {
     expect(find.byKey(const ValueKey('settings-entry-danmaku_visible')), findsOneWidget);
   });
 
-  testWidgets('the danmaku page writes the default a room opens with', (tester) async {    final stores = _Stores();
+  testWidgets('the danmaku page writes the default a room opens with', (tester) async {
+    final stores = _Stores();
     await _pump(tester, language: PureDesignLanguage.material, child: const DanmakuSettingsPage(), stores: stores);
 
     expect(stores.preferences.value.danmakuVisible, isTrue);
@@ -190,6 +192,9 @@ Future<PureDesignLanguage?> _pump(
         appPreferencesStoreProvider.overrideWithValue(resolved.preferences),
         appearanceStoreProvider.overrideWithValue(resolved.appearance),
         signedInAccountsProvider.overrideWith((ref) => const <String, LiveCredential>{}),
+        // The refresh page's alert-scope rows enumerate the follow tags; the
+        // harness hands the page an empty repository.
+        followRepositoryProvider.overrideWithValue(FollowRepository(InMemoryLibraryStore())),
         environmentProvider.overrideWithValue(const _DesktopEnvironment()),
         // The video page's audience chips enumerate the site graph; the
         // harness hands it the empty one — the row still renders, the chips

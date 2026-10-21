@@ -145,6 +145,7 @@ final class AppPreferences extends Equatable {
     int autoRefreshMinutes = 0,
     List<String> liveAlertTagIds = const [],
     int refreshResumeThresholdMinutes = 10,
+    int refreshConcurrency = 4,
     bool proxyEnabled = false,
     String proxyHost = '127.0.0.1',
     int proxyPort = 7890,
@@ -277,6 +278,7 @@ final class AppPreferences extends Equatable {
          autoRefreshMinutes: autoRefreshMinutes,
          liveAlertTagIds: liveAlertTagIds,
          refreshResumeThresholdMinutes: refreshResumeThresholdMinutes,
+         refreshConcurrency: refreshConcurrency,
          loadingStyle: loadingStyle,
          roomCardCornerRadius: roomCardCornerRadius,
          roomCardShowPlatform: roomCardShowPlatform,
@@ -727,6 +729,9 @@ final class AppPreferences extends Equatable {
   /// counts as worth refreshing for.
   int get refreshResumeThresholdMinutes => feed.refreshResumeThresholdMinutes;
 
+  /// How many followed rooms the refresh pass asks about at once.
+  int get refreshConcurrency => feed.refreshConcurrency;
+
   /// Whether outgoing requests route through the user's proxy.
   bool get proxyEnabled => network.proxyEnabled;
 
@@ -898,6 +903,7 @@ final class AppPreferences extends Equatable {
     int? autoRefreshMinutes,
     List<String>? liveAlertTagIds,
     int? refreshResumeThresholdMinutes,
+    int? refreshConcurrency,
     bool? proxyEnabled,
     String? proxyHost,
     int? proxyPort,
@@ -1014,6 +1020,7 @@ final class AppPreferences extends Equatable {
     autoRefreshMinutes: autoRefreshMinutes ?? this.autoRefreshMinutes,
     liveAlertTagIds: List.unmodifiable(liveAlertTagIds ?? this.liveAlertTagIds),
     refreshResumeThresholdMinutes: refreshResumeThresholdMinutes ?? this.refreshResumeThresholdMinutes,
+    refreshConcurrency: refreshConcurrency ?? this.refreshConcurrency,
     proxyEnabled: proxyEnabled ?? this.proxyEnabled,
     proxyHost: proxyHost ?? this.proxyHost,
     proxyPort: proxyPort ?? this.proxyPort,

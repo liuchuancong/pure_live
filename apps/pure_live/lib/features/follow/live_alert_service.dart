@@ -55,7 +55,8 @@ final class LiveAlertService {
 
   Future<FollowRefreshResult> _run() async {
     final repository = ref.read(followRepositoryProvider);
-    final result = await FollowRefresher(sites: ref.read(sitesProvider)).refresh(repository.rooms);
+    final result = await FollowRefresher(sites: ref.read(sitesProvider))
+        .refresh(repository.rooms, concurrency: ref.read(appPreferencesProvider).refreshConcurrency);
     for (final room in result.rooms) {
       await repository.replaceRoom(room);
     }

@@ -57,6 +57,24 @@ final class RefreshSettingsPage extends ConsumerWidget {
                 ),
               ),
               SettingsTile.navigation(
+                leading: const Icon(Icons.speed_outlined),
+                title: Text(t.settings.refreshConcurrency),
+                value: Text('${preferences.refreshConcurrency}'),
+                onPressed: (_) => unawaited(
+                  _choose<int>(
+                    context,
+                    ref,
+                    title: t.settings.refreshConcurrency,
+                    hint: t.settings.refreshConcurrencyHint,
+                    current: preferences.refreshConcurrency,
+                    options: [
+                      for (final n in const [1, 2, 3, 4, 6, 8]) (n, '$n'),
+                    ],
+                    apply: (value) => update((p) => p.copyWith(refreshConcurrency: value)),
+                  ),
+                ),
+              ),
+              SettingsTile.navigation(
                 leading: const Icon(Icons.history_outlined),
                 title: Text(t.settings.refreshResumeThreshold),
                 value: Text(_thresholdLabel(context, preferences.refreshResumeThresholdMinutes)),

@@ -485,7 +485,9 @@
     "backgroundPlayDesc": "切到后台继续播放声音；关闭则进后台暂停、回来恢复",
     "liveAlertScope": "开播提醒范围",
     "liveAlertScopeDesc": "只提醒带所选标签的关注；全不选则提醒全部关注",
-    "liveAlertAll": "全部关注"
+    "liveAlertAll": "全部关注",
+    "refreshConcurrency": "并发刷新任务",
+    "refreshConcurrencyHint": "同时向几个直播间发起刷新"
   },
   "hotAreas": {
     "title": "平台显示",

@@ -1546,6 +1546,12 @@ class Translations$settings$zh {
 
 	/// zh: '全部关注'
 	String get liveAlertAll => '全部关注';
+
+	/// zh: '并发刷新任务'
+	String get refreshConcurrency => '并发刷新任务';
+
+	/// zh: '同时向几个直播间发起刷新'
+	String get refreshConcurrencyHint => '同时向几个直播间发起刷新';
 }
 
 // Path: hotAreas
@@ -4631,6 +4637,8 @@ extension on Translations {
 			'settings.liveAlertScope' => '开播提醒范围',
 			'settings.liveAlertScopeDesc' => '只提醒带所选标签的关注；全不选则提醒全部关注',
 			'settings.liveAlertAll' => '全部关注',
+			'settings.refreshConcurrency' => '并发刷新任务',
+			'settings.refreshConcurrencyHint' => '同时向几个直播间发起刷新',
 			'hotAreas.title' => '平台显示',
 			'hotAreas.note' => '隐藏的平台不会出现在热门、分区与搜索中。',
 			'hotAreas.orderNote' => '拖动调整平台的显示顺序。',
@@ -4676,10 +4684,10 @@ extension on Translations {
 			'recorder.watchStarted' => '已开始监听，开播后自动录制',
 			'recorder.watchFailed' => ({required String error}) => '监听失败：${error}',
 			'recorder.noSites' => '没有支持房间查询的平台',
-			'recorder.openFolder' => '打开输出目录',
-			'recorder.folderNotOpened' => '无法打开文件夹',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.openFolder' => '打开输出目录',
+			'recorder.folderNotOpened' => '无法打开文件夹',
 			'recorder.outputDirectory' => '输出目录',
 			'recorder.outputDirectoryDefault' => '应用的录制目录',
 			'recorder.chooseDirectory' => '选择录制目录',
@@ -5190,10 +5198,10 @@ extension on Translations {
 			'remoteSync.partWebdav' => 'WebDAV 服务器',
 			'remoteSync.partAccounts' => '账号 Cookie',
 			'remoteSync.includeAccounts' => '同步账号 Cookie',
-			'remoteSync.includeAccountsHint' => '开启后会发送或提供各平台登录 Cookie 与 WebDAV 密码，只在信任的设备之间开启',
-			'remoteSync.receiveAction' => '接收',
 			_ => null,
 		} ?? switch (path) {
+			'remoteSync.includeAccountsHint' => '开启后会发送或提供各平台登录 Cookie 与 WebDAV 密码，只在信任的设备之间开启',
+			'remoteSync.receiveAction' => '接收',
 			'remoteSync.sendAction' => '发送',
 			'remoteSync.invalidQr' => '不是纯粹直播的同步二维码',
 			'errors.generic' => '出了点问题，请稍后再试。',

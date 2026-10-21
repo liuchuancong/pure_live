@@ -478,7 +478,9 @@
     "backgroundPlayDesc": "Keep playing in the background; off pauses on the way out and resumes on return",
     "liveAlertScope": "Alert scope",
     "liveAlertScopeDesc": "Alert only for follows carrying a chosen tag; none chosen alerts every follow",
-    "liveAlertAll": "All follows"
+    "liveAlertAll": "All follows",
+    "refreshConcurrency": "Parallel refresh jobs",
+    "refreshConcurrencyHint": "How many followed rooms refresh at once"
   },
   "hotAreas": {
     "title": "Platform visibility",

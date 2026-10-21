@@ -11,6 +11,7 @@ final class FeedPreferences extends Equatable {
     this.autoRefreshMinutes = 0,
     this.liveAlertTagIds = const [],
     this.refreshResumeThresholdMinutes = 10,
+    this.refreshConcurrency = 4,
     this.loadingStyle = LoadingStyle.shimmer,
     this.roomCardCornerRadius = 12,
     this.roomCardShowPlatform = true,
@@ -36,6 +37,7 @@ final class FeedPreferences extends Equatable {
       autoRefreshMinutes: json['autoRefreshMinutes'] as int? ?? 0,
       liveAlertTagIds: (json['liveAlertTagIds'] as List<Object?>?)?.whereType<String>().toList() ?? const [],
       refreshResumeThresholdMinutes: json['refreshResumeThresholdMinutes'] as int? ?? 10,
+      refreshConcurrency: (json['refreshConcurrency'] as num?)?.toInt() ?? 4,
       loadingStyle: LoadingStyle.fromId(json['loadingStyle'] as String?),
       roomCardCornerRadius: (json['roomCardCornerRadius'] as num?)?.toDouble() ?? 12,
       roomCardShowPlatform: json['roomCardShowPlatform'] as bool? ?? true,
@@ -66,6 +68,10 @@ final class FeedPreferences extends Equatable {
   /// How long the app must have been away, in minutes, before a resume
   /// counts as worth refreshing for.
   final int refreshResumeThresholdMinutes;
+
+  /// How many followed rooms the refresh pass asks about at once (1–8);
+  /// the reference's 首页并发刷新任务.
+  final int refreshConcurrency;
 
   /// How a feed's first-load placeholder is drawn.
   final LoadingStyle loadingStyle;
@@ -133,6 +139,7 @@ final class FeedPreferences extends Equatable {
     'autoRefreshMinutes': autoRefreshMinutes,
     'liveAlertTagIds': liveAlertTagIds,
     'refreshResumeThresholdMinutes': refreshResumeThresholdMinutes,
+    'refreshConcurrency': refreshConcurrency,
     'loadingStyle': loadingStyle.id,
     'roomCardCornerRadius': roomCardCornerRadius,
     'roomCardShowPlatform': roomCardShowPlatform,
@@ -156,6 +163,7 @@ final class FeedPreferences extends Equatable {
     int? autoRefreshMinutes,
     List<String>? liveAlertTagIds,
     int? refreshResumeThresholdMinutes,
+    int? refreshConcurrency,
     LoadingStyle? loadingStyle,
     double? roomCardCornerRadius,
     bool? roomCardShowPlatform,
@@ -198,6 +206,7 @@ final class FeedPreferences extends Equatable {
     autoRefreshMinutes,
     liveAlertTagIds,
     refreshResumeThresholdMinutes,
+    refreshConcurrency,
     loadingStyle,
     roomCardCornerRadius,
     roomCardShowPlatform,
