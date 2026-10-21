@@ -30,7 +30,7 @@
 | B1b | 搜索排序：4 模式 + 离线过滤 + 排序 UI | search/search_ranking.dart | ✅ 77b2b03a6（+5 测试） |
 | B2 | 房间·本地互动 | live_play/local_interaction/16（6.8k 行） | ✅ B2a 3c9d55d98（礼物+等级）、B2b f2e58692b（预设样式+等级读数） |
 | B2c | 礼物横幅（一屏一张、大额大卡、预设着色、可关） | local_gift_effect | ✅ e1897b16a |
-| B3 | 房间·附件（下一批）：mini 播放器/悬浮窗、切房间、后台播放/音频焦点/重连看护/播放列表/预测返回 | live_play/{mini,switch_room,logic} | ⬜ |
+| B3 | 房间·附件 | live_play/{mini,switch_room,logic} | 🟡 重连阶梯 6106be436、后台播放 acd14002b；剩 mini 播放器/切房间/音频焦点/预测返回（需原生或列表上下文） |
 | B4 | 播放器视图：控制条/手势/状态/竖屏诊断对齐 | live_play/player/8 | ⬜（手势 W1 已完成） |
 | B5 | 多画面：布局与单元格交互 | multiview/10 | ⬜ |
 | B6 | 录制/IPTV：录制视图与控制、IPTV 增强 | recorder/、iptv/ | ⬜ |
