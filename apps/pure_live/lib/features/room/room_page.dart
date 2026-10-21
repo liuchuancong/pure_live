@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatf
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_sites/live_sites.dart' show LiveRoom, RoomContent;
+import 'package:live_sites/live_sites.dart' show LiveRoom, LiveRoomIdentity, RoomContent;
 import 'package:pure_live/app/providers/app_providers.dart';
 import 'package:pure_live/features/room/layouts/room_desktop_layout.dart';
 import 'package:pure_live/features/room/layouts/room_phone_landscape_layout.dart';
@@ -55,15 +55,18 @@ final class RoomPage extends ConsumerWidget {
 
     final site = ref.watch(sitesProvider).registry.getById(siteId);
     final siteName = site?.manifest.localizedName(Localizations.localeOf(context).toLanguageTag(), 'zh-CN') ?? siteId;
-    // The route's own hint carries the bar until the detail arrives, so a slow
-    // platform never shows an empty header.
-    final room =
-        state.room ??
-        LiveRoom.normalized(
-          platform: siteId,
-          roomId: roomId,
-          content: RoomContent(title: roomName),
-        );
+    // The route's own hint carries the bar until the detail arrives, and it
+    // keeps carrying the title afterwards: kuaishou's room page has no
+    // broadcast title at all (its reference leaves that field empty on
+    // purpose), so a detail that knows nothing must not blank the name the
+    // card, the history row or the link did know. The merge only fills holes —
+    // every other field of the fresher record wins.
+    final hint = LiveRoom.normalized(
+      platform: siteId,
+      roomId: roomId,
+      content: RoomContent(title: roomName),
+    );
+    final room = state.room == null ? hint : state.room!.mergedWith(hint);
 
     return PopScope(
       // The remote's Back and the phone's gesture leave the presentation first
