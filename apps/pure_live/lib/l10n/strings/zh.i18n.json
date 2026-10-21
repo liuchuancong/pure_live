@@ -489,7 +489,10 @@
     "refreshConcurrency": "并发刷新任务",
     "refreshConcurrencyHint": "同时向几个直播间发起刷新",
     "screenKeepOn": "播放时屏幕常亮",
-    "screenKeepOnDesc": "直播间播放期间不让屏幕自动熄灭"
+    "screenKeepOnDesc": "直播间播放期间不让屏幕自动熄灭",
+    "preferredPlatform": "首选直播平台",
+    "preferredPlatformDesc": "热门、分区与搜索默认打开这个平台",
+    "preferredPlatformNone": "按平台顺序"
   },
   "hotAreas": {
     "title": "平台显示",

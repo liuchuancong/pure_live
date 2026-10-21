@@ -7,13 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:live_library/live_library.dart' show FollowRepository, InMemoryLibraryStore;
 import 'package:live_net/live_net.dart' show DioFactory;
 import 'package:live_platform/live_platform.dart'
     show DesktopDistribution, FormFactor, PlatformCapabilities, PlatformEnvironment, PlatformKind, PlatformRuntimeInfo;
 import 'package:live_sites/live_sites.dart' show LiveCredential, LiveSiteRegistry;
 import 'package:live_storage/live_storage.dart' show StorageRepository;
 import 'package:pure_live/app/app_delegates.dart' show appLocalizationsDelegates, appSupportedLocales;
-import 'package:live_library/live_library.dart' show FollowRepository, InMemoryLibraryStore;
 import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/app/composition/sites.dart' show AppSites;
 import 'package:pure_live/features/account/login_providers.dart' show signedInAccountsProvider;

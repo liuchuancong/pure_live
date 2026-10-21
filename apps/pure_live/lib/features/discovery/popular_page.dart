@@ -41,6 +41,10 @@ final class PopularPage extends ConsumerStatefulWidget {
 
 final class _PopularPageState extends ConsumerState<PopularPage> {
   int _selected = 0;
+
+  /// Whether the preferred-platform jump was already applied — it opens the
+  /// page, it does not keep pulling the tabs back.
+  bool _appliedPreferred = false;
   final Set<String> _shouldLoad = {};
   Timer? _settle;
   Timer? _warm;
@@ -92,6 +96,19 @@ final class _PopularPageState extends ConsumerState<PopularPage> {
       sites,
       preferences.siteOrder,
     ).where((site) => !preferences.hiddenSiteIds.contains(site.manifest.id)).toList();
+    // 首选直播平台: the page opens on the preferred platform, once.
+    if (!_appliedPreferred) {
+      _appliedPreferred = true;
+      final preferred = preferences.preferredSiteId;
+      final target = visible.indexWhere((site) => site.manifest.id == preferred);
+      if (target > 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _selectTo(visible, target);
+          }
+        });
+      }
+    }
     final phoneTab = MainPageFrame.showsHomeBarButtons(context, inHome: true);
     final index = visible.isEmpty ? 0 : _selected.clamp(0, visible.length - 1);
     if (_currentId == null && visible.isNotEmpty) {

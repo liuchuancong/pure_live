@@ -97,6 +97,7 @@ final class AppPreferences extends Equatable {
     int videoFitIndex = 0,
     bool openRoomFullscreen = false,
     bool preferRealOnlineCounts = false,
+    String preferredSiteId = '',
     bool showUnplayableInDiscover = false,
     List<String> realOnlinePlatforms = defaultRealOnlinePlatforms,
     bool portraitAdapt = true,
@@ -293,6 +294,7 @@ final class AppPreferences extends Equatable {
          pageShowSizeSelector: pageShowSizeSelector,
          pageShowGoto: pageShowGoto,
          preferRealOnlineCounts: preferRealOnlineCounts,
+         preferredSiteId: preferredSiteId,
          showUnplayableInDiscover: showUnplayableInDiscover,
          realOnlinePlatforms: realOnlinePlatforms,
          hiddenSiteIds: hiddenSiteIds,
@@ -537,6 +539,9 @@ final class AppPreferences extends Equatable {
   /// as the headline audience number; off, the platform's own heat/popularity
   /// number leads (the reference's preferRealOnlineCounts).
   bool get preferRealOnlineCounts => feed.preferRealOnlineCounts;
+
+  /// The platform the discovery pages open on; empty keeps the first.
+  String get preferredSiteId => feed.preferredSiteId;
 
   /// Whether the discovery pages show rooms that cannot play here.
   bool get showUnplayableInDiscover => feed.showUnplayableInDiscover;
@@ -858,6 +863,7 @@ final class AppPreferences extends Equatable {
     int? videoFitIndex,
     bool? openRoomFullscreen,
     bool? preferRealOnlineCounts,
+    String? preferredSiteId,
     bool? showUnplayableInDiscover,
     List<String>? realOnlinePlatforms,
     bool? portraitAdapt,
@@ -977,6 +983,7 @@ final class AppPreferences extends Equatable {
     videoFitIndex: videoFitIndex ?? this.videoFitIndex,
     openRoomFullscreen: openRoomFullscreen ?? this.openRoomFullscreen,
     preferRealOnlineCounts: preferRealOnlineCounts ?? this.preferRealOnlineCounts,
+    preferredSiteId: preferredSiteId ?? this.preferredSiteId,
     showUnplayableInDiscover: showUnplayableInDiscover ?? this.showUnplayableInDiscover,
     realOnlinePlatforms: List.unmodifiable(realOnlinePlatforms ?? this.realOnlinePlatforms),
     portraitAdapt: portraitAdapt ?? this.portraitAdapt,

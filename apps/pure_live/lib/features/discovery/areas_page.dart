@@ -34,6 +34,9 @@ final class AreasPage extends ConsumerStatefulWidget {
 final class _AreasPageState extends ConsumerState<AreasPage> {
   int _selected = 0;
 
+  /// Whether the preferred-platform jump was already applied.
+  bool _appliedPreferred = false;
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -50,6 +53,19 @@ final class _AreasPageState extends ConsumerState<AreasPage> {
       sites,
       preferences.siteOrder,
     ).where((site) => !preferences.hiddenSiteIds.contains(site.manifest.id)).toList();
+    // 首选直播平台: the page opens on the preferred platform, once.
+    if (!_appliedPreferred) {
+      _appliedPreferred = true;
+      final preferred = preferences.preferredSiteId;
+      final index = capable.indexWhere((site) => site.manifest.id == preferred);
+      if (index > 0 && index != _selected) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() => _selected = index);
+          }
+        });
+      }
+    }
     final phoneTab = MainPageFrame.showsHomeBarButtons(context, inHome: true);
     if (capable.isEmpty) {
       return PureScaffold(

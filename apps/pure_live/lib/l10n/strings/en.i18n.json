@@ -482,7 +482,10 @@
     "refreshConcurrency": "Parallel refresh jobs",
     "refreshConcurrencyHint": "How many followed rooms refresh at once",
     "screenKeepOn": "Keep the screen on",
-    "screenKeepOnDesc": "Stop the screen from sleeping while a room plays"
+    "screenKeepOnDesc": "Stop the screen from sleeping while a room plays",
+    "preferredPlatform": "Preferred platform",
+    "preferredPlatformDesc": "Popular, areas and search open on this platform",
+    "preferredPlatformNone": "Platform order"
   },
   "hotAreas": {
     "title": "Platform visibility",

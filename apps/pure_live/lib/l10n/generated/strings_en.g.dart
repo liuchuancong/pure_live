@@ -618,6 +618,9 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get refreshConcurrencyHint => 'How many followed rooms refresh at once';
 	@override String get screenKeepOn => 'Keep the screen on';
 	@override String get screenKeepOnDesc => 'Stop the screen from sleeping while a room plays';
+	@override String get preferredPlatform => 'Preferred platform';
+	@override String get preferredPlatformDesc => 'Popular, areas and search open on this platform';
+	@override String get preferredPlatformNone => 'Platform order';
 }
 
 // Path: hotAreas
@@ -2147,6 +2150,9 @@ extension on TranslationsEn {
 			'settings.refreshConcurrencyHint' => 'How many followed rooms refresh at once',
 			'settings.screenKeepOn' => 'Keep the screen on',
 			'settings.screenKeepOnDesc' => 'Stop the screen from sleeping while a room plays',
+			'settings.preferredPlatform' => 'Preferred platform',
+			'settings.preferredPlatformDesc' => 'Popular, areas and search open on this platform',
+			'settings.preferredPlatformNone' => 'Platform order',
 			'hotAreas.title' => 'Platform visibility',
 			'hotAreas.note' => 'Hidden platforms are left out of popular, areas and search.',
 			'hotAreas.orderNote' => 'Drag to reorder the platforms.',
@@ -2187,11 +2193,11 @@ extension on TranslationsEn {
 			'recorder.title' => 'Recorder',
 			'recorder.addRoom' => 'Add room',
 			'recorder.platform' => 'Platform',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.roomId' => 'Room ID',
 			'recorder.startWatching' => 'Start watching',
 			'recorder.watchStarted' => 'Watching; recording starts when the room goes live',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.watchFailed' => ({required String error}) => 'Watching failed: ${error}',
 			'recorder.noSites' => 'No platform here can look rooms up',
 			'recorder.openFolder' => 'Open output folder',
@@ -2701,11 +2707,11 @@ extension on TranslationsEn {
 			'remoteSync.partFollows' => 'Follow list',
 			'remoteSync.partHistory' => 'Watch history',
 			'remoteSync.partGroups' => 'Follow groups',
+			_ => null,
+		} ?? switch (path) {
 			'remoteSync.partKeywords' => 'Blocked keywords',
 			'remoteSync.partUsers' => 'Blocked users',
 			'remoteSync.partWebdav' => 'WebDAV servers',
-			_ => null,
-		} ?? switch (path) {
 			'remoteSync.partAccounts' => 'Account cookies',
 			'remoteSync.includeAccounts' => 'Sync account cookies',
 			'remoteSync.includeAccountsHint' => 'Sends or serves the platform login cookies and WebDAV passwords; turn it on only between devices you trust',

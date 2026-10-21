@@ -1558,6 +1558,15 @@ class Translations$settings$zh {
 
 	/// zh: '直播间播放期间不让屏幕自动熄灭'
 	String get screenKeepOnDesc => '直播间播放期间不让屏幕自动熄灭';
+
+	/// zh: '首选直播平台'
+	String get preferredPlatform => '首选直播平台';
+
+	/// zh: '热门、分区与搜索默认打开这个平台'
+	String get preferredPlatformDesc => '热门、分区与搜索默认打开这个平台';
+
+	/// zh: '按平台顺序'
+	String get preferredPlatformNone => '按平台顺序';
 }
 
 // Path: hotAreas
@@ -4647,6 +4656,9 @@ extension on Translations {
 			'settings.refreshConcurrencyHint' => '同时向几个直播间发起刷新',
 			'settings.screenKeepOn' => '播放时屏幕常亮',
 			'settings.screenKeepOnDesc' => '直播间播放期间不让屏幕自动熄灭',
+			'settings.preferredPlatform' => '首选直播平台',
+			'settings.preferredPlatformDesc' => '热门、分区与搜索默认打开这个平台',
+			'settings.preferredPlatformNone' => '按平台顺序',
 			'hotAreas.title' => '平台显示',
 			'hotAreas.note' => '隐藏的平台不会出现在热门、分区与搜索中。',
 			'hotAreas.orderNote' => '拖动调整平台的显示顺序。',
@@ -4687,11 +4699,11 @@ extension on Translations {
 			'recorder.title' => '录播',
 			'recorder.addRoom' => '添加房间',
 			'recorder.platform' => '平台',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.roomId' => '房间号',
 			'recorder.startWatching' => '开始监听',
 			'recorder.watchStarted' => '已开始监听，开播后自动录制',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.watchFailed' => ({required String error}) => '监听失败：${error}',
 			'recorder.noSites' => '没有支持房间查询的平台',
 			'recorder.openFolder' => '打开输出目录',
@@ -5201,11 +5213,11 @@ extension on Translations {
 			'remoteSync.partFollows' => '关注列表',
 			'remoteSync.partHistory' => '观看历史',
 			'remoteSync.partGroups' => '关注分组',
+			_ => null,
+		} ?? switch (path) {
 			'remoteSync.partKeywords' => '屏蔽关键词',
 			'remoteSync.partUsers' => '屏蔽用户',
 			'remoteSync.partWebdav' => 'WebDAV 服务器',
-			_ => null,
-		} ?? switch (path) {
 			'remoteSync.partAccounts' => '账号 Cookie',
 			'remoteSync.includeAccounts' => '同步账号 Cookie',
 			'remoteSync.includeAccountsHint' => '开启后会发送或提供各平台登录 Cookie 与 WebDAV 密码，只在信任的设备之间开启',
