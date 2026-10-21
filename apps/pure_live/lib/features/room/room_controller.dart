@@ -23,6 +23,7 @@ import 'package:media_core/media_core.dart'
         PlayerAdapterVolumeChanged;
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitPlayerAdapter;
 import 'package:pure_live/app/app_providers.dart';
+import 'package:pure_live/features/room/audio_focus.dart';
 import 'package:pure_live/features/room/danmaku.dart';
 import 'package:pure_live/features/room/play_quality.dart';
 import 'package:pure_live/features/room/portrait_rules.dart';
@@ -30,6 +31,7 @@ import 'package:pure_live/features/room/reconnect_policy.dart';
 import 'package:pure_live/features/room/room_providers.dart';
 import 'package:pure_live/system/configuration/app_preferences.dart';
 import 'package:pure_live/system/configuration/app_preferences_providers.dart';
+import 'package:pure_live/system/playback/audio_focus_port.dart';
 import 'package:pure_live/system/playback/mpv_tuning.dart';
 import 'package:pure_live/system/playback/playback_engine.dart';
 import 'package:pure_live/system/playback/window_surface_hooks.dart';
@@ -269,7 +271,7 @@ final class RoomState {
 /// This is the reference's `LivePlayController` and `PlayerController` pair
 /// folded onto the workspace's Riverpod stack — the page widgets render this
 /// state and call these methods, and none of them owns logic of its own.
-final class RoomController extends Notifier<RoomState> {
+final class RoomController extends Notifier<RoomState> implements RoomAudioTarget {
   /// A controller for [identity].
   new(this.identity);
 
@@ -324,6 +326,13 @@ final class RoomController extends Notifier<RoomState> {
   /// Whether the keep-awake is on, so the room only releases what it took.
   bool _awake = false;
 
+  /// The system's audio focus, once playback first starts on a phone.
+  RoomAudioFocus? _audioFocus;
+
+  /// Whether the app is on screen; the focus resumes a call-paused room only
+  /// where the room may play (see [RoomAudioFocus]).
+  bool _foreground = true;
+
   /// Applies 屏幕常亮: the screen stays on while the room plays, and only
   /// while it plays — a pause, the background and closing the room release
   /// it. Failures are the platform's business; the setting simply does not
@@ -349,6 +358,7 @@ final class RoomController extends Notifier<RoomState> {
   void _watchBackground() {
     _lifecycle = AppLifecycleListener(
       onPause: () {
+        _foreground = false;
         if (ref.read(appPreferencesProvider).backgroundPlay || state.paused) {
           return;
         }
@@ -356,6 +366,7 @@ final class RoomController extends Notifier<RoomState> {
         togglePause();
       },
       onResume: () {
+        _foreground = true;
         if (!_pausedByBackground) {
           return;
         }
@@ -365,6 +376,32 @@ final class RoomController extends Notifier<RoomState> {
         }
       },
     );
+  }
+
+  /// Opens the system's audio focus on the first stream — the desktops have
+  /// none, and the phones set theirs up as music so a locked screen keeps the
+  /// sound and the ring switch does not silence it.
+  void _startAudioFocus() {
+    final port = ref.read(audioFocusPortProvider);
+    if (port == null) {
+      return;
+    }
+    final current = _audioFocus;
+    if (current != null) {
+      current.ensureActive();
+      return;
+    }
+    _audioFocus = RoomAudioFocus(
+      target: this,
+      port: port,
+      mayPlayNow: () => _foreground || ref.read(appPreferencesProvider).backgroundPlay,
+      onError: (error, stack) => ErrorReporter.report(
+        ref.read(appLogProvider).forCategory('room.audio'),
+        error,
+        stack,
+        message: 'audio focus failed',
+      ),
+    )..start();
   }
 
   /// Arms the next automatic attempt for a failed stream, or leaves the
@@ -407,6 +444,7 @@ final class RoomController extends Notifier<RoomState> {
       _progressTimer?.cancel();
       _reconnectTimer?.cancel();
       _lifecycle?.dispose();
+      unawaited(_audioFocus?.dispose());
       if (_awake) {
         unawaited(WakelockPlus.disable().catchError((_) {}));
       }
@@ -771,6 +809,7 @@ final class RoomController extends Notifier<RoomState> {
           fields: {'host': Uri.tryParse(line.url)?.host ?? '', 'headers': line.headers.keys.toList()},
         );
     state = state.copyWith(line: line, engineStopped: false, paused: false);
+    _startAudioFocus();
     await _engine.open(line);
     unawaited(_adapterSub?.cancel());
     _adapterSub = _engine.surfaceAdapter?.events.listen(onAdapterEvent);
@@ -783,7 +822,15 @@ final class RoomController extends Notifier<RoomState> {
 
   /// Pauses or resumes, flushing the pause position past the write throttle.
   void togglePause() {
-    final paused = !state.paused;
+    _setPaused(!state.paused);
+    _audioFocus?.onUserChanged();
+  }
+
+  /// The pause itself; the focus's own pause/resume skip the bookkeeping.
+  void _setPaused(bool paused) {
+    if (paused == state.paused) {
+      return;
+    }
     state = state.copyWith(paused: paused);
     _applyKeepAwake();
     if (paused) {
@@ -793,6 +840,24 @@ final class RoomController extends Notifier<RoomState> {
       unawaited(_engine.resume());
     }
   }
+
+  @override
+  bool get sounding => state.line != null && !state.paused && !state.engineStopped && state.streamError == null;
+
+  @override
+  bool get paused => state.paused;
+
+  @override
+  bool get muted => state.muted;
+
+  @override
+  double get volume => state.volume;
+
+  @override
+  void pause() => _setPaused(true);
+
+  @override
+  void resume() => _setPaused(false);
 
   /// Hands playback to another surface — a cast receiver, the desktop PiP
   /// window — while the room page stays open: the local engine pauses (the
@@ -806,6 +871,7 @@ final class RoomController extends Notifier<RoomState> {
 
   /// Sets the player volume, 0..1, and unmutes it — the overlay's slider owns
   /// the number and the adapter only ever takes the command.
+  @override
   void setVolume(double volume) {
     final value = volume.clamp(0.0, 1.0);
     state = state.copyWith(volume: value, muted: value == 0);

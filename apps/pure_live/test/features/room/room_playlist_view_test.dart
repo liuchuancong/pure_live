@@ -17,9 +17,9 @@ LiveRoom _room(String platform, String id, [String title = '']) => LiveRoom.norm
   content: RoomContent(title: title),
 );
 
-final _alpha = _room('bilibili', '1', 'A');
-final _beta = _room('bilibili', '2', 'B');
-final _gamma = _room('douyu', '3', 'C');
+final LiveRoom _alpha = _room('bilibili', '1', 'A');
+final LiveRoom _beta = _room('bilibili', '2', 'B');
+final LiveRoom _gamma = _room('douyu', '3', 'C');
 
 void main() {
   testWidgets('a room opened on its own has no switch', (tester) async {

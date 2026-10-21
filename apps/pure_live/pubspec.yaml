@@ -16,6 +16,7 @@ environment:
 dependencies:
   # 系统与设备
   android_intent_plus: ^6.1.0 # 调用 Android 系统意图
+  audio_session: ^0.2.4 # 系统音频焦点：通话/闹钟中断与耳机拔出
   package_info_plus: ^10.2.2 # 应用版本信息
 
   # 窗口与桌面集成

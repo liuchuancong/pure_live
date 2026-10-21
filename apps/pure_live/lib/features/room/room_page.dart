@@ -1,9 +1,12 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveRoom, LiveRoomIdentity, RoomContent;
 import 'package:pure_live/app/app_providers.dart';
+import 'package:pure_live/features/room/room_back_channel.dart';
 import 'package:pure_live/features/room/room_controller.dart';
 import 'package:pure_live/features/room/room_providers.dart' show RoomIdentity;
 import 'package:pure_live/features/room/room_shell.dart';
@@ -24,7 +27,7 @@ import 'package:pure_uikit/pure_uikit.dart';
 /// different numbers, because they do not put the same things on screen — a
 /// sideways phone has no height for a column, and a TV has no hover to bring
 /// hidden chrome back with.
-final class RoomPage extends ConsumerWidget {
+final class RoomPage extends ConsumerStatefulWidget {
   /// Opens [roomId] on [siteId]; [roomName] titles the bar until the room
   /// detail arrives.
   const new({required this.siteId, required this.roomId, this.roomName = '', super.key});
@@ -39,8 +42,54 @@ final class RoomPage extends ConsumerWidget {
   final String roomName;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final identity = (siteId: siteId, roomId: roomId);
+  ConsumerState<RoomPage> createState() => _RoomPageState();
+}
+
+final class _RoomPageState extends ConsumerState<RoomPage> {
+  RoomIdentity get _identity => (siteId: widget.siteId, roomId: widget.roomId);
+
+  @override
+  void initState() {
+    super.initState();
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      unawaited(RoomBackChannel.instance.hold(this, _nativeBack));
+    }
+  }
+
+  @override
+  void dispose() {
+    unawaited(RoomBackChannel.instance.release(this));
+    super.dispose();
+  }
+
+  /// The activity's back, once the room holds it: a surface on top closes
+  /// first (a dialog, a sheet), then the presentation, then the page.
+  Future<void> _nativeBack() async {
+    if (!mounted) {
+      return;
+    }
+    final navigator = Navigator.of(context);
+    if (ModalRoute.of(context)?.isCurrent == false) {
+      await navigator.maybePop();
+      return;
+    }
+    final identity = _identity;
+    final state = ref.read(roomControllerProvider(identity));
+    if (state.presentation != RoomPresentation.normal) {
+      ref.read(roomControllerProvider(identity).notifier).setPresentation(RoomPresentation.normal);
+      return;
+    }
+    if (!await navigator.maybePop()) {
+      await SystemNavigator.pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final identity = _identity;
+    final siteId = widget.siteId;
+    final roomId = widget.roomId;
+    final roomName = widget.roomName;
     final state = ref.watch(roomControllerProvider(identity));
     final controller = ref.read(roomControllerProvider(identity).notifier);
     final immersive = state.presentation != RoomPresentation.normal;
