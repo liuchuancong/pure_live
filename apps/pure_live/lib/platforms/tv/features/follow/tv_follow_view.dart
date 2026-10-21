@@ -10,6 +10,7 @@ import 'package:pure_live/app/shell/shell_destinations.dart' show ShellBranch;
 import 'package:pure_live/features/follow/follow_rules.dart';
 import 'package:pure_live/features/follow/live_alert_service.dart' show liveAlertServiceProvider;
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/platforms/tv/widgets/tv_pill.dart';
 import 'package:pure_live/platforms/tv/widgets/tv_room_wall.dart';
 import 'package:pure_live/system/configuration/app_preferences_providers.dart';
 import 'package:pure_live/system/navigation/app_router.dart' show RoomRoute;
@@ -119,12 +120,10 @@ final class _TvFollowViewState extends ConsumerState<TvFollowView> {
         ].length,
     ];
 
-    Widget pill({required String label, required bool selected, required VoidCallback onTap, Key? key}) {
-      final color = selected ? theme.colors.primary : theme.colors.textSecondary;
-      return FocusTraversalGroup(
-        child: _TvPill(key: key, label: label, color: color, selected: selected, onTap: onTap),
-      );
-    }
+    Widget pill({required String label, required bool selected, required VoidCallback onTap, Key? key}) =>
+        FocusTraversalGroup(
+          child: TvPill(key: key, label: label, selected: selected, onTap: onTap),
+        );
 
     return SafeArea(
       child: Column(
@@ -197,55 +196,6 @@ final class _TvFollowViewState extends ConsumerState<TvFollowView> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// One focusable TV pill: scale + accent border on focus, accent fill when
-/// selected.
-final class _TvPill extends StatefulWidget {
-  const new({required this.label, required this.color, required this.selected, required this.onTap, super.key});
-
-  final String label;
-  final Color color;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  State<_TvPill> createState() => _TvPillState();
-}
-
-final class _TvPillState extends State<_TvPill> {
-  bool _focused = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = PureTheme.of(context);
-    return Focus(
-      onFocusChange: (value) {
-        if (value != _focused) {
-          setState(() => _focused = value);
-        }
-      },
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-          decoration: BoxDecoration(
-            color: widget.selected ? theme.colors.primaryBg : theme.colors.fillQuaternary,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: _focused ? theme.colors.primary : Colors.transparent, width: 2),
-          ),
-          child: Text(
-            widget.label,
-            style: theme.text.body.copyWith(
-              color: _focused || widget.selected ? theme.colors.primary : widget.color,
-              fontWeight: widget.selected ? FontWeight.w700 : FontWeight.w500,
-            ),
-          ),
-        ),
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_pagination/live_pagination.dart';
+import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_sites/live_sites.dart' show LiveDiscoveryProvider, LivePageRequest, LiveRoom, LiveSite;
 import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/app/shell/home_views.dart' show isHomeRailWidth;
@@ -12,6 +13,7 @@ import 'package:pure_live/app/shell/main_page_frame.dart';
 import 'package:pure_live/app/shell/shell_actions.dart';
 import 'package:pure_live/features/room/paging.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/platforms/tv/features/discovery/tv_popular_view.dart';
 import 'package:pure_live/shared/utilities/sites_order.dart' show orderedSites;
 import 'package:pure_live/shared/widgets/list_loading.dart';
 import 'package:pure_live/shared/widgets/room_card.dart';
@@ -84,6 +86,10 @@ final class _PopularPageState extends ConsumerState<PopularPage> {
 
   @override
   Widget build(BuildContext context) {
+    // The TV draws its own focus-first pane instead of the phone catalogue.
+    if (ref.read(environmentProvider).runtime.formFactor == FormFactor.tv) {
+      return const TvPopularView();
+    }
     final t = context.t;
     final preferences = ref.watch(appPreferencesProvider);
     final sites = ref
