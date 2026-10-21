@@ -333,6 +333,8 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get proxySettingsSubtitle => 'Route requests through a proxy';
 	@override String get refreshOnResume => 'Refresh on resume';
 	@override String get refreshOnResumeSubtitle => 'Refresh feeds when you come back, if you were away long enough';
+	@override String get showUnplayable => 'Show unplayable rooms';
+	@override String get showUnplayableDesc => 'List carousel, sign-in-required and members-only rooms in feeds and search';
 	@override String get autoCheckUpdate => 'Check for updates at start';
 	@override String get autoCheckUpdateSubtitle => 'Ask about new versions from the release feed; the About page can always check manually';
 	@override String get countdownClose => 'Countdown close';
@@ -1834,6 +1836,8 @@ extension on TranslationsEn {
 			'settings.proxySettingsSubtitle' => 'Route requests through a proxy',
 			'settings.refreshOnResume' => 'Refresh on resume',
 			'settings.refreshOnResumeSubtitle' => 'Refresh feeds when you come back, if you were away long enough',
+			'settings.showUnplayable' => 'Show unplayable rooms',
+			'settings.showUnplayableDesc' => 'List carousel, sign-in-required and members-only rooms in feeds and search',
 			'settings.autoCheckUpdate' => 'Check for updates at start',
 			'settings.autoCheckUpdateSubtitle' => 'Ask about new versions from the release feed; the About page can always check manually',
 			'settings.countdownClose' => 'Countdown close',
@@ -2160,10 +2164,10 @@ extension on TranslationsEn {
 			'recorder.filterWaiting' => 'Waiting',
 			'recorder.filterSaved' => 'Saved',
 			'recorder.filterFailed' => 'Failed',
-			'recorder.recordSettings' => 'Recording settings',
-			'recorder.filterFinished' => 'Finished',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.recordSettings' => 'Recording settings',
+			'recorder.filterFinished' => 'Finished',
 			'recorder.emptyTitle' => 'No rooms watched yet',
 			'recorder.emptySubtitle' => 'Add a room and it is recorded once it goes live',
 			'recorder.nothingToJoin' => 'Nothing to join yet',
@@ -2674,10 +2678,10 @@ extension on TranslationsEn {
 			'window.close' => 'Close',
 			'closePrompt.title' => 'What should closing the window do?',
 			'closePrompt.toTray' => 'Hide to tray, keep playback',
-			'closePrompt.quit' => 'Quit Pure Live',
-			'closePrompt.remember' => 'Remember my choice, stop asking',
 			_ => null,
 		} ?? switch (path) {
+			'closePrompt.quit' => 'Quit Pure Live',
+			'closePrompt.remember' => 'Remember my choice, stop asking',
 			'shellSettings.sectionWindow' => 'Window',
 			'shellSettings.titleBar' => 'Window title bar',
 			'shellSettings.titleBarAuto' => 'Auto (by Windows version)',

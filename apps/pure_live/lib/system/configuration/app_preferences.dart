@@ -92,6 +92,7 @@ final class AppPreferences extends Equatable {
     int videoFitIndex = 0,
     bool openRoomFullscreen = false,
     bool preferRealOnlineCounts = false,
+    bool showUnplayableInDiscover = false,
     List<String> realOnlinePlatforms = defaultRealOnlinePlatforms,
     bool portraitAdapt = true,
     bool portraitAdaptiveHeight = true,
@@ -278,6 +279,7 @@ final class AppPreferences extends Equatable {
          pageShowSizeSelector: pageShowSizeSelector,
          pageShowGoto: pageShowGoto,
          preferRealOnlineCounts: preferRealOnlineCounts,
+         showUnplayableInDiscover: showUnplayableInDiscover,
          realOnlinePlatforms: realOnlinePlatforms,
          hiddenSiteIds: hiddenSiteIds,
          siteOrder: siteOrder,
@@ -506,6 +508,9 @@ final class AppPreferences extends Equatable {
   /// as the headline audience number; off, the platform's own heat/popularity
   /// number leads (the reference's preferRealOnlineCounts).
   bool get preferRealOnlineCounts => feed.preferRealOnlineCounts;
+
+  /// Whether the discovery pages show rooms that cannot play here.
+  bool get showUnplayableInDiscover => feed.showUnplayableInDiscover;
 
   /// The platforms whose online figure is trusted (the reference's
   /// realOnlinePlatforms); the audience row of the video settings edits it.
@@ -813,6 +818,7 @@ final class AppPreferences extends Equatable {
     int? videoFitIndex,
     bool? openRoomFullscreen,
     bool? preferRealOnlineCounts,
+    bool? showUnplayableInDiscover,
     List<String>? realOnlinePlatforms,
     bool? portraitAdapt,
     bool? portraitAdaptiveHeight,
@@ -924,6 +930,7 @@ final class AppPreferences extends Equatable {
     videoFitIndex: videoFitIndex ?? this.videoFitIndex,
     openRoomFullscreen: openRoomFullscreen ?? this.openRoomFullscreen,
     preferRealOnlineCounts: preferRealOnlineCounts ?? this.preferRealOnlineCounts,
+    showUnplayableInDiscover: showUnplayableInDiscover ?? this.showUnplayableInDiscover,
     realOnlinePlatforms: List.unmodifiable(realOnlinePlatforms ?? this.realOnlinePlatforms),
     portraitAdapt: portraitAdapt ?? this.portraitAdapt,
     portraitAdaptiveHeight: portraitAdaptiveHeight ?? this.portraitAdaptiveHeight,

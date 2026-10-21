@@ -83,6 +83,14 @@ final class GeneralSettingsPage extends ConsumerWidget {
                 onToggle: (value) => update((p) => p.copyWith(refreshOnResume: value)),
               ),
               SettingsTile.switchTile(
+                key: const ValueKey('general-show-unplayable'),
+                leading: const Icon(Icons.visibility_off_outlined),
+                title: Text(t.settings.showUnplayable),
+                description: Text(t.settings.showUnplayableDesc),
+                initialValue: preferences.showUnplayableInDiscover,
+                onToggle: (value) => update((p) => p.copyWith(showUnplayableInDiscover: value)),
+              ),
+              SettingsTile.switchTile(
                 leading: const Icon(Icons.system_update_outlined),
                 title: Text(t.settings.autoCheckUpdate),
                 description: Text(t.settings.autoCheckUpdateSubtitle),

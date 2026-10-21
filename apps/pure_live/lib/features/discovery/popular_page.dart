@@ -126,11 +126,7 @@ final class _PopularPageState extends ConsumerState<PopularPage> {
           );
 
     return PureScaffold(
-      appBar: PureAppBar(
-        leading: phoneTab ? const HomeMenuButton() : null,
-        title: t.tabs.popular,
-        titleWidget: title,
-              ),
+      appBar: PureAppBar(leading: phoneTab ? const HomeMenuButton() : null, title: t.tabs.popular, titleWidget: title),
       body: visible.isEmpty
           ? PureEmpty(
               title: t.popular.noPlatforms,
@@ -588,21 +584,25 @@ final class _SiteFeedState extends ConsumerState<_SiteFeed>
     // it into numbered pages — the slice for page N waits on the appends
     // that fill it.
     final preferences = ref.watch(appPreferencesProvider);
+    // The discovery rule: carousels, paid members-only rooms and the like
+    // are left out unless the viewer asked to see them.
+    final roomVisible = ref.watch(discoveryRoomFilterProvider);
+    final items = [
+      for (final room in state.items)
+        if (roomVisible(room)) room,
+    ];
     final width = MediaQuery.sizeOf(context).width;
     final desktop = desktopPagesIn(ref, width);
     final sizes = pageSizesOf(preferences, width);
     final pageSize = _sizeOverride ?? sizes.size;
     final lastPage = state.totalCount == null ? null : (state.totalCount! / pageSize).ceil().clamp(1, 1 << 31);
-    final canNext = state.hasMore || state.items.length > _page * pageSize;
-    final maxPage = lastPage ?? (state.items.isEmpty ? 1 : ((state.items.length - 1) ~/ pageSize) + 1);
+    final canNext = state.hasMore || items.length > _page * pageSize;
+    final maxPage = lastPage ?? (items.isEmpty ? 1 : ((items.length - 1) ~/ pageSize) + 1);
     final page = _page.clamp(1, maxPage);
     final busy = state.isRefreshing || state.isLoadingMore;
     final shown = desktop
-        ? state.items.sublist(
-            ((page - 1) * pageSize).clamp(0, state.items.length),
-            (page * pageSize).clamp(0, state.items.length),
-          )
-        : state.items;
+        ? items.sublist(((page - 1) * pageSize).clamp(0, items.length), (page * pageSize).clamp(0, items.length))
+        : items;
 
     Widget grid() => RoomGrid(
       scrollController: _scroll,

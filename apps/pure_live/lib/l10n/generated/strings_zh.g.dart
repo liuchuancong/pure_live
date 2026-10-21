@@ -704,6 +704,12 @@ class Translations$settings$zh {
 	/// zh: '离开足够久后回到应用时刷新列表'
 	String get refreshOnResumeSubtitle => '离开足够久后回到应用时刷新列表';
 
+	/// zh: '显示无法播放的房间'
+	String get showUnplayable => '显示无法播放的房间';
+
+	/// zh: '首页、分区与搜索列出轮播、需登录或会员无法观看的房间'
+	String get showUnplayableDesc => '首页、分区与搜索列出轮播、需登录或会员无法观看的房间';
+
 	/// zh: '启动时检查更新'
 	String get autoCheckUpdate => '启动时检查更新';
 
@@ -4278,6 +4284,8 @@ extension on Translations {
 			'settings.proxySettingsSubtitle' => '通过代理转发请求',
 			'settings.refreshOnResume' => '回到前台时刷新',
 			'settings.refreshOnResumeSubtitle' => '离开足够久后回到应用时刷新列表',
+			'settings.showUnplayable' => '显示无法播放的房间',
+			'settings.showUnplayableDesc' => '首页、分区与搜索列出轮播、需登录或会员无法观看的房间',
 			'settings.autoCheckUpdate' => '启动时检查更新',
 			'settings.autoCheckUpdateSubtitle' => '从发布源检查新版本；关于页随时可以手动检查',
 			'settings.countdownClose' => '倒计时退出',
@@ -4604,10 +4612,10 @@ extension on Translations {
 			'recorder.filterWaiting' => '等待中',
 			'recorder.filterSaved' => '已保存',
 			'recorder.filterFailed' => '失败',
-			'recorder.recordSettings' => '录制设置',
-			'recorder.filterFinished' => '已结束',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.recordSettings' => '录制设置',
+			'recorder.filterFinished' => '已结束',
 			'recorder.emptyTitle' => '还没有监听的房间',
 			'recorder.emptySubtitle' => '添加一个房间，开播后自动录制',
 			'recorder.nothingToJoin' => '没有待合并的分段',
@@ -5118,10 +5126,10 @@ extension on Translations {
 			'window.close' => '关闭',
 			'closePrompt.title' => '关闭窗口时要执行什么？',
 			'closePrompt.toTray' => '隐藏到托盘，保留播放',
-			'closePrompt.quit' => '退出 Pure Live',
-			'closePrompt.remember' => '记住我的选择，不再询问',
 			_ => null,
 		} ?? switch (path) {
+			'closePrompt.quit' => '退出 Pure Live',
+			'closePrompt.remember' => '记住我的选择，不再询问',
 			'shellSettings.sectionWindow' => '窗口',
 			'shellSettings.titleBar' => '窗口标题栏',
 			'shellSettings.titleBarAuto' => '自动（按系统版本）',

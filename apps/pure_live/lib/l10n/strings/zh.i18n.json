@@ -205,6 +205,8 @@
     "proxySettingsSubtitle": "通过代理转发请求",
     "refreshOnResume": "回到前台时刷新",
     "refreshOnResumeSubtitle": "离开足够久后回到应用时刷新列表",
+    "showUnplayable": "显示无法播放的房间",
+    "showUnplayableDesc": "首页、分区与搜索列出轮播、需登录或会员无法观看的房间",
     "autoCheckUpdate": "启动时检查更新",
     "autoCheckUpdateSubtitle": "从发布源检查新版本；关于页随时可以手动检查",
     "countdownClose": "倒计时退出",

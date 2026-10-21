@@ -22,6 +22,7 @@ final class FeedPreferences extends Equatable {
     this.pageShowSizeSelector = true,
     this.pageShowGoto = true,
     this.preferRealOnlineCounts = false,
+    this.showUnplayableInDiscover = false,
     this.realOnlinePlatforms = defaultRealOnlinePlatforms,
     this.hiddenSiteIds = const [],
     this.siteOrder = const [],
@@ -45,6 +46,7 @@ final class FeedPreferences extends Equatable {
       pageShowSizeSelector: json['pageShowSizeSelector'] as bool? ?? true,
       pageShowGoto: json['pageShowGoto'] as bool? ?? true,
       preferRealOnlineCounts: json['preferRealOnlineCounts'] as bool? ?? false,
+      showUnplayableInDiscover: json['showUnplayableInDiscover'] as bool? ?? false,
       realOnlinePlatforms:
           (json['realOnlinePlatforms'] as List<Object?>?)?.whereType<String>().toList() ?? defaultRealOnlinePlatforms,
       hiddenSiteIds: (json['hiddenSiteIds'] as List<Object?>?)?.whereType<String>().toList() ?? const [],
@@ -102,6 +104,11 @@ final class FeedPreferences extends Equatable {
   /// number leads (the reference's preferRealOnlineCounts).
   final bool preferRealOnlineCounts;
 
+  /// Whether the discovery pages show rooms that cannot play here — a
+  /// carousel, or a restriction this client cannot pass (login, payment,
+  /// members-only, region). Off hides them, as the reference does.
+  final bool showUnplayableInDiscover;
+
   /// The platforms whose online figure is trusted (the reference's
   /// realOnlinePlatforms); the audience row of the video settings edits it.
   final List<String> realOnlinePlatforms;
@@ -131,6 +138,7 @@ final class FeedPreferences extends Equatable {
     'pageShowSizeSelector': pageShowSizeSelector,
     'pageShowGoto': pageShowGoto,
     'preferRealOnlineCounts': preferRealOnlineCounts,
+    'showUnplayableInDiscover': showUnplayableInDiscover,
     'realOnlinePlatforms': realOnlinePlatforms,
     'hiddenSiteIds': hiddenSiteIds,
     'siteOrder': siteOrder,
@@ -152,6 +160,7 @@ final class FeedPreferences extends Equatable {
     bool? pageShowSizeSelector,
     bool? pageShowGoto,
     bool? preferRealOnlineCounts,
+    bool? showUnplayableInDiscover,
     List<String>? realOnlinePlatforms,
     List<String>? hiddenSiteIds,
     List<String>? siteOrder,

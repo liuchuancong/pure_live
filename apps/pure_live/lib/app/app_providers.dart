@@ -8,8 +8,10 @@ import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart' show StorageBootstrap;
 import 'package:pure_live/app/composition/sites.dart';
 import 'package:pure_live/features/about/update_feed.dart';
+import 'package:pure_live/features/account/login_providers.dart' show signedInAccountsProvider;
 import 'package:pure_live/features/iptv/iptv_preferences.dart';
 import 'package:pure_live/features/multiview/multiview_preferences.dart';
+import 'package:pure_live/shared/rooms/room_visibility.dart' show cannotPlayHere;
 import 'package:pure_live/system/configuration/app_preferences_providers.dart';
 import 'package:pure_live/system/environment/app_paths.dart';
 import 'package:pure_live/system/logging/app_log.dart';
@@ -105,6 +107,18 @@ final storageProvider = Provider<StorageBootstrap>(
 /// The network and site graph, overridden at start-up — the sites are
 /// initialized before the first frame and never re-created.
 final sitesProvider = Provider<AppSites>((ref) => throw UnimplementedError('overridden by the composition root'));
+
+/// Which rooms the discovery pages list: every room when the viewer asked to
+/// see unplayable ones, otherwise the reference's rule — carousels and
+/// unpassable restrictions hidden, a login check hidden only while that
+/// platform has no signed-in account.
+final discoveryRoomFilterProvider = Provider<bool Function(LiveRoom)>((ref) {
+  if (ref.watch(appPreferencesProvider).showUnplayableInDiscover) {
+    return (_) => true;
+  }
+  final signedIn = {for (final id in ref.watch(signedInAccountsProvider).keys) id};
+  return (room) => !cannotPlayHere(room, signedIn: signedIn.contains(room.ref.platform));
+});
 
 /// The process log, overridden at start-up. The log page reads the in-memory
 /// ring through it and re-tunes the live tree's minimum level; nothing else

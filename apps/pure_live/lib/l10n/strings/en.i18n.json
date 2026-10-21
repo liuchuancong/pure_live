@@ -198,6 +198,8 @@
     "proxySettingsSubtitle": "Route requests through a proxy",
     "refreshOnResume": "Refresh on resume",
     "refreshOnResumeSubtitle": "Refresh feeds when you come back, if you were away long enough",
+    "showUnplayable": "Show unplayable rooms",
+    "showUnplayableDesc": "List carousel, sign-in-required and members-only rooms in feeds and search",
     "autoCheckUpdate": "Check for updates at start",
     "autoCheckUpdateSubtitle": "Ask about new versions from the release feed; the About page can always check manually",
     "countdownClose": "Countdown close",
