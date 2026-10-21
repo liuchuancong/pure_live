@@ -69,6 +69,14 @@ final class VideoSettingsPage extends ConsumerWidget {
                 onToggle: (value) => unawaited(update((p) => p.copyWith(backgroundPlay: value))),
               ),
               SettingsTile.switchTile(
+                key: const ValueKey('video-screen-keep-on'),
+                leading: const Icon(Icons.lightbulb_outline),
+                title: Text(t.settings.screenKeepOn),
+                description: Text(t.settings.screenKeepOnDesc),
+                initialValue: preferences.screenKeepOn,
+                onToggle: (value) => unawaited(update((p) => p.copyWith(screenKeepOn: value))),
+              ),
+              SettingsTile.switchTile(
                 leading: const Icon(Icons.volume_off_outlined),
                 title: Text(t.room.globalMute),
                 description: Text(t.room.globalMuteSubtitle),

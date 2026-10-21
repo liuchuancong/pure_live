@@ -616,6 +616,8 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get liveAlertAll => 'All follows';
 	@override String get refreshConcurrency => 'Parallel refresh jobs';
 	@override String get refreshConcurrencyHint => 'How many followed rooms refresh at once';
+	@override String get screenKeepOn => 'Keep the screen on';
+	@override String get screenKeepOnDesc => 'Stop the screen from sleeping while a room plays';
 }
 
 // Path: hotAreas
@@ -2143,6 +2145,8 @@ extension on TranslationsEn {
 			'settings.liveAlertAll' => 'All follows',
 			'settings.refreshConcurrency' => 'Parallel refresh jobs',
 			'settings.refreshConcurrencyHint' => 'How many followed rooms refresh at once',
+			'settings.screenKeepOn' => 'Keep the screen on',
+			'settings.screenKeepOnDesc' => 'Stop the screen from sleeping while a room plays',
 			'hotAreas.title' => 'Platform visibility',
 			'hotAreas.note' => 'Hidden platforms are left out of popular, areas and search.',
 			'hotAreas.orderNote' => 'Drag to reorder the platforms.',
@@ -2186,10 +2190,10 @@ extension on TranslationsEn {
 			'recorder.roomId' => 'Room ID',
 			'recorder.startWatching' => 'Start watching',
 			'recorder.watchStarted' => 'Watching; recording starts when the room goes live',
-			'recorder.watchFailed' => ({required String error}) => 'Watching failed: ${error}',
-			'recorder.noSites' => 'No platform here can look rooms up',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.watchFailed' => ({required String error}) => 'Watching failed: ${error}',
+			'recorder.noSites' => 'No platform here can look rooms up',
 			'recorder.openFolder' => 'Open output folder',
 			'recorder.folderNotOpened' => 'The folder could not be opened',
 			'recorder.outputDirectory' => 'Output directory',
@@ -2700,10 +2704,10 @@ extension on TranslationsEn {
 			'remoteSync.partKeywords' => 'Blocked keywords',
 			'remoteSync.partUsers' => 'Blocked users',
 			'remoteSync.partWebdav' => 'WebDAV servers',
-			'remoteSync.partAccounts' => 'Account cookies',
-			'remoteSync.includeAccounts' => 'Sync account cookies',
 			_ => null,
 		} ?? switch (path) {
+			'remoteSync.partAccounts' => 'Account cookies',
+			'remoteSync.includeAccounts' => 'Sync account cookies',
 			'remoteSync.includeAccountsHint' => 'Sends or serves the platform login cookies and WebDAV passwords; turn it on only between devices you trust',
 			'remoteSync.receiveAction' => 'Receive',
 			'remoteSync.sendAction' => 'Send',

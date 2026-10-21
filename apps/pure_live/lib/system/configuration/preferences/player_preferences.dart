@@ -9,6 +9,7 @@ final class PlayerPreferences extends Equatable {
   const new({
     this.volumeMuted = false,
     this.backgroundPlay = false,
+    this.screenKeepOn = true,
     this.defaultMobileVolume = 0.5,
     this.defaultDesktopVolume = 1,
     this.preferResolution = '原画',
@@ -40,6 +41,7 @@ final class PlayerPreferences extends Equatable {
     return PlayerPreferences(
       volumeMuted: json['volumeMuted'] as bool? ?? false,
       backgroundPlay: json['backgroundPlay'] as bool? ?? false,
+      screenKeepOn: json['screenKeepOn'] as bool? ?? true,
       defaultMobileVolume: (json['defaultMobileVolume'] as num?)?.toDouble() ?? legacyVolume ?? 0.5,
       defaultDesktopVolume: (json['defaultDesktopVolume'] as num?)?.toDouble() ?? legacyVolume ?? 1,
       preferResolution: json['preferResolution'] as String? ?? '原画',
@@ -71,6 +73,10 @@ final class PlayerPreferences extends Equatable {
   /// Whether playback carries on while the app is in the background. Off
   /// pauses the room on the way out and resumes it on the way back.
   final bool backgroundPlay;
+
+  /// Whether the screen stays awake while a room plays (the reference's
+  /// `enableScreenKeepOn`, on by default).
+  final bool screenKeepOn;
 
   /// The volume a room starts at on a touch phone, 0..1 — the reference's
   /// `vol.defaultMobileVolume`, one of the two answers its volume dialog edits.
@@ -159,6 +165,7 @@ final class PlayerPreferences extends Equatable {
   Map<String, Object?> toJson() => {
     'volumeMuted': volumeMuted,
     'backgroundPlay': backgroundPlay,
+    'screenKeepOn': screenKeepOn,
     'defaultMobileVolume': defaultMobileVolume,
     'defaultDesktopVolume': defaultDesktopVolume,
     'preferResolution': preferResolution,
@@ -186,6 +193,7 @@ final class PlayerPreferences extends Equatable {
   PlayerPreferences copyWith({
     bool? volumeMuted,
     bool? backgroundPlay,
+    bool? screenKeepOn,
     double? defaultMobileVolume,
     double? defaultDesktopVolume,
     String? preferResolution,
@@ -236,6 +244,7 @@ final class PlayerPreferences extends Equatable {
   List<Object?> get props => [
     volumeMuted,
     backgroundPlay,
+    screenKeepOn,
     defaultMobileVolume,
     defaultDesktopVolume,
     preferResolution,

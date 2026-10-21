@@ -61,6 +61,7 @@ dependencies:
     sdk: flutter
   flutter_riverpod: ^3.3.2 # 状态管理与依赖注入
   flutter_secure_storage: 11.2.0 # 安全存储密钥
+  wakelock_plus: 1.8.1 # 播放中保持屏幕常亮
 
   # PureLive 内部功能包
   live_device: # 电量、亮度、音量、刷新率等设备能力

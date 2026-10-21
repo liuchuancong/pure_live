@@ -54,6 +54,7 @@ final class AppPreferences extends Equatable {
     bool danmakuVisible = true,
     bool volumeMuted = false,
     bool backgroundPlay = false,
+    bool screenKeepOn = true,
     double defaultMobileVolume = 0.5,
     double defaultDesktopVolume = 1,
     bool localInteractionEnabled = false,
@@ -221,6 +222,7 @@ final class AppPreferences extends Equatable {
        player = PlayerPreferences(
          volumeMuted: volumeMuted,
          backgroundPlay: backgroundPlay,
+         screenKeepOn: screenKeepOn,
          defaultMobileVolume: defaultMobileVolume,
          defaultDesktopVolume: defaultDesktopVolume,
          preferResolution: preferResolution,
@@ -378,6 +380,9 @@ final class AppPreferences extends Equatable {
 
   /// Whether playback carries on while the app is in the background.
   bool get backgroundPlay => player.backgroundPlay;
+
+  /// Whether the screen stays awake while a room plays.
+  bool get screenKeepOn => player.screenKeepOn;
 
   /// The volume a room starts at on a touch phone, 0..1 — the reference's
   /// `vol.defaultMobileVolume`, one of the two answers its volume dialog edits.
@@ -810,6 +815,7 @@ final class AppPreferences extends Equatable {
     bool? danmakuVisible,
     bool? volumeMuted,
     bool? backgroundPlay,
+    bool? screenKeepOn,
     double? defaultMobileVolume,
     double? defaultDesktopVolume,
     bool? localInteractionEnabled,
@@ -928,6 +934,7 @@ final class AppPreferences extends Equatable {
     danmakuVisible: danmakuVisible ?? this.danmakuVisible,
     volumeMuted: volumeMuted ?? this.volumeMuted,
     backgroundPlay: backgroundPlay ?? this.backgroundPlay,
+    screenKeepOn: screenKeepOn ?? this.screenKeepOn,
     defaultMobileVolume: defaultMobileVolume ?? this.defaultMobileVolume,
     defaultDesktopVolume: defaultDesktopVolume ?? this.defaultDesktopVolume,
     localInteractionEnabled: localInteractionEnabled ?? this.localInteractionEnabled,

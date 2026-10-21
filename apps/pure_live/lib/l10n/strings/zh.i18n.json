@@ -487,7 +487,9 @@
     "liveAlertScopeDesc": "只提醒带所选标签的关注；全不选则提醒全部关注",
     "liveAlertAll": "全部关注",
     "refreshConcurrency": "并发刷新任务",
-    "refreshConcurrencyHint": "同时向几个直播间发起刷新"
+    "refreshConcurrencyHint": "同时向几个直播间发起刷新",
+    "screenKeepOn": "播放时屏幕常亮",
+    "screenKeepOnDesc": "直播间播放期间不让屏幕自动熄灭"
   },
   "hotAreas": {
     "title": "平台显示",

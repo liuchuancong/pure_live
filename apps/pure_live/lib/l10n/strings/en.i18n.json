@@ -480,7 +480,9 @@
     "liveAlertScopeDesc": "Alert only for follows carrying a chosen tag; none chosen alerts every follow",
     "liveAlertAll": "All follows",
     "refreshConcurrency": "Parallel refresh jobs",
-    "refreshConcurrencyHint": "How many followed rooms refresh at once"
+    "refreshConcurrencyHint": "How many followed rooms refresh at once",
+    "screenKeepOn": "Keep the screen on",
+    "screenKeepOnDesc": "Stop the screen from sleeping while a room plays"
   },
   "hotAreas": {
     "title": "Platform visibility",

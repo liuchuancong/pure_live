@@ -33,6 +33,7 @@ import 'package:pure_live/system/configuration/app_preferences_providers.dart';
 import 'package:pure_live/system/playback/mpv_tuning.dart';
 import 'package:pure_live/system/playback/playback_engine.dart';
 import 'package:pure_live/system/playback/window_surface_hooks.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:window_frame_kit/window_frame_kit.dart' show windowManager;
 
 /// How the room is presented — the reference's `VideoMode`.
@@ -320,6 +321,22 @@ final class RoomController extends Notifier<RoomState> {
   /// The attempt the ladder is on; 0 between streaks.
   int _reconnectAttempt = 0;
 
+  /// Whether the keep-awake is on, so the room only releases what it took.
+  bool _awake = false;
+
+  /// Applies 屏幕常亮: the screen stays on while the room plays, and only
+  /// while it plays — a pause, the background and closing the room release
+  /// it. Failures are the platform's business; the setting simply does not
+  /// take there.
+  void _applyKeepAwake() {
+    final wanted = ref.read(appPreferencesProvider).screenKeepOn && !state.paused;
+    if (wanted == _awake) {
+      return;
+    }
+    _awake = wanted;
+    unawaited((wanted ? WakelockPlus.enable() : WakelockPlus.disable()).catchError((_) {}));
+  }
+
   /// The app lifecycle: a room that went to the background by itself
   /// remembers whether it paused, so only that pause is lifted on return.
   AppLifecycleListener? _lifecycle;
@@ -390,6 +407,9 @@ final class RoomController extends Notifier<RoomState> {
       _progressTimer?.cancel();
       _reconnectTimer?.cancel();
       _lifecycle?.dispose();
+      if (_awake) {
+        unawaited(WakelockPlus.disable().catchError((_) {}));
+      }
       _chromeTimer?.cancel();
       _sleepTimer?.cancel();
       unawaited(_adapterSub?.cancel());
@@ -456,6 +476,7 @@ final class RoomController extends Notifier<RoomState> {
         );
         _cancelReconnect();
         state = state.copyWith(engineStopped: false, streamError: null, paused: false);
+        _applyKeepAwake();
         // The stored 画面比例 rides every open — a quality switch rebuilds
         // the adapter, and a new one starts from the engine's own default.
         _engine.surfaceAdapter?.setVideoFit(state.videoFit);
@@ -764,6 +785,7 @@ final class RoomController extends Notifier<RoomState> {
   void togglePause() {
     final paused = !state.paused;
     state = state.copyWith(paused: paused);
+    _applyKeepAwake();
     if (paused) {
       writeProgress(force: true);
       unawaited(_engine.pause());
