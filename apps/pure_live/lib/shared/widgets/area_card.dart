@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:live_sites/live_sites.dart' show LiveArea;
+import 'package:pure_live/shared/areas/area_artwork.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// Shared geometry for the area grids (3.x `areaCardGridMainAxisExtent`):
@@ -49,6 +50,9 @@ final class AreaCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = PureTheme.of(context);
     final parent = subtitle ?? area.parentAreaName ?? '';
+    // The area's own picture, or the one another platform's catalogue lent
+    // to this name; a two-state icon shows the half that carries its colour.
+    final picture = AreaPictures.instance.pictureFor(area);
     return PureCard(
       onTap: onOpen,
       padding: EdgeInsets.zero,
@@ -57,10 +61,11 @@ final class AreaCard extends StatelessWidget {
         children: [
           AspectRatio(
             aspectRatio: 1,
-            child: switch (area.iconUrl) {
+            child: switch (picture) {
               final url? when url.isNotEmpty => CachedNetworkImage(
                 imageUrl: url,
                 fit: BoxFit.cover,
+                alignment: areaArtworkAlignment(url),
                 errorWidget: (_, _, _) => _fallback(theme),
               ),
               _ => _fallback(theme),

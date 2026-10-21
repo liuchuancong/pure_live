@@ -173,7 +173,14 @@ final class _InfiniteFeedState extends ConsumerState<_InfiniteFeed> with FeedAut
         onRetry: () => unawaited(_controller.refresh()),
       );
     }
-    final rooms = widget.sort == RoomSort.viewers ? _sortByViewers(state.items) : state.items;
+    // The discovery rule applies here too: carousels and unpassable
+    // restrictions are left out unless the viewer asked to see them.
+    final roomVisible = ref.watch(discoveryRoomFilterProvider);
+    final visible = [
+      for (final room in state.items)
+        if (roomVisible(room)) room,
+    ];
+    final rooms = widget.sort == RoomSort.viewers ? _sortByViewers(visible) : visible;
     return CustomRefreshIndicator(
       onRefresh: _controller.refresh,
       builder: (context, child, indicator) => Stack(
@@ -368,7 +375,14 @@ final class _PagedFeedState extends ConsumerState<_PagedFeed> with FeedAutoRefre
         onRetry: () => unawaited(_controller.refresh()),
       );
     }
-    final rooms = widget.sort == RoomSort.viewers ? _sortByViewers(state.items) : state.items;
+    // The discovery rule applies here too: carousels and unpassable
+    // restrictions are left out unless the viewer asked to see them.
+    final roomVisible = ref.watch(discoveryRoomFilterProvider);
+    final visible = [
+      for (final room in state.items)
+        if (roomVisible(room)) room,
+    ];
+    final rooms = widget.sort == RoomSort.viewers ? _sortByViewers(visible) : visible;
     return RoomGrid(
       scrollController: _scroll,
       itemCount: rooms.length,

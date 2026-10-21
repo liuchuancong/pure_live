@@ -10,6 +10,7 @@ import 'package:pure_live/app/shell/main_page_frame.dart';
 import 'package:pure_live/app/shell/shell_actions.dart';
 import 'package:pure_live/features/room/paging.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/shared/areas/area_artwork.dart';
 import 'package:pure_live/shared/utilities/sites_order.dart' show orderedSites;
 import 'package:pure_live/shared/widgets/area_card.dart';
 import 'package:pure_live/shared/widgets/list_loading.dart' show FeedAutoRefresh;
@@ -52,10 +53,7 @@ final class _AreasPageState extends ConsumerState<AreasPage> {
     final phoneTab = MainPageFrame.showsHomeBarButtons(context, inHome: true);
     if (capable.isEmpty) {
       return PureScaffold(
-        appBar: PureAppBar(
-          leading: phoneTab ? const HomeMenuButton() : null,
-          title: t.tabs.areas,
-                  ),
+        appBar: PureAppBar(leading: phoneTab ? const HomeMenuButton() : null, title: t.tabs.areas),
         body: PureEmpty(
           title: t.popular.noPlatforms,
           message: t.popular.noPlatformsHint,
@@ -82,7 +80,7 @@ final class _AreasPageState extends ConsumerState<AreasPage> {
           isScrollable: true,
           onChanged: (value) => setState(() => _selected = value),
         ),
-              ),
+      ),
       body: Stack(
         children: [
           PureTabView(
@@ -214,6 +212,9 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas>
           },
           (areas) {
             _areas = areas;
+            // Every catalogue that loads teaches the picture registry, so an
+            // area without artwork can borrow one by name.
+            AreaPictures.instance.remember(areas);
           },
         );
       });
