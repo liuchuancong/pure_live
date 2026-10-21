@@ -14,11 +14,16 @@ class PureTitleBarDragRegion extends StatelessWidget {
     this.alignment = Alignment.center,
     this.padding = EdgeInsets.zero,
     this.expand = true,
+    this.leading,
     super.key,
   });
 
   /// The title displayed inside the draggable region.
   final String title;
+
+  /// The mark drawn before the title — the app's own brand. It sits inside
+  /// the drag region, so a drag begun on it still moves the window.
+  final Widget? leading;
 
   /// Starts dragging the current window.
   final Future<void> Function() startDragging;
@@ -44,7 +49,16 @@ class PureTitleBarDragRegion extends StatelessWidget {
 
     final content = Padding(
       padding: padding,
-      child: Align(alignment: alignment, child: titleWidget),
+      child: Align(
+        alignment: alignment,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ?leading,
+            Flexible(child: titleWidget),
+          ],
+        ),
+      ),
     );
 
     return GestureDetector(

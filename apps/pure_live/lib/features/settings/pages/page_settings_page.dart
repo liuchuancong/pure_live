@@ -30,7 +30,7 @@ final class PageSettingsPage extends ConsumerWidget {
     final preferences = ref.watch(appPreferencesProvider);
     final update = ref.read(appPreferencesProvider.notifier).update;
     final visible = visibleShellBranches(preferences);
-    final hidden = ShellBranch.values.where((branch) => !visible.contains(branch)).toList();
+    final hidden = ShellBranch.primary.where((branch) => !visible.contains(branch)).toList();
 
     return PureScaffold(
       appBar: PureAppBar(title: t.settings.pageSettings),

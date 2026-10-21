@@ -91,8 +91,23 @@ part 'app_router.g.dart';
     TypedStatefulShellBranch<AreasBranchData>(
       routes: <TypedRoute<RouteData>>[TypedGoRoute<AreasRoute>(path: RoutePath.areas)],
     ),
+    TypedStatefulShellBranch<IptvBranchData>(
+      routes: <TypedRoute<RouteData>>[TypedGoRoute<IptvRoute>(path: RoutePath.iptv)],
+    ),
     TypedStatefulShellBranch<RecordBranchData>(
       routes: <TypedRoute<RouteData>>[TypedGoRoute<RecorderRoute>(path: RoutePath.recorder)],
+    ),
+    TypedStatefulShellBranch<MultiviewBranchData>(
+      routes: <TypedRoute<RouteData>>[TypedGoRoute<MultiviewRoute>(path: RoutePath.multiview)],
+    ),
+    TypedStatefulShellBranch<ToolboxBranchData>(
+      routes: <TypedRoute<RouteData>>[TypedGoRoute<ToolboxRoute>(path: RoutePath.toolbox)],
+    ),
+    TypedStatefulShellBranch<SearchBranchData>(
+      routes: <TypedRoute<RouteData>>[TypedGoRoute<SearchRoute>(path: RoutePath.search)],
+    ),
+    TypedStatefulShellBranch<HistoryBranchData>(
+      routes: <TypedRoute<RouteData>>[TypedGoRoute<HistoryRoute>(path: RoutePath.history)],
     ),
   ],
 )
@@ -142,6 +157,36 @@ class AreasBranchData extends StatefulShellBranchData {
 
 /// Marks the recording centre branch inside the shell.
 class RecordBranchData extends StatefulShellBranchData {
+  /// The branch marker.
+  const new();
+}
+
+/// Marks the IPTV library branch inside the shell.
+class IptvBranchData extends StatefulShellBranchData {
+  /// The branch marker.
+  const new();
+}
+
+/// Marks the multi-view branch — a menu branch, shown in the content pane.
+class MultiviewBranchData extends StatefulShellBranchData {
+  /// The branch marker.
+  const new();
+}
+
+/// Marks the toolbox branch — a menu branch.
+class ToolboxBranchData extends StatefulShellBranchData {
+  /// The branch marker.
+  const new();
+}
+
+/// Marks the search branch — a menu branch.
+class SearchBranchData extends StatefulShellBranchData {
+  /// The branch marker.
+  const new();
+}
+
+/// Marks the watch-history branch — a menu branch.
+class HistoryBranchData extends StatefulShellBranchData {
   /// The branch marker.
   const new();
 }
@@ -269,9 +314,8 @@ class BackupRoute extends GoRouteData with $BackupRoute {
   Widget build(BuildContext context, GoRouterState state) => const BackupPage();
 }
 
-/// The watch history, pushed from the shell's menu — the reference keeps it in
-/// `MenuButton`'s list (`menu_button.dart:10`), not among the tabs.
-@TypedGoRoute<HistoryRoute>(path: RoutePath.history)
+/// The watch-history branch's root route: `/history` — a menu branch since
+/// it left the shell's menu listing.
 class HistoryRoute extends GoRouteData with $HistoryRoute {
   /// The history route.
   const new();
@@ -280,8 +324,8 @@ class HistoryRoute extends GoRouteData with $HistoryRoute {
   Widget build(BuildContext context, GoRouterState state) => const HistoryPage();
 }
 
-/// The IPTV library page: imported playlists, their channels grouped.
-@TypedGoRoute<IptvRoute>(path: RoutePath.iptv)
+/// The IPTV library's root route: `/iptv` — a chrome branch since it joined
+/// the destinations ahead of the recording centre.
 class IptvRoute extends GoRouteData with $IptvRoute {
   /// The IPTV route.
   const new();
@@ -371,8 +415,8 @@ class WebSearchRoute extends GoRouteData with $WebSearchRoute {
   );
 }
 
-/// The multi-view page: up to four rooms playing side by side.
-@TypedGoRoute<MultiviewRoute>(path: RoutePath.multiview)
+/// The multi-view branch's root route: `/multiview` — a menu branch, shown
+/// in the content pane and pushed only where there is no pane.
 class MultiviewRoute extends GoRouteData with $MultiviewRoute {
   /// The multiview route.
   const new();
@@ -402,10 +446,8 @@ class RoomRoute extends GoRouteData with $RoomRoute {
       RoomPage(siteId: siteId, roomId: roomId, roomName: roomName);
 }
 
-/// The search route: `/search`, a full page above the shell. Declared
-/// apart from the shell table, like the settings route, so the home menu
-/// reaches it without importing the router back.
-@TypedGoRoute<SearchRoute>(path: RoutePath.search)
+/// The search branch's root route: `/search` — a menu branch, shown in the
+/// content pane and pushed only where there is no pane.
 class SearchRoute extends GoRouteData with $SearchRoute {
   /// The search route.
   const new();

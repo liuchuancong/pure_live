@@ -16,6 +16,7 @@ class PureTitleBar extends StatefulWidget {
     this.designLanguage,
     this.metrics,
     this.maximized,
+    this.leading,
     super.key,
   });
 
@@ -38,6 +39,9 @@ class PureTitleBar extends StatefulWidget {
   /// When supplied, the title bar listens to this value instead of polling
   /// the window state after actions.
   final ValueListenable<bool>? maximized;
+
+  /// The mark drawn before the title — the app's own brand.
+  final Widget? leading;
 
   @override
   State<PureTitleBar> createState() => _PureTitleBarState();
@@ -184,6 +188,7 @@ class _PureTitleBarState extends State<PureTitleBar> {
         presentation = PureMacOSTitleBar(
           labels: labels,
           actions: actions,
+          leading: widget.leading,
           isMaximized: _isMaximized,
           onToggleMaximize: toggleMaximize,
           metrics: widget.metrics ?? const PureCaptionMetrics.macos(),
@@ -193,6 +198,7 @@ class _PureTitleBarState extends State<PureTitleBar> {
         presentation = PureYaruTitleBar(
           labels: labels,
           actions: actions,
+          leading: widget.leading,
           isMaximized: _isMaximized,
           onToggleMaximize: toggleMaximize,
           metrics: widget.metrics ?? const PureCaptionMetrics(titleBarHeight: 37, buttonWidth: 42, buttonHeight: 37),
@@ -202,6 +208,7 @@ class _PureTitleBarState extends State<PureTitleBar> {
         presentation = PureGlassTitleBar(
           labels: labels,
           actions: actions,
+          leading: widget.leading,
           isMaximized: _isMaximized,
           onToggleMaximize: toggleMaximize,
           metrics: widget.metrics ?? const PureCaptionMetrics(titleBarHeight: 36, buttonWidth: 40, buttonHeight: 36),
@@ -211,6 +218,7 @@ class _PureTitleBarState extends State<PureTitleBar> {
         presentation = PureNeumorphicTitleBar(
           labels: labels,
           actions: actions,
+          leading: widget.leading,
           isMaximized: _isMaximized,
           onToggleMaximize: toggleMaximize,
           metrics: widget.metrics ?? const PureCaptionMetrics(titleBarHeight: 38, buttonWidth: 40, buttonHeight: 38),
@@ -220,6 +228,7 @@ class _PureTitleBarState extends State<PureTitleBar> {
         presentation = PureWindTitleBar(
           labels: labels,
           actions: actions,
+          leading: widget.leading,
           isMaximized: _isMaximized,
           onToggleMaximize: toggleMaximize,
           metrics: widget.metrics ?? const PureCaptionMetrics(titleBarHeight: 36, buttonWidth: 40, buttonHeight: 36),
@@ -231,6 +240,7 @@ class _PureTitleBarState extends State<PureTitleBar> {
         presentation = PureTokenTitleBar(
           labels: labels,
           actions: actions,
+          leading: widget.leading,
           isMaximized: _isMaximized,
           onToggleMaximize: toggleMaximize,
           metrics: widget.metrics ?? const PureCaptionMetrics.desktop(),

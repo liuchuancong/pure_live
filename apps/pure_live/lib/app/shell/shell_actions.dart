@@ -2,149 +2,157 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart' show StatefulNavigationShell;
+import 'package:go_router/go_router.dart' show GoRouteData, StatefulNavigationShell;
+import 'package:pure_live/app/shell/home_views.dart' show HomeLayoutScope;
+import 'package:pure_live/app/shell/shell_destinations.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/system/configuration/app_preferences_providers.dart' show goShellBranch;
 import 'package:pure_live/system/navigation/app_router.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
-/// The ways to find a room that every home layout offers (the reference's
-/// `HomeAction`): search on its own button, the others beside it — on the
-/// rail each is its own tool button, on the phone the non-search ones live
-/// in the app bar's "more" menu.
-enum HomeAction {
-  /// Search rooms.
-  search,
-
-  /// The watch history.
-  history,
-
-  /// Open a shared link (the toolbox).
-  openLink,
-
-  /// Multi-view.
-  multiview;
-
-  /// The action's glyph.
-  IconData get icon => switch (this) {
-    HomeAction.search => Icons.search_rounded,
-    HomeAction.history => Icons.history_rounded,
-    HomeAction.openLink => Icons.link_outlined,
-    HomeAction.multiview => Icons.grid_view_outlined,
-  };
-
-  /// The action's label.
-  String label(Translations t) => switch (this) {
-    HomeAction.search => t.tabs.search,
-    HomeAction.history => t.tabs.history,
-    HomeAction.openLink => t.toolbox.title,
-    HomeAction.multiview => t.multiview.title,
-  };
-
-  /// Opens its page.
-  void run(BuildContext context) => switch (this) {
-    HomeAction.search => unawaited(const SearchRoute().push<void>(context)),
-    HomeAction.history => unawaited(const HistoryRoute().push<void>(context)),
-    HomeAction.openLink => unawaited(const ToolboxRoute().push<void>(context)),
-    HomeAction.multiview => unawaited(const MultiviewRoute().push<void>(context)),
-  };
-}
-
-/// The home actions shown (the reference gates `multiview` on a setting;
-/// this build always offers it — multi-view has no off switch here).
-List<HomeAction> homeActions() => HomeAction.values;
-
-/// Activates a navigation column destination by id: the branch entries walk
-/// the shell (with the re-tap and last-tab bookkeeping), the tool and system
-/// entries push their page above it — no tool is ever the selected
-/// destination.
+/// Activates a navigation destination by id: a branch id — primary or menu —
+/// walks the shell, so the content pane shows it with the re-tap and last-tab
+/// bookkeeping; the settings entry pushes its page everywhere.
 void activateShellDestination(
   BuildContext context, {
   required WidgetRef ref,
   required StatefulNavigationShell navigationShell,
   required String id,
 }) => switch (id) {
-  'search' => unawaited(const SearchRoute().push<void>(context)),
-  'history' => unawaited(const HistoryRoute().push<void>(context)),
-  'iptv' => unawaited(const IptvRoute().push<void>(context)),
-  'multiview' => unawaited(const MultiviewRoute().push<void>(context)),
-  'toolbox' => unawaited(const ToolboxRoute().push<void>(context)),
   'settings' => unawaited(const SettingsRoute().push<void>(context)),
   _ => goShellBranch(ref, navigationShell, id),
 };
 
-/// The menu at the top of the rail and the leading button of the phone app
-/// bars (the reference's `MenuButton`): settings, about and backup in one
-/// small anchored menu.
+/// The route a menu branch pushes where there is no content pane.
+GoRouteData menuRouteOf(ShellBranch branch) => switch (branch) {
+  ShellBranch.multiview => const MultiviewRoute(),
+  ShellBranch.toolbox => const ToolboxRoute(),
+  ShellBranch.search => const SearchRoute(),
+  ShellBranch.history => const HistoryRoute(),
+  _ => throw ArgumentError.value(branch, 'branch', 'not a menu branch'),
+};
+
+/// Opens a menu branch from page content: on a wide layout it activates the
+/// branch through the shell's own scope — the content pane shows it — and on
+/// a phone, where there is no pane, it is pushed as a page above the shell.
+void openMenuBranch(BuildContext context, ShellBranch branch) {
+  final scope = HomeLayoutScope.maybeOf(context);
+  if (scope != null && !scope.phone && scope.activateBranch != null) {
+    scope.activateBranch!(branch);
+    return;
+  }
+  unawaited(menuRouteOf(branch).push<void>(context));
+}
+
+/// Opens the phone's navigation drawer: the four menu branches and the
+/// settings entry, sliding in from the start edge over a scrim. A drawer is
+/// where a phone keeps what a wide column lists — it has no pane, so every
+/// entry opens its page as a route.
+Future<void> showHomeDrawer(BuildContext context) {
+  final outer = context;
+  final rtl = Directionality.of(context) == TextDirection.rtl;
+  return showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: context.t.common.menu,
+    barrierColor: adaptiveDrawerScrim(isDark: PureTheme.of(context).isDark),
+    transitionDuration: AdaptiveShellDurations.normal,
+    pageBuilder: (_, _, _) => _HomeDrawer(outer: outer),
+    transitionBuilder: (context, animation, _, child) => SlideTransition(
+      position: Tween(
+        begin: Offset(rtl ? 1 : -1, 0),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+      child: Align(alignment: AlignmentDirectional.centerStart, child: child),
+    ),
+  );
+}
+
+/// The phone's drawer: the brand on top — a phone has no title bar to carry
+/// it — then the four menu branches and the settings entry.
+class _HomeDrawer extends StatelessWidget {
+  /// Draws the drawer; [outer] is the context the entries push their routes
+  /// through, so closing the drawer and opening the page is one gesture.
+  const new({required this.outer});
+
+  final BuildContext outer;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = PureTheme.of(context);
+    final destinations = shellDrawerDestinations(context);
+    return Material(
+      color: theme.colors.bgContainer,
+      child: SafeArea(
+        right: false,
+        child: SizedBox(
+          width: 268,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Row(
+                  children: [
+                    const AdaptiveBrandMark(size: 26),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: Text(
+                        context.t.app.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.text.body.copyWith(fontSize: 14.5, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Divider(height: 1, color: theme.colors.border),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: PureSpacing.sm, vertical: PureSpacing.xs),
+                  children: [
+                    for (final destination in destinations)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: PureNavigationTile(
+                          destination: destination,
+                          selected: false,
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            switch (destination.id) {
+                              case 'settings':
+                                unawaited(const SettingsRoute().push<void>(outer));
+                              default:
+                                unawaited(menuRouteOf(ShellBranch.fromId(destination.id)).push<void>(outer));
+                            }
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The menu button at the top-left of a phone's home tabs: it opens the
+/// navigation drawer (the reference's `MenuButton` slot).
 class HomeMenuButton extends StatelessWidget {
   /// The menu button.
   const new({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final t = context.t;
-    return PureMenu(
+    return PureIconButton(
       key: const ValueKey('home-menu'),
-      items: [
-        PureMenuItem(
-          id: 'settings',
-          label: t.tabs.settings,
-          icon: Icons.settings_outlined,
-          onTap: () => unawaited(const SettingsRoute().push<void>(context)),
-        ),
-        PureMenuItem(
-          id: 'about',
-          label: t.about.title,
-          icon: Icons.info_outline,
-          onTap: () => unawaited(const AboutRoute().push<void>(context)),
-        ),
-        PureMenuItem(
-          id: 'backup',
-          label: t.backup.title,
-          icon: Icons.cloud_outlined,
-          onTap: () => unawaited(const BackupRoute().push<void>(context)),
-        ),
-      ],
-      child: PureIconButton(icon: Icons.menu_rounded, tooltip: t.common.menu),
-    );
-  }
-}
-
-/// The buttons at the top right of the phone tabs: search in one tap and
-/// "more" with the history, the link parser and multi-view (the reference's
-/// `CommonAppBarActions`).
-class CommonAppBarActions extends StatelessWidget {
-  /// The action pair.
-  const new({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        PureIconButton(
-          key: const ValueKey('home-search'),
-          icon: HomeAction.search.icon,
-          tooltip: HomeAction.search.label(t),
-          onPressed: () => HomeAction.search.run(context),
-        ),
-        PureMenu(
-          key: const ValueKey('home-more'),
-          items: [
-            for (final action in homeActions())
-              if (action != HomeAction.search)
-                PureMenuItem(
-                  id: action.name,
-                  label: action.label(t),
-                  icon: action.icon,
-                  onTap: () => action.run(context),
-                ),
-          ],
-          child: PureIconButton(icon: Icons.more_vert_rounded, tooltip: t.common.more),
-        ),
-        const SizedBox(width: 4),
-      ],
+      icon: Icons.menu_rounded,
+      tooltip: context.t.common.menu,
+      onPressed: () => unawaited(showHomeDrawer(context)),
     );
   }
 }

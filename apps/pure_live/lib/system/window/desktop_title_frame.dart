@@ -72,7 +72,14 @@ final class DesktopTitleFrame extends ConsumerWidget {
                     : PureTheme.of(context).colors.bgLayout,
                 child: Column(
                   children: [
-                    PureTitleBar(labels: labels, actions: actions, maximized: state.maximized),
+                    PureTitleBar(
+                      labels: labels,
+                      actions: actions,
+                      maximized: state.maximized,
+                      // The brand lives here since the sidebar gave its head to
+                      // the top-left menu: the app's own icon before the name.
+                      leading: Image.asset('assets/icon/app_icon.png', width: 16, height: 16),
+                    ),
                     Expanded(child: content!),
                   ],
                 ),

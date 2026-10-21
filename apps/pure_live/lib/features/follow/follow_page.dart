@@ -233,8 +233,7 @@ final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefr
         leading: phoneTab ? const HomeMenuButton() : null,
         title: t.tabs.follow,
         titleWidget: title,
-        actions: phoneTab ? const [CommonAppBarActions()] : const [],
-        bottom: oneRow
+                bottom: oneRow
             ? null
             : PreferredSize(
                 preferredSize: const Size.fromHeight(48),
@@ -267,7 +266,7 @@ final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefr
       content = PureEmpty(
         title: t.follow.empty,
         icon: Icons.favorite_border,
-        action: PureButton(label: t.tabs.search, onPressed: () => HomeAction.search.run(context)),
+        action: PureButton(label: t.tabs.search, onPressed: () => openMenuBranch(context, ShellBranch.search)),
       );
     } else {
       content = Column(

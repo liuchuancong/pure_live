@@ -55,8 +55,7 @@ final class _AreasPageState extends ConsumerState<AreasPage> {
         appBar: PureAppBar(
           leading: phoneTab ? const HomeMenuButton() : null,
           title: t.tabs.areas,
-          actions: phoneTab ? const [CommonAppBarActions()] : const [],
-        ),
+                  ),
         body: PureEmpty(
           title: t.popular.noPlatforms,
           message: t.popular.noPlatformsHint,
@@ -83,8 +82,7 @@ final class _AreasPageState extends ConsumerState<AreasPage> {
           isScrollable: true,
           onChanged: (value) => setState(() => _selected = value),
         ),
-        actions: phoneTab ? const [CommonAppBarActions()] : const [],
-      ),
+              ),
       body: Stack(
         children: [
           PureTabView(

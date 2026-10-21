@@ -30,7 +30,7 @@ void main() {
                   width: AdaptiveShellSizes.railWidth,
                   child: Builder(
                     builder: (context) => PureNavigationRail(
-                      destinations: shellNavDestinations(context),
+                      destinations: shellPrimaryDestinations(context),
                       selectedId: ShellBranch.follow.name,
                       onDestinationSelected: (_) {},
                     ),
@@ -76,9 +76,11 @@ void main() {
         ),
       );
 
+      // The bar's one shell affordance is the top-left menu; the tools it
+      // opens live in the drawer, so no search or more buttons sit at the end.
       expect(find.byKey(const ValueKey('home-menu')), findsOneWidget);
-      expect(find.byKey(const ValueKey('home-search')), findsOneWidget);
-      expect(find.byKey(const ValueKey('home-more')), findsOneWidget);
+      expect(find.byKey(const ValueKey('home-search')), findsNothing);
+      expect(find.byKey(const ValueKey('home-more')), findsNothing);
       expect(find.text('热门'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });

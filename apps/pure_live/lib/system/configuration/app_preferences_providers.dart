@@ -330,6 +330,11 @@ final class _ShellBranchGuardState extends ConsumerState<ShellBranchGuard> {
 
   void _redirectIfHidden() {
     final current = ShellBranch.at(widget.navigationShell.currentIndex);
+    // A menu branch is not the chrome's to hide: it stands where it is, and
+    // no sidebar destination reads as selected under it.
+    if (!current.isPrimary) {
+      return;
+    }
     if (ref.read(visibleShellBranchesProvider).contains(current)) {
       return;
     }

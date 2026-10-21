@@ -130,8 +130,7 @@ final class _PopularPageState extends ConsumerState<PopularPage> {
         leading: phoneTab ? const HomeMenuButton() : null,
         title: t.tabs.popular,
         titleWidget: title,
-        actions: phoneTab ? const [CommonAppBarActions()] : const [],
-      ),
+              ),
       body: visible.isEmpty
           ? PureEmpty(
               title: t.popular.noPlatforms,

@@ -74,10 +74,7 @@ class MainPageFrame extends StatelessWidget {
         leading: shellButtons ? const HomeMenuButton() : null,
         title: title,
         titleWidget: titleWidget,
-        actions: [
-          if (shellButtons && showShellActions) const CommonAppBarActions(),
-          ...actions,
-        ],
+        actions: actions,
         bottom: tabs == null || tabs.isEmpty
             ? null
             : PreferredSize(
@@ -89,12 +86,7 @@ class MainPageFrame extends StatelessWidget {
                   height: 48,
                   child: Align(
                     alignment: AlignmentDirectional.centerStart,
-                    child: PureTabs(
-                      tabs: tabs,
-                      index: tabIndex,
-                      isScrollable: true,
-                      onChanged: onTabChanged,
-                    ),
+                    child: PureTabs(tabs: tabs, index: tabIndex, isScrollable: true, onChanged: onTabChanged),
                   ),
                 ),
               ),

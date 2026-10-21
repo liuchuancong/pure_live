@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart' show IptvChannel, IptvLibrary, IptvPlaylist, iptvFetcherFor;
 import 'package:pure_live/app/app_providers.dart';
+import 'package:pure_live/app/shell/home_views.dart' show HomeLayoutScope;
+import 'package:pure_live/app/shell/shell_actions.dart' show HomeMenuButton;
 import 'package:pure_live/features/iptv/iptv_preferences.dart' show IptvPreferences, IptvXtreamSource;
 import 'package:pure_live/features/iptv/iptv_xtream.dart'
     show importXtreamChannels, isXtreamCredentialError, isXtreamPlaylistUrl, xtreamCatalogProvider, xtreamPlaylistId;
@@ -355,6 +357,9 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
     final showGroups = groups.any((name) => name.isNotEmpty);
     return PureScaffold(
       appBar: PureAppBar(
+        // The IPTV tab is a chrome branch: a phone home tab carries the
+        // top-left menu on its bar, a wide layout leaves it to the column.
+        leading: HomeLayoutScope.maybeOf(context)?.phone == true ? const HomeMenuButton() : null,
         title: context.t.iptv.title,
         actions: [
           PureIconButton(

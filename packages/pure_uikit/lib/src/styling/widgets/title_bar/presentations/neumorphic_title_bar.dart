@@ -19,6 +19,7 @@ class PureNeumorphicTitleBar extends StatelessWidget {
     required this.isMaximized,
     required this.onToggleMaximize,
     this.metrics = const PureCaptionMetrics(titleBarHeight: 38, buttonWidth: 40, buttonHeight: 38),
+    this.leading,
     super.key,
   });
 
@@ -36,6 +37,9 @@ class PureNeumorphicTitleBar extends StatelessWidget {
 
   /// The dimensions used by this presentation.
   final PureCaptionMetrics metrics;
+
+  /// The mark drawn before the title — the app's own brand.
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +62,7 @@ class PureNeumorphicTitleBar extends StatelessWidget {
             Expanded(
               child: PureTitleBarDragRegion(
                 title: labels.title,
+                leading: leading,
                 startDragging: actions.startDragging,
                 titleStyle: theme.textTheme.titleSmall?.copyWith(color: colors.text, fontWeight: FontWeight.w600),
                 onDoubleTap: onToggleMaximize,

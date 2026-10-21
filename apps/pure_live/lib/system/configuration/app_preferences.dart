@@ -107,7 +107,12 @@ enum RoomCardCoverAspect {
 /// The shell branches, in the order the chromes render them — the visible
 /// subset. The home branch is the floor: a shell with no destination cannot
 /// be walked, so every writer keeps at least one id.
-const List<String> defaultShellBranches = ['follow', 'popular', 'areas', 'record'];
+const List<String> defaultShellBranches = ['follow', 'popular', 'areas', 'iptv', 'record'];
+
+/// The default before IPTV joined the chrome. A stored document still naming
+/// exactly this list was never customised, so it grows the current default
+/// instead of keeping IPTV hidden.
+const List<String> legacyShellBranches = ['follow', 'popular', 'areas', 'record'];
 
 /// The platforms whose concurrent-online figure is trusted, as the reference
 /// `Settings.realOnlinePlatforms` ships them (3.x's audience audit); the
@@ -225,7 +230,6 @@ final class AppPreferences extends Equatable {
     this.launchBranch = AppLaunchBranch.follow,
     this.restoreLastTab = false,
     this.lastBranchId,
-    this.shellNavExpanded = true,
     this.windowWidth = 0,
     this.windowHeight = 0,
     this.autoRefreshMinutes = 0,
@@ -320,7 +324,6 @@ final class AppPreferences extends Equatable {
       launchBranch: AppLaunchBranch.fromId(json['launchBranch'] as String?),
       restoreLastTab: json['restoreLastTab'] as bool? ?? false,
       lastBranchId: json['lastBranchId'] as String?,
-      shellNavExpanded: json['shellNavExpanded'] as bool? ?? true,
       windowWidth: json['windowWidth'] as int? ?? 0,
       windowHeight: json['windowHeight'] as int? ?? 0,
       autoRefreshMinutes: json['autoRefreshMinutes'] as int? ?? 0,
@@ -676,12 +679,6 @@ final class AppPreferences extends Equatable {
   /// tab switch.
   final String? lastBranchId;
 
-  /// Whether the desktop navigation column is drawn expanded (the labelled
-  /// sidebar) or collapsed (the icon rail). The width classes apply on top —
-  /// a narrow window draws the rail whatever this says — and the choice is
-  /// never rewritten when the window crosses a class.
-  final bool shellNavExpanded;
-
   /// The desktop window's stored width; 0 keeps the launch default.
   final int windowWidth;
 
@@ -849,7 +846,6 @@ final class AppPreferences extends Equatable {
     'launchBranch': launchBranch.id,
     'restoreLastTab': restoreLastTab,
     if (lastBranchId != null) 'lastBranchId': lastBranchId,
-    'shellNavExpanded': shellNavExpanded,
     'windowWidth': windowWidth,
     'windowHeight': windowHeight,
     'autoRefreshMinutes': autoRefreshMinutes,
@@ -963,7 +959,6 @@ final class AppPreferences extends Equatable {
     bool? restoreLastTab,
     String? lastBranchId,
     bool clearLastBranchId = false,
-    bool? shellNavExpanded,
     int? windowWidth,
     int? windowHeight,
     int? autoRefreshMinutes,
@@ -1072,7 +1067,6 @@ final class AppPreferences extends Equatable {
     launchBranch: launchBranch ?? this.launchBranch,
     restoreLastTab: restoreLastTab ?? this.restoreLastTab,
     lastBranchId: clearLastBranchId ? null : (lastBranchId ?? this.lastBranchId),
-    shellNavExpanded: shellNavExpanded ?? this.shellNavExpanded,
     windowWidth: windowWidth ?? this.windowWidth,
     windowHeight: windowHeight ?? this.windowHeight,
     autoRefreshMinutes: autoRefreshMinutes ?? this.autoRefreshMinutes,
@@ -1185,9 +1179,6 @@ final class AppPreferences extends Equatable {
     countdownCloseMinutes,
     launchBranch,
     restoreLastTab,
-    lastBranchId,
-    shellNavExpanded,
-    windowWidth,
     windowHeight,
     autoRefreshMinutes,
     refreshResumeThresholdMinutes,

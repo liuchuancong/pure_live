@@ -11,26 +11,50 @@ import 'package:pure_uikit/pure_uikit.dart';
 /// the `@TypedStatefulShellRoute` table in `app_router.dart` — go_router
 /// addresses branches by position, and this enum is the single place that
 /// position is written beside the destinations the chromes render from it.
+///
+/// The first five are the primary branches: the destinations the chromes
+/// list. The last four are the menu branches — reachable from the top-left
+/// menu, drawn in the shell's content pane like a primary branch, but never
+/// listed in the chrome and never offered to the page settings.
 enum ShellBranch {
-  /// The followed streamers' live grid — the reference's first tab and the
-  /// shell's first screen (3.x `HomeMenu.favorites`, heart glyph).
+  /// The followed streamers' live grid — the shell's first screen (3.x
+  /// `HomeMenu.favorites`, heart glyph).
   follow(0, Icons.favorite),
 
-  /// The recommend feed — the reference's second tab (3.x
-  /// `HomeMenu.popular`, fire glyph).
+  /// The recommend feed (3.x `HomeMenu.popular`, fire glyph).
   popular(1, Icons.local_fire_department),
 
-  /// The category catalogue — the reference's third tab (3.x
-  /// `HomeMenu.areas`, grid glyph).
+  /// The category catalogue (3.x `HomeMenu.areas`, grid glyph).
   areas(2, Icons.apps),
 
-  /// The recording centre — the reference's fourth tab (3.x
-  /// `HomeMenu.record`, download glyph). It is a bottom-bar tab on a phone and
-  /// a normal destination in the desktop/tablet column now that the branded
-  /// sidebar has room for all four branches.
-  record(3, Icons.download_outlined);
+  /// The IPTV library, a primary branch since it joined the chrome ahead of
+  /// the recording centre (3.x `HomeMenu.iptv`, server glyph).
+  iptv(3, Icons.dns_outlined),
+
+  /// The recording centre (3.x `HomeMenu.record`, download glyph).
+  record(4, Icons.download_outlined),
+
+  /// Multi-view, a menu branch: shown in the content pane on a wide layout,
+  /// pushed as a page on a phone.
+  multiview(5, Icons.grid_view_outlined),
+
+  /// The toolbox (link resolution), a menu branch.
+  toolbox(6, Icons.link_outlined),
+
+  /// Search, a menu branch.
+  search(7, Icons.search_rounded),
+
+  /// The watch history, a menu branch (3.x kept it in `MenuButton` too).
+  history(8, Icons.history_rounded);
 
   new(this.branchIndex, this.icon);
+
+  /// The primary branches, in chrome order — the destinations the bottom bar,
+  /// the rail and the sidebar draw, and the set the page settings arrange.
+  static const List<ShellBranch> primary = [follow, popular, areas, iptv, record];
+
+  /// The menu branches, in menu order — what the top-left menu lists.
+  static const List<ShellBranch> menu = [multiview, toolbox, search, history];
 
   /// The position inside the stateful shell — what `goBranch` takes.
   final int branchIndex;
@@ -38,13 +62,20 @@ enum ShellBranch {
   /// The icon every chrome renders for this branch.
   final IconData icon;
 
-  /// The localized label. The favorites branch carries the reference's
-  /// favorites tab label (3.x `favorites_title`).
+  /// Whether the chromes list this branch.
+  bool get isPrimary => primary.contains(this);
+
+  /// The localized label.
   String label(BuildContext context) => switch (this) {
     ShellBranch.follow => context.t.tabs.favorites,
     ShellBranch.popular => context.t.tabs.popular,
     ShellBranch.areas => context.t.tabs.areas,
+    ShellBranch.iptv => context.t.iptv.title,
     ShellBranch.record => context.t.tabs.record,
+    ShellBranch.multiview => context.t.multiview.title,
+    ShellBranch.toolbox => context.t.toolbox.title,
+    ShellBranch.search => context.t.tabs.search,
+    ShellBranch.history => context.t.tabs.history,
   };
 
   /// The route location this branch's root answers — what the router starts
@@ -53,7 +84,12 @@ enum ShellBranch {
     ShellBranch.follow => RoutePath.favorites,
     ShellBranch.popular => RoutePath.popular,
     ShellBranch.areas => RoutePath.areas,
+    ShellBranch.iptv => RoutePath.iptv,
     ShellBranch.record => RoutePath.recorder,
+    ShellBranch.multiview => RoutePath.multiview,
+    ShellBranch.toolbox => RoutePath.toolbox,
+    ShellBranch.search => RoutePath.search,
+    ShellBranch.history => RoutePath.history,
   };
 
   /// The branch a destination widget's position stands for: the chromes
@@ -78,30 +114,28 @@ enum ShellBranch {
 /// The shell branches the user's page settings keep visible, in the order
 /// they arranged them.
 ///
-/// An id the enum does not know is dropped — which is how a document naming
-/// the old `home` launcher or `history` branch stops drawing them. An empty or
-/// unknown document falls back to every branch in table order: a shell with no
-/// destination cannot be walked, so this never returns an empty list.
-///
-/// A stored document that is still the untouched default (`shellBranches`
-/// before the popular and areas branches existed) has never been customised,
-/// so it grows the new branches instead of hiding them: the tab conversion
-/// must not land as two tabs going missing. A document that differs from the
-/// default at all is a real choice and stands as stored.
+/// Only primary branches are chromed, so only they come out of the document —
+/// a stored id naming a menu branch is dropped, as is an id the enum does not
+/// know. A document still matching a default — this build's or the one before
+/// IPTV joined the chrome — has never been customised, so it grows the
+/// current default instead of hiding the branch the old default never named.
 List<ShellBranch> visibleShellBranches(AppPreferences preferences) {
   final stored = preferences.shellBranches;
+  final untouchedDefault =
+      stored.length == defaultShellBranches.length && _sameIds(stored, defaultShellBranches) ||
+      stored.length == legacyShellBranches.length && _sameIds(stored, legacyShellBranches);
   final seen = <ShellBranch>{};
   final result = <ShellBranch>[];
-  if (stored.length != defaultShellBranches.length || !_sameIds(stored, defaultShellBranches)) {
+  if (!untouchedDefault) {
     for (final id in stored) {
       final branch = ShellBranch.maybeFromId(id);
-      if (branch != null && seen.add(branch)) {
+      if (branch != null && branch.isPrimary && seen.add(branch)) {
         result.add(branch);
       }
     }
   }
   if (result.isEmpty) {
-    result.addAll(ShellBranch.values);
+    result.addAll(ShellBranch.primary);
   }
   return result;
 }
@@ -134,52 +168,47 @@ String launchLocationFor(AppPreferences preferences) {
   return visible.first.location;
 }
 
-/// The navigation column's destinations, in the design table's three groups:
-/// the user's tabs first, then the content tools, then the system entries —
-/// a divider before each group's first destination
-/// ([PureNavDestination.startsGroup]).
-///
-/// The same list serves every wide surface: the desktop sidebar draws it
-/// labelled and grouped, the compact rail draws it icon-over-label, and the
-/// phone bottom bar filters it down to the branch entries. Selection stays
-/// branch-based: a tool is pushed above the shell, so no tool is ever the
-/// selected destination.
-List<PureNavDestination> shellNavDestinations(BuildContext context, {List<ShellBranch>? branches}) => [
-  for (final branch in branches ?? ShellBranch.values)
+/// The chrome destinations: the user's visible primary branches, in their
+/// order — the list the phone's bottom bar renders. The menu branches and
+/// the settings entry are not here; the wide column and the drawer own them.
+List<PureNavDestination> shellPrimaryDestinations(BuildContext context, {List<ShellBranch>? branches}) => [
+  for (final branch in branches ?? ShellBranch.primary)
     PureNavDestination(id: branch.name, label: branch.label(context), icon: branch.icon),
-  PureNavDestination(
-    id: 'search',
-    label: context.t.tabs.search,
-    icon: Icons.search_rounded,
-    startsGroup: true,
-    showInCompactBar: false,
-  ),
-  PureNavDestination(
-    id: 'history',
-    label: context.t.tabs.history,
-    icon: Icons.history_rounded,
-    showInCompactBar: false,
-  ),
-  PureNavDestination(id: 'iptv', label: context.t.iptv.title, icon: Icons.dns_outlined, showInCompactBar: false),
-  PureNavDestination(
-    id: 'multiview',
-    label: context.t.multiview.title,
-    icon: Icons.grid_view_outlined,
-    showInCompactBar: false,
-  ),
-  PureNavDestination(id: 'toolbox', label: context.t.toolbox.title, icon: Icons.link_outlined, showInCompactBar: false),
-  PureNavDestination(
-    id: 'settings',
-    label: context.t.tabs.settings,
-    icon: Icons.settings_outlined,
-    startsGroup: true,
-    showInCompactBar: false,
-  ),
 ];
 
-/// The same column as [shellNavDestinations] as the dispatched shell's own
-/// destination type — what the TV chrome renders.
+/// The wide column's destinations: the primary branches, then — under the
+/// group divider — the four menu branches as rows of their own. A menu
+/// branch activates like a primary one; the settings entry lives in the
+/// column's footer, not in this list.
+List<PureNavDestination> shellColumnDestinations(BuildContext context, {List<ShellBranch>? branches}) {
+  const menu = ShellBranch.menu;
+  return [
+    for (final branch in branches ?? ShellBranch.primary)
+      PureNavDestination(id: branch.name, label: branch.label(context), icon: branch.icon),
+    for (var index = 0; index < menu.length; index++)
+      PureNavDestination(
+        id: menu[index].name,
+        label: menu[index].label(context),
+        icon: menu[index].icon,
+        startsGroup: index == 0,
+      ),
+  ];
+}
+
+/// The phone drawer's destinations: the four menu branches, then the
+/// settings entry — a drawer has no footer, so settings travels with them.
+List<PureNavDestination> shellDrawerDestinations(BuildContext context) => [
+  for (final branch in ShellBranch.menu)
+    PureNavDestination(id: branch.name, label: branch.label(context), icon: branch.icon),
+  PureNavDestination(id: 'settings', label: context.t.tabs.settings, icon: Icons.settings_outlined),
+];
+
+/// The same column flattened for the TV shell's dispatched destinations: the
+/// primary branches, then the menu branches, then settings.
 List<PureShellDestination> shellTvDestinations(BuildContext context, {List<ShellBranch>? branches}) => [
-  for (final destination in shellNavDestinations(context, branches: branches))
+  for (final destination in [
+    ...shellPrimaryDestinations(context, branches: branches),
+    ...shellDrawerDestinations(context),
+  ])
     PureShellDestination(id: destination.id, label: destination.label, icon: destination.icon),
 ];
