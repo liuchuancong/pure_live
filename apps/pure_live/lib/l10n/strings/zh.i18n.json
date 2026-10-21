@@ -478,7 +478,9 @@
     "localPresetHighlight": "高亮",
     "localPresetNeon": "霓虹",
     "localPresetMinimal": "极简",
-    "localLevel": "等级 {level: int} · {into: int}/{total: int}"
+    "localLevel": "等级 {level: int} · {into: int}/{total: int}",
+    "localGiftBanner": "礼物横幅",
+    "localGiftBannerDesc": "送出礼物时在画面上浮出礼物卡片"
   },
   "hotAreas": {
     "title": "平台显示",
@@ -996,7 +998,8 @@
     "blockKeywordTitle": "屏蔽弹幕关键词",
     "block": "屏蔽",
     "portraitFullscreenRestoreHint": "已进入竖屏全屏 · 上滑恢复弹幕栏",
-    "gift": "送礼物"
+    "gift": "送礼物",
+    "sentGift": "送出"
   },
   "areas": {
     "followedAreas": "关注的分区",

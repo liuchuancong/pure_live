@@ -607,6 +607,8 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get localPresetNeon => 'Neon';
 	@override String get localPresetMinimal => 'Minimal';
 	@override String localLevel({required int level, required int into, required int total}) => 'Level ${level} · ${into}/${total}';
+	@override String get localGiftBanner => 'Gift banner';
+	@override String get localGiftBannerDesc => 'Raise a gift card over the picture when you send one';
 }
 
 // Path: hotAreas
@@ -907,6 +909,7 @@ class _Translations$room$en extends Translations$room$zh {
 	@override String get block => 'Block';
 	@override String get portraitFullscreenRestoreHint => 'Portrait fullscreen — swipe up to bring the danmaku bar back';
 	@override String get gift => 'Send a gift';
+	@override String get sentGift => 'sent';
 }
 
 // Path: areas
@@ -2123,6 +2126,8 @@ extension on TranslationsEn {
 			'settings.localPresetNeon' => 'Neon',
 			'settings.localPresetMinimal' => 'Minimal',
 			'settings.localLevel' => ({required int level, required int into, required int total}) => 'Level ${level} · ${into}/${total}',
+			'settings.localGiftBanner' => 'Gift banner',
+			'settings.localGiftBannerDesc' => 'Raise a gift card over the picture when you send one',
 			'hotAreas.title' => 'Platform visibility',
 			'hotAreas.note' => 'Hidden platforms are left out of popular, areas and search.',
 			'hotAreas.orderNote' => 'Drag to reorder the platforms.',
@@ -2175,10 +2180,10 @@ extension on TranslationsEn {
 			'recorder.chooseDirectory' => 'Choose the recordings folder',
 			'recorder.segmentLength' => 'Segment length',
 			'recorder.minutesValue' => ({required int minutes}) => '${minutes} min',
-			'recorder.segmentsValue' => ({required int count}) => '${count} segments',
-			'recorder.restoring' => 'Finishing the previous run’s recordings…',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.segmentsValue' => ({required int count}) => '${count} segments',
+			'recorder.restoring' => 'Finishing the previous run’s recordings…',
 			'recorder.engineFailed' => ({required String error}) => 'The recording engine failed to start: ${error}',
 			'recorder.filterAll' => 'All',
 			'recorder.filterActive' => 'Active',
@@ -2362,6 +2367,7 @@ extension on TranslationsEn {
 			'room.block' => 'Block',
 			'room.portraitFullscreenRestoreHint' => 'Portrait fullscreen — swipe up to bring the danmaku bar back',
 			'room.gift' => 'Send a gift',
+			'room.sentGift' => 'sent',
 			'areas.followedAreas' => 'Followed areas',
 			'areas.empty' => 'No areas here',
 			'areas.followEmpty' => 'No followed areas yet',
@@ -2688,11 +2694,11 @@ extension on TranslationsEn {
 			'errors.network' => 'Network unavailable. Check your connection and retry.',
 			'errors.notFound' => 'Nothing found.',
 			'errors.cancelled' => 'Cancelled.',
+			_ => null,
+		} ?? switch (path) {
 			'errors.unsupported' => 'This source doesn\'t support that.',
 			'tabs.home' => 'Home',
 			'tabs.favorites' => 'Favorites',
-			_ => null,
-		} ?? switch (path) {
 			'tabs.follow' => 'Follow',
 			'tabs.history' => 'History',
 			'tabs.popular' => 'Popular',

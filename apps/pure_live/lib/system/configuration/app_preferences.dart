@@ -60,6 +60,7 @@ final class AppPreferences extends Equatable {
     int localInteractionColor = 0xFFFFFFFF,
     int localInteractionExperience = 0,
     String localInteractionPreset = 'clean',
+    bool localInteractionGiftBanner = true,
     double barrageFontSize = 15,
     double barrageOpacity = 1,
     double barrageArea = 1,
@@ -182,6 +183,7 @@ final class AppPreferences extends Equatable {
          localInteractionColor: localInteractionColor,
          localInteractionExperience: localInteractionExperience,
          localInteractionPreset: localInteractionPreset,
+         localInteractionGiftBanner: localInteractionGiftBanner,
        ),
        danmaku = DanmakuPreferences(
          danmakuVisible: danmakuVisible,
@@ -390,6 +392,9 @@ final class AppPreferences extends Equatable {
 
   /// The local danmaku preset the viewer's own lines draw with.
   String get localInteractionPreset => localInteraction.localInteractionPreset;
+
+  /// Whether a gift the viewer sends raises the banner over the picture.
+  bool get localInteractionGiftBanner => localInteraction.localInteractionGiftBanner;
 
   /// The barrage text size, in logical pixels.
   double get barrageFontSize => danmaku.barrageFontSize;
@@ -796,6 +801,7 @@ final class AppPreferences extends Equatable {
     int? localInteractionColor,
     int? localInteractionExperience,
     String? localInteractionPreset,
+    bool? localInteractionGiftBanner,
     double? barrageFontSize,
     double? barrageOpacity,
     double? barrageArea,
@@ -910,6 +916,7 @@ final class AppPreferences extends Equatable {
     localInteractionColor: localInteractionColor ?? this.localInteractionColor,
     localInteractionExperience: localInteractionExperience ?? this.localInteractionExperience,
     localInteractionPreset: localInteractionPreset ?? this.localInteractionPreset,
+    localInteractionGiftBanner: localInteractionGiftBanner ?? this.localInteractionGiftBanner,
     barrageFontSize: barrageFontSize ?? this.barrageFontSize,
     barrageOpacity: barrageOpacity ?? this.barrageOpacity,
     barrageArea: barrageArea ?? this.barrageArea,

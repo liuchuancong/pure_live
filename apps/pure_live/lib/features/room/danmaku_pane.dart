@@ -256,6 +256,9 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
 
   @override
   Widget build(BuildContext context) {
+    // The bus is auto-disposed; watching it keeps the instance the
+    // subscription listens on alive while the pane is up.
+    ref.watch(roomLocalMessageBusProvider(widget.identity));
     final t = context.t;
     final dark = widget.dark;
     // The reference gates the chat feed on the same answer the overlay uses:

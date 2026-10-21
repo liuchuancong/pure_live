@@ -471,7 +471,9 @@
     "localPresetHighlight": "Highlight",
     "localPresetNeon": "Neon",
     "localPresetMinimal": "Minimal",
-    "localLevel": "Level {level: int} · {into: int}/{total: int}"
+    "localLevel": "Level {level: int} · {into: int}/{total: int}",
+    "localGiftBanner": "Gift banner",
+    "localGiftBannerDesc": "Raise a gift card over the picture when you send one"
   },
   "hotAreas": {
     "title": "Platform visibility",
@@ -722,7 +724,8 @@
     "blockKeywordTitle": "Block a danmaku keyword",
     "block": "Block",
     "portraitFullscreenRestoreHint": "Portrait fullscreen — swipe up to bring the danmaku bar back",
-    "gift": "Send a gift"
+    "gift": "Send a gift",
+    "sentGift": "sent"
   },
   "areas": {
     "followedAreas": "Followed areas",

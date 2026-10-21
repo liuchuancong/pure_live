@@ -1525,6 +1525,12 @@ class Translations$settings$zh {
 
 	/// zh: '等级 {level: int} · {into: int}/{total: int}'
 	String localLevel({required int level, required int into, required int total}) => '等级 ${level} · ${into}/${total}';
+
+	/// zh: '礼物横幅'
+	String get localGiftBanner => '礼物横幅';
+
+	/// zh: '送出礼物时在画面上浮出礼物卡片'
+	String get localGiftBannerDesc => '送出礼物时在画面上浮出礼物卡片';
 }
 
 // Path: hotAreas
@@ -3130,6 +3136,9 @@ class Translations$room$zh {
 
 	/// zh: '送礼物'
 	String get gift => '送礼物';
+
+	/// zh: '送出'
+	String get sentGift => '送出';
 }
 
 // Path: areas
@@ -4597,6 +4606,8 @@ extension on Translations {
 			'settings.localPresetNeon' => '霓虹',
 			'settings.localPresetMinimal' => '极简',
 			'settings.localLevel' => ({required int level, required int into, required int total}) => '等级 ${level} · ${into}/${total}',
+			'settings.localGiftBanner' => '礼物横幅',
+			'settings.localGiftBannerDesc' => '送出礼物时在画面上浮出礼物卡片',
 			'hotAreas.title' => '平台显示',
 			'hotAreas.note' => '隐藏的平台不会出现在热门、分区与搜索中。',
 			'hotAreas.orderNote' => '拖动调整平台的显示顺序。',
@@ -4649,10 +4660,10 @@ extension on Translations {
 			'recorder.chooseDirectory' => '选择录制目录',
 			'recorder.segmentLength' => '分段时长',
 			'recorder.minutesValue' => ({required int minutes}) => '${minutes} 分钟',
-			'recorder.segmentsValue' => ({required int count}) => '${count} 个分段',
-			'recorder.restoring' => '正在恢复上次未完成的录制…',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.segmentsValue' => ({required int count}) => '${count} 个分段',
+			'recorder.restoring' => '正在恢复上次未完成的录制…',
 			'recorder.engineFailed' => ({required String error}) => '录制引擎启动失败：${error}',
 			'recorder.filterAll' => '全部',
 			'recorder.filterActive' => '进行中',
@@ -5083,6 +5094,7 @@ extension on Translations {
 			'room.block' => '屏蔽',
 			'room.portraitFullscreenRestoreHint' => '已进入竖屏全屏 · 上滑恢复弹幕栏',
 			'room.gift' => '送礼物',
+			'room.sentGift' => '送出',
 			'areas.followedAreas' => '关注的分区',
 			'areas.empty' => '暂无分区',
 			'areas.followEmpty' => '还没有关注的分区',
@@ -5162,11 +5174,11 @@ extension on Translations {
 			'errors.network' => '网络连接不可用，请检查网络后重试。',
 			'errors.notFound' => '没有找到相关内容。',
 			'errors.cancelled' => '已取消。',
+			_ => null,
+		} ?? switch (path) {
 			'errors.unsupported' => '当前来源不支持该功能。',
 			'tabs.home' => '首页',
 			'tabs.favorites' => '关注',
-			_ => null,
-		} ?? switch (path) {
 			'tabs.follow' => '关注',
 			'tabs.history' => '历史',
 			'tabs.popular' => '热门',

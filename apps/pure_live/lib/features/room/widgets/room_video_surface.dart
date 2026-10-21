@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitVideoView;
+import 'package:pure_live/features/room/local/local_gift_overlay.dart';
 import 'package:pure_live/features/room/room_controller.dart' show RoomController, RoomPresentation, RoomState;
 import 'package:pure_live/features/room/room_providers.dart' show RoomIdentity;
 import 'package:pure_live/features/room/widgets/room_barrage_overlay.dart';
@@ -121,6 +122,9 @@ final class _RoomVideoSurfaceState extends ConsumerState<RoomVideoSurface> {
               fontSize: widget.barrageFontSize,
               areaOverride: widget.barrageArea,
             ),
+          // A gift the viewer sends crosses the picture on its own layer,
+          // apart from the barrage and the controls.
+          LocalGiftOverlay(identity: widget.identity),
           if (!locked)
             RoomControlOverlay(
               identity: widget.identity,

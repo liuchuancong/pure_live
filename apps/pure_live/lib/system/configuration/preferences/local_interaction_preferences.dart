@@ -12,6 +12,7 @@ final class LocalInteractionPreferences extends Equatable {
     this.localInteractionColor = 0xFFFFFFFF,
     this.localInteractionExperience = 0,
     this.localInteractionPreset = 'clean',
+    this.localInteractionGiftBanner = true,
   });
 
   /// Reads the domain's keys from the flat document; unknown shapes decode
@@ -23,6 +24,7 @@ final class LocalInteractionPreferences extends Equatable {
       localInteractionColor: (json['localInteractionColor'] as num?)?.toInt() ?? 0xFFFFFFFF,
       localInteractionExperience: (json['localInteractionExperience'] as num?)?.toInt() ?? 0,
       localInteractionPreset: json['localInteractionPreset'] as String? ?? 'clean',
+      localInteractionGiftBanner: json['localInteractionGiftBanner'] as bool? ?? true,
     );
   }
 
@@ -44,6 +46,9 @@ final class LocalInteractionPreferences extends Equatable {
   /// catalogue's id, `clean` for the shipping look.
   final String localInteractionPreset;
 
+  /// Whether a gift the viewer sends raises the banner over the picture.
+  final bool localInteractionGiftBanner;
+
   /// The domain's keys as stored, flat.
   Map<String, Object?> toJson() => {
     'localInteractionEnabled': localInteractionEnabled,
@@ -51,6 +56,7 @@ final class LocalInteractionPreferences extends Equatable {
     'localInteractionColor': localInteractionColor,
     'localInteractionExperience': localInteractionExperience,
     'localInteractionPreset': localInteractionPreset,
+    'localInteractionGiftBanner': localInteractionGiftBanner,
   };
 
   /// Returns a copy with the given fields replaced.
@@ -60,6 +66,7 @@ final class LocalInteractionPreferences extends Equatable {
     int? localInteractionColor,
     int? localInteractionExperience,
     String? localInteractionPreset,
+    bool? localInteractionGiftBanner,
   }) => LocalInteractionPreferences(
     localInteractionEnabled: localInteractionEnabled ?? this.localInteractionEnabled,
     localInteractionUserName: localInteractionUserName ?? this.localInteractionUserName,
@@ -73,5 +80,7 @@ final class LocalInteractionPreferences extends Equatable {
     localInteractionUserName,
     localInteractionColor,
     localInteractionExperience,
+    localInteractionPreset,
+    localInteractionGiftBanner,
   ];
 }

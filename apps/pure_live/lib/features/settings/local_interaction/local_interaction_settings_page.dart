@@ -53,6 +53,13 @@ final class LocalInteractionSettingsPage extends ConsumerWidget {
                 initialValue: preferences.localInteractionEnabled,
                 onToggle: (value) => unawaited(update((p) => p.copyWith(localInteractionEnabled: value))),
               ),
+              SettingsTile.switchTile(
+                leading: const Icon(Icons.celebration_outlined),
+                title: Text(t.settings.localGiftBanner),
+                description: Text(t.settings.localGiftBannerDesc),
+                initialValue: preferences.localInteractionGiftBanner,
+                onToggle: (value) => unawaited(update((p) => p.copyWith(localInteractionGiftBanner: value))),
+              ),
               SettingsTile.navigation(
                 leading: const Icon(Icons.style_outlined),
                 title: Text(t.settings.localPreset),

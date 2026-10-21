@@ -201,6 +201,7 @@ final class FeedPreferences extends Equatable {
     pageShowSizeSelector,
     pageShowGoto,
     preferRealOnlineCounts,
+    showUnplayableInDiscover,
     realOnlinePlatforms,
     hiddenSiteIds,
     siteOrder,

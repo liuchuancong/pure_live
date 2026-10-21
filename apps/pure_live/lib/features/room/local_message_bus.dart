@@ -61,7 +61,7 @@ final class RoomLocalMessageBus {
         text: gift.name,
         sender: _localSender(userName, level),
         color: _localColor(colorArgb),
-        payload: LiveGift(name: gift.name, count: count),
+        payload: LiveGift(giftId: gift.id, name: gift.name, count: count),
         isLocal: true,
         sentAt: DateTime.now(),
       ),
