@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
+import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_playback/live_playback.dart' show EngineProgress, EngineReady, EngineStopped, PlaybackEngineEvent;
 import 'package:live_sites/live_sites.dart' show LivePlayFormatSource, LivePlayLine, LiveStreamFormat;
 import 'package:live_vod/live_vod.dart' show BilibiliVodClient, VodFailure, VodVideo;
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitVideoView;
-import 'package:pure_live/app/app_providers.dart' show httpProvider;
+import 'package:pure_live/app/app_providers.dart' show environmentProvider, httpProvider;
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/platforms/tv/features/vod/tv_vod_view.dart';
 import 'package:pure_live/system/navigation/route_paths.dart' show RoutePath;
 import 'package:pure_live/system/playback/playback_engine.dart' show MediaCorePlaybackEngine;
 import 'package:pure_uikit/pure_uikit.dart';
@@ -63,6 +65,14 @@ final class _VodPageState extends ConsumerState<VodPage> {
 
   @override
   Widget build(BuildContext context) {
+    // The TV draws its own pane: a focus wall of cover tiles over the same
+    // search.
+    if (ref.read(environmentProvider).runtime.formFactor == FormFactor.tv) {
+      return const PureScaffold(
+        appBar: PureAppBar(title: '视频'),
+        body: TvVodView(),
+      );
+    }
     final t = context.t;
     final theme = PureTheme.of(context);
     final state = _state;
