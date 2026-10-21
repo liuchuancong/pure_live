@@ -55,6 +55,7 @@ import 'package:pure_live/features/settings/video/portrait_settings_page.dart';
 import 'package:pure_live/features/settings/video/video_settings_page.dart';
 import 'package:pure_live/features/shield/shield_page.dart';
 import 'package:pure_live/features/toolbox/toolbox_page.dart';
+import 'package:pure_live/features/vod/vod_page.dart';
 import 'package:pure_live/features/wallpaper/wallpaper_picker_page.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/platforms/tv/shell/tv_shell.dart';
@@ -780,6 +781,32 @@ class ToolboxRoute extends GoRouteData with $ToolboxRoute {
 
   @override
   Widget build(BuildContext context, GoRouterState state) => const ToolboxPage();
+}
+
+/// The video page: search and play the source's videos.
+@TypedGoRoute<VodRoute>(path: RoutePath.vod)
+class VodRoute extends GoRouteData with $VodRoute {
+  /// The video route.
+  const new();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const VodPage();
+}
+
+/// One video playing; [title] only titles the bar.
+@TypedGoRoute<VodPlayRoute>(path: RoutePath.vodPlay)
+class VodPlayRoute extends GoRouteData with $VodPlayRoute {
+  /// The play route.
+  const new({required this.videoId, this.title = ''});
+
+  /// The source's video id.
+  final String videoId;
+
+  /// A title hint.
+  final String title;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) => VodPlayPage(videoId: videoId, title: title);
 }
 
 /// The assembled graph. Every typed route in this library is generated into

@@ -51,6 +51,12 @@ abstract final class RoutePath {
   /// The toolbox: link resolution.
   static const String toolbox = '/toolbox';
 
+  /// The video page.
+  static const String vod = '/vod';
+
+  /// One video playing, under the video page.
+  static const String vodPlay = '/vod/play';
+
   /// The LAN sync page (the toolbox's remote receiver).
   static const String remoteSync = '/remote-sync';
 

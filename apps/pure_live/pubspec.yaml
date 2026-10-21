@@ -80,6 +80,7 @@ dependencies:
   live_shell_desktop: # 桌面端外壳
   live_sites: # 直播平台与站点适配
   live_storage: # 存储与数据仓库
+  live_vod: # 视频点播源（B 站视频搜索与播放地址）
 
   # UIKit 核心与风格适配器
   pure_settings_ui: # 设置页语法：settings_ui 的设计语言分派

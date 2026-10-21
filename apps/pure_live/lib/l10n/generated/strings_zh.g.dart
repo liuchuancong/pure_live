@@ -79,6 +79,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$cast$zh cast = Translations$cast$zh.internal(_root);
 	late final Translations$danmaku$zh danmaku = Translations$danmaku$zh.internal(_root);
 	late final Translations$clipboard$zh clipboard = Translations$clipboard$zh.internal(_root);
+	late final Translations$vod$zh vod = Translations$vod$zh.internal(_root);
 }
 
 // Path: app
@@ -4188,6 +4189,30 @@ class Translations$clipboard$zh {
 	String get go => '去看看';
 }
 
+// Path: vod
+class Translations$vod$zh {
+	Translations$vod$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '视频'
+	String get title => '视频';
+
+	/// zh: '搜索'
+	String get search => '搜索';
+
+	/// zh: '搜索视频'
+	String get searchHint => '搜索视频';
+
+	/// zh: '还没有搜索结果'
+	String get empty => '还没有搜索结果';
+
+	/// zh: '这个视频只有分离的音视频流，当前只播放画面'
+	String get silentHint => '这个视频只有分离的音视频流，当前只播放画面';
+}
+
 /// The flat map containing all translations for locale <zh>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -5455,6 +5480,11 @@ extension on Translations {
 			'clipboard.title' => '剪贴板里有直播链接',
 			'clipboard.found' => ({required Object site, required Object room}) => '${site} 房间 ${room}，要现在去看吗？',
 			'clipboard.go' => '去看看',
+			'vod.title' => '视频',
+			'vod.search' => '搜索',
+			'vod.searchHint' => '搜索视频',
+			'vod.empty' => '还没有搜索结果',
+			'vod.silentHint' => '这个视频只有分离的音视频流，当前只播放画面',
 			_ => null,
 		};
 	}

@@ -1329,5 +1329,12 @@
     "title": "A live-room link in your clipboard",
     "found": "{site} room {room} — take a look now?",
     "go": "Open"
+  },
+  "vod": {
+    "title": "Videos",
+    "search": "Search",
+    "searchHint": "Search videos",
+    "empty": "No results yet",
+    "silentHint": "This video only offers split streams; the picture plays without sound"
   }
 }

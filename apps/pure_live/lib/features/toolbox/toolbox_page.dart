@@ -296,7 +296,13 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
               constraints: const BoxConstraints(maxWidth: 720),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [_linkCard(context), const SizedBox(height: 16), _syncCard(context)],
+                children: [
+                  _linkCard(context),
+                  const SizedBox(height: 16),
+                  _syncCard(context),
+                  const SizedBox(height: 16),
+                  _videoCard(context),
+                ],
               ),
             ),
           ),
@@ -318,6 +324,23 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
         subtitle: context.t.remoteSync.tileSubtitle,
         trailing: const Icon(Icons.chevron_right),
         onTap: () => unawaited(context.push<void>(RoutePath.remoteSync)),
+        divided: false,
+      ),
+    );
+  }
+
+  /// The video source card: the search page for the platform's videos.
+  Widget _videoCard(BuildContext context) {
+    final theme = PureTheme.of(context);
+    return PureCard(
+      padding: EdgeInsets.zero,
+      child: PureListRow(
+        key: const ValueKey('toolbox-vod'),
+        leading: Icon(Icons.videocam_outlined, color: theme.colors.primary),
+        title: context.t.vod.title,
+        subtitle: context.t.vod.searchHint,
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => unawaited(context.push<void>(RoutePath.vod)),
         divided: false,
       ),
     );

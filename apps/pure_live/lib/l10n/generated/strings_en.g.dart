@@ -77,6 +77,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$cast$en cast = _Translations$cast$en._(_root);
 	@override late final _Translations$danmaku$en danmaku = _Translations$danmaku$en._(_root);
 	@override late final _Translations$clipboard$en clipboard = _Translations$clipboard$en._(_root);
+	@override late final _Translations$vod$en vod = _Translations$vod$en._(_root);
 }
 
 // Path: app
@@ -1676,6 +1677,20 @@ class _Translations$clipboard$en extends Translations$clipboard$zh {
 	@override String get go => 'Open';
 }
 
+// Path: vod
+class _Translations$vod$en extends Translations$vod$zh {
+	_Translations$vod$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Videos';
+	@override String get search => 'Search';
+	@override String get searchHint => 'Search videos';
+	@override String get empty => 'No results yet';
+	@override String get silentHint => 'This video only offers split streams; the picture plays without sound';
+}
+
 /// The flat map containing all translations for locale <en>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -2943,6 +2958,11 @@ extension on TranslationsEn {
 			'clipboard.title' => 'A live-room link in your clipboard',
 			'clipboard.found' => ({required Object site, required Object room}) => '${site} room ${room} — take a look now?',
 			'clipboard.go' => 'Open',
+			'vod.title' => 'Videos',
+			'vod.search' => 'Search',
+			'vod.searchHint' => 'Search videos',
+			'vod.empty' => 'No results yet',
+			'vod.silentHint' => 'This video only offers split streams; the picture plays without sound',
 			_ => null,
 		};
 	}
