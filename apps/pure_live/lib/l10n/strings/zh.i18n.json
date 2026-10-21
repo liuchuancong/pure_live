@@ -480,7 +480,9 @@
     "localPresetMinimal": "极简",
     "localLevel": "等级 {level: int} · {into: int}/{total: int}",
     "localGiftBanner": "礼物横幅",
-    "localGiftBannerDesc": "送出礼物时在画面上浮出礼物卡片"
+    "localGiftBannerDesc": "送出礼物时在画面上浮出礼物卡片",
+    "backgroundPlay": "后台播放",
+    "backgroundPlayDesc": "切到后台继续播放声音；关闭则进后台暂停、回来恢复"
   },
   "hotAreas": {
     "title": "平台显示",

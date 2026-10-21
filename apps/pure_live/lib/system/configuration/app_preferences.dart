@@ -53,6 +53,7 @@ final class AppPreferences extends Equatable {
     bool refreshOnResume = true,
     bool danmakuVisible = true,
     bool volumeMuted = false,
+    bool backgroundPlay = false,
     double defaultMobileVolume = 0.5,
     double defaultDesktopVolume = 1,
     bool localInteractionEnabled = false,
@@ -217,6 +218,7 @@ final class AppPreferences extends Equatable {
        ),
        player = PlayerPreferences(
          volumeMuted: volumeMuted,
+         backgroundPlay: backgroundPlay,
          defaultMobileVolume: defaultMobileVolume,
          defaultDesktopVolume: defaultDesktopVolume,
          preferResolution: preferResolution,
@@ -369,6 +371,9 @@ final class AppPreferences extends Equatable {
   /// Whether every room opens silenced, the reference's `vol.globalVolumeMute`.
   /// The level itself survives the mute; un-muting returns to it.
   bool get volumeMuted => player.volumeMuted;
+
+  /// Whether playback carries on while the app is in the background.
+  bool get backgroundPlay => player.backgroundPlay;
 
   /// The volume a room starts at on a touch phone, 0..1 — the reference's
   /// `vol.defaultMobileVolume`, one of the two answers its volume dialog edits.
@@ -794,6 +799,7 @@ final class AppPreferences extends Equatable {
     bool? refreshOnResume,
     bool? danmakuVisible,
     bool? volumeMuted,
+    bool? backgroundPlay,
     double? defaultMobileVolume,
     double? defaultDesktopVolume,
     bool? localInteractionEnabled,
@@ -909,6 +915,7 @@ final class AppPreferences extends Equatable {
     refreshOnResume: refreshOnResume ?? this.refreshOnResume,
     danmakuVisible: danmakuVisible ?? this.danmakuVisible,
     volumeMuted: volumeMuted ?? this.volumeMuted,
+    backgroundPlay: backgroundPlay ?? this.backgroundPlay,
     defaultMobileVolume: defaultMobileVolume ?? this.defaultMobileVolume,
     defaultDesktopVolume: defaultDesktopVolume ?? this.defaultDesktopVolume,
     localInteractionEnabled: localInteractionEnabled ?? this.localInteractionEnabled,

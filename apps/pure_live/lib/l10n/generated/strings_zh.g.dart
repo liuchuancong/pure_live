@@ -1531,6 +1531,12 @@ class Translations$settings$zh {
 
 	/// zh: '送出礼物时在画面上浮出礼物卡片'
 	String get localGiftBannerDesc => '送出礼物时在画面上浮出礼物卡片';
+
+	/// zh: '后台播放'
+	String get backgroundPlay => '后台播放';
+
+	/// zh: '切到后台继续播放声音；关闭则进后台暂停、回来恢复'
+	String get backgroundPlayDesc => '切到后台继续播放声音；关闭则进后台暂停、回来恢复';
 }
 
 // Path: hotAreas
@@ -4611,6 +4617,8 @@ extension on Translations {
 			'settings.localLevel' => ({required int level, required int into, required int total}) => '等级 ${level} · ${into}/${total}',
 			'settings.localGiftBanner' => '礼物横幅',
 			'settings.localGiftBannerDesc' => '送出礼物时在画面上浮出礼物卡片',
+			'settings.backgroundPlay' => '后台播放',
+			'settings.backgroundPlayDesc' => '切到后台继续播放声音；关闭则进后台暂停、回来恢复',
 			'hotAreas.title' => '平台显示',
 			'hotAreas.note' => '隐藏的平台不会出现在热门、分区与搜索中。',
 			'hotAreas.orderNote' => '拖动调整平台的显示顺序。',
@@ -4661,10 +4669,10 @@ extension on Translations {
 			'recorder.outputDirectory' => '输出目录',
 			'recorder.outputDirectoryDefault' => '应用的录制目录',
 			'recorder.chooseDirectory' => '选择录制目录',
-			'recorder.segmentLength' => '分段时长',
-			'recorder.minutesValue' => ({required int minutes}) => '${minutes} 分钟',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.segmentLength' => '分段时长',
+			'recorder.minutesValue' => ({required int minutes}) => '${minutes} 分钟',
 			'recorder.segmentsValue' => ({required int count}) => '${count} 个分段',
 			'recorder.restoring' => '正在恢复上次未完成的录制…',
 			'recorder.engineFailed' => ({required String error}) => '录制引擎启动失败：${error}',
@@ -5175,10 +5183,10 @@ extension on Translations {
 			'remoteSync.sendAction' => '发送',
 			'remoteSync.invalidQr' => '不是纯粹直播的同步二维码',
 			'errors.generic' => '出了点问题，请稍后再试。',
-			'errors.network' => '网络连接不可用，请检查网络后重试。',
-			'errors.notFound' => '没有找到相关内容。',
 			_ => null,
 		} ?? switch (path) {
+			'errors.network' => '网络连接不可用，请检查网络后重试。',
+			'errors.notFound' => '没有找到相关内容。',
 			'errors.cancelled' => '已取消。',
 			'errors.unsupported' => '当前来源不支持该功能。',
 			'tabs.home' => '首页',

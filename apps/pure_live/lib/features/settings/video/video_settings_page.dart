@@ -61,6 +61,14 @@ final class VideoSettingsPage extends ConsumerWidget {
             title: Text(t.settings.groupAudio),
             tiles: [
               SettingsTile.switchTile(
+                key: const ValueKey('video-background-play'),
+                leading: const Icon(Icons.music_note_outlined),
+                title: Text(t.settings.backgroundPlay),
+                description: Text(t.settings.backgroundPlayDesc),
+                initialValue: preferences.backgroundPlay,
+                onToggle: (value) => unawaited(update((p) => p.copyWith(backgroundPlay: value))),
+              ),
+              SettingsTile.switchTile(
                 leading: const Icon(Icons.volume_off_outlined),
                 title: Text(t.room.globalMute),
                 description: Text(t.room.globalMuteSubtitle),

@@ -609,6 +609,8 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String localLevel({required int level, required int into, required int total}) => 'Level ${level} · ${into}/${total}';
 	@override String get localGiftBanner => 'Gift banner';
 	@override String get localGiftBannerDesc => 'Raise a gift card over the picture when you send one';
+	@override String get backgroundPlay => 'Background playback';
+	@override String get backgroundPlayDesc => 'Keep playing in the background; off pauses on the way out and resumes on return';
 }
 
 // Path: hotAreas
@@ -2129,6 +2131,8 @@ extension on TranslationsEn {
 			'settings.localLevel' => ({required int level, required int into, required int total}) => 'Level ${level} · ${into}/${total}',
 			'settings.localGiftBanner' => 'Gift banner',
 			'settings.localGiftBannerDesc' => 'Raise a gift card over the picture when you send one',
+			'settings.backgroundPlay' => 'Background playback',
+			'settings.backgroundPlayDesc' => 'Keep playing in the background; off pauses on the way out and resumes on return',
 			'hotAreas.title' => 'Platform visibility',
 			'hotAreas.note' => 'Hidden platforms are left out of popular, areas and search.',
 			'hotAreas.orderNote' => 'Drag to reorder the platforms.',
@@ -2179,10 +2183,10 @@ extension on TranslationsEn {
 			'recorder.outputDirectory' => 'Output directory',
 			'recorder.outputDirectoryDefault' => 'The app\'s recordings folder',
 			'recorder.chooseDirectory' => 'Choose the recordings folder',
-			'recorder.segmentLength' => 'Segment length',
-			'recorder.minutesValue' => ({required int minutes}) => '${minutes} min',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.segmentLength' => 'Segment length',
+			'recorder.minutesValue' => ({required int minutes}) => '${minutes} min',
 			'recorder.segmentsValue' => ({required int count}) => '${count} segments',
 			'recorder.restoring' => 'Finishing the previous run’s recordings…',
 			'recorder.engineFailed' => ({required String error}) => 'The recording engine failed to start: ${error}',
@@ -2693,10 +2697,10 @@ extension on TranslationsEn {
 			'remoteSync.sendAction' => 'Send',
 			'remoteSync.invalidQr' => 'Not a PureLive sync QR code',
 			'errors.generic' => 'Something went wrong. Please try again later.',
-			'errors.network' => 'Network unavailable. Check your connection and retry.',
-			'errors.notFound' => 'Nothing found.',
 			_ => null,
 		} ?? switch (path) {
+			'errors.network' => 'Network unavailable. Check your connection and retry.',
+			'errors.notFound' => 'Nothing found.',
 			'errors.cancelled' => 'Cancelled.',
 			'errors.unsupported' => 'This source doesn\'t support that.',
 			'tabs.home' => 'Home',

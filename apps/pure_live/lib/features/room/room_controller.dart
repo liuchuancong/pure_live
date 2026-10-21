@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/painting.dart' show BoxFit, Rect;
+import 'package:flutter/widgets.dart' show AppLifecycleListener;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_device/live_device.dart' show NetworkInterface, PlatformNetworkConnectivityService;
 import 'package:live_library/live_library.dart' show WatchRecordIdentity;
@@ -319,6 +320,36 @@ final class RoomController extends Notifier<RoomState> {
   /// The attempt the ladder is on; 0 between streaks.
   int _reconnectAttempt = 0;
 
+  /// The app lifecycle: a room that went to the background by itself
+  /// remembers whether it paused, so only that pause is lifted on return.
+  AppLifecycleListener? _lifecycle;
+  bool _pausedByBackground = false;
+
+  /// Watches the app's lifecycle: with 后台播放 off, the room pauses on the
+  /// way out and resumes on the way back (the reference's
+  /// `background_playback`, trimmed to the pause/resume it owns). A room
+  /// the viewer had already paused is left alone.
+  void _watchBackground() {
+    _lifecycle = AppLifecycleListener(
+      onPause: () {
+        if (ref.read(appPreferencesProvider).backgroundPlay || state.paused) {
+          return;
+        }
+        _pausedByBackground = true;
+        togglePause();
+      },
+      onResume: () {
+        if (!_pausedByBackground) {
+          return;
+        }
+        _pausedByBackground = false;
+        if (state.paused) {
+          togglePause();
+        }
+      },
+    );
+  }
+
   /// Arms the next automatic attempt for a failed stream, or leaves the
   /// manual retry alone once the ladder is spent.
   void _scheduleReconnect() {
@@ -352,11 +383,13 @@ final class RoomController extends Notifier<RoomState> {
   @override
   RoomState build() {
     _engineSub = _engine.events.listen(_onEngineEvent);
+    _watchBackground();
     _progressTimer = Timer.periodic(_progressWriteInterval, (_) => writeProgress());
     ref.onDispose(() {
       _clearTileCloseHook();
       _progressTimer?.cancel();
       _reconnectTimer?.cancel();
+      _lifecycle?.dispose();
       _chromeTimer?.cancel();
       _sleepTimer?.cancel();
       unawaited(_adapterSub?.cancel());
