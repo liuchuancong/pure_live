@@ -13,6 +13,7 @@ import 'package:pure_live/features/room/widgets/room_bar_parts.dart';
 import 'package:pure_live/features/room/widgets/room_on_video_controls.dart';
 import 'package:pure_live/features/settings/widgets/settings_surface.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/system/navigation/app_router.dart' show DanmakuSettingsRoute;
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The player's control bars, drawn over the video surface — the reference's
@@ -301,6 +302,15 @@ final class RoomControlOverlay extends ConsumerWidget {
                               : RoomPresentation.miniWindow,
                         )
                       : null,
+                ),
+              // The danmaku settings, one tap from the picture (the
+              // reference's `danmaku_settings` button).
+              if (!compact)
+                RoomOnVideoButton(
+                  key: const ValueKey('room-danmaku-settings'),
+                  icon: Icons.subtitles_outlined,
+                  tooltip: context.t.settings.danmakuTitle,
+                  onPressed: () => unawaited(const DanmakuSettingsRoute().push<void>(context)),
                 ),
               if (canCast)
                 RoomOnVideoButton(
