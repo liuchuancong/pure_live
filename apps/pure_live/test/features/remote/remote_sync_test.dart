@@ -373,7 +373,7 @@ void main() {
     test('the export only carries them when handed in', () {
       Map<String, dynamic> build({List<Map<String, dynamic>>? webdav, List<Map<String, dynamic>>? accounts}) =>
           RemoteSyncPayload.buildExport(
-            preferences: const AppPreferences(),
+            preferences: AppPreferences(),
             follows: const [],
             groups: const [],
             history: const [],
@@ -397,7 +397,7 @@ void main() {
       Future<void> noteWebDav(Map<String, dynamic> entry) async => webdavSeen.add(entry);
       Future<void> noteAccounts(Map<String, dynamic> entry) async => accountsSeen.add(entry);
       final payload = RemoteSyncPayload.buildExport(
-        preferences: const AppPreferences(),
+        preferences: AppPreferences(),
         follows: const [],
         groups: const [],
         history: const [],

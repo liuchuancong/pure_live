@@ -1,9 +1,36 @@
+// The app's general choices — the facade over the per-domain preference
+// documents under `preferences/`. The storage format is unchanged: one flat
+// JSON document, every key where it has always been, so existing data and
+// backups decode as they stand. Each domain owns its fields, its codec and
+// its equality under `preferences/<domain>_preferences.dart`; this class
+// keeps the single constructor, the field getters the pages read, and the
+// copyWith the settings pages write through.
+//
+// The `new` shorthand is reserved for the constructor name; the fromJson
+// factory and [copyWith] spell the class name, which the lint otherwise
+// asks to shorten.
+// ignore_for_file: unnecessary_type_name_in_constructor
+
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart' show immutable;
 import 'package:live_net/live_net.dart' show HttpProxyRoute, ProxyPolicy, ProxyRoute;
 import 'package:live_storage/live_storage.dart' show StorageRepository;
+
+import 'package:pure_live/system/configuration/preferences/danmaku_preferences.dart';
+import 'package:pure_live/system/configuration/preferences/data_preferences.dart';
+import 'package:pure_live/system/configuration/preferences/feed_preferences.dart';
+import 'package:pure_live/system/configuration/preferences/general_preferences.dart';
+import 'package:pure_live/system/configuration/preferences/local_interaction_preferences.dart';
+import 'package:pure_live/system/configuration/preferences/network_preferences.dart';
+import 'package:pure_live/system/configuration/preferences/player_preferences.dart';
+import 'package:pure_live/system/configuration/preferences/portrait_preferences.dart';
+import 'package:pure_live/system/configuration/preferences/shell_preferences.dart';
+import 'package:pure_live/system/configuration/preferences/values.dart';
+
+export 'preferences/shell_preferences.dart' show defaultShellBranches, legacyShellBranches;
+export 'preferences/values.dart' show AppLaunchBranch, LoadingStyle, RoomCardCoverAspect, defaultRealOnlinePlatforms;
 
 /// Where the general-preferences document is persisted.
 ///
@@ -18,878 +45,731 @@ abstract final class AppPreferenceKeys {
   static const String document = 'preferences.app.v1';
 }
 
-/// The branch the router starts on, when the last visited one is not asked
-/// for (`restoreLastTab` off).
-enum AppLaunchBranch {
-  /// The followed streamers' grid — the shipping default, the reference's
-  /// first tab.
-  follow,
-
-  /// The popular / super-deal grid.
-  popular,
-
-  /// The areas catalogue.
-  areas,
-
-  /// The recording centre.
-  record;
-
-  /// Resolves a stored identifier. A document written before the shell took
-  /// the reference's tab set (which named a `home` launcher and a `history`
-  /// branch) lands on the favorites branch rather than losing the choice.
-  static AppLaunchBranch fromId(String? id) => switch (id) {
-    'popular' => AppLaunchBranch.popular,
-    'areas' => AppLaunchBranch.areas,
-    'record' => AppLaunchBranch.record,
-    _ => AppLaunchBranch.follow,
-  };
-
-  /// The stable identifier persisted in the document.
-  String get id => name;
-}
-
-/// How a list feed's first-load placeholder is drawn.
-enum LoadingStyle {
-  /// The bone grid, shimmering (the shipping default).
-  shimmer,
-
-  /// A centred spinner.
-  spinner,
-
-  /// Nothing — the page stays blank until content arrives.
-  none;
-
-  /// Resolves a stored identifier; an unknown one falls back to [shimmer].
-  static LoadingStyle fromId(String? id) => switch (id) {
-    'spinner' => LoadingStyle.spinner,
-    'none' => LoadingStyle.none,
-    _ => LoadingStyle.shimmer,
-  };
-
-  /// The stable identifier persisted in the document.
-  String get id => name;
-}
-
-/// The room-card cover's shape.
-enum RoomCardCoverAspect {
-  /// 16:9 — the shipping default, one video frame tall.
-  sixteenByNine(16 / 9),
-
-  /// 4:3 — a taller, closer cover.
-  fourByThree(4 / 3),
-
-  /// 1:1 — the square cover.
-  square(1);
-
-  new(this.ratio);
-
-  /// The aspect as width / height, what `AspectRatio` and the grid metrics
-  /// consume.
-  final double ratio;
-
-  /// The [RoomCardCoverAspect] whose ratio is closest to [ratio] — how a
-  /// stored double round-trips through the chooser.
-  static RoomCardCoverAspect of(double ratio) =>
-      values.reduce((best, aspect) => (aspect.ratio - ratio).abs() < (best.ratio - ratio).abs() ? aspect : best);
-
-  /// Resolves a stored identifier; an unknown one falls back to
-  /// [sixteenByNine].
-  static RoomCardCoverAspect fromId(String? id) => switch (id) {
-    'fourByThree' => RoomCardCoverAspect.fourByThree,
-    'square' => RoomCardCoverAspect.square,
-    _ => RoomCardCoverAspect.sixteenByNine,
-  };
-
-  /// The stable identifier persisted in the document.
-  String get id => name;
-}
-
-/// The shell branches, in the order the chromes render them — the visible
-/// subset. The home branch is the floor: a shell with no destination cannot
-/// be walked, so every writer keeps at least one id.
-const List<String> defaultShellBranches = ['follow', 'popular', 'areas', 'iptv', 'record'];
-
-/// The default before IPTV joined the chrome. A stored document still naming
-/// exactly this list was never customised, so it grows the current default
-/// instead of keeping IPTV hidden.
-const List<String> legacyShellBranches = ['follow', 'popular', 'areas', 'record'];
-
-/// The platforms whose concurrent-online figure is trusted, as the reference
-/// `Settings.realOnlinePlatforms` ships them (3.x's audience audit); the
-/// audience settings row starts here and every check-box rewrites it.
-const List<String> defaultRealOnlinePlatforms = [
-  'douyin',
-  'kuaishou',
-  'cc',
-  'twitch',
-  'soop',
-  'acfun',
-  'picarto',
-  'twitcasting',
-];
-
-/// The app's general choices — general, refresh, page, navigation, proxy,
-/// loading and room-card preferences — as one persisted document.
-///
-/// Plain fields, like the shell document: the shape is closed, an unknown
-/// stored value decodes to its enum's default, and [copyWith] is written by
-/// hand so a rename fails to compile instead of regenerating silently.
-/// Equality is equatable's: [props] carries every field in one order, and the
-/// package's deep iterable/map comparison is what the hand-written version
-/// spelled out for the list and map fields.
-///
-/// The `new` shorthand is reserved for the constructor name; the fromJson
-/// factory and [copyWith] spell the class name, which the lint otherwise
-/// asks to shorten.
-// ignore_for_file: unnecessary_type_name_in_constructor
+/// The app's general choices, one document.
 @immutable
 final class AppPreferences extends Equatable {
-  /// The shipping defaults.
-  const new({
-    this.refreshOnResume = true,
-    this.danmakuVisible = true,
-    this.volumeMuted = false,
-    this.defaultMobileVolume = 0.5,
-    this.defaultDesktopVolume = 1,
-    this.localInteractionEnabled = false,
-    this.localInteractionUserName = '',
-    this.localInteractionColor = 0xFFFFFFFF,
-    this.barrageFontSize = 15,
-    this.barrageOpacity = 1,
-    this.barrageArea = 1,
-    this.barrageTopArea = 0,
-    this.barrageBottomArea = 0,
-    this.barrageSpeed = 120,
-    this.barrageFontWeight = 600,
-    this.barrageStroke = true,
-    this.barrageStrokeWidth = 3,
-    this.barrageShowSender = true,
-    this.barrageMaxVisible = 48,
-    this.barrageFps = 30,
-    this.barrageNoEmoji = false,
-    this.barrageCollapse = false,
-    this.barrageCollapseWindow = 5,
-    this.barragePausedBehavior = 'pause',
-    this.barrageAutoFps = true,
-    this.barrageFpsMode = 'powerSaving',
-    this.barrageShowGifts = false,
-    this.barrageTapAction = true,
-    this.barrageLongPressAction = true,
-    this.barrageFontFamily = '',
-    this.backupDirectory = '',
-    this.barrageHoldOnPress = false,
-    this.barrageListFontSize = 13,
-    this.barrageListLineSpacing = 4,
-    this.barrageListStyle = 'compact',
-    this.barrageTemplate = '',
-    this.preferResolution = '原画',
-    this.preferResolutionCellular = '原画',
-    this.preferH264 = true,
-    this.videoFitIndex = 0,
-    this.openRoomFullscreen = false,
-    this.preferRealOnlineCounts = false,
-    this.realOnlinePlatforms = defaultRealOnlinePlatforms,
-    this.portraitAdapt = true,
-    this.portraitAdaptiveHeight = true,
-    this.portraitLayoutMode = 'balanced',
-    this.portraitFullscreenPolicy = 'followSource',
-    this.portraitDisplayMode = 'ambient',
-    this.portraitDanmakuMode = 'followGlobal',
-    this.rememberPortraitRoomOverride = true,
-    this.showPortraitDiagnostics = false,
-    this.portraitRoomOverrides = const {},
-    this.pipAlwaysOnTop = false,
-    this.miniRememberPosition = true,
-    this.miniWindowRect = '',
-    this.pauseOnPipClose = false,
-    this.showSplash = true,
-    this.githubOnlyUpdates = false,
-    this.detectClipboardRooms = true,
-    this.startAtLogin = false,
-    this.cacheMaxMB = 1024,
-    this.cacheAutoClear = false,
-    this.cacheKeepDays = 7,
-    this.cacheKeepCount = 500,
-    this.autoRefreshThumbnails = false,
-    this.thumbnailRefreshMinutes = 30,
-    this.thumbnailKeepOldFiles = false,
-    this.playerProxyEnabled = false,
-    this.playerProxyHost = '127.0.0.1',
-    this.playerProxyPort = 7890,
-    this.audioOutputDriver = 'auto',
-    this.hardwareDecoder = 'auto',
-    this.frameInterpolation = false,
-    this.scaler = 'auto',
-    this.deinterlace = 'auto',
-    this.streamCacheSeconds = 0,
-    this.customPlayerOutput = false,
-    this.languageId = '',
-    this.autoCheckUpdate = true,
-    this.countdownCloseEnabled = false,
-    this.countdownCloseMinutes = 60,
-    this.launchBranch = AppLaunchBranch.follow,
-    this.restoreLastTab = false,
-    this.lastBranchId,
-    this.shellNavExpanded = true,
-    this.sidebarWidth = 180,
-    this.windowWidth = 0,
-    this.windowHeight = 0,
-    this.autoRefreshMinutes = 0,
-    this.refreshResumeThresholdMinutes = 10,
-    this.proxyEnabled = false,
-    this.proxyHost = '127.0.0.1',
-    this.proxyPort = 7890,
-    this.loadingStyle = LoadingStyle.shimmer,
-    this.roomCardCornerRadius = 12,
-    this.roomCardShowPlatform = true,
-    this.roomCardShowAudience = true,
-    this.roomCardShowAnchor = true,
-    this.roomCardAspect = RoomCardCoverAspect.sixteenByNine,
-    this.shellBranches = defaultShellBranches,
-    this.hiddenSiteIds = const [],
-    this.siteOrder = const [],
-    this.logLevelId = '',
-    this.historyLimit = 50,
-    this.pageDefaultSize = 0,
-    this.pageSizeOptions = '',
-    this.pageShowScrollTop = true,
-    this.pageShowSizeSelector = true,
-    this.pageShowGoto = true,
+  /// The shipping defaults, one named argument per field.
+  new({
+    bool refreshOnResume = true,
+    bool danmakuVisible = true,
+    bool volumeMuted = false,
+    double defaultMobileVolume = 0.5,
+    double defaultDesktopVolume = 1,
+    bool localInteractionEnabled = false,
+    String localInteractionUserName = '',
+    int localInteractionColor = 0xFFFFFFFF,
+    double barrageFontSize = 15,
+    double barrageOpacity = 1,
+    double barrageArea = 1,
+    double barrageTopArea = 0,
+    double barrageBottomArea = 0,
+    double barrageSpeed = 120,
+    int barrageFontWeight = 600,
+    bool barrageStroke = true,
+    double barrageStrokeWidth = 3,
+    bool barrageShowSender = true,
+    int barrageMaxVisible = 48,
+    int barrageFps = 30,
+    bool barrageNoEmoji = false,
+    bool barrageCollapse = false,
+    int barrageCollapseWindow = 5,
+    String barragePausedBehavior = 'pause',
+    bool barrageAutoFps = true,
+    String barrageFpsMode = 'powerSaving',
+    bool barrageShowGifts = false,
+    bool barrageTapAction = true,
+    bool barrageLongPressAction = true,
+    String barrageFontFamily = '',
+    String backupDirectory = '',
+    bool barrageHoldOnPress = false,
+    double barrageListFontSize = 13,
+    double barrageListLineSpacing = 4,
+    String barrageListStyle = 'compact',
+    String barrageTemplate = '',
+    String preferResolution = '原画',
+    String preferResolutionCellular = '原画',
+    bool preferH264 = true,
+    int videoFitIndex = 0,
+    bool openRoomFullscreen = false,
+    bool preferRealOnlineCounts = false,
+    List<String> realOnlinePlatforms = defaultRealOnlinePlatforms,
+    bool portraitAdapt = true,
+    bool portraitAdaptiveHeight = true,
+    String portraitLayoutMode = 'balanced',
+    String portraitFullscreenPolicy = 'followSource',
+    String portraitDisplayMode = 'ambient',
+    String portraitDanmakuMode = 'followGlobal',
+    bool rememberPortraitRoomOverride = true,
+    bool showPortraitDiagnostics = false,
+    Map<String, String> portraitRoomOverrides = const {},
+    bool pipAlwaysOnTop = false,
+    bool miniRememberPosition = true,
+    String miniWindowRect = '',
+    bool pauseOnPipClose = false,
+    bool showSplash = true,
+    bool githubOnlyUpdates = false,
+    bool detectClipboardRooms = true,
+    bool startAtLogin = false,
+    int cacheMaxMB = 1024,
+    bool cacheAutoClear = false,
+    int cacheKeepDays = 7,
+    int cacheKeepCount = 500,
+    bool autoRefreshThumbnails = false,
+    int thumbnailRefreshMinutes = 30,
+    bool thumbnailKeepOldFiles = false,
+    bool playerProxyEnabled = false,
+    String playerProxyHost = '127.0.0.1',
+    int playerProxyPort = 7890,
+    String audioOutputDriver = 'auto',
+    String hardwareDecoder = 'auto',
+    bool frameInterpolation = false,
+    String scaler = 'auto',
+    String deinterlace = 'auto',
+    int streamCacheSeconds = 0,
+    bool customPlayerOutput = false,
+    String languageId = '',
+    bool autoCheckUpdate = true,
+    bool countdownCloseEnabled = false,
+    int countdownCloseMinutes = 60,
+    AppLaunchBranch launchBranch = AppLaunchBranch.follow,
+    bool restoreLastTab = false,
+    bool shellNavExpanded = true,
+    double sidebarWidth = 180,
+    int windowWidth = 0,
+    int windowHeight = 0,
+    int autoRefreshMinutes = 0,
+    int refreshResumeThresholdMinutes = 10,
+    bool proxyEnabled = false,
+    String proxyHost = '127.0.0.1',
+    int proxyPort = 7890,
+    LoadingStyle loadingStyle = LoadingStyle.shimmer,
+    double roomCardCornerRadius = 12,
+    bool roomCardShowPlatform = true,
+    bool roomCardShowAudience = true,
+    bool roomCardShowAnchor = true,
+    RoomCardCoverAspect roomCardAspect = RoomCardCoverAspect.sixteenByNine,
+    List<String> shellBranches = defaultShellBranches,
+    List<String> hiddenSiteIds = const [],
+    List<String> siteOrder = const [],
+    String logLevelId = '',
+    int historyLimit = 50,
+    int pageDefaultSize = 0,
+    String pageSizeOptions = '',
+    bool pageShowScrollTop = true,
+    bool pageShowSizeSelector = true,
+    bool pageShowGoto = true,
+    String? lastBranchId,
+  }) : general = GeneralPreferences(
+         refreshOnResume: refreshOnResume,
+         showSplash: showSplash,
+         githubOnlyUpdates: githubOnlyUpdates,
+         detectClipboardRooms: detectClipboardRooms,
+         startAtLogin: startAtLogin,
+         languageId: languageId,
+         autoCheckUpdate: autoCheckUpdate,
+         countdownCloseEnabled: countdownCloseEnabled,
+         countdownCloseMinutes: countdownCloseMinutes,
+         backupDirectory: backupDirectory,
+         logLevelId: logLevelId,
+         historyLimit: historyLimit,
+       ),
+       localInteraction = LocalInteractionPreferences(
+         localInteractionEnabled: localInteractionEnabled,
+         localInteractionUserName: localInteractionUserName,
+         localInteractionColor: localInteractionColor,
+       ),
+       danmaku = DanmakuPreferences(
+         danmakuVisible: danmakuVisible,
+         barrageFontSize: barrageFontSize,
+         barrageOpacity: barrageOpacity,
+         barrageArea: barrageArea,
+         barrageTopArea: barrageTopArea,
+         barrageBottomArea: barrageBottomArea,
+         barrageSpeed: barrageSpeed,
+         barrageFontWeight: barrageFontWeight,
+         barrageStroke: barrageStroke,
+         barrageStrokeWidth: barrageStrokeWidth,
+         barrageShowSender: barrageShowSender,
+         barrageMaxVisible: barrageMaxVisible,
+         barrageFps: barrageFps,
+         barrageNoEmoji: barrageNoEmoji,
+         barrageCollapse: barrageCollapse,
+         barrageCollapseWindow: barrageCollapseWindow,
+         barragePausedBehavior: barragePausedBehavior,
+         barrageAutoFps: barrageAutoFps,
+         barrageFpsMode: barrageFpsMode,
+         barrageShowGifts: barrageShowGifts,
+         barrageTapAction: barrageTapAction,
+         barrageLongPressAction: barrageLongPressAction,
+         barrageFontFamily: barrageFontFamily,
+         barrageHoldOnPress: barrageHoldOnPress,
+         barrageListFontSize: barrageListFontSize,
+         barrageListLineSpacing: barrageListLineSpacing,
+         barrageListStyle: barrageListStyle,
+         barrageTemplate: barrageTemplate,
+       ),
+       player = PlayerPreferences(
+         volumeMuted: volumeMuted,
+         defaultMobileVolume: defaultMobileVolume,
+         defaultDesktopVolume: defaultDesktopVolume,
+         preferResolution: preferResolution,
+         preferResolutionCellular: preferResolutionCellular,
+         preferH264: preferH264,
+         videoFitIndex: videoFitIndex,
+         openRoomFullscreen: openRoomFullscreen,
+         pipAlwaysOnTop: pipAlwaysOnTop,
+         miniRememberPosition: miniRememberPosition,
+         miniWindowRect: miniWindowRect,
+         pauseOnPipClose: pauseOnPipClose,
+         playerProxyEnabled: playerProxyEnabled,
+         playerProxyHost: playerProxyHost,
+         playerProxyPort: playerProxyPort,
+         audioOutputDriver: audioOutputDriver,
+         hardwareDecoder: hardwareDecoder,
+         frameInterpolation: frameInterpolation,
+         scaler: scaler,
+         deinterlace: deinterlace,
+         streamCacheSeconds: streamCacheSeconds,
+         customPlayerOutput: customPlayerOutput,
+       ),
+       portrait = PortraitPreferences(
+         portraitAdapt: portraitAdapt,
+         portraitAdaptiveHeight: portraitAdaptiveHeight,
+         portraitLayoutMode: portraitLayoutMode,
+         portraitFullscreenPolicy: portraitFullscreenPolicy,
+         portraitDisplayMode: portraitDisplayMode,
+         portraitDanmakuMode: portraitDanmakuMode,
+         rememberPortraitRoomOverride: rememberPortraitRoomOverride,
+         showPortraitDiagnostics: showPortraitDiagnostics,
+         portraitRoomOverrides: portraitRoomOverrides,
+       ),
+       data = DataPreferences(
+         cacheMaxMB: cacheMaxMB,
+         cacheAutoClear: cacheAutoClear,
+         cacheKeepDays: cacheKeepDays,
+         cacheKeepCount: cacheKeepCount,
+         autoRefreshThumbnails: autoRefreshThumbnails,
+         thumbnailRefreshMinutes: thumbnailRefreshMinutes,
+         thumbnailKeepOldFiles: thumbnailKeepOldFiles,
+       ),
+       network = NetworkPreferences(proxyEnabled: proxyEnabled, proxyHost: proxyHost, proxyPort: proxyPort),
+       shell = ShellPreferences(
+         launchBranch: launchBranch,
+         restoreLastTab: restoreLastTab,
+         lastBranchId: lastBranchId,
+         shellNavExpanded: shellNavExpanded,
+         sidebarWidth: sidebarWidth,
+         windowWidth: windowWidth,
+         windowHeight: windowHeight,
+         shellBranches: shellBranches,
+       ),
+       feed = FeedPreferences(
+         autoRefreshMinutes: autoRefreshMinutes,
+         refreshResumeThresholdMinutes: refreshResumeThresholdMinutes,
+         loadingStyle: loadingStyle,
+         roomCardCornerRadius: roomCardCornerRadius,
+         roomCardShowPlatform: roomCardShowPlatform,
+         roomCardShowAudience: roomCardShowAudience,
+         roomCardShowAnchor: roomCardShowAnchor,
+         roomCardAspect: roomCardAspect,
+         pageDefaultSize: pageDefaultSize,
+         pageSizeOptions: pageSizeOptions,
+         pageShowScrollTop: pageShowScrollTop,
+         pageShowSizeSelector: pageShowSizeSelector,
+         pageShowGoto: pageShowGoto,
+         preferRealOnlineCounts: preferRealOnlineCounts,
+         realOnlinePlatforms: realOnlinePlatforms,
+         hiddenSiteIds: hiddenSiteIds,
+         siteOrder: siteOrder,
+       );
+
+  /// One instance per document — the private door the codec comes in
+  /// through, so the flat constructor above stays the only public shape.
+  const AppPreferences._({
+    required this.general,
+    required this.localInteraction,
+    required this.danmaku,
+    required this.player,
+    required this.portrait,
+    required this.data,
+    required this.network,
+    required this.shell,
+    required this.feed,
   });
 
-  /// Reads the document; unknown shapes decode to the defaults.
-  factory AppPreferences.fromJson(Map<String, Object?> json) {
-    final branches = (json['shellBranches'] as List<Object?>?)?.whereType<String>().toList();
-    // The one volume field a pre-split document stored seeds both answers;
-    // after that the mobile and desktop levels are kept apart, the way the
-    // reference's volume dialog edits and reads them.
-    final legacyVolume = (json['defaultVolume'] as num?)?.toDouble();
-    return AppPreferences(
-      refreshOnResume: json['refreshOnResume'] as bool? ?? true,
-      danmakuVisible: json['danmakuVisible'] as bool? ?? true,
-      volumeMuted: json['volumeMuted'] as bool? ?? false,
-      defaultMobileVolume: (json['defaultMobileVolume'] as num?)?.toDouble() ?? legacyVolume ?? 0.5,
-      defaultDesktopVolume: (json['defaultDesktopVolume'] as num?)?.toDouble() ?? legacyVolume ?? 1,
-      localInteractionEnabled: json['localInteractionEnabled'] as bool? ?? false,
-      localInteractionUserName: json['localInteractionUserName'] as String? ?? '',
-      localInteractionColor: (json['localInteractionColor'] as num?)?.toInt() ?? 0xFFFFFFFF,
-      barrageFontSize: (json['barrageFontSize'] as num?)?.toDouble() ?? 15,
-      barrageOpacity: (json['barrageOpacity'] as num?)?.toDouble() ?? 1,
-      barrageArea: (json['barrageArea'] as num?)?.toDouble() ?? 1,
-      barrageTopArea: (json['barrageTopArea'] as num?)?.toDouble() ?? 0,
-      barrageBottomArea: (json['barrageBottomArea'] as num?)?.toDouble() ?? 0,
-      barrageSpeed: (json['barrageSpeed'] as num?)?.toDouble() ?? 120,
-      barrageFontWeight: (json['barrageFontWeight'] as num?)?.toInt() ?? 600,
-      barrageStroke: json['barrageStroke'] as bool? ?? true,
-      barrageStrokeWidth: (json['barrageStrokeWidth'] as num?)?.toDouble() ?? 3,
-      barrageShowSender: json['barrageShowSender'] as bool? ?? true,
-      barrageMaxVisible: (json['barrageMaxVisible'] as num?)?.toInt() ?? 48,
-      barrageFps: (json['barrageFps'] as num?)?.toInt() ?? 30,
-      barrageNoEmoji: json['barrageNoEmoji'] as bool? ?? false,
-      barrageCollapse: json['barrageCollapse'] as bool? ?? false,
-      barrageCollapseWindow: (json['barrageCollapseWindow'] as num?)?.toInt() ?? 5,
-      barragePausedBehavior: json['barragePausedBehavior'] as String? ?? 'pause',
-      barrageAutoFps: json['barrageAutoFps'] as bool? ?? true,
-      barrageFpsMode: json['barrageFpsMode'] as String? ?? 'powerSaving',
-      barrageShowGifts: json['barrageShowGifts'] as bool? ?? false,
-      barrageTapAction: json['barrageTapAction'] as bool? ?? true,
-      barrageLongPressAction: json['barrageLongPressAction'] as bool? ?? true,
-      barrageFontFamily: json['barrageFontFamily'] as String? ?? '',
-      backupDirectory: json['backupDirectory'] as String? ?? '',
-      barrageHoldOnPress: json['barrageHoldOnPress'] as bool? ?? false,
-      barrageListFontSize: (json['barrageListFontSize'] as num?)?.toDouble() ?? 13,
-      barrageListLineSpacing: (json['barrageListLineSpacing'] as num?)?.toDouble() ?? 4,
-      barrageListStyle: json['barrageListStyle'] as String? ?? 'compact',
-      barrageTemplate: json['barrageTemplate'] as String? ?? '',
-      preferResolution: json['preferResolution'] as String? ?? '原画',
-      preferResolutionCellular: json['preferResolutionCellular'] as String? ?? '原画',
-      preferH264: json['preferH264'] as bool? ?? true,
-      videoFitIndex: (json['videoFitIndex'] as num?)?.toInt() ?? 0,
-      openRoomFullscreen: json['openRoomFullscreen'] as bool? ?? false,
-      preferRealOnlineCounts: json['preferRealOnlineCounts'] as bool? ?? false,
-      realOnlinePlatforms:
-          (json['realOnlinePlatforms'] as List<Object?>?)?.whereType<String>().toList() ?? defaultRealOnlinePlatforms,
-      // The mpv tuning answers. The defaults are what the engine did before
-      // this page existed — auto for everything, no interpolation, the
-      // adapter's own cache — so an existing document keeps behaving the same.
-      audioOutputDriver: json['audioOutputDriver'] as String? ?? 'auto',
-      hardwareDecoder: json['hardwareDecoder'] as String? ?? 'auto',
-      frameInterpolation: json['frameInterpolation'] as bool? ?? false,
-      scaler: json['scaler'] as String? ?? 'auto',
-      deinterlace: json['deinterlace'] as String? ?? 'auto',
-      streamCacheSeconds: (json['streamCacheSeconds'] as num?)?.toInt() ?? 0,
-      customPlayerOutput: json['customPlayerOutput'] as bool? ?? false,
-      languageId: json['languageId'] as String? ?? '',
-      autoCheckUpdate: json['autoCheckUpdate'] as bool? ?? true,
-      countdownCloseEnabled: json['countdownCloseEnabled'] as bool? ?? false,
-      countdownCloseMinutes: json['countdownCloseMinutes'] as int? ?? 60,
-      launchBranch: AppLaunchBranch.fromId(json['launchBranch'] as String?),
-      restoreLastTab: json['restoreLastTab'] as bool? ?? false,
-      lastBranchId: json['lastBranchId'] as String?,
-      shellNavExpanded: json['shellNavExpanded'] as bool? ?? true,
-      sidebarWidth: (json['sidebarWidth'] as num?)?.toDouble() ?? 180,
-      windowWidth: json['windowWidth'] as int? ?? 0,
-      windowHeight: json['windowHeight'] as int? ?? 0,
-      autoRefreshMinutes: json['autoRefreshMinutes'] as int? ?? 0,
-      refreshResumeThresholdMinutes: json['refreshResumeThresholdMinutes'] as int? ?? 10,
-      proxyEnabled: json['proxyEnabled'] as bool? ?? false,
-      proxyHost: json['proxyHost'] as String? ?? '127.0.0.1',
-      proxyPort: json['proxyPort'] as int? ?? 7890,
-      loadingStyle: LoadingStyle.fromId(json['loadingStyle'] as String?),
-      roomCardCornerRadius: (json['roomCardCornerRadius'] as num?)?.toDouble() ?? 12,
-      roomCardShowPlatform: json['roomCardShowPlatform'] as bool? ?? true,
-      roomCardShowAudience: json['roomCardShowAudience'] as bool? ?? true,
-      roomCardShowAnchor: json['roomCardShowAnchor'] as bool? ?? true,
-      roomCardAspect: RoomCardCoverAspect.fromId(json['roomCardAspect'] as String?),
-      shellBranches: branches == null || branches.isEmpty ? defaultShellBranches : branches,
-      hiddenSiteIds: (json['hiddenSiteIds'] as List<Object?>?)?.whereType<String>().toList() ?? const [],
-      siteOrder: (json['siteOrder'] as List<Object?>?)?.whereType<String>().toList() ?? const [],
-      logLevelId: json['logLevelId'] as String? ?? '',
-      historyLimit: (json['historyLimit'] as num?)?.toInt() ?? 50,
-      pageDefaultSize: (json['pageDefaultSize'] as num?)?.toInt() ?? 0,
-      pageSizeOptions: json['pageSizeOptions'] as String? ?? '',
-      pageShowScrollTop: json['pageShowScrollTop'] as bool? ?? true,
-      pageShowSizeSelector: json['pageShowSizeSelector'] as bool? ?? true,
-      pageShowGoto: json['pageShowGoto'] as bool? ?? true,
-    );
-  }
+  /// Reads the document; unknown shapes decode to the defaults. Each domain
+  /// reads its own keys from the same flat map the app has always stored.
+  factory AppPreferences.fromJson(Map<String, Object?> json) => AppPreferences._(
+    general: GeneralPreferences.fromJson(json),
+    localInteraction: LocalInteractionPreferences.fromJson(json),
+    danmaku: DanmakuPreferences.fromJson(json),
+    player: PlayerPreferences.fromJson(json),
+    portrait: PortraitPreferences.fromJson(json),
+    data: DataPreferences.fromJson(json),
+    network: NetworkPreferences.fromJson(json),
+    shell: ShellPreferences.fromJson(json),
+    feed: FeedPreferences.fromJson(json),
+  );
+
+  /// The general document.
+  final GeneralPreferences general;
+
+  /// The localInteraction document.
+  final LocalInteractionPreferences localInteraction;
+
+  /// The danmaku document.
+  final DanmakuPreferences danmaku;
+
+  /// The player document.
+  final PlayerPreferences player;
+
+  /// The portrait document.
+  final PortraitPreferences portrait;
+
+  /// The data document.
+  final DataPreferences data;
+
+  /// The network document.
+  final NetworkPreferences network;
+
+  /// The shell document.
+  final ShellPreferences shell;
+
+  /// The feed document.
+  final FeedPreferences feed;
+
+  /// The domain's keys as stored, flat.
+  Map<String, Object?> toJson() => {
+    ...general.toJson(),
+    ...localInteraction.toJson(),
+    ...danmaku.toJson(),
+    ...player.toJson(),
+    ...portrait.toJson(),
+    ...data.toJson(),
+    ...network.toJson(),
+    ...shell.toJson(),
+    ...feed.toJson(),
+  };
 
   /// Whether a feed refreshes when the app comes back to the foreground.
-  final bool refreshOnResume;
+  bool get refreshOnResume => general.refreshOnResume;
 
   /// Whether a room draws the barrage over its video. The reference's
   /// `danmaku.hideDanmaku`, inverted: the switch says what is on.
-  final bool danmakuVisible;
-
-  /// The volume a room starts at on a touch phone, 0..1 — the reference's
-  /// `vol.defaultMobileVolume`, one of the two answers its volume dialog edits.
-  final double defaultMobileVolume;
-
-  /// The volume a room starts at on a desktop window, 0..1.
-  final double defaultDesktopVolume;
+  bool get danmakuVisible => danmaku.danmakuVisible;
 
   /// Whether every room opens silenced, the reference's `vol.globalVolumeMute`.
   /// The level itself survives the mute; un-muting returns to it.
-  final bool volumeMuted;
+  bool get volumeMuted => player.volumeMuted;
+
+  /// The volume a room starts at on a touch phone, 0..1 — the reference's
+  /// `vol.defaultMobileVolume`, one of the two answers its volume dialog edits.
+  double get defaultMobileVolume => player.defaultMobileVolume;
+
+  /// The volume a room starts at on a desktop window, 0..1.
+  double get defaultDesktopVolume => player.defaultDesktopVolume;
 
   /// Whether the room's local-interaction composer and bus are live — the
   /// reference's `localInteraction.enabled` gate on the same feature.
-  final bool localInteractionEnabled;
+  bool get localInteractionEnabled => localInteraction.localInteractionEnabled;
 
   /// The name the local messages carry. Empty draws the localized "me".
-  final String localInteractionUserName;
+  String get localInteractionUserName => localInteraction.localInteractionUserName;
 
   /// The colour local messages are drawn in, packed ARGB.
-  final int localInteractionColor;
+  int get localInteractionColor => localInteraction.localInteractionColor;
 
   /// The barrage text size, in logical pixels.
-  final double barrageFontSize;
+  double get barrageFontSize => danmaku.barrageFontSize;
 
   /// The barrage text opacity, 0..1.
-  final double barrageOpacity;
+  double get barrageOpacity => danmaku.barrageOpacity;
 
   /// The share of the video the flying barrage may use, 0..1 — the
   /// reference's `danmakuArea`.
-  final double barrageArea;
+  double get barrageArea => danmaku.barrageArea;
 
   /// The blank band kept under the top edge, in logical pixels
   /// (`danmakuTopArea`).
-  final double barrageTopArea;
+  double get barrageTopArea => danmaku.barrageTopArea;
 
   /// The blank band kept above the bottom edge, in logical pixels
   /// (`danmakuBottomArea`).
-  final double barrageBottomArea;
+  double get barrageBottomArea => danmaku.barrageBottomArea;
 
   /// How fast a line crosses, in pixels per second (`danmakuSpeed`).
-  final double barrageSpeed;
+  double get barrageSpeed => danmaku.barrageSpeed;
 
   /// The barrage text weight, a CSS weight (100..900, `danmakuFontWeight`).
-  final int barrageFontWeight;
+  int get barrageFontWeight => danmaku.barrageFontWeight;
 
   /// Whether the barrage text carries its dark outline (`enableDanmakuStroke`).
-  final bool barrageStroke;
+  bool get barrageStroke => danmaku.barrageStroke;
 
   /// The outline's blur radius, the stroke width (`danmakuFontBorder`).
-  final double barrageStrokeWidth;
+  double get barrageStrokeWidth => danmaku.barrageStrokeWidth;
 
   /// Whether the sender's name rides in front of the line (`showChatNames`).
-  final bool barrageShowSender;
+  bool get barrageShowSender => danmaku.barrageShowSender;
 
   /// How many lines may fly at once (`danmakuMaxVisibleCount`).
-  final int barrageMaxVisible;
+  int get barrageMaxVisible => danmaku.barrageMaxVisible;
 
   /// The repaint rate of the flying barrage, 25..240 FPS
   /// (`danmakuFps`; the automatic variant follows the display in the
   /// reference — this build drives the manual answer).
-  final int barrageFps;
+  int get barrageFps => danmaku.barrageFps;
 
   /// Whether emote-only chats are dropped (`noEmojiMode`).
-  final bool barrageNoEmoji;
+  bool get barrageNoEmoji => danmaku.barrageNoEmoji;
 
   /// Whether an identical chat seen again inside [barrageCollapseWindow]
   /// keeps only its first copy (`collapseRepeatedDanmaku`).
-  final bool barrageCollapse;
+  bool get barrageCollapse => danmaku.barrageCollapse;
 
   /// The collapse window in seconds, 1..30 (`repeatedDanmakuWindowSeconds`).
-  final int barrageCollapseWindow;
+  int get barrageCollapseWindow => danmaku.barrageCollapseWindow;
 
   /// What the barrage does while the video is paused: `pause` holds every
   /// line in place, `fly` lets it cross on (`danmakuPausedBehavior`).
-  final String barragePausedBehavior;
+  String get barragePausedBehavior => danmaku.barragePausedBehavior;
 
   /// Whether the repaint clock follows the display instead of the manual
   /// number (the reference's danmakuAutoFps; true ships it there).
-  final bool barrageAutoFps;
+  bool get barrageAutoFps => danmaku.barrageAutoFps;
 
   /// What the automatic clock may reach: `powerSaving`/`balanced` cap at 60,
   /// `performance` lets the display's own maximum through (the reference's
   /// refreshRateMode trio).
-  final String barrageFpsMode;
+  String get barrageFpsMode => danmaku.barrageFpsMode;
 
   /// Whether the platform's gift messages fly over the picture beside the
   /// chat (A08.12; off keeps the surface chat-only).
-  final bool barrageShowGifts;
+  bool get barrageShowGifts => danmaku.barrageShowGifts;
 
   /// Whether tapping a flying line opens its sender's card (画面弹幕交互).
-  final bool barrageTapAction;
+  bool get barrageTapAction => danmaku.barrageTapAction;
 
   /// Whether long-pressing a flying line offers to block its sender.
-  final bool barrageLongPressAction;
+  bool get barrageLongPressAction => danmaku.barrageLongPressAction;
 
   /// The danmaku font family registered from the font library; '' is the
   /// system default.
-  final String barrageFontFamily;
+  String get barrageFontFamily => danmaku.barrageFontFamily;
 
   /// Where backups are written and listed: the reference's
   /// `Settings.backupDirectory`; '' takes the data area's own backups
   /// tree (the app's default folder).
-  final String backupDirectory;
+  String get backupDirectory => general.backupDirectory;
 
   /// Whether pressing the picture holds the lines under the finger
   /// (`holdDanmakuOnPress`).
-  final bool barrageHoldOnPress;
+  bool get barrageHoldOnPress => danmaku.barrageHoldOnPress;
 
   /// The chat list's text size (`danmakuListFontSize`).
-  final double barrageListFontSize;
+  double get barrageListFontSize => danmaku.barrageListFontSize;
 
   /// The chat list's line spacing (`danmakuListLineSpacing`).
-  final double barrageListLineSpacing;
+  double get barrageListLineSpacing => danmaku.barrageListLineSpacing;
 
   /// The chat list's look: `compact` rows or `card` bubbles
   /// (`danmakuListStyle`).
-  final String barrageListStyle;
+  String get barrageListStyle => danmaku.barrageListStyle;
 
   /// The viewer's own saved barrage look, a `key=value;` string; empty when
   /// nothing was saved yet (`savedDanmakuTemplate`).
-  final String barrageTemplate;
+  String get barrageTemplate => danmaku.barrageTemplate;
 
   /// The quality name to open a room with on Wi-Fi — one of
   /// `playQualityNames`, matched against the platform's own quality labels
   /// (the reference's preferResolution).
-  final String preferResolution;
+  String get preferResolution => player.preferResolution;
 
   /// The same answer for a cellular connection; the reference keeps a
   /// separate one so a metered network can start lower.
-  final String preferResolutionCellular;
+  String get preferResolutionCellular => player.preferResolutionCellular;
 
   /// Whether an HEVC-labelled quality is passed over while the room offers
   /// anything else (the reference's "优先 H.264 编码"); HEVC stays one menu tap
   /// away either way.
-  final bool preferH264;
+  bool get preferH264 => player.preferH264;
 
   /// Index into the six viewport fits (default, crop, fill, height, width,
   /// scale-down) a room opens with; anything out of range reads 0.
-  final int videoFitIndex;
+  int get videoFitIndex => player.videoFitIndex;
 
   /// Whether the room walks itself into fullscreen once the stream starts
   /// playing (the reference's "自动全屏").
-  final bool openRoomFullscreen;
+  bool get openRoomFullscreen => player.openRoomFullscreen;
 
   /// Whether a room on a trusted platform shows its concurrent-online figure
   /// as the headline audience number; off, the platform's own heat/popularity
   /// number leads (the reference's preferRealOnlineCounts).
-  final bool preferRealOnlineCounts;
+  bool get preferRealOnlineCounts => feed.preferRealOnlineCounts;
 
   /// The platforms whose online figure is trusted (the reference's
   /// realOnlinePlatforms); the audience row of the video settings edits it.
-  final List<String> realOnlinePlatforms;
+  List<String> get realOnlinePlatforms => feed.realOnlinePlatforms;
 
   /// Whether a decoded tall frame re-dresses the room for a vertical stream
   /// (the reference's 智能识别竖屏直播源); off, every source plays in the
   /// plain landscape stack.
-  final bool portraitAdapt;
+  bool get portraitAdapt => portrait.portraitAdapt;
 
   /// Whether the sheet's ceiling follows the body — a tall source gets the
   /// bigger watch area while the chat list keeps its room (the reference's
   /// portraitAdaptiveHeight). Off, the panel sits fixed at the middle stop.
-  final bool portraitAdaptiveHeight;
+  bool get portraitAdaptiveHeight => portrait.portraitAdaptiveHeight;
 
   /// The normal-page shape for a vertical source: `balanced` (sheet over the
   /// full-bleed picture), `immersive` (same, opening at the lowest panel),
   /// `compatibility` (the plain letterboxed stack, like landscape rooms).
-  final String portraitLayoutMode;
+  String get portraitLayoutMode => portrait.portraitLayoutMode;
 
   /// Which direction a fullscreen entry takes for a vertical source:
   /// `followSource` keeps the picture upright (portrait fullscreen),
   /// `followSystem` defers to the device, `landscape` always turns the
   /// sideways room.
-  final String portraitFullscreenPolicy;
+  String get portraitFullscreenPolicy => portrait.portraitFullscreenPolicy;
 
   /// The portrait-fullscreen canvas: `complete` (no backdrop, the fitted
   /// picture), `ambient` (blurred cover behind it — the reference's own
   /// default), `balanced` (ambient, lighter veil), `cover` (cropped to fill).
-  final String portraitDisplayMode;
+  String get portraitDisplayMode => portrait.portraitDisplayMode;
 
   /// How the flying barrage is bounded over a vertical source's picture:
   /// `followGlobal`, `upperQuarter` (top quarter only), `reduced` (half the
   /// rows), `hidden`; it bounds the overlay, never the global style numbers.
-  final String portraitDanmakuMode;
+  String get portraitDanmakuMode => portrait.portraitDanmakuMode;
 
   /// Whether a direction picked by hand in the player is remembered for the
   /// room (the reference's portraitRoomOverrides).
-  final bool rememberPortraitRoomOverride;
+  bool get rememberPortraitRoomOverride => portrait.rememberPortraitRoomOverride;
 
   /// Whether the picture shows the detection read-out — source size, ratio
   /// and the rule in force (the reference's 显示识别状态).
-  final bool showPortraitDiagnostics;
+  bool get showPortraitDiagnostics => portrait.showPortraitDiagnostics;
 
   /// The per-room direction overrides: room key to `portrait`/`landscape`.
-  final Map<String, String> portraitRoomOverrides;
+  Map<String, String> get portraitRoomOverrides => portrait.portraitRoomOverrides;
 
   /// Whether the desktop picture-in-picture tile stays above the other
   /// windows (the reference's 小窗始终置顶).
-  final bool pipAlwaysOnTop;
+  bool get pipAlwaysOnTop => player.pipAlwaysOnTop;
 
   /// Whether the free-floating mini window re-opens where it was last left
   /// (the reference's rememberPipPosition). Off, every entry starts at the
   /// corner the driver chooses.
-  final bool miniRememberPosition;
+  bool get miniRememberPosition => player.miniRememberPosition;
 
   /// The last mini-window geometry as `x,y,w,h`; '' is never-left. Written
   /// only while [miniRememberPosition] is on.
-  final String miniWindowRect;
+  String get miniWindowRect => player.miniWindowRect;
 
   /// Whether closing the window while it is a PiP/mini tile pauses playback
   /// (the reference's pauseOnPipClose) instead of letting the stream run
   /// behind a hidden window.
-  final bool pauseOnPipClose;
+  bool get pauseOnPipClose => player.pauseOnPipClose;
 
   /// Whether the start-up splash holds its two seconds of branding before it
   /// hands over (the reference's showSplashPage); off goes straight to the
   /// launch page.
-  final bool showSplash;
+  bool get showSplash => general.showSplash;
 
   /// Whether the update feed asks GitHub only (the reference's
   /// useGitHubOriginForUpdates); off races the release assets through the
   /// mirrors first, GitHub as the last door — the shape for networks where
   /// GitHub is the slow one.
-  final bool githubOnlyUpdates;
+  bool get githubOnlyUpdates => general.githubOnlyUpdates;
 
   /// Whether a room link found on the clipboard at resume is offered as a
   /// jump (the reference's detectClipboardRooms; 3.x always looked).
-  final bool detectClipboardRooms;
+  bool get detectClipboardRooms => general.detectClipboardRooms;
 
   /// The stored answer behind the desktop 开机自启 row; the truth is read
   /// from the OS, and the row rewrites the store when the OS refuses.
-  final bool startAtLogin;
+  bool get startAtLogin => general.startAtLogin;
 
   /// The picture cache's ceiling in MB (the reference's currentCacheSize
   /// display pairs with it); 0 or negative means no cap.
-  final int cacheMaxMB;
+  int get cacheMaxMB => data.cacheMaxMB;
 
   /// Whether the cache prunes itself when it crosses [cacheMaxMB] after a
   /// resume (the reference's automatic cache-clear answer).
-  final bool cacheAutoClear;
+  bool get cacheAutoClear => data.cacheAutoClear;
 
   /// How many days a pruned cache may keep pictures for (1..90).
-  final int cacheKeepDays;
+  int get cacheKeepDays => data.cacheKeepDays;
 
   /// How many files a pruned cache may keep (100..2000).
-  final int cacheKeepCount;
+  int get cacheKeepCount => data.cacheKeepCount;
 
   /// Whether room covers re-pull on a timer (the reference's
   /// autoRefreshThumbnails); off, a cover is fetched once and kept.
-  final bool autoRefreshThumbnails;
+  bool get autoRefreshThumbnails => data.autoRefreshThumbnails;
 
   /// Minutes between cover re-pulls (5..360, the reference's
   /// thumbnailRefreshInterval); the bucket lands in the cover URL, so every
   /// window reads as a new address once and only once.
-  final int thumbnailRefreshMinutes;
+  int get thumbnailRefreshMinutes => data.thumbnailRefreshMinutes;
 
   /// Whether a cover refresh keeps the superseded pictures instead of
   /// letting the cache drop them (the reference's thumbnailKeepOldFiles).
-  final bool thumbnailKeepOldFiles;
+  bool get thumbnailKeepOldFiles => data.thumbnailKeepOldFiles;
 
   /// The player's own proxy (the reference's 播放器代理): mpv pulls the live
   /// stream through `http://host:port`, separate from the app's own HTTP
   /// proxy because the two often want different doors.
-  final bool playerProxyEnabled;
+  bool get playerProxyEnabled => player.playerProxyEnabled;
 
   /// The player proxy's host.
-  final String playerProxyHost;
+  String get playerProxyHost => player.playerProxyHost;
 
   /// The player proxy's port (1..65535 as the field page validates it).
-  final int playerProxyPort;
-
-  /// Whether the stored audio output driver is used at all; off, the engine's
-  /// own platform default answers — the reference's `customPlayerOutput` gate.
-  ///
-  /// There is no video-output answer any more: media_kit renders through mpv's
-  /// `libmpv` output, and writing any other value leaves the embedded surface
-  /// with no frames at all.
-  final bool customPlayerOutput;
+  int get playerProxyPort => player.playerProxyPort;
 
   /// mpv `ao` — the audio output driver.
-  final String audioOutputDriver;
+  String get audioOutputDriver => player.audioOutputDriver;
 
   /// mpv `hwdec` — the hardware decoder, `auto` letting mpv choose.
-  final String hardwareDecoder;
+  String get hardwareDecoder => player.hardwareDecoder;
 
   /// mpv `interpolation` — frame blending; desktop only, the reference's
   /// own gate on the cost.
-  final bool frameInterpolation;
+  bool get frameInterpolation => player.frameInterpolation;
 
   /// mpv `scale` — the upscaling filter; `auto` keeps mpv's default.
-  final String scaler;
+  String get scaler => player.scaler;
 
   /// mpv `deinterlace`.
-  final String deinterlace;
+  String get deinterlace => player.deinterlace;
 
   /// mpv `cache`/`cache-secs` — the streaming read-ahead in seconds; 0 leaves
   /// the adapter's own cache settings untouched.
-  final int streamCacheSeconds;
+  int get streamCacheSeconds => player.streamCacheSeconds;
+
+  /// There is no video-output answer any more: media_kit renders through mpv's
+  /// `libmpv` output, and writing any other value leaves the embedded surface
+  /// with no frames at all.
+  bool get customPlayerOutput => player.customPlayerOutput;
 
   /// The interface language: an empty id follows the system, otherwise a slang
   /// locale code (`zh`, `en`). Frozen at boot — the whole tree is translated by
   /// the delegate the app builds before the first frame.
-  final String languageId;
+  String get languageId => general.languageId;
 
   /// Whether the home page checks the release feed at start-up.
-  final bool autoCheckUpdate;
+  bool get autoCheckUpdate => general.autoCheckUpdate;
 
   /// Whether a countdown runs that exits the app when it fires.
-  final bool countdownCloseEnabled;
+  bool get countdownCloseEnabled => general.countdownCloseEnabled;
 
   /// How long the countdown runs, in minutes.
-  final int countdownCloseMinutes;
+  int get countdownCloseMinutes => general.countdownCloseMinutes;
 
   /// The branch the router starts on, unless [restoreLastTab] wins.
-  final AppLaunchBranch launchBranch;
+  AppLaunchBranch get launchBranch => shell.launchBranch;
 
   /// Whether the app starts on the branch it was last left on.
-  final bool restoreLastTab;
-
-  /// The shell branch id the app was last left on; null before the first
-  /// tab switch.
-  final String? lastBranchId;
+  bool get restoreLastTab => shell.restoreLastTab;
 
   /// Whether the wide column is drawn expanded (the labelled sidebar) or
   /// collapsed (the icon rail). The toggle in the column's head flips it, the
   /// choice survives restarts, and the width classes apply on top without
   /// ever rewriting it — a narrow window draws the rail whatever this says.
-  final bool shellNavExpanded;
+  bool get shellNavExpanded => shell.shellNavExpanded;
 
   /// The labelled sidebar's width, in logical pixels — what the drag handle
   /// between the panes writes and every boot restores. The shell clamps it
   /// before drawing, so a hand-edited document cannot stretch it absurdly.
-  final double sidebarWidth;
+  double get sidebarWidth => shell.sidebarWidth;
 
   /// The desktop window's stored width; 0 keeps the launch default.
-  final int windowWidth;
+  int get windowWidth => shell.windowWidth;
 
   /// The desktop window's stored height; 0 keeps the launch default.
-  final int windowHeight;
+  int get windowHeight => shell.windowHeight;
 
   /// The foreground feed refresh interval, in minutes; 0 is off.
-  final int autoRefreshMinutes;
+  int get autoRefreshMinutes => feed.autoRefreshMinutes;
 
   /// How long the app must have been away, in minutes, before a resume
   /// counts as worth refreshing for.
-  final int refreshResumeThresholdMinutes;
+  int get refreshResumeThresholdMinutes => feed.refreshResumeThresholdMinutes;
 
   /// Whether outgoing requests route through the user's proxy.
-  final bool proxyEnabled;
+  bool get proxyEnabled => network.proxyEnabled;
 
   /// The proxy host name or IP.
-  final String proxyHost;
+  String get proxyHost => network.proxyHost;
 
   /// The proxy port.
-  final int proxyPort;
+  int get proxyPort => network.proxyPort;
 
   /// How a feed's first-load placeholder is drawn.
-  final LoadingStyle loadingStyle;
+  LoadingStyle get loadingStyle => feed.loadingStyle;
 
   /// The room card's corner radius, in logical pixels.
-  final double roomCardCornerRadius;
+  double get roomCardCornerRadius => feed.roomCardCornerRadius;
 
   /// Whether the room card draws its platform pill.
-  final bool roomCardShowPlatform;
+  bool get roomCardShowPlatform => feed.roomCardShowPlatform;
 
   /// Whether the room card draws its audience and status pills.
-  final bool roomCardShowAudience;
+  bool get roomCardShowAudience => feed.roomCardShowAudience;
 
   /// Whether the room card draws its anchor line (avatar and name).
-  final bool roomCardShowAnchor;
+  bool get roomCardShowAnchor => feed.roomCardShowAnchor;
 
   /// The room card cover's shape.
-  final RoomCardCoverAspect roomCardAspect;
+  RoomCardCoverAspect get roomCardAspect => feed.roomCardAspect;
 
   /// The visible shell branches, in display order; the home branch is the
   /// floor, so this is never empty.
-  final List<String> shellBranches;
+  List<String> get shellBranches => shell.shellBranches;
 
   /// The platform ids the user hid from the platform list (3.x
   /// `Settings.hiddenSettingPlatforms`): hidden platforms are left out of
   /// popular, areas and search. An unknown id is simply never matched.
-  final List<String> hiddenSiteIds;
+  List<String> get hiddenSiteIds => feed.hiddenSiteIds;
 
   /// The user's manual platform order (3.x `Settings.hotAreasList` order);
   /// ids not listed keep their registry position after the listed ones.
-  final List<String> siteOrder;
+  List<String> get siteOrder => feed.siteOrder;
 
   /// The persisted log threshold — a `LogLevel.name`, empty for the
   /// build default the `AppLog` already opened with.
-  final String logLevelId;
+  String get logLevelId => general.logLevelId;
 
   /// How many watch-history entries are kept; 0 keeps everything (the
   /// reference's `Settings.historyLimit`, default 50).
-  final int historyLimit;
+  int get historyLimit => general.historyLimit;
 
   /// Rooms per desktop page; 0 picks the width answer (20 above 960 px,
   /// else 12) — the reference's `pageDefaultSize`.
-  final int pageDefaultSize;
+  int get pageDefaultSize => feed.pageDefaultSize;
 
   /// The page-size choices as a comma-separated text; empty means the
   /// width rule (20/40/60/80 above 960 px, else 12/24/36/48) — the
   /// reference's `pageSizeOptions`.
-  final String pageSizeOptions;
+  String get pageSizeOptions => feed.pageSizeOptions;
 
   /// Whether paged lists show the scroll-to-top/bottom buttons
   /// (`pageShowScrollTop`).
-  final bool pageShowScrollTop;
+  bool get pageShowScrollTop => feed.pageShowScrollTop;
 
   /// Whether the page bar offers the rooms-per-page menu
   /// (`pageShowSizeSelector`).
-  final bool pageShowSizeSelector;
+  bool get pageShowSizeSelector => feed.pageShowSizeSelector;
 
   /// Whether the page bar offers 'go to page' (`pageShowGotoButton`).
-  final bool pageShowGoto;
+  bool get pageShowGoto => feed.pageShowGoto;
 
-  /// Writes the document.
-  Map<String, Object?> toJson() => {
-    'refreshOnResume': refreshOnResume,
-    'danmakuVisible': danmakuVisible,
-    'volumeMuted': volumeMuted,
-    'defaultMobileVolume': defaultMobileVolume,
-    'defaultDesktopVolume': defaultDesktopVolume,
-    'localInteractionEnabled': localInteractionEnabled,
-    'localInteractionUserName': localInteractionUserName,
-    'localInteractionColor': localInteractionColor,
-    'barrageFontSize': barrageFontSize,
-    'barrageOpacity': barrageOpacity,
-    'barrageArea': barrageArea,
-    'barrageTopArea': barrageTopArea,
-    'barrageBottomArea': barrageBottomArea,
-    'barrageSpeed': barrageSpeed,
-    'barrageFontWeight': barrageFontWeight,
-    'barrageStroke': barrageStroke,
-    'barrageStrokeWidth': barrageStrokeWidth,
-    'barrageShowSender': barrageShowSender,
-    'barrageMaxVisible': barrageMaxVisible,
-    'barrageFps': barrageFps,
-    'barrageNoEmoji': barrageNoEmoji,
-    'barrageCollapse': barrageCollapse,
-    'barrageCollapseWindow': barrageCollapseWindow,
-    'barragePausedBehavior': barragePausedBehavior,
-    'barrageAutoFps': barrageAutoFps,
-    'barrageFpsMode': barrageFpsMode,
-    'barrageShowGifts': barrageShowGifts,
-    'barrageTapAction': barrageTapAction,
-    'barrageLongPressAction': barrageLongPressAction,
-    'barrageFontFamily': barrageFontFamily,
-    'backupDirectory': backupDirectory,
-    'barrageHoldOnPress': barrageHoldOnPress,
-    'barrageListFontSize': barrageListFontSize,
-    'barrageListLineSpacing': barrageListLineSpacing,
-    'barrageListStyle': barrageListStyle,
-    'barrageTemplate': barrageTemplate,
-    'preferResolution': preferResolution,
-    'preferResolutionCellular': preferResolutionCellular,
-    'preferH264': preferH264,
-    'videoFitIndex': videoFitIndex,
-    'openRoomFullscreen': openRoomFullscreen,
-    'preferRealOnlineCounts': preferRealOnlineCounts,
-    'realOnlinePlatforms': realOnlinePlatforms,
-    'portraitAdapt': portraitAdapt,
-    'portraitAdaptiveHeight': portraitAdaptiveHeight,
-    'portraitLayoutMode': portraitLayoutMode,
-    'portraitFullscreenPolicy': portraitFullscreenPolicy,
-    'portraitDisplayMode': portraitDisplayMode,
-    'portraitDanmakuMode': portraitDanmakuMode,
-    'rememberPortraitRoomOverride': rememberPortraitRoomOverride,
-    'showPortraitDiagnostics': showPortraitDiagnostics,
-    'portraitRoomOverrides': portraitRoomOverrides,
-    'pipAlwaysOnTop': pipAlwaysOnTop,
-    'miniRememberPosition': miniRememberPosition,
-    'miniWindowRect': miniWindowRect,
-    'pauseOnPipClose': pauseOnPipClose,
-    'showSplash': showSplash,
-    'githubOnlyUpdates': githubOnlyUpdates,
-    'detectClipboardRooms': detectClipboardRooms,
-    'startAtLogin': startAtLogin,
-    'cacheMaxMB': cacheMaxMB,
-    'cacheAutoClear': cacheAutoClear,
-    'cacheKeepDays': cacheKeepDays,
-    'cacheKeepCount': cacheKeepCount,
-    'autoRefreshThumbnails': autoRefreshThumbnails,
-    'thumbnailRefreshMinutes': thumbnailRefreshMinutes,
-    'thumbnailKeepOldFiles': thumbnailKeepOldFiles,
-    'playerProxyEnabled': playerProxyEnabled,
-    'playerProxyHost': playerProxyHost,
-    'playerProxyPort': playerProxyPort,
-    'customPlayerOutput': customPlayerOutput,
-    'audioOutputDriver': audioOutputDriver,
-    'hardwareDecoder': hardwareDecoder,
-    'frameInterpolation': frameInterpolation,
-    'scaler': scaler,
-    'deinterlace': deinterlace,
-    'streamCacheSeconds': streamCacheSeconds,
-    'languageId': languageId,
-    'autoCheckUpdate': autoCheckUpdate,
-    'countdownCloseEnabled': countdownCloseEnabled,
-    'countdownCloseMinutes': countdownCloseMinutes,
-    'launchBranch': launchBranch.id,
-    'restoreLastTab': restoreLastTab,
-    if (lastBranchId != null) 'lastBranchId': lastBranchId,
-    'shellNavExpanded': shellNavExpanded,
-    'sidebarWidth': sidebarWidth,
-    'windowWidth': windowWidth,
-    'windowHeight': windowHeight,
-    'autoRefreshMinutes': autoRefreshMinutes,
-    'refreshResumeThresholdMinutes': refreshResumeThresholdMinutes,
-    'proxyEnabled': proxyEnabled,
-    'proxyHost': proxyHost,
-    'proxyPort': proxyPort,
-    'loadingStyle': loadingStyle.id,
-    'roomCardCornerRadius': roomCardCornerRadius,
-    'roomCardShowPlatform': roomCardShowPlatform,
-    'roomCardShowAudience': roomCardShowAudience,
-    'roomCardShowAnchor': roomCardShowAnchor,
-    'roomCardAspect': roomCardAspect.id,
-    'shellBranches': shellBranches,
-    'hiddenSiteIds': hiddenSiteIds,
-    'siteOrder': siteOrder,
-    'logLevelId': logLevelId,
-    'historyLimit': historyLimit,
-    'pageDefaultSize': pageDefaultSize,
-    'pageSizeOptions': pageSizeOptions,
-    'pageShowScrollTop': pageShowScrollTop,
-    'pageShowSizeSelector': pageShowSizeSelector,
-    'pageShowGoto': pageShowGoto,
-  };
+  /// The shell branch id the app was last left on; null before the first
+  /// tab switch.
+  String? get lastBranchId => shell.lastBranchId;
 
-  /// Returns a copy with the given fields replaced. [shellBranches] never
-  /// takes an empty list — a shell with no destination cannot be walked.
+  /// Returns a copy with the given fields replaced.
   AppPreferences copyWith({
     bool? refreshOnResume,
     bool? danmakuVisible,
@@ -1116,122 +996,7 @@ final class AppPreferences extends Equatable {
   );
 
   @override
-  List<Object?> get props => <Object?>[
-    refreshOnResume,
-    danmakuVisible,
-    volumeMuted,
-    defaultMobileVolume,
-    defaultDesktopVolume,
-    localInteractionEnabled,
-    localInteractionUserName,
-    localInteractionColor,
-    barrageFontSize,
-    barrageOpacity,
-    barrageArea,
-    barrageTopArea,
-    barrageBottomArea,
-    barrageSpeed,
-    barrageFontWeight,
-    barrageStroke,
-    barrageStrokeWidth,
-    barrageShowSender,
-    barrageMaxVisible,
-    barrageFps,
-    barrageNoEmoji,
-    barrageCollapse,
-    barrageCollapseWindow,
-    barragePausedBehavior,
-    barrageAutoFps,
-    barrageFpsMode,
-    barrageShowGifts,
-    barrageTapAction,
-    barrageLongPressAction,
-    barrageFontFamily,
-    backupDirectory,
-    barrageHoldOnPress,
-    barrageListFontSize,
-    barrageListLineSpacing,
-    barrageListStyle,
-    barrageTemplate,
-    preferResolution,
-    preferResolutionCellular,
-    preferH264,
-    videoFitIndex,
-    openRoomFullscreen,
-    preferRealOnlineCounts,
-    realOnlinePlatforms,
-    portraitAdapt,
-    portraitAdaptiveHeight,
-    portraitLayoutMode,
-    portraitFullscreenPolicy,
-    portraitDisplayMode,
-    portraitDanmakuMode,
-    rememberPortraitRoomOverride,
-    showPortraitDiagnostics,
-    portraitRoomOverrides,
-    pipAlwaysOnTop,
-    miniRememberPosition,
-    miniWindowRect,
-    pauseOnPipClose,
-    showSplash,
-    githubOnlyUpdates,
-    detectClipboardRooms,
-    startAtLogin,
-    cacheMaxMB,
-    cacheAutoClear,
-    cacheKeepDays,
-    cacheKeepCount,
-    autoRefreshThumbnails,
-    thumbnailRefreshMinutes,
-    thumbnailKeepOldFiles,
-    playerProxyEnabled,
-    playerProxyHost,
-    playerProxyPort,
-    customPlayerOutput,
-    audioOutputDriver,
-    hardwareDecoder,
-    frameInterpolation,
-    scaler,
-    deinterlace,
-    streamCacheSeconds,
-    languageId,
-    autoCheckUpdate,
-    countdownCloseEnabled,
-    countdownCloseMinutes,
-    launchBranch,
-    restoreLastTab,
-    lastBranchId,
-    shellNavExpanded,
-    sidebarWidth,
-    windowWidth,
-    windowHeight,
-    autoRefreshMinutes,
-    refreshResumeThresholdMinutes,
-    proxyEnabled,
-    proxyHost,
-    proxyPort,
-    loadingStyle,
-    roomCardCornerRadius,
-    roomCardShowPlatform,
-    roomCardShowAudience,
-    roomCardShowAnchor,
-    roomCardAspect,
-    shellBranches,
-    hiddenSiteIds,
-    siteOrder,
-    logLevelId,
-    historyLimit,
-    pageDefaultSize,
-    pageSizeOptions,
-    pageShowScrollTop,
-    pageShowSizeSelector,
-    pageShowGoto,
-  ];
-
-  // The framework's own toString is what this class always showed; equatable
-  // would otherwise dump the whole document on every debug log line.
-  @override
-  bool? get stringify => false;
+  List<Object?> get props => [general, localInteraction, danmaku, player, portrait, data, network, shell, feed];
 }
 
 /// What a [AppPreferencesStore.load] or write found wrong.
@@ -1277,7 +1042,7 @@ final class AppPreferencesStore {
   final void Function(AppPreferencesFailure failure, Object error, StackTrace stack)? onError;
   final StreamController<AppPreferences> _controller = StreamController<AppPreferences>.broadcast();
 
-  AppPreferences _value = const AppPreferences();
+  AppPreferences _value = AppPreferences();
   Timer? _debounce;
   Future<void> _writeChain = Future<void>.value();
   Completer<void>? _batch;

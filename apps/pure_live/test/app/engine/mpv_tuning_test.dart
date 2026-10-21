@@ -7,7 +7,7 @@ void main() {
   group('MpvTuning.nativeOptions — 播放器代理', () {
     test('off writes no proxy keys', () {
       final options = MpvTuning.nativeOptions(
-        const AppPreferences(),
+        AppPreferences(),
         platform: TargetPlatform.windows,
         isDesktop: true,
       );
@@ -17,7 +17,7 @@ void main() {
 
     test('on writes both spellings with the stored endpoint', () {
       final options = MpvTuning.nativeOptions(
-        const AppPreferences(playerProxyEnabled: true, playerProxyHost: '10.0.0.2', playerProxyPort: 10809),
+        AppPreferences(playerProxyEnabled: true, playerProxyHost: '10.0.0.2', playerProxyPort: 10809),
         platform: TargetPlatform.windows,
         isDesktop: true,
       );
@@ -26,8 +26,8 @@ void main() {
     });
 
     test('the proxy is a next-open change, not a live one', () {
-      const before = AppPreferences();
-      const after = AppPreferences(playerProxyEnabled: true);
+      final before = AppPreferences();
+      final after = AppPreferences(playerProxyEnabled: true);
       expect(MpvTuning.nextOpenOnlyChanged(before, after), isTrue);
     });
   });

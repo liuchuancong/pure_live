@@ -3,7 +3,7 @@ import 'package:pure_live/features/room/portrait_rules.dart';
 import 'package:pure_live/features/room/room_controller.dart' show RoomPresentation;
 import 'package:pure_live/system/configuration/app_preferences.dart';
 
-const AppPreferences _p = AppPreferences();
+final AppPreferences _p = AppPreferences();
 
 ({double minimum, double middle, double maximum, double initial}) _stops() =>
     (minimum: 200, middle: 400, maximum: 600, initial: 400);
@@ -15,9 +15,9 @@ void main() {
     });
 
     test('adaptation off or compatibility mode keeps the plain stack', () {
-      expect(usesPortraitShape(const AppPreferences(portraitAdapt: false), verticalSource: true), isFalse);
+      expect(usesPortraitShape(AppPreferences(portraitAdapt: false), verticalSource: true), isFalse);
       expect(
-        usesPortraitShape(const AppPreferences(portraitLayoutMode: 'compatibility'), verticalSource: true),
+        usesPortraitShape(AppPreferences(portraitLayoutMode: 'compatibility'), verticalSource: true),
         isFalse,
       );
     });
@@ -29,14 +29,14 @@ void main() {
 
   group('applyPanelStops', () {
     test('the fixed-height answer pins all three stops at the middle', () {
-      final stops = applyPanelStops(_stops(), const AppPreferences(portraitAdaptiveHeight: false));
+      final stops = applyPanelStops(_stops(), AppPreferences(portraitAdaptiveHeight: false));
       expect(stops.minimum, 400);
       expect(stops.maximum, 400);
       expect(stops.initial, 400);
     });
 
     test('immersive opens at the floor', () {
-      final stops = applyPanelStops(_stops(), const AppPreferences(portraitLayoutMode: 'immersive'));
+      final stops = applyPanelStops(_stops(), AppPreferences(portraitLayoutMode: 'immersive'));
       expect(stops.initial, 200);
       expect(stops.maximum, 600);
     });
@@ -56,7 +56,7 @@ void main() {
     });
 
     test('landscape policy turns the upright request sideways', () {
-      const p = AppPreferences(portraitFullscreenPolicy: 'landscape');
+      final p = AppPreferences(portraitFullscreenPolicy: 'landscape');
       expect(
         resolveFullscreenEntry(RoomPresentation.portraitFullscreen, preferences: p, verticalSource: true),
         RoomPresentation.fullscreen,
@@ -64,7 +64,7 @@ void main() {
     });
 
     test('followSystem leaves the caller\u2019s direction alone', () {
-      const p = AppPreferences(portraitFullscreenPolicy: 'followSystem');
+      final p = AppPreferences(portraitFullscreenPolicy: 'followSystem');
       expect(
         resolveFullscreenEntry(RoomPresentation.fullscreen, preferences: p, verticalSource: true),
         RoomPresentation.fullscreen,
@@ -81,7 +81,7 @@ void main() {
       expect(remembered, RoomPresentation.fullscreen);
       final notRemembered = resolveFullscreenEntry(
         RoomPresentation.fullscreen,
-        preferences: const AppPreferences(rememberPortraitRoomOverride: false),
+        preferences: AppPreferences(rememberPortraitRoomOverride: false),
         verticalSource: true,
         roomOverride: 'landscape',
       );
@@ -107,7 +107,7 @@ void main() {
     });
 
     test('upperQuarter bounds the band without touching the row count', () {
-      expect(portraitBarrage(const AppPreferences(portraitDanmakuMode: 'upperQuarter'), globalRows: 3), (
+      expect(portraitBarrage(AppPreferences(portraitDanmakuMode: 'upperQuarter'), globalRows: 3), (
         rows: 3,
         area: 0.25,
         hidden: false,
@@ -115,12 +115,12 @@ void main() {
     });
 
     test('reduced halves the rows; hidden takes the overlay off', () {
-      expect(portraitBarrage(const AppPreferences(portraitDanmakuMode: 'reduced'), globalRows: 4), (
+      expect(portraitBarrage(AppPreferences(portraitDanmakuMode: 'reduced'), globalRows: 4), (
         rows: 2,
         area: null,
         hidden: false,
       ));
-      expect(portraitBarrage(const AppPreferences(portraitDanmakuMode: 'hidden'), globalRows: 4).hidden, isTrue);
+      expect(portraitBarrage(AppPreferences(portraitDanmakuMode: 'hidden'), globalRows: 4).hidden, isTrue);
     });
   });
 

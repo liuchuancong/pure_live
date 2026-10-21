@@ -13,7 +13,7 @@ import 'package:pure_uikit/pure_uikit.dart';
 /// dispatches to — the same contract the page sweeps hold for whole pages.
 void main() {
   group('pageSizesOf', () {
-    const auto = AppPreferences();
+    final auto = AppPreferences();
 
     test('the wide window answer is 20 of 20/40/60/80', () {
       final of = pageSizesOf(auto, 1200);

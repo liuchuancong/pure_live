@@ -5,7 +5,7 @@ import 'package:pure_live/system/configuration/app_preferences.dart';
 void main() {
   group('BarrageTemplate', () {
     test('of() reads the look out of the stored answers', () {
-      final preferences = const AppPreferences().copyWith(barrageArea: 0.35, barrageSpeed: 105, barrageFontSize: 17);
+      final preferences = AppPreferences().copyWith(barrageArea: 0.35, barrageSpeed: 105, barrageFontSize: 17);
       final template = BarrageTemplate.of(preferences);
       expect(template.area, 0.35);
       expect(template.speed, 105);
@@ -14,7 +14,7 @@ void main() {
 
     test('applyTo() writes the look back onto the answers', () {
       final preset = BarrageTemplate.presets.first.$2;
-      final applied = preset.applyTo(const AppPreferences());
+      final applied = preset.applyTo(AppPreferences());
       expect(BarrageTemplate.of(applied).presetKey, 'best');
     });
 
