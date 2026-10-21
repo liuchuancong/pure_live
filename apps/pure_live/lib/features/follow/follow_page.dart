@@ -572,6 +572,8 @@ class _FollowGridState extends ConsumerState<_FollowGrid> {
           return RoomGrid(
             scrollController: _scroll,
             padding: EdgeInsets.fromLTRB(gutter, PureSpacing.sm, gutter, PureSpacing.xxl),
+            crossSpacing: preferences.crossAxisSpacing,
+            mainSpacing: preferences.mainAxisSpacing,
             // The favourites ladder reads one card wider than the discovery grid
             // at the same width; the cards themselves set their own height.
             columns: RoomGridMetrics.favouriteColumnsFor(listWidth),

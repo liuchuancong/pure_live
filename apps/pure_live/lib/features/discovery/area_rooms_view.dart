@@ -163,6 +163,7 @@ final class _InfiniteFeedState extends ConsumerState<_InfiniteFeed> with FeedAut
   @override
   Widget build(BuildContext context) {
     final coverAspect = ref.watch(roomCardStyleProvider).aspect.ratio;
+    final feed = ref.watch(appPreferencesProvider);
     final state = _controller.state;
     if (state.items.isEmpty) {
       return _placeholder(
@@ -213,6 +214,8 @@ final class _InfiniteFeedState extends ConsumerState<_InfiniteFeed> with FeedAut
           Positioned.fill(
             child: RoomGrid(
               scrollController: _scroll,
+              crossSpacing: feed.crossAxisSpacing,
+              mainSpacing: feed.mainAxisSpacing,
               itemCount: rooms.length,
               itemBuilder: (context, index) => _tile(context, ref, rooms, rooms[index]),
               footer: state.isLoadingMore ? const Center(child: PureSpinner(size: 40)) : null,
@@ -366,6 +369,7 @@ final class _PagedFeedState extends ConsumerState<_PagedFeed> with FeedAutoRefre
 
   Widget _body(BuildContext context, PagedState<LiveRoom> state) {
     final coverAspect = ref.watch(roomCardStyleProvider).aspect.ratio;
+    final feed = ref.watch(appPreferencesProvider);
     if (state.items.isEmpty) {
       return _placeholder(
         context,
@@ -385,6 +389,8 @@ final class _PagedFeedState extends ConsumerState<_PagedFeed> with FeedAutoRefre
     final rooms = widget.sort == RoomSort.viewers ? _sortByViewers(visible) : visible;
     return RoomGrid(
       scrollController: _scroll,
+      crossSpacing: feed.crossAxisSpacing,
+      mainSpacing: feed.mainAxisSpacing,
       itemCount: rooms.length,
       itemBuilder: (context, index) => _tile(context, ref, rooms, rooms[index]),
     );

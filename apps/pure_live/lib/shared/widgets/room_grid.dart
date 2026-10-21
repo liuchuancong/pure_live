@@ -32,6 +32,8 @@ final class RoomGrid extends StatelessWidget {
     this.padding = const EdgeInsets.fromLTRB(PureSpacing.sm, PureSpacing.sm, PureSpacing.sm, PureSpacing.xl),
     this.footer,
     this.columns,
+    this.crossSpacing = PureSpacing.sm,
+    this.mainSpacing = PureSpacing.sm,
     this.shrinkWrap = false,
     this.physics,
     this.keyboardDismissBehavior = ScrollViewKeyboardDismissBehavior.manual,
@@ -57,6 +59,12 @@ final class RoomGrid extends StatelessWidget {
   /// Column count, or null to take it from the width.
   final int? columns;
 
+  /// The horizontal gap between columns; the appearance page's 列间距.
+  final double crossSpacing;
+
+  /// The vertical gap between tiles; the appearance page's 行间距.
+  final double mainSpacing;
+
   /// Whether the grid sizes itself to its content inside a scrolling parent.
   final bool shrinkWrap;
 
@@ -71,8 +79,8 @@ final class RoomGrid extends StatelessWidget {
     builder: (context, constraints) => MosaicGrid.builder(
       columns: MosaicColumns.count(columns ?? RoomGridMetrics.columnsFor(constraints.maxWidth)),
       layout: const MosaicLayout.masonry(),
-      columnGap: PureSpacing.sm,
-      rowGap: PureSpacing.sm,
+      columnGap: crossSpacing,
+      rowGap: mainSpacing,
       itemCount: itemCount,
       itemBuilder: itemBuilder,
       footer: footer,
@@ -92,7 +100,14 @@ final class RoomGrid extends StatelessWidget {
 /// its own to measure, so the caller's `LayoutBuilder` hands it down.
 final class SliverRoomGrid extends StatelessWidget {
   /// The sliver; [itemCount] cards laid out across [width].
-  const new({required this.width, required this.itemCount, required this.itemBuilder, super.key});
+  const new({
+    required this.width,
+    required this.itemCount,
+    required this.itemBuilder,
+    this.crossSpacing = PureSpacing.sm,
+    this.mainSpacing = PureSpacing.sm,
+    super.key,
+  });
 
   /// The width the column ladder reads.
   final double width;
@@ -103,12 +118,18 @@ final class SliverRoomGrid extends StatelessWidget {
   /// Builds the card at an index.
   final Widget Function(BuildContext context, int index) itemBuilder;
 
+  /// The horizontal gap between columns; the appearance page's 列间距.
+  final double crossSpacing;
+
+  /// The vertical gap between tiles; the appearance page's 行间距.
+  final double mainSpacing;
+
   @override
   Widget build(BuildContext context) => SliverMosaicGrid.builder(
     columns: MosaicColumns.count(RoomGridMetrics.columnsFor(width)),
     layout: const MosaicLayout.masonry(),
-    columnGap: PureSpacing.sm,
-    rowGap: PureSpacing.sm,
+    columnGap: crossSpacing,
+    rowGap: mainSpacing,
     itemCount: itemCount,
     itemBuilder: itemBuilder,
   );

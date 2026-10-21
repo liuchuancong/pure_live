@@ -26,9 +26,10 @@ import 'package:restart_app/restart_app.dart';
 /// live process, so its write is stored and waits for a relaunch (§2.4 of the v4
 /// spec). The row reports the pending language and the picker offers the restart.
 ///
-/// The controls the reference ships without a backing in this build (dynamic
-/// colour, loading style, room card, grid spacing, page settings, language) stay
-/// out — except the ones that live on their own pages here.
+/// The controls whose own page this build ships (loading style, room card,
+/// page settings) are links here, and the grid gaps are sliders: the appearance
+/// page is where the reference groups them, so a viewer looking for them finds
+/// them where the reference put them.
 final class AppearancePage extends ConsumerWidget {
   /// The appearance page.
   const new({super.key});
@@ -48,7 +49,9 @@ final class AppearancePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final appearance = ref.watch(appearancePreferencesProvider);
+    final preferences = ref.watch(appPreferencesProvider);
     final update = ref.read(appearancePreferencesProvider.notifier).update;
+    final updatePreferences = ref.read(appPreferencesProvider.notifier).update;
     // The language this process mounted is frozen, so a stored change to it is
     // pending rather than applied: the row says which language the next launch
     // will use, and every other control on this page still re-skins live.
@@ -142,6 +145,54 @@ final class AppearancePage extends ConsumerWidget {
                 description: Text(t.settings.focusOutlineSubtitle),
                 initialValue: appearance.focusOutline,
                 onToggle: (value) => update((a) => a.copyWith(focusOutline: value)),
+              ),
+            ],
+          ),
+          SettingsSection(
+            title: Text(t.settings.sectionFeedDisplay),
+            tiles: [
+              SettingsTile.navigation(
+                key: const ValueKey('appearance-loading-style'),
+                leading: const Icon(Icons.animation_outlined),
+                title: Text(t.settings.loadingStyle),
+                description: Text(t.settings.loadingStyleSubtitle),
+                onPressed: (_) => unawaited(const LoadingStyleSettingsRoute().push<void>(context)),
+              ),
+              SettingsTile.navigation(
+                key: const ValueKey('appearance-room-card'),
+                leading: const Icon(Icons.view_agenda_outlined),
+                title: Text(t.settings.roomCardSettings),
+                description: Text(t.settings.roomCardSettingsSubtitle),
+                onPressed: (_) => unawaited(const RoomCardSettingsRoute().push<void>(context)),
+              ),
+              SettingsTile.navigation(
+                key: const ValueKey('appearance-page-settings'),
+                leading: const Icon(Icons.tune_outlined),
+                title: Text(t.settings.pageSettings),
+                description: Text(t.settings.pageSettingsSubtitle),
+                onPressed: (_) => unawaited(const PageSettingsRoute().push<void>(context)),
+              ),
+              CustomSettingsTile(
+                child: SettingsSliderRow(
+                  icon: Icons.swap_horiz_outlined,
+                  title: t.settings.crossAxisSpacing,
+                  subtitle: t.settings.crossAxisSpacingSubtitle,
+                  value: preferences.crossAxisSpacing,
+                  max: 64,
+                  valueLabel: '${preferences.crossAxisSpacing.round()} px',
+                  onChanged: (value) => unawaited(updatePreferences((p) => p.copyWith(crossAxisSpacing: value))),
+                ),
+              ),
+              CustomSettingsTile(
+                child: SettingsSliderRow(
+                  icon: Icons.swap_vert_outlined,
+                  title: t.settings.mainAxisSpacing,
+                  subtitle: t.settings.mainAxisSpacingSubtitle,
+                  value: preferences.mainAxisSpacing,
+                  max: 64,
+                  valueLabel: '${preferences.mainAxisSpacing.round()} px',
+                  onChanged: (value) => unawaited(updatePreferences((p) => p.copyWith(mainAxisSpacing: value))),
+                ),
               ),
             ],
           ),

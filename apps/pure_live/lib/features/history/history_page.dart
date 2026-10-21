@@ -367,6 +367,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
   /// The rooms by day: each day's heading with its count, then a grid whose
   /// columns follow the width.
   Widget _grid(List<WatchRecord> records) {
+    final feed = ref.watch(appPreferencesProvider);
     final groups = _groups(records);
     return LayoutBuilder(
       builder: (context, constraints) => CustomScrollView(
@@ -388,6 +389,8 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
               padding: const EdgeInsets.symmetric(horizontal: PureSpacing.sm),
               sliver: SliverRoomGrid(
                 width: constraints.maxWidth,
+                crossSpacing: feed.crossAxisSpacing,
+                mainSpacing: feed.mainAxisSpacing,
                 itemCount: group.records.length,
                 itemBuilder: (context, index) => _HistoryTile(
                   record: group.records[index],

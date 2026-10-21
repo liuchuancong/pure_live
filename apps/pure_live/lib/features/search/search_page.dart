@@ -545,6 +545,7 @@ final class _SitePaneState extends State<_SitePane> with AutomaticKeepAliveClien
     if (controller == null) {
       return PureEmpty(title: context.t.search.hint, icon: Icons.travel_explore_outlined);
     }
+    final feed = ProviderScope.containerOf(context, listen: false).read(appPreferencesProvider);
     final state = controller.state;
     final results = visibleSearchResults(
       state.items,
@@ -600,6 +601,8 @@ final class _SitePaneState extends State<_SitePane> with AutomaticKeepAliveClien
         scrollController: _scroll,
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.fromLTRB(PureSpacing.sm, PureSpacing.xs, PureSpacing.sm, PureSpacing.xl),
+        crossSpacing: feed.crossAxisSpacing,
+        mainSpacing: feed.mainAxisSpacing,
         itemCount: results.length,
         itemBuilder: (context, index) => SearchResultTile(result: results[index], playlist: playlist),
         footer: state.isLoadingMore ? const Center(child: PureSpinner()) : null,
@@ -785,6 +788,7 @@ final class _AllSitesPaneState extends State<_AllSitesPane> with AutomaticKeepAl
   Widget _section(BuildContext context, String siteId, InfiniteController<LiveSearchResult> controller) {
     final site = widget.sites.firstWhere((candidate) => candidate.manifest.id == siteId);
     final name = site.manifest.localizedName(Localizations.localeOf(context).toLanguageTag(), 'zh-CN');
+    final feed = ProviderScope.containerOf(context, listen: false).read(appPreferencesProvider);
     final state = controller.state;
     final visible = visibleSearchResults(
       state.items,
@@ -839,6 +843,8 @@ final class _AllSitesPaneState extends State<_AllSitesPane> with AutomaticKeepAl
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             padding: EdgeInsets.zero,
+            crossSpacing: feed.crossAxisSpacing,
+            mainSpacing: feed.mainAxisSpacing,
             itemCount: visible.length,
             itemBuilder: (context, index) => SearchResultTile(result: visible[index], playlist: playlist),
           ),

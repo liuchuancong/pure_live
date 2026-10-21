@@ -18,6 +18,8 @@ final class FeedPreferences extends Equatable {
     this.roomCardShowAudience = true,
     this.roomCardShowAnchor = true,
     this.roomCardAspect = RoomCardCoverAspect.sixteenByNine,
+    this.crossAxisSpacing = 6,
+    this.mainAxisSpacing = 6,
     this.pageDefaultSize = 0,
     this.pageSizeOptions = '',
     this.pageShowScrollTop = true,
@@ -45,6 +47,8 @@ final class FeedPreferences extends Equatable {
       roomCardShowAudience: json['roomCardShowAudience'] as bool? ?? true,
       roomCardShowAnchor: json['roomCardShowAnchor'] as bool? ?? true,
       roomCardAspect: RoomCardCoverAspect.fromId(json['roomCardAspect'] as String?),
+      crossAxisSpacing: (json['crossAxisSpacing'] as num?)?.toDouble() ?? 6,
+      mainAxisSpacing: (json['mainAxisSpacing'] as num?)?.toDouble() ?? 6,
       pageDefaultSize: (json['pageDefaultSize'] as num?)?.toInt() ?? 0,
       pageSizeOptions: json['pageSizeOptions'] as String? ?? '',
       pageShowScrollTop: json['pageShowScrollTop'] as bool? ?? true,
@@ -92,6 +96,14 @@ final class FeedPreferences extends Equatable {
 
   /// The room card cover's shape.
   final RoomCardCoverAspect roomCardAspect;
+
+  /// The horizontal gap between the cards of one row, in logical pixels
+  /// (3.x `crossAxisSpacing`, 0–64).
+  final double crossAxisSpacing;
+
+  /// The vertical gap between the cards of one column, in logical pixels
+  /// (3.x `mainAxisSpacing`, 0–64).
+  final double mainAxisSpacing;
 
   /// Rooms per desktop page; 0 picks the width answer (20 above 960 px,
   /// else 12) — the reference's `pageDefaultSize`.
@@ -152,6 +164,8 @@ final class FeedPreferences extends Equatable {
     'roomCardShowAudience': roomCardShowAudience,
     'roomCardShowAnchor': roomCardShowAnchor,
     'roomCardAspect': roomCardAspect.id,
+    'crossAxisSpacing': crossAxisSpacing,
+    'mainAxisSpacing': mainAxisSpacing,
     'pageDefaultSize': pageDefaultSize,
     'pageSizeOptions': pageSizeOptions,
     'pageShowScrollTop': pageShowScrollTop,
@@ -177,6 +191,8 @@ final class FeedPreferences extends Equatable {
     bool? roomCardShowAudience,
     bool? roomCardShowAnchor,
     RoomCardCoverAspect? roomCardAspect,
+    double? crossAxisSpacing,
+    double? mainAxisSpacing,
     int? pageDefaultSize,
     String? pageSizeOptions,
     bool? pageShowScrollTop,
@@ -190,19 +206,25 @@ final class FeedPreferences extends Equatable {
     List<String>? siteOrder,
   }) => FeedPreferences(
     autoRefreshMinutes: autoRefreshMinutes ?? this.autoRefreshMinutes,
+    liveAlertTagIds: liveAlertTagIds ?? this.liveAlertTagIds,
     refreshResumeThresholdMinutes: refreshResumeThresholdMinutes ?? this.refreshResumeThresholdMinutes,
+    refreshConcurrency: refreshConcurrency ?? this.refreshConcurrency,
     loadingStyle: loadingStyle ?? this.loadingStyle,
     roomCardCornerRadius: roomCardCornerRadius ?? this.roomCardCornerRadius,
     roomCardShowPlatform: roomCardShowPlatform ?? this.roomCardShowPlatform,
     roomCardShowAudience: roomCardShowAudience ?? this.roomCardShowAudience,
     roomCardShowAnchor: roomCardShowAnchor ?? this.roomCardShowAnchor,
     roomCardAspect: roomCardAspect ?? this.roomCardAspect,
+    crossAxisSpacing: crossAxisSpacing ?? this.crossAxisSpacing,
+    mainAxisSpacing: mainAxisSpacing ?? this.mainAxisSpacing,
     pageDefaultSize: pageDefaultSize ?? this.pageDefaultSize,
     pageSizeOptions: pageSizeOptions ?? this.pageSizeOptions,
     pageShowScrollTop: pageShowScrollTop ?? this.pageShowScrollTop,
     pageShowSizeSelector: pageShowSizeSelector ?? this.pageShowSizeSelector,
     pageShowGoto: pageShowGoto ?? this.pageShowGoto,
     preferRealOnlineCounts: preferRealOnlineCounts ?? this.preferRealOnlineCounts,
+    preferredSiteId: preferredSiteId ?? this.preferredSiteId,
+    showUnplayableInDiscover: showUnplayableInDiscover ?? this.showUnplayableInDiscover,
     realOnlinePlatforms: realOnlinePlatforms ?? this.realOnlinePlatforms,
     hiddenSiteIds: hiddenSiteIds ?? this.hiddenSiteIds,
     siteOrder: siteOrder ?? this.siteOrder,
@@ -221,6 +243,8 @@ final class FeedPreferences extends Equatable {
     roomCardShowAudience,
     roomCardShowAnchor,
     roomCardAspect,
+    crossAxisSpacing,
+    mainAxisSpacing,
     pageDefaultSize,
     pageSizeOptions,
     pageShowScrollTop,

@@ -108,6 +108,20 @@ void main() {
     expect(find.byKey(const ValueKey('settings-entry-danmaku_visible')), findsOneWidget);
   });
 
+  testWidgets('the appearance page links the list pages and writes the grid gaps', (tester) async {
+    final stores = _Stores();
+    await _pump(tester, language: PureDesignLanguage.material, child: const AppearancePage(), stores: stores);
+
+    expect(find.byKey(const ValueKey('appearance-loading-style')), findsOneWidget);
+    expect(find.byKey(const ValueKey('appearance-room-card')), findsOneWidget);
+    expect(find.byKey(const ValueKey('appearance-page-settings')), findsOneWidget);
+    expect(find.text('6 px'), findsNWidgets(2));
+
+    await tester.drag(find.byType(PureSlider).first, const Offset(200, 0));
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(stores.preferences.value.crossAxisSpacing, greaterThan(6));
+  });
+
   testWidgets('the danmaku page writes the default a room opens with', (tester) async {
     final stores = _Stores();
     await _pump(tester, language: PureDesignLanguage.material, child: const DanmakuSettingsPage(), stores: stores);

@@ -253,6 +253,20 @@ final class VideoSettingsPage extends ConsumerWidget {
                   onToggle: (value) => unawaited(update((p) => p.copyWith(miniRememberPosition: value))),
                 ),
               if (isDesktop)
+                SettingsTile(
+                  key: const ValueKey('video-reset-mini-position'),
+                  leading: const Icon(Icons.restart_alt_outlined),
+                  title: Text(t.settings.miniResetPosition),
+                  description: Text(t.settings.miniResetPositionSubtitle),
+                  onPressed: (_) => unawaited(
+                    update((p) => p.copyWith(miniWindowRect: '')).then((_) {
+                      if (context.mounted) {
+                        PureToast.show(context, t.settings.miniResetDone);
+                      }
+                    }),
+                  ),
+                ),
+              if (isDesktop)
                 SettingsTile.switchTile(
                   key: const ValueKey('video-pause-on-tile-close'),
                   leading: const Icon(Icons.pause_circle_outline),

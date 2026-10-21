@@ -691,6 +691,27 @@ class Translations$settings$zh {
 	/// zh: '圆角、封面比例与信息行'
 	String get roomCardSettingsSubtitle => '圆角、封面比例与信息行';
 
+	/// zh: '列间距（横向）'
+	String get crossAxisSpacing => '列间距（横向）';
+
+	/// zh: '同一行卡片之间的水平缝隙'
+	String get crossAxisSpacingSubtitle => '同一行卡片之间的水平缝隙';
+
+	/// zh: '行间距（纵向）'
+	String get mainAxisSpacing => '行间距（纵向）';
+
+	/// zh: '上下卡片之间的垂直缝隙'
+	String get mainAxisSpacingSubtitle => '上下卡片之间的垂直缝隙';
+
+	/// zh: '重置小窗位置与大小'
+	String get miniResetPosition => '重置小窗位置与大小';
+
+	/// zh: '清除记住的位置，下次从右下角打开'
+	String get miniResetPositionSubtitle => '清除记住的位置，下次从右下角打开';
+
+	/// zh: '已重置小窗位置'
+	String get miniResetDone => '已重置小窗位置';
+
 	/// zh: '网络'
 	String get sectionNetwork => '网络';
 
@@ -4476,6 +4497,13 @@ extension on Translations {
 			'settings.loadingStyleSubtitle' => '加载占位的呈现方式',
 			'settings.roomCardSettings' => '房间卡片',
 			'settings.roomCardSettingsSubtitle' => '圆角、封面比例与信息行',
+			'settings.crossAxisSpacing' => '列间距（横向）',
+			'settings.crossAxisSpacingSubtitle' => '同一行卡片之间的水平缝隙',
+			'settings.mainAxisSpacing' => '行间距（纵向）',
+			'settings.mainAxisSpacingSubtitle' => '上下卡片之间的垂直缝隙',
+			'settings.miniResetPosition' => '重置小窗位置与大小',
+			'settings.miniResetPositionSubtitle' => '清除记住的位置，下次从右下角打开',
+			'settings.miniResetDone' => '已重置小窗位置',
 			'settings.sectionNetwork' => '网络',
 			'settings.proxySettings' => '网络代理',
 			'settings.proxySettingsSubtitle' => '通过代理转发请求',
@@ -4802,6 +4830,8 @@ extension on Translations {
 			'logs.levelError' => '错误（error）',
 			'logs.levelFatal' => '严重（fatal）',
 			'logs.levelOff' => '关闭',
+			_ => null,
+		} ?? switch (path) {
 			'logs.levelDefault' => '跟随构建默认值',
 			'logs.export' => '导出最近日志',
 			'logs.exportDone' => ({required int count}) => '已复制 ${count} 条日志到剪贴板',
@@ -4809,8 +4839,6 @@ extension on Translations {
 			'logs.openFolder' => '打开日志目录',
 			'logs.note' => '日志文件保存在数据目录的 logs 下，会滚动清理。',
 			'recorder.title' => '录播',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.addRoom' => '添加房间',
 			'recorder.platform' => '平台',
 			'recorder.roomId' => '房间号',
@@ -5316,6 +5344,8 @@ extension on Translations {
 			'remoteSync.manualHint' => '输入对方设备的地址，或粘贴对方二维码里的同步链接（含配对码，不用再输入）',
 			'remoteSync.copyAddress' => '复制地址',
 			'remoteSync.addressCopied' => '地址已复制',
+			_ => null,
+		} ?? switch (path) {
 			'remoteSync.fromName' => ({required String name}) => '来自 ${name}',
 			'remoteSync.legacyDevice' => '3.x 版本的设备',
 			'remoteSync.allow' => '允许',
@@ -5323,8 +5353,6 @@ extension on Translations {
 			'remoteSync.incomingImportNamed' => ({required Object address, required Object name}) => '设备 ${address}（${name}）请求用它的设置覆盖本机设置，是否允许？',
 			'remoteSync.incomingExportNamed' => ({required Object address, required Object name}) => '设备 ${address}（${name}）请求读取本机设置，是否允许？',
 			'remoteSync.pairingCode' => '配对码',
-			_ => null,
-		} ?? switch (path) {
 			'remoteSync.pairingCodeFor' => ({required String name}) => '输入“${name}”上显示的 6 位配对码',
 			'remoteSync.pairingCodeInvalid' => '配对码应为 6 位数字',
 			'remoteSync.partsAll' => '全选',

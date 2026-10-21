@@ -631,6 +631,8 @@ final class _SiteFeedState extends ConsumerState<_SiteFeed>
     Widget grid() => RoomGrid(
       scrollController: _scroll,
       padding: EdgeInsets.fromLTRB(gutter, PureSpacing.sm, gutter, PureSpacing.xl),
+      crossSpacing: preferences.crossAxisSpacing,
+      mainSpacing: preferences.mainAxisSpacing,
       itemCount: shown.length,
       itemBuilder: (context, index) {
         final room = shown[index];

@@ -157,6 +157,8 @@ final class AppPreferences extends Equatable {
     bool roomCardShowAudience = true,
     bool roomCardShowAnchor = true,
     RoomCardCoverAspect roomCardAspect = RoomCardCoverAspect.sixteenByNine,
+    double crossAxisSpacing = 6,
+    double mainAxisSpacing = 6,
     List<String> shellBranches = defaultShellBranches,
     List<String> hiddenSiteIds = const [],
     List<String> siteOrder = const [],
@@ -288,6 +290,8 @@ final class AppPreferences extends Equatable {
          roomCardShowAudience: roomCardShowAudience,
          roomCardShowAnchor: roomCardShowAnchor,
          roomCardAspect: roomCardAspect,
+         crossAxisSpacing: crossAxisSpacing,
+         mainAxisSpacing: mainAxisSpacing,
          pageDefaultSize: pageDefaultSize,
          pageSizeOptions: pageSizeOptions,
          pageShowScrollTop: pageShowScrollTop,
@@ -769,6 +773,12 @@ final class AppPreferences extends Equatable {
   /// The room card cover's shape.
   RoomCardCoverAspect get roomCardAspect => feed.roomCardAspect;
 
+  /// The horizontal gap between the cards of one row, in logical pixels.
+  double get crossAxisSpacing => feed.crossAxisSpacing;
+
+  /// The vertical gap between the cards of one column, in logical pixels.
+  double get mainAxisSpacing => feed.mainAxisSpacing;
+
   /// The visible shell branches, in display order; the home branch is the
   /// floor, so this is never empty.
   List<String> get shellBranches => shell.shellBranches;
@@ -925,6 +935,8 @@ final class AppPreferences extends Equatable {
     bool? roomCardShowAudience,
     bool? roomCardShowAnchor,
     RoomCardCoverAspect? roomCardAspect,
+    double? crossAxisSpacing,
+    double? mainAxisSpacing,
     List<String>? shellBranches,
     List<String>? hiddenSiteIds,
     List<String>? siteOrder,
@@ -1044,6 +1056,8 @@ final class AppPreferences extends Equatable {
     roomCardShowAudience: roomCardShowAudience ?? this.roomCardShowAudience,
     roomCardShowAnchor: roomCardShowAnchor ?? this.roomCardShowAnchor,
     roomCardAspect: roomCardAspect ?? this.roomCardAspect,
+    crossAxisSpacing: crossAxisSpacing ?? this.crossAxisSpacing,
+    mainAxisSpacing: mainAxisSpacing ?? this.mainAxisSpacing,
     shellBranches: (shellBranches == null || shellBranches.isEmpty)
         ? this.shellBranches
         : List.unmodifiable(shellBranches),

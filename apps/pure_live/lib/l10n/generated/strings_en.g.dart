@@ -330,6 +330,13 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get loadingStyleSubtitle => 'How loading placeholders present';
 	@override String get roomCardSettings => 'Room card';
 	@override String get roomCardSettingsSubtitle => 'Radius, cover shape and info lines';
+	@override String get crossAxisSpacing => 'Column gap';
+	@override String get crossAxisSpacingSubtitle => 'The horizontal gap between cards in a row';
+	@override String get mainAxisSpacing => 'Row gap';
+	@override String get mainAxisSpacingSubtitle => 'The vertical gap between cards in a column';
+	@override String get miniResetPosition => 'Reset mini window size and position';
+	@override String get miniResetPositionSubtitle => 'Clears the remembered geometry; the next mini window opens at the bottom-right';
+	@override String get miniResetDone => 'Mini window position reset';
 	@override String get sectionNetwork => 'Network';
 	@override String get proxySettings => 'Network proxy';
 	@override String get proxySettingsSubtitle => 'Route requests through a proxy';
@@ -1910,6 +1917,13 @@ extension on TranslationsEn {
 			'settings.loadingStyleSubtitle' => 'How loading placeholders present',
 			'settings.roomCardSettings' => 'Room card',
 			'settings.roomCardSettingsSubtitle' => 'Radius, cover shape and info lines',
+			'settings.crossAxisSpacing' => 'Column gap',
+			'settings.crossAxisSpacingSubtitle' => 'The horizontal gap between cards in a row',
+			'settings.mainAxisSpacing' => 'Row gap',
+			'settings.mainAxisSpacingSubtitle' => 'The vertical gap between cards in a column',
+			'settings.miniResetPosition' => 'Reset mini window size and position',
+			'settings.miniResetPositionSubtitle' => 'Clears the remembered geometry; the next mini window opens at the bottom-right',
+			'settings.miniResetDone' => 'Mini window position reset',
 			'settings.sectionNetwork' => 'Network',
 			'settings.proxySettings' => 'Network proxy',
 			'settings.proxySettingsSubtitle' => 'Route requests through a proxy',
@@ -2236,6 +2250,8 @@ extension on TranslationsEn {
 			'logs.levelError' => 'Errors (error)',
 			'logs.levelFatal' => 'Fatal only',
 			'logs.levelOff' => 'Off',
+			_ => null,
+		} ?? switch (path) {
 			'logs.levelDefault' => 'Follow build default',
 			'logs.export' => 'Export recent logs',
 			'logs.exportDone' => ({required int count}) => 'Copied ${count} log lines to the clipboard',
@@ -2243,8 +2259,6 @@ extension on TranslationsEn {
 			'logs.openFolder' => 'Open log folder',
 			'logs.note' => 'Log files live under the logs directory and rotate.',
 			'recorder.title' => 'Recorder',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.addRoom' => 'Add room',
 			'recorder.platform' => 'Platform',
 			'recorder.roomId' => 'Room ID',
@@ -2750,6 +2764,8 @@ extension on TranslationsEn {
 			'remoteSync.manualHint' => 'Type the other device\'s address, or paste its QR code\'s sync link (it carries the pairing code)',
 			'remoteSync.copyAddress' => 'Copy Address',
 			'remoteSync.addressCopied' => 'Address copied',
+			_ => null,
+		} ?? switch (path) {
 			'remoteSync.fromName' => ({required String name}) => 'From ${name}',
 			'remoteSync.legacyDevice' => 'Pure Live 3.x device',
 			'remoteSync.allow' => 'Allow',
@@ -2757,8 +2773,6 @@ extension on TranslationsEn {
 			'remoteSync.incomingImportNamed' => ({required Object address, required Object name}) => '${address} (${name}) asks to replace this device’s settings with its own. Allow?',
 			'remoteSync.incomingExportNamed' => ({required Object address, required Object name}) => '${address} (${name}) asks to read this device’s settings. Allow?',
 			'remoteSync.pairingCode' => 'Pairing code',
-			_ => null,
-		} ?? switch (path) {
 			'remoteSync.pairingCodeFor' => ({required String name}) => 'Enter the 6-digit pairing code shown on “${name}”',
 			'remoteSync.pairingCodeInvalid' => 'The pairing code should be 6 digits',
 			'remoteSync.partsAll' => 'Select all',
