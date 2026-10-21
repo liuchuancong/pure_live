@@ -30,14 +30,20 @@
 | B1b | 搜索排序：4 模式 + 离线过滤 + 排序 UI | search/search_ranking.dart | ✅ 77b2b03a6（+5 测试） |
 | B2 | 房间·本地互动 | live_play/local_interaction/16（6.8k 行） | ✅ B2a 3c9d55d98（礼物+等级）、B2b f2e58692b（预设样式+等级读数） |
 | B2c | 礼物横幅（一屏一张、大额大卡、预设着色、可关） | local_gift_effect | ✅ e1897b16a |
-| B3 | 房间·附件 | live_play/{mini,switch_room,logic} | 🟡 重连阶梯 6106be436、后台播放 acd14002b；剩 mini 播放器/切房间/音频焦点/预测返回（需原生或列表上下文） |
-| B4 | 播放器视图：控制条/手势/状态/竖屏诊断对齐 | live_play/player/8 | ⬜（手势 W1 已完成） |
+| B3 | 房间·附件（⏸ 用户指令：先基础页面） | live_play/{mini,switch_room,logic} | 🟡 重连阶梯 6106be436、后台播放 acd14002b；剩 mini 播放器/切房间/音频焦点/预测返回（需原生或列表上下文） |
+| B4 | 播放器视图（⏸ 同 B3） | live_play/player/8 | ⬜（手势 W1 已完成） |
 | B5 | 多画面：布局与单元格交互 | multiview/10 | ⬜ |
 | B6 | 录制/IPTV：录制视图与控制、IPTV 增强 | recorder/、iptv/ | ⬜ |
 | B7 | 账号/备份：账号三视图、WebDAV、日志页 | account/14、backup/5、web_dav/5 | ⬜ |
 | B8 | 设置全量：逐项对照参考 settings | settings/16 | ⬜ |
 | B9 | TV UI 树 | tv/54 | ⬜ |
 | B10 | VOD | live_vod 包、tv/video | ⬜ |
+
+## 顺序调整（2026-10-21 用户指令）
+
+**先做基础页面（设置/账号/备份/历史/关于/IPTV/录制/多画面/工具箱等），房间页与播放器相关的工作（B3、B4）暂停**，
+等基础页面完成后回头再做。因此实际执行顺序：**B7（账号/备份）→ B8（设置全量）→ B6（录制/IPTV 页面）→ B5（多画面）→ B9（TV 树）→ B10（VOD）**，
+其中 B1/B2 已完成。
 
 ## 逐页推进（用户 2026-10-21 指定顺序）
 
