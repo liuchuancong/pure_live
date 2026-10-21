@@ -134,47 +134,30 @@ String launchLocationFor(AppPreferences preferences) {
   return visible.first.location;
 }
 
-/// Every branch as a shell destination, in display order — the one list the
-/// dispatched shell renders from, whichever library draws it.
+/// The navigation column's destinations, in the design table's three groups:
+/// the user's tabs first, then the content tools, then the system entries —
+/// a divider before each group's first destination
+/// ([PureNavDestination.startsGroup]).
 ///
-/// The id is the branch's own name, so the shell reports a choice as something
-/// the router layer can map back without relying on positions surviving a change
-/// to the table.
-List<PureShellDestination> shellDestinations(BuildContext context, {List<ShellBranch>? branches}) => [
-  for (final branch in branches ?? ShellBranch.values)
-    PureShellDestination(id: branch.name, label: branch.label(context), icon: branch.icon),
-];
-
-/// The wider navigation column's destinations.
-///
-/// The four branches come first, then the utility pages the old rail exposed as
-/// icon actions. Listing them as destinations is what gives the reference
-/// sidebar its full column and lets the compact tablet rail carry the same set
-/// as the desktop drawer. Selection stays branch-based: a utility page is pushed
-/// above the shell, so no destination is selected while it is open.
-List<PureShellDestination> shellRailDestinations(BuildContext context, {List<ShellBranch>? branches}) => [
-  ...shellDestinations(context, branches: branches),
-  PureShellDestination(id: 'history', label: context.t.tabs.history, icon: Icons.history_rounded),
-  PureShellDestination(id: 'iptv', label: context.t.iptv.title, icon: Icons.dns_outlined),
-  PureShellDestination(id: 'multiview', label: context.t.multiview.title, icon: Icons.grid_view_outlined),
-  PureShellDestination(id: 'toolbox', label: context.t.toolbox.title, icon: Icons.link_outlined),
-];
-
-/// The adaptive shell's destination set, mirroring [shellRailDestinations].
-///
-/// The same one list serves every surface: the sidebar and rail render it all,
-/// the drawer renders it all with the account card above, and the bottom bar
-/// keeps only what [PureNavDestination.showInCompactBar] admits — the four
-/// branches. The utilities carry a group divider before them so a wide column
-/// shows where the tabs end.
-List<PureNavDestination> shellAdaptiveDestinations(BuildContext context, {List<ShellBranch>? branches}) => [
+/// The same list serves every wide surface: the desktop sidebar draws it
+/// labelled and grouped, the compact rail draws it icon-over-label, and the
+/// phone bottom bar filters it down to the branch entries. Selection stays
+/// branch-based: a tool is pushed above the shell, so no tool is ever the
+/// selected destination.
+List<PureNavDestination> shellNavDestinations(BuildContext context, {List<ShellBranch>? branches}) => [
   for (final branch in branches ?? ShellBranch.values)
     PureNavDestination(id: branch.name, label: branch.label(context), icon: branch.icon),
+  PureNavDestination(
+    id: 'search',
+    label: context.t.tabs.search,
+    icon: Icons.search_rounded,
+    startsGroup: true,
+    showInCompactBar: false,
+  ),
   PureNavDestination(
     id: 'history',
     label: context.t.tabs.history,
     icon: Icons.history_rounded,
-    startsGroup: true,
     showInCompactBar: false,
   ),
   PureNavDestination(id: 'iptv', label: context.t.iptv.title, icon: Icons.dns_outlined, showInCompactBar: false),
@@ -185,4 +168,18 @@ List<PureNavDestination> shellAdaptiveDestinations(BuildContext context, {List<S
     showInCompactBar: false,
   ),
   PureNavDestination(id: 'toolbox', label: context.t.toolbox.title, icon: Icons.link_outlined, showInCompactBar: false),
+  PureNavDestination(
+    id: 'settings',
+    label: context.t.tabs.settings,
+    icon: Icons.settings_outlined,
+    startsGroup: true,
+    showInCompactBar: false,
+  ),
+];
+
+/// The same column as [shellNavDestinations] as the dispatched shell's own
+/// destination type — what the TV chrome renders.
+List<PureShellDestination> shellTvDestinations(BuildContext context, {List<ShellBranch>? branches}) => [
+  for (final destination in shellNavDestinations(context, branches: branches))
+    PureShellDestination(id: destination.id, label: destination.label, icon: destination.icon),
 ];

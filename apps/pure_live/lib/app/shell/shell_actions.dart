@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart' show StatefulNavigationShell;
+import 'package:pure_live/app/preferences/app_preferences_providers.dart' show goShellBranch;
 import 'package:pure_live/app/routing/app_router.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_uikit/pure_uikit.dart';
@@ -50,6 +53,25 @@ enum HomeAction {
 /// The home actions shown (the reference gates `multiview` on a setting;
 /// this build always offers it — multi-view has no off switch here).
 List<HomeAction> homeActions() => HomeAction.values;
+
+/// Activates a navigation column destination by id: the branch entries walk
+/// the shell (with the re-tap and last-tab bookkeeping), the tool and system
+/// entries push their page above it — no tool is ever the selected
+/// destination.
+void activateShellDestination(
+  BuildContext context, {
+  required WidgetRef ref,
+  required StatefulNavigationShell navigationShell,
+  required String id,
+}) => switch (id) {
+  'search' => unawaited(const SearchRoute().push<void>(context)),
+  'history' => unawaited(const HistoryRoute().push<void>(context)),
+  'iptv' => unawaited(const IptvRoute().push<void>(context)),
+  'multiview' => unawaited(const MultiviewRoute().push<void>(context)),
+  'toolbox' => unawaited(const ToolboxRoute().push<void>(context)),
+  'settings' => unawaited(const SettingsRoute().push<void>(context)),
+  _ => goShellBranch(ref, navigationShell, id),
+};
 
 /// The menu at the top of the rail and the leading button of the phone app
 /// bars (the reference's `MenuButton`): settings, about and backup in one
