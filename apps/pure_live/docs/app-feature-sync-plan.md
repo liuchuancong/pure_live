@@ -1,0 +1,41 @@
+# 功能同步计划（参考仓 → v2）
+
+参考实现：`C:\Users\XA-158\projects\study\PureLive`（用户的原应用 v4 workspace）。
+本文记录 2026-10-21 的差距盘点与波次顺序；每波完成后在此勾掉。
+
+## 硬约束（每一波都适用）
+
+1. **播放走 media_core**：页面只经 `system/playback/playback_engine.dart` 的接缝，不直接碰播放库。
+2. **数据模型用本仓 `packages/live_sites`**：参考仓的模型只作行为参照，字段按 live_sites 实读（可空性/变体数不得凭记忆）。
+3. **配置按域补**：新配置项写进 `system/configuration/preferences/<域>_preferences.dart`，facade 加 getter/copyWith 参数；不再往单一文件里堆。
+4. **UI 走 pure_uikit 分派**：不直接 import 设计语言库，不手绘别家控件。
+
+## 差距盘点（2026-10-21）
+
+| 域 | 参考 | v2 | 缺口 |
+|---|---|---|---|
+| 房间/播放 `live_play` | 79 文件 | 26 文件 | 手势层（本次已补）、本地互动 6.8k 行、mini 播放器/悬浮窗、切房间面板、后台播放/音频焦点/播放列表/预测返回/重连看护 |
+| TV | 54 文件（home/music/pages/room/settings/video/wallpaper/widgets） | shell + room layout | 整棵 TV UI 树、音乐模式 |
+| VOD | `live_vod` 整包 | 无 | 录播/点播能力 |
+| 多画面 | 10 文件 | 2 文件 | 分屏布局/交互 |
+| 历史 | 4 文件 | 1 文件 | 分组/清理/搜索 |
+| 搜索 | 9 文件 | 5 文件 | 联想/结果过滤增强 |
+| web_dav | 独立域 5 文件 | backup 内 | 已等价，不单列 |
+
+## 波次（按价值/独立度排序）
+
+- [x] **W1 播放手势层**（2026-10-21）：音量/亮度半区拖动 + 档位浮层 + 滚轮调音量 + 松手写回设备类默认音量。新增 `features/room/widgets/room_gesture_layer.dart`，`room_video_surface` 原手势并入。
+- [ ] **W2 本地互动**：房间内自己的弹幕/礼物（composer、面板、样式面板、礼物目录/等级/成长），v2 侧以 `RoomLocalMessageBus` 为投递口；配置进 local_interaction 域。
+- [ ] **W3 mini 播放器/悬浮窗**：从房间收进小窗继续看（pip 域字段已存在，补 UI 与生命周期）。
+- [ ] **W4 切房间面板**：播放器内左滑/面板切上一个下一个房间。
+- [ ] **W5 后台播放与重连看护**：background_playback/audio_focus/reconnect_watch 三条逻辑。
+- [ ] **W6 多画面增强**：布局与交互对齐参考。
+- [ ] **W7 TV UI 树**：按参考 tv/* 移植，入口 `platforms/tv/`。
+- [ ] **W8 VOD**：先定能力边界（依赖 live_vod 语义）再落页面。
+- [ ] **W9 历史/搜索增强**。
+
+## 与并行工作的边界
+
+- 分支表/路由改动须重跑 build_runner（曾因漏跑导致 goBranch 错位）。
+- `git add` 前查 `test/tool/failures/`（金图临时产物）。
+- 参考仓的 `live_store`（drift/per-key setting）**不照搬**：v2 的存储是 Hive CE + 分域 JSON 文档（用户已定案）。

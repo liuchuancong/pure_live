@@ -161,12 +161,7 @@ final class _PlayerBatteryState extends State<PlayerBattery> {
               child: Text(
                 '$level',
                 key: const ValueKey('live-play-battery-level'),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: _fontSize,
-                  height: 1,
-                  fontFeatures: [_tabular],
-                ),
+                style: const TextStyle(color: Colors.white, fontSize: _fontSize, height: 1, fontFeatures: [_tabular]),
               ),
             ),
           ),
@@ -297,11 +292,7 @@ final class _PortraitEntryHintState extends State<PortraitEntryHint> {
                       child: Text(
                         context.t.room.portraitFullscreenRestoreHint,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],

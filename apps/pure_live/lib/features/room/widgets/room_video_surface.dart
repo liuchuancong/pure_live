@@ -7,6 +7,7 @@ import 'package:pure_live/features/room/room_controller.dart' show RoomControlle
 import 'package:pure_live/features/room/room_providers.dart' show RoomIdentity;
 import 'package:pure_live/features/room/widgets/room_barrage_overlay.dart';
 import 'package:pure_live/features/room/widgets/room_control_overlay.dart';
+import 'package:pure_live/features/room/widgets/room_gesture_layer.dart';
 import 'package:pure_live/features/room/widgets/room_on_video_controls.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_uikit/pure_uikit.dart';
@@ -90,11 +91,6 @@ final class RoomVideoSurface extends ConsumerStatefulWidget {
 }
 
 final class _RoomVideoSurfaceState extends ConsumerState<RoomVideoSurface> {
-  /// The running vertical drag's first touch and total travel — what tells
-  /// the portrait restore fling from a volume slide.
-  Offset? _dragFrom;
-  double _dragDy = 0;
-
   @override
   Widget build(BuildContext context) {
     final core = _tapLayer(context);
@@ -106,52 +102,14 @@ final class _RoomVideoSurfaceState extends ConsumerState<RoomVideoSurface> {
 
   Widget _tapLayer(BuildContext context) {
     final locked = widget.state.locked;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      // One tap brings the chrome up (or takes it back down); two take the
-      // window, the reference's own surface grammar. The lock silences all
-      // of it — only the unlock chip answers.
-      onTap: locked ? null : () => widget.controller.revealChrome(toggle: widget.immersive),
-      onDoubleTap: locked
-          ? null
-          : () => widget.controller.setPresentation(
-              widget.immersive ? RoomPresentation.normal : RoomPresentation.fullscreen,
-            ),
-      // A vertical drag on the right half is volume; on the left it is the
-      // portrait fullscreen's 上滑恢复 — brightness needs a system channel
-      // this app does not own, so the half is free for the restore.
-      onVerticalDragStart: locked
-          ? null
-          : (details) {
-              _dragFrom = details.globalPosition;
-              _dragDy = 0;
-            },
-      onVerticalDragUpdate: locked
-          ? null
-          : (details) {
-              _dragDy += details.delta.dy;
-              final box = context.findRenderObject() as RenderBox?;
-              final from = _dragFrom;
-              if (box == null || from == null) {
-                return;
-              }
-              final local = box.globalToLocal(from);
-              if (local.dx < box.size.width * 0.5) {
-                return;
-              }
-              widget.controller.setVolume(widget.state.volume - details.delta.dy / box.size.height);
-            },
-      onVerticalDragEnd: locked
-          ? null
-          : (details) {
-              final velocity = details.primaryVelocity ?? 0;
-              final restore = widget.onPortraitRestore;
-              _dragFrom = null;
-              if (restore == null || velocity > -600 || _dragDy > -80) {
-                return;
-              }
-              restore();
-            },
+    // The picture's gesture grammar lives in its own layer: tap, double tap,
+    // the volume and brightness halves and the wheel — the lock silences all
+    // of it, and only the unlock chip answers.
+    return RoomGestureLayer(
+      controller: widget.controller,
+      state: widget.state,
+      immersive: widget.immersive,
+      onPortraitRestore: widget.onPortraitRestore,
       child: Stack(
         fit: StackFit.expand,
         children: [
