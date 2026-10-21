@@ -1537,6 +1537,15 @@ class Translations$settings$zh {
 
 	/// zh: '切到后台继续播放声音；关闭则进后台暂停、回来恢复'
 	String get backgroundPlayDesc => '切到后台继续播放声音；关闭则进后台暂停、回来恢复';
+
+	/// zh: '开播提醒范围'
+	String get liveAlertScope => '开播提醒范围';
+
+	/// zh: '只提醒带所选标签的关注；全不选则提醒全部关注'
+	String get liveAlertScopeDesc => '只提醒带所选标签的关注；全不选则提醒全部关注';
+
+	/// zh: '全部关注'
+	String get liveAlertAll => '全部关注';
 }
 
 // Path: hotAreas
@@ -4619,6 +4628,9 @@ extension on Translations {
 			'settings.localGiftBannerDesc' => '送出礼物时在画面上浮出礼物卡片',
 			'settings.backgroundPlay' => '后台播放',
 			'settings.backgroundPlayDesc' => '切到后台继续播放声音；关闭则进后台暂停、回来恢复',
+			'settings.liveAlertScope' => '开播提醒范围',
+			'settings.liveAlertScopeDesc' => '只提醒带所选标签的关注；全不选则提醒全部关注',
+			'settings.liveAlertAll' => '全部关注',
 			'hotAreas.title' => '平台显示',
 			'hotAreas.note' => '隐藏的平台不会出现在热门、分区与搜索中。',
 			'hotAreas.orderNote' => '拖动调整平台的显示顺序。',
@@ -4666,11 +4678,11 @@ extension on Translations {
 			'recorder.noSites' => '没有支持房间查询的平台',
 			'recorder.openFolder' => '打开输出目录',
 			'recorder.folderNotOpened' => '无法打开文件夹',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.outputDirectory' => '输出目录',
 			'recorder.outputDirectoryDefault' => '应用的录制目录',
 			'recorder.chooseDirectory' => '选择录制目录',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.segmentLength' => '分段时长',
 			'recorder.minutesValue' => ({required int minutes}) => '${minutes} 分钟',
 			'recorder.segmentsValue' => ({required int count}) => '${count} 个分段',
@@ -5180,11 +5192,11 @@ extension on Translations {
 			'remoteSync.includeAccounts' => '同步账号 Cookie',
 			'remoteSync.includeAccountsHint' => '开启后会发送或提供各平台登录 Cookie 与 WebDAV 密码，只在信任的设备之间开启',
 			'remoteSync.receiveAction' => '接收',
+			_ => null,
+		} ?? switch (path) {
 			'remoteSync.sendAction' => '发送',
 			'remoteSync.invalidQr' => '不是纯粹直播的同步二维码',
 			'errors.generic' => '出了点问题，请稍后再试。',
-			_ => null,
-		} ?? switch (path) {
 			'errors.network' => '网络连接不可用，请检查网络后重试。',
 			'errors.notFound' => '没有找到相关内容。',
 			'errors.cancelled' => '已取消。',

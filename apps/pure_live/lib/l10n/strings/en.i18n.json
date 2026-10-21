@@ -475,7 +475,10 @@
     "localGiftBanner": "Gift banner",
     "localGiftBannerDesc": "Raise a gift card over the picture when you send one",
     "backgroundPlay": "Background playback",
-    "backgroundPlayDesc": "Keep playing in the background; off pauses on the way out and resumes on return"
+    "backgroundPlayDesc": "Keep playing in the background; off pauses on the way out and resumes on return",
+    "liveAlertScope": "Alert scope",
+    "liveAlertScopeDesc": "Alert only for follows carrying a chosen tag; none chosen alerts every follow",
+    "liveAlertAll": "All follows"
   },
   "hotAreas": {
     "title": "Platform visibility",

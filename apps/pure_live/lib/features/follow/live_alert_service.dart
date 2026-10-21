@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveRoom;
 import 'package:pure_live/app/app_providers.dart' show followRepositoryProvider, sitesProvider;
 import 'package:pure_live/features/follow/follow_refresher.dart';
+import 'package:pure_live/features/follow/live_alert_rules.dart';
+import 'package:pure_live/system/configuration/app_preferences_providers.dart' show appPreferencesProvider;
 import 'package:pure_live/system/configuration/app_preferences_providers.dart' show feedRefreshProvider;
 
 /// The service that keeps the followed rooms' state fresh while the app is up,
@@ -57,10 +59,18 @@ final class LiveAlertService {
     for (final room in result.rooms) {
       await repository.replaceRoom(room);
     }
+    // 开播提醒 covers the viewer's chosen tags (none = every follow): a room
+    // that came live without one of them is refreshed but stays quiet.
+    final covered = ref.read(appPreferencesProvider).liveAlertTagIds;
+    final tagsByRoom = {
+      for (final record in repository.rooms) '${record.room.ref.platform}:${record.room.ref.roomId}': record.groupIds,
+    };
     for (final room in result.wentLive) {
-      if (!_started.isClosed) {
-        _started.add(room);
+      final groups = tagsByRoom['${room.ref.platform}:${room.ref.roomId}'] ?? const <String>[];
+      if (_started.isClosed || !alertCoversRoom(covered, groups)) {
+        continue;
       }
+      _started.add(room);
     }
     return result;
   }

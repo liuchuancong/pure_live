@@ -143,6 +143,7 @@ final class AppPreferences extends Equatable {
     int windowWidth = 0,
     int windowHeight = 0,
     int autoRefreshMinutes = 0,
+    List<String> liveAlertTagIds = const [],
     int refreshResumeThresholdMinutes = 10,
     bool proxyEnabled = false,
     String proxyHost = '127.0.0.1',
@@ -274,6 +275,7 @@ final class AppPreferences extends Equatable {
        ),
        feed = FeedPreferences(
          autoRefreshMinutes: autoRefreshMinutes,
+         liveAlertTagIds: liveAlertTagIds,
          refreshResumeThresholdMinutes: refreshResumeThresholdMinutes,
          loadingStyle: loadingStyle,
          roomCardCornerRadius: roomCardCornerRadius,
@@ -718,6 +720,9 @@ final class AppPreferences extends Equatable {
   /// The foreground feed refresh interval, in minutes; 0 is off.
   int get autoRefreshMinutes => feed.autoRefreshMinutes;
 
+  /// The follow-tag ids 开播提醒 covers; empty covers every follow.
+  List<String> get liveAlertTagIds => feed.liveAlertTagIds;
+
   /// How long the app must have been away, in minutes, before a resume
   /// counts as worth refreshing for.
   int get refreshResumeThresholdMinutes => feed.refreshResumeThresholdMinutes;
@@ -891,6 +896,7 @@ final class AppPreferences extends Equatable {
     int? windowWidth,
     int? windowHeight,
     int? autoRefreshMinutes,
+    List<String>? liveAlertTagIds,
     int? refreshResumeThresholdMinutes,
     bool? proxyEnabled,
     String? proxyHost,
@@ -1006,6 +1012,7 @@ final class AppPreferences extends Equatable {
     windowWidth: windowWidth ?? this.windowWidth,
     windowHeight: windowHeight ?? this.windowHeight,
     autoRefreshMinutes: autoRefreshMinutes ?? this.autoRefreshMinutes,
+    liveAlertTagIds: List.unmodifiable(liveAlertTagIds ?? this.liveAlertTagIds),
     refreshResumeThresholdMinutes: refreshResumeThresholdMinutes ?? this.refreshResumeThresholdMinutes,
     proxyEnabled: proxyEnabled ?? this.proxyEnabled,
     proxyHost: proxyHost ?? this.proxyHost,

@@ -9,6 +9,7 @@ final class FeedPreferences extends Equatable {
   /// The shipping defaults.
   const new({
     this.autoRefreshMinutes = 0,
+    this.liveAlertTagIds = const [],
     this.refreshResumeThresholdMinutes = 10,
     this.loadingStyle = LoadingStyle.shimmer,
     this.roomCardCornerRadius = 12,
@@ -33,6 +34,7 @@ final class FeedPreferences extends Equatable {
   factory FeedPreferences.fromJson(Map<String, Object?> json) {
     return FeedPreferences(
       autoRefreshMinutes: json['autoRefreshMinutes'] as int? ?? 0,
+      liveAlertTagIds: (json['liveAlertTagIds'] as List<Object?>?)?.whereType<String>().toList() ?? const [],
       refreshResumeThresholdMinutes: json['refreshResumeThresholdMinutes'] as int? ?? 10,
       loadingStyle: LoadingStyle.fromId(json['loadingStyle'] as String?),
       roomCardCornerRadius: (json['roomCardCornerRadius'] as num?)?.toDouble() ?? 12,
@@ -56,6 +58,10 @@ final class FeedPreferences extends Equatable {
 
   /// The foreground feed refresh interval, in minutes; 0 is off.
   final int autoRefreshMinutes;
+
+  /// The follow-tag ids 开播提醒 covers; empty covers every follow. A room
+  /// that carries none of these tags never raises a notice.
+  final List<String> liveAlertTagIds;
 
   /// How long the app must have been away, in minutes, before a resume
   /// counts as worth refreshing for.
@@ -125,6 +131,7 @@ final class FeedPreferences extends Equatable {
   /// The domain's keys as stored, flat.
   Map<String, Object?> toJson() => {
     'autoRefreshMinutes': autoRefreshMinutes,
+    'liveAlertTagIds': liveAlertTagIds,
     'refreshResumeThresholdMinutes': refreshResumeThresholdMinutes,
     'loadingStyle': loadingStyle.id,
     'roomCardCornerRadius': roomCardCornerRadius,
@@ -147,6 +154,7 @@ final class FeedPreferences extends Equatable {
   /// Returns a copy with the given fields replaced.
   FeedPreferences copyWith({
     int? autoRefreshMinutes,
+    List<String>? liveAlertTagIds,
     int? refreshResumeThresholdMinutes,
     LoadingStyle? loadingStyle,
     double? roomCardCornerRadius,
@@ -188,6 +196,7 @@ final class FeedPreferences extends Equatable {
   /// Every field, in declaration order.
   List<Object?> get props => [
     autoRefreshMinutes,
+    liveAlertTagIds,
     refreshResumeThresholdMinutes,
     loadingStyle,
     roomCardCornerRadius,

@@ -611,6 +611,9 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get localGiftBannerDesc => 'Raise a gift card over the picture when you send one';
 	@override String get backgroundPlay => 'Background playback';
 	@override String get backgroundPlayDesc => 'Keep playing in the background; off pauses on the way out and resumes on return';
+	@override String get liveAlertScope => 'Alert scope';
+	@override String get liveAlertScopeDesc => 'Alert only for follows carrying a chosen tag; none chosen alerts every follow';
+	@override String get liveAlertAll => 'All follows';
 }
 
 // Path: hotAreas
@@ -2133,6 +2136,9 @@ extension on TranslationsEn {
 			'settings.localGiftBannerDesc' => 'Raise a gift card over the picture when you send one',
 			'settings.backgroundPlay' => 'Background playback',
 			'settings.backgroundPlayDesc' => 'Keep playing in the background; off pauses on the way out and resumes on return',
+			'settings.liveAlertScope' => 'Alert scope',
+			'settings.liveAlertScopeDesc' => 'Alert only for follows carrying a chosen tag; none chosen alerts every follow',
+			'settings.liveAlertAll' => 'All follows',
 			'hotAreas.title' => 'Platform visibility',
 			'hotAreas.note' => 'Hidden platforms are left out of popular, areas and search.',
 			'hotAreas.orderNote' => 'Drag to reorder the platforms.',
@@ -2180,11 +2186,11 @@ extension on TranslationsEn {
 			'recorder.noSites' => 'No platform here can look rooms up',
 			'recorder.openFolder' => 'Open output folder',
 			'recorder.folderNotOpened' => 'The folder could not be opened',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.outputDirectory' => 'Output directory',
 			'recorder.outputDirectoryDefault' => 'The app\'s recordings folder',
 			'recorder.chooseDirectory' => 'Choose the recordings folder',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.segmentLength' => 'Segment length',
 			'recorder.minutesValue' => ({required int minutes}) => '${minutes} min',
 			'recorder.segmentsValue' => ({required int count}) => '${count} segments',
@@ -2694,11 +2700,11 @@ extension on TranslationsEn {
 			'remoteSync.includeAccounts' => 'Sync account cookies',
 			'remoteSync.includeAccountsHint' => 'Sends or serves the platform login cookies and WebDAV passwords; turn it on only between devices you trust',
 			'remoteSync.receiveAction' => 'Receive',
+			_ => null,
+		} ?? switch (path) {
 			'remoteSync.sendAction' => 'Send',
 			'remoteSync.invalidQr' => 'Not a PureLive sync QR code',
 			'errors.generic' => 'Something went wrong. Please try again later.',
-			_ => null,
-		} ?? switch (path) {
 			'errors.network' => 'Network unavailable. Check your connection and retry.',
 			'errors.notFound' => 'Nothing found.',
 			'errors.cancelled' => 'Cancelled.',

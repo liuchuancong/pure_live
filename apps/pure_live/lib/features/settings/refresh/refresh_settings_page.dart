@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pure_live/app/app_providers.dart' show followRepositoryProvider;
 import 'package:pure_live/features/settings/widgets/settings_chooser.dart';
 import 'package:pure_live/features/settings/widgets/settings_chrome.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/system/configuration/app_preferences_providers.dart';
 import 'package:pure_settings_ui/pure_settings_ui.dart';
+import 'package:pure_uikit/pure_uikit.dart';
 
 /// The refresh settings page (3.x `RefreshSettingsPage`, trimmed to the backed
 /// knobs): how often the visible feed refreshes itself in the foreground, and
@@ -68,6 +70,17 @@ final class RefreshSettingsPage extends ConsumerWidget {
                     options: [for (final minutes in _thresholdChoices) (minutes, _thresholdLabel(context, minutes))],
                     apply: (value) => update((p) => p.copyWith(refreshResumeThresholdMinutes: value)),
                   ),
+                ),
+              ),
+            ],
+          ),
+          SettingsSection(
+            title: Text(t.settings.liveAlertScope),
+            tiles: [
+              CustomSettingsTile(
+                child: _LiveAlertScopeTile(
+                  selected: preferences.liveAlertTagIds,
+                  onChanged: (ids) => unawaited(update((p) => p.copyWith(liveAlertTagIds: ids))),
                 ),
               ),
             ],
@@ -176,4 +189,46 @@ final class RefreshSettingsPage extends ConsumerWidget {
 
   static String _thresholdLabel(BuildContext context, int minutes) =>
       minutes <= 0 ? context.t.settings.refreshEveryResume : context.t.settings.minutesAway(minutes: minutes);
+}
+
+/// Which follow tags 开播提醒 covers: a switch per tag; none chosen means
+/// every follow, which is what the hint says.
+final class _LiveAlertScopeTile extends ConsumerWidget {
+  const new({required this.selected, required this.onChanged});
+
+  final List<String> selected;
+  final ValueChanged<List<String>> onChanged;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final groups = ref.watch(followRepositoryProvider).groups;
+    final theme = PureTheme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: PureSpacing.lg, vertical: PureSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(t.settings.liveAlertScopeDesc, style: theme.text.bodySmall.copyWith(color: theme.colors.textSecondary)),
+          const SizedBox(height: 6),
+          for (final group in groups)
+            SwitchListTile(
+              key: ValueKey('live-alert-tag-${group.id}'),
+              contentPadding: EdgeInsets.zero,
+              title: Text(group.name),
+              value: selected.contains(group.id),
+              onChanged: (on) {
+                final next = [...selected]..remove(group.id);
+                if (on) {
+                  next.add(group.id);
+                }
+                onChanged(next);
+              },
+            ),
+          if (groups.isEmpty)
+            Text(t.settings.liveAlertAll, style: theme.text.bodySmall.copyWith(color: theme.colors.textSecondary)),
+        ],
+      ),
+    );
+  }
 }
