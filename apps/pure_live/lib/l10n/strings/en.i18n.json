@@ -1336,5 +1336,16 @@
     "searchHint": "Search videos",
     "empty": "No results yet",
     "silentHint": "This video only offers split streams; the picture plays without sound"
+  },
+  "music": {
+    "title": "Music",
+    "search": "Search",
+    "searchHint": "Search music",
+    "empty": "No results yet",
+    "play": "Play",
+    "pause": "Pause",
+    "next": "Next",
+    "previous": "Previous",
+    "mode": "Play mode"
   }
 }

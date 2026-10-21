@@ -302,6 +302,8 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
                   _syncCard(context),
                   const SizedBox(height: 16),
                   _videoCard(context),
+                  const SizedBox(height: 16),
+                  _musicCard(context),
                 ],
               ),
             ),
@@ -324,6 +326,23 @@ final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
         subtitle: context.t.remoteSync.tileSubtitle,
         trailing: const Icon(Icons.chevron_right),
         onTap: () => unawaited(context.push<void>(RoutePath.remoteSync)),
+        divided: false,
+      ),
+    );
+  }
+
+  /// The music card: the same search, played by media_core_audio.
+  Widget _musicCard(BuildContext context) {
+    final theme = PureTheme.of(context);
+    return PureCard(
+      padding: EdgeInsets.zero,
+      child: PureListRow(
+        key: const ValueKey('toolbox-music'),
+        leading: Icon(Icons.music_note_outlined, color: theme.colors.primary),
+        title: context.t.music.title,
+        subtitle: context.t.music.searchHint,
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => unawaited(context.push<void>(RoutePath.music)),
         divided: false,
       ),
     );

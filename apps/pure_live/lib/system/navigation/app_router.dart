@@ -55,6 +55,7 @@ import 'package:pure_live/features/settings/video/portrait_settings_page.dart';
 import 'package:pure_live/features/settings/video/video_settings_page.dart';
 import 'package:pure_live/features/shield/shield_page.dart';
 import 'package:pure_live/features/toolbox/toolbox_page.dart';
+import 'package:pure_live/features/vod/music/music_page.dart';
 import 'package:pure_live/features/vod/vod_page.dart';
 import 'package:pure_live/features/wallpaper/wallpaper_picker_page.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
@@ -807,6 +808,16 @@ class VodPlayRoute extends GoRouteData with $VodPlayRoute {
 
   @override
   Widget build(BuildContext context, GoRouterState state) => VodPlayPage(videoId: videoId, title: title);
+}
+
+/// The music page: the platform's videos as songs, played by media_core_audio.
+@TypedGoRoute<MusicRoute>(path: RoutePath.music)
+class MusicRoute extends GoRouteData with $MusicRoute {
+  /// The music route.
+  const new();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const MusicPage();
 }
 
 /// The assembled graph. Every typed route in this library is generated into

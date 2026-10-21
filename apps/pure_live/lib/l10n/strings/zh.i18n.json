@@ -1343,5 +1343,16 @@
     "searchHint": "搜索视频",
     "empty": "还没有搜索结果",
     "silentHint": "这个视频只有分离的音视频流，当前只播放画面"
+  },
+  "music": {
+    "title": "音乐",
+    "search": "搜索",
+    "searchHint": "搜索音乐",
+    "empty": "还没有搜索结果",
+    "play": "播放",
+    "pause": "暂停",
+    "next": "下一首",
+    "previous": "上一首",
+    "mode": "播放模式"
   }
 }

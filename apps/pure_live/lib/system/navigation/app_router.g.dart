@@ -49,6 +49,7 @@ List<RouteBase> get $appRoutes => [
   $toolboxRoute,
   $vodRoute,
   $vodPlayRoute,
+  $musicRoute,
 ];
 
 RouteBase get $appShellRouteData => StatefulShellRouteData.$route(
@@ -1222,6 +1223,28 @@ mixin $VodPlayRoute on GoRouteData {
     '/vod/play',
     queryParams: {'video-id': _self.videoId, if (_self.title != '') 'title': _self.title},
   );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $musicRoute =>
+    GoRouteData.$route(path: '/music', hasOverriddenOnExit: false, factory: $MusicRoute._fromState);
+
+mixin $MusicRoute on GoRouteData {
+  static MusicRoute _fromState(GoRouterState state) => const MusicRoute();
+
+  @override
+  String get location => GoRouteData.$location('/music');
 
   @override
   void go(BuildContext context) => context.go(location);

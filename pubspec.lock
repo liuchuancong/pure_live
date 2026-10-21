@@ -1543,6 +1543,15 @@ packages:
       url: "https://github.com/liuchuancong/media_core.git"
     source: git
     version: "0.1.0"
+  media_core_audio:
+    dependency: transitive
+    description:
+      path: "packages/media_core_audio"
+      ref: "1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c"
+      resolved-ref: "1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c"
+      url: "https://github.com/liuchuancong/media_core.git"
+    source: git
+    version: "0.1.0"
   media_core_cast_dlna:
     dependency: transitive
     description:

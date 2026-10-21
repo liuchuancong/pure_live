@@ -78,6 +78,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$danmaku$en danmaku = _Translations$danmaku$en._(_root);
 	@override late final _Translations$clipboard$en clipboard = _Translations$clipboard$en._(_root);
 	@override late final _Translations$vod$en vod = _Translations$vod$en._(_root);
+	@override late final _Translations$music$en music = _Translations$music$en._(_root);
 }
 
 // Path: app
@@ -1691,6 +1692,24 @@ class _Translations$vod$en extends Translations$vod$zh {
 	@override String get silentHint => 'This video only offers split streams; the picture plays without sound';
 }
 
+// Path: music
+class _Translations$music$en extends Translations$music$zh {
+	_Translations$music$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Music';
+	@override String get search => 'Search';
+	@override String get searchHint => 'Search music';
+	@override String get empty => 'No results yet';
+	@override String get play => 'Play';
+	@override String get pause => 'Pause';
+	@override String get next => 'Next';
+	@override String get previous => 'Previous';
+	@override String get mode => 'Play mode';
+}
+
 /// The flat map containing all translations for locale <en>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -2963,6 +2982,15 @@ extension on TranslationsEn {
 			'vod.searchHint' => 'Search videos',
 			'vod.empty' => 'No results yet',
 			'vod.silentHint' => 'This video only offers split streams; the picture plays without sound',
+			'music.title' => 'Music',
+			'music.search' => 'Search',
+			'music.searchHint' => 'Search music',
+			'music.empty' => 'No results yet',
+			'music.play' => 'Play',
+			'music.pause' => 'Pause',
+			'music.next' => 'Next',
+			'music.previous' => 'Previous',
+			'music.mode' => 'Play mode',
 			_ => null,
 		};
 	}

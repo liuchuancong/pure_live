@@ -57,6 +57,9 @@ abstract final class RoutePath {
   /// One video playing, under the video page.
   static const String vodPlay = '/vod/play';
 
+  /// The music page.
+  static const String music = '/music';
+
   /// The LAN sync page (the toolbox's remote receiver).
   static const String remoteSync = '/remote-sync';
 

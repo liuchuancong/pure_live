@@ -80,6 +80,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$danmaku$zh danmaku = Translations$danmaku$zh.internal(_root);
 	late final Translations$clipboard$zh clipboard = Translations$clipboard$zh.internal(_root);
 	late final Translations$vod$zh vod = Translations$vod$zh.internal(_root);
+	late final Translations$music$zh music = Translations$music$zh.internal(_root);
 }
 
 // Path: app
@@ -4213,6 +4214,42 @@ class Translations$vod$zh {
 	String get silentHint => '这个视频只有分离的音视频流，当前只播放画面';
 }
 
+// Path: music
+class Translations$music$zh {
+	Translations$music$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '音乐'
+	String get title => '音乐';
+
+	/// zh: '搜索'
+	String get search => '搜索';
+
+	/// zh: '搜索音乐'
+	String get searchHint => '搜索音乐';
+
+	/// zh: '还没有搜索结果'
+	String get empty => '还没有搜索结果';
+
+	/// zh: '播放'
+	String get play => '播放';
+
+	/// zh: '暂停'
+	String get pause => '暂停';
+
+	/// zh: '下一首'
+	String get next => '下一首';
+
+	/// zh: '上一首'
+	String get previous => '上一首';
+
+	/// zh: '播放模式'
+	String get mode => '播放模式';
+}
+
 /// The flat map containing all translations for locale <zh>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -5485,6 +5522,15 @@ extension on Translations {
 			'vod.searchHint' => '搜索视频',
 			'vod.empty' => '还没有搜索结果',
 			'vod.silentHint' => '这个视频只有分离的音视频流，当前只播放画面',
+			'music.title' => '音乐',
+			'music.search' => '搜索',
+			'music.searchHint' => '搜索音乐',
+			'music.empty' => '还没有搜索结果',
+			'music.play' => '播放',
+			'music.pause' => '暂停',
+			'music.next' => '下一首',
+			'music.previous' => '上一首',
+			'music.mode' => '播放模式',
 			_ => null,
 		};
 	}
