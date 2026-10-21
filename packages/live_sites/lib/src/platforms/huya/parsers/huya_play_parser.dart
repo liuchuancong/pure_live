@@ -182,7 +182,7 @@ abstract final class HuyaPlayParser {
       (LiveStreamFormat.flv, 'flv', 'sFlvUrl', 'sFlvAntiCode'),
       (LiveStreamFormat.hls, 'hls', 'sHlsUrl', 'sHlsAntiCode'),
     ]) {
-      for (final raw in jsonList(jsonObject(jsonObject(stream[key])?['multiLine']))) {
+      for (final raw in jsonList(jsonObject(stream[key])?['multiLine'])) {
         final item = jsonObject(raw);
         final cdn = jsonString(item?['cdnType']);
         if (item == null || cdn == null || jsonString(item['url']) == null) continue;

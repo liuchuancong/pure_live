@@ -189,6 +189,51 @@ void main() {
     });
   });
 
+  group('HuyaPlayParser.lines', () {
+    // The `multiLine` list is what a live room's play lines are built from; a
+    // read that walks into it one level too deep yields nothing, and huya then
+    // reports every live room as unplayable.
+    Map<String, dynamic> profileStream() => {
+      'baseSteamInfoList': [
+        {
+          'sCdnType': 'AL',
+          'sStreamName': 'stream-A',
+          'sFlvUrl': 'http://al.flv.huya.com/src',
+          'sFlvAntiCode': 'wsSecret=1',
+          'sHlsUrl': 'http://al.hls.huya.com/src',
+          'sHlsAntiCode': 'wsSecret=2',
+        },
+      ],
+      'flv': {
+        'multiLine': [
+          {'cdnType': 'AL', 'url': 'al'},
+        ],
+      },
+      'hls': {
+        'multiLine': [
+          {'cdnType': 'AL', 'url': 'al'},
+          {'cdnType': 'TX', 'url': 'tx'},
+        ],
+      },
+    };
+
+    test('reads every multiLine entry whose cdn has a base stream', () {
+      final lines = HuyaPlayParser.lines(profileStream(), [
+        for (final raw in (profileStream()['baseSteamInfoList'] as List).cast<Map<String, dynamic>>()) raw,
+      ], null);
+      expect(lines.map((line) => '${line.format.name}:${line.cdnType}'), ['flv:AL', 'hls:AL']);
+      expect(lines.first.base, 'https://al.flv.huya.com/src');
+      expect(lines.first.streamName, 'stream-A');
+    });
+
+    test('a line whose cdn no base lists is left out', () {
+      final lines = HuyaPlayParser.lines({'flv': {'multiLine': [
+        {'cdnType': 'HS', 'url': 'hs'},
+      ]}}, [], null);
+      expect(lines, isEmpty);
+    });
+  });
+
   group('HuyaDanmakuProtocol push/batch framing', () {
     test('uri 8001 end notice reports the streamer uid', () {
       final body = (TarsWriter()..writeInt(0, 4242)).toBytes();
