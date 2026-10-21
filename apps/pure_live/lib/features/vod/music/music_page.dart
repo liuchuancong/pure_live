@@ -2,20 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:media_core/media_core.dart' show PlayerKernel;
+import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:media_core_audio/media_core_audio.dart'
-    show
-        AudioPlaybackController,
-        AudioPlaybackState,
-        LyricDocument,
-        LyricLine,
-        MusicSourceRegistry,
-        MusicTrack,
-        PlayMode;
-import 'package:media_core_media_kit/media_core_media_kit.dart' show registerMediaKitRegistry;
+    show AudioPlaybackState, LyricDocument, LyricLine, MusicTrack, PlayMode;
+import 'package:pure_live/app/app_providers.dart' show environmentProvider;
 import 'package:pure_live/features/vod/music/bilibili_music_source.dart';
+import 'package:pure_live/features/vod/music/music_player.dart';
 import 'package:pure_live/features/vod/vod_page.dart' show vodClientProvider;
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/platforms/tv/features/music/tv_music_view.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The music page: search the platform's videos as songs, queue them in
@@ -35,9 +30,9 @@ final class MusicPage extends ConsumerStatefulWidget {
 
 final class _MusicPageState extends ConsumerState<MusicPage> {
   final TextEditingController _keyword = TextEditingController();
-  late final PlayerKernel _kernel = PlayerKernel();
-  late final AudioPlaybackController _player;
-  StreamSubscription<AudioPlaybackState>? _states;
+
+  /// The state the page last rendered; the provider's stream keeps it
+  /// current.
   AudioPlaybackState _state = AudioPlaybackState.idle;
   List<MusicTrack> _results = const [];
 
@@ -53,25 +48,10 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
   @override
   void initState() {
     super.initState();
-    registerMediaKitRegistry(_kernel.registry);
-    _player = AudioPlaybackController(
-      _kernel,
-      registry: MusicSourceRegistry([BilibiliMusicSource(ref.read(vodClientProvider))]),
-    );
-    _states = _player.stateStream.listen((state) {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _state = state);
-      unawaited(_loadLyric(state.track));
-    });
   }
 
   @override
   void dispose() {
-    unawaited(_states?.cancel());
-    unawaited(_player.dispose());
-    unawaited(_kernel.dispose());
     _keyword.dispose();
     super.dispose();
   }
@@ -91,7 +71,7 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
       return;
     }
     try {
-      final document = await _player.loadCurrentLyric();
+      final document = await ref.read(musicPlayerProvider).loadCurrentLyric();
       if (mounted && _lyricTrack == key) {
         setState(() => _lyric = document.lines.isEmpty ? null : document);
       }
@@ -132,11 +112,25 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
     if (_results.isEmpty) {
       return;
     }
-    await _player.setQueue(_results, startIndex: index);
+    await ref.read(musicPlayerProvider).setQueue(_results, startIndex: index);
   }
 
   @override
   Widget build(BuildContext context) {
+    // The TV draws its own pane over the same controller and state stream.
+    if (ref.read(environmentProvider).runtime.formFactor == FormFactor.tv) {
+      return const PureScaffold(
+        appBar: PureAppBar(title: '音乐'),
+        body: TvMusicView(),
+      );
+    }
+    // The module's state stream, watched through the provider the TV pane
+    // reads too; a track change reloads the lyric once.
+    final incoming = ref.watch(musicStateProvider).value;
+    if (incoming != null) {
+      _state = incoming;
+      unawaited(_loadLyric(incoming.track));
+    }
     final t = context.t;
     final theme = PureTheme.of(context);
     final state = _state;
@@ -224,7 +218,7 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
         children: [
           for (final line in window)
             GestureDetector(
-              onTap: lyric.isSynchronized ? () => unawaited(_player.seek(line.start)) : null,
+              onTap: lyric.isSynchronized ? () => unawaited(ref.read(musicPlayerProvider).seek(line.start)) : null,
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Text(
@@ -283,7 +277,7 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
                       PlayMode.random => Icons.shuffle,
                     },
                     tooltip: t.music.mode,
-                    onPressed: () => _player.setPlayMode(switch (state.mode) {
+                    onPressed: () => ref.read(musicPlayerProvider).setPlayMode(switch (state.mode) {
                       PlayMode.list => PlayMode.listLoop,
                       PlayMode.listLoop => PlayMode.singleLoop,
                       PlayMode.singleLoop => PlayMode.random,
@@ -293,18 +287,18 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
                   PureIconButton(
                     icon: Icons.skip_previous,
                     tooltip: t.music.previous,
-                    onPressed: () => unawaited(_player.previous()),
+                    onPressed: () => unawaited(ref.read(musicPlayerProvider).previous()),
                   ),
                   PureIconButton(
                     key: const ValueKey('music-toggle'),
                     icon: state.playing ? Icons.pause : Icons.play_arrow,
                     tooltip: state.playing ? t.music.pause : t.music.play,
-                    onPressed: () => unawaited(_player.toggle()),
+                    onPressed: () => unawaited(ref.read(musicPlayerProvider).toggle()),
                   ),
                   PureIconButton(
                     icon: Icons.skip_next,
                     tooltip: t.music.next,
-                    onPressed: () => unawaited(_player.next()),
+                    onPressed: () => unawaited(ref.read(musicPlayerProvider).next()),
                   ),
                 ],
               ),
@@ -315,7 +309,9 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
                     child: Slider(
                       value: (state.position.inMilliseconds / total).clamp(0.0, 1.0),
                       onChanged: (value) => unawaited(
-                        _player.seek(Duration(milliseconds: (value * state.duration.inMilliseconds).round())),
+                        ref
+                            .read(musicPlayerProvider)
+                            .seek(Duration(milliseconds: (value * state.duration.inMilliseconds).round())),
                       ),
                     ),
                   ),
