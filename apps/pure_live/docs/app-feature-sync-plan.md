@@ -36,8 +36,8 @@
 | B6 | 录制/IPTV | recorder/、iptv/ | ✅ 审计：v2 体量相当（录制 718+649 行、IPTV 544+1104 行），既有等价 |
 | B7 | 账号/备份：账号三视图、WebDAV、日志页 | account/14、backup/5、web_dav/5 | 🟡 盘点：v2 已有等价（账号名单/编辑器/QR 登录、备份+WebDAV 1012 行、日志页）；开播提醒按标签 f8a6a2760 |
 | B8 | 设置全量 | settings/16 | ✅ 并发刷新 522969fc0、屏幕常亮 e1893639e、首选平台 937cb4d8a、动态取色 c9fee55c4；仅剩内核/兼容模式（依赖引擎能力，随 media_core） |
-| B9 | TV UI 树 | tv/54 | 🟡 关注/热门/分区/历史/频道/设置 全部落地（08695da19…f058e0e15）；仅剩视频/音乐模式，依赖 B10 |
-| B10 | VOD | live_vod 包、tv/video | 🟡 B10a ✅；**B10b ✅ 音乐**：队列/音频地址 d631d7fc6、音乐页走 media_core_audio 5564347a7、歌词条 6710ed886；剩余 B10b-3 歌词匹配源（B站视频→LRC）、B10c TV 视频/音乐 |
+| B9 | TV UI 树 | tv/54 | 🟡 关注/热门/分区/历史/频道/设置/视频 落地（08695da19…e266eda90）；剩音乐模式（用 media_core_audio 控制器驱动 TV 墙） |
+| B10 | VOD | live_vod 包、tv/video | 🟡 B10a ✅；**B10b ✅ 音乐**：队列/音频地址 d631d7fc6、音乐页走 media_core_audio 5564347a7、歌词条 6710ed886；剩余 B10b-3 歌词匹配源（B站视频→LRC）、B10c TV 视频 ✅ e266eda90 / 音乐待做 |
 
 ## 顺序调整（2026-10-21 用户指令）
 
