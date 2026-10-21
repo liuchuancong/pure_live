@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_library/live_library.dart' show FollowRepository, LibraryRoom;
+import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_sites/live_sites.dart' show LiveFollowGroup;
 import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/app/shell/main_page_frame.dart';
@@ -14,6 +15,7 @@ import 'package:pure_live/features/follow/live_alert_service.dart';
 import 'package:pure_live/features/room/paging.dart';
 import 'package:pure_live/features/settings/widgets/settings_surface.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
+import 'package:pure_live/platforms/tv/features/follow/tv_follow_view.dart';
 import 'package:pure_live/shared/widgets/list_loading.dart';
 import 'package:pure_live/shared/widgets/room_card.dart';
 import 'package:pure_live/shared/widgets/room_grid.dart';
@@ -214,6 +216,12 @@ final class _FollowPageState extends ConsumerState<FollowPage> with FeedAutoRefr
 
   @override
   Widget build(BuildContext context) {
+    // The TV draws the ten-foot wall instead of the grid — the same
+    // repository, ordering and tabs, sized for a remote (the room page's
+    // layout dispatch is the same pattern).
+    if (ref.read(environmentProvider).runtime.formFactor == FormFactor.tv) {
+      return const TvFollowView();
+    }
     final t = context.t;
     final theme = PureTheme.of(context);
     final tagged = _tagged;
