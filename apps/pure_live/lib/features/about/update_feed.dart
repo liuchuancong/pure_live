@@ -140,10 +140,22 @@ final class UpdateFeed {
   /// Whether only GitHub is asked.
   final bool githubOnly;
 
-  /// The mirror hosts that stand in for `api.github.com` when the setting
-  /// does not ask for the origin itself. The path is replayed against each,
-  /// with a cache-busting `ts` — the pattern 3.x used for its release reads.
-  static const List<String> _mirrors = ['gh-proxy.com', 'mirror.ghproxy.com'];
+  /// The mirrors that stand in for `api.github.com` when the setting does not
+  /// ask for the origin itself: each is a prefix put in front of the whole
+  /// origin URL, which is how this kind of proxy addresses the API.
+  ///
+  /// Measured from a Chinese network on 2026-10-21, these seven answer the
+  /// release JSON; the reference's other prefixes serve raw files only and
+  /// reply to an API path with HTML or a 403, so they are not listed.
+  static const List<String> _mirrors = [
+    'https://cdn.gh-proxy.org/',
+    'https://edgeone.gh-proxy.org/',
+    'https://hk.gh-proxy.org/',
+    'https://v6.gh-proxy.org/',
+    'https://gh.noki.eu.org/',
+    'https://gh-proxy.com/',
+    'https://wget.la/',
+  ];
 
   /// Fetches up to [limit] published releases.
   ///
@@ -155,22 +167,23 @@ final class UpdateFeed {
     const path = '/repos/$updateOwner/$updateRepo/releases';
     const timeout = Duration(seconds: 10);
     final stamp = DateTime.now().millisecondsSinceEpoch.toString();
+    final query = {'per_page': '$limit', 'ts': stamp};
+    // The release JSON is an api.github.com document; `github.com/repos/…` is
+    // a 404 page, not the same answer prettily dressed.
+    final origin = Uri.https('api.github.com', path, query);
     final uris = <Uri>[
+      // A mirror of this kind is addressed by prefixing the whole origin URL:
+      // `https://gh-proxy.com/https://api.github.com/…`. Replaying only the
+      // path against the mirror host asks it for a repository it does not have.
       if (!githubOnly)
-        for (final host in _mirrors)
-          Uri.https(host, path, {'per_page': '$limit', 'ts': stamp}),
-      Uri.parse(githubOnly ? 'https://api.github.com$path' : 'https://github.com$path')
-          .replace(queryParameters: {'per_page': '$limit', 'ts': stamp}),
+        for (final prefix in _mirrors) Uri.parse('$prefix$origin'),
+      origin,
     ];
     Exception? lastError;
     for (final uri in uris) {
       try {
         final response = await http.send(
-          LiveRequest.get(
-            uri,
-            headers: {'Accept': 'application/vnd.github+json'},
-            timeout: timeout,
-          ),
+          LiveRequest.get(uri, headers: {'Accept': 'application/vnd.github+json'}, timeout: timeout),
         );
         if (response.statusCode != 200) {
           lastError = FeedUnavailable('${uri.host} answered ${response.statusCode}');
