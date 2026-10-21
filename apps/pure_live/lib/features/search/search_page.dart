@@ -493,6 +493,10 @@ final class _SitePaneState extends State<_SitePane> with AutomaticKeepAliveClien
       return PureEmpty(title: context.t.search.hint, icon: Icons.travel_explore_outlined);
     }
     final state = controller.state;
+    final results = visibleSearchResults(
+      state.items,
+      ProviderScope.containerOf(context, listen: false).read(discoveryRoomFilterProvider),
+    );
     if (state.items.isEmpty) {
       if (state.error != null) {
         return PureError(
@@ -539,8 +543,8 @@ final class _SitePaneState extends State<_SitePane> with AutomaticKeepAliveClien
         scrollController: _scroll,
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.fromLTRB(PureSpacing.sm, PureSpacing.xs, PureSpacing.sm, PureSpacing.xl),
-        itemCount: state.items.length,
-        itemBuilder: (context, index) => SearchResultTile(result: state.items[index]),
+        itemCount: results.length,
+        itemBuilder: (context, index) => SearchResultTile(result: results[index]),
         footer: state.isLoadingMore ? const Center(child: PureSpinner()) : null,
       ),
     );
@@ -707,6 +711,10 @@ final class _AllSitesPaneState extends State<_AllSitesPane> with AutomaticKeepAl
     final site = widget.sites.firstWhere((candidate) => candidate.manifest.id == siteId);
     final name = site.manifest.localizedName(Localizations.localeOf(context).toLanguageTag(), 'zh-CN');
     final state = controller.state;
+    final visible = visibleSearchResults(
+      state.items,
+      ProviderScope.containerOf(context, listen: false).read(discoveryRoomFilterProvider),
+    );
     // A section that answered nothing stays quiet — the pane's overall empty
     // state speaks for it once every section has answered. A failed one keeps
     // only its header with the retry where the spinner would sit.
@@ -736,7 +744,7 @@ final class _AllSitesPaneState extends State<_AllSitesPane> with AutomaticKeepAl
             ],
           ),
         ),
-        if (state.items.isEmpty)
+        if (visible.isEmpty)
           if (state.isRefreshing || state.isUnloaded)
             const _SkeletonGrid(compact: true)
           else
@@ -752,13 +760,24 @@ final class _AllSitesPaneState extends State<_AllSitesPane> with AutomaticKeepAl
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             padding: EdgeInsets.zero,
-            itemCount: state.items.length,
-            itemBuilder: (context, index) => SearchResultTile(result: state.items[index]),
+            itemCount: visible.length,
+            itemBuilder: (context, index) => SearchResultTile(result: visible[index]),
           ),
       ],
     );
   }
 }
+
+/// Drops room hits the discovery rule hides, leaving anchors and areas as
+/// they are — one rule for every list the discovery pages show.
+List<LiveSearchResult> visibleSearchResults(List<LiveSearchResult> results, bool Function(LiveRoom) roomVisible) => [
+  for (final result in results)
+    if (switch (result) {
+      RoomSearchResult(:final room) => roomVisible(room),
+      _ => true,
+    })
+      result,
+];
 
 /// One typed search hit, drawn with the shared room card — anchors keep
 /// their avatar tile and areas open their room list.

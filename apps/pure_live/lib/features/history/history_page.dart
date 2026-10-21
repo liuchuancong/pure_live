@@ -76,11 +76,19 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
   List<WatchRecord> get _records => _repository.records;
 
   List<WatchRecord> _shown() {
-    if (!_filtering) return _records;
-    final needle = _query.text.trim().toLowerCase();
-    if (needle.isEmpty) return _records;
-    return [
+    // The discovery rule covers the history too (the reference's M12.2): a
+    // record whose room cannot play here is left out unless the viewer asked
+    // to see such rooms.
+    final roomVisible = ref.watch(discoveryRoomFilterProvider);
+    final base = [
       for (final record in _records)
+        if (roomVisible(record.room)) record,
+    ];
+    if (!_filtering) return base;
+    final needle = _query.text.trim().toLowerCase();
+    if (needle.isEmpty) return base;
+    return [
+      for (final record in base)
         if (record.room.content.title.toLowerCase().contains(needle) ||
             (record.room.anchor?.name.toLowerCase().contains(needle) ?? false))
           record,
