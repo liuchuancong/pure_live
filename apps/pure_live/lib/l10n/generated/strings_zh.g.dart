@@ -1507,6 +1507,24 @@ class Translations$settings$zh {
 
 	/// zh: '刷新封面后保留旧图，由缓存策略自行清理；关闭时超过两个周期的旧图会被清除'
 	String get thumbnailKeepOldFilesDesc => '刷新封面后保留旧图，由缓存策略自行清理；关闭时超过两个周期的旧图会被清除';
+
+	/// zh: '弹幕样式'
+	String get localPreset => '弹幕样式';
+
+	/// zh: '清爽'
+	String get localPresetClean => '清爽';
+
+	/// zh: '高亮'
+	String get localPresetHighlight => '高亮';
+
+	/// zh: '霓虹'
+	String get localPresetNeon => '霓虹';
+
+	/// zh: '极简'
+	String get localPresetMinimal => '极简';
+
+	/// zh: '等级 {level: int} · {into: int}/{total: int}'
+	String localLevel({required int level, required int into, required int total}) => '等级 ${level} · ${into}/${total}';
 }
 
 // Path: hotAreas
@@ -4573,6 +4591,12 @@ extension on Translations {
 			'settings.playerProxyHint' => '对下一条直播流生效；正在播放的一路保持原样',
 			'settings.thumbnailKeepOldFiles' => '保存旧的缩略图',
 			'settings.thumbnailKeepOldFilesDesc' => '刷新封面后保留旧图，由缓存策略自行清理；关闭时超过两个周期的旧图会被清除',
+			'settings.localPreset' => '弹幕样式',
+			'settings.localPresetClean' => '清爽',
+			'settings.localPresetHighlight' => '高亮',
+			'settings.localPresetNeon' => '霓虹',
+			'settings.localPresetMinimal' => '极简',
+			'settings.localLevel' => ({required int level, required int into, required int total}) => '等级 ${level} · ${into}/${total}',
 			'hotAreas.title' => '平台显示',
 			'hotAreas.note' => '隐藏的平台不会出现在热门、分区与搜索中。',
 			'hotAreas.orderNote' => '拖动调整平台的显示顺序。',
@@ -4627,14 +4651,14 @@ extension on Translations {
 			'recorder.minutesValue' => ({required int minutes}) => '${minutes} 分钟',
 			'recorder.segmentsValue' => ({required int count}) => '${count} 个分段',
 			'recorder.restoring' => '正在恢复上次未完成的录制…',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.engineFailed' => ({required String error}) => '录制引擎启动失败：${error}',
 			'recorder.filterAll' => '全部',
 			'recorder.filterActive' => '进行中',
 			'recorder.filterWaiting' => '等待中',
 			'recorder.filterSaved' => '已保存',
 			'recorder.filterFailed' => '失败',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.recordSettings' => '录制设置',
 			'recorder.filterFinished' => '已结束',
 			'recorder.emptyTitle' => '还没有监听的房间',
@@ -5141,14 +5165,14 @@ extension on Translations {
 			'errors.unsupported' => '当前来源不支持该功能。',
 			'tabs.home' => '首页',
 			'tabs.favorites' => '关注',
+			_ => null,
+		} ?? switch (path) {
 			'tabs.follow' => '关注',
 			'tabs.history' => '历史',
 			'tabs.popular' => '热门',
 			'tabs.areas' => '分区',
 			'tabs.search' => '搜索',
 			'tabs.settings' => '设置',
-			_ => null,
-		} ?? switch (path) {
 			'tabs.record' => '录制中心',
 			'window.minimize' => '最小化',
 			'window.maximize' => '最大化',

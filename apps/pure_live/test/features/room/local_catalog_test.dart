@@ -32,4 +32,19 @@ void main() {
       expect(LocalCatalog.intoLevel(exp) + LocalCatalog.missingToNext(exp), LocalCatalog.expPerLevel, reason: '$exp');
     }
   });
+
+  test('the presets keep their ids and the unknown id falls back', () {
+    final ids = LocalCatalog.presets.map((preset) => preset.id).toList();
+    expect(ids.toSet().length, ids.length);
+    expect(ids.first, 'clean');
+    expect(LocalCatalog.presetOf('no-such-preset').id, 'clean');
+  });
+
+  test('a preset states a readable size and weight', () {
+    for (final preset in LocalCatalog.presets) {
+      expect(preset.fontSize, greaterThanOrEqualTo(14), reason: preset.id);
+      expect(preset.fontWeight, inInclusiveRange(100, 900), reason: preset.id);
+      expect(preset.strokeWidth, greaterThanOrEqualTo(0), reason: preset.id);
+    }
+  });
 }

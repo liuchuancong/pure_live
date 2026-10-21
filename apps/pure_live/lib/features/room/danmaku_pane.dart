@@ -441,6 +441,9 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
     // plain rows or cards, and whether the sender's name leads the line.
     final listPrefs = ref.watch(appPreferencesProvider);
     final cardStyle = listPrefs.barrageListStyle == 'card';
+    // The viewer's own line draws with the local preset; the shared list
+    // settings keep the platform messages as they are.
+    final preset = message.isLocal ? LocalCatalog.presetOf(listPrefs.localInteractionPreset) : null;
     final family = listPrefs.barrageFontFamily.trim();
     final row = Padding(
       padding: EdgeInsets.symmetric(vertical: (listPrefs.barrageListLineSpacing / 2).clamp(1, 14)),
@@ -492,16 +495,23 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
                     text: '${message.text}$giftNote',
                     emotes: message.emotes,
                     style: TextStyle(
-                      color: dark
+                      color: preset != null
+                          ? Color(preset.color)
+                          : dark
                           ? (gift != null ? Colors.white : Colors.white.withValues(alpha: 0.88))
                           : PureTheme.of(context).colors.text,
-                      fontWeight: gift != null ? FontWeight.w600 : FontWeight.w400,
+                      fontWeight: preset != null
+                          ? FontWeight(preset.fontWeight.clamp(100, 900))
+                          : gift != null
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                      letterSpacing: preset?.letterSpacing,
                     ),
                   ),
                 ],
               ),
               style: TextStyle(
-                fontSize: listPrefs.barrageListFontSize,
+                fontSize: preset?.fontSize ?? listPrefs.barrageListFontSize,
                 fontFamily: family.isEmpty ? null : family,
                 height: 1.35,
               ),

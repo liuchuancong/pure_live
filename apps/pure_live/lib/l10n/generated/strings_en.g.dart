@@ -601,6 +601,12 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get playerProxyHint => 'Applies to the next stream; a running one keeps what it started with';
 	@override String get thumbnailKeepOldFiles => 'Keep old thumbnails';
 	@override String get thumbnailKeepOldFilesDesc => 'Superseded covers stay until the cache policy drops them; off clears what is past two intervals';
+	@override String get localPreset => 'Line style';
+	@override String get localPresetClean => 'Clean';
+	@override String get localPresetHighlight => 'Highlight';
+	@override String get localPresetNeon => 'Neon';
+	@override String get localPresetMinimal => 'Minimal';
+	@override String localLevel({required int level, required int into, required int total}) => 'Level ${level} · ${into}/${total}';
 }
 
 // Path: hotAreas
@@ -2111,6 +2117,12 @@ extension on TranslationsEn {
 			'settings.playerProxyHint' => 'Applies to the next stream; a running one keeps what it started with',
 			'settings.thumbnailKeepOldFiles' => 'Keep old thumbnails',
 			'settings.thumbnailKeepOldFilesDesc' => 'Superseded covers stay until the cache policy drops them; off clears what is past two intervals',
+			'settings.localPreset' => 'Line style',
+			'settings.localPresetClean' => 'Clean',
+			'settings.localPresetHighlight' => 'Highlight',
+			'settings.localPresetNeon' => 'Neon',
+			'settings.localPresetMinimal' => 'Minimal',
+			'settings.localLevel' => ({required int level, required int into, required int total}) => 'Level ${level} · ${into}/${total}',
 			'hotAreas.title' => 'Platform visibility',
 			'hotAreas.note' => 'Hidden platforms are left out of popular, areas and search.',
 			'hotAreas.orderNote' => 'Drag to reorder the platforms.',
@@ -2165,14 +2177,14 @@ extension on TranslationsEn {
 			'recorder.minutesValue' => ({required int minutes}) => '${minutes} min',
 			'recorder.segmentsValue' => ({required int count}) => '${count} segments',
 			'recorder.restoring' => 'Finishing the previous run’s recordings…',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.engineFailed' => ({required String error}) => 'The recording engine failed to start: ${error}',
 			'recorder.filterAll' => 'All',
 			'recorder.filterActive' => 'Active',
 			'recorder.filterWaiting' => 'Waiting',
 			'recorder.filterSaved' => 'Saved',
 			'recorder.filterFailed' => 'Failed',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.recordSettings' => 'Recording settings',
 			'recorder.filterFinished' => 'Finished',
 			'recorder.emptyTitle' => 'No rooms watched yet',
@@ -2679,14 +2691,14 @@ extension on TranslationsEn {
 			'errors.unsupported' => 'This source doesn\'t support that.',
 			'tabs.home' => 'Home',
 			'tabs.favorites' => 'Favorites',
+			_ => null,
+		} ?? switch (path) {
 			'tabs.follow' => 'Follow',
 			'tabs.history' => 'History',
 			'tabs.popular' => 'Popular',
 			'tabs.areas' => 'Areas',
 			'tabs.search' => 'Search',
 			'tabs.settings' => 'Settings',
-			_ => null,
-		} ?? switch (path) {
 			'tabs.record' => 'Recordings',
 			'window.minimize' => 'Minimize',
 			'window.maximize' => 'Maximize',

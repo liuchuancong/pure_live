@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_interaction/live_interaction.dart' show InteractionSession;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/features/room/danmaku_fps.dart' show displayRefreshRateProvider, resolvedDanmakuFps;
+import 'package:pure_live/features/room/local/local_catalog.dart';
 import 'package:pure_live/features/room/room_controller.dart' show roomControllerProvider;
 import 'package:pure_live/features/room/room_providers.dart';
 import 'package:pure_live/features/room/widgets/room_emote_text.dart';
@@ -434,19 +435,21 @@ final class _RoomBarrageOverlayState extends ConsumerState<RoomBarrageOverlay> w
     final family = preferences.barrageFontFamily.trim();
     final tap = preferences.barrageTapAction;
     final longPress = preferences.barrageLongPressAction;
+    // The viewer's own line wears the local preset; everyone else keeps the
+    // shared barrage settings.
+    final preset = entry.message.isLocal ? LocalCatalog.presetOf(preferences.localInteractionPreset) : null;
+    final stroke = preset == null ? preferences.barrageStroke : preset.strokeWidth > 0;
+    final strokeWidth = preset == null ? preferences.barrageStrokeWidth : preset.strokeWidth;
     final lineStyle = TextStyle(
-      color: _readable(entry.message.effectiveColor).withValues(alpha: opacity),
-      fontSize: fontSize,
+      color: preset == null
+          ? _readable(entry.message.effectiveColor).withValues(alpha: opacity)
+          : Color(preset.color).withValues(alpha: opacity),
+      fontSize: preset?.fontSize ?? fontSize,
       fontFamily: family.isEmpty ? null : family,
-      fontWeight: FontWeight(preferences.barrageFontWeight.clamp(100, 900)),
-      shadows: preferences.barrageStroke
-          ? [
-              Shadow(
-                color: Colors.black87,
-                blurRadius: preferences.barrageStrokeWidth.clamp(0, 4),
-                offset: const Offset(1, 1),
-              ),
-            ]
+      fontWeight: FontWeight((preset?.fontWeight ?? preferences.barrageFontWeight).clamp(100, 900)),
+      letterSpacing: preset?.letterSpacing,
+      shadows: stroke
+          ? [Shadow(color: Colors.black87, blurRadius: strokeWidth.clamp(0, 4), offset: const Offset(1, 1))]
           : const [],
     );
     final line = ConstrainedBox(

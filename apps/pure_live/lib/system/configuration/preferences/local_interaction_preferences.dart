@@ -11,6 +11,7 @@ final class LocalInteractionPreferences extends Equatable {
     this.localInteractionUserName = '',
     this.localInteractionColor = 0xFFFFFFFF,
     this.localInteractionExperience = 0,
+    this.localInteractionPreset = 'clean',
   });
 
   /// Reads the domain's keys from the flat document; unknown shapes decode
@@ -21,6 +22,7 @@ final class LocalInteractionPreferences extends Equatable {
       localInteractionUserName: json['localInteractionUserName'] as String? ?? '',
       localInteractionColor: (json['localInteractionColor'] as num?)?.toInt() ?? 0xFFFFFFFF,
       localInteractionExperience: (json['localInteractionExperience'] as num?)?.toInt() ?? 0,
+      localInteractionPreset: json['localInteractionPreset'] as String? ?? 'clean',
     );
   }
 
@@ -38,12 +40,17 @@ final class LocalInteractionPreferences extends Equatable {
   /// level in the badge is this figure's arithmetic (500 per level).
   final int localInteractionExperience;
 
+  /// The local danmaku preset the viewer's own lines draw with — the
+  /// catalogue's id, `clean` for the shipping look.
+  final String localInteractionPreset;
+
   /// The domain's keys as stored, flat.
   Map<String, Object?> toJson() => {
     'localInteractionEnabled': localInteractionEnabled,
     'localInteractionUserName': localInteractionUserName,
     'localInteractionColor': localInteractionColor,
     'localInteractionExperience': localInteractionExperience,
+    'localInteractionPreset': localInteractionPreset,
   };
 
   /// Returns a copy with the given fields replaced.
@@ -52,6 +59,7 @@ final class LocalInteractionPreferences extends Equatable {
     String? localInteractionUserName,
     int? localInteractionColor,
     int? localInteractionExperience,
+    String? localInteractionPreset,
   }) => LocalInteractionPreferences(
     localInteractionEnabled: localInteractionEnabled ?? this.localInteractionEnabled,
     localInteractionUserName: localInteractionUserName ?? this.localInteractionUserName,

@@ -59,6 +59,7 @@ final class AppPreferences extends Equatable {
     String localInteractionUserName = '',
     int localInteractionColor = 0xFFFFFFFF,
     int localInteractionExperience = 0,
+    String localInteractionPreset = 'clean',
     double barrageFontSize = 15,
     double barrageOpacity = 1,
     double barrageArea = 1,
@@ -180,6 +181,7 @@ final class AppPreferences extends Equatable {
          localInteractionUserName: localInteractionUserName,
          localInteractionColor: localInteractionColor,
          localInteractionExperience: localInteractionExperience,
+         localInteractionPreset: localInteractionPreset,
        ),
        danmaku = DanmakuPreferences(
          danmakuVisible: danmakuVisible,
@@ -385,6 +387,9 @@ final class AppPreferences extends Equatable {
 
   /// The local experience the viewer's own lines and gifts accumulate.
   int get localInteractionExperience => localInteraction.localInteractionExperience;
+
+  /// The local danmaku preset the viewer's own lines draw with.
+  String get localInteractionPreset => localInteraction.localInteractionPreset;
 
   /// The barrage text size, in logical pixels.
   double get barrageFontSize => danmaku.barrageFontSize;
@@ -790,6 +795,7 @@ final class AppPreferences extends Equatable {
     String? localInteractionUserName,
     int? localInteractionColor,
     int? localInteractionExperience,
+    String? localInteractionPreset,
     double? barrageFontSize,
     double? barrageOpacity,
     double? barrageArea,
@@ -903,6 +909,7 @@ final class AppPreferences extends Equatable {
     localInteractionUserName: localInteractionUserName ?? this.localInteractionUserName,
     localInteractionColor: localInteractionColor ?? this.localInteractionColor,
     localInteractionExperience: localInteractionExperience ?? this.localInteractionExperience,
+    localInteractionPreset: localInteractionPreset ?? this.localInteractionPreset,
     barrageFontSize: barrageFontSize ?? this.barrageFontSize,
     barrageOpacity: barrageOpacity ?? this.barrageOpacity,
     barrageArea: barrageArea ?? this.barrageArea,

@@ -472,7 +472,13 @@
     "playerProxyEnableDesc": "直播流由播放器经此代理拉取，与应用自身的网络请求分开",
     "playerProxyHint": "对下一条直播流生效；正在播放的一路保持原样",
     "thumbnailKeepOldFiles": "保存旧的缩略图",
-    "thumbnailKeepOldFilesDesc": "刷新封面后保留旧图，由缓存策略自行清理；关闭时超过两个周期的旧图会被清除"
+    "thumbnailKeepOldFilesDesc": "刷新封面后保留旧图，由缓存策略自行清理；关闭时超过两个周期的旧图会被清除",
+    "localPreset": "弹幕样式",
+    "localPresetClean": "清爽",
+    "localPresetHighlight": "高亮",
+    "localPresetNeon": "霓虹",
+    "localPresetMinimal": "极简",
+    "localLevel": "等级 {level: int} · {into: int}/{total: int}"
   },
   "hotAreas": {
     "title": "平台显示",

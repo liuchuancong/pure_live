@@ -465,7 +465,13 @@
     "playerProxyEnableDesc": "Live streams are pulled through this proxy by the player, apart from the app's own requests",
     "playerProxyHint": "Applies to the next stream; a running one keeps what it started with",
     "thumbnailKeepOldFiles": "Keep old thumbnails",
-    "thumbnailKeepOldFilesDesc": "Superseded covers stay until the cache policy drops them; off clears what is past two intervals"
+    "thumbnailKeepOldFilesDesc": "Superseded covers stay until the cache policy drops them; off clears what is past two intervals",
+    "localPreset": "Line style",
+    "localPresetClean": "Clean",
+    "localPresetHighlight": "Highlight",
+    "localPresetNeon": "Neon",
+    "localPresetMinimal": "Minimal",
+    "localLevel": "Level {level: int} · {into: int}/{total: int}"
   },
   "hotAreas": {
     "title": "Platform visibility",

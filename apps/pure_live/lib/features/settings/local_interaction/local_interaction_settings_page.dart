@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pure_live/features/room/local/local_catalog.dart';
 import 'package:pure_live/features/settings/widgets/settings_chrome.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/system/configuration/app_preferences_providers.dart';
@@ -53,6 +54,23 @@ final class LocalInteractionSettingsPage extends ConsumerWidget {
                 onToggle: (value) => unawaited(update((p) => p.copyWith(localInteractionEnabled: value))),
               ),
               SettingsTile.navigation(
+                leading: const Icon(Icons.style_outlined),
+                title: Text(t.settings.localPreset),
+                trailing: Text(_presetLabel(context, preferences.localInteractionPreset)),
+                onPressed: (_) => unawaited(_choosePreset(context, ref)),
+              ),
+              SettingsTile.navigation(
+                leading: const Icon(Icons.military_tech_outlined),
+                title: Text(
+                  t.settings.localLevel(
+                    level: LocalCatalog.levelFor(preferences.localInteractionExperience),
+                    into: LocalCatalog.intoLevel(preferences.localInteractionExperience),
+                    total: LocalCatalog.expPerLevel,
+                  ),
+                ),
+                enabled: false,
+              ),
+              SettingsTile.navigation(
                 leading: const Icon(Icons.badge_outlined),
                 title: Text(t.settings.localInteractionName),
                 trailing: Text(
@@ -91,6 +109,43 @@ final class LocalInteractionSettingsPage extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  String _presetLabel(BuildContext context, String id) {
+    final t = context.t;
+    return switch (id) {
+      'highlight' => t.settings.localPresetHighlight,
+      'neon' => t.settings.localPresetNeon,
+      'minimal' => t.settings.localPresetMinimal,
+      _ => t.settings.localPresetClean,
+    };
+  }
+
+  /// The preset chooser: the catalogue's four looks, the stored one marked.
+  Future<void> _choosePreset(BuildContext context, WidgetRef ref) async {
+    final current = ref.read(appPreferencesProvider).localInteractionPreset;
+    final picked = await showPureDialog<String>(
+      context: context,
+      title: context.t.settings.localPreset,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final preset in LocalCatalog.presets)
+            ListTile(
+              title: Text(
+                _presetLabel(context, preset.id),
+                style: TextStyle(color: Color(preset.color), fontWeight: FontWeight(preset.fontWeight.clamp(100, 900))),
+              ),
+              trailing: preset.id == current ? const Icon(Icons.check) : null,
+              onTap: () => Navigator.of(context).pop(preset.id),
+            ),
+        ],
+      ),
+    );
+    if (picked == null) {
+      return;
+    }
+    await ref.read(appPreferencesProvider.notifier).update((p) => p.copyWith(localInteractionPreset: picked));
   }
 
   Future<void> _editName(BuildContext context, WidgetRef ref) async {
@@ -147,13 +202,14 @@ class _Swatch extends StatelessWidget {
           decoration: BoxDecoration(
             color: Color(argb),
             shape: BoxShape.circle,
-            border: Border.all(
-              color: selected ? theme.colors.primary : theme.colors.border,
-              width: selected ? 3 : 1,
-            ),
+            border: Border.all(color: selected ? theme.colors.primary : theme.colors.border, width: selected ? 3 : 1),
           ),
           child: selected
-              ? Icon(Icons.check_rounded, size: 16, color: Color(argb).computeLuminance() > 0.5 ? Colors.black : Colors.white)
+              ? Icon(
+                  Icons.check_rounded,
+                  size: 16,
+                  color: Color(argb).computeLuminance() > 0.5 ? Colors.black : Colors.white,
+                )
               : null,
         ),
       ),
