@@ -3,4 +3,5 @@
 library;
 
 export 'src/bilibili_vod_client.dart';
+export 'src/lyric_query.dart';
 export 'src/play_queue.dart';

@@ -6,6 +6,7 @@ import 'package:media_core_audio/media_core_audio.dart'
     show AudioPlaybackController, AudioPlaybackState, MusicSourceRegistry;
 import 'package:media_core_media_kit/media_core_media_kit.dart' show registerMediaKitRegistry;
 import 'package:pure_live/features/vod/music/bilibili_music_source.dart';
+import 'package:pure_live/features/vod/music/lyric_provider.dart' show lyricProvider;
 import 'package:pure_live/features/vod/vod_page.dart' show vodClientProvider;
 
 /// The music module's player, shared by the phone page and the TV pane: one
@@ -18,7 +19,9 @@ final musicPlayerProvider = Provider.autoDispose<AudioPlaybackController>((ref) 
   registerMediaKitRegistry(kernel.registry);
   final controller = AudioPlaybackController(
     kernel,
-    registry: MusicSourceRegistry([BilibiliMusicSource(ref.watch(vodClientProvider))]),
+    registry: MusicSourceRegistry([
+      BilibiliMusicSource(ref.watch(vodClientProvider), lyrics: ref.watch(lyricProvider)),
+    ]),
   );
   ref.onDispose(() {
     unawaited(controller.dispose());

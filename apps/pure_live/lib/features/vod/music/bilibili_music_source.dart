@@ -1,7 +1,8 @@
-import 'package:live_vod/live_vod.dart' show BilibiliVodClient, VodVideo;
+import 'package:live_vod/live_vod.dart' show BilibiliVodClient, LyricQuery, VodVideo;
 import 'package:media_core/media_core.dart' show SourceFormat;
 import 'package:media_core_audio/media_core_audio.dart'
-    show MusicQuality, MusicSource, MusicSourcePage, MusicTrack, TrackSource;
+    show MusicLyricPayload, MusicQuality, MusicSource, MusicSourcePage, MusicTrack, TrackSource;
+import 'package:pure_live/features/vod/music/lyric_provider.dart' show LyricProvider;
 
 /// Bilibili as a music source for media_core_audio: a video's audio stream is
 /// the song, the uploader is the artist, and the search is the video search.
@@ -11,10 +12,14 @@ import 'package:media_core_audio/media_core_audio.dart'
 /// source carries its platform's headers in.
 final class BilibiliMusicSource extends MusicSource {
   /// A source over the video client.
-  new(this.client);
+  new(this.client, {this.lyrics});
 
   /// The video client (search, audio address).
   final BilibiliVodClient client;
+
+  /// Where lyrics come from, when the build ships a service; null is the
+  /// shipping answer and the music page draws no strip.
+  final LyricProvider? lyrics;
 
   @override
   String get id => 'bilibili';
@@ -39,6 +44,23 @@ final class BilibiliMusicSource extends MusicSource {
       ],
       hasMore: hits.hasMore,
     );
+  }
+
+  @override
+  Future<MusicLyricPayload?> resolveLyric(MusicTrack track) async {
+    final provider = lyrics;
+    if (provider == null) {
+      return null;
+    }
+    final query = LyricQuery.fromVideoTitle(track.title, uploader: track.artist.isEmpty ? null : track.artist);
+    if (!query.isUsable) {
+      return null;
+    }
+    final text = await provider.fetch(query);
+    if (text == null || text.trim().isEmpty) {
+      return null;
+    }
+    return MusicLyricPayload(lyric: text);
   }
 
   @override
