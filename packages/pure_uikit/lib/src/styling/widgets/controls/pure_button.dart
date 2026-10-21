@@ -655,12 +655,21 @@ class PureIconButton extends StatelessWidget {
     final glyph = Icon(icon, color: color, semanticLabel: tooltip);
 
     final button = switch (language) {
+      // WinUI's toggle: checked = the accent fill carrying its own foreground
+      // (`FluentButton` has no selected state of its own, so the style paints
+      // it unconditionally).
       PureDesignLanguage.fluent => f2.FluentButton.icon(
         icon: glyph,
         semanticLabel: tooltip,
         onPressed: active ? onPressed : null,
         focusNode: focusNode,
         autofocus: autofocus,
+        style: selected
+            ? f2.FluentButtonStyle(
+                backgroundColor: WidgetStatePropertyAll(theme.colors.primary),
+                foregroundColor: WidgetStatePropertyAll(theme.colors.onPrimary),
+              )
+            : null,
         appearance: switch (variant) {
           ButtonVariant.primary => f2.FluentButtonAppearance.primary,
           ButtonVariant.secondary => f2.FluentButtonAppearance.secondary,
@@ -676,42 +685,57 @@ class PureIconButton extends StatelessWidget {
       // `MacosIconButton` sinks only its plate when disabled — the glyph is the
       // caller's and the library leaves it at full colour, so a dead button's
       // mark looked live. It carries `PushButton`'s own quarter-alpha rule over.
+      // The selected toggle takes the accent plate with its own foreground.
       PureDesignLanguage.macos => macos.MacosIconButton(
-        icon: active ? glyph : _macosDim(glyph, color ?? IconTheme.of(context).color ?? theme.colors.text),
+        icon: !active
+            ? _macosDim(glyph, color ?? IconTheme.of(context).color ?? theme.colors.text)
+            : selected
+            ? Icon(icon, color: theme.colors.onPrimary, semanticLabel: tooltip)
+            : glyph,
+        backgroundColor: selected ? theme.colors.primary : null,
         onPressed: active ? onPressed : null,
       ),
       PureDesignLanguage.cupertino => cupertino.CupertinoButton(
         onPressed: active ? onPressed : null,
         focusNode: focusNode,
         autofocus: autofocus,
+        // iOS spells no toggle: selected is the system's tinted fill carrying
+        // a contrasting glyph.
+        color: selected ? theme.colors.primary : null,
         sizeStyle: switch (size) {
           ControlSize.sm => cupertino.CupertinoButtonSize.small,
           ControlSize.md => cupertino.CupertinoButtonSize.medium,
           ControlSize.lg => cupertino.CupertinoButtonSize.large,
         },
-        child: glyph,
+        child: selected ? Icon(icon, color: theme.colors.onPrimary, semanticLabel: tooltip) : glyph,
       ),
       // An icon-only control is forui's own variant, laid out by the library —
       // squeezing the token square around a full `FButton` clipped the glyph,
       // so this language does not use that geometry.
       PureDesignLanguage.forui => _foruiIcon(theme, active),
       // The library's own icon button: its frosted plate, at its own 44-point
-      // circular default.
+      // circular default. Selected frosts the accent and draws its border.
       PureDesignLanguage.glass => glass.GlassIconButton(
         icon: glyph,
         onPressed: active ? onPressed : null,
         tooltip: tooltip,
+        color: selected ? theme.colors.primaryBg : Colors.white,
+        borderColor: selected ? theme.colors.primary : null,
       ),
       // The library's own icon button: the same embossed plane as NeuButton.
+      // The neumorphic selected state is the pressed-in plane on the accent's
+      // subtle base.
       PureDesignLanguage.neumorphic => neu.NeuIconButton(
         icon: glyph,
         onPressed: active ? onPressed : null,
         tooltip: tooltip,
+        shape: selected ? neu.NeuShape.pressed : neu.NeuShape.flat,
+        baseColor: selected ? theme.colors.primaryBg : null,
       ),
       // The fork's one button shape carries the glyph, the accessible name on
       // the button itself (`WButton` has no icon variant either) and the
       // surface in its own utility classes.
-      PureDesignLanguage.wind => _windIcon(theme, m, active),
+      PureDesignLanguage.wind => _windIcon(theme, m, active, selected),
       PureDesignLanguage.yaru => yaru.YaruIconButton(
         icon: glyph,
         onPressed: active ? onPressed : null,
@@ -726,6 +750,9 @@ class PureIconButton extends StatelessWidget {
         onPressed: active ? onPressed : null,
         focusNode: focusNode,
         autofocus: autofocus,
+        // Material 3's own selected icon button: the highlight plate and the
+        // tinted glyph are the platform's, not ours to draw.
+        isSelected: selected,
         visualDensity: switch (size) {
           ControlSize.sm => VisualDensity.compact,
           ControlSize.md => const VisualDensity(horizontal: -0.5, vertical: -0.5),
@@ -772,14 +799,17 @@ class PureIconButton extends StatelessWidget {
   ///
   /// The primary plate rides the fork's `primary-*` family like the text
   /// button's does, and the disabled face is the same `Opacity` compensation,
-  /// because `WButton` states neither in a class.
-  Widget _windIcon(PureTheme theme, _Metrics m, bool active) {
-    final surface = switch (variant) {
-      ButtonVariant.primary => 'bg-primary-500 text-white rounded hover:bg-primary-600',
-      ButtonVariant.secondary => 'bg-white text-gray-900 border border-gray-400 rounded hover:bg-gray-100',
-      ButtonVariant.danger => 'bg-red-600 text-white rounded hover:bg-red-700',
-      ButtonVariant.ghost => 'text-gray-900 rounded hover:bg-gray-100',
-    };
+  /// because `WButton` states neither in a class. Selected holds the deeper
+  /// primary plate without the hover step.
+  Widget _windIcon(PureTheme theme, _Metrics m, bool active, bool selected) {
+    final surface = selected
+        ? 'bg-primary-600 text-white rounded'
+        : switch (variant) {
+            ButtonVariant.primary => 'bg-primary-500 text-white rounded hover:bg-primary-600',
+            ButtonVariant.secondary => 'bg-white text-gray-900 border border-gray-400 rounded hover:bg-gray-100',
+            ButtonVariant.danger => 'bg-red-600 text-white rounded hover:bg-red-700',
+            ButtonVariant.ghost => 'text-gray-900 rounded hover:bg-gray-100',
+          };
     Widget button = wind.WButton(
       onTap: active ? onPressed : null,
       disabled: !active,
@@ -790,7 +820,7 @@ class PureIconButton extends StatelessWidget {
             ControlSize.lg => 'p-2.5',
           }}',
       semanticLabel: tooltip,
-      child: Icon(icon, size: m.icon, color: color, semanticLabel: tooltip),
+      child: Icon(icon, size: m.icon, color: selected ? Colors.white : color, semanticLabel: tooltip),
     );
     if (!active) {
       button = Opacity(opacity: 0.5, child: button);
