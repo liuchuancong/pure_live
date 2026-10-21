@@ -25,6 +25,7 @@ import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/features/room/danmaku.dart';
 import 'package:pure_live/features/room/play_quality.dart';
 import 'package:pure_live/features/room/portrait_rules.dart';
+import 'package:pure_live/features/room/reconnect_policy.dart';
 import 'package:pure_live/features/room/room_providers.dart';
 import 'package:pure_live/system/configuration/app_preferences.dart';
 import 'package:pure_live/system/configuration/app_preferences_providers.dart';
@@ -74,6 +75,8 @@ final class RoomState {
     this.loadingLines = false,
     this.streamError,
     this.engineStopped = false,
+    this.reconnecting = false,
+    this.reconnectAttempt = 0,
     this.paused = false,
     this.presentation = RoomPresentation.normal,
     this.chromeVisible = true,
@@ -122,6 +125,13 @@ final class RoomState {
 
   /// Whether playback is paused.
   final bool paused;
+
+  /// Whether the auto-reconnect ladder is running — the picture then says
+  /// which attempt is in flight instead of offering the retry button.
+  final bool reconnecting;
+
+  /// The attempt the ladder is on, 1-based; 0 while idle.
+  final int reconnectAttempt;
 
   /// The presentation the page renders.
   final RoomPresentation presentation;
@@ -205,6 +215,8 @@ final class RoomState {
     Object? streamError = _keep,
     bool? engineStopped,
     bool? paused,
+    bool? reconnecting,
+    int? reconnectAttempt,
     RoomPresentation? presentation,
     bool? chromeVisible,
     bool? sleepTimerActive,
@@ -230,6 +242,8 @@ final class RoomState {
     streamError: streamError == _keep ? this.streamError : streamError,
     engineStopped: engineStopped ?? this.engineStopped,
     paused: paused ?? this.paused,
+    reconnecting: reconnecting ?? this.reconnecting,
+    reconnectAttempt: reconnectAttempt ?? this.reconnectAttempt,
     presentation: presentation ?? this.presentation,
     chromeVisible: chromeVisible ?? this.chromeVisible,
     sleepTimerActive: sleepTimerActive ?? this.sleepTimerActive,
@@ -298,6 +312,43 @@ final class RoomController extends Notifier<RoomState> {
   /// change (the engine coming ready is what triggers the rebuild).
   MediaKitPlayerAdapter? get adapter => _engine.surfaceAdapter;
 
+  /// The auto-reconnect ladder and its running timer.
+  static const ReconnectPolicy _reconnectPolicy = ReconnectPolicy();
+  Timer? _reconnectTimer;
+
+  /// The attempt the ladder is on; 0 between streaks.
+  int _reconnectAttempt = 0;
+
+  /// Arms the next automatic attempt for a failed stream, or leaves the
+  /// manual retry alone once the ladder is spent.
+  void _scheduleReconnect() {
+    _reconnectTimer?.cancel();
+    final next = _reconnectAttempt + 1;
+    if (!_reconnectPolicy.allows(next)) {
+      state = state.copyWith(reconnecting: false, reconnectAttempt: 0);
+      return;
+    }
+    _reconnectAttempt = next;
+    state = state.copyWith(reconnecting: true, reconnectAttempt: next);
+    _reconnectTimer = Timer(_reconnectPolicy.delayFor(next), () {
+      if (state.reconnecting) {
+        unawaited(retry());
+      }
+    });
+  }
+
+  /// Stops the ladder without touching the error state — the manual retry,
+  /// a fresh open and a successful engine start all mean a person or the
+  /// stream has moved on.
+  void _cancelReconnect() {
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _reconnectAttempt = 0;
+    if (state.reconnecting || state.reconnectAttempt != 0) {
+      state = state.copyWith(reconnecting: false, reconnectAttempt: 0);
+    }
+  }
+
   @override
   RoomState build() {
     _engineSub = _engine.events.listen(_onEngineEvent);
@@ -305,6 +356,7 @@ final class RoomController extends Notifier<RoomState> {
     ref.onDispose(() {
       _clearTileCloseHook();
       _progressTimer?.cancel();
+      _reconnectTimer?.cancel();
       _chromeTimer?.cancel();
       _sleepTimer?.cancel();
       unawaited(_adapterSub?.cancel());
@@ -369,6 +421,7 @@ final class RoomController extends Notifier<RoomState> {
           'engine ready',
           fields: {'site': identity.siteId, 'room': identity.roomId, 'fit': state.videoFit.name},
         );
+        _cancelReconnect();
         state = state.copyWith(engineStopped: false, streamError: null, paused: false);
         // The stored 画面比例 rides every open — a quality switch rebuilds
         // the adapter, and a new one starts from the engine's own default.
@@ -393,6 +446,7 @@ final class RoomController extends Notifier<RoomState> {
           message: 'engine stopped (${identity.siteId} ${identity.roomId})',
         );
         state = state.copyWith(engineStopped: true);
+        _scheduleReconnect();
       case EngineProgress():
         break;
     }
@@ -415,6 +469,7 @@ final class RoomController extends Notifier<RoomState> {
           message: 'player error: $message',
         );
         state = state.copyWith(engineStopped: true, streamError: StateError(message));
+        _scheduleReconnect();
       case PlayerAdapterVideoSizeChanged(:final width, :final height):
         if (width != state.videoWidth || height != state.videoHeight) {
           ref.read(appLogProvider).forCategory('room').debug('video size $width x $height');
@@ -637,10 +692,12 @@ final class RoomController extends Notifier<RoomState> {
       return;
     }
     final chosen = quality ?? state.quality;
+    _cancelReconnect();
     state = state.copyWith(loadingLines: true, engineStopped: false, streamError: null, quality: chosen);
     final result = await capability.getLines(roomId: identity.roomId, quality: chosen);
     final lines = result.fold((error) {
       state = state.copyWith(streamError: error);
+      _scheduleReconnect();
       return const <LivePlayLine>[];
     }, (value) => value);
     state = state.copyWith(lines: lines, loadingLines: false);

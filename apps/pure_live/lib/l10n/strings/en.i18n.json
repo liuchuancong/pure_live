@@ -725,7 +725,8 @@
     "block": "Block",
     "portraitFullscreenRestoreHint": "Portrait fullscreen — swipe up to bring the danmaku bar back",
     "gift": "Send a gift",
-    "sentGift": "sent"
+    "sentGift": "sent",
+    "autoReconnecting": "Reconnecting (attempt {count: int})"
   },
   "areas": {
     "followedAreas": "Followed areas",

@@ -910,6 +910,7 @@ class _Translations$room$en extends Translations$room$zh {
 	@override String get portraitFullscreenRestoreHint => 'Portrait fullscreen — swipe up to bring the danmaku bar back';
 	@override String get gift => 'Send a gift';
 	@override String get sentGift => 'sent';
+	@override String autoReconnecting({required int count}) => 'Reconnecting (attempt ${count})';
 }
 
 // Path: areas
@@ -2368,6 +2369,7 @@ extension on TranslationsEn {
 			'room.portraitFullscreenRestoreHint' => 'Portrait fullscreen — swipe up to bring the danmaku bar back',
 			'room.gift' => 'Send a gift',
 			'room.sentGift' => 'sent',
+			'room.autoReconnecting' => ({required int count}) => 'Reconnecting (attempt ${count})',
 			'areas.followedAreas' => 'Followed areas',
 			'areas.empty' => 'No areas here',
 			'areas.followEmpty' => 'No followed areas yet',
@@ -2693,9 +2695,9 @@ extension on TranslationsEn {
 			'errors.generic' => 'Something went wrong. Please try again later.',
 			'errors.network' => 'Network unavailable. Check your connection and retry.',
 			'errors.notFound' => 'Nothing found.',
-			'errors.cancelled' => 'Cancelled.',
 			_ => null,
 		} ?? switch (path) {
+			'errors.cancelled' => 'Cancelled.',
 			'errors.unsupported' => 'This source doesn\'t support that.',
 			'tabs.home' => 'Home',
 			'tabs.favorites' => 'Favorites',

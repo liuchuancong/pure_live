@@ -3139,6 +3139,9 @@ class Translations$room$zh {
 
 	/// zh: '送出'
 	String get sentGift => '送出';
+
+	/// zh: '正在重连（第 {count: int} 次）'
+	String autoReconnecting({required int count}) => '正在重连（第 ${count} 次）';
 }
 
 // Path: areas
@@ -5095,6 +5098,7 @@ extension on Translations {
 			'room.portraitFullscreenRestoreHint' => '已进入竖屏全屏 · 上滑恢复弹幕栏',
 			'room.gift' => '送礼物',
 			'room.sentGift' => '送出',
+			'room.autoReconnecting' => ({required int count}) => '正在重连（第 ${count} 次）',
 			'areas.followedAreas' => '关注的分区',
 			'areas.empty' => '暂无分区',
 			'areas.followEmpty' => '还没有关注的分区',
@@ -5173,9 +5177,9 @@ extension on Translations {
 			'errors.generic' => '出了点问题，请稍后再试。',
 			'errors.network' => '网络连接不可用，请检查网络后重试。',
 			'errors.notFound' => '没有找到相关内容。',
-			'errors.cancelled' => '已取消。',
 			_ => null,
 		} ?? switch (path) {
+			'errors.cancelled' => '已取消。',
 			'errors.unsupported' => '当前来源不支持该功能。',
 			'tabs.home' => '首页',
 			'tabs.favorites' => '关注',

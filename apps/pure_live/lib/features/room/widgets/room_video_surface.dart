@@ -164,7 +164,14 @@ final class _RoomVideoSurfaceState extends ConsumerState<RoomVideoSurface> {
       return const Center(child: PureSpinner(size: 40));
     }
     if (widget.state.engineStopped || widget.state.streamError != null) {
-      return _Failed(onRetry: () => unawaited(widget.controller.retry()), message: context.t.room.failed);
+      return _Failed(
+        onRetry: () => unawaited(widget.controller.retry()),
+        message: context.t.room.failed,
+        // The auto-reconnect ladder speaks for a stream it is bringing
+        // back; the button waits until the ladder is spent.
+        reconnecting: widget.state.reconnecting,
+        attempt: widget.state.reconnectAttempt,
+      );
     }
     if (widget.state.explicitlyOffline) {
       return PureEmpty(
@@ -186,10 +193,16 @@ final class _RoomVideoSurfaceState extends ConsumerState<RoomVideoSurface> {
 
 /// The stopped stream: the message and one way back.
 final class _Failed extends StatelessWidget {
-  const new({required this.message, required this.onRetry});
+  const new({required this.message, required this.onRetry, this.reconnecting = false, this.attempt = 0});
 
   final String message;
   final VoidCallback onRetry;
+
+  /// Whether the auto-reconnect ladder is running.
+  final bool reconnecting;
+
+  /// The ladder's attempt, 1-based.
+  final int attempt;
 
   @override
   Widget build(BuildContext context) => Center(
@@ -200,7 +213,16 @@ final class _Failed extends StatelessWidget {
         const SizedBox(height: 10),
         Text(message, style: const TextStyle(color: Colors.white70)),
         const SizedBox(height: 12),
-        PureButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: onRetry),
+        if (reconnecting) const PureSpinner(size: 22) else const SizedBox.shrink(),
+        if (reconnecting) const SizedBox(height: 8),
+        if (reconnecting)
+          Text(
+            context.t.room.autoReconnecting(count: attempt),
+            key: const ValueKey('room-reconnecting'),
+            style: const TextStyle(color: Colors.white70),
+          )
+        else
+          PureButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: onRetry),
       ],
     ),
   );

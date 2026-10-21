@@ -999,7 +999,8 @@
     "block": "屏蔽",
     "portraitFullscreenRestoreHint": "已进入竖屏全屏 · 上滑恢复弹幕栏",
     "gift": "送礼物",
-    "sentGift": "送出"
+    "sentGift": "送出",
+    "autoReconnecting": "正在重连（第 {count: int} 次）"
   },
   "areas": {
     "followedAreas": "关注的分区",
