@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show Icons;
+import 'package:flutter/material.dart' show IconData, Icons;
 import 'package:pure_uikit/src/icons/registry/icon_mapping.dart';
 
 /// The universal answer when nothing else registered the key.
@@ -8,7 +8,10 @@ import 'package:pure_uikit/src/icons/registry/icon_mapping.dart';
 /// session can name the key that missed.
 abstract final class PureIconFallback {
   /// The broken-image glyph every unresolved key draws.
-  static const PureIconSource source = PureIconGlyph(Icons.broken_image_outlined);
+  static const PureIconSource source = PureIconGlyph(glyph);
+
+  /// The glyph itself, for APIs that only take an [IconData].
+  static const IconData glyph = Icons.broken_image_outlined;
 
   /// Whether [candidate] is this fallback source.
   static bool isFallback(PureIconSource candidate) => identical(candidate, source);
