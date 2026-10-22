@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show gzip;
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
@@ -20,12 +21,20 @@ import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/core/live_site_runtime_info.dart';
+import 'package:live_sites/src/models/audience/live_audience_update/live_audience_update.dart';
 import 'package:live_sites/src/models/enums/live_audience_metric_type.dart';
+import 'package:live_sites/src/models/enums/live_audience_signal_kind.dart';
+import 'package:live_sites/src/models/enums/live_gift_unit.dart';
+import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/enums/live_play_format_source.dart';
 import 'package:live_sites/src/models/enums/live_restriction.dart';
 import 'package:live_sites/src/models/enums/live_status.dart';
 import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
+import 'package:live_sites/src/models/gift/live_gift/live_gift.dart';
+import 'package:live_sites/src/models/gift/live_gift_value/live_gift_value.dart';
+import 'package:live_sites/src/models/message/live_message/live_message.dart';
+import 'package:live_sites/src/models/message/message_sender/message_sender.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
@@ -1689,6 +1698,204 @@ void main() {
         throwsA(
           isA<BaiduliveFailure>().having((failure) => failure.message, 'message', 'quality 1080p is not offered'),
         ),
+      );
+    });
+  });
+
+  group('the chat protocol', () {
+    final chatList = Uri.parse('https://liveshowstatic.baidu.com/live/chat_${_roomId}_a.m3u8');
+
+    BaiduliveSegment decode(List<Object?> messages, {String room = _roomId}) => BaiduliveDanmakuProtocol.segment(
+      utf8.encode(
+        _json({
+          'list': [
+            {'messages': messages},
+          ],
+        }),
+      ),
+      roomId: room,
+    );
+
+    Map<String, Object?> outer(Object? inner, {String msgid = 'm1'}) => {
+      'type': 0,
+      'msgid': msgid,
+      'create_time': 1700000000,
+      'content': {'text': inner is String ? inner : _json(inner)},
+    };
+
+    test('a playlist keeps same-scheme same-host segments and the media sequence', () {
+      final playlist = BaiduliveDanmakuProtocol.playlist(
+        '#EXTM3U\n#EXT-X-MEDIA-SEQUENCE:7\nseg_a.flv?sign=1\n#EXTINF\n'
+        'https://elsewhere.example/seg_b\nhttp://liveshowstatic.baidu.com/seg_c\n',
+        chatList,
+      );
+      expect(playlist.mediaSequence, 7);
+      expect(playlist.segments, [chatList.resolve('seg_a.flv?sign=1')]);
+      expect(() => BaiduliveDanmakuProtocol.playlist('hello', chatList), throwsFormatException);
+    });
+
+    test('inflate unwraps a doubled gzip and leaves plain bytes', () {
+      final once = gzip.encode(utf8.encode('{"a":1}'));
+      expect(utf8.decode(BaiduliveDanmakuProtocol.inflate(gzip.encode(once))), '{"a":1}');
+      expect(BaiduliveDanmakuProtocol.inflate([1, 2, 3]), [1, 2, 3]);
+      expect(() => BaiduliveDanmakuProtocol.segment([0x1f, 0x8b, 0x00], roomId: _roomId), throwsFormatException);
+    });
+
+    test('a chat line reads through the double JSON payload', () {
+      final segment = decode([
+        outer({'type': 0, 'room_id': _roomId, 'message_type': '0', 'content': '你好', 'uid': 42, 'name': ' nick '}),
+        outer({'type': 0, 'room_id': _roomId, 'message_type': '1', 'content': 'ignored image'}),
+        outer({'type': 0, 'room_id': _otherRoom, 'message_type': '0', 'content': 'elsewhere'}),
+        {'type': 1, 'content': 'not a chat envelope'},
+      ]);
+      expect(segment.messages, hasLength(1));
+      final message = segment.messages.single;
+      expect(message.text, '你好');
+      expect(message.sender, MessageSender.normalized(userId: '42', userName: 'nick'));
+      expect(message.messageId, 'm1');
+      expect(segment.ended, isFalse);
+    });
+
+    test("a reply carries the writer's own words, a link the title", () {
+      expect(
+        decode([
+          outer({
+            'type': 0,
+            'room_id': _roomId,
+            'message_type': '0',
+            'content': '@x 好的',
+            'uid': 42,
+            'name': 'nick',
+            'at_name': 'x',
+            'at_message_type': 0,
+            'at_message_body': {
+              'txt': {'word': 'quoted'},
+            },
+            'message_body': {
+              'txt': {'word': '好的'},
+            },
+          }),
+        ]).messages.single.text,
+        '好的',
+      );
+      expect(
+        decode([
+          outer({
+            'type': 0,
+            'room_id': _roomId,
+            'message_type': '3',
+            'uid': 42,
+            'name': 'nick',
+            'message_body': {
+              'link': {'title': '直播标题'},
+            },
+          }),
+        ]).messages.single.text,
+        '直播标题',
+      );
+    });
+
+    test('101 names the online count; 102 ends this room only', () {
+      final online = decode([
+        outer({
+          'type': 101,
+          'room_id': _roomId,
+          'data': {'onlineusercnt': '123'},
+        }),
+      ]);
+      expect(
+        online.messages.single,
+        isA<LiveMessage>()
+            .having((m) => m.type, 'type', LiveMessageType.audienceUpdate)
+            .having(
+              (m) => m.payload,
+              'payload',
+              const LiveAudienceUpdate(kind: LiveAudienceSignalKind.onlineViewers, value: 123),
+            ),
+      );
+      expect(
+        decode([
+          outer({
+            'type': 101,
+            'room_id': _roomId,
+            'data': {'onlineusercnt': -1},
+          }),
+        ]).messages,
+        isEmpty,
+      );
+      expect(
+        decode([
+          outer({'type': 102, 'room_id': _roomId}),
+        ]).ended,
+        isTrue,
+      );
+      expect(
+        decode([
+          outer({'type': 102, 'room_id': _otherRoom}),
+        ]).ended,
+        isFalse,
+      );
+    });
+
+    test('107/10024 gives the gift; free and paid tell their unit, no name no gift', () {
+      Map<String, Object?> giftInner(Map<String, Object?> content) => {
+        'type': 107,
+        'data': {
+          'service_type': '10024',
+          'service_info': {'room_id': _roomId, 'user_id': 7, 'user_name': ' giver ', 'content': _json(content)},
+        },
+      };
+      final paid = decode([
+        outer(
+          giftInner({
+            'gift_name': '火箭',
+            'gift_count': '2',
+            'gift_id': 9,
+            'is_free': 0,
+            'gift_url': 'https://icon.example/x.png',
+          }),
+        ),
+      ]).messages.single;
+      expect(paid.text, '火箭 ×2');
+      expect(paid.type, LiveMessageType.gift);
+      expect(
+        paid.payload,
+        isA<LiveGift>()
+            .having((g) => g.giftId, 'giftId', '9')
+            .having((g) => g.count, 'count', 2)
+            .having((g) => g.iconUrl, 'iconUrl', 'https://icon.example/x.png')
+            .having((g) => g.value, 'value', const LiveGiftValue()),
+      );
+      final free = decode([
+        outer(giftInner({'gift_name': '小心心', 'is_free': 1, 'gift_url': 'http://icon.example/x.png'})),
+      ]).messages.single;
+      expect(free.sender, MessageSender.normalized(userId: '7', userName: 'giver'));
+      expect(
+        free.payload,
+        isA<LiveGift>()
+            .having((g) => g.count, 'count', 1)
+            .having((g) => g.iconUrl, 'iconUrl', isNull)
+            .having((g) => g.value, 'value', const LiveGiftValue(unit: LiveGiftUnit.free)),
+      );
+      expect(
+        decode([
+          outer(giftInner({'gift_count': 2})),
+        ]).messages,
+        isEmpty,
+      );
+      expect(
+        decode([
+          outer({
+            'type': 107,
+            'data': {
+              'service_type': '700',
+              'service_info': {
+                'content': _json({'gift_name': '火箭'}),
+              },
+            },
+          }),
+        ]).messages,
+        isEmpty,
       );
     });
   });
