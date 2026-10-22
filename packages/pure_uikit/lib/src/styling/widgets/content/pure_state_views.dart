@@ -1,28 +1,14 @@
-import 'package:flutter/cupertino.dart' as cupertino;
 import 'package:flutter/material.dart';
-import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 import 'package:pure_uikit/src/styling/style/recipe.dart';
 import 'package:pure_uikit/src/styling/widgets/controls/pure_button.dart';
 import 'package:pure_uikit/src/styling/widgets/layout/pure_environment.dart';
 
-/// The mark of [role] in the active language's own icon set.
-///
-/// Apple and Material drew these differently, and a state view is one glyph the
-/// whole page hangs on, so the bar's language picks it. The languages whose
-/// library ships no status glyph of its own keep Material's, which is what
-/// their fallback controls draw anyway.
-IconData _glyph(PureTheme theme, _GlyphRole role) => switch ((theme.config.language, role)) {
-  (PureDesignLanguage.macos || PureDesignLanguage.cupertino, _) => switch (role) {
-    _GlyphRole.error => cupertino.CupertinoIcons.exclamationmark_circle,
-    _GlyphRole.empty => cupertino.CupertinoIcons.tray,
-    _GlyphRole.retry => cupertino.CupertinoIcons.arrow_clockwise,
-  },
-  (_, _) => switch (role) {
-    _GlyphRole.error => Icons.error_outline,
-    _GlyphRole.empty => Icons.inbox_outlined,
-    _GlyphRole.retry => Icons.refresh,
-  },
+/// The mark of [role]: the Material status glyph the fluent view draws.
+IconData _glyph(_GlyphRole role) => switch (role) {
+  _GlyphRole.error => Icons.error_outline,
+  _GlyphRole.empty => Icons.inbox_outlined,
+  _GlyphRole.retry => Icons.refresh,
 };
 
 /// The three glyphs a full-view state asks the language for.
@@ -76,13 +62,7 @@ class PureLoading extends StatelessWidget {
 /// A full-view error state with an optional retry action.
 class PureError extends StatelessWidget {
   /// An error view.
-  const new({
-    required this.message,
-    this.onRetry,
-    this.retryLabel = 'Retry',
-    this.icon,
-    super.key,
-  });
+  const new({required this.message, this.onRetry, this.retryLabel = 'Retry', this.icon, super.key});
 
   /// The headline shown to the user.
   final String message;
@@ -93,7 +73,7 @@ class PureError extends StatelessWidget {
   /// The retry button's label.
   final String retryLabel;
 
-  /// The status icon, or null for the active language's own error mark.
+  /// The status icon, or null for the state view's own error mark.
   final IconData? icon;
 
   @override
@@ -101,7 +81,7 @@ class PureError extends StatelessWidget {
     final theme = PureTheme.of(context);
     final geometry = _geometry(context, theme);
     return _stateColumn(context, theme, [
-      Icon(icon ?? _glyph(theme, _GlyphRole.error), size: geometry.iconSize * 2, color: theme.colors.error),
+      Icon(icon ?? _glyph(_GlyphRole.error), size: geometry.iconSize * 2, color: theme.colors.error),
       SizedBox(height: geometry.sectionGap),
       Text(
         message,
@@ -112,7 +92,7 @@ class PureError extends StatelessWidget {
         SizedBox(height: geometry.sectionGap),
         PureButton(
           label: retryLabel,
-          icon: _glyph(theme, _GlyphRole.retry),
+          icon: _glyph(_GlyphRole.retry),
           variant: ButtonVariant.secondary,
           onPressed: retry,
         ),
@@ -135,7 +115,7 @@ class PureEmpty extends StatelessWidget {
   /// An optional call-to-action widget.
   final Widget? action;
 
-  /// The status icon, or null for the active language's own empty mark.
+  /// The status icon, or null for the state view's own empty mark.
   final IconData? icon;
 
   @override
@@ -143,7 +123,7 @@ class PureEmpty extends StatelessWidget {
     final theme = PureTheme.of(context);
     final geometry = _geometry(context, theme);
     return _stateColumn(context, theme, [
-      Icon(icon ?? _glyph(theme, _GlyphRole.empty), size: geometry.iconSize * 2, color: theme.colors.textDisabled),
+      Icon(icon ?? _glyph(_GlyphRole.empty), size: geometry.iconSize * 2, color: theme.colors.textDisabled),
       SizedBox(height: geometry.sectionGap),
       Text(
         title,

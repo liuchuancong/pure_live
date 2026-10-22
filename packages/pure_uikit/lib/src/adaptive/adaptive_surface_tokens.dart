@@ -2,15 +2,12 @@ import 'package:flutter/widgets.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 
 /// The semantic surface colours the adaptive navigation reads, resolved from
-/// the active design language's `PureTheme` rather than a palette of its
-/// own.
+/// the `PureTheme` rather than a palette of its own.
 ///
-/// The adaptive shell is one structure shared by every design language: this
-/// class is the whole reason that can hold. Each field keeps the role name the
-/// Fluent reference used (`sidebar`, `brand`, `live`, …) so the navigation
-/// surfaces read naturally, while the value underneath comes from whichever
-/// language's tokens are in scope — Material's primary, Fluent's accent and
-/// macOS's controls all land here through `PureTheme.of(context).colors`.
+/// Each field keeps the role name the Fluent reference used (`sidebar`,
+/// `brand`, `live`, …) so the navigation surfaces read naturally, while the
+/// value underneath comes from the tokens in scope through
+/// `PureTheme.of(context).colors`.
 @immutable
 final class AdaptiveSurfaceColors {
   /// Resolved roles; produced by `of`, never constructed by callers.
@@ -125,7 +122,6 @@ final class AdaptiveSurfaceColors {
 
   /// Whether the resolved theme is dark.
   final bool isDark;
-
 }
 
 /// Convenient access to the adaptive surface roles.

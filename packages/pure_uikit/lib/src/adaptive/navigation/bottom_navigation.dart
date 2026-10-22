@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import 'package:pure_uikit/src/adaptive/adaptive_shell_sizes.dart';
 import 'package:pure_uikit/src/adaptive/adaptive_surface_tokens.dart';
@@ -9,8 +9,8 @@ import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 /// A compact bottom navigation bar for phones.
 ///
 /// It is deliberately custom rather than Material's `NavigationBar` so the
-/// selected state, icon weight, and 3px accent stay identical in every design
-/// language.
+/// selected state, icon weight, and 3px accent stay identical wherever the
+/// bar mounts.
 class PureBottomNavigation extends StatelessWidget {
   /// A bottom bar [height] tall listing [destinations].
   const new({
@@ -111,13 +111,7 @@ class PureBottomNavigation extends StatelessWidget {
 /// One item inside [PureBottomNavigation].
 class PureBottomNavigationItem extends StatelessWidget {
   /// Renders [destination] as one bottom-bar item.
-  const new({
-    required this.destination,
-    required this.selected,
-    required this.onTap,
-    this.showLabel = true,
-    super.key,
-  });
+  const new({required this.destination, required this.selected, required this.onTap, this.showLabel = true, super.key});
 
   /// The destination this item stands for.
   final PureNavDestination destination;
@@ -188,12 +182,7 @@ class PureBottomNavigationItem extends StatelessWidget {
 }
 
 final class _BottomIcon extends StatelessWidget {
-  const new({
-    required this.destination,
-    required this.selected,
-    required this.color,
-    required this.colors,
-  });
+  const new({required this.destination, required this.selected, required this.color, required this.colors});
 
   final PureNavDestination destination;
   final bool selected;
@@ -229,12 +218,7 @@ final class _BottomIcon extends StatelessWidget {
               child: Text(
                 destination.badgeCount! > 9 ? '9+' : '${destination.badgeCount}',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 8,
-                  fontWeight: FontWeight.w700,
-                  height: 1.2,
-                ),
+                style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w700, height: 1.2),
               ),
             ),
           ),

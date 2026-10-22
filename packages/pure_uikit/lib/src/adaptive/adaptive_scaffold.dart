@@ -145,7 +145,7 @@ class AdaptiveScaffold extends StatelessWidget {
 
   /// The key handed to the inner scaffold, so a host above the shell can open
   /// its drawer deterministically — page-level scaffolds shadow
-  /// `Scaffold.of` for some design languages.
+  /// `Scaffold.of`.
   final GlobalKey<ScaffoldState>? scaffoldKey;
 
   /// Overrides the scaffold's background.
@@ -182,11 +182,7 @@ class AdaptiveScaffold extends StatelessWidget {
       );
     }
 
-    return _buildWide(
-      context: context,
-      mode: mode,
-      backgroundColor: resolvedBackground,
-    );
+    return _buildWide(context: context, mode: mode, backgroundColor: resolvedBackground);
   }
 
   Widget _buildCompactOrDrawer({
@@ -228,11 +224,7 @@ class AdaptiveScaffold extends StatelessWidget {
     );
   }
 
-  Widget _buildWide({
-    required BuildContext context,
-    required PureNavigationMode mode,
-    required Color backgroundColor,
-  }) {
+  Widget _buildWide({required BuildContext context, required PureNavigationMode mode, required Color backgroundColor}) {
     return Scaffold(
       key: scaffoldKey,
       backgroundColor: backgroundColor,

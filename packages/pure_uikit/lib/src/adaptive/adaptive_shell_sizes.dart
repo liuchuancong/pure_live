@@ -47,9 +47,8 @@ abstract final class AdaptiveShellDurations {
 }
 
 /// The nav tile's corner radius — a fixed soft radius rather than a token, so
-/// a selection pill keeps its shape in every design language.
+/// a selection pill keeps its shape.
 const BorderRadius adaptiveTileRadius = BorderRadius.all(Radius.circular(8));
 
 /// The scrim over the content behind an open drawer.
-Color adaptiveDrawerScrim({required bool isDark}) =>
-    Colors.black.withValues(alpha: isDark ? 0.58 : 0.28);
+Color adaptiveDrawerScrim({required bool isDark}) => Colors.black.withValues(alpha: isDark ? 0.58 : 0.28);

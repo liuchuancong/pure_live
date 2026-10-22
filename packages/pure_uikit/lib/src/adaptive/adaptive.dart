@@ -2,8 +2,8 @@
 /// navigation surfaces, and the content primitives the pages tile with.
 ///
 /// Everything here is theme-agnostic — the surfaces read their colours from
-/// the active design language through `AdaptiveSurfaceColors`, so the same
-/// structure serves every language the package ships.
+/// the `PureTheme` tokens through `AdaptiveSurfaceColors`, so the one
+/// structure draws the fluent shell wherever the package mounts it.
 library;
 
 export 'adaptive_breakpoints.dart';

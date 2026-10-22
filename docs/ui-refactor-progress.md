@@ -68,6 +68,7 @@
 | 2026-10-23 | T3 | (随本提交) | ✅ | Fluent 主题桥接:新增 pure_uikit src/theme/fluent_theme.dart 的 FluentThemeBridge,由 PureTheme 的亮度、colors.primary 七步 accent、字体、圆角生成 fluent_ui FluentThemeData 与 Material ThemeData,经 theme barrel 导出至包入口;无设计语言分支,非 fluent 值一律回落 Fluent;纯新增,旧 API/依赖零改动,包级 dart analyze 全绿(flutter analyze 由脚本执行) |
 | 2026-10-23 | T5 | (随本提交) | ✅ | 控件分发清理:controls 目录 10 个控件删除 PureDesignLanguage switch/if 分发与其余 8 语言的工厂、绘制代码与专属辅助类(净删约 4000 行),只保留 fluent 路径,公开 API(类名、参数,含 PureButton.fluentShape)不变,非 fluent 值一律回落 Fluent;grep 目录 0 处 PureDesignLanguage/退役语言值引用,包级 dart analyze 全绿;断言已删分支视觉的既有测试(pure_switch_test 的 macos/glass、pure_progress_test 按语言厚度表等)运行时会失败,测试文件按规则未动,待后续跟进 |
 | 2026-10-23 | T6 | (随本提交) | ✅ | chrome 分发清理:chrome 目录 4 个组件(app_bar/app_shell/nav_bar/scaffold)删除 PureDesignLanguage switch 分发与其余 8 语言的可视工厂、专属辅助与死分支(净删约 1300 行),只保留 fluent 绘制路径,公开 API 与分支标识 ValueKeys 不变,非 fluent 值一律回落 Fluent;grep 目录 0 处 PureDesignLanguage 残留,包级 dart analyze 全绿、dart format 已对齐;断言已退役分支视觉的既有 chrome 测试运行时会失败,测试文件按规则未动,待后续跟进 |
+| 2026-10-23 | T7 | (随本提交) | ✅ | 内容与布局分发清理:content 目录 5 个文件(avatar/badge/card+list row/divider/state views)删除 PureDesignLanguage switch 分发与其余 8 语言的可视工厂、专属 painter/辅助与死分支(净删约 1300 行),只保留 fluent 绘制路径,公开 API 与分支标识 ValueKeys 不变,非 fluent 值一律回落 Fluent;layout 目录无任何语言分发(实查 0 处);adaptive 目录无代码级分发(颜色全部经 PureTheme token 解析),仅收敛宣传多语言服务的文档注释,PureNavigationRail/PureBottomNavigation 等弃用组件行为未动;grep 三目录 0 处 PureDesignLanguage 残留,包级 dart analyze 全绿(app 侧同验)、dart format 已对齐;断言已退役分支视觉的既有测试(pure_avatar_language_test 等)运行时会失败,测试文件按规则未动,待后续跟进 |
 
 ## 阻塞与待定
 
