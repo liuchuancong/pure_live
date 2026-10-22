@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_library/live_library.dart' show FollowArea, FollowAreaRepository;
 import 'package:live_sites/live_sites.dart' show LiveArea, LiveAreaIdentity;
-import 'package:pure_live/app/app_providers.dart' show followAreaRepositoryProvider;
+import 'package:pure_live/app/app_providers.dart' show areaProvider, followAreaRepositoryProvider;
 import 'package:pure_live/features/settings/widgets/settings_surface.dart' show SettingsSurfaceRef, showSettingsSurface;
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_uikit/pure_uikit.dart';
@@ -24,6 +24,19 @@ Stream<List<FollowArea>> _areasOf(FollowAreaRepository repository) async* {
     yield repository.areas;
   }
 }
+
+/// One platform's area catalogue, fetched once per read and refreshable —
+/// the page's header rail reads it beside the grid, so both share one answer.
+/// A site that cannot serve a catalogue answers empty rather than failing
+/// the rail.
+// ignore: specify_nonobvious_property_types
+final areasCatalogProvider = FutureProvider.autoDispose.family<List<LiveArea>, String>((ref, siteId) {
+  final capability = ref.watch(areaProvider(siteId));
+  if (capability == null) {
+    return Future.value(const <LiveArea>[]);
+  }
+  return capability.getAreas().then((result) => result.fold((error) => throw StateError('$error'), (areas) => areas));
+});
 
 /// Whether [area] is among [areas].
 bool isAreaFollowed(Iterable<FollowArea> areas, LiveArea area) =>

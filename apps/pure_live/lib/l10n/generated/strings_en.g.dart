@@ -65,6 +65,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$about$en about = _Translations$about$en._(_root);
 	@override late final _Translations$shield$en shield = _Translations$shield$en._(_root);
 	@override late final _Translations$multiview$en multiview = _Translations$multiview$en._(_root);
+	@override late final _Translations$discovery$en discovery = _Translations$discovery$en._(_root);
 	@override late final _Translations$search$en search = _Translations$search$en._(_root);
 	@override late final _Translations$remoteSync$en remoteSync = _Translations$remoteSync$en._(_root);
 	@override late final _Translations$errors$en errors = _Translations$errors$en._(_root);
@@ -1019,6 +1020,12 @@ class _Translations$areas$en extends Translations$areas$zh {
 	@override String get followEmptyHint => 'Open an area and follow it with the button in its top-right corner.';
 	@override String followDone({required String name}) => 'Following ${name}';
 	@override String unfollowDone({required String name}) => 'Unfollowed ${name}';
+	@override String get myFollows => 'My follows';
+	@override String get hotGroups => 'Hot categories';
+	@override String connected({required String site}) => 'Connected: ${site}';
+	@override String areaCount({required Object count}) => '${count} areas';
+	@override String followAreaCount({required Object count}) => '${count}';
+	@override String get noFollowsInSite => 'No followed areas on this site yet';
 }
 
 // Path: popular
@@ -1333,6 +1340,18 @@ class _Translations$multiview$en extends Translations$multiview$zh {
 	@override String get audioFocus => 'Playing sound';
 	@override String get removeCell => 'Remove cell';
 	@override String get noPick => 'No followed rooms or history yet';
+}
+
+// Path: discovery
+class _Translations$discovery$en extends Translations$discovery$zh {
+	_Translations$discovery$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String currentSite({required String site}) => 'Current site: ${site}';
+	@override String get pickSite => 'Choose a site';
+	@override String get searchSite => 'Search sites';
 }
 
 // Path: search
@@ -2618,6 +2637,12 @@ extension on TranslationsEn {
 			'areas.followEmptyHint' => 'Open an area and follow it with the button in its top-right corner.',
 			'areas.followDone' => ({required String name}) => 'Following ${name}',
 			'areas.unfollowDone' => ({required String name}) => 'Unfollowed ${name}',
+			'areas.myFollows' => 'My follows',
+			'areas.hotGroups' => 'Hot categories',
+			'areas.connected' => ({required String site}) => 'Connected: ${site}',
+			'areas.areaCount' => ({required Object count}) => '${count} areas',
+			'areas.followAreaCount' => ({required Object count}) => '${count}',
+			'areas.noFollowsInSite' => 'No followed areas on this site yet',
 			'popular.allPlatforms' => 'All platforms',
 			'popular.allPlatformsHint' => 'Tap to switch; platform settings hide and order them.',
 			'popular.noPlatforms' => 'No platforms to show',
@@ -2840,14 +2865,17 @@ extension on TranslationsEn {
 			'multiview.muteAll' => 'Mute all',
 			'multiview.unmuteAll' => 'Unmute all',
 			'multiview.audioFocus' => 'Playing sound',
+			_ => null,
+		} ?? switch (path) {
 			'multiview.removeCell' => 'Remove cell',
 			'multiview.noPick' => 'No followed rooms or history yet',
+			'discovery.currentSite' => ({required String site}) => 'Current site: ${site}',
+			'discovery.pickSite' => 'Choose a site',
+			'discovery.searchSite' => 'Search sites',
 			'search.hint' => 'Search rooms by keyword',
 			'search.rooms' => 'Rooms',
 			'search.anchors' => 'Anchors',
 			'search.areas' => 'Categories',
-			_ => null,
-		} ?? switch (path) {
 			'search.allSites' => 'All',
 			'search.historyTitle' => 'Recent searches',
 			'search.historyRemove' => 'Remove this search',

@@ -8,9 +8,9 @@ import 'package:live_pagination/live_pagination.dart';
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_sites/live_sites.dart' show LiveDiscoveryProvider, LivePageRequest, LiveRoom, LiveSite;
 import 'package:pure_live/app/app_providers.dart';
-import 'package:pure_live/app/shell/home_views.dart' show isHomeRailWidth;
 import 'package:pure_live/app/shell/main_page_frame.dart';
 import 'package:pure_live/app/shell/shell_actions.dart';
+import 'package:pure_live/features/discovery/site_picker.dart';
 import 'package:pure_live/features/room/paging.dart';
 import 'package:pure_live/features/room/room_playlist.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
@@ -128,25 +128,12 @@ final class _PopularPageState extends ConsumerState<PopularPage> {
 
     final title = visible.isEmpty
         ? null
-        : Row(
-            children: [
-              Expanded(
-                child: PureTabs(
-                  tabs: [for (final site in visible) PureTab(label: _name(context, site))],
-                  index: index,
-                  // One tab per visible platform in the space left of the
-                  // "all platforms" button; the count is the user's.
-                  isScrollable: true,
-                  onChanged: (value) => _selectTo(visible, value),
-                ),
-              ),
-              PureIconButton(
-                key: const ValueKey('popular-all-platforms'),
-                icon: Icons.expand_more_rounded,
-                tooltip: t.popular.allPlatforms,
-                onPressed: () => unawaited(_pickPlatform(visible, index)),
-              ),
-            ],
+        : SitePickerButton(
+            key: const ValueKey('popular-site-picker'),
+            sites: visible,
+            current: visible[index],
+            onSelected: (site) =>
+                _selectTo(visible, visible.indexWhere((candidate) => candidate.manifest.id == site.manifest.id)),
           );
 
     return PureScaffold(
@@ -176,200 +163,6 @@ final class _PopularPageState extends ConsumerState<PopularPage> {
                   ),
               ],
             ),
-    );
-  }
-
-  static String _name(BuildContext context, LiveSite site) =>
-      site.manifest.localizedName(Localizations.localeOf(context).toLanguageTag(), 'zh-CN');
-
-  Future<void> _pickPlatform(List<LiveSite> sites, int current) async {
-    final width = MediaQuery.sizeOf(context).width;
-    final side = isHomeRailWidth(width);
-    final picker = _PlatformPicker(sites: sites, current: current);
-    final picked = side
-        ? await showGeneralDialog<int>(
-            context: context,
-            barrierDismissible: true,
-            barrierLabel: 'platform-picker',
-            pageBuilder: (context, _, _) => Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: Material(
-                color: PureTheme.of(context).colors.bgElevated,
-                elevation: 8,
-                child: SizedBox(width: 360, child: picker),
-              ),
-            ),
-          )
-        : await showModalBottomSheet<int>(
-            context: context,
-            showDragHandle: true,
-            isScrollControlled: true,
-            builder: (context) => ConstrainedBox(
-              constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.71),
-              child: picker,
-            ),
-          );
-    if (picked != null && mounted) _selectTo(sites, picked);
-  }
-}
-
-/// "All platforms" (A09.2 c2): every platform of the tabs with its mark and
-/// name, the current one ticked; a tap switches to it and closes the panel;
-/// "平台显示" opens the settings that hide and order them. The same content
-/// rises from the bottom on phones and sits on the right on wide screens.
-class _PlatformPicker extends StatelessWidget {
-  const new({required this.sites, required this.current});
-
-  final List<LiveSite> sites;
-  final int current;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = PureTheme.of(context);
-    return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 12, 4),
-            child: Row(
-              children: [
-                Expanded(child: Text(t.popular.allPlatforms, style: theme.text.title)),
-                PureButton(
-                  key: const ValueKey('popular-platform-settings'),
-                  label: t.hotAreas.title,
-                  variant: ButtonVariant.ghost,
-                  icon: Icons.settings_outlined,
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    unawaited(const HotAreasRoute().push<void>(context));
-                  },
-                ),
-                PureIconButton(
-                  icon: Icons.close_rounded,
-                  tooltip: t.common.close,
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-            child: Text(
-              t.popular.allPlatformsHint,
-              style: theme.text.bodySmall.copyWith(color: theme.colors.textSecondary),
-            ),
-          ),
-          Flexible(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final columns = (constraints.maxWidth / 84).floor().clamp(3, 6);
-                return GridView.builder(
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: columns,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 4,
-                    mainAxisExtent: 84,
-                  ),
-                  itemCount: sites.length,
-                  itemBuilder: (context, index) => _PlatformTile(
-                    site: sites[index],
-                    selected: index == current,
-                    onTap: () => Navigator.of(context).pop(index),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PlatformTile extends StatelessWidget {
-  const new({required this.site, required this.selected, required this.onTap});
-
-  final LiveSite site;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = PureTheme.of(context);
-    final name = _PopularPageState._name(context, site);
-    return PureBox(
-      key: ValueKey('popular-platform-${site.manifest.id}'),
-      style: (state) => Style(
-        background: selected
-            ? theme.colors.fillSecondary
-            : switch (state) {
-                InteractionState.hovered => theme.colors.fillQuaternary,
-                InteractionState.pressed => theme.colors.fillTertiary,
-                _ => null,
-              },
-        borderRadius: BorderRadius.circular(12),
-      ),
-      onTap: onTap,
-      child: Semantics(
-        selected: selected,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox.square(
-                dimension: 40,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  alignment: Alignment.center,
-                  children: [
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundColor: theme.colors.fillTertiary,
-                      child: Text(name.characters.first, style: theme.text.title.copyWith(color: theme.colors.text)),
-                    ),
-                    if (selected)
-                      Positioned(
-                        right: -6,
-                        top: -6,
-                        child: Container(
-                          width: 20,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            color: theme.colors.primary,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: theme.colors.bgElevated, width: 2),
-                          ),
-                          child: Icon(Icons.check_rounded, size: 12, color: theme.colors.textLightSolid),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 6),
-              // A long Latin name (SHOWROOM, YouTube Live) narrows a
-              // little rather than losing its end to an ellipsis.
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  name,
-                  maxLines: 1,
-                  textAlign: TextAlign.center,
-                  style: theme.text.bodySmall.copyWith(
-                    color: selected ? theme.colors.text : theme.colors.textSecondary,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

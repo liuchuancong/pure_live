@@ -825,7 +825,13 @@
     "followEmpty": "No followed areas yet",
     "followEmptyHint": "Open an area and follow it with the button in its top-right corner.",
     "followDone": "Following {name: String}",
-    "unfollowDone": "Unfollowed {name: String}"
+    "unfollowDone": "Unfollowed {name: String}",
+    "myFollows": "My follows",
+    "hotGroups": "Hot categories",
+    "connected": "Connected: {site: String}",
+    "areaCount": "{count} areas",
+    "followAreaCount": "{count}",
+    "noFollowsInSite": "No followed areas on this site yet"
   },
   "popular": {
     "allPlatforms": "All platforms",
@@ -1070,6 +1076,11 @@
     "audioFocus": "Playing sound",
     "removeCell": "Remove cell",
     "noPick": "No followed rooms or history yet"
+  },
+  "discovery": {
+    "currentSite": "Current site: {site: String}",
+    "pickSite": "Choose a site",
+    "searchSite": "Search sites"
   },
   "search": {
     "hint": "Search rooms by keyword",

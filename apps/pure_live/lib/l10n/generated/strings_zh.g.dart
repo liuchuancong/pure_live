@@ -64,6 +64,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$about$zh about = Translations$about$zh.internal(_root);
 	late final Translations$shield$zh shield = Translations$shield$zh.internal(_root);
 	late final Translations$multiview$zh multiview = Translations$multiview$zh.internal(_root);
+	late final Translations$discovery$zh discovery = Translations$discovery$zh.internal(_root);
 	late final Translations$search$zh search = Translations$search$zh.internal(_root);
 	late final Translations$room$zh room = Translations$room$zh.internal(_root);
 	late final Translations$areas$zh areas = Translations$areas$zh.internal(_root);
@@ -2963,6 +2964,24 @@ class Translations$multiview$zh {
 	String get noPick => '还没有关注或历史房间';
 }
 
+// Path: discovery
+class Translations$discovery$zh {
+	Translations$discovery$zh.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh: '当前站点: {site: String}'
+	String currentSite({required String site}) => '当前站点: ${site}';
+
+	/// zh: '选择站点'
+	String get pickSite => '选择站点';
+
+	/// zh: '搜索站点'
+	String get searchSite => '搜索站点';
+}
+
 // Path: search
 class Translations$search$zh {
 	Translations$search$zh.internal(this._root);
@@ -3447,6 +3466,24 @@ class Translations$areas$zh {
 
 	/// zh: '已取消关注「{name: String}」'
 	String unfollowDone({required String name}) => '已取消关注「${name}」';
+
+	/// zh: '我的收藏'
+	String get myFollows => '我的收藏';
+
+	/// zh: '热门分类'
+	String get hotGroups => '热门分类';
+
+	/// zh: '已连接: {site: String}'
+	String connected({required String site}) => '已连接: ${site}';
+
+	/// zh: '{count} 个分区'
+	String areaCount({required Object count}) => '${count} 个分区';
+
+	/// zh: '{count} 个'
+	String followAreaCount({required Object count}) => '${count} 个';
+
+	/// zh: '这个站点还没有关注的分区'
+	String get noFollowsInSite => '这个站点还没有关注的分区';
 }
 
 // Path: popular
@@ -5457,6 +5494,9 @@ extension on Translations {
 			'multiview.audioFocus' => '正在播放声音',
 			'multiview.removeCell' => '移除格子',
 			'multiview.noPick' => '还没有关注或历史房间',
+			'discovery.currentSite' => ({required String site}) => '当前站点: ${site}',
+			'discovery.pickSite' => '选择站点',
+			'discovery.searchSite' => '搜索站点',
 			'search.hint' => '输入关键词搜索房间',
 			'search.rooms' => '房间',
 			'search.anchors' => '主播',
@@ -5587,11 +5627,11 @@ extension on Translations {
 			'room.blockWordDesc' => '输入一个词，含这个词的弹幕都不再显示',
 			'room.keywordBlocked' => '关键词已加入弹幕屏蔽列表',
 			'room.userLevel' => ({required Object level}) => '等级 ${level}',
+			_ => null,
+		} ?? switch (path) {
 			'room.blockKeywordTitle' => '屏蔽弹幕关键词',
 			'room.block' => '屏蔽',
 			'room.portraitFullscreenRestoreHint' => '已进入竖屏全屏 · 上滑恢复弹幕栏',
-			_ => null,
-		} ?? switch (path) {
 			'room.gift' => '送礼物',
 			'room.sentGift' => '送出',
 			'room.autoReconnecting' => ({required int count}) => '正在重连（第 ${count} 次）',
@@ -5612,6 +5652,12 @@ extension on Translations {
 			'areas.followEmptyHint' => '点进一个分区，再用右上角的按钮关注它。',
 			'areas.followDone' => ({required String name}) => '已关注「${name}」',
 			'areas.unfollowDone' => ({required String name}) => '已取消关注「${name}」',
+			'areas.myFollows' => '我的收藏',
+			'areas.hotGroups' => '热门分类',
+			'areas.connected' => ({required String site}) => '已连接: ${site}',
+			'areas.areaCount' => ({required Object count}) => '${count} 个分区',
+			'areas.followAreaCount' => ({required Object count}) => '${count} 个',
+			'areas.noFollowsInSite' => '这个站点还没有关注的分区',
 			'popular.allPlatforms' => '全部平台',
 			'popular.allPlatformsHint' => '点按切换平台；平台显示设置可隐藏或排序。',
 			'popular.noPlatforms' => '没有可显示的平台',
