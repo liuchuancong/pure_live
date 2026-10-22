@@ -31,9 +31,9 @@ import 'package:pure_uikit/pure_uikit.dart';
 /// ⌄ at their end that opens "all platforms" in a panel (a bottom sheet on
 /// a phone, a right panel from the rail width up).
 ///
-/// A tab loads once it settles (80 ms) and the next platform is fetched
-/// 700 ms after this one shows its rooms; an empty platform list says where
-/// to choose them. The feed itself is the workspace's infinite grid.
+/// A tab loads only once it settles (80 ms), and only the platform on
+/// screen loads; an empty platform list says where to choose them. The feed
+/// itself is the workspace's infinite grid.
 final class PopularPage extends ConsumerStatefulWidget {
   /// The popular page.
   const new({super.key});
@@ -50,13 +50,11 @@ final class _PopularPageState extends ConsumerState<PopularPage> {
   bool _appliedPreferred = false;
   final Set<String> _shouldLoad = {};
   Timer? _settle;
-  Timer? _warm;
   String? _currentId;
 
   @override
   void dispose() {
     _settle?.cancel();
-    _warm?.cancel();
     super.dispose();
   }
 
@@ -64,24 +62,10 @@ final class _PopularPageState extends ConsumerState<PopularPage> {
     setState(() => _selected = index);
     final id = sites[index].manifest.id;
     _settle?.cancel();
-    _warm?.cancel();
     _settle = Timer(const Duration(milliseconds: 80), () {
       if (!mounted) return;
       setState(() => _shouldLoad.add(id));
       _currentId = id;
-    });
-  }
-
-  void _firstContent(String id, List<LiveSite> sites) {
-    if (!mounted || _currentId != id) return;
-    final index = sites.indexWhere((site) => site.manifest.id == id);
-    if (index < 0 || sites.length < 2) return;
-    // Fetch the next platform while the user looks at this one (3.x).
-    _warm?.cancel();
-    _warm = Timer(const Duration(milliseconds: 700), () {
-      if (!mounted || _currentId != id) return;
-      final next = index + 1 < sites.length ? index + 1 : index - 1;
-      setState(() => _shouldLoad.add(sites[next].manifest.id));
     });
   }
 
@@ -159,7 +143,6 @@ final class _PopularPageState extends ConsumerState<PopularPage> {
                     site: visible[i],
                     shouldLoad: _shouldLoad.contains(visible[i].manifest.id),
                     selected: i == index,
-                    onFirstContent: () => _firstContent(visible[i].manifest.id, visible),
                   ),
               ],
             ),
@@ -170,31 +153,20 @@ final class _PopularPageState extends ConsumerState<PopularPage> {
 /// One platform's recommend feed: an infinite grid over the discovery
 /// capability, kept alive across tab switches.
 ///
-/// The feed loads when the page says it may — when its tab settles or when
-/// the previous platform pre-warmed it — and reports its first content so
-/// the page can schedule the next pre-warm (the reference's 80 ms / 700 ms
-/// rhythm).
+/// The feed loads when the page says it may — when its tab settles as the
+/// selected one; a tab the page has not settled on never fetches.
 final class _SiteFeed extends ConsumerStatefulWidget {
   /// A feed for [site].
-  const new({
-    required this.site,
-    required this.shouldLoad,
-    required this.selected,
-    required this.onFirstContent,
-    super.key,
-  });
+  const new({required this.site, required this.shouldLoad, required this.selected, super.key});
 
   final LiveSite site;
 
-  /// Whether the page has settled on (or pre-warmed) this platform.
+  /// Whether the page has settled on this platform as the selected one.
   final bool shouldLoad;
 
   /// Whether this platform's tab is the one on screen — its paged mode owns
   /// the keyboard focus that ← → land on.
   final bool selected;
-
-  /// Called once, when the first rooms (or the empty/error answer) show.
-  final VoidCallback onFirstContent;
 
   @override
   ConsumerState<_SiteFeed> createState() => _SiteFeedState();
@@ -205,7 +177,6 @@ final class _SiteFeedState extends ConsumerState<_SiteFeed>
   late final InfiniteController<LiveRoom> _controller = InfiniteController(loader: _load);
   late final ScrollController _scroll = ScrollController()..addListener(_onScroll);
   bool _started = false;
-  bool _reported = false;
   bool _active = true;
 
   /// The shown desktop page and the pager's per-page pick (the reference's
@@ -265,10 +236,6 @@ final class _SiteFeedState extends ConsumerState<_SiteFeed>
   void _onState(InfiniteState<LiveRoom> state) {
     if (mounted) {
       setState(() {});
-    }
-    if (!_reported && (state.items.isNotEmpty || state.error != null || (!state.isRefreshing && !state.isUnloaded))) {
-      _reported = true;
-      widget.onFirstContent();
     }
     if (state.items.isEmpty) {
       return;

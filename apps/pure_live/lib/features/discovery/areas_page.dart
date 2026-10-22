@@ -163,8 +163,8 @@ final class _PlatformAreas extends ConsumerStatefulWidget {
 
   final LiveSite site;
 
-  /// Whether this catalogue's tab is the one on screen; hidden tabs skip
-  /// their refresh ticks — the popular page's `_SiteFeed` semantics.
+  /// Whether this catalogue's tab is the one on screen; a hidden tab neither
+  /// fetches nor ticks — the popular page's `_SiteFeed` semantics.
   final bool active;
 
   @override
@@ -175,6 +175,7 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas>
     with AutomaticKeepAliveClientMixin, FeedAutoRefresh<_PlatformAreas> {
   List<LiveArea>? _areas;
   Object? _error;
+  bool _started = false;
   final ScrollController _scroll = ScrollController();
 
   /// The selected parent category, as the reference's category tab index:
@@ -207,16 +208,29 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas>
   @override
   void initState() {
     super.initState();
-    unawaited(_load());
+    _maybeLoad();
   }
 
   @override
   void didUpdateWidget(_PlatformAreas oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.active && !oldWidget.active) {
+      _maybeLoad();
       // An unattached node ignores the request, which is right off paging.
       _pagerFocus.requestFocus();
     }
+  }
+
+  /// A catalogue fetches when its platform first becomes the selected tab —
+  /// the popular page's `shouldLoad`: the `IndexedStack` builds every tab at
+  /// once, so an ungated first load would ask every site for its catalogue
+  /// in the same frame.
+  void _maybeLoad() {
+    if (_started || !widget.active) {
+      return;
+    }
+    _started = true;
+    unawaited(_load());
   }
 
   @override
