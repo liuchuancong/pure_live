@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/kick/api/kick_endpoints.dart';
+import 'package:live_sites/src/platforms/kick/kick_manifest.dart';
 import 'package:live_sites/src/platforms/kick/kick_site.dart';
 import 'package:live_sites/src/platforms/kick/parsers/kick_failure.dart';
 import 'package:live_sites/src/platforms/kick/parsers/kick_room_parser.dart';
@@ -39,9 +40,9 @@ final class KickAreaProvider implements LiveAreaProvider {
     try {
       return right(await _categories());
     } on KickFailure catch (failure) {
-      return left(failure.toLiveSiteError('kick'));
+      return left(failure.toLiveSiteError(kickSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kick', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kickSiteId, message: '$error', cause: error));
     }
   }
 
@@ -54,13 +55,15 @@ final class KickAreaProvider implements LiveAreaProvider {
     if (KickRoomParser.categoryNames.containsKey(slug) || _mainSlugs.contains(slug)) {
       return left(
         LiveSiteError.invalidArgument(
-          siteId: 'kick',
+          siteId: kickSiteId,
           message: 'area id "$areaId" is Kick\'s top-level category; only its subcategories list rooms',
         ),
       );
     }
     if (!KickEndpoints.subcategoryPattern.hasMatch(slug)) {
-      return left(LiveSiteError.notFound(siteId: 'kick', message: 'area id "$areaId" is not a Kick subcategory slug'));
+      return left(
+        LiveSiteError.notFound(siteId: kickSiteId, message: 'area id "$areaId" is not a Kick subcategory slug'),
+      );
     }
     try {
       final page = request.page < 1 ? 1 : request.page;
@@ -78,9 +81,9 @@ final class KickAreaProvider implements LiveAreaProvider {
       );
       return right(LivePage(items: result.rooms, hasMore: result.hasMore));
     } on KickFailure catch (failure) {
-      return left(failure.toLiveSiteError('kick'));
+      return left(failure.toLiveSiteError(kickSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kick', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kickSiteId, message: '$error', cause: error));
     }
   }
 

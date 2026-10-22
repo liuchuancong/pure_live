@@ -1,6 +1,7 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/showroom/api/showroom_endpoints.dart';
 import 'package:live_sites/src/platforms/showroom/parsers/showroom_failure.dart';
+import 'package:live_sites/src/platforms/showroom/showroom_manifest.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -29,7 +30,7 @@ final class ShowroomHttp {
     final LiveResponse response;
     try {
       response = await http.send(
-        LiveRequest.custom(method: 'GET', site: 'showroom', url: url, headers: ShowroomEndpoints.headers),
+        LiveRequest.custom(method: 'GET', site: showroomSiteId, url: url, headers: ShowroomEndpoints.headers),
       );
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;

@@ -4,6 +4,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/platforms/soop/parsers/soop_failure.dart';
+import 'package:live_sites/src/platforms/soop/soop_manifest.dart';
 import 'package:live_sites/src/platforms/soop/soop_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -32,9 +33,9 @@ final class SoopPlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.qualitiesOf(roomId));
     } on SoopFailure catch (failure) {
-      return left(failure.toLiveSiteError('soop'));
+      return left(failure.toLiveSiteError(soopSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'soop', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: soopSiteId, message: '$error', cause: error));
     }
   }
 
@@ -43,9 +44,9 @@ final class SoopPlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.linesOf(roomId, quality: quality));
     } on SoopFailure catch (failure) {
-      return left(failure.toLiveSiteError('soop'));
+      return left(failure.toLiveSiteError(soopSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'soop', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: soopSiteId, message: '$error', cause: error));
     }
   }
 }

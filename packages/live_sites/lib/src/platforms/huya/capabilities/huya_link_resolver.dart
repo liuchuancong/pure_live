@@ -1,6 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
+import 'package:live_sites/src/platforms/huya/huya_manifest.dart';
 import 'package:live_sites/src/platforms/huya/huya_site.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_failure.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_room_parser.dart';
@@ -24,11 +25,11 @@ final class HuyaLinkResolver implements LiveLinkResolver {
   Future<Either<LiveSiteError, Uri>> resolve(Uri uri) async {
     final host = uri.host.toLowerCase();
     if (host != 'huya.com' && !host.endsWith('.huya.com')) {
-      return left(LiveSiteError.unsupported(siteId: 'huya', message: 'not a huya link: $uri'));
+      return left(LiveSiteError.unsupported(siteId: huyaSiteId, message: 'not a huya link: $uri'));
     }
     final first = uri.pathSegments.where((segment) => segment.isNotEmpty).firstOrNull;
     if (first == null) {
-      return left(LiveSiteError.notFound(siteId: 'huya', message: 'no room in huya link: $uri'));
+      return left(LiveSiteError.notFound(siteId: huyaSiteId, message: 'no room in huya link: $uri'));
     }
     // A numeric path is already canonical; `profileRoom` refuses a letter
     // alias, so the alias page resolves it to a number.
@@ -36,19 +37,19 @@ final class HuyaLinkResolver implements LiveLinkResolver {
     if (numeric != null) return right(Uri.https('www.huya.com', '/$numeric'));
     final alias = HuyaRoomParser.aliasAt(uri);
     if (alias == null) {
-      return left(LiveSiteError.notFound(siteId: 'huya', message: 'no room in huya link: $uri'));
+      return left(LiveSiteError.notFound(siteId: huyaSiteId, message: 'no room in huya link: $uri'));
     }
     try {
       final rid = await site.ridFor(alias);
       if (rid == null) {
-        return left(LiveSiteError.notFound(siteId: 'huya', message: 'huya link resolves to no room: $alias'));
+        return left(LiveSiteError.notFound(siteId: huyaSiteId, message: 'huya link resolves to no room: $alias'));
       }
       site.rememberRid(alias, rid);
       return right(Uri.https('www.huya.com', '/$rid'));
     } on HuyaFailure catch (failure) {
-      return left(failure.toLiveSiteError('huya'));
+      return left(failure.toLiveSiteError(huyaSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'huya', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: huyaSiteId, message: '$error', cause: error));
     }
   }
 }

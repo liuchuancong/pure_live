@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/enums/live_search_target.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
+import 'package:live_sites/src/platforms/kugoulive/kugoulive_manifest.dart';
 import 'package:live_sites/src/platforms/kugoulive/kugoulive_site.dart';
 import 'package:live_sites/src/platforms/kugoulive/parsers/kugoulive_failure.dart';
 
@@ -33,7 +34,10 @@ final class KugouliveSearchProvider implements LiveSearchProvider {
     if (!supportedTargets.contains(request.target)) {
       return Future.value(
         left(
-          LiveSiteError.unsupported(siteId: 'kugoulive', message: 'search target ${request.target.name} not supported'),
+          LiveSiteError.unsupported(
+            siteId: kugouliveSiteId,
+            message: 'search target ${request.target.name} not supported',
+          ),
         ),
       );
     }
@@ -47,9 +51,9 @@ final class KugouliveSearchProvider implements LiveSearchProvider {
     try {
       return right(await work());
     } on KugouliveFailure catch (failure) {
-      return left(failure.toLiveSiteError('kugoulive'));
+      return left(failure.toLiveSiteError(kugouliveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kugoulive', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kugouliveSiteId, message: '$error', cause: error));
     }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/api/xiaohongshu_endpoints.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/parsers/xiaohongshu_failure.dart';
+import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_manifest.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -35,7 +36,7 @@ final class XiaohongshuHttp {
       response = await http.send(
         LiveRequest.custom(
           method: 'GET',
-          site: 'xiaohongshu',
+          site: xiaohongshuSiteId,
           url: url,
           headers: XiaohongshuEndpoints.headers,
           cancelToken: cancel,

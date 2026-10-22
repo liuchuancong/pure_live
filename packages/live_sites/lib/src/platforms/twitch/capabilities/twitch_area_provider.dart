@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/twitch/parsers/twitch_failure.dart';
+import 'package:live_sites/src/platforms/twitch/twitch_manifest.dart';
 import 'package:live_sites/src/platforms/twitch/twitch_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -31,9 +32,9 @@ final class TwitchAreaProvider implements LiveAreaProvider {
     try {
       return right(await site.categories());
     } on TwitchFailure catch (failure) {
-      return left(failure.toLiveSiteError('twitch'));
+      return left(failure.toLiveSiteError(twitchSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'twitch', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: twitchSiteId, message: '$error', cause: error));
     }
   }
 
@@ -46,9 +47,9 @@ final class TwitchAreaProvider implements LiveAreaProvider {
       final result = await site.areaRooms(site.slugFor(areaId), request.page, request.pageSize);
       return right(LivePage(items: result.rooms, hasMore: result.hasMore));
     } on TwitchFailure catch (failure) {
-      return left(failure.toLiveSiteError('twitch'));
+      return left(failure.toLiveSiteError(twitchSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'twitch', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: twitchSiteId, message: '$error', cause: error));
     }
   }
 }

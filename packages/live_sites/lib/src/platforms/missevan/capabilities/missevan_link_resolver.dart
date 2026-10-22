@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/missevan/api/missevan_endpoints.dart';
+import 'package:live_sites/src/platforms/missevan/missevan_manifest.dart';
 import 'package:live_sites/src/platforms/missevan/missevan_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -29,8 +30,8 @@ final class MissevanLinkResolver implements LiveLinkResolver {
     final ours = host == 'missevan.com' || host.endsWith('.missevan.com');
     return left(
       ours
-          ? LiveSiteError.notFound(siteId: 'missevan', message: '"$uri" names no room')
-          : LiveSiteError.unsupported(siteId: 'missevan', message: '"$uri" is not a Missevan link'),
+          ? LiveSiteError.notFound(siteId: missevanSiteId, message: '"$uri" names no room')
+          : LiveSiteError.unsupported(siteId: missevanSiteId, message: '"$uri" is not a Missevan link'),
     );
   }
 }

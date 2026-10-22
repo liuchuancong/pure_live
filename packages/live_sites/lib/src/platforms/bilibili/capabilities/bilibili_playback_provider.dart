@@ -4,6 +4,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_endpoints.dart';
+import 'package:live_sites/src/platforms/bilibili/bilibili_manifest.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_site.dart';
 import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_failure.dart';
 import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_play_parser.dart';
@@ -33,9 +34,9 @@ final class BilibiliPlaybackProvider implements LivePlaybackProvider {
       final data = play.data;
       return right(data == null ? const [BilibiliPlayParser.carouselQuality] : BilibiliPlayParser.qualities(data));
     } on BilibiliFailure catch (failure) {
-      return left(failure.toLiveSiteError('bilibili'));
+      return left(failure.toLiveSiteError(bilibiliSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'bilibili', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: bilibiliSiteId, message: '$error', cause: error));
     }
   }
 
@@ -61,9 +62,9 @@ final class BilibiliPlaybackProvider implements LivePlaybackProvider {
       }
       return right(lines);
     } on BilibiliFailure catch (failure) {
-      return left(failure.toLiveSiteError('bilibili'));
+      return left(failure.toLiveSiteError(bilibiliSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'bilibili', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: bilibiliSiteId, message: '$error', cause: error));
     }
   }
 

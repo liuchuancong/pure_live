@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/fc2live/api/fc2live_endpoints.dart';
+import 'package:live_sites/src/platforms/fc2live/fc2live_manifest.dart';
 import 'package:live_sites/src/platforms/fc2live/parsers/fc2live_failure.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -39,7 +40,7 @@ final class Fc2LiveHttp {
     final form = LiveRequest.form(
       url,
       fields: fields,
-      site: 'fc2live',
+      site: fc2LiveSiteId,
       headers: const {...Fc2LiveEndpoints.headers, 'content-type': Fc2LiveEndpoints.formContentType},
       cancelToken: cancel,
       timeout: timeout ?? Fc2LiveEndpoints.requestTimeout,

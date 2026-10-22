@@ -4,6 +4,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/platforms/douyu/api/douyu_endpoints.dart';
+import 'package:live_sites/src/platforms/douyu/douyu_manifest.dart';
 import 'package:live_sites/src/platforms/douyu/douyu_site.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_failure.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_play_parser.dart';
@@ -41,9 +42,9 @@ final class DouyuPlaybackProvider implements LivePlaybackProvider {
       }
       return right(DouyuPlayParser.qualities(data));
     } on DouyuFailure catch (failure) {
-      return left(failure.toLiveSiteError('douyu'));
+      return left(failure.toLiveSiteError(douyuSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'douyu', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: douyuSiteId, message: '$error', cause: error));
     }
   }
 
@@ -72,9 +73,9 @@ final class DouyuPlaybackProvider implements LivePlaybackProvider {
       }
       return right(_linesFor(answers, requestedRate: rate));
     } on DouyuFailure catch (failure) {
-      return left(failure.toLiveSiteError('douyu'));
+      return left(failure.toLiveSiteError(douyuSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'douyu', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: douyuSiteId, message: '$error', cause: error));
     }
   }
 

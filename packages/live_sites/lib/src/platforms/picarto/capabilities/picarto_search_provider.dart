@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
 import 'package:live_sites/src/platforms/picarto/parsers/picarto_failure.dart';
+import 'package:live_sites/src/platforms/picarto/picarto_manifest.dart';
 import 'package:live_sites/src/platforms/picarto/picarto_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -32,7 +33,7 @@ final class PicartoSearchProvider implements LiveSearchProvider {
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
     if (!supportedTargets.contains(request.target)) {
       return left(
-        LiveSiteError.unsupported(siteId: 'picarto', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(siteId: picartoSiteId, message: 'search target ${request.target.name} not supported'),
       );
     }
     try {
@@ -41,9 +42,9 @@ final class PicartoSearchProvider implements LiveSearchProvider {
         LivePage(items: [for (final room in page.rooms) LiveSearchResult.room(room)], hasMore: page.hasMore),
       );
     } on PicartoFailure catch (failure) {
-      return left(failure.toLiveSiteError('picarto'));
+      return left(failure.toLiveSiteError(picartoSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'picarto', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: picartoSiteId, message: '$error', cause: error));
     }
   }
 }

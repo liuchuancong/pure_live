@@ -10,6 +10,7 @@ import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_endpoints.dart';
+import 'package:live_sites/src/platforms/bilibili/bilibili_manifest.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_site.dart';
 import 'package:live_sites/src/platforms/bilibili/danmaku/bilibili_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_failure.dart';
@@ -46,13 +47,13 @@ final class BilibiliDanmakuProvider implements LiveDanmakuProvider {
       }
       if (args.token.isEmpty) {
         return left(
-          LiveSiteError.contentUnavailable(siteId: 'bilibili', message: 'room $roomId hands out no danmaku token'),
+          LiveSiteError.contentUnavailable(siteId: bilibiliSiteId, message: 'room $roomId hands out no danmaku token'),
         );
       }
     } on BilibiliFailure catch (failure) {
-      return left(failure.toLiveSiteError('bilibili'));
+      return left(failure.toLiveSiteError(bilibiliSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'bilibili', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: bilibiliSiteId, message: '$error', cause: error));
     }
     final session = BilibiliDanmakuSession(args: args, gifts: site.giftCatalog, random: site.random);
     final failure = await session.connect();
@@ -151,7 +152,7 @@ final class BilibiliDanmakuSession implements LiveDanmakuSession {
     );
     _socket = socket;
     if (!await socket.start()) {
-      return LiveSiteError.network(siteId: 'bilibili', message: 'danmaku connect failed on $endpoint');
+      return LiveSiteError.network(siteId: bilibiliSiteId, message: 'danmaku connect failed on $endpoint');
     }
     _joined = false;
     _join = Timer(BilibiliDanmakuProtocol.joinTimeout, () {

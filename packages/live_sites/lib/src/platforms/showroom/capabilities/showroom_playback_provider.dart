@@ -4,6 +4,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/platforms/showroom/parsers/showroom_failure.dart';
+import 'package:live_sites/src/platforms/showroom/showroom_manifest.dart';
 import 'package:live_sites/src/platforms/showroom/showroom_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -31,9 +32,9 @@ final class ShowroomPlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.qualitiesOf(roomId));
     } on ShowroomFailure catch (failure) {
-      return left(failure.toLiveSiteError('showroom'));
+      return left(failure.toLiveSiteError(showroomSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'showroom', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: showroomSiteId, message: '$error', cause: error));
     }
   }
 
@@ -42,9 +43,9 @@ final class ShowroomPlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.linesOf(roomId, quality: quality));
     } on ShowroomFailure catch (failure) {
-      return left(failure.toLiveSiteError('showroom'));
+      return left(failure.toLiveSiteError(showroomSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'showroom', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: showroomSiteId, message: '$error', cause: error));
     }
   }
 }

@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/looklive/api/looklive_endpoints.dart';
+import 'package:live_sites/src/platforms/looklive/looklive_manifest.dart';
 import 'package:live_sites/src/platforms/looklive/looklive_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -27,8 +28,8 @@ final class LookliveLinkResolver implements LiveLinkResolver {
       final ours = uri.host.toLowerCase() == 'look.163.com' || uri.host.toLowerCase().endsWith('.look.163.com');
       return left(
         ours
-            ? LiveSiteError.notFound(siteId: 'looklive', message: '"$uri" names no room')
-            : LiveSiteError.unsupported(siteId: 'looklive', message: '"$uri" is not a LOOK Live link'),
+            ? LiveSiteError.notFound(siteId: lookliveSiteId, message: '"$uri" names no room')
+            : LiveSiteError.unsupported(siteId: lookliveSiteId, message: '"$uri" is not a LOOK Live link'),
       );
     }
     return right(Uri.parse(LookliveEndpoints.link(roomId)));

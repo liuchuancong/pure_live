@@ -10,6 +10,7 @@ import 'package:live_sites/src/models/message/live_message_color/live_message_co
 import 'package:live_sites/src/platforms/fc2live/api/fc2live_endpoints.dart';
 import 'package:live_sites/src/platforms/fc2live/danmaku/fc2live_control.dart';
 import 'package:live_sites/src/platforms/fc2live/danmaku/fc2live_danmaku_codec.dart';
+import 'package:live_sites/src/platforms/fc2live/fc2live_manifest.dart';
 import 'package:live_sites/src/platforms/fc2live/fc2live_site.dart';
 import 'package:live_sites/src/platforms/fc2live/parsers/fc2live_failure.dart';
 import 'package:live_sites/src/platforms/fc2live/parsers/fc2live_play_parser.dart';
@@ -138,9 +139,9 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
   /// the first handshake exactly like any later one.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) return const LiveSiteError.unsupported(siteId: 'fc2live', message: 'session is disposed');
+    if (_disposed) return const LiveSiteError.unsupported(siteId: fc2LiveSiteId, message: 'session is disposed');
     if (!Fc2LiveEndpoints.isChannelId(args.channelId)) {
-      return const LiveSiteError.notFound(siteId: 'fc2live', message: 'not an FC2 channel');
+      return const LiveSiteError.notFound(siteId: fc2LiveSiteId, message: 'not an FC2 channel');
     }
     final Fc2LiveGrant grant;
     try {
@@ -149,7 +150,7 @@ final class Fc2LiveDanmakuSession implements LiveDanmakuSession {
       // Torn down while asking: the closer owns the goodbye.
       return null;
     } on Fc2LiveFailure catch (failure) {
-      if (!failure.isTransient) return failure.toLiveSiteError('fc2live');
+      if (!failure.isTransient) return failure.toLiveSiteError(fc2LiveSiteId);
       _scheduleRetry(failure.message);
       return null;
     }

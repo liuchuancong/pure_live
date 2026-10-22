@@ -9,6 +9,7 @@ import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/platforms/kugoulive/danmaku/kugoulive_danmaku_codec.dart';
+import 'package:live_sites/src/platforms/kugoulive/kugoulive_manifest.dart';
 import 'package:live_sites/src/platforms/kugoulive/kugoulive_site.dart';
 import 'package:live_sites/src/platforms/kugoulive/parsers/kugoulive_failure.dart';
 import 'package:live_websocket/live_websocket.dart';
@@ -140,9 +141,9 @@ final class KugouliveDanmakuSession implements LiveDanmakuSession {
   /// session, and this returns null.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) return const LiveSiteError.unsupported(siteId: 'kugoulive', message: 'session is disposed');
+    if (_disposed) return const LiveSiteError.unsupported(siteId: kugouliveSiteId, message: 'session is disposed');
     if (KugouliveDanmakuCodec.checkedRoom(args.roomId) == null) {
-      return const LiveSiteError.notFound(siteId: 'kugoulive', message: 'not a Kugou Live room');
+      return const LiveSiteError.notFound(siteId: kugouliveSiteId, message: 'not a Kugou Live room');
     }
     _sid = KugouliveDanmakuCodec.uuid(_random);
     _deviceNo = KugouliveDanmakuCodec.uuid(_random);

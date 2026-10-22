@@ -1,6 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
+import 'package:live_sites/src/platforms/acfun/acfun_manifest.dart';
 import 'package:live_sites/src/platforms/acfun/acfun_site.dart';
 import 'package:live_sites/src/platforms/acfun/api/acfun_endpoints.dart';
 
@@ -32,8 +33,8 @@ final class AcfunLinkResolver implements LiveLinkResolver {
     final host = uri.host.toLowerCase();
     final owned = const {'live.acfun.cn', 'm.acfun.cn', 'www.acfun.cn', 'acfun.cn'}.contains(host);
     return owned
-        ? left(LiveSiteError.notFound(siteId: 'acfun', message: 'no author in acfun link: $uri'))
-        : left(LiveSiteError.unsupported(siteId: 'acfun', message: 'not an acfun link: $uri'));
+        ? left(LiveSiteError.notFound(siteId: acfunSiteId, message: 'no author in acfun link: $uri'))
+        : left(LiveSiteError.unsupported(siteId: acfunSiteId, message: 'not an acfun link: $uri'));
   }
 
   /// The author id a link names, or null when it names none.

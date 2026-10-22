@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/enums/live_restriction.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
+import 'package:live_sites/src/platforms/douyin/douyin_manifest.dart';
 import 'package:live_sites/src/platforms/douyin/douyin_site.dart';
 import 'package:live_sites/src/platforms/douyin/parsers/douyin_failure.dart';
 import 'package:live_sites/src/platforms/douyin/parsers/douyin_play_parser.dart';
@@ -33,9 +34,9 @@ final class DouyinPlaybackProvider implements LivePlaybackProvider {
       final fetched = await _streamed(roomId);
       return right(DouyinPlayParser.qualities(fetched.room.streamUrl));
     } on DouyinFailure catch (failure) {
-      return left(failure.toLiveSiteError('douyin'));
+      return left(failure.toLiveSiteError(douyinSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'douyin', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: douyinSiteId, message: '$error', cause: error));
     }
   }
 
@@ -55,9 +56,9 @@ final class DouyinPlaybackProvider implements LivePlaybackProvider {
       }
       return right(lines);
     } on DouyinFailure catch (failure) {
-      return left(failure.toLiveSiteError('douyin'));
+      return left(failure.toLiveSiteError(douyinSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'douyin', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: douyinSiteId, message: '$error', cause: error));
     }
   }
 

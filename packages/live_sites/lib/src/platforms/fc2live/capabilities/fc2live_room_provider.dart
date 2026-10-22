@@ -4,6 +4,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
+import 'package:live_sites/src/platforms/fc2live/fc2live_manifest.dart';
 import 'package:live_sites/src/platforms/fc2live/fc2live_site.dart';
 import 'package:live_sites/src/platforms/fc2live/parsers/fc2live_failure.dart';
 
@@ -30,9 +31,9 @@ final class Fc2LiveRoomProvider implements LiveRoomProvider {
     try {
       return right(await site.detail(roomId));
     } on Fc2LiveFailure catch (failure) {
-      return left(failure.toLiveSiteError('fc2live'));
+      return left(failure.toLiveSiteError(fc2LiveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'fc2live', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: fc2LiveSiteId, message: '$error', cause: error));
     }
   }
 
@@ -42,9 +43,9 @@ final class Fc2LiveRoomProvider implements LiveRoomProvider {
       final page = await site.listing(page: request.page, pageSize: request.pageSize);
       return right(LivePage(items: page.rooms, totalCount: page.totalCount, hasMore: page.hasMore));
     } on Fc2LiveFailure catch (failure) {
-      return left(failure.toLiveSiteError('fc2live'));
+      return left(failure.toLiveSiteError(fc2LiveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'fc2live', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: fc2LiveSiteId, message: '$error', cause: error));
     }
   }
 }

@@ -4,6 +4,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
+import 'package:live_sites/src/platforms/niconico/niconico_manifest.dart';
 import 'package:live_sites/src/platforms/niconico/niconico_site.dart';
 import 'package:live_sites/src/platforms/niconico/parsers/niconico_failure.dart';
 
@@ -28,9 +29,9 @@ final class NiconicoDiscoveryProvider implements LiveDiscoveryProvider {
       final result = await site.recent('common', request.page);
       return right(LivePage(items: result.rooms, hasMore: result.hasMore));
     } on NiconicoFailure catch (failure) {
-      return left(failure.toLiveSiteError('niconico'));
+      return left(failure.toLiveSiteError(niconicoSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'niconico', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: niconicoSiteId, message: '$error', cause: error));
     }
   }
 }

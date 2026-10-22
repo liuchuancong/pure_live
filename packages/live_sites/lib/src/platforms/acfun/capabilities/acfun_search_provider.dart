@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/enums/live_search_target.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
+import 'package:live_sites/src/platforms/acfun/acfun_manifest.dart';
 import 'package:live_sites/src/platforms/acfun/acfun_site.dart';
 import 'package:live_sites/src/platforms/acfun/parsers/acfun_failure.dart';
 
@@ -33,7 +34,7 @@ final class AcfunSearchProvider implements LiveSearchProvider {
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
     if (!supportedTargets.contains(request.target)) {
       return left(
-        LiveSiteError.unsupported(siteId: 'acfun', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(siteId: acfunSiteId, message: 'search target ${request.target.name} not supported'),
       );
     }
     if (request.query.trim().isEmpty) return right(const LivePage(items: []));
@@ -53,9 +54,9 @@ final class AcfunSearchProvider implements LiveSearchProvider {
         ),
       );
     } on AcfunFailure catch (failure) {
-      return left(failure.toLiveSiteError('acfun'));
+      return left(failure.toLiveSiteError(acfunSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'acfun', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: acfunSiteId, message: '$error', cause: error));
     }
   }
 }

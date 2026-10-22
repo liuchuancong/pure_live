@@ -1,4 +1,5 @@
 import 'package:live_net/live_net.dart';
+import 'package:live_sites/src/platforms/douyu/douyu_manifest.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_failure.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -19,7 +20,9 @@ final class DouyuHttp {
   /// parsers decide what 403/412/5xx mean for their endpoint.
   Future<({String text, int status})> get(Uri url, {Map<String, String> headers = const {}}) async {
     try {
-      final response = await http.send(LiveRequest.custom(method: 'GET', site: 'douyu', url: url, headers: headers));
+      final response = await http.send(
+        LiveRequest.custom(method: 'GET', site: douyuSiteId, url: url, headers: headers),
+      );
       return (text: response.text, status: response.statusCode);
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;
@@ -38,7 +41,7 @@ final class DouyuHttp {
       final response = await http.send(
         LiveRequest.custom(
           method: 'POST',
-          site: 'douyu',
+          site: douyuSiteId,
           url: url,
           body: body,
           contentType: 'application/x-www-form-urlencoded',
@@ -56,7 +59,7 @@ final class DouyuHttp {
   /// 3xx answer (an alias page to its rid page).
   Future<({String? location, String text, int status})> getRedirect(Uri url) async {
     try {
-      final response = await http.send(LiveRequest.custom(method: 'GET', site: 'douyu', url: url));
+      final response = await http.send(LiveRequest.custom(method: 'GET', site: douyuSiteId, url: url));
       return (location: response.headers['location'], text: response.text, status: response.statusCode);
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;
@@ -70,7 +73,9 @@ final class DouyuHttp {
   /// date holds a comma).
   Future<List<String>> passportSetCookies(Uri url, Map<String, String> headers) async {
     try {
-      final response = await http.send(LiveRequest.custom(method: 'GET', site: 'douyu', url: url, headers: headers));
+      final response = await http.send(
+        LiveRequest.custom(method: 'GET', site: douyuSiteId, url: url, headers: headers),
+      );
       return response.setCookies;
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;

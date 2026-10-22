@@ -1,6 +1,7 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/picarto/api/picarto_endpoints.dart';
 import 'package:live_sites/src/platforms/picarto/parsers/picarto_failure.dart';
+import 'package:live_sites/src/platforms/picarto/picarto_manifest.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -33,7 +34,7 @@ final class PicartoHttp {
     final LiveResponse response;
     try {
       response = await http.send(
-        LiveRequest.get(url, headers: PicartoEndpoints.headers, site: 'picarto', cancelToken: cancel),
+        LiveRequest.get(url, headers: PicartoEndpoints.headers, site: picartoSiteId, cancelToken: cancel),
       );
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;
@@ -57,7 +58,7 @@ final class PicartoHttp {
           url,
           body: body,
           headers: PicartoEndpoints.headers,
-          site: 'picarto',
+          site: picartoSiteId,
           timeout: timeout,
           cancelToken: cancel,
         ),

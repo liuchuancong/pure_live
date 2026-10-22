@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/youtube/parsers/youtube_failure.dart';
+import 'package:live_sites/src/platforms/youtube/youtube_manifest.dart';
 import 'package:live_sites/src/platforms/youtube/youtube_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -29,9 +30,9 @@ final class YoutubeRoomProvider implements LiveRoomProvider {
     try {
       return right(await site.detail(roomId));
     } on YouTubeFailure catch (failure) {
-      return left(failure.toLiveSiteError('youtube'));
+      return left(failure.toLiveSiteError(youtubeSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'youtube', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: youtubeSiteId, message: '$error', cause: error));
     }
   }
 
@@ -42,9 +43,9 @@ final class YoutubeRoomProvider implements LiveRoomProvider {
       final hub = await site.hub();
       return right(LivePage(items: hub.rooms, hasMore: false));
     } on YouTubeFailure catch (failure) {
-      return left(failure.toLiveSiteError('youtube'));
+      return left(failure.toLiveSiteError(youtubeSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'youtube', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: youtubeSiteId, message: '$error', cause: error));
     }
   }
 }

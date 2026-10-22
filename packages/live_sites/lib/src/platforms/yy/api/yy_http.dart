@@ -1,5 +1,6 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/yy/parsers/yy_failure.dart';
+import 'package:live_sites/src/platforms/yy/yy_manifest.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -26,7 +27,7 @@ final class YyHttp {
   /// GETs [url] with [headers].
   Future<YyResponse> get(Uri url, {Map<String, String> headers = const {}}) async {
     try {
-      final response = await http.send(LiveRequest.custom(method: 'GET', site: 'yy', url: url, headers: headers));
+      final response = await http.send(LiveRequest.custom(method: 'GET', site: yySiteId, url: url, headers: headers));
       return (text: response.text, status: response.statusCode);
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;
@@ -39,7 +40,7 @@ final class YyHttp {
   Future<YyResponse> postText(Uri url, {required String body, Map<String, String> headers = const {}}) async {
     try {
       final response = await http.send(
-        LiveRequest.custom(method: 'POST', site: 'yy', url: url, body: body, headers: headers),
+        LiveRequest.custom(method: 'POST', site: yySiteId, url: url, body: body, headers: headers),
       );
       return (text: response.text, status: response.statusCode);
     } on TransportFailure catch (failure) {

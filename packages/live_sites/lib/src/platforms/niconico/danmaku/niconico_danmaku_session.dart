@@ -12,6 +12,7 @@ import 'package:live_sites/src/platforms/niconico/api/niconico_endpoints.dart';
 import 'package:live_sites/src/platforms/niconico/api/niconico_http.dart';
 import 'package:live_sites/src/platforms/niconico/danmaku/niconico_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/niconico/danmaku/niconico_seat_session.dart';
+import 'package:live_sites/src/platforms/niconico/niconico_manifest.dart';
 import 'package:live_sites/src/platforms/niconico/niconico_site.dart';
 import 'package:live_sites/src/platforms/niconico/parsers/niconico_failure.dart';
 
@@ -32,12 +33,7 @@ final class NiconicoDanmakuProvider implements LiveDanmakuProvider {
 
   @override
   Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
-    final session = NiconicoDanmakuSession(
-      roomId: roomId,
-      http: site.http,
-      openSeat: site.openSeat,
-      now: site.now,
-    );
+    final session = NiconicoDanmakuSession(roomId: roomId, http: site.http, openSeat: site.openSeat, now: site.now);
     final failure = await session.connect();
     if (failure != null) {
       await session.dispose();
@@ -85,12 +81,8 @@ final class _Refused implements Exception {
 final class NiconicoDanmakuSession implements LiveDanmakuSession {
   /// A session for the room [roomId] over [http]. [openSeat] boots a watching
   /// seat (the site's [NiconicoSite.openSeat]); [now] times the windows' waits.
-  NiconicoDanmakuSession({
-    required this.roomId,
-    required this.http,
-    required this.openSeat,
-    DateTime Function()? now,
-  }) : _now = now ?? DateTime.now;
+  NiconicoDanmakuSession({required this.roomId, required this.http, required this.openSeat, DateTime Function()? now})
+    : _now = now ?? DateTime.now;
 
   /// The room whose seat and comment server this session follows.
   final String roomId;
@@ -160,7 +152,7 @@ final class NiconicoDanmakuSession implements LiveDanmakuSession {
   @override
   Future<LiveSiteError?> connect() async {
     if (_disposed) {
-      return const LiveSiteError.unsupported(siteId: 'niconico', message: 'session is disposed');
+      return const LiveSiteError.unsupported(siteId: niconicoSiteId, message: 'session is disposed');
     }
     if (_running) return null;
     final generation = ++_generation;
@@ -458,7 +450,7 @@ final class NiconicoDanmakuSession implements LiveDanmakuSession {
     _running = false;
     final first = _first;
     if (first != null && !first.isCompleted) {
-      first.complete(const LiveSiteError.network(siteId: 'niconico', message: 'comment server failed'));
+      first.complete(const LiveSiteError.network(siteId: niconicoSiteId, message: 'comment server failed'));
     }
     _events.add(
       LiveMessage.normalized(type: LiveMessageType.system, text: '弹幕连接已中断 ($reason)', color: LiveMessageColor.white),

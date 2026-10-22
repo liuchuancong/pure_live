@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_endpoints.dart';
+import 'package:live_sites/src/platforms/bilibili/bilibili_manifest.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_site.dart';
 import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_failure.dart';
 import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_room_parser.dart';
@@ -34,9 +35,9 @@ final class BilibiliDiscoveryProvider implements LiveDiscoveryProvider {
     try {
       return right(await page(request));
     } on BilibiliFailure catch (failure) {
-      return left(failure.toLiveSiteError('bilibili'));
+      return left(failure.toLiveSiteError(bilibiliSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'bilibili', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: bilibiliSiteId, message: '$error', cause: error));
     }
   }
 

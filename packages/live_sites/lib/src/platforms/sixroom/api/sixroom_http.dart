@@ -1,6 +1,7 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/sixroom/api/sixroom_endpoints.dart';
 import 'package:live_sites/src/platforms/sixroom/parsers/sixroom_failure.dart';
+import 'package:live_sites/src/platforms/sixroom/sixroom_manifest.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -66,7 +67,7 @@ final class SixroomHttp {
       response = await http.send(
         LiveRequest.custom(
           method: method,
-          site: 'sixroom',
+          site: sixroomSiteId,
           url: url,
           headers: headers,
           body: body,

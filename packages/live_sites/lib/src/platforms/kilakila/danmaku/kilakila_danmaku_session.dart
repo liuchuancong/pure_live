@@ -8,6 +8,7 @@ import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/platforms/kilakila/api/kilakila_endpoints.dart';
 import 'package:live_sites/src/platforms/kilakila/danmaku/kilakila_danmaku_codec.dart';
+import 'package:live_sites/src/platforms/kilakila/kilakila_manifest.dart';
 import 'package:live_sites/src/platforms/kilakila/kilakila_site.dart';
 import 'package:live_sites/src/platforms/kilakila/parsers/kilakila_failure.dart';
 import 'package:live_websocket/live_websocket.dart';
@@ -121,9 +122,9 @@ final class KilakilaDanmakuSession implements LiveDanmakuSession {
   /// session, and this returns null.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) return const LiveSiteError.unsupported(siteId: 'kilakila', message: 'session is disposed');
+    if (_disposed) return const LiveSiteError.unsupported(siteId: kilakilaSiteId, message: 'session is disposed');
     if (!KilakilaEndpoints.isId(args.roomId)) {
-      return const LiveSiteError.notFound(siteId: 'kilakila', message: 'not a KilaKila broadcast');
+      return const LiveSiteError.notFound(siteId: kilakilaSiteId, message: 'not a KilaKila broadcast');
     }
     unawaited(_handshake());
     return null;

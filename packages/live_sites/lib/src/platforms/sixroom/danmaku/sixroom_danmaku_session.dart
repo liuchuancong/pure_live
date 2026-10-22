@@ -10,6 +10,7 @@ import 'package:live_sites/src/models/message/live_message_color/live_message_co
 import 'package:live_sites/src/platforms/sixroom/danmaku/sixroom_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/sixroom/parsers/sixroom_failure.dart';
 import 'package:live_sites/src/platforms/sixroom/parsers/sixroom_room_parser.dart';
+import 'package:live_sites/src/platforms/sixroom/sixroom_manifest.dart';
 import 'package:live_sites/src/platforms/sixroom/sixroom_site.dart';
 import 'package:live_websocket/live_websocket.dart';
 
@@ -37,13 +38,13 @@ final class SixroomDanmakuProvider implements LiveDanmakuProvider {
     try {
       final handle = (await site.detail(roomId)).runtime.danmakuHandle;
       if (handle is! SixroomDanmakuArgs || SixroomDanmakuCodec.checked(handle) == null) {
-        return left(LiveSiteError.contentUnavailable(siteId: 'sixroom', message: 'room $roomId opens no chat'));
+        return left(LiveSiteError.contentUnavailable(siteId: sixroomSiteId, message: 'room $roomId opens no chat'));
       }
       args = handle;
     } on SixroomFailure catch (failure) {
-      return left(failure.toLiveSiteError('sixroom'));
+      return left(failure.toLiveSiteError(sixroomSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'sixroom', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: sixroomSiteId, message: '$error', cause: error));
     }
     final session = SixroomDanmakuSession(args: args, site: site);
     final failure = await session.connect();
@@ -130,9 +131,9 @@ final class SixroomDanmakuSession implements LiveDanmakuSession {
   /// this returns null.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) return const LiveSiteError.unsupported(siteId: 'sixroom', message: 'session is disposed');
+    if (_disposed) return const LiveSiteError.unsupported(siteId: sixroomSiteId, message: 'session is disposed');
     if (SixroomDanmakuCodec.checked(args) == null) {
-      return const LiveSiteError.notFound(siteId: 'sixroom', message: 'not a Six Rooms chat room');
+      return const LiveSiteError.notFound(siteId: sixroomSiteId, message: 'not a Six Rooms chat room');
     }
     unawaited(_handshake());
     return null;

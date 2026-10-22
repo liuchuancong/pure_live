@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/niconico/api/niconico_endpoints.dart';
+import 'package:live_sites/src/platforms/niconico/niconico_manifest.dart';
 import 'package:live_sites/src/platforms/niconico/niconico_site.dart';
 import 'package:live_sites/src/platforms/niconico/parsers/niconico_failure.dart';
 import 'package:live_sites/src/platforms/niconico/parsers/niconico_room_parser.dart';
@@ -38,14 +39,14 @@ final class NiconicoLinkResolver implements LiveLinkResolver {
   Future<Either<LiveSiteError, Uri>> resolve(Uri uri) async {
     final host = uri.host.toLowerCase();
     if (!_hosts.contains(host)) {
-      return left(LiveSiteError.unsupported(siteId: 'niconico', message: 'not a niconico link: $uri'));
+      return left(LiveSiteError.unsupported(siteId: niconicoSiteId, message: 'not a niconico link: $uri'));
     }
     final text = '$uri';
     final broadcaster = NiconicoRoomParser.broadcasterRoomIdFromUrl(text);
     if (broadcaster != null) return right(NiconicoEndpoints.watchPage(broadcaster));
     final program = NiconicoRoomParser.programIdFromUrl(text);
     if (program == null) {
-      return left(LiveSiteError.notFound(siteId: 'niconico', message: 'no room in niconico link: $uri'));
+      return left(LiveSiteError.notFound(siteId: niconicoSiteId, message: 'no room in niconico link: $uri'));
     }
     try {
       final watch = await site.watch(program);

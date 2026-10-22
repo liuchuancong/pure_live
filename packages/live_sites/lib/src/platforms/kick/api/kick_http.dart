@@ -1,4 +1,5 @@
 import 'package:live_net/live_net.dart';
+import 'package:live_sites/src/platforms/kick/kick_manifest.dart';
 import 'package:live_sites/src/platforms/kick/parsers/kick_failure.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -22,7 +23,7 @@ final class KickHttp {
   /// GETs [url] with [headers].
   Future<KickResponse> get(Uri url, {Map<String, String> headers = const {}}) async {
     try {
-      final response = await http.send(LiveRequest.custom(method: 'GET', site: 'kick', url: url, headers: headers));
+      final response = await http.send(LiveRequest.custom(method: 'GET', site: kickSiteId, url: url, headers: headers));
       return (text: response.text, status: response.statusCode);
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;

@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/enums/live_search_target.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
+import 'package:live_sites/src/platforms/bigo/bigo_manifest.dart';
 import 'package:live_sites/src/platforms/bigo/bigo_site.dart';
 import 'package:live_sites/src/platforms/bigo/parsers/bigo_failure.dart';
 import 'package:live_sites/src/platforms/bigo/parsers/bigo_room_parser.dart';
@@ -35,7 +36,7 @@ final class BigoSearchProvider implements LiveSearchProvider {
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
     if (!supportedTargets.contains(request.target)) {
       return left(
-        LiveSiteError.unsupported(siteId: 'bigo', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(siteId: bigoSiteId, message: 'search target ${request.target.name} not supported'),
       );
     }
     if (request.query.trim().isEmpty) return right(const LivePage(items: []));
@@ -44,9 +45,9 @@ final class BigoSearchProvider implements LiveSearchProvider {
       final page = BigoRoomParser.slice(rooms, page: request.page, pageSize: request.pageSize);
       return right(LivePage(items: [for (final room in page) LiveSearchResult.room(room)]));
     } on BigoFailure catch (failure) {
-      return left(failure.toLiveSiteError('bigo'));
+      return left(failure.toLiveSiteError(bigoSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'bigo', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: bigoSiteId, message: '$error', cause: error));
     }
   }
 }

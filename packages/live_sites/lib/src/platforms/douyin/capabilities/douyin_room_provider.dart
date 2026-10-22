@@ -8,6 +8,7 @@ import 'package:live_sites/src/models/page/live_page_request/live_page_request.d
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/models/room/room_runtime/room_runtime.dart';
 import 'package:live_sites/src/platforms/douyin/api/douyin_endpoints.dart';
+import 'package:live_sites/src/platforms/douyin/douyin_manifest.dart';
 import 'package:live_sites/src/platforms/douyin/douyin_site.dart';
 import 'package:live_sites/src/platforms/douyin/parsers/douyin_failure.dart';
 import 'package:live_sites/src/platforms/douyin/parsers/douyin_room_parser.dart';
@@ -34,9 +35,9 @@ final class DouyinRoomProvider implements LiveRoomProvider {
     try {
       return right(await detail(roomId));
     } on DouyinFailure catch (failure) {
-      return left(failure.toLiveSiteError('douyin'));
+      return left(failure.toLiveSiteError(douyinSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'douyin', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: douyinSiteId, message: '$error', cause: error));
     }
   }
 
@@ -48,9 +49,9 @@ final class DouyinRoomProvider implements LiveRoomProvider {
       final rooms = DouyinRoomParser.feed(response.text, status: response.status, headers: response.headers);
       return right(LivePage(items: rooms, hasMore: rooms.isNotEmpty));
     } on DouyinFailure catch (failure) {
-      return left(failure.toLiveSiteError('douyin'));
+      return left(failure.toLiveSiteError(douyinSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'douyin', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: douyinSiteId, message: '$error', cause: error));
     }
   }
 

@@ -1,5 +1,6 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/jdlive/api/jdlive_endpoints.dart';
+import 'package:live_sites/src/platforms/jdlive/jdlive_manifest.dart';
 import 'package:live_sites/src/platforms/jdlive/parsers/jdlive_failure.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -33,7 +34,7 @@ final class JdliveHttp {
       response = await http.send(
         LiveRequest.custom(
           method: 'GET',
-          site: 'jdlive',
+          site: jdliveSiteId,
           url: url,
           headers: headers ?? JdliveEndpoints.apiHeaders,
           cancelToken: cancel,
@@ -57,7 +58,7 @@ final class JdliveHttp {
       response = await http.send(
         LiveRequest.custom(
           method: 'POST',
-          site: 'jdlive',
+          site: jdliveSiteId,
           url: url,
           headers: const {...JdliveEndpoints.apiHeaders, 'content-type': 'application/x-www-form-urlencoded'},
           body: form,

@@ -4,6 +4,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/platforms/kick/api/kick_endpoints.dart';
+import 'package:live_sites/src/platforms/kick/kick_manifest.dart';
 import 'package:live_sites/src/platforms/kick/kick_site.dart';
 import 'package:live_sites/src/platforms/kick/parsers/kick_failure.dart';
 import 'package:live_sites/src/platforms/kick/parsers/kick_play_parser.dart';
@@ -48,9 +49,9 @@ final class KickPlaybackProvider implements LivePlaybackProvider {
     try {
       return right(KickPlayParser.qualities((await _read(roomId)).variants));
     } on KickFailure catch (failure) {
-      return left(failure.toLiveSiteError('kick'));
+      return left(failure.toLiveSiteError(kickSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kick', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kickSiteId, message: '$error', cause: error));
     }
   }
 
@@ -71,9 +72,9 @@ final class KickPlaybackProvider implements LivePlaybackProvider {
         KickPlayParser.lines(variant, slug: data.slug, master: data.master, expiresAt: data.expiresAt, now: site.now()),
       );
     } on KickFailure catch (failure) {
-      return left(failure.toLiveSiteError('kick'));
+      return left(failure.toLiveSiteError(kickSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kick', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kickSiteId, message: '$error', cause: error));
     }
   }
 

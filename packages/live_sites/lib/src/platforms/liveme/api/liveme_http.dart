@@ -1,5 +1,6 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/liveme/api/liveme_endpoints.dart';
+import 'package:live_sites/src/platforms/liveme/liveme_manifest.dart';
 import 'package:live_sites/src/platforms/liveme/parsers/liveme_failure.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -32,7 +33,7 @@ final class LivemeHttp {
   Future<LivemeResponse> get(Uri url, {String? shortId, CancelToken? cancel}) => send(
     LiveRequest.custom(
       method: 'GET',
-      site: 'liveme',
+      site: livemeSiteId,
       url: url,
       headers: LivemeEndpoints.headers(shortId: shortId),
       cancelToken: cancel,

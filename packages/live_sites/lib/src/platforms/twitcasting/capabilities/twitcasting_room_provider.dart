@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/twitcasting/parsers/twitcasting_failure.dart';
+import 'package:live_sites/src/platforms/twitcasting/twitcasting_manifest.dart';
 import 'package:live_sites/src/platforms/twitcasting/twitcasting_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -29,9 +30,9 @@ final class TwitcastingRoomProvider implements LiveRoomProvider {
     try {
       return right(await site.detail(roomId));
     } on TwitcastingFailure catch (failure) {
-      return left(failure.toLiveSiteError('twitcasting'));
+      return left(failure.toLiveSiteError(twitcastingSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'twitcasting', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: twitcastingSiteId, message: '$error', cause: error));
     }
   }
 
@@ -41,9 +42,9 @@ final class TwitcastingRoomProvider implements LiveRoomProvider {
       final page = await site.recommend(request.page, request.pageSize);
       return right(LivePage(items: page.rooms, hasMore: page.hasMore));
     } on TwitcastingFailure catch (failure) {
-      return left(failure.toLiveSiteError('twitcasting'));
+      return left(failure.toLiveSiteError(twitcastingSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'twitcasting', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: twitcastingSiteId, message: '$error', cause: error));
     }
   }
 }

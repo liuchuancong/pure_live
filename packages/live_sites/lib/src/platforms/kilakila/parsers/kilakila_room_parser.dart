@@ -16,6 +16,7 @@ import 'package:live_sites/src/models/room/room_broadcast/room_broadcast.dart';
 import 'package:live_sites/src/models/room/room_content/room_content.dart';
 import 'package:live_sites/src/models/room/room_links/room_links.dart';
 import 'package:live_sites/src/platforms/kilakila/api/kilakila_endpoints.dart';
+import 'package:live_sites/src/platforms/kilakila/kilakila_manifest.dart';
 import 'package:live_sites/src/platforms/kilakila/parsers/kilakila_failure.dart';
 import 'package:live_sites/src/platforms/kilakila/parsers/kilakila_html.dart';
 import 'package:live_sites/src/platforms/kilakila/parsers/kilakila_json.dart';
@@ -181,7 +182,7 @@ abstract final class KilakilaRoomParser {
   static List<LiveArea> areas() => [
     for (final entry in KilakilaEndpoints.timelines.entries)
       LiveArea.normalized(
-        platform: 'kilakila',
+        platform: kilakilaSiteId,
         areaId: entry.key,
         areaName: entry.value,
         parentAreaId: 'kilakila',
@@ -415,11 +416,11 @@ abstract final class KilakilaRoomParser {
     final live = broadcast.isLive;
     final liveStatus = live ? LiveStatus.live : (broadcast.hasEnded ? LiveStatus.offline : LiveStatus.unknown);
     return LiveRoom.normalized(
-      platform: 'kilakila',
+      platform: kilakilaSiteId,
       roomId: broadcast.uid,
       content: RoomContent(title: broadcast.title, coverUrl: broadcast.cover),
       anchor: LiveAnchor.normalized(
-        platform: 'kilakila',
+        platform: kilakilaSiteId,
         anchorId: broadcast.uid,
         name: broadcast.nick,
         avatarUrl: broadcast.avatar,
@@ -483,11 +484,11 @@ abstract final class KilakilaRoomParser {
     String title = '',
     LiveStatus liveStatus = LiveStatus.unknown,
   }) => LiveRoom.normalized(
-    platform: 'kilakila',
+    platform: kilakilaSiteId,
     roomId: uid,
     content: RoomContent(title: title),
     anchor: LiveAnchor.normalized(
-      platform: 'kilakila',
+      platform: kilakilaSiteId,
       anchorId: uid,
       name: nick,
       avatarUrl: avatar,

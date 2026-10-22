@@ -12,6 +12,7 @@ import 'package:live_sites/src/models/message/live_message_color/live_message_co
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/twitch/danmaku/twitch_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/twitch/parsers/twitch_failure.dart';
+import 'package:live_sites/src/platforms/twitch/twitch_manifest.dart';
 import 'package:live_sites/src/platforms/twitch/twitch_site.dart';
 import 'package:live_websocket/live_websocket.dart';
 
@@ -61,9 +62,9 @@ final class TwitchDanmakuProvider implements LiveDanmakuProvider {
       final room = await site.detail(roomId);
       args = TwitchDanmakuArgs(channel: room.roomId.toLowerCase(), chat: site.chat());
     } on TwitchFailure catch (failure) {
-      return left(failure.toLiveSiteError('twitch'));
+      return left(failure.toLiveSiteError(twitchSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'twitch', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: twitchSiteId, message: '$error', cause: error));
     }
     final session = TwitchDanmakuSession(args: args);
     final failure = await session.connect();
@@ -157,10 +158,10 @@ final class TwitchDanmakuSession implements LiveDanmakuSession {
   @override
   Future<LiveSiteError?> connect() async {
     if (_disposed) {
-      return const LiveSiteError.unsupported(siteId: 'twitch', message: 'session is disposed');
+      return const LiveSiteError.unsupported(siteId: twitchSiteId, message: 'session is disposed');
     }
     if (args.channel.trim().isEmpty) {
-      return const LiveSiteError.notFound(siteId: 'twitch', message: 'twitch channel login is missing');
+      return const LiveSiteError.notFound(siteId: twitchSiteId, message: 'twitch channel login is missing');
     }
     _chat ??= args.chat;
     return await _open();
@@ -179,7 +180,7 @@ final class TwitchDanmakuSession implements LiveDanmakuSession {
     );
     _socket = socket;
     if (await socket.start()) return null;
-    return LiveSiteError.network(siteId: 'twitch', message: 'danmaku connect failed on ${socket.uri}');
+    return LiveSiteError.network(siteId: twitchSiteId, message: 'danmaku connect failed on ${socket.uri}');
   }
 
   /// The IRC login and join of one connection: Twitch confirms nothing, so an

@@ -1,6 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
+import 'package:live_sites/src/platforms/douyu/douyu_manifest.dart';
 import 'package:live_sites/src/platforms/douyu/douyu_site.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_failure.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_room_parser.dart';
@@ -25,31 +26,31 @@ final class DouyuLinkResolver implements LiveLinkResolver {
   Future<Either<LiveSiteError, Uri>> resolve(Uri uri) async {
     final host = uri.host.toLowerCase();
     if (host != 'douyu.com' && !host.endsWith('.douyu.com')) {
-      return left(LiveSiteError.unsupported(siteId: 'douyu', message: 'not a douyu link: $uri'));
+      return left(LiveSiteError.unsupported(siteId: douyuSiteId, message: 'not a douyu link: $uri'));
     }
     final segments = [
       for (final segment in uri.pathSegments)
         if (segment.isNotEmpty) segment,
     ];
     if (segments.isEmpty) {
-      return left(LiveSiteError.notFound(siteId: 'douyu', message: 'no room in douyu link: $uri'));
+      return left(LiveSiteError.notFound(siteId: douyuSiteId, message: 'no room in douyu link: $uri'));
     }
     // A share page (`/room/share/<number>`) names the room in its third part.
     final share = segments.length == 3 && segments[0] == 'room' && segments[1] == 'share';
     final key = share ? segments[2] : segments[0];
     if (!DouyuRoomParser.isRoomKey(key)) {
-      return left(LiveSiteError.notFound(siteId: 'douyu', message: 'no room in douyu link: $uri'));
+      return left(LiveSiteError.notFound(siteId: douyuSiteId, message: 'no room in douyu link: $uri'));
     }
     try {
       final rid = await site.ridFor(key);
       if (rid == null) {
-        return left(LiveSiteError.notFound(siteId: 'douyu', message: 'douyu link resolves to no room: $key'));
+        return left(LiveSiteError.notFound(siteId: douyuSiteId, message: 'douyu link resolves to no room: $key'));
       }
       return right(Uri.https('www.douyu.com', '/$rid'));
     } on DouyuFailure catch (failure) {
-      return left(failure.toLiveSiteError('douyu'));
+      return left(failure.toLiveSiteError(douyuSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'douyu', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: douyuSiteId, message: '$error', cause: error));
     }
   }
 }

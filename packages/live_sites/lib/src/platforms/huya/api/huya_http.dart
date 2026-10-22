@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:live_net/live_net.dart';
+import 'package:live_sites/src/platforms/huya/huya_manifest.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_failure.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -22,7 +23,7 @@ final class HuyaHttp {
   /// parsers decide what 403/422/429/5xx mean for their endpoint.
   Future<({String text, int status})> get(Uri url, {Map<String, String> headers = const {}}) async {
     try {
-      final response = await http.send(LiveRequest.custom(method: 'GET', site: 'huya', url: url, headers: headers));
+      final response = await http.send(LiveRequest.custom(method: 'GET', site: huyaSiteId, url: url, headers: headers));
       return (text: response.text, status: response.statusCode);
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;
@@ -40,7 +41,7 @@ final class HuyaHttp {
       final response = await http.send(
         LiveRequest.custom(
           method: 'POST',
-          site: 'huya',
+          site: huyaSiteId,
           url: url,
           body: jsonEncode(json),
           contentType: 'application/json',
@@ -66,7 +67,7 @@ final class HuyaHttp {
       final response = await http.send(
         LiveRequest.custom(
           method: 'POST',
-          site: 'huya',
+          site: huyaSiteId,
           url: url,
           bodyBytes: Uint8List.fromList(body),
           headers: headers,

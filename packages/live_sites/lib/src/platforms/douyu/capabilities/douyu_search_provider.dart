@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
 import 'package:live_sites/src/platforms/douyu/api/douyu_endpoints.dart';
+import 'package:live_sites/src/platforms/douyu/douyu_manifest.dart';
 import 'package:live_sites/src/platforms/douyu/douyu_site.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_failure.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_room_parser.dart';
@@ -32,7 +33,7 @@ final class DouyuSearchProvider implements LiveSearchProvider {
       // search, whatever the keyword is — so it is checked before the blank
       // keyword short-circuit below.
       return left(
-        LiveSiteError.unsupported(siteId: 'douyu', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(siteId: douyuSiteId, message: 'search target ${request.target.name} not supported'),
       );
     }
     final text = request.query.trim();
@@ -55,9 +56,9 @@ final class DouyuSearchProvider implements LiveSearchProvider {
           : DouyuRoomParser.searchAnchors(response.text, status: response.status);
       return right(LivePage(items: items));
     } on DouyuFailure catch (failure) {
-      return left(failure.toLiveSiteError('douyu'));
+      return left(failure.toLiveSiteError(douyuSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'douyu', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: douyuSiteId, message: '$error', cause: error));
     }
   }
 }

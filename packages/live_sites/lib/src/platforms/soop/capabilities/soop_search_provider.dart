@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
 import 'package:live_sites/src/platforms/soop/parsers/soop_failure.dart';
+import 'package:live_sites/src/platforms/soop/soop_manifest.dart';
 import 'package:live_sites/src/platforms/soop/soop_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -31,7 +32,7 @@ final class SoopSearchProvider implements LiveSearchProvider {
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
     if (!supportedTargets.contains(request.target)) {
       return left(
-        LiveSiteError.unsupported(siteId: 'soop', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(siteId: soopSiteId, message: 'search target ${request.target.name} not supported'),
       );
     }
     try {
@@ -40,9 +41,9 @@ final class SoopSearchProvider implements LiveSearchProvider {
         LivePage(items: [for (final room in page.rooms) LiveSearchResult.room(room)], hasMore: page.hasMore),
       );
     } on SoopFailure catch (failure) {
-      return left(failure.toLiveSiteError('soop'));
+      return left(failure.toLiveSiteError(soopSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'soop', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: soopSiteId, message: '$error', cause: error));
     }
   }
 }

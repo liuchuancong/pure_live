@@ -4,6 +4,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
+import 'package:live_sites/src/platforms/kilakila/kilakila_manifest.dart';
 import 'package:live_sites/src/platforms/kilakila/kilakila_site.dart';
 import 'package:live_sites/src/platforms/kilakila/parsers/kilakila_failure.dart';
 
@@ -29,9 +30,9 @@ final class KilakilaRoomProvider implements LiveRoomProvider {
     try {
       return right(await site.detail(roomId));
     } on KilakilaFailure catch (failure) {
-      return left(failure.toLiveSiteError('kilakila'));
+      return left(failure.toLiveSiteError(kilakilaSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kilakila', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kilakilaSiteId, message: '$error', cause: error));
     }
   }
 
@@ -41,9 +42,9 @@ final class KilakilaRoomProvider implements LiveRoomProvider {
       final page = await site.timeline(request.page, request.pageSize);
       return right(LivePage(items: page.rooms, hasMore: page.hasMore));
     } on KilakilaFailure catch (failure) {
-      return left(failure.toLiveSiteError('kilakila'));
+      return left(failure.toLiveSiteError(kilakilaSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kilakila', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kilakilaSiteId, message: '$error', cause: error));
     }
   }
 }

@@ -7,6 +7,7 @@ import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
 import 'package:live_sites/src/platforms/youtube/parsers/youtube_failure.dart';
+import 'package:live_sites/src/platforms/youtube/youtube_manifest.dart';
 import 'package:live_sites/src/platforms/youtube/youtube_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -35,7 +36,7 @@ final class YoutubeSearchProvider implements LiveSearchProvider {
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
     if (!supportedTargets.contains(request.target)) {
       return left(
-        LiveSiteError.unsupported(siteId: 'youtube', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(siteId: youtubeSiteId, message: 'search target ${request.target.name} not supported'),
       );
     }
     final text = request.query.trim();
@@ -47,9 +48,9 @@ final class YoutubeSearchProvider implements LiveSearchProvider {
       final items = [for (final room in result.rooms.take(size)) LiveSearchResult.room(room)];
       return right(LivePage(items: items, hasMore: result.hasMore));
     } on YouTubeFailure catch (failure) {
-      return left(failure.toLiveSiteError('youtube'));
+      return left(failure.toLiveSiteError(youtubeSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'youtube', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: youtubeSiteId, message: '$error', cause: error));
     }
   }
 

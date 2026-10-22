@@ -11,8 +11,7 @@ import 'package:live_sites/src/models/room/room_links/room_links.dart';
 import 'package:live_sites/src/platforms/twitch/api/twitch_endpoints.dart';
 import 'package:live_sites/src/platforms/twitch/parsers/twitch_failure.dart';
 import 'package:live_sites/src/platforms/twitch/parsers/twitch_json.dart';
-
-const String _site = 'twitch';
+import 'package:live_sites/src/platforms/twitch/twitch_manifest.dart';
 
 /// A category tag of `SearchCategoryTags`.
 typedef TwitchTag = ({String id, String name});
@@ -57,7 +56,7 @@ abstract final class TwitchRoomParser {
             final String slug,
           ))
             LiveArea.normalized(
-              platform: _site,
+              platform: twitchSiteId,
               areaId: id,
               areaName: gameName(game),
               parentAreaId: tag.id,
@@ -120,13 +119,18 @@ abstract final class TwitchRoomParser {
       final avatar = TwitchJson.textOf(item['profileImageURL']);
       rooms.add(
         LiveRoom.normalized(
-          platform: _site,
+          platform: twitchSiteId,
           roomId: login,
           content: RoomContent(
             title: TwitchJson.textOf(TwitchJson.object(item['broadcastSettings'])?['title']),
             coverUrl: _cover(TwitchJson.textOf(stream?['previewImageURL']), now),
           ),
-          anchor: LiveAnchor.normalized(platform: _site, anchorId: login.toLowerCase(), name: name, avatarUrl: avatar),
+          anchor: LiveAnchor.normalized(
+            platform: twitchSiteId,
+            anchorId: login.toLowerCase(),
+            name: name,
+            avatarUrl: avatar,
+          ),
           area: _area(TwitchJson.object(stream?['game'])),
           audience: RoomAudience(onlineViewers: viewers, primaryMetric: LiveAudienceMetricType.onlineViewers),
           broadcast: RoomBroadcast(
@@ -175,7 +179,7 @@ abstract final class TwitchRoomParser {
     final description = TwitchJson.textOf(user['description']).trim();
     final game = TwitchJson.object(stream?['game']);
     return LiveRoom.normalized(
-      platform: _site,
+      platform: twitchSiteId,
       roomId: id,
       content: RoomContent(
         title: TwitchJson.textOf(TwitchJson.object(user['lastBroadcast'])?['title']),
@@ -183,7 +187,7 @@ abstract final class TwitchRoomParser {
         introduction: description,
       ),
       anchor: LiveAnchor.normalized(
-        platform: _site,
+        platform: twitchSiteId,
         anchorId: login,
         name: TwitchJson.textOf(user['displayName']),
         avatarUrl: profile,
@@ -259,14 +263,14 @@ abstract final class TwitchRoomParser {
     final viewers = TwitchJson.intOf(node['viewersCount'] ?? 0) ?? 0;
     final name = TwitchJson.stringOf(broadcaster['displayName']);
     return LiveRoom.normalized(
-      platform: _site,
+      platform: twitchSiteId,
       roomId: login,
       content: RoomContent(
         title: TwitchJson.textOf(node['title']),
         coverUrl: _cover(TwitchJson.textOf(node['previewImageURL']), now),
       ),
       anchor: LiveAnchor.normalized(
-        platform: _site,
+        platform: twitchSiteId,
         anchorId: login.toLowerCase(),
         name: name == null || name.isEmpty ? login : name,
         avatarUrl: TwitchJson.textOf(broadcaster['profileImageURL']),
@@ -300,7 +304,7 @@ abstract final class TwitchRoomParser {
     final name = gameName(game);
     if (name.isEmpty) return null;
     return LiveArea.normalized(
-      platform: _site,
+      platform: twitchSiteId,
       areaId: TwitchJson.textOf(game['id']),
       areaName: name,
       shortName: TwitchJson.textOf(game['slug']),

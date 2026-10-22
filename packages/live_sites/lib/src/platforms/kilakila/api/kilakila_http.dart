@@ -1,5 +1,6 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/kilakila/api/kilakila_endpoints.dart';
+import 'package:live_sites/src/platforms/kilakila/kilakila_manifest.dart';
 import 'package:live_sites/src/platforms/kilakila/parsers/kilakila_failure.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -31,7 +32,7 @@ final class KilakilaHttp {
       response = await http.send(
         LiveRequest.custom(
           method: 'GET',
-          site: 'kilakila',
+          site: kilakilaSiteId,
           url: url,
           headers: KilakilaEndpoints.headers,
           cancelToken: cancel,

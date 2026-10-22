@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/enums/live_search_target.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
+import 'package:live_sites/src/platforms/pandalive/pandalive_manifest.dart';
 import 'package:live_sites/src/platforms/pandalive/pandalive_site.dart';
 import 'package:live_sites/src/platforms/pandalive/parsers/pandalive_failure.dart';
 
@@ -31,7 +32,10 @@ final class PandaliveSearchProvider implements LiveSearchProvider {
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
     if (!supportedTargets.contains(request.target)) {
       return left(
-        LiveSiteError.unsupported(siteId: 'pandalive', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(
+          siteId: pandaliveSiteId,
+          message: 'search target ${request.target.name} not supported',
+        ),
       );
     }
     try {
@@ -40,9 +44,9 @@ final class PandaliveSearchProvider implements LiveSearchProvider {
         LivePage(items: [for (final room in page.rooms) LiveSearchResult.room(room)], hasMore: page.hasMore),
       );
     } on PandaliveFailure catch (failure) {
-      return left(failure.toLiveSiteError('pandalive'));
+      return left(failure.toLiveSiteError(pandaliveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'pandalive', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: pandaliveSiteId, message: '$error', cause: error));
     }
   }
 }

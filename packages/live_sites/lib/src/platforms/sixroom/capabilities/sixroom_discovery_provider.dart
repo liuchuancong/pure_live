@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/sixroom/parsers/sixroom_failure.dart';
+import 'package:live_sites/src/platforms/sixroom/sixroom_manifest.dart';
 import 'package:live_sites/src/platforms/sixroom/sixroom_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -32,9 +33,9 @@ final class SixroomDiscoveryProvider implements LiveDiscoveryProvider {
       final page = await site.directoryPage(request.page, request.pageSize);
       return right(LivePage(items: page.rooms, hasMore: page.hasMore));
     } on SixroomFailure catch (failure) {
-      return left(failure.toLiveSiteError('sixroom'));
+      return left(failure.toLiveSiteError(sixroomSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'sixroom', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: sixroomSiteId, message: '$error', cause: error));
     }
   }
 }

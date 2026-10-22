@@ -1,5 +1,6 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/looklive/api/looklive_endpoints.dart';
+import 'package:live_sites/src/platforms/looklive/looklive_manifest.dart';
 import 'package:live_sites/src/platforms/looklive/parsers/looklive_failure.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -32,7 +33,7 @@ final class LookliveHttp {
       response = await http.send(
         LiveRequest.custom(
           method: 'POST',
-          site: 'looklive',
+          site: lookliveSiteId,
           url: Uri.parse('${LookliveEndpoints.apiOrigin}$path'),
           body: LookliveEndpoints.formBody(payload),
           headers: LookliveEndpoints.requestHeaders,
@@ -54,7 +55,7 @@ final class LookliveHttp {
       response = await http.send(
         LiveRequest.custom(
           method: 'GET',
-          site: 'looklive',
+          site: lookliveSiteId,
           url: url,
           headers: headers ?? const {},
           cancelToken: cancel,

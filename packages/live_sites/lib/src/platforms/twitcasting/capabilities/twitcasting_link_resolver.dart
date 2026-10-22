@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/twitcasting/api/twitcasting_endpoints.dart';
+import 'package:live_sites/src/platforms/twitcasting/twitcasting_manifest.dart';
 import 'package:live_sites/src/platforms/twitcasting/twitcasting_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -29,8 +30,8 @@ final class TwitcastingLinkResolver implements LiveLinkResolver {
       final ours = TwitcastingEndpoints.isSiteHost(uri.host.toLowerCase());
       return left(
         ours
-            ? LiveSiteError.notFound(siteId: 'twitcasting', message: '"$uri" names no room')
-            : LiveSiteError.unsupported(siteId: 'twitcasting', message: '"$uri" is not a TwitCasting link'),
+            ? LiveSiteError.notFound(siteId: twitcastingSiteId, message: '"$uri" names no room')
+            : LiveSiteError.unsupported(siteId: twitcastingSiteId, message: '"$uri" is not a TwitCasting link'),
       );
     }
     return right(Uri.parse(TwitcastingEndpoints.roomUrl(channel)));

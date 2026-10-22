@@ -19,6 +19,7 @@ import 'package:live_sites/src/platforms/xiaohongshu/api/xiaohongshu_endpoints.d
 import 'package:live_sites/src/platforms/xiaohongshu/parsers/xiaohongshu_failure.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/parsers/xiaohongshu_html.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/parsers/xiaohongshu_json.dart';
+import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_manifest.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -233,11 +234,11 @@ abstract final class XiaohongshuRoomParser {
       null => LiveStatus.unknown,
     };
     final room = LiveRoom.normalized(
-      platform: 'xiaohongshu',
+      platform: xiaohongshuSiteId,
       roomId: requestedId,
       content: RoomContent(title: title ?? '', coverUrl: normalizeImageUrl(cover), notice: notice(roomData)),
       anchor: LiveAnchor.normalized(
-        platform: 'xiaohongshu',
+        platform: xiaohongshuSiteId,
         name: nick ?? '',
         avatarUrl: normalizeImageUrl(avatar),
         liveStatus: liveState,

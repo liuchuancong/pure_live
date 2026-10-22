@@ -16,6 +16,7 @@ import 'package:live_sites/src/platforms/showroom/api/showroom_endpoints.dart';
 import 'package:live_sites/src/platforms/showroom/parsers/showroom_failure.dart';
 import 'package:live_sites/src/platforms/showroom/parsers/showroom_json.dart';
 import 'package:live_sites/src/platforms/showroom/parsers/showroom_models.dart';
+import 'package:live_sites/src/platforms/showroom/showroom_manifest.dart';
 
 /// Pure parsing of SHOWROOM responses (the reference's `ShowroomApi`, its
 /// models and its link reader).
@@ -117,7 +118,7 @@ abstract final class ShowroomParser {
   static List<LiveArea> areas(ShowroomSnapshot snapshot) => [
     for (final genre in snapshot.genres)
       LiveArea.normalized(
-        platform: 'showroom',
+        platform: showroomSiteId,
         areaId: '${genre.id}',
         areaName: genre.name,
         parentAreaId: 'showroom',
@@ -179,11 +180,11 @@ abstract final class ShowroomParser {
     required DateTime? startedAt,
     required LiveRestriction? restriction,
   }) => LiveRoom.normalized(
-    platform: 'showroom',
+    platform: showroomSiteId,
     roomId: roomId,
     content: RoomContent(title: title, coverUrl: cover, introduction: introduction),
     anchor: LiveAnchor.normalized(
-      platform: 'showroom',
+      platform: showroomSiteId,
       anchorId: roomId,
       name: name,
       avatarUrl: cover.isEmpty ? null : cover,
@@ -202,7 +203,7 @@ abstract final class ShowroomParser {
     area: genreName.isEmpty
         ? null
         : LiveArea.normalized(
-            platform: 'showroom',
+            platform: showroomSiteId,
             areaId: '$genreId',
             areaName: genreName,
             parentAreaId: 'showroom',

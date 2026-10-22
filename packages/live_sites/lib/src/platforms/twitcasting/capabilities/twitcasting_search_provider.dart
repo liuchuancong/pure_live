@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
 import 'package:live_sites/src/platforms/twitcasting/parsers/twitcasting_failure.dart';
+import 'package:live_sites/src/platforms/twitcasting/twitcasting_manifest.dart';
 import 'package:live_sites/src/platforms/twitcasting/twitcasting_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -31,7 +32,10 @@ final class TwitcastingSearchProvider implements LiveSearchProvider {
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
     if (!supportedTargets.contains(request.target)) {
       return left(
-        LiveSiteError.unsupported(siteId: 'twitcasting', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(
+          siteId: twitcastingSiteId,
+          message: 'search target ${request.target.name} not supported',
+        ),
       );
     }
     try {
@@ -40,9 +44,9 @@ final class TwitcastingSearchProvider implements LiveSearchProvider {
         LivePage(items: [for (final room in page.rooms) LiveSearchResult.room(room)], hasMore: page.hasMore),
       );
     } on TwitcastingFailure catch (failure) {
-      return left(failure.toLiveSiteError('twitcasting'));
+      return left(failure.toLiveSiteError(twitcastingSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'twitcasting', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: twitcastingSiteId, message: '$error', cause: error));
     }
   }
 }

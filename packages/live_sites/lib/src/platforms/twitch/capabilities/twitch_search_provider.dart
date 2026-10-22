@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
 import 'package:live_sites/src/platforms/twitch/parsers/twitch_failure.dart';
+import 'package:live_sites/src/platforms/twitch/twitch_manifest.dart';
 import 'package:live_sites/src/platforms/twitch/twitch_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -33,7 +34,7 @@ final class TwitchSearchProvider implements LiveSearchProvider {
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
     if (!supportedTargets.contains(request.target)) {
       return left(
-        LiveSiteError.unsupported(siteId: 'twitch', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(siteId: twitchSiteId, message: 'search target ${request.target.name} not supported'),
       );
     }
     if (request.query.trim().isEmpty) return right(const LivePage(items: []));
@@ -42,9 +43,9 @@ final class TwitchSearchProvider implements LiveSearchProvider {
       final size = request.pageSize < 1 ? 0 : request.pageSize;
       return right(LivePage(items: [for (final room in result.rooms.take(size)) LiveSearchResult.room(room)]));
     } on TwitchFailure catch (failure) {
-      return left(failure.toLiveSiteError('twitch'));
+      return left(failure.toLiveSiteError(twitchSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'twitch', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: twitchSiteId, message: '$error', cause: error));
     }
   }
 }

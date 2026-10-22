@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
 import 'package:live_sites/src/platforms/huya/api/huya_endpoints.dart';
+import 'package:live_sites/src/platforms/huya/huya_manifest.dart';
 import 'package:live_sites/src/platforms/huya/huya_site.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_failure.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_room_parser.dart';
@@ -32,7 +33,7 @@ final class HuyaSearchProvider implements LiveSearchProvider {
       // search, whatever the keyword is — checked before the blank short
       // circuit below.
       return left(
-        LiveSiteError.unsupported(siteId: 'huya', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(siteId: huyaSiteId, message: 'search target ${request.target.name} not supported'),
       );
     }
     final text = request.query.trim();
@@ -54,9 +55,9 @@ final class HuyaSearchProvider implements LiveSearchProvider {
           : HuyaRoomParser.searchAnchors(response.text, status: response.status);
       return right(LivePage(items: items));
     } on HuyaFailure catch (failure) {
-      return left(failure.toLiveSiteError('huya'));
+      return left(failure.toLiveSiteError(huyaSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'huya', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: huyaSiteId, message: '$error', cause: error));
     }
   }
 }

@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
 import 'package:live_sites/src/platforms/kick/api/kick_endpoints.dart';
+import 'package:live_sites/src/platforms/kick/kick_manifest.dart';
 import 'package:live_sites/src/platforms/kick/kick_site.dart';
 import 'package:live_sites/src/platforms/kick/parsers/kick_failure.dart';
 import 'package:live_sites/src/platforms/kick/parsers/kick_room_parser.dart';
@@ -36,7 +37,7 @@ final class KickSearchProvider implements LiveSearchProvider {
       // search, whatever the keyword is — so it is checked before the blank
       // keyword short-circuit below.
       return left(
-        LiveSiteError.unsupported(siteId: 'kick', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(siteId: kickSiteId, message: 'search target ${request.target.name} not supported'),
       );
     }
     final text = request.query.trim();
@@ -53,9 +54,9 @@ final class KickSearchProvider implements LiveSearchProvider {
       final rooms = KickRoomParser.searchRooms(response.text, status: response.status);
       return right(LivePage(items: [for (final room in rooms) LiveSearchResult.room(room)], hasMore: false));
     } on KickFailure catch (failure) {
-      return left(failure.toLiveSiteError('kick'));
+      return left(failure.toLiveSiteError(kickSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kick', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kickSiteId, message: '$error', cause: error));
     }
   }
 }

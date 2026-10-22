@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/pandalive/api/pandalive_endpoints.dart';
+import 'package:live_sites/src/platforms/pandalive/pandalive_manifest.dart';
 import 'package:live_sites/src/platforms/pandalive/pandalive_site.dart';
 import 'package:live_sites/src/platforms/pandalive/parsers/pandalive_link.dart';
 
@@ -30,8 +31,8 @@ final class PandaliveLinkResolver implements LiveLinkResolver {
       final ours = PandaliveEndpoints.roomHosts.contains(host) || host.endsWith('.pandalive.co.kr');
       return left(
         ours
-            ? LiveSiteError.notFound(siteId: 'pandalive', message: '"$uri" names no room')
-            : LiveSiteError.unsupported(siteId: 'pandalive', message: '"$uri" is not a PandaTV link'),
+            ? LiveSiteError.notFound(siteId: pandaliveSiteId, message: '"$uri" names no room')
+            : LiveSiteError.unsupported(siteId: pandaliveSiteId, message: '"$uri" is not a PandaTV link'),
       );
     }
     return right(Uri.parse(PandaliveEndpoints.roomUrl(id)));

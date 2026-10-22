@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/twitch/parsers/twitch_failure.dart';
+import 'package:live_sites/src/platforms/twitch/twitch_manifest.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -25,7 +26,9 @@ final class TwitchHttp {
   /// GETs [url] with [headers].
   Future<TwitchResponse> get(Uri url, {Map<String, String> headers = const {}}) async {
     try {
-      final response = await http.send(LiveRequest.custom(method: 'GET', site: 'twitch', url: url, headers: headers));
+      final response = await http.send(
+        LiveRequest.custom(method: 'GET', site: twitchSiteId, url: url, headers: headers),
+      );
       return (text: response.text, status: response.statusCode, headers: response.headers);
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;
@@ -41,7 +44,7 @@ final class TwitchHttp {
       final response = await http.send(
         LiveRequest.custom(
           method: 'POST',
-          site: 'twitch',
+          site: twitchSiteId,
           url: url ?? Uri.https('gql.twitch.tv', '/gql'),
           body: jsonEncode(operation),
           contentType: 'text/plain;charset=UTF-8',

@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/platforms/kilakila/kilakila_manifest.dart';
 import 'package:live_sites/src/platforms/kilakila/kilakila_site.dart';
 import 'package:live_sites/src/platforms/kilakila/parsers/kilakila_failure.dart';
 
@@ -31,9 +32,9 @@ final class KilakilaPlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.qualitiesOf(roomId));
     } on KilakilaFailure catch (failure) {
-      return left(failure.toLiveSiteError('kilakila'));
+      return left(failure.toLiveSiteError(kilakilaSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kilakila', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kilakilaSiteId, message: '$error', cause: error));
     }
   }
 
@@ -42,9 +43,9 @@ final class KilakilaPlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.linesOf(roomId, quality: quality));
     } on KilakilaFailure catch (failure) {
-      return left(failure.toLiveSiteError('kilakila'));
+      return left(failure.toLiveSiteError(kilakilaSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kilakila', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kilakilaSiteId, message: '$error', cause: error));
     }
   }
 }

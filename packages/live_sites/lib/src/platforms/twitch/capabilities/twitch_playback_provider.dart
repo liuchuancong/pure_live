@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.d
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/twitch/parsers/twitch_failure.dart';
 import 'package:live_sites/src/platforms/twitch/parsers/twitch_play_parser.dart';
+import 'package:live_sites/src/platforms/twitch/twitch_manifest.dart';
 import 'package:live_sites/src/platforms/twitch/twitch_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -48,9 +49,9 @@ final class TwitchPlaybackProvider implements LivePlaybackProvider {
       final room = await site.detail(roomId);
       return right(TwitchPlayParser.qualities(await _resolve(room)));
     } on TwitchFailure catch (failure) {
-      return left(failure.toLiveSiteError('twitch'));
+      return left(failure.toLiveSiteError(twitchSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'twitch', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: twitchSiteId, message: '$error', cause: error));
     }
   }
 
@@ -63,9 +64,9 @@ final class TwitchPlaybackProvider implements LivePlaybackProvider {
           TwitchPlayParser.sameGroup(groups, quality?.qualityId, label: quality?.label ?? '') ?? groups.first;
       return right(TwitchPlayParser.lines(chosen, roomId: room.roomId));
     } on TwitchFailure catch (failure) {
-      return left(failure.toLiveSiteError('twitch'));
+      return left(failure.toLiveSiteError(twitchSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'twitch', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: twitchSiteId, message: '$error', cause: error));
     }
   }
 

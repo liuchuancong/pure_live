@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/kilakila/api/kilakila_endpoints.dart';
+import 'package:live_sites/src/platforms/kilakila/kilakila_manifest.dart';
 import 'package:live_sites/src/platforms/kilakila/kilakila_site.dart';
 import 'package:live_sites/src/platforms/kilakila/parsers/kilakila_failure.dart';
 import 'package:live_sites/src/platforms/kilakila/parsers/kilakila_link.dart';
@@ -35,8 +36,8 @@ final class KilakilaLinkResolver implements LiveLinkResolver {
           host.endsWith('.hongrenshuo.com.cn');
       return left(
         ours
-            ? LiveSiteError.notFound(siteId: 'kilakila', message: '"$uri" names no room')
-            : LiveSiteError.unsupported(siteId: 'kilakila', message: '"$uri" is not a KilaKila link'),
+            ? LiveSiteError.notFound(siteId: kilakilaSiteId, message: '"$uri" names no room')
+            : LiveSiteError.unsupported(siteId: kilakilaSiteId, message: '"$uri" is not a KilaKila link'),
       );
     }
     final String uid;
@@ -46,9 +47,9 @@ final class KilakilaLinkResolver implements LiveLinkResolver {
         KilakilaLinkKind.broadcast => await site.resolveBroadcast(link.id),
       };
     } on KilakilaFailure catch (failure) {
-      return left(failure.toLiveSiteError('kilakila'));
+      return left(failure.toLiveSiteError(kilakilaSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kilakila', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kilakilaSiteId, message: '$error', cause: error));
     }
     return right(Uri.parse(KilakilaEndpoints.ownerUrl(uid)));
   }

@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/jdlive/api/jdlive_endpoints.dart';
+import 'package:live_sites/src/platforms/jdlive/jdlive_manifest.dart';
 import 'package:live_sites/src/platforms/jdlive/jdlive_site.dart';
 import 'package:live_sites/src/platforms/jdlive/parsers/jdlive_failure.dart';
 import 'package:live_sites/src/platforms/jdlive/parsers/jdlive_room_parser.dart';
@@ -35,16 +36,16 @@ final class JdliveAreaProvider implements LiveAreaProvider {
   }) async {
     if (areaId != JdliveEndpoints.areaId) {
       return left(
-        LiveSiteError.invalidArgument(siteId: 'jdlive', message: 'area "$areaId" is not the JD Live featured list'),
+        LiveSiteError.invalidArgument(siteId: jdliveSiteId, message: 'area "$areaId" is not the JD Live featured list'),
       );
     }
     try {
       final page = await site.recommend(request.page, request.pageSize);
       return right(LivePage(items: page.rooms, hasMore: page.hasMore));
     } on JdliveFailure catch (failure) {
-      return left(failure.toLiveSiteError('jdlive'));
+      return left(failure.toLiveSiteError(jdliveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'jdlive', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: jdliveSiteId, message: '$error', cause: error));
     }
   }
 }

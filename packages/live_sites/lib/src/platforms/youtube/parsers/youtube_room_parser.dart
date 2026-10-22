@@ -12,8 +12,7 @@ import 'package:live_sites/src/models/room/room_links/room_links.dart';
 import 'package:live_sites/src/platforms/youtube/api/youtube_endpoints.dart';
 import 'package:live_sites/src/platforms/youtube/parsers/youtube_failure.dart';
 import 'package:live_sites/src/platforms/youtube/parsers/youtube_json.dart';
-
-const String _site = 'youtube';
+import 'package:live_sites/src/platforms/youtube/youtube_manifest.dart';
 
 /// A room read from a paired `player` (ANDROID) and `next` (WEB) answer: the
 /// `room` itself, the broadcast's `videoId`, the streaming handles the playback
@@ -69,16 +68,16 @@ abstract final class YoutubeRoomParser {
     final (:continuation, :timeoutMs, :isReplay) = _firstChat(next);
     final streaming = fields(player['streamingData']);
     final room = LiveRoom.normalized(
-      platform: _site,
+      platform: youtubeSiteId,
       roomId: channelId.isNotEmpty ? channelId : videoId,
       content: RoomContent(title: title, coverUrl: lastThumbnail(details['thumbnail'])),
       anchor: LiveAnchor.normalized(
-        platform: _site,
+        platform: youtubeSiteId,
         anchorId: channelId,
         name: author,
         profileUrl: channelId.startsWith('UC') ? '${YoutubeEndpoints.origin}/channel/$channelId' : null,
       ),
-      area: LiveArea.normalized(platform: _site),
+      area: LiveArea.normalized(platform: youtubeSiteId),
       audience: RoomAudience(onlineViewers: viewers, primaryMetric: LiveAudienceMetricType.onlineViewers),
       broadcast: RoomBroadcast(
         liveStatus: isLive ? LiveStatus.live : LiveStatus.offline,
@@ -114,11 +113,11 @@ abstract final class YoutubeRoomParser {
     final watching = _renderWatchers(item);
     final live = _hasLiveBadge(item) || watching != null;
     return LiveRoom.normalized(
-      platform: _site,
+      platform: youtubeSiteId,
       roomId: channelId.isNotEmpty ? channelId : videoId,
       content: RoomContent(title: name, coverUrl: lastThumbnail(item['thumbnail'])),
       anchor: LiveAnchor.normalized(
-        platform: _site,
+        platform: youtubeSiteId,
         anchorId: channelId,
         name: author,
         profileUrl: channelId.startsWith('UC') ? '${YoutubeEndpoints.origin}/channel/$channelId' : null,

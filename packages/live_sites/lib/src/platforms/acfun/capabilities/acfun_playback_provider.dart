@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/platforms/acfun/acfun_manifest.dart';
 import 'package:live_sites/src/platforms/acfun/acfun_site.dart';
 import 'package:live_sites/src/platforms/acfun/parsers/acfun_failure.dart';
 import 'package:live_sites/src/platforms/acfun/parsers/acfun_play_parser.dart';
@@ -32,9 +33,9 @@ final class AcfunPlaybackProvider implements LivePlaybackProvider {
     try {
       return right(AcfunPlayParser.toModel(await site.qualities(await site.detail(roomId))));
     } on AcfunFailure catch (failure) {
-      return left(failure.toLiveSiteError('acfun'));
+      return left(failure.toLiveSiteError(acfunSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'acfun', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: acfunSiteId, message: '$error', cause: error));
     }
   }
 
@@ -49,9 +50,9 @@ final class AcfunPlaybackProvider implements LivePlaybackProvider {
       }
       return right(lines);
     } on AcfunFailure catch (failure) {
-      return left(failure.toLiveSiteError('acfun'));
+      return left(failure.toLiveSiteError(acfunSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'acfun', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: acfunSiteId, message: '$error', cause: error));
     }
   }
 }

@@ -12,11 +12,10 @@ import 'package:live_sites/src/models/super_chat/live_super_chat_display/live_su
 import 'package:live_sites/src/models/super_chat/live_super_chat_message/live_super_chat_message.dart';
 import 'package:live_sites/src/models/super_chat/live_super_chat_price/live_super_chat_price.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_endpoints.dart';
+import 'package:live_sites/src/platforms/bilibili/bilibili_manifest.dart';
 import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_failure.dart';
 import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_json.dart';
 import 'package:meta/meta.dart';
-
-const String _site = 'bilibili';
 
 // Platform-internal code: constructor-name rules that govern the public
 // surface are relaxed here.
@@ -84,7 +83,7 @@ abstract final class BilibiliRoomParser {
           for (final rawArea in jsonList(category['list']))
             if (jsonObject(rawArea) case final area? when jsonString(area['id']) != null)
               LiveArea.normalized(
-                platform: _site,
+                platform: bilibiliSiteId,
                 areaId: '${jsonString(area['parent_id']) ?? jsonString(category['id'])!},${jsonString(area['id'])!}',
                 areaName: decodeHtmlEntities(jsonString(area['name']) ?? ''),
                 parentAreaId: jsonString(area['parent_id']) ?? jsonString(category['id'])!,
@@ -136,20 +135,20 @@ abstract final class BilibiliRoomParser {
     final online = jsonCount(item['online']);
     final live = _status(item['live_status']) ?? LiveStatus.live;
     return LiveRoom.normalized(
-      platform: _site,
+      platform: bilibiliSiteId,
       roomId: id,
       content: RoomContent(
         title: decodeHtmlEntities(jsonString(item['title']) ?? ''),
         coverUrl: sizedImage(item['cover'] ?? item['user_cover'], '@400w.jpg'),
       ),
       anchor: LiveAnchor.normalized(
-        platform: _site,
+        platform: bilibiliSiteId,
         name: decodeHtmlEntities(jsonString(item['uname']) ?? ''),
         avatarUrl: sizedImage(item['face'], '@400w.jpg'),
         liveStatus: live,
       ),
       area: LiveArea.normalized(
-        platform: _site,
+        platform: bilibiliSiteId,
         areaName:
             jsonString(item['area_v2_name']) ?? jsonString(item['area_name']) ?? jsonString(item['areaName']) ?? '',
       ),
@@ -194,18 +193,18 @@ abstract final class BilibiliRoomParser {
     final live = state == LiveStatus.live;
     final online = jsonCount(item['online']);
     return LiveRoom.normalized(
-      platform: _site,
+      platform: bilibiliSiteId,
       roomId: id,
       content: RoomContent(title: _highlighted(item['title']), coverUrl: sizedImage(item['user_cover'], '@400w.jpg')),
       anchor: LiveAnchor.normalized(
-        platform: _site,
+        platform: bilibiliSiteId,
         anchorId: jsonString(item['uid']) ?? '',
         name: _highlighted(item['uname']),
         avatarUrl: sizedImage(item['uface'], '@400w.jpg'),
         followerCount: jsonCount(item['attentions']),
         liveStatus: state,
       ),
-      area: LiveArea.normalized(platform: _site, areaName: _highlighted(item['cate_name'])),
+      area: LiveArea.normalized(platform: bilibiliSiteId, areaName: _highlighted(item['cate_name'])),
       audience: _audience(
         online: online,
         total: _watched(item['watched_show'], state: state),
@@ -220,17 +219,17 @@ abstract final class BilibiliRoomParser {
     if (id == null) return null;
     final state = _status(item['live_status']) ?? LiveStatus.offline;
     return LiveRoom.normalized(
-      platform: _site,
+      platform: bilibiliSiteId,
       roomId: id,
       anchor: LiveAnchor.normalized(
-        platform: _site,
+        platform: bilibiliSiteId,
         anchorId: jsonString(item['mid']) ?? '',
         name: _highlighted(item['uname']),
         avatarUrl: sizedImage(item['uface'], '@400w.jpg'),
         followerCount: jsonCount(item['fans_num']) ?? jsonCount(item['attentions']),
         liveStatus: state,
       ),
-      area: LiveArea.normalized(platform: _site, areaName: _highlighted(item['cate_name'])),
+      area: LiveArea.normalized(platform: bilibiliSiteId, areaName: _highlighted(item['cate_name'])),
       broadcast: RoomBroadcast(
         liveStatus: state,
         startedAt: state == LiveStatus.live ? _beijingTime(item['live_time']) : null,
@@ -247,7 +246,7 @@ abstract final class BilibiliRoomParser {
       for (final item in jsonList(jsonObject(root['data'])?['result']))
         if (jsonObject(item) case final user? when _roomId(user['roomid']) != null)
           LiveAnchor.normalized(
-            platform: _site,
+            platform: bilibiliSiteId,
             anchorId: jsonString(user['mid']) ?? _roomId(user['roomid'])!,
             name: _highlighted(user['uname']),
             avatarUrl: sizedImage(user['uface'], '@400w.jpg'),
@@ -291,7 +290,7 @@ abstract final class BilibiliRoomParser {
     return (
       longId: longId,
       room: LiveRoom.normalized(
-        platform: _site,
+        platform: bilibiliSiteId,
         roomId: id,
         content: RoomContent(
           title: decodeHtmlEntities(jsonString(room['title']) ?? ''),
@@ -300,14 +299,14 @@ abstract final class BilibiliRoomParser {
           notice: notice == null ? '' : decodeHtmlEntities(notice),
         ),
         anchor: LiveAnchor.normalized(
-          platform: _site,
+          platform: bilibiliSiteId,
           anchorId: jsonString(base?['uid']) ?? '',
           name: decodeHtmlEntities(jsonString(base?['uname']) ?? ''),
           avatarUrl: sizedImage(base?['face'], '@100w.jpg'),
           liveStatus: state,
         ),
         area: LiveArea.normalized(
-          platform: _site,
+          platform: bilibiliSiteId,
           areaId: jsonString(room['area_id']) ?? '',
           areaName: jsonString(room['area_name']) ?? '',
         ),

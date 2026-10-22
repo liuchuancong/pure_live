@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/area/live_area/live_area.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
+import 'package:live_sites/src/platforms/looklive/looklive_manifest.dart';
 import 'package:live_sites/src/platforms/looklive/looklive_site.dart';
 import 'package:live_sites/src/platforms/looklive/parsers/looklive_failure.dart';
 import 'package:live_sites/src/platforms/looklive/parsers/looklive_room_parser.dart';
@@ -39,9 +40,9 @@ final class LookliveAreaProvider implements LiveAreaProvider {
       final rooms = request.pageSize < 1 ? const <LiveRoom>[] : page.rooms.take(request.pageSize).toList();
       return right(LivePage(items: rooms, hasMore: page.hasMore));
     } on LookliveFailure catch (failure) {
-      return left(failure.toLiveSiteError('looklive'));
+      return left(failure.toLiveSiteError(lookliveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'looklive', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: lookliveSiteId, message: '$error', cause: error));
     }
   }
 }

@@ -8,6 +8,7 @@ import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
+import 'package:live_sites/src/platforms/huya/huya_manifest.dart';
 import 'package:live_sites/src/platforms/huya/huya_site.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_failure.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_play_parser.dart';
@@ -44,9 +45,9 @@ final class HuyaPlaybackProvider implements LivePlaybackProvider {
       }
       return right(profile.qualities);
     } on HuyaFailure catch (failure) {
-      return left(failure.toLiveSiteError('huya'));
+      return left(failure.toLiveSiteError(huyaSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'huya', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: huyaSiteId, message: '$error', cause: error));
     }
   }
 
@@ -102,9 +103,9 @@ final class HuyaPlaybackProvider implements LivePlaybackProvider {
       if (lines.isEmpty) throw last ?? const HuyaFailure(HuyaFailureKind.streamUnavailable, 'no line could be signed');
       return right(lines);
     } on HuyaFailure catch (failure) {
-      return left(failure.toLiveSiteError('huya'));
+      return left(failure.toLiveSiteError(huyaSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'huya', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: huyaSiteId, message: '$error', cause: error));
     }
   }
 
@@ -131,7 +132,10 @@ final class HuyaPlaybackProvider implements LivePlaybackProvider {
           receivedAt: token.receivedAt,
         );
         if (!site.now().toUtc().isBefore(native.invalidAt)) {
-          throw const HuyaFailure(HuyaFailureKind.streamUnavailable, 'getCdnTokenInfoEx: the native token arrived expired');
+          throw const HuyaFailure(
+            HuyaFailureKind.streamUnavailable,
+            'getCdnTokenInfoEx: the native token arrived expired',
+          );
         }
         antiCode = _signWith(token.token, line, line.presenterUid > 0 ? line.presenterUid : viewerUid);
         window = native;

@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/picarto/parsers/picarto_failure.dart';
+import 'package:live_sites/src/platforms/picarto/picarto_manifest.dart';
 import 'package:live_sites/src/platforms/picarto/picarto_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -31,9 +32,9 @@ final class PicartoDiscoveryProvider implements LiveDiscoveryProvider {
       final page = await site.directory(request.page, request.pageSize);
       return right(LivePage(items: page.rooms, hasMore: page.hasMore));
     } on PicartoFailure catch (failure) {
-      return left(failure.toLiveSiteError('picarto'));
+      return left(failure.toLiveSiteError(picartoSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'picarto', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: picartoSiteId, message: '$error', cause: error));
     }
   }
 }

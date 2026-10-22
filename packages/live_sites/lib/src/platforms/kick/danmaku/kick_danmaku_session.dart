@@ -9,6 +9,7 @@ import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/kick/danmaku/kick_danmaku_codec.dart';
+import 'package:live_sites/src/platforms/kick/kick_manifest.dart';
 import 'package:live_sites/src/platforms/kick/kick_site.dart';
 import 'package:live_sites/src/platforms/kick/parsers/kick_failure.dart';
 import 'package:live_websocket/live_websocket.dart';
@@ -38,20 +39,20 @@ final class KickDanmakuProvider implements LiveDanmakuProvider {
       // The three subscription ids must all be real, or the socket would
       // subscribe `chatrooms.0.v2` / `channel_0` and join nothing.
       if (chatroom == null || chatroom <= 0) {
-        return left(const LiveSiteError.unsupported(siteId: 'kick', message: 'no chatroom to subscribe to'));
+        return left(const LiveSiteError.unsupported(siteId: kickSiteId, message: 'no chatroom to subscribe to'));
       }
       if (channel.channelId <= 0) {
-        return left(const LiveSiteError.contentUnavailable(siteId: 'kick', message: 'channel has no id'));
+        return left(const LiveSiteError.contentUnavailable(siteId: kickSiteId, message: 'channel has no id'));
       }
       final slug = channel.room.roomId.trim();
       if (slug.isEmpty) {
-        return left(const LiveSiteError.contentUnavailable(siteId: 'kick', message: 'channel has no slug'));
+        return left(const LiveSiteError.contentUnavailable(siteId: kickSiteId, message: 'channel has no slug'));
       }
       args = KickDanmakuArgs(chatroomId: chatroom, channelId: channel.channelId, slug: slug);
     } on KickFailure catch (failure) {
-      return left(failure.toLiveSiteError('kick'));
+      return left(failure.toLiveSiteError(kickSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kick', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kickSiteId, message: '$error', cause: error));
     }
     final session = KickDanmakuSession(args: args);
     final failure = await session.connect();
@@ -137,7 +138,7 @@ final class KickDanmakuSession implements LiveDanmakuSession {
   @override
   Future<LiveSiteError?> connect() async {
     if (_disposed) {
-      return const LiveSiteError.unsupported(siteId: 'kick', message: 'session is disposed');
+      return const LiveSiteError.unsupported(siteId: kickSiteId, message: 'session is disposed');
     }
     final generation = ++_generation;
     _joined = false;
@@ -154,7 +155,7 @@ final class KickDanmakuSession implements LiveDanmakuSession {
     );
     _socket = socket;
     if (!await socket.start()) {
-      return const LiveSiteError.network(siteId: 'kick', message: 'danmaku connect failed');
+      return const LiveSiteError.network(siteId: kickSiteId, message: 'danmaku connect failed');
     }
     _heartbeat = Timer.periodic(KickDanmakuCodec.heartbeatInterval, (_) {
       if (_joined && generation == _generation && !_disposed) _send(KickDanmakuCodec.ping);

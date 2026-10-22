@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/fc2live/api/fc2live_endpoints.dart';
+import 'package:live_sites/src/platforms/fc2live/fc2live_manifest.dart';
 import 'package:live_sites/src/platforms/fc2live/fc2live_site.dart';
 import 'package:live_sites/src/platforms/fc2live/parsers/fc2live_room_parser.dart';
 
@@ -27,11 +28,11 @@ final class Fc2LiveLinkResolver implements LiveLinkResolver {
   @override
   Future<Either<LiveSiteError, Uri>> resolve(Uri uri) async {
     if (uri.host.toLowerCase() != Fc2LiveEndpoints.host) {
-      return left(LiveSiteError.unsupported(siteId: 'fc2live', message: 'not an FC2 Live link: $uri'));
+      return left(LiveSiteError.unsupported(siteId: fc2LiveSiteId, message: 'not an FC2 Live link: $uri'));
     }
     final id = Fc2LiveRoomParser.channelIdFromUrl('$uri');
     if (id == null) {
-      return left(LiveSiteError.notFound(siteId: 'fc2live', message: 'no channel in FC2 Live link: $uri'));
+      return left(LiveSiteError.notFound(siteId: fc2LiveSiteId, message: 'no channel in FC2 Live link: $uri'));
     }
     return right(Uri.parse(Fc2LiveEndpoints.channelUrl(id)));
   }

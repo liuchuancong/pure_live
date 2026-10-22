@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/platforms/cc/cc_manifest.dart';
 import 'package:live_sites/src/platforms/cc/cc_site.dart';
 import 'package:live_sites/src/platforms/cc/parsers/cc_failure.dart';
 
@@ -29,9 +30,9 @@ final class CcPlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.qualitiesOf(roomId));
     } on CcFailure catch (failure) {
-      return left(failure.toLiveSiteError('cc'));
+      return left(failure.toLiveSiteError(ccSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'cc', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: ccSiteId, message: '$error', cause: error));
     }
   }
 
@@ -40,9 +41,9 @@ final class CcPlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.linesOf(roomId, quality: quality));
     } on CcFailure catch (failure) {
-      return left(failure.toLiveSiteError('cc'));
+      return left(failure.toLiveSiteError(ccSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'cc', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: ccSiteId, message: '$error', cause: error));
     }
   }
 }

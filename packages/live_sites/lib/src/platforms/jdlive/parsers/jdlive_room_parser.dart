@@ -16,6 +16,7 @@ import 'package:live_sites/src/models/room/room_links/room_links.dart';
 import 'package:live_sites/src/models/room/room_runtime/room_runtime.dart';
 import 'package:live_sites/src/platforms/jdlive/api/jdlive_endpoints.dart';
 import 'package:live_sites/src/platforms/jdlive/danmaku/jdlive_danmaku_codec.dart';
+import 'package:live_sites/src/platforms/jdlive/jdlive_manifest.dart';
 import 'package:live_sites/src/platforms/jdlive/parsers/jdlive_failure.dart';
 import 'package:live_sites/src/platforms/jdlive/parsers/jdlive_json.dart';
 
@@ -170,7 +171,7 @@ final class JdliveBroadcast {
 abstract final class JdliveRoomParser {
   /// The one area of the catalog.
   static LiveArea area() =>
-      LiveArea.normalized(platform: 'jdlive', areaId: JdliveEndpoints.areaId, areaName: JdliveEndpoints.areaName);
+      LiveArea.normalized(platform: jdliveSiteId, areaId: JdliveEndpoints.areaId, areaName: JdliveEndpoints.areaName);
 
   /// The 3.x state of a `status`: 1 live, 0 preview, 2 ended, 3 replay, 10
   /// and 11 paused, anything else (or none) unknown.
@@ -392,7 +393,7 @@ abstract final class JdliveRoomParser {
       JdliveState.paused || JdliveState.unknown => LiveStatus.unknown,
     };
     return LiveRoom.normalized(
-      platform: 'jdlive',
+      platform: jdliveSiteId,
       roomId: room.liveId,
       content: RoomContent(
         title: room.title,
@@ -400,7 +401,7 @@ abstract final class JdliveRoomParser {
         notice: room.appOnly ? JdliveEndpoints.restrictedNotice : JdliveEndpoints.chatNotice,
       ),
       anchor: LiveAnchor.normalized(
-        platform: 'jdlive',
+        platform: jdliveSiteId,
         anchorId: room.authorId,
         name: room.nick,
         avatarUrl: room.avatar,

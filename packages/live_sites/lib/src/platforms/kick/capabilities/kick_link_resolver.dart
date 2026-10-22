@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/kick/api/kick_endpoints.dart';
+import 'package:live_sites/src/platforms/kick/kick_manifest.dart';
 import 'package:live_sites/src/platforms/kick/kick_site.dart';
 import 'package:live_sites/src/platforms/kick/parsers/kick_room_parser.dart';
 
@@ -30,11 +31,11 @@ final class KickLinkResolver implements LiveLinkResolver {
   Future<Either<LiveSiteError, Uri>> resolve(Uri uri) async {
     final host = uri.host.toLowerCase();
     if (!KickRoomParser.isKickHost(host)) {
-      return left(LiveSiteError.unsupported(siteId: 'kick', message: 'not a kick link: $uri'));
+      return left(LiveSiteError.unsupported(siteId: kickSiteId, message: 'not a kick link: $uri'));
     }
     final slug = KickRoomParser.slugFromUrl(uri);
     if (slug == null) {
-      return left(LiveSiteError.notFound(siteId: 'kick', message: 'no channel in kick link: $uri'));
+      return left(LiveSiteError.notFound(siteId: kickSiteId, message: 'no channel in kick link: $uri'));
     }
     return right(KickEndpoints.roomPage(slug));
   }

@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/platforms/inke/inke_manifest.dart';
 import 'package:live_sites/src/platforms/inke/inke_site.dart';
 import 'package:live_sites/src/platforms/inke/parsers/inke_failure.dart';
 
@@ -32,9 +33,9 @@ final class InkePlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.qualitiesOf(roomId));
     } on InkeFailure catch (failure) {
-      return left(failure.toLiveSiteError('inke'));
+      return left(failure.toLiveSiteError(inkeSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'inke', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: inkeSiteId, message: '$error', cause: error));
     }
   }
 
@@ -43,9 +44,9 @@ final class InkePlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.linesOf(roomId, quality: quality));
     } on InkeFailure catch (failure) {
-      return left(failure.toLiveSiteError('inke'));
+      return left(failure.toLiveSiteError(inkeSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'inke', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: inkeSiteId, message: '$error', cause: error));
     }
   }
 }

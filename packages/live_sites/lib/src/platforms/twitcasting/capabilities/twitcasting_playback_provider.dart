@@ -4,6 +4,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/platforms/twitcasting/parsers/twitcasting_failure.dart';
+import 'package:live_sites/src/platforms/twitcasting/twitcasting_manifest.dart';
 import 'package:live_sites/src/platforms/twitcasting/twitcasting_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -29,9 +30,9 @@ final class TwitcastingPlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.qualitiesOf(roomId));
     } on TwitcastingFailure catch (failure) {
-      return left(failure.toLiveSiteError('twitcasting'));
+      return left(failure.toLiveSiteError(twitcastingSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'twitcasting', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: twitcastingSiteId, message: '$error', cause: error));
     }
   }
 
@@ -40,9 +41,9 @@ final class TwitcastingPlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.linesOf(roomId, quality: quality));
     } on TwitcastingFailure catch (failure) {
-      return left(failure.toLiveSiteError('twitcasting'));
+      return left(failure.toLiveSiteError(twitcastingSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'twitcasting', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: twitcastingSiteId, message: '$error', cause: error));
     }
   }
 }

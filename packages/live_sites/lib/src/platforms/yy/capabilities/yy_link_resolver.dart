@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/yy/api/yy_endpoints.dart';
+import 'package:live_sites/src/platforms/yy/yy_manifest.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -18,7 +19,7 @@ final class YyLinkResolver implements LiveLinkResolver {
   /// Creates the resolver.
   const YyLinkResolver();
 
-  static const String _siteId = 'yy';
+  static const String _siteId = yySiteId;
 
   @override
   Future<Either<LiveSiteError, Uri>> resolve(Uri uri) async {

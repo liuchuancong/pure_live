@@ -10,11 +10,10 @@ import 'package:live_sites/src/models/room/room_broadcast/room_broadcast.dart';
 import 'package:live_sites/src/models/room/room_content/room_content.dart';
 import 'package:live_sites/src/models/room/room_links/room_links.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
+import 'package:live_sites/src/platforms/douyu/douyu_manifest.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_failure.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_gift_parser.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_json.dart';
-
-const _site = 'douyu';
 
 final RegExp _digits = RegExp(r'^\d{1,18}$');
 
@@ -81,7 +80,7 @@ abstract final class DouyuRoomParser {
         if (areaId == null) continue;
         result.add(
           LiveArea.normalized(
-            platform: _site,
+            platform: douyuSiteId,
             areaId: areaId,
             areaName: decodeHtmlEntities(jsonString(area['cate2Name']) ?? ''),
             parentAreaId: parentId,
@@ -129,18 +128,18 @@ abstract final class DouyuRoomParser {
     if (id == null) return null;
     final hot = jsonString(item['ol']);
     return LiveRoom.normalized(
-      platform: _site,
+      platform: douyuSiteId,
       roomId: id,
       content: RoomContent(
         title: decodeHtmlEntities(jsonString(item['rn']) ?? ''),
         coverUrl: normalizeImageUrl(item['rs16']),
       ),
       anchor: LiveAnchor.normalized(
-        platform: _site,
+        platform: douyuSiteId,
         name: decodeHtmlEntities(jsonString(item['nn']) ?? ''),
         avatarUrl: anchorAvatar(item['av']),
       ),
-      area: LiveArea.normalized(platform: _site, areaName: jsonString(item['c2name']) ?? ''),
+      area: LiveArea.normalized(platform: douyuSiteId, areaName: jsonString(item['c2name']) ?? ''),
       audience: RoomAudience(popularity: parseAudienceNumberOrNull(hot)),
       broadcast: const RoomBroadcast(liveStatus: LiveStatus.live),
       links: RoomLinks(webUrl: 'https://www.douyu.com/$id'),
@@ -186,18 +185,18 @@ abstract final class DouyuRoomParser {
     };
     return LiveSearchResult.room(
       LiveRoom.normalized(
-        platform: _site,
+        platform: douyuSiteId,
         roomId: id,
         content: RoomContent(
           title: decodeHtmlEntities(jsonString(item['roomName']) ?? ''),
           coverUrl: normalizeImageUrl(item['roomSrc']),
         ),
         anchor: LiveAnchor.normalized(
-          platform: _site,
+          platform: douyuSiteId,
           name: decodeHtmlEntities(jsonString(item['nickName']) ?? ''),
           avatarUrl: anchorAvatar(item['avatar']),
         ),
-        area: LiveArea.normalized(platform: _site, areaName: jsonString(item['cateName']) ?? ''),
+        area: LiveArea.normalized(platform: douyuSiteId, areaName: jsonString(item['cateName']) ?? ''),
         audience: RoomAudience(popularity: parseAudienceNumberOrNull(hot)),
         broadcast: RoomBroadcast(liveStatus: status),
       ),
@@ -212,7 +211,7 @@ abstract final class DouyuRoomParser {
         if (jsonObject(jsonObject(item)?['anchorInfo']) case final anchor? when roomId(anchor['rid']) != null)
           LiveSearchResult.anchor(
             LiveAnchor.normalized(
-              platform: _site,
+              platform: douyuSiteId,
               anchorId: roomId(anchor['rid'])!,
               name: decodeHtmlEntities(jsonString(anchor['nickName']) ?? ''),
               avatarUrl: anchorAvatar(anchor['avatar']),
@@ -267,7 +266,7 @@ abstract final class DouyuRoomParser {
     final result = (
       rid: rid,
       room: LiveRoom.normalized(
-        platform: _site,
+        platform: douyuSiteId,
         roomId: id,
         content: RoomContent(
           title: decodeHtmlEntities(rawTitle),
@@ -276,11 +275,11 @@ abstract final class DouyuRoomParser {
           notice: '',
         ),
         anchor: LiveAnchor.normalized(
-          platform: _site,
+          platform: douyuSiteId,
           name: decodeHtmlEntities(jsonString(room['owner_name']) ?? ''),
           avatarUrl: anchorAvatar(room['owner_avatar']),
         ),
-        area: LiveArea.normalized(platform: _site, areaName: jsonString(room['second_lvl_name']) ?? ''),
+        area: LiveArea.normalized(platform: douyuSiteId, areaName: jsonString(room['second_lvl_name']) ?? ''),
         audience: RoomAudience(
           popularity: parseAudienceNumberOrNull(hot),
           primaryMetric: LiveAudienceMetricType.popularity,

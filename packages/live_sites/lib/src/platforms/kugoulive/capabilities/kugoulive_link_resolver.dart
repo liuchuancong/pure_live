@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/kugoulive/api/kugoulive_endpoints.dart';
+import 'package:live_sites/src/platforms/kugoulive/kugoulive_manifest.dart';
 import 'package:live_sites/src/platforms/kugoulive/kugoulive_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -31,8 +32,8 @@ final class KugouliveLinkResolver implements LiveLinkResolver {
     return Future.value(
       left(
         ours
-            ? LiveSiteError.notFound(siteId: 'kugoulive', message: '"$uri" names no room')
-            : LiveSiteError.unsupported(siteId: 'kugoulive', message: '"$uri" is not a Kugou Live link'),
+            ? LiveSiteError.notFound(siteId: kugouliveSiteId, message: '"$uri" names no room')
+            : LiveSiteError.unsupported(siteId: kugouliveSiteId, message: '"$uri" is not a Kugou Live link'),
       ),
     );
   }

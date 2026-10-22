@@ -6,9 +6,8 @@
 /// persists the channels, playlists, group arrangement and line probe
 /// verdicts through the `IptvStore` seam (a Hivez box in production),
 /// reconciles re-imports by URL so favourites, numbers, hiding and ordering
-/// survive a playlist update, and `LibraryIptvChannelSource` exposes the
-/// library through the live_sites IPTV site so channels play through the
-/// ordinary playback stack.
+/// survive a playlist update, and `LibraryIptvChannelSource` reads the
+/// library back in zap order, as the player and the screens list it.
 ///
 /// Two things a remote control needs are modelled separately from the
 /// playlist, because they belong to the viewer rather than to the source:

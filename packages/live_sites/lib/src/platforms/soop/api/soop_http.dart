@@ -1,6 +1,7 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/soop/api/soop_endpoints.dart';
 import 'package:live_sites/src/platforms/soop/parsers/soop_failure.dart';
+import 'package:live_sites/src/platforms/soop/soop_manifest.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -29,7 +30,7 @@ final class SoopHttp {
     final LiveResponse response;
     try {
       response = await http.send(
-        LiveRequest.get(url, headers: SoopEndpoints.apiHeaders(), site: 'soop', cancelToken: cancel),
+        LiveRequest.get(url, headers: SoopEndpoints.apiHeaders(), site: soopSiteId, cancelToken: cancel),
       );
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;
@@ -43,7 +44,13 @@ final class SoopHttp {
     final LiveResponse response;
     try {
       response = await http.send(
-        LiveRequest.form(url, fields: fields, headers: SoopEndpoints.apiHeaders(), site: 'soop', cancelToken: cancel),
+        LiveRequest.form(
+          url,
+          fields: fields,
+          headers: SoopEndpoints.apiHeaders(),
+          site: soopSiteId,
+          cancelToken: cancel,
+        ),
       );
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;

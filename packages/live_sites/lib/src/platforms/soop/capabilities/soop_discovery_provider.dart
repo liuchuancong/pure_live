@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/soop/parsers/soop_failure.dart';
+import 'package:live_sites/src/platforms/soop/soop_manifest.dart';
 import 'package:live_sites/src/platforms/soop/soop_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -31,9 +32,9 @@ final class SoopDiscoveryProvider implements LiveDiscoveryProvider {
       final page = await site.recommend(page: request.page);
       return right(LivePage(items: page.rooms, hasMore: page.hasMore));
     } on SoopFailure catch (failure) {
-      return left(failure.toLiveSiteError('soop'));
+      return left(failure.toLiveSiteError(soopSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'soop', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: soopSiteId, message: '$error', cause: error));
     }
   }
 }

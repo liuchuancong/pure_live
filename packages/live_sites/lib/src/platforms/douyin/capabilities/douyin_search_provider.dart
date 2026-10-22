@@ -8,6 +8,7 @@ import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
 import 'package:live_sites/src/platforms/douyin/api/douyin_endpoints.dart';
+import 'package:live_sites/src/platforms/douyin/douyin_manifest.dart';
 import 'package:live_sites/src/platforms/douyin/douyin_site.dart';
 import 'package:live_sites/src/platforms/douyin/parsers/douyin_failure.dart';
 import 'package:live_sites/src/platforms/douyin/parsers/douyin_room_parser.dart';
@@ -43,7 +44,7 @@ final class DouyinSearchProvider implements LiveSearchProvider {
       // search, whatever the keyword is — so it is checked before the blank
       // keyword short-circuit below.
       return left(
-        LiveSiteError.unsupported(siteId: 'douyin', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(siteId: douyinSiteId, message: 'search target ${request.target.name} not supported'),
       );
     }
     final text = request.query.trim();
@@ -58,9 +59,9 @@ final class DouyinSearchProvider implements LiveSearchProvider {
           : [for (final area in await matchedAreas(text)) LiveSearchResult.area(area)];
       return right(LivePage(items: items));
     } on DouyinFailure catch (failure) {
-      return left(failure.toLiveSiteError('douyin'));
+      return left(failure.toLiveSiteError(douyinSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'douyin', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: douyinSiteId, message: '$error', cause: error));
     }
   }
 

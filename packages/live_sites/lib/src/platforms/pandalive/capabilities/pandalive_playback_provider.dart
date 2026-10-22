@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/platforms/pandalive/pandalive_manifest.dart';
 import 'package:live_sites/src/platforms/pandalive/pandalive_site.dart';
 import 'package:live_sites/src/platforms/pandalive/parsers/pandalive_failure.dart';
 
@@ -31,9 +32,9 @@ final class PandalivePlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.qualitiesOf(roomId));
     } on PandaliveFailure catch (failure) {
-      return left(failure.toLiveSiteError('pandalive'));
+      return left(failure.toLiveSiteError(pandaliveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'pandalive', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: pandaliveSiteId, message: '$error', cause: error));
     }
   }
 
@@ -42,9 +43,9 @@ final class PandalivePlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.linesOf(roomId, quality: quality));
     } on PandaliveFailure catch (failure) {
-      return left(failure.toLiveSiteError('pandalive'));
+      return left(failure.toLiveSiteError(pandaliveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'pandalive', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: pandaliveSiteId, message: '$error', cause: error));
     }
   }
 }

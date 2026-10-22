@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/platforms/chzzk/chzzk_manifest.dart';
 import 'package:live_sites/src/platforms/chzzk/chzzk_site.dart';
 import 'package:live_sites/src/platforms/chzzk/parsers/chzzk_failure.dart';
 import 'package:live_sites/src/platforms/chzzk/parsers/chzzk_play_parser.dart';
@@ -35,9 +36,9 @@ final class ChzzkPlaybackProvider implements LivePlaybackProvider {
     try {
       return right(ChzzkPlayParser.qualities(await site.variantsOf(roomId)));
     } on ChzzkFailure catch (failure) {
-      return left(failure.toLiveSiteError('chzzk'));
+      return left(failure.toLiveSiteError(chzzkSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'chzzk', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: chzzkSiteId, message: '$error', cause: error));
     }
   }
 
@@ -54,9 +55,9 @@ final class ChzzkPlaybackProvider implements LivePlaybackProvider {
       }
       return right(lines);
     } on ChzzkFailure catch (failure) {
-      return left(failure.toLiveSiteError('chzzk'));
+      return left(failure.toLiveSiteError(chzzkSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'chzzk', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: chzzkSiteId, message: '$error', cause: error));
     }
   }
 }

@@ -2,9 +2,13 @@ import 'package:live_sites/src/core/live_site_manifest.dart';
 import 'package:live_sites/src/models/asset/live_asset_ref/live_asset_ref.dart';
 import 'package:live_sites/src/models/enums/live_asset_type.dart';
 
+/// The one stable id of this platform; its manifest, errors and
+/// models all read it from here.
+const String bilibiliSiteId = 'bilibili';
+
 /// Bilibili Live's stable identity (ARCHITECTURE.md §4.1).
 const bilibiliManifest = LiveSiteManifest(
-  id: 'bilibili',
+  id: bilibiliSiteId,
   name: {'zh-CN': '哔哩哔哩直播', 'en-US': 'Bilibili Live'},
   description: {
     'zh-CN': '哔哩哔哩直播：分区、推荐、搜索、房间详情、播放地址与经典 JSON 广播弹幕协议。',

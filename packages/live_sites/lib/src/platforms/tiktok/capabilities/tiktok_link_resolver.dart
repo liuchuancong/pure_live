@@ -4,6 +4,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/tiktok/api/tiktok_endpoints.dart';
 import 'package:live_sites/src/platforms/tiktok/parsers/tiktok_failure.dart';
 import 'package:live_sites/src/platforms/tiktok/parsers/tiktok_link.dart';
+import 'package:live_sites/src/platforms/tiktok/tiktok_manifest.dart';
 import 'package:live_sites/src/platforms/tiktok/tiktok_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -32,20 +33,20 @@ final class TiktokLinkResolver implements LiveLinkResolver {
       try {
         final username = await site.shortLinkUsername(short);
         return username == null
-            ? left(LiveSiteError.notFound(siteId: 'tiktok', message: '"$uri" leads to no LIVE room'))
+            ? left(LiveSiteError.notFound(siteId: tiktokSiteId, message: '"$uri" leads to no LIVE room'))
             : right(Uri.parse(TiktokEndpoints.roomUrl(username)));
       } on TiktokFailure catch (failure) {
-        return left(failure.toLiveSiteError('tiktok'));
+        return left(failure.toLiveSiteError(tiktokSiteId));
       } on Object catch (error) {
-        return left(LiveSiteError.unexpected(siteId: 'tiktok', message: '$error', cause: error));
+        return left(LiveSiteError.unexpected(siteId: tiktokSiteId, message: '$error', cause: error));
       }
     }
     final link = TiktokLink.parse(raw);
     if (link == null) {
       return left(
         TiktokLink.ownsHost(uri.host)
-            ? LiveSiteError.notFound(siteId: 'tiktok', message: '"$uri" names no LIVE room')
-            : LiveSiteError.unsupported(siteId: 'tiktok', message: '"$uri" is not a TikTok link'),
+            ? LiveSiteError.notFound(siteId: tiktokSiteId, message: '"$uri" names no LIVE room')
+            : LiveSiteError.unsupported(siteId: tiktokSiteId, message: '"$uri" is not a TikTok link'),
       );
     }
     if (link.kind == TiktokLinkKind.username) {
@@ -55,9 +56,9 @@ final class TiktokLinkResolver implements LiveLinkResolver {
       final username = await site.owner(link.id);
       return right(Uri.parse(TiktokEndpoints.roomUrl(username)));
     } on TiktokFailure catch (failure) {
-      return left(failure.toLiveSiteError('tiktok'));
+      return left(failure.toLiveSiteError(tiktokSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'tiktok', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: tiktokSiteId, message: '$error', cause: error));
     }
   }
 }

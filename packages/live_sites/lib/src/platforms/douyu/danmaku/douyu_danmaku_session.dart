@@ -10,6 +10,7 @@ import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/douyu/danmaku/douyu_stt_codec.dart';
+import 'package:live_sites/src/platforms/douyu/douyu_manifest.dart';
 import 'package:live_sites/src/platforms/douyu/douyu_site.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_gift_parser.dart';
 import 'package:live_websocket/live_websocket.dart';
@@ -65,7 +66,7 @@ final class DouyuDanmakuProvider implements LiveDanmakuProvider {
       }());
       return right(session);
     }
-    return left(const LiveSiteError.contentUnavailable(siteId: 'douyu', message: 'room names no danmaku handle'));
+    return left(const LiveSiteError.contentUnavailable(siteId: douyuSiteId, message: 'room names no danmaku handle'));
   }
 }
 
@@ -126,7 +127,7 @@ final class DouyuDanmakuSession implements LiveDanmakuSession {
   @override
   Future<LiveSiteError?> connect() async {
     if (_disposed) {
-      return const LiveSiteError.unsupported(siteId: 'douyu', message: 'session is disposed');
+      return const LiveSiteError.unsupported(siteId: douyuSiteId, message: 'session is disposed');
     }
     await _teardownSocket();
     final socket = DanmakuSocket(
@@ -139,7 +140,7 @@ final class DouyuDanmakuSession implements LiveDanmakuSession {
     _socket = socket;
     if (!await socket.start()) {
       return const LiveSiteError.network(
-        siteId: 'douyu',
+        siteId: douyuSiteId,
         message: 'danmaku connect failed: no connection to $_endpoint',
       );
     }

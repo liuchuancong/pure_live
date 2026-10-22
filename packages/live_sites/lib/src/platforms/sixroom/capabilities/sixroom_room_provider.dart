@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/sixroom/parsers/sixroom_failure.dart';
+import 'package:live_sites/src/platforms/sixroom/sixroom_manifest.dart';
 import 'package:live_sites/src/platforms/sixroom/sixroom_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -40,8 +41,8 @@ Future<Either<LiveSiteError, T>> _guard<T>(Future<T> Function() work) async {
   try {
     return right(await work());
   } on SixroomFailure catch (failure) {
-    return left(failure.toLiveSiteError('sixroom'));
+    return left(failure.toLiveSiteError(sixroomSiteId));
   } on Object catch (error) {
-    return left(LiveSiteError.unexpected(siteId: 'sixroom', message: '$error', cause: error));
+    return left(LiveSiteError.unexpected(siteId: sixroomSiteId, message: '$error', cause: error));
   }
 }

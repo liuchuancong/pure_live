@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/chzzk/api/chzzk_endpoints.dart';
+import 'package:live_sites/src/platforms/chzzk/chzzk_manifest.dart';
 import 'package:live_sites/src/platforms/chzzk/chzzk_site.dart';
 import 'package:live_sites/src/platforms/chzzk/parsers/chzzk_room_parser.dart';
 
@@ -29,11 +30,11 @@ final class ChzzkLinkResolver implements LiveLinkResolver {
   @override
   Future<Either<LiveSiteError, Uri>> resolve(Uri uri) async {
     if (uri.host.toLowerCase() != 'chzzk.naver.com') {
-      return left(LiveSiteError.unsupported(siteId: 'chzzk', message: 'not a chzzk link: $uri'));
+      return left(LiveSiteError.unsupported(siteId: chzzkSiteId, message: 'not a chzzk link: $uri'));
     }
     final id = ChzzkRoomParser.roomIdFromUrl('$uri');
     if (id == null) {
-      return left(LiveSiteError.notFound(siteId: 'chzzk', message: 'no channel in chzzk link: $uri'));
+      return left(LiveSiteError.notFound(siteId: chzzkSiteId, message: 'no channel in chzzk link: $uri'));
     }
     return right(Uri.parse(ChzzkEndpoints.roomUrl(id)));
   }

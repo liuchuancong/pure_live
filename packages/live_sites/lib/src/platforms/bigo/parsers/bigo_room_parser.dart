@@ -9,6 +9,7 @@ import 'package:live_sites/src/models/room/room_broadcast/room_broadcast.dart';
 import 'package:live_sites/src/models/room/room_content/room_content.dart';
 import 'package:live_sites/src/models/room/room_links/room_links.dart';
 import 'package:live_sites/src/platforms/bigo/api/bigo_endpoints.dart';
+import 'package:live_sites/src/platforms/bigo/bigo_manifest.dart';
 import 'package:live_sites/src/platforms/bigo/parsers/bigo_failure.dart';
 import 'package:live_sites/src/platforms/bigo/parsers/bigo_json.dart';
 import 'package:live_sites/src/platforms/bigo/parsers/bigo_studio.dart';
@@ -16,8 +17,6 @@ import 'package:live_sites/src/platforms/bigo/parsers/bigo_studio.dart';
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
 // ignore_for_file: unnecessary_type_name_in_constructor
-
-const _site = 'bigo';
 
 /// The studio data a room carries for playback: the identity and access of the
 /// answer it came from, whether that answer handed out a playlist, and whether
@@ -110,7 +109,7 @@ abstract final class BigoRoomParser {
   /// The one area: the public list. Bigo's website has no category tree, so
   /// every browse goes through this list and the parent name is the platform.
   static LiveArea area() => LiveArea.normalized(
-    platform: _site,
+    platform: bigoSiteId,
     areaId: BigoEndpoints.areaId,
     areaName: BigoEndpoints.areaName,
     parentAreaName: BigoEndpoints.siteName,
@@ -180,17 +179,17 @@ abstract final class BigoRoomParser {
     final locked = binary(row['is_locked'], 'is_locked of $siteId');
     count(row['room_flag'], 'room_flag of $siteId');
     return LiveRoom.normalized(
-      platform: _site,
+      platform: bigoSiteId,
       roomId: siteId,
       content: RoomContent(title: topic.isEmpty ? nickname : topic, coverUrl: cover),
       anchor: LiveAnchor.normalized(
-        platform: _site,
+        platform: bigoSiteId,
         anchorId: '$ownerId',
         name: nickname,
         avatarUrl: cover,
         liveStatus: LiveStatus.live,
       ),
-      area: LiveArea.normalized(platform: _site, areaName: BigoEndpoints.siteName),
+      area: LiveArea.normalized(platform: bigoSiteId, areaName: BigoEndpoints.siteName),
       audience: RoomAudience(onlineViewers: viewers, primaryMetric: LiveAudienceMetricType.onlineViewers),
       broadcast: RoomBroadcast(
         liveStatus: LiveStatus.live,
@@ -312,21 +311,21 @@ abstract final class BigoRoomParser {
   /// count). An offline studio names nobody (`nick_name` and `avatar` are
   /// empty), so they stay empty and a follow keeps its stored name and picture.
   static LiveRoom room(BigoStudio studio) => LiveRoom.normalized(
-    platform: _site,
+    platform: bigoSiteId,
     roomId: studio.siteId,
     content: RoomContent(
       title: studio.title.isEmpty ? studio.nickname : studio.title,
       coverUrl: studio.snapshot.isEmpty ? studio.avatar : studio.snapshot,
     ),
     anchor: LiveAnchor.normalized(
-      platform: _site,
+      platform: bigoSiteId,
       anchorId: '${studio.ownerId}',
       name: studio.nickname,
       avatarUrl: studio.avatar,
       liveStatus: studio.liveStatus,
     ),
     area: LiveArea.normalized(
-      platform: _site,
+      platform: bigoSiteId,
       areaName: studio.category.isEmpty ? BigoEndpoints.siteName : studio.category,
     ),
     audience: const RoomAudience(primaryMetric: LiveAudienceMetricType.onlineViewers),

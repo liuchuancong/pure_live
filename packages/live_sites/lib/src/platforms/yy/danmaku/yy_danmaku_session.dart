@@ -10,6 +10,7 @@ import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/platforms/yy/danmaku/yy_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/yy/parsers/yy_failure.dart';
+import 'package:live_sites/src/platforms/yy/yy_manifest.dart';
 import 'package:live_sites/src/platforms/yy/yy_site.dart';
 import 'package:live_websocket/live_websocket.dart';
 
@@ -38,13 +39,13 @@ final class YyDanmakuProvider implements LiveDanmakuProvider {
     try {
       final handle = (await site.detail(roomId)).runtime.danmakuHandle;
       if (handle is! YyDanmakuArgs) {
-        return left(LiveSiteError.contentUnavailable(siteId: 'yy', message: 'room $roomId opens no chat'));
+        return left(LiveSiteError.contentUnavailable(siteId: yySiteId, message: 'room $roomId opens no chat'));
       }
       args = handle;
     } on YyFailure catch (failure) {
-      return left(failure.toLiveSiteError('yy'));
+      return left(failure.toLiveSiteError(yySiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'yy', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: yySiteId, message: '$error', cause: error));
     }
     final session = YyDanmakuSession(args: args, site: site);
     final failure = await session.connect();
@@ -129,9 +130,9 @@ final class YyDanmakuSession implements LiveDanmakuSession {
   /// session, and this returns null.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) return const LiveSiteError.unsupported(siteId: 'yy', message: 'session is disposed');
+    if (_disposed) return const LiveSiteError.unsupported(siteId: yySiteId, message: 'session is disposed');
     if (args.topSid <= 0) {
-      return LiveSiteError.contentUnavailable(siteId: 'yy', message: 'channel ${args.topSid} opens no chat');
+      return LiveSiteError.contentUnavailable(siteId: yySiteId, message: 'channel ${args.topSid} opens no chat');
     }
     unawaited(_handshake());
     return null;

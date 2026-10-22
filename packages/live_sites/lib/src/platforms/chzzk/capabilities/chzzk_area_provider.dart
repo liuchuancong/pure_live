@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/area/live_area/live_area.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
+import 'package:live_sites/src/platforms/chzzk/chzzk_manifest.dart';
 import 'package:live_sites/src/platforms/chzzk/chzzk_site.dart';
 import 'package:live_sites/src/platforms/chzzk/parsers/chzzk_failure.dart';
 
@@ -33,9 +34,9 @@ final class ChzzkAreaProvider implements LiveAreaProvider {
     try {
       return right(await site.areas());
     } on ChzzkFailure catch (failure) {
-      return left(failure.toLiveSiteError('chzzk'));
+      return left(failure.toLiveSiteError(chzzkSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'chzzk', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: chzzkSiteId, message: '$error', cause: error));
     }
   }
 
@@ -48,9 +49,9 @@ final class ChzzkAreaProvider implements LiveAreaProvider {
       final page = await site.listing(areaId: areaId, page: request.page, cursor: request.cursor);
       return right(LivePage(items: page.rooms, hasMore: page.hasMore, nextCursor: page.nextCursor));
     } on ChzzkFailure catch (failure) {
-      return left(failure.toLiveSiteError('chzzk'));
+      return left(failure.toLiveSiteError(chzzkSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'chzzk', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: chzzkSiteId, message: '$error', cause: error));
     }
   }
 }

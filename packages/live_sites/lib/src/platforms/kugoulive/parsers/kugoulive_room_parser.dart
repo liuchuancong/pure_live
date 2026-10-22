@@ -16,6 +16,7 @@ import 'package:live_sites/src/models/room/room_broadcast/room_broadcast.dart';
 import 'package:live_sites/src/models/room/room_content/room_content.dart';
 import 'package:live_sites/src/models/room/room_links/room_links.dart';
 import 'package:live_sites/src/platforms/kugoulive/api/kugoulive_endpoints.dart';
+import 'package:live_sites/src/platforms/kugoulive/kugoulive_manifest.dart';
 import 'package:live_sites/src/platforms/kugoulive/parsers/kugoulive_failure.dart';
 import 'package:live_sites/src/platforms/kugoulive/parsers/kugoulive_json.dart';
 
@@ -119,7 +120,7 @@ abstract final class KugouliveRoomParser {
   }
 
   static LiveArea _area(String id, String name) => LiveArea.normalized(
-    platform: 'kugoulive',
+    platform: kugouliveSiteId,
     areaId: id,
     areaName: name,
     parentAreaId: 'kugoulive',
@@ -182,7 +183,7 @@ abstract final class KugouliveRoomParser {
       KugouliveState.unknown => LiveStatus.unknown,
     };
     return LiveRoom.normalized(
-      platform: 'kugoulive',
+      platform: kugouliveSiteId,
       roomId: id,
       content: RoomContent(
         title: KugouliveJson.firstText([raw['label'], raw['topicContent'], raw['performContent'], nick]),
@@ -190,7 +191,7 @@ abstract final class KugouliveRoomParser {
         notice: KugouliveEndpoints.chatNotice,
       ),
       anchor: LiveAnchor.normalized(
-        platform: 'kugoulive',
+        platform: kugouliveSiteId,
         anchorId: userId.isEmpty ? kugouId : userId,
         name: nick,
         avatarUrl: avatar.isEmpty ? cover : avatar,
@@ -206,7 +207,7 @@ abstract final class KugouliveRoomParser {
             ? LiveAudienceMetricType.popularity
             : LiveAudienceMetricType.unknown,
       ),
-      area: LiveArea.normalized(platform: 'kugoulive', areaName: KugouliveEndpoints.siteName),
+      area: LiveArea.normalized(platform: kugouliveSiteId, areaName: KugouliveEndpoints.siteName),
       broadcast: RoomBroadcast(liveStatus: liveStatus, startedAt: startedAt),
       links: RoomLinks(webUrl: KugouliveEndpoints.roomUrl(id)),
     );
@@ -295,18 +296,18 @@ abstract final class KugouliveRoomParser {
     final cover = KugouliveJson.image(info['imgPath']);
     final avatar = KugouliveJson.image(info['userLogo']);
     final room = LiveRoom.normalized(
-      platform: 'kugoulive',
+      platform: kugouliveSiteId,
       roomId: roomId,
       content: RoomContent(coverUrl: cover, notice: [...announcements, KugouliveEndpoints.chatNotice].join('\n')),
       anchor: LiveAnchor.normalized(
-        platform: 'kugoulive',
+        platform: kugouliveSiteId,
         anchorId: userId.isEmpty ? kugouId : userId,
         name: nick,
         avatarUrl: avatar.isEmpty ? cover : avatar,
         followerCount: KugouliveJson.count(info['fansCount']),
         liveStatus: liveStatus,
       ),
-      area: LiveArea.normalized(platform: 'kugoulive', areaName: KugouliveEndpoints.siteName),
+      area: LiveArea.normalized(platform: kugouliveSiteId, areaName: KugouliveEndpoints.siteName),
       audience: const RoomAudience(primaryMetric: LiveAudienceMetricType.unknown),
       broadcast: RoomBroadcast(
         liveStatus: liveStatus,

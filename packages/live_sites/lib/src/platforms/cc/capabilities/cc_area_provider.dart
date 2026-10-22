@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/area/live_area/live_area.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
+import 'package:live_sites/src/platforms/cc/cc_manifest.dart';
 import 'package:live_sites/src/platforms/cc/cc_site.dart';
 import 'package:live_sites/src/platforms/cc/parsers/cc_failure.dart';
 
@@ -30,9 +31,9 @@ final class CcAreaProvider implements LiveAreaProvider {
     try {
       return right(await site.areas());
     } on CcFailure catch (failure) {
-      return left(failure.toLiveSiteError('cc'));
+      return left(failure.toLiveSiteError(ccSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'cc', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: ccSiteId, message: '$error', cause: error));
     }
   }
 
@@ -45,9 +46,9 @@ final class CcAreaProvider implements LiveAreaProvider {
       final page = await site.areaRooms(areaId, page: request.page, pageSize: request.pageSize);
       return right(LivePage(items: page.rooms, hasMore: page.hasMore));
     } on CcFailure catch (failure) {
-      return left(failure.toLiveSiteError('cc'));
+      return left(failure.toLiveSiteError(ccSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'cc', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: ccSiteId, message: '$error', cause: error));
     }
   }
 }

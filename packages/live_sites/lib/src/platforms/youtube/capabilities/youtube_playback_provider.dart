@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.d
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/youtube/parsers/youtube_failure.dart';
 import 'package:live_sites/src/platforms/youtube/parsers/youtube_play_parser.dart';
+import 'package:live_sites/src/platforms/youtube/youtube_manifest.dart';
 import 'package:live_sites/src/platforms/youtube/youtube_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -44,9 +45,9 @@ final class YoutubePlaybackProvider implements LivePlaybackProvider {
       }
       return right(qualities);
     } on YouTubeFailure catch (failure) {
-      return left(failure.toLiveSiteError('youtube'));
+      return left(failure.toLiveSiteError(youtubeSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'youtube', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: youtubeSiteId, message: '$error', cause: error));
     }
   }
 
@@ -69,9 +70,9 @@ final class YoutubePlaybackProvider implements LivePlaybackProvider {
       }
       return right(lines);
     } on YouTubeFailure catch (failure) {
-      return left(failure.toLiveSiteError('youtube'));
+      return left(failure.toLiveSiteError(youtubeSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'youtube', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: youtubeSiteId, message: '$error', cause: error));
     }
   }
 

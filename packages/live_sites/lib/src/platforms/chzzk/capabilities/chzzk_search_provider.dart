@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
 import 'package:live_sites/src/platforms/chzzk/api/chzzk_endpoints.dart';
+import 'package:live_sites/src/platforms/chzzk/chzzk_manifest.dart';
 import 'package:live_sites/src/platforms/chzzk/chzzk_site.dart';
 import 'package:live_sites/src/platforms/chzzk/parsers/chzzk_failure.dart';
 import 'package:live_sites/src/platforms/chzzk/parsers/chzzk_room_parser.dart';
@@ -38,7 +39,7 @@ final class ChzzkSearchProvider implements LiveSearchProvider {
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
     if (!supportedTargets.contains(request.target)) {
       return left(
-        LiveSiteError.unsupported(siteId: 'chzzk', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(siteId: chzzkSiteId, message: 'search target ${request.target.name} not supported'),
       );
     }
     if (request.page < 1) return right(const LivePage(items: []));
@@ -47,7 +48,7 @@ final class ChzzkSearchProvider implements LiveSearchProvider {
     final offset = (request.page - 1) * ChzzkEndpoints.searchPageSize;
     if (offset > ChzzkEndpoints.maxSearchOffset) {
       return left(
-        LiveSiteError.invalidArgument(siteId: 'chzzk', message: 'search offset $offset is past the platform'),
+        LiveSiteError.invalidArgument(siteId: chzzkSiteId, message: 'search offset $offset is past the platform'),
       );
     }
     try {
@@ -55,9 +56,9 @@ final class ChzzkSearchProvider implements LiveSearchProvider {
       final rooms = ChzzkRoomParser.searchRooms(response.text, status: response.status);
       return right(LivePage(items: [for (final room in rooms) LiveSearchResult.room(room)]));
     } on ChzzkFailure catch (failure) {
-      return left(failure.toLiveSiteError('chzzk'));
+      return left(failure.toLiveSiteError(chzzkSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'chzzk', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: chzzkSiteId, message: '$error', cause: error));
     }
   }
 }

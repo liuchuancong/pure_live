@@ -4,6 +4,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
+import 'package:live_sites/src/platforms/kuaishou/kuaishou_manifest.dart';
 import 'package:live_sites/src/platforms/kuaishou/kuaishou_site.dart';
 import 'package:live_sites/src/platforms/kuaishou/parsers/kuaishou_failure.dart';
 import 'package:live_sites/src/platforms/kuaishou/parsers/kuaishou_play_parser.dart';
@@ -38,9 +39,9 @@ final class KuaishouPlaybackProvider implements LivePlaybackProvider {
       }
       return right(qualities);
     } on KuaishouFailure catch (failure) {
-      return left(failure.toLiveSiteError('kuaishou'));
+      return left(failure.toLiveSiteError(kuaishouSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kuaishou', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kuaishouSiteId, message: '$error', cause: error));
     }
   }
 
@@ -61,9 +62,9 @@ final class KuaishouPlaybackProvider implements LivePlaybackProvider {
       }
       return right(lines);
     } on KuaishouFailure catch (failure) {
-      return left(failure.toLiveSiteError('kuaishou'));
+      return left(failure.toLiveSiteError(kuaishouSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kuaishou', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kuaishouSiteId, message: '$error', cause: error));
     }
   }
 

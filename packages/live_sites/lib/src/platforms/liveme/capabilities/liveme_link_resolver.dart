@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/liveme/api/liveme_endpoints.dart';
+import 'package:live_sites/src/platforms/liveme/liveme_manifest.dart';
 import 'package:live_sites/src/platforms/liveme/liveme_site.dart';
 import 'package:live_sites/src/platforms/liveme/parsers/liveme_failure.dart';
 import 'package:live_sites/src/platforms/liveme/parsers/liveme_link.dart';
@@ -32,8 +33,8 @@ final class LivemeLinkResolver implements LiveLinkResolver {
       final ours = host == 'liveme.com' || host == 'www.liveme.com' || host.endsWith('.liveme.com');
       return left(
         ours
-            ? LiveSiteError.notFound(siteId: 'liveme', message: '"$uri" names no room')
-            : LiveSiteError.unsupported(siteId: 'liveme', message: '"$uri" is not a LiveMe link'),
+            ? LiveSiteError.notFound(siteId: livemeSiteId, message: '"$uri" names no room')
+            : LiveSiteError.unsupported(siteId: livemeSiteId, message: '"$uri" is not a LiveMe link'),
       );
     }
     final String shortId;
@@ -44,9 +45,9 @@ final class LivemeLinkResolver implements LiveLinkResolver {
         try {
           shortId = await site.resolveLink(link);
         } on LivemeFailure catch (failure) {
-          return left(failure.toLiveSiteError('liveme'));
+          return left(failure.toLiveSiteError(livemeSiteId));
         } on Object catch (error) {
-          return left(LiveSiteError.unexpected(siteId: 'liveme', message: '$error', cause: error));
+          return left(LiveSiteError.unexpected(siteId: livemeSiteId, message: '$error', cause: error));
         }
     }
     return right(Uri.parse(LivemeEndpoints.roomUrl(shortId)));

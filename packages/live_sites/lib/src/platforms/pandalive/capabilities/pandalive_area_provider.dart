@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/pandalive/api/pandalive_endpoints.dart';
+import 'package:live_sites/src/platforms/pandalive/pandalive_manifest.dart';
 import 'package:live_sites/src/platforms/pandalive/pandalive_site.dart';
 import 'package:live_sites/src/platforms/pandalive/parsers/pandalive_failure.dart';
 
@@ -46,9 +47,9 @@ final class PandaliveAreaProvider implements LiveAreaProvider {
       final page = await site.directory(request.page, request.pageSize, areaId: areaId);
       return right(LivePage(items: page.rooms, hasMore: page.hasMore));
     } on PandaliveFailure catch (failure) {
-      return left(failure.toLiveSiteError('pandalive'));
+      return left(failure.toLiveSiteError(pandaliveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'pandalive', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: pandaliveSiteId, message: '$error', cause: error));
     }
   }
 }

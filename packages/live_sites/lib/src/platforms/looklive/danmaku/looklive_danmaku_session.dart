@@ -10,6 +10,7 @@ import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/platforms/looklive/api/looklive_endpoints.dart';
 import 'package:live_sites/src/platforms/looklive/danmaku/looklive_danmaku_codec.dart';
+import 'package:live_sites/src/platforms/looklive/looklive_manifest.dart';
 import 'package:live_sites/src/platforms/looklive/looklive_site.dart';
 import 'package:live_sites/src/platforms/looklive/parsers/looklive_failure.dart';
 import 'package:live_sites/src/platforms/looklive/parsers/looklive_room_parser.dart';
@@ -146,9 +147,9 @@ final class LookliveDanmakuSession implements LiveDanmakuSession {
   /// session, and this returns null.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) return const LiveSiteError.unsupported(siteId: 'looklive', message: 'session is disposed');
+    if (_disposed) return const LiveSiteError.unsupported(siteId: lookliveSiteId, message: 'session is disposed');
     if (LookliveDanmakuCodec.checked(args) == null) {
-      return const LiveSiteError.contentUnavailable(siteId: 'looklive', message: 'not a LOOK room with a chatroom');
+      return const LiveSiteError.contentUnavailable(siteId: lookliveSiteId, message: 'not a LOOK room with a chatroom');
     }
     unawaited(_handshake());
     return null;

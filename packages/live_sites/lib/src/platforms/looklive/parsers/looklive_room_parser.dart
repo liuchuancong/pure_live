@@ -15,6 +15,7 @@ import 'package:live_sites/src/models/room/room_links/room_links.dart';
 import 'package:live_sites/src/models/room/room_runtime/room_runtime.dart';
 import 'package:live_sites/src/platforms/looklive/api/looklive_endpoints.dart';
 import 'package:live_sites/src/platforms/looklive/danmaku/looklive_danmaku_codec.dart';
+import 'package:live_sites/src/platforms/looklive/looklive_manifest.dart';
 import 'package:live_sites/src/platforms/looklive/parsers/looklive_failure.dart';
 import 'package:live_sites/src/platforms/looklive/parsers/looklive_json.dart';
 
@@ -259,7 +260,7 @@ abstract final class LookliveRoomParser {
 
   /// The video area.
   static final LiveArea videoArea = LiveArea.normalized(
-    platform: 'looklive',
+    platform: lookliveSiteId,
     areaId: LookliveEndpoints.videoAreaId,
     areaName: LookliveEndpoints.videoAreaName,
     parentAreaId: 'looklive',
@@ -268,7 +269,7 @@ abstract final class LookliveRoomParser {
 
   /// The voice area.
   static final LiveArea audioArea = LiveArea.normalized(
-    platform: 'looklive',
+    platform: lookliveSiteId,
     areaId: LookliveEndpoints.audioAreaId,
     areaName: LookliveEndpoints.audioAreaName,
     parentAreaId: 'looklive',
@@ -583,11 +584,11 @@ abstract final class LookliveRoomParser {
       LookliveState.unknown => LiveStatus.unknown,
     };
     return LiveRoom.normalized(
-      platform: 'looklive',
+      platform: lookliveSiteId,
       roomId: room.roomId,
       content: RoomContent(title: room.title, coverUrl: room.cover, notice: _notice(room, restriction)),
       anchor: LiveAnchor.normalized(
-        platform: 'looklive',
+        platform: lookliveSiteId,
         anchorId: room.userId,
         name: room.nick,
         avatarUrl: room.avatar.isEmpty ? room.cover : room.avatar,

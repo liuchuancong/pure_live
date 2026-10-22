@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/inke/api/inke_endpoints.dart';
+import 'package:live_sites/src/platforms/inke/inke_manifest.dart';
 import 'package:live_sites/src/platforms/inke/inke_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -27,8 +28,8 @@ final class InkeLinkResolver implements LiveLinkResolver {
     final ours = InkeEndpoints.isOurHost(uri.host.toLowerCase());
     return left(
       ours
-          ? LiveSiteError.notFound(siteId: 'inke', message: '"$uri" names no room')
-          : LiveSiteError.unsupported(siteId: 'inke', message: '"$uri" is not an Inke link'),
+          ? LiveSiteError.notFound(siteId: inkeSiteId, message: '"$uri" names no room')
+          : LiveSiteError.unsupported(siteId: inkeSiteId, message: '"$uri" is not an Inke link'),
     );
   }
 }

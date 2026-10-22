@@ -4,6 +4,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/api/xiaohongshu_endpoints.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/parsers/xiaohongshu_failure.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/parsers/xiaohongshu_link.dart';
+import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_manifest.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -37,11 +38,11 @@ final class XiaohongshuLinkResolver implements LiveLinkResolver {
         final followed = await site.shortLinkRoom(text);
         if (followed != null) return right(XiaohongshuEndpoints.roomUrl(followed));
       } on XiaohongshuFailure catch (failure) {
-        return left(failure.toLiveSiteError('xiaohongshu'));
+        return left(failure.toLiveSiteError(xiaohongshuSiteId));
       } on Object catch (error) {
-        return left(LiveSiteError.unexpected(siteId: 'xiaohongshu', message: '$error', cause: error));
+        return left(LiveSiteError.unexpected(siteId: xiaohongshuSiteId, message: '$error', cause: error));
       }
-      return left(LiveSiteError.notFound(siteId: 'xiaohongshu', message: '"$uri" leads to no room'));
+      return left(LiveSiteError.notFound(siteId: xiaohongshuSiteId, message: '"$uri" leads to no room'));
     }
     final host = uri.host.toLowerCase();
     final ours =
@@ -53,8 +54,8 @@ final class XiaohongshuLinkResolver implements LiveLinkResolver {
         host.endsWith('.xhslink.com');
     return left(
       ours
-          ? LiveSiteError.notFound(siteId: 'xiaohongshu', message: '"$uri" names no room')
-          : LiveSiteError.unsupported(siteId: 'xiaohongshu', message: '"$uri" is not a Xiaohongshu link'),
+          ? LiveSiteError.notFound(siteId: xiaohongshuSiteId, message: '"$uri" names no room')
+          : LiveSiteError.unsupported(siteId: xiaohongshuSiteId, message: '"$uri" is not a Xiaohongshu link'),
     );
   }
 }

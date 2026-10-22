@@ -9,6 +9,7 @@ import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/platforms/kuaishou/api/kuaishou_http.dart';
 import 'package:live_sites/src/platforms/kuaishou/danmaku/kuaishou_danmaku_codec.dart';
+import 'package:live_sites/src/platforms/kuaishou/kuaishou_manifest.dart';
 import 'package:live_sites/src/platforms/kuaishou/kuaishou_site.dart';
 import 'package:live_sites/src/platforms/kuaishou/parsers/kuaishou_failure.dart';
 
@@ -37,13 +38,15 @@ final class KuaishouDanmakuProvider implements LiveDanmakuProvider {
     try {
       final handle = (await site.detail(roomId)).runtime.danmakuHandle;
       if (handle is! KuaishouDanmakuArgs || handle.liveStreamId.isEmpty) {
-        return left(LiveSiteError.contentUnavailable(siteId: 'kuaishou', message: 'room $roomId names no broadcast'));
+        return left(
+          LiveSiteError.contentUnavailable(siteId: kuaishouSiteId, message: 'room $roomId names no broadcast'),
+        );
       }
       args = handle;
     } on KuaishouFailure catch (failure) {
-      return left(failure.toLiveSiteError('kuaishou'));
+      return left(failure.toLiveSiteError(kuaishouSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kuaishou', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kuaishouSiteId, message: '$error', cause: error));
     }
     final session = KuaishouDanmakuSession(args: args, http: site.http);
     final failure = await session.connect();
@@ -93,10 +96,13 @@ final class KuaishouDanmakuSession implements LiveDanmakuSession {
   @override
   Future<LiveSiteError?> connect() async {
     if (_disposed) {
-      return const LiveSiteError.unsupported(siteId: 'kuaishou', message: 'session is disposed');
+      return const LiveSiteError.unsupported(siteId: kuaishouSiteId, message: 'session is disposed');
     }
     if (args.liveStreamId.trim().isEmpty) {
-      return const LiveSiteError.contentUnavailable(siteId: 'kuaishou', message: 'kuaishou live stream id is missing');
+      return const LiveSiteError.contentUnavailable(
+        siteId: kuaishouSiteId,
+        message: 'kuaishou live stream id is missing',
+      );
     }
     _running = true;
     _cursor = '';
@@ -119,7 +125,7 @@ final class KuaishouDanmakuSession implements LiveDanmakuSession {
       return null;
     }
     return LiveSiteError.network(
-      siteId: 'kuaishou',
+      siteId: kuaishouSiteId,
       message: 'danmaku feed failed to start: $lastError',
       cause: lastError,
     );

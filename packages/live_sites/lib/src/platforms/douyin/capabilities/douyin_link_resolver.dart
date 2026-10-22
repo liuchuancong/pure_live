@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/douyin/api/douyin_endpoints.dart';
 import 'package:live_sites/src/platforms/douyin/api/douyin_http.dart';
+import 'package:live_sites/src/platforms/douyin/douyin_manifest.dart';
 import 'package:live_sites/src/platforms/douyin/douyin_site.dart';
 import 'package:live_sites/src/platforms/douyin/parsers/douyin_failure.dart';
 import 'package:live_sites/src/platforms/douyin/parsers/douyin_room_parser.dart';
@@ -35,14 +36,14 @@ final class DouyinLinkResolver implements LiveLinkResolver {
     final host = uri.host.toLowerCase();
     // The webcast fallback host (reflow links) belongs to Douyin too.
     if (!_owns(host)) {
-      return left(LiveSiteError.unsupported(siteId: 'douyin', message: 'not a douyin link: $uri'));
+      return left(LiveSiteError.unsupported(siteId: douyinSiteId, message: 'not a douyin link: $uri'));
     }
     final segments = [
       for (final segment in uri.pathSegments)
         if (segment.isNotEmpty) segment,
     ];
     if (segments.isEmpty) {
-      return left(LiveSiteError.notFound(siteId: 'douyin', message: 'no room in douyin link: $uri'));
+      return left(LiveSiteError.notFound(siteId: douyinSiteId, message: 'no room in douyin link: $uri'));
     }
     final direct = _roomIdOf(host, segments);
     if (direct != null) return right(Uri.https(DouyinEndpoints.liveHost, '/$direct'));
@@ -52,7 +53,7 @@ final class DouyinLinkResolver implements LiveLinkResolver {
       return right(Uri.https(DouyinEndpoints.liveHost, '/$webRid'));
     }
     if (host != 'v.douyin.com' && host != DouyinEndpoints.webHost && host != DouyinEndpoints.amemvHost) {
-      return left(LiveSiteError.notFound(siteId: 'douyin', message: 'no room in douyin link: $uri'));
+      return left(LiveSiteError.notFound(siteId: douyinSiteId, message: 'no room in douyin link: $uri'));
     }
     try {
       // The transport follows the share link itself, so the room is read out
@@ -69,13 +70,13 @@ final class DouyinLinkResolver implements LiveLinkResolver {
       final found =
           fromLocation ?? DouyinRoomParser.reflowWebRid(response.text) ?? DouyinRoomParser.roomIdInPage(response.text);
       if (found == null) {
-        return left(LiveSiteError.notFound(siteId: 'douyin', message: 'douyin link resolves to no room: $uri'));
+        return left(LiveSiteError.notFound(siteId: douyinSiteId, message: 'douyin link resolves to no room: $uri'));
       }
       return right(Uri.https(DouyinEndpoints.liveHost, '/$found'));
     } on DouyinFailure catch (failure) {
-      return left(failure.toLiveSiteError('douyin'));
+      return left(failure.toLiveSiteError(douyinSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'douyin', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: douyinSiteId, message: '$error', cause: error));
     }
   }
 

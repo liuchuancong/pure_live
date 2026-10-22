@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/bigo/api/bigo_endpoints.dart';
+import 'package:live_sites/src/platforms/bigo/bigo_manifest.dart';
 import 'package:live_sites/src/platforms/bigo/parsers/bigo_failure.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -52,7 +53,7 @@ final class BigoHttp {
       response = await http.send(
         LiveRequest.custom(
           method: method,
-          site: 'bigo',
+          site: bigoSiteId,
           url: url,
           headers: BigoEndpoints.headers,
           body: body,

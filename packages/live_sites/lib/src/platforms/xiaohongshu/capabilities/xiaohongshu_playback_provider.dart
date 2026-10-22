@@ -4,6 +4,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/parsers/xiaohongshu_failure.dart';
+import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_manifest.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -31,9 +32,9 @@ final class XiaohongshuPlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.qualitiesOf(roomId));
     } on XiaohongshuFailure catch (failure) {
-      return left(failure.toLiveSiteError('xiaohongshu'));
+      return left(failure.toLiveSiteError(xiaohongshuSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'xiaohongshu', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: xiaohongshuSiteId, message: '$error', cause: error));
     }
   }
 
@@ -42,9 +43,9 @@ final class XiaohongshuPlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.linesOf(roomId, quality: quality));
     } on XiaohongshuFailure catch (failure) {
-      return left(failure.toLiveSiteError('xiaohongshu'));
+      return left(failure.toLiveSiteError(xiaohongshuSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'xiaohongshu', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: xiaohongshuSiteId, message: '$error', cause: error));
     }
   }
 }

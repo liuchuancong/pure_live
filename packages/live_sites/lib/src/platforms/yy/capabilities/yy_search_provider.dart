@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
 import 'package:live_sites/src/platforms/yy/parsers/yy_failure.dart';
+import 'package:live_sites/src/platforms/yy/yy_manifest.dart';
 import 'package:live_sites/src/platforms/yy/yy_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -30,7 +31,7 @@ final class YySearchProvider implements LiveSearchProvider {
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
     if (!supportedTargets.contains(request.target)) {
       return left(
-        LiveSiteError.unsupported(siteId: 'yy', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(siteId: yySiteId, message: 'search target ${request.target.name} not supported'),
       );
     }
     try {
@@ -50,9 +51,9 @@ final class YySearchProvider implements LiveSearchProvider {
       }
       return right(LivePage(items: results));
     } on YyFailure catch (failure) {
-      return left(failure.toLiveSiteError('yy'));
+      return left(failure.toLiveSiteError(yySiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'yy', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: yySiteId, message: '$error', cause: error));
     }
   }
 }

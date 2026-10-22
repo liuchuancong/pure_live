@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/kick/api/kick_endpoints.dart';
+import 'package:live_sites/src/platforms/kick/kick_manifest.dart';
 import 'package:live_sites/src/platforms/kick/kick_site.dart';
 import 'package:live_sites/src/platforms/kick/parsers/kick_failure.dart';
 import 'package:live_sites/src/platforms/kick/parsers/kick_room_parser.dart';
@@ -34,9 +35,9 @@ final class KickDiscoveryProvider implements LiveDiscoveryProvider {
       final result = KickRoomParser.directoryPage(response.text, page: page, pageSize: size, status: response.status);
       return right(LivePage(items: result.rooms, hasMore: result.hasMore));
     } on KickFailure catch (failure) {
-      return left(failure.toLiveSiteError('kick'));
+      return left(failure.toLiveSiteError(kickSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kick', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kickSiteId, message: '$error', cause: error));
     }
   }
 }

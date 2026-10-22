@@ -19,7 +19,6 @@ export 'src/capabilities/live_search_provider.dart';
 export 'src/capabilities/live_site_capability.dart';
 export 'src/capabilities/live_suggest_capability.dart';
 export 'src/capabilities/live_web_search_provider.dart';
-
 // core
 export 'src/core/live_site.dart';
 export 'src/core/live_site_context.dart';
@@ -27,10 +26,8 @@ export 'src/core/live_site_error.dart';
 export 'src/core/live_site_manifest.dart';
 export 'src/core/live_site_registry.dart';
 export 'src/core/live_site_runtime_info.dart';
-
 // internal entry point
 export 'src/internal/built_in_sites.dart';
-
 // models — domain barrels
 export 'src/models/anchor/anchor.dart';
 export 'src/models/area/area.dart';
@@ -52,5 +49,3 @@ export 'src/models/super_chat/super_chat.dart';
 export 'src/platforms/douyu/douyu_login_store.dart';
 export 'src/platforms/douyu/douyu_site.dart';
 export 'src/platforms/douyu/parsers/douyu_account.dart';
-// iptv seam (consumed by live_iptv; see ARCHITECTURE.md §11)
-export 'src/platforms/iptv/iptv_channel_source.dart';

@@ -11,6 +11,7 @@ import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/models/message/message_sender/message_sender.dart';
 import 'package:live_sites/src/platforms/bigo/api/bigo_http.dart';
+import 'package:live_sites/src/platforms/bigo/bigo_manifest.dart';
 import 'package:live_sites/src/platforms/bigo/bigo_site.dart';
 import 'package:live_sites/src/platforms/bigo/danmaku/bigo_chat_visitor.dart';
 import 'package:live_sites/src/platforms/bigo/danmaku/bigo_danmaku_codec.dart';
@@ -44,13 +45,13 @@ final class BigoDanmakuProvider implements LiveDanmakuProvider {
     try {
       final handle = (await site.detail(roomId)).runtime.danmakuHandle;
       if (handle is! BigoDanmakuArgs || !BigoDanmakuCodec.checks(handle)) {
-        return left(LiveSiteError.contentUnavailable(siteId: 'bigo', message: 'room $roomId opens no chat'));
+        return left(LiveSiteError.contentUnavailable(siteId: bigoSiteId, message: 'room $roomId opens no chat'));
       }
       args = handle;
     } on BigoFailure catch (failure) {
-      return left(failure.toLiveSiteError('bigo'));
+      return left(failure.toLiveSiteError(bigoSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'bigo', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: bigoSiteId, message: '$error', cause: error));
     }
     final session = BigoDanmakuSession(args: args, http: site.http);
     final failure = await session.connect();
@@ -157,10 +158,10 @@ final class BigoDanmakuSession implements LiveDanmakuSession {
   @override
   Future<LiveSiteError?> connect() async {
     if (_disposed) {
-      return const LiveSiteError.unsupported(siteId: 'bigo', message: 'session is disposed');
+      return const LiveSiteError.unsupported(siteId: bigoSiteId, message: 'session is disposed');
     }
     if (!BigoDanmakuCodec.checks(args)) {
-      return const LiveSiteError.contentUnavailable(siteId: 'bigo', message: 'the studio names no chat room');
+      return const LiveSiteError.contentUnavailable(siteId: bigoSiteId, message: 'the studio names no chat room');
     }
     return await _openSocket();
   }
@@ -172,7 +173,7 @@ final class BigoDanmakuSession implements LiveDanmakuSession {
     try {
       await _ensureVisitor();
     } on Object catch (error) {
-      return LiveSiteError.network(siteId: 'bigo', message: 'chat visitor failed: $error', cause: error);
+      return LiveSiteError.network(siteId: bigoSiteId, message: 'chat visitor failed: $error', cause: error);
     }
     await _teardownSocket();
     _resetSocket();
@@ -187,7 +188,7 @@ final class BigoDanmakuSession implements LiveDanmakuSession {
     );
     _socket = socket;
     if (!await socket.start()) {
-      return LiveSiteError.network(siteId: 'bigo', message: 'danmaku connect failed on ${socket.uri}');
+      return LiveSiteError.network(siteId: bigoSiteId, message: 'danmaku connect failed on ${socket.uri}');
     }
     return null;
   }

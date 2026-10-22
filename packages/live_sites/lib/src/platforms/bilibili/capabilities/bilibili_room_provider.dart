@@ -7,6 +7,7 @@ import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/models/room/room_runtime/room_runtime.dart';
 import 'package:live_sites/src/models/super_chat/live_super_chat_message/live_super_chat_message.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_endpoints.dart';
+import 'package:live_sites/src/platforms/bilibili/bilibili_manifest.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_site.dart';
 import 'package:live_sites/src/platforms/bilibili/capabilities/bilibili_discovery_provider.dart';
 import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_failure.dart';
@@ -37,9 +38,9 @@ final class BilibiliRoomProvider implements LiveRoomProvider {
     try {
       return right(await detail(roomId));
     } on BilibiliFailure catch (failure) {
-      return left(failure.toLiveSiteError('bilibili'));
+      return left(failure.toLiveSiteError(bilibiliSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'bilibili', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: bilibiliSiteId, message: '$error', cause: error));
     }
   }
 
@@ -48,9 +49,9 @@ final class BilibiliRoomProvider implements LiveRoomProvider {
     try {
       return right(await discovery.page(request));
     } on BilibiliFailure catch (failure) {
-      return left(failure.toLiveSiteError('bilibili'));
+      return left(failure.toLiveSiteError(bilibiliSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'bilibili', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: bilibiliSiteId, message: '$error', cause: error));
     }
   }
 

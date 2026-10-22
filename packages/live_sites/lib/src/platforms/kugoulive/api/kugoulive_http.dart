@@ -1,5 +1,6 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/kugoulive/api/kugoulive_endpoints.dart';
+import 'package:live_sites/src/platforms/kugoulive/kugoulive_manifest.dart';
 import 'package:live_sites/src/platforms/kugoulive/parsers/kugoulive_failure.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -32,7 +33,7 @@ final class KugouliveHttp {
       response = await http.send(
         LiveRequest.custom(
           method: 'GET',
-          site: 'kugoulive',
+          site: kugouliveSiteId,
           url: url,
           headers: headers ?? KugouliveEndpoints.apiHeaders,
           cancelToken: cancel,

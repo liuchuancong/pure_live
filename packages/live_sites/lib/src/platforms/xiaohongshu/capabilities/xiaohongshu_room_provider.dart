@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/parsers/xiaohongshu_failure.dart';
+import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_manifest.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -30,9 +31,9 @@ final class XiaohongshuRoomProvider implements LiveRoomProvider {
     try {
       return right(await site.detail(roomId));
     } on XiaohongshuFailure catch (failure) {
-      return left(failure.toLiveSiteError('xiaohongshu'));
+      return left(failure.toLiveSiteError(xiaohongshuSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'xiaohongshu', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: xiaohongshuSiteId, message: '$error', cause: error));
     }
   }
 
@@ -42,9 +43,9 @@ final class XiaohongshuRoomProvider implements LiveRoomProvider {
       final page = await site.directory(request.page);
       return right(LivePage(items: page.rooms, hasMore: page.hasMore));
     } on XiaohongshuFailure catch (failure) {
-      return left(failure.toLiveSiteError('xiaohongshu'));
+      return left(failure.toLiveSiteError(xiaohongshuSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'xiaohongshu', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: xiaohongshuSiteId, message: '$error', cause: error));
     }
   }
 }

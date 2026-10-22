@@ -1,4 +1,5 @@
 import 'package:live_net/live_net.dart';
+import 'package:live_sites/src/platforms/douyin/douyin_manifest.dart';
 import 'package:live_sites/src/platforms/douyin/parsers/douyin_failure.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -24,7 +25,9 @@ final class DouyinHttp {
   /// parsers decide what 401/403/429/5xx mean for their endpoint.
   Future<DouyinResponse> get(Uri url, {Map<String, String> headers = const {}}) async {
     try {
-      final response = await http.send(LiveRequest.custom(method: 'GET', site: 'douyin', url: url, headers: headers));
+      final response = await http.send(
+        LiveRequest.custom(method: 'GET', site: douyinSiteId, url: url, headers: headers),
+      );
       return (text: response.text, status: response.statusCode, headers: response.headers);
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;

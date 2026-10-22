@@ -17,6 +17,7 @@ import 'package:live_sites/src/platforms/soop/api/soop_endpoints.dart';
 import 'package:live_sites/src/platforms/soop/danmaku/soop_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/soop/parsers/soop_failure.dart';
 import 'package:live_sites/src/platforms/soop/parsers/soop_json.dart';
+import 'package:live_sites/src/platforms/soop/soop_manifest.dart';
 import 'package:meta/meta.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -150,7 +151,7 @@ abstract final class SoopRoomParser {
       for (final raw in list)
         if (SoopJson.object(raw) case final item? when SoopJson.string(item['category_no']) != null)
           LiveArea.normalized(
-            platform: 'soop',
+            platform: soopSiteId,
             areaId: SoopJson.string(item['category_no'])!,
             areaName: SoopJson.display(item['category_name']),
             parentAreaId: SoopEndpoints.category.id,
@@ -307,10 +308,10 @@ abstract final class SoopRoomParser {
       case -6 || -8 || -14:
         return (
           room: LiveRoom.normalized(
-            platform: 'soop',
+            platform: soopSiteId,
             roomId: id,
             content: RoomContent(title: SoopJson.display(fields['TITLE'])),
-            anchor: LiveAnchor.normalized(platform: 'soop', anchorId: id, liveStatus: LiveStatus.live),
+            anchor: LiveAnchor.normalized(platform: soopSiteId, anchorId: id, liveStatus: LiveStatus.live),
             broadcast: RoomBroadcast(
               liveStatus: LiveStatus.live,
               startedAt: startedBefore(fields['BTIME'], now),
@@ -335,18 +336,18 @@ abstract final class SoopRoomParser {
     final viewersText = onlineViewers(fields);
     final viewers = int.tryParse(viewersText);
     final room = LiveRoom.normalized(
-      platform: 'soop',
+      platform: soopSiteId,
       roomId: id,
       content: RoomContent(title: SoopJson.display(fields['TITLE']), coverUrl: cover(bno, now)),
       anchor: LiveAnchor.normalized(
-        platform: 'soop',
+        platform: soopSiteId,
         anchorId: id,
         name: SoopJson.display(fields['BJNICK']),
         avatarUrl: SoopEndpoints.logo(bj),
         liveStatus: live ? LiveStatus.live : LiveStatus.offline,
       ),
       area: tags is List && tags.isNotEmpty
-          ? LiveArea.normalized(platform: 'soop', areaName: SoopJson.text(tags.first))
+          ? LiveArea.normalized(platform: soopSiteId, areaName: SoopJson.text(tags.first))
           : null,
       audience: RoomAudience(
         onlineViewers: viewers,
@@ -379,9 +380,9 @@ abstract final class SoopRoomParser {
   /// The room of a streamer the player API named offline ([liveStatus] also
   /// banned): nothing but its identity and its page.
   static LiveRoom _bare(String id, LiveStatus liveStatus) => LiveRoom.normalized(
-    platform: 'soop',
+    platform: soopSiteId,
     roomId: id,
-    anchor: LiveAnchor.normalized(platform: 'soop', anchorId: id, liveStatus: liveStatus),
+    anchor: LiveAnchor.normalized(platform: soopSiteId, anchorId: id, liveStatus: liveStatus),
     broadcast: RoomBroadcast(liveStatus: liveStatus),
     links: RoomLinks(webUrl: SoopEndpoints.roomPageUrl(id)),
   );
@@ -443,7 +444,7 @@ abstract final class SoopRoomParser {
       if (station.nick.isNotEmpty || station.avatar.isNotEmpty) {
         merged = merged.copyWith(
           anchor: LiveAnchor.normalized(
-            platform: 'soop',
+            platform: soopSiteId,
             anchorId: room.roomId,
             name: station.nick,
             avatarUrl: station.avatar.isEmpty ? null : station.avatar,
@@ -800,17 +801,17 @@ abstract final class SoopRoomParser {
     final viewers = int.tryParse(onlineViewers(item));
     final areaName = area == null || area.isEmpty ? null : area;
     return LiveRoom.normalized(
-      platform: 'soop',
+      platform: soopSiteId,
       roomId: id,
       content: RoomContent(title: SoopJson.display(item['broad_title']), coverUrl: SoopJson.image(cover)),
       anchor: LiveAnchor.normalized(
-        platform: 'soop',
+        platform: soopSiteId,
         anchorId: id,
         name: SoopJson.display(item['user_nick']),
         avatarUrl: avatar.isEmpty ? SoopEndpoints.avatar(id) : avatar,
         liveStatus: LiveStatus.live,
       ),
-      area: areaName == null ? null : LiveArea.normalized(platform: 'soop', areaName: areaName),
+      area: areaName == null ? null : LiveArea.normalized(platform: soopSiteId, areaName: areaName),
       audience: RoomAudience(
         onlineViewers: viewers,
         primaryMetric: viewers == null ? null : LiveAudienceMetricType.onlineViewers,

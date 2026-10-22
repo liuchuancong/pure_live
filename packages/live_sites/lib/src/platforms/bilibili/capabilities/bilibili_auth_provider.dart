@@ -1,5 +1,6 @@
 import 'package:live_sites/src/capabilities/live_auth_capability.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_endpoints.dart';
+import 'package:live_sites/src/platforms/bilibili/bilibili_manifest.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_site.dart';
 import 'package:live_sites/src/platforms/bilibili/capabilities/bilibili_qr_login_session.dart';
 import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_auth_parser.dart';
@@ -20,7 +21,7 @@ final class BilibiliAuthProvider implements LiveAuthCapability {
   /// The site this capability serves.
   final BilibiliSite site;
 
-  static const String _siteId = 'bilibili';
+  static const String _siteId = bilibiliSiteId;
 
   @override
   LiveAuthSession startQrLogin() => BilibiliQrLoginSession(provider: this);
@@ -32,10 +33,7 @@ final class BilibiliAuthProvider implements LiveAuthCapability {
   @override
   Future<LiveCredential> exchange(LiveAuthSession session) async {
     if (session is! BilibiliQrLoginSession) {
-      throw const BilibiliFailure(
-        BilibiliFailureKind.invalidArgument,
-        'exchange: not a bilibili QR session',
-      );
+      throw const BilibiliFailure(BilibiliFailureKind.invalidArgument, 'exchange: not a bilibili QR session');
     }
     final granted = await session.granted();
     final account = await site.accountOf(cookie: _cookieHeader(granted.cookies));

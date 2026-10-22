@@ -1,6 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
+import 'package:live_sites/src/platforms/soop/soop_manifest.dart';
 import 'package:live_sites/src/platforms/soop/soop_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -28,8 +29,8 @@ final class SoopLinkResolver implements LiveLinkResolver {
     if (canonical != null) return right(canonical);
     return left(
       SoopSite.ownsHost(uri)
-          ? LiveSiteError.notFound(siteId: 'soop', message: '"$uri" names no room')
-          : LiveSiteError.unsupported(siteId: 'soop', message: '"$uri" is not a SOOP link'),
+          ? LiveSiteError.notFound(siteId: soopSiteId, message: '"$uri" names no room')
+          : LiveSiteError.unsupported(siteId: soopSiteId, message: '"$uri" is not a SOOP link'),
     );
   }
 }

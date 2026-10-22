@@ -4,6 +4,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
+import 'package:live_sites/src/platforms/inke/inke_manifest.dart';
 import 'package:live_sites/src/platforms/inke/inke_site.dart';
 import 'package:live_sites/src/platforms/inke/parsers/inke_failure.dart';
 
@@ -30,9 +31,9 @@ final class InkeDiscoveryProvider implements LiveDiscoveryProvider {
       final page = await site.hot(page: request.page);
       return right(LivePage(items: page.rooms, hasMore: page.hasMore));
     } on InkeFailure catch (failure) {
-      return left(failure.toLiveSiteError('inke'));
+      return left(failure.toLiveSiteError(inkeSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'inke', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: inkeSiteId, message: '$error', cause: error));
     }
   }
 }

@@ -4,6 +4,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
+import 'package:live_sites/src/platforms/pandalive/pandalive_manifest.dart';
 import 'package:live_sites/src/platforms/pandalive/pandalive_site.dart';
 import 'package:live_sites/src/platforms/pandalive/parsers/pandalive_failure.dart';
 
@@ -30,9 +31,9 @@ final class PandaliveRoomProvider implements LiveRoomProvider {
     try {
       return right(await site.detail(roomId));
     } on PandaliveFailure catch (failure) {
-      return left(failure.toLiveSiteError('pandalive'));
+      return left(failure.toLiveSiteError(pandaliveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'pandalive', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: pandaliveSiteId, message: '$error', cause: error));
     }
   }
 
@@ -42,9 +43,9 @@ final class PandaliveRoomProvider implements LiveRoomProvider {
       final page = await site.directory(request.page, request.pageSize);
       return right(LivePage(items: page.rooms, hasMore: page.hasMore));
     } on PandaliveFailure catch (failure) {
-      return left(failure.toLiveSiteError('pandalive'));
+      return left(failure.toLiveSiteError(pandaliveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'pandalive', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: pandaliveSiteId, message: '$error', cause: error));
     }
   }
 }

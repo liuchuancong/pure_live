@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/enums/live_search_target.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
+import 'package:live_sites/src/platforms/inke/inke_manifest.dart';
 import 'package:live_sites/src/platforms/inke/inke_site.dart';
 import 'package:live_sites/src/platforms/inke/parsers/inke_failure.dart';
 
@@ -33,7 +34,7 @@ final class InkeSearchProvider implements LiveSearchProvider {
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
     if (!supportedTargets.contains(request.target)) {
       return left(
-        LiveSiteError.unsupported(siteId: 'inke', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(siteId: inkeSiteId, message: 'search target ${request.target.name} not supported'),
       );
     }
     try {
@@ -42,9 +43,9 @@ final class InkeSearchProvider implements LiveSearchProvider {
         LivePage(items: [for (final room in page.rooms) LiveSearchResult.room(room)], hasMore: page.hasMore),
       );
     } on InkeFailure catch (failure) {
-      return left(failure.toLiveSiteError('inke'));
+      return left(failure.toLiveSiteError(inkeSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'inke', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: inkeSiteId, message: '$error', cause: error));
     }
   }
 }

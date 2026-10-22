@@ -8,6 +8,7 @@ import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/platforms/soop/danmaku/soop_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/soop/parsers/soop_failure.dart';
+import 'package:live_sites/src/platforms/soop/soop_manifest.dart';
 import 'package:live_sites/src/platforms/soop/soop_site.dart';
 import 'package:live_websocket/live_websocket.dart';
 
@@ -119,9 +120,9 @@ final class SoopDanmakuSession implements LiveDanmakuSession {
   /// session, and this returns null.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) return const LiveSiteError.unsupported(siteId: 'soop', message: 'session is disposed');
+    if (_disposed) return const LiveSiteError.unsupported(siteId: soopSiteId, message: 'session is disposed');
     if (!args.url.hasAuthority || args.chatNo.isEmpty) {
-      return const LiveSiteError.contentUnavailable(siteId: 'soop', message: 'the room names no chat server');
+      return const LiveSiteError.contentUnavailable(siteId: soopSiteId, message: 'the room names no chat server');
     }
     unawaited(_handshake());
     return null;

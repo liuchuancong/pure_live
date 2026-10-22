@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/enums/live_search_target.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
+import 'package:live_sites/src/platforms/kilakila/kilakila_manifest.dart';
 import 'package:live_sites/src/platforms/kilakila/kilakila_site.dart';
 import 'package:live_sites/src/platforms/kilakila/parsers/kilakila_failure.dart';
 
@@ -33,7 +34,10 @@ final class KilakilaSearchProvider implements LiveSearchProvider {
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
     if (!supportedTargets.contains(request.target)) {
       return left(
-        LiveSiteError.unsupported(siteId: 'kilakila', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(
+          siteId: kilakilaSiteId,
+          message: 'search target ${request.target.name} not supported',
+        ),
       );
     }
     try {
@@ -42,9 +46,9 @@ final class KilakilaSearchProvider implements LiveSearchProvider {
         LivePage(items: [for (final room in page.rooms) LiveSearchResult.room(room)], hasMore: page.hasMore),
       );
     } on KilakilaFailure catch (failure) {
-      return left(failure.toLiveSiteError('kilakila'));
+      return left(failure.toLiveSiteError(kilakilaSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kilakila', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kilakilaSiteId, message: '$error', cause: error));
     }
   }
 }

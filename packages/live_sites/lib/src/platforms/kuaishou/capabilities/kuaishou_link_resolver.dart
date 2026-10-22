@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/kuaishou/api/kuaishou_endpoints.dart';
+import 'package:live_sites/src/platforms/kuaishou/kuaishou_manifest.dart';
 import 'package:live_sites/src/platforms/kuaishou/kuaishou_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -30,7 +31,7 @@ final class KuaishouLinkResolver implements LiveLinkResolver {
   Future<Either<LiveSiteError, Uri>> resolve(Uri uri) async {
     final host = uri.host.toLowerCase();
     if (host != KuaishouEndpoints.host && host != 'live.kuaishou.cn') {
-      return left(LiveSiteError.unsupported(siteId: 'kuaishou', message: 'not a kuaishou link: $uri'));
+      return left(LiveSiteError.unsupported(siteId: kuaishouSiteId, message: 'not a kuaishou link: $uri'));
     }
     final segments = [
       for (final segment in uri.pathSegments)
@@ -38,7 +39,7 @@ final class KuaishouLinkResolver implements LiveLinkResolver {
     ];
     final id = roomIdOf(segments);
     if (id == null) {
-      return left(LiveSiteError.notFound(siteId: 'kuaishou', message: 'no room in kuaishou link: $uri'));
+      return left(LiveSiteError.notFound(siteId: kuaishouSiteId, message: 'no room in kuaishou link: $uri'));
     }
     return right(Uri.parse(KuaishouEndpoints.roomPageUrl(id)));
   }

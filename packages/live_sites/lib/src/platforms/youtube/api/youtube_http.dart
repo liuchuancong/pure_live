@@ -1,5 +1,6 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/youtube/parsers/youtube_failure.dart';
+import 'package:live_sites/src/platforms/youtube/youtube_manifest.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -33,7 +34,7 @@ final class YouTubeHttp {
       final response = await http.send(
         LiveRequest.custom(
           method: 'GET',
-          site: 'youtube',
+          site: youtubeSiteId,
           url: url,
           headers: headers,
           timeout: timeout,
@@ -60,7 +61,7 @@ final class YouTubeHttp {
   }) async {
     try {
       final response = await http.send(
-        LiveRequest.json(url, body: json, site: 'youtube', headers: headers, timeout: timeout, cancelToken: cancel),
+        LiveRequest.json(url, body: json, site: youtubeSiteId, headers: headers, timeout: timeout, cancelToken: cancel),
       );
       return (text: response.text, status: response.statusCode, headers: response.headers);
     } on TransportFailure catch (failure) {

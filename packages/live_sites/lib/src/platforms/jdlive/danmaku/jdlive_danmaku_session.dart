@@ -10,6 +10,7 @@ import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/platforms/jdlive/api/jdlive_endpoints.dart';
 import 'package:live_sites/src/platforms/jdlive/danmaku/jdlive_danmaku_codec.dart';
+import 'package:live_sites/src/platforms/jdlive/jdlive_manifest.dart';
 import 'package:live_sites/src/platforms/jdlive/jdlive_site.dart';
 import 'package:live_sites/src/platforms/jdlive/parsers/jdlive_failure.dart';
 import 'package:live_websocket/live_websocket.dart';
@@ -130,9 +131,9 @@ final class JdliveDanmakuSession implements LiveDanmakuSession {
   /// session, and this returns null.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) return const LiveSiteError.unsupported(siteId: 'jdlive', message: 'session is disposed');
+    if (_disposed) return const LiveSiteError.unsupported(siteId: jdliveSiteId, message: 'session is disposed');
     if (!JdliveEndpoints.isLiveId(args.liveId)) {
-      return const LiveSiteError.notFound(siteId: 'jdlive', message: 'not a JD Live broadcast');
+      return const LiveSiteError.notFound(siteId: jdliveSiteId, message: 'not a JD Live broadcast');
     }
     unawaited(_handshake());
     return null;

@@ -12,6 +12,7 @@ import 'package:live_sites/src/models/message/live_message_color/live_message_co
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/models/super_chat/live_super_chat_message/live_super_chat_message.dart';
 import 'package:live_sites/src/platforms/huya/danmaku/huya_danmaku_codec.dart';
+import 'package:live_sites/src/platforms/huya/huya_manifest.dart';
 import 'package:live_sites/src/platforms/huya/huya_site.dart';
 import 'package:live_websocket/live_websocket.dart';
 
@@ -55,7 +56,7 @@ final class HuyaDanmakuProvider implements LiveDanmakuProvider {
       }
       return right(session);
     }
-    return left(const LiveSiteError.contentUnavailable(siteId: 'huya', message: 'room names no danmaku handle'));
+    return left(const LiveSiteError.contentUnavailable(siteId: huyaSiteId, message: 'room names no danmaku handle'));
   }
 }
 
@@ -126,7 +127,7 @@ final class HuyaDanmakuSession implements LiveDanmakuSession {
   @override
   Future<LiveSiteError?> connect() async {
     if (_disposed) {
-      return const LiveSiteError.unsupported(siteId: 'huya', message: 'session is disposed');
+      return const LiveSiteError.unsupported(siteId: huyaSiteId, message: 'session is disposed');
     }
     await _teardownSocket();
     _ended = false;
@@ -143,7 +144,7 @@ final class HuyaDanmakuSession implements LiveDanmakuSession {
     _socket = socket;
     if (!await socket.start()) {
       return const LiveSiteError.network(
-        siteId: 'huya',
+        siteId: huyaSiteId,
         message: 'danmaku connect failed: no connection to $_endpoint',
       );
     }

@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/sixroom/api/sixroom_endpoints.dart';
+import 'package:live_sites/src/platforms/sixroom/sixroom_manifest.dart';
 import 'package:live_sites/src/platforms/sixroom/sixroom_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -28,8 +29,8 @@ final class SixroomLinkResolver implements LiveLinkResolver {
     final ours = host == 'v.6.cn' || host == 'm.6.cn' || host.endsWith('.6.cn') || host.endsWith('.6rooms.com');
     return left(
       ours
-          ? const LiveSiteError.notFound(siteId: 'sixroom', message: 'the page names no Six Rooms room')
-          : LiveSiteError.unsupported(siteId: 'sixroom', message: '"$uri" is not a Six Rooms link'),
+          ? const LiveSiteError.notFound(siteId: sixroomSiteId, message: 'the page names no Six Rooms room')
+          : LiveSiteError.unsupported(siteId: sixroomSiteId, message: '"$uri" is not a Six Rooms link'),
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/enums/live_search_target.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
+import 'package:live_sites/src/platforms/looklive/looklive_manifest.dart';
 import 'package:live_sites/src/platforms/looklive/looklive_site.dart';
 import 'package:live_sites/src/platforms/looklive/parsers/looklive_failure.dart';
 
@@ -33,7 +34,10 @@ final class LookliveSearchProvider implements LiveSearchProvider {
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
     if (!supportedTargets.contains(request.target)) {
       return left(
-        LiveSiteError.unsupported(siteId: 'looklive', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(
+          siteId: lookliveSiteId,
+          message: 'search target ${request.target.name} not supported',
+        ),
       );
     }
     try {
@@ -42,9 +46,9 @@ final class LookliveSearchProvider implements LiveSearchProvider {
         LivePage(items: [for (final room in page.rooms) LiveSearchResult.room(room)], hasMore: page.hasMore),
       );
     } on LookliveFailure catch (failure) {
-      return left(failure.toLiveSiteError('looklive'));
+      return left(failure.toLiveSiteError(lookliveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'looklive', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: lookliveSiteId, message: '$error', cause: error));
     }
   }
 }

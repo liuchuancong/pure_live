@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/missevan/api/missevan_endpoints.dart';
+import 'package:live_sites/src/platforms/missevan/missevan_manifest.dart';
 import 'package:live_sites/src/platforms/missevan/missevan_site.dart';
 import 'package:live_sites/src/platforms/missevan/parsers/missevan_failure.dart';
 
@@ -30,9 +31,9 @@ final class MissevanRoomProvider implements LiveRoomProvider {
     try {
       return right(await site.detail(roomId));
     } on MissevanFailure catch (failure) {
-      return left(failure.toLiveSiteError('missevan'));
+      return left(failure.toLiveSiteError(missevanSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'missevan', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: missevanSiteId, message: '$error', cause: error));
     }
   }
 
@@ -42,9 +43,9 @@ final class MissevanRoomProvider implements LiveRoomProvider {
       final page = await site.directory(request.page, pageSize: request.pageSize);
       return right(LivePage(items: page.rooms, hasMore: page.hasMore));
     } on MissevanFailure catch (failure) {
-      return left(failure.toLiveSiteError('missevan'));
+      return left(failure.toLiveSiteError(missevanSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'missevan', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: missevanSiteId, message: '$error', cause: error));
     }
   }
 }

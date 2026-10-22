@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
 import 'package:live_sites/src/platforms/fc2live/api/fc2live_endpoints.dart';
+import 'package:live_sites/src/platforms/fc2live/fc2live_manifest.dart';
 import 'package:live_sites/src/platforms/fc2live/fc2live_site.dart';
 import 'package:live_sites/src/platforms/fc2live/parsers/fc2live_failure.dart';
 
@@ -40,7 +41,7 @@ final class Fc2LiveSearchProvider implements LiveSearchProvider {
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
     if (!supportedTargets.contains(request.target)) {
       return left(
-        LiveSiteError.unsupported(siteId: 'fc2live', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(siteId: fc2LiveSiteId, message: 'search target ${request.target.name} not supported'),
       );
     }
     try {
@@ -53,9 +54,9 @@ final class Fc2LiveSearchProvider implements LiveSearchProvider {
         ),
       );
     } on Fc2LiveFailure catch (failure) {
-      return left(failure.toLiveSiteError('fc2live'));
+      return left(failure.toLiveSiteError(fc2LiveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'fc2live', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: fc2LiveSiteId, message: '$error', cause: error));
     }
   }
 }

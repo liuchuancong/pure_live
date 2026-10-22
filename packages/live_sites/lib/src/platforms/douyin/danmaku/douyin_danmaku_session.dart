@@ -9,6 +9,7 @@ import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/platforms/douyin/danmaku/douyin_danmaku_codec.dart';
+import 'package:live_sites/src/platforms/douyin/douyin_manifest.dart';
 import 'package:live_sites/src/platforms/douyin/douyin_site.dart';
 import 'package:live_sites/src/platforms/douyin/parsers/douyin_failure.dart';
 import 'package:live_websocket/live_websocket.dart';
@@ -36,14 +37,14 @@ final class DouyinDanmakuProvider implements LiveDanmakuProvider {
       final resolved = await site.danmakuArgs(roomId);
       if (resolved == null || resolved.roomId.isEmpty) {
         return left(
-          LiveSiteError.contentUnavailable(siteId: 'douyin', message: 'room $roomId streams no broadcast to join'),
+          LiveSiteError.contentUnavailable(siteId: douyinSiteId, message: 'room $roomId streams no broadcast to join'),
         );
       }
       args = resolved;
     } on DouyinFailure catch (failure) {
-      return left(failure.toLiveSiteError('douyin'));
+      return left(failure.toLiveSiteError(douyinSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'douyin', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: douyinSiteId, message: '$error', cause: error));
     }
     final session = DouyinDanmakuSession(
       args: args,
@@ -146,7 +147,7 @@ final class DouyinDanmakuSession implements LiveDanmakuSession {
     );
     _socket = socket;
     if (await socket.start()) return null;
-    return LiveSiteError.network(siteId: 'douyin', message: 'danmaku connect failed on $endpoint');
+    return LiveSiteError.network(siteId: douyinSiteId, message: 'danmaku connect failed on $endpoint');
   }
 
   void _onFrame(Object frame) {

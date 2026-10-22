@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:live_net/live_net.dart';
+import 'package:live_sites/src/platforms/acfun/acfun_manifest.dart';
 import 'package:live_sites/src/platforms/acfun/parsers/acfun_failure.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -59,7 +60,7 @@ final class AcfunHttp {
       final response = await http.send(
         LiveRequest.custom(
           method: method,
-          site: 'acfun',
+          site: acfunSiteId,
           url: url,
           headers: headers,
           body: body,

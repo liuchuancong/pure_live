@@ -4,6 +4,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
+import 'package:live_sites/src/platforms/looklive/looklive_manifest.dart';
 import 'package:live_sites/src/platforms/looklive/looklive_site.dart';
 import 'package:live_sites/src/platforms/looklive/parsers/looklive_failure.dart';
 
@@ -30,9 +31,9 @@ final class LookliveRoomProvider implements LiveRoomProvider {
     try {
       return right(await site.detail(roomId));
     } on LookliveFailure catch (failure) {
-      return left(failure.toLiveSiteError('looklive'));
+      return left(failure.toLiveSiteError(lookliveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'looklive', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: lookliveSiteId, message: '$error', cause: error));
     }
   }
 
@@ -42,9 +43,9 @@ final class LookliveRoomProvider implements LiveRoomProvider {
       final page = await site.recommend(request.page, request.pageSize);
       return right(LivePage(items: page.rooms, hasMore: page.hasMore));
     } on LookliveFailure catch (failure) {
-      return left(failure.toLiveSiteError('looklive'));
+      return left(failure.toLiveSiteError(lookliveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'looklive', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: lookliveSiteId, message: '$error', cause: error));
     }
   }
 }

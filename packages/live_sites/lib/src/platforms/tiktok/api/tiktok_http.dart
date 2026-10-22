@@ -1,5 +1,6 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/tiktok/parsers/tiktok_failure.dart';
+import 'package:live_sites/src/platforms/tiktok/tiktok_manifest.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -27,7 +28,7 @@ final class TiktokHttp {
   Future<TiktokResponse> get(Uri url, {Map<String, String> headers = const {}}) async {
     final LiveResponse response;
     try {
-      response = await http.send(LiveRequest.custom(method: 'GET', site: 'tiktok', url: url, headers: headers));
+      response = await http.send(LiveRequest.custom(method: 'GET', site: tiktokSiteId, url: url, headers: headers));
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;
       throw TiktokFailure(TiktokFailureKind.network, 'GET $url: $failure', cause: failure);

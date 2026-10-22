@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/platforms/bigo/api/bigo_endpoints.dart';
+import 'package:live_sites/src/platforms/bigo/bigo_manifest.dart';
 import 'package:live_sites/src/platforms/bigo/bigo_site.dart';
 import 'package:live_sites/src/platforms/bigo/parsers/bigo_failure.dart';
 
@@ -49,9 +50,9 @@ final class BigoPlaybackProvider implements LivePlaybackProvider {
       if (error != null) throw error;
       return right(const [quality]);
     } on BigoFailure catch (failure) {
-      return left(failure.toLiveSiteError('bigo'));
+      return left(failure.toLiveSiteError(bigoSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'bigo', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: bigoSiteId, message: '$error', cause: error));
     }
   }
 
@@ -59,7 +60,10 @@ final class BigoPlaybackProvider implements LivePlaybackProvider {
   Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
     if (quality != null && quality.qualityId != BigoEndpoints.qualityId) {
       return left(
-        LiveSiteError.invalidArgument(siteId: 'bigo', message: 'quality ${quality.qualityId} is not a bigo quality'),
+        LiveSiteError.invalidArgument(
+          siteId: bigoSiteId,
+          message: 'quality ${quality.qualityId} is not a bigo quality',
+        ),
       );
     }
     try {
@@ -75,9 +79,9 @@ final class BigoPlaybackProvider implements LivePlaybackProvider {
         ),
       ]);
     } on BigoFailure catch (failure) {
-      return left(failure.toLiveSiteError('bigo'));
+      return left(failure.toLiveSiteError(bigoSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'bigo', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: bigoSiteId, message: '$error', cause: error));
     }
   }
 }

@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/area/live_area/live_area.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
+import 'package:live_sites/src/platforms/bigo/bigo_manifest.dart';
 import 'package:live_sites/src/platforms/bigo/bigo_site.dart';
 import 'package:live_sites/src/platforms/bigo/parsers/bigo_failure.dart';
 import 'package:live_sites/src/platforms/bigo/parsers/bigo_room_parser.dart';
@@ -30,9 +31,9 @@ final class BigoAreaProvider implements LiveAreaProvider {
     try {
       return right([BigoRoomParser.area()]);
     } on BigoFailure catch (failure) {
-      return left(failure.toLiveSiteError('bigo'));
+      return left(failure.toLiveSiteError(bigoSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'bigo', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: bigoSiteId, message: '$error', cause: error));
     }
   }
 
@@ -42,16 +43,18 @@ final class BigoAreaProvider implements LiveAreaProvider {
     LivePageRequest request = const LivePageRequest(),
   }) async {
     if (!BigoRoomParser.isAreaId(areaId)) {
-      return left(LiveSiteError.invalidArgument(siteId: 'bigo', message: 'area "$areaId" is not the bigo public list'));
+      return left(
+        LiveSiteError.invalidArgument(siteId: bigoSiteId, message: 'area "$areaId" is not the bigo public list'),
+      );
     }
     try {
       final page = request.page < 1 ? 1 : request.page;
       final result = await site.directory(page);
       return right(LivePage(items: result.rooms, hasMore: result.hasMore));
     } on BigoFailure catch (failure) {
-      return left(failure.toLiveSiteError('bigo'));
+      return left(failure.toLiveSiteError(bigoSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'bigo', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: bigoSiteId, message: '$error', cause: error));
     }
   }
 }

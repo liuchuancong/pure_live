@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_endpoints.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_http.dart';
+import 'package:live_sites/src/platforms/bilibili/bilibili_manifest.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_site.dart';
 import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_failure.dart';
 
@@ -33,7 +34,7 @@ final class BilibiliLinkResolver implements LiveLinkResolver {
     final direct = BilibiliSite.roomIdFromUrl('$uri');
     if (direct != null) return right(Uri.https(BilibiliEndpoints.liveHost, '/$direct'));
     if (!_owns(host)) {
-      return left(LiveSiteError.unsupported(siteId: 'bilibili', message: 'not a bilibili link: $uri'));
+      return left(LiveSiteError.unsupported(siteId: bilibiliSiteId, message: 'not a bilibili link: $uri'));
     }
     // A short link: the transport lands on the room page (another b23.tv hop
     // included), which names its room in the Location or in its own text.
@@ -43,13 +44,13 @@ final class BilibiliLinkResolver implements LiveLinkResolver {
       final fromLocation = target == null ? null : BilibiliSite.roomIdFromUrl(target);
       final id = fromLocation ?? _roomInPage(response);
       if (id == null) {
-        return left(LiveSiteError.notFound(siteId: 'bilibili', message: 'bilibili link resolves to no room: $uri'));
+        return left(LiveSiteError.notFound(siteId: bilibiliSiteId, message: 'bilibili link resolves to no room: $uri'));
       }
       return right(Uri.https(BilibiliEndpoints.liveHost, '/$id'));
     } on BilibiliFailure catch (failure) {
-      return left(failure.toLiveSiteError('bilibili'));
+      return left(failure.toLiveSiteError(bilibiliSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'bilibili', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: bilibiliSiteId, message: '$error', cause: error));
     }
   }
 

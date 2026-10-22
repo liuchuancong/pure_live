@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/platforms/niconico/api/niconico_endpoints.dart';
 import 'package:live_sites/src/platforms/niconico/danmaku/niconico_seat_session.dart';
+import 'package:live_sites/src/platforms/niconico/niconico_manifest.dart';
 import 'package:live_sites/src/platforms/niconico/niconico_site.dart';
 import 'package:live_sites/src/platforms/niconico/parsers/niconico_failure.dart';
 import 'package:live_sites/src/platforms/niconico/parsers/niconico_play_parser.dart';
@@ -38,14 +39,16 @@ final class NiconicoPlaybackProvider implements LivePlaybackProvider {
     try {
       seat = await site.openSeat(roomId);
     } on NiconicoFailure catch (failure) {
-      return left(failure.toLiveSiteError('niconico'));
+      return left(failure.toLiveSiteError(niconicoSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'niconico', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: niconicoSiteId, message: '$error', cause: error));
     }
     try {
       final grant = seat.currentGrant;
       if (grant == null) {
-        return left(const LiveSiteError.contentUnavailable(siteId: 'niconico', message: 'the seat granted no stream'));
+        return left(
+          const LiveSiteError.contentUnavailable(siteId: niconicoSiteId, message: 'the seat granted no stream'),
+        );
       }
       final response = await site.httpGet(grant.uri, headers: _mediaHeaders(roomId, grant), timeout: masterTimeout);
       return right(
@@ -54,9 +57,9 @@ final class NiconicoPlaybackProvider implements LivePlaybackProvider {
         ),
       );
     } on NiconicoFailure catch (failure) {
-      return left(failure.toLiveSiteError('niconico'));
+      return left(failure.toLiveSiteError(niconicoSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'niconico', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: niconicoSiteId, message: '$error', cause: error));
     } finally {
       await seat.close();
     }
@@ -68,28 +71,32 @@ final class NiconicoPlaybackProvider implements LivePlaybackProvider {
     try {
       seat = await site.openSeat(roomId);
     } on NiconicoFailure catch (failure) {
-      return left(failure.toLiveSiteError('niconico'));
+      return left(failure.toLiveSiteError(niconicoSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'niconico', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: niconicoSiteId, message: '$error', cause: error));
     }
     try {
       final grant = seat.currentGrant;
       if (grant == null) {
-        return left(const LiveSiteError.contentUnavailable(siteId: 'niconico', message: 'the seat granted no stream'));
+        return left(
+          const LiveSiteError.contentUnavailable(siteId: niconicoSiteId, message: 'the seat granted no stream'),
+        );
       }
       final response = await site.httpGet(grant.uri, headers: _mediaHeaders(roomId, grant), timeout: masterTimeout);
       final variants = NiconicoPlayParser.variants(response.text, source: grant.uri, status: response.status);
       final variant = NiconicoPlayParser.pick(variants, quality?.qualityId);
       if (variant == null) {
-        return left(const LiveSiteError.contentUnavailable(siteId: 'niconico', message: 'the master named no variant'));
+        return left(
+          const LiveSiteError.contentUnavailable(siteId: niconicoSiteId, message: 'the master named no variant'),
+        );
       }
       // The line captures the cookie header now: closing the seat below
       // revokes the grant, and the player reuses the captured header.
       return right(NiconicoPlayParser.lines(grant, variant, roomId: roomId, now: site.now()));
     } on NiconicoFailure catch (failure) {
-      return left(failure.toLiveSiteError('niconico'));
+      return left(failure.toLiveSiteError(niconicoSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'niconico', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: niconicoSiteId, message: '$error', cause: error));
     } finally {
       await seat.close();
     }

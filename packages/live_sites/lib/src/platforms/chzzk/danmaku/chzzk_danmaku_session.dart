@@ -10,6 +10,7 @@ import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/platforms/chzzk/api/chzzk_endpoints.dart';
 import 'package:live_sites/src/platforms/chzzk/api/chzzk_http.dart';
+import 'package:live_sites/src/platforms/chzzk/chzzk_manifest.dart';
 import 'package:live_sites/src/platforms/chzzk/chzzk_site.dart';
 import 'package:live_sites/src/platforms/chzzk/danmaku/chzzk_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/chzzk/parsers/chzzk_failure.dart';
@@ -42,13 +43,13 @@ final class ChzzkDanmakuProvider implements LiveDanmakuProvider {
     try {
       final handle = (await site.detail(roomId)).runtime.danmakuHandle;
       if (handle is! ChzzkDanmakuArgs || !ChzzkDanmakuCodec.isChatChannelId(handle.chatChannelId)) {
-        return left(LiveSiteError.contentUnavailable(siteId: 'chzzk', message: 'room $roomId opens no chat'));
+        return left(LiveSiteError.contentUnavailable(siteId: chzzkSiteId, message: 'room $roomId opens no chat'));
       }
       args = handle;
     } on ChzzkFailure catch (failure) {
-      return left(failure.toLiveSiteError('chzzk'));
+      return left(failure.toLiveSiteError(chzzkSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'chzzk', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: chzzkSiteId, message: '$error', cause: error));
     }
     final session = ChzzkDanmakuSession(args: args, http: site.http);
     final failure = await session.connect();
@@ -181,17 +182,17 @@ final class ChzzkDanmakuSession implements LiveDanmakuSession {
   @override
   Future<LiveSiteError?> connect() async {
     if (_disposed) {
-      return const LiveSiteError.unsupported(siteId: 'chzzk', message: 'session is disposed');
+      return const LiveSiteError.unsupported(siteId: chzzkSiteId, message: 'session is disposed');
     }
     final channel = args.chatChannelId.trim();
     if (!ChzzkDanmakuCodec.isChatChannelId(channel)) {
-      return const LiveSiteError.contentUnavailable(siteId: 'chzzk', message: 'the live names no chat channel');
+      return const LiveSiteError.contentUnavailable(siteId: chzzkSiteId, message: 'the live names no chat channel');
     }
     final routing = _askServers();
     final token = await _askToken(channel);
     _servers = await routing;
     if (token == null) {
-      return const LiveSiteError.authentication(siteId: 'chzzk', message: 'chzzk gave no chat access token');
+      return const LiveSiteError.authentication(siteId: chzzkSiteId, message: 'chzzk gave no chat access token');
     }
     _token = token;
     _server = _random.nextInt(_servers.length);
@@ -216,7 +217,7 @@ final class ChzzkDanmakuSession implements LiveDanmakuSession {
     );
     _socket = socket;
     if (!await socket.start()) {
-      return LiveSiteError.network(siteId: 'chzzk', message: 'danmaku connect failed on $endpoint');
+      return LiveSiteError.network(siteId: chzzkSiteId, message: 'danmaku connect failed on $endpoint');
     }
     _join = Timer(ChzzkDanmakuCodec.joinTimeout, () {
       if (generation == _generation && !_disposed && !_joined) _scheduleReconnect(generation, 'join timed out');

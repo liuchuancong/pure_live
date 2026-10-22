@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/youtube/api/youtube_endpoints.dart';
 import 'package:live_sites/src/platforms/youtube/parsers/youtube_failure.dart';
+import 'package:live_sites/src/platforms/youtube/youtube_manifest.dart';
 import 'package:live_sites/src/platforms/youtube/youtube_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -36,7 +37,7 @@ final class YoutubeLinkResolver implements LiveLinkResolver {
   Future<Either<LiveSiteError, Uri>> resolve(Uri uri) async {
     final host = uri.host.toLowerCase();
     if (!isYoutubeHost(host)) {
-      return left(LiveSiteError.unsupported(siteId: 'youtube', message: 'not a youtube link: $uri'));
+      return left(LiveSiteError.unsupported(siteId: youtubeSiteId, message: 'not a youtube link: $uri'));
     }
     final segments = [
       for (final segment in uri.pathSegments)
@@ -46,13 +47,13 @@ final class YoutubeLinkResolver implements LiveLinkResolver {
     if (video != null) return right(YoutubeEndpoints.watchUri(video));
     final channel = channelOf(segments, uri.queryParameters);
     if (channel == null) {
-      return left(LiveSiteError.notFound(siteId: 'youtube', message: 'no room in youtube link: $uri'));
+      return left(LiveSiteError.notFound(siteId: youtubeSiteId, message: 'no room in youtube link: $uri'));
     }
     final browseId = channel.browseId;
     if (browseId != null) return right(Uri.parse('${YoutubeEndpoints.origin}/channel/$browseId/live'));
     final url = channel.resolveUrl;
     if (url == null) {
-      return left(LiveSiteError.notFound(siteId: 'youtube', message: 'no room in youtube link: $uri'));
+      return left(LiveSiteError.notFound(siteId: youtubeSiteId, message: 'no room in youtube link: $uri'));
     }
     try {
       final resolved = await site.resolveUrl(url);
@@ -60,11 +61,11 @@ final class YoutubeLinkResolver implements LiveLinkResolver {
       if (videoId != null) return right(YoutubeEndpoints.watchUri(videoId));
       final id = resolved.browseId;
       if (id != null) return right(Uri.parse('${YoutubeEndpoints.origin}/channel/$id/live'));
-      return left(LiveSiteError.notFound(siteId: 'youtube', message: 'youtube link resolves to no room: $uri'));
+      return left(LiveSiteError.notFound(siteId: youtubeSiteId, message: 'youtube link resolves to no room: $uri'));
     } on YouTubeFailure catch (failure) {
-      return left(failure.toLiveSiteError('youtube'));
+      return left(failure.toLiveSiteError(youtubeSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'youtube', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: youtubeSiteId, message: '$error', cause: error));
     }
   }
 

@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/parsers/xiaohongshu_failure.dart';
+import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_manifest.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -33,7 +34,10 @@ final class XiaohongshuSearchProvider implements LiveSearchProvider {
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
     if (!supportedTargets.contains(request.target)) {
       return left(
-        LiveSiteError.unsupported(siteId: 'xiaohongshu', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(
+          siteId: xiaohongshuSiteId,
+          message: 'search target ${request.target.name} not supported',
+        ),
       );
     }
     try {
@@ -42,9 +46,9 @@ final class XiaohongshuSearchProvider implements LiveSearchProvider {
         LivePage(items: [for (final room in page.rooms) LiveSearchResult.room(room)], hasMore: page.hasMore),
       );
     } on XiaohongshuFailure catch (failure) {
-      return left(failure.toLiveSiteError('xiaohongshu'));
+      return left(failure.toLiveSiteError(xiaohongshuSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'xiaohongshu', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: xiaohongshuSiteId, message: '$error', cause: error));
     }
   }
 }

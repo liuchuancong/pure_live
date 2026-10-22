@@ -1,5 +1,6 @@
 import 'package:live_sites/src/capabilities/live_auth_capability.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
+import 'package:live_sites/src/platforms/douyu/douyu_manifest.dart';
 import 'package:live_sites/src/platforms/douyu/douyu_site.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_account.dart';
 import 'package:live_sites/src/platforms/douyu/parsers/douyu_json.dart';
@@ -28,7 +29,7 @@ final class DouyuAuthProvider implements LiveAuthCapability {
   /// The site this capability serves.
   final DouyuSite site;
 
-  static const String _siteId = 'douyu';
+  static const String _siteId = douyuSiteId;
 
   @override
   LiveAuthSession startQrLogin() =>
@@ -55,7 +56,8 @@ final class DouyuAuthProvider implements LiveAuthCapability {
     if (DouyuAccount.isPassportCookie(cookie)) {
       throw const LiveSiteError.authentication(
         siteId: _siteId,
-        message: "the paste is the passport request's cookie, which carries no login — "
+        message:
+            "the paste is the passport request's cookie, which carries no login — "
             'copy the www.douyu.com page cookie instead',
       );
     }

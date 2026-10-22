@@ -9,6 +9,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
+import 'package:live_sites/src/platforms/acfun/acfun_manifest.dart';
 import 'package:live_sites/src/platforms/acfun/acfun_site.dart';
 import 'package:live_sites/src/platforms/acfun/danmaku/acfun_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/acfun/parsers/acfun_failure.dart';
@@ -39,13 +40,15 @@ final class AcfunDanmakuProvider implements LiveDanmakuProvider {
     try {
       final handle = (await site.detail(roomId)).runtime.danmakuHandle;
       if (handle is! AcfunDanmakuArgs) {
-        return left(LiveSiteError.contentUnavailable(siteId: 'acfun', message: 'room $roomId names no live broadcast'));
+        return left(
+          LiveSiteError.contentUnavailable(siteId: acfunSiteId, message: 'room $roomId names no live broadcast'),
+        );
       }
       args = handle;
     } on AcfunFailure catch (failure) {
-      return left(failure.toLiveSiteError('acfun'));
+      return left(failure.toLiveSiteError(acfunSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'acfun', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: acfunSiteId, message: '$error', cause: error));
     }
     final session = AcfunDanmakuSession(args: args);
     final failure = await session.connect();
@@ -152,21 +155,21 @@ final class AcfunDanmakuSession implements LiveDanmakuSession {
   @override
   Future<LiveSiteError?> connect() async {
     if (_disposed) {
-      return const LiveSiteError.unsupported(siteId: 'acfun', message: 'session is disposed');
+      return const LiveSiteError.unsupported(siteId: acfunSiteId, message: 'session is disposed');
     }
     var key = AcfunDanmakuProtocol.securityKey(args.visitor.security);
     if (key == null || args.tickets.isEmpty) {
       try {
         await refresh();
       } on AcfunFailure catch (failure) {
-        return failure.toLiveSiteError('acfun');
+        return failure.toLiveSiteError(acfunSiteId);
       } on Object catch (error) {
-        return LiveSiteError.authentication(siteId: 'acfun', message: 'chat credentials failed: $error');
+        return LiveSiteError.authentication(siteId: acfunSiteId, message: 'chat credentials failed: $error');
       }
       key = AcfunDanmakuProtocol.securityKey(args.visitor.security);
       if (key == null || args.tickets.isEmpty) {
         return const LiveSiteError.authentication(
-          siteId: 'acfun',
+          siteId: acfunSiteId,
           message: 'chat needs an acSecurity key and tickets, and the broadcast gave neither',
         );
       }
@@ -199,7 +202,7 @@ final class AcfunDanmakuSession implements LiveDanmakuSession {
     );
     _socket = socket;
     if (!await socket.start()) {
-      return LiveSiteError.network(siteId: 'acfun', message: 'danmaku connect failed on ${socket.uri}');
+      return LiveSiteError.network(siteId: acfunSiteId, message: 'danmaku connect failed on ${socket.uri}');
     }
     _opens += 1;
     _heartbeats = 0;

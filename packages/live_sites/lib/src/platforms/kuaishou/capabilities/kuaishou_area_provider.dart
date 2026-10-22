@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/kuaishou/api/kuaishou_endpoints.dart';
+import 'package:live_sites/src/platforms/kuaishou/kuaishou_manifest.dart';
 import 'package:live_sites/src/platforms/kuaishou/kuaishou_site.dart';
 import 'package:live_sites/src/platforms/kuaishou/parsers/kuaishou_failure.dart';
 
@@ -34,9 +35,9 @@ final class KuaishouAreaProvider implements LiveAreaProvider {
       }
       return right(areas);
     } on KuaishouFailure catch (failure) {
-      return left(failure.toLiveSiteError('kuaishou'));
+      return left(failure.toLiveSiteError(kuaishouSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kuaishou', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kuaishouSiteId, message: '$error', cause: error));
     }
   }
 
@@ -50,9 +51,9 @@ final class KuaishouAreaProvider implements LiveAreaProvider {
       final result = await site.areaPage(areaId.trim(), page);
       return right(LivePage(items: result.rooms, hasMore: result.hasMore));
     } on KuaishouFailure catch (failure) {
-      return left(failure.toLiveSiteError('kuaishou'));
+      return left(failure.toLiveSiteError(kuaishouSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kuaishou', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kuaishouSiteId, message: '$error', cause: error));
     }
   }
 }

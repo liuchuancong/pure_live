@@ -1,6 +1,7 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/twitcasting/api/twitcasting_endpoints.dart';
 import 'package:live_sites/src/platforms/twitcasting/parsers/twitcasting_failure.dart';
+import 'package:live_sites/src/platforms/twitcasting/twitcasting_manifest.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -34,7 +35,7 @@ final class TwitcastingHttp {
       response = await http.send(
         LiveRequest.custom(
           method: 'GET',
-          site: 'twitcasting',
+          site: twitcastingSiteId,
           url: url,
           headers: TwitcastingEndpoints.headers,
           cancelToken: cancel,
@@ -62,7 +63,7 @@ final class TwitcastingHttp {
           url,
           fields: fields,
           headers: TwitcastingEndpoints.headers,
-          site: 'twitcasting',
+          site: twitcastingSiteId,
           timeout: timeout,
           cancelToken: cancel,
         ),

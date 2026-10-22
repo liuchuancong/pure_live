@@ -14,6 +14,7 @@ import 'package:live_sites/src/models/room/room_links/room_links.dart';
 import 'package:live_sites/src/platforms/yy/api/yy_endpoints.dart';
 import 'package:live_sites/src/platforms/yy/parsers/yy_failure.dart';
 import 'package:live_sites/src/platforms/yy/parsers/yy_json.dart';
+import 'package:live_sites/src/platforms/yy/yy_manifest.dart';
 
 /// The listing module of an area page (`pageInfo.pageBar`): what
 /// `more/page.action` needs. 3.x stored it as the area's `shortName`.
@@ -84,7 +85,7 @@ abstract final class YyRoomParser {
         if (YyJson.object(raw) case final item? when YyJson.text(item['id']).isNotEmpty)
           (
             area: LiveArea.normalized(
-              platform: 'yy',
+              platform: yySiteId,
               areaId: YyJson.text(item['id']),
               areaName: YyJson.text(item['title']),
               parentAreaId: categoryId,
@@ -189,20 +190,20 @@ abstract final class YyRoomParser {
     final state = live ? LiveStatus.live : LiveStatus.offline;
     return (
       room: LiveRoom.normalized(
-        platform: 'yy',
+        platform: yySiteId,
         roomId: sid,
         content: RoomContent(
           title: YyJson.title(title),
           coverUrl: YyJson.image(item['thumb2']).isEmpty ? YyJson.image(item['thumb']) : YyJson.image(item['thumb2']),
         ),
         anchor: LiveAnchor.normalized(
-          platform: 'yy',
+          platform: yySiteId,
           anchorId: YyJson.text(item['uid']),
           name: YyJson.name(nick),
           avatarUrl: avatar,
           liveStatus: state,
         ),
-        area: LiveArea.normalized(platform: 'yy', areaName: area),
+        area: LiveArea.normalized(platform: yySiteId, areaName: area),
         audience: RoomAudience(popularity: users, primaryMetric: LiveAudienceMetricType.popularity),
         broadcast: RoomBroadcast(liveStatus: state, startedAt: live ? YyJson.startedAt(item['startTime']) : null),
         links: RoomLinks(webUrl: YyEndpoints.roomUrl(sid)),
@@ -239,7 +240,7 @@ abstract final class YyRoomParser {
     for (final item in _docs(body, status: status, tab: '1'))
       if (YyJson.channel(item['sid']) ?? YyJson.channel(item['ssid']) case final sid?)
         LiveAnchor.normalized(
-          platform: 'yy',
+          platform: yySiteId,
           anchorId: sid,
           name: YyJson.name(item['name'] ?? item['stageName']),
           avatarUrl: _avatar(YyJson.image(item['headurl'])),
@@ -295,20 +296,20 @@ abstract final class YyRoomParser {
     final ssid = YyJson.channel(item['ssid']) ?? sid;
     final users = parseAudienceNumberOrNull(YyJson.text(item['users']));
     final room = LiveRoom.normalized(
-      platform: 'yy',
+      platform: yySiteId,
       roomId: id,
       content: RoomContent(
         title: YyJson.title(item['desc']),
         coverUrl: YyJson.image(item['thumb2']).isEmpty ? YyJson.image(item['thumb']) : YyJson.image(item['thumb2']),
       ),
       anchor: LiveAnchor.normalized(
-        platform: 'yy',
+        platform: yySiteId,
         anchorId: YyJson.text(item['uid']),
         name: YyJson.name(item['name']),
         avatarUrl: _avatar(YyJson.image(item['avatar'])),
         liveStatus: LiveStatus.live,
       ),
-      area: LiveArea.normalized(platform: 'yy', areaName: YyEndpoints.areaOf(item['biz'], areaNames)),
+      area: LiveArea.normalized(platform: yySiteId, areaName: YyEndpoints.areaOf(item['biz'], areaNames)),
       audience: RoomAudience(popularity: users, primaryMetric: LiveAudienceMetricType.popularity),
       broadcast: RoomBroadcast(liveStatus: LiveStatus.live, startedAt: YyJson.startedAt(item['startTime'])),
       links: RoomLinks(webUrl: YyEndpoints.roomUrl(id)),
@@ -389,20 +390,20 @@ abstract final class YyRoomParser {
     final title = _attribute(_firstTag(part('box')?.$1 ?? '') ?? '', 'data-title');
     final pid = (attributes['data-pid'] ?? '').split('_');
     final room = LiveRoom.normalized(
-      platform: 'yy',
+      platform: yySiteId,
       roomId: sid,
       content: RoomContent(
         title: YyJson.title(title.isEmpty ? part('title')?.$2 : title),
         coverUrl: picture(part('cover')),
       ),
       anchor: LiveAnchor.normalized(
-        platform: 'yy',
+        platform: yySiteId,
         anchorId: YyJson.channel(attributes['data-uid']) ?? '',
         name: YyJson.name(part('intro')?.$2),
         avatarUrl: _avatar(picture(part('avt'))),
         liveStatus: LiveStatus.live,
       ),
-      area: LiveArea.normalized(platform: 'yy', areaName: area),
+      area: LiveArea.normalized(platform: yySiteId, areaName: area),
       audience: RoomAudience(
         popularity: parseAudienceNumberOrNull(part('usr')?.$2),
         primaryMetric: LiveAudienceMetricType.popularity,
@@ -460,23 +461,23 @@ abstract final class YyRoomParser {
     final id = requestedId.trim();
     if (page == null) {
       return LiveRoom.normalized(
-        platform: 'yy',
+        platform: yySiteId,
         roomId: id,
         broadcast: const RoomBroadcast(liveStatus: LiveStatus.offline),
       );
     }
     return LiveRoom.normalized(
-      platform: 'yy',
+      platform: yySiteId,
       roomId: id,
       content: RoomContent(title: page.title),
       anchor: LiveAnchor.normalized(
-        platform: 'yy',
+        platform: yySiteId,
         anchorId: page.uid,
         name: page.nick,
         avatarUrl: page.avatar,
         liveStatus: LiveStatus.offline,
       ),
-      area: LiveArea.normalized(platform: 'yy', areaName: page.area),
+      area: LiveArea.normalized(platform: yySiteId, areaName: page.area),
       broadcast: const RoomBroadcast(liveStatus: LiveStatus.offline),
       links: RoomLinks(webUrl: YyEndpoints.roomUrl(id)),
     );

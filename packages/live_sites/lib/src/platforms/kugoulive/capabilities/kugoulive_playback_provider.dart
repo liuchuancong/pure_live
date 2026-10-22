@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/platforms/kugoulive/kugoulive_manifest.dart';
 import 'package:live_sites/src/platforms/kugoulive/kugoulive_site.dart';
 import 'package:live_sites/src/platforms/kugoulive/parsers/kugoulive_failure.dart';
 
@@ -36,9 +37,9 @@ final class KugoulivePlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await work());
     } on KugouliveFailure catch (failure) {
-      return left(failure.toLiveSiteError('kugoulive'));
+      return left(failure.toLiveSiteError(kugouliveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kugoulive', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kugouliveSiteId, message: '$error', cause: error));
     }
   }
 }

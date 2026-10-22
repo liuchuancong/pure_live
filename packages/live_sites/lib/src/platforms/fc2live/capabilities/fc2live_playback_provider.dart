@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/platforms/fc2live/fc2live_manifest.dart';
 import 'package:live_sites/src/platforms/fc2live/fc2live_site.dart';
 import 'package:live_sites/src/platforms/fc2live/parsers/fc2live_failure.dart';
 
@@ -37,9 +38,9 @@ final class Fc2LivePlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.qualitiesOf(roomId));
     } on Fc2LiveFailure catch (failure) {
-      return left(failure.toLiveSiteError('fc2live'));
+      return left(failure.toLiveSiteError(fc2LiveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'fc2live', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: fc2LiveSiteId, message: '$error', cause: error));
     }
   }
 
@@ -48,9 +49,9 @@ final class Fc2LivePlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.linesOf(roomId, quality: quality));
     } on Fc2LiveFailure catch (failure) {
-      return left(failure.toLiveSiteError('fc2live'));
+      return left(failure.toLiveSiteError(fc2LiveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'fc2live', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: fc2LiveSiteId, message: '$error', cause: error));
     }
   }
 }

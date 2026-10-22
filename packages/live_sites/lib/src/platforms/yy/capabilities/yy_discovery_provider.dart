@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/yy/parsers/yy_failure.dart';
+import 'package:live_sites/src/platforms/yy/yy_manifest.dart';
 import 'package:live_sites/src/platforms/yy/yy_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -32,9 +33,9 @@ final class YyDiscoveryProvider implements LiveDiscoveryProvider {
       final rooms = await site.recommendRooms(page: request.page, pageSize: request.pageSize);
       return right(LivePage(items: rooms));
     } on YyFailure catch (failure) {
-      return left(failure.toLiveSiteError('yy'));
+      return left(failure.toLiveSiteError(yySiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'yy', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: yySiteId, message: '$error', cause: error));
     }
   }
 }

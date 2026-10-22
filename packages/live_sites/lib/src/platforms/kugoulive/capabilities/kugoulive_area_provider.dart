@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/area/live_area/live_area.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
+import 'package:live_sites/src/platforms/kugoulive/kugoulive_manifest.dart';
 import 'package:live_sites/src/platforms/kugoulive/kugoulive_site.dart';
 import 'package:live_sites/src/platforms/kugoulive/parsers/kugoulive_failure.dart';
 
@@ -41,9 +42,9 @@ final class KugouliveAreaProvider implements LiveAreaProvider {
     try {
       return right(await work());
     } on KugouliveFailure catch (failure) {
-      return left(failure.toLiveSiteError('kugoulive'));
+      return left(failure.toLiveSiteError(kugouliveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kugoulive', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kugouliveSiteId, message: '$error', cause: error));
     }
   }
 }

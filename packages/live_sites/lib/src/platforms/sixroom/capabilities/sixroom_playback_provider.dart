@@ -4,6 +4,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/platforms/sixroom/parsers/sixroom_failure.dart';
+import 'package:live_sites/src/platforms/sixroom/sixroom_manifest.dart';
 import 'package:live_sites/src/platforms/sixroom/sixroom_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -30,9 +31,9 @@ final class SixroomPlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.qualitiesOf(roomId));
     } on SixroomFailure catch (failure) {
-      return left(failure.toLiveSiteError('sixroom'));
+      return left(failure.toLiveSiteError(sixroomSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'sixroom', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: sixroomSiteId, message: '$error', cause: error));
     }
   }
 
@@ -41,9 +42,9 @@ final class SixroomPlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.linesOf(roomId, quality: quality));
     } on SixroomFailure catch (failure) {
-      return left(failure.toLiveSiteError('sixroom'));
+      return left(failure.toLiveSiteError(sixroomSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'sixroom', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: sixroomSiteId, message: '$error', cause: error));
     }
   }
 }

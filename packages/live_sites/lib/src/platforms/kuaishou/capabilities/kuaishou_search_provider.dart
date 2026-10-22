@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/enums/live_search_target.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
+import 'package:live_sites/src/platforms/kuaishou/kuaishou_manifest.dart';
 import 'package:live_sites/src/platforms/kuaishou/kuaishou_site.dart';
 import 'package:live_sites/src/platforms/kuaishou/parsers/kuaishou_failure.dart';
 
@@ -31,7 +32,10 @@ final class KuaishouSearchProvider implements LiveSearchProvider {
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
     if (!supportedTargets.contains(request.target)) {
       return left(
-        LiveSiteError.unsupported(siteId: 'kuaishou', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(
+          siteId: kuaishouSiteId,
+          message: 'search target ${request.target.name} not supported',
+        ),
       );
     }
     if (request.query.trim().isEmpty) return right(const LivePage(items: []));
@@ -42,9 +46,9 @@ final class KuaishouSearchProvider implements LiveSearchProvider {
       final items = [for (final room in rooms.take(size)) LiveSearchResult.room(room)];
       return right(LivePage(items: items));
     } on KuaishouFailure catch (failure) {
-      return left(failure.toLiveSiteError('kuaishou'));
+      return left(failure.toLiveSiteError(kuaishouSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'kuaishou', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: kuaishouSiteId, message: '$error', cause: error));
     }
   }
 }

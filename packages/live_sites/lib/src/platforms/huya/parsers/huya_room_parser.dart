@@ -13,11 +13,11 @@ import 'package:live_sites/src/models/room/room_broadcast/room_broadcast.dart';
 import 'package:live_sites/src/models/room/room_content/room_content.dart';
 import 'package:live_sites/src/models/room/room_links/room_links.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
+import 'package:live_sites/src/platforms/huya/huya_manifest.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_failure.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_json.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_play_parser.dart';
 
-const _site = 'huya';
 const _web = 'https://www.huya.com';
 
 final RegExp _number = RegExp(r'^\d{1,19}$');
@@ -150,7 +150,7 @@ abstract final class HuyaRoomParser {
       if (gid == null) continue;
       result.add(
         LiveArea.normalized(
-          platform: _site,
+          platform: huyaSiteId,
           areaId: '$gid',
           areaName: _text(item['gameFullName']),
           parentAreaId: categoryId,
@@ -179,18 +179,18 @@ abstract final class HuyaRoomParser {
       if (room == null || id == null) continue;
       rooms.add(
         LiveRoom.normalized(
-          platform: _site,
+          platform: huyaSiteId,
           roomId: id,
           content: RoomContent(
             title: _title(room['introduction'], room['roomName']),
             coverUrl: _thumbnail(room['screenshot']),
           ),
           anchor: LiveAnchor.normalized(
-            platform: _site,
+            platform: huyaSiteId,
             name: _text(room['nick']),
             avatarUrl: normalizeImageUrl(room['avatar180']),
           ),
-          area: LiveArea.normalized(platform: _site, areaName: _text(room['gameFullName'])),
+          area: LiveArea.normalized(platform: huyaSiteId, areaName: _text(room['gameFullName'])),
           audience: RoomAudience(
             popularity: jsonInt(room['totalCount']),
             primaryMetric: LiveAudienceMetricType.popularity,
@@ -244,20 +244,20 @@ abstract final class HuyaRoomParser {
       results.add(
         LiveSearchResult.room(
           LiveRoom.normalized(
-            platform: _site,
+            platform: huyaSiteId,
             roomId: id,
             content: RoomContent(
               title: _title(doc['game_introduction'], doc['game_roomName']),
               coverUrl: _thumbnail(doc['game_screenshot']),
             ),
             anchor: LiveAnchor.normalized(
-              platform: _site,
+              platform: huyaSiteId,
               anchorId: jsonString(doc['uid']) ?? '',
               name: _text(doc['game_nick']),
               avatarUrl: normalizeImageUrl(doc['game_imgUrl']),
               liveStatus: LiveStatus.live,
             ),
-            area: LiveArea.normalized(platform: _site, areaName: _text(doc['gameName'])),
+            area: LiveArea.normalized(platform: huyaSiteId, areaName: _text(doc['gameName'])),
             audience: RoomAudience(
               popularity: jsonInt(doc['game_total_count']),
               primaryMetric: LiveAudienceMetricType.popularity,
@@ -285,7 +285,7 @@ abstract final class HuyaRoomParser {
       results.add(
         LiveSearchResult.anchor(
           LiveAnchor.normalized(
-            platform: _site,
+            platform: huyaSiteId,
             anchorId: id,
             name: _text(doc['game_nick']),
             avatarUrl: normalizeImageUrl(doc['game_avatarUrl180']),
@@ -346,7 +346,7 @@ abstract final class HuyaRoomParser {
     final replay = state == LiveStatus.replay ? _replayOf(live) : null;
     return (
       room: LiveRoom.normalized(
-        platform: _site,
+        platform: huyaSiteId,
         roomId: id,
         content: RoomContent(
           title: _title(live['introduction'], live['roomName']),
@@ -355,14 +355,14 @@ abstract final class HuyaRoomParser {
           notice: _text(data['welcomeText']),
         ),
         anchor: LiveAnchor.normalized(
-          platform: _site,
+          platform: huyaSiteId,
           anchorId: presenterUid > 0 ? '$presenterUid' : '',
           name: _text(info['nick']),
           avatarUrl: normalizeImageUrl(info['avatar180']),
           liveStatus: state,
         ),
         area: LiveArea.normalized(
-          platform: _site,
+          platform: huyaSiteId,
           areaId: _positive(live['gamePid']) != null ? '${_positive(live['gamePid'])}' : '',
           areaName: _text(live['gameFullName']),
         ),

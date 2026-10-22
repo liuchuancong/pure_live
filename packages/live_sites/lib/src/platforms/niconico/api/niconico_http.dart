@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:live_net/live_net.dart';
+import 'package:live_sites/src/platforms/niconico/niconico_manifest.dart';
 import 'package:live_sites/src/platforms/niconico/parsers/niconico_failure.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -28,7 +29,7 @@ final class NiconicoHttp {
   Future<NiconicoResponse> get(Uri url, {Map<String, String> headers = const {}, Duration? timeout}) async {
     try {
       final response = await http.send(
-        LiveRequest.custom(method: 'GET', site: 'niconico', url: url, headers: headers, timeout: timeout),
+        LiveRequest.custom(method: 'GET', site: niconicoSiteId, url: url, headers: headers, timeout: timeout),
       );
       return (text: response.text, bytes: response.bodyBytes, status: response.statusCode);
     } on TransportFailure catch (failure) {
@@ -44,7 +45,7 @@ final class NiconicoHttp {
   /// the loop stops.
   Future<NiconicoResponse> feed(Uri url, {Map<String, String> headers = const {}, CancelToken? cancel}) async {
     final response = await http.send(
-      LiveRequest.custom(method: 'GET', site: 'niconico', url: url, headers: headers, cancelToken: cancel),
+      LiveRequest.custom(method: 'GET', site: niconicoSiteId, url: url, headers: headers, cancelToken: cancel),
     );
     return (text: response.text, bytes: response.bodyBytes, status: response.statusCode);
   }
@@ -65,7 +66,7 @@ final class NiconicoHttp {
       return await http.open(
         LiveRequest.custom(
           method: 'GET',
-          site: 'niconico',
+          site: niconicoSiteId,
           url: url,
           headers: headers,
           timeout: timeout,

@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/platforms/jdlive/jdlive_manifest.dart';
 import 'package:live_sites/src/platforms/jdlive/jdlive_site.dart';
 import 'package:live_sites/src/platforms/jdlive/parsers/jdlive_failure.dart';
 
@@ -30,9 +31,9 @@ final class JdlivePlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.qualitiesOf(roomId));
     } on JdliveFailure catch (failure) {
-      return left(failure.toLiveSiteError('jdlive'));
+      return left(failure.toLiveSiteError(jdliveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'jdlive', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: jdliveSiteId, message: '$error', cause: error));
     }
   }
 
@@ -41,9 +42,9 @@ final class JdlivePlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.linesOf(roomId, quality: quality));
     } on JdliveFailure catch (failure) {
-      return left(failure.toLiveSiteError('jdlive'));
+      return left(failure.toLiveSiteError(jdliveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'jdlive', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: jdliveSiteId, message: '$error', cause: error));
     }
   }
 }

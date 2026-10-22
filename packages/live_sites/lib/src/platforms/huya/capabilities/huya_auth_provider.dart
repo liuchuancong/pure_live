@@ -1,5 +1,6 @@
 import 'package:live_sites/src/capabilities/live_auth_capability.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
+import 'package:live_sites/src/platforms/huya/huya_manifest.dart';
 import 'package:live_sites/src/platforms/huya/huya_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -26,7 +27,7 @@ final class HuyaAuthProvider implements LiveAuthCapability {
   /// The site this capability serves.
   final HuyaSite site;
 
-  static const String _siteId = 'huya';
+  static const String _siteId = huyaSiteId;
 
   @override
   LiveAuthSession startQrLogin() =>

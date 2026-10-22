@@ -10,6 +10,7 @@ import 'package:live_sites/src/models/message/live_message_color/live_message_co
 import 'package:live_sites/src/platforms/picarto/api/picarto_endpoints.dart';
 import 'package:live_sites/src/platforms/picarto/danmaku/picarto_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/picarto/parsers/picarto_failure.dart';
+import 'package:live_sites/src/platforms/picarto/picarto_manifest.dart';
 import 'package:live_sites/src/platforms/picarto/picarto_site.dart';
 import 'package:live_websocket/live_websocket.dart';
 
@@ -130,9 +131,9 @@ final class PicartoDanmakuSession implements LiveDanmakuSession {
   /// instead of ending the session, and this returns null.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) return const LiveSiteError.unsupported(siteId: 'picarto', message: 'session is disposed');
+    if (_disposed) return const LiveSiteError.unsupported(siteId: picartoSiteId, message: 'session is disposed');
     if (!PicartoEndpoints.isChannelName(args.channelName.trim())) {
-      return const LiveSiteError.notFound(siteId: 'picarto', message: 'not a Picarto channel');
+      return const LiveSiteError.notFound(siteId: picartoSiteId, message: 'not a Picarto channel');
     }
     unawaited(_handshake());
     return null;

@@ -1,5 +1,6 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/inke/api/inke_endpoints.dart';
+import 'package:live_sites/src/platforms/inke/inke_manifest.dart';
 import 'package:live_sites/src/platforms/inke/parsers/inke_failure.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -28,7 +29,13 @@ final class InkeHttp {
     final LiveResponse response;
     try {
       response = await http.send(
-        LiveRequest.custom(method: 'GET', site: 'inke', url: url, headers: InkeEndpoints.headers, cancelToken: cancel),
+        LiveRequest.custom(
+          method: 'GET',
+          site: inkeSiteId,
+          url: url,
+          headers: InkeEndpoints.headers,
+          cancelToken: cancel,
+        ),
       );
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;

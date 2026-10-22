@@ -9,6 +9,7 @@ import 'package:live_sites/src/models/message/live_message_color/live_message_co
 import 'package:live_sites/src/platforms/showroom/danmaku/showroom_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/showroom/parsers/showroom_failure.dart';
 import 'package:live_sites/src/platforms/showroom/parsers/showroom_models.dart';
+import 'package:live_sites/src/platforms/showroom/showroom_manifest.dart';
 import 'package:live_sites/src/platforms/showroom/showroom_site.dart';
 import 'package:live_websocket/live_websocket.dart';
 
@@ -118,10 +119,10 @@ final class ShowroomDanmakuSession implements LiveDanmakuSession {
   /// and this returns null.
   @override
   Future<LiveSiteError?> connect() async {
-    if (_disposed) return const LiveSiteError.unsupported(siteId: 'showroom', message: 'session is disposed');
+    if (_disposed) return const LiveSiteError.unsupported(siteId: showroomSiteId, message: 'session is disposed');
     final checked = ShowroomDanmakuCodec.checked(args);
     if (checked == null) {
-      return const LiveSiteError.notFound(siteId: 'showroom', message: 'not a SHOWROOM broadcast server or key');
+      return const LiveSiteError.notFound(siteId: showroomSiteId, message: 'not a SHOWROOM broadcast server or key');
     }
     unawaited(_handshake());
     unawaited(_loadGifts());

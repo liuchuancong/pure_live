@@ -1,6 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
+import 'package:live_sites/src/platforms/bigo/bigo_manifest.dart';
 import 'package:live_sites/src/platforms/bigo/bigo_site.dart';
 import 'package:live_sites/src/platforms/bigo/parsers/bigo_room_parser.dart';
 
@@ -28,11 +29,11 @@ final class BigoLinkResolver implements LiveLinkResolver {
   Future<Either<LiveSiteError, Uri>> resolve(Uri uri) async {
     final host = uri.host.toLowerCase();
     if (host != 'bigo.tv' && !host.endsWith('.bigo.tv')) {
-      return left(LiveSiteError.unsupported(siteId: 'bigo', message: 'not a bigo link: $uri'));
+      return left(LiveSiteError.unsupported(siteId: bigoSiteId, message: 'not a bigo link: $uri'));
     }
     final id = BigoRoomParser.siteIdFromUrl('$uri');
     if (id == null) {
-      return left(LiveSiteError.notFound(siteId: 'bigo', message: 'no room in bigo link: $uri'));
+      return left(LiveSiteError.notFound(siteId: bigoSiteId, message: 'no room in bigo link: $uri'));
     }
     return right(Uri.parse(BigoRoomParser.link(id)));
   }

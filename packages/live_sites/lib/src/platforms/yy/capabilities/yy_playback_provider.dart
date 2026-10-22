@@ -4,6 +4,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/platforms/yy/parsers/yy_failure.dart';
+import 'package:live_sites/src/platforms/yy/yy_manifest.dart';
 import 'package:live_sites/src/platforms/yy/yy_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -32,9 +33,9 @@ final class YyPlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.qualitiesOf(roomId));
     } on YyFailure catch (failure) {
-      return left(failure.toLiveSiteError('yy'));
+      return left(failure.toLiveSiteError(yySiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'yy', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: yySiteId, message: '$error', cause: error));
     }
   }
 
@@ -43,9 +44,9 @@ final class YyPlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.linesOf(roomId, quality: quality));
     } on YyFailure catch (failure) {
-      return left(failure.toLiveSiteError('yy'));
+      return left(failure.toLiveSiteError(yySiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'yy', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: yySiteId, message: '$error', cause: error));
     }
   }
 }

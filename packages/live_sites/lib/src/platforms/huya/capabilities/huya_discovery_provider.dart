@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/huya/api/huya_endpoints.dart';
+import 'package:live_sites/src/platforms/huya/huya_manifest.dart';
 import 'package:live_sites/src/platforms/huya/huya_site.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_failure.dart';
 import 'package:live_sites/src/platforms/huya/parsers/huya_room_parser.dart';
@@ -35,9 +36,9 @@ final class HuyaDiscoveryProvider implements LiveDiscoveryProvider {
       final result = HuyaRoomParser.roomList(response.text, page: page, status: response.status);
       return right(LivePage(items: result.rooms, hasMore: result.hasMore));
     } on HuyaFailure catch (failure) {
-      return left(failure.toLiveSiteError('huya'));
+      return left(failure.toLiveSiteError(huyaSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'huya', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: huyaSiteId, message: '$error', cause: error));
     }
   }
 }

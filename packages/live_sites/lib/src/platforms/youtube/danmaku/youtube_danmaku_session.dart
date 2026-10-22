@@ -12,6 +12,7 @@ import 'package:live_sites/src/platforms/youtube/api/youtube_http.dart';
 import 'package:live_sites/src/platforms/youtube/danmaku/youtube_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/youtube/parsers/youtube_failure.dart';
 import 'package:live_sites/src/platforms/youtube/parsers/youtube_json.dart';
+import 'package:live_sites/src/platforms/youtube/youtube_manifest.dart';
 import 'package:live_sites/src/platforms/youtube/youtube_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -49,22 +50,25 @@ final class YoutubeDanmakuProvider implements LiveDanmakuProvider {
       final handle = (await site.detail(roomId)).runtime.danmakuHandle;
       if (handle is! YoutubeDanmakuArgs) {
         return left(
-          const LiveSiteError.contentUnavailable(siteId: 'youtube', message: 'room names no live chat continuation'),
+          const LiveSiteError.contentUnavailable(
+            siteId: youtubeSiteId,
+            message: 'room names no live chat continuation',
+          ),
         );
       }
       if (handle.isReplay) {
-        return left(const LiveSiteError.unsupported(siteId: 'youtube', message: 'chat replay is not supported'));
+        return left(const LiveSiteError.unsupported(siteId: youtubeSiteId, message: 'chat replay is not supported'));
       }
       if (handle.continuation.isEmpty) {
         return left(
-          const LiveSiteError.contentUnavailable(siteId: 'youtube', message: 'live chat continuation is missing'),
+          const LiveSiteError.contentUnavailable(siteId: youtubeSiteId, message: 'live chat continuation is missing'),
         );
       }
       args = handle;
     } on YouTubeFailure catch (failure) {
-      return left(failure.toLiveSiteError('youtube'));
+      return left(failure.toLiveSiteError(youtubeSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'youtube', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: youtubeSiteId, message: '$error', cause: error));
     }
     final session = YoutubeDanmakuSession(
       args: args,
@@ -142,11 +146,14 @@ final class YoutubeDanmakuSession implements LiveDanmakuSession {
   @override
   Future<LiveSiteError?> connect() async {
     if (_disposed) {
-      return const LiveSiteError.unsupported(siteId: 'youtube', message: 'session is disposed');
+      return const LiveSiteError.unsupported(siteId: youtubeSiteId, message: 'session is disposed');
     }
     if (_running) return null;
     if (args.continuation.trim().isEmpty) {
-      return const LiveSiteError.contentUnavailable(siteId: 'youtube', message: 'live chat continuation is missing');
+      return const LiveSiteError.contentUnavailable(
+        siteId: youtubeSiteId,
+        message: 'live chat continuation is missing',
+      );
     }
     _running = true;
     _allChat = allChat;
@@ -165,7 +172,7 @@ final class YoutubeDanmakuSession implements LiveDanmakuSession {
         if (!_running || _disposed) return null;
         if (_isTerminal(error)) {
           _terminal('$error');
-          return error is YouTubeFailure ? error.toLiveSiteError('youtube') : null;
+          return error is YouTubeFailure ? error.toLiveSiteError(youtubeSiteId) : null;
         }
         lastError = error;
         continue;
@@ -185,7 +192,11 @@ final class YoutubeDanmakuSession implements LiveDanmakuSession {
       _scheduleViewers();
       return null;
     }
-    return LiveSiteError.network(siteId: 'youtube', message: 'live chat failed to start: $lastError', cause: lastError);
+    return LiveSiteError.network(
+      siteId: youtubeSiteId,
+      message: 'live chat failed to start: $lastError',
+      cause: lastError,
+    );
   }
 
   @override

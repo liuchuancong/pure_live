@@ -4,6 +4,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/page/live_page_request/live_page_request.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
+import 'package:live_sites/src/platforms/bigo/bigo_manifest.dart';
 import 'package:live_sites/src/platforms/bigo/bigo_site.dart';
 import 'package:live_sites/src/platforms/bigo/parsers/bigo_failure.dart';
 
@@ -30,9 +31,9 @@ final class BigoRoomProvider implements LiveRoomProvider {
     try {
       return right(await site.detail(roomId));
     } on BigoFailure catch (failure) {
-      return left(failure.toLiveSiteError('bigo'));
+      return left(failure.toLiveSiteError(bigoSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'bigo', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: bigoSiteId, message: '$error', cause: error));
     }
   }
 
@@ -43,9 +44,9 @@ final class BigoRoomProvider implements LiveRoomProvider {
       final result = await site.directory(page);
       return right(LivePage(items: result.rooms, hasMore: result.hasMore));
     } on BigoFailure catch (failure) {
-      return left(failure.toLiveSiteError('bigo'));
+      return left(failure.toLiveSiteError(bigoSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'bigo', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: bigoSiteId, message: '$error', cause: error));
     }
   }
 }

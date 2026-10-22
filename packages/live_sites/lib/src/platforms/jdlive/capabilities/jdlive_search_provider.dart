@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/enums/live_search_target.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
+import 'package:live_sites/src/platforms/jdlive/jdlive_manifest.dart';
 import 'package:live_sites/src/platforms/jdlive/jdlive_site.dart';
 import 'package:live_sites/src/platforms/jdlive/parsers/jdlive_failure.dart';
 
@@ -32,7 +33,7 @@ final class JdliveSearchProvider implements LiveSearchProvider {
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
     if (!supportedTargets.contains(request.target)) {
       return left(
-        LiveSiteError.unsupported(siteId: 'jdlive', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(siteId: jdliveSiteId, message: 'search target ${request.target.name} not supported'),
       );
     }
     try {
@@ -41,9 +42,9 @@ final class JdliveSearchProvider implements LiveSearchProvider {
         LivePage(items: [for (final room in page.rooms) LiveSearchResult.room(room)], hasMore: page.hasMore),
       );
     } on JdliveFailure catch (failure) {
-      return left(failure.toLiveSiteError('jdlive'));
+      return left(failure.toLiveSiteError(jdliveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'jdlive', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: jdliveSiteId, message: '$error', cause: error));
     }
   }
 }

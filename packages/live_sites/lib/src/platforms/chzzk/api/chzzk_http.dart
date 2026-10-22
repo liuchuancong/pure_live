@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/chzzk/api/chzzk_endpoints.dart';
+import 'package:live_sites/src/platforms/chzzk/chzzk_manifest.dart';
 import 'package:live_sites/src/platforms/chzzk/parsers/chzzk_failure.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -36,7 +37,7 @@ final class ChzzkHttp {
       response = await http.send(
         LiveRequest.custom(
           method: 'GET',
-          site: 'chzzk',
+          site: chzzkSiteId,
           url: url,
           headers: headers ?? ChzzkEndpoints.headers,
           cancelToken: cancel,

@@ -1,5 +1,6 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/steambroadcast/parsers/steambroadcast_failure.dart';
+import 'package:live_sites/src/platforms/steambroadcast/steambroadcast_manifest.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -39,7 +40,7 @@ final class SteambroadcastHttp {
       response = await http.send(
         LiveRequest.custom(
           method: 'GET',
-          site: 'steambroadcast',
+          site: steambroadcastSiteId,
           url: url,
           headers: headers,
           cancelToken: cancel,

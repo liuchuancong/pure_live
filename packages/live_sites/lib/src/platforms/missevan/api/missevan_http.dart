@@ -1,5 +1,6 @@
 import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/platforms/missevan/api/missevan_endpoints.dart';
+import 'package:live_sites/src/platforms/missevan/missevan_manifest.dart';
 import 'package:live_sites/src/platforms/missevan/parsers/missevan_failure.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -34,7 +35,7 @@ final class MissevanHttp {
       response = await http.send(
         LiveRequest.custom(
           method: 'GET',
-          site: 'missevan',
+          site: missevanSiteId,
           url: url,
           headers: MissevanEndpoints.headers,
           cancelToken: cancel,

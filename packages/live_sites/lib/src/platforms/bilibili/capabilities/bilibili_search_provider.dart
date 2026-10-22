@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_endpoints.dart';
+import 'package:live_sites/src/platforms/bilibili/bilibili_manifest.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_site.dart';
 import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_failure.dart';
 import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_room_parser.dart';
@@ -35,7 +36,10 @@ final class BilibiliSearchProvider implements LiveSearchProvider {
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
     if (!supportedTargets.contains(request.target)) {
       return left(
-        LiveSiteError.unsupported(siteId: 'bilibili', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(
+          siteId: bilibiliSiteId,
+          message: 'search target ${request.target.name} not supported',
+        ),
       );
     }
     final text = request.query.trim();
@@ -51,9 +55,9 @@ final class BilibiliSearchProvider implements LiveSearchProvider {
           : await _anchors(text, page);
       return right(LivePage(items: items, hasMore: items.isNotEmpty));
     } on BilibiliFailure catch (failure) {
-      return left(failure.toLiveSiteError('bilibili'));
+      return left(failure.toLiveSiteError(bilibiliSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'bilibili', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: bilibiliSiteId, message: '$error', cause: error));
     }
   }
 

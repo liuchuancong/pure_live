@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
 import 'package:live_sites/src/models/search/live_search_result/live_search_result.dart';
 import 'package:live_sites/src/platforms/sixroom/parsers/sixroom_failure.dart';
+import 'package:live_sites/src/platforms/sixroom/sixroom_manifest.dart';
 import 'package:live_sites/src/platforms/sixroom/sixroom_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -31,7 +32,7 @@ final class SixroomSearchProvider implements LiveSearchProvider {
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
     if (!supportedTargets.contains(request.target)) {
       return left(
-        LiveSiteError.unsupported(siteId: 'sixroom', message: 'search target ${request.target.name} not supported'),
+        LiveSiteError.unsupported(siteId: sixroomSiteId, message: 'search target ${request.target.name} not supported'),
       );
     }
     try {
@@ -40,9 +41,9 @@ final class SixroomSearchProvider implements LiveSearchProvider {
         LivePage(items: [for (final room in page.rooms) LiveSearchResult.room(room)], hasMore: page.hasMore),
       );
     } on SixroomFailure catch (failure) {
-      return left(failure.toLiveSiteError('sixroom'));
+      return left(failure.toLiveSiteError(sixroomSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'sixroom', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: sixroomSiteId, message: '$error', cause: error));
     }
   }
 }

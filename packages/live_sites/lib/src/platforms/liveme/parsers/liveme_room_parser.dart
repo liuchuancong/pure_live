@@ -17,6 +17,7 @@ import 'package:live_sites/src/models/room/room_content/room_content.dart';
 import 'package:live_sites/src/models/room/room_links/room_links.dart';
 import 'package:live_sites/src/models/room/room_runtime/room_runtime.dart';
 import 'package:live_sites/src/platforms/liveme/api/liveme_endpoints.dart';
+import 'package:live_sites/src/platforms/liveme/liveme_manifest.dart';
 import 'package:live_sites/src/platforms/liveme/parsers/liveme_failure.dart';
 import 'package:live_sites/src/platforms/liveme/parsers/liveme_json.dart';
 
@@ -506,7 +507,7 @@ abstract final class LivemeRoomParser {
       LivemeState.unknown => LiveStatus.unknown,
     };
     return LiveRoom.normalized(
-      platform: 'liveme',
+      platform: livemeSiteId,
       roomId: snapshot.shortId,
       content: RoomContent(
         title: snapshot.title,
@@ -515,7 +516,7 @@ abstract final class LivemeRoomParser {
         notice: LivemeEndpoints.chatNotice,
       ),
       anchor: LiveAnchor.normalized(
-        platform: 'liveme',
+        platform: livemeSiteId,
         anchorId: snapshot.userId,
         name: snapshot.nickname,
         avatarUrl: snapshot.avatar,
@@ -524,7 +525,7 @@ abstract final class LivemeRoomParser {
       ),
       area: snapshot.countryCode.isEmpty
           ? null
-          : LiveArea.normalized(platform: 'liveme', areaName: snapshot.countryCode),
+          : LiveArea.normalized(platform: livemeSiteId, areaName: snapshot.countryCode),
       audience: RoomAudience(
         popularity: snapshot.heat,
         onlineViewers: snapshot.currentViewers,

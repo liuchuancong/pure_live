@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/platforms/looklive/looklive_manifest.dart';
 import 'package:live_sites/src/platforms/looklive/looklive_site.dart';
 import 'package:live_sites/src/platforms/looklive/parsers/looklive_failure.dart';
 
@@ -29,9 +30,9 @@ final class LooklivePlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.qualitiesOf(roomId));
     } on LookliveFailure catch (failure) {
-      return left(failure.toLiveSiteError('looklive'));
+      return left(failure.toLiveSiteError(lookliveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'looklive', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: lookliveSiteId, message: '$error', cause: error));
     }
   }
 
@@ -40,9 +41,9 @@ final class LooklivePlaybackProvider implements LivePlaybackProvider {
     try {
       return right(await site.linesOf(roomId, quality: quality));
     } on LookliveFailure catch (failure) {
-      return left(failure.toLiveSiteError('looklive'));
+      return left(failure.toLiveSiteError(lookliveSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'looklive', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: lookliveSiteId, message: '$error', cause: error));
     }
   }
 }

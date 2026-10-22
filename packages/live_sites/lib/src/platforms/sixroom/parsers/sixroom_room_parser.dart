@@ -20,6 +20,7 @@ import 'package:live_sites/src/platforms/sixroom/api/sixroom_endpoints.dart';
 import 'package:live_sites/src/platforms/sixroom/parsers/sixroom_failure.dart';
 import 'package:live_sites/src/platforms/sixroom/parsers/sixroom_html.dart';
 import 'package:live_sites/src/platforms/sixroom/parsers/sixroom_json.dart';
+import 'package:live_sites/src/platforms/sixroom/sixroom_manifest.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -270,7 +271,7 @@ abstract final class SixroomRoomParser {
   static List<LiveArea> areas() => [
     for (final area in SixroomEndpoints.areas)
       LiveArea.normalized(
-        platform: 'sixroom',
+        platform: sixroomSiteId,
         areaId: area.id,
         areaName: area.name,
         parentAreaId: 'sixroom',
@@ -714,7 +715,7 @@ abstract final class SixroomRoomParser {
     };
     final restricted = room.restriction != null && room.restriction != LiveRestriction.none;
     return LiveRoom.normalized(
-      platform: 'sixroom',
+      platform: sixroomSiteId,
       roomId: room.roomId,
       content: RoomContent(
         title: room.title,
@@ -724,7 +725,7 @@ abstract final class SixroomRoomParser {
             : SixroomEndpoints.chatNotice,
       ),
       anchor: LiveAnchor.normalized(
-        platform: 'sixroom',
+        platform: sixroomSiteId,
         anchorId: room.userId,
         name: room.nick,
         avatarUrl: room.avatar.isEmpty ? null : room.avatar,

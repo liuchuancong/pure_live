@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/cc/api/cc_endpoints.dart';
+import 'package:live_sites/src/platforms/cc/cc_manifest.dart';
 import 'package:live_sites/src/platforms/cc/cc_site.dart';
 import 'package:live_sites/src/platforms/cc/parsers/cc_link.dart';
 
@@ -28,8 +29,8 @@ final class CcLinkResolver implements LiveLinkResolver {
     final ours = CcLink.hosts.contains(uri.host.toLowerCase());
     return left(
       ours
-          ? LiveSiteError.notFound(siteId: 'cc', message: '"$uri" names no room')
-          : LiveSiteError.unsupported(siteId: 'cc', message: '"$uri" is not a CC link'),
+          ? LiveSiteError.notFound(siteId: ccSiteId, message: '"$uri" names no room')
+          : LiveSiteError.unsupported(siteId: ccSiteId, message: '"$uri" is not a CC link'),
     );
   }
 }

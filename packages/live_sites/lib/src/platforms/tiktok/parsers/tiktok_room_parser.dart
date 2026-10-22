@@ -18,6 +18,7 @@ import 'package:live_sites/src/platforms/tiktok/api/tiktok_endpoints.dart';
 import 'package:live_sites/src/platforms/tiktok/parsers/tiktok_failure.dart';
 import 'package:live_sites/src/platforms/tiktok/parsers/tiktok_json.dart';
 import 'package:live_sites/src/platforms/tiktok/parsers/tiktok_link.dart';
+import 'package:live_sites/src/platforms/tiktok/tiktok_manifest.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
@@ -231,7 +232,7 @@ abstract final class TiktokRoomParser {
       issuedAt: issuedAt,
     );
     return LiveRoom.normalized(
-      platform: 'tiktok',
+      platform: tiktokSiteId,
       roomId: username,
       content: RoomContent(
         title: title.isEmpty ? nickname : title,
@@ -240,7 +241,7 @@ abstract final class TiktokRoomParser {
         notice: TiktokEndpoints.chatNotice,
       ),
       anchor: LiveAnchor.normalized(
-        platform: 'tiktok',
+        platform: tiktokSiteId,
         anchorId: userId,
         name: nickname,
         avatarUrl: avatar.isEmpty ? null : avatar,

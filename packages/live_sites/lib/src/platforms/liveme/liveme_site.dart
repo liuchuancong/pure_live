@@ -134,14 +134,14 @@ final class LivemeSite implements LiveSite {
     final url = LivemeEndpoints.videoUrl;
     return LiveRequest.custom(
       method: 'POST',
-      site: 'liveme',
+      site: livemeSiteId,
       url: url,
       headers: {
         ...LivemeEndpoints.headers(shortId: shortId),
         'lm-s-sign': signed.signature,
         'content-type': 'application/x-www-form-urlencoded',
       },
-      body: LiveRequest.form(url, fields: signed.fields, site: 'liveme').body,
+      body: LiveRequest.form(url, fields: signed.fields, site: livemeSiteId).body,
     );
   }
 

@@ -4,6 +4,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/platforms/showroom/api/showroom_endpoints.dart';
 import 'package:live_sites/src/platforms/showroom/parsers/showroom_failure.dart';
 import 'package:live_sites/src/platforms/showroom/parsers/showroom_parser.dart';
+import 'package:live_sites/src/platforms/showroom/showroom_manifest.dart';
 import 'package:live_sites/src/platforms/showroom/showroom_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -31,8 +32,8 @@ final class ShowroomLinkResolver implements LiveLinkResolver {
       final ours = ShowroomEndpoints.isSiteHost(uri.host.toLowerCase());
       return left(
         ours
-            ? LiveSiteError.notFound(siteId: 'showroom', message: '"$uri" names no room')
-            : LiveSiteError.unsupported(siteId: 'showroom', message: '"$uri" is not a SHOWROOM link'),
+            ? LiveSiteError.notFound(siteId: showroomSiteId, message: '"$uri" names no room')
+            : LiveSiteError.unsupported(siteId: showroomSiteId, message: '"$uri" is not a SHOWROOM link'),
       );
     }
     final String roomId;
@@ -41,13 +42,13 @@ final class ShowroomLinkResolver implements LiveLinkResolver {
       final key = link.key;
       roomId = id ?? '${await site.resolveRoomKey(key!)}';
     } on ShowroomFailure catch (failure) {
-      return left(failure.toLiveSiteError('showroom'));
+      return left(failure.toLiveSiteError(showroomSiteId));
     } on Object catch (error) {
-      return left(LiveSiteError.unexpected(siteId: 'showroom', message: '$error', cause: error));
+      return left(LiveSiteError.unexpected(siteId: showroomSiteId, message: '$error', cause: error));
     }
     final page = ShowroomEndpoints.roomUrl(roomId);
     if (page == null) {
-      return left(LiveSiteError.notFound(siteId: 'showroom', message: '"$uri" names no room'));
+      return left(LiveSiteError.notFound(siteId: showroomSiteId, message: '"$uri" names no room'));
     }
     return right(Uri.parse(page));
   }

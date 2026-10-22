@@ -9,6 +9,7 @@ import 'package:live_sites/src/models/room/room_audience/room_audience.dart';
 import 'package:live_sites/src/models/room/room_broadcast/room_broadcast.dart';
 import 'package:live_sites/src/models/room/room_content/room_content.dart';
 import 'package:live_sites/src/models/room/room_links/room_links.dart';
+import 'package:live_sites/src/platforms/acfun/acfun_manifest.dart';
 import 'package:live_sites/src/platforms/acfun/api/acfun_endpoints.dart';
 import 'package:live_sites/src/platforms/acfun/parsers/acfun_failure.dart';
 import 'package:live_sites/src/platforms/acfun/parsers/acfun_html.dart';
@@ -18,8 +19,6 @@ import 'package:live_sites/src/platforms/acfun/parsers/acfun_play_parser.dart';
 // Platform-internal code: constructor-name and doc verbosity rules that
 // govern the public surface are relaxed here.
 // ignore_for_file: unnecessary_type_name_in_constructor
-
-const String _site = 'acfun';
 
 /// The broadcast behind a live room, apart from its identity (the author id):
 /// the `liveId` (new with every broadcast), the qualities `startPlay` offered
@@ -135,7 +134,7 @@ abstract final class AcfunRoomParser {
         }
         areas.add(
           LiveArea.normalized(
-            platform: _site,
+            platform: acfunSiteId,
             // The filter a page of this area asks for is the (type, id) pair,
             // and the contract hands a page request only the area id, so the
             // id carries both.
@@ -207,14 +206,14 @@ abstract final class AcfunRoomParser {
     final viewers = AcfunJson.count(item['onlineCount']);
     final followers = parseAudienceNumberOrNull(AcfunJson.text(user['fanCountValue']));
     return LiveRoom.normalized(
-      platform: _site,
+      platform: acfunSiteId,
       roomId: authorId,
       content: RoomContent(
         title: AcfunJson.text(item['title']),
         coverUrl: covers == null || covers.isEmpty ? '' : imageUrl(covers.first),
       ),
       anchor: LiveAnchor.normalized(
-        platform: _site,
+        platform: acfunSiteId,
         anchorId: authorId,
         name: AcfunJson.text(user['name']),
         avatarUrl: imageUrl(user['headUrl']),
@@ -439,11 +438,11 @@ abstract final class AcfunRoomParser {
       null => LiveStatus.unknown,
     };
     return LiveRoom.normalized(
-      platform: _site,
+      platform: acfunSiteId,
       roomId: id,
       content: RoomContent(introduction: card.query((element) => element.hasClass('up__main__intro'))?.text.trim()),
       anchor: LiveAnchor.normalized(
-        platform: _site,
+        platform: acfunSiteId,
         anchorId: id,
         name: name,
         avatarUrl: imageUrl(
@@ -462,8 +461,11 @@ abstract final class AcfunRoomParser {
 
   /// An area named by its type object; the id rides along when the answer
   /// gives one.
-  static LiveArea _area(Map<String, dynamic> type) =>
-      LiveArea.normalized(platform: _site, areaId: AcfunJson.text(type['id']), areaName: AcfunJson.text(type['name']));
+  static LiveArea _area(Map<String, dynamic> type) => LiveArea.normalized(
+    platform: acfunSiteId,
+    areaId: AcfunJson.text(type['id']),
+    areaName: AcfunJson.text(type['name']),
+  );
 
   /// The first https `url` of a picture list.
   static String? _picture(Object? list) {

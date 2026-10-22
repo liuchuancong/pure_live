@@ -1,6 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
+import 'package:live_sites/src/platforms/picarto/picarto_manifest.dart';
 import 'package:live_sites/src/platforms/picarto/picarto_site.dart';
 
 // Platform-internal code: constructor-name and doc verbosity rules that
@@ -25,8 +26,8 @@ final class PicartoLinkResolver implements LiveLinkResolver {
     if (canonical != null) return right(canonical);
     return left(
       PicartoSite.ownsHost(uri)
-          ? LiveSiteError.notFound(siteId: 'picarto', message: '"$uri" names no room')
-          : LiveSiteError.unsupported(siteId: 'picarto', message: '"$uri" is not a Picarto link'),
+          ? LiveSiteError.notFound(siteId: picartoSiteId, message: '"$uri" names no room')
+          : LiveSiteError.unsupported(siteId: picartoSiteId, message: '"$uri" is not a Picarto link'),
     );
   }
 }
