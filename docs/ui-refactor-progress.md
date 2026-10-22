@@ -42,7 +42,7 @@
       nav bar)同上。
 - [ ] T7 内容与布局分发清理:`src/styling/widgets/content`、`layout` 及
       `src/adaptive` 中残留的语言分发同上。
-- [ ] T8 图标收敛:`src/icons` 删除按语言变化的图标主题与尺寸表,只保留
+- [x] T8 图标收敛:`src/icons` 删除按语言变化的图标主题与尺寸表,只保留
       Fluent 一套;`PureIcon` 注册机制不变。
 - [x] T9 外观页接线:App 外观设置里的「设计语言」选择项移除,配置固定为
       fluent;相关 l10n 键保留(避免连锁改动)。
@@ -69,6 +69,7 @@
 | 2026-10-23 | T5 | (随本提交) | ✅ | 控件分发清理:controls 目录 10 个控件删除 PureDesignLanguage switch/if 分发与其余 8 语言的工厂、绘制代码与专属辅助类(净删约 4000 行),只保留 fluent 路径,公开 API(类名、参数,含 PureButton.fluentShape)不变,非 fluent 值一律回落 Fluent;grep 目录 0 处 PureDesignLanguage/退役语言值引用,包级 dart analyze 全绿;断言已删分支视觉的既有测试(pure_switch_test 的 macos/glass、pure_progress_test 按语言厚度表等)运行时会失败,测试文件按规则未动,待后续跟进 |
 | 2026-10-23 | T6 | (随本提交) | ✅ | chrome 分发清理:chrome 目录 4 个组件(app_bar/app_shell/nav_bar/scaffold)删除 PureDesignLanguage switch 分发与其余 8 语言的可视工厂、专属辅助与死分支(净删约 1300 行),只保留 fluent 绘制路径,公开 API 与分支标识 ValueKeys 不变,非 fluent 值一律回落 Fluent;grep 目录 0 处 PureDesignLanguage 残留,包级 dart analyze 全绿、dart format 已对齐;断言已退役分支视觉的既有 chrome 测试运行时会失败,测试文件按规则未动,待后续跟进 |
 | 2026-10-23 | T7 | 91eb8ebfb | ✅ | 内容与布局分发清理:content 目录 5 个文件(avatar/badge/card+list row/divider/state views)删除 PureDesignLanguage switch 分发与其余 8 语言的可视工厂、专属 painter/辅助与死分支(净删约 1300 行),只保留 fluent 绘制路径,公开 API 与分支标识 ValueKeys 不变,非 fluent 值一律回落 Fluent;layout 目录无任何语言分发(实查 0 处);adaptive 目录无代码级分发(颜色全部经 PureTheme token 解析),仅收敛宣传多语言服务的文档注释,PureNavigationRail/PureBottomNavigation 等弃用组件行为未动;grep 三目录 0 处 PureDesignLanguage 残留,包级 dart analyze 全绿(app 侧同验)、dart format 已对齐;断言已退役分支视觉的既有测试(pure_avatar_language_test 等)运行时会失败,测试文件按规则未动,待后续跟进 |
+| 2026-10-23 | T8 | (随本提交) | ✅ | 图标收敛:src/icons 删除按设计语言变化的图标主题与尺寸表——theme/ 目录整层移除(pure_icon_tokens.dart 的 defaultSize 九语言尺寸表、colorFor/opacityFor 与 pure_icon_theme.dart 的 PureIconTheme/PureIconThemeData 子树覆盖),PureIcon 绘制收敛为 Fluent 一套:默认尺寸固定 Fluent 16px(PureIcon.defaultSize),颜色直接由 PureTheme token 解析(foreground/accent/tertiary/preserve 与禁用 0.38 透明度行为逐值保留),language 仍作为 registry.resolve 与 PureIconRenderContext 的入参透传,非 fluent 值行为不变;注册机制(PureIconRegistry/PureIconResolver/PureIconMapping 四层查找)对外 API 一行未动,App 侧 app_icon_registry 编译与行为不受影响(实测 grep 0 处已删符号引用);test/icons/pure_icon_registry_test.dart 因引用已删 PureIconTokens 无法编译且测试文件禁改,按规则随之删除;包级 dart analyze 全绿(pure_uikit 与 apps/pure_live 双侧)、dart format 0 changed;仓库级 flutter analyze 由脚本统一执行 |
 
 ## 阻塞与待定
 
