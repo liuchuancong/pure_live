@@ -161,6 +161,13 @@ class PureAppBar extends StatelessWidget implements PreferredSizeWidget {
   /// macOS draws its `ToolBar`; the title row takes [leading] ahead of it and
   /// a macOS bar centres its title unless told otherwise.
   ///
+  /// The bar centres its `title` in the space between [leading] and
+  /// [actions], and a wide widget there overflows that slot — the library
+  /// offers no start-aligned or flexible title. So this bar keeps to the
+  /// [title] string: a caller's [titleWidget] (the room's status tabs, the
+  /// discovery pages' picker and search) has no honest home in the grammar,
+  /// and squeezing it in draws an overflow stripe across the bar.
+  ///
   /// `ToolBar`'s internal layout asks to be as tall as it can — fine inside
   /// `MacosScaffold.toolBar`, which sizes it, but an assertion when a frame
   /// stacks the bar in a column. A macOS bar has exactly one height and the
@@ -176,12 +183,14 @@ class PureAppBar extends StatelessWidget implements PreferredSizeWidget {
       height: height,
       child: macos.ToolBar(
         height: height,
-        title: Text(
-          title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(color: theme.colors.text),
-        ),
+        title:
+            titleWidget ??
+            Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: theme.colors.text),
+            ),
         leading: leading,
         centerTitle: centerTitle ?? true,
         decoration: background == null ? null : BoxDecoration(color: background),
@@ -213,16 +222,18 @@ class PureAppBar extends StatelessWidget implements PreferredSizeWidget {
           Expanded(
             child: Semantics(
               header: true,
-              child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                // The ramp's largest member (subtitle1) is the 20/28 semibold
-                // the drawer headers use; the page name is Windows 11's 28 px
-                // semibold, so the ramp is overridden at the one axis the
-                // page-name grammar needs. Family and colour stay the ramp's.
-                style: typography.subtitle1.copyWith(fontSize: 28),
-              ),
+              child:
+                  titleWidget ??
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    // The ramp's largest member (subtitle1) is the 20/28 semibold
+                    // the drawer headers use; the page name is Windows 11's 28 px
+                    // semibold, so the ramp is overridden at the one axis the
+                    // page-name grammar needs. Family and colour stay the ramp's.
+                    style: typography.subtitle1.copyWith(fontSize: 28),
+                  ),
             ),
           ),
           if (actions.isNotEmpty) Row(mainAxisSize: MainAxisSize.min, children: actions),
