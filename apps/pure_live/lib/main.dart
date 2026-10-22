@@ -12,6 +12,7 @@ import 'package:live_shell/live_shell.dart' show CommandStartupRegistration;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/app/app_services.dart';
+import 'package:pure_live/app/icons/app_icon_registry.dart';
 import 'package:pure_live/features/account/douyu_login_store.dart' show douyuLoginStoreProvider;
 import 'package:pure_live/platforms/desktop/entry/desktop_entry.dart';
 import 'package:pure_live/platforms/desktop/entry/desktop_launch.dart';
@@ -115,6 +116,11 @@ Future<void> main(List<String> args) async {
   // appearance box, which the user then has to un-pick. A release never reads the
   // argument — what the user chose is the whole answer there.
   final pinnedLanguage = kDebugMode ? _pinnedLanguageFrom(args) : null;
+
+  // The global icon registry is installed before the first frame, exactly
+  // once: pages name semantic keys and never an icon font, and the tiers
+  // (platform override → language → global backstop) answer them.
+  AppIcons.install();
 
   // media_core's own playback surfaces, turned on before the first window so
   // its media-session driver is installed before any room's PlayerKernel is

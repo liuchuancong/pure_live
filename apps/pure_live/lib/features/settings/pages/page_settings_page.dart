@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:pure_live/app/app_providers.dart';
+import 'package:pure_live/app/icons/app_icon_registry.dart';
 import 'package:pure_live/app/shell/shell_destinations.dart';
 import 'package:pure_live/features/room/paging.dart';
 import 'package:pure_live/features/settings/widgets/settings_chooser.dart';
@@ -60,7 +61,7 @@ final class PageSettingsPage extends ConsumerWidget {
                     final branch = visible[index];
                     return PureListRow(
                       key: ValueKey(branch.name),
-                      leading: Icon(branch.icon, size: 22),
+                      leading: Icon(AppIcons.glyph(context, branch.icon), size: 22),
                       title: branch.label(context),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -100,7 +101,7 @@ final class PageSettingsPage extends ConsumerWidget {
               tiles: [
                 for (final branch in hidden)
                   SettingsTile.switchTile(
-                    leading: Icon(branch.icon),
+                    leading: Icon(AppIcons.glyph(context, branch.icon)),
                     title: Text(branch.label(context)),
                     description: Text(t.settings.showBranchSubtitle),
                     initialValue: false,

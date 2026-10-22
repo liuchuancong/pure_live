@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:pure_live/app/icons/app_icon_keys.dart';
+import 'package:pure_live/app/icons/app_icon_registry.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/system/configuration/app_preferences.dart';
 import 'package:pure_live/system/navigation/route_paths.dart';
@@ -19,33 +21,33 @@ import 'package:pure_uikit/pure_uikit.dart';
 enum ShellBranch {
   /// The followed streamers' live grid — the shell's first screen (3.x
   /// `HomeMenu.favorites`, heart glyph).
-  follow(0, Icons.favorite),
+  follow(0, AppIconKey.follow),
 
   /// The recommend feed (3.x `HomeMenu.popular`, fire glyph).
-  popular(1, Icons.local_fire_department),
+  popular(1, AppIconKey.popular),
 
   /// The category catalogue (3.x `HomeMenu.areas`, grid glyph).
-  areas(2, Icons.apps),
+  areas(2, AppIconKey.apps),
 
   /// The IPTV library, a primary branch since it joined the chrome ahead of
   /// the recording centre (3.x `HomeMenu.iptv`, server glyph).
-  iptv(3, Icons.dns_outlined),
+  iptv(3, AppIconKey.iptv),
 
   /// The recording centre (3.x `HomeMenu.record`, download glyph).
-  record(4, Icons.download_outlined),
+  record(4, AppIconKey.record),
 
   /// Multi-view, a menu branch: shown in the content pane on a wide layout,
   /// pushed as a page on a phone.
-  multiview(5, Icons.grid_view_outlined),
+  multiview(5, AppIconKey.multiview),
 
   /// The toolbox (link resolution), a menu branch.
-  toolbox(6, Icons.link_outlined),
+  toolbox(6, AppIconKey.toolbox),
 
   /// Search, a menu branch.
-  search(7, Icons.search_rounded),
+  search(7, AppIconKey.search),
 
   /// The watch history, a menu branch (3.x kept it in `MenuButton` too).
-  history(8, Icons.history_rounded);
+  history(8, AppIconKey.history);
 
   new(this.branchIndex, this.icon);
 
@@ -59,8 +61,8 @@ enum ShellBranch {
   /// The position inside the stateful shell — what `goBranch` takes.
   final int branchIndex;
 
-  /// The icon every chrome renders for this branch.
-  final IconData icon;
+  /// The icon every chrome resolves and renders for this branch.
+  final AppIconKey icon;
 
   /// Whether the chromes list this branch.
   bool get isPrimary => primary.contains(this);
@@ -173,7 +175,7 @@ String launchLocationFor(AppPreferences preferences) {
 /// the settings entry are not here; the wide column and the drawer own them.
 List<PureNavDestination> shellPrimaryDestinations(BuildContext context, {List<ShellBranch>? branches}) => [
   for (final branch in branches ?? ShellBranch.primary)
-    PureNavDestination(id: branch.name, label: branch.label(context), icon: branch.icon),
+    PureNavDestination(id: branch.name, label: branch.label(context), icon: AppIcons.glyph(context, branch.icon)),
 ];
 
 /// The wide column's destinations: the primary branches, then — under the
@@ -184,12 +186,12 @@ List<PureNavDestination> shellColumnDestinations(BuildContext context, {List<She
   const menu = ShellBranch.menu;
   return [
     for (final branch in branches ?? ShellBranch.primary)
-      PureNavDestination(id: branch.name, label: branch.label(context), icon: branch.icon),
+      PureNavDestination(id: branch.name, label: branch.label(context), icon: AppIcons.glyph(context, branch.icon)),
     for (var index = 0; index < menu.length; index++)
       PureNavDestination(
         id: menu[index].name,
         label: menu[index].label(context),
-        icon: menu[index].icon,
+        icon: AppIcons.glyph(context, menu[index].icon),
         startsGroup: index == 0,
       ),
   ];
@@ -199,8 +201,12 @@ List<PureNavDestination> shellColumnDestinations(BuildContext context, {List<She
 /// settings entry — a drawer has no footer, so settings travels with them.
 List<PureNavDestination> shellDrawerDestinations(BuildContext context) => [
   for (final branch in ShellBranch.menu)
-    PureNavDestination(id: branch.name, label: branch.label(context), icon: branch.icon),
-  PureNavDestination(id: 'settings', label: context.t.tabs.settings, icon: Icons.settings_outlined),
+    PureNavDestination(id: branch.name, label: branch.label(context), icon: AppIcons.glyph(context, branch.icon)),
+  PureNavDestination(
+    id: 'settings',
+    label: context.t.tabs.settings,
+    icon: AppIcons.glyph(context, AppIconKey.settings),
+  ),
 ];
 
 /// The same column flattened for the TV shell's dispatched destinations: the

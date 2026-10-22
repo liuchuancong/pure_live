@@ -50,10 +50,12 @@ dependencies:
   flutter_screenutil_plus: ^2.0.0 # 自适应布局辅助
   flutter_keyboard_visibility: ^7.0.1 # 监听软键盘状态
   flutter_svg: ^2.3.0 # SVG 图片渲染
+  lucide_icons_flutter: ^4.0.1 # Lucide 图标库（全局图标注册表的来源）
   mosaic_grid: ^0.1.2 # 瀑布流网格
   pretty_qr_code: ^3.6.0 # 生成二维码
   shimmer: ^4.0.0 # 闪烁占位效果
   skeletonizer: ^3.0.0 # 骨架屏
+  yaru: ^11.0.0 # Ubuntu Yaru 图标字体（图标注册表的 yaru 套）
 
   # Flutter 与状态管理
   collection: ^1.19.1 # 集合处理工具
