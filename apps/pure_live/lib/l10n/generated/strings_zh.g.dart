@@ -2485,6 +2485,30 @@ class Translations$fonts$zh {
 
 	/// zh: '这个文件没能导入'
 	String get importFailed => '这个文件没能导入';
+
+	/// zh: '跟随设计语言'
+	String get followTheme => '跟随设计语言';
+
+	/// zh: '每套设计语言自动配上为其挑选的推荐字体'
+	String get followThemeDesc => '每套设计语言自动配上为其挑选的推荐字体';
+
+	/// zh: '当前推荐：{name: String}'
+	String followThemeCurrent({required String name}) => '当前推荐：${name}';
+
+	/// zh: '尚未下载，到云端字体一键下载后生效'
+	String get followThemeMissing => '尚未下载，到云端字体一键下载后生效';
+
+	/// zh: '推荐'
+	String get recommended => '推荐';
+
+	/// zh: '本机字体'
+	String get onThisDevice => '本机字体';
+
+	/// zh: '预设字体'
+	String get presets => '预设字体';
+
+	/// zh: '随应用打包的官方字体，开箱即用'
+	String get presetsDesc => '随应用打包的官方字体，开箱即用';
 }
 
 // Path: follow
@@ -5338,6 +5362,14 @@ extension on Translations {
 			'fonts.customDesc' => '从本机选择 ttf、otf 或 ttc 字体文件',
 			'fonts.import' => '导入字体文件',
 			'fonts.importFailed' => '这个文件没能导入',
+			'fonts.followTheme' => '跟随设计语言',
+			'fonts.followThemeDesc' => '每套设计语言自动配上为其挑选的推荐字体',
+			'fonts.followThemeCurrent' => ({required String name}) => '当前推荐：${name}',
+			'fonts.followThemeMissing' => '尚未下载，到云端字体一键下载后生效',
+			'fonts.recommended' => '推荐',
+			'fonts.onThisDevice' => '本机字体',
+			'fonts.presets' => '预设字体',
+			'fonts.presetsDesc' => '随应用打包的官方字体，开箱即用',
 			'follow.all' => '全部',
 			'follow.empty' => '还没有关注任何房间',
 			'follow.follow' => '关注',
@@ -5604,6 +5636,8 @@ extension on Translations {
 			'room.exitMiniWindow' => '退出小窗',
 			'room.messageActions' => '弹幕',
 			'room.copyMessage' => '复制',
+			_ => null,
+		} ?? switch (path) {
 			'room.copiedToClipboard' => '已复制到剪贴板',
 			'room.blockViewer' => '屏蔽此用户',
 			'room.blockViewerDesc' => ({required Object name}) => '${name} 的弹幕都不再显示',
@@ -5612,8 +5646,6 @@ extension on Translations {
 			'room.blockWordDesc' => '输入一个词，含这个词的弹幕都不再显示',
 			'room.keywordBlocked' => '关键词已加入弹幕屏蔽列表',
 			'room.userLevel' => ({required Object level}) => '等级 ${level}',
-			_ => null,
-		} ?? switch (path) {
 			'room.blockKeywordTitle' => '屏蔽弹幕关键词',
 			'room.block' => '屏蔽',
 			'room.portraitFullscreenRestoreHint' => '已进入竖屏全屏 · 上滑恢复弹幕栏',

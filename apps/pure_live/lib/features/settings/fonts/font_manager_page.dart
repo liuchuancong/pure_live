@@ -8,6 +8,7 @@ import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/features/settings/widgets/settings_rows.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/system/resources/font_library.dart';
+import 'package:pure_live/system/theme/font_recommendations.dart';
 import 'package:pure_settings_ui/pure_settings_ui.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
@@ -60,10 +61,26 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
     final appearance = ref.watch(appearancePreferencesProvider);
     final update = ref.read(appearancePreferencesProvider.notifier).update;
     final cloud = _families;
+    // The skin currently rendering decides WHICH family 跟随设计语言 means,
+    // and the library says whether that family's files are on disk yet.
+    final language = ref.watch(uiStartupConfigProvider).language;
+    final recommended = recommendedFontFor(language);
+    // A skin with no owning platform promises nothing forced — the system
+    // default draws. An installed one is already on the machine; a
+    // downloadable pick only counts once its files are in the font tree.
+    final String followSubtitle;
+    if (recommended.source == RecommendedFontSource.none) {
+      followSubtitle = context.t.fonts.followThemeDesc;
+    } else if (recommended.source != RecommendedFontSource.downloadable || _library.isDownloaded(recommended.family)) {
+      followSubtitle = context.t.fonts.followThemeCurrent(name: recommended.name);
+    } else {
+      followSubtitle = '${context.t.fonts.followThemeCurrent(name: recommended.name)} · '
+          '${context.t.fonts.followThemeMissing}';
+    }
     // The imported families are read from disk on every build: they are a
     // directory listing of the fonts tree, and the page has to show a font the
     // user imported a second ago without a reload.
-    final imported = _library.importedFamilies();
+    final imported = _library.installedFamilies();
     return PureScaffold(
       appBar: PureAppBar(title: context.t.settings.fonts),
       body: SettingsList(
@@ -74,21 +91,53 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
               SettingsRowTile(
                 row: _row(
                   context,
+                  title: context.t.fonts.followTheme,
+                  subtitle: followSubtitle,
+                  selected: appearance.fontFamily == kThemeFontFamily,
+                  action: appearance.fontFamily == kThemeFontFamily
+                      ? null
+                      : () => update((a) => a.copyWith(fontFamily: kThemeFontFamily)),
+                ),
+              ),
+              SettingsRowTile(
+                row: _row(
+                  context,
                   title: context.t.fonts.system,
                   subtitle: context.t.fonts.systemDesc,
-                  selected: appearance.fontFamily?.isEmpty ?? true,
-                  action: (appearance.fontFamily?.isEmpty ?? true)
-                      ? null
-                      : () => update((a) => a.copyWith(fontFamily: '')),
+                  selected: appearance.fontFamily.isEmpty,
+                  action: appearance.fontFamily.isEmpty ? null : () => update((a) => a.copyWith(fontFamily: '')),
                 ),
               ),
             ],
           ),
-          // A font the user brought needs no network: the manifest may be
-          // unreachable, and the imported list still has to be readable, so this
-          // section sits outside the cloud one's loading and error states.
+          // The official faces shipped inside the app: always drawable,
+          // nothing to fetch. A download from the cloud section (or an
+          // import) simply replaces the choice — the presets stay as the
+          // fallback 跟随设计语言 resolves to.
           SettingsSection(
-            title: Text(context.t.fonts.custom),
+            title: Text(context.t.fonts.presets),
+            tiles: [
+              for (final preset in kBundledFonts)
+                SettingsRowTile(
+                  row: _row(
+                    context,
+                    title: preset.name,
+                    subtitle: context.t.fonts.presetsDesc,
+                    selected: appearance.fontFamily == preset.family,
+                    action: appearance.fontFamily == preset.family
+                        ? null
+                        : () => update((a) => a.copyWith(fontFamily: preset.family)),
+                  ),
+                ),
+            ],
+          ),
+          // Everything on disk needs no network — the user's imports AND the
+          // official platform faces installed outside the manifest: the
+          // manifest may be unreachable, and this list still has to be
+          // readable, so the section sits outside the cloud one's loading
+          // and error states.
+          SettingsSection(
+            title: Text(context.t.fonts.onThisDevice),
             tiles: [
               SettingsRowTile(
                 row: PureListRow(
@@ -152,7 +201,9 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
                   SettingsRowTile(
                     row: _row(
                       context,
-                      title: cloud[i].name,
+                      title: cloud[i].id == recommended.family
+                          ? '${cloud[i].name}（${context.t.fonts.recommended}）'
+                          : cloud[i].name,
                       subtitle: cloud[i].description,
                       selected: appearance.fontFamily == cloud[i].id,
                       action: _library.isDownloaded(cloud[i].id)

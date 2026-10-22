@@ -1,5 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'package:pure_live/system/theme/font_recommendations.dart';
+
 part 'appearance_preferences.freezed.dart';
 part 'appearance_preferences.g.dart';
 
@@ -75,8 +77,10 @@ abstract class AppearancePreferences with _$AppearancePreferences {
     double? titleSize,
     double? headlineSize,
 
-    /// A global font family override; null keeps the platform default.
-    String? fontFamily,
+    /// The global font family: `theme` follows the design language's
+    /// recommendation (`font_recommendations.dart`), empty is the system
+    /// default, anything else is a downloaded or imported family id.
+    @Default(kThemeFontFamily) String fontFamily,
 
     /// A multiplier (0..1) on glass/scrim opacity.
     @Default(1.0) double transparency,

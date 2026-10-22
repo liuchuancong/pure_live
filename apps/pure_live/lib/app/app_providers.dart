@@ -264,7 +264,12 @@ final pendingDesignLanguageProvider = Provider<PureDesignLanguage?>((ref) {
 /// nothing that watches this instead of the appearance — no playback session,
 /// no danmaku connection — is rebuilt with it.
 final uiConfigProvider = Provider<UiConfig>((ref) {
-  final config = uiConfigFromAppearance(ref.watch(appearancePreferencesProvider));
+  final config = uiConfigFromAppearance(
+    ref.watch(appearancePreferencesProvider),
+    // The 跟随设计语言 family only counts when its files are on disk and
+    // registered; the library is the one that says so.
+    themeFontAvailable: ref.watch(fontLibraryProvider).isDownloaded,
+  );
   return config.copyWith(language: ref.watch(uiStartupConfigProvider).language);
 });
 

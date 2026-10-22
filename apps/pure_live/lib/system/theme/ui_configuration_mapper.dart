@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/widgets.dart' show Color;
 import 'package:live_shell_desktop/live_shell_desktop.dart' show readWindowsAccentColor;
 import 'package:pure_live/system/theme/appearance_preferences/appearance_preferences.dart';
+import 'package:pure_live/system/theme/font_recommendations.dart';
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The one place that knows both the persisted [AppearancePreferences]
@@ -17,7 +18,19 @@ import 'package:pure_uikit/pure_uikit.dart';
 
 /// Builds a [UiConfig] from [appearance]; an unknown language or density id
 /// falls back to the default rather than blocking start-up.
-UiConfig uiConfigFromAppearance(AppearancePreferences appearance, {Color? dynamicAccent}) {
+///
+/// The stored family goes through [resolveThemeFont]: `theme` becomes the
+/// language's recommendation, [themeFontAvailable] says whether that family is
+/// actually on disk and registered (the caller's font library), and anything
+/// else — the system default, an explicit family — passes through. Without a
+/// resolver every recommendation counts as available, which is what the
+/// window-chrome path wants: it reads the config for colours, and an
+/// unregistered family name still renders in the system font.
+UiConfig uiConfigFromAppearance(
+  AppearancePreferences appearance, {
+  Color? dynamicAccent,
+  bool Function(String id)? themeFontAvailable,
+}) {
   final language = designLanguageOrDefault(appearance.designLanguageId);
   return UiConfig(
     language: language,
@@ -40,7 +53,7 @@ UiConfig uiConfigFromAppearance(AppearancePreferences appearance, {Color? dynami
     },
     pureBlack: appearance.pureBlack,
     density: _byName(UiDensity.values, appearance.densityId, UiDensity.comfortable),
-    fontFamily: appearance.fontFamily,
+    fontFamily: resolveThemeFont(appearance.fontFamily, language, isDownloaded: themeFontAvailable ?? (_) => true),
     fontScale: appearance.fontScale,
     bodySmallSize: appearance.bodySmallSize,
     bodySize: appearance.bodySize,
@@ -66,7 +79,7 @@ AppearancePreferences appearanceFromUiConfig(UiConfig config) => AppearancePrefe
   accentColor: config.accent?.toARGB32(),
   pureBlack: config.pureBlack,
   densityId: config.density.name,
-  fontFamily: config.fontFamily,
+  fontFamily: config.fontFamily ?? kThemeFontFamily,
   fontScale: config.fontScale,
   transparency: config.transparency,
   reduceTransparency: config.reduceTransparency,

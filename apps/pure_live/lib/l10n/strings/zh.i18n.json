@@ -788,7 +788,15 @@
     "custom": "自定义字体",
     "customDesc": "从本机选择 ttf、otf 或 ttc 字体文件",
     "import": "导入字体文件",
-    "importFailed": "这个文件没能导入"
+    "importFailed": "这个文件没能导入",
+    "followTheme": "跟随设计语言",
+    "followThemeDesc": "每套设计语言自动配上为其挑选的推荐字体",
+    "followThemeCurrent": "当前推荐：{name: String}",
+    "followThemeMissing": "尚未下载，到云端字体一键下载后生效",
+    "recommended": "推荐",
+    "onThisDevice": "本机字体",
+    "presets": "预设字体",
+    "presetsDesc": "随应用打包的官方字体，开箱即用"
   },
   "follow": {
     "all": "全部",

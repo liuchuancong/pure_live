@@ -10,6 +10,7 @@ import 'package:pure_live/l10n/generated/strings.g.dart';
 import 'package:pure_live/system/configuration/app_preferences_providers.dart';
 import 'package:pure_live/system/navigation/app_router.dart';
 import 'package:pure_live/system/theme/appearance_preferences/appearance_preferences.dart';
+import 'package:pure_live/system/theme/font_recommendations.dart';
 import 'package:pure_live/system/theme/ui_configuration_mapper.dart' show designLanguageByStoredId;
 import 'package:pure_settings_ui/pure_settings_ui.dart';
 import 'package:pure_uikit/pure_uikit.dart';
@@ -202,7 +203,7 @@ final class AppearancePage extends ConsumerWidget {
               SettingsTile.navigation(
                 leading: const Icon(Icons.font_download_outlined),
                 title: Text(t.settings.fonts),
-                value: Text(_currentFontName(context, appearance)),
+                value: Text(_currentFontName(context, ref, appearance)),
                 onPressed: (_) => unawaited(const FontManagerRoute().push<void>(context)),
               ),
             ],
@@ -256,9 +257,16 @@ final class AppearancePage extends ConsumerWidget {
     );
   }
 
-  static String _currentFontName(BuildContext context, AppearancePreferences appearance) {
+  String _currentFontName(BuildContext context, WidgetRef ref, AppearancePreferences appearance) {
     final family = appearance.fontFamily;
-    return (family == null || family.isEmpty) ? context.t.fonts.system : family;
+    if (family == kThemeFontFamily) {
+      // Name the family actually drawing, not the sentinel.
+      final recommended = recommendedFontFor(ref.read(uiStartupConfigProvider).language);
+      return recommended.name.isEmpty
+          ? context.t.fonts.followTheme
+          : context.t.fonts.followThemeCurrent(name: recommended.name);
+    }
+    return family.isEmpty ? context.t.fonts.system : family;
   }
 
   /// One line on what the wallpaper layer currently paints.

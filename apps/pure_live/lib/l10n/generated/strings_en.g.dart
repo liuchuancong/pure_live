@@ -1140,6 +1140,14 @@ class _Translations$fonts$en extends Translations$fonts$zh {
 	@override String get customDesc => 'Pick a ttf, otf or ttc font file from this device';
 	@override String get import => 'Import a font file';
 	@override String get importFailed => 'That file could not be imported';
+	@override String get followTheme => 'Follow the design language';
+	@override String get followThemeDesc => 'Each skin applies the font chosen for its character';
+	@override String followThemeCurrent({required String name}) => 'Current pick: ${name}';
+	@override String get followThemeMissing => 'not downloaded yet — grab it under cloud fonts';
+	@override String get recommended => 'recommended';
+	@override String get onThisDevice => 'On this device';
+	@override String get presets => 'Preset fonts';
+	@override String get presetsDesc => 'The platform-official faces shipped in the app';
 }
 
 // Path: follow
@@ -2716,6 +2724,14 @@ extension on TranslationsEn {
 			'fonts.customDesc' => 'Pick a ttf, otf or ttc font file from this device',
 			'fonts.import' => 'Import a font file',
 			'fonts.importFailed' => 'That file could not be imported',
+			'fonts.followTheme' => 'Follow the design language',
+			'fonts.followThemeDesc' => 'Each skin applies the font chosen for its character',
+			'fonts.followThemeCurrent' => ({required String name}) => 'Current pick: ${name}',
+			'fonts.followThemeMissing' => 'not downloaded yet — grab it under cloud fonts',
+			'fonts.recommended' => 'recommended',
+			'fonts.onThisDevice' => 'On this device',
+			'fonts.presets' => 'Preset fonts',
+			'fonts.presetsDesc' => 'The platform-official faces shipped in the app',
 			'follow.all' => 'All',
 			'follow.empty' => 'No followed rooms yet',
 			'follow.follow' => 'Follow',
@@ -2852,6 +2868,8 @@ extension on TranslationsEn {
 			'multiview.emptyCell' => 'Tap to choose a room',
 			'multiview.mute' => 'Mute',
 			'multiview.unmute' => 'Unmute',
+			_ => null,
+		} ?? switch (path) {
 			'multiview.muteAll' => 'Mute all',
 			'multiview.unmuteAll' => 'Unmute all',
 			'multiview.audioFocus' => 'Playing sound',
@@ -2860,8 +2878,6 @@ extension on TranslationsEn {
 			'discovery.currentSite' => ({required String site}) => 'Current site: ${site}',
 			'discovery.pickSite' => 'Choose a site',
 			'discovery.searchSite' => 'Search sites',
-			_ => null,
-		} ?? switch (path) {
 			'search.hint' => 'Search rooms by keyword',
 			'search.rooms' => 'Rooms',
 			'search.anchors' => 'Anchors',

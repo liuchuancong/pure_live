@@ -57,7 +57,11 @@ class AppTheme extends ConsumerWidget {
         final appearance = ref.watch(appearancePreferencesProvider);
         final dynamic = appearance.dynamicColor ? (light?.primary ?? dark?.primary) : null;
         final config = appearance.dynamicColor
-            ? uiConfigFromAppearance(appearance, dynamicAccent: dynamic)
+            ? uiConfigFromAppearance(
+                appearance,
+                dynamicAccent: dynamic,
+                themeFontAvailable: ref.read(fontLibraryProvider).isDownloaded,
+              )
             : ref.watch(uiConfigProvider);
         return ScreenUtilPlusInit(
           designSize: const Size(1280, 800),

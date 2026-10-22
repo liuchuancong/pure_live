@@ -8,6 +8,7 @@ import 'dart:typed_data' show ByteData;
 import 'package:flutter/services.dart' show FontLoader;
 import 'package:live_net/live_net.dart';
 import 'package:path/path.dart' as p;
+import 'package:pure_live/system/theme/font_recommendations.dart';
 
 /// The cloud font families of the `liuchuancong/fonts` repository
 /// (`fonts-manifest.json` at its root): files, a description, the official
@@ -180,20 +181,45 @@ final class FontLibrary {
   /// The families on disk that came from an import, sorted by shown name. The
   /// page lists these without reading the manifest, so an offline host still
   /// shows the fonts the user brought.
-  List<FontFamily> importedFamilies() {
+  List<FontFamily> importedFamilies() => installedFamilies(importedOnly: true);
+
+  /// Every family on disk that holds font files — the imports AND the
+  /// official faces installed outside the manifest (SF Pro, Roboto, Inter,
+  /// Ubuntu under their family ids) — sorted by shown name. The page lists
+  /// these so a font that lives in the tree is visible and selectable even
+  /// when the cloud manifest never heard of it.
+  List<FontFamily> installedFamilies({bool importedOnly = false}) {
     if (!root.existsSync()) {
       return const [];
     }
     final families = [
       for (final entity in root.listSync())
-        if (entity is Directory && isImported(p.basename(entity.path)) && filesOf(p.basename(entity.path)).isNotEmpty)
+        if (entity is Directory &&
+            filesOf(p.basename(entity.path)).isNotEmpty &&
+            (!importedOnly || isImported(p.basename(entity.path))))
           FontFamily.imported(
             id: p.basename(entity.path),
-            name: nameForImport(p.basename(entity.path)),
+            name: displayName(p.basename(entity.path)),
             files: [for (final file in filesOf(p.basename(entity.path))) file.path],
           ),
     ];
     return families..sort((a, b) => a.name.compareTo(b.name));
+  }
+
+  /// The shown name of the on-disk family [id]: an import reads its file
+  /// stem back; the official faces installed under their family ids answer
+  /// with the name the recommendation table carries ('SFPro' → SF Pro),
+  /// and anything else shows its id.
+  static String displayName(String id) {
+    if (isImported(id)) {
+      return nameForImport(id);
+    }
+    for (final recommended in kRecommendedFonts.values) {
+      if (recommended.family == id) {
+        return recommended.name;
+      }
+    }
+    return id;
   }
 
   /// The downloaded font files of [id], sorted; empty when not downloaded.

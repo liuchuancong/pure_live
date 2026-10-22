@@ -28,8 +28,10 @@ mixin _$AppearancePreferences {
  String get densityId;/// A global multiplier on every font size (the "enlarge text" control).
  double get fontScale;/// Absolute pixel sizes for the five adjustable text roles; null keeps
 /// the design language's own size (the fine-tuning page writes these).
- double? get bodySmallSize; double? get bodySize; double? get subtitleSize; double? get titleSize; double? get headlineSize;/// A global font family override; null keeps the platform default.
- String? get fontFamily;/// A multiplier (0..1) on glass/scrim opacity.
+ double? get bodySmallSize; double? get bodySize; double? get subtitleSize; double? get titleSize; double? get headlineSize;/// The global font family: `theme` follows the design language's
+/// recommendation (`font_recommendations.dart`), empty is the system
+/// default, anything else is a downloaded or imported family id.
+ String get fontFamily;/// A multiplier (0..1) on glass/scrim opacity.
  double get transparency;/// Accessibility: force surfaces opaque and disable backdrop blur.
  bool get reduceTransparency;/// Whether motion runs.
  bool get animations;/// Whether focused controls draw a visible outline.
@@ -88,7 +90,7 @@ abstract mixin class $AppearancePreferencesCopyWith<$Res>  {
   factory $AppearancePreferencesCopyWith(AppearancePreferences value, $Res Function(AppearancePreferences) _then) = _$AppearancePreferencesCopyWithImpl;
 @useResult
 $Res call({
- String designLanguageId, AppThemeMode themeMode, int? accentColor, bool pureBlack, bool dynamicColor, String densityId, double fontScale, double? bodySmallSize, double? bodySize, double? subtitleSize, double? titleSize, double? headlineSize, String? fontFamily, double transparency, bool reduceTransparency, bool animations, bool focusOutline, WallpaperKind wallpaperKind, int? wallpaperColor, List<int> wallpaperGradientColors, int wallpaperGradientAngle, List<double> wallpaperGradientStops, String wallpaperImagePath, String wallpaperFit, double wallpaperBlur, double wallpaperScrim
+ String designLanguageId, AppThemeMode themeMode, int? accentColor, bool pureBlack, bool dynamicColor, String densityId, double fontScale, double? bodySmallSize, double? bodySize, double? subtitleSize, double? titleSize, double? headlineSize, String fontFamily, double transparency, bool reduceTransparency, bool animations, bool focusOutline, WallpaperKind wallpaperKind, int? wallpaperColor, List<int> wallpaperGradientColors, int wallpaperGradientAngle, List<double> wallpaperGradientStops, String wallpaperImagePath, String wallpaperFit, double wallpaperBlur, double wallpaperScrim
 });
 
 
@@ -105,7 +107,7 @@ class _$AppearancePreferencesCopyWithImpl<$Res>
 
 /// Create a copy of AppearancePreferences
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? designLanguageId = null,Object? themeMode = null,Object? accentColor = freezed,Object? pureBlack = null,Object? dynamicColor = null,Object? densityId = null,Object? fontScale = null,Object? bodySmallSize = freezed,Object? bodySize = freezed,Object? subtitleSize = freezed,Object? titleSize = freezed,Object? headlineSize = freezed,Object? fontFamily = freezed,Object? transparency = null,Object? reduceTransparency = null,Object? animations = null,Object? focusOutline = null,Object? wallpaperKind = null,Object? wallpaperColor = freezed,Object? wallpaperGradientColors = null,Object? wallpaperGradientAngle = null,Object? wallpaperGradientStops = null,Object? wallpaperImagePath = null,Object? wallpaperFit = null,Object? wallpaperBlur = null,Object? wallpaperScrim = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? designLanguageId = null,Object? themeMode = null,Object? accentColor = freezed,Object? pureBlack = null,Object? dynamicColor = null,Object? densityId = null,Object? fontScale = null,Object? bodySmallSize = freezed,Object? bodySize = freezed,Object? subtitleSize = freezed,Object? titleSize = freezed,Object? headlineSize = freezed,Object? fontFamily = null,Object? transparency = null,Object? reduceTransparency = null,Object? animations = null,Object? focusOutline = null,Object? wallpaperKind = null,Object? wallpaperColor = freezed,Object? wallpaperGradientColors = null,Object? wallpaperGradientAngle = null,Object? wallpaperGradientStops = null,Object? wallpaperImagePath = null,Object? wallpaperFit = null,Object? wallpaperBlur = null,Object? wallpaperScrim = null,}) {
   return _then(AppearancePreferences(
 designLanguageId: null == designLanguageId ? _self.designLanguageId : designLanguageId // ignore: cast_nullable_to_non_nullable
 as String,themeMode: null == themeMode ? _self.themeMode : themeMode // ignore: cast_nullable_to_non_nullable
@@ -119,8 +121,8 @@ as double?,bodySize: freezed == bodySize ? _self.bodySize : bodySize // ignore: 
 as double?,subtitleSize: freezed == subtitleSize ? _self.subtitleSize : subtitleSize // ignore: cast_nullable_to_non_nullable
 as double?,titleSize: freezed == titleSize ? _self.titleSize : titleSize // ignore: cast_nullable_to_non_nullable
 as double?,headlineSize: freezed == headlineSize ? _self.headlineSize : headlineSize // ignore: cast_nullable_to_non_nullable
-as double?,fontFamily: freezed == fontFamily ? _self.fontFamily : fontFamily // ignore: cast_nullable_to_non_nullable
-as String?,transparency: null == transparency ? _self.transparency : transparency // ignore: cast_nullable_to_non_nullable
+as double?,fontFamily: null == fontFamily ? _self.fontFamily : fontFamily // ignore: cast_nullable_to_non_nullable
+as String,transparency: null == transparency ? _self.transparency : transparency // ignore: cast_nullable_to_non_nullable
 as double,reduceTransparency: null == reduceTransparency ? _self.reduceTransparency : reduceTransparency // ignore: cast_nullable_to_non_nullable
 as bool,animations: null == animations ? _self.animations : animations // ignore: cast_nullable_to_non_nullable
 as bool,focusOutline: null == focusOutline ? _self.focusOutline : focusOutline // ignore: cast_nullable_to_non_nullable
@@ -218,7 +220,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String designLanguageId,  AppThemeMode themeMode,  int? accentColor,  bool pureBlack,  bool dynamicColor,  String densityId,  double fontScale,  double? bodySmallSize,  double? bodySize,  double? subtitleSize,  double? titleSize,  double? headlineSize,  String? fontFamily,  double transparency,  bool reduceTransparency,  bool animations,  bool focusOutline,  WallpaperKind wallpaperKind,  int? wallpaperColor,  List<int> wallpaperGradientColors,  int wallpaperGradientAngle,  List<double> wallpaperGradientStops,  String wallpaperImagePath,  String wallpaperFit,  double wallpaperBlur,  double wallpaperScrim)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String designLanguageId,  AppThemeMode themeMode,  int? accentColor,  bool pureBlack,  bool dynamicColor,  String densityId,  double fontScale,  double? bodySmallSize,  double? bodySize,  double? subtitleSize,  double? titleSize,  double? headlineSize,  String fontFamily,  double transparency,  bool reduceTransparency,  bool animations,  bool focusOutline,  WallpaperKind wallpaperKind,  int? wallpaperColor,  List<int> wallpaperGradientColors,  int wallpaperGradientAngle,  List<double> wallpaperGradientStops,  String wallpaperImagePath,  String wallpaperFit,  double wallpaperBlur,  double wallpaperScrim)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AppearancePreferences() when $default != null:
 return $default(_that.designLanguageId,_that.themeMode,_that.accentColor,_that.pureBlack,_that.dynamicColor,_that.densityId,_that.fontScale,_that.bodySmallSize,_that.bodySize,_that.subtitleSize,_that.titleSize,_that.headlineSize,_that.fontFamily,_that.transparency,_that.reduceTransparency,_that.animations,_that.focusOutline,_that.wallpaperKind,_that.wallpaperColor,_that.wallpaperGradientColors,_that.wallpaperGradientAngle,_that.wallpaperGradientStops,_that.wallpaperImagePath,_that.wallpaperFit,_that.wallpaperBlur,_that.wallpaperScrim);case _:
@@ -239,7 +241,7 @@ return $default(_that.designLanguageId,_that.themeMode,_that.accentColor,_that.p
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String designLanguageId,  AppThemeMode themeMode,  int? accentColor,  bool pureBlack,  bool dynamicColor,  String densityId,  double fontScale,  double? bodySmallSize,  double? bodySize,  double? subtitleSize,  double? titleSize,  double? headlineSize,  String? fontFamily,  double transparency,  bool reduceTransparency,  bool animations,  bool focusOutline,  WallpaperKind wallpaperKind,  int? wallpaperColor,  List<int> wallpaperGradientColors,  int wallpaperGradientAngle,  List<double> wallpaperGradientStops,  String wallpaperImagePath,  String wallpaperFit,  double wallpaperBlur,  double wallpaperScrim)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String designLanguageId,  AppThemeMode themeMode,  int? accentColor,  bool pureBlack,  bool dynamicColor,  String densityId,  double fontScale,  double? bodySmallSize,  double? bodySize,  double? subtitleSize,  double? titleSize,  double? headlineSize,  String fontFamily,  double transparency,  bool reduceTransparency,  bool animations,  bool focusOutline,  WallpaperKind wallpaperKind,  int? wallpaperColor,  List<int> wallpaperGradientColors,  int wallpaperGradientAngle,  List<double> wallpaperGradientStops,  String wallpaperImagePath,  String wallpaperFit,  double wallpaperBlur,  double wallpaperScrim)  $default,) {final _that = this;
 switch (_that) {
 case _AppearancePreferences():
 return $default(_that.designLanguageId,_that.themeMode,_that.accentColor,_that.pureBlack,_that.dynamicColor,_that.densityId,_that.fontScale,_that.bodySmallSize,_that.bodySize,_that.subtitleSize,_that.titleSize,_that.headlineSize,_that.fontFamily,_that.transparency,_that.reduceTransparency,_that.animations,_that.focusOutline,_that.wallpaperKind,_that.wallpaperColor,_that.wallpaperGradientColors,_that.wallpaperGradientAngle,_that.wallpaperGradientStops,_that.wallpaperImagePath,_that.wallpaperFit,_that.wallpaperBlur,_that.wallpaperScrim);case _:
@@ -259,7 +261,7 @@ return $default(_that.designLanguageId,_that.themeMode,_that.accentColor,_that.p
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String designLanguageId,  AppThemeMode themeMode,  int? accentColor,  bool pureBlack,  bool dynamicColor,  String densityId,  double fontScale,  double? bodySmallSize,  double? bodySize,  double? subtitleSize,  double? titleSize,  double? headlineSize,  String? fontFamily,  double transparency,  bool reduceTransparency,  bool animations,  bool focusOutline,  WallpaperKind wallpaperKind,  int? wallpaperColor,  List<int> wallpaperGradientColors,  int wallpaperGradientAngle,  List<double> wallpaperGradientStops,  String wallpaperImagePath,  String wallpaperFit,  double wallpaperBlur,  double wallpaperScrim)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String designLanguageId,  AppThemeMode themeMode,  int? accentColor,  bool pureBlack,  bool dynamicColor,  String densityId,  double fontScale,  double? bodySmallSize,  double? bodySize,  double? subtitleSize,  double? titleSize,  double? headlineSize,  String fontFamily,  double transparency,  bool reduceTransparency,  bool animations,  bool focusOutline,  WallpaperKind wallpaperKind,  int? wallpaperColor,  List<int> wallpaperGradientColors,  int wallpaperGradientAngle,  List<double> wallpaperGradientStops,  String wallpaperImagePath,  String wallpaperFit,  double wallpaperBlur,  double wallpaperScrim)?  $default,) {final _that = this;
 switch (_that) {
 case _AppearancePreferences() when $default != null:
 return $default(_that.designLanguageId,_that.themeMode,_that.accentColor,_that.pureBlack,_that.dynamicColor,_that.densityId,_that.fontScale,_that.bodySmallSize,_that.bodySize,_that.subtitleSize,_that.titleSize,_that.headlineSize,_that.fontFamily,_that.transparency,_that.reduceTransparency,_that.animations,_that.focusOutline,_that.wallpaperKind,_that.wallpaperColor,_that.wallpaperGradientColors,_that.wallpaperGradientAngle,_that.wallpaperGradientStops,_that.wallpaperImagePath,_that.wallpaperFit,_that.wallpaperBlur,_that.wallpaperScrim);case _:
@@ -274,7 +276,7 @@ return $default(_that.designLanguageId,_that.themeMode,_that.accentColor,_that.p
 @JsonSerializable()
 
 class _AppearancePreferences implements AppearancePreferences {
-  const _AppearancePreferences({this.designLanguageId = '', this.themeMode = AppThemeMode.system, this.accentColor, this.pureBlack = false, this.dynamicColor = false, this.densityId = '', this.fontScale = 1.0, this.bodySmallSize, this.bodySize, this.subtitleSize, this.titleSize, this.headlineSize, this.fontFamily, this.transparency = 1.0, this.reduceTransparency = false, this.animations = true, this.focusOutline = true, this.wallpaperKind = WallpaperKind.none, this.wallpaperColor,  List<int> wallpaperGradientColors = const <int>[], this.wallpaperGradientAngle = 0,  List<double> wallpaperGradientStops = const <double>[], this.wallpaperImagePath = '', this.wallpaperFit = 'cover', this.wallpaperBlur = 0.0, this.wallpaperScrim = 0.35}): _wallpaperGradientColors = wallpaperGradientColors,_wallpaperGradientStops = wallpaperGradientStops;
+  const _AppearancePreferences({this.designLanguageId = '', this.themeMode = AppThemeMode.system, this.accentColor, this.pureBlack = false, this.dynamicColor = false, this.densityId = '', this.fontScale = 1.0, this.bodySmallSize, this.bodySize, this.subtitleSize, this.titleSize, this.headlineSize, this.fontFamily = kThemeFontFamily, this.transparency = 1.0, this.reduceTransparency = false, this.animations = true, this.focusOutline = true, this.wallpaperKind = WallpaperKind.none, this.wallpaperColor,  List<int> wallpaperGradientColors = const <int>[], this.wallpaperGradientAngle = 0,  List<double> wallpaperGradientStops = const <double>[], this.wallpaperImagePath = '', this.wallpaperFit = 'cover', this.wallpaperBlur = 0.0, this.wallpaperScrim = 0.35}): _wallpaperGradientColors = wallpaperGradientColors,_wallpaperGradientStops = wallpaperGradientStops;
   factory _AppearancePreferences.fromJson(Map<String, dynamic> json) => _$AppearancePreferencesFromJson(json);
 
 /// The design language registry id; empty means the build's default
@@ -301,8 +303,10 @@ class _AppearancePreferences implements AppearancePreferences {
 @override final  double? subtitleSize;
 @override final  double? titleSize;
 @override final  double? headlineSize;
-/// A global font family override; null keeps the platform default.
-@override final  String? fontFamily;
+/// The global font family: `theme` follows the design language's
+/// recommendation (`font_recommendations.dart`), empty is the system
+/// default, anything else is a downloaded or imported family id.
+@override@JsonKey() final  String fontFamily;
 /// A multiplier (0..1) on glass/scrim opacity.
 @override@JsonKey() final  double transparency;
 /// Accessibility: force surfaces opaque and disable backdrop blur.
@@ -390,7 +394,7 @@ abstract mixin class _$AppearancePreferencesCopyWith<$Res> implements $Appearanc
   factory _$AppearancePreferencesCopyWith(_AppearancePreferences value, $Res Function(_AppearancePreferences) _then) = __$AppearancePreferencesCopyWithImpl;
 @override @useResult
 $Res call({
- String designLanguageId, AppThemeMode themeMode, int? accentColor, bool pureBlack, bool dynamicColor, String densityId, double fontScale, double? bodySmallSize, double? bodySize, double? subtitleSize, double? titleSize, double? headlineSize, String? fontFamily, double transparency, bool reduceTransparency, bool animations, bool focusOutline, WallpaperKind wallpaperKind, int? wallpaperColor, List<int> wallpaperGradientColors, int wallpaperGradientAngle, List<double> wallpaperGradientStops, String wallpaperImagePath, String wallpaperFit, double wallpaperBlur, double wallpaperScrim
+ String designLanguageId, AppThemeMode themeMode, int? accentColor, bool pureBlack, bool dynamicColor, String densityId, double fontScale, double? bodySmallSize, double? bodySize, double? subtitleSize, double? titleSize, double? headlineSize, String fontFamily, double transparency, bool reduceTransparency, bool animations, bool focusOutline, WallpaperKind wallpaperKind, int? wallpaperColor, List<int> wallpaperGradientColors, int wallpaperGradientAngle, List<double> wallpaperGradientStops, String wallpaperImagePath, String wallpaperFit, double wallpaperBlur, double wallpaperScrim
 });
 
 
@@ -407,7 +411,7 @@ class __$AppearancePreferencesCopyWithImpl<$Res>
 
 /// Create a copy of AppearancePreferences
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? designLanguageId = null,Object? themeMode = null,Object? accentColor = freezed,Object? pureBlack = null,Object? dynamicColor = null,Object? densityId = null,Object? fontScale = null,Object? bodySmallSize = freezed,Object? bodySize = freezed,Object? subtitleSize = freezed,Object? titleSize = freezed,Object? headlineSize = freezed,Object? fontFamily = freezed,Object? transparency = null,Object? reduceTransparency = null,Object? animations = null,Object? focusOutline = null,Object? wallpaperKind = null,Object? wallpaperColor = freezed,Object? wallpaperGradientColors = null,Object? wallpaperGradientAngle = null,Object? wallpaperGradientStops = null,Object? wallpaperImagePath = null,Object? wallpaperFit = null,Object? wallpaperBlur = null,Object? wallpaperScrim = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? designLanguageId = null,Object? themeMode = null,Object? accentColor = freezed,Object? pureBlack = null,Object? dynamicColor = null,Object? densityId = null,Object? fontScale = null,Object? bodySmallSize = freezed,Object? bodySize = freezed,Object? subtitleSize = freezed,Object? titleSize = freezed,Object? headlineSize = freezed,Object? fontFamily = null,Object? transparency = null,Object? reduceTransparency = null,Object? animations = null,Object? focusOutline = null,Object? wallpaperKind = null,Object? wallpaperColor = freezed,Object? wallpaperGradientColors = null,Object? wallpaperGradientAngle = null,Object? wallpaperGradientStops = null,Object? wallpaperImagePath = null,Object? wallpaperFit = null,Object? wallpaperBlur = null,Object? wallpaperScrim = null,}) {
   return _then(_AppearancePreferences(
 designLanguageId: null == designLanguageId ? _self.designLanguageId : designLanguageId // ignore: cast_nullable_to_non_nullable
 as String,themeMode: null == themeMode ? _self.themeMode : themeMode // ignore: cast_nullable_to_non_nullable
@@ -421,8 +425,8 @@ as double?,bodySize: freezed == bodySize ? _self.bodySize : bodySize // ignore: 
 as double?,subtitleSize: freezed == subtitleSize ? _self.subtitleSize : subtitleSize // ignore: cast_nullable_to_non_nullable
 as double?,titleSize: freezed == titleSize ? _self.titleSize : titleSize // ignore: cast_nullable_to_non_nullable
 as double?,headlineSize: freezed == headlineSize ? _self.headlineSize : headlineSize // ignore: cast_nullable_to_non_nullable
-as double?,fontFamily: freezed == fontFamily ? _self.fontFamily : fontFamily // ignore: cast_nullable_to_non_nullable
-as String?,transparency: null == transparency ? _self.transparency : transparency // ignore: cast_nullable_to_non_nullable
+as double?,fontFamily: null == fontFamily ? _self.fontFamily : fontFamily // ignore: cast_nullable_to_non_nullable
+as String,transparency: null == transparency ? _self.transparency : transparency // ignore: cast_nullable_to_non_nullable
 as double,reduceTransparency: null == reduceTransparency ? _self.reduceTransparency : reduceTransparency // ignore: cast_nullable_to_non_nullable
 as bool,animations: null == animations ? _self.animations : animations // ignore: cast_nullable_to_non_nullable
 as bool,focusOutline: null == focusOutline ? _self.focusOutline : focusOutline // ignore: cast_nullable_to_non_nullable

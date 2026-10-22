@@ -917,7 +917,15 @@
     "custom": "Custom fonts",
     "customDesc": "Pick a ttf, otf or ttc font file from this device",
     "import": "Import a font file",
-    "importFailed": "That file could not be imported"
+    "importFailed": "That file could not be imported",
+    "followTheme": "Follow the design language",
+    "followThemeDesc": "Each skin applies the font chosen for its character",
+    "followThemeCurrent": "Current pick: {name: String}",
+    "followThemeMissing": "not downloaded yet — grab it under cloud fonts",
+    "recommended": "recommended",
+    "onThisDevice": "On this device",
+    "presets": "Preset fonts",
+    "presetsDesc": "The platform-official faces shipped in the app"
   },
   "follow": {
     "all": "All",
