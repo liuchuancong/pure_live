@@ -505,6 +505,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.2"
+  custom_sliding_segmented_control:
+    dependency: transitive
+    description:
+      name: custom_sliding_segmented_control
+      sha256: bc747b1500284bff36fc8c61774c9a3ca35c1dca4d570141c8a2569b4f984bf3
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.8.5"
   dart_helper_utils:
     dependency: transitive
     description:
@@ -825,6 +833,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.0.9"
+  fluent2_kit:
+    dependency: transitive
+    description:
+      name: fluent2_kit
+      sha256: "4142c1ac9d7dd53741085b598cbde886209aacb398f2fe9eff79a3e6e5b223c4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.0"
   fluent_2:
     dependency: transitive
     description:

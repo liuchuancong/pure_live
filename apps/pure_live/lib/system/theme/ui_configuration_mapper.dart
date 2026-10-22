@@ -35,7 +35,7 @@ UiConfig uiConfigFromAppearance(
   // The appearance page no longer offers the choice, so the stored id steers
   // nothing here: the language field stays (the hosts and the font table read
   // it) and is written the build's one shipped value.
-  final language = defaultDesignLanguage;
+  const language = defaultDesignLanguage;
   return UiConfig(
     language: language,
     brightness: switch (appearance.themeMode) {

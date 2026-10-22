@@ -26,14 +26,14 @@
 
 ### 第一批:地基(本次自动任务范围)
 
-- [ ] T1 依赖落地:`pure_uikit` 增加 `fluent_ui ^4.17.0`、`fluent2_kit ^2.2.0`,
+- [x] T1 依赖落地:`pure_uikit` 增加 `fluent_ui ^4.17.0`、`fluent2_kit ^2.2.0`,
       工作区 `pub get` 通过,旧依赖暂不拆除。
 - [ ] T2 fluent 用法笔记:通读示例仓库,把本工程会用到的关键 API
       (FluentApp / FluentThemeData / NavigationView / Button / ContentDialog /
       Focus 相关)写成 `docs/fluent-ui-notes.md`,给后续所有施工任务当手册。
 - [ ] T3 主题桥接:新增 `pure_uikit` 的 Fluent 主题桥(由现有 token 生成
       fluent_ui 的主题数据与强调色),保持旧 API 不动、旧依赖不动。
-- [ ] T4 Host 收拢:`pure_uikit/src/app/hosts` 只保留 Fluent 宿主并改接
+- [x] T4 Host 收拢:`pure_uikit/src/app/hosts` 只保留 Fluent 宿主并改接
       `fluent_ui` 的 `FluentApp`;其余 8 个语言的宿主文件删除;非 fluent
       语言值一律回落 Fluent 宿主。
 - [ ] T5 控件分发清理:`src/styling/widgets/controls` 全部控件的
@@ -44,8 +44,11 @@
       `src/adaptive` 中残留的语言分发同上。
 - [ ] T8 图标收敛:`src/icons` 删除按语言变化的图标主题与尺寸表,只保留
       Fluent 一套;`PureIcon` 注册机制不变。
-- [ ] T9 外观页接线:App 外观设置里的「设计语言」选择项移除,配置固定为
+- [x] T9 外观页接线:App 外观设置里的「设计语言」选择项移除,配置固定为
       fluent;相关 l10n 键保留(避免连锁改动)。
+
+> ⚠️ 重跑说明:T2、T3、T5–T8 首轮被施工代理误执行在会话工作区(`F:\pure_live`,非本仓库),
+> 未落地任何代码,已修正路径后重新排期;T1 的 `fluent2_kit` 亦由本提交补齐。
 
 ### 第二批(待第一批完成后另行排期)
 

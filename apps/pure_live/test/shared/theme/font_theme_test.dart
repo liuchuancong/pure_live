@@ -69,19 +69,9 @@ void main() {
   });
 
   group('the mapper', () {
-    test('a theme document renders the platform font of its own language', () {
-      final config = uiConfigFromAppearance(const AppearancePreferences(designLanguageId: 'cupertino'));
-      expect(config.fontFamily, 'SFRounded'); // the default family is the sentinel
-    });
-
-    test('the bundled presets ignore the availability word entirely', () {
-      final config = uiConfigFromAppearance(
-        const AppearancePreferences(designLanguageId: 'material'),
-        themeFontAvailable: (_) => false,
-      );
-      expect(config.fontFamily, 'Roboto');
-    });
-
+    // The per-language default families retired with the design-language
+    // picker: the mapper pins one shipped language, so only the explicit
+    // choice and the system default remain as behaviour.
     test('an explicit system choice ignores the recommendation', () {
       final config = uiConfigFromAppearance(
         const AppearancePreferences(designLanguageId: 'fluent', fontFamily: ''),

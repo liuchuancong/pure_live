@@ -21,6 +21,7 @@ dependencies:
   # constants but not the font — an app that draws them has to depend on this
   # package or every one of those codepoints renders as a fallback box.
   cupertino_icons: ^1.0.9
+  fluent2_kit: ^2.2.0
   fluent_2: ^0.0.7
   fluent_ui: ^4.17.0
   flutter:
