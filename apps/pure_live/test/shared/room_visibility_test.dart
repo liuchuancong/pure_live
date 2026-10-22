@@ -2,8 +2,7 @@
 // restriction always hides, and a login or age check hides only while the
 // platform has no signed-in account.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:live_sites/live_sites.dart'
-    show LiveRestriction, LiveRoom, LiveStatus, RoomBroadcast, RoomContent;
+import 'package:live_sites/live_sites.dart' show LiveRestriction, LiveRoom, LiveStatus, RoomBroadcast, RoomContent;
 import 'package:pure_live/shared/rooms/room_visibility.dart';
 
 LiveRoom _room({LiveStatus? liveStatus, LiveRestriction? restriction}) => LiveRoom.normalized(

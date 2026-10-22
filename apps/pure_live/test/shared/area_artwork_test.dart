@@ -22,8 +22,7 @@ void main() {
   });
 
   test('an area without artwork borrows the same name', () {
-    final pictures = AreaPictures()
-      ..remember([_area('英雄联盟', icon: 'https://a/lol.png')]);
+    final pictures = AreaPictures()..remember([_area('英雄联盟', icon: 'https://a/lol.png')]);
     expect(pictures.pictureFor(_area('英雄联盟 ')), 'https://a/lol.png');
   });
 
@@ -45,8 +44,7 @@ void main() {
   });
 
   test('the area keeps its own picture over a borrowed one', () {
-    final pictures = AreaPictures()
-      ..remember([_area('单机', icon: 'https://a/1.png')]);
+    final pictures = AreaPictures()..remember([_area('单机', icon: 'https://a/1.png')]);
     expect(pictures.pictureFor(_area('单机', icon: 'https://mine/2.png')), 'https://mine/2.png');
   });
 }

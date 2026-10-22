@@ -154,7 +154,7 @@ void main() {
 
     testWidgets('the bar is a semantics container', (tester) async {
       await _pump(tester, _bar(index: 0));
-      final containers = find.byWidgetPredicate((w) => w is Semantics && w.container == true);
+      final containers = find.byWidgetPredicate((w) => w is Semantics && w.container);
       expect(containers, findsWidgets);
     });
   });
