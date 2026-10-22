@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/cupertino.dart' as cupertino show ObstructingPreferredSizeWidget;
@@ -217,11 +218,19 @@ class PureAppBar extends StatelessWidget implements PreferredSizeWidget, cuperti
 
     // WinUI's header is content-sized — the compact bar the design sheet
     // draws — while the plate languages keep the row at the height the frame
-    // reserved for it. An explicit `height` sizes fluent too.
+    // reserved for it. An explicit `height` sizes fluent too. The sized
+    // content still bows to the frame: a tall title (a tab strip standing in
+    // the title slot) clamps to the reserved row minus the padding, so the
+    // bar never overflows the height that was reserved for it.
     final row = visual.contentSized && height == null
         ? Padding(
             padding: EdgeInsets.symmetric(vertical: visual.contentVerticalPad),
-            child: slots,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: math.max(0, rowHeight - 2 * visual.contentVerticalPad),
+              ),
+              child: slots,
+            ),
           )
         : SizedBox(height: rowHeight, child: slots);
 
