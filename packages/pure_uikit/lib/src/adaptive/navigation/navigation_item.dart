@@ -125,6 +125,7 @@ class PureNavigationTile extends StatefulWidget {
     this.iconSize = 20,
     this.height,
     this.autofocus = false,
+    this.showLabel = true,
     this.showSelectedBar = true,
     super.key,
   });
@@ -150,6 +151,10 @@ class PureNavigationTile extends StatefulWidget {
   /// Whether the row takes initial focus (TV/D-pad).
   final bool autofocus;
 
+  /// Whether the vertical layout draws its label under the icon; false is
+  /// the compact rail's icon-only cell, named by its tooltip instead.
+  final bool showLabel;
+
   /// Whether the leading selection bar is drawn (horizontal layout).
   final bool showSelectedBar;
 
@@ -159,12 +164,28 @@ class PureNavigationTile extends StatefulWidget {
 
 final class _PureNavigationTileState extends State<PureNavigationTile> {
   bool _focused = false;
+  bool _hovered = false;
+
+  /// True from the moment a pointer takes the tile until focus leaves it: a
+  /// click answers in the fill and the pill alone — the ring is the
+  /// keyboard's and the remote's answer, never the mouse's.
+  bool _pointerFocused = false;
+
+  /// The ring, only for a keyboard- or remote-driven focus.
+  bool get _showsFocusRing => _focused && !_pointerFocused;
 
   void _handleFocusChange(bool focused) {
     if (_focused == focused) {
       return;
     }
-    setState(() => _focused = focused);
+    setState(() {
+      _focused = focused;
+      // Focus leaving ends a pointer's claim: the next arrival — by
+      // traversal or remote — is the keyboard's to answer.
+      if (!focused) {
+        _pointerFocused = false;
+      }
+    });
     if (focused) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) {
@@ -204,24 +225,26 @@ final class _PureNavigationTileState extends State<PureNavigationTile> {
     );
 
     final content = vertical
-        ? Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              icon,
-              const SizedBox(height: 3),
-              Text(
-                destination.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: textTheme.label.copyWith(
-                  color: foreground,
-                  fontSize: 10.5,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                ),
-              ),
-            ],
-          )
+        ? widget.showLabel
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  icon,
+                  const SizedBox(height: 3),
+                  Text(
+                    destination.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.label.copyWith(
+                      color: foreground,
+                      fontSize: 10.5,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    ),
+                  ),
+                ],
+              )
+            : icon
         : Row(
             children: <Widget>[
               if (widget.showSelectedBar)
@@ -262,10 +285,16 @@ final class _PureNavigationTileState extends State<PureNavigationTile> {
           ? const EdgeInsets.symmetric(horizontal: 4, vertical: 6)
           : const EdgeInsets.only(right: PureSpacing.sm),
       decoration: BoxDecoration(
-        color: selected ? colors.brandSubtle : Colors.transparent,
+        // The hover's answer is this same fill at a whisper, fading in —
+        // the pane's own hover, never a block that snaps on.
+        color: selected
+            ? colors.brandSubtle
+            : _hovered
+            ? colors.hover
+            : Colors.transparent,
         borderRadius: adaptiveTileRadius,
       ),
-      foregroundDecoration: _focused
+      foregroundDecoration: _showsFocusRing
           ? BoxDecoration(
               borderRadius: adaptiveTileRadius,
               border: Border.all(color: colors.brand, width: 1.4),
@@ -282,20 +311,36 @@ final class _PureNavigationTileState extends State<PureNavigationTile> {
       child: Tooltip(
         message: destination.tooltip ?? destination.label,
         waitDuration: const Duration(milliseconds: 600),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: adaptiveTileRadius,
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: destination.enabled ? widget.onTap : null,
-            autofocus: widget.autofocus,
-            onFocusChange: _handleFocusChange,
-            borderRadius: adaptiveTileRadius,
-            hoverColor: colors.hover,
-            focusColor: colors.brand.withValues(alpha: 0.12),
-            splashColor: colors.brand.withValues(alpha: 0.10),
-            mouseCursor: destination.enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-            child: tile,
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _hovered = true),
+          onExit: (_) => setState(() => _hovered = false),
+          child: MouseRegion(
+            onEnter: (_) => setState(() => _hovered = true),
+            onExit: (_) => setState(() => _hovered = false),
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: adaptiveTileRadius,
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: destination.enabled ? widget.onTap : null,
+                onTapDown: destination.enabled
+                    ? (_) => setState(() => _pointerFocused = true)
+                    : null,
+                autofocus: widget.autofocus,
+                onFocusChange: _handleFocusChange,
+                borderRadius: adaptiveTileRadius,
+                // Every ink effect is carried by the tile above — the hover
+                // fill fades there, and a press takes the fill, not a ripple.
+                hoverColor: Colors.transparent,
+                highlightColor: Colors.transparent,
+                splashColor: Colors.transparent,
+                focusColor: Colors.transparent,
+                mouseCursor: destination.enabled
+                    ? SystemMouseCursors.click
+                    : SystemMouseCursors.basic,
+                child: tile,
+              ),
+            ),
           ),
         ),
       ),

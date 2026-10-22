@@ -14,6 +14,10 @@ abstract final class AdaptiveShellSizes {
   /// The tablet icon rail's width.
   static const double railWidth = 88;
 
+  /// The collapsed rail's width — the compact pane: icon-only cells 44 tall,
+  /// named by tooltips, a step narrower than the labelled rail.
+  static const double compactRailWidth = 72;
+
   /// The phone drawer's width.
   static const double drawerWidth = 320;
 
