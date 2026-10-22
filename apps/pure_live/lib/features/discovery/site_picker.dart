@@ -46,15 +46,31 @@ final class SitePickerButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = PureTheme.of(context);
     final label = compact ? _name(context, current) : context.t.discovery.currentSite(site: _name(context, current));
-    return PureCard(
-      key: const ValueKey('site-picker-button'),
-      padding: EdgeInsets.zero,
-      child: PureListRow(
-        leading: PlatformLogo(siteId: current.manifest.id, size: 18),
-        title: label,
-        trailing: Icon(Icons.expand_more_rounded, size: 18, color: theme.colors.textSecondary),
+    // A self-contained compact row, not a list row: the app bar's title slot
+    // gives an unbounded width, and a list row's flexible title turns that
+    // into an infinite-width layout. Everything here is sized by its content.
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        key: const ValueKey('site-picker-button'),
+        borderRadius: BorderRadius.circular(8),
         onTap: () => unawaited(_open(context)),
-        divided: false,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: BoxDecoration(color: theme.colors.fillSecondary, borderRadius: BorderRadius.circular(8)),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              PlatformLogo(siteId: current.manifest.id, size: 18),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.text.body),
+              ),
+              const SizedBox(width: 4),
+              Icon(Icons.expand_more_rounded, size: 18, color: theme.colors.textSecondary),
+            ],
+          ),
+        ),
       ),
     );
   }
