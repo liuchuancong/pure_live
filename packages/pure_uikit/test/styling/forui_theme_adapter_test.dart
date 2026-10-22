@@ -5,7 +5,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart' as forui;
 import 'package:pure_uikit/pure_uikit.dart';
-import 'package:pure_uikit/src/styling/adapters/forui_theme_adapter.dart';
 
 void main() {
   testWidgets('the chosen family reaches forui itself', (tester) async {
@@ -22,8 +21,14 @@ void main() {
   });
 
   testWidgets('the palette variant still follows the brightness', (tester) async {
-    final light = await _resolve(tester, const UiConfig(language: PureDesignLanguage.forui, brightness: UiBrightnessMode.light));
-    final dark = await _resolve(tester, const UiConfig(language: PureDesignLanguage.forui, brightness: UiBrightnessMode.dark));
+    final light = await _resolve(
+      tester,
+      const UiConfig(language: PureDesignLanguage.forui, brightness: UiBrightnessMode.light),
+    );
+    final dark = await _resolve(
+      tester,
+      const UiConfig(language: PureDesignLanguage.forui, brightness: UiBrightnessMode.dark),
+    );
 
     expect(light.colors, isNot(dark.colors));
   });

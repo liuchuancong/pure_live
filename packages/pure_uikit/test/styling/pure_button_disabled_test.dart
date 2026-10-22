@@ -6,8 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fluttersdk_wind/fluttersdk_wind.dart' as wind;
 import 'package:macos_ui/macos_ui.dart' as macos;
 import 'package:pure_uikit/pure_uikit.dart';
-import 'package:pure_uikit/src/styling/adapters/macos_theme_adapter.dart';
-import 'package:pure_uikit/src/styling/adapters/wind_theme_adapter.dart';
 
 void main() {
   group('macOS dims the glyph with the label', () {

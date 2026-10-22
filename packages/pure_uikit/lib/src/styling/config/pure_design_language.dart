@@ -3,7 +3,6 @@
 /// library's real components — there is no adapter or spec in between.
 library;
 
-
 /// The switchable design languages.
 enum PureDesignLanguage {
   /// Windows `fluent_ui`.
@@ -24,19 +23,13 @@ enum PureDesignLanguage {
   /// `forui` (the shadcn-style `F*` widget library).
   forui,
 
-  /// `material_ui` — Flutter's Material library, the same one
-  /// `package:flutter/material.dart` was moved into: the Material design system,
-  /// taken from the library's own widgets, theme and host.
+  /// `material_ui`
   material,
 
-  /// `cupertino_ui` — Flutter's Cupertino library, the same one
-  /// `package:flutter/cupertino.dart` was moved into. This is the iOS language:
-  /// its own widgets, its own host, its own navigation.
+  /// `cupertino_ui`
+  ///
   cupertino,
 
-  /// Ubuntu `yaru` — Material 3 carrying Ubuntu's token tables: the controls
-  /// are the familiar Material ones, re-themed by `createYaruLightTheme` /
-  /// `createYaruDarkTheme` from the app's accent, with Yaru's own widgets
-  /// (`YaruIconButton`, its title bar family) where they exist.
+  ///  `yaru`
   yaru,
 }
