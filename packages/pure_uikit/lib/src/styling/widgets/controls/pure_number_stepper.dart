@@ -1,28 +1,16 @@
 import 'dart:async';
-import 'dart:ui' show FontFeature, ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show KeyDownEvent, KeyEvent, KeyRepeatEvent, LogicalKeyboardKey;
-import 'package:pure_uikit/src/scales/radii.dart';
-import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 
 /// The kit's number stepper — the design sheet's `InputNumber` controls: a
-/// decrement cell, the current value, and an increment cell — drawn in every
-/// design language.
+/// decrement cell, the current value, and an increment cell.
 ///
-/// Where `PureSlider` is the continuous pick, this is the discrete one, and
-/// every language reads the same plus-and-minus grammar its own way: Material
-/// 3's circular icon buttons flanking the value, iOS's joined capsule with
-/// accent halves and hairline dividers, macOS's `NSStepper` — a slim column
-/// of thin chevrons beside the number —, WinUI's NumberBox with a bordered
-/// value box and an attached spin column that answers hover in the accent,
-/// Yaru's flat squares, shadcn's bordered buttons for forui and (following
-/// its siblings) wind again, a frosted plate of translucent cells under
-/// glass, and raised plates that press into themselves under neumorphic. All
-/// of it is painted here, because a number control is exactly what the
-/// libraries ship unevenly; the colours, radii, motion and text come from the
-/// tokens, so a language re-skin and a dark switch still come out right.
+/// Where `PureSlider` is the continuous pick, this is the discrete one, drawn
+/// in the WinUI NumberBox grammar: a bordered value box with an attached spin
+/// column that answers hover in the accent. All of it is painted here from the
+/// tokens, so a dark switch still comes out right.
 ///
 /// Every visual answers to the same interaction contract: a press steps once
 /// and a hold keeps stepping, the repeat accelerating while the finger stays
@@ -75,32 +63,11 @@ class PureNumberStepper extends StatelessWidget {
   /// as the value.
   final String? semanticLabel;
 
-  /// The design language's reading of the plus-and-minus, chosen from the
-  /// resolved theme's tokens so a re-skin and a dark switch re-seat the
-  /// geometry too.
-  _StepperVisual _resolveVisual(PureTheme theme) {
-    final radii = theme.token.scale.radii;
-    return switch (theme.config.language) {
-      PureDesignLanguage.material => _StepperVisual.m3Circles(),
-      PureDesignLanguage.cupertino => _StepperVisual.iosCapsule(trackRadius: radii.sm),
-      PureDesignLanguage.macos => _StepperVisual.nsChevronPair(trackRadius: radii.base),
-      PureDesignLanguage.fluent => _StepperVisual.numberBox(trackRadius: radii.base),
-      PureDesignLanguage.yaru => _StepperVisual.flatSquares(cellRadius: radii.lg),
-      PureDesignLanguage.forui => _StepperVisual.borderedButtons(cellRadius: radii.base),
-      // shadcn's bordered button is wind's sibling grammar everywhere the kit
-      // has drawn one — the tab bar's pill, the segmented bar's track — and
-      // the stepper follows suit with the same reading.
-      PureDesignLanguage.wind => _StepperVisual.borderedButtons(cellRadius: radii.base),
-      PureDesignLanguage.glass => _StepperVisual.frostedPlate(trackRadius: radii.lg),
-      PureDesignLanguage.neumorphic => _StepperVisual.raisedPlates(trackRadius: radii.lg),
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = PureTheme.of(context);
-    // A null callback is every library's inert state, so folding `enabled`
-    // into it once serves every branch.
+    // A null callback is the inert state, so folding `enabled` into it once
+    // gives the core a single verdict.
     final commit = enabled ? onChanged : null;
     return _StepperCore(
       value: value,
@@ -110,30 +77,24 @@ class PureNumberStepper extends StatelessWidget {
       decimals: decimals,
       semanticLabel: semanticLabel,
       commit: commit,
-      visual: _resolveVisual(theme),
+      visual: _StepperVisual.numberBox(trackRadius: theme.token.scale.radii.base),
     );
   }
 }
 
 /// The geometry a stepper lays out: absolute pixels, so the control keeps its
-/// compact tier whatever the design language makes of its colour. Text still
-/// rides the theme's font scale, and colour and radius come from tokens.
+/// compact tier. Text still rides the theme's font scale, and colour and radius
+/// come from tokens.
 abstract final class _StepperMetrics {
   /// 32 — the control's height, the stepper's own compact tier.
   static const double height = 32;
-
-  /// 32 — the side of a flanking step cell; a square a pill radius turns into
-  /// the Material circle.
-  static const double cellSide = 32;
 
   /// 44 — the width of the value column: room for the numbers a stepper
   /// reaches, tabular so the figure does not jitter as it steps.
   static const double valueWidth = 44;
 
-  /// 4 — the air between two unjoined cells (and the glass plate's inset).
-  static const double gap = 4;
-
-  /// 1 — the hairline between joined cells and stacked chevron segments.
+  /// 1 — the hairline between the value box and the attached spin column, and
+  /// between the column's stacked cells.
   static const double hairline = 1;
 
   /// 2 — the focus ring's width.
@@ -141,12 +102,6 @@ abstract final class _StepperMetrics {
 
   /// 34 — the width of the attached spin column, WinUI NumberBox's own.
   static const double spinWidth = 34;
-
-  /// 23 — the width of the standalone chevron column, macOS NSStepper slim.
-  static const double chevronWidth = 23;
-
-  /// 24 — its height; NSStepper is a smaller control than the sheet's row.
-  static const double chevronHeight = 24;
 
   /// 13 — the value text size, before the theme's font scale.
   static const double valueFontSize = 13;
@@ -163,30 +118,12 @@ abstract final class _StepperMetrics {
   static const double holdDecay = 0.7;
 }
 
-/// Which of the three arrangements a design language puts its cells in: the
-/// step buttons flanking the value, a spin column attached to a bordered
-/// value box, or a standalone chevron column beside the number.
-enum _StepperLayout {
-  /// `-  value  +` in a row (Material, iOS, Yaru, shadcn, glass, neumorphic).
-  flanking,
-
-  /// The value box with up/down cells stacked against its right edge
-  /// (WinUI's NumberBox).
-  numberBox,
-
-  /// The number in plain text with the up/down column standing beside it
-  /// (macOS's NSStepper).
-  chevronPair,
-}
-
-/// How one design language paints the stepper: the arrangement of its cells,
-/// the glyphs they carry, the fills and hairlines each state draws, and the
-/// colour of a glyph in each state.
+/// How the stepper is painted: the arrangement of its cells, the glyphs they
+/// carry, the fills and hairlines each state draws, and the colour of a glyph
+/// in each state.
 @immutable
 final class _StepperVisual {
   const new({
-    required this.layout,
-    required this.joined,
     required this.increaseIcon,
     required this.decreaseIcon,
     required this.iconSize,
@@ -197,111 +134,9 @@ final class _StepperVisual {
     required this.pressedTint,
     required this.restTint,
     required this.cellBorder,
-    required this.shadows,
     required this.glyph,
-    required this.track,
     required this.focusRadius,
   });
-
-  /// Material 3: circular icon buttons flanking the value — a state-layer
-  /// grey behind the glyph on hover, a deeper one pressed, the cell at a
-  /// bound greyed and inert.
-  factory m3Circles() {
-    return _StepperVisual(
-      layout: _StepperLayout.flanking,
-      joined: false,
-      increaseIcon: Icons.add,
-      decreaseIcon: Icons.remove,
-      iconSize: 18,
-      cellRadius: BorderRadius.circular(PureRadii.pill),
-      capsule: (theme) => null,
-      divider: (theme) => null,
-      hoverTint: (theme) => theme.colors.fill,
-      pressedTint: (theme) => theme.colors.fillSecondary,
-      restTint: (theme) => null,
-      cellBorder: (theme) => null,
-      shadows: (theme, {required pressed}) => const [],
-      glyph: (theme, {required hovered, required pressed, required enabled}) {
-        if (!enabled) {
-          return theme.colors.textQuaternary;
-        }
-        return theme.colors.text;
-      },
-      track: (theme, strip) => strip,
-      focusRadius: BorderRadius.circular(PureRadii.md),
-    );
-  }
-
-  /// iOS: the stepper's own capsule — two accent-halved cells joined to the
-  /// number by hairline dividers on a bordered white plate, the pressed half
-  /// filling grey, the glyph answering in the accent alone.
-  factory iosCapsule({required double trackRadius}) {
-    final radius = BorderRadius.circular(trackRadius);
-    return _StepperVisual(
-      layout: _StepperLayout.flanking,
-      joined: true,
-      increaseIcon: Icons.add,
-      decreaseIcon: Icons.remove,
-      iconSize: 16,
-      cellRadius: BorderRadius.zero,
-      capsule: (theme) => BoxDecoration(
-        color: theme.colors.bgContainer,
-        borderRadius: radius,
-        border: Border.all(color: theme.colors.borderSecondary),
-      ),
-      divider: (theme) => theme.colors.borderSecondary,
-      hoverTint: (theme) => theme.colors.fill,
-      pressedTint: (theme) => theme.colors.fillSecondary,
-      restTint: (theme) => null,
-      cellBorder: (theme) => null,
-      shadows: (theme, {required pressed}) => const [],
-      glyph: (theme, {required hovered, required pressed, required enabled}) {
-        if (!enabled) {
-          return theme.colors.textQuaternary;
-        }
-        return theme.colors.primary;
-      },
-      track: (theme, strip) => strip,
-      focusRadius: radius,
-    );
-  }
-
-  /// macOS: the NSStepper's slim chevron column beside the number — a small
-  /// bordered capsule of two stacked segments over a hairline, grey at rest,
-  /// darkening under the pointer.
-  factory nsChevronPair({required double trackRadius}) {
-    final radius = BorderRadius.circular(trackRadius);
-    return _StepperVisual(
-      layout: _StepperLayout.chevronPair,
-      joined: true,
-      increaseIcon: Icons.expand_less,
-      decreaseIcon: Icons.expand_more,
-      iconSize: 12,
-      cellRadius: BorderRadius.zero,
-      capsule: (theme) => BoxDecoration(
-        color: theme.colors.bgContainer,
-        borderRadius: radius,
-        border: Border.all(color: theme.colors.borderSecondary),
-      ),
-      divider: (theme) => theme.colors.borderSecondary,
-      hoverTint: (theme) => theme.colors.fillTertiary,
-      pressedTint: (theme) => theme.colors.fillSecondary,
-      restTint: (theme) => null,
-      cellBorder: (theme) => null,
-      shadows: (theme, {required pressed}) => const [],
-      glyph: (theme, {required hovered, required pressed, required enabled}) {
-        if (!enabled) {
-          return theme.colors.textQuaternary;
-        }
-        if (pressed || hovered) {
-          return theme.colors.text;
-        }
-        return theme.colors.textSecondary;
-      },
-      track: (theme, strip) => strip,
-      focusRadius: radius,
-    );
-  }
 
   /// Windows: the WinUI NumberBox — a bordered value box with the spin column
   /// attached to its right edge over a hairline, answering hover in the
@@ -309,8 +144,6 @@ final class _StepperVisual {
   factory numberBox({required double trackRadius}) {
     final radius = BorderRadius.circular(trackRadius);
     return _StepperVisual(
-      layout: _StepperLayout.numberBox,
-      joined: true,
       increaseIcon: Icons.keyboard_arrow_up,
       decreaseIcon: Icons.keyboard_arrow_down,
       iconSize: 16,
@@ -325,7 +158,6 @@ final class _StepperVisual {
       pressedTint: (theme) => theme.colors.primaryBgHover,
       restTint: (theme) => null,
       cellBorder: (theme) => null,
-      shadows: (theme, {required pressed}) => const [],
       glyph: (theme, {required hovered, required pressed, required enabled}) {
         if (!enabled) {
           return theme.colors.textQuaternary;
@@ -338,179 +170,9 @@ final class _StepperVisual {
         }
         return theme.colors.textSecondary;
       },
-      track: (theme, strip) => strip,
       focusRadius: radius,
     );
   }
-
-  /// Ubuntu: Yaru's flat squares — no plate, no border at rest, a header
-  /// button's rounded fill appearing under the pointer and deepening on
-  /// press.
-  factory flatSquares({required double cellRadius}) {
-    final radius = BorderRadius.circular(cellRadius);
-    return _StepperVisual(
-      layout: _StepperLayout.flanking,
-      joined: false,
-      increaseIcon: Icons.add,
-      decreaseIcon: Icons.remove,
-      iconSize: 16,
-      cellRadius: radius,
-      capsule: (theme) => null,
-      divider: (theme) => null,
-      hoverTint: (theme) => theme.colors.fill,
-      pressedTint: (theme) => theme.colors.fillSecondary,
-      restTint: (theme) => null,
-      cellBorder: (theme) => null,
-      shadows: (theme, {required pressed}) => const [],
-      glyph: (theme, {required hovered, required pressed, required enabled}) {
-        if (!enabled) {
-          return theme.colors.textQuaternary;
-        }
-        return theme.colors.text;
-      },
-      track: (theme, strip) => strip,
-      focusRadius: radius,
-    );
-  }
-
-  /// shadcn's button — and wind's, the sibling the kit's other controls keep
-  /// it beside: a bordered, plate-filled cell that clouds on hover and
-  /// presses deeper, around a full set of corners.
-  factory borderedButtons({required double cellRadius}) {
-    final radius = BorderRadius.circular(cellRadius);
-    return _StepperVisual(
-      layout: _StepperLayout.flanking,
-      joined: false,
-      increaseIcon: Icons.add,
-      decreaseIcon: Icons.remove,
-      iconSize: 16,
-      cellRadius: radius,
-      capsule: (theme) => null,
-      divider: (theme) => null,
-      hoverTint: (theme) => theme.colors.fill,
-      pressedTint: (theme) => theme.colors.fillSecondary,
-      restTint: (theme) => theme.colors.bgContainer,
-      cellBorder: (theme) => theme.colors.borderSecondary,
-      shadows: (theme, {required pressed}) => const [],
-      glyph: (theme, {required hovered, required pressed, required enabled}) {
-        if (!enabled) {
-          return theme.colors.textQuaternary;
-        }
-        if (pressed || hovered) {
-          return theme.colors.text;
-        }
-        return theme.colors.textSecondary;
-      },
-      track: (theme, strip) => strip,
-      focusRadius: radius,
-    );
-  }
-
-  /// The glass language: a frosted plate (real backdrop blur when the device
-  /// can afford it) under translucent, hairline-rimmed cells that cloud over
-  /// as the pointer works them.
-  factory frostedPlate({required double trackRadius}) {
-    final radius = BorderRadius.circular(trackRadius);
-    Color frost(PureTheme theme, double alpha) =>
-        theme.isDark ? Colors.white.withValues(alpha: alpha) : Colors.black.withValues(alpha: alpha);
-    return _StepperVisual(
-      layout: _StepperLayout.flanking,
-      joined: false,
-      increaseIcon: Icons.add,
-      decreaseIcon: Icons.remove,
-      iconSize: 16,
-      cellRadius: BorderRadius.circular(PureRadii.pill),
-      capsule: (theme) => null,
-      divider: (theme) => null,
-      hoverTint: (theme) => frost(theme, 0.12),
-      pressedTint: (theme) => frost(theme, 0.18),
-      restTint: (theme) => frost(theme, 0.06),
-      cellBorder: (theme) => theme.isDark ? Colors.white.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.6),
-      shadows: (theme, {required pressed}) => const [],
-      glyph: (theme, {required hovered, required pressed, required enabled}) {
-        if (!enabled) {
-          return theme.colors.textQuaternary;
-        }
-        if (pressed || hovered) {
-          return theme.colors.primary;
-        }
-        return theme.colors.text;
-      },
-      track: (theme, strip) {
-        final plate = DecoratedBox(
-          decoration: BoxDecoration(
-            color: theme.isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.55),
-            borderRadius: radius,
-            border: Border.all(
-              color: theme.isDark ? Colors.white.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.7),
-            ),
-          ),
-          child: Padding(padding: const EdgeInsets.all(_StepperMetrics.gap), child: strip),
-        );
-        if (!theme.canBlur) {
-          return plate;
-        }
-        return ClipRRect(
-          borderRadius: radius,
-          child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14), child: plate),
-        );
-      },
-      focusRadius: radius,
-    );
-  }
-
-  /// The neumorphic language: plates raised out of the surface (light from
-  /// the top left, shadow from the bottom right) that press into it — the
-  /// shadows reversing — while the finger holds them.
-  factory raisedPlates({required double trackRadius}) {
-    final radius = BorderRadius.circular(trackRadius);
-    List<BoxShadow> raised(PureTheme theme) => [
-      BoxShadow(color: theme.colors.shadowBase, blurRadius: 6, offset: const Offset(3, 3)),
-      BoxShadow(
-        color: theme.colors.white.withValues(alpha: theme.isDark ? 0.04 : 0.8),
-        blurRadius: 6,
-        offset: const Offset(-3, -3),
-      ),
-    ];
-    List<BoxShadow> sunk(PureTheme theme) => [
-      for (final shadow in raised(theme))
-        BoxShadow(color: shadow.color, blurRadius: shadow.blurRadius, offset: -shadow.offset),
-    ];
-    return _StepperVisual(
-      layout: _StepperLayout.flanking,
-      joined: false,
-      increaseIcon: Icons.add,
-      decreaseIcon: Icons.remove,
-      iconSize: 16,
-      cellRadius: radius,
-      capsule: (theme) => null,
-      divider: (theme) => null,
-      hoverTint: (theme) => theme.colors.bgElevated,
-      pressedTint: (theme) => theme.colors.bgContainer,
-      restTint: (theme) => theme.colors.bgContainer,
-      cellBorder: (theme) => null,
-      shadows: (theme, {required pressed}) => pressed ? sunk(theme) : raised(theme),
-      glyph: (theme, {required hovered, required pressed, required enabled}) {
-        if (!enabled) {
-          return theme.colors.textQuaternary;
-        }
-        if (pressed || hovered) {
-          return theme.colors.text;
-        }
-        return theme.colors.textSecondary;
-      },
-      track: (theme, strip) => strip,
-      focusRadius: radius,
-    );
-  }
-
-  /// Which of the three arrangements the cells sit in.
-  final _StepperLayout layout;
-
-  /// Whether the cells are flush inside the [capsule] (their own radius
-  /// defers to the clip, and hairline dividers join them) rather than
-  /// standing apart as individual buttons.
-  final bool joined;
 
   /// The glyph on the increment cell.
   final IconData increaseIcon;
@@ -521,15 +183,15 @@ final class _StepperVisual {
   /// The glyph size inside a cell.
   final double iconSize;
 
-  /// The corner radius of a cell that is not flush in a capsule.
+  /// The corner radius of a cell.
   final BorderRadius cellRadius;
 
-  /// The frame around a joined strip — the plate, border and corner the
-  /// capsule paints; null for the languages whose cells float free.
+  /// The frame around the strip — the plate, border and corner the capsule
+  /// paints.
   final BoxDecoration? Function(PureTheme theme) capsule;
 
-  /// The hairline between joined cells or stacked segments; null is the
-  /// languages that divide nothing.
+  /// The hairline between the value box and the spin column and between the
+  /// column's stacked cells.
   final Color? Function(PureTheme theme) divider;
 
   /// The fill behind a hovered cell.
@@ -538,28 +200,20 @@ final class _StepperVisual {
   /// The fill behind a pressed cell.
   final Color? Function(PureTheme theme) pressedTint;
 
-  /// The fill a cell carries at rest; null is the flat languages.
+  /// The fill a cell carries at rest.
   final Color? Function(PureTheme theme) restTint;
 
-  /// The border around each cell; null is the borderless languages.
+  /// The border around each cell.
   final Color? Function(PureTheme theme) cellBorder;
-
-  /// The shadows a cell draws, the pressed flag letting neumorphic reverse
-  /// its emboss; every other language answers with the empty list.
-  final List<BoxShadow> Function(PureTheme theme, {required bool pressed}) shadows;
 
   /// The glyph colour in each state.
   final Color Function(PureTheme theme, {required bool hovered, required bool pressed, required bool enabled}) glyph;
-
-  /// Wraps the assembled control: the glass plate and its blur; every other
-  /// language passes the strip through.
-  final Widget Function(PureTheme theme, Widget strip) track;
 
   /// The corner radius of the focus ring drawn around the whole control.
   final BorderRadius focusRadius;
 }
 
-/// The stepper's interaction core, shared by every language: it owns the
+/// The stepper's interaction core: it owns the
 /// focus, the hold-to-repeat timer and its acceleration, the arrow-key
 /// stepping, the min/max clamping and the value semantics, and lays the
 /// cells out in the visual's arrangement.
@@ -696,18 +350,12 @@ class _StepperCoreState extends State<_StepperCore> {
   Widget build(BuildContext context) {
     final theme = context.themeFor;
     final visual = widget.visual;
-    var strip = switch (visual.layout) {
-      _StepperLayout.flanking => _flanking(visual),
-      _StepperLayout.numberBox => _numberBox(visual),
-      _StepperLayout.chevronPair => _chevronPair(visual),
-    };
-    // The chevron column carries its capsule around the block alone; every
-    // other joined arrangement caps the whole strip.
+    var strip = _numberBox(visual);
+    // The capsule caps the value box and its spin column together.
     final capsule = visual.capsule(theme);
-    if (capsule != null && visual.layout != _StepperLayout.chevronPair) {
+    if (capsule != null) {
       strip = _capsule(capsule, strip);
     }
-    final framed = visual.track(theme, strip);
     // The focus ring is the keyboard and remote answer for the whole control:
     // a foreground border that never shifts the layout.  Always wrapped in
     // DecoratedBox so the tree structure is stable regardless of focus state
@@ -721,7 +369,7 @@ class _StepperCoreState extends State<_StepperCore> {
             )
           : const BoxDecoration(),
       position: DecorationPosition.foreground,
-      child: framed,
+      child: strip,
     );
     final control = Focus(
       focusNode: _focusNode,
@@ -745,25 +393,6 @@ class _StepperCoreState extends State<_StepperCore> {
       return semantics;
     }
     return IgnorePointer(child: semantics);
-  }
-
-  /// `-  value  +`: hairline dividers between the cells of a joined capsule,
-  /// air between cells that stand alone.
-  Widget _flanking(_StepperVisual visual) {
-    final dividerColor = visual.divider(context.themeFor);
-    final separator = visual.joined && dividerColor != null
-        ? Container(width: _StepperMetrics.hairline, height: _StepperMetrics.height, color: dividerColor)
-        : const SizedBox(width: _StepperMetrics.gap);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _button(visual, up: false, live: _canStep(-widget.step), width: _StepperMetrics.cellSide),
-        separator,
-        _valueCell(_StepperMetrics.valueWidth, _StepperMetrics.height),
-        separator,
-        _button(visual, up: true, live: _canStep(widget.step), width: _StepperMetrics.cellSide),
-      ],
-    );
   }
 
   /// The WinUI NumberBox: the value box with the spin column attached to its
@@ -802,43 +431,6 @@ class _StepperCoreState extends State<_StepperCore> {
     );
   }
 
-  /// The macOS reading: the number in plain text, the NSStepper's slim
-  /// up/down column standing beside it with a capsule of its own.
-  Widget _chevronPair(_StepperVisual visual) {
-    final theme = context.themeFor;
-    final dividerColor = visual.divider(theme);
-    const segmentHeight = (_StepperMetrics.chevronHeight - _StepperMetrics.hairline) / 2;
-    final block = Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _button(
-          visual,
-          up: true,
-          live: _canStep(widget.step),
-          width: _StepperMetrics.chevronWidth,
-          height: segmentHeight,
-        ),
-        if (dividerColor != null)
-          Container(width: _StepperMetrics.chevronWidth, height: _StepperMetrics.hairline, color: dividerColor),
-        _button(
-          visual,
-          up: false,
-          live: _canStep(-widget.step),
-          width: _StepperMetrics.chevronWidth,
-          height: segmentHeight,
-        ),
-      ],
-    );
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _valueCell(_StepperMetrics.valueWidth, _StepperMetrics.height),
-        const SizedBox(width: _StepperMetrics.gap * 2),
-        if (visual.capsule(theme) case final capsule?) _capsule(capsule, block) else block,
-      ],
-    );
-  }
-
   Widget _capsule(BoxDecoration decoration, Widget strip) {
     final radius = decoration.borderRadius ?? BorderRadius.zero;
     return DecoratedBox(
@@ -855,7 +447,9 @@ class _StepperCoreState extends State<_StepperCore> {
       live: live,
       width: width,
       height: height ?? _StepperMetrics.height,
-      flush: visual.joined || visual.layout != _StepperLayout.flanking,
+      // The NumberBox's cells sit flush inside the capsule, their own radius
+      // deferring to the clip.
+      flush: true,
       visual: visual,
       focusNode: _focusNode,
       onHoldStart: _startHold,
@@ -1009,7 +603,6 @@ class _StepButtonState extends State<_StepButton> {
               color: fill,
               borderRadius: widget.flush ? BorderRadius.zero : visual.cellRadius,
               border: borderColor == null ? null : Border.all(color: borderColor),
-              boxShadow: visual.shadows(theme, pressed: _pressed),
             ),
             child: Icon(widget.icon, size: visual.iconSize, color: color),
           ),

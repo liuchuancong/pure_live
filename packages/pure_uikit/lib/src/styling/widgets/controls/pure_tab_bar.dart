@@ -1,10 +1,8 @@
 import 'dart:math' as math;
-import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show KeyDownEvent, KeyEvent, KeyRepeatEvent, LogicalKeyboardKey;
 import 'package:pure_uikit/src/scales/radii.dart';
-import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 
 /// A count or marker drawn over a [PureTabBarItem]'s icon corner — the tab
@@ -93,9 +91,8 @@ final class PureTabBarItem {
 
 /// The semantic role of a tab bar.
 ///
-/// The role is intentionally independent from the active design language: a
-/// page tab should remain a page tab when the app switches from Fluent to
-/// Material, while a segmented control keeps its contained selection surface.
+/// The role decides the selection surface: a page tab keeps the lightweight
+/// indicator, while a segmented control keeps its contained selection surface.
 enum PureTabBarVariant {
   /// Page-level navigation, normally indicated by an underline.
   page,
@@ -166,17 +163,14 @@ extension PureTabBarSizeMetrics on PureTabBarSize {
 }
 
 /// The design sheet's pill tab bar: one navigation strip for page switching
-/// and channel categories, drawn in every design language.
+/// and channel categories.
 ///
-/// Where `PureTabs` hands a page's strip to the active library's own tab
-/// widget, this component is the pill bar itself — an accent-filled pill on
-/// Windows (Fluent), a floating white thumb on iOS and macOS (Cupertino), an
-/// ink underline on Android (Material) and the wind and forui tracks that
-/// share its grammar, a rounder pill under Yaru, a frosted stadium under
-/// glass, and a raised track with a pressed-in pill under neumorphic. All of
-/// it is painted here, because a pill that slides is exactly what the
-/// libraries do not ship; the colours, radii, motion and text come from the
-/// tokens, so a language re-skin and a dark switch still come out right.
+/// Where `PureTabs` hands a page's strip to the host's own tab widget, this
+/// component is the pill bar itself — the accent-filled pill slides behind the
+/// selected cell for a segmented pick, and page and category tabs ride the
+/// lightweight ink underline. All of it is painted here, because a pill that
+/// slides is exactly what the libraries do not ship; the colours, radii, motion
+/// and text come from the tokens, so a dark switch still comes out right.
 ///
 /// Every visual answers to the same interaction contract: hover and pressed
 /// tints, a disabled bar and disabled cells, a badge over the icon, the three
@@ -224,31 +218,13 @@ class PureTabBar extends StatelessWidget {
   final bool enabled;
 
   _BarVisual _resolveVisual(PureTheme theme) {
-    final language = theme.config.language;
-
-    // Glass and neumorphic are intentionally distinctive design languages.
-    // Other languages choose their geometry from the tab bar's semantic role.
-    if (language == PureDesignLanguage.glass) {
-      return _BarVisual.glass();
-    }
-    if (language == PureDesignLanguage.neumorphic) {
-      return _BarVisual.neumorphic();
-    }
-
+    // A segmented pick keeps the contained accent-pill selection surface; page
+    // and category tabs use a lightweight indicator instead of turning every
+    // selected tab into a filled button.
     if (variant == PureTabBarVariant.segmented) {
-      return switch (language) {
-        PureDesignLanguage.fluent => _BarVisual.accentPill(trackRadius: theme.token.scale.radii.base),
-        PureDesignLanguage.yaru => _BarVisual.accentPill(trackRadius: theme.token.scale.radii.lg),
-        PureDesignLanguage.cupertino || PureDesignLanguage.macos => _BarVisual.thumb(),
-        PureDesignLanguage.material ||
-        PureDesignLanguage.wind ||
-        PureDesignLanguage.forui => _BarVisual.accentPill(trackRadius: theme.token.scale.radii.base),
-        PureDesignLanguage.glass || PureDesignLanguage.neumorphic => throw StateError('Handled above.'),
-      };
+      return _BarVisual.accentPill(trackRadius: theme.token.scale.radii.base);
     }
 
-    // Page and category tabs use a lightweight indicator instead of turning
-    // every selected tab into a filled button.
     return _BarVisual.underline();
   }
 
@@ -276,7 +252,7 @@ class PureTabBar extends StatelessWidget {
   }
 }
 
-/// How one design language paints the bar: the track it sits on, the sliding
+/// How the bar is painted: the track it sits on, the sliding
 /// indicator behind the selected cell, the interaction tints, and the colour
 /// of a cell's content in each state.
 @immutable
@@ -293,8 +269,8 @@ final class _BarVisual {
     this.selectedTint,
   });
 
-  /// Windows Fluent and Linux Yaru: an accent-filled pill slides behind the
-  /// selected cell on a card track. Yaru asks for the rounder container.
+  /// Windows Fluent: an accent-filled pill slides behind the
+  /// selected cell on a card track.
   factory accentPill({required double trackRadius}) {
     return _BarVisual(
       track: (theme, strip, inset) => DecoratedBox(
@@ -315,48 +291,6 @@ final class _BarVisual {
       hoverTint: (theme) => theme.colors.fill,
       pressedTint: (theme) => theme.colors.fillSecondary,
       content: contentOnPill,
-    );
-  }
-
-  /// iOS and macOS: a floating white thumb on a grey stadium track, the
-  /// selected cell in the accent — the sliding control's own grammar, drawn
-  /// long.
-  factory thumb() {
-    return _BarVisual(
-      track: (theme, strip, inset) => Padding(
-        padding: inset,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: theme.colors.fillSecondary,
-            borderRadius: BorderRadius.circular(PureRadii.pill),
-          ),
-          child: strip,
-        ),
-      ),
-      stackAlignment: AlignmentDirectional.center,
-      cellRadius: BorderRadius.circular(PureRadii.pill),
-      indicator: (theme, {required active}) => BoxDecoration(
-        color: active ? theme.colors.bgElevated : theme.colors.fillTertiary,
-        borderRadius: BorderRadius.circular(PureRadii.pill),
-        boxShadow: active
-            ? [BoxShadow(color: theme.colors.shadowBase, blurRadius: 6, offset: const Offset(0, 1.5))]
-            : const [],
-      ),
-      indicatorHeight: null,
-      hoverTint: (_) => null,
-      pressedTint: (_) => null,
-      content: (theme, {required selected, required hovered, required pressed, required enabled}) {
-        if (!enabled) {
-          return theme.colors.textQuaternary;
-        }
-        if (selected) {
-          return theme.colors.primary;
-        }
-        if (pressed || hovered) {
-          return theme.colors.text;
-        }
-        return theme.colors.textSecondary;
-      },
     );
   }
 
@@ -393,111 +327,12 @@ final class _BarVisual {
     );
   }
 
-  /// The glass language: a frosted stadium track (real backdrop blur when the
-  /// device can afford it) with a gradient accent pill.
-  factory glass() {
-    Color tint(PureTheme theme, double alpha) =>
-        theme.isDark ? Colors.white.withValues(alpha: alpha) : Colors.black.withValues(alpha: alpha);
-    return _BarVisual(
-      track: (theme, strip, inset) {
-        final filled = DecoratedBox(
-          decoration: BoxDecoration(
-            color: theme.isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.55),
-            borderRadius: BorderRadius.circular(PureRadii.pill),
-            border: Border.all(
-              color: theme.isDark ? Colors.white.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.7),
-            ),
-          ),
-          child: Padding(padding: inset, child: strip),
-        );
-        if (!theme.canBlur) {
-          return filled;
-        }
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(PureRadii.pill),
-          child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14), child: filled),
-        );
-      },
-      stackAlignment: AlignmentDirectional.center,
-      cellRadius: BorderRadius.circular(PureRadii.pill),
-      indicator: (theme, {required active}) {
-        if (!active) {
-          return BoxDecoration(color: theme.colors.fill, borderRadius: BorderRadius.circular(PureRadii.pill));
-        }
-        return BoxDecoration(
-          borderRadius: BorderRadius.circular(PureRadii.pill),
-          gradient: LinearGradient(
-            begin: AlignmentDirectional.topStart,
-            end: AlignmentDirectional.bottomEnd,
-            colors: [theme.colors.primary, Color.lerp(theme.colors.primary, theme.colors.link, 0.35)!],
-          ),
-          boxShadow: [
-            BoxShadow(color: theme.colors.primary.withValues(alpha: 0.35), blurRadius: 8, offset: const Offset(0, 2)),
-          ],
-        );
-      },
-      indicatorHeight: null,
-      hoverTint: (theme) => tint(theme, 0.06),
-      pressedTint: (theme) => tint(theme, 0.1),
-      content: contentOnPill,
-    );
-  }
-
-  /// The neumorphic language: a raised track (light from the top left, shadow
-  /// from the bottom right) and a pressed-in pill under the selected cell.
-  factory neumorphic() {
-    List<BoxShadow> raised(PureTheme theme) => [
-      BoxShadow(color: theme.colors.shadowBase, blurRadius: 6, offset: const Offset(3, 3)),
-      BoxShadow(
-        color: theme.colors.white.withValues(alpha: theme.isDark ? 0.04 : 0.8),
-        blurRadius: 6,
-        offset: const Offset(-3, -3),
-      ),
-    ];
-    List<BoxShadow> sunk(PureTheme theme) => [
-      for (final shadow in raised(theme))
-        BoxShadow(color: shadow.color, blurRadius: shadow.blurRadius, offset: -shadow.offset),
-    ];
-    return _BarVisual(
-      track: (theme, strip, inset) => DecoratedBox(
-        decoration: BoxDecoration(
-          color: theme.colors.bgContainer,
-          borderRadius: BorderRadius.circular(theme.token.scale.radii.lg),
-          boxShadow: raised(theme),
-        ),
-        child: Padding(padding: inset, child: strip),
-      ),
-      stackAlignment: AlignmentDirectional.center,
-      cellRadius: BorderRadius.circular(PureRadii.pill),
-      indicator: (theme, {required active}) => BoxDecoration(
-        color: active ? theme.colors.primaryBg : theme.colors.fill,
-        borderRadius: BorderRadius.circular(PureRadii.pill),
-        boxShadow: active ? sunk(theme) : null,
-      ),
-      indicatorHeight: null,
-      hoverTint: (theme) => theme.colors.fill,
-      pressedTint: (theme) => theme.colors.fillSecondary,
-      content: (theme, {required selected, required hovered, required pressed, required enabled}) {
-        if (!enabled) {
-          return theme.colors.textQuaternary;
-        }
-        if (selected) {
-          return theme.colors.primary;
-        }
-        if (pressed || hovered) {
-          return theme.colors.text;
-        }
-        return theme.colors.textSecondary;
-      },
-    );
-  }
-
-  /// Wraps the strip: decoration, blur, padding — whatever the language puts
-  /// around the cells. The `inset` argument is the tier's track padding.
+  /// Wraps the strip: decoration and padding around the cells. The `inset`
+  /// argument is the tier's track padding.
   final Widget Function(PureTheme theme, Widget strip, EdgeInsets inset) track;
 
   /// Where the strip sits inside the bar's fixed height; the underline
-  /// languages pin it to the bottom edge so the ink bar touches it.
+  /// pins it to the bottom edge so the ink bar touches it.
   final AlignmentDirectional stackAlignment;
 
   /// The corner radius of a cell's hover tint and focus ring.
@@ -509,7 +344,7 @@ final class _BarVisual {
   final Color? Function(PureTheme theme)? selectedTint;
 
   /// The decoration of the sliding indicator behind the selected cell, with
-  /// the `active` flag telling the language's chosen colour apart from the
+  /// the `active` flag telling the chosen colour apart from the
   /// grey one an inert bar shows.
   final Decoration Function(PureTheme theme, {required bool active}) indicator;
 
@@ -518,8 +353,8 @@ final class _BarVisual {
   /// bar).
   final double? indicatorHeight;
 
-  /// The tint behind a hovered, unselected cell; null is the languages that
-  /// answer a hover in the text colour alone.
+  /// The tint behind a hovered, unselected cell; null when the hover is
+  /// answered in the text colour alone.
   final Color? Function(PureTheme theme) hoverTint;
 
   /// The tint behind a pressed cell.
@@ -535,7 +370,7 @@ final class _BarVisual {
   })
   content;
 
-  /// The content colours the filled-pill languages share: white on the pill,
+  /// The content colours the filled-pill language shares: white on the pill,
   /// the text roles elsewhere.
   static Color contentOnPill(
     PureTheme theme, {

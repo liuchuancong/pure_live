@@ -1,12 +1,11 @@
 import 'dart:math' show cos, pi, sin;
-import 'dart:ui' show ImageFilter, SemanticsRole;
+import 'dart:ui' show SemanticsRole;
 
 import 'package:flutter/material.dart';
 import 'package:pure_uikit/src/scales/radii.dart';
-import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 
-/// A marquee for work of unknown length: the active language's own indeterminate
+/// A marquee for work of unknown length: the indeterminate
 /// bar, filling whatever box it is given. [PureProgress] is the control; this is
 /// the one call that always wants the running shape and never a fraction, so it
 /// carries nothing but the thickness the kit's densest scale asks for.
@@ -23,38 +22,27 @@ class LinearIndeterminate extends StatelessWidget {
 
 /// Which of the two progress shapes a [PureProgress] draws.
 ///
-/// Every one of the nine design languages ships both: a bar for work with a
-/// measurable length and a ring for work without one. The language decides the
-/// style — iOS's fading spokes, the Aqua can, the WinUI dot chase, the shadcn
-/// ticks — while this decides which of the two the call site wants, so a page
-/// can put a spinner where an Android shell would still show a bar.
+/// Both shapes exist: a bar for work with a measurable length and a ring for
+/// work without one. The style — the WinUI dot chase, the sliding segment —
+/// comes from the language; this decides which of the two the call site wants,
+/// so a page can put a spinner where a bar would still show a fraction.
 enum PureProgressShape {
   /// A horizontal track with the fill running along it.
   linear,
 
-  /// A ring: a determinate arc, or the language's own spinner for unknown work.
+  /// A ring: a determinate arc, or the spinner for unknown work.
   circular,
 }
 
 /// The kit's progress: one widget that draws the real shape of the control in
-/// every `PureDesignLanguage` — the Material 3 ring whose 4dp stroke carries the
-/// gap that opens and closes as it turns, and the bar whose fill runs the
-/// two-phase loop; iOS's twelve spokes fading around the hub over a thin
-/// round-cap bar; the Aqua can of macOS's ring beside its glossier, chunkier
-/// rail; the four dots WinUI chases around a circle over the sliding segment;
-/// Ubuntu's round-capped arc and its slim stroke; the eight ticks the shadcn
-/// spinner turns through, and the crisper rail its wind sibling puts around the
-/// same grammar; a frosted groove with a luminous fill and a blurred ring under
-/// glass; and an inset mould whose raised fill lifts out of it under neumorphic.
-/// All of it is painted here, from the theme's own tokens — colours, radii,
-/// motion and text — because the nine widget libraries the kit otherwise
-/// dispatches to disagree about what unknown-length work even looks like, and a
-/// bar that stops animating the moment the language changes is a defect, not a
-/// re-skin. Drawn once, one contract holds everywhere: a null `value` is the
-/// repeating animation, `UiConfig.animations: false` stills it on a resting pose
-/// instead of freezing a frame, the controller is released when the bar leaves
-/// the tree, and a screen reader hears the same `progressBar` value in every
-/// language. Switching `UiConfig.language` re-skins every bar.
+/// the WinUI grammar — the ring of four dots that chase each other around the
+/// circle over the 3px rail whose third-of-a-track segment eases across and
+/// leaves. All of it is painted here, from the theme's own tokens — colours,
+/// radii and motion. Drawn once, one contract holds everywhere: a null `value`
+/// is the repeating animation, `UiConfig.animations: false` stills it on a
+/// resting pose instead of freezing a frame, the controller is released when
+/// the bar leaves the tree, and a screen reader hears the same `progressBar`
+/// value.
 class PureProgress extends StatelessWidget {
   /// A progress indicator at [value] (0..1), or an indeterminate one when it is
   /// null.
@@ -70,25 +58,21 @@ class PureProgress extends StatelessWidget {
     super.key,
   });
 
-  /// The completion fraction, or null for indeterminate — the two states every
-  /// language's shape answers to.
+  /// The completion fraction, or null for indeterminate — the two states the
+  /// shape answers to.
   final double? value;
 
-  /// The linear track's thickness, or null to keep the active language's own:
-  /// 3 for WinUI's rail, 4 for Material 3 and Ubuntu, 5 for iOS, 6 for the Aqua
-  /// bar and the shadcn family, 8 for the frosted track and 12 for the mould a
-  /// neumorphic fill rides in. Ignored by the [PureProgressShape.circular]
-  /// shape, whose ring stroke is the language's own.
+  /// The linear track's thickness, or null to keep the language's own: 3 for
+  /// WinUI's rail. Ignored by the [PureProgressShape.circular] shape, whose
+  /// ring stroke is the language's own.
   final double? height;
 
-  /// The shape. [PureProgressShape.linear] is the default, so a bar stays a bar
-  /// in every language; [PureProgressShape.circular] asks for the ring, which is
-  /// what the spinner-shaped languages draw for unknown-length work anyway.
+  /// The shape. [PureProgressShape.linear] is the default, so a bar stays a
+  /// bar; [PureProgressShape.circular] asks for the ring.
   final PureProgressShape shape;
 
-  /// The ring's diameter, or null to keep the active language's own: 24 for the
-  /// shadcn family, 28 for iOS, 32 for macOS, Windows, Ubuntu and glass, 36 for
-  /// Material 3 and neumorphic. Ignored by the linear shape.
+  /// The ring's diameter, or null to keep the language's own: 32. Ignored by
+  /// the linear shape.
   final double? size;
 
   /// Whether to show the percentage. A linear bar answers with a trailing label
@@ -106,20 +90,10 @@ class PureProgress extends StatelessWidget {
   /// own is otherwise announced as a bare percentage.
   final String? semanticLabel;
 
-  /// The geometry, colours and motion the active language puts on the shape.
+  /// The geometry, colours and motion the shape is drawn with.
   _ProgressVisual _visual(PureTheme theme) {
     final palette = _ProgressPalette(theme: theme, thickness: height, diameter: size);
-    return switch (theme.config.language) {
-      PureDesignLanguage.material => _ProgressVisual.material(palette),
-      PureDesignLanguage.cupertino => _ProgressVisual.cupertino(palette),
-      PureDesignLanguage.macos => _ProgressVisual.macos(palette),
-      PureDesignLanguage.fluent => _ProgressVisual.fluent(palette),
-      PureDesignLanguage.yaru => _ProgressVisual.yaru(palette),
-      PureDesignLanguage.forui => _ProgressVisual.forui(palette),
-      PureDesignLanguage.glass => _ProgressVisual.glass(palette),
-      PureDesignLanguage.neumorphic => _ProgressVisual.neumorphic(palette),
-      PureDesignLanguage.wind => _ProgressVisual.wind(palette),
-    };
+    return _ProgressVisual.fluent(palette);
   }
 
   @override
@@ -199,7 +173,7 @@ class PureProgress extends StatelessWidget {
   }
 }
 
-/// What a language's shape is measured against: the theme it reads its colours
+/// What the shape is measured against: the theme it reads its colours
 /// from, and the two sizes the call site may override.
 @immutable
 final class _ProgressPalette {
@@ -216,10 +190,10 @@ final class _ProgressPalette {
   final double? diameter;
 }
 
-/// The geometry, colours and motion one design language puts on a progress
-/// shape. Everything is resolved from the theme when the bar builds, so a
-/// language re-skin, a dark switch and the user's motion settings all come out
-/// of the same tokens the kit's other controls read.
+/// The geometry, colours and motion the progress shape is drawn with.
+/// Everything is resolved from the theme when the bar builds, so a dark switch
+/// and the user's motion settings all come out of the same tokens the kit's
+/// other controls read.
 @immutable
 final class _ProgressVisual {
   /// A progress visual.
@@ -234,140 +208,7 @@ final class _ProgressVisual {
     required this.cycle,
     required this.linear,
     required this.circular,
-    this.shadow,
-    this.highlight,
-    this.glow = 0,
-    this.frosted = false,
   });
-
-  /// Material 3: the 4dp stroke whose arc keeps turning while its gap opens and
-  /// closes — M3's own sweep, not a fixed comma — over the primary at a quarter
-  /// of its strength, and the bar that runs the two-phase loop: the stretch
-  /// growing out of the leading edge, then the tail catching up as the head runs
-  /// off the far end.
-  factory material(_ProgressPalette palette) {
-    final theme = palette.theme;
-    final radius = BorderRadius.circular(PureRadii.pill);
-    return _ProgressVisual(
-      linearThickness: palette.thickness ?? 4,
-      diameter: palette.diameter ?? 36,
-      stroke: 4,
-      radius: radius,
-      cap: StrokeCap.round,
-      track: theme.colors.primary.withValues(alpha: 0.24),
-      fill: theme.colors.primary,
-      cycle: theme.token.motion.durationSlow * 4,
-      linear: (args) => _BarPainter(
-        track: args.track,
-        fill: args.fill,
-        fraction: args.fraction,
-        tick: args.tick,
-        radius: radius,
-        phase: _BarLoop.twoPhase,
-      ),
-      circular: (args) => _RingPainter(
-        track: args.track,
-        fill: args.fill,
-        stroke: args.stroke,
-        cap: args.cap,
-        fraction: args.fraction,
-        tick: args.tick,
-        gapSweep: true,
-      ),
-    );
-  }
-
-  /// iOS: the activity indicator's twelve spokes, the one the control points at
-  /// solid and the ones behind it fading out over half the turn, and the thin
-  /// round-cap bar the platform puts on measurable work.
-  factory cupertino(_ProgressPalette palette) {
-    final theme = palette.theme;
-    final radius = BorderRadius.circular(PureRadii.pill);
-    return _ProgressVisual(
-      linearThickness: palette.thickness ?? 5,
-      diameter: palette.diameter ?? 28,
-      stroke: 2,
-      radius: radius,
-      cap: StrokeCap.round,
-      track: theme.colors.fillSecondary,
-      fill: theme.colors.primary,
-      cycle: theme.token.motion.durationSlow * 3,
-      linear: (args) => _BarPainter(
-        track: args.track,
-        fill: args.fill,
-        fraction: args.fraction,
-        tick: args.tick,
-        radius: radius,
-        phase: _BarLoop.slide,
-      ),
-      circular: (args) => args.fraction == null
-          ? _SpokePainter(
-              fill: args.fill,
-              count: 12,
-              width: 2,
-              length: 6,
-              ramp: 0.5,
-              floor: 0.12,
-              cap: StrokeCap.round,
-              tick: args.tick,
-            )
-          : _RingPainter(
-              track: args.track,
-              fill: args.fill,
-              stroke: args.stroke,
-              cap: args.cap,
-              fraction: args.fraction,
-              tick: args.tick,
-            ),
-    );
-  }
-
-  /// macOS: the Aqua can — twelve blades, wide at the rim and narrowing toward
-  /// the hub, with the trail dimmed rather than removed — and the chunkier rail
-  /// the platform's own bar draws, glossed from the accent up toward white.
-  factory macos(_ProgressPalette palette) {
-    final theme = palette.theme;
-    final radius = BorderRadius.circular(PureRadii.pill);
-    return _ProgressVisual(
-      linearThickness: palette.thickness ?? 6,
-      diameter: palette.diameter ?? 32,
-      stroke: 3,
-      radius: radius,
-      cap: StrokeCap.butt,
-      track: theme.colors.fillTertiary,
-      fill: theme.colors.primary,
-      cycle: theme.token.motion.durationSlow * 4,
-      linear: (args) => _BarPainter(
-        track: args.track,
-        fill: args.fill,
-        fraction: args.fraction,
-        tick: args.tick,
-        radius: radius,
-        phase: _BarLoop.twoPhase,
-        gradient: [args.fill, Color.lerp(args.fill, theme.colors.white, 0.28)!],
-      ),
-      circular: (args) => args.fraction == null
-          ? _SpokePainter(
-              fill: args.fill,
-              count: 12,
-              width: 3,
-              length: 8,
-              taper: 0.45,
-              ramp: 0.7,
-              floor: 0.3,
-              cap: StrokeCap.butt,
-              tick: args.tick,
-            )
-          : _RingPainter(
-              track: args.track,
-              fill: args.fill,
-              stroke: args.stroke,
-              cap: args.cap,
-              fraction: args.fraction,
-              tick: args.tick,
-            ),
-    );
-  }
 
   /// WinUI: the ring of four dots that chase each other around the circle —
   /// every dot on the same turn a beat behind the one ahead, so the ring gathers
@@ -407,200 +248,6 @@ final class _ProgressVisual {
     );
   }
 
-  /// Ubuntu: the arc with round caps that grows and shrinks as it turns, on the
-  /// track the language picks for its own accent, and the slim stroke its
-  /// progress bars are drawn with.
-  factory yaru(_ProgressPalette palette) {
-    final theme = palette.theme;
-    final radius = BorderRadius.circular(PureRadii.pill);
-    return _ProgressVisual(
-      linearThickness: palette.thickness ?? 4,
-      diameter: palette.diameter ?? 32,
-      stroke: 4,
-      radius: radius,
-      cap: StrokeCap.round,
-      track: theme.colors.fillSecondary,
-      fill: theme.colors.primary,
-      cycle: theme.token.motion.durationSlow * 5,
-      linear: (args) => _BarPainter(
-        track: args.track,
-        fill: args.fill,
-        fraction: args.fraction,
-        tick: args.tick,
-        radius: radius,
-        phase: _BarLoop.slide,
-      ),
-      circular: (args) => _RingPainter(
-        track: args.track,
-        fill: args.fill,
-        stroke: args.stroke,
-        cap: args.cap,
-        fraction: args.fraction,
-        tick: args.tick,
-        gapSweep: true,
-      ),
-    );
-  }
-
-  /// shadcn: the eight ticks the library's spinner turns through — the leading
-  /// one solid, the rest dimmed along one full ramp — and the tall rounded bar
-  /// over the neutral track the utility classes set.
-  factory forui(_ProgressPalette palette) {
-    final theme = palette.theme;
-    final radius = BorderRadius.circular(PureRadii.pill);
-    return _ProgressVisual(
-      linearThickness: palette.thickness ?? 6,
-      diameter: palette.diameter ?? 24,
-      stroke: 2,
-      radius: radius,
-      cap: StrokeCap.round,
-      track: theme.colors.fillSecondary,
-      fill: theme.colors.primary,
-      cycle: theme.token.motion.durationSlow * 5,
-      linear: (args) => _BarPainter(
-        track: args.track,
-        fill: args.fill,
-        fraction: args.fraction,
-        tick: args.tick,
-        radius: radius,
-        phase: _BarLoop.slide,
-      ),
-      circular: (args) => _SpokePainter(
-        fill: args.fill,
-        count: 8,
-        width: 2,
-        length: 5,
-        ramp: 1,
-        floor: 0.16,
-        cap: StrokeCap.round,
-        fraction: args.fraction,
-        tick: args.tick,
-      ),
-    );
-  }
-
-  /// The wind language's answer: the sibling grammar of the shadcn bar — the
-  /// same eight ticks and the same running segment — read a little crisper, on
-  /// the layout surface and at the container radius rather than a stadium.
-  factory wind(_ProgressPalette palette) {
-    final theme = palette.theme;
-    final radius = BorderRadius.circular(theme.token.scale.radii.sm);
-    return _ProgressVisual(
-      linearThickness: palette.thickness ?? 5,
-      diameter: palette.diameter ?? 26,
-      stroke: 2,
-      radius: radius,
-      cap: StrokeCap.round,
-      track: theme.colors.bgContainer,
-      fill: theme.colors.primary,
-      cycle: theme.token.motion.durationSlow * 5,
-      linear: (args) => _BarPainter(
-        track: args.track,
-        fill: args.fill,
-        fraction: args.fraction,
-        tick: args.tick,
-        radius: radius,
-        phase: _BarLoop.slide,
-      ),
-      circular: (args) => _SpokePainter(
-        fill: args.fill,
-        count: 8,
-        width: 2,
-        length: 6,
-        ramp: 1,
-        floor: 0.2,
-        cap: StrokeCap.round,
-        fraction: args.fraction,
-        tick: args.tick,
-      ),
-    );
-  }
-
-  /// Glass: the frosted groove — a real backdrop filter when the device can
-  /// afford it, the pure ramp when it cannot — with a luminous fill that bleeds
-  /// its own accent out past the edge, and the ring blurred the same way.
-  factory glass(_ProgressPalette palette) {
-    final theme = palette.theme;
-    final radius = BorderRadius.circular(PureRadii.pill);
-    final gradient = [theme.colors.primary, Color.lerp(theme.colors.primary, theme.colors.link, 0.4)!];
-    return _ProgressVisual(
-      linearThickness: palette.thickness ?? 8,
-      diameter: palette.diameter ?? 32,
-      stroke: 4,
-      radius: radius,
-      cap: StrokeCap.round,
-      track: theme.isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.5),
-      fill: theme.colors.primary,
-      cycle: theme.token.motion.durationSlow * 5,
-      glow: 6,
-      frosted: true,
-      linear: (args) => _BarPainter(
-        track: args.track,
-        fill: args.fill,
-        fraction: args.fraction,
-        tick: args.tick,
-        radius: radius,
-        phase: _BarLoop.twoPhase,
-        glow: args.glow,
-        gradient: gradient,
-      ),
-      circular: (args) => _RingPainter(
-        track: args.track,
-        fill: args.fill,
-        stroke: args.stroke,
-        cap: args.cap,
-        fraction: args.fraction,
-        tick: args.tick,
-        gapSweep: true,
-        glow: args.glow,
-        gradient: gradient,
-      ),
-    );
-  }
-
-  /// Neumorphic: the groove cut into the surface — light falling in along the
-  /// top edge, lifting back out along the bottom — and the raised fill that
-  /// casts down into it, over the same mould on the ring.
-  factory neumorphic(_ProgressPalette palette) {
-    final theme = palette.theme;
-    final radius = BorderRadius.circular(theme.token.scale.radii.base);
-    final shadow = theme.colors.shadowBase.withValues(alpha: theme.isDark ? 0.5 : 0.4);
-    final highlight = theme.colors.white.withValues(alpha: theme.isDark ? 0.05 : 0.75);
-    return _ProgressVisual(
-      linearThickness: palette.thickness ?? 12,
-      diameter: palette.diameter ?? 36,
-      stroke: 5,
-      radius: radius,
-      cap: StrokeCap.round,
-      track: theme.colors.bgContainer,
-      fill: theme.colors.primary,
-      cycle: theme.token.motion.durationSlow * 5,
-      shadow: shadow,
-      highlight: highlight,
-      linear: (args) => _BarPainter(
-        track: args.track,
-        fill: args.fill,
-        fraction: args.fraction,
-        tick: args.tick,
-        radius: radius,
-        phase: _BarLoop.slide,
-        inset: true,
-        shadow: args.shadow,
-        highlight: args.highlight,
-      ),
-      circular: (args) => _RingPainter(
-        track: args.track,
-        fill: args.fill,
-        stroke: args.stroke,
-        cap: args.cap,
-        fraction: args.fraction,
-        tick: args.tick,
-        gapSweep: true,
-        shadow: args.shadow,
-      ),
-    );
-  }
-
   /// The linear track's thickness before the call site overrides it.
   final double linearThickness;
 
@@ -634,23 +281,9 @@ final class _ProgressVisual {
 
   /// The ring's painter for this fraction and animation position.
   final _ShapePainter circular;
-
-  /// The colour the extruded languages cast in: neumorphic's groove shadow and
-  /// its raised fill's drop shadow, glass's glow base.
-  final Color? shadow;
-
-  /// The light edge a recessed groove answers with; only the moulded language
-  /// carries one.
-  final Color? highlight;
-
-  /// How far the luminous languages bleed their fill past the shape's edge.
-  final double glow;
-
-  /// Whether the groove frosts the page behind it through a backdrop filter.
-  final bool frosted;
 }
 
-/// The frame a language's painter draws in: the fraction (null for
+/// The frame a painter draws in: the fraction (null for
 /// unknown-length work), the position through one cycle of the loop, and what
 /// this call resolved — the language's geometry and colours, or the caller's
 /// override of the two colours.
@@ -664,9 +297,6 @@ final class _ProgressArgs {
     required this.fill,
     required this.stroke,
     required this.cap,
-    required this.glow,
-    required this.shadow,
-    required this.highlight,
   });
 
   /// The completion fraction, or null for indeterminate.
@@ -686,22 +316,13 @@ final class _ProgressArgs {
 
   /// How the ring's arc ends are drawn.
   final StrokeCap cap;
-
-  /// How far the luminous languages bleed their fill past the shape's edge.
-  final double glow;
-
-  /// The colour the extruded languages cast in.
-  final Color? shadow;
-
-  /// The light edge a recessed groove answers with.
-  final Color? highlight;
 }
 
 /// A painter built from one frame of the loop.
 typedef _ShapePainter = CustomPainter Function(_ProgressArgs args);
 
 /// One stretch of an indeterminate bar: where it starts and how far it reaches,
-/// both as fractions of the track's width, so a language's loop is two numbers
+/// both as fractions of the track's width, so the loop is two numbers
 /// and not a pixel guess.
 @immutable
 final class _BarPhase {
@@ -715,31 +336,18 @@ final class _BarPhase {
   final double extent;
 }
 
-/// The two loops an indeterminate bar runs across its track. The languages pick
-/// one — the geometry and the colours are theirs, the shape of the motion is
-/// here — so a bar that never animates is a bug in one place rather than nine.
+/// The loop the indeterminate bar runs across its track: a third of the track
+/// eases in from the left, runs the width and leaves from the right, so the bar
+/// never reads as stalled.
 abstract final class _BarLoop {
-  /// The two-phase loop: the stretch grows out of the leading edge to three
-  /// quarters of the track, then the tail catches up while the head runs off the
-  /// far end.
-  static _BarPhase twoPhase(double tick) {
-    if (tick < 0.5) {
-      final k = Curves.easeInOutCubic.transform(tick * 2);
-      return _BarPhase(0, 0.05 + 0.7 * k);
-    }
-    final k = Curves.easeInOutCubic.transform((tick - 0.5) * 2);
-    return _BarPhase(0.95 * k, 0.75 - 0.7 * k);
-  }
-
-  /// The crossing segment: a third of the track eases in from the left, runs the
-  /// width and leaves from the right, so the bar never reads as stalled.
+  /// The crossing segment.
   static _BarPhase slide(double tick) {
     final k = Curves.easeInOutSine.transform(tick);
     return _BarPhase(1.34 * k - 0.34, 0.34);
   }
 }
 
-/// The bar: the groove, and the fill wherever this language's loop puts it at
+/// The bar: the groove, and the fill wherever the loop puts it at
 /// this frame. The fill is clipped to the groove, so a fraction of 1 and a
 /// segment running off the edge both read as the track they were drawn on.
 class _BarPainter extends CustomPainter {
@@ -750,11 +358,6 @@ class _BarPainter extends CustomPainter {
     required this.tick,
     this.fraction,
     this.phase,
-    this.inset = false,
-    this.shadow,
-    this.highlight,
-    this.glow = 0,
-    this.gradient,
   });
 
   /// The groove's colour.
@@ -772,33 +375,13 @@ class _BarPainter extends CustomPainter {
   /// The position through one cycle of the loop.
   final double tick;
 
-  /// Where the loop puts the stretch at this frame; null is the crossing
-  /// segment.
+  /// Where the loop puts the stretch at this frame.
   final _BarPhase Function(double tick)? phase;
-
-  /// Whether the groove is cut into the surface rather than laid on it.
-  final bool inset;
-
-  /// The colour the moulded languages cast in.
-  final Color? shadow;
-
-  /// The light edge of a recessed groove.
-  final Color? highlight;
-
-  /// How far the luminous fill bleeds past its own edge.
-  final double glow;
-
-  /// The fill's ramp, for the languages whose bar is glossed or gradient-filled
-  /// rather than flat.
-  final List<Color>? gradient;
 
   @override
   void paint(Canvas canvas, Size size) {
     final groove = radius.toRRect(Offset.zero & size);
     canvas.drawRRect(groove, Paint()..color = track);
-    if (inset) {
-      _paintMould(canvas, size, groove);
-    }
 
     final fraction = this.fraction;
     final fill = fraction == null ? _loopRect(size) : Rect.fromLTWH(0, 0, size.width * fraction, size.height);
@@ -808,65 +391,12 @@ class _BarPainter extends CustomPainter {
     final cap = radius.toRRect(fill);
     canvas
       ..save()
-      ..clipRRect(groove);
-    if (glow > 0) {
-      // The luminous languages bleed their accent past the edge it is drawn on.
-      canvas.drawRRect(
-        cap,
-        Paint()
-          ..color = this.fill.withValues(alpha: 0.5)
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, glow),
-      );
-    }
-    final color = shadow;
-    if (color != null) {
-      // The raised fill casts down into the mould it rides in.
-      canvas.drawRRect(
-        cap.shift(Offset(0, size.height * 0.18)),
-        Paint()
-          ..color = color
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, size.height / 4),
-      );
-    }
-    final paint = Paint()..color = this.fill;
-    if (gradient case final colors?) {
-      paint.shader = LinearGradient(colors: colors).createShader(fill);
-    }
-    canvas
-      ..drawRRect(cap, paint)
+      ..clipRRect(groove)
+      ..drawRRect(cap, Paint()..color = this.fill)
       ..restore();
   }
 
-  /// The recessed groove: light falls into the trough along its top edge and
-  /// lifts back out along the bottom, which is what makes the bar a mould
-  /// instead of a tint.
-  void _paintMould(Canvas canvas, Size size, RRect groove) {
-    final blur = size.height / 2.5;
-    canvas
-      ..save()
-      ..clipRRect(groove);
-    final cast = shadow;
-    if (cast != null) {
-      canvas.drawRect(
-        Rect.fromLTRB(0, -size.height, size.width, size.height * 0.3),
-        Paint()
-          ..color = cast
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, blur),
-      );
-    }
-    final light = highlight;
-    if (light != null) {
-      canvas.drawRect(
-        Rect.fromLTRB(0, size.height * 0.7, size.width, size.height * 2),
-        Paint()
-          ..color = light
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, blur),
-      );
-    }
-    canvas.restore();
-  }
-
-  /// Where this language's loop puts the stretch at this frame.
+  /// Where the loop puts the stretch at this frame.
   Rect _loopRect(Size size) {
     final loop = (phase ?? _BarLoop.slide)(tick);
     return Rect.fromLTWH(size.width * loop.start, 0, size.width * loop.extent, size.height);
@@ -879,16 +409,11 @@ class _BarPainter extends CustomPainter {
       oldDelegate.fraction != fraction ||
       oldDelegate.tick != tick ||
       oldDelegate.radius != radius ||
-      oldDelegate.phase != phase ||
-      oldDelegate.inset != inset ||
-      oldDelegate.shadow != shadow ||
-      oldDelegate.highlight != highlight ||
-      oldDelegate.glow != glow ||
-      oldDelegate.gradient != gradient;
+      oldDelegate.phase != phase;
 }
 
-/// The ring: an arc of this language's stroke and cap, either at a fraction of
-/// the turn or turning with the gap sweeping open and shut.
+/// The ring: an arc of the stroke and cap, either at a fraction of
+/// the turn or turning with a constant comma.
 class _RingPainter extends CustomPainter {
   const new({
     required this.track,
@@ -897,11 +422,7 @@ class _RingPainter extends CustomPainter {
     required this.cap,
     required this.tick,
     this.fraction,
-    this.gapSweep = false,
     this.groove = true,
-    this.glow = 0,
-    this.shadow,
-    this.gradient,
   });
 
   /// The groove ring's colour.
@@ -922,22 +443,9 @@ class _RingPainter extends CustomPainter {
   /// The position through one turn of the loop.
   final double tick;
 
-  /// Whether the gap opens and closes as the arc turns — Material 3's sweep —
-  /// or stays a constant comma.
-  final bool gapSweep;
-
-  /// Whether the language draws its groove ring behind the arc at all; the
-  /// languages that answer a fraction with a bare arc say no.
+  /// Whether the groove ring is drawn behind the arc at all; the bare-arc
+  /// reading says no.
   final bool groove;
-
-  /// How far the luminous arc bleeds past its own edge.
-  final double glow;
-
-  /// The colour the moulded languages cast the arc out of the groove in.
-  final Color? shadow;
-
-  /// The arc's ramp, for the languages whose ring glows toward a second colour.
-  final List<Color>? gradient;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -957,51 +465,13 @@ class _RingPainter extends CustomPainter {
     }
 
     final fraction = this.fraction;
-    final sweep = fraction == null
-        ? (gapSweep ? pi * (0.3 + 1.5 * (0.5 - 0.5 * cos(2 * pi * tick))) : 1.5 * pi)
-        : 2 * pi * fraction;
+    final sweep = fraction == null ? 1.5 * pi : 2 * pi * fraction;
     final start = -pi / 2 + (fraction == null ? 2 * pi * tick : 0);
     if (sweep <= 0) {
       return;
     }
 
     paint.color = fill;
-    if (gradient case final colors?) {
-      paint.shader = SweepGradient(
-        colors: [colors[0].withValues(alpha: 0.35), colors[1]],
-        transform: GradientRotation(start),
-      ).createShader(circle);
-    }
-    if (glow > 0) {
-      canvas.drawArc(
-        circle,
-        start,
-        sweep,
-        false,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = stroke
-          ..strokeCap = cap
-          ..color = fill.withValues(alpha: 0.45)
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, glow),
-      );
-    }
-    if (shadow case final color?) {
-      // The arc sits above the groove, not in it: the ring's own cast is what
-      // makes a neumorphic spinner read as raised.
-      canvas.drawArc(
-        circle.shift(const Offset(0, 1.5)),
-        start,
-        sweep,
-        false,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = stroke
-          ..strokeCap = cap
-          ..color = color
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, stroke),
-      );
-    }
     canvas.drawArc(circle, start, sweep, false, paint);
   }
 
@@ -1013,122 +483,7 @@ class _RingPainter extends CustomPainter {
       oldDelegate.cap != cap ||
       oldDelegate.fraction != fraction ||
       oldDelegate.tick != tick ||
-      oldDelegate.gapSweep != gapSweep ||
-      oldDelegate.groove != groove ||
-      oldDelegate.glow != glow ||
-      oldDelegate.shadow != shadow ||
-      oldDelegate.gradient != gradient;
-}
-
-/// The ring of radial marks: iOS's spokes, the Aqua can's blades, the shadcn
-/// family's ticks. The mark the control points at is solid and the ones behind it
-/// fade out along the ramp, which is the whole of the rotation; a determinate
-/// value instead lights the first `value * count` marks and dims the rest, the
-/// way a tick ring reads as progress.
-class _SpokePainter extends CustomPainter {
-  const new({
-    required this.fill,
-    required this.count,
-    required this.width,
-    required this.length,
-    required this.ramp,
-    required this.floor,
-    required this.cap,
-    required this.tick,
-    this.taper,
-    this.fraction,
-  });
-
-  /// The marks' colour.
-  final Color fill;
-
-  /// How many marks the ring is drawn with.
-  final int count;
-
-  /// A mark's width at the rim.
-  final double width;
-
-  /// How far a mark reaches in from the rim.
-  final double length;
-
-  /// The fraction of the turn the fade runs over.
-  final double ramp;
-
-  /// The alpha the tail of the fade settles at.
-  final double floor;
-
-  /// The mark's width at its inner end, as a fraction of [width]; null draws the
-  /// parallel-sided spoke, a value the tapered blade.
-  final double? taper;
-
-  /// How a spoke's ends are drawn.
-  final StrokeCap cap;
-
-  /// The completion fraction, or null for indeterminate.
-  final double? fraction;
-
-  /// The position through one turn of the loop.
-  final double tick;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final outer = size.shortestSide / 2 - width / 2;
-    final inner = outer - length;
-    if (inner <= 0) {
-      return;
-    }
-    final center = size.center(Offset.zero);
-    final fraction = this.fraction;
-    final lit = fraction == null ? null : (fraction * count).ceil();
-    final paint = Paint()..strokeCap = cap;
-
-    for (var i = 0; i < count; i++) {
-      // The mark the control points at is solid and the ones behind it fade out
-      // along the ramp; a determinate value instead lights the first
-      // `value * count` marks, which is how a tick ring reads as progress.
-      final alpha = lit != null
-          ? (i < lit ? 1.0 : floor)
-          : 1 - (1 - floor) * (((i / count - tick) % 1) / ramp).clamp(0.0, 1.0);
-      paint.color = fill.withValues(alpha: alpha);
-      canvas
-        ..save()
-        ..translate(center.dx, center.dy)
-        ..rotate(2 * pi * i / count - pi / 2);
-      _drawMark(canvas, paint, outer, inner);
-      canvas.restore();
-    }
-  }
-
-  /// One mark of the ring: the parallel-sided spoke iOS and the shadcn family
-  /// draw, or the blade wide at the rim and narrowing toward the hub that makes
-  /// the Aqua can.
-  void _drawMark(Canvas canvas, Paint paint, double outer, double inner) {
-    final taper = this.taper;
-    if (taper == null) {
-      canvas.drawLine(Offset(0, -outer), Offset(0, -inner), paint..strokeWidth = width);
-      return;
-    }
-    final path = Path()
-      ..moveTo(-width / 2, -outer)
-      ..lineTo(width / 2, -outer)
-      ..lineTo(width * taper / 2, -inner)
-      ..lineTo(-width * taper / 2, -inner)
-      ..close();
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _SpokePainter oldDelegate) =>
-      oldDelegate.fill != fill ||
-      oldDelegate.count != count ||
-      oldDelegate.width != width ||
-      oldDelegate.length != length ||
-      oldDelegate.ramp != ramp ||
-      oldDelegate.floor != floor ||
-      oldDelegate.taper != taper ||
-      oldDelegate.cap != cap ||
-      oldDelegate.fraction != fraction ||
-      oldDelegate.tick != tick;
+      oldDelegate.groove != groove;
 }
 
 /// The WinUI ring: dots on a circle, each on the same turn a beat behind the one
@@ -1177,7 +532,7 @@ class _DotPainter extends CustomPainter {
       oldDelegate.tick != tick;
 }
 
-/// The bar's body: the shape one language drew, turned by one repeating
+/// The bar's body: the shape, turned by one repeating
 /// controller while the work has no length to measure, and laid out at the
 /// thickness or diameter this call asked for.
 class _ProgressCore extends StatefulWidget {
@@ -1195,7 +550,7 @@ class _ProgressCore extends StatefulWidget {
 
   final _ProgressVisual visual;
 
-  /// Which of the language's two shapes is being drawn.
+  /// Which of the two shapes is being drawn.
   final PureProgressShape shape;
 
   /// The completion fraction; null is the indeterminate loop.
@@ -1258,15 +613,14 @@ class _ProgressCoreState extends State<_ProgressCore> with SingleTickerProviderS
       _controller.stop();
     }
     // A stopped loop is the shape's own resting pose rather than a frame caught
-    // mid-turn, so the reduced-motion answer looks like the language drew it
-    // still on purpose.
+    // mid-turn, so the reduced-motion answer looks like it was drawn still on
+    // purpose.
     if (widget.fraction == null && _controller.value != 0) {
       _controller.value = 0;
     }
   }
 
   Widget _painted(BuildContext context, double tick) {
-    final theme = PureTheme.of(context);
     final visual = widget.visual;
     final args = _ProgressArgs(
       fraction: widget.fraction,
@@ -1275,9 +629,6 @@ class _ProgressCoreState extends State<_ProgressCore> with SingleTickerProviderS
       fill: widget.fillOverride ?? visual.fill,
       stroke: visual.stroke,
       cap: visual.cap,
-      glow: visual.glow,
-      shadow: visual.shadow,
-      highlight: visual.highlight,
     );
     Widget shape = CustomPaint(
       painter: switch (widget.shape) {
@@ -1289,18 +640,9 @@ class _ProgressCoreState extends State<_ProgressCore> with SingleTickerProviderS
       PureProgressShape.linear => SizedBox(width: double.infinity, height: visual.linearThickness, child: shape),
       PureProgressShape.circular => SizedBox.square(dimension: visual.diameter, child: shape),
     };
-    // The frosted language's groove blurs what is behind it; where the device
-    // cannot afford the filter the pure ramp stands in, which is the same answer
-    // the kit's other frosted surfaces give.
-    if (visual.frosted && theme.canBlur) {
-      shape = ClipRRect(
-        borderRadius: visual.radius,
-        child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), child: shape),
-      );
-    }
     if (widget.shape == PureProgressShape.circular) {
-      // A ring is a square in a wide slot: it keeps the diameter its language
-      // drew and centres in the room it was given, rather than being stretched
+      // A ring is a square in a wide slot: it keeps the diameter it was drawn
+      // at and centres in the room it was given, rather than being stretched
       // across it the way a bar is.
       return Align(alignment: AlignmentDirectional.center, child: shape);
     }

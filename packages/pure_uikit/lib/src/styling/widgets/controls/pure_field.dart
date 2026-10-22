@@ -1,35 +1,21 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show TextInputFormatter;
-import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 import 'package:pure_uikit/src/styling/style/style.dart';
 
-/// The kit's text field: one widget whose plate is drawn here, in every design
-/// language, over Flutter's own editing engine.
+/// The kit's text field: one widget whose plate is drawn here, over Flutter's
+/// own editing engine.
 ///
 /// Editing stays exactly where it was — a [TextField] wraps the text, the
 /// controller, the focus plumbing, the keyboard hints and the selection
 /// gestures, so typing, cursoring, formatters, obscuring and submission behave
 /// identically to before and to the app's 44 call sites. What changes is the
-/// decoration: every library chrome (Material's outlined box, Cupertino's and
-/// macOS's plates, Fluent's box, shadcn's border, the glass and neumorphic
-/// surfaces) is now painted by this file from the theme's own tokens, so one
-/// interaction contract holds everywhere — hover lifts the border, focus draws
-/// the language's ring, an error recolours it and adds a caption, a disabled
-/// field greys out and answers nothing, and the plate animates between those
-/// states on the token's motion. Switching `UiConfig.language` re-skins every
-/// field, and none of them borrows a foreign decoration to do it.
-///
-/// Each language keeps its own grammar rather than a shared box: Material 3's
-/// outline tightens to a two-width accent on focus, iOS answers a soft accent
-/// glow over its 5-radius plate, macOS runs the 7-radius well with the
-/// platform focus halo, WinUI darkens its bottom edge into the accent underline
-/// while the sides stay grey, Yaru takes the distribution accent as a solid
-/// outline, forui/wind ring the field with shadcn's offset focus ring, glass
-/// frosts the plate through a real backdrop blur where the device affords it,
-/// and neumorphic presses the extruded surface in when focused.
+/// decoration: the plate is painted by this file from the theme's own tokens in
+/// the WinUI grammar — the grey hairline box whose bottom edge darkens into the
+/// accent underline — so one interaction contract holds everywhere: hover lifts
+/// the border, focus draws the ring, an error recolours it and adds a caption,
+/// a disabled field greys out and answers nothing, and the plate animates
+/// between those states on the token's motion.
 class PureTextField extends StatelessWidget {
   /// A text field.
   const new({
@@ -81,7 +67,7 @@ class PureTextField extends StatelessWidget {
   final bool readOnly;
 
   /// Whether the field hides its content. Forces [maxLines] to one, as every
-  /// language's password field does.
+  /// password field does.
   final bool obscure;
 
   /// The line count; a value above one grows the plate with its content.
@@ -135,7 +121,7 @@ class PureTextField extends StatelessWidget {
     return _FieldShell(
       // The branch a field draws is its identity in tests and diagnostics.
       key: ValueKey('PureTextField.${language.name}'),
-      visual: _FieldVisual.resolve(theme),
+      visual: _FieldVisual.fluent(),
       controller: controller,
       focusNode: focusNode,
       placeholder: placeholder,
@@ -160,11 +146,10 @@ class PureTextField extends StatelessWidget {
   }
 }
 
-/// How one design language paints the plate around the text: the fill, the
-/// border in each interaction state, the corner, the motion's ink and whether
-/// the surface frosts what sits behind it. Every value is a function of the
-/// resolved theme, so a language re-skin, a dark switch and the accent all come
-/// out of the same tokens the kit's other controls read.
+/// How the plate around the text is painted: the fill, the border in each
+/// interaction state, the corner, the motion's ink. Every value is a function
+/// of the resolved theme, so a dark switch and the accent all come out of the
+/// same tokens the kit's other controls read.
 @immutable
 final class _FieldVisual {
   const new({
@@ -173,89 +158,8 @@ final class _FieldVisual {
     required this.contentPadding,
     required this.minHeight,
     required this.disabledAlpha,
-    required this.frosted,
     this.bottomRule,
   });
-
-  /// Material 3's outlined box: a container surface with a full hairline at
-  /// rest that lifts to the text grey under the pointer and tightens to a
-  /// two-width accent outline on focus.
-  factory material() {
-    return _FieldVisual(
-      radius: (theme) => BorderRadius.circular(theme.input.borderRadius),
-      contentPadding: _inset,
-      minHeight: (theme) => theme.input.height,
-      disabledAlpha: (theme) => theme.token.motion.opacityLoading,
-      frosted: false,
-      plate: (theme, {required focused, required hovered, required pressed, required disabled, required error}) {
-        final line = _outline(theme, focused: focused, hovered: hovered, pressed: pressed, error: error);
-        return BoxDecoration(
-          color: disabled ? theme.colors.fillTertiary : theme.input.background,
-          borderRadius: BorderRadius.circular(theme.input.borderRadius),
-          border: Border.all(color: line, width: focused ? 2 : theme.token.motion.lineWidth),
-        );
-      },
-    );
-  }
-
-  /// Cupertino's iOS plate: the classic 5-radius field, a hairline you barely
-  /// see at rest, and on focus the accent border plus the soft glow iOS rings
-  /// a focused control with.
-  factory cupertino() {
-    return _FieldVisual(
-      radius: (theme) => BorderRadius.circular(5),
-      contentPadding: (theme) => _inset(theme, vertical: theme.token.scale.sizes.sm),
-      minHeight: (theme) => theme.input.height,
-      disabledAlpha: (theme) => theme.token.motion.opacityLoading,
-      frosted: false,
-      plate: (theme, {required focused, required hovered, required pressed, required disabled, required error}) {
-        final accent = theme.colors.primary;
-        final line = error
-            ? theme.colors.error
-            : focused
-            ? accent
-            : hovered || pressed
-            ? theme.colors.border
-            : theme.colors.borderSecondary;
-        return BoxDecoration(
-          color: disabled ? theme.colors.fillTertiary : theme.input.background,
-          borderRadius: BorderRadius.circular(5),
-          border: Border.all(color: line, width: focused ? 2 : theme.token.motion.lineWidth),
-          boxShadow: focused && !disabled
-              ? [BoxShadow(color: accent.withValues(alpha: 0.18), blurRadius: 6)]
-              : const [],
-        );
-      },
-    );
-  }
-
-  /// macOS's well: the 7-radius elevated plate with its hairline, the accent
-  /// border on focus, and the platform's own blue focus halo around it.
-  factory macos() {
-    return _FieldVisual(
-      radius: (theme) => BorderRadius.circular(7),
-      contentPadding: (theme) => _inset(theme, horizontal: theme.input.paddingInline + theme.token.scale.sizes.xxs),
-      minHeight: (theme) => theme.input.height,
-      disabledAlpha: (theme) => theme.token.motion.opacityLoading,
-      frosted: false,
-      plate: (theme, {required focused, required hovered, required pressed, required disabled, required error}) {
-        final accent = theme.colors.primary;
-        final line = error
-            ? theme.colors.error
-            : focused
-            ? accent
-            : hovered || pressed
-            ? theme.colors.border
-            : theme.colors.borderSecondary;
-        return BoxDecoration(
-          color: disabled ? theme.colors.fillTertiary : theme.colors.bgElevated,
-          borderRadius: BorderRadius.circular(7),
-          border: Border.all(color: line, width: focused ? 2 : theme.token.motion.lineWidth),
-          boxShadow: focused && !disabled ? [BoxShadow(color: accent.withValues(alpha: 0.4), blurRadius: 6)] : const [],
-        );
-      },
-    );
-  }
 
   /// Windows Fluent's WinUI box: the sides keep their grey hairline while the
   /// bottom edge is the accent line the control is known for — it darkens under
@@ -273,7 +177,6 @@ final class _FieldVisual {
       contentPadding: _inset,
       minHeight: (theme) => theme.input.height,
       disabledAlpha: (theme) => theme.token.motion.opacityLoading,
-      frosted: false,
       plate: (theme, {required focused, required hovered, required pressed, required disabled, required error}) {
         return BoxDecoration(
           color: disabled
@@ -307,157 +210,10 @@ final class _FieldVisual {
     );
   }
 
-  /// Ubuntu Yaru's field: the lightly rounded container that takes the
-  /// distribution accent as a solid two-width outline on focus — the same
-  /// accent-as-outline answer its checkbox gives, not Material's.
-  factory yaru() {
-    return _FieldVisual(
-      radius: (theme) => BorderRadius.circular(theme.token.scale.radii.sm),
-      contentPadding: _inset,
-      minHeight: (theme) => theme.input.height,
-      disabledAlpha: (theme) => theme.token.motion.opacityLoading,
-      frosted: false,
-      plate: (theme, {required focused, required hovered, required pressed, required disabled, required error}) {
-        final line = _outline(theme, focused: focused, hovered: hovered, pressed: pressed, error: error);
-        return BoxDecoration(
-          color: disabled ? theme.colors.fillTertiary : theme.input.background,
-          borderRadius: BorderRadius.circular(theme.token.scale.radii.sm),
-          border: Border.all(
-            color: error || focused ? line : theme.colors.borderSecondary,
-            width: focused ? 2 : theme.token.motion.lineWidth,
-          ),
-        );
-      },
-    );
-  }
-
-  /// forui's shadcn field and the wind branch that sits in the same arm as it
-  /// (and as the tab bar and checkbox put wind beside the web-descended
-  /// languages): a crisp rounded border that inverts to the accent on focus and
-  /// rings the field with shadcn's offset focus ring — a gap, then the accent —
-  /// rather than a thick outline.
-  factory crisp() {
-    return _FieldVisual(
-      radius: (theme) => BorderRadius.circular(theme.token.scale.radii.sm),
-      contentPadding: _inset,
-      minHeight: (theme) => theme.input.height,
-      disabledAlpha: (theme) => theme.token.motion.opacityLoading,
-      frosted: false,
-      plate: (theme, {required focused, required hovered, required pressed, required disabled, required error}) {
-        final accent = theme.colors.primary;
-        final line = error
-            ? theme.colors.error
-            : focused
-            ? accent
-            : hovered || pressed
-            ? theme.colors.textSecondary
-            : theme.colors.border;
-        final ring = (error ? theme.colors.error : accent).withValues(alpha: 0.5);
-        return BoxDecoration(
-          color: disabled ? theme.colors.fillTertiary : theme.input.background,
-          borderRadius: BorderRadius.circular(theme.token.scale.radii.sm),
-          border: Border.all(color: line, width: focused || error ? 2 : theme.token.motion.lineWidth),
-          boxShadow: focused && !disabled
-              ? [BoxShadow(color: theme.colors.bgElevated, spreadRadius: 2), BoxShadow(color: ring, spreadRadius: 4)]
-              : const [],
-        );
-      },
-    );
-  }
-
-  /// The glass language: a frosted plate (a real backdrop blur where the device
-  /// can afford it, the same film the tab bar's glass track wears where it
-  /// cannot) with a hairline that turns to the accent on focus.
-  factory glass() {
-    Color film(PureTheme theme, {required bool focused, required bool hovered, required bool pressed}) {
-      final alpha = focused || pressed
-          ? (theme.isDark ? 0.16 : 0.68)
-          : hovered
-          ? (theme.isDark ? 0.12 : 0.62)
-          : (theme.isDark ? 0.08 : 0.55);
-      return Colors.white.withValues(alpha: alpha);
-    }
-
-    return _FieldVisual(
-      radius: (theme) => BorderRadius.circular(theme.token.scale.radii.lg),
-      contentPadding: (theme) => _inset(theme, horizontal: theme.token.scale.sizes.lg),
-      minHeight: (theme) => theme.input.height,
-      disabledAlpha: (theme) => theme.token.motion.opacityLoading,
-      frosted: true,
-      plate: (theme, {required focused, required hovered, required pressed, required disabled, required error}) {
-        final edge = error
-            ? theme.colors.error
-            : focused
-            ? theme.colors.primary
-            : theme.isDark
-            ? Colors.white.withValues(alpha: 0.18)
-            : Colors.white.withValues(alpha: 0.7);
-        return BoxDecoration(
-          color: film(theme, focused: focused, hovered: hovered, pressed: pressed),
-          borderRadius: BorderRadius.circular(theme.token.scale.radii.lg),
-          border: Border.all(color: edge, width: focused ? 2 : theme.token.motion.lineWidth),
-        );
-      },
-    );
-  }
-
-  /// The neumorphic language: the plate raised on two soft shadows at rest, and
-  /// pressed into a well with an accent hairline once focused.
-  factory neumorphic() {
-    List<BoxShadow> raised(PureTheme theme) => [
-      BoxShadow(color: theme.colors.shadowBase, blurRadius: 6, offset: const Offset(3, 3)),
-      BoxShadow(
-        color: theme.colors.white.withValues(alpha: theme.isDark ? 0.04 : 0.8),
-        blurRadius: 6,
-        offset: const Offset(-3, -3),
-      ),
-    ];
-    List<BoxShadow> sunk(PureTheme theme) => [
-      for (final shadow in raised(theme))
-        BoxShadow(color: shadow.color, blurRadius: shadow.blurRadius, offset: -shadow.offset),
-    ];
-    return _FieldVisual(
-      radius: (theme) => BorderRadius.circular(theme.token.scale.radii.lg),
-      contentPadding: (theme) => _inset(theme, horizontal: theme.token.scale.sizes.lg),
-      minHeight: (theme) => theme.input.height,
-      disabledAlpha: (theme) => theme.token.motion.opacityLoading,
-      frosted: false,
-      plate: (theme, {required focused, required hovered, required pressed, required disabled, required error}) {
-        final accent = error ? theme.colors.error : theme.colors.primary;
-        return BoxDecoration(
-          color: disabled ? theme.colors.fillTertiary : theme.colors.bgContainer,
-          borderRadius: BorderRadius.circular(theme.token.scale.radii.lg),
-          border: focused
-              ? Border.all(color: accent, width: 2)
-              : (hovered || pressed) && !disabled
-              ? Border.all(color: theme.colors.border, width: theme.token.motion.lineWidth)
-              : null,
-          boxShadow: focused || pressed ? sunk(theme) : raised(theme),
-        );
-      },
-    );
-  }
-
-  /// The branch one design language paints, chosen from the resolved theme the
-  /// way the tab bar and the checkbox resolve theirs.
-  factory resolve(PureTheme theme) => switch (theme.config.language) {
-    PureDesignLanguage.material => _FieldVisual.material(),
-    PureDesignLanguage.cupertino => _FieldVisual.cupertino(),
-    PureDesignLanguage.macos => _FieldVisual.macos(),
-    PureDesignLanguage.fluent => _FieldVisual.fluent(),
-    PureDesignLanguage.yaru => _FieldVisual.yaru(),
-    // forui and wind share the crisp branch, as they share the checkbox's and
-    // the tab bar's.
-    PureDesignLanguage.forui || PureDesignLanguage.wind => _FieldVisual.crisp(),
-    PureDesignLanguage.glass => _FieldVisual.glass(),
-    PureDesignLanguage.neumorphic => _FieldVisual.neumorphic(),
-  };
-
   /// The plate's corner.
   final BorderRadius Function(PureTheme theme) radius;
 
-  /// The plate's whole surface for one state: fill, border (per-side in the
-  /// languages whose edge differs by side), ring and shadow.
+  /// The plate's whole surface for one state: fill and border.
   final BoxDecoration Function(
     PureTheme theme, {
     required bool focused,
@@ -478,9 +234,7 @@ final class _FieldVisual {
   final double Function(PureTheme theme) disabledAlpha;
 
   /// The accent rule laid over the plate's bottom edge in the resolved state,
-  /// or null for the languages whose outline is one colour all the way round.
-  /// Only the fluent branch sets it, and only because Flutter refuses a
-  /// two-colour border on a rounded box.
+  /// or null for an outline that is one colour all the way round.
   final _BottomRule Function(
     PureTheme theme, {
     required bool focused,
@@ -490,32 +244,6 @@ final class _FieldVisual {
     required bool error,
   })?
   bottomRule;
-
-  /// Whether the plate frosts what sits behind it — true only of the glass
-  /// branch, and honoured only while [PureTheme.canBlur] agrees.
-  final bool frosted;
-
-  /// The outline colour the box-drawing languages share: the error role on an
-  /// error, the accent on focus, the text grey under the pointer, the resting
-  /// border otherwise.
-  static Color _outline(
-    PureTheme theme, {
-    required bool focused,
-    required bool hovered,
-    required bool pressed,
-    required bool error,
-  }) {
-    if (error) {
-      return theme.colors.error;
-    }
-    if (focused) {
-      return theme.colors.primary;
-    }
-    if (hovered || pressed) {
-      return theme.colors.textSecondary;
-    }
-    return theme.colors.border;
-  }
 
   /// The grey hairline WinUI keeps on its three non-accent sides: the error
   /// role on an error, the stronger grey once the field is engaged, the resting
@@ -537,15 +265,14 @@ final class _FieldVisual {
     return theme.colors.borderSecondary;
   }
 
-  /// The token inset, overridable per side for the languages whose plate wants
-  /// more air than the base control padding.
+  /// The token inset, overridable per side.
   static EdgeInsets _inset(PureTheme theme, {double? horizontal, double? vertical}) => EdgeInsets.symmetric(
     horizontal: horizontal ?? theme.input.paddingInline,
     vertical: vertical ?? theme.input.paddingBlock,
   );
 }
 
-/// The accent rule a language lays along the plate's bottom edge: its ink and
+/// The accent rule laid along the plate's bottom edge: its ink and
 /// its thickness in one resolved state. It rides over the plate as its own
 /// animated layer, clipped to the plate's corner, because a rounded
 /// [BoxDecoration] may not carry two border colours.
@@ -560,8 +287,8 @@ final class _BottomRule {
   final double width;
 }
 
-/// The field's body: the editing engine wrapped in the language's self-painted
-/// plate, under the interaction contract every language shares — hover and
+/// The field's body: the editing engine wrapped in the self-painted
+/// plate, under the interaction contract — hover and
 /// focus tints, the disabled render, the error recolour and caption, the focus
 /// ring, `textField` semantics and the plate's state animation.
 class _FieldShell extends StatefulWidget {
@@ -770,10 +497,9 @@ class _FieldShellState extends State<_FieldShell> {
       child: field,
     );
 
-    // A language that marks its bottom edge with a rule of its own (WinUI's
-    // accent underline) lays it inside the plate's corner, so the hairline
-    // stays one colour — and stays paintable — while the edge still thickens
-    // into the accent on focus.
+    // The WinUI accent underline lays inside the plate's corner, so the
+    // hairline stays one colour — and stays paintable — while the edge still
+    // thickens into the accent on focus.
     final rule = visual.bottomRule?.call(
       theme,
       focused: focused,
@@ -806,15 +532,6 @@ class _FieldShellState extends State<_FieldShell> {
             ),
           );
 
-    // The glass branch frosts what sits behind the plate, real blur where the
-    // device can afford it — the same policy the tab bar and switch read.
-    final box = !visual.frosted || !theme.canBlur
-        ? edged
-        : ClipRRect(
-            borderRadius: visual.radius(theme),
-            child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14), child: edged),
-          );
-
     final observed = MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
@@ -824,7 +541,7 @@ class _FieldShellState extends State<_FieldShell> {
         onPointerDown: (_) => setState(() => _pressed = true),
         onPointerUp: (_) => setState(() => _pressed = false),
         onPointerCancel: (_) => setState(() => _pressed = false),
-        child: box,
+        child: edged,
       ),
     );
 

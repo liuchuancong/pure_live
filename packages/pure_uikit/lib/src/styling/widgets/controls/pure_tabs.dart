@@ -25,12 +25,9 @@ final class PureTab {
   int get hashCode => Object.hash(label, icon, enabled);
 }
 
-/// The kit's tab strip: a [PureTab]-shaped door into [PureTabBar]. Every
-/// design language draws the pill bar's own strip — the ink-line page tab,
-/// the accent bar riding the bottom edge, hover previewing the same ink —
-/// so a page's tabs and the shell's tabs are one control. The strip stands
-/// its tier's height where the caller reserved it and shrinks to a slot that
-/// bounds it lower (a title row), the way [PureTabBar] does.
+/// The kit's tab strip: a [PureTab]-shaped door into [PureTabBar]. The strip
+/// stands its tier's height where the caller reserved it and shrinks to a slot
+/// that bounds it lower (a title row), the way [PureTabBar] does.
 class PureTabs extends StatelessWidget {
   /// A tab strip.
   const new({

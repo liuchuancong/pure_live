@@ -1,6 +1,6 @@
 /// The kit's input controls: buttons, fields, selection widgets, tab bars
-/// and the rest of the form-and-command vocabulary, each dispatched to the
-/// active design language by its own implementation.
+/// and the rest of the form-and-command vocabulary, each painted in the
+/// Fluent grammar from the resolved theme's own tokens.
 library;
 
 export 'pure_button.dart';

@@ -66,6 +66,7 @@
 | 2026-10-23 | T9 | (随本提交) | ✅ | 外观页接线收敛:删「设计语言」行/选择器/重启弹窗、pendingDesignLanguageProvider 与检索条目,uiConfigFromAppearance 将 UiConfig.language 固定写 fluent,l10n 五键按方案保留避免连锁改动;脚本侧 flutter analyze 全绿,dart format 4 文件 0 changed;已知 font_theme_test.dart:72-83 前两用例仍断言已删的按语言取字体行为,测试不在本任务范围,待后续跟进 |
 | 2026-10-23 | T2 | (随本提交) | ✅ | fluent 用法手册落盘 docs/fluent-ui-notes.md:按 8 个主题(应用根与主题/导航骨架/页面脚手架/按钮/对话框/输入框/标签页/焦点与快捷键)收录 24 条 API,全部条目经 fluent_ui 示例仓库实读核对并附 file:line 引用,未引入示例之外的 API;纯文档改动,无代码影响 |
 | 2026-10-23 | T3 | (随本提交) | ✅ | Fluent 主题桥接:新增 pure_uikit src/theme/fluent_theme.dart 的 FluentThemeBridge,由 PureTheme 的亮度、colors.primary 七步 accent、字体、圆角生成 fluent_ui FluentThemeData 与 Material ThemeData,经 theme barrel 导出至包入口;无设计语言分支,非 fluent 值一律回落 Fluent;纯新增,旧 API/依赖零改动,包级 dart analyze 全绿(flutter analyze 由脚本执行) |
+| 2026-10-23 | T5 | (随本提交) | ✅ | 控件分发清理:controls 目录 10 个控件删除 PureDesignLanguage switch/if 分发与其余 8 语言的工厂、绘制代码与专属辅助类(净删约 4000 行),只保留 fluent 路径,公开 API(类名、参数,含 PureButton.fluentShape)不变,非 fluent 值一律回落 Fluent;grep 目录 0 处 PureDesignLanguage/退役语言值引用,包级 dart analyze 全绿;断言已删分支视觉的既有测试(pure_switch_test 的 macos/glass、pure_progress_test 按语言厚度表等)运行时会失败,测试文件按规则未动,待后续跟进 |
 
 ## 阻塞与待定
 
