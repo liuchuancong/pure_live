@@ -44,25 +44,7 @@ const double _sidebarMinWidth = 150;
 const double _sidebarMaxWidth = 300;
 const double _sidebarDefaultWidth = 180;
 
-final class _HomeShellState extends ConsumerState<HomeShell>
-    with SingleTickerProviderStateMixin {
-  /// The branch swap's fade-and-slide driver. go_router keeps every branch's
-  /// navigator alive and shows one at a time with no transition of its own,
-  /// so the shell owns the motion: on a branch change the incoming page fades
-  /// in with a short push from the travel direction. This also covers the
-  /// one-frame flash a re-arming page used to leave behind on an instant cut.
-  late final AnimationController _branchSwap = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 220),
-    value: 1,
-  );
-
-  /// +1 when the last switch moved down the branch list, -1 when up; the
-  /// slide comes from the direction travelled.
-  double _swapDirection = 1;
-
-  int? _lastBranchIndex;
-
+final class _HomeShellState extends ConsumerState<HomeShell> {
   /// The width while a drag is moving the handle; null lets the stored value
   /// rule.
   double? _dragWidth;
@@ -70,7 +52,6 @@ final class _HomeShellState extends ConsumerState<HomeShell>
   @override
   void initState() {
     super.initState();
-    _lastBranchIndex = widget.navigationShell.currentIndex;
     // 剪贴板口令: the clipboard's room links are looked for when the app
     // comes back to the foreground, for as long as the shell is up.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -83,19 +64,7 @@ final class _HomeShellState extends ConsumerState<HomeShell>
   }
 
   @override
-  void didUpdateWidget(HomeShell oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final index = widget.navigationShell.currentIndex;
-    if (index != _lastBranchIndex) {
-      _swapDirection = _lastBranchIndex == null || index > _lastBranchIndex! ? 1 : -1;
-      _lastBranchIndex = index;
-      _branchSwap.forward(from: 0);
-    }
-  }
-
-  @override
   void dispose() {
-    _branchSwap.dispose();
     super.dispose();
   }
 
@@ -169,20 +138,7 @@ final class _HomeShellState extends ConsumerState<HomeShell>
             onPopInvokedWithResult: (didPop, _) {
               if (!didPop && Platform.isAndroid) unawaited(SystemNavigator.pop());
             },
-            child: AnimatedBuilder(
-              animation: _branchSwap,
-              child: navigationShell,
-              builder: (context, child) => FadeTransition(
-                opacity: CurvedAnimation(parent: _branchSwap, curve: Curves.easeOutCubic),
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: Offset(_swapDirection * 0.04, 0),
-                    end: Offset.zero,
-                  ).animate(CurvedAnimation(parent: _branchSwap, curve: Curves.easeOutCubic)),
-                  child: child,
-                ),
-              ),
-            ),
+            child: navigationShell,
           ),
         );
         // The phone: the bottom bar carries the five primary branches and
@@ -256,21 +212,36 @@ final class _HomeShellState extends ConsumerState<HomeShell>
             ),
           );
         } else {
-          navigation = PureNavigationRail(
+          // The collapsed pane is the settings page's own compact rail — the
+          // same rows, the same selection motion — at the rail's width, with
+          // the shell's toggle above and its settings entry below.
+          navigation = SizedBox(
             key: const ValueKey('home-rail'),
-            destinations: destinations,
-            selectedId: selected.name,
-            onDestinationSelected: (destination) =>
-                activateShellDestination(context, ref: ref, navigationShell: navigationShell, id: destination.id),
-            showBrand: false,
-            backgroundColor: Colors.transparent,
-            header: Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Center(child: toggle),
-            ),
-            footer: const Padding(
-              padding: EdgeInsets.only(bottom: 8),
-              child: Center(child: _SettingsIcon()),
+            width: 72,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 4),
+                  child: Center(child: toggle),
+                ),
+                Expanded(
+                  child: SettingsNavPane(
+                    compact: true,
+                    items: [
+                      for (final destination in destinations)
+                        SettingsNavItem(id: destination.id, label: destination.label, icon: destination.icon),
+                    ],
+                    selectedId: selected.name,
+                    onSelected: (id) =>
+                        activateShellDestination(context, ref: ref, navigationShell: navigationShell, id: id),
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 8),
+                  child: Center(child: _SettingsIcon()),
+                ),
+              ],
             ),
           );
         }
