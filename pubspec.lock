@@ -370,7 +370,7 @@ packages:
     source: hosted
     version: "0.3.4"
   cli_util:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: cli_util
       sha256: "89b8801ba49f8b593fbf2d3e59efd0f566c46cd4ba6837ae2610c72b52a0f899"
@@ -681,14 +681,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.1.2"
+  ffigen_js:
+    dependency: transitive
+    description:
+      name: ffigen_js
+      sha256: ef53d70a1b7b4a48483613d3e0f5464615026d2abf68f887488bc606a54173ce
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.16-pre"
   ffmpeg_kit_extended_flutter:
     dependency: "direct overridden"
     description:
       name: ffmpeg_kit_extended_flutter
-      sha256: cde6cba6e3d31238ee19172ada1057bf16540510485358f5fd73e5cd1abff089
+      sha256: "9623aa07d20953669b7cf1cfe4bcbd85c13e25b1b7ce4f7eb67b188bf86fdf73"
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.2"
+    version: "1.0.0"
   file:
     dependency: transitive
     description:
@@ -1486,6 +1494,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.0"
+  lucide_icons_flutter:
+    dependency: transitive
+    description:
+      name: lucide_icons_flutter
+      sha256: a07370b432d4a88ed8fd6c26b5bbcc4e29fb7b24b6350517fd32209a6b1a50c1
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.1"
   macos_ui:
     dependency: transitive
     description:
@@ -1899,10 +1915,10 @@ packages:
     dependency: transitive
     description:
       name: package_config
-      sha256: ffcf4cf3d6c0b74ac43708d9f56625506e8a68aa935abe9d267a7330f320eb5d
+      sha256: f096c55ebb7deb7e384101542bfba8c52696c1b56fca2eb62827989ef2353bbc
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.0"
+    version: "2.2.0"
   package_info_plus:
     dependency: transitive
     description:
@@ -2111,6 +2127,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.2"
+  quiver:
+    dependency: transitive
+    description:
+      name: quiver
+      sha256: ea0b925899e64ecdfbf9c7becb60d5b50e706ade44a85b2363be2a22d88117d2
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.2.2"
   recase:
     dependency: transitive
     description:

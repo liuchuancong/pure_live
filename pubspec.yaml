@@ -49,10 +49,15 @@ dev_dependencies:
 # fork needs code_assets ^2.1.0; the media_core workspace carries the same two
 # overrides for the same reason (see its root pubspec).
 dependency_overrides:
+  # ffmpeg_kit_extended_flutter 1.0.0 -> ffigen_js pins cli_util ^0.4.2, which
+  # is disjoint from melos 8.9's >=0.5.0 <0.7.0. ffigen_js only imports
+  # `cli_logging.dart show Ansi`, a library identical in 0.4.2 and 0.6.0, so
+  # the graph stays on the 0.6.0 it already resolved to.
+  cli_util: ^0.6.0
   code_assets: ^2.1.0
   dbus: ^0.8.0
   equatable: ^3.0.0
-  ffmpeg_kit_extended_flutter: ^0.6.2
+  ffmpeg_kit_extended_flutter: ^1.0.0
   hooks: ^2.2.0
   media_core:
     git:
