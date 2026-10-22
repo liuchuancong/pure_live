@@ -3467,23 +3467,8 @@ class Translations$areas$zh {
 	/// zh: '已取消关注「{name: String}」'
 	String unfollowDone({required String name}) => '已取消关注「${name}」';
 
-	/// zh: '我的收藏'
-	String get myFollows => '我的收藏';
-
-	/// zh: '热门分类'
-	String get hotGroups => '热门分类';
-
-	/// zh: '已连接: {site: String}'
-	String connected({required String site}) => '已连接: ${site}';
-
-	/// zh: '{count} 个分区'
-	String areaCount({required Object count}) => '${count} 个分区';
-
-	/// zh: '{count} 个'
-	String followAreaCount({required Object count}) => '${count} 个';
-
-	/// zh: '这个站点还没有关注的分区'
-	String get noFollowsInSite => '这个站点还没有关注的分区';
+	/// zh: '搜索分区名称'
+	String get searchAreaName => '搜索分区名称';
 }
 
 // Path: popular
@@ -5652,12 +5637,7 @@ extension on Translations {
 			'areas.followEmptyHint' => '点进一个分区，再用右上角的按钮关注它。',
 			'areas.followDone' => ({required String name}) => '已关注「${name}」',
 			'areas.unfollowDone' => ({required String name}) => '已取消关注「${name}」',
-			'areas.myFollows' => '我的收藏',
-			'areas.hotGroups' => '热门分类',
-			'areas.connected' => ({required String site}) => '已连接: ${site}',
-			'areas.areaCount' => ({required Object count}) => '${count} 个分区',
-			'areas.followAreaCount' => ({required Object count}) => '${count} 个',
-			'areas.noFollowsInSite' => '这个站点还没有关注的分区',
+			'areas.searchAreaName' => '搜索分区名称',
 			'popular.allPlatforms' => '全部平台',
 			'popular.allPlatformsHint' => '点按切换平台；平台显示设置可隐藏或排序。',
 			'popular.noPlatforms' => '没有可显示的平台',

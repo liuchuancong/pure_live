@@ -1020,12 +1020,7 @@ class _Translations$areas$en extends Translations$areas$zh {
 	@override String get followEmptyHint => 'Open an area and follow it with the button in its top-right corner.';
 	@override String followDone({required String name}) => 'Following ${name}';
 	@override String unfollowDone({required String name}) => 'Unfollowed ${name}';
-	@override String get myFollows => 'My follows';
-	@override String get hotGroups => 'Hot categories';
-	@override String connected({required String site}) => 'Connected: ${site}';
-	@override String areaCount({required Object count}) => '${count} areas';
-	@override String followAreaCount({required Object count}) => '${count}';
-	@override String get noFollowsInSite => 'No followed areas on this site yet';
+	@override String get searchAreaName => 'Search area names';
 }
 
 // Path: popular
@@ -2637,12 +2632,7 @@ extension on TranslationsEn {
 			'areas.followEmptyHint' => 'Open an area and follow it with the button in its top-right corner.',
 			'areas.followDone' => ({required String name}) => 'Following ${name}',
 			'areas.unfollowDone' => ({required String name}) => 'Unfollowed ${name}',
-			'areas.myFollows' => 'My follows',
-			'areas.hotGroups' => 'Hot categories',
-			'areas.connected' => ({required String site}) => 'Connected: ${site}',
-			'areas.areaCount' => ({required Object count}) => '${count} areas',
-			'areas.followAreaCount' => ({required Object count}) => '${count}',
-			'areas.noFollowsInSite' => 'No followed areas on this site yet',
+			'areas.searchAreaName' => 'Search area names',
 			'popular.allPlatforms' => 'All platforms',
 			'popular.allPlatformsHint' => 'Tap to switch; platform settings hide and order them.',
 			'popular.noPlatforms' => 'No platforms to show',
@@ -2865,13 +2855,13 @@ extension on TranslationsEn {
 			'multiview.muteAll' => 'Mute all',
 			'multiview.unmuteAll' => 'Unmute all',
 			'multiview.audioFocus' => 'Playing sound',
-			_ => null,
-		} ?? switch (path) {
 			'multiview.removeCell' => 'Remove cell',
 			'multiview.noPick' => 'No followed rooms or history yet',
 			'discovery.currentSite' => ({required String site}) => 'Current site: ${site}',
 			'discovery.pickSite' => 'Choose a site',
 			'discovery.searchSite' => 'Search sites',
+			_ => null,
+		} ?? switch (path) {
 			'search.hint' => 'Search rooms by keyword',
 			'search.rooms' => 'Rooms',
 			'search.anchors' => 'Anchors',

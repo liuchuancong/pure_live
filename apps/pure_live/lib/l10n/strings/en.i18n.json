@@ -826,12 +826,7 @@
     "followEmptyHint": "Open an area and follow it with the button in its top-right corner.",
     "followDone": "Following {name: String}",
     "unfollowDone": "Unfollowed {name: String}",
-    "myFollows": "My follows",
-    "hotGroups": "Hot categories",
-    "connected": "Connected: {site: String}",
-    "areaCount": "{count} areas",
-    "followAreaCount": "{count}",
-    "noFollowsInSite": "No followed areas on this site yet"
+    "searchAreaName": "Search area names"
   },
   "popular": {
     "allPlatforms": "All platforms",

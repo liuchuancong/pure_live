@@ -1106,12 +1106,7 @@
     "followEmptyHint": "点进一个分区，再用右上角的按钮关注它。",
     "followDone": "已关注「{name: String}」",
     "unfollowDone": "已取消关注「{name: String}」",
-    "myFollows": "我的收藏",
-    "hotGroups": "热门分类",
-    "connected": "已连接: {site: String}",
-    "areaCount": "{count} 个分区",
-    "followAreaCount": "{count} 个",
-    "noFollowsInSite": "这个站点还没有关注的分区"
+    "searchAreaName": "搜索分区名称"
   },
   "popular": {
     "allPlatforms": "全部平台",

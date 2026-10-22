@@ -4,13 +4,11 @@ import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_library/live_library.dart' show FollowArea;
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_sites/live_sites.dart' show LiveArea, LiveAreaProvider, LiveSite;
 import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/app/shell/main_page_frame.dart';
 import 'package:pure_live/app/shell/shell_actions.dart';
-import 'package:pure_live/features/discovery/areas_common.dart' show areasCatalogProvider, followedAreasProvider;
 import 'package:pure_live/features/discovery/site_picker.dart';
 import 'package:pure_live/features/room/paging.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
@@ -41,6 +39,16 @@ final class _AreasPageState extends ConsumerState<AreasPage> {
 
   /// Whether the preferred-platform jump was already applied.
   bool _appliedPreferred = false;
+
+  /// The area-name filter the header's search field drives (the reference's
+  /// 搜索分区名称): matches across every category of the current site.
+  final TextEditingController _search = TextEditingController();
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,61 +103,63 @@ final class _AreasPageState extends ConsumerState<AreasPage> {
     // (the reference's shape), category tabs under them for grouped
     // platforms, and a category opens its room route.
     final index = _selected.clamp(0, capable.length - 1);
-    // The header's site picker and the wide rail answer the reference's
-    // 分区 shape: the platform lives in the header, the follows and the hot
-    // categories live beside the catalogue.
-    final windowWidth = MediaQuery.sizeOf(context).width;
-    final showRail = desktopPagesIn(ref, windowWidth) && windowWidth >= 1100;
+    // The header carries the two answers the reference's 分区 leads with:
+    // which site the catalogue reads, and what the viewer is looking for —
+    // the search filters every category of the current site at once.
     final current = capable[index];
     return PureScaffold(
       appBar: PureAppBar(
         leading: phoneTab ? const HomeMenuButton() : null,
         title: t.tabs.areas,
-        titleWidget: SitePickerButton(
-          key: const ValueKey('areas-site-picker'),
-          sites: capable,
-          current: current,
-          onSelected: (site) => setState(() {
-            _selected = capable.indexWhere((candidate) => candidate.manifest.id == site.manifest.id);
-          }),
+        titleWidget: Row(
+          children: [
+            SitePickerButton(
+              key: const ValueKey('areas-site-picker'),
+              sites: capable,
+              current: current,
+              onSelected: (site) => setState(() {
+                _selected = capable.indexWhere((candidate) => candidate.manifest.id == site.manifest.id);
+              }),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: PureTextField(
+                key: const ValueKey('areas-search'),
+                controller: _search,
+                onChanged: (_) => setState(() {}),
+                placeholder: t.areas.searchAreaName,
+                prefix: const Icon(Icons.search_rounded, size: 18),
+              ),
+            ),
+          ],
         ),
       ),
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      body: Stack(
         children: [
-          Expanded(
-            child: Stack(
-              children: [
-                PureTabView(
-                  index: index,
-                  onIndexChanged: (value) => setState(() => _selected = value),
-                  pages: [
-                    for (var position = 0; position < capable.length; position++)
-                      _PlatformAreas(
-                        key: ValueKey(capable[position].manifest.id),
-                        site: capable[position],
-                        active: position == index,
-                      ),
-                  ],
+          PureTabView(
+            index: index,
+            onIndexChanged: (value) => setState(() => _selected = value),
+            pages: [
+              for (var position = 0; position < capable.length; position++)
+                _PlatformAreas(
+                  key: ValueKey(capable[position].manifest.id),
+                  site: capable[position],
+                  active: position == index,
+                  query: _search.text,
                 ),
-                // The followed partitions sit on their own page on the narrow
-                // layouts; the wide rail below carries them in place.
-                if (!showRail)
-                  PositionedDirectional(
-                    end: MainLayout.gutterOf(context),
-                    bottom: desktopPagesIn(ref, windowWidth) ? 88 : 24,
-                    child: PureButton(
-                      key: const ValueKey('areas-followed-button'),
-                      label: t.areas.followedAreas,
-                      icon: Icons.favorite_outline,
-                      size: ControlSize.sm,
-                      onPressed: () => unawaited(const FollowedAreasRoute().push<void>(context)),
-                    ),
-                  ),
-              ],
+            ],
+          ),
+          PositionedDirectional(
+            end: MainLayout.gutterOf(context),
+            bottom: desktopPagesIn(ref, MediaQuery.sizeOf(context).width) ? 88 : 24,
+            child: PureButton(
+              key: const ValueKey('areas-followed-button'),
+              label: t.areas.followedAreas,
+              icon: Icons.favorite_outline,
+              size: ControlSize.sm,
+              onPressed: () => unawaited(const FollowedAreasRoute().push<void>(context)),
             ),
           ),
-          if (showRail) _AreasRail(site: current),
         ],
       ),
     );
@@ -159,13 +169,17 @@ final class _AreasPageState extends ConsumerState<AreasPage> {
 /// One platform's catalogue: its areas, grouped by their parent category.
 final class _PlatformAreas extends ConsumerStatefulWidget {
   /// A catalogue for [site].
-  const new({required this.site, required this.active, super.key});
+  const new({required this.site, required this.active, required this.query, super.key});
 
   final LiveSite site;
 
   /// Whether this catalogue's tab is the one on screen; a hidden tab neither
   /// fetches nor ticks — the popular page's `_SiteFeed` semantics.
   final bool active;
+
+  /// The area-name filter; non-empty, it searches across every category and
+  /// the group tab row steps aside.
+  final String query;
 
   @override
   ConsumerState<_PlatformAreas> createState() => _PlatformAreasState();
@@ -309,10 +323,23 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas>
         action: PureButton(label: context.t.common.retry, icon: Icons.refresh, onPressed: _load),
       );
     }
-    _selectedGroup = _selectedGroup.clamp(0, groups.length - 1);
-    final parents = groups.keys.toList(growable: false);
-    final selectedParent = parents[_selectedGroup];
-    final visible = groups.length > 1 ? groups[selectedParent]! : groups.values.expand((list) => list).toList();
+    final needle = widget.query.trim().toLowerCase();
+    final List<LiveArea> visible;
+    final List<String> parents;
+    if (needle.isEmpty) {
+      _selectedGroup = _selectedGroup.clamp(0, groups.length - 1);
+      parents = groups.keys.toList(growable: false);
+      final selectedParent = parents[_selectedGroup];
+      visible = groups.length > 1 ? groups[selectedParent]! : groups.values.expand((list) => list).toList();
+    } else {
+      // Searching: every category of the site at once, so a name is found
+      // wherever the platform filed it.
+      parents = const [];
+      visible = [
+        for (final area in areas)
+          if (area.areaName.toLowerCase().contains(needle)) area,
+      ];
+    }
     final gutter = MainLayout.gutterOf(context);
     // The shared paging rule (the reference's `platform_areas_view`): wide
     // windows page the catalogue with numbers, ← → and the settings' size
@@ -438,7 +465,7 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas>
 
     return Column(
       children: [
-        if (groups.length > 1)
+        if (needle.isEmpty && groups.length > 1)
           SizedBox(
             height: 48,
             child: Padding(
@@ -453,163 +480,6 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas>
           ),
         Expanded(child: body),
       ],
-    );
-  }
-}
-
-/// The wide catalogue's side rail (the reference's right column): the
-/// followed partitions of this site, the site's biggest categories, and the
-/// connection footer. Everything on it opens a room list or moves the
-/// catalogue's group tab; nothing here fetches a second copy of what the
-/// grid already shows.
-final class _AreasRail extends ConsumerWidget {
-  /// A rail beside the catalogue of [site].
-  const new({required this.site});
-
-  /// The site whose catalogue shows now.
-  final LiveSite site;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = PureTheme.of(context);
-    final follows = ref.watch(followedAreasProvider).value ?? const <FollowArea>[];
-    final mine = [
-      for (final area in follows)
-        if (area.platform == site.manifest.id) area,
-    ];
-    final catalog = ref.watch(areasCatalogProvider(site.manifest.id));
-    // The parent categories by how much the site puts in them, biggest first.
-    final groups = <String, int>{};
-    for (final area in catalog.value ?? const <LiveArea>[]) {
-      final parent = area.parentAreaName ?? '';
-      groups[parent] = (groups[parent] ?? 0) + 1;
-    }
-    final hot = (groups.entries.toList()..sort((a, b) => b.value.compareTo(a.value))).take(5).toList();
-    return SizedBox(
-      width: 264,
-      child: ColoredBox(
-        color: theme.colors.bgLayout,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
-          children: [
-            _RailCard(
-              icon: Icons.favorite_outline,
-              title: context.t.areas.myFollows,
-              badge: '${mine.length}',
-              children: mine.isEmpty
-                  ? [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
-                        child: Text(
-                          context.t.areas.noFollowsInSite,
-                          style: theme.text.caption.copyWith(color: theme.colors.textSecondary),
-                        ),
-                      ),
-                    ]
-                  : [
-                      for (final area in mine)
-                        PureListRow(
-                          key: ValueKey('areas-rail-follow-${area.areaId}'),
-                          title: area.name,
-                          trailing: Icon(Icons.chevron_right, size: 18, color: theme.colors.textSecondary),
-                          onTap: () => unawaited(
-                            AreaRoomsRoute(
-                              siteId: area.platform,
-                              areaId: area.areaId,
-                              areaName: area.name,
-                            ).push<void>(context),
-                          ),
-                          divided: area != mine.last,
-                        ),
-                    ],
-            ),
-            const SizedBox(height: 12),
-            _RailCard(
-              icon: Icons.local_fire_department_outlined,
-              title: context.t.areas.hotGroups,
-              children: [
-                for (final entry in hot)
-                  PureListRow(
-                    key: ValueKey('areas-rail-hot-${entry.key}'),
-                    title: entry.key.isEmpty ? context.t.tabs.areas : entry.key,
-                    subtitle: context.t.areas.areaCount(count: '${entry.value}'),
-                    trailing: Icon(Icons.chevron_right, size: 18, color: theme.colors.textSecondary),
-                    onTap: () {
-                      final areas = catalog.value ?? const <LiveArea>[];
-                      final first = areas.isEmpty ? null : areas.first;
-                      if (first == null) {
-                        return;
-                      }
-                      unawaited(
-                        AreaRoomsRoute(
-                          siteId: site.manifest.id,
-                          areaId: first.areaId,
-                          areaName: entry.key,
-                        ).push<void>(context),
-                      );
-                    },
-                    divided: entry != hot.last,
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                children: [
-                  Icon(Icons.link_rounded, size: 14, color: theme.colors.textSecondary),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      context.t.areas.connected(site: site.manifest.localizedName(_tag(context), 'zh-CN')),
-                      style: theme.text.caption.copyWith(color: theme.colors.textSecondary),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static String _tag(BuildContext context) => Localizations.localeOf(context).toLanguageTag();
-}
-
-/// One rail card: a title row with its icon and badge over the rows.
-final class _RailCard extends StatelessWidget {
-  const new({required this.icon, required this.title, required this.children, this.badge});
-
-  final IconData icon;
-  final String title;
-  final String? badge;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = PureTheme.of(context);
-    return PureCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
-            child: Row(
-              children: [
-                Icon(icon, size: 16, color: theme.colors.primary),
-                const SizedBox(width: 8),
-                Expanded(child: Text(title, style: theme.text.title)),
-                if (badge != null) Text(badge!, style: theme.text.caption.copyWith(color: theme.colors.textSecondary)),
-              ],
-            ),
-          ),
-          ...children,
-        ],
-      ),
     );
   }
 }
