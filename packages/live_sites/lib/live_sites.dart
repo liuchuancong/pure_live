@@ -1,8 +1,11 @@
 /// Live Sites — unified integration contract for live platforms.
 ///
 /// One package, one public surface: core contracts, optional capabilities,
-/// model domains (one barrel per domain) plus enums/converters barrels.
-/// Platform implementations under src/platforms/ are private.
+/// model domains (one barrel per domain), the shared primitives under
+/// `common/`, and every built-in platform under `platforms/` (one barrel per
+/// site — manifest, adapter, capabilities, transport, parsers and danmaku).
+/// Only generated files and the site-internal wiring stay out; the registry
+/// entry point is `createBuiltInLiveSites`.
 library;
 
 // capabilities
@@ -19,6 +22,9 @@ export 'src/capabilities/live_search_provider.dart';
 export 'src/capabilities/live_site_capability.dart';
 export 'src/capabilities/live_suggest_capability.dart';
 export 'src/capabilities/live_web_search_provider.dart';
+// shared primitives the adapters build on (codec, crypto, hls, normalization,
+// websocket)
+export 'src/common/common.dart';
 // core
 export 'src/core/live_site.dart';
 export 'src/core/live_site_context.dart';
@@ -43,9 +49,7 @@ export 'src/models/play/play.dart';
 export 'src/models/room/room.dart';
 export 'src/models/search/search.dart';
 export 'src/models/super_chat/super_chat.dart';
-// Douyu renewal seam (consumed by the application's account store): the
-// login store the adapter reads beside the cookie, the adapter's public
-// renewal surface, and the cookie parser the status cards answer from.
-export 'src/platforms/douyu/douyu_login_store.dart';
-export 'src/platforms/douyu/douyu_site.dart';
-export 'src/platforms/douyu/parsers/douyu_account.dart';
+// the platforms, one public barrel per site (manifest, adapter, capabilities,
+// transport, parsers, danmaku) — the douyu renewal seam rides in douyu's own
+// barrel now
+export 'src/platforms/platforms.dart';
