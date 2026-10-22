@@ -51,6 +51,7 @@ import 'package:pure_live/features/settings/refresh/refresh_settings_page.dart';
 import 'package:pure_live/features/settings/room_card/room_card_settings_page.dart';
 import 'package:pure_live/features/settings/settings_page.dart';
 import 'package:pure_live/features/settings/tags/tags_page.dart';
+import 'package:pure_live/features/settings/video/background_guide_page.dart';
 import 'package:pure_live/features/settings/video/portrait_settings_page.dart';
 import 'package:pure_live/features/settings/video/video_settings_page.dart';
 import 'package:pure_live/features/shield/shield_page.dart';
@@ -589,6 +590,17 @@ class RoomCardSettingsRoute extends GoRouteData with $RoomCardSettingsRoute {
 
   @override
   Widget build(BuildContext context, GoRouterState state) => const RoomCardSettingsPage();
+}
+
+/// The background-play guide: `/settings/background-guide`, reached from the
+/// video settings on Android.
+@TypedGoRoute<BackgroundGuideRoute>(path: RoutePath.settingsBackgroundGuide)
+class BackgroundGuideRoute extends GoRouteData with $BackgroundGuideRoute {
+  /// The guide route.
+  const new();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const BackgroundGuidePage();
 }
 
 /// The video and danmaku settings: `/settings/video`.

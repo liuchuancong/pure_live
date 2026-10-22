@@ -6,6 +6,7 @@ import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_sites/live_sites.dart' show LiveSiteManifest;
 import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/features/room/play_quality.dart';
+import 'package:pure_live/features/settings/video/background_guide.dart';
 import 'package:pure_live/features/settings/widgets/settings_chooser.dart';
 import 'package:pure_live/features/settings/widgets/settings_chrome.dart';
 import 'package:pure_live/features/settings/widgets/settings_rows.dart';
@@ -46,6 +47,9 @@ final class VideoSettingsPage extends ConsumerWidget {
       PlatformKind.android || PlatformKind.ios => true,
       _ => false,
     };
+    final isAndroid = ref.watch(environmentProvider).runtime.kind == PlatformKind.android;
+    final guideStatus = isAndroid ? ref.watch(backgroundStatusProvider).value : null;
+    final guidePending = guideStatus == null ? 0 : pendingSteps(guideSteps(guideStatus));
     final isDesktop = switch (ref.read(environmentProvider).runtime.kind) {
       PlatformKind.windows || PlatformKind.macos || PlatformKind.linux => true,
       _ => false,
@@ -68,6 +72,15 @@ final class VideoSettingsPage extends ConsumerWidget {
                 initialValue: preferences.backgroundPlay,
                 onToggle: (value) => unawaited(update((p) => p.copyWith(backgroundPlay: value))),
               ),
+              if (isAndroid)
+                SettingsTile.navigation(
+                  key: const ValueKey('video-background-guide'),
+                  leading: const Icon(Icons.battery_saver_outlined),
+                  title: Text(t.settings.backgroundGuide),
+                  description: Text(t.settings.backgroundGuideDesc),
+                  value: guidePending == 0 ? null : Text(t.settings.backgroundGuidePending(count: '$guidePending')),
+                  onPressed: (_) => unawaited(const BackgroundGuideRoute().push<void>(context)),
+                ),
               SettingsTile.switchTile(
                 key: const ValueKey('video-screen-keep-on'),
                 leading: const Icon(Icons.lightbulb_outline),

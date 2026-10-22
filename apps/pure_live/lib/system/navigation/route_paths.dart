@@ -121,6 +121,9 @@ abstract final class RoutePath {
   /// The room card settings page, one level under the settings index.
   static const String settingsRoomCard = '/settings/room-card';
 
+  /// The background-play guide, one level under the settings index.
+  static const String settingsBackgroundGuide = '/settings/background-guide';
+
   /// The video and danmaku settings, one level under the settings index.
   static const String settingsVideo = '/settings/video';
 

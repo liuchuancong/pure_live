@@ -712,6 +712,126 @@ class Translations$settings$zh {
 	/// zh: '已重置小窗位置'
 	String get miniResetDone => '已重置小窗位置';
 
+	/// zh: '后台播放设置'
+	String get backgroundGuide => '后台播放设置';
+
+	/// zh: '检查系统设置，跳到要改的地方'
+	String get backgroundGuideDesc => '检查系统设置，跳到要改的地方';
+
+	/// zh: '{count} 项待处理'
+	String backgroundGuidePending({required Object count}) => '${count} 项待处理';
+
+	/// zh: '读不到这台手机的状态'
+	String get backgroundGuideUnavailable => '读不到这台手机的状态';
+
+	/// zh: '没能打开系统设置，请在系统设置 → 应用 → 纯粹直播里手动修改'
+	String get backgroundGuideOpenFailed => '没能打开系统设置，请在系统设置 → 应用 → 纯粹直播里手动修改';
+
+	/// zh: '省电模式开着：系统可能限制后台播放，长时间听直播时建议关掉。'
+	String get backgroundGuidePowerSave => '省电模式开着：系统可能限制后台播放，长时间听直播时建议关掉。';
+
+	/// zh: '下面几项是 {rom} 自己的设置，系统不让应用读取，请在系统里确认。'
+	String backgroundGuideManualNote({required Object rom}) => '下面几项是 ${rom} 自己的设置，系统不让应用读取，请在系统里确认。';
+
+	/// zh: '已设置'
+	String get backgroundGuideStateOk => '已设置';
+
+	/// zh: '去设置'
+	String get backgroundGuideStateTodo => '去设置';
+
+	/// zh: '去看看'
+	String get backgroundGuideStateManual => '去看看';
+
+	/// zh: '通知'
+	String get backgroundGuideNotifications => '通知';
+
+	/// zh: '通知栏里的播放控制让系统知道纯粹直播在放声音；没有它，后台播放很快会被停掉'
+	String get backgroundGuideNotificationsHow => '通知栏里的播放控制让系统知道纯粹直播在放声音；没有它，后台播放很快会被停掉';
+
+	/// zh: '电池优化'
+	String get backgroundGuideBattery => '电池优化';
+
+	/// zh: '设为“不优化”（允许后台运行）：锁屏很久后系统才不会断网、停掉播放'
+	String get backgroundGuideBatteryHow => '设为“不优化”（允许后台运行）：锁屏很久后系统才不会断网、停掉播放';
+
+	/// zh: '后台限制'
+	String get backgroundGuideRestricted => '后台限制';
+
+	/// zh: '系统把纯粹直播设成了“受限”，后台会被停掉：在应用信息 → 电池里改成“不受限制”'
+	String get backgroundGuideRestrictedHow => '系统把纯粹直播设成了“受限”，后台会被停掉：在应用信息 → 电池里改成“不受限制”';
+
+	/// zh: '流量节省'
+	String get backgroundGuideDataSaver => '流量节省';
+
+	/// zh: '流量节省开着，后台不能用移动数据：允许纯粹直播“不受流量节省限制”'
+	String get backgroundGuideDataSaverHow => '流量节省开着，后台不能用移动数据：允许纯粹直播“不受流量节省限制”';
+
+	/// zh: '自启动'
+	String get backgroundGuideXiaomiAutostart => '自启动';
+
+	/// zh: '打开“自启动”：被系统清理后，通知栏和耳机按钮才能把播放拉起来'
+	String get backgroundGuideXiaomiAutostartHow => '打开“自启动”：被系统清理后，通知栏和耳机按钮才能把播放拉起来';
+
+	/// zh: '自启动'
+	String get backgroundGuideOppoAutostart => '自启动';
+
+	/// zh: '设置 → 应用 → 自启动（或应用信息 → 允许自动启动），打开纯粹直播'
+	String get backgroundGuideOppoAutostartHow => '设置 → 应用 → 自启动（或应用信息 → 允许自动启动），打开纯粹直播';
+
+	/// zh: '自启动'
+	String get backgroundGuideVivoAutostart => '自启动';
+
+	/// zh: 'i管家 → 应用管理 → 自启动管理（或权限管理 → 自启动），打开纯粹直播'
+	String get backgroundGuideVivoAutostartHow => 'i管家 → 应用管理 → 自启动管理（或权限管理 → 自启动），打开纯粹直播';
+
+	/// zh: '省电策略'
+	String get backgroundGuideXiaomiBattery => '省电策略';
+
+	/// zh: '设为“无限制”（HyperOS：应用信息 → 电量消耗 → 无限制），否则锁屏几分钟后会被冻结'
+	String get backgroundGuideXiaomiBatteryHow => '设为“无限制”（HyperOS：应用信息 → 电量消耗 → 无限制），否则锁屏几分钟后会被冻结';
+
+	/// zh: '耗电管理'
+	String get backgroundGuideOppoBattery => '耗电管理';
+
+	/// zh: '应用信息 → 耗电管理：打开“允许后台运行”“允许完全后台行为”，关掉“后台冻结”“异常耗电自动优化”'
+	String get backgroundGuideOppoBatteryHow => '应用信息 → 耗电管理：打开“允许后台运行”“允许完全后台行为”，关掉“后台冻结”“异常耗电自动优化”';
+
+	/// zh: '后台高耗电'
+	String get backgroundGuideVivoPower => '后台高耗电';
+
+	/// zh: '设置 → 电池 → 后台耗电管理 → 纯粹直播：选“允许后台高耗电”'
+	String get backgroundGuideVivoPowerHow => '设置 → 电池 → 后台耗电管理 → 纯粹直播：选“允许后台高耗电”';
+
+	/// zh: '应用启动管理'
+	String get backgroundGuideHuaweiLaunch => '应用启动管理';
+
+	/// zh: '关掉纯粹直播的“自动管理”，在弹出的窗口里打开“允许自启动”“允许关联启动”“允许后台活动”'
+	String get backgroundGuideHuaweiLaunchHow => '关掉纯粹直播的“自动管理”，在弹出的窗口里打开“允许自启动”“允许关联启动”“允许后台活动”';
+
+	/// zh: '电池不受限制'
+	String get backgroundGuideSamsungBattery => '电池不受限制';
+
+	/// zh: '应用信息 → 电池 → 选“不受限制”'
+	String get backgroundGuideSamsungBatteryHow => '应用信息 → 电池 → 选“不受限制”';
+
+	/// zh: '休眠应用'
+	String get backgroundGuideSamsungSleeping => '休眠应用';
+
+	/// zh: '设置 → 电池 → 后台使用限制：把纯粹直播从“休眠应用”“深度休眠应用”里移除，或加进“永不休眠的应用”'
+	String get backgroundGuideSamsungSleepingHow => '设置 → 电池 → 后台使用限制：把纯粹直播从“休眠应用”“深度休眠应用”里移除，或加进“永不休眠的应用”';
+
+	/// zh: '后台管理'
+	String get backgroundGuideMeizuBackground => '后台管理';
+
+	/// zh: '手机管家 → 后台管理（或应用信息 → 权限管理 → 后台运行），选“允许后台运行”'
+	String get backgroundGuideMeizuBackgroundHow => '手机管家 → 后台管理（或应用信息 → 权限管理 → 后台运行），选“允许后台运行”';
+
+	/// zh: '在最近任务里锁定'
+	String get backgroundGuideLockRecents => '在最近任务里锁定';
+
+	/// zh: '打开最近任务，长按（或下拉）纯粹直播的卡片，选“锁定”：一键清理时就不会关掉它'
+	String get backgroundGuideLockRecentsHow => '打开最近任务，长按（或下拉）纯粹直播的卡片，选“锁定”：一键清理时就不会关掉它';
+
 	/// zh: '网络'
 	String get sectionNetwork => '网络';
 
@@ -4504,6 +4624,46 @@ extension on Translations {
 			'settings.miniResetPosition' => '重置小窗位置与大小',
 			'settings.miniResetPositionSubtitle' => '清除记住的位置，下次从右下角打开',
 			'settings.miniResetDone' => '已重置小窗位置',
+			'settings.backgroundGuide' => '后台播放设置',
+			'settings.backgroundGuideDesc' => '检查系统设置，跳到要改的地方',
+			'settings.backgroundGuidePending' => ({required Object count}) => '${count} 项待处理',
+			'settings.backgroundGuideUnavailable' => '读不到这台手机的状态',
+			'settings.backgroundGuideOpenFailed' => '没能打开系统设置，请在系统设置 → 应用 → 纯粹直播里手动修改',
+			'settings.backgroundGuidePowerSave' => '省电模式开着：系统可能限制后台播放，长时间听直播时建议关掉。',
+			'settings.backgroundGuideManualNote' => ({required Object rom}) => '下面几项是 ${rom} 自己的设置，系统不让应用读取，请在系统里确认。',
+			'settings.backgroundGuideStateOk' => '已设置',
+			'settings.backgroundGuideStateTodo' => '去设置',
+			'settings.backgroundGuideStateManual' => '去看看',
+			'settings.backgroundGuideNotifications' => '通知',
+			'settings.backgroundGuideNotificationsHow' => '通知栏里的播放控制让系统知道纯粹直播在放声音；没有它，后台播放很快会被停掉',
+			'settings.backgroundGuideBattery' => '电池优化',
+			'settings.backgroundGuideBatteryHow' => '设为“不优化”（允许后台运行）：锁屏很久后系统才不会断网、停掉播放',
+			'settings.backgroundGuideRestricted' => '后台限制',
+			'settings.backgroundGuideRestrictedHow' => '系统把纯粹直播设成了“受限”，后台会被停掉：在应用信息 → 电池里改成“不受限制”',
+			'settings.backgroundGuideDataSaver' => '流量节省',
+			'settings.backgroundGuideDataSaverHow' => '流量节省开着，后台不能用移动数据：允许纯粹直播“不受流量节省限制”',
+			'settings.backgroundGuideXiaomiAutostart' => '自启动',
+			'settings.backgroundGuideXiaomiAutostartHow' => '打开“自启动”：被系统清理后，通知栏和耳机按钮才能把播放拉起来',
+			'settings.backgroundGuideOppoAutostart' => '自启动',
+			'settings.backgroundGuideOppoAutostartHow' => '设置 → 应用 → 自启动（或应用信息 → 允许自动启动），打开纯粹直播',
+			'settings.backgroundGuideVivoAutostart' => '自启动',
+			'settings.backgroundGuideVivoAutostartHow' => 'i管家 → 应用管理 → 自启动管理（或权限管理 → 自启动），打开纯粹直播',
+			'settings.backgroundGuideXiaomiBattery' => '省电策略',
+			'settings.backgroundGuideXiaomiBatteryHow' => '设为“无限制”（HyperOS：应用信息 → 电量消耗 → 无限制），否则锁屏几分钟后会被冻结',
+			'settings.backgroundGuideOppoBattery' => '耗电管理',
+			'settings.backgroundGuideOppoBatteryHow' => '应用信息 → 耗电管理：打开“允许后台运行”“允许完全后台行为”，关掉“后台冻结”“异常耗电自动优化”',
+			'settings.backgroundGuideVivoPower' => '后台高耗电',
+			'settings.backgroundGuideVivoPowerHow' => '设置 → 电池 → 后台耗电管理 → 纯粹直播：选“允许后台高耗电”',
+			'settings.backgroundGuideHuaweiLaunch' => '应用启动管理',
+			'settings.backgroundGuideHuaweiLaunchHow' => '关掉纯粹直播的“自动管理”，在弹出的窗口里打开“允许自启动”“允许关联启动”“允许后台活动”',
+			'settings.backgroundGuideSamsungBattery' => '电池不受限制',
+			'settings.backgroundGuideSamsungBatteryHow' => '应用信息 → 电池 → 选“不受限制”',
+			'settings.backgroundGuideSamsungSleeping' => '休眠应用',
+			'settings.backgroundGuideSamsungSleepingHow' => '设置 → 电池 → 后台使用限制：把纯粹直播从“休眠应用”“深度休眠应用”里移除，或加进“永不休眠的应用”',
+			'settings.backgroundGuideMeizuBackground' => '后台管理',
+			'settings.backgroundGuideMeizuBackgroundHow' => '手机管家 → 后台管理（或应用信息 → 权限管理 → 后台运行），选“允许后台运行”',
+			'settings.backgroundGuideLockRecents' => '在最近任务里锁定',
+			'settings.backgroundGuideLockRecentsHow' => '打开最近任务，长按（或下拉）纯粹直播的卡片，选“锁定”：一键清理时就不会关掉它',
 			'settings.sectionNetwork' => '网络',
 			'settings.proxySettings' => '网络代理',
 			'settings.proxySettingsSubtitle' => '通过代理转发请求',
@@ -4790,6 +4950,8 @@ extension on Translations {
 			'settings.liveAlertScope' => '开播提醒范围',
 			'settings.liveAlertScopeDesc' => '只提醒带所选标签的关注；全不选则提醒全部关注',
 			'settings.liveAlertAll' => '全部关注',
+			_ => null,
+		} ?? switch (path) {
 			'settings.refreshConcurrency' => '并发刷新任务',
 			'settings.refreshConcurrencyHint' => '同时向几个直播间发起刷新',
 			'settings.screenKeepOn' => '播放时屏幕常亮',
@@ -4830,8 +4992,6 @@ extension on Translations {
 			'logs.levelError' => '错误（error）',
 			'logs.levelFatal' => '严重（fatal）',
 			'logs.levelOff' => '关闭',
-			_ => null,
-		} ?? switch (path) {
 			'logs.levelDefault' => '跟随构建默认值',
 			'logs.export' => '导出最近日志',
 			'logs.exportDone' => ({required int count}) => '已复制 ${count} 条日志到剪贴板',
@@ -5304,6 +5464,8 @@ extension on Translations {
 			'areas.followedAreas' => '关注的分区',
 			'areas.empty' => '暂无分区',
 			'areas.followEmpty' => '还没有关注的分区',
+			_ => null,
+		} ?? switch (path) {
 			'areas.followEmptyHint' => '点进一个分区，再用右上角的按钮关注它。',
 			'areas.followDone' => ({required String name}) => '已关注「${name}」',
 			'areas.unfollowDone' => ({required String name}) => '已取消关注「${name}」',
@@ -5344,8 +5506,6 @@ extension on Translations {
 			'remoteSync.manualHint' => '输入对方设备的地址，或粘贴对方二维码里的同步链接（含配对码，不用再输入）',
 			'remoteSync.copyAddress' => '复制地址',
 			'remoteSync.addressCopied' => '地址已复制',
-			_ => null,
-		} ?? switch (path) {
 			'remoteSync.fromName' => ({required String name}) => '来自 ${name}',
 			'remoteSync.legacyDevice' => '3.x 版本的设备',
 			'remoteSync.allow' => '允许',

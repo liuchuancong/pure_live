@@ -30,6 +30,13 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        BackgroundGuideChannel.attach(
+            MethodChannel(
+                flutterEngine.dartExecutor.binaryMessenger,
+                "pure_live/background_guide",
+            ),
+        )
+        BackgroundGuideChannel.attachActivity(this)
         predictiveBackChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             PREDICTIVE_BACK_CHANNEL,
@@ -50,6 +57,7 @@ class MainActivity : FlutterActivity() {
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
         predictiveBackChannel?.setMethodCallHandler(null)
         predictiveBackChannel = null
+        BackgroundGuideChannel.detach()
         super.cleanUpFlutterEngine(flutterEngine)
     }
 

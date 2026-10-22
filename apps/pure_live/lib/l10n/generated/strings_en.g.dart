@@ -337,6 +337,46 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get miniResetPosition => 'Reset mini window size and position';
 	@override String get miniResetPositionSubtitle => 'Clears the remembered geometry; the next mini window opens at the bottom-right';
 	@override String get miniResetDone => 'Mini window position reset';
+	@override String get backgroundGuide => 'Background play setup';
+	@override String get backgroundGuideDesc => 'Check this phone\'s settings and jump to the ones that need changing';
+	@override String backgroundGuidePending({required Object count}) => '${count} to fix';
+	@override String get backgroundGuideUnavailable => 'Couldn\'t read this phone\'s state';
+	@override String get backgroundGuideOpenFailed => 'Couldn\'t open the system settings — use Settings → Apps → Pure Live';
+	@override String get backgroundGuidePowerSave => 'Battery saver is on: the system may pause background playback; turn it off for long listening.';
+	@override String backgroundGuideManualNote({required Object rom}) => 'The next few are ${rom}\'s own switches, which the system does not expose; check them in the system settings.';
+	@override String get backgroundGuideStateOk => 'Set';
+	@override String get backgroundGuideStateTodo => 'Fix';
+	@override String get backgroundGuideStateManual => 'Check';
+	@override String get backgroundGuideNotifications => 'Notifications';
+	@override String get backgroundGuideNotificationsHow => 'The playback notification tells the system Pure Live is sounding; without it background play is stopped quickly';
+	@override String get backgroundGuideBattery => 'Battery optimisation';
+	@override String get backgroundGuideBatteryHow => 'Set to "Not optimised" (allow background running), or the system cuts the stream after a long lock';
+	@override String get backgroundGuideRestricted => 'Background restriction';
+	@override String get backgroundGuideRestrictedHow => 'The system marks Pure Live as restricted and stops it in the background: App info → Battery → Unrestricted';
+	@override String get backgroundGuideDataSaver => 'Data Saver';
+	@override String get backgroundGuideDataSaverHow => 'Data Saver is on, so background mobile data is blocked: let Pure Live use data unrestricted';
+	@override String get backgroundGuideXiaomiAutostart => 'Autostart';
+	@override String get backgroundGuideXiaomiAutostartHow => 'Turn on Autostart, so the notification and headset buttons can bring playback back after the system clears the app';
+	@override String get backgroundGuideOppoAutostart => 'Autostart';
+	@override String get backgroundGuideOppoAutostartHow => 'Settings → Apps → Autostart (or App info → Allow auto-start), turn on Pure Live';
+	@override String get backgroundGuideVivoAutostart => 'Autostart';
+	@override String get backgroundGuideVivoAutostartHow => 'iManager → App management → Autostart (or Permissions → Autostart), turn on Pure Live';
+	@override String get backgroundGuideXiaomiBattery => 'Power-saving policy';
+	@override String get backgroundGuideXiaomiBatteryHow => 'Set to "No restrictions" (HyperOS: App info → Battery usage → No restrictions); otherwise the app is frozen minutes after locking';
+	@override String get backgroundGuideOppoBattery => 'Power usage';
+	@override String get backgroundGuideOppoBatteryHow => 'App info → Power usage: allow background running and full background behaviour; turn off background freeze and auto-optimisation';
+	@override String get backgroundGuideVivoPower => 'High background power';
+	@override String get backgroundGuideVivoPowerHow => 'Settings → Battery → Background power management → Pure Live: allow high background power';
+	@override String get backgroundGuideHuaweiLaunch => 'App launch';
+	@override String get backgroundGuideHuaweiLaunchHow => 'Turn off automatic management for Pure Live, then allow auto-start, associated start and background activity';
+	@override String get backgroundGuideSamsungBattery => 'Battery unrestricted';
+	@override String get backgroundGuideSamsungBatteryHow => 'App info → Battery → Unrestricted';
+	@override String get backgroundGuideSamsungSleeping => 'Sleeping apps';
+	@override String get backgroundGuideSamsungSleepingHow => 'Settings → Battery → Background usage limits: remove Pure Live from sleeping/deep sleeping apps, or add it to never-sleeping apps';
+	@override String get backgroundGuideMeizuBackground => 'Background management';
+	@override String get backgroundGuideMeizuBackgroundHow => 'Phone manager → Background management (or App info → Permissions → Background running), choose Allow background running';
+	@override String get backgroundGuideLockRecents => 'Lock in Recents';
+	@override String get backgroundGuideLockRecentsHow => 'Open Recents, long-press (or pull down) the Pure Live card and choose Lock, so clearing all keeps it';
 	@override String get sectionNetwork => 'Network';
 	@override String get proxySettings => 'Network proxy';
 	@override String get proxySettingsSubtitle => 'Route requests through a proxy';
@@ -1924,6 +1964,46 @@ extension on TranslationsEn {
 			'settings.miniResetPosition' => 'Reset mini window size and position',
 			'settings.miniResetPositionSubtitle' => 'Clears the remembered geometry; the next mini window opens at the bottom-right',
 			'settings.miniResetDone' => 'Mini window position reset',
+			'settings.backgroundGuide' => 'Background play setup',
+			'settings.backgroundGuideDesc' => 'Check this phone\'s settings and jump to the ones that need changing',
+			'settings.backgroundGuidePending' => ({required Object count}) => '${count} to fix',
+			'settings.backgroundGuideUnavailable' => 'Couldn\'t read this phone\'s state',
+			'settings.backgroundGuideOpenFailed' => 'Couldn\'t open the system settings — use Settings → Apps → Pure Live',
+			'settings.backgroundGuidePowerSave' => 'Battery saver is on: the system may pause background playback; turn it off for long listening.',
+			'settings.backgroundGuideManualNote' => ({required Object rom}) => 'The next few are ${rom}\'s own switches, which the system does not expose; check them in the system settings.',
+			'settings.backgroundGuideStateOk' => 'Set',
+			'settings.backgroundGuideStateTodo' => 'Fix',
+			'settings.backgroundGuideStateManual' => 'Check',
+			'settings.backgroundGuideNotifications' => 'Notifications',
+			'settings.backgroundGuideNotificationsHow' => 'The playback notification tells the system Pure Live is sounding; without it background play is stopped quickly',
+			'settings.backgroundGuideBattery' => 'Battery optimisation',
+			'settings.backgroundGuideBatteryHow' => 'Set to "Not optimised" (allow background running), or the system cuts the stream after a long lock',
+			'settings.backgroundGuideRestricted' => 'Background restriction',
+			'settings.backgroundGuideRestrictedHow' => 'The system marks Pure Live as restricted and stops it in the background: App info → Battery → Unrestricted',
+			'settings.backgroundGuideDataSaver' => 'Data Saver',
+			'settings.backgroundGuideDataSaverHow' => 'Data Saver is on, so background mobile data is blocked: let Pure Live use data unrestricted',
+			'settings.backgroundGuideXiaomiAutostart' => 'Autostart',
+			'settings.backgroundGuideXiaomiAutostartHow' => 'Turn on Autostart, so the notification and headset buttons can bring playback back after the system clears the app',
+			'settings.backgroundGuideOppoAutostart' => 'Autostart',
+			'settings.backgroundGuideOppoAutostartHow' => 'Settings → Apps → Autostart (or App info → Allow auto-start), turn on Pure Live',
+			'settings.backgroundGuideVivoAutostart' => 'Autostart',
+			'settings.backgroundGuideVivoAutostartHow' => 'iManager → App management → Autostart (or Permissions → Autostart), turn on Pure Live',
+			'settings.backgroundGuideXiaomiBattery' => 'Power-saving policy',
+			'settings.backgroundGuideXiaomiBatteryHow' => 'Set to "No restrictions" (HyperOS: App info → Battery usage → No restrictions); otherwise the app is frozen minutes after locking',
+			'settings.backgroundGuideOppoBattery' => 'Power usage',
+			'settings.backgroundGuideOppoBatteryHow' => 'App info → Power usage: allow background running and full background behaviour; turn off background freeze and auto-optimisation',
+			'settings.backgroundGuideVivoPower' => 'High background power',
+			'settings.backgroundGuideVivoPowerHow' => 'Settings → Battery → Background power management → Pure Live: allow high background power',
+			'settings.backgroundGuideHuaweiLaunch' => 'App launch',
+			'settings.backgroundGuideHuaweiLaunchHow' => 'Turn off automatic management for Pure Live, then allow auto-start, associated start and background activity',
+			'settings.backgroundGuideSamsungBattery' => 'Battery unrestricted',
+			'settings.backgroundGuideSamsungBatteryHow' => 'App info → Battery → Unrestricted',
+			'settings.backgroundGuideSamsungSleeping' => 'Sleeping apps',
+			'settings.backgroundGuideSamsungSleepingHow' => 'Settings → Battery → Background usage limits: remove Pure Live from sleeping/deep sleeping apps, or add it to never-sleeping apps',
+			'settings.backgroundGuideMeizuBackground' => 'Background management',
+			'settings.backgroundGuideMeizuBackgroundHow' => 'Phone manager → Background management (or App info → Permissions → Background running), choose Allow background running',
+			'settings.backgroundGuideLockRecents' => 'Lock in Recents',
+			'settings.backgroundGuideLockRecentsHow' => 'Open Recents, long-press (or pull down) the Pure Live card and choose Lock, so clearing all keeps it',
 			'settings.sectionNetwork' => 'Network',
 			'settings.proxySettings' => 'Network proxy',
 			'settings.proxySettingsSubtitle' => 'Route requests through a proxy',
@@ -2210,6 +2290,8 @@ extension on TranslationsEn {
 			'settings.liveAlertScope' => 'Alert scope',
 			'settings.liveAlertScopeDesc' => 'Alert only for follows carrying a chosen tag; none chosen alerts every follow',
 			'settings.liveAlertAll' => 'All follows',
+			_ => null,
+		} ?? switch (path) {
 			'settings.refreshConcurrency' => 'Parallel refresh jobs',
 			'settings.refreshConcurrencyHint' => 'How many followed rooms refresh at once',
 			'settings.screenKeepOn' => 'Keep the screen on',
@@ -2250,8 +2332,6 @@ extension on TranslationsEn {
 			'logs.levelError' => 'Errors (error)',
 			'logs.levelFatal' => 'Fatal only',
 			'logs.levelOff' => 'Off',
-			_ => null,
-		} ?? switch (path) {
 			'logs.levelDefault' => 'Follow build default',
 			'logs.export' => 'Export recent logs',
 			'logs.exportDone' => ({required int count}) => 'Copied ${count} log lines to the clipboard',
@@ -2724,6 +2804,8 @@ extension on TranslationsEn {
 			'search.roomEnter' => 'Enter',
 			'search.webSearchRoomDismiss' => 'Stop offering this room',
 			'search.webSearchInvalidAddress' => 'The web-search address is invalid; go back to the search page and try again.',
+			_ => null,
+		} ?? switch (path) {
 			'search.webSearchLoadFailed' => 'The page failed to load; check the network or proxy and retry.',
 			'search.webSearchUnavailableTitle' => 'Web search unavailable',
 			'search.sortMode' => 'Sort',
@@ -2764,8 +2846,6 @@ extension on TranslationsEn {
 			'remoteSync.manualHint' => 'Type the other device\'s address, or paste its QR code\'s sync link (it carries the pairing code)',
 			'remoteSync.copyAddress' => 'Copy Address',
 			'remoteSync.addressCopied' => 'Address copied',
-			_ => null,
-		} ?? switch (path) {
 			'remoteSync.fromName' => ({required String name}) => 'From ${name}',
 			'remoteSync.legacyDevice' => 'Pure Live 3.x device',
 			'remoteSync.allow' => 'Allow',

@@ -35,6 +35,7 @@ import 'package:pure_live/features/settings/recording/record_settings_page.dart'
 import 'package:pure_live/features/settings/refresh/refresh_settings_page.dart';
 import 'package:pure_live/features/settings/room_card/room_card_settings_page.dart';
 import 'package:pure_live/features/settings/settings_page.dart';
+import 'package:pure_live/features/settings/video/background_guide_page.dart';
 import 'package:pure_live/features/settings/video/portrait_settings_page.dart';
 import 'package:pure_live/features/settings/video/video_settings_page.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
@@ -162,6 +163,7 @@ const List<_Page> _pages = [
   _Page('network proxy', NetworkProxySettingsPage.new, custom: true),
   _Page('appearance', AppearancePage.new, custom: true),
   _Page('video', VideoSettingsPage.new, custom: true),
+  _Page('background guide', BackgroundGuidePage.new),
   _Page('portrait', PortraitSettingsPage.new, custom: true),
   _Page('danmaku', DanmakuSettingsPage.new, custom: true),
   _Page('platforms', PlatformsSettingsPage.new),
