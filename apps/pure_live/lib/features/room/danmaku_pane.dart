@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_interaction/live_interaction.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:pure_live/features/room/chat_rules.dart';
 import 'package:pure_live/features/room/local/local_catalog.dart';
 import 'package:pure_live/features/room/room_providers.dart';
 import 'package:pure_live/features/room/shield_lists_panel.dart';
@@ -190,37 +191,25 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
   }
 
   void _onMessage(LiveMessage message) {
-    switch (message.type) {
-      case LiveMessageType.chat:
-        _chats.add(message);
+    final preferences = ref.read(appPreferencesProvider);
+    // Super chats come through the dedicated payload; memberships may also
+    // earn a card when the viewer asked.
+    if (message.type == LiveMessageType.superChat) {
+      final payload = message.payload;
+      if (payload is LiveSuperChatMessage) {
+        _superChats.add(payload);
         _markArrival();
-      case LiveMessageType.gift:
-        _chats.add(message);
-        _markArrival();
-      case LiveMessageType.superChat:
-        final payload = message.payload;
-        if (payload is LiveSuperChatMessage) {
-          _superChats.add(payload);
-        }
-        _markArrival();
-      case LiveMessageType.audienceUpdate:
-        // The session's own tracker consumes these; nothing to render.
-        break;
-      case LiveMessageType.retraction:
-        break;
-      // Notices, entries, leaves, likes, membership joins and system
-      // broadcasts render as dim lines in the chat feed.
-      case LiveMessageType.notice ||
-          LiveMessageType.enter ||
-          LiveMessageType.leave ||
-          LiveMessageType.follow ||
-          LiveMessageType.like ||
-          LiveMessageType.membershipJoin ||
-          LiveMessageType.system:
-        if (message.text.isNotEmpty) {
-          _chats.add(message);
-          _markArrival();
-        }
+      }
+    }
+    if (membershipCard(message, include: preferences.superChatIncludesMembership) case final card?) {
+      _superChats.add(card);
+      _markArrival();
+    }
+    final takesALine =
+        message.type == LiveMessageType.chat || message.type == LiveMessageType.gift || message.text.isNotEmpty;
+    if (takesALine && chatLineVisible(message, showGifts: preferences.chatShowGifts)) {
+      _chats.add(message);
+      _markArrival();
     }
     if (_chats.length > _chatCap) {
       _chats.removeRange(0, _chats.length - _chatCap);

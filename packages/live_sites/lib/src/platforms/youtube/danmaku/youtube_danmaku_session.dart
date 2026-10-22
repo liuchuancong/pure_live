@@ -30,15 +30,17 @@ import 'package:live_sites/src/platforms/youtube/youtube_site.dart';
 /// message — instead of the default "Top chat"; a continuation the site will not
 /// rewrite, or refuses, falls back to "Top chat" for the rest of the run.
 final class YoutubeDanmakuProvider implements LiveDanmakuProvider {
-  /// The provider over [site] (which resolves the room's continuation).
-  YoutubeDanmakuProvider({required this.site, this.allChat = false});
+  /// The provider over [site] (which resolves the room's continuation);
+  /// [allChat] is read when a session opens, so a setting change needs no new
+  /// provider.
+  YoutubeDanmakuProvider({required this.site, this.allChat});
 
   /// The site this capability serves: the source of the room detail and the
   /// poll transport.
   final YoutubeSite site;
 
   /// Whether sessions read the "Live chat" view rather than "Top chat".
-  final bool allChat;
+  final bool Function()? allChat;
 
   @override
   Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
@@ -64,7 +66,12 @@ final class YoutubeDanmakuProvider implements LiveDanmakuProvider {
     } on Object catch (error) {
       return left(LiveSiteError.unexpected(siteId: 'youtube', message: '$error', cause: error));
     }
-    final session = YoutubeDanmakuSession(args: args, http: site.http, allChat: allChat, now: site.now);
+    final session = YoutubeDanmakuSession(
+      args: args,
+      http: site.http,
+      allChat: allChat?.call() ?? false,
+      now: site.now,
+    );
     final failure = await session.connect();
     if (failure != null) {
       await session.dispose();

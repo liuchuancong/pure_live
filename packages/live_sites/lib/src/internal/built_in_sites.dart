@@ -73,11 +73,13 @@ import 'package:live_sites/src/platforms/yy/yy_site.dart';
 /// hands its secret store in so stored logins renew themselves before they
 /// end; null makes every douyu request a guest, exactly as before.
 /// [twitchLanguages] reads the Twitch directory filter (lower-case codes);
-/// null keeps every language.
+/// null keeps every language. [youtubeAllChat] reads "YouTube 显示全部聊天";
+/// null keeps the web's Top chat.
 List<LiveSite> createBuiltInLiveSites({
   LiveHttp? http,
   DouyuLoginStore? douyuLogin,
   List<String> Function()? twitchLanguages,
+  bool Function()? youtubeAllChat,
 }) {
   final transport = http ?? DioFactory().create();
   return <LiveSite>[
@@ -86,7 +88,7 @@ List<LiveSite> createBuiltInLiveSites({
     DouyinSite(http: DouyinHttp(transport)),
     BilibiliSite(http: BilibiliHttp(transport)),
     KuaishouSite(http: KuaishouHttp(transport)),
-    YoutubeSite(http: YouTubeHttp(transport)),
+    YoutubeSite(http: YouTubeHttp(transport), allChat: youtubeAllChat),
     TwitchSite(http: TwitchHttp(transport), languages: twitchLanguages),
     AcfunSite(http: AcfunHttp(transport)),
     BigoSite(http: BigoHttp(transport)),

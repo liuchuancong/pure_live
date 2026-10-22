@@ -4351,6 +4351,24 @@ class Translations$danmaku$zh {
 	/// zh: '弹幕列表'
 	String get listGroup => '弹幕列表';
 
+	/// zh: '在聊天列表显示礼物'
+	String get chatShowGifts => '在聊天列表显示礼物';
+
+	/// zh: '平台上报的礼物显示为聊天里的一行；飞不飞过画面看“飞行弹幕显示礼物”'
+	String get chatShowGiftsDesc => '平台上报的礼物显示为聊天里的一行；飞不飞过画面看“飞行弹幕显示礼物”';
+
+	/// zh: '上舰和开会员进醒目留言'
+	String get superChatMembership => '上舰和开会员进醒目留言';
+
+	/// zh: '哔哩哔哩上舰、YouTube 会员和各平台的订阅也在醒目留言里显示一张卡；聊天列表照旧'
+	String get superChatMembershipDesc => '哔哩哔哩上舰、YouTube 会员和各平台的订阅也在醒目留言里显示一张卡；聊天列表照旧';
+
+	/// zh: 'YouTube 显示全部聊天'
+	String get youtubeAllChat => 'YouTube 显示全部聊天';
+
+	/// zh: '默认和网页一样只显示精选聊天；打开后显示所有消息'
+	String get youtubeAllChatDesc => '默认和网页一样只显示精选聊天；打开后显示所有消息';
+
 	/// zh: '弹幕列表样式'
 	String get listStyle => '弹幕列表样式';
 
@@ -5805,6 +5823,12 @@ extension on Translations {
 			'danmaku.holdOnPress' => '按住飞行弹幕让它停住',
 			'danmaku.holdOnPressDesc' => '手指按住画面上的一条弹幕时只停住这一条，其他照飞，松手继续',
 			'danmaku.listGroup' => '弹幕列表',
+			'danmaku.chatShowGifts' => '在聊天列表显示礼物',
+			'danmaku.chatShowGiftsDesc' => '平台上报的礼物显示为聊天里的一行；飞不飞过画面看“飞行弹幕显示礼物”',
+			'danmaku.superChatMembership' => '上舰和开会员进醒目留言',
+			'danmaku.superChatMembershipDesc' => '哔哩哔哩上舰、YouTube 会员和各平台的订阅也在醒目留言里显示一张卡；聊天列表照旧',
+			'danmaku.youtubeAllChat' => 'YouTube 显示全部聊天',
+			'danmaku.youtubeAllChatDesc' => '默认和网页一样只显示精选聊天；打开后显示所有消息',
 			'danmaku.listStyle' => '弹幕列表样式',
 			'danmaku.listCompact' => '紧凑',
 			'danmaku.listCard' => '卡片',

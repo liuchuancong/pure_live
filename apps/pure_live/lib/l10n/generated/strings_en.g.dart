@@ -1724,6 +1724,12 @@ class _Translations$danmaku$en extends Translations$danmaku$zh {
 	@override String get holdOnPress => 'Hold a line to stop it';
 	@override String get holdOnPressDesc => 'Pressing a flying line holds only that line; the rest keep flying, and it resumes on release.';
 	@override String get listGroup => 'Chat list';
+	@override String get chatShowGifts => 'Show gifts in the chat';
+	@override String get chatShowGiftsDesc => 'Gifts the platform reports appear as chat lines; whether they fly over the video is up to "Gifts in flying danmaku"';
+	@override String get superChatMembership => 'Memberships in Super Chats';
+	@override String get superChatMembershipDesc => 'Bilibili guards, YouTube memberships and other subscriptions also get a card among the Super Chats; the chat list keeps its line';
+	@override String get youtubeAllChat => 'YouTube: show all chat';
+	@override String get youtubeAllChatDesc => 'By default only Top chat shows, as on the web; turn on for every message';
 	@override String get listStyle => 'Chat list style';
 	@override String get listCompact => 'Compact';
 	@override String get listCard => 'Card';
@@ -3111,6 +3117,12 @@ extension on TranslationsEn {
 			'danmaku.holdOnPress' => 'Hold a line to stop it',
 			'danmaku.holdOnPressDesc' => 'Pressing a flying line holds only that line; the rest keep flying, and it resumes on release.',
 			'danmaku.listGroup' => 'Chat list',
+			'danmaku.chatShowGifts' => 'Show gifts in the chat',
+			'danmaku.chatShowGiftsDesc' => 'Gifts the platform reports appear as chat lines; whether they fly over the video is up to "Gifts in flying danmaku"',
+			'danmaku.superChatMembership' => 'Memberships in Super Chats',
+			'danmaku.superChatMembershipDesc' => 'Bilibili guards, YouTube memberships and other subscriptions also get a card among the Super Chats; the chat list keeps its line',
+			'danmaku.youtubeAllChat' => 'YouTube: show all chat',
+			'danmaku.youtubeAllChatDesc' => 'By default only Top chat shows, as on the web; turn on for every message',
 			'danmaku.listStyle' => 'Chat list style',
 			'danmaku.listCompact' => 'Compact',
 			'danmaku.listCard' => 'Card',

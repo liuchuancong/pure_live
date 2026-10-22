@@ -261,6 +261,7 @@ final class AppServices {
       // Read per request: a language picked in the settings lands on the next
       // Twitch page without rebuilding the site graph.
       twitchLanguages: () => appPreferences.value.twitchLanguages,
+      youtubeAllChat: () => appPreferences.value.youtubeAllChat,
     );
 
     // The font library downloads and registers through the shared client.

@@ -49,6 +49,7 @@ final class AppSites {
     Uri? proxy,
     ProxyPolicy Function(ProxyPolicy fallback)? proxyPolicyBuilder,
     List<String> Function()? twitchLanguages,
+    bool Function()? youtubeAllChat,
   }) async {
     final fallbackPolicy = FixedProxyPolicy(
       global: proxy == null
@@ -73,7 +74,12 @@ final class AppSites {
       douyuLogin = null;
     }
     final registry = LiveSiteRegistry(
-      createBuiltInLiveSites(http: http, douyuLogin: douyuLogin, twitchLanguages: twitchLanguages),
+      createBuiltInLiveSites(
+        http: http,
+        douyuLogin: douyuLogin,
+        twitchLanguages: twitchLanguages,
+        youtubeAllChat: youtubeAllChat,
+      ),
     );
 
     final context = LiveSiteContext(

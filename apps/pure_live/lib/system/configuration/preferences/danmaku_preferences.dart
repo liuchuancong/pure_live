@@ -27,6 +27,9 @@ final class DanmakuPreferences extends Equatable {
     this.barrageAutoFps = true,
     this.barrageFpsMode = 'powerSaving',
     this.barrageShowGifts = false,
+    this.chatShowGifts = true,
+    this.superChatIncludesMembership = false,
+    this.youtubeAllChat = false,
     this.barrageTapAction = true,
     this.barrageLongPressAction = true,
     this.barrageFontFamily = '',
@@ -61,6 +64,9 @@ final class DanmakuPreferences extends Equatable {
       barrageAutoFps: json['barrageAutoFps'] as bool? ?? true,
       barrageFpsMode: json['barrageFpsMode'] as String? ?? 'powerSaving',
       barrageShowGifts: json['barrageShowGifts'] as bool? ?? false,
+      chatShowGifts: json['chatShowGifts'] as bool? ?? true,
+      superChatIncludesMembership: json['superChatIncludesMembership'] as bool? ?? false,
+      youtubeAllChat: json['youtubeAllChat'] as bool? ?? false,
       barrageTapAction: json['barrageTapAction'] as bool? ?? true,
       barrageLongPressAction: json['barrageLongPressAction'] as bool? ?? true,
       barrageFontFamily: json['barrageFontFamily'] as String? ?? '',
@@ -144,6 +150,19 @@ final class DanmakuPreferences extends Equatable {
   /// chat (A08.12; off keeps the surface chat-only).
   final bool barrageShowGifts;
 
+  /// Whether the platform's gifts show as lines in the chat list (the
+  /// reference's `showChatGifts`); the flying gifts keep their own switch.
+  final bool chatShowGifts;
+
+  /// Whether memberships (a Bilibili guard, a YouTube membership, a
+  /// subscription) also get a card among the super chats; the chat list keeps
+  /// its own line either way.
+  final bool superChatIncludesMembership;
+
+  /// Whether YouTube's chat reads the "Live chat" view (every message)
+  /// instead of the default "Top chat".
+  final bool youtubeAllChat;
+
   /// Whether tapping a flying line opens its sender's card (画面弹幕交互).
   final bool barrageTapAction;
 
@@ -194,6 +213,9 @@ final class DanmakuPreferences extends Equatable {
     'barrageAutoFps': barrageAutoFps,
     'barrageFpsMode': barrageFpsMode,
     'barrageShowGifts': barrageShowGifts,
+    'chatShowGifts': chatShowGifts,
+    'superChatIncludesMembership': superChatIncludesMembership,
+    'youtubeAllChat': youtubeAllChat,
     'barrageTapAction': barrageTapAction,
     'barrageLongPressAction': barrageLongPressAction,
     'barrageFontFamily': barrageFontFamily,
@@ -226,6 +248,9 @@ final class DanmakuPreferences extends Equatable {
     bool? barrageAutoFps,
     String? barrageFpsMode,
     bool? barrageShowGifts,
+    bool? chatShowGifts,
+    bool? superChatIncludesMembership,
+    bool? youtubeAllChat,
     bool? barrageTapAction,
     bool? barrageLongPressAction,
     String? barrageFontFamily,
@@ -255,6 +280,9 @@ final class DanmakuPreferences extends Equatable {
     barrageAutoFps: barrageAutoFps ?? this.barrageAutoFps,
     barrageFpsMode: barrageFpsMode ?? this.barrageFpsMode,
     barrageShowGifts: barrageShowGifts ?? this.barrageShowGifts,
+    chatShowGifts: chatShowGifts ?? this.chatShowGifts,
+    superChatIncludesMembership: superChatIncludesMembership ?? this.superChatIncludesMembership,
+    youtubeAllChat: youtubeAllChat ?? this.youtubeAllChat,
     barrageTapAction: barrageTapAction ?? this.barrageTapAction,
     barrageLongPressAction: barrageLongPressAction ?? this.barrageLongPressAction,
     barrageFontFamily: barrageFontFamily ?? this.barrageFontFamily,
@@ -288,6 +316,9 @@ final class DanmakuPreferences extends Equatable {
     barrageAutoFps,
     barrageFpsMode,
     barrageShowGifts,
+    chatShowGifts,
+    superChatIncludesMembership,
+    youtubeAllChat,
     barrageTapAction,
     barrageLongPressAction,
     barrageFontFamily,

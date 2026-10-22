@@ -82,6 +82,9 @@ final class AppPreferences extends Equatable {
     bool barrageAutoFps = true,
     String barrageFpsMode = 'powerSaving',
     bool barrageShowGifts = false,
+    bool chatShowGifts = true,
+    bool superChatIncludesMembership = false,
+    bool youtubeAllChat = false,
     bool barrageTapAction = true,
     bool barrageLongPressAction = true,
     String barrageFontFamily = '',
@@ -215,6 +218,9 @@ final class AppPreferences extends Equatable {
          barrageAutoFps: barrageAutoFps,
          barrageFpsMode: barrageFpsMode,
          barrageShowGifts: barrageShowGifts,
+         chatShowGifts: chatShowGifts,
+         superChatIncludesMembership: superChatIncludesMembership,
+         youtubeAllChat: youtubeAllChat,
          barrageTapAction: barrageTapAction,
          barrageLongPressAction: barrageLongPressAction,
          barrageFontFamily: barrageFontFamily,
@@ -487,6 +493,15 @@ final class AppPreferences extends Equatable {
   /// Whether the platform's gift messages fly over the picture beside the
   /// chat (A08.12; off keeps the surface chat-only).
   bool get barrageShowGifts => danmaku.barrageShowGifts;
+
+  /// Whether platform gifts show as lines in the chat list.
+  bool get chatShowGifts => danmaku.chatShowGifts;
+
+  /// Whether memberships also get a card among the super chats.
+  bool get superChatIncludesMembership => danmaku.superChatIncludesMembership;
+
+  /// Whether YouTube's chat reads every message instead of "Top chat".
+  bool get youtubeAllChat => danmaku.youtubeAllChat;
 
   /// Whether tapping a flying line opens its sender's card (画面弹幕交互).
   bool get barrageTapAction => danmaku.barrageTapAction;
@@ -870,6 +885,9 @@ final class AppPreferences extends Equatable {
     bool? barrageAutoFps,
     String? barrageFpsMode,
     bool? barrageShowGifts,
+    bool? chatShowGifts,
+    bool? superChatIncludesMembership,
+    bool? youtubeAllChat,
     bool? barrageTapAction,
     bool? barrageLongPressAction,
     String? barrageFontFamily,
@@ -994,6 +1012,9 @@ final class AppPreferences extends Equatable {
     barrageAutoFps: barrageAutoFps ?? this.barrageAutoFps,
     barrageFpsMode: barrageFpsMode ?? this.barrageFpsMode,
     barrageShowGifts: barrageShowGifts ?? this.barrageShowGifts,
+    chatShowGifts: chatShowGifts ?? this.chatShowGifts,
+    superChatIncludesMembership: superChatIncludesMembership ?? this.superChatIncludesMembership,
+    youtubeAllChat: youtubeAllChat ?? this.youtubeAllChat,
     barrageTapAction: barrageTapAction ?? this.barrageTapAction,
     barrageLongPressAction: barrageLongPressAction ?? this.barrageLongPressAction,
     barrageFontFamily: barrageFontFamily ?? this.barrageFontFamily,

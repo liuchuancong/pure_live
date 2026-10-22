@@ -116,16 +116,20 @@ final class YoutubeDanmakuArgs {
 final class YoutubeSite implements LiveSite {
   /// Creates the adapter over [http]. [now] (the media lease issue times) is
   /// injectable for tests.
-  factory YoutubeSite({required YouTubeHttp http, DateTime Function()? now}) =>
-      YoutubeSite._(http, now ?? DateTime.now);
+  factory YoutubeSite({required YouTubeHttp http, DateTime Function()? now, bool Function()? allChat}) =>
+      YoutubeSite._(http, now ?? DateTime.now, allChat);
 
-  YoutubeSite._(this.http, this.now);
+  YoutubeSite._(this.http, this.now, this.allChat);
 
   /// Transport (the capabilities' and the comment feed's).
   final YouTubeHttp http;
 
   /// Injectable clock (the media leases).
   final DateTime Function() now;
+
+  /// Whether the chat reads the "Live chat" view instead of "Top chat"
+  /// (the reference's "YouTube 显示全部聊天"); null keeps Top chat.
+  final bool Function()? allChat;
 
   /// Stable platform identity.
   @override
@@ -281,7 +285,7 @@ final class YoutubeSite implements LiveSite {
     final discovery = _discovery ??= YoutubeDiscoveryProvider(site: this);
     final search = _search ??= YoutubeSearchProvider(site: this);
     final playback = _playback ??= YoutubePlaybackProvider(site: this);
-    final danmaku = _danmaku ??= YoutubeDanmakuProvider(site: this);
+    final danmaku = _danmaku ??= YoutubeDanmakuProvider(site: this, allChat: allChat);
     final link = _link ??= YoutubeLinkResolver(site: this);
     return switch (T) {
       const (LiveRoomProvider) => room as T,

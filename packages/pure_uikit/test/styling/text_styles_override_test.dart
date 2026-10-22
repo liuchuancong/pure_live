@@ -32,8 +32,8 @@ void main() {
     expect(TextStyles.from(token, scale: 2, bodySize: 10).body.fontSize, 20);
   });
 
-  test('null keeps the token size', () {
-    final tuned = TextStyles.from(token, scale: 1, bodySize: null);
+  test('an omitted size keeps the token size', () {
+    final tuned = TextStyles.from(token, scale: 1);
     expect(tuned.body.fontSize, base.body.fontSize);
   });
 }

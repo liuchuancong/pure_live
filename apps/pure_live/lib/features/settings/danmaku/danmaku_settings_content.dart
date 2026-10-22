@@ -268,6 +268,27 @@ final class DanmakuSettingsContent extends ConsumerWidget {
               value: p.barrageShowSender,
               onChanged: (value) => set((old) => old.copyWith(barrageShowSender: value)),
             ),
+            _switch(
+              context,
+              title: t.danmaku.chatShowGifts,
+              subtitle: t.danmaku.chatShowGiftsDesc,
+              value: p.chatShowGifts,
+              onChanged: (value) => set((old) => old.copyWith(chatShowGifts: value)),
+            ),
+            _switch(
+              context,
+              title: t.danmaku.superChatMembership,
+              subtitle: t.danmaku.superChatMembershipDesc,
+              value: p.superChatIncludesMembership,
+              onChanged: (value) => set((old) => old.copyWith(superChatIncludesMembership: value)),
+            ),
+            _switch(
+              context,
+              title: t.danmaku.youtubeAllChat,
+              subtitle: t.danmaku.youtubeAllChatDesc,
+              value: p.youtubeAllChat,
+              onChanged: (value) => set((old) => old.copyWith(youtubeAllChat: value)),
+            ),
             _choice(
               context,
               title: t.danmaku.listStyle,
