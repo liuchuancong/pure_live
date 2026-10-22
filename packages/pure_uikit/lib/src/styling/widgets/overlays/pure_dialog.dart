@@ -1,8 +1,6 @@
-import 'dart:ui' show ImageFilter, SemanticsRole;
+import 'dart:ui' show SemanticsRole;
 
 import 'package:flutter/material.dart';
-import 'package:pure_uikit/src/scales/radii.dart';
-import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 import 'package:pure_uikit/src/styling/widgets/overlays/pure_dialog_action_scope.dart';
 
@@ -114,103 +112,8 @@ final class _DialogVisual {
     required this.curve,
   });
 
-  /// Material 3's dialog: a 28dp tonal sheet lifted off the page, its headline
-  /// left-aligned over the body and its buttons end-aligned in the same inset.
-  factory material() => _DialogVisual(
-    panel: (theme, body) => DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colors.surfaceElevated,
-        borderRadius: BorderRadius.circular(PureRadii.xl + 4),
-        boxShadow: _elevation(theme, 24),
-      ),
-      child: body,
-    ),
-    minWidth: 280,
-    contentPadding: const EdgeInsets.all(24),
-    actionPadding: const EdgeInsets.only(top: 24),
-    headerGap: 16,
-    actionGap: 0,
-    buttonGap: 8,
-    titleStyle: (theme) => theme.text.headline.copyWith(color: theme.colors.text),
-    titleAlign: TextAlign.start,
-    bodyAlign: TextAlign.start,
-    bodyStyle: (theme) => theme.text.body.copyWith(color: theme.colors.textSecondary),
-    accentBar: (_) => null,
-    headerRule: (_) => null,
-    band: _ActionBand.end,
-    actionRule: (_) => null,
-    actionTopRule: (_) => null,
-    bodyMaxHeight: 0.6,
-    beginScale: 0.96,
-    curve: Curves.easeOutCubic,
-  );
 
-  /// iOS's alert: a blurred panel at the alert's own radius, its title and
-  /// message centred, and its answers stacked in a band divided by hairlines —
-  /// the one shape here whose action row is not a row of buttons but the
-  /// alert's own footer.
-  factory cupertino() => _DialogVisual(
-    panel: (theme, body) => _frosted(
-      theme,
-      body,
-      radius: 14,
-      fill: theme.isDark ? const Color(0xF22C2C2E) : const Color(0xF2FFFFFF),
-      sigma: 24,
-      edge: theme.colors.borderSecondary.withValues(alpha: 0.35),
-      elevation: 18,
-    ),
-    minWidth: 270,
-    contentPadding: const EdgeInsets.fromLTRB(16, 18, 16, 14),
-    actionPadding: EdgeInsets.zero,
-    headerGap: 6,
-    actionGap: 14,
-    buttonGap: 0,
-    titleStyle: (theme) => theme.text.title.copyWith(color: theme.colors.text),
-    titleAlign: TextAlign.center,
-    bodyAlign: TextAlign.center,
-    bodyStyle: (theme) => theme.text.body.copyWith(color: theme.colors.text),
-    accentBar: (_) => null,
-    headerRule: (_) => null,
-    band: _ActionBand.stack,
-    actionRule: (theme) => theme.colors.split,
-    actionTopRule: (theme) => theme.colors.split,
-    bodyMaxHeight: 0.5,
-    beginScale: 1.08,
-    curve: Curves.easeOutCubic,
-  );
 
-  /// macOS's window-modal panel: the sheet the system raises over a document —
-  /// vibrancy under a hairline edge, the question centred in it, and the answer
-  /// row bottom-right the way a Mac alert puts its default button there.
-  factory macos() => _DialogVisual(
-    panel: (theme, body) => _frosted(
-      theme,
-      body,
-      radius: 12,
-      fill: theme.isDark ? const Color(0xF03A3A3C) : const Color(0xF0FFFFFF),
-      sigma: 30,
-      edge: theme.colors.borderSecondary.withValues(alpha: 0.45),
-      elevation: 22,
-    ),
-    minWidth: 300,
-    contentPadding: const EdgeInsets.fromLTRB(24, 22, 24, 16),
-    actionPadding: const EdgeInsets.only(top: 18),
-    headerGap: 8,
-    actionGap: 0,
-    buttonGap: 10,
-    titleStyle: (theme) => theme.text.title.copyWith(color: theme.colors.text),
-    titleAlign: TextAlign.center,
-    bodyAlign: TextAlign.center,
-    bodyStyle: (theme) => theme.text.body.copyWith(color: theme.colors.textSecondary),
-    accentBar: (_) => null,
-    headerRule: (_) => null,
-    band: _ActionBand.end,
-    actionRule: (_) => null,
-    actionTopRule: (_) => null,
-    bodyMaxHeight: 0.55,
-    beginScale: 0.98,
-    curve: Curves.easeOut,
-  );
 
   /// Windows's ContentDialog: the card over its smoke fill at Fluent's corner,
   /// and the mark that names it — a 2dp accent bar standing in front of the
@@ -245,168 +148,10 @@ final class _DialogVisual {
     curve: Curves.easeOutCubic,
   );
 
-  /// Ubuntu's dialog: a flat bordered sheet with a header band ruled off the
-  /// body, and the two footer cells the Yaru theme gives a dialog — equal width,
-  /// side by side.
-  factory yaru() => _DialogVisual(
-    panel: (theme, body) => DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colors.surfaceElevated,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: theme.colors.borderSecondary),
-        boxShadow: _elevation(theme, 12),
-      ),
-      child: body,
-    ),
-    minWidth: 320,
-    contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 14),
-    actionPadding: const EdgeInsets.only(top: 16),
-    headerGap: 0,
-    actionGap: 0,
-    buttonGap: 8,
-    titleStyle: (theme) => theme.text.title.copyWith(color: theme.colors.text),
-    titleAlign: TextAlign.center,
-    bodyAlign: TextAlign.center,
-    bodyStyle: (theme) => theme.text.body.copyWith(color: theme.colors.textSecondary),
-    accentBar: (_) => null,
-    headerRule: (theme) => theme.colors.split,
-    band: _ActionBand.equal,
-    actionRule: (_) => null,
-    actionTopRule: (_) => null,
-    bodyMaxHeight: 0.6,
-    beginScale: 0.97,
-    curve: Curves.easeOut,
-  );
 
-  /// ForUI's shadcn alert: a bordered card with a ring of shadow, the title in
-  /// the plain text role over a muted body and the actions end-aligned under it.
-  factory forui() => _DialogVisual(
-    panel: (theme, body) => DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colors.surfaceElevated,
-        borderRadius: BorderRadius.circular(theme.token.scale.radii.lg),
-        border: Border.all(color: theme.colors.border),
-        boxShadow: _elevation(theme, 10),
-      ),
-      child: body,
-    ),
-    minWidth: 340,
-    contentPadding: const EdgeInsets.all(24),
-    actionPadding: const EdgeInsets.only(top: 24),
-    headerGap: 10,
-    actionGap: 0,
-    buttonGap: 8,
-    titleStyle: (theme) => theme.text.title.copyWith(color: theme.colors.text),
-    titleAlign: TextAlign.start,
-    bodyAlign: TextAlign.start,
-    bodyStyle: (theme) => theme.text.body.copyWith(color: theme.colors.textSecondary),
-    accentBar: (_) => null,
-    headerRule: (_) => null,
-    band: _ActionBand.end,
-    actionRule: (_) => null,
-    actionTopRule: (_) => null,
-    bodyMaxHeight: 0.6,
-    beginScale: 0.96,
-    curve: Curves.easeOutCubic,
-  );
 
-  /// The glass language: a frosted card — a real backdrop blur over a barely
-  /// there fill when the device can afford it, a plain translucent panel when it
-  /// cannot — with a lit hair edge around the message.
-  factory glass() => _DialogVisual(
-    panel: (theme, body) => _frosted(
-      theme,
-      body,
-      radius: theme.token.scale.radii.lg,
-      fill: theme.isDark ? Colors.white.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.55),
-      sigma: 24,
-      edge: theme.isDark ? Colors.white.withValues(alpha: 0.18) : Colors.white.withValues(alpha: 0.65),
-      elevation: 20,
-    ),
-    minWidth: 320,
-    contentPadding: const EdgeInsets.all(20),
-    actionPadding: const EdgeInsets.only(top: 20),
-    headerGap: 10,
-    actionGap: 0,
-    buttonGap: 8,
-    titleStyle: (theme) => theme.text.title.copyWith(color: theme.colors.text),
-    titleAlign: TextAlign.start,
-    bodyAlign: TextAlign.start,
-    bodyStyle: (theme) => theme.text.body.copyWith(color: theme.colors.textSecondary),
-    accentBar: (_) => null,
-    headerRule: (_) => null,
-    band: _ActionBand.end,
-    actionRule: (_) => null,
-    actionTopRule: (_) => null,
-    bodyMaxHeight: 0.6,
-    beginScale: 0.94,
-    curve: Curves.easeOutCubic,
-  );
 
-  /// The neumorphic language: the message sunk into a mould of the page's own
-  /// material — no border, no shadow card, but light from the top left and
-  /// shade from the bottom right around a soft round edge.
-  factory neumorphic() => _DialogVisual(
-    panel: (theme, body) => DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colors.bgContainer,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: _mould(theme),
-      ),
-      child: body,
-    ),
-    minWidth: 320,
-    contentPadding: const EdgeInsets.all(24),
-    actionPadding: const EdgeInsets.only(top: 22),
-    headerGap: 12,
-    actionGap: 0,
-    buttonGap: 12,
-    titleStyle: (theme) => theme.text.title.copyWith(color: theme.colors.text),
-    titleAlign: TextAlign.center,
-    bodyAlign: TextAlign.center,
-    bodyStyle: (theme) => theme.text.body.copyWith(color: theme.colors.textSecondary),
-    accentBar: (_) => null,
-    headerRule: (_) => null,
-    band: _ActionBand.end,
-    actionRule: (_) => null,
-    actionTopRule: (_) => null,
-    bodyMaxHeight: 0.6,
-    beginScale: 1.04,
-    curve: Curves.easeOutCubic,
-  );
 
-  /// The wind dialog: the same border-and-shadow grammar as shadcn, but crisper
-  /// — the fork's own small corner, tighter insets and a hairline under the
-  /// title, so the card reads as a paneled window rather than a floating sheet.
-  factory wind() => _DialogVisual(
-    panel: (theme, body) => DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colors.surfaceElevated,
-        borderRadius: BorderRadius.circular(theme.token.scale.radii.base),
-        border: Border.all(color: theme.colors.borderSecondary),
-        boxShadow: _elevation(theme, 8),
-      ),
-      child: body,
-    ),
-    minWidth: 320,
-    contentPadding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
-    actionPadding: const EdgeInsets.only(top: 16),
-    headerGap: 0,
-    actionGap: 0,
-    buttonGap: 6,
-    titleStyle: (theme) => theme.text.title.copyWith(color: theme.colors.text),
-    titleAlign: TextAlign.start,
-    bodyAlign: TextAlign.start,
-    bodyStyle: (theme) => theme.text.body.copyWith(color: theme.colors.textSecondary),
-    accentBar: (_) => null,
-    headerRule: (theme) => theme.colors.borderSecondary.withValues(alpha: 0.5),
-    band: _ActionBand.end,
-    actionRule: (_) => null,
-    actionTopRule: (_) => null,
-    bodyMaxHeight: 0.6,
-    beginScale: 0.98,
-    curve: Curves.easeOut,
-  );
 
   /// Wraps the card's column in whatever the language paints behind it: fill,
   /// blur, border, shadow, and for iOS the clip that rounds the button band.
@@ -468,19 +213,6 @@ final class _DialogVisual {
     ),
   ];
 
-  /// The neumorphic pair: light from the top left, shade from the bottom right.
-  static List<BoxShadow> _mould(PureTheme theme) => [
-    BoxShadow(
-      color: theme.colors.shadowBase.withValues(alpha: theme.isDark ? 0.55 : 0.2),
-      blurRadius: 22,
-      offset: const Offset(9, 9),
-    ),
-    BoxShadow(
-      color: theme.colors.white.withValues(alpha: theme.isDark ? 0.05 : 0.75),
-      blurRadius: 22,
-      offset: const Offset(-9, -9),
-    ),
-  ];
 }
 
 /// The three ways a dialog's answers are put down.
@@ -647,55 +379,9 @@ class _DialogSurface extends StatelessWidget {
   }
 }
 
-/// The surface a blurred language raises its dialog on: a real backdrop filter
-/// over the tinted fill when the theme allows transparency, a plain filled card
-/// when it does not, and a hair edge in both cases so the panel still separates
-/// from the scrim behind it. The whole thing is clipped to the card's own radius,
-/// which is what lets an iOS footer band sit flush against the bottom corners
-/// instead of squaring them off.
-Widget _frosted(
-  PureTheme theme,
-  Widget body, {
-  required double radius,
-  required Color fill,
-  required double sigma,
-  required Color edge,
-  required double elevation,
-}) {
-  final card = DecoratedBox(
-    decoration: BoxDecoration(
-      color: theme.canBlur ? fill.withValues(alpha: fill.a * 0.9) : fill,
-      borderRadius: BorderRadius.circular(radius),
-      border: Border.all(color: edge),
-      boxShadow: _DialogVisual._elevation(theme, elevation),
-    ),
-    child: body,
-  );
-  // The blur has to sit inside the clip, or the frosted panel would bleed its
-  // blurred rectangle past its own rounded corners.
-  return ClipRRect(
-    borderRadius: BorderRadius.circular(radius),
-    child: theme.canBlur
-        ? BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
-            child: card,
-          )
-        : card,
-  );
-}
 
 /// The dialog for the active design language.
-_DialogVisual _dialogVisual(PureTheme theme) => switch (theme.config.language) {
-  PureDesignLanguage.material => _DialogVisual.material(),
-  PureDesignLanguage.cupertino => _DialogVisual.cupertino(),
-  PureDesignLanguage.macos => _DialogVisual.macos(),
-  PureDesignLanguage.fluent => _DialogVisual.fluent(),
-  PureDesignLanguage.yaru => _DialogVisual.yaru(),
-  PureDesignLanguage.forui => _DialogVisual.forui(),
-  PureDesignLanguage.glass => _DialogVisual.glass(),
-  PureDesignLanguage.neumorphic => _DialogVisual.neumorphic(),
-  PureDesignLanguage.wind => _DialogVisual.wind(),
-};
+_DialogVisual _dialogVisual(PureTheme theme) => _DialogVisual.fluent();
 
 /// The actions in the dialog's own action form: the last is the default, which
 /// is where both macOS and iOS put the answer to the question the dialog asks.

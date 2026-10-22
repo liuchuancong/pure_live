@@ -1,9 +1,6 @@
 import 'dart:async';
-import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
-import 'package:pure_uikit/src/scales/radii.dart';
-import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 
 /// A hover/focus/long-press tooltip — a word of help dropped over the widget it
@@ -76,68 +73,8 @@ final class _TipVisual {
     required this.curve,
   });
 
-  /// Material 3's tooltip: the inverse pill — dark ink surface in a light theme,
-  /// an elevated one in a dark theme — at the small 4dp corner with a soft
-  /// shadow, and nothing else.
-  factory material() => _TipVisual(
-    bubble: (theme, body) => _card(theme, body, radius: 4, fill: theme.colors.bgSpotlight, elevation: 4),
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    gap: 8,
-    maxWidth: 300,
-    estimatedHeight: 40,
-    tail: false,
-    tailColor: (_) => null,
-    content: _onSpotlight,
-    beginScale: 0.92,
-    curve: Curves.easeOutCubic,
-  );
 
-  /// iOS's help bubble: a dark blurred capsule — the shape iOS puts over a
-  /// pressed field — with reversed white text on it.
-  factory cupertino() => _TipVisual(
-    bubble: (theme, body) => _frost(
-      theme,
-      body,
-      radius: 8,
-      fill: theme.isDark ? const Color(0xE0F2F2F7) : const Color(0xB0000000),
-      sigma: 12,
-      edge: Colors.transparent,
-      elevation: 6,
-    ),
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    gap: 10,
-    maxWidth: 260,
-    estimatedHeight: 36,
-    tail: false,
-    tailColor: (_) => null,
-    content: (theme) => theme.isDark ? theme.colors.text : Colors.white,
-    beginScale: 0.96,
-    curve: Curves.easeOut,
-  );
 
-  /// macOS's help tag: the grey pill a control's `#?` hint arrives in, at the
-  /// small control radius over vibrancy — and the mark that names it, the point
-  /// on its underside that aims the tag at the control it belongs to.
-  factory macos() => _TipVisual(
-    bubble: (theme, body) => _frost(
-      theme,
-      body,
-      radius: 5,
-      fill: theme.isDark ? const Color(0xEC4C4C4E) : const Color(0xECF5F5F7),
-      sigma: 24,
-      edge: theme.colors.borderSecondary.withValues(alpha: 0.35),
-      elevation: 6,
-    ),
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-    gap: 6,
-    maxWidth: 240,
-    estimatedHeight: 32,
-    tail: true,
-    tailColor: (theme) => theme.isDark ? const Color(0xEC4C4C4E) : const Color(0xECF5F5F7),
-    content: (theme) => theme.colors.text,
-    beginScale: 0.98,
-    curve: Curves.easeOut,
-  );
 
   /// Windows's flyout: the bordered card WinUI drops under a hovered control, at
   /// Fluent's corner with its hairline edge and its soft elevation.
@@ -161,118 +98,10 @@ final class _TipVisual {
     curve: Curves.easeOutBack,
   );
 
-  /// Ubuntu's tooltip: the dark bubble the Yaru shell draws over a hovered
-  /// control — always dark, always reversed text, at the shell's own corner with
-  /// more air than its siblings.
-  factory yaru() => _TipVisual(
-    bubble: (theme, body) => _card(
-      theme,
-      body,
-      radius: PureRadii.sm,
-      fill: theme.isDark ? const Color(0xF0515151) : const Color(0xF03D3D3D),
-      elevation: 5,
-    ),
-    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-    gap: 10,
-    maxWidth: 340,
-    estimatedHeight: 40,
-    tail: false,
-    tailColor: (_) => null,
-    content: (_) => Colors.white,
-    beginScale: 0.96,
-    curve: Curves.easeOut,
-  );
 
-  /// ForUI's shadcn tooltip: the inverse plate with a ring rather than a shadow,
-  /// the tightest padding of the nine — shadcn's hint is meant to read as a
-  /// label, not a card.
-  factory forui() => _TipVisual(
-    bubble: (theme, body) => _card(
-      theme,
-      body,
-      radius: theme.token.scale.radii.base,
-      fill: theme.colors.bgSpotlight,
-      border: theme.colors.borderSecondary.withValues(alpha: 0.3),
-    ),
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-    gap: 6,
-    maxWidth: 320,
-    estimatedHeight: 34,
-    tail: false,
-    tailColor: (_) => null,
-    content: _onSpotlight,
-    beginScale: 0.95,
-    curve: Curves.easeOutCubic,
-  );
 
-  /// The glass language: a frosted hint — a real backdrop blur over a barely
-  /// there fill when the device can afford it, a plain translucent bubble when it
-  /// cannot — with a lit hair edge.
-  factory glass() => _TipVisual(
-    bubble: (theme, body) => _frost(
-      theme,
-      body,
-      radius: theme.token.scale.radii.lg,
-      fill: theme.isDark ? Colors.white.withValues(alpha: 0.14) : Colors.white.withValues(alpha: 0.6),
-      sigma: 16,
-      edge: theme.isDark ? Colors.white.withValues(alpha: 0.18) : Colors.white.withValues(alpha: 0.65),
-      elevation: 6,
-    ),
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-    gap: 8,
-    maxWidth: 300,
-    estimatedHeight: 38,
-    tail: false,
-    tailColor: (_) => null,
-    content: (theme) => theme.colors.text,
-    beginScale: 0.9,
-    curve: Curves.easeOutCubic,
-  );
 
-  /// The neumorphic language: a plate raised off the page — light from the top
-  /// left, shade from the bottom right, no border — so the hint is the same
-  /// extruded surface as the rest of the language.
-  factory neumorphic() => _TipVisual(
-    bubble: (theme, body) => DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colors.bgContainer,
-        borderRadius: BorderRadius.circular(PureRadii.md),
-        boxShadow: _raised(theme),
-      ),
-      child: body,
-    ),
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-    gap: 8,
-    maxWidth: 300,
-    estimatedHeight: 40,
-    tail: false,
-    tailColor: (_) => null,
-    content: (theme) => theme.colors.text,
-    beginScale: 1.04,
-    curve: Curves.easeOutBack,
-  );
 
-  /// The wind hint: the same border-and-shadow grammar as the Fluent flyout, but
-  /// crisper — the fork's own small corner, tighter air and a lighter shadow.
-  factory wind() => _TipVisual(
-    bubble: (theme, body) => _card(
-      theme,
-      body,
-      radius: theme.token.scale.radii.xs,
-      fill: theme.colors.surfaceElevated,
-      border: theme.colors.borderSecondary,
-      elevation: 3,
-    ),
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-    gap: 4,
-    maxWidth: 280,
-    estimatedHeight: 32,
-    tail: false,
-    tailColor: (_) => null,
-    content: (theme) => theme.colors.text,
-    beginScale: 0.96,
-    curve: Curves.easeOut,
-  );
 
   /// Wraps the message in whatever the language paints behind it: the fill, the
   /// blur, the border, the shadow.
@@ -304,8 +133,6 @@ final class _TipVisual {
   final double beginScale;
   final Curve curve;
 
-  /// The ink a reversed (dark-surfaced) bubble reads its text in.
-  static Color _onSpotlight(PureTheme theme) => theme.isDark ? theme.colors.text : Colors.white;
 }
 
 /// The plain plate: a fill, an optional hairline, and an optional elevation
@@ -328,40 +155,6 @@ Widget _card(
   child: body,
 );
 
-/// The surface a blurred language draws its bubble on: a real backdrop filter
-/// when the theme allows transparency, a plain filled plate when it does not, and
-/// the blur inside the clip either way so no blurred rectangle bleeds past the
-/// bubble's own corners.
-Widget _frost(
-  PureTheme theme,
-  Widget body, {
-  required double radius,
-  required Color fill,
-  required double sigma,
-  required Color edge,
-  required double elevation,
-}) {
-  final rounded = BorderRadius.circular(radius);
-  final card = DecoratedBox(
-    decoration: BoxDecoration(
-      color: theme.canBlur ? fill.withValues(alpha: fill.a * 0.85) : fill,
-      borderRadius: rounded,
-      border: edge.a == 0 ? null : Border.all(color: edge),
-      boxShadow: _elevation(theme, elevation),
-    ),
-    child: body,
-  );
-  if (!theme.canBlur) {
-    return card;
-  }
-  return ClipRRect(
-    borderRadius: rounded,
-    child: BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
-      child: card,
-    ),
-  );
-}
 
 /// The elevation shadow a floating bubble is lifted on.
 List<BoxShadow> _elevation(PureTheme theme, double blur) => [
@@ -373,31 +166,9 @@ List<BoxShadow> _elevation(PureTheme theme, double blur) => [
 ];
 
 /// The neumorphic pair: light from the top left, shade from the bottom right.
-List<BoxShadow> _raised(PureTheme theme) => [
-  BoxShadow(
-    color: theme.colors.shadowBase.withValues(alpha: theme.isDark ? 0.5 : 0.18),
-    blurRadius: 12,
-    offset: const Offset(6, 6),
-  ),
-  BoxShadow(
-    color: theme.colors.white.withValues(alpha: theme.isDark ? 0.04 : 0.7),
-    blurRadius: 12,
-    offset: const Offset(-6, -6),
-  ),
-];
 
 /// The tooltip for the active design language.
-_TipVisual _tooltipVisual(PureTheme theme) => switch (theme.config.language) {
-  PureDesignLanguage.material => _TipVisual.material(),
-  PureDesignLanguage.cupertino => _TipVisual.cupertino(),
-  PureDesignLanguage.macos => _TipVisual.macos(),
-  PureDesignLanguage.fluent => _TipVisual.fluent(),
-  PureDesignLanguage.yaru => _TipVisual.yaru(),
-  PureDesignLanguage.forui => _TipVisual.forui(),
-  PureDesignLanguage.glass => _TipVisual.glass(),
-  PureDesignLanguage.neumorphic => _TipVisual.neumorphic(),
-  PureDesignLanguage.wind => _TipVisual.wind(),
-};
+_TipVisual _tooltipVisual(PureTheme theme) => _TipVisual.fluent();
 
 /// The trigger's side of the contract: it owns the hover timer, the long-press
 /// pin, the focus answer and the single [OverlayEntry] the bubble lives in while
