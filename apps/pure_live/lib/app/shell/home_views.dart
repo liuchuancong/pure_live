@@ -14,6 +14,12 @@ const double homeRailBreakpoint = 600;
 /// Whether a home of [width] uses the navigation column.
 bool isHomeRailWidth(double width) => width >= homeRailBreakpoint;
 
+/// Whether the shell draws the phone chrome at [width]: under the breakpoint
+/// always, and above it when a phone-shaped wide screen (a tablet, an unfolded
+/// foldable) was told to keep the bottom bar. A desktop keeps its column.
+bool usesHomeBottomBar(double width, {required bool bottomBarOnWide, required bool mobile}) =>
+    !isHomeRailWidth(width) || (bottomBarOnWide && mobile);
+
 /// Tells the home tabs which layout the shell chose (the reference's
 /// `HomeLayoutScope`): a page shows its own menu/search buttons only in the
 /// phone layout, because the navigation column already carries them.

@@ -120,17 +120,22 @@ void main() {
   });
 
   group('guideSteps', () {
-    final rom = RomInfo(family: RomFamily.other, manufacturer: 'Google');
+    const rom = RomInfo(family: RomFamily.other, manufacturer: 'Google');
 
     test('a healthy phone has no readable step in the way', () {
-      final steps = guideSteps(BackgroundStatus(rom: rom));
+      final steps = guideSteps(const BackgroundStatus(rom: rom));
       expect([for (final step in steps) step.id], [GuideStepId.notifications, GuideStepId.battery]);
       expect(pendingSteps(steps), 0);
     });
 
     test('notifications and the battery exemption are the readable todos', () {
       final steps = guideSteps(
-        BackgroundStatus(rom: rom, notifications: false, batteryUnrestricted: false, dataSaver: DataSaver.restricted),
+        const BackgroundStatus(
+          rom: rom,
+          notifications: false,
+          batteryUnrestricted: false,
+          dataSaver: DataSaver.restricted,
+        ),
       );
       expect(pendingSteps(steps), 3);
       expect(steps.map((step) => step.id), contains(GuideStepId.dataSaver));
@@ -138,15 +143,15 @@ void main() {
 
     test('the background restriction and data saver appear only when set', () {
       final restricted = guideSteps(
-        BackgroundStatus(rom: rom, backgroundRestricted: true, dataSaver: DataSaver.restricted),
+        const BackgroundStatus(rom: rom, backgroundRestricted: true, dataSaver: DataSaver.restricted),
       );
       expect(restricted.map((step) => step.id), containsAll([GuideStepId.restricted, GuideStepId.dataSaver]));
     });
 
     test('a vendor adds the switches only it can read', () {
       final xi = guideSteps(
-        BackgroundStatus(
-          rom: const RomInfo(family: RomFamily.xiaomi, manufacturer: 'Xiaomi'),
+        const BackgroundStatus(
+          rom: RomInfo(family: RomFamily.xiaomi, manufacturer: 'Xiaomi'),
         ),
       );
       expect(

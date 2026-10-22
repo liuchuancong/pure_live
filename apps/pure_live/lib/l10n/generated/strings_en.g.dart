@@ -413,6 +413,9 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get restoreLastTabSubtitle => 'Start on the branch you last visited';
 	@override String restoreLastTabOn({required String branch}) => 'Start on the branch you last visited (last: ${branch})';
 	@override String get navigationHint => 'Decides where the start splash hands over; a change lands at the next start.';
+	@override String get groupWideNavigation => 'Wide navigation';
+	@override String get homeBottomBarOnWide => 'Bottom bar on wide screens';
+	@override String get homeBottomBarOnWideSubtitle => 'Tablets and unfolded foldables keep the phone bottom bar instead of the side rail';
 	@override String get proxyGroup => 'Proxy';
 	@override String get proxyEnable => 'Use a proxy';
 	@override String get proxyEnableSubtitle => 'Route outgoing requests through the proxy below';
@@ -2040,6 +2043,9 @@ extension on TranslationsEn {
 			'settings.restoreLastTabSubtitle' => 'Start on the branch you last visited',
 			'settings.restoreLastTabOn' => ({required String branch}) => 'Start on the branch you last visited (last: ${branch})',
 			'settings.navigationHint' => 'Decides where the start splash hands over; a change lands at the next start.',
+			'settings.groupWideNavigation' => 'Wide navigation',
+			'settings.homeBottomBarOnWide' => 'Bottom bar on wide screens',
+			'settings.homeBottomBarOnWideSubtitle' => 'Tablets and unfolded foldables keep the phone bottom bar instead of the side rail',
 			'settings.proxyGroup' => 'Proxy',
 			'settings.proxyEnable' => 'Use a proxy',
 			'settings.proxyEnableSubtitle' => 'Route outgoing requests through the proxy below',
@@ -2287,11 +2293,11 @@ extension on TranslationsEn {
 			'settings.localGiftBannerDesc' => 'Raise a gift card over the picture when you send one',
 			'settings.backgroundPlay' => 'Background playback',
 			'settings.backgroundPlayDesc' => 'Keep playing in the background; off pauses on the way out and resumes on return',
+			_ => null,
+		} ?? switch (path) {
 			'settings.liveAlertScope' => 'Alert scope',
 			'settings.liveAlertScopeDesc' => 'Alert only for follows carrying a chosen tag; none chosen alerts every follow',
 			'settings.liveAlertAll' => 'All follows',
-			_ => null,
-		} ?? switch (path) {
 			'settings.refreshConcurrency' => 'Parallel refresh jobs',
 			'settings.refreshConcurrencyHint' => 'How many followed rooms refresh at once',
 			'settings.screenKeepOn' => 'Keep the screen on',
@@ -2801,11 +2807,11 @@ extension on TranslationsEn {
 			'search.externalBrowserNotOpened' => 'The system browser did not open; check the default-browser settings',
 			'search.webSearchRoomBanner' => 'This is a live room',
 			'search.roomIdLabel' => ({required String roomId}) => 'room ${roomId}',
+			_ => null,
+		} ?? switch (path) {
 			'search.roomEnter' => 'Enter',
 			'search.webSearchRoomDismiss' => 'Stop offering this room',
 			'search.webSearchInvalidAddress' => 'The web-search address is invalid; go back to the search page and try again.',
-			_ => null,
-		} ?? switch (path) {
 			'search.webSearchLoadFailed' => 'The page failed to load; check the network or proxy and retry.',
 			'search.webSearchUnavailableTitle' => 'Web search unavailable',
 			'search.sortMode' => 'Sort',

@@ -107,7 +107,12 @@ final class _HomeShellState extends ConsumerState<HomeShell> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final phone = !isHomeRailWidth(width);
+        final preferences = ref.watch(appPreferencesProvider);
+        final phone = usesHomeBottomBar(
+          width,
+          bottomBarOnWide: preferences.homeBottomBarOnWide,
+          mobile: Platform.isAndroid || Platform.isIOS,
+        );
         final branches = ref.watch(visibleShellBranchesProvider);
         final current = ShellBranch.at(navigationShell.currentIndex);
         // A removed or hidden destination falls back to the first one; a menu
@@ -152,7 +157,7 @@ final class _HomeShellState extends ConsumerState<HomeShell> {
         // The column's shape is width first, then the user's toggle: a wide
         // window draws the labelled sidebar unless they collapsed it, and a
         // narrow one draws the rail whatever the toggle says.
-        final expanded = width >= AdaptiveBreakpoints.expanded && ref.watch(appPreferencesProvider).shellNavExpanded;
+        final expanded = width >= AdaptiveBreakpoints.expanded && preferences.shellNavExpanded;
         final destinations = shellColumnDestinations(context, branches: branches);
         // The labelled sidebar's width is the user's: dragged on the handle
         // between the panes, held in the preferences, reset by a double tap.

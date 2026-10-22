@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_platform/live_platform.dart' show PlatformKind;
+import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/app/shell/shell_destinations.dart';
 import 'package:pure_live/features/settings/widgets/settings_chrome.dart';
 import 'package:pure_live/l10n/generated/strings.g.dart';
@@ -42,6 +44,23 @@ final class NavigationSettingsPage extends ConsumerWidget {
               ),
             ],
           ),
+          if (switch (ref.watch(environmentProvider).runtime.kind) {
+            PlatformKind.android || PlatformKind.ios => true,
+            _ => false,
+          })
+            SettingsSection(
+              title: Text(t.settings.groupWideNavigation),
+              tiles: [
+                SettingsTile.switchTile(
+                  key: const ValueKey('navigation-wide-bottom-bar'),
+                  leading: const Icon(Icons.tablet_android_outlined),
+                  title: Text(t.settings.homeBottomBarOnWide),
+                  description: Text(t.settings.homeBottomBarOnWideSubtitle),
+                  initialValue: preferences.homeBottomBarOnWide,
+                  onToggle: (value) => update((p) => p.copyWith(homeBottomBarOnWide: value)),
+                ),
+              ],
+            ),
           SettingsSection(
             tiles: [
               CustomSettingsTile(

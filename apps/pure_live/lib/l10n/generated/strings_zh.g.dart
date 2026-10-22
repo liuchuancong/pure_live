@@ -940,6 +940,15 @@ class Translations$settings$zh {
 	/// zh: '决定启动页跳转的目标；更改在下次启动生效。'
 	String get navigationHint => '决定启动页跳转的目标；更改在下次启动生效。';
 
+	/// zh: '宽屏导航'
+	String get groupWideNavigation => '宽屏导航';
+
+	/// zh: '宽屏也用底栏'
+	String get homeBottomBarOnWide => '宽屏也用底栏';
+
+	/// zh: '平板和展开的折叠屏的首页也用手机的底栏，不再显示侧栏'
+	String get homeBottomBarOnWideSubtitle => '平板和展开的折叠屏的首页也用手机的底栏，不再显示侧栏';
+
 	/// zh: '代理'
 	String get proxyGroup => '代理';
 
@@ -4700,6 +4709,9 @@ extension on Translations {
 			'settings.restoreLastTabSubtitle' => '启动时回到上次访问的页签',
 			'settings.restoreLastTabOn' => ({required String branch}) => '启动时回到上次访问的页签（上次：${branch}）',
 			'settings.navigationHint' => '决定启动页跳转的目标；更改在下次启动生效。',
+			'settings.groupWideNavigation' => '宽屏导航',
+			'settings.homeBottomBarOnWide' => '宽屏也用底栏',
+			'settings.homeBottomBarOnWideSubtitle' => '平板和展开的折叠屏的首页也用手机的底栏，不再显示侧栏',
 			'settings.proxyGroup' => '代理',
 			'settings.proxyEnable' => '使用代理',
 			'settings.proxyEnableSubtitle' => '通过下方代理转发请求',
@@ -4947,11 +4959,11 @@ extension on Translations {
 			'settings.localGiftBannerDesc' => '送出礼物时在画面上浮出礼物卡片',
 			'settings.backgroundPlay' => '后台播放',
 			'settings.backgroundPlayDesc' => '切到后台继续播放声音；关闭则进后台暂停、回来恢复',
+			_ => null,
+		} ?? switch (path) {
 			'settings.liveAlertScope' => '开播提醒范围',
 			'settings.liveAlertScopeDesc' => '只提醒带所选标签的关注；全不选则提醒全部关注',
 			'settings.liveAlertAll' => '全部关注',
-			_ => null,
-		} ?? switch (path) {
 			'settings.refreshConcurrency' => '并发刷新任务',
 			'settings.refreshConcurrencyHint' => '同时向几个直播间发起刷新',
 			'settings.screenKeepOn' => '播放时屏幕常亮',
@@ -5461,11 +5473,11 @@ extension on Translations {
 			'room.recBadgeRecording' => ({required String time}) => '录制中 ${time}',
 			'room.recBadgeRetrying' => ({required String time}) => '重连中 ${time}',
 			'room.recBadgeMerging' => '合成中',
+			_ => null,
+		} ?? switch (path) {
 			'areas.followedAreas' => '关注的分区',
 			'areas.empty' => '暂无分区',
 			'areas.followEmpty' => '还没有关注的分区',
-			_ => null,
-		} ?? switch (path) {
 			'areas.followEmptyHint' => '点进一个分区，再用右上角的按钮关注它。',
 			'areas.followDone' => ({required String name}) => '已关注「${name}」',
 			'areas.unfollowDone' => ({required String name}) => '已取消关注「${name}」',

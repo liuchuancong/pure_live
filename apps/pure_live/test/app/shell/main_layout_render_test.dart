@@ -104,6 +104,15 @@ void main() {
     expect(isHomeRailWidth(599), isFalse);
     expect(isHomeRailWidth(600), isTrue);
   });
+
+  test('a wide phone keeps the bottom bar only when asked to', () {
+    expect(usesHomeBottomBar(900, bottomBarOnWide: false, mobile: true), isFalse);
+    expect(usesHomeBottomBar(900, bottomBarOnWide: true, mobile: true), isTrue);
+    // A desktop window is never turned into the phone chrome.
+    expect(usesHomeBottomBar(900, bottomBarOnWide: true, mobile: false), isFalse);
+    // Under the breakpoint the bottom bar is not a choice.
+    expect(usesHomeBottomBar(390, bottomBarOnWide: false, mobile: false), isTrue);
+  });
 }
 
 /// Pumps [child] through the same host chain the app uses: PureTheme above

@@ -141,6 +141,7 @@ final class AppPreferences extends Equatable {
     AppLaunchBranch launchBranch = AppLaunchBranch.follow,
     bool restoreLastTab = false,
     bool shellNavExpanded = true,
+    bool homeBottomBarOnWide = false,
     double sidebarWidth = 180,
     int windowWidth = 0,
     int windowHeight = 0,
@@ -274,6 +275,7 @@ final class AppPreferences extends Equatable {
          restoreLastTab: restoreLastTab,
          lastBranchId: lastBranchId,
          shellNavExpanded: shellNavExpanded,
+         homeBottomBarOnWide: homeBottomBarOnWide,
          sidebarWidth: sidebarWidth,
          windowWidth: windowWidth,
          windowHeight: windowHeight,
@@ -722,6 +724,10 @@ final class AppPreferences extends Equatable {
   /// ever rewriting it — a narrow window draws the rail whatever this says.
   bool get shellNavExpanded => shell.shellNavExpanded;
 
+  /// Whether a wide phone-shaped screen keeps the phone's bottom bar instead
+  /// of the navigation column.
+  bool get homeBottomBarOnWide => shell.homeBottomBarOnWide;
+
   /// The labelled sidebar's width, in logical pixels — what the drag handle
   /// between the panes writes and every boot restores. The shell clamps it
   /// before drawing, so a hand-edited document cannot stretch it absurdly.
@@ -919,6 +925,7 @@ final class AppPreferences extends Equatable {
     String? lastBranchId,
     bool clearLastBranchId = false,
     bool? shellNavExpanded,
+    bool? homeBottomBarOnWide,
     double? sidebarWidth,
     int? windowWidth,
     int? windowHeight,
@@ -1040,6 +1047,7 @@ final class AppPreferences extends Equatable {
     restoreLastTab: restoreLastTab ?? this.restoreLastTab,
     lastBranchId: clearLastBranchId ? null : (lastBranchId ?? this.lastBranchId),
     shellNavExpanded: shellNavExpanded ?? this.shellNavExpanded,
+    homeBottomBarOnWide: homeBottomBarOnWide ?? this.homeBottomBarOnWide,
     sidebarWidth: sidebarWidth ?? this.sidebarWidth,
     windowWidth: windowWidth ?? this.windowWidth,
     windowHeight: windowHeight ?? this.windowHeight,

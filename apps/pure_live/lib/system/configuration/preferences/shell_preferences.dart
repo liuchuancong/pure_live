@@ -25,6 +25,7 @@ final class ShellPreferences extends Equatable {
     this.restoreLastTab = false,
     this.lastBranchId,
     this.shellNavExpanded = true,
+    this.homeBottomBarOnWide = false,
     this.sidebarWidth = 180,
     this.windowWidth = 0,
     this.windowHeight = 0,
@@ -40,6 +41,7 @@ final class ShellPreferences extends Equatable {
       restoreLastTab: json['restoreLastTab'] as bool? ?? false,
       lastBranchId: json['lastBranchId'] as String?,
       shellNavExpanded: json['shellNavExpanded'] as bool? ?? true,
+      homeBottomBarOnWide: json['homeBottomBarOnWide'] as bool? ?? false,
       sidebarWidth: (json['sidebarWidth'] as num?)?.toDouble() ?? 180,
       windowWidth: json['windowWidth'] as int? ?? 0,
       windowHeight: json['windowHeight'] as int? ?? 0,
@@ -63,6 +65,11 @@ final class ShellPreferences extends Equatable {
   /// ever rewriting it — a narrow window draws the rail whatever this says.
   final bool shellNavExpanded;
 
+  /// Whether a wide phone-shaped screen (a tablet, an unfolded foldable) keeps
+  /// the phone's bottom bar instead of the navigation column. Off: the rail
+  /// from the phone breakpoint, as before. The desktops keep their column.
+  final bool homeBottomBarOnWide;
+
   /// The labelled sidebar's width, in logical pixels — what the drag handle
   /// between the panes writes and every boot restores. The shell clamps it
   /// before drawing, so a hand-edited document cannot stretch it absurdly.
@@ -84,6 +91,7 @@ final class ShellPreferences extends Equatable {
     'restoreLastTab': restoreLastTab,
     'lastBranchId': lastBranchId,
     'shellNavExpanded': shellNavExpanded,
+    'homeBottomBarOnWide': homeBottomBarOnWide,
     'sidebarWidth': sidebarWidth,
     'windowWidth': windowWidth,
     'windowHeight': windowHeight,
@@ -96,6 +104,7 @@ final class ShellPreferences extends Equatable {
     bool? restoreLastTab,
     String? lastBranchId,
     bool? shellNavExpanded,
+    bool? homeBottomBarOnWide,
     double? sidebarWidth,
     int? windowWidth,
     int? windowHeight,
@@ -105,6 +114,7 @@ final class ShellPreferences extends Equatable {
     restoreLastTab: restoreLastTab ?? this.restoreLastTab,
     lastBranchId: lastBranchId ?? this.lastBranchId,
     shellNavExpanded: shellNavExpanded ?? this.shellNavExpanded,
+    homeBottomBarOnWide: homeBottomBarOnWide ?? this.homeBottomBarOnWide,
     sidebarWidth: sidebarWidth ?? this.sidebarWidth,
     windowWidth: windowWidth ?? this.windowWidth,
     windowHeight: windowHeight ?? this.windowHeight,
@@ -117,6 +127,7 @@ final class ShellPreferences extends Equatable {
     restoreLastTab,
     lastBranchId,
     shellNavExpanded,
+    homeBottomBarOnWide,
     sidebarWidth,
     windowWidth,
     windowHeight,
