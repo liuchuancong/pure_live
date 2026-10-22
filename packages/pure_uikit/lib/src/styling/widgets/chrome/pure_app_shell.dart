@@ -1,51 +1,42 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show KeyDownEvent, KeyEvent, KeyRepeatEvent, LogicalKeyboardKey;
 import 'package:pure_uikit/src/scales/radii.dart';
 import 'package:pure_uikit/src/scales/sizing.dart';
-import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 import 'package:pure_uikit/src/styling/widgets/chrome/pure_nav_bar.dart';
 import 'package:pure_uikit/src/styling/widgets/chrome/pure_shell_types.dart';
 import 'package:pure_uikit/src/styling/widgets/layout/pure_environment.dart';
 
-/// The public application shell: one widget, every design language.
+/// The public application shell.
 ///
 /// It sits between the host and the page — the routing layer's `ShellRoute` in
 /// an app — and takes only neutral data: the destinations, the selected id,
 /// the callback and the body. One private `_ShellVisual` is resolved from
-/// `PureTheme.of(context)` plus `theme.config.language`, and all nine
-/// languages paint their navigation pane here, from the tokens: Windows
-/// Fluent's NavigationView row with its accent edge pill, macOS's source list
-/// with the solid-accent chip, iOS's grouped list with hairline separators,
-/// Material 3's icon-over-label rail with its container pill, Ubuntu's quiet
-/// rounded chips, forui's shadcn card rows, the frosted glass pane, the
-/// raised-and-sunk neumorphic pane and wind's bold-quiet Harmony rows.
-/// Nothing is borrowed from fluent_2, macos_ui, forui or the Material rail:
-/// the pane surface, the row states, the separators, the overlay drawer, its
-/// scrim and its hamburger are all painted from `PureTheme`, so a language
-/// re-skin and a dark switch still come out right.
+/// `PureTheme.of(context)`, and the shell paints Windows Fluent's
+/// NavigationView pane here, from the tokens: the row with its accent edge
+/// pill, the flat surface under a right hairline. Nothing is borrowed from
+/// fluent_2: the pane surface, the row states, the separators, the overlay
+/// drawer, its scrim and its hamburger are all painted from `PureTheme`, so a
+/// dark switch still comes out right.
 ///
-/// The host chain is the app's, not the shell's: the per-language hosts
-/// `PureApp` mounts (`buildFluentAppHost`, `buildMacosAppHost`, the
-/// `WidgetsApp`-based forui/glass/neumorphic/wind hosts, the Material, Yaru
-/// and Cupertino app hosts) still wrap the tree, own the library theme data
-/// and — with `window_manager` behind `PureTitleBar`'s actions seam — own the
-/// real window. That chain is documented work and is not this widget's to
-/// remove; what the shell no longer does is borrow those libraries'
-/// *appearance* widgets to draw its pane. Window frame, title reservation and
-/// safe-area insets belong to `PureScaffold` and `PureTitleBar` (the scaffold
-/// lane); the shell reserves its pane, hands the body through, and answers
-/// for nothing above the fold.
+/// The host chain is the app's, not the shell's: the host `PureApp` mounts
+/// still wraps the tree, owns the library theme data and — with
+/// `window_manager` behind `PureTitleBar`'s actions seam — owns the real
+/// window. That chain is documented work and is not this widget's to remove;
+/// what the shell no longer does is borrow the library's *appearance* widgets
+/// to draw its pane. Window frame, title reservation and safe-area insets
+/// belong to `PureScaffold` and `PureTitleBar` (the scaffold lane); the shell
+/// reserves its pane, hands the body through, and answers for nothing above
+/// the fold.
 ///
-/// Every pane row answers to the same interaction contract, whatever the
-/// language: hover and pressed tints, a disabled destination that keeps its
-/// row and refuses the tap, a focus ring with up/down traversal and
-/// Enter/Space/Select activation for keyboards and remotes, screen-reader
-/// semantics on every row, and motion that honours the config's `animations`
-/// flag. The bottom-strip form stays delegated to [PureNavBar] — the same
-/// dispatched control a page names — so the two forms cannot drift apart.
+/// Every pane row answers to the same interaction contract: hover and pressed
+/// tints, a disabled destination that keeps its row and refuses the tap, a
+/// focus ring with up/down traversal and Enter/Space/Select activation for
+/// keyboards and remotes, screen-reader semantics on every row, and motion
+/// that honours the config's `animations` flag. The bottom-strip form stays
+/// delegated to [PureNavBar] — the same control a page names — so the two
+/// forms cannot drift apart. The config's `language` names no branch here: a
+/// non-fluent value keeps compiling and simply draws this pane.
 class PureAppShell extends StatefulWidget {
   /// A shell around [child].
   const new({
@@ -127,9 +118,9 @@ class PureAppShellState extends State<PureAppShell> {
     if (!_wantsRail(placement, context)) {
       return _bottomStrip();
     }
-    final visual = _resolveVisual(theme);
-    // Only fluent trades the pane for an overlay drawer below the breakpoint:
-    // the Windows 11 Settings grammar. The buckets come from the shared
+    final visual = _ShellVisual.fluentPane();
+    // The pane trades itself for an overlay drawer below the breakpoint: the
+    // Windows 11 Settings grammar. The buckets come from the shared
     // [PureBreakpoints] qualification (768/1024), the same source every
     // dynamic layout reads.
     if (visual.overlayWhenNarrow) {
@@ -158,24 +149,10 @@ class PureAppShellState extends State<PureAppShell> {
       (PureEnvironmentScope.maybeOf(context)?.geometry.railWidth ?? PureSizing.railWidth) > 0,
   };
 
-  /// The language's pane grammar, resolved once per build. Nine grammars,
-  /// nine self-painted visuals — no library widget below this line.
-  static _ShellVisual _resolveVisual(PureTheme theme) => switch (theme.config.language) {
-    PureDesignLanguage.fluent => _ShellVisual.fluentPane(),
-    PureDesignLanguage.macos => _ShellVisual.sourceList(),
-    PureDesignLanguage.cupertino => _ShellVisual.groupedList(),
-    PureDesignLanguage.material => _ShellVisual.m3Rail(),
-    PureDesignLanguage.yaru => _ShellVisual.ubuntuChips(),
-    PureDesignLanguage.forui => _ShellVisual.cardRows(),
-    PureDesignLanguage.glass => _ShellVisual.frostedPane(),
-    PureDesignLanguage.neumorphic => _ShellVisual.softPane(),
-    PureDesignLanguage.wind => _ShellVisual.quietRows(),
-  };
-
   /// The bottom-strip form: the shell delegates to [PureNavBar] — the same
-  /// dispatched control a page names — rather than drawing a second strip, so
-  /// the two forms cannot drift apart. `leading` and `trailing` have no slot in
-  /// a strip and are dropped, as the contract documents.
+  /// control a page names — rather than drawing a second strip, so the two
+  /// forms cannot drift apart. `leading` and `trailing` have no slot in a
+  /// strip and are dropped, as the contract documents.
   Widget _bottomStrip() {
     return Column(
       children: [
@@ -196,11 +173,10 @@ class PureAppShellState extends State<PureAppShell> {
     );
   }
 
-  /// The rail form: the pane stands beside the page, at least as wide as the
-  /// language's rows need. The environment's rail metric decides the
-  /// rail-versus-strip *form*; the visual's floor decides that a row never
-  /// gets squeezed out of its grammar — the macOS source list documented its
-  /// own 154 minimum, and every row-form language now carries one.
+  /// The rail form: the pane stands beside the page, at least as wide as its
+  /// rows need. The environment's rail metric decides the rail-versus-strip
+  /// *form*; the visual's floor decides that a row never gets squeezed out of
+  /// its grammar.
   Widget _rail(BuildContext context, PureTheme theme, _ShellVisual visual, Widget body) {
     final railWidth = PureEnvironmentScope.maybeOf(context)?.geometry.railWidth ?? PureSizing.railWidth;
     return Row(
@@ -269,7 +245,7 @@ class PureAppShellState extends State<PureAppShell> {
 
   /// The pane column every form shares: head slot, scrolling destination list
   /// (a sidebar that cannot scroll is not a sidebar), foot slot — dressed by
-  /// the language's own surface.
+  /// the pane's own surface.
   Widget _pane(BuildContext context, PureTheme theme, _ShellVisual visual) {
     final iconSize = PureEnvironmentScope.maybeOf(context)?.geometry.iconSize ?? 18;
     return visual.pane(
@@ -297,8 +273,8 @@ class PureAppShellState extends State<PureAppShell> {
   }
 
   /// The narrow form's top strip: the hamburger that summons the overlay
-  /// drawer, over the language's own pane surface under a hairline — the
-  /// NavigationView's chrome bar, painted from the tokens.
+  /// drawer, over the pane surface under a hairline — the NavigationView's
+  /// chrome bar, painted from the tokens.
   Widget _fluentTopStrip(PureTheme theme) {
     return SizedBox(
       height: 40,
@@ -324,11 +300,10 @@ class PureAppShellState extends State<PureAppShell> {
   }
 }
 
-/// The shell's one visual value class: how a language paints the pane it
-/// stands on, the rows inside it, and the selection that names one of them.
-/// Mirrors the control-layer idiom (see `pure_tab_bar.dart`'s `_BarVisual`):
-/// geometry and colour arrive as closures, so one row builder serves nine
-/// grammars and every difference is data.
+/// The shell's one visual value class: how the pane it stands on is painted,
+/// the rows inside it, and the selection that names one of them. Mirrors the
+/// control-layer idiom (see `pure_tab_bar.dart`'s `_BarVisual`): geometry and
+/// colour arrive as closures, so every difference is data.
 @immutable
 final class _ShellVisual {
   const new({
@@ -379,327 +354,15 @@ final class _ShellVisual {
     );
   }
 
-  /// macOS: the source list. Rows ride the container colour under the hairline
-  /// split, 28 logical pixels to a row — the library's own density — and the
-  /// selection is the solid accent chip with the content knocked out of it.
-  /// The chip's corner is the source list's squircle-soft 6, not a pill.
-  factory sourceList() {
-    return _ShellVisual(
-      pane: (theme, body) => DecoratedBox(
-        decoration: BoxDecoration(
-          color: theme.colors.bgContainer,
-          border: Border(right: BorderSide(color: theme.colors.borderSecondary)),
-        ),
-        child: body,
-      ),
-      rowsStacked: false,
-      minPaneWidth: 154,
-      inset: 10,
-      rowHeight: 28,
-      rowRadius: BorderRadius.circular(PureRadii.xs + 2),
-      rowFill: (theme, {required active}) => BoxDecoration(color: active ? theme.colors.primary : theme.colors.fillSecondary),
-      hoverTint: (theme) => theme.colors.textSecondary.withValues(alpha: 0.12),
-      pressedTint: (theme) => theme.colors.textSecondary.withValues(alpha: 0.18),
-      content: contentOnChip,
-      selectedBold: false,
-      separator: false,
-    );
-  }
-
-  /// Cupertino: the grouped list. The pane is the grouped background under a
-  /// hairline; rows are 44-grammar cells divided by separators that start
-  /// where the glyph ends — the inset-grouped answer iOS draws — and the
-  /// selection is the rounded grey chip with the label in the accent and the
-  /// weight to match.
-  factory groupedList() {
-    return _ShellVisual(
-      pane: (theme, body) => DecoratedBox(
-        decoration: BoxDecoration(
-          color: theme.colors.bgLayout,
-          border: Border(right: BorderSide(color: theme.colors.borderSecondary)),
-        ),
-        child: body,
-      ),
-      rowsStacked: false,
-      minPaneWidth: 154,
-      inset: 10,
-      rowHeight: 44,
-      rowRadius: BorderRadius.circular(PureRadii.sm),
-      rowFill: (theme, {required active}) =>
-          BoxDecoration(color: active ? theme.colors.fillSecondary : theme.colors.fillQuaternary),
-      hoverTint: (theme) => theme.colors.fill,
-      pressedTint: (theme) => theme.colors.fillSecondary,
-      content: (theme, {required selected, required hovered, required pressed, required enabled}) {
-        if (!enabled) {
-          return theme.colors.textQuaternary;
-        }
-        if (selected) {
-          return theme.colors.primaryText;
-        }
-        return theme.colors.text;
-      },
-      selectedBold: true,
-      separator: true,
-    );
-  }
-
-  /// Material: the M3 navigation rail. The pane is flat on the container
-  /// colour — the rail carries no border — and the cell stacks the glyph over
-  /// a 12-label; the selection is the primary-tinted pill behind the glyph
-  /// alone, the glyph and label inked in the accent. Flutter's own rail
-  /// grammar rebuilt on the tokens, so it survives a test binding that never
-  /// installed a Material theme.
-  factory m3Rail() {
-    return _ShellVisual(
-      pane: (theme, body) => ColoredBox(color: theme.colors.bgContainer, child: body),
-      rowsStacked: true,
-      minPaneWidth: 72,
-      inset: 4,
-      rowHeight: 72,
-      rowRadius: BorderRadius.circular(PureRadii.pill),
-      rowFill: (theme, {required active}) => BoxDecoration(color: active ? theme.colors.primaryBg : theme.colors.fillTertiary),
-      hoverTint: (theme) => theme.colors.fill,
-      pressedTint: (theme) => theme.colors.fillSecondary,
-      content: (theme, {required selected, required hovered, required pressed, required enabled}) {
-        if (!enabled) {
-          return theme.colors.textQuaternary;
-        }
-        if (selected) {
-          return theme.colors.primary;
-        }
-        return theme.colors.textSecondary;
-      },
-      selectedBold: false,
-      separator: false,
-    );
-  }
-
-  /// Yaru: the Ubuntu side panel. Flat on the layout colour, roomy rounded
-  /// chips; the selected row is a pale grey pill with the label out front and
-  /// the accent never used as a fill — Yaru reserves it for the icon's mood
-  /// and the window itself.
-  factory ubuntuChips() {
-    return _ShellVisual(
-      pane: (theme, body) => ColoredBox(color: theme.colors.bgLayout, child: body),
-      rowsStacked: false,
-      minPaneWidth: 176,
-      inset: 8,
-      rowHeight: 40,
-      rowRadius: BorderRadius.circular(PureRadii.sm),
-      rowFill: (theme, {required active}) => BoxDecoration(color: active ? theme.colors.fill : theme.colors.fillQuaternary),
-      hoverTint: (theme) => theme.colors.fillTertiary,
-      pressedTint: (theme) => theme.colors.fillSecondary,
-      content: (theme, {required selected, required hovered, required pressed, required enabled}) {
-        if (!enabled) {
-          return theme.colors.textQuaternary;
-        }
-        if (selected) {
-          return theme.colors.text;
-        }
-        return theme.colors.textSecondary;
-      },
-      selectedBold: false,
-      separator: false,
-    );
-  }
-
-  /// forui: the shadcn sidebar. The pane is the container under its full
-  /// `border` hairline; a row is a quiet ghost cell that rises to an elevated,
-  /// bordered card when chosen — the sidebar item's own state ramp, painted on
-  /// the tokens instead of the library's theme data.
-  factory cardRows() {
-    return _ShellVisual(
-      pane: (theme, body) => DecoratedBox(
-        decoration: BoxDecoration(
-          color: theme.colors.bgContainer,
-          border: Border(right: BorderSide(color: theme.colors.border)),
-        ),
-        child: body,
-      ),
-      rowsStacked: false,
-      minPaneWidth: 216,
-      inset: 12,
-      rowHeight: 40,
-      rowRadius: BorderRadius.circular(PureRadii.sm),
-      rowFill: (theme, {required active}) => BoxDecoration(
-        color: active ? theme.colors.bgElevated : theme.colors.fillQuaternary,
-        border: active ? Border.all(color: theme.colors.border) : null,
-        boxShadow: active
-            ? [BoxShadow(color: theme.colors.shadowBase, blurRadius: 4, offset: const Offset(0, 1))]
-            : null,
-      ),
-      hoverTint: (theme) => theme.colors.fillTertiary,
-      pressedTint: (theme) => theme.colors.fill,
-      content: (theme, {required selected, required hovered, required pressed, required enabled}) {
-        if (!enabled) {
-          return theme.colors.textQuaternary;
-        }
-        if (selected) {
-          return theme.colors.text;
-        }
-        if (pressed || hovered) {
-          return theme.colors.text;
-        }
-        return theme.colors.textSecondary;
-      },
-      selectedBold: true,
-      separator: false,
-    );
-  }
-
-  /// Glass: the frosted pane. A real backdrop blur where the `canBlur` policy
-  /// affords one, a translucent slab under a light hairline, and the gradient
-  /// accent pill for the selection with the primary glow beneath it — the
-  /// language's two signatures, drawn exactly as the tab bar draws its own.
-  factory frostedPane() {
-    Color hairline(PureTheme theme) =>
-        theme.isDark ? theme.colors.white.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.7);
-    return _ShellVisual(
-      pane: (theme, body) {
-        final decorated = DecoratedBox(
-          decoration: BoxDecoration(
-            color: theme.isDark
-                ? theme.colors.white.withValues(alpha: 0.08)
-                : Colors.white.withValues(alpha: 0.55),
-            border: Border(right: BorderSide(color: hairline(theme))),
-          ),
-          child: body,
-        );
-        if (!theme.canBlur) {
-          return decorated;
-        }
-        return ClipRect(
-          child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20), child: decorated),
-        );
-      },
-      rowsStacked: false,
-      minPaneWidth: 176,
-      inset: 10,
-      rowHeight: 36,
-      rowRadius: BorderRadius.circular(PureRadii.pill),
-      rowFill: (theme, {required active}) {
-        if (!active) {
-          return BoxDecoration(color: theme.colors.fill.withValues(alpha: 0.5));
-        }
-        return BoxDecoration(
-          gradient: LinearGradient(
-            begin: AlignmentDirectional.topStart,
-            end: AlignmentDirectional.bottomEnd,
-            colors: [theme.colors.primary, Color.lerp(theme.colors.primary, theme.colors.link, 0.35)!],
-          ),
-          borderRadius: BorderRadius.circular(PureRadii.pill),
-          boxShadow: [
-            BoxShadow(color: theme.colors.primary.withValues(alpha: 0.35), blurRadius: 8, offset: const Offset(0, 2)),
-          ],
-        );
-      },
-      hoverTint: (theme) =>
-          theme.isDark ? theme.colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.04),
-      pressedTint: (theme) =>
-          theme.isDark ? theme.colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08),
-      content: contentOnChip,
-      selectedBold: false,
-      separator: false,
-    );
-  }
-
-  /// Neumorphic: the soft pane. The whole rail is one raised slab — light
-  /// from the top-left, shadow from the bottom-right, no borders anywhere —
-  /// and the selected row *sinks* into it, the slab's shadows inverted; the
-  /// same pressed-in answer the tab bar's pill gives.
-  factory softPane() {
-    List<BoxShadow> raised(PureTheme theme) => [
-      BoxShadow(color: theme.colors.shadowBase, blurRadius: 8, offset: const Offset(4, 4)),
-      BoxShadow(
-        color: theme.colors.white.withValues(alpha: theme.isDark ? 0.04 : 0.7),
-        blurRadius: 8,
-        offset: const Offset(-4, -4),
-      ),
-    ];
-    List<BoxShadow> sunk(PureTheme theme) => [
-      for (final shadow in raised(theme))
-        BoxShadow(color: shadow.color, blurRadius: shadow.blurRadius, offset: -shadow.offset),
-    ];
-    return _ShellVisual(
-      pane: (theme, body) => Padding(
-        padding: const EdgeInsets.all(8),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: theme.colors.bgContainer,
-            borderRadius: BorderRadius.circular(PureRadii.md),
-            boxShadow: raised(theme),
-          ),
-          child: body,
-        ),
-      ),
-      rowsStacked: false,
-      minPaneWidth: 154,
-      inset: 8,
-      rowHeight: 40,
-      rowRadius: BorderRadius.circular(PureRadii.pill),
-      rowFill: (theme, {required active}) => BoxDecoration(
-        color: active ? theme.colors.primaryBg : theme.colors.fillQuaternary,
-        boxShadow: active ? sunk(theme) : null,
-      ),
-      hoverTint: (theme) => theme.colors.fill,
-      pressedTint: (theme) => theme.colors.fillSecondary,
-      content: (theme, {required selected, required hovered, required pressed, required enabled}) {
-        if (!enabled) {
-          return theme.colors.textQuaternary;
-        }
-        if (selected) {
-          return theme.colors.primary;
-        }
-        if (pressed || hovered) {
-          return theme.colors.text;
-        }
-        return theme.colors.textSecondary;
-      },
-      selectedBold: false,
-      separator: false,
-    );
-  }
-
-  /// Wind: the quiet Harmony rows. A flat surfaceless column — the pane takes
-  /// the window colour and asks for no border and no hairline — with a wide
-  /// rounded chip on the selected row and the label taking the bold weight a
-  /// Harmony sidebar uses to say "you are here" without an accent fill.
-  factory quietRows() {
-    return _ShellVisual(
-      pane: (theme, body) => ColoredBox(color: theme.colors.bgLayout, child: body),
-      rowsStacked: false,
-      minPaneWidth: 176,
-      inset: 12,
-      rowHeight: 44,
-      rowRadius: BorderRadius.circular(PureRadii.md),
-      rowFill: (theme, {required active}) => BoxDecoration(color: active ? theme.colors.fill : theme.colors.fillQuaternary),
-      hoverTint: (theme) => theme.colors.fillTertiary,
-      pressedTint: (theme) => theme.colors.fillSecondary,
-      content: (theme, {required selected, required hovered, required pressed, required enabled}) {
-        if (!enabled) {
-          return theme.colors.textQuaternary;
-        }
-        if (selected) {
-          return theme.colors.primaryText;
-        }
-        return theme.colors.text;
-      },
-      selectedBold: true,
-      separator: false,
-    );
-  }
-
   /// Wraps the row column: the pane's surface, border, blur, shadow — whatever
-  /// the language puts under the rows.
+  /// the pane puts under the rows.
   final Widget Function(PureTheme theme, Widget body) pane;
 
-  /// Whether the cell stacks icon-over-label (the M3 rail) or lays them side
-  /// by side (every source-list grammar).
+  /// Whether the cell stacks icon-over-label or lays them side by side.
   final bool rowsStacked;
 
-  /// The narrowest this language's pane will be: the caller's rail metric
-  /// decides the form, this decides that a row never gets squeezed out of its
-  /// grammar.
+  /// The narrowest the pane will be: the caller's rail metric decides the
+  /// form, this decides that a row never gets squeezed out of its grammar.
   final double minPaneWidth;
 
   /// The pane's own inset: head and foot padding and the list's horizontal
@@ -736,45 +399,23 @@ final class _ShellVisual {
   /// Whether the selected row's label takes the bold weight.
   final bool selectedBold;
 
-  /// Whether rows are divided by the grouped-list hairline — Cupertino's
-  /// `CupertinoListSection` answer, painted from `borderSecondary`.
+  /// Whether rows are divided by the grouped-list hairline, painted from
+  /// `borderSecondary`.
   final bool separator;
 
   /// The widget painted at a selected row's start edge (the Fluent accent
-  /// pill); null for the grammars that carry no indicator.
+  /// pill); null carries no indicator.
   final Widget Function(PureTheme theme)? indicator;
 
-  /// Whether this language trades the inline pane for an overlay drawer below
-  /// the mobile breakpoint (only Fluent — the NavigationView grammar).
+  /// Whether the shell trades the inline pane for an overlay drawer below the
+  /// mobile breakpoint (the NavigationView grammar).
   final bool overlayWhenNarrow;
 
-  /// The overlay drawer's width for [overlayWhenNarrow] languages: the
-  /// NavigationView's expanded pane.
+  /// The overlay drawer's width: the NavigationView's expanded pane.
   double get drawerWidth => 240;
 
   /// The pane's width for a requested rail width.
   double widen(double requested) => requested < minPaneWidth ? minPaneWidth : requested;
-
-  /// The content colours the filled-chip grammars share: knocked out on the
-  /// fill, the text roles elsewhere, quaternary when the row is disabled.
-  static Color contentOnChip(
-    PureTheme theme, {
-    required bool selected,
-    required bool hovered,
-    required bool pressed,
-    required bool enabled,
-  }) {
-    if (!enabled) {
-      return theme.colors.textQuaternary;
-    }
-    if (selected) {
-      return theme.colors.textLightSolid;
-    }
-    if (pressed || hovered) {
-      return theme.colors.text;
-    }
-    return theme.colors.textSecondary;
-  }
 
   /// The content colours the indicator-led grammar uses: the row never
   /// changes colour when selected — the accent pill says it instead.
@@ -951,8 +592,8 @@ class _ShellRailState extends State<_ShellRail> {
 }
 
 /// One destination row: interaction states (hover, pressed, focus, disabled),
-/// the language's fill and indicator, and the semantics that name it for a
-/// screen reader. Shared by all nine grammars — only [_ShellVisual] differs.
+/// the pane's fill and indicator, and the semantics that name it for a
+/// screen reader.
 class _ShellCell extends StatefulWidget {
   const new({
     required this.destination,
@@ -1004,13 +645,7 @@ class _ShellCellState extends State<_ShellCell> {
     final destination = widget.destination;
     final enabled = _enabled;
     final selected = widget.selected;
-    final color = visual.content(
-      theme,
-      selected: selected,
-      hovered: _hovered,
-      pressed: _pressed,
-      enabled: enabled,
-    );
+    final color = visual.content(theme, selected: selected, hovered: _hovered, pressed: _pressed, enabled: enabled);
     final tint = !selected && enabled
         ? (_pressed
               ? visual.pressedTint(theme)
@@ -1018,12 +653,12 @@ class _ShellCellState extends State<_ShellCell> {
               ? visual.hoverTint(theme)
               : null)
         : null;
-    // The row's live decoration: the language's selection when chosen, the
+    // The row's live decoration: the pane's selection when chosen, the
     // interaction tint otherwise. The radius is applied here so a factory's
     // fill never has to remember it.
-    final decoration = (selected
-            ? visual.rowFill(theme, active: enabled)
-            : BoxDecoration(color: tint)).copyWith(borderRadius: visual.rowRadius);
+    final decoration = (selected ? visual.rowFill(theme, active: enabled) : BoxDecoration(color: tint)).copyWith(
+      borderRadius: visual.rowRadius,
+    );
 
     final label = Text(
       destination.label,
@@ -1038,7 +673,7 @@ class _ShellCellState extends State<_ShellCell> {
 
     final Widget row;
     if (visual.rowsStacked) {
-      // The M3 rail cell: the pill rides behind the glyph alone and the label
+      // The stacked cell: the fill rides behind the glyph alone and the label
       // sits under the whole cell.
       row = Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1183,7 +818,11 @@ class _DrawerButtonState extends State<_DrawerButton> {
   @override
   Widget build(BuildContext context) {
     final theme = widget.theme;
-    final tint = _pressed ? theme.colors.fillSecondary : _hovered ? theme.colors.fill : null;
+    final tint = _pressed
+        ? theme.colors.fillSecondary
+        : _hovered
+        ? theme.colors.fill
+        : null;
     return Semantics(
       button: true,
       label: widget.semanticLabel,
