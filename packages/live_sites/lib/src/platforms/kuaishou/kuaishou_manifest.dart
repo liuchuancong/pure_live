@@ -9,5 +9,5 @@ const kuaishouManifest = LiveSiteManifest(
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['kuaishoulive', 'ks', '快手'],
-  icon: LiveAssetRef(type: LiveAssetType.platformDefault),
+  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/kuaishou.png'),
 );

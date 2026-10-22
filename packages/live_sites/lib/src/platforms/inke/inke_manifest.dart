@@ -9,5 +9,5 @@ const inkeManifest = LiveSiteManifest(
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['yingke'],
-  icon: LiveAssetRef(type: LiveAssetType.platformDefault),
+  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/inke.png'),
 );

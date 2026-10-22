@@ -13,5 +13,5 @@ const bilibiliManifest = LiveSiteManifest(
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['bili', 'b站', 'bilibili-live'],
-  icon: LiveAssetRef(type: LiveAssetType.platformDefault),
+  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/bilibili.png'),
 );

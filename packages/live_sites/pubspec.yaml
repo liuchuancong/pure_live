@@ -32,3 +32,9 @@ dev_dependencies:
   json_serializable: ^6.14.0
   test: ^1.25.15
   very_good_analysis: ^11.0.0
+
+# Platform icons, bundled for the Flutter app that owns this package: every
+# manifest's icon is one of these files, referenced package-relative.
+flutter:
+  assets:
+    - assets/platforms/

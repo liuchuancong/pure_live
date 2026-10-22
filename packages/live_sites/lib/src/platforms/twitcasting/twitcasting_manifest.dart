@@ -9,5 +9,5 @@ const twitcastingManifest = LiveSiteManifest(
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['twitcasting.tv', 'twitcasting_tv', 'tc'],
-  icon: LiveAssetRef(type: LiveAssetType.platformDefault),
+  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/twitcasting.png'),
 );
