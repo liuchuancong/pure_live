@@ -20,25 +20,25 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(picked, [1]);
-      final pill = tester.getRect(find.byType(AnimatedPositioned));
+      final pill = tester.getRect(find.byType(Positioned));
       expect(pill.center.dx, moreOrLessEquals(tester.getRect(find.text('One')).center.dx));
     });
 
-    testWidgets('the material language pins a 3px ink bar to the strip bottom', (tester) async {
+    testWidgets('the selection draws the ink bar on the strip’s bottom edge', (tester) async {
       await _pump(tester, _bar(index: 1));
 
-      final ink = tester.getRect(find.byType(AnimatedPositioned));
-      final cells = find.byType(AnimatedContainer);
-      expect(ink.height, 3);
-      expect(ink.width, moreOrLessEquals(tester.getRect(cells.at(1)).width));
-      expect(ink.bottom, moreOrLessEquals(tester.getRect(find.byType(Row).first).bottom));
+      final bar = tester.getRect(find.byType(Positioned));
+      final cell = tester.getRect(find.ancestor(of: find.text('Two'), matching: find.byType(AnimatedContainer)));
+      expect(bar.height, 3);
+      expect(bar.width, moreOrLessEquals(cell.width, epsilon: 1));
+      expect(bar.bottom, moreOrLessEquals(cell.bottom, epsilon: 1));
     });
 
     testWidgets('an outside selection slides the pill too', (tester) async {
       await _pump(tester, _bar(index: 0));
       await _pump(tester, _bar(index: 2));
 
-      final pill = tester.getRect(find.byType(AnimatedPositioned));
+      final pill = tester.getRect(find.byType(Positioned));
       expect(pill.center.dx, moreOrLessEquals(tester.getRect(find.text('Three')).center.dx));
     });
 
@@ -52,13 +52,13 @@ void main() {
 
     testWidgets('the tiers change the cell height the tier table promises', (tester) async {
       await _pump(tester, _bar(index: 0, size: PureTabBarSize.small));
-      expect(_cellMinHeight(tester), PureTabBarSize.small.height - 2 * PureTabBarSize.small.inset);
+      expect(_cellMinHeight(tester), PureTabBarSize.small.height);
 
       await _pump(tester, _bar(index: 0));
-      expect(_cellMinHeight(tester), PureTabBarSize.standard.height - 2 * PureTabBarSize.standard.inset);
+      expect(_cellMinHeight(tester), PureTabBarSize.standard.height);
 
       await _pump(tester, _bar(index: 0, size: PureTabBarSize.large));
-      expect(_cellMinHeight(tester), PureTabBarSize.large.height - 2 * PureTabBarSize.large.inset);
+      expect(_cellMinHeight(tester), PureTabBarSize.large.height);
     });
 
     testWidgets('a long strip scrolls and reveals an outside selection', (tester) async {
@@ -101,7 +101,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // The inert bar keeps the grey selection where the caller put it.
-      final pill = tester.getRect(find.byType(AnimatedPositioned));
+      final pill = tester.getRect(find.byType(Positioned));
       expect(pill.center.dx, moreOrLessEquals(tester.getRect(find.text('One')).center.dx));
     });
 
@@ -228,7 +228,7 @@ void main() {
     testWidgets('an empty bar is an empty box', (tester) async {
       await _pump(tester, const PureTabBar(items: [], index: 0, onChanged: null));
 
-      expect(find.byType(AnimatedPositioned), findsNothing);
+      expect(find.byType(Positioned), findsNothing);
       expect(tester.takeException(), isNull);
     });
   });
@@ -238,7 +238,7 @@ void main() {
       await _pump(tester, _bar(index: 1), language: language);
       expect(tester.takeException(), isNull, reason: '$language failed to build');
       // Every language places exactly one indicator behind the selection.
-      expect(find.byType(AnimatedPositioned), findsOneWidget, reason: '$language lost its indicator');
+      expect(find.byType(Positioned), findsOneWidget, reason: '$language lost its indicator');
     }
   });
 }

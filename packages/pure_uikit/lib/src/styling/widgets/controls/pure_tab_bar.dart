@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
@@ -289,6 +290,7 @@ final class _BarVisual {
     required this.hoverTint,
     required this.pressedTint,
     required this.content,
+    this.selectedTint,
   });
 
   /// Windows Fluent and Linux Yaru: an accent-filled pill slides behind the
@@ -358,20 +360,23 @@ final class _BarVisual {
     );
   }
 
-  /// Android Material and the wind and forui tracks that share its grammar:
-  /// no track at all, the selected cell in the accent over an ink bar pinned
-  /// to the strip's bottom edge.
+  /// The navigation row turned sideways — the pane row's own grammar at the
+  /// strip's orientation: the selected cell on the pane's soft rounded fill,
+  /// the accent bar riding the strip's bottom edge where the pane's pill
+  /// stands on its start edge, hover and press fading the same fill in, and
+  /// the bar travelling between cells with the pane indicator's stretch.
   factory underline() {
     return _BarVisual(
       track: (theme, strip, inset) => strip,
       stackAlignment: AlignmentDirectional.bottomCenter,
       cellRadius: BorderRadius.circular(PureRadii.sm),
+      selectedTint: (theme) => theme.colors.fillSecondary,
       indicator: (theme, {required active}) => BoxDecoration(
         color: active ? theme.tabs.inkBarColor : theme.colors.fillTertiary,
         borderRadius: BorderRadius.circular(1.5),
       ),
       indicatorHeight: 3,
-      hoverTint: (theme) => theme.colors.fill,
+      hoverTint: (theme) => theme.colors.fillTertiary,
       pressedTint: (theme) => theme.colors.fillSecondary,
       content: (theme, {required selected, required hovered, required pressed, required enabled}) {
         if (!enabled) {
@@ -497,6 +502,11 @@ final class _BarVisual {
 
   /// The corner radius of a cell's hover tint and focus ring.
   final BorderRadius cellRadius;
+
+  /// The fill under the selected cell — the pane row's own soft rounded
+  /// fill, the body of the selection the bar only marks. Null leaves the
+  /// look to the sliding indicator alone.
+  final Color? Function(PureTheme theme)? selectedTint;
 
   /// The decoration of the sliding indicator behind the selected cell, with
   /// the `active` flag telling the language's chosen colour apart from the
@@ -733,31 +743,39 @@ class _SlidingTabBarState extends State<_SlidingTabBar> {
     final fontRatio = theme.text.caption.fontSize! / theme.token.type.fontSizeSM;
     final labelStyle = theme.text.caption.copyWith(fontSize: metrics.fontSize * fontRatio);
     final inset = EdgeInsets.symmetric(horizontal: metrics.inset, vertical: metrics.inset);
-    final row = Row(
-      mainAxisSize: widget.expand ? MainAxisSize.max : MainAxisSize.min,
-      children: [
-        for (var i = 0; i < widget.items.length; i++)
-          if (widget.expand)
-            Expanded(
-              child: _cell(index: i, metrics: metrics, visual: visual, labelStyle: labelStyle),
-            )
-          else
-            _cell(index: i, metrics: metrics, visual: visual, labelStyle: labelStyle),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // The strip stands its tier's height where the caller reserved it,
+        // and shrinks to a slot that bounds it lower (a title row) rather
+        // than overflowing it.
+        final height = constraints.hasBoundedHeight ? math.min(metrics.height, constraints.maxHeight) : metrics.height;
+        final row = Row(
+          mainAxisSize: widget.expand ? MainAxisSize.max : MainAxisSize.min,
+          children: [
+            for (var i = 0; i < widget.items.length; i++)
+              if (widget.expand)
+                Expanded(
+                  child: _cell(index: i, metrics: metrics, height: height, visual: visual, labelStyle: labelStyle),
+                )
+              else
+                _cell(index: i, metrics: metrics, height: height, visual: visual, labelStyle: labelStyle),
+          ],
+        );
+        final strip = Stack(
+          key: _stripKey,
+          clipBehavior: Clip.none,
+          children: [
+            if (_indicatorPlaced && _indicatorRect != null) _indicator(theme, visual: visual),
+            row,
+          ],
+        );
+        final bar = SizedBox(height: height, child: visual.track(theme, strip, inset));
+        if (_active) {
+          return bar;
+        }
+        return IgnorePointer(child: bar);
+      },
     );
-    final strip = Stack(
-      key: _stripKey,
-      clipBehavior: Clip.none,
-      children: [
-        if (_indicatorPlaced && _indicatorRect != null) _indicator(theme, visual: visual),
-        row,
-      ],
-    );
-    final bar = SizedBox(height: metrics.height, child: visual.track(theme, strip, inset));
-    if (_active) {
-      return bar;
-    }
-    return IgnorePointer(child: bar);
   }
 
   Widget _indicator(PureTheme theme, {required _BarVisual visual}) {
@@ -790,6 +808,7 @@ class _SlidingTabBarState extends State<_SlidingTabBar> {
   Widget _cell({
     required int index,
     required PureTabBarSize metrics,
+    required double height,
     required _BarVisual visual,
     required TextStyle labelStyle,
   }) {
@@ -799,6 +818,7 @@ class _SlidingTabBarState extends State<_SlidingTabBar> {
       selected: index == _selectedIndex,
       barActive: _active,
       metrics: metrics,
+      stripHeight: height,
       visual: visual,
       labelStyle: labelStyle,
       focusNode: _focusNodes[index],
@@ -824,6 +844,7 @@ class _TabCell extends StatefulWidget {
     required this.selected,
     required this.barActive,
     required this.metrics,
+    required this.stripHeight,
     required this.visual,
     required this.labelStyle,
     required this.focusNode,
@@ -840,6 +861,10 @@ class _TabCell extends StatefulWidget {
   final bool barActive;
 
   final PureTabBarSize metrics;
+
+  /// The strip's laid-out height — the cell's own floor, and for the ink
+  /// strip the edge its hover bar rides.
+  final double stripHeight;
 
   final _BarVisual visual;
 
@@ -860,6 +885,15 @@ class _TabCellState extends State<_TabCell> {
   bool _pressed = false;
   bool _focused = false;
 
+  /// True from the moment a pointer takes the cell until focus leaves it: a
+  /// click answers in the fill and the bar alone — the ring and the growth
+  /// are the keyboard's and the remote's answer, never the mouse's.
+  bool _pointerFocused = false;
+
+  /// The ring and the touch of growth, only for a keyboard- or remote-driven
+  /// focus.
+  bool get _showsFocusLook => _focused && !_pointerFocused;
+
   bool get _enabled => widget.barActive && widget.item.enabled;
 
   @override
@@ -871,12 +905,16 @@ class _TabCellState extends State<_TabCell> {
     final enabled = _enabled;
     final selected = widget.selected && widget.barActive;
     final color = visual.content(theme, selected: selected, hovered: _hovered, pressed: _pressed, enabled: enabled);
-    final tint = !selected && enabled
-        ? (_pressed
-              ? visual.pressedTint(theme)
-              : _hovered
-              ? visual.hoverTint(theme)
-              : null)
+    // The selected cell carries the pane row's fill; hover and press fade
+    // the same fill in — the navigation row's own answers, sideways.
+    final tint = !enabled
+        ? null
+        : selected
+        ? visual.selectedTint?.call(theme)
+        : _pressed
+        ? visual.pressedTint(theme)
+        : _hovered
+        ? visual.hoverTint(theme)
         : null;
 
     final Widget content;
@@ -919,7 +957,14 @@ class _TabCellState extends State<_TabCell> {
     return Focus(
       focusNode: widget.focusNode,
       canRequestFocus: enabled,
-      onFocusChange: (focused) => setState(() => _focused = focused),
+      onFocusChange: (focused) => setState(() {
+        _focused = focused;
+        // Focus leaving ends a pointer's claim: the next arrival — by
+        // traversal or remote — is the keyboard's to answer.
+        if (!focused) {
+          _pointerFocused = false;
+        }
+      }),
       onKeyEvent: (node, event) => widget.onKeyEvent(node, event),
       child: MouseRegion(
         cursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
@@ -930,7 +975,10 @@ class _TabCellState extends State<_TabCell> {
           onTapDown: enabled
               ? (_) {
                   widget.focusNode.requestFocus();
-                  setState(() => _pressed = true);
+                  setState(() {
+                    _pressed = true;
+                    _pointerFocused = true;
+                  });
                 }
               : null,
           onTapUp: (_) => setState(() => _pressed = false),
@@ -943,9 +991,9 @@ class _TabCellState extends State<_TabCell> {
             label: item.semanticsText.isEmpty ? null : item.semanticsText,
             child: ExcludeSemantics(
               child: AnimatedScale(
-                // The TV answer: the focused cell grows a touch, and the ring
-                // below names it for keyboard and remote users alike.
-                scale: _focused ? 1.05 : 1,
+                // The TV answer: a focused cell grows a touch — no ring, the
+                // fill and the bar are all the focus says here.
+                scale: _showsFocusLook ? 1.05 : 1,
                 duration: theme.duration,
                 curve: Curves.easeOut,
                 child: AnimatedContainer(
@@ -953,13 +1001,7 @@ class _TabCellState extends State<_TabCell> {
                   curve: Curves.easeOut,
                   padding: EdgeInsets.symmetric(horizontal: metrics.horizontalPadding),
                   decoration: BoxDecoration(color: tint, borderRadius: visual.cellRadius),
-                  foregroundDecoration: _focused
-                      ? BoxDecoration(
-                          borderRadius: visual.cellRadius,
-                          border: Border.fromBorderSide(BorderSide(color: theme.colors.primary, width: 2)),
-                        )
-                      : null,
-                  constraints: BoxConstraints(minHeight: metrics.height - 2 * metrics.inset),
+                  constraints: BoxConstraints(minHeight: math.max(0, widget.stripHeight - 2 * metrics.inset)),
                   alignment: AlignmentDirectional.center,
                   child: content,
                 ),
