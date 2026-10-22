@@ -116,22 +116,26 @@ enum ShellBranch {
 /// The shell branches the user's page settings keep visible, in the order
 /// they arranged them.
 ///
-/// Only primary branches are chromed, so only they come out of the document —
-/// a stored id naming a menu branch is dropped, as is an id the enum does not
-/// know. A document still matching a default — this build's or the one before
-/// IPTV joined the chrome — has never been customised, so it grows the
-/// current default instead of hiding the branch the old default never named.
+/// A stored list counts as customised only if this build's page settings
+/// could have written it: known primary ids alone. Anything else is another
+/// shape's document — `home` is an id an older build renamed away, and a
+/// menu branch never appears in the page settings' list — so honouring it
+/// pins the column to that build's world: the document `popular, follow,
+/// areas, history, home` kept IPTV and the recording centre hidden after
+/// they joined the chrome. The legacy default is the one all-known-ids list
+/// that still grows: matching it means the document was never customised,
+/// so it takes the current default instead.
 List<ShellBranch> visibleShellBranches(AppPreferences preferences) {
   final stored = preferences.shellBranches;
-  final untouchedDefault =
-      stored.length == defaultShellBranches.length && _sameIds(stored, defaultShellBranches) ||
-      stored.length == legacyShellBranches.length && _sameIds(stored, legacyShellBranches);
+  final customised =
+      stored.isNotEmpty &&
+      stored.every((id) => ShellBranch.maybeFromId(id)?.isPrimary ?? false);
+  final untouchedLegacy = stored.length == legacyShellBranches.length && _sameIds(stored, legacyShellBranches);
   final seen = <ShellBranch>{};
   final result = <ShellBranch>[];
-  if (!untouchedDefault) {
+  if (customised && !untouchedLegacy) {
     for (final id in stored) {
-      final branch = ShellBranch.maybeFromId(id);
-      if (branch != null && branch.isPrimary && seen.add(branch)) {
+      if (ShellBranch.maybeFromId(id) case final ShellBranch branch when seen.add(branch)) {
         result.add(branch);
       }
     }
