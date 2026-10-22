@@ -43,7 +43,25 @@ const double _sidebarMinWidth = 150;
 const double _sidebarMaxWidth = 300;
 const double _sidebarDefaultWidth = 180;
 
-final class _HomeShellState extends ConsumerState<HomeShell> {
+final class _HomeShellState extends ConsumerState<HomeShell>
+    with SingleTickerProviderStateMixin {
+  /// The branch swap's fade-and-slide driver. go_router keeps every branch's
+  /// navigator alive and shows one at a time with no transition of its own,
+  /// so the shell owns the motion: on a branch change the incoming page fades
+  /// in with a short push from the travel direction. This also covers the
+  /// one-frame flash a re-arming page used to leave behind on an instant cut.
+  late final AnimationController _branchSwap = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 220),
+    value: 1,
+  );
+
+  /// +1 when the last switch moved down the branch list, -1 when up; the
+  /// slide comes from the direction travelled.
+  double _swapDirection = 1;
+
+  int? _lastBranchIndex;
+
   /// The width while a drag is moving the handle; null lets the stored value
   /// rule.
   double? _dragWidth;
@@ -51,6 +69,7 @@ final class _HomeShellState extends ConsumerState<HomeShell> {
   @override
   void initState() {
     super.initState();
+    _lastBranchIndex = widget.navigationShell.currentIndex;
     // 剪贴板口令: the clipboard's room links are looked for when the app
     // comes back to the foreground, for as long as the shell is up.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -60,6 +79,23 @@ final class _HomeShellState extends ConsumerState<HomeShell> {
           ..read(cacheAutoClearWatcherProvider).start();
       }
     });
+  }
+
+  @override
+  void didUpdateWidget(HomeShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final index = widget.navigationShell.currentIndex;
+    if (index != _lastBranchIndex) {
+      _swapDirection = _lastBranchIndex == null || index > _lastBranchIndex! ? 1 : -1;
+      _lastBranchIndex = index;
+      _branchSwap.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _branchSwap.dispose();
+    super.dispose();
   }
 
   /// Persists the dragged width; the store's own debounce batches a drag
@@ -132,7 +168,20 @@ final class _HomeShellState extends ConsumerState<HomeShell> {
             onPopInvokedWithResult: (didPop, _) {
               if (!didPop && Platform.isAndroid) unawaited(SystemNavigator.pop());
             },
-            child: navigationShell,
+            child: AnimatedBuilder(
+              animation: _branchSwap,
+              child: navigationShell,
+              builder: (context, child) => FadeTransition(
+                opacity: CurvedAnimation(parent: _branchSwap, curve: Curves.easeOutCubic),
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: Offset(_swapDirection * 0.04, 0),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(parent: _branchSwap, curve: Curves.easeOutCubic)),
+                  child: child,
+                ),
+              ),
+            ),
           ),
         );
         // The phone: the bottom bar carries the five primary branches and
