@@ -124,6 +124,9 @@ abstract final class RoutePath {
   /// The background-play guide, one level under the settings index.
   static const String settingsBackgroundGuide = '/settings/background-guide';
 
+  /// The fine-tuned text sizes, one level under the settings index.
+  static const String settingsFontSizes = '/settings/font-sizes';
+
   /// The video and danmaku settings, one level under the settings index.
   static const String settingsVideo = '/settings/video';
 

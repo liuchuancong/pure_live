@@ -81,6 +81,14 @@ abstract class UiConfig with _$UiConfig {
     /// A multiplier on every font size — the global "enlarge text" control.
     @Default(1.0) double fontScale,
 
+    /// Absolute pixel sizes for the five adjustable roles, applied under
+    /// [fontScale]; null keeps the design language's own size.
+    double? bodySmallSize,
+    double? bodySize,
+    double? subtitleSize,
+    double? titleSize,
+    double? headlineSize,
+
     /// A multiplier (0..1) on glass/scrim opacity; ignored when
     /// [reduceTransparency].
     @Default(1.0) double transparency,

@@ -20,6 +20,7 @@ import 'package:pure_live/features/account/login_providers.dart' show signedInAc
 import 'package:pure_live/features/recorder/recorder_preferences.dart';
 import 'package:pure_live/features/recorder/recorder_providers.dart';
 import 'package:pure_live/features/settings/appearance/appearance_page.dart';
+import 'package:pure_live/features/settings/appearance/font_sizes_page.dart';
 import 'package:pure_live/features/settings/danmaku/danmaku_settings_page.dart';
 import 'package:pure_live/features/settings/general/general_settings_page.dart';
 import 'package:pure_live/features/settings/loading/loading_style_settings_page.dart';
@@ -137,6 +138,20 @@ void main() {
     expect(stores.preferences.value.twitchLanguages, ['zh']);
   });
 
+  testWidgets('the font sizes page writes a role size and clears it again', (tester) async {
+    final stores = _Stores();
+    await _pump(tester, language: PureDesignLanguage.material, child: const FontSizesPage(), stores: stores);
+    expect(stores.appearance.value.bodySize, isNull);
+
+    await tester.drag(find.byType(PureSlider).at(1), const Offset(150, 0));
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(stores.appearance.value.bodySize, isNotNull);
+
+    await tester.tap(find.byKey(const ValueKey('font-size-reset')));
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(stores.appearance.value.bodySize, isNull);
+  });
+
   testWidgets('the danmaku page writes the default a room opens with', (tester) async {
     final stores = _Stores();
     await _pump(tester, language: PureDesignLanguage.material, child: const DanmakuSettingsPage(), stores: stores);
@@ -176,6 +191,7 @@ const List<_Page> _pages = [
   _Page('room card', RoomCardSettingsPage.new, custom: true),
   _Page('network proxy', NetworkProxySettingsPage.new, custom: true),
   _Page('appearance', AppearancePage.new, custom: true),
+  _Page('font sizes', FontSizesPage.new, custom: true),
   _Page('video', VideoSettingsPage.new, custom: true),
   _Page('background guide', BackgroundGuidePage.new),
   _Page('portrait', PortraitSettingsPage.new, custom: true),

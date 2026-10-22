@@ -24,20 +24,31 @@ final class TextStyles {
     required this.label,
   });
 
-  /// Builds the roles from [token], scaled by [scale] and overridden by [family].
-  factory from(DesignToken token, {required double scale, String? family}) {
+  /// Builds the roles from [token], scaled by [scale] and overridden by
+  /// [family]; each `*Size` is an absolute pixel size (before [scale]) that
+  /// replaces the token's own, and null keeps the design language's value.
+  factory from(
+    DesignToken token, {
+    required double scale,
+    String? family,
+    double? headlineSize,
+    double? titleSize,
+    double? subtitleSize,
+    double? bodySize,
+    double? bodySmallSize,
+  }) {
     final t = token.type;
-    TextStyle role(double size, FontWeight weight, double height) =>
-        TextStyle(fontSize: size * scale, fontWeight: weight, height: height, fontFamily: family ?? t.fontFamily);
+    TextStyle role(double size, FontWeight weight, double height, [double? override]) =>
+        TextStyle(fontSize: (override ?? size) * scale, fontWeight: weight, height: height, fontFamily: family ?? t.fontFamily);
     return TextStyles(
       display: role(t.fontSizeHeading1, FontWeight.w600, t.lineHeight),
-      headline: role(t.fontSizeHeading2, FontWeight.w600, t.lineHeight),
-      title: role(t.fontSizeHeading4, FontWeight.w600, t.lineHeight),
-      subtitle: role(t.fontSizeLG, FontWeight.w500, t.lineHeightLG),
-      body: role(t.fontSize, FontWeight.w400, t.lineHeight),
-      bodySmall: role(t.fontSizeSM, FontWeight.w400, t.lineHeightSM),
-      caption: role(t.fontSizeSM, FontWeight.w400, t.lineHeightSM),
-      label: role(t.fontSize, FontWeight.w500, t.lineHeight),
+      headline: role(t.fontSizeHeading2, FontWeight.w600, t.lineHeight, headlineSize),
+      title: role(t.fontSizeHeading4, FontWeight.w600, t.lineHeight, titleSize),
+      subtitle: role(t.fontSizeLG, FontWeight.w500, t.lineHeightLG, subtitleSize),
+      body: role(t.fontSize, FontWeight.w400, t.lineHeight, bodySize),
+      bodySmall: role(t.fontSizeSM, FontWeight.w400, t.lineHeightSM, bodySmallSize),
+      caption: role(t.fontSizeSM, FontWeight.w400, t.lineHeightSM, bodySmallSize),
+      label: role(t.fontSize, FontWeight.w500, t.lineHeight, bodySize),
     );
   }
 
@@ -221,7 +232,16 @@ class _PureConfigProviderState extends State<PureConfigProvider> with WidgetsBin
     final theme = PureTheme(
       config: widget.config,
       token: token,
-      text: TextStyles.from(token, scale: scale, family: widget.config.fontFamily),
+      text: TextStyles.from(
+        token,
+        scale: scale,
+        family: widget.config.fontFamily,
+        headlineSize: widget.config.headlineSize,
+        titleSize: widget.config.titleSize,
+        subtitleSize: widget.config.subtitleSize,
+        bodySize: widget.config.bodySize,
+        bodySmallSize: widget.config.bodySmallSize,
+      ),
       button: widget.buttonToken?.call(token) ?? ButtonComponentToken.of(token),
       canBlur: widget.config.allowsTransparency && widget.hardwareBlur,
       isDark: dark,

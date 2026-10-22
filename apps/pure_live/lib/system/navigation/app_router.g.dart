@@ -31,6 +31,7 @@ List<RouteBase> get $appRoutes => [
   $navigationSettingsRoute,
   $networkProxySettingsRoute,
   $loadingStyleSettingsRoute,
+  $fontSizesRoute,
   $roomCardSettingsRoute,
   $backgroundGuideRoute,
   $videoSettingsRoute,
@@ -972,6 +973,33 @@ mixin $LoadingStyleSettingsRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location('/settings/loading-style');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $fontSizesRoute => GoRouteData.$route(
+  path: '/settings/font-sizes',
+  hasOverriddenOnExit: false,
+  factory: $FontSizesRoute._fromState,
+);
+
+mixin $FontSizesRoute on GoRouteData {
+  static FontSizesRoute _fromState(GoRouterState state) =>
+      const FontSizesRoute();
+
+  @override
+  String get location => GoRouteData.$location('/settings/font-sizes');
 
   @override
   void go(BuildContext context) => context.go(location);

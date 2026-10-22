@@ -625,6 +625,39 @@ class Translations$settings$zh {
 	/// zh: '所有字体大小的倍率'
 	String get fontScaleSubtitle => '所有字体大小的倍率';
 
+	/// zh: '精细化字号微调'
+	String get fineFontSizes => '精细化字号微调';
+
+	/// zh: '分别调整小字、正文、副标题、标题和大标题'
+	String get fineFontSizesSubtitle => '分别调整小字、正文、副标题、标题和大标题';
+
+	/// zh: '精细字号'
+	String get groupFineFontSizes => '精细字号';
+
+	/// zh: '小字'
+	String get fontSizeBodySmall => '小字';
+
+	/// zh: '正文'
+	String get fontSizeBody => '正文';
+
+	/// zh: '副标题'
+	String get fontSizeSubtitle => '副标题';
+
+	/// zh: '标题'
+	String get fontSizeTitle => '标题';
+
+	/// zh: '大标题'
+	String get fontSizeHeadline => '大标题';
+
+	/// zh: '恢复默认字号'
+	String get fontSizeReset => '恢复默认字号';
+
+	/// zh: '已恢复默认字号'
+	String get fontSizeResetDone => '已恢复默认字号';
+
+	/// zh: '拖动后这一档改用固定像素；没拖过的档位继续跟随当前设计语言，切换设计语言时保持各自的默认。'
+	String get fontSizeFineNote => '拖动后这一档改用固定像素；没拖过的档位继续跟随当前设计语言，切换设计语言时保持各自的默认。';
+
 	/// zh: '千里之行，始于足下'
 	String get previewText => '千里之行，始于足下';
 
@@ -4613,6 +4646,17 @@ extension on Translations {
 			'settings.animationsSubtitle' => '是否开启动效',
 			'settings.focusOutlineSubtitle' => '聚焦控件显示可见轮廓',
 			'settings.fontScaleSubtitle' => '所有字体大小的倍率',
+			'settings.fineFontSizes' => '精细化字号微调',
+			'settings.fineFontSizesSubtitle' => '分别调整小字、正文、副标题、标题和大标题',
+			'settings.groupFineFontSizes' => '精细字号',
+			'settings.fontSizeBodySmall' => '小字',
+			'settings.fontSizeBody' => '正文',
+			'settings.fontSizeSubtitle' => '副标题',
+			'settings.fontSizeTitle' => '标题',
+			'settings.fontSizeHeadline' => '大标题',
+			'settings.fontSizeReset' => '恢复默认字号',
+			'settings.fontSizeResetDone' => '已恢复默认字号',
+			'settings.fontSizeFineNote' => '拖动后这一档改用固定像素；没拖过的档位继续跟随当前设计语言，切换设计语言时保持各自的默认。',
 			'settings.previewText' => '千里之行，始于足下',
 			'settings.fontFamilyCurrent' => ({required String name}) => '当前：${name}',
 			'settings.defaultOption' => '默认',
@@ -4957,6 +5001,8 @@ extension on Translations {
 			'settings.playerProxyEnableDesc' => '直播流由播放器经此代理拉取，与应用自身的网络请求分开',
 			'settings.playerProxyHint' => '对下一条直播流生效；正在播放的一路保持原样',
 			'settings.thumbnailKeepOldFiles' => '保存旧的缩略图',
+			_ => null,
+		} ?? switch (path) {
 			'settings.thumbnailKeepOldFilesDesc' => '刷新封面后保留旧图，由缓存策略自行清理；关闭时超过两个周期的旧图会被清除',
 			'settings.localPreset' => '弹幕样式',
 			'settings.localPresetClean' => '清爽',
@@ -4968,8 +5014,6 @@ extension on Translations {
 			'settings.localGiftBannerDesc' => '送出礼物时在画面上浮出礼物卡片',
 			'settings.backgroundPlay' => '后台播放',
 			'settings.backgroundPlayDesc' => '切到后台继续播放声音；关闭则进后台暂停、回来恢复',
-			_ => null,
-		} ?? switch (path) {
 			'settings.liveAlertScope' => '开播提醒范围',
 			'settings.liveAlertScopeDesc' => '只提醒带所选标签的关注；全不选则提醒全部关注',
 			'settings.liveAlertAll' => '全部关注',
@@ -5471,6 +5515,8 @@ extension on Translations {
 			'room.blockKeywordTitle' => '屏蔽弹幕关键词',
 			'room.block' => '屏蔽',
 			'room.portraitFullscreenRestoreHint' => '已进入竖屏全屏 · 上滑恢复弹幕栏',
+			_ => null,
+		} ?? switch (path) {
 			'room.gift' => '送礼物',
 			'room.sentGift' => '送出',
 			'room.autoReconnecting' => ({required int count}) => '正在重连（第 ${count} 次）',
@@ -5482,8 +5528,6 @@ extension on Translations {
 			'room.diagnosticsFullscreen' => '全屏',
 			'room.diagnosticsPortrait' => '竖屏全屏',
 			'room.diagnosticsPip' => '小窗',
-			_ => null,
-		} ?? switch (path) {
 			'room.recBadgeRecording' => ({required String time}) => '录制中 ${time}',
 			'room.recBadgeRetrying' => ({required String time}) => '重连中 ${time}',
 			'room.recBadgeMerging' => '合成中',

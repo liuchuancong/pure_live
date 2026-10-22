@@ -40,7 +40,7 @@
 | B8 | 设置全量 | settings/16 | ✅ 并发刷新 522969fc0、屏幕常亮 e1893639e、首选平台 937cb4d8a、动态取色 c9fee55c4；仅剩内核/兼容模式（依赖引擎能力，随 media_core） |
 | B9 | TV UI 树 | tv/54 | ✅ 关注/热门/分区/历史/频道/设置/视频/音乐 全部落地（08695da19…ed2e2ed54）；播放器抽为 musicPlayerProvider 供双端共用 |
 | B10 | VOD | live_vod 包、tv/video | ✅ B10a ✅；**B10b ✅ 音乐**：队列/音频地址 d631d7fc6、音乐页走 media_core_audio 5564347a7、歌词条 6710ed886；B10c TV 视频 ✅ e266eda90 / 音乐 ✅ ed2e2ed54；**B10b-3 ✅ 6e54a6e15**：标题解析（7 测试）+ 可插拔 LyricProvider（出厂无服务；覆盖 lyricProvider 即接外部歌词源，歌词条自动生效） |
-| B11 | 设置页对齐（2026-10-22 用户：“对比设置页面，同步”） | settings/16 | 🟡 **B11a ✅** 外观页「列表显示」组：加载样式/房间卡片/页面设置三个原本无入口的子页 + 列/行间距滑块（`FeedPreferences` 新增 `crossAxisSpacing`/`mainAxisSpacing`，七处网格生效，顺带修复 `FeedPreferences.copyWith` 漏转发 `liveAlertTagIds`/`preferredSiteId`/`showUnplayableInDiscover`）；**B11b ✅** 视频页「重置小窗位置与大小」；**B11c ✅** 后台播放引导：ROM 族识别（HyperOS/MIUI/ColorOS/OxygenOS/OriginOS/HarmonyOS/MagicOS/One UI/Flyme）、系统状态读取（通知/电池优化/后台限制/流量节省/省电模式）与按厂商的系统页跳转，Kotlin 通道 `pure_live/background_guide`，视频页入口显示待处理数；**B11d ✅** 宽屏也用底栏（`homeBottomBarOnWide`，仅 Android/iOS：平板与展开的折叠屏在首页保留手机底栏，桌面仍用侧栏；导航页新增宽屏组）；**B11e ✅** Twitch 语言筛选（`twitchLanguages` 偏好 + 平台页多选对话框 + `createBuiltInLiveSites(twitchLanguages:)` 接缝，适配器按请求读取）；斗鱼续期审计：v2 的 `DouyuLoginStore` 在凭据可用时已自动续期，参考的开关无需存在。剩：精确字号微调、弹幕列表礼物口径（值钱礼物/换算元/上舰卡片/YouTube 全聊天）、移动小窗与 PiP 弹幕（引擎缺口） |
+| B11 | 设置页对齐（2026-10-22 用户：“对比设置页面，同步”） | settings/16 | 🟡 **B11a ✅** 外观页「列表显示」组：加载样式/房间卡片/页面设置三个原本无入口的子页 + 列/行间距滑块（`FeedPreferences` 新增 `crossAxisSpacing`/`mainAxisSpacing`，七处网格生效，顺带修复 `FeedPreferences.copyWith` 漏转发 `liveAlertTagIds`/`preferredSiteId`/`showUnplayableInDiscover`）；**B11b ✅** 视频页「重置小窗位置与大小」；**B11c ✅** 后台播放引导：ROM 族识别（HyperOS/MIUI/ColorOS/OxygenOS/OriginOS/HarmonyOS/MagicOS/One UI/Flyme）、系统状态读取（通知/电池优化/后台限制/流量节省/省电模式）与按厂商的系统页跳转，Kotlin 通道 `pure_live/background_guide`，视频页入口显示待处理数；**B11d ✅** 宽屏也用底栏（`homeBottomBarOnWide`，仅 Android/iOS：平板与展开的折叠屏在首页保留手机底栏，桌面仍用侧栏；导航页新增宽屏组）；**B11e ✅** Twitch 语言筛选（`twitchLanguages` 偏好 + 平台页多选对话框 + `createBuiltInLiveSites(twitchLanguages:)` 接缝，适配器按请求读取）；斗鱼续期审计：v2 的 `DouyuLoginStore` 在凭据可用时已自动续期，参考的开关无需存在。**B11f ✅** 精细字号微调（pure_uikit `UiConfig`/`TextStyles` 增加五档可空像素覆盖，外观页新增子页：五条滑块带实时预览与恢复默认，未拖动的档位继续跟随设计语言）。剩：弹幕列表礼物口径（值钱礼物/换算元/上舰卡片/YouTube 全聊天）、移动小窗与 PiP 弹幕（引擎缺口） |
 
 ## 顺序调整（2026-10-21 用户指令）
 
@@ -52,8 +52,8 @@
 
 - 2026-10-22 复核：工作区（根目录 `dart analyze`，含全部包）零问题；B11 后全量 `flutter test` 为 **327 通过 / 12 金图失败**，失败仍全部是待重录的视觉金图。
 - 全量 `flutter analyze`：零问题。
-- 全量 `flutter test`：**347 通过 / 12 失败**；失败全部是 `test/tool/` 的金图（uikit_closeup ×4、uikit_showcase ×8）——这套金图是用户的视觉验收工具，导航/房间/音乐/TV 的改动改变了渲染，**金图需用户重录**，本轮刻意未动 `test/tool/failures/` 与金图。
-- 台账：B1–B10 全部 ✅；2026-10-22 用户要求对比设置页后重开 **B11（🟡，见下行）**，B11a/B11b 已完成。B3 补齐音频焦点（+9 测试）与预测性返回（+3 测试），切房间 +11 测试；B11a/B11b +5 测试、B11c +14 测试、B11d +4 测试、B11e +2 测试。
+- 全量 `flutter test`：**348 通过 / 12 失败**；失败全部是 `test/tool/` 的金图（uikit_closeup ×4、uikit_showcase ×8）——这套金图是用户的视觉验收工具，导航/房间/音乐/TV 的改动改变了渲染，**金图需用户重录**，本轮刻意未动 `test/tool/failures/` 与金图。
+- 台账：B1–B10 全部 ✅；2026-10-22 用户要求对比设置页后重开 **B11（🟡，见下行）**，B11a/B11b 已完成。B3 补齐音频焦点（+9 测试）与预测性返回（+3 测试），切房间 +11 测试；B11a/B11b +5 测试、B11c +14 测试、B11d +4 测试、B11e +2 测试、B11f +4 测试（pure_uikit 3 + 应用 1；pure_uikit 全量 66 通过）。
 - 待用户侧：重录 `test/tool` 金图；真机验证音频焦点（来电/耳机拔出）、Android 预测性返回与桌面小窗/PiP。
 
 ## 逐页推进（用户 2026-10-21 指定顺序）

@@ -221,6 +221,13 @@ final class AppearancePage extends ConsumerWidget {
                   onChanged: (value) => update((a) => a.copyWith(fontScale: value)),
                 ),
               ),
+              SettingsTile.navigation(
+                key: const ValueKey('appearance-fine-fonts'),
+                leading: const Icon(Icons.format_size),
+                title: Text(t.settings.fineFontSizes),
+                description: Text(t.settings.fineFontSizesSubtitle),
+                onPressed: (_) => unawaited(const FontSizesRoute().push<void>(context)),
+              ),
               CustomSettingsTile(
                 child: SettingsSliderRow(
                   icon: Icons.opacity_outlined,

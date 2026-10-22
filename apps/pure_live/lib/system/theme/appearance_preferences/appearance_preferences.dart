@@ -67,6 +67,14 @@ abstract class AppearancePreferences with _$AppearancePreferences {
     /// A global multiplier on every font size (the "enlarge text" control).
     @Default(1.0) double fontScale,
 
+    /// Absolute pixel sizes for the five adjustable text roles; null keeps
+    /// the design language's own size (the fine-tuning page writes these).
+    double? bodySmallSize,
+    double? bodySize,
+    double? subtitleSize,
+    double? titleSize,
+    double? headlineSize,
+
     /// A global font family override; null keeps the platform default.
     String? fontFamily,
 

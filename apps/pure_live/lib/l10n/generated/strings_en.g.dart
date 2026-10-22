@@ -305,6 +305,17 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get animationsSubtitle => 'Whether motion runs';
 	@override String get focusOutlineSubtitle => 'Draw a visible outline on focused controls';
 	@override String get fontScaleSubtitle => 'A multiplier on every font size';
+	@override String get fineFontSizes => 'Fine-tune font sizes';
+	@override String get fineFontSizesSubtitle => 'Adjust the small, body, subtitle, title and headline sizes separately';
+	@override String get groupFineFontSizes => 'Fine sizes';
+	@override String get fontSizeBodySmall => 'Small text';
+	@override String get fontSizeBody => 'Body text';
+	@override String get fontSizeSubtitle => 'Subtitles';
+	@override String get fontSizeTitle => 'Titles';
+	@override String get fontSizeHeadline => 'Headlines';
+	@override String get fontSizeReset => 'Reset font sizes';
+	@override String get fontSizeResetDone => 'Font sizes reset';
+	@override String get fontSizeFineNote => 'A dragged role keeps its fixed pixel size; untouched roles keep following the design language\'s own sizes.';
 	@override String get previewText => 'The quick brown fox jumps over the lazy dog';
 	@override String fontFamilyCurrent({required String name}) => 'Current: ${name}';
 	@override String get defaultOption => 'Default';
@@ -1938,6 +1949,17 @@ extension on TranslationsEn {
 			'settings.animationsSubtitle' => 'Whether motion runs',
 			'settings.focusOutlineSubtitle' => 'Draw a visible outline on focused controls',
 			'settings.fontScaleSubtitle' => 'A multiplier on every font size',
+			'settings.fineFontSizes' => 'Fine-tune font sizes',
+			'settings.fineFontSizesSubtitle' => 'Adjust the small, body, subtitle, title and headline sizes separately',
+			'settings.groupFineFontSizes' => 'Fine sizes',
+			'settings.fontSizeBodySmall' => 'Small text',
+			'settings.fontSizeBody' => 'Body text',
+			'settings.fontSizeSubtitle' => 'Subtitles',
+			'settings.fontSizeTitle' => 'Titles',
+			'settings.fontSizeHeadline' => 'Headlines',
+			'settings.fontSizeReset' => 'Reset font sizes',
+			'settings.fontSizeResetDone' => 'Font sizes reset',
+			'settings.fontSizeFineNote' => 'A dragged role keeps its fixed pixel size; untouched roles keep following the design language\'s own sizes.',
 			'settings.previewText' => 'The quick brown fox jumps over the lazy dog',
 			'settings.fontFamilyCurrent' => ({required String name}) => 'Current: ${name}',
 			'settings.defaultOption' => 'Default',
@@ -2285,6 +2307,8 @@ extension on TranslationsEn {
 			'settings.playerProxyEnableDesc' => 'Live streams are pulled through this proxy by the player, apart from the app\'s own requests',
 			'settings.playerProxyHint' => 'Applies to the next stream; a running one keeps what it started with',
 			'settings.thumbnailKeepOldFiles' => 'Keep old thumbnails',
+			_ => null,
+		} ?? switch (path) {
 			'settings.thumbnailKeepOldFilesDesc' => 'Superseded covers stay until the cache policy drops them; off clears what is past two intervals',
 			'settings.localPreset' => 'Line style',
 			'settings.localPresetClean' => 'Clean',
@@ -2296,8 +2320,6 @@ extension on TranslationsEn {
 			'settings.localGiftBannerDesc' => 'Raise a gift card over the picture when you send one',
 			'settings.backgroundPlay' => 'Background playback',
 			'settings.backgroundPlayDesc' => 'Keep playing in the background; off pauses on the way out and resumes on return',
-			_ => null,
-		} ?? switch (path) {
 			'settings.liveAlertScope' => 'Alert scope',
 			'settings.liveAlertScopeDesc' => 'Alert only for follows carrying a chosen tag; none chosen alerts every follow',
 			'settings.liveAlertAll' => 'All follows',
@@ -2799,6 +2821,8 @@ extension on TranslationsEn {
 			'search.rooms' => 'Rooms',
 			'search.anchors' => 'Anchors',
 			'search.areas' => 'Categories',
+			_ => null,
+		} ?? switch (path) {
 			'search.allSites' => 'All',
 			'search.historyTitle' => 'Recent searches',
 			'search.historyRemove' => 'Remove this search',
@@ -2810,8 +2834,6 @@ extension on TranslationsEn {
 			'search.webUnavailableFor' => ({required Object site}) => '${site} has no web search page.',
 			'search.webExternalTip' => 'The web search opens in the system browser. Find the live room you want, copy its link, and paste it into the search box to open it here.',
 			'search.openInSystemBrowser' => 'Open in system browser',
-			_ => null,
-		} ?? switch (path) {
 			'search.externalBrowserNotOpened' => 'The system browser did not open; check the default-browser settings',
 			'search.webSearchRoomBanner' => 'This is a live room',
 			'search.roomIdLabel' => ({required String roomId}) => 'room ${roomId}',

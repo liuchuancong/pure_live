@@ -32,6 +32,7 @@ import 'package:pure_live/features/room/room_page.dart';
 import 'package:pure_live/features/search/search_page.dart';
 import 'package:pure_live/features/search/web_search_view.dart';
 import 'package:pure_live/features/settings/appearance/appearance_page.dart';
+import 'package:pure_live/features/settings/appearance/font_sizes_page.dart';
 import 'package:pure_live/features/settings/danmaku/danmaku_settings_page.dart';
 import 'package:pure_live/features/settings/data/cache_data_page.dart';
 import 'package:pure_live/features/settings/fonts/font_manager_page.dart';
@@ -579,6 +580,17 @@ class LoadingStyleSettingsRoute extends GoRouteData with $LoadingStyleSettingsRo
 
   @override
   Widget build(BuildContext context, GoRouterState state) => const LoadingStyleSettingsPage();
+}
+
+/// The fine-tuned text sizes: `/settings/font-sizes`, reached from the text
+/// size group.
+@TypedGoRoute<FontSizesRoute>(path: RoutePath.settingsFontSizes)
+class FontSizesRoute extends GoRouteData with $FontSizesRoute {
+  /// The font-sizes route.
+  const new();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const FontSizesPage();
 }
 
 /// Room card settings: `/settings/room-card`, reached from the feed display
