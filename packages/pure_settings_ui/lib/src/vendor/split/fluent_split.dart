@@ -41,6 +41,11 @@ const double _kItemMarginV = 2;
 const double _kIconColumn = 40;
 const double _kIconSize = 16;
 
+/// The compact rail draws the same row at the rail's own scale: a larger
+/// glyph now that the label is gone, on a taller cell.
+const double _kCompactIconSize = 24;
+const double _kCompactItemMinHeight = 40;
+
 /// NavigationViewItemContentPresenterMargin (4,-1,8,-1): the label starts
 /// 48 from the pane edge.
 const double _kLabelStart = 4;
@@ -391,27 +396,36 @@ class _FluentNavigationItemState extends State<FluentNavigationItem>
       );
     }
 
+    // The compact rail's glyph is the rail's own size, not whatever the
+    // tile's leading slot carried — a label-less row is read by its icon,
+    // so the icon carries the row.
+    Widget? railIcon = icon;
+    if (compact && railIcon is Icon) {
+      railIcon = Icon(railIcon.icon, size: _kCompactIconSize, color: railIcon.color);
+    }
     final iconColumn = SizedBox(
       width: _kIconColumn,
-      child: icon == null
+      child: railIcon == null
           ? null
           : Center(
               child: IconTheme.merge(
-                data: IconThemeData(color: iconColor, size: _kIconSize),
-                child: icon,
+                data: IconThemeData(color: iconColor, size: compact ? _kCompactIconSize : _kIconSize),
+                child: railIcon,
               ),
             ),
     );
     final textScaler = MediaQuery.textScalerOf(context);
     final content = ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: kFluentPaneItemMinHeight),
+      constraints: BoxConstraints(
+        minHeight: compact ? _kCompactItemMinHeight : kFluentPaneItemMinHeight,
+      ),
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: textScaler.scale(2)),
-        // The rail shows only the icon. Its line is a Row like the open
-        // pane's, so an item without a tooltip is updated in place when the
-        // pane opens.
+        // The rail shows only the icon, centred in the cell whatever the
+        // rail's width. Its line is a Row like the open pane's, so an item
+        // without a tooltip is updated in place when the pane opens.
         child: compact
-            ? Row(children: [iconColumn])
+            ? Center(child: iconColumn)
             : buildLine(
                 leading: iconColumn,
                 titleStyle: labelStyle,
