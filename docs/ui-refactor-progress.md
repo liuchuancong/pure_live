@@ -59,6 +59,7 @@
 | 日期 | 任务 | 提交 | 结果 | 备注 |
 |---|---|---|---|---|
 | 2026-10-23 | 文档建立 | (随本提交) | ✅ | 台账建立 |
+| 2026-10-23 | T4 | (随本提交) | ✅ | hosts 收拢为 Fluent:fluent_ui 4.17.0 的 FluentApp 接管宿主,删 5 宿主/8 适配器/5 标题栏 presentation,非 fluent 语言一律回落;dart analyze 全绿(含 app 侧),纯新增失败测试 0(tab_bar/tabs 8 个失败经 HEAD worktree 基线核实为既有) |
 
 ## 阻塞与待定
 

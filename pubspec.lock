@@ -97,14 +97,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.5.0"
-  appkit_ui_element_colors:
-    dependency: transitive
-    description:
-      name: appkit_ui_element_colors
-      sha256: b88a7c35d440fa3ac75222d0e2b7e3259200e531e33b5d2468e358119f3481dc
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.1"
   archive:
     dependency: transitive
     description:
@@ -897,6 +889,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.0.2"
+  fluent_ui:
+    dependency: transitive
+    description:
+      name: fluent_ui
+      sha256: "4482326e3d4881f59b4a42e9c608b2be3171cd00fa181f51b6b0dd63bd786a0f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.17.0"
   fluentui_system_icons:
     dependency: transitive
     description:
@@ -1028,14 +1028,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_neumorphic_ui_kit:
-    dependency: transitive
-    description:
-      name: flutter_neumorphic_ui_kit
-      sha256: bb9109241095977dbb6c08df71f4bbb7961655aa5baecba9a3fdd4fd00a2b0d7
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.1"
   flutter_overlay_window:
     dependency: transitive
     description:
@@ -1126,22 +1118,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  fluttersdk_wind:
-    dependency: transitive
-    description:
-      name: fluttersdk_wind
-      sha256: "989ccc05afa242da690b06790c3bec09cd853043f754b5852872d2091edd75a6"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.8.4"
-  fluttersdk_wind_diagnostics_contracts:
-    dependency: transitive
-    description:
-      name: fluttersdk_wind_diagnostics_contracts
-      sha256: "909f743ed9f2b7c67ae68ae8b7af8dd997cd1f309167a9c1a6c1e283d18f19ce"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.2.0"
   forui:
     dependency: transitive
     description:
@@ -1198,14 +1174,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.2.0"
-  glass_morphism_plus:
-    dependency: transitive
-    description:
-      name: glass_morphism_plus
-      sha256: "8c463cc183b4d97127396c05ecb6f1ce92a89452d8d091a1825fa1679d6d9577"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.0"
   glob:
     dependency: transitive
     description:
@@ -1230,14 +1198,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.5.0"
-  gradient_borders:
-    dependency: transitive
-    description:
-      name: gradient_borders
-      sha256: c65c9b2169cb32fa7164625fc438a597409576e4b5bee498655152abea4a93cc
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.4"
   graphs:
     dependency: transitive
     description:
@@ -1502,14 +1462,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.1"
-  macos_ui:
-    dependency: transitive
-    description:
-      name: macos_ui
-      sha256: "09fb51d65b6a2d328ba5aa429ba0f7aabad5bc770193ea6e49da9f29bf95d835"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.2.2"
   macos_window_utils:
     dependency: transitive
     description:
@@ -1550,6 +1502,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.7.0"
+  math_expressions:
+    dependency: transitive
+    description:
+      name: math_expressions
+      sha256: "22aca3a24e445be5f42ecf186cbded1f9951bf9ec5eb48fcddbd55e102bb11f5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.2.0"
   matrix4_transform:
     dependency: transitive
     description:
@@ -2231,6 +2191,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.3.0"
+  scroll_pos:
+    dependency: transitive
+    description:
+      name: scroll_pos
+      sha256: cebf602b2dd939de6832bb902ffefb574608d1b84f420b82b381a4007d3c1e1b
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.5.0"
   serial_csv:
     dependency: transitive
     description:

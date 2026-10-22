@@ -6,8 +6,9 @@ import 'package:pure_uikit/pure_uikit.dart';
 
 /// Selects and manages the appropriate title bar presentation.
 ///
-/// This widget owns maximized-state tracking and dispatches visual rendering
-/// to the presentation associated with the active design language.
+/// This widget owns maximized-state tracking and renders the token
+/// presentation: the per-language presentations are retired with the hosts,
+/// and every design language draws the same token title bar.
 class PureTitleBar extends StatefulWidget {
   /// Creates a title bar for the selected design language.
   const new({
@@ -20,9 +21,8 @@ class PureTitleBar extends StatefulWidget {
     super.key,
   });
 
-  /// The active UI design language; null takes the one the theme resolved,
-  /// which is how every other control in this package decides what to draw.
-  /// Pass it only to dress this strip in a language other than the app's.
+  /// Retained for call-site compatibility; it no longer changes what this
+  /// strip draws. Every language renders the token presentation.
   final PureDesignLanguage? designLanguage;
 
   /// The title and localized window-control labels.
@@ -180,72 +180,14 @@ class _PureTitleBarState extends State<PureTitleBar> {
     final labels = widget.labels;
     void toggleMaximize() => unawaited(_toggleMaximize());
 
-    final Widget presentation;
-
-    switch (widget.designLanguage ?? PureTheme.of(context).config.language) {
-      case PureDesignLanguage.macos:
-      case PureDesignLanguage.cupertino:
-        presentation = PureMacOSTitleBar(
-          labels: labels,
-          actions: actions,
-          leading: widget.leading,
-          isMaximized: _isMaximized,
-          onToggleMaximize: toggleMaximize,
-          metrics: widget.metrics ?? const PureCaptionMetrics.macos(),
-        );
-
-      case PureDesignLanguage.yaru:
-        presentation = PureYaruTitleBar(
-          labels: labels,
-          actions: actions,
-          leading: widget.leading,
-          isMaximized: _isMaximized,
-          onToggleMaximize: toggleMaximize,
-          metrics: widget.metrics ?? const PureCaptionMetrics(titleBarHeight: 37, buttonWidth: 42, buttonHeight: 37),
-        );
-
-      case PureDesignLanguage.glass:
-        presentation = PureGlassTitleBar(
-          labels: labels,
-          actions: actions,
-          leading: widget.leading,
-          isMaximized: _isMaximized,
-          onToggleMaximize: toggleMaximize,
-          metrics: widget.metrics ?? const PureCaptionMetrics(titleBarHeight: 36, buttonWidth: 40, buttonHeight: 36),
-        );
-
-      case PureDesignLanguage.neumorphic:
-        presentation = PureNeumorphicTitleBar(
-          labels: labels,
-          actions: actions,
-          leading: widget.leading,
-          isMaximized: _isMaximized,
-          onToggleMaximize: toggleMaximize,
-          metrics: widget.metrics ?? const PureCaptionMetrics(titleBarHeight: 38, buttonWidth: 40, buttonHeight: 38),
-        );
-
-      case PureDesignLanguage.wind:
-        presentation = PureWindTitleBar(
-          labels: labels,
-          actions: actions,
-          leading: widget.leading,
-          isMaximized: _isMaximized,
-          onToggleMaximize: toggleMaximize,
-          metrics: widget.metrics ?? const PureCaptionMetrics(titleBarHeight: 36, buttonWidth: 40, buttonHeight: 36),
-        );
-
-      case PureDesignLanguage.material:
-      case PureDesignLanguage.fluent:
-      case PureDesignLanguage.forui:
-        presentation = PureTokenTitleBar(
-          labels: labels,
-          actions: actions,
-          leading: widget.leading,
-          isMaximized: _isMaximized,
-          onToggleMaximize: toggleMaximize,
-          metrics: widget.metrics ?? const PureCaptionMetrics.desktop(),
-        );
-    }
+    final Widget presentation = PureTokenTitleBar(
+      labels: labels,
+      actions: actions,
+      leading: widget.leading,
+      isMaximized: _isMaximized,
+      onToggleMaximize: toggleMaximize,
+      metrics: widget.metrics ?? const PureCaptionMetrics.desktop(),
+    );
 
     return presentation;
   }

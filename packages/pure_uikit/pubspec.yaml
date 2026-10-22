@@ -22,18 +22,15 @@ dependencies:
   # package or every one of those codepoints renders as a fallback box.
   cupertino_icons: ^1.0.9
   fluent_2: ^0.0.7
+  fluent_ui: ^4.17.0
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  flutter_neumorphic_ui_kit:
   flutter_screenutil_plus: ^2.0.0
-  fluttersdk_wind:
   forui: ^0.27.5
   freezed_annotation: ^3.1.0
-  glass_morphism_plus:
   json_annotation: ^4.12.0
-  macos_ui: ^2.2.2
   meta: ^1.19.0
   yaru: ^11.0.0
 
@@ -44,3 +41,6 @@ dev_dependencies:
   freezed: ^4.0.2
   json_serializable: ^6.14.1
   very_good_analysis: ^11.0.0
+
+flutter:
+  uses-material-design: true

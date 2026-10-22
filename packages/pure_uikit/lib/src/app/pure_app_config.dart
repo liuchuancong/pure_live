@@ -33,9 +33,9 @@ final class PureAppConfig {
   /// every host.
   final RouterConfig<Object>? routerConfig;
 
-  /// The startup configuration the process was launched with: [language]
-  /// picks the host and, through the frozen configuration below, the look of
-  /// every Pure widget.
+  /// The startup configuration the process was launched with: through the
+  /// frozen configuration below, [language] drives the look of every Pure
+  /// widget; the host itself is always Fluent.
   final PureUiStartupConfig startupConfig;
 
   /// The language this process renders with, frozen at startup.

@@ -1,20 +1,19 @@
-import 'package:fluent_2/fluent_2.dart' as f2;
+import 'package:fluent_ui/fluent_ui.dart' as fluent;
 
 import 'package:pure_uikit/src/app/pure_app_host.dart';
 import 'package:pure_uikit/src/styling/adapters/fluent_theme_adapter.dart';
 
-/// The Fluent host: `FluentApp` wraps `WidgetsApp` — not `MaterialApp`, so
-/// nothing in the tree pulls in Material — and supplies the `FluentTheme`,
-/// the Fluent page transitions and the Fluent scrollbar. The brand ramp is
-/// generated from the binding's accent colour with Fluent's own generator
-/// (this is the one place each language may speak its native palette
-/// dialect: Material seeds a colour scheme, Fluent grows a brand ramp, and
-/// that difference *is* each design language), so an accent change re-brands
-/// the whole fluent subtree. The theme fills both slots; the host never
-/// re-picks the brightness.
-f2.FluentApp buildFluentAppHost(PureAppHostBinding b) {
+/// The Fluent host: fluent_ui's `FluentApp.router` owns the route stack's
+/// chrome — the `FluentTheme`, the Fluent page transitions, the Fluent
+/// scrollbar and Fluent's localizations — so a page reads Fluent from the
+/// window frame down. The theme fills both the light and the dark slot: the
+/// token already picked the brightness, so the host never re-picks it from
+/// the platform. The builder runs once per frame inside the theme scope, so
+/// a brightness, accent, font or density change re-skins the host along with
+/// everything under it.
+fluent.FluentApp buildFluentAppHost(PureAppHostBinding b) {
   final data = const FluentThemeAdapter().resolve(b.theme);
-  return f2.FluentApp.router(
+  return fluent.FluentApp.router(
     routerConfig: b.routerConfig,
     title: b.title,
     onGenerateTitle: b.onGenerateTitle,
