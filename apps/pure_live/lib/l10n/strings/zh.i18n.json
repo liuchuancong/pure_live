@@ -543,6 +543,9 @@
     "preferredPlatform": "首选直播平台",
     "preferredPlatformDesc": "热门、分区与搜索默认打开这个平台",
     "preferredPlatformNone": "按平台顺序",
+    "twitchLanguages": "Twitch 语言筛选",
+    "twitchLanguagesSubtitle": "热门和分区只显示这些语言的直播；不选则显示全部",
+    "twitchLanguagesAll": "全部语言",
     "dynamicColor": "动态取色",
     "dynamicColorSubtitle": "Android 12+ 跟随系统壁纸取强调色"
   },

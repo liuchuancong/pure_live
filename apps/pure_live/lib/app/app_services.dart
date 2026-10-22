@@ -258,6 +258,9 @@ final class AppServices {
       // decision: while it is disabled the requests fall through to the
       // build-time or system route, so the shipped behaviour is unchanged.
       proxyPolicyBuilder: (fallback) => PreferenceProxyPolicy(store: appPreferences, fallback: fallback),
+      // Read per request: a language picked in the settings lands on the next
+      // Twitch page without rebuilding the site graph.
+      twitchLanguages: () => appPreferences.value.twitchLanguages,
     );
 
     // The font library downloads and registers through the shared client.

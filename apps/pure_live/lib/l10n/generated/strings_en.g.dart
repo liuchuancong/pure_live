@@ -673,6 +673,9 @@ class _Translations$settings$en extends Translations$settings$zh {
 	@override String get preferredPlatform => 'Preferred platform';
 	@override String get preferredPlatformDesc => 'Popular, areas and search open on this platform';
 	@override String get preferredPlatformNone => 'Platform order';
+	@override String get twitchLanguages => 'Twitch languages';
+	@override String get twitchLanguagesSubtitle => 'Popular and areas show only streams in these languages; none keeps every language';
+	@override String get twitchLanguagesAll => 'All languages';
 	@override String get dynamicColor => 'Dynamic colour';
 	@override String get dynamicColorSubtitle => 'Take the accent from the system wallpaper (Android 12+)';
 }
@@ -2305,6 +2308,9 @@ extension on TranslationsEn {
 			'settings.preferredPlatform' => 'Preferred platform',
 			'settings.preferredPlatformDesc' => 'Popular, areas and search open on this platform',
 			'settings.preferredPlatformNone' => 'Platform order',
+			'settings.twitchLanguages' => 'Twitch languages',
+			'settings.twitchLanguagesSubtitle' => 'Popular and areas show only streams in these languages; none keeps every language',
+			'settings.twitchLanguagesAll' => 'All languages',
 			'settings.dynamicColor' => 'Dynamic colour',
 			'settings.dynamicColorSubtitle' => 'Take the accent from the system wallpaper (Android 12+)',
 			'hotAreas.title' => 'Platform visibility',
@@ -2804,11 +2810,11 @@ extension on TranslationsEn {
 			'search.webUnavailableFor' => ({required Object site}) => '${site} has no web search page.',
 			'search.webExternalTip' => 'The web search opens in the system browser. Find the live room you want, copy its link, and paste it into the search box to open it here.',
 			'search.openInSystemBrowser' => 'Open in system browser',
+			_ => null,
+		} ?? switch (path) {
 			'search.externalBrowserNotOpened' => 'The system browser did not open; check the default-browser settings',
 			'search.webSearchRoomBanner' => 'This is a live room',
 			'search.roomIdLabel' => ({required String roomId}) => 'room ${roomId}',
-			_ => null,
-		} ?? switch (path) {
 			'search.roomEnter' => 'Enter',
 			'search.webSearchRoomDismiss' => 'Stop offering this room',
 			'search.webSearchInvalidAddress' => 'The web-search address is invalid; go back to the search page and try again.',

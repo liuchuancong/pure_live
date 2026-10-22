@@ -72,7 +72,13 @@ import 'package:live_sites/src/platforms/yy/yy_site.dart';
 /// [douyuLogin] is the douyu renewal seam (see [DouyuLoginStore]): the app
 /// hands its secret store in so stored logins renew themselves before they
 /// end; null makes every douyu request a guest, exactly as before.
-List<LiveSite> createBuiltInLiveSites({LiveHttp? http, DouyuLoginStore? douyuLogin}) {
+/// [twitchLanguages] reads the Twitch directory filter (lower-case codes);
+/// null keeps every language.
+List<LiveSite> createBuiltInLiveSites({
+  LiveHttp? http,
+  DouyuLoginStore? douyuLogin,
+  List<String> Function()? twitchLanguages,
+}) {
   final transport = http ?? DioFactory().create();
   return <LiveSite>[
     DouyuSite(http: DouyuHttp(transport), login: douyuLogin),
@@ -81,7 +87,7 @@ List<LiveSite> createBuiltInLiveSites({LiveHttp? http, DouyuLoginStore? douyuLog
     BilibiliSite(http: BilibiliHttp(transport)),
     KuaishouSite(http: KuaishouHttp(transport)),
     YoutubeSite(http: YouTubeHttp(transport)),
-    TwitchSite(http: TwitchHttp(transport)),
+    TwitchSite(http: TwitchHttp(transport), languages: twitchLanguages),
     AcfunSite(http: AcfunHttp(transport)),
     BigoSite(http: BigoHttp(transport)),
     CcSite(http: CcHttp(transport)),

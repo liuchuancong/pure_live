@@ -48,6 +48,7 @@ final class AppSites {
     required FormFactor formFactor,
     Uri? proxy,
     ProxyPolicy Function(ProxyPolicy fallback)? proxyPolicyBuilder,
+    List<String> Function()? twitchLanguages,
   }) async {
     final fallbackPolicy = FixedProxyPolicy(
       global: proxy == null
@@ -71,7 +72,9 @@ final class AppSites {
     } on Object {
       douyuLogin = null;
     }
-    final registry = LiveSiteRegistry(createBuiltInLiveSites(http: http, douyuLogin: douyuLogin));
+    final registry = LiveSiteRegistry(
+      createBuiltInLiveSites(http: http, douyuLogin: douyuLogin, twitchLanguages: twitchLanguages),
+    );
 
     final context = LiveSiteContext(
       platform: switch ((kind, formFactor)) {

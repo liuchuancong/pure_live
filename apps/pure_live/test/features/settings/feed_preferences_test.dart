@@ -33,6 +33,13 @@ void main() {
     expect(after.refreshConcurrency, 6);
   });
 
+  test('the Twitch languages survive the document and copyWith', () {
+    final read = FeedPreferences.fromJson(const FeedPreferences(twitchLanguages: ['zh', 'ko']).toJson());
+    expect(read.twitchLanguages, ['zh', 'ko']);
+    expect(const FeedPreferences().copyWith(twitchLanguages: ['en']).twitchLanguages, ['en']);
+    expect(const FeedPreferences().copyWith(twitchLanguages: ['en']).preferredSiteId, '');
+  });
+
   test('props carries the gaps, so a write reaches the store', () {
     expect(const FeedPreferences().copyWith(mainAxisSpacing: 9), isNot(equals(const FeedPreferences())));
   });

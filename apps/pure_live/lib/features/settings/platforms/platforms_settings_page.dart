@@ -63,6 +63,18 @@ final class PlatformsSettingsPage extends ConsumerWidget {
                 onPressed: (_) => _choosePreferred(context, ref, sites, names),
               ),
               SettingsTile.navigation(
+                key: const ValueKey('platforms-twitch-languages'),
+                leading: const Icon(Icons.translate_outlined),
+                title: Text(t.settings.twitchLanguages),
+                description: Text(t.settings.twitchLanguagesSubtitle),
+                value: Text(
+                  preferences.twitchLanguages.isEmpty
+                      ? t.settings.twitchLanguagesAll
+                      : [for (final code in preferences.twitchLanguages) twitchLanguageNames[code] ?? code].join(' · '),
+                ),
+                onPressed: (_) => unawaited(_chooseTwitchLanguages(context, ref, preferences.twitchLanguages)),
+              ),
+              SettingsTile.navigation(
                 leading: const Icon(Icons.person_outline),
                 title: Text(t.settings.sectionAccount),
                 description: Text(t.settings.accountSubtitle),
@@ -74,6 +86,96 @@ final class PlatformsSettingsPage extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// The Twitch directory's languages, by the lower-case codes the adapter
+/// normalizes; the names are the languages' own, so no locale has to spell
+/// them.
+const Map<String, String> twitchLanguageNames = {
+  'zh': '中文',
+  'en': 'English',
+  'ko': '한국어',
+  'ja': '日本語',
+  'es': 'Español',
+  'pt': 'Português',
+  'de': 'Deutsch',
+  'fr': 'Français',
+  'ru': 'Русский',
+  'it': 'Italiano',
+  'th': 'ไทย',
+  'vi': 'Tiếng Việt',
+  'id': 'Bahasa Indonesia',
+  'tr': 'Türkçe',
+  'pl': 'Polski',
+};
+
+/// Picks the Twitch broadcast languages; none selected keeps every language.
+Future<void> _chooseTwitchLanguages(BuildContext context, WidgetRef ref, List<String> current) async {
+  final t = context.t;
+  final choice = ValueNotifier<Set<String>>({...current});
+  final picked = await showPureDialog<List<String>>(
+    context: context,
+    title: t.settings.twitchLanguages,
+    child: SingleChildScrollView(
+      child: ValueListenableBuilder<Set<String>>(
+        valueListenable: choice,
+        builder: (context, chosen, _) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Text(
+                  t.settings.twitchLanguagesSubtitle,
+                  style: PureTheme.of(context).text.caption.copyWith(color: PureTheme.of(context).colors.textSecondary),
+                ),
+              ),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final MapEntry(key: code, value: name) in twitchLanguageNames.entries)
+                    PureButton(
+                      key: ValueKey('twitch-language-$code'),
+                      label: name,
+                      size: ControlSize.sm,
+                      variant: chosen.contains(code) ? ButtonVariant.primary : ButtonVariant.secondary,
+                      onPressed: () {
+                        final next = {...chosen};
+                        if (!next.remove(code)) {
+                          next.add(code);
+                        }
+                        choice.value = next;
+                      },
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+    actions: (dialogContext) => [
+      PureButton(
+        label: dialogContext.t.common.cancel,
+        variant: ButtonVariant.ghost,
+        onPressed: () => Navigator.of(dialogContext).pop(),
+      ),
+      PureButton(
+        label: dialogContext.t.common.confirm,
+        onPressed: () => Navigator.of(dialogContext).pop(choice.value.toList()..sort()),
+      ),
+    ],
+  );
+  choice.dispose();
+  if (picked == null) {
+    return;
+  }
+  await ref
+      .read(appPreferencesProvider.notifier)
+      .update((preferences) => preferences.copyWith(twitchLanguages: picked));
 }
 
 /// Picks the discovery pages' opening platform; "platform order" clears it.

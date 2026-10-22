@@ -123,6 +123,20 @@ void main() {
     expect(stores.preferences.value.crossAxisSpacing, greaterThan(6));
   });
 
+  testWidgets('the platforms page stores the Twitch languages it was given', (tester) async {
+    final stores = _Stores();
+    await _pump(tester, language: PureDesignLanguage.material, child: const PlatformsSettingsPage(), stores: stores);
+
+    await tester.tap(find.byKey(const ValueKey('platforms-twitch-languages')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('twitch-language-zh')));
+    await tester.pump();
+    await tester.tap(find.text('确定'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(stores.preferences.value.twitchLanguages, ['zh']);
+  });
+
   testWidgets('the danmaku page writes the default a room opens with', (tester) async {
     final stores = _Stores();
     await _pump(tester, language: PureDesignLanguage.material, child: const DanmakuSettingsPage(), stores: stores);

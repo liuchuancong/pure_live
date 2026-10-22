@@ -27,6 +27,7 @@ final class FeedPreferences extends Equatable {
     this.pageShowGoto = true,
     this.preferRealOnlineCounts = false,
     this.preferredSiteId = '',
+    this.twitchLanguages = const [],
     this.showUnplayableInDiscover = false,
     this.realOnlinePlatforms = defaultRealOnlinePlatforms,
     this.hiddenSiteIds = const [],
@@ -56,6 +57,7 @@ final class FeedPreferences extends Equatable {
       pageShowGoto: json['pageShowGoto'] as bool? ?? true,
       preferRealOnlineCounts: json['preferRealOnlineCounts'] as bool? ?? false,
       preferredSiteId: json['preferredSiteId'] as String? ?? '',
+      twitchLanguages: (json['twitchLanguages'] as List<Object?>?)?.whereType<String>().toList() ?? const [],
       showUnplayableInDiscover: json['showUnplayableInDiscover'] as bool? ?? false,
       realOnlinePlatforms:
           (json['realOnlinePlatforms'] as List<Object?>?)?.whereType<String>().toList() ?? defaultRealOnlinePlatforms,
@@ -134,6 +136,11 @@ final class FeedPreferences extends Equatable {
   /// empty keeps the first visible one.
   final String preferredSiteId;
 
+  /// The Twitch directory's broadcast languages, as lower-case codes
+  /// (`zh`, `ko`); empty keeps every language — the reference's
+  /// `twitchLanguages`.
+  final List<String> twitchLanguages;
+
   /// Whether the discovery pages show rooms that cannot play here — a
   /// carousel, or a restriction this client cannot pass (login, payment,
   /// members-only, region). Off hides them, as the reference does.
@@ -173,6 +180,7 @@ final class FeedPreferences extends Equatable {
     'pageShowGoto': pageShowGoto,
     'preferRealOnlineCounts': preferRealOnlineCounts,
     'preferredSiteId': preferredSiteId,
+    'twitchLanguages': twitchLanguages,
     'showUnplayableInDiscover': showUnplayableInDiscover,
     'realOnlinePlatforms': realOnlinePlatforms,
     'hiddenSiteIds': hiddenSiteIds,
@@ -200,6 +208,7 @@ final class FeedPreferences extends Equatable {
     bool? pageShowGoto,
     bool? preferRealOnlineCounts,
     String? preferredSiteId,
+    List<String>? twitchLanguages,
     bool? showUnplayableInDiscover,
     List<String>? realOnlinePlatforms,
     List<String>? hiddenSiteIds,
@@ -224,6 +233,7 @@ final class FeedPreferences extends Equatable {
     pageShowGoto: pageShowGoto ?? this.pageShowGoto,
     preferRealOnlineCounts: preferRealOnlineCounts ?? this.preferRealOnlineCounts,
     preferredSiteId: preferredSiteId ?? this.preferredSiteId,
+    twitchLanguages: twitchLanguages ?? this.twitchLanguages,
     showUnplayableInDiscover: showUnplayableInDiscover ?? this.showUnplayableInDiscover,
     realOnlinePlatforms: realOnlinePlatforms ?? this.realOnlinePlatforms,
     hiddenSiteIds: hiddenSiteIds ?? this.hiddenSiteIds,
@@ -252,6 +262,7 @@ final class FeedPreferences extends Equatable {
     pageShowGoto,
     preferRealOnlineCounts,
     preferredSiteId,
+    twitchLanguages,
     showUnplayableInDiscover,
     realOnlinePlatforms,
     hiddenSiteIds,

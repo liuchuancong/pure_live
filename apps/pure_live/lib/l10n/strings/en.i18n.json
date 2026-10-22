@@ -536,6 +536,9 @@
     "preferredPlatform": "Preferred platform",
     "preferredPlatformDesc": "Popular, areas and search open on this platform",
     "preferredPlatformNone": "Platform order",
+    "twitchLanguages": "Twitch languages",
+    "twitchLanguagesSubtitle": "Popular and areas show only streams in these languages; none keeps every language",
+    "twitchLanguagesAll": "All languages",
     "dynamicColor": "Dynamic colour",
     "dynamicColorSubtitle": "Take the accent from the system wallpaper (Android 12+)"
   },

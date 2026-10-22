@@ -1720,6 +1720,15 @@ class Translations$settings$zh {
 	/// zh: '按平台顺序'
 	String get preferredPlatformNone => '按平台顺序';
 
+	/// zh: 'Twitch 语言筛选'
+	String get twitchLanguages => 'Twitch 语言筛选';
+
+	/// zh: '热门和分区只显示这些语言的直播；不选则显示全部'
+	String get twitchLanguagesSubtitle => '热门和分区只显示这些语言的直播；不选则显示全部';
+
+	/// zh: '全部语言'
+	String get twitchLanguagesAll => '全部语言';
+
 	/// zh: '动态取色'
 	String get dynamicColor => '动态取色';
 
@@ -4971,6 +4980,9 @@ extension on Translations {
 			'settings.preferredPlatform' => '首选直播平台',
 			'settings.preferredPlatformDesc' => '热门、分区与搜索默认打开这个平台',
 			'settings.preferredPlatformNone' => '按平台顺序',
+			'settings.twitchLanguages' => 'Twitch 语言筛选',
+			'settings.twitchLanguagesSubtitle' => '热门和分区只显示这些语言的直播；不选则显示全部',
+			'settings.twitchLanguagesAll' => '全部语言',
 			'settings.dynamicColor' => '动态取色',
 			'settings.dynamicColorSubtitle' => 'Android 12+ 跟随系统壁纸取强调色',
 			'hotAreas.title' => '平台显示',
@@ -5470,11 +5482,11 @@ extension on Translations {
 			'room.diagnosticsFullscreen' => '全屏',
 			'room.diagnosticsPortrait' => '竖屏全屏',
 			'room.diagnosticsPip' => '小窗',
+			_ => null,
+		} ?? switch (path) {
 			'room.recBadgeRecording' => ({required String time}) => '录制中 ${time}',
 			'room.recBadgeRetrying' => ({required String time}) => '重连中 ${time}',
 			'room.recBadgeMerging' => '合成中',
-			_ => null,
-		} ?? switch (path) {
 			'areas.followedAreas' => '关注的分区',
 			'areas.empty' => '暂无分区',
 			'areas.followEmpty' => '还没有关注的分区',
