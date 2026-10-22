@@ -489,7 +489,7 @@ abstract final class SixroomDanmakuCodec {
       name: _html(content['itemName']),
       count: count,
       value: LiveGiftValue(
-        unit: coins > 0 ? LiveGiftUnit.gold : LiveGiftUnit.free,
+        unit: coins > 0 ? LiveGiftUnit.sixCoin : LiveGiftUnit.free,
         unitPrice: coins > 0 && coins % count == 0 ? (coins ~/ count).toDouble() : null,
         totalValue: coins > 0 ? coins.toDouble() : null,
       ),

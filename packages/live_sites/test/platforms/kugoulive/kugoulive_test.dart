@@ -768,7 +768,7 @@ void main() {
       expect(gift.giftId, '55');
       expect(gift.name, '火箭');
       expect(gift.count, 2);
-      expect(gift.value.unit, LiveGiftUnit.gold);
+      expect(gift.value.unit, LiveGiftUnit.starCoin);
       expect(gift.value.unitPrice, 10);
       expect(gift.value.totalValue, 20);
       expect(gift.combo.comboKey, 'combo-1');

@@ -291,7 +291,7 @@ void main() {
       expect(message.messageId, 'kick:tx-1');
       final gift = message.payload! as LiveGift;
       expect(gift.name, 'Kick');
-      expect(gift.value.unit, LiveGiftUnit.gold);
+      expect(gift.value.unit, LiveGiftUnit.kicks);
       expect(gift.value.unitPrice, 50);
       expect(gift.value.totalValue, 50);
     });

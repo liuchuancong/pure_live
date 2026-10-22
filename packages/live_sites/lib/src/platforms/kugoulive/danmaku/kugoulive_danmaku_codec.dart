@@ -706,7 +706,7 @@ abstract final class KugouliveDanmakuCodec {
       name: _clean(content['giftname']),
       count: count,
       value: LiveGiftValue(
-        unit: price == 0 ? LiveGiftUnit.free : LiveGiftUnit.gold,
+        unit: price == 0 ? LiveGiftUnit.free : LiveGiftUnit.starCoin,
         unitPrice: price < 0 ? null : price.toDouble(),
         totalValue: price < 0 ? null : (price * count).toDouble(),
       ),

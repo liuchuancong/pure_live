@@ -604,7 +604,7 @@ void main() {
       final giftMessage = result.messages.last;
       expect(giftMessage.type, LiveMessageType.gift);
       expect((giftMessage.payload! as LiveGift).count, 2);
-      expect((giftMessage.payload! as LiveGift).value.unit, LiveGiftUnit.gold);
+      expect((giftMessage.payload! as LiveGift).value.unit, LiveGiftUnit.acCoin);
       expect((giftMessage.payload! as LiveGift).value.totalValue, 20);
       expect((giftMessage.payload! as LiveGift).combo.comboTotal, 6);
       expect(giftMessage.messageId, '4242:combo-1:3');

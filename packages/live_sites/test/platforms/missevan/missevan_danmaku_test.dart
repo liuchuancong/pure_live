@@ -617,7 +617,7 @@ void main() {
       expect(gift.name, '幻彩礼炮');
       expect(gift.iconUrl, 'https://i0.hdslb.com/bfs/gift.png');
       expect(gift.count, 2);
-      expect(gift.value.unit, LiveGiftUnit.gold);
+      expect(gift.value.unit, LiveGiftUnit.diamond);
       expect(gift.value.unitPrice, 100);
       expect(gift.value.totalValue, 200);
       expect(gift.combo.comboKey, '900001');

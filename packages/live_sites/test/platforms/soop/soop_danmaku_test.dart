@@ -359,7 +359,7 @@ void main() {
       expect(gift.name, '별풍선');
       expect(gift.count, 3);
       expect(gift.kind, LiveGiftKind.tip);
-      expect(gift.value.unit, LiveGiftUnit.gold);
+      expect(gift.value.unit, LiveGiftUnit.starBalloon);
       expect(gift.value.unitPrice, 1.0);
       expect(gift.value.totalValue, 3.0);
       expect(gift.iconUrl, isNull);

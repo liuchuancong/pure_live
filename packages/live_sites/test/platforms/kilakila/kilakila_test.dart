@@ -949,7 +949,7 @@ void main() {
       final gift = hit.payload! as LiveGift;
       expect(gift.name, '飞天小猪');
       expect(gift.count, 3);
-      expect(gift.value.unit, LiveGiftUnit.gold);
+      expect(gift.value.unit, LiveGiftUnit.redBean);
       expect(gift.value.totalValue, 204);
       expect(gift.value.unitPrice, 68, reason: '204 divides by 3');
       expect(gift.combo.comboKey, '901');

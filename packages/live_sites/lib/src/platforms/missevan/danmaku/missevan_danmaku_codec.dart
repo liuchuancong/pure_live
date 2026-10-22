@@ -574,7 +574,7 @@ abstract final class MissevanDanmakuCodec {
       iconUrl: _https(gift['icon_url']),
       count: count != null && count > 0 ? count : 1,
       value: LiveGiftValue(
-        unit: paid ? LiveGiftUnit.gold : LiveGiftUnit.free,
+        unit: paid ? LiveGiftUnit.diamond : LiveGiftUnit.free,
         unitPrice: paid ? unit.toDouble() : null,
         totalValue: paid ? (unit * (count != null && count > 0 ? count : 1)).toDouble() : null,
       ),

@@ -303,7 +303,7 @@ abstract final class TwitchDanmakuCodec {
       name: bitsName,
       kind: LiveGiftKind.tip,
       count: bits,
-      value: LiveGiftValue(unit: LiveGiftUnit.gold, unitPrice: bits.toDouble(), totalValue: bits.toDouble()),
+      value: LiveGiftValue(unit: LiveGiftUnit.bits, unitPrice: bits.toDouble(), totalValue: bits.toDouble()),
       combo: LiveGiftCombo(comboKey: key),
     );
     return LiveMessage.normalized(

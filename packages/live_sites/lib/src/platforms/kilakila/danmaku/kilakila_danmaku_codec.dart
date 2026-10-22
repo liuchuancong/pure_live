@@ -314,7 +314,7 @@ abstract final class KilakilaDanmakuCodec {
       iconUrl: icon != null && icon.scheme == 'https' ? '$icon' : null,
       count: count,
       value: LiveGiftValue(
-        unit: price == 0 ? LiveGiftUnit.free : LiveGiftUnit.gold,
+        unit: price == 0 ? LiveGiftUnit.free : LiveGiftUnit.redBean,
         unitPrice: line || count == 1
             ? price.toDouble()
             : price % count == 0

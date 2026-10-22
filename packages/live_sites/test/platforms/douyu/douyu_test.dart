@@ -111,9 +111,9 @@ void main() {
       expect(gift.name, '火箭');
       expect(gift.count, 2);
       expect(gift.iconUrl, 'https://x/55.png');
-      expect(gift.value.unit, LiveGiftUnit.rmb);
-      expect(gift.value.unitPrice, 5.0);
-      expect(gift.value.totalValue, 10.0);
+      expect(gift.value.unit, LiveGiftUnit.fen);
+      expect(gift.value.unitPrice, 500.0);
+      expect(gift.value.totalValue, 1000.0);
     });
 
     test('a gift the catalogue does not know is reported by packet name, unpriced', () {

@@ -213,9 +213,9 @@ abstract final class DouyuGiftParser {
       kind: free ? LiveGiftKind.normal : LiveGiftKind.normal,
       count: count,
       value: LiveGiftValue(
-        unit: free ? LiveGiftUnit.free : (priceFen == null ? LiveGiftUnit.other : LiveGiftUnit.rmb),
-        unitPrice: priceFen == null ? null : priceFen / 100,
-        totalValue: priceFen == null ? null : priceFen * count / 100,
+        unit: free ? LiveGiftUnit.free : (priceFen == null ? LiveGiftUnit.other : LiveGiftUnit.fen),
+        unitPrice: priceFen?.toDouble(),
+        totalValue: priceFen == null ? null : (priceFen * count).toDouble(),
       ),
       combo: LiveGiftCombo(comboKey: comboKey, comboTotal: combo > 0 ? combo : null),
       recipientName: receiverName,

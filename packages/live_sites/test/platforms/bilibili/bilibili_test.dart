@@ -466,7 +466,7 @@ void main() {
       expect(message.text, '小心心 ×2');
       expect(gift.giftId, '23');
       expect(gift.count, 2);
-      expect(gift.value.unit, LiveGiftUnit.gold);
+      expect(gift.value.unit, LiveGiftUnit.goldSeed);
       expect(gift.value.unitPrice, 100);
       expect(gift.value.totalValue, 200);
       expect(gift.iconUrl, startsWith('https://'));

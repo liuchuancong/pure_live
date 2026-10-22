@@ -263,7 +263,7 @@ abstract final class SoopDanmakuCodec {
       count: amount,
       kind: LiveGiftKind.tip,
       value: LiveGiftValue(
-        unit: valued ? LiveGiftUnit.gold : LiveGiftUnit.other,
+        unit: valued ? LiveGiftUnit.starBalloon : LiveGiftUnit.other,
         unitPrice: valued ? 1.0 : null,
         totalValue: valued ? amount.toDouble() : null,
       ),

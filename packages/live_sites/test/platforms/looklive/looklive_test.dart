@@ -1262,7 +1262,7 @@ void main() {
       expect(gift.giftId, '21');
       expect(gift.name, '小星星');
       expect(gift.count, 2);
-      expect(gift.value.unit, LiveGiftUnit.gold, reason: "the platform's paid currency");
+      expect(gift.value.unit, LiveGiftUnit.note, reason: "the platform's paid currency");
       expect(gift.value.unitPrice, 10);
       expect(gift.value.totalValue, 20);
       expect(gift.iconUrl, 'https://img1.126.net/gift.png');

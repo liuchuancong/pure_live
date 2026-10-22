@@ -618,7 +618,7 @@ abstract final class BilibiliDanmakuProtocol {
       iconUrl: (icon ?? entry?.icon)?.toString(),
       count: number,
       value: LiveGiftValue(
-        unit: silver ? LiveGiftUnit.silver : LiveGiftUnit.gold,
+        unit: silver ? LiveGiftUnit.silver : LiveGiftUnit.goldSeed,
         unitPrice: unit?.toDouble(),
         totalValue: value?.toDouble(),
       ),
@@ -670,7 +670,7 @@ abstract final class BilibiliDanmakuProtocol {
       kind: LiveGiftKind.subscription,
       count: months,
       value: LiveGiftValue(
-        unit: LiveGiftUnit.gold,
+        unit: LiveGiftUnit.goldSeed,
         unitPrice: price > 0 ? price.toDouble() : null,
         totalValue: price > 0 ? (price * months).toDouble() : null,
       ),

@@ -1279,7 +1279,7 @@ void main() {
       expect(gift.giftId, '1024');
       expect(gift.name, '棒棒糖');
       expect(gift.count, 3);
-      expect(gift.value.unit, LiveGiftUnit.gold);
+      expect(gift.value.unit, LiveGiftUnit.sixCoin);
       expect(gift.value.unitPrice, 10.0, reason: '30 six coins over 3');
       expect(gift.value.totalValue, 30.0);
       expect(gift.combo.comboKey, '888:t9');

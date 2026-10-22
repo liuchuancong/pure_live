@@ -428,7 +428,7 @@ abstract final class AcfunDanmakuProtocol {
             ? LiveGiftUnit.free
             : price == null
             ? LiveGiftUnit.other
-            : LiveGiftUnit.gold,
+            : LiveGiftUnit.acCoin,
         unitPrice: free || price == null ? null : price.toDouble(),
         totalValue: free || price == null ? null : (price * count).toDouble(),
       ),

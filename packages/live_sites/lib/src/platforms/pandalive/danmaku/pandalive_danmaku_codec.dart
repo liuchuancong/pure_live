@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:live_sites/src/models/enums/live_gift_kind.dart';
+import 'package:live_sites/src/models/enums/live_gift_unit.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/gift/live_gift/live_gift.dart';
 import 'package:live_sites/src/models/gift/live_gift_value/live_gift_value.dart';
@@ -333,8 +334,8 @@ abstract final class PandaliveDanmakuCodec {
       name: heartName,
       count: coin,
       kind: LiveGiftKind.tip,
-      // The hearts are the platform's own denomination (unit: other).
-      value: LiveGiftValue(unitPrice: 1, totalValue: coin.toDouble()),
+      // The hearts are the platform's own denomination (about 110 won each).
+      value: LiveGiftValue(unit: LiveGiftUnit.heart, unitPrice: 1, totalValue: coin.toDouble()),
       recipientName: _text(sponsor['excelNick']),
     );
     final offset = publication['offset'];

@@ -559,7 +559,7 @@ abstract final class LookliveDanmakuCodec {
           : null,
       count: count,
       value: LiveGiftValue(
-        unit: LiveGiftUnit.gold,
+        unit: LiveGiftUnit.note,
         unitPrice: worth != null && worth >= 0 ? worth.toDouble() : null,
         totalValue: worth != null && worth >= 0 ? (worth * max(count, 1)).toDouble() : null,
       ),

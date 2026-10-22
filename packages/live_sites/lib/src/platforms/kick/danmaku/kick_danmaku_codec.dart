@@ -246,7 +246,7 @@ abstract final class KickDanmakuCodec {
           giftId: display,
           name: display,
           value: LiveGiftValue(
-            unit: LiveGiftUnit.gold,
+            unit: LiveGiftUnit.kicks,
             unitPrice: amount > 0 ? amount.toDouble() : null,
             totalValue: amount > 0 ? amount.toDouble() : null,
           ),
