@@ -14,6 +14,7 @@ import 'package:pure_live/system/configuration/app_preferences_providers.dart';
 import 'package:pure_live/system/input/clipboard_room_watcher.dart';
 import 'package:pure_live/system/navigation/app_router.dart' show SettingsRoute;
 import 'package:pure_live/system/resources/image_cache.dart' show cacheAutoClearWatcherProvider;
+import 'package:pure_settings_ui/pure_settings_ui.dart' show SettingsNavItem, SettingsNavPane;
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The home shell: a bottom bar carrying the five primary branches under the
@@ -224,24 +225,35 @@ final class _HomeShellState extends ConsumerState<HomeShell>
         );
         final Widget navigation;
         if (expanded) {
-          navigation = DesktopNavigation(
+          // The settings list pane, not the kit's own sidebar rows: the
+          // home column and the settings column are then one visual system
+          // per design language (Windows' NavigationView rows, the macOS
+          // sidebar, the grouped cards), down to how the selected row is
+          // marked. Header and footer keep the shell's own.
+          navigation = SizedBox(
             key: const ValueKey('home-sidebar'),
             width: sidebarWidth,
-            destinations: destinations,
-            selectedId: selected.name,
-            onDestinationSelected: (destination) =>
-                activateShellDestination(context, ref: ref, navigationShell: navigationShell, id: destination.id),
-            showBrand: false,
-            // Transparent keeps the scaffold's surface (a window material
-            // where one exists, the layout colour otherwise) running under
-            // the column, so the sidebar reads as part of the page rather
-            // than a panel on it.
-            backgroundColor: Colors.transparent,
-            header: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 12, 12, 8),
-              child: Row(children: [toggle]),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 12, 12, 8),
+                  child: Row(children: [toggle]),
+                ),
+                Expanded(
+                  child: SettingsNavPane(
+                    items: [for (final destination in destinations) SettingsNavItem(id: destination.id, label: destination.label, icon: destination.icon)],
+                    selectedId: selected.name,
+                    onSelected: (id) =>
+                        activateShellDestination(context, ref: ref, navigationShell: navigationShell, id: id),
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(8, 4, 8, 8),
+                  child: Align(alignment: AlignmentDirectional.centerStart, child: _SettingsCard()),
+                ),
+              ],
             ),
-            footer: const _SettingsCard(),
           );
         } else {
           navigation = PureNavigationRail(

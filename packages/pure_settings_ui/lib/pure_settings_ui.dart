@@ -52,6 +52,7 @@
 /// the list. Set it to force one style, which is what the tests do.
 library;
 
+export 'src/nav/settings_nav_pane.dart';
 export 'src/pure/settings_language.dart' show devicePlatformOf;
 export 'src/vendor/list/settings_list.dart';
 export 'src/vendor/sections/abstract_settings_section.dart';
