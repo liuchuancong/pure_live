@@ -19,14 +19,6 @@ final List<SettingsEntry> settingsCatalog = [
     keywords: const ['theme', 'dark', 'light', '深色', '浅色', '夜间'],
   ),
   SettingsEntry(
-    id: 'design_language',
-    section: SettingsSection.appearance,
-    group: (t) => t.settings.sectionTheme,
-    title: (t) => t.settings.designLanguage,
-    description: (t) => t.settings.designLanguageSubtitle,
-    keywords: const ['material', 'cupertino', 'fluent', '语言', '风格'],
-  ),
-  SettingsEntry(
     id: 'accent',
     section: SettingsSection.appearance,
     group: (t) => t.settings.sectionTheme,

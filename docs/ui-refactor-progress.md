@@ -60,6 +60,7 @@
 |---|---|---|---|---|
 | 2026-10-23 | 文档建立 | (随本提交) | ✅ | 台账建立 |
 | 2026-10-23 | T4 | (随本提交) | ✅ | hosts 收拢为 Fluent:fluent_ui 4.17.0 的 FluentApp 接管宿主,删 5 宿主/8 适配器/5 标题栏 presentation,非 fluent 语言一律回落;dart analyze 全绿(含 app 侧),纯新增失败测试 0(tab_bar/tabs 8 个失败经 HEAD worktree 基线核实为既有) |
+| 2026-10-23 | T9 | (随本提交) | ✅ | 外观页接线收敛:删「设计语言」行/选择器/重启弹窗、pendingDesignLanguageProvider 与检索条目,uiConfigFromAppearance 将 UiConfig.language 固定写 fluent,l10n 五键按方案保留避免连锁改动;脚本侧 flutter analyze 全绿,dart format 4 文件 0 changed;已知 font_theme_test.dart:72-83 前两用例仍断言已删的按语言取字体行为,测试不在本任务范围,待后续跟进 |
 
 ## 阻塞与待定
 

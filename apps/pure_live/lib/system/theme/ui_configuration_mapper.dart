@@ -16,8 +16,9 @@ import 'package:pure_uikit/pure_uikit.dart';
 /// [UiConfig] for `PureConfigProvider`, and writes the reverse mapping back
 /// whenever the config changes.
 
-/// Builds a [UiConfig] from [appearance]; an unknown language or density id
-/// falls back to the default rather than blocking start-up.
+/// Builds a [UiConfig] from [appearance]; an unknown density id falls back to
+/// the default rather than blocking start-up. The language is not derived — the
+/// picker is gone and this build ships fluent only, written fixed below.
 ///
 /// The stored family goes through [resolveThemeFont]: `theme` becomes the
 /// language's recommendation, [themeFontAvailable] says whether that family is
@@ -31,7 +32,10 @@ UiConfig uiConfigFromAppearance(
   Color? dynamicAccent,
   bool Function(String id)? themeFontAvailable,
 }) {
-  final language = designLanguageOrDefault(appearance.designLanguageId);
+  // The appearance page no longer offers the choice, so the stored id steers
+  // nothing here: the language field stays (the hosts and the font table read
+  // it) and is written the build's one shipped value.
+  final language = defaultDesignLanguage;
   return UiConfig(
     language: language,
     brightness: switch (appearance.themeMode) {
@@ -41,9 +45,8 @@ UiConfig uiConfigFromAppearance(
     },
     // Fluent's shipped accent is the machine's own: an install left at its
     // defaults reads the accent Windows already chose, the way the system's
-    // Fluent apps do. A stored choice — any other language — keeps its own
-    // answer, and a machine without a readable accent keeps the language's
-    // seed default.
+    // Fluent apps do, and a machine without a readable accent keeps the seed
+    // default.
     // 动态取色 outranks a stored accent when the system has one to give.
     accent: switch ((dynamicAccent, appearance.accentColor)) {
       (final Color fromSystem?, _) => fromSystem,

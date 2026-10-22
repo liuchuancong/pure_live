@@ -235,24 +235,9 @@ final appearancePreferencesProvider = NotifierProvider<AppearancePreferencesNoti
 /// like every other booted fact — the store, the paths, the site registry —
 /// because the value is a start-up decision and a provider that could re-derive
 /// it would be a provider that could change it (§6.1 of the v4 spec).
-///
-/// Editing the language in settings writes the store and leaves this alone.
-/// [pendingDesignLanguageProvider] is how the UI knows to ask for a restart.
 final uiStartupConfigProvider = Provider<PureUiStartupConfig>(
   (ref) => throw UnimplementedError('overridden by the composition root'),
 );
-
-/// The language the store asks for that this process is not drawing with, null
-/// when the two agree.
-///
-/// The restart-pending marker: it compares the live preference against the
-/// frozen startup language rather than tracking the edit, so it survives a
-/// rebuild and reads the same truth after a navigate-away and back.
-final pendingDesignLanguageProvider = Provider<PureDesignLanguage?>((ref) {
-  final startup = ref.watch(uiStartupConfigProvider);
-  final stored = designLanguageByStoredId(ref.watch(appearancePreferencesProvider).designLanguageId);
-  return stored == null || stored == startup.language ? null : stored;
-});
 
 /// The [UiConfig] the app renders with.
 ///
