@@ -5,8 +5,8 @@ import 'package:live_log/live_log.dart';
 
 /// The log policy this build ships.
 ///
-/// Debug builds trace the whole tree into the stdout sink, so a desktop
-/// launch without an IDE still shows everything; release builds keep
+  /// Debug builds trace the whole tree into the pretty console sink, so a
+  /// desktop launch without an IDE still shows everything; release builds keep
 /// regular operations and above. [categoryMinLevels] quiets one loud
 /// category without touching the rest of the tree; a settings page adjusts
 /// the live policy later through `LiveLog.setMinLevel`, never by
@@ -44,7 +44,7 @@ final class AppLog {
     ring = MemorySink();
     _attachable = FanOutSink([ring]);
     root = LiveLog.root(
-      sinks: [if (kDebugMode) const StdoutConsoleSink(), _attachable],
+      sinks: [if (kDebugMode) const LoggerConsoleSink(), _attachable],
       minLevel: _settings.minLevel,
       categoryMinLevels: _settings.categoryMinLevels,
     );
