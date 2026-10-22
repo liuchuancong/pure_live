@@ -277,6 +277,20 @@ final class DanmakuSettingsContent extends ConsumerWidget {
             ),
             _switch(
               context,
+              title: t.danmaku.valuableGifts,
+              subtitle: t.danmaku.valuableGiftsDesc,
+              value: p.chatValuableGiftsOnly,
+              onChanged: (value) => set((old) => old.copyWith(chatValuableGiftsOnly: value)),
+            ),
+            _switch(
+              context,
+              title: t.danmaku.giftValueYuan,
+              subtitle: t.danmaku.giftValueYuanDesc,
+              value: p.chatGiftValueYuan,
+              onChanged: (value) => set((old) => old.copyWith(chatGiftValueYuan: value)),
+            ),
+            _switch(
+              context,
               title: t.danmaku.superChatMembership,
               subtitle: t.danmaku.superChatMembershipDesc,
               value: p.superChatIncludesMembership,

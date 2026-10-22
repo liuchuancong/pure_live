@@ -4369,6 +4369,63 @@ class Translations$danmaku$zh {
 	/// zh: '默认和网页一样只显示精选聊天；打开后显示所有消息'
 	String get youtubeAllChatDesc => '默认和网页一样只显示精选聊天；打开后显示所有消息';
 
+	/// zh: '只显示值钱的礼物'
+	String get valuableGifts => '只显示值钱的礼物';
+
+	/// zh: '免费和便宜的礼物不进聊天列表；换算后达到 10 元的礼物才留下'
+	String get valuableGiftsDesc => '免费和便宜的礼物不进聊天列表；换算后达到 10 元的礼物才留下';
+
+	/// zh: '礼物价值换算成元'
+	String get giftValueYuan => '礼物价值换算成元';
+
+	/// zh: '金瓜子、钻石、抖币按平台的固定比例写成元；海外的币种只用于排序，不换算'
+	String get giftValueYuanDesc => '金瓜子、钻石、抖币按平台的固定比例写成元；海外的币种只用于排序，不换算';
+
+	/// zh: '{value} 元'
+	String giftValueYuanLabel({required Object value}) => '${value} 元';
+
+	/// zh: '{value} 金瓜子'
+	String giftValueGoldSeed({required Object value}) => '${value} 金瓜子';
+
+	/// zh: '{value} 钻石'
+	String giftValueDiamond({required Object value}) => '${value} 钻石';
+
+	/// zh: '{value} 红豆'
+	String giftValueRedBean({required Object value}) => '${value} 红豆';
+
+	/// zh: '{value} Bits'
+	String giftValueBits({required Object value}) => '${value} Bits';
+
+	/// zh: '{value} Kicks'
+	String giftValueKicks({required Object value}) => '${value} Kicks';
+
+	/// zh: '{value} 奶酪'
+	String giftValueCheese({required Object value}) => '${value} 奶酪';
+
+	/// zh: '{value} 星气球'
+	String giftValueStarBalloon({required Object value}) => '${value} 星气球';
+
+	/// zh: '{value} 抖币'
+	String giftValueDouyinCoin({required Object value}) => '${value} 抖币';
+
+	/// zh: '{value} 六币'
+	String giftValueSixCoin({required Object value}) => '${value} 六币';
+
+	/// zh: '{value} AC币'
+	String giftValueAcCoin({required Object value}) => '${value} AC币';
+
+	/// zh: '{value} 星币'
+	String giftValueStarCoin({required Object value}) => '${value} 星币';
+
+	/// zh: '{value} 爱心'
+	String giftValueHeart({required Object value}) => '${value} 爱心';
+
+	/// zh: '{value} 音符'
+	String giftValueNote({required Object value}) => '${value} 音符';
+
+	/// zh: '{value} 点'
+	String giftValuePoint({required Object value}) => '${value} 点';
+
 	/// zh: '弹幕列表样式'
 	String get listStyle => '弹幕列表样式';
 
@@ -5829,6 +5886,25 @@ extension on Translations {
 			'danmaku.superChatMembershipDesc' => '哔哩哔哩上舰、YouTube 会员和各平台的订阅也在醒目留言里显示一张卡；聊天列表照旧',
 			'danmaku.youtubeAllChat' => 'YouTube 显示全部聊天',
 			'danmaku.youtubeAllChatDesc' => '默认和网页一样只显示精选聊天；打开后显示所有消息',
+			'danmaku.valuableGifts' => '只显示值钱的礼物',
+			'danmaku.valuableGiftsDesc' => '免费和便宜的礼物不进聊天列表；换算后达到 10 元的礼物才留下',
+			'danmaku.giftValueYuan' => '礼物价值换算成元',
+			'danmaku.giftValueYuanDesc' => '金瓜子、钻石、抖币按平台的固定比例写成元；海外的币种只用于排序，不换算',
+			'danmaku.giftValueYuanLabel' => ({required Object value}) => '${value} 元',
+			'danmaku.giftValueGoldSeed' => ({required Object value}) => '${value} 金瓜子',
+			'danmaku.giftValueDiamond' => ({required Object value}) => '${value} 钻石',
+			'danmaku.giftValueRedBean' => ({required Object value}) => '${value} 红豆',
+			'danmaku.giftValueBits' => ({required Object value}) => '${value} Bits',
+			'danmaku.giftValueKicks' => ({required Object value}) => '${value} Kicks',
+			'danmaku.giftValueCheese' => ({required Object value}) => '${value} 奶酪',
+			'danmaku.giftValueStarBalloon' => ({required Object value}) => '${value} 星气球',
+			'danmaku.giftValueDouyinCoin' => ({required Object value}) => '${value} 抖币',
+			'danmaku.giftValueSixCoin' => ({required Object value}) => '${value} 六币',
+			'danmaku.giftValueAcCoin' => ({required Object value}) => '${value} AC币',
+			'danmaku.giftValueStarCoin' => ({required Object value}) => '${value} 星币',
+			'danmaku.giftValueHeart' => ({required Object value}) => '${value} 爱心',
+			'danmaku.giftValueNote' => ({required Object value}) => '${value} 音符',
+			'danmaku.giftValuePoint' => ({required Object value}) => '${value} 点',
 			'danmaku.listStyle' => '弹幕列表样式',
 			'danmaku.listCompact' => '紧凑',
 			'danmaku.listCard' => '卡片',

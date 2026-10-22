@@ -20,6 +20,23 @@ void main() {
     expect(chatLineVisible(gift, showGifts: false), isFalse);
   });
 
+  test('the valuable switch hides a cheap gift and keeps a rich one', () {
+    LiveMessage giftOf(double value) => LiveMessage.normalized(
+      type: LiveMessageType.gift,
+      text: '礼物',
+      payload: LiveGift(
+        giftId: 'g',
+        name: '礼物',
+        value: LiveGiftValue(unit: LiveGiftUnit.goldSeed, unitPrice: value, totalValue: value),
+      ),
+    );
+    final cheap = giftOf(1000); // 1 yuan
+    final rich = giftOf(10000); // 10 yuan
+    expect(chatLineVisible(cheap, showGifts: true, valuableGiftsOnly: true), isFalse);
+    expect(chatLineVisible(rich, showGifts: true, valuableGiftsOnly: true), isTrue);
+    expect(chatLineVisible(cheap, showGifts: true), isTrue);
+  });
+
   test('chat and the quiet types keep their lines', () {
     for (final type in [
       LiveMessageType.chat,

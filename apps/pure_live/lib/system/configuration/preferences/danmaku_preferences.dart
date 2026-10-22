@@ -28,6 +28,8 @@ final class DanmakuPreferences extends Equatable {
     this.barrageFpsMode = 'powerSaving',
     this.barrageShowGifts = false,
     this.chatShowGifts = true,
+    this.chatValuableGiftsOnly = false,
+    this.chatGiftValueYuan = false,
     this.superChatIncludesMembership = false,
     this.youtubeAllChat = false,
     this.barrageTapAction = true,
@@ -65,6 +67,8 @@ final class DanmakuPreferences extends Equatable {
       barrageFpsMode: json['barrageFpsMode'] as String? ?? 'powerSaving',
       barrageShowGifts: json['barrageShowGifts'] as bool? ?? false,
       chatShowGifts: json['chatShowGifts'] as bool? ?? true,
+      chatValuableGiftsOnly: json['chatValuableGiftsOnly'] as bool? ?? false,
+      chatGiftValueYuan: json['chatGiftValueYuan'] as bool? ?? false,
       superChatIncludesMembership: json['superChatIncludesMembership'] as bool? ?? false,
       youtubeAllChat: json['youtubeAllChat'] as bool? ?? false,
       barrageTapAction: json['barrageTapAction'] as bool? ?? true,
@@ -154,6 +158,14 @@ final class DanmakuPreferences extends Equatable {
   /// reference's `showChatGifts`); the flying gifts keep their own switch.
   final bool chatShowGifts;
 
+  /// Whether the chat list hides the free and cheap gifts (the reference's
+  /// 只显示值钱的礼物): a gift line needs its value to reach the valuable tier.
+  final bool chatValuableGiftsOnly;
+
+  /// Whether a gift line writes its value in yuan (the reference's
+  /// 礼物价值换算成元) instead of the platform's own currency.
+  final bool chatGiftValueYuan;
+
   /// Whether memberships (a Bilibili guard, a YouTube membership, a
   /// subscription) also get a card among the super chats; the chat list keeps
   /// its own line either way.
@@ -214,6 +226,8 @@ final class DanmakuPreferences extends Equatable {
     'barrageFpsMode': barrageFpsMode,
     'barrageShowGifts': barrageShowGifts,
     'chatShowGifts': chatShowGifts,
+    'chatValuableGiftsOnly': chatValuableGiftsOnly,
+    'chatGiftValueYuan': chatGiftValueYuan,
     'superChatIncludesMembership': superChatIncludesMembership,
     'youtubeAllChat': youtubeAllChat,
     'barrageTapAction': barrageTapAction,
@@ -249,6 +263,8 @@ final class DanmakuPreferences extends Equatable {
     String? barrageFpsMode,
     bool? barrageShowGifts,
     bool? chatShowGifts,
+    bool? chatValuableGiftsOnly,
+    bool? chatGiftValueYuan,
     bool? superChatIncludesMembership,
     bool? youtubeAllChat,
     bool? barrageTapAction,
@@ -281,6 +297,8 @@ final class DanmakuPreferences extends Equatable {
     barrageFpsMode: barrageFpsMode ?? this.barrageFpsMode,
     barrageShowGifts: barrageShowGifts ?? this.barrageShowGifts,
     chatShowGifts: chatShowGifts ?? this.chatShowGifts,
+    chatValuableGiftsOnly: chatValuableGiftsOnly ?? this.chatValuableGiftsOnly,
+    chatGiftValueYuan: chatGiftValueYuan ?? this.chatGiftValueYuan,
     superChatIncludesMembership: superChatIncludesMembership ?? this.superChatIncludesMembership,
     youtubeAllChat: youtubeAllChat ?? this.youtubeAllChat,
     barrageTapAction: barrageTapAction ?? this.barrageTapAction,
@@ -317,6 +335,8 @@ final class DanmakuPreferences extends Equatable {
     barrageFpsMode,
     barrageShowGifts,
     chatShowGifts,
+    chatValuableGiftsOnly,
+    chatGiftValueYuan,
     superChatIncludesMembership,
     youtubeAllChat,
     barrageTapAction,

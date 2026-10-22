@@ -83,6 +83,8 @@ final class AppPreferences extends Equatable {
     String barrageFpsMode = 'powerSaving',
     bool barrageShowGifts = false,
     bool chatShowGifts = true,
+    bool chatValuableGiftsOnly = false,
+    bool chatGiftValueYuan = false,
     bool superChatIncludesMembership = false,
     bool youtubeAllChat = false,
     bool barrageTapAction = true,
@@ -219,6 +221,8 @@ final class AppPreferences extends Equatable {
          barrageFpsMode: barrageFpsMode,
          barrageShowGifts: barrageShowGifts,
          chatShowGifts: chatShowGifts,
+         chatValuableGiftsOnly: chatValuableGiftsOnly,
+         chatGiftValueYuan: chatGiftValueYuan,
          superChatIncludesMembership: superChatIncludesMembership,
          youtubeAllChat: youtubeAllChat,
          barrageTapAction: barrageTapAction,
@@ -496,6 +500,12 @@ final class AppPreferences extends Equatable {
 
   /// Whether platform gifts show as lines in the chat list.
   bool get chatShowGifts => danmaku.chatShowGifts;
+
+  /// Whether the chat list hides free and cheap gifts.
+  bool get chatValuableGiftsOnly => danmaku.chatValuableGiftsOnly;
+
+  /// Whether a gift line writes its value in yuan.
+  bool get chatGiftValueYuan => danmaku.chatGiftValueYuan;
 
   /// Whether memberships also get a card among the super chats.
   bool get superChatIncludesMembership => danmaku.superChatIncludesMembership;
@@ -886,6 +896,8 @@ final class AppPreferences extends Equatable {
     String? barrageFpsMode,
     bool? barrageShowGifts,
     bool? chatShowGifts,
+    bool? chatValuableGiftsOnly,
+    bool? chatGiftValueYuan,
     bool? superChatIncludesMembership,
     bool? youtubeAllChat,
     bool? barrageTapAction,
@@ -1013,6 +1025,8 @@ final class AppPreferences extends Equatable {
     barrageFpsMode: barrageFpsMode ?? this.barrageFpsMode,
     barrageShowGifts: barrageShowGifts ?? this.barrageShowGifts,
     chatShowGifts: chatShowGifts ?? this.chatShowGifts,
+    chatValuableGiftsOnly: chatValuableGiftsOnly ?? this.chatValuableGiftsOnly,
+    chatGiftValueYuan: chatGiftValueYuan ?? this.chatGiftValueYuan,
     superChatIncludesMembership: superChatIncludesMembership ?? this.superChatIncludesMembership,
     youtubeAllChat: youtubeAllChat ?? this.youtubeAllChat,
     barrageTapAction: barrageTapAction ?? this.barrageTapAction,

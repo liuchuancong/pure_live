@@ -11,10 +11,18 @@ void main() {
     expect(preferences.youtubeAllChat, isFalse);
   });
 
-  test('the three switches survive the document', () {
-    const before = DanmakuPreferences(chatShowGifts: false, superChatIncludesMembership: true, youtubeAllChat: true);
+  test('the switches survive the document', () {
+    const before = DanmakuPreferences(
+      chatShowGifts: false,
+      chatValuableGiftsOnly: true,
+      chatGiftValueYuan: true,
+      superChatIncludesMembership: true,
+      youtubeAllChat: true,
+    );
     final read = DanmakuPreferences.fromJson(before.toJson());
     expect(read.chatShowGifts, isFalse);
+    expect(read.chatValuableGiftsOnly, isTrue);
+    expect(read.chatGiftValueYuan, isTrue);
     expect(read.superChatIncludesMembership, isTrue);
     expect(read.youtubeAllChat, isTrue);
   });

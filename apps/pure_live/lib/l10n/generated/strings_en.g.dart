@@ -1730,6 +1730,25 @@ class _Translations$danmaku$en extends Translations$danmaku$zh {
 	@override String get superChatMembershipDesc => 'Bilibili guards, YouTube memberships and other subscriptions also get a card among the Super Chats; the chat list keeps its line';
 	@override String get youtubeAllChat => 'YouTube: show all chat';
 	@override String get youtubeAllChatDesc => 'By default only Top chat shows, as on the web; turn on for every message';
+	@override String get valuableGifts => 'Only valuable gifts';
+	@override String get valuableGiftsDesc => 'Free and cheap gifts stay out of the chat list; a gift worth 10 yuan or more keeps its line';
+	@override String get giftValueYuan => 'Show gift value in yuan';
+	@override String get giftValueYuanDesc => 'Gold seeds, diamonds and Douyin coins are written in yuan at the platform\'s fixed rate; overseas currencies only rank gifts';
+	@override String giftValueYuanLabel({required Object value}) => '${value} CNY';
+	@override String giftValueGoldSeed({required Object value}) => '${value} gold seeds';
+	@override String giftValueDiamond({required Object value}) => '${value} diamonds';
+	@override String giftValueRedBean({required Object value}) => '${value} red beans';
+	@override String giftValueBits({required Object value}) => '${value} Bits';
+	@override String giftValueKicks({required Object value}) => '${value} Kicks';
+	@override String giftValueCheese({required Object value}) => '${value} cheese';
+	@override String giftValueStarBalloon({required Object value}) => '${value} star balloons';
+	@override String giftValueDouyinCoin({required Object value}) => '${value} Douyin coins';
+	@override String giftValueSixCoin({required Object value}) => '${value} six coins';
+	@override String giftValueAcCoin({required Object value}) => '${value} AC coins';
+	@override String giftValueStarCoin({required Object value}) => '${value} star coins';
+	@override String giftValueHeart({required Object value}) => '${value} hearts';
+	@override String giftValueNote({required Object value}) => '${value} notes';
+	@override String giftValuePoint({required Object value}) => '${value} points';
 	@override String get listStyle => 'Chat list style';
 	@override String get listCompact => 'Compact';
 	@override String get listCard => 'Card';
@@ -3123,6 +3142,25 @@ extension on TranslationsEn {
 			'danmaku.superChatMembershipDesc' => 'Bilibili guards, YouTube memberships and other subscriptions also get a card among the Super Chats; the chat list keeps its line',
 			'danmaku.youtubeAllChat' => 'YouTube: show all chat',
 			'danmaku.youtubeAllChatDesc' => 'By default only Top chat shows, as on the web; turn on for every message',
+			'danmaku.valuableGifts' => 'Only valuable gifts',
+			'danmaku.valuableGiftsDesc' => 'Free and cheap gifts stay out of the chat list; a gift worth 10 yuan or more keeps its line',
+			'danmaku.giftValueYuan' => 'Show gift value in yuan',
+			'danmaku.giftValueYuanDesc' => 'Gold seeds, diamonds and Douyin coins are written in yuan at the platform\'s fixed rate; overseas currencies only rank gifts',
+			'danmaku.giftValueYuanLabel' => ({required Object value}) => '${value} CNY',
+			'danmaku.giftValueGoldSeed' => ({required Object value}) => '${value} gold seeds',
+			'danmaku.giftValueDiamond' => ({required Object value}) => '${value} diamonds',
+			'danmaku.giftValueRedBean' => ({required Object value}) => '${value} red beans',
+			'danmaku.giftValueBits' => ({required Object value}) => '${value} Bits',
+			'danmaku.giftValueKicks' => ({required Object value}) => '${value} Kicks',
+			'danmaku.giftValueCheese' => ({required Object value}) => '${value} cheese',
+			'danmaku.giftValueStarBalloon' => ({required Object value}) => '${value} star balloons',
+			'danmaku.giftValueDouyinCoin' => ({required Object value}) => '${value} Douyin coins',
+			'danmaku.giftValueSixCoin' => ({required Object value}) => '${value} six coins',
+			'danmaku.giftValueAcCoin' => ({required Object value}) => '${value} AC coins',
+			'danmaku.giftValueStarCoin' => ({required Object value}) => '${value} star coins',
+			'danmaku.giftValueHeart' => ({required Object value}) => '${value} hearts',
+			'danmaku.giftValueNote' => ({required Object value}) => '${value} notes',
+			'danmaku.giftValuePoint' => ({required Object value}) => '${value} points',
 			'danmaku.listStyle' => 'Chat list style',
 			'danmaku.listCompact' => 'Compact',
 			'danmaku.listCard' => 'Card',

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_interaction/live_interaction.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/features/room/chat_rules.dart';
+import 'package:pure_live/features/room/gift_value.dart';
 import 'package:pure_live/features/room/local/local_catalog.dart';
 import 'package:pure_live/features/room/room_providers.dart';
 import 'package:pure_live/features/room/shield_lists_panel.dart';
@@ -207,7 +208,12 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
     }
     final takesALine =
         message.type == LiveMessageType.chat || message.type == LiveMessageType.gift || message.text.isNotEmpty;
-    if (takesALine && chatLineVisible(message, showGifts: preferences.chatShowGifts)) {
+    if (takesALine &&
+        chatLineVisible(
+          message,
+          showGifts: preferences.chatShowGifts,
+          valuableGiftsOnly: preferences.chatValuableGiftsOnly,
+        )) {
       _chats.add(message);
       _markArrival();
     }
@@ -427,11 +433,15 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
       final LiveGift value => value,
       _ => null,
     };
-    final giftNote = gift == null ? '' : (gift.count > 1 ? ' ×${gift.count}' : '');
+    final shownCount = gift == null ? 1 : giftShownCount(gift);
+    final giftNote = shownCount > 1 ? ' ×$shownCount' : '';
     final accent = gift != null ? const Color(0xFFFFC107) : _readable(message.effectiveColor, dark);
     // The list's look answers to the shared barrage settings: size, spacing,
     // plain rows or cards, and whether the sender's name leads the line.
     final listPrefs = ref.watch(appPreferencesProvider);
+    final valueText = gift == null || message.isLocal
+        ? null
+        : giftValueText(context, gift, inYuan: listPrefs.chatGiftValueYuan);
     final cardStyle = listPrefs.barrageListStyle == 'card';
     // The viewer's own line draws with the local preset; the shared list
     // settings keep the platform messages as they are.
@@ -484,7 +494,7 @@ final class _SessionPaneState extends ConsumerState<_SessionPane> {
                   ...emoteSpans(
                     // The platform's own表情图, inline; the gift note rides the
                     // same style as the rest of the line.
-                    text: '${message.text}$giftNote',
+                    text: '${message.text}$giftNote${valueText == null ? '' : ' · $valueText'}',
                     emotes: message.emotes,
                     style: TextStyle(
                       color: preset != null
