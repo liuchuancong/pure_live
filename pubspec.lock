@@ -201,6 +201,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.1"
+  blit:
+    dependency: transitive
+    description:
+      name: blit
+      sha256: "6ae7e9cd269d657f42fc85b6366962fd1818a0ed5419a9b784f14dae4fd28f4e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.1"
   blur:
     dependency: transitive
     description:
@@ -217,6 +225,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.2"
+  brotli_neo:
+    dependency: transitive
+    description:
+      name: brotli_neo
+      sha256: "0635e5d06631646410fdf34f00a3227e4878a5a046e2fb2a02209c1c03bdc692"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.0"
   build:
     dependency: transitive
     description:
@@ -641,14 +657,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.0"
-  es_compression:
-    dependency: transitive
-    description:
-      name: es_compression
-      sha256: c1ff7af54802631cf5c3942cb67bb99daadcc087f573ca99a9de91002d1a7ece
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.15"
   fake_async:
     dependency: transitive
     description:
@@ -1358,6 +1366,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.0"
+  io_uring:
+    dependency: transitive
+    description:
+      name: io_uring
+      sha256: bc6c0ce7d22607091ab80a75b2ed0099a54932617fb362a18d66faf9cd1674df
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.1"
   isolate_channel:
     dependency: transitive
     description:

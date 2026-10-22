@@ -3,7 +3,7 @@ import 'dart:io' show ZLibDecoder;
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:es_compression/brotli.dart';
+import 'package:brotli_neo/compat.dart';
 import 'package:live_sites/src/models/audience/live_audience_update/live_audience_update.dart';
 import 'package:live_sites/src/models/enums/live_audience_signal_kind.dart';
 import 'package:live_sites/src/models/enums/live_gift_kind.dart';
@@ -245,7 +245,7 @@ abstract final class BilibiliDanmakuProtocol {
             _stream(_inflate(body), depth + 1, out, gifts);
           case 3:
             try {
-              final decompressed = brotli.decode(body);
+              final decompressed = brotliCompress(body);
               if (decompressed.length > maxInflatedBytes) {
                 throw const FormatException('Bilibili brotli decompressed message exceeds limit');
               }
