@@ -28,7 +28,7 @@
 
 - [x] T1 依赖落地:`pure_uikit` 增加 `fluent_ui ^4.17.0`、`fluent2_kit ^2.2.0`,
       工作区 `pub get` 通过,旧依赖暂不拆除。
-- [ ] T2 fluent 用法笔记:通读示例仓库,把本工程会用到的关键 API
+- [x] T2 fluent 用法笔记:通读示例仓库,把本工程会用到的关键 API
       (FluentApp / FluentThemeData / NavigationView / Button / ContentDialog /
       Focus 相关)写成 `docs/fluent-ui-notes.md`,给后续所有施工任务当手册。
 - [ ] T3 主题桥接:新增 `pure_uikit` 的 Fluent 主题桥(由现有 token 生成
@@ -64,6 +64,7 @@
 | 2026-10-23 | 文档建立 | (随本提交) | ✅ | 台账建立 |
 | 2026-10-23 | T4 | (随本提交) | ✅ | hosts 收拢为 Fluent:fluent_ui 4.17.0 的 FluentApp 接管宿主,删 5 宿主/8 适配器/5 标题栏 presentation,非 fluent 语言一律回落;dart analyze 全绿(含 app 侧),纯新增失败测试 0(tab_bar/tabs 8 个失败经 HEAD worktree 基线核实为既有) |
 | 2026-10-23 | T9 | (随本提交) | ✅ | 外观页接线收敛:删「设计语言」行/选择器/重启弹窗、pendingDesignLanguageProvider 与检索条目,uiConfigFromAppearance 将 UiConfig.language 固定写 fluent,l10n 五键按方案保留避免连锁改动;脚本侧 flutter analyze 全绿,dart format 4 文件 0 changed;已知 font_theme_test.dart:72-83 前两用例仍断言已删的按语言取字体行为,测试不在本任务范围,待后续跟进 |
+| 2026-10-23 | T2 | (随本提交) | ✅ | fluent 用法手册落盘 docs/fluent-ui-notes.md:按 8 个主题(应用根与主题/导航骨架/页面脚手架/按钮/对话框/输入框/标签页/焦点与快捷键)收录 24 条 API,全部条目经 fluent_ui 示例仓库实读核对并附 file:line 引用,未引入示例之外的 API;纯文档改动,无代码影响 |
 
 ## 阻塞与待定
 
