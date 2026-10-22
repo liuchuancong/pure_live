@@ -10,6 +10,7 @@ import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 import 'package:pure_uikit/src/styling/style/recipe.dart';
 import 'package:pure_uikit/src/styling/style/style.dart';
+import 'package:pure_uikit/src/styling/widgets/controls/pure_progress.dart';
 import 'package:pure_uikit/src/styling/widgets/overlays/pure_dialog_action_scope.dart';
 import 'package:pure_uikit/src/styling/widgets/overlays/pure_tooltip.dart';
 import 'package:yaru/yaru.dart' as yaru;
@@ -829,8 +830,12 @@ class PureIconButton extends StatelessWidget {
   }
 }
 
-/// A standalone circular spinner built from the active language's own progress
-/// control where it has one and Flutter's official Material spinner elsewhere.
+/// A standalone circular spinner — `PureProgress`'s ring asked for by name.
+///
+/// The kit already paints each language's unknown-work ring in
+/// `pure_progress.dart`, so this is the shape callers reach for when they want
+/// the ring without the bar's vocabulary; a `null` value is what every
+/// language's shape answers to for a spinner.
 class PureSpinner extends StatelessWidget {
   /// A spinner.
   const new({this.size = 18, this.color, super.key});
@@ -843,25 +848,8 @@ class PureSpinner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = PureTheme.of(context);
-    final tint = color ?? theme.colors.primary;
-    final language = theme.config.language;
-
-    final spinner = switch (language) {
-      PureDesignLanguage.fluent => f2.FluentSpinner(
-        style: f2.FluentSpinnerStyle.from(diameter: size, indicatorColor: tint),
-      ),
-      PureDesignLanguage.macos => macos.ProgressCircle(radius: size / 2),
-      PureDesignLanguage.cupertino => cupertino.CupertinoActivityIndicator(radius: size / 2, color: tint),
-      PureDesignLanguage.forui => const forui.FCircularProgress(),
-      PureDesignLanguage.neumorphic => neu.NeuCircularProgress(size: size, strokeWidth: 2, progressColor: tint),
-      PureDesignLanguage.yaru => yaru.YaruCircularProgressIndicator(strokeWidth: 2, color: tint),
-      PureDesignLanguage.material ||
-      PureDesignLanguage.glass ||
-      PureDesignLanguage.wind => CircularProgressIndicator(strokeWidth: 2, color: tint),
-    };
-
-    return SizedBox.square(dimension: size, child: spinner);
+    final tint = color ?? PureTheme.of(context).colors.primary;
+    return PureProgress(value: null, shape: PureProgressShape.circular, size: size, barColor: tint);
   }
 }
 
