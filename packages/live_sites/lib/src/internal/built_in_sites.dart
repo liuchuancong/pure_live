@@ -2,6 +2,8 @@ import 'package:live_net/live_net.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/platforms/acfun/acfun_site.dart';
 import 'package:live_sites/src/platforms/acfun/api/acfun_http.dart';
+import 'package:live_sites/src/platforms/baidulive/api/baidulive_http.dart';
+import 'package:live_sites/src/platforms/baidulive/baidulive_site.dart';
 import 'package:live_sites/src/platforms/bigo/api/bigo_http.dart';
 import 'package:live_sites/src/platforms/bigo/bigo_site.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_http.dart';
@@ -43,6 +45,8 @@ import 'package:live_sites/src/platforms/pandalive/api/pandalive_http.dart';
 import 'package:live_sites/src/platforms/pandalive/pandalive_site.dart';
 import 'package:live_sites/src/platforms/picarto/api/picarto_http.dart';
 import 'package:live_sites/src/platforms/picarto/picarto_site.dart';
+import 'package:live_sites/src/platforms/seventeenlive/api/seventeenlive_http.dart';
+import 'package:live_sites/src/platforms/seventeenlive/seventeenlive_site.dart';
 import 'package:live_sites/src/platforms/showroom/api/showroom_http.dart';
 import 'package:live_sites/src/platforms/showroom/showroom_site.dart';
 import 'package:live_sites/src/platforms/sixroom/api/sixroom_http.dart';
@@ -57,6 +61,8 @@ import 'package:live_sites/src/platforms/twitcasting/api/twitcasting_http.dart';
 import 'package:live_sites/src/platforms/twitcasting/twitcasting_site.dart';
 import 'package:live_sites/src/platforms/twitch/api/twitch_http.dart';
 import 'package:live_sites/src/platforms/twitch/twitch_site.dart';
+import 'package:live_sites/src/platforms/weibo/api/weibo_http.dart';
+import 'package:live_sites/src/platforms/weibo/weibo_site.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/api/xiaohongshu_http.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/xiaohongshu_site.dart';
 import 'package:live_sites/src/platforms/youtube/api/youtube_http.dart';
@@ -114,5 +120,8 @@ List<LiveSite> createBuiltInLiveSites({
     SteambroadcastSite(http: SteambroadcastHttp(transport)),
     TiktokSite(http: TiktokHttp(transport)),
     TwitcastingSite(http: TwitcastingHttp(transport)),
+    BaiduliveSite(http: BaiduliveHttp(transport)),
+    SeventeenLiveSite(http: SeventeenLiveHttp(transport)),
+    WeiboSite(http: WeiboHttp(transport)),
   ];
 }
