@@ -12,4 +12,5 @@ export 'pure_segmented.dart';
 export 'pure_select.dart';
 export 'pure_slider.dart';
 export 'pure_switch.dart';
+export 'pure_tab_bar.dart';
 export 'pure_tabs.dart';

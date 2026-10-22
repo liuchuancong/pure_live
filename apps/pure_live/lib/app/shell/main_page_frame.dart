@@ -78,15 +78,21 @@ class MainPageFrame extends StatelessWidget {
         bottom: tabs == null || tabs.isEmpty
             ? null
             : PreferredSize(
-                // The strip scrolls its own tabs (see [PureTabs.isScrollable]),
+                // The strip scrolls its own tabs (see [PureTabBar.isScrollable]),
                 // so the bar hands it a bounded width and the caller only asks
-                // for the left-aligned pack rather than a stretched row.
+                // for the left-aligned pack rather than a stretched row. The
+                // slot is the pill tab bar's standard tier: 48 exactly.
                 preferredSize: const Size.fromHeight(48),
                 child: SizedBox(
                   height: 48,
                   child: Align(
                     alignment: AlignmentDirectional.centerStart,
-                    child: PureTabs(tabs: tabs, index: tabIndex, isScrollable: true, onChanged: onTabChanged),
+                    child: PureTabBar(
+                      items: [for (final tab in tabs) PureTabBarItem(icon: tab.icon, label: tab.label)],
+                      index: tabIndex,
+                      isScrollable: true,
+                      onChanged: onTabChanged,
+                    ),
                   ),
                 ),
               ),
