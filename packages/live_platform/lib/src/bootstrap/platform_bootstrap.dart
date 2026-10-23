@@ -46,13 +46,22 @@ abstract final class PlatformBootstrap {
   /// the default (desktop for desktop OSes, phone for mobile) — the user's
   /// own phone/tablet/TV choice travels here from the app's settings,
   /// because a TV build is a UI and storage composition, not a hardware
-  /// fact.
+  /// fact. [appNamespace] is the one place a host application declares the
+  /// name it writes under — storage, logs and startup registration read it
+  /// off the snapshot instead of carrying their own product literal.
   static PlatformRuntime init({
     DesktopDistribution? declaredDistribution,
     FormFactor? formFactor,
     Directory? claimDirectory,
     bool? packageIdentity,
+    String appNamespace = PlatformRuntimeInfo.defaultAppNamespace,
   }) {
+    // The namespace is one path segment everywhere it lands; the check
+    // lives here rather than in the const constructor's assert because no
+    // string test is a constant expression in a const constructor.
+    if (appNamespace.isEmpty || appNamespace.contains('/') || appNamespace.contains(r'\')) {
+      throw ArgumentError.value(appNamespace, 'appNamespace', 'must be one non-empty path segment');
+    }
     final kind = PlatformRuntimeInfo.inferKind();
     final executableRoot = File(Platform.resolvedExecutable).parent;
     final resolution = DistributionResolver.resolve(
@@ -80,6 +89,7 @@ abstract final class PlatformBootstrap {
       osVersion: Platform.operatingSystemVersion,
       distributionOrigin: resolution.origin,
       distributionConflicts: resolution.conflicts,
+      appNamespace: appNamespace,
     );
 
     return PlatformRuntime(

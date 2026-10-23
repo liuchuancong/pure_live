@@ -21,7 +21,19 @@ final class PlatformRuntimeInfo {
     this.osVersion,
     this.distributionOrigin = DistributionOrigin.undetermined,
     this.distributionConflicts = const [],
+    this.appNamespace = defaultAppNamespace,
   });
+
+  /// The namespace this application writes under — the single fact the
+  /// storage, log and registration layers borrow instead of carrying their
+  /// own copy of a product name. A reusable package must never hardcode
+  /// it; the shell declares it once here and every reader takes it from
+  /// the snapshot.
+  final String appNamespace;
+
+  /// The namespace this repository's own app boots with; a host application
+  /// passes its own to the platform bootstrap's init.
+  static const String defaultAppNamespace = 'pure_live';
 
   /// The operating system family.
   final PlatformKind kind;
