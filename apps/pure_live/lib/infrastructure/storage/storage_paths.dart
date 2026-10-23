@@ -1,0 +1,99 @@
+import 'package:live_log/live_log.dart' show LiveLog;
+import 'package:live_platform/live_platform.dart' show PlatformEnvironment;
+import 'package:live_platform_path_provider/live_platform_path_provider.dart'
+    show PathProviderBootstrap, StorageArea, StorageLocation, StorageManager;
+import 'package:pure_live/infrastructure/platform/os_roots.dart' show OsRoots;
+
+/// The app's storage paths, resolved from the deployment facts.
+///
+/// `live_platform` answers *what this deployment is* — the trust chain is
+/// portable marker, then build claim, then package identity (an MSIX
+/// install), then shape — and `live_platform_path_provider` turns that
+/// answer into directories. The policy owns every branch; this class owns
+/// none:
+///
+/// * **portable** — data lives on the bundle's own medium:
+///   `<exe>/data/pure_live` (the `data/` segment is namespaced because
+///   Flutter's own Windows bundle occupies `data/` next to the
+///   executable), cache at `<exe>/cache`, temp at `<exe>/temp`,
+///   downloads at `<exe>/downloads` with the OS folder as fallback.
+/// * **installed / MSIX** — data under the OS application-support root
+///   (`<appsupport>/data`), cache under `<cacheroot>/pure_live`, temp
+///   under `<temproot>/pure_temp`, downloads = the OS download folder.
+///   Neither deployment style ever writes next to the executable.
+///
+/// The OS roots come from [OsRoots.measure] — the one place that touches
+/// `path_provider` — and are only the *installed* case's answers; whether
+/// they are offered at all is the policy's call, made from the runtime
+/// snapshot, never from here.
+final class StoragePaths {
+  StoragePaths._({
+    required this.environment,
+    required this.manager,
+    required this.roots,
+    required this.data,
+    required this.config,
+    required this.cache,
+  });
+
+  /// The platform runtime snapshot (OS family, form factor, distribution).
+  final PlatformEnvironment environment;
+
+  /// The OS roots this layout was built over, kept for the diagnostics and
+  /// the split-brain checks that must name them.
+  final OsRoots roots;
+
+  /// Directory resolution for every storage area, memoised per area.
+  final StorageManager manager;
+
+  /// The persistent data area — settings, databases, history.
+  final StorageLocation data;
+
+  /// The user-editable configuration area.
+  final StorageLocation config;
+
+  /// The clearable cache area.
+  final StorageLocation cache;
+
+  /// Resolves the layout for [environment] once at boot; every later
+  /// reader takes the resolved locations from here instead of asking the
+  /// OS again.
+  static Future<StoragePaths> resolve({required PlatformEnvironment environment, LiveLog? log}) async {
+    final roots = await OsRoots.measure();
+    final pathRuntime = await PathProviderBootstrap.init(
+      environment: environment,
+      userDataDirectory: () async => roots.userRoot,
+      cacheDirectory: () async => roots.cacheRoot,
+      temporaryDirectory: () async => roots.temporaryRoot,
+      downloadsDirectory: () async => roots.downloadsRoot,
+    );
+    final manager = pathRuntime.storage;
+    final data = await manager.resolve(StorageArea.data);
+    final config = await manager.resolve(StorageArea.config);
+    final cache = await manager.resolve(StorageArea.cache);
+    log
+        ?.forCategory('paths')
+        .info(
+          'storage layout resolved',
+          fields: {
+            'distribution': environment.runtime.distribution.name,
+            'portable': '${environment.runtime.isPortable}',
+            'data': data.path,
+            'config': config.path,
+            'cache': cache.path,
+          },
+        );
+    return StoragePaths._(
+      environment: environment,
+      manager: manager,
+      roots: roots,
+      data: data,
+      config: config,
+      cache: cache,
+    );
+  }
+
+  /// Resolves any other area (temporary, downloads, extensions, imports,
+  /// exports) through the same policy.
+  Future<StorageLocation> resolveArea(StorageArea area) => manager.resolve(area);
+}
