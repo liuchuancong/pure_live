@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/src/instance/launch_intent.dart';
 import 'package:live_shell/src/startup/startup_registration.dart';
+import 'package:path/path.dart' as p;
 
 /// Runs one external command. Injectable, so the registration can be tested
 /// without touching a registry or a user's autostart folder.
@@ -145,7 +146,7 @@ final class CommandStartupRegistration implements StartupRegistration {
     final directory =
         autostartDirectory ??
         Directory('${Platform.environment['HOME'] ?? Platform.environment['USERPROFILE']}/.config/autostart');
-    return File('${directory.path}/$registryValueName.desktop');
+    return File(p.join(directory.path, '$registryValueName.desktop'));
   }
 
   /// Writes or removes the XDG autostart entry.

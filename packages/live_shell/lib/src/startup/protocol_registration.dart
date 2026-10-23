@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/src/startup/command_startup_registration.dart' show RunCommand;
+import 'package:path/path.dart' as p;
 
 /// Claiming a URL scheme and file types for this build of the app.
 abstract interface class ProtocolRegistration {
@@ -40,7 +41,7 @@ final class CommandProtocolRegistration implements ProtocolRegistration {
     required this.progIdPrefix,
     required this.displayName,
     required this.run,
-    this.desktopEntryName = 'pure_live',
+    required this.desktopEntryName,
     this.applicationsDirectory,
   });
 
@@ -50,13 +51,15 @@ final class CommandProtocolRegistration implements ProtocolRegistration {
   /// The executable a handler invokes.
   final String executablePath;
 
-  /// The base of the ProgIDs this build creates, e.g. `pure_live`.
+  /// The base of the ProgIDs this build creates, e.g. the host's app id.
   final String progIdPrefix;
 
   /// The name shown in the shell's picker.
   final String displayName;
 
-  /// The Linux desktop entry that claims the MIME types.
+  /// The host application's name; a desktop entry is written as
+  /// `<desktopEntryName>.desktop`. Required because this package serves any
+  /// host app and must not assume any particular one's identity.
   final String desktopEntryName;
 
   /// Where desktop entries live, null to use the profile's own.
@@ -202,7 +205,7 @@ final class CommandProtocolRegistration implements ProtocolRegistration {
   /// being on disk is the fact worth answering for.
   Future<bool> _linuxEntry({required String mimeType, required String argument}) async {
     final directory = applicationsDirectory ?? Directory(_defaultApplicationsDirectory);
-    final file = File('${directory.path}/$desktopEntryName.desktop');
+    final file = File(p.join(directory.path, '$desktopEntryName.desktop'));
     final entry = [
       '[Desktop Entry]',
       'Type=Application',

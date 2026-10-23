@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/live_shell.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 void main() {
@@ -14,9 +15,20 @@ void main() {
 
   CommandProtocolRegistration windows() => CommandProtocolRegistration(
     platform: PlatformKind.windows,
-    executablePath: r'C:\app\pure_live.exe',
-    progIdPrefix: 'pure_live',
-    displayName: 'Pure Live',
+    executablePath: r'C:\app\unit_host.exe',
+    progIdPrefix: 'unit_host',
+    displayName: 'Unit Host',
+    desktopEntryName: 'unit_host',
+    run: record,
+  );
+
+  CommandProtocolRegistration linux(Directory applicationsDirectory) => CommandProtocolRegistration(
+    platform: PlatformKind.linux,
+    executablePath: '/opt/unit_host/unit_host',
+    progIdPrefix: 'unit_host',
+    displayName: 'Unit Host',
+    desktopEntryName: 'unit_host',
+    applicationsDirectory: applicationsDirectory,
     run: record,
   );
 
@@ -27,7 +39,7 @@ void main() {
       expect(await windows().registerScheme('pureshell'), isTrue);
 
       expect(calls, hasLength(3));
-      expect(calls[0], ['reg', 'add', r'HKCU\Software\Classes\pureshell', '/ve', '/d', 'URL:Pure Live', '/f']);
+      expect(calls[0], ['reg', 'add', r'HKCU\Software\Classes\pureshell', '/ve', '/d', 'URL:Unit Host', '/f']);
       // The empty URL Protocol value is what makes this a protocol at all.
       expect(calls[1], ['reg', 'add', r'HKCU\Software\Classes\pureshell', '/v', 'URL Protocol', '/d', '', '/f']);
       expect(calls[2], [
@@ -36,7 +48,7 @@ void main() {
         r'HKCU\Software\Classes\pureshell\shell\open\command',
         '/ve',
         '/d',
-        r'"C:\app\pure_live.exe" "%1"',
+        r'"C:\app\unit_host.exe" "%1"',
         '/f',
       ]);
     });
@@ -44,9 +56,10 @@ void main() {
     test('a step that fails stops the sequence and is reported', () async {
       final failing = CommandProtocolRegistration(
         platform: PlatformKind.windows,
-        executablePath: r'C:\app\pure_live.exe',
-        progIdPrefix: 'pure_live',
-        displayName: 'Pure Live',
+        executablePath: r'C:\app\unit_host.exe',
+        progIdPrefix: 'unit_host',
+        displayName: 'Unit Host',
+        desktopEntryName: 'unit_host',
         run: (_, _) async => ProcessResult(1, 1010, '', 'Access is denied.'),
       );
 
@@ -58,8 +71,8 @@ void main() {
     test('a bare extension gains its dot and its own ProgID', () async {
       expect(await windows().offerFileTypes(['m3u']), isTrue);
 
-      expect(calls[0], containsAllInOrder(['add', r'HKCU\Software\Classes\pure_livem3u', '/ve']));
-      expect(calls[1], containsAllInOrder(['add', r'HKCU\Software\Classes\pure_livem3u\shell\open\command']));
+      expect(calls[0], containsAllInOrder(['add', r'HKCU\Software\Classes\unit_hostm3u', '/ve']));
+      expect(calls[1], containsAllInOrder(['add', r'HKCU\Software\Classes\unit_hostm3u\shell\open\command']));
     });
 
     test('offering does not rewrite the viewer’s existing default handler', () async {
@@ -86,54 +99,54 @@ void main() {
     test('a scheme is claimed through x-scheme-handler in the desktop entry', () async {
       final home = Directory.systemTemp.createTempSync('shell-protocol');
       addTearDown(() => home.deleteSync(recursive: true));
+      final registration = linux(home);
+
+      expect(await registration.registerScheme('pureshell'), isTrue);
+
+      // The entry on disk is named by desktopEntryName, not by any product
+      // the package assumes.
+      final text = File(p.join(home.path, 'unit_host.desktop')).readAsStringSync();
+      expect(text, contains('MimeType=x-scheme-handler/pureshell;'));
+      expect(text, contains('Exec="/opt/unit_host/unit_host" "%u"'));
+      expect(calls.map((call) => call.first), contains('update-desktop-database'));
+    });
+
+    test('the host’s entry name, not a fixed one, titles the written file', () async {
+      final home = Directory.systemTemp.createTempSync('shell-protocol-named');
+      addTearDown(() => home.deleteSync(recursive: true));
       final registration = CommandProtocolRegistration(
         platform: PlatformKind.linux,
-        executablePath: '/opt/pure_live/pure_live',
-        progIdPrefix: 'pure_live',
-        displayName: 'Pure Live',
+        executablePath: '/opt/unit_host/unit_host',
+        progIdPrefix: 'unit_host',
+        displayName: 'Unit Host',
+        desktopEntryName: 'other_host',
         applicationsDirectory: home,
         run: record,
       );
 
       expect(await registration.registerScheme('pureshell'), isTrue);
 
-      final text = File('${home.path}/pure_live.desktop').readAsStringSync();
-      expect(text, contains('MimeType=x-scheme-handler/pureshell;'));
-      expect(text, contains('Exec="/opt/pure_live/pure_live" "%u"'));
-      expect(calls.map((call) => call.first), contains('update-desktop-database'));
+      expect(File(p.join(home.path, 'other_host.desktop')).existsSync(), isTrue);
+      expect(File(p.join(home.path, 'unit_host.desktop')).existsSync(), isFalse);
     });
 
     test('an extension with no known MIME type is refused, not glossed over', () async {
       final home = Directory.systemTemp.createTempSync('shell-protocol-unknown');
       addTearDown(() => home.deleteSync(recursive: true));
-      final registration = CommandProtocolRegistration(
-        platform: PlatformKind.linux,
-        executablePath: '/opt/pure_live/pure_live',
-        progIdPrefix: 'pure_live',
-        displayName: 'Pure Live',
-        applicationsDirectory: home,
-        run: record,
-      );
+      final registration = linux(home);
 
       expect(await registration.offerFileTypes(['.weird']), isFalse);
-      expect(File('${home.path}/pure_live.desktop').existsSync(), isFalse, reason: 'nothing was claimed');
+      expect(File(p.join(home.path, 'unit_host.desktop')).existsSync(), isFalse, reason: 'nothing was claimed');
     });
 
     test('a known playlist extension lands in the MimeType list', () async {
       final home = Directory.systemTemp.createTempSync('shell-protocol-m3u');
       addTearDown(() => home.deleteSync(recursive: true));
-      final registration = CommandProtocolRegistration(
-        platform: PlatformKind.linux,
-        executablePath: '/opt/pure_live/pure_live',
-        progIdPrefix: 'pure_live',
-        displayName: 'Pure Live',
-        applicationsDirectory: home,
-        run: record,
-      );
+      final registration = linux(home);
 
       expect(await registration.offerFileTypes(['.m3u', '.m3u8']), isTrue);
 
-      final text = File('${home.path}/pure_live.desktop').readAsStringSync();
+      final text = File(p.join(home.path, 'unit_host.desktop')).readAsStringSync();
       expect(text, contains('application/x-mpegurl;application/vnd.apple.mpegurl;'));
     });
   });
@@ -142,9 +155,10 @@ void main() {
     test('macOS says so instead of pretending', () async {
       final mac = CommandProtocolRegistration(
         platform: PlatformKind.macos,
-        executablePath: '/Applications/Pure Live.app/Contents/MacOS/pure_live',
-        progIdPrefix: 'pure_live',
-        displayName: 'Pure Live',
+        executablePath: '/Applications/Unit Host.app/Contents/MacOS/unit_host',
+        progIdPrefix: 'unit_host',
+        displayName: 'Unit Host',
+        desktopEntryName: 'unit_host',
         run: record,
       );
 
