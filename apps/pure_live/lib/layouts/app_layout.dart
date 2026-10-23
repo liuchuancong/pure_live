@@ -7,6 +7,9 @@ import 'package:go_router/go_router.dart' show StatefulNavigationShell;
 import 'package:pure_live/app/providers/module_providers.dart';
 import 'package:pure_live/app/providers/navigation_providers.dart';
 import 'package:pure_live/app/providers/sidebar_providers.dart';
+import 'package:pure_live/features/iptv/iptv_page.dart' show IptvPage;
+import 'package:pure_live/features/music/music_page.dart' show MusicPage;
+import 'package:pure_live/features/vod/vod_page.dart' show VodPage;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/desktop/desktop_layout.dart';
 import 'package:pure_live/layouts/mobile/mobile_layout.dart';
@@ -140,9 +143,18 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       _go(_trail[_cursor]);
     }
 
+    // The module's entry surface: live keeps the router's branch shell —
+    // its destinations are routes — while each other module renders its
+    // own entry page; a module whose page has not arrived yet falls back
+    // to the placeholder rather than failing to build.
     final moduleContent = module == AppModule.live
         ? widget.shell
-        : _ModulePlaceholder(module: module);
+        : switch (module) {
+            AppModule.iptv => const IptvPage(),
+            AppModule.vod => const VodPage(),
+            AppModule.music => const MusicPage(),
+            _ => _ModulePlaceholder(module: module),
+          };
 
     if (breakpoint.index < kBottomBarBreakpoint.index) {
       final items = mobileNavigationItemsFor(module);

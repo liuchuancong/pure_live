@@ -43,11 +43,14 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$common$en common = _Translations$common$en._(_root);
 	@override late final _Translations$favorites$en favorites = _Translations$favorites$en._(_root);
 	@override late final _Translations$history$en history = _Translations$history$en._(_root);
+	@override late final _Translations$iptv$en iptv = _Translations$iptv$en._(_root);
+	@override late final _Translations$music$en music = _Translations$music$en._(_root);
 	@override late final _Translations$navigation$en navigation = _Translations$navigation$en._(_root);
 	@override late final _Translations$player$en player = _Translations$player$en._(_root);
 	@override late final _Translations$search$en search = _Translations$search$en._(_root);
 	@override late final _Translations$settings$en settings = _Translations$settings$en._(_root);
 	@override late final _Translations$sites$en sites = _Translations$sites$en._(_root);
+	@override late final _Translations$vod$en vod = _Translations$vod$en._(_root);
 }
 
 // Path: areas
@@ -112,6 +115,52 @@ class _Translations$history$en extends Translations$history$zh_CN {
 	@override String get emptyDescription => 'Watch a stream and it lands here.';
 	@override String get clear => 'Clear history';
 	@override String get remove => 'Remove this record';
+}
+
+// Path: iptv
+class _Translations$iptv$en extends Translations$iptv$zh_CN {
+	_Translations$iptv$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get tabAll => 'All';
+	@override String get scopeLabel => 'Channel scope';
+	@override String get scopeAll => 'All channels';
+	@override String get scopeFavourites => 'Favourites';
+	@override String get groupsLabel => 'Channel groups';
+	@override String get ungrouped => 'Ungrouped';
+	@override String get emptyTitle => 'No channels yet';
+	@override String get emptyDescription => 'Import an M3U or TXT playlist and its channels will appear here.';
+	@override String get openFailedDescription => 'The channel library could not be opened.';
+	@override String get noFavoritesTitle => 'No favourite channels';
+	@override String get noFavoritesDescription => 'Tap the heart on a channel card and it stays in this list.';
+	@override String get onAir => 'On air';
+	@override String get upNext => 'Next';
+	@override String get noGuide => 'No programme guide';
+	@override String get favouriteAction => 'Favourite';
+	@override String get unfavouriteAction => 'Unfavourite';
+}
+
+// Path: music
+class _Translations$music$en extends Translations$music$zh_CN {
+	_Translations$music$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Music';
+	@override String get tagline => 'Songs, playlists and charts are on their way';
+	@override String get viewsLabel => 'Music views';
+	@override String get tabLibrary => 'Library';
+	@override String get tabPlaylists => 'Playlists';
+	@override String get tabCharts => 'Charts';
+	@override String get libraryEmptyTitle => 'The song library is on its way';
+	@override String get libraryEmptyDescription => 'Once a music source lands, songs will page in here as a masonry grid of cards.';
+	@override String get playlistsEmptyTitle => 'Playlists are on their way';
+	@override String get playlistsEmptyDescription => 'Playlists you curate and follow will live here.';
+	@override String get chartsEmptyTitle => 'Charts are on their way';
+	@override String get chartsEmptyDescription => 'Popular-song charts from the music sources will live here.';
 }
 
 // Path: navigation
@@ -214,6 +263,22 @@ class _Translations$sites$en extends Translations$sites$zh_CN {
 	@override String get rooms => 'Rooms';
 }
 
+// Path: vod
+class _Translations$vod$en extends Translations$vod$zh_CN {
+	_Translations$vod$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get searchHint => 'Search Bilibili videos';
+	@override String get idleTitle => 'Search for videos';
+	@override String get idleDescription => 'Type a keyword to search Bilibili videos; region browse and rankings are not offered by this source yet.';
+	@override String get noResultsTitle => 'No videos found';
+	@override String get noResultsDescription => 'Try another keyword.';
+	@override String get errorTitle => 'The videos did not load';
+	@override String get retry => 'Retry';
+}
+
 /// The flat map containing all translations for locale <en>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -250,6 +315,34 @@ extension on TranslationsEn {
 			'history.emptyDescription' => 'Watch a stream and it lands here.',
 			'history.clear' => 'Clear history',
 			'history.remove' => 'Remove this record',
+			'iptv.tabAll' => 'All',
+			'iptv.scopeLabel' => 'Channel scope',
+			'iptv.scopeAll' => 'All channels',
+			'iptv.scopeFavourites' => 'Favourites',
+			'iptv.groupsLabel' => 'Channel groups',
+			'iptv.ungrouped' => 'Ungrouped',
+			'iptv.emptyTitle' => 'No channels yet',
+			'iptv.emptyDescription' => 'Import an M3U or TXT playlist and its channels will appear here.',
+			'iptv.openFailedDescription' => 'The channel library could not be opened.',
+			'iptv.noFavoritesTitle' => 'No favourite channels',
+			'iptv.noFavoritesDescription' => 'Tap the heart on a channel card and it stays in this list.',
+			'iptv.onAir' => 'On air',
+			'iptv.upNext' => 'Next',
+			'iptv.noGuide' => 'No programme guide',
+			'iptv.favouriteAction' => 'Favourite',
+			'iptv.unfavouriteAction' => 'Unfavourite',
+			'music.title' => 'Music',
+			'music.tagline' => 'Songs, playlists and charts are on their way',
+			'music.viewsLabel' => 'Music views',
+			'music.tabLibrary' => 'Library',
+			'music.tabPlaylists' => 'Playlists',
+			'music.tabCharts' => 'Charts',
+			'music.libraryEmptyTitle' => 'The song library is on its way',
+			'music.libraryEmptyDescription' => 'Once a music source lands, songs will page in here as a masonry grid of cards.',
+			'music.playlistsEmptyTitle' => 'Playlists are on their way',
+			'music.playlistsEmptyDescription' => 'Playlists you curate and follow will live here.',
+			'music.chartsEmptyTitle' => 'Charts are on their way',
+			'music.chartsEmptyDescription' => 'Popular-song charts from the music sources will live here.',
 			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
@@ -305,6 +398,13 @@ extension on TranslationsEn {
 			'sites.live' => 'Live',
 			'sites.search' => 'Search',
 			'sites.rooms' => 'Rooms',
+			'vod.searchHint' => 'Search Bilibili videos',
+			'vod.idleTitle' => 'Search for videos',
+			'vod.idleDescription' => 'Type a keyword to search Bilibili videos; region browse and rankings are not offered by this source yet.',
+			'vod.noResultsTitle' => 'No videos found',
+			'vod.noResultsDescription' => 'Try another keyword.',
+			'vod.errorTitle' => 'The videos did not load',
+			'vod.retry' => 'Retry',
 			_ => null,
 		};
 	}

@@ -45,11 +45,14 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$common$zh_CN common = Translations$common$zh_CN.internal(_root);
 	late final Translations$favorites$zh_CN favorites = Translations$favorites$zh_CN.internal(_root);
 	late final Translations$history$zh_CN history = Translations$history$zh_CN.internal(_root);
+	late final Translations$iptv$zh_CN iptv = Translations$iptv$zh_CN.internal(_root);
+	late final Translations$music$zh_CN music = Translations$music$zh_CN.internal(_root);
 	late final Translations$navigation$zh_CN navigation = Translations$navigation$zh_CN.internal(_root);
 	late final Translations$player$zh_CN player = Translations$player$zh_CN.internal(_root);
 	late final Translations$search$zh_CN search = Translations$search$zh_CN.internal(_root);
 	late final Translations$settings$zh_CN settings = Translations$settings$zh_CN.internal(_root);
 	late final Translations$sites$zh_CN sites = Translations$sites$zh_CN.internal(_root);
+	late final Translations$vod$zh_CN vod = Translations$vod$zh_CN.internal(_root);
 }
 
 // Path: areas
@@ -170,6 +173,108 @@ class Translations$history$zh_CN {
 
 	/// zh-CN: '删除这条记录'
 	String get remove => '删除这条记录';
+}
+
+// Path: iptv
+class Translations$iptv$zh_CN {
+	Translations$iptv$zh_CN.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh-CN: '全部'
+	String get tabAll => '全部';
+
+	/// zh-CN: '频道范围'
+	String get scopeLabel => '频道范围';
+
+	/// zh-CN: '全部频道'
+	String get scopeAll => '全部频道';
+
+	/// zh-CN: '收藏频道'
+	String get scopeFavourites => '收藏频道';
+
+	/// zh-CN: '频道分组'
+	String get groupsLabel => '频道分组';
+
+	/// zh-CN: '未分组'
+	String get ungrouped => '未分组';
+
+	/// zh-CN: '还没有频道'
+	String get emptyTitle => '还没有频道';
+
+	/// zh-CN: '导入 M3U/TXT 播放列表后，频道就会出现在这里。'
+	String get emptyDescription => '导入 M3U/TXT 播放列表后，频道就会出现在这里。';
+
+	/// zh-CN: '频道库打开失败。'
+	String get openFailedDescription => '频道库打开失败。';
+
+	/// zh-CN: '还没有收藏的频道'
+	String get noFavoritesTitle => '还没有收藏的频道';
+
+	/// zh-CN: '点一下频道卡片上的心形，频道就会留在这里。'
+	String get noFavoritesDescription => '点一下频道卡片上的心形，频道就会留在这里。';
+
+	/// zh-CN: '正在播出'
+	String get onAir => '正在播出';
+
+	/// zh-CN: '接下来'
+	String get upNext => '接下来';
+
+	/// zh-CN: '暂无节目单'
+	String get noGuide => '暂无节目单';
+
+	/// zh-CN: '收藏频道'
+	String get favouriteAction => '收藏频道';
+
+	/// zh-CN: '取消收藏'
+	String get unfavouriteAction => '取消收藏';
+}
+
+// Path: music
+class Translations$music$zh_CN {
+	Translations$music$zh_CN.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh-CN: '音乐'
+	String get title => '音乐';
+
+	/// zh-CN: '歌曲、歌单与榜单正在路上'
+	String get tagline => '歌曲、歌单与榜单正在路上';
+
+	/// zh-CN: '音乐视图'
+	String get viewsLabel => '音乐视图';
+
+	/// zh-CN: '乐库'
+	String get tabLibrary => '乐库';
+
+	/// zh-CN: '歌单'
+	String get tabPlaylists => '歌单';
+
+	/// zh-CN: '榜单'
+	String get tabCharts => '榜单';
+
+	/// zh-CN: '曲库还在路上'
+	String get libraryEmptyTitle => '曲库还在路上';
+
+	/// zh-CN: '音乐源接入后，歌曲会以瀑布流卡片在这里分页呈现。'
+	String get libraryEmptyDescription => '音乐源接入后，歌曲会以瀑布流卡片在这里分页呈现。';
+
+	/// zh-CN: '歌单还在路上'
+	String get playlistsEmptyTitle => '歌单还在路上';
+
+	/// zh-CN: '整理与收藏的歌单会出现在这里。'
+	String get playlistsEmptyDescription => '整理与收藏的歌单会出现在这里。';
+
+	/// zh-CN: '榜单还在路上'
+	String get chartsEmptyTitle => '榜单还在路上';
+
+	/// zh-CN: '来自各音乐源的热门榜单会出现在这里。'
+	String get chartsEmptyDescription => '来自各音乐源的热门榜单会出现在这里。';
 }
 
 // Path: navigation
@@ -382,6 +487,36 @@ class Translations$sites$zh_CN {
 	String get rooms => '房间';
 }
 
+// Path: vod
+class Translations$vod$zh_CN {
+	Translations$vod$zh_CN.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh-CN: '搜索 Bilibili 视频'
+	String get searchHint => '搜索 Bilibili 视频';
+
+	/// zh-CN: '搜索点播视频'
+	String get idleTitle => '搜索点播视频';
+
+	/// zh-CN: '输入关键词搜索 Bilibili 的视频；分区与排行榜此源暂未提供。'
+	String get idleDescription => '输入关键词搜索 Bilibili 的视频；分区与排行榜此源暂未提供。';
+
+	/// zh-CN: '没有找到视频'
+	String get noResultsTitle => '没有找到视频';
+
+	/// zh-CN: '换个关键词再试试。'
+	String get noResultsDescription => '换个关键词再试试。';
+
+	/// zh-CN: '视频没有加载出来'
+	String get errorTitle => '视频没有加载出来';
+
+	/// zh-CN: '重试'
+	String get retry => '重试';
+}
+
 /// The flat map containing all translations for locale <zh-CN>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -418,6 +553,34 @@ extension on Translations {
 			'history.emptyDescription' => '看过一场直播后，就会出现在这里。',
 			'history.clear' => '清空记录',
 			'history.remove' => '删除这条记录',
+			'iptv.tabAll' => '全部',
+			'iptv.scopeLabel' => '频道范围',
+			'iptv.scopeAll' => '全部频道',
+			'iptv.scopeFavourites' => '收藏频道',
+			'iptv.groupsLabel' => '频道分组',
+			'iptv.ungrouped' => '未分组',
+			'iptv.emptyTitle' => '还没有频道',
+			'iptv.emptyDescription' => '导入 M3U/TXT 播放列表后，频道就会出现在这里。',
+			'iptv.openFailedDescription' => '频道库打开失败。',
+			'iptv.noFavoritesTitle' => '还没有收藏的频道',
+			'iptv.noFavoritesDescription' => '点一下频道卡片上的心形，频道就会留在这里。',
+			'iptv.onAir' => '正在播出',
+			'iptv.upNext' => '接下来',
+			'iptv.noGuide' => '暂无节目单',
+			'iptv.favouriteAction' => '收藏频道',
+			'iptv.unfavouriteAction' => '取消收藏',
+			'music.title' => '音乐',
+			'music.tagline' => '歌曲、歌单与榜单正在路上',
+			'music.viewsLabel' => '音乐视图',
+			'music.tabLibrary' => '乐库',
+			'music.tabPlaylists' => '歌单',
+			'music.tabCharts' => '榜单',
+			'music.libraryEmptyTitle' => '曲库还在路上',
+			'music.libraryEmptyDescription' => '音乐源接入后，歌曲会以瀑布流卡片在这里分页呈现。',
+			'music.playlistsEmptyTitle' => '歌单还在路上',
+			'music.playlistsEmptyDescription' => '整理与收藏的歌单会出现在这里。',
+			'music.chartsEmptyTitle' => '榜单还在路上',
+			'music.chartsEmptyDescription' => '来自各音乐源的热门榜单会出现在这里。',
 			'navigation.groupPrimary' => '高频页面',
 			'navigation.home' => '首页',
 			'navigation.live' => '直播',
@@ -473,6 +636,13 @@ extension on Translations {
 			'sites.live' => '直播',
 			'sites.search' => '搜索',
 			'sites.rooms' => '房间',
+			'vod.searchHint' => '搜索 Bilibili 视频',
+			'vod.idleTitle' => '搜索点播视频',
+			'vod.idleDescription' => '输入关键词搜索 Bilibili 的视频；分区与排行榜此源暂未提供。',
+			'vod.noResultsTitle' => '没有找到视频',
+			'vod.noResultsDescription' => '换个关键词再试试。',
+			'vod.errorTitle' => '视频没有加载出来',
+			'vod.retry' => '重试',
 			_ => null,
 		};
 	}
