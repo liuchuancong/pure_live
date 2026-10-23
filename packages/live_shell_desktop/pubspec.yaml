@@ -1,7 +1,7 @@
 name: live_shell_desktop
 description: >-
   The plugin-backed implementation of live_shell's seams for Windows, macOS and
-  Linux: a WindowHost over window_frame_kit, a TrayHost over tray_manager, a
+  Linux: a WindowHost over window_manager, a TrayHost over tray_manager, a
   display reader over screen_retriever and a window launcher over
   desktop_multi_window. live_shell decides what a window should do; this is the
   part that asks the operating system to do it.

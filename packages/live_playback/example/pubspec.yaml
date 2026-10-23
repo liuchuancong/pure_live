@@ -23,7 +23,7 @@ dependencies:
     git:
       url: https://github.com/liuchuancong/media_core.git
       path: ./packages/media_core
-      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b
 
 dev_dependencies:
   flutter_test:

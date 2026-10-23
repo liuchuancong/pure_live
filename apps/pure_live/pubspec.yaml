@@ -23,12 +23,11 @@ dependencies:
   desktop_multi_window: ^0.3.1 # 多窗口支持
   dynamic_app_icon_flutter_plus: ^2.2.1 # 动态应用图标
   restart_app: ^1.10.1 # 重启应用
-  screen_retriever: ^0.3.0 # 屏幕与显示器信息
   system_theme: ^3.3.0 # 系统强调色（Windows accent）
   tray_manager: ^0.8.0 # 系统托盘
   vibrancy: ^0.1.1 # 窗口透明与材质效果
-  window_frame_kit: ^0.3.0 # 桌面窗口管理 + 自绘边框接管
-
+  window_manager: ^0.5.2
+  desen_ui: ^0.3.2
   # 文件与外部操作
   archive: ^4.5.2 # 压缩包读写
   file_picker: ^13.1.0 # 选择文件或目录
@@ -41,21 +40,15 @@ dependencies:
   equatable: ^3.0.0
   # UI、图片与布局
   animations: ^3.0.0 # 常用动画效果
-  any_image_view: ^2.5.0 # 多来源图片展示
   cached_network_image: ^4.0.4 # 网络图片缓存
   cached_network_image_ce: ^4.13.1 # 社区维护的图片缓存实现
   flutter_cache_manager: ^3.4.5 # 图片缓存的体积与清理
   custom_refresh_indicator: ^4.0.2 # 自定义下拉刷新
   dynamic_color: ^1.7.0 # Android 12+ 动态取色
-  flutter_helper_utils: ^10.0.0
-  flutter_screenutil_plus: ^2.0.0 # 自适应布局辅助
-  flutter_keyboard_visibility: ^7.0.1 # 监听软键盘状态
   flutter_svg: ^2.3.0 # SVG 图片渲染
   lucide_icons_flutter: ^4.0.1 # Lucide 图标库（全局图标注册表的来源）
   mosaic_grid: ^0.1.2 # 瀑布流网格
   pretty_qr_code: ^3.6.0 # 生成二维码
-  shimmer: ^4.0.0 # 闪烁占位效果
-  skeletonizer: ^3.0.0 # 骨架屏
 
   # Flutter 与状态管理
   collection: ^1.19.1 # 集合处理工具
@@ -84,10 +77,6 @@ dependencies:
   live_sites: # 直播平台与站点适配
   live_storage: # 存储与数据仓库
   live_vod: # 视频点播源（B 站视频搜索与播放地址）
-
-  # UIKit 核心与风格适配器
-  pure_settings_ui: # 设置页语法：settings_ui 的设计语言分派
-  pure_uikit: # UI Token、组件与运行时分派
   pure_uikit_background: # 背景样式与图层
 
   # 播放内核
@@ -95,52 +84,52 @@ dependencies:
     git:
       url: https://github.com/liuchuancong/media_core.git
       path: ./packages/media_core
-      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b
   media_core_media_kit:
     git:
       url: https://github.com/liuchuancong/media_core.git
       path: ./packages/media_core_media_kit
-      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b
   media_core_recording_ffmpeg:
     git:
       url: https://github.com/liuchuancong/media_core.git
       path: ./packages/media_core_recording_ffmpeg
-      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c # FFmpeg 录制后端（分段采集与合并）
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b # FFmpeg 录制后端（分段采集与合并）
   media_core_presentation:
     git:
       url: https://github.com/liuchuancong/media_core.git
       path: ./packages/media_core_presentation
-      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c # 朝向感知的呈现 + 视频叠加图层
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b # 朝向感知的呈现 + 视频叠加图层
   media_core_audio:
     git:
       url: https://github.com/liuchuancong/media_core.git
       path: ./packages/media_core_audio
-      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c # 音乐播放（队列/歌词/后台）
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b # 音乐播放（队列/歌词/后台）
   media_core_fullscreen:
     git:
       url: https://github.com/liuchuancong/media_core.git
       path: ./packages/media_core_fullscreen
-      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c # 全屏 / 窗口全屏驱动
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b # 全屏 / 窗口全屏驱动
   media_core_pip:
     git:
       url: https://github.com/liuchuancong/media_core.git
       path: ./packages/media_core_pip
-      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c # 画中画驱动（桌面小窗 / 移动端 overlay）
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b # 画中画驱动（桌面小窗 / 移动端 overlay）
   media_core_cast_dlna:
     git:
       url: https://github.com/liuchuancong/media_core.git
       path: ./packages/media_core_cast_dlna
-      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c # DLNA/UPnP 投屏后端
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b # DLNA/UPnP 投屏后端
   media_core_mediasession:
     git:
       url: https://github.com/liuchuancong/media_core.git
       path: ./packages/media_core_mediasession
-      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c # 媒体会话通知（锁屏/SMTC/MPRIS 播放控制）
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b # 媒体会话通知（锁屏/SMTC/MPRIS 播放控制）
   media_core_notify:
     git:
       url: https://github.com/liuchuancong/media_core.git
       path: ./packages/media_core_notify
-      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c # 用户通知（录制/下载结果、前台任务行）
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b # 用户通知（录制/下载结果、前台任务行）
 
   # 路由、配置与序列化
   envied: ^1.3.10 # 编译期环境变量

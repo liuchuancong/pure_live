@@ -27,17 +27,17 @@ dependencies:
     git:
       url: https://github.com/liuchuancong/media_core.git
       path: ./packages/media_core
-      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b
   media_core_danmaku:
     git:
       url: https://github.com/liuchuancong/media_core.git
       path: ./packages/media_core_danmaku
-      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b
   media_core_mediasession:
     git:
       url: https://github.com/liuchuancong/media_core.git
       path: ./packages/media_core_mediasession
-      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b
   meta: ^1.19.0
   rxdart: ^0.28.0
 

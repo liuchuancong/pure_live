@@ -63,7 +63,7 @@ dependency_overrides:
     git:
       url: https://github.com/liuchuancong/media_core.git
       path: ./packages/media_core
-      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b
   # hosted window_manager 0.5.2 still speaks screen_retriever 0.2.x — the
   # `screenRetriever` global and `Display.visiblePosition` — which the
   # workspace's screen_retriever 0.3.0 (nativeapi DisplayManager) removed.
@@ -76,7 +76,7 @@ dependency_overrides:
     git:
       url: https://github.com/liuchuancong/media_core.git
       path: ./packages/media_core_native
-      ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b
   platform: ^3.2.0
   screen_retriever: ^0.3.0
   test_api: ^0.7.15

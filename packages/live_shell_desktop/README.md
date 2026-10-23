@@ -1,7 +1,7 @@
 # live_shell_desktop
 
 The plugin-bound half of the desktop shell: implementations of the seams
-`live_shell` declares, against `window_frame_kit`, `tray_manager`,
+`live_shell` declares, against `window_manager`, `tray_manager`,
 `screen_retriever` and `desktop_multi_window`.
 
 ## Purpose
@@ -46,7 +46,7 @@ differently-branded product without forking it.
 
 ## Dependencies
 
-`live_shell` (the seams), plus `window_frame_kit`, `tray_manager`, `screen_retriever`,
+`live_shell` (the seams), plus `window_manager`, `tray_manager`, `screen_retriever`,
 `desktop_multi_window`, `ffi`, `flutter`.
 
 ### Platform requirements and known plugin limits

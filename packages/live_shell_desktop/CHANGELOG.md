@@ -26,10 +26,8 @@
   `TrayManagerHost.iconAssets` (the seam already existed).
 
 ### Changed
-- The window plugin is `window_frame_kit` 0.3.0 instead of `window_manager` 0.5.2: it is a
-  verbatim port of the same facade plus frame takeover, and it reads displays through
-  `screen_retriever` 0.3 (nativeapi) instead of 0.2, so the app ends up with one window
-  delegate rather than the two `window_manager` and a frame helper each install.
+- The window plugin is `window_manager` again — `leanflutter/window_manager@main`
+  (0.6.0, the nativeapi rewrite), pinned through the workspace override.
 - `ScreenRetrieverDisplays` moved onto the 0.3 display API: `DisplayManager` answers the
   full frame origin now, so `DisplayFrame.bounds` is no longer assembled from the visible
   origin and stops understating a secondary monitor.
@@ -37,9 +35,6 @@
   asking the plugin to centre it. `WindowOptions.center` and `center()` reach the display
   API over FFI, which no unit test can answer; the seam keeps the placement observable and
   lets a read failure fall back to the system position.
-  The fork of `yaru_window_manager` under `third_party/` is what makes the swap possible:
-  `yaru` is the only thing in the tree still pulling `window_manager`, whose
-  `screen_retriever` ^0.2.x cannot coexist with the ^0.3.0 the new plugin needs.
 
 
 - `WindowManagerHost` forwards both the in-progress and the settled move/resize

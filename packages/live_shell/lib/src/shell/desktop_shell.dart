@@ -56,7 +56,7 @@ enum ShellPhase {
 ///   question is answered from the ledger afterwards — see [QuitLedger].
 ///
 /// One limitation worth stating plainly, because it contradicts a design the
-/// shell borrows: on desktop Flutter a window destroyed through `window_frame_kit`
+/// shell borrows: on desktop Flutter a window destroyed through `window_manager`
 /// **cannot be rebuilt from Dart** — there is no "create another primary window"
 /// call. So reclaiming the interface to give memory back is available only when
 /// the app itself can start a fresh window or process ([canRebuildPrimary]);
@@ -112,7 +112,7 @@ final class DesktopShell {
 
   /// Builds a fresh primary window, for the apps that can.
   ///
-  /// Its presence is the whole capability question: with `window_frame_kit` a
+  /// Its presence is the whole capability question: with `window_manager` a
   /// destroyed window cannot be shown again from Dart, so reclaiming the
   /// interface is only offered when the application knows how to make another
   /// one. A null here means the shell will hide and give memory back to the app

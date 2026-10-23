@@ -98,7 +98,7 @@ typedef WindowOriginReader = Future<Offset?> Function(Size size);
 /// The work-area-centred origin the window plugin would have computed for
 /// itself, computed here instead.
 ///
-/// `window_frame_kit` 0.3 moved its own centering onto the display API's FFI
+/// `window_manager` computes its own centering on the display API's FFI
 /// handles (`WindowOptions.center` and `center()` both call
 /// `calcWindowPosition`, which reads `DisplayManager` directly), so a caller that
 /// wants the placement to be observable — or testable without a display server —
