@@ -437,3 +437,45 @@ FocusScope(
 ```
 
 参考:`lib/src/controls/navigation/tab_view/tab_view.dart:705-750`。
+
+## 9. 页面转换范式(后续页面任务统一执行)
+
+> 试点页:`apps/pure_live/lib/features/toolbox/toolbox_page.dart`(下称「成品页」)。
+> 本节引用与上文不同:除标注外均指向本仓库内文件。后续页面任务按本节执行——
+> 页面内直接使用的 Material 组件逐一替换成 pure_uikit 的 Pure 组件,只动 UI 层;
+> 业务逻辑、Riverpod、路由、数据访问一律不动。analyze 由脚本统一执行,不要自跑,
+> 但不得留下语法错误或未使用的导入。
+
+### 9.1 替换对照表
+
+| Material | 换成 | 视觉/行为保持 | 成品页先例 |
+|---|---|---|---|
+| `Scaffold` + `AppBar` | `PureScaffold(body:, appBar: PureAppBar(title:, actions:))` | 标题走 `context.t.*`;右上动作放 `actions`(如 `SettingsEntryButton`);页体滚动列外套 `Center + ConstrainedBox(maxWidth: 720)` 的卡片列 | `apps/pure_live/lib/features/toolbox/toolbox_page.dart:287-296` |
+| `TextField` | `PureTextField` | `controller` / `placeholder` / `maxLines` / `keyboardType` / `enabled` 一一对应(定义见 `pure_uikit/lib/src/styling/widgets/controls/pure_field.dart:19`);禁用态由 `enabled:` 驱动,自带变灰 | `toolbox_page.dart:401-407` |
+| `SnackBar` | `PureToast.show(context, message, type:)` | `type: info/success/warning/error` 定色;挂根 Overlay、无需 Scaffold(`pure_uikit/lib/src/styling/widgets/overlays/pure_toast.dart:33-72`);页面内封一个 `_toast` 助手统一默认 `error` | `toolbox_page.dart:78-82` |
+| `showDialog` | `showPureDialog<T>(context:, title:, maxWidth:, child:, actions:)` | `actions` 用**对话框的** context(`dialogContext`)构建,回值一律 `Navigator.pop(dialogContext, v)`;取消键 `PureButton(variant: ButtonVariant.ghost)`(定义见 `pure_uikit/lib/src/styling/widgets/overlays/pure_dialog.dart:37-68`) | `toolbox_page.dart:253-283` |
+| `ElevatedButton` / `TextButton` | `PureButton(label:, icon:, variant:, size:, expand:, loading:)` | 主操作 `ButtonVariant.primary`、次操作 `secondary`、文字态 `ghost`;`onPressed: null` 禁用;忙态用 `loading:`(自带进度环并拒输入),不要自己换图标 | `toolbox_page.dart:414-446` |
+| `IconButton` | `PureIconButton(tooltip:, icon:, size:, onPressed:)` | `tooltip` 必填(兼无障碍名);`size: ControlSize.sm` 得小号;`onPressed: null` 禁用(定义见 `pure_uikit/lib/src/styling/widgets/controls/pure_button.dart:144`) | `toolbox_page.dart:390-395` |
+| `Card` | `PureCard(padding: EdgeInsets.zero)` | 卡内直接铺 `PureListRow` 或自管 `Column`(文本块手动 `Padding`);卡片之间 `SizedBox(height: 16)` | `toolbox_page.dart:319-331`、`375-380` |
+| `ListTile` / `InkWell` 视觉 | `PureListRow(title:, subtitle:, leading:, trailing:, onTap:, divided:)` | 自带 fluent ListViewItem 的 hover/pressed 填充与选中视觉,**不要**再手写 Ink/hover(`pure_uikit/lib/src/styling/widgets/content/pure_card.dart:360-409`);`onTap: null` 即非交互;`divided: false` 关闭行底分隔线 | `toolbox_page.dart:321-331` |
+| `Divider` | `PureDivider` | — | `toolbox_page.dart:462` |
+| `PopupMenuButton` | fluent `MenuBar` / Pure 菜单 | 本页未涉及,暂无成品先例;API 拿不准先读示例仓库(`example/lib`)与上文第 2–7 节 | 无 |
+| `Checkbox` / `Switch` / `Slider` / `DropdownButton` | 对应 Pure 组件,没有再用 fluent 原生(`CheckBox` / `ToggleButton` / `Slider` / `DropDownButton`) | 本页未涉及,暂无成品先例;首个遇到的页面任务补写先例行 | 无 |
+
+### 9.2 保留不动清单
+
+- **`Icons.*`(material.dart 的图标字形)**:全仓库图标惯例,Pure 组件的 `icon:` / `leading:` 直接吃它;不替换、不改字形(会变视觉),`import 'package:flutter/material.dart'` 因此保留。
+- 布局与基建设施不算「Material 组件」:`Text`、`SelectableText`、`EdgeInsets`、`BoxConstraints`、`CrossAxisAlignment`、`TextEditingController`、`WidgetsBinding`、`Clipboard`(flutter/services)等照用。
+- 业务逻辑、Riverpod provider、go_router 路由、数据访问一律不动;纯 UI 重排只在视觉等价的前提下做(如成品页把运行中的「取消」按钮放在卡片尾部而非动作行内,`toolbox_page.dart:436-448`)。
+
+### 9.3 视觉保持套路
+
+- 页面只从 `PureTheme.of(context)` 取 token:色用 `theme.colors.*`(`primary`、`textSecondary`),字用 `theme.text.*`(`body`、`caption`)再 `copyWith` 微调,不手写裸色值(`toolbox_page.dart:320、373、457-483`)。
+- 卡片列宽与间距照抄成品页:`maxWidth: 720`、卡间距 16(`toolbox_page.dart:296、301-306`)。
+- 每个组件上的 `///` 注释保留 3.x 参照与替换理由;后续页面任务同样把「为什么这么换」写进注释。
+
+### 9.4 已核实的陷阱
+
+- `const new({super.key});` 是全仓库的构造函数写法:Dart 3.13 允许 `new` 作构造名,实例化照旧写 `ToolboxPage()`(见 `apps/pure_live/lib/system/navigation/app_router.dart:808`)。已用一次性探针 `dart analyze` 验证无语法错误——**不是笔误,不要"修复"**。
+- grep 检查残留 Material 组件时,`TextField\(` 这类宽松正则会误命中 `PureTextField(`;用词边界或人工核对构造返回行。
+- 验收口径:页面内不得出现 9.1 表左列的 Material 组件构造;不创建/不修改测试文件;不自行 commit / push。
