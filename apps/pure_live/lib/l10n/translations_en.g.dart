@@ -39,12 +39,24 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	TranslationsEn $copyWith({TranslationMetadata<AppLocale, Translations>? meta}) => TranslationsEn(meta: meta ?? this.$meta);
 
 	// Translations
+	@override late final _Translations$areas$en areas = _Translations$areas$en._(_root);
 	@override late final _Translations$common$en common = _Translations$common$en._(_root);
 	@override late final _Translations$navigation$en navigation = _Translations$navigation$en._(_root);
 	@override late final _Translations$player$en player = _Translations$player$en._(_root);
 	@override late final _Translations$search$en search = _Translations$search$en._(_root);
 	@override late final _Translations$settings$en settings = _Translations$settings$en._(_root);
 	@override late final _Translations$sites$en sites = _Translations$sites$en._(_root);
+}
+
+// Path: areas
+class _Translations$areas$en extends Translations$areas$zh_CN {
+	_Translations$areas$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get allAreas => 'All areas';
+	@override String get noAreas => 'This site has no areas';
 }
 
 // Path: common
@@ -177,6 +189,8 @@ class _Translations$sites$en extends Translations$sites$zh_CN {
 extension on TranslationsEn {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
+			'areas.allAreas' => 'All areas',
+			'areas.noAreas' => 'This site has no areas',
 			'common.appTitle' => 'Pure Live',
 			'common.empty' => 'Nothing here yet',
 			'common.comingSoon' => 'Coming soon',

@@ -41,12 +41,28 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	Translations $copyWith({TranslationMetadata<AppLocale, Translations>? meta}) => Translations(meta: meta ?? this.$meta);
 
 	// Translations
+	late final Translations$areas$zh_CN areas = Translations$areas$zh_CN.internal(_root);
 	late final Translations$common$zh_CN common = Translations$common$zh_CN.internal(_root);
 	late final Translations$navigation$zh_CN navigation = Translations$navigation$zh_CN.internal(_root);
 	late final Translations$player$zh_CN player = Translations$player$zh_CN.internal(_root);
 	late final Translations$search$zh_CN search = Translations$search$zh_CN.internal(_root);
 	late final Translations$settings$zh_CN settings = Translations$settings$zh_CN.internal(_root);
 	late final Translations$sites$zh_CN sites = Translations$sites$zh_CN.internal(_root);
+}
+
+// Path: areas
+class Translations$areas$zh_CN {
+	Translations$areas$zh_CN.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh-CN: '全部分区'
+	String get allAreas => '全部分区';
+
+	/// zh-CN: '该站点没有分区'
+	String get noAreas => '该站点没有分区';
 }
 
 // Path: common
@@ -315,6 +331,8 @@ class Translations$sites$zh_CN {
 extension on Translations {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
+			'areas.allAreas' => '全部分区',
+			'areas.noAreas' => '该站点没有分区',
 			'common.appTitle' => 'Pure Live',
 			'common.empty' => '这里还没有内容',
 			'common.comingSoon' => '即将推出',
