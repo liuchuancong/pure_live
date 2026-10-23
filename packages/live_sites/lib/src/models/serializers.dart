@@ -1,14 +1,13 @@
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/serializer.dart';
 import 'package:built_value/standard_json_plugin.dart';
-
 import 'package:live_sites/src/models/anchor/live_anchor/live_anchor.dart';
 import 'package:live_sites/src/models/area/live_area/live_area.dart';
 import 'package:live_sites/src/models/asset/live_asset_ref/live_asset_ref.dart';
 import 'package:live_sites/src/models/audience/live_audience_update/live_audience_update.dart';
 import 'package:live_sites/src/models/guide/guide_catch_up/guide_catch_up.dart';
-import 'package:live_sites/src/models/message/live_badge/live_badge.dart';
 import 'package:live_sites/src/models/guide/room_guide/room_guide.dart';
+import 'package:live_sites/src/models/message/live_badge/live_badge.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/models/room/live_room_ref/live_room_ref.dart';
 import 'package:live_sites/src/models/room/room_audience/room_audience.dart';

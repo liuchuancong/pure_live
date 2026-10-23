@@ -65,8 +65,9 @@ final class DouyinRoomProvider implements LiveRoomProvider {
     final startedAt = room.broadcast.isLiveNow && room.broadcast.startedAt == null
         ? await _startOf(broadcast, webRid: room.roomId)
         : null;
-    if (startedAt != null)
+    if (startedAt != null) {
       room = room.rebuild((b) => b..broadcast.replace(room.broadcast.rebuild((b) => b..startedAt = startedAt)));
+    }
     return room.rebuild(
       (b) => b
         ..runtime = RoomRuntime.of(

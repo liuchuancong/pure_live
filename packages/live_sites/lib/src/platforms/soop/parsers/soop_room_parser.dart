@@ -459,8 +459,9 @@ abstract final class SoopRoomParser {
       }
     } else {
       var mergedAnchor = anchor;
-      if (anchor.name.isEmpty && station.nick.isNotEmpty)
+      if (anchor.name.isEmpty && station.nick.isNotEmpty) {
         mergedAnchor = mergedAnchor.rebuild((b) => b..name = station.nick);
+      }
       if (station.avatar.isNotEmpty) mergedAnchor = mergedAnchor.rebuild((b) => b..avatarUrl = station.avatar);
       merged = merged.rebuild((b) => b..anchor = mergedAnchor.toBuilder());
     }

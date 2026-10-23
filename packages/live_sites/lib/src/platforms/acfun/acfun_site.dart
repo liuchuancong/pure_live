@@ -237,10 +237,11 @@ final class AcfunSite implements LiveSite {
     if (!room.broadcast.isLiveNow) return room;
     final play = await startPlay(room.roomId);
     final data = play.result.data;
-    if (data == null)
+    if (data == null) {
       return room.rebuild(
         (b) => b..broadcast.replace(room.broadcast.rebuild((b) => b..restriction = play.result.restriction)),
       );
+    }
     return room.rebuild(
       (b) => b
         ..runtime = RoomRuntime.of(
