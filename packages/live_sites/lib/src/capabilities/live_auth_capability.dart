@@ -95,7 +95,8 @@ final class LiveCredential {
   final DateTime? expiry;
 
   @override
-  String toString() => 'LiveCredential($siteId, ${cookies.length} cookie(s)'
+  String toString() =>
+      'LiveCredential($siteId, ${cookies.length} cookie(s)'
       '${userId == null ? '' : ', user $userId'})';
 }
 

@@ -223,7 +223,7 @@ $Res call({
 });
 
 
-$LiveRoomCopyWith<$Res> get room;
+
 
 }
 /// @nodoc
@@ -243,16 +243,7 @@ as LiveRoom,
   ));
 }
 
-/// Create a copy of LiveSearchResult
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$LiveRoomCopyWith<$Res> get room {
-  
-  return $LiveRoomCopyWith<$Res>(_self.room, (value) {
-    return _then(_self.copyWith(room: value));
-  });
-}
+
 }
 
 /// @nodoc
@@ -300,7 +291,7 @@ $Res call({
 });
 
 
-$LiveAnchorCopyWith<$Res> get anchor;
+
 
 }
 /// @nodoc
@@ -320,16 +311,7 @@ as LiveAnchor,
   ));
 }
 
-/// Create a copy of LiveSearchResult
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$LiveAnchorCopyWith<$Res> get anchor {
-  
-  return $LiveAnchorCopyWith<$Res>(_self.anchor, (value) {
-    return _then(_self.copyWith(anchor: value));
-  });
-}
+
 }
 
 /// @nodoc
@@ -377,7 +359,7 @@ $Res call({
 });
 
 
-$LiveAreaCopyWith<$Res> get area;
+
 
 }
 /// @nodoc
@@ -397,16 +379,7 @@ as LiveArea,
   ));
 }
 
-/// Create a copy of LiveSearchResult
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$LiveAreaCopyWith<$Res> get area {
-  
-  return $LiveAreaCopyWith<$Res>(_self.area, (value) {
-    return _then(_self.copyWith(area: value));
-  });
-}
+
 }
 
 // dart format on

@@ -310,9 +310,9 @@ abstract final class SoopRoomParser {
           room: LiveRoom.normalized(
             platform: soopSiteId,
             roomId: id,
-            content: RoomContent(title: SoopJson.display(fields['TITLE'])),
+            content: RoomContent.of(title: SoopJson.display(fields['TITLE'])),
             anchor: LiveAnchor.normalized(platform: soopSiteId, anchorId: id, liveStatus: LiveStatus.live),
-            broadcast: RoomBroadcast(
+            broadcast: RoomBroadcast.of(
               liveStatus: LiveStatus.live,
               startedAt: startedBefore(fields['BTIME'], now),
               restriction: switch (answer.result) {
@@ -321,7 +321,7 @@ abstract final class SoopRoomParser {
                 _ => LiveRestriction.subscribersOnly,
               },
             ),
-            links: RoomLinks(webUrl: SoopEndpoints.roomPageUrl(id)),
+            links: RoomLinks.of(webUrl: SoopEndpoints.roomPageUrl(id)),
           ),
           data: null,
           danmaku: null,
@@ -338,7 +338,7 @@ abstract final class SoopRoomParser {
     final room = LiveRoom.normalized(
       platform: soopSiteId,
       roomId: id,
-      content: RoomContent(title: SoopJson.display(fields['TITLE']), coverUrl: cover(bno, now)),
+      content: RoomContent.of(title: SoopJson.display(fields['TITLE']), coverUrl: cover(bno, now)),
       anchor: LiveAnchor.normalized(
         platform: soopSiteId,
         anchorId: id,
@@ -349,18 +349,18 @@ abstract final class SoopRoomParser {
       area: tags is List && tags.isNotEmpty
           ? LiveArea.normalized(platform: soopSiteId, areaName: SoopJson.text(tags.first))
           : null,
-      audience: RoomAudience(
+      audience: RoomAudience.of(
         onlineViewers: viewers,
         primaryMetric: viewers == null ? null : LiveAudienceMetricType.onlineViewers,
       ),
-      broadcast: RoomBroadcast(
+      broadcast: RoomBroadcast.of(
         liveStatus: live ? LiveStatus.live : LiveStatus.offline,
         startedAt: live ? startedBefore(fields['BTIME'], now) : null,
         restriction: live
             ? restrictionOf(password: fields['BPWD'], subscribers: fields['P_MIN_TIER'], grade: fields['GRADE'])
             : null,
       ),
-      links: RoomLinks(webUrl: SoopEndpoints.roomPageUrl(id)),
+      links: RoomLinks.of(webUrl: SoopEndpoints.roomPageUrl(id)),
     );
     return (
       room: room,
@@ -383,8 +383,8 @@ abstract final class SoopRoomParser {
     platform: soopSiteId,
     roomId: id,
     anchor: LiveAnchor.normalized(platform: soopSiteId, anchorId: id, liveStatus: liveStatus),
-    broadcast: RoomBroadcast(liveStatus: liveStatus),
-    links: RoomLinks(webUrl: SoopEndpoints.roomPageUrl(id)),
+    broadcast: RoomBroadcast.of(liveStatus: liveStatus),
+    links: RoomLinks.of(webUrl: SoopEndpoints.roomPageUrl(id)),
   );
 
   /// `chapi.sooplive.co.kr/api/<id>/station`. An unknown streamer is
@@ -437,25 +437,32 @@ abstract final class SoopRoomParser {
   static LiveRoom withStation(LiveRoom room, SoopRoomData? data, SoopStation station, {required DateTime now}) {
     final broadcast = station.broadcast;
     final anchor = room.anchor;
-    var merged = room.copyWith(
-      content: station.introduction.isEmpty ? room.content : room.content.copyWith(introduction: station.introduction),
+    var merged = room.rebuild(
+      (b) => b
+        ..content.replace(
+          station.introduction.isEmpty
+              ? room.content
+              : room.content.rebuild((b) => b..introduction = station.introduction),
+        ),
     );
     if (anchor == null) {
       if (station.nick.isNotEmpty || station.avatar.isNotEmpty) {
-        merged = merged.copyWith(
-          anchor: LiveAnchor.normalized(
-            platform: soopSiteId,
-            anchorId: room.roomId,
-            name: station.nick,
-            avatarUrl: station.avatar.isEmpty ? null : station.avatar,
-          ),
+        merged = merged.rebuild(
+          (b) => b
+            ..anchor = LiveAnchor.normalized(
+              platform: soopSiteId,
+              anchorId: room.roomId,
+              name: station.nick,
+              avatarUrl: station.avatar.isEmpty ? null : station.avatar,
+            ).toBuilder(),
         );
       }
     } else {
       var mergedAnchor = anchor;
-      if (anchor.name.isEmpty && station.nick.isNotEmpty) mergedAnchor = mergedAnchor.copyWith(name: station.nick);
-      if (station.avatar.isNotEmpty) mergedAnchor = mergedAnchor.copyWith(avatarUrl: station.avatar);
-      merged = merged.copyWith(anchor: mergedAnchor);
+      if (anchor.name.isEmpty && station.nick.isNotEmpty)
+        mergedAnchor = mergedAnchor.rebuild((b) => b..name = station.nick);
+      if (station.avatar.isNotEmpty) mergedAnchor = mergedAnchor.rebuild((b) => b..avatarUrl = station.avatar);
+      merged = merged.rebuild((b) => b..anchor = mergedAnchor.toBuilder());
     }
     final stationBroadcast = broadcast;
     if (stationBroadcast == null || merged.broadcast.effectiveLiveStatus == LiveStatus.banned) return merged;
@@ -465,26 +472,33 @@ abstract final class SoopRoomParser {
     if (!live && merged.broadcast.effectiveLiveStatus != LiveStatus.offline) return merged;
     var content = merged.content;
     if (content.title.trim().isEmpty && stationBroadcast.title.isNotEmpty) {
-      content = content.copyWith(title: stationBroadcast.title);
+      content = content.rebuild((b) => b..title = stationBroadcast.title);
     }
-    if (content.coverUrl.isEmpty) content = content.copyWith(coverUrl: cover(stationBroadcast.bno, now));
-    return merged.copyWith(
-      content: content,
-      audience: stationBroadcast.viewers == null
-          ? merged.audience
-          : merged.audience.copyWith(
-              onlineViewers: stationBroadcast.viewers,
-              primaryMetric: LiveAudienceMetricType.onlineViewers,
-            ),
-      broadcast: merged.broadcast.copyWith(
-        liveStatus: LiveStatus.live,
-        startedAt: merged.broadcast.startedAt ?? stationBroadcast.startedAt,
-        restriction: live
-            ? stricter(merged.broadcast.restriction, stationBroadcast.restriction)
-            : (stationBroadcast.restriction == LiveRestriction.none
-                  ? LiveRestriction.unplayable
-                  : stationBroadcast.restriction),
-      ),
+    if (content.coverUrl.isEmpty) content = content.rebuild((b) => b..coverUrl = cover(stationBroadcast.bno, now));
+    return merged.rebuild(
+      (b) => b
+        ..content.replace(content)
+        ..audience.replace(
+          stationBroadcast.viewers == null
+              ? merged.audience
+              : merged.audience.rebuild(
+                  (a) => a
+                    ..onlineViewers = stationBroadcast.viewers
+                    ..primaryMetric = LiveAudienceMetricType.onlineViewers,
+                ),
+        )
+        ..broadcast.replace(
+          merged.broadcast.rebuild(
+            (r) => r
+              ..liveStatus = LiveStatus.live
+              ..startedAt = merged.broadcast.startedAt ?? stationBroadcast.startedAt
+              ..restriction = live
+                  ? stricter(merged.broadcast.restriction, stationBroadcast.restriction)
+                  : (stationBroadcast.restriction == LiveRestriction.none
+                        ? LiveRestriction.unplayable
+                        : stationBroadcast.restriction),
+          ),
+        ),
     );
   }
 
@@ -803,7 +817,7 @@ abstract final class SoopRoomParser {
     return LiveRoom.normalized(
       platform: soopSiteId,
       roomId: id,
-      content: RoomContent(title: SoopJson.display(item['broad_title']), coverUrl: SoopJson.image(cover)),
+      content: RoomContent.of(title: SoopJson.display(item['broad_title']), coverUrl: SoopJson.image(cover)),
       anchor: LiveAnchor.normalized(
         platform: soopSiteId,
         anchorId: id,
@@ -812,11 +826,11 @@ abstract final class SoopRoomParser {
         liveStatus: LiveStatus.live,
       ),
       area: areaName == null ? null : LiveArea.normalized(platform: soopSiteId, areaName: areaName),
-      audience: RoomAudience(
+      audience: RoomAudience.of(
         onlineViewers: viewers,
         primaryMetric: viewers == null ? null : LiveAudienceMetricType.onlineViewers,
       ),
-      broadcast: RoomBroadcast(
+      broadcast: RoomBroadcast.of(
         liveStatus: LiveStatus.live,
         startedAt: koreanTime(item['broad_start']),
         restriction: restrictionOf(
@@ -825,7 +839,7 @@ abstract final class SoopRoomParser {
           grade: item['broad_grade'] ?? item['grade'],
         ),
       ),
-      links: RoomLinks(webUrl: SoopEndpoints.roomPageUrl(id)),
+      links: RoomLinks.of(webUrl: SoopEndpoints.roomPageUrl(id)),
     );
   }
 }

@@ -60,10 +60,10 @@ abstract final class SeventeenLiveEndpoints {
 
   /// The catalog: the one category's three regions, flat, each carrying
   /// [categoryId] as its parent; no request builds them.
-  static const List<LiveArea> areas = [
-    LiveArea(platform: _site, areaId: 'JP', areaName: '日本', parentAreaId: categoryId, parentAreaName: categoryName),
-    LiveArea(platform: _site, areaId: 'TW', areaName: '台湾', parentAreaId: categoryId, parentAreaName: categoryName),
-    LiveArea(platform: _site, areaId: 'HK', areaName: '香港', parentAreaId: categoryId, parentAreaName: categoryName),
+  static final List<LiveArea> areas = [
+    LiveArea.of(platform: _site, areaId: 'JP', areaName: '日本', parentAreaId: categoryId, parentAreaName: categoryName),
+    LiveArea.of(platform: _site, areaId: 'TW', areaName: '台湾', parentAreaId: categoryId, parentAreaName: categoryName),
+    LiveArea.of(platform: _site, areaId: 'HK', areaName: '香港', parentAreaId: categoryId, parentAreaName: categoryName),
   ];
 
   /// Rows the website asks each section for (`count`).
@@ -111,12 +111,7 @@ abstract final class SeventeenLiveEndpoints {
   /// which was its lowest). A bigger value is the better quality, as on
   /// bilibili, and it is what the quality's platform order carries;
   /// `SeventeenLivePlayParser.playQualities` does the "优先 H.264" reordering.
-  static const Map<String, int> qualitySorts = {
-    sourceQualityId: 500,
-    'enhanced': 400,
-    'hd': 300,
-    h264QualityId: 200,
-  };
+  static const Map<String, int> qualitySorts = {sourceQualityId: 500, 'enhanced': 400, 'hd': 300, h264QualityId: 200};
 
   /// The pull URL fields of each quality, best first: every field of every
   /// provider is a line. The source fields are the broadcaster's stream as
@@ -146,10 +141,7 @@ abstract final class SeventeenLiveEndpoints {
   };
 
   /// The headers of the token request: the catalog headers and a JSON body.
-  static const Map<String, String> authHeaders = {
-    ...catalogHeaders,
-    'content-type': 'application/json',
-  };
+  static const Map<String, String> authHeaders = {...catalogHeaders, 'content-type': 'application/json'};
 
   /// The token source; the website's ably-js asks it in its `authCallback`.
   static final Uri authUrl = Uri.https(apiHost, '/api/v1/messenger/auth');

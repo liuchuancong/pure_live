@@ -764,7 +764,7 @@ abstract final class KugouliveDanmakuCodec {
         if (KugouliveJson.count(data[key]) case final value?)
           LiveMessage.normalized(
             type: LiveMessageType.audienceUpdate,
-            payload: LiveAudienceUpdate(kind: kind, value: value),
+            payload: LiveAudienceUpdate.of(kind: kind, value: value),
           ),
     ];
   }

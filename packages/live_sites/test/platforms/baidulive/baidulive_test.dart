@@ -1810,7 +1810,7 @@ void main() {
             .having(
               (m) => m.payload,
               'payload',
-              const LiveAudienceUpdate(kind: LiveAudienceSignalKind.onlineViewers, value: 123),
+              LiveAudienceUpdate.of(kind: LiveAudienceSignalKind.onlineViewers, value: 123),
             ),
       );
       expect(

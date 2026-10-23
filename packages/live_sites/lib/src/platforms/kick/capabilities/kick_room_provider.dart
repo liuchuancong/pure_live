@@ -36,16 +36,17 @@ final class KickRoomProvider implements LiveRoomProvider {
       return right(
         chatroom == null
             ? channel.room
-            : channel.room.copyWith(
+            : channel.room.rebuild(
                 // The ids a chat session subscribes by: the chatroom is not
                 // the channel, so both ride along (never guessed).
-                runtime: RoomRuntime(
-                  danmakuHandle: KickDanmakuArgs(
-                    chatroomId: chatroom,
-                    channelId: channel.channelId,
-                    slug: channel.room.roomId,
-                  ),
-                ),
+                (b) => b
+                  ..runtime = RoomRuntime.of(
+                    danmakuHandle: KickDanmakuArgs(
+                      chatroomId: chatroom,
+                      channelId: channel.channelId,
+                      slug: channel.room.roomId,
+                    ),
+                  ).toBuilder(),
               ),
       );
     } on KickFailure catch (failure) {

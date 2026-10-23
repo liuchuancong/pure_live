@@ -187,7 +187,7 @@ abstract final class TwitcastingRoomParser {
     final room = LiveRoom.normalized(
       platform: _site,
       roomId: channel,
-      content: RoomContent(
+      content: RoomContent.of(
         title: telop.isNotEmpty ? telop : TwitcastingJson.text(row['title']),
         coverUrl: TwitcastingJson.picture(row['thumbnail_url']),
       ),
@@ -198,13 +198,13 @@ abstract final class TwitcastingRoomParser {
         avatarUrl: TwitcastingJson.picture(row['user_icon_url']),
         liveStatus: LiveStatus.live,
       ),
-      audience: RoomAudience(onlineViewers: count, primaryMetric: LiveAudienceMetricType.onlineViewers),
-      broadcast: RoomBroadcast(
+      audience: RoomAudience.of(onlineViewers: count, primaryMetric: LiveAudienceMetricType.onlineViewers),
+      broadcast: RoomBroadcast.of(
         liveStatus: LiveStatus.live,
         startedAt: started != null && started.millisecondsSinceEpoch > 0 ? started : null,
         restriction: row['is_locked'] == true ? LiveRestriction.password : LiveRestriction.none,
       ),
-      links: RoomLinks(webUrl: TwitcastingEndpoints.roomUrl(channel)),
+      links: RoomLinks.of(webUrl: TwitcastingEndpoints.roomUrl(channel)),
     );
     return (room: room, malformed: false);
   }
@@ -300,7 +300,7 @@ abstract final class TwitcastingRoomParser {
     final room = LiveRoom.normalized(
       platform: _site,
       roomId: channel,
-      content: RoomContent(
+      content: RoomContent.of(
         title: title == null ? '' : html.textOf(title).trim(),
         coverUrl: TwitcastingJson.picture(cover?.attributes['src']),
       ),
@@ -312,13 +312,13 @@ abstract final class TwitcastingRoomParser {
         liveStatus: LiveStatus.live,
       ),
       // The page shows viewers only for private rows: no audience figures.
-      audience: const RoomAudience(primaryMetric: LiveAudienceMetricType.unknown),
-      broadcast: RoomBroadcast(
+      audience: RoomAudience.of(primaryMetric: LiveAudienceMetricType.unknown),
+      broadcast: RoomBroadcast.of(
         liveStatus: LiveStatus.live,
         startedAt: pageDate(date?.attributes['datetime'] ?? ''),
         restriction: restriction,
       ),
-      links: RoomLinks(webUrl: TwitcastingEndpoints.roomUrl(channel)),
+      links: RoomLinks.of(webUrl: TwitcastingEndpoints.roomUrl(channel)),
     );
     return (room: room, malformed: false);
   }
@@ -421,7 +421,7 @@ abstract final class TwitcastingRoomParser {
         room: LiveRoom.normalized(
           platform: _site,
           roomId: roomId,
-          links: RoomLinks(webUrl: TwitcastingEndpoints.roomUrl(channel)),
+          links: RoomLinks.of(webUrl: TwitcastingEndpoints.roomUrl(channel)),
         ),
         channel: channel,
         secretWord: true,
@@ -460,7 +460,7 @@ abstract final class TwitcastingRoomParser {
       room: LiveRoom.normalized(
         platform: _site,
         roomId: roomId,
-        content: RoomContent(
+        content: RoomContent.of(
           title: telop.isNotEmpty ? telop : (title.trim().isEmpty ? '' : title),
           coverUrl: TwitcastingJson.picture(meta('property', 'og:image')),
         ),
@@ -470,7 +470,7 @@ abstract final class TwitcastingRoomParser {
           name: name == null ? channel : page.textOf(name).trim(),
           avatarUrl: TwitcastingJson.picture(avatar?.attributes['src']),
         ),
-        links: RoomLinks(webUrl: TwitcastingEndpoints.roomUrl(channel)),
+        links: RoomLinks.of(webUrl: TwitcastingEndpoints.roomUrl(channel)),
       ),
       channel: channel,
       movieId: TwitcastingJson.integer(movie?.attributes['data-movie-id']),
@@ -527,31 +527,35 @@ abstract final class TwitcastingRoomParser {
   static LiveRoom roomDetail(TwitcastingChannelPage page, TwitcastingRoomData stream) {
     final movie = stream.movieId;
     if (!stream.live) {
-      return page.room.copyWith(
-        anchor: page.room.anchor?.copyWith(liveStatus: LiveStatus.offline),
-        broadcast: const RoomBroadcast(liveStatus: LiveStatus.offline),
-        runtime: RoomRuntime(streamHandle: stream),
+      return page.room.rebuild(
+        (b) => b
+          ..anchor = page.room.anchor?.rebuild((b) => b..liveStatus = LiveStatus.offline).toBuilder()
+          ..broadcast.replace(RoomBroadcast.of(liveStatus: LiveStatus.offline))
+          ..runtime = RoomRuntime.of(streamHandle: stream).toBuilder(),
       );
     }
     final sameBroadcast = page.movieId == null || movie == null || page.movieId == movie;
-    return page.room.copyWith(
-      anchor: page.room.anchor?.copyWith(liveStatus: LiveStatus.live),
-      broadcast: RoomBroadcast(
-        liveStatus: LiveStatus.live,
-        startedAt: sameBroadcast ? page.liveStartedAt : null,
-        restriction: page.secretWord ? LiveRestriction.password : LiveRestriction.none,
-      ),
-      runtime: RoomRuntime(
-        streamHandle: TwitcastingRoomData(
-          live: true,
-          movieId: movie,
-          streams: stream.streams,
-          secretWord: page.secretWord,
-        ),
-        danmakuHandle: movie != null && movie > 0
-            ? TwitcastingDanmakuArgs(channel: page.channel, movieId: movie)
-            : null,
-      ),
+    return page.room.rebuild(
+      (b) => b
+        ..anchor = page.room.anchor?.rebuild((b) => b..liveStatus = LiveStatus.live).toBuilder()
+        ..broadcast.replace(
+          RoomBroadcast.of(
+            liveStatus: LiveStatus.live,
+            startedAt: sameBroadcast ? page.liveStartedAt : null,
+            restriction: page.secretWord ? LiveRestriction.password : LiveRestriction.none,
+          ),
+        )
+        ..runtime = RoomRuntime.of(
+          streamHandle: TwitcastingRoomData(
+            live: true,
+            movieId: movie,
+            streams: stream.streams,
+            secretWord: page.secretWord,
+          ),
+          danmakuHandle: movie != null && movie > 0
+              ? TwitcastingDanmakuArgs(channel: page.channel, movieId: movie)
+              : null,
+        ).toBuilder(),
     );
   }
 

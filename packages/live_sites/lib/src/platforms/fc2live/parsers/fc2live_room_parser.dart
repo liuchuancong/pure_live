@@ -457,7 +457,7 @@ abstract final class Fc2LiveRoomParser {
     return LiveRoom.normalized(
       platform: _site,
       roomId: channel.channelId,
-      content: RoomContent(
+      content: RoomContent.of(
         title: channel.title,
         coverUrl: channel.cover,
         introduction: channel.description.isEmpty ? null : channel.description,
@@ -478,20 +478,20 @@ abstract final class Fc2LiveRoomParser {
         parentAreaId: Fc2LiveEndpoints.categoryId,
         parentAreaName: Fc2LiveEndpoints.categoryName,
       ),
-      audience: RoomAudience(
+      audience: RoomAudience.of(
         onlineViewers: live ? channel.currentViewers : null,
         totalViewers: live ? channel.totalViewers : null,
         primaryMetric: channel.currentViewers == null
             ? LiveAudienceMetricType.unknown
             : LiveAudienceMetricType.onlineViewers,
       ),
-      broadcast: RoomBroadcast(
+      broadcast: RoomBroadcast.of(
         liveStatus: live ? LiveStatus.live : LiveStatus.offline,
         startedAt: live ? channel.startedAt : null,
         restriction: restriction,
       ),
-      links: RoomLinks(webUrl: Fc2LiveEndpoints.channelUrl(channel.channelId)),
-      runtime: RoomRuntime(
+      links: RoomLinks.of(webUrl: Fc2LiveEndpoints.channelUrl(channel.channelId)),
+      runtime: RoomRuntime.of(
         streamHandle: Fc2LiveRoomData(
           channelId: channel.channelId,
           state: channel.state,

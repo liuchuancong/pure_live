@@ -149,10 +149,7 @@ abstract final class YoutubeEndpoints {
 
   /// The WEB-context `updated_metadata` body of [videoId]: the live viewer count
   /// the watch page shows.
-  static Map<String, Object?> metadataBody(String videoId) => {
-    'context': webContext,
-    'videoId': videoId.trim(),
-  };
+  static Map<String, Object?> metadataBody(String videoId) => {'context': webContext, 'videoId': videoId.trim()};
 
   /// The WEB-context `navigation/resolve_url` body for [url].
   static Map<String, Object?> resolveUrlBody(String url) => {'context': webContext, 'url': url};

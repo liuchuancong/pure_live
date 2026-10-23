@@ -7,11 +7,11 @@ import 'package:live_sites/src/models/enums/live_asset_type.dart';
 const String twitchSiteId = 'twitch';
 
 /// Twitch's stable identity (ARCHITECTURE.md §4.1).
-const twitchManifest = LiveSiteManifest(
+final twitchManifest = LiveSiteManifest(
   id: twitchSiteId,
   name: {'zh-CN': 'Twitch 直播', 'en-US': 'Twitch'},
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['tw', 'twitchtv'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/twitch.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/twitch.png'),
 );

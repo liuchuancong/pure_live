@@ -274,11 +274,11 @@ abstract final class PicartoRoomParser {
         () => LiveRoom.normalized(
           platform: PicartoEndpoints.siteId,
           roomId: name,
-          content: RoomContent(title: name, introduction: bio.isEmpty ? null : bio),
+          content: RoomContent.of(title: name, introduction: bio.isEmpty ? null : bio),
           anchor: _anchor(profile, name, followers: followers),
-          audience: const RoomAudience(primaryMetric: LiveAudienceMetricType.unknown),
-          broadcast: RoomBroadcast(liveStatus: profile['online'] == true ? LiveStatus.live : LiveStatus.offline),
-          links: RoomLinks(webUrl: PicartoEndpoints.roomPageUrl(name)),
+          audience: RoomAudience.of(primaryMetric: LiveAudienceMetricType.unknown),
+          broadcast: RoomBroadcast.of(liveStatus: profile['online'] == true ? LiveStatus.live : LiveStatus.offline),
+          links: RoomLinks.of(webUrl: PicartoEndpoints.roomPageUrl(name)),
         ),
       );
     }
@@ -359,12 +359,16 @@ abstract final class PicartoRoomParser {
     // The stream's thumbnail when live; the channel's is the fallback.
     final thumbnail = own.length == 1 ? normalizeImageUrl(own.single['thumbnail_image']) : '';
     final followers = PicartoJson.count(channel['followers_count']);
-    final detailed = card.copyWith(
-      content: card.content.copyWith(
-        coverUrl: thumbnail.isEmpty ? card.content.coverUrl : thumbnail,
-        introduction: _introduction(channel['descriptions']),
-      ),
-      anchor: followers == null ? null : card.anchor?.copyWith(followerCount: followers),
+    final detailed = card.rebuild(
+      (b) => b
+        ..content.replace(
+          card.content.rebuild(
+            (b) => b
+              ..coverUrl = thumbnail.isEmpty ? card.content.coverUrl : thumbnail
+              ..introduction = _introduction(channel['descriptions']),
+          ),
+        )
+        ..anchor = followers == null ? null : card.anchor?.rebuild((b) => b..followerCount = followers).toBuilder(),
     );
     return PicartoChannel(room: detailed, name: card.roomId, channelId: channelId, requestedId: id, master: master);
   }
@@ -592,7 +596,7 @@ abstract final class PicartoRoomParser {
     return LiveRoom.normalized(
       platform: PicartoEndpoints.siteId,
       roomId: name,
-      content: RoomContent(
+      content: RoomContent.of(
         title: title.trim() == PicartoEndpoints.placeholderTitle ? '' : title,
         coverUrl: normalizeImageUrl(channel['image_thumbnail']),
         platformTags: categories is List
@@ -600,16 +604,16 @@ abstract final class PicartoRoomParser {
             : const [],
       ),
       anchor: _anchor(channel, name),
-      audience: RoomAudience(
+      audience: RoomAudience.of(
         onlineViewers: viewers,
         totalViewers: total,
         primaryMetric: LiveAudienceMetricType.onlineViewers,
       ),
-      broadcast: RoomBroadcast(
+      broadcast: RoomBroadcast.of(
         liveStatus: channel['online'] == true ? LiveStatus.live : LiveStatus.offline,
         restriction: private is bool ? (private ? LiveRestriction.private : LiveRestriction.none) : null,
       ),
-      links: RoomLinks(webUrl: PicartoEndpoints.roomPageUrl(name)),
+      links: RoomLinks.of(webUrl: PicartoEndpoints.roomPageUrl(name)),
     );
   }
 

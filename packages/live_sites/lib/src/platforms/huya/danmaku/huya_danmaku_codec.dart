@@ -206,7 +206,7 @@ abstract final class HuyaDanmakuProtocol {
     type: LiveMessageType.audienceUpdate,
     color: LiveMessageColor.white,
     messageId: messageId(eventId),
-    payload: LiveAudienceUpdate(
+    payload: LiveAudienceUpdate.of(
       kind: LiveAudienceSignalKind.popularity,
       value: TarsStruct.decode(body ?? const <int>[]).integer(0) ?? 0,
     ),

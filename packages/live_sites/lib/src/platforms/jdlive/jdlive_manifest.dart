@@ -7,11 +7,11 @@ import 'package:live_sites/src/models/enums/live_asset_type.dart';
 const String jdliveSiteId = 'jdlive';
 
 /// JD Live's stable identity (ARCHITECTURE.md §4.1).
-const jdliveManifest = LiveSiteManifest(
+final jdliveManifest = LiveSiteManifest(
   id: jdliveSiteId,
   name: {'zh-CN': '京东直播', 'en-US': 'JD Live'},
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['jd', 'jdlive', 'jingdong'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/jdlive.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/jdlive.png'),
 );

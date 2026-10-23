@@ -251,8 +251,8 @@ final class SoopSite implements LiveSite {
         ? answer.room
         : SoopRoomParser.withStation(answer.room, answer.data, found.station!, now: _now());
     if (answer.data != null) _streams[id] = answer.data!;
-    return room.copyWith(
-      runtime: RoomRuntime(streamHandle: answer.data, danmakuHandle: answer.danmaku),
+    return room.rebuild(
+      (b) => b..runtime = RoomRuntime.of(streamHandle: answer.data, danmakuHandle: answer.danmaku).toBuilder(),
     );
   }
 

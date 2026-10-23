@@ -136,10 +136,7 @@ final class SeventeenLiveSite implements LiveSite {
   /// platform serves is a caller error, never a guessed region.
   String regionOf(String? areaId) =>
       SeventeenLiveEndpoints.regionFor(areaId) ??
-      (throw SeventeenLiveFailure(
-        SeventeenLiveFailureKind.invalidArgument,
-        'area "$areaId" is not a 17LIVE region',
-      ));
+      (throw SeventeenLiveFailure(SeventeenLiveFailureKind.invalidArgument, 'area "$areaId" is not a 17LIVE region'));
 
   // Directory -----------------------------------------------------------------
 
@@ -177,7 +174,7 @@ final class SeventeenLiveSite implements LiveSite {
     }
     final code = region ?? SeventeenLiveEndpoints.region;
     String? walked;
-    for (var current = 1;; current++) {
+    for (var current = 1; ; current++) {
       final result = await sections(region: code, cursor: walked);
       if (current == page) {
         return (
@@ -219,11 +216,10 @@ final class SeventeenLiveSite implements LiveSite {
     }
     final query = SeventeenLiveRoomParser.searchKeyword(text);
     if (query.isEmpty || SeventeenLiveRoomParser.isUrl(text)) return const [];
-    final response = await get(
-      SeventeenLiveEndpoints.search(query),
-      headers: SeventeenLiveEndpoints.catalogHeaders,
+    final response = await get(SeventeenLiveEndpoints.search(query), headers: SeventeenLiveEndpoints.catalogHeaders);
+    return List.unmodifiable(
+      SeventeenLiveRoomParser.searchRooms(response.text, status: response.status).take(pageSize),
     );
-    return List.unmodifiable(SeventeenLiveRoomParser.searchRooms(response.text, status: response.status).take(pageSize));
   }
 
   // Rooms ---------------------------------------------------------------------

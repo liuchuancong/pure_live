@@ -73,11 +73,12 @@ final class DouyuRoomProvider implements LiveRoomProvider {
     );
     final result = DouyuRoomParser.roomDetail(response.text, requestedId: id, status: response.status);
     site.rememberRid(id, result.rid);
-    return result.room.copyWith(
-      runtime: RoomRuntime(
-        streamHandle: DouyuRoomData(result.rid),
-        danmakuHandle: DouyuDanmakuArgs(result.rid, result.gifts),
-      ),
+    return result.room.rebuild(
+      (b) => b
+        ..runtime = RoomRuntime.of(
+          streamHandle: DouyuRoomData(result.rid),
+          danmakuHandle: DouyuDanmakuArgs(result.rid, result.gifts),
+        ).toBuilder(),
     );
   }
 }

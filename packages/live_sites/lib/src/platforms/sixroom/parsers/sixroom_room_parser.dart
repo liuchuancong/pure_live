@@ -717,7 +717,7 @@ abstract final class SixroomRoomParser {
     return LiveRoom.normalized(
       platform: sixroomSiteId,
       roomId: room.roomId,
-      content: RoomContent(
+      content: RoomContent.of(
         title: room.title,
         coverUrl: room.cover,
         notice: restricted
@@ -732,17 +732,17 @@ abstract final class SixroomRoomParser {
         followerCount: room.followers,
         liveStatus: liveStatus,
       ),
-      audience: RoomAudience(
+      audience: RoomAudience.of(
         popularity: room.popularity,
         primaryMetric: room.popularity == null ? LiveAudienceMetricType.unknown : LiveAudienceMetricType.popularity,
       ),
-      broadcast: RoomBroadcast(
+      broadcast: RoomBroadcast.of(
         liveStatus: liveStatus,
         startedAt: room.state == SixroomState.live ? room.startedAt : null,
         restriction: room.restriction,
       ),
-      links: RoomLinks(webUrl: SixroomEndpoints.link(room.roomId)),
-      runtime: RoomRuntime(streamHandle: data, danmakuHandle: danmaku),
+      links: RoomLinks.of(webUrl: SixroomEndpoints.link(room.roomId)),
+      runtime: RoomRuntime.of(streamHandle: data, danmakuHandle: danmaku),
     );
   }
 

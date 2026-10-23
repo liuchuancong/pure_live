@@ -283,7 +283,8 @@ final class PandaliveSite implements LiveSite {
         unavailable: const PandaliveFailure(PandaliveFailureKind.streamUnavailable, 'member/bj: not live'),
       );
       keep(data, _now());
-      return PandaliveRoomParser.profileRoom(member).copyWith(runtime: RoomRuntime(streamHandle: data));
+      return PandaliveRoomParser.profileRoom(member)
+          .rebuild((b) => b..runtime = RoomRuntime.of(streamHandle: data).toBuilder());
     }
     final referer = PandaliveEndpoints.roomUrl(userId);
     final answer = await http.post(PandaliveEndpoints.playPath, PandaliveEndpoints.playForm(userId), referer: referer);
@@ -293,9 +294,8 @@ final class PandaliveSite implements LiveSite {
     final danmaku = grant == null
         ? null
         : PandaliveDanmakuArgs(userId: userId, channel: grant.channel, token: grant.token);
-    LiveRoom entered(PandaliveStreamData data) => room.copyWith(
-      runtime: RoomRuntime(streamHandle: data, danmakuHandle: danmaku),
-    );
+    LiveRoom entered(PandaliveStreamData data) =>
+        room.rebuild((b) => b..runtime = RoomRuntime.of(streamHandle: data, danmakuHandle: danmaku).toBuilder());
     if (unavailable != null) {
       final data = PandaliveStreamData(userId: userId, userIndex: member.userIndex, unavailable: unavailable);
       keep(data, _now());
@@ -318,7 +318,9 @@ final class PandaliveSite implements LiveSite {
       if (failure.kind != PandaliveFailureKind.streamUnavailable) rethrow;
       final data = PandaliveStreamData(userId: userId, userIndex: member.userIndex, unavailable: failure);
       keep(data, issuedAt);
-      return entered(data).copyWith(broadcast: room.broadcast.copyWith(restriction: LiveRestriction.unplayable));
+      return entered(data).rebuild(
+        (b) => b..broadcast.replace(room.broadcast.rebuild((b) => b..restriction = LiveRestriction.unplayable)),
+      );
     }
   }
 

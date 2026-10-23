@@ -136,7 +136,7 @@ abstract final class KuaishouRoomParser {
       room: LiveRoom.normalized(
         platform: _site,
         roomId: id,
-        content: RoomContent(coverUrl: _cover(stream['poster']), introduction: description, notice: description),
+        content: RoomContent.of(coverUrl: _cover(stream['poster']), introduction: description, notice: description),
         anchor: LiveAnchor.normalized(
           platform: _site,
           anchorId: id,
@@ -145,8 +145,8 @@ abstract final class KuaishouRoomParser {
           followerCount: parseAudienceNumberOrNull(jsonString(fields(author['counts'])['fan'])),
         ),
         area: LiveArea.normalized(platform: _site, areaName: text(game['name'])),
-        audience: const RoomAudience(primaryMetric: LiveAudienceMetricType.onlineViewers),
-        broadcast: RoomBroadcast(
+        audience: RoomAudience.of(primaryMetric: LiveAudienceMetricType.onlineViewers),
+        broadcast: RoomBroadcast.of(
           liveStatus: living ? LiveStatus.live : LiveStatus.offline,
           restriction: living
               ? KuaishouPlayParser.qualities(playUrls).isEmpty
@@ -154,7 +154,7 @@ abstract final class KuaishouRoomParser {
                     : LiveRestriction.none
               : null,
         ),
-        links: RoomLinks(webUrl: KuaishouEndpoints.roomPageUrl(id)),
+        links: RoomLinks.of(webUrl: KuaishouEndpoints.roomPageUrl(id)),
       ),
       playUrls: playUrls,
       liveStreamId: liveStreamId,
@@ -297,7 +297,7 @@ abstract final class KuaishouRoomParser {
     return LiveRoom.normalized(
       platform: _site,
       roomId: id,
-      content: RoomContent(
+      content: RoomContent.of(
         title: recommend && caption.isEmpty ? flatBio ?? '' : caption,
         coverUrl: _cover(item['poster']),
         introduction: recommend ? flatBio ?? '' : null,
@@ -310,16 +310,16 @@ abstract final class KuaishouRoomParser {
         avatarUrl: imageUrl(author['avatar']),
       ),
       area: LiveArea.normalized(platform: _site, areaName: text(fields(item['gameInfo'])['name'])),
-      audience: RoomAudience(
+      audience: RoomAudience.of(
         onlineViewers: parseAudienceNumberOrNull(watching),
         primaryMetric: LiveAudienceMetricType.onlineViewers,
       ),
-      broadcast: RoomBroadcast(
+      broadcast: RoomBroadcast.of(
         liveStatus: LiveStatus.live,
         startedAt: _epochMilliseconds(item['statrtTime']) ?? _epochMilliseconds(item['startTime']),
         restriction: KuaishouPlayParser.qualities(item['playUrls']).isEmpty ? null : LiveRestriction.none,
       ),
-      links: RoomLinks(webUrl: KuaishouEndpoints.roomPageUrl(id)),
+      links: RoomLinks.of(webUrl: KuaishouEndpoints.roomPageUrl(id)),
     );
   }
 
@@ -338,7 +338,7 @@ abstract final class KuaishouRoomParser {
     return LiveRoom.normalized(
       platform: _site,
       roomId: id,
-      content: RoomContent(title: name, coverUrl: avatar, introduction: jsonString(author['description'])),
+      content: RoomContent.of(title: name, coverUrl: avatar, introduction: jsonString(author['description'])),
       anchor: LiveAnchor.normalized(
         platform: _site,
         anchorId: id,
@@ -347,8 +347,8 @@ abstract final class KuaishouRoomParser {
         followerCount: parseAudienceNumberOrNull(jsonString(counts['fan'])),
         liveStatus: status,
       ),
-      broadcast: RoomBroadcast(liveStatus: status),
-      links: RoomLinks(webUrl: KuaishouEndpoints.roomPageUrl(id)),
+      broadcast: RoomBroadcast.of(liveStatus: status),
+      links: RoomLinks.of(webUrl: KuaishouEndpoints.roomPageUrl(id)),
     );
   }
 

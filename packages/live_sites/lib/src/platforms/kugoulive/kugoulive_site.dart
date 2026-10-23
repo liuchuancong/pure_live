@@ -243,16 +243,17 @@ final class KugouliveSite implements LiveSite {
     if (refused != null) {
       final data = KugouliveRoomData(roomId: id, unavailable: refused);
       _streams[id] = data;
-      return room.copyWith(runtime: RoomRuntime(streamHandle: data));
+      return room.rebuild((b) => b..runtime = RoomRuntime.of(streamHandle: data).toBuilder());
     }
     final response = await http.get(KugouliveEndpoints.streamUrl(id, millis: _now().millisecondsSinceEpoch));
     final (restriction, data) = _resolvePlayback(id, response);
     _streams[id] = data;
-    return KugouliveRoomParser.withRestriction(room, restriction).copyWith(
-      runtime: RoomRuntime(
-        streamHandle: data,
-        danmakuHandle: KugouliveDanmakuArgs(roomId: id),
-      ),
+    return KugouliveRoomParser.withRestriction(room, restriction).rebuild(
+      (b) => b
+        ..runtime = RoomRuntime.of(
+          streamHandle: data,
+          danmakuHandle: KugouliveDanmakuArgs(roomId: id),
+        ).toBuilder(),
     );
   }
 

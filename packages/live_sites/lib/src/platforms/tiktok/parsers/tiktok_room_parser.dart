@@ -234,7 +234,7 @@ abstract final class TiktokRoomParser {
     return LiveRoom.normalized(
       platform: tiktokSiteId,
       roomId: username,
-      content: RoomContent(
+      content: RoomContent.of(
         title: title.isEmpty ? nickname : title,
         coverUrl: TiktokJson.image([live['coverUrl'], live['squareCoverImg']]),
         introduction: signature.isEmpty ? null : signature,
@@ -253,12 +253,12 @@ abstract final class TiktokRoomParser {
           TiktokState.unknown => LiveStatus.unknown,
         },
       ),
-      audience: RoomAudience(
+      audience: RoomAudience.of(
         onlineViewers: online,
         totalViewers: entered,
         primaryMetric: isLive ? LiveAudienceMetricType.onlineViewers : LiveAudienceMetricType.unknown,
       ),
-      broadcast: RoomBroadcast(
+      broadcast: RoomBroadcast.of(
         liveStatus: switch (state) {
           TiktokState.live => LiveStatus.live,
           TiktokState.offline => LiveStatus.offline,
@@ -267,8 +267,8 @@ abstract final class TiktokRoomParser {
         startedAt: isLive ? TiktokJson.startTime(live['startTime']) : null,
         restriction: isLive ? restriction : null,
       ),
-      links: RoomLinks(webUrl: TiktokEndpoints.roomUrl(username)),
-      runtime: includeMedia ? RoomRuntime(streamHandle: handle) : const RoomRuntime(),
+      links: RoomLinks.of(webUrl: TiktokEndpoints.roomUrl(username)),
+      runtime: includeMedia ? RoomRuntime.of(streamHandle: handle) : RoomRuntime(),
     );
   }
 

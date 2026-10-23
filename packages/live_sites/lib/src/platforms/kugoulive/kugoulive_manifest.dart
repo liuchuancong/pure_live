@@ -7,11 +7,11 @@ import 'package:live_sites/src/models/enums/live_asset_type.dart';
 const String kugouliveSiteId = 'kugoulive';
 
 /// Kugou Live's stable identity (ARCHITECTURE.md §4.1).
-const kugouliveManifest = LiveSiteManifest(
+final kugouliveManifest = LiveSiteManifest(
   id: kugouliveSiteId,
   name: {'zh-CN': '酷狗直播', 'en-US': 'Kugou Live'},
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['kugou', 'fanxing'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/kugoulive.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/kugoulive.png'),
 );

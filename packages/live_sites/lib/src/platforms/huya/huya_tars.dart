@@ -443,12 +443,13 @@ final class WupPacket {
   /// Encodes the packet: version 3, a normal call, no timeout, empty context
   /// and status.
   Uint8List encode() {
-    final buffer = TarsWriter()..writeMap<String, List<int>>(
-      0,
-      params,
-      key: (writer, key) => writer.writeString(0, key),
-      value: (writer, value) => writer.writeBytes(1, value),
-    );
+    final buffer = TarsWriter()
+      ..writeMap<String, List<int>>(
+        0,
+        params,
+        key: (writer, key) => writer.writeString(0, key),
+        value: (writer, value) => writer.writeBytes(1, value),
+      );
     void empty(TarsWriter writer, int tag) => writer.writeMap<String, String>(
       tag,
       const {},

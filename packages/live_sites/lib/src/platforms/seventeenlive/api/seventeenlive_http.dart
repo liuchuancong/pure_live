@@ -35,7 +35,16 @@ final class SeventeenLiveHttp {
     required Map<String, String> headers,
     CancelToken? cancel,
     Duration? timeout,
-  }) => send(LiveRequest.custom(method: 'GET', site: seventeenliveSiteId, url: url, headers: headers, cancelToken: cancel, timeout: timeout));
+  }) => send(
+    LiveRequest.custom(
+      method: 'GET',
+      site: seventeenliveSiteId,
+      url: url,
+      headers: headers,
+      cancelToken: cancel,
+      timeout: timeout,
+    ),
+  );
 
   /// POSTs [body] as JSON to [url] with [headers] — the chat's token request,
   /// which the website sends as `POST {}` and which answers for the room the
@@ -67,7 +76,11 @@ final class SeventeenLiveHttp {
       response = await http.send(request);
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;
-      throw SeventeenLiveFailure(SeventeenLiveFailureKind.network, '${request.method} ${request.url}: $failure', cause: failure);
+      throw SeventeenLiveFailure(
+        SeventeenLiveFailureKind.network,
+        '${request.method} ${request.url}: $failure',
+        cause: failure,
+      );
     }
     return (text: response.text, status: response.statusCode);
   }

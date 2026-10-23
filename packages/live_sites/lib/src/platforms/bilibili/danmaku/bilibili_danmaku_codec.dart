@@ -746,7 +746,7 @@ abstract final class BilibiliDanmakuProtocol {
   static LiveMessage _audience(LiveAudienceSignalKind kind, int value) => LiveMessage.normalized(
     type: LiveMessageType.audienceUpdate,
     color: LiveMessageColor.white,
-    payload: LiveAudienceUpdate(kind: kind, value: value),
+    payload: LiveAudienceUpdate.of(kind: kind, value: value),
   );
 
   static String _giftId(Object? raw) {

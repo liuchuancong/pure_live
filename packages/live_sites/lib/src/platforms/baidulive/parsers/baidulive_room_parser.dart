@@ -581,7 +581,7 @@ abstract final class BaiduliveRoomParser {
     return LiveRoom.normalized(
       platform: baiduliveSiteId,
       roomId: room.roomId,
-      content: RoomContent(
+      content: RoomContent.of(
         title: room.title,
         coverUrl: room.cover,
         introduction: room.introduction.isEmpty ? null : room.introduction,
@@ -602,13 +602,13 @@ abstract final class BaiduliveRoomParser {
         platform: baiduliveSiteId,
         areaName: room.category.isEmpty ? BaiduliveEndpoints.siteName : room.category,
       ),
-      audience: RoomAudience(
+      audience: RoomAudience.of(
         onlineViewers: viewers,
         primaryMetric: viewers == null ? LiveAudienceMetricType.unknown : LiveAudienceMetricType.onlineViewers,
       ),
-      broadcast: RoomBroadcast(liveStatus: liveStatus, startedAt: room.startedAt, restriction: room.restriction),
-      links: RoomLinks(webUrl: BaiduliveEndpoints.roomUrl(room.roomId)),
-      runtime: RoomRuntime(streamHandle: withData ? room : null, danmakuHandle: keepChat ? room.danmaku : null),
+      broadcast: RoomBroadcast.of(liveStatus: liveStatus, startedAt: room.startedAt, restriction: room.restriction),
+      links: RoomLinks.of(webUrl: BaiduliveEndpoints.roomUrl(room.roomId)),
+      runtime: RoomRuntime.of(streamHandle: withData ? room : null, danmakuHandle: keepChat ? room.danmaku : null),
     );
   }
 }

@@ -740,7 +740,7 @@ abstract final class SteambroadcastRoomParser {
     return LiveRoom.normalized(
       platform: siteId,
       roomId: broadcast.steamId,
-      content: RoomContent(
+      content: RoomContent.of(
         title: broadcast.title,
         coverUrl: broadcast.cover,
         notice: broadcast.state == SteambroadcastState.accountRestricted
@@ -756,13 +756,13 @@ abstract final class SteambroadcastRoomParser {
         profileUrl: SteambroadcastEndpoints.link(broadcast.steamId),
         liveStatus: liveStatus,
       ),
-      audience: RoomAudience(
+      audience: RoomAudience.of(
         onlineViewers: viewers,
         primaryMetric: viewers == null ? LiveAudienceMetricType.unknown : LiveAudienceMetricType.onlineViewers,
       ),
-      broadcast: RoomBroadcast(liveStatus: liveStatus, restriction: broadcast.restriction),
-      links: RoomLinks(webUrl: SteambroadcastEndpoints.link(broadcast.steamId)),
-      runtime: RoomRuntime(streamHandle: data),
+      broadcast: RoomBroadcast.of(liveStatus: liveStatus, restriction: broadcast.restriction),
+      links: RoomLinks.of(webUrl: SteambroadcastEndpoints.link(broadcast.steamId)),
+      runtime: RoomRuntime.of(streamHandle: data),
     );
   }
 

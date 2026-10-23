@@ -377,7 +377,7 @@ abstract final class ChzzkRoomParser {
     return LiveRoom.normalized(
       platform: _site,
       roomId: id,
-      content: RoomContent(
+      content: RoomContent.of(
         title: title.isEmpty ? name : title,
         coverUrl: cover(row['liveImageUrl'], row['defaultThumbnailImageUrl']),
       ),
@@ -389,13 +389,13 @@ abstract final class ChzzkRoomParser {
         liveStatus: LiveStatus.live,
       ),
       area: LiveArea.normalized(platform: _site, areaName: areaName(row)),
-      audience: RoomAudience(onlineViewers: viewers, primaryMetric: LiveAudienceMetricType.onlineViewers),
-      broadcast: RoomBroadcast(
+      audience: RoomAudience.of(onlineViewers: viewers, primaryMetric: LiveAudienceMetricType.onlineViewers),
+      broadcast: RoomBroadcast.of(
         liveStatus: LiveStatus.live,
         startedAt: seoulTime(row['openDate']),
         restriction: restriction,
       ),
-      links: RoomLinks(webUrl: link(id)),
+      links: RoomLinks.of(webUrl: link(id)),
     );
   }
 
@@ -476,7 +476,7 @@ abstract final class ChzzkRoomParser {
   static LiveRoom channelCard(ChzzkChannel channel, {LiveStatus? status}) => LiveRoom.normalized(
     platform: _site,
     roomId: channel.id,
-    content: RoomContent(
+    content: RoomContent.of(
       title: channel.name,
       coverUrl: channel.avatar,
       introduction: channel.description.isEmpty ? null : channel.description,
@@ -490,9 +490,9 @@ abstract final class ChzzkRoomParser {
       introduction: channel.description.isEmpty ? null : channel.description,
       liveStatus: status ?? (channel.isLive ? LiveStatus.live : LiveStatus.offline),
     ),
-    audience: const RoomAudience(primaryMetric: LiveAudienceMetricType.onlineViewers),
-    broadcast: RoomBroadcast(liveStatus: status ?? (channel.isLive ? LiveStatus.live : LiveStatus.offline)),
-    links: RoomLinks(webUrl: link(channel.id)),
+    audience: RoomAudience.of(primaryMetric: LiveAudienceMetricType.onlineViewers),
+    broadcast: RoomBroadcast.of(liveStatus: status ?? (channel.isLive ? LiveStatus.live : LiveStatus.offline)),
+    links: RoomLinks.of(webUrl: link(channel.id)),
   );
 
   // The live ------------------------------------------------------------------
@@ -561,7 +561,7 @@ abstract final class ChzzkRoomParser {
     return LiveRoom.normalized(
       platform: _site,
       roomId: owner.id,
-      content: RoomContent(
+      content: RoomContent.of(
         title: live.title,
         coverUrl: live.cover,
         introduction: owner.description.isEmpty ? null : owner.description,
@@ -576,9 +576,13 @@ abstract final class ChzzkRoomParser {
         liveStatus: LiveStatus.live,
       ),
       area: LiveArea.normalized(platform: _site, areaName: live.area.isEmpty ? ChzzkEndpoints.siteName : live.area),
-      audience: RoomAudience(onlineViewers: live.online, primaryMetric: LiveAudienceMetricType.onlineViewers),
-      broadcast: RoomBroadcast(liveStatus: LiveStatus.live, startedAt: live.startedAt, restriction: restriction(live)),
-      links: RoomLinks(webUrl: link(owner.id)),
+      audience: RoomAudience.of(onlineViewers: live.online, primaryMetric: LiveAudienceMetricType.onlineViewers),
+      broadcast: RoomBroadcast.of(
+        liveStatus: LiveStatus.live,
+        startedAt: live.startedAt,
+        restriction: restriction(live),
+      ),
+      links: RoomLinks.of(webUrl: link(owner.id)),
     );
   }
 

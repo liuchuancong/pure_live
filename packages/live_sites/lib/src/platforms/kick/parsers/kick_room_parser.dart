@@ -100,7 +100,7 @@ abstract final class KickRoomParser {
     final room = LiveRoom.normalized(
       platform: _site,
       roomId: slug,
-      content: RoomContent(
+      content: RoomContent.of(
         title: live ? jsonString(stream['session_title']) ?? '' : '',
         coverUrl: cover,
         introduction: jsonString(user['bio']) ?? '',
@@ -117,9 +117,9 @@ abstract final class KickRoomParser {
         liveStatus: statusValue,
       ),
       area: live ? categoryArea(stream['categories']) : null,
-      audience: RoomAudience(onlineViewers: viewers, primaryMetric: LiveAudienceMetricType.onlineViewers),
-      broadcast: RoomBroadcast(liveStatus: statusValue, startedAt: live ? jsonTime(stream['start_time']) : null),
-      links: RoomLinks(webUrl: KickEndpoints.roomPageUrl(slug)),
+      audience: RoomAudience.of(onlineViewers: viewers, primaryMetric: LiveAudienceMetricType.onlineViewers),
+      broadcast: RoomBroadcast.of(liveStatus: statusValue, startedAt: live ? jsonTime(stream['start_time']) : null),
+      links: RoomLinks.of(webUrl: KickEndpoints.roomPageUrl(slug)),
     );
     return KickChannel(
       room: room,
@@ -323,7 +323,7 @@ abstract final class KickRoomParser {
     return LiveRoom.normalized(
       platform: _site,
       roomId: slug,
-      content: RoomContent(
+      content: RoomContent.of(
         title: jsonString(row['session_title']) ?? '',
         coverUrl: normalizeImageUrl(thumbnail?['src'] ?? thumbnail?['url']),
         notice: row['is_mature'] == true ? KickEndpoints.matureNotice : '',
@@ -337,9 +337,9 @@ abstract final class KickRoomParser {
         liveStatus: LiveStatus.live,
       ),
       area: categoryArea(row['categories']),
-      audience: RoomAudience(onlineViewers: viewers, primaryMetric: LiveAudienceMetricType.onlineViewers),
-      broadcast: RoomBroadcast(liveStatus: LiveStatus.live, startedAt: jsonTime(row['start_time'])),
-      links: RoomLinks(webUrl: KickEndpoints.roomPageUrl(slug)),
+      audience: RoomAudience.of(onlineViewers: viewers, primaryMetric: LiveAudienceMetricType.onlineViewers),
+      broadcast: RoomBroadcast.of(liveStatus: LiveStatus.live, startedAt: jsonTime(row['start_time'])),
+      links: RoomLinks.of(webUrl: KickEndpoints.roomPageUrl(slug)),
     );
   }
 
@@ -372,9 +372,9 @@ abstract final class KickRoomParser {
         introduction: jsonString(user?['bio']),
         liveStatus: status,
       ),
-      audience: const RoomAudience(primaryMetric: LiveAudienceMetricType.onlineViewers),
-      broadcast: RoomBroadcast(liveStatus: status),
-      links: RoomLinks(webUrl: KickEndpoints.roomPageUrl(slug)),
+      audience: RoomAudience.of(primaryMetric: LiveAudienceMetricType.onlineViewers),
+      broadcast: RoomBroadcast.of(liveStatus: status),
+      links: RoomLinks.of(webUrl: KickEndpoints.roomPageUrl(slug)),
     );
   }
 

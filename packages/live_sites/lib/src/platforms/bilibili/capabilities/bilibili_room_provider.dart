@@ -67,8 +67,9 @@ final class BilibiliRoomProvider implements LiveRoomProvider {
     }, (response) => BilibiliRoomParser.roomDetail(response.text, requestedId: id, status: response.status));
     final longId = result.value.longId;
     site.rememberLongId(id, longId);
-    return result.value.room.copyWith(
-      runtime: RoomRuntime(streamHandle: BilibiliRoomData(longId), danmakuHandle: await _danmaku(longId)),
+    final danmaku = await _danmaku(longId);
+    return result.value.room.rebuild(
+      (b) => b..runtime = RoomRuntime.of(streamHandle: BilibiliRoomData(longId), danmakuHandle: danmaku).toBuilder(),
     );
   }
 

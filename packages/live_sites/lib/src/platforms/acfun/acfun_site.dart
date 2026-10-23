@@ -237,16 +237,23 @@ final class AcfunSite implements LiveSite {
     if (!room.broadcast.isLiveNow) return room;
     final play = await startPlay(room.roomId);
     final data = play.result.data;
-    if (data == null) return room.copyWith(broadcast: room.broadcast.copyWith(restriction: play.result.restriction));
-    return room.copyWith(
-      runtime: RoomRuntime(
-        streamHandle: data,
-        danmakuHandle: danmakuArgs(room.roomId, data, play.result, play.visitor),
-      ),
-      broadcast: room.broadcast.copyWith(
-        startedAt: room.broadcast.startedAt ?? data.startedAt,
-        restriction: play.result.restriction,
-      ),
+    if (data == null)
+      return room.rebuild(
+        (b) => b..broadcast.replace(room.broadcast.rebuild((b) => b..restriction = play.result.restriction)),
+      );
+    return room.rebuild(
+      (b) => b
+        ..runtime = RoomRuntime.of(
+          streamHandle: data,
+          danmakuHandle: danmakuArgs(room.roomId, data, play.result, play.visitor),
+        ).toBuilder()
+        ..broadcast.replace(
+          room.broadcast.rebuild(
+            (b) => b
+              ..startedAt = room.broadcast.startedAt ?? data.startedAt
+              ..restriction = play.result.restriction,
+          ),
+        ),
     );
   }
 

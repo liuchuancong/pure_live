@@ -7,11 +7,11 @@ import 'package:live_sites/src/models/enums/live_asset_type.dart';
 const String ccSiteId = 'cc';
 
 /// NetEase CC's stable identity (ARCHITECTURE.md §4.1).
-const ccManifest = LiveSiteManifest(
+final ccManifest = LiveSiteManifest(
   id: ccSiteId,
   name: {'zh-CN': '网易CC直播', 'en-US': 'NetEase CC'},
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['netease', '163cc', 'wangyi'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/cc.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/cc.png'),
 );

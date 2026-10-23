@@ -302,10 +302,11 @@ final class YySite implements LiveSite {
   /// room's stream handle.
   List<LiveRoom> _withStreams(Iterable<YyLiveRoom> entries) => [
     for (final (:room, :channel) in entries)
-      room.copyWith(
-        runtime: RoomRuntime(
-          streamHandle: YyRoomData(sid: channel.sid, ssid: channel.ssid),
-        ),
+      room.rebuild(
+        (b) => b
+          ..runtime = RoomRuntime.of(
+            streamHandle: YyRoomData(sid: channel.sid, ssid: channel.ssid),
+          ).toBuilder(),
       ),
   ];
 
@@ -334,11 +335,12 @@ final class YySite implements LiveSite {
     final live = await _liveDetail(known?.sid ?? id, requestedId: id);
     if (live != null) {
       _remember(id, live.channel);
-      return live.room.copyWith(
-        runtime: RoomRuntime(
-          streamHandle: YyRoomData(sid: live.channel.sid, ssid: live.channel.ssid),
-          danmakuHandle: _danmakuArgs(live.channel),
-        ),
+      return live.room.rebuild(
+        (b) => b
+          ..runtime = RoomRuntime.of(
+            streamHandle: YyRoomData(sid: live.channel.sid, ssid: live.channel.ssid),
+            danmakuHandle: _danmakuArgs(live.channel),
+          ).toBuilder(),
       );
     }
     if (!always && known != null) return _offline(id, page: null, channel: known);
@@ -350,11 +352,12 @@ final class YySite implements LiveSite {
       final canonical = await _liveDetail(page.sid, requestedId: id);
       if (canonical != null) {
         _remember(id, canonical.channel);
-        return canonical.room.copyWith(
-          runtime: RoomRuntime(
-            streamHandle: YyRoomData(sid: canonical.channel.sid, ssid: canonical.channel.ssid),
-            danmakuHandle: _danmakuArgs(canonical.channel),
-          ),
+        return canonical.room.rebuild(
+          (b) => b
+            ..runtime = RoomRuntime.of(
+              streamHandle: YyRoomData(sid: canonical.channel.sid, ssid: canonical.channel.ssid),
+              danmakuHandle: _danmakuArgs(canonical.channel),
+            ).toBuilder(),
         );
       }
     }
@@ -373,11 +376,12 @@ final class YySite implements LiveSite {
 
   /// The offline room, its runtime handles attached.
   LiveRoom _offline(String id, {required YyRoomPage? page, required YyChannel channel}) =>
-      YyRoomParser.offlineRoom(requestedId: id, page: page).copyWith(
-        runtime: RoomRuntime(
-          streamHandle: YyRoomData(sid: channel.sid, ssid: channel.ssid),
-          danmakuHandle: _danmakuArgs(channel),
-        ),
+      YyRoomParser.offlineRoom(requestedId: id, page: page).rebuild(
+        (b) => b
+          ..runtime = RoomRuntime.of(
+            streamHandle: YyRoomData(sid: channel.sid, ssid: channel.ssid),
+            danmakuHandle: _danmakuArgs(channel),
+          ).toBuilder(),
       );
 
   /// The danmaku arguments of a channel (3.x's, numbers).

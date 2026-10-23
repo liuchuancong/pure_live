@@ -7,11 +7,11 @@ import 'package:live_sites/src/models/enums/live_asset_type.dart';
 const String kuaishouSiteId = 'kuaishou';
 
 /// Kuaishou's stable identity (ARCHITECTURE.md §4.1).
-const kuaishouManifest = LiveSiteManifest(
+final kuaishouManifest = LiveSiteManifest(
   id: kuaishouSiteId,
   name: {'zh-CN': '快手直播', 'en-US': 'Kuaishou'},
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['kuaishoulive', 'ks', '快手'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/kuaishou.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/kuaishou.png'),
 );

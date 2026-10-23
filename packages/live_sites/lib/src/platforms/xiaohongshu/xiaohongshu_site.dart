@@ -180,7 +180,7 @@ final class XiaohongshuSite implements LiveSite {
   Future<LiveRoom> detail(String roomId) async {
     final page = await _read(roomId);
     _remember(page.data);
-    return page.room.copyWith(runtime: RoomRuntime(streamHandle: page.data));
+    return page.room.rebuild((b) => b..runtime = RoomRuntime.of(streamHandle: page.data).toBuilder());
   }
 
   // Streams -------------------------------------------------------------------

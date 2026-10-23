@@ -7,9 +7,13 @@ part of 'live_gift_combo.dart';
 // **************************************************************************
 
 _LiveGiftCombo _$LiveGiftComboFromJson(Map<String, dynamic> json) =>
-    _LiveGiftCombo(comboKey: json['comboKey'] as String? ?? '', comboTotal: (json['comboTotal'] as num?)?.toInt());
+    _LiveGiftCombo(
+      comboKey: json['comboKey'] as String? ?? '',
+      comboTotal: (json['comboTotal'] as num?)?.toInt(),
+    );
 
-Map<String, dynamic> _$LiveGiftComboToJson(_LiveGiftCombo instance) => <String, dynamic>{
-  'comboKey': instance.comboKey,
-  'comboTotal': instance.comboTotal,
-};
+Map<String, dynamic> _$LiveGiftComboToJson(_LiveGiftCombo instance) =>
+    <String, dynamic>{
+      'comboKey': instance.comboKey,
+      'comboTotal': instance.comboTotal,
+    };

@@ -234,14 +234,12 @@ abstract final class SeventeenLiveRoomParser {
   /// Why a live with [restriction] is not played: the website locks it for this
   /// (anonymous) viewer even when the answer carries pull URLs (it did on
   /// 2026-09-28, sample S04-live-army), so its lines are never read.
-  static SeventeenLiveFailure lockedLive(String roomId, LiveRestriction restriction) => SeventeenLiveFailure(
-    SeventeenLiveFailureKind.streamUnavailable,
-    switch (restriction) {
-      LiveRestriction.paid => '$roomId: a premium live, for viewers who paid',
-      LiveRestriction.subscribersOnly => "$roomId: a live for the broadcaster's army members only",
-      _ => '$roomId: a locked live (${restriction.name})',
-    },
-  );
+  static SeventeenLiveFailure lockedLive(String roomId, LiveRestriction restriction) =>
+      SeventeenLiveFailure(SeventeenLiveFailureKind.streamUnavailable, switch (restriction) {
+        LiveRestriction.paid => '$roomId: a premium live, for viewers who paid',
+        LiveRestriction.subscribersOnly => "$roomId: a live for the broadcaster's army members only",
+        _ => '$roomId: a locked live (${restriction.name})',
+      });
 
   /// A stream object by the platform's rules. Its identity is always checked:
   /// `liveStreamID` is [requested], the owner's `userInfo.roomID` (required with
@@ -322,7 +320,7 @@ abstract final class SeventeenLiveRoomParser {
   static LiveRoom card(SeventeenLiveStream stream) => LiveRoom.normalized(
     platform: _site,
     roomId: stream.roomId,
-    content: RoomContent(
+    content: RoomContent.of(
       title: stream.title,
       coverUrl: stream.cover,
       introduction: stream.bio.isEmpty ? null : stream.bio,
@@ -337,21 +335,18 @@ abstract final class SeventeenLiveRoomParser {
       introduction: stream.bio.isEmpty ? null : stream.bio,
       liveStatus: stream.status,
     ),
-    area: LiveArea.normalized(
-      platform: _site,
-      areaName: stream.audioOnly ? SeventeenLiveEndpoints.audioRoom : '',
-    ),
-    audience: RoomAudience(
+    area: LiveArea.normalized(platform: _site, areaName: stream.audioOnly ? SeventeenLiveEndpoints.audioRoom : ''),
+    audience: RoomAudience.of(
       onlineViewers: stream.online,
       totalViewers: stream.total,
       primaryMetric: LiveAudienceMetricType.onlineViewers,
     ),
-    broadcast: RoomBroadcast(
+    broadcast: RoomBroadcast.of(
       liveStatus: stream.status,
       startedAt: stream.startedAt,
       restriction: stream.restriction,
     ),
-    links: RoomLinks(webUrl: roomUrl(stream.roomId)),
+    links: RoomLinks.of(webUrl: roomUrl(stream.roomId)),
   );
 
   // Directory -----------------------------------------------------------------
@@ -495,17 +490,18 @@ abstract final class SeventeenLiveRoomParser {
       case _:
         unavailable = SeventeenLiveFailure(SeventeenLiveFailureKind.apiChanged, '$what: status ${data['status']}');
     }
-    return card(stream).copyWith(
-      runtime: RoomRuntime(
-        streamHandle: SeventeenLiveRoomData(
-          roomId: roomId,
-          userId: stream.userId,
-          qualities: offered.qualities,
-          lines: offered.lines,
-          unavailable: unavailable,
-        ),
-        danmakuHandle: SeventeenLiveDanmakuArgs(roomId: roomId),
-      ),
+    return card(stream).rebuild(
+      (b) => b
+        ..runtime = RoomRuntime.of(
+          streamHandle: SeventeenLiveRoomData(
+            roomId: roomId,
+            userId: stream.userId,
+            qualities: offered.qualities,
+            lines: offered.lines,
+            unavailable: unavailable,
+          ),
+          danmakuHandle: SeventeenLiveDanmakuArgs(roomId: roomId),
+        ).toBuilder(),
     );
   }
 

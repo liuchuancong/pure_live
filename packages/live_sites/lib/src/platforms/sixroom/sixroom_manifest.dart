@@ -7,11 +7,11 @@ import 'package:live_sites/src/models/enums/live_asset_type.dart';
 const String sixroomSiteId = 'sixroom';
 
 /// Six Rooms' stable identity (ARCHITECTURE.md §4.1).
-const sixroomManifest = LiveSiteManifest(
+final sixroomManifest = LiveSiteManifest(
   id: sixroomSiteId,
   name: {'zh-CN': '六间房直播', 'en-US': 'Six Rooms'},
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['6.cn', '6rooms', 'sixrooms'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/sixroom.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/sixroom.png'),
 );

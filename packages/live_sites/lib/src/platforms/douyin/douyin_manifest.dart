@@ -7,11 +7,11 @@ import 'package:live_sites/src/models/enums/live_asset_type.dart';
 const String douyinSiteId = 'douyin';
 
 /// Douyin's stable identity (ARCHITECTURE.md §4.1).
-const douyinManifest = LiveSiteManifest(
+final douyinManifest = LiveSiteManifest(
   id: douyinSiteId,
   name: {'zh-CN': '抖音直播', 'en-US': 'Douyin'},
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['douyinlive', 'tiktok-live'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/douyin.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/douyin.png'),
 );

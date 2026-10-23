@@ -7,11 +7,11 @@ import 'package:live_sites/src/models/enums/live_asset_type.dart';
 const String acfunSiteId = 'acfun';
 
 /// AcFun's stable identity (ARCHITECTURE.md §4.1).
-const acfunManifest = LiveSiteManifest(
+final acfunManifest = LiveSiteManifest(
   id: acfunSiteId,
   name: {'zh-CN': 'AcFun 直播', 'en-US': 'AcFun Live'},
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['acfunlive', 'ac', 'acfun直播'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/acfun.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/acfun.png'),
 );

@@ -325,7 +325,7 @@ abstract final class SteambroadcastDanmakuCodec {
   static LiveMessage audience(int viewers) => LiveMessage.normalized(
     type: LiveMessageType.audienceUpdate,
     color: LiveMessageColor.white,
-    payload: LiveAudienceUpdate(kind: LiveAudienceSignalKind.onlineViewers, value: viewers),
+    payload: LiveAudienceUpdate.of(kind: LiveAudienceSignalKind.onlineViewers, value: viewers),
   );
 
   static final RegExp _digits = RegExp(r'^[0-9]{1,15}$');

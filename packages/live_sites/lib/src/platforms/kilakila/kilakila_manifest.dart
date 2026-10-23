@@ -7,11 +7,11 @@ import 'package:live_sites/src/models/enums/live_asset_type.dart';
 const String kilakilaSiteId = 'kilakila';
 
 /// KilaKila's stable identity (ARCHITECTURE.md §4.1).
-const kilakilaManifest = LiveSiteManifest(
+final kilakilaManifest = LiveSiteManifest(
   id: kilakilaSiteId,
   name: {'zh-CN': '克拉克拉', 'en-US': 'KilaKila'},
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['kila', 'hongdou', 'hongdoufm'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/kilakila.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/kilakila.png'),
 );

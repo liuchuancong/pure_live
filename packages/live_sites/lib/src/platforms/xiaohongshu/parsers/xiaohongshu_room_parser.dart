@@ -236,15 +236,15 @@ abstract final class XiaohongshuRoomParser {
     final room = LiveRoom.normalized(
       platform: xiaohongshuSiteId,
       roomId: requestedId,
-      content: RoomContent(title: title ?? '', coverUrl: normalizeImageUrl(cover), notice: notice(roomData)),
+      content: RoomContent.of(title: title ?? '', coverUrl: normalizeImageUrl(cover), notice: notice(roomData)),
       anchor: LiveAnchor.normalized(
         platform: xiaohongshuSiteId,
         name: nick ?? '',
         avatarUrl: normalizeImageUrl(avatar),
         liveStatus: liveState,
       ),
-      audience: const RoomAudience(primaryMetric: LiveAudienceMetricType.unknown),
-      broadcast: RoomBroadcast(
+      audience: RoomAudience.of(primaryMetric: LiveAudienceMetricType.unknown),
+      broadcast: RoomBroadcast.of(
         liveStatus: liveState,
         restriction: switch (live) {
           true when restriction == LiveRestriction.none && !_hasAddresses(roomData.pullConfig) =>
@@ -253,7 +253,7 @@ abstract final class XiaohongshuRoomParser {
           _ => null,
         },
       ),
-      links: RoomLinks(webUrl: XiaohongshuEndpoints.roomUrl(requestedId).toString()),
+      links: RoomLinks.of(webUrl: XiaohongshuEndpoints.roomUrl(requestedId).toString()),
     );
     return (room: room, data: roomData);
   }

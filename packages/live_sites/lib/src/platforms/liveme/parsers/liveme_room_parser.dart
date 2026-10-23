@@ -509,7 +509,7 @@ abstract final class LivemeRoomParser {
     return LiveRoom.normalized(
       platform: livemeSiteId,
       roomId: snapshot.shortId,
-      content: RoomContent(
+      content: RoomContent.of(
         title: snapshot.title,
         coverUrl: snapshot.cover,
         introduction: snapshot.bio.isEmpty ? null : snapshot.bio,
@@ -526,7 +526,7 @@ abstract final class LivemeRoomParser {
       area: snapshot.countryCode.isEmpty
           ? null
           : LiveArea.normalized(platform: livemeSiteId, areaName: snapshot.countryCode),
-      audience: RoomAudience(
+      audience: RoomAudience.of(
         popularity: snapshot.heat,
         onlineViewers: snapshot.currentViewers,
         totalViewers: snapshot.totalViewers,
@@ -536,13 +536,13 @@ abstract final class LivemeRoomParser {
             ? LiveAudienceMetricType.onlineViewers
             : LiveAudienceMetricType.unknown,
       ),
-      broadcast: RoomBroadcast(
+      broadcast: RoomBroadcast.of(
         liveStatus: liveStatus,
         startedAt: snapshot.startedAt,
         restriction: snapshot.restriction,
       ),
-      links: RoomLinks(webUrl: LivemeEndpoints.roomUrl(snapshot.shortId)),
-      runtime: RoomRuntime(streamHandle: data),
+      links: RoomLinks.of(webUrl: LivemeEndpoints.roomUrl(snapshot.shortId)),
+      runtime: RoomRuntime.of(streamHandle: data),
     );
   }
 

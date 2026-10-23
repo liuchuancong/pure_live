@@ -7,11 +7,11 @@ import 'package:live_sites/src/models/enums/live_asset_type.dart';
 const String steambroadcastSiteId = 'steambroadcast';
 
 /// Steam Broadcast's stable identity (ARCHITECTURE.md §4.1).
-const steambroadcastManifest = LiveSiteManifest(
+final steambroadcastManifest = LiveSiteManifest(
   id: steambroadcastSiteId,
   name: {'zh-CN': 'Steam 直播', 'en-US': 'Steam Broadcasts'},
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['steam'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/steambroadcast.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/steambroadcast.png'),
 );

@@ -58,8 +58,10 @@ abstract final class SeventeenLivePlayParser {
       return (qualities: const [], lines: const {});
     }
     if (providers.length > SeventeenLiveEndpoints.maxProviders) {
-      skip('${providers.length - SeventeenLiveEndpoints.maxProviders} providers over '
-          '${SeventeenLiveEndpoints.maxProviders}');
+      skip(
+        '${providers.length - SeventeenLiveEndpoints.maxProviders} providers over '
+        '${SeventeenLiveEndpoints.maxProviders}',
+      );
     }
     final lines = <String, List<LivePlayLine>>{};
     final headers = SeventeenLiveEndpoints.mediaHeaders(roomId);

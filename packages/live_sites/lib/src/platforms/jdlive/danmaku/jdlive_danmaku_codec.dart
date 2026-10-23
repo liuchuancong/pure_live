@@ -284,7 +284,7 @@ abstract final class JdliveDanmakuCodec {
         LiveMessage.normalized(
           type: LiveMessageType.audienceUpdate,
           color: LiveMessageColor.white,
-          payload: LiveAudienceUpdate(kind: kind, value: value),
+          payload: LiveAudienceUpdate.of(kind: kind, value: value),
         ),
   ];
 

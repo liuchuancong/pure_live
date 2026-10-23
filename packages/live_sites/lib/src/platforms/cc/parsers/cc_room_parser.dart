@@ -254,7 +254,7 @@ abstract final class CcRoomParser {
     return LiveRoom.normalized(
       platform: _site,
       roomId: roomId,
-      content: RoomContent(title: CcJson.text(item['title']), coverUrl: _image(item['cover'], item['poster'])),
+      content: RoomContent.of(title: CcJson.text(item['title']), coverUrl: _image(item['cover'], item['poster'])),
       anchor: LiveAnchor.normalized(
         platform: _site,
         anchorId: roomId,
@@ -263,12 +263,12 @@ abstract final class CcRoomParser {
       ),
       area: area.isEmpty ? null : LiveArea.normalized(platform: _site, areaName: area),
       audience: _audienceOf(popularity: audience.$1, online: audience.$2),
-      broadcast: RoomBroadcast(
+      broadcast: RoomBroadcast.of(
         liveStatus: liveStatus,
         startedAt: _startedAt(item, liveStatus),
         restriction: _restriction(item, liveStatus),
       ),
-      links: RoomLinks(webUrl: CcEndpoints.roomUrl(roomId)),
+      links: RoomLinks.of(webUrl: CcEndpoints.roomUrl(roomId)),
     );
   }
 
@@ -311,7 +311,7 @@ abstract final class CcRoomParser {
     return LiveRoom.normalized(
       platform: _site,
       roomId: roomId,
-      content: RoomContent(title: CcJson.text(item['title']), coverUrl: cover.isEmpty ? portrait : cover),
+      content: RoomContent.of(title: CcJson.text(item['title']), coverUrl: cover.isEmpty ? portrait : cover),
       anchor: LiveAnchor.normalized(
         platform: _site,
         anchorId: roomId,
@@ -323,12 +323,12 @@ abstract final class CcRoomParser {
           ? null
           : LiveArea.normalized(platform: _site, areaName: CcJson.text(item['game_name'])),
       audience: _audienceOf(popularity: heat, online: null, followers: followers),
-      broadcast: RoomBroadcast(
+      broadcast: RoomBroadcast.of(
         liveStatus: liveStatus,
         startedAt: _startedAt(item, liveStatus),
         restriction: _restriction(item, liveStatus),
       ),
-      links: RoomLinks(webUrl: CcEndpoints.roomUrl(roomId)),
+      links: RoomLinks.of(webUrl: CcEndpoints.roomUrl(roomId)),
     );
   }
 
@@ -384,7 +384,7 @@ abstract final class CcRoomParser {
     final built = LiveRoom.normalized(
       platform: _site,
       roomId: ccid,
-      content: RoomContent(
+      content: RoomContent.of(
         title: CcJson.text(room['title']),
         coverUrl: _image(room['cover'], room['poster']),
         introduction: label.isEmpty ? null : label,
@@ -401,12 +401,12 @@ abstract final class CcRoomParser {
           ? null
           : LiveArea.normalized(platform: _site, areaName: CcJson.string(room['gamename'])!),
       audience: _audienceOf(popularity: audience.$1, online: audience.$2, followers: followers),
-      broadcast: RoomBroadcast(
+      broadcast: RoomBroadcast.of(
         liveStatus: liveStatus,
         startedAt: _startedAt(room, liveStatus),
         restriction: _restriction(room, liveStatus),
       ),
-      links: RoomLinks(webUrl: CcEndpoints.roomUrl(ccid)),
+      links: RoomLinks.of(webUrl: CcEndpoints.roomUrl(ccid)),
     );
     return (room: built, data: data);
   }
@@ -417,8 +417,8 @@ abstract final class CcRoomParser {
   static LiveRoom offlineRoom(String ccid) => LiveRoom.normalized(
     platform: _site,
     roomId: ccid,
-    broadcast: const RoomBroadcast(liveStatus: LiveStatus.offline),
-    links: RoomLinks(webUrl: CcEndpoints.roomUrl(ccid)),
+    broadcast: RoomBroadcast.of(liveStatus: LiveStatus.offline),
+    links: RoomLinks.of(webUrl: CcEndpoints.roomUrl(ccid)),
   );
 
   static final RegExp _nextData = RegExp(r'<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)</script>');
@@ -453,7 +453,7 @@ abstract final class CcRoomParser {
     return LiveRoom.normalized(
       platform: _site,
       roomId: ccid,
-      content: RoomContent(
+      content: RoomContent.of(
         title: _firstText(info['live_title'], live['title']),
         coverUrl: _firstOf([anchor['purl'], anchor['portraiturl'], info['purl']]),
         introduction: announcement.isEmpty ? null : announcement,
@@ -468,8 +468,8 @@ abstract final class CcRoomParser {
       ),
       area: (gamename ?? '').trim().isEmpty ? null : LiveArea.normalized(platform: _site, areaName: gamename!),
       audience: _audienceOf(popularity: null, online: null, followers: followers),
-      broadcast: const RoomBroadcast(liveStatus: LiveStatus.offline),
-      links: RoomLinks(webUrl: CcEndpoints.roomUrl(ccid)),
+      broadcast: RoomBroadcast.of(liveStatus: LiveStatus.offline),
+      links: RoomLinks.of(webUrl: CcEndpoints.roomUrl(ccid)),
     );
   }
 
@@ -781,7 +781,7 @@ abstract final class CcRoomParser {
 
   /// The audience with the metric a list card leads with: the heat, else the
   /// concurrent viewers, else the follower count, else unknown.
-  static RoomAudience _audienceOf({required int? popularity, required int? online, int? followers}) => RoomAudience(
+  static RoomAudience _audienceOf({required int? popularity, required int? online, int? followers}) => RoomAudience.of(
     popularity: popularity,
     onlineViewers: online,
     primaryMetric: popularity != null

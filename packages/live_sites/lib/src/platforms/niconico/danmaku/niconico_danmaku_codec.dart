@@ -157,7 +157,7 @@ final class NiconicoMessageReader {
     if (viewers == null || viewers < 0) return null;
     return LiveMessage.normalized(
       type: LiveMessageType.audienceUpdate,
-      payload: LiveAudienceUpdate(kind: LiveAudienceSignalKind.totalViewers, value: viewers),
+      payload: LiveAudienceUpdate.of(kind: LiveAudienceSignalKind.totalViewers, value: viewers),
       color: LiveMessageColor.white,
     );
   }
@@ -282,12 +282,8 @@ abstract final class NiconicoDanmakuCodec {
 
   /// The notice that the program ended ([programEndedNotice]), with the
   /// platform's [messageId] and [sentAt] when it has them.
-  static LiveMessage programEnded({String messageId = '', DateTime? sentAt}) => notice(
-    programEndedNotice,
-    null,
-    messageId: messageId,
-    sentAt: sentAt,
-  );
+  static LiveMessage programEnded({String messageId = '', DateTime? sentAt}) =>
+      notice(programEndedNotice, null, messageId: messageId, sentAt: sentAt);
 
   /// A system notice of [text] with the window message's [meta] (id and time),
   /// its optional [userName] and [color].
@@ -336,9 +332,7 @@ abstract final class NiconicoDanmakuCodec {
     if (next.isLocked) return commentLockedNotice;
     if (next.followersOnly case final minimum?) {
       final seconds = minimum.inSeconds;
-      return seconds == 0
-          ? '【コメント制限】フォロワーに限定されます'
-          : '【コメント制限】${followDuration(seconds)}フォローを継続したユーザーに限定されます';
+      return seconds == 0 ? '【コメント制限】フォロワーに限定されます' : '【コメント制限】${followDuration(seconds)}フォローを継続したユーザーに限定されます';
     }
     return previous.isLocked ? commentUnlockedNotice : followersOnlyLiftedNotice;
   }
@@ -396,10 +390,7 @@ abstract final class NiconicoDanmakuCodec {
     return LiveMessage.normalized(
       type: LiveMessageType.gift,
       text: '${name.isEmpty ? itemId : name} ×1',
-      sender: MessageSender.normalized(
-        userId: giverId != null && giverId > 0 ? '$giverId' : '',
-        userName: giver,
-      ),
+      sender: MessageSender.normalized(userId: giverId != null && giverId > 0 ? '$giverId' : '', userName: giver),
       color: LiveMessageColor.white,
       payload: LiveGift(
         giftId: itemId,

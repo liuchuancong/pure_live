@@ -45,11 +45,12 @@ final class SeventeenLiveDanmakuProvider implements LiveDanmakuProvider {
   Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
     final id = SeventeenLiveRoomParser.normalizeRoomId(roomId);
     if (id == null) {
-      return left(
-        LiveSiteError.invalidArgument(siteId: seventeenliveSiteId, message: 'not a room id: $roomId'),
-      );
+      return left(LiveSiteError.invalidArgument(siteId: seventeenliveSiteId, message: 'not a room id: $roomId'));
     }
-    final session = SeventeenLiveDanmakuSession(args: SeventeenLiveDanmakuArgs(roomId: id), http: site.http);
+    final session = SeventeenLiveDanmakuSession(
+      args: SeventeenLiveDanmakuArgs(roomId: id),
+      http: site.http,
+    );
     final failure = await session.connect();
     if (failure != null) {
       await session.dispose();
@@ -257,12 +258,7 @@ final class SeventeenLiveDanmakuSession implements LiveDanmakuSession {
     _reconnectFailures = 0;
     final now = _now();
     _lastActivity = now;
-    final frame = SeventeenLiveDanmakuCodec.decode(
-      data,
-      roomId: args.roomId,
-      now: now,
-      backlogBefore: _backlogBefore,
-    );
+    final frame = SeventeenLiveDanmakuCodec.decode(data, roomId: args.roomId, now: now, backlogBefore: _backlogBefore);
     if (frame.channelSerial case final serial?) _channelSerial = serial;
     switch (frame.signal) {
       case SeventeenLiveSignal.none:
@@ -315,7 +311,7 @@ final class SeventeenLiveDanmakuSession implements LiveDanmakuSession {
       final paused = _muted == true || entry.muted == true;
       for (final message in entry.messages) {
         if (_disposed || generation != _generation) return;
-        if (message.payload case LiveAudienceUpdate(value: 0) when paused) continue;
+        if (message.payload case final LiveAudienceUpdate update when update.value == 0 && paused) continue;
         _report(message);
       }
       if (entry.muted case final muted?) {
@@ -332,9 +328,7 @@ final class SeventeenLiveDanmakuSession implements LiveDanmakuSession {
   /// the last serial with the `ATTACH_RESUME` flag (ably-js).
   void _attach() {
     _attachPending = true;
-    _send(
-      SeventeenLiveDanmakuCodec.attach(args.roomId, channelSerial: _channelSerial, resume: _attachedBefore),
-    );
+    _send(SeventeenLiveDanmakuCodec.attach(args.roomId, channelSerial: _channelSerial, resume: _attachedBefore));
   }
 
   /// The server detached the channel: attach it again on this socket, as ably-js

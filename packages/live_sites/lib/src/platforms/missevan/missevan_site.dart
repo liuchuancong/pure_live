@@ -200,8 +200,8 @@ final class MissevanSite implements LiveSite {
     while (_entries.length > _entryLimit) {
       _entries.remove(_entries.keys.first);
     }
-    return entry.room.copyWith(
-      runtime: RoomRuntime(streamHandle: entry.data, danmakuHandle: entry.args),
+    return entry.room.rebuild(
+      (b) => b..runtime = RoomRuntime.of(streamHandle: entry.data, danmakuHandle: entry.args).toBuilder(),
     );
   }
 

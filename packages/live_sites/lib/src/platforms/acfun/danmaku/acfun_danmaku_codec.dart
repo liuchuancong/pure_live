@@ -394,7 +394,7 @@ abstract final class AcfunDanmakuProtocol {
       return LiveMessage.normalized(
         type: LiveMessageType.audienceUpdate,
         color: LiveMessageColor.white,
-        payload: LiveAudienceUpdate(kind: LiveAudienceSignalKind.onlineViewers, value: watching),
+        payload: LiveAudienceUpdate.of(kind: LiveAudienceSignalKind.onlineViewers, value: watching),
       );
     } on FormatException {
       return null;

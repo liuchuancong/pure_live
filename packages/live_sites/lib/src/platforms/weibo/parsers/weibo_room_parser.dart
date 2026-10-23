@@ -127,15 +127,15 @@ abstract final class WeiboRoomParser {
         LiveRoom.normalized(
           platform: weiboSiteId,
           roomId: id,
-          content: RoomContent(
+          content: RoomContent.of(
             title: nick,
             coverUrl: normalizeImageUrl(row['cover']),
             notice: WeiboEndpoints.roomScopeNotice,
           ),
           anchor: uid == null ? null : LiveAnchor.normalized(platform: weiboSiteId, anchorId: '$uid', name: nick),
-          audience: const RoomAudience(primaryMetric: LiveAudienceMetricType.unknown),
-          broadcast: const RoomBroadcast(liveStatus: LiveStatus.live),
-          links: RoomLinks(webUrl: WeiboEndpoints.roomUrl(id)),
+          audience: RoomAudience.of(primaryMetric: LiveAudienceMetricType.unknown),
+          broadcast: RoomBroadcast.of(liveStatus: LiveStatus.live),
+          links: RoomLinks.of(webUrl: WeiboEndpoints.roomUrl(id)),
         ),
       );
     }
@@ -226,7 +226,7 @@ abstract final class WeiboRoomParser {
     return LiveRoom.normalized(
       platform: weiboSiteId,
       roomId: id,
-      content: RoomContent(
+      content: RoomContent.of(
         title: WeiboJson.text(item['title']),
         coverUrl: normalizeImageUrl(item['cover']),
         notice: [
@@ -241,14 +241,14 @@ abstract final class WeiboRoomParser {
         name: WeiboJson.text(user['screenName']),
         avatarUrl: avatar.isNotEmpty ? avatar : normalizeImageUrl(user['profileImageUrl']),
       ),
-      audience: const RoomAudience(primaryMetric: LiveAudienceMetricType.unknown),
-      broadcast: RoomBroadcast(
+      audience: RoomAudience.of(primaryMetric: LiveAudienceMetricType.unknown),
+      broadcast: RoomBroadcast.of(
         liveStatus: liveStatus,
         startedAt: state == WeiboEndpoints.liveStatusCode ? WeiboJson.startedAt(item['startTime']) : null,
         restriction: restrictionOf(roomData),
       ),
-      links: RoomLinks(webUrl: WeiboEndpoints.roomUrl(id)),
-      runtime: RoomRuntime(streamHandle: roomData),
+      links: RoomLinks.of(webUrl: WeiboEndpoints.roomUrl(id)),
+      runtime: RoomRuntime.of(streamHandle: roomData),
     );
   }
 

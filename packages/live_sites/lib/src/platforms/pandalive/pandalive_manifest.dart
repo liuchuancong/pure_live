@@ -7,11 +7,11 @@ import 'package:live_sites/src/models/enums/live_asset_type.dart';
 const String pandaliveSiteId = 'pandalive';
 
 /// PandaTV's stable identity (ARCHITECTURE.md §4.1).
-const pandaliveManifest = LiveSiteManifest(
+final pandaliveManifest = LiveSiteManifest(
   id: pandaliveSiteId,
   name: {'zh-CN': 'PandaTV', 'en-US': 'PandaTV'},
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['pandatv', 'pandalive.co.kr'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/pandalive.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/pandalive.png'),
 );

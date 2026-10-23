@@ -181,7 +181,7 @@ abstract final class BigoRoomParser {
     return LiveRoom.normalized(
       platform: bigoSiteId,
       roomId: siteId,
-      content: RoomContent(title: topic.isEmpty ? nickname : topic, coverUrl: cover),
+      content: RoomContent.of(title: topic.isEmpty ? nickname : topic, coverUrl: cover),
       anchor: LiveAnchor.normalized(
         platform: bigoSiteId,
         anchorId: '$ownerId',
@@ -190,13 +190,13 @@ abstract final class BigoRoomParser {
         liveStatus: LiveStatus.live,
       ),
       area: LiveArea.normalized(platform: bigoSiteId, areaName: BigoEndpoints.siteName),
-      audience: RoomAudience(onlineViewers: viewers, primaryMetric: LiveAudienceMetricType.onlineViewers),
-      broadcast: RoomBroadcast(
+      audience: RoomAudience.of(onlineViewers: viewers, primaryMetric: LiveAudienceMetricType.onlineViewers),
+      broadcast: RoomBroadcast.of(
         liveStatus: LiveStatus.live,
         startedAt: startedAt(row['time_stamp']),
         restriction: locked ? LiveRestriction.password : LiveRestriction.none,
       ),
-      links: RoomLinks(webUrl: link(siteId)),
+      links: RoomLinks.of(webUrl: link(siteId)),
     );
   }
 
@@ -313,7 +313,7 @@ abstract final class BigoRoomParser {
   static LiveRoom room(BigoStudio studio) => LiveRoom.normalized(
     platform: bigoSiteId,
     roomId: studio.siteId,
-    content: RoomContent(
+    content: RoomContent.of(
       title: studio.title.isEmpty ? studio.nickname : studio.title,
       coverUrl: studio.snapshot.isEmpty ? studio.avatar : studio.snapshot,
     ),
@@ -328,9 +328,9 @@ abstract final class BigoRoomParser {
       platform: bigoSiteId,
       areaName: studio.category.isEmpty ? BigoEndpoints.siteName : studio.category,
     ),
-    audience: const RoomAudience(primaryMetric: LiveAudienceMetricType.onlineViewers),
-    broadcast: RoomBroadcast(liveStatus: studio.liveStatus, restriction: studio.restriction),
-    links: RoomLinks(webUrl: link(studio.siteId)),
+    audience: RoomAudience.of(primaryMetric: LiveAudienceMetricType.onlineViewers),
+    broadcast: RoomBroadcast.of(liveStatus: studio.liveStatus, restriction: studio.restriction),
+    links: RoomLinks.of(webUrl: link(studio.siteId)),
   );
 
   /// The chat arguments of [studio], or null where the website does not open

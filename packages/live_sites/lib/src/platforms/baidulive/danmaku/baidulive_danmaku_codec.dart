@@ -259,7 +259,7 @@ abstract final class BaiduliveDanmakuProtocol {
   static LiveMessage audience(int viewers) => LiveMessage.normalized(
     type: LiveMessageType.audienceUpdate,
     color: LiveMessageColor.white,
-    payload: LiveAudienceUpdate(kind: LiveAudienceSignalKind.onlineViewers, value: viewers),
+    payload: LiveAudienceUpdate.of(kind: LiveAudienceSignalKind.onlineViewers, value: viewers),
   );
 
   /// A message and its payload: the page reads only `type` 0, whose

@@ -309,11 +309,12 @@ final class BigoSite implements LiveSite {
   /// handle, without another request.
   Future<LiveRoom> detail(String roomId) async {
     final answer = await studio(roomId, BigoStudioUse.entry);
-    return BigoRoomParser.room(answer).copyWith(
-      runtime: RoomRuntime(
-        streamHandle: BigoRoomParser.roomData(answer),
-        danmakuHandle: BigoRoomParser.danmakuArgs(answer),
-      ),
+    return BigoRoomParser.room(answer).rebuild(
+      (b) => b
+        ..runtime = RoomRuntime.of(
+          streamHandle: BigoRoomParser.roomData(answer),
+          danmakuHandle: BigoRoomParser.danmakuArgs(answer),
+        ).toBuilder(),
     );
   }
 

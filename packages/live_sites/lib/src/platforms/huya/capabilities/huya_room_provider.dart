@@ -61,13 +61,14 @@ final class HuyaRoomProvider implements LiveRoomProvider {
     final profile = await site.detailRoom(roomId);
     final rid = profile.room.roomId;
     final live = profile.room.broadcast.isLiveNow;
-    return profile.room.copyWith(
-      runtime: RoomRuntime(
-        streamHandle: HuyaRoomData(rid),
-        danmakuHandle: live
-            ? HuyaDanmakuArgs(uid: profile.presenterUid, topSid: profile.topSid, subSid: profile.subSid)
-            : null,
-      ),
+    return profile.room.rebuild(
+      (b) => b
+        ..runtime = RoomRuntime.of(
+          streamHandle: HuyaRoomData(rid),
+          danmakuHandle: live
+              ? HuyaDanmakuArgs(uid: profile.presenterUid, topSid: profile.topSid, subSid: profile.subSid)
+              : null,
+        ).toBuilder(),
     );
   }
 }

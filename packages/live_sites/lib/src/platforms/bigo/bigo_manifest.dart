@@ -7,11 +7,11 @@ import 'package:live_sites/src/models/enums/live_asset_type.dart';
 const String bigoSiteId = 'bigo';
 
 /// Bigo Live's stable identity (ARCHITECTURE.md §4.1).
-const bigoManifest = LiveSiteManifest(
+final bigoManifest = LiveSiteManifest(
   id: bigoSiteId,
   name: {'zh-CN': 'Bigo Live', 'en-US': 'Bigo Live'},
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['bigolive', 'bigo'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/bigo.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/bigo.png'),
 );

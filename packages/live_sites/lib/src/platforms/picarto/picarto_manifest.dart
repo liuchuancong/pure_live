@@ -7,11 +7,11 @@ import 'package:live_sites/src/models/enums/live_asset_type.dart';
 const String picartoSiteId = 'picarto';
 
 /// Picarto.TV's stable identity (ARCHITECTURE.md §4.1).
-const picartoManifest = LiveSiteManifest(
+final picartoManifest = LiveSiteManifest(
   id: picartoSiteId,
   name: {'zh-CN': 'Picarto', 'en-US': 'Picarto'},
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['picarto.tv'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/picarto.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/picarto.png'),
 );

@@ -185,7 +185,7 @@ abstract final class KugouliveRoomParser {
     return LiveRoom.normalized(
       platform: kugouliveSiteId,
       roomId: id,
-      content: RoomContent(
+      content: RoomContent.of(
         title: KugouliveJson.firstText([raw['label'], raw['topicContent'], raw['performContent'], nick]),
         coverUrl: cover,
         notice: KugouliveEndpoints.chatNotice,
@@ -198,7 +198,7 @@ abstract final class KugouliveRoomParser {
         followerCount: followers,
         liveStatus: liveStatus,
       ),
-      audience: RoomAudience(
+      audience: RoomAudience.of(
         onlineViewers: shownViewers,
         popularity: popularity,
         primaryMetric: shownViewers != null
@@ -208,8 +208,8 @@ abstract final class KugouliveRoomParser {
             : LiveAudienceMetricType.unknown,
       ),
       area: LiveArea.normalized(platform: kugouliveSiteId, areaName: KugouliveEndpoints.siteName),
-      broadcast: RoomBroadcast(liveStatus: liveStatus, startedAt: startedAt),
-      links: RoomLinks(webUrl: KugouliveEndpoints.roomUrl(id)),
+      broadcast: RoomBroadcast.of(liveStatus: liveStatus, startedAt: startedAt),
+      links: RoomLinks.of(webUrl: KugouliveEndpoints.roomUrl(id)),
     );
   }
 
@@ -298,7 +298,7 @@ abstract final class KugouliveRoomParser {
     final room = LiveRoom.normalized(
       platform: kugouliveSiteId,
       roomId: roomId,
-      content: RoomContent(coverUrl: cover, notice: [...announcements, KugouliveEndpoints.chatNotice].join('\n')),
+      content: RoomContent.of(coverUrl: cover, notice: [...announcements, KugouliveEndpoints.chatNotice].join('\n')),
       anchor: LiveAnchor.normalized(
         platform: kugouliveSiteId,
         anchorId: userId.isEmpty ? kugouId : userId,
@@ -308,14 +308,14 @@ abstract final class KugouliveRoomParser {
         liveStatus: liveStatus,
       ),
       area: LiveArea.normalized(platform: kugouliveSiteId, areaName: KugouliveEndpoints.siteName),
-      audience: const RoomAudience(primaryMetric: LiveAudienceMetricType.unknown),
-      broadcast: RoomBroadcast(
+      audience: RoomAudience.of(primaryMetric: LiveAudienceMetricType.unknown),
+      broadcast: RoomBroadcast.of(
         liveStatus: liveStatus,
         startedAt: state == KugouliveState.live
             ? KugouliveJson.sessionStart(session, ownerId: kugouId, answered: KugouliveJson.answeredAt(root))
             : null,
       ),
-      links: RoomLinks(webUrl: KugouliveEndpoints.roomUrl(roomId)),
+      links: RoomLinks.of(webUrl: KugouliveEndpoints.roomUrl(roomId)),
     );
     return (room: room, state: state);
   }
@@ -341,9 +341,10 @@ abstract final class KugouliveRoomParser {
             if (room.content.notice case final text? when text.isNotEmpty) text,
           ].join('\n')
         : room.content.notice;
-    return room.copyWith(
-      broadcast: room.broadcast.copyWith(restriction: restriction),
-      content: room.content.copyWith(notice: notice),
+    return room.rebuild(
+      (b) => b
+        ..broadcast.replace(room.broadcast.rebuild((b) => b..restriction = restriction))
+        ..content.replace(room.content.rebuild((b) => b..notice = notice)),
     );
   }
 

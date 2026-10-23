@@ -121,7 +121,7 @@ abstract final class TwitchRoomParser {
         LiveRoom.normalized(
           platform: twitchSiteId,
           roomId: login,
-          content: RoomContent(
+          content: RoomContent.of(
             title: TwitchJson.textOf(TwitchJson.object(item['broadcastSettings'])?['title']),
             coverUrl: _cover(TwitchJson.textOf(stream?['previewImageURL']), now),
           ),
@@ -132,8 +132,8 @@ abstract final class TwitchRoomParser {
             avatarUrl: avatar,
           ),
           area: _area(TwitchJson.object(stream?['game'])),
-          audience: RoomAudience(onlineViewers: viewers, primaryMetric: LiveAudienceMetricType.onlineViewers),
-          broadcast: RoomBroadcast(
+          audience: RoomAudience.of(onlineViewers: viewers, primaryMetric: LiveAudienceMetricType.onlineViewers),
+          broadcast: RoomBroadcast.of(
             liveStatus: stream == null
                 ? LiveStatus.offline
                 : _isRerun(stream)
@@ -141,7 +141,7 @@ abstract final class TwitchRoomParser {
                 : LiveStatus.live,
             startedAt: onAirNow ? TwitchJson.time(broadcast?['startedAt']) : null,
           ),
-          links: RoomLinks(webUrl: TwitchEndpoints.roomPageUrl(login)),
+          links: RoomLinks.of(webUrl: TwitchEndpoints.roomPageUrl(login)),
         ),
       );
     }
@@ -181,7 +181,7 @@ abstract final class TwitchRoomParser {
     return LiveRoom.normalized(
       platform: twitchSiteId,
       roomId: id,
-      content: RoomContent(
+      content: RoomContent.of(
         title: TwitchJson.textOf(TwitchJson.object(user['lastBroadcast'])?['title']),
         coverUrl: preview.isEmpty ? profile : preview,
         introduction: description,
@@ -195,13 +195,13 @@ abstract final class TwitchRoomParser {
         liveStatus: status,
       ),
       area: _area(game),
-      audience: RoomAudience(onlineViewers: viewers, primaryMetric: LiveAudienceMetricType.onlineViewers),
-      broadcast: RoomBroadcast(
+      audience: RoomAudience.of(onlineViewers: viewers, primaryMetric: LiveAudienceMetricType.onlineViewers),
+      broadcast: RoomBroadcast.of(
         liveStatus: status,
         startedAt: onAir ? TwitchJson.time(stream!['createdAt']) : null,
         restriction: onAir ? restriction(stream) : null,
       ),
-      links: RoomLinks(webUrl: TwitchEndpoints.roomPageUrl(id)),
+      links: RoomLinks.of(webUrl: TwitchEndpoints.roomPageUrl(id)),
     );
   }
 
@@ -265,7 +265,7 @@ abstract final class TwitchRoomParser {
     return LiveRoom.normalized(
       platform: twitchSiteId,
       roomId: login,
-      content: RoomContent(
+      content: RoomContent.of(
         title: TwitchJson.textOf(node['title']),
         coverUrl: _cover(TwitchJson.textOf(node['previewImageURL']), now),
       ),
@@ -276,13 +276,13 @@ abstract final class TwitchRoomParser {
         avatarUrl: TwitchJson.textOf(broadcaster['profileImageURL']),
       ),
       area: _area(game),
-      audience: RoomAudience(onlineViewers: viewers, primaryMetric: LiveAudienceMetricType.onlineViewers),
-      broadcast: RoomBroadcast(
+      audience: RoomAudience.of(onlineViewers: viewers, primaryMetric: LiveAudienceMetricType.onlineViewers),
+      broadcast: RoomBroadcast.of(
         liveStatus: _isRerun(node) ? LiveStatus.replay : LiveStatus.live,
         startedAt: TwitchJson.time(node['createdAt']),
         restriction: restriction(node),
       ),
-      links: RoomLinks(webUrl: TwitchEndpoints.roomPageUrl(login)),
+      links: RoomLinks.of(webUrl: TwitchEndpoints.roomPageUrl(login)),
     );
   }
 

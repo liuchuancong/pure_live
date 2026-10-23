@@ -236,7 +236,7 @@ abstract final class InkeRoomParser {
     return LiveRoom.normalized(
       platform: _site,
       roomId: uid,
-      content: RoomContent(title: nick, coverUrl: portrait),
+      content: RoomContent.of(title: nick, coverUrl: portrait),
       anchor: LiveAnchor.normalized(
         platform: _site,
         anchorId: uid,
@@ -244,9 +244,9 @@ abstract final class InkeRoomParser {
         avatarUrl: portrait,
         liveStatus: LiveStatus.live,
       ),
-      audience: const RoomAudience(primaryMetric: LiveAudienceMetricType.unknown),
-      broadcast: const RoomBroadcast(liveStatus: LiveStatus.live),
-      links: RoomLinks(webUrl: InkeEndpoints.roomUrl(uid, liveId: liveId)),
+      audience: RoomAudience.of(primaryMetric: LiveAudienceMetricType.unknown),
+      broadcast: RoomBroadcast.of(liveStatus: LiveStatus.live),
+      links: RoomLinks.of(webUrl: InkeEndpoints.roomUrl(uid, liveId: liveId)),
     );
   }
 
@@ -300,21 +300,21 @@ abstract final class InkeRoomParser {
   }) => LiveRoom.normalized(
     platform: _site,
     roomId: uid,
-    content: RoomContent(
+    content: RoomContent.of(
       title: broadcast.title.isEmpty ? nick : broadcast.title,
       coverUrl: broadcast.cover.isEmpty ? avatar : broadcast.cover,
     ),
     anchor: LiveAnchor.normalized(platform: _site, anchorId: uid, name: nick, avatarUrl: avatar),
     audience: _audience(broadcast),
-    broadcast: RoomBroadcast(
+    broadcast: RoomBroadcast.of(
       liveStatus: LiveStatus.live,
       startedAt: broadcast.startedAt,
       restriction: broadcast.hasLine ? LiveRestriction.none : null,
     ),
-    links: RoomLinks(webUrl: InkeEndpoints.roomUrl(uid, liveId: broadcast.liveId)),
+    links: RoomLinks.of(webUrl: InkeEndpoints.roomUrl(uid, liveId: broadcast.liveId)),
   );
 
-  static RoomAudience _audience(InkeBroadcast broadcast) => RoomAudience(
+  static RoomAudience _audience(InkeBroadcast broadcast) => RoomAudience.of(
     popularity: broadcast.heat,
     onlineViewers: broadcast.online,
     primaryMetric: broadcast.online != null
@@ -409,8 +409,8 @@ abstract final class InkeRoomParser {
       return LiveRoom.normalized(
         platform: _site,
         roomId: uid,
-        broadcast: const RoomBroadcast(liveStatus: LiveStatus.offline),
-        links: RoomLinks(webUrl: InkeEndpoints.roomUrl(uid)),
+        broadcast: RoomBroadcast.of(liveStatus: LiveStatus.offline),
+        links: RoomLinks.of(webUrl: InkeEndpoints.roomUrl(uid)),
       );
     }
     if (InkeJson.idOf(info['live_uid'], '$what.live_uid') != uid || !const {1, '1', true}.contains(info['status'])) {
@@ -426,7 +426,7 @@ abstract final class InkeRoomParser {
     return LiveRoom.normalized(
       platform: _site,
       roomId: uid,
-      content: RoomContent(title: name.isEmpty ? nick : name, coverUrl: InkeJson.picture(info['portrait'])),
+      content: RoomContent.of(title: name.isEmpty ? nick : name, coverUrl: InkeJson.picture(info['portrait'])),
       anchor: LiveAnchor.normalized(
         platform: _site,
         anchorId: uid,
@@ -434,10 +434,10 @@ abstract final class InkeRoomParser {
         avatarUrl: InkeJson.picture(owner['portrait']),
         liveStatus: LiveStatus.live,
       ),
-      audience: const RoomAudience(primaryMetric: LiveAudienceMetricType.unknown),
-      broadcast: const RoomBroadcast(liveStatus: LiveStatus.live),
-      links: RoomLinks(webUrl: InkeEndpoints.roomUrl(uid, liveId: liveId)),
-      runtime: RoomRuntime(streamHandle: InkeRoomData(liveId: liveId)),
+      audience: RoomAudience.of(primaryMetric: LiveAudienceMetricType.unknown),
+      broadcast: RoomBroadcast.of(liveStatus: LiveStatus.live),
+      links: RoomLinks.of(webUrl: InkeEndpoints.roomUrl(uid, liveId: liveId)),
+      runtime: RoomRuntime.of(streamHandle: InkeRoomData(liveId: liveId)),
     );
   }
 
@@ -451,19 +451,24 @@ abstract final class InkeRoomParser {
     InkeBroadcast broadcast, {
     required DateTime receivedAt,
     required InkeRoomData data,
-  }) => room.copyWith(
-    content: RoomContent(
-      title: broadcast.title.isEmpty ? room.content.title : broadcast.title,
-      coverUrl: broadcast.cover.isEmpty ? room.content.coverUrl : broadcast.cover,
-    ),
-    audience: _audience(broadcast),
-    broadcast: RoomBroadcast(
-      liveStatus: room.broadcast.liveStatus,
-      startedAt: broadcast.startedAt,
-      restriction: broadcast.hasLine ? LiveRestriction.none : null,
-    ),
-    links: RoomLinks(webUrl: InkeEndpoints.roomUrl(room.roomId, liveId: broadcast.liveId)),
-    runtime: RoomRuntime(streamHandle: data),
+  }) => room.rebuild(
+    (b) => b
+      ..content.replace(
+        RoomContent.of(
+          title: broadcast.title.isEmpty ? room.content.title : broadcast.title,
+          coverUrl: broadcast.cover.isEmpty ? room.content.coverUrl : broadcast.cover,
+        ),
+      )
+      ..audience.replace(_audience(broadcast))
+      ..broadcast.replace(
+        RoomBroadcast.of(
+          liveStatus: room.broadcast.liveStatus,
+          startedAt: broadcast.startedAt,
+          restriction: broadcast.hasLine ? LiveRestriction.none : null,
+        ),
+      )
+      ..links.replace(RoomLinks.of(webUrl: InkeEndpoints.roomUrl(room.roomId, liveId: broadcast.liveId)))
+      ..runtime = RoomRuntime.of(streamHandle: data).toBuilder(),
   );
 
   /// `now_publish?id=`: the broadcast the app says [uid] is live with, or

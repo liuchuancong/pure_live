@@ -209,7 +209,7 @@ final class CcSite implements LiveSite {
       if (answer != null) {
         _remember(ccid, answer.data);
         _legacy.remove(ccid);
-        return answer.room.copyWith(runtime: RoomRuntime(streamHandle: answer.data));
+        return answer.room.rebuild((b) => b..runtime = RoomRuntime.of(streamHandle: answer.data).toBuilder());
       }
     }
     // A channel that ended in between belongs to an existing anchor: its

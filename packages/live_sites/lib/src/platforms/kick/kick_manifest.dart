@@ -7,11 +7,11 @@ import 'package:live_sites/src/models/enums/live_asset_type.dart';
 const String kickSiteId = 'kick';
 
 /// Kick's stable identity (ARCHITECTURE.md §4.1).
-const kickManifest = LiveSiteManifest(
+final kickManifest = LiveSiteManifest(
   id: kickSiteId,
   name: {'zh-CN': 'Kick直播', 'en-US': 'Kick'},
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['kickcom'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/kick.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/kick.png'),
 );

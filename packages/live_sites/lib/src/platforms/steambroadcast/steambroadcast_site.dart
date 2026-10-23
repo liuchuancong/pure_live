@@ -353,11 +353,12 @@ final class SteambroadcastSite implements LiveSite {
     _remember(filled);
     final room = SteambroadcastRoomParser.room(filled, data: SteambroadcastRoomParser.roomData(filled));
     if (!danmaku) return room;
-    return room.copyWith(
-      runtime: RoomRuntime(
-        streamHandle: room.runtime.streamHandle,
-        danmakuHandle: SteambroadcastDanmakuArgs(filled.steamId, broadcastId: filled.broadcastId),
-      ),
+    return room.rebuild(
+      (b) => b
+        ..runtime = RoomRuntime.of(
+          streamHandle: room.runtime.streamHandle,
+          danmakuHandle: SteambroadcastDanmakuArgs(filled.steamId, broadcastId: filled.broadcastId),
+        ).toBuilder(),
     );
   }
 

@@ -189,23 +189,24 @@ final class YoutubeSite implements LiveSite {
     final player = await post('player', YoutubeEndpoints.playerBody(videoId), referer: referer, key: true);
     final next = await post('next', YoutubeEndpoints.nextBody(videoId), referer: referer);
     final parse = YoutubeRoomParser.room(player.text, next.text, requestedId: trimmed);
-    return parse.room.copyWith(
-      runtime: RoomRuntime(
-        streamHandle: YoutubeRoomData(
-          videoId: parse.videoId,
-          issuedAt: now(),
-          hlsManifestUrl: parse.hlsManifestUrl,
-          dashManifestUrl: parse.dashManifestUrl,
-          formats: parse.formats,
-        ),
-        danmakuHandle: YoutubeDanmakuArgs(
-          videoId: parse.videoId,
-          continuation: parse.continuation,
-          timeoutMs: parse.timeoutMs,
-          viewers: parse.room.audience.onlineViewers,
-          isReplay: parse.isReplay,
-        ),
-      ),
+    return parse.room.rebuild(
+      (b) => b
+        ..runtime = RoomRuntime.of(
+          streamHandle: YoutubeRoomData(
+            videoId: parse.videoId,
+            issuedAt: now(),
+            hlsManifestUrl: parse.hlsManifestUrl,
+            dashManifestUrl: parse.dashManifestUrl,
+            formats: parse.formats,
+          ),
+          danmakuHandle: YoutubeDanmakuArgs(
+            videoId: parse.videoId,
+            continuation: parse.continuation,
+            timeoutMs: parse.timeoutMs,
+            viewers: parse.room.audience.onlineViewers,
+            isReplay: parse.isReplay,
+          ),
+        ).toBuilder(),
     );
   }
 

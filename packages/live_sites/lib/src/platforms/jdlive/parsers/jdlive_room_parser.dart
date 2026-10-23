@@ -395,7 +395,7 @@ abstract final class JdliveRoomParser {
     return LiveRoom.normalized(
       platform: jdliveSiteId,
       roomId: room.liveId,
-      content: RoomContent(
+      content: RoomContent.of(
         title: room.title,
         coverUrl: room.cover,
         notice: room.appOnly ? JdliveEndpoints.restrictedNotice : JdliveEndpoints.chatNotice,
@@ -408,13 +408,13 @@ abstract final class JdliveRoomParser {
         liveStatus: liveStatus,
       ),
       area: area(),
-      audience: RoomAudience(
+      audience: RoomAudience.of(
         totalViewers: total,
         primaryMetric: total == null ? LiveAudienceMetricType.unknown : LiveAudienceMetricType.totalViewers,
       ),
-      broadcast: RoomBroadcast(liveStatus: liveStatus, restriction: room.restriction),
-      links: RoomLinks(webUrl: JdliveEndpoints.link(room.liveId)),
-      runtime: RoomRuntime(
+      broadcast: RoomBroadcast.of(liveStatus: liveStatus, restriction: room.restriction),
+      links: RoomLinks.of(webUrl: JdliveEndpoints.link(room.liveId)),
+      runtime: RoomRuntime.of(
         danmakuHandle: withData && room.state == JdliveState.live && !room.appOnly
             ? JdliveDanmakuArgs(liveId: room.liveId)
             : null,

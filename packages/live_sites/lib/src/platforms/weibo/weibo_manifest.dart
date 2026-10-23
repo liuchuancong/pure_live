@@ -7,11 +7,11 @@ import 'package:live_sites/src/models/enums/live_asset_type.dart';
 const String weiboSiteId = 'weibo';
 
 /// Weibo Live's stable identity (ARCHITECTURE.md §4.1).
-const weiboManifest = LiveSiteManifest(
+final weiboManifest = LiveSiteManifest(
   id: weiboSiteId,
   name: {'zh-CN': '微博直播', 'en-US': 'Weibo Live'},
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['微博直播'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/weibo.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/weibo.png'),
 );

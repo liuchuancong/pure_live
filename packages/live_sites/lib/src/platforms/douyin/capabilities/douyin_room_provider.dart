@@ -65,22 +65,24 @@ final class DouyinRoomProvider implements LiveRoomProvider {
     final startedAt = room.broadcast.isLiveNow && room.broadcast.startedAt == null
         ? await _startOf(broadcast, webRid: room.roomId)
         : null;
-    if (startedAt != null) room = room.copyWith(broadcast: room.broadcast.copyWith(startedAt: startedAt));
-    return room.copyWith(
-      runtime: RoomRuntime(
-        streamHandle: DouyinRoomData(
-          webRid: room.roomId,
-          roomId: broadcast,
-          streamUrl: parse.streamUrl,
-          issuedAt: fetched.issuedAt,
-        ),
-        danmakuHandle: DouyinDanmakuArgs(
-          webRid: room.roomId,
-          roomId: broadcast ?? '',
-          userId: parse.userUniqueId ?? site.visitorId,
-          cookie: fetched.cookie,
-        ),
-      ),
+    if (startedAt != null)
+      room = room.rebuild((b) => b..broadcast.replace(room.broadcast.rebuild((b) => b..startedAt = startedAt)));
+    return room.rebuild(
+      (b) => b
+        ..runtime = RoomRuntime.of(
+          streamHandle: DouyinRoomData(
+            webRid: room.roomId,
+            roomId: broadcast,
+            streamUrl: parse.streamUrl,
+            issuedAt: fetched.issuedAt,
+          ),
+          danmakuHandle: DouyinDanmakuArgs(
+            webRid: room.roomId,
+            roomId: broadcast ?? '',
+            userId: parse.userUniqueId ?? site.visitorId,
+            cookie: fetched.cookie,
+          ),
+        ).toBuilder(),
     );
   }
 

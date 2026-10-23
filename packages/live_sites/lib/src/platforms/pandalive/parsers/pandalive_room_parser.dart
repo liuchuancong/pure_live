@@ -247,7 +247,7 @@ abstract final class PandaliveRoomParser {
     return LiveRoom.normalized(
       platform: PandaliveEndpoints.siteId,
       roomId: id,
-      content: RoomContent(
+      content: RoomContent.of(
         title: PandaliveJson.firstText([row['title'], nick]),
         coverUrl: PandaliveJson.image(row['thumbUrl'] ?? row['ivsThumbnail']),
         notice: noticeOf(restriction),
@@ -261,17 +261,17 @@ abstract final class PandaliveRoomParser {
         followerCount: PandaliveJson.count(row['fanCnt']),
       ),
       area: areaOf(category),
-      audience: RoomAudience(
+      audience: RoomAudience.of(
         onlineViewers: PandaliveJson.count(row['user']),
         totalViewers: PandaliveJson.count(row['playCnt']),
         primaryMetric: LiveAudienceMetricType.onlineViewers,
       ),
-      broadcast: RoomBroadcast(
+      broadcast: RoomBroadcast.of(
         liveStatus: status,
         startedAt: PandaliveJson.koreanTime(row['startTime']),
         restriction: restriction,
       ),
-      links: RoomLinks(webUrl: PandaliveEndpoints.roomUrl(id)),
+      links: RoomLinks.of(webUrl: PandaliveEndpoints.roomUrl(id)),
     );
   }
 
@@ -306,7 +306,7 @@ abstract final class PandaliveRoomParser {
     return LiveRoom.normalized(
       platform: PandaliveEndpoints.siteId,
       roomId: id,
-      content: RoomContent(
+      content: RoomContent.of(
         title: PandaliveJson.firstText([media['title'], nick]),
         coverUrl: PandaliveJson.image(media['thumbUrl'] ?? media['ivsThumbnail']),
         notice: noticeOf(restriction),
@@ -320,17 +320,17 @@ abstract final class PandaliveRoomParser {
         followerCount: PandaliveJson.count(media['fanCnt']),
       ),
       area: areaOf(category),
-      audience: RoomAudience(
+      audience: RoomAudience.of(
         onlineViewers: isLive ? PandaliveJson.count(media['user']) : null,
         totalViewers: isLive ? PandaliveJson.count(media['playCnt']) : null,
         primaryMetric: isLive ? LiveAudienceMetricType.onlineViewers : LiveAudienceMetricType.unknown,
       ),
-      broadcast: RoomBroadcast(
+      broadcast: RoomBroadcast.of(
         liveStatus: status,
         startedAt: isLive ? PandaliveJson.koreanTime(media['startTime']) : null,
         restriction: isLive ? restriction : null,
       ),
-      links: RoomLinks(webUrl: PandaliveEndpoints.roomUrl(id)),
+      links: RoomLinks.of(webUrl: PandaliveEndpoints.roomUrl(id)),
     );
   }
 
@@ -340,7 +340,7 @@ abstract final class PandaliveRoomParser {
       LiveRoom.normalized(
         platform: PandaliveEndpoints.siteId,
         roomId: id,
-        content: RoomContent(title: nick, notice: PandaliveEndpoints.chatNotice),
+        content: RoomContent.of(title: nick, notice: PandaliveEndpoints.chatNotice),
         anchor: LiveAnchor.normalized(
           platform: PandaliveEndpoints.siteId,
           anchorId: id,
@@ -348,8 +348,8 @@ abstract final class PandaliveRoomParser {
           avatarUrl: _blankless(avatar),
           liveStatus: LiveStatus.offline,
         ),
-        broadcast: const RoomBroadcast(liveStatus: LiveStatus.offline),
-        links: RoomLinks(webUrl: PandaliveEndpoints.roomUrl(id)),
+        broadcast: RoomBroadcast.of(liveStatus: LiveStatus.offline),
+        links: RoomLinks.of(webUrl: PandaliveEndpoints.roomUrl(id)),
       );
 
   // Rooms -----------------------------------------------------------------
@@ -401,7 +401,7 @@ abstract final class PandaliveRoomParser {
     return LiveRoom.normalized(
       platform: PandaliveEndpoints.siteId,
       roomId: member.userId,
-      content: RoomContent(
+      content: RoomContent.of(
         title: PandaliveJson.firstText([profile['channelTitle'], nick]),
         coverUrl: PandaliveJson.image(profile['channelBannerUrl']),
         introduction: _blankless(PandaliveJson.text(profile['channelDesc'])),
@@ -415,8 +415,8 @@ abstract final class PandaliveRoomParser {
         liveStatus: LiveStatus.offline,
         followerCount: PandaliveJson.count(profile['fanCnt']),
       ),
-      broadcast: const RoomBroadcast(liveStatus: LiveStatus.offline),
-      links: RoomLinks(webUrl: PandaliveEndpoints.roomUrl(member.userId)),
+      broadcast: RoomBroadcast.of(liveStatus: LiveStatus.offline),
+      links: RoomLinks.of(webUrl: PandaliveEndpoints.roomUrl(member.userId)),
     );
   }
 
@@ -442,7 +442,7 @@ abstract final class PandaliveRoomParser {
     return LiveRoom.normalized(
       platform: PandaliveEndpoints.siteId,
       roomId: member.userId,
-      content: RoomContent(
+      content: RoomContent.of(
         title: PandaliveJson.firstText([media['title'], profile['channelTitle'], profile['nick'], nick]),
         coverUrl: PandaliveJson.image(cover),
         introduction: _blankless(PandaliveJson.text(profile['channelDesc'])),
@@ -457,17 +457,17 @@ abstract final class PandaliveRoomParser {
         followerCount: PandaliveJson.count(media['fanCnt'] ?? profile['fanCnt']),
       ),
       area: areaOf(category),
-      audience: RoomAudience(
+      audience: RoomAudience.of(
         onlineViewers: PandaliveJson.count(media['user']),
         totalViewers: PandaliveJson.count(media['playCnt']),
         primaryMetric: LiveAudienceMetricType.onlineViewers,
       ),
-      broadcast: RoomBroadcast(
+      broadcast: RoomBroadcast.of(
         liveStatus: onAirStatus(media),
         startedAt: PandaliveJson.koreanTime(media['startTime']),
         restriction: restriction,
       ),
-      links: RoomLinks(webUrl: PandaliveEndpoints.roomUrl(member.userId)),
+      links: RoomLinks.of(webUrl: PandaliveEndpoints.roomUrl(member.userId)),
     );
   }
 

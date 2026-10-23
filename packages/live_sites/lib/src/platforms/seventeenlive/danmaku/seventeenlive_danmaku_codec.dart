@@ -76,7 +76,10 @@ final class SeventeenLiveAblyError {
 
   @override
   bool operator ==(Object other) =>
-      other is SeventeenLiveAblyError && other.code == code && other.statusCode == statusCode && other.message == message;
+      other is SeventeenLiveAblyError &&
+      other.code == code &&
+      other.statusCode == statusCode &&
+      other.message == message;
 
   @override
   int get hashCode => Object.hash(code, statusCode, message);
@@ -383,9 +386,8 @@ abstract final class SeventeenLiveDanmakuCodec {
 
   /// [endpoint] with the `access_token` [token] first, as ably-js orders it, and
   /// with a [resume] key the `resume` of the connection it names.
-  static Uri withToken(Uri endpoint, String token, {String? resume}) => endpoint.replace(
-    queryParameters: {'access_token': token, 'resume': ?resume, ...endpoint.queryParameters},
-  );
+  static Uri withToken(Uri endpoint, String token, {String? resume}) =>
+      endpoint.replace(queryParameters: {'access_token': token, 'resume': ?resume, ...endpoint.queryParameters});
 
   /// The `ATTACH` (10) of the channel [roomId]: as the recordings sent it, or,
   /// for a channel attached before ([resume]), with ably-js's `ATTACH_RESUME`
@@ -428,7 +430,12 @@ abstract final class SeventeenLiveDanmakuCodec {
   /// Anything else (the heartbeat 0, a presence `SYNC` 16, another channel, a
   /// frame that is not a JSON object) holds nothing. A field of the wrong type
   /// costs only that field or that message.
-  static SeventeenLiveDanmakuFrame decode(Object? data, {required String roomId, DateTime? now, DateTime? backlogBefore}) {
+  static SeventeenLiveDanmakuFrame decode(
+    Object? data, {
+    required String roomId,
+    DateTime? now,
+    DateTime? backlogBefore,
+  }) {
     final text = switch (data) {
       final String text => text,
       final List<int> bytes => utf8.decode(bytes, allowMalformed: true),
@@ -580,7 +587,10 @@ abstract final class SeventeenLiveDanmakuCodec {
         id: id,
         publishedAt: publishedAt,
         replayed: replayed,
-        messages: [?shown, ?superChat(payload, id: id, now: now, replayed: replayed)],
+        messages: [
+          ?shown,
+          ?superChat(payload, id: id, now: now, replayed: replayed),
+        ],
       ),
       liveType => SeventeenLiveEntry(
         id: id,
@@ -645,11 +655,7 @@ abstract final class SeventeenLiveDanmakuCodec {
             ? ''
             : image(picture.startsWith('http://') || picture.startsWith('https://') ? picture : 'THUMBNAIL_$picture'),
         text: text,
-        price: SuperChatPrice(
-          amount: point,
-          currency: pointUnit,
-          displayText: '$point coins',
-        ),
+        price: SuperChatPrice(amount: point, currency: pointUnit, displayText: '$point coins'),
         startTime: start,
         endTime: start.add(superChatDuration),
         display: SuperChatDisplay(backgroundColor: fill, backgroundBottomColor: fill),
@@ -660,15 +666,14 @@ abstract final class SeventeenLiveDanmakuCodec {
   /// The system notice of the live figures' `liveinfo.mute` turning [muted]
   /// ([mutedNotice], [unmutedNotice]), with the Ably message [id]; [replayed]
   /// when that message was.
-  static LiveMessage muteNotice({required bool muted, String id = '', bool replayed = false}) =>
-      LiveMessage.normalized(
-        type: LiveMessageType.notice,
-        text: muted ? mutedNotice : unmutedNotice,
-        color: LiveMessageColor.white,
-        messageId: id,
-        payload: LiveNoticeKind.system,
-        replayed: replayed,
-      );
+  static LiveMessage muteNotice({required bool muted, String id = '', bool replayed = false}) => LiveMessage.normalized(
+    type: LiveMessageType.notice,
+    text: muted ? mutedNotice : unmutedNotice,
+    color: LiveMessageColor.white,
+    messageId: id,
+    payload: LiveNoticeKind.system,
+    replayed: replayed,
+  );
 
   /// A message's `data`: base64 of gzipped UTF-8 JSON, as the website reads it
   /// (`gzip_base64`); null when it is not that or not a JSON object.
@@ -760,7 +765,10 @@ abstract final class SeventeenLiveDanmakuCodec {
     if (event == null) return null;
     final giftId = _string(event['giftID']).trim();
     if (giftId.isEmpty) return null;
-    final metas = [for (final meta in optionalList(event['giftMetas'])) if (meta is Map) meta];
+    final metas = [
+      for (final meta in optionalList(event['giftMetas']))
+        if (meta is Map) meta,
+    ];
     final meta = metas.where((item) => item['targetGiftID'] == giftId).firstOrNull ?? metas.firstOrNull;
     final combo = optionalObject(meta?['combo']);
     final count = combo?['count'];
@@ -853,7 +861,7 @@ abstract final class SeventeenLiveDanmakuCodec {
   /// The audience update of the live figures: the viewers now, as this
   /// contract's typed audience signal.
   static LiveAudienceUpdate audienceUpdate(int viewers) =>
-      LiveAudienceUpdate(kind: LiveAudienceSignalKind.onlineViewers, value: viewers);
+      LiveAudienceUpdate.of(kind: LiveAudienceSignalKind.onlineViewers, value: viewers);
 
   static int? _level(Object? value) => value is int && value > 0 ? value : null;
 

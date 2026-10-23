@@ -48,7 +48,7 @@ final class NiconicoAreaProvider implements LiveAreaProvider {
   /// platform's order.
   static List<LiveArea> tabAreas() => [
     for (final (index, tab) in NiconicoEndpoints.tabs.indexed)
-      LiveArea(
+      LiveArea.of(
         platform: niconicoSiteId,
         areaId: tab,
         areaName: NiconicoEndpoints.tabNames[tab] ?? tab,

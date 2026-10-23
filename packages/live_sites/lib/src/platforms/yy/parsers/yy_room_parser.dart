@@ -192,7 +192,7 @@ abstract final class YyRoomParser {
       room: LiveRoom.normalized(
         platform: yySiteId,
         roomId: sid,
-        content: RoomContent(
+        content: RoomContent.of(
           title: YyJson.title(title),
           coverUrl: YyJson.image(item['thumb2']).isEmpty ? YyJson.image(item['thumb']) : YyJson.image(item['thumb2']),
         ),
@@ -204,9 +204,9 @@ abstract final class YyRoomParser {
           liveStatus: state,
         ),
         area: LiveArea.normalized(platform: yySiteId, areaName: area),
-        audience: RoomAudience(popularity: users, primaryMetric: LiveAudienceMetricType.popularity),
-        broadcast: RoomBroadcast(liveStatus: state, startedAt: live ? YyJson.startedAt(item['startTime']) : null),
-        links: RoomLinks(webUrl: YyEndpoints.roomUrl(sid)),
+        audience: RoomAudience.of(popularity: users, primaryMetric: LiveAudienceMetricType.popularity),
+        broadcast: RoomBroadcast.of(liveStatus: state, startedAt: live ? YyJson.startedAt(item['startTime']) : null),
+        links: RoomLinks.of(webUrl: YyEndpoints.roomUrl(sid)),
       ),
       channel: (sid: sid, ssid: ssid),
     );
@@ -298,7 +298,7 @@ abstract final class YyRoomParser {
     final room = LiveRoom.normalized(
       platform: yySiteId,
       roomId: id,
-      content: RoomContent(
+      content: RoomContent.of(
         title: YyJson.title(item['desc']),
         coverUrl: YyJson.image(item['thumb2']).isEmpty ? YyJson.image(item['thumb']) : YyJson.image(item['thumb2']),
       ),
@@ -310,9 +310,9 @@ abstract final class YyRoomParser {
         liveStatus: LiveStatus.live,
       ),
       area: LiveArea.normalized(platform: yySiteId, areaName: YyEndpoints.areaOf(item['biz'], areaNames)),
-      audience: RoomAudience(popularity: users, primaryMetric: LiveAudienceMetricType.popularity),
-      broadcast: RoomBroadcast(liveStatus: LiveStatus.live, startedAt: YyJson.startedAt(item['startTime'])),
-      links: RoomLinks(webUrl: YyEndpoints.roomUrl(id)),
+      audience: RoomAudience.of(popularity: users, primaryMetric: LiveAudienceMetricType.popularity),
+      broadcast: RoomBroadcast.of(liveStatus: LiveStatus.live, startedAt: YyJson.startedAt(item['startTime'])),
+      links: RoomLinks.of(webUrl: YyEndpoints.roomUrl(id)),
     );
     return (room: room, channel: (sid: sid, ssid: ssid));
   }
@@ -392,7 +392,7 @@ abstract final class YyRoomParser {
     final room = LiveRoom.normalized(
       platform: yySiteId,
       roomId: sid,
-      content: RoomContent(
+      content: RoomContent.of(
         title: YyJson.title(title.isEmpty ? part('title')?.$2 : title),
         coverUrl: picture(part('cover')),
       ),
@@ -404,15 +404,15 @@ abstract final class YyRoomParser {
         liveStatus: LiveStatus.live,
       ),
       area: LiveArea.normalized(platform: yySiteId, areaName: area),
-      audience: RoomAudience(
+      audience: RoomAudience.of(
         popularity: parseAudienceNumberOrNull(part('usr')?.$2),
         primaryMetric: LiveAudienceMetricType.popularity,
       ),
-      broadcast: RoomBroadcast(
+      broadcast: RoomBroadcast.of(
         liveStatus: LiveStatus.live,
         startedAt: YyJson.startedAt(pid.length > 3 ? pid[3] : null),
       ),
-      links: RoomLinks(webUrl: YyEndpoints.roomUrl(sid)),
+      links: RoomLinks.of(webUrl: YyEndpoints.roomUrl(sid)),
     );
     return (room: room, channel: (sid: sid, ssid: YyJson.channel(attributes['data-ssid']) ?? sid));
   }
@@ -463,13 +463,13 @@ abstract final class YyRoomParser {
       return LiveRoom.normalized(
         platform: yySiteId,
         roomId: id,
-        broadcast: const RoomBroadcast(liveStatus: LiveStatus.offline),
+        broadcast: RoomBroadcast.of(liveStatus: LiveStatus.offline),
       );
     }
     return LiveRoom.normalized(
       platform: yySiteId,
       roomId: id,
-      content: RoomContent(title: page.title),
+      content: RoomContent.of(title: page.title),
       anchor: LiveAnchor.normalized(
         platform: yySiteId,
         anchorId: page.uid,
@@ -478,8 +478,8 @@ abstract final class YyRoomParser {
         liveStatus: LiveStatus.offline,
       ),
       area: LiveArea.normalized(platform: yySiteId, areaName: page.area),
-      broadcast: const RoomBroadcast(liveStatus: LiveStatus.offline),
-      links: RoomLinks(webUrl: YyEndpoints.roomUrl(id)),
+      broadcast: RoomBroadcast.of(liveStatus: LiveStatus.offline),
+      links: RoomLinks.of(webUrl: YyEndpoints.roomUrl(id)),
     );
   }
 

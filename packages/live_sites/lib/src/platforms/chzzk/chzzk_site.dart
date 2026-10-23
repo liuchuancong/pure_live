@@ -228,8 +228,12 @@ final class ChzzkSite implements LiveSite {
     if (live != null && live.isLive && live.media.isNotEmpty) {
       _playback.remove(owner.id);
     }
-    return ChzzkRoomParser.room(owner, live).copyWith(
-      runtime: RoomRuntime(streamHandle: data, danmakuHandle: ChzzkRoomParser.danmakuArgs(owner, live)),
+    return ChzzkRoomParser.room(owner, live).rebuild(
+      (b) => b
+        ..runtime = RoomRuntime.of(
+          streamHandle: data,
+          danmakuHandle: ChzzkRoomParser.danmakuArgs(owner, live),
+        ).toBuilder(),
     );
   }
 

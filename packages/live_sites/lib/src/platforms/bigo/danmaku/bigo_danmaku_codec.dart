@@ -457,7 +457,7 @@ abstract final class BigoDanmakuCodec {
     return LiveMessage.normalized(
       type: LiveMessageType.audienceUpdate,
       color: LiveMessageColor.white,
-      payload: LiveAudienceUpdate(kind: LiveAudienceSignalKind.onlineViewers, value: value),
+      payload: LiveAudienceUpdate.of(kind: LiveAudienceSignalKind.onlineViewers, value: value),
     );
   }
 

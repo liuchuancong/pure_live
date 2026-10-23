@@ -130,7 +130,7 @@ abstract final class DouyuRoomParser {
     return LiveRoom.normalized(
       platform: douyuSiteId,
       roomId: id,
-      content: RoomContent(
+      content: RoomContent.of(
         title: decodeHtmlEntities(jsonString(item['rn']) ?? ''),
         coverUrl: normalizeImageUrl(item['rs16']),
       ),
@@ -140,9 +140,9 @@ abstract final class DouyuRoomParser {
         avatarUrl: anchorAvatar(item['av']),
       ),
       area: LiveArea.normalized(platform: douyuSiteId, areaName: jsonString(item['c2name']) ?? ''),
-      audience: RoomAudience(popularity: parseAudienceNumberOrNull(hot)),
-      broadcast: const RoomBroadcast(liveStatus: LiveStatus.live),
-      links: RoomLinks(webUrl: 'https://www.douyu.com/$id'),
+      audience: RoomAudience.of(popularity: parseAudienceNumberOrNull(hot)),
+      broadcast: RoomBroadcast.of(liveStatus: LiveStatus.live),
+      links: RoomLinks.of(webUrl: 'https://www.douyu.com/$id'),
     );
   }
 
@@ -187,7 +187,7 @@ abstract final class DouyuRoomParser {
       LiveRoom.normalized(
         platform: douyuSiteId,
         roomId: id,
-        content: RoomContent(
+        content: RoomContent.of(
           title: decodeHtmlEntities(jsonString(item['roomName']) ?? ''),
           coverUrl: normalizeImageUrl(item['roomSrc']),
         ),
@@ -197,8 +197,8 @@ abstract final class DouyuRoomParser {
           avatarUrl: anchorAvatar(item['avatar']),
         ),
         area: LiveArea.normalized(platform: douyuSiteId, areaName: jsonString(item['cateName']) ?? ''),
-        audience: RoomAudience(popularity: parseAudienceNumberOrNull(hot)),
-        broadcast: RoomBroadcast(liveStatus: status),
+        audience: RoomAudience.of(popularity: parseAudienceNumberOrNull(hot)),
+        broadcast: RoomBroadcast.of(liveStatus: status),
       ),
     );
   }
@@ -268,7 +268,7 @@ abstract final class DouyuRoomParser {
       room: LiveRoom.normalized(
         platform: douyuSiteId,
         roomId: id,
-        content: RoomContent(
+        content: RoomContent.of(
           title: decodeHtmlEntities(rawTitle),
           coverUrl: normalizeImageUrl(room['room_pic']),
           introduction: decodeHtmlEntities(jsonString(room['show_details']) ?? ''),
@@ -280,11 +280,11 @@ abstract final class DouyuRoomParser {
           avatarUrl: anchorAvatar(room['owner_avatar']),
         ),
         area: LiveArea.normalized(platform: douyuSiteId, areaName: jsonString(room['second_lvl_name']) ?? ''),
-        audience: RoomAudience(
+        audience: RoomAudience.of(
           popularity: parseAudienceNumberOrNull(hot),
           primaryMetric: LiveAudienceMetricType.popularity,
         ),
-        broadcast: RoomBroadcast(
+        broadcast: RoomBroadcast.of(
           liveStatus: replay
               ? LiveStatus.replay
               : live
@@ -292,7 +292,7 @@ abstract final class DouyuRoomParser {
               : LiveStatus.offline,
           startedAt: live ? _seconds(room['show_time']) : null,
         ),
-        links: RoomLinks(webUrl: 'https://www.douyu.com/$id'),
+        links: RoomLinks.of(webUrl: 'https://www.douyu.com/$id'),
       ),
       gifts: roomGiftsOf(decoded),
     );

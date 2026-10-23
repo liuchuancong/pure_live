@@ -7,7 +7,7 @@ import 'package:live_sites/src/models/enums/live_asset_type.dart';
 const String bilibiliSiteId = 'bilibili';
 
 /// Bilibili Live's stable identity (ARCHITECTURE.md §4.1).
-const bilibiliManifest = LiveSiteManifest(
+final bilibiliManifest = LiveSiteManifest(
   id: bilibiliSiteId,
   name: {'zh-CN': '哔哩哔哩直播', 'en-US': 'Bilibili Live'},
   description: {
@@ -17,5 +17,5 @@ const bilibiliManifest = LiveSiteManifest(
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['bili', 'b站', 'bilibili-live'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/bilibili.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/bilibili.png'),
 );

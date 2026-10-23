@@ -246,15 +246,16 @@ abstract final class MissevanRoomParser {
         throw MissevanFailure(MissevanFailureKind.apiChanged, '$what: the creator does not own the room');
       }
       final introduction = MissevanJson.text(creator['introduction']);
-      room = room.copyWith(
-        content: room.content.copyWith(introduction: introduction.isEmpty ? null : introduction),
-        anchor: room.anchor?.copyWith(avatarUrl: normalizeImageUrl(creator['iconurl'])),
+      room = room.rebuild(
+        (b) => b
+          ..content.replace(room.content.rebuild((b) => b..introduction = introduction.isEmpty ? null : introduction))
+          ..anchor = room.anchor?.rebuild((b) => b..avatarUrl = normalizeImageUrl(creator['iconurl'])).toBuilder(),
       );
     }
     final statistics = MissevanJson.object(row['statistics'], '$what.room.statistics');
     final followers = MissevanJson.integer(statistics['attention_count']);
     if (followers != null && followers >= 0) {
-      room = room.copyWith(anchor: room.anchor?.copyWith(followerCount: followers));
+      room = room.rebuild((b) => b..anchor = room.anchor?.rebuild((b) => b..followerCount = followers).toBuilder());
     }
     final args = danmakuArgs(info, roomId: room.roomId);
     if (!room.broadcast.isLiveNow || !media) {
@@ -273,7 +274,9 @@ abstract final class MissevanRoomParser {
       throw MissevanFailure(MissevanFailureKind.apiChanged, '$what: live without a usable pull URL');
     }
     return MissevanDetail(
-      room: room.copyWith(broadcast: room.broadcast.copyWith(restriction: LiveRestriction.none)),
+      room: room.rebuild(
+        (b) => b..broadcast.replace(room.broadcast.rebuild((b) => b..restriction = LiveRestriction.none)),
+      ),
       data: MissevanRoomData(hls: hls, flv: flv),
       args: args,
     );
@@ -336,7 +339,7 @@ abstract final class MissevanRoomParser {
     return LiveRoom.normalized(
       platform: _site,
       roomId: id,
-      content: RoomContent(
+      content: RoomContent.of(
         title: MissevanJson.text(row['name']),
         coverUrl: _isPlaceholderCover(cover) ? '' : cover,
         introduction: MissevanJson.text(row['creator_introduction']),
@@ -350,12 +353,12 @@ abstract final class MissevanRoomParser {
         liveStatus: liveStatus,
       ),
       area: LiveArea.normalized(platform: _site, areaName: MissevanJson.text(row['catalog_name'])),
-      audience: RoomAudience(popularity: score, primaryMetric: LiveAudienceMetricType.popularity),
-      broadcast: RoomBroadcast(
+      audience: RoomAudience.of(popularity: score, primaryMetric: LiveAudienceMetricType.popularity),
+      broadcast: RoomBroadcast.of(
         liveStatus: liveStatus,
         startedAt: live ? MissevanJson.startedAt(state['open_time']) : null,
       ),
-      links: RoomLinks(webUrl: MissevanEndpoints.roomUrl(id)),
+      links: RoomLinks.of(webUrl: MissevanEndpoints.roomUrl(id)),
     );
   }
 

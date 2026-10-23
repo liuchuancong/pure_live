@@ -137,7 +137,7 @@ abstract final class BilibiliRoomParser {
     return LiveRoom.normalized(
       platform: bilibiliSiteId,
       roomId: id,
-      content: RoomContent(
+      content: RoomContent.of(
         title: decodeHtmlEntities(jsonString(item['title']) ?? ''),
         coverUrl: sizedImage(item['cover'] ?? item['user_cover'], '@400w.jpg'),
       ),
@@ -156,8 +156,8 @@ abstract final class BilibiliRoomParser {
         online: online,
         total: _watched(item['watched_show'], state: live),
       ),
-      broadcast: RoomBroadcast(liveStatus: live),
-      links: RoomLinks(webUrl: '${BilibiliEndpoints.origin}/$id'),
+      broadcast: RoomBroadcast.of(liveStatus: live),
+      links: RoomLinks.of(webUrl: '${BilibiliEndpoints.origin}/$id'),
     );
   }
 
@@ -195,7 +195,10 @@ abstract final class BilibiliRoomParser {
     return LiveRoom.normalized(
       platform: bilibiliSiteId,
       roomId: id,
-      content: RoomContent(title: _highlighted(item['title']), coverUrl: sizedImage(item['user_cover'], '@400w.jpg')),
+      content: RoomContent.of(
+        title: _highlighted(item['title']),
+        coverUrl: sizedImage(item['user_cover'], '@400w.jpg'),
+      ),
       anchor: LiveAnchor.normalized(
         platform: bilibiliSiteId,
         anchorId: jsonString(item['uid']) ?? '',
@@ -209,8 +212,8 @@ abstract final class BilibiliRoomParser {
         online: online,
         total: _watched(item['watched_show'], state: state),
       ),
-      broadcast: RoomBroadcast(liveStatus: state, startedAt: live ? _beijingTime(item['live_time']) : null),
-      links: RoomLinks(webUrl: '${BilibiliEndpoints.origin}/$id'),
+      broadcast: RoomBroadcast.of(liveStatus: state, startedAt: live ? _beijingTime(item['live_time']) : null),
+      links: RoomLinks.of(webUrl: '${BilibiliEndpoints.origin}/$id'),
     );
   }
 
@@ -230,11 +233,11 @@ abstract final class BilibiliRoomParser {
         liveStatus: state,
       ),
       area: LiveArea.normalized(platform: bilibiliSiteId, areaName: _highlighted(item['cate_name'])),
-      broadcast: RoomBroadcast(
+      broadcast: RoomBroadcast.of(
         liveStatus: state,
         startedAt: state == LiveStatus.live ? _beijingTime(item['live_time']) : null,
       ),
-      links: RoomLinks(webUrl: '${BilibiliEndpoints.origin}/$id'),
+      links: RoomLinks.of(webUrl: '${BilibiliEndpoints.origin}/$id'),
     );
   }
 
@@ -292,7 +295,7 @@ abstract final class BilibiliRoomParser {
       room: LiveRoom.normalized(
         platform: bilibiliSiteId,
         roomId: id,
-        content: RoomContent(
+        content: RoomContent.of(
           title: decodeHtmlEntities(jsonString(room['title']) ?? ''),
           coverUrl: sizedImage(room['cover']),
           introduction: _richText(room['description']) ?? '',
@@ -314,12 +317,12 @@ abstract final class BilibiliRoomParser {
           online: online,
           total: _watched(data['watched_show'], state: state),
         ),
-        broadcast: RoomBroadcast(
+        broadcast: RoomBroadcast.of(
           liveStatus: state,
           startedAt: live ? _unixTime(room['live_start_time']) : null,
           restriction: _restriction(room['special_type'], live: live),
         ),
-        links: RoomLinks(webUrl: '${BilibiliEndpoints.origin}/$id'),
+        links: RoomLinks.of(webUrl: '${BilibiliEndpoints.origin}/$id'),
       ),
     );
   }
@@ -454,7 +457,7 @@ abstract final class BilibiliRoomParser {
   static int _key(LiveRoom room) =>
       room.audience.popularity ?? room.audience.onlineViewers ?? room.audience.totalViewers ?? 0;
 
-  static RoomAudience _audience({required int? online, required int? total}) => RoomAudience(
+  static RoomAudience _audience({required int? online, required int? total}) => RoomAudience.of(
     popularity: online,
     totalViewers: total,
     primaryMetric: switch ((online, total)) {

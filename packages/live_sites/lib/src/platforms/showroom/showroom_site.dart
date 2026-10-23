@@ -301,8 +301,8 @@ final class ShowroomSite implements LiveSite {
     }
     final data = ShowroomStreamData(roomId: id, rows: failed ? null : rows);
     _streams[id] = data;
-    return room.copyWith(
-      runtime: RoomRuntime(streamHandle: data, danmakuHandle: info.danmaku),
+    return room.rebuild(
+      (b) => b..runtime = RoomRuntime.of(streamHandle: data, danmakuHandle: info.danmaku).toBuilder(),
     );
   }
 

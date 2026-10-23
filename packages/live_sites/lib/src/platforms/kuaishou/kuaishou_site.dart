@@ -308,13 +308,14 @@ final class KuaishouSite implements LiveSite {
     );
     final parse = result.parse;
     final liveStreamId = parse.liveStreamId;
-    return parse.room.copyWith(
-      runtime: RoomRuntime(
-        streamHandle: KuaishouRoomData(issuedAt: now(), liveStreamId: liveStreamId, playUrls: parse.playUrls),
-        danmakuHandle: liveStreamId == null
-            ? null
-            : KuaishouDanmakuArgs(liveStreamId: liveStreamId, cookie: result.cookie, emotes: parse.emotes),
-      ),
+    return parse.room.rebuild(
+      (b) => b
+        ..runtime = RoomRuntime.of(
+          streamHandle: KuaishouRoomData(issuedAt: now(), liveStreamId: liveStreamId, playUrls: parse.playUrls),
+          danmakuHandle: liveStreamId == null
+              ? null
+              : KuaishouDanmakuArgs(liveStreamId: liveStreamId, cookie: result.cookie, emotes: parse.emotes),
+        ).toBuilder(),
     );
   }
 

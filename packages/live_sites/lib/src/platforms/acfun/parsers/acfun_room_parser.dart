@@ -192,7 +192,9 @@ abstract final class AcfunRoomParser {
     }
     final parsed = room(root, authorId);
     final signature = acfunHtmlEntities(AcfunJson.text(user['signature']));
-    return parsed.copyWith(content: parsed.content.copyWith(introduction: signature.isEmpty ? null : signature));
+    return parsed.rebuild(
+      (b) => b..content.replace(parsed.content.rebuild((b) => b..introduction = signature.isEmpty ? null : signature)),
+    );
   }
 
   /// A room card or detail: the online count as concurrent viewers, the
@@ -208,7 +210,7 @@ abstract final class AcfunRoomParser {
     return LiveRoom.normalized(
       platform: acfunSiteId,
       roomId: authorId,
-      content: RoomContent(
+      content: RoomContent.of(
         title: AcfunJson.text(item['title']),
         coverUrl: covers == null || covers.isEmpty ? '' : imageUrl(covers.first),
       ),
@@ -220,13 +222,13 @@ abstract final class AcfunRoomParser {
         followerCount: followers,
       ),
       area: type == null || AcfunJson.text(type['name']).isEmpty ? null : _area(type),
-      audience: RoomAudience(onlineViewers: viewers, primaryMetric: LiveAudienceMetricType.onlineViewers),
-      broadcast: RoomBroadcast(
+      audience: RoomAudience.of(onlineViewers: viewers, primaryMetric: LiveAudienceMetricType.onlineViewers),
+      broadcast: RoomBroadcast.of(
         liveStatus: live ? LiveStatus.live : LiveStatus.offline,
         startedAt: live ? startedAt(item['createTime']) : null,
         restriction: live ? restriction(item) : null,
       ),
-      links: RoomLinks(webUrl: AcfunEndpoints.roomPageUrl(authorId)),
+      links: RoomLinks.of(webUrl: AcfunEndpoints.roomPageUrl(authorId)),
     );
   }
 
@@ -440,7 +442,7 @@ abstract final class AcfunRoomParser {
     return LiveRoom.normalized(
       platform: acfunSiteId,
       roomId: id,
-      content: RoomContent(introduction: card.query((element) => element.hasClass('up__main__intro'))?.text.trim()),
+      content: RoomContent.of(introduction: card.query((element) => element.hasClass('up__main__intro'))?.text.trim()),
       anchor: LiveAnchor.normalized(
         platform: acfunSiteId,
         anchorId: id,
@@ -451,8 +453,8 @@ abstract final class AcfunRoomParser {
         followerCount: followers,
         liveStatus: status,
       ),
-      broadcast: RoomBroadcast(liveStatus: status),
-      links: RoomLinks(webUrl: AcfunEndpoints.roomPageUrl(id)),
+      broadcast: RoomBroadcast.of(liveStatus: status),
+      links: RoomLinks.of(webUrl: AcfunEndpoints.roomPageUrl(id)),
     );
   }
 

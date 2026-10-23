@@ -50,10 +50,7 @@ final class SeventeenLivePlaybackProvider implements LivePlaybackProvider {
   }
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({
-    required String roomId,
-    LivePlayQuality? quality,
-  }) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
     try {
       final prefer = site.preferH264();
       final wanted = quality?.qualityId?.trim();

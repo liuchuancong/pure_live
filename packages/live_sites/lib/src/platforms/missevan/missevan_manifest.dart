@@ -7,11 +7,11 @@ import 'package:live_sites/src/models/enums/live_asset_type.dart';
 const String missevanSiteId = 'missevan';
 
 /// Missevan's stable identity (ARCHITECTURE.md §4.1).
-const missevanManifest = LiveSiteManifest(
+final missevanManifest = LiveSiteManifest(
   id: missevanSiteId,
   name: {'zh-CN': '猫耳 FM', 'en-US': 'MissEvan'},
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['maoer', 'moefm', 'moe'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/missevan.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/missevan.png'),
 );

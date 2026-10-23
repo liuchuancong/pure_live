@@ -98,7 +98,7 @@ abstract final class KuaishouDanmakuCodec {
   static LiveMessage audience(int viewers) => LiveMessage.normalized(
     type: LiveMessageType.audienceUpdate,
     color: LiveMessageColor.white,
-    payload: LiveAudienceUpdate(kind: LiveAudienceSignalKind.onlineViewers, value: viewers),
+    payload: LiveAudienceUpdate.of(kind: LiveAudienceSignalKind.onlineViewers, value: viewers),
   );
 
   /// Parses one answer: [body] is the response decoded once; text is decoded up

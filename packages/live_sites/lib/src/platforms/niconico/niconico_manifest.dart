@@ -7,11 +7,11 @@ import 'package:live_sites/src/models/enums/live_asset_type.dart';
 const String niconicoSiteId = 'niconico';
 
 /// Niconico's stable identity (ARCHITECTURE.md §4.1).
-const niconicoManifest = LiveSiteManifest(
+final niconicoManifest = LiveSiteManifest(
   id: niconicoSiteId,
   name: {'zh-CN': ' Nico Nico 直播', 'en-US': 'Niconico'},
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['nicovideo', 'niconico-live'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/niconico.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/niconico.png'),
 );

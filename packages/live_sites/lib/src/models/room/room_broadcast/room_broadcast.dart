@@ -1,35 +1,62 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:live_sites/src/models/converters/epoch_millis_converter.dart';
-import 'package:live_sites/src/models/converters/live_status_by_name_converter.dart';
+// The named factories spell their class name; the `new` shorthand
+// cannot carry per-constructor documentation.
+// ignore_for_file: unnecessary_type_name_in_constructor
+import 'package:built_value/built_value.dart';
+import 'package:built_value/serializer.dart';
 import 'package:live_sites/src/models/enums/live_follow_group.dart';
 import 'package:live_sites/src/models/enums/live_restriction.dart';
 import 'package:live_sites/src/models/enums/live_room_activity.dart';
 import 'package:live_sites/src/models/enums/live_status.dart';
+import 'package:live_sites/src/models/serializers.dart';
 
-// The named factories spell their class name; the `new` shorthand
-// cannot carry per-constructor documentation.
-// ignore_for_file: unnecessary_type_name_in_constructor
-part 'room_broadcast.freezed.dart';
 part 'room_broadcast.g.dart';
 
 /// The broadcast state of a room: status, start time, restriction, format.
 ///
 /// [liveStatus] null = the source said nothing (≠ [LiveStatus.unknown],
 /// which is an explicit unknown).
-@freezed
-abstract class RoomBroadcast with _$RoomBroadcast {
-  /// Creates a RoomBroadcast with already-normalized fields.
-  const factory RoomBroadcast({
-    @LiveStatusByNameConverter() LiveStatus? liveStatus,
-    @EpochMillisConverter() DateTime? startedAt,
-    LiveRestriction? restriction,
-    @Default(LiveRoomActivity.none) LiveRoomActivity activity,
-  }) = _RoomBroadcast;
+abstract class RoomBroadcast implements Built<RoomBroadcast, RoomBroadcastBuilder> {
+  /// Builds from a builder [updates] callback — the codegen entry.
+  factory RoomBroadcast([void Function(RoomBroadcastBuilder)? updates]) = _$RoomBroadcast;
 
-  const RoomBroadcast._();
+  /// Creates a RoomBroadcast with already-normalized fields.
+  /// Creates a RoomBroadcast with already-normalized fields.
+  factory RoomBroadcast.of({
+    LiveStatus? liveStatus,
+    DateTime? startedAt,
+    LiveRestriction? restriction,
+    LiveRoomActivity activity = LiveRoomActivity.none,
+  }) => RoomBroadcast(
+    (b) => b
+      ..liveStatus = liveStatus
+      ..startedAt = startedAt
+      ..restriction = restriction
+      ..activity = activity,
+  );
+
+  RoomBroadcast._();
 
   /// Deserializes a stored JSON record.
-  factory RoomBroadcast.fromJson(Map<String, Object?> json) => _$RoomBroadcastFromJson(json);
+  factory RoomBroadcast.fromJson(Map<String, Object?> json) =>
+      serializers.deserializeWith(RoomBroadcast.serializer, json)!;
+
+  @BuiltValueHook(initializeBuilder: true)
+  static void _initialize(RoomBroadcastBuilder b) => b..activity = LiveRoomActivity.none;
+
+  /// The serializer built_value registers in [serializers].
+  static Serializer<RoomBroadcast> get serializer => _$roomBroadcastSerializer;
+
+  /// The platform's live status, when it said one.
+  LiveStatus? get liveStatus;
+
+  /// When the current session started.
+  DateTime? get startedAt;
+
+  /// A restriction on playing the room.
+  LiveRestriction? get restriction;
+
+  /// A special activity the room is running.
+  LiveRoomActivity get activity;
 
   /// The state used for display and playback; unknown when not given.
   LiveStatus get effectiveLiveStatus => liveStatus ?? LiveStatus.unknown;
@@ -75,11 +102,12 @@ abstract class RoomBroadcast with _$RoomBroadcast {
       (_, null) || (_, LiveStatus.unknown) => true,
       (final current, final next) => current == next,
     };
-    return copyWith(
-      liveStatus: incoming.liveStatus ?? liveStatus,
-      startedAt: incoming.startedAt ?? (sameStatus ? startedAt : null),
-      restriction: incoming.restriction ?? (sameStatus ? restriction : null),
-      activity: incoming.activity != LiveRoomActivity.none ? incoming.activity : activity,
+    return rebuild(
+      (b) => b
+        ..liveStatus = incoming.liveStatus ?? liveStatus
+        ..startedAt = incoming.startedAt ?? (sameStatus ? startedAt : null)
+        ..restriction = incoming.restriction ?? (sameStatus ? restriction : null)
+        ..activity = incoming.activity != LiveRoomActivity.none ? incoming.activity : activity,
     );
   }
 }

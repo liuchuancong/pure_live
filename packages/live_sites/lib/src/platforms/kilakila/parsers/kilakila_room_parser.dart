@@ -418,7 +418,7 @@ abstract final class KilakilaRoomParser {
     return LiveRoom.normalized(
       platform: kilakilaSiteId,
       roomId: broadcast.uid,
-      content: RoomContent(title: broadcast.title, coverUrl: broadcast.cover),
+      content: RoomContent.of(title: broadcast.title, coverUrl: broadcast.cover),
       anchor: LiveAnchor.normalized(
         platform: kilakilaSiteId,
         anchorId: broadcast.uid,
@@ -426,17 +426,17 @@ abstract final class KilakilaRoomParser {
         avatarUrl: broadcast.avatar,
         liveStatus: liveStatus,
       ),
-      audience: RoomAudience(
+      audience: RoomAudience.of(
         onlineViewers: live ? broadcast.online : null,
         totalViewers: live ? broadcast.total : null,
         primaryMetric: live ? LiveAudienceMetricType.onlineViewers : LiveAudienceMetricType.unknown,
       ),
-      broadcast: RoomBroadcast(
+      broadcast: RoomBroadcast.of(
         liveStatus: liveStatus,
         startedAt: live ? broadcast.startedAt : null,
         restriction: live ? broadcast.restriction : null,
       ),
-      links: RoomLinks(webUrl: KilakilaEndpoints.ownerUrl(broadcast.uid)),
+      links: RoomLinks.of(webUrl: KilakilaEndpoints.ownerUrl(broadcast.uid)),
     );
   }
 
@@ -472,9 +472,14 @@ abstract final class KilakilaRoomParser {
   }
 
   /// [room] with [profile]'s introduction and follower count.
-  static LiveRoom _withProfile(LiveRoom room, KilakilaProfile profile) => room.copyWith(
-    content: room.content.copyWith(introduction: profile.introduction.isEmpty ? null : profile.introduction),
-    anchor: profile.followers == null ? room.anchor : room.anchor?.copyWith(followerCount: profile.followers),
+  static LiveRoom _withProfile(LiveRoom room, KilakilaProfile profile) => room.rebuild(
+    (b) => b
+      ..content.replace(
+        room.content.rebuild((b) => b..introduction = profile.introduction.isEmpty ? null : profile.introduction),
+      )
+      ..anchor =
+          (profile.followers == null ? room.anchor : room.anchor?.rebuild((b) => b..followerCount = profile.followers))
+              ?.toBuilder(),
   );
 
   static LiveRoom _anchorRoom(
@@ -486,7 +491,7 @@ abstract final class KilakilaRoomParser {
   }) => LiveRoom.normalized(
     platform: kilakilaSiteId,
     roomId: uid,
-    content: RoomContent(title: title),
+    content: RoomContent.of(title: title),
     anchor: LiveAnchor.normalized(
       platform: kilakilaSiteId,
       anchorId: uid,
@@ -494,8 +499,8 @@ abstract final class KilakilaRoomParser {
       avatarUrl: avatar,
       liveStatus: liveStatus,
     ),
-    broadcast: RoomBroadcast(liveStatus: liveStatus),
-    links: RoomLinks(webUrl: KilakilaEndpoints.ownerUrl(uid)),
+    broadcast: RoomBroadcast.of(liveStatus: liveStatus),
+    links: RoomLinks.of(webUrl: KilakilaEndpoints.ownerUrl(uid)),
   );
 
   // Streams -------------------------------------------------------------------

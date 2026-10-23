@@ -241,11 +241,7 @@ abstract final class YoutubeDanmakuCodec {
   /// A Super Sticker, as a Super Chat: shown from its platform time (or
   /// [received]) for as long as the ticker pins it, else its colour tier, else
   /// the shortest display. Null without an amount, a message or a sticker.
-  static LiveMessage? _sticker(
-    Map<String, dynamic> renderer,
-    Map<String, Duration> pinned,
-    DateTime received,
-  ) {
+  static LiveMessage? _sticker(Map<String, dynamic> renderer, Map<String, Duration> pinned, DateTime received) {
     final background = jsonInt(renderer['backgroundColor']);
     final amount = label(renderer['purchaseAmountText']).trim();
     final text = label(renderer['message']);
@@ -415,15 +411,20 @@ abstract final class YoutubeDanmakuCodec {
     final found = <(DateTime, int, LiveMessage)>[];
     for (var index = 0; index < actions.length; index++) {
       final ticker = jsonObject(jsonObject(actions[index])?['addLiveChatTickerItemAction'])?['item'];
-      if (jsonObject(ticker)?['liveChatTickerPaidMessageItemRenderer']
-          case final Map<Object?, Object?> item) {
+      if (jsonObject(ticker)?['liveChatTickerPaidMessageItemRenderer'] case final Map<Object?, Object?> item) {
         final left = jsonInt(item['durationSec']);
         if (left == null || left <= 0) continue;
         final show = jsonObject(item['showItemEndpoint']);
         final renderer = jsonObject(jsonObject(show?['showLiveChatItemEndpoint'])?['renderer']);
         final paid = jsonObject(renderer?['liveChatPaidMessageRenderer']);
         if (paid == null) continue;
-        final message = _superChat(paid, const {}, received, end: received.add(Duration(seconds: left)), replayed: true);
+        final message = _superChat(
+          paid,
+          const {},
+          received,
+          end: received.add(Duration(seconds: left)),
+          replayed: true,
+        );
         if (message == null) continue;
         if (message.messageId.isNotEmpty && !ids.add(message.messageId)) continue;
         final start = (message.payload! as LiveSuperChatMessage).startTime!;
@@ -438,7 +439,7 @@ abstract final class YoutubeDanmakuCodec {
   static LiveMessage audience(int viewers) => LiveMessage.normalized(
     type: LiveMessageType.audienceUpdate,
     color: LiveMessageColor.white,
-    payload: LiveAudienceUpdate(kind: LiveAudienceSignalKind.onlineViewers, value: viewers),
+    payload: LiveAudienceUpdate.of(kind: LiveAudienceSignalKind.onlineViewers, value: viewers),
   );
 
   /// A live viewer count of a `next` or `updated_metadata` answer: the digits of

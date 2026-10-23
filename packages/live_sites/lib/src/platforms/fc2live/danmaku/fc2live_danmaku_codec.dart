@@ -247,7 +247,7 @@ final class Fc2LiveAudience {
 
   static LiveMessage _figure(LiveAudienceSignalKind kind, int value) => LiveMessage.normalized(
     type: LiveMessageType.audienceUpdate,
-    payload: LiveAudienceUpdate(kind: kind, value: value),
+    payload: LiveAudienceUpdate.of(kind: kind, value: value),
   );
 }
 

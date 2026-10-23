@@ -7,11 +7,11 @@ import 'package:live_sites/src/models/enums/live_asset_type.dart';
 const String lookliveSiteId = 'looklive';
 
 /// LOOK Live's stable identity (ARCHITECTURE.md §4.1).
-const lookliveManifest = LiveSiteManifest(
+final lookliveManifest = LiveSiteManifest(
   id: lookliveSiteId,
   name: {'zh-CN': 'LOOK 直播', 'en-US': 'LOOK Live'},
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['look', 'wangyi', '163live'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/looklive.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/looklive.png'),
 );

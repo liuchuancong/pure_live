@@ -266,7 +266,8 @@ final class KilakilaSite implements LiveSite {
     final data = KilakilaRoomData(issuedAt: _now());
     if (current == null) {
       _streams[profile.uid] = data;
-      return KilakilaRoomParser.profileDetail(profile).copyWith(runtime: RoomRuntime(streamHandle: data));
+      return KilakilaRoomParser.profileDetail(profile)
+          .rebuild((b) => b..runtime = RoomRuntime.of(streamHandle: data).toBuilder());
     }
     final KilakilaBroadcast broadcast;
     try {
@@ -286,11 +287,12 @@ final class KilakilaSite implements LiveSite {
     }
     final entered = KilakilaRoomData(issuedAt: _now(), broadcast: broadcast);
     _streams[profile.uid] = entered;
-    return KilakilaRoomParser.enteredRoom(profile, broadcast).copyWith(
-      runtime: RoomRuntime(
-        streamHandle: entered,
-        danmakuHandle: KilakilaDanmakuArgs(roomId: broadcast.broadcastId),
-      ),
+    return KilakilaRoomParser.enteredRoom(profile, broadcast).rebuild(
+      (b) => b
+        ..runtime = RoomRuntime.of(
+          streamHandle: entered,
+          danmakuHandle: KilakilaDanmakuArgs(roomId: broadcast.broadcastId),
+        ).toBuilder(),
     );
   }
 

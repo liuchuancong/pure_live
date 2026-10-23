@@ -182,7 +182,7 @@ abstract final class ShowroomParser {
   }) => LiveRoom.normalized(
     platform: showroomSiteId,
     roomId: roomId,
-    content: RoomContent(title: title, coverUrl: cover, introduction: introduction),
+    content: RoomContent.of(title: title, coverUrl: cover, introduction: introduction),
     anchor: LiveAnchor.normalized(
       platform: showroomSiteId,
       anchorId: roomId,
@@ -190,16 +190,16 @@ abstract final class ShowroomParser {
       avatarUrl: cover.isEmpty ? null : cover,
       followerCount: followers,
     ),
-    audience: RoomAudience(
+    audience: RoomAudience.of(
       totalViewers: live ? views : null,
       primaryMetric: live && views != null ? LiveAudienceMetricType.totalViewers : LiveAudienceMetricType.unknown,
     ),
-    broadcast: RoomBroadcast(
+    broadcast: RoomBroadcast.of(
       liveStatus: live ? LiveStatus.live : LiveStatus.offline,
       startedAt: startedAt,
       restriction: restriction,
     ),
-    links: RoomLinks(webUrl: ShowroomEndpoints.roomKeyUrl(roomUrlKey)),
+    links: RoomLinks.of(webUrl: ShowroomEndpoints.roomKeyUrl(roomUrlKey)),
     area: genreName.isEmpty
         ? null
         : LiveArea.normalized(

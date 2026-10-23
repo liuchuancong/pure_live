@@ -13,7 +13,7 @@ const String seventeenliveSiteId = '17live';
 /// areas and search cover — the reference carried it as a `directoryNoticeKey`,
 /// and this contract has no directory notice of its own, so the scope belongs to
 /// the slow-changing metadata instead.
-const seventeenliveManifest = LiveSiteManifest(
+final seventeenliveManifest = LiveSiteManifest(
   id: seventeenliveSiteId,
   name: {'zh-CN': '17LIVE', 'en-US': '17LIVE'},
   description: {
@@ -26,5 +26,5 @@ const seventeenliveManifest = LiveSiteManifest(
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['17直播', '17media', 'イチナナ'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/17live.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/17live.png'),
 );

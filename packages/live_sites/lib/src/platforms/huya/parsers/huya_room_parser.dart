@@ -181,7 +181,7 @@ abstract final class HuyaRoomParser {
         LiveRoom.normalized(
           platform: huyaSiteId,
           roomId: id,
-          content: RoomContent(
+          content: RoomContent.of(
             title: _title(room['introduction'], room['roomName']),
             coverUrl: _thumbnail(room['screenshot']),
           ),
@@ -191,12 +191,12 @@ abstract final class HuyaRoomParser {
             avatarUrl: normalizeImageUrl(room['avatar180']),
           ),
           area: LiveArea.normalized(platform: huyaSiteId, areaName: _text(room['gameFullName'])),
-          audience: RoomAudience(
+          audience: RoomAudience.of(
             popularity: jsonInt(room['totalCount']),
             primaryMetric: LiveAudienceMetricType.popularity,
           ),
-          broadcast: RoomBroadcast(liveStatus: LiveStatus.live, restriction: _flagRestriction(room['isRoomPay'])),
-          links: RoomLinks(webUrl: '$_web/$id'),
+          broadcast: RoomBroadcast.of(liveStatus: LiveStatus.live, restriction: _flagRestriction(room['isRoomPay'])),
+          links: RoomLinks.of(webUrl: '$_web/$id'),
         ),
       );
     }
@@ -246,7 +246,7 @@ abstract final class HuyaRoomParser {
           LiveRoom.normalized(
             platform: huyaSiteId,
             roomId: id,
-            content: RoomContent(
+            content: RoomContent.of(
               title: _title(doc['game_introduction'], doc['game_roomName']),
               coverUrl: _thumbnail(doc['game_screenshot']),
             ),
@@ -258,12 +258,12 @@ abstract final class HuyaRoomParser {
               liveStatus: LiveStatus.live,
             ),
             area: LiveArea.normalized(platform: huyaSiteId, areaName: _text(doc['gameName'])),
-            audience: RoomAudience(
+            audience: RoomAudience.of(
               popularity: jsonInt(doc['game_total_count']),
               primaryMetric: LiveAudienceMetricType.popularity,
             ),
-            broadcast: const RoomBroadcast(liveStatus: LiveStatus.live),
-            links: RoomLinks(webUrl: '$_web/$id'),
+            broadcast: RoomBroadcast.of(liveStatus: LiveStatus.live),
+            links: RoomLinks.of(webUrl: '$_web/$id'),
           ),
         ),
       );
@@ -348,7 +348,7 @@ abstract final class HuyaRoomParser {
       room: LiveRoom.normalized(
         platform: huyaSiteId,
         roomId: id,
-        content: RoomContent(
+        content: RoomContent.of(
           title: _title(live['introduction'], live['roomName']),
           coverUrl: normalizeImageUrl(live['screenshot']),
           introduction: _text(live['introduction']),
@@ -366,8 +366,8 @@ abstract final class HuyaRoomParser {
           areaId: _positive(live['gamePid']) != null ? '${_positive(live['gamePid'])}' : '',
           areaName: _text(live['gameFullName']),
         ),
-        audience: RoomAudience(popularity: popularity, primaryMetric: LiveAudienceMetricType.popularity),
-        broadcast: RoomBroadcast(
+        audience: RoomAudience.of(popularity: popularity, primaryMetric: LiveAudienceMetricType.popularity),
+        broadcast: RoomBroadcast.of(
           liveStatus: state,
           startedAt: startTime == null ? null : DateTime.fromMillisecondsSinceEpoch(startTime * 1000, isUtc: true),
           restriction: switch (state) {
@@ -376,7 +376,7 @@ abstract final class HuyaRoomParser {
             _ => null,
           },
         ),
-        links: RoomLinks(webUrl: '$_web/$id'),
+        links: RoomLinks.of(webUrl: '$_web/$id'),
       ),
       presenterUid: presenterUid,
       topSid: channel('lChannelId', 'chTopId'),

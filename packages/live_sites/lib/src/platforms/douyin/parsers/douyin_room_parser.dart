@@ -265,16 +265,16 @@ abstract final class DouyinRoomParser {
     return LiveRoom.normalized(
       platform: _site,
       roomId: id,
-      content: RoomContent(title: title, coverUrl: cover),
+      content: RoomContent.of(title: title, coverUrl: cover),
       anchor: LiveAnchor.normalized(platform: _site, anchorId: anchorId ?? '', name: nick, avatarUrl: avatar),
       area: LiveArea.normalized(platform: _site, areaId: areaId ?? '', areaName: areaName),
-      audience: RoomAudience(
+      audience: RoomAudience.of(
         onlineViewers: online,
         totalViewers: total,
         primaryMetric: total != null ? LiveAudienceMetricType.totalViewers : LiveAudienceMetricType.onlineViewers,
       ),
-      broadcast: const RoomBroadcast(liveStatus: LiveStatus.live),
-      links: RoomLinks(webUrl: '${DouyinEndpoints.origin}/$id'),
+      broadcast: RoomBroadcast.of(liveStatus: LiveStatus.live),
+      links: RoomLinks.of(webUrl: '${DouyinEndpoints.origin}/$id'),
     );
   }
 
@@ -383,7 +383,7 @@ abstract final class DouyinRoomParser {
       room: LiveRoom.normalized(
         platform: _site,
         roomId: id,
-        content: RoomContent(
+        content: RoomContent.of(
           title: jsonFirstText([raw['title'], room['title'], item['title'], item['desc'], nickname]) ?? '',
           coverUrl: jsonFirstImage([owner['avatar_large'], raw['cover'], room['cover'], raw['cover_url']]),
         ),
@@ -406,13 +406,13 @@ abstract final class DouyinRoomParser {
               ]) ??
               '',
         ),
-        audience: RoomAudience(
+        audience: RoomAudience.of(
           onlineViewers: online,
           totalViewers: total,
           primaryMetric: total != null ? LiveAudienceMetricType.totalViewers : LiveAudienceMetricType.onlineViewers,
         ),
-        broadcast: RoomBroadcast(liveStatus: live ? LiveStatus.live : LiveStatus.offline),
-        links: RoomLinks(webUrl: '${DouyinEndpoints.origin}/$id'),
+        broadcast: RoomBroadcast.of(liveStatus: live ? LiveStatus.live : LiveStatus.offline),
+        links: RoomLinks.of(webUrl: '${DouyinEndpoints.origin}/$id'),
       ),
       roomId: roomId,
     );
@@ -534,7 +534,7 @@ abstract final class DouyinRoomParser {
       room: LiveRoom.normalized(
         platform: _site,
         roomId: webRid,
-        content: RoomContent(
+        content: RoomContent.of(
           title: jsonText(room['title']) ?? '',
           coverUrl: live ? jsonFirstImage([room['cover']]) : '',
           introduction: jsonText(owner?['signature']),
@@ -547,17 +547,17 @@ abstract final class DouyinRoomParser {
           liveStatus: live ? LiveStatus.live : LiveStatus.offline,
         ),
         area: LiveArea.normalized(platform: _site, areaName: _detailArea(room, roadMap)),
-        audience: RoomAudience(
+        audience: RoomAudience.of(
           onlineViewers: online,
           totalViewers: total,
           primaryMetric: total != null ? LiveAudienceMetricType.totalViewers : LiveAudienceMetricType.onlineViewers,
         ),
-        broadcast: RoomBroadcast(
+        broadcast: RoomBroadcast.of(
           liveStatus: live ? LiveStatus.live : LiveStatus.offline,
           startedAt: live ? epochSeconds(room['start_time']) ?? epochSeconds(room['create_time']) : null,
           restriction: live && qualities.isEmpty ? LiveRestriction.unplayable : LiveRestriction.none,
         ),
-        links: RoomLinks(webUrl: '${DouyinEndpoints.origin}/$webRid'),
+        links: RoomLinks.of(webUrl: '${DouyinEndpoints.origin}/$webRid'),
       ),
       roomId: jsonFirstId([room['id_str'], room['id']]),
       streamUrl: streamUrl,

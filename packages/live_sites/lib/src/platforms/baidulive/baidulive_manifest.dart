@@ -7,7 +7,7 @@ import 'package:live_sites/src/models/enums/live_asset_type.dart';
 const String baiduliveSiteId = 'baidulive';
 
 /// Baidu Live's stable identity (ARCHITECTURE.md §4.1).
-const baiduliveManifest = LiveSiteManifest(
+final baiduliveManifest = LiveSiteManifest(
   id: baiduliveSiteId,
   name: {'zh-CN': '百度直播', 'en-US': 'Baidu Live'},
   description: {
@@ -17,5 +17,5 @@ const baiduliveManifest = LiveSiteManifest(
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['baidu', 'baidulive', '百度直播'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/baidulive.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/baidulive.png'),
 );

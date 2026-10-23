@@ -586,7 +586,7 @@ abstract final class LookliveRoomParser {
     return LiveRoom.normalized(
       platform: lookliveSiteId,
       roomId: room.roomId,
-      content: RoomContent(title: room.title, coverUrl: room.cover, notice: _notice(room, restriction)),
+      content: RoomContent.of(title: room.title, coverUrl: room.cover, notice: _notice(room, restriction)),
       anchor: LiveAnchor.normalized(
         platform: lookliveSiteId,
         anchorId: room.userId,
@@ -595,7 +595,7 @@ abstract final class LookliveRoomParser {
         liveStatus: liveStatus,
       ),
       area: areaOf(room.kind),
-      audience: RoomAudience(
+      audience: RoomAudience.of(
         onlineViewers: room.currentViewers,
         popularity: room.popularity,
         primaryMetric: room.currentViewers != null
@@ -604,9 +604,9 @@ abstract final class LookliveRoomParser {
             ? LiveAudienceMetricType.popularity
             : LiveAudienceMetricType.unknown,
       ),
-      broadcast: RoomBroadcast(liveStatus: liveStatus, startedAt: room.startedAt, restriction: restriction),
-      links: RoomLinks(webUrl: LookliveEndpoints.link(room.roomId)),
-      runtime: withData ? RoomRuntime(streamHandle: room, danmakuHandle: room.danmakuArgs) : const RoomRuntime(),
+      broadcast: RoomBroadcast.of(liveStatus: liveStatus, startedAt: room.startedAt, restriction: restriction),
+      links: RoomLinks.of(webUrl: LookliveEndpoints.link(room.roomId)),
+      runtime: withData ? RoomRuntime.of(streamHandle: room, danmakuHandle: room.danmakuArgs) : RoomRuntime(),
     );
   }
 

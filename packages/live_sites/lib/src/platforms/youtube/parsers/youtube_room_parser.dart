@@ -70,7 +70,7 @@ abstract final class YoutubeRoomParser {
     final room = LiveRoom.normalized(
       platform: youtubeSiteId,
       roomId: channelId.isNotEmpty ? channelId : videoId,
-      content: RoomContent(title: title, coverUrl: lastThumbnail(details['thumbnail'])),
+      content: RoomContent.of(title: title, coverUrl: lastThumbnail(details['thumbnail'])),
       anchor: LiveAnchor.normalized(
         platform: youtubeSiteId,
         anchorId: channelId,
@@ -78,13 +78,13 @@ abstract final class YoutubeRoomParser {
         profileUrl: channelId.startsWith('UC') ? '${YoutubeEndpoints.origin}/channel/$channelId' : null,
       ),
       area: LiveArea.normalized(platform: youtubeSiteId),
-      audience: RoomAudience(onlineViewers: viewers, primaryMetric: LiveAudienceMetricType.onlineViewers),
-      broadcast: RoomBroadcast(
+      audience: RoomAudience.of(onlineViewers: viewers, primaryMetric: LiveAudienceMetricType.onlineViewers),
+      broadcast: RoomBroadcast.of(
         liveStatus: isLive ? LiveStatus.live : LiveStatus.offline,
         restriction: isLive ? LiveRestriction.none : null,
         startedAt: _isoTime(liveDetails['startTimestamp']),
       ),
-      links: RoomLinks(webUrl: YoutubeEndpoints.watchUrl(videoId)),
+      links: RoomLinks.of(webUrl: YoutubeEndpoints.watchUrl(videoId)),
     );
     return (
       room: room,
@@ -115,19 +115,19 @@ abstract final class YoutubeRoomParser {
     return LiveRoom.normalized(
       platform: youtubeSiteId,
       roomId: channelId.isNotEmpty ? channelId : videoId,
-      content: RoomContent(title: name, coverUrl: lastThumbnail(item['thumbnail'])),
+      content: RoomContent.of(title: name, coverUrl: lastThumbnail(item['thumbnail'])),
       anchor: LiveAnchor.normalized(
         platform: youtubeSiteId,
         anchorId: channelId,
         name: author,
         profileUrl: channelId.startsWith('UC') ? '${YoutubeEndpoints.origin}/channel/$channelId' : null,
       ),
-      audience: RoomAudience(onlineViewers: watching, primaryMetric: LiveAudienceMetricType.onlineViewers),
-      broadcast: RoomBroadcast(
+      audience: RoomAudience.of(onlineViewers: watching, primaryMetric: LiveAudienceMetricType.onlineViewers),
+      broadcast: RoomBroadcast.of(
         liveStatus: live ? LiveStatus.live : LiveStatus.offline,
         restriction: live ? LiveRestriction.none : null,
       ),
-      links: RoomLinks(webUrl: YoutubeEndpoints.watchUrl(videoId)),
+      links: RoomLinks.of(webUrl: YoutubeEndpoints.watchUrl(videoId)),
     );
   }
 

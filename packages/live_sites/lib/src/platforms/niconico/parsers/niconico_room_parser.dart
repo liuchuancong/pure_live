@@ -277,7 +277,7 @@ abstract final class NiconicoRoomParser {
     return LiveRoom.normalized(
       platform: _site,
       roomId: watch.room,
-      content: RoomContent(title: watch.title, coverUrl: watch.cover ?? '', introduction: watch.description),
+      content: RoomContent.of(title: watch.title, coverUrl: watch.cover ?? '', introduction: watch.description),
       anchor: watch.broadcaster.isEmpty
           ? null
           : LiveAnchor.normalized(
@@ -286,14 +286,14 @@ abstract final class NiconicoRoomParser {
               name: watch.broadcaster,
               avatarUrl: watch.avatar,
             ),
-      audience: RoomAudience(totalViewers: watch.watchCount, primaryMetric: LiveAudienceMetricType.totalViewers),
-      broadcast: RoomBroadcast(
+      audience: RoomAudience.of(totalViewers: watch.watchCount, primaryMetric: LiveAudienceMetricType.totalViewers),
+      broadcast: RoomBroadcast.of(
         liveStatus: live ? LiveStatus.live : LiveStatus.offline,
         startedAt: live ? watch.startedAt : null,
         restriction: watch.restriction,
       ),
-      links: RoomLinks(webUrl: NiconicoEndpoints.watchPage(watch.room).toString()),
-      runtime: RoomRuntime(streamHandle: watch, danmakuHandle: watch),
+      links: RoomLinks.of(webUrl: NiconicoEndpoints.watchPage(watch.room).toString()),
+      runtime: RoomRuntime.of(streamHandle: watch, danmakuHandle: watch),
     );
   }
 
@@ -389,7 +389,7 @@ abstract final class NiconicoRoomParser {
     return LiveRoom.normalized(
       platform: _site,
       roomId: roomId,
-      content: RoomContent(
+      content: RoomContent.of(
         title: title,
         coverUrl: publicImage(row['flippedListingThumbnail']) ?? publicImage(row['listingThumbnail']) ?? '',
       ),
@@ -399,14 +399,14 @@ abstract final class NiconicoRoomParser {
         name: jsonString(name) ?? '',
         avatarUrl: publicImage(icon) ?? publicImage(social?['thumbnailImageUrl']),
       ),
-      area: const LiveArea(platform: _site, areaId: NiconicoEndpoints.areaId, areaName: 'niconico'),
-      audience: RoomAudience(totalViewers: count, primaryMetric: LiveAudienceMetricType.totalViewers),
-      broadcast: RoomBroadcast(
+      area: LiveArea.of(platform: _site, areaId: NiconicoEndpoints.areaId, areaName: 'niconico'),
+      audience: RoomAudience.of(totalViewers: count, primaryMetric: LiveAudienceMetricType.totalViewers),
+      broadcast: RoomBroadcast.of(
         liveStatus: LiveStatus.live,
         startedAt: search ? startedAtSeconds(row['beginTime']) : startedAtMilliseconds(row['beginAt']),
         restriction: listRestriction(row, search: search),
       ),
-      links: RoomLinks(webUrl: NiconicoEndpoints.watchPage(roomId).toString()),
+      links: RoomLinks.of(webUrl: NiconicoEndpoints.watchPage(roomId).toString()),
     );
   }
 

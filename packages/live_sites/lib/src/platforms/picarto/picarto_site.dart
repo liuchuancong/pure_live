@@ -181,12 +181,14 @@ final class PicartoSite implements LiveSite {
     } else {
       _streams[channel.name] = data;
     }
-    return channel.room.copyWith(
-      broadcast: channel.room.broadcast.copyWith(startedAt: await since),
-      runtime: RoomRuntime(
-        streamHandle: data,
-        danmakuHandle: PicartoDanmakuArgs(channelName: channel.name, channelId: channel.channelId),
-      ),
+    final startedAt = await since;
+    return channel.room.rebuild(
+      (b) => b
+        ..broadcast.replace(channel.room.broadcast.rebuild((r) => r..startedAt = startedAt))
+        ..runtime = RoomRuntime.of(
+          streamHandle: data,
+          danmakuHandle: PicartoDanmakuArgs(channelName: channel.name, channelId: channel.channelId),
+        ).toBuilder(),
     );
   }
 

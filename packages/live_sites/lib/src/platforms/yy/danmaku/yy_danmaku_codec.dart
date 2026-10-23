@@ -421,7 +421,7 @@ final class YyProtocolSession {
     if (reader.readUint32() != topSid) return null;
     return LiveMessage.normalized(
       type: LiveMessageType.audienceUpdate,
-      payload: LiveAudienceUpdate(kind: LiveAudienceSignalKind.popularity, value: heat),
+      payload: LiveAudienceUpdate.of(kind: LiveAudienceSignalKind.popularity, value: heat),
       color: LiveMessageColor.white,
     );
   }

@@ -445,7 +445,7 @@ abstract final class PicartoDanmakuCodec {
     return LiveMessage.normalized(
       type: LiveMessageType.audienceUpdate,
       color: LiveMessageColor.white,
-      payload: LiveAudienceUpdate(kind: LiveAudienceSignalKind.onlineViewers, value: viewers),
+      payload: LiveAudienceUpdate.of(kind: LiveAudienceSignalKind.onlineViewers, value: viewers),
     );
   }
 

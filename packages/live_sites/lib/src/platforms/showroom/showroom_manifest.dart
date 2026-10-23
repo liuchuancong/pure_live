@@ -7,11 +7,11 @@ import 'package:live_sites/src/models/enums/live_asset_type.dart';
 const String showroomSiteId = 'showroom';
 
 /// SHOWROOM's stable identity (ARCHITECTURE.md §4.1).
-const showroomManifest = LiveSiteManifest(
+final showroomManifest = LiveSiteManifest(
   id: showroomSiteId,
   name: {'zh-CN': 'SHOWROOM', 'en-US': 'SHOWROOM'},
   version: '0.1.0',
   contractVersion: '1.0.0',
   aliases: ['showroom-live', 'showroomlive'],
-  icon: LiveAssetRef(type: LiveAssetType.bundled, path: 'assets/platforms/showroom.png'),
+  icon: LiveAssetRef.of(type: LiveAssetType.bundled, path: 'assets/platforms/showroom.png'),
 );
