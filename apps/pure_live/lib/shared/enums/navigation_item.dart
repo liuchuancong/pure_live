@@ -157,14 +157,3 @@ const List<NavigationItem> kMobileNavigationItems = [
   NavigationItem.favorites,
   NavigationItem.settings,
 ];
-
-/// The destinations the TV layout shows on its rail.
-const List<NavigationItem> kTvNavigationItems = [
-  NavigationItem.home,
-  NavigationItem.live,
-  NavigationItem.channels,
-  NavigationItem.discover,
-  NavigationItem.history,
-  NavigationItem.favorites,
-  NavigationItem.settings,
-];

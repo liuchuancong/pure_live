@@ -1,11 +1,9 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show StatefulNavigationShell;
-import 'package:pure_live/app/providers/environment_providers.dart' show DeviceProfile, deviceProfileProvider;
 import 'package:pure_live/app/providers/navigation_providers.dart' show selectedNavItemProvider;
 import 'package:pure_live/layouts/desktop/desktop_layout.dart' show DesktopLayout;
 import 'package:pure_live/layouts/mobile/mobile_layout.dart' show MobileLayout;
-import 'package:pure_live/layouts/tv/tv_layout.dart' show TvLayout;
 import 'package:pure_live/shared/enums/navigation_item.dart'
     show NavigationItem, kContentItems, kMobileNavigationItems, kPersonalItems, kPrimaryItems;
 import 'package:responsive_breakpoints/responsive_breakpoints.dart' show TailwindBreakpoint;
@@ -58,7 +56,6 @@ final class AppLayout extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final device = ref.watch(deviceProfileProvider);
     final breakpoint = _breakpointOf(MediaQuery.sizeOf(context).width);
     final selected = ref.watch(selectedNavItemProvider);
 
@@ -71,17 +68,7 @@ final class AppLayout extends ConsumerWidget {
       shell.goBranch(branch, initialLocation: branch == shell.currentIndex);
     }
 
-    if (device == DeviceProfile.tv) {
-      const items = kPrimaryItems;
-      final index = items.indexOf(selected);
-      return TvLayout(
-        content: shell,
-        items: items,
-        selectedIndex: index < 0 ? 0 : index,
-        onSelected: (index) => handleSelected(items[index]),
-      );
-    }
-    if (device == DeviceProfile.mobile || breakpoint.index < kBottomBarBreakpoint.index) {
+    if (breakpoint.index < kBottomBarBreakpoint.index) {
       const items = kMobileNavigationItems;
       final index = items.indexOf(selected);
       return MobileLayout(

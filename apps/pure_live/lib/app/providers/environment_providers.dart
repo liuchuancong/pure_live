@@ -19,14 +19,12 @@ final platformKindProvider = Provider<PlatformKind>(
 /// code never imports the platform package for a fact the shell already
 /// knows.
 enum DeviceProfile {
-  /// A desktop window: keyboard, mouse, a caption the app draws.
+  /// A desktop window: keyboard, mouse, a caption the app draws. A TV runs
+  /// here too — the width picks the layout and the UI kit carries focus.
   desktop,
 
   /// A phone: touch, a bottom bar, portrait first.
-  mobile,
-
-  /// A TV: a remote, focus travel, no pointer at all.
-  tv;
+  mobile;
 
   /// Translates the platform layer's form factor. A tablet is a touch
   /// device like a phone — the mobile layout's bar, not a desktop rail.
@@ -34,7 +32,7 @@ enum DeviceProfile {
     FormFactor.desktop => DeviceProfile.desktop,
     FormFactor.tablet => DeviceProfile.mobile,
     FormFactor.phone => DeviceProfile.mobile,
-    FormFactor.tv => DeviceProfile.tv,
+    FormFactor.tv => DeviceProfile.desktop,
   };
 
   /// Whether this profile owns a window with a caption.
