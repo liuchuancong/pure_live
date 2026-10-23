@@ -98,6 +98,9 @@ class Translations$common$zh_CN {
 	/// zh-CN: '音乐'
 	String get moduleMusic => '音乐';
 
+	/// zh-CN: '重试'
+	String get retry => '重试';
+
 	/// zh-CN: '这个模块还在路上'
 	String get moduleComingSoon => '这个模块还在路上';
 
@@ -280,6 +283,7 @@ extension on Translations {
 			'common.moduleIptv' => 'IPTV',
 			'common.moduleVod' => '点播',
 			'common.moduleMusic' => '音乐',
+			'common.retry' => '重试',
 			'common.moduleComingSoon' => '这个模块还在路上',
 			'common.back' => '后退',
 			'common.forward' => '前进',

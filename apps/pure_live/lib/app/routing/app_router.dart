@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:pure_live/app/routing/route_names.dart' show RouteNames;
 import 'package:pure_live/app/routing/route_observer.dart' show routeObserver;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/features/home/home_page.dart' show HomePage;
 import 'package:pure_live/layouts/app_layout.dart' show AppLayout;
 import 'package:pure_live/shared/enums/navigation_item.dart' show NavigationItem;
 
@@ -89,7 +90,7 @@ final class HomeRoute extends GoRouteData with $HomeRoute {
   const HomeRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => const _DestinationPlaceholder(item: NavigationItem.home);
+  Widget build(BuildContext context, GoRouterState state) => const HomePage();
 }
 
 /// The live branch's screen.

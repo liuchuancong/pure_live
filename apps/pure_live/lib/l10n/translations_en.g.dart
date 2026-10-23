@@ -67,6 +67,7 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get moduleIptv => 'IPTV';
 	@override String get moduleVod => 'Videos';
 	@override String get moduleMusic => 'Music';
+	@override String get retry => 'Retry';
 	@override String get moduleComingSoon => 'This module is on its way';
 	@override String get back => 'Back';
 	@override String get forward => 'Forward';
@@ -168,6 +169,7 @@ extension on TranslationsEn {
 			'common.moduleIptv' => 'IPTV',
 			'common.moduleVod' => 'Videos',
 			'common.moduleMusic' => 'Music',
+			'common.retry' => 'Retry',
 			'common.moduleComingSoon' => 'This module is on its way',
 			'common.back' => 'Back',
 			'common.forward' => 'Forward',

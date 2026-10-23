@@ -13,6 +13,7 @@
   "moduleIptv": "IPTV",
   "moduleVod": "Videos",
   "moduleMusic": "Music",
+  "retry": "Retry",
   "moduleComingSoon": "This module is on its way",
   "back": "Back",
   "forward": "Forward",
