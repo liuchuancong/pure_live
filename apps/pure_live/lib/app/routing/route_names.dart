@@ -22,6 +22,9 @@ abstract final class RouteNames {
   /// The playlist branch.
   static const String playlist = '/playlist';
 
+  /// The live room detail, pushed on the root navigator.
+  static const String room = '/room/:platform/:roomId';
+
   /// The settings branch.
   static const String settings = '/settings';
 

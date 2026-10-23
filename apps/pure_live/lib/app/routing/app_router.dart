@@ -8,6 +8,7 @@ import 'package:pure_live/features/areas/areas_page.dart' show AreasPage;
 import 'package:pure_live/features/favorites/favorites_page.dart' show FavoritesPage;
 import 'package:pure_live/features/history/history_page.dart' show HistoryPage;
 import 'package:pure_live/features/home/home_page.dart' show HomePage;
+import 'package:pure_live/features/room/room_page.dart' show RoomPage;
 import 'package:pure_live/features/search/search_page.dart' show SearchPage;
 import 'package:pure_live/features/settings/settings_page.dart' show SettingsPage;
 import 'package:pure_live/l10n/translations.dart';
@@ -159,6 +160,24 @@ final class SettingsRoute extends GoRouteData with $SettingsRoute {
 
   @override
   Widget build(BuildContext context, GoRouterState state) => const SettingsPage();
+}
+
+/// The live room detail, pushed on the root navigator above the shell: one
+/// room at a time, back returns to where it was opened from.
+@TypedGoRoute<RoomRoute>(path: RouteNames.room)
+final class RoomRoute extends GoRouteData with $RoomRoute {
+  /// The room detail over [platform] and [roomId].
+  const RoomRoute({required this.platform, required this.roomId});
+
+  /// The room's platform id.
+  final String platform;
+
+  /// The room's platform room id.
+  final String roomId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      RoomPage(platform: platform, roomId: roomId);
 }
 
 /// The app's router: the generated typed routes under the shell route, the

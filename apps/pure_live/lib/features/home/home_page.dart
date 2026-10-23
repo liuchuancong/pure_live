@@ -3,10 +3,12 @@ import 'dart:async' show unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
 import 'package:mosaic_grid/mosaic_grid.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
 import 'package:pure_live/app/providers/sites_providers.dart';
+import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
 import 'package:pure_live/features/home/home_feed_controller.dart';
 import 'package:pure_live/features/home/room_card.dart' show RoomCard, RoomCardSkeleton;
 import 'package:pure_live/l10n/translations.dart';
@@ -172,7 +174,7 @@ final class _FeedGrid extends ConsumerWidget {
       columnGap: DsSpace.s16,
       rowGap: DsSpace.s16,
       itemCount: feed.rooms.length,
-      itemBuilder: (context, index) => RoomCard(room: feed.rooms[index]),
+      itemBuilder: (context, index) => RoomCard(room: feed.rooms[index], onOpen: () => context.push(RoomRoute(platform: feed.rooms[index].ref.platform, roomId: feed.rooms[index].ref.roomId).location)),
       footer:
           feed.loading
               ? const Padding(padding: EdgeInsets.all(DsSpace.s16), child: Center(child: RoomCardSkeleton()))

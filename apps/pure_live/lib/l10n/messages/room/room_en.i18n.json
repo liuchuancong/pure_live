@@ -1,0 +1,12 @@
+{
+  "opening": "Opening the room",
+  "follow": "Follow",
+  "unfollow": "Following",
+  "quality": "Quality",
+  "lineLabel": "Line",
+  "line": "Line {n}",
+  "play": "Play",
+  "pause": "Pause",
+  "noChat": "No chat yet",
+  "system": "System"
+}

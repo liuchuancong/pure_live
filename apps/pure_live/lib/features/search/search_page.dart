@@ -3,10 +3,12 @@ import 'dart:async' show Timer, unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
 import 'package:mosaic_grid/mosaic_grid.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show selectedSiteProvider;
+import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
 import 'package:pure_live/features/home/room_card.dart' show RoomCard, RoomCardSkeleton;
 import 'package:pure_live/features/search/search_controller.dart';
 import 'package:pure_live/l10n/translations.dart';
@@ -269,7 +271,7 @@ final class _RoomResults extends ConsumerWidget {
       columnGap: DsSpace.s16,
       rowGap: DsSpace.s16,
       itemCount: search.rooms.length,
-      itemBuilder: (context, index) => RoomCard(room: search.rooms[index]),
+      itemBuilder: (context, index) => RoomCard(room: search.rooms[index], onOpen: () => context.push(RoomRoute(platform: search.rooms[index].ref.platform, roomId: search.rooms[index].ref.roomId).location)),
       footer: search.loading
           ? const Padding(
               padding: EdgeInsets.all(DsSpace.s16),

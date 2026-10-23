@@ -49,6 +49,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$music$zh_CN music = Translations$music$zh_CN.internal(_root);
 	late final Translations$navigation$zh_CN navigation = Translations$navigation$zh_CN.internal(_root);
 	late final Translations$player$zh_CN player = Translations$player$zh_CN.internal(_root);
+	late final Translations$room$zh_CN room = Translations$room$zh_CN.internal(_root);
 	late final Translations$search$zh_CN search = Translations$search$zh_CN.internal(_root);
 	late final Translations$settings$zh_CN settings = Translations$settings$zh_CN.internal(_root);
 	late final Translations$sites$zh_CN sites = Translations$sites$zh_CN.internal(_root);
@@ -370,6 +371,45 @@ class Translations$player$zh_CN {
 	String get danmaku => '弹幕';
 }
 
+// Path: room
+class Translations$room$zh_CN {
+	Translations$room$zh_CN.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh-CN: '正在打开房间'
+	String get opening => '正在打开房间';
+
+	/// zh-CN: '关注'
+	String get follow => '关注';
+
+	/// zh-CN: '已关注'
+	String get unfollow => '已关注';
+
+	/// zh-CN: '画质'
+	String get quality => '画质';
+
+	/// zh-CN: '线路'
+	String get lineLabel => '线路';
+
+	/// zh-CN: '线路 {n}'
+	String line({required Object n}) => '线路 ${n}';
+
+	/// zh-CN: '播放'
+	String get play => '播放';
+
+	/// zh-CN: '暂停'
+	String get pause => '暂停';
+
+	/// zh-CN: '还没有弹幕'
+	String get noChat => '还没有弹幕';
+
+	/// zh-CN: '系统'
+	String get system => '系统';
+}
+
 // Path: search
 class Translations$search$zh_CN {
 	Translations$search$zh_CN.internal(this._root);
@@ -606,6 +646,16 @@ extension on Translations {
 			'player.line' => '线路',
 			'player.fullscreen' => '全屏',
 			'player.danmaku' => '弹幕',
+			'room.opening' => '正在打开房间',
+			'room.follow' => '关注',
+			'room.unfollow' => '已关注',
+			'room.quality' => '画质',
+			'room.lineLabel' => '线路',
+			'room.line' => ({required Object n}) => '线路 ${n}',
+			'room.play' => '播放',
+			'room.pause' => '暂停',
+			'room.noChat' => '还没有弹幕',
+			'room.system' => '系统',
 			'search.idleTitle' => '搜索当前站点',
 			'search.idleDescription' => '输入关键词，搜索房间、主播或分区。',
 			'search.suggestionsTitle' => '搜索建议',

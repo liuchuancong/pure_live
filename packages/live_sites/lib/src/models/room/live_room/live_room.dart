@@ -99,8 +99,8 @@ abstract class LiveRoom implements Built<LiveRoom, LiveRoomBuilder> {
   /// Deserializes a stored JSON record.
   factory LiveRoom.fromJson(Map<String, Object?> json) => serializers.deserializeWith(LiveRoom.serializer, json)!;
 
-  /// Serializes the stored JSON record — the inverse of [fromJson] (the
-  /// plugins make DateTime ISO-8601 text and Uri a string).
+  /// Serializes the stored JSON record — the inverse of the fromJson
+  /// factory (the plugins make DateTime ISO-8601 text and Uri a string).
   Map<String, Object?> toJson() =>
       Map<String, Object?>.from(serializers.serializeWith(LiveRoom.serializer, this)! as Map);
 

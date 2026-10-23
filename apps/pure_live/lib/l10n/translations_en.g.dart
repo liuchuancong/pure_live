@@ -47,6 +47,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$music$en music = _Translations$music$en._(_root);
 	@override late final _Translations$navigation$en navigation = _Translations$navigation$en._(_root);
 	@override late final _Translations$player$en player = _Translations$player$en._(_root);
+	@override late final _Translations$room$en room = _Translations$room$en._(_root);
 	@override late final _Translations$search$en search = _Translations$search$en._(_root);
 	@override late final _Translations$settings$en settings = _Translations$settings$en._(_root);
 	@override late final _Translations$sites$en sites = _Translations$sites$en._(_root);
@@ -204,6 +205,25 @@ class _Translations$player$en extends Translations$player$zh_CN {
 	@override String get line => 'Line';
 	@override String get fullscreen => 'Fullscreen';
 	@override String get danmaku => 'Danmaku';
+}
+
+// Path: room
+class _Translations$room$en extends Translations$room$zh_CN {
+	_Translations$room$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get opening => 'Opening the room';
+	@override String get follow => 'Follow';
+	@override String get unfollow => 'Following';
+	@override String get quality => 'Quality';
+	@override String get lineLabel => 'Line';
+	@override String line({required Object n}) => 'Line ${n}';
+	@override String get play => 'Play';
+	@override String get pause => 'Pause';
+	@override String get noChat => 'No chat yet';
+	@override String get system => 'System';
 }
 
 // Path: search
@@ -368,6 +388,16 @@ extension on TranslationsEn {
 			'player.line' => 'Line',
 			'player.fullscreen' => 'Fullscreen',
 			'player.danmaku' => 'Danmaku',
+			'room.opening' => 'Opening the room',
+			'room.follow' => 'Follow',
+			'room.unfollow' => 'Following',
+			'room.quality' => 'Quality',
+			'room.lineLabel' => 'Line',
+			'room.line' => ({required Object n}) => 'Line ${n}',
+			'room.play' => 'Play',
+			'room.pause' => 'Pause',
+			'room.noChat' => 'No chat yet',
+			'room.system' => 'System',
 			'search.idleTitle' => 'Search the selected site',
 			'search.idleDescription' => 'Type to search its rooms, streamers or areas.',
 			'search.suggestionsTitle' => 'Suggestions',
