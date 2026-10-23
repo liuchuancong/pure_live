@@ -9,7 +9,7 @@
     "editor.formatOnPaste": false,
     "editor.formatOnType": false,
     "editor.codeActionsOnSave": {
-      "source.organizeImports": "explicit"
+      "source.organizeImports": "always"
     },
     "editor.rulers": [120]
   },
