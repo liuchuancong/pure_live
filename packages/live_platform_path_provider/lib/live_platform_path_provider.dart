@@ -1,4 +1,4 @@
-/// Path and storage layer for Pure Live.
+/// Path and storage layer for whichever application hosts it.
 ///
 /// This package answers "where does this kind of data live, and may we
 /// write there" from the deployment facts `live_platform` produced: a

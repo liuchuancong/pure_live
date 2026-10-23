@@ -2,13 +2,16 @@ import 'dart:io';
 
 import 'package:live_platform/live_platform.dart';
 import 'package:live_platform_path_provider/live_platform_path_provider.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 /// `DefaultStorageManager` is the probe-and-fallback engine, so the cases
 /// below pin its promises: only a real write wins, a winner is memoised, a
 /// clearable area may degrade to the system temp while a persistent one fails
 /// loudly, and probing leaves no trace of itself in the user's directories.
-/// A candidate list fixed by the test — the policy layer has its own suite.
+/// The degraded and probe names come off the snapshot's namespace (`unit_host`
+/// here) — the manager owns no product name either. A candidate list fixed by
+/// the test — the policy layer has its own suite.
 final class _StaticPolicy implements StoragePolicy {
   const new(this.candidates);
 
@@ -19,6 +22,8 @@ final class _StaticPolicy implements StoragePolicy {
 }
 
 void main() {
+  const hostNamespace = 'unit_host';
+
   late Directory root;
 
   setUp(() {
@@ -33,12 +38,13 @@ void main() {
     }
   });
 
-  PlatformRuntimeInfo snapshot() => PlatformRuntimeInfo(
+  PlatformRuntimeInfo snapshot({String namespace = hostNamespace}) => PlatformRuntimeInfo(
     kind: PlatformKind.windows,
     formFactor: FormFactor.desktop,
     distribution: DesktopDistribution.installed,
     isPackaged: false,
     executableRoot: root,
+    appNamespace: namespace,
   );
 
   /// A candidate whose path is occupied by a file, so `create` fails the way
@@ -53,7 +59,7 @@ void main() {
       .listSync()
       .whereType<File>()
       .map((file) => file.uri.pathSegments.last)
-      .where((name) => name.startsWith('.pure_probe'))
+      .where((name) => name.startsWith('.${DefaultStoragePolicy.probeBaseName(hostNamespace)}'))
       .toList();
 
   test('the first writable candidate wins and is then memoised', () async {
@@ -99,8 +105,28 @@ void main() {
     );
 
     final location = await manager.resolve(StorageArea.cache);
-    expect(location.path, '${systemTemp.path}${Platform.pathSeparator}pure_cache');
+    expect(location.path, p.join(systemTemp.path, '${hostNamespace}_cache'));
     expect(location.isPersistent, isFalse);
+  });
+
+  test("the degraded names are the namespace's, taken from the snapshot", () async {
+    final blocked = await blockedCandidate('blocked');
+    final systemTemp = Directory('${root.path}/system');
+    final otherHost = DefaultStorageManager(
+      policy: _StaticPolicy([blocked]),
+      runtime: snapshot(namespace: 'other_host'),
+      systemTemp: systemTemp,
+    );
+
+    expect((await otherHost.resolve(StorageArea.cache)).path, p.join(systemTemp.path, 'other_host_cache'));
+    expect((await otherHost.resolve(StorageArea.temporary)).path, p.join(systemTemp.path, 'other_host_temp'));
+
+    final thisHost = DefaultStorageManager(
+      policy: _StaticPolicy([blocked]),
+      runtime: snapshot(),
+      systemTemp: systemTemp,
+    );
+    expect((await thisHost.resolve(StorageArea.temporary)).path, p.join(systemTemp.path, '${hostNamespace}_temp'));
   });
 
   test('probing leaves no trace in the resolved directory', () async {

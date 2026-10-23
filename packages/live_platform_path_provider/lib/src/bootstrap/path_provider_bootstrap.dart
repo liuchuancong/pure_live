@@ -29,7 +29,11 @@ abstract final class PathProviderBootstrap {
   /// the OS cache directory, [temporaryDirectory] the system temporary
   /// directory, [downloadsDirectory] the user-visible download target —
   /// the user's own setting when one exists, the OS download directory
-  /// otherwise. [policy] replaces the standard layout entirely.
+  /// otherwise. [policy] replaces the standard layout entirely. Without it,
+  /// the default layout namespaces whatever it writes with the snapshot's
+  /// `appNamespace` — the identity the host declared once at platform
+  /// bootstrap — so a reused package writes under the calling application,
+  /// never under this repository's own app.
   static Future<PathProviderRuntime> init({
     required PlatformEnvironment environment,
     Future<Directory?> Function()? userDataDirectory,
@@ -52,6 +56,9 @@ abstract final class PathProviderBootstrap {
             cacheRoot: cacheRoot,
             tempRoot: tempRoot,
             downloadsRoot: downloadsRoot,
+            // The host's identity travels from the snapshot the shell
+            // bootstrapped; this layer never spells a product name itself.
+            appNamespace: runtime.appNamespace,
           ),
     )..runtime = runtime;
     return PathProviderRuntime(storage: storage);

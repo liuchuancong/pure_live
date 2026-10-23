@@ -30,7 +30,7 @@ void main() {
   test('desktop paths are not private', () {
     for (final kind in [PlatformKind.windows, PlatformKind.macos, PlatformKind.linux]) {
       expect(PathPrivacy.isPrivate('C:/Users/x/Downloads', kind: kind), isFalse, reason: '$kind');
-      expect(PathPrivacy.isPrivate('/home/x/pure_live', kind: kind), isFalse, reason: '$kind');
+      expect(PathPrivacy.isPrivate('/home/x/unit_host', kind: kind), isFalse, reason: '$kind');
     }
   });
 

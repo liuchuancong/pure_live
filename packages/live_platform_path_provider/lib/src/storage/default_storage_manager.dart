@@ -16,17 +16,30 @@ import 'package:path/path.dart' as p;
 /// Persistent areas (data/config/extensions) never silently fall back to
 /// a temp directory — if every candidate fails, resolution throws so the
 /// caller can tell the user where data will live.
+///
+/// Where a name is concerned the manager owns none of them: the degraded
+/// cache and temporary directories are the snapshot's namespace
+/// ([PlatformRuntimeInfo.appNamespace]) run through the policy layer's
+/// naming vocabulary — `DefaultStoragePolicy.cacheDirectoryName` and
+/// `DefaultStoragePolicy.tempDirectoryName`, i.e. `<ns>_cache` and
+/// `<ns>_temp` — so the last-resort scratch trees are exactly the trees the
+/// default policy would have offered. The probe file it writes to prove a
+/// directory is writable uses `DefaultStoragePolicy.probeBaseName` for the
+/// same reason. A host that overrides the namespace on its policy alone is
+/// naming trees this manager cannot see; declare the identity on the
+/// runtime snapshot instead, which is what the bootstrap does.
 final class DefaultStorageManager implements StorageManager {
   /// A manager over [policy]; [runtime] feeds the portable-ordering
-  /// decision (bootstrap injects it after building the snapshot),
-  /// [systemTemp] is the last-resort directory for cache and temporary
-  /// areas.
+  /// decision and names the degraded trees (bootstrap injects it after
+  /// building the snapshot), [systemTemp] is the last-resort directory for
+  /// cache and temporary areas.
   new({required this.policy, this.runtime, Directory? systemTemp}) : _systemTemp = systemTemp ?? Directory.systemTemp;
 
   /// The active candidate policy.
   final StoragePolicy policy;
 
-  /// The runtime snapshot the policy consults; settable so bootstrap can
+  /// The runtime snapshot the policy consults, and the declaration this
+  /// manager reads the host's namespace from; settable so bootstrap can
   /// attach it after the manager and the snapshot are both built.
   PlatformRuntimeInfo? runtime;
 
@@ -47,7 +60,7 @@ final class DefaultStorageManager implements StorageManager {
     final snapshot =
         runtime ?? (throw StateError('no runtime snapshot: construct with runtime or run PlatformBootstrap.init'));
     for (final candidate in policy.candidatesFor(area, snapshot)) {
-      final location = await _probe(area, candidate, snapshot.kind);
+      final location = await _probe(area, candidate, snapshot.kind, snapshot.appNamespace);
       if (location != null) {
         return _resolved[area] = location;
       }
@@ -56,12 +69,15 @@ final class DefaultStorageManager implements StorageManager {
     // must fail loudly instead of hiding data where it will be wiped. Each
     // area keeps its own namespace there, matching the policy's naming.
     if (area == StorageArea.cache || area == StorageArea.temporary) {
-      // The same names the policy's own temp candidates use, so a degraded
-      // area never changes directory depending on which tier failed.
-      final fallback = Directory(
-        p.join(_systemTemp.path, area == StorageArea.cache ? 'pure_cache' : 'pure_temp'),
-      );
-      final location = await _probe(area, fallback, snapshot.kind);
+      // The same names the policy's own temp candidates use, derived from
+      // the same source, so a degraded area never changes directory
+      // depending on which tier failed.
+      final scratchName = switch (area) {
+        StorageArea.cache => DefaultStoragePolicy.cacheDirectoryName(snapshot.appNamespace),
+        _ => DefaultStoragePolicy.tempDirectoryName(snapshot.appNamespace),
+      };
+      final fallback = Directory(p.join(_systemTemp.path, scratchName));
+      final location = await _probe(area, fallback, snapshot.kind, snapshot.appNamespace);
       if (location != null) {
         return _resolved[area] = location;
       }
@@ -78,10 +94,12 @@ final class DefaultStorageManager implements StorageManager {
     return resolve(area);
   }
 
-  Future<StorageLocation?> _probe(StorageArea area, Directory candidate, PlatformKind kind) async {
+  Future<StorageLocation?> _probe(StorageArea area, Directory candidate, PlatformKind kind, String namespace) async {
     try {
       await candidate.create(recursive: true);
-      final probe = File(p.join(candidate.path, '.pure_probe_${pid}_${++_probeSequence}'));
+      final probe = File(
+        p.join(candidate.path, '.${DefaultStoragePolicy.probeBaseName(namespace)}_${pid}_${++_probeSequence}'),
+      );
       final sink = probe.openWrite();
       await sink.close();
       await probe.delete();
