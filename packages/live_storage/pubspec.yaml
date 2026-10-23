@@ -1,6 +1,6 @@
 name: live_storage
 description: >-
-  Storage infrastructure for Pure Live: bootstrap and lifecycle over
+  Storage infrastructure for a host application: bootstrap and lifecycle over
   Hive CE, typed box opening through hive_box_manager, typed storage
   repositories, migration contracts, diagnostics and the JSON box
   adapter bridge. Pure Dart; the app shell injects the storage

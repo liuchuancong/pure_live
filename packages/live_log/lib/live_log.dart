@@ -1,4 +1,4 @@
-/// Logging facade for Pure Live.
+/// Application logging facade.
 ///
 /// One `LiveLog` tree per process: pick a root with sinks and a level
 /// policy, hand out category views with `LiveLog.forCategory`, and emit

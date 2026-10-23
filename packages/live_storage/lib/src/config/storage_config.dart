@@ -1,11 +1,16 @@
-/// Defines shared configuration for the PureLive storage infrastructure.
+/// Defines shared configuration for the storage infrastructure.
 final class StorageConfig {
   /// Creates a storage configuration.
-  const new({this.directoryName = 'pure_live', this.schemaVersion = 1})
+  ///
+  /// [directoryName] is the host application's namespace — the app
+  /// supplies its own identity; this reusable package names no product
+  /// itself.
+  const new({required this.directoryName, this.schemaVersion = 1})
     : assert(directoryName != '', 'The storage directory name must not be empty.'),
       assert(schemaVersion > 0, 'The storage schema version must be positive.');
 
-  /// The application-specific storage directory name.
+  /// The application-specific storage directory name, supplied by the
+  /// host application.
   final String directoryName;
 
   /// The current storage schema version.

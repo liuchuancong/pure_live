@@ -1,4 +1,4 @@
-/// Public API for PureLive storage infrastructure.
+/// Public API for the reusable storage infrastructure.
 library;
 
 /// The typed box families the repositories and the box manager speak

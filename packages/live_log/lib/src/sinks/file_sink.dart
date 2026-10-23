@@ -19,9 +19,14 @@ import 'package:path/path.dart' as p;
 /// recurse. Await [flushed] in tests and shutdown paths.
 final class FileSink implements LogSink {
   /// A rotating sink under [directory] (created lazily on first write).
+  ///
+  /// [baseName] is the log file base name — the host application's
+  /// namespace, supplied by the caller: the sink writes `<baseName>.log`
+  /// and, on rotation, the `<baseName>.<index>.log` files. This package
+  /// is reusable and names no product itself.
   new(
     this.directory, {
-    this.baseName = 'pure_live',
+    required this.baseName,
     this.maxFileBytes = 5 * 1024 * 1024,
     this.maxFiles = 5,
     this.sanitizer = const LogSanitizer(),
@@ -30,7 +35,8 @@ final class FileSink implements LogSink {
   /// Directory holding the log files.
   final Directory directory;
 
-  /// File name stem; files are `<baseName>.log`, `<baseName>.1.log`, …
+  /// File name stem; the host application's namespace. Files are
+  /// `<baseName>.log`, `<baseName>.1.log`, …
   final String baseName;
 
   /// Size that triggers a rotation of the current file.
