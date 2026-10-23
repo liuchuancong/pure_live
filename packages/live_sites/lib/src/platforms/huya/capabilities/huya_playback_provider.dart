@@ -93,6 +93,7 @@ final class HuyaPlaybackProvider implements LivePlaybackProvider {
             cookie: cookie,
             issuedAt: issuedAt,
             token: signed.window,
+            hevc: !site.preferH264(),
           );
           if (seen.add(answer.url)) lines.add(answer);
         } on HuyaFailure catch (failure) {

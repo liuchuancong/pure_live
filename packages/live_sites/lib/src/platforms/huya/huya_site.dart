@@ -82,19 +82,34 @@ final class HuyaDanmakuArgs {
 /// play line. [loginCookie] supplies the viewer cookie (null: a guest); the
 /// clock ([now]) and randomness are injectable for tests.
 final class HuyaSite implements LiveSite {
-  /// Creates the adapter over [http].
-  HuyaSite({required this.http, String Function()? loginCookie, DateTime Function()? now, Random? random})
-    : loginCookie = loginCookie ?? _guest,
-      now = now ?? DateTime.now,
-      _random = random ?? Random.secure() {
+  /// Creates the adapter over [http]. [loginCookie] supplies the viewer
+  /// cookie (null: a guest), read per request; [preferH264] reads
+  /// "优先 H.264" (on by default) at each call, asking an FLV line for
+  /// H.264 instead of the HEVC the stream names; [now] and [random] are
+  /// injectable for tests.
+  HuyaSite({
+    required this.http,
+    String Function()? loginCookie,
+    bool Function()? preferH264,
+    DateTime Function()? now,
+    Random? random,
+  }) : loginCookie = loginCookie ?? _guest,
+       preferH264 = preferH264 ?? _on,
+       now = now ?? DateTime.now,
+       _random = random ?? Random.secure() {
     guid = _generateGuid(_random);
     fallbackUid = _generateFallbackUid(_random);
   }
 
   static String _guest() => '';
+  static bool _on() => true;
 
   /// Transport.
   final HuyaHttp http;
+
+  /// Whether an FLV line is asked for H.264 instead of its stream's HEVC
+  /// ("优先 H.264", on by default); HLS always asks for H.264.
+  final bool Function() preferH264;
 
   /// The viewer login cookie (its `yyuid` is the signing uid), read per
   /// request so a changed login applies at once.

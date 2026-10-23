@@ -80,17 +80,19 @@ import 'package:live_sites/src/platforms/yy/yy_site.dart';
 /// end; null makes every douyu request a guest, exactly as before.
 /// [twitchLanguages] reads the Twitch directory filter (lower-case codes);
 /// null keeps every language. [youtubeAllChat] reads "YouTube 显示全部聊天";
-/// null keeps the web's Top chat.
+/// null keeps the web's Top chat. [huyaPreferH264] reads huya's "优先 H.264"
+/// (on by default).
 List<LiveSite> createBuiltInLiveSites({
   LiveHttp? http,
   DouyuLoginStore? douyuLogin,
   List<String> Function()? twitchLanguages,
   bool Function()? youtubeAllChat,
+  bool Function()? huyaPreferH264,
 }) {
   final transport = http ?? DioFactory().create();
   return <LiveSite>[
     DouyuSite(http: DouyuHttp(transport), login: douyuLogin),
-    HuyaSite(http: HuyaHttp(transport)),
+    HuyaSite(http: HuyaHttp(transport), preferH264: huyaPreferH264),
     DouyinSite(http: DouyinHttp(transport)),
     BilibiliSite(http: BilibiliHttp(transport)),
     KuaishouSite(http: KuaishouHttp(transport)),
