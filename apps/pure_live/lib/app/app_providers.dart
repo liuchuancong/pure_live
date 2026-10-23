@@ -36,13 +36,11 @@ final class MaximizedController extends Notifier<bool> {
     final host = ref.watch(desktopWindowHostProvider);
     StreamSubscription<WindowEvent>? subscription;
     ref.onDispose(() => subscription?.cancel());
-    unawaited(
-      host.isMaximized().then((value) {
-        if (ref.mounted) {
-          state = value;
-        }
-      }),
-    );
+    // The native window registers itself shortly after Dart starts, so the
+    // first read can land in the registration gap and answer the default.
+    // A short poll re-asks until the answer is the window's own; the event
+    // stream keeps it true from there.
+    unawaited(_settle(host));
     subscription = host.events.listen((event) {
       if (!ref.mounted) {
         return;
@@ -54,5 +52,15 @@ final class MaximizedController extends Notifier<bool> {
       }
     });
     return false;
+  }
+
+  Future<void> _settle(WindowHost host) async {
+    for (var attempt = 0; attempt < 10; attempt++) {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      if (!ref.mounted) {
+        return;
+      }
+      state = await host.isMaximized();
+    }
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show Rect;
 
 import 'package:live_shell/live_shell.dart';
 import 'package:live_shell_desktop/src/displays.dart';
@@ -49,12 +50,17 @@ final class WindowManagerHost implements WindowHost {
   /// window the runner rebuilt (lightweight mode, a render failure) is a new
   /// native object, and a cached reference would dress the corpse.
   wm.Window get _window {
-    final window = wm.WindowManager.instance.getCurrent();
+    final window = _windowOrNull;
     if (window == null) {
       throw StateError('the current engine owns no top-level window');
     }
     return window;
   }
+
+  /// The window, or null while the native side has not registered one yet —
+  /// a gap every read must tolerate, because the first widget frame can be
+  /// built before the registration lands. Only the verbs assert.
+  wm.Window? get _windowOrNull => wm.WindowManager.instance.getCurrent();
 
   /// Subscribes to the plugin. Calling it again does nothing.
   ///
@@ -166,7 +172,7 @@ final class WindowManagerHost implements WindowHost {
   }
 
   @override
-  Future<bool> isMaximized() async => _window.isMaximized;
+  Future<bool> isMaximized() async => _windowOrNull?.isMaximized ?? false;
 
   @override
   Future<void> setPreventClose({required bool enabled}) async {
@@ -195,7 +201,13 @@ final class WindowManagerHost implements WindowHost {
 
   @override
   Future<WindowGeometry> geometry() async {
-    final frame = rectToFrame(_window.bounds.toRect());
+    final window = _windowOrNull;
+    if (window == null) {
+      // Nothing registered yet: a zero frame says "unknown" louder than a
+      // real rectangle read off the wrong window would.
+      return WindowGeometry(frame: rectToFrame(Rect.zero), maximized: false);
+    }
+    final frame = rectToFrame(window.bounds.toRect());
     return WindowGeometry(
       frame: frame,
       // Asked of the window manager here rather than remembered from the last
@@ -204,7 +216,7 @@ final class WindowManagerHost implements WindowHost {
       // arrives with no such notice, and a stale `false` here stores the
       // maximised outer rectangle — overhang and all — as the size the
       // window should come back at.
-      maximized: _window.isMaximized,
+      maximized: window.isMaximized,
       displayId: _screenRetrieverDisplays.displayHosting(frame, await _readDisplays()),
     );
   }
@@ -249,8 +261,13 @@ final class WindowManagerHost implements WindowHost {
 
   @override
   Future<WindowState> snapshot() async {
+    final window = _windowOrNull;
     final geometry = await this.geometry();
-    return WindowState(geometry: geometry, isVisible: _window.isVisible, isFocused: _window.isFocused);
+    return WindowState(
+      geometry: geometry,
+      isVisible: window?.isVisible ?? false,
+      isFocused: window?.isFocused ?? false,
+    );
   }
 
   /// Detaches from the plugin and closes the event stream.
