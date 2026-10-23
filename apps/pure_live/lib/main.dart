@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:pure_live/app/theme/system_accent_color.dart'
     show preloadSystemAccent, readSystemAccentColor;
 import 'package:pure_live/app/theme/theme_settings.dart' show AppThemeScope, AppThemeSettings;
+import 'package:pure_live/i18n/translations.g.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -11,6 +12,7 @@ Future<void> main() async {
   // so it lands before the first frame instead of recolouring afterwards.
   await preloadSystemAccent();
   runApp(const PureLiveApp());
+
 }
 
 /// The root: `DsApp` over the viewer's theme settings — the seed from the
@@ -40,25 +42,28 @@ final class _PureLiveAppState extends State<PureLiveApp> {
 
   @override
   Widget build(BuildContext context) {
-    return DsApp(
-      title: 'Pure Live',
-      debugShowCheckedModeBanner: false,
-      themeMode: _settings.mode,
+    return TranslationProvider(
+      child: DsApp(
+        onGenerateTitle: (context) => context.t.app.title,
+        locale: LocaleSettings.currentLocale.flutterLocale,
+        debugShowCheckedModeBanner: false,
+        themeMode: _settings.mode,
       theme: _settings.theme(),
-      builder: (context, child) => AppThemeScope(
-        settings: _settings,
-        onChanged: _updateSettings,
-        child: child!,
+        builder: (context, child) => AppThemeScope(
+          settings: _settings,
+          onChanged: _updateSettings,
+          child: child!,
+        ),
+        home: const _HomePlaceholder(),
       ),
-      home: const Placeholder(),
     );
   }
 }
 
 /// The first screen: the canvas colour under the theme, until the real
 /// shell replaces it.
-class Placeholder extends StatelessWidget {
-  const Placeholder({super.key});
+class _HomePlaceholder extends StatelessWidget {
+  const _HomePlaceholder();
 
   @override
   Widget build(BuildContext context) {

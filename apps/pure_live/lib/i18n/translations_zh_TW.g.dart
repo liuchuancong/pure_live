@@ -8,7 +8,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:slang/generated.dart';
-import 'package:pure_live/i18n/translations.g.dart';
+import 'translations.g.dart';
 
 // Path: <root>
 class TranslationsZhTw extends Translations with BaseTranslations<AppLocale, Translations> {
