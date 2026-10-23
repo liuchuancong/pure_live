@@ -24,6 +24,7 @@ dependencies:
   dynamic_app_icon_flutter_plus: ^2.2.1 # 动态应用图标
   restart_app: ^1.10.1 # 重启应用
   screen_retriever: ^0.3.0 # 屏幕与显示器信息
+  system_theme: ^3.3.0 # 系统强调色（Windows accent）
   tray_manager: ^0.8.0 # 系统托盘
   vibrancy: ^0.1.1 # 窗口透明与材质效果
   window_frame_kit: ^0.3.0 # 桌面窗口管理 + 自绘边框接管

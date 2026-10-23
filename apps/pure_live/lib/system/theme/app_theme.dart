@@ -1,10 +1,12 @@
+import 'dart:io' show Platform;
+
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil_plus/flutter_screenutil_plus.dart';
 import 'package:pure_live/app/app_providers.dart';
 import 'package:pure_live/system/environment/env.dart';
-import 'package:pure_live/system/theme/ui_configuration_mapper.dart' show uiConfigFromAppearance;
+import 'package:pure_live/system/theme/ui_configuration_mapper.dart' show readSystemAccentColor, uiConfigFromAppearance;
 import 'package:pure_uikit/pure_uikit.dart';
 
 /// The Material surface the chosen appearance resolves to.
@@ -47,15 +49,20 @@ class AppTheme extends ConsumerWidget {
     // The design-size reference every `.w`/`.h`/`.sp` scaling extension reads.
     // Desktop-first: a 1280x800 window is the 1:1 baseline; phone and TV scale
     // around it. minTextAdapt keeps labels legible at the small end.
-    // 动态取色: the system's wallpaper accent (Android 12+) overrides the
-    // stored one while the switch is on; elsewhere the builder reports none
-    // and the stored answer stands. The config is resolved here rather than
-    // from [uiConfigProvider] so the system's light and dark schemes both
+    // 动态取色: the system accent overrides the stored one while the switch is
+    // on. Android 12+ reads the wallpaper accent through `DynamicColorBuilder`
+    // (dynamic_color is kept as the Android path); Windows reads the machine's
+    // own accent through [readSystemAccentColor] — the system_theme plugin —
+    // because dynamic_color has nothing to report there, so the builder's
+    // schemes only ever answer on Android. The config is resolved here rather
+    // than from [uiConfigProvider] so the system's light and dark schemes both
     // arrive without writing preferences.
     return DynamicColorBuilder(
       builder: (light, dark) {
         final appearance = ref.watch(appearancePreferencesProvider);
-        final dynamic = appearance.dynamicColor ? (light?.primary ?? dark?.primary) : null;
+        final dynamic = appearance.dynamicColor
+            ? (Platform.isWindows ? readSystemAccentColor() : (light?.primary ?? dark?.primary))
+            : null;
         final config = appearance.dynamicColor
             ? uiConfigFromAppearance(
                 appearance,

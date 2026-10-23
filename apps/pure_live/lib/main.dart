@@ -24,6 +24,7 @@ import 'package:pure_live/system/playback/playback_surfaces.dart';
 import 'package:pure_live/system/theme/app_theme.dart';
 import 'package:pure_live/system/theme/ui_configuration_mapper.dart';
 import 'package:pure_uikit/pure_uikit.dart' show PureDesignLanguage, PureUiStartupResolver;
+import 'package:system_theme/system_theme.dart' show SystemTheme;
 
 /// The process entry point: open the log, boot the service graph, then hand
 /// it to the widget tree through `ProviderScope` overrides.
@@ -52,6 +53,16 @@ Future<void> main(List<String> args) async {
     ErrorReporter.report(log.forCategory('uncaught'), error, stack);
     return true;
   };
+
+  // The Windows system accent is fetched through the system_theme plugin and
+  // read again on every theme resolution (`readSystemAccentColor`). Fired
+  // here — before the boot's own awaits, per the fluent-ui-notes 装配 — so the
+  // round-trip has finished by the first frame and the theme seeds from the
+  // machine's real colour instead of the plugin's fallback. Best effort: an
+  // unawaited failure only leaves the fallback colour standing.
+  if (Platform.isWindows) {
+    unawaited(SystemTheme.accentColor.load());
+  }
 
   // The single-instance lock is the first thing a desktop launch takes: a
   // second launch that reached the data tree would fight the running

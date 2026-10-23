@@ -1,10 +1,10 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter/widgets.dart' show Color;
-import 'package:live_shell_desktop/live_shell_desktop.dart' show readWindowsAccentColor;
 import 'package:pure_live/system/theme/appearance_preferences/appearance_preferences.dart';
 import 'package:pure_live/system/theme/font_recommendations.dart';
 import 'package:pure_uikit/pure_uikit.dart';
+import 'package:system_theme/system_theme.dart' show SystemTheme;
 
 /// The one place that knows both the persisted [AppearancePreferences]
 /// document and pure_uikit's [UiConfig].
@@ -15,6 +15,23 @@ import 'package:pure_uikit/pure_uikit.dart';
 /// translation — the composition root loads preferences, turns them into a
 /// [UiConfig] for `PureConfigProvider`, and writes the reverse mapping back
 /// whenever the config changes.
+
+/// The machine's own accent colour, or null when the platform has none to give.
+///
+/// Windows reads the accent the Settings app writes through the `system_theme`
+/// plugin (`SystemTheme.accentColor`), the way the system's own Fluent apps do;
+/// the answer before — or without — a successful read is the plugin's own
+/// fallback colour, so the read itself cannot fail. Until `load()` runs the
+/// fallback is what comes back, which is why the composition root fires it
+/// before the first frame. Android 的系统取色（壁纸）走 dynamic_color，由调用方
+/// 作为 [uiConfigFromAppearance] 的 `dynamicAccent` 传入，这里不读；其余平台没有
+/// 要读的强调色，返回 null，交给调用方保留种子默认。
+Color? readSystemAccentColor() {
+  if (!Platform.isWindows) {
+    return null;
+  }
+  return SystemTheme.accentColor.accent;
+}
 
 /// Builds a [UiConfig] from [appearance]; an unknown density id falls back to
 /// the default rather than blocking start-up. The language is not derived — the
@@ -47,12 +64,13 @@ UiConfig uiConfigFromAppearance(
     // defaults reads the accent Windows already chose, the way the system's
     // Fluent apps do, and a machine without a readable accent keeps the seed
     // default.
-    // 动态取色 outranks a stored accent when the system has one to give.
+    // 动态取色 outranks a stored accent when the system has one to give; the
+    // three cases exhaust the (Color?, int?) space, and readSystemAccentColor
+    // answers null itself where the machine has no accent to give.
     accent: switch ((dynamicAccent, appearance.accentColor)) {
       (final Color fromSystem?, _) => fromSystem,
       (_, final int stored) => Color(stored),
-      (_, null) when Platform.isWindows => readWindowsAccentColor(),
-      _ => null,
+      (_, null) => readSystemAccentColor(),
     },
     pureBlack: appearance.pureBlack,
     density: _byName(UiDensity.values, appearance.densityId, UiDensity.comfortable),

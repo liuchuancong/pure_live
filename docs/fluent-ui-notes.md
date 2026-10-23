@@ -92,6 +92,29 @@ void main() {
 
 参考:`example/lib/main.dart:32-44`。
 
+### SystemTheme.accentColor.accent — 读取(经平台守卫助手)
+
+`accentColor.accent` 是纯字段读,不抛异常;但 `load()` 完成前(或读取失败时)返回
+插件 fallback 色(`kDefaultFallbackColor = 0xFF00B7C3`)而非 null,所以「取系统强调色」
+要包一层平台守卫助手,由助手决定无色可取时返回 null:
+
+```dart
+Color? readSystemAccentColor() {
+  if (!Platform.isWindows) {
+    return null;
+  }
+  return SystemTheme.accentColor.accent;
+}
+```
+
+要点:`load()` 内部自带 `MissingPluginException` 捕获,不支持的平台上静默保持
+fallback;`SystemTheme.onChange` 流只在 Windows/macOS 推送,且是就地改字段、不
+触发 widget 重建,需要界面跟随得自己接状态层。本仓库落点:
+`apps/pure_live/lib/system/theme/ui_configuration_mapper.dart` 的
+`readSystemAccentColor()`,取色优先级为 动态取色 > 存储强调色 > 系统强调色 > null。
+
+参考:包源码 `system_theme-3.3.0/lib/system_theme.dart:75-76, 134-142, 150-175`。
+
 ### AccentColor.swatch({...}) — 手工构造强调色
 
 用 `darkest → lightest` 七档色阶构造;可包装 `SystemTheme.accentColor`,也用于主题间插值:
