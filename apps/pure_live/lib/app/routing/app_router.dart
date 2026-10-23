@@ -5,8 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:pure_live/app/routing/route_names.dart' show RouteNames;
 import 'package:pure_live/app/routing/route_observer.dart' show routeObserver;
 import 'package:pure_live/features/areas/areas_page.dart' show AreasPage;
+import 'package:pure_live/features/favorites/favorites_page.dart' show FavoritesPage;
+import 'package:pure_live/features/history/history_page.dart' show HistoryPage;
 import 'package:pure_live/features/home/home_page.dart' show HomePage;
 import 'package:pure_live/features/search/search_page.dart' show SearchPage;
+import 'package:pure_live/features/settings/settings_page.dart' show SettingsPage;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_layout.dart' show AppLayout;
 import 'package:pure_live/shared/enums/navigation_item.dart' show NavigationItem;
@@ -128,8 +131,7 @@ final class FavoritesRoute extends GoRouteData with $FavoritesRoute {
   const FavoritesRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) =>
-      const _DestinationPlaceholder(item: NavigationItem.favorites);
+  Widget build(BuildContext context, GoRouterState state) => const FavoritesPage();
 }
 
 /// The history branch's screen.
@@ -138,8 +140,7 @@ final class HistoryRoute extends GoRouteData with $HistoryRoute {
   const HistoryRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) =>
-      const _DestinationPlaceholder(item: NavigationItem.history);
+  Widget build(BuildContext context, GoRouterState state) => const HistoryPage();
 }
 
 /// The search branch's screen.
@@ -157,8 +158,7 @@ final class SettingsRoute extends GoRouteData with $SettingsRoute {
   const SettingsRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) =>
-      const _DestinationPlaceholder(item: NavigationItem.settings);
+  Widget build(BuildContext context, GoRouterState state) => const SettingsPage();
 }
 
 /// The app's router: the generated typed routes under the shell route, the
