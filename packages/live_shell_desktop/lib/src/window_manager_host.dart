@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:live_shell/live_shell.dart';
 import 'package:live_shell_desktop/src/displays.dart';
-import 'package:window_frame_kit/window_frame_kit.dart';
+import 'package:window_manager/window_manager.dart';
 
 /// Used for the one stateless calculation the reader performs over a frame.
 const _screenRetrieverDisplays = ScreenRetrieverDisplays();

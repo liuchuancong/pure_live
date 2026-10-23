@@ -19,7 +19,7 @@ import 'package:meta/meta.dart';
 @immutable
 class IptvLineHealth {
   /// A probe verdict.
-  const new({
+  const IptvLineHealth({
     required this.url,
     required this.ok,
     required this.checkedAt,

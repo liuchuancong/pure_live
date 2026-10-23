@@ -28,21 +28,14 @@ int windowsBuildNumber() {
   }
 }
 
-/// The first Windows build that composes a window's rounded corners and frame
-/// border itself, so an app that takes the non-client area over still reads as a
-/// window with an edge.
+/// The first Windows build whose compositor hosts the Mica backdrop and
+/// composes a window's rounded corners and frame border itself.
 ///
-/// The same threshold the Mica backdrop uses, for the same reason: it is where
-/// Windows 11's compositor begins.
+/// The threshold the material applier dispatches on: below it the backdrop
+/// attribute does not exist and the window keeps its opaque surface. The
+/// title bar is not consulted against it — every Windows build draws its
+/// chrome in Flutter.
 const int kWindowsRoundedFrameBuild = 22000;
-
-/// Whether this Windows gives an app-drawn frame its edge for free.
-///
-/// False on Windows 10, where a custom frame loses the system-drawn border and
-/// the corners were square anyway — the window ends up as a rectangle with no
-/// visible edge against the desktop. That is why the default title-bar mode is
-/// chosen from this rather than fixed for every build.
-bool windowsDrawsFrameEdgeItself() => windowsBuildNumber() >= kWindowsRoundedFrameBuild;
 
 final class _OsVersionInfo extends ffi.Struct {
   @ffi.Uint32()

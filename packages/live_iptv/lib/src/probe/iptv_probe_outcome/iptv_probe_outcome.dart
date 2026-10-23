@@ -26,7 +26,7 @@ typedef IptvLineProbe = Future<IptvProbeOutcome> Function(String url, Map<String
 @immutable
 class IptvProbeOutcome {
   /// A verdict.
-  const new({required this.ok, this.inconclusive = false, this.latency, this.bytes, this.message});
+  const IptvProbeOutcome({required this.ok, this.inconclusive = false, this.latency, this.bytes, this.message});
 
   /// A verdict about an address that answered with media in [latency].
   const IptvProbeOutcome.answered(this.latency, {this.bytes, this.message}) : ok = true, inconclusive = false;

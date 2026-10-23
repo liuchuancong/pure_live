@@ -4,7 +4,7 @@ import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/live_shell.dart';
 import 'package:live_shell_desktop/src/displays.dart' show WindowOriginReader, centerOnWorkArea, defaultWindowSize;
 import 'package:live_shell_desktop/src/window_material.dart';
-import 'package:window_frame_kit/window_frame_kit.dart';
+import 'package:window_manager/window_manager.dart';
 
 /// Applies a [ChromePlan] and the rendering fallbacks to the window, before the
 /// first frame is shown.
@@ -59,46 +59,18 @@ Future<void> configureMainWindow({
       title: title,
       size: initialSize,
       minimumSize: minimumSize,
-      // Always opaque at creation: on Windows 10 an unbacked transparent
-      // surface shows the desktop through, because the compositor there has
-      // no default backdrop to fall back on. Only a material that actually
-      // applied clears the surface, and it does so after this call, below.
       backgroundColor: background,
-      // macOS's `hidden` style keeps the traffic lights and the app draws beneath
-      // them; a true inset — moving the buttons into a sidebar — needs a change in
-      // macos/Runner/MainFlutterWindow.swift (titlebarAppearsTransparent plus the
-      // standardWindowButton frames), because the window plugin exposes no offset.
       titleBarStyle: plan.mode == ChromeMode.nativeCaption ? TitleBarStyle.normal : TitleBarStyle.hidden,
-      // `null` sends no channel call at all, so a plan that leaves the frame to
-      // the system is untouched — the window keeps the caption it was created with.
-      customFrame: takesFrameOver ? true : null,
-      // From the role, not a literal: a floating video window and a corner toast
-      // asked for by name must not clutter alt-tab, and hard-coding `false` here
-      // is how that promise gets broken by the next caller.
       skipTaskbar: !role.showsInTaskbar,
     ),
   );
-  // The origin is ours to compute, not the plugin's: `WindowOptions.center` and
-  // `center()` both reach the display API through FFI handles, which a unit test has
-  // no way to answer, and a placement nobody can observe is a placement nobody can
-  // say is wrong. `placeWindow` is that seam; a null answer means the display could
-  // not be read, and the window keeps wherever the system put it.
   final origin = await placeWindow(initialSize);
   if (origin != null) {
     await windowManager.setPosition(origin);
   }
-  // The takeover's resize bands are gated on the window being resizable: a
-  // custom frame that is told it is not says so by answering the hit-test with
-  // no band at all, which leaves the window undraggable at every edge. So the
-  // flag is set where the frame is ours, and left alone everywhere else — the
-  // system's own caption already sizes the window.
   if (takesFrameOver) {
     await windowManager.setResizable(true);
   }
-  // The window exists only after waitUntilReadyToShow, so the material is
-  // applied here rather than before the options: on success the surface
-  // clears transparent so the material shows; on refusal the opaque
-  // background set above stands and nothing else changes.
   if (requestMaterial && !fallbacks.needsOpaqueSurface) {
     final applied = await (applyMaterial ?? applyWindowMaterial)(dark: materialDark);
     if (applied != AppliedWindowMaterial.none) {

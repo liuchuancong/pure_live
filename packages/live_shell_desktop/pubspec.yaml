@@ -28,8 +28,8 @@ dependencies:
   nativeapi: ^0.5.2 # 系统通知（nativeapi 的 NotificationManager，与 tray_manager 同栈）
   screen_retriever: ^0.3.0
   tray_manager: ^0.8.0
-  window_frame_kit: ^0.3.0
-
+  window_manager: ^0.5.2
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter

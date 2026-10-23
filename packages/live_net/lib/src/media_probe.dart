@@ -71,7 +71,7 @@ extension MediaContainerX on MediaContainer {
 @immutable
 final class MediaProbeResult {
   /// A verdict.
-  const new({
+  const MediaProbeResult({
     required this.playable,
     this.latency = Duration.zero,
     this.bytes = 0,
@@ -239,7 +239,7 @@ bool _isSuccess(int statusCode) => statusCode >= 200 && statusCode < 300;
 /// the interface cannot show progress on.
 final class MediaProbe {
   /// A probe reading through [http].
-  new({
+  MediaProbe({
     required this.http,
     this.firstBytes = 64 * 1024,
     this.timeout = const Duration(seconds: 8),
