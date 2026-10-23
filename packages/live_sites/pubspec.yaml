@@ -35,4 +35,10 @@ dev_dependencies:
 # manifest's icon is one of these files, referenced package-relative.
 flutter:
   assets:
+    - assets/emo/json/
+    - assets/emo/images/bilibili/
+    - assets/emo/images/douyin/
+    - assets/emo/images/douyu/
+    - assets/emo/images/huya/
+    - assets/emo/images/kuaishou/
     - assets/platforms/

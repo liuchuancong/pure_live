@@ -3,6 +3,7 @@
 library;
 export 'codec/brotli.dart';
 export 'crypto/aes_cbc.dart';
+export 'danmaku/emotes.dart';
 export 'danmaku/filters/block_list.dart';
 export 'danmaku/filters/block_pattern.dart';
 export 'danmaku/filters/filters.dart';
