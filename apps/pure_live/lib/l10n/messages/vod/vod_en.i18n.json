@@ -1,0 +1,9 @@
+{
+  "searchHint": "Search Bilibili videos",
+  "idleTitle": "Search for videos",
+  "idleDescription": "Type a keyword to search Bilibili videos; region browse and rankings are not offered by this source yet.",
+  "noResultsTitle": "No videos found",
+  "noResultsDescription": "Try another keyword.",
+  "errorTitle": "The videos did not load",
+  "retry": "Retry"
+}

@@ -1,0 +1,9 @@
+{
+  "searchHint": "搜索 Bilibili 视频",
+  "idleTitle": "搜索点播视频",
+  "idleDescription": "输入关键词搜索 Bilibili 的视频；分区与排行榜此源暂未提供。",
+  "noResultsTitle": "没有找到视频",
+  "noResultsDescription": "换个关键词再试试。",
+  "errorTitle": "视频没有加载出来",
+  "retry": "重试"
+}
