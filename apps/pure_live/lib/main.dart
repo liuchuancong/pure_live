@@ -232,9 +232,9 @@ PureDesignLanguage? _pinnedLanguageFrom(List<String> args) {
 /// the first frame.
 ///
 /// The `[ui] design language` line says what the resolver *chose*; this says
-/// what is on screen — `FluentApp`, `CupertinoApp`, `MacosApp`, `MaterialApp`
-/// or the token host — because "did the language change the window" is a question
-/// about the mounted tree, and answering it used to mean attaching a debugger.
+/// what is on screen — the Fluent host chain — because "did the language
+/// change the window" is a question about the mounted tree, and answering it
+/// used to mean attaching a debugger.
 void _reportHostChain() {
   final root = WidgetsBinding.instance.rootElement;
   if (root == null) {

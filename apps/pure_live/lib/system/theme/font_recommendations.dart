@@ -33,41 +33,15 @@ enum RecommendedFontSource {
 /// name the settings page shows, and where it comes from.
 typedef RecommendedFont = ({String family, String name, RecommendedFontSource source});
 
-/// The font each design language's own platform officially uses — not a
-/// stylistic guess, the actual shipped family:
-///
-/// - fluent is Windows' design system: **Segoe UI**, installed on every
-///   Windows machine and referenced by name (Windows 11 resolves that name
-///   onto the Segoe UI Variable family its apps are meant to draw with);
-/// - macos_ui and glass dress Apple's design languages: **SF Pro**, and
-///   Cupertino's rounded register is **SF Pro Rounded** — Apple ships both
-///   faces in its SF Fonts package;
-/// - material is Google's: **Roboto**, Android's system face since 4.0;
-/// - forui copies shadcn/ui, whose default template ships **Inter**;
-/// - wind is the Flutter port of Tailwind (fluttersdk_wind), whose own UI
-///   kit sets headings and body in **Inter**;
-/// - yaru is Ubuntu's theme, carrying Canonical's **Ubuntu** font family.
-///
-/// Neumorphism is a technique, not a platform — no vendor ships its UI
-/// text, so the skin answers [RecommendedFontSource.none] and the system
-/// default stands. The downloadable faces are fetched from their vendors'
-/// official distribution channels and registered under these family ids;
-/// a downloadable pick counts only once its files are in the app's font
-/// tree.
+/// The font the design language's own platform officially uses — not a
+/// stylistic guess, the actual shipped family: fluent is Windows' design
+/// system, so **Segoe UI** — installed on every Windows machine and
+/// referenced by name (Windows 11 resolves that name onto the Segoe UI
+/// Variable family its apps are meant to draw with). A downloadable face is
+/// fetched from its vendor's official distribution channel and registered
+/// under the family id; it counts once its files are in the app's font tree.
 const Map<PureDesignLanguage, RecommendedFont> kRecommendedFonts = {
   PureDesignLanguage.fluent: (family: 'Segoe UI', name: 'Segoe UI', source: RecommendedFontSource.installed),
-  PureDesignLanguage.macos: (family: 'SFPro', name: 'SF Pro', source: RecommendedFontSource.bundled),
-  PureDesignLanguage.glass: (family: 'SFPro', name: 'SF Pro', source: RecommendedFontSource.bundled),
-  PureDesignLanguage.cupertino: (
-    family: 'SFRounded',
-    name: 'SF Pro Rounded',
-    source: RecommendedFontSource.downloadable,
-  ),
-  PureDesignLanguage.material: (family: 'Roboto', name: 'Roboto', source: RecommendedFontSource.bundled),
-  PureDesignLanguage.forui: (family: 'Inter', name: 'Inter', source: RecommendedFontSource.bundled),
-  PureDesignLanguage.wind: (family: 'Inter', name: 'Inter', source: RecommendedFontSource.bundled),
-  PureDesignLanguage.yaru: (family: 'Ubuntu', name: 'Ubuntu', source: RecommendedFontSource.bundled),
-  PureDesignLanguage.neumorphic: (family: '', name: '', source: RecommendedFontSource.none),
 };
 
 /// The bundled preset families — the official faces `pubspec.yaml` ships

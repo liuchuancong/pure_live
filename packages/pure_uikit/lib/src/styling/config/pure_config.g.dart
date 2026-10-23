@@ -8,14 +8,10 @@ part of 'pure_config.dart';
 
 _UiConfig _$UiConfigFromJson(Map<String, dynamic> json) => _UiConfig(
   language: $enumDecode(_$PureDesignLanguageEnumMap, json['language']),
-  brightness:
-      $enumDecodeNullable(_$UiBrightnessModeEnumMap, json['brightness']) ??
-      UiBrightnessMode.system,
+  brightness: $enumDecodeNullable(_$UiBrightnessModeEnumMap, json['brightness']) ?? UiBrightnessMode.system,
   accent: const ColorConverter().fromJson((json['accent'] as num?)?.toInt()),
   pureBlack: json['pureBlack'] as bool? ?? false,
-  density:
-      $enumDecodeNullable(_$UiDensityEnumMap, json['density']) ??
-      UiDensity.comfortable,
+  density: $enumDecodeNullable(_$UiDensityEnumMap, json['density']) ?? UiDensity.comfortable,
   fontFamily: json['fontFamily'] as String?,
   fontScale: (json['fontScale'] as num?)?.toDouble() ?? 1.0,
   bodySmallSize: (json['bodySmallSize'] as num?)?.toDouble(),
@@ -48,17 +44,7 @@ Map<String, dynamic> _$UiConfigToJson(_UiConfig instance) => <String, dynamic>{
   'focusOutline': instance.focusOutline,
 };
 
-const _$PureDesignLanguageEnumMap = {
-  PureDesignLanguage.fluent: 'fluent',
-  PureDesignLanguage.macos: 'macos',
-  PureDesignLanguage.neumorphic: 'neumorphic',
-  PureDesignLanguage.glass: 'glass',
-  PureDesignLanguage.wind: 'wind',
-  PureDesignLanguage.forui: 'forui',
-  PureDesignLanguage.material: 'material',
-  PureDesignLanguage.cupertino: 'cupertino',
-  PureDesignLanguage.yaru: 'yaru',
-};
+const _$PureDesignLanguageEnumMap = {PureDesignLanguage.fluent: 'fluent'};
 
 const _$UiBrightnessModeEnumMap = {
   UiBrightnessMode.system: 'system',

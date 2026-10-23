@@ -5,10 +5,10 @@ import 'package:pure_uikit/pure_uikit.dart' show PureDesignLanguage, PureIconGly
 
 /// Tier 1: the single-icon specials, keyed by platform AND design language.
 ///
-/// Platform and language are separate dimensions — a Windows Fluent chrome
-/// may legitimately borrow one Material glyph while keeping its own font
-/// everywhere else. Each table here answers only the keys it lists; the
-/// rest of that platform+language pair falls to the language default.
+/// Platform and language are separate dimensions, so a key is answered for
+/// one platform only where the fluent chrome needs a different glyph there.
+/// Each table here answers only the keys it lists; the rest of that
+/// platform+language pair falls to the language default.
 ///
 /// The seed pair keeps the search glyph legible in the dense Fluent chrome
 /// (the plain Material magnifier instead of the rounded variant the global
@@ -18,8 +18,5 @@ const Map<(TargetPlatform, PureDesignLanguage), PureIconMapping> appIconOverride
   (TargetPlatform.windows, PureDesignLanguage.fluent): PureIconMapping({
     AppIconKey.search: PureIconGlyph(Icons.search),
     AppIconKey.more: PureIconGlyph(Icons.more_horiz),
-  }),
-  (TargetPlatform.macOS, PureDesignLanguage.macos): PureIconMapping({
-    AppIconKey.back: PureIconGlyph(Icons.arrow_back_ios_new),
   }),
 };

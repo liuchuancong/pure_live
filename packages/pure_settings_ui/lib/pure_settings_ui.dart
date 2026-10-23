@@ -10,16 +10,12 @@
 ///
 /// | language | style |
 /// |---|---|
-/// | `material` | Android 16 cards |
-/// | `cupertino` | iOS 26 grouped cards |
 /// | `fluent` | Windows 11 Settings |
-/// | `macos` | macOS 26 System Settings |
-/// | `yaru` | GNOME/libadwaita boxed lists |
-/// | `forui`, `glass`, `neumorphic`, `wind` | pure_uikit's own |
 ///
-/// The first five are upstream's renderings, kept as they ship. The sixth is
-/// this package's addition: built on pure_uikit's components, so each of those
-/// four languages draws its own library's real card, row and switch.
+/// That one is upstream's rendering, kept as it ships. The package also
+/// carries `DevicePlatform.pure`, its own addition: built on pure_uikit's
+/// components, so a language that names it draws pure_uikit's real card, row
+/// and switch.
 ///
 /// ```dart
 /// SettingsList(

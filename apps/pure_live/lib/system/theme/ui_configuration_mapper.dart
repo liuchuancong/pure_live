@@ -51,7 +51,7 @@ UiConfig uiConfigFromAppearance(
     accent: switch ((dynamicAccent, appearance.accentColor)) {
       (final Color fromSystem?, _) => fromSystem,
       (_, final int stored) => Color(stored),
-      (_, null) when language == PureDesignLanguage.fluent && Platform.isWindows => readWindowsAccentColor(),
+      (_, null) when Platform.isWindows => readWindowsAccentColor(),
       _ => null,
     },
     pureBlack: appearance.pureBlack,
@@ -90,28 +90,15 @@ AppearancePreferences appearanceFromUiConfig(UiConfig config) => AppearancePrefe
   focusOutline: config.focusOutline,
 );
 
-/// The skin this build ships on when the user has not chosen: fluent, a
-/// fully registered third-party language. The default only decides which
-/// host answers first — every language renders its own whole contract, and a
-/// stored id that names a language this build does not register is a fault the
-/// startup resolver reports rather than a look to settle for.
+/// The skin this build ships on when the user has not chosen: fluent, the
+/// one design language this build registers. The default only decides which
+/// host answers first — and since the enum carries that one value, a stored
+/// id that names anything else is a fault the startup resolver reports
+/// rather than a look to settle for.
 ///
 /// One product value, not a per-platform guess: §6.3 of the v4 spec asks for
 /// the default to be stated, so a Linux and an Android first run agree.
 const PureDesignLanguage defaultDesignLanguage = PureDesignLanguage.fluent;
-
-/// Ids that named something the enum no longer has.
-///
-/// The two Material- and iOS-shaped languages used to be spelled `materialUi`
-/// and `cupertinoUi`; both ids are still what a document written before the
-/// rename holds, and an unknown id would drop the viewer onto the build's
-/// default skin — a language change they never asked for. The base, which that
-/// older enum called `material`, is now `token`, and a stored `material` names
-/// the Material library it visually matched all along.
-const Map<String, PureDesignLanguage> _retiredIds = {
-  'materialUi': PureDesignLanguage.material,
-  'cupertinoUi': PureDesignLanguage.cupertino,
-};
 
 /// The language a stored id names, null when it names none.
 ///
@@ -122,10 +109,6 @@ const Map<String, PureDesignLanguage> _retiredIds = {
 PureDesignLanguage? designLanguageByStoredId(String? id) {
   if (id == null || id.isEmpty) {
     return null;
-  }
-  final retired = _retiredIds[id];
-  if (retired != null) {
-    return retired;
   }
   for (final language in PureDesignLanguage.values) {
     if (language.name == id) {

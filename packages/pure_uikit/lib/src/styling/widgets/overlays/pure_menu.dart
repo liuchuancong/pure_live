@@ -1,10 +1,7 @@
 import 'dart:async' show Completer, unawaited;
-import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show KeyDownEvent, KeyEvent, KeyRepeatEvent, LogicalKeyboardKey;
-import 'package:pure_uikit/src/scales/radii.dart';
-import 'package:pure_uikit/src/styling/config/pure_design_language.dart';
 import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 
 /// One line of a [PureMenu]: an action, a checked choice, or a hairline that
@@ -97,16 +94,10 @@ final class PureMenuItem {
 /// A menu — a list of commands dropped over the trigger that opened it.
 ///
 /// Where the earlier kit handed the popup to each library's own menu widget,
-/// this is the menu drawn here, one shape per design language from the tokens —
-/// the M3 [surfaceContainerLow][PureDesignLanguage.material] card with its
-/// leading icons and its 48dp rows, the iOS context-menu card under Cupertino,
-/// the vibrancy menu with its tick under macOS, the WinUI flyout with its
-/// bordered card and its accelerator column under Fluent, the flat Ubuntu menu
-/// with its hairline separators under Yaru, the shadcn popover under ForUI, the
-/// frosted card under glass, the raised soft-edged card under neumorphic, and
-/// the wind popover that shares ForUI's grammar. The colours, radii, motion and
-/// text all come from the tokens, so a language re-skin and a dark switch still
-/// come out right — a menu is exactly the surface no anchor library drops into
+/// this is the menu drawn here, the WinUI flyout shape from the tokens — the
+/// bordered card with its accelerator column. The colours, radii, motion and
+/// text all come from the tokens, so a re-skin and a dark switch still come
+/// out right — a menu is exactly the surface no anchor library drops into
 /// a `PureConfigProvider` that sits above the [Navigator], which is why it is
 /// painted here rather than borrowed.
 ///
@@ -185,7 +176,7 @@ Future<PureMenuItem?> showPureMenu(
   if (overlay == null) {
     return null;
   }
-  final visual = _menuVisual(theme);
+  final visual = _MenuVisual.fluent();
   final done = Completer<PureMenuItem?>();
   late final OverlayEntry entry;
   entry = OverlayEntry(
@@ -237,104 +228,6 @@ final class _MenuVisual {
     required this.showSeparators,
   });
 
-  /// Material's `surfaceContainerLow` menu: a near-flat elevated card, a 2dp
-  /// corner, a soft elevation shadow, 48dp rows carrying leading icons, a check
-  /// for the chosen item and an ink pill behind the active row.
-  factory material() => _MenuVisual(
-    card: (theme, body) => DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colors.surfaceElevated,
-        borderRadius: BorderRadius.circular(2),
-        boxShadow: _elevation(theme, 6),
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: theme.token.scale.sizes.xxs),
-        child: body,
-      ),
-    ),
-    rowHeight: 48,
-    iconSize: 24,
-    rowPadding: const EdgeInsets.symmetric(horizontal: 12),
-    rowRadius: BorderRadius.circular(PureRadii.sm),
-    leadingGap: 12,
-    minWidth: 168,
-    maxWidth: 360,
-    beginScale: 0.9,
-    beginAlignment: Alignment.topLeft,
-    curve: Curves.easeOutCubic,
-    highlight: (theme) => theme.colors.fill,
-    content: _standardContent,
-    checkColor: (theme, {required active}) => theme.colors.primary,
-    separatorColor: (theme) => theme.colors.split,
-    showSeparators: false,
-  );
-
-  /// iOS's context-menu card: a blurred rounded panel (about 13dp) with a hair
-  /// outline when it cannot afford the blur, rows that answer a hover with a
-  /// soft grey wash and a checkmark for the chosen item.
-  factory cupertino() => _MenuVisual(
-    card: (theme, body) => _blurred(
-      theme,
-      body,
-      radius: 13,
-      fill: theme.isDark ? const Color(0xE61C1C1E) : const Color(0xE6FFFFFF),
-      sigma: 20,
-      outline: theme.colors.borderSecondary.withValues(alpha: 0.5),
-    ),
-    rowHeight: 40,
-    iconSize: 19,
-    rowPadding: const EdgeInsets.symmetric(horizontal: 12),
-    rowRadius: BorderRadius.circular(PureRadii.sm),
-    leadingGap: 10,
-    minWidth: 180,
-    maxWidth: 320,
-    beginScale: 0.94,
-    beginAlignment: Alignment.topLeft,
-    curve: Curves.easeOut,
-    highlight: (theme) => theme.colors.fillSecondary,
-    content: _standardContent,
-    checkColor: (theme, {required active}) => theme.colors.primary,
-    separatorColor: (theme) => theme.colors.split,
-    showSeparators: false,
-  );
-
-  /// macOS's menu: a translucent vibrancy card at the small control radius, a
-  /// dense row, and the native answer to being on it — the accent fills the row
-  /// and the label, tick and glyph all turn to the solid text-on-accent white.
-  factory macos() => _MenuVisual(
-    card: (theme, body) => _blurred(
-      theme,
-      body,
-      radius: 6,
-      fill: theme.isDark ? const Color(0xE63A3A3C) : const Color(0xE6FFFFFF),
-      sigma: 30,
-      outline: theme.colors.borderSecondary.withValues(alpha: 0.4),
-    ),
-    rowHeight: 24,
-    iconSize: 14,
-    rowPadding: const EdgeInsets.symmetric(horizontal: 8),
-    rowRadius: BorderRadius.circular(4),
-    leadingGap: 6,
-    minWidth: 180,
-    maxWidth: 340,
-    beginScale: 0.98,
-    beginAlignment: Alignment.topLeft,
-    curve: Curves.easeOut,
-    highlight: (theme) => theme.colors.primary,
-    content: (theme, {required active, required danger, required enabled}) {
-      if (!enabled) {
-        return theme.colors.textQuaternary;
-      }
-      if (active) {
-        return theme.colors.onPrimary;
-      }
-      return danger ? theme.colors.error : theme.colors.text;
-    },
-    checkColor: (theme, {required active}) => active ? theme.colors.onPrimary : theme.colors.primary,
-    separatorColor: (theme) => theme.colors.split,
-    showSeparators: false,
-  );
-
   /// Windows's flyout: a bordered card at Fluent's control radius, a row tall
   /// enough for its reveal fill, and the accelerator the item carries printed in
   /// the trailing column the way WinUI's menu items do.
@@ -361,156 +254,6 @@ final class _MenuVisual {
     beginScale: 0.88,
     beginAlignment: Alignment.topLeft,
     curve: Curves.easeOutBack,
-    highlight: (theme) => theme.colors.fill,
-    content: _standardContent,
-    checkColor: (theme, {required active}) => theme.colors.primary,
-    separatorColor: (theme) => theme.colors.split,
-    showSeparators: false,
-  );
-
-  /// Ubuntu's menu: a flat card at the Yaru corner, no elevation, and the one
-  /// thing that names it — a hairline rule drawn across every group break, so
-  /// the whole list reads as bands rather than a floating pill.
-  factory yaru() => _MenuVisual(
-    card: (theme, body) => DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colors.surfaceElevated,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: theme.colors.borderSecondary),
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: theme.token.scale.sizes.xs),
-        child: body,
-      ),
-    ),
-    rowHeight: 40,
-    iconSize: 18,
-    rowPadding: const EdgeInsets.symmetric(horizontal: 12),
-    rowRadius: BorderRadius.zero,
-    leadingGap: 12,
-    minWidth: 180,
-    maxWidth: 360,
-    beginScale: 0.96,
-    beginAlignment: Alignment.topLeft,
-    curve: Curves.easeOut,
-    highlight: (theme) => theme.colors.fill,
-    content: _standardContent,
-    checkColor: (theme, {required active}) => theme.colors.primary,
-    separatorColor: (theme) => theme.colors.split,
-    showSeparators: true,
-  );
-
-  /// ForUI's shadcn popover: a bordered card with a ring of shadow, the accent
-  /// fill under the active row, the destructive item in the error colour and the
-  /// chosen item's tick in the leading gutter.
-  factory forui() => _MenuVisual(
-    card: (theme, body) => DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colors.surfaceElevated,
-        borderRadius: BorderRadius.circular(theme.token.scale.radii.lg),
-        border: Border.all(color: theme.colors.border),
-        boxShadow: _elevation(theme, 3),
-      ),
-      child: Padding(padding: EdgeInsets.all(theme.token.scale.sizes.xs), child: body),
-    ),
-    rowHeight: 36,
-    iconSize: 16,
-    rowPadding: const EdgeInsets.symmetric(horizontal: 10),
-    rowRadius: BorderRadius.circular(PureRadii.md),
-    leadingGap: 10,
-    minWidth: 180,
-    maxWidth: 340,
-    beginScale: 0.95,
-    beginAlignment: Alignment.topLeft,
-    curve: Curves.easeOutCubic,
-    highlight: (theme) => theme.colors.fillSecondary,
-    content: _standardContent,
-    checkColor: (theme, {required active}) => theme.colors.primary,
-    separatorColor: (theme) => theme.colors.split,
-    showSeparators: false,
-  );
-
-  /// The glass language: a frosted card — a real backdrop blur over a barely
-  /// there fill when the device can afford it, a plain translucent panel when it
-  /// cannot — with a lit hair edge and a light wash under the active row.
-  factory glass() => _MenuVisual(
-    card: (theme, body) => _blurred(
-      theme,
-      body,
-      radius: theme.token.scale.radii.lg,
-      fill: theme.isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.5),
-      sigma: 18,
-      outline: theme.isDark ? Colors.white.withValues(alpha: 0.16) : Colors.white.withValues(alpha: 0.6),
-    ),
-    rowHeight: 44,
-    iconSize: 20,
-    rowPadding: const EdgeInsets.symmetric(horizontal: 12),
-    rowRadius: BorderRadius.circular(PureRadii.md),
-    leadingGap: 12,
-    minWidth: 180,
-    maxWidth: 340,
-    beginScale: 0.92,
-    beginAlignment: Alignment.topLeft,
-    curve: Curves.easeOutCubic,
-    highlight: (theme) => theme.isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.5),
-    content: _standardContent,
-    checkColor: (theme, {required active}) => theme.colors.primary,
-    separatorColor: (theme) => theme.colors.borderSecondary.withValues(alpha: 0.5),
-    showSeparators: false,
-  );
-
-  /// The neumorphic language: a card raised off its page — light from the top
-  /// left, shadow from the bottom right, a soft round edge — so the menu floats
-  /// as the same extruded surface the rest of the language is built from.
-  factory neumorphic() => _MenuVisual(
-    card: (theme, body) => DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colors.bgContainer,
-        borderRadius: BorderRadius.circular(theme.token.scale.radii.lg),
-        boxShadow: _raised(theme),
-      ),
-      child: Padding(padding: EdgeInsets.all(theme.token.scale.sizes.xs), child: body),
-    ),
-    rowHeight: 44,
-    iconSize: 20,
-    rowPadding: const EdgeInsets.symmetric(horizontal: 12),
-    rowRadius: BorderRadius.circular(PureRadii.md),
-    leadingGap: 12,
-    minWidth: 180,
-    maxWidth: 340,
-    beginScale: 0.94,
-    beginAlignment: Alignment.topLeft,
-    curve: Curves.easeOutCubic,
-    highlight: (theme) => theme.colors.fill,
-    content: _standardContent,
-    checkColor: (theme, {required active}) => theme.colors.primary,
-    separatorColor: (theme) => theme.colors.borderSecondary.withValues(alpha: 0.6),
-    showSeparators: false,
-  );
-
-  /// The wind popover: the same border-and-shadow card grammar as ForUI, sized
-  /// and padded on the fork's own scale, so the two shadcn-lineage languages
-  /// agree without sharing an import.
-  factory wind() => _MenuVisual(
-    card: (theme, body) => DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colors.surfaceElevated,
-        borderRadius: BorderRadius.circular(theme.token.scale.radii.base),
-        border: Border.all(color: theme.colors.borderSecondary),
-        boxShadow: _elevation(theme, 4),
-      ),
-      child: Padding(padding: EdgeInsets.all(theme.token.scale.sizes.xs), child: body),
-    ),
-    rowHeight: 36,
-    iconSize: 16,
-    rowPadding: const EdgeInsets.symmetric(horizontal: 10),
-    rowRadius: BorderRadius.circular(PureRadii.sm),
-    leadingGap: 10,
-    minWidth: 180,
-    maxWidth: 340,
-    beginScale: 0.96,
-    beginAlignment: Alignment.topLeft,
-    curve: Curves.easeOut,
     highlight: (theme) => theme.colors.fill,
     content: _standardContent,
     checkColor: (theme, {required active}) => theme.colors.primary,
@@ -559,12 +302,12 @@ final class _MenuVisual {
   /// The hairline that divides two groups.
   final Color Function(PureTheme theme) separatorColor;
 
-  /// Whether the language rules every group break, Ubuntu's habit, or only the
-  /// separators the caller asked for.
+  /// Whether group breaks draw a rule between rows without an explicit
+  /// separator; the flyout draws only the separators the caller placed.
   final bool showSeparators;
 
-  /// The text colour the non-accent-selection languages share: greyed when off,
-  /// the error colour for a destructive action, the plain text role otherwise.
+  /// The text colour: greyed when off, the error colour for a destructive
+  /// action, the plain text role otherwise.
   static Color _standardContent(PureTheme theme, {required bool active, required bool danger, required bool enabled}) {
     if (!enabled) {
       return theme.colors.textQuaternary;
@@ -572,7 +315,7 @@ final class _MenuVisual {
     return danger ? theme.colors.error : theme.colors.text;
   }
 
-  /// The elevation shadow the flat-card languages float the menu on.
+  /// The elevation shadow the flyout card floats the menu on.
   static List<BoxShadow> _elevation(PureTheme theme, double blur) => [
     BoxShadow(
       color: theme.colors.shadowBase.withValues(alpha: theme.isDark ? 0.4 : 0.16),
@@ -580,69 +323,7 @@ final class _MenuVisual {
       offset: Offset(0, blur / 4),
     ),
   ];
-
-  /// The neumorphic pair: light from the top left, shadow from the bottom right.
-  static List<BoxShadow> _raised(PureTheme theme) => [
-    BoxShadow(
-      color: theme.colors.shadowBase.withValues(alpha: theme.isDark ? 0.5 : 0.18),
-      blurRadius: 12,
-      offset: const Offset(6, 6),
-    ),
-    BoxShadow(
-      color: theme.colors.white.withValues(alpha: theme.isDark ? 0.04 : 0.7),
-      blurRadius: 12,
-      offset: const Offset(-6, -6),
-    ),
-  ];
 }
-
-/// The surface a blurred-language menu is drawn on: a real backdrop filter when
-/// the theme allows transparency, a plain filled card when it does not, and a
-/// hair outline in both cases so the panel still separates from what is behind.
-Widget _blurred(
-  PureTheme theme,
-  Widget body, {
-  required double radius,
-  required Color fill,
-  required double sigma,
-  required Color outline,
-}) {
-  final bordered = DecoratedBox(
-    decoration: BoxDecoration(
-      color: theme.canBlur ? fill.withValues(alpha: fill.a * 0.85) : fill,
-      borderRadius: BorderRadius.circular(radius),
-      border: Border.all(color: outline),
-      boxShadow: _MenuVisual._elevation(theme, 16),
-    ),
-    child: Padding(
-      padding: EdgeInsets.symmetric(vertical: theme.token.scale.sizes.xxs, horizontal: theme.token.scale.sizes.xxs),
-      child: body,
-    ),
-  );
-  if (!theme.canBlur) {
-    return bordered;
-  }
-  return ClipRRect(
-    borderRadius: BorderRadius.circular(radius),
-    child: BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
-      child: bordered,
-    ),
-  );
-}
-
-/// The menu for the active design language.
-_MenuVisual _menuVisual(PureTheme theme) => switch (theme.config.language) {
-  PureDesignLanguage.material => _MenuVisual.material(),
-  PureDesignLanguage.cupertino => _MenuVisual.cupertino(),
-  PureDesignLanguage.macos => _MenuVisual.macos(),
-  PureDesignLanguage.fluent => _MenuVisual.fluent(),
-  PureDesignLanguage.yaru => _MenuVisual.yaru(),
-  PureDesignLanguage.forui => _MenuVisual.forui(),
-  PureDesignLanguage.glass => _MenuVisual.glass(),
-  PureDesignLanguage.neumorphic => _MenuVisual.neumorphic(),
-  PureDesignLanguage.wind => _MenuVisual.wind(),
-};
 
 /// The card on the overlay: the scrim that dismisses it, the anchored placement
 /// that flips and clamps it into the viewport, the fade-and-scale entrance, the
@@ -836,8 +517,7 @@ class _MenuOverlayState extends State<_MenuOverlay> with SingleTickerProviderSta
     );
   }
 
-  /// The rows with the rules the language asks for woven in: every group break
-  /// for Yaru, only the separators the caller placed elsewhere.
+  /// The rows with the separators the caller placed woven in.
   List<Widget> _rows(PureTheme theme, _MenuVisual visual) {
     final children = <Widget>[];
     var drewRow = false;
@@ -859,7 +539,7 @@ class _MenuOverlayState extends State<_MenuOverlay> with SingleTickerProviderSta
 
   Widget _divider(PureTheme theme, _MenuVisual visual) => Padding(
     // The hairline sits in the row gutter rather than running edge to edge, the
-    // way both Ubuntu and the desktop menus inset their separators.
+    // way desktop menus inset their separators.
     padding: EdgeInsets.symmetric(horizontal: theme.token.scale.sizes.sm, vertical: theme.token.scale.sizes.xxs / 2),
     child: ExcludeSemantics(child: Container(height: 1, color: visual.separatorColor(theme))),
   );
