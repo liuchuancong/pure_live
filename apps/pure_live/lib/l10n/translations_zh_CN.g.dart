@@ -43,6 +43,8 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	// Translations
 	late final Translations$areas$zh_CN areas = Translations$areas$zh_CN.internal(_root);
 	late final Translations$common$zh_CN common = Translations$common$zh_CN.internal(_root);
+	late final Translations$favorites$zh_CN favorites = Translations$favorites$zh_CN.internal(_root);
+	late final Translations$history$zh_CN history = Translations$history$zh_CN.internal(_root);
 	late final Translations$navigation$zh_CN navigation = Translations$navigation$zh_CN.internal(_root);
 	late final Translations$player$zh_CN player = Translations$player$zh_CN.internal(_root);
 	late final Translations$search$zh_CN search = Translations$search$zh_CN.internal(_root);
@@ -129,6 +131,45 @@ class Translations$common$zh_CN {
 
 	/// zh-CN: '搜索房间、主播或站点'
 	String get searchHint => '搜索房间、主播或站点';
+}
+
+// Path: favorites
+class Translations$favorites$zh_CN {
+	Translations$favorites$zh_CN.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh-CN: '还没有关注的房间'
+	String get emptyTitle => '还没有关注的房间';
+
+	/// zh-CN: '在房间里点关注，就会出现在这里。'
+	String get emptyDescription => '在房间里点关注，就会出现在这里。';
+
+	/// zh-CN: '取消关注'
+	String get unfollow => '取消关注';
+}
+
+// Path: history
+class Translations$history$zh_CN {
+	Translations$history$zh_CN.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh-CN: '还没有观看记录'
+	String get emptyTitle => '还没有观看记录';
+
+	/// zh-CN: '看过一场直播后，就会出现在这里。'
+	String get emptyDescription => '看过一场直播后，就会出现在这里。';
+
+	/// zh-CN: '清空记录'
+	String get clear => '清空记录';
+
+	/// zh-CN: '删除这条记录'
+	String get remove => '删除这条记录';
 }
 
 // Path: navigation
@@ -300,6 +341,24 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '关于'
 	String get about => '关于';
+
+	/// zh-CN: '浏览偏好'
+	String get browsingTitle => '浏览偏好';
+
+	/// zh-CN: '默认站点'
+	String get site => '默认站点';
+
+	/// zh-CN: '卡片宽度'
+	String get cardExtent => '卡片宽度';
+
+	/// zh-CN: '首页与分区流里一张卡片的宽度；越小一排越多。'
+	String get cardExtentDescription => '首页与分区流里一张卡片的宽度；越小一排越多。';
+
+	/// zh-CN: '每页数量'
+	String get pageSize => '每页数量';
+
+	/// zh-CN: '一次向站点请求多少个房间。'
+	String get pageSizeDescription => '一次向站点请求多少个房间。';
 }
 
 // Path: sites
@@ -352,6 +411,13 @@ extension on Translations {
 			'common.back' => '后退',
 			'common.forward' => '前进',
 			'common.searchHint' => '搜索房间、主播或站点',
+			'favorites.emptyTitle' => '还没有关注的房间',
+			'favorites.emptyDescription' => '在房间里点关注，就会出现在这里。',
+			'favorites.unfollow' => '取消关注',
+			'history.emptyTitle' => '还没有观看记录',
+			'history.emptyDescription' => '看过一场直播后，就会出现在这里。',
+			'history.clear' => '清空记录',
+			'history.remove' => '删除这条记录',
 			'navigation.groupPrimary' => '高频页面',
 			'navigation.home' => '首页',
 			'navigation.live' => '直播',
@@ -397,6 +463,12 @@ extension on Translations {
 			'settings.themeModeDark' => '深色',
 			'settings.language' => '语言',
 			'settings.about' => '关于',
+			'settings.browsingTitle' => '浏览偏好',
+			'settings.site' => '默认站点',
+			'settings.cardExtent' => '卡片宽度',
+			'settings.cardExtentDescription' => '首页与分区流里一张卡片的宽度；越小一排越多。',
+			'settings.pageSize' => '每页数量',
+			'settings.pageSizeDescription' => '一次向站点请求多少个房间。',
 			'sites.title' => '站点',
 			'sites.live' => '直播',
 			'sites.search' => '搜索',

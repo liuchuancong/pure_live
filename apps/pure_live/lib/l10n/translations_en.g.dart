@@ -41,6 +41,8 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	// Translations
 	@override late final _Translations$areas$en areas = _Translations$areas$en._(_root);
 	@override late final _Translations$common$en common = _Translations$common$en._(_root);
+	@override late final _Translations$favorites$en favorites = _Translations$favorites$en._(_root);
+	@override late final _Translations$history$en history = _Translations$history$en._(_root);
 	@override late final _Translations$navigation$en navigation = _Translations$navigation$en._(_root);
 	@override late final _Translations$player$en player = _Translations$player$en._(_root);
 	@override late final _Translations$search$en search = _Translations$search$en._(_root);
@@ -85,6 +87,31 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get back => 'Back';
 	@override String get forward => 'Forward';
 	@override String get searchHint => 'Search rooms, streamers or sites';
+}
+
+// Path: favorites
+class _Translations$favorites$en extends Translations$favorites$zh_CN {
+	_Translations$favorites$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get emptyTitle => 'No followed rooms yet';
+	@override String get emptyDescription => 'Follow a room and it lands here.';
+	@override String get unfollow => 'Unfollow';
+}
+
+// Path: history
+class _Translations$history$en extends Translations$history$zh_CN {
+	_Translations$history$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get emptyTitle => 'No watch history yet';
+	@override String get emptyDescription => 'Watch a stream and it lands here.';
+	@override String get clear => 'Clear history';
+	@override String get remove => 'Remove this record';
 }
 
 // Path: navigation
@@ -166,6 +193,12 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get themeModeDark => 'Dark';
 	@override String get language => 'Language';
 	@override String get about => 'About';
+	@override String get browsingTitle => 'Browsing';
+	@override String get site => 'Default site';
+	@override String get cardExtent => 'Card width';
+	@override String get cardExtentDescription => 'How wide a feed card gets; smaller fits more per row.';
+	@override String get pageSize => 'Page size';
+	@override String get pageSizeDescription => 'How many rooms one page asks the site for.';
 }
 
 // Path: sites
@@ -210,6 +243,13 @@ extension on TranslationsEn {
 			'common.back' => 'Back',
 			'common.forward' => 'Forward',
 			'common.searchHint' => 'Search rooms, streamers or sites',
+			'favorites.emptyTitle' => 'No followed rooms yet',
+			'favorites.emptyDescription' => 'Follow a room and it lands here.',
+			'favorites.unfollow' => 'Unfollow',
+			'history.emptyTitle' => 'No watch history yet',
+			'history.emptyDescription' => 'Watch a stream and it lands here.',
+			'history.clear' => 'Clear history',
+			'history.remove' => 'Remove this record',
 			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
@@ -255,6 +295,12 @@ extension on TranslationsEn {
 			'settings.themeModeDark' => 'Dark',
 			'settings.language' => 'Language',
 			'settings.about' => 'About',
+			'settings.browsingTitle' => 'Browsing',
+			'settings.site' => 'Default site',
+			'settings.cardExtent' => 'Card width',
+			'settings.cardExtentDescription' => 'How wide a feed card gets; smaller fits more per row.',
+			'settings.pageSize' => 'Page size',
+			'settings.pageSizeDescription' => 'How many rooms one page asks the site for.',
 			'sites.title' => 'Sites',
 			'sites.live' => 'Live',
 			'sites.search' => 'Search',

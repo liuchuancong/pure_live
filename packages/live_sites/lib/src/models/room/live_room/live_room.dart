@@ -32,6 +32,33 @@ abstract class LiveRoom implements Built<LiveRoom, LiveRoomBuilder> {
   /// Builds from a builder [updates] callback — the codegen entry.
   factory LiveRoom([void Function(LiveRoomBuilder)? updates]) = _$LiveRoom;
 
+  /// Adapter entry point: normalizes identity once (platform lower-cased,
+  /// ids trimmed) and delegates. Must stay idempotent.
+  factory LiveRoom.normalized({
+    String platform = '',
+    String roomId = '',
+    RoomContent? content,
+    RoomAudience? audience,
+    RoomBroadcast? broadcast,
+    RoomLinks? links,
+    RoomGuide? guide,
+    RoomLocal? local,
+    RoomRuntime? runtime,
+    LiveAnchor? anchor,
+    LiveArea? area,
+  }) => LiveRoom.of(
+    ref: LiveRoomRef.of(platform: platform.trim().toLowerCase(), roomId: roomId.trim()),
+    content: content,
+    audience: audience,
+    broadcast: broadcast,
+    links: links,
+    guide: guide,
+    local: local,
+    runtime: runtime,
+    anchor: anchor,
+    area: area,
+  );
+
   /// The normalized-fields constructor; fields are already normalized —
   /// construct through [LiveRoom.normalized] unless the caller normalized
   /// upstream.
@@ -72,32 +99,10 @@ abstract class LiveRoom implements Built<LiveRoom, LiveRoomBuilder> {
   /// Deserializes a stored JSON record.
   factory LiveRoom.fromJson(Map<String, Object?> json) => serializers.deserializeWith(LiveRoom.serializer, json)!;
 
-  /// Adapter entry point: normalizes identity once (platform lower-cased,
-  /// ids trimmed) and delegates. Must stay idempotent.
-  factory LiveRoom.normalized({
-    String platform = '',
-    String roomId = '',
-    RoomContent? content,
-    RoomAudience? audience,
-    RoomBroadcast? broadcast,
-    RoomLinks? links,
-    RoomGuide? guide,
-    RoomLocal? local,
-    RoomRuntime? runtime,
-    LiveAnchor? anchor,
-    LiveArea? area,
-  }) => LiveRoom.of(
-    ref: LiveRoomRef.of(platform: platform.trim().toLowerCase(), roomId: roomId.trim()),
-    content: content,
-    audience: audience,
-    broadcast: broadcast,
-    links: links,
-    guide: guide,
-    local: local,
-    runtime: runtime,
-    anchor: anchor,
-    area: area,
-  );
+  /// Serializes the stored JSON record — the inverse of [fromJson] (the
+  /// plugins make DateTime ISO-8601 text and Uri a string).
+  Map<String, Object?> toJson() =>
+      Map<String, Object?>.from(serializers.serializeWith(LiveRoom.serializer, this)! as Map);
 
   @BuiltValueHook(initializeBuilder: true)
   static void _initialize(LiveRoomBuilder b) => b

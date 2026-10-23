@@ -43,7 +43,6 @@ DanmakuTextShape danmakuMessageShape(LiveMessage message) {
 /// and spaces.
 final RegExp _emojiOnly = RegExp(
   // The analyzer checks the pattern without the unicode flag it runs with.
-  // ignore: valid_regexps
   r'^[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u{1F1E6}-\u{1F1FF}\u{E0020}-\u{E007F}\u200d\ufe0f\u20e3\s]+$',
   unicode: true,
 );
@@ -51,7 +50,6 @@ final RegExp _emojiOnly = RegExp(
 /// At least one picture among them (not only joiners and spaces).
 final RegExp _pictograph = RegExp(
   // The analyzer checks the pattern without the unicode flag it runs with.
-  // ignore: valid_regexps
   r'[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}]',
   unicode: true,
 );
