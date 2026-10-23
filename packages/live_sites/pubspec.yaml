@@ -15,8 +15,9 @@ environment:
 
 dependencies:
   brotli_neo: ^0.2.0
+  built_collection: ^5.1.2 # 不可变集合
+  built_value: ^8.13.0 # 不可变模型
   crypto: ^3.0.6
-  equatable: ^2.0.7
   fpdart: ^1.2.0
   freezed_annotation: ^3.1.0
   hls: 1.0.0
@@ -25,9 +26,10 @@ dependencies:
   live_websocket:
   meta: ^1.19.0
   web_socket_channel: ^3.0.3
-  
+
 dev_dependencies:
-  build_runner: ^2.16.0
+  build_runner: ^2.16.2 # 运行代码生成器
+  built_value_generator: ^8.13.0 # 生成 built_value 模型
   freezed: ^4.0.2
   json_serializable: ^6.14.0
   test: ^1.25.15
