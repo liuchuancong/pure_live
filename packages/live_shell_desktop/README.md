@@ -66,11 +66,13 @@ differently-branded product without forking it.
 flutter test
 ```
 
-The hosts are driven against faked method channels
-(`TestDefaultBinaryMessengerBinding…setMockMethodCallHandler`) with the real channel
-names and payload shapes, so the transport rules are checked without a window
-server. The FFI idle reader is exercised against `user32` when the host is Windows
-and skips elsewhere.
+The decision code lives in `live_shell` and is tested headless there; this
+package's testable surface is the display reader, the chrome plan and the
+window launcher. The main window's host drives nativeapi's `Window` objects
+directly — they have no fakes, so its transport rules are exercised on a real
+desktop session, and the tray and launcher remain the only method-channel
+fakes. The FFI idle reader is exercised against `user32` when the host is
+Windows and skips elsewhere.
 
 `TrayManagerHost` is **not** covered: `tray_manager`'s legacy singleton has a private
 constructor and no injectable seam, and its remaining logic is glue over
