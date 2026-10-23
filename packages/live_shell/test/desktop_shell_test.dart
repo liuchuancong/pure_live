@@ -84,6 +84,9 @@ class _FakeWindow implements WindowHost {
   Future<void> setTitle(String value) async => calls.add('title');
 
   @override
+  Future<void> startDragging() async => calls.add('drag');
+
+  @override
   Future<WindowState> snapshot() async => WindowState(geometry: lastSet, isVisible: true, isFocused: focused);
 }
 

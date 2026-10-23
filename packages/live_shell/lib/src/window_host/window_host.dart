@@ -148,6 +148,13 @@ abstract interface class WindowHost {
   /// Sets the title the taskbar and window list show.
   Future<void> setTitle(String value);
 
+  /// Hands the drag to the OS: the strip the app drew becomes the window's
+  /// title bar until the pointer is released.
+  ///
+  /// Only a shell that draws its own strip needs this; with the system's
+  /// caption the manager already knows what a drag means.
+  Future<void> startDragging();
+
   /// Reports the current state after a caller has changed something, so the
   /// shell can reconcile its own view with the window manager's.
   Future<WindowState> snapshot();

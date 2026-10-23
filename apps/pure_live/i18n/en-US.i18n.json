@@ -1,0 +1,25 @@
+{
+  "app": {"title": "Pure Live"},
+  "nav": {
+    "home": "Home",
+    "live": "Live",
+    "favorites": "Favorites",
+    "history": "History",
+    "search": "Search",
+    "playlist": "Playlist",
+    "settings": "Settings"
+  },
+  "window": {
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "restore": "Restore",
+    "close": "Close"
+  },
+  "home": {
+    "welcome": "Welcome to Pure Live",
+    "welcomeHint": "Pick a section from the sidebar; live streams arrive once the sites are wired in."
+  },
+  "live": {"empty": "Live streams appear here once the sites are wired in."},
+  "search": {"hint": "Search rooms, streamers or sites", "empty": "Type a keyword to start searching."},
+  "generic": {"empty": "Nothing here yet", "comingSoon": "Coming soon"}
+}

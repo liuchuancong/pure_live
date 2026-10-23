@@ -293,6 +293,9 @@ class _ShellWindow implements WindowHost {
   Future<void> setTitle(String value) async {}
 
   @override
+  Future<void> startDragging() async {}
+
+  @override
   Future<WindowState> snapshot() async => WindowState(
     geometry: const WindowGeometry(frame: PixelRect(0, 0, 800, 600), maximized: false),
     isVisible: true,

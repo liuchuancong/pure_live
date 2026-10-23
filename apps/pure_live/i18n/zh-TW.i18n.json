@@ -1,0 +1,25 @@
+{
+  "app": {"title": "Pure Live"},
+  "nav": {
+    "home": "首頁",
+    "live": "直播",
+    "favorites": "收藏",
+    "history": "歷史",
+    "search": "搜尋",
+    "playlist": "播放清單",
+    "settings": "設定"
+  },
+  "window": {
+    "minimize": "最小化",
+    "maximize": "最大化",
+    "restore": "還原",
+    "close": "關閉"
+  },
+  "home": {
+    "welcome": "歡迎使用 Pure Live",
+    "welcomeHint": "從側欄選擇一個版塊開始;站點接入後即可觀看直播。"
+  },
+  "live": {"empty": "站點接入後即可在此觀看直播。"},
+  "search": {"hint": "搜尋房間、主播或站點", "empty": "輸入關鍵字開始搜尋。"},
+  "generic": {"empty": "這裡還沒有內容", "comingSoon": "即將推出"}
+}

@@ -69,13 +69,13 @@ dependency_overrides:
       url: https://github.com/liuchuancong/media_core.git
       path: ./packages/media_core_native
       ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b
+  platform: ^3.2.0
+  test_api: ^0.7.15
+  wakelock_plus: 1.8.1
   window_manager:
     git:
       url: https://github.com/leanflutter/window_manager.git
       ref: main
-  platform: ^3.2.0
-  test_api: ^0.7.15
-  wakelock_plus: 1.8.1
   win32: ^6.4.0
   xml: ^7.0.0
 melos:

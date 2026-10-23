@@ -237,6 +237,11 @@ final class WindowManagerHost implements WindowHost {
   }
 
   @override
+  Future<void> startDragging() async {
+    _window.startDragging();
+  }
+
+  @override
   Future<WindowState> snapshot() async {
     final geometry = await this.geometry();
     return WindowState(geometry: geometry, isVisible: _window.isVisible, isFocused: _window.isFocused);
