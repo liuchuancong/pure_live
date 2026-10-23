@@ -140,11 +140,10 @@ packages:
   audio_service_win:
     dependency: transitive
     description:
-      path: "."
-      ref: "8ad650c6eb487208b9861d44755c8e58db061c88"
-      resolved-ref: "8ad650c6eb487208b9861d44755c8e58db061c88"
-      url: "https://github.com/Predidit/audio_service_win.git"
-    source: git
+      name: audio_service_win
+      sha256: "677e25f447d3d49f537ea6f4fd36e9511acdc0badc6534c9cb92a205566ba12a"
+      url: "https://pub.dev"
+    source: hosted
     version: "0.0.3"
   audio_session:
     dependency: transitive
@@ -1402,128 +1401,114 @@ packages:
   media_core:
     dependency: "direct overridden"
     description:
-      path: "packages/media_core"
-      ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      resolved-ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      url: "https://github.com/liuchuancong/media_core.git"
-    source: git
+      path: "F:/media_core/packages/media_core"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_audio:
     dependency: transitive
     description:
-      path: "packages/media_core_audio"
-      ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      resolved-ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      url: "https://github.com/liuchuancong/media_core.git"
-    source: git
+      path: "F:/media_core/packages/media_core_audio"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_cast_dlna:
     dependency: transitive
     description:
-      path: "packages/media_core_cast_dlna"
-      ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      resolved-ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      url: "https://github.com/liuchuancong/media_core.git"
-    source: git
+      path: "F:/media_core/packages/media_core_cast_dlna"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_fullscreen:
     dependency: transitive
     description:
-      path: "packages/media_core_fullscreen"
-      ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      resolved-ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      url: "https://github.com/liuchuancong/media_core.git"
-    source: git
+      path: "F:/media_core/packages/media_core_fullscreen"
+      relative: false
+    source: path
+    version: "0.1.0"
+  media_core_live:
+    dependency: transitive
+    description:
+      path: "F:/media_core/packages/media_core_live"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_logging:
     dependency: transitive
     description:
-      path: "packages/media_core_logging"
-      ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      resolved-ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      url: "https://github.com/liuchuancong/media_core.git"
-    source: git
+      path: "../../media_core/packages/media_core_logging"
+      relative: true
+    source: path
     version: "0.1.0"
   media_core_media_kit:
     dependency: transitive
     description:
-      path: "packages/media_core_media_kit"
-      ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      resolved-ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      url: "https://github.com/liuchuancong/media_core.git"
-    source: git
+      path: "F:/media_core/packages/media_core_media_kit"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_mediasession:
     dependency: transitive
     description:
-      path: "packages/media_core_mediasession"
-      ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      resolved-ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      url: "https://github.com/liuchuancong/media_core.git"
-    source: git
+      path: "F:/media_core/packages/media_core_mediasession"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_memory:
     dependency: transitive
     description:
-      path: "packages/media_core_memory"
-      ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      resolved-ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      url: "https://github.com/liuchuancong/media_core.git"
-    source: git
+      path: "../../media_core/packages/media_core_memory"
+      relative: true
+    source: path
     version: "0.1.0"
   media_core_native:
     dependency: "direct overridden"
     description:
-      path: "packages/media_core_native"
-      ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      resolved-ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      url: "https://github.com/liuchuancong/media_core.git"
-    source: git
+      path: "F:/media_core/packages/media_core_native"
+      relative: false
+    source: path
     version: "0.2.0"
   media_core_notify:
     dependency: transitive
     description:
-      path: "packages/media_core_notify"
-      ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      resolved-ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      url: "https://github.com/liuchuancong/media_core.git"
-    source: git
+      path: "F:/media_core/packages/media_core_notify"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_pip:
     dependency: transitive
     description:
-      path: "packages/media_core_pip"
-      ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      resolved-ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      url: "https://github.com/liuchuancong/media_core.git"
-    source: git
+      path: "F:/media_core/packages/media_core_pip"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_presentation:
     dependency: transitive
     description:
-      path: "packages/media_core_presentation"
-      ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      resolved-ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      url: "https://github.com/liuchuancong/media_core.git"
-    source: git
+      path: "F:/media_core/packages/media_core_presentation"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_recording_ffmpeg:
     dependency: transitive
     description:
-      path: "packages/media_core_recording_ffmpeg"
-      ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      resolved-ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      url: "https://github.com/liuchuancong/media_core.git"
-    source: git
+      path: "F:/media_core/packages/media_core_recording_ffmpeg"
+      relative: false
+    source: path
+    version: "0.1.0"
+  media_core_ui:
+    dependency: transitive
+    description:
+      path: "F:/media_core/packages/media_core_ui"
+      relative: false
+    source: path
     version: "0.1.0"
   media_core_win32:
     dependency: transitive
     description:
-      path: "packages/media_core_win32"
-      ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      resolved-ref: "13cae1869580b5a96ffae8d1278fb9ab1d10ddee"
-      url: "https://github.com/liuchuancong/media_core.git"
-    source: git
+      path: "../../media_core/packages/media_core_win32"
+      relative: true
+    source: path
     version: "0.1.0"
   media_kit:
     dependency: transitive
