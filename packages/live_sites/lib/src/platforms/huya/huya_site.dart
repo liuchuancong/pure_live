@@ -13,6 +13,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_super_chat_feed.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -28,6 +29,7 @@ import 'package:live_sites/src/platforms/huya/capabilities/huya_link_resolver.da
 import 'package:live_sites/src/platforms/huya/capabilities/huya_playback_provider.dart';
 import 'package:live_sites/src/platforms/huya/capabilities/huya_room_provider.dart';
 import 'package:live_sites/src/platforms/huya/capabilities/huya_search_provider.dart';
+import 'package:live_sites/src/platforms/huya/capabilities/huya_super_chat_feed_provider.dart';
 import 'package:live_sites/src/platforms/huya/danmaku/huya_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/huya/danmaku/huya_danmaku_session.dart';
 import 'package:live_sites/src/platforms/huya/huya_manifest.dart';
@@ -438,6 +440,7 @@ final class HuyaSite implements LiveSite {
   HuyaSearchProvider? _search;
   HuyaPlaybackProvider? _playback;
   HuyaDanmakuProvider? _danmaku;
+  HuyaSuperChatFeedProvider? _superChats;
   HuyaLinkResolver? _link;
   HuyaAuthProvider? _auth;
 
@@ -451,6 +454,7 @@ final class HuyaSite implements LiveSite {
     final search = _search ??= HuyaSearchProvider(site: this);
     final playback = _playback ??= HuyaPlaybackProvider(site: this);
     final danmaku = _danmaku ??= HuyaDanmakuProvider(site: this);
+    final superChats = _superChats ??= HuyaSuperChatFeedProvider(site: this);
     final link = _link ??= HuyaLinkResolver(site: this);
     final auth = _auth ??= HuyaAuthProvider(site: this);
     return switch (T) {
@@ -460,6 +464,7 @@ final class HuyaSite implements LiveSite {
       const (LiveSearchProvider) => search as T,
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
+      const (LiveSuperChatFeed) => superChats as T,
       const (LiveLinkResolver) => link as T,
       const (LiveAuthCapability) => auth as T,
       _ => null,
