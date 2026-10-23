@@ -10,6 +10,7 @@ import 'package:pure_live/app/providers/window_providers.dart' show windowHostPr
 import 'package:pure_live/app/theme/system_accent_color.dart' show readSystemAccentColor;
 import 'package:pure_live/app/theme/theme_settings.dart' show AppThemeScope, AppThemeSettings;
 import 'package:pure_live/i18n/translations.g.dart';
+import 'package:pure_live/layouts/app_layout.dart' show AppLayout;
 
 Future<void> main() async {
   final boot = await bootstrap();
@@ -64,7 +65,7 @@ final class _PureLiveAppState extends State<PureLiveApp> {
         themeMode: _settings.mode,
         theme: _settings.theme(),
         builder: (context, child) => AppThemeScope(settings: _settings, onChanged: _updateSettings, child: child!),
-        home: const Placeholder(),
+        home: const AppLayout(),
       ),
     );
   }
