@@ -6,5 +6,11 @@
   "themeModeLight": "浅色",
   "themeModeDark": "深色",
   "language": "语言",
-  "about": "关于"
+  "about": "关于",
+  "browsingTitle": "浏览偏好",
+  "site": "默认站点",
+  "cardExtent": "卡片宽度",
+  "cardExtentDescription": "首页与分区流里一张卡片的宽度；越小一排越多。",
+  "pageSize": "每页数量",
+  "pageSizeDescription": "一次向站点请求多少个房间。"
 }

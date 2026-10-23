@@ -6,6 +6,8 @@ import 'package:live_platform/live_platform.dart' show FormFactor, PlatformBoots
 import 'package:live_shell/live_shell.dart' show RenderFallbacks, WindowEvent, WindowHost, WindowRole;
 import 'package:live_shell_desktop/live_shell_desktop.dart'
     show WindowManagerHost, configureMainWindow, primaryChromePlan;
+import 'package:live_storage/live_storage.dart'
+    show StorageAdapterRegistry, StorageBootstrap, StoragePathProvider, StoragePrefs;
 import 'package:pure_live/app/theme/system_accent_color.dart' show preloadSystemAccent;
 import 'package:pure_live/infrastructure/storage/storage_paths.dart' show StoragePaths;
 
@@ -38,7 +40,8 @@ final class Boot {
 
 /// Boots everything the widget tree cannot build lazily: the platform
 /// layer, the log tree, the accent preload, the desktop window's dress and
-/// its host with the close policy, and the storage layout.
+/// its host with the close policy, the storage layout, and — best-effort —
+/// the Hive storage over it.
 ///
 /// A failure here is fatal — the startup error screen replaces the app,
 /// because a half-initialised shell is worse than a visible failure.
@@ -76,6 +79,19 @@ Future<Boot> bootstrap() async {
       windowHost = host;
     }
     final storagePaths = await StoragePaths.resolve(environment: runtime.environment, log: bootLog);
+    // The storage layer is best-effort: a failure logs and the boot carries
+    // on — browsing works without storage, and the providers fall back to
+    // their defaults when the settings facade never opened.
+    try {
+      final storageBootstrap = StorageBootstrap(
+        pathProvider: StoragePathProvider(resolver: () async => storagePaths.data.path),
+        adapterRegistry: StorageAdapterRegistry(), // plain JSON values need no custom adapter
+      );
+      await storageBootstrap.initialize();
+      await StoragePrefs.init();
+    } on Object catch (error, stackTrace) {
+      log.forCategory('storage').error('storage bootstrap failed', error: error, stackTrace: stackTrace);
+    }
     return Boot(runtime: runtime, windowHost: windowHost, storagePaths: storagePaths);
   } on Object catch (error, stackTrace) {
     bootLog.fatal('boot failed', error: error, stackTrace: stackTrace);

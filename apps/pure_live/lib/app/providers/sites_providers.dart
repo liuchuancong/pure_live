@@ -1,5 +1,8 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
 /// The registry of every built-in site, built once per process.
 ///
@@ -16,16 +19,35 @@ final sitesProvider = Provider<LiveSiteRegistry>((ref) {
 /// read; one at a time, switched from the home page's site picker.
 ///
 /// The default is douyu — the biggest catalog that needs no login. The id
-/// persists with the settings store once the app wires it.
+/// persists under `browse.site` in the settings store; an id the registry
+/// does not know falls back to the default.
 final class SelectedSiteController extends Notifier<String> {
   @override
-  String build() => 'douyu';
+  String build() {
+    final stored = _readStoredSite();
+    if (stored != null && ref.watch(sitesProvider).getById(stored) != null) return stored;
+    return 'douyu';
+  }
+
+  /// The stored site's id, or null when storage never opened (its boot
+  /// failure is logged); douyu is then the default.
+  static String? _readStoredSite() {
+    try {
+      return StoragePrefs.getString('browse.site');
+    } on Object {
+      return null;
+    }
+  }
 
   /// The site the browsing surfaces read.
   String get selected => state;
 
-  /// Moves the selection; a switch keeps each surface's pages fresh.
-  set selected(String siteId) => state = siteId;
+  /// Moves the selection; a switch keeps each surface's pages fresh, and
+  /// the choice is written through.
+  set selected(String siteId) {
+    state = siteId;
+    unawaited(StoragePrefs.setString('browse.site', siteId));
+  }
 }
 
 /// The selected site's id.

@@ -6,5 +6,11 @@
   "themeModeLight": "Light",
   "themeModeDark": "Dark",
   "language": "Language",
-  "about": "About"
+  "about": "About",
+  "browsingTitle": "Browsing",
+  "site": "Default site",
+  "cardExtent": "Card width",
+  "cardExtentDescription": "How wide a feed card gets; smaller fits more per row.",
+  "pageSize": "Page size",
+  "pageSizeDescription": "How many rooms one page asks the site for."
 }
