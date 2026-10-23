@@ -1,8 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:responsive_breakpoints/responsive_breakpoints.dart' show TailwindBreakpoint;
 import 'package:go_router/go_router.dart' show StatefulNavigationShell;
-
 import 'package:pure_live/app/providers/environment_providers.dart' show DeviceProfile, deviceProfileProvider;
 import 'package:pure_live/app/providers/navigation_providers.dart' show selectedNavItemProvider;
 import 'package:pure_live/layouts/desktop/desktop_layout.dart' show DesktopLayout;
@@ -10,6 +8,7 @@ import 'package:pure_live/layouts/mobile/mobile_layout.dart' show MobileLayout;
 import 'package:pure_live/layouts/tv/tv_layout.dart' show TvLayout;
 import 'package:pure_live/shared/enums/navigation_item.dart'
     show NavigationItem, kContentItems, kMobileNavigationItems, kPersonalItems, kPrimaryItems;
+import 'package:responsive_breakpoints/responsive_breakpoints.dart' show TailwindBreakpoint;
 
 /// The Tailwind breakpoint from which the desktop sidebar shows its
 /// labels: xl (≥1280px). Below it the sidebar folds to icons.
