@@ -38,8 +38,10 @@ dev_dependencies:
   melos: ^8.9.0
 
 # Overrides apply to the whole workspace and may only be declared here.
-# melos 8.9.0 caps platform <3.2.0 while yaru 11 requires ^3.2.0; platform
-# 3.2.x is what the app already resolves to, so melos is made to accept it.
+# The platform pin is a leftover of yaru 11 (retired with the per-language
+# adapters): melos 8.9.0 caps platform <3.2.0 and nothing in the graph needs
+# 3.2.x any more, so the override only holds the already-resolved 3.2.0 in
+# place.
 # battery_plus (upower -> dbus ^0.7) and network_info_plus (nm -> dbus ^0.8)
 # pin disjoint dbus majors; force dbus 0.8 so the workspace resolves. If a
 # device-info feature later needs upower against 0.8, align the *_plus versions

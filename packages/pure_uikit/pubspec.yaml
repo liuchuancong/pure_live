@@ -2,11 +2,11 @@ name: pure_uikit
 description: >-
   The unified UI system (pure_uikit) of Pure Live: an Ant Design-style design-token core and
   a runtime-switchable theme (brightness, accent, font family and scale,
-  density, background, transparency). Its Pure widgets switch on
-  `PureDesignLanguage` and construct each language's official components
-  directly (Material, Cupertino, macos_ui, fluent_2, forui, glass, neumorphic,
-  wind, yaru) — there is no adapter layer. Business pages depend on this
-  package and never on a design-language library directly.
+  density, background, transparency). Its Pure widgets draw the unified
+  Fluent surface on fluent_ui and pure Flutter — the resolved
+  `PureDesignLanguage` rides the tokens, not a per-language widget library.
+  Business pages depend on this package and never on a design-language
+  library directly.
 version: 0.1.0
 publish_to: none
 
@@ -22,18 +22,15 @@ dependencies:
   # package or every one of those codepoints renders as a fallback box.
   cupertino_icons: ^1.0.9
   fluent2_kit: ^2.2.0
-  fluent_2: ^0.0.7
   fluent_ui: ^4.17.0
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
   flutter_screenutil_plus: ^2.0.0
-  forui: ^0.27.5
   freezed_annotation: ^3.1.0
   json_annotation: ^4.12.0
   meta: ^1.19.0
-  yaru: ^11.0.0
 
 dev_dependencies:
   build_runner: ^2.16.0

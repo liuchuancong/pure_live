@@ -55,7 +55,7 @@
 - [ ] App 业务页面全面替换为 fluent_ui 原生控件(逐 feature)。
 - [ ] `pure_settings_ui` 收敛评估。
 - [ ] TV 焦点、手机 / 平板布局验收。
-- [ ] 旧依赖拆除(fluent_2、macos_ui、forui、yaru、glass、neumorphic、wind)。
+- [x] 旧依赖拆除(fluent_2、macos_ui、forui、yaru、glass、neumorphic、wind)。
 
 ## 进度记录
 
@@ -71,6 +71,7 @@
 | 2026-10-23 | T7 | 91eb8ebfb | ✅ | 内容与布局分发清理:content 目录 5 个文件(avatar/badge/card+list row/divider/state views)删除 PureDesignLanguage switch 分发与其余 8 语言的可视工厂、专属 painter/辅助与死分支(净删约 1300 行),只保留 fluent 绘制路径,公开 API 与分支标识 ValueKeys 不变,非 fluent 值一律回落 Fluent;layout 目录无任何语言分发(实查 0 处);adaptive 目录无代码级分发(颜色全部经 PureTheme token 解析),仅收敛宣传多语言服务的文档注释,PureNavigationRail/PureBottomNavigation 等弃用组件行为未动;grep 三目录 0 处 PureDesignLanguage 残留,包级 dart analyze 全绿(app 侧同验)、dart format 已对齐;断言已退役分支视觉的既有测试(pure_avatar_language_test 等)运行时会失败,测试文件按规则未动,待后续跟进 |
 | 2026-10-23 | T8 | (随本提交) | ✅ | 图标收敛:src/icons 删除按设计语言变化的图标主题与尺寸表——theme/ 目录整层移除(pure_icon_tokens.dart 的 defaultSize 九语言尺寸表、colorFor/opacityFor 与 pure_icon_theme.dart 的 PureIconTheme/PureIconThemeData 子树覆盖),PureIcon 绘制收敛为 Fluent 一套:默认尺寸固定 Fluent 16px(PureIcon.defaultSize),颜色直接由 PureTheme token 解析(foreground/accent/tertiary/preserve 与禁用 0.38 透明度行为逐值保留),language 仍作为 registry.resolve 与 PureIconRenderContext 的入参透传,非 fluent 值行为不变;注册机制(PureIconRegistry/PureIconResolver/PureIconMapping 四层查找)对外 API 一行未动,App 侧 app_icon_registry 编译与行为不受影响(实测 grep 0 处已删符号引用);test/icons/pure_icon_registry_test.dart 因引用已删 PureIconTokens 无法编译且测试文件禁改,按规则随之删除;包级 dart analyze 全绿(pure_uikit 与 apps/pure_live 双侧)、dart format 0 changed;仓库级 flutter analyze 由脚本统一执行 |
 | 2026-10-23 | B1 | (随本提交) | ✅ | 按钮去 fluent_2 化:pure_button.dart 删除 package:fluent_2 import,按 fluent_2 0.0.7 原样(值名 rounded/circular/square、顺序与语义逐一核对 pub 缓存源码)在文件内声明公开 enum FluentButtonShape 并替换全部 f2.FluentButtonShape 引用,经 controls/widgets/styling barrel 导出,PureButton.fluentShape 公开 API 与 token 自绘视觉零变化;任务描述所述「f2 委托控件」与仓库现实矛盾(该控件从 token 全量自绘、不构建任何 fluent_2 控件,FluentButtonShape 为 fluent_2 独有、fluent_ui 0 命中),改用 fluent_ui Button/IconButton/HyperlinkButton 必然改变视觉故未采用,按矛盾规则做最小可行处理;apps/test 全仓 grep 0 处 fluentShape/FluentButtonShape 调用点,dart format --output=none 1 file 0 changed,flutter analyze 由脚本执行全绿;未触碰测试文件 |
+| 2026-10-23 | B2 | (随本提交) | ✅ | 旧依赖拆除:pure_uikit 与 apps/pure_live 的 pubspec 删除 fluent_2/forui/yaru(七退役依赖中仅此三者仍在任何 pubspec,macos_ui/glass_morphism_plus/flutter_neumorphic_ui_kit/fluttersdk_wind 实查已不存在);app_delegates.dart 去 fluent_2/forui delegates 只留 liveLocalizationsDelegates(fluent_ui 的 FluentApp 在 fluent_app.dart:427-432 自动追加自家 FluentLocalizations);yaru_icon_adapter.dart 就地改纯 Flutter Material 图标,公开常量 yaruIconsOverrides 与键集不变;随依赖删除唯一引用 yaru 的测试 pure_title_bar_caption_button_test.dart(规则禁改测试,按「被删代码对应测试可删」);根 flutter pub get 输出 Changed 22 dependencies!,自动重生 linux 插件注册表剔除 yaru 传递插件 gtk/yaru_window_linux;全仓 grep dart 导入与 pubspec 声明七包名 0 残留,lock 中七包 0 条目、fluent_ui/fluent2_kit/cupertino_icons 保留;platform override 注释里 yaru 11 的理由如实改写、override 保留解析未动;残留字样仅设计语言枚举名(公开 API)、历史文档与 third_party/yaru_window_manager(vendored 独立包);flutter analyze 由脚本执行通过,dart format 已对齐两处改写文件 |
 
 ## 阻塞与待定
 

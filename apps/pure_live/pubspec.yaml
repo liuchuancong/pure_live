@@ -55,7 +55,6 @@ dependencies:
   pretty_qr_code: ^3.6.0 # 生成二维码
   shimmer: ^4.0.0 # 闪烁占位效果
   skeletonizer: ^3.0.0 # 骨架屏
-  yaru: ^11.0.0 # Ubuntu Yaru 图标字体（图标注册表的 yaru 套）
 
   # Flutter 与状态管理
   collection: ^1.19.1 # 集合处理工具
@@ -155,8 +154,6 @@ dependencies:
   slang: ^4.19.2 # 多语言代码生成基础
   slang_flutter: ^4.19.0 # Flutter 多语言集成
   webview_flutter: ^4.14.1 # 内嵌网页视图
-  fluent_2: any
-  forui: any
 dev_dependencies:
   # 代码生成
   build_runner: ^2.16.2 # 运行代码生成器

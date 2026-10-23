@@ -13,7 +13,6 @@
 #include <file_selector_linux/file_selector_plugin.h>
 #include <flutter_acrylic/flutter_acrylic_plugin.h>
 #include <flutter_secure_storage_linux/flutter_secure_storage_linux_plugin.h>
-#include <gtk/gtk_plugin.h>
 #include <media_core_audio/media_core_audio_plugin.h>
 #include <media_core_native/media_core_native_plugin.h>
 #include <media_kit_video/media_kit_video_plugin.h>
@@ -23,7 +22,6 @@
 #include <url_launcher_linux/url_launcher_plugin.h>
 #include <volume_controller/volume_controller_plugin.h>
 #include <window_frame_kit/window_frame_kit_plugin.h>
-#include <yaru_window_linux/yaru_window_linux_plugin.h>
 
 void fl_register_plugins(FlPluginRegistry* registry) {
   g_autoptr(FlPluginRegistrar) desktop_multi_window_registrar =
@@ -47,9 +45,6 @@ void fl_register_plugins(FlPluginRegistry* registry) {
   g_autoptr(FlPluginRegistrar) flutter_secure_storage_linux_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "FlutterSecureStorageLinuxPlugin");
   flutter_secure_storage_linux_plugin_register_with_registrar(flutter_secure_storage_linux_registrar);
-  g_autoptr(FlPluginRegistrar) gtk_registrar =
-      fl_plugin_registry_get_registrar_for_plugin(registry, "GtkPlugin");
-  gtk_plugin_register_with_registrar(gtk_registrar);
   g_autoptr(FlPluginRegistrar) media_core_audio_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "MediaCoreAudioPlugin");
   media_core_audio_plugin_register_with_registrar(media_core_audio_registrar);
@@ -77,7 +72,4 @@ void fl_register_plugins(FlPluginRegistry* registry) {
   g_autoptr(FlPluginRegistrar) window_frame_kit_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "WindowFrameKitPlugin");
   window_frame_kit_plugin_register_with_registrar(window_frame_kit_registrar);
-  g_autoptr(FlPluginRegistrar) yaru_window_linux_registrar =
-      fl_plugin_registry_get_registrar_for_plugin(registry, "YaruWindowLinuxPlugin");
-  yaru_window_linux_plugin_register_with_registrar(yaru_window_linux_registrar);
 }

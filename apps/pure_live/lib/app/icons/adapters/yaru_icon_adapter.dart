@@ -1,24 +1,26 @@
+import 'package:flutter/material.dart' show Icons;
 import 'package:pure_live/app/icons/app_icon_keys.dart';
 import 'package:pure_uikit/pure_uikit.dart' show PureIconGlyph, PureIconMapping;
-import 'package:yaru/icons.dart' show YaruIcons;
 
-/// The Ubuntu skin's answers: the `yaru` package's own icon font.
+/// The Ubuntu skin's answers: pure Flutter glyphs.
 ///
-/// Names were checked against yaru-11's generated icon data; keys it does
-/// not name fall through to the global Material backstop.
+/// The skin's own icon font (`yaru`'s YaruIcons) retired with the
+/// dependency, so the table draws from Flutter's bundled Material face —
+/// the outlined set, closest to Yaru's line weight. Keys it does not name
+/// fall through to the global Lucide backstop, as before.
 const PureIconMapping yaruIconsOverrides = PureIconMapping({
-  AppIconKey.refresh: PureIconGlyph(YaruIcons.refresh),
-  AppIconKey.settings: PureIconGlyph(YaruIcons.settings),
-  AppIconKey.search: PureIconGlyph(YaruIcons.search),
-  AppIconKey.language: PureIconGlyph(YaruIcons.globe),
-  AppIconKey.visibility: PureIconGlyph(YaruIcons.eye),
-  AppIconKey.video: PureIconGlyph(YaruIcons.video),
-  AppIconKey.history: PureIconGlyph(YaruIcons.history),
-  AppIconKey.timer: PureIconGlyph(YaruIcons.clock),
-  AppIconKey.folder: PureIconGlyph(YaruIcons.folder),
-  AppIconKey.folderOpen: PureIconGlyph(YaruIcons.folder_open_filled),
-  AppIconKey.download: PureIconGlyph(YaruIcons.download),
-  AppIconKey.bookmark: PureIconGlyph(YaruIcons.bookmark),
-  AppIconKey.delete: PureIconGlyph(YaruIcons.trash),
-  AppIconKey.tag: PureIconGlyph(YaruIcons.tag),
+  AppIconKey.refresh: PureIconGlyph(Icons.refresh),
+  AppIconKey.settings: PureIconGlyph(Icons.settings_outlined),
+  AppIconKey.search: PureIconGlyph(Icons.search),
+  AppIconKey.language: PureIconGlyph(Icons.language),
+  AppIconKey.visibility: PureIconGlyph(Icons.visibility_outlined),
+  AppIconKey.video: PureIconGlyph(Icons.videocam_outlined),
+  AppIconKey.history: PureIconGlyph(Icons.history),
+  AppIconKey.timer: PureIconGlyph(Icons.timer_outlined),
+  AppIconKey.folder: PureIconGlyph(Icons.folder_outlined),
+  AppIconKey.folderOpen: PureIconGlyph(Icons.folder_open_outlined),
+  AppIconKey.download: PureIconGlyph(Icons.download_outlined),
+  AppIconKey.bookmark: PureIconGlyph(Icons.bookmark_outlined),
+  AppIconKey.delete: PureIconGlyph(Icons.delete_outline),
+  AppIconKey.tag: PureIconGlyph(Icons.sell_outlined),
 });
