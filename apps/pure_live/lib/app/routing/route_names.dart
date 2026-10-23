@@ -4,6 +4,9 @@ abstract final class RouteNames {
   /// The home branch.
   static const String home = '/';
 
+  /// The zones branch.
+  static const String zones = '/zones';
+
   /// The live branch.
   static const String live = '/live';
 

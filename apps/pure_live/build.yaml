@@ -1,0 +1,12 @@
+# The app's build_runner config. Translations come from `dart run slang`
+# (see slang.yaml), not from the slang_build_runner builder: the builder
+# runs on defaults that do not read slang.yaml (namespaces off, a
+# different output layout), so a `build_runner build` would delete the
+# committed lib/l10n/translations.g.dart and mangle the per-locale files
+# every run. Off here, `dart run build_runner build` runs only the
+# generators whose committed output it shares (go_router, built_value).
+targets:
+  $default:
+    builders:
+      slang_build_runner|slang_build_runner:
+        enabled: false

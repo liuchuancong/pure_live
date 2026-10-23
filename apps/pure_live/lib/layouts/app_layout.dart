@@ -37,6 +37,7 @@ TailwindBreakpoint _breakpointOf(double width) => TailwindBreakpoint.values.last
 /// destination maps to when its page exists.
 const List<NavigationItem> _kBranchOrder = [
   NavigationItem.home,
+  NavigationItem.zones,
   NavigationItem.live,
   NavigationItem.favorites,
   NavigationItem.history,

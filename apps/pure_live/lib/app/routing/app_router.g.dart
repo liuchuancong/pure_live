@@ -15,6 +15,9 @@ RouteBase get $appShellRoute => StatefulShellRouteData.$route(
       routes: [GoRouteData.$route(path: '/', hasOverriddenOnExit: false, factory: $HomeRoute._fromState)],
     ),
     StatefulShellBranchData.$branch(
+      routes: [GoRouteData.$route(path: '/zones', hasOverriddenOnExit: false, factory: $ZonesRoute._fromState)],
+    ),
+    StatefulShellBranchData.$branch(
       routes: [GoRouteData.$route(path: '/live', hasOverriddenOnExit: false, factory: $LiveRoute._fromState)],
     ),
     StatefulShellBranchData.$branch(
@@ -41,6 +44,25 @@ mixin $HomeRoute on GoRouteData {
 
   @override
   String get location => GoRouteData.$location('/');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $ZonesRoute on GoRouteData {
+  static ZonesRoute _fromState(GoRouterState state) => const ZonesRoute();
+
+  @override
+  String get location => GoRouteData.$location('/zones');
 
   @override
   void go(BuildContext context) => context.go(location);
