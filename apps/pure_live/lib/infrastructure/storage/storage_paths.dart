@@ -62,7 +62,11 @@ final class StoragePaths {
   /// Resolves the layout for [environment] once at boot; every later
   /// reader takes the resolved locations from here instead of asking the
   /// OS again.
-  static Future<StoragePaths> resolve({required PlatformEnvironment environment, LiveLog? log}) async {
+  static Future<StoragePaths> resolve({
+    required PlatformEnvironment environment,
+    LiveLog? log,
+    String? dataDirOverride,
+  }) async {
     final roots = await OsRoots.measure();
     final exeRoot = environment.runtime.executableRoot;
     // In a debug run the data tree is rooted beside the debug executable —
@@ -83,7 +87,12 @@ final class StoragePaths {
         : DefaultStoragePolicy(portableRoot: exeRoot);
     final pathRuntime = await PathProviderBootstrap.init(environment: environment, policy: policy);
     final manager = pathRuntime.storage;
-    final data = await manager.resolve(StorageArea.data);
+    // A build-time data-root override (PURE_LIVE_DATA_DIR) pins the data
+    // area wherever the diagnostic run wants it; the write probe in the
+    // resolver does not run for a hand-pinned location.
+    final data = dataDirOverride == null
+        ? await manager.resolve(StorageArea.data)
+        : StorageLocation(area: StorageArea.data, path: dataDirOverride, isPersistent: true);
     final config = await manager.resolve(StorageArea.config);
     final cache = await manager.resolve(StorageArea.cache);
     log
