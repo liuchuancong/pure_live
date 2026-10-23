@@ -33,11 +33,12 @@ final class SixroomAreaProvider implements LiveAreaProvider {
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
     required String areaId,
-    LivePageRequest request = const LivePageRequest(),
+    LivePageRequest? request,
   }) async {
+    request ??= LivePageRequest();
     try {
       final page = await site.directoryPage(request.page, request.pageSize, areaId: areaId);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on SixroomFailure catch (failure) {
       return left(failure.toLiveSiteError(sixroomSiteId));
     } on Object catch (error) {

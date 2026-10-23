@@ -17,8 +17,7 @@ class _$RoomRuntime extends RoomRuntime {
 
   _$RoomRuntime._({this.streamHandle, this.danmakuHandle}) : super._();
   @override
-  RoomRuntime rebuild(void Function(RoomRuntimeBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+  RoomRuntime rebuild(void Function(RoomRuntimeBuilder) updates) => (toBuilder()..update(updates)).build();
 
   @override
   RoomRuntimeBuilder toBuilder() => RoomRuntimeBuilder()..replace(this);
@@ -26,9 +25,7 @@ class _$RoomRuntime extends RoomRuntime {
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is RoomRuntime &&
-        streamHandle == other.streamHandle &&
-        danmakuHandle == other.danmakuHandle;
+    return other is RoomRuntime && streamHandle == other.streamHandle && danmakuHandle == other.danmakuHandle;
   }
 
   @override
@@ -58,8 +55,7 @@ class RoomRuntimeBuilder implements Builder<RoomRuntime, RoomRuntimeBuilder> {
 
   Object? _danmakuHandle;
   Object? get danmakuHandle => _$this._danmakuHandle;
-  set danmakuHandle(Object? danmakuHandle) =>
-      _$this._danmakuHandle = danmakuHandle;
+  set danmakuHandle(Object? danmakuHandle) => _$this._danmakuHandle = danmakuHandle;
 
   RoomRuntimeBuilder();
 
@@ -87,12 +83,7 @@ class RoomRuntimeBuilder implements Builder<RoomRuntime, RoomRuntimeBuilder> {
   RoomRuntime build() => _build();
 
   _$RoomRuntime _build() {
-    final _$result =
-        _$v ??
-        _$RoomRuntime._(
-          streamHandle: streamHandle,
-          danmakuHandle: danmakuHandle,
-        );
+    final _$result = _$v ?? _$RoomRuntime._(streamHandle: streamHandle, danmakuHandle: danmakuHandle);
     replace(_$result);
     return _$result;
   }

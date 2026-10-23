@@ -39,8 +39,9 @@ final class BilibiliAreaProvider implements LiveAreaProvider {
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
     required String areaId,
-    LivePageRequest request = const LivePageRequest(),
+    LivePageRequest? request,
   }) async {
+    request ??= LivePageRequest();
     try {
       return right(await page(areaId, request));
     } on BilibiliFailure catch (failure) {
@@ -64,7 +65,7 @@ final class BilibiliAreaProvider implements LiveAreaProvider {
         BilibiliEndpoints.areaRooms(parentAreaId: area.parentAreaId, areaId: area.areaId, page: number, pageSize: size),
       );
       final list = BilibiliRoomParser.roomList(response.text, status: response.status);
-      return LivePage(items: list.rooms, hasMore: list.hasMore);
+      return LivePage.of(items: list.rooms, hasMore: list.hasMore);
     } on BilibiliFailure catch (first) {
       if (first.kind == BilibiliFailureKind.rateLimited) rethrow;
       try {
@@ -74,7 +75,7 @@ final class BilibiliAreaProvider implements LiveAreaProvider {
           (response) => BilibiliRoomParser.roomList(response.text, status: response.status),
           webId: true,
         );
-        return LivePage(items: result.value.rooms, hasMore: result.value.hasMore);
+        return LivePage.of(items: result.value.rooms, hasMore: result.value.hasMore);
       } on BilibiliFailure catch (fallback) {
         if (fallback.kind == BilibiliFailureKind.rateLimited) rethrow;
         throw first;

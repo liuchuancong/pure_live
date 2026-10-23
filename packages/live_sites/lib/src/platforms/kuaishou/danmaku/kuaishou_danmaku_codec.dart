@@ -174,7 +174,7 @@ abstract final class KuaishouDanmakuCodec {
     return [
       for (final match in _code.allMatches(text))
         if (table[match.group(0)!] case final url? when seen.add(match.group(0)!))
-          LiveEmote(code: match.group(0)!, url: url),
+          LiveEmote.of(code: match.group(0)!, url: url),
     ];
   }
 

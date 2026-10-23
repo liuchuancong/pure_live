@@ -29,9 +29,8 @@ final class BilibiliDiscoveryProvider implements LiveDiscoveryProvider {
   final BilibiliSite site;
 
   @override
-  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({
-    LivePageRequest request = const LivePageRequest(),
-  }) async {
+  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({LivePageRequest? request}) async {
+    request ??= LivePageRequest();
     try {
       return right(await page(request));
     } on BilibiliFailure catch (failure) {
@@ -51,7 +50,7 @@ final class BilibiliDiscoveryProvider implements LiveDiscoveryProvider {
       try {
         final response = await site.unsignedGet(BilibiliEndpoints.recommend(page: number, pageSize: size));
         final list = BilibiliRoomParser.roomList(response.text, status: response.status);
-        return LivePage(items: list.rooms, hasMore: list.hasMore);
+        return LivePage.of(items: list.rooms, hasMore: list.hasMore);
       } on BilibiliFailure catch (failure) {
         if (failure.kind == BilibiliFailureKind.rateLimited) rethrow;
         ranked = failure;
@@ -60,7 +59,7 @@ final class BilibiliDiscoveryProvider implements LiveDiscoveryProvider {
     try {
       final response = await site.unsignedGet(BilibiliEndpoints.moreRecommendations(page: number));
       final list = BilibiliRoomParser.roomList(response.text, status: response.status);
-      return LivePage(items: list.rooms, hasMore: list.hasMore);
+      return LivePage.of(items: list.rooms, hasMore: list.hasMore);
     } on BilibiliFailure catch (fallback) {
       if (fallback.kind == BilibiliFailureKind.rateLimited) rethrow;
       throw ranked!;

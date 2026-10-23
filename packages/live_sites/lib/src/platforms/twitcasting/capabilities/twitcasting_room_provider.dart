@@ -40,7 +40,7 @@ final class TwitcastingRoomProvider implements LiveRoomProvider {
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRooms(LivePageRequest request) async {
     try {
       final page = await site.recommend(request.page, request.pageSize);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on TwitcastingFailure catch (failure) {
       return left(failure.toLiveSiteError(twitcastingSiteId));
     } on Object catch (error) {

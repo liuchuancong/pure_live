@@ -817,13 +817,13 @@ abstract final class PandaliveRoomParser {
     return [
       for (final (index, variant) in variants.indexed)
         (
-          quality: LivePlayQuality(
+          quality: LivePlayQuality.of(
             label: variant.source ? PandaliveEndpoints.originalQualityName : variant.id,
             qualityId: variant.id,
             platformOrder: total - index,
             codec: variant.codec,
           ),
-          line: LivePlayLine(
+          line: LivePlayLine.of(
             url: '${variant.url}',
             format: LiveStreamFormat.hls,
             formatSource: LivePlayFormatSource.declared,
@@ -841,7 +841,7 @@ abstract final class PandaliveRoomParser {
   /// known; an expired playlist stops playback, so the renewal cuts over
   /// ([LivePlayLease.requiresReconnect]).
   static LivePlayLease lease(DateTime issuedAt) =>
-      LivePlayLease(refreshAt: issuedAt.add(PandaliveEndpoints.variantRefresh), requiresReconnect: true);
+      LivePlayLease.of(refreshAt: issuedAt.add(PandaliveEndpoints.variantRefresh), requiresReconnect: true);
 
   /// The id for [id] as a stored preference from the older adapter:
   /// `<height>p30` (25 to 49 fps) is now `<height>p`, and its repeated

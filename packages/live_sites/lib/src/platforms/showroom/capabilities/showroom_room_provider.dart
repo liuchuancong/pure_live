@@ -43,7 +43,7 @@ final class ShowroomRoomProvider implements LiveRoomProvider {
       // The platform has no directory of its own: the snapshot is sliced
       // locally, and a caller's page size does not reshape the slice.
       final page = await site.directory(request.page);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on ShowroomFailure catch (failure) {
       return left(failure.toLiveSiteError(showroomSiteId));
     } on Object catch (error) {

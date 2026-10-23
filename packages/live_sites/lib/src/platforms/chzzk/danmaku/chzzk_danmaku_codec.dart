@@ -429,12 +429,12 @@ abstract final class ChzzkDanmakuCodec {
       color: LiveMessageColor.white,
       messageId: id,
       sentAt: row.sentAt,
-      payload: LiveSuperChatMessage(
+      payload: LiveSuperChatMessage.of(
         messageId: id,
         userName: name,
         faceUrl: anonymous ? '' : image(row.profile?['profileImageUrl']),
         text: row.text,
-        price: SuperChatPrice(
+        price: SuperChatPrice.of(
           amount: amount == 0 ? null : amount,
           currency: cheeseCurrency,
           displayText: cheeseText(amount),
@@ -544,7 +544,7 @@ abstract final class ChzzkDanmakuCodec {
     return LiveMessage.normalized(
       type: LiveMessageType.retraction,
       color: LiveMessageColor.white,
-      payload: LiveRetraction(messageId: '$user:$time'),
+      payload: LiveRetraction.of(messageId: '$user:$time'),
     );
   }
 
@@ -559,7 +559,7 @@ abstract final class ChzzkDanmakuCodec {
       for (final match in _emojiCode.allMatches(text))
         if (table[match.group(1)] case final String url
             when (url.startsWith('https://') || url.startsWith('http://')) && seen.add(match.group(0)!))
-          LiveEmote(code: match.group(0)!, url: url),
+          LiveEmote.of(code: match.group(0)!, url: url),
     ];
   }
 

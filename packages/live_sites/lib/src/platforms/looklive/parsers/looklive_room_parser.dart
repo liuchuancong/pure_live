@@ -531,7 +531,7 @@ abstract final class LookliveRoomParser {
   /// The qualities of a playable [room]: one per stream, HLS first.
   static List<LivePlayQuality> qualities(LookliveRoom room) => [
     for (final variant in room.variants)
-      LivePlayQuality(
+      LivePlayQuality.of(
         label: variant.format == LiveStreamFormat.hls
             ? LookliveEndpoints.hlsQualityLabel
             : LookliveEndpoints.flvQualityLabel,
@@ -550,7 +550,7 @@ abstract final class LookliveRoomParser {
     }
     for (final variant in room.variants) {
       if (variant.id == qualityId) {
-        return LivePlayLine(
+        return LivePlayLine.of(
           url: '${variant.uri}',
           format: variant.format,
           formatSource: LivePlayFormatSource.declared,

@@ -22,81 +22,46 @@ class _$LiveRoomSerializer implements StructuredSerializer<LiveRoom> {
   }) {
     final result = <Object?>[
       'ref',
-      serializers.serialize(
-        object.ref,
-        specifiedType: const FullType(LiveRoomRef),
-      ),
+      serializers.serialize(object.ref, specifiedType: const FullType(LiveRoomRef)),
       'content',
-      serializers.serialize(
-        object.content,
-        specifiedType: const FullType(RoomContent),
-      ),
+      serializers.serialize(object.content, specifiedType: const FullType(RoomContent)),
       'audience',
-      serializers.serialize(
-        object.audience,
-        specifiedType: const FullType(RoomAudience),
-      ),
+      serializers.serialize(object.audience, specifiedType: const FullType(RoomAudience)),
       'broadcast',
-      serializers.serialize(
-        object.broadcast,
-        specifiedType: const FullType(RoomBroadcast),
-      ),
+      serializers.serialize(object.broadcast, specifiedType: const FullType(RoomBroadcast)),
       'links',
-      serializers.serialize(
-        object.links,
-        specifiedType: const FullType(RoomLinks),
-      ),
+      serializers.serialize(object.links, specifiedType: const FullType(RoomLinks)),
       'guide',
-      serializers.serialize(
-        object.guide,
-        specifiedType: const FullType(RoomGuide),
-      ),
+      serializers.serialize(object.guide, specifiedType: const FullType(RoomGuide)),
       'local',
-      serializers.serialize(
-        object.local,
-        specifiedType: const FullType(RoomLocal),
-      ),
+      serializers.serialize(object.local, specifiedType: const FullType(RoomLocal)),
       'runtime',
-      serializers.serialize(
-        object.runtime,
-        specifiedType: const FullType(RoomRuntime),
-      ),
+      serializers.serialize(object.runtime, specifiedType: const FullType(RoomRuntime)),
     ];
     Object? value;
     value = object.anchor;
     if (value != null) {
       result
         ..add('anchor')
-        ..add(
-          serializers.serialize(
-            value,
-            specifiedType: const FullType(LiveAnchor),
-          ),
-        );
+        ..add(serializers.serialize(value, specifiedType: const FullType(LiveAnchor)));
     }
     value = object.area;
     if (value != null) {
       result
         ..add('area')
-        ..add(
-          serializers.serialize(value, specifiedType: const FullType(LiveArea)),
-        );
+        ..add(serializers.serialize(value, specifiedType: const FullType(LiveArea)));
     }
     value = object.createdAt;
     if (value != null) {
       result
         ..add('createdAt')
-        ..add(
-          serializers.serialize(value, specifiedType: const FullType(DateTime)),
-        );
+        ..add(serializers.serialize(value, specifiedType: const FullType(DateTime)));
     }
     value = object.updatedAt;
     if (value != null) {
       result
         ..add('updatedAt')
-        ..add(
-          serializers.serialize(value, specifiedType: const FullType(DateTime)),
-        );
+        ..add(serializers.serialize(value, specifiedType: const FullType(DateTime)));
     }
     return result;
   }
@@ -117,105 +82,51 @@ class _$LiveRoomSerializer implements StructuredSerializer<LiveRoom> {
       switch (key) {
         case 'ref':
           result.ref.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(LiveRoomRef),
-                )!
-                as LiveRoomRef,
+            serializers.deserialize(value, specifiedType: const FullType(LiveRoomRef))! as LiveRoomRef,
           );
           break;
         case 'content':
           result.content.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(RoomContent),
-                )!
-                as RoomContent,
+            serializers.deserialize(value, specifiedType: const FullType(RoomContent))! as RoomContent,
           );
           break;
         case 'audience':
           result.audience.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(RoomAudience),
-                )!
-                as RoomAudience,
+            serializers.deserialize(value, specifiedType: const FullType(RoomAudience))! as RoomAudience,
           );
           break;
         case 'broadcast':
           result.broadcast.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(RoomBroadcast),
-                )!
-                as RoomBroadcast,
+            serializers.deserialize(value, specifiedType: const FullType(RoomBroadcast))! as RoomBroadcast,
           );
           break;
         case 'links':
-          result.links.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(RoomLinks),
-                )!
-                as RoomLinks,
-          );
+          result.links.replace(serializers.deserialize(value, specifiedType: const FullType(RoomLinks))! as RoomLinks);
           break;
         case 'guide':
-          result.guide.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(RoomGuide),
-                )!
-                as RoomGuide,
-          );
+          result.guide.replace(serializers.deserialize(value, specifiedType: const FullType(RoomGuide))! as RoomGuide);
           break;
         case 'local':
-          result.local.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(RoomLocal),
-                )!
-                as RoomLocal,
-          );
+          result.local.replace(serializers.deserialize(value, specifiedType: const FullType(RoomLocal))! as RoomLocal);
           break;
         case 'runtime':
           result.runtime.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(RoomRuntime),
-                )!
-                as RoomRuntime,
+            serializers.deserialize(value, specifiedType: const FullType(RoomRuntime))! as RoomRuntime,
           );
           break;
         case 'anchor':
           result.anchor.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(LiveAnchor),
-                )!
-                as LiveAnchor,
+            serializers.deserialize(value, specifiedType: const FullType(LiveAnchor))! as LiveAnchor,
           );
           break;
         case 'area':
-          result.area.replace(
-            serializers.deserialize(
-                  value,
-                  specifiedType: const FullType(LiveArea),
-                )!
-                as LiveArea,
-          );
+          result.area.replace(serializers.deserialize(value, specifiedType: const FullType(LiveArea))! as LiveArea);
           break;
         case 'createdAt':
-          result.createdAt = serializers.deserialize(
-            value,
-            specifiedType: const FullType(DateTime),
-          ) as DateTime?;
+          result.createdAt = serializers.deserialize(value, specifiedType: const FullType(DateTime)) as DateTime?;
           break;
         case 'updatedAt':
-          result.updatedAt = serializers.deserialize(
-            value,
-            specifiedType: const FullType(DateTime),
-          ) as DateTime?;
+          result.updatedAt = serializers.deserialize(value, specifiedType: const FullType(DateTime)) as DateTime?;
           break;
       }
     }
@@ -250,8 +161,7 @@ class _$LiveRoom extends LiveRoom {
   @override
   final DateTime? updatedAt;
 
-  factory _$LiveRoom([void Function(LiveRoomBuilder)? updates]) =>
-      (LiveRoomBuilder()..update(updates))._build();
+  factory _$LiveRoom([void Function(LiveRoomBuilder)? updates]) => (LiveRoomBuilder()..update(updates))._build();
 
   _$LiveRoom._({
     required this.ref,
@@ -268,8 +178,7 @@ class _$LiveRoom extends LiveRoom {
     this.updatedAt,
   }) : super._();
   @override
-  LiveRoom rebuild(void Function(LiveRoomBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+  LiveRoom rebuild(void Function(LiveRoomBuilder) updates) => (toBuilder()..update(updates)).build();
 
   @override
   LiveRoomBuilder toBuilder() => LiveRoomBuilder()..replace(this);
@@ -342,15 +251,12 @@ class LiveRoomBuilder implements Builder<LiveRoom, LiveRoomBuilder> {
   set content(RoomContentBuilder? content) => _$this._content = content;
 
   RoomAudienceBuilder? _audience;
-  RoomAudienceBuilder get audience =>
-      _$this._audience ??= RoomAudienceBuilder();
+  RoomAudienceBuilder get audience => _$this._audience ??= RoomAudienceBuilder();
   set audience(RoomAudienceBuilder? audience) => _$this._audience = audience;
 
   RoomBroadcastBuilder? _broadcast;
-  RoomBroadcastBuilder get broadcast =>
-      _$this._broadcast ??= RoomBroadcastBuilder();
-  set broadcast(RoomBroadcastBuilder? broadcast) =>
-      _$this._broadcast = broadcast;
+  RoomBroadcastBuilder get broadcast => _$this._broadcast ??= RoomBroadcastBuilder();
+  set broadcast(RoomBroadcastBuilder? broadcast) => _$this._broadcast = broadcast;
 
   RoomLinksBuilder? _links;
   RoomLinksBuilder get links => _$this._links ??= RoomLinksBuilder();
@@ -464,11 +370,7 @@ class LiveRoomBuilder implements Builder<LiveRoom, LiveRoomBuilder> {
         _$failedField = 'area';
         _area?.build();
       } catch (e) {
-        throw BuiltValueNestedFieldError(
-          r'LiveRoom',
-          _$failedField,
-          e.toString(),
-        );
+        throw BuiltValueNestedFieldError(r'LiveRoom', _$failedField, e.toString());
       }
       rethrow;
     }

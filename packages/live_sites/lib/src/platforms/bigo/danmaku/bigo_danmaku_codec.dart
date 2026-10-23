@@ -407,11 +407,11 @@ abstract final class BigoDanmakuCodec {
       text: '$name x$count',
       color: LiveMessageColor.white,
       messageId: userId.isNotEmpty && _digits.hasMatch(seq) ? '$userId:$seq' : '',
-      payload: LiveGift(
+      payload: LiveGift.of(
         giftId: _scalar(payload['vgift_typeid']).trim(),
         name: name,
         count: count,
-        combo: LiveGiftCombo(comboTotal: sends == null ? null : count * sends),
+        combo: LiveGiftCombo.of(comboTotal: sends == null ? null : count * sends),
       ),
     );
   }

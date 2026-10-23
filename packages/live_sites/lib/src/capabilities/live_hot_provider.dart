@@ -12,5 +12,5 @@ import 'package:live_sites/src/models/room/live_room/live_room.dart';
 /// different concepts and a platform exposes any subset.
 abstract interface class LiveHotProvider implements LiveSiteCapability {
   /// Fetches a page of the hot list.
-  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getHotRooms({LivePageRequest request = const LivePageRequest()});
+  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getHotRooms({LivePageRequest? request});
 }

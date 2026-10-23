@@ -49,8 +49,9 @@ final class KickAreaProvider implements LiveAreaProvider {
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
     required String areaId,
-    LivePageRequest request = const LivePageRequest(),
+    LivePageRequest? request,
   }) async {
+    request ??= LivePageRequest();
     final slug = areaId.trim().toLowerCase();
     if (KickRoomParser.categoryNames.containsKey(slug) || _mainSlugs.contains(slug)) {
       return left(
@@ -79,7 +80,7 @@ final class KickAreaProvider implements LiveAreaProvider {
         subcategory: slug,
         status: response.status,
       );
-      return right(LivePage(items: result.rooms, hasMore: result.hasMore));
+      return right(LivePage.of(items: result.rooms, hasMore: result.hasMore));
     } on KickFailure catch (failure) {
       return left(failure.toLiveSiteError(kickSiteId));
     } on Object catch (error) {

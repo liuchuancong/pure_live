@@ -288,8 +288,8 @@ final class SteambroadcastRoomData {
   /// The qualities: the adaptive master first (the player chooses), then one
   /// per variant, each named as Steam's player names it.
   List<LivePlayQuality> get qualities => [
-    const LivePlayQuality(label: SteambroadcastEndpoints.qualityLabel, qualityId: SteambroadcastEndpoints.qualityId),
-    for (final variant in variants) LivePlayQuality(label: variant.id, qualityId: variant.id, codec: variant.codec),
+    LivePlayQuality.of(label: SteambroadcastEndpoints.qualityLabel, qualityId: SteambroadcastEndpoints.qualityId),
+    for (final variant in variants) LivePlayQuality.of(label: variant.id, qualityId: variant.id, codec: variant.codec),
   ];
 
   /// Why this room cannot be played, or null: not live (offline, restricted
@@ -790,7 +790,7 @@ abstract final class SteambroadcastRoomParser {
     if (wanted != SteambroadcastEndpoints.qualityId && variant == null) {
       throw SteambroadcastFailure(SteambroadcastFailureKind.streamUnavailable, 'quality $wanted is not offered');
     }
-    return LivePlayLine(
+    return LivePlayLine.of(
       url: '${data.master}',
       format: LiveStreamFormat.hls,
       formatSource: LivePlayFormatSource.declared,

@@ -491,7 +491,7 @@ abstract final class PicartoRoomParser {
     if (externalAudio || grouped.isEmpty) {
       return [
         PicartoQuality(
-          quality: const LivePlayQuality(label: autoQualityName, qualityId: autoQualityId),
+          quality: LivePlayQuality.of(label: autoQualityName, qualityId: autoQualityId),
           urls: [master.toString()],
         ),
       ];
@@ -506,7 +506,7 @@ abstract final class PicartoRoomParser {
     return [
       for (final (_, MapEntry(:key, :value)) in ordered)
         PicartoQuality(
-          quality: LivePlayQuality(
+          quality: LivePlayQuality.of(
             label: value.label,
             qualityId: key,
             platformOrder: value.height * heightWeight + value.rank,
@@ -546,7 +546,7 @@ abstract final class PicartoRoomParser {
     }
     return [
       for (final url in quality.urls)
-        LivePlayLine(
+        LivePlayLine.of(
           url: url,
           format: LiveStreamFormat.hls,
           formatSource: LivePlayFormatSource.declared,

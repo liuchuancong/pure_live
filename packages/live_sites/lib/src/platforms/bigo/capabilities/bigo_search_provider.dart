@@ -39,11 +39,11 @@ final class BigoSearchProvider implements LiveSearchProvider {
         LiveSiteError.unsupported(siteId: bigoSiteId, message: 'search target ${request.target.name} not supported'),
       );
     }
-    if (request.query.trim().isEmpty) return right(const LivePage(items: []));
+    if (request.query.trim().isEmpty) return right(LivePage.of(items: []));
     try {
       final rooms = await site.search(request.query, request.page, request.pageSize);
       final page = BigoRoomParser.slice(rooms, page: request.page, pageSize: request.pageSize);
-      return right(LivePage(items: [for (final room in page) LiveSearchResult.room(room)]));
+      return right(LivePage.of(items: [for (final room in page) LiveSearchResult.room(room)]));
     } on BigoFailure catch (failure) {
       return left(failure.toLiveSiteError(bigoSiteId));
     } on Object catch (error) {

@@ -132,11 +132,11 @@ abstract final class WeiboEndpoints {
   static const String replayQualityId = 'replay';
 
   /// The quality of a live broadcast (the reference's 原始流).
-  static const LivePlayQuality original = LivePlayQuality(label: '原始流', qualityId: originalQualityId);
+  static final LivePlayQuality original = LivePlayQuality.of(label: '原始流', qualityId: originalQualityId);
 
   /// The quality of a replay's recording (upgrade 18-5; one stream,
   /// `…_wb1080avc_index.m3u8`).
-  static const LivePlayQuality replay = LivePlayQuality(label: '原画', qualityId: replayQualityId);
+  static final LivePlayQuality replay = LivePlayQuality.of(label: '原画', qualityId: replayQualityId);
 
   /// Redirect statuses a `t.cn` answer is read as a hop (the reference's
   /// `ShortLinkSession.redirectStatuses`).

@@ -346,7 +346,11 @@ final class BigoDanmakuSession implements LiveDanmakuSession {
     _report(
       LiveMessage.normalized(
         type: gift.type,
-        sender: (gift.sender ?? const MessageSender()).copyWith(userName: sender.name, userLevel: sender.level),
+        sender: (gift.sender ?? MessageSender()).rebuild(
+          (b) => b
+            ..userName = sender.name
+            ..userLevel = sender.level,
+        ),
         text: gift.text,
         color: gift.color,
         messageId: gift.messageId,

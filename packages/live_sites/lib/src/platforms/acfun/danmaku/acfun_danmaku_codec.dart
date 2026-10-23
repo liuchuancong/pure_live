@@ -418,12 +418,12 @@ abstract final class AcfunDanmakuProtocol {
     // A banana is free, and so is a table entry priced at zero — the platform
     // takes nothing for either.
     final free = banana || price == 0;
-    return LiveGift(
+    return LiveGift.of(
       giftId: id,
       name: info?.name ?? (id == bananaId ? bananaName : ''),
       iconUrl: info?.iconUrl,
       count: count,
-      value: LiveGiftValue(
+      value: LiveGiftValue.of(
         unit: free
             ? LiveGiftUnit.free
             : price == null
@@ -432,7 +432,7 @@ abstract final class AcfunDanmakuProtocol {
         unitPrice: free || price == null ? null : price.toDouble(),
         totalValue: free || price == null ? null : (price * count).toDouble(),
       ),
-      combo: LiveGiftCombo(comboKey: comboKey, comboTotal: comboTotal),
+      combo: LiveGiftCombo.of(comboKey: comboKey, comboTotal: comboTotal),
     );
   }
 

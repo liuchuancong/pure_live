@@ -33,7 +33,7 @@ abstract final class BilibiliPlayParser {
   static const Duration leaseLead = Duration(seconds: 60);
 
   /// The one quality of a carousel, named by [carouselQualityId].
-  static const LivePlayQuality carouselQuality = LivePlayQuality(label: carouselLabel, qualityId: carouselQualityId);
+  static final LivePlayQuality carouselQuality = LivePlayQuality.of(label: carouselLabel, qualityId: carouselQualityId);
 
   /// `getRoomPlayInfo` → its `data`, whatever the room's state: a carousel
   /// that comes with a stream (possibly only for a signed-in user) is played.
@@ -128,7 +128,7 @@ abstract final class BilibiliPlayParser {
     }
     return [
       for (final (index, url) in urls.indexed)
-        LivePlayLine(
+        LivePlayLine.of(
           url: url,
           format: LiveStreamFormat.mp4,
           formatSource: LivePlayFormatSource.declared,
@@ -153,7 +153,7 @@ abstract final class BilibiliPlayParser {
     }
     return [
       for (final qn in codes.toList()..sort((a, b) => b.compareTo(a)))
-        LivePlayQuality(label: names[qn] ?? (qn == 10000 ? '源' : '$qn'), qualityId: '$qn', platformOrder: qn),
+        LivePlayQuality.of(label: names[qn] ?? (qn == 10000 ? '源' : '$qn'), qualityId: '$qn', platformOrder: qn),
     ];
   }
 
@@ -205,7 +205,7 @@ abstract final class BilibiliPlayParser {
     return [
       for (final candidate in candidates)
         if (candidate.qn == first.qn && candidate.codec == first.codec && seen.add(candidate.url.toString()))
-          LivePlayLine(
+          LivePlayLine.of(
             url: candidate.url.toString(),
             format: candidate.type,
             formatSource: LivePlayFormatSource.declared,
@@ -229,7 +229,7 @@ abstract final class BilibiliPlayParser {
     final lifetime = expiresAt.difference(issuedAt.toUtc());
     if (lifetime <= Duration.zero) return null;
     final quarter = lifetime ~/ 4;
-    return LivePlayLease(
+    return LivePlayLease.of(
       refreshAt: expiresAt.subtract(quarter < leaseLead ? quarter : leaseLead),
       expiresAt: expiresAt,
     );

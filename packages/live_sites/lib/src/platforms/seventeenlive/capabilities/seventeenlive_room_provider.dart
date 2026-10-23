@@ -47,7 +47,7 @@ final class SeventeenLiveRoomProvider implements LiveRoomProvider {
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRooms(LivePageRequest request) async {
     try {
       final page = await site.directory(page: request.page, cursor: request.cursor, pageSize: request.pageSize);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore, nextCursor: page.nextCursor));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore, nextCursor: page.nextCursor));
     } on SeventeenLiveFailure catch (failure) {
       return left(failure.toLiveSiteError(seventeenliveSiteId));
     } on Object catch (error) {

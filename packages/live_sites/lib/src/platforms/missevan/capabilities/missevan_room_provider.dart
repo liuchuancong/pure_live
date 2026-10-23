@@ -41,7 +41,7 @@ final class MissevanRoomProvider implements LiveRoomProvider {
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRooms(LivePageRequest request) async {
     try {
       final page = await site.directory(request.page, pageSize: request.pageSize);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on MissevanFailure catch (failure) {
       return left(failure.toLiveSiteError(missevanSiteId));
     } on Object catch (error) {

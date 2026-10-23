@@ -1,9 +1,10 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
-
 // The named factories spell their class name; the `new` shorthand
 // cannot carry per-constructor documentation.
 // ignore_for_file: unnecessary_type_name_in_constructor
-part 'live_retraction.freezed.dart';
+import 'package:built_value/built_value.dart';
+import 'package:built_value/serializer.dart';
+import 'package:live_sites/src/models/serializers.dart';
+
 part 'live_retraction.g.dart';
 
 /// Which earlier messages a `LiveMessageType.retraction` takes back.
@@ -11,15 +12,38 @@ part 'live_retraction.g.dart';
 /// Exactly one targeting mode is set: a specific user (by id or, when the
 /// platform only names them, by display name), a specific message, or the
 /// whole chat.
-@freezed
-abstract class LiveRetraction with _$LiveRetraction {
-  /// Creates a LiveRetraction with already-normalized fields.
-  const factory LiveRetraction({String? userId, String? messageId, @Default(false) bool all}) = _LiveRetraction;
+abstract class LiveRetraction implements Built<LiveRetraction, LiveRetractionBuilder> {
+  /// Builds from a builder [updates] callback — the codegen entry.
+  factory LiveRetraction([void Function(LiveRetractionBuilder)? updates]) = _$LiveRetraction;
 
-  const LiveRetraction._();
+  /// Creates a LiveRetraction with already-normalized fields.
+  factory LiveRetraction.of({String? userId, String? messageId, bool all = false}) => LiveRetraction(
+    (b) => b
+      ..userId = userId
+      ..messageId = messageId
+      ..all = all,
+  );
+
+  LiveRetraction._();
 
   /// Deserializes a stored JSON record.
-  factory LiveRetraction.fromJson(Map<String, Object?> json) => _$LiveRetractionFromJson(json);
+  factory LiveRetraction.fromJson(Map<String, Object?> json) =>
+      serializers.deserializeWith(LiveRetraction.serializer, json)!;
+
+  /// The serializer built_value registers in [serializers].
+  static Serializer<LiveRetraction> get serializer => _$liveRetractionSerializer;
+
+  @BuiltValueHook(initializeBuilder: true)
+  static void _initialize(LiveRetractionBuilder b) => b..all = false;
+
+  /// The user whose messages are taken back, when targeted that way.
+  String? get userId;
+
+  /// The message taken back, when targeted that way.
+  String? get messageId;
+
+  /// The whole chat is taken back.
+  bool get all;
 
   /// Whether this retraction targets the message shown for the given sender
   /// or id.

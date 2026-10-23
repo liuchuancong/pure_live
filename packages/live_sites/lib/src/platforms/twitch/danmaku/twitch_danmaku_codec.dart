@@ -299,12 +299,12 @@ abstract final class TwitchDanmakuCodec {
     final key = id.isNotEmpty
         ? 'bits:$id'
         : 'bits:${chat.sender?.userId ?? ''}:${chat.sentAt?.millisecondsSinceEpoch ?? ''}';
-    final gift = LiveGift(
+    final gift = LiveGift.of(
       name: bitsName,
       kind: LiveGiftKind.tip,
       count: bits,
-      value: LiveGiftValue(unit: LiveGiftUnit.bits, unitPrice: bits.toDouble(), totalValue: bits.toDouble()),
-      combo: LiveGiftCombo(comboKey: key),
+      value: LiveGiftValue.of(unit: LiveGiftUnit.bits, unitPrice: bits.toDouble(), totalValue: bits.toDouble()),
+      combo: LiveGiftCombo.of(comboKey: key),
     );
     return LiveMessage.normalized(
       type: LiveMessageType.gift,
@@ -362,11 +362,11 @@ abstract final class TwitchDanmakuCodec {
     switch (line.command) {
       case 'CLEARMSG':
         final target = tags['target-msg-id']?.trim() ?? '';
-        return [if (target.isNotEmpty) retraction(LiveRetraction(messageId: target))];
+        return [if (target.isNotEmpty) retraction(LiveRetraction.of(messageId: target))];
       case 'CLEARCHAT':
         final user = tags['target-user-id']?.trim() ?? '';
-        if (user.isNotEmpty) return [retraction(LiveRetraction(userId: user))];
-        return [if (line.trailing == null) retraction(const LiveRetraction(all: true))];
+        if (user.isNotEmpty) return [retraction(LiveRetraction.of(userId: user))];
+        return [if (line.trailing == null) retraction(LiveRetraction.of(all: true))];
       case 'USERNOTICE':
         final noticeId = tags['msg-id'] ?? '';
         final kind = noticeId == 'sharedchatnotice' ? tags['source-msg-id'] ?? '' : noticeId;

@@ -38,7 +38,7 @@ final class TwitchRoomProvider implements LiveRoomProvider {
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRooms(LivePageRequest request) async {
     try {
       final result = await site.recommend(request.page, request.pageSize);
-      return right(LivePage(items: result.rooms, hasMore: result.hasMore));
+      return right(LivePage.of(items: result.rooms, hasMore: result.hasMore));
     } on TwitchFailure catch (failure) {
       return left(failure.toLiveSiteError(twitchSiteId));
     } on Object catch (error) {

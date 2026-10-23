@@ -41,7 +41,7 @@ final class PandaliveRoomProvider implements LiveRoomProvider {
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRooms(LivePageRequest request) async {
     try {
       final page = await site.directory(request.page, request.pageSize);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on PandaliveFailure catch (failure) {
       return left(failure.toLiveSiteError(pandaliveSiteId));
     } on Object catch (error) {

@@ -297,12 +297,12 @@ abstract final class PicartoDanmakuCodec {
       color: LiveMessageColor.white,
       messageId: id,
       sentAt: sentAt,
-      payload: LiveSuperChatMessage(
+      payload: LiveSuperChatMessage.of(
         messageId: id,
         userName: _scalar(line['n']),
         faceUrl: avatar(line['i']),
         text: shown,
-        price: SuperChatPrice(amount: chips, currency: tipUnit, displayText: '$chips $tipUnit'),
+        price: SuperChatPrice.of(amount: chips, currency: tipUnit, displayText: '$chips $tipUnit'),
         startTime: start,
         endTime: start.add(tipDuration),
       ),
@@ -419,7 +419,7 @@ abstract final class PicartoDanmakuCodec {
   /// text with the frame's `m` and marks it deleted.
   static LiveMessage? deletion(Object? deletion) {
     if (deletion case {'id': final String id} when id.trim().isNotEmpty) {
-      return _retraction(LiveRetraction(messageId: id));
+      return _retraction(LiveRetraction.of(messageId: id));
     }
     return null;
   }
@@ -430,7 +430,7 @@ abstract final class PicartoDanmakuCodec {
   static LiveMessage? clearance(Object? clearance) {
     if (clearance is! Map) return null;
     final user = _scalar(clearance['u']);
-    return user.trim().isEmpty ? null : _retraction(LiveRetraction(userId: user));
+    return user.trim().isEmpty ? null : _retraction(LiveRetraction.of(userId: user));
   }
 
   /// The concurrent audience of a `stream` frame's state, or null. A frame

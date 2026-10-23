@@ -37,12 +37,12 @@ final class AcfunSearchProvider implements LiveSearchProvider {
         LiveSiteError.unsupported(siteId: acfunSiteId, message: 'search target ${request.target.name} not supported'),
       );
     }
-    if (request.query.trim().isEmpty) return right(const LivePage(items: []));
+    if (request.query.trim().isEmpty) return right(LivePage.of(items: []));
     try {
       final rooms = await site.search(request.query, request.page, request.pageSize);
       final anchors = request.target == LiveSearchTarget.anchors;
       return right(
-        LivePage(
+        LivePage.of(
           items: [
             for (final room in rooms)
               if (anchors) ...[

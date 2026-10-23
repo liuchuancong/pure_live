@@ -64,7 +64,7 @@ final class HuyaPlaybackProvider implements LivePlaybackProvider {
         final requested = quality?.qualityId ?? '';
         final url = HuyaPlayParser.replayUrl(requested) ?? replay.url;
         return right([
-          LivePlayLine(
+          LivePlayLine.of(
             url: url,
             format: LiveStreamFormat.hls,
             formatSource: LivePlayFormatSource.declared,

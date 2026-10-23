@@ -25,12 +25,11 @@ final class LivemeDiscoveryProvider implements LiveDiscoveryProvider {
   final LivemeSite site;
 
   @override
-  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({
-    LivePageRequest request = const LivePageRequest(),
-  }) async {
+  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({LivePageRequest? request}) async {
+    request ??= LivePageRequest();
     try {
       final page = await site.featured(page: request.page, pageSize: request.pageSize);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on LivemeFailure catch (failure) {
       return left(failure.toLiveSiteError(livemeSiteId));
     } on Object catch (error) {

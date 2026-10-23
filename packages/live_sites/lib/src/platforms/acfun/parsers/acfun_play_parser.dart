@@ -96,7 +96,7 @@ abstract final class AcfunPlayParser {
     final total = qualities.length;
     return [
       for (final (index, quality) in qualities.indexed)
-        LivePlayQuality(label: quality.label, qualityId: quality.id, platformOrder: total - index),
+        LivePlayQuality.of(label: quality.label, qualityId: quality.id, platformOrder: total - index),
     ];
   }
 
@@ -123,7 +123,7 @@ abstract final class AcfunPlayParser {
           () {
             final uri = Uri.parse(text);
             final repeat = hosts.update(uri.host, (count) => count + 1, ifAbsent: () => 1);
-            return LivePlayLine(
+            return LivePlayLine.of(
               url: text,
               format: uri.path.toLowerCase().endsWith('.m3u8') ? LiveStreamFormat.hls : LiveStreamFormat.flv,
               formatSource: LivePlayFormatSource.inferred,
@@ -148,7 +148,7 @@ abstract final class AcfunPlayParser {
     if (lifetime <= Duration.zero) return null;
     final quarter = lifetime ~/ 4;
     final lead = quarter < leaseLead ? quarter : leaseLead;
-    return LivePlayLease(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt);
+    return LivePlayLease.of(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt);
   }
 
   /// Media request headers: the desktop UA, the live site as Origin and the

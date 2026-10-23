@@ -648,17 +648,17 @@ abstract final class SeventeenLiveDanmakuCodec {
       messageId: id,
       sentAt: chat.sentAt,
       replayed: replayed,
-      payload: LiveSuperChatMessage(
+      payload: LiveSuperChatMessage.of(
         messageId: id,
         userName: chat.effectiveSender.userName,
         faceUrl: picture.isEmpty
             ? ''
             : image(picture.startsWith('http://') || picture.startsWith('https://') ? picture : 'THUMBNAIL_$picture'),
         text: text,
-        price: SuperChatPrice(amount: point, currency: pointUnit, displayText: '$point coins'),
+        price: SuperChatPrice.of(amount: point, currency: pointUnit, displayText: '$point coins'),
         startTime: start,
         endTime: start.add(superChatDuration),
-        display: SuperChatDisplay(backgroundColor: fill, backgroundBottomColor: fill),
+        display: SuperChatDisplay.of(backgroundColor: fill, backgroundBottomColor: fill),
       ),
     );
   }
@@ -774,9 +774,9 @@ abstract final class SeventeenLiveDanmakuCodec {
     final count = combo?['count'];
     final point = event['point'];
     final value = point is int && point >= 0 ? point : null;
-    final gift = LiveGift(
+    final gift = LiveGift.of(
       giftId: giftId,
-      value: LiveGiftValue(
+      value: LiveGiftValue.of(
         unit: switch (value) {
           null => LiveGiftUnit.other,
           0 => LiveGiftUnit.free,
@@ -785,7 +785,7 @@ abstract final class SeventeenLiveDanmakuCodec {
         unitPrice: value == null || value == 0 ? null : value.toDouble(),
         totalValue: value == null || value == 0 ? null : value.toDouble(),
       ),
-      combo: LiveGiftCombo(comboTotal: count is int && count > 0 ? count : null),
+      combo: LiveGiftCombo.of(comboTotal: count is int && count > 0 ? count : null),
     );
     final user = optionalObject(event['displayUser']);
     final name = _string(user?['displayName']);
@@ -837,7 +837,7 @@ abstract final class SeventeenLiveDanmakuCodec {
       if (badge is! Map) return;
       final url = image(badge['URL']);
       if (url.isEmpty || !seen.add(url)) return;
-      result.add(LiveBadge(url: url, id: _string(badge['styleID']).trim()));
+      result.add(LiveBadge.of(url: url, id: _string(badge['styleID']).trim()));
     }
 
     final prefixes = comment['prefixBadges'];

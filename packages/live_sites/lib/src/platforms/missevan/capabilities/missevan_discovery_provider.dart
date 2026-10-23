@@ -25,12 +25,11 @@ final class MissevanDiscoveryProvider implements LiveDiscoveryProvider {
   final MissevanSite site;
 
   @override
-  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({
-    LivePageRequest request = const LivePageRequest(),
-  }) async {
+  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({LivePageRequest? request}) async {
+    request ??= LivePageRequest();
     try {
       final page = await site.directory(request.page, pageSize: request.pageSize);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on MissevanFailure catch (failure) {
       return left(failure.toLiveSiteError(missevanSiteId));
     } on Object catch (error) {

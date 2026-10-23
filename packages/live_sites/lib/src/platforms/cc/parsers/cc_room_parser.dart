@@ -514,7 +514,7 @@ abstract final class CcRoomParser {
     final unique = codes.toSet().toList();
     return [
       for (final (index, code) in unique.indexed)
-        LivePlayQuality(
+        LivePlayQuality.of(
           label: code == 'original' ? '原画' : CcJson.string(names[code]) ?? _siteNames[code] ?? code,
           qualityId: code,
           platformOrder: unique.length - index,
@@ -556,7 +556,7 @@ abstract final class CcRoomParser {
         if (index == 0 || CcJson.string(answer.data['vbrname_sel']) == applied)
           for (final line in _answerLines(answer.data))
             if (cdns.add(line.cdn) && urls.add(line.url.toString()))
-              LivePlayLine(
+              LivePlayLine.of(
                 url: line.url.toString(),
                 format: _format(line.url),
                 formatSource: LivePlayFormatSource.inferred,
@@ -622,7 +622,7 @@ abstract final class CcRoomParser {
     final headers = CcEndpoints.mediaHeaders(roomId);
     return [
       for (final url in chosen.urls)
-        LivePlayLine(
+        LivePlayLine.of(
           url: url,
           format: _format(Uri.parse(url)),
           formatSource: LivePlayFormatSource.inferred,
@@ -669,7 +669,7 @@ abstract final class CcRoomParser {
     if (urls.isEmpty) return null;
     final kbps = int.tryParse(tier['vbr']?.toString() ?? '') ?? 0;
     return (
-      quality: LivePlayQuality(
+      quality: LivePlayQuality.of(
         label: _legacyNames[code] ?? code,
         qualityId: code,
         platformOrder: _legacySort(code, kbps),
@@ -752,7 +752,7 @@ abstract final class CcRoomParser {
     if (lifetime <= Duration.zero) return null;
     final quarter = lifetime ~/ 4;
     final lead = quarter < CcEndpoints.leaseLead ? quarter : CcEndpoints.leaseLead;
-    return LivePlayLease(
+    return LivePlayLease.of(
       refreshAt: expiresAt.subtract(lead),
       expiresAt: expiresAt,
       requiresReconnect: _format(url) == LiveStreamFormat.hls,

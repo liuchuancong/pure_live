@@ -46,7 +46,7 @@ final class DouyuRoomProvider implements LiveRoomProvider {
       final page = request.page < 1 ? 1 : request.page;
       final response = await site.httpGet(DouyuEndpoints.recommend(page), headers: site.apiHeaders(''));
       final result = DouyuRoomParser.roomList(response.text, page: page, status: response.status);
-      return right(LivePage(items: result.rooms, hasMore: result.hasMore));
+      return right(LivePage.of(items: result.rooms, hasMore: result.hasMore));
     } on DouyuFailure catch (failure) {
       return left(failure.toLiveSiteError(douyuSiteId));
     } on Object catch (error) {

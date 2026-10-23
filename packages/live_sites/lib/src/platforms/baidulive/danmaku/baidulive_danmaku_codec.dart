@@ -338,12 +338,12 @@ abstract final class BaiduliveDanmakuProtocol {
     final count = _int(content['gift_count']);
     final icon = Uri.tryParse(_string(content['gift_url']).trim());
     final free = _int(content['is_free']) == 1;
-    final gift = LiveGift(
+    final gift = LiveGift.of(
       giftId: _id(content['gift_id']),
       name: name,
       iconUrl: icon != null && icon.scheme == 'https' && icon.host.isNotEmpty ? '$icon' : null,
       count: count != null && count > 0 ? count : 1,
-      value: LiveGiftValue(unit: free ? LiveGiftUnit.free : LiveGiftUnit.other),
+      value: LiveGiftValue.of(unit: free ? LiveGiftUnit.free : LiveGiftUnit.other),
     );
     return LiveMessage.normalized(
       type: LiveMessageType.gift,

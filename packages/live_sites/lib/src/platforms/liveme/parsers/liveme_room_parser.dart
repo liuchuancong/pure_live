@@ -604,7 +604,7 @@ abstract final class LivemeRoomParser {
     }
     return [
       for (final (index, stream) in data.streams.indexed)
-        LivePlayQuality(
+        LivePlayQuality.of(
           label: LivemeEndpoints.qualityNames[stream.qualityId]!,
           qualityId: stream.qualityId,
           platformOrder: index,
@@ -629,7 +629,7 @@ abstract final class LivemeRoomParser {
     return [
       for (final (format, urls) in [(LiveStreamFormat.flv, stream.flv), (LiveStreamFormat.hls, stream.hls)])
         for (final (index, url) in urls.indexed)
-          LivePlayLine(
+          LivePlayLine.of(
             url: url,
             format: format,
             formatSource: LivePlayFormatSource.declared,

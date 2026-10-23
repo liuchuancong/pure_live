@@ -72,7 +72,7 @@ abstract final class DouyinPlayParser {
     for (final line in variant.lines) {
       final index = used[line.format] = (used[line.format] ?? 0) + 1;
       lines.add(
-        LivePlayLine(
+        LivePlayLine.of(
           url: line.url.toString(),
           format: line.format,
           formatSource: LivePlayFormatSource.declared,
@@ -80,7 +80,7 @@ abstract final class DouyinPlayParser {
           codec: variant.codec,
           lineLabel: index == 1 ? line.format.name : '${line.format.name}-$index',
           lease: lease(line.url, issuedAt),
-          geometry: PlayGeometry(width: variant.size?.width, height: variant.size?.height),
+          geometry: PlayGeometry.of(width: variant.size?.width, height: variant.size?.height),
         ),
       );
     }
@@ -125,7 +125,7 @@ abstract final class DouyinPlayParser {
     final lead = lifetime <= Duration.zero
         ? Duration.zero
         : Duration(microseconds: math.min(leaseLead.inMicroseconds, lifetime.inMicroseconds ~/ 4));
-    return LivePlayLease(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt);
+    return LivePlayLease.of(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt);
   }
 
   static DateTime? _expiry(Map<String, String> query, DateTime issuedAt) {
@@ -213,7 +213,7 @@ abstract final class DouyinPlayParser {
       final level = jsonInt(descriptor['level']) ?? 0;
       final tier = _tier(key);
       ranked.add((
-        quality: LivePlayQuality(
+        quality: LivePlayQuality.of(
           label: jsonText(descriptor['name']) ?? jsonText(_lookup(names, key)) ?? spellings[key] ?? key,
           qualityId: key,
           codec: codec,
@@ -267,7 +267,7 @@ abstract final class DouyinPlayParser {
       list: [
         for (final (index, variant) in kept.indexed)
           (
-            quality: variant.quality.copyWith(platformOrder: total - index),
+            quality: variant.quality.rebuild((b) => b..platformOrder = total - index),
             lines: variant.lines,
             codec: variant.codec,
             size: variant.size,

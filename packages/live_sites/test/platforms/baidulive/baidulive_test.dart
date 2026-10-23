@@ -746,7 +746,7 @@ void main() {
       expect(form['sign'], BaiduliveEndpoints.signFeed(unsigned));
       expect(http.requestCount, 1);
 
-      final second = _right(await discovery.getRecommendedRooms(request: const LivePageRequest(page: 2)));
+      final second = _right(await discovery.getRecommendedRooms(request: LivePageRequest.of(page: 2)));
       final secondForm = Uri.splitQueryString(http.posts.last.body!);
       expect(secondForm['resource'], 'feed');
       expect(secondForm['session_id'], 'session-1');
@@ -755,14 +755,14 @@ void main() {
       expect(http.requestCount, 2);
 
       // The page a session served last is replayed without a request (30-6).
-      final replay = _right(await discovery.getRecommendedRooms(request: const LivePageRequest(page: 2)));
+      final replay = _right(await discovery.getRecommendedRooms(request: LivePageRequest.of(page: 2)));
       expect(replay.items.first.roomId, '${_roomId}020');
       expect(http.requestCount, 2);
 
       // A page that is not the session's next is empty without a request, and
       // so is one past the last page the directory ever asks for.
       for (final page in [9, BaiduliveEndpoints.maxPage + 1]) {
-        final skipped = _right(await discovery.getRecommendedRooms(request: LivePageRequest(page: page)));
+        final skipped = _right(await discovery.getRecommendedRooms(request: LivePageRequest.of(page: page)));
         expect(skipped.items, isEmpty, reason: 'page $page');
         expect(skipped.hasMore, isFalse, reason: 'page $page');
       }
@@ -779,17 +779,11 @@ void main() {
       final site = _bound(transport: http);
       final discovery = site.capability<LiveDiscoveryProvider>()!;
       final area = site.capability<LiveAreaProvider>()!;
-      expect(_right(await discovery.getRecommendedRooms(request: const LivePageRequest(page: 0))).items, isEmpty);
-      expect(_right(await discovery.getRecommendedRooms(request: const LivePageRequest(pageSize: 0))).items, isEmpty);
-      expect(_right(await area.getAreaRooms(areaId: 'rec', request: const LivePageRequest(page: -1))).items, isEmpty);
-      expect(
-        _right(await area.getAreaRooms(areaId: 'rec', request: const LivePageRequest(pageSize: 0))).items,
-        isEmpty,
-      );
-      expect(
-        _right(await site.capability<LiveRoomProvider>()!.getRooms(const LivePageRequest(page: 0))).items,
-        isEmpty,
-      );
+      expect(_right(await discovery.getRecommendedRooms(request: LivePageRequest.of(page: 0))).items, isEmpty);
+      expect(_right(await discovery.getRecommendedRooms(request: LivePageRequest.of(pageSize: 0))).items, isEmpty);
+      expect(_right(await area.getAreaRooms(areaId: 'rec', request: LivePageRequest.of(page: -1))).items, isEmpty);
+      expect(_right(await area.getAreaRooms(areaId: 'rec', request: LivePageRequest.of(pageSize: 0))).items, isEmpty);
+      expect(_right(await site.capability<LiveRoomProvider>()!.getRooms(LivePageRequest.of(page: 0))).items, isEmpty);
       expect((await site.directory(0)).rooms, isEmpty);
       expect(http.requestCount, 0);
     });
@@ -911,7 +905,7 @@ void main() {
       final site = _bound(transport: http);
       await site.capability<LiveDiscoveryProvider>()!.getRecommendedRooms();
       await site.capability<LiveAreaProvider>()!.getAreaRooms(areaId: 'rec');
-      await site.capability<LiveAreaProvider>()!.getAreaRooms(areaId: 'rec', request: const LivePageRequest(page: 2));
+      await site.capability<LiveAreaProvider>()!.getAreaRooms(areaId: 'rec', request: LivePageRequest.of(page: 2));
       final third = Uri.splitQueryString(http.posts.last.body!);
       expect(third['session_id'], 'session-rec');
       expect(third['refresh_index'], '2');
@@ -925,7 +919,7 @@ void main() {
       final page = _right(
         await site.capability<LiveAreaProvider>()!.getAreaRooms(
           areaId: 'rec',
-          request: const LivePageRequest(pageSize: 3),
+          request: LivePageRequest.of(pageSize: 3),
         ),
       );
       expect(page.items, hasLength(3));
@@ -1665,7 +1659,7 @@ void main() {
       expect(lines.first.codec, LiveStreamCodec.avc);
       expect(lines.first.lease, isNull);
       expect(lines.first.singleUse, isFalse);
-      expect(lines.first.headers, BaiduliveEndpoints.mediaHeaders(_roomId));
+      expect(lines.first.headers.toMap(), BaiduliveEndpoints.mediaHeaders(_roomId));
       expect(lines.first.headers['referer'], 'https://live.baidu.com/m/room/$_roomId');
       expect(lines.first.headers['user-agent'], BaiduliveEndpoints.userAgent);
       expect(lines.first.url, 'https://p1.liveshow.bdstatic.com/live/live_$_roomId-720.flv');
@@ -1673,28 +1667,22 @@ void main() {
 
     test('the lines of a quality, and one the room no longer offers', () {
       final room = _full();
-      expect(BaidulivePlayParser.linesFor(room, const LivePlayQuality(label: '', qualityId: '720p')), hasLength(2));
-      expect(
-        BaidulivePlayParser.linesFor(room, const LivePlayQuality(label: '', qualityId: 'hls:720:avc')),
-        hasLength(2),
-      );
-      expect(
-        BaidulivePlayParser.linesFor(room, const LivePlayQuality(label: '', qualityId: '720p:hevc')),
-        hasLength(1),
-      );
+      expect(BaidulivePlayParser.linesFor(room, LivePlayQuality.of(label: '', qualityId: '720p')), hasLength(2));
+      expect(BaidulivePlayParser.linesFor(room, LivePlayQuality.of(label: '', qualityId: 'hls:720:avc')), hasLength(2));
+      expect(BaidulivePlayParser.linesFor(room, LivePlayQuality.of(label: '', qualityId: '720p:hevc')), hasLength(1));
       // null is the quality the menu puts first (原画, H.264).
       expect(
         BaidulivePlayParser.linesFor(room, null).first.url,
         'https://hls-live.bdstatic.com/live/live_$_roomId.flv',
       );
       expect(
-        () => BaidulivePlayParser.linesFor(room, const LivePlayQuality(label: '', qualityId: '1080p')),
+        () => BaidulivePlayParser.linesFor(room, LivePlayQuality.of(label: '', qualityId: '1080p')),
         throwsA(
           isA<BaiduliveFailure>().having((failure) => failure.message, 'message', 'quality 1080p is not offered'),
         ),
       );
       expect(
-        () => BaidulivePlayParser.linesFor(room, const LivePlayQuality(label: '', qualityId: 'FLV:1080:AVC')),
+        () => BaidulivePlayParser.linesFor(room, LivePlayQuality.of(label: '', qualityId: 'FLV:1080:AVC')),
         throwsA(
           isA<BaiduliveFailure>().having((failure) => failure.message, 'message', 'quality 1080p is not offered'),
         ),
@@ -1864,7 +1852,7 @@ void main() {
             .having((g) => g.giftId, 'giftId', '9')
             .having((g) => g.count, 'count', 2)
             .having((g) => g.iconUrl, 'iconUrl', 'https://icon.example/x.png')
-            .having((g) => g.value, 'value', const LiveGiftValue()),
+            .having((g) => g.value, 'value', LiveGiftValue()),
       );
       final free = decode([
         outer(giftInner({'gift_name': '小心心', 'is_free': 1, 'gift_url': 'http://icon.example/x.png'})),
@@ -1875,7 +1863,7 @@ void main() {
         isA<LiveGift>()
             .having((g) => g.count, 'count', 1)
             .having((g) => g.iconUrl, 'iconUrl', isNull)
-            .having((g) => g.value, 'value', const LiveGiftValue(unit: LiveGiftUnit.free)),
+            .having((g) => g.value, 'value', LiveGiftValue.of(unit: LiveGiftUnit.free)),
       );
       expect(
         decode([

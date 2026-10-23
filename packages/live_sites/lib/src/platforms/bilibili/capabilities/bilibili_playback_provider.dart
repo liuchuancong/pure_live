@@ -32,7 +32,7 @@ final class BilibiliPlaybackProvider implements LivePlaybackProvider {
     try {
       final play = await _play(site.longId(roomId), 0);
       final data = play.data;
-      return right(data == null ? const [BilibiliPlayParser.carouselQuality] : BilibiliPlayParser.qualities(data));
+      return right(data == null ? [BilibiliPlayParser.carouselQuality] : BilibiliPlayParser.qualities(data));
     } on BilibiliFailure catch (failure) {
       return left(failure.toLiveSiteError(bilibiliSiteId));
     } on Object catch (error) {

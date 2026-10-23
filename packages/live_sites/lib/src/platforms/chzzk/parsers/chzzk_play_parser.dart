@@ -181,7 +181,7 @@ abstract final class ChzzkPlayParser {
     final total = ids.length;
     return [
       for (var index = 0; index < total; index++)
-        LivePlayQuality(
+        LivePlayQuality.of(
           label: '${ids[index]} · HLS',
           qualityId: ids[index],
           platformOrder: total - index,
@@ -199,7 +199,7 @@ abstract final class ChzzkPlayParser {
       for (final variant in variants)
         if (wanted == null || wanted.isEmpty || _qualityId(variant) == wanted)
           if (urls.add(variant.url))
-            LivePlayLine(
+            LivePlayLine.of(
               url: variant.url,
               format: LiveStreamFormat.hls,
               formatSource: LivePlayFormatSource.declared,
@@ -249,7 +249,7 @@ abstract final class ChzzkPlayParser {
     final lifetime = expiresAt.difference(issuedAt);
     if (lifetime <= Duration.zero) return null;
     final lead = Duration(microseconds: _min(ChzzkEndpoints.leaseLead.inMicroseconds, lifetime.inMicroseconds ~/ 4));
-    return LivePlayLease(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt, requiresReconnect: true);
+    return LivePlayLease.of(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt, requiresReconnect: true);
   }
 
   static int _min(int a, int b) => a < b ? a : b;

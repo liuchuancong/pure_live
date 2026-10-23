@@ -701,16 +701,16 @@ abstract final class KugouliveDanmakuCodec {
     final combo = KugouliveJson.text(content['comboId']).trim();
     final comboSum = KugouliveJson.integer(content['comboGiftSum']) ?? 0;
     final level = _positive(content['senderrichlevelV2']) ?? _positive(content['senderrichlevel']);
-    final gift = LiveGift(
+    final gift = LiveGift.of(
       giftId: id,
       name: _clean(content['giftname']),
       count: count,
-      value: LiveGiftValue(
+      value: LiveGiftValue.of(
         unit: price == 0 ? LiveGiftUnit.free : LiveGiftUnit.starCoin,
         unitPrice: price < 0 ? null : price.toDouble(),
         totalValue: price < 0 ? null : (price * count).toDouble(),
       ),
-      combo: LiveGiftCombo(
+      combo: LiveGiftCombo.of(
         comboKey: comboV2.isNotEmpty && comboV2 != '0'
             ? comboV2
             : combo.isNotEmpty && combo != '0'

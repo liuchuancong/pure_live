@@ -31,7 +31,7 @@ final class SixroomRoomProvider implements LiveRoomProvider {
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRooms(LivePageRequest request) => _guard(() async {
     final page = await site.directoryPage(request.page, request.pageSize);
-    return LivePage(items: page.rooms, hasMore: page.hasMore);
+    return LivePage.of(items: page.rooms, hasMore: page.hasMore);
   });
 }
 

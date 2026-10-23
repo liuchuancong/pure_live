@@ -465,7 +465,7 @@ abstract final class ShowroomParser {
   /// the platform's own order (the adaptive master 自动 is below every `hls`
   /// tier).
   static LivePlayQuality quality(ShowroomTier tier) =>
-      LivePlayQuality(label: tier.quality.label, qualityId: tier.quality.id, platformOrder: tier.quality.order);
+      LivePlayQuality.of(label: tier.quality.label, qualityId: tier.quality.id, platformOrder: tier.quality.order);
 
   /// The qualities of [rows], best first (see [tiers]).
   static List<LivePlayQuality> qualities(List<Object?> rows) => [for (final tier in tiers(rows)) quality(tier)];
@@ -473,7 +473,7 @@ abstract final class ShowroomParser {
   /// The line of [tier]: its HLS URL with the media headers and the tier's
   /// type as the line label. The URLs are not signed and do not expire, so
   /// there is no lease.
-  static LivePlayLine line(ShowroomTier tier) => LivePlayLine(
+  static LivePlayLine line(ShowroomTier tier) => LivePlayLine.of(
     url: tier.url,
     format: LiveStreamFormat.hls,
     formatSource: LivePlayFormatSource.declared,

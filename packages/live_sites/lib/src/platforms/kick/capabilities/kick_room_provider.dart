@@ -63,7 +63,7 @@ final class KickRoomProvider implements LiveRoomProvider {
       final size = request.pageSize.clamp(1, KickEndpoints.pageSize);
       final response = await site.httpGet(KickEndpoints.livestreams(page, size), headers: site.apiHeaders());
       final result = KickRoomParser.directoryPage(response.text, page: page, pageSize: size, status: response.status);
-      return right(LivePage(items: result.rooms, hasMore: result.hasMore));
+      return right(LivePage.of(items: result.rooms, hasMore: result.hasMore));
     } on KickFailure catch (failure) {
       return left(failure.toLiveSiteError(kickSiteId));
     } on Object catch (error) {

@@ -436,14 +436,10 @@ abstract final class SixroomDanmakuCodec {
       text: text,
       sentAt: line.sentAt,
       color: LiveMessageColor.white,
-      payload: LiveSuperChatMessage(
+      payload: LiveSuperChatMessage.of(
         userName: name,
         text: text,
-        price: const SuperChatPrice(
-          amount: flyScreenPrice,
-          currency: currency,
-          displayText: '$flyScreenPrice$currency',
-        ),
+        price: SuperChatPrice.of(amount: flyScreenPrice, currency: currency, displayText: '$flyScreenPrice$currency'),
         startTime: start,
         endTime: start.add(flyScreenDuration),
       ),
@@ -484,16 +480,16 @@ abstract final class SixroomDanmakuCodec {
     final continued = _text(content['isContinue']) == '1' && combo.isNotEmpty && combo != '0';
     final hits = max(1, jsonInt(content['groupnum']) ?? 1);
     final picture = Uri.tryParse(_text(content['aiGiftPic']));
-    final data = LiveGift(
+    final data = LiveGift.of(
       giftId: item,
       name: _html(content['itemName']),
       count: count,
-      value: LiveGiftValue(
+      value: LiveGiftValue.of(
         unit: coins > 0 ? LiveGiftUnit.sixCoin : LiveGiftUnit.free,
         unitPrice: coins > 0 && coins % count == 0 ? (coins ~/ count).toDouble() : null,
         totalValue: coins > 0 ? coins.toDouble() : null,
       ),
-      combo: LiveGiftCombo(comboKey: continued ? '$sender:$combo' : '', comboTotal: continued ? count * hits : null),
+      combo: LiveGiftCombo.of(comboKey: continued ? '$sender:$combo' : '', comboTotal: continued ? count * hits : null),
       iconUrl: picture != null && picture.host.isNotEmpty && (picture.isScheme('https') || picture.isScheme('http'))
           ? '${picture.replace(scheme: 'https')}'
           : null,
@@ -534,11 +530,11 @@ abstract final class SixroomDanmakuCodec {
       sentAt: line.sentAt,
       messageId: id.isEmpty ? '' : 'follow-fly:$id',
       color: LiveMessageColor.white,
-      payload: LiveSuperChatMessage(
+      payload: LiveSuperChatMessage.of(
         messageId: id.isEmpty ? '' : 'follow-fly:$id',
         userName: name,
         text: text,
-        price: const SuperChatPrice(
+        price: SuperChatPrice.of(
           amount: followFlyScreenPrice,
           currency: currency,
           displayText: '$followFlyScreenPrice$currency',

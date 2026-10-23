@@ -26,12 +26,11 @@ final class YyDiscoveryProvider implements LiveDiscoveryProvider {
   final YySite site;
 
   @override
-  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({
-    LivePageRequest request = const LivePageRequest(),
-  }) async {
+  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({LivePageRequest? request}) async {
+    request ??= LivePageRequest();
     try {
       final rooms = await site.recommendRooms(page: request.page, pageSize: request.pageSize);
-      return right(LivePage(items: rooms));
+      return right(LivePage.of(items: rooms));
     } on YyFailure catch (failure) {
       return left(failure.toLiveSiteError(yySiteId));
     } on Object catch (error) {

@@ -955,7 +955,7 @@ void main() {
         ),
       );
       final areas = adapter.site.capability<LiveAreaProvider>()!;
-      final page = _right(await areas.getAreaRooms(areaId: 'tw', request: const LivePageRequest(pageSize: 1)));
+      final page = _right(await areas.getAreaRooms(areaId: 'tw', request: LivePageRequest.of(pageSize: 1)));
       expect(page.items, hasLength(1));
       expect(page.nextCursor, 'p2');
       expect(page.hasMore, isTrue);
@@ -990,17 +990,17 @@ void main() {
         );
       });
       final rooms = adapter.site.capability<LiveRoomProvider>()!;
-      final first = _right(await rooms.getRooms(const LivePageRequest()));
+      final first = _right(await rooms.getRooms(LivePageRequest()));
       expect(first.items.map((room) => room.roomId), ['1', '2']);
       expect(first.hasMore, isTrue);
       expect(asks, 1);
-      final second = _right(await rooms.getRooms(const LivePageRequest(cursor: '2')));
+      final second = _right(await rooms.getRooms(LivePageRequest.of(cursor: '2')));
       expect(second.items.map((room) => room.roomId), ['3', '4']);
       expect(second.hasMore, isTrue);
       expect(asks, 2);
       // A page number is walked from the first page: that many requests.
       asks = 0;
-      final third = _right(await rooms.getRooms(const LivePageRequest(page: 3)));
+      final third = _right(await rooms.getRooms(LivePageRequest.of(page: 3)));
       expect(asks, 3);
       expect(third.items.map((room) => room.roomId), ['5', '6']);
       expect(third.nextCursor, '6');
@@ -1018,20 +1018,20 @@ void main() {
         );
       });
       final discovery = adapter.site.capability<LiveDiscoveryProvider>()!;
-      final page = _right(await discovery.getRecommendedRooms(request: const LivePageRequest(page: 4)));
+      final page = _right(await discovery.getRecommendedRooms(request: LivePageRequest.of(page: 4)));
       expect(page.items, isEmpty);
       expect(page.hasMore, isFalse);
       expect(asks, 1);
       expect(
-        _leftOf(await discovery.getRecommendedRooms(request: const LivePageRequest(page: 21))),
+        _leftOf(await discovery.getRecommendedRooms(request: LivePageRequest.of(page: 21))),
         isA<LiveSiteInvalidArgument>(),
       );
       expect(
-        _leftOf(await discovery.getRecommendedRooms(request: const LivePageRequest(cursor: ''))),
+        _leftOf(await discovery.getRecommendedRooms(request: LivePageRequest.of(cursor: ''))),
         isA<LiveSiteInvalidArgument>(),
       );
       expect(
-        _leftOf(await discovery.getRecommendedRooms(request: const LivePageRequest(pageSize: 0))),
+        _leftOf(await discovery.getRecommendedRooms(request: LivePageRequest.of(pageSize: 0))),
         isA<LiveSiteInvalidArgument>(),
       );
       expect(asks, 1);
@@ -1047,7 +1047,7 @@ void main() {
         ),
       );
       final discovery = adapter.site.capability<LiveDiscoveryProvider>()!;
-      final page = _right(await discovery.getRecommendedRooms(request: const LivePageRequest(pageSize: 2)));
+      final page = _right(await discovery.getRecommendedRooms(request: LivePageRequest.of(pageSize: 2)));
       expect(page.items, hasLength(2));
       expect(page.hasMore, isFalse);
     });
@@ -1107,7 +1107,7 @@ void main() {
       expect(search.supportedTargets, {LiveSearchTarget.rooms});
       Future<LivePage<LiveSearchResult>> run(String query, {int page = 1, int pageSize = 20}) async {
         final either = await search.search(
-          LiveSearchRequest(query: query, target: LiveSearchTarget.rooms, page: page, pageSize: pageSize),
+          LiveSearchRequest.of(query: query, target: LiveSearchTarget.rooms, page: page, pageSize: pageSize),
         );
         return await _right(either);
       }
@@ -1140,7 +1140,7 @@ void main() {
       expect(adapter.http.sent, isEmpty);
       // The page size cuts the rows, and another target is unsupported.
       expect(
-        _leftOf(await search.search(const LiveSearchRequest(query: 'x', target: LiveSearchTarget.anchors))),
+        _leftOf(await search.search(LiveSearchRequest.of(query: 'x', target: LiveSearchTarget.anchors))),
         isA<LiveSiteUnsupported>(),
       );
     });
@@ -1149,7 +1149,7 @@ void main() {
       final adapter = _adapter((_) => _resp(200, '{"not":"a list"}'));
       final search = adapter.site.capability<LiveSearchProvider>()!;
       expect(
-        _leftOf(await search.search(const LiveSearchRequest(query: 'ann', target: LiveSearchTarget.rooms))),
+        _leftOf(await search.search(LiveSearchRequest.of(query: 'ann', target: LiveSearchTarget.rooms))),
         isA<LiveSiteParseError>(),
       );
     });
@@ -1197,7 +1197,7 @@ void main() {
         _right(
           await playback.getLines(
             roomId: _room,
-            quality: const LivePlayQuality(label: '标准 · FLV', qualityId: 'standard'),
+            quality: LivePlayQuality.of(label: '标准 · FLV', qualityId: 'standard'),
           ),
         ),
         hasLength(3),
@@ -1209,7 +1209,7 @@ void main() {
         _leftOf(
           await playback.getLines(
             roomId: _room,
-            quality: const LivePlayQuality(label: 'x', qualityId: 'nope'),
+            quality: LivePlayQuality.of(label: 'x', qualityId: 'nope'),
           ),
         ),
         isA<LiveSiteContentUnavailable>(),

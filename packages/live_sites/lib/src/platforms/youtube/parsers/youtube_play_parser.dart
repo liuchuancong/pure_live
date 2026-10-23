@@ -75,11 +75,11 @@ abstract final class YoutubePlayParser {
           : 'hls:$height:${_fpsPart(variant.fps)}:${variant.codec?.name ?? 'unknown'}';
       if (!seen.add(id)) continue;
       qualities.add(
-        LivePlayQuality(label: height == null ? 'HLS 自动' : '${height}p', qualityId: id, codec: variant.codec),
+        LivePlayQuality.of(label: height == null ? 'HLS 自动' : '${height}p', qualityId: id, codec: variant.codec),
       );
     }
     if (hlsManifestUrl != null && variants.isEmpty) {
-      qualities.add(const LivePlayQuality(label: 'HLS 自动', qualityId: 'hls:auto'));
+      qualities.add(LivePlayQuality.of(label: 'HLS 自动', qualityId: 'hls:auto'));
     }
     for (final format in progressive) {
       final itag = jsonString(format['itag']);
@@ -88,7 +88,7 @@ abstract final class YoutubePlayParser {
       if (!seen.add(id)) continue;
       final height = jsonInt(format['height']);
       qualities.add(
-        LivePlayQuality(
+        LivePlayQuality.of(
           label: jsonString(format['qualityLabel']) ?? (height == null ? 'MP4 $itag' : '${height}p'),
           qualityId: id,
           codec: _codecOf(format),
@@ -96,10 +96,10 @@ abstract final class YoutubePlayParser {
       );
     }
     if (dashManifestUrl != null && seen.add('dash:auto')) {
-      qualities.add(const LivePlayQuality(label: 'DASH 自动', qualityId: 'dash:auto'));
+      qualities.add(LivePlayQuality.of(label: 'DASH 自动', qualityId: 'dash:auto'));
     }
     final total = qualities.length;
-    return [for (final (index, quality) in qualities.indexed) quality.copyWith(platformOrder: total - index)];
+    return [for (final (index, quality) in qualities.indexed) quality.rebuild((b) => b..platformOrder = total - index)];
   }
 
   /// The playable lines for [qualityId] (the default tier when null): the
@@ -189,7 +189,7 @@ abstract final class YoutubePlayParser {
     final lifetime = expiresAt.difference(issuedAt);
     if (lifetime <= Duration.zero) return null;
     final lead = Duration(microseconds: math.min(leaseLead.inMicroseconds, lifetime.inMicroseconds ~/ 4));
-    return LivePlayLease(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt);
+    return LivePlayLease.of(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt);
   }
 
   /// One https media URL inside the platform's host allowlist
@@ -235,7 +235,7 @@ abstract final class YoutubePlayParser {
     String? lineLabel,
   }) {
     final uri = allowlisted(url);
-    return LivePlayLine(
+    return LivePlayLine.of(
       url: uri.toString(),
       format: format,
       formatSource: LivePlayFormatSource.declared,

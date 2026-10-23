@@ -40,7 +40,7 @@ final class DouyuSearchProvider implements LiveSearchProvider {
     if (text.isEmpty) {
       // The platform answers a blank keyword with an error; the caller gets
       // a successful empty page instead of a round trip.
-      return right(const LivePage(items: []));
+      return right(LivePage.of(items: []));
     }
     final page = request.page < 1 ? 1 : request.page;
     final pageSize = request.pageSize.clamp(1, 50);
@@ -54,7 +54,7 @@ final class DouyuSearchProvider implements LiveSearchProvider {
       final items = request.target == LiveSearchTarget.rooms
           ? DouyuRoomParser.searchRooms(response.text, status: response.status)
           : DouyuRoomParser.searchAnchors(response.text, status: response.status);
-      return right(LivePage(items: items));
+      return right(LivePage.of(items: items));
     } on DouyuFailure catch (failure) {
       return left(failure.toLiveSiteError(douyuSiteId));
     } on Object catch (error) {

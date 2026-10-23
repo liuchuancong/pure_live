@@ -395,7 +395,7 @@ abstract final class KugouliveRoomParser {
             final url = mediaUrl(KugouliveJson.text(raw), protocol: protocol);
             if (url == null || group.lines.any((line) => line.url == '$url')) continue;
             group.lines.add(
-              LivePlayLine(
+              LivePlayLine.of(
                 url: '$url',
                 headers: headers,
                 format: format,
@@ -499,7 +499,7 @@ abstract final class KugouliveRoomParser {
     final expires = invalidAt('$url');
     return expires == null
         ? null
-        : LivePlayLease(refreshAt: expires.subtract(KugouliveEndpoints.leaseLead), expiresAt: expires);
+        : LivePlayLease.of(refreshAt: expires.subtract(KugouliveEndpoints.leaseLead), expiresAt: expires);
   }
 
   /// The qualities: one per variant, `<FLV|HLS> 码率档 <rate>`, id the
@@ -513,7 +513,7 @@ abstract final class KugouliveRoomParser {
     var order = 0;
     return [
       for (final variant in ordered)
-        LivePlayQuality(
+        LivePlayQuality.of(
           label: '${variant.protocol.toUpperCase()} 码率档 ${variant.rate}',
           qualityId: variant.id,
           platformOrder: order++,

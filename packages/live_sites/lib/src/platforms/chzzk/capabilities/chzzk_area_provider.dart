@@ -43,11 +43,12 @@ final class ChzzkAreaProvider implements LiveAreaProvider {
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
     required String areaId,
-    LivePageRequest request = const LivePageRequest(),
+    LivePageRequest? request,
   }) async {
+    request ??= LivePageRequest();
     try {
       final page = await site.listing(areaId: areaId, page: request.page, cursor: request.cursor);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore, nextCursor: page.nextCursor));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore, nextCursor: page.nextCursor));
     } on ChzzkFailure catch (failure) {
       return left(failure.toLiveSiteError(chzzkSiteId));
     } on Object catch (error) {

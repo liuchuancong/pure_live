@@ -47,7 +47,7 @@ final class DouyinRoomProvider implements LiveRoomProvider {
       final cookie = await site.cookie();
       final response = await site.httpGet(DouyinEndpoints.feed(), headers: site.apiHeaders(cookie));
       final rooms = DouyinRoomParser.feed(response.text, status: response.status, headers: response.headers);
-      return right(LivePage(items: rooms, hasMore: rooms.isNotEmpty));
+      return right(LivePage.of(items: rooms, hasMore: rooms.isNotEmpty));
     } on DouyinFailure catch (failure) {
       return left(failure.toLiveSiteError(douyinSiteId));
     } on Object catch (error) {

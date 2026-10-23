@@ -40,13 +40,13 @@ final class YoutubeSearchProvider implements LiveSearchProvider {
       );
     }
     final text = request.query.trim();
-    if (text.isEmpty) return right(const LivePage(items: []));
+    if (text.isEmpty) return right(LivePage.of(items: []));
     try {
       final page = request.page < 1 ? 1 : request.page;
       final size = request.pageSize < 1 ? 0 : request.pageSize;
       final result = await _page(text, page);
       final items = [for (final room in result.rooms.take(size)) LiveSearchResult.room(room)];
-      return right(LivePage(items: items, hasMore: result.hasMore));
+      return right(LivePage.of(items: items, hasMore: result.hasMore));
     } on YouTubeFailure catch (failure) {
       return left(failure.toLiveSiteError(youtubeSiteId));
     } on Object catch (error) {

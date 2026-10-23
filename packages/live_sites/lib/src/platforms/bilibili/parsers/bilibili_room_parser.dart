@@ -341,15 +341,15 @@ abstract final class BilibiliRoomParser {
       for (final item in jsonList(jsonObject(root['data'])?['list']))
         if (jsonObject(item) case final chat?)
           if ((_unixTime(chat['start_time']), _unixTime(chat['end_time'])) case (final start?, final end?))
-            LiveSuperChatMessage(
+            LiveSuperChatMessage.of(
               messageId: jsonString(chat['id']) ?? '',
               userName: decodeHtmlEntities(jsonString(jsonObject(chat['user_info'])?['uname']) ?? ''),
               faceUrl: sizedImage(jsonObject(chat['user_info'])?['face'], '@200w.jpg'),
               text: jsonString(chat['message']) ?? '',
-              price: SuperChatPrice(amount: jsonInt(chat['price']), currency: 'CNY'),
+              price: SuperChatPrice.of(amount: jsonInt(chat['price']), currency: 'CNY'),
               startTime: start,
               endTime: end,
-              display: SuperChatDisplay(
+              display: SuperChatDisplay.of(
                 backgroundColor: jsonString(chat['background_color']) ?? '',
                 backgroundBottomColor: jsonString(chat['background_bottom_color']) ?? '',
               ),

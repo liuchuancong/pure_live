@@ -36,7 +36,7 @@ final class NiconicoSearchProvider implements LiveSearchProvider {
     }
     try {
       final result = await site.search(request.query, request.page);
-      return right(LivePage(items: result.items, hasMore: result.hasMore));
+      return right(LivePage.of(items: result.items, hasMore: result.hasMore));
     } on NiconicoFailure catch (failure) {
       return left(failure.toLiveSiteError(niconicoSiteId));
     } on Object catch (error) {

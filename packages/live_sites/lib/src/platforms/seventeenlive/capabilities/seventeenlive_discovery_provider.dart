@@ -27,12 +27,11 @@ final class SeventeenLiveDiscoveryProvider implements LiveDiscoveryProvider {
   final SeventeenLiveSite site;
 
   @override
-  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({
-    LivePageRequest request = const LivePageRequest(),
-  }) async {
+  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({LivePageRequest? request}) async {
+    request ??= LivePageRequest();
     try {
       final page = await site.directory(page: request.page, cursor: request.cursor, pageSize: request.pageSize);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore, nextCursor: page.nextCursor));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore, nextCursor: page.nextCursor));
     } on SeventeenLiveFailure catch (failure) {
       return left(failure.toLiveSiteError(seventeenliveSiteId));
     } on Object catch (error) {

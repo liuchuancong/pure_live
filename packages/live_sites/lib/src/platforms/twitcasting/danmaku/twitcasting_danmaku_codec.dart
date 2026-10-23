@@ -169,7 +169,7 @@ abstract final class TwitcastingDanmakuCodec {
     if (name.isEmpty || item['showsSenderInfo'] == false) return const [];
     final sender = event['sender'] is Map ? event['sender'] as Map<Object?, Object?> : const <Object?, Object?>{};
     final image = Uri.tryParse(TwitcastingJson.text(item['image']));
-    final gift = LiveGift(
+    final gift = LiveGift.of(
       name: name,
       iconUrl: image != null && image.isScheme('https') && image.host.isNotEmpty ? '$image' : null,
     );

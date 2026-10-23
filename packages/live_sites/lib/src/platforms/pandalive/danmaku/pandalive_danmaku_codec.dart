@@ -330,12 +330,12 @@ abstract final class PandaliveDanmakuCodec {
     final coin = sponsor['coin'];
     final name = _text(sponsor['nick']);
     if (coin is! int || coin <= 0 || name.isEmpty) return const [];
-    final gift = LiveGift(
+    final gift = LiveGift.of(
       name: heartName,
       count: coin,
       kind: LiveGiftKind.tip,
       // The hearts are the platform's own denomination (about 110 won each).
-      value: LiveGiftValue(unit: LiveGiftUnit.heart, unitPrice: 1, totalValue: coin.toDouble()),
+      value: LiveGiftValue.of(unit: LiveGiftUnit.heart, unitPrice: 1, totalValue: coin.toDouble()),
       recipientName: _text(sponsor['excelNick']),
     );
     final offset = publication['offset'];

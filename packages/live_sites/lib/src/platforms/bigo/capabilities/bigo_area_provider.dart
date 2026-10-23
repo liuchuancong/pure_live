@@ -40,8 +40,9 @@ final class BigoAreaProvider implements LiveAreaProvider {
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
     required String areaId,
-    LivePageRequest request = const LivePageRequest(),
+    LivePageRequest? request,
   }) async {
+    request ??= LivePageRequest();
     if (!BigoRoomParser.isAreaId(areaId)) {
       return left(
         LiveSiteError.invalidArgument(siteId: bigoSiteId, message: 'area "$areaId" is not the bigo public list'),
@@ -50,7 +51,7 @@ final class BigoAreaProvider implements LiveAreaProvider {
     try {
       final page = request.page < 1 ? 1 : request.page;
       final result = await site.directory(page);
-      return right(LivePage(items: result.rooms, hasMore: result.hasMore));
+      return right(LivePage.of(items: result.rooms, hasMore: result.hasMore));
     } on BigoFailure catch (failure) {
       return left(failure.toLiveSiteError(bigoSiteId));
     } on Object catch (error) {

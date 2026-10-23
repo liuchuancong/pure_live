@@ -47,8 +47,9 @@ final class HuyaAreaProvider implements LiveAreaProvider {
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
     required String areaId,
-    LivePageRequest request = const LivePageRequest(),
+    LivePageRequest? request,
   }) async {
+    request ??= LivePageRequest();
     try {
       final page = request.page < 1 ? 1 : request.page;
       final response = await site.httpGet(
@@ -56,7 +57,7 @@ final class HuyaAreaProvider implements LiveAreaProvider {
         headers: site.webHeaders(),
       );
       final result = HuyaRoomParser.roomList(response.text, page: page, status: response.status);
-      return right(LivePage(items: result.rooms, hasMore: result.hasMore));
+      return right(LivePage.of(items: result.rooms, hasMore: result.hasMore));
     } on HuyaFailure catch (failure) {
       return left(failure.toLiveSiteError(huyaSiteId));
     } on Object catch (error) {

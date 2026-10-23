@@ -1,56 +1,40 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
+// The named factories spell their class name; the `new` shorthand
+// cannot carry per-constructor documentation.
+// ignore_for_file: unnecessary_type_name_in_constructor
+import 'package:built_collection/built_collection.dart';
+import 'package:built_value/built_value.dart';
+import 'package:built_value/serializer.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_emote/live_emote.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/models/message/live_message_style/live_message_style.dart';
 import 'package:live_sites/src/models/message/message_sender/message_sender.dart';
+import 'package:live_sites/src/models/serializers.dart';
 
-// The named factories spell their class name; the `new` shorthand
-// cannot carry per-constructor documentation.
-// ignore_for_file: unnecessary_type_name_in_constructor
-part 'live_message.freezed.dart';
 part 'live_message.g.dart';
 
 /// One danmaku message.
 ///
 /// [payload]'s concrete type follows [type] — the contract is MODELS.md §5
 /// (gift → LiveGift, audienceUpdate → LiveAudienceUpdate, retraction →
-/// LiveRetraction, notice → LiveNoticeKind, everything else null).
+/// LiveRetraction, notice → LiveNoticeKind, everything else null);
+/// [payload] and [style] are runtime-only and never serialized.
 /// [messageId] suppresses packets a platform replays after a reconnect
 /// without merging two genuine identical texts; [replayed] marks a backlog
 /// or replay as not-live-happening; [sourceRoomId] names the real room of a
 /// cross-room message (a PK partner room), `''` for the joined room.
-@freezed
-abstract class LiveMessage with _$LiveMessage {
-  /// The normalized-fields constructor (code generation and copyWith
-  /// target); construct through [LiveMessage.normalized] unless the caller
-  /// normalized upstream.
-  const factory LiveMessage({
+abstract class LiveMessage implements Built<LiveMessage, LiveMessageBuilder> {
+  /// Builds from a builder [updates] callback — the codegen entry.
+  factory LiveMessage([void Function(LiveMessageBuilder)? updates]) = _$LiveMessage;
+
+  /// The normalized-fields constructor; construct through
+  /// [LiveMessage.normalized] unless the caller normalized upstream.
+  factory LiveMessage.of({
     required LiveMessageType type,
-    @Default('') String text,
-    MessageSender? sender,
-    LiveMessageColor? color,
-    @JsonKey(includeFromJson: false, includeToJson: false) LiveMessageStyle? style,
-    Object? payload,
-    @Default([]) List<LiveEmote> emotes,
-    @Default('') String messageId,
-    DateTime? sentAt,
-    DateTime? createdAt,
-    @Default(false) bool isLocal,
-    @Default(false) bool replayed,
-    @Default('') String sourceRoomId,
-  }) = _LiveMessage;
-
-  /// Deserializes a stored JSON record.
-  factory LiveMessage.fromJson(Map<String, Object?> json) => _$LiveMessageFromJson(json);
-
-  /// Adapter entry point: normalizes text once and delegates.
-  factory LiveMessage.normalized({
-    LiveMessageType type = LiveMessageType.chat,
     String text = '',
     MessageSender? sender,
     LiveMessageColor? color,
-    @JsonKey(includeFromJson: false, includeToJson: false) LiveMessageStyle? style,
+    LiveMessageStyle? style,
     Object? payload,
     List<LiveEmote> emotes = const [],
     String messageId = '',
@@ -60,6 +44,43 @@ abstract class LiveMessage with _$LiveMessage {
     bool replayed = false,
     String sourceRoomId = '',
   }) => LiveMessage(
+    (b) => b
+      ..type = type
+      ..text = text
+      ..sender = sender?.toBuilder()
+      ..color = color
+      ..style = style
+      ..payload = payload
+      ..emotes.replace(emotes)
+      ..messageId = messageId
+      ..sentAt = sentAt
+      ..createdAt = createdAt
+      ..isLocal = isLocal
+      ..replayed = replayed
+      ..sourceRoomId = sourceRoomId,
+  );
+
+  LiveMessage._();
+
+  /// Deserializes a stored JSON record.
+  factory LiveMessage.fromJson(Map<String, Object?> json) => serializers.deserializeWith(LiveMessage.serializer, json)!;
+
+  /// Adapter entry point: normalizes text once and delegates.
+  factory LiveMessage.normalized({
+    LiveMessageType type = LiveMessageType.chat,
+    String text = '',
+    MessageSender? sender,
+    LiveMessageColor? color,
+    LiveMessageStyle? style,
+    Object? payload,
+    List<LiveEmote> emotes = const [],
+    String messageId = '',
+    DateTime? sentAt,
+    DateTime? createdAt,
+    bool isLocal = false,
+    bool replayed = false,
+    String sourceRoomId = '',
+  }) => LiveMessage.of(
     type: type,
     text: text.trim(),
     sender: sender,
@@ -74,18 +95,70 @@ abstract class LiveMessage with _$LiveMessage {
     replayed: replayed,
     sourceRoomId: sourceRoomId,
   );
+
+  /// The serializer built_value registers in [serializers].
+  static Serializer<LiveMessage> get serializer => _$liveMessageSerializer;
+
+  @BuiltValueHook(initializeBuilder: true)
+  static void _initialize(LiveMessageBuilder b) => b
+    ..text = ''
+    ..messageId = ''
+    ..sourceRoomId = ''
+    ..isLocal = false
+    ..replayed = false;
+
+  /// What kind of message this is.
+  LiveMessageType get type;
+
+  /// The message's text.
+  String get text;
+
+  /// Who sent it, when the platform says so.
+  @BuiltValueField(serialize: false)
+  MessageSender? get sender;
+
+  /// The text color the platform gave.
+  LiveMessageColor? get color;
+
+  /// The locally composed presentation; runtime-only.
+  @BuiltValueField(serialize: false)
+  LiveMessageStyle? get style;
+
+  /// The typed payload [type] names; runtime-only.
+  @BuiltValueField(serialize: false)
+  Object? get payload;
+
+  /// The picture emotes named in [text].
+  BuiltList<LiveEmote> get emotes;
+
+  /// The platform's dedup id, `''` when it sends none.
+  String get messageId;
+
+  /// When the platform sent the message.
+  DateTime? get sentAt;
+
+  /// When this record was created locally.
+  DateTime? get createdAt;
+
+  /// Whether the message was composed on this device.
+  bool get isLocal;
+
+  /// Whether the message is a replay, not live-happening.
+  bool get replayed;
+
+  /// The real room of a cross-room message, `''` for the joined room.
+  String get sourceRoomId;
+
+  /// Query helpers for [LiveMessage].
 }
 
 /// Query helpers for [LiveMessage].
-///
-/// A separate extension because freezed cannot implement a private
-/// generative constructor next to the required `type` parameter.
 extension LiveMessageQuery on LiveMessage {
   /// The message color; white when the platform gave none.
   LiveMessageColor get effectiveColor => color ?? LiveMessageColor.white;
 
   /// The sender; an empty system sender when none was given.
-  MessageSender get effectiveSender => sender ?? const MessageSender();
+  MessageSender get effectiveSender => sender ?? MessageSender();
 
   /// Whether [sourceRoomId] names a room other than the joined one.
   bool get isFromOtherRoom => sourceRoomId.isNotEmpty;

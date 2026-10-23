@@ -124,12 +124,12 @@ abstract final class ShowroomDanmakuCodec {
     final free = info?.free ?? _text(event['gt']) == '2';
     final price = free ? null : info?.point;
     final hits = count is int && count > 1 ? count : 1;
-    final gift = LiveGift(
+    final gift = LiveGift.of(
       giftId: id,
       name: info?.name ?? '',
       count: count is int ? count : 1,
       iconUrl: '${info?.image ?? giftImage(id)}',
-      value: LiveGiftValue(
+      value: LiveGiftValue.of(
         unit: free ? LiveGiftUnit.free : LiveGiftUnit.point,
         unitPrice: price?.toDouble(),
         totalValue: price == null ? null : (price * hits).toDouble(),

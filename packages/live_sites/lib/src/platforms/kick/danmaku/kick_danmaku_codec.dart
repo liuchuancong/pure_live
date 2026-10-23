@@ -168,7 +168,7 @@ abstract final class KickDanmakuCodec {
       case 'UserBannedEvent':
         return retraction(userId: _text(jsonObject(data['user'])?['id']));
       case 'ChatroomClearEvent':
-        return _retract(const LiveRetraction(all: true));
+        return _retract(LiveRetraction.of(all: true));
       case 'SubscriptionEvent':
         return subscription(data, args);
       case 'GiftedSubscriptionsEvent':
@@ -242,10 +242,10 @@ abstract final class KickDanmakuCodec {
         color: LiveMessageColor.white,
         messageId: messageId,
         sentAt: sentAt,
-        payload: LiveGift(
+        payload: LiveGift.of(
           giftId: display,
           name: display,
-          value: LiveGiftValue(
+          value: LiveGiftValue.of(
             unit: LiveGiftUnit.kicks,
             unitPrice: amount > 0 ? amount.toDouble() : null,
             totalValue: amount > 0 ? amount.toDouble() : null,
@@ -262,11 +262,11 @@ abstract final class KickDanmakuCodec {
       color: LiveMessageColor.white,
       messageId: messageId,
       sentAt: sentAt,
-      payload: LiveSuperChatMessage(
+      payload: LiveSuperChatMessage.of(
         messageId: messageId,
         userName: name,
         text: text,
-        price: SuperChatPrice(
+        price: SuperChatPrice.of(
           amount: amount > 0 ? amount : null,
           currency: 'Kicks',
           displayText: amount > 0 ? '$amount Kicks' : giftName,
@@ -290,9 +290,9 @@ abstract final class KickDanmakuCodec {
   /// or a cleared chat (all); null when neither id is there.
   static LiveMessage? retraction({String? messageId, String? userId}) {
     final id = messageId?.trim() ?? '';
-    if (id.isNotEmpty) return _retract(LiveRetraction(messageId: 'kick:$id'));
+    if (id.isNotEmpty) return _retract(LiveRetraction.of(messageId: 'kick:$id'));
     final user = userId?.trim() ?? '';
-    if (user.isNotEmpty) return _retract(LiveRetraction(userId: user));
+    if (user.isNotEmpty) return _retract(LiveRetraction.of(userId: user));
     return null;
   }
 

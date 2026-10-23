@@ -428,18 +428,14 @@ abstract final class JdliveRoomParser {
     if (room.state == JdliveState.replay) {
       return [
         if (room.recording != null)
-          const LivePlayQuality(
-            label: JdliveEndpoints.replayLabel,
-            qualityId: JdliveEndpoints.replayId,
-            platformOrder: 2,
-          ),
+          LivePlayQuality.of(label: JdliveEndpoints.replayLabel, qualityId: JdliveEndpoints.replayId, platformOrder: 2),
       ];
     }
     var order = 0;
     return [
       for (final (label, id) in JdliveEndpoints.liveQualities)
         if ((id == JdliveEndpoints.hlsId ? room.hls : room.flv) != null)
-          LivePlayQuality(label: label, qualityId: id, platformOrder: order++),
+          LivePlayQuality.of(label: label, qualityId: id, platformOrder: order++),
     ];
   }
 
@@ -459,7 +455,7 @@ abstract final class JdliveRoomParser {
     if (url == null) {
       throw JdliveFailure(JdliveFailureKind.streamUnavailable, '${room.liveId}: no $qualityId');
     }
-    return LivePlayLine(
+    return LivePlayLine.of(
       url: '$url',
       format: JdliveEndpoints.formatOf(qualityId),
       formatSource: LivePlayFormatSource.declared,

@@ -328,12 +328,12 @@ abstract final class MissevanDanmakuCodec {
       color: LiveMessageColor.white,
       messageId: id,
       sentAt: created,
-      payload: LiveSuperChatMessage(
+      payload: LiveSuperChatMessage.of(
         messageId: id,
         userName: field('username'),
         faceUrl: _https(user['iconurl']) ?? _https(question['iconurl']) ?? '',
         text: text,
-        price: SuperChatPrice(amount: price, currency: currency, displayText: '$price $currency'),
+        price: SuperChatPrice.of(amount: price, currency: currency, displayText: '$price $currency'),
         startTime: start,
         endTime: start.add(questionDuration),
       ),
@@ -349,14 +349,14 @@ abstract final class MissevanDanmakuCodec {
         LiveMessage.normalized(type: LiveMessageType.retraction, color: LiveMessageColor.white, payload: target);
     switch (_int(item['opt'])) {
       case clearAll:
-        return [retraction(const LiveRetraction(all: true))];
+        return [retraction(LiveRetraction.of(all: true))];
       case clearSpecific:
         final ids = item['msg_ids'];
         if (ids is! List) return const [];
         final seen = <String>{};
         return [
           for (final id in ids.map(_scalar))
-            if (id.trim().isNotEmpty && seen.add(id)) retraction(LiveRetraction(messageId: id)),
+            if (id.trim().isNotEmpty && seen.add(id)) retraction(LiveRetraction.of(messageId: id)),
         ];
       default:
         return const [];
@@ -540,11 +540,12 @@ abstract final class MissevanDanmakuCodec {
     final comboTotal = _int(combo['num']);
     final user = item['user'] is Map ? item['user']! as Map<Object?, Object?> : const <Object?, Object?>{};
     final order = _scalar(item['oid']).trim();
-    final data = present.copyWith(
-      combo: LiveGiftCombo(
-        comboKey: comboId.contains(_nonZero) ? comboId : '',
-        comboTotal: comboTotal != null && comboTotal > 0 ? comboTotal : null,
-      ),
+    final data = present.rebuild(
+      (b) => b
+        ..combo = LiveGiftCombo.of(
+          comboKey: comboId.contains(_nonZero) ? comboId : '',
+          comboTotal: comboTotal != null && comboTotal > 0 ? comboTotal : null,
+        ).toBuilder(),
     );
     return LiveMessage.normalized(
       type: LiveMessageType.gift,
@@ -568,12 +569,12 @@ abstract final class MissevanDanmakuCodec {
     final price = _int(gift['price']);
     final paid = price != null && price > 0;
     final unit = paid ? price : 0;
-    return LiveGift(
+    return LiveGift.of(
       giftId: _scalar(gift['gift_id']).trim(),
       name: name,
       iconUrl: _https(gift['icon_url']),
       count: count != null && count > 0 ? count : 1,
-      value: LiveGiftValue(
+      value: LiveGiftValue.of(
         unit: paid ? LiveGiftUnit.diamond : LiveGiftUnit.free,
         unitPrice: paid ? unit.toDouble() : null,
         totalValue: paid ? (unit * (count != null && count > 0 ? count : 1)).toDouble() : null,

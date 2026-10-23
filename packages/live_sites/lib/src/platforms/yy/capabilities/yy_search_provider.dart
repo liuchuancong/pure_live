@@ -49,7 +49,7 @@ final class YySearchProvider implements LiveSearchProvider {
         case LiveSearchTarget.areas:
           results = const [];
       }
-      return right(LivePage(items: results));
+      return right(LivePage.of(items: results));
     } on YyFailure catch (failure) {
       return left(failure.toLiveSiteError(yySiteId));
     } on Object catch (error) {

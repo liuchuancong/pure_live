@@ -43,7 +43,7 @@ final class LookliveSearchProvider implements LiveSearchProvider {
     try {
       final page = await site.search(request.query, page: request.page, pageSize: request.pageSize);
       return right(
-        LivePage(items: [for (final room in page.rooms) LiveSearchResult.room(room)], hasMore: page.hasMore),
+        LivePage.of(items: [for (final room in page.rooms) LiveSearchResult.room(room)], hasMore: page.hasMore),
       );
     } on LookliveFailure catch (failure) {
       return left(failure.toLiveSiteError(lookliveSiteId));

@@ -24,12 +24,11 @@ final class BigoDiscoveryProvider implements LiveDiscoveryProvider {
   final BigoSite site;
 
   @override
-  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({
-    LivePageRequest request = const LivePageRequest(),
-  }) async {
+  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({LivePageRequest? request}) async {
+    request ??= LivePageRequest();
     try {
       final result = await site.recommend(request.page, request.pageSize);
-      return right(LivePage(items: result.rooms, hasMore: result.hasMore));
+      return right(LivePage.of(items: result.rooms, hasMore: result.hasMore));
     } on BigoFailure catch (failure) {
       return left(failure.toLiveSiteError(bigoSiteId));
     } on Object catch (error) {

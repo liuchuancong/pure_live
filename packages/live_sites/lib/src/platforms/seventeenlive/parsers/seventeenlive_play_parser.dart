@@ -91,7 +91,7 @@ abstract final class SeventeenLivePlayParser {
           final address = url.toString();
           if (bucket.any((line) => line.url == address)) continue;
           bucket.add(
-            LivePlayLine(
+            LivePlayLine.of(
               url: address,
               format: LiveStreamFormat.flv,
               formatSource: LivePlayFormatSource.declared,
@@ -108,7 +108,7 @@ abstract final class SeventeenLivePlayParser {
       qualities: List.unmodifiable([
         for (final id in SeventeenLiveEndpoints.qualityFields.keys)
           if (lines.containsKey(id))
-            LivePlayQuality(
+            LivePlayQuality.of(
               label: '${SeventeenLiveEndpoints.qualityNames[id]} · FLV',
               qualityId: id,
               platformOrder: SeventeenLiveEndpoints.qualitySorts[id]!,

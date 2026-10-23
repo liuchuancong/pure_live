@@ -296,7 +296,7 @@ abstract final class BilibiliDanmakuProtocol {
       'GUARD_BUY' => [?guard(notice, gifts)],
       'SUPER_CHAT_MESSAGE' => [?superChat(notice)],
       'SUPER_CHAT_MESSAGE_DELETE' => [
-        for (final id in _superChatIds(notice)) _retraction(LiveRetraction(messageId: id)),
+        for (final id in _superChatIds(notice)) _retraction(LiveRetraction.of(messageId: id)),
       ],
       'WARNING' => [_notify(notice, warningNotice)],
       'CUT_OFF' => [_notify(notice, cutOffNotice)],
@@ -325,9 +325,9 @@ abstract final class BilibiliDanmakuProtocol {
       case 2:
         final uid = jsonInt(jsonObject(data['uinfo'])?['uid']) ?? jsonInt(data['target_id']);
         if (uid == null || uid <= 0) return null;
-        target = LiveRetraction(userId: '$uid');
+        target = LiveRetraction.of(userId: '$uid');
       case 3:
-        target = const LiveRetraction(all: true);
+        target = LiveRetraction.of(all: true);
       default:
         return null;
     }
@@ -423,7 +423,7 @@ abstract final class BilibiliDanmakuProtocol {
     final sticker = meta.length > 13 ? meta[13] : null;
     if (meta.length > 12 && meta[12] == 1 && sticker is Map) {
       final url = _picture(sticker['url']);
-      return url.isEmpty ? const [] : [LiveEmote(code: text, url: url)];
+      return url.isEmpty ? const [] : [LiveEmote.of(code: text, url: url)];
     }
     // `info[0][15]` is the rich user, as an object or as JSON text.
     final rich = jsonObject(meta.length > 15 ? meta[15] : null);
@@ -434,7 +434,7 @@ abstract final class BilibiliDanmakuProtocol {
     for (final code in emots.keys.toList()) {
       if (code.isEmpty || !text.contains(code)) continue;
       final url = _picture(jsonObject(emots[code])?['url']);
-      if (url.isNotEmpty) found.add(LiveEmote(code: code, url: url));
+      if (url.isNotEmpty) found.add(LiveEmote.of(code: code, url: url));
     }
     return found;
   }
@@ -612,17 +612,17 @@ abstract final class BilibiliDanmakuProtocol {
     if (paid != null && (unit == null || unit * number != paid)) unit = paid % number == 0 ? paid ~/ number : null;
     if (unit == null && entry != null && entry.silver == silver && entry.price > 0) unit = entry.price;
     final value = paid ?? (unit == null ? null : unit * number);
-    final gift = LiveGift(
+    final gift = LiveGift.of(
       giftId: id,
       name: title,
       iconUrl: (icon ?? entry?.icon)?.toString(),
       count: number,
-      value: LiveGiftValue(
+      value: LiveGiftValue.of(
         unit: silver ? LiveGiftUnit.silver : LiveGiftUnit.goldSeed,
         unitPrice: unit?.toDouble(),
         totalValue: value?.toDouble(),
       ),
-      combo: LiveGiftCombo(comboKey: comboId, comboTotal: comboTotal),
+      combo: LiveGiftCombo.of(comboKey: comboId, comboTotal: comboTotal),
       recipientName: receiver,
     );
     return LiveMessage.normalized(
@@ -663,13 +663,13 @@ abstract final class BilibiliDanmakuProtocol {
     final count = jsonInt(data['num']) ?? 0;
     final months = count > 0 ? count : 1;
     final price = jsonInt(data['price']) ?? 0;
-    final gift = LiveGift(
+    final gift = LiveGift.of(
       giftId: _giftId(data['gift_id']),
       name: name,
       iconUrl: gifts.guards[level]?.icon.toString(),
       kind: LiveGiftKind.subscription,
       count: months,
-      value: LiveGiftValue(
+      value: LiveGiftValue.of(
         unit: LiveGiftUnit.goldSeed,
         unitPrice: price > 0 ? price.toDouble() : null,
         totalValue: price > 0 ? (price * months).toDouble() : null,
@@ -711,15 +711,15 @@ abstract final class BilibiliDanmakuProtocol {
       ),
       color: LiveMessageColor.white,
       messageId: id,
-      payload: LiveSuperChatMessage(
+      payload: LiveSuperChatMessage.of(
         messageId: id,
         userName: jsonString(user?['uname']) ?? '',
         faceUrl: sizedImage(user?['face'], '@200w.jpg'),
         text: jsonString(data['message']) ?? '',
-        price: SuperChatPrice(amount: jsonInt(data['price']), currency: 'CNY'),
+        price: SuperChatPrice.of(amount: jsonInt(data['price']), currency: 'CNY'),
         startTime: start,
         endTime: end,
-        display: SuperChatDisplay(
+        display: SuperChatDisplay.of(
           backgroundColor: jsonString(data['background_color']) ?? '',
           backgroundBottomColor: jsonString(data['background_bottom_color']) ?? '',
         ),

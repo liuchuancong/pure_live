@@ -27,12 +27,11 @@ final class Fc2LiveDiscoveryProvider implements LiveDiscoveryProvider {
   final Fc2LiveSite site;
 
   @override
-  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({
-    LivePageRequest request = const LivePageRequest(),
-  }) async {
+  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({LivePageRequest? request}) async {
+    request ??= LivePageRequest();
     try {
       final page = await site.listing(page: request.page, pageSize: request.pageSize);
-      return right(LivePage(items: page.rooms, totalCount: page.totalCount, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, totalCount: page.totalCount, hasMore: page.hasMore));
     } on Fc2LiveFailure catch (failure) {
       return left(failure.toLiveSiteError(fc2LiveSiteId));
     } on Object catch (error) {

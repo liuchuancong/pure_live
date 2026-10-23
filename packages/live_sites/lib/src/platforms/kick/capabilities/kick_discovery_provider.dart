@@ -25,15 +25,14 @@ final class KickDiscoveryProvider implements LiveDiscoveryProvider {
   final KickSite site;
 
   @override
-  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({
-    LivePageRequest request = const LivePageRequest(),
-  }) async {
+  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({LivePageRequest? request}) async {
+    request ??= LivePageRequest();
     try {
       final page = request.page < 1 ? 1 : request.page;
       final size = request.pageSize.clamp(1, KickEndpoints.pageSize);
       final response = await site.httpGet(KickEndpoints.livestreams(page, size), headers: site.apiHeaders());
       final result = KickRoomParser.directoryPage(response.text, page: page, pageSize: size, status: response.status);
-      return right(LivePage(items: result.rooms, hasMore: result.hasMore));
+      return right(LivePage.of(items: result.rooms, hasMore: result.hasMore));
     } on KickFailure catch (failure) {
       return left(failure.toLiveSiteError(kickSiteId));
     } on Object catch (error) {

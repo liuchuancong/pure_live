@@ -317,7 +317,7 @@ abstract final class NiconicoPlayParser {
     final total = variants.length;
     return [
       for (final (index, variant) in variants.indexed)
-        LivePlayQuality(
+        LivePlayQuality.of(
           label: '${variant.width}x${variant.height}',
           qualityId: '${variant.width}x${variant.height}@${variant.bandwidth}',
           platformOrder: total - index,
@@ -349,7 +349,7 @@ abstract final class NiconicoPlayParser {
     final target = Uri.parse(variant.url);
     final cookie = grant.cookieHeaderFor(target, now: at);
     return [
-      LivePlayLine(
+      LivePlayLine.of(
         url: variant.url,
         format: LiveStreamFormat.hls,
         formatSource: LivePlayFormatSource.declared,
@@ -369,7 +369,7 @@ abstract final class NiconicoPlayParser {
   static LivePlayLease? lease({required DateTime now, DateTime? expiresAt}) {
     if (expiresAt == null) return null;
     final refresh = expiresAt.subtract(const Duration(minutes: 1));
-    return LivePlayLease(refreshAt: refresh.isAfter(now) ? refresh : expiresAt, expiresAt: expiresAt);
+    return LivePlayLease.of(refreshAt: refresh.isAfter(now) ? refresh : expiresAt, expiresAt: expiresAt);
   }
 
   // Helpers -------------------------------------------------------------------

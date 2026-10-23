@@ -41,7 +41,7 @@ final class YyRoomProvider implements LiveRoomProvider {
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRooms(LivePageRequest request) async {
     try {
       final rooms = await site.recommendRooms(page: request.page, pageSize: request.pageSize);
-      return right(LivePage(items: rooms));
+      return right(LivePage.of(items: rooms));
     } on YyFailure catch (failure) {
       return left(failure.toLiveSiteError(yySiteId));
     } on Object catch (error) {

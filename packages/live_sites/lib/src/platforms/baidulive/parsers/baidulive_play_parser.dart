@@ -412,7 +412,12 @@ abstract final class BaidulivePlayParser {
     if (room.unavailable case final error?) throw error;
     return List.unmodifiable([
       for (final variant in ordered(room.variants, preferH264: preferH264))
-        LivePlayQuality(label: variant.name, qualityId: variant.id, platformOrder: variant.sort, codec: variant.codec),
+        LivePlayQuality.of(
+          label: variant.name,
+          qualityId: variant.id,
+          platformOrder: variant.sort,
+          codec: variant.codec,
+        ),
     ]);
   }
 
@@ -428,7 +433,7 @@ abstract final class BaidulivePlayParser {
       final host = source.url.host;
       final count = hosts.update(host, (count) => count + 1, ifAbsent: () => 1);
       lines.add(
-        LivePlayLine(
+        LivePlayLine.of(
           url: '${source.url}',
           format: source.format,
           formatSource: LivePlayFormatSource.declared,

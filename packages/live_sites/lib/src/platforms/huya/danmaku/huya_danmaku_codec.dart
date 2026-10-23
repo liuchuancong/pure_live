@@ -226,12 +226,12 @@ abstract final class HuyaDanmakuProtocol {
     final payTotal = packet.integer(41) ?? 0;
     final id = packet.integer(0) ?? 0;
     final uid = packet.integer(4) ?? 0;
-    final gift = LiveGift(
+    final gift = LiveGift.of(
       giftId: id == 0 ? '' : '$id',
       name: name,
       count: count > 0 ? count : 1,
-      value: LiveGiftValue(totalValue: payTotal > 0 ? payTotal.toDouble() : null),
-      combo: LiveGiftCombo(comboKey: comboKey(uid, packet.integer(39) ?? 0), comboTotal: combo > 0 ? combo : null),
+      value: LiveGiftValue.of(totalValue: payTotal > 0 ? payTotal.toDouble() : null),
+      combo: LiveGiftCombo.of(comboKey: comboKey(uid, packet.integer(39) ?? 0), comboTotal: combo > 0 ? combo : null),
     );
     return LiveMessage.normalized(
       type: LiveMessageType.gift,
@@ -319,15 +319,15 @@ abstract final class HuyaDanmakuProtocol {
       final user = raw.struct(0);
       final end = now.add(Duration(seconds: remaining));
       entries.add(
-        LiveSuperChatMessage(
+        LiveSuperChatMessage.of(
           messageId: id > 0 ? 'huya:$id' : '',
           userName: (user?.string(1) ?? '').trim(),
           faceUrl: normalizeImageUrl(user?.string(2)),
           text: content,
-          price: SuperChatPrice(amount: cost > 0 ? cost : (paid > 0 ? max(1, (paid / 100).round()) : cost)),
+          price: SuperChatPrice.of(amount: cost > 0 ? cost : (paid > 0 ? max(1, (paid / 100).round()) : cost)),
           startTime: end.subtract(Duration(seconds: total > 0 ? total : remaining)),
           endTime: end,
-          display: const SuperChatDisplay(backgroundColor: superChatTop, backgroundBottomColor: superChatBottom),
+          display: SuperChatDisplay.of(backgroundColor: superChatTop, backgroundBottomColor: superChatBottom),
         ),
       );
     }

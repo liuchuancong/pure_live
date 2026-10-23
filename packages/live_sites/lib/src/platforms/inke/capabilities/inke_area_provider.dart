@@ -41,11 +41,12 @@ final class InkeAreaProvider implements LiveAreaProvider {
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
     required String areaId,
-    LivePageRequest request = const LivePageRequest(),
+    LivePageRequest? request,
   }) async {
+    request ??= LivePageRequest();
     try {
       final page = await site.areaRooms(areaId, page: request.page);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on InkeFailure catch (failure) {
       return left(failure.toLiveSiteError(inkeSiteId));
     } on Object catch (error) {

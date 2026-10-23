@@ -226,14 +226,14 @@ abstract final class DouyuDanmakuProtocol {
     final face = chat['ic'] ?? '';
     final start = DateTime.fromMillisecondsSinceEpoch(now, isUtc: true);
     return _superChatMessage(
-      LiveSuperChatMessage(
+      LiveSuperChatMessage.of(
         userName: chat['nn'] ?? '',
         faceUrl: face.isEmpty ? '' : 'https://apic.douyucdn.cn/upload/${face}_small.jpg',
         text: chat['txt'] ?? '',
-        price: SuperChatPrice(amount: cents ~/ 100, currency: 'CNY', displayText: '￥${cents ~/ 100}'),
+        price: SuperChatPrice.of(amount: cents ~/ 100, currency: 'CNY', displayText: '￥${cents ~/ 100}'),
         startTime: start,
         endTime: start.add(Duration(seconds: seconds)),
-        display: const SuperChatDisplay(backgroundColor: '#c1c1ff', backgroundBottomColor: '#292a60'),
+        display: SuperChatDisplay.of(backgroundColor: '#c1c1ff', backgroundBottomColor: '#292a60'),
       ),
     );
   }
@@ -252,14 +252,14 @@ abstract final class DouyuDanmakuProtocol {
     final avatars = DouyuStt.list(item['uat'] ?? '');
     final avatar = avatars.length > 1 ? avatars[1] : '';
     return _superChatMessage(
-      LiveSuperChatMessage(
+      LiveSuperChatMessage.of(
         userName: item['un'] ?? '',
         faceUrl: avatar.isEmpty ? '' : 'https://$avatar',
         text: item['content'] ?? '',
-        price: SuperChatPrice(amount: cents ~/ 100, currency: 'CNY', displayText: '￥${cents ~/ 100}'),
+        price: SuperChatPrice.of(amount: cents ~/ 100, currency: 'CNY', displayText: '￥${cents ~/ 100}'),
         startTime: DateTime.fromMillisecondsSinceEpoch(start * 1000, isUtc: true),
         endTime: DateTime.fromMillisecondsSinceEpoch(end * 1000, isUtc: true),
-        display: const SuperChatDisplay(backgroundColor: '#ffffff', backgroundBottomColor: '#246488'),
+        display: SuperChatDisplay.of(backgroundColor: '#ffffff', backgroundBottomColor: '#246488'),
       ),
     );
   }

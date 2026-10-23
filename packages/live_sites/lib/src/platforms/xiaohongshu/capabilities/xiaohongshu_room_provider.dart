@@ -41,7 +41,7 @@ final class XiaohongshuRoomProvider implements LiveRoomProvider {
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRooms(LivePageRequest request) async {
     try {
       final page = await site.directory(request.page);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on XiaohongshuFailure catch (failure) {
       return left(failure.toLiveSiteError(xiaohongshuSiteId));
     } on Object catch (error) {

@@ -56,7 +56,7 @@ abstract final class YyPlayParser {
     }
     return [
       for (final record in records)
-        LivePlayQuality(
+        LivePlayQuality.of(
           label: names[record.name] == 1 ? record.name : '${record.name} · ${record.gear}',
           qualityId: record.gear,
           platformOrder: record.rate,
@@ -96,7 +96,7 @@ abstract final class YyPlayParser {
       }
       applied ??= gears[key];
       lines.add(
-        LivePlayLine(
+        LivePlayLine.of(
           url: url,
           format: inferStreamFormat(url) ?? LiveStreamFormat.other,
           formatSource: LivePlayFormatSource.inferred,
@@ -162,7 +162,7 @@ abstract final class YyPlayParser {
     if (lifetime <= Duration.zero) return null;
     final quarter = lifetime ~/ 4;
     final lead = quarter < YyEndpoints.leaseLead ? quarter : YyEndpoints.leaseLead;
-    return LivePlayLease(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt);
+    return LivePlayLease.of(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt);
   }
 
   // Mobile HLS ----------------------------------------------------------------
@@ -212,7 +212,7 @@ abstract final class YyPlayParser {
           : 0;
       final identity = hlsAnswer.video.isNotEmpty ? hlsAnswer.video : '${hlsAnswer.width}x${hlsAnswer.height}';
       final tier = rate == YyEndpoints.mobileHlsRates.first ? '流畅' : '高清';
-      byStream[identity] = LivePlayQuality(
+      byStream[identity] = LivePlayQuality.of(
         label: '$tier${shortEdge > 0 ? ' · ${shortEdge}p' : ''}',
         qualityId: '${YyEndpoints.mobileHlsPrefix}$rate',
         platformOrder: int.tryParse(rate) ?? 0,
@@ -222,7 +222,7 @@ abstract final class YyPlayParser {
   }
 
   /// The one HLS line of a mobile answer, with the media headers.
-  static LivePlayLine mobileLine(YyMobileHls hls, {String cookie = ''}) => LivePlayLine(
+  static LivePlayLine mobileLine(YyMobileHls hls, {String cookie = ''}) => LivePlayLine.of(
     url: hls.url.toString(),
     format: LiveStreamFormat.hls,
     formatSource: LivePlayFormatSource.declared,

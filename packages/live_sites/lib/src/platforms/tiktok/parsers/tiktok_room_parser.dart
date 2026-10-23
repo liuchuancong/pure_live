@@ -415,7 +415,7 @@ abstract final class TiktokRoomParser {
     final names = [for (final stream in streams) qualityName(stream)];
     return List.unmodifiable([
       for (final (index, stream) in streams.indexed)
-        LivePlayQuality(
+        LivePlayQuality.of(
           label: names.where((name) => name == names[index]).length > 1
               ? '${names[index]} (${stream.qualityId})'
               : names[index],
@@ -516,7 +516,7 @@ abstract final class TiktokRoomParser {
     void add(String protocol, LiveStreamFormat format, List<Uri> urls) {
       for (final (index, url) in urls.indexed) {
         lines.add(
-          LivePlayLine(
+          LivePlayLine.of(
             url: '$url',
             format: format,
             formatSource: LivePlayFormatSource.declared,
@@ -548,7 +548,7 @@ abstract final class TiktokRoomParser {
     if (lifetime <= Duration.zero) return null;
     final quarter = lifetime ~/ 4;
     final lead = quarter < TiktokEndpoints.leaseLead ? quarter : TiktokEndpoints.leaseLead;
-    return LivePlayLease(
+    return LivePlayLease.of(
       refreshAt: expiresAt.subtract(lead),
       expiresAt: expiresAt,
       requiresReconnect: url.path.endsWith('.m3u8'),

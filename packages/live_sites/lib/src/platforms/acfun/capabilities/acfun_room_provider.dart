@@ -39,7 +39,7 @@ final class AcfunRoomProvider implements LiveRoomProvider {
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRooms(LivePageRequest request) async {
     try {
       final page = await site.listing(page: request.page, pageSize: request.pageSize);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore, nextCursor: page.nextCursor));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore, nextCursor: page.nextCursor));
     } on AcfunFailure catch (failure) {
       return left(failure.toLiveSiteError(acfunSiteId));
     } on Object catch (error) {

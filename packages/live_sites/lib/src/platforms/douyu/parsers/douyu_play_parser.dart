@@ -196,7 +196,7 @@ abstract final class DouyuPlayParser {
     final qualities = <LivePlayQuality>[
       for (final (index, item) in items.indexed)
         if (jsonInt(item['rate']) case final rate? when seen.add(rate))
-          LivePlayQuality(
+          LivePlayQuality.of(
             label: jsonString(item['name']) ?? '',
             qualityId: '$rate',
             platformOrder: items.length - index,
@@ -204,7 +204,7 @@ abstract final class DouyuPlayParser {
     ];
     if (qualities.isNotEmpty) return qualities;
     final rate = jsonInt(data['rate']) ?? -1;
-    return [LivePlayQuality(label: 'default', qualityId: '$rate', platformOrder: 1)];
+    return [LivePlayQuality.of(label: 'default', qualityId: '$rate', platformOrder: 1)];
   }
 
   /// CDN codes: `cdnsWithName` in order without duplicates, the answering
@@ -274,7 +274,7 @@ abstract final class DouyuPlayParser {
     }
     final format = inferStreamFormat(url) ?? LiveStreamFormat.other;
     return (
-      line: LivePlayLine(
+      line: LivePlayLine.of(
         url: url,
         headers: mediaHeaders(roomId, cookie: cookie),
         format: format,
@@ -308,7 +308,7 @@ abstract final class DouyuPlayParser {
     if (lifetime == null) return null;
     final expiresAt = issuedAt.toUtc().add(lifetime);
     final quarter = Duration(seconds: lifetime.inSeconds ~/ 4);
-    return LivePlayLease(
+    return LivePlayLease.of(
       refreshAt: expiresAt.subtract(quarter < leaseLead ? quarter : leaseLead),
       expiresAt: expiresAt,
       requiresReconnect: true,

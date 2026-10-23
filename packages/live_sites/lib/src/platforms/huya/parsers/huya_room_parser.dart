@@ -422,7 +422,7 @@ abstract final class HuyaRoomParser {
       final source = fallback.platformOrder == HuyaPlayParser.sourceRank;
       final name = jsonString(item['defName']);
       qualities.add(
-        LivePlayQuality(
+        LivePlayQuality.of(
           label: source || name == null ? fallback.label : name,
           qualityId: url,
           platformOrder: source ? HuyaPlayParser.sourceRank : max(jsonInt(item['height']) ?? 0, 0),

@@ -46,14 +46,14 @@ final class BilibiliSearchProvider implements LiveSearchProvider {
     if (text.isEmpty) {
       // The platform answers a blank keyword with an error; the caller gets a
       // successful empty page instead of a round trip.
-      return right(const LivePage(items: []));
+      return right(LivePage.of(items: []));
     }
     final page = request.page < 1 ? 1 : request.page;
     try {
       final items = request.target == LiveSearchTarget.rooms
           ? await _rooms(text, page, request.pageSize.clamp(1, 50))
           : await _anchors(text, page);
-      return right(LivePage(items: items, hasMore: items.isNotEmpty));
+      return right(LivePage.of(items: items, hasMore: items.isNotEmpty));
     } on BilibiliFailure catch (failure) {
       return left(failure.toLiveSiteError(bilibiliSiteId));
     } on Object catch (error) {

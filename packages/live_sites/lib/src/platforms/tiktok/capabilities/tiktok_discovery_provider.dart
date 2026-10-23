@@ -25,12 +25,11 @@ final class TiktokDiscoveryProvider implements LiveDiscoveryProvider {
   final TiktokSite site;
 
   @override
-  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({
-    LivePageRequest request = const LivePageRequest(),
-  }) async {
+  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({LivePageRequest? request}) async {
+    request ??= LivePageRequest();
     try {
       final page = await site.directory(request.page);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on TiktokFailure catch (failure) {
       return left(failure.toLiveSiteError(tiktokSiteId));
     } on Object catch (error) {

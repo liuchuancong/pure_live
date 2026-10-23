@@ -384,7 +384,7 @@ abstract final class MissevanRoomParser {
     if (detail.data.isEmpty) {
       throw MissevanFailure(MissevanFailureKind.streamUnavailable, '${detail.room.roomId} has no pull URL');
     }
-    return [const LivePlayQuality(label: MissevanEndpoints.qualityName, qualityId: MissevanEndpoints.qualityId)];
+    return [LivePlayQuality.of(label: MissevanEndpoints.qualityName, qualityId: MissevanEndpoints.qualityId)];
   }
 
   /// The lines of [qualityId] (a stored `hls` or `flv` names the one
@@ -402,7 +402,7 @@ abstract final class MissevanRoomParser {
       for (final url in urls)
         () {
           final isHls = formatOf(url) == LiveStreamFormat.hls;
-          return LivePlayLine(
+          return LivePlayLine.of(
             url: url,
             format: isHls ? LiveStreamFormat.hls : LiveStreamFormat.flv,
             formatSource: LivePlayFormatSource.inferred,
@@ -457,7 +457,7 @@ abstract final class MissevanRoomParser {
     final expires = int.tryParse(uri.queryParameters['expires'] ?? '');
     if (expires == null || expires <= 0) return null;
     final expiresAt = DateTime.fromMillisecondsSinceEpoch(expires * 1000, isUtc: true);
-    return LivePlayLease(
+    return LivePlayLease.of(
       refreshAt: expiresAt.subtract(MissevanEndpoints.leaseLead),
       expiresAt: expiresAt,
       requiresReconnect: formatOf(url) == LiveStreamFormat.hls,

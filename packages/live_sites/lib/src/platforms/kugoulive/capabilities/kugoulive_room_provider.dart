@@ -30,7 +30,7 @@ final class KugouliveRoomProvider implements LiveRoomProvider {
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRooms(LivePageRequest request) => _run(() async {
     final page = await site.directory(request.page);
-    return LivePage(items: page.rooms, hasMore: page.hasMore);
+    return LivePage.of(items: page.rooms, hasMore: page.hasMore);
   });
 
   Future<Either<LiveSiteError, T>> _run<T>(Future<T> Function() work) async {

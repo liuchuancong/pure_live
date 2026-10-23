@@ -46,7 +46,7 @@ final class SeventeenLiveSearchProvider implements LiveSearchProvider {
     }
     try {
       final rooms = await site.search(request.query, page: request.page, pageSize: request.pageSize);
-      return right(LivePage(items: [for (final room in rooms) LiveSearchResult.room(room)], hasMore: false));
+      return right(LivePage.of(items: [for (final room in rooms) LiveSearchResult.room(room)], hasMore: false));
     } on SeventeenLiveFailure catch (failure) {
       return left(failure.toLiveSiteError(seventeenliveSiteId));
     } on Object catch (error) {

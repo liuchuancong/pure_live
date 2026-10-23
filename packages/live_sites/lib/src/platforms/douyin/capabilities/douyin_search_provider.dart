@@ -51,13 +51,13 @@ final class DouyinSearchProvider implements LiveSearchProvider {
     if (text.isEmpty) {
       // The platform answers a blank keyword with an error; the caller gets
       // a successful empty page instead of a round trip.
-      return right(const LivePage(items: []));
+      return right(LivePage.of(items: []));
     }
     try {
       final items = request.target == LiveSearchTarget.rooms
           ? await _rooms(request, text)
           : [for (final area in await matchedAreas(text)) LiveSearchResult.area(area)];
-      return right(LivePage(items: items));
+      return right(LivePage.of(items: items));
     } on DouyinFailure catch (failure) {
       return left(failure.toLiveSiteError(douyinSiteId));
     } on Object catch (error) {

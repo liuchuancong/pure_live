@@ -25,12 +25,11 @@ final class TwitcastingDiscoveryProvider implements LiveDiscoveryProvider {
   final TwitcastingSite site;
 
   @override
-  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({
-    LivePageRequest request = const LivePageRequest(),
-  }) async {
+  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({LivePageRequest? request}) async {
+    request ??= LivePageRequest();
     try {
       final page = await site.recommend(request.page, request.pageSize);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on TwitcastingFailure catch (failure) {
       return left(failure.toLiveSiteError(twitcastingSiteId));
     } on Object catch (error) {

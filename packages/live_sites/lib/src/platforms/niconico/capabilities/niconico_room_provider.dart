@@ -37,7 +37,7 @@ final class NiconicoRoomProvider implements LiveRoomProvider {
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRooms(LivePageRequest request) async {
     try {
       final result = await site.recent('common', request.page);
-      return right(LivePage(items: result.rooms, hasMore: result.hasMore));
+      return right(LivePage.of(items: result.rooms, hasMore: result.hasMore));
     } on NiconicoFailure catch (failure) {
       return left(failure.toLiveSiteError(niconicoSiteId));
     } on Object catch (error) {

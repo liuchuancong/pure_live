@@ -39,7 +39,7 @@ final class InkeRoomProvider implements LiveRoomProvider {
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRooms(LivePageRequest request) async {
     try {
       final page = await site.hot(page: request.page);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on InkeFailure catch (failure) {
       return left(failure.toLiveSiteError(inkeSiteId));
     } on Object catch (error) {

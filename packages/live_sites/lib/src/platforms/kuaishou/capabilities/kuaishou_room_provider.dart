@@ -41,7 +41,7 @@ final class KuaishouRoomProvider implements LiveRoomProvider {
     try {
       final page = request.page < 1 ? 1 : request.page;
       final rooms = await site.recommend(page);
-      return right(LivePage(items: rooms, hasMore: page <= 1 && rooms.isNotEmpty));
+      return right(LivePage.of(items: rooms, hasMore: page <= 1 && rooms.isNotEmpty));
     } on KuaishouFailure catch (failure) {
       return left(failure.toLiveSiteError(kuaishouSiteId));
     } on Object catch (error) {

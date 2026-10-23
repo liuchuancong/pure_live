@@ -37,11 +37,11 @@ final class TwitchSearchProvider implements LiveSearchProvider {
         LiveSiteError.unsupported(siteId: twitchSiteId, message: 'search target ${request.target.name} not supported'),
       );
     }
-    if (request.query.trim().isEmpty) return right(const LivePage(items: []));
+    if (request.query.trim().isEmpty) return right(LivePage.of(items: []));
     try {
       final result = await site.search(request.query, request.page);
       final size = request.pageSize < 1 ? 0 : request.pageSize;
-      return right(LivePage(items: [for (final room in result.rooms.take(size)) LiveSearchResult.room(room)]));
+      return right(LivePage.of(items: [for (final room in result.rooms.take(size)) LiveSearchResult.room(room)]));
     } on TwitchFailure catch (failure) {
       return left(failure.toLiveSiteError(twitchSiteId));
     } on Object catch (error) {

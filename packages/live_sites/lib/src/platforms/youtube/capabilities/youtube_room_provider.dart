@@ -39,9 +39,9 @@ final class YoutubeRoomProvider implements LiveRoomProvider {
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRooms(LivePageRequest request) async {
     try {
-      if (request.page > 1) return right(const LivePage(items: [], hasMore: false));
+      if (request.page > 1) return right(LivePage.of(items: [], hasMore: false));
       final hub = await site.hub();
-      return right(LivePage(items: hub.rooms, hasMore: false));
+      return right(LivePage.of(items: hub.rooms, hasMore: false));
     } on YouTubeFailure catch (failure) {
       return left(failure.toLiveSiteError(youtubeSiteId));
     } on Object catch (error) {

@@ -39,7 +39,7 @@ final class WeiboRoomProvider implements LiveRoomProvider {
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRooms(LivePageRequest request) async {
     try {
       final page = await site.snapshot(page: request.page);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on WeiboFailure catch (failure) {
       return left(failure.toLiveSiteError(weiboSiteId));
     } on Object catch (error) {

@@ -41,7 +41,7 @@ final class SteambroadcastRoomProvider implements LiveRoomProvider {
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRooms(LivePageRequest request) async {
     try {
       final page = await site.rooms(request.page);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on SteambroadcastFailure catch (failure) {
       return left(failure.toLiveSiteError(siteId));
     } on Object catch (error) {

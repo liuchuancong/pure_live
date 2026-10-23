@@ -258,11 +258,11 @@ abstract final class SoopDanmakuCodec {
     if (sender.isEmpty || name.isEmpty || amount == null || amount <= 0) return null;
     final valued = kind != adBalloonName;
     final image = Uri.tryParse(picture);
-    final gift = LiveGift(
+    final gift = LiveGift.of(
       name: kind,
       count: amount,
       kind: LiveGiftKind.tip,
-      value: LiveGiftValue(
+      value: LiveGiftValue.of(
         unit: valued ? LiveGiftUnit.starBalloon : LiveGiftUnit.other,
         unitPrice: valued ? 1.0 : null,
         totalValue: valued ? amount.toDouble() : null,

@@ -27,12 +27,11 @@ final class ChzzkDiscoveryProvider implements LiveDiscoveryProvider {
   final ChzzkSite site;
 
   @override
-  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({
-    LivePageRequest request = const LivePageRequest(),
-  }) async {
+  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({LivePageRequest? request}) async {
+    request ??= LivePageRequest();
     try {
       final page = await site.listing(page: request.page, cursor: request.cursor);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore, nextCursor: page.nextCursor));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore, nextCursor: page.nextCursor));
     } on ChzzkFailure catch (failure) {
       return left(failure.toLiveSiteError(chzzkSiteId));
     } on Object catch (error) {

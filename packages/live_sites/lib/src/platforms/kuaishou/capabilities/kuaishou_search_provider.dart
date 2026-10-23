@@ -38,13 +38,13 @@ final class KuaishouSearchProvider implements LiveSearchProvider {
         ),
       );
     }
-    if (request.query.trim().isEmpty) return right(const LivePage(items: []));
+    if (request.query.trim().isEmpty) return right(LivePage.of(items: []));
     try {
       final page = request.page < 1 ? 1 : request.page;
       final rooms = await site.search(request.query, page);
       final size = request.pageSize < 1 ? 0 : request.pageSize;
       final items = [for (final room in rooms.take(size)) LiveSearchResult.room(room)];
-      return right(LivePage(items: items));
+      return right(LivePage.of(items: items));
     } on KuaishouFailure catch (failure) {
       return left(failure.toLiveSiteError(kuaishouSiteId));
     } on Object catch (error) {

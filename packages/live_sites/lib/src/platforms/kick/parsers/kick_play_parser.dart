@@ -137,7 +137,7 @@ abstract final class KickPlayParser {
     final total = variants.length;
     return [
       for (final (index, variant) in variants.indexed)
-        LivePlayQuality(
+        LivePlayQuality.of(
           label: variant.name,
           qualityId: variant.name,
           codec: variant.codec,
@@ -157,7 +157,7 @@ abstract final class KickPlayParser {
     DateTime? expiresAt,
     DateTime? now,
   }) => [
-    LivePlayLine(
+    LivePlayLine.of(
       url: variant.url,
       format: LiveStreamFormat.hls,
       formatSource: LivePlayFormatSource.declared,
@@ -165,7 +165,7 @@ abstract final class KickPlayParser {
       codec: variant.codec,
       lineLabel: master.host,
       lease: lease(expiresAt: expiresAt, now: now ?? DateTime.now().toUtc()),
-      geometry: PlayGeometry(
+      geometry: PlayGeometry.of(
         width: variant.width,
         height: variant.height,
         frameRate: variant.frameRate >= 1 ? variant.frameRate.round() : null,
@@ -188,7 +188,7 @@ abstract final class KickPlayParser {
   static LivePlayLease? lease({required DateTime now, DateTime? expiresAt}) {
     if (expiresAt == null) return null;
     final refresh = expiresAt.subtract(const Duration(minutes: 1));
-    return LivePlayLease(refreshAt: refresh.isAfter(now) ? refresh : expiresAt, expiresAt: expiresAt);
+    return LivePlayLease.of(refreshAt: refresh.isAfter(now) ? refresh : expiresAt, expiresAt: expiresAt);
   }
 
   /// When the playback token of [master] expires: its JWT payload's `exp`,

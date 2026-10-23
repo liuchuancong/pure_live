@@ -392,10 +392,10 @@ abstract final class NiconicoDanmakuCodec {
       text: '${name.isEmpty ? itemId : name} ×1',
       sender: MessageSender.normalized(userId: giverId != null && giverId > 0 ? '$giverId' : '', userName: giver),
       color: LiveMessageColor.white,
-      payload: LiveGift(
+      payload: LiveGift.of(
         giftId: itemId,
         name: name,
-        value: LiveGiftValue(
+        value: LiveGiftValue.of(
           unit: point == 0 ? LiveGiftUnit.free : LiveGiftUnit.point,
           unitPrice: point == 0 ? null : point.toDouble(),
           totalValue: point == 0 ? null : point.toDouble(),
@@ -453,7 +453,7 @@ abstract final class NiconicoDanmakuCodec {
   /// The colours of `Chat.Modifier.ColorName`, by value: the ten basic colours
   /// and the ten premium ones, as niconico's comment commands draw them.
   static const List<LiveMessageColor> namedColors = [
-    LiveMessageColor(255, 255, 255), // white
+    LiveMessageColor.white,
     LiveMessageColor(255, 0, 0), // red
     LiveMessageColor(255, 128, 128), // pink
     LiveMessageColor(255, 192, 0), // orange

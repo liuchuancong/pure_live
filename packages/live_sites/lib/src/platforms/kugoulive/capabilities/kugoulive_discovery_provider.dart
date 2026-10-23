@@ -23,12 +23,13 @@ final class KugouliveDiscoveryProvider implements LiveDiscoveryProvider {
   final KugouliveSite site;
 
   @override
-  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({
-    LivePageRequest request = const LivePageRequest(),
-  }) => _run(() async {
-    final page = await site.directory(request.page);
-    return LivePage(items: page.rooms, hasMore: page.hasMore);
-  });
+  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({LivePageRequest? request}) {
+    final req = request ?? LivePageRequest();
+    return _run(() async {
+      final page = await site.directory(req.page);
+      return LivePage.of(items: page.rooms, hasMore: page.hasMore);
+    });
+  }
 
   Future<Either<LiveSiteError, T>> _run<T>(Future<T> Function() work) async {
     try {

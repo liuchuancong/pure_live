@@ -70,20 +70,20 @@ abstract final class Fc2LivePlayParser {
   /// The tiers, best first. The id is the playlist mode of the tier in a
   /// control's answer: the site transcodes every one of them, so none is the
   /// source. The names follow the site's own player.
-  static const List<LivePlayQuality> tierQualities = [
-    LivePlayQuality(label: '超清 3M（β）', qualityId: '50'),
-    LivePlayQuality(label: '超清 2M', qualityId: '40'),
-    LivePlayQuality(label: '高清', qualityId: '30'),
-    LivePlayQuality(label: '标清', qualityId: '20'),
-    LivePlayQuality(label: '流畅', qualityId: '10'),
+  static final List<LivePlayQuality> tierQualities = [
+    LivePlayQuality.of(label: '超清 3M（β）', qualityId: '50'),
+    LivePlayQuality.of(label: '超清 2M', qualityId: '40'),
+    LivePlayQuality.of(label: '高清', qualityId: '30'),
+    LivePlayQuality.of(label: '标清', qualityId: '20'),
+    LivePlayQuality.of(label: '流畅', qualityId: '10'),
   ];
 
   /// The adaptive master, kept after the tiers as 3.x kept it.
-  static const LivePlayQuality autoQuality = LivePlayQuality(label: '自适应 HLS', qualityId: autoQualityId);
+  static final LivePlayQuality autoQuality = LivePlayQuality.of(label: '自适应 HLS', qualityId: autoQualityId);
 
   /// Every quality a live room can have, in the site's menu order. Which of
   /// them a channel has is only known from its control answer ([qualitiesOf]).
-  static const List<LivePlayQuality> menu = [...tierQualities, autoQuality];
+  static final List<LivePlayQuality> menu = [...tierQualities, autoQuality];
 
   /// The ids of [menu]. 3.x's one id, `auto`, is unchanged, so a quality a
   /// viewer stored under 3.x needs no mapping.
@@ -230,7 +230,7 @@ abstract final class Fc2LivePlayParser {
       if (masterModes.any(playlists.containsKey)) autoQuality,
     ];
     final total = offered.length;
-    return [for (final (index, quality) in offered.indexed) quality.copyWith(platformOrder: total - index)];
+    return [for (final (index, quality) in offered.indexed) quality.rebuild((b) => b..platformOrder = total - index)];
   }
 
   /// The playlist to play for [quality] among [playlists], or null when the
@@ -286,13 +286,17 @@ abstract final class Fc2LivePlayParser {
   }) {
     final expiresAt = issuedAt.add(life ?? Fc2LiveEndpoints.controlLife);
     return [
-      LivePlayLine(
+      LivePlayLine.of(
         url: playlist.url.toString(),
         format: LiveStreamFormat.hls,
         formatSource: LivePlayFormatSource.declared,
         headers: Fc2LiveEndpoints.mediaHeaders(channelId),
         lineLabel: playlist.quality,
-        lease: LivePlayLease(refreshAt: expiresAt.subtract(renewLead), expiresAt: expiresAt, requiresReconnect: true),
+        lease: LivePlayLease.of(
+          refreshAt: expiresAt.subtract(renewLead),
+          expiresAt: expiresAt,
+          requiresReconnect: true,
+        ),
       ),
     ];
   }

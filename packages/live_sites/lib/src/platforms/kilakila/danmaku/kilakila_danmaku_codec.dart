@@ -308,12 +308,12 @@ abstract final class KilakilaDanmakuCodec {
     final receiverName = receiver is String ? receiver.trim() : '';
     final icon = _url(item['pic']);
     // The platform's red bean is its paid currency, written as gold here.
-    final gift = LiveGift(
+    final gift = LiveGift.of(
       giftId: _id(item['id']),
       name: name.trim(),
       iconUrl: icon != null && icon.scheme == 'https' ? '$icon' : null,
       count: count,
-      value: LiveGiftValue(
+      value: LiveGiftValue.of(
         unit: price == 0 ? LiveGiftUnit.free : LiveGiftUnit.redBean,
         unitPrice: line || count == 1
             ? price.toDouble()
@@ -322,7 +322,7 @@ abstract final class KilakilaDanmakuCodec {
             : null,
         totalValue: price == 0 ? null : price.toDouble(),
       ),
-      combo: LiveGiftCombo(comboKey: _id(item['no']), comboTotal: line || hit ? count : null),
+      combo: LiveGiftCombo.of(comboKey: _id(item['no']), comboTotal: line || hit ? count : null),
       recipientName: receiverName,
     );
     final sender = content['n'];
@@ -386,12 +386,12 @@ abstract final class KilakilaDanmakuCodec {
       color: LiveMessageColor.white,
       messageId: id,
       sentAt: sentAt,
-      payload: LiveSuperChatMessage(
+      payload: LiveSuperChatMessage.of(
         messageId: id,
         userName: name,
         faceUrl: face != null && face.scheme == 'https' ? '$face' : '',
         text: text,
-        price: SuperChatPrice(amount: price, currency: currency, displayText: '${amount(price)}$currency'),
+        price: SuperChatPrice.of(amount: price, currency: currency, displayText: '${amount(price)}$currency'),
         startTime: start,
         endTime: start.add(questionDisplay),
       ),

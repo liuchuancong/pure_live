@@ -43,7 +43,7 @@ final class JdliveRoomProvider implements LiveRoomProvider {
       // The platform pages the featured list itself (30 broadcasts a page, in
       // a sequence); a caller's page size does not reshape it.
       final page = await site.directory(request.page);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on JdliveFailure catch (failure) {
       return left(failure.toLiveSiteError(jdliveSiteId));
     } on Object catch (error) {

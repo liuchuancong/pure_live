@@ -30,13 +30,13 @@ final class KugouliveAreaProvider implements LiveAreaProvider {
   Future<Either<LiveSiteError, List<LiveArea>>> getAreas() => _run(site.catalog);
 
   @override
-  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
-    required String areaId,
-    LivePageRequest request = const LivePageRequest(),
-  }) => _run(() async {
-    final page = await site.directory(request.page, areaId: areaId);
-    return LivePage(items: page.rooms, hasMore: page.hasMore);
-  });
+  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({required String areaId, LivePageRequest? request}) {
+    final page = request ?? LivePageRequest();
+    return _run(() async {
+      final result = await site.directory(page.page, areaId: areaId);
+      return LivePage.of(items: result.rooms, hasMore: result.hasMore);
+    });
+  }
 
   Future<Either<LiveSiteError, T>> _run<T>(Future<T> Function() work) async {
     try {

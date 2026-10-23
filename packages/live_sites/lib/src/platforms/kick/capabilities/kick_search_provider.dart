@@ -44,7 +44,7 @@ final class KickSearchProvider implements LiveSearchProvider {
     if (text.isEmpty || request.page > 1) {
       // One page only, and the platform answers a blank keyword with an
       // error; the caller gets a successful empty page instead.
-      return right(const LivePage(items: []));
+      return right(LivePage.of(items: []));
     }
     final word = text.length > KickEndpoints.maxKeywordLength
         ? text.substring(0, KickEndpoints.maxKeywordLength)
@@ -52,7 +52,7 @@ final class KickSearchProvider implements LiveSearchProvider {
     try {
       final response = await site.httpGet(KickEndpoints.search(word), headers: site.apiHeaders());
       final rooms = KickRoomParser.searchRooms(response.text, status: response.status);
-      return right(LivePage(items: [for (final room in rooms) LiveSearchResult.room(room)], hasMore: false));
+      return right(LivePage.of(items: [for (final room in rooms) LiveSearchResult.room(room)], hasMore: false));
     } on KickFailure catch (failure) {
       return left(failure.toLiveSiteError(kickSiteId));
     } on Object catch (error) {

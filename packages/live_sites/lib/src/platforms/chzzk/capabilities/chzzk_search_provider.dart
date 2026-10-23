@@ -42,9 +42,9 @@ final class ChzzkSearchProvider implements LiveSearchProvider {
         LiveSiteError.unsupported(siteId: chzzkSiteId, message: 'search target ${request.target.name} not supported'),
       );
     }
-    if (request.page < 1) return right(const LivePage(items: []));
+    if (request.page < 1) return right(LivePage.of(items: []));
     final keyword = ChzzkRoomParser.searchKeyword(request.query);
-    if (keyword.isEmpty) return right(const LivePage(items: []));
+    if (keyword.isEmpty) return right(LivePage.of(items: []));
     final offset = (request.page - 1) * ChzzkEndpoints.searchPageSize;
     if (offset > ChzzkEndpoints.maxSearchOffset) {
       return left(
@@ -54,7 +54,7 @@ final class ChzzkSearchProvider implements LiveSearchProvider {
     try {
       final response = await site.get(ChzzkEndpoints.search(keyword, offset));
       final rooms = ChzzkRoomParser.searchRooms(response.text, status: response.status);
-      return right(LivePage(items: [for (final room in rooms) LiveSearchResult.room(room)]));
+      return right(LivePage.of(items: [for (final room in rooms) LiveSearchResult.room(room)]));
     } on ChzzkFailure catch (failure) {
       return left(failure.toLiveSiteError(chzzkSiteId));
     } on Object catch (error) {

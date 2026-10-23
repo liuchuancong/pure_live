@@ -40,7 +40,7 @@ final class CcRoomProvider implements LiveRoomProvider {
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRooms(LivePageRequest request) async {
     try {
       final page = await site.recommend(page: request.page, pageSize: request.pageSize);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on CcFailure catch (failure) {
       return left(failure.toLiveSiteError(ccSiteId));
     } on Object catch (error) {

@@ -43,7 +43,7 @@ final class KugouliveSearchProvider implements LiveSearchProvider {
     }
     return _run(() async {
       final page = await site.search(request.query, page: request.page, pageSize: request.pageSize);
-      return LivePage(items: [for (final room in page.rooms) LiveSearchResult.room(room)], hasMore: page.hasMore);
+      return LivePage.of(items: [for (final room in page.rooms) LiveSearchResult.room(room)], hasMore: page.hasMore);
     });
   }
 

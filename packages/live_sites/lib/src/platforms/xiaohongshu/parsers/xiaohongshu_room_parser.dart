@@ -451,7 +451,7 @@ abstract final class XiaohongshuRoomParser {
   static List<LivePlayQuality> qualities(List<XiaohongshuStream> streams) {
     final qualities = <String, LivePlayQuality>{};
     for (final stream in streams) {
-      qualities.putIfAbsent(stream.quality, () => LivePlayQuality(label: stream.label, qualityId: stream.quality));
+      qualities.putIfAbsent(stream.quality, () => LivePlayQuality.of(label: stream.label, qualityId: stream.quality));
     }
     return List.unmodifiable(qualities.values);
   }
@@ -481,7 +481,7 @@ abstract final class XiaohongshuRoomParser {
     final repeats = <String, int>{};
     return [
       for (final stream in ordered)
-        LivePlayLine(
+        LivePlayLine.of(
           url: stream.url.toString(),
           headers: XiaohongshuEndpoints.headers,
           format: stream.format,

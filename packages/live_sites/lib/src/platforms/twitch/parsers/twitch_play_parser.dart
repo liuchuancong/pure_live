@@ -106,7 +106,7 @@ abstract final class TwitchPlayParser {
     final total = groups.length;
     return [
       for (final (index, group) in groups.indexed)
-        LivePlayQuality(
+        LivePlayQuality.of(
           label: group.label,
           qualityId: group.qualityId,
           codec: group.codec,
@@ -121,7 +121,7 @@ abstract final class TwitchPlayParser {
     final headers = mediaHeaders(roomId);
     return [
       for (final url in group.urls.where((url) => url.trim().isNotEmpty))
-        LivePlayLine(
+        LivePlayLine.of(
           url: url.trim(),
           format: LiveStreamFormat.hls,
           formatSource: LivePlayFormatSource.declared,

@@ -42,8 +42,9 @@ final class DouyinAreaProvider implements LiveAreaProvider {
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
     required String areaId,
-    LivePageRequest request = const LivePageRequest(),
+    LivePageRequest? request,
   }) async {
+    request ??= LivePageRequest();
     try {
       return right(await page(areaId, request));
     } on DouyinFailure catch (failure) {
@@ -103,7 +104,7 @@ final class DouyinAreaProvider implements LiveAreaProvider {
         status: response.status,
         headers: response.headers,
       );
-      return LivePage(items: result.rooms, hasMore: result.hasMore);
+      return LivePage.of(items: result.rooms, hasMore: result.hasMore);
     } on DouyinFailure {
       // The fallback host failed too: report the refusal that started the
       // detour, which names the endpoint the caller asked for.

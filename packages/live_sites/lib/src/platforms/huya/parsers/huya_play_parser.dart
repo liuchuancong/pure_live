@@ -114,7 +114,7 @@ abstract final class HuyaPlayParser {
   static LivePlayQuality replayQuality(String url) {
     final definition = _parseMap(Uri.tryParse(url)?.query ?? '')['definition'] ?? '';
     final quality = replayDefinitionNames[definition] ?? '默认';
-    return LivePlayQuality(
+    return LivePlayQuality.of(
       label: quality,
       qualityId: url,
       platformOrder: definition == replaySourceDefinition ? sourceRank : 0,
@@ -161,7 +161,7 @@ abstract final class HuyaPlayParser {
     final sorted = [...named]..sort((a, b) => _rank(b.rate).compareTo(_rank(a.rate)));
     return [
       for (final (index, entry) in sorted.indexed)
-        LivePlayQuality(
+        LivePlayQuality.of(
           label: entry.name,
           qualityId: '${entry.rate}',
           platformOrder: sorted.length - index,
@@ -454,7 +454,7 @@ abstract final class HuyaPlayParser {
       issuedAt?.add(const Duration(seconds: 100)),
     ]);
     if (refreshAt == null) return null;
-    return LivePlayLease(refreshAt: refreshAt, expiresAt: invalidAt, requiresReconnect: issuedAt != null);
+    return LivePlayLease.of(refreshAt: refreshAt, expiresAt: invalidAt, requiresReconnect: issuedAt != null);
   }
 
   /// [line] signed with the already-signed [antiCode] at the media [bitRate],
@@ -471,7 +471,7 @@ abstract final class HuyaPlayParser {
     bool hevc = false,
   }) {
     final url = mediaUrl(line, antiCode: antiCode, bitRate: bitRate, hevc: hevc);
-    return LivePlayLine(
+    return LivePlayLine.of(
       url: url.toString(),
       format: line.format,
       formatSource: LivePlayFormatSource.declared,

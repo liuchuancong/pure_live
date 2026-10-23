@@ -39,7 +39,7 @@ final class HuyaSearchProvider implements LiveSearchProvider {
     final text = request.query.trim();
     if (text.isEmpty) {
       // A blank keyword is a successful empty page, not a round trip.
-      return right(const LivePage(items: []));
+      return right(LivePage.of(items: []));
     }
     final page = request.page < 1 ? 1 : request.page;
     final rows = request.pageSize.clamp(1, 50);
@@ -53,7 +53,7 @@ final class HuyaSearchProvider implements LiveSearchProvider {
       final items = rooms
           ? HuyaRoomParser.searchRooms(response.text, start: start, rows: rows, status: response.status)
           : HuyaRoomParser.searchAnchors(response.text, status: response.status);
-      return right(LivePage(items: items));
+      return right(LivePage.of(items: items));
     } on HuyaFailure catch (failure) {
       return left(failure.toLiveSiteError(huyaSiteId));
     } on Object catch (error) {

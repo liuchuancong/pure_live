@@ -42,7 +42,7 @@ final class LivemeRoomProvider implements LiveRoomProvider {
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRooms(LivePageRequest request) async {
     try {
       final page = await site.featured(page: request.page, pageSize: LivemeEndpoints.pageSize);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on LivemeFailure catch (failure) {
       return left(failure.toLiveSiteError(livemeSiteId));
     } on Object catch (error) {

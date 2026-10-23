@@ -357,7 +357,7 @@ final class PandaliveSite implements LiveSite {
   /// and its lease.
   Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality}) async {
     final data = await _stream(roomId);
-    final wanted = quality ?? (data.entries.isEmpty ? const LivePlayQuality(label: '') : data.entries.first.quality);
+    final wanted = quality ?? (data.entries.isEmpty ? LivePlayQuality.of(label: '') : data.entries.first.quality);
     return [PandaliveRoomParser.line(data, wanted)];
   }
 

@@ -37,7 +37,7 @@ final class BigoPlaybackProvider implements LivePlaybackProvider {
   final BigoSite site;
 
   /// The one quality this platform offers.
-  static const LivePlayQuality quality = LivePlayQuality(
+  static final LivePlayQuality quality = LivePlayQuality.of(
     label: BigoEndpoints.qualityLabel,
     qualityId: BigoEndpoints.qualityId,
   );
@@ -48,7 +48,7 @@ final class BigoPlaybackProvider implements LivePlaybackProvider {
       final studio = await site.refresh(roomId);
       final error = studio.streamError;
       if (error != null) throw error;
-      return right(const [quality]);
+      return right([quality]);
     } on BigoFailure catch (failure) {
       return left(failure.toLiveSiteError(bigoSiteId));
     } on Object catch (error) {
@@ -69,7 +69,7 @@ final class BigoPlaybackProvider implements LivePlaybackProvider {
     try {
       final hls = await site.playPlaylist(roomId);
       return right([
-        LivePlayLine(
+        LivePlayLine.of(
           url: '$hls',
           format: LiveStreamFormat.hls,
           formatSource: LivePlayFormatSource.declared,

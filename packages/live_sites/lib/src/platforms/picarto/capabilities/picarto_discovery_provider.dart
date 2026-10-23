@@ -25,12 +25,11 @@ final class PicartoDiscoveryProvider implements LiveDiscoveryProvider {
   final PicartoSite site;
 
   @override
-  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({
-    LivePageRequest request = const LivePageRequest(),
-  }) async {
+  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({LivePageRequest? request}) async {
+    request ??= LivePageRequest();
     try {
       final page = await site.directory(request.page, request.pageSize);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on PicartoFailure catch (failure) {
       return left(failure.toLiveSiteError(picartoSiteId));
     } on Object catch (error) {

@@ -551,14 +551,14 @@ abstract final class LookliveDanmakuCodec {
     final receiver = content['receiver'];
     final user = content['user'] is Map ? content['user'] as Map : const <Object?, Object?>{};
     final time = _int(message['20']);
-    final gift = LiveGift(
+    final gift = LiveGift.of(
       giftId: '$id',
       name: _text(content['giftName']),
       iconUrl: icon != null && icon.host.isNotEmpty && (icon.isScheme('http') || icon.isScheme('https'))
           ? '${icon.replace(scheme: 'https')}'
           : null,
       count: count,
-      value: LiveGiftValue(
+      value: LiveGiftValue.of(
         unit: LiveGiftUnit.note,
         unitPrice: worth != null && worth >= 0 ? worth.toDouble() : null,
         totalValue: worth != null && worth >= 0 ? (worth * max(count, 1)).toDouble() : null,

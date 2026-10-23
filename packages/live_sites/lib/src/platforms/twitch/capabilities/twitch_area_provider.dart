@@ -41,11 +41,12 @@ final class TwitchAreaProvider implements LiveAreaProvider {
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
     required String areaId,
-    LivePageRequest request = const LivePageRequest(),
+    LivePageRequest? request,
   }) async {
+    request ??= LivePageRequest();
     try {
       final result = await site.areaRooms(site.slugFor(areaId), request.page, request.pageSize);
-      return right(LivePage(items: result.rooms, hasMore: result.hasMore));
+      return right(LivePage.of(items: result.rooms, hasMore: result.hasMore));
     } on TwitchFailure catch (failure) {
       return left(failure.toLiveSiteError(twitchSiteId));
     } on Object catch (error) {

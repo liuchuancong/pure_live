@@ -637,14 +637,14 @@ abstract final class SoopRoomParser {
     for (final preset in presets) {
       final key = preset.name.toLowerCase();
       if (key == 'auto' || !seen.add(key)) continue;
-      options.add((preset, LivePlayQuality(label: qualityName(preset), qualityId: preset.name)));
+      options.add((preset, LivePlayQuality.of(label: qualityName(preset), qualityId: preset.name)));
     }
     final ordered = options.indexed.toList()
       ..sort((a, b) {
         final bySort = qualitySort(b.$2.$1.name, b.$2.$1.bps).compareTo(qualitySort(a.$2.$1.name, a.$2.$1.bps));
         return bySort != 0 ? bySort : a.$1.compareTo(b.$1);
       });
-    return [for (final (index, (_, quality)) in ordered) quality.copyWith(platformOrder: index)];
+    return [for (final (index, (_, quality)) in ordered) quality.rebuild((b) => b..platformOrder = index)];
   }
 
   /// The name of [preset] (3.x's `LiveQualityLabel` names: 原画, 高清, 标清,
@@ -787,7 +787,7 @@ abstract final class SoopRoomParser {
   }) {
     final url = '$playlist${playlist.contains('?') ? '&' : '?'}aid=$aid';
     final uri = Uri.parse(url);
-    return LivePlayLine(
+    return LivePlayLine.of(
       url: url,
       format: uri.path.toLowerCase().endsWith('.flv') ? LiveStreamFormat.flv : LiveStreamFormat.hls,
       formatSource: LivePlayFormatSource.inferred,

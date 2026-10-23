@@ -49,7 +49,7 @@ abstract final class KuaishouPlayParser {
     final total = tiers.length;
     return [
       for (final (index, tier) in tiers.indexed)
-        LivePlayQuality(
+        LivePlayQuality.of(
           label: tier.name + (tier.hevcOnly ? _hevcSuffix : ''),
           qualityId: tier.key,
           codec: tier.codec,
@@ -82,7 +82,7 @@ abstract final class KuaishouPlayParser {
       if (codec != null && line.codec != null && line.codec != codec) continue;
       final count = hosts.update(line.uri.host, (value) => value + 1, ifAbsent: () => 1);
       lines.add(
-        LivePlayLine(
+        LivePlayLine.of(
           url: line.url,
           format: line.uri.path.toLowerCase().endsWith('.m3u8') ? LiveStreamFormat.hls : LiveStreamFormat.flv,
           formatSource: LivePlayFormatSource.inferred,
@@ -123,7 +123,7 @@ abstract final class KuaishouPlayParser {
     final lifetime = expiresAt.difference(issuedAt);
     if (lifetime <= Duration.zero) return null;
     final lead = Duration(microseconds: math.min(leaseLead.inMicroseconds, lifetime.inMicroseconds ~/ 4));
-    return LivePlayLease(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt);
+    return LivePlayLease.of(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt);
   }
 
   /// The codec of a card URL (card descriptors name none): the part of the

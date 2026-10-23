@@ -32,8 +32,9 @@ final class SeventeenLiveAreaProvider implements LiveAreaProvider {
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
     required String areaId,
-    LivePageRequest request = const LivePageRequest(),
+    LivePageRequest? request,
   }) async {
+    request ??= LivePageRequest();
     try {
       final region = site.regionOf(areaId);
       final page = await site.directory(
@@ -42,7 +43,7 @@ final class SeventeenLiveAreaProvider implements LiveAreaProvider {
         cursor: request.cursor,
         pageSize: request.pageSize,
       );
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore, nextCursor: page.nextCursor));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore, nextCursor: page.nextCursor));
     } on SeventeenLiveFailure catch (failure) {
       return left(failure.toLiveSiteError(seventeenliveSiteId));
     } on Object catch (error) {

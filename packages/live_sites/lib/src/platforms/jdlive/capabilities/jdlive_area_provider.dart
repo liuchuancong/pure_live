@@ -32,8 +32,9 @@ final class JdliveAreaProvider implements LiveAreaProvider {
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
     required String areaId,
-    LivePageRequest request = const LivePageRequest(),
+    LivePageRequest? request,
   }) async {
+    request ??= LivePageRequest();
     if (areaId != JdliveEndpoints.areaId) {
       return left(
         LiveSiteError.invalidArgument(siteId: jdliveSiteId, message: 'area "$areaId" is not the JD Live featured list'),
@@ -41,7 +42,7 @@ final class JdliveAreaProvider implements LiveAreaProvider {
     }
     try {
       final page = await site.recommend(request.page, request.pageSize);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on JdliveFailure catch (failure) {
       return left(failure.toLiveSiteError(jdliveSiteId));
     } on Object catch (error) {

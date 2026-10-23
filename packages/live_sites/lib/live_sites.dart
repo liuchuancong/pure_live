@@ -39,7 +39,6 @@ export 'src/models/anchor/anchor.dart';
 export 'src/models/area/area.dart';
 export 'src/models/asset/asset.dart';
 export 'src/models/audience/audience.dart';
-export 'src/models/converters/converters.dart';
 export 'src/models/enums/enums.dart';
 export 'src/models/gift/gift.dart';
 export 'src/models/guide/guide.dart';

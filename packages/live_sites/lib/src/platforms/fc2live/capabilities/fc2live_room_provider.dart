@@ -41,7 +41,7 @@ final class Fc2LiveRoomProvider implements LiveRoomProvider {
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRooms(LivePageRequest request) async {
     try {
       final page = await site.listing(page: request.page, pageSize: request.pageSize);
-      return right(LivePage(items: page.rooms, totalCount: page.totalCount, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, totalCount: page.totalCount, hasMore: page.hasMore));
     } on Fc2LiveFailure catch (failure) {
       return left(failure.toLiveSiteError(fc2LiveSiteId));
     } on Object catch (error) {

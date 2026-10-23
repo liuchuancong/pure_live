@@ -42,7 +42,7 @@ final class BaiduliveRoomProvider implements LiveRoomProvider {
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRooms(LivePageRequest request) async {
     try {
       final page = await site.recommend(request.page, request.pageSize);
-      return right(LivePage(items: page.rooms, hasMore: page.hasMore));
+      return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on BaiduliveFailure catch (failure) {
       return left(failure.toLiveSiteError(baiduliveSiteId));
     } on Object catch (error) {

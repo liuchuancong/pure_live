@@ -602,7 +602,7 @@ abstract final class TwitcastingRoomParser {
           !path.hasMatch(uri.path)) {
         continue;
       }
-      qualities.add(LivePlayQuality(label: 'HLS $key', qualityId: key, platformOrder: 3 - qualities.length));
+      qualities.add(LivePlayQuality.of(label: 'HLS $key', qualityId: key, platformOrder: 3 - qualities.length));
     }
     if (qualities.isEmpty) {
       throw TwitcastingFailure(
@@ -629,7 +629,7 @@ abstract final class TwitcastingRoomParser {
     }
     final url = data.streams![qualityId]!;
     return [
-      LivePlayLine(
+      LivePlayLine.of(
         url: url,
         format: LiveStreamFormat.hls,
         formatSource: LivePlayFormatSource.declared,

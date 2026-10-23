@@ -765,7 +765,7 @@ abstract final class SixroomRoomParser {
       if (stream.resolution.isNotEmpty) stream.resolution,
       if (stream.bitrate != null) '${stream.bitrate} kbps',
     ];
-    return LivePlayQuality(
+    return LivePlayQuality.of(
       label: detail.isEmpty ? SixroomEndpoints.qualityName : '${SixroomEndpoints.qualityName} · ${detail.join(' · ')}',
       qualityId: SixroomEndpoints.qualityId,
       platformOrder: stream.bitrate ?? 1,
@@ -776,7 +776,7 @@ abstract final class SixroomRoomParser {
   /// The one line of [stream]: FLV, its codec, no headers (the player and
   /// recorder sent none; the CDN answers without them) and no lease (no
   /// expiry in the address).
-  static LivePlayLine line(SixroomStream stream) => LivePlayLine(
+  static LivePlayLine line(SixroomStream stream) => LivePlayLine.of(
     url: '${stream.url}',
     format: LiveStreamFormat.flv,
     formatSource: LivePlayFormatSource.declared,

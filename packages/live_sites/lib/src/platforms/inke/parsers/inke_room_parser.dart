@@ -513,13 +513,13 @@ abstract final class InkeRoomParser {
     if (data.liveId == null && data.broadcast == null) {
       throw const InkeFailure(InkeFailureKind.streamUnavailable, 'the room is not live');
     }
-    const flv = LivePlayQuality(
+    final flv = LivePlayQuality.of(
       label: InkeEndpoints.flvQualityLabel,
       qualityId: InkeEndpoints.flvQualityId,
       codec: LiveStreamCodec.avc,
     );
     if (data.broadcast?.originUrl == null) return [flv];
-    const origin = LivePlayQuality(
+    final origin = LivePlayQuality.of(
       label: InkeEndpoints.originQualityLabel,
       qualityId: InkeEndpoints.originQualityId,
       platformOrder: 1,
@@ -575,7 +575,7 @@ abstract final class InkeRoomParser {
   /// The line of a Wangsu pull URL received at [issuedAt]: the media
   /// headers, FLV, H.264, the Wangsu line label and the lease of its
   /// `wsABStime`.
-  static LivePlayLine flvLine(String url, {required DateTime issuedAt}) => LivePlayLine(
+  static LivePlayLine flvLine(String url, {required DateTime issuedAt}) => LivePlayLine.of(
     url: url,
     format: LiveStreamFormat.flv,
     formatSource: LivePlayFormatSource.declared,
@@ -588,7 +588,7 @@ abstract final class InkeRoomParser {
   /// The line of the Zego pull URL [url] received at [issuedAt]: the media
   /// headers, FLV, its codec ([zegoCodec]), the Zego line label and the lease
   /// of its `wsABStime` (the broadcast's start plus a day).
-  static LivePlayLine zegoLine(String url, {required DateTime issuedAt}) => LivePlayLine(
+  static LivePlayLine zegoLine(String url, {required DateTime issuedAt}) => LivePlayLine.of(
     url: url,
     format: LiveStreamFormat.flv,
     formatSource: LivePlayFormatSource.declared,
@@ -618,7 +618,7 @@ abstract final class InkeRoomParser {
     if (expires <= 0 || lifetime <= Duration.zero) return null;
     final quarter = lifetime ~/ 4;
     final lead = quarter < InkeEndpoints.leaseLead ? quarter : InkeEndpoints.leaseLead;
-    return LivePlayLease(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt);
+    return LivePlayLease.of(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt);
   }
 
   /// A broadcast title: trimmed text, empty for

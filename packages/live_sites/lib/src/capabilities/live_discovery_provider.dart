@@ -8,7 +8,5 @@ import 'package:live_sites/src/models/room/live_room/live_room.dart';
 /// A site's discovery feed — rooms recommended to the current viewer.
 abstract interface class LiveDiscoveryProvider implements LiveSiteCapability {
   /// Fetches a page of recommended rooms.
-  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({
-    LivePageRequest request = const LivePageRequest(),
-  });
+  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({LivePageRequest? request});
 }

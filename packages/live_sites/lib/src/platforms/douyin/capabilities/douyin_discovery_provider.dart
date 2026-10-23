@@ -38,9 +38,8 @@ final class DouyinDiscoveryProvider implements LiveDiscoveryProvider {
   final Set<String> _delivered = {};
 
   @override
-  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({
-    LivePageRequest request = const LivePageRequest(),
-  }) async {
+  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getRecommendedRooms({LivePageRequest? request}) async {
+    request ??= LivePageRequest();
     try {
       return right(await recommended(request));
     } on DouyinFailure catch (failure) {
@@ -56,7 +55,7 @@ final class DouyinDiscoveryProvider implements LiveDiscoveryProvider {
     if (number <= 1) {
       _delivered.clear();
       final rooms = await draw();
-      return LivePage(items: rooms, hasMore: rooms.isNotEmpty);
+      return LivePage.of(items: rooms, hasMore: rooms.isNotEmpty);
     }
     final rooms = <LiveRoom>[];
     for (var draws = 0; draws < maxDraws && rooms.length < fillRooms; draws++) {
@@ -70,7 +69,7 @@ final class DouyinDiscoveryProvider implements LiveDiscoveryProvider {
       if (fresh.isEmpty) break;
       rooms.addAll(fresh);
     }
-    return LivePage(items: rooms, hasMore: rooms.isNotEmpty);
+    return LivePage.of(items: rooms, hasMore: rooms.isNotEmpty);
   }
 
   /// One feed request's rooms, minus what was delivered since page 1.

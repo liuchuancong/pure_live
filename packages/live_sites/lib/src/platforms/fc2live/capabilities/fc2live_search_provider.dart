@@ -47,7 +47,7 @@ final class Fc2LiveSearchProvider implements LiveSearchProvider {
     try {
       final page = await site.search(request.query, page: request.page, pageSize: request.pageSize);
       return right(
-        LivePage(
+        LivePage.of(
           items: [for (final room in page.rooms) LiveSearchResult.room(room)],
           totalCount: page.totalCount,
           hasMore: page.hasMore,

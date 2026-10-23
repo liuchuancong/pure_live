@@ -206,18 +206,18 @@ abstract final class DouyuGiftParser {
     required int? priceFen,
     required String? iconUrl,
   }) {
-    return LiveGift(
+    return LiveGift.of(
       giftId: id,
       name: name,
       iconUrl: iconUrl,
       kind: free ? LiveGiftKind.normal : LiveGiftKind.normal,
       count: count,
-      value: LiveGiftValue(
+      value: LiveGiftValue.of(
         unit: free ? LiveGiftUnit.free : (priceFen == null ? LiveGiftUnit.other : LiveGiftUnit.fen),
         unitPrice: priceFen?.toDouble(),
         totalValue: priceFen == null ? null : (priceFen * count).toDouble(),
       ),
-      combo: LiveGiftCombo(comboKey: comboKey, comboTotal: combo > 0 ? combo : null),
+      combo: LiveGiftCombo.of(comboKey: comboKey, comboTotal: combo > 0 ? combo : null),
       recipientName: receiverName,
     );
   }

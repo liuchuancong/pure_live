@@ -46,7 +46,7 @@ final class HuyaRoomProvider implements LiveRoomProvider {
         headers: {...site.webHeaders(), 'origin': HuyaEndpoints.origin, 'referer': '${HuyaEndpoints.origin}/'},
       );
       final result = HuyaRoomParser.roomList(response.text, page: page, status: response.status);
-      return right(LivePage(items: result.rooms, hasMore: result.hasMore));
+      return right(LivePage.of(items: result.rooms, hasMore: result.hasMore));
     } on HuyaFailure catch (failure) {
       return left(failure.toLiveSiteError(huyaSiteId));
     } on Object catch (error) {

@@ -338,7 +338,7 @@ void main() {
       expect(rooms.single.roomId, _id);
       expect(http.sent, hasLength(1));
       expect(http.sent.single.url.query, 'count=100&uid=');
-      final second = _right(await discovery.getRecommendedRooms(request: const LivePageRequest(page: 2)));
+      final second = _right(await discovery.getRecommendedRooms(request: LivePageRequest.of(page: 2)));
       expect(second.items, isEmpty);
       expect(second.hasMore, isFalse);
       expect(http.sent, hasLength(1), reason: 'page 2 costs no request');
@@ -348,7 +348,7 @@ void main() {
       final (site: site, http: http) = _adapter();
       final discovery = site.capability<LiveDiscoveryProvider>()!;
       expect(
-        _leftOf(await discovery.getRecommendedRooms(request: const LivePageRequest(page: 0))),
+        _leftOf(await discovery.getRecommendedRooms(request: LivePageRequest.of(page: 0))),
         isA<LiveSiteInvalidArgument>(),
       );
       expect(http.sent, isEmpty);
@@ -532,7 +532,7 @@ void main() {
       final room = _right(await site.capability<LiveRoomProvider>()!.getRoom(_id));
       expect(room.platform, 'weibo');
       expect(room.broadcast.liveStatus, LiveStatus.live);
-      final page = _right(await site.capability<LiveRoomProvider>()!.getRooms(const LivePageRequest()));
+      final page = _right(await site.capability<LiveRoomProvider>()!.getRooms(LivePageRequest()));
       expect(page.items.single.roomId, _id);
       expect(page.hasMore, isFalse);
       expect(http.sent, hasLength(2));
@@ -678,12 +678,12 @@ void main() {
     test('a broadcast id or room link finds that room', () async {
       final (site: site, http: http) = _adapter();
       final search = site.capability<LiveSearchProvider>()!;
-      final byId = _right(await search.search(const LiveSearchRequest(query: _id, target: LiveSearchTarget.rooms)));
+      final byId = _right(await search.search(LiveSearchRequest.of(query: _id, target: LiveSearchTarget.rooms)));
       expect(byId.items, hasLength(1));
       expect(byId.hasMore, isFalse);
       final byLink = _right(
         await search.search(
-          const LiveSearchRequest(
+          LiveSearchRequest.of(
             query: 'https://weibo.com/l/wblive/p/show/1022%3A2321325347923495092258',
             target: LiveSearchTarget.rooms,
           ),
@@ -701,7 +701,7 @@ void main() {
       );
       final result = _right(
         await site.capability<LiveSearchProvider>()!.search(
-          const LiveSearchRequest(query: _id, target: LiveSearchTarget.rooms),
+          LiveSearchRequest.of(query: _id, target: LiveSearchTarget.rooms),
         ),
       );
       expect(result.items, isEmpty);
@@ -720,7 +720,7 @@ void main() {
       );
       final result = _right(
         await site.capability<LiveSearchProvider>()!.search(
-          const LiveSearchRequest(query: 'https://t.cn/A6J8Y0lY', target: LiveSearchTarget.rooms),
+          LiveSearchRequest.of(query: 'https://t.cn/A6J8Y0lY', target: LiveSearchTarget.rooms),
         ),
       );
       expect(result.items, hasLength(1));
@@ -736,7 +736,7 @@ void main() {
       );
       final result = _right(
         await site.capability<LiveSearchProvider>()!.search(
-          const LiveSearchRequest(query: 'https://t.cn/A6J8Y0lY', target: LiveSearchTarget.rooms),
+          LiveSearchRequest.of(query: 'https://t.cn/A6J8Y0lY', target: LiveSearchTarget.rooms),
         ),
       );
       expect(result.items, isEmpty);
@@ -747,7 +747,7 @@ void main() {
       final (site: site, http: http) = _adapter();
       final search = site.capability<LiveSearchProvider>()!;
       for (final query in ['https://example.com/x', '', '   ', 'https://weibo.com/u/9001']) {
-        final result = _right(await search.search(LiveSearchRequest(query: query, target: LiveSearchTarget.rooms)));
+        final result = _right(await search.search(LiveSearchRequest.of(query: query, target: LiveSearchTarget.rooms)));
         expect(result.items, isEmpty, reason: query);
       }
       expect(http.sent, isEmpty);
@@ -766,17 +766,15 @@ void main() {
         ),
       );
       final search = site.capability<LiveSearchProvider>()!;
-      final found = _right(
-        await search.search(const LiveSearchRequest(query: ' ALPHA ', target: LiveSearchTarget.rooms)),
-      );
+      final found = _right(await search.search(LiveSearchRequest.of(query: ' ALPHA ', target: LiveSearchTarget.rooms)));
       expect(found.items, hasLength(1));
       expect(found.hasMore, isFalse);
       final page2 = _right(
-        await search.search(const LiveSearchRequest(query: 'alpha', target: LiveSearchTarget.rooms, page: 2)),
+        await search.search(LiveSearchRequest.of(query: 'alpha', target: LiveSearchTarget.rooms, page: 2)),
       );
       expect(page2.items, isEmpty);
       final cut = _right(
-        await search.search(const LiveSearchRequest(query: '甲', target: LiveSearchTarget.rooms, pageSize: 1)),
+        await search.search(LiveSearchRequest.of(query: '甲', target: LiveSearchTarget.rooms, pageSize: 1)),
       );
       expect(cut.items, hasLength(1));
       expect(http.sent.where((seen) => seen.url.path == WeiboEndpoints.recommendPath), isNotEmpty);
@@ -786,9 +784,9 @@ void main() {
       final (site: site, http: http) = _adapter();
       final search = site.capability<LiveSearchProvider>()!;
       for (final request in [
-        const LiveSearchRequest(query: '甲', target: LiveSearchTarget.rooms, page: 0),
-        const LiveSearchRequest(query: '甲', target: LiveSearchTarget.rooms, pageSize: 0),
-        const LiveSearchRequest(query: '甲', target: LiveSearchTarget.rooms, pageSize: 1001),
+        LiveSearchRequest.of(query: '甲', target: LiveSearchTarget.rooms, page: 0),
+        LiveSearchRequest.of(query: '甲', target: LiveSearchTarget.rooms, pageSize: 0),
+        LiveSearchRequest.of(query: '甲', target: LiveSearchTarget.rooms, pageSize: 1001),
       ]) {
         expect(
           _leftOf(await search.search(request)),
@@ -797,7 +795,7 @@ void main() {
         );
       }
       expect(
-        _leftOf(await search.search(const LiveSearchRequest(query: '甲', target: LiveSearchTarget.areas))),
+        _leftOf(await search.search(LiveSearchRequest.of(query: '甲', target: LiveSearchTarget.areas))),
         isA<LiveSiteUnsupported>(),
       );
       expect(http.sent, isEmpty);
@@ -947,7 +945,7 @@ void main() {
       final error = _leftOf(
         await site.capability<LivePlaybackProvider>()!.getLines(
           roomId: _id,
-          quality: const LivePlayQuality(label: '高清', qualityId: '720'),
+          quality: LivePlayQuality.of(label: '高清', qualityId: '720'),
         ),
       );
       expect(error, isA<LiveSiteContentUnavailable>());
@@ -974,11 +972,11 @@ void main() {
       expect(rooms.items.single.roomId, _id);
       expect(_leftOf(await area.getAreaRooms(areaId: 'nope')), isA<LiveSiteInvalidArgument>());
       expect(http.sent, hasLength(1));
-      final latePage = _right(await area.getAreaRooms(areaId: 'live', request: const LivePageRequest(page: 2)));
+      final latePage = _right(await area.getAreaRooms(areaId: 'live', request: LivePageRequest.of(page: 2)));
       expect(latePage.items, isEmpty);
       expect(latePage.hasMore, isFalse);
       expect(
-        _leftOf(await area.getAreaRooms(areaId: 'live', request: const LivePageRequest(page: 0))),
+        _leftOf(await area.getAreaRooms(areaId: 'live', request: LivePageRequest.of(page: 0))),
         isA<LiveSiteInvalidArgument>(),
       );
       expect(http.sent, hasLength(1), reason: 'pages beyond the first cost no request');

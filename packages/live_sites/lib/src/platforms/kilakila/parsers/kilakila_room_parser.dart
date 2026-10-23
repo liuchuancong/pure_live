@@ -532,7 +532,7 @@ abstract final class KilakilaRoomParser {
         'broadcast ${broadcast.broadcastId} has no pull URL',
       );
     }
-    return [const LivePlayQuality(label: KilakilaEndpoints.qualityName, qualityId: KilakilaEndpoints.qualityId)];
+    return [LivePlayQuality.of(label: KilakilaEndpoints.qualityName, qualityId: KilakilaEndpoints.qualityId)];
   }
 
   /// The lines of [qualityId] (a stored `flv` or `hls` names the one quality)
@@ -551,7 +551,7 @@ abstract final class KilakilaRoomParser {
       for (final url in urls)
         () {
           final isHls = Uri.parse(url).path.endsWith('.m3u8');
-          return LivePlayLine(
+          return LivePlayLine.of(
             url: url,
             format: isHls ? LiveStreamFormat.hls : LiveStreamFormat.flv,
             formatSource: LivePlayFormatSource.inferred,
@@ -606,6 +606,6 @@ abstract final class KilakilaRoomParser {
     final lead = Duration(
       microseconds: math.min(KilakilaEndpoints.leaseLead.inMicroseconds, lifetime.inMicroseconds ~/ 4),
     );
-    return LivePlayLease(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt, requiresReconnect: isHls);
+    return LivePlayLease.of(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt, requiresReconnect: isHls);
   }
 }

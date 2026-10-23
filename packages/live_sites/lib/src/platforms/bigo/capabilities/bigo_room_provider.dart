@@ -42,7 +42,7 @@ final class BigoRoomProvider implements LiveRoomProvider {
     try {
       final page = request.page < 1 ? 1 : request.page;
       final result = await site.directory(page);
-      return right(LivePage(items: result.rooms, hasMore: result.hasMore));
+      return right(LivePage.of(items: result.rooms, hasMore: result.hasMore));
     } on BigoFailure catch (failure) {
       return left(failure.toLiveSiteError(bigoSiteId));
     } on Object catch (error) {

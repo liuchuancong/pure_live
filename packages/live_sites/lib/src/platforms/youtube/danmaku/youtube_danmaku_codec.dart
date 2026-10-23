@@ -157,14 +157,14 @@ abstract final class YoutubeDanmakuCodec {
     final deleted = jsonObject(action['markChatItemAsDeletedAction']) ?? jsonObject(action['removeChatItemAction']);
     if (deleted != null) {
       final target = jsonString(deleted['targetId']) ?? jsonString(deleted['targetItemId']);
-      if (target != null) return _retraction(LiveRetraction(messageId: target));
+      if (target != null) return _retraction(LiveRetraction.of(messageId: target));
     }
     final byAuthor =
         jsonObject(action['markChatItemsByAuthorAsDeletedAction']) ??
         jsonObject(action['removeChatItemByAuthorAction']);
     if (byAuthor != null) {
       final author = jsonString(byAuthor['externalChannelId']);
-      if (author != null) return _retraction(LiveRetraction(userId: author));
+      if (author != null) return _retraction(LiveRetraction.of(userId: author));
     }
     return null;
   }
@@ -222,15 +222,15 @@ abstract final class YoutubeDanmakuCodec {
       text: text,
       sender: _sender(renderer),
       color: header == null ? LiveMessageColor.white : LiveMessageColor.numberToColor(header),
-      payload: LiveSuperChatMessage(
+      payload: LiveSuperChatMessage.of(
         messageId: _id(renderer),
         userName: label(renderer['authorName']),
         faceUrl: thumbnailUrl(renderer['authorPhoto']),
         text: text,
-        price: SuperChatPrice(amount: _priceAmount(amount), displayText: amount),
+        price: SuperChatPrice.of(amount: _priceAmount(amount), displayText: amount),
         startTime: start,
         endTime: end ?? start.add(display),
-        display: SuperChatDisplay(backgroundColor: _hexColor(header), backgroundBottomColor: _hexColor(body)),
+        display: SuperChatDisplay.of(backgroundColor: _hexColor(header), backgroundBottomColor: _hexColor(body)),
       ),
       replayed: replayed,
       messageId: _id(renderer),
@@ -255,15 +255,15 @@ abstract final class YoutubeDanmakuCodec {
       text: text.isEmpty ? amount : text,
       sender: _sender(renderer),
       color: LiveMessageColor.white,
-      payload: LiveSuperChatMessage(
+      payload: LiveSuperChatMessage.of(
         messageId: _id(renderer),
         userName: label(renderer['authorName']),
         faceUrl: thumbnailUrl(renderer['authorPhoto']),
         text: text,
-        price: SuperChatPrice(amount: _priceAmount(amount), displayText: amount),
+        price: SuperChatPrice.of(amount: _priceAmount(amount), displayText: amount),
         startTime: start,
         endTime: start.add(display),
-        display: SuperChatDisplay(backgroundColor: _hexColor(background)),
+        display: SuperChatDisplay.of(backgroundColor: _hexColor(background)),
       ),
       messageId: _id(renderer),
       sentAt: time,
@@ -291,7 +291,7 @@ abstract final class YoutubeDanmakuCodec {
       text: text,
       sender: MessageSender.normalized(userName: author.isEmpty ? anonymousUserName : author),
       color: LiveMessageColor.white,
-      payload: LiveGift(giftId: giftId, name: text, iconUrl: _firstSource(model['giftImage'])),
+      payload: LiveGift.of(giftId: giftId, name: text, iconUrl: _firstSource(model['giftImage'])),
       messageId: giftId.isEmpty ? '' : 'youtube:$giftId',
     );
   }
@@ -325,7 +325,7 @@ abstract final class YoutubeDanmakuCodec {
       final code = shortcuts.isNotEmpty ? shortcuts.first : (jsonString(emoji['emojiId']) ?? '');
       final url = lastThumbnail(emoji['image']);
       if (code.isEmpty || url.isEmpty) continue;
-      emotes.add(LiveEmote(code: code, url: url));
+      emotes.add(LiveEmote.of(code: code, url: url));
     }
     return emotes;
   }

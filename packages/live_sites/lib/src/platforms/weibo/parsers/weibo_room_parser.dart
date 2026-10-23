@@ -336,7 +336,7 @@ abstract final class WeiboRoomParser {
     final path = uri.path.toLowerCase();
     final segments = uri.pathSegments.where((segment) => segment.isNotEmpty).toList();
     final name = segments.isEmpty ? '' : segments.last.toLowerCase();
-    return LivePlayLine(
+    return LivePlayLine.of(
       url: url,
       format: path.endsWith('.flv')
           ? LiveStreamFormat.flv
