@@ -158,12 +158,15 @@ dev_dependencies:
   icons_launcher: ^3.1.0 # 生成应用图标
   json_serializable: ^6.14.1 # 生成 JSON 序列化代码
   riverpod_generator: ^4.0.9 # 生成 Riverpod Provider
-
+  slang_build_runner: ^4.19.0
   # 测试与规范
   flutter_test:
     sdk: flutter
   riverpod_lint: ^3.0.0 # Riverpod 代码检查
   very_good_analysis: ^11.0.0 # Dart 静态分析规则
+
+  # 开发辅助
+  slang_mcp: ^0.2.1 # 多语言开发辅助工具（MCP 服务器）
 
   hive_ce: any
 flutter:
