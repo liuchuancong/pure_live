@@ -82,6 +82,9 @@ class Translations$common$zh_CN {
 
 	/// zh-CN: '还原'
 	String get restore => '还原';
+
+	/// zh-CN: '搜索房间、主播或站点'
+	String get searchHint => '搜索房间、主播或站点';
 }
 
 // Path: navigation
@@ -92,26 +95,62 @@ class Translations$navigation$zh_CN {
 
 	// Translations
 
+	/// zh-CN: '高频页面'
+	String get groupPrimary => '高频页面';
+
 	/// zh-CN: '首页'
 	String get home => '首页';
 
 	/// zh-CN: '直播'
 	String get live => '直播';
 
-	/// zh-CN: '收藏'
-	String get favorites => '收藏';
+	/// zh-CN: '频道'
+	String get channels => '频道';
+
+	/// zh-CN: '发现'
+	String get discover => '发现';
 
 	/// zh-CN: '历史'
 	String get history => '历史';
 
+	/// zh-CN: '内容与工具'
+	String get groupContent => '内容与工具';
+
+	/// zh-CN: '多画面'
+	String get multiview => '多画面';
+
+	/// zh-CN: '关注'
+	String get favorites => '关注';
+
+	/// zh-CN: '热门'
+	String get hot => '热门';
+
+	/// zh-CN: '分区'
+	String get zones => '分区';
+
 	/// zh-CN: '搜索'
 	String get search => '搜索';
 
-	/// zh-CN: '播放列表'
-	String get playlist => '播放列表';
+	/// zh-CN: '工具箱'
+	String get toolbox => '工具箱';
+
+	/// zh-CN: '个人与系统'
+	String get groupPersonal => '个人与系统';
+
+	/// zh-CN: '录制中心'
+	String get record => '录制中心';
 
 	/// zh-CN: '设置'
 	String get settings => '设置';
+
+	/// zh-CN: '外观'
+	String get appearance => '外观';
+
+	/// zh-CN: '网络代理'
+	String get proxy => '网络代理';
+
+	/// zh-CN: '用户'
+	String get user => '用户';
 }
 
 // Path: player
@@ -212,13 +251,26 @@ extension on Translations {
 			'common.minimize' => '最小化',
 			'common.maximize' => '最大化',
 			'common.restore' => '还原',
+			'common.searchHint' => '搜索房间、主播或站点',
+			'navigation.groupPrimary' => '高频页面',
 			'navigation.home' => '首页',
 			'navigation.live' => '直播',
-			'navigation.favorites' => '收藏',
+			'navigation.channels' => '频道',
+			'navigation.discover' => '发现',
 			'navigation.history' => '历史',
+			'navigation.groupContent' => '内容与工具',
+			'navigation.multiview' => '多画面',
+			'navigation.favorites' => '关注',
+			'navigation.hot' => '热门',
+			'navigation.zones' => '分区',
 			'navigation.search' => '搜索',
-			'navigation.playlist' => '播放列表',
+			'navigation.toolbox' => '工具箱',
+			'navigation.groupPersonal' => '个人与系统',
+			'navigation.record' => '录制中心',
 			'navigation.settings' => '设置',
+			'navigation.appearance' => '外观',
+			'navigation.proxy' => '网络代理',
+			'navigation.user' => '用户',
 			'player.title' => '播放',
 			'player.back' => '返回',
 			'player.quality' => '清晰度',

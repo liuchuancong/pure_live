@@ -7,5 +7,6 @@
   "confirm": "Confirm",
   "minimize": "Minimize",
   "maximize": "Maximize",
-  "restore": "Restore"
+  "restore": "Restore",
+  "searchHint": "Search rooms, streamers or sites"
 }

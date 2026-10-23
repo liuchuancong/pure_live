@@ -7,5 +7,6 @@
   "confirm": "确定",
   "minimize": "最小化",
   "maximize": "最大化",
-  "restore": "还原"
+  "restore": "还原",
+  "searchHint": "搜索房间、主播或站点"
 }

@@ -1,9 +1,21 @@
 {
+  "groupPrimary": "Top pages",
   "home": "Home",
   "live": "Live",
-  "favorites": "Favorites",
+  "channels": "Channels",
+  "discover": "Discover",
   "history": "History",
+  "groupContent": "Content & tools",
+  "multiview": "Multi-view",
+  "favorites": "Favorites",
+  "hot": "Hot",
+  "zones": "Zones",
   "search": "Search",
-  "playlist": "Playlist",
-  "settings": "Settings"
+  "toolbox": "Toolbox",
+  "groupPersonal": "Personal & system",
+  "record": "Recording",
+  "settings": "Settings",
+  "appearance": "Appearance",
+  "proxy": "Network proxy",
+  "user": "User"
 }

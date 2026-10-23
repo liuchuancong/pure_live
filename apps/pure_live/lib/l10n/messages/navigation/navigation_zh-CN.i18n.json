@@ -1,9 +1,21 @@
 {
+  "groupPrimary": "高频页面",
   "home": "首页",
   "live": "直播",
-  "favorites": "收藏",
+  "channels": "频道",
+  "discover": "发现",
   "history": "历史",
+  "groupContent": "内容与工具",
+  "multiview": "多画面",
+  "favorites": "关注",
+  "hot": "热门",
+  "zones": "分区",
   "search": "搜索",
-  "playlist": "播放列表",
-  "settings": "设置"
+  "toolbox": "工具箱",
+  "groupPersonal": "个人与系统",
+  "record": "录制中心",
+  "settings": "设置",
+  "appearance": "外观",
+  "proxy": "网络代理",
+  "user": "用户"
 }

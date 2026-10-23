@@ -62,6 +62,7 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get minimize => 'Minimize';
 	@override String get maximize => 'Maximize';
 	@override String get restore => 'Restore';
+	@override String get searchHint => 'Search rooms, streamers or sites';
 }
 
 // Path: navigation
@@ -71,13 +72,25 @@ class _Translations$navigation$en extends Translations$navigation$zh_CN {
 	final TranslationsEn _root; // ignore: unused_field
 
 	// Translations
+	@override String get groupPrimary => 'Top pages';
 	@override String get home => 'Home';
 	@override String get live => 'Live';
-	@override String get favorites => 'Favorites';
+	@override String get channels => 'Channels';
+	@override String get discover => 'Discover';
 	@override String get history => 'History';
+	@override String get groupContent => 'Content & tools';
+	@override String get multiview => 'Multi-view';
+	@override String get favorites => 'Favorites';
+	@override String get hot => 'Hot';
+	@override String get zones => 'Zones';
 	@override String get search => 'Search';
-	@override String get playlist => 'Playlist';
+	@override String get toolbox => 'Toolbox';
+	@override String get groupPersonal => 'Personal & system';
+	@override String get record => 'Recording';
 	@override String get settings => 'Settings';
+	@override String get appearance => 'Appearance';
+	@override String get proxy => 'Network proxy';
+	@override String get user => 'User';
 }
 
 // Path: player
@@ -142,13 +155,26 @@ extension on TranslationsEn {
 			'common.minimize' => 'Minimize',
 			'common.maximize' => 'Maximize',
 			'common.restore' => 'Restore',
+			'common.searchHint' => 'Search rooms, streamers or sites',
+			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
-			'navigation.favorites' => 'Favorites',
+			'navigation.channels' => 'Channels',
+			'navigation.discover' => 'Discover',
 			'navigation.history' => 'History',
+			'navigation.groupContent' => 'Content & tools',
+			'navigation.multiview' => 'Multi-view',
+			'navigation.favorites' => 'Favorites',
+			'navigation.hot' => 'Hot',
+			'navigation.zones' => 'Zones',
 			'navigation.search' => 'Search',
-			'navigation.playlist' => 'Playlist',
+			'navigation.toolbox' => 'Toolbox',
+			'navigation.groupPersonal' => 'Personal & system',
+			'navigation.record' => 'Recording',
 			'navigation.settings' => 'Settings',
+			'navigation.appearance' => 'Appearance',
+			'navigation.proxy' => 'Network proxy',
+			'navigation.user' => 'User',
 			'player.title' => 'Player',
 			'player.back' => 'Back',
 			'player.quality' => 'Quality',

@@ -32,9 +32,6 @@ final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(de
     TypedStatefulShellBranch<SearchBranch>(
       routes: <TypedRoute<RouteData>>[TypedGoRoute<SearchRoute>(path: RouteNames.search)],
     ),
-    TypedStatefulShellBranch<PlaylistBranch>(
-      routes: <TypedRoute<RouteData>>[TypedGoRoute<PlaylistRoute>(path: RouteNames.playlist)],
-    ),
     TypedStatefulShellBranch<SettingsBranch>(
       routes: <TypedRoute<RouteData>>[TypedGoRoute<SettingsRoute>(path: RouteNames.settings)],
     ),
@@ -78,12 +75,6 @@ final class HistoryBranch extends StatefulShellBranchData {
 final class SearchBranch extends StatefulShellBranchData {
   /// The branch token.
   const SearchBranch();
-}
-
-/// The playlist branch's token.
-final class PlaylistBranch extends StatefulShellBranchData {
-  /// The branch token.
-  const PlaylistBranch();
 }
 
 /// The settings branch's token.
@@ -142,17 +133,6 @@ final class SearchRoute extends GoRouteData with $SearchRoute {
 
   @override
   Widget build(BuildContext context, GoRouterState state) => const _DestinationPlaceholder(item: NavigationItem.search);
-}
-
-/// The playlist branch's screen.
-@TypedGoRoute<PlaylistRoute>(path: RouteNames.playlist)
-final class PlaylistRoute extends GoRouteData with $PlaylistRoute {
-  /// The playlist route.
-  const PlaylistRoute();
-
-  @override
-  Widget build(BuildContext context, GoRouterState state) =>
-      const _DestinationPlaceholder(item: NavigationItem.playlist);
 }
 
 /// The settings branch's screen.
