@@ -514,6 +514,59 @@ class DanmakuItem extends StatelessWidget {
 
     final textColor = isDark ? Colors.white70 : Colors.black87;
 
+    final isDouyu = controller.site == PlatformIds.douyu;
+
+    var fanBadgeColor = textColor;
+    final fanLevel = int.tryParse(danmaku.fansLevel) ?? 0;
+    if (isDouyu) {
+      if (fanLevel <= 5) {
+        fanBadgeColor = const Color(0xFF7DD0FD); // #7DD0FD
+      } else if (fanLevel <= 10) {
+        fanBadgeColor = const Color(0xFF4CD5E1); // #4CD5E1
+      } else if (fanLevel <= 15) {
+        fanBadgeColor = const Color(0xFFFB9D23); // #FB9D23
+      } else if (fanLevel <= 20) {
+        fanBadgeColor = const Color(0xFFFA791F); // #FA791F
+      } else if (fanLevel <= 25) {
+        fanBadgeColor = const Color(0xFFFA4C1C); // #FA4C1C
+      } else if (fanLevel <= 30) {
+        fanBadgeColor = const Color(0xFFAC38D3); // #AC38D3
+      } else {
+        fanBadgeColor = const Color(0xFF7C00E3); // #7C00E3
+      }
+    }
+
+    var userLevelColor = textColor;
+    final userLevel = int.tryParse(danmaku.userLevel) ?? 0;
+    if (isDouyu) {
+      if (userLevel <= 19) {
+        userLevelColor = const Color(0xFFDED9C6); // #DED9C6
+      } else if (userLevel <= 29) {
+        userLevelColor = const Color(0xFF94D256); // #94D256
+      } else if (userLevel <= 39) {
+        userLevelColor = const Color(0xFF97B3D5); // #97B3D5
+      } else if (userLevel <= 69) {
+        userLevelColor = const Color(0xFF3980F9); // #3980F9
+      } else if (userLevel <= 79) {
+        userLevelColor = const Color(0xFFB42CF4); // #B42CF4
+      } else if (userLevel <= 89) {
+        userLevelColor = const Color(0xFFFA7B83); // #FA7B83
+      } else if (userLevel <= 99) {
+        userLevelColor = const Color(0xFFF94D55); // #F94D55
+      } else {
+        userLevelColor = const Color(0xFFF5F241); // #F5F241
+      }
+    }
+
+    // The palette above is designed for Douyu's dark surface. Darken it on the
+    // light card so the lowest levels stay readable.
+    final readableFanBadgeColor = isDouyu && !isDark
+        ? HSLColor.fromColor(fanBadgeColor).withLightness(0.4).toColor()
+        : fanBadgeColor;
+    final readableUserLevelColor = isDouyu && !isDark
+        ? HSLColor.fromColor(userLevelColor).withLightness(0.4).toColor()
+        : userLevelColor;
+
     return RepaintBoundary(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -568,7 +621,7 @@ class DanmakuItem extends StatelessWidget {
                                 margin: const EdgeInsets.only(right: 4),
                                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                                 decoration: BoxDecoration(
-                                  color: textColor.withValues(alpha: 0.18),
+                                  color: readableFanBadgeColor.withValues(alpha: 0.16),
                                   borderRadius: BorderRadius.circular(3),
                                 ),
                                 child: Text(
@@ -579,9 +632,18 @@ class DanmakuItem extends StatelessWidget {
                                     fontSize: 10,
                                     height: 1.2,
                                     fontWeight: FontWeight.w600,
-                                    color: textColor,
+                                    color: readableFanBadgeColor,
                                   ),
                                 ),
+                              ),
+                            ),
+                          if (isDouyu && danmaku.userLevel.isNotEmpty)
+                            TextSpan(
+                              text: "Lv.${danmaku.userLevel} ",
+                              style: AppTextStyles.t14.copyWith(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: readableUserLevelColor,
                               ),
                             ),
                           TextSpan(
