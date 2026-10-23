@@ -73,14 +73,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.3.2+1"
-  any_image_view:
-    dependency: transitive
-    description:
-      name: any_image_view
-      sha256: "1144eb4b59a50df07a9fba9d35f06539564868423519c437a49d4c94b3e9b61a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.5.0"
   archive:
     dependency: transitive
     description:
@@ -417,14 +409,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.2"
-  convert_object:
-    dependency: transitive
-    description:
-      name: convert_object
-      sha256: a35faeb03782a26e23521a73e0d7e71e3dd4294edf9f31f2e62cc5dc28f12d93
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.1"
   cookie_jar:
     dependency: transitive
     description:
@@ -457,14 +441,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.7"
-  cupertino_icons:
-    dependency: transitive
-    description:
-      name: cupertino_icons
-      sha256: "41e005c33bd814be4d3096aff55b1908d419fde52ca656c8c47719ec745873cd"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.9"
   cupertino_ui:
     dependency: transitive
     description:
@@ -481,22 +457,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.2"
-  custom_sliding_segmented_control:
-    dependency: transitive
-    description:
-      name: custom_sliding_segmented_control
-      sha256: bc747b1500284bff36fc8c61774c9a3ca35c1dca4d570141c8a2569b4f984bf3
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.8.5"
-  dart_helper_utils:
-    dependency: transitive
-    description:
-      name: dart_helper_utils
-      sha256: a4c1e943555f2c187bd99df54e86ba0270f63d0948a0ce83fa39a47378c933a5
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.1.0"
   dart_style:
     dependency: transitive
     description:
@@ -513,6 +473,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.8.0"
+  desen_ui:
+    dependency: transitive
+    description:
+      name: desen_ui
+      sha256: "8a6f8ab9ce73e12cf1c4f71fb3548faa8a2ccf27b56468dda048901e48fdd984"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.2"
   desktop_multi_window:
     dependency: transitive
     description:
@@ -809,30 +777,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.0.9"
-  fluent2_kit:
-    dependency: transitive
-    description:
-      name: fluent2_kit
-      sha256: "4142c1ac9d7dd53741085b598cbde886209aacb398f2fe9eff79a3e6e5b223c4"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.2.0"
-  fluent_ui:
-    dependency: transitive
-    description:
-      name: fluent_ui
-      sha256: "4482326e3d4881f59b4a42e9c608b2be3171cd00fa181f51b6b0dd63bd786a0f"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.17.0"
-  fluentui_system_icons:
-    dependency: transitive
-    description:
-      name: fluentui_system_icons
-      sha256: "1592ae32dae75fb66741ab2c0607bc6554ef086f1c457e27ef937fb4901d33da"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.273"
   flutter:
     dependency: transitive
     description: flutter
@@ -855,62 +799,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.4.5"
-  flutter_helper_utils:
-    dependency: transitive
-    description:
-      name: flutter_helper_utils
-      sha256: d394968c4608c4d0fbc29d30808a8e1011bddda5388f42d1d0b86fd98b450f0f
-      url: "https://pub.dev"
-    source: hosted
-    version: "10.0.0"
-  flutter_keyboard_visibility:
-    dependency: transitive
-    description:
-      name: flutter_keyboard_visibility
-      sha256: dabc6c146897b2d07794b096e3e696212c08ac1500b4344ba84f0bd6878b9a51
-      url: "https://pub.dev"
-    source: hosted
-    version: "7.0.1"
-  flutter_keyboard_visibility_linux:
-    dependency: transitive
-    description:
-      name: flutter_keyboard_visibility_linux
-      sha256: "478ccab140efbf8e0725063da5522a6c512a6ed33b9687161855a1eb6a668abe"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.0"
-  flutter_keyboard_visibility_macos:
-    dependency: transitive
-    description:
-      name: flutter_keyboard_visibility_macos
-      sha256: "7bee81be3c5aa06950b11e68cc947b4b567079456ab66a261c3fee01a5194fc0"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.0"
-  flutter_keyboard_visibility_platform_interface:
-    dependency: transitive
-    description:
-      name: flutter_keyboard_visibility_platform_interface
-      sha256: c16de89f36e655562baed76d8e05a9f19c884707e569b3ae6c121e0f41adfabe
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.0"
-  flutter_keyboard_visibility_web:
-    dependency: transitive
-    description:
-      name: flutter_keyboard_visibility_web
-      sha256: "2200cc44d1d743b83176bd078a341780bd054a0217ec35a08679387c0989fb35"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.0"
-  flutter_keyboard_visibility_windows:
-    dependency: transitive
-    description:
-      name: flutter_keyboard_visibility_windows
-      sha256: fde7b3fd757bcd31474e6575d0e12ccb3d244841e97645b6d78df7bf86a9e341
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.0"
   flutter_local_notifications:
     dependency: transitive
     description:
@@ -972,14 +860,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.4.3"
-  flutter_screenutil_plus:
-    dependency: transitive
-    description:
-      name: flutter_screenutil_plus
-      sha256: b5e3820a93f332d8079579df7df39bfc2734c6bfadc00114ecdc6a037b961617
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.0"
   flutter_secure_storage:
     dependency: transitive
     description:
@@ -1398,14 +1278,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.7.0"
-  math_expressions:
-    dependency: transitive
-    description:
-      name: math_expressions
-      sha256: "22aca3a24e445be5f42ecf186cbded1f9951bf9ec5eb48fcddbd55e102bb11f5"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.2.0"
   mcp_dart:
     dependency: transitive
     description:
@@ -2064,21 +1936,13 @@ packages:
     source: hosted
     version: "2.0.6"
   screen_retriever:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: screen_retriever
       sha256: e409a9247218b4c4772d05719144787aad35fc299b216d07e41647d9f35acc5b
       url: "https://pub.dev"
     source: hosted
     version: "0.3.0"
-  scroll_pos:
-    dependency: transitive
-    description:
-      name: scroll_pos
-      sha256: cebf602b2dd939de6832bb902ffefb574608d1b84f420b82b381a4007d3c1e1b
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.5.0"
   serial_csv:
     dependency: transitive
     description:
@@ -2132,22 +1996,6 @@ packages:
     description:
       name: shelf_web_socket
       sha256: "3632775c8e90d6c9712f883e633716432a27758216dfb61bd86a8321c0580925"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.0"
-  shimmer:
-    dependency: transitive
-    description:
-      name: shimmer
-      sha256: "61ef3b8de6bdb9f16db1bb78d502cb991a12b5223fd2c0b9114d41e782227b55"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.0.0"
-  skeletonizer:
-    dependency: transitive
-    description:
-      name: skeletonizer
-      sha256: f67c2ce8a3fedea63d885afe61a136f3adb59f2c28faa6e79102a5280973c64f
       url: "https://pub.dev"
     source: hosted
     version: "3.0.0"
@@ -2308,14 +2156,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.1"
-  stringo:
-    dependency: transitive
-    description:
-      name: stringo
-      sha256: c81711b419454f32fe0401ab5fd99d35ae119b4f84a7559641c08bd498eb92d4
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.0"
   synchronized:
     dependency: transitive
     description:
@@ -2677,14 +2517,22 @@ packages:
     source: hosted
     version: "3.0.3"
   window_frame_kit:
+    dependency: transitive
+    description:
+      name: window_frame_kit
+      sha256: dc12c5a3c005a7de734802acdb94ed009b8b947fe6239a95ec7b442507a32a8c
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.0"
+  window_manager:
     dependency: "direct overridden"
     description:
       path: "."
-      ref: "1e0db6871150d0e11cf67ab2f8ee1e9173fd9bee"
-      resolved-ref: "1e0db6871150d0e11cf67ab2f8ee1e9173fd9bee"
-      url: "https://github.com/TATboy210/window_frame_kit"
+      ref: main
+      resolved-ref: "80acd536a1ea1c121c36e32d30e638a295087ed1"
+      url: "https://github.com/leanflutter/window_manager.git"
     source: git
-    version: "0.3.1"
+    version: "0.6.0"
   windows_file_picker:
     dependency: transitive
     description:
@@ -2733,21 +2581,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
-  yaru_window_manager:
-    dependency: "direct overridden"
-    description:
-      path: "third_party/yaru_window_manager"
-      relative: true
-    source: path
-    version: "0.1.3"
-  yaru_window_platform_interface:
-    dependency: transitive
-    description:
-      name: yaru_window_platform_interface
-      sha256: d514387cc96750112ecf1933b6f12a1912beca199178d00052c0e87a94e232fa
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.3"
 sdks:
   dart: ">=3.13.5 <4.0.0"
-  flutter: ">=3.47.7"
+  flutter: ">=3.47.0"

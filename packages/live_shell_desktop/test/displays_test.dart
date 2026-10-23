@@ -127,11 +127,11 @@ void main() {
   });
 
   group('primaryChromePlan', () {
-    test('Windows keeps the system caption in the shipping stage', () {
+    test('windows 10 and 11 alike draw their own strip, and the resize is theirs', () {
       final plan = primaryChromePlan(PlatformKind.windows);
 
-      expect(plan.mode, ChromeMode.nativeCaption);
-      expect(plan.ownsResize, isFalse);
+      expect(plan.mode, ChromeMode.selfDrawn);
+      expect(plan.ownsResize, isTrue);
       expect(plan.ownsSnap, isFalse);
     });
 

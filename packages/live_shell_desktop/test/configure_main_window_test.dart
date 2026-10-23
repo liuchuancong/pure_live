@@ -16,7 +16,7 @@ import 'package:live_shell_desktop/live_shell_desktop.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const channel = MethodChannel('window_frame_kit');
+  const channel = MethodChannel('window_manager');
 
   final calls = <MethodCall>[];
 
@@ -49,7 +49,6 @@ void main() {
   Future<void> configure({
     WindowRole role = WindowRole.main,
     PlatformKind platform = PlatformKind.windows,
-    ChromeStage stage = ChromeStage.nativeFirst,
     RenderFallbacks fallbacks = const RenderFallbacks(),
     Color background = const Color(0xFF101418),
     bool requestMaterial = false,
@@ -59,7 +58,7 @@ void main() {
     WindowOriginReader? placeWindow,
   }) => configureMainWindow(
     role: role,
-    plan: primaryChromePlan(platform, stage: stage),
+    plan: primaryChromePlan(platform),
     fallbacks: fallbacks,
     title: 'Pure Live',
     background: background,
@@ -69,37 +68,27 @@ void main() {
   );
 
   group('the chrome plan', () {
-    test('a native caption keeps the system title bar and never touches the frame', () async {
+    test('windows 10 and 11 alike draw their own strip and keep the window resizable', () async {
       await configure();
 
-      expect(argsOf(find('setTitleBarStyle'))['titleBarStyle'], 'normal');
-      expect(sent('setCustomFrame'), isFalse, reason: 'null option means no channel call, so the caption survives');
-      expect(sent('setResizable'), isFalse, reason: 'the system caption already sizes this window');
-    });
-
-    test('a self-drawn strip that owns the edges takes the frame over', () async {
-      await configure(platform: PlatformKind.linux, stage: ChromeStage.seamlessSelfDrawn);
-
       expect(argsOf(find('setTitleBarStyle'))['titleBarStyle'], 'hidden');
-      expect(argsOf(find('setCustomFrame'))['isCustomFrame'], isTrue);
       expect(
         argsOf(find('setResizable'))['isResizable'],
         isTrue,
-        reason: 'the takeover answers the hit-test with resize bands only while the window is resizable',
+        reason: 'the self-drawn plan owns the edges, so the window must stay resizable',
       );
     });
 
-    test('the takeover lands before the window is placed or sized', () async {
-      // The native subclass has to be installed before any geometry-affecting
-      // transition, and the plugin applies `customFrame` inside
-      // `waitUntilReadyToShow` — so nothing this function does afterwards, and
-      // nothing that carries the frame, may come first.
-      await configure(platform: PlatformKind.linux, stage: ChromeStage.seamlessSelfDrawn);
+    test('the caption is dressed before the window is placed', () async {
+      // The plugin applies the title bar style inside `waitUntilReadyToShow`, so
+      // nothing this function does afterwards, and nothing that carries the
+      // frame, may come first.
+      await configure(platform: PlatformKind.linux);
 
-      final frame = calls.indexWhere((call) => call.method == 'setCustomFrame');
+      final caption = calls.indexWhere((call) => call.method == 'setTitleBarStyle');
       final placed = calls.indexWhere((call) => call.method == 'setBounds');
-      expect(frame, greaterThanOrEqualTo(0));
-      expect(placed, greaterThan(frame));
+      expect(caption, greaterThanOrEqualTo(0));
+      expect(placed, greaterThan(caption));
     });
 
     test('a strip we draw but the system still sizes keeps its frame', () async {
@@ -107,7 +96,6 @@ void main() {
       await configure(platform: PlatformKind.macos);
 
       expect(argsOf(find('setTitleBarStyle'))['titleBarStyle'], 'hidden');
-      expect(sent('setCustomFrame'), isFalse);
       expect(sent('setResizable'), isFalse);
     });
   });

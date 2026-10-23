@@ -4,7 +4,10 @@ import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/live_shell.dart';
 import 'package:live_shell_desktop/src/displays.dart' show WindowOriginReader, centerOnWorkArea, defaultWindowSize;
 import 'package:live_shell_desktop/src/window_material.dart';
-import 'package:window_manager/window_manager.dart';
+// The 0.5-shaped facade: git main moved the plugin onto nativeapi's Window
+// objects, and `windowManager`/`WindowOptions` live on in the deprecated
+// `legacy.dart` bridge until the hosts are rewritten against the object API.
+import 'package:window_manager/legacy.dart';
 
 /// Applies a [ChromePlan] and the rendering fallbacks to the window, before the
 /// first frame is shown.
@@ -79,13 +82,19 @@ Future<void> configureMainWindow({
   }
 }
 
-/// The plan for the platform's shipping arrangement, first stage.
+/// The plan for the platform's shipping arrangement.
 ///
 /// Split out so a caller can ask "what will the window actually look like"
-/// without duplicating the stage choice, which is what decides whether the
-/// caption buttons are ours to draw or the system's.
-ChromePlan primaryChromePlan(PlatformKind platform, {ChromeStage stage = ChromeStage.nativeFirst}) =>
-    ChromePlan.select(platform: platform, stage: stage);
+/// without duplicating the stage choice. Windows draws its own strip on every
+/// build — 10 and 11 alike: the hidden caption and the app-drawn strip keep
+/// `WS_THICKFRAME`, so snap, edge resize, the shadow and per-monitor DPI
+/// survive, and no build falls back to the native caption. macOS stays at the
+/// first stage, where the system's traffic lights sit inset in the app's own
+/// bar; Linux draws the whole strip at either stage.
+ChromePlan primaryChromePlan(PlatformKind platform) => ChromePlan.select(
+  platform: platform,
+  stage: platform == PlatformKind.macos ? ChromeStage.nativeFirst : ChromeStage.seamlessSelfDrawn,
+);
 
 /// Whether this platform has a tray at all.
 ///

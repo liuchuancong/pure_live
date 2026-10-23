@@ -64,6 +64,14 @@ dependency_overrides:
       url: https://github.com/liuchuancong/media_core.git
       path: ./packages/media_core
       ref: 1dc8b4a302cb60914b5c2b38cd31bf4a6afa266c
+  # hosted window_manager 0.5.2 still speaks screen_retriever 0.2.x — the
+  # `screenRetriever` global and `Display.visiblePosition` — which the
+  # workspace's screen_retriever 0.3.0 (nativeapi DisplayManager) removed.
+  # main carries the rewrite, and the workspace must stay on one source.
+  window_manager:
+    git:
+      url: https://github.com/leanflutter/window_manager.git
+      ref: main
   media_core_native:
     git:
       url: https://github.com/liuchuancong/media_core.git

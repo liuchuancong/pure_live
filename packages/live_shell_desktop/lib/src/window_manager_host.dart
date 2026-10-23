@@ -2,7 +2,10 @@ import 'dart:async';
 
 import 'package:live_shell/live_shell.dart';
 import 'package:live_shell_desktop/src/displays.dart';
-import 'package:window_manager/window_manager.dart';
+// The 0.5-shaped facade: git main moved the plugin onto nativeapi's Window
+// objects, and `windowManager`/`WindowListener` live on in the deprecated
+// `legacy.dart` bridge until this host is rewritten against the object API.
+import 'package:window_manager/legacy.dart';
 
 /// Used for the one stateless calculation the reader performs over a frame.
 const _screenRetrieverDisplays = ScreenRetrieverDisplays();
