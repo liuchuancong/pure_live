@@ -1,9 +1,3 @@
-// `fluent_2` is imported for one reason only: `FluentButtonShape` is part of
-// [PureButton]'s public API (`fluentShape`) and a member of the most-used
-// control in the app cannot be re-typed or removed. No widget from it is built
-// here — the plate is painted from the tokens. The enum only ever reaches the
-// fluent branch's corner radius.
-import 'package:fluent_2/fluent_2.dart' as f2;
 import 'package:flutter/gestures.dart' show PointerEnterEvent, PointerExitEvent, TapDownDetails, TapUpDetails;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show KeyDownEvent, KeyEvent, KeyRepeatEvent, LogicalKeyboardKey;
@@ -12,6 +6,24 @@ import 'package:pure_uikit/src/styling/provider/pure_config_provider.dart';
 import 'package:pure_uikit/src/styling/style/recipe.dart';
 import 'package:pure_uikit/src/styling/style/style.dart';
 import 'package:pure_uikit/src/styling/widgets/controls/pure_progress.dart';
+
+/// The corner treatment a [PureButton]'s plate can take: the base token
+/// radius, a full pill, or square corners.
+///
+/// The name and the three values mirror the retired `fluent_2` enum one to
+/// one, so the `fluentShape` parameter keeps its public type and every
+/// existing call site keeps naming the corner it always did — the file
+/// itself no longer reaches into that package.
+enum FluentButtonShape {
+  /// The token's base radius. The default.
+  rounded,
+
+  /// Fully rounded ends — a pill.
+  circular,
+
+  /// Square corners.
+  square,
+}
 
 /// A button in the token model: one widget, the Fluent theme and every density.
 ///
@@ -92,7 +104,7 @@ class PureButton extends StatelessWidget {
 
   /// Fluent only: the corner treatment, mapped onto the plate's radius
   /// (rounded → the token's base, circular → a pill, square → none).
-  final f2.FluentButtonShape? fluentShape;
+  final FluentButtonShape? fluentShape;
 
   @override
   Widget build(BuildContext context) {
@@ -235,12 +247,12 @@ final class _Visual {
   /// plate for the secondary, a quiet hover fill for the ghost and a filled
   /// destructive for the danger. [shape] picks the corner (rounded / pill /
   /// square).
-  factory fluent(PureTheme theme, f2.FluentButtonShape? shape) {
+  factory fluent(PureTheme theme, FluentButtonShape? shape) {
     final c = theme.colors;
-    final radius = switch (shape ?? f2.FluentButtonShape.rounded) {
-      f2.FluentButtonShape.rounded => BorderRadius.circular(theme.token.scale.radii.base),
-      f2.FluentButtonShape.circular => BorderRadius.circular(PureRadii.pill),
-      f2.FluentButtonShape.square => BorderRadius.zero,
+    final radius = switch (shape ?? FluentButtonShape.rounded) {
+      FluentButtonShape.rounded => BorderRadius.circular(theme.token.scale.radii.base),
+      FluentButtonShape.circular => BorderRadius.circular(PureRadii.pill),
+      FluentButtonShape.square => BorderRadius.zero,
     };
     return _Visual(
       radius: radius,
