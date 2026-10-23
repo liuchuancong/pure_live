@@ -87,57 +87,19 @@ dependencies:
   live_websocket: # WebSocket 连接
   pure_uikit_background: # 背景样式与图层
 
-  # 播放内核
-  media_core:
-    git:
-      url: https://github.com/liuchuancong/media_core.git
-      path: ./packages/media_core
-      ref: 13cae1869580b5a96ffae8d1278fb9ab1d10ddee
-  media_core_media_kit:
-    git:
-      url: https://github.com/liuchuancong/media_core.git
-      path: ./packages/media_core_media_kit
-      ref: 13cae1869580b5a96ffae8d1278fb9ab1d10ddee
-  media_core_recording_ffmpeg:
-    git:
-      url: https://github.com/liuchuancong/media_core.git
-      path: ./packages/media_core_recording_ffmpeg
-      ref: 13cae1869580b5a96ffae8d1278fb9ab1d10ddee # FFmpeg 录制后端（分段采集与合并）
-  media_core_presentation:
-    git:
-      url: https://github.com/liuchuancong/media_core.git
-      path: ./packages/media_core_presentation
-      ref: 13cae1869580b5a96ffae8d1278fb9ab1d10ddee # 朝向感知的呈现 + 视频叠加图层
-  media_core_audio:
-    git:
-      url: https://github.com/liuchuancong/media_core.git
-      path: ./packages/media_core_audio
-      ref: 13cae1869580b5a96ffae8d1278fb9ab1d10ddee # 音乐播放（队列/歌词/后台）
-  media_core_fullscreen:
-    git:
-      url: https://github.com/liuchuancong/media_core.git
-      path: ./packages/media_core_fullscreen
-      ref: 13cae1869580b5a96ffae8d1278fb9ab1d10ddee # 全屏 / 窗口全屏驱动
-  media_core_pip:
-    git:
-      url: https://github.com/liuchuancong/media_core.git
-      path: ./packages/media_core_pip
-      ref: 13cae1869580b5a96ffae8d1278fb9ab1d10ddee # 画中画驱动（桌面小窗 / 移动端 overlay）
-  media_core_cast_dlna:
-    git:
-      url: https://github.com/liuchuancong/media_core.git
-      path: ./packages/media_core_cast_dlna
-      ref: 13cae1869580b5a96ffae8d1278fb9ab1d10ddee # DLNA/UPnP 投屏后端
-  media_core_mediasession:
-    git:
-      url: https://github.com/liuchuancong/media_core.git
-      path: ./packages/media_core_mediasession
-      ref: 13cae1869580b5a96ffae8d1278fb9ab1d10ddee # 媒体会话通知（锁屏/SMTC/MPRIS 播放控制）
-  media_core_notify:
-    git:
-      url: https://github.com/liuchuancong/media_core.git
-      path: ./packages/media_core_notify
-      ref: 13cae1869580b5a96ffae8d1278fb9ab1d10ddee # 用户通知（录制/下载结果、前台任务行）
+  # 播放内核（本地 F:/media_core，绝对路径；沙盒 player-lab 已验证解析）
+  media_core: { path: F:/media_core/packages/media_core } # 播放器内核
+  media_core_live: { path: F:/media_core/packages/media_core_live } # 直播恢复编排（线路×引擎扫描）
+  media_core_media_kit: { path: F:/media_core/packages/media_core_media_kit } # mpv 后端
+  media_core_ui: { path: F:/media_core/packages/media_core_ui } # 播放器视图与控制条
+  media_core_recording_ffmpeg: { path: F:/media_core/packages/media_core_recording_ffmpeg } # FFmpeg 录制后端
+  media_core_presentation: { path: F:/media_core/packages/media_core_presentation } # 呈现驱动
+  media_core_audio: { path: F:/media_core/packages/media_core_audio } # 音乐播放（队列/歌词/后台）
+  media_core_fullscreen: { path: F:/media_core/packages/media_core_fullscreen } # 全屏驱动
+  media_core_pip: { path: F:/media_core/packages/media_core_pip } # 画中画驱动
+  media_core_cast_dlna: { path: F:/media_core/packages/media_core_cast_dlna } # DLNA 投屏后端
+  media_core_mediasession: { path: F:/media_core/packages/media_core_mediasession } # 媒体会话通知
+  media_core_notify: { path: F:/media_core/packages/media_core_notify } # 用户通知
 
   responsive_breakpoints: ^1.0.3 # 断点定义与解析（Tailwind/Material/Bootstrap）
 

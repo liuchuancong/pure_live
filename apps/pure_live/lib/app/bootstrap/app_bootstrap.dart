@@ -8,6 +8,7 @@ import 'package:live_shell_desktop/live_shell_desktop.dart'
     show WindowManagerHost, configureMainWindow, primaryChromePlan;
 import 'package:live_storage/live_storage.dart'
     show StorageAdapterRegistry, StorageBootstrap, StoragePathProvider, StoragePrefs;
+import 'package:pure_live/app/providers/player_providers.dart' show primePlayerEngine;
 import 'package:pure_live/app/theme/system_accent_color.dart' show preloadSystemAccent;
 import 'package:pure_live/infrastructure/storage/storage_paths.dart' show StoragePaths;
 
@@ -60,6 +61,8 @@ Future<Boot> bootstrap() async {
     // The accent read is asynchronous and the theme pair is built from it,
     // so it lands before the first frame instead of recolouring afterwards.
     unawaited(preloadSystemAccent());
+    // The player's native engine loads once, before any room asks for it.
+    primePlayerEngine();
     final formFactor = runtime.environment.runtime.formFactor;
     WindowHost? windowHost;
     if (formFactor == FormFactor.desktop) {
