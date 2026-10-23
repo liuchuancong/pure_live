@@ -62,6 +62,9 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get minimize => 'Minimize';
 	@override String get maximize => 'Maximize';
 	@override String get restore => 'Restore';
+	@override String get toggleSidebar => 'Toggle sidebar';
+	@override String get back => 'Back';
+	@override String get forward => 'Forward';
 	@override String get searchHint => 'Search rooms, streamers or sites';
 }
 
@@ -155,6 +158,9 @@ extension on TranslationsEn {
 			'common.minimize' => 'Minimize',
 			'common.maximize' => 'Maximize',
 			'common.restore' => 'Restore',
+			'common.toggleSidebar' => 'Toggle sidebar',
+			'common.back' => 'Back',
+			'common.forward' => 'Forward',
 			'common.searchHint' => 'Search rooms, streamers or sites',
 			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',

@@ -8,5 +8,8 @@
   "minimize": "Minimize",
   "maximize": "Maximize",
   "restore": "Restore",
+  "toggleSidebar": "Toggle sidebar",
+  "back": "Back",
+  "forward": "Forward",
   "searchHint": "Search rooms, streamers or sites"
 }

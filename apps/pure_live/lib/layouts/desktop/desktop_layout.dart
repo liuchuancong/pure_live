@@ -1,25 +1,33 @@
+// Every import stays on one line with no `show` clause: the save-time
+// import organizer used to tear wrapped imports apart, so nothing here
+// may wrap. Do not add a wrapped import to this file.
+import 'dart:math' as math;
+
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:pure_live/app/providers/window_providers.dart' show desktopWindowHostProvider, maximizedProvider;
+import 'package:pure_live/app/providers/sidebar_providers.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/enums/navigation_item.dart' show NavigationItem;
-
-/// The height of the title bar: the drag band and the caption row.
-const double kTitleBarHeight = 44;
+import 'package:pure_live/layouts/desktop/sidebar_resizer.dart';
+import 'package:pure_live/layouts/desktop/title_bar.dart';
+import 'package:pure_live/shared/enums/navigation_item.dart';
 
 /// The desktop layout, following the v4 navigation design: the self-drawn
-/// title bar above; a grouped sidebar below it — the brand on top, three
-/// labelled sections of destinations, the user entry last — expanded with
-/// labels at wide widths and folded to an icon rail with tooltips below
-/// the breakpoint; a search field opening the search destination above the
-/// content.
+/// title bar above ([WindowTitleBar] — its left corner holds the app icon
+/// that hovers into the sidebar toggle, and the back and forward arrows
+/// over the caller's visit trail) — a grouped sidebar below it, the brand
+/// on top, three labelled sections of destinations, the user entry last,
+/// expanded with labels at wide widths and folded to an icon rail with
+/// tooltips below the breakpoint; a [SidebarResizer] between the sidebar
+/// and the content drags the width (double-tap resets it, dragging it far
+/// left puts the sidebar away); a search field opening the search
+/// destination above the content.
 ///
 /// The caption and the drag band go to the window host — the layout is the
 /// app's, the window behaviour is `live_shell_desktop`'s. Which widths get
 /// which sidebar is the caller's breakpoints, not this widget's.
-final class DesktopLayout extends ConsumerWidget {
+final class DesktopLayout extends ConsumerStatefulWidget {
   /// A desktop layout over [content].
   const DesktopLayout({
     required this.content,
@@ -27,6 +35,13 @@ final class DesktopLayout extends ConsumerWidget {
     required this.selected,
     required this.onSelected,
     required this.expanded,
+    required this.sidebarWidth,
+    required this.onToggleSidebar,
+    required this.onSidebarWidthChanged,
+    required this.canBack,
+    required this.canForward,
+    required this.onBack,
+    required this.onForward,
     super.key,
   });
 
@@ -46,56 +61,142 @@ final class DesktopLayout extends ConsumerWidget {
   /// icons with tooltips.
   final bool expanded;
 
+  /// The sidebar's dragged width, when [expanded].
+  final double sidebarWidth;
+
+  /// Fired when the toggle button (or Ctrl+B) flips the sidebar.
+  final VoidCallback onToggleSidebar;
+
+  /// Fired with the width a drag (or the reset) produced.
+  final ValueChanged<double> onSidebarWidthChanged;
+
+  /// Whether the trail has a destination behind the current one.
+  final bool canBack;
+
+  /// Whether the trail has a destination ahead of the current one.
+  final bool canForward;
+
+  /// Fired when the back arrow moves one destination back.
+  final VoidCallback onBack;
+
+  /// Fired when the forward arrow moves one destination ahead.
+  final VoidCallback onForward;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DesktopLayout> createState() => _DesktopLayoutState();
+}
+
+final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
+  /// Whether a width drag is live: while it is, the sidebar's width
+  /// follows the pointer at once instead of chasing it on the theme's
+  /// motion.
+  bool _resizing = false;
+
+  void _setResizing(bool resizing) {
+    if (_resizing != resizing) setState(() => _resizing = resizing);
+  }
+
+  @override
+  void didUpdateWidget(DesktopLayout oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // A drag that collapsed the sidebar took the strip with it, so its
+    // end-of-drag report never arrives; the layout stops resizing here.
+    if (!widget.expanded && oldWidget.expanded && _resizing) {
+      _resizing = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
     final t = context.t;
-    return ColoredBox(
-      color: colors.surface,
-      child: Column(
-        children: [
-          const _WindowTitleBar(),
-          Expanded(
-            child: Row(
-              children: [
-                DsSidebar(
-                  collapsed: !expanded,
-                  header: _Brand(collapsed: !expanded),
-                  value: selected,
-                  onChanged: onSelected,
+    final theme = DsTheme.of(context);
+    // A width remembered from a wider window yields to the content's
+    // floor until the window grows again.
+    final sidebarWidth = math.min(widget.sidebarWidth, MediaQuery.sizeOf(context).width - kSidebarContentFloor);
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.keyB, control: true): widget.onToggleSidebar,
+        const SingleActivator(LogicalKeyboardKey.keyB, meta: true): widget.onToggleSidebar,
+      },
+      // The autofocus node keeps the shortcut alive when nothing on a page
+      // holds focus; it is skipped in traversal, so Tab never lands here.
+      child: Focus(
+        autofocus: true,
+        skipTraversal: true,
+        child: ColoredBox(
+          color: colors.surface,
+          child: Column(
+            children: [
+              WindowTitleBar(
+                expanded: widget.expanded,
+                onToggleSidebar: widget.onToggleSidebar,
+                canBack: widget.canBack,
+                canForward: widget.canForward,
+                onBack: widget.onBack,
+                onForward: widget.onForward,
+              ),
+              Expanded(
+                child: Row(
                   children: [
-                    for (final (groupKey, groupItems) in groups) ...[
-                      DsSidebarSection(label: Text(_groupLabel(t, groupKey))),
-                      for (final item in groupItems)
-                        DsSidebarItem(
-                          label: Text(item.label(t)),
-                          value: item,
-                          leading: DsIcon(item.icon),
-                          selected: item == selected,
-                          onPressed: () => onSelected(item),
-                        ),
-                    ],
+                    DsTheme(
+                      // A live drag moves the width itself; the spring is
+                      // for the toggle, not for the pointer's hand.
+                      data: _resizing ? theme.copyWith(motion: theme.motion.copyWith(reduced: true)) : theme,
+                      child: DsSidebar(
+                        collapsed: !widget.expanded,
+                        header: _Brand(collapsed: !widget.expanded),
+                        value: widget.selected,
+                        onChanged: widget.onSelected,
+                        style: DsSidebarStyle(width: sidebarWidth),
+                        children: [
+                          for (final (groupKey, groupItems) in widget.groups) ...[
+                            DsSidebarSection(label: Text(_groupLabel(t, groupKey))),
+                            for (final item in groupItems)
+                              DsSidebarItem(
+                                label: Text(item.label(t)),
+                                value: item,
+                                leading: DsIcon(item.icon),
+                                selected: item == widget.selected,
+                                onPressed: () => widget.onSelected(item),
+                              ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    if (widget.expanded)
+                      SidebarResizer(
+                        width: sidebarWidth,
+                        onWidthChanged: widget.onSidebarWidthChanged,
+                        onCollapse: widget.onToggleSidebar,
+                        onReset: () => widget.onSidebarWidthChanged(kSidebarDefaultWidth),
+                        onDragging: _setResizing,
+                      )
+                    else
+                      ColoredBox(
+                        color: colors.border,
+                        child: const SizedBox(width: 1, height: double.infinity),
+                      ),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                            child: GestureDetector(
+                              onTap: () => widget.onSelected(NavigationItem.search),
+                              child: AbsorbPointer(child: DsSearchField(placeholder: t.common.searchHint)),
+                            ),
+                          ),
+                          Expanded(child: widget.content),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-                ColoredBox(color: colors.border, child: const SizedBox(width: 1)),
-                Expanded(
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                        child: GestureDetector(
-                          onTap: () => onSelected(NavigationItem.search),
-                          child: AbsorbPointer(child: DsSearchField(placeholder: t.common.searchHint)),
-                        ),
-                      ),
-                      Expanded(child: content),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -128,106 +229,6 @@ final class _Brand extends StatelessWidget {
         const SizedBox(width: 8),
         Text(context.t.common.appTitle, style: DsTheme.of(context).typography.title.copyWith(color: colors.text)),
       ],
-    );
-  }
-}
-
-/// The strip above every route: drag band, brand, caption controls.
-final class _WindowTitleBar extends ConsumerWidget {
-  const _WindowTitleBar();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colors = DsTheme.colorsOf(context);
-    final host = ref.watch(desktopWindowHostProvider);
-    return ColoredBox(
-      color: colors.surface,
-      child: SizedBox(
-        height: kTitleBarHeight,
-        child: Row(
-          children: [
-            Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onPanStart: (_) => host.startDragging(),
-                onDoubleTap: host.toggleMaximize,
-                child: Row(
-                  children: [
-                    const SizedBox(width: 12),
-                    DsIcon(DsIcons.tv, size: 16, color: colors.textMuted),
-                    const SizedBox(width: 8),
-                    Text(
-                      context.t.common.appTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: DsTheme.of(context).typography.caption.copyWith(color: colors.textMuted),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const _CaptionControls(),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-final class _CaptionControls extends ConsumerWidget {
-  const _CaptionControls();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final host = ref.watch(desktopWindowHostProvider);
-    final maximized = ref.watch(maximizedProvider);
-    return Row(
-      children: [
-        _CaptionButton(semanticLabel: t.common.minimize, icon: DsIcons.minus, onPressed: host.minimize),
-        _CaptionButton(
-          semanticLabel: maximized ? t.common.restore : t.common.maximize,
-          icon: maximized ? DsIcons.copy : DsIcons.square,
-          onPressed: host.toggleMaximize,
-        ),
-        _CaptionButton(semanticLabel: t.common.close, icon: DsIcons.x, danger: true, onPressed: host.close),
-      ],
-    );
-  }
-}
-
-final class _CaptionButton extends ConsumerWidget {
-  const _CaptionButton({required this.semanticLabel, required this.icon, required this.onPressed, this.danger = false});
-
-  final String semanticLabel;
-  final DsIconData icon;
-  final Future<void> Function() onPressed;
-  final bool danger;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colors = DsTheme.colorsOf(context);
-    return SizedBox(
-      width: kTitleBarHeight,
-      height: kTitleBarHeight,
-      child: DsPressable(
-        semanticLabel: semanticLabel,
-        onPressed: onPressed,
-        builder: (context, states, _) {
-          final hovered = states.contains(WidgetState.hovered);
-          final pressed = states.contains(WidgetState.pressed);
-          Color? background;
-          if (danger && hovered) {
-            background = colors.danger.fill;
-          } else if (hovered || pressed) {
-            background = pressed ? colors.press : colors.hover;
-          }
-          return ColoredBox(
-            color: background ?? const Color(0x00000000),
-            child: Center(child: DsIcon(icon, size: 14, color: colors.text)),
-          );
-        },
-      ),
     );
   }
 }

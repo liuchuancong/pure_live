@@ -8,5 +8,8 @@
   "minimize": "最小化",
   "maximize": "最大化",
   "restore": "还原",
+  "toggleSidebar": "切换侧栏",
+  "back": "后退",
+  "forward": "前进",
   "searchHint": "搜索房间、主播或站点"
 }

@@ -83,6 +83,15 @@ class Translations$common$zh_CN {
 	/// zh-CN: '还原'
 	String get restore => '还原';
 
+	/// zh-CN: '切换侧栏'
+	String get toggleSidebar => '切换侧栏';
+
+	/// zh-CN: '后退'
+	String get back => '后退';
+
+	/// zh-CN: '前进'
+	String get forward => '前进';
+
 	/// zh-CN: '搜索房间、主播或站点'
 	String get searchHint => '搜索房间、主播或站点';
 }
@@ -251,6 +260,9 @@ extension on Translations {
 			'common.minimize' => '最小化',
 			'common.maximize' => '最大化',
 			'common.restore' => '还原',
+			'common.toggleSidebar' => '切换侧栏',
+			'common.back' => '后退',
+			'common.forward' => '前进',
 			'common.searchHint' => '搜索房间、主播或站点',
 			'navigation.groupPrimary' => '高频页面',
 			'navigation.home' => '首页',

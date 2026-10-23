@@ -1,15 +1,21 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show StatefulNavigationShell;
 import 'package:pure_live/app/providers/navigation_providers.dart' show selectedNavItemProvider;
+import 'package:pure_live/app/providers/sidebar_providers.dart' show sidebarProvider;
 import 'package:pure_live/layouts/desktop/desktop_layout.dart' show DesktopLayout;
 import 'package:pure_live/layouts/mobile/mobile_layout.dart' show MobileLayout;
-import 'package:pure_live/shared/enums/navigation_item.dart'
-    show NavigationItem, kContentItems, kMobileNavigationItems, kPersonalItems, kPrimaryItems;
+import 'package:pure_live/shared/enums/navigation_item.dart';
 import 'package:responsive_breakpoints/responsive_breakpoints.dart' show TailwindBreakpoint;
 
-/// The Tailwind breakpoint from which the desktop sidebar shows its
-/// labels: xl (≥1280px). Below it the sidebar folds to icons.
+// No `show` clause: a wrapped import is what the save-time import
+// organizer kept breaking apart.
+
+/// The Tailwind breakpoint under which a shrinking window folds the
+/// sidebar once, on the crossing: xl (<1280px). The toggle always gets it
+/// back — the fold nudges, it does not outvote the viewer.
 const TailwindBreakpoint kExpandedSidebarBreakpoint = TailwindBreakpoint.xl;
 
 /// The Tailwind breakpoint below which a touch device takes the bottom
@@ -44,10 +50,14 @@ int? _branchIndexOf(NavigationItem item) {
 /// mobile bottom bar, or the TV rail — and the content area is the
 /// router's indexed stack, one navigator per branch.
 ///
+/// The desktop title bar's back and forward arrows walk the trail of
+/// destinations the viewer visited, this widget's own record: go_router's
+/// typed `go` navigation has no forward history of its own.
+///
 /// Destinations whose pages have not arrived yet sit in the sidebar but
 /// do not navigate; a selection only moves when the destination has a
 /// branch, so the highlight never lies about what is on screen.
-final class AppLayout extends ConsumerWidget {
+final class AppLayout extends ConsumerStatefulWidget {
   /// The app's layout shell around the router's [shell].
   const AppLayout({required this.shell, super.key});
 
@@ -55,31 +65,87 @@ final class AppLayout extends ConsumerWidget {
   final StatefulNavigationShell shell;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AppLayout> createState() => _AppLayoutState();
+}
+
+final class _AppLayoutState extends ConsumerState<AppLayout> {
+  /// The destinations the viewer visited, in visit order; the one at
+  /// [_cursor] is on screen, and back and forward move along them.
+  final List<NavigationItem> _trail = [NavigationItem.home];
+
+  int _cursor = 0;
+
+  /// The window width the last dependency pass saw, null on the first;
+  /// the sidebar's fold watches this for the crossing under
+  /// [kExpandedSidebarBreakpoint].
+  double? _lastWidth;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final width = MediaQuery.sizeOf(context).width;
+    final previous = _lastWidth;
+    _lastWidth = width;
+    final under = kExpandedSidebarBreakpoint.breakpoint;
+    final crossed = previous != null && previous >= under && width < under;
+    if (crossed || (previous == null && width < under)) {
+      // Riverpod rejects a provider write inside the build phase; the
+      // fold lands a microtask later, before the frame paints.
+      unawaited(
+        Future<void>.microtask(() {
+          if (!mounted) return;
+          ref.read(sidebarProvider.notifier).collapse();
+        }),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final breakpoint = _breakpointOf(MediaQuery.sizeOf(context).width);
     final selected = ref.watch(selectedNavItemProvider);
+    final sidebar = ref.watch(sidebarProvider);
 
     void handleSelected(NavigationItem item) {
-      final branch = _branchIndexOf(item);
-      if (branch == null) {
+      if (_branchIndexOf(item) == null) {
         return; // the page has not arrived yet.
       }
-      ref.read(selectedNavItemProvider.notifier).selected = item;
-      shell.goBranch(branch, initialLocation: branch == shell.currentIndex);
+      setState(() {
+        // A fresh selection cuts the trail's future: forward is gone
+        // until back has run.
+        _trail.removeRange(_cursor + 1, _trail.length);
+        if (_trail[_cursor] != item) {
+          _trail.add(item);
+          _cursor = _trail.length - 1;
+        }
+      });
+      _go(item);
+    }
+
+    void goBack() {
+      if (_cursor == 0) return;
+      setState(() => _cursor--);
+      _go(_trail[_cursor]);
+    }
+
+    void goForward() {
+      if (_cursor >= _trail.length - 1) return;
+      setState(() => _cursor++);
+      _go(_trail[_cursor]);
     }
 
     if (breakpoint.index < kBottomBarBreakpoint.index) {
       const items = kMobileNavigationItems;
       final index = items.indexOf(selected);
       return MobileLayout(
-        content: shell,
+        content: widget.shell,
         items: items,
         selectedIndex: index < 0 ? 0 : index,
         onSelected: (index) => handleSelected(items[index]),
       );
     }
     return DesktopLayout(
-      content: shell,
+      content: widget.shell,
       groups: const [
         ('groupPrimary', kPrimaryItems),
         ('groupContent', kContentItems),
@@ -87,7 +153,25 @@ final class AppLayout extends ConsumerWidget {
       ],
       selected: selected,
       onSelected: handleSelected,
-      expanded: breakpoint.index >= kExpandedSidebarBreakpoint.index,
+      // The toggle rules; a window crossing under the breakpoint folds
+      // the sidebar once (didChangeDependencies), never outvoting this.
+      expanded: sidebar.expanded,
+      sidebarWidth: sidebar.width,
+      onToggleSidebar: () => ref.read(sidebarProvider.notifier).toggle(),
+      onSidebarWidthChanged: ref.read(sidebarProvider.notifier).setWidth,
+      canBack: _cursor > 0,
+      canForward: _cursor < _trail.length - 1,
+      onBack: goBack,
+      onForward: goForward,
     );
+  }
+
+  /// Shows [item]'s branch without touching the trail; a revisit of the
+  /// branch the shell already shows relinks to the page's root.
+  void _go(NavigationItem item) {
+    final branch = _branchIndexOf(item);
+    if (branch == null) return;
+    ref.read(selectedNavItemProvider.notifier).selected = item;
+    widget.shell.goBranch(branch, initialLocation: branch == widget.shell.currentIndex);
   }
 }
