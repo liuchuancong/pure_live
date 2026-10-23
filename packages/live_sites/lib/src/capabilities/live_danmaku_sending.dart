@@ -8,9 +8,8 @@ import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 /// needs credentials to send reports it through the returned error, not by
 /// withholding the interface — the session exists either way.
 abstract interface class LiveDanmakuSending {
-  /// Posts [text] to the room's chat. Throws a [LiveSiteError] when it
-  /// could not be sent (missing credentials, the room's chat is closed, a
-  /// transport break).
+  /// Posts [text] to the room's chat. Throws when it could not be sent
+  /// (missing credentials, the room's chat is closed, a transport break).
   Future<void> send(String text);
 }
 
