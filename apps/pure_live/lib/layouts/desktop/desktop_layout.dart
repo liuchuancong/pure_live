@@ -191,10 +191,21 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                       child: Column(
                         children: [
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                            child: GestureDetector(
-                              onTap: () => widget.onSelected(NavigationItem.search),
-                              child: AbsorbPointer(child: DsSearchField(placeholder: t.common.searchHint)),
+                            padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s12, DsSpace.s16, 0),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: _LocationBreadcrumb(module: widget.module, selected: widget.selected),
+                                ),
+                                const SizedBox(width: DsSpace.s16),
+                                SizedBox(
+                                  width: 320,
+                                  child: GestureDetector(
+                                    onTap: () => widget.onSelected(NavigationItem.search),
+                                    child: AbsorbPointer(child: DsSearchField(placeholder: t.common.searchHint)),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           Expanded(child: widget.content),
@@ -280,6 +291,30 @@ final class _ModuleHeader extends StatelessWidget {
               ),
           ],
         ),
+      ],
+    );
+  }
+}
+
+/// The where-am-I path at the content's head: the module, then the page.
+///
+/// The crumbs say where the viewer stands (the current page is the last
+/// crumb, not pressed); deeper context — an area inside the areas page,
+/// the query inside the search page — is that page's own breadcrumb, one
+/// level below this one.
+final class _LocationBreadcrumb extends StatelessWidget {
+  const _LocationBreadcrumb({required this.module, required this.selected});
+
+  final AppModule module;
+  final NavigationItem selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return DsBreadcrumb(
+      items: [
+        DsBreadcrumbItem(label: module.label(t), icon: DsIcon(module.icon, size: 14)),
+        DsBreadcrumbItem(label: selected.label(t)),
       ],
     );
   }
