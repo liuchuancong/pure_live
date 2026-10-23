@@ -63,6 +63,11 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get maximize => 'Maximize';
 	@override String get restore => 'Restore';
 	@override String get toggleSidebar => 'Toggle sidebar';
+	@override String get moduleLive => 'Live';
+	@override String get moduleIptv => 'IPTV';
+	@override String get moduleVod => 'Videos';
+	@override String get moduleMusic => 'Music';
+	@override String get moduleComingSoon => 'This module is on its way';
 	@override String get back => 'Back';
 	@override String get forward => 'Forward';
 	@override String get searchHint => 'Search rooms, streamers or sites';
@@ -159,6 +164,11 @@ extension on TranslationsEn {
 			'common.maximize' => 'Maximize',
 			'common.restore' => 'Restore',
 			'common.toggleSidebar' => 'Toggle sidebar',
+			'common.moduleLive' => 'Live',
+			'common.moduleIptv' => 'IPTV',
+			'common.moduleVod' => 'Videos',
+			'common.moduleMusic' => 'Music',
+			'common.moduleComingSoon' => 'This module is on its way',
 			'common.back' => 'Back',
 			'common.forward' => 'Forward',
 			'common.searchHint' => 'Search rooms, streamers or sites',

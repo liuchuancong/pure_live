@@ -9,6 +9,11 @@
   "maximize": "Maximize",
   "restore": "Restore",
   "toggleSidebar": "Toggle sidebar",
+  "moduleLive": "Live",
+  "moduleIptv": "IPTV",
+  "moduleVod": "Videos",
+  "moduleMusic": "Music",
+  "moduleComingSoon": "This module is on its way",
   "back": "Back",
   "forward": "Forward",
   "searchHint": "Search rooms, streamers or sites"

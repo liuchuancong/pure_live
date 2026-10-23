@@ -2,7 +2,6 @@
 // import organizer used to tear wrapped imports apart, so nothing here
 // may wrap. Do not add a wrapped import to this file.
 import 'dart:math' as math;
-
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -11,7 +10,10 @@ import 'package:pure_live/app/providers/sidebar_providers.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/desktop/sidebar_resizer.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart';
+import 'package:pure_live/shared/enums/app_module.dart';
 import 'package:pure_live/shared/enums/navigation_item.dart';
+
+
 
 /// The desktop layout, following the v4 navigation design: the self-drawn
 /// title bar above ([WindowTitleBar] — its left corner holds the app icon
@@ -35,6 +37,8 @@ final class DesktopLayout extends ConsumerStatefulWidget {
     required this.selected,
     required this.onSelected,
     required this.expanded,
+    required this.module,
+    required this.onModuleSelected,
     required this.sidebarWidth,
     required this.onToggleSidebar,
     required this.onSidebarWidthChanged,
@@ -60,6 +64,12 @@ final class DesktopLayout extends ConsumerStatefulWidget {
   /// Whether the sidebar shows its labels (the expanded rail) or folds to
   /// icons with tooltips.
   final bool expanded;
+
+  /// The module whose navigation the sidebar shows.
+  final AppModule module;
+
+  /// Fired when a module icon picks that module.
+  final ValueChanged<AppModule> onModuleSelected;
 
   /// The sidebar's dragged width, when [expanded].
   final double sidebarWidth;
@@ -145,7 +155,7 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                       data: _resizing ? theme.copyWith(motion: theme.motion.copyWith(reduced: true)) : theme,
                       child: DsSidebar(
                         collapsed: !widget.expanded,
-                        header: _Brand(collapsed: !widget.expanded),
+                        header: _ModuleHeader(collapsed: !widget.expanded, module: widget.module, onModule: widget.onModuleSelected),
                         value: widget.selected,
                         onChanged: widget.onSelected,
                         style: DsSidebarStyle(width: sidebarWidth),
@@ -209,25 +219,67 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
   };
 }
 
-/// The brand at the sidebar's top: icon plus the app name when expanded,
-/// the icon alone when folded.
-final class _Brand extends StatelessWidget {
-  const _Brand({required this.collapsed});
+/// The sidebar's head: the brand above a row of module icons — click a
+/// module and the destinations below become its own. Collapsed, the strip
+/// gives way to the current module's icon alone (expand to switch).
+final class _ModuleHeader extends StatelessWidget {
+  const _ModuleHeader({required this.collapsed, required this.module, required this.onModule});
 
   final bool collapsed;
+  final AppModule module;
+  final ValueChanged<AppModule> onModule;
 
   @override
   Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
     if (collapsed) {
-      return Center(child: DsIcon(DsIcons.tv, size: 18, color: colors.text));
+      return Center(child: DsIcon(module.icon, size: 18, color: colors.text));
     }
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: 10,
       children: [
-        const SizedBox(width: 12),
-        DsIcon(DsIcons.tv, size: 18, color: colors.text),
-        const SizedBox(width: 8),
-        Text(context.t.common.appTitle, style: DsTheme.of(context).typography.title.copyWith(color: colors.text)),
+        Row(
+          children: [
+            const SizedBox(width: 12),
+            DsIcon(DsIcons.tv, size: 18, color: colors.text),
+            const SizedBox(width: 8),
+            Text(context.t.common.appTitle, style: DsTheme.of(context).typography.title.copyWith(color: colors.text)),
+          ],
+        ),
+        Row(
+          children: [
+            for (final candidate in AppModule.values)
+              Expanded(
+                child: DsTooltip(
+                  message: candidate.label(context.t),
+                  side: DsSide.bottom,
+                  child: DsPressable(
+                    semanticLabel: candidate.label(context.t),
+                    onPressed: () => onModule(candidate),
+                    builder: (context, states, _) {
+                      final selected = candidate == module;
+                      final hovered = states.contains(WidgetState.hovered);
+                      return Container(
+                        height: 30,
+                        decoration: DsBoxDecoration(
+                          color: selected ? DsTheme.of(context).selectedFill : hovered ? colors.hover : null,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Center(
+                          child: DsIcon(
+                            candidate.icon,
+                            size: 16,
+                            color: selected ? DsTheme.of(context).onSelectedFill : colors.textMuted,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+          ],
+        ),
       ],
     );
   }

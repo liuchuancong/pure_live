@@ -1,5 +1,7 @@
 import 'package:desen_ui/desen_ui.dart';
+
 import 'package:pure_live/l10n/translations.dart' show Translations;
+import 'package:pure_live/shared/enums/app_module.dart' show AppModule;
 
 /// The shell's navigation destinations, named after the v4 navigation
 /// design: three groups — high-frequency pages, content and tools,
@@ -157,3 +159,71 @@ const List<NavigationItem> kMobileNavigationItems = [
   NavigationItem.favorites,
   NavigationItem.settings,
 ];
+
+/// The personal-and-system group every module shares, bottom of the sidebar.
+const List<NavigationItem> kSharedPersonalItems = [
+  NavigationItem.settings,
+  NavigationItem.appearance,
+  NavigationItem.proxy,
+  NavigationItem.user,
+];
+
+/// Each module's sidebar groups: (slang key of the section label,
+/// destinations). A module's own groups first, the shared personal group
+/// last — the shell renders whichever module is selected.
+const Map<AppModule, List<(String, List<NavigationItem>)>> kModuleNavigationGroups = {
+  AppModule.live: [
+    ('groupPrimary', [NavigationItem.home, NavigationItem.zones, NavigationItem.favorites, NavigationItem.history]),
+    ('groupContent', [NavigationItem.search, NavigationItem.multiview, NavigationItem.record, NavigationItem.toolbox]),
+  ],
+  AppModule.iptv: [
+    ('groupPrimary', [NavigationItem.channels, NavigationItem.favorites, NavigationItem.history]),
+    ('groupContent', [NavigationItem.search, NavigationItem.toolbox]),
+  ],
+  AppModule.vod: [
+    ('groupPrimary', [NavigationItem.zones, NavigationItem.favorites, NavigationItem.history]),
+    ('groupContent', [NavigationItem.search, NavigationItem.toolbox]),
+  ],
+  AppModule.music: [
+    ('groupPrimary', [NavigationItem.favorites, NavigationItem.history]),
+    ('groupContent', [NavigationItem.search]),
+  ],
+};
+
+/// The sidebar groups of [module], its own plus the shared personal group.
+List<(String, List<NavigationItem>)> navigationGroupsFor(AppModule module) => [
+  ...kModuleNavigationGroups[module]!,
+  ('groupPersonal', kSharedPersonalItems),
+];
+
+/// The destinations the mobile bottom bar shows for [module]: five entries
+/// at most.
+List<NavigationItem> mobileNavigationItemsFor(AppModule module) => switch (module) {
+  AppModule.live => [
+    NavigationItem.home,
+    NavigationItem.zones,
+    NavigationItem.favorites,
+    NavigationItem.history,
+    NavigationItem.settings,
+  ],
+  AppModule.iptv => [
+    NavigationItem.channels,
+    NavigationItem.favorites,
+    NavigationItem.history,
+    NavigationItem.search,
+    NavigationItem.settings,
+  ],
+  AppModule.vod => [
+    NavigationItem.zones,
+    NavigationItem.favorites,
+    NavigationItem.history,
+    NavigationItem.search,
+    NavigationItem.settings,
+  ],
+  AppModule.music => [
+    NavigationItem.favorites,
+    NavigationItem.history,
+    NavigationItem.search,
+    NavigationItem.settings,
+  ],
+};

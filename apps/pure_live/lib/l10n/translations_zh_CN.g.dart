@@ -86,6 +86,21 @@ class Translations$common$zh_CN {
 	/// zh-CN: '切换侧栏'
 	String get toggleSidebar => '切换侧栏';
 
+	/// zh-CN: '直播'
+	String get moduleLive => '直播';
+
+	/// zh-CN: 'IPTV'
+	String get moduleIptv => 'IPTV';
+
+	/// zh-CN: '点播'
+	String get moduleVod => '点播';
+
+	/// zh-CN: '音乐'
+	String get moduleMusic => '音乐';
+
+	/// zh-CN: '这个模块还在路上'
+	String get moduleComingSoon => '这个模块还在路上';
+
 	/// zh-CN: '后退'
 	String get back => '后退';
 
@@ -261,6 +276,11 @@ extension on Translations {
 			'common.maximize' => '最大化',
 			'common.restore' => '还原',
 			'common.toggleSidebar' => '切换侧栏',
+			'common.moduleLive' => '直播',
+			'common.moduleIptv' => 'IPTV',
+			'common.moduleVod' => '点播',
+			'common.moduleMusic' => '音乐',
+			'common.moduleComingSoon' => '这个模块还在路上',
 			'common.back' => '后退',
 			'common.forward' => '前进',
 			'common.searchHint' => '搜索房间、主播或站点',

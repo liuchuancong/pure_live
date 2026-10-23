@@ -1,12 +1,16 @@
 import 'dart:async' show unawaited;
 
+import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show StatefulNavigationShell;
-import 'package:pure_live/app/providers/navigation_providers.dart' show selectedNavItemProvider;
-import 'package:pure_live/app/providers/sidebar_providers.dart' show sidebarProvider;
-import 'package:pure_live/layouts/desktop/desktop_layout.dart' show DesktopLayout;
-import 'package:pure_live/layouts/mobile/mobile_layout.dart' show MobileLayout;
+import 'package:pure_live/app/providers/module_providers.dart';
+import 'package:pure_live/app/providers/navigation_providers.dart';
+import 'package:pure_live/app/providers/sidebar_providers.dart';
+import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/desktop/desktop_layout.dart';
+import 'package:pure_live/layouts/mobile/mobile_layout.dart';
+import 'package:pure_live/shared/enums/app_module.dart';
 import 'package:pure_live/shared/enums/navigation_item.dart';
 import 'package:responsive_breakpoints/responsive_breakpoints.dart' show TailwindBreakpoint;
 
@@ -105,6 +109,7 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     final breakpoint = _breakpointOf(MediaQuery.sizeOf(context).width);
     final selected = ref.watch(selectedNavItemProvider);
     final sidebar = ref.watch(sidebarProvider);
+    final module = ref.watch(selectedModuleProvider);
 
     void handleSelected(NavigationItem item) {
       if (_branchIndexOf(item) == null) {
@@ -134,23 +139,25 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       _go(_trail[_cursor]);
     }
 
+    final moduleContent = module == AppModule.live
+        ? widget.shell
+        : _ModulePlaceholder(module: module);
+
     if (breakpoint.index < kBottomBarBreakpoint.index) {
-      const items = kMobileNavigationItems;
+      final items = mobileNavigationItemsFor(module);
       final index = items.indexOf(selected);
       return MobileLayout(
-        content: widget.shell,
+        content: moduleContent,
         items: items,
         selectedIndex: index < 0 ? 0 : index,
         onSelected: (index) => handleSelected(items[index]),
       );
     }
     return DesktopLayout(
-      content: widget.shell,
-      groups: const [
-        ('groupPrimary', kPrimaryItems),
-        ('groupContent', kContentItems),
-        ('groupPersonal', kPersonalItems),
-      ],
+      content: moduleContent,
+      module: module,
+      onModuleSelected: (next) => ref.read(selectedModuleProvider.notifier).selected = next,
+      groups: navigationGroupsFor(module),
       selected: selected,
       onSelected: handleSelected,
       // The toggle rules; a window crossing under the breakpoint folds
@@ -173,5 +180,24 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     if (branch == null) return;
     ref.read(selectedNavItemProvider.notifier).selected = item;
     widget.shell.goBranch(branch, initialLocation: branch == widget.shell.currentIndex);
+  }
+}
+
+
+/// What a module without its pages yet shows: the module's icon and its
+/// name, honest about the wait.
+final class _ModulePlaceholder extends StatelessWidget {
+  const _ModulePlaceholder({required this.module});
+
+  final AppModule module;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return DsEmptyState(
+      icon: DsIcon(module.icon),
+      title: Text(module.label(t)),
+      description: Text(t.common.moduleComingSoon),
+    );
   }
 }

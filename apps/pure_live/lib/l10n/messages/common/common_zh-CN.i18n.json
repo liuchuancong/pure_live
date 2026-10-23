@@ -9,6 +9,11 @@
   "maximize": "最大化",
   "restore": "还原",
   "toggleSidebar": "切换侧栏",
+  "moduleLive": "直播",
+  "moduleIptv": "IPTV",
+  "moduleVod": "点播",
+  "moduleMusic": "音乐",
+  "moduleComingSoon": "这个模块还在路上",
   "back": "后退",
   "forward": "前进",
   "searchHint": "搜索房间、主播或站点"
