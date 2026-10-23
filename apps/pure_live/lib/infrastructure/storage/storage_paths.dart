@@ -1,8 +1,12 @@
+import 'dart:io' show Directory;
+
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:live_log/live_log.dart' show LiveLog;
 import 'package:live_platform/live_platform.dart' show PlatformEnvironment;
 import 'package:live_platform_path_provider/live_platform_path_provider.dart'
-    show PathProviderBootstrap, StorageArea, StorageLocation, StorageManager;
+    show DefaultStoragePolicy, PathProviderBootstrap, StorageArea, StorageLocation, StorageManager;
 import 'package:pure_live/infrastructure/platform/os_roots.dart' show OsRoots;
+import 'package:pure_live/infrastructure/storage/debug_rooted_policy.dart' show DebugRootedPolicy;
 
 /// The app's storage paths, resolved from the deployment facts.
 ///
@@ -60,13 +64,24 @@ final class StoragePaths {
   /// OS again.
   static Future<StoragePaths> resolve({required PlatformEnvironment environment, LiveLog? log}) async {
     final roots = await OsRoots.measure();
-    final pathRuntime = await PathProviderBootstrap.init(
-      environment: environment,
-      userDataDirectory: () async => roots.userRoot,
-      cacheDirectory: () async => roots.cacheRoot,
-      temporaryDirectory: () async => roots.temporaryRoot,
-      downloadsDirectory: () async => roots.downloadsRoot,
-    );
+    final exeRoot = environment.runtime.executableRoot;
+    // In a debug run the data tree is rooted beside the debug executable —
+    // inside the project's build tree — so `flutter run` never touches an
+    // installed build's data and the developer finds every file in the
+    // project. Release builds keep the standard policy untouched.
+    final policy = kDebugMode
+        ? DebugRootedPolicy(
+            inner: DefaultStoragePolicy(
+              portableRoot: exeRoot,
+              userRoot: roots.userRoot,
+              cacheRoot: roots.cacheRoot,
+              tempRoot: roots.temporaryRoot,
+              downloadsRoot: roots.downloadsRoot,
+            ),
+            executableRoot: Directory(exeRoot.path),
+          )
+        : DefaultStoragePolicy(portableRoot: exeRoot);
+    final pathRuntime = await PathProviderBootstrap.init(environment: environment, policy: policy);
     final manager = pathRuntime.storage;
     final data = await manager.resolve(StorageArea.data);
     final config = await manager.resolve(StorageArea.config);
