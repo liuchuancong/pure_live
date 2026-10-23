@@ -88,6 +88,7 @@ List<LiveSite> createBuiltInLiveSites({
   List<String> Function()? twitchLanguages,
   bool Function()? youtubeAllChat,
   bool Function()? huyaPreferH264,
+  List<LiveHttp>? twitchGqlFallbacks,
 }) {
   final transport = http ?? DioFactory().create();
   return <LiveSite>[
@@ -97,7 +98,11 @@ List<LiveSite> createBuiltInLiveSites({
     BilibiliSite(http: BilibiliHttp(transport)),
     KuaishouSite(http: KuaishouHttp(transport)),
     YoutubeSite(http: YouTubeHttp(transport), allChat: youtubeAllChat),
-    TwitchSite(http: TwitchHttp(transport), languages: twitchLanguages),
+    TwitchSite(
+      http: TwitchHttp(transport),
+      languages: twitchLanguages,
+      gqlFallbacks: [for (final fallback in twitchGqlFallbacks ?? const <LiveHttp>[]) TwitchHttp(fallback)],
+    ),
     AcfunSite(http: AcfunHttp(transport)),
     BigoSite(http: BigoHttp(transport)),
     CcSite(http: CcHttp(transport)),

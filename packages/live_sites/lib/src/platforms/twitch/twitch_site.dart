@@ -113,6 +113,7 @@ final class TwitchSite implements LiveSite {
     Set<String>? Function()? codecs,
     DateTime Function()? now,
     Random? random,
+    List<TwitchHttp> gqlFallbacks = const [],
   }) {
     final source = random ?? Random.secure();
     return TwitchSite._(
@@ -123,15 +124,33 @@ final class TwitchSite implements LiveSite {
       codecs ?? _unknownCodecs,
       now ?? DateTime.now,
       source,
+      gqlFallbacks,
     );
   }
 
-  TwitchSite._(this.http, this.loginCookie, this.languages, this.preferH264, this.codecs, this.now, this._random);
+  TwitchSite._(
+    this.http,
+    this.loginCookie,
+    this.languages,
+    this.preferH264,
+    this.codecs,
+    this.now,
+    this._random,
+    this.gqlFallbacks,
+  );
 
   static String _guest() => '';
   static List<String> _everyLanguage() => const [];
   static bool _on() => true;
   static Set<String>? _unknownCodecs() => null;
+
+  /// Extra GraphQL transports tried after [http] on a network break or an
+  /// integrity challenge (3.x's Android system-TLS and WebView routes: some
+  /// proxies reset `dart:io`'s TLS after CONNECT). Each gets the request
+  /// [http] got; the first answer that is neither is used. Only
+  /// `gql.twitch.tv` ever goes through them — usher and media stay on
+  /// [http].
+  final List<TwitchHttp> gqlFallbacks;
 
   /// Transport (usher and GraphQL alike).
   final TwitchHttp http;
@@ -237,11 +256,18 @@ final class TwitchSite implements LiveSite {
     String cookie = '',
     String language = TwitchEndpoints.acceptLanguage,
   }) async {
-    final response = await http.gql(
-      operation,
-      headers: gqlHeaders(cookie: cookie, language: language),
-    );
-    return TwitchJson.decode(response.text, status: response.status, what: what);
+    final headers = gqlHeaders(cookie: cookie, language: language);
+    TwitchFailure? failure;
+    for (final transport in [http, ...gqlFallbacks]) {
+      try {
+        final response = await transport.gql(operation, headers: headers);
+        return TwitchJson.decode(response.text, status: response.status, what: what);
+      } on TwitchFailure catch (error) {
+        if (error.kind != TwitchFailureKind.network && error.kind != TwitchFailureKind.riskControl) rethrow;
+        failure = error;
+      }
+    }
+    throw failure ?? const TwitchFailure(TwitchFailureKind.network, 'POST gql: no transport answered');
   }
 
   /// usher's master playlist of [login] with a fresh access token: the
