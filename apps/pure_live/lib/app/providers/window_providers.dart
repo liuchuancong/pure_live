@@ -3,31 +3,14 @@ import 'dart:async' show StreamSubscription, unawaited;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_shell/live_shell.dart' show WindowEvent, WindowHost;
 
-import 'package:pure_live/app/app_services.dart' show AppServices;
-import 'package:pure_live/app/composition/app_sites.dart' show AppSites;
-import 'package:pure_live/app/configuration/app_preferences.dart' show AppearanceStore;
-export 'package:pure_live/app/environment/app_environment.dart' show platformKindProvider, platformRuntimeProvider;
-
-/// The wired service graph; only the bootstrap can produce one, so `main`
-/// overrides this.
-final appServicesProvider = Provider<AppServices>(
-  (ref) => throw UnimplementedError('appServicesProvider must be overridden at boot'),
-);
-
-/// The persisted appearance document (theme mode, accent, language).
-final appearanceStoreProvider = Provider<AppearanceStore>((ref) => ref.watch(appServicesProvider).appearance);
-
-/// The network and site graph.
-final sitesProvider = Provider<AppSites>((ref) => ref.watch(appServicesProvider).sites);
-
 /// The main window's host, or null where the form factor has no window
-/// (a phone, a tablet, a TV). The desktop caption controls and the title
-/// bar route every window verb through this; only the bootstrap can build
-/// one, so `main` overrides this.
+/// (a phone, a tablet, a TV). The desktop caption and every window verb
+/// route through this; only the bootstrap can build one, so `main`
+/// overrides this.
 final windowHostProvider = Provider<WindowHost?>((_) => null);
 
-/// The host, non-null: only the desktop shell reads this, and a desktop run
-/// always boots with one.
+/// The host, non-null: only the desktop shell reads this, and a desktop
+/// run always boots with one.
 final desktopWindowHostProvider = Provider<WindowHost>((ref) {
   final host = ref.watch(windowHostProvider);
   if (host == null) {
@@ -39,9 +22,8 @@ final desktopWindowHostProvider = Provider<WindowHost>((ref) {
 /// Whether the window is currently maximised — the caption's glyph and the
 /// title bar's double-tap read this.
 ///
-/// The initial answer comes from the host; the stream keeps it true without
-/// rebuilding anything beneath the caption, which is the whole reason this
-/// is a notifier over events rather than a query.
+/// The initial answer comes from the host; the event stream keeps it true
+/// without rebuilding anything beneath the caption.
 final maximizedProvider = NotifierProvider<MaximizedController, bool>(MaximizedController.new);
 
 /// Tracks the window's maximised state so the caption can swap its glyph.

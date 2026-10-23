@@ -186,12 +186,7 @@ abstract class AppThemeSettings implements Built<AppThemeSettings, AppThemeSetti
 /// rebuilds exactly the widgets that look.
 class AppThemeScope extends InheritedWidget {
   /// Exposes [settings] with [onChanged] to [child].
-  const AppThemeScope({
-    required this.settings,
-    required this.onChanged,
-    required super.child,
-    super.key,
-  });
+  const AppThemeScope({required this.settings, required this.onChanged, required super.child, super.key});
 
   /// The current appearance settings.
   final AppThemeSettings settings;
@@ -200,8 +195,7 @@ class AppThemeScope extends InheritedWidget {
   final ValueChanged<AppThemeSettings> onChanged;
 
   /// The nearest scope.
-  static AppThemeScope of(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<AppThemeScope>()!;
+  static AppThemeScope of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<AppThemeScope>()!;
 
   @override
   bool updateShouldNotify(AppThemeScope old) => old.settings != settings;

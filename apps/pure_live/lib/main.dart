@@ -1,18 +1,32 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:pure_live/app/theme/system_accent_color.dart'
-    show preloadSystemAccent, readSystemAccentColor;
+import 'package:pure_live/app/bootstrap/app_bootstrap.dart' show bootstrap;
+import 'package:pure_live/app/bootstrap/startup_error_page.dart' show StartupErrorPage;
+import 'package:pure_live/app/providers/environment_providers.dart' show platformRuntimeProvider;
+import 'package:pure_live/app/providers/storage_providers.dart' show storagePathsProvider;
+import 'package:pure_live/app/providers/window_providers.dart' show windowHostProvider;
+import 'package:pure_live/app/theme/system_accent_color.dart' show readSystemAccentColor;
 import 'package:pure_live/app/theme/theme_settings.dart' show AppThemeScope, AppThemeSettings;
 import 'package:pure_live/i18n/translations.g.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  // The accent read is asynchronous and the settings below are built once,
-  // so it lands before the first frame instead of recolouring afterwards.
-  await preloadSystemAccent();
-  runApp(const PureLiveApp());
-
+  final boot = await bootstrap();
+  if (boot.failed) {
+    runApp(StartupErrorPage(error: boot.error!));
+    return;
+  }
+  runApp(
+    ProviderScope(
+      overrides: [
+        platformRuntimeProvider.overrideWithValue(boot.runtime),
+        windowHostProvider.overrideWithValue(boot.windowHost),
+        storagePathsProvider.overrideWithValue(boot.storagePaths!),
+      ],
+      child: const PureLiveApp(),
+    ),
+  );
 }
 
 /// The root: `DsApp` over the viewer's theme settings — the seed from the
@@ -48,13 +62,9 @@ final class _PureLiveAppState extends State<PureLiveApp> {
         locale: LocaleSettings.currentLocale.flutterLocale,
         debugShowCheckedModeBanner: false,
         themeMode: _settings.mode,
-      theme: _settings.theme(),
-        builder: (context, child) => AppThemeScope(
-          settings: _settings,
-          onChanged: _updateSettings,
-          child: child!,
-        ),
-        home: const _HomePlaceholder(),
+        theme: _settings.theme(),
+        builder: (context, child) => AppThemeScope(settings: _settings, onChanged: _updateSettings, child: child!),
+        home: const Placeholder(),
       ),
     );
   }
@@ -62,8 +72,8 @@ final class _PureLiveAppState extends State<PureLiveApp> {
 
 /// The first screen: the canvas colour under the theme, until the real
 /// shell replaces it.
-class _HomePlaceholder extends StatelessWidget {
-  const _HomePlaceholder();
+class Placeholder extends StatelessWidget {
+  const Placeholder({super.key});
 
   @override
   Widget build(BuildContext context) {

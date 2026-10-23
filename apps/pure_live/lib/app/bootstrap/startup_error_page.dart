@@ -4,13 +4,13 @@ import 'package:flutter/widgets.dart';
 /// The screen a failed boot shows instead of the app.
 ///
 /// The widget tree is not up — no theme, no router, no translations — so
-/// this renders a bare `DsScope` with the failing task's name, which is
-/// what a bug report needs first.
+/// this renders a bare `DsScope` carrying the failing task's name, which
+/// is what a bug report needs first.
 final class StartupErrorPage extends StatelessWidget {
-  /// An error screen for the [error] the coordinator raised.
-  const new({required this.error, super.key});
+  /// An error screen for the [error] the bootstrap raised.
+  const StartupErrorPage({required this.error, super.key});
 
-  /// The startup failure to show.
+  /// The start-up failure to show.
   final Object error;
 
   @override
