@@ -12,6 +12,7 @@ export 'capabilities/huya_link_resolver.dart';
 export 'capabilities/huya_playback_provider.dart';
 export 'capabilities/huya_room_provider.dart';
 export 'capabilities/huya_search_provider.dart';
+export 'capabilities/huya_super_chat_feed_provider.dart';
 export 'danmaku/huya_danmaku_codec.dart';
 export 'danmaku/huya_danmaku_session.dart';
 export 'huya_manifest.dart';
