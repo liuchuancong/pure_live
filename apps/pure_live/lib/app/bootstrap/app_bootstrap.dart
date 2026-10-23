@@ -2,12 +2,10 @@ import 'dart:async' show unawaited;
 
 import 'package:flutter/widgets.dart';
 import 'package:live_log/live_log.dart' show ErrorReporter, LiveLog, LoggerConsoleSink;
-import 'package:live_platform/live_platform.dart'
-    show DesktopDistribution, FormFactor, PlatformBootstrap, PlatformRuntime;
+import 'package:live_platform/live_platform.dart' show FormFactor, PlatformBootstrap, PlatformRuntime;
 import 'package:live_shell/live_shell.dart' show RenderFallbacks, WindowEvent, WindowHost, WindowRole;
 import 'package:live_shell_desktop/live_shell_desktop.dart'
     show WindowManagerHost, configureMainWindow, primaryChromePlan;
-import 'package:pure_live/app/configuration/env.dart' show Env;
 import 'package:pure_live/app/theme/system_accent_color.dart' show preloadSystemAccent;
 import 'package:pure_live/infrastructure/storage/storage_paths.dart' show StoragePaths;
 
@@ -46,21 +44,7 @@ final class Boot {
 /// because a half-initialised shell is worse than a visible failure.
 Future<Boot> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final runtime = PlatformBootstrap.init(
-    appNamespace: 'pure_live',
-    // The .env declarations outrank every on-disk probe: PURE_LIVE_TV makes
-    // this build the ten-foot composition, PURE_LIVE_PORTABLE roots its
-    // storage beside the executable.
-    // The three reads below are compile-time constants from .env; on this
-    // machine they are all unset, so the lints call the arguments
-    // redundant. A build generated with PURE_LIVE_* set has real values.
-    declaredDistribution: // ignore: avoid_redundant_argument_values
-    Env.isPortable
-        ? DesktopDistribution.portable
-        : null,
-    // ignore: avoid_redundant_argument_values
-    formFactor: Env.isTv ? FormFactor.tv : null,
-  );
+  final runtime = PlatformBootstrap.init(appNamespace: 'pure_live');
   final log = LiveLog.root(sinks: const [LoggerConsoleSink()]);
   final bootLog = log.forCategory('boot');
 
@@ -91,12 +75,7 @@ Future<Boot> bootstrap() async {
       _wireClosePolicy(host, log.forCategory('close'));
       windowHost = host;
     }
-    final storagePaths = await StoragePaths.resolve(
-      environment: runtime.environment,
-      log: bootLog,
-      // ignore: avoid_redundant_argument_values
-      dataDirOverride: Env.dataDir,
-    );
+    final storagePaths = await StoragePaths.resolve(environment: runtime.environment, log: bootLog);
     return Boot(runtime: runtime, windowHost: windowHost, storagePaths: storagePaths);
   } on Object catch (error, stackTrace) {
     bootLog.fatal('boot failed', error: error, stackTrace: stackTrace);

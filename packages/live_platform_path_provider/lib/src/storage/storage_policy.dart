@@ -160,10 +160,8 @@ final class DefaultStoragePolicy implements StoragePolicy {
   /// of hand-assembling the segment and drifting from the policy.
   /// [namespace] defaults to this repository's own app; a host passes the
   /// identity it declared to the platform bootstrap.
-  static Directory portableDataRoot(
-    Directory executableRoot, {
-    String namespace = PlatformRuntimeInfo.defaultAppNamespace,
-  }) => Directory(p.join(executableRoot.path, 'data', namespace));
+  static Directory portableDataRoot(Directory executableRoot, {required String namespace}) =>
+      Directory(p.join(executableRoot.path, 'data', namespace));
 
   /// The data tree an installed or packaged layout resolves to under its
   /// application-support root — the exact candidate [candidatesFor]

@@ -50,11 +50,11 @@ abstract final class PlatformBootstrap {
   /// name it writes under — storage, logs and startup registration read it
   /// off the snapshot instead of carrying their own product literal.
   static PlatformRuntime init({
+    required String appNamespace,
     DesktopDistribution? declaredDistribution,
     FormFactor? formFactor,
     Directory? claimDirectory,
     bool? packageIdentity,
-    String appNamespace = PlatformRuntimeInfo.defaultAppNamespace,
   }) {
     // The namespace is one path segment everywhere it lands; the check
     // lives here rather than in the const constructor's assert because no

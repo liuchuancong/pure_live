@@ -27,5 +27,6 @@
   "files.encoding": "utf8",
 
   "dart.lineLength": 120,
-  "dart.enableSdkFormatter": true
+  "dart.enableSdkFormatter": true,
+  "cmake.sourceDirectory": "D:/flutter/pure_live/apps/pure_live/windows"
 }

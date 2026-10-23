@@ -33,7 +33,7 @@ abstract final class AtomicFileWriter {
       await target.parent.create(recursive: true);
       // The target name is kept in the temp name so an orphan left by a crash
       // identifies the file it was writing.
-      temp = File(p.join(target.parent.path, '.pure_tmp_${pid}_${++_sequence}_${p.basename(target.path)}'));
+      temp = File(p.join(target.parent.path, '.file_tmp_${pid}_${++_sequence}_${p.basename(target.path)}'));
       final sink = temp.openWrite();
       try {
         sink.add(bytes);

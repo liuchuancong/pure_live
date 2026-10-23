@@ -18,10 +18,10 @@ final class PlatformRuntimeInfo {
     required this.distribution,
     required this.isPackaged,
     required this.executableRoot,
+    required this.appNamespace,
     this.osVersion,
     this.distributionOrigin = DistributionOrigin.undetermined,
     this.distributionConflicts = const [],
-    this.appNamespace = defaultAppNamespace,
   });
 
   /// The namespace this application writes under — the single fact the
@@ -30,10 +30,6 @@ final class PlatformRuntimeInfo {
   /// it; the shell declares it once here and every reader takes it from
   /// the snapshot.
   final String appNamespace;
-
-  /// The namespace this repository's own app boots with; a host application
-  /// passes its own to the platform bootstrap's init.
-  static const String defaultAppNamespace = 'pure_live';
 
   /// The operating system family.
   final PlatformKind kind;
