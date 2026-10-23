@@ -14,7 +14,6 @@ const List<NavigationItem> kTvNavigation = NavigationItem.values;
 /// playlist — wait for their pages' own entries.
 const List<NavigationItem> kMobileNavigation = [
   NavigationItem.home,
-  NavigationItem.live,
   NavigationItem.favorites,
   NavigationItem.history,
   NavigationItem.settings,

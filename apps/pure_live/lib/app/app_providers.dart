@@ -3,7 +3,22 @@ import 'dart:async' show StreamSubscription, unawaited;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_shell/live_shell.dart' show WindowEvent, WindowHost;
 
-export 'environment/app_environment.dart' show platformKindProvider, platformRuntimeProvider;
+import 'package:pure_live/app/app_services.dart' show AppServices;
+import 'package:pure_live/app/composition/app_sites.dart' show AppSites;
+import 'package:pure_live/app/configuration/app_preferences.dart' show AppearanceStore;
+export 'package:pure_live/app/environment/app_environment.dart' show platformKindProvider, platformRuntimeProvider;
+
+/// The wired service graph; only the bootstrap can produce one, so `main`
+/// overrides this.
+final appServicesProvider = Provider<AppServices>(
+  (ref) => throw UnimplementedError('appServicesProvider must be overridden at boot'),
+);
+
+/// The persisted appearance document (theme mode, accent, language).
+final appearanceStoreProvider = Provider<AppearanceStore>((ref) => ref.watch(appServicesProvider).appearance);
+
+/// The network and site graph.
+final sitesProvider = Provider<AppSites>((ref) => ref.watch(appServicesProvider).sites);
 
 /// The main window's host, or null where the form factor has no window
 /// (a phone, a tablet, a TV). The desktop caption controls and the title

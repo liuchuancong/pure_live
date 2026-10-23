@@ -1,13 +1,53 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/widgets.dart' show Color;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:pure_live/app/app_providers.dart' show appearanceStoreProvider;
+import 'package:pure_live/app/configuration/app_preferences.dart' show AppearanceDocument, accentColorOf;
+import 'package:pure_live/app/localization/locale_preferences.dart' show localePreferencesProvider;
 import 'package:pure_live/app/theme/app_theme_mode.dart' show AppThemeMode;
 
-/// The user's theme choices as plain primitives.
+/// The user's theme choices, backed by the persisted appearance document.
 ///
-/// Preferences store values the theme factories understand — a mode and an
-/// accent override — and nothing from the theme packages themselves, so a
-/// stored document survives either package changing its types.
+/// The controller is the document's write face: the boot loads the store,
+/// this reads it into widgets, and every change writes the whole document
+/// back (theme and language travel together in one file).
+final class ThemePreferencesController extends Notifier<ThemePreferences> {
+  @override
+  ThemePreferences build() {
+    final stored = ref.watch(appearanceStoreProvider).value;
+    return ThemePreferences(mode: stored.themeMode, accentOverride: accentColorOf(stored));
+  }
+
+  /// Switches the light/dark mode.
+  void setMode(AppThemeMode mode) {
+    state = state.copyWith(mode: mode);
+    _persist();
+  }
+
+  /// Picks the accent, or clears the override with null.
+  void setAccent(Color? color) {
+    state = state.copyWith(accentOverride: color, clearAccentOverride: color == null);
+    _persist();
+  }
+
+  void _persist() {
+    final document = AppearanceDocument(
+      themeMode: state.mode,
+      accentArgb: state.accentOverride?.toARGB32(),
+      locale: ref.read(localePreferencesProvider.notifier).locale,
+    );
+    unawaited(ref.read(appearanceStoreProvider).save(document));
+  }
+}
+
+/// The theme preferences the shell reads.
+final themePreferencesProvider = NotifierProvider<ThemePreferencesController, ThemePreferences>(
+  ThemePreferencesController.new,
+);
+
+/// The user's theme choices as the widgets see them.
 final class ThemePreferences {
   /// A set of preferences.
   const new({this.mode = AppThemeMode.system, this.accentOverride});
@@ -25,23 +65,3 @@ final class ThemePreferences {
         accentOverride: clearAccentOverride ? null : (accentOverride ?? this.accentOverride),
       );
 }
-
-/// The in-memory preference store.
-///
-/// Persistence arrives with the storage phase; when it does, this controller
-/// gains a load and a write and the interface stays exactly this.
-final class ThemePreferencesController extends Notifier<ThemePreferences> {
-  @override
-  ThemePreferences build() => const ThemePreferences();
-
-  /// Switches the light/dark mode.
-  void setMode(AppThemeMode mode) => state = state.copyWith(mode: mode);
-
-  /// Picks the accent, or clears the override with null.
-  void setAccent(Color? color) => state = state.copyWith(accentOverride: color, clearAccentOverride: color == null);
-}
-
-/// The theme preferences the shell reads.
-final themePreferencesProvider = NotifierProvider<ThemePreferencesController, ThemePreferences>(
-  ThemePreferencesController.new,
-);

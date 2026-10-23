@@ -1,9 +1,9 @@
 name: pure_live
 description: >-
   Pure Live: the application composition root. It boots the platform layer,
-  dresses the desktop window through live_shell_desktop, resolves the theme
-  and the language, and assembles the shell and the feature pages. The
-  business lives in the packages; this holds only the wiring.
+  opens the storage, installs the logging and network stacks, resolves the theme
+  from the user's preferences and assembles the pages out of the business
+  packages.
 version: 0.1.0
 publish_to: none
 
@@ -14,29 +14,194 @@ environment:
   flutter: ">=3.47.0"
 
 dependencies:
-  # UI 与状态
+  # 系统与设备
+  android_intent_plus: ^6.1.0 # 调用 Android 系统意图
+  audio_session: ^0.2.4 # 系统音频焦点：通话/闹钟中断与耳机拔出
+  package_info_plus: ^10.2.2 # 应用版本信息
+
+  # 窗口与桌面集成
+  desktop_multi_window: ^0.3.1 # 多窗口支持
+  dynamic_app_icon_flutter_plus: ^2.2.1 # 动态应用图标
+  restart_app: ^1.10.1 # 重启应用
+  screen_retriever: ^0.3.0 # 屏幕与显示器信息
+  system_theme: ^3.3.0 # Windows 系统强调色
+  tray_manager: ^0.8.0 # 系统托盘
+  vibrancy: ^0.1.1 # 窗口透明与材质效果
+
+  # 文件与外部操作
+  archive: ^4.5.2 # 压缩包读写
+  file_picker: ^13.1.0 # 选择文件或目录
+  file_selector: ^1.1.0 # 原生文件选择器
+  open_file: ^4.0.0 # 调用系统打开文件
+  path: ^1.9.0 # 路径拼接与处理
+  path_provider: ^2.1.6 # 获取应用目录
+  share_plus: ^13.3.1 # 系统分享面板
+  url_launcher: ^6.3.3 # 打开链接或外部应用
+  equatable: ^3.0.0
+
+  # UI、图片与布局
+  animations: ^3.0.0 # 常用动画效果
+  any_image_view: ^2.5.0 # 多来源图片展示
+  cached_network_image: ^4.0.4 # 网络图片缓存
+  cached_network_image_ce: ^4.13.1 # 社区维护的图片缓存实现
+  flutter_cache_manager: ^3.4.5 # 图片缓存的体积与清理
+  custom_refresh_indicator: ^4.0.2 # 自定义下拉刷新
   desen_ui: ^0.3.2 # 设计令牌、主题与组件
+  dynamic_color: ^1.7.0 # Android 12+ 动态取色
+  flutter_helper_utils: ^10.0.0
+  flutter_keyboard_visibility: ^7.0.1 # 监听软键盘状态
+  flutter_screenutil_plus: ^2.0.0 # 自适应布局辅助
+  flutter_svg: ^2.3.0 # SVG 图片渲染
+  lucide_icons_flutter: ^4.0.1 # Lucide 图标库
+  mosaic_grid: ^0.1.2 # 瀑布流网格
+  pretty_qr_code: ^3.6.0 # 生成二维码
+  shimmer: ^4.0.0 # 闪烁占位效果
+  skeletonizer: ^3.0.0 # 骨架屏
+
+  # Flutter 与状态管理
+  collection: ^1.19.1 # 集合处理工具
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
   flutter_riverpod: ^3.3.2 # 状态管理与依赖注入
-  go_router: ^18.0.2 # 路由
-  slang: ^4.19.2 # 多语言生成与运行时
-  slang_flutter: ^4.19.0 # 多语言的 Flutter 集成
-  system_theme: ^3.3.0 # Windows 系统强调色
+  flutter_secure_storage: 11.2.0 # 安全存储密钥
+  go_router: ^18.0.2 # 路由管理
+  slang: ^4.19.2 # 多语言代码生成基础
+  slang_flutter: ^4.19.0 # Flutter 多语言集成
+  wakelock_plus: 1.8.1 # 播放中保持屏幕常亮
 
-  # PureLive 内部包
-  live_log: # 日志与诊断
-  live_platform: # 平台区分与运行环境
-  live_shell: # 外壳契约（窗口宿主、角色）
-  live_shell_desktop: # 桌面窗口宿主（window_manager 对象 API）
+  # PureLive 内部功能包
+  live_device: # 电量、亮度、音量、刷新率等设备能力
+  live_iptv: # IPTV 业务
+  live_log: # 日志系统
+  live_net: # 网络请求层
+  live_pagination: # 分页工具
+  live_platform: # 平台能力抽象
+  live_platform_path_provider: # 平台数据路径
+  live_shell: # 通用应用外壳
+  live_shell_desktop: # 桌面端外壳
+  live_sites: # 直播平台与站点适配
+  live_storage: # 存储与数据仓库
+  live_vod: # 视频点播源
+  live_websocket: # WebSocket 连接
+  pure_uikit_background: # 背景样式与图层
 
-  riverpod: any
+  # 播放内核
+  media_core:
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b
+  media_core_media_kit:
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core_media_kit
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b
+  media_core_recording_ffmpeg:
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core_recording_ffmpeg
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b # FFmpeg 录制后端（分段采集与合并）
+  media_core_presentation:
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core_presentation
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b # 朝向感知的呈现 + 视频叠加图层
+  media_core_audio:
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core_audio
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b # 音乐播放（队列/歌词/后台）
+  media_core_fullscreen:
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core_fullscreen
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b # 全屏 / 窗口全屏驱动
+  media_core_pip:
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core_pip
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b # 画中画驱动（桌面小窗 / 移动端 overlay）
+  media_core_cast_dlna:
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core_cast_dlna
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b # DLNA/UPnP 投屏后端
+  media_core_mediasession:
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core_mediasession
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b # 媒体会话通知（锁屏/SMTC/MPRIS 播放控制）
+  media_core_notify:
+    git:
+      url: https://github.com/liuchuancong/media_core.git
+      path: ./packages/media_core_notify
+      ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b # 用户通知（录制/下载结果、前台任务行）
+
+  # 路由、配置与序列化
+  envied: ^1.3.10 # 编译期环境变量
+  fpdart: ^1.2.0
+  freezed_annotation: ^3.1.0 # 不可变模型注解
+  json_annotation: ^4.12.0 # JSON 序列化注解
+  markdown: ^7.3.1 # Markdown 内容渲染
+  pub_semver: ^2.2.1 # 语义化版本比较
+  riverpod_annotation: ^4.0.7 # Riverpod 生成器注解
+  webview_flutter: ^4.14.1 # 内嵌网页视图
+
 dev_dependencies:
+  # 代码生成
+  build_runner: ^2.16.2 # 运行代码生成器
+  envied_generator: ^1.3.10 # 生成环境变量代码
+  freezed: ^4.0.2 # 生成数据模型
+  go_router_builder: ^4.5.0 # 生成类型安全路由
+  icons_launcher: ^3.1.0 # 生成应用图标
+  json_serializable: ^6.14.1 # 生成 JSON 序列化代码
+  riverpod_generator: ^4.0.9 # 生成 Riverpod Provider
+
+  # 测试与规范
   flutter_test:
     sdk: flutter
-  very_good_analysis: ^11.0.0
+  riverpod_lint: ^3.0.0 # Riverpod 代码检查
+  very_good_analysis: ^11.0.0 # Dart 静态分析规则
 
+  hive_ce: any
 flutter:
   uses-material-design: true
+
+  # 预设字体：各设计语言的官方字体随应用打包，开箱即用。
+  # 每族只内置 Regular（400）一档，粗字重由引擎合成。
+  # Segoe UI（fluent）走 Windows 系统自带，不占资源。
+  fonts:
+    - family: SFPro
+      fonts:
+        - asset: assets/fonts/SFPro/SFProDisplay-Regular.otf
+    - family: SFRounded
+      fonts:
+        - asset: assets/fonts/SFRounded/SFProRounded-Regular.otf
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto/Roboto-Regular.ttf
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter/Inter-Regular.ttf
+    - family: Ubuntu
+      fonts:
+        - asset: assets/fonts/Ubuntu/UbuntuSans-Regular.ttf
+  assets:
+    - assets/tray/ # 系统托盘图标
+    - assets/icon/ # 启动页的品牌图（母图）
+
+# 启动图标：assets/icon/app_icon.png 是唯一母图，各平台的图标资源全部由它生成。
+# 换图标只改母图，然后跑：dart run icons_launcher:launch
+icons_launcher:
+  image_path: assets/icon/app_icon.png
+  platforms:
+    android:
+      enable: true
+    ios:
+      enable: true
+    macos:
+      enable: true
+    windows:
+      enable: true

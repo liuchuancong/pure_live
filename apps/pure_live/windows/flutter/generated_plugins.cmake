@@ -3,12 +3,30 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  audio_service_win
+  battery_plus
+  connectivity_plus
   desktop_multi_window
+  device_screen_brightness
+  dynamic_color
+  ffmpeg_kit_extended_flutter
+  file_selector_windows
   flutter_acrylic
+  flutter_secure_storage_windows
+  media_core_audio
+  media_core_native
+  media_kit_video
+  refresh_rate
+  restart_app
+  share_plus
   system_theme
+  url_launcher_windows
+  volume_controller
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  flutter_local_notifications_windows
+  jni
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)

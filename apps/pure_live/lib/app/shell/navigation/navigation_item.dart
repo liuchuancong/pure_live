@@ -4,7 +4,6 @@ import 'package:pure_live/app/routing/route_names.dart' show RouteNames;
 import 'package:pure_live/features/favorites/presentation/pages/favorites_page.dart' show FavoritesPage;
 import 'package:pure_live/features/history/presentation/pages/history_page.dart' show HistoryPage;
 import 'package:pure_live/features/home/presentation/pages/home_page.dart' show HomePage;
-import 'package:pure_live/features/live/presentation/pages/live_page.dart' show LivePage;
 import 'package:pure_live/features/playlist/presentation/pages/playlist_page.dart' show PlaylistPage;
 import 'package:pure_live/features/search/presentation/pages/search_page.dart' show SearchPage;
 import 'package:pure_live/features/settings/presentation/pages/settings_page.dart' show SettingsPage;
@@ -18,9 +17,6 @@ import 'package:pure_live/i18n/translations.g.dart' show Translations;
 enum NavigationItem {
   /// The home branch.
   home(RouteNames.home, DsIcons.home),
-
-  /// The live branch.
-  live(RouteNames.live, DsIcons.tv),
 
   /// The favorites branch.
   favorites(RouteNames.favorites, DsIcons.heart),
@@ -48,7 +44,6 @@ enum NavigationItem {
   /// The localized label.
   String label(Translations t) => switch (this) {
     NavigationItem.home => t.nav.home,
-    NavigationItem.live => t.nav.live,
     NavigationItem.favorites => t.nav.favorites,
     NavigationItem.history => t.nav.history,
     NavigationItem.search => t.nav.search,
@@ -59,7 +54,6 @@ enum NavigationItem {
   /// The branch's page.
   Widget page() => switch (this) {
     NavigationItem.home => const HomePage(),
-    NavigationItem.live => const LivePage(),
     NavigationItem.favorites => const FavoritesPage(),
     NavigationItem.history => const HistoryPage(),
     NavigationItem.search => const SearchPage(),

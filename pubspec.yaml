@@ -10,17 +10,12 @@ environment:
 workspace:
   - apps/pure_live
   - packages/live_device
-  - packages/live_interaction
   - packages/live_iptv
-  - packages/live_library
   - packages/live_log
   - packages/live_net
   - packages/live_pagination
   - packages/live_platform
   - packages/live_platform_path_provider
-  - packages/live_playback
-  - packages/live_playback/example
-  - packages/live_record_core
   - packages/live_shell
   - packages/live_shell_desktop
   - packages/live_sites
