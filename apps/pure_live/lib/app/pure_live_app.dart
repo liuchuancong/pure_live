@@ -23,19 +23,21 @@ final class PureLiveApp extends ConsumerWidget {
     final mode = ref.watch(themeModeProvider);
     final locale = ref.watch(activeLocaleProvider);
     final router = ref.watch(routerProvider);
-    return DsApp.router(
-      onGenerateTitle: (context) => context.t.app.title,
-      theme: ref.watch(dsThemeProvider(Brightness.light)),
-      darkTheme: ref.watch(dsThemeProvider(Brightness.dark)),
-      themeMode: mode,
-      locale: flutterLocaleOf(locale),
-      supportedLocales: AppLocale.values.map(flutterLocaleOf),
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      routerConfig: router,
+    return TranslationProvider(
+      child: DsApp.router(
+        onGenerateTitle: (context) => context.t.app.title,
+        theme: ref.watch(dsThemeProvider(Brightness.light)),
+        darkTheme: ref.watch(dsThemeProvider(Brightness.dark)),
+        themeMode: mode,
+        locale: flutterLocaleOf(locale),
+        supportedLocales: AppLocale.values.map(flutterLocaleOf),
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        routerConfig: router,
+      ),
     );
   }
 }

@@ -77,8 +77,14 @@ final class WindowManagerHost implements WindowHost {
   /// consumer sees one `restored` for both — which is what the close policy
   /// and the geometry store actually act on.
   void _onEvent(wm.WindowEvent event) {
-    if (event.windowId != _window.id) {
-      return; // another engine's window; it runs its own host.
+    // The window is looked up with a guard here rather than through the
+    // throwing getter: an event can arrive before the current engine has
+    // registered its window — or belong to a window this engine never owned
+    // — and a listener that throws inside the native dispatch turns a
+    // foreign event into an unhandled crash.
+    final window = wm.WindowManager.instance.getCurrent();
+    if (window == null || event.windowId != window.id) {
+      return; // another engine's window, or none yet.
     }
     switch (event) {
       case wm.WindowCloseRequestedEvent(:final request):
