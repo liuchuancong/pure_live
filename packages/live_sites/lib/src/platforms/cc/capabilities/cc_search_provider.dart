@@ -1,6 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
+import 'package:live_sites/src/models/anchor/live_anchor/live_anchor.dart';
 import 'package:live_sites/src/models/enums/live_search_target.dart';
 import 'package:live_sites/src/models/page/live_page/live_page.dart';
 import 'package:live_sites/src/models/search/live_search_request/live_search_request.dart';
@@ -16,8 +17,9 @@ import 'package:live_sites/src/platforms/cc/parsers/cc_failure.dart';
 /// CC's search: the website's anchor search (`search/anchor/`), streamers
 /// live or not.
 ///
-/// Only rooms are searched — the site has no area index the adapter could
-/// ask.
+/// The same answer serves both targets: rooms for the lists, and anchors
+/// (the streamer's own card) for the anchor view. Areas are not searched —
+/// the site has no area index the adapter could ask.
 final class CcSearchProvider implements LiveSearchProvider {
   /// Serves [site].
   CcSearchProvider({required this.site});
@@ -26,7 +28,7 @@ final class CcSearchProvider implements LiveSearchProvider {
   final CcSite site;
 
   @override
-  Set<LiveSearchTarget> get supportedTargets => const {LiveSearchTarget.rooms};
+  Set<LiveSearchTarget> get supportedTargets => const {LiveSearchTarget.rooms, LiveSearchTarget.anchors};
 
   @override
   Future<Either<LiveSiteError, LivePage<LiveSearchResult>>> search(LiveSearchRequest request) async {
@@ -37,9 +39,22 @@ final class CcSearchProvider implements LiveSearchProvider {
     }
     try {
       final page = await site.search(request.query, page: request.page, pageSize: request.pageSize);
-      return right(
-        LivePage.of(items: [for (final room in page.rooms) LiveSearchResult.room(room)], hasMore: page.hasMore),
-      );
+      final items =
+          request.target == LiveSearchTarget.anchors
+          ? [
+              for (final room in page.rooms)
+                LiveSearchResult.anchor(
+                  LiveAnchor.of(
+                    platform: ccSiteId,
+                    anchorId: room.ref.roomId,
+                    name: room.content.title,
+                    avatarUrl: room.content.coverUrl.isEmpty ? null : room.content.coverUrl,
+                    liveStatus: room.broadcast.liveStatus,
+                  ),
+                ),
+            ]
+          : [for (final room in page.rooms) LiveSearchResult.room(room)];
+      return right(LivePage.of(items: items, hasMore: page.hasMore));
     } on CcFailure catch (failure) {
       return left(failure.toLiveSiteError(ccSiteId));
     } on Object catch (error) {
