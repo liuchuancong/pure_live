@@ -31,16 +31,16 @@
 - [x] T2 fluent 用法笔记:通读示例仓库,把本工程会用到的关键 API
       (FluentApp / FluentThemeData / NavigationView / Button / ContentDialog /
       Focus 相关)写成 `docs/fluent-ui-notes.md`,给后续所有施工任务当手册。
-- [ ] T3 主题桥接:新增 `pure_uikit` 的 Fluent 主题桥(由现有 token 生成
+- [x] T3 主题桥接:新增 `pure_uikit` 的 Fluent 主题桥(由现有 token 生成
       fluent_ui 的主题数据与强调色),保持旧 API 不动、旧依赖不动。
 - [x] T4 Host 收拢:`pure_uikit/src/app/hosts` 只保留 Fluent 宿主并改接
       `fluent_ui` 的 `FluentApp`;其余 8 个语言的宿主文件删除;非 fluent
       语言值一律回落 Fluent 宿主。
-- [ ] T5 控件分发清理:`src/styling/widgets/controls` 全部控件的
+- [x] T5 控件分发清理:`src/styling/widgets/controls` 全部控件的
       `PureDesignLanguage` 分支只留 fluent 路径,删除其余语言的绘制代码。
-- [ ] T6 Chrome 分发清理:`src/styling/widgets/chrome`(app bar / app shell /
+- [x] T6 Chrome 分发清理:`src/styling/widgets/chrome`(app bar / app shell /
       nav bar)同上。
-- [ ] T7 内容与布局分发清理:`src/styling/widgets/content`、`layout` 及
+- [x] T7 内容与布局分发清理:`src/styling/widgets/content`、`layout` 及
       `src/adaptive` 中残留的语言分发同上。
 - [x] T8 图标收敛:`src/icons` 删除按语言变化的图标主题与尺寸表,只保留
       Fluent 一套;`PureIcon` 注册机制不变。
@@ -73,7 +73,17 @@
 | 2026-10-23 | B1 | (随本提交) | ✅ | 按钮去 fluent_2 化:pure_button.dart 删除 package:fluent_2 import,按 fluent_2 0.0.7 原样(值名 rounded/circular/square、顺序与语义逐一核对 pub 缓存源码)在文件内声明公开 enum FluentButtonShape 并替换全部 f2.FluentButtonShape 引用,经 controls/widgets/styling barrel 导出,PureButton.fluentShape 公开 API 与 token 自绘视觉零变化;任务描述所述「f2 委托控件」与仓库现实矛盾(该控件从 token 全量自绘、不构建任何 fluent_2 控件,FluentButtonShape 为 fluent_2 独有、fluent_ui 0 命中),改用 fluent_ui Button/IconButton/HyperlinkButton 必然改变视觉故未采用,按矛盾规则做最小可行处理;apps/test 全仓 grep 0 处 fluentShape/FluentButtonShape 调用点,dart format --output=none 1 file 0 changed,flutter analyze 由脚本执行全绿;未触碰测试文件 |
 | 2026-10-23 | B2 | (随本提交) | ✅ | 旧依赖拆除:pure_uikit 与 apps/pure_live 的 pubspec 删除 fluent_2/forui/yaru(七退役依赖中仅此三者仍在任何 pubspec,macos_ui/glass_morphism_plus/flutter_neumorphic_ui_kit/fluttersdk_wind 实查已不存在);app_delegates.dart 去 fluent_2/forui delegates 只留 liveLocalizationsDelegates(fluent_ui 的 FluentApp 在 fluent_app.dart:427-432 自动追加自家 FluentLocalizations);yaru_icon_adapter.dart 就地改纯 Flutter Material 图标,公开常量 yaruIconsOverrides 与键集不变;随依赖删除唯一引用 yaru 的测试 pure_title_bar_caption_button_test.dart(规则禁改测试,按「被删代码对应测试可删」);根 flutter pub get 输出 Changed 22 dependencies!,自动重生 linux 插件注册表剔除 yaru 传递插件 gtk/yaru_window_linux;全仓 grep dart 导入与 pubspec 声明七包名 0 残留,lock 中七包 0 条目、fluent_ui/fluent2_kit/cupertino_icons 保留;platform override 注释里 yaru 11 的理由如实改写、override 保留解析未动;残留字样仅设计语言枚举名(公开 API)、历史文档与 third_party/yaru_window_manager(vendored 独立包);flutter analyze 由脚本执行通过,dart format 已对齐两处改写文件 |
 | 2026-10-23 | B3 | (随本提交) | ✅ | 枚举收敛 fluent 单值:pure_design_language.dart 删除其余 8 值,menu/toast 的九语言可视工厂与 switch 收敛为 fluent 一套(孤儿辅助 _blurred/_raised/_frost/_card 与 Apple 字形表随删),build_runner 于 packages/pure_uikit 重生成 pure_config.g.dart(freezed 仅类型引用无变化;新版 build_runner 已移除 --delete-conflicting-outputs,照任务原样执行被忽略);App 侧图标语言表与平台 override 只留 fluent 并删 3 个孤儿 adapter,ui_configuration_mapper 删 _retiredIds,font_recommendations 官方字体表按任务备注保留 fluent 条目、kBundledFonts 预设字体不动;pure_settings_ui 同样引用已删枚举值,按最小可行原则表收缩 fluent、删 8 个孤儿语言文件与 2 个测试;39 个引用已删枚举值无法编译的测试文件,规则禁改测试沿 T8/B2 先例随之删除;全仓 grep 已删枚举值与已删文件 import 0 残留,dart format 全部通过,analyze 由脚本执行通过(一轮修复:恢复 settings_language.dart 误删的 flutter/widgets.dart import) |
+| 2026-10-23 | B4 | (随本提交) | ✅ | 终验与台账收口通过:七退役 UI 包的 dart import 与 pubspec 声明全仓 0 残留(lock 仅 vendored yaru_window_manager 窗口工具)、退役设计语言值在 pure_uikit/pure_settings_ui/app 三侧 lib 代码 0 分发(生成文件纯 config 例外),第二批仅「旧依赖拆除」实际完成、其余三项未完成记入「阻塞与待定」,并补齐第一批 T3/T5/T6/T7 漏勾复选框;flutter analyze 按规则由脚本统一执行,本任务纯文档改动、无代码与测试改动 |
 
 ## 阻塞与待定
 
-(暂无)
+- [待排期] App 业务页面全面替换为 fluent_ui 原生控件(逐 feature):未开始。
+  实测 apps/pure_live/lib 全部 0 处 `package:fluent_ui` import,features 148 个
+  dart 文件中 87 个仍 import `flutter/material.dart`(2026-10-23 grep);页面现走
+  Pure* 组件 + Material 基建,逐 feature 替换需另行排期施工。
+- [待决策] `pure_settings_ui` 收敛评估:未做。B3 仅按最小可行原则修复枚举删除的
+  连锁引用(src/pure 表收缩 fluent);vendor/ 下仍保留 adwaita/android/ios/macos/web
+  等多平台 settings_section 与 split 的完整 vendored 实现,收敛与否、收敛到什么
+  程度尚无评估结论,需架构决策。
+- [需人工] TV 焦点、手机 / 平板布局验收:未做。需真机与人工走查,非代理可机械
+  完成,B1–B3 亦未覆盖;完成前不视为重构终验通过项。
