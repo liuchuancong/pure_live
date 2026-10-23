@@ -42,89 +42,78 @@
 
 ---
 
-## 1.5 代码生成与构造模式（freezed / json_serializable / equatable）
+## 1.5 代码生成与构造模式（built_value / built_collection）
 
-**手写 `==`、`hashCode`、`copyWith`、`toJson/fromJson` 一律违规——全部交给生成器。** 手写只允许三处：归一化工厂体、业务方法（`mergedWith` 等）、JsonConverter。加一个字段 = 在工厂里声明字段 + `dart run build_runner build`，结束。
+**手写 `==`、`hashCode`、`toJson/fromJson` 一律违规——全部交给生成器。** 手写只允许四处：`.of` 归一化工厂体、业务方法（`mergedWith` 等）、`@BuiltValueHook(initializeBuilder:)` 默认值、SerializerPlugin。加一个字段 = 在 `.of` 工厂与 getter 里声明字段 + `dart run build_runner build`，结束。
 
 ### 1.5.1 模型分三类（含目录形态）
 
 | 类别 | 工具链 | 目录形态 | 模型 |
 |---|---|---|---|
-| **A 值对象**（全字段相等即语义） | `@freezed`（持久化的加 json） | `models/<域>/<类型>/<类型>.{dart,freezed.dart[,g.dart]}` | RoomContent/Links/Local/Runtime、RoomBroadcast、RoomAudience、RoomGuide、GuideCatchUp、PlayQuality/Line/Lease/Geometry、MessageSender、Badge、Emote、Gift 族、SuperChat 族、Page/PageRequest、Search 族、AssetRef |
-| **B 身份实体** | `@freezed` + 身份下沉 `LiveRoomRef` | 同上 | LiveRoom、LiveArea、LiveAnchor |
-| **C 密封联合** | `@freezed` union | 同上 | LiveLinkResolution、LiveSearchResult、LiveSiteError |
+| **A 值对象**（全字段相等即语义） | built_value `Built<X, XBuilder>`（持久化的注册进 `serializers`） | `models/<域>/<类型>/<类型>.{dart,g.dart}` | RoomContent/Links/Local/Runtime、RoomBroadcast、RoomAudience、RoomGuide、GuideCatchUp、PlayQuality/Line/Lease/Geometry、MessageSender、Badge、Emote、Gift 族、SuperChat 族、Page/PageRequest、Search 族、AssetRef |
+| **B 身份实体** | built_value + 身份下沉 `LiveRoomRef` | 同上 | LiveRoom、LiveArea、LiveAnchor |
+| **C 密封联合** | **手写 sealed class**（不进生成器） | 单文件、无生成物 | LiveSearchResult、LiveSiteError |
 
-**B 类的相等约定**：freezed 不允许覆写 `==`，因此——
+**B 类的相等约定**：
 
-- `LiveRoomRef(platform, roomId)`：freezed 生成全字段相等，**恰好就是身份相等**；
+- `LiveRoomRef(platform, roomId)`：built_value 生成全字段相等，**恰好就是身份相等**；
 - `LiveRoom` 自身 `==` 是全字段相等（值语义）：同一房间刷新后标题变化 ⇒ 不相等，这是**正确**的；
 - **身份比较/去重/合并一律显式走 `room.ref` 或 `ref.identityKey`**（`Set`/`Map` 用 `Map<String, LiveRoom>` keyed by `identityKey`），禁止依赖 `Set<LiveRoom>` 的去重行为。
 
-`equatable` 只用于非模型的不可变手写类（错误详情、配置对象）；模型本体不用。
-
-### 1.5.2 归一化模式：raw 工厂
+### 1.5.2 构造模式：重定向工厂 + `.of` 归一化工厂
 
 ```dart
-@freezed
-abstract class LiveRoom with _$LiveRoom {
-  const LiveRoom._();
+abstract class LiveRoom implements Built<LiveRoom, LiveRoomBuilder> {
+  /// 生成器要求的重定向工厂：`LiveRoom()` 全默认构造走 initializeBuilder 钩子。
+  factory LiveRoom([void Function(LiveRoomBuilder)? updates]) = _$LiveRoom;
 
-  /// 唯一 redirecting 工厂：字段已归一；copyWith 与 fromJson 生成代码走它。
-  @visibleForTesting
-  const factory LiveRoom.raw({required LiveRoomRef ref, RoomContent content = const RoomContent()})
-      = _LiveRoom;
+  /// 命名参数工厂：字段已归一；调用点一律 `LiveRoom.of(...)`。
+  factory LiveRoom.of({required LiveRoomRef ref, RoomContent? content}) => LiveRoom((b) => b
+    ..ref.replace(ref)
+    ..content.replace(content ?? RoomContent()));
 
-  /// 业务工厂：先归一（trim/lowercase/UTC/去占位符）再委托 raw。必须幂等。
-  factory LiveRoom({required String platform, required String roomId, RoomContent content = const RoomContent()}) =>
-      LiveRoom.raw(
-        ref: LiveRoomRef(platform: platform.trim().toLowerCase(), roomId: roomId.trim()),
-        content: content,
-      );
+  LiveRoom._();
 
-  factory LiveRoom.fromJson(Map<String, Object?> json) => _$LiveRoomFromJson(json);
+  /// 持久化模型注册进 models/serializers.dart 的 @SerializersFor 表。
+  factory LiveRoom.fromJson(Map<String, Object?> json) =>
+      serializers.deserializeWith(LiveRoom.serializer, json)!;
+  static Serializer<LiveRoom> get serializer => _$liveRoomSerializer;
+
+  @BuiltValueHook(initializeBuilder: true)
+  static void _initialize(LiveRoomBuilder b) => b..content.replace(RoomContent());
+
+  /// 业务工厂：先归一（trim/lowercase/UTC/去占位符）再委托 .of。必须幂等。
+  factory LiveRoom.normalized({String platform = '', String roomId = ''}) => LiveRoom.of(
+    ref: LiveRoomRef.of(platform: platform.trim().toLowerCase(), roomId: roomId.trim()),
+  );
 }
 ```
 
-要点：`raw` 带默认值（copyWith 不传就保持）；归一化只写在业务工厂体内；fromJson 走 json_serializable 生成的 `_$XxxFromJson`（对旧 schema 的兼容读入放在 `@JsonKey(fromJson:)` 指向的 converter，不放工厂）。
+要点：`copyWith` 不存在，改 `rebuild((b) => b..x = y)`；嵌套 Built 字段在 builder 上用 `.replace(x)`，可空嵌套用 `x?.toBuilder()`；集合字段是 `BuiltList`/`BuiltMap`，工厂参数保持 `List`/`Map` 由内部 `replace` 收编；默认值全部走 `_initialize` 钩子（Dart 默认参数必须是 const，built_value 实例不是）。wire 格式由 `serializers.dart` 的插件定义：`DateTime` 为 ISO-8601、`Uri` 为字符串、枚举为 name；旧 freezed/json_serializable 格式从未被任何消费方写过，格式就此另起。
 
-part 指令示例（一类型一目录）：
+part 指令（一类型一目录）：
 ```dart
-part 'live_room.freezed.dart';
 part 'live_room.g.dart';
 ```
 
-### 1.5.3 converters（脏解析的唯一居所）
+### 1.5.3 手写不可变与自定义序列化
 
-`models/converters/` 目录独立，**一 converter 一文件**，`converters/converters.dart` 为 barrel：
+`LiveMessageColor`（位置参数 const 构造的 Three-Int 值）与 `LiveMessageStyle`（仅内存的 UI 值）是手写 `@immutable` 类；Color 通过 `StructuredSerializer` 适配进 `serializers` 表，Style 不序列化。`LiveMessage.payload/style` 与 `RoomRuntime` 的句柄字段 `@BuiltValueField(serialize: false)`，永不落盘。
 
-| Converter | 文件 | 干什么 |
-|---|---|---|
-| `LiveStatusByNameConverter` | `live_status_by_name_converter.dart` | 枚举 name 字符串读写；读入兼容 v1 index int |
-| `EpochMillisConverter` | `epoch_millis_converter.dart` | 毫秒 ↔ `DateTime?`（UTC） |
-| `IsoTimeConverter` | `iso_time_converter.dart` | ISO-8601 ↔ `DateTime?`（UTC） |
-| `AudienceNumberConverter` | `audience_number_converter.dart` | `"1.2万"/"3,400"` → `int?`（null=未知） |
-| `UriStringConverter` | `uri_string_converter.dart` | 字符串 ↔ `Uri?`，非法给 null 不抛 |
-| `StringifyConverter` | `stringify_converter.dart` | 平台数字 id → String |
+### 1.5.4 生成器同升同降
 
-枚举专属 converter **放 `converters/`，不放枚举同文件**——枚举文件保持纯声明，converter 集中统一审查。
-
-### 1.5.4 五件套同升同降
-
-`freezed_annotation / freezed / json_annotation / json_serializable / build_runner`（**`analyzer` 不直接声明**，由 `very_good_analysis` 与生成器牵引）整体升级：升 SDK 约束 → 升五件套 → `dart run build_runner build --delete-conflicting-outputs` → `dart analyze` 全绿 → 源与生成物**同一 PR**提交。生成物永远与源同目录同名，手改生成物直接打回。
+`built_value / built_collection / built_value_generator / build_runner` 整体升级：升 SDK 约束 → 升四件套 → `dart run build_runner build` → `dart analyze` 全绿 → 源与生成物**同一 PR**提交。生成物永远与源同目录同名，手改生成物直接打回。
 
 当前基准（`packages/live_sites/pubspec.yaml`，`sdk: ^3.13.0`、`resolution: workspace`）：
 
 ```yaml
 dependencies:
-  equatable: ^2.0.7
-  freezed_annotation: ^3.1.0
-  json_annotation: ^4.12.0
+  built_collection: ^5.1.2
+  built_value: ^8.13.0
 
 dev_dependencies:
-  build_runner: ^2.16.0
-  freezed: ^4.0.2
-  json_serializable: ^6.14.0
-  very_good_analysis: ^11.0.0
+  build_runner: ^2.16.2
+  built_value_generator: ^8.13.0
 ```
 
 ---

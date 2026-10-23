@@ -1,5 +1,3 @@
-# Shared codegen options for live_sites models (ARCHITECTURE.md §9).
-#
-# explicit_to_json made json_serializable call `.toJson()` on nested
-# freezed values; built_value's serializers nest natively, so the option
-# and the whole target block go away once the migration lands.
+# No shared codegen options yet: built_value's generators need none, and
+# the retired json_serializable block (explicit_to_json for freezed values)
+# went with freezed itself.

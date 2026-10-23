@@ -10,7 +10,7 @@
 
 | # | v1 的问题 | v2 的决定 |
 |---|---|---|
-| 1 | `models/` 一类型一目录时条目散落、枚举混在属主文件里难定位；另一极端（全扁平成少数大文件）又让单类型不可独立生成/测试 | **一类型一目录**（`live_room/live_room.{dart,freezed.dart,g.dart}`）；**枚举独立 `models/enums/` 单文件**；**converter 独立 `models/converters/` 单文件**；每领域一个 barrel 文件做聚合出口（§3、§9.1a） |
+| 1 | `models/` 一类型一目录时条目散落、枚举混在属主文件里难定位；另一极端（全扁平成少数大文件）又让单类型不可独立生成/测试 | **一类型一目录**（`live_room/live_room.{dart,g.dart}`）；**枚举独立 `models/enums/` 单文件**；**枚举独立 `models/enums/` 单文件**；每领域一个 barrel 文件做聚合出口（§3、§9.1a） |
 | 2 | `LiveRoom` 双重结构：8 个子对象 + 30 参数扁平构造器 + 40 个委托 getter，加一个字段改 7 处 | **子对象是唯一形态**；扁平访问器仅迁移期保留并 `@Deprecated`（§6） |
 | 3 | 观众数是 `String`，`'0'`/`''`/`'null'` 三种语义 | 数量一律 `int?`，null=未知；解析/格式化在边界（MODELS.md §1.3） |
 | 4 | 平台特例写在共享模型里（Huya 热度特判、B 站瞬时掉 1、平台能力表） | **共享模型禁止出现平台名的 switch**，quirk 全部下沉平台适配器（§7.4） |
@@ -97,64 +97,64 @@ packages/live_sites/
 │       ├── capabilities/             # 11 个能力接口（现状保留）
 │       ├── models/                   # ★ 一类型一目录 + enums + converters + 领域 barrel
 │       │   ├── room/
-│       │   │   ├── live_room/{live_room.dart, live_room.freezed.dart, live_room.g.dart}
-│       │   │   ├── live_room_ref/{live_room_ref.dart, live_room_ref.freezed.dart}
-│       │   │   ├── room_broadcast/{room_broadcast.dart, room_broadcast.freezed.dart}
-│       │   │   ├── room_content/{room_content.dart, room_content.freezed.dart}
-│       │   │   ├── room_links/{room_links.dart, room_links.freezed.dart}
-│       │   │   ├── room_audience/{room_audience.dart, room_audience.freezed.dart}
-│       │   │   ├── room_local/{room_local.dart, room_local.freezed.dart}
-│       │   │   ├── room_runtime/{room_runtime.dart, room_runtime.freezed.dart}
+│       │   │   ├── live_room/{live_room.dart, live_room, live_room.g.dart}
+│       │   │   ├── live_room_ref/{live_room_ref.dart, live_room_ref}
+│       │   │   ├── room_broadcast/{room_broadcast.dart, room_broadcast}
+│       │   │   ├── room_content/{room_content.dart, room_content}
+│       │   │   ├── room_links/{room_links.dart, room_links}
+│       │   │   ├── room_audience/{room_audience.dart, room_audience}
+│       │   │   ├── room_local/{room_local.dart, room_local}
+│       │   │   ├── room_runtime/{room_runtime.dart, room_runtime}
 │       │   │   └── room.dart                      # barrel：export 本领域全部
 │       │   ├── anchor/
-│       │   │   ├── live_anchor/{live_anchor.dart, live_anchor.freezed.dart}
+│       │   │   ├── live_anchor/{live_anchor.dart, live_anchor}
 │       │   │   └── anchor.dart
 │       │   ├── area/
-│       │   │   ├── live_area/{live_area.dart, live_area.freezed.dart}
+│       │   │   ├── live_area/{live_area.dart, live_area}
 │       │   │   └── area.dart
 │       │   ├── audience/
-│       │   │   ├── live_audience_update/{live_audience_update.dart, live_audience_update.freezed.dart}
+│       │   │   ├── live_audience_update/{live_audience_update.dart, live_audience_update}
 │       │   │   └── audience.dart
 │       │   ├── guide/
-│       │   │   ├── room_guide/{room_guide.dart, room_guide.freezed.dart}
-│       │   │   ├── guide_catch_up/{guide_catch_up.dart, guide_catch_up.freezed.dart}
+│       │   │   ├── room_guide/{room_guide.dart, room_guide}
+│       │   │   ├── guide_catch_up/{guide_catch_up.dart, guide_catch_up}
 │       │   │   └── guide.dart
 │       │   ├── message/
-│       │   │   ├── live_message/{live_message.dart, live_message.freezed.dart}
-│       │   │   ├── message_sender/{message_sender.dart, message_sender.freezed.dart}
-│       │   │   ├── live_badge/{live_badge.dart, live_badge.freezed.dart}
-│       │   │   ├── live_emote/{live_emote.dart, live_emote.freezed.dart}
-│       │   │   ├── live_message_color/{live_message_color.dart, live_message_color.freezed.dart}
-│       │   │   ├── live_message_style/{live_message_style.dart, live_message_style.freezed.dart}
-│       │   │   ├── live_retraction/{live_retraction.dart, live_retraction.freezed.dart}
+│       │   │   ├── live_message/{live_message.dart, live_message}
+│       │   │   ├── message_sender/{message_sender.dart, message_sender}
+│       │   │   ├── live_badge/{live_badge.dart, live_badge}
+│       │   │   ├── live_emote/{live_emote.dart, live_emote}
+│       │   │   ├── live_message_color/{live_message_color.dart, live_message_color}
+│       │   │   ├── live_message_style/{live_message_style.dart, live_message_style}
+│       │   │   ├── live_retraction/{live_retraction.dart, live_retraction}
 │       │   │   └── message.dart
 │       │   ├── gift/
-│       │   │   ├── live_gift/{live_gift.dart, live_gift.freezed.dart}
-│       │   │   ├── live_gift_value/{live_gift_value.dart, live_gift_value.freezed.dart}
-│       │   │   ├── live_gift_combo/{live_gift_combo.dart, live_gift_combo.freezed.dart}
+│       │   │   ├── live_gift/{live_gift.dart, live_gift}
+│       │   │   ├── live_gift_value/{live_gift_value.dart, live_gift_value}
+│       │   │   ├── live_gift_combo/{live_gift_combo.dart, live_gift_combo}
 │       │   │   └── gift.dart
 │       │   ├── super_chat/
-│       │   │   ├── live_super_chat_message/{live_super_chat_message.dart, live_super_chat_message.freezed.dart}
-│       │   │   ├── live_super_chat_price/{live_super_chat_price.dart, live_super_chat_price.freezed.dart}
-│       │   │   ├── live_super_chat_display/{live_super_chat_display.dart, live_super_chat_display.freezed.dart}
+│       │   │   ├── live_super_chat_message/{live_super_chat_message.dart, live_super_chat_message}
+│       │   │   ├── live_super_chat_price/{live_super_chat_price.dart, live_super_chat_price}
+│       │   │   ├── live_super_chat_display/{live_super_chat_display.dart, live_super_chat_display}
 │       │   │   └── super_chat.dart
 │       │   ├── play/
-│       │   │   ├── live_play_quality/{live_play_quality.dart, live_play_quality.freezed.dart}
-│       │   │   ├── live_play_line/{live_play_line.dart, live_play_line.freezed.dart}
-│       │   │   ├── live_play_lease/{live_play_lease.dart, live_play_lease.freezed.dart}
-│       │   │   ├── play_geometry/{play_geometry.dart, play_geometry.freezed.dart}
+│       │   │   ├── live_play_quality/{live_play_quality.dart, live_play_quality}
+│       │   │   ├── live_play_line/{live_play_line.dart, live_play_line}
+│       │   │   ├── live_play_lease/{live_play_lease.dart, live_play_lease}
+│       │   │   ├── play_geometry/{play_geometry.dart, play_geometry}
 │       │   │   ├── infer_stream_format.dart       # 纯函数，无生成物
 │       │   │   └── play.dart
 │       │   ├── search/
-│       │   │   ├── live_search_request/{live_search_request.dart, live_search_request.freezed.dart}
-│       │   │   ├── live_search_result/{live_search_result.dart, live_search_result.freezed.dart}  # sealed union
+│       │   │   ├── live_search_request/{live_search_request.dart, live_search_request}
+│       │   │   ├── live_search_result/{live_search_result.dart, live_search_result}  # sealed union
 │       │   │   └── search.dart
 │       │   ├── page/
-│       │   │   ├── live_page_request/{live_page_request.dart, live_page_request.freezed.dart}
-│       │   │   ├── live_page/{live_page.dart, live_page.freezed.dart}   # 泛型
+│       │   │   ├── live_page_request/{live_page_request.dart, live_page_request}
+│       │   │   ├── live_page/{live_page.dart, live_page}   # 泛型
 │       │   │   └── page.dart
 │       │   ├── asset/
-│       │   │   ├── live_asset_ref/{live_asset_ref.dart, live_asset_ref.freezed.dart}
+│       │   │   ├── live_asset_ref/{live_asset_ref.dart, live_asset_ref}
 │       │   │   └── asset.dart
 │       │   ├── enums/                             # ★ 枚举：一文件一枚举，纯 .dart
 │       │   │   ├── live_status.dart
@@ -199,7 +199,7 @@ packages/live_sites/
     └── platforms/<id>/               # parser 金样本测试
 ```
 
-> 现存 `models/` 根目录 13 个孤儿 `.freezed.dart/.g.dart`、`contracts/`、`registry/` 的孤儿生成物：**Phase 0 删除**（已确认无任何引用）。
+> 现存 `models/` 根目录 13 个孤儿 `/.g.dart`、`contracts/`、`registry/` 的孤儿生成物：**Phase 0 删除**（已确认无任何引用）。
 
 **依赖规则补充**：`enums/` 不引用任何 models 目录；领域类型引用 `enums/` 与 `converters/`；barrel 只 export 不定义。
 
@@ -316,7 +316,7 @@ Future<Either<LiveSiteError, T>> xxx(...);   // 能力接口签名
 
 ### 9.1a 为何一类型一目录（目录形态决策）
 
-- **生成物定位**：`.freezed.dart`/`.g.dart` 必须与源同目录同名（§9.5）。一类型一目录让单个类型的源与生成物共处一个目录，`LiveRoom` 的生成代码就在 `live_room/` 里，不需要在一堆同名字段文件间翻找。
+- **生成物定位**：``/`.g.dart` 必须与源同目录同名（§9.5）。一类型一目录让单个类型的源与生成物共处一个目录，`LiveRoom` 的生成代码就在 `live_room/` 里，不需要在一堆同名字段文件间翻找。
 - **独立演进**：单类型的 `freezed`/`json_serializable` 输入输出边界清晰，加字段的 diff 只落在该类型目录。
 - **枚举与 converter 解耦**：枚举独立 `models/enums/` 单文件（纯 `.dart`，无生成物）；converter 独立 `models/converters/` 单文件；脏解析规则集中但不与枚举耦合。
 - **导航成本可控**：每领域一个 barrel（`room.dart`）保留聚合出口，公共出口仍只 export barrel，外部无感（§10 成立）。
@@ -397,7 +397,7 @@ dev_dependencies:
 ### 9.5 生成物卫生（对孤儿文件问题的硬规则）
 
 - 生成文件与源文件**同目录同名**；源文件删除/移动时生成文件必须同删同移。
-- PR 检查：`git status` 出现无源 `.g.dart/.freezed.dart` 即不合并；改名后旧生成物残留即不合并。
+- PR 检查：`git status` 出现无源 `.g.dart/` 即不合并；改名后旧生成物残留即不合并。
 - 手改生成文件 = 直接打回。
 - 现存 16 个孤儿生成物：Phase 0 一次性清除。
 
