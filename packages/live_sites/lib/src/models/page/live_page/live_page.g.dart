@@ -16,18 +16,11 @@ class _$LivePage<T> extends LivePage<T> {
   @override
   final bool? hasMore;
 
-  factory _$LivePage([void Function(LivePageBuilder<T>)? updates]) =>
-      (LivePageBuilder<T>()..update(updates))._build();
+  factory _$LivePage([void Function(LivePageBuilder<T>)? updates]) => (LivePageBuilder<T>()..update(updates))._build();
 
-  _$LivePage._({
-    required this.items,
-    this.totalCount,
-    this.nextCursor,
-    this.hasMore,
-  }) : super._();
+  _$LivePage._({required this.items, this.totalCount, this.nextCursor, this.hasMore}) : super._();
   @override
-  LivePage<T> rebuild(void Function(LivePageBuilder<T>) updates) =>
-      (toBuilder()..update(updates)).build();
+  LivePage<T> rebuild(void Function(LivePageBuilder<T>) updates) => (toBuilder()..update(updates)).build();
 
   @override
   LivePageBuilder<T> toBuilder() => LivePageBuilder<T>()..replace(this);
@@ -115,23 +108,14 @@ class LivePageBuilder<T> implements Builder<LivePage<T>, LivePageBuilder<T>> {
     try {
       _$result =
           _$v ??
-          _$LivePage<T>._(
-            items: items.build(),
-            totalCount: totalCount,
-            nextCursor: nextCursor,
-            hasMore: hasMore,
-          );
+          _$LivePage<T>._(items: items.build(), totalCount: totalCount, nextCursor: nextCursor, hasMore: hasMore);
     } catch (_) {
       late String _$failedField;
       try {
         _$failedField = 'items';
         items.build();
       } catch (e) {
-        throw BuiltValueNestedFieldError(
-          r'LivePage',
-          _$failedField,
-          e.toString(),
-        );
+        throw BuiltValueNestedFieldError(r'LivePage', _$failedField, e.toString());
       }
       rethrow;
     }

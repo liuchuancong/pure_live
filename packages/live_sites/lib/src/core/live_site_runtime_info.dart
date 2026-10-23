@@ -49,14 +49,10 @@ class LiveSiteRuntimeInfo {
 
   /// Builds a status snapshot for [siteId], its facts taken from
   /// [SiteFacts].
-  LiveSiteRuntimeInfo.of(
-    String siteId, {
-    required this.status,
-    this.message,
-    this.lastCheckedAt,
-  }) : isVoiceLive = SiteFacts.isVoiceLive(siteId),
-       hasSuperChats = SiteFacts.hasSuperChats(siteId),
-       superChatUnit = SiteFacts.superChatUnitOf(siteId);
+  LiveSiteRuntimeInfo.of(String siteId, {required this.status, this.message, this.lastCheckedAt})
+    : isVoiceLive = SiteFacts.isVoiceLive(siteId),
+      hasSuperChats = SiteFacts.hasSuperChats(siteId),
+      superChatUnit = SiteFacts.superChatUnitOf(siteId);
 
   /// The lifecycle state.
   final LiveSiteStatus status;

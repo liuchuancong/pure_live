@@ -1,6 +1,7 @@
 /// The shared primitives every platform adapter builds on:
 /// codecs, crypto, HLS parsing, normalization and the danmaku socket.
 library;
+
 export 'codec/brotli.dart';
 export 'crypto/aes_cbc.dart';
 export 'danmaku/emotes.dart';

@@ -1,5 +1,112 @@
 import 'package:live_sites/src/models/enums/live_gift_unit.dart';
 
+/// Every built-in site's stable id, in one place: the manifests name
+/// their platform by it and the tables below read them by it, so an id is
+/// written exactly once.
+abstract final class SiteIds {
+  /// The acfun platform id.
+  static const String acfun = 'acfun';
+
+  /// The baidulive platform id.
+  static const String baiduLive = 'baidulive';
+
+  /// The bigo platform id.
+  static const String bigo = 'bigo';
+
+  /// The bilibili platform id.
+  static const String bilibili = 'bilibili';
+
+  /// The cc platform id.
+  static const String cc = 'cc';
+
+  /// The chzzk platform id.
+  static const String chzzk = 'chzzk';
+
+  /// The douyin platform id.
+  static const String douyin = 'douyin';
+
+  /// The douyu platform id.
+  static const String douyu = 'douyu';
+
+  /// The fc2live platform id.
+  static const String fc2Live = 'fc2live';
+
+  /// The huya platform id.
+  static const String huya = 'huya';
+
+  /// The inke platform id.
+  static const String inke = 'inke';
+
+  /// The jdlive platform id.
+  static const String jdLive = 'jdlive';
+
+  /// The kick platform id.
+  static const String kick = 'kick';
+
+  /// The kilakila platform id.
+  static const String kilakila = 'kilakila';
+
+  /// The kuaishou platform id.
+  static const String kuaishou = 'kuaishou';
+
+  /// The kugoulive platform id.
+  static const String kugouLive = 'kugoulive';
+
+  /// The liveme platform id.
+  static const String liveMe = 'liveme';
+
+  /// The looklive platform id.
+  static const String lookLive = 'looklive';
+
+  /// The missevan platform id.
+  static const String missevan = 'missevan';
+
+  /// The niconico platform id.
+  static const String niconico = 'niconico';
+
+  /// The pandalive platform id.
+  static const String pandaLive = 'pandalive';
+
+  /// The picarto platform id.
+  static const String picarto = 'picarto';
+
+  /// The 17live platform id.
+  static const String seventeenLive = '17live';
+
+  /// The showroom platform id.
+  static const String showroom = 'showroom';
+
+  /// The sixroom platform id.
+  static const String sixRoom = 'sixroom';
+
+  /// The soop platform id.
+  static const String soop = 'soop';
+
+  /// The steambroadcast platform id.
+  static const String steamBroadcast = 'steambroadcast';
+
+  /// The tiktok platform id.
+  static const String tiktok = 'tiktok';
+
+  /// The twitcasting platform id.
+  static const String twitcasting = 'twitcasting';
+
+  /// The twitch platform id.
+  static const String twitch = 'twitch';
+
+  /// The weibo platform id.
+  static const String weibo = 'weibo';
+
+  /// The xiaohongshu platform id.
+  static const String xiaohongshu = 'xiaohongshu';
+
+  /// The youtube platform id.
+  static const String youtube = 'youtube';
+
+  /// The yy platform id.
+  static const String yy = 'yy';
+}
+
 /// Cross-site knowledge that is not any one site's business: platform facts
 /// the whole package and the app ask about by site id (the counterpart of
 /// the per-site `LiveSiteManifest`, which holds what each site says about
@@ -8,7 +115,7 @@ abstract final class SiteFacts {
   /// Voice platforms: the stream's video track is a placeholder (Missevan's
   /// 16 × 16 picture) or a plain background (Kilakila's colour or picture),
   /// so a room shows its cover instead of the video.
-  static const Set<String> voiceLive = {'missevan', 'kilakila'};
+  static const Set<String> voiceLive = {SiteIds.missevan, SiteIds.kilakila};
 
   /// Platforms whose room id is a user name or alias the platform itself
   /// matches without regard to case, so room identity folds case there. The
@@ -25,14 +132,14 @@ abstract final class SiteFacts {
   /// - Bigo: the user id; answered in its own spelling.
   /// - Kick: the slug, matched without regard to case.
   static const Set<String> caseInsensitiveRoomIds = {
-    'twitch',
-    'soop',
-    'picarto',
-    'twitcasting',
-    'douyu',
-    'kuaishou',
-    'bigo',
-    'kick',
+    SiteIds.twitch,
+    SiteIds.soop,
+    SiteIds.picarto,
+    SiteIds.twitcasting,
+    SiteIds.douyu,
+    SiteIds.kuaishou,
+    SiteIds.bigo,
+    SiteIds.kick,
   };
 
   /// Platforms retired before this lineage (hard to maintain, niche or
@@ -83,17 +190,17 @@ abstract final class SiteFacts {
   ///   17LIVE's paid barrage in points; Kick's Kicks with a message; Six
   ///   Rooms' fly-screens in six coins.
   static const Map<String, LiveGiftUnit> superChatUnits = {
-    'bilibili': LiveGiftUnit.yuan,
-    'douyu': LiveGiftUnit.yuan,
-    'huya': LiveGiftUnit.yuan,
-    'missevan': LiveGiftUnit.diamond,
-    'kilakila': LiveGiftUnit.redBean,
-    'picarto': LiveGiftUnit.other,
-    'chzzk': LiveGiftUnit.cheese,
-    'youtube': LiveGiftUnit.other,
-    '17live': LiveGiftUnit.point,
-    'kick': LiveGiftUnit.kicks,
-    'sixroom': LiveGiftUnit.sixCoin,
+    SiteIds.bilibili: LiveGiftUnit.yuan,
+    SiteIds.douyu: LiveGiftUnit.yuan,
+    SiteIds.huya: LiveGiftUnit.yuan,
+    SiteIds.missevan: LiveGiftUnit.diamond,
+    SiteIds.kilakila: LiveGiftUnit.redBean,
+    SiteIds.picarto: LiveGiftUnit.other,
+    SiteIds.chzzk: LiveGiftUnit.cheese,
+    SiteIds.youtube: LiveGiftUnit.other,
+    SiteIds.seventeenLive: LiveGiftUnit.point,
+    SiteIds.kick: LiveGiftUnit.kicks,
+    SiteIds.sixRoom: LiveGiftUnit.sixCoin,
   };
 
   /// The platforms with super chats: the keys of [superChatUnits].
@@ -113,8 +220,7 @@ abstract final class SiteFacts {
 
   /// The unit the platform's super chat prices are counted in, when it has
   /// super chats at all.
-  static LiveGiftUnit? superChatUnitOf(String platform) =>
-      superChatUnits[platform.trim().toLowerCase()];
+  static LiveGiftUnit? superChatUnitOf(String platform) => superChatUnits[platform.trim().toLowerCase()];
 
   /// Whether [platform] is a retired platform (see [retired]).
   static bool isRetired(String platform) => retired.contains(platform.trim().toLowerCase());

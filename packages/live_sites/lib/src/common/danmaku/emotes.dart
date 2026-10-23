@@ -55,7 +55,12 @@ final class DanmakuEmoji {
         );
       case 'douyu':
         final key = fallbackKey.startsWith('[') && fallbackKey.endsWith(']') ? fallbackKey : '[$fallbackKey]';
-        return DanmakuEmoji(primaryKey: key, text: key, url: text(json['img_url']), localFile: text(json['local_file']));
+        return DanmakuEmoji(
+          primaryKey: key,
+          text: key,
+          url: text(json['img_url']),
+          localFile: text(json['local_file']),
+        );
       case 'huya':
         final key = text(json['sName']);
         final escape = text(json['sEscape']);

@@ -20,18 +20,13 @@ class _$GuideCatchUpSerializer implements StructuredSerializer<GuideCatchUp> {
     GuideCatchUp object, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = <Object?>[
-      'active',
-      serializers.serialize(object.active, specifiedType: const FullType(bool)),
-    ];
+    final result = <Object?>['active', serializers.serialize(object.active, specifiedType: const FullType(bool))];
     Object? value;
     value = object.url;
     if (value != null) {
       result
         ..add('url')
-        ..add(
-          serializers.serialize(value, specifiedType: const FullType(String)),
-        );
+        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
     }
     value = object.start;
     if (value != null) {
@@ -49,41 +44,31 @@ class _$GuideCatchUpSerializer implements StructuredSerializer<GuideCatchUp> {
     if (value != null) {
       result
         ..add('mode')
-        ..add(
-          serializers.serialize(value, specifiedType: const FullType(String)),
-        );
+        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
     }
     value = object.urlTemplate;
     if (value != null) {
       result
         ..add('urlTemplate')
-        ..add(
-          serializers.serialize(value, specifiedType: const FullType(String)),
-        );
+        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
     }
     value = object.windowDays;
     if (value != null) {
       result
         ..add('windowDays')
-        ..add(
-          serializers.serialize(value, specifiedType: const FullType(double)),
-        );
+        ..add(serializers.serialize(value, specifiedType: const FullType(double)));
     }
     value = object.correctionHours;
     if (value != null) {
       result
         ..add('correctionHours')
-        ..add(
-          serializers.serialize(value, specifiedType: const FullType(double)),
-        );
+        ..add(serializers.serialize(value, specifiedType: const FullType(double)));
     }
     value = object.catchupId;
     if (value != null) {
       result
         ..add('catchupId')
-        ..add(
-          serializers.serialize(value, specifiedType: const FullType(String)),
-        );
+        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
     }
     return result;
   }
@@ -103,60 +88,31 @@ class _$GuideCatchUpSerializer implements StructuredSerializer<GuideCatchUp> {
       final Object? value = iterator.current;
       switch (key) {
         case 'url':
-          result.url = serializers.deserialize(
-            value,
-            specifiedType: const FullType(String),
-          ) as String?;
+          result.url = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
           break;
         case 'active':
-          result.active =
-              serializers.deserialize(
-                    value,
-                    specifiedType: const FullType(bool),
-                  )!
-                  as bool;
+          result.active = serializers.deserialize(value, specifiedType: const FullType(bool))! as bool;
           break;
         case 'start':
-          result.start = serializers.deserialize(
-            value,
-            specifiedType: const FullType(int),
-          ) as int?;
+          result.start = serializers.deserialize(value, specifiedType: const FullType(int)) as int?;
           break;
         case 'end':
-          result.end = serializers.deserialize(
-            value,
-            specifiedType: const FullType(int),
-          ) as int?;
+          result.end = serializers.deserialize(value, specifiedType: const FullType(int)) as int?;
           break;
         case 'mode':
-          result.mode = serializers.deserialize(
-            value,
-            specifiedType: const FullType(String),
-          ) as String?;
+          result.mode = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
           break;
         case 'urlTemplate':
-          result.urlTemplate = serializers.deserialize(
-            value,
-            specifiedType: const FullType(String),
-          ) as String?;
+          result.urlTemplate = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
           break;
         case 'windowDays':
-          result.windowDays = serializers.deserialize(
-            value,
-            specifiedType: const FullType(double),
-          ) as double?;
+          result.windowDays = serializers.deserialize(value, specifiedType: const FullType(double)) as double?;
           break;
         case 'correctionHours':
-          result.correctionHours = serializers.deserialize(
-            value,
-            specifiedType: const FullType(double),
-          ) as double?;
+          result.correctionHours = serializers.deserialize(value, specifiedType: const FullType(double)) as double?;
           break;
         case 'catchupId':
-          result.catchupId = serializers.deserialize(
-            value,
-            specifiedType: const FullType(String),
-          ) as String?;
+          result.catchupId = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
           break;
       }
     }
@@ -200,8 +156,7 @@ class _$GuideCatchUp extends GuideCatchUp {
     this.catchupId,
   }) : super._();
   @override
-  GuideCatchUp rebuild(void Function(GuideCatchUpBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+  GuideCatchUp rebuild(void Function(GuideCatchUpBuilder) updates) => (toBuilder()..update(updates)).build();
 
   @override
   GuideCatchUpBuilder toBuilder() => GuideCatchUpBuilder()..replace(this);
@@ -253,8 +208,7 @@ class _$GuideCatchUp extends GuideCatchUp {
   }
 }
 
-class GuideCatchUpBuilder
-    implements Builder<GuideCatchUp, GuideCatchUpBuilder> {
+class GuideCatchUpBuilder implements Builder<GuideCatchUp, GuideCatchUpBuilder> {
   _$GuideCatchUp? _$v;
 
   String? _url;
@@ -287,8 +241,7 @@ class GuideCatchUpBuilder
 
   double? _correctionHours;
   double? get correctionHours => _$this._correctionHours;
-  set correctionHours(double? correctionHours) =>
-      _$this._correctionHours = correctionHours;
+  set correctionHours(double? correctionHours) => _$this._correctionHours = correctionHours;
 
   String? _catchupId;
   String? get catchupId => _$this._catchupId;
@@ -333,11 +286,7 @@ class GuideCatchUpBuilder
         _$v ??
         _$GuideCatchUp._(
           url: url,
-          active: BuiltValueNullFieldError.checkNotNull(
-            active,
-            r'GuideCatchUp',
-            'active',
-          ),
+          active: BuiltValueNullFieldError.checkNotNull(active, r'GuideCatchUp', 'active'),
           start: start,
           end: end,
           mode: mode,

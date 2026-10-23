@@ -6,7 +6,8 @@
 // ignore_for_file: unnecessary_type_name_in_constructor
 final class DanmakuNoticeThrottle {
   /// Creates the throttle with 3.x's 3 s window.
-  DanmakuNoticeThrottle({this.window = const Duration(seconds: 3), DateTime Function()? clock}) : _clock = clock ?? DateTime.now;
+  DanmakuNoticeThrottle({this.window = const Duration(seconds: 3), DateTime Function()? clock})
+    : _clock = clock ?? DateTime.now;
 
   /// Quiet period for one notice.
   final Duration window;

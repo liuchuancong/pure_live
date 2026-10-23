@@ -4,7 +4,6 @@
 import 'package:live_sites/src/common/danmaku/filters/block_pattern.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 
-
 /// The user's blocked viewers and words (3.x `DanmakuController._isBlocked`
 /// with the lists of `_refreshFilters`).
 ///
@@ -19,7 +18,6 @@ import 'package:live_sites/src/models/message/live_message/live_message.dart';
 ///   the first [DanmakuBlockPattern.matchedLength] characters of the text;
 ///   a pattern that does not compile or is refused blocks nothing.
 final class DanmakuBlockList {
-
   /// Creates the list from the stored names ([users]) and words
   /// ([keywords]), as the user typed them.
   factory DanmakuBlockList.of({Iterable<String> users = const [], Iterable<String> keywords = const []}) {
@@ -37,9 +35,7 @@ final class DanmakuBlockList {
     return DanmakuBlockList._(
       {
         for (final user in users)
-          if (user.trim().toLowerCase() case final name
-              when name.isNotEmpty && !_isMaskedName(name))
-            name,
+          if (user.trim().toLowerCase() case final name when name.isNotEmpty && !_isMaskedName(name)) name,
       },
       List.unmodifiable(words),
       List.unmodifiable(patterns),
@@ -51,7 +47,6 @@ final class DanmakuBlockList {
   /// A platform-masked viewer name (`观***`): it stands for every viewer
   /// whose name starts the same way, so it blocks nobody.
   static bool _isMaskedName(String name) => name.contains('*');
-
 
   final Set<String> _users;
   final List<String> _keywords;

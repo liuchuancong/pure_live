@@ -41,8 +41,7 @@ class _$LivePlayLine extends LivePlayLine {
     required this.singleUse,
   }) : super._();
   @override
-  LivePlayLine rebuild(void Function(LivePlayLineBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+  LivePlayLine rebuild(void Function(LivePlayLineBuilder) updates) => (toBuilder()..update(updates)).build();
 
   @override
   LivePlayLineBuilder toBuilder() => LivePlayLineBuilder()..replace(this);
@@ -94,8 +93,7 @@ class _$LivePlayLine extends LivePlayLine {
   }
 }
 
-class LivePlayLineBuilder
-    implements Builder<LivePlayLine, LivePlayLineBuilder> {
+class LivePlayLineBuilder implements Builder<LivePlayLine, LivePlayLineBuilder> {
   _$LivePlayLine? _$v;
 
   String? _url;
@@ -108,12 +106,10 @@ class LivePlayLineBuilder
 
   LivePlayFormatSource? _formatSource;
   LivePlayFormatSource? get formatSource => _$this._formatSource;
-  set formatSource(LivePlayFormatSource? formatSource) =>
-      _$this._formatSource = formatSource;
+  set formatSource(LivePlayFormatSource? formatSource) => _$this._formatSource = formatSource;
 
   MapBuilder<String, String>? _headers;
-  MapBuilder<String, String> get headers =>
-      _$this._headers ??= MapBuilder<String, String>();
+  MapBuilder<String, String> get headers => _$this._headers ??= MapBuilder<String, String>();
   set headers(MapBuilder<String, String>? headers) => _$this._headers = headers;
 
   LiveStreamCodec? _codec;
@@ -129,8 +125,7 @@ class LivePlayLineBuilder
   set lease(LivePlayLeaseBuilder? lease) => _$this._lease = lease;
 
   PlayGeometryBuilder? _geometry;
-  PlayGeometryBuilder get geometry =>
-      _$this._geometry ??= PlayGeometryBuilder();
+  PlayGeometryBuilder get geometry => _$this._geometry ??= PlayGeometryBuilder();
   set geometry(PlayGeometryBuilder? geometry) => _$this._geometry = geometry;
 
   bool? _singleUse;
@@ -177,31 +172,15 @@ class LivePlayLineBuilder
       _$result =
           _$v ??
           _$LivePlayLine._(
-            url: BuiltValueNullFieldError.checkNotNull(
-              url,
-              r'LivePlayLine',
-              'url',
-            ),
-            format: BuiltValueNullFieldError.checkNotNull(
-              format,
-              r'LivePlayLine',
-              'format',
-            ),
-            formatSource: BuiltValueNullFieldError.checkNotNull(
-              formatSource,
-              r'LivePlayLine',
-              'formatSource',
-            ),
+            url: BuiltValueNullFieldError.checkNotNull(url, r'LivePlayLine', 'url'),
+            format: BuiltValueNullFieldError.checkNotNull(format, r'LivePlayLine', 'format'),
+            formatSource: BuiltValueNullFieldError.checkNotNull(formatSource, r'LivePlayLine', 'formatSource'),
             headers: headers.build(),
             codec: codec,
             lineLabel: lineLabel,
             lease: _lease?.build(),
             geometry: geometry.build(),
-            singleUse: BuiltValueNullFieldError.checkNotNull(
-              singleUse,
-              r'LivePlayLine',
-              'singleUse',
-            ),
+            singleUse: BuiltValueNullFieldError.checkNotNull(singleUse, r'LivePlayLine', 'singleUse'),
           );
     } catch (_) {
       late String _$failedField;
@@ -214,11 +193,7 @@ class LivePlayLineBuilder
         _$failedField = 'geometry';
         geometry.build();
       } catch (e) {
-        throw BuiltValueNestedFieldError(
-          r'LivePlayLine',
-          _$failedField,
-          e.toString(),
-        );
+        throw BuiltValueNestedFieldError(r'LivePlayLine', _$failedField, e.toString());
       }
       rethrow;
     }

@@ -45,8 +45,7 @@ final class KuaishouSearchProvider implements LiveSearchProvider {
       final page = request.page < 1 ? 1 : request.page;
       final rooms = await site.search(request.query, page);
       final size = request.pageSize < 1 ? 0 : request.pageSize;
-      final items =
-          request.target == LiveSearchTarget.anchors
+      final items = request.target == LiveSearchTarget.anchors
           ? [
               for (final room in rooms.take(size))
                 LiveSearchResult.anchor(

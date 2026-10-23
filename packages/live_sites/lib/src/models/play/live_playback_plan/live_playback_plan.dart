@@ -26,11 +26,13 @@ abstract class LivePlaybackPlan implements Built<LivePlaybackPlan, LivePlaybackP
     LivePlayQuality? appliedQuality,
     bool qualityUnconfirmed = false,
     Duration? start,
-  }) => LivePlaybackPlan((b) => b
-    ..lines.replace(lines)
-    ..appliedQuality = appliedQuality?.toBuilder()
-    ..qualityUnconfirmed = qualityUnconfirmed
-    ..start = start);
+  }) => LivePlaybackPlan(
+    (b) => b
+      ..lines.replace(lines)
+      ..appliedQuality = appliedQuality?.toBuilder()
+      ..qualityUnconfirmed = qualityUnconfirmed
+      ..start = start,
+  );
 
   LivePlaybackPlan._();
 

@@ -39,8 +39,7 @@ final class CcSearchProvider implements LiveSearchProvider {
     }
     try {
       final page = await site.search(request.query, page: request.page, pageSize: request.pageSize);
-      final items =
-          request.target == LiveSearchTarget.anchors
+      final items = request.target == LiveSearchTarget.anchors
           ? [
               for (final room in page.rooms)
                 LiveSearchResult.anchor(
