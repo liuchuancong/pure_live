@@ -1,0 +1,18 @@
+{
+  "tabAll": "All",
+  "scopeLabel": "Channel scope",
+  "scopeAll": "All channels",
+  "scopeFavourites": "Favourites",
+  "groupsLabel": "Channel groups",
+  "ungrouped": "Ungrouped",
+  "emptyTitle": "No channels yet",
+  "emptyDescription": "Import an M3U or TXT playlist and its channels will appear here.",
+  "openFailedDescription": "The channel library could not be opened.",
+  "noFavoritesTitle": "No favourite channels",
+  "noFavoritesDescription": "Tap the heart on a channel card and it stays in this list.",
+  "onAir": "On air",
+  "upNext": "Next",
+  "noGuide": "No programme guide",
+  "favouriteAction": "Favourite",
+  "unfavouriteAction": "Unfavourite"
+}

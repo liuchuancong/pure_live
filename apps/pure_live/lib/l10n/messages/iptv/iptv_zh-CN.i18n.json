@@ -1,0 +1,18 @@
+{
+  "tabAll": "全部",
+  "scopeLabel": "频道范围",
+  "scopeAll": "全部频道",
+  "scopeFavourites": "收藏频道",
+  "groupsLabel": "频道分组",
+  "ungrouped": "未分组",
+  "emptyTitle": "还没有频道",
+  "emptyDescription": "导入 M3U/TXT 播放列表后，频道就会出现在这里。",
+  "openFailedDescription": "频道库打开失败。",
+  "noFavoritesTitle": "还没有收藏的频道",
+  "noFavoritesDescription": "点一下频道卡片上的心形，频道就会留在这里。",
+  "onAir": "正在播出",
+  "upNext": "接下来",
+  "noGuide": "暂无节目单",
+  "favouriteAction": "收藏频道",
+  "unfavouriteAction": "取消收藏"
+}
