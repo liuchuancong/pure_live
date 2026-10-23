@@ -1,5 +1,5 @@
 import 'package:desen_ui/desen_ui.dart';
-import 'package:pure_live/i18n/translations.g.dart' show Translations;
+import 'package:pure_live/l10n/translations.dart' show Translations;
 
 /// The shell's navigation destinations, in display order.
 ///
@@ -35,13 +35,13 @@ enum NavigationItem {
 
   /// The localized label.
   String label(Translations t) => switch (this) {
-    NavigationItem.home => t.nav.home,
-    NavigationItem.live => t.nav.live,
-    NavigationItem.favorites => t.nav.favorites,
-    NavigationItem.history => t.nav.history,
-    NavigationItem.search => t.nav.search,
-    NavigationItem.playlist => t.nav.playlist,
-    NavigationItem.settings => t.nav.settings,
+    NavigationItem.home => t.navigation.home,
+    NavigationItem.live => t.navigation.live,
+    NavigationItem.favorites => t.navigation.favorites,
+    NavigationItem.history => t.navigation.history,
+    NavigationItem.search => t.navigation.search,
+    NavigationItem.playlist => t.navigation.playlist,
+    NavigationItem.settings => t.navigation.settings,
   };
 }
 

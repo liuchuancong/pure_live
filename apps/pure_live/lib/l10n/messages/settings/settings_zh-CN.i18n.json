@@ -1,0 +1,10 @@
+{
+  "title": "设置",
+  "appearance": "外观",
+  "themeMode": "主题",
+  "themeModeSystem": "跟随系统",
+  "themeModeLight": "浅色",
+  "themeModeDark": "深色",
+  "language": "语言",
+  "about": "关于"
+}

@@ -22,4 +22,5 @@ formatter:
 linter:
   rules:
     lines_longer_than_80_chars: false
-    public_member_api_docs: true
+    public_member_api_docs: false
+    unnecessary_type_name_in_constructor: false

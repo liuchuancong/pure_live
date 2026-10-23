@@ -1,10 +1,10 @@
 /// Generated file. Do not edit.
 ///
-/// Source: i18n
+/// Source: lib/l10n/messages
 /// To regenerate, run: `dart run slang`
 ///
-/// Locales: 4
-/// Strings: 76 (19 per locale)
+/// Locales: 2
+/// Strings: 68 (34 per locale)
 
 // coverage:ignore-file
 // ignore_for_file: type=lint, unused_import
@@ -16,9 +16,7 @@ import 'package:slang/generated.dart';
 import 'package:slang_flutter/slang_flutter.dart';
 export 'package:slang_flutter/slang_flutter.dart';
 
-import 'translations_en_US.g.dart' as l_en_US;
-import 'translations_ja_JP.g.dart' as l_ja_JP;
-import 'translations_zh_TW.g.dart' as l_zh_TW;
+import 'translations_en.g.dart' as l_en;
 part 'translations_zh_CN.g.dart';
 
 /// Supported locales.
@@ -29,9 +27,7 @@ part 'translations_zh_CN.g.dart';
 /// - if (LocaleSettings.currentLocale == AppLocale.zhCn) // locale check
 enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 	zhCn(languageCode: 'zh', countryCode: 'CN'),
-	enUs(languageCode: 'en', countryCode: 'US'),
-	jaJp(languageCode: 'ja', countryCode: 'JP'),
-	zhTw(languageCode: 'zh', countryCode: 'TW');
+	en(languageCode: 'en');
 
 	const AppLocale({
 		required this.languageCode,
@@ -69,20 +65,8 @@ enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 					cardinalResolver: cardinalResolver,
 					ordinalResolver: ordinalResolver,
 				);
-			case AppLocale.enUs:
-				return l_en_US.TranslationsEnUs(
-					overrides: overrides,
-					cardinalResolver: cardinalResolver,
-					ordinalResolver: ordinalResolver,
-				);
-			case AppLocale.jaJp:
-				return l_ja_JP.TranslationsJaJp(
-					overrides: overrides,
-					cardinalResolver: cardinalResolver,
-					ordinalResolver: ordinalResolver,
-				);
-			case AppLocale.zhTw:
-				return l_zh_TW.TranslationsZhTw(
+			case AppLocale.en:
+				return l_en.TranslationsEn(
 					overrides: overrides,
 					cardinalResolver: cardinalResolver,
 					ordinalResolver: ordinalResolver,

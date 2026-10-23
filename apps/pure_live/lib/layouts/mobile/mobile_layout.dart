@@ -1,7 +1,7 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:pure_live/i18n/translations.g.dart';
+import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/enums/navigation_item.dart' show NavigationItem;
 
 /// The mobile layout: the content above a bottom navigation bar.

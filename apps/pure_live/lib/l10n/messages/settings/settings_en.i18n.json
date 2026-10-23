@@ -1,0 +1,10 @@
+{
+  "title": "Settings",
+  "appearance": "Appearance",
+  "themeMode": "Theme",
+  "themeModeSystem": "Follow system",
+  "themeModeLight": "Light",
+  "themeModeDark": "Dark",
+  "language": "Language",
+  "about": "About"
+}

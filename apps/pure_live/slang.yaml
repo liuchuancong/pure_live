@@ -1,16 +1,17 @@
-# The app's translations: slang's own config, consumed by `dart run slang`.
-#
-# Source JSON files live in `i18n/` at the app root and the generated code is
-# written into `lib/i18n/`, per the directory spec. The generated file stays
-# committed (a clone builds without a codegen step) and one command
-# regenerates it; a per-run timestamp would only produce diff noise, and lazy
-# loading would make the non-base locale an async import the shell cannot
-# rely on, so both stay off.
+# The app's translations: slang's own config, consumed by `dart run slang`
+# from this directory. Translations live per namespace under
+# `lib/l10n/messages/<namespace>/<namespace>_<locale>.i18n.json` — one
+# namespace per feature area — and the generated code lands in
+# `lib/l10n/translations.g.dart` (committed, so a clone builds without a
+# codegen step; a per-run timestamp would only produce diff noise, and
+# lazy loading would make the non-base locale an async import the shell
+# cannot rely on, so both stay off).
 base_locale: zh-CN
 fallback_strategy: base_locale
-input_directory: i18n
+namespaces: true
+input_directory: lib/l10n/messages
 input_file_pattern: .i18n.json
-output_directory: lib/i18n
+output_directory: lib/l10n
 output_file_name: translations.g.dart
 string_interpolation: braces
 lazy: false

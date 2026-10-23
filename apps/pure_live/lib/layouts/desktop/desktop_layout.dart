@@ -3,7 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pure_live/app/providers/window_providers.dart' show desktopWindowHostProvider, maximizedProvider;
-import 'package:pure_live/i18n/translations.g.dart';
+import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/enums/navigation_item.dart' show NavigationItem;
 
 /// The height of the title bar: the drag band and the caption row.
@@ -99,7 +99,7 @@ final class _WindowTitleBar extends ConsumerWidget {
                     DsIcon(DsIcons.tv, size: 16, color: colors.textMuted),
                     const SizedBox(width: 8),
                     Text(
-                      context.t.app.title,
+                      context.t.common.appTitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: DsTheme.of(context).typography.caption.copyWith(color: colors.textMuted),
@@ -126,13 +126,13 @@ final class _CaptionControls extends ConsumerWidget {
     final maximized = ref.watch(maximizedProvider);
     return Row(
       children: [
-        _CaptionButton(semanticLabel: t.window.minimize, icon: DsIcons.minus, onPressed: host.minimize),
+        _CaptionButton(semanticLabel: t.common.minimize, icon: DsIcons.minus, onPressed: host.minimize),
         _CaptionButton(
-          semanticLabel: maximized ? t.window.restore : t.window.maximize,
+          semanticLabel: maximized ? t.common.restore : t.common.maximize,
           icon: maximized ? DsIcons.copy : DsIcons.square,
           onPressed: host.toggleMaximize,
         ),
-        _CaptionButton(semanticLabel: t.window.close, icon: DsIcons.x, danger: true, onPressed: host.close),
+        _CaptionButton(semanticLabel: t.common.close, icon: DsIcons.x, danger: true, onPressed: host.close),
       ],
     );
   }

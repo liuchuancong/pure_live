@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pure_live/app/routing/route_names.dart' show RouteNames;
 import 'package:pure_live/app/routing/route_observer.dart' show routeObserver;
-import 'package:pure_live/i18n/translations.g.dart';
+import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_layout.dart' show AppLayout;
 import 'package:pure_live/shared/enums/navigation_item.dart' show NavigationItem, kNavigationItems;
 
