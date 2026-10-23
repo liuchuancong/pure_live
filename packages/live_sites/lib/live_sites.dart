@@ -9,6 +9,9 @@ export 'src/capabilities/live_danmaku_provider.dart';
 export 'src/capabilities/live_discovery_provider.dart';
 export 'src/capabilities/live_hot_provider.dart';
 export 'src/capabilities/live_link_resolver.dart';
+export 'src/capabilities/live_play_lease_lookup.dart';
+export 'src/capabilities/live_play_recovery.dart';
+export 'src/capabilities/live_playback_plan_resolver.dart';
 export 'src/capabilities/live_playback_provider.dart';
 export 'src/capabilities/live_room_provider.dart';
 export 'src/capabilities/live_room_refresh.dart';
@@ -41,19 +44,3 @@ export 'src/models/room/room.dart';
 export 'src/models/search/search.dart';
 export 'src/models/super_chat/super_chat.dart';
 export 'src/platforms/platforms.dart';
-
-/// One package, one public surface: core contracts, optional capabilities,
-/// model domains (one barrel per domain), the shared primitives under
-/// `common/`, and every built-in platform under `platforms/` (one barrel per
-/// site — manifest, adapter, capabilities, transport, parsers and danmaku).
-/// Only generated files and the site-internal wiring stay out; the registry
-/// entry point is `createBuiltInLiveSites`.
-// capabilities
-// shared primitives the adapters build on (codec, crypto, hls, normalization,
-// websocket)
-// core
-// internal entry point
-// models — domain barrels
-// the platforms, one public barrel per site (manifest, adapter, capabilities,
-// transport, parsers, danmaku) — the douyu renewal seam rides in douyu's own
-// barrel now

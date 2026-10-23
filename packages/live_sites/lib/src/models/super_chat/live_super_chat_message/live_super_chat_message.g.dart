@@ -6,11 +6,16 @@ part of 'live_super_chat_message.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-Serializer<LiveSuperChatMessage> _$liveSuperChatMessageSerializer = _$LiveSuperChatMessageSerializer();
+Serializer<LiveSuperChatMessage> _$liveSuperChatMessageSerializer =
+    _$LiveSuperChatMessageSerializer();
 
-class _$LiveSuperChatMessageSerializer implements StructuredSerializer<LiveSuperChatMessage> {
+class _$LiveSuperChatMessageSerializer
+    implements StructuredSerializer<LiveSuperChatMessage> {
   @override
-  final Iterable<Type> types = const [LiveSuperChatMessage, _$LiveSuperChatMessage];
+  final Iterable<Type> types = const [
+    LiveSuperChatMessage,
+    _$LiveSuperChatMessage,
+  ];
   @override
   final String wireName = 'LiveSuperChatMessage';
 
@@ -22,30 +27,49 @@ class _$LiveSuperChatMessageSerializer implements StructuredSerializer<LiveSuper
   }) {
     final result = <Object?>[
       'messageId',
-      serializers.serialize(object.messageId, specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.messageId,
+        specifiedType: const FullType(String),
+      ),
       'userName',
-      serializers.serialize(object.userName, specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.userName,
+        specifiedType: const FullType(String),
+      ),
       'faceUrl',
-      serializers.serialize(object.faceUrl, specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.faceUrl,
+        specifiedType: const FullType(String),
+      ),
       'text',
       serializers.serialize(object.text, specifiedType: const FullType(String)),
       'price',
-      serializers.serialize(object.price, specifiedType: const FullType(SuperChatPrice)),
+      serializers.serialize(
+        object.price,
+        specifiedType: const FullType(SuperChatPrice),
+      ),
       'display',
-      serializers.serialize(object.display, specifiedType: const FullType(SuperChatDisplay)),
+      serializers.serialize(
+        object.display,
+        specifiedType: const FullType(SuperChatDisplay),
+      ),
     ];
     Object? value;
     value = object.startTime;
     if (value != null) {
       result
         ..add('startTime')
-        ..add(serializers.serialize(value, specifiedType: const FullType(DateTime)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(DateTime)),
+        );
     }
     value = object.endTime;
     if (value != null) {
       result
         ..add('endTime')
-        ..add(serializers.serialize(value, specifiedType: const FullType(DateTime)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(DateTime)),
+        );
     }
     return result;
   }
@@ -65,31 +89,65 @@ class _$LiveSuperChatMessageSerializer implements StructuredSerializer<LiveSuper
       final Object? value = iterator.current;
       switch (key) {
         case 'messageId':
-          result.messageId = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.messageId =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'userName':
-          result.userName = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.userName =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'faceUrl':
-          result.faceUrl = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.faceUrl =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'text':
-          result.text = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.text =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'price':
           result.price.replace(
-            serializers.deserialize(value, specifiedType: const FullType(SuperChatPrice))! as SuperChatPrice,
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(SuperChatPrice),
+                )!
+                as SuperChatPrice,
           );
           break;
         case 'startTime':
-          result.startTime = serializers.deserialize(value, specifiedType: const FullType(DateTime)) as DateTime?;
+          result.startTime = serializers.deserialize(
+            value,
+            specifiedType: const FullType(DateTime),
+          ) as DateTime?;
           break;
         case 'endTime':
-          result.endTime = serializers.deserialize(value, specifiedType: const FullType(DateTime)) as DateTime?;
+          result.endTime = serializers.deserialize(
+            value,
+            specifiedType: const FullType(DateTime),
+          ) as DateTime?;
           break;
         case 'display':
           result.display.replace(
-            serializers.deserialize(value, specifiedType: const FullType(SuperChatDisplay))! as SuperChatDisplay,
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(SuperChatDisplay),
+                )!
+                as SuperChatDisplay,
           );
           break;
       }
@@ -117,8 +175,9 @@ class _$LiveSuperChatMessage extends LiveSuperChatMessage {
   @override
   final SuperChatDisplay display;
 
-  factory _$LiveSuperChatMessage([void Function(LiveSuperChatMessageBuilder)? updates]) =>
-      (LiveSuperChatMessageBuilder()..update(updates))._build();
+  factory _$LiveSuperChatMessage([
+    void Function(LiveSuperChatMessageBuilder)? updates,
+  ]) => (LiveSuperChatMessageBuilder()..update(updates))._build();
 
   _$LiveSuperChatMessage._({
     required this.messageId,
@@ -131,11 +190,13 @@ class _$LiveSuperChatMessage extends LiveSuperChatMessage {
     required this.display,
   }) : super._();
   @override
-  LiveSuperChatMessage rebuild(void Function(LiveSuperChatMessageBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+  LiveSuperChatMessage rebuild(
+    void Function(LiveSuperChatMessageBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
-  LiveSuperChatMessageBuilder toBuilder() => LiveSuperChatMessageBuilder()..replace(this);
+  LiveSuperChatMessageBuilder toBuilder() =>
+      LiveSuperChatMessageBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -181,7 +242,8 @@ class _$LiveSuperChatMessage extends LiveSuperChatMessage {
   }
 }
 
-class LiveSuperChatMessageBuilder implements Builder<LiveSuperChatMessage, LiveSuperChatMessageBuilder> {
+class LiveSuperChatMessageBuilder
+    implements Builder<LiveSuperChatMessage, LiveSuperChatMessageBuilder> {
   _$LiveSuperChatMessage? _$v;
 
   String? _messageId;
@@ -213,7 +275,8 @@ class LiveSuperChatMessageBuilder implements Builder<LiveSuperChatMessage, LiveS
   set endTime(DateTime? endTime) => _$this._endTime = endTime;
 
   SuperChatDisplayBuilder? _display;
-  SuperChatDisplayBuilder get display => _$this._display ??= SuperChatDisplayBuilder();
+  SuperChatDisplayBuilder get display =>
+      _$this._display ??= SuperChatDisplayBuilder();
   set display(SuperChatDisplayBuilder? display) => _$this._display = display;
 
   LiveSuperChatMessageBuilder() {
@@ -255,10 +318,26 @@ class LiveSuperChatMessageBuilder implements Builder<LiveSuperChatMessage, LiveS
       _$result =
           _$v ??
           _$LiveSuperChatMessage._(
-            messageId: BuiltValueNullFieldError.checkNotNull(messageId, r'LiveSuperChatMessage', 'messageId'),
-            userName: BuiltValueNullFieldError.checkNotNull(userName, r'LiveSuperChatMessage', 'userName'),
-            faceUrl: BuiltValueNullFieldError.checkNotNull(faceUrl, r'LiveSuperChatMessage', 'faceUrl'),
-            text: BuiltValueNullFieldError.checkNotNull(text, r'LiveSuperChatMessage', 'text'),
+            messageId: BuiltValueNullFieldError.checkNotNull(
+              messageId,
+              r'LiveSuperChatMessage',
+              'messageId',
+            ),
+            userName: BuiltValueNullFieldError.checkNotNull(
+              userName,
+              r'LiveSuperChatMessage',
+              'userName',
+            ),
+            faceUrl: BuiltValueNullFieldError.checkNotNull(
+              faceUrl,
+              r'LiveSuperChatMessage',
+              'faceUrl',
+            ),
+            text: BuiltValueNullFieldError.checkNotNull(
+              text,
+              r'LiveSuperChatMessage',
+              'text',
+            ),
             price: price.build(),
             startTime: startTime,
             endTime: endTime,
@@ -273,7 +352,11 @@ class LiveSuperChatMessageBuilder implements Builder<LiveSuperChatMessage, LiveS
         _$failedField = 'display';
         display.build();
       } catch (e) {
-        throw BuiltValueNestedFieldError(r'LiveSuperChatMessage', _$failedField, e.toString());
+        throw BuiltValueNestedFieldError(
+          r'LiveSuperChatMessage',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

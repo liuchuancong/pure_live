@@ -22,15 +22,28 @@ class _$RoomContentSerializer implements StructuredSerializer<RoomContent> {
   }) {
     final result = <Object?>[
       'title',
-      serializers.serialize(object.title, specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.title,
+        specifiedType: const FullType(String),
+      ),
       'coverUrl',
-      serializers.serialize(object.coverUrl, specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.coverUrl,
+        specifiedType: const FullType(String),
+      ),
       'badges',
-      serializers.serialize(object.badges, specifiedType: const FullType(BuiltList, const [const FullType(LiveBadge)])),
+      serializers.serialize(
+        object.badges,
+        specifiedType: const FullType(BuiltList, const [
+          const FullType(LiveBadge),
+        ]),
+      ),
       'platformTags',
       serializers.serialize(
         object.platformTags,
-        specifiedType: const FullType(BuiltList, const [const FullType(String)]),
+        specifiedType: const FullType(BuiltList, const [
+          const FullType(String),
+        ]),
       ),
     ];
     Object? value;
@@ -38,13 +51,17 @@ class _$RoomContentSerializer implements StructuredSerializer<RoomContent> {
     if (value != null) {
       result
         ..add('introduction')
-        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     value = object.notice;
     if (value != null) {
       result
         ..add('notice')
-        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     return result;
   }
@@ -64,26 +81,52 @@ class _$RoomContentSerializer implements StructuredSerializer<RoomContent> {
       final Object? value = iterator.current;
       switch (key) {
         case 'title':
-          result.title = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.title =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'coverUrl':
-          result.coverUrl = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.coverUrl =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'introduction':
-          result.introduction = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
+          result.introduction = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
           break;
         case 'notice':
-          result.notice = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
+          result.notice = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
           break;
         case 'badges':
           result.badges.replace(
-            serializers.deserialize(value, specifiedType: const FullType(BuiltList, const [const FullType(LiveBadge)]))!
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltList, const [
+                    const FullType(LiveBadge),
+                  ]),
+                )!
                 as BuiltList<Object?>,
           );
           break;
         case 'platformTags':
           result.platformTags.replace(
-            serializers.deserialize(value, specifiedType: const FullType(BuiltList, const [const FullType(String)]))!
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltList, const [
+                    const FullType(String),
+                  ]),
+                )!
                 as BuiltList<Object?>,
           );
           break;
@@ -120,7 +163,8 @@ class _$RoomContent extends RoomContent {
     required this.platformTags,
   }) : super._();
   @override
-  RoomContent rebuild(void Function(RoomContentBuilder) updates) => (toBuilder()..update(updates)).build();
+  RoomContent rebuild(void Function(RoomContentBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   RoomContentBuilder toBuilder() => RoomContentBuilder()..replace(this);
@@ -183,12 +227,15 @@ class RoomContentBuilder implements Builder<RoomContent, RoomContentBuilder> {
   set notice(String? notice) => _$this._notice = notice;
 
   ListBuilder<LiveBadge>? _badges;
-  ListBuilder<LiveBadge> get badges => _$this._badges ??= ListBuilder<LiveBadge>();
+  ListBuilder<LiveBadge> get badges =>
+      _$this._badges ??= ListBuilder<LiveBadge>();
   set badges(ListBuilder<LiveBadge>? badges) => _$this._badges = badges;
 
   ListBuilder<String>? _platformTags;
-  ListBuilder<String> get platformTags => _$this._platformTags ??= ListBuilder<String>();
-  set platformTags(ListBuilder<String>? platformTags) => _$this._platformTags = platformTags;
+  ListBuilder<String> get platformTags =>
+      _$this._platformTags ??= ListBuilder<String>();
+  set platformTags(ListBuilder<String>? platformTags) =>
+      _$this._platformTags = platformTags;
 
   RoomContentBuilder() {
     RoomContent._initialize(this);
@@ -227,8 +274,16 @@ class RoomContentBuilder implements Builder<RoomContent, RoomContentBuilder> {
       _$result =
           _$v ??
           _$RoomContent._(
-            title: BuiltValueNullFieldError.checkNotNull(title, r'RoomContent', 'title'),
-            coverUrl: BuiltValueNullFieldError.checkNotNull(coverUrl, r'RoomContent', 'coverUrl'),
+            title: BuiltValueNullFieldError.checkNotNull(
+              title,
+              r'RoomContent',
+              'title',
+            ),
+            coverUrl: BuiltValueNullFieldError.checkNotNull(
+              coverUrl,
+              r'RoomContent',
+              'coverUrl',
+            ),
             introduction: introduction,
             notice: notice,
             badges: badges.build(),
@@ -242,7 +297,11 @@ class RoomContentBuilder implements Builder<RoomContent, RoomContentBuilder> {
         _$failedField = 'platformTags';
         platformTags.build();
       } catch (e) {
-        throw BuiltValueNestedFieldError(r'RoomContent', _$failedField, e.toString());
+        throw BuiltValueNestedFieldError(
+          r'RoomContent',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

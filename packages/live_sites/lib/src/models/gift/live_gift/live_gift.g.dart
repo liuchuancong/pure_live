@@ -22,26 +22,43 @@ class _$LiveGiftSerializer implements StructuredSerializer<LiveGift> {
   }) {
     final result = <Object?>[
       'giftId',
-      serializers.serialize(object.giftId, specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.giftId,
+        specifiedType: const FullType(String),
+      ),
       'name',
       serializers.serialize(object.name, specifiedType: const FullType(String)),
       'kind',
-      serializers.serialize(object.kind, specifiedType: const FullType(LiveGiftKind)),
+      serializers.serialize(
+        object.kind,
+        specifiedType: const FullType(LiveGiftKind),
+      ),
       'count',
       serializers.serialize(object.count, specifiedType: const FullType(int)),
       'value',
-      serializers.serialize(object.value, specifiedType: const FullType(LiveGiftValue)),
+      serializers.serialize(
+        object.value,
+        specifiedType: const FullType(LiveGiftValue),
+      ),
       'combo',
-      serializers.serialize(object.combo, specifiedType: const FullType(LiveGiftCombo)),
+      serializers.serialize(
+        object.combo,
+        specifiedType: const FullType(LiveGiftCombo),
+      ),
       'recipientName',
-      serializers.serialize(object.recipientName, specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.recipientName,
+        specifiedType: const FullType(String),
+      ),
     ];
     Object? value;
     value = object.iconUrl;
     if (value != null) {
       result
         ..add('iconUrl')
-        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     return result;
   }
@@ -61,32 +78,68 @@ class _$LiveGiftSerializer implements StructuredSerializer<LiveGift> {
       final Object? value = iterator.current;
       switch (key) {
         case 'giftId':
-          result.giftId = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.giftId =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'name':
-          result.name = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.name =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'iconUrl':
-          result.iconUrl = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
+          result.iconUrl = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
           break;
         case 'kind':
-          result.kind = serializers.deserialize(value, specifiedType: const FullType(LiveGiftKind))! as LiveGiftKind;
+          result.kind =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(LiveGiftKind),
+                  )!
+                  as LiveGiftKind;
           break;
         case 'count':
-          result.count = serializers.deserialize(value, specifiedType: const FullType(int))! as int;
+          result.count =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(int),
+                  )!
+                  as int;
           break;
         case 'value':
           result.value.replace(
-            serializers.deserialize(value, specifiedType: const FullType(LiveGiftValue))! as LiveGiftValue,
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(LiveGiftValue),
+                )!
+                as LiveGiftValue,
           );
           break;
         case 'combo':
           result.combo.replace(
-            serializers.deserialize(value, specifiedType: const FullType(LiveGiftCombo))! as LiveGiftCombo,
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(LiveGiftCombo),
+                )!
+                as LiveGiftCombo,
           );
           break;
         case 'recipientName':
-          result.recipientName = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.recipientName =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
       }
     }
@@ -113,7 +166,8 @@ class _$LiveGift extends LiveGift {
   @override
   final String recipientName;
 
-  factory _$LiveGift([void Function(LiveGiftBuilder)? updates]) => (LiveGiftBuilder()..update(updates))._build();
+  factory _$LiveGift([void Function(LiveGiftBuilder)? updates]) =>
+      (LiveGiftBuilder()..update(updates))._build();
 
   _$LiveGift._({
     required this.giftId,
@@ -126,7 +180,8 @@ class _$LiveGift extends LiveGift {
     required this.recipientName,
   }) : super._();
   @override
-  LiveGift rebuild(void Function(LiveGiftBuilder) updates) => (toBuilder()..update(updates)).build();
+  LiveGift rebuild(void Function(LiveGiftBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   LiveGiftBuilder toBuilder() => LiveGiftBuilder()..replace(this);
@@ -208,7 +263,8 @@ class LiveGiftBuilder implements Builder<LiveGift, LiveGiftBuilder> {
 
   String? _recipientName;
   String? get recipientName => _$this._recipientName;
-  set recipientName(String? recipientName) => _$this._recipientName = recipientName;
+  set recipientName(String? recipientName) =>
+      _$this._recipientName = recipientName;
 
   LiveGiftBuilder() {
     LiveGift._initialize(this);
@@ -249,14 +305,34 @@ class LiveGiftBuilder implements Builder<LiveGift, LiveGiftBuilder> {
       _$result =
           _$v ??
           _$LiveGift._(
-            giftId: BuiltValueNullFieldError.checkNotNull(giftId, r'LiveGift', 'giftId'),
-            name: BuiltValueNullFieldError.checkNotNull(name, r'LiveGift', 'name'),
+            giftId: BuiltValueNullFieldError.checkNotNull(
+              giftId,
+              r'LiveGift',
+              'giftId',
+            ),
+            name: BuiltValueNullFieldError.checkNotNull(
+              name,
+              r'LiveGift',
+              'name',
+            ),
             iconUrl: iconUrl,
-            kind: BuiltValueNullFieldError.checkNotNull(kind, r'LiveGift', 'kind'),
-            count: BuiltValueNullFieldError.checkNotNull(count, r'LiveGift', 'count'),
+            kind: BuiltValueNullFieldError.checkNotNull(
+              kind,
+              r'LiveGift',
+              'kind',
+            ),
+            count: BuiltValueNullFieldError.checkNotNull(
+              count,
+              r'LiveGift',
+              'count',
+            ),
             value: value.build(),
             combo: combo.build(),
-            recipientName: BuiltValueNullFieldError.checkNotNull(recipientName, r'LiveGift', 'recipientName'),
+            recipientName: BuiltValueNullFieldError.checkNotNull(
+              recipientName,
+              r'LiveGift',
+              'recipientName',
+            ),
           );
     } catch (_) {
       late String _$failedField;
@@ -266,7 +342,11 @@ class LiveGiftBuilder implements Builder<LiveGift, LiveGiftBuilder> {
         _$failedField = 'combo';
         combo.build();
       } catch (e) {
-        throw BuiltValueNestedFieldError(r'LiveGift', _$failedField, e.toString());
+        throw BuiltValueNestedFieldError(
+          r'LiveGift',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

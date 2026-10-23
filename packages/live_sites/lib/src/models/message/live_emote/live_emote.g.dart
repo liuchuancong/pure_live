@@ -45,10 +45,20 @@ class _$LiveEmoteSerializer implements StructuredSerializer<LiveEmote> {
       final Object? value = iterator.current;
       switch (key) {
         case 'code':
-          result.code = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.code =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'url':
-          result.url = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.url =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
       }
     }
@@ -63,11 +73,13 @@ class _$LiveEmote extends LiveEmote {
   @override
   final String url;
 
-  factory _$LiveEmote([void Function(LiveEmoteBuilder)? updates]) => (LiveEmoteBuilder()..update(updates))._build();
+  factory _$LiveEmote([void Function(LiveEmoteBuilder)? updates]) =>
+      (LiveEmoteBuilder()..update(updates))._build();
 
   _$LiveEmote._({required this.code, required this.url}) : super._();
   @override
-  LiveEmote rebuild(void Function(LiveEmoteBuilder) updates) => (toBuilder()..update(updates)).build();
+  LiveEmote rebuild(void Function(LiveEmoteBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   LiveEmoteBuilder toBuilder() => LiveEmoteBuilder()..replace(this);
@@ -136,7 +148,11 @@ class LiveEmoteBuilder implements Builder<LiveEmote, LiveEmoteBuilder> {
     final _$result =
         _$v ??
         _$LiveEmote._(
-          code: BuiltValueNullFieldError.checkNotNull(code, r'LiveEmote', 'code'),
+          code: BuiltValueNullFieldError.checkNotNull(
+            code,
+            r'LiveEmote',
+            'code',
+          ),
           url: BuiltValueNullFieldError.checkNotNull(url, r'LiveEmote', 'url'),
         );
     replace(_$result);

@@ -8,4 +8,5 @@ export 'hls/hls_master.dart';
 export 'normalization/html_entities.dart';
 export 'normalization/site_counts.dart';
 export 'normalization/site_urls.dart';
+export 'quality_label.dart';
 export 'websocket/danmaku_socket.dart';

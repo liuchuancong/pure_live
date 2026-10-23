@@ -6,7 +6,8 @@ part of 'live_gift_value.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-Serializer<LiveGiftValue> _$liveGiftValueSerializer = _$LiveGiftValueSerializer();
+Serializer<LiveGiftValue> _$liveGiftValueSerializer =
+    _$LiveGiftValueSerializer();
 
 class _$LiveGiftValueSerializer implements StructuredSerializer<LiveGiftValue> {
   @override
@@ -20,19 +21,29 @@ class _$LiveGiftValueSerializer implements StructuredSerializer<LiveGiftValue> {
     LiveGiftValue object, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = <Object?>['unit', serializers.serialize(object.unit, specifiedType: const FullType(LiveGiftUnit))];
+    final result = <Object?>[
+      'unit',
+      serializers.serialize(
+        object.unit,
+        specifiedType: const FullType(LiveGiftUnit),
+      ),
+    ];
     Object? value;
     value = object.unitPrice;
     if (value != null) {
       result
         ..add('unitPrice')
-        ..add(serializers.serialize(value, specifiedType: const FullType(double)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(double)),
+        );
     }
     value = object.totalValue;
     if (value != null) {
       result
         ..add('totalValue')
-        ..add(serializers.serialize(value, specifiedType: const FullType(double)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(double)),
+        );
     }
     return result;
   }
@@ -52,13 +63,24 @@ class _$LiveGiftValueSerializer implements StructuredSerializer<LiveGiftValue> {
       final Object? value = iterator.current;
       switch (key) {
         case 'unit':
-          result.unit = serializers.deserialize(value, specifiedType: const FullType(LiveGiftUnit))! as LiveGiftUnit;
+          result.unit =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(LiveGiftUnit),
+                  )!
+                  as LiveGiftUnit;
           break;
         case 'unitPrice':
-          result.unitPrice = serializers.deserialize(value, specifiedType: const FullType(double)) as double?;
+          result.unitPrice = serializers.deserialize(
+            value,
+            specifiedType: const FullType(double),
+          ) as double?;
           break;
         case 'totalValue':
-          result.totalValue = serializers.deserialize(value, specifiedType: const FullType(double)) as double?;
+          result.totalValue = serializers.deserialize(
+            value,
+            specifiedType: const FullType(double),
+          ) as double?;
           break;
       }
     }
@@ -78,9 +100,11 @@ class _$LiveGiftValue extends LiveGiftValue {
   factory _$LiveGiftValue([void Function(LiveGiftValueBuilder)? updates]) =>
       (LiveGiftValueBuilder()..update(updates))._build();
 
-  _$LiveGiftValue._({required this.unit, this.unitPrice, this.totalValue}) : super._();
+  _$LiveGiftValue._({required this.unit, this.unitPrice, this.totalValue})
+    : super._();
   @override
-  LiveGiftValue rebuild(void Function(LiveGiftValueBuilder) updates) => (toBuilder()..update(updates)).build();
+  LiveGiftValue rebuild(void Function(LiveGiftValueBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   LiveGiftValueBuilder toBuilder() => LiveGiftValueBuilder()..replace(this);
@@ -114,7 +138,8 @@ class _$LiveGiftValue extends LiveGiftValue {
   }
 }
 
-class LiveGiftValueBuilder implements Builder<LiveGiftValue, LiveGiftValueBuilder> {
+class LiveGiftValueBuilder
+    implements Builder<LiveGiftValue, LiveGiftValueBuilder> {
   _$LiveGiftValue? _$v;
 
   LiveGiftUnit? _unit;
@@ -161,7 +186,11 @@ class LiveGiftValueBuilder implements Builder<LiveGiftValue, LiveGiftValueBuilde
     final _$result =
         _$v ??
         _$LiveGiftValue._(
-          unit: BuiltValueNullFieldError.checkNotNull(unit, r'LiveGiftValue', 'unit'),
+          unit: BuiltValueNullFieldError.checkNotNull(
+            unit,
+            r'LiveGiftValue',
+            'unit',
+          ),
           unitPrice: unitPrice,
           totalValue: totalValue,
         );

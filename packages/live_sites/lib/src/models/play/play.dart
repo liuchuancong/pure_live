@@ -5,4 +5,5 @@ export 'infer_stream_format.dart';
 export 'live_play_lease/live_play_lease.dart';
 export 'live_play_line/live_play_line.dart';
 export 'live_play_quality/live_play_quality.dart';
+export 'live_playback_plan/live_playback_plan.dart';
 export 'play_geometry/play_geometry.dart';

@@ -22,13 +22,22 @@ class _$RoomGuideSerializer implements StructuredSerializer<RoomGuide> {
   }) {
     final result = <Object?>[
       'currentProgramme',
-      serializers.serialize(object.currentProgramme, specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.currentProgramme,
+        specifiedType: const FullType(String),
+      ),
       'catchUp',
-      serializers.serialize(object.catchUp, specifiedType: const FullType(GuideCatchUp)),
+      serializers.serialize(
+        object.catchUp,
+        specifiedType: const FullType(GuideCatchUp),
+      ),
       'httpHeaders',
       serializers.serialize(
         object.httpHeaders,
-        specifiedType: const FullType(BuiltMap, const [const FullType(String), const FullType(String)]),
+        specifiedType: const FullType(BuiltMap, const [
+          const FullType(String),
+          const FullType(String),
+        ]),
       ),
     ];
     Object? value;
@@ -36,13 +45,17 @@ class _$RoomGuideSerializer implements StructuredSerializer<RoomGuide> {
     if (value != null) {
       result
         ..add('epgId')
-        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     value = object.currentProgrammeDescription;
     if (value != null) {
       result
         ..add('currentProgrammeDescription')
-        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     return result;
   }
@@ -62,25 +75,42 @@ class _$RoomGuideSerializer implements StructuredSerializer<RoomGuide> {
       final Object? value = iterator.current;
       switch (key) {
         case 'epgId':
-          result.epgId = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
+          result.epgId = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
           break;
         case 'currentProgramme':
-          result.currentProgramme = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.currentProgramme =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'currentProgrammeDescription':
-          result.currentProgrammeDescription =
-              serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
+          result.currentProgrammeDescription = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
           break;
         case 'catchUp':
           result.catchUp.replace(
-            serializers.deserialize(value, specifiedType: const FullType(GuideCatchUp))! as GuideCatchUp,
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(GuideCatchUp),
+                )!
+                as GuideCatchUp,
           );
           break;
         case 'httpHeaders':
           result.httpHeaders.replace(
             serializers.deserialize(
               value,
-              specifiedType: const FullType(BuiltMap, const [const FullType(String), const FullType(String)]),
+              specifiedType: const FullType(BuiltMap, const [
+                const FullType(String),
+                const FullType(String),
+              ]),
             )!,
           );
           break;
@@ -103,7 +133,8 @@ class _$RoomGuide extends RoomGuide {
   @override
   final BuiltMap<String, String> httpHeaders;
 
-  factory _$RoomGuide([void Function(RoomGuideBuilder)? updates]) => (RoomGuideBuilder()..update(updates))._build();
+  factory _$RoomGuide([void Function(RoomGuideBuilder)? updates]) =>
+      (RoomGuideBuilder()..update(updates))._build();
 
   _$RoomGuide._({
     this.epgId,
@@ -113,7 +144,8 @@ class _$RoomGuide extends RoomGuide {
     required this.httpHeaders,
   }) : super._();
   @override
-  RoomGuide rebuild(void Function(RoomGuideBuilder) updates) => (toBuilder()..update(updates)).build();
+  RoomGuide rebuild(void Function(RoomGuideBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   RoomGuideBuilder toBuilder() => RoomGuideBuilder()..replace(this);
@@ -162,10 +194,12 @@ class RoomGuideBuilder implements Builder<RoomGuide, RoomGuideBuilder> {
 
   String? _currentProgramme;
   String? get currentProgramme => _$this._currentProgramme;
-  set currentProgramme(String? currentProgramme) => _$this._currentProgramme = currentProgramme;
+  set currentProgramme(String? currentProgramme) =>
+      _$this._currentProgramme = currentProgramme;
 
   String? _currentProgrammeDescription;
-  String? get currentProgrammeDescription => _$this._currentProgrammeDescription;
+  String? get currentProgrammeDescription =>
+      _$this._currentProgrammeDescription;
   set currentProgrammeDescription(String? currentProgrammeDescription) =>
       _$this._currentProgrammeDescription = currentProgrammeDescription;
 
@@ -174,8 +208,10 @@ class RoomGuideBuilder implements Builder<RoomGuide, RoomGuideBuilder> {
   set catchUp(GuideCatchUpBuilder? catchUp) => _$this._catchUp = catchUp;
 
   MapBuilder<String, String>? _httpHeaders;
-  MapBuilder<String, String> get httpHeaders => _$this._httpHeaders ??= MapBuilder<String, String>();
-  set httpHeaders(MapBuilder<String, String>? httpHeaders) => _$this._httpHeaders = httpHeaders;
+  MapBuilder<String, String> get httpHeaders =>
+      _$this._httpHeaders ??= MapBuilder<String, String>();
+  set httpHeaders(MapBuilder<String, String>? httpHeaders) =>
+      _$this._httpHeaders = httpHeaders;
 
   RoomGuideBuilder() {
     RoomGuide._initialize(this);
@@ -214,7 +250,11 @@ class RoomGuideBuilder implements Builder<RoomGuide, RoomGuideBuilder> {
           _$v ??
           _$RoomGuide._(
             epgId: epgId,
-            currentProgramme: BuiltValueNullFieldError.checkNotNull(currentProgramme, r'RoomGuide', 'currentProgramme'),
+            currentProgramme: BuiltValueNullFieldError.checkNotNull(
+              currentProgramme,
+              r'RoomGuide',
+              'currentProgramme',
+            ),
             currentProgrammeDescription: currentProgrammeDescription,
             catchUp: catchUp.build(),
             httpHeaders: httpHeaders.build(),
@@ -227,7 +267,11 @@ class RoomGuideBuilder implements Builder<RoomGuide, RoomGuideBuilder> {
         _$failedField = 'httpHeaders';
         httpHeaders.build();
       } catch (e) {
-        throw BuiltValueNestedFieldError(r'RoomGuide', _$failedField, e.toString());
+        throw BuiltValueNestedFieldError(
+          r'RoomGuide',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

@@ -6,7 +6,8 @@ part of 'message_sender.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-Serializer<MessageSender> _$messageSenderSerializer = _$MessageSenderSerializer();
+Serializer<MessageSender> _$messageSenderSerializer =
+    _$MessageSenderSerializer();
 
 class _$MessageSenderSerializer implements StructuredSerializer<MessageSender> {
   @override
@@ -22,36 +23,65 @@ class _$MessageSenderSerializer implements StructuredSerializer<MessageSender> {
   }) {
     final result = <Object?>[
       'userId',
-      serializers.serialize(object.userId, specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.userId,
+        specifiedType: const FullType(String),
+      ),
       'userName',
-      serializers.serialize(object.userName, specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.userName,
+        specifiedType: const FullType(String),
+      ),
       'fanBadgeLevel',
-      serializers.serialize(object.fanBadgeLevel, specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.fanBadgeLevel,
+        specifiedType: const FullType(String),
+      ),
       'fanBadgeName',
-      serializers.serialize(object.fanBadgeName, specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.fanBadgeName,
+        specifiedType: const FullType(String),
+      ),
       'badges',
-      serializers.serialize(object.badges, specifiedType: const FullType(BuiltList, const [const FullType(LiveBadge)])),
+      serializers.serialize(
+        object.badges,
+        specifiedType: const FullType(BuiltList, const [
+          const FullType(LiveBadge),
+        ]),
+      ),
       'role',
-      serializers.serialize(object.role, specifiedType: const FullType(LiveAnchorRole)),
+      serializers.serialize(
+        object.role,
+        specifiedType: const FullType(LiveAnchorRole),
+      ),
     ];
     Object? value;
     value = object.avatarUrl;
     if (value != null) {
       result
         ..add('avatarUrl')
-        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     value = object.userLevel;
     if (value != null) {
       result
         ..add('userLevel')
-        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     value = object.nameColor;
     if (value != null) {
       result
         ..add('nameColor')
-        ..add(serializers.serialize(value, specifiedType: const FullType(LiveMessageColor)));
+        ..add(
+          serializers.serialize(
+            value,
+            specifiedType: const FullType(LiveMessageColor),
+          ),
+        );
     }
     value = object.membershipTier;
     if (value != null) {
@@ -77,39 +107,79 @@ class _$MessageSenderSerializer implements StructuredSerializer<MessageSender> {
       final Object? value = iterator.current;
       switch (key) {
         case 'userId':
-          result.userId = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.userId =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'userName':
-          result.userName = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.userName =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'avatarUrl':
-          result.avatarUrl = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
+          result.avatarUrl = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
           break;
         case 'userLevel':
-          result.userLevel = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
+          result.userLevel = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
           break;
         case 'fanBadgeLevel':
-          result.fanBadgeLevel = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.fanBadgeLevel =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'fanBadgeName':
-          result.fanBadgeName = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.fanBadgeName =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'nameColor':
-          result.nameColor =
-              serializers.deserialize(value, specifiedType: const FullType(LiveMessageColor)) as LiveMessageColor?;
+          result.nameColor = serializers.deserialize(
+            value,
+            specifiedType: const FullType(LiveMessageColor),
+          ) as LiveMessageColor?;
           break;
         case 'badges':
           result.badges.replace(
-            serializers.deserialize(value, specifiedType: const FullType(BuiltList, const [const FullType(LiveBadge)]))!
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltList, const [
+                    const FullType(LiveBadge),
+                  ]),
+                )!
                 as BuiltList<Object?>,
           );
           break;
         case 'role':
           result.role =
-              serializers.deserialize(value, specifiedType: const FullType(LiveAnchorRole))! as LiveAnchorRole;
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(LiveAnchorRole),
+                  )!
+                  as LiveAnchorRole;
           break;
         case 'membershipTier':
-          result.membershipTier = serializers.deserialize(value, specifiedType: const FullType(int)) as int?;
+          result.membershipTier = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int?;
           break;
       }
     }
@@ -156,7 +226,8 @@ class _$MessageSender extends MessageSender {
     this.membershipTier,
   }) : super._();
   @override
-  MessageSender rebuild(void Function(MessageSenderBuilder) updates) => (toBuilder()..update(updates)).build();
+  MessageSender rebuild(void Function(MessageSenderBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   MessageSenderBuilder toBuilder() => MessageSenderBuilder()..replace(this);
@@ -211,7 +282,8 @@ class _$MessageSender extends MessageSender {
   }
 }
 
-class MessageSenderBuilder implements Builder<MessageSender, MessageSenderBuilder> {
+class MessageSenderBuilder
+    implements Builder<MessageSender, MessageSenderBuilder> {
   _$MessageSender? _$v;
 
   String? _userId;
@@ -232,7 +304,8 @@ class MessageSenderBuilder implements Builder<MessageSender, MessageSenderBuilde
 
   String? _fanBadgeLevel;
   String? get fanBadgeLevel => _$this._fanBadgeLevel;
-  set fanBadgeLevel(String? fanBadgeLevel) => _$this._fanBadgeLevel = fanBadgeLevel;
+  set fanBadgeLevel(String? fanBadgeLevel) =>
+      _$this._fanBadgeLevel = fanBadgeLevel;
 
   String? _fanBadgeName;
   String? get fanBadgeName => _$this._fanBadgeName;
@@ -243,7 +316,8 @@ class MessageSenderBuilder implements Builder<MessageSender, MessageSenderBuilde
   set nameColor(LiveMessageColor? nameColor) => _$this._nameColor = nameColor;
 
   ListBuilder<LiveBadge>? _badges;
-  ListBuilder<LiveBadge> get badges => _$this._badges ??= ListBuilder<LiveBadge>();
+  ListBuilder<LiveBadge> get badges =>
+      _$this._badges ??= ListBuilder<LiveBadge>();
   set badges(ListBuilder<LiveBadge>? badges) => _$this._badges = badges;
 
   LiveAnchorRole? _role;
@@ -252,7 +326,8 @@ class MessageSenderBuilder implements Builder<MessageSender, MessageSenderBuilde
 
   int? _membershipTier;
   int? get membershipTier => _$this._membershipTier;
-  set membershipTier(int? membershipTier) => _$this._membershipTier = membershipTier;
+  set membershipTier(int? membershipTier) =>
+      _$this._membershipTier = membershipTier;
 
   MessageSenderBuilder() {
     MessageSender._initialize(this);
@@ -295,15 +370,35 @@ class MessageSenderBuilder implements Builder<MessageSender, MessageSenderBuilde
       _$result =
           _$v ??
           _$MessageSender._(
-            userId: BuiltValueNullFieldError.checkNotNull(userId, r'MessageSender', 'userId'),
-            userName: BuiltValueNullFieldError.checkNotNull(userName, r'MessageSender', 'userName'),
+            userId: BuiltValueNullFieldError.checkNotNull(
+              userId,
+              r'MessageSender',
+              'userId',
+            ),
+            userName: BuiltValueNullFieldError.checkNotNull(
+              userName,
+              r'MessageSender',
+              'userName',
+            ),
             avatarUrl: avatarUrl,
             userLevel: userLevel,
-            fanBadgeLevel: BuiltValueNullFieldError.checkNotNull(fanBadgeLevel, r'MessageSender', 'fanBadgeLevel'),
-            fanBadgeName: BuiltValueNullFieldError.checkNotNull(fanBadgeName, r'MessageSender', 'fanBadgeName'),
+            fanBadgeLevel: BuiltValueNullFieldError.checkNotNull(
+              fanBadgeLevel,
+              r'MessageSender',
+              'fanBadgeLevel',
+            ),
+            fanBadgeName: BuiltValueNullFieldError.checkNotNull(
+              fanBadgeName,
+              r'MessageSender',
+              'fanBadgeName',
+            ),
             nameColor: nameColor,
             badges: badges.build(),
-            role: BuiltValueNullFieldError.checkNotNull(role, r'MessageSender', 'role'),
+            role: BuiltValueNullFieldError.checkNotNull(
+              role,
+              r'MessageSender',
+              'role',
+            ),
             membershipTier: membershipTier,
           );
     } catch (_) {
@@ -312,7 +407,11 @@ class MessageSenderBuilder implements Builder<MessageSender, MessageSenderBuilde
         _$failedField = 'badges';
         badges.build();
       } catch (e) {
-        throw BuiltValueNestedFieldError(r'MessageSender', _$failedField, e.toString());
+        throw BuiltValueNestedFieldError(
+          r'MessageSender',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

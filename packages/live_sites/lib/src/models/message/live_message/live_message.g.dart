@@ -22,38 +22,67 @@ class _$LiveMessageSerializer implements StructuredSerializer<LiveMessage> {
   }) {
     final result = <Object?>[
       'type',
-      serializers.serialize(object.type, specifiedType: const FullType(LiveMessageType)),
+      serializers.serialize(
+        object.type,
+        specifiedType: const FullType(LiveMessageType),
+      ),
       'text',
       serializers.serialize(object.text, specifiedType: const FullType(String)),
       'emotes',
-      serializers.serialize(object.emotes, specifiedType: const FullType(BuiltList, const [const FullType(LiveEmote)])),
+      serializers.serialize(
+        object.emotes,
+        specifiedType: const FullType(BuiltList, const [
+          const FullType(LiveEmote),
+        ]),
+      ),
       'messageId',
-      serializers.serialize(object.messageId, specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.messageId,
+        specifiedType: const FullType(String),
+      ),
       'isLocal',
-      serializers.serialize(object.isLocal, specifiedType: const FullType(bool)),
+      serializers.serialize(
+        object.isLocal,
+        specifiedType: const FullType(bool),
+      ),
       'replayed',
-      serializers.serialize(object.replayed, specifiedType: const FullType(bool)),
+      serializers.serialize(
+        object.replayed,
+        specifiedType: const FullType(bool),
+      ),
       'sourceRoomId',
-      serializers.serialize(object.sourceRoomId, specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.sourceRoomId,
+        specifiedType: const FullType(String),
+      ),
     ];
     Object? value;
     value = object.color;
     if (value != null) {
       result
         ..add('color')
-        ..add(serializers.serialize(value, specifiedType: const FullType(LiveMessageColor)));
+        ..add(
+          serializers.serialize(
+            value,
+            specifiedType: const FullType(LiveMessageColor),
+          ),
+        );
     }
     value = object.sentAt;
     if (value != null) {
       result
         ..add('sentAt')
-        ..add(serializers.serialize(value, specifiedType: const FullType(DateTime)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(DateTime)),
+        );
     }
     value = object.createdAt;
     if (value != null) {
       result
         ..add('createdAt')
-        ..add(serializers.serialize(value, specifiedType: const FullType(DateTime)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(DateTime)),
+        );
     }
     return result;
   }
@@ -74,38 +103,80 @@ class _$LiveMessageSerializer implements StructuredSerializer<LiveMessage> {
       switch (key) {
         case 'type':
           result.type =
-              serializers.deserialize(value, specifiedType: const FullType(LiveMessageType))! as LiveMessageType;
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(LiveMessageType),
+                  )!
+                  as LiveMessageType;
           break;
         case 'text':
-          result.text = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.text =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'color':
-          result.color =
-              serializers.deserialize(value, specifiedType: const FullType(LiveMessageColor)) as LiveMessageColor?;
+          result.color = serializers.deserialize(
+            value,
+            specifiedType: const FullType(LiveMessageColor),
+          ) as LiveMessageColor?;
           break;
         case 'emotes':
           result.emotes.replace(
-            serializers.deserialize(value, specifiedType: const FullType(BuiltList, const [const FullType(LiveEmote)]))!
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltList, const [
+                    const FullType(LiveEmote),
+                  ]),
+                )!
                 as BuiltList<Object?>,
           );
           break;
         case 'messageId':
-          result.messageId = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.messageId =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'sentAt':
-          result.sentAt = serializers.deserialize(value, specifiedType: const FullType(DateTime)) as DateTime?;
+          result.sentAt = serializers.deserialize(
+            value,
+            specifiedType: const FullType(DateTime),
+          ) as DateTime?;
           break;
         case 'createdAt':
-          result.createdAt = serializers.deserialize(value, specifiedType: const FullType(DateTime)) as DateTime?;
+          result.createdAt = serializers.deserialize(
+            value,
+            specifiedType: const FullType(DateTime),
+          ) as DateTime?;
           break;
         case 'isLocal':
-          result.isLocal = serializers.deserialize(value, specifiedType: const FullType(bool))! as bool;
+          result.isLocal =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(bool),
+                  )!
+                  as bool;
           break;
         case 'replayed':
-          result.replayed = serializers.deserialize(value, specifiedType: const FullType(bool))! as bool;
+          result.replayed =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(bool),
+                  )!
+                  as bool;
           break;
         case 'sourceRoomId':
-          result.sourceRoomId = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.sourceRoomId =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
       }
     }
@@ -161,7 +232,8 @@ class _$LiveMessage extends LiveMessage {
     required this.sourceRoomId,
   }) : super._();
   @override
-  LiveMessage rebuild(void Function(LiveMessageBuilder) updates) => (toBuilder()..update(updates)).build();
+  LiveMessage rebuild(void Function(LiveMessageBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   LiveMessageBuilder toBuilder() => LiveMessageBuilder()..replace(this);
@@ -253,7 +325,8 @@ class LiveMessageBuilder implements Builder<LiveMessage, LiveMessageBuilder> {
   set payload(Object? payload) => _$this._payload = payload;
 
   ListBuilder<LiveEmote>? _emotes;
-  ListBuilder<LiveEmote> get emotes => _$this._emotes ??= ListBuilder<LiveEmote>();
+  ListBuilder<LiveEmote> get emotes =>
+      _$this._emotes ??= ListBuilder<LiveEmote>();
   set emotes(ListBuilder<LiveEmote>? emotes) => _$this._emotes = emotes;
 
   String? _messageId;
@@ -324,19 +397,43 @@ class LiveMessageBuilder implements Builder<LiveMessage, LiveMessageBuilder> {
       _$result =
           _$v ??
           _$LiveMessage._(
-            type: BuiltValueNullFieldError.checkNotNull(type, r'LiveMessage', 'type'),
-            text: BuiltValueNullFieldError.checkNotNull(text, r'LiveMessage', 'text'),
+            type: BuiltValueNullFieldError.checkNotNull(
+              type,
+              r'LiveMessage',
+              'type',
+            ),
+            text: BuiltValueNullFieldError.checkNotNull(
+              text,
+              r'LiveMessage',
+              'text',
+            ),
             sender: _sender?.build(),
             color: color,
             style: style,
             payload: payload,
             emotes: emotes.build(),
-            messageId: BuiltValueNullFieldError.checkNotNull(messageId, r'LiveMessage', 'messageId'),
+            messageId: BuiltValueNullFieldError.checkNotNull(
+              messageId,
+              r'LiveMessage',
+              'messageId',
+            ),
             sentAt: sentAt,
             createdAt: createdAt,
-            isLocal: BuiltValueNullFieldError.checkNotNull(isLocal, r'LiveMessage', 'isLocal'),
-            replayed: BuiltValueNullFieldError.checkNotNull(replayed, r'LiveMessage', 'replayed'),
-            sourceRoomId: BuiltValueNullFieldError.checkNotNull(sourceRoomId, r'LiveMessage', 'sourceRoomId'),
+            isLocal: BuiltValueNullFieldError.checkNotNull(
+              isLocal,
+              r'LiveMessage',
+              'isLocal',
+            ),
+            replayed: BuiltValueNullFieldError.checkNotNull(
+              replayed,
+              r'LiveMessage',
+              'replayed',
+            ),
+            sourceRoomId: BuiltValueNullFieldError.checkNotNull(
+              sourceRoomId,
+              r'LiveMessage',
+              'sourceRoomId',
+            ),
           );
     } catch (_) {
       late String _$failedField;
@@ -347,7 +444,11 @@ class LiveMessageBuilder implements Builder<LiveMessage, LiveMessageBuilder> {
         _$failedField = 'emotes';
         emotes.build();
       } catch (e) {
-        throw BuiltValueNestedFieldError(r'LiveMessage', _$failedField, e.toString());
+        throw BuiltValueNestedFieldError(
+          r'LiveMessage',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

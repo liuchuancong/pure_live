@@ -45,10 +45,20 @@ class _$LiveBadgeSerializer implements StructuredSerializer<LiveBadge> {
       final Object? value = iterator.current;
       switch (key) {
         case 'url':
-          result.url = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.url =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'id':
-          result.id = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.id =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
       }
     }
@@ -63,11 +73,13 @@ class _$LiveBadge extends LiveBadge {
   @override
   final String id;
 
-  factory _$LiveBadge([void Function(LiveBadgeBuilder)? updates]) => (LiveBadgeBuilder()..update(updates))._build();
+  factory _$LiveBadge([void Function(LiveBadgeBuilder)? updates]) =>
+      (LiveBadgeBuilder()..update(updates))._build();
 
   _$LiveBadge._({required this.url, required this.id}) : super._();
   @override
-  LiveBadge rebuild(void Function(LiveBadgeBuilder) updates) => (toBuilder()..update(updates)).build();
+  LiveBadge rebuild(void Function(LiveBadgeBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   LiveBadgeBuilder toBuilder() => LiveBadgeBuilder()..replace(this);

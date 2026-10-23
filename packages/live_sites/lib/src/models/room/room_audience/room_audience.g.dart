@@ -44,7 +44,12 @@ class _$RoomAudienceSerializer implements StructuredSerializer<RoomAudience> {
     if (value != null) {
       result
         ..add('primaryMetric')
-        ..add(serializers.serialize(value, specifiedType: const FullType(LiveAudienceMetricType)));
+        ..add(
+          serializers.serialize(
+            value,
+            specifiedType: const FullType(LiveAudienceMetricType),
+          ),
+        );
     }
     return result;
   }
@@ -64,13 +69,22 @@ class _$RoomAudienceSerializer implements StructuredSerializer<RoomAudience> {
       final Object? value = iterator.current;
       switch (key) {
         case 'popularity':
-          result.popularity = serializers.deserialize(value, specifiedType: const FullType(int)) as int?;
+          result.popularity = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int?;
           break;
         case 'onlineViewers':
-          result.onlineViewers = serializers.deserialize(value, specifiedType: const FullType(int)) as int?;
+          result.onlineViewers = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int?;
           break;
         case 'totalViewers':
-          result.totalViewers = serializers.deserialize(value, specifiedType: const FullType(int)) as int?;
+          result.totalViewers = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int?;
           break;
         case 'primaryMetric':
           result.primaryMetric = serializers.deserialize(
@@ -98,9 +112,15 @@ class _$RoomAudience extends RoomAudience {
   factory _$RoomAudience([void Function(RoomAudienceBuilder)? updates]) =>
       (RoomAudienceBuilder()..update(updates))._build();
 
-  _$RoomAudience._({this.popularity, this.onlineViewers, this.totalViewers, this.primaryMetric}) : super._();
+  _$RoomAudience._({
+    this.popularity,
+    this.onlineViewers,
+    this.totalViewers,
+    this.primaryMetric,
+  }) : super._();
   @override
-  RoomAudience rebuild(void Function(RoomAudienceBuilder) updates) => (toBuilder()..update(updates)).build();
+  RoomAudience rebuild(void Function(RoomAudienceBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   RoomAudienceBuilder toBuilder() => RoomAudienceBuilder()..replace(this);
@@ -137,7 +157,8 @@ class _$RoomAudience extends RoomAudience {
   }
 }
 
-class RoomAudienceBuilder implements Builder<RoomAudience, RoomAudienceBuilder> {
+class RoomAudienceBuilder
+    implements Builder<RoomAudience, RoomAudienceBuilder> {
   _$RoomAudience? _$v;
 
   int? _popularity;
@@ -146,7 +167,8 @@ class RoomAudienceBuilder implements Builder<RoomAudience, RoomAudienceBuilder> 
 
   int? _onlineViewers;
   int? get onlineViewers => _$this._onlineViewers;
-  set onlineViewers(int? onlineViewers) => _$this._onlineViewers = onlineViewers;
+  set onlineViewers(int? onlineViewers) =>
+      _$this._onlineViewers = onlineViewers;
 
   int? _totalViewers;
   int? get totalViewers => _$this._totalViewers;
@@ -154,7 +176,8 @@ class RoomAudienceBuilder implements Builder<RoomAudience, RoomAudienceBuilder> 
 
   LiveAudienceMetricType? _primaryMetric;
   LiveAudienceMetricType? get primaryMetric => _$this._primaryMetric;
-  set primaryMetric(LiveAudienceMetricType? primaryMetric) => _$this._primaryMetric = primaryMetric;
+  set primaryMetric(LiveAudienceMetricType? primaryMetric) =>
+      _$this._primaryMetric = primaryMetric;
 
   RoomAudienceBuilder();
 
