@@ -39,7 +39,7 @@ final class PicartoAreaProvider implements LiveAreaProvider {
 
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
-    required String areaId,
+    required LiveArea area,
     LivePageRequest? request,
   }) async {
     request ??= LivePageRequest();
@@ -47,7 +47,7 @@ final class PicartoAreaProvider implements LiveAreaProvider {
       final page = await site.directory(
         request.page,
         request.pageSize,
-        categoryId: PicartoRoomParser.categoryIdOf(areaId),
+        categoryId: PicartoRoomParser.categoryIdOf(area.areaId),
       );
       return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on PicartoFailure catch (failure) {

@@ -29,10 +29,10 @@ final class KuaishouPlaybackProvider implements LivePlaybackProvider {
   final KuaishouSite site;
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required String roomId}) async {
+  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required LiveRoom room}) async {
     try {
-      final room = await site.detail(roomId);
-      final streams = _streams(room);
+      final detail = await site.detail(room.roomId);
+      final streams = _streams(detail);
       final qualities = KuaishouPlayParser.qualities(streams.playUrls, preferH264: site.preferH264());
       if (qualities.isEmpty) {
         throw const KuaishouFailure(KuaishouFailureKind.streamUnavailable, 'playUrls: no playable representation');
@@ -46,10 +46,10 @@ final class KuaishouPlaybackProvider implements LivePlaybackProvider {
   }
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
     try {
-      final room = await site.detail(roomId);
-      final streams = _streams(room);
+      final detail = await site.detail(room.roomId);
+      final streams = _streams(detail);
       final lines = KuaishouPlayParser.lines(
         streams.playUrls,
         roomId: room.roomId,

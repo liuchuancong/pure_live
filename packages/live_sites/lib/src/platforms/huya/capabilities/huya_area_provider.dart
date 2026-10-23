@@ -46,14 +46,14 @@ final class HuyaAreaProvider implements LiveAreaProvider {
 
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
-    required String areaId,
+    required LiveArea area,
     LivePageRequest? request,
   }) async {
     request ??= LivePageRequest();
     try {
       final page = request.page < 1 ? 1 : request.page;
       final response = await site.httpGet(
-        HuyaEndpoints.liveList(page, gameId: areaId.trim()),
+        HuyaEndpoints.liveList(page, gameId: area.areaId.trim()),
         headers: site.webHeaders(),
       );
       final result = HuyaRoomParser.roomList(response.text, page: page, status: response.status);

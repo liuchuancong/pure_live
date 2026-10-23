@@ -41,13 +41,16 @@ final class DouyuAreaProvider implements LiveAreaProvider {
   @override
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
-    required String areaId,
+    required LiveArea area,
     LivePageRequest? request,
   }) async {
     request ??= LivePageRequest();
     try {
       final page = request.page < 1 ? 1 : request.page;
-      final response = await site.httpGet(DouyuEndpoints.mixList(areaId.trim(), page), headers: site.apiHeaders(''));
+      final response = await site.httpGet(
+        DouyuEndpoints.mixList(area.areaId.trim(), page),
+        headers: site.apiHeaders(''),
+      );
       final result = DouyuRoomParser.roomList(response.text, page: page, status: response.status);
       return right(LivePage.of(items: result.rooms, hasMore: result.hasMore));
     } on DouyuFailure catch (failure) {

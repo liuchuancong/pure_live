@@ -243,8 +243,8 @@ abstract final class KugouliveDanmakuCodec {
 
   /// [roomId] trimmed when it is a room number, else null.
   static String? checkedRoom(String roomId) {
-    final room = roomId.trim();
-    return KugouliveEndpoints.roomId.hasMatch(room) ? room : null;
+    final id = roomId.trim();
+    return KugouliveEndpoints.roomId.hasMatch(id) ? id : null;
   }
 
   /// The scheduler's signature of [query]: the MD5 of the keys in order with

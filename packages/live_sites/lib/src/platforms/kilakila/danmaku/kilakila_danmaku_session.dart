@@ -6,6 +6,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/kilakila/api/kilakila_endpoints.dart';
 import 'package:live_sites/src/platforms/kilakila/danmaku/kilakila_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/kilakila/kilakila_manifest.dart';
@@ -31,12 +32,12 @@ final class KilakilaDanmakuProvider implements LiveDanmakuProvider {
   final KilakilaSite site;
 
   @override
-  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
+  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room}) async {
     final KilakilaDanmakuArgs args;
     try {
-      final handle = (await site.detail(roomId)).runtime.danmakuHandle;
+      final handle = (await site.detail(room.roomId)).runtime.danmakuHandle;
       if (handle is! KilakilaDanmakuArgs) {
-        return left(LiveSiteError.contentUnavailable(siteId: _site, message: 'anchor $roomId has no broadcast'));
+        return left(LiveSiteError.contentUnavailable(siteId: _site, message: 'anchor ${room.roomId} has no broadcast'));
       }
       args = handle;
     } on KilakilaFailure catch (failure) {

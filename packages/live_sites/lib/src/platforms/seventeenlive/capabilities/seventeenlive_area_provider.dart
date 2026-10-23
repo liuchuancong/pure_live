@@ -31,12 +31,12 @@ final class SeventeenLiveAreaProvider implements LiveAreaProvider {
 
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
-    required String areaId,
+    required LiveArea area,
     LivePageRequest? request,
   }) async {
     request ??= LivePageRequest();
     try {
-      final region = site.regionOf(areaId);
+      final region = site.regionOf(area.areaId);
       final page = await site.directory(
         region: region,
         page: request.page,

@@ -48,22 +48,22 @@ final class KickAreaProvider implements LiveAreaProvider {
 
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
-    required String areaId,
+    required LiveArea area,
     LivePageRequest? request,
   }) async {
     request ??= LivePageRequest();
-    final slug = areaId.trim().toLowerCase();
+    final slug = area.areaId.trim().toLowerCase();
     if (KickRoomParser.categoryNames.containsKey(slug) || _mainSlugs.contains(slug)) {
       return left(
         LiveSiteError.invalidArgument(
           siteId: kickSiteId,
-          message: 'area id "$areaId" is Kick\'s top-level category; only its subcategories list rooms',
+          message: 'area id "${area.areaId}" is Kick\'s top-level category; only its subcategories list rooms',
         ),
       );
     }
     if (!KickEndpoints.subcategoryPattern.hasMatch(slug)) {
       return left(
-        LiveSiteError.notFound(siteId: kickSiteId, message: 'area id "$areaId" is not a Kick subcategory slug'),
+        LiveSiteError.notFound(siteId: kickSiteId, message: 'area id "${area.areaId}" is not a Kick subcategory slug'),
       );
     }
     try {

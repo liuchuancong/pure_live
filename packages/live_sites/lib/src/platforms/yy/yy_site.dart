@@ -254,7 +254,7 @@ final class YySite implements LiveSite {
     final module = await _module(area);
     if (!YyRoomParser.hasListing(module)) {
       if (page > 1) return const [];
-      final html = _pages.remove(area.areaId.trim()) ?? await _readPage(await _areaPage(area));
+      final html = _pages.remove(areaId.trim()) ?? await _readPage(await _areaPage(area));
       return _withStreams(YyRoomParser.pageRooms(html, area: area.areaName));
     }
     final response = await _get(

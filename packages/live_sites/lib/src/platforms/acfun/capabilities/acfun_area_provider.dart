@@ -39,12 +39,16 @@ final class AcfunAreaProvider implements LiveAreaProvider {
 
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
-    required String areaId,
+    required LiveArea area,
     LivePageRequest? request,
   }) async {
     request ??= LivePageRequest();
     try {
-      final page = await site.listing(page: request.page, pageSize: request.pageSize, filters: site.filtersFor(areaId));
+      final page = await site.listing(
+        page: request.page,
+        pageSize: request.pageSize,
+        filters: site.filtersFor(area.areaId),
+      );
       return right(LivePage.of(items: page.rooms, hasMore: page.hasMore, nextCursor: page.nextCursor));
     } on AcfunFailure catch (failure) {
       return left(failure.toLiveSiteError(acfunSiteId));

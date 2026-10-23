@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/chzzk/chzzk_manifest.dart';
 import 'package:live_sites/src/platforms/chzzk/chzzk_site.dart';
 import 'package:live_sites/src/platforms/chzzk/parsers/chzzk_failure.dart';
@@ -32,9 +33,9 @@ final class ChzzkPlaybackProvider implements LivePlaybackProvider {
   final ChzzkSite site;
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required String roomId}) async {
+  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required LiveRoom room}) async {
     try {
-      return right(ChzzkPlayParser.qualities(await site.variantsOf(roomId)));
+      return right(ChzzkPlayParser.qualities(await site.variantsOf(room.roomId)));
     } on ChzzkFailure catch (failure) {
       return left(failure.toLiveSiteError(chzzkSiteId));
     } on Object catch (error) {
@@ -43,9 +44,9 @@ final class ChzzkPlaybackProvider implements LivePlaybackProvider {
   }
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
     try {
-      final variants = await site.variantsOf(roomId);
+      final variants = await site.variantsOf(room.roomId);
       final lines = ChzzkPlayParser.lines(variants, quality: quality?.qualityId);
       if (lines.isEmpty) {
         throw ChzzkFailure(

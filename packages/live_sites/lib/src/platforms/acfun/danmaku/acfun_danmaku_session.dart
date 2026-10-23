@@ -9,6 +9,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/acfun/acfun_manifest.dart';
 import 'package:live_sites/src/platforms/acfun/acfun_site.dart';
 import 'package:live_sites/src/platforms/acfun/danmaku/acfun_danmaku_codec.dart';
@@ -35,13 +36,13 @@ final class AcfunDanmakuProvider implements LiveDanmakuProvider {
   final AcfunSite site;
 
   @override
-  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
+  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room}) async {
     final AcfunDanmakuArgs args;
     try {
-      final handle = (await site.detail(roomId)).runtime.danmakuHandle;
+      final handle = (await site.detail(room.roomId)).runtime.danmakuHandle;
       if (handle is! AcfunDanmakuArgs) {
         return left(
-          LiveSiteError.contentUnavailable(siteId: acfunSiteId, message: 'room $roomId names no live broadcast'),
+          LiveSiteError.contentUnavailable(siteId: acfunSiteId, message: 'room ${room.roomId} names no live broadcast'),
         );
       }
       args = handle;

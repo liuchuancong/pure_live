@@ -15,6 +15,6 @@ abstract interface class LiveAreaProvider implements LiveSiteCapability {
   /// The site's areas, in the order it presents them.
   Future<Either<LiveSiteError, List<LiveArea>>> getAreas();
 
-  /// A page of rooms under [areaId] for [request].
-  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({required String areaId, LivePageRequest? request});
+  /// A page of rooms under [area] for [request].
+  Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({required LiveArea area, LivePageRequest? request});
 }

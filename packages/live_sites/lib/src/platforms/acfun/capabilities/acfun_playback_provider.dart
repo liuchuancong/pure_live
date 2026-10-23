@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/acfun/acfun_manifest.dart';
 import 'package:live_sites/src/platforms/acfun/acfun_site.dart';
 import 'package:live_sites/src/platforms/acfun/parsers/acfun_failure.dart';
@@ -29,9 +30,9 @@ final class AcfunPlaybackProvider implements LivePlaybackProvider {
   final AcfunSite site;
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required String roomId}) async {
+  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required LiveRoom room}) async {
     try {
-      return right(AcfunPlayParser.toModel(await site.qualities(await site.detail(roomId))));
+      return right(AcfunPlayParser.toModel(await site.qualities(await site.detail(room.roomId))));
     } on AcfunFailure catch (failure) {
       return left(failure.toLiveSiteError(acfunSiteId));
     } on Object catch (error) {
@@ -40,9 +41,9 @@ final class AcfunPlaybackProvider implements LivePlaybackProvider {
   }
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
     try {
-      final data = await site.broadcast(await site.detail(roomId));
+      final data = await site.broadcast(await site.detail(room.roomId));
       final id = quality?.qualityId ?? data.qualities.first.id;
       final lines = AcfunPlayParser.lines(data.qualities, qualityId: id, issuedAt: data.issuedAt);
       if (lines.isEmpty) {

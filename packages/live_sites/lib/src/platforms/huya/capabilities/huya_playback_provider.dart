@@ -33,9 +33,9 @@ final class HuyaPlaybackProvider implements LivePlaybackProvider {
   final HuyaSite site;
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required String roomId}) async {
+  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required LiveRoom room}) async {
     try {
-      final profile = await _playable(roomId);
+      final profile = await _playable(room.roomId);
       // A replay offers every definition of its recording (getMomentContent),
       // falling back to the one quality profileRoom named.
       final videoId = profile.replay?.videoId;
@@ -52,9 +52,9 @@ final class HuyaPlaybackProvider implements LivePlaybackProvider {
   }
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
     try {
-      final profile = await _playable(roomId);
+      final profile = await _playable(room.roomId);
       final rid = profile.room.roomId;
       final cookie = site.cookie();
       // A replay plays its recording: an unsigned VOD playlist that does not

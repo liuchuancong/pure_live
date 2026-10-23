@@ -44,10 +44,10 @@ final class TwitchPlaybackProvider implements LivePlaybackProvider {
   ({String login, List<TwitchVariantGroup> groups, DateTime at})? _cached;
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required String roomId}) async {
+  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required LiveRoom room}) async {
     try {
-      final room = await site.detail(roomId);
-      return right(TwitchPlayParser.qualities(await _resolve(room)));
+      final detail = await site.detail(room.roomId);
+      return right(TwitchPlayParser.qualities(await _resolve(detail)));
     } on TwitchFailure catch (failure) {
       return left(failure.toLiveSiteError(twitchSiteId));
     } on Object catch (error) {
@@ -56,10 +56,10 @@ final class TwitchPlaybackProvider implements LivePlaybackProvider {
   }
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
     try {
-      final room = await site.detail(roomId);
-      final groups = await _resolve(room);
+      final detail = await site.detail(room.roomId);
+      final groups = await _resolve(detail);
       final chosen =
           TwitchPlayParser.sameGroup(groups, quality?.qualityId, label: quality?.label ?? '') ?? groups.first;
       return right(TwitchPlayParser.lines(chosen, roomId: room.roomId));

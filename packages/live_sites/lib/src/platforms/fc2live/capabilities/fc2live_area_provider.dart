@@ -34,12 +34,12 @@ final class Fc2LiveAreaProvider implements LiveAreaProvider {
 
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
-    required String areaId,
+    required LiveArea area,
     LivePageRequest? request,
   }) async {
     request ??= LivePageRequest();
     try {
-      final page = await site.listing(areaId: areaId, page: request.page, pageSize: request.pageSize);
+      final page = await site.listing(areaId: area.areaId, page: request.page, pageSize: request.pageSize);
       return right(LivePage.of(items: page.rooms, totalCount: page.totalCount, hasMore: page.hasMore));
     } on Fc2LiveFailure catch (failure) {
       return left(failure.toLiveSiteError(fc2LiveSiteId));

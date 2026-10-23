@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/enums/live_play_format_source.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/bigo/api/bigo_endpoints.dart';
 import 'package:live_sites/src/platforms/bigo/bigo_manifest.dart';
 import 'package:live_sites/src/platforms/bigo/bigo_site.dart';
@@ -43,9 +44,9 @@ final class BigoPlaybackProvider implements LivePlaybackProvider {
   );
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required String roomId}) async {
+  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required LiveRoom room}) async {
     try {
-      final studio = await site.refresh(roomId);
+      final studio = await site.refresh(room.roomId);
       final error = studio.streamError;
       if (error != null) throw error;
       return right([quality]);
@@ -57,7 +58,7 @@ final class BigoPlaybackProvider implements LivePlaybackProvider {
   }
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
     if (quality != null && quality.qualityId != BigoEndpoints.qualityId) {
       return left(
         LiveSiteError.invalidArgument(
@@ -67,7 +68,7 @@ final class BigoPlaybackProvider implements LivePlaybackProvider {
       );
     }
     try {
-      final hls = await site.playPlaylist(roomId);
+      final hls = await site.playPlaylist(room.roomId);
       return right([
         LivePlayLine.of(
           url: '$hls',

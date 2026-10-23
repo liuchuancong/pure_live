@@ -31,11 +31,11 @@ final class HuyaDanmakuProvider implements LiveDanmakuProvider {
   final HuyaSite site;
 
   @override
-  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
+  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room}) async {
     // The streamer uid, the top channel id and the board fetch all ride in the
     // room detail's danmaku handle.
-    final room = site.capability<LiveRoomProvider>()!.getRoom(roomId);
-    return await (await room).match<Future<Either<LiveSiteError, LiveDanmakuSession>>>(
+    final detail = site.capability<LiveRoomProvider>()!.getRoom(room.roomId);
+    return await (await detail).match<Future<Either<LiveSiteError, LiveDanmakuSession>>>(
       (error) async => left(error),
       _openRoom,
     );

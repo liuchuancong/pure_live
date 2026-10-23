@@ -8,6 +8,7 @@ import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/enums/live_restriction.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/steambroadcast/api/steambroadcast_endpoints.dart';
 import 'package:live_sites/src/platforms/steambroadcast/api/steambroadcast_http.dart';
 import 'package:live_sites/src/platforms/steambroadcast/danmaku/steambroadcast_danmaku_codec.dart';
@@ -40,12 +41,14 @@ final class SteambroadcastDanmakuProvider implements LiveDanmakuProvider {
   final SteambroadcastSite site;
 
   @override
-  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
+  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room}) async {
     final SteambroadcastDanmakuArgs args;
     try {
-      final handle = (await site.detail(roomId)).runtime.danmakuHandle;
+      final handle = (await site.detail(room.roomId)).runtime.danmakuHandle;
       if (handle is! SteambroadcastDanmakuArgs) {
-        return left(LiveSiteError.contentUnavailable(siteId: _site, message: 'broadcaster $roomId opens no chat'));
+        return left(
+          LiveSiteError.contentUnavailable(siteId: _site, message: 'broadcaster ${room.roomId} opens no chat'),
+        );
       }
       args = handle;
     } on SteambroadcastFailure catch (failure) {

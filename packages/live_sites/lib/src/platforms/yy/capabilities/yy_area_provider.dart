@@ -40,12 +40,12 @@ final class YyAreaProvider implements LiveAreaProvider {
 
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
-    required String areaId,
+    required LiveArea area,
     LivePageRequest? request,
   }) async {
     request ??= LivePageRequest();
     try {
-      final rooms = await site.areaRooms(areaId, page: request.page, pageSize: request.pageSize);
+      final rooms = await site.areaRooms(area.areaId, page: request.page, pageSize: request.pageSize);
       return right(LivePage.of(items: rooms));
     } on YyFailure catch (failure) {
       return left(failure.toLiveSiteError(yySiteId));

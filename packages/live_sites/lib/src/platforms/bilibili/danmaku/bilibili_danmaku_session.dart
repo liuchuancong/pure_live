@@ -9,6 +9,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_endpoints.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_manifest.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_site.dart';
@@ -36,10 +37,10 @@ final class BilibiliDanmakuProvider implements LiveDanmakuProvider {
   final BilibiliSite site;
 
   @override
-  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
+  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room}) async {
     BilibiliDanmakuArgs args;
     try {
-      final longId = site.longId(roomId);
+      final longId = site.longId(room.roomId);
       try {
         args = await site.danmakuArgs(longId);
       } on BilibiliFailure {
@@ -47,7 +48,10 @@ final class BilibiliDanmakuProvider implements LiveDanmakuProvider {
       }
       if (args.token.isEmpty) {
         return left(
-          LiveSiteError.contentUnavailable(siteId: bilibiliSiteId, message: 'room $roomId hands out no danmaku token'),
+          LiveSiteError.contentUnavailable(
+            siteId: bilibiliSiteId,
+            message: 'room ${room.roomId} hands out no danmaku token',
+          ),
         );
       }
     } on BilibiliFailure catch (failure) {

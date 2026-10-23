@@ -29,9 +29,9 @@ final class DouyinPlaybackProvider implements LivePlaybackProvider {
   final DouyinSite site;
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required String roomId}) async {
+  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required LiveRoom room}) async {
     try {
-      final fetched = await _streamed(roomId);
+      final fetched = await _streamed(room.roomId);
       return right(DouyinPlayParser.qualities(fetched.room.streamUrl));
     } on DouyinFailure catch (failure) {
       return left(failure.toLiveSiteError(douyinSiteId));
@@ -41,9 +41,9 @@ final class DouyinPlaybackProvider implements LivePlaybackProvider {
   }
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
     try {
-      final fetched = await _streamed(roomId);
+      final fetched = await _streamed(room.roomId);
       final lines = DouyinPlayParser.lines(
         fetched.room.streamUrl,
         webRid: fetched.room.room.roomId,

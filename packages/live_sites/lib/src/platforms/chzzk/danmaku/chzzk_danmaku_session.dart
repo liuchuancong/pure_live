@@ -8,6 +8,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/chzzk/api/chzzk_endpoints.dart';
 import 'package:live_sites/src/platforms/chzzk/api/chzzk_http.dart';
 import 'package:live_sites/src/platforms/chzzk/chzzk_manifest.dart';
@@ -38,12 +39,14 @@ final class ChzzkDanmakuProvider implements LiveDanmakuProvider {
   final ChzzkSite site;
 
   @override
-  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
+  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room}) async {
     final ChzzkDanmakuArgs args;
     try {
-      final handle = (await site.detail(roomId)).runtime.danmakuHandle;
+      final handle = (await site.detail(room.roomId)).runtime.danmakuHandle;
       if (handle is! ChzzkDanmakuArgs || !ChzzkDanmakuCodec.isChatChannelId(handle.chatChannelId)) {
-        return left(LiveSiteError.contentUnavailable(siteId: chzzkSiteId, message: 'room $roomId opens no chat'));
+        return left(
+          LiveSiteError.contentUnavailable(siteId: chzzkSiteId, message: 'room ${room.roomId} opens no chat'),
+        );
       }
       args = handle;
     } on ChzzkFailure catch (failure) {

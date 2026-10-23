@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/sixroom/parsers/sixroom_failure.dart';
 import 'package:live_sites/src/platforms/sixroom/sixroom_manifest.dart';
 import 'package:live_sites/src/platforms/sixroom/sixroom_site.dart';
@@ -27,9 +28,9 @@ final class SixroomPlaybackProvider implements LivePlaybackProvider {
   final SixroomSite site;
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required String roomId}) async {
+  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required LiveRoom room}) async {
     try {
-      return right(await site.qualitiesOf(roomId));
+      return right(await site.qualitiesOf(room.roomId));
     } on SixroomFailure catch (failure) {
       return left(failure.toLiveSiteError(sixroomSiteId));
     } on Object catch (error) {
@@ -38,9 +39,9 @@ final class SixroomPlaybackProvider implements LivePlaybackProvider {
   }
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
     try {
-      return right(await site.linesOf(roomId, quality: quality));
+      return right(await site.linesOf(room.roomId, quality: quality));
     } on SixroomFailure catch (failure) {
       return left(failure.toLiveSiteError(sixroomSiteId));
     } on Object catch (error) {

@@ -7,6 +7,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/youtube/api/youtube_endpoints.dart';
 import 'package:live_sites/src/platforms/youtube/api/youtube_http.dart';
 import 'package:live_sites/src/platforms/youtube/danmaku/youtube_danmaku_codec.dart';
@@ -44,10 +45,10 @@ final class YoutubeDanmakuProvider implements LiveDanmakuProvider {
   final bool Function()? allChat;
 
   @override
-  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
+  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room}) async {
     final YoutubeDanmakuArgs args;
     try {
-      final handle = (await site.detail(roomId)).runtime.danmakuHandle;
+      final handle = (await site.detail(room.roomId)).runtime.danmakuHandle;
       if (handle is! YoutubeDanmakuArgs) {
         return left(
           const LiveSiteError.contentUnavailable(

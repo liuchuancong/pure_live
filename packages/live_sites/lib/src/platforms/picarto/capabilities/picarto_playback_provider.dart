@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/picarto/parsers/picarto_failure.dart';
 import 'package:live_sites/src/platforms/picarto/picarto_manifest.dart';
 import 'package:live_sites/src/platforms/picarto/picarto_site.dart';
@@ -27,9 +28,9 @@ final class PicartoPlaybackProvider implements LivePlaybackProvider {
   final PicartoSite site;
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required String roomId}) async {
+  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required LiveRoom room}) async {
     try {
-      return right(await site.qualitiesOf(roomId));
+      return right(await site.qualitiesOf(room.roomId));
     } on PicartoFailure catch (failure) {
       return left(failure.toLiveSiteError(picartoSiteId));
     } on Object catch (error) {
@@ -38,9 +39,9 @@ final class PicartoPlaybackProvider implements LivePlaybackProvider {
   }
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
     try {
-      return right(await site.linesOf(roomId, quality: quality));
+      return right(await site.linesOf(room.roomId, quality: quality));
     } on PicartoFailure catch (failure) {
       return left(failure.toLiveSiteError(picartoSiteId));
     } on Object catch (error) {

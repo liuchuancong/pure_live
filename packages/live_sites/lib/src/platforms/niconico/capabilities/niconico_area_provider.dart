@@ -28,12 +28,12 @@ final class NiconicoAreaProvider implements LiveAreaProvider {
 
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
-    required String areaId,
+    required LiveArea area,
     LivePageRequest? request,
   }) async {
     request ??= LivePageRequest();
     try {
-      final result = await site.recent(areaId.trim(), request.page);
+      final result = await site.recent(area.areaId.trim(), request.page);
       return right(LivePage.of(items: result.rooms, hasMore: result.hasMore));
     } on NiconicoFailure catch (failure) {
       return left(failure.toLiveSiteError(niconicoSiteId));

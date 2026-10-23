@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/niconico/api/niconico_endpoints.dart';
 import 'package:live_sites/src/platforms/niconico/danmaku/niconico_seat_session.dart';
 import 'package:live_sites/src/platforms/niconico/niconico_manifest.dart';
@@ -34,10 +35,10 @@ final class NiconicoPlaybackProvider implements LivePlaybackProvider {
   static const Duration masterTimeout = Duration(seconds: 5);
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required String roomId}) async {
+  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required LiveRoom room}) async {
     final NiconicoSeat seat;
     try {
-      seat = await site.openSeat(roomId);
+      seat = await site.openSeat(room.roomId);
     } on NiconicoFailure catch (failure) {
       return left(failure.toLiveSiteError(niconicoSiteId));
     } on Object catch (error) {
@@ -50,7 +51,11 @@ final class NiconicoPlaybackProvider implements LivePlaybackProvider {
           const LiveSiteError.contentUnavailable(siteId: niconicoSiteId, message: 'the seat granted no stream'),
         );
       }
-      final response = await site.httpGet(grant.uri, headers: _mediaHeaders(roomId, grant), timeout: masterTimeout);
+      final response = await site.httpGet(
+        grant.uri,
+        headers: _mediaHeaders(room.roomId, grant),
+        timeout: masterTimeout,
+      );
       return right(
         NiconicoPlayParser.qualities(
           NiconicoPlayParser.variants(response.text, source: grant.uri, status: response.status),
@@ -66,10 +71,10 @@ final class NiconicoPlaybackProvider implements LivePlaybackProvider {
   }
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
     final NiconicoSeat seat;
     try {
-      seat = await site.openSeat(roomId);
+      seat = await site.openSeat(room.roomId);
     } on NiconicoFailure catch (failure) {
       return left(failure.toLiveSiteError(niconicoSiteId));
     } on Object catch (error) {
@@ -82,7 +87,11 @@ final class NiconicoPlaybackProvider implements LivePlaybackProvider {
           const LiveSiteError.contentUnavailable(siteId: niconicoSiteId, message: 'the seat granted no stream'),
         );
       }
-      final response = await site.httpGet(grant.uri, headers: _mediaHeaders(roomId, grant), timeout: masterTimeout);
+      final response = await site.httpGet(
+        grant.uri,
+        headers: _mediaHeaders(room.roomId, grant),
+        timeout: masterTimeout,
+      );
       final variants = NiconicoPlayParser.variants(response.text, source: grant.uri, status: response.status);
       final variant = NiconicoPlayParser.pick(variants, quality?.qualityId);
       if (variant == null) {
@@ -92,7 +101,7 @@ final class NiconicoPlaybackProvider implements LivePlaybackProvider {
       }
       // The line captures the cookie header now: closing the seat below
       // revokes the grant, and the player reuses the captured header.
-      return right(NiconicoPlayParser.lines(grant, variant, roomId: roomId, now: site.now()));
+      return right(NiconicoPlayParser.lines(grant, variant, roomId: room.roomId, now: site.now()));
     } on NiconicoFailure catch (failure) {
       return left(failure.toLiveSiteError(niconicoSiteId));
     } on Object catch (error) {

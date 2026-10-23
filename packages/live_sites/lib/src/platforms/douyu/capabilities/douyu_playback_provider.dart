@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/douyu/api/douyu_endpoints.dart';
 import 'package:live_sites/src/platforms/douyu/douyu_manifest.dart';
 import 'package:live_sites/src/platforms/douyu/douyu_site.dart';
@@ -31,14 +32,14 @@ final class DouyuPlaybackProvider implements LivePlaybackProvider {
 
   @override
   @override
-  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required String roomId}) async {
+  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required LiveRoom room}) async {
     try {
-      final play = await _play(roomId, rate: -1, cdn: '');
+      final play = await _play(room.roomId, rate: -1, cdn: '');
       final data = DouyuPlayParser.playData(play.text, status: play.status);
       final lines = DouyuPlayParser.cdns(data);
-      if (roomId.trim().isNotEmpty) {
-        _cdns.remove(roomId.trim());
-        _cdns[roomId.trim()] = lines;
+      if (room.roomId.trim().isNotEmpty) {
+        _cdns.remove(room.roomId.trim());
+        _cdns[room.roomId.trim()] = lines;
       }
       return right(DouyuPlayParser.qualities(data));
     } on DouyuFailure catch (failure) {
@@ -50,9 +51,9 @@ final class DouyuPlaybackProvider implements LivePlaybackProvider {
 
   @override
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
     try {
-      final rid = await _ridOf(roomId);
+      final rid = await _ridOf(room.roomId);
       final rate = int.tryParse(quality?.qualityId ?? '') ?? -1;
       final cdns = _cdns[rid] ?? await _refreshCdns(rid);
       final issuedAt = DateTime.now().toUtc();

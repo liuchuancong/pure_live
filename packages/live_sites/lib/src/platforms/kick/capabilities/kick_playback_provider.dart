@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/kick/api/kick_endpoints.dart';
 import 'package:live_sites/src/platforms/kick/kick_manifest.dart';
 import 'package:live_sites/src/platforms/kick/kick_site.dart';
@@ -45,9 +46,9 @@ final class KickPlaybackProvider implements LivePlaybackProvider {
   final Map<String, KickStreamData> _streams = {};
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required String roomId}) async {
+  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required LiveRoom room}) async {
     try {
-      return right(KickPlayParser.qualities((await _read(roomId)).variants));
+      return right(KickPlayParser.qualities((await _read(room.roomId)).variants));
     } on KickFailure catch (failure) {
       return left(failure.toLiveSiteError(kickSiteId));
     } on Object catch (error) {
@@ -56,14 +57,14 @@ final class KickPlaybackProvider implements LivePlaybackProvider {
   }
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
     try {
-      var data = await _read(roomId);
+      var data = await _read(room.roomId);
       // A recovery read: the reference re-reads the channel and its master on
       // recovery, because a token revoked early server-side otherwise has no
       // way back. Same trigger kept here — the cached lease is spent, so the
       // lines it would build are certain to die mid-play.
-      if (_leaseRunningOut(data)) data = await _read(roomId, force: true);
+      if (_leaseRunningOut(data)) data = await _read(room.roomId, force: true);
       final variant = KickPlayParser.pick(data.variants, quality?.qualityId ?? quality?.label);
       if (variant == null) {
         throw const KickFailure(KickFailureKind.streamUnavailable, 'master playlist: no variant');

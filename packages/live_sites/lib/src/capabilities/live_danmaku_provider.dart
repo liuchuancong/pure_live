@@ -4,6 +4,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 
 /// Creates a danmaku session for a room.
 ///
@@ -20,9 +21,9 @@ import 'package:live_sites/src/models/message/live_message/live_message.dart';
 /// catalogues) flow into the live session through the concrete session's
 /// update methods, not through a new connection.
 abstract interface class LiveDanmakuProvider implements LiveSiteCapability {
-  /// Creates a session for [roomId]. A left reports why the session could
+  /// Creates a session for [room]. A left reports why the session could
   /// not be started (auth, unsupported, temporary unavailability).
-  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId});
+  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room});
 }
 
 /// A live danmaku connection over a platform protocol.

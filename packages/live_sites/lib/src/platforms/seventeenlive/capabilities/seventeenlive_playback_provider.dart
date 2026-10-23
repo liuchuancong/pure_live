@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/seventeenlive/parsers/seventeenlive_failure.dart';
 import 'package:live_sites/src/platforms/seventeenlive/parsers/seventeenlive_play_parser.dart';
 import 'package:live_sites/src/platforms/seventeenlive/parsers/seventeenlive_room_parser.dart';
@@ -39,9 +40,9 @@ final class SeventeenLivePlaybackProvider implements LivePlaybackProvider {
   ({String roomId, SeventeenLiveRoomData data})? _snapshot;
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required String roomId}) async {
+  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required LiveRoom room}) async {
     try {
-      return right(SeventeenLivePlayParser.playQualities(await _enter(roomId), preferH264: site.preferH264()));
+      return right(SeventeenLivePlayParser.playQualities(await _enter(room.roomId), preferH264: site.preferH264()));
     } on SeventeenLiveFailure catch (failure) {
       return left(failure.toLiveSiteError(seventeenliveSiteId));
     } on Object catch (error) {
@@ -50,11 +51,11 @@ final class SeventeenLivePlaybackProvider implements LivePlaybackProvider {
   }
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
     try {
       final prefer = site.preferH264();
       final wanted = quality?.qualityId?.trim();
-      var data = await _held(roomId);
+      var data = await _held(room.roomId);
       // A held answer that plays but does not know this quality is stale, not
       // refusing: read the room again, as the reference's recovery did. One that
       // has nothing to play at all is reported without a second request.
@@ -62,7 +63,7 @@ final class SeventeenLivePlaybackProvider implements LivePlaybackProvider {
           wanted != null &&
           wanted.isNotEmpty &&
           !data.lines.containsKey(SeventeenLivePlayParser.qualityIdFromLegacy(wanted))) {
-        data = await _enter(roomId);
+        data = await _enter(room.roomId);
       }
       return right(SeventeenLivePlayParser.lines(data, quality: wanted, preferH264: prefer));
     } on SeventeenLiveFailure catch (failure) {

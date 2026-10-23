@@ -7,6 +7,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/fc2live/api/fc2live_endpoints.dart';
 import 'package:live_sites/src/platforms/fc2live/danmaku/fc2live_control.dart';
 import 'package:live_sites/src/platforms/fc2live/danmaku/fc2live_danmaku_codec.dart';
@@ -36,12 +37,12 @@ final class Fc2LiveDanmakuProvider implements LiveDanmakuProvider {
   final Fc2LiveSite site;
 
   @override
-  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
+  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room}) async {
     final Fc2LiveDanmakuArgs args;
     try {
-      final handle = (await site.detail(roomId)).runtime.danmakuHandle;
+      final handle = (await site.detail(room.roomId)).runtime.danmakuHandle;
       if (handle is! Fc2LiveDanmakuArgs) {
-        return left(LiveSiteError.contentUnavailable(siteId: _site, message: 'room $roomId names no channel'));
+        return left(LiveSiteError.contentUnavailable(siteId: _site, message: 'room ${room.roomId} names no channel'));
       }
       args = handle;
     } on Fc2LiveFailure catch (failure) {

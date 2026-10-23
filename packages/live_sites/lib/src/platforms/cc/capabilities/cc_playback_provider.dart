@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/cc/cc_manifest.dart';
 import 'package:live_sites/src/platforms/cc/cc_site.dart';
 import 'package:live_sites/src/platforms/cc/parsers/cc_failure.dart';
@@ -26,9 +27,9 @@ final class CcPlaybackProvider implements LivePlaybackProvider {
   final CcSite site;
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required String roomId}) async {
+  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required LiveRoom room}) async {
     try {
-      return right(await site.qualitiesOf(roomId));
+      return right(await site.qualitiesOf(room.roomId));
     } on CcFailure catch (failure) {
       return left(failure.toLiveSiteError(ccSiteId));
     } on Object catch (error) {
@@ -37,9 +38,9 @@ final class CcPlaybackProvider implements LivePlaybackProvider {
   }
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
     try {
-      return right(await site.linesOf(roomId, quality: quality));
+      return right(await site.linesOf(room.roomId, quality: quality));
     } on CcFailure catch (failure) {
       return left(failure.toLiveSiteError(ccSiteId));
     } on Object catch (error) {

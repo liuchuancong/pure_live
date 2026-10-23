@@ -38,12 +38,12 @@ final class BilibiliAreaProvider implements LiveAreaProvider {
 
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
-    required String areaId,
+    required LiveArea area,
     LivePageRequest? request,
   }) async {
     request ??= LivePageRequest();
     try {
-      return right(await page(areaId, request));
+      return right(await page(area.areaId, request));
     } on BilibiliFailure catch (failure) {
       return left(failure.toLiveSiteError(bilibiliSiteId));
     } on Object catch (error) {

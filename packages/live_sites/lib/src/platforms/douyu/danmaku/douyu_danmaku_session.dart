@@ -31,12 +31,12 @@ final class DouyuDanmakuProvider implements LiveDanmakuProvider {
   final bool Function()? filterSuspectedAutomated;
 
   @override
-  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
+  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room}) async {
     // The room's own gift catalogue (its `betard` answer's `room_gift.gift`) is
     // what prices a gift the lists do not carry, so the session takes the room
     // detail's danmaku handle and seeds from it before any packet arrives.
-    final room = site.capability<LiveRoomProvider>()!.getRoom(roomId);
-    return await (await room).match<Future<Either<LiveSiteError, LiveDanmakuSession>>>(
+    final detail = site.capability<LiveRoomProvider>()!.getRoom(room.roomId);
+    return await (await detail).match<Future<Either<LiveSiteError, LiveDanmakuSession>>>(
       (error) async => left(error),
       _open,
     );

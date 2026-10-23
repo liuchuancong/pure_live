@@ -40,12 +40,12 @@ final class PandaliveAreaProvider implements LiveAreaProvider {
 
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
-    required String areaId,
+    required LiveArea area,
     LivePageRequest? request,
   }) async {
     request ??= LivePageRequest();
     try {
-      final page = await site.directory(request.page, request.pageSize, areaId: areaId);
+      final page = await site.directory(request.page, request.pageSize, areaId: area.areaId);
       return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on PandaliveFailure catch (failure) {
       return left(failure.toLiveSiteError(pandaliveSiteId));

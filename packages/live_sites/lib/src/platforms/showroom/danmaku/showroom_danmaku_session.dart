@@ -6,6 +6,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/showroom/danmaku/showroom_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/showroom/parsers/showroom_failure.dart';
 import 'package:live_sites/src/platforms/showroom/parsers/showroom_models.dart';
@@ -32,12 +33,14 @@ final class ShowroomDanmakuProvider implements LiveDanmakuProvider {
   final ShowroomSite site;
 
   @override
-  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
+  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room}) async {
     final ShowroomDanmakuArgs args;
     try {
-      final handle = (await site.detail(roomId)).runtime.danmakuHandle;
+      final handle = (await site.detail(room.roomId)).runtime.danmakuHandle;
       if (handle is! ShowroomDanmakuArgs) {
-        return left(LiveSiteError.contentUnavailable(siteId: _site, message: 'room $roomId has no comment server'));
+        return left(
+          LiveSiteError.contentUnavailable(siteId: _site, message: 'room ${room.roomId} has no comment server'),
+        );
       }
       args = handle;
     } on ShowroomFailure catch (failure) {

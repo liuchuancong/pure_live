@@ -39,12 +39,12 @@ final class CcAreaProvider implements LiveAreaProvider {
 
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
-    required String areaId,
+    required LiveArea area,
     LivePageRequest? request,
   }) async {
     request ??= LivePageRequest();
     try {
-      final page = await site.areaRooms(areaId, page: request.page, pageSize: request.pageSize);
+      final page = await site.areaRooms(area.areaId, page: request.page, pageSize: request.pageSize);
       return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on CcFailure catch (failure) {
       return left(failure.toLiveSiteError(ccSiteId));

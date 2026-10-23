@@ -10,6 +10,7 @@ import 'package:live_sites/src/models/gift/live_gift/live_gift.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
 import 'package:live_sites/src/models/message/message_sender/message_sender.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/bigo/api/bigo_http.dart';
 import 'package:live_sites/src/platforms/bigo/bigo_manifest.dart';
 import 'package:live_sites/src/platforms/bigo/bigo_site.dart';
@@ -40,12 +41,12 @@ final class BigoDanmakuProvider implements LiveDanmakuProvider {
   final BigoSite site;
 
   @override
-  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
+  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room}) async {
     final BigoDanmakuArgs args;
     try {
-      final handle = (await site.detail(roomId)).runtime.danmakuHandle;
+      final handle = (await site.detail(room.roomId)).runtime.danmakuHandle;
       if (handle is! BigoDanmakuArgs || !BigoDanmakuCodec.checks(handle)) {
-        return left(LiveSiteError.contentUnavailable(siteId: bigoSiteId, message: 'room $roomId opens no chat'));
+        return left(LiveSiteError.contentUnavailable(siteId: bigoSiteId, message: 'room ${room.roomId} opens no chat'));
       }
       args = handle;
     } on BigoFailure catch (failure) {

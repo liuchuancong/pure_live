@@ -39,12 +39,12 @@ final class MissevanAreaProvider implements LiveAreaProvider {
 
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
-    required String areaId,
+    required LiveArea area,
     LivePageRequest? request,
   }) async {
     request ??= LivePageRequest();
     try {
-      final page = await site.directory(request.page, areaId: areaId, pageSize: request.pageSize);
+      final page = await site.directory(request.page, areaId: area.areaId, pageSize: request.pageSize);
       return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on MissevanFailure catch (failure) {
       return left(failure.toLiveSiteError(missevanSiteId));

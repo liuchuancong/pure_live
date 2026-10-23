@@ -10,6 +10,7 @@ import 'package:live_sites/src/models/audience/live_audience_update/live_audienc
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/seventeenlive/api/seventeenlive_endpoints.dart';
 import 'package:live_sites/src/platforms/seventeenlive/api/seventeenlive_http.dart';
 import 'package:live_sites/src/platforms/seventeenlive/danmaku/seventeenlive_danmaku_codec.dart';
@@ -42,10 +43,10 @@ final class SeventeenLiveDanmakuProvider implements LiveDanmakuProvider {
   final SeventeenLiveSite site;
 
   @override
-  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
-    final id = SeventeenLiveRoomParser.normalizeRoomId(roomId);
+  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room}) async {
+    final id = SeventeenLiveRoomParser.normalizeRoomId(room.roomId);
     if (id == null) {
-      return left(LiveSiteError.invalidArgument(siteId: seventeenliveSiteId, message: 'not a room id: $roomId'));
+      return left(LiveSiteError.invalidArgument(siteId: seventeenliveSiteId, message: 'not a room id: ${room.roomId}'));
     }
     final session = SeventeenLiveDanmakuSession(
       args: SeventeenLiveDanmakuArgs(roomId: id),

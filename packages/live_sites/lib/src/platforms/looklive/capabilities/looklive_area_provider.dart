@@ -31,12 +31,12 @@ final class LookliveAreaProvider implements LiveAreaProvider {
 
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
-    required String areaId,
+    required LiveArea area,
     LivePageRequest? request,
   }) async {
     request ??= LivePageRequest();
     try {
-      final page = await site.directory(request.page, areaId: areaId);
+      final page = await site.directory(request.page, areaId: area.areaId);
       // A size below 1 asks for nothing (the merged recommendations do too).
       final rooms = request.pageSize < 1 ? const <LiveRoom>[] : page.rooms.take(request.pageSize).toList();
       return right(LivePage.of(items: rooms, hasMore: page.hasMore));

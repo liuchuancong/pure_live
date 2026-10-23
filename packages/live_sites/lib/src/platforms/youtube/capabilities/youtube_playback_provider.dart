@@ -30,9 +30,9 @@ final class YoutubePlaybackProvider implements LivePlaybackProvider {
   final YoutubeSite site;
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required String roomId}) async {
+  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required LiveRoom room}) async {
     try {
-      final handle = await _handle(roomId);
+      final handle = await _handle(room.roomId);
       final variants = await _variants(handle);
       final qualities = YoutubePlayParser.qualities(
         variants: variants,
@@ -52,9 +52,9 @@ final class YoutubePlaybackProvider implements LivePlaybackProvider {
   }
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
     try {
-      final handle = await _handle(roomId);
+      final handle = await _handle(room.roomId);
       final variants = await _variants(handle);
       final lines = YoutubePlayParser.lines(
         variants: variants,

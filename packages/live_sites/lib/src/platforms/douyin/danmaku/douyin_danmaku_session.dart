@@ -8,6 +8,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/douyin/danmaku/douyin_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/douyin/douyin_manifest.dart';
 import 'package:live_sites/src/platforms/douyin/douyin_site.dart';
@@ -31,13 +32,16 @@ final class DouyinDanmakuProvider implements LiveDanmakuProvider {
   final DouyinSite site;
 
   @override
-  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
+  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room}) async {
     final DouyinDanmakuArgs args;
     try {
-      final resolved = await site.danmakuArgs(roomId);
+      final resolved = await site.danmakuArgs(room.roomId);
       if (resolved == null || resolved.roomId.isEmpty) {
         return left(
-          LiveSiteError.contentUnavailable(siteId: douyinSiteId, message: 'room $roomId streams no broadcast to join'),
+          LiveSiteError.contentUnavailable(
+            siteId: douyinSiteId,
+            message: 'room ${room.roomId} streams no broadcast to join',
+          ),
         );
       }
       args = resolved;

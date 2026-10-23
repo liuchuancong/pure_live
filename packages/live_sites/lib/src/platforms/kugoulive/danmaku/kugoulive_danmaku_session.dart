@@ -8,6 +8,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/kugoulive/danmaku/kugoulive_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/kugoulive/kugoulive_manifest.dart';
 import 'package:live_sites/src/platforms/kugoulive/kugoulive_site.dart';
@@ -32,12 +33,14 @@ final class KugouliveDanmakuProvider implements LiveDanmakuProvider {
   final KugouliveSite site;
 
   @override
-  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
+  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room}) async {
     final KugouliveDanmakuArgs args;
     try {
-      final handle = (await site.detail(roomId)).runtime.danmakuHandle;
+      final handle = (await site.detail(room.roomId)).runtime.danmakuHandle;
       if (handle is! KugouliveDanmakuArgs) {
-        return left(LiveSiteError.contentUnavailable(siteId: _site, message: 'room $roomId has no live session'));
+        return left(
+          LiveSiteError.contentUnavailable(siteId: _site, message: 'room ${room.roomId} has no live session'),
+        );
       }
       args = handle;
     } on KugouliveFailure catch (failure) {

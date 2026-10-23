@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/steambroadcast/parsers/steambroadcast_failure.dart';
 import 'package:live_sites/src/platforms/steambroadcast/parsers/steambroadcast_room_parser.dart' show siteId;
 import 'package:live_sites/src/platforms/steambroadcast/steambroadcast_site.dart';
@@ -28,9 +29,9 @@ final class SteambroadcastPlaybackProvider implements LivePlaybackProvider {
   final SteambroadcastSite site;
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required String roomId}) async {
+  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required LiveRoom room}) async {
     try {
-      return right(await site.qualitiesOf(roomId));
+      return right(await site.qualitiesOf(room.roomId));
     } on SteambroadcastFailure catch (failure) {
       return left(failure.toLiveSiteError(siteId));
     } on Object catch (error) {
@@ -39,9 +40,9 @@ final class SteambroadcastPlaybackProvider implements LivePlaybackProvider {
   }
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
     try {
-      return right(await site.linesOf(roomId, quality));
+      return right(await site.linesOf(room.roomId, quality));
     } on SteambroadcastFailure catch (failure) {
       return left(failure.toLiveSiteError(siteId));
     } on Object catch (error) {

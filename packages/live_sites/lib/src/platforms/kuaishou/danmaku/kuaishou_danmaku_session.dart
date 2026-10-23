@@ -7,6 +7,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/kuaishou/api/kuaishou_http.dart';
 import 'package:live_sites/src/platforms/kuaishou/danmaku/kuaishou_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/kuaishou/kuaishou_manifest.dart';
@@ -33,13 +34,13 @@ final class KuaishouDanmakuProvider implements LiveDanmakuProvider {
   final KuaishouSite site;
 
   @override
-  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
+  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room}) async {
     final KuaishouDanmakuArgs args;
     try {
-      final handle = (await site.detail(roomId)).runtime.danmakuHandle;
+      final handle = (await site.detail(room.roomId)).runtime.danmakuHandle;
       if (handle is! KuaishouDanmakuArgs || handle.liveStreamId.isEmpty) {
         return left(
-          LiveSiteError.contentUnavailable(siteId: kuaishouSiteId, message: 'room $roomId names no broadcast'),
+          LiveSiteError.contentUnavailable(siteId: kuaishouSiteId, message: 'room ${room.roomId} names no broadcast'),
         );
       }
       args = handle;

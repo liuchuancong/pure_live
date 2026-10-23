@@ -56,11 +56,11 @@ final class TwitchDanmakuProvider implements LiveDanmakuProvider {
   final TwitchSite site;
 
   @override
-  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
+  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room}) async {
     final TwitchDanmakuArgs args;
     try {
-      final room = await site.detail(roomId);
-      args = TwitchDanmakuArgs(channel: room.roomId.toLowerCase(), chat: site.chat());
+      final detail = await site.detail(room.roomId);
+      args = TwitchDanmakuArgs(channel: detail.roomId.toLowerCase(), chat: site.chat());
     } on TwitchFailure catch (failure) {
       return left(failure.toLiveSiteError(twitchSiteId));
     } on Object catch (error) {

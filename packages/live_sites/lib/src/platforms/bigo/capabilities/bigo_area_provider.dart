@@ -39,13 +39,13 @@ final class BigoAreaProvider implements LiveAreaProvider {
 
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
-    required String areaId,
+    required LiveArea area,
     LivePageRequest? request,
   }) async {
     request ??= LivePageRequest();
-    if (!BigoRoomParser.isAreaId(areaId)) {
+    if (!BigoRoomParser.isAreaId(area.areaId)) {
       return left(
-        LiveSiteError.invalidArgument(siteId: bigoSiteId, message: 'area "$areaId" is not the bigo public list'),
+        LiveSiteError.invalidArgument(siteId: bigoSiteId, message: 'area "${area.areaId}" is not the bigo public list'),
       );
     }
     try {

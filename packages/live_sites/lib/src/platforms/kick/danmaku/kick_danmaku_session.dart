@@ -31,10 +31,10 @@ final class KickDanmakuProvider implements LiveDanmakuProvider {
   final KickSite site;
 
   @override
-  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
+  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room}) async {
     final KickDanmakuArgs args;
     try {
-      final channel = await site.channel(roomId);
+      final channel = await site.channel(room.roomId);
       final chatroom = channel.chatroomId;
       // The three subscription ids must all be real, or the socket would
       // subscribe `chatrooms.0.v2` / `channel_0` and join nothing.

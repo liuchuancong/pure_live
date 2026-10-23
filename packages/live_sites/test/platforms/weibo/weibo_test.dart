@@ -18,6 +18,7 @@ import 'package:live_sites/src/capabilities/live_site_capability.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/core/live_site_runtime_info.dart';
+import 'package:live_sites/src/models/area/live_area/live_area.dart';
 import 'package:live_sites/src/models/enums/live_play_format_source.dart';
 import 'package:live_sites/src/models/enums/live_restriction.dart';
 import 'package:live_sites/src/models/enums/live_search_target.dart';
@@ -521,7 +522,9 @@ void main() {
       final (site: site, http: http) = _adapter();
       expect(_leftOf(await site.capability<LiveRoomProvider>()!.getRoom('1022:short')), isA<LiveSiteNotFound>());
       expect(
-        _leftOf(await site.capability<LivePlaybackProvider>()!.getQualities(roomId: 'nonsense')),
+        _leftOf(
+          await site.capability<LivePlaybackProvider>()!.getQualities(room: LiveRoom.normalized(roomId: 'nonsense')),
+        ),
         isA<LiveSiteNotFound>(),
       );
       expect(http.sent, isEmpty);
@@ -809,9 +812,16 @@ void main() {
       );
       final room = _right(await site.capability<LiveRoomProvider>()!.getRoom(_id));
       final playback = site.capability<LivePlaybackProvider>()!;
-      expect(_right(await playback.getQualities(roomId: room.roomId)), [WeiboEndpoints.original]);
+      expect(_right(await playback.getQualities(room: LiveRoom.normalized(roomId: room.roomId))), [
+        WeiboEndpoints.original,
+      ]);
       expect(asked, hasLength(1), reason: 'the qualities come from the kept detail, no request');
-      final lines = _right(await playback.getLines(roomId: room.roomId, quality: WeiboEndpoints.original));
+      final lines = _right(
+        await playback.getLines(
+          room: LiveRoom.normalized(roomId: room.roomId),
+          quality: WeiboEndpoints.original,
+        ),
+      );
       expect(lines.map((line) => line.url), [_flv, _hls], reason: 'FLV before HLS');
       expect(lines.first.format, LiveStreamFormat.flv);
       expect(lines.last.format, LiveStreamFormat.hls);
@@ -823,7 +833,9 @@ void main() {
         (path) => path == WeiboEndpoints.detailPath ? _detailFixture(hls: _flv) : null,
       );
       await site.detail(_id);
-      final lines = _right(await site.capability<LivePlaybackProvider>()!.getLines(roomId: _id));
+      final lines = _right(
+        await site.capability<LivePlaybackProvider>()!.getLines(room: LiveRoom.normalized(roomId: _id)),
+      );
       expect(lines.single.url, _flv);
       expect(http.sent, hasLength(2), reason: 'the live default still re-reads the detail');
     });
@@ -833,7 +845,10 @@ void main() {
         (path) => path == WeiboEndpoints.detailPath ? _detailFixture(hls: _flv) : null,
       );
       final lines = _right(
-        await site.capability<LivePlaybackProvider>()!.getLines(roomId: _id, quality: WeiboEndpoints.original),
+        await site.capability<LivePlaybackProvider>()!.getLines(
+          room: LiveRoom.normalized(roomId: _id),
+          quality: WeiboEndpoints.original,
+        ),
       );
       expect(lines.single.url, _flv);
       expect(http.sent, hasLength(1));
@@ -848,7 +863,10 @@ void main() {
       });
       await site.detail(_id);
       final error = _leftOf(
-        await site.capability<LivePlaybackProvider>()!.getLines(roomId: _id, quality: WeiboEndpoints.original),
+        await site.capability<LivePlaybackProvider>()!.getLines(
+          room: LiveRoom.normalized(roomId: _id),
+          quality: WeiboEndpoints.original,
+        ),
       );
       expect(error, isA<LiveSiteParseError>());
       expect(error.message, contains('not of 9001'));
@@ -864,7 +882,10 @@ void main() {
       });
       await site.detail(_id);
       final error = _leftOf(
-        await site.capability<LivePlaybackProvider>()!.getLines(roomId: _id, quality: WeiboEndpoints.original),
+        await site.capability<LivePlaybackProvider>()!.getLines(
+          room: LiveRoom.normalized(roomId: _id),
+          quality: WeiboEndpoints.original,
+        ),
       );
       expect(error, isA<LiveSiteContentUnavailable>());
       expect(error.message, contains('the broadcast has ended'));
@@ -876,7 +897,10 @@ void main() {
       await site.detail(_id);
       final before = http.sent.length;
       final error = _leftOf(
-        await site.capability<LivePlaybackProvider>()!.getLines(roomId: _id, quality: WeiboEndpoints.replay),
+        await site.capability<LivePlaybackProvider>()!.getLines(
+          room: LiveRoom.normalized(roomId: _id),
+          quality: WeiboEndpoints.replay,
+        ),
       );
       expect(error, isA<LiveSiteContentUnavailable>());
       expect(error.message, contains('not a replay'));
@@ -889,8 +913,15 @@ void main() {
       );
       final room = _right(await site.capability<LiveRoomProvider>()!.getRoom(_id));
       final playback = site.capability<LivePlaybackProvider>()!;
-      expect(_right(await playback.getQualities(roomId: room.roomId)), [WeiboEndpoints.replay]);
-      final lines = _right(await playback.getLines(roomId: room.roomId, quality: WeiboEndpoints.replay));
+      expect(_right(await playback.getQualities(room: LiveRoom.normalized(roomId: room.roomId))), [
+        WeiboEndpoints.replay,
+      ]);
+      final lines = _right(
+        await playback.getLines(
+          room: LiveRoom.normalized(roomId: room.roomId),
+          quality: WeiboEndpoints.replay,
+        ),
+      );
       expect(lines.single.url, 'https://playback.weibo.com/replay/1022_2321_wb1080avc_index.m3u8');
       expect(lines.single.format, LiveStreamFormat.hls);
       expect(lines.single.codec, LiveStreamCodec.avc);
@@ -903,7 +934,10 @@ void main() {
         (path) => path == WeiboEndpoints.detailPath ? _detailFixture(status: 3, flv: null, replayUrl: _replay) : null,
       );
       final lines = _right(
-        await site.capability<LivePlaybackProvider>()!.getLines(roomId: _id, quality: WeiboEndpoints.replay),
+        await site.capability<LivePlaybackProvider>()!.getLines(
+          room: LiveRoom.normalized(roomId: _id),
+          quality: WeiboEndpoints.replay,
+        ),
       );
       expect(lines.single.url, startsWith('https://'));
       expect(http.sent, hasLength(1));
@@ -914,7 +948,10 @@ void main() {
         (path) => path == WeiboEndpoints.detailPath ? _detailFixture(status: 3, flv: null, replayUrl: _replay) : null,
       );
       final error = _leftOf(
-        await site.capability<LivePlaybackProvider>()!.getLines(roomId: _id, quality: WeiboEndpoints.original),
+        await site.capability<LivePlaybackProvider>()!.getLines(
+          room: LiveRoom.normalized(roomId: _id),
+          quality: WeiboEndpoints.original,
+        ),
       );
       expect(error, isA<LiveSiteContentUnavailable>());
       expect(error.message, contains('its replay is quality replay'));
@@ -932,7 +969,9 @@ void main() {
           (path) => path == WeiboEndpoints.detailPath ? fixture : null,
         );
         await site.detail(_id);
-        final error = _leftOf(await site.capability<LivePlaybackProvider>()!.getQualities(roomId: _id));
+        final error = _leftOf(
+          await site.capability<LivePlaybackProvider>()!.getQualities(room: LiveRoom.normalized(roomId: _id)),
+        );
         expect(error, isA<LiveSiteContentUnavailable>(), reason: needle);
         expect(error.message, contains(needle));
         expect(http.sent, hasLength(1), reason: 'the kept detail answers without a request');
@@ -944,7 +983,7 @@ void main() {
       await site.detail(_id);
       final error = _leftOf(
         await site.capability<LivePlaybackProvider>()!.getLines(
-          roomId: _id,
+          room: LiveRoom.normalized(roomId: _id),
           quality: LivePlayQuality.of(label: '高清', qualityId: '720'),
         ),
       );
@@ -968,15 +1007,28 @@ void main() {
     test('the area holds the snapshot; other areas and pages say so', () async {
       final (site: site, http: http) = _adapter();
       final area = site.capability<LiveAreaProvider>()!;
-      final rooms = _right(await area.getAreaRooms(areaId: 'live'));
+      final rooms = _right(await area.getAreaRooms(area: LiveArea.normalized(areaId: 'live')));
       expect(rooms.items.single.roomId, _id);
-      expect(_leftOf(await area.getAreaRooms(areaId: 'nope')), isA<LiveSiteInvalidArgument>());
+      expect(
+        _leftOf(await area.getAreaRooms(area: LiveArea.normalized(areaId: 'nope'))),
+        isA<LiveSiteInvalidArgument>(),
+      );
       expect(http.sent, hasLength(1));
-      final latePage = _right(await area.getAreaRooms(areaId: 'live', request: LivePageRequest.of(page: 2)));
+      final latePage = _right(
+        await area.getAreaRooms(
+          area: LiveArea.normalized(areaId: 'live'),
+          request: LivePageRequest.of(page: 2),
+        ),
+      );
       expect(latePage.items, isEmpty);
       expect(latePage.hasMore, isFalse);
       expect(
-        _leftOf(await area.getAreaRooms(areaId: 'live', request: LivePageRequest.of(page: 0))),
+        _leftOf(
+          await area.getAreaRooms(
+            area: LiveArea.normalized(areaId: 'live'),
+            request: LivePageRequest.of(page: 0),
+          ),
+        ),
         isA<LiveSiteInvalidArgument>(),
       );
       expect(http.sent, hasLength(1), reason: 'pages beyond the first cost no request');

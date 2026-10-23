@@ -12,6 +12,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
+import 'package:live_sites/src/models/area/live_area/live_area.dart';
 import 'package:live_sites/src/models/audience/live_audience_update/live_audience_update.dart';
 import 'package:live_sites/src/models/enums/live_audience_signal_kind.dart';
 import 'package:live_sites/src/models/enums/live_gift_unit.dart';
@@ -955,7 +956,12 @@ void main() {
         ),
       );
       final areas = adapter.site.capability<LiveAreaProvider>()!;
-      final page = _right(await areas.getAreaRooms(areaId: 'tw', request: LivePageRequest.of(pageSize: 1)));
+      final page = _right(
+        await areas.getAreaRooms(
+          area: LiveArea.normalized(areaId: 'tw'),
+          request: LivePageRequest.of(pageSize: 1),
+        ),
+      );
       expect(page.items, hasLength(1));
       expect(page.nextCursor, 'p2');
       expect(page.hasMore, isTrue);
@@ -972,7 +978,10 @@ void main() {
     test('an area the platform does not serve is refused before any request', () async {
       final adapter = _adapter((_) => _resp(200, '{}'));
       final areas = adapter.site.capability<LiveAreaProvider>()!;
-      expect(_leftOf(await areas.getAreaRooms(areaId: 'LoL')), isA<LiveSiteInvalidArgument>());
+      expect(
+        _leftOf(await areas.getAreaRooms(area: LiveArea.normalized(areaId: 'LoL'))),
+        isA<LiveSiteInvalidArgument>(),
+      );
       expect(adapter.http.sent, isEmpty);
     });
 
@@ -1159,23 +1168,25 @@ void main() {
     test('the qualities come in the order the setting asks for', () async {
       final on = _adapter((_) => _resp(200, _roomAnswer()), preferH264: () => true);
       final playback = on.site.capability<LivePlaybackProvider>()!;
-      expect(_right(await playback.getQualities(roomId: _room)).map((quality) => quality.qualityId), [
-        'h264',
-        'source',
-        'enhanced',
-        'hd',
-      ]);
+      expect(
+        _right(await playback.getQualities(room: LiveRoom.normalized(roomId: _room)))
+            .map((quality) => quality.qualityId),
+        ['h264', 'source', 'enhanced', 'hd'],
+      );
       final off = _adapter((_) => _resp(200, _roomAnswer()), preferH264: () => false);
       expect(
-        _right(await off.site.capability<LivePlaybackProvider>()!.getQualities(roomId: _room))
-            .map((quality) => quality.qualityId),
+        _right(
+          await off.site.capability<LivePlaybackProvider>()!.getQualities(room: LiveRoom.normalized(roomId: _room)),
+        ).map((quality) => quality.qualityId),
         ['source', 'enhanced', 'hd', 'h264'],
       );
       // The default of the setting is on, as 3.x shipped it.
       final plain = _adapter((_) => _resp(200, _roomAnswer()));
       expect(plain.site.preferH264(), isTrue);
       expect(
-        _right(await plain.site.capability<LivePlaybackProvider>()!.getQualities(roomId: _room)).first.qualityId,
+        _right(
+          await plain.site.capability<LivePlaybackProvider>()!.getQualities(room: LiveRoom.normalized(roomId: _room)),
+        ).first.qualityId,
         'h264',
       );
     });
@@ -1187,16 +1198,24 @@ void main() {
         return _resp(200, _roomAnswer());
       });
       final playback = adapter.site.capability<LivePlaybackProvider>()!;
-      final qualities = _right(await playback.getQualities(roomId: _room));
+      final qualities = _right(await playback.getQualities(room: LiveRoom.normalized(roomId: _room)));
       expect(asks, 1);
       final source = qualities.firstWhere((quality) => quality.qualityId == 'source');
-      expect(_right(await playback.getLines(roomId: _room, quality: source)), hasLength(3));
+      expect(
+        _right(
+          await playback.getLines(
+            room: LiveRoom.normalized(roomId: _room),
+            quality: source,
+          ),
+        ),
+        hasLength(3),
+      );
       expect(asks, 1);
       // The legacy 标准 id is the same quality: no new request.
       expect(
         _right(
           await playback.getLines(
-            roomId: _room,
+            room: LiveRoom.normalized(roomId: _room),
             quality: LivePlayQuality.of(label: '标准 · FLV', qualityId: 'standard'),
           ),
         ),
@@ -1208,7 +1227,7 @@ void main() {
       expect(
         _leftOf(
           await playback.getLines(
-            roomId: _room,
+            room: LiveRoom.normalized(roomId: _room),
             quality: LivePlayQuality.of(label: 'x', qualityId: 'nope'),
           ),
         ),
@@ -1217,7 +1236,7 @@ void main() {
       expect(asks, 2);
       // Null quality is the default one the caller was shown.
       asks = 0;
-      expect(_right(await playback.getLines(roomId: _room)), hasLength(1));
+      expect(_right(await playback.getLines(room: LiveRoom.normalized(roomId: _room))), hasLength(1));
       expect(asks, 0);
     });
 
@@ -1228,12 +1247,20 @@ void main() {
         return _resp(200, _roomAnswer(status: 0));
       });
       final playback = adapter.site.capability<LivePlaybackProvider>()!;
-      expect(_leftOf(await playback.getQualities(roomId: _room)), isA<LiveSiteContentUnavailable>());
+      expect(
+        _leftOf(await playback.getQualities(room: LiveRoom.normalized(roomId: _room))),
+        isA<LiveSiteContentUnavailable>(),
+      );
       expect(asks, 1);
-      expect(_leftOf(await playback.getLines(roomId: _room)), isA<LiveSiteContentUnavailable>());
+      expect(
+        _leftOf(await playback.getLines(room: LiveRoom.normalized(roomId: _room))),
+        isA<LiveSiteContentUnavailable>(),
+      );
       expect(asks, 1);
       final locked = _adapter((_) => _resp(200, _roomAnswer(premium: {'premiumType': 1})));
-      final error = _leftOf(await locked.site.capability<LivePlaybackProvider>()!.getQualities(roomId: _room));
+      final error = _leftOf(
+        await locked.site.capability<LivePlaybackProvider>()!.getQualities(room: LiveRoom.normalized(roomId: _room)),
+      );
       expect(error, isA<LiveSiteContentUnavailable>());
       expect(error.message, contains('premium'));
     });
@@ -1690,7 +1717,7 @@ void main() {
     test('the room id is the channel and needs no room request', () async {
       final adapter = _adapter((_) => _resp(200, _json({'provider': 2, 'token': 'x.abc'})));
       final danmaku = adapter.site.capability<LiveDanmakuProvider>()!;
-      final failure = _leftOf(await danmaku.createSession(roomId: ' $_room '));
+      final failure = _leftOf(await danmaku.createSession(room: LiveRoom.normalized(roomId: ' $_room ')));
       expect(failure, isA<LiveSiteUnsupported>());
       expect(failure.message, contains('provider 2'));
       final sent = adapter.http.sent.single;
@@ -1704,7 +1731,10 @@ void main() {
     test('an id that is not a room id starts nothing', () async {
       final adapter = _adapter((_) => _resp(200, '{}'));
       final danmaku = adapter.site.capability<LiveDanmakuProvider>()!;
-      expect(_leftOf(await danmaku.createSession(roomId: '0abc')), isA<LiveSiteInvalidArgument>());
+      expect(
+        _leftOf(await danmaku.createSession(room: LiveRoom.normalized(roomId: '0abc'))),
+        isA<LiveSiteInvalidArgument>(),
+      );
       expect(adapter.http.sent, isEmpty);
     });
 

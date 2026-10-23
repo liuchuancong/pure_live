@@ -8,6 +8,7 @@ import 'package:live_sites/src/models/audience/live_audience_update/live_audienc
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/niconico/api/niconico_endpoints.dart';
 import 'package:live_sites/src/platforms/niconico/api/niconico_http.dart';
 import 'package:live_sites/src/platforms/niconico/danmaku/niconico_danmaku_codec.dart';
@@ -32,8 +33,13 @@ final class NiconicoDanmakuProvider implements LiveDanmakuProvider {
   final NiconicoSite site;
 
   @override
-  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
-    final session = NiconicoDanmakuSession(roomId: roomId, http: site.http, openSeat: site.openSeat, now: site.now);
+  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room}) async {
+    final session = NiconicoDanmakuSession(
+      roomId: room.roomId,
+      http: site.http,
+      openSeat: site.openSeat,
+      now: site.now,
+    );
     final failure = await session.connect();
     if (failure != null) {
       await session.dispose();

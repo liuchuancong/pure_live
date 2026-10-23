@@ -6,6 +6,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/soop/danmaku/soop_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/soop/parsers/soop_failure.dart';
 import 'package:live_sites/src/platforms/soop/soop_manifest.dart';
@@ -31,12 +32,12 @@ final class SoopDanmakuProvider implements LiveDanmakuProvider {
   final SoopSite site;
 
   @override
-  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
+  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room}) async {
     final SoopDanmakuArgs args;
     try {
-      final handle = (await site.detail(roomId)).runtime.danmakuHandle;
+      final handle = (await site.detail(room.roomId)).runtime.danmakuHandle;
       if (handle is! SoopDanmakuArgs) {
-        return left(LiveSiteError.contentUnavailable(siteId: _site, message: 'room $roomId opens no chat'));
+        return left(LiveSiteError.contentUnavailable(siteId: _site, message: 'room ${room.roomId} opens no chat'));
       }
       args = handle;
     } on SoopFailure catch (failure) {

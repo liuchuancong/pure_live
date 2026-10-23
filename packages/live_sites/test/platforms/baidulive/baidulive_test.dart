@@ -21,6 +21,7 @@ import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/core/live_site_runtime_info.dart';
+import 'package:live_sites/src/models/area/live_area/live_area.dart';
 import 'package:live_sites/src/models/audience/live_audience_update/live_audience_update.dart';
 import 'package:live_sites/src/models/enums/live_audience_metric_type.dart';
 import 'package:live_sites/src/models/enums/live_audience_signal_kind.dart';
@@ -781,8 +782,24 @@ void main() {
       final area = site.capability<LiveAreaProvider>()!;
       expect(_right(await discovery.getRecommendedRooms(request: LivePageRequest.of(page: 0))).items, isEmpty);
       expect(_right(await discovery.getRecommendedRooms(request: LivePageRequest.of(pageSize: 0))).items, isEmpty);
-      expect(_right(await area.getAreaRooms(areaId: 'rec', request: LivePageRequest.of(page: -1))).items, isEmpty);
-      expect(_right(await area.getAreaRooms(areaId: 'rec', request: LivePageRequest.of(pageSize: 0))).items, isEmpty);
+      expect(
+        _right(
+          await area.getAreaRooms(
+            area: LiveArea.normalized(areaId: 'rec'),
+            request: LivePageRequest.of(page: -1),
+          ),
+        ).items,
+        isEmpty,
+      );
+      expect(
+        _right(
+          await area.getAreaRooms(
+            area: LiveArea.normalized(areaId: 'rec'),
+            request: LivePageRequest.of(pageSize: 0),
+          ),
+        ).items,
+        isEmpty,
+      );
       expect(_right(await site.capability<LiveRoomProvider>()!.getRooms(LivePageRequest.of(page: 0))).items, isEmpty);
       expect((await site.directory(0)).rooms, isEmpty);
       expect(http.requestCount, 0);
@@ -861,15 +878,17 @@ void main() {
         'leisure',
       ]);
       expect(http.requestCount, 0);
-      final unknown = _leftOf(await site.capability<LiveAreaProvider>()!.getAreaRooms(areaId: 'sport'));
+      final unknown = _leftOf(
+        await site.capability<LiveAreaProvider>()!.getAreaRooms(area: LiveArea.normalized(areaId: 'sport')),
+      );
       expect(unknown, isA<LiveSiteInvalidArgument>());
       expect(unknown.message, contains('sport'));
       expect(
-        _leftOf(await site.capability<LiveAreaProvider>()!.getAreaRooms(areaId: ' REC ')),
+        _leftOf(await site.capability<LiveAreaProvider>()!.getAreaRooms(area: LiveArea.normalized(areaId: ' REC '))),
         isA<LiveSiteInvalidArgument>(),
       );
       expect(
-        _leftOf(await site.capability<LiveAreaProvider>()!.getAreaRooms(areaId: '')),
+        _leftOf(await site.capability<LiveAreaProvider>()!.getAreaRooms(area: LiveArea.normalized())),
         isA<LiveSiteInvalidArgument>(),
       );
       expect(http.requestCount, 0);
@@ -891,7 +910,7 @@ void main() {
       await withTabs.directory(1);
       expect(_right(await withTabs.capability<LiveAreaProvider>()!.getAreas()).single.areaId, 'games');
       expect(
-        _leftOf(await withTabs.capability<LiveAreaProvider>()!.getAreaRooms(areaId: 'rec')),
+        _leftOf(await withTabs.capability<LiveAreaProvider>()!.getAreaRooms(area: LiveArea.normalized(areaId: 'rec'))),
         isA<LiveSiteInvalidArgument>(),
       );
     });
@@ -904,8 +923,11 @@ void main() {
       });
       final site = _bound(transport: http);
       await site.capability<LiveDiscoveryProvider>()!.getRecommendedRooms();
-      await site.capability<LiveAreaProvider>()!.getAreaRooms(areaId: 'rec');
-      await site.capability<LiveAreaProvider>()!.getAreaRooms(areaId: 'rec', request: LivePageRequest.of(page: 2));
+      await site.capability<LiveAreaProvider>()!.getAreaRooms(area: LiveArea.normalized(areaId: 'rec'));
+      await site.capability<LiveAreaProvider>()!.getAreaRooms(
+        area: LiveArea.normalized(areaId: 'rec'),
+        request: LivePageRequest.of(page: 2),
+      );
       final third = Uri.splitQueryString(http.posts.last.body!);
       expect(third['session_id'], 'session-rec');
       expect(third['refresh_index'], '2');
@@ -918,7 +940,7 @@ void main() {
       final site = _bound(transport: http);
       final page = _right(
         await site.capability<LiveAreaProvider>()!.getAreaRooms(
-          areaId: 'rec',
+          area: LiveArea.normalized(areaId: 'rec'),
           request: LivePageRequest.of(pageSize: 3),
         ),
       );

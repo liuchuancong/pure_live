@@ -7,6 +7,7 @@ import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
 import 'package:live_sites/src/models/message/live_message_color/live_message_color.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/picarto/api/picarto_endpoints.dart';
 import 'package:live_sites/src/platforms/picarto/danmaku/picarto_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/picarto/parsers/picarto_failure.dart';
@@ -34,12 +35,12 @@ final class PicartoDanmakuProvider implements LiveDanmakuProvider {
   final PicartoSite site;
 
   @override
-  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required String roomId}) async {
+  Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room}) async {
     final PicartoDanmakuArgs args;
     try {
-      final handle = (await site.detail(roomId)).runtime.danmakuHandle;
+      final handle = (await site.detail(room.roomId)).runtime.danmakuHandle;
       if (handle is! PicartoDanmakuArgs) {
-        return left(LiveSiteError.contentUnavailable(siteId: _site, message: 'channel $roomId opens no chat'));
+        return left(LiveSiteError.contentUnavailable(siteId: _site, message: 'channel ${room.roomId} opens no chat'));
       }
       args = handle;
     } on PicartoFailure catch (failure) {

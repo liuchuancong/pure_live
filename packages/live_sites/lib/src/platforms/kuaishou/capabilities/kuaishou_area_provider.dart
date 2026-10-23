@@ -43,13 +43,13 @@ final class KuaishouAreaProvider implements LiveAreaProvider {
 
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
-    required String areaId,
+    required LiveArea area,
     LivePageRequest? request,
   }) async {
     request ??= LivePageRequest();
     try {
       final page = request.page < 1 ? 1 : request.page;
-      final result = await site.areaPage(areaId.trim(), page);
+      final result = await site.areaPage(area.areaId.trim(), page);
       return right(LivePage.of(items: result.rooms, hasMore: result.hasMore));
     } on KuaishouFailure catch (failure) {
       return left(failure.toLiveSiteError(kuaishouSiteId));

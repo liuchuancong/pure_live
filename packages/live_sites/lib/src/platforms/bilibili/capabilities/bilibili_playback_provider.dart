@@ -3,6 +3,7 @@ import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_endpoints.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_manifest.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_site.dart';
@@ -28,9 +29,9 @@ final class BilibiliPlaybackProvider implements LivePlaybackProvider {
   final BilibiliSite site;
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required String roomId}) async {
+  Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required LiveRoom room}) async {
     try {
-      final play = await _play(site.longId(roomId), 0);
+      final play = await _play(site.longId(room.roomId), 0);
       final data = play.data;
       return right(data == null ? [BilibiliPlayParser.carouselQuality] : BilibiliPlayParser.qualities(data));
     } on BilibiliFailure catch (failure) {
@@ -41,9 +42,9 @@ final class BilibiliPlaybackProvider implements LivePlaybackProvider {
   }
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required String roomId, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
     try {
-      final longId = site.longId(roomId);
+      final longId = site.longId(room.roomId);
       if (quality?.qualityId == BilibiliPlayParser.carouselQualityId) return right(await _carousel(longId));
       final requested = int.tryParse(quality?.qualityId ?? '') ?? 0;
       final play = await _play(longId, requested);

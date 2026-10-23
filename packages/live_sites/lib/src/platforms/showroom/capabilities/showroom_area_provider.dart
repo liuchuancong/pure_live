@@ -41,14 +41,14 @@ final class ShowroomAreaProvider implements LiveAreaProvider {
 
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
-    required String areaId,
+    required LiveArea area,
     LivePageRequest? request,
   }) async {
     request ??= LivePageRequest();
     try {
       // The platform pages genres itself (30 rooms a page, of one snapshot);
       // a caller's page size does not reshape the slice.
-      final page = await site.directory(request.page, areaId: areaId);
+      final page = await site.directory(request.page, areaId: area.areaId);
       return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on ShowroomFailure catch (failure) {
       return left(failure.toLiveSiteError(showroomSiteId));

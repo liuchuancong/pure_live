@@ -30,12 +30,12 @@ final class SteambroadcastAreaProvider implements LiveAreaProvider {
 
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
-    required String areaId,
+    required LiveArea area,
     LivePageRequest? request,
   }) async {
     request ??= LivePageRequest();
     try {
-      final page = await site.areaRooms(areaId, request.page);
+      final page = await site.areaRooms(area.areaId, request.page);
       return right(LivePage.of(items: page.rooms, hasMore: page.hasMore));
     } on SteambroadcastFailure catch (failure) {
       return left(failure.toLiveSiteError(siteId));

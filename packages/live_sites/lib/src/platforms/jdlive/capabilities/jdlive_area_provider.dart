@@ -31,13 +31,16 @@ final class JdliveAreaProvider implements LiveAreaProvider {
 
   @override
   Future<Either<LiveSiteError, LivePage<LiveRoom>>> getAreaRooms({
-    required String areaId,
+    required LiveArea area,
     LivePageRequest? request,
   }) async {
     request ??= LivePageRequest();
-    if (areaId != JdliveEndpoints.areaId) {
+    if (area.areaId != JdliveEndpoints.areaId) {
       return left(
-        LiveSiteError.invalidArgument(siteId: jdliveSiteId, message: 'area "$areaId" is not the JD Live featured list'),
+        LiveSiteError.invalidArgument(
+          siteId: jdliveSiteId,
+          message: 'area "${area.areaId}" is not the JD Live featured list',
+        ),
       );
     }
     try {
