@@ -6,6 +6,7 @@ export 'src/capabilities/live_anchor_provider.dart';
 export 'src/capabilities/live_area_provider.dart';
 export 'src/capabilities/live_auth_capability.dart';
 export 'src/capabilities/live_danmaku_provider.dart';
+export 'src/capabilities/live_danmaku_sending.dart';
 export 'src/capabilities/live_discovery_provider.dart';
 export 'src/capabilities/live_hot_provider.dart';
 export 'src/capabilities/live_link_resolver.dart';
