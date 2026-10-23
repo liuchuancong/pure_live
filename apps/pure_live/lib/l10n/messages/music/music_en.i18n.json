@@ -1,0 +1,14 @@
+{
+  "title": "Music",
+  "tagline": "Songs, playlists and charts are on their way",
+  "viewsLabel": "Music views",
+  "tabLibrary": "Library",
+  "tabPlaylists": "Playlists",
+  "tabCharts": "Charts",
+  "libraryEmptyTitle": "The song library is on its way",
+  "libraryEmptyDescription": "Once a music source lands, songs will page in here as a masonry grid of cards.",
+  "playlistsEmptyTitle": "Playlists are on their way",
+  "playlistsEmptyDescription": "Playlists you curate and follow will live here.",
+  "chartsEmptyTitle": "Charts are on their way",
+  "chartsEmptyDescription": "Popular-song charts from the music sources will live here."
+}

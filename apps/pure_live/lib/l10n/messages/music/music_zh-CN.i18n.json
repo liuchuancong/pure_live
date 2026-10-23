@@ -1,0 +1,14 @@
+{
+  "title": "音乐",
+  "tagline": "歌曲、歌单与榜单正在路上",
+  "viewsLabel": "音乐视图",
+  "tabLibrary": "乐库",
+  "tabPlaylists": "歌单",
+  "tabCharts": "榜单",
+  "libraryEmptyTitle": "曲库还在路上",
+  "libraryEmptyDescription": "音乐源接入后，歌曲会以瀑布流卡片在这里分页呈现。",
+  "playlistsEmptyTitle": "歌单还在路上",
+  "playlistsEmptyDescription": "整理与收藏的歌单会出现在这里。",
+  "chartsEmptyTitle": "榜单还在路上",
+  "chartsEmptyDescription": "来自各音乐源的热门榜单会出现在这里。"
+}
