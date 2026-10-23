@@ -139,6 +139,8 @@ dependencies:
       path: ./packages/media_core_notify
       ref: 2720605ac9fba8ef080edf0f8531e9a3f80db82b # 用户通知（录制/下载结果、前台任务行）
 
+  responsive_breakpoints: ^1.0.3 # 断点定义与解析（Tailwind/Material/Bootstrap）
+
   # 路由、配置与序列化
   envied: ^1.3.10 # 编译期环境变量
   fpdart: ^1.2.0

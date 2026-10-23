@@ -84,7 +84,6 @@ final class SettingsBranch extends StatefulShellBranchData {
 }
 
 /// The home branch's screen.
-@TypedGoRoute<HomeRoute>(path: RouteNames.home)
 final class HomeRoute extends GoRouteData with $HomeRoute {
   /// The home route.
   const HomeRoute();
@@ -94,7 +93,6 @@ final class HomeRoute extends GoRouteData with $HomeRoute {
 }
 
 /// The live branch's screen.
-@TypedGoRoute<LiveRoute>(path: RouteNames.live)
 final class LiveRoute extends GoRouteData with $LiveRoute {
   /// The live route.
   const LiveRoute();
@@ -104,7 +102,6 @@ final class LiveRoute extends GoRouteData with $LiveRoute {
 }
 
 /// The favorites branch's screen.
-@TypedGoRoute<FavoritesRoute>(path: RouteNames.favorites)
 final class FavoritesRoute extends GoRouteData with $FavoritesRoute {
   /// The favorites route.
   const FavoritesRoute();
@@ -115,7 +112,6 @@ final class FavoritesRoute extends GoRouteData with $FavoritesRoute {
 }
 
 /// The history branch's screen.
-@TypedGoRoute<HistoryRoute>(path: RouteNames.history)
 final class HistoryRoute extends GoRouteData with $HistoryRoute {
   /// The history route.
   const HistoryRoute();
@@ -126,7 +122,6 @@ final class HistoryRoute extends GoRouteData with $HistoryRoute {
 }
 
 /// The search branch's screen.
-@TypedGoRoute<SearchRoute>(path: RouteNames.search)
 final class SearchRoute extends GoRouteData with $SearchRoute {
   /// The search route.
   const SearchRoute();
@@ -136,7 +131,6 @@ final class SearchRoute extends GoRouteData with $SearchRoute {
 }
 
 /// The settings branch's screen.
-@TypedGoRoute<SettingsRoute>(path: RouteNames.settings)
 final class SettingsRoute extends GoRouteData with $SettingsRoute {
   /// The settings route.
   const SettingsRoute();

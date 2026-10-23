@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:responsive_breakpoints/responsive_breakpoints.dart' show TailwindBreakpoint;
 import 'package:go_router/go_router.dart' show StatefulNavigationShell;
 
 import 'package:pure_live/app/providers/environment_providers.dart' show DeviceProfile, deviceProfileProvider;
@@ -10,11 +11,20 @@ import 'package:pure_live/layouts/tv/tv_layout.dart' show TvLayout;
 import 'package:pure_live/shared/enums/navigation_item.dart'
     show NavigationItem, kContentItems, kMobileNavigationItems, kPersonalItems, kPrimaryItems;
 
-/// The width from which the desktop sidebar shows its labels.
-const double kExpandedSidebarBreakpoint = 1200;
+/// The Tailwind breakpoint from which the desktop sidebar shows its
+/// labels: xl (≥1280px). Below it the sidebar folds to icons.
+const TailwindBreakpoint kExpandedSidebarBreakpoint = TailwindBreakpoint.xl;
 
-/// The width below which a touch device takes the bottom bar.
-const double kBottomBarBreakpoint = 600;
+/// The Tailwind breakpoint below which a touch device takes the bottom
+/// bar: under md (<768px).
+const TailwindBreakpoint kBottomBarBreakpoint = TailwindBreakpoint.md;
+
+/// Resolves [width] to the package's breakpoint scale: the last
+/// breakpoint whose minimum width the window meets.
+TailwindBreakpoint _breakpointOf(double width) => TailwindBreakpoint.values.lastWhere(
+  (breakpoint) => width >= breakpoint.breakpoint,
+  orElse: () => TailwindBreakpoint.xs,
+);
 
 /// The branches the router built, in branch order — the index a
 /// destination maps to when its page exists.
@@ -50,7 +60,7 @@ final class AppLayout extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final device = ref.watch(deviceProfileProvider);
-    final width = MediaQuery.sizeOf(context).width;
+    final breakpoint = _breakpointOf(MediaQuery.sizeOf(context).width);
     final selected = ref.watch(selectedNavItemProvider);
 
     void handleSelected(NavigationItem item) {
@@ -72,7 +82,7 @@ final class AppLayout extends ConsumerWidget {
         onSelected: (index) => handleSelected(items[index]),
       );
     }
-    if (device == DeviceProfile.mobile || width < kBottomBarBreakpoint) {
+    if (device == DeviceProfile.mobile || breakpoint.index < kBottomBarBreakpoint.index) {
       const items = kMobileNavigationItems;
       final index = items.indexOf(selected);
       return MobileLayout(
@@ -91,7 +101,7 @@ final class AppLayout extends ConsumerWidget {
       ],
       selected: selected,
       onSelected: handleSelected,
-      expanded: width >= kExpandedSidebarBreakpoint,
+      expanded: breakpoint.index >= kExpandedSidebarBreakpoint.index,
     );
   }
 }
