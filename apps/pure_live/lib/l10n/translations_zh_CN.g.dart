@@ -44,6 +44,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$common$zh_CN common = Translations$common$zh_CN.internal(_root);
 	late final Translations$navigation$zh_CN navigation = Translations$navigation$zh_CN.internal(_root);
 	late final Translations$player$zh_CN player = Translations$player$zh_CN.internal(_root);
+	late final Translations$search$zh_CN search = Translations$search$zh_CN.internal(_root);
 	late final Translations$settings$zh_CN settings = Translations$settings$zh_CN.internal(_root);
 	late final Translations$sites$zh_CN sites = Translations$sites$zh_CN.internal(_root);
 }
@@ -207,6 +208,51 @@ class Translations$player$zh_CN {
 	String get danmaku => '弹幕';
 }
 
+// Path: search
+class Translations$search$zh_CN {
+	Translations$search$zh_CN.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh-CN: '搜索当前站点'
+	String get idleTitle => '搜索当前站点';
+
+	/// zh-CN: '输入关键词，搜索房间、主播或分区。'
+	String get idleDescription => '输入关键词，搜索房间、主播或分区。';
+
+	/// zh-CN: '搜索建议'
+	String get suggestionsTitle => '搜索建议';
+
+	/// zh-CN: '搜索目标'
+	String get targetsLabel => '搜索目标';
+
+	/// zh-CN: '房间'
+	String get tabRooms => '房间';
+
+	/// zh-CN: '主播'
+	String get tabAnchors => '主播';
+
+	/// zh-CN: '分区'
+	String get tabAreas => '分区';
+
+	/// zh-CN: '没有找到相关结果'
+	String get noResultsTitle => '没有找到相关结果';
+
+	/// zh-CN: '换个关键词，或切换到其他搜索目标。'
+	String get noResultsDescription => '换个关键词，或切换到其他搜索目标。';
+
+	/// zh-CN: '该站点不支持搜索'
+	String get unsupportedTitle => '该站点不支持搜索';
+
+	/// zh-CN: '请先回到首页选择其他站点。'
+	String get unsupportedDescription => '请先回到首页选择其他站点。';
+
+	/// zh-CN: '直播中'
+	String get liveBadge => '直播中';
+}
+
 // Path: settings
 class Translations$settings$zh_CN {
 	Translations$settings$zh_CN.internal(this._root);
@@ -313,6 +359,18 @@ extension on Translations {
 			'player.line' => '线路',
 			'player.fullscreen' => '全屏',
 			'player.danmaku' => '弹幕',
+			'search.idleTitle' => '搜索当前站点',
+			'search.idleDescription' => '输入关键词，搜索房间、主播或分区。',
+			'search.suggestionsTitle' => '搜索建议',
+			'search.targetsLabel' => '搜索目标',
+			'search.tabRooms' => '房间',
+			'search.tabAnchors' => '主播',
+			'search.tabAreas' => '分区',
+			'search.noResultsTitle' => '没有找到相关结果',
+			'search.noResultsDescription' => '换个关键词，或切换到其他搜索目标。',
+			'search.unsupportedTitle' => '该站点不支持搜索',
+			'search.unsupportedDescription' => '请先回到首页选择其他站点。',
+			'search.liveBadge' => '直播中',
 			'settings.title' => '设置',
 			'settings.appearance' => '外观',
 			'settings.themeMode' => '主题',

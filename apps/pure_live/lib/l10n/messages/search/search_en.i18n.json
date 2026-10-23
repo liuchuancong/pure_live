@@ -1,0 +1,14 @@
+{
+  "idleTitle": "Search the selected site",
+  "idleDescription": "Type to search its rooms, streamers or areas.",
+  "suggestionsTitle": "Suggestions",
+  "targetsLabel": "Search target",
+  "tabRooms": "Rooms",
+  "tabAnchors": "Streamers",
+  "tabAreas": "Areas",
+  "noResultsTitle": "No results",
+  "noResultsDescription": "Try another keyword, or switch to another target.",
+  "unsupportedTitle": "This site cannot be searched",
+  "unsupportedDescription": "Pick another site from the home page first.",
+  "liveBadge": "Live"
+}

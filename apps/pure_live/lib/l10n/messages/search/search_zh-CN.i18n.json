@@ -1,0 +1,14 @@
+{
+  "idleTitle": "搜索当前站点",
+  "idleDescription": "输入关键词，搜索房间、主播或分区。",
+  "suggestionsTitle": "搜索建议",
+  "targetsLabel": "搜索目标",
+  "tabRooms": "房间",
+  "tabAnchors": "主播",
+  "tabAreas": "分区",
+  "noResultsTitle": "没有找到相关结果",
+  "noResultsDescription": "换个关键词，或切换到其他搜索目标。",
+  "unsupportedTitle": "该站点不支持搜索",
+  "unsupportedDescription": "请先回到首页选择其他站点。",
+  "liveBadge": "直播中"
+}

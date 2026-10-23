@@ -42,6 +42,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$common$en common = _Translations$common$en._(_root);
 	@override late final _Translations$navigation$en navigation = _Translations$navigation$en._(_root);
 	@override late final _Translations$player$en player = _Translations$player$en._(_root);
+	@override late final _Translations$search$en search = _Translations$search$en._(_root);
 	@override late final _Translations$settings$en settings = _Translations$settings$en._(_root);
 	@override late final _Translations$sites$en sites = _Translations$sites$en._(_root);
 }
@@ -115,6 +116,27 @@ class _Translations$player$en extends Translations$player$zh_CN {
 	@override String get line => 'Line';
 	@override String get fullscreen => 'Fullscreen';
 	@override String get danmaku => 'Danmaku';
+}
+
+// Path: search
+class _Translations$search$en extends Translations$search$zh_CN {
+	_Translations$search$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get idleTitle => 'Search the selected site';
+	@override String get idleDescription => 'Type to search its rooms, streamers or areas.';
+	@override String get suggestionsTitle => 'Suggestions';
+	@override String get targetsLabel => 'Search target';
+	@override String get tabRooms => 'Rooms';
+	@override String get tabAnchors => 'Streamers';
+	@override String get tabAreas => 'Areas';
+	@override String get noResultsTitle => 'No results';
+	@override String get noResultsDescription => 'Try another keyword, or switch to another target.';
+	@override String get unsupportedTitle => 'This site cannot be searched';
+	@override String get unsupportedDescription => 'Pick another site from the home page first.';
+	@override String get liveBadge => 'Live';
 }
 
 // Path: settings
@@ -199,6 +221,18 @@ extension on TranslationsEn {
 			'player.line' => 'Line',
 			'player.fullscreen' => 'Fullscreen',
 			'player.danmaku' => 'Danmaku',
+			'search.idleTitle' => 'Search the selected site',
+			'search.idleDescription' => 'Type to search its rooms, streamers or areas.',
+			'search.suggestionsTitle' => 'Suggestions',
+			'search.targetsLabel' => 'Search target',
+			'search.tabRooms' => 'Rooms',
+			'search.tabAnchors' => 'Streamers',
+			'search.tabAreas' => 'Areas',
+			'search.noResultsTitle' => 'No results',
+			'search.noResultsDescription' => 'Try another keyword, or switch to another target.',
+			'search.unsupportedTitle' => 'This site cannot be searched',
+			'search.unsupportedDescription' => 'Pick another site from the home page first.',
+			'search.liveBadge' => 'Live',
 			'settings.title' => 'Settings',
 			'settings.appearance' => 'Appearance',
 			'settings.themeMode' => 'Theme',
