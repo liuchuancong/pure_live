@@ -6,13 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
 import 'package:media_core_ui/media_core_ui.dart';
-import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
 import 'package:pure_live/features/favorites/follow_repository.dart' show followsProvider;
 import 'package:pure_live/features/room/room_controller.dart';
 import 'package:pure_live/features/room/room_status.dart'
-    show RoomPictureAction, RoomPictureDim, RoomPictureKind, roomPictureProvider, slowAfter;
-import 'package:pure_live/features/room/room_status.dart'
-    show pictureStateOf, slowAfter, RoomPictureAction, RoomPictureDim;
+    show RoomPictureAction, RoomPictureDim, RoomPictureKind, roomPictureProvider, roomSlowProvider, slowAfter;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/utils/audience_format.dart' show AudienceFormat;
 
@@ -41,10 +38,6 @@ final class RoomPage extends ConsumerStatefulWidget {
 }
 
 final class _RoomPageState extends ConsumerState<RoomPage> {
-  /// Whether the opening stream has taken longer than the overlay's
-  /// patience; the overlay then offers a retry beside the spinner.
-  bool _slow = false;
-
   Timer? _slowTimer;
 
   @override
@@ -66,12 +59,12 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
     final connecting = room.room != null && room.handle == null && !room.playback.playing;
     if (connecting && _slowTimer == null) {
       _slowTimer = Timer(slowAfter, () {
-        if (mounted) setState(() => _slow = true);
+        ref.read(roomSlowProvider.notifier).slow = true;
       });
     } else if (!connecting && _slowTimer != null) {
       _slowTimer?.cancel();
       _slowTimer = null;
-      if (_slow && mounted) setState(() => _slow = false);
+      ref.read(roomSlowProvider.notifier).slow = false;
     }
   }
 
@@ -82,10 +75,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AspectRatio(
-          aspectRatio: 16 / 9,
-          child: _PlayerSurface(room: room, slow: _slow),
-        ),
+        const AspectRatio(aspectRatio: 16 / 9, child: _PlayerSurface()),
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
           child: _RoomFacts(room: room),
@@ -103,19 +93,15 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
 /// The player: media_core's view over the live handle; behind the
 /// picture-state overlay wherever the stream is not on screen.
 final class _PlayerSurface extends ConsumerWidget {
-  const _PlayerSurface({required this.room, required this.slow});
-
-  final RoomState room;
-
-  /// Whether the opening stream has outlived the overlay's patience.
-  final bool slow;
+  const _PlayerSurface();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
+    final room = ref.watch(roomProvider);
     final handle = room.handle;
-    final picture = ref.watch(roomPictureProvider(slow));
+    final picture = ref.watch(roomPictureProvider);
     final showOverlay = picture.kind != RoomPictureKind.none;
     return Stack(
       fit: StackFit.expand,
@@ -164,10 +150,6 @@ final class _PlayerSurface extends ConsumerWidget {
     );
   }
 }
-
-/// The sentinel the overlay's visibility checks against: the kinds that
-/// hide the stream behind a message.
-RoomPictureKind RoomPictureKindNone() => RoomPictureKind.none;
 
 /// One action the overlay offers, pressed through the room controller.
 final class _PictureAction extends ConsumerWidget {

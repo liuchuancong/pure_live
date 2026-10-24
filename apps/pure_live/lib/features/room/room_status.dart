@@ -191,7 +191,7 @@ RoomPictureState pictureStateOf(RoomState state, {bool slow = false}) {
 
 /// The offline room's picture, named by what the platform said.
 RoomPictureState _offline(LiveRoom room) {
-  final RoomPictureState state = switch (room.broadcast.effectiveLiveStatus) {
+  final state = switch (room.broadcast.effectiveLiveStatus) {
     LiveStatus.banned => _of(
       RoomPictureKind.banned,
       '该直播间已被封禁',
@@ -208,7 +208,25 @@ RoomPictureState _offline(LiveRoom room) {
 }
 
 /// The picture state of the open room, derived fresh on every watch of
-/// [roomProvider]; the page's own slow flag rides in as the parameter.
-final roomPictureProvider = Provider.family<RoomPictureState, bool>((ref, slow) {
-  return pictureStateOf(ref.watch(roomProvider), slow: slow);
+/// [roomProvider]; the page's slow flag rides with the room's state — the
+/// controller keeps it, so no parameter is needed here.
+final roomPictureProvider = Provider<RoomPictureState>((ref) {
+  return pictureStateOf(ref.watch(roomProvider), slow: ref.watch(roomSlowProvider));
 });
+
+/// Whether the room's opening stream has outlived the overlay's patience;
+/// the room page's timer owns it and the overlay reads it from here.
+final roomSlowProvider = NotifierProvider<RoomSlowController, bool>(RoomSlowController.new);
+
+/// The room page's slow-open flag, timed by the page and read by the
+/// overlay's derivation.
+final class RoomSlowController extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  /// Whether the room's stream is on screen already.
+  bool get slow => state;
+
+  /// The stream is taking the overlay's patience.
+  set slow(bool value) => state = value;
+}
