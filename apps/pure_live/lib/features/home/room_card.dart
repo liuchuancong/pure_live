@@ -24,79 +24,70 @@ final class RoomCard extends StatelessWidget {
     final figure = room.audience.primaryMetric == LiveAudienceMetricType.onlineViewers
         ? room.audience.onlineViewers
         : room.audience.popularity;
-    return DsPressable(
+    // The card component carries the theme's fill, radius, hover lift and
+    // focus ring itself — the page only shapes what is inside.
+    return DsCard(
       onPressed: onOpen,
-      builder: (context, states, _) {
-        final hovered = states.contains(WidgetState.hovered);
-        return Container(
-          decoration: DsBoxDecoration(
-            color: hovered ? colors.hover : null,
-            borderRadius: BorderRadius.circular(theme.radii.card),
-            shadows: hovered
-                ? [DsShadow(color: colors.overlay, blur: 24, offset: const Offset(0, 8))]
-                : const <DsShadow>[],
+      style: DsCardStyle(padding: EdgeInsets.zero, borderRadius: BorderRadius.circular(theme.radii.card)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // The cover keeps 16:9 whatever the tile's height; the text
+          // row absorbs the remainder of the grid tile. DsImage needs
+          // its own reserved box — the ratio is its parameter, not an
+          // outer wrapper's.
+          DsImage.network(
+            room.content.coverUrl,
+            aspectRatio: 16 / 9,
+            semanticLabel: room.content.title,
+            fallback: _CoverFallback(title: room.content.title),
+            style: DsImageStyle(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.card)),
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // The cover keeps 16:9 whatever the tile's height; the text
-              // row absorbs the remainder of the grid tile. DsImage needs
-              // its own reserved box — the ratio is its parameter, not an
-              // outer wrapper's.
-              DsImage.network(
-                room.content.coverUrl,
-                aspectRatio: 16 / 9,
-                semanticLabel: room.content.title,
-                fallback: _CoverFallback(title: room.content.title),
-                style: DsImageStyle(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.card)),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: 3,
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 3,
+                children: [
+                  Flexible(
+                    child: Text(
+                      room.content.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                    ),
+                  ),
+                  Row(
+                    spacing: 6,
                     children: [
                       Flexible(
                         child: Text(
-                          room.content.title,
+                          room.anchor?.name ?? room.ref.roomId,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                          style: theme.typography.caption.copyWith(color: colors.textMuted),
                         ),
                       ),
-                      Row(
-                        spacing: 6,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              room.anchor?.name ?? room.ref.roomId,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.typography.caption.copyWith(color: colors.textMuted),
-                            ),
-                          ),
-                          if (figure != null)
-                            Text(
-                              AudienceFormat.format(figure),
-                              style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
-                            ),
-                          const Spacer(),
-                          // An off-air room keeps its place in the feed; the
-                          // room page will say why it cannot play.
-                          if (!live) DsIcon(DsIcons.circleSlash, size: 12, color: colors.textSubtle),
-                        ],
-                      ),
+                      if (figure != null)
+                        Text(
+                          AudienceFormat.format(figure),
+                          style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
+                        ),
+                      const Spacer(),
+                      // An off-air room keeps its place in the feed; the
+                      // room page will say why it cannot play.
+                      if (!live) DsIcon(DsIcons.circleSlash, size: 12, color: colors.textSubtle),
                     ],
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 }

@@ -9,8 +9,8 @@ import 'package:pure_live/features/areas/area_rooms_page.dart' show AreaRoomsPag
 import 'package:pure_live/features/areas/areas_page.dart' show AreasPage;
 import 'package:pure_live/features/favorites/favorites_page.dart' show FavoritesPage;
 import 'package:pure_live/features/history/history_page.dart' show HistoryPage;
-import 'package:pure_live/features/home/popular_page.dart' show PopularPage;
 import 'package:pure_live/features/multiview/multiview_page.dart' show MultiviewPage;
+import 'package:pure_live/features/popular/popular_page.dart' show PopularPage;
 import 'package:pure_live/features/recorder/recorder_page.dart' show RecorderPage;
 import 'package:pure_live/features/room/room_page.dart' show RoomPage;
 import 'package:pure_live/features/search/search_page.dart' show SearchPage;
@@ -278,8 +278,7 @@ final class RoomRoute extends GoRouteData with $RoomRoute {
   final String roomId;
 
   @override
-  Widget build(BuildContext context, GoRouterState state) =>
-      RoomPage(platform: platform, roomId: roomId);
+  Widget build(BuildContext context, GoRouterState state) => RoomPage(platform: platform, roomId: roomId);
 }
 
 /// One area's rooms (the reference's `kAreaRooms`), pushed on the root
@@ -301,7 +300,10 @@ final class AreaRoomsRoute extends GoRouteData with $AreaRoomsRoute {
   Widget build(BuildContext context, GoRouterState state) => AreaRoomsPage(
     platform: platform,
     areaId: areaId,
-    area: switch (state.extra) { final LiveArea area => area, _ => null },
+    area: switch (state.extra) {
+      final LiveArea area => area,
+      _ => null,
+    },
   );
 }
 

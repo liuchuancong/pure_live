@@ -2,7 +2,6 @@ import 'dart:async' show unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
-
 import 'package:pure_live/l10n/translations.dart';
 
 /// A paged card grid drawn with desen_ui primitives only: the cards in a
@@ -120,7 +119,9 @@ final class _CardGridState<T> extends State<CardGrid<T>> {
         icon: const DsIcon(DsIcons.cloudOff),
         title: Text(context.t.common.empty),
         description: Text(widget.error!),
-        action: widget.onRetry == null ? null : DsButton(onPressed: widget.onRetry, child: Text(context.t.common.retry)),
+        action: widget.onRetry == null
+            ? null
+            : DsButton(onPressed: widget.onRetry, child: Text(context.t.common.retry)),
       );
     }
     if (widget.items.isEmpty) {
@@ -183,7 +184,12 @@ final class _SkeletonGrid extends StatelessWidget {
         childAspectRatio: aspectRatio,
       ),
       itemCount: count,
-      itemBuilder: (context, index) => const DsSkeleton.block(width: double.infinity, height: double.infinity),
+      // The shimmer's sweep over the plain block: one shared animation
+      // across the whole placeholder grid, the loading idiom the kit
+      // draws by.
+      itemBuilder: (context, index) => const DsShimmer(
+        child: DsSkeleton.block(width: double.infinity, height: double.infinity),
+      ),
     );
   }
 }
@@ -200,7 +206,12 @@ final class _MessagePane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: DsEmptyState(icon: icon, title: title, description: description, actions: action == null ? const <Widget>[] : [action!]),
+      child: DsEmptyState(
+        icon: icon,
+        title: title,
+        description: description,
+        actions: action == null ? const <Widget>[] : [action!],
+      ),
     );
   }
 }
