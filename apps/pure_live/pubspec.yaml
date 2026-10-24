@@ -54,6 +54,7 @@ dependencies:
   flutter_svg: ^2.3.0 # SVG 图片渲染
   lucide_icons_flutter: ^4.0.1 # Lucide 图标库
   mosaic_grid: ^0.1.2 # 瀑布流网格
+  flame_barrage: ^0.0.9 # 飞行弹幕渲染（media_core_danmaku 的火焰宿主）
   pretty_qr_code: ^3.6.0 # 生成二维码
 
   # Flutter 与状态管理
@@ -92,6 +93,7 @@ dependencies:
   media_core_live: { path: F:/media_core/packages/media_core_live } # 直播恢复编排（线路×引擎扫描）
   media_core_media_kit: { path: F:/media_core/packages/media_core_media_kit } # mpv 后端
   media_core_ui: { path: F:/media_core/packages/media_core_ui } # 播放器视图与控制条
+  media_core_danmaku: { path: F:/media_core/packages/media_core_danmaku } # 弹幕管线（过滤/摄录）
   media_core_recording_ffmpeg: { path: F:/media_core/packages/media_core_recording_ffmpeg } # FFmpeg 录制后端
   media_core_presentation: { path: F:/media_core/packages/media_core_presentation } # 呈现驱动
   media_core_audio: { path: F:/media_core/packages/media_core_audio } # 音乐播放（队列/歌词/后台）

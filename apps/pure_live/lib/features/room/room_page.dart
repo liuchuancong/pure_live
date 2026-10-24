@@ -1,6 +1,7 @@
 import 'dart:async' show Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
@@ -110,6 +111,14 @@ final class _PlayerSurface extends ConsumerWidget {
           ColoredBox(color: colors.overlay, child: const SizedBox.expand())
         else
           MediaCorePlayerView(handle: handle),
+        if (ref.watch(barrageProvider) case final barrage?)
+          Positioned.fill(
+            child: FlameBarrageWidget(
+              config: const BarrageConfig(area: 0.7),
+              emojiAtlas: EmojiAtlas.instance,
+              controller: barrage,
+            ),
+          ),
         if (showOverlay)
           ColoredBox(
             color: switch (picture.dim) {

@@ -1,8 +1,10 @@
 import 'dart:async' show StreamSubscription, unawaited;
 
+import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:media_core/media_core.dart';
+import 'package:media_core_danmaku/media_core_danmaku.dart';
 import 'package:media_core_live/media_core_live.dart';
 import 'package:pure_live/app/providers/player_providers.dart'
     show createRoomPlayback, playerKernelProvider, roomSourcesOf;
@@ -38,6 +40,61 @@ RoomState _initial() => (
   error: null,
 );
 
+/// The room's flying danmaku pipeline, one per open room: the site's
+/// session events are accepted into the media_core danmaku controller
+/// (whose gate and filters run first), and its sink fans every accepted
+/// message into the flame engine (the flying layer) and the chat list at
+/// once; the player binding carries pause and seek along.
+final class RoomDanmakuPipeline {
+  RoomDanmakuPipeline(this.onChat) {
+    danmaku = DanmakuController(
+      sink: DanmakuFanOutSink(primary: FlameBarrageSink(barrage), overlay: overlay),
+    );
+  }
+
+  /// The flame engine the flying layer draws with.
+  final BarrageController barrage = BarrageController();
+
+  /// The chat list's mirror of the flying layer's source.
+  final DanmakuOverlaySession overlay = DanmakuOverlaySession();
+
+  /// The danmaku controller running the reference pipeline's filters.
+  late final DanmakuController danmaku;
+
+  /// Where the accepted chat lands (the room state subscribes).
+  final void Function(LiveMessage message) onChat;
+
+  /// The player binding carrying pause and seek into the barrage.
+  DanmakuPlayerBinding? binding;
+
+  /// Feeds one accepted site message through the pipeline.
+  void accept(LiveMessage message) {
+    danmaku.acceptExternal(
+      DanmakuMessage(
+        type: DanmakuMessageType.chat,
+        userName: message.sender?.userName ?? '',
+        text: message.text,
+        color: message.color == null
+            ? DanmakuColor.white
+            : DanmakuColor(message.color!.r, message.color!.g, message.color!.b),
+        messageId: message.messageId,
+      ),
+    );
+  }
+
+  /// Carries playback pause/seek into the barrage engine.
+  void bind(PlayerHandle handle) {
+    unawaited(binding?.dispose() ?? Future<void>.value());
+    binding = DanmakuPlayerBinding.forHandle(controller: barrage, handle: handle);
+    binding!.attach();
+  }
+
+  Future<void> dispose() async {
+    await binding?.dispose();
+    barrage.detach();
+  }
+}
+
 /// One open live room: its detail, its play plan, the playback over
 /// media_core's live controller, and the danmaku session beside it.
 ///
@@ -51,6 +108,11 @@ final class RoomController extends Notifier<RoomState> {
   StreamSubscription<PlayerHandle>? _handles;
   StreamSubscription<LiveMessage>? _chat;
   LiveDanmakuSession? _danmaku;
+  RoomDanmakuPipeline? _pipeline;
+  // Held for the room's lifetime; the cancel happens in teardown.
+  // Held for the room's lifetime; the cancel happens in teardown.
+  // ignore: unused_field, cancel_subscriptions, use_late_for_private_fields_and_variables
+  StreamSubscription<LiveMessage>? _sessionChat;
   LivePlayQuality? _wantedQuality;
 
   @override
@@ -115,6 +177,13 @@ final class RoomController extends Notifier<RoomState> {
   Future<void> togglePlayPause() async {
     await _playback?.togglePlayPause();
   }
+
+  /// The flying danmaku pipeline the page draws with (the flame widget's
+  /// controller); null until the room's danmaku session opened.
+  BarrageController? get barrage => _pipeline?.barrage;
+
+  /// The pipeline's overlay session the chat list mirrors.
+  DanmakuOverlaySession? get overlay => _pipeline?.overlay;
 
   /// Whether the room is followed right now.
   bool get followed {
@@ -228,3 +297,10 @@ final class RoomController extends Notifier<RoomState> {
 
 /// The open room's state (one room at a time; the route owns the page).
 final roomProvider = NotifierProvider<RoomController, RoomState>(RoomController.new);
+
+/// The open room's flying danmaku engine (the flame widget's controller);
+/// null until the room's danmaku pipeline exists.
+final barrageProvider = Provider<BarrageController?>((ref) {
+  ref.watch(roomProvider);
+  return ref.read(roomProvider.notifier).barrage;
+});
