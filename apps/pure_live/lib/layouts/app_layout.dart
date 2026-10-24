@@ -1,19 +1,18 @@
 import 'dart:async' show unawaited;
 
-import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show StatefulNavigationShell;
 import 'package:live_platform/live_platform.dart' show FormFactor;
+import 'package:pure_live/app/navigation/module_navigation.dart';
 import 'package:pure_live/app/providers/environment_providers.dart' show platformRuntimeProvider;
 import 'package:pure_live/app/providers/module_providers.dart';
 import 'package:pure_live/app/providers/navigation_providers.dart';
+import 'package:pure_live/app/providers/settings_section_provider.dart' show settingsSectionProvider;
 import 'package:pure_live/app/providers/sidebar_providers.dart';
-import 'package:pure_live/features/iptv/iptv_page.dart' show IptvPage;
-import 'package:pure_live/features/music/music_page.dart' show MusicPage;
+import 'package:pure_live/features/settings/settings_page.dart' show SettingsPage;
+import 'package:pure_live/features/settings/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/features/tv/tv_shell.dart' show TvShell;
-import 'package:pure_live/features/vod/vod_page.dart' show VodPage;
-import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/desktop/desktop_layout.dart';
 import 'package:pure_live/layouts/mobile/mobile_layout.dart';
 import 'package:pure_live/shared/enums/app_module.dart';
@@ -89,6 +88,9 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
 
   int _cursor = 0;
 
+  /// The last destination shown outside settings: 返回应用 goes back here.
+  NavigationItem? _lastAppItem;
+
   /// The window width the last dependency pass saw, null on the first;
   /// the sidebar's fold watches this for the crossing under
   /// [kExpandedSidebarBreakpoint].
@@ -127,9 +129,28 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     final sidebar = ref.watch(sidebarProvider);
     final module = ref.watch(selectedModuleProvider);
 
+    /// Shows [item]: the live module's entries are router branches (state
+    /// and deep links live there), every other module renders the entry's
+    /// page in place from [kModulePages].
+    void showItem(NavigationItem item) {
+      ref.read(selectedNavItemProvider.notifier).selected = item;
+      if (module != AppModule.live) {
+        setState(() {});
+        return;
+      }
+      final branch = _branchIndexOf(item);
+      if (branch != null) {
+        widget.shell.goBranch(branch, initialLocation: branch == widget.shell.currentIndex);
+      }
+    }
+
     void handleSelected(NavigationItem item) {
-      if (_branchIndexOf(item) == null) {
-        return; // the page has not arrived yet.
+      if (module == AppModule.live) {
+        if (_branchIndexOf(item) == null) {
+          return; // the page has not arrived yet.
+        }
+      } else if (item != NavigationItem.settings && !kModulePages.containsKey(item)) {
+        return;
       }
       setState(() {
         // A fresh selection cuts the trail's future: forward is gone
@@ -140,19 +161,52 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
           _cursor = _trail.length - 1;
         }
       });
-      _go(item);
+      if (item != NavigationItem.settings) {
+        _lastAppItem = item;
+      }
+      showItem(item);
+    }
+
+    // Settings is a destination of the same shell: while it is selected the
+    // sidebar lists the settings sections instead of the module's business
+    // entries — one menu, not a menu inside a menu. The section on screen
+    // lives in a provider, because the sidebar picks it and the page shows
+    // it across the shell.
+    final inSettings = selected == NavigationItem.settings;
+    final settingsSection = ref.watch(settingsSectionProvider);
+    // One registry row per module decides both menus: the settings menu
+    // shows the module's settings groups (alone — no home tools mixed in),
+    // the app's menu its business block and shared tools.
+    final navigation = navigationOf(module);
+    final menuGroups = <List<Object>>[
+      if (inSettings) ...[
+        for (final group in navigation.settingsGroups) group.sections,
+      ] else ...[
+        navigation.business,
+        navigation.tools,
+      ],
+    ];
+    final Object menuValue = inSettings ? settingsSection : selected;
+
+    void handleMenu(Object value) {
+      switch (value) {
+        case final NavigationItem item:
+          handleSelected(item);
+        case final SettingsSection section:
+          ref.read(settingsSectionProvider.notifier).section = section;
+      }
     }
 
     void goBack() {
       if (_cursor == 0) return;
       setState(() => _cursor--);
-      _go(_trail[_cursor]);
+      showItem(_trail[_cursor]);
     }
 
     void goForward() {
       if (_cursor >= _trail.length - 1) return;
       setState(() => _cursor++);
-      _go(_trail[_cursor]);
+      showItem(_trail[_cursor]);
     }
 
     /// The app switcher's choice: the module's own landing page comes with
@@ -164,21 +218,33 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       ref.read(selectedModuleProvider.notifier).selected = next;
       final landing = defaultNavigationItemFor(next);
       ref.read(selectedNavItemProvider.notifier).selected = landing;
-      if (next == AppModule.live) handleSelected(landing);
+      // The module's settings menu may not carry the section the last
+      // module was on; keep the pane on a row that exists.
+      ref.read(settingsSectionProvider.notifier).ensureWithin(navigationOf(next).settingsSections);
+      _lastAppItem = landing;
+      if (next == AppModule.live) {
+        handleSelected(landing);
+      } else {
+        setState(() {});
+      }
     }
 
     // The module's entry surface: live keeps the router's branch shell —
     // its destinations are routes — while each other module renders its
     // own entry page; a module whose page has not arrived yet falls back
     // to the placeholder rather than failing to build.
-    final moduleContent = module == AppModule.live
-        ? widget.shell
-        : switch (module) {
-            AppModule.iptv => const IptvPage(),
-            AppModule.vod => const VodPage(),
-            AppModule.music => const MusicPage(),
-            _ => _ModulePlaceholder(module: module),
-          };
+    // The live module keeps its routed branch shell; the others resolve
+    // the selected entry through the registry (settings is a page there
+    // too, which is what makes one settings surface work in every module).
+    final Widget moduleContent;
+    if (module == AppModule.live) {
+      moduleContent = widget.shell;
+    } else if (selected == NavigationItem.settings) {
+      moduleContent = const SettingsPage();
+    } else {
+      final page = kModulePages[selected] ?? kModulePages[navigation.landing]!;
+      moduleContent = page();
+    }
 
     if (breakpoint.index < kBottomBarBreakpoint.index) {
       return MobileLayout(
@@ -193,9 +259,11 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       content: moduleContent,
       module: module,
       onModuleSelected: selectModule,
-      business: kModuleBusinessItems[module]!,
-      selected: selected,
-      onSelected: handleSelected,
+      menuGroups: menuGroups,
+      menuValue: menuValue,
+      onMenu: handleMenu,
+      settingsSection: inSettings ? settingsSection : null,
+      onBackToApp: () => handleSelected(_lastAppItem ?? defaultNavigationItemFor(AppModule.live)),
       // The toggle rules; a window crossing under the breakpoint folds
       // the sidebar once (didChangeDependencies), never outvoting this.
       expanded: sidebar.expanded,
@@ -209,30 +277,4 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     );
   }
 
-  /// Shows [item]'s branch without touching the trail; a revisit of the
-  /// branch the shell already shows relinks to the page's root.
-  void _go(NavigationItem item) {
-    final branch = _branchIndexOf(item);
-    if (branch == null) return;
-    ref.read(selectedNavItemProvider.notifier).selected = item;
-    widget.shell.goBranch(branch, initialLocation: branch == widget.shell.currentIndex);
-  }
-}
-
-/// What a module without its pages yet shows: the module's icon and its
-/// name, honest about the wait.
-final class _ModulePlaceholder extends StatelessWidget {
-  const _ModulePlaceholder({required this.module});
-
-  final AppModule module;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    return DsEmptyState(
-      icon: DsIcon(module.icon),
-      title: Text(module.label(t)),
-      description: Text(t.common.moduleComingSoon),
-    );
-  }
 }

@@ -102,5 +102,6 @@
   "closeTrayUnavailable": "Hide to tray (needs the tray, not wired yet)",
   "font": "Font",
   "fontDescription": "UI typeface: the platform's own face, or one of the bundled official ones.",
-  "fontPlatform": "Follow the platform (system font)"
+  "fontPlatform": "Follow the platform (system font)",
+  "backHome": "Back to app"
 }

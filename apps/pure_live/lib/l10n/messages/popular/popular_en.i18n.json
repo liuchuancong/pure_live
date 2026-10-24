@@ -1,0 +1,6 @@
+{
+  "allPlatforms": "All platforms",
+  "page": "Page {page: int} of {total: int}",
+  "prevPage": "Previous page",
+  "nextPage": "Next page"
+}

@@ -102,5 +102,6 @@
   "closeTrayUnavailable": "隐藏到托盘(需托盘,暂未接入)",
   "font": "字体",
   "fontDescription": "界面字体：跟随平台官方字体，或选一款内置官方字体。",
-  "fontPlatform": "跟随平台（系统字体）"
+  "fontPlatform": "跟随平台（系统字体）",
+  "backHome": "返回应用"
 }

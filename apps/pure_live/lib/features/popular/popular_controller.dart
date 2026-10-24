@@ -17,6 +17,10 @@ typedef PopularFeedState = ({
   LiveSiteError? error,
 });
 
+/// The page a feed is showing — the desktop pager's number. Derived from
+/// nextPage on the first load, kept as the load that produced the rooms.
+int pageOf(PopularFeedState feed) => feed.rooms.isEmpty ? 1 : feed.nextPage - 1;
+
 PopularFeedState _initial() => (rooms: const [], nextPage: 1, hasMore: true, loading: false, error: null);
 
 /// The popular page's catalogues: one feed per platform, kept while the
@@ -73,6 +77,16 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
     return Future.value();
   }
 
+  /// Loads [page] of [platform] for the desktop pager: the shown page is
+  /// replaced whole (page 1 keeps the infinite scroll's append behaviour,
+  /// which the phone and the pager's first arrow share).
+  Future<void> loadPage(String platform, int page) {
+    final feed = feedOf(platform);
+    if (feed.loading || page < 1) return Future.value();
+    if (page == feed.nextPage) return loadMore(platform);
+    return _load(platform, page: page);
+  }
+
   Future<void> _load(String platform, {required int page}) async {
     final current = feedOf(platform);
     if (current.loading) return;
@@ -98,7 +112,11 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
         ...state,
         platform: _with(
           open,
-          rooms: page == 1 ? pageAnswer.items.toList() : [...open.rooms, ...pageAnswer.items],
+          // A continuous turn appends; a jump (the pager's arrows, an
+          // out-of-order retry) replaces the page whole.
+          rooms: page == 1 || page != current.nextPage
+              ? pageAnswer.items.toList()
+              : [...open.rooms, ...pageAnswer.items],
           nextPage: page + 1,
           hasMore: pageAnswer.hasMore ?? pageAnswer.items.isNotEmpty,
           loading: false,

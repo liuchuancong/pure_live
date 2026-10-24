@@ -52,6 +52,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$music$zh_CN music = Translations$music$zh_CN.internal(_root);
 	late final Translations$navigation$zh_CN navigation = Translations$navigation$zh_CN.internal(_root);
 	late final Translations$player$zh_CN player = Translations$player$zh_CN.internal(_root);
+	late final Translations$popular$zh_CN popular = Translations$popular$zh_CN.internal(_root);
 	late final Translations$recorder$zh_CN recorder = Translations$recorder$zh_CN.internal(_root);
 	late final Translations$room$zh_CN room = Translations$room$zh_CN.internal(_root);
 	late final Translations$search$zh_CN search = Translations$search$zh_CN.internal(_root);
@@ -710,6 +711,27 @@ class Translations$player$zh_CN {
 	String get danmaku => '弹幕';
 }
 
+// Path: popular
+class Translations$popular$zh_CN {
+	Translations$popular$zh_CN.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh-CN: '全部平台'
+	String get allPlatforms => '全部平台';
+
+	/// zh-CN: '第 {page: int} 页，共 {total: int} 页'
+	String page({required int page, required int total}) => '第 ${page} 页，共 ${total} 页';
+
+	/// zh-CN: '上一页'
+	String get prevPage => '上一页';
+
+	/// zh-CN: '下一页'
+	String get nextPage => '下一页';
+}
+
 // Path: recorder
 class Translations$recorder$zh_CN {
 	Translations$recorder$zh_CN.internal(this._root);
@@ -1224,6 +1246,9 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '跟随平台（系统字体）'
 	String get fontPlatform => '跟随平台（系统字体）';
+
+	/// zh-CN: '返回应用'
+	String get backHome => '返回应用';
 }
 
 // Path: shield
@@ -1714,6 +1739,10 @@ extension on Translations {
 			'player.line' => '线路',
 			'player.fullscreen' => '全屏',
 			'player.danmaku' => '弹幕',
+			'popular.allPlatforms' => '全部平台',
+			'popular.page' => ({required int page, required int total}) => '第 ${page} 页，共 ${total} 页',
+			'popular.prevPage' => '上一页',
+			'popular.nextPage' => '下一页',
 			'recorder.tabRunning' => '进行中',
 			'recorder.tabFinished' => '已完成',
 			'recorder.clearFinished' => '清空已完成',
@@ -1874,6 +1903,7 @@ extension on Translations {
 			'settings.font' => '字体',
 			'settings.fontDescription' => '界面字体：跟随平台官方字体，或选一款内置官方字体。',
 			'settings.fontPlatform' => '跟随平台（系统字体）',
+			'settings.backHome' => '返回应用',
 			'shield.title' => '弹幕屏蔽',
 			'shield.description' => '按关键词与用户屏蔽直播间弹幕，规则保存在本机。',
 			'shield.masterTitle' => '总开关',

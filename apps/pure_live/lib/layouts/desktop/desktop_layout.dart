@@ -5,6 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/providers/sidebar_providers.dart';
+import 'package:pure_live/app/providers/sites_providers.dart' show selectedSiteIdProvider;
+import 'package:pure_live/features/search/search_controller.dart';
+import 'package:pure_live/features/settings/settings_sections.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_switcher.dart';
 import 'package:pure_live/layouts/desktop/sidebar_resizer.dart';
@@ -37,9 +40,9 @@ final class DesktopLayout extends ConsumerStatefulWidget {
   /// A desktop layout over [content].
   const DesktopLayout({
     required this.content,
-    required this.business,
-    required this.selected,
-    required this.onSelected,
+    required this.menuGroups,
+    required this.menuValue,
+    required this.onMenu,
     required this.expanded,
     required this.module,
     required this.onModuleSelected,
@@ -50,20 +53,34 @@ final class DesktopLayout extends ConsumerStatefulWidget {
     required this.canForward,
     required this.onBack,
     required this.onForward,
+    required this.onBackToApp,
+    this.settingsSection,
     super.key,
   });
 
   /// The current screen.
   final Widget content;
 
-  /// The module's business menu: the sidebar's top block, no headings.
-  final List<NavigationItem> business;
+  /// The sidebar's menu, one list per block; a divider separates the
+  /// blocks. A live module's entries are [NavigationItem]s, the settings
+  /// surface's are [SettingsSection]s — the same menu either way, which is
+  /// the point: entering settings swaps the entries, not the sidebar.
+  final List<List<Object>> menuGroups;
 
-  /// The selected destination.
-  final NavigationItem selected;
+  /// The selected entry of the menu, when one is.
+  final Object? menuValue;
 
-  /// Fired when the viewer picks a destination.
-  final ValueChanged<NavigationItem> onSelected;
+  /// Fired when the viewer picks an entry.
+  final ValueChanged<Object> onMenu;
+
+  /// The section on screen while the settings surface is showing; null
+  /// elsewhere, where only the foot's settings entry highlights.
+  final SettingsSection? settingsSection;
+
+  /// Leaves the settings surface for the app: the foot's own entry while
+  /// the settings menu is what the sidebar shows (the reference's
+  /// 返回应用), instead of stacking a second menu or a button on the page.
+  final VoidCallback onBackToApp;
 
   /// Whether the sidebar shows its labels (the expanded rail) or folds to
   /// icons with tooltips.
@@ -120,6 +137,22 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
     }
   }
 
+  /// One entry of either menu as the same sidebar row: a module
+  /// destination or a settings section.
+  Widget _menuItem(Translations t, Object value) => switch (value) {
+    final NavigationItem item => DsSidebarItem<Object>(
+      value: item,
+      leading: DsIcon(item.icon),
+      label: Text(item.label(t)),
+    ),
+    final SettingsSection section => DsSidebarItem<Object>(
+      value: section,
+      leading: DsIcon(section.icon),
+      label: Text(section.label(t)),
+    ),
+    _ => const SizedBox.shrink(),
+  };
+
   @override
   Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
@@ -128,11 +161,11 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
     // A width remembered from a wider window yields to the content's
     // floor until the window grows again.
     final sidebarWidth = math.min(widget.sidebarWidth, MediaQuery.sizeOf(context).width - kSidebarContentFloor);
-    final items = [
-      for (final item in widget.business)
-        DsSidebarItem(value: item, leading: DsIcon(item.icon), label: Text(item.label(t))),
-      const SidebarDivider(),
-      for (final item in kToolItems) DsSidebarItem(value: item, leading: DsIcon(item.icon), label: Text(item.label(t))),
+    final items = <Widget>[
+      for (final (index, group) in widget.menuGroups.indexed) ...[
+        if (index > 0) const SidebarDivider(),
+        for (final entry in group) _menuItem(t, entry),
+      ],
     ];
     return CallbackShortcuts(
       bindings: {
@@ -171,13 +204,18 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                           Expanded(
                             child: DsSidebar(
                               collapsed: !widget.expanded,
-                              header: AppSwitcher(
-                                collapsed: !widget.expanded,
-                                module: widget.module,
-                                onModule: widget.onModuleSelected,
-                              ),
-                              value: widget.selected,
-                              onChanged: widget.onSelected,
+                              // The app switcher belongs to the app's menu.
+                              // The settings menu is the settings menu: the
+                              // brand row (and its module dropdown) goes.
+                              header: widget.settingsSection == null
+                                  ? AppSwitcher(
+                                      collapsed: !widget.expanded,
+                                      module: widget.module,
+                                      onModule: widget.onModuleSelected,
+                                    )
+                                  : null,
+                              value: widget.menuValue,
+                              onChanged: widget.onMenu,
                               style: DsSidebarStyle(width: sidebarWidth),
                               children: items,
                             ),
@@ -185,18 +223,32 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                           // Settings stays in the foot whatever the menu's
                           // length: a second sidebar of one item, its top
                           // padding handed to the divider instead.
-                          DsSidebar(
+                          // The foot carries the one way in and the one way
+                          // out: the settings entry on the app's menu, and
+                          // 返回应用 while the settings menu is showing —
+                          // the reference's arrangement.
+                          DsSidebar<Object>(
                             collapsed: !widget.expanded,
-                            value: widget.selected,
-                            onChanged: widget.onSelected,
+                            value: widget.settingsSection == null ? null : NavigationItem.settings,
+                            onChanged: widget.settingsSection == null
+                                ? widget.onMenu
+                                : (_) => widget.onBackToApp(),
                             style: DsSidebarStyle(width: sidebarWidth),
-                            children: [
-                              DsSidebarItem(
-                                value: NavigationItem.settings,
-                                leading: const DsIcon(DsIcons.settings),
-                                label: Text(t.navigation.settings),
-                              ),
-                            ],
+                            children: widget.settingsSection == null
+                                ? [
+                                    DsSidebarItem<Object>(
+                                      value: NavigationItem.settings,
+                                      leading: const DsIcon(DsIcons.settings),
+                                      label: Text(t.navigation.settings),
+                                    ),
+                                  ]
+                                : [
+                                    DsSidebarItem<Object>(
+                                      value: NavigationItem.settings,
+                                      leading: const DsIcon(DsIcons.arrowLeft),
+                                      label: Text(t.settings.backHome),
+                                    ),
+                                  ],
                           ),
                         ],
                       ),
@@ -222,14 +274,28 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                             child: Row(
                               children: [
                                 Expanded(
-                                  child: _LocationBreadcrumb(module: widget.module, selected: widget.selected),
+                                  child: _LocationBreadcrumb(
+                                    module: widget.module,
+                                    selected: widget.menuValue,
+                                    settings: widget.settingsSection,
+                                  ),
                                 ),
                                 const SizedBox(width: DsSpace.s16),
                                 SizedBox(
                                   width: 320,
-                                  child: GestureDetector(
-                                    onTap: () => widget.onSelected(NavigationItem.search),
-                                    child: AbsorbPointer(child: DsSearchField(placeholder: t.common.searchHint)),
+                                  // The toolbar search searches what the
+                                  // viewer is browsing: submitting pins the
+                                  // search scope to this page's platform (the
+                                  // live module's selected site) and opens the
+                                  // search page there — not a cold, scopeless
+                                  // search.
+                                  child: _ToolbarSearch(
+                                    hint: t.common.searchHint,
+                                    onSubmitted: (word) {
+                                      ref.read(searchSiteIdProvider.notifier).selected = ref.read(selectedSiteIdProvider);
+                                      ref.read(pendingSearchProvider.notifier).hand(word);
+                                      widget.onMenu(NavigationItem.search);
+                                    },
                                   ),
                                 ),
                               ],
@@ -257,19 +323,65 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
 /// the query inside the search page — is that page's own breadcrumb, one
 /// level below this one.
 final class _LocationBreadcrumb extends StatelessWidget {
-  const _LocationBreadcrumb({required this.module, required this.selected});
+  const _LocationBreadcrumb({required this.module, required this.selected, this.settings});
 
   final AppModule module;
-  final NavigationItem selected;
+  final Object? selected;
+  final SettingsSection? settings;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final section = settings;
+    if (section != null) {
+      return DsBreadcrumb(
+        items: [
+          DsBreadcrumbItem(label: t.navigation.settings, icon: const DsIcon(DsIcons.settings, size: 14)),
+          DsBreadcrumbItem(label: section.label(t)),
+        ],
+      );
+    }
     return DsBreadcrumb(
       items: [
         DsBreadcrumbItem(label: module.label(t), icon: DsIcon(module.icon, size: 14)),
-        DsBreadcrumbItem(label: selected.label(t)),
+        if (selected case final NavigationItem item) DsBreadcrumbItem(label: item.label(t)),
       ],
+    );
+  }
+}
+
+/// The toolbar's live search field: typing is real (unlike the old
+/// tap-to-navigate stub), submitting pins the search scope to the
+/// browsed platform and carries the word to the search page.
+final class _ToolbarSearch extends StatefulWidget {
+  const _ToolbarSearch({required this.hint, required this.onSubmitted});
+
+  final String hint;
+  final ValueChanged<String> onSubmitted;
+
+  @override
+  State<_ToolbarSearch> createState() => _ToolbarSearchState();
+}
+
+final class _ToolbarSearchState extends State<_ToolbarSearch> {
+  final TextEditingController _field = TextEditingController();
+
+  @override
+  void dispose() {
+    _field.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DsSearchField(
+      controller: _field,
+      placeholder: widget.hint,
+      onSubmitted: (word) {
+        if (word.trim().isEmpty) return;
+        widget.onSubmitted(word.trim());
+        _field.clear();
+      },
     );
   }
 }

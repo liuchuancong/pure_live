@@ -41,6 +41,20 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
   String _draft = '';
 
   @override
+  void initState() {
+    super.initState();
+    // A word handed from outside (the toolbar): taken once on arrival,
+    // searched as though typed here.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final word = ref.read(pendingSearchProvider.notifier).take();
+      if (word == null || word.isEmpty || !mounted) return;
+      _field.value = TextEditingValue(text: word, selection: TextSelection.collapsed(offset: word.length));
+      unawaited(ref.read(searchProvider.notifier).search(word));
+      unawaited(ref.read(searchHistoryProvider.notifier).commit(word));
+    });
+  }
+
+  @override
   void dispose() {
     _suggestDebounce?.cancel();
     _field.dispose();

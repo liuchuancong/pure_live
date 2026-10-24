@@ -164,7 +164,7 @@ final class _PlatformFeed extends ConsumerWidget {
     final cardExtent = ref.watch(browseSettingsProvider.select((settings) => settings.homeCardExtent));
     final state =
         feed ?? (rooms: const <LiveRoom>[], nextPage: 1, hasMore: true, loading: false, error: null);
-    return CardGrid<LiveRoom>(
+    final grid = CardGrid<LiveRoom>(
       scrollController: scrollController,
       items: state.rooms,
       cardExtent: cardExtent,
@@ -177,6 +177,31 @@ final class _PlatformFeed extends ConsumerWidget {
         room: room,
         onOpen: () => context.push(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),
       ),
+    );
+    // A wide window pages by number (the reference's desktop feed) — the
+    // kit's pagination: numbers with gaps, arrows at the ends; a narrow
+    // one keeps the infinite scroll, thumbs do not page. The feed only
+    // knows whether one more page exists, so the count sits one ahead:
+    // the last number answers "is there a next" and the pager never
+    // offers a page past the end.
+    final wide = MediaQuery.sizeOf(context).width >= 768;
+    if (!wide) return grid;
+    final page = pageOf(state);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(child: grid),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
+          child: Center(
+            child: DsPagination(
+              page: page,
+              pageCount: state.hasMore ? page + 1 : page,
+              onChanged: state.loading ? null : (next) => controller.loadPage(platform, next),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

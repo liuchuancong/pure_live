@@ -1,0 +1,6 @@
+{
+  "allPlatforms": "全部平台",
+  "page": "第 {page: int} 页，共 {total: int} 页",
+  "prevPage": "上一页",
+  "nextPage": "下一页"
+}

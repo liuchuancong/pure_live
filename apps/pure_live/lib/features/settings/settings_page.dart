@@ -9,9 +9,12 @@ import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_shell/live_shell.dart' show CloseAction;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pure_live/app/bootstrap/pure_live_app.dart' show AppLocaleScope;
+import 'package:pure_live/app/navigation/module_navigation.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
+import 'package:pure_live/app/providers/module_providers.dart' show selectedModuleProvider;
 import 'package:pure_live/app/providers/network_providers.dart' show proxySettingsProvider;
 import 'package:pure_live/app/providers/refresh_settings_providers.dart';
+import 'package:pure_live/app/providers/settings_section_provider.dart' show settingsSectionProvider;
 import 'package:pure_live/app/providers/shell_settings_provider.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show selectedSiteIdProvider, sitesProvider;
 import 'package:pure_live/app/routing/app_router.dart' show SettingsSectionRoute;
@@ -31,163 +34,67 @@ import 'package:pure_live/layouts/app_switcher.dart' show AppMark;
 import 'package:pure_live/shared/enums/tool_order.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
-/// The settings surface: ZCode's master-detail on a desktop window — the
-/// grouped navigation on the left, the selected section's pane on the
-/// right — and, under the bottom-bar breakpoint, a grouped list whose
+/// The settings surface. On a desktop window the shell's own sidebar lists
+/// the sections — the same menu the module destinations live in, so
+/// entering settings swaps the menu's entries rather than stacking a second
+/// menu beside it — and this page is the selected section's pane alone. On
+/// a phone, where there is no sidebar, the page is the grouped list whose
 /// entries push their section as its own route ([SettingsSectionRoute]).
 ///
-/// The desktop selection is the pane's own state; the mobile selection is
-/// the route stack. Both render the same [SettingsSectionPane].
-final class SettingsPage extends ConsumerStatefulWidget {
+/// Both read and write [settingsSectionProvider]: the sidebar and the list
+/// agree on which section is on screen, and the pane is always that one.
+final class SettingsPage extends ConsumerWidget {
   /// The settings page.
   const SettingsPage({super.key});
 
   @override
-  ConsumerState<SettingsPage> createState() => _SettingsPageState();
-}
-
-final class _SettingsPageState extends ConsumerState<SettingsPage> {
-  /// The pane the desktop master-detail shows.
-  SettingsSection _pane = SettingsSection.general;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
+  Widget build(BuildContext context, WidgetRef ref) {
     final compact = MediaQuery.sizeOf(context).width < 768;
     if (compact) return const _SettingsMenuList();
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // The navigation column, scrollable on its own; the pane beside it
-        // never scrolls with it.
-        SizedBox(
-          width: 240,
-          child: ColoredBox(
-            color: colors.sidebar,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s16, DsSpace.s12, DsSpace.s24),
-              child: _SettingsMenu(selected: _pane, onSelected: (section) => setState(() => _pane = section)),
-            ),
-          ),
-        ),
-        Expanded(
-          child: SettingsSectionPane(key: ValueKey(_pane), section: _pane),
-        ),
-      ],
-    );
-  }
-}
-
-/// The settings entries, grouped: the desktop column's body and, inside a
-/// scaffold-less list, the mobile menu's body.
-final class _SettingsMenu extends StatelessWidget {
-  const _SettingsMenu({required this.selected, required this.onSelected});
-
-  /// The highlighted entry (desktop only; the mobile list highlights none).
-  final SettingsSection? selected;
-
-  /// Fired when an entry is pressed.
-  final ValueChanged<SettingsSection> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    final t = context.t;
-    final children = <Widget>[];
-    for (final (groupKey, sections) in kSettingsGroups) {
-      children.add(
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s16, DsSpace.s8, DsSpace.s6),
-          child: Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: Text(
-              settingsGroupLabel(t, groupKey),
-              style: theme.typography.overline.copyWith(color: colors.textSubtle),
-            ),
-          ),
-        ),
-      );
-      for (final section in sections) {
-        final isSelected = section == selected;
-        children.add(
-          DsPressable(
-            semanticLabel: section.label(t),
-            onPressed: () => onSelected(section),
-            builder: (context, states, _) {
-              final hovered = states.contains(WidgetState.hovered);
-              return Container(
-                padding: const EdgeInsets.all(DsSpace.s12),
-                decoration: DsBoxDecoration(
-                  color: isSelected
-                      ? theme.selectedFill
-                      : hovered
-                      ? colors.hover
-                      : null,
-                  borderRadius: theme.radii.controlCorners(null, 36),
-                ),
-                child: Row(
-                  spacing: DsSpace.s12,
-                  children: [
-                    DsIcon(
-                      section.icon,
-                      size: theme.sizes.iconMd,
-                      color: isSelected ? theme.onSelectedFill : colors.text,
-                    ),
-                    Expanded(
-                      child: Text(
-                        section.label(t),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.body.copyWith(
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                          color: isSelected ? theme.onSelectedFill : colors.text,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        );
-      }
-    }
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, spacing: 2, children: children);
+    final section = ref.watch(settingsSectionProvider);
+    return SettingsSectionPane(key: ValueKey(section), section: section);
   }
 }
 
 /// The mobile menu: the same groups as full-width rows, each pushing its
 /// section as a route — the phone's way into a submenu.
-final class _SettingsMenuList extends StatelessWidget {
+final class _SettingsMenuList extends ConsumerWidget {
   const _SettingsMenuList();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final rows = <Widget>[];
-    for (final (groupKey, sections) in kSettingsGroups) {
+    // The phone list mirrors the desktop menu: the module's own settings
+    // groups, from the one registry.
+    for (final group in navigationOf(ref.watch(selectedModuleProvider)).settingsGroups) {
       rows.add(
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s16, DsSpace.s20, DsSpace.s4),
           child: Align(
             alignment: AlignmentDirectional.centerStart,
             child: Text(
-              settingsGroupLabel(t, groupKey),
+              settingsGroupLabel(t, group.labelKey),
               style: theme.typography.overline.copyWith(color: colors.textSubtle),
             ),
           ),
         ),
       );
-      for (final section in sections) {
+      for (final section in group.sections) {
         rows.add(
           DsListRow(
             leading: DsIcon(section.icon),
             title: Text(section.label(t)),
             description: Text(section.description(t)),
-            onPressed: () => context.push(SettingsSectionRoute(section: section.name).location),
+            onPressed: () {
+              // The pane the route pushes is the provider's section; keeping
+              // it in step also carries the last visit over to a desktop
+              // window the app may be resized into.
+              ref.read(settingsSectionProvider.notifier).section = section;
+              unawaited(context.push(SettingsSectionRoute(section: section.name).location));
+            },
             trailing: const DsIcon(DsIcons.chevronRight),
           ),
         );

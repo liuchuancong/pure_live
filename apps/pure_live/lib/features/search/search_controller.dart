@@ -402,3 +402,25 @@ final class SearchHistoryController extends Notifier<List<String>> {
 
 /// The search history.
 final searchHistoryProvider = NotifierProvider<SearchHistoryController, List<String>>(SearchHistoryController.new);
+
+/// A word handed to the search page from outside (the toolbar's field):
+/// the page takes it on arrival — submitting it and recording the
+/// history — and clears it, so a back-and-fororth never replays it.
+final class PendingSearchController extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  /// Hands [word] to the next search page (taken once on arrival).
+  // ignore: use_setters_to_change_properties
+  void hand(String word) => state = word;
+
+  /// Takes the word (null when none was handed).
+  String? take() {
+    final word = state;
+    state = null;
+    return word;
+  }
+}
+
+/// The word the next search page should run.
+final pendingSearchProvider = NotifierProvider<PendingSearchController, String?>(PendingSearchController.new);

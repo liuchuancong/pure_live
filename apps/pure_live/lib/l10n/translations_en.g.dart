@@ -50,6 +50,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$music$en music = _Translations$music$en._(_root);
 	@override late final _Translations$navigation$en navigation = _Translations$navigation$en._(_root);
 	@override late final _Translations$player$en player = _Translations$player$en._(_root);
+	@override late final _Translations$popular$en popular = _Translations$popular$en._(_root);
 	@override late final _Translations$recorder$en recorder = _Translations$recorder$en._(_root);
 	@override late final _Translations$room$en room = _Translations$room$en._(_root);
 	@override late final _Translations$search$en search = _Translations$search$en._(_root);
@@ -342,6 +343,19 @@ class _Translations$player$en extends Translations$player$zh_CN {
 	@override String get danmaku => 'Danmaku';
 }
 
+// Path: popular
+class _Translations$popular$en extends Translations$popular$zh_CN {
+	_Translations$popular$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get allPlatforms => 'All platforms';
+	@override String page({required int page, required int total}) => 'Page ${page} of ${total}';
+	@override String get prevPage => 'Previous page';
+	@override String get nextPage => 'Next page';
+}
+
 // Path: recorder
 class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	_Translations$recorder$en._(TranslationsEn root) : this._root = root, super.internal(root);
@@ -536,6 +550,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get font => 'Font';
 	@override String get fontDescription => 'UI typeface: the platform\'s own face, or one of the bundled official ones.';
 	@override String get fontPlatform => 'Follow the platform (system font)';
+	@override String get backHome => 'Back to app';
 }
 
 // Path: shield
@@ -852,6 +867,10 @@ extension on TranslationsEn {
 			'player.line' => 'Line',
 			'player.fullscreen' => 'Fullscreen',
 			'player.danmaku' => 'Danmaku',
+			'popular.allPlatforms' => 'All platforms',
+			'popular.page' => ({required int page, required int total}) => 'Page ${page} of ${total}',
+			'popular.prevPage' => 'Previous page',
+			'popular.nextPage' => 'Next page',
 			'recorder.tabRunning' => 'Recording',
 			'recorder.tabFinished' => 'Finished',
 			'recorder.clearFinished' => 'Clear finished',
@@ -1012,6 +1031,7 @@ extension on TranslationsEn {
 			'settings.font' => 'Font',
 			'settings.fontDescription' => 'UI typeface: the platform\'s own face, or one of the bundled official ones.',
 			'settings.fontPlatform' => 'Follow the platform (system font)',
+			'settings.backHome' => 'Back to app',
 			'shield.title' => 'Danmaku shield',
 			'shield.description' => 'Keep live-room danmaku out by keyword or user; the rules live on this device.',
 			'shield.masterTitle' => 'Master switch',

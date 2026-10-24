@@ -1,6 +1,7 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/material.dart';
 
+import 'package:pure_live/app/navigation/module_navigation.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_switcher.dart';
 import 'package:pure_live/shared/enums/app_module.dart';
@@ -88,10 +89,10 @@ final class MobileLayout extends StatelessWidget {
                 onChanged: pick,
                 style: const DsSidebarStyle(width: kNavigationDrawerWidth),
                 children: [
-                  for (final item in kModuleBusinessItems[module]!)
+                  for (final item in navigationOf(module).business)
                     DsSidebarItem(value: item, leading: DsIcon(item.icon), label: Text(item.label(t))),
                   const SidebarDivider(),
-                  for (final item in kToolItems)
+                  for (final item in navigationOf(module).tools)
                     DsSidebarItem(value: item, leading: DsIcon(item.icon), label: Text(item.label(t))),
                   const SidebarDivider(),
                   DsSidebarItem(

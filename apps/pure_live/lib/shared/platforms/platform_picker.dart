@@ -42,7 +42,6 @@ final class PlatformTabRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
     final children = <Widget>[
       Expanded(
         child: DsTopNav<String>(
@@ -55,34 +54,35 @@ final class PlatformTabRow extends StatelessWidget {
         ),
       ),
       const SizedBox(width: DsSpace.s8),
-      // The dropdown: every platform in one menu, the current one checked.
-      DsMenuAnchor(
-        items: [
-          for (final id in platforms)
-            DsMenuItem(
-              label: Text(nameOf(id)),
-              trailing: id == current ? const DsIcon(DsIcons.check, size: 16) : null,
-              onPressed: () => onChanged(id),
+      // The dropdown: every platform in a panel — a side sheet on a wide
+      // window, a half-height (pullable to full) sheet on a narrow one;
+      // the current one checked.
+      DsButton(
+        variant: DsButtonVariant.secondary,
+        onPressed: () => showDsPanel<void>(
+          context: context,
+          // auto (the default) is exactly the rule: side on a wide window,
+          // bottom on a narrow one.
+          detents: const [0.5, 1],
+          builder: (context) => DsPanel(
+            title: Text(context.t.popular.allPlatforms),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final id in platforms)
+                  DsListRow(
+                    title: Text(nameOf(id)),
+                    trailing: id == current ? const DsIcon(DsIcons.check, size: 16) : null,
+                    onPressed: () {
+                      onChanged(id);
+                      Navigator.of(context).pop();
+                    },
+                  ),
+              ],
             ),
-        ],
-        builder: (context, controller, _) => DsPressable(
-          semanticLabel: context.t.common.switchModule,
-          onPressed: controller.toggle,
-          builder: (context, states, _) {
-            final hovered = states.contains(WidgetState.hovered);
-            return Container(
-              width: 30,
-              height: 30,
-              decoration: DsBoxDecoration(
-                color: controller.isOpen || hovered ? colors.hover : null,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Center(
-                child: DsIcon(DsIcons.chevronDown, size: 16, color: colors.textMuted),
-              ),
-            );
-          },
+          ),
         ),
+        child: const DsIcon(DsIcons.chevronDown, size: 16),
       ),
     ];
     return SizedBox(height: 36, child: Row(children: children));
