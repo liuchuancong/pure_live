@@ -8,6 +8,7 @@ import 'package:pure_live/features/favorites/follow_repository.dart' show follow
 import 'package:pure_live/features/room/player_surface.dart' show PlayerSurface;
 import 'package:pure_live/features/room/room_controller.dart';
 import 'package:pure_live/features/room/room_status.dart' show roomSlowProvider, slowAfter;
+import 'package:pure_live/features/room/sleep_timer.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/utils/audience_format.dart' show AudienceFormat;
 
@@ -200,6 +201,7 @@ final class _RoomControls extends ConsumerWidget {
             leading: DsIcon(DsIcons.route, size: DsTheme.of(context).sizes.iconSm),
             semanticLabel: t.room.lineLabel,
           ),
+        _SleepChip(),
         const Spacer(),
         DsButton(
           onPressed: () => unawaited(controller.togglePlayPause()),
@@ -270,6 +272,69 @@ final class _ChatLine extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The sleep timer's chip: off shows a moon that opens the picker; running
+/// shows the countdown and the picker's first item stops it.
+/// The sleep timer's chip: off shows a moon that opens the picker; running
+/// shows the countdown and the picker's first item stops it.
+final class _SleepChip extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final timer = ref.watch(sleepTimerProvider);
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final t = context.t;
+    final running = timer.minutes != null;
+    final label = running ? '${timer.minutes} min' : t.room.sleep;
+    return DsMenuAnchor(
+      semanticLabel: t.room.sleep,
+      side: DsSide.top,
+      builder: (context, controller, child) => DsPressable(
+        semanticLabel: t.room.sleep,
+        onPressed: controller.toggle,
+        builder: (context, states, _) {
+          final hovered = states.contains(WidgetState.hovered);
+          return Container(
+            height: theme.sizes.sm,
+            padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8),
+            decoration: DsBoxDecoration(
+              color: running
+                  ? theme.selectedFill
+                  : hovered
+                  ? colors.hover
+                  : null,
+              borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: DsSpace.s4,
+              children: [
+                DsIcon(
+                  DsIcons.moon,
+                  size: theme.sizes.iconSm,
+                  color: running ? theme.onSelectedFill : colors.textMuted,
+                ),
+                Text(
+                  label,
+                  style: theme.typography.caption.copyWith(color: running ? theme.onSelectedFill : colors.textMuted),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+      items: [
+        if (running)
+          DsMenuItem(label: Text(t.room.sleepOff), onPressed: () => ref.read(sleepTimerProvider.notifier).start(null)),
+        for (final minutes in const [30, 60, 90])
+          DsMenuItem(
+            label: Text('$minutes min'),
+            onPressed: () => ref.read(sleepTimerProvider.notifier).start(minutes),
+          ),
+      ],
     );
   }
 }

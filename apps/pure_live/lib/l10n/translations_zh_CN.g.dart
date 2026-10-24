@@ -417,6 +417,12 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '音量'
 	String get volume => '音量';
+
+	/// zh-CN: '定时关闭'
+	String get sleep => '定时关闭';
+
+	/// zh-CN: '关闭定时'
+	String get sleepOff => '关闭定时';
 }
 
 // Path: search
@@ -668,6 +674,8 @@ extension on Translations {
 			'room.mute' => '静音',
 			'room.unmute' => '取消静音',
 			'room.volume' => '音量',
+			'room.sleep' => '定时关闭',
+			'room.sleepOff' => '关闭定时',
 			'search.idleTitle' => '搜索当前站点',
 			'search.idleDescription' => '输入关键词，搜索房间、主播或分区。',
 			'search.suggestionsTitle' => '搜索建议',

@@ -13,4 +13,7 @@
   "mute": "静音",
   "unmute": "取消静音",
   "volume": "音量"
+,
+  "sleep": "定时关闭",
+  "sleepOff": "关闭定时"
 }

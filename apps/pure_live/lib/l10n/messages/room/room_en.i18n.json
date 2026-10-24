@@ -13,4 +13,7 @@
   "mute": "Mute",
   "unmute": "Unmute",
   "volume": "Volume"
+,
+  "sleep": "Sleep timer",
+  "sleepOff": "Stop the timer"
 }
