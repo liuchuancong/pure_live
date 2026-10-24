@@ -11,6 +11,11 @@ enum RecordingTaskState {
   /// The engine is capturing the room's stream.
   recording,
 
+  /// The task is kept for a room that is not live yet: the polling engine
+  /// starts it when the room goes live. Nothing produces it until that
+  /// engine arrives, but the filter bar counts it as its own status.
+  waiting,
+
   /// The last session ended and its file was saved.
   stopped,
 

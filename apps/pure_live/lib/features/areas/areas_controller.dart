@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
-import 'package:pure_live/features/settings/sites_display_provider.dart' show sitesDisplayProvider;
+import 'package:pure_live/features/settings/sites_display_provider.dart' show sitesDisplayProvider, sitesOrderProvider;
 
 /// What one platform's areas catalogue holds: the areas and their load.
 typedef PlatformAreasState = ({List<LiveArea> areas, bool loading, LiveSiteError? error});
@@ -22,9 +22,15 @@ final class AreasCatalogController extends Notifier<Map<String, PlatformAreasSta
   /// The ids of the platforms that have areas, in registry order.
   List<String> platformIds() {
     final display = ref.read(sitesDisplayProvider.notifier);
+    // The viewer's order is the menu's order: a drag in the settings
+    // reorders these tabs too.
+    final order = ref.read(sitesOrderProvider).order;
+    final sites = {for (final site in ref.read(sitesProvider).all) site.manifest.id: site};
     return [
-      for (final site in ref.read(sitesProvider).all)
-        if (site.capability<LiveAreaProvider>() != null && display.shown(site.manifest.id)) site.manifest.id,
+      for (final id in order)
+        if (sites[id] case final site?
+            when site.capability<LiveAreaProvider>() != null && display.shown(id))
+          id,
     ];
   }
 
@@ -73,6 +79,9 @@ final class AreasSiteController extends Notifier<String> {
     final stored = _readStored();
     final ids = ref.read(areasCatalogProvider.notifier).platformIds();
     if (stored != null && ids.contains(stored)) return stored;
+    // No local choice yet: the settings' preferred platform opens first.
+    final preferred = ref.read(sitesOrderProvider).preferred;
+    if (preferred.isNotEmpty && ids.contains(preferred)) return preferred;
     return ids.isEmpty ? '' : ids.first;
   }
 

@@ -144,6 +144,10 @@ final class _PlatformAreas extends ConsumerWidget {
       isLoading: state.loading,
       error: state.error?.message,
       onRetry: () => controller.refresh(platform),
+      // A pull reloads the catalogue; a failure keeps the areas and is
+      // explained in the bar over them.
+      onRefresh: () => controller.refresh(platform),
+      refreshError: state.error?.message,
       emptyIcon: DsIcons.layoutGrid,
       emptyTitle: context.t.areas.noAreas,
       itemBuilder: (context, area) => _AreaCard(

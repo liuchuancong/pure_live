@@ -7,8 +7,10 @@ typedef FollowsAutoRefresh = ({bool enabled, int minutes});
 
 const FollowsAutoRefresh _defaults = (enabled: false, minutes: 15);
 
-/// The refresh choices the interval select offers.
-const List<int> kRefreshIntervalChoices = [5, 10, 15, 30];
+/// The refresh choices the interval select offers — the reference's twelve
+/// (`settings_catalog.dart` `followRefreshMinutes`): five minutes up to six
+/// hours.
+const List<int> kRefreshIntervalChoices = [5, 10, 15, 20, 30, 45, 60, 90, 120, 180, 240, 360];
 
 /// Owns the follows page's auto-refresh choice.
 final class FollowsAutoRefreshController extends Notifier<FollowsAutoRefresh> {
@@ -52,6 +54,9 @@ final class HistoryLimitController extends Notifier<int> {
   static const int min = 100;
   static const int max = 1000;
   static const int fallback = 500;
+
+  /// The caps the limit select offers, inside [min] and [max].
+  static const List<int> choices = [min, 200, 300, fallback, 800, max];
 
   @override
   int build() {

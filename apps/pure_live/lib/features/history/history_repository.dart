@@ -52,9 +52,12 @@ final class HistoryRepository {
   /// no-op.
   Future<void> remove(String identityKey) => box.delete(identityKey);
 
-  /// Drops every record.
-  Future<void> clear() async {
-    await box.deleteAll(box.getAllKeys());
+  /// Drops every record, or only [identityKeys] when given (the page's
+  /// clear under an active filter drops the matches).
+  Future<void> clear({Iterable<String>? identityKeys}) async {
+    final keys = identityKeys?.toList() ?? box.getAllKeys();
+    if (keys.isEmpty) return;
+    await box.deleteAll(keys);
   }
 
   /// Keeps the newest [limit] records.
@@ -134,11 +137,11 @@ final class HistoryController extends Notifier<HistoryState> {
     await repository.remove(identityKey);
   }
 
-  /// Drops every record.
-  Future<void> clear() async {
+  /// Drops every record, or only [identityKeys] when given.
+  Future<void> clear({Iterable<String>? identityKeys}) async {
     final repository = ref.read(historyRepositoryProvider).value;
     if (repository == null) return;
-    await repository.clear();
+    await repository.clear(identityKeys: identityKeys);
   }
 }
 

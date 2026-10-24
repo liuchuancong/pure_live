@@ -116,5 +116,9 @@
   "cacheLimit": "Automatic cleanup cap",
   "cacheLimitDesc": "Oldest images are deleted past the cap; off keeps only expiry-based cleanup.",
   "cacheLimitOff": "No automatic cleanup",
-  "cacheHint": "Covers and avatars are kept on this device for 30 days and pruned when they expire or pass the cap."
+  "cacheHint": "Covers and avatars are kept on this device for 30 days and pruned when they expire or pass the cap.",
+  "preferPlatform": "Preferred platform",
+  "preferPlatformDesc": "The platform the popular and areas pages open with.",
+  "sitesOrderReset": "Restore default order",
+  "sitesOrderResetDesc": "Platforms return to the built-in order; the show switches stay as they are."
 }

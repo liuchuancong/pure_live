@@ -8,18 +8,21 @@ import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
 import 'package:pure_live/app/providers/refresh_settings_providers.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
-import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
+import 'package:pure_live/app/routing/app_router.dart' show RoomRoute, SearchRoute;
+import 'package:pure_live/features/favorites/favorite_rules.dart';
 import 'package:pure_live/features/favorites/follow_repository.dart';
 import 'package:pure_live/features/popular/room_card.dart' show RoomCard;
+import 'package:pure_live/features/settings/sites_display_provider.dart' show sitesDisplayProvider, sitesOrderProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
-import 'package:pure_live/shared/platforms/platform_picker.dart';
+import 'package:pure_live/shared/platforms/platform_picker.dart' show kAllPlatforms;
 
-/// The follows page (the reference's `FavoritePage`): the status tabs
-/// (live / offline / all) beside the platform tabs ("all", then every
-/// platform with follows), a refresh button over the visible slice, and
-/// the followed rooms as the home feed's own card grid with an unfollow
-/// heart on each cover.
+/// The follows page (the reference's `FavoritePage`): the group tabs (all,
+/// live, replay, offline — each with its count on the shown platform)
+/// above the platform tabs (each with its count in the shown group), a
+/// refresh button over the visible slice with its progress bar, and the
+/// followed rooms as the home feed's own card grid with an unfollow heart
+/// on each cover.
 final class FavoritesPage extends ConsumerStatefulWidget {
   /// The favorites page.
   const FavoritesPage({super.key});
@@ -28,11 +31,9 @@ final class FavoritesPage extends ConsumerStatefulWidget {
   ConsumerState<FavoritesPage> createState() => _FavoritesPageState();
 }
 
-/// The status the tabs filter by.
-enum _FollowStatus { all, live, offline }
-
 final class _FavoritesPageState extends ConsumerState<FavoritesPage> with WidgetsBindingObserver {
-  _FollowStatus _status = _FollowStatus.all;
+  /// The group shown; null is every group.
+  LiveFollowGroup? _group;
 
   /// The platform shown ([kAllPlatforms] for all); local like the
   /// reference's — what a follow list shows depends on what is followed.
@@ -40,6 +41,9 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
 
   /// Whether a refresh is running: the header's button spins.
   bool _refreshing = false;
+
+  /// Progress of the visible refresh (0..1); null when none is shown.
+  double? _progress;
 
   Timer? _autoRefresh;
 
@@ -73,18 +77,70 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     if (!choice.enabled) return;
     _autoRefresh = Timer.periodic(Duration(minutes: choice.minutes), (_) {
       if (!mounted || _refreshing) return;
-      unawaited(_runRefresh());
+      // The clock keeps every follow current, whatever tab is shown (the
+      // reference's `autoRefreshFavorite`); it stays silent.
+      unawaited(_refresh(ref.read(followsProvider).rooms, showProgress: false));
     });
   }
 
+  /// The platform shown, falling back to "all" when its last follow left.
+  String _visiblePlatform(List<LiveRoom> rooms) {
+    if (_platform == kAllPlatforms) return kAllPlatforms;
+    final platforms = followPlatformTabs(rooms, ref.read(sitesDisplayProvider.notifier).visibleIds());
+    return platforms.contains(_platform) ? _platform : kAllPlatforms;
+  }
+
+  /// Refreshes the visible platform and group (the reference's
+  /// `refreshVisible`). An empty group refreshes its platform instead: the
+  /// refresh is what moves a room into the group, so refreshing nothing
+  /// would leave the empty state's button dead.
   Future<void> _runRefresh() async {
+    final rooms = ref.read(followsProvider).rooms;
+    final platform = _visiblePlatform(rooms);
+    final scope = platform == kAllPlatforms ? null : platform;
+    final slice = [
+      for (final room in rooms)
+        if (onFollowPlatform(room, scope) && (_group == null || followGroupOf(room) == _group)) room,
+    ];
+    final targets = slice.isEmpty
+        ? [
+            for (final room in rooms)
+              if (onFollowPlatform(room, scope)) room,
+          ]
+        : slice;
+    await _refresh(targets, showProgress: true);
+  }
+
+  Future<void> _refresh(List<LiveRoom> targets, {required bool showProgress}) async {
     if (_refreshing) return;
-    setState(() => _refreshing = true);
+    setState(() {
+      _refreshing = true;
+      if (showProgress) _progress = 0;
+    });
     try {
-      await ref.read(followsProvider.notifier).refresh();
+      final failed = await ref
+          .read(followsProvider.notifier)
+          .refreshRooms(targets, onProgress: showProgress ? _onRefreshProgress : null);
+      if (showProgress && failed > 0 && mounted) {
+        showDsToast(
+          context: context,
+          title: context.t.favorites.refreshFailed(count: failed),
+          status: DsStatus.danger,
+        );
+      }
     } finally {
-      if (mounted) setState(() => _refreshing = false);
+      if (mounted) {
+        setState(() {
+          _refreshing = false;
+          _progress = null;
+        });
+      }
     }
+  }
+
+  void _onRefreshProgress(int done, int total) {
+    if (!mounted) return;
+    setState(() => _progress = total == 0 ? 1 : done / total);
   }
 
   @override
@@ -92,6 +148,11 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     final t = context.t;
     final follows = ref.watch(followsProvider);
     final cardExtent = ref.watch(browseSettingsProvider.select((settings) => settings.homeCardExtent));
+    // A platform switched off, or the order dragged, in the settings
+    // surface reorders the tabs.
+    ref
+      ..watch(sitesDisplayProvider)
+      ..watch(sitesOrderProvider);
     if (!follows.ready) {
       // A locked box (a second app instance) or a broken store says so,
       // with the retry that re-opens the repository once the other
@@ -104,6 +165,8 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
             description: Text(follows.error!),
             actions: [
               DsButton(
+                variant: DsButtonVariant.primary,
+                size: DsSize.sm,
                 onPressed: () {
                   ref
                     ..invalidate(followRepositoryProvider)
@@ -123,26 +186,34 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
       );
     }
     if (follows.rooms.isEmpty) {
+      // Nothing followed at all: the one useful next step is finding a
+      // room, so the empty page opens the search.
       return Center(
         child: DsEmptyState(
           icon: const DsIcon(DsIcons.heart),
           title: Text(t.favorites.emptyTitle),
           description: Text(t.favorites.emptyDescription),
+          actions: [
+            DsButton(
+              variant: DsButtonVariant.primary,
+              size: DsSize.sm,
+              leading: const DsIcon(DsIcons.search, size: 16),
+              onPressed: () => const SearchRoute().go(context),
+              child: Text(t.favorites.searchLive),
+            ),
+          ],
         ),
       );
     }
 
-    // The platform tabs: "all", then every platform with follows, in
-    // registry order (the reference's platformTabs).
-    final platforms = <String>[
-      kAllPlatforms,
-      ...{for (final room in follows.rooms) room.ref.platform},
-    ];
+    final platformTabs = followPlatformTabs(follows.rooms, ref.read(sitesDisplayProvider.notifier).visibleIds());
+    final platform = platformTabs.contains(_platform) ? _platform : kAllPlatforms;
+    final scope = platform == kAllPlatforms ? null : platform;
+    final counts = followGroupCounts(follows.rooms, scope);
+    final total = followCount(follows.rooms, platform: scope);
     final rooms = [
       for (final room in follows.rooms)
-        if ((_platform == kAllPlatforms || room.ref.platform == _platform) &&
-            (_status == _FollowStatus.all || (_status == _FollowStatus.live) == room.broadcast.isLiveNow))
-          room,
+        if (onFollowPlatform(room, scope) && (_group == null || followGroupOf(room) == _group)) room,
     ];
 
     return Column(
@@ -150,46 +221,84 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
-          // A wrap, not a row: the status segments, the platform tabs and
-          // the refresh button each keep their own width, and a narrow
-          // window flows them onto a second line instead of overflowing.
-          child: Wrap(
-            spacing: DsSpace.s12,
-            runSpacing: DsSpace.s8,
-            crossAxisAlignment: WrapCrossAlignment.center,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: DsSpace.s8,
             children: [
-              DsSegmentedControl<_FollowStatus>(
-                segments: [
-                  DsSegment(value: _FollowStatus.all, label: Text(t.favorites.statusAll)),
-                  DsSegment(value: _FollowStatus.live, label: Text(t.favorites.statusLive)),
-                  DsSegment(value: _FollowStatus.offline, label: Text(t.favorites.statusOffline)),
+              // The group tabs and the refresh button share the first line:
+              // the tabs scroll, the button keeps its width.
+              Row(
+                children: [
+                  Expanded(
+                    child: DsTabs<LiveFollowGroup?>(
+                      value: _group,
+                      onChanged: (value) => setState(() => _group = value),
+                      tabs: [
+                        DsTab<LiveFollowGroup?>(value: null, label: Text(t.favorites.statusAll), count: total),
+                        DsTab<LiveFollowGroup?>(
+                          value: LiveFollowGroup.live,
+                          label: Text(t.favorites.statusLive),
+                          count: counts[LiveFollowGroup.live],
+                        ),
+                        DsTab<LiveFollowGroup?>(
+                          value: LiveFollowGroup.replay,
+                          label: Text(t.favorites.statusReplay),
+                          count: counts[LiveFollowGroup.replay],
+                        ),
+                        DsTab<LiveFollowGroup?>(
+                          value: LiveFollowGroup.offline,
+                          label: Text(t.favorites.statusOffline),
+                          count: counts[LiveFollowGroup.offline],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: DsSpace.s12),
+                  _RefreshButton(refreshing: _refreshing, onRefresh: _runRefresh),
                 ],
-                value: _status,
-                onChanged: (value) => setState(() => _status = value),
               ),
-              SizedBox(
-                width: 260,
-                child: PlatformTabRow(
-                  platforms: platforms,
-                  current: _platform,
-                  nameOf: _platformName,
-                  semanticLabel: t.favorites.statusAll,
-                  onChanged: (id) => setState(() => _platform = id),
+              // The platform tabs: "all", then every platform with follows
+              // in the configured order, each with its count in the group.
+              DsTabs<String>(
+                value: platform,
+                onChanged: (value) => setState(() => _platform = value),
+                tabs: [
+                  for (final id in <String>[kAllPlatforms, ...platformTabs])
+                    DsTab<String>(
+                      value: id,
+                      label: Text(_platformName(id)),
+                      count: followCount(follows.rooms, platform: id == kAllPlatforms ? null : id, group: _group),
+                    ),
+                ],
+              ),
+              if (_progress case final progress?)
+                DsProgressBar(
+                  value: progress,
+                  semanticLabel: t.favorites.refresh,
+                  style: const DsProgressBarStyle(height: 2.5),
                 ),
-              ),
-              _RefreshButton(refreshing: _refreshing, onRefresh: _runRefresh),
             ],
           ),
         ),
         Expanded(
-          child: CardGrid<LiveRoom>(
-            items: rooms,
-            cardExtent: cardExtent,
-            itemBuilder: (context, room) => _FollowedCard(
-              room: room,
-              onUnfollow: () => unawaited(ref.read(followsProvider.notifier).remove(room.ref.identityKey)),
-            ),
-          ),
+          child: rooms.isEmpty
+              ? Center(
+                  child: _EmptySlice(
+                    group: _group,
+                    offlineCount: counts[LiveFollowGroup.offline] ?? 0,
+                    refreshing: _refreshing,
+                    onShowOffline: () => setState(() => _group = LiveFollowGroup.offline),
+                    onRefresh: _runRefresh,
+                  ),
+                )
+              : CardGrid<LiveRoom>(
+                  items: rooms,
+                  cardExtent: cardExtent,
+                  itemBuilder: (context, room) => _FollowedCard(
+                    room: room,
+                    onUnfollow: () => unawaited(ref.read(followsProvider.notifier).remove(room.ref.identityKey)),
+                  ),
+                ),
         ),
       ],
     );
@@ -199,6 +308,58 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     if (id == kAllPlatforms) return context.t.favorites.statusAll;
     final site = ref.read(sitesProvider).getById(id);
     return site?.manifest.name['zh-CN'] ?? id;
+  }
+}
+
+/// The empty state of one group on the shown platform: the group's title,
+/// a refresh, and — when offline follows exist elsewhere — the hint and
+/// button that switch to them (the reference's "view offline").
+final class _EmptySlice extends StatelessWidget {
+  const _EmptySlice({
+    required this.group,
+    required this.offlineCount,
+    required this.refreshing,
+    required this.onShowOffline,
+    required this.onRefresh,
+  });
+
+  final LiveFollowGroup? group;
+  final int offlineCount;
+  final bool refreshing;
+  final VoidCallback onShowOffline;
+  final VoidCallback onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final canShowOffline = group != LiveFollowGroup.offline && offlineCount > 0;
+    final title = switch (group) {
+      LiveFollowGroup.live => t.favorites.emptyLiveTitle,
+      LiveFollowGroup.replay => t.favorites.emptyReplayTitle,
+      LiveFollowGroup.offline => t.favorites.emptyOfflineTitle,
+      null => t.favorites.emptyTitle,
+    };
+    return DsEmptyState(
+      icon: DsIcon(group == LiveFollowGroup.offline ? DsIcons.eyeOff : DsIcons.heart),
+      title: Text(title),
+      description: Text(canShowOffline ? t.favorites.emptyOfflineHint : t.favorites.emptyGroupHint),
+      actions: [
+        if (canShowOffline)
+          DsButton(
+            variant: DsButtonVariant.primary,
+            size: DsSize.sm,
+            leading: const DsIcon(DsIcons.eyeOff, size: 16),
+            onPressed: onShowOffline,
+            child: Text(t.favorites.showOffline),
+          ),
+        DsButton(
+          variant: canShowOffline ? DsButtonVariant.secondary : DsButtonVariant.primary,
+          size: DsSize.sm,
+          onPressed: refreshing ? null : onRefresh,
+          child: Text(t.favorites.refresh),
+        ),
+      ],
+    );
   }
 }
 

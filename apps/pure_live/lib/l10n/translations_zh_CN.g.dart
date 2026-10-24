@@ -313,6 +313,105 @@ class Translations$backup$zh_CN {
 
 	/// zh-CN: '另一项操作正在进行'
 	String get busy => '另一项操作正在进行';
+
+	/// zh-CN: '选择备份文件夹'
+	String get folderPickTitle => '选择备份文件夹';
+
+	/// zh-CN: '备份文件夹'
+	String get folderTitle => '备份文件夹';
+
+	/// zh-CN: '默认文件夹'
+	String get folderDefault => '默认文件夹';
+
+	/// zh-CN: '正在获取…'
+	String get folderLoading => '正在获取…';
+
+	/// zh-CN: '恢复默认文件夹'
+	String get folderReset => '恢复默认文件夹';
+
+	/// zh-CN: '打开备份文件夹'
+	String get folderOpen => '打开备份文件夹';
+
+	/// zh-CN: '备份文件夹不可写，请换一个'
+	String get folderUnwritable => '备份文件夹不可写，请换一个';
+
+	/// zh-CN: '保存备份文件夹失败'
+	String get folderSaveFailed => '保存备份文件夹失败';
+
+	/// zh-CN: '无法打开备份文件夹'
+	String get openFolderFailed => '无法打开备份文件夹';
+
+	/// zh-CN: '创建备份'
+	String get createTitle => '创建备份';
+
+	/// zh-CN: '把关注、观看历史、关注分区与设置写入备份文件夹。'
+	String get createDescription => '把关注、观看历史、关注分区与设置写入备份文件夹。';
+
+	/// zh-CN: '创建关注备份'
+	String get createFollowsTitle => '创建关注备份';
+
+	/// zh-CN: '只备份关注的房间与分区。'
+	String get createFollowsDescription => '只备份关注的房间与分区。';
+
+	/// zh-CN: '已创建 {name: String}'
+	String createDone({required String name}) => '已创建 ${name}';
+
+	/// zh-CN: '创建备份失败'
+	String get createFailed => '创建备份失败';
+
+	/// zh-CN: '备份文件'
+	String get filesSection => '备份文件';
+
+	/// zh-CN: '{count: int} 个备份文件'
+	String filesCount({required int count}) => '${count} 个备份文件';
+
+	/// zh-CN: '文件夹里还没有备份文件'
+	String get filesEmpty => '文件夹里还没有备份文件';
+
+	/// zh-CN: '读取备份文件夹失败'
+	String get filesFailed => '读取备份文件夹失败';
+
+	/// zh-CN: '检查文件夹是否存在且可读，点击重试。'
+	String get filesFailedHint => '检查文件夹是否存在且可读，点击重试。';
+
+	/// zh-CN: '{time: String} · {size: String} · {kind: String}'
+	String fileMeta({required String time, required String size, required String kind}) => '${time} · ${size} · ${kind}';
+
+	/// zh-CN: '完整备份'
+	String get kindFull => '完整备份';
+
+	/// zh-CN: '仅关注'
+	String get kindFollows => '仅关注';
+
+	/// zh-CN: '删除备份文件'
+	String get fileDelete => '删除备份文件';
+
+	/// zh-CN: '恢复这个备份？'
+	String get restoreConfirmTitle => '恢复这个备份？';
+
+	/// zh-CN: '将用 {name: String} 覆盖本机的关注、观看历史、关注分区与设置，当前数据无法找回。'
+	String restoreConfirmDesc({required String name}) => '将用 ${name} 覆盖本机的关注、观看历史、关注分区与设置，当前数据无法找回。';
+
+	/// zh-CN: '将用 {name: String} 覆盖本机的关注与关注分区，其他数据保持不变。'
+	String restoreFollowsConfirmDesc({required String name}) => '将用 ${name} 覆盖本机的关注与关注分区，其他数据保持不变。';
+
+	/// zh-CN: '恢复失败'
+	String get restoreFailed => '恢复失败';
+
+	/// zh-CN: '删除这个备份文件？'
+	String get deleteConfirmTitle => '删除这个备份文件？';
+
+	/// zh-CN: '{name: String} 将被永久删除。'
+	String deleteConfirmDesc({required String name}) => '${name} 将被永久删除。';
+
+	/// zh-CN: '备份文件已删除'
+	String get deleteDone => '备份文件已删除';
+
+	/// zh-CN: '删除备份文件失败'
+	String get deleteFileFailed => '删除备份文件失败';
+
+	/// zh-CN: '关注 {follows: int} · 分区 {areas: int}'
+	String summaryFollows({required int follows, required int areas}) => '关注 ${follows} · 分区 ${areas}';
 }
 
 // Path: common
@@ -385,6 +484,9 @@ class Translations$common$zh_CN {
 
 	/// zh-CN: '打开导航'
 	String get openNavigation => '打开导航';
+
+	/// zh-CN: '刷新失败'
+	String get refreshFailed => '刷新失败';
 }
 
 // Path: favorites
@@ -418,6 +520,33 @@ class Translations$favorites$zh_CN {
 
 	/// zh-CN: '关注列表打不开'
 	String get openFailedTitle => '关注列表打不开';
+
+	/// zh-CN: '录播'
+	String get statusReplay => '录播';
+
+	/// zh-CN: '搜索直播'
+	String get searchLive => '搜索直播';
+
+	/// zh-CN: '当前筛选暂无已开播直播'
+	String get emptyLiveTitle => '当前筛选暂无已开播直播';
+
+	/// zh-CN: '当前筛选暂无录播'
+	String get emptyReplayTitle => '当前筛选暂无录播';
+
+	/// zh-CN: '当前筛选暂无未开播直播'
+	String get emptyOfflineTitle => '当前筛选暂无未开播直播';
+
+	/// zh-CN: '有未开播的关注，切换到「未开播」即可查看。'
+	String get emptyOfflineHint => '有未开播的关注，切换到「未开播」即可查看。';
+
+	/// zh-CN: '换个分组或平台，或刷新重新获取状态。'
+	String get emptyGroupHint => '换个分组或平台，或刷新重新获取状态。';
+
+	/// zh-CN: '查看未开播'
+	String get showOffline => '查看未开播';
+
+	/// zh-CN: '{count: int} 个直播间刷新失败'
+	String refreshFailed({required int count}) => '${count} 个直播间刷新失败';
 }
 
 // Path: history
@@ -451,6 +580,78 @@ class Translations$history$zh_CN {
 
 	/// zh-CN: '历史记录打不开'
 	String get openFailedTitle => '历史记录打不开';
+
+	/// zh-CN: '已记录 {count: int} / 上限 {limit: int} 条'
+	String recordCount({required int count, required int limit}) => '已记录 ${count} / 上限 ${limit} 条';
+
+	/// zh-CN: '筛选'
+	String get filter => '筛选';
+
+	/// zh-CN: '关闭筛选'
+	String get filterClose => '关闭筛选';
+
+	/// zh-CN: '按标题、主播、房间号或平台筛选'
+	String get filterHint => '按标题、主播、房间号或平台筛选';
+
+	/// zh-CN: '{count: int} 条匹配'
+	String filterMatches({required int count}) => '${count} 条匹配';
+
+	/// zh-CN: '清除筛选'
+	String get filterReset => '清除筛选';
+
+	/// zh-CN: '没有符合条件的观看记录'
+	String get filterEmptyTitle => '没有符合条件的观看记录';
+
+	/// zh-CN: '换个关键词，或清除筛选试试。'
+	String get filterEmptyDescription => '换个关键词，或清除筛选试试。';
+
+	/// zh-CN: '删除观看记录？'
+	String get deleteConfirmTitle => '删除观看记录？';
+
+	/// zh-CN: '要从观看记录中删除“{title: String}”吗？仅删除这一条记录。'
+	String deleteConfirmDesc({required String title}) => '要从观看记录中删除“${title}”吗？仅删除这一条记录。';
+
+	/// zh-CN: '删除'
+	String get deleteAction => '删除';
+
+	/// zh-CN: '已从观看记录删除'
+	String get deleteDone => '已从观看记录删除';
+
+	/// zh-CN: '清空观看记录？'
+	String get clearConfirmTitle => '清空观看记录？';
+
+	/// zh-CN: '确定清空这 {count: int} 条观看记录吗？此操作不可撤销。'
+	String clearConfirmDesc({required int count}) => '确定清空这 ${count} 条观看记录吗？此操作不可撤销。';
+
+	/// zh-CN: '确定删除筛选出的 {count: int} 条观看记录吗？其他记录不受影响，此操作不可撤销。'
+	String clearFilteredConfirmDesc({required int count}) => '确定删除筛选出的 ${count} 条观看记录吗？其他记录不受影响，此操作不可撤销。';
+
+	/// zh-CN: '已清空 {count: int} 条观看记录'
+	String clearDone({required int count}) => '已清空 ${count} 条观看记录';
+
+	/// zh-CN: '观看记录更改未保存，请重试。'
+	String get changeFailed => '观看记录更改未保存，请重试。';
+
+	/// zh-CN: '调整上限'
+	String get limitAction => '调整上限';
+
+	/// zh-CN: '观看记录保留数量'
+	String get limitTitle => '观看记录保留数量';
+
+	/// zh-CN: '超出上限后，最早的记录会被移除。'
+	String get limitDescription => '超出上限后，最早的记录会被移除。';
+
+	/// zh-CN: '预设数量'
+	String get limitPresetsLabel => '预设数量';
+
+	/// zh-CN: '自定义数量'
+	String get limitCustomLabel => '自定义数量';
+
+	/// zh-CN: '请输入 {min: int} 到 {max: int} 之间的整数。'
+	String limitInvalid({required int min, required int max}) => '请输入 ${min} 到 ${max} 之间的整数。';
+
+	/// zh-CN: '上限已设为 {limit: int} 条'
+	String limitSaved({required int limit}) => '上限已设为 ${limit} 条';
 }
 
 // Path: iptv
@@ -529,6 +730,213 @@ class Translations$iptv$zh_CN {
 
 	/// zh-CN: '还没有节目单源，导入一个后频道卡就会显示正在播的节目。'
 	String get epgEmpty => '还没有节目单源，导入一个后频道卡就会显示正在播的节目。';
+
+	/// zh-CN: '选择用于节目单的指南源；同一时间只使用一个。'
+	String get activeGuideDescription => '选择用于节目单的指南源；同一时间只使用一个。';
+
+	/// zh-CN: '未选择'
+	String get activeGuideNone => '未选择';
+
+	/// zh-CN: '使用中的指南'
+	String get activeGuideTitle => '使用中的指南';
+
+	/// zh-CN: '自动更新'
+	String get autoUpdate => '自动更新';
+
+	/// zh-CN: '打开后按间隔自动重新拉取订阅源。'
+	String get autoUpdateHint => '打开后按间隔自动重新拉取订阅源。';
+
+	/// zh-CN: '{count: int} 个频道'
+	String channelCount({required int count}) => '${count} 个频道';
+
+	/// zh-CN: '选择指南源'
+	String get chooseGuide => '选择指南源';
+
+	/// zh-CN: '删除'
+	String get delete => '删除';
+
+	/// zh-CN: '这是正在使用的指南，删除后将改用其他来源。'
+	String get deleteActiveGuideNote => '这是正在使用的指南，删除后将改用其他来源。';
+
+	/// zh-CN: '删除指南源“{name: String}”？已下载的节目单会一并移除。'
+	String deleteGuideMessage({required String name}) => '删除指南源“${name}”？已下载的节目单会一并移除。';
+
+	/// zh-CN: '删除指南源？'
+	String get deleteGuideTitle => '删除指南源？';
+
+	/// zh-CN: '删除“{name: String}”及其 {count: int} 个频道？'
+	String deletePlaylistMessage({required String name, required int count}) => '删除“${name}”及其 ${count} 个频道？';
+
+	/// zh-CN: '删除播放列表？'
+	String get deletePlaylistTitle => '删除播放列表？';
+
+	/// zh-CN: '已删除“{name: String}”'
+	String deleted({required String name}) => '已删除“${name}”';
+
+	/// zh-CN: '指南名称'
+	String get guideName => '指南名称';
+
+	/// zh-CN: '例如：我的 EPG'
+	String get guideNameHint => '例如：我的 EPG';
+
+	/// zh-CN: '已切换到“{name: String}”'
+	String guideSelected({required String name}) => '已切换到“${name}”';
+
+	/// zh-CN: '导入'
+	String get importAction => '导入';
+
+	/// zh-CN: '请输入有效的订阅地址'
+	String get importAddressInvalid => '请输入有效的订阅地址';
+
+	/// zh-CN: '请先输入订阅地址'
+	String get importAddressRequired => '请先输入订阅地址';
+
+	/// zh-CN: '导入失败'
+	String get importFailed => '导入失败';
+
+	/// zh-CN: '不支持的文件格式'
+	String get importFormat => '不支持的文件格式';
+
+	/// zh-CN: '从文件'
+	String get importFromFile => '从文件';
+
+	/// zh-CN: '粘贴文本'
+	String get importFromText => '粘贴文本';
+
+	/// zh-CN: '订阅地址'
+	String get importFromUrl => '订阅地址';
+
+	/// zh-CN: '导入指南'
+	String get importGuide => '导入指南';
+
+	/// zh-CN: '支持 XMLTV 地址或文件；导入后会下载节目单。'
+	String get importGuideDescription => '支持 XMLTV 地址或文件；导入后会下载节目单。';
+
+	/// zh-CN: '内容不是有效的播放列表'
+	String get importInvalid => '内容不是有效的播放列表';
+
+	/// zh-CN: '请输入播放列表名称'
+	String get importNameRequired => '请输入播放列表名称';
+
+	/// zh-CN: '网络请求失败，请检查地址或代理'
+	String get importNetworkFailed => '网络请求失败，请检查地址或代理';
+
+	/// zh-CN: '导入播放列表'
+	String get importPlaylist => '导入播放列表';
+
+	/// zh-CN: '支持 M3U/M3U8/TXT 地址、文件或粘贴的文本。'
+	String get importPlaylistDescription => '支持 M3U/M3U8/TXT 地址、文件或粘贴的文本。';
+
+	/// zh-CN: '已导入“{name: String}”，跳过 {count: int} 项'
+	String importSkipped({required String name, required int count}) => '已导入“${name}”，跳过 ${count} 项';
+
+	/// zh-CN: '请粘贴播放列表内容'
+	String get importTextRequired => '请粘贴播放列表内容';
+
+	/// zh-CN: '已导入“{name: String}”'
+	String imported({required String name}) => '已导入“${name}”';
+
+	/// zh-CN: '导入于 {time: String}'
+	String importedAt({required String time}) => '导入于 ${time}';
+
+	/// zh-CN: '使用中'
+	String get inUse => '使用中';
+
+	/// zh-CN: '更新于 {time: String}'
+	String lastRefresh({required String time}) => '更新于 ${time}';
+
+	/// zh-CN: '本地'
+	String get localTag => '本地';
+
+	/// zh-CN: '网络'
+	String get networkTag => '网络';
+
+	/// zh-CN: '尚未更新'
+	String get neverUpdated => '尚未更新';
+
+	/// zh-CN: '还没有指南源'
+	String get noGuidesTitle => '还没有指南源';
+
+	/// zh-CN: '从订阅地址、文件或粘贴的文本导入播放列表。'
+	String get noPlaylistsDescription => '从订阅地址、文件或粘贴的文本导入播放列表。';
+
+	/// zh-CN: '还没有播放列表'
+	String get noPlaylistsTitle => '还没有播放列表';
+
+	/// zh-CN: '选择播放列表文件'
+	String get pickPlaylistFile => '选择播放列表文件';
+
+	/// zh-CN: '播放列表名称'
+	String get playlistName => '播放列表名称';
+
+	/// zh-CN: '例如：我的频道'
+	String get playlistNameHint => '例如：我的频道';
+
+	/// zh-CN: '播放列表内容'
+	String get playlistText => '播放列表内容';
+
+	/// zh-CN: '粘贴 M3U/M3U8/TXT 内容'
+	String get playlistTextHint => '粘贴 M3U/M3U8/TXT 内容';
+
+	/// zh-CN: '订阅地址'
+	String get playlistUrl => '订阅地址';
+
+	/// zh-CN: 'https://example.com/playlist.m3u'
+	String get playlistUrlHint => 'https://example.com/playlist.m3u';
+
+	/// zh-CN: '播放列表'
+	String get playlistsTitle => '播放列表';
+
+	/// zh-CN: '同名播放列表已存在，导入内容将替换它。'
+	String get replaceMessage => '同名播放列表已存在，导入内容将替换它。';
+
+	/// zh-CN: '替换“{name: String}”？'
+	String replaceTitle({required String name}) => '替换“${name}”？';
+
+	/// zh-CN: '订阅源已变化，已更新缓存'
+	String get sourceChanged => '订阅源已变化，已更新缓存';
+
+	/// zh-CN: '频道'
+	String get statChannels => '频道';
+
+	/// zh-CN: '指南'
+	String get statGuides => '指南';
+
+	/// zh-CN: '播放列表'
+	String get statPlaylists => '播放列表';
+
+	/// zh-CN: '同步'
+	String get sync => '同步';
+
+	/// zh-CN: '全部同步'
+	String get syncAll => '全部同步';
+
+	/// zh-CN: '已同步 {count: int} 个播放列表'
+	String syncAllDone({required int count}) => '已同步 ${count} 个播放列表';
+
+	/// zh-CN: '没有可同步的播放列表'
+	String get syncAllNone => '没有可同步的播放列表';
+
+	/// zh-CN: '{failed: int} / {count: int} 个播放列表同步失败'
+	String syncAllPartial({required int failed, required int count}) => '${failed} / ${count} 个播放列表同步失败';
+
+	/// zh-CN: '正在同步 {done: int} / {total: int}'
+	String syncAllRunning({required int done, required int total}) => '正在同步 ${done} / ${total}';
+
+	/// zh-CN: '“{name: String}”同步失败'
+	String syncFailed({required String name}) => '“${name}”同步失败';
+
+	/// zh-CN: '已同步“{name: String}”'
+	String synced({required String name}) => '已同步“${name}”';
+
+	/// zh-CN: '频道'
+	String get viewChannels => '频道';
+
+	/// zh-CN: '视图'
+	String get viewLabel => '视图';
+
+	/// zh-CN: '播放列表'
+	String get viewSources => '播放列表';
 }
 
 // Path: multiview
@@ -808,6 +1216,57 @@ class Translations$recorder$zh_CN {
 
 	/// zh-CN: '录制超过上限后分卷保存，播放器接入后生效。'
 	String get maxSizeDescription => '录制超过上限后分卷保存，播放器接入后生效。';
+
+	/// zh-CN: '筛选'
+	String get filterLabel => '筛选';
+
+	/// zh-CN: '全部'
+	String get filterAll => '全部';
+
+	/// zh-CN: '录制中'
+	String get filterRecording => '录制中';
+
+	/// zh-CN: '等待'
+	String get filterWaiting => '等待';
+
+	/// zh-CN: '已保存'
+	String get filterSaved => '已保存';
+
+	/// zh-CN: '失败'
+	String get filterFailed => '失败';
+
+	/// zh-CN: '“{status: String}”里还没有任务'
+	String emptyFilterTitle({required String status}) => '“${status}”里还没有任务';
+
+	/// zh-CN: '等待开播'
+	String get stateWaiting => '等待开播';
+
+	/// zh-CN: '已保存'
+	String get stateSaved => '已保存';
+
+	/// zh-CN: '更多操作'
+	String get menuMore => '更多操作';
+
+	/// zh-CN: '进入直播间'
+	String get openRoom => '进入直播间';
+
+	/// zh-CN: '打开文件夹'
+	String get openFolder => '打开文件夹';
+
+	/// zh-CN: '无法打开文件夹'
+	String get openFolderFailed => '无法打开文件夹';
+
+	/// zh-CN: '删除'
+	String get delete => '删除';
+
+	/// zh-CN: '删除“{name: String}”？'
+	String deleteTitle({required String name}) => '删除“${name}”？';
+
+	/// zh-CN: '只删除这条录制任务记录，已保存的视频文件不会被删除。'
+	String get deleteBody => '只删除这条录制任务记录，已保存的视频文件不会被删除。';
+
+	/// zh-CN: '录制设置'
+	String get settingsOpen => '录制设置';
 }
 
 // Path: room
@@ -1294,6 +1753,18 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '封面与头像会在本机缓存 30 天，过期或超限时自动清理。'
 	String get cacheHint => '封面与头像会在本机缓存 30 天，过期或超限时自动清理。';
+
+	/// zh-CN: '首选平台'
+	String get preferPlatform => '首选平台';
+
+	/// zh-CN: '进入热门或分区时优先显示的平台。'
+	String get preferPlatformDesc => '进入热门或分区时优先显示的平台。';
+
+	/// zh-CN: '恢复默认顺序'
+	String get sitesOrderReset => '恢复默认顺序';
+
+	/// zh-CN: '平台回到内置的排列顺序；显示开关不受影响。'
+	String get sitesOrderResetDesc => '平台回到内置的排列顺序；显示开关不受影响。';
 }
 
 // Path: shield
@@ -1676,6 +2147,39 @@ extension on Translations {
 			'backup.webdavServerFailed' => ({required Object status}) => '服务器返回错误（${status}）',
 			'backup.webdavFailed' => '操作失败',
 			'backup.busy' => '另一项操作正在进行',
+			'backup.folderPickTitle' => '选择备份文件夹',
+			'backup.folderTitle' => '备份文件夹',
+			'backup.folderDefault' => '默认文件夹',
+			'backup.folderLoading' => '正在获取…',
+			'backup.folderReset' => '恢复默认文件夹',
+			'backup.folderOpen' => '打开备份文件夹',
+			'backup.folderUnwritable' => '备份文件夹不可写，请换一个',
+			'backup.folderSaveFailed' => '保存备份文件夹失败',
+			'backup.openFolderFailed' => '无法打开备份文件夹',
+			'backup.createTitle' => '创建备份',
+			'backup.createDescription' => '把关注、观看历史、关注分区与设置写入备份文件夹。',
+			'backup.createFollowsTitle' => '创建关注备份',
+			'backup.createFollowsDescription' => '只备份关注的房间与分区。',
+			'backup.createDone' => ({required String name}) => '已创建 ${name}',
+			'backup.createFailed' => '创建备份失败',
+			'backup.filesSection' => '备份文件',
+			'backup.filesCount' => ({required int count}) => '${count} 个备份文件',
+			'backup.filesEmpty' => '文件夹里还没有备份文件',
+			'backup.filesFailed' => '读取备份文件夹失败',
+			'backup.filesFailedHint' => '检查文件夹是否存在且可读，点击重试。',
+			'backup.fileMeta' => ({required String time, required String size, required String kind}) => '${time} · ${size} · ${kind}',
+			'backup.kindFull' => '完整备份',
+			'backup.kindFollows' => '仅关注',
+			'backup.fileDelete' => '删除备份文件',
+			'backup.restoreConfirmTitle' => '恢复这个备份？',
+			'backup.restoreConfirmDesc' => ({required String name}) => '将用 ${name} 覆盖本机的关注、观看历史、关注分区与设置，当前数据无法找回。',
+			'backup.restoreFollowsConfirmDesc' => ({required String name}) => '将用 ${name} 覆盖本机的关注与关注分区，其他数据保持不变。',
+			'backup.restoreFailed' => '恢复失败',
+			'backup.deleteConfirmTitle' => '删除这个备份文件？',
+			'backup.deleteConfirmDesc' => ({required String name}) => '${name} 将被永久删除。',
+			'backup.deleteDone' => '备份文件已删除',
+			'backup.deleteFileFailed' => '删除备份文件失败',
+			'backup.summaryFollows' => ({required int follows, required int areas}) => '关注 ${follows} · 分区 ${areas}',
 			'common.appTitle' => 'Pure Live',
 			'common.empty' => '这里还没有内容',
 			'common.comingSoon' => '即将推出',
@@ -1697,6 +2201,7 @@ extension on Translations {
 			'common.searchHint' => '搜索房间、主播或站点',
 			'common.switchModule' => '切换内容类型',
 			'common.openNavigation' => '打开导航',
+			'common.refreshFailed' => '刷新失败',
 			'favorites.emptyTitle' => '还没有关注的房间',
 			'favorites.emptyDescription' => '在房间里点关注，就会出现在这里。',
 			'favorites.unfollow' => '取消关注',
@@ -1705,6 +2210,15 @@ extension on Translations {
 			'favorites.statusOffline' => '离线',
 			'favorites.refresh' => '刷新',
 			'favorites.openFailedTitle' => '关注列表打不开',
+			'favorites.statusReplay' => '录播',
+			'favorites.searchLive' => '搜索直播',
+			'favorites.emptyLiveTitle' => '当前筛选暂无已开播直播',
+			'favorites.emptyReplayTitle' => '当前筛选暂无录播',
+			'favorites.emptyOfflineTitle' => '当前筛选暂无未开播直播',
+			'favorites.emptyOfflineHint' => '有未开播的关注，切换到「未开播」即可查看。',
+			'favorites.emptyGroupHint' => '换个分组或平台，或刷新重新获取状态。',
+			'favorites.showOffline' => '查看未开播',
+			'favorites.refreshFailed' => ({required int count}) => '${count} 个直播间刷新失败',
 			'history.emptyTitle' => '还没有观看记录',
 			'history.emptyDescription' => '看过一场直播后，就会出现在这里。',
 			'history.clear' => '清空记录',
@@ -1713,6 +2227,30 @@ extension on Translations {
 			'history.yesterday' => '昨天',
 			'history.earlier' => '更早',
 			'history.openFailedTitle' => '历史记录打不开',
+			'history.recordCount' => ({required int count, required int limit}) => '已记录 ${count} / 上限 ${limit} 条',
+			'history.filter' => '筛选',
+			'history.filterClose' => '关闭筛选',
+			'history.filterHint' => '按标题、主播、房间号或平台筛选',
+			'history.filterMatches' => ({required int count}) => '${count} 条匹配',
+			'history.filterReset' => '清除筛选',
+			'history.filterEmptyTitle' => '没有符合条件的观看记录',
+			'history.filterEmptyDescription' => '换个关键词，或清除筛选试试。',
+			'history.deleteConfirmTitle' => '删除观看记录？',
+			'history.deleteConfirmDesc' => ({required String title}) => '要从观看记录中删除“${title}”吗？仅删除这一条记录。',
+			'history.deleteAction' => '删除',
+			'history.deleteDone' => '已从观看记录删除',
+			'history.clearConfirmTitle' => '清空观看记录？',
+			'history.clearConfirmDesc' => ({required int count}) => '确定清空这 ${count} 条观看记录吗？此操作不可撤销。',
+			'history.clearFilteredConfirmDesc' => ({required int count}) => '确定删除筛选出的 ${count} 条观看记录吗？其他记录不受影响，此操作不可撤销。',
+			'history.clearDone' => ({required int count}) => '已清空 ${count} 条观看记录',
+			'history.changeFailed' => '观看记录更改未保存，请重试。',
+			'history.limitAction' => '调整上限',
+			'history.limitTitle' => '观看记录保留数量',
+			'history.limitDescription' => '超出上限后，最早的记录会被移除。',
+			'history.limitPresetsLabel' => '预设数量',
+			'history.limitCustomLabel' => '自定义数量',
+			'history.limitInvalid' => ({required int min, required int max}) => '请输入 ${min} 到 ${max} 之间的整数。',
+			'history.limitSaved' => ({required int limit}) => '上限已设为 ${limit} 条',
 			'iptv.tabAll' => '全部',
 			'iptv.scopeLabel' => '频道范围',
 			'iptv.scopeAll' => '全部频道',
@@ -1736,6 +2274,75 @@ extension on Translations {
 			'iptv.epgFailed' => '节目单导入失败',
 			'iptv.epgRemove' => '删除此节目单源',
 			'iptv.epgEmpty' => '还没有节目单源，导入一个后频道卡就会显示正在播的节目。',
+			'iptv.activeGuideDescription' => '选择用于节目单的指南源；同一时间只使用一个。',
+			'iptv.activeGuideNone' => '未选择',
+			'iptv.activeGuideTitle' => '使用中的指南',
+			'iptv.autoUpdate' => '自动更新',
+			'iptv.autoUpdateHint' => '打开后按间隔自动重新拉取订阅源。',
+			'iptv.channelCount' => ({required int count}) => '${count} 个频道',
+			'iptv.chooseGuide' => '选择指南源',
+			'iptv.delete' => '删除',
+			'iptv.deleteActiveGuideNote' => '这是正在使用的指南，删除后将改用其他来源。',
+			'iptv.deleteGuideMessage' => ({required String name}) => '删除指南源“${name}”？已下载的节目单会一并移除。',
+			'iptv.deleteGuideTitle' => '删除指南源？',
+			'iptv.deletePlaylistMessage' => ({required String name, required int count}) => '删除“${name}”及其 ${count} 个频道？',
+			'iptv.deletePlaylistTitle' => '删除播放列表？',
+			'iptv.deleted' => ({required String name}) => '已删除“${name}”',
+			'iptv.guideName' => '指南名称',
+			'iptv.guideNameHint' => '例如：我的 EPG',
+			'iptv.guideSelected' => ({required String name}) => '已切换到“${name}”',
+			'iptv.importAction' => '导入',
+			'iptv.importAddressInvalid' => '请输入有效的订阅地址',
+			'iptv.importAddressRequired' => '请先输入订阅地址',
+			'iptv.importFailed' => '导入失败',
+			'iptv.importFormat' => '不支持的文件格式',
+			'iptv.importFromFile' => '从文件',
+			'iptv.importFromText' => '粘贴文本',
+			'iptv.importFromUrl' => '订阅地址',
+			'iptv.importGuide' => '导入指南',
+			'iptv.importGuideDescription' => '支持 XMLTV 地址或文件；导入后会下载节目单。',
+			'iptv.importInvalid' => '内容不是有效的播放列表',
+			'iptv.importNameRequired' => '请输入播放列表名称',
+			'iptv.importNetworkFailed' => '网络请求失败，请检查地址或代理',
+			'iptv.importPlaylist' => '导入播放列表',
+			'iptv.importPlaylistDescription' => '支持 M3U/M3U8/TXT 地址、文件或粘贴的文本。',
+			'iptv.importSkipped' => ({required String name, required int count}) => '已导入“${name}”，跳过 ${count} 项',
+			'iptv.importTextRequired' => '请粘贴播放列表内容',
+			'iptv.imported' => ({required String name}) => '已导入“${name}”',
+			'iptv.importedAt' => ({required String time}) => '导入于 ${time}',
+			'iptv.inUse' => '使用中',
+			'iptv.lastRefresh' => ({required String time}) => '更新于 ${time}',
+			'iptv.localTag' => '本地',
+			'iptv.networkTag' => '网络',
+			'iptv.neverUpdated' => '尚未更新',
+			'iptv.noGuidesTitle' => '还没有指南源',
+			'iptv.noPlaylistsDescription' => '从订阅地址、文件或粘贴的文本导入播放列表。',
+			'iptv.noPlaylistsTitle' => '还没有播放列表',
+			'iptv.pickPlaylistFile' => '选择播放列表文件',
+			'iptv.playlistName' => '播放列表名称',
+			'iptv.playlistNameHint' => '例如：我的频道',
+			'iptv.playlistText' => '播放列表内容',
+			'iptv.playlistTextHint' => '粘贴 M3U/M3U8/TXT 内容',
+			'iptv.playlistUrl' => '订阅地址',
+			'iptv.playlistUrlHint' => 'https://example.com/playlist.m3u',
+			'iptv.playlistsTitle' => '播放列表',
+			'iptv.replaceMessage' => '同名播放列表已存在，导入内容将替换它。',
+			'iptv.replaceTitle' => ({required String name}) => '替换“${name}”？',
+			'iptv.sourceChanged' => '订阅源已变化，已更新缓存',
+			'iptv.statChannels' => '频道',
+			'iptv.statGuides' => '指南',
+			'iptv.statPlaylists' => '播放列表',
+			'iptv.sync' => '同步',
+			'iptv.syncAll' => '全部同步',
+			'iptv.syncAllDone' => ({required int count}) => '已同步 ${count} 个播放列表',
+			'iptv.syncAllNone' => '没有可同步的播放列表',
+			'iptv.syncAllPartial' => ({required int failed, required int count}) => '${failed} / ${count} 个播放列表同步失败',
+			'iptv.syncAllRunning' => ({required int done, required int total}) => '正在同步 ${done} / ${total}',
+			'iptv.syncFailed' => ({required String name}) => '“${name}”同步失败',
+			'iptv.synced' => ({required String name}) => '已同步“${name}”',
+			'iptv.viewChannels' => '频道',
+			'iptv.viewLabel' => '视图',
+			'iptv.viewSources' => '播放列表',
 			'multiview.layoutLabel' => '布局',
 			'multiview.videoComingSoon' => '多画面播放将随播放器内核接入，现在可先排布格子并挑选房间。',
 			'multiview.pickRoom' => '选择房间',
@@ -1811,6 +2418,23 @@ extension on Translations {
 			'recorder.namingDialogHint' => '输入录制文件的命名模板',
 			'recorder.maxSizeTitle' => '单文件大小上限',
 			'recorder.maxSizeDescription' => '录制超过上限后分卷保存，播放器接入后生效。',
+			'recorder.filterLabel' => '筛选',
+			'recorder.filterAll' => '全部',
+			'recorder.filterRecording' => '录制中',
+			'recorder.filterWaiting' => '等待',
+			'recorder.filterSaved' => '已保存',
+			'recorder.filterFailed' => '失败',
+			'recorder.emptyFilterTitle' => ({required String status}) => '“${status}”里还没有任务',
+			'recorder.stateWaiting' => '等待开播',
+			'recorder.stateSaved' => '已保存',
+			'recorder.menuMore' => '更多操作',
+			'recorder.openRoom' => '进入直播间',
+			'recorder.openFolder' => '打开文件夹',
+			'recorder.openFolderFailed' => '无法打开文件夹',
+			'recorder.delete' => '删除',
+			'recorder.deleteTitle' => ({required String name}) => '删除“${name}”？',
+			'recorder.deleteBody' => '只删除这条录制任务记录，已保存的视频文件不会被删除。',
+			'recorder.settingsOpen' => '录制设置',
 			'room.opening' => '正在打开房间',
 			'room.follow' => '关注',
 			'room.unfollow' => '已关注',
@@ -1960,10 +2584,16 @@ extension on Translations {
 			'settings.cacheClear' => '清除缓存',
 			'settings.cacheClearDesc' => '删除所有已缓存的封面、头像与站点图标。',
 			'settings.cacheCleared' => '缓存已清除',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheLimit' => '自动清理上限',
 			'settings.cacheLimitDesc' => '超过上限时按最旧优先删除；关闭则只清理过期项。',
 			'settings.cacheLimitOff' => '不自动清理',
 			'settings.cacheHint' => '封面与头像会在本机缓存 30 天，过期或超限时自动清理。',
+			'settings.preferPlatform' => '首选平台',
+			'settings.preferPlatformDesc' => '进入热门或分区时优先显示的平台。',
+			'settings.sitesOrderReset' => '恢复默认顺序',
+			'settings.sitesOrderResetDesc' => '平台回到内置的排列顺序；显示开关不受影响。',
 			'shield.title' => '弹幕屏蔽',
 			'shield.description' => '按关键词与用户屏蔽直播间弹幕，规则保存在本机。',
 			'shield.masterTitle' => '总开关',

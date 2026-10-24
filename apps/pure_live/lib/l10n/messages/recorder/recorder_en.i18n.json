@@ -19,5 +19,22 @@
   "namingDescription": "Placeholders for date, time, platform, room id and title; takes effect with the player stack.",
   "namingDialogHint": "Enter the naming template for recording files",
   "maxSizeTitle": "Single-file size cap",
-  "maxSizeDescription": "Recordings split once a file reaches the cap; takes effect with the player stack."
+  "maxSizeDescription": "Recordings split once a file reaches the cap; takes effect with the player stack.",
+  "filterLabel": "Filter",
+  "filterAll": "All",
+  "filterRecording": "Recording",
+  "filterWaiting": "Waiting",
+  "filterSaved": "Saved",
+  "filterFailed": "Failed",
+  "emptyFilterTitle": "No tasks in “{status: String}” yet",
+  "stateWaiting": "Waiting for live",
+  "stateSaved": "Saved",
+  "menuMore": "More actions",
+  "openRoom": "Open live room",
+  "openFolder": "Open folder",
+  "openFolderFailed": "Could not open the folder",
+  "delete": "Delete",
+  "deleteTitle": "Delete “{name: String}”?",
+  "deleteBody": "This removes the task only; files already saved stay on disk.",
+  "settingsOpen": "Recording settings"
 }

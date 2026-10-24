@@ -38,8 +38,7 @@ final class FollowRepository {
   Future<void> merge(LiveRoom incoming) {
     final key = incoming.ref.identityKey;
     final stored = box.get(key);
-    final merged =
-        stored == null ? incoming : LiveRoom.fromJson(_jsonOf(stored)).mergedWith(incoming);
+    final merged = stored == null ? incoming : LiveRoom.fromJson(_jsonOf(stored)).mergedWith(incoming);
     return box.save(key, merged.toJson());
   }
 
@@ -126,24 +125,47 @@ final class FollowsController extends Notifier<FollowsState> {
   ///
   /// A platform without the room capability (or a failed ask) keeps the
   /// stored copy: the refresh reports no error, it just learns nothing.
+  /// This is the whole-list scope; the page calls [refreshRooms] with its
+  /// visible slice.
   Future<void> refresh() async {
+    await refreshRooms(state.rooms);
+  }
+
+  /// Refreshes [rooms] and answers how many asks failed; [onProgress] gets
+  /// the number done and the total after every ask, so the page can show
+  /// the bar. A platform without the room capability keeps its stored copy
+  /// and is not counted as a failure; a failed ask is.
+  Future<int> refreshRooms(Iterable<LiveRoom> rooms, {void Function(int done, int total)? onProgress}) async {
     final repository = ref.read(followRepositoryProvider).value;
-    if (repository == null) return;
-    final rooms = repository.list();
+    if (repository == null) return 0;
+    final targets = rooms.toList(growable: false);
     final sites = ref.read(sitesProvider);
+    var failed = 0;
+    var done = 0;
+    onProgress?.call(done, targets.length);
     // A handful of asks at a time keeps a full list from stampeding one
     // platform's endpoints.
     const batchSize = 4;
-    for (var start = 0; start < rooms.length; start += batchSize) {
-      final batch = rooms.sublist(start, (start + batchSize).clamp(0, rooms.length));
-      Future<void> refreshOne(LiveRoom room) {
-        final provider = sites.getById(room.ref.platform)?.capability<LiveRoomProvider>();
-        if (provider == null) return Future<void>.value();
-        return provider.getRoom(room.ref.roomId).then((answer) => answer.match((_) {}, repository.merge));
+    for (var start = 0; start < targets.length; start += batchSize) {
+      final batch = targets.sublist(start, (start + batchSize).clamp(0, targets.length));
+      Future<void> refreshOne(LiveRoom room) async {
+        try {
+          final provider = sites.getById(room.ref.platform)?.capability<LiveRoomProvider>();
+          if (provider == null) return;
+          final answer = await provider.getRoom(room.ref.roomId);
+          await answer.match<Future<void>>((_) async {
+            failed++;
+          }, repository.merge);
+        } on Object {
+          failed++;
+        } finally {
+          onProgress?.call(++done, targets.length);
+        }
       }
 
       await Future.wait(<Future<void>>[for (final room in batch) refreshOne(room)]);
     }
+    return failed;
   }
 }
 

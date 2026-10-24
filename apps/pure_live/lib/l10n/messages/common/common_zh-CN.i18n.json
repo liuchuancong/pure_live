@@ -19,5 +19,6 @@
   "forward": "前进",
   "searchHint": "搜索房间、主播或站点",
   "switchModule": "切换内容类型",
-  "openNavigation": "打开导航"
+  "openNavigation": "打开导航",
+  "refreshFailed": "刷新失败"
 }

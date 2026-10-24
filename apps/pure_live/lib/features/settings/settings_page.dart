@@ -164,6 +164,8 @@ final class _GeneralPane extends ConsumerWidget {
     final selectedId = ref.watch(selectedSiteIdProvider);
     final autoRefresh = ref.watch(followsAutoRefreshProvider);
     final window = ref.watch(shellWindowSettingsProvider);
+    // A stored interval the choices do not list still shows as chosen.
+    final intervals = {...kRefreshIntervalChoices, autoRefresh.minutes}.toList()..sort();
 
     return DsListSection(
       header: Text(t.settings.browsingTitle),
@@ -233,7 +235,7 @@ final class _GeneralPane extends ConsumerWidget {
           DsListRow(
             leading: const DsIcon(DsIcons.timer),
             title: Text(t.settings.refreshInterval),
-            detail: Text('${autoRefresh.minutes} min'),
+            detail: Text(_intervalLabel(autoRefresh.minutes)),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
@@ -243,7 +245,7 @@ final class _GeneralPane extends ConsumerWidget {
                 if (value != null) unawaited(ref.read(followsAutoRefreshProvider.notifier).setMinutes(value));
               },
               options: [
-                for (final minutes in kRefreshIntervalChoices) DsSelectOption(value: minutes, label: '$minutes min'),
+                for (final minutes in intervals) DsSelectOption(value: minutes, label: _intervalLabel(minutes)),
               ],
               semanticLabel: t.settings.refreshInterval,
             ),
@@ -273,6 +275,15 @@ final class _GeneralPane extends ConsumerWidget {
       ],
     );
   }
+}
+
+/// A refresh interval's label: minutes under an hour, whole hours above,
+/// half hours as the decimal the reference shows ("1.5 h").
+String _intervalLabel(int minutes) {
+  if (minutes < 60) return '$minutes min';
+  if (minutes % 60 == 0) return '${minutes ~/ 60} h';
+  if (minutes % 30 == 0) return '${minutes / 60} h';
+  return '$minutes min';
 }
 
 /// The appearance pane: the theme mode, the accent colour, the corner
@@ -659,9 +670,12 @@ final class _DanmakuPane extends ConsumerWidget {
 }
 
 /// The sites pane: the platform display (the reference's hot-areas
-/// setting) — one switch per site; a switched-off platform leaves the
-/// popular and areas tab lists until it is switched back on — with the
-/// accounts block under it (the reference keeps accounts with platforms).
+/// setting) — one switch per site, in the viewer's own order (drag a
+/// handle, or Alt+Up/Down, to move one; "restore default" puts the
+/// registry's back) and the preferred platform; a switched-off platform
+/// leaves the popular and areas tab lists until it is switched back on —
+/// with the accounts block under it (the reference keeps accounts with
+/// platforms).
 final class _SitesPane extends ConsumerWidget {
   const _SitesPane();
 
@@ -669,8 +683,15 @@ final class _SitesPane extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final sites = ref.watch(sitesProvider).all;
-    final controller = ref.read(sitesDisplayProvider.notifier);
-    final anythingHidden = ref.watch(sitesDisplayProvider.select((set) => set.isNotEmpty));
+    final hidden = ref.watch(sitesDisplayProvider);
+    final display = ref.read(sitesDisplayProvider.notifier);
+    final order = ref.watch(sitesOrderProvider);
+    final orderController = ref.read(sitesOrderProvider.notifier);
+    final names = {for (final site in sites) site.manifest.id: site.manifest.name['zh-CN'] ?? site.manifest.id};
+    String name(String id) => names[id] ?? id;
+    // The hidden set stores the platforms switched off; an empty set shows
+    // everything.
+    bool shown(String id) => hidden.isEmpty || !hidden.contains(id);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: DsSpace.s16,
@@ -678,15 +699,49 @@ final class _SitesPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.sitesDisplay),
           children: [
-            if (!anythingHidden)
+            if (hidden.isEmpty)
               DsListRow(leading: const DsIcon(DsIcons.antenna), title: Text(t.settings.sitesAllShown)),
-            for (final site in sites)
-              DsSwitch(
-                value: controller.shown(site.manifest.id),
-                onChanged: (value) => unawaited(controller.toggle(site.manifest.id)),
-                label: Text(site.manifest.name['zh-CN'] ?? site.manifest.id),
-                description: Text(site.manifest.id),
+            // The rows are the display order itself: a drag (or Alt+arrow
+            // on a focused row) moves a platform, and the provider keeps
+            // the new order for the browsing pages.
+            DsReorderableList(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: order.order.length,
+              itemBuilder: (context, index) {
+                final id = order.order[index];
+                return DsSwitch(
+                  key: ValueKey(id),
+                  value: shown(id),
+                  onChanged: (value) => unawaited(display.toggle(id)),
+                  label: Text(name(id)),
+                  description: Text(id),
+                );
+              },
+              onReorder: (from, to) => unawaited(orderController.move(from, to)),
+            ),
+            DsListRow(
+              leading: const DsIcon(DsIcons.pin),
+              title: Text(t.settings.preferPlatform),
+              description: Text(t.settings.preferPlatformDesc),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
+              child: DsSelect<String>(
+                value: order.preferred,
+                onChanged: (value) {
+                  if (value != null) unawaited(orderController.setPreferred(value));
+                },
+                options: [for (final id in order.order) DsSelectOption(value: id, label: name(id))],
+                semanticLabel: t.settings.preferPlatform,
               ),
+            ),
+            DsListRow(
+              leading: const DsIcon(DsIcons.listRestart),
+              title: Text(t.settings.sitesOrderReset),
+              description: Text(t.settings.sitesOrderResetDesc),
+              onPressed: () => unawaited(orderController.resetOrder()),
+            ),
           ],
         ),
         const AccountPane(),
@@ -695,7 +750,7 @@ final class _SitesPane extends ConsumerWidget {
   }
 }
 
-/// The data pane: the tools that already work — clearing the watch history
+/// The data pane: the watch history's cap, clearing the watch history
 /// behind a confirm, and the follow list as a JSON round trip through the
 /// clipboard — with the backup section under them (the local file round
 /// trip and the WebDAV sync).
@@ -705,6 +760,9 @@ final class _DataPane extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
+    final historyLimit = ref.watch(historyLimitProvider);
+    // A cap imported from outside the choices still shows as chosen.
+    final limits = {...HistoryLimitController.choices, historyLimit}.toList()..sort();
     void toast(String message) {
       showDsToast(context: context, title: message);
     }
@@ -712,6 +770,23 @@ final class _DataPane extends ConsumerWidget {
     return DsListSection(
       header: Text(t.settings.navData),
       children: [
+        DsListRow(
+          leading: const DsIcon(DsIcons.clock),
+          title: Text(t.settings.historyLimit),
+          description: Text(t.settings.historyLimitDesc),
+          detail: Text('$historyLimit'),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
+          child: DsSelect<int>(
+            value: historyLimit,
+            onChanged: (value) {
+              if (value != null) unawaited(ref.read(historyLimitProvider.notifier).setLimit(value));
+            },
+            options: [for (final limit in limits) DsSelectOption(value: limit, label: '$limit')],
+            semanticLabel: t.settings.historyLimit,
+          ),
+        ),
         DsListRow(
           leading: const DsIcon(DsIcons.history),
           title: Text(t.settings.dataClearHistory),

@@ -4,10 +4,8 @@ import 'package:pure_live/features/areas/area_follow_repository.dart'
     show AreaFollowRepository, areaFollowRepositoryProvider;
 import 'package:pure_live/features/backup/backup_document.dart';
 import 'package:pure_live/features/backup/backup_settings.dart';
-import 'package:pure_live/features/favorites/follow_repository.dart'
-    show FollowRepository, followRepositoryProvider;
-import 'package:pure_live/features/history/history_repository.dart'
-    show HistoryRepository, historyRepositoryProvider;
+import 'package:pure_live/features/favorites/follow_repository.dart' show FollowRepository, followRepositoryProvider;
+import 'package:pure_live/features/history/history_repository.dart' show HistoryRepository, historyRepositoryProvider;
 
 /// The backup feature's own view of the user data: it reads the three
 /// user-data boxes into a [BackupDocument] and writes a document back,
@@ -38,22 +36,27 @@ final class BackupRepository {
     settings: captureSettingsSnapshot().length,
   );
 
-  /// Bundles the boxes and the settings subset into one document.
-  BackupDocument capture() => BackupDocument(
+  /// Bundles the boxes and the settings subset into one document. A
+  /// follows-only capture leaves the history and settings sections empty;
+  /// its [BackupDocument.scope] is what tells a restore to keep them.
+  BackupDocument capture({BackupScope scope = BackupScope.all}) => BackupDocument(
     exportedAt: DateTime.now().toUtc(),
+    scope: scope,
     follows: _entriesOf(follows.box),
-    history: _entriesOf(history.box),
+    history: scope == BackupScope.follows ? const {} : _entriesOf(history.box),
     areaFollows: _entriesOf(areaFollows.box),
-    settings: captureSettingsSnapshot(),
+    settings: scope == BackupScope.follows ? const {} : captureSettingsSnapshot(),
   );
 
   /// Restores [document]: every present section clears its box and takes
   /// the document's entries; the settings keys it carries are written
-  /// back. A section the document does not carry stays untouched.
+  /// back. A follows-only document touches only the two follows boxes, so
+  /// the history and settings of this device stay as they are.
   Future<void> apply(BackupDocument document) async {
     await _restore(follows.box, document.follows);
-    await _restore(history.box, document.history);
     await _restore(areaFollows.box, document.areaFollows);
+    if (document.followsOnly) return;
+    await _restore(history.box, document.history);
     await applySettingsSnapshot(document.settings);
   }
 
@@ -85,9 +88,7 @@ final backupRepositoryProvider = FutureProvider<BackupRepository>((ref) async {
 
 /// What the boxes and the settings subset hold right now, for the pane's
 /// summary row and its empty guard.
-final backupSummaryProvider = FutureProvider<({int follows, int history, int areas, int settings})>((
-  ref,
-) async {
+final backupSummaryProvider = FutureProvider<({int follows, int history, int areas, int settings})>((ref) async {
   final repository = await ref.watch(backupRepositoryProvider.future);
   return repository.summary();
 });

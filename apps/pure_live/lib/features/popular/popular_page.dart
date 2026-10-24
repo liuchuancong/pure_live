@@ -182,6 +182,10 @@ final class _PlatformFeed extends ConsumerWidget {
       onLoadMore: () => controller.loadMore(platform),
       error: state.error?.message,
       onRetry: () => controller.refresh(platform),
+      // A pull reloads the first page; a failure keeps the rooms and is
+      // explained in the bar over them.
+      onRefresh: () => controller.refresh(platform),
+      refreshError: state.error?.message,
       itemBuilder: (context, room) => RoomCard(
         room: room,
         onOpen: () => context.push(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),

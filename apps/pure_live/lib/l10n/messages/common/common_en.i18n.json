@@ -19,5 +19,6 @@
   "forward": "Forward",
   "searchHint": "Search rooms, streamers or sites",
   "switchModule": "Switch content type",
-  "openNavigation": "Open navigation"
+  "openNavigation": "Open navigation",
+  "refreshFailed": "Refresh failed"
 }

@@ -6,5 +6,14 @@
   "statusLive": "Live",
   "statusOffline": "Offline",
   "refresh": "Refresh",
-  "openFailedTitle": "The follow list could not open"
+  "openFailedTitle": "The follow list could not open",
+  "statusReplay": "Recording",
+  "searchLive": "Search Live",
+  "emptyLiveTitle": "No followed rooms are live in this filter",
+  "emptyReplayTitle": "No recordings in this filter",
+  "emptyOfflineTitle": "No offline rooms in this filter",
+  "emptyOfflineHint": "Some follows are offline; switch to Offline to see them.",
+  "emptyGroupHint": "Try another group or platform, or refresh to fetch their status.",
+  "showOffline": "View offline",
+  "refreshFailed": "{count: int} rooms could not be refreshed"
 }

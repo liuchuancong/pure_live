@@ -19,5 +19,22 @@
   "namingDescription": "可用日期、时间、平台、房间号与标题占位符，播放器接入后生效。",
   "namingDialogHint": "输入录制文件的命名模板",
   "maxSizeTitle": "单文件大小上限",
-  "maxSizeDescription": "录制超过上限后分卷保存，播放器接入后生效。"
+  "maxSizeDescription": "录制超过上限后分卷保存，播放器接入后生效。",
+  "filterLabel": "筛选",
+  "filterAll": "全部",
+  "filterRecording": "录制中",
+  "filterWaiting": "等待",
+  "filterSaved": "已保存",
+  "filterFailed": "失败",
+  "emptyFilterTitle": "“{status: String}”里还没有任务",
+  "stateWaiting": "等待开播",
+  "stateSaved": "已保存",
+  "menuMore": "更多操作",
+  "openRoom": "进入直播间",
+  "openFolder": "打开文件夹",
+  "openFolderFailed": "无法打开文件夹",
+  "delete": "删除",
+  "deleteTitle": "删除“{name: String}”？",
+  "deleteBody": "只删除这条录制任务记录，已保存的视频文件不会被删除。",
+  "settingsOpen": "录制设置"
 }

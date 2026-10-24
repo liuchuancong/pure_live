@@ -1,5 +1,6 @@
 import 'dart:async' show unawaited;
 
+import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:pure_live/l10n/translations.dart';
@@ -23,6 +24,8 @@ final class CardGrid<T> extends StatefulWidget {
     this.onLoadMore,
     this.error,
     this.onRetry,
+    this.onRefresh,
+    this.refreshError,
     this.emptyIcon = DsIcons.tv,
     this.emptyTitle,
     this.emptyDescription,
@@ -64,6 +67,15 @@ final class CardGrid<T> extends StatefulWidget {
   /// Retries after [error].
   final VoidCallback? onRetry;
 
+  /// Loads the first page again when the viewer pulls the grid down; null
+  /// leaves the grid without the gesture.
+  final Future<void> Function()? onRefresh;
+
+  /// The failure of a refresh that kept [items] on screen: a bar over the
+  /// cards naming the reason, with retry and dismiss. Ignored while [items]
+  /// is empty — a first-load failure already takes the whole pane ([error]).
+  final String? refreshError;
+
   /// The empty state's icon and words.
   final DsIconData emptyIcon;
   final String? emptyTitle;
@@ -91,6 +103,16 @@ final class _CardGridState<T> extends State<CardGrid<T>> {
   /// One ask in flight at a time: the notification stream fires per frame
   /// while the viewer scrolls, and one page's load is enough.
   bool _asking = false;
+
+  /// The refresh failure the viewer closed. Cleared when a new failure
+  /// arrives (or the old one clears), so every failed refresh shows again.
+  String? _dismissedRefreshError;
+
+  @override
+  void didUpdateWidget(CardGrid<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshError != widget.refreshError) _dismissedRefreshError = null;
+  }
 
   void _onScroll(ScrollNotification notification) {
     final onLoadMore = widget.onLoadMore;
@@ -132,7 +154,8 @@ final class _CardGridState<T> extends State<CardGrid<T>> {
       );
     }
     final loadingRow = widget.isLoading && widget.hasMore;
-    return NotificationListener<ScrollNotification>(
+    final refresh = widget.onRefresh;
+    final grid = NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         _onScroll(notification);
         return false;
@@ -140,6 +163,9 @@ final class _CardGridState<T> extends State<CardGrid<T>> {
       child: GridView.builder(
         controller: widget.scrollController,
         padding: widget.padding,
+        // With the gesture on, a short grid still scrolls far enough to
+        // pull (the reference's always-scrollable feeds).
+        physics: refresh == null ? null : const AlwaysScrollableScrollPhysics(),
         gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: widget.cardExtent,
           mainAxisSpacing: DsSpace.s16,
@@ -154,6 +180,114 @@ final class _CardGridState<T> extends State<CardGrid<T>> {
           }
           return widget.itemBuilder(context, widget.items[index]);
         },
+      ),
+    );
+    final content = refresh == null
+        ? grid
+        : CustomRefreshIndicator(onRefresh: refresh, builder: _buildRefreshIndicator, child: grid);
+    final error = widget.refreshError;
+    if (error == null || error == _dismissedRefreshError) return content;
+    // The bar rides over the kept cards: a failed refresh never empties
+    // the grid, it explains itself on top of it.
+    return Stack(
+      children: [
+        Positioned.fill(child: content),
+        Positioned(
+          top: DsSpace.s4,
+          left: DsSpace.s20,
+          right: DsSpace.s20,
+          child: _RefreshErrorBanner(
+            reason: error,
+            onRetry: refresh == null ? null : () => unawaited(refresh()),
+            onDismiss: () => setState(() => _dismissedRefreshError = error),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// The pull-to-refresh indicator: a spinner easing down from under the
+  /// grid's top edge as the drag grows, on the kit's surface with the
+  /// accent ink.
+  Widget _buildRefreshIndicator(BuildContext context, Widget child, IndicatorController controller) {
+    final colors = DsTheme.colorsOf(context);
+    final value = controller.value.clamp(0.0, 1.0);
+    return Stack(
+      children: [
+        child,
+        if (!controller.isIdle)
+          Positioned(
+            top: value * 48 - 44,
+            left: 0,
+            right: 0,
+            child: IgnorePointer(
+              child: Center(
+                child: Opacity(
+                  opacity: value,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    alignment: Alignment.center,
+                    decoration: DsBoxDecoration(
+                      color: colors.surface,
+                      borderRadius: BorderRadius.circular(18),
+                      shadows: [DsShadow.innerRing(colors.border)],
+                    ),
+                    child: IconTheme.merge(
+                      data: IconThemeData(size: 18, color: colors.accent),
+                      child: const DsSpinner(),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// The bar over a feed whose refresh failed while the old cards stay: the
+/// reason, a retry, and the ✕ that closes it until the next failure.
+final class _RefreshErrorBanner extends StatelessWidget {
+  const _RefreshErrorBanner({required this.reason, required this.onRetry, required this.onDismiss});
+
+  /// What the failed refresh said.
+  final String reason;
+
+  /// Loads the first page again; null when the grid has no [CardGrid.onRefresh].
+  final VoidCallback? onRetry;
+
+  /// Closes the bar.
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return DsAlert(
+      status: DsStatus.danger,
+      // A failure appearing after the cards is news for a screen reader.
+      announce: true,
+      title: Text(t.common.refreshFailed),
+      description: Text(reason, maxLines: 2, overflow: TextOverflow.ellipsis),
+      action: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: DsSpace.s4,
+        children: [
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            onPressed: onRetry,
+            child: Text(t.common.retry),
+          ),
+          DsButton.icon(
+            variant: DsButtonVariant.ghost,
+            size: DsSize.sm,
+            onPressed: onDismiss,
+            semanticLabel: t.common.close,
+            icon: const DsIcon(DsIcons.x),
+          ),
+        ],
       ),
     );
   }

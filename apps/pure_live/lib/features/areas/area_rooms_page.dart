@@ -82,6 +82,10 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
               onLoadMore: ref.read(areaRoomsProvider.notifier).loadMore,
               error: state.error?.message,
               onRetry: ref.read(areaRoomsProvider.notifier).reload,
+              // A pull reloads the first page; a failure keeps the rooms
+              // and is explained in the bar over them.
+              onRefresh: ref.read(areaRoomsProvider.notifier).reload,
+              refreshError: state.error?.message,
               itemBuilder: (context, room) => RoomCard(
                 room: room,
                 onOpen: () => context.push(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),

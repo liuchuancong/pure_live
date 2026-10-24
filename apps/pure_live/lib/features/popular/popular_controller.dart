@@ -5,7 +5,7 @@ import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
-import 'package:pure_live/features/settings/sites_display_provider.dart' show sitesDisplayProvider;
+import 'package:pure_live/features/settings/sites_display_provider.dart' show sitesDisplayProvider, sitesOrderProvider;
 
 /// What one platform's popular feed holds: the rooms shown so far and
 /// where the next page asks.
@@ -38,10 +38,15 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
   /// order; the tabs show these.
   List<String> platformIds() {
     final display = ref.read(sitesDisplayProvider.notifier);
+    // The viewer's order is the menu's order: a drag in the settings
+    // reorders these tabs too.
+    final order = ref.read(sitesOrderProvider).order;
+    final sites = {for (final site in ref.read(sitesProvider).all) site.manifest.id: site};
     return [
-      for (final site in ref.read(sitesProvider).all)
-        if (site.capability<LiveDiscoveryProvider>() != null && display.shown(site.manifest.id))
-          site.manifest.id,
+      for (final id in order)
+        if (sites[id] case final site?
+            when site.capability<LiveDiscoveryProvider>() != null && display.shown(id))
+          id,
     ];
   }
 
@@ -158,6 +163,9 @@ final class PopularSiteController extends Notifier<String> {
     final stored = _readStored();
     final ids = ref.read(popularCatalogProvider.notifier).platformIds();
     if (stored != null && ids.contains(stored)) return stored;
+    // No local choice yet: the settings' preferred platform opens first.
+    final preferred = ref.read(sitesOrderProvider).preferred;
+    if (preferred.isNotEmpty && ids.contains(preferred)) return preferred;
     return ids.isEmpty ? '' : ids.first;
   }
 

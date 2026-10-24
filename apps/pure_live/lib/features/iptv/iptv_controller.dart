@@ -2,8 +2,10 @@ import 'dart:async' show StreamSubscription, unawaited;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart';
+import 'package:live_net/live_net.dart' show ClientProfile;
 import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
+import 'package:pure_live/app/providers/network_providers.dart' show networkFactoryProvider;
 
 /// The IPTV library over its Hive box (one box, one process).
 ///
@@ -20,6 +22,29 @@ final iptvLibraryProvider = FutureProvider<IptvLibrary>((ref) async {
   ref.onDispose(() => unawaited(library.dispose()));
   return library;
 });
+
+/// The importer every playlist and guide write goes through, over the open
+/// library.
+///
+/// Its two download seams ride the app's shared transport, so an IPTV
+/// download honours the network settings (proxy, cookies) exactly as the
+/// rest of the app does. Null while the library is still opening — an
+/// import cannot land before the store it writes to exists.
+final iptvImporterProvider = Provider<IptvImporter?>((ref) {
+  final library = ref.watch(iptvLibraryProvider).value;
+  if (library == null) return null;
+  final http = ref.read(networkFactoryProvider).create(profile: ClientProfile.api);
+  ref.onDispose(http.close);
+  return IptvImporter(library: library, fetch: iptvFetcherFor(http), fetchBytes: iptvBytesFetcherFor(http));
+});
+
+/// Whether [playlist] was imported from a web address, so a sync has
+/// something to download again. Local files and pasted text record no
+/// address ([IptvPlaylist.url] is null) and are never "due".
+bool iptvPlaylistIsRemote(IptvPlaylist playlist) {
+  final url = (playlist.url ?? '').trim().toLowerCase();
+  return url.startsWith('http://') || url.startsWith('https://');
+}
 
 /// What the channels list filters to: every channel, or the favourites.
 enum IptvChannelScope {
@@ -73,19 +98,28 @@ IptvChannelsState _initial() => (
 /// library is the source, not `selectedSiteProvider`.
 final class IptvChannelsController extends Notifier<IptvChannelsState> {
   StreamSubscription<void>? _subscription;
+  IptvLibrary? _listened;
 
   @override
   IptvChannelsState build() {
-    ref.watch(iptvLibraryProvider).whenData((library) {
-      // A retry (or any rebuild) hands back a different library: the old
-      // subscription belongs to the old one and is cancelled rather than
-      // kept by the `??=` that would quietly hold a dead stream.
+    final library = ref.watch(iptvLibraryProvider).value;
+    ref.onDispose(() => unawaited(_subscription?.cancel() ?? Future<void>.value()));
+    if (library == null) {
+      return _initial();
+    }
+    // A retry (or any rebuild) hands back a different library: the old
+    // subscription belongs to the old one and is cancelled rather than
+    // kept by the `??=` that would quietly hold a dead stream.
+    if (!identical(_listened, library)) {
       unawaited(_subscription?.cancel() ?? Future<void>.value());
       _subscription = library.changes.listen((_) => _mirror(library));
-      _mirror(library);
-    });
-    ref.onDispose(() => unawaited(_subscription?.cancel() ?? Future<void>.value()));
-    return _initial();
+      _listened = library;
+    }
+    // The mirrored state is the build's result: assigning it and then
+    // returning a blank state would throw the mirror away on every
+    // rebuild that lands after the library finished opening.
+    _mirror(library, from: stateOrNull ?? _initial());
+    return state;
   }
 
   /// Opens [group] — null for every group at once. The reveal restarts at
@@ -166,16 +200,21 @@ final class IptvChannelsController extends Notifier<IptvChannelsState> {
   /// Re-derives the whole state from [library], keeping the open group and
   /// scope and how much was revealed; [reveal] forces the reveal to a
   /// count instead (the next page from [loadMore]), and [resetReveal]
-  /// forces it to the first page.
-  void _mirror(IptvLibrary library, {int? reveal, bool resetReveal = false}) {
-    final favouritesOnly = state.scope == IptvChannelScope.favourites;
+  /// forces it to the first page. [from] is the state the derivation
+  /// starts from — the blank state during a build, the current one
+  /// otherwise.
+  void _mirror(IptvLibrary library, {int? reveal, bool resetReveal = false, IptvChannelsState? from}) {
+    final current = from ?? state;
+    final favouritesOnly = current.scope == IptvChannelScope.favourites;
     final groups = [
       for (final name in library.groupNames)
         if (!library.isGroupHidden(name)) name,
     ];
     // A re-import may drop the open group; the list falls back to every
     // channel rather than to an empty page nobody can explain.
-    final selected = state.selectedGroup != null && groups.contains(state.selectedGroup) ? state.selectedGroup : null;
+    final selected = current.selectedGroup != null && groups.contains(current.selectedGroup)
+        ? current.selectedGroup
+        : null;
     final walk = library.zapSequence(favouritesOnly: favouritesOnly).channels;
     // The library's own size, whatever the filter: an empty favourites
     // list and an empty library are different facts, and the page words
@@ -190,7 +229,7 @@ final class IptvChannelsController extends Notifier<IptvChannelsState> {
     final pageSize = ref.read(browseSettingsProvider).homePageSize;
     // A list that just gained its first channels opens on the first page;
     // an established reveal survives a change, capped by what is there.
-    final kept = state.shown == 0 ? _capped(pageSize, channels.length) : _capped(state.shown, channels.length);
+    final kept = current.shown == 0 ? _capped(pageSize, channels.length) : _capped(current.shown, channels.length);
     final base = resetReveal ? _capped(pageSize, channels.length) : (reveal ?? kept);
     final shown = _capped(base, channels.length);
     state = (
@@ -200,7 +239,7 @@ final class IptvChannelsController extends Notifier<IptvChannelsState> {
       libraryCount: libraryCount,
       totalCount: walk.length,
       selectedGroup: selected,
-      scope: state.scope,
+      scope: current.scope,
       channels: channels,
       shown: shown,
       loadingMore: false,

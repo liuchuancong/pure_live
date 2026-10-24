@@ -23,11 +23,12 @@ final class SitesDisplayController extends Notifier<Set<String>> {
   /// is empty.
   bool shown(String id) => state.isEmpty || state.contains(id);
 
-  /// The browsing pages' platform order, the registry's, with the hidden
-  /// ones left out.
+  /// The browsing pages' platform order — the viewer's own, the registry's
+  /// for a platform the order has not met yet — with the hidden ones left
+  /// out.
   List<String> visibleIds() {
-    final all = [for (final site in ref.read(sitesProvider).all) site.manifest.id];
-    return state.isEmpty ? all : all.where(shown).toList();
+    final all = ref.read(sitesOrderProvider).order;
+    return state.isEmpty ? List.of(all) : all.where(shown).toList();
   }
 
   /// Flips [id]'s visibility, writing the choice through. The set stores
@@ -52,6 +53,97 @@ final class SitesDisplayController extends Notifier<Set<String>> {
 
 /// The platforms the browsing pages show.
 final sitesDisplayProvider = NotifierProvider<SitesDisplayController, Set<String>>(SitesDisplayController.new);
+
+/// The browsing pages' platform order and preferred platform: the ordered
+/// ids — the registry's until the viewer drags another order — and the one
+/// platform the surfaces prefer (3.x's `preferPlatform`).
+typedef SitesOrder = ({List<String> order, String preferred});
+
+/// Owns the platform order and the preferred platform. The order persists
+/// under `sites.display.order`, the preference under
+/// `sites.display.preferred`; a stored id the registry no longer knows is
+/// dropped, and a platform the order has not met yet joins at its
+/// registry place, so a new site never goes missing.
+final class SitesOrderController extends Notifier<SitesOrder> {
+  /// Where the order lives in the settings store.
+  static const String orderKey = 'sites.display.order';
+
+  /// Where the preferred platform's id lives in the settings store.
+  static const String preferredKey = 'sites.display.preferred';
+
+  @override
+  SitesOrder build() {
+    final ids = [for (final site in ref.watch(sitesProvider).all) site.manifest.id];
+    List<String>? storedOrder;
+    String? storedPreferred;
+    try {
+      storedOrder = StoragePrefs.getStringList(orderKey);
+      storedPreferred = StoragePrefs.getString(preferredKey);
+    } on Object {
+      // The store may never have opened; the registry's order stands.
+    }
+    final order = _sanitize(storedOrder, ids);
+    final preferred = storedPreferred != null && ids.contains(storedPreferred)
+        ? storedPreferred
+        : (order.isEmpty ? '' : order.first);
+    return (order: order, preferred: preferred);
+  }
+
+  /// [stored] with the ids the registry no longer knows dropped,
+  /// duplicates gone, and every platform the order has not met appended in
+  /// registry order.
+  static List<String> _sanitize(List<String>? stored, List<String> ids) {
+    if (stored == null) return List.of(ids);
+    final known = <String>{};
+    return [
+      for (final id in stored)
+        if (ids.contains(id) && known.add(id)) id,
+      for (final id in ids)
+        if (known.add(id)) id,
+    ];
+  }
+
+  /// Moves the platform at [from] to [to] — the index it holds after the
+  /// move, as the reorderable list reports it — writing the order through.
+  Future<void> move(int from, int to) async {
+    final order = List.of(state.order);
+    if (from < 0 || from >= order.length || to < 0) return;
+    final id = order.removeAt(from);
+    order.insert(to.clamp(0, order.length), id);
+    state = (order: order, preferred: state.preferred);
+    await _writeOrder(order);
+  }
+
+  /// Puts the platforms back in the registry's order ("restore default");
+  /// the preferred platform stays unless the registry no longer knows it.
+  Future<void> resetOrder() async {
+    final ids = [for (final site in ref.read(sitesProvider).all) site.manifest.id];
+    final preferred = ids.contains(state.preferred) ? state.preferred : (ids.isEmpty ? '' : ids.first);
+    state = (order: ids, preferred: preferred);
+    await _writeOrder(ids);
+  }
+
+  /// Moves the preferred platform, writing the choice through.
+  Future<void> setPreferred(String id) async {
+    state = (order: state.order, preferred: id);
+    try {
+      await StoragePrefs.setString(preferredKey, id);
+    } on Object {
+      // The choice is a preference; a closed store loses it, nothing else.
+    }
+  }
+
+  Future<void> _writeOrder(List<String> order) async {
+    try {
+      await StoragePrefs.setStringList(orderKey, order);
+    } on Object {
+      // The choice is a preference; a closed store loses it, nothing else.
+    }
+  }
+}
+
+/// The browsing pages' platform order and preferred platform.
+final sitesOrderProvider = NotifierProvider<SitesOrderController, SitesOrder>(SitesOrderController.new);
 
 /// The follow list as one JSON document: an array of the rooms' own
 /// storage JSON. The export and the import share the shape.

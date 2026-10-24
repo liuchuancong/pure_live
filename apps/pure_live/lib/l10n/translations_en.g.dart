@@ -161,6 +161,39 @@ class _Translations$backup$en extends Translations$backup$zh_CN {
 	@override String webdavServerFailed({required Object status}) => 'The server answered with an error (${status})';
 	@override String get webdavFailed => 'The operation failed';
 	@override String get busy => 'Another operation is running';
+	@override String get folderPickTitle => 'Choose backup folder';
+	@override String get folderTitle => 'Backup folder';
+	@override String get folderDefault => 'Default folder';
+	@override String get folderLoading => 'Loading…';
+	@override String get folderReset => 'Reset to default folder';
+	@override String get folderOpen => 'Open backup folder';
+	@override String get folderUnwritable => 'The backup folder is not writable; pick another';
+	@override String get folderSaveFailed => 'Could not save the backup folder';
+	@override String get openFolderFailed => 'Could not open the backup folder';
+	@override String get createTitle => 'Create backup';
+	@override String get createDescription => 'Bundles follows, watch history, followed areas and settings into a file in the backup folder.';
+	@override String get createFollowsTitle => 'Create follows-only backup';
+	@override String get createFollowsDescription => 'Backs up followed rooms and areas only.';
+	@override String createDone({required String name}) => 'Created ${name}';
+	@override String get createFailed => 'Could not create the backup';
+	@override String get filesSection => 'Backup files';
+	@override String filesCount({required int count}) => '${count} backup files';
+	@override String get filesEmpty => 'No backup files in this folder yet';
+	@override String get filesFailed => 'Could not read the backup folder';
+	@override String get filesFailedHint => 'Check that the folder exists and is readable, then tap to retry.';
+	@override String fileMeta({required String time, required String size, required String kind}) => '${time} · ${size} · ${kind}';
+	@override String get kindFull => 'Full backup';
+	@override String get kindFollows => 'Follows only';
+	@override String get fileDelete => 'Delete backup file';
+	@override String get restoreConfirmTitle => 'Restore this backup?';
+	@override String restoreConfirmDesc({required String name}) => 'Restoring ${name} overwrites this device\'s follows, watch history, followed areas and settings. The current data cannot be recovered.';
+	@override String restoreFollowsConfirmDesc({required String name}) => 'Restoring ${name} overwrites this device\'s follows and followed areas; other data stays as it is.';
+	@override String get restoreFailed => 'Restore failed';
+	@override String get deleteConfirmTitle => 'Delete this backup file?';
+	@override String deleteConfirmDesc({required String name}) => '${name} will be permanently deleted.';
+	@override String get deleteDone => 'Backup file deleted';
+	@override String get deleteFileFailed => 'Could not delete the backup file';
+	@override String summaryFollows({required int follows, required int areas}) => 'Follows ${follows} · Areas ${areas}';
 }
 
 // Path: common
@@ -191,6 +224,7 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get searchHint => 'Search rooms, streamers or sites';
 	@override String get switchModule => 'Switch content type';
 	@override String get openNavigation => 'Open navigation';
+	@override String get refreshFailed => 'Refresh failed';
 }
 
 // Path: favorites
@@ -208,6 +242,15 @@ class _Translations$favorites$en extends Translations$favorites$zh_CN {
 	@override String get statusOffline => 'Offline';
 	@override String get refresh => 'Refresh';
 	@override String get openFailedTitle => 'The follow list could not open';
+	@override String get statusReplay => 'Recording';
+	@override String get searchLive => 'Search Live';
+	@override String get emptyLiveTitle => 'No followed rooms are live in this filter';
+	@override String get emptyReplayTitle => 'No recordings in this filter';
+	@override String get emptyOfflineTitle => 'No offline rooms in this filter';
+	@override String get emptyOfflineHint => 'Some follows are offline; switch to Offline to see them.';
+	@override String get emptyGroupHint => 'Try another group or platform, or refresh to fetch their status.';
+	@override String get showOffline => 'View offline';
+	@override String refreshFailed({required int count}) => '${count} rooms could not be refreshed';
 }
 
 // Path: history
@@ -225,6 +268,30 @@ class _Translations$history$en extends Translations$history$zh_CN {
 	@override String get yesterday => 'Yesterday';
 	@override String get earlier => 'Earlier';
 	@override String get openFailedTitle => 'The history could not open';
+	@override String recordCount({required int count, required int limit}) => 'Recorded ${count} / limit ${limit}';
+	@override String get filter => 'Filter';
+	@override String get filterClose => 'Close filter';
+	@override String get filterHint => 'Filter by title, streamer, room ID or platform';
+	@override String filterMatches({required int count}) => '${count} found';
+	@override String get filterReset => 'Clear filter';
+	@override String get filterEmptyTitle => 'No history entries match';
+	@override String get filterEmptyDescription => 'Try another keyword, or clear the filter.';
+	@override String get deleteConfirmTitle => 'Delete watch record?';
+	@override String deleteConfirmDesc({required String title}) => 'Remove “${title}” from watch history? This only removes this saved entry.';
+	@override String get deleteAction => 'Delete';
+	@override String get deleteDone => 'Removed from history';
+	@override String get clearConfirmTitle => 'Clear watch history?';
+	@override String clearConfirmDesc({required int count}) => 'Clear all ${count} history entries? This action cannot be undone.';
+	@override String clearFilteredConfirmDesc({required int count}) => 'Remove the ${count} entries that match the filter? Other entries stay. This cannot be undone.';
+	@override String clearDone({required int count}) => 'Cleared ${count} history entries';
+	@override String get changeFailed => 'The history changes were not saved. Try again.';
+	@override String get limitAction => 'Change limit';
+	@override String get limitTitle => 'Watch History Retention';
+	@override String get limitDescription => 'The oldest records are dropped past the limit.';
+	@override String get limitPresetsLabel => 'Preset Limits';
+	@override String get limitCustomLabel => 'Custom Limit';
+	@override String limitInvalid({required int min, required int max}) => 'Enter a whole number from ${min} to ${max}.';
+	@override String limitSaved({required int limit}) => 'History limit set to ${limit}';
 }
 
 // Path: iptv
@@ -257,6 +324,75 @@ class _Translations$iptv$en extends Translations$iptv$zh_CN {
 	@override String get epgFailed => 'The guide failed to import';
 	@override String get epgRemove => 'Remove this guide source';
 	@override String get epgEmpty => 'No guide sources yet; import one and the channel cards show what is on.';
+	@override String get activeGuideDescription => 'The guide source used for the channel list; one at a time.';
+	@override String get activeGuideNone => 'None selected';
+	@override String get activeGuideTitle => 'Active guide';
+	@override String get autoUpdate => 'Auto update';
+	@override String get autoUpdateHint => 'Re-fetches the source at an interval when on.';
+	@override String channelCount({required int count}) => '${count} channels';
+	@override String get chooseGuide => 'Choose guide source';
+	@override String get delete => 'Delete';
+	@override String get deleteActiveGuideNote => 'This guide is in use; another source takes over after deletion.';
+	@override String deleteGuideMessage({required String name}) => 'Delete the guide “${name}”? Its downloaded guide data is removed too.';
+	@override String get deleteGuideTitle => 'Delete guide source?';
+	@override String deletePlaylistMessage({required String name, required int count}) => 'Delete “${name}” and its ${count} channels?';
+	@override String get deletePlaylistTitle => 'Delete playlist?';
+	@override String deleted({required String name}) => 'Deleted “${name}”';
+	@override String get guideName => 'Guide name';
+	@override String get guideNameHint => 'e.g. My EPG';
+	@override String guideSelected({required String name}) => 'Switched to “${name}”';
+	@override String get importAction => 'Import';
+	@override String get importAddressInvalid => 'Enter a valid subscription address';
+	@override String get importAddressRequired => 'Enter the subscription address first';
+	@override String get importFailed => 'Import failed';
+	@override String get importFormat => 'Unsupported file format';
+	@override String get importFromFile => 'From file';
+	@override String get importFromText => 'Paste text';
+	@override String get importFromUrl => 'From URL';
+	@override String get importGuide => 'Import guide';
+	@override String get importGuideDescription => 'XMLTV URLs or files; the guide is downloaded after import.';
+	@override String get importInvalid => 'The content is not a valid playlist';
+	@override String get importNameRequired => 'Enter a playlist name';
+	@override String get importNetworkFailed => 'The network request failed; check the address or proxy';
+	@override String get importPlaylist => 'Import playlist';
+	@override String get importPlaylistDescription => 'M3U/M3U8/TXT from a URL, a file or pasted text.';
+	@override String importSkipped({required String name, required int count}) => 'Imported “${name}”, skipped ${count}';
+	@override String get importTextRequired => 'Paste the playlist content first';
+	@override String imported({required String name}) => 'Imported “${name}”';
+	@override String importedAt({required String time}) => 'Imported ${time}';
+	@override String get inUse => 'In use';
+	@override String lastRefresh({required String time}) => 'Updated ${time}';
+	@override String get localTag => 'Local';
+	@override String get networkTag => 'Network';
+	@override String get neverUpdated => 'Never updated';
+	@override String get noGuidesTitle => 'No guide sources yet';
+	@override String get noPlaylistsDescription => 'Import a playlist from a URL, a file or pasted text.';
+	@override String get noPlaylistsTitle => 'No playlists yet';
+	@override String get pickPlaylistFile => 'Choose a playlist file';
+	@override String get playlistName => 'Playlist name';
+	@override String get playlistNameHint => 'e.g. My channels';
+	@override String get playlistText => 'Playlist content';
+	@override String get playlistTextHint => 'Paste M3U/M3U8/TXT content';
+	@override String get playlistUrl => 'Subscription URL';
+	@override String get playlistUrlHint => 'https://example.com/playlist.m3u';
+	@override String get playlistsTitle => 'Playlists';
+	@override String get replaceMessage => 'A playlist with this name exists; the imported content replaces it.';
+	@override String replaceTitle({required String name}) => 'Replace “${name}”?';
+	@override String get sourceChanged => 'The source changed; the cache was updated';
+	@override String get statChannels => 'Channels';
+	@override String get statGuides => 'Guides';
+	@override String get statPlaylists => 'Playlists';
+	@override String get sync => 'Sync';
+	@override String get syncAll => 'Sync all';
+	@override String syncAllDone({required int count}) => 'Synced ${count} playlists';
+	@override String get syncAllNone => 'No playlists to sync';
+	@override String syncAllPartial({required int failed, required int count}) => '${failed} of ${count} playlists failed';
+	@override String syncAllRunning({required int done, required int total}) => 'Syncing ${done} / ${total}';
+	@override String syncFailed({required String name}) => 'Could not sync “${name}”';
+	@override String synced({required String name}) => 'Synced “${name}”';
+	@override String get viewChannels => 'Channels';
+	@override String get viewLabel => 'View';
+	@override String get viewSources => 'Playlists';
 }
 
 // Path: multiview
@@ -386,6 +522,23 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get namingDialogHint => 'Enter the naming template for recording files';
 	@override String get maxSizeTitle => 'Single-file size cap';
 	@override String get maxSizeDescription => 'Recordings split once a file reaches the cap; takes effect with the player stack.';
+	@override String get filterLabel => 'Filter';
+	@override String get filterAll => 'All';
+	@override String get filterRecording => 'Recording';
+	@override String get filterWaiting => 'Waiting';
+	@override String get filterSaved => 'Saved';
+	@override String get filterFailed => 'Failed';
+	@override String emptyFilterTitle({required String status}) => 'No tasks in “${status}” yet';
+	@override String get stateWaiting => 'Waiting for live';
+	@override String get stateSaved => 'Saved';
+	@override String get menuMore => 'More actions';
+	@override String get openRoom => 'Open live room';
+	@override String get openFolder => 'Open folder';
+	@override String get openFolderFailed => 'Could not open the folder';
+	@override String get delete => 'Delete';
+	@override String deleteTitle({required String name}) => 'Delete “${name}”?';
+	@override String get deleteBody => 'This removes the task only; files already saved stay on disk.';
+	@override String get settingsOpen => 'Recording settings';
 }
 
 // Path: room
@@ -566,6 +719,10 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get cacheLimitDesc => 'Oldest images are deleted past the cap; off keeps only expiry-based cleanup.';
 	@override String get cacheLimitOff => 'No automatic cleanup';
 	@override String get cacheHint => 'Covers and avatars are kept on this device for 30 days and pruned when they expire or pass the cap.';
+	@override String get preferPlatform => 'Preferred platform';
+	@override String get preferPlatformDesc => 'The platform the popular and areas pages open with.';
+	@override String get sitesOrderReset => 'Restore default order';
+	@override String get sitesOrderResetDesc => 'Platforms return to the built-in order; the show switches stay as they are.';
 }
 
 // Path: shield
@@ -774,6 +931,39 @@ extension on TranslationsEn {
 			'backup.webdavServerFailed' => ({required Object status}) => 'The server answered with an error (${status})',
 			'backup.webdavFailed' => 'The operation failed',
 			'backup.busy' => 'Another operation is running',
+			'backup.folderPickTitle' => 'Choose backup folder',
+			'backup.folderTitle' => 'Backup folder',
+			'backup.folderDefault' => 'Default folder',
+			'backup.folderLoading' => 'Loading…',
+			'backup.folderReset' => 'Reset to default folder',
+			'backup.folderOpen' => 'Open backup folder',
+			'backup.folderUnwritable' => 'The backup folder is not writable; pick another',
+			'backup.folderSaveFailed' => 'Could not save the backup folder',
+			'backup.openFolderFailed' => 'Could not open the backup folder',
+			'backup.createTitle' => 'Create backup',
+			'backup.createDescription' => 'Bundles follows, watch history, followed areas and settings into a file in the backup folder.',
+			'backup.createFollowsTitle' => 'Create follows-only backup',
+			'backup.createFollowsDescription' => 'Backs up followed rooms and areas only.',
+			'backup.createDone' => ({required String name}) => 'Created ${name}',
+			'backup.createFailed' => 'Could not create the backup',
+			'backup.filesSection' => 'Backup files',
+			'backup.filesCount' => ({required int count}) => '${count} backup files',
+			'backup.filesEmpty' => 'No backup files in this folder yet',
+			'backup.filesFailed' => 'Could not read the backup folder',
+			'backup.filesFailedHint' => 'Check that the folder exists and is readable, then tap to retry.',
+			'backup.fileMeta' => ({required String time, required String size, required String kind}) => '${time} · ${size} · ${kind}',
+			'backup.kindFull' => 'Full backup',
+			'backup.kindFollows' => 'Follows only',
+			'backup.fileDelete' => 'Delete backup file',
+			'backup.restoreConfirmTitle' => 'Restore this backup?',
+			'backup.restoreConfirmDesc' => ({required String name}) => 'Restoring ${name} overwrites this device\'s follows, watch history, followed areas and settings. The current data cannot be recovered.',
+			'backup.restoreFollowsConfirmDesc' => ({required String name}) => 'Restoring ${name} overwrites this device\'s follows and followed areas; other data stays as it is.',
+			'backup.restoreFailed' => 'Restore failed',
+			'backup.deleteConfirmTitle' => 'Delete this backup file?',
+			'backup.deleteConfirmDesc' => ({required String name}) => '${name} will be permanently deleted.',
+			'backup.deleteDone' => 'Backup file deleted',
+			'backup.deleteFileFailed' => 'Could not delete the backup file',
+			'backup.summaryFollows' => ({required int follows, required int areas}) => 'Follows ${follows} · Areas ${areas}',
 			'common.appTitle' => 'Pure Live',
 			'common.empty' => 'Nothing here yet',
 			'common.comingSoon' => 'Coming soon',
@@ -795,6 +985,7 @@ extension on TranslationsEn {
 			'common.searchHint' => 'Search rooms, streamers or sites',
 			'common.switchModule' => 'Switch content type',
 			'common.openNavigation' => 'Open navigation',
+			'common.refreshFailed' => 'Refresh failed',
 			'favorites.emptyTitle' => 'No followed rooms yet',
 			'favorites.emptyDescription' => 'Follow a room and it shows up here.',
 			'favorites.unfollow' => 'Unfollow',
@@ -803,6 +994,15 @@ extension on TranslationsEn {
 			'favorites.statusOffline' => 'Offline',
 			'favorites.refresh' => 'Refresh',
 			'favorites.openFailedTitle' => 'The follow list could not open',
+			'favorites.statusReplay' => 'Recording',
+			'favorites.searchLive' => 'Search Live',
+			'favorites.emptyLiveTitle' => 'No followed rooms are live in this filter',
+			'favorites.emptyReplayTitle' => 'No recordings in this filter',
+			'favorites.emptyOfflineTitle' => 'No offline rooms in this filter',
+			'favorites.emptyOfflineHint' => 'Some follows are offline; switch to Offline to see them.',
+			'favorites.emptyGroupHint' => 'Try another group or platform, or refresh to fetch their status.',
+			'favorites.showOffline' => 'View offline',
+			'favorites.refreshFailed' => ({required int count}) => '${count} rooms could not be refreshed',
 			'history.emptyTitle' => 'No watch history yet',
 			'history.emptyDescription' => 'Watch a stream and it lands here.',
 			'history.clear' => 'Clear history',
@@ -811,6 +1011,30 @@ extension on TranslationsEn {
 			'history.yesterday' => 'Yesterday',
 			'history.earlier' => 'Earlier',
 			'history.openFailedTitle' => 'The history could not open',
+			'history.recordCount' => ({required int count, required int limit}) => 'Recorded ${count} / limit ${limit}',
+			'history.filter' => 'Filter',
+			'history.filterClose' => 'Close filter',
+			'history.filterHint' => 'Filter by title, streamer, room ID or platform',
+			'history.filterMatches' => ({required int count}) => '${count} found',
+			'history.filterReset' => 'Clear filter',
+			'history.filterEmptyTitle' => 'No history entries match',
+			'history.filterEmptyDescription' => 'Try another keyword, or clear the filter.',
+			'history.deleteConfirmTitle' => 'Delete watch record?',
+			'history.deleteConfirmDesc' => ({required String title}) => 'Remove “${title}” from watch history? This only removes this saved entry.',
+			'history.deleteAction' => 'Delete',
+			'history.deleteDone' => 'Removed from history',
+			'history.clearConfirmTitle' => 'Clear watch history?',
+			'history.clearConfirmDesc' => ({required int count}) => 'Clear all ${count} history entries? This action cannot be undone.',
+			'history.clearFilteredConfirmDesc' => ({required int count}) => 'Remove the ${count} entries that match the filter? Other entries stay. This cannot be undone.',
+			'history.clearDone' => ({required int count}) => 'Cleared ${count} history entries',
+			'history.changeFailed' => 'The history changes were not saved. Try again.',
+			'history.limitAction' => 'Change limit',
+			'history.limitTitle' => 'Watch History Retention',
+			'history.limitDescription' => 'The oldest records are dropped past the limit.',
+			'history.limitPresetsLabel' => 'Preset Limits',
+			'history.limitCustomLabel' => 'Custom Limit',
+			'history.limitInvalid' => ({required int min, required int max}) => 'Enter a whole number from ${min} to ${max}.',
+			'history.limitSaved' => ({required int limit}) => 'History limit set to ${limit}',
 			'iptv.tabAll' => 'All',
 			'iptv.scopeLabel' => 'Channel scope',
 			'iptv.scopeAll' => 'All channels',
@@ -834,6 +1058,75 @@ extension on TranslationsEn {
 			'iptv.epgFailed' => 'The guide failed to import',
 			'iptv.epgRemove' => 'Remove this guide source',
 			'iptv.epgEmpty' => 'No guide sources yet; import one and the channel cards show what is on.',
+			'iptv.activeGuideDescription' => 'The guide source used for the channel list; one at a time.',
+			'iptv.activeGuideNone' => 'None selected',
+			'iptv.activeGuideTitle' => 'Active guide',
+			'iptv.autoUpdate' => 'Auto update',
+			'iptv.autoUpdateHint' => 'Re-fetches the source at an interval when on.',
+			'iptv.channelCount' => ({required int count}) => '${count} channels',
+			'iptv.chooseGuide' => 'Choose guide source',
+			'iptv.delete' => 'Delete',
+			'iptv.deleteActiveGuideNote' => 'This guide is in use; another source takes over after deletion.',
+			'iptv.deleteGuideMessage' => ({required String name}) => 'Delete the guide “${name}”? Its downloaded guide data is removed too.',
+			'iptv.deleteGuideTitle' => 'Delete guide source?',
+			'iptv.deletePlaylistMessage' => ({required String name, required int count}) => 'Delete “${name}” and its ${count} channels?',
+			'iptv.deletePlaylistTitle' => 'Delete playlist?',
+			'iptv.deleted' => ({required String name}) => 'Deleted “${name}”',
+			'iptv.guideName' => 'Guide name',
+			'iptv.guideNameHint' => 'e.g. My EPG',
+			'iptv.guideSelected' => ({required String name}) => 'Switched to “${name}”',
+			'iptv.importAction' => 'Import',
+			'iptv.importAddressInvalid' => 'Enter a valid subscription address',
+			'iptv.importAddressRequired' => 'Enter the subscription address first',
+			'iptv.importFailed' => 'Import failed',
+			'iptv.importFormat' => 'Unsupported file format',
+			'iptv.importFromFile' => 'From file',
+			'iptv.importFromText' => 'Paste text',
+			'iptv.importFromUrl' => 'From URL',
+			'iptv.importGuide' => 'Import guide',
+			'iptv.importGuideDescription' => 'XMLTV URLs or files; the guide is downloaded after import.',
+			'iptv.importInvalid' => 'The content is not a valid playlist',
+			'iptv.importNameRequired' => 'Enter a playlist name',
+			'iptv.importNetworkFailed' => 'The network request failed; check the address or proxy',
+			'iptv.importPlaylist' => 'Import playlist',
+			'iptv.importPlaylistDescription' => 'M3U/M3U8/TXT from a URL, a file or pasted text.',
+			'iptv.importSkipped' => ({required String name, required int count}) => 'Imported “${name}”, skipped ${count}',
+			'iptv.importTextRequired' => 'Paste the playlist content first',
+			'iptv.imported' => ({required String name}) => 'Imported “${name}”',
+			'iptv.importedAt' => ({required String time}) => 'Imported ${time}',
+			'iptv.inUse' => 'In use',
+			'iptv.lastRefresh' => ({required String time}) => 'Updated ${time}',
+			'iptv.localTag' => 'Local',
+			'iptv.networkTag' => 'Network',
+			'iptv.neverUpdated' => 'Never updated',
+			'iptv.noGuidesTitle' => 'No guide sources yet',
+			'iptv.noPlaylistsDescription' => 'Import a playlist from a URL, a file or pasted text.',
+			'iptv.noPlaylistsTitle' => 'No playlists yet',
+			'iptv.pickPlaylistFile' => 'Choose a playlist file',
+			'iptv.playlistName' => 'Playlist name',
+			'iptv.playlistNameHint' => 'e.g. My channels',
+			'iptv.playlistText' => 'Playlist content',
+			'iptv.playlistTextHint' => 'Paste M3U/M3U8/TXT content',
+			'iptv.playlistUrl' => 'Subscription URL',
+			'iptv.playlistUrlHint' => 'https://example.com/playlist.m3u',
+			'iptv.playlistsTitle' => 'Playlists',
+			'iptv.replaceMessage' => 'A playlist with this name exists; the imported content replaces it.',
+			'iptv.replaceTitle' => ({required String name}) => 'Replace “${name}”?',
+			'iptv.sourceChanged' => 'The source changed; the cache was updated',
+			'iptv.statChannels' => 'Channels',
+			'iptv.statGuides' => 'Guides',
+			'iptv.statPlaylists' => 'Playlists',
+			'iptv.sync' => 'Sync',
+			'iptv.syncAll' => 'Sync all',
+			'iptv.syncAllDone' => ({required int count}) => 'Synced ${count} playlists',
+			'iptv.syncAllNone' => 'No playlists to sync',
+			'iptv.syncAllPartial' => ({required int failed, required int count}) => '${failed} of ${count} playlists failed',
+			'iptv.syncAllRunning' => ({required int done, required int total}) => 'Syncing ${done} / ${total}',
+			'iptv.syncFailed' => ({required String name}) => 'Could not sync “${name}”',
+			'iptv.synced' => ({required String name}) => 'Synced “${name}”',
+			'iptv.viewChannels' => 'Channels',
+			'iptv.viewLabel' => 'View',
+			'iptv.viewSources' => 'Playlists',
 			'multiview.layoutLabel' => 'Layout',
 			'multiview.videoComingSoon' => 'Multi-view playback arrives with the player stack; arrange the panes and pick rooms meanwhile.',
 			'multiview.pickRoom' => 'Pick a room',
@@ -909,6 +1202,23 @@ extension on TranslationsEn {
 			'recorder.namingDialogHint' => 'Enter the naming template for recording files',
 			'recorder.maxSizeTitle' => 'Single-file size cap',
 			'recorder.maxSizeDescription' => 'Recordings split once a file reaches the cap; takes effect with the player stack.',
+			'recorder.filterLabel' => 'Filter',
+			'recorder.filterAll' => 'All',
+			'recorder.filterRecording' => 'Recording',
+			'recorder.filterWaiting' => 'Waiting',
+			'recorder.filterSaved' => 'Saved',
+			'recorder.filterFailed' => 'Failed',
+			'recorder.emptyFilterTitle' => ({required String status}) => 'No tasks in “${status}” yet',
+			'recorder.stateWaiting' => 'Waiting for live',
+			'recorder.stateSaved' => 'Saved',
+			'recorder.menuMore' => 'More actions',
+			'recorder.openRoom' => 'Open live room',
+			'recorder.openFolder' => 'Open folder',
+			'recorder.openFolderFailed' => 'Could not open the folder',
+			'recorder.delete' => 'Delete',
+			'recorder.deleteTitle' => ({required String name}) => 'Delete “${name}”?',
+			'recorder.deleteBody' => 'This removes the task only; files already saved stay on disk.',
+			'recorder.settingsOpen' => 'Recording settings',
 			'room.opening' => 'Opening the room',
 			'room.follow' => 'Follow',
 			'room.unfollow' => 'Following',
@@ -1058,10 +1368,16 @@ extension on TranslationsEn {
 			'settings.cacheClear' => 'Clear cache',
 			'settings.cacheClearDesc' => 'Deletes every cached cover, avatar and site icon.',
 			'settings.cacheCleared' => 'Cache cleared',
+			_ => null,
+		} ?? switch (path) {
 			'settings.cacheLimit' => 'Automatic cleanup cap',
 			'settings.cacheLimitDesc' => 'Oldest images are deleted past the cap; off keeps only expiry-based cleanup.',
 			'settings.cacheLimitOff' => 'No automatic cleanup',
 			'settings.cacheHint' => 'Covers and avatars are kept on this device for 30 days and pruned when they expire or pass the cap.',
+			'settings.preferPlatform' => 'Preferred platform',
+			'settings.preferPlatformDesc' => 'The platform the popular and areas pages open with.',
+			'settings.sitesOrderReset' => 'Restore default order',
+			'settings.sitesOrderResetDesc' => 'Platforms return to the built-in order; the show switches stay as they are.',
 			'shield.title' => 'Danmaku shield',
 			'shield.description' => 'Keep live-room danmaku out by keyword or user; the rules live on this device.',
 			'shield.masterTitle' => 'Master switch',

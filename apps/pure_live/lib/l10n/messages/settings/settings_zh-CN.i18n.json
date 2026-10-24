@@ -116,5 +116,9 @@
   "cacheLimit": "自动清理上限",
   "cacheLimitDesc": "超过上限时按最旧优先删除；关闭则只清理过期项。",
   "cacheLimitOff": "不自动清理",
-  "cacheHint": "封面与头像会在本机缓存 30 天，过期或超限时自动清理。"
+  "cacheHint": "封面与头像会在本机缓存 30 天，过期或超限时自动清理。",
+  "preferPlatform": "首选平台",
+  "preferPlatformDesc": "进入热门或分区时优先显示的平台。",
+  "sitesOrderReset": "恢复默认顺序",
+  "sitesOrderResetDesc": "平台回到内置的排列顺序；显示开关不受影响。"
 }

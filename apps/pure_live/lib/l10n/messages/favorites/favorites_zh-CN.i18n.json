@@ -6,5 +6,14 @@
   "statusLive": "直播中",
   "statusOffline": "离线",
   "refresh": "刷新",
-  "openFailedTitle": "关注列表打不开"
+  "openFailedTitle": "关注列表打不开",
+  "statusReplay": "录播",
+  "searchLive": "搜索直播",
+  "emptyLiveTitle": "当前筛选暂无已开播直播",
+  "emptyReplayTitle": "当前筛选暂无录播",
+  "emptyOfflineTitle": "当前筛选暂无未开播直播",
+  "emptyOfflineHint": "有未开播的关注，切换到「未开播」即可查看。",
+  "emptyGroupHint": "换个分组或平台，或刷新重新获取状态。",
+  "showOffline": "查看未开播",
+  "refreshFailed": "{count: int} 个直播间刷新失败"
 }

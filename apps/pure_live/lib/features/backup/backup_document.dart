@@ -1,5 +1,15 @@
 import 'dart:convert' show jsonDecode, jsonEncode;
 
+/// What a document carries: every section the codec knows, or just the
+/// follows (the reference app's "favorites only" backup).
+enum BackupScope {
+  /// Followed rooms, watch history, followed areas and settings.
+  all,
+
+  /// Followed rooms and followed areas only.
+  follows,
+}
+
 /// One backup document: the app's user data bundled into a single JSON
 /// object — the followed rooms, the watch history, the followed areas and
 /// a named subset of the simple settings.
@@ -13,6 +23,7 @@ final class BackupDocument {
   /// A document with the given sections; empty ones restore as "clear".
   BackupDocument({
     required this.exportedAt,
+    this.scope = BackupScope.all,
     this.follows = const {},
     this.history = const {},
     this.areaFollows = const {},
@@ -22,10 +33,10 @@ final class BackupDocument {
   factory BackupDocument._fromRoot(Map<String, Object?> root) {
     final version = _objectMap(root['version']);
     final exportedAt =
-        DateTime.tryParse(version?['exportedAt'] as String? ?? '') ??
-        DateTime.fromMillisecondsSinceEpoch(0);
+        DateTime.tryParse(version?['exportedAt'] as String? ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
     return BackupDocument(
       exportedAt: exportedAt,
+      scope: version?['scope'] == 'follows' ? BackupScope.follows : BackupScope.all,
       follows: _entries(root['follows']),
       history: _entries(root['history']),
       areaFollows: _entries(root['areaFollows']),
@@ -36,6 +47,13 @@ final class BackupDocument {
   /// When the document was written (UTC; an unknown moment restores as
   /// the epoch).
   final DateTime exportedAt;
+
+  /// What this document carries. A follows-only document restores only
+  /// its follows and areas; the other sections stay untouched.
+  final BackupScope scope;
+
+  /// Whether this document backs up the follows only.
+  bool get followsOnly => scope == BackupScope.follows;
 
   /// The followed rooms: identity key → the room's storage JSON.
   final Map<String, Map<String, Object?>> follows;
@@ -61,26 +79,30 @@ final class BackupDocument {
   /// The file name the WebDAV sync and the export settle on.
   static const String backupFileName = 'pure_live_backup.json';
 
-  /// The export's file name, stamped with the local date.
-  static String exportFileName(DateTime localNow) {
+  /// The export's file name, stamped with the local date and time so
+  /// repeated backups in one day do not collide: `pure_live_backup_…json`
+  /// or `pure_live_follows_…json` for a follows-only document.
+  static String exportFileName(DateTime localNow, {BackupScope scope = BackupScope.all}) {
     String two(int value) => value.toString().padLeft(2, '0');
-    final date = '${localNow.year}${two(localNow.month)}${two(localNow.day)}';
-    return 'pure_live_backup_$date.json';
+    final stamp =
+        '${localNow.year}${two(localNow.month)}${two(localNow.day)}'
+        '_${two(localNow.hour)}${two(localNow.minute)}${two(localNow.second)}';
+    final kind = scope == BackupScope.follows ? 'follows' : 'backup';
+    return 'pure_live_${kind}_$stamp.json';
   }
 
-  /// Whether nothing at all would be restored.
-  bool get isEmpty =>
-      follows.isEmpty && history.isEmpty && areaFollows.isEmpty && settings.isEmpty;
+  /// Whether nothing at all would be restored. A follows-only document
+  /// only needs follows or areas to be worth writing.
+  bool get isEmpty => scope == BackupScope.follows
+      ? follows.isEmpty && areaFollows.isEmpty
+      : follows.isEmpty && history.isEmpty && areaFollows.isEmpty && settings.isEmpty;
 
   /// The counts the pane's summary shows.
-  ({int follows, int history, int areas, int settings}) get counts => (
-    follows: follows.length,
-    history: history.length,
-    areas: areaFollows.length,
-    settings: settings.length,
-  );
+  ({int follows, int history, int areas, int settings}) get counts =>
+      (follows: follows.length, history: history.length, areas: areaFollows.length, settings: settings.length);
 
-  /// The document as the wire JSON, so a pasted one stays readable.
+  /// The document as the wire JSON, so a file or a server payload stays
+  /// readable.
   String encode() => jsonEncode(toJson());
 
   /// The document as plain JSON objects.
@@ -88,6 +110,7 @@ final class BackupDocument {
     'version': <String, Object?>{
       'app': appTag,
       'schema': schemaVersion,
+      'scope': scope.name,
       'exportedAt': exportedAt.toUtc().toIso8601String(),
     },
     'follows': follows,
@@ -100,7 +123,8 @@ final class BackupDocument {
   ///
   /// Defensive by design: a section of the wrong shape is dropped, not a
   /// failure — an export from a newer app still restores what this one
-  /// understands.
+  /// understands. A root with neither this app's tag nor a single known
+  /// section is not a backup at all, so `{}` can never wipe a device.
   static BackupDocument? tryDecode(String raw) {
     Object? decoded;
     try {
@@ -108,7 +132,12 @@ final class BackupDocument {
     } on Object {
       return null;
     }
-    return decoded is Map ? BackupDocument._fromRoot(Map<String, Object?>.from(decoded)) : null;
+    if (decoded is! Map) return null;
+    final root = Map<String, Object?>.from(decoded);
+    final tagged = _objectMap(root['version'])?['app'] == appTag;
+    final hasSection = const ['follows', 'history', 'areaFollows', 'settings'].any((key) => root[key] is Map);
+    if (!tagged && !hasSection) return null;
+    return BackupDocument._fromRoot(root);
   }
 
   /// One keyed section: identity key → a stored JSON map. Entries that
@@ -129,6 +158,5 @@ final class BackupDocument {
       section is Map ? Map<String, Object?>.from(section) : const {};
 
   /// A nested object with string keys, or null when [value] is not one.
-  static Map<String, Object?>? _objectMap(Object? value) =>
-      value is Map ? Map<String, Object?>.from(value) : null;
+  static Map<String, Object?>? _objectMap(Object? value) => value is Map ? Map<String, Object?>.from(value) : null;
 }
