@@ -9,4 +9,8 @@
   "pause": "暂停",
   "noChat": "还没有弹幕",
   "system": "系统"
+,
+  "mute": "静音",
+  "unmute": "取消静音",
+  "volume": "音量"
 }

@@ -9,4 +9,8 @@
   "pause": "Pause",
   "noChat": "No chat yet",
   "system": "System"
+,
+  "mute": "Mute",
+  "unmute": "Unmute",
+  "volume": "Volume"
 }

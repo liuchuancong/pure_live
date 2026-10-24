@@ -1,16 +1,13 @@
 import 'dart:async' show Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
-import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
-import 'package:media_core_ui/media_core_ui.dart';
 import 'package:pure_live/features/favorites/follow_repository.dart' show followsProvider;
+import 'package:pure_live/features/room/player_surface.dart' show PlayerSurface;
 import 'package:pure_live/features/room/room_controller.dart';
-import 'package:pure_live/features/room/room_status.dart'
-    show RoomPictureAction, RoomPictureDim, RoomPictureKind, roomPictureProvider, roomSlowProvider, slowAfter;
+import 'package:pure_live/features/room/room_status.dart' show roomSlowProvider, slowAfter;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/utils/audience_format.dart' show AudienceFormat;
 
@@ -76,7 +73,10 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const AspectRatio(aspectRatio: 16 / 9, child: _PlayerSurface()),
+        AspectRatio(
+          aspectRatio: 16 / 9,
+          child: PlayerSurface(roomState: room, barrage: ref.read(roomProvider.notifier).barrage),
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
           child: _RoomFacts(room: room),
@@ -88,100 +88,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
         Expanded(child: _ChatFeed(room: room)),
       ],
     );
-  }
-}
-
-/// The player: media_core's view over the live handle; behind the
-/// picture-state overlay wherever the stream is not on screen.
-final class _PlayerSurface extends ConsumerWidget {
-  const _PlayerSurface();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    final room = ref.watch(roomProvider);
-    final handle = room.handle;
-    final picture = ref.watch(roomPictureProvider);
-    final showOverlay = picture.kind != RoomPictureKind.none;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        if (handle == null)
-          ColoredBox(color: colors.overlay, child: const SizedBox.expand())
-        else
-          MediaCorePlayerView(handle: handle),
-        if (ref.watch(barrageProvider) case final barrage?)
-          Positioned.fill(
-            child: FlameBarrageWidget(
-              config: const BarrageConfig(area: 0.7),
-              emojiAtlas: EmojiAtlas.instance,
-              controller: barrage,
-            ),
-          ),
-        if (showOverlay)
-          ColoredBox(
-            color: switch (picture.dim) {
-              RoomPictureDim.none => const Color(0x00000000),
-              RoomPictureDim.light => const Color(0x66000000),
-              RoomPictureDim.heavy => const Color(0xB3000000),
-              RoomPictureDim.cover => const Color(0xE6000000),
-            },
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                spacing: DsSpace.s12,
-                children: [
-                  if (picture.busy) const DsSpinner(),
-                  Text(
-                    picture.title,
-                    textAlign: TextAlign.center,
-                    style: theme.typography.title.copyWith(color: colors.text),
-                  ),
-                  if (picture.reason != null)
-                    Text(
-                      picture.reason!,
-                      textAlign: TextAlign.center,
-                      style: theme.typography.caption.copyWith(color: colors.textMuted),
-                    ),
-                  if (picture.actions.isNotEmpty)
-                    Wrap(
-                      spacing: DsSpace.s8,
-                      runSpacing: DsSpace.s8,
-                      alignment: WrapAlignment.center,
-                      children: [for (final action in picture.actions) _PictureAction(action: action)],
-                    ),
-                ],
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-/// One action the overlay offers, pressed through the room controller.
-final class _PictureAction extends ConsumerWidget {
-  const _PictureAction({required this.action});
-
-  final RoomPictureAction action;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final controller = ref.read(roomProvider.notifier);
-    final room = ref.read(roomProvider).room;
-    final (label, onPressed) = switch (action) {
-      RoomPictureAction.back => (t.common.close, () async => context.pop()),
-      RoomPictureAction.refresh => (
-        t.common.retry,
-        room == null ? null : () => unawaited(controller.open(platform: room.ref.platform, roomId: room.ref.roomId)),
-      ),
-      RoomPictureAction.retry => (t.common.retry, () => unawaited(controller.retry())),
-      RoomPictureAction.switchLine => (t.room.lineLabel, () => unawaited(controller.selectLine(1))),
-      RoomPictureAction.playAgain => (t.room.play, () => unawaited(controller.retry())),
-    };
-    return DsButton(onPressed: onPressed, child: Text(label));
   }
 }
 

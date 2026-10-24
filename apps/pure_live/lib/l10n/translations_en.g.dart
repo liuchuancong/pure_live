@@ -224,6 +224,9 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get pause => 'Pause';
 	@override String get noChat => 'No chat yet';
 	@override String get system => 'System';
+	@override String get mute => 'Mute';
+	@override String get unmute => 'Unmute';
+	@override String get volume => 'Volume';
 }
 
 // Path: search
@@ -398,6 +401,9 @@ extension on TranslationsEn {
 			'room.pause' => 'Pause',
 			'room.noChat' => 'No chat yet',
 			'room.system' => 'System',
+			'room.mute' => 'Mute',
+			'room.unmute' => 'Unmute',
+			'room.volume' => 'Volume',
 			'search.idleTitle' => 'Search the selected site',
 			'search.idleDescription' => 'Type to search its rooms, streamers or areas.',
 			'search.suggestionsTitle' => 'Suggestions',

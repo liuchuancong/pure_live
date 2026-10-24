@@ -408,6 +408,15 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '系统'
 	String get system => '系统';
+
+	/// zh-CN: '静音'
+	String get mute => '静音';
+
+	/// zh-CN: '取消静音'
+	String get unmute => '取消静音';
+
+	/// zh-CN: '音量'
+	String get volume => '音量';
 }
 
 // Path: search
@@ -656,6 +665,9 @@ extension on Translations {
 			'room.pause' => '暂停',
 			'room.noChat' => '还没有弹幕',
 			'room.system' => '系统',
+			'room.mute' => '静音',
+			'room.unmute' => '取消静音',
+			'room.volume' => '音量',
 			'search.idleTitle' => '搜索当前站点',
 			'search.idleDescription' => '输入关键词，搜索房间、主播或分区。',
 			'search.suggestionsTitle' => '搜索建议',
