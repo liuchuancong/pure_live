@@ -1519,13 +1519,6 @@ packages:
       relative: false
     source: path
     version: "0.1.0"
-  media_core_ui:
-    dependency: transitive
-    description:
-      path: "F:/media_core/packages/media_core_ui"
-      relative: false
-    source: path
-    version: "0.1.0"
   media_core_win32:
     dependency: transitive
     description:

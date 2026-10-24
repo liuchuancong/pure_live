@@ -14,7 +14,7 @@ import 'package:pure_live/shared/utils/audience_format.dart' show AudienceFormat
 /// The live room: media_core's player surface above, the room's facts and
 /// controls under it, the chat beside them on a wide window.
 ///
-/// The player brings its own control bar (media_core_ui's built-in one);
+/// The player picture is media_core's bare view; the control layer is the app's own,
 /// the picture overlay tells the states the stream goes through (the
 /// connecting, the slow open, the recovery, the offline room) with the
 /// actions each one offers; the room's own row picks the quality and the
