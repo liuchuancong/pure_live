@@ -13,6 +13,7 @@ enum SettingsSection {
   shield(DsIcons.shield),
   sites(DsIcons.antenna),
   data(DsIcons.database),
+  cache(DsIcons.archive),
   about(DsIcons.info);
 
   SettingsSection(this.icon);
@@ -29,6 +30,7 @@ enum SettingsSection {
     SettingsSection.network => t.settings.navNetwork,
     SettingsSection.sites => t.settings.navSites,
     SettingsSection.data => t.settings.navData,
+    SettingsSection.cache => t.settings.navCache,
     SettingsSection.about => t.settings.navAbout,
   };
 
@@ -41,6 +43,7 @@ enum SettingsSection {
     SettingsSection.network => t.settings.networkDescription,
     SettingsSection.sites => t.settings.sitesDescription,
     SettingsSection.data => t.settings.dataDescription,
+    SettingsSection.cache => t.settings.cacheDescription,
     SettingsSection.about => t.settings.aboutDescription,
   };
 

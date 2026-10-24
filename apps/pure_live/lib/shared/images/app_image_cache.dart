@@ -1,40 +1,69 @@
 import 'dart:io';
 
-import 'package:cached_network_image_ce/cached_network_image.dart' hide CacheManager;
+import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/widgets.dart' show ImageProvider;
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 /// The app's one disk cache for network images: covers, avatars, logos.
 ///
-/// Every image the app draws from the network goes through cachedImage,
+/// Every image the app draws from the network goes through [cachedImage],
 /// which hands the [CachedNetworkImageProvider] this manager — so the bytes
-/// live under one folder, age out on a fixed period and can be sized,
-/// cleared and capped from the settings surface. (Before this, images used
-/// `Image.network`: memory only, nothing on disk to manage.)
-final CacheManager appImageCache = CacheManager(
-  Config('pure_live_images', stalePeriod: const Duration(days: 30), maxNrOfCacheObjects: 320),
+/// live in one folder, age out after the manager's stale period, and can be
+/// measured, cleared and capped from the settings surface. (Before this,
+/// images used `Image.network`: memory only, nothing on disk to manage.)
+final DefaultCacheManager appImageCache = DefaultCacheManager(
+  stalePeriod: const Duration(days: 30),
+  maxNrOfCacheObjects: 320,
 );
 
-/// The cache's folder name; its files live under the temporary directory,
-/// which is what the settings surface measures and prunes.
-const String _cacheKey = 'pure_live_images';
+/// The folder the manager keeps its image files in, under the temporary
+/// directory. Its `hive` subfolder is metadata and is never counted or
+/// pruned — deleting it would corrupt the manager's bookkeeping.
+const String _cacheFolder = 'cached_network_image_ce';
+const String _metadataFolder = 'hive';
 
-/// A network image through [appImageCache]; [width]/[height] ask the
-/// provider for a decode box and the server for a fitting copy where it can.
+/// The extensions the manager writes (webp included); only these are
+/// counted and pruned.
+const Set<String> _imageExtensions = {'jpg', 'jpeg', 'png', 'webp', 'gif', 'tga', 'cur', 'ico'};
+
+/// A network image through [appImageCache]; [width]/[height] ask for a
+/// decode box and, where the server can, a fitting copy.
 ImageProvider cachedImage(String url, {int? width, int? height, String? cacheKey}) =>
     CachedNetworkImageProvider(url, cacheManager: appImageCache, maxWidth: width, maxHeight: height, cacheKey: cacheKey);
 
-/// The cache's folder, when the platform has a temporary directory.
+/// The cache's image folder, when the platform has a temporary directory.
 Future<Directory?> _cacheDirectory() async {
   try {
     final temp = await getTemporaryDirectory();
-    return Directory(p.join(temp.path, _cacheKey));
+    return Directory(p.join(temp.path, _cacheFolder));
   } on Object {
     return null;
   }
+}
+
+/// The image files under [root], skipping the metadata folder.
+List<(File, DateTime, int)> _imageFiles(Directory root) {
+  final files = <(File, DateTime, int)>[];
+  try {
+    for (final entity in root.listSync(recursive: true)) {
+      if (entity is! File) {
+        continue;
+      }
+      final parts = p.split(p.relative(entity.path, from: root.path));
+      if (parts.contains(_metadataFolder)) {
+        continue;
+      }
+      if (!_imageExtensions.contains(p.extension(entity.path).replaceFirst('.', '').toLowerCase())) {
+        continue;
+      }
+      files.add((entity, entity.lastModifiedSync(), entity.lengthSync()));
+    }
+  } on Object {
+    // A file vanishing mid-walk just means it is not counted.
+  }
+  return files;
 }
 
 /// The bytes the image cache occupies on disk.
@@ -43,23 +72,13 @@ Future<int> imageCacheBytes() async {
   if (directory == null || !directory.existsSync()) {
     return 0;
   }
-  var total = 0;
-  try {
-    for (final entity in directory.listSync(recursive: true)) {
-      if (entity is File) {
-        total += entity.lengthSync();
-      }
-    }
-  } on Object {
-    // A file vanishing mid-walk just means it is not counted.
-  }
-  return total;
+  return _imageFiles(directory).fold<int>(0, (sum, entry) => sum + entry.$3);
 }
 
-/// Deletes every cached image.
+/// Deletes every cached image (the manager's own bookkeeping goes with it).
 Future<void> clearImageCache() => appImageCache.emptyCache();
 
-/// Deletes the oldest cached files until the folder fits [maxBytes]; a
+/// Deletes the oldest cached images until the images fit [maxBytes]; a
 /// limit of zero or less means no pruning. Answers the bytes left.
 Future<int> enforceImageCacheLimit(int maxBytes) async {
   if (maxBytes <= 0) {
@@ -69,16 +88,7 @@ Future<int> enforceImageCacheLimit(int maxBytes) async {
   if (directory == null || !directory.existsSync()) {
     return 0;
   }
-  final files = <(File, DateTime, int)>[];
-  try {
-    for (final entity in directory.listSync(recursive: true)) {
-      if (entity is File) {
-        files.add((entity, entity.lastModifiedSync(), entity.lengthSync()));
-      }
-    }
-  } on Object {
-    return 0;
-  }
+  final files = _imageFiles(directory);
   var total = files.fold<int>(0, (sum, entry) => sum + entry.$3);
   if (total <= maxBytes) {
     return total;
@@ -98,8 +108,7 @@ Future<int> enforceImageCacheLimit(int maxBytes) async {
   return total;
 }
 
-/// The configured automatic limit in megabytes; 0 means off. Stored beside
-/// the other preferences so the boot can prune without a settings page.
+/// The configured automatic limit in megabytes; 0 means off.
 int imageCacheLimitMb() {
   try {
     return StoragePrefs.getInt('cache.maxMB') ?? 0;

@@ -555,6 +555,17 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get backHome => 'Back to app';
 	@override String get pureBlack => 'True black (OLED)';
 	@override String get pureBlackDesc => 'Collapses dark backgrounds to true black for OLED screens.';
+	@override String get navCache => 'Cache';
+	@override String get cacheDescription => 'The disk cache for covers and avatars, and its cleanup cap.';
+	@override String get cacheSize => 'Current cache size';
+	@override String get cacheRefresh => 'Refresh';
+	@override String get cacheClear => 'Clear cache';
+	@override String get cacheClearDesc => 'Deletes every cached cover, avatar and site icon.';
+	@override String get cacheCleared => 'Cache cleared';
+	@override String get cacheLimit => 'Automatic cleanup cap';
+	@override String get cacheLimitDesc => 'Oldest images are deleted past the cap; off keeps only expiry-based cleanup.';
+	@override String get cacheLimitOff => 'No automatic cleanup';
+	@override String get cacheHint => 'Covers and avatars are kept on this device for 30 days and pruned when they expire or pass the cap.';
 }
 
 // Path: shield
@@ -1040,6 +1051,17 @@ extension on TranslationsEn {
 			'settings.backHome' => 'Back to app',
 			'settings.pureBlack' => 'True black (OLED)',
 			'settings.pureBlackDesc' => 'Collapses dark backgrounds to true black for OLED screens.',
+			'settings.navCache' => 'Cache',
+			'settings.cacheDescription' => 'The disk cache for covers and avatars, and its cleanup cap.',
+			'settings.cacheSize' => 'Current cache size',
+			'settings.cacheRefresh' => 'Refresh',
+			'settings.cacheClear' => 'Clear cache',
+			'settings.cacheClearDesc' => 'Deletes every cached cover, avatar and site icon.',
+			'settings.cacheCleared' => 'Cache cleared',
+			'settings.cacheLimit' => 'Automatic cleanup cap',
+			'settings.cacheLimitDesc' => 'Oldest images are deleted past the cap; off keeps only expiry-based cleanup.',
+			'settings.cacheLimitOff' => 'No automatic cleanup',
+			'settings.cacheHint' => 'Covers and avatars are kept on this device for 30 days and pruned when they expire or pass the cap.',
 			'shield.title' => 'Danmaku shield',
 			'shield.description' => 'Keep live-room danmaku out by keyword or user; the rules live on this device.',
 			'shield.masterTitle' => 'Master switch',

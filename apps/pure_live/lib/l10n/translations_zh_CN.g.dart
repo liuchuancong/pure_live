@@ -1261,6 +1261,39 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '深色模式下把背景收成纯黑，OLED 屏更省电。'
 	String get pureBlackDesc => '深色模式下把背景收成纯黑，OLED 屏更省电。';
+
+	/// zh-CN: '缓存'
+	String get navCache => '缓存';
+
+	/// zh-CN: '封面与头像的磁盘缓存、清理上限。'
+	String get cacheDescription => '封面与头像的磁盘缓存、清理上限。';
+
+	/// zh-CN: '当前缓存大小'
+	String get cacheSize => '当前缓存大小';
+
+	/// zh-CN: '刷新'
+	String get cacheRefresh => '刷新';
+
+	/// zh-CN: '清除缓存'
+	String get cacheClear => '清除缓存';
+
+	/// zh-CN: '删除所有已缓存的封面、头像与站点图标。'
+	String get cacheClearDesc => '删除所有已缓存的封面、头像与站点图标。';
+
+	/// zh-CN: '缓存已清除'
+	String get cacheCleared => '缓存已清除';
+
+	/// zh-CN: '自动清理上限'
+	String get cacheLimit => '自动清理上限';
+
+	/// zh-CN: '超过上限时按最旧优先删除；关闭则只清理过期项。'
+	String get cacheLimitDesc => '超过上限时按最旧优先删除；关闭则只清理过期项。';
+
+	/// zh-CN: '不自动清理'
+	String get cacheLimitOff => '不自动清理';
+
+	/// zh-CN: '封面与头像会在本机缓存 30 天，过期或超限时自动清理。'
+	String get cacheHint => '封面与头像会在本机缓存 30 天，过期或超限时自动清理。';
 }
 
 // Path: shield
@@ -1920,6 +1953,17 @@ extension on Translations {
 			'settings.backHome' => '返回应用',
 			'settings.pureBlack' => '纯黑（OLED）',
 			'settings.pureBlackDesc' => '深色模式下把背景收成纯黑，OLED 屏更省电。',
+			'settings.navCache' => '缓存',
+			'settings.cacheDescription' => '封面与头像的磁盘缓存、清理上限。',
+			'settings.cacheSize' => '当前缓存大小',
+			'settings.cacheRefresh' => '刷新',
+			'settings.cacheClear' => '清除缓存',
+			'settings.cacheClearDesc' => '删除所有已缓存的封面、头像与站点图标。',
+			'settings.cacheCleared' => '缓存已清除',
+			'settings.cacheLimit' => '自动清理上限',
+			'settings.cacheLimitDesc' => '超过上限时按最旧优先删除；关闭则只清理过期项。',
+			'settings.cacheLimitOff' => '不自动清理',
+			'settings.cacheHint' => '封面与头像会在本机缓存 30 天，过期或超限时自动清理。',
 			'shield.title' => '弹幕屏蔽',
 			'shield.description' => '按关键词与用户屏蔽直播间弹幕，规则保存在本机。',
 			'shield.masterTitle' => '总开关',

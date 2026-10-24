@@ -32,6 +32,7 @@ import 'package:pure_live/features/shield/shield_pane.dart' show ShieldPane;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_switcher.dart' show AppMark;
 import 'package:pure_live/shared/enums/tool_order.dart';
+import 'package:pure_live/shared/images/app_image_cache.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// The settings surface. On a desktop window the shell's own sidebar lists
@@ -130,6 +131,7 @@ final class SettingsSectionPane extends ConsumerWidget {
       SettingsSection.shield => const _DanmakuPane(),
       SettingsSection.sites => const _SitesPane(),
       SettingsSection.data => const _DataPane(),
+      SettingsSection.cache => const _CachePane(),
       SettingsSection.about => const _AboutPane(),
     };
     return SingleChildScrollView(
@@ -762,6 +764,121 @@ final class _DataPane extends ConsumerWidget {
           },
         ),
         const BackupPane(),
+      ],
+    );
+  }
+}
+
+/// The cache pane: the cover/avatar disk cache the network images live in —
+/// its size, a manual clear, and the automatic cap the boot prunes to.
+final class _CachePane extends StatefulWidget {
+  const _CachePane();
+
+  @override
+  State<_CachePane> createState() => _CachePaneState();
+}
+
+final class _CachePaneState extends State<_CachePane> {
+  int? _bytes;
+  int _limitMb = imageCacheLimitMb();
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_measure());
+  }
+
+  Future<void> _measure() async {
+    final bytes = await imageCacheBytes();
+    if (mounted) {
+      setState(() => _bytes = bytes);
+    }
+  }
+
+  Future<void> _clear() async {
+    setState(() => _busy = true);
+    try {
+      await clearImageCache();
+      await _measure();
+      if (mounted) {
+        showDsToast(context: context, title: context.t.settings.cacheCleared);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  Future<void> _setLimit(int? value) async {
+    if (value == null) {
+      return;
+    }
+    setState(() => _limitMb = value);
+    await storeImageCacheLimitMb(value);
+    // Applying the cap at once makes the setting honest on the spot.
+    if (value > 0) {
+      await enforceImageCacheLimit(value * 1024 * 1024);
+      await _measure();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return DsListSection(
+      header: Text(t.settings.navCache),
+      children: [
+        DsListRow(
+          leading: const DsIcon(DsIcons.archive),
+          title: Text(t.settings.cacheSize),
+          detail: Text(_bytes == null ? '…' : formatCacheSize(_bytes!)),
+          trailing: DsButton(
+            variant: DsButtonVariant.ghost,
+            size: DsSize.sm,
+            leading: const DsIcon(DsIcons.refreshCw, size: 16),
+            onPressed: _busy ? null : () => unawaited(_measure()),
+            child: Text(t.settings.cacheRefresh),
+          ),
+        ),
+        DsListRow(
+          leading: const DsIcon(DsIcons.trash2),
+          title: Text(t.settings.cacheClear),
+          description: Text(t.settings.cacheClearDesc),
+          trailing: DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            onPressed: _busy ? null : () => unawaited(_clear()),
+            child: Text(t.settings.cacheClear),
+          ),
+        ),
+        DsListRow(
+          leading: const DsIcon(DsIcons.settings),
+          title: Text(t.settings.cacheLimit),
+          description: Text(t.settings.cacheLimitDesc),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
+          child: DsSelect<int>(
+            value: _limitMb,
+            onChanged: (value) => unawaited(_setLimit(value)),
+            options: [
+              DsSelectOption(value: 0, label: t.settings.cacheLimitOff),
+              for (final mb in const [100, 200, 500, 1024, 2048]) DsSelectOption(value: mb, label: '$mb MB'),
+            ],
+            semanticLabel: t.settings.cacheLimit,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s16),
+          child: Text(
+            t.settings.cacheHint,
+            style: theme.typography.caption.copyWith(color: colors.textMuted),
+          ),
+        ),
       ],
     );
   }

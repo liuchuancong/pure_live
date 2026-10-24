@@ -9,6 +9,7 @@ import 'package:pure_live/app/theme/system_accent_color.dart' show readSystemAcc
 import 'package:pure_live/app/theme/theme_persistence.dart';
 import 'package:pure_live/app/theme/theme_settings.dart' show AppThemeScope, AppThemeSettings;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/images/app_image_cache.dart';
 
 /// The root: `DsApp` over the viewer's theme settings — the seed from the
 /// platform accent or the appearance pane's named tone, light/dark, density
@@ -54,6 +55,9 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     });
     final font = ThemePersistence.readFont();
     if (font != null) _settings = _settings.rebuild((b) => b..fontFamily = font);
+    // The image cache's configured cap is applied once per start, off the
+    // first frame so a big tree never waits on the disk walk.
+    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(enforceConfiguredImageCacheLimit()));
     _localeCode = ThemePersistence.readLocale();
     if (_localeCode != null) {
       LocaleSettings.setLocaleRawSync(_localeCode!);

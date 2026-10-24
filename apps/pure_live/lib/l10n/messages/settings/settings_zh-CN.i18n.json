@@ -105,5 +105,16 @@
   "fontPlatform": "跟随平台（系统字体）",
   "backHome": "返回应用",
   "pureBlack": "纯黑（OLED）",
-  "pureBlackDesc": "深色模式下把背景收成纯黑，OLED 屏更省电。"
+  "pureBlackDesc": "深色模式下把背景收成纯黑，OLED 屏更省电。",
+  "navCache": "缓存",
+  "cacheDescription": "封面与头像的磁盘缓存、清理上限。",
+  "cacheSize": "当前缓存大小",
+  "cacheRefresh": "刷新",
+  "cacheClear": "清除缓存",
+  "cacheClearDesc": "删除所有已缓存的封面、头像与站点图标。",
+  "cacheCleared": "缓存已清除",
+  "cacheLimit": "自动清理上限",
+  "cacheLimitDesc": "超过上限时按最旧优先删除；关闭则只清理过期项。",
+  "cacheLimitOff": "不自动清理",
+  "cacheHint": "封面与头像会在本机缓存 30 天，过期或超限时自动清理。"
 }

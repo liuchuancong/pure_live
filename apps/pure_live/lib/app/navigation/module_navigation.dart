@@ -76,7 +76,7 @@ const List<SettingsGroup> _mediaSettings = [
       SettingsSection.playback,
     ],
   ),
-  (labelKey: 'groupData', sections: [SettingsSection.data]),
+  (labelKey: 'groupData', sections: [SettingsSection.data, SettingsSection.cache]),
   (labelKey: 'groupAbout', sections: [SettingsSection.about]),
 ];
 
@@ -97,7 +97,7 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
         ],
       ),
       (labelKey: 'groupContent', sections: [SettingsSection.sites]),
-      (labelKey: 'groupData', sections: [SettingsSection.data]),
+      (labelKey: 'groupData', sections: [SettingsSection.data, SettingsSection.cache]),
       (labelKey: 'groupAbout', sections: [SettingsSection.about]),
     ],
   ),

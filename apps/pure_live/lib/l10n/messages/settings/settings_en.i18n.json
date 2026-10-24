@@ -105,5 +105,16 @@
   "fontPlatform": "Follow the platform (system font)",
   "backHome": "Back to app",
   "pureBlack": "True black (OLED)",
-  "pureBlackDesc": "Collapses dark backgrounds to true black for OLED screens."
+  "pureBlackDesc": "Collapses dark backgrounds to true black for OLED screens.",
+  "navCache": "Cache",
+  "cacheDescription": "The disk cache for covers and avatars, and its cleanup cap.",
+  "cacheSize": "Current cache size",
+  "cacheRefresh": "Refresh",
+  "cacheClear": "Clear cache",
+  "cacheClearDesc": "Deletes every cached cover, avatar and site icon.",
+  "cacheCleared": "Cache cleared",
+  "cacheLimit": "Automatic cleanup cap",
+  "cacheLimitDesc": "Oldest images are deleted past the cap; off keeps only expiry-based cleanup.",
+  "cacheLimitOff": "No automatic cleanup",
+  "cacheHint": "Covers and avatars are kept on this device for 30 days and pruned when they expire or pass the cap."
 }
