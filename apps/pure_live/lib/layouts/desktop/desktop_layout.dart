@@ -8,6 +8,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/providers/sidebar_providers.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/app_switcher.dart';
 import 'package:pure_live/layouts/desktop/sidebar_resizer.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart';
 import 'package:pure_live/shared/enums/app_module.dart';
@@ -18,13 +19,16 @@ import 'package:pure_live/shared/enums/navigation_item.dart';
 /// The desktop layout, following the v4 navigation design: the self-drawn
 /// title bar above ([WindowTitleBar] — its left corner holds the app icon
 /// that hovers into the sidebar toggle, and the back and forward arrows
-/// over the caller's visit trail) — a grouped sidebar below it, the brand
-/// on top, three labelled sections of destinations, the user entry last,
-/// expanded with labels at wide widths and folded to an icon rail with
-/// tooltips below the breakpoint; a [SidebarResizer] between the sidebar
-/// and the content drags the width (double-tap resets it, dragging it far
-/// left puts the sidebar away); a search field opening the search
-/// destination above the content.
+/// over the caller's visit trail) — below it the sidebar: the app
+/// switcher on top ("Pure Live" and a dropdown chevron opening the
+/// content types), the module's business menu under it (no section
+/// headings), the shared tools under a divider, and settings pinned to
+/// the foot — the menu scrolls when it must, settings never do; expanded
+/// with labels at wide widths and folded to an icon rail with tooltips
+/// below the breakpoint; a [SidebarResizer] between the sidebar and the
+/// content drags the width (double-tap resets it, dragging it far left
+/// puts the sidebar away); a search field opening the search destination
+/// above the content.
 ///
 /// The caption and the drag band go to the window host — the layout is the
 /// app's, the window behaviour is `live_shell_desktop`'s. Which widths get
@@ -33,7 +37,7 @@ final class DesktopLayout extends ConsumerStatefulWidget {
   /// A desktop layout over [content].
   const DesktopLayout({
     required this.content,
-    required this.groups,
+    required this.business,
     required this.selected,
     required this.onSelected,
     required this.expanded,
@@ -52,8 +56,8 @@ final class DesktopLayout extends ConsumerStatefulWidget {
   /// The current screen.
   final Widget content;
 
-  /// The sidebar groups: (slang key of the section label, destinations).
-  final List<(String, List<NavigationItem>)> groups;
+  /// The module's business menu: the sidebar's top block, no headings.
+  final List<NavigationItem> business;
 
   /// The selected destination.
   final NavigationItem selected;
@@ -68,7 +72,7 @@ final class DesktopLayout extends ConsumerStatefulWidget {
   /// The module whose navigation the sidebar shows.
   final AppModule module;
 
-  /// Fired when a module icon picks that module.
+  /// Fired when the app switcher picks that module.
   final ValueChanged<AppModule> onModuleSelected;
 
   /// The sidebar's dragged width, when [expanded].
@@ -124,6 +128,13 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
     // A width remembered from a wider window yields to the content's
     // floor until the window grows again.
     final sidebarWidth = math.min(widget.sidebarWidth, MediaQuery.sizeOf(context).width - kSidebarContentFloor);
+    final items = [
+      for (final item in widget.business)
+        DsSidebarItem(value: item, leading: DsIcon(item.icon), label: Text(item.label(t))),
+      const SidebarDivider(),
+      for (final item in kToolItems)
+        DsSidebarItem(value: item, leading: DsIcon(item.icon), label: Text(item.label(t))),
+    ];
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.keyB, control: true): widget.onToggleSidebar,
@@ -153,24 +164,45 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                       // A live drag moves the width itself; the spring is
                       // for the toggle, not for the pointer's hand.
                       data: _resizing ? theme.copyWith(motion: theme.motion.copyWith(reduced: true)) : theme,
-                      child: DsSidebar(
-                        collapsed: !widget.expanded,
-                        header: _ModuleHeader(collapsed: !widget.expanded, module: widget.module, onModule: widget.onModuleSelected),
-                        value: widget.selected,
-                        onChanged: widget.onSelected,
-                        style: DsSidebarStyle(width: sidebarWidth),
+                      child: Column(
                         children: [
-                          for (final (groupKey, groupItems) in widget.groups) ...[
-                            DsSidebarSection(label: Text(_groupLabel(t, groupKey))),
-                            for (final item in groupItems)
-                              DsSidebarItem(
-                                label: Text(item.label(t)),
-                                value: item,
-                                leading: DsIcon(item.icon),
-                                selected: item == widget.selected,
-                                onPressed: () => widget.onSelected(item),
+                          // The navigation itself: it scrolls when the
+                          // window is too short for it; the settings entry
+                          // below never leaves the foot.
+                          Expanded(
+                            child: DsSidebar(
+                              collapsed: !widget.expanded,
+                              header: AppSwitcher(
+                                collapsed: !widget.expanded,
+                                module: widget.module,
+                                onModule: widget.onModuleSelected,
                               ),
-                          ],
+                              value: widget.selected,
+                              onChanged: widget.onSelected,
+                              style: DsSidebarStyle(width: sidebarWidth),
+                              children: items,
+                            ),
+                          ),
+                          // Settings stays in the foot whatever the menu's
+                          // length: a second sidebar of one item, its top
+                          // padding handed to the divider instead.
+                          DsSidebar(
+                            collapsed: !widget.expanded,
+                            value: widget.selected,
+                            onChanged: widget.onSelected,
+                            style: DsSidebarStyle(
+                              width: sidebarWidth,
+                              padding: const EdgeInsetsDirectional.only(bottom: DsSpace.s16),
+                            ),
+                            children: [
+                              const SidebarDivider(),
+                              DsSidebarItem(
+                                value: NavigationItem.settings,
+                                leading: const DsIcon(DsIcons.settings),
+                                label: Text(t.navigation.settings),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -219,79 +251,6 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
           ),
         ),
       ),
-    );
-  }
-
-  String _groupLabel(Translations t, String key) => switch (key) {
-    'groupPrimary' => t.navigation.groupPrimary,
-    'groupContent' => t.navigation.groupContent,
-    'groupPersonal' => t.navigation.groupPersonal,
-    _ => key,
-  };
-}
-
-/// The sidebar's head: the brand above a row of module icons — click a
-/// module and the destinations below become its own. Collapsed, the strip
-/// gives way to the current module's icon alone (expand to switch).
-final class _ModuleHeader extends StatelessWidget {
-  const _ModuleHeader({required this.collapsed, required this.module, required this.onModule});
-
-  final bool collapsed;
-  final AppModule module;
-  final ValueChanged<AppModule> onModule;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    if (collapsed) {
-      return Center(child: DsIcon(module.icon, size: 18, color: colors.text));
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: 10,
-      children: [
-        Row(
-          children: [
-            const SizedBox(width: 12),
-            DsIcon(DsIcons.tv, size: 18, color: colors.text),
-            const SizedBox(width: 8),
-            Text(context.t.common.appTitle, style: DsTheme.of(context).typography.title.copyWith(color: colors.text)),
-          ],
-        ),
-        Row(
-          children: [
-            for (final candidate in AppModule.values)
-              Expanded(
-                child: DsTooltip(
-                  message: candidate.label(context.t),
-                  side: DsSide.bottom,
-                  child: DsPressable(
-                    semanticLabel: candidate.label(context.t),
-                    onPressed: () => onModule(candidate),
-                    builder: (context, states, _) {
-                      final selected = candidate == module;
-                      final hovered = states.contains(WidgetState.hovered);
-                      return Container(
-                        height: 30,
-                        decoration: DsBoxDecoration(
-                          color: selected ? DsTheme.of(context).selectedFill : hovered ? colors.hover : null,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Center(
-                          child: DsIcon(
-                            candidate.icon,
-                            size: 16,
-                            color: selected ? DsTheme.of(context).onSelectedFill : colors.textMuted,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ],
     );
   }
 }

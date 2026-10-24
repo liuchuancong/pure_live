@@ -1,0 +1,23 @@
+{
+  "title": "账号",
+  "description": "各直播平台的登录状态，凭证只保存在本机安全存储中。",
+  "sectionHeader": "登录状态",
+  "empty": "暂无支持登录的平台",
+  "notSignedIn": "未登录",
+  "signedInAs": "已登录：{name}",
+  "qrLogin": "扫码登录",
+  "cookieLogin": "导入 Cookie",
+  "signOut": "退出登录",
+  "qrDialogTitle": "{site} 扫码登录",
+  "qrHint": "打开{site}的手机客户端，扫描二维码并确认登录。",
+  "qrExpired": "二维码已过期",
+  "qrRetry": "重新获取",
+  "qrPollingFailed": "连接失败，正在重试…",
+  "cookieDialogTitle": "{site} 导入 Cookie",
+  "cookieDialogHint": "在已登录的浏览器中复制该网站的 Cookie，粘贴到下面（形如 name=value; name2=value2）。",
+  "cookieFieldHint": "粘贴 Cookie 内容",
+  "loginSuccess": "登录成功",
+  "loginFailed": "登录失败：{message}",
+  "signOutConfirmDesc": "将清除本机保存的{site}登录凭证。",
+  "signOutSuccess": "已退出登录"
+}

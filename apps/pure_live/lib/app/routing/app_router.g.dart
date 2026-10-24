@@ -6,7 +6,12 @@ part of 'app_router.dart';
 // GoRouterGenerator
 // **************************************************************************
 
-List<RouteBase> get $appRoutes => [$appShellRoute, $roomRoute];
+List<RouteBase> get $appRoutes => [
+  $appShellRoute,
+  $settingsSectionRoute,
+  $roomRoute,
+  $areaRoomsRoute,
+];
 
 RouteBase get $appShellRoute => StatefulShellRouteData.$route(
   factory: $AppShellRouteExtension._fromState,
@@ -62,6 +67,33 @@ RouteBase get $appShellRoute => StatefulShellRouteData.$route(
           path: '/search',
           hasOverriddenOnExit: false,
           factory: $SearchRoute._fromState,
+        ),
+      ],
+    ),
+    StatefulShellBranchData.$branch(
+      routes: [
+        GoRouteData.$route(
+          path: '/multiview',
+          hasOverriddenOnExit: false,
+          factory: $MultiviewRoute._fromState,
+        ),
+      ],
+    ),
+    StatefulShellBranchData.$branch(
+      routes: [
+        GoRouteData.$route(
+          path: '/recorder',
+          hasOverriddenOnExit: false,
+          factory: $RecorderRoute._fromState,
+        ),
+      ],
+    ),
+    StatefulShellBranchData.$branch(
+      routes: [
+        GoRouteData.$route(
+          path: '/toolbox',
+          hasOverriddenOnExit: false,
+          factory: $ToolboxRoute._fromState,
         ),
       ],
     ),
@@ -202,11 +234,102 @@ mixin $SearchRoute on GoRouteData {
   void replace(BuildContext context) => context.replace(location);
 }
 
+mixin $MultiviewRoute on GoRouteData {
+  static MultiviewRoute _fromState(GoRouterState state) =>
+      const MultiviewRoute();
+
+  @override
+  String get location => GoRouteData.$location('/multiview');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $RecorderRoute on GoRouteData {
+  static RecorderRoute _fromState(GoRouterState state) => const RecorderRoute();
+
+  @override
+  String get location => GoRouteData.$location('/recorder');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $ToolboxRoute on GoRouteData {
+  static ToolboxRoute _fromState(GoRouterState state) => const ToolboxRoute();
+
+  @override
+  String get location => GoRouteData.$location('/toolbox');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
 mixin $SettingsRoute on GoRouteData {
   static SettingsRoute _fromState(GoRouterState state) => const SettingsRoute();
 
   @override
   String get location => GoRouteData.$location('/settings');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $settingsSectionRoute => GoRouteData.$route(
+  path: '/settings/:section',
+  hasOverriddenOnExit: false,
+  factory: $SettingsSectionRoute._fromState,
+);
+
+mixin $SettingsSectionRoute on GoRouteData {
+  static SettingsSectionRoute _fromState(GoRouterState state) =>
+      SettingsSectionRoute(section: state.pathParameters['section']!);
+
+  SettingsSectionRoute get _self => this as SettingsSectionRoute;
+
+  @override
+  String get location =>
+      GoRouteData.$location('/settings/${Uri.encodeComponent(_self.section)}');
 
   @override
   void go(BuildContext context) => context.go(location);
@@ -239,6 +362,39 @@ mixin $RoomRoute on GoRouteData {
   @override
   String get location => GoRouteData.$location(
     '/room/${Uri.encodeComponent(_self.platform)}/${Uri.encodeComponent(_self.roomId)}',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $areaRoomsRoute => GoRouteData.$route(
+  path: '/zones/:platform/:areaId',
+  hasOverriddenOnExit: false,
+  factory: $AreaRoomsRoute._fromState,
+);
+
+mixin $AreaRoomsRoute on GoRouteData {
+  static AreaRoomsRoute _fromState(GoRouterState state) => AreaRoomsRoute(
+    platform: state.pathParameters['platform']!,
+    areaId: state.pathParameters['areaId']!,
+  );
+
+  AreaRoomsRoute get _self => this as AreaRoomsRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/zones/${Uri.encodeComponent(_self.platform)}/${Uri.encodeComponent(_self.areaId)}',
   );
 
   @override

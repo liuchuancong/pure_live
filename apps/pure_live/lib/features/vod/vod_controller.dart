@@ -1,7 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_net/live_net.dart' show ClientProfile, DioFactory, LiveHttp;
+import 'package:live_net/live_net.dart' show ClientProfile, LiveHttp;
 import 'package:live_vod/live_vod.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
+import 'package:pure_live/app/providers/network_providers.dart' show networkFactoryProvider;
 
 /// What the vod page holds: the committed query, its videos, where the next
 /// page asks, the in-flight flag, and the last failure.
@@ -16,7 +17,7 @@ VodState _initial() => (query: '', videos: const [], nextPage: 1, hasMore: true,
 /// and the transport stays behind [LiveHttp], so proxies and cookies remain
 /// the app shell's business.
 final vodClientProvider = Provider<BilibiliVodClient>((ref) {
-  final http = DioFactory().create(profile: ClientProfile.api);
+  final http = ref.watch(networkFactoryProvider).create(profile: ClientProfile.api);
   ref.onDispose(http.close);
   return BilibiliVodClient(http);
 });

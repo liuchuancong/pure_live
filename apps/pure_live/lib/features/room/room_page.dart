@@ -1,9 +1,13 @@
 import 'dart:async' show Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/material.dart' show AppBar, Scaffold;
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:pure_live/app/providers/fullscreen_providers.dart' show fullscreenStateProvider;
 import 'package:pure_live/features/favorites/follow_repository.dart' show followsProvider;
 import 'package:pure_live/features/room/player_surface.dart' show PlayerSurface;
 import 'package:pure_live/features/room/room_controller.dart';
@@ -39,6 +43,16 @@ final class RoomPage extends ConsumerStatefulWidget {
 final class _RoomPageState extends ConsumerState<RoomPage> {
   Timer? _slowTimer;
 
+  /// F enters or leaves fullscreen, Escape leaves (the keys the reference
+  /// binds and every video player expects).
+  late final Map<SingleActivator, VoidCallback> _keys = {
+    const SingleActivator(LogicalKeyboardKey.keyF): () => unawaited(ref.read(fullscreenStateProvider.notifier).toggle()),
+    const SingleActivator(LogicalKeyboardKey.escape): () => unawaited(ref.read(fullscreenStateProvider.notifier).exit()),
+    // Space plays and pauses — every player's reflex. A focused text field
+    // consumes the key first, so the composer never flips the playback.
+    const SingleActivator(LogicalKeyboardKey.space): () => unawaited(ref.read(roomProvider.notifier).togglePlayPause()),
+  };
+
   @override
   void initState() {
     super.initState();
@@ -70,8 +84,12 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
   @override
   Widget build(BuildContext context) {
     final room = ref.watch(roomProvider);
+    final fullscreen = ref.watch(fullscreenStateProvider);
+    final colors = DsTheme.colorsOf(context);
     _watchSlow(room);
-    return Column(
+    // In fullscreen the picture takes the whole page: the facts, the
+    // controls and the chat wait behind the surface until it leaves.
+    final body = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AspectRatio(
@@ -86,8 +104,92 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
           child: _RoomControls(room: room),
         ),
-        Expanded(child: _ChatFeed(room: room)),
+        const Expanded(child: _ChatFeed()),
+        const _ChatComposer(),
       ],
+    );
+    final page = CallbackShortcuts(
+      bindings: _keys,
+      child: fullscreen
+          ? Stack(
+              children: [
+                Positioned.fill(
+                  child: PlayerSurface(roomState: room, barrage: ref.read(roomProvider.notifier).barrage),
+                ),
+                // A way back without the keyboard: a quiet leave button in
+                // the corner.
+                const PositionedDirectional(
+                  top: DsSpace.s12,
+                  end: DsSpace.s12,
+                  child: _FullscreenButton(expanded: true),
+                ),
+              ],
+            )
+          : body,
+    );
+    // On a phone the room is a pushed page with no shell chrome of its
+    // own: the app bar carries the way back and the room's name.
+    final compact = MediaQuery.sizeOf(context).width < 768;
+    if (!compact) return page;
+    return Scaffold(
+      backgroundColor: colors.surface,
+      appBar: AppBar(
+        backgroundColor: colors.surface,
+        surfaceTintColor: const Color(0x00000000),
+        elevation: 0,
+        title: Text(
+          room.room?.content.title ?? context.t.common.appTitle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+      body: page,
+    );
+  }
+}
+
+/// The fullscreen toggle: the icon button in the controls row, and the
+/// quiet corner button while fullscreen holds the page.
+final class _FullscreenButton extends ConsumerWidget {
+  const _FullscreenButton({required this.expanded});
+
+  /// Whether the button sits on the fullscreen surface (true) or in the
+  /// controls row (false); only the styling differs.
+  final bool expanded;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final active = ref.watch(fullscreenStateProvider);
+    final leave = expanded || active;
+    return DsTooltip(
+      message: leave ? t.room.fullscreenOff : t.room.fullscreenOn,
+      child: DsPressable(
+        semanticLabel: leave ? t.room.fullscreenOff : t.room.fullscreenOn,
+        onPressed: () {
+          final controller = ref.read(fullscreenStateProvider.notifier);
+          unawaited(active ? controller.exit() : controller.toggle());
+        },
+        builder: (context, states, _) {
+          final hovered = states.contains(WidgetState.hovered);
+          return Container(
+            width: 30,
+            height: 30,
+            decoration: DsBoxDecoration(
+              color: expanded ? colors.overlay.withValues(alpha: hovered ? 0.7 : 0.45) : hovered ? colors.hover : null,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Center(
+              child: DsIcon(
+                active ? DsIcons.minimize : DsIcons.maximize2,
+                size: 16,
+                color: expanded ? colors.text : colors.textMuted,
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -202,6 +304,7 @@ final class _RoomControls extends ConsumerWidget {
             semanticLabel: t.room.lineLabel,
           ),
         _SleepChip(),
+        const _FullscreenButton(expanded: false),
         const Spacer(),
         DsButton(
           onPressed: () => unawaited(controller.togglePlayPause()),
@@ -216,26 +319,80 @@ final class _RoomControls extends ConsumerWidget {
 /// The chat feed: the danmaku session's messages, newest at the bottom,
 /// the sender's name before the text in the sender's color.
 final class _ChatFeed extends ConsumerWidget {
-  const _ChatFeed({required this.room});
-
-  final RoomState room;
+  const _ChatFeed();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    if (room.chat.isEmpty) {
+    final chat = ref.watch(roomChatProvider);
+    if (chat.isEmpty) {
       return Center(
         child: DsEmptyState(icon: const DsIcon(DsIcons.messageCircle), title: Text(t.room.noChat)),
       );
     }
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s16),
-      itemCount: room.chat.length,
-      itemBuilder: (context, index) {
-        final message = room.chat[index];
-        return _ChatLine(message: message);
-      },
+      itemCount: chat.length,
+      itemBuilder: (context, index) => _ChatLine(message: chat[index]),
     );
+  }
+}
+
+/// The chat composer: the field and the send button, only when the room's
+/// chat accepts a posted message; a failure toasts, a success clears the
+/// field.
+final class _ChatComposer extends ConsumerStatefulWidget {
+  const _ChatComposer();
+
+  @override
+  ConsumerState<_ChatComposer> createState() => _ChatComposerState();
+}
+
+final class _ChatComposerState extends ConsumerState<_ChatComposer> {
+  final TextEditingController _field = TextEditingController();
+
+  @override
+  void dispose() {
+    _field.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final canSend = ref.watch(roomProvider.notifier).canSendDanmaku;
+    if (!canSend) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
+      child: Row(
+        spacing: DsSpace.s8,
+        children: [
+          Expanded(
+            child: DsTextField(
+              controller: _field,
+              clearable: true,
+              placeholder: t.room.sendHint,
+              onSubmitted: (word) => unawaited(_send(word)),
+            ),
+          ),
+          DsButton(
+            onPressed: () => unawaited(_send(_field.text)),
+            child: Text(t.room.send),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _send(String word) async {
+    if (word.trim().isEmpty) return;
+    final failure = await ref.read(roomProvider.notifier).sendDanmaku(word);
+    if (!mounted) return;
+    if (failure == null) {
+      _field.clear();
+    } else {
+      showDsToast(context: context, title: context.t.room.sendFailed);
+    }
   }
 }
 

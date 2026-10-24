@@ -1,4 +1,10 @@
 {
   "allAreas": "All areas",
-  "noAreas": "This site has no areas"
+  "noAreas": "This platform has no areas",
+  "viewPlatform": "Platform areas",
+  "viewFollowed": "Followed areas",
+  "followedEmpty": "No followed areas yet",
+  "followedEmptyHint": "Tap the heart on an area or in a room to follow it",
+  "noPlatforms": "No platform to browse",
+  "unfollow": "Unfollow"
 }

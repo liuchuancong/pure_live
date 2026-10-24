@@ -1,0 +1,23 @@
+{
+  "tabRunning": "Recording",
+  "tabFinished": "Finished",
+  "clearFinished": "Clear finished",
+  "removeTask": "Remove this task",
+  "emptyTitle": "No recording tasks yet",
+  "emptyFinishedTitle": "Finished recordings will show up here",
+  "emptyDescription": "Recording arrives with the player stack: once it is in, start a recording from a live room and its task will show up here.",
+  "qualityBest": "Best quality",
+  "startedAt": "Started at {time}",
+  "stateRecording": "Recording",
+  "stateStopped": "Stopped",
+  "stateFailed": "Failed",
+  "settingsTitle": "Recording",
+  "saveDirTitle": "Save directory",
+  "saveDirDefault": "Follow the engine's default directory",
+  "saveDirDialogHint": "Enter the folder recordings are saved to",
+  "namingTitle": "File naming template",
+  "namingDescription": "Placeholders for date, time, platform, room id and title; takes effect with the player stack.",
+  "namingDialogHint": "Enter the naming template for recording files",
+  "maxSizeTitle": "Single-file size cap",
+  "maxSizeDescription": "Recordings split once a file reaches the cap; takes effect with the player stack."
+}

@@ -9,6 +9,7 @@ import 'package:media_core/media_core.dart';
 import 'package:pure_live/features/room/room_controller.dart';
 import 'package:pure_live/features/room/room_status.dart'
     show RoomPictureAction, RoomPictureDim, RoomPictureKind, roomPictureProvider;
+import 'package:pure_live/features/settings/danmaku_style_providers.dart' show danmakuStyleProvider;
 import 'package:pure_live/l10n/translations.dart';
 
 /// One action the overlay offers, pressed through the room controller.
@@ -102,6 +103,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     final handle = room.handle;
     _watchTransport(handle);
     final picture = ref.watch(roomPictureProvider);
+    final style = ref.watch(danmakuStyleProvider);
     final transport = _transport;
     return Stack(
       fit: StackFit.expand,
@@ -113,7 +115,15 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
         if (widget.barrage case final barrage?)
           Positioned.fill(
             child: FlameBarrageWidget(
-              config: const BarrageConfig(area: 0.7),
+              // The settings surface's danmaku style, applied live: every
+              // slider there rebuilds this config on its next frame.
+              config: BarrageConfig(
+                fontSize: style.fontSize,
+                baseSpeed: style.baseSpeed,
+                area: style.area,
+                opacity: style.opacity,
+                showStroke: style.showStroke,
+              ),
               emojiAtlas: EmojiAtlas.instance,
               controller: barrage,
             ),

@@ -1,5 +1,9 @@
 {
   "emptyTitle": "No followed rooms yet",
-  "emptyDescription": "Follow a room and it lands here.",
-  "unfollow": "Unfollow"
+  "emptyDescription": "Follow a room and it shows up here.",
+  "unfollow": "Unfollow",
+  "statusAll": "All",
+  "statusLive": "Live",
+  "statusOffline": "Offline",
+  "refresh": "Refresh"
 }

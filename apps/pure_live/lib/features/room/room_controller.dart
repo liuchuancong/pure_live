@@ -11,6 +11,7 @@ import 'package:pure_live/app/providers/player_providers.dart'
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
 import 'package:pure_live/features/favorites/follow_repository.dart' show followsProvider;
 import 'package:pure_live/features/history/history_repository.dart' show historyProvider;
+import 'package:pure_live/features/shield/shield_repository.dart' show ShieldRules, shieldRulesProvider;
 
 /// How many chat lines the page keeps; older leave first.
 const int kRoomChatLimit = 200;
@@ -25,7 +26,6 @@ typedef RoomState = ({
   LivePlayQuality? quality,
   PlayerCoreState playback,
   PlayerHandle? handle,
-  List<LiveMessage> chat,
   String? error,
 });
 
@@ -36,7 +36,6 @@ RoomState _initial() => (
   quality: null,
   playback: PlayerCoreState.idle,
   handle: null,
-  chat: const [],
   error: null,
 );
 
@@ -67,6 +66,16 @@ final class RoomDanmakuPipeline {
   /// The player binding carrying pause and seek into the barrage.
   DanmakuPlayerBinding? binding;
 
+  /// Brings the controller's session up over a bridge: the app's own site
+  /// session owns the real connection, so the transport only settles the
+  /// controller's state machine — after this, the gate, the policy and the
+  /// content filters run for every accepted message, and the sink flies
+  /// them onto the flame layer and the chat overlay at once.
+  Future<void> start({required String platform, required String roomId}) async {
+    danmaku.installTransport(_BridgeTransport(platform: platform, roomId: roomId));
+    await danmaku.connect(DanmakuRoomRef(platform: platform, roomId: roomId));
+  }
+
   /// Feeds one accepted site message through the pipeline.
   void accept(LiveMessage message) {
     danmaku.acceptExternal(
@@ -90,10 +99,63 @@ final class RoomDanmakuPipeline {
   }
 
   Future<void> dispose() async {
+    await danmaku.stop(clearRenderer: false);
     await binding?.dispose();
     barrage.detach();
   }
 }
+
+/// The pipeline's session transport: the bridge. The site's own session
+/// carries the real connection, so this one settles ready the moment it
+/// starts and carries nothing else — no heartbeat, no socket, nothing to
+/// stop. Its only job is to bring the controller's session to connected so
+/// accepted messages run the full filter pipeline.
+final class _BridgeTransport implements DanmakuTransport {
+  const _BridgeTransport({required this.platform, required this.roomId});
+
+  final String platform;
+  final String roomId;
+
+  @override
+  String get id => 'bridge:$platform:$roomId';
+
+  @override
+  bool get isConnected => true;
+
+  @override
+  Duration get heartbeatInterval => Duration.zero;
+
+  @override
+  Future<void> start({required DanmakuTransportRequest request, required DanmakuTransportListener listener}) async {
+    listener.onTransportReady();
+  }
+
+  @override
+  Future<void> stop() async {}
+
+  @override
+  void heartbeat() {}
+}
+
+/// The chat list, on its own controller: a busy room's messages land many
+/// times a second, and a chat line should never rebuild the player surface
+/// beside it. The room controller feeds it; the page reads only this.
+final class RoomChatController extends Notifier<List<LiveMessage>> {
+  @override
+  List<LiveMessage> build() => const [];
+
+  /// Appends [message], keeping the newest [kRoomChatLimit].
+  void add(LiveMessage message) {
+    final next = [...state, message];
+    state = next.length > kRoomChatLimit ? next.sublist(next.length - kRoomChatLimit) : next;
+  }
+
+  /// Clears the list (a new room opens).
+  void clear() => state = const [];
+}
+
+/// The open room's chat lines.
+final roomChatProvider = NotifierProvider<RoomChatController, List<LiveMessage>>(RoomChatController.new);
 
 /// One open live room: its detail, its play plan, the playback over
 /// media_core's live controller, and the danmaku session beside it.
@@ -128,6 +190,7 @@ final class RoomController extends Notifier<RoomState> {
   Future<void> open({required String platform, required String roomId}) async {
     _teardown();
     state = _initial();
+    ref.read(roomChatProvider.notifier).clear();
     final site = ref.read(sitesProvider).getById(platform);
     final roomProvider = site?.capability<LiveRoomProvider>();
     final playbackProvider = site?.capability<LivePlaybackProvider>();
@@ -193,6 +256,37 @@ final class RoomController extends Notifier<RoomState> {
     return ref.read(followsProvider).rooms.any((followed) => followed.ref.identityKey == key);
   }
 
+  /// Whether the room's chat accepts a posted message (the session's own
+  /// capability; most platforms listen only).
+  bool get canSendDanmaku => _danmaku is LiveDanmakuSending;
+
+  /// Posts [text] to the room's chat. The message flies locally the moment
+  /// the platform accepts it (the session's own echo, when it sends one,
+  /// is caught by the pipeline's duplicate gate).
+  Future<String?> sendDanmaku(String text) async {
+    final session = _danmaku;
+    final word = text.trim();
+    if (session == null || session is! LiveDanmakuSending || word.isEmpty) {
+      return 'cannot send';
+    }
+    final sending = session as LiveDanmakuSending;
+    try {
+      await sending.send(word);
+      // The local echo: what the viewer sent flies at once, in the theme's
+      // own voice rather than waiting for a platform round trip.
+      _pipeline?.accept(
+        LiveMessage.normalized(
+          messageId: 'local-${DateTime.now().microsecondsSinceEpoch}',
+          text: word,
+          isLocal: true,
+        ),
+      );
+      return null;
+    } on Object catch (error) {
+      return error.toString();
+    }
+  }
+
   /// Follows or unfollows the room.
   Future<void> toggleFollow() async {
     final room = state.room;
@@ -229,6 +323,8 @@ final class RoomController extends Notifier<RoomState> {
       });
       _handles ??= playback.onHandleChanged.listen((handle) {
         state = _with(handle: handle);
+        // The player's pause and seek carry into the flying layer.
+        _pipeline?.bind(handle);
       });
       await playback.play(
         LiveSourceRequest(sources: roomSourcesOf(lines), title: room.content.title, allowEngineFallback: true),
@@ -241,13 +337,41 @@ final class RoomController extends Notifier<RoomState> {
     sessionAnswer.match((error) => state = _with(error: error.message), (session) async {
       _danmaku = session;
       await session.connect();
-      _chat = session.events.listen(_onMessage);
+      // The pipeline (the flying layer over the site session) starts with
+      // the session: the bridge settles the controller, every site message
+      // runs the shield first, and what passes flies and lands in the chat
+      // list at once.
+      final pipeline = RoomDanmakuPipeline(ref.read(roomChatProvider.notifier).add);
+      _pipeline = pipeline;
+      await pipeline.start(platform: room.ref.platform, roomId: room.ref.roomId);
+      _chat = session.events.listen(_onSiteMessage);
+      // The page reads the pipeline's barrage engine through the notifier;
+      // this rebuild is what picks it up the moment it exists.
+      state = _with();
     });
   }
 
-  void _onMessage(LiveMessage message) {
-    final chat = [...state.chat, message];
-    state = _with(chat: chat.length > kRoomChatLimit ? chat.sublist(chat.length - kRoomChatLimit) : chat);
+  /// One site message: the shield's word, then the pipeline's own filters.
+  void _onSiteMessage(LiveMessage message) {
+    if (_shielded(message)) return;
+    _pipeline?.accept(message);
+  }
+
+  /// Whether the shield drops [message]: the settings surface's rules,
+  /// read per message (a change there takes effect on the very next line).
+  bool _shielded(LiveMessage message) {
+    final rules = ref.read(shieldRulesProvider);
+    return _shielded_(message, rules);
+  }
+
+  static bool _shielded_(LiveMessage message, ShieldRules rules) {
+    if (!rules.enabled) return false;
+    final sender = message.sender?.userName;
+    if (sender != null && rules.users.contains(sender)) return true;
+    for (final keyword in rules.keywords) {
+      if (keyword.isNotEmpty && message.text.contains(keyword)) return true;
+    }
+    return false;
   }
 
   Future<void> _recordHistory(LiveRoom room) async {
@@ -267,7 +391,6 @@ final class RoomController extends Notifier<RoomState> {
     LivePlayQuality? quality,
     PlayerCoreState? playback,
     PlayerHandle? handle,
-    List<LiveMessage>? chat,
     String? error,
   }) => (
     room: room ?? state.room,
@@ -276,7 +399,6 @@ final class RoomController extends Notifier<RoomState> {
     quality: quality ?? state.quality,
     playback: playback ?? state.playback,
     handle: handle ?? state.handle,
-    chat: chat ?? state.chat,
     error: error,
   );
 
@@ -292,6 +414,8 @@ final class RoomController extends Notifier<RoomState> {
     unawaited(_danmaku?.disconnect() ?? Future<void>.value());
     unawaited(_danmaku?.dispose() ?? Future<void>.value());
     _danmaku = null;
+    unawaited(_pipeline?.dispose() ?? Future<void>.value());
+    _pipeline = null;
   }
 }
 

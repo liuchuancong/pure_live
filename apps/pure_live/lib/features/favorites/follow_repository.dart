@@ -3,6 +3,7 @@ import 'dart:async' show StreamSubscription, unawaited;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart';
+import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
 
 /// The stored rooms the viewer follows, one entry per room identity.
 ///
@@ -94,6 +95,33 @@ final class FollowsController extends Notifier<FollowsState> {
     final repository = ref.read(followRepositoryProvider).value;
     if (repository == null) return;
     await repository.remove(identityKey);
+  }
+
+  /// Refreshes every followed room against its platform (the reference's
+  /// `FollowRefresher`): the room provider asks each site for the room as
+  /// it is now, and what comes back merges into the stored copy — a stale
+  /// title or audience figure never erases a fresh one.
+  ///
+  /// A platform without the room capability (or a failed ask) keeps the
+  /// stored copy: the refresh reports no error, it just learns nothing.
+  Future<void> refresh() async {
+    final repository = ref.read(followRepositoryProvider).value;
+    if (repository == null) return;
+    final rooms = repository.list();
+    final sites = ref.read(sitesProvider);
+    // A handful of asks at a time keeps a full list from stampeding one
+    // platform's endpoints.
+    const batchSize = 4;
+    for (var start = 0; start < rooms.length; start += batchSize) {
+      final batch = rooms.sublist(start, (start + batchSize).clamp(0, rooms.length));
+      Future<void> refreshOne(LiveRoom room) {
+        final provider = sites.getById(room.ref.platform)?.capability<LiveRoomProvider>();
+        if (provider == null) return Future<void>.value();
+        return provider.getRoom(room.ref.roomId).then((answer) => answer.match((_) {}, repository.merge));
+      }
+
+      await Future.wait(<Future<void>>[for (final room in batch) refreshOne(room)]);
+    }
   }
 }
 

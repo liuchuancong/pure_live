@@ -4,14 +4,13 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_vod/live_vod.dart';
-import 'package:mosaic_grid/mosaic_grid.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
 import 'package:pure_live/features/vod/vod_controller.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/grids/card_grid.dart';
 import 'package:pure_live/shared/utils/audience_format.dart' show AudienceFormat;
 
 /// How many skeleton cards stand in for a first page that has not landed.
-const int _skeletonCards = 12;
 
 /// The video-on-demand module's entry: a keyword search over the Bilibili
 /// video source, its hits as a masonry grid that pages in as the viewer
@@ -125,22 +124,13 @@ final class _VodGrid extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(vodProvider.notifier);
     final cardExtent = ref.watch(browseSettingsProvider.select((settings) => settings.homeCardExtent));
-    return MosaicGrid.builder(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
-      columns: MosaicColumns.maxExtent(cardExtent),
-      layout: const MosaicLayout.masonry(),
-      columnGap: DsSpace.s16,
-      rowGap: DsSpace.s16,
-      itemCount: vod.videos.length,
-      itemBuilder: (context, index) => _VodCard(video: vod.videos[index]),
-      footer: vod.loading
-          ? const Padding(
-              padding: EdgeInsets.all(DsSpace.s16),
-              child: Center(child: _VodCardSkeleton()),
-            )
-          : null,
-      onEndReached: vod.hasMore ? () => unawaited(controller.loadMore()) : null,
-      endReachedKey: 'videos:${vod.query}',
+    return CardGrid<VodVideo>(
+      items: vod.videos,
+      cardExtent: cardExtent,
+      isLoading: vod.loading,
+      hasMore: vod.hasMore,
+      onLoadMore: controller.loadMore,
+      itemBuilder: (context, video) => _VodCard(video: video),
     );
   }
 }
@@ -188,7 +178,10 @@ final class _VodCard extends StatelessWidget {
                         child: video.coverUrl == null
                             ? const _CoverFallback()
                             : DsImage.network(
+                                // DsImage needs a reserved box; the stack's
+                                // tight fill overrides the ratio here.
                                 video.coverUrl!,
+                                aspectRatio: 16 / 9,
                                 semanticLabel: video.title,
                                 fallback: const _CoverFallback(),
                               ),
@@ -272,40 +265,6 @@ final class _CoverFallback extends StatelessWidget {
   }
 }
 
-/// One card's placeholder while its page loads: the same shape, no content.
-final class _VodCardSkeleton extends StatelessWidget {
-  const _VodCardSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s6,
-      children: [
-        AspectRatio(
-          aspectRatio: 16 / 9,
-          child: ClipRRect(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.card)),
-            child: const DsSkeleton.block(height: double.infinity),
-          ),
-        ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: DsSpace.s12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: DsSpace.s4,
-            children: [
-              DsSkeleton(width: DsSpace.s64, height: DsSpace.s12),
-              DsSkeleton(width: DsSpace.s40, height: DsSpace.s8),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 /// The first page's placeholder: the same grid shape, no content.
 final class _SkeletonGrid extends ConsumerWidget {
   const _SkeletonGrid();
@@ -313,13 +272,11 @@ final class _SkeletonGrid extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cardExtent = ref.watch(browseSettingsProvider.select((settings) => settings.homeCardExtent));
-    return MosaicGrid(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
-      columns: MosaicColumns.maxExtent(cardExtent),
-      layout: const MosaicLayout.masonry(),
-      columnGap: DsSpace.s16,
-      rowGap: DsSpace.s16,
-      children: [for (var i = 0; i < _skeletonCards; i++) const _VodCardSkeleton()],
+    return CardGrid<Object>(
+      items: const [],
+      cardExtent: cardExtent,
+      isLoading: true,
+      itemBuilder: (context, item) => const SizedBox.shrink(),
     );
   }
 }

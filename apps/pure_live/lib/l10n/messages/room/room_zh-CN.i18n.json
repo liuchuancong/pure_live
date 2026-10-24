@@ -8,12 +8,15 @@
   "play": "播放",
   "pause": "暂停",
   "noChat": "还没有弹幕",
-  "system": "系统"
-,
+  "system": "系统",
   "mute": "静音",
   "unmute": "取消静音",
-  "volume": "音量"
-,
+  "volume": "音量",
   "sleep": "定时关闭",
-  "sleepOff": "关闭定时"
+  "sleepOff": "关闭定时",
+  "sendHint": "发个弹幕见证当下",
+  "send": "发送",
+  "sendFailed": "发送失败",
+  "fullscreenOn": "进入全屏",
+  "fullscreenOff": "退出全屏"
 }

@@ -5,20 +5,19 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
-import 'package:mosaic_grid/mosaic_grid.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
-import 'package:pure_live/app/providers/sites_providers.dart' show selectedSiteIdProvider;
-import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
+import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
+import 'package:pure_live/app/routing/app_router.dart' show AreaRoomsRoute;
+import 'package:pure_live/features/areas/area_follow_repository.dart';
 import 'package:pure_live/features/areas/areas_controller.dart';
-import 'package:pure_live/features/home/room_card.dart' show RoomCard, RoomCardSkeleton;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/grids/card_grid.dart';
+import 'package:pure_live/shared/platforms/platform_picker.dart';
 
-/// The live module's areas page: the selected site's areas as a grid of
-/// cards; open one and its rooms take the page under a breadcrumb that
-/// leads back to the whole grid.
-///
-/// A site without the area capability (or with no areas of its own) says so
-/// in the grid's place instead of failing silently.
+/// The areas page (the reference's `AreasPage`): the platforms' own
+/// catalogues — one tab per platform, each loaded when its tab first
+/// shows and kept while the app runs — beside the followed areas, the
+/// segmented control switching between the two views.
 final class AreasPage extends ConsumerStatefulWidget {
   /// The areas page.
   const AreasPage({super.key});
@@ -27,102 +26,173 @@ final class AreasPage extends ConsumerStatefulWidget {
   ConsumerState<AreasPage> createState() => _AreasPageState();
 }
 
+/// The two views the segmented control switches between.
+enum _AreasView { platform, followed }
+
 final class _AreasPageState extends ConsumerState<AreasPage> {
+  _AreasView _view = _AreasView.platform;
+
+  /// One scroll controller per platform (the catalogue grid keeps each
+  /// platform's place across tab switches); released with the page.
+  final Map<String, ScrollController> _scrolls = {};
+
+  @override
+  void dispose() {
+    for (final controller in _scrolls.values) {
+      controller.dispose();
+    }
+    _scrolls.clear();
+    super.dispose();
+  }
+
+  ScrollController _scrollOf(String platform) => _scrolls[platform] ??= ScrollController();
+
   @override
   void initState() {
     super.initState();
-    // The grid never loads from inside its own build; the page asks.
+    // The catalogue never loads from inside its own build; the page asks.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(ref.read(areasProvider.notifier).loadAreas());
-    });
-    // A site switch resets the controller; the page asks again, so the new
-    // site's areas arrive however the switch was made.
-    ref.listenManual(selectedSiteIdProvider, (_, _) {
-      unawaited(ref.read(areasProvider.notifier).loadAreas());
+      unawaited(ref.read(areasCatalogProvider.notifier).open(ref.read(areasSiteProvider)));
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(areasProvider);
-    final area = state.selectedArea;
-    if (area == null) return _AreasGrid(state: state);
+    final t = context.t;
+    final platform = ref.watch(areasSiteProvider);
+    final ids = ref.watch(areasCatalogProvider.notifier).platformIds();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
-          child: Align(alignment: AlignmentDirectional.centerStart, child: _AreaBreadcrumb(areaName: area.areaName)),
+          // A wrap, not a row: the two views and the platform tabs keep
+          // their own widths, and a narrow window flows them.
+          child: Wrap(
+            spacing: DsSpace.s12,
+            runSpacing: DsSpace.s8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              DsSegmentedControl<_AreasView>(
+                segments: [
+                  DsSegment(value: _AreasView.platform, label: Text(t.areas.viewPlatform)),
+                  DsSegment(value: _AreasView.followed, label: Text(t.areas.viewFollowed)),
+                ],
+                value: _view,
+                onChanged: (view) => setState(() => _view = view),
+              ),
+              if (_view == _AreasView.platform && ids.isNotEmpty)
+                SizedBox(
+                  width: 260,
+                  child: PlatformTabRow(
+                    platforms: ids,
+                    current: platform,
+                    nameOf: _platformName,
+                    semanticLabel: t.areas.allAreas,
+                    onChanged: (id) {
+                      ref.read(areasSiteProvider.notifier).selected = id;
+                      unawaited(ref.read(areasCatalogProvider.notifier).open(id));
+                    },
+                  ),
+                ),
+            ],
+          ),
         ),
-        Expanded(child: _AreaRoomsGrid(state: state)),
+        Expanded(
+          child: _view == _AreasView.platform
+              ? (ids.isEmpty
+                  ? Center(child: DsEmptyState(icon: const DsIcon(DsIcons.antenna), title: Text(t.areas.noPlatforms)))
+                  : _PlatformAreas(
+                      key: ValueKey('areas-$platform'),
+                      platform: platform,
+                      scrollController: _scrollOf(platform),
+                    ))
+              : const _FollowedAreas(),
+        ),
       ],
     );
   }
-}
 
-/// The open area's path: the whole grid behind it, the area as the current
-/// page. Pressing the first level returns to the grid.
-final class _AreaBreadcrumb extends ConsumerWidget {
-  const _AreaBreadcrumb({required this.areaName});
-
-  /// The open area's display name.
-  final String areaName;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return DsBreadcrumb(
-      items: [
-        DsBreadcrumbItem(
-          label: context.t.areas.allAreas,
-          icon: const DsIcon(DsIcons.layoutGrid),
-          onPressed: () => ref.read(areasProvider.notifier).backToAllAreas(),
-        ),
-        DsBreadcrumbItem(label: areaName),
-      ],
-    );
+  String _platformName(String id) {
+    final site = ref.watch(sitesProvider).getById(id);
+    return site?.manifest.name['zh-CN'] ?? id;
   }
 }
 
-/// The areas grid: skeletons while the areas load, an area card per
-/// entry, an honest error or no-areas state in their place.
-final class _AreasGrid extends ConsumerWidget {
-  const _AreasGrid({required this.state});
+/// One platform's areas catalogue as the card grid.
+final class _PlatformAreas extends ConsumerWidget {
+  const _PlatformAreas({required this.platform, this.scrollController, super.key});
 
-  /// The page's state; only its areas half is read here.
-  final AreasState state;
+  /// The platform whose areas show.
+  final String platform;
+
+  /// The kept controller of this platform's tab.
+  final ScrollController? scrollController;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final controller = ref.read(areasProvider.notifier);
+    final controller = ref.read(areasCatalogProvider.notifier);
+    final catalog = ref.watch(areasCatalogProvider.select((map) => map[platform]));
     final cardExtent = ref.watch(browseSettingsProvider.select((settings) => settings.homeCardExtent));
-    if (state.areas.isEmpty && state.areasLoading) {
-      return _SkeletonAreas(cardExtent: cardExtent);
+    final state = catalog ?? (areas: const <LiveArea>[], loading: false, error: null);
+    return CardGrid<LiveArea>(
+      scrollController: scrollController,
+      items: state.areas,
+      cardExtent: cardExtent,
+      aspectRatio: 3.4,
+      isLoading: state.loading,
+      error: state.error?.message,
+      onRetry: () => controller.refresh(platform),
+      emptyIcon: DsIcons.layoutGrid,
+      emptyTitle: context.t.areas.noAreas,
+      itemBuilder: (context, area) => _AreaCard(
+        area: area,
+        onSelect: () => unawaited(
+          context.push(AreaRoomsRoute(platform: area.platform, areaId: area.areaId).location, extra: area),
+        ),
+      ),
+    );
+  }
+}
+
+/// The followed areas: the areas the viewer follows, the platform they
+/// belong to named under each one; pressing the heart unfollows.
+final class _FollowedAreas extends ConsumerWidget {
+  const _FollowedAreas();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final followed = ref.watch(followedAreasProvider);
+    final cardExtent = ref.watch(browseSettingsProvider.select((settings) => settings.homeCardExtent));
+    if (!followed.ready) {
+      return CardGrid<LiveArea>(
+        items: const [],
+        cardExtent: cardExtent,
+        aspectRatio: 3.4,
+        isLoading: true,
+        itemBuilder: (_, _) => const SizedBox.shrink(),
+      );
     }
-    if (state.areas.isEmpty && state.areasError != null) {
+    if (followed.areas.isEmpty) {
       return Center(
         child: DsEmptyState(
-          icon: const DsIcon(DsIcons.cloudOff),
-          title: Text(context.t.common.empty),
-          description: Text(state.areasError!.message),
-          actions: [DsButton(onPressed: controller.loadAreas, child: Text(context.t.common.retry))],
+          icon: const DsIcon(DsIcons.heart),
+          title: Text(t.areas.followedEmpty),
+          description: Text(t.areas.followedEmptyHint),
         ),
       );
     }
-    if (state.areas.isEmpty) {
-      // A site without the area capability lands here too: not a failure,
-      // just nothing to browse by.
-      return Center(child: DsEmptyState(icon: const DsIcon(DsIcons.layoutGrid), title: Text(context.t.areas.noAreas)));
-    }
-    return MosaicGrid.builder(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s24),
-      columns: MosaicColumns.maxExtent(cardExtent),
-      layout: const MosaicLayout.masonry(),
-      columnGap: DsSpace.s16,
-      rowGap: DsSpace.s16,
-      itemCount: state.areas.length,
-      itemBuilder: (context, index) => _AreaCard(
-        area: state.areas[index],
-        onSelect: () => unawaited(controller.selectArea(state.areas[index])),
+    return CardGrid<LiveArea>(
+      items: followed.areas,
+      cardExtent: cardExtent,
+      aspectRatio: 3.4,
+      itemBuilder: (context, area) => _FollowedAreaCard(
+        area: area,
+        onUnfollow: () => unawaited(ref.read(followedAreasProvider.notifier).remove(area.identityKey)),
+        onSelect: () => unawaited(
+          context.push(AreaRoomsRoute(platform: area.platform, areaId: area.areaId).location, extra: area),
+        ),
       ),
     );
   }
@@ -131,13 +201,16 @@ final class _AreasGrid extends ConsumerWidget {
 /// One area as a card: its picture, its name, and the parent group it sits
 /// in when the platform nests areas. Opening the area is [onSelect].
 final class _AreaCard extends StatelessWidget {
-  const _AreaCard({required this.area, required this.onSelect});
+  const _AreaCard({required this.area, required this.onSelect, this.trailing});
 
   /// The area shown.
   final LiveArea area;
 
   /// Fired when the card opens the area.
   final VoidCallback onSelect;
+
+  /// A small widget at the card's end, e.g. the follow toggle.
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -154,9 +227,7 @@ final class _AreaCard extends StatelessWidget {
           decoration: DsBoxDecoration(
             color: hovered ? colors.hover : colors.control,
             borderRadius: BorderRadius.circular(theme.radii.card),
-            shadows: hovered
-                ? [DsShadow(color: colors.overlay, blur: 24, offset: const Offset(0, 8))]
-                : const <DsShadow>[],
+            shadows: hovered ? [DsShadow(color: colors.overlay, blur: 24, offset: const Offset(0, 8))] : const <DsShadow>[],
           ),
           child: Row(
             spacing: DsSpace.s12,
@@ -165,6 +236,7 @@ final class _AreaCard extends StatelessWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   spacing: DsSpace.s3,
                   children: [
                     Text(
@@ -174,19 +246,46 @@ final class _AreaCard extends StatelessWidget {
                       style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
                     ),
                     if (parent != null && parent.isNotEmpty)
-                      Text(
-                        parent,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
-                      ),
+                      Text(parent, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.typography.caption.copyWith(color: colors.textMuted)),
                   ],
                 ),
               ),
+              ?trailing,
             ],
           ),
         );
       },
+    );
+  }
+}
+
+/// The followed area's card: the area card with an active heart that
+/// unfollows on press.
+final class _FollowedAreaCard extends StatelessWidget {
+  const _FollowedAreaCard({required this.area, required this.onUnfollow, required this.onSelect});
+
+  final LiveArea area;
+  final VoidCallback onUnfollow;
+  final VoidCallback onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return _AreaCard(
+      area: area,
+      onSelect: onSelect,
+      trailing: DsPressable(
+        semanticLabel: t.areas.unfollow,
+        onPressed: onUnfollow,
+        builder: (context, states, _) {
+          final hovered = states.contains(WidgetState.hovered);
+          return DsIcon(
+            DsIcons.heart,
+            size: DsTheme.of(context).sizes.iconSm,
+            color: hovered ? DsTheme.colorsOf(context).danger.fill : DsTheme.colorsOf(context).textSubtle,
+          );
+        },
+      ),
     );
   }
 }
@@ -217,121 +316,6 @@ final class _AreaIcon extends StatelessWidget {
       height: theme.sizes.md,
       semanticLabel: area.areaName,
       fallback: fallback,
-    );
-  }
-}
-
-/// The areas grid's first-load placeholder: the same grid shape, no
-/// content.
-final class _SkeletonAreas extends StatelessWidget {
-  const _SkeletonAreas({required this.cardExtent});
-
-  /// The widest a card gets; the same setting the real grid reads.
-  final double cardExtent;
-
-  @override
-  Widget build(BuildContext context) {
-    return MosaicGrid(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s24),
-      columns: MosaicColumns.maxExtent(cardExtent),
-      layout: const MosaicLayout.masonry(),
-      columnGap: DsSpace.s16,
-      rowGap: DsSpace.s16,
-      children: [for (var i = 0; i < 12; i++) const _AreaCardSkeleton()],
-    );
-  }
-}
-
-/// The area card's placeholder while its grid loads: the same shape, no
-/// content.
-final class _AreaCardSkeleton extends StatelessWidget {
-  const _AreaCardSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    return Padding(
-      padding: const EdgeInsets.all(DsSpace.s12),
-      child: Row(
-        spacing: DsSpace.s12,
-        children: [
-          DsSkeleton.circle(size: theme.sizes.md),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s3,
-              children: [DsSkeleton(width: DsSpace.s32), DsSkeleton(width: DsSpace.s20)],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The open area's room feed: the same shape as the home feed — the rooms
-/// as cards page by page, an honest error or empty state in their place.
-/// The mosaic grid pages itself; its footer is the loading row's home.
-final class _AreaRoomsGrid extends ConsumerWidget {
-  const _AreaRoomsGrid({required this.state});
-
-  /// The page's state; only its rooms half is read here.
-  final AreasState state;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final controller = ref.read(areasProvider.notifier);
-    final cardExtent = ref.watch(browseSettingsProvider.select((settings) => settings.homeCardExtent));
-    if (state.rooms.isEmpty && state.roomsLoading) {
-      return _SkeletonRooms(cardExtent: cardExtent);
-    }
-    if (state.rooms.isEmpty && state.roomsError != null) {
-      return Center(
-        child: DsEmptyState(
-          icon: const DsIcon(DsIcons.cloudOff),
-          title: Text(context.t.common.empty),
-          description: Text(state.roomsError!.message),
-          actions: [DsButton(onPressed: controller.reloadRooms, child: Text(context.t.common.retry))],
-        ),
-      );
-    }
-    if (state.rooms.isEmpty) {
-      return Center(child: DsEmptyState(icon: const DsIcon(DsIcons.tv), title: Text(context.t.common.empty)));
-    }
-    return MosaicGrid.builder(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
-      columns: MosaicColumns.maxExtent(cardExtent),
-      layout: const MosaicLayout.masonry(),
-      columnGap: DsSpace.s16,
-      rowGap: DsSpace.s16,
-      itemCount: state.rooms.length,
-      itemBuilder: (context, index) => RoomCard(room: state.rooms[index], onOpen: () => context.push(RoomRoute(platform: state.rooms[index].ref.platform, roomId: state.rooms[index].ref.roomId).location)),
-      footer:
-          state.roomsLoading
-              ? const Padding(padding: EdgeInsets.all(DsSpace.s16), child: Center(child: RoomCardSkeleton()))
-              : null,
-      onEndReached: state.hasMore ? () => unawaited(controller.loadMoreRooms()) : null,
-    );
-  }
-}
-
-/// The room feed's first-page placeholder: the same grid shape, no
-/// content.
-final class _SkeletonRooms extends StatelessWidget {
-  const _SkeletonRooms({required this.cardExtent});
-
-  /// The widest a card gets; the same setting the real grid reads.
-  final double cardExtent;
-
-  @override
-  Widget build(BuildContext context) {
-    return MosaicGrid(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
-      columns: MosaicColumns.maxExtent(cardExtent),
-      layout: const MosaicLayout.masonry(),
-      columnGap: DsSpace.s16,
-      rowGap: DsSpace.s16,
-      children: [for (var i = 0; i < 12; i++) const RoomCardSkeleton()],
     );
   }
 }

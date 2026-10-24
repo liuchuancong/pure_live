@@ -1,0 +1,23 @@
+{
+  "tabRunning": "进行中",
+  "tabFinished": "已完成",
+  "clearFinished": "清空已完成",
+  "removeTask": "删除这条任务",
+  "emptyTitle": "还没有录制任务",
+  "emptyFinishedTitle": "已完成的录制会出现在这里",
+  "emptyDescription": "录制功能将随播放器内核一起接入：到时可在直播间里点录制，任务会出现在这里。",
+  "qualityBest": "最佳画质",
+  "startedAt": "开始于 {time}",
+  "stateRecording": "录制中",
+  "stateStopped": "已停止",
+  "stateFailed": "失败",
+  "settingsTitle": "录制",
+  "saveDirTitle": "保存目录",
+  "saveDirDefault": "跟随引擎默认目录",
+  "saveDirDialogHint": "输入保存录制文件的文件夹路径",
+  "namingTitle": "文件命名模板",
+  "namingDescription": "可用日期、时间、平台、房间号与标题占位符，播放器接入后生效。",
+  "namingDialogHint": "输入录制文件的命名模板",
+  "maxSizeTitle": "单文件大小上限",
+  "maxSizeDescription": "录制超过上限后分卷保存，播放器接入后生效。"
+}

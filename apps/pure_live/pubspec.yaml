@@ -53,7 +53,6 @@ dependencies:
   flutter_screenutil_plus: ^2.0.0 # 自适应布局辅助
   flutter_svg: ^2.3.0 # SVG 图片渲染
   lucide_icons_flutter: ^4.0.1 # Lucide 图标库
-  mosaic_grid: ^0.1.2 # 瀑布流网格
   flame_barrage: ^0.0.9 # 飞行弹幕渲染（media_core_danmaku 的火焰宿主）
   pretty_qr_code: ^3.6.0 # 生成二维码
 

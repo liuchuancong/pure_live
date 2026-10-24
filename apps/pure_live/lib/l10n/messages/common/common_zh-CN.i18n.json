@@ -11,11 +11,13 @@
   "toggleSidebar": "切换侧栏",
   "moduleLive": "直播",
   "moduleIptv": "IPTV",
-  "moduleVod": "点播",
+  "moduleVod": "Bilibili视频站",
   "moduleMusic": "音乐",
   "retry": "重试",
   "moduleComingSoon": "这个模块还在路上",
   "back": "后退",
   "forward": "前进",
-  "searchHint": "搜索房间、主播或站点"
+  "searchHint": "搜索房间、主播或站点",
+  "switchModule": "切换内容类型",
+  "openNavigation": "打开导航"
 }

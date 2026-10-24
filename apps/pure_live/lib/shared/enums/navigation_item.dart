@@ -3,10 +3,10 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:pure_live/l10n/translations.dart' show Translations;
 import 'package:pure_live/shared/enums/app_module.dart' show AppModule;
 
-/// The shell's navigation destinations, named after the v4 navigation
-/// design: three groups — high-frequency pages, content and tools,
-/// personal and system — rendered as labelled sections in the desktop
-/// sidebar and as flat bars on mobile and TV.
+/// The shell's navigation destinations. The v4 navigation design keeps
+/// three blocks apart: each content type's business menu (no section
+/// headings — live's is exactly 关注 / 热门 / 分区), the shared tools under
+/// a divider, and settings pinned to the sidebar's foot.
 enum NavigationItem {
   /// The home branch.
   home(DsIcons.home),
@@ -82,148 +82,26 @@ enum NavigationItem {
   };
 }
 
-/// The sidebar's groups, top to bottom: (slang key of the section label,
-/// destinations). The layouts resolve the label through the navigation
-/// namespace.
-const List<(String, List<NavigationItem>)> kNavigationGroups = [
-  (
-    'groupPrimary',
-    [
-      NavigationItem.home,
-      NavigationItem.live,
-      NavigationItem.channels,
-      NavigationItem.discover,
-      NavigationItem.history,
-    ],
-  ),
-  (
-    'groupContent',
-    [
-      NavigationItem.multiview,
-      NavigationItem.favorites,
-      NavigationItem.hot,
-      NavigationItem.zones,
-      NavigationItem.search,
-      NavigationItem.toolbox,
-    ],
-  ),
-  (
-    'groupPersonal',
-    [
-      NavigationItem.record,
-      NavigationItem.settings,
-      NavigationItem.appearance,
-      NavigationItem.proxy,
-      NavigationItem.user,
-    ],
-  ),
-];
+/// Each module's business menu, the sidebar's top block — flat, without
+/// section headings. Switching the app switcher's content type swaps this
+/// block (and the content area) in place.
+const Map<AppModule, List<NavigationItem>> kModuleBusinessItems = {
+  AppModule.live: [NavigationItem.favorites, NavigationItem.hot, NavigationItem.zones],
+  AppModule.iptv: [NavigationItem.channels, NavigationItem.favorites, NavigationItem.history],
+  AppModule.vod: [NavigationItem.zones, NavigationItem.favorites, NavigationItem.history],
+  AppModule.music: [NavigationItem.favorites, NavigationItem.history],
+};
 
-/// Every destination, across the groups.
-const List<NavigationItem> kNavigationItems = [...kPrimaryItems, ...kContentItems, ...kPersonalItems];
-
-/// The high-frequency group, flat.
-const List<NavigationItem> kPrimaryItems = [
-  NavigationItem.home,
-  NavigationItem.live,
-  NavigationItem.channels,
-  NavigationItem.discover,
-  NavigationItem.history,
-];
-
-/// The content-and-tools group, flat.
-const List<NavigationItem> kContentItems = [
+/// The shared tools under the divider below the business menu: they serve
+/// every content type, so they never repeat inside a business menu.
+const List<NavigationItem> kToolItems = [
   NavigationItem.multiview,
-  NavigationItem.favorites,
-  NavigationItem.hot,
-  NavigationItem.zones,
   NavigationItem.search,
+  NavigationItem.record,
   NavigationItem.toolbox,
 ];
 
-/// The personal-and-system group, flat.
-const List<NavigationItem> kPersonalItems = [
-  NavigationItem.record,
-  NavigationItem.settings,
-  NavigationItem.appearance,
-  NavigationItem.proxy,
-  NavigationItem.user,
-];
-
-/// The destinations the mobile bottom bar fits: five entries, the rest
-/// wait for their pages' own entries.
-const List<NavigationItem> kMobileNavigationItems = [
-  NavigationItem.home,
-  NavigationItem.live,
-  NavigationItem.discover,
-  NavigationItem.favorites,
-  NavigationItem.settings,
-];
-
-/// The personal-and-system group every module shares, bottom of the sidebar.
-const List<NavigationItem> kSharedPersonalItems = [
-  NavigationItem.settings,
-  NavigationItem.appearance,
-  NavigationItem.proxy,
-  NavigationItem.user,
-];
-
-/// Each module's sidebar groups: (slang key of the section label,
-/// destinations). A module's own groups first, the shared personal group
-/// last — the shell renders whichever module is selected.
-const Map<AppModule, List<(String, List<NavigationItem>)>> kModuleNavigationGroups = {
-  AppModule.live: [
-    ('groupPrimary', [NavigationItem.home, NavigationItem.zones, NavigationItem.favorites, NavigationItem.history]),
-    ('groupContent', [NavigationItem.search, NavigationItem.multiview, NavigationItem.record, NavigationItem.toolbox]),
-  ],
-  AppModule.iptv: [
-    ('groupPrimary', [NavigationItem.channels, NavigationItem.favorites, NavigationItem.history]),
-    ('groupContent', [NavigationItem.search, NavigationItem.toolbox]),
-  ],
-  AppModule.vod: [
-    ('groupPrimary', [NavigationItem.zones, NavigationItem.favorites, NavigationItem.history]),
-    ('groupContent', [NavigationItem.search, NavigationItem.toolbox]),
-  ],
-  AppModule.music: [
-    ('groupPrimary', [NavigationItem.favorites, NavigationItem.history]),
-    ('groupContent', [NavigationItem.search]),
-  ],
-};
-
-/// The sidebar groups of [module], its own plus the shared personal group.
-List<(String, List<NavigationItem>)> navigationGroupsFor(AppModule module) => [
-  ...kModuleNavigationGroups[module]!,
-  ('groupPersonal', kSharedPersonalItems),
-];
-
-/// The destinations the mobile bottom bar shows for [module]: five entries
-/// at most.
-List<NavigationItem> mobileNavigationItemsFor(AppModule module) => switch (module) {
-  AppModule.live => [
-    NavigationItem.home,
-    NavigationItem.zones,
-    NavigationItem.favorites,
-    NavigationItem.history,
-    NavigationItem.settings,
-  ],
-  AppModule.iptv => [
-    NavigationItem.channels,
-    NavigationItem.favorites,
-    NavigationItem.history,
-    NavigationItem.search,
-    NavigationItem.settings,
-  ],
-  AppModule.vod => [
-    NavigationItem.zones,
-    NavigationItem.favorites,
-    NavigationItem.history,
-    NavigationItem.search,
-    NavigationItem.settings,
-  ],
-  AppModule.music => [
-    NavigationItem.favorites,
-    NavigationItem.history,
-    NavigationItem.search,
-    NavigationItem.settings,
-  ],
-};
+/// Where a module lands when it is chosen in the app switcher: live opens
+/// on the hot feed, the others on their first page.
+NavigationItem defaultNavigationItemFor(AppModule module) =>
+    kModuleBusinessItems[module]!.first;

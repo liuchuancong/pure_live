@@ -5,27 +5,25 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
-import 'package:mosaic_grid/mosaic_grid.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
-import 'package:pure_live/app/providers/sites_providers.dart' show selectedSiteProvider;
+import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
 import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
-import 'package:pure_live/features/home/room_card.dart' show RoomCard, RoomCardSkeleton;
+import 'package:pure_live/features/home/room_card.dart' show RoomCard;
 import 'package:pure_live/features/search/search_controller.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/grids/card_grid.dart';
+import 'package:pure_live/shared/platforms/platform_picker.dart';
 import 'package:pure_live/shared/utils/audience_format.dart' show AudienceFormat;
 
 /// How many completions the panel shows at most: a handful keeps the field's
 /// reach honest while bounding the panel's height in a short window.
 const int _maxSuggestionsShown = 5;
 
-/// The live module's search: one field over the selected site's search.
-///
-/// Typing asks the site for completions (debounced by the field); submitting
-/// runs the query, whose target — rooms, streamers or areas, whichever the
-/// site actually searches — switches on the segments above the results.
-/// Rooms page in as a masonry grid of cards; streamers and areas page the
-/// same way as list cards. A site without search says so in the results'
-/// place instead of failing silently.
+/// The search page (the reference's `SearchPage`): a platform scope above
+/// the field — every platform at once, or one — the committed query's
+/// target switching on the segments, the rooms paging in as a card grid
+/// and the streamers and areas as list cards, and the viewer's last
+/// queries waiting under the empty field as tappable history.
 final class SearchPage extends ConsumerStatefulWidget {
   /// The live search page.
   const SearchPage({super.key});
@@ -61,10 +59,13 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
     });
   }
 
-  /// Runs the draft as the search's query and keeps the field's own text.
+  /// Runs the draft as the search's query, records it in the history and
+  /// keeps the field's own text.
   void _onSubmitted(String draft) {
     _suggestDebounce?.cancel();
     setState(() => _draft = draft.trim());
+    final word = draft.trim();
+    if (word.isNotEmpty) unawaited(ref.read(searchHistoryProvider.notifier).commit(word));
     unawaited(ref.read(searchProvider.notifier).search(draft));
   }
 
@@ -80,12 +81,30 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
   @override
   Widget build(BuildContext context) {
     final search = ref.watch(searchProvider);
-    final targets = SearchController.supportedTargetsOf(ref.watch(selectedSiteProvider));
+    final scope = ref.watch(searchSiteIdProvider);
+    final targets = ref.watch(searchProvider.notifier).supportedTargetsOf(scope);
+    final allPlatformIds = ref.watch(sitesProvider).all.map((site) => site.manifest.id).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
+          child: PlatformTabRow(
+            platforms: [kSearchAllPlatforms, ...allPlatformIds],
+            current: scope,
+            nameOf: _platformName,
+            semanticLabel: context.t.search.targetsLabel,
+            onChanged: (id) {
+              if (id == scope) return;
+              ref.read(searchSiteIdProvider.notifier).selected = id;
+              _field.clear();
+              setState(() => _draft = '');
+              unawaited(ref.read(searchProvider.notifier).search(''));
+            },
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
           child: DsSearchField(
             controller: _field,
             autofocus: true,
@@ -94,6 +113,17 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
             onSubmitted: _onSubmitted,
           ),
         ),
+        if (_showHistory(search))
+          Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+            child: _SearchHistory(
+              onPicked: _onSuggestionPicked,
+              onCleared: () {
+                unawaited(ref.read(searchHistoryProvider.notifier).clear());
+                setState(() {});
+              },
+            ),
+          ),
         if (targets.length >= 2)
           Padding(
             padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
@@ -130,6 +160,71 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
   bool _showSuggestions(SearchState search) {
     final word = _draft.trim();
     return word.isNotEmpty && word != search.query && search.suggestions.isNotEmpty;
+  }
+
+  /// Whether the history panel shows: an empty field and a committed search
+  /// that is not showing results — the moments the history is useful.
+  bool _showHistory(SearchState search) {
+    return _draft.isEmpty && search.query.isEmpty;
+  }
+
+  String _platformName(String id) {
+    if (id == kSearchAllPlatforms) return context.t.search.scopeAll;
+    final site = ref.read(sitesProvider).getById(id);
+    return site?.manifest.name['zh-CN'] ?? id;
+  }
+}
+
+/// The search history: the last committed queries as rows, each opening the
+/// search again, an x dropping one, the header's button dropping all.
+final class _SearchHistory extends ConsumerWidget {
+  const _SearchHistory({required this.onPicked, required this.onCleared});
+
+  /// Runs the picked word as the field's text and query.
+  final ValueChanged<String> onPicked;
+
+  /// Drops every entry.
+  final VoidCallback onCleared;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final history = ref.watch(searchHistoryProvider);
+    if (history.isEmpty) return const SizedBox.shrink();
+    final colors = DsTheme.colorsOf(context);
+    return DsListSection(
+      header: Row(
+        children: [
+          Expanded(child: Text(context.t.search.historyTitle)),
+          DsPressable(
+            semanticLabel: context.t.search.clearHistory,
+            onPressed: onCleared,
+            builder: (context, states, _) => Text(
+              context.t.search.clearHistory,
+              style: DsTheme.of(context).typography.caption.copyWith(
+                color: states.contains(WidgetState.hovered) ? colors.text : colors.textMuted,
+              ),
+            ),
+          ),
+        ],
+      ),
+      children: [
+        for (final word in history)
+          DsListRow(
+            leading: const DsIcon(DsIcons.history),
+            title: Text(word),
+            onPressed: () => onPicked(word),
+            trailing: DsPressable(
+              semanticLabel: context.t.search.clearHistory,
+              onPressed: () => unawaited(ref.read(searchHistoryProvider.notifier).remove(word)),
+              builder: (context, states, _) => DsIcon(
+                DsIcons.x,
+                size: 14,
+                color: states.contains(WidgetState.hovered) ? colors.text : colors.textSubtle,
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }
 
@@ -235,18 +330,16 @@ final class _SearchResults extends ConsumerWidget {
     return switch (search.target) {
       LiveSearchTarget.rooms => _RoomResults(search: search),
       LiveSearchTarget.anchors => _ListResults(
-        itemCount: search.anchors.length,
-        itemBuilder: (context, index) => _AnchorCard(anchor: search.anchors[index]),
+        items: search.anchors,
+        itemBuilder: (context, item) => _AnchorCard(anchor: item as LiveAnchor),
         hasMore: search.hasMore,
         loading: search.loading,
-        endReachedKey: 'anchors:${search.query}',
       ),
       LiveSearchTarget.areas => _ListResults(
-        itemCount: search.areas.length,
-        itemBuilder: (context, index) => _AreaCard(area: search.areas[index]),
+        items: search.areas,
+        itemBuilder: (context, item) => _AreaCard(area: item as LiveArea),
         hasMore: search.hasMore,
         loading: search.loading,
-        endReachedKey: 'areas:${search.query}',
       ),
     };
   }
@@ -264,22 +357,16 @@ final class _RoomResults extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(searchProvider.notifier);
     final cardExtent = ref.watch(browseSettingsProvider.select((settings) => settings.homeCardExtent));
-    return MosaicGrid.builder(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
-      columns: MosaicColumns.maxExtent(cardExtent),
-      layout: const MosaicLayout.masonry(),
-      columnGap: DsSpace.s16,
-      rowGap: DsSpace.s16,
-      itemCount: search.rooms.length,
-      itemBuilder: (context, index) => RoomCard(room: search.rooms[index], onOpen: () => context.push(RoomRoute(platform: search.rooms[index].ref.platform, roomId: search.rooms[index].ref.roomId).location)),
-      footer: search.loading
-          ? const Padding(
-              padding: EdgeInsets.all(DsSpace.s16),
-              child: Center(child: RoomCardSkeleton()),
-            )
-          : null,
-      onEndReached: search.hasMore ? () => unawaited(controller.loadMore()) : null,
-      endReachedKey: 'rooms:${search.query}',
+    return CardGrid<LiveRoom>(
+      items: search.rooms,
+      cardExtent: cardExtent,
+      isLoading: search.loading,
+      hasMore: search.hasMore,
+      onLoadMore: controller.loadMore,
+      itemBuilder: (context, room) => RoomCard(
+        room: room,
+        onOpen: () => context.push(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),
+      ),
     );
   }
 }
@@ -288,18 +375,17 @@ final class _RoomResults extends ConsumerWidget {
 /// pages in exactly like the rooms grid, so every target pages the same way.
 final class _ListResults extends ConsumerWidget {
   const _ListResults({
-    required this.itemCount,
+    required this.items,
     required this.itemBuilder,
     required this.hasMore,
     required this.loading,
-    required this.endReachedKey,
   });
 
-  /// How many cards the list holds.
-  final int itemCount;
+  /// The hits shown, in order.
+  final List<Object> items;
 
   /// Builds the card at each index.
-  final IndexedWidgetBuilder itemBuilder;
+  final Widget Function(BuildContext context, Object item) itemBuilder;
 
   /// Whether another page can be loaded.
   final bool hasMore;
@@ -307,26 +393,15 @@ final class _ListResults extends ConsumerWidget {
   /// Whether a page is loading now.
   final bool loading;
 
-  /// What these items were loaded for; a change re-arms the paging.
-  final Object endReachedKey;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(searchProvider.notifier);
-    return MosaicGrid.builder(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
-      columns: const MosaicColumns.count(1),
-      rowGap: DsSpace.s12,
-      itemCount: itemCount,
+    return CardList<Object>(
+      items: items,
       itemBuilder: itemBuilder,
-      footer: loading
-          ? const Padding(
-              padding: EdgeInsets.all(DsSpace.s16),
-              child: Center(child: _ListCardSkeleton()),
-            )
-          : null,
-      onEndReached: hasMore ? () => unawaited(controller.loadMore()) : null,
-      endReachedKey: endReachedKey,
+      hasMore: hasMore,
+      isLoading: loading,
+      onLoadMore: controller.loadMore,
     );
   }
 }
@@ -522,13 +597,11 @@ final class _RoomSkeletonGrid extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cardExtent = ref.watch(browseSettingsProvider.select((settings) => settings.homeCardExtent));
-    return MosaicGrid(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
-      columns: MosaicColumns.maxExtent(cardExtent),
-      layout: const MosaicLayout.masonry(),
-      columnGap: DsSpace.s16,
-      rowGap: DsSpace.s16,
-      children: [for (var i = 0; i < 12; i++) const RoomCardSkeleton()],
+    return CardGrid<LiveRoom>(
+      items: const [],
+      cardExtent: cardExtent,
+      isLoading: true,
+      itemBuilder: (context, room) => const SizedBox.shrink(),
     );
   }
 }
@@ -540,11 +613,10 @@ final class _ListSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MosaicGrid(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
-      columns: const MosaicColumns.count(1),
-      rowGap: DsSpace.s12,
-      children: [for (var i = 0; i < 8; i++) const _ListCardSkeleton()],
+    return CardList<Object>(
+      items: const [],
+      isLoading: true,
+      skeletonBuilder: (context) => const _ListCardSkeleton(),
     );
   }
 }

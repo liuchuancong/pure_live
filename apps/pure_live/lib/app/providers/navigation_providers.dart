@@ -4,7 +4,7 @@ import 'package:pure_live/shared/enums/navigation_item.dart' show NavigationItem
 /// The destination the shell currently shows.
 final class SelectedNavItemController extends Notifier<NavigationItem> {
   @override
-  NavigationItem build() => NavigationItem.home;
+  NavigationItem build() => NavigationItem.hot;
 
   /// The destination the shell is showing.
   NavigationItem get selected => state;

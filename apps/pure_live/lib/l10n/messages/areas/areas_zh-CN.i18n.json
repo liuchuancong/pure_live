@@ -1,4 +1,10 @@
 {
   "allAreas": "全部分区",
-  "noAreas": "该站点没有分区"
+  "noAreas": "该平台没有分区",
+  "viewPlatform": "平台分区",
+  "viewFollowed": "关注分区",
+  "followedEmpty": "还没有关注的分区",
+  "followedEmptyHint": "在平台分区或直播间里点爱心即可关注",
+  "noPlatforms": "没有可浏览的平台",
+  "unfollow": "取消关注"
 }

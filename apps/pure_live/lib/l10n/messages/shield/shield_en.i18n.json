@@ -1,0 +1,23 @@
+{
+  "title": "Danmaku shield",
+  "description": "Keep live-room danmaku out by keyword or user; the rules live on this device.",
+  "masterTitle": "Master switch",
+  "enabled": "Enable the danmaku shield",
+  "enabledDescription": "When off, every rule stands down for the moment",
+  "keywordsTitle": "Keywords",
+  "usersTitle": "Users",
+  "keywordFieldHint": "Type a keyword to block",
+  "userFieldHint": "Type a user name to block",
+  "add": "Add",
+  "keywordsEmpty": "No blocked keywords yet",
+  "usersEmpty": "No blocked users yet",
+  "clear": "Clear all",
+  "clearConfirmDesc": "The list empties; add entries again whenever you need them.",
+  "duplicateEntry": "This entry is already on the list",
+  "invalidEntry": "The entry cannot be empty",
+  "added": "Blocked",
+  "removed": "Removed",
+  "cleared": "Cleared",
+  "removeEntry": "Remove this rule",
+  "effectNote": "The rules apply in the live room's danmaku pipeline, which arrives with the player stack."
+}

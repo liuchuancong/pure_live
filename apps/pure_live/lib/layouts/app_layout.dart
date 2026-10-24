@@ -4,11 +4,14 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show StatefulNavigationShell;
+import 'package:live_platform/live_platform.dart' show FormFactor;
+import 'package:pure_live/app/providers/environment_providers.dart' show platformRuntimeProvider;
 import 'package:pure_live/app/providers/module_providers.dart';
 import 'package:pure_live/app/providers/navigation_providers.dart';
 import 'package:pure_live/app/providers/sidebar_providers.dart';
 import 'package:pure_live/features/iptv/iptv_page.dart' show IptvPage;
 import 'package:pure_live/features/music/music_page.dart' show MusicPage;
+import 'package:pure_live/features/tv/tv_shell.dart' show TvShell;
 import 'package:pure_live/features/vod/vod_page.dart' show VodPage;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/desktop/desktop_layout.dart';
@@ -45,11 +48,23 @@ const List<NavigationItem> _kBranchOrder = [
   NavigationItem.favorites,
   NavigationItem.history,
   NavigationItem.search,
+  NavigationItem.multiview,
+  NavigationItem.record,
+  NavigationItem.toolbox,
   NavigationItem.settings,
 ];
 
+/// Destinations that share a branch with another: the hot feed is the
+/// home branch — "热门" is the feed's name in the navigation, "home" is
+/// its route.
+const Map<NavigationItem, NavigationItem> _kBranchAliases = {
+  NavigationItem.hot: NavigationItem.home,
+};
+
+NavigationItem _branchItemOf(NavigationItem item) => _kBranchAliases[item] ?? item;
+
 int? _branchIndexOf(NavigationItem item) {
-  final index = _kBranchOrder.indexOf(item);
+  final index = _kBranchOrder.indexOf(_branchItemOf(item));
   return index < 0 ? null : index;
 }
 
@@ -79,7 +94,7 @@ final class AppLayout extends ConsumerStatefulWidget {
 final class _AppLayoutState extends ConsumerState<AppLayout> {
   /// The destinations the viewer visited, in visit order; the one at
   /// [_cursor] is on screen, and back and forward move along them.
-  final List<NavigationItem> _trail = [NavigationItem.home];
+  final List<NavigationItem> _trail = [NavigationItem.hot];
 
   int _cursor = 0;
 
@@ -112,6 +127,12 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
   Widget build(BuildContext context) {
     final breakpoint = _breakpointOf(MediaQuery.sizeOf(context).width);
     final selected = ref.watch(selectedNavItemProvider);
+
+    // A TV build (the leanback launcher, the dart-define at boot) gets the
+    // TV shell from the first frame: a remote cannot reach a touch UI.
+    if (ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv) {
+      return const TvShell();
+    }
     final sidebar = ref.watch(sidebarProvider);
     final module = ref.watch(selectedModuleProvider);
 
@@ -143,6 +164,18 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       _go(_trail[_cursor]);
     }
 
+    /// The app switcher's choice: the module's own landing page comes with
+    /// it — live opens on the hot feed's branch (its content is the routed
+    /// shell), the others mark their landing destination while the module's
+    /// page takes the content area. The window and its chrome stay; only
+    /// the business menu and the content area swap.
+    void selectModule(AppModule next) {
+      ref.read(selectedModuleProvider.notifier).selected = next;
+      final landing = defaultNavigationItemFor(next);
+      ref.read(selectedNavItemProvider.notifier).selected = landing;
+      if (next == AppModule.live) handleSelected(landing);
+    }
+
     // The module's entry surface: live keeps the router's branch shell —
     // its destinations are routes — while each other module renders its
     // own entry page; a module whose page has not arrived yet falls back
@@ -157,20 +190,19 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
           };
 
     if (breakpoint.index < kBottomBarBreakpoint.index) {
-      final items = mobileNavigationItemsFor(module);
-      final index = items.indexOf(selected);
       return MobileLayout(
         content: moduleContent,
-        items: items,
-        selectedIndex: index < 0 ? 0 : index,
-        onSelected: (index) => handleSelected(items[index]),
+        module: module,
+        selected: selected,
+        onSelected: handleSelected,
+        onModuleSelected: selectModule,
       );
     }
     return DesktopLayout(
       content: moduleContent,
       module: module,
-      onModuleSelected: (next) => ref.read(selectedModuleProvider.notifier).selected = next,
-      groups: navigationGroupsFor(module),
+      onModuleSelected: selectModule,
+      business: kModuleBusinessItems[module]!,
       selected: selected,
       onSelected: handleSelected,
       // The toggle rules; a window crossing under the breakpoint folds

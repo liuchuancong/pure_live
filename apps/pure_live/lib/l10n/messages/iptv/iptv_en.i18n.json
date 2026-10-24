@@ -14,5 +14,12 @@
   "upNext": "Next",
   "noGuide": "No programme guide",
   "favouriteAction": "Favourite",
-  "unfavouriteAction": "Unfavourite"
+  "unfavouriteAction": "Unfavourite",
+  "epgSourceTitle": "Guide sources",
+  "epgSourceHint": "An XMLTV or JSON guide URL",
+  "epgImport": "Import",
+  "epgImported": "Guide imported",
+  "epgFailed": "The guide failed to import",
+  "epgRemove": "Remove this guide source",
+  "epgEmpty": "No guide sources yet; import one and the channel cards show what is on."
 }

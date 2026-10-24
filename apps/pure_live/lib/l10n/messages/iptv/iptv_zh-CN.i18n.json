@@ -14,5 +14,12 @@
   "upNext": "接下来",
   "noGuide": "暂无节目单",
   "favouriteAction": "收藏频道",
-  "unfavouriteAction": "取消收藏"
+  "unfavouriteAction": "取消收藏",
+  "epgSourceTitle": "节目单源",
+  "epgSourceHint": "XMLTV 或 JSON 节目单地址",
+  "epgImport": "导入",
+  "epgImported": "节目单已导入",
+  "epgFailed": "节目单导入失败",
+  "epgRemove": "删除此节目单源",
+  "epgEmpty": "还没有节目单源，导入一个后频道卡就会显示正在播的节目。"
 }

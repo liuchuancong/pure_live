@@ -1,0 +1,13 @@
+{
+  "layoutLabel": "布局",
+  "videoComingSoon": "多画面播放将随播放器内核接入，现在可先排布格子并挑选房间。",
+  "pickRoom": "选择房间",
+  "clearPane": "清空这一格",
+  "swapPane": "交换格子",
+  "swapHere": "换到这格",
+  "pickerTitle": "为第 {index} 格选择房间",
+  "pickerEmptyTitle": "还没有关注的房间",
+  "pickerEmptyHint": "先到直播间点关注，再回到这里挑选，房间会出现在列表里。",
+  "alreadyShown": "已在第 {index} 格",
+  "shownIn": "第 {index} 格"
+}

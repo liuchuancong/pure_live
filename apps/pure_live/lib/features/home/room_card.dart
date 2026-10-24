@@ -38,54 +38,59 @@ final class RoomCard extends StatelessWidget {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: 8,
             children: [
-              AspectRatio(
+              // The cover keeps 16:9 whatever the tile's height; the text
+              // row absorbs the remainder of the grid tile. DsImage needs
+              // its own reserved box — the ratio is its parameter, not an
+              // outer wrapper's.
+              DsImage.network(
+                room.content.coverUrl,
                 aspectRatio: 16 / 9,
-                child: ClipRRect(
+                semanticLabel: room.content.title,
+                fallback: _CoverFallback(title: room.content.title),
+                style: DsImageStyle(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.card)),
-                  child: DsImage.network(
-                    room.content.coverUrl,
-                    semanticLabel: room.content.title,
-                    fallback: _CoverFallback(title: room.content.title),
-                  ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 3,
-                  children: [
-                    Text(
-                      room.content.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                    ),
-                    Row(
-                      spacing: 6,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            room.anchor?.name ?? room.ref.roomId,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.typography.caption.copyWith(color: colors.textMuted),
-                          ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 3,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          room.content.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
                         ),
-                        if (figure != null)
-                          Text(
-                            AudienceFormat.format(figure),
-                            style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
+                      ),
+                      Row(
+                        spacing: 6,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              room.anchor?.name ?? room.ref.roomId,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.typography.caption.copyWith(color: colors.textMuted),
+                            ),
                           ),
-                        const Spacer(),
-                        // An off-air room keeps its place in the feed; the
-                        // room page will say why it cannot play.
-                        if (!live) DsIcon(DsIcons.circleSlash, size: 12, color: colors.textSubtle),
-                      ],
-                    ),
-                  ],
+                          if (figure != null)
+                            Text(
+                              AudienceFormat.format(figure),
+                              style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
+                            ),
+                          const Spacer(),
+                          // An off-air room keeps its place in the feed; the
+                          // room page will say why it cannot play.
+                          if (!live) DsIcon(DsIcons.circleSlash, size: 12, color: colors.textSubtle),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

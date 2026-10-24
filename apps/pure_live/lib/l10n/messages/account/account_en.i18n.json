@@ -1,0 +1,23 @@
+{
+  "title": "Accounts",
+  "description": "The platforms' sign-in state; credentials live only in this device's secure storage.",
+  "sectionHeader": "Sign-in state",
+  "empty": "No platform supports signing in yet",
+  "notSignedIn": "Not signed in",
+  "signedInAs": "Signed in as {name}",
+  "qrLogin": "Scan QR code",
+  "cookieLogin": "Import cookie",
+  "signOut": "Sign out",
+  "qrDialogTitle": "Sign in to {site} with a QR code",
+  "qrHint": "Open the {site} mobile app, scan the code and confirm the sign-in.",
+  "qrExpired": "The QR code expired",
+  "qrRetry": "Fetch a new code",
+  "qrPollingFailed": "Connection failed, retrying…",
+  "cookieDialogTitle": "Import the {site} cookie",
+  "cookieDialogHint": "Copy the site's cookie from a signed-in browser and paste it below (name=value; name2=value2).",
+  "cookieFieldHint": "Paste the cookie here",
+  "loginSuccess": "Signed in",
+  "loginFailed": "Sign-in failed: {message}",
+  "signOutConfirmDesc": "The stored {site} credential leaves this device.",
+  "signOutSuccess": "Signed out"
+}

@@ -11,11 +11,13 @@
   "toggleSidebar": "Toggle sidebar",
   "moduleLive": "Live",
   "moduleIptv": "IPTV",
-  "moduleVod": "Videos",
+  "moduleVod": "Bilibili",
   "moduleMusic": "Music",
   "retry": "Retry",
   "moduleComingSoon": "This module is on its way",
   "back": "Back",
   "forward": "Forward",
-  "searchHint": "Search rooms, streamers or sites"
+  "searchHint": "Search rooms, streamers or sites",
+  "switchModule": "Switch content type",
+  "openNavigation": "Open navigation"
 }

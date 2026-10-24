@@ -1,0 +1,235 @@
+import 'dart:async' show unawaited;
+
+import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pure_live/features/shield/shield_repository.dart';
+import 'package:pure_live/l10n/translations.dart';
+
+/// The danmaku shield's settings pane: the master switch, then the two
+/// managed lists — blocked keywords and blocked users — one removable row
+/// per entry, an add row per list, and a destructive clear behind a
+/// confirm. The rules apply in the live room's danmaku pipeline, which
+/// arrives with the player stack; the pane says so rather than promising
+/// an effect that is not wired yet.
+final class ShieldPane extends ConsumerWidget {
+  /// The pane.
+  const ShieldPane({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final rules = ref.watch(shieldRulesProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: DsSpace.s16,
+      children: [
+        DsListSection(
+          header: Text(t.shield.masterTitle),
+          children: [
+            DsSwitch(
+              value: rules.enabled,
+              onChanged: (value) => unawaited(ref.read(shieldRulesProvider.notifier).setEnabled(value: value)),
+              label: Text(t.shield.enabled),
+              description: Text(t.shield.enabledDescription),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(DsSpace.s12),
+              child: Text(t.shield.effectNote, style: theme.typography.small.copyWith(color: colors.textSubtle)),
+            ),
+          ],
+        ),
+        _ShieldList(
+          icon: DsIcons.filter,
+          title: t.shield.keywordsTitle,
+          entries: rules.keywords,
+          fieldHint: t.shield.keywordFieldHint,
+          emptyText: t.shield.keywordsEmpty,
+          onAdd: (value) => ref.read(shieldRulesProvider.notifier).addKeyword(value),
+          onRemove: (value) => ref.read(shieldRulesProvider.notifier).removeKeyword(value),
+          onClear: () => ref.read(shieldRulesProvider.notifier).clearKeywords(),
+        ),
+        _ShieldList(
+          icon: DsIcons.users,
+          title: t.shield.usersTitle,
+          entries: rules.users,
+          fieldHint: t.shield.userFieldHint,
+          emptyText: t.shield.usersEmpty,
+          onAdd: (value) => ref.read(shieldRulesProvider.notifier).addUser(value),
+          onRemove: (value) => ref.read(shieldRulesProvider.notifier).removeUser(value),
+          onClear: () => ref.read(shieldRulesProvider.notifier).clearUsers(),
+        ),
+      ],
+    );
+  }
+}
+
+/// One managed list's section: the entries as removable rows, an inline
+/// add row under them and the destructive clear behind a confirm.
+final class _ShieldList extends ConsumerWidget {
+  const _ShieldList({
+    required this.icon,
+    required this.title,
+    required this.entries,
+    required this.fieldHint,
+    required this.emptyText,
+    required this.onAdd,
+    required this.onRemove,
+    required this.onClear,
+  });
+
+  /// The list's icon (a keyword's funnel, a user's person).
+  final DsIconData icon;
+
+  /// The section header's words.
+  final String title;
+
+  /// The entries, in stored order.
+  final List<String> entries;
+
+  /// The add field's placeholder.
+  final String fieldHint;
+
+  /// What an empty list says.
+  final String emptyText;
+
+  /// Adds an entry; answers false when it is empty or a duplicate.
+  final Future<bool> Function(String value) onAdd;
+
+  /// Removes one entry.
+  final Future<void> Function(String value) onRemove;
+
+  /// Drops every entry.
+  final Future<void> Function() onClear;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    return DsListSection(
+      header: Text(title),
+      children: [
+        if (entries.isEmpty) DsListRow(leading: DsIcon(icon), title: Text(emptyText)),
+        for (final entry in entries)
+          DsListRow(
+            leading: DsIcon(icon),
+            title: Text(entry),
+            trailing: _RemoveButton(onPressed: () => unawaited(_remove(context, ref, entry))),
+          ),
+        _ShieldAddField(fieldHint: fieldHint, onAdd: onAdd),
+        if (entries.isNotEmpty)
+          DsListRow(
+            leading: const DsIcon(DsIcons.delete),
+            title: Text(t.shield.clear),
+            destructive: true,
+            onPressed: () => unawaited(_clear(context, ref)),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _remove(BuildContext context, WidgetRef ref, String value) async {
+    await onRemove(value);
+    if (!context.mounted) return;
+    showDsToast(context: context, title: context.t.shield.removed);
+  }
+
+  Future<void> _clear(BuildContext context, WidgetRef ref) async {
+    final t = context.t;
+    final confirmed = await showDsConfirm(
+      context: context,
+      title: t.shield.clear,
+      description: t.shield.clearConfirmDesc,
+      confirmLabel: t.common.confirm,
+      destructive: true,
+    );
+    if (!confirmed) return;
+    await onClear();
+    if (!context.mounted) return;
+    showDsToast(context: context, title: t.shield.cleared);
+  }
+}
+
+/// The x at a list entry's end: an icon button that removes the entry.
+final class _RemoveButton extends StatelessWidget {
+  const _RemoveButton({required this.onPressed});
+
+  /// Fired when the button is pressed.
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return DsButton.icon(
+      variant: DsButtonVariant.ghost,
+      onPressed: onPressed,
+      icon: const DsIcon(DsIcons.close),
+      semanticLabel: context.t.shield.removeEntry,
+    );
+  }
+}
+
+/// The inline add row: a text field plus the add button; submitting from
+/// the field commits the same way.
+final class _ShieldAddField extends ConsumerStatefulWidget {
+  const _ShieldAddField({required this.fieldHint, required this.onAdd});
+
+  /// The field's placeholder.
+  final String fieldHint;
+
+  /// Adds the entry; answers false when it is empty or a duplicate.
+  final Future<bool> Function(String value) onAdd;
+
+  @override
+  ConsumerState<_ShieldAddField> createState() => _ShieldAddFieldState();
+}
+
+final class _ShieldAddFieldState extends ConsumerState<_ShieldAddField> {
+  final TextEditingController _field = TextEditingController();
+
+  @override
+  void dispose() {
+    _field.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
+      child: Row(
+        spacing: DsSpace.s8,
+        children: [
+          Expanded(
+            child: DsTextField(
+              controller: _field,
+              clearable: true,
+              placeholder: widget.fieldHint,
+              onSubmitted: (value) => unawaited(_commit()),
+              semanticLabel: widget.fieldHint,
+            ),
+          ),
+          DsButton(onPressed: () => unawaited(_commit()), child: Text(t.shield.add)),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _commit() async {
+    final t = context.t;
+    final value = _field.text;
+    final added = await widget.onAdd(value);
+    if (!mounted) return;
+    if (value.trim().isEmpty) {
+      showDsToast(context: context, title: t.shield.invalidEntry);
+      return;
+    }
+    if (!added) {
+      showDsToast(context: context, title: t.shield.duplicateEntry);
+      return;
+    }
+    _field.clear();
+    showDsToast(context: context, title: t.shield.added);
+  }
+}

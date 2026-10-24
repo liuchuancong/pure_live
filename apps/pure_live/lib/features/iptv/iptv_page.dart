@@ -4,10 +4,11 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart';
-import 'package:mosaic_grid/mosaic_grid.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
 import 'package:pure_live/features/iptv/iptv_controller.dart';
+import 'package:pure_live/features/iptv/iptv_epg_controller.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/grids/card_grid.dart';
 
 /// How often the page re-reads "what is on now": a programme that started
 /// on the minute should not wait for the viewer to reopen the page.
@@ -83,7 +84,13 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
-          child: _ScopeSegments(scope: channels.scope),
+          child: Row(
+            spacing: DsSpace.s12,
+            children: [
+              Expanded(child: _ScopeSegments(scope: channels.scope)),
+              const _GuideSourceButton(),
+            ],
+          ),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
@@ -181,29 +188,17 @@ final class _ChannelsGrid extends ConsumerWidget {
     final controller = ref.read(iptvChannelsProvider.notifier);
     final cardExtent = ref.watch(browseSettingsProvider.select((settings) => settings.homeCardExtent));
     final hasMore = channels.shown < channels.channels.length;
-    return MosaicGrid.builder(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
-      columns: MosaicColumns.maxExtent(cardExtent),
-      layout: const MosaicLayout.masonry(),
-      columnGap: DsSpace.s16,
-      rowGap: DsSpace.s16,
-      itemCount: channels.shown,
-      itemBuilder: (context, index) {
-        final channel = channels.channels[index];
-        return _ChannelCard(
-          channel: channel,
-          slot: channels.slots[channel.id],
-          onToggleFavorite: () => unawaited(controller.toggleFavorite(channel.id)),
-        );
-      },
-      footer: channels.loadingMore
-          ? const Padding(
-              padding: EdgeInsets.all(DsSpace.s16),
-              child: Center(child: _ChannelCardSkeleton()),
-            )
-          : null,
-      onEndReached: hasMore ? () => unawaited(controller.loadMore()) : null,
-      endReachedKey: '${channels.selectedGroup ?? '*'}:${channels.scope.name}',
+    return CardGrid<IptvChannel>(
+      items: channels.channels.take(channels.shown).toList(growable: false),
+      cardExtent: cardExtent,
+      isLoading: channels.loadingMore,
+      hasMore: hasMore,
+      onLoadMore: controller.loadMore,
+      itemBuilder: (context, channel) => _ChannelCard(
+        channel: channel,
+        slot: channels.slots[channel.id],
+        onToggleFavorite: () => unawaited(controller.toggleFavorite(channel.id)),
+      ),
     );
   }
 }
@@ -409,41 +404,114 @@ final class _SkeletonGrid extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cardExtent = ref.watch(browseSettingsProvider.select((settings) => settings.homeCardExtent));
-    return MosaicGrid(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s24),
-      columns: MosaicColumns.maxExtent(cardExtent),
-      layout: const MosaicLayout.masonry(),
-      columnGap: DsSpace.s16,
-      rowGap: DsSpace.s16,
-      children: [for (var i = 0; i < 12; i++) const _ChannelCardSkeleton()],
+    return CardGrid<Object>(
+      items: const [],
+      cardExtent: cardExtent,
+      isLoading: true,
+      itemBuilder: (context, item) => const SizedBox.shrink(),
     );
   }
 }
 
-/// One channel card's placeholder while its page loads: the same shape,
-/// no content.
-final class _ChannelCardSkeleton extends StatelessWidget {
-  const _ChannelCardSkeleton();
+/// The guide-source button beside the scope segments: it opens the source
+/// manager, where a URL is imported, refreshed or removed — the stored
+/// guide is what the cards' programme lines read.
+final class _GuideSourceButton extends ConsumerStatefulWidget {
+  const _GuideSourceButton();
+
+  @override
+  ConsumerState<_GuideSourceButton> createState() => _GuideSourceButtonState();
+}
+
+final class _GuideSourceButtonState extends ConsumerState<_GuideSourceButton> {
+  final TextEditingController _url = TextEditingController();
+
+  @override
+  void dispose() {
+    _url.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    return Padding(
-      padding: const EdgeInsets.all(DsSpace.s12),
-      child: Row(
-        spacing: DsSpace.s12,
-        children: [
-          DsSkeleton.circle(size: theme.sizes.md),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s4,
-              children: [
-                DsSkeleton(width: DsSpace.s64, height: DsSpace.s12),
-                DsSkeleton(width: DsSpace.s48, height: DsSpace.s8),
-                DsSkeleton(width: DsSpace.s40, height: DsSpace.s4),
-              ],
+    final colors = DsTheme.colorsOf(context);
+    final library = ref.watch(iptvLibraryProvider).value;
+    final epg = ref.watch(iptvEpgProvider);
+    final sources = library?.guideSources ?? const <EpgSource>[];
+    return DsPressable(
+      semanticLabel: context.t.iptv.epgSourceTitle,
+      onPressed: epg.loading ? null : () => unawaited(_openManager(sources)),
+      builder: (context, states, _) {
+        final hovered = states.contains(WidgetState.hovered);
+        return Container(
+          width: 34,
+          height: 34,
+          decoration: DsBoxDecoration(
+            color: hovered ? colors.hover : colors.control,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Center(
+            child: epg.loading
+                ? const SizedBox(width: 14, height: 14, child: DsSpinner())
+                : DsIcon(DsIcons.calendarClock, size: 17, color: colors.textMuted),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _openManager(List<EpgSource> sources) async {
+    final t = context.t;
+    await showDsDialog<void>(
+      context: context,
+      builder: (context) => DsDialog(
+        title: Text(t.iptv.epgSourceTitle),
+        description: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: DsSpace.s8,
+          children: [
+            DsTextField(
+              controller: _url,
+              clearable: true,
+              placeholder: t.iptv.epgSourceHint,
+              keyboardType: TextInputType.url,
             ),
+            if (sources.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: DsSpace.s8),
+                child: Text(
+                  t.iptv.epgEmpty,
+                  style: DsTheme.of(context).typography.small.copyWith(color: DsTheme.colorsOf(context).textMuted),
+                ),
+              ),
+            for (final source in sources)
+              DsListRow(
+                leading: const DsIcon(DsIcons.calendarClock),
+                title: Text(source.name),
+                description: Text(source.source),
+                trailing: DsPressable(
+                  semanticLabel: t.iptv.epgRemove,
+                  onPressed: () => unawaited(ref.read(iptvEpgProvider.notifier).removeAll()),
+                  builder: (context, states, _) => DsIcon(
+                    DsIcons.x,
+                    size: 14,
+                    color: states.contains(WidgetState.hovered)
+                        ? DsTheme.colorsOf(context).danger.fill
+                        : DsTheme.colorsOf(context).textSubtle,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        actions: [
+          DsButton(
+            onPressed: () async {
+              final ok = await ref.read(iptvEpgProvider.notifier).importFromUrl(_url.text);
+              if (!context.mounted) return;
+              Navigator.of(context).pop();
+              showDsToast(context: context, title: ok ? t.iptv.epgImported : t.iptv.epgFailed);
+            },
+            child: Text(t.iptv.epgImport),
           ),
         ],
       ),

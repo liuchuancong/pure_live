@@ -1,214 +1,98 @@
+import 'dart:async' show unawaited;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
-import 'package:pure_live/app/providers/browse_settings_providers.dart';
-import 'package:pure_live/app/providers/sites_providers.dart' show selectedSiteIdProvider, selectedSiteProvider;
+import 'package:live_storage/live_storage.dart';
+import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
+import 'package:pure_live/features/settings/sites_display_provider.dart' show sitesDisplayProvider;
 
-/// What the areas page holds: the selected site's areas, which one is open,
-/// and the rooms shown under it so far with where the next page asks.
-typedef AreasState = ({
-  List<LiveArea> areas,
-  bool areasLoading,
-  LiveSiteError? areasError,
-  LiveArea? selectedArea,
-  List<LiveRoom> rooms,
-  int nextPage,
-  bool hasMore,
-  bool roomsLoading,
-  LiveSiteError? roomsError,
-});
+/// What one platform's areas catalogue holds: the areas and their load.
+typedef PlatformAreasState = ({List<LiveArea> areas, bool loading, LiveSiteError? error});
 
-AreasState _initial() => (
-  areas: const [],
-  areasLoading: false,
-  areasError: null,
-  selectedArea: null,
-  rooms: const [],
-  nextPage: 1,
-  hasMore: true,
-  roomsLoading: false,
-  roomsError: null,
-);
+PlatformAreasState _initial() => (areas: const [], loading: false, error: null);
 
-/// The areas page's state: the selected site's areas as a grid, and one
-/// open area's rooms as a paged feed.
+/// The areas page's catalogues: one per platform (the reference's
+/// `AreaCatalog`), each loaded when its tab is first shown and kept while
+/// the app runs — switching tabs never refetches.
 ///
-/// [build] watches the selected site, so switching sites drops the old
-/// site's areas and rooms at once: they never linger under the new site's
-/// pages. The page asks for the first areas (and every rooms page) — a
-/// notifier never loads from inside its own build.
-final class AreasController extends Notifier<AreasState> {
+/// The page asks; a notifier never loads from inside its own build.
+final class AreasCatalogController extends Notifier<Map<String, PlatformAreasState>> {
   @override
-  AreasState build() {
-    ref.watch(selectedSiteIdProvider);
-    return _initial();
+  Map<String, PlatformAreasState> build() => const {};
+
+  /// The ids of the platforms that have areas, in registry order.
+  List<String> platformIds() {
+    final display = ref.read(sitesDisplayProvider.notifier);
+    return [
+      for (final site in ref.read(sitesProvider).all)
+        if (site.capability<LiveAreaProvider>() != null && display.shown(site.manifest.id)) site.manifest.id,
+    ];
   }
 
-  /// Loads the site's areas (the first show and every retry). A site
-  /// without the area capability is no failure: the page says it has no
-  /// areas.
-  Future<void> loadAreas() async {
-    if (state.areasLoading) return;
-    state = (
-      areas: state.areas,
-      areasLoading: true,
-      areasError: null,
-      selectedArea: state.selectedArea,
-      rooms: state.rooms,
-      nextPage: state.nextPage,
-      hasMore: state.hasMore,
-      roomsLoading: state.roomsLoading,
-      roomsError: state.roomsError,
-    );
-    final site = ref.read(selectedSiteProvider);
-    final capability = site.capability<LiveAreaProvider>();
+  /// The catalogue of [platform], made on first ask.
+  PlatformAreasState catalogOf(String platform) => state[platform] ?? _initial();
+
+  /// Loads [platform]'s areas when its catalogue is still empty and idle.
+  /// A site with no areas of its own keeps an honest empty catalogue.
+  Future<void> open(String platform) async {
+    final catalog = catalogOf(platform);
+    if (catalog.areas.isNotEmpty || catalog.loading) return;
+    await _load(platform);
+  }
+
+  /// Loads [platform]'s areas again (a retry from its error state).
+  Future<void> refresh(String platform) => _load(platform);
+
+  Future<void> _load(String platform) async {
+    final current = catalogOf(platform);
+    if (current.loading) return;
+    state = {...state, platform: (areas: current.areas, loading: true, error: null)};
+    final capability = ref.read(sitesProvider).getById(platform)?.capability<LiveAreaProvider>();
     if (capability == null) {
-      state = (
-        areas: const [],
-        areasLoading: false,
-        areasError: null,
-        selectedArea: null,
-        rooms: const [],
-        nextPage: 1,
-        hasMore: true,
-        roomsLoading: false,
-        roomsError: null,
-      );
+      state = {...state, platform: (areas: const [], loading: false, error: null)};
       return;
     }
     final answer = await capability.getAreas();
+    final open = state[platform];
+    if (open == null) return;
     answer.match(
-      (error) => state = (
-        areas: state.areas,
-        areasLoading: false,
-        areasError: error,
-        selectedArea: state.selectedArea,
-        rooms: state.rooms,
-        nextPage: state.nextPage,
-        hasMore: state.hasMore,
-        roomsLoading: state.roomsLoading,
-        roomsError: state.roomsError,
-      ),
-      (areas) => state = (
-        areas: areas.toList(),
-        areasLoading: false,
-        areasError: null,
-        selectedArea: state.selectedArea,
-        rooms: state.rooms,
-        nextPage: state.nextPage,
-        hasMore: state.hasMore,
-        roomsLoading: state.roomsLoading,
-        roomsError: state.roomsError,
-      ),
-    );
-  }
-
-  /// Opens [area]: its rooms feed starts over at the first page. The rooms
-  /// load is kicked from this user action, not from build.
-  Future<void> selectArea(LiveArea area) async {
-    state = (
-      areas: state.areas,
-      areasLoading: state.areasLoading,
-      areasError: state.areasError,
-      selectedArea: area,
-      rooms: const [],
-      nextPage: 1,
-      hasMore: true,
-      roomsLoading: false,
-      roomsError: null,
-    );
-    await _loadRooms(area: area, page: 1);
-  }
-
-  /// Closes the open area and returns to the areas grid; the feed it held
-  /// is dropped with it.
-  void backToAllAreas() {
-    state = (
-      areas: state.areas,
-      areasLoading: state.areasLoading,
-      areasError: state.areasError,
-      selectedArea: null,
-      rooms: const [],
-      nextPage: 1,
-      hasMore: true,
-      roomsLoading: false,
-      roomsError: null,
-    );
-  }
-
-  /// Loads the open area's rooms again (a retry from its error state).
-  Future<void> reloadRooms() => _loadRooms(area: state.selectedArea!, page: state.rooms.isEmpty ? 1 : state.nextPage);
-
-  /// Loads the next page of the open area's rooms when one is left.
-  Future<void> loadMoreRooms() {
-    if (!state.roomsLoading && state.hasMore) {
-      return _loadRooms(area: state.selectedArea!, page: state.nextPage);
-    }
-    return Future.value();
-  }
-
-  Future<void> _loadRooms({required LiveArea area, required int page}) async {
-    if (state.selectedArea != area || state.roomsLoading) return;
-    state = (
-      areas: state.areas,
-      areasLoading: state.areasLoading,
-      areasError: state.areasError,
-      selectedArea: state.selectedArea,
-      rooms: state.rooms,
-      nextPage: state.nextPage,
-      hasMore: state.hasMore,
-      roomsLoading: true,
-      roomsError: null,
-    );
-    final site = ref.read(selectedSiteProvider);
-    final capability = site.capability<LiveAreaProvider>();
-    if (capability == null) {
-      state = (
-        areas: state.areas,
-        areasLoading: state.areasLoading,
-        areasError: state.areasError,
-        selectedArea: state.selectedArea,
-        rooms: state.rooms,
-        nextPage: state.nextPage,
-        hasMore: false,
-        roomsLoading: false,
-        roomsError: LiveSiteError.unsupported(siteId: site.manifest.id, message: 'no area capability'),
-      );
-      return;
-    }
-    final answer = await capability.getAreaRooms(
-      area: area,
-      request: LivePageRequest.of(page: page, pageSize: ref.read(browseSettingsProvider).homePageSize),
-    );
-    // The open area may have changed (or closed) while the page was in
-    // flight; a stale answer would splice the old area's rooms under the
-    // new one's breadcrumb.
-    if (state.selectedArea != area) return;
-    answer.match(
-      (error) => state = (
-        areas: state.areas,
-        areasLoading: state.areasLoading,
-        areasError: state.areasError,
-        selectedArea: state.selectedArea,
-        rooms: state.rooms,
-        nextPage: state.nextPage,
-        hasMore: false,
-        roomsLoading: false,
-        roomsError: error,
-      ),
-      (pageAnswer) => state = (
-        areas: state.areas,
-        areasLoading: state.areasLoading,
-        areasError: state.areasError,
-        selectedArea: state.selectedArea,
-        rooms: page == 1 ? pageAnswer.items.toList() : [...state.rooms, ...pageAnswer.items],
-        nextPage: page + 1,
-        hasMore: pageAnswer.hasMore ?? pageAnswer.items.isNotEmpty,
-        roomsLoading: false,
-        roomsError: null,
-      ),
+      (error) => state = {...state, platform: (areas: open.areas, loading: false, error: error)},
+      (areas) => state = {...state, platform: (areas: areas.toList(), loading: false, error: null)},
     );
   }
 }
 
-/// The areas page's state.
-final areasProvider = NotifierProvider<AreasController, AreasState>(AreasController.new);
+/// The areas page's per-platform catalogues.
+final areasCatalogProvider = NotifierProvider<AreasCatalogController, Map<String, PlatformAreasState>>(
+  AreasCatalogController.new,
+);
+
+/// The areas page's shown platform, remembered under `browse.areas.site`.
+final class AreasSiteController extends Notifier<String> {
+  @override
+  String build() {
+    final stored = _readStored();
+    final ids = ref.read(areasCatalogProvider.notifier).platformIds();
+    if (stored != null && ids.contains(stored)) return stored;
+    return ids.isEmpty ? '' : ids.first;
+  }
+
+  static String? _readStored() {
+    try {
+      return StoragePrefs.getString('browse.areas.site');
+    } on Object {
+      return null;
+    }
+  }
+
+  /// The shown platform.
+  String get selected => state;
+
+  /// Moves the shown platform, writing the choice through.
+  set selected(String id) {
+    state = id;
+    unawaited(StoragePrefs.setString('browse.areas.site', id));
+  }
+}
+
+/// The areas page's shown platform.
+final areasSiteProvider = NotifierProvider<AreasSiteController, String>(AreasSiteController.new);

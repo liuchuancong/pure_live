@@ -1,0 +1,13 @@
+{
+  "layoutLabel": "Layout",
+  "videoComingSoon": "Multi-view playback arrives with the player stack; arrange the panes and pick rooms meanwhile.",
+  "pickRoom": "Pick a room",
+  "clearPane": "Clear this pane",
+  "swapPane": "Swap panes",
+  "swapHere": "Move here",
+  "pickerTitle": "Pick a room for pane {index}",
+  "pickerEmptyTitle": "No followed rooms yet",
+  "pickerEmptyHint": "Follow a room from its live page first; followed rooms show up in this list.",
+  "alreadyShown": "Already on pane {index}",
+  "shownIn": "Pane {index}"
+}

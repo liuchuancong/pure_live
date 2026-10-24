@@ -8,12 +8,15 @@
   "play": "Play",
   "pause": "Pause",
   "noChat": "No chat yet",
-  "system": "System"
-,
+  "system": "System",
   "mute": "Mute",
   "unmute": "Unmute",
-  "volume": "Volume"
-,
+  "volume": "Volume",
   "sleep": "Sleep timer",
-  "sleepOff": "Stop the timer"
+  "sleepOff": "Stop the timer",
+  "sendHint": "Say something",
+  "send": "Send",
+  "sendFailed": "The message failed to send",
+  "fullscreenOn": "Enter fullscreen",
+  "fullscreenOff": "Leave fullscreen"
 }

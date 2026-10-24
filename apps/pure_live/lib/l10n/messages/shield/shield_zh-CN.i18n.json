@@ -1,0 +1,23 @@
+{
+  "title": "弹幕屏蔽",
+  "description": "按关键词与用户屏蔽直播间弹幕，规则保存在本机。",
+  "masterTitle": "总开关",
+  "enabled": "启用弹幕屏蔽",
+  "enabledDescription": "关闭后所有屏蔽规则临时失效",
+  "keywordsTitle": "关键词",
+  "usersTitle": "用户",
+  "keywordFieldHint": "输入要屏蔽的关键词",
+  "userFieldHint": "输入要屏蔽的用户名",
+  "add": "添加",
+  "keywordsEmpty": "还没有屏蔽关键词",
+  "usersEmpty": "还没有屏蔽的用户",
+  "clear": "清空全部",
+  "clearConfirmDesc": "列表将被清空，需要时再重新添加。",
+  "duplicateEntry": "该条目已在屏蔽列表中",
+  "invalidEntry": "内容不能为空",
+  "added": "已添加屏蔽",
+  "removed": "已移除",
+  "cleared": "已清空",
+  "removeEntry": "移除这条屏蔽规则",
+  "effectNote": "屏蔽在直播间弹幕管道中生效；该管道将随播放器接入后启用。"
+}

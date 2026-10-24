@@ -2,5 +2,8 @@
   "emptyTitle": "还没有观看记录",
   "emptyDescription": "看过一场直播后，就会出现在这里。",
   "clear": "清空记录",
-  "remove": "删除这条记录"
+  "remove": "删除这条记录",
+  "today": "今天",
+  "yesterday": "昨天",
+  "earlier": "更早"
 }
