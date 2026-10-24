@@ -181,3 +181,22 @@ final class PopularSiteController extends Notifier<String> {
 
 /// The popular page's shown platform.
 final popularSiteProvider = NotifierProvider<PopularSiteController, String>(PopularSiteController.new);
+
+/// The popular page's inline search word, or null while it browses: the
+/// toolbar's field submits into the page itself — the results grid takes
+/// the feed's place under a search bar, ESC or the × returns to browsing.
+final class PopularInlineSearchController extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  /// Searches [word] inline (null or empty returns to browsing).
+  void search(String? word) => state = (word == null || word.trim().isEmpty) ? null : word.trim();
+
+  /// Returns to browsing.
+  void clear() => state = null;
+}
+
+/// The popular page's inline search word.
+final popularInlineSearchProvider = NotifierProvider<PopularInlineSearchController, String?>(
+  PopularInlineSearchController.new,
+);

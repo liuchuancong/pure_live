@@ -354,6 +354,8 @@ class _Translations$popular$en extends Translations$popular$zh_CN {
 	@override String page({required int page, required int total}) => 'Page ${page} of ${total}';
 	@override String get prevPage => 'Previous page';
 	@override String get nextPage => 'Next page';
+	@override String inlineAt({required Object query, required Object platform}) => 'Searching “${query}” on ${platform}';
+	@override String get backToBrowse => 'Back to browsing';
 }
 
 // Path: recorder
@@ -871,6 +873,8 @@ extension on TranslationsEn {
 			'popular.page' => ({required int page, required int total}) => 'Page ${page} of ${total}',
 			'popular.prevPage' => 'Previous page',
 			'popular.nextPage' => 'Next page',
+			'popular.inlineAt' => ({required Object query, required Object platform}) => 'Searching “${query}” on ${platform}',
+			'popular.backToBrowse' => 'Back to browsing',
 			'recorder.tabRunning' => 'Recording',
 			'recorder.tabFinished' => 'Finished',
 			'recorder.clearFinished' => 'Clear finished',

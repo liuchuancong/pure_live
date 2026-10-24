@@ -730,6 +730,12 @@ class Translations$popular$zh_CN {
 
 	/// zh-CN: '下一页'
 	String get nextPage => '下一页';
+
+	/// zh-CN: '在 {platform} 中搜索“{query}”'
+	String inlineAt({required Object platform, required Object query}) => '在 ${platform} 中搜索“${query}”';
+
+	/// zh-CN: '返回浏览'
+	String get backToBrowse => '返回浏览';
 }
 
 // Path: recorder
@@ -1743,6 +1749,8 @@ extension on Translations {
 			'popular.page' => ({required int page, required int total}) => '第 ${page} 页，共 ${total} 页',
 			'popular.prevPage' => '上一页',
 			'popular.nextPage' => '下一页',
+			'popular.inlineAt' => ({required Object platform, required Object query}) => '在 ${platform} 中搜索“${query}”',
+			'popular.backToBrowse' => '返回浏览',
 			'recorder.tabRunning' => '进行中',
 			'recorder.tabFinished' => '已完成',
 			'recorder.clearFinished' => '清空已完成',

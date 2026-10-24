@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/providers/sidebar_providers.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show selectedSiteIdProvider;
+import 'package:pure_live/features/popular/popular_controller.dart';
 import 'package:pure_live/features/search/search_controller.dart';
 import 'package:pure_live/features/settings/settings_sections.dart';
 import 'package:pure_live/l10n/translations.dart';
@@ -292,9 +293,21 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                                   child: _ToolbarSearch(
                                     hint: t.common.searchHint,
                                     onSubmitted: (word) {
-                                      ref.read(searchSiteIdProvider.notifier).selected = ref.read(selectedSiteIdProvider);
-                                      ref.read(pendingSearchProvider.notifier).hand(word);
-                                      widget.onMenu(NavigationItem.search);
+                                      // Inline: the word lands in the
+                                      // popular page itself — its results
+                                      // grid over the browsed platform, no
+                                      // navigation away. (Other modules
+                                      // fall through to the search page,
+                                      // where the same word waits.)
+                                      if (widget.module == AppModule.live) {
+                                        ref.read(popularSiteProvider.notifier).selected = ref.read(selectedSiteIdProvider);
+                                        ref.read(popularInlineSearchProvider.notifier).search(word);
+                                        widget.onMenu(NavigationItem.hot);
+                                      } else {
+                                        ref.read(searchSiteIdProvider.notifier).selected = ref.read(selectedSiteIdProvider);
+                                        ref.read(pendingSearchProvider.notifier).hand(word);
+                                        widget.onMenu(NavigationItem.search);
+                                      }
                                     },
                                   ),
                                 ),

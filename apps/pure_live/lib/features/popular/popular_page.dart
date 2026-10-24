@@ -10,6 +10,7 @@ import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider
 import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
 import 'package:pure_live/features/popular/popular_controller.dart';
 import 'package:pure_live/features/popular/room_card.dart' show RoomCard;
+import 'package:pure_live/features/search/search_controller.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
 import 'package:pure_live/shared/platforms/platform_picker.dart';
@@ -111,6 +112,12 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
   Widget build(BuildContext context) {
     final t = context.t;
     final platform = ref.watch(popularSiteProvider);
+    final inline = ref.watch(popularInlineSearchProvider);
+    // An inline search (the toolbar's word) takes the page: the platform's
+    // own results grid under a search bar, browsing one keypress away.
+    if (inline != null) {
+      return _InlineSearchFeed(platform: platform, query: inline);
+    }
     final ids = ref.watch(popularCatalogProvider.notifier).platformIds();
     if (ids.isEmpty) {
       return Center(child: DsEmptyState(icon: const DsIcon(DsIcons.tv), title: Text(t.common.empty)));
@@ -203,5 +210,110 @@ final class _PlatformFeed extends ConsumerWidget {
         ),
       ],
     );
+  }
+}
+
+/// The popular page's inline search results: the search controller runs
+/// over the browsed platform (rooms), the results as the feed's own card
+/// grid, the search bar above naming the word and the platform with the
+/// way back.
+final class _InlineSearchFeed extends ConsumerStatefulWidget {
+  const _InlineSearchFeed({required this.platform, required this.query});
+
+  /// The platform whose rooms are searched (the browsed one).
+  final String platform;
+
+  /// The word handed by the toolbar.
+  final String query;
+
+  @override
+  ConsumerState<_InlineSearchFeed> createState() => _InlineSearchFeedState();
+}
+
+final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
+  @override
+  void initState() {
+    super.initState();
+    // The search runs on arrival (and on a re-word, when the widget is
+    // rebuilt by the provider) — pinned to the browsed platform.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(searchSiteIdProvider.notifier).selected = widget.platform;
+      unawaited(ref.read(searchProvider.notifier).search(widget.query));
+    });
+  }
+
+  @override
+  void didUpdateWidget(_InlineSearchFeed oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.query != widget.query || oldWidget.platform != widget.platform) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(searchSiteIdProvider.notifier).selected = widget.platform;
+        unawaited(ref.read(searchProvider.notifier).search(widget.query));
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final search = ref.watch(searchProvider);
+    final cardExtent = ref.watch(browseSettingsProvider.select((settings) => settings.homeCardExtent));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
+          child: Row(
+            spacing: DsSpace.s8,
+            children: [
+              DsIcon(DsIcons.search, size: 16, color: colors.textMuted),
+              Expanded(
+                child: Text(
+                  t.popular.inlineAt(platform: _platformName(), query: widget.query),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.body.copyWith(color: colors.text),
+                ),
+              ),
+              if (search.loading)
+                const SizedBox(width: 14, height: 14, child: DsSpinner()),
+              DsButton(
+                variant: DsButtonVariant.secondary,
+                onPressed: () => ref.read(popularInlineSearchProvider.notifier).clear(),
+                leading: const DsIcon(DsIcons.x, size: 14),
+                child: Text(t.popular.backToBrowse),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: CardGrid<LiveRoom>(
+            key: ValueKey('inline-${widget.platform}-${widget.query}'),
+            items: search.rooms,
+            cardExtent: cardExtent,
+            isLoading: search.loading,
+            hasMore: search.hasMore,
+            onLoadMore: () => ref.read(searchProvider.notifier).loadMore(),
+            error: search.error?.message,
+            onRetry: () => ref.read(searchProvider.notifier).retry(),
+            emptyIcon: DsIcons.searchX,
+            emptyTitle: t.search.noResultsTitle,
+            itemBuilder: (context, room) => RoomCard(
+              room: room,
+              onOpen: () => context.push(
+                RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _platformName() {
+    final site = ref.read(sitesProvider).getById(widget.platform);
+    return site?.manifest.name['zh-CN'] ?? widget.platform;
   }
 }
