@@ -17,10 +17,7 @@ final class FollowsAutoRefreshController extends Notifier<FollowsAutoRefresh> {
     try {
       final enabled = StoragePrefs.getBool('refresh.follows.auto');
       final minutes = StoragePrefs.getInt('refresh.follows.minutes');
-      return (
-        enabled: enabled ?? _defaults.enabled,
-        minutes: minutes ?? _defaults.minutes,
-      );
+      return (enabled: enabled ?? _defaults.enabled, minutes: minutes ?? _defaults.minutes);
     } on Object {
       return _defaults;
     }

@@ -3,8 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:flutter/widgets.dart';
 import 'package:live_log/live_log.dart' show ErrorReporter, LiveLog, LoggerConsoleSink;
 import 'package:live_platform/live_platform.dart' show FormFactor, PlatformBootstrap, PlatformRuntime;
-import 'package:live_shell/live_shell.dart'
-    show CloseAction, RenderFallbacks, WindowEvent, WindowHost, WindowRole;
+import 'package:live_shell/live_shell.dart' show CloseAction, RenderFallbacks, WindowEvent, WindowHost, WindowRole;
 import 'package:live_shell_desktop/live_shell_desktop.dart'
     show WindowManagerHost, configureMainWindow, primaryChromePlan;
 import 'package:live_storage/live_storage.dart'

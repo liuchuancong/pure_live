@@ -2,6 +2,7 @@ import 'dart:async' show unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/routing/app_router.dart' show appRouterProvider;
 import 'package:pure_live/app/theme/system_accent_color.dart' show readSystemAccentColor;
@@ -49,6 +50,8 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
       if (corners != null) b.cornerStyle = corners;
       b.density = ThemePersistence.readDensity();
     });
+    final font = ThemePersistence.readFont();
+    if (font != null) _settings = _settings.rebuild((b) => b..fontFamily = font);
     _localeCode = ThemePersistence.readLocale();
     if (_localeCode != null) {
       LocaleSettings.setLocaleRawSync(_localeCode!);
@@ -62,6 +65,7 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     unawaited(ThemePersistence.storeMode(settings.mode));
     unawaited(ThemePersistence.storeCorners(settings.cornerStyle));
     unawaited(ThemePersistence.storeDensity(settings.density));
+    unawaited(ThemePersistence.storeFont(settings.fontFamily));
     // Only a named tone persists; the platform accent is re-read at boot
     // (the machine may have changed it), so it stores as "no seed".
     String? named;
@@ -89,6 +93,14 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
         routerConfig: ref.watch(appRouterProvider),
         onGenerateTitle: (context) => context.t.common.appTitle,
         locale: LocaleSettings.currentLocale.flutterLocale,
+        // Material's own strings (an AppBar's back tooltip, a
+        // RefreshIndicator's semantics) need MaterialLocalizations; DsApp
+        // supplies only the widgets-level ones. Desen's own strings stay —
+        // they live under their own type and DsApp appends its delegate.
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         debugShowCheckedModeBanner: false,
         themeMode: _settings.mode,
         theme: _settings.theme(),

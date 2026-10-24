@@ -36,8 +36,7 @@ abstract final class ThemePersistence {
   }
 
   /// Stores the seed's name; null clears it back to the platform accent.
-  static Future<void> storeSeedName(String? name) =>
-      name == null ? _remove('theme.seed') : _store('theme.seed', name);
+  static Future<void> storeSeedName(String? name) => name == null ? _remove('theme.seed') : _store('theme.seed', name);
 
   /// The stored corner style, or null for the default.
   static DsCornerStyle? readCorners() {
@@ -74,6 +73,21 @@ abstract final class ThemePersistence {
   static Future<void> storeDensity(DsDensity? density) =>
       density == null ? _remove('theme.density') : _store('theme.density', density.name);
 
+  /// The stored font family (an app preset id), or null for the platform's
+  /// own face.
+  static String? readFont() {
+    try {
+      final stored = StoragePrefs.getString('theme.font');
+      return (stored == null || stored.isEmpty) ? null : stored;
+    } on Object {
+      return null;
+    }
+  }
+
+  /// Stores the font family; null clears it back to the platform face.
+  static Future<void> storeFont(String? family) =>
+      family == null ? _remove('theme.font') : _store('theme.font', family);
+
   /// The stored locale's code ('zh-CN', 'en'), or null to follow the system.
   static String? readLocale() {
     try {
@@ -85,8 +99,7 @@ abstract final class ThemePersistence {
   }
 
   /// Stores the locale's code; null clears it back to the system.
-  static Future<void> storeLocale(String? code) =>
-      code == null ? _remove('app.locale') : _store('app.locale', code);
+  static Future<void> storeLocale(String? code) => code == null ? _remove('app.locale') : _store('app.locale', code);
 
   static Future<void> _store(String key, String value) async {
     try {
@@ -116,5 +129,4 @@ const List<(String, DsSeed)> kNamedSeeds = [
 ];
 
 /// Rebuilds [settings] with [seed] applied (null = platform accent).
-AppThemeSettings withSeed(AppThemeSettings settings, DsSeed? seed) =>
-    settings.rebuild((b) => b..seed = seed);
+AppThemeSettings withSeed(AppThemeSettings settings, DsSeed? seed) => settings.rebuild((b) => b..seed = seed);

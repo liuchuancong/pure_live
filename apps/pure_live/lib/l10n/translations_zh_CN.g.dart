@@ -1215,6 +1215,15 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '隐藏到托盘(需托盘,暂未接入)'
 	String get closeTrayUnavailable => '隐藏到托盘(需托盘,暂未接入)';
+
+	/// zh-CN: '字体'
+	String get font => '字体';
+
+	/// zh-CN: '界面字体：跟随平台官方字体，或选一款内置官方字体。'
+	String get fontDescription => '界面字体：跟随平台官方字体，或选一款内置官方字体。';
+
+	/// zh-CN: '跟随平台（系统字体）'
+	String get fontPlatform => '跟随平台（系统字体）';
 }
 
 // Path: shield
@@ -1862,6 +1871,9 @@ extension on Translations {
 			'settings.closeQuit' => '退出应用',
 			'settings.closeMinimise' => '最小化到任务栏',
 			'settings.closeTrayUnavailable' => '隐藏到托盘(需托盘,暂未接入)',
+			'settings.font' => '字体',
+			'settings.fontDescription' => '界面字体：跟随平台官方字体，或选一款内置官方字体。',
+			'settings.fontPlatform' => '跟随平台（系统字体）',
 			'shield.title' => '弹幕屏蔽',
 			'shield.description' => '按关键词与用户屏蔽直播间弹幕，规则保存在本机。',
 			'shield.masterTitle' => '总开关',

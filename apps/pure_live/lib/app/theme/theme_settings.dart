@@ -4,6 +4,8 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/widgets.dart' hide Builder; // Builder resolves to built_value's in the part file.
 
+import 'package:pure_live/app/theme/font_defaults.dart';
+
 part 'theme_settings.g.dart';
 
 /// Everything `DsThemeData`'s factory can express, as the app's theme
@@ -144,10 +146,16 @@ abstract class AppThemeSettings implements Built<AppThemeSettings, AppThemeSetti
     extensions: extensions,
   );
 
-  /// Builds the typography override only when a font getter is set;
-  /// otherwise the API's `DsTypography(density: …)` stands.
+  /// Builds the typography override. A stored [fontFamily] wins; without
+  /// one the platform's own face is named where this app can
+  /// ([platformFontFamily]: Segoe UI on Windows, Roboto on Android), and
+  /// Apple/Linux/web keep the library's defaults (San Francisco,
+  /// Schibsted Grotesk). The bundled presets are app fonts, so they are
+  /// looked up with a null package.
   DsTypography? _typography() {
-    if (fontFamily == null &&
+    final family = fontFamily ?? platformFontFamily();
+    final package = fontFamily == null ? null : fontPackage;
+    if (family == null &&
         monoFontFamily == null &&
         displayFontFamily == null &&
         fontPackage == null &&
@@ -158,8 +166,8 @@ abstract class AppThemeSettings implements Built<AppThemeSettings, AppThemeSetti
     final density = this.density ?? DsDensity.forPlatform(platform ?? defaultTargetPlatform);
     if (monoFontFamily != null || monoFontPackage != null) {
       return DsTypography(
-        family: fontFamily,
-        package: fontPackage,
+        family: family,
+        package: package,
         monoFamily: monoFontFamily!,
         monoPackage: monoFontPackage,
         displayFamily: displayFontFamily,
@@ -168,8 +176,8 @@ abstract class AppThemeSettings implements Built<AppThemeSettings, AppThemeSetti
       );
     }
     return DsTypography(
-      family: fontFamily,
-      package: fontPackage,
+      family: family,
+      package: package,
       displayFamily: displayFontFamily,
       displayPackage: displayFontPackage,
       density: density,

@@ -37,6 +37,4 @@ final class FullscreenStateController extends Notifier<bool> {
 }
 
 /// Whether any fullscreen variant is active.
-final fullscreenStateProvider = NotifierProvider<FullscreenStateController, bool>(
-  FullscreenStateController.new,
-);
+final fullscreenStateProvider = NotifierProvider<FullscreenStateController, bool>(FullscreenStateController.new);

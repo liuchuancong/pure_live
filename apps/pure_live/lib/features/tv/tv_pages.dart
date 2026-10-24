@@ -8,7 +8,7 @@ import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
 import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
-import 'package:pure_live/features/home/popular_controller.dart';
+import 'package:pure_live/features/popular/popular_controller.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
 
 /// The TV card: a room as the remote sees it. The pressable is already

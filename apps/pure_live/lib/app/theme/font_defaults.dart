@@ -11,8 +11,8 @@ import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatf
 /// - iOS and macOS answer null on purpose: desen_ui's `DsTypography`
 ///   already resolves its null family to `CupertinoSystemText`/`Display`,
 ///   i.e. San Francisco, Apple's own face. Linux and the web answer null
-///   too — Linux draws its distro's default through the bundled fallback,
-///   the web the bundled Schibsted Grotesk, both designed for that host.
+///   too and keep the library's bundled Schibsted Grotesk, which is the
+///   face designed for those hosts.
 ///
 /// A stored family always outranks this: it is a choice the viewer made.
 String? platformFontFamily({bool? web, TargetPlatform? platform}) {

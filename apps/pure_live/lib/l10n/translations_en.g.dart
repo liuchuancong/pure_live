@@ -533,6 +533,9 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get closeQuit => 'Quit the app';
 	@override String get closeMinimise => 'Minimise to the taskbar';
 	@override String get closeTrayUnavailable => 'Hide to tray (needs the tray, not wired yet)';
+	@override String get font => 'Font';
+	@override String get fontDescription => 'UI typeface: the platform\'s own face, or one of the bundled official ones.';
+	@override String get fontPlatform => 'Follow the platform (system font)';
 }
 
 // Path: shield
@@ -1006,6 +1009,9 @@ extension on TranslationsEn {
 			'settings.closeQuit' => 'Quit the app',
 			'settings.closeMinimise' => 'Minimise to the taskbar',
 			'settings.closeTrayUnavailable' => 'Hide to tray (needs the tray, not wired yet)',
+			'settings.font' => 'Font',
+			'settings.fontDescription' => 'UI typeface: the platform\'s own face, or one of the bundled official ones.',
+			'settings.fontPlatform' => 'Follow the platform (system font)',
 			'shield.title' => 'Danmaku shield',
 			'shield.description' => 'Keep live-room danmaku out by keyword or user; the rules live on this device.',
 			'shield.masterTitle' => 'Master switch',

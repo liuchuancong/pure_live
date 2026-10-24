@@ -36,9 +36,7 @@ final class ProxySettingsController extends Notifier<ProxySettings> {
 
   /// The route the shared factory's policy hands out: the configured proxy
   /// when enabled, direct otherwise.
-  ProxyRoute get route => state.enabled
-      ? HttpProxyRoute(host: state.host, port: state.port)
-      : const DirectRoute();
+  ProxyRoute get route => state.enabled ? HttpProxyRoute(host: state.host, port: state.port) : const DirectRoute();
 
   Future<void> _write(ProxySettings next) async {
     state = next;
@@ -53,9 +51,7 @@ final class ProxySettingsController extends Notifier<ProxySettings> {
 }
 
 /// The proxy choice.
-final proxySettingsProvider = NotifierProvider<ProxySettingsController, ProxySettings>(
-  ProxySettingsController.new,
-);
+final proxySettingsProvider = NotifierProvider<ProxySettingsController, ProxySettings>(ProxySettingsController.new);
 
 /// The policy the shared transport factory carries: it asks the controller
 /// on every request, so a change in the settings surface reaches the next
@@ -73,7 +69,5 @@ final class _SettingsProxyPolicy implements ProxyPolicy {
 /// so the player-adjacent modules (vod, iptv, backups) all honour the
 /// same network settings.
 final networkFactoryProvider = Provider<DioFactory>((ref) {
-  return DioFactory(
-    proxyPolicy: _SettingsProxyPolicy(() => ref.read(proxySettingsProvider.notifier).route),
-  );
+  return DioFactory(proxyPolicy: _SettingsProxyPolicy(() => ref.read(proxySettingsProvider.notifier).route));
 });

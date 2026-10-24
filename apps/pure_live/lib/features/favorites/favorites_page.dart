@@ -10,7 +10,7 @@ import 'package:pure_live/app/providers/refresh_settings_providers.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
 import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
 import 'package:pure_live/features/favorites/follow_repository.dart';
-import 'package:pure_live/features/home/room_card.dart' show RoomCard;
+import 'package:pure_live/features/popular/room_card.dart' show RoomCard;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
 import 'package:pure_live/shared/platforms/platform_picker.dart';

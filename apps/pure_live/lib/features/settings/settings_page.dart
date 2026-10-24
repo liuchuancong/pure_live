@@ -15,6 +15,7 @@ import 'package:pure_live/app/providers/refresh_settings_providers.dart';
 import 'package:pure_live/app/providers/shell_settings_provider.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show selectedSiteIdProvider, sitesProvider;
 import 'package:pure_live/app/routing/app_router.dart' show SettingsSectionRoute;
+import 'package:pure_live/app/theme/font_defaults.dart';
 import 'package:pure_live/app/theme/theme_persistence.dart';
 import 'package:pure_live/app/theme/theme_settings.dart';
 import 'package:pure_live/features/account/account_pane.dart' show AccountPane;
@@ -65,14 +66,13 @@ final class _SettingsPageState extends ConsumerState<SettingsPage> {
             color: colors.sidebar,
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s16, DsSpace.s12, DsSpace.s24),
-              child: _SettingsMenu(
-                selected: _pane,
-                onSelected: (section) => setState(() => _pane = section),
-              ),
+              child: _SettingsMenu(selected: _pane, onSelected: (section) => setState(() => _pane = section)),
             ),
           ),
         ),
-        Expanded(child: SettingsSectionPane(key: ValueKey(_pane), section: _pane)),
+        Expanded(
+          child: SettingsSectionPane(key: ValueKey(_pane), section: _pane),
+        ),
       ],
     );
   }
@@ -119,13 +119,21 @@ final class _SettingsMenu extends StatelessWidget {
               return Container(
                 padding: const EdgeInsets.all(DsSpace.s12),
                 decoration: DsBoxDecoration(
-                  color: isSelected ? theme.selectedFill : hovered ? colors.hover : null,
+                  color: isSelected
+                      ? theme.selectedFill
+                      : hovered
+                      ? colors.hover
+                      : null,
                   borderRadius: theme.radii.controlCorners(null, 36),
                 ),
                 child: Row(
                   spacing: DsSpace.s12,
                   children: [
-                    DsIcon(section.icon, size: theme.sizes.iconMd, color: isSelected ? theme.onSelectedFill : colors.text),
+                    DsIcon(
+                      section.icon,
+                      size: theme.sizes.iconMd,
+                      color: isSelected ? theme.onSelectedFill : colors.text,
+                    ),
                     Expanded(
                       child: Text(
                         section.label(t),
@@ -166,7 +174,10 @@ final class _SettingsMenuList extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s16, DsSpace.s20, DsSpace.s4),
           child: Align(
             alignment: AlignmentDirectional.centerStart,
-            child: Text(settingsGroupLabel(t, groupKey), style: theme.typography.overline.copyWith(color: colors.textSubtle)),
+            child: Text(
+              settingsGroupLabel(t, groupKey),
+              style: theme.typography.overline.copyWith(color: colors.textSubtle),
+            ),
           ),
         ),
       );
@@ -461,6 +472,34 @@ final class _AppearancePane extends ConsumerWidget {
             semanticLabel: t.settings.density,
           ),
         ),
+        DsListRow(
+          leading: const DsIcon(DsIcons.type),
+          title: Text(t.settings.font),
+          description: Text(t.settings.fontDescription),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
+          child: DsSelect<String>(
+            value: settings.fontFamily ?? '',
+            onChanged: (value) {
+              if (value == null) return;
+              scope.onChanged(
+                settings.rebuild((b) {
+                  // Empty is the platform's own face; a preset id is this
+                  // app's bundled family, never a package one.
+                  b
+                    ..fontFamily = value.isEmpty ? null : value
+                    ..fontPackage = null;
+                }),
+              );
+            },
+            options: [
+              DsSelectOption(value: '', label: t.settings.fontPlatform),
+              for (final (id, label) in kBundledFontPresets) DsSelectOption(value: id, label: label),
+            ],
+            semanticLabel: t.settings.font,
+          ),
+        ),
         DsListRow(leading: const DsIcon(DsIcons.languages), title: Text(t.settings.language)),
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
@@ -577,12 +616,7 @@ final class _NetworkPane extends ConsumerWidget {
 
 /// One of the reorder buttons at a row's end: dimmed at its boundary.
 final class _OrderButton extends StatelessWidget {
-  const _OrderButton({
-    required this.icon,
-    required this.label,
-    required this.enabled,
-    required this.onPressed,
-  });
+  const _OrderButton({required this.icon, required this.label, required this.enabled, required this.onPressed});
 
   final DsIconData icon;
   final String label;
@@ -604,9 +638,7 @@ final class _OrderButton extends StatelessWidget {
             color: hovered && enabled ? colors.hover : colors.control,
             borderRadius: BorderRadius.circular(6),
           ),
-          child: Center(
-            child: DsIcon(icon, size: 14, color: enabled ? colors.textMuted : colors.textSubtle),
-          ),
+          child: Center(child: DsIcon(icon, size: 14, color: enabled ? colors.textMuted : colors.textSubtle)),
         );
       },
     );
@@ -728,7 +760,8 @@ final class _SitesPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.sitesDisplay),
           children: [
-            if (!anythingHidden) DsListRow(leading: const DsIcon(DsIcons.antenna), title: Text(t.settings.sitesAllShown)),
+            if (!anythingHidden)
+              DsListRow(leading: const DsIcon(DsIcons.antenna), title: Text(t.settings.sitesAllShown)),
             for (final site in sites)
               DsSwitch(
                 value: controller.shown(site.manifest.id),

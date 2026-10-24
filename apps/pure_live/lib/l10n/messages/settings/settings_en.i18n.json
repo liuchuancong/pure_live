@@ -99,5 +99,8 @@
   "closeAction": "On window close",
   "closeQuit": "Quit the app",
   "closeMinimise": "Minimise to the taskbar",
-  "closeTrayUnavailable": "Hide to tray (needs the tray, not wired yet)"
+  "closeTrayUnavailable": "Hide to tray (needs the tray, not wired yet)",
+  "font": "Font",
+  "fontDescription": "UI typeface: the platform's own face, or one of the bundled official ones.",
+  "fontPlatform": "Follow the platform (system font)"
 }
