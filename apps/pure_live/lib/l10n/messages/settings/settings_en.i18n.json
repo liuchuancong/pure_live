@@ -120,5 +120,12 @@
   "preferPlatform": "Preferred platform",
   "preferPlatformDesc": "The platform the popular and areas pages open with.",
   "sitesOrderReset": "Restore default order",
-  "sitesOrderResetDesc": "Platforms return to the built-in order; the show switches stay as they are."
+  "sitesOrderResetDesc": "Platforms return to the built-in order; the show switches stay as they are.",
+  "windowChrome": "Window title bar",
+  "windowChromeDesc": "Use the system caption, or the app's own strip; a restart applies the change.",
+  "windowChromeSystem": "System title bar",
+  "windowChromeCustom": "Custom title bar",
+  "windowChromeRestartTitle": "Restart to apply the title bar?",
+  "windowChromeRestartDesc": "The caption style is chosen when the window is created; it applies after a restart.",
+  "windowChromeRestartNow": "Restart now"
 }

@@ -2,6 +2,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/material.dart';
 
 import 'package:pure_live/app/navigation/module_navigation.dart';
+import 'package:pure_live/app/window_chrome.dart' show WindowChromeState;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_switcher.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart' show WindowTitleBar;
@@ -116,14 +117,15 @@ final class MobileLayout extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        WindowTitleBar(
-          expanded: false,
-          onToggleSidebar: () {},
-          canBack: false,
-          canForward: false,
-          onBack: () {},
-          onForward: () {},
-        ),
+        if (WindowChromeState.drawsStrip)
+          WindowTitleBar(
+            expanded: false,
+            onToggleSidebar: () {},
+            canBack: false,
+            canForward: false,
+            onBack: () {},
+            onForward: () {},
+          ),
         Expanded(child: scaffold),
       ],
     );

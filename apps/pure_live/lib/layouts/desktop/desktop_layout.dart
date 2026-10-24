@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/providers/sidebar_providers.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show selectedSiteIdProvider;
+import 'package:pure_live/app/window_chrome.dart' show WindowChromeState;
 import 'package:pure_live/features/popular/popular_controller.dart';
 import 'package:pure_live/features/search/search_controller.dart';
 import 'package:pure_live/features/settings/settings_sections.dart';
@@ -182,14 +183,17 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
           color: colors.surface,
           child: Column(
             children: [
-              WindowTitleBar(
-                expanded: widget.expanded,
-                onToggleSidebar: widget.onToggleSidebar,
-                canBack: widget.canBack,
-                canForward: widget.canForward,
-                onBack: widget.onBack,
-                onForward: widget.onForward,
-              ),
+              // A native caption means the system already drew the strip;
+              // drawing a second one under it is two title bars.
+              if (WindowChromeState.drawsStrip)
+                WindowTitleBar(
+                  expanded: widget.expanded,
+                  onToggleSidebar: widget.onToggleSidebar,
+                  canBack: widget.canBack,
+                  canForward: widget.canForward,
+                  onBack: widget.onBack,
+                  onForward: widget.onForward,
+                ),
               Expanded(
                 child: Row(
                   children: [

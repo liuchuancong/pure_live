@@ -2,8 +2,10 @@ import 'dart:async' show unawaited;
 
 import 'package:flutter/widgets.dart';
 import 'package:live_log/live_log.dart' show ErrorReporter, LiveLog, LoggerConsoleSink;
-import 'package:live_platform/live_platform.dart' show FormFactor, PlatformBootstrap, PlatformRuntime;
-import 'package:live_shell/live_shell.dart' show CloseAction, RenderFallbacks, WindowEvent, WindowHost, WindowRole;
+import 'package:live_platform/live_platform.dart'
+    show FormFactor, PlatformBootstrap, PlatformKind, PlatformRuntime;
+import 'package:live_shell/live_shell.dart'
+    show ChromePlan, ChromeStage, CloseAction, RenderFallbacks, WindowEvent, WindowHost, WindowRole;
 import 'package:live_shell_desktop/live_shell_desktop.dart'
     show WindowManagerHost, configureMainWindow, primaryChromePlan;
 import 'package:live_storage/live_storage.dart'
@@ -11,6 +13,7 @@ import 'package:live_storage/live_storage.dart'
 import 'package:pure_live/app/providers/media_session_providers.dart' show enableMediaSession;
 import 'package:pure_live/app/providers/player_providers.dart' show primePlayerEngine;
 import 'package:pure_live/app/theme/system_accent_color.dart' show preloadSystemAccent;
+import 'package:pure_live/app/window_chrome.dart' show WindowChrome, WindowChromeState;
 import 'package:pure_live/infrastructure/storage/storage_paths.dart' show StoragePaths;
 
 /// What one process boot produced: the platform snapshot, the resolved
@@ -78,23 +81,8 @@ Future<Boot> bootstrap() async {
     primePlayerEngine();
     unawaited(enableMediaSession());
     final formFactor = runtime.environment.runtime.formFactor;
-    WindowHost? windowHost;
-    if (formFactor == FormFactor.desktop) {
-      // The window is dressed before the first frame: the hidden caption
-      // and the self-drawn strip are a creation-time choice, not a live
-      // one.
-      await configureMainWindow(
-        plan: primaryChromePlan(runtime.environment.runtime.kind),
-        role: WindowRole.main,
-        minimumSize: const Size(300, 600),
-        fallbacks: const RenderFallbacks(),
-        title: 'Pure Live',
-        background: const Color(0xFF101418),
-      );
-      final host = WindowManagerHost(role: WindowRole.main)..attach();
-      await host.setPreventClose(enabled: true);
-      windowHost = host;
-    }
+    // The storage bootstrap comes first: the window's caption style is one
+    // of its preferences, and the caption is dressed once, at creation.
     final storagePaths = await StoragePaths.resolve(environment: runtime.environment, log: bootLog);
     // The storage layer is best-effort: a failure logs and the boot carries
     // on — browsing works without storage, and the providers fall back to
@@ -108,6 +96,35 @@ Future<Boot> bootstrap() async {
       await StoragePrefs.init();
     } on Object catch (error, stackTrace) {
       log.forCategory('storage').error('storage bootstrap failed', error: error, stackTrace: stackTrace);
+    }
+    WindowHost? windowHost;
+    if (formFactor == FormFactor.desktop) {
+      // The window is dressed before the first frame: the caption style —
+      // the system's own or the app's self-drawn strip — is a creation-time
+      // choice, not a live one. Windows offers both; macOS keeps the
+      // system's traffic lights inset in the app's bar, Linux draws its
+      // whole strip either way.
+      final kind = runtime.environment.runtime.kind;
+      final chrome = WindowChromeState.readStored();
+      final plan = kind == PlatformKind.windows
+          ? ChromePlan.select(
+              platform: kind,
+              stage: chrome == WindowChrome.custom ? ChromeStage.seamlessSelfDrawn : ChromeStage.nativeFirst,
+            )
+          : primaryChromePlan(kind);
+      WindowChromeState.chrome = chrome;
+      WindowChromeState.mode = plan.mode;
+      await configureMainWindow(
+        plan: plan,
+        role: WindowRole.main,
+        minimumSize: const Size(300, 600),
+        fallbacks: const RenderFallbacks(),
+        title: 'Pure Live',
+        background: const Color(0xFF101418),
+      );
+      final host = WindowManagerHost(role: WindowRole.main)..attach();
+      await host.setPreventClose(enabled: true);
+      windowHost = host;
     }
     // The close policy reads the settings store, so it wires after the
     // storage bootstrap (a failed store keeps the default: quit).

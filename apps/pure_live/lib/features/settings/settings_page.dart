@@ -21,6 +21,7 @@ import 'package:pure_live/app/routing/app_router.dart' show SettingsSectionRoute
 import 'package:pure_live/app/theme/font_defaults.dart';
 import 'package:pure_live/app/theme/theme_persistence.dart';
 import 'package:pure_live/app/theme/theme_settings.dart';
+import 'package:pure_live/app/window_chrome.dart' show WindowChrome, WindowChromeState;
 import 'package:pure_live/features/account/account_pane.dart' show AccountPane;
 import 'package:pure_live/features/backup/backup_pane.dart' show BackupPane;
 import 'package:pure_live/features/favorites/follow_repository.dart' show followRepositoryProvider, followsProvider;
@@ -33,6 +34,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_switcher.dart' show AppMark;
 import 'package:pure_live/shared/enums/tool_order.dart';
 import 'package:pure_live/shared/images/app_image_cache.dart';
+import 'package:restart_app/restart_app.dart' show Restart;
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// The settings surface. On a desktop window the shell's own sidebar lists
@@ -250,6 +252,25 @@ final class _GeneralPane extends ConsumerWidget {
               semanticLabel: t.settings.refreshInterval,
             ),
           ),
+          if (WindowChromeState.configurable) ...[
+            DsListRow(
+              leading: const DsIcon(DsIcons.appWindow),
+              title: Text(t.settings.windowChrome),
+              description: Text(t.settings.windowChromeDesc),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
+              child: DsSelect<WindowChrome>(
+                value: WindowChromeState.chrome,
+                onChanged: (value) => unawaited(_setWindowChrome(context, value)),
+                options: [
+                  DsSelectOption(value: WindowChrome.system, label: t.settings.windowChromeSystem),
+                  DsSelectOption(value: WindowChrome.custom, label: t.settings.windowChromeCustom),
+                ],
+                semanticLabel: t.settings.windowChrome,
+              ),
+            ),
+          ],
           DsListRow(
             leading: const DsIcon(DsIcons.panelLeftClose),
             title: Text(t.settings.closeAction),
@@ -274,6 +295,32 @@ final class _GeneralPane extends ConsumerWidget {
         ],
       ],
     );
+  }
+}
+
+/// The title bar's owner is a creation-time choice: store it, ask about a
+/// restart, and put the old value back when the viewer would rather not
+/// restart now (so the row never shows a choice the window does not have).
+Future<void> _setWindowChrome(BuildContext context, WindowChrome? value) async {
+  if (value == null || value == WindowChromeState.chrome) {
+    return;
+  }
+  await WindowChromeState.store(value);
+  if (!context.mounted) {
+    return;
+  }
+  final t = context.t;
+  final restart = await showDsConfirm(
+    context: context,
+    title: t.settings.windowChromeRestartTitle,
+    description: t.settings.windowChromeRestartDesc,
+    confirmLabel: t.settings.windowChromeRestartNow,
+    cancelLabel: t.common.cancel,
+  );
+  if (restart) {
+    unawaited(Restart.restartApp());
+  } else {
+    await WindowChromeState.store(WindowChromeState.chrome);
   }
 }
 

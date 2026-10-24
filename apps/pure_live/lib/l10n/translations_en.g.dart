@@ -723,6 +723,13 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get preferPlatformDesc => 'The platform the popular and areas pages open with.';
 	@override String get sitesOrderReset => 'Restore default order';
 	@override String get sitesOrderResetDesc => 'Platforms return to the built-in order; the show switches stay as they are.';
+	@override String get windowChrome => 'Window title bar';
+	@override String get windowChromeDesc => 'Use the system caption, or the app\'s own strip; a restart applies the change.';
+	@override String get windowChromeSystem => 'System title bar';
+	@override String get windowChromeCustom => 'Custom title bar';
+	@override String get windowChromeRestartTitle => 'Restart to apply the title bar?';
+	@override String get windowChromeRestartDesc => 'The caption style is chosen when the window is created; it applies after a restart.';
+	@override String get windowChromeRestartNow => 'Restart now';
 }
 
 // Path: shield
@@ -1378,6 +1385,13 @@ extension on TranslationsEn {
 			'settings.preferPlatformDesc' => 'The platform the popular and areas pages open with.',
 			'settings.sitesOrderReset' => 'Restore default order',
 			'settings.sitesOrderResetDesc' => 'Platforms return to the built-in order; the show switches stay as they are.',
+			'settings.windowChrome' => 'Window title bar',
+			'settings.windowChromeDesc' => 'Use the system caption, or the app\'s own strip; a restart applies the change.',
+			'settings.windowChromeSystem' => 'System title bar',
+			'settings.windowChromeCustom' => 'Custom title bar',
+			'settings.windowChromeRestartTitle' => 'Restart to apply the title bar?',
+			'settings.windowChromeRestartDesc' => 'The caption style is chosen when the window is created; it applies after a restart.',
+			'settings.windowChromeRestartNow' => 'Restart now',
 			'shield.title' => 'Danmaku shield',
 			'shield.description' => 'Keep live-room danmaku out by keyword or user; the rules live on this device.',
 			'shield.masterTitle' => 'Master switch',

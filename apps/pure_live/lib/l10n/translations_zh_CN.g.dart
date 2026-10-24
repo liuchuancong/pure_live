@@ -1765,6 +1765,27 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '平台回到内置的排列顺序；显示开关不受影响。'
 	String get sitesOrderResetDesc => '平台回到内置的排列顺序；显示开关不受影响。';
+
+	/// zh-CN: '窗口标题栏'
+	String get windowChrome => '窗口标题栏';
+
+	/// zh-CN: '使用系统标题栏，或由应用自绘标题栏；切换后需要重启。'
+	String get windowChromeDesc => '使用系统标题栏，或由应用自绘标题栏；切换后需要重启。';
+
+	/// zh-CN: '系统标题栏'
+	String get windowChromeSystem => '系统标题栏';
+
+	/// zh-CN: '自定义标题栏'
+	String get windowChromeCustom => '自定义标题栏';
+
+	/// zh-CN: '重启以应用标题栏？'
+	String get windowChromeRestartTitle => '重启以应用标题栏？';
+
+	/// zh-CN: '标题栏样式在窗口创建时决定，重启应用后生效。'
+	String get windowChromeRestartDesc => '标题栏样式在窗口创建时决定，重启应用后生效。';
+
+	/// zh-CN: '立即重启'
+	String get windowChromeRestartNow => '立即重启';
 }
 
 // Path: shield
@@ -2594,6 +2615,13 @@ extension on Translations {
 			'settings.preferPlatformDesc' => '进入热门或分区时优先显示的平台。',
 			'settings.sitesOrderReset' => '恢复默认顺序',
 			'settings.sitesOrderResetDesc' => '平台回到内置的排列顺序；显示开关不受影响。',
+			'settings.windowChrome' => '窗口标题栏',
+			'settings.windowChromeDesc' => '使用系统标题栏，或由应用自绘标题栏；切换后需要重启。',
+			'settings.windowChromeSystem' => '系统标题栏',
+			'settings.windowChromeCustom' => '自定义标题栏',
+			'settings.windowChromeRestartTitle' => '重启以应用标题栏？',
+			'settings.windowChromeRestartDesc' => '标题栏样式在窗口创建时决定，重启应用后生效。',
+			'settings.windowChromeRestartNow' => '立即重启',
 			'shield.title' => '弹幕屏蔽',
 			'shield.description' => '按关键词与用户屏蔽直播间弹幕，规则保存在本机。',
 			'shield.masterTitle' => '总开关',
