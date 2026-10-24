@@ -53,15 +53,27 @@ final class FollowRepository {
       value is Map<String, Object?> ? value : Map<String, Object?>.from(value as Map);
 }
 
+/// How long a box may take to open before the wait is declared: the open
+/// is normally a few milliseconds. The one slow case is real — another
+/// app instance still holds the box's file lock (hive_ce locks are
+/// exclusive across processes), and waiting forever there is exactly the
+/// silent skeleton the viewer would never understand.
+const Duration _boxOpenTimeout = Duration(seconds: 8);
+
+/// Opens a keyed box with [_boxOpenTimeout]; a timeout or a failure
+/// surfaces as the future's error instead of hanging the page forever.
+Future<KeyedBox<Object, String>> _openKeyedBox(String name) =>
+    StorageBoxManager().keyed<Object>(name).timeout(_boxOpenTimeout);
+
 /// The follows repository (one box, one process).
 final followRepositoryProvider = FutureProvider<FollowRepository>((ref) async {
-  final box = await StorageBoxManager().keyed<Object>('follows');
+  final box = await _openKeyedBox('follows');
   return FollowRepository(HiveStorageRepository(box: box));
 });
 
-/// What the favorites page holds: the followed rooms and whether the
-/// repository has opened yet.
-typedef FollowsState = ({bool ready, List<LiveRoom> rooms});
+/// What the favorites page holds: the followed rooms, whether the
+/// repository has opened yet, and what went wrong when it never did.
+typedef FollowsState = ({bool ready, List<LiveRoom> rooms, String? error});
 
 /// Mirrors the follows repository into the widget tree: it lists once the
 /// repository opens and follows its watch stream, so every change from any
@@ -71,16 +83,26 @@ final class FollowsController extends Notifier<FollowsState> {
 
   @override
   FollowsState build() {
-    ref.watch(followRepositoryProvider).whenData((repository) {
-      _subscription ??= repository.watch().listen((_) => _refresh(repository));
-      _refresh(repository);
-    });
     ref.onDispose(() => unawaited(_subscription?.cancel() ?? Future<void>.value()));
-    return (ready: false, rooms: const []);
+    final repository = ref.watch(followRepositoryProvider);
+    // Every state the open can be in lands here: loading keeps the page's
+    // skeleton, an error (a locked box from a second instance, a broken
+    // store) reaches the page as words with a retry, and data mirrors.
+    switch (repository) {
+      case AsyncData(:final value):
+        _subscription ??= value.watch().listen((_) => _refresh(value));
+        _refresh(value);
+        return state;
+      case AsyncError(:final error):
+        _subscription = null;
+        return (ready: false, rooms: const [], error: error.toString());
+      default:
+        return (ready: false, rooms: const [], error: null);
+    }
   }
 
   void _refresh(FollowRepository repository) {
-    state = (ready: true, rooms: repository.list());
+    state = (ready: true, rooms: repository.list(), error: null);
   }
 
   /// Follows [room] (or refreshes its stored copy).

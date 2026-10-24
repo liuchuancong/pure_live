@@ -9,7 +9,7 @@ import 'package:pure_live/features/areas/area_rooms_page.dart' show AreaRoomsPag
 import 'package:pure_live/features/areas/areas_page.dart' show AreasPage;
 import 'package:pure_live/features/favorites/favorites_page.dart' show FavoritesPage;
 import 'package:pure_live/features/history/history_page.dart' show HistoryPage;
-import 'package:pure_live/features/home/home_page.dart' show HomePage;
+import 'package:pure_live/features/home/popular_page.dart' show PopularPage;
 import 'package:pure_live/features/multiview/multiview_page.dart' show MultiviewPage;
 import 'package:pure_live/features/recorder/recorder_page.dart' show RecorderPage;
 import 'package:pure_live/features/room/room_page.dart' show RoomPage;
@@ -30,8 +30,8 @@ final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(de
 /// or TV chrome per device).
 @TypedStatefulShellRoute<AppShellRoute>(
   branches: <TypedStatefulShellBranch<StatefulShellBranchData>>[
-    TypedStatefulShellBranch<HomeBranch>(
-      routes: <TypedRoute<RouteData>>[TypedGoRoute<HomeRoute>(path: RouteNames.home)],
+    TypedStatefulShellBranch<PopularBranch>(
+      routes: <TypedRoute<RouteData>>[TypedGoRoute<PopularRoute>(path: RouteNames.popular)],
     ),
     TypedStatefulShellBranch<ZonesBranch>(
       routes: <TypedRoute<RouteData>>[TypedGoRoute<ZonesRoute>(path: RouteNames.zones)],
@@ -72,10 +72,10 @@ final class AppShellRoute extends StatefulShellRouteData {
   }
 }
 
-/// The home branch's token.
-final class HomeBranch extends StatefulShellBranchData {
+/// The popular branch's token.
+final class PopularBranch extends StatefulShellBranchData {
   /// The branch token.
-  const HomeBranch();
+  const PopularBranch();
 }
 
 /// The zones branch's token.
@@ -132,13 +132,13 @@ final class SettingsBranch extends StatefulShellBranchData {
   const SettingsBranch();
 }
 
-/// The home branch's screen.
-final class HomeRoute extends GoRouteData with $HomeRoute {
-  /// The home route.
-  const HomeRoute();
+/// The popular branch's screen.
+final class PopularRoute extends GoRouteData with $PopularRoute {
+  /// The popular route.
+  const PopularRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => const HomePage();
+  Widget build(BuildContext context, GoRouterState state) => const PopularPage();
 }
 
 /// The zones branch's screen.
@@ -311,7 +311,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     observers: [routeObserver],
-    initialLocation: const HomeRoute().location,
+    initialLocation: const PopularRoute().location,
     routes: $appRoutes,
   );
 });

@@ -414,6 +414,9 @@ class Translations$favorites$zh_CN {
 
 	/// zh-CN: '刷新'
 	String get refresh => '刷新';
+
+	/// zh-CN: '关注列表打不开'
+	String get openFailedTitle => '关注列表打不开';
 }
 
 // Path: history
@@ -444,6 +447,9 @@ class Translations$history$zh_CN {
 
 	/// zh-CN: '更早'
 	String get earlier => '更早';
+
+	/// zh-CN: '历史记录打不开'
+	String get openFailedTitle => '历史记录打不开';
 }
 
 // Path: iptv
@@ -1619,6 +1625,7 @@ extension on Translations {
 			'favorites.statusLive' => '直播中',
 			'favorites.statusOffline' => '离线',
 			'favorites.refresh' => '刷新',
+			'favorites.openFailedTitle' => '关注列表打不开',
 			'history.emptyTitle' => '还没有观看记录',
 			'history.emptyDescription' => '看过一场直播后，就会出现在这里。',
 			'history.clear' => '清空记录',
@@ -1626,6 +1633,7 @@ extension on Translations {
 			'history.today' => '今天',
 			'history.yesterday' => '昨天',
 			'history.earlier' => '更早',
+			'history.openFailedTitle' => '历史记录打不开',
 			'iptv.tabAll' => '全部',
 			'iptv.scopeLabel' => '频道范围',
 			'iptv.scopeAll' => '全部频道',

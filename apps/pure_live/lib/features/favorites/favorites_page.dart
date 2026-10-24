@@ -93,6 +93,28 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     final follows = ref.watch(followsProvider);
     final cardExtent = ref.watch(browseSettingsProvider.select((settings) => settings.homeCardExtent));
     if (!follows.ready) {
+      // A locked box (a second app instance) or a broken store says so,
+      // with the retry that re-opens the repository once the other
+      // instance is gone.
+      if (follows.error != null) {
+        return Center(
+          child: DsEmptyState(
+            icon: const DsIcon(DsIcons.cloudOff),
+            title: Text(t.favorites.openFailedTitle),
+            description: Text(follows.error!),
+            actions: [
+              DsButton(
+                onPressed: () {
+                  ref
+                    ..invalidate(followRepositoryProvider)
+                    ..invalidate(followsProvider);
+                },
+                child: Text(t.common.retry),
+              ),
+            ],
+          ),
+        );
+      }
       return CardGrid<LiveRoom>(
         items: const [],
         cardExtent: cardExtent,
@@ -112,12 +134,14 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
 
     // The platform tabs: "all", then every platform with follows, in
     // registry order (the reference's platformTabs).
-    final platforms = <String>[kAllPlatforms, ...{for (final room in follows.rooms) room.ref.platform}];
+    final platforms = <String>[
+      kAllPlatforms,
+      ...{for (final room in follows.rooms) room.ref.platform},
+    ];
     final rooms = [
       for (final room in follows.rooms)
         if ((_platform == kAllPlatforms || room.ref.platform == _platform) &&
-            (_status == _FollowStatus.all ||
-                (_status == _FollowStatus.live) == room.broadcast.isLiveNow))
+            (_status == _FollowStatus.all || (_status == _FollowStatus.live) == room.broadcast.isLiveNow))
           room,
     ];
 
@@ -225,7 +249,10 @@ final class _FollowedCard extends StatelessWidget {
     final theme = DsTheme.of(context);
     return Stack(
       children: [
-        RoomCard(room: room, onOpen: () => context.push(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location)),
+        RoomCard(
+          room: room,
+          onOpen: () => context.push(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),
+        ),
         PositionedDirectional(
           top: DsSpace.s8,
           end: DsSpace.s8,
@@ -241,7 +268,9 @@ final class _FollowedCard extends StatelessWidget {
                   color: hovered ? colors.danger.fill : colors.overlay,
                   borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
                 ),
-                child: Center(child: DsIcon(DsIcons.heart, size: theme.sizes.iconSm, color: colors.text)),
+                child: Center(
+                  child: DsIcon(DsIcons.heart, size: theme.sizes.iconSm, color: colors.text),
+                ),
               );
             },
           ),

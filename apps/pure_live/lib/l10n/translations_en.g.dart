@@ -206,6 +206,7 @@ class _Translations$favorites$en extends Translations$favorites$zh_CN {
 	@override String get statusLive => 'Live';
 	@override String get statusOffline => 'Offline';
 	@override String get refresh => 'Refresh';
+	@override String get openFailedTitle => 'The follow list could not open';
 }
 
 // Path: history
@@ -222,6 +223,7 @@ class _Translations$history$en extends Translations$history$zh_CN {
 	@override String get today => 'Today';
 	@override String get yesterday => 'Yesterday';
 	@override String get earlier => 'Earlier';
+	@override String get openFailedTitle => 'The history could not open';
 }
 
 // Path: iptv
@@ -767,6 +769,7 @@ extension on TranslationsEn {
 			'favorites.statusLive' => 'Live',
 			'favorites.statusOffline' => 'Offline',
 			'favorites.refresh' => 'Refresh',
+			'favorites.openFailedTitle' => 'The follow list could not open',
 			'history.emptyTitle' => 'No watch history yet',
 			'history.emptyDescription' => 'Watch a stream and it lands here.',
 			'history.clear' => 'Clear history',
@@ -774,6 +777,7 @@ extension on TranslationsEn {
 			'history.today' => 'Today',
 			'history.yesterday' => 'Yesterday',
 			'history.earlier' => 'Earlier',
+			'history.openFailedTitle' => 'The history could not open',
 			'iptv.tabAll' => 'All',
 			'iptv.scopeLabel' => 'Channel scope',
 			'iptv.scopeAll' => 'All channels',

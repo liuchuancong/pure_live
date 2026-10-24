@@ -1,32 +1,16 @@
 {
   "editor.formatOnSave": true,
-  "editor.formatOnPaste": false,
-  "editor.formatOnType": false,
 
   "[dart]": {
     "editor.defaultFormatter": "Dart-Code.dart-code",
     "editor.formatOnSave": true,
-    "editor.formatOnPaste": false,
     "editor.formatOnType": false,
+    "editor.formatOnPaste": false,
     "editor.codeActionsOnSave": {
-      "source.organizeImports": "always"
-    },
-    "editor.rulers": [120]
-  },
-  "[yaml]": {
-    "editor.formatOnSave": false,
-    "editor.formatOnPaste": false
-  },
-  "[markdown]": {
-    "editor.formatOnSave": false,
-    "editor.formatOnPaste": false
+      "source.organizeImports": "explicit"
+    }
   },
 
-  "files.insertFinalNewline": true,
-  "files.trimTrailingWhitespace": false,
-  "files.encoding": "utf8",
-
-  "dart.lineLength": 120,
   "dart.enableSdkFormatter": true,
-  "cmake.sourceDirectory": "D:/flutter/pure_live/apps/pure_live/windows"
+  "dart.lineLength": 120
 }

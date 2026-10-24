@@ -5,5 +5,6 @@
   "statusAll": "All",
   "statusLive": "Live",
   "statusOffline": "Offline",
-  "refresh": "Refresh"
+  "refresh": "Refresh",
+  "openFailedTitle": "The follow list could not open"
 }

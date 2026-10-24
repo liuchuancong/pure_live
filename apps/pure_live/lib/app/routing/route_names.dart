@@ -1,8 +1,9 @@
 /// The route paths, in one place: the shell's branches and the pushed
 /// screens name themselves here, and nothing builds a path inline.
 abstract final class RouteNames {
-  /// The home branch.
-  static const String home = '/';
+  /// The popular branch (the live module's landing page; the reference's
+  /// `kPopular`).
+  static const String popular = '/popular';
 
   /// The zones branch.
   static const String zones = '/zones';

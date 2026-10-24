@@ -1,7 +1,5 @@
-// Every import stays on one line with no `show` clause: the save-time
-// import organizer used to tear wrapped imports apart, so nothing here
-// may wrap. Do not add a wrapped import to this file.
 import 'dart:math' as math;
+
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -14,7 +12,9 @@ import 'package:pure_live/layouts/desktop/title_bar.dart';
 import 'package:pure_live/shared/enums/app_module.dart';
 import 'package:pure_live/shared/enums/navigation_item.dart';
 
-
+// Every import stays on one line with no `show` clause: the save-time
+// import organizer used to tear wrapped imports apart, so nothing here
+// may wrap. Do not add a wrapped import to this file.
 
 /// The desktop layout, following the v4 navigation design: the self-drawn
 /// title bar above ([WindowTitleBar] — its left corner holds the app icon
@@ -132,8 +132,7 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
       for (final item in widget.business)
         DsSidebarItem(value: item, leading: DsIcon(item.icon), label: Text(item.label(t))),
       const SidebarDivider(),
-      for (final item in kToolItems)
-        DsSidebarItem(value: item, leading: DsIcon(item.icon), label: Text(item.label(t))),
+      for (final item in kToolItems) DsSidebarItem(value: item, leading: DsIcon(item.icon), label: Text(item.label(t))),
     ];
     return CallbackShortcuts(
       bindings: {
@@ -190,12 +189,8 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                             collapsed: !widget.expanded,
                             value: widget.selected,
                             onChanged: widget.onSelected,
-                            style: DsSidebarStyle(
-                              width: sidebarWidth,
-                              padding: const EdgeInsetsDirectional.only(bottom: DsSpace.s16),
-                            ),
+                            style: DsSidebarStyle(width: sidebarWidth),
                             children: [
-                              const SidebarDivider(),
                               DsSidebarItem(
                                 value: NavigationItem.settings,
                                 leading: const DsIcon(DsIcons.settings),

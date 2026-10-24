@@ -19,9 +19,9 @@ RouteBase get $appShellRoute => StatefulShellRouteData.$route(
     StatefulShellBranchData.$branch(
       routes: [
         GoRouteData.$route(
-          path: '/',
+          path: '/popular',
           hasOverriddenOnExit: false,
-          factory: $HomeRoute._fromState,
+          factory: $PopularRoute._fromState,
         ),
       ],
     ),
@@ -113,11 +113,11 @@ extension $AppShellRouteExtension on AppShellRoute {
   static AppShellRoute _fromState(GoRouterState state) => const AppShellRoute();
 }
 
-mixin $HomeRoute on GoRouteData {
-  static HomeRoute _fromState(GoRouterState state) => const HomeRoute();
+mixin $PopularRoute on GoRouteData {
+  static PopularRoute _fromState(GoRouterState state) => const PopularRoute();
 
   @override
-  String get location => GoRouteData.$location('/');
+  String get location => GoRouteData.$location('/popular');
 
   @override
   void go(BuildContext context) => context.go(location);

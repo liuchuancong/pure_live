@@ -5,5 +5,6 @@
   "remove": "Remove this record",
   "today": "Today",
   "yesterday": "Yesterday",
-  "earlier": "Earlier"
+  "earlier": "Earlier",
+  "openFailedTitle": "The history could not open"
 }

@@ -33,8 +33,7 @@ final class HistoryRepository {
   /// page groups them by day (the reference's history sections).
   List<(LiveRoom, DateTime)> entries() {
     final records = box.getAllEntries();
-    final entries = records.entries.toList()
-      ..sort((a, b) => _watchedAt(b.value).compareTo(_watchedAt(a.value)));
+    final entries = records.entries.toList()..sort((a, b) => _watchedAt(b.value).compareTo(_watchedAt(a.value)));
     return [for (final entry in entries) (LiveRoom.fromJson(_jsonOf(entry.value)), _watchedAt(entry.value))];
   }
 
@@ -60,10 +59,7 @@ final class HistoryRepository {
 
   /// Keeps the newest [limit] records.
   Future<void> _trim(int limit) async {
-    final keys = box
-        .getAllEntries()
-        .entries
-        .toList()
+    final keys = box.getAllEntries().entries.toList()
       ..sort((a, b) => _watchedAt(b.value).compareTo(_watchedAt(a.value)));
     final excess = keys.skip(limit).map((entry) => entry.key).toList();
     if (excess.isNotEmpty) await box.deleteAll(excess);
@@ -72,23 +68,26 @@ final class HistoryRepository {
   /// The entry's watch moment; entries without one (from a future writer)
   /// sort oldest.
   static DateTime _watchedAt(Object value) =>
-      DateTime.tryParse(_jsonOf(value)['lastWatchedAt'] as String? ?? '') ??
-      DateTime.fromMillisecondsSinceEpoch(0);
+      DateTime.tryParse(_jsonOf(value)['lastWatchedAt'] as String? ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
 
   /// The storage value as the JSON the room serializer reads.
   static Map<String, Object?> _jsonOf(Object value) =>
       value is Map<String, Object?> ? value : Map<String, Object?>.from(value as Map);
 }
 
+/// Same open contract as the follows box: a timeout instead of an
+/// infinite wait when another instance holds the file lock.
+const Duration _boxOpenTimeout = Duration(seconds: 8);
+
 /// The history repository (one box, one process).
 final historyRepositoryProvider = FutureProvider<HistoryRepository>((ref) async {
-  final box = await StorageBoxManager().keyed<Object>('history');
+  final box = await StorageBoxManager().keyed<Object>('history').timeout(_boxOpenTimeout);
   return HistoryRepository(HiveStorageRepository(box: box));
 });
 
 /// What the history page holds: the watched rooms with their watch
-/// moments, and whether the repository has opened yet.
-typedef HistoryState = ({bool ready, List<(LiveRoom, DateTime)> records});
+/// moments, whether the repository has opened yet, and the open failure.
+typedef HistoryState = ({bool ready, List<(LiveRoom, DateTime)> records, String? error});
 
 /// Mirrors the history repository into the widget tree, like the follows
 /// controller beside it.
@@ -102,11 +101,22 @@ final class HistoryController extends Notifier<HistoryState> {
       _refresh(repository);
     });
     ref.onDispose(() => unawaited(_subscription?.cancel() ?? Future<void>.value()));
-    return (ready: false, records: const []);
+    final repository = ref.watch(historyRepositoryProvider);
+    switch (repository) {
+      case AsyncData(:final value):
+        _subscription ??= value.watch().listen((_) => _refresh(value));
+        _refresh(value);
+        return state;
+      case AsyncError(:final error):
+        _subscription = null;
+        return (ready: false, records: const [], error: error.toString());
+      default:
+        return (ready: false, records: const [], error: null);
+    }
   }
 
   void _refresh(HistoryRepository repository) {
-    state = (ready: true, records: repository.entries());
+    state = (ready: true, records: repository.entries(), error: null);
   }
 
   /// Records a viewing of [room] ending now, at the history cap the

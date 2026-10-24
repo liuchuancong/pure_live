@@ -87,6 +87,7 @@ Future<Boot> bootstrap() async {
       await configureMainWindow(
         plan: primaryChromePlan(runtime.environment.runtime.kind),
         role: WindowRole.main,
+        minimumSize: const Size(300, 600),
         fallbacks: const RenderFallbacks(),
         title: 'Pure Live',
         background: const Color(0xFF101418),

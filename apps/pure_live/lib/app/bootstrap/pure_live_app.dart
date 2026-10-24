@@ -106,12 +106,7 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
 /// appearance pane writes through [onChanged], the root applies it at once.
 class AppLocaleScope extends InheritedWidget {
   /// Exposes [localeCode] with [onChanged] to [child].
-  const AppLocaleScope({
-    required this.localeCode,
-    required this.onChanged,
-    required super.child,
-    super.key,
-  });
+  const AppLocaleScope({required this.localeCode, required this.onChanged, required super.child, super.key});
 
   /// The pinned locale's code, or null to follow the system.
   final String? localeCode;
@@ -120,8 +115,7 @@ class AppLocaleScope extends InheritedWidget {
   final ValueChanged<String?> onChanged;
 
   /// The nearest scope.
-  static AppLocaleScope of(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<AppLocaleScope>()!;
+  static AppLocaleScope of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<AppLocaleScope>()!;
 
   @override
   bool updateShouldNotify(AppLocaleScope old) => old.localeCode != localeCode;

@@ -8,9 +8,6 @@ import 'package:pure_live/shared/enums/app_module.dart' show AppModule;
 /// headings — live's is exactly 关注 / 热门 / 分区), the shared tools under
 /// a divider, and settings pinned to the sidebar's foot.
 enum NavigationItem {
-  /// The home branch.
-  home(DsIcons.home),
-
   /// The live branch.
   live(DsIcons.tv),
 
@@ -63,7 +60,6 @@ enum NavigationItem {
 
   /// The localized label.
   String label(Translations t) => switch (this) {
-    NavigationItem.home => t.navigation.home,
     NavigationItem.live => t.navigation.live,
     NavigationItem.channels => t.navigation.channels,
     NavigationItem.discover => t.navigation.discover,

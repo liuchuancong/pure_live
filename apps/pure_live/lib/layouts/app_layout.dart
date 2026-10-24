@@ -42,7 +42,7 @@ TailwindBreakpoint _breakpointOf(double width) => TailwindBreakpoint.values.last
 /// The branches the router built, in branch order — the index a
 /// destination maps to when its page exists.
 const List<NavigationItem> _kBranchOrder = [
-  NavigationItem.home,
+  NavigationItem.hot,
   NavigationItem.zones,
   NavigationItem.live,
   NavigationItem.favorites,
@@ -54,17 +54,8 @@ const List<NavigationItem> _kBranchOrder = [
   NavigationItem.settings,
 ];
 
-/// Destinations that share a branch with another: the hot feed is the
-/// home branch — "热门" is the feed's name in the navigation, "home" is
-/// its route.
-const Map<NavigationItem, NavigationItem> _kBranchAliases = {
-  NavigationItem.hot: NavigationItem.home,
-};
-
-NavigationItem _branchItemOf(NavigationItem item) => _kBranchAliases[item] ?? item;
-
 int? _branchIndexOf(NavigationItem item) {
-  final index = _kBranchOrder.indexOf(_branchItemOf(item));
+  final index = _kBranchOrder.indexOf(item);
   return index < 0 ? null : index;
 }
 
@@ -227,7 +218,6 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     widget.shell.goBranch(branch, initialLocation: branch == widget.shell.currentIndex);
   }
 }
-
 
 /// What a module without its pages yet shows: the module's icon and its
 /// name, honest about the wait.

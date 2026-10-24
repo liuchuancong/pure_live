@@ -5,5 +5,6 @@
   "remove": "删除这条记录",
   "today": "今天",
   "yesterday": "昨天",
-  "earlier": "更早"
+  "earlier": "更早",
+  "openFailedTitle": "历史记录打不开"
 }

@@ -21,15 +21,15 @@ import 'package:pure_live/shared/platforms/platform_picker.dart';
 ///
 /// A platform without recommendations says so in the feed's place instead
 /// of failing silently.
-final class HomePage extends ConsumerStatefulWidget {
+final class PopularPage extends ConsumerStatefulWidget {
   /// The popular page.
-  const HomePage({super.key});
+  const PopularPage({super.key});
 
   @override
-  ConsumerState<HomePage> createState() => _HomePageState();
+  ConsumerState<PopularPage> createState() => _PopularPageState();
 }
 
-final class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver {
+final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBindingObserver {
   /// One scroll controller per platform, kept while the page lives: a
   /// platform left and returned to lands where the viewer left it (the
   /// reference's TabBarView behaviour).

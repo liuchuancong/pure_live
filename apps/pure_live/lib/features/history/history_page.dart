@@ -21,6 +21,25 @@ final class HistoryPage extends ConsumerWidget {
     if (!history.ready) {
       return const _SkeletonList();
     }
+    if (history.error != null) {
+      return Center(
+        child: DsEmptyState(
+          icon: const DsIcon(DsIcons.cloudOff),
+          title: Text(context.t.history.openFailedTitle),
+          description: Text(history.error!),
+          actions: [
+            DsButton(
+              onPressed: () {
+                ref
+                  ..invalidate(historyRepositoryProvider)
+                  ..invalidate(historyProvider);
+              },
+              child: Text(context.t.common.retry),
+            ),
+          ],
+        ),
+      );
+    }
     if (history.records.isEmpty) {
       return Center(
         child: DsEmptyState(
@@ -56,7 +75,11 @@ final class HistoryPage extends ConsumerWidget {
                     padding: const EdgeInsets.only(top: DsSpace.s8, bottom: DsSpace.s4),
                     child: Align(
                       alignment: AlignmentDirectional.centerStart,
-                      child: Text(header, style: DsTheme.of(context).typography.small.copyWith(color: DsTheme.colorsOf(context).textMuted)),
+                      child: Text(
+                        header,
+                        style: DsTheme.of(context).typography.small
+                            .copyWith(color: DsTheme.colorsOf(context).textMuted),
+                      ),
                     ),
                   ),
                   for (final (room, _) in records)
@@ -98,7 +121,10 @@ final class HistoryPage extends ConsumerWidget {
         sections[2].$2.add(record);
       }
     }
-    return [for (final section in sections) if (section.$2.isNotEmpty) section];
+    return [
+      for (final section in sections)
+        if (section.$2.isNotEmpty) section,
+    ];
   }
 }
 
@@ -189,7 +215,13 @@ final class _SkeletonList extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s24),
-      children: [for (var i = 0; i < 8; i++) const Padding(padding: EdgeInsets.only(bottom: DsSpace.s8), child: _HistoryCardSkeleton())],
+      children: [
+        for (var i = 0; i < 8; i++)
+          const Padding(
+            padding: EdgeInsets.only(bottom: DsSpace.s8),
+            child: _HistoryCardSkeleton(),
+          ),
+      ],
     );
   }
 }
@@ -211,7 +243,10 @@ final class _HistoryCardSkeleton extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: DsSpace.s3,
-              children: [DsSkeleton(width: DsSpace.s32), DsSkeleton(width: DsSpace.s20)],
+              children: [
+                DsSkeleton(width: DsSpace.s32),
+                DsSkeleton(width: DsSpace.s20),
+              ],
             ),
           ),
         ],
