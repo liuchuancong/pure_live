@@ -8,6 +8,7 @@ import 'package:pure_live/app/providers/browse_settings_providers.dart';
 import 'package:pure_live/features/vod/vod_controller.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
+import 'package:pure_live/shared/images/app_image_cache.dart';
 import 'package:pure_live/shared/utils/audience_format.dart' show AudienceFormat;
 
 /// How many skeleton cards stand in for a first page that has not landed.
@@ -177,10 +178,10 @@ final class _VodCard extends StatelessWidget {
                       Positioned.fill(
                         child: video.coverUrl == null
                             ? const _CoverFallback()
-                            : DsImage.network(
+                            : DsImage(
                                 // DsImage needs a reserved box; the stack's
                                 // tight fill overrides the ratio here.
-                                video.coverUrl!,
+                                image: cachedImage(video.coverUrl!),
                                 aspectRatio: 16 / 9,
                                 semanticLabel: video.title,
                                 fallback: const _CoverFallback(),

@@ -553,6 +553,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get fontDescription => 'UI typeface: the platform\'s own face, or one of the bundled official ones.';
 	@override String get fontPlatform => 'Follow the platform (system font)';
 	@override String get backHome => 'Back to app';
+	@override String get pureBlack => 'True black (OLED)';
+	@override String get pureBlackDesc => 'Collapses dark backgrounds to true black for OLED screens.';
 }
 
 // Path: shield
@@ -1036,6 +1038,8 @@ extension on TranslationsEn {
 			'settings.fontDescription' => 'UI typeface: the platform\'s own face, or one of the bundled official ones.',
 			'settings.fontPlatform' => 'Follow the platform (system font)',
 			'settings.backHome' => 'Back to app',
+			'settings.pureBlack' => 'True black (OLED)',
+			'settings.pureBlackDesc' => 'Collapses dark backgrounds to true black for OLED screens.',
 			'shield.title' => 'Danmaku shield',
 			'shield.description' => 'Keep live-room danmaku out by keyword or user; the rules live on this device.',
 			'shield.masterTitle' => 'Master switch',

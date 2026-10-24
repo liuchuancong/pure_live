@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:pure_live/app/navigation/module_navigation.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_switcher.dart';
+import 'package:pure_live/layouts/desktop/title_bar.dart' show WindowTitleBar;
 import 'package:pure_live/shared/enums/app_module.dart';
 import 'package:pure_live/shared/enums/navigation_item.dart';
 
@@ -49,7 +50,11 @@ final class MobileLayout extends StatelessWidget {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    return Scaffold(
+    // The window's own strip first: on Windows the caption is hidden at
+    // creation (seamless self-drawn), so a narrow window still needs the
+    // drag band and the window controls — without this strip a small
+    // window could not be moved or closed by its own chrome.
+    final scaffold = Scaffold(
       backgroundColor: colors.surface,
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -107,6 +112,20 @@ final class MobileLayout extends StatelessWidget {
         },
       ),
       body: content,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        WindowTitleBar(
+          expanded: false,
+          onToggleSidebar: () {},
+          canBack: false,
+          canForward: false,
+          onBack: () {},
+          onForward: () {},
+        ),
+        Expanded(child: scaffold),
+      ],
     );
   }
 }

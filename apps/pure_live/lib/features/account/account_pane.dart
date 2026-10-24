@@ -10,6 +10,7 @@ import 'package:pretty_qr_code/pretty_qr_code.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
 import 'package:pure_live/features/account/account_providers.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/images/app_image_cache.dart';
 
 /// The account pane: one row per site that offers the auth capability —
 /// the account's avatar and display name when the viewer is signed in, an
@@ -60,7 +61,7 @@ final class _AccountRow extends ConsumerWidget {
     return DsListRow(
       leading: credential?.avatar == null
           ? const DsIcon(DsIcons.user)
-          : DsAvatar(image: NetworkImage(credential!.avatar!), initials: name, semanticLabel: name),
+          : DsAvatar(image: cachedImage(credential!.avatar!), initials: name, semanticLabel: name),
       title: Text(name),
       description: Text(signedIn ? t.account.signedInAs(name: _displayName(credential)) : t.account.notSignedIn),
       trailing: Row(

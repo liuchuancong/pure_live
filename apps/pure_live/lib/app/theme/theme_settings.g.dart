@@ -12,6 +12,8 @@ class _$AppThemeSettings extends AppThemeSettings {
   @override
   final DsThemeMode mode;
   @override
+  final bool pureBlack;
+  @override
   final DsContrast contrast;
   @override
   final DsCornerStyle cornerStyle;
@@ -56,12 +58,14 @@ class _$AppThemeSettings extends AppThemeSettings {
   @override
   final BuiltList<DsThemeExtension<dynamic>> extensions;
 
-  factory _$AppThemeSettings([void Function(AppThemeSettingsBuilder)? updates]) =>
-      (AppThemeSettingsBuilder()..update(updates))._build();
+  factory _$AppThemeSettings([
+    void Function(AppThemeSettingsBuilder)? updates,
+  ]) => (AppThemeSettingsBuilder()..update(updates))._build();
 
   _$AppThemeSettings._({
     this.seed,
     required this.mode,
+    required this.pureBlack,
     required this.contrast,
     required this.cornerStyle,
     this.density,
@@ -86,10 +90,12 @@ class _$AppThemeSettings extends AppThemeSettings {
     required this.extensions,
   }) : super._();
   @override
-  AppThemeSettings rebuild(void Function(AppThemeSettingsBuilder) updates) => (toBuilder()..update(updates)).build();
+  AppThemeSettings rebuild(void Function(AppThemeSettingsBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
-  AppThemeSettingsBuilder toBuilder() => AppThemeSettingsBuilder()..replace(this);
+  AppThemeSettingsBuilder toBuilder() =>
+      AppThemeSettingsBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -97,6 +103,7 @@ class _$AppThemeSettings extends AppThemeSettings {
     return other is AppThemeSettings &&
         seed == other.seed &&
         mode == other.mode &&
+        pureBlack == other.pureBlack &&
         contrast == other.contrast &&
         cornerStyle == other.cornerStyle &&
         density == other.density &&
@@ -126,6 +133,7 @@ class _$AppThemeSettings extends AppThemeSettings {
     var _$hash = 0;
     _$hash = $jc(_$hash, seed.hashCode);
     _$hash = $jc(_$hash, mode.hashCode);
+    _$hash = $jc(_$hash, pureBlack.hashCode);
     _$hash = $jc(_$hash, contrast.hashCode);
     _$hash = $jc(_$hash, cornerStyle.hashCode);
     _$hash = $jc(_$hash, density.hashCode);
@@ -157,6 +165,7 @@ class _$AppThemeSettings extends AppThemeSettings {
     return (newBuiltValueToStringHelper(r'AppThemeSettings')
           ..add('seed', seed)
           ..add('mode', mode)
+          ..add('pureBlack', pureBlack)
           ..add('contrast', contrast)
           ..add('cornerStyle', cornerStyle)
           ..add('density', density)
@@ -183,7 +192,8 @@ class _$AppThemeSettings extends AppThemeSettings {
   }
 }
 
-class AppThemeSettingsBuilder implements Builder<AppThemeSettings, AppThemeSettingsBuilder> {
+class AppThemeSettingsBuilder
+    implements Builder<AppThemeSettings, AppThemeSettingsBuilder> {
   _$AppThemeSettings? _$v;
 
   DsSeed? _seed;
@@ -194,13 +204,18 @@ class AppThemeSettingsBuilder implements Builder<AppThemeSettings, AppThemeSetti
   DsThemeMode? get mode => _$this._mode;
   set mode(DsThemeMode? mode) => _$this._mode = mode;
 
+  bool? _pureBlack;
+  bool? get pureBlack => _$this._pureBlack;
+  set pureBlack(bool? pureBlack) => _$this._pureBlack = pureBlack;
+
   DsContrast? _contrast;
   DsContrast? get contrast => _$this._contrast;
   set contrast(DsContrast? contrast) => _$this._contrast = contrast;
 
   DsCornerStyle? _cornerStyle;
   DsCornerStyle? get cornerStyle => _$this._cornerStyle;
-  set cornerStyle(DsCornerStyle? cornerStyle) => _$this._cornerStyle = cornerStyle;
+  set cornerStyle(DsCornerStyle? cornerStyle) =>
+      _$this._cornerStyle = cornerStyle;
 
   DsDensity? _density;
   DsDensity? get density => _$this._density;
@@ -212,39 +227,48 @@ class AppThemeSettingsBuilder implements Builder<AppThemeSettings, AppThemeSetti
 
   DsSelectionStyle? _selectionStyle;
   DsSelectionStyle? get selectionStyle => _$this._selectionStyle;
-  set selectionStyle(DsSelectionStyle? selectionStyle) => _$this._selectionStyle = selectionStyle;
+  set selectionStyle(DsSelectionStyle? selectionStyle) =>
+      _$this._selectionStyle = selectionStyle;
 
   bool? _autoClashRule;
   bool? get autoClashRule => _$this._autoClashRule;
-  set autoClashRule(bool? autoClashRule) => _$this._autoClashRule = autoClashRule;
+  set autoClashRule(bool? autoClashRule) =>
+      _$this._autoClashRule = autoClashRule;
 
   Color? _dangerOverride;
   Color? get dangerOverride => _$this._dangerOverride;
-  set dangerOverride(Color? dangerOverride) => _$this._dangerOverride = dangerOverride;
+  set dangerOverride(Color? dangerOverride) =>
+      _$this._dangerOverride = dangerOverride;
 
   Color? _successOverride;
   Color? get successOverride => _$this._successOverride;
-  set successOverride(Color? successOverride) => _$this._successOverride = successOverride;
+  set successOverride(Color? successOverride) =>
+      _$this._successOverride = successOverride;
 
   Color? _warningOverride;
   Color? get warningOverride => _$this._warningOverride;
-  set warningOverride(Color? warningOverride) => _$this._warningOverride = warningOverride;
+  set warningOverride(Color? warningOverride) =>
+      _$this._warningOverride = warningOverride;
 
   DsColorsAdjuster? _adjustColors;
   DsColorsAdjuster? get adjustColors => _$this._adjustColors;
-  set adjustColors(DsColorsAdjuster? adjustColors) => _$this._adjustColors = adjustColors;
+  set adjustColors(DsColorsAdjuster? adjustColors) =>
+      _$this._adjustColors = adjustColors;
 
   DsShadowsAdjuster? _adjustShadows;
   DsShadowsAdjuster? get adjustShadows => _$this._adjustShadows;
-  set adjustShadows(DsShadowsAdjuster? adjustShadows) => _$this._adjustShadows = adjustShadows;
+  set adjustShadows(DsShadowsAdjuster? adjustShadows) =>
+      _$this._adjustShadows = adjustShadows;
 
   DsRadiiAdjuster? _adjustRadii;
   DsRadiiAdjuster? get adjustRadii => _$this._adjustRadii;
-  set adjustRadii(DsRadiiAdjuster? adjustRadii) => _$this._adjustRadii = adjustRadii;
+  set adjustRadii(DsRadiiAdjuster? adjustRadii) =>
+      _$this._adjustRadii = adjustRadii;
 
   DsSizesAdjuster? _adjustSizes;
   DsSizesAdjuster? get adjustSizes => _$this._adjustSizes;
-  set adjustSizes(DsSizesAdjuster? adjustSizes) => _$this._adjustSizes = adjustSizes;
+  set adjustSizes(DsSizesAdjuster? adjustSizes) =>
+      _$this._adjustSizes = adjustSizes;
 
   String? _fontFamily;
   String? get fontFamily => _$this._fontFamily;
@@ -252,11 +276,13 @@ class AppThemeSettingsBuilder implements Builder<AppThemeSettings, AppThemeSetti
 
   String? _monoFontFamily;
   String? get monoFontFamily => _$this._monoFontFamily;
-  set monoFontFamily(String? monoFontFamily) => _$this._monoFontFamily = monoFontFamily;
+  set monoFontFamily(String? monoFontFamily) =>
+      _$this._monoFontFamily = monoFontFamily;
 
   String? _displayFontFamily;
   String? get displayFontFamily => _$this._displayFontFamily;
-  set displayFontFamily(String? displayFontFamily) => _$this._displayFontFamily = displayFontFamily;
+  set displayFontFamily(String? displayFontFamily) =>
+      _$this._displayFontFamily = displayFontFamily;
 
   String? _fontPackage;
   String? get fontPackage => _$this._fontPackage;
@@ -264,11 +290,13 @@ class AppThemeSettingsBuilder implements Builder<AppThemeSettings, AppThemeSetti
 
   String? _monoFontPackage;
   String? get monoFontPackage => _$this._monoFontPackage;
-  set monoFontPackage(String? monoFontPackage) => _$this._monoFontPackage = monoFontPackage;
+  set monoFontPackage(String? monoFontPackage) =>
+      _$this._monoFontPackage = monoFontPackage;
 
   String? _displayFontPackage;
   String? get displayFontPackage => _$this._displayFontPackage;
-  set displayFontPackage(String? displayFontPackage) => _$this._displayFontPackage = displayFontPackage;
+  set displayFontPackage(String? displayFontPackage) =>
+      _$this._displayFontPackage = displayFontPackage;
 
   DsMotion? _motion;
   DsMotion? get motion => _$this._motion;
@@ -281,7 +309,8 @@ class AppThemeSettingsBuilder implements Builder<AppThemeSettings, AppThemeSetti
   ListBuilder<DsThemeExtension<dynamic>>? _extensions;
   ListBuilder<DsThemeExtension<dynamic>> get extensions =>
       _$this._extensions ??= ListBuilder<DsThemeExtension<dynamic>>();
-  set extensions(ListBuilder<DsThemeExtension<dynamic>>? extensions) => _$this._extensions = extensions;
+  set extensions(ListBuilder<DsThemeExtension<dynamic>>? extensions) =>
+      _$this._extensions = extensions;
 
   AppThemeSettingsBuilder() {
     AppThemeSettings._defaults(this);
@@ -292,6 +321,7 @@ class AppThemeSettingsBuilder implements Builder<AppThemeSettings, AppThemeSetti
     if ($v != null) {
       _seed = $v.seed;
       _mode = $v.mode;
+      _pureBlack = $v.pureBlack;
       _contrast = $v.contrast;
       _cornerStyle = $v.cornerStyle;
       _density = $v.density;
@@ -339,9 +369,26 @@ class AppThemeSettingsBuilder implements Builder<AppThemeSettings, AppThemeSetti
           _$v ??
           _$AppThemeSettings._(
             seed: seed,
-            mode: BuiltValueNullFieldError.checkNotNull(mode, r'AppThemeSettings', 'mode'),
-            contrast: BuiltValueNullFieldError.checkNotNull(contrast, r'AppThemeSettings', 'contrast'),
-            cornerStyle: BuiltValueNullFieldError.checkNotNull(cornerStyle, r'AppThemeSettings', 'cornerStyle'),
+            mode: BuiltValueNullFieldError.checkNotNull(
+              mode,
+              r'AppThemeSettings',
+              'mode',
+            ),
+            pureBlack: BuiltValueNullFieldError.checkNotNull(
+              pureBlack,
+              r'AppThemeSettings',
+              'pureBlack',
+            ),
+            contrast: BuiltValueNullFieldError.checkNotNull(
+              contrast,
+              r'AppThemeSettings',
+              'contrast',
+            ),
+            cornerStyle: BuiltValueNullFieldError.checkNotNull(
+              cornerStyle,
+              r'AppThemeSettings',
+              'cornerStyle',
+            ),
             density: density,
             platform: platform,
             selectionStyle: BuiltValueNullFieldError.checkNotNull(
@@ -349,7 +396,11 @@ class AppThemeSettingsBuilder implements Builder<AppThemeSettings, AppThemeSetti
               r'AppThemeSettings',
               'selectionStyle',
             ),
-            autoClashRule: BuiltValueNullFieldError.checkNotNull(autoClashRule, r'AppThemeSettings', 'autoClashRule'),
+            autoClashRule: BuiltValueNullFieldError.checkNotNull(
+              autoClashRule,
+              r'AppThemeSettings',
+              'autoClashRule',
+            ),
             dangerOverride: dangerOverride,
             successOverride: successOverride,
             warningOverride: warningOverride,
@@ -363,7 +414,11 @@ class AppThemeSettingsBuilder implements Builder<AppThemeSettings, AppThemeSetti
             fontPackage: fontPackage,
             monoFontPackage: monoFontPackage,
             displayFontPackage: displayFontPackage,
-            motion: BuiltValueNullFieldError.checkNotNull(motion, r'AppThemeSettings', 'motion'),
+            motion: BuiltValueNullFieldError.checkNotNull(
+              motion,
+              r'AppThemeSettings',
+              'motion',
+            ),
             haptics: haptics,
             extensions: extensions.build(),
           );
@@ -373,7 +428,11 @@ class AppThemeSettingsBuilder implements Builder<AppThemeSettings, AppThemeSetti
         _$failedField = 'extensions';
         extensions.build();
       } catch (e) {
-        throw BuiltValueNestedFieldError(r'AppThemeSettings', _$failedField, e.toString());
+        throw BuiltValueNestedFieldError(
+          r'AppThemeSettings',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

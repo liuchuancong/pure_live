@@ -10,6 +10,7 @@ import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
 import 'package:pure_live/features/favorites/follow_repository.dart' show followsProvider;
 import 'package:pure_live/features/multiview/multiview_controller.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/images/app_image_cache.dart';
 
 /// The multi-view wall (the reference's multiview): 1, 2, 4, 6 or 9 panes,
 /// each holding a followed room, with the layout switcher in the header
@@ -288,8 +289,8 @@ final class _PaneTile extends StatelessWidget {
       ),
     );
     if (url.isEmpty) return fallback;
-    return DsImage.network(
-      url,
+    return DsImage(
+      image: cachedImage(url),
       aspectRatio: 16 / 9,
       semanticLabel: slot.title,
       fallback: fallback,

@@ -1255,6 +1255,12 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '返回应用'
 	String get backHome => '返回应用';
+
+	/// zh-CN: '纯黑（OLED）'
+	String get pureBlack => '纯黑（OLED）';
+
+	/// zh-CN: '深色模式下把背景收成纯黑，OLED 屏更省电。'
+	String get pureBlackDesc => '深色模式下把背景收成纯黑，OLED 屏更省电。';
 }
 
 // Path: shield
@@ -1912,6 +1918,8 @@ extension on Translations {
 			'settings.fontDescription' => '界面字体：跟随平台官方字体，或选一款内置官方字体。',
 			'settings.fontPlatform' => '跟随平台（系统字体）',
 			'settings.backHome' => '返回应用',
+			'settings.pureBlack' => '纯黑（OLED）',
+			'settings.pureBlackDesc' => '深色模式下把背景收成纯黑，OLED 屏更省电。',
 			'shield.title' => '弹幕屏蔽',
 			'shield.description' => '按关键词与用户屏蔽直播间弹幕，规则保存在本机。',
 			'shield.masterTitle' => '总开关',

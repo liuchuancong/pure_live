@@ -12,6 +12,7 @@ import 'package:pure_live/features/popular/room_card.dart' show RoomCard;
 import 'package:pure_live/features/search/search_controller.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
+import 'package:pure_live/shared/images/app_image_cache.dart';
 import 'package:pure_live/shared/platforms/platform_picker.dart';
 import 'package:pure_live/shared/utils/audience_format.dart' show AudienceFormat;
 
@@ -454,7 +455,7 @@ final class _AnchorCard extends StatelessWidget {
             children: [
               DsAvatar(
                 initials: anchor.name,
-                image: anchor.avatarUrl == null ? null : NetworkImage(anchor.avatarUrl!),
+                image: anchor.avatarUrl == null ? null : cachedImage(anchor.avatarUrl!),
                 size: DsSize.md,
                 toneIndex: DsAvatar.toneFor(anchor.anchorId.isEmpty ? anchor.name : anchor.anchorId),
                 status: live ? DsStatus.success : null,
@@ -591,8 +592,8 @@ final class _AreaIcon extends StatelessWidget {
         borderRadius: BorderRadius.circular(theme.radii.control(theme.sizes.md)),
         child: icon.isEmpty
             ? fallback
-            : DsImage.network(
-                icon,
+            : DsImage(
+                image: cachedImage(icon),
                 width: theme.sizes.md,
                 height: theme.sizes.md,
                 semanticLabel: area.areaName,

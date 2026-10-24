@@ -48,7 +48,9 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
       if (mode != null) b.mode = mode;
       final corners = ThemePersistence.readCorners();
       if (corners != null) b.cornerStyle = corners;
-      b.density = ThemePersistence.readDensity();
+      b
+        ..pureBlack = ThemePersistence.readPureBlack()
+        ..density = ThemePersistence.readDensity();
     });
     final font = ThemePersistence.readFont();
     if (font != null) _settings = _settings.rebuild((b) => b..fontFamily = font);
@@ -64,6 +66,7 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     // them back on the next boot.
     unawaited(ThemePersistence.storeMode(settings.mode));
     unawaited(ThemePersistence.storeCorners(settings.cornerStyle));
+    unawaited(ThemePersistence.storePureBlack(value: settings.pureBlack));
     unawaited(ThemePersistence.storeDensity(settings.density));
     unawaited(ThemePersistence.storeFont(settings.fontFamily));
     // Only a named tone persists; the platform accent is re-read at boot

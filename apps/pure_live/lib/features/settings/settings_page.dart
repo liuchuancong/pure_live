@@ -340,6 +340,15 @@ final class _AppearancePane extends ConsumerWidget {
             semanticLabel: t.settings.themeSeed,
           ),
         ),
+        DsListRow(
+          leading: const DsIcon(DsIcons.circle),
+          title: Text(t.settings.pureBlack),
+          description: Text(t.settings.pureBlackDesc),
+          trailing: DsSwitch(
+            value: settings.pureBlack,
+            onChanged: (value) => scope.onChanged(settings.rebuild((b) => b..pureBlack = value)),
+          ),
+        ),
         DsListRow(leading: const DsIcon(DsIcons.cornerDownRight), title: Text(t.settings.corners)),
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),

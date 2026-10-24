@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/features/history/history_repository.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/images/app_image_cache.dart';
 
 /// The live module's history (the reference's `HistoryPage`): the watched
 /// rooms grouped by day — 今天 / 昨天 / 更早, like the reference's history
@@ -158,8 +159,8 @@ final class _HistoryCard extends StatelessWidget {
             children: [
               SizedBox(
                 width: theme.sizes.lg * 2,
-                child: DsImage.network(
-                  room.content.coverUrl,
+                child: DsImage(
+                  image: cachedImage(room.content.coverUrl),
                   aspectRatio: 16 / 9,
                   semanticLabel: room.content.title,
                   style: DsImageStyle(

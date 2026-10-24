@@ -12,6 +12,7 @@ import 'package:pure_live/features/areas/area_follow_repository.dart';
 import 'package:pure_live/features/areas/areas_controller.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
+import 'package:pure_live/shared/images/app_image_cache.dart';
 import 'package:pure_live/shared/platforms/platform_picker.dart';
 
 /// The areas page (the reference's `AreasPage`): the platforms' own
@@ -310,8 +311,8 @@ final class _AreaIcon extends StatelessWidget {
     if (url == null || url.isEmpty) {
       return SizedBox(width: theme.sizes.md, height: theme.sizes.md, child: fallback);
     }
-    return DsImage.network(
-      url,
+    return DsImage(
+      image: cachedImage(url),
       width: theme.sizes.md,
       height: theme.sizes.md,
       semanticLabel: area.areaName,

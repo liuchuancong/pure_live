@@ -1,6 +1,7 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:live_sites/live_sites.dart';
+import 'package:pure_live/shared/images/app_image_cache.dart';
 import 'package:pure_live/shared/utils/audience_format.dart' show AudienceFormat;
 
 /// One recommended room as a card: the cover, the title, the streamer and
@@ -36,8 +37,8 @@ final class RoomCard extends StatelessWidget {
           // row absorbs the remainder of the grid tile. DsImage needs
           // its own reserved box — the ratio is its parameter, not an
           // outer wrapper's.
-          DsImage.network(
-            room.content.coverUrl,
+          DsImage(
+            image: cachedImage(room.content.coverUrl),
             aspectRatio: 16 / 9,
             semanticLabel: room.content.title,
             fallback: _CoverFallback(title: room.content.title),

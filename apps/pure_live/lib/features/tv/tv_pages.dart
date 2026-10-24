@@ -10,6 +10,7 @@ import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider
 import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
 import 'package:pure_live/features/popular/popular_controller.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
+import 'package:pure_live/shared/images/app_image_cache.dart';
 
 /// The TV card: a room as the remote sees it. The pressable is already
 /// keyboard-activatable (OK opens the room) and its focus state is the
@@ -51,8 +52,8 @@ final class TvFocusCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              DsImage.network(
-                room.content.coverUrl,
+              DsImage(
+                image: cachedImage(room.content.coverUrl),
                 aspectRatio: 16 / 9,
                 semanticLabel: room.content.title,
                 style: DsImageStyle(borderRadius: BorderRadius.circular(theme.radii.card)),
