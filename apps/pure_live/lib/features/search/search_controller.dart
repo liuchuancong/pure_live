@@ -91,6 +91,15 @@ final class SearchController extends Notifier<SearchState> {
     return _load(query: state.query, target: state.target, page: state.nextPage);
   }
 
+  /// Loads [page] of the current query for the desktop pager: a jump
+  /// replaces the page whole, a continuous turn appends (the popular
+  /// feed's rule, the same pager on both).
+  Future<void> loadPage(int page) {
+    if (state.loading || state.query.isEmpty || page < 1) return Future.value();
+    if (page == state.nextPage) return loadMore();
+    return _load(query: state.query, target: state.target, page: page);
+  }
+
   /// Runs the current query again from its first page (the retry button).
   Future<void> retry() {
     if (state.query.isEmpty) return Future.value();
@@ -149,6 +158,9 @@ final class SearchController extends Notifier<SearchState> {
 
   Future<void> _load({required String query, required LiveSearchTarget target, required int page}) async {
     final generation = ++_searchGeneration;
+    // The page the call continues from — a jump (the pager) replaces, a
+    // continuous turn appends; the answer handler reads it below.
+    final current = (nextPage: state.nextPage, rooms: state.rooms);
     final scope = ref.read(searchSiteIdProvider);
     final site = scope == kSearchAllPlatforms ? null : ref.read(sitesProvider).getById(scope);
     state = (
@@ -213,9 +225,17 @@ final class SearchController extends Notifier<SearchState> {
       (pageAnswer) => state = (
         query: query,
         target: target,
-        rooms: [...state.rooms, ..._roomsOf(pageAnswer)],
-        anchors: [...state.anchors, ..._anchorsOf(pageAnswer)],
-        areas: [...state.areas, ..._areasOf(pageAnswer)],
+        // A continuous turn appends; a jump (the pager) replaces the page
+        // whole.
+        rooms: page == 1 || page != current.nextPage
+            ? _roomsOf(pageAnswer)
+            : [...state.rooms, ..._roomsOf(pageAnswer)],
+        anchors: page == 1 || page != current.nextPage
+            ? _anchorsOf(pageAnswer)
+            : [...state.anchors, ..._anchorsOf(pageAnswer)],
+        areas: page == 1 || page != current.nextPage
+            ? _areasOf(pageAnswer)
+            : [...state.areas, ..._areasOf(pageAnswer)],
         nextPage: page + 1,
         hasMore: pageAnswer.hasMore ?? pageAnswer.items.isNotEmpty,
         loading: false,

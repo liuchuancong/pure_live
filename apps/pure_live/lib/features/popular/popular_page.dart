@@ -115,6 +115,8 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
     final inline = ref.watch(popularInlineSearchProvider);
     // An inline search (the toolbar's word) takes the page: the platform's
     // own results grid under a search bar, browsing one keypress away.
+    // The platform is watched, not frozen, so a tab switch during the
+    // search re-runs it there.
     if (inline != null) {
       return _InlineSearchFeed(platform: platform, query: inline);
     }
@@ -289,22 +291,49 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
           ),
         ),
         Expanded(
-          child: CardGrid<LiveRoom>(
-            key: ValueKey('inline-${widget.platform}-${widget.query}'),
-            items: search.rooms,
-            cardExtent: cardExtent,
-            isLoading: search.loading,
-            hasMore: search.hasMore,
-            onLoadMore: () => ref.read(searchProvider.notifier).loadMore(),
-            error: search.error?.message,
-            onRetry: () => ref.read(searchProvider.notifier).retry(),
-            emptyIcon: DsIcons.searchX,
-            emptyTitle: t.search.noResultsTitle,
-            itemBuilder: (context, room) => RoomCard(
-              room: room,
-              onOpen: () => context.push(
-                RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location,
-              ),
+          child: _pagedResults(context, search, cardExtent),
+        ),
+      ],
+    );
+  }
+
+  /// The results grid; a wide window pages it by number exactly like the
+  /// browse feed, a narrow one scrolls forever.
+  Widget _pagedResults(BuildContext context, SearchState search, double cardExtent) {
+    final t = context.t;
+    final grid = CardGrid<LiveRoom>(
+      items: search.rooms,
+      cardExtent: cardExtent,
+      isLoading: search.loading,
+      hasMore: search.hasMore,
+      onLoadMore: () => ref.read(searchProvider.notifier).loadMore(),
+      error: search.error?.message,
+      onRetry: () => ref.read(searchProvider.notifier).retry(),
+      emptyIcon: DsIcons.searchX,
+      emptyTitle: t.search.noResultsTitle,
+      itemBuilder: (context, room) => RoomCard(
+        room: room,
+        onOpen: () => context.push(
+          RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location,
+        ),
+      ),
+    );
+    final wide = MediaQuery.sizeOf(context).width >= 768;
+    if (!wide) return grid;
+    final page = search.rooms.isEmpty ? 1 : search.nextPage - 1;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(child: grid),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
+          child: Center(
+            child: DsPagination(
+              page: page,
+              pageCount: search.hasMore ? page + 1 : page,
+              onChanged: search.loading
+                  ? null
+                  : (next) => ref.read(searchProvider.notifier).loadPage(next),
             ),
           ),
         ),

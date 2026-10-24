@@ -300,7 +300,10 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                                       // fall through to the search page,
                                       // where the same word waits.)
                                       if (widget.module == AppModule.live) {
-                                        ref.read(popularSiteProvider.notifier).selected = ref.read(selectedSiteIdProvider);
+                                        // The platform stays as browsed — the
+                                        // inline feed reads it; switching it
+                                        // here would strand the browse feed
+                                        // on an unopened platform.
                                         ref.read(popularInlineSearchProvider.notifier).search(word);
                                         widget.onMenu(NavigationItem.hot);
                                       } else {
