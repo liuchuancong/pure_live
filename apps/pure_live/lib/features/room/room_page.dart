@@ -1,12 +1,18 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
 import 'package:media_core_ui/media_core_ui.dart';
+import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
 import 'package:pure_live/features/favorites/follow_repository.dart' show followsProvider;
 import 'package:pure_live/features/room/room_controller.dart';
+import 'package:pure_live/features/room/room_status.dart'
+    show RoomPictureAction, RoomPictureDim, RoomPictureKind, roomPictureProvider, slowAfter;
+import 'package:pure_live/features/room/room_status.dart'
+    show pictureStateOf, slowAfter, RoomPictureAction, RoomPictureDim;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/utils/audience_format.dart' show AudienceFormat;
 
@@ -14,9 +20,12 @@ import 'package:pure_live/shared/utils/audience_format.dart' show AudienceFormat
 /// controls under it, the chat beside them on a wide window.
 ///
 /// The player brings its own control bar (media_core_ui's built-in one);
-/// the room's own row picks the quality and the line, retries on failure,
-/// and follows the streamer. Chat is the danmaku session's messages, a
-/// scrolling list; the flying-danmaku overlay is the next floor.
+/// the picture overlay tells the states the stream goes through (the
+/// connecting, the slow open, the recovery, the offline room) with the
+/// actions each one offers; the room's own row picks the quality and the
+/// line, retries on failure, and follows the streamer. Chat is the
+/// danmaku session's messages, a scrolling list; the flying-danmaku
+/// overlay is the next floor.
 final class RoomPage extends ConsumerStatefulWidget {
   /// The room to open, by platform and room id.
   const RoomPage({required this.platform, required this.roomId, super.key});
@@ -32,6 +41,12 @@ final class RoomPage extends ConsumerStatefulWidget {
 }
 
 final class _RoomPageState extends ConsumerState<RoomPage> {
+  /// Whether the opening stream has taken longer than the overlay's
+  /// patience; the overlay then offers a retry beside the spinner.
+  bool _slow = false;
+
+  Timer? _slowTimer;
+
   @override
   void initState() {
     super.initState();
@@ -42,12 +57,35 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
   }
 
   @override
+  void dispose() {
+    _slowTimer?.cancel();
+    super.dispose();
+  }
+
+  void _watchSlow(RoomState room) {
+    final connecting = room.room != null && room.handle == null && !room.playback.playing;
+    if (connecting && _slowTimer == null) {
+      _slowTimer = Timer(slowAfter, () {
+        if (mounted) setState(() => _slow = true);
+      });
+    } else if (!connecting && _slowTimer != null) {
+      _slowTimer?.cancel();
+      _slowTimer = null;
+      if (_slow && mounted) setState(() => _slow = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final room = ref.watch(roomProvider);
+    _watchSlow(room);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AspectRatio(aspectRatio: 16 / 9, child: _PlayerSurface(room: room)),
+        AspectRatio(
+          aspectRatio: 16 / 9,
+          child: _PlayerSurface(room: room, slow: _slow),
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
           child: _RoomFacts(room: room),
@@ -62,44 +100,105 @@ final class _RoomPageState extends ConsumerState<RoomPage> {
   }
 }
 
-/// The player: media_core's view over the live handle, an honest stand-in
-/// while the room has none (loading, or a room that cannot play).
+/// The player: media_core's view over the live handle; behind the
+/// picture-state overlay wherever the stream is not on screen.
 final class _PlayerSurface extends ConsumerWidget {
-  const _PlayerSurface({required this.room});
+  const _PlayerSurface({required this.room, required this.slow});
 
   final RoomState room;
+
+  /// Whether the opening stream has outlived the overlay's patience.
+  final bool slow;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
     final handle = room.handle;
-    if (handle == null) {
-      final message = room.error ?? context.t.room.opening;
-      return ColoredBox(
-        color: colors.overlay,
-        child: Center(
-          child: DsEmptyState(
-            icon: DsIcon(DsIcons.tv, size: DsTheme.of(context).sizes.iconLg),
-            title: Text(message, style: DsTheme.of(context).typography.caption.copyWith(color: colors.text)),
-            actions: room.error == null ? const [] : [_RetryButton()],
+    final picture = ref.watch(roomPictureProvider(slow));
+    final showOverlay = picture.kind != RoomPictureKind.none;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (handle == null)
+          ColoredBox(color: colors.overlay, child: const SizedBox.expand())
+        else
+          MediaCorePlayerView(handle: handle),
+        if (showOverlay)
+          ColoredBox(
+            color: switch (picture.dim) {
+              RoomPictureDim.none => const Color(0x00000000),
+              RoomPictureDim.light => const Color(0x66000000),
+              RoomPictureDim.heavy => const Color(0xB3000000),
+              RoomPictureDim.cover => const Color(0xE6000000),
+            },
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                spacing: DsSpace.s12,
+                children: [
+                  if (picture.busy) const DsSpinner(),
+                  Text(
+                    picture.title,
+                    textAlign: TextAlign.center,
+                    style: theme.typography.title.copyWith(color: colors.text),
+                  ),
+                  if (picture.reason != null)
+                    Text(
+                      picture.reason!,
+                      textAlign: TextAlign.center,
+                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                    ),
+                  if (picture.actions.isNotEmpty)
+                    Wrap(
+                      spacing: DsSpace.s8,
+                      runSpacing: DsSpace.s8,
+                      alignment: WrapAlignment.center,
+                      children: [for (final action in picture.actions) _PictureAction(action: action)],
+                    ),
+                ],
+              ),
+            ),
           ),
-        ),
-      );
-    }
-    return MediaCorePlayerView(handle: handle);
-  }
-}
-
-/// The retry the error state offers.
-final class _RetryButton extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return DsButton(
-      onPressed: () => unawaited(ref.read(roomProvider.notifier).retry()),
-      child: Text(context.t.common.retry),
+      ],
     );
   }
 }
+
+/// The sentinel the overlay's visibility checks against: the kinds that
+/// hide the stream behind a message.
+RoomPictureKind RoomPictureKindNone() => RoomPictureKind.none;
+
+/// One action the overlay offers, pressed through the room controller.
+final class _PictureAction extends ConsumerWidget {
+  const _PictureAction({required this.action});
+
+  final RoomPictureAction action;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final controller = ref.read(roomProvider.notifier);
+    final room = ref.read(roomProvider).room;
+    final (label, onPressed) = switch (action) {
+      RoomPictureAction.back => (t.common.close, () async => context.pop()),
+      RoomPictureAction.refresh => (
+        t.common.retry,
+        room == null ? null : () => unawaited(controller.open(platform: room.ref.platform, roomId: room.ref.roomId)),
+      ),
+      RoomPictureAction.retry => (t.common.retry, () => unawaited(controller.retry())),
+      RoomPictureAction.switchLine => (t.room.lineLabel, () => unawaited(controller.selectLine(1))),
+      RoomPictureAction.playAgain => (t.room.play, () => unawaited(controller.retry())),
+    };
+    return DsButton(onPressed: onPressed, child: Text(label));
+  }
+}
+
+/// The follows the room page reads (the follow button's watched list).
+final followsRoomProvider = Provider<List<LiveRoom>>((ref) {
+  ref.watch(followsProvider);
+  return ref.read(followsProvider).rooms;
+});
 
 /// The room's facts: the title, the streamer, the audience figure and the
 /// follow button.
@@ -112,13 +211,11 @@ final class _RoomFacts extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    final t = context.t;
     final detail = room.room;
     if (detail == null) {
       return DsSkeleton(width: DsSpace.s32, height: theme.sizes.iconMd);
     }
-    final figure =
-        detail.audience.primaryMetric == LiveAudienceMetricType.onlineViewers
+    final figure = detail.audience.primaryMetric == LiveAudienceMetricType.onlineViewers
         ? detail.audience.onlineViewers
         : detail.audience.popularity;
     final followed = ref.watch(
@@ -161,18 +258,12 @@ final class _RoomFacts extends ConsumerWidget {
         DsButton(
           onPressed: () => unawaited(ref.read(roomProvider.notifier).toggleFollow()),
           leading: DsIcon(followed ? DsIcons.heart : DsIcons.heartCrack, size: theme.sizes.iconSm),
-          child: Text(followed ? t.room.unfollow : t.room.follow),
+          child: Text(followed ? context.t.room.unfollow : context.t.room.follow),
         ),
       ],
     );
   }
 }
-
-/// The follows the room page reads (the follow button's watched list).
-final followsRoomProvider = Provider<List<LiveRoom>>((ref) {
-  ref.watch(followsProvider);
-  return ref.read(followsProvider).rooms;
-});
 
 /// The room's own controls: the quality and the line the playback sits
 /// on, and the pause.
@@ -192,9 +283,7 @@ final class _RoomControls extends ConsumerWidget {
           DsSelect<LivePlayQuality>(
             value: room.quality ?? room.qualities.first,
             onChanged: (quality) => unawaited(controller.selectQuality(quality ?? room.qualities.first)),
-            options: [
-              for (final quality in room.qualities) DsSelectOption(value: quality, label: quality.label),
-            ],
+            options: [for (final quality in room.qualities) DsSelectOption(value: quality, label: quality.label)],
             placeholder: t.room.quality,
             leading: DsIcon(DsIcons.gauge, size: DsTheme.of(context).sizes.iconSm),
             semanticLabel: t.room.quality,
@@ -205,7 +294,10 @@ final class _RoomControls extends ConsumerWidget {
             onChanged: (index) => unawaited(controller.selectLine(index ?? 0)),
             options: [
               for (final (index, line) in room.lines.indexed)
-                DsSelectOption(value: index, label: line.lineLabel ?? t.room.line(n: index + 1)),
+                DsSelectOption(
+                  value: index,
+                  label: line.lineLabel ?? t.room.line(n: index + 1),
+                ),
             ],
             placeholder: t.room.lineLabel,
             leading: DsIcon(DsIcons.route, size: DsTheme.of(context).sizes.iconSm),
@@ -214,10 +306,7 @@ final class _RoomControls extends ConsumerWidget {
         const Spacer(),
         DsButton(
           onPressed: () => unawaited(controller.togglePlayPause()),
-          leading: DsIcon(
-            room.playback.playing ? DsIcons.pause : DsIcons.play,
-            size: DsTheme.of(context).sizes.iconSm,
-          ),
+          leading: DsIcon(room.playback.playing ? DsIcons.pause : DsIcons.play, size: DsTheme.of(context).sizes.iconSm),
           child: Text(room.playback.playing ? t.room.pause : t.room.play),
         ),
       ],
@@ -236,7 +325,9 @@ final class _ChatFeed extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     if (room.chat.isEmpty) {
-      return Center(child: DsEmptyState(icon: const DsIcon(DsIcons.messageCircle), title: Text(t.room.noChat)));
+      return Center(
+        child: DsEmptyState(icon: const DsIcon(DsIcons.messageCircle), title: Text(t.room.noChat)),
+      );
     }
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s16),
@@ -262,7 +353,9 @@ final class _ChatLine extends StatelessWidget {
     final theme = DsTheme.of(context);
     final sender = message.sender;
     final nameStyle = theme.typography.caption.copyWith(
-      color: message.color == null ? colors.textMuted : Color.fromARGB(255, message.color!.r, message.color!.g, message.color!.b),
+      color: message.color == null
+          ? colors.textMuted
+          : Color.fromARGB(255, message.color!.r, message.color!.g, message.color!.b),
     );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: DsSpace.s3),
@@ -273,7 +366,10 @@ final class _ChatLine extends StatelessWidget {
               TextSpan(text: '${context.t.room.system}: ', style: nameStyle)
             else
               TextSpan(text: '${sender.userName}: ', style: nameStyle),
-            TextSpan(text: message.text, style: theme.typography.caption.copyWith(color: colors.text)),
+            TextSpan(
+              text: message.text,
+              style: theme.typography.caption.copyWith(color: colors.text),
+            ),
           ],
         ),
       ),

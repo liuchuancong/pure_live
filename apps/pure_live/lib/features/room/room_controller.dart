@@ -74,26 +74,20 @@ final class RoomController extends Notifier<RoomState> {
       return;
     }
     final roomAnswer = await roomProvider.getRoom(roomId);
-    roomAnswer.match(
-      (error) => state = _with(error: error.message),
-      (room) async {
-        state = _with(room: room);
-        unawaited(_recordHistory(room));
-        if (room.broadcast.isLiveNow) {
-          final danmakuProvider = site.capability<LiveDanmakuProvider>();
-          if (danmakuProvider != null) await _openDanmaku(danmakuProvider, room);
-        }
-        final qualitiesAnswer = await playbackProvider.getQualities(room: room);
-        qualitiesAnswer.match(
-          (error) => state = _with(error: error.message),
-          (qualities) async {
-            _wantedQuality = qualities.isEmpty ? null : qualities.first;
-            state = _with(qualities: qualities, quality: _wantedQuality);
-            await _startPlayback(playbackProvider, room);
-          },
-        );
-      },
-    );
+    roomAnswer.match((error) => state = _with(error: error.message), (room) async {
+      state = _with(room: room);
+      unawaited(_recordHistory(room));
+      if (room.broadcast.isLiveNow) {
+        final danmakuProvider = site.capability<LiveDanmakuProvider>();
+        if (danmakuProvider != null) await _openDanmaku(danmakuProvider, room);
+      }
+      final qualitiesAnswer = await playbackProvider.getQualities(room: room);
+      qualitiesAnswer.match((error) => state = _with(error: error.message), (qualities) async {
+        _wantedQuality = qualities.isEmpty ? null : qualities.first;
+        state = _with(qualities: qualities, quality: _wantedQuality);
+        await _startPlayback(playbackProvider, room);
+      });
+    });
   }
 
   /// Switches the quality: the plan is re-read at the new quality and
@@ -146,46 +140,40 @@ final class RoomController extends Notifier<RoomState> {
 
   Future<void> _startPlayback(LivePlaybackProvider capability, LiveRoom room) async {
     final linesAnswer = await capability.getLines(room: room, quality: _wantedQuality);
-    linesAnswer.match(
-      (error) => state = _with(error: error.message),
-      (lines) async {
-        if (lines.isEmpty) {
-          state = _with(lines: const [], error: 'the room has nothing to play');
-          return;
-        }
-        state = _with(lines: lines);
-        final playback =
-            _playback ??
-            createRoomPlayback(
-              kernel: ref.read(playerKernelProvider),
-              onLinesNeeded: () => capability
-                  .getLines(room: room, quality: _wantedQuality)
-                  .then((answer) => answer.fold((_) => const <LivePlayLine>[], (fresh) => fresh)),
-            );
-        _playback ??= playback;
-        _states ??= playback.onStateChanged.listen((playback_) {
-          state = _with(playback: playback_);
-        });
-        _handles ??= playback.onHandleChanged.listen((handle) {
-          state = _with(handle: handle);
-        });
-        await playback.play(
-          LiveSourceRequest(sources: roomSourcesOf(lines), title: room.content.title, allowEngineFallback: true),
-        );
-      },
-    );
+    linesAnswer.match((error) => state = _with(error: error.message), (lines) async {
+      if (lines.isEmpty) {
+        state = _with(lines: const [], error: 'the room has nothing to play');
+        return;
+      }
+      state = _with(lines: lines);
+      final playback =
+          _playback ??
+          createRoomPlayback(
+            kernel: ref.read(playerKernelProvider),
+            onLinesNeeded: () => capability
+                .getLines(room: room, quality: _wantedQuality)
+                .then((answer) => answer.fold((_) => const <LivePlayLine>[], (fresh) => fresh)),
+          );
+      _playback ??= playback;
+      _states ??= playback.onStateChanged.listen((playback_) {
+        state = _with(playback: playback_);
+      });
+      _handles ??= playback.onHandleChanged.listen((handle) {
+        state = _with(handle: handle);
+      });
+      await playback.play(
+        LiveSourceRequest(sources: roomSourcesOf(lines), title: room.content.title, allowEngineFallback: true),
+      );
+    });
   }
 
   Future<void> _openDanmaku(LiveDanmakuProvider provider, LiveRoom room) async {
     final sessionAnswer = await provider.createSession(room: room);
-    sessionAnswer.match(
-      (error) => state = _with(error: error.message),
-      (session) async {
-        _danmaku = session;
-        await session.connect();
-        _chat = session.events.listen(_onMessage);
-      },
-    );
+    sessionAnswer.match((error) => state = _with(error: error.message), (session) async {
+      _danmaku = session;
+      await session.connect();
+      _chat = session.events.listen(_onMessage);
+    });
   }
 
   void _onMessage(LiveMessage message) {
