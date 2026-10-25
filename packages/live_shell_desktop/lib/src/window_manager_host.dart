@@ -10,10 +10,12 @@ const _screenRetrieverDisplays = ScreenRetrieverDisplays();
 
 /// The main window, driven through `window_manager`'s object API.
 ///
-/// `WindowManager.instance.getCurrent()` addresses exactly one window — the one
-/// belonging to the current Flutter engine — which is why this class is the main
-/// window's host, and a secondary window runs its own instance inside its own
-/// engine instead of being controlled from here.
+/// The host pins its own window on the engine's first focus event (see
+/// [_onEvent]) and addresses every verb and every event through that pin —
+/// never through the manager's "current window", which answers the active
+/// window of the shared main thread and, once a secondary window takes
+/// focus, belongs to *that* window. A host that forgot this answered a
+/// clone's close request as its own and quit the whole process.
 ///
 /// The listener is registered on [attach] and removed on [dispose], and that
 /// pairing is not ceremony: the manager keeps a strong list, so a shell that
@@ -40,6 +42,11 @@ final class WindowManagerHost implements WindowHost {
   bool _destroying = false;
   wm.ListenerId? _listener;
 
+  /// This engine's own window, pinned on its first focus event; null until
+  /// then. Every verb and every event filter goes through the pin — see
+  /// [_onEvent] for why the manager's "current window" must not be trusted.
+  wm.Window? _self;
+
   @override
   bool get isAlive => _alive;
 
@@ -48,8 +55,13 @@ final class WindowManagerHost implements WindowHost {
 
   /// The window, or null while the native side has not registered one yet —
   /// a gap every read must tolerate, because the first widget frame can be
-  /// built before the registration lands.
+  /// built before the registration lands. The pinned [_self] answers first;
+  /// the manager's current window is only the hot-restart fallback, where
+  /// the engine's own window is the focused one and the pin has not landed.
   wm.Window? get _windowOrNull {
+    if (_self != null) {
+      return _self;
+    }
     try {
       return wm.WindowManager.instance.getCurrent();
     } on Object {
@@ -93,14 +105,25 @@ final class WindowManagerHost implements WindowHost {
   /// consumer sees one `restored` for both — which is what the close policy
   /// and the geometry store actually act on.
   void _onEvent(wm.WindowEvent event) {
-    // The window is looked up with a guard here rather than through the
-    // throwing getter: an event can arrive before the current engine has
-    // registered its window — or belong to a window this engine never owned
-    // — and a listener that throws inside the native dispatch turns a
-    // foreign event into an unhandled crash.
-    final window = wm.WindowManager.instance.getCurrent();
-    if (window == null || event.windowId != window.id) {
-      return; // another engine's window, or none yet.
+    // The event's own window, resolved within this process: a foreign
+    // application's foreground change resolves to nothing here and is
+    // dropped, because the manager's lookup only ever finds windows of the
+    // process it runs in.
+    final window = wm.WindowManager.instance.get(event.windowId);
+    if (window == null) {
+      return;
+    }
+    // The pin: the first focused window of this process is this engine's
+    // own — no secondary window exists yet, and a foreign one never
+    // resolved above. From here on the host answers only for the window it
+    // pinned; a secondary window's close request, arriving while that
+    // secondary window happens to be the active one, must be ignored
+    // rather than answered with the primary's quit.
+    if (_self == null && event is wm.WindowFocusedEvent) {
+      _self = window;
+    }
+    if (_self == null || event.windowId != _self!.id) {
+      return; // another engine's window, or not pinned yet.
     }
     switch (event) {
       case wm.WindowCloseRequestedEvent(:final request):
