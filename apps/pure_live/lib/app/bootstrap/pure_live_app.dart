@@ -4,7 +4,9 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:pure_live/app/background/app_background.dart' show AppBackground;
+import 'package:pure_live/app/providers/environment_providers.dart' show platformRuntimeProvider;
 import 'package:pure_live/app/routing/app_router.dart' show appRouterProvider;
 import 'package:pure_live/app/theme/system_accent_color.dart' show readSystemAccentColor;
 import 'package:pure_live/app/theme/theme_persistence.dart';
@@ -111,6 +113,10 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
 
   @override
   Widget build(BuildContext context) {
+    // A desktop list row is a row a pointer can rest on: the extra 12 px
+    // over the compact default and the larger leading icon are the
+    // reference's density. Phones keep the touch default.
+    final desktop = ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.desktop;
     return TranslationProvider(
       child: DsApp.router(
         routerConfig: ref.watch(appRouterProvider),
@@ -124,23 +130,35 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
         debugShowCheckedModeBanner: false,
         themeMode: _settings.mode,
         theme: _settings.theme(),
-        builder: (context, child) => AppVisibilityObserver(
-          // The wallpaper is the bottom layer of the app: every route sits
-          // over it, and the shell's own fill turns translucent while one
-          // is set. The observer feeds the video's pause signal.
-          child: AppBackground(
-            child: FocusAutoScroll(
-              // A remote or keyboard moves focus by geometry; this reveals
-              // the stop in whichever sidebar, list or settings column
-              // holds it.
-              child: AppThemeScope(
-                settings: _settings,
-                onChanged: _updateSettings,
-                child: AppLocaleScope(localeCode: _localeCode, onChanged: _updateLocale, child: child!),
+        builder: (context, child) {
+          final app = AppVisibilityObserver(
+            // The wallpaper is the bottom layer of the app: every route sits
+            // over it, and the shell's own fill turns translucent while one
+            // is set. The observer feeds the video's pause signal.
+            child: AppBackground(
+              child: FocusAutoScroll(
+                // A remote or keyboard moves focus by geometry; this reveals
+                // the stop in whichever sidebar, list or settings column
+                // holds it.
+                child: AppThemeScope(
+                  settings: _settings,
+                  onChanged: _updateSettings,
+                  child: AppLocaleScope(localeCode: _localeCode, onChanged: _updateLocale, child: child!),
+                ),
               ),
             ),
-          ),
-        ),
+          );
+          if (!desktop) return app;
+          return DsListRowTheme(
+            data: const DsListRowThemeData(
+              style: DsListRowStyle(height: 52, iconSize: 20, gap: 16),
+            ),
+            child: DsListSectionTheme(
+              data: const DsListSectionThemeData(style: DsListSectionStyle(padding: EdgeInsets.all(8))),
+              child: app,
+            ),
+          );
+        },
       ),
     );
   }
