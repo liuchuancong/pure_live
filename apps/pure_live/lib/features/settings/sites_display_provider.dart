@@ -31,11 +31,17 @@ final class SitesDisplayController extends Notifier<Set<String>> {
     return state.isEmpty ? List.of(all) : all.where(shown).toList();
   }
 
-  /// Flips [id]'s visibility, writing the choice through. The set stores
-  /// hidden ids once anything is hidden at all; while nothing is hidden,
-  /// the first switch-off starts the set with every id but the one being
-  /// hidden.
-  Future<void> toggle(String id) async {
+  /// Flips [id]'s visibility, writing the choice through; answers whether
+  /// it changed. Turning the last visible platform off changes nothing: a
+  /// browsing page with no platform at all is not a choice the switch
+  /// offers, and the caller says so.
+  ///
+  /// The set stores hidden ids once anything is hidden at all; while nothing
+  /// is hidden, the first switch-off starts the set with every id but the
+  /// one being hidden.
+  Future<bool> toggle(String id) async {
+    final currentlyShown = state.isEmpty || !state.contains(id);
+    if (currentlyShown && visibleIds().length <= 1) return false;
     final next = state.isEmpty
         ? {
             for (final site in ref.read(sitesProvider).all)
@@ -43,11 +49,22 @@ final class SitesDisplayController extends Notifier<Set<String>> {
           }
         : (state.contains(id) ? state.difference({id}) : state.union({id}));
     state = next;
+    // Hiding the preferred platform leaves the preference on the first
+    // platform still shown, so the browse pages never lead with a hidden
+    // one.
+    if (currentlyShown) {
+      final order = ref.read(sitesOrderProvider);
+      if (order.preferred == id) {
+        final remaining = visibleIds();
+        if (remaining.isNotEmpty) await ref.read(sitesOrderProvider.notifier).setPreferred(remaining.first);
+      }
+    }
     try {
       await StoragePrefs.setStringList('sites.display', next.toList());
     } on Object {
       // The choice is a preference; a closed store loses it, nothing else.
     }
+    return true;
   }
 }
 

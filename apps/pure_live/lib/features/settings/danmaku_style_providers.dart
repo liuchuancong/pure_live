@@ -4,21 +4,9 @@ import 'package:live_storage/live_storage.dart';
 /// The flying danmaku's look and motion (the reference's danmaku settings,
 /// the subset the flame layer draws by): type size, speed, the screen's
 /// share the messages may cross, opacity and the outline.
-typedef DanmakuStyle = ({
-  double fontSize,
-  double baseSpeed,
-  double area,
-  double opacity,
-  bool showStroke,
-});
+typedef DanmakuStyle = ({double fontSize, double baseSpeed, double area, double opacity, bool showStroke});
 
-const DanmakuStyle _defaults = (
-  fontSize: 18,
-  baseSpeed: 120,
-  area: 0.7,
-  opacity: 1.0,
-  showStroke: true,
-);
+const DanmakuStyle _defaults = (fontSize: 18, baseSpeed: 120, area: 0.7, opacity: 1.0, showStroke: true);
 
 /// The ranges the settings surface offers; the flame layer's own design
 /// bounds, kept beside the controller so a slider and its consumer can
@@ -53,29 +41,49 @@ final class DanmakuStyleController extends Notifier<DanmakuStyle> {
   }
 
   /// Moves the type size, writing through.
-  Future<void> setFontSize(double value) => _write(
-    (fontSize: value.clamp(DanmakuStyleRange.fontSizeMin, DanmakuStyleRange.fontSizeMax), baseSpeed: state.baseSpeed, area: state.area, opacity: state.opacity, showStroke: state.showStroke),
-  );
+  Future<void> setFontSize(double value) => _write((
+    fontSize: value.clamp(DanmakuStyleRange.fontSizeMin, DanmakuStyleRange.fontSizeMax),
+    baseSpeed: state.baseSpeed,
+    area: state.area,
+    opacity: state.opacity,
+    showStroke: state.showStroke,
+  ));
 
   /// Moves the speed, writing through.
-  Future<void> setBaseSpeed(double value) => _write(
-    (fontSize: state.fontSize, baseSpeed: value.clamp(DanmakuStyleRange.speedMin, DanmakuStyleRange.speedMax), area: state.area, opacity: state.opacity, showStroke: state.showStroke),
-  );
+  Future<void> setBaseSpeed(double value) => _write((
+    fontSize: state.fontSize,
+    baseSpeed: value.clamp(DanmakuStyleRange.speedMin, DanmakuStyleRange.speedMax),
+    area: state.area,
+    opacity: state.opacity,
+    showStroke: state.showStroke,
+  ));
 
   /// Moves the share of the screen messages may cross, writing through.
-  Future<void> setArea(double value) => _write(
-    (fontSize: state.fontSize, baseSpeed: state.baseSpeed, area: value.clamp(DanmakuStyleRange.areaMin, DanmakuStyleRange.areaMax), opacity: state.opacity, showStroke: state.showStroke),
-  );
+  Future<void> setArea(double value) => _write((
+    fontSize: state.fontSize,
+    baseSpeed: state.baseSpeed,
+    area: value.clamp(DanmakuStyleRange.areaMin, DanmakuStyleRange.areaMax),
+    opacity: state.opacity,
+    showStroke: state.showStroke,
+  ));
 
   /// Moves the opacity, writing through.
-  Future<void> setOpacity(double value) => _write(
-    (fontSize: state.fontSize, baseSpeed: state.baseSpeed, area: state.area, opacity: value.clamp(DanmakuStyleRange.opacityMin, DanmakuStyleRange.opacityMax), showStroke: state.showStroke),
-  );
+  Future<void> setOpacity(double value) => _write((
+    fontSize: state.fontSize,
+    baseSpeed: state.baseSpeed,
+    area: state.area,
+    opacity: value.clamp(DanmakuStyleRange.opacityMin, DanmakuStyleRange.opacityMax),
+    showStroke: state.showStroke,
+  ));
 
   /// Flips the outline, writing through.
-  Future<void> setShowStroke({required bool value}) => _write(
-    (fontSize: state.fontSize, baseSpeed: state.baseSpeed, area: state.area, opacity: state.opacity, showStroke: value),
-  );
+  Future<void> setShowStroke({required bool value}) => _write((
+    fontSize: state.fontSize,
+    baseSpeed: state.baseSpeed,
+    area: state.area,
+    opacity: state.opacity,
+    showStroke: value,
+  ));
 
   /// Restores the designed defaults.
   Future<void> reset() => _write(_defaults);
